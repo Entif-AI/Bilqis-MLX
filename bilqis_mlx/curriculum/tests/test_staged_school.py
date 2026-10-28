@@ -15,6 +15,7 @@ from bilqis_mlx.curriculum.scheduler import (
 )
 from bilqis_mlx.trainer import _state_from_json
 from bilqis_mlx.curriculum.tests.test_school import all_scores, cp, grade_loop, snapshot, three_grade_course
+from bilqis_mlx.learning.stagnation_control import begin_recovery_cycle, start_session
 
 
 def staged_course():
@@ -195,6 +196,27 @@ class StagedSchoolTests(unittest.TestCase):
                            queue.count(priority_caps[1]))
         self.assertGreater(queue.count(priority_caps[1]),
                            queue.count(priority_caps[2]))
+
+        assessed = assess(
+            course, state,
+            snapshot(
+                course, pointer,
+                {capability: (score.correct, score.total)
+                 for capability, score in scores.items()}))
+        self.assertEqual(assessed.queue, queue)
+        self.assertEqual(assessed.first_recovery,
+                         tuple(dict.fromkeys(queue)))
+        self.assertEqual(len(set(assessed.first_recovery)),
+                         len(assessed.first_recovery))
+        stagnation = start_session(
+            session_id="weighted-recovery",
+            generation=1,
+            required_capabilities=tuple(scores),
+        )
+        stagnation = begin_recovery_cycle(
+            stagnation, first_recovery=assessed.first_recovery)
+        self.assertEqual(
+            stagnation["cycle_first_recovery"], list(assessed.first_recovery))
 
     def test_new_state_does_not_infer_historical_debt_cadence(self):
         state = start_new(staged_course(), cp("new-school"))

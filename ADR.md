@@ -1825,6 +1825,12 @@ additional 10 percentage points below the school mean it receives one additional
 visit, capped at six visits in one recovery queue. Interleave weighted visits by
 rank rather than running one capability's entire weight consecutively.
 
+Weighted visit multiplicity belongs only to the executable recovery `queue`.
+`first_recovery` is stagnation-control membership metadata and must remain the
+unique ordered capability set underlying that queue. Never copy repeated weighted
+visits into `first_recovery`; doing so violates the stagnation cycle invariant and
+can block resume with `STAGNATION_FIRST_RECOVERY_DUPLICATE`.
+
 This is scheduling pressure, not evidence or retention credit. Exams remain
 unchanged, near-mastered imperfect semantics still receive maintenance exposure,
 and B debt cadence, promotion thresholds, plasticity bounds, mature-debt repair,

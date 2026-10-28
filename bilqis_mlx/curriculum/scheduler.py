@@ -13,8 +13,7 @@ from fractions import Fraction
 from .debt_control import (
     _apply_mature_debt_frontier, _debt_cadence_mode, _debt_run_due,
     _debt_run_queue, _frontier_recovery_queue, _imperfect_ranked,
-    _frontier_catchup_target_passes, _mature_debt_repair_grade,
-    _next_imperfect_grade_index,
+    _frontier_catchup_target_passes, _mature_debt_repair_grade, _next_imperfect_grade_index, _recovery_members,
 )
 from .state import (
     SCHOOL_STATE_SCHEMA, STAGES, _program, ScheduleTopology,
@@ -574,7 +573,7 @@ def _assess_ordinary(program, state: SchoolState,
         trio = _frontier_recovery_queue(
             program, state, snapshot.scores, pool)
         return replace(state, stage="RECOVERY_1", queue=trio,
-                       first_recovery=trio,
+                       first_recovery=_recovery_members(trio),
                        main_sweep_visited=(
                            state.main_sweep_visited + (state.grade,)
                            if state.grade not in state.main_sweep_visited
@@ -736,7 +735,8 @@ def assess_flash(program, state: SchoolState, snapshot: Assessment) -> SchoolSta
                 if state.grade not in visited:
                     visited = visited + (state.grade,)
                 return replace(state, stage="RECOVERY_1", queue=trio,
-                               first_recovery=trio, main_sweep_visited=visited,
+                               first_recovery=_recovery_members(trio),
+                               main_sweep_visited=visited,
                                latest_rubric_digest=snapshot.rubric_digest)
         resumed = _resume_ordinary_spiral(program, state, snapshot, reset_sweep=True)
         if resumed is not None and resumed.grade != state.grade:
@@ -752,7 +752,7 @@ def assess_flash(program, state: SchoolState, snapshot: Assessment) -> SchoolSta
         trio = _frontier_recovery_queue(
             program, state, snapshot.scores, pool)
         return replace(state, stage="RECOVERY_1", queue=trio,
-                       first_recovery=trio,
+                       first_recovery=_recovery_members(trio),
                        main_sweep_visited=(state.main_sweep_visited + (state.grade,)
                                            if state.grade not in state.main_sweep_visited
                                            else state.main_sweep_visited),
@@ -822,7 +822,7 @@ def assess_withheld(program, state: SchoolState, snapshot: Assessment,
             if state.grade not in visited:
                 visited = visited + (state.grade,)
             return replace(state, stage="RECOVERY_1", queue=trio,
-                           first_recovery=trio,
+                           first_recovery=_recovery_members(trio),
                            main_sweep_visited=visited,
                            latest_rubric_digest=snapshot.rubric_digest)
         return replace(state, stage="DEFERRED_STAGNATION", queue=(),

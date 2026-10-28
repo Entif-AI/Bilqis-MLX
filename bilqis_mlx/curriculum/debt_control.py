@@ -13,6 +13,11 @@ FRONTIER_CATCHUP_SHARE_DENOMINATOR = 4
 FRONTIER_CATCHUP_MINIMUM_ACTIVE_GRADES = 2
 FRONTIER_DEFICIT_WEIGHT_BUCKET = Fraction(1, 10)
 FRONTIER_DEFICIT_MAX_VISITS = 6
+
+
+def _recovery_members(queue: tuple[str, ...]) -> tuple[str, ...]:
+    """Unique ordered recovery membership; visit queues may be severity-weighted."""
+    return tuple(dict.fromkeys(queue))
 _ALLOWED_CAPABILITY_OUTSIDE_ASSESSMENT = "SPIRAL_ALLOWED_CAPABILITY_OUTSIDE_ASSESSMENT"
 _EXCLUDED_GRADE_OUTSIDE_ACTIVE_PROGRAM = "SPIRAL_EXCLUDED_GRADE_OUTSIDE_ACTIVE_PROGRAM"
 
