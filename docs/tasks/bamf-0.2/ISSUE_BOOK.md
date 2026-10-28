@@ -1,13 +1,34 @@
 # BAMF-0.2 complete implementation issue book
 
 <!-- BAMF02:LIVE-DECOMPOSITION-DIRECTIVE -->
-> Active implementation starts at the deepest dependency-ready native GitHub child, not the original broad owner. All 43 original specifications, engineering constraints and acceptance contracts remain intact. The exact complete child tree is `children/registry.json`. No predecessor BAV crosswalk, live trainer experiment or new research gate is part of this issue-grooming pass.
+> Active implementation starts at the deepest dependency-ready native GitHub child, not the original broad owner. All 43 original specifications, engineering constraints and acceptance contracts remain intact. The exact complete child tree is `children/registry.json`. Lane branch synchronization and reviewed return-to-unified rules are embedded in every checked-in issue mirror.
 
 <!-- BAMF02:A01 -->
 # A01 | Compile the pinned SKOS release into the BAMF semantic authority snapshot
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_A: #342](https://github.com/Entif-AI/Bilqis-MLX/issues/342). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:A -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-a-semantics`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-a-semantics`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-a-semantics` and
+open a pull request from `codex/bamf02-a-semantics` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Compile the pinned SKOS release into the BAMF semantic authority snapshot. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -30,7 +51,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-a-semantics` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `lib/ithkuil/src/skos/identity.py`
 - `lib/ithkuil/src/skos/corpus.py`
@@ -95,6 +116,27 @@ The new BAMF-0.2 trainer treats **every admitted grade by the same generic Facto
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_A: #342](https://github.com/Entif-AI/Bilqis-MLX/issues/342). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:A -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-a-semantics`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-a-semantics`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-a-semantics` and
+open a pull request from `codex/bamf02-a-semantics` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Implement append-only semantic banks and active-vocabulary allocation. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -117,7 +159,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-a-semantics` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/vocabulary_growth.py:append_catalog/extend_mlx_student`
 - `bilqis_mlx/semantics/atlas_vocabulary.py (new)`
@@ -174,6 +216,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_A: #342](https://github.com/Entif-AI/Bilqis-MLX/issues/342). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:A -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-a-semantics`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-a-semantics`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-a-semantics` and
+open a pull request from `codex/bamf02-a-semantics` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Bind typed AST semantics to role-addressable frame contracts. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -196,7 +259,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-a-semantics` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/registry_ast.py:RegistryAST`
 - `bilqis_mlx/semantics/core.py`
@@ -251,6 +314,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_A: #342](https://github.com/Entif-AI/Bilqis-MLX/issues/342). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:A -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-a-semantics`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-a-semantics`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-a-semantics` and
+open a pull request from `codex/bamf02-a-semantics` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Build the reversible four-slot frame codec and extended fallback. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -273,7 +357,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-a-semantics` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/semantics/frame_codec.py (new)`
 - `bilqis_mlx/semantics/tests/test_frame_codec.py (new)`
@@ -328,6 +412,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_A: #342](https://github.com/Entif-AI/Bilqis-MLX/issues/342). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:A -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-a-semantics`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-a-semantics`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-a-semantics` and
+open a pull request from `codex/bamf02-a-semantics` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Compile causally valid mixed frame and atomic sequences. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -350,7 +455,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-a-semantics` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/semantics/frame_compiler.py (new)`
 - `bilqis_mlx/semantics/tests/test_frame_compiler.py (new)`
@@ -414,6 +519,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_A: #342](https://github.com/Entif-AI/Bilqis-MLX/issues/342). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:A -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-a-semantics`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-a-semantics`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-a-semantics` and
+open a pull request from `codex/bamf02-a-semantics` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Compile source-grounded factorized features once per release. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -435,7 +561,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-a-semantics` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/semantics/atlas_features.py (new)`
 - `lib/ithkuil/src/skos/relations.py`
@@ -492,6 +618,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_A: #342](https://github.com/Entif-AI/Bilqis-MLX/issues/342). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:A -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-a-semantics`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-a-semantics`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-a-semantics` and
+open a pull request from `codex/bamf02-a-semantics` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Register exact semantic and deterministic cognitive operators. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -514,7 +661,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-a-semantics` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/semantics/functions.py`
 - `bilqis_mlx/semantics/memo.py`
@@ -572,6 +719,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_A: #342](https://github.com/Entif-AI/Bilqis-MLX/issues/342). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:A -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-a-semantics`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-a-semantics`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-a-semantics` and
+open a pull request from `codex/bamf02-a-semantics` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Generate capability and lesson programs across the full SKOS inventory. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -596,7 +764,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-a-semantics` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/factory/model.py:CapabilityDefinition/ConstructionProgram`
 - `bilqis_mlx/factory/curriculum_definition.py`
@@ -672,6 +840,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_A: #342](https://github.com/Entif-AI/Bilqis-MLX/issues/342). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:A -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-a-semantics`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-a-semantics`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-a-semantics` and
+open a pull request from `codex/bamf02-a-semantics` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Generate a resumable prerequisite-aware curriculum frontier. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -696,7 +885,7 @@ Every child defines its interfaces, dependencies and owned acceptance. Child tur
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-a-semantics` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/factory/candidate_frontier.py`
 - `bilqis_mlx/factory/jit_curriculum.py:propose_curriculum_delta`
@@ -762,6 +951,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_A: #342](https://github.com/Entif-AI/Bilqis-MLX/issues/342). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:A -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-a-semantics`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-a-semantics`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-a-semantics` and
+open a pull request from `codex/bamf02-a-semantics` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Compile BRAVO evidence strata into Factory learning releases. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -784,7 +994,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-a-semantics` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/source_adapters/evidence_frames.py (new)`
 - `bilqis_mlx/factory/evidence_curriculum.py (new)`
@@ -855,6 +1065,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_A: #342](https://github.com/Entif-AI/Bilqis-MLX/issues/342). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:A -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-a-semantics`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-a-semantics`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-a-semantics` and
+open a pull request from `codex/bamf02-a-semantics` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Generate lawful ambiguity and structural contrast lessons. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -877,7 +1108,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-a-semantics` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/factory/semantic_contrasts.py (new)`
 - `bilqis_mlx/factory/tests/test_semantic_contrasts.py (new)`
@@ -930,6 +1161,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_A: #342](https://github.com/Entif-AI/Bilqis-MLX/issues/342). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:A -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-a-semantics`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-a-semantics`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-a-semantics` and
+open a pull request from `codex/bamf02-a-semantics` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Complete the single-authority semantic cutover and release receipt. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -952,7 +1204,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-a-semantics` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/semantics/atlas_release_audit.py (new)`
 - `scripts/check_semantic_boundaries.py`
@@ -1021,6 +1273,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_A: #342](https://github.com/Entif-AI/Bilqis-MLX/issues/342). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:A -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-a-semantics`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-a-semantics`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-a-semantics` and
+open a pull request from `codex/bamf02-a-semantics` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Enforce combined context eligibility before neural or motif access. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -1043,7 +1316,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-a-semantics` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/semantics/context_eligibility.py (new)`
 - `bilqis_mlx/semantics/tests/test_context_eligibility.py (new)`
@@ -1099,6 +1372,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_B: #343](https://github.com/Entif-AI/Bilqis-MLX/issues/343). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:B -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-b-neural`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-b-neural`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-b-neural` and
+open a pull request from `codex/bamf02-b-neural` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Declare BAMF v2 topology and generate the complete parameter manifest. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -1124,7 +1418,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-b-neural` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/runtime/model_topology.py`
 - `bilqis_mlx/runtime/topology_lifecycle.py`
@@ -1262,6 +1556,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_B: #343](https://github.com/Entif-AI/Bilqis-MLX/issues/343). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:B -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-b-neural`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-b-neural`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-b-neural` and
+open a pull request from `codex/bamf02-b-neural` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Implement tied factorized semantic embeddings and paged readout. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -1284,7 +1599,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-b-neural` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/learning/frame_embeddings.py (new)`
 - `bilqis_mlx/learning/tests/test_frame_embeddings.py (new)`
@@ -1340,6 +1655,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_B: #343](https://github.com/Entif-AI/Bilqis-MLX/issues/343). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:B -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-b-neural`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-b-neural`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-b-neural` and
+open a pull request from `codex/bamf02-b-neural` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Build the role-aware frame encoder and constituent handles. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -1362,7 +1698,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-b-neural` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/learning/frame_embeddings.py`
 - `bilqis_mlx/learning/frame_encoder.py (new)`
@@ -1416,6 +1752,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_B: #343](https://github.com/Entif-AI/Bilqis-MLX/issues/343). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:B -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-b-neural`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-b-neural`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-b-neural` and
+open a pull request from `codex/bamf02-b-neural` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Implement causal compressed-convolution GQA and incremental RoPE caches. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -1439,7 +1796,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-b-neural` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/runtime/atlas_attention.py (new)`
 - `bilqis_mlx/runtime/mlx_parity.py:forward_arrays`
@@ -1495,6 +1852,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_B: #343](https://github.com/Entif-AI/Bilqis-MLX/issues/343). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:B -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-b-neural`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-b-neural`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-b-neural` and
+open a pull request from `codex/bamf02-b-neural` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Implement three-group Block AttnRes with stable depth selection. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -1517,7 +1895,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-b-neural` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/runtime/block_attnres.py (new)`
 - `bilqis_mlx/runtime/tests/test_block_attnres.py (new)`
@@ -1570,6 +1948,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_B: #343](https://github.com/Entif-AI/Bilqis-MLX/issues/343). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:B -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-b-neural`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-b-neural`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-b-neural` and
+open a pull request from `codex/bamf02-b-neural` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Add bounded recurrent constituent refinement with input recall. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -1593,7 +1992,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-b-neural` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/runtime/atlas_refinement.py (new)`
 - `bilqis_mlx/runtime/tests/test_atlas_refinement.py (new)`
@@ -1649,6 +2048,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_B: #343](https://github.com/Entif-AI/Bilqis-MLX/issues/343). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:B -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-b-neural`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-b-neural`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-b-neural` and
+open a pull request from `codex/bamf02-b-neural` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Implement transactional motif-key allocation and structural fallback. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -1672,7 +2092,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-b-neural` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/learning/atlas_engram.py (new)`
 - `bilqis_mlx/learning/tests/test_atlas_engram_allocation.py (new)`
@@ -1735,6 +2155,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_B: #343](https://github.com/Entif-AI/Bilqis-MLX/issues/343). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:B -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-b-neural`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-b-neural`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-b-neural` and
+open a pull request from `codex/bamf02-b-neural` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Train two context-gated motif-memory reads inside the model. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -1756,7 +2197,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-b-neural` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/learning/atlas_engram.py`
 - `bilqis_mlx/learning/tests/test_atlas_engram_reads.py (new)`
@@ -1817,6 +2258,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_B: #343](https://github.com/Entif-AI/Bilqis-MLX/issues/343). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:B -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-b-neural`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-b-neural`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-b-neural` and
+open a pull request from `codex/bamf02-b-neural` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Provision fast adapters and explicit multi-timescale plasticity. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -1841,7 +2303,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-b-neural` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/learning/atlas_plasticity.py (new)`
 - `bilqis_mlx/runtime/tests/test_atlas_plasticity.py (new)`
@@ -1912,6 +2374,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_B: #343](https://github.com/Entif-AI/Bilqis-MLX/issues/343). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:B -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-b-neural`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-b-neural`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-b-neural` and
+open a pull request from `codex/bamf02-b-neural` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Implement typed scalar, slot and structured answer heads. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -1935,7 +2418,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-b-neural` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/factory/answers.py:AnswerModalityRegistry/compile_answer_heads`
 - `bilqis_mlx/typed_answer_training.py`
@@ -2007,6 +2490,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_B: #343](https://github.com/Entif-AI/Bilqis-MLX/issues/343). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:B -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-b-neural`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-b-neural`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-b-neural` and
+open a pull request from `codex/bamf02-b-neural` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Assemble the real atlas-native model and architecture dispatch. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -2029,7 +2533,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-b-neural` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/runtime/atlas_model.py (new)`
 - `bilqis_mlx/runtime/model_topology.py`
@@ -2106,6 +2610,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_B: #343](https://github.com/Entif-AI/Bilqis-MLX/issues/343). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:B -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-b-neural`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-b-neural`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-b-neural` and
+open a pull request from `codex/bamf02-b-neural` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Extend native AdamW custody to masked plastic groups and candidate transactions. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -2129,7 +2654,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-b-neural` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/learning/student_ops.py:_train_step`
 - `bilqis_mlx/runtime/mlx_parity.py:native_optimizer_to_mlx`
@@ -2190,6 +2715,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_B: #343](https://github.com/Entif-AI/Bilqis-MLX/issues/343). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:B -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-b-neural`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-b-neural`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-b-neural` and
+open a pull request from `codex/bamf02-b-neural` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Persist and cold-resume the complete BAMF learning generation. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -2213,7 +2759,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-b-neural` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/runtime/mlx_checkpoint.py:save_new_bundle/load_bundle`
 - `bilqis_mlx/runtime/checkpoints.py:_bundle_pointer/_advance`
@@ -2288,6 +2834,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_B: #343](https://github.com/Entif-AI/Bilqis-MLX/issues/343). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:B -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-b-neural`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-b-neural`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-b-neural` and
+open a pull request from `codex/bamf02-b-neural` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Implement the derived low-bit KV-cache codec with FP32 fallback. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -2311,7 +2878,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-b-neural` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/runtime/atlas_cache_codec.py (new)`
 - `bilqis_mlx/runtime/tests/test_atlas_cache_codec.py (new)`
@@ -2373,6 +2940,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_C: #344](https://github.com/Entif-AI/Bilqis-MLX/issues/344). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:C -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-c-runtime`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-c-runtime`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-c-runtime` and
+open a pull request from `codex/bamf02-c-runtime` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Create the three-lane integration baseline and executable EGM work contract. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -2396,7 +2984,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-c-runtime` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `AGENTS.md (scoped amendment)`
 - `ADR.md (append)`
@@ -2462,6 +3050,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_C: #344](https://github.com/Entif-AI/Bilqis-MLX/issues/344). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:C -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-c-runtime`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-c-runtime`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-c-runtime` and
+open a pull request from `codex/bamf02-c-runtime` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Adapt ordinary Factory batches to BAMF inputs and targets. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -2485,7 +3094,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-c-runtime` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/learning/student_ops.py:_make_batch/_train_step`
 - `bilqis_mlx/runtime/atlas_training_adapter.py (new)`
@@ -2568,6 +3177,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_C: #344](https://github.com/Entif-AI/Bilqis-MLX/issues/344). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:C -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-c-runtime`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-c-runtime`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-c-runtime` and
+open a pull request from `codex/bamf02-c-runtime` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Carry the replay-salvaged teacher into the new student lineage. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -2591,7 +3221,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-c-runtime` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/learning/teacher_strategy_population.py`
 - `bilqis_mlx/learning/teacher_multifidelity.py`
@@ -2663,6 +3293,27 @@ The new BAMF-0.2 trainer treats **every admitted grade by the same generic Facto
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_C: #344](https://github.com/Entif-AI/Bilqis-MLX/issues/344). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:C -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-c-runtime`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-c-runtime`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-c-runtime` and
+open a pull request from `codex/bamf02-c-runtime` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Compose exact and neural mechanisms behind one capability solver. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -2685,7 +3336,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-c-runtime` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/runtime/cognitive_solver.py (new)`
 - `bilqis_mlx/runtime/operator_registry.py (new)`
@@ -2751,6 +3402,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_C: #344](https://github.com/Entif-AI/Bilqis-MLX/issues/344). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:C -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-c-runtime`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-c-runtime`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-c-runtime` and
+open a pull request from `codex/bamf02-c-runtime` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Evaluate and retain end-to-end capabilities with current school safeguards. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -2773,7 +3445,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-c-runtime` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/runtime/candidate_evidence.py`
 - `bilqis_mlx/runtime/exam_execution.py`
@@ -2853,6 +3525,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_C: #344](https://github.com/Entif-AI/Bilqis-MLX/issues/344). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:C -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-c-runtime`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-c-runtime`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-c-runtime` and
+open a pull request from `codex/bamf02-c-runtime` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Route attention and curriculum priorities with SÍ SÉ SON signals. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -2876,7 +3569,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-c-runtime` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/learning/atlas_salience.py (new)`
 - `bilqis_mlx/diagnostics/signals.py`
@@ -2946,6 +3639,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_C: #344](https://github.com/Entif-AI/Bilqis-MLX/issues/344). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:C -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-c-runtime`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-c-runtime`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-c-runtime` and
+open a pull request from `codex/bamf02-c-runtime` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Advance the Factory continuously under an explicit atlas admission lease. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -2970,7 +3684,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-c-runtime` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/runtime/autonomy_loop.py`
 - `bilqis_mlx/runtime/autonomy_state.py`
@@ -3039,6 +3753,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_C: #344](https://github.com/Entif-AI/Bilqis-MLX/issues/344). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:C -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-c-runtime`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-c-runtime`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-c-runtime` and
+open a pull request from `codex/bamf02-c-runtime` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Make batch preparation and resource budgets topology-aware. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -3061,7 +3796,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-c-runtime` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/runtime/source_prefetch.py`
 - `bilqis_mlx/runtime/mlx_memory.py`
@@ -3117,6 +3852,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_C: #344](https://github.com/Entif-AI/Bilqis-MLX/issues/344). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:C -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-c-runtime`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-c-runtime`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-c-runtime` and
+open a pull request from `codex/bamf02-c-runtime` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Propagate corrections through reusable cognition and learned support. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -3139,7 +3895,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-c-runtime` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/semantics/cognitive_dependencies.py (new)`
 - `bilqis_mlx/runtime/atlas_revalidation.py (new)`
@@ -3205,6 +3961,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_C: #344](https://github.com/Entif-AI/Bilqis-MLX/issues/344). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:C -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-c-runtime`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-c-runtime`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-c-runtime` and
+open a pull request from `codex/bamf02-c-runtime` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Publish BAMF learning and release events into Rosetta/Akasha projections. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -3227,7 +4004,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-c-runtime` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/runtime/outbox_lineage.py`
 - `bilqis_mlx/runtime/bamf_projection.py (new)`
@@ -3282,6 +4059,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_C: #344](https://github.com/Entif-AI/Bilqis-MLX/issues/344). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:C -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-c-runtime`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-c-runtime`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-c-runtime` and
+open a pull request from `codex/bamf02-c-runtime` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Expose a usable BAMF cockpit and stable launch/resume commands. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -3304,7 +4102,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-c-runtime` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/cli.py`
 - `bilqis_mlx/presentation/dashboard.py`
@@ -3375,6 +4173,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_C: #344](https://github.com/Entif-AI/Bilqis-MLX/issues/344). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:C -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-c-runtime`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-c-runtime`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-c-runtime` and
+open a pull request from `codex/bamf02-c-runtime` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Package reusable cognitive capabilities and compatible plastic deltas. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -3397,7 +4216,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-c-runtime` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/runtime/cognitive_package.py (new)`
 - `bilqis_mlx/runtime/tests/test_cognitive_package.py (new)`
@@ -3457,6 +4276,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_C: #344](https://github.com/Entif-AI/Bilqis-MLX/issues/344). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:C -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-c-runtime`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-c-runtime`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-c-runtime` and
+open a pull request from `codex/bamf02-c-runtime` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Run the integrated disposable learning and recovery acceptance slice. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -3479,7 +4319,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-c-runtime` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `tests/system/test_bamf_learning_path.py (new)`
 - `scripts/prove_bamf_delivery.py (new)`
@@ -3551,6 +4391,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_C: #344](https://github.com/Entif-AI/Bilqis-MLX/issues/344). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:C -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-c-runtime`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-c-runtime`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-c-runtime` and
+open a pull request from `codex/bamf02-c-runtime` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Deliver the continuing BRAVO-to-full-atlas training program. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -3575,7 +4436,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-c-runtime` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `configs/curricula/bamf-developmental-v1.json (new)`
 - `docs/operations/BAMF_0_2_TRAINING.md (new)`
@@ -3657,6 +4518,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_C: #344](https://github.com/Entif-AI/Bilqis-MLX/issues/344). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:C -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-c-runtime`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-c-runtime`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-c-runtime` and
+open a pull request from `codex/bamf02-c-runtime` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Close BAMF delivery with fresh EGM review and three-lane receipts. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -3681,7 +4563,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-c-runtime` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `docs/evidence/bamf/delivery/ (new)`
 - `docs/tasks/bamf-0.2/workstack.json`
@@ -3757,6 +4639,27 @@ All admitted grades use the **same generic Factory/teacher scheduling, assessmen
 
 **Program:** BAMF-0.2, root [#341](https://github.com/Entif-AI/Bilqis-MLX/issues/341). **Lane:** [LANE_C: #344](https://github.com/Entif-AI/Bilqis-MLX/issues/344). **Disposition:** implementation work order; owner selected27 October2026.
 
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:C -->
+## Lane branch and integration lifecycle
+
+**Working branch:** `codex/bamf02-c-runtime`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.
+
+Before beginning implementation on this issue, fetch `origin` and, while on
+`codex/bamf02-c-runtime`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the
+lane already equals the current unified head, record that exact unified SHA and
+proceed without manufacturing a no-op merge. Resolve any real conflicts and run
+the smallest affected verification before issue-owned edits. Record the consumed
+unified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch
+directly; reviewed cross-lane work arrives through the unified trunk.
+
+After this issue's owned acceptance is satisfied, commit and push `codex/bamf02-c-runtime` and
+open a pull request from `codex/bamf02-c-runtime` into `codex/bamf-unified-base-20261028` for human review and
+sign-off. This issue does not authorize self-merging that PR. After accepted work
+lands on unified, the next issue in the lane repeats the sync-in step. A
+non-implementing group/integration parent does not create a bookkeeping code PR;
+its implementing descendants follow this lifecycle and the parent closes only at
+its existing integration gate.
 ## Outcome
 Open the first durable BAMF student path before optional projection work. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
 
@@ -3781,7 +4684,7 @@ Source semantics, grades, privacy, optimizer custody, independent gold and imple
 Existing-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.
 
 ## Source and allowed edit surface
-Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Re-read current branch equivalents before patching. Listed new files are prescribed additions, not claims of existing implementation.
+Historical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-c-runtime` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.
 
 - `bilqis_mlx/cli.py`
 - `docs/operations/BAMF_0_2_FIRST_STUDENT.md (new)`

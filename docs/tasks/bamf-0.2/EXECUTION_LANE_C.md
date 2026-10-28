@@ -7,14 +7,14 @@ Continue the BAMF-0.2 program in Entif-AI/Bilqis-MLX. Root #341; lane #344; star
 
 ## Bootstrap once
 
-Read root README.md, AGENTS.md, the root successor amendment and this lane's live issue. Read `docs/architecture/BAMF_0_2.md` for shared contract orientation once. Confirm the actual branch and worktree. Lane C first publishes the exact combined baseline from replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23` and SKOS `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Branch `codex/bamf02-c-runtime` from that baseline in a dedicated worktree. Before it is published, prepare source adapters, isolated modules and literal fixtures against the pinned inputs without mutating shared runtime owners.
+Read root README.md, AGENTS.md, the root successor amendment and this lane's live issue. Read `docs/architecture/BAMF_0_2.md` for shared contract orientation once. Confirm the actual branch and worktree. Lane C works on `codex/bamf02-c-runtime`; `codex/bamf-unified-base-20261028` is the living reviewed integration trunk. Before each implementing issue begins, fetch `origin`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch, record the consumed unified SHA, resolve any conflict, and verify the affected seam before issue-owned edits. Do not rebuild the baseline from `main` or the historical replay/SKOS refs.
 
 ## Work selection and isolation
 
 **Recursive owner dispatch:** When an issue has native sub-issues, assign the deepest dependency-ready implementable child, not its integration/group parent. Keep every parent requirement, engineering detail, and acceptance obligation; subdivide further if the child is still too broad. Lower-tier affordability comes from smaller work units, not weakened specifications.
 
 
-Use `docs/tasks/bamf-0.2/workstack.json` and the latest direct dependency receipts. Take the earliest ready leaf in this lane. Recheck only its named prerequisites. Read its allowed files and current amendments. Commit each coherent outcome. One lane writer owns the lane branch. Lane C owns shared trainer/CLI/ADR edits and integration; other lanes submit changes against its interface rather than racing those files.
+Use `docs/tasks/bamf-0.2/workstack.json` and the latest direct dependency receipts. Take the earliest ready leaf in this lane. Recheck only its named prerequisites. Read its allowed files and current amendments. Commit each coherent outcome. One lane writer owns the lane branch. Lane C owns shared trainer/CLI/ADR implementation surfaces while this lane's issues are active. Reviewed Lane A or Lane B changes arrive through unified at the next issue-boundary sync, never by direct sibling merge.
 
 Lane keys: C01, C02, C03, C04, C05, C06, C07, C08, C09, C10, C11, C12, C13, C14, C15, C16.
 
@@ -36,4 +36,4 @@ M3 Ultra owns real MLX work. The second workstation may perform source generatio
 
 ## Finish a leaf, continue
 
-Push and read back the SHA. Comment on the leaf and lane PR. Add `Closes #<leaf>` to the PR Development section. Include exact changed paths, test commands and totals, EGM disposition and next ready leaf. Checkpoint every coherent unit and continue until the lane has no executable independent work. A low quota warning alone is not a blocker.
+Push and read back the SHA. Open a PR from `codex/bamf02-c-runtime` into `codex/bamf-unified-base-20261028` for this completed issue, add `Closes #<leaf>` to the PR Development section, and comment on the leaf with the PR and exact branch/head receipt. Human sign-off is required; do not self-merge. Include exact changed paths, test commands and totals, EGM disposition and next ready leaf. After accepted work lands on unified, the next leaf starts by syncing unified again. Checkpoint every coherent unit and continue until the lane has no executable independent work. A low quota warning alone is not a blocker.

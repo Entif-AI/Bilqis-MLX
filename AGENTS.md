@@ -16,6 +16,18 @@ the executable Factory. Current Prometheus-specific operating rules below remain
 binding for the existing student; BAMF successor work must express new behavior in
 grade-neutral Factory terms rather than hard-code a future grade letter.
 
+The unified branch is the reviewed integration trunk and remains live throughout
+BAMF execution. Lane A works on `codex/bamf02-a-semantics`, Lane B on
+`codex/bamf02-b-neural`, and Lane C on `codex/bamf02-c-runtime`. Before beginning
+each implementing issue, the lane writer must fetch and merge the current
+`origin/codex/bamf-unified-base-20261028` into the lane branch, record the unified
+SHA consumed, resolve conflicts, and run the smallest affected verification. Do
+not merge `main` or a sibling lane directly. Completed issue work returns through
+a lane-to-unified PR for explicit human sign-off; no issue authorizes the agent to
+self-merge that PR. After accepted work lands on unified, the next issue in every
+lane repeats the sync-in step so reviewed cross-lane interfaces and instrumentation
+arrive early rather than accumulating as end-of-program conflicts.
+
 ## CONTROLLING USER CORRECTION — 2026-10-27: no developmental generalization
 
 Bilqis is still a tiny developmental student learning a narrow semantic inventory.

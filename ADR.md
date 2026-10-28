@@ -2185,3 +2185,38 @@ full specifications and then guess which one wins.
 
 **Status:** Accepted as the authority-transition contract for the BAMF unified
 base and future Bilqis-MLX work shaping.
+
+
+## ADR-119 | 2026-10-28 | BAMF uses three long-lived lane branches around a living reviewed integration trunk
+
+The BAMF unified branch is not frozen after its initial composition. Git history
+already preserves the exact common ancestor, so freezing the integration branch
+would add no meaningful provenance while delaying useful cross-lane integration.
+
+`codex/bamf-unified-base-20261028` is therefore the living reviewed integration
+trunk. Lane A works on `codex/bamf02-a-semantics`, Lane B on
+`codex/bamf02-b-neural`, and Lane C on `codex/bamf02-c-runtime`.
+
+Every implementing issue begins with a sync-in boundary. The lane fetches `origin`
+and merges the current `origin/codex/bamf-unified-base-20261028` into its own lane
+branch before issue-owned edits. The receipt records the consumed unified SHA. If
+the lane already equals that head, record the SHA rather than manufacturing a
+no-op merge. Resolve conflicts and run the smallest affected verification before
+continuing. Lanes do not merge `main` or sibling lanes directly; accepted
+cross-lane work travels through unified.
+
+Every completed issue has a reviewed return path. After its owned acceptance
+passes, the lane pushes and opens a pull request from the lane branch into
+`codex/bamf-unified-base-20261028`. Human sign-off is required before merge; issue
+execution does not delegate self-merge authority. After accepted work lands on
+unified, subsequent issues in all lanes consume it at their next sync-in boundary.
+This exposes shared interfaces, tests, instrumentation, and conflict pressure
+early while preserving lane ownership and an explicit integration approval gate.
+
+The three lane branches remain long-lived across issues. Merge commits from unified
+into a lane are preferred over rebasing because issue receipts, reviews, and other
+agents may already reference lane commit SHAs. Non-implementing group or
+integration-parent issues inherit this lifecycle through their implementing
+descendants and do not create empty bookkeeping code PRs.
+
+**Status:** Accepted as the BAMF branch topology and integration lifecycle.

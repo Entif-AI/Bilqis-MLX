@@ -23,6 +23,12 @@ OBSOLETE_LIVE_POLICY = (
     "C progresses while carrying B debt",
     "Keep B debt and numeric scope from the real run manifest",
 )
+INTEGRATION_BRANCH = "codex/bamf-unified-base-20261028"
+LANE_BRANCHES = {
+    "A": "codex/bamf02-a-semantics",
+    "B": "codex/bamf02-b-neural",
+    "C": "codex/bamf02-c-runtime",
+}
 
 
 def section(body: str, start: str, end: str) -> str:
@@ -56,6 +62,11 @@ def main() -> None:
         for phrase in OBSOLETE_LIVE_POLICY:
             if phrase in body:
                 errors.append(f"{key}: obsolete grade-specific BAMF policy: {phrase}")
+        lane = key[0]
+        if f"<!-- BAMF02:LANE-BRANCH-LIFECYCLE:{lane} -->" not in body:
+            errors.append(f"{key}: missing lane branch lifecycle marker")
+        if LANE_BRANCHES[lane] not in body or INTEGRATION_BRANCH not in body:
+            errors.append(f"{key}: missing exact lane/integration branch binding")
         if key in REQUIRED_ADR and "<!-- BAMF02:ADR-004-FUNCTIONAL-FACTORY -->" not in body:
             errors.append(f"{key}: missing ADR-004 functional Factory acceptance")
         if item["number"] < 345 or item["number"] > 387:
@@ -129,6 +140,11 @@ def main() -> None:
         for phrase in OBSOLETE_LIVE_POLICY:
             if phrase in body:
                 errors.append(f"{key}: obsolete named-grade policy: {phrase}")
+        lane = key[0]
+        if f"<!-- BAMF02:LANE-BRANCH-LIFECYCLE:{lane} -->" not in body:
+            errors.append(f"{key}: missing lane branch lifecycle marker")
+        if LANE_BRANCHES[lane] not in body or INTEGRATION_BRANCH not in body:
+            errors.append(f"{key}: missing exact lane/integration branch binding")
         visit_child(key)
     if "<!-- BAMF02:A09-LOSSLESS-DECOMPOSITION-20261027 -->" not in (TASKS / "issues/A09.md").read_text(encoding="utf-8"):
         errors.append("A09: no lossless decomposition dispatch in full parent body")
@@ -189,6 +205,7 @@ def main() -> None:
     print("PASS: 43/43 exact checked-in issue mirrors equal workstack SHA-256 receipts")
     print("PASS: 43/43 issue API, implementation and acceptance fields match workstack")
     print("PASS: no missing/cyclic dependencies, no obsolete named-grade debt exception")
+    print("PASS: all 200 BAMF owner/child specs bind exact lane branches and reviewed unified lifecycle")
     print("PASS: 12 owner issues and 3 repository entrypoints carry ADR-BAMF02-004")
     print(f"PASS: {len(CHILDREN)} recursive A09 sub-issues retain exact indexed mirrors, linked ownership and acyclic dependencies")
     if registry_path.exists():

@@ -17,11 +17,19 @@ First ready child candidates: A [A01.1 #396](https://github.com/Entif-AI/Bilqis-
 
 ## Parallel start
 
-- Lane A: [Semantics and curricula](https://github.com/Entif-AI/Bilqis-MLX/issues/342), start [A01 #345](https://github.com/Entif-AI/Bilqis-MLX/issues/345). [Launch instructions](EXECUTION_LANE_A.md).
-- Lane B: [Neural architecture](https://github.com/Entif-AI/Bilqis-MLX/issues/343), start [B01 #346](https://github.com/Entif-AI/Bilqis-MLX/issues/346). [Launch instructions](EXECUTION_LANE_B.md).
-- Lane C: [Training and integration](https://github.com/Entif-AI/Bilqis-MLX/issues/344), start [C01 #347](https://github.com/Entif-AI/Bilqis-MLX/issues/347). [Launch instructions](EXECUTION_LANE_C.md).
+- Lane A: [Semantics and curricula](https://github.com/Entif-AI/Bilqis-MLX/issues/342), branch `codex/bamf02-a-semantics`, start [A01 #345](https://github.com/Entif-AI/Bilqis-MLX/issues/345). [Launch instructions](EXECUTION_LANE_A.md).
+- Lane B: [Neural architecture](https://github.com/Entif-AI/Bilqis-MLX/issues/343), branch `codex/bamf02-b-neural`, start [B01 #346](https://github.com/Entif-AI/Bilqis-MLX/issues/346). [Launch instructions](EXECUTION_LANE_B.md).
+- Lane C: [Training and integration](https://github.com/Entif-AI/Bilqis-MLX/issues/344), branch `codex/bamf02-c-runtime`, start [C01 #347](https://github.com/Entif-AI/Bilqis-MLX/issues/347). [Launch instructions](EXECUTION_LANE_C.md).
 
-The integration owner creates the common baseline and owns shared files. CPU source/fixture work proceeds concurrently. MLX evaluation and neural updates use one serialized M3 Ultra lane. The first durable student gate is [C16](issues/C16.md); full delivery is [C15](issues/C15.md).
+The common integration trunk is `codex/bamf-unified-base-20261028`. It is a living
+reviewed branch: every implementing issue first merges the current unified trunk
+into its assigned lane, and every completed issue returns by PR from that lane
+into unified for human sign-off. Do not merge `main` or a sibling lane directly.
+Lane C still owns shared trainer/CLI/runtime surfaces; this ownership rule prevents
+races but does not make Lane C the integration trunk. CPU source/fixture work
+proceeds concurrently. MLX evaluation and neural updates use one serialized M3
+Ultra lane. The first durable student gate is [C16](issues/C16.md); full delivery
+is [C15](issues/C15.md).
 
 ## Artifacts
 
@@ -33,4 +41,10 @@ The integration owner creates the common baseline and owns shared files. CPU sou
 
 ## Turn-in
 
-Keep one writer per lane. Push coherent commits, record exact proof on the issue and lane PR, and add a closing keyword to the PR Development section. Main merge and a durable live student launch remain operator actions. Context is a cache; the issue, committed source and receipts carry continuation.
+Keep one writer per lane. At issue start, sync the current unified trunk into the
+lane and record the consumed unified SHA. Push coherent commits, record exact proof
+on the issue, then open a PR from the lane branch into
+`codex/bamf-unified-base-20261028` and add the issue closing keyword to the PR
+Development section. Human sign-off is required before that PR merges. Main merge
+and a durable live student launch remain operator actions. Context is a cache; the
+issue, committed source and receipts carry continuation.

@@ -27,6 +27,7 @@ import subprocess
 from pathlib import Path
 
 from bamf02_grooming_slices import GROUP_TITLES, NESTED_FIRST_TWO, SLICES
+from bamf02_bind_lane_branches import lifecycle_block
 
 ROOT = Path(__file__).resolve().parents[1]
 TASKS = ROOT / "docs/tasks/bamf-0.2"
@@ -137,6 +138,8 @@ def child_body(key: str, d: dict, byid: dict[str, int], parent_text: str, owner_
 # {d['key']} | {d['title']}
 
 **BAMF-0.2 implementation packet. Lane {key[0]}.** Full original owner: [{key} #{owner_num}](https://github.com/{REPO}/issues/{owner_num}); direct native parent: {p}. **This issue is {'a non-implementing group' if d['group'] else 'an implementable leaf'}**, not an amendment to the approved design.
+
+{lifecycle_block(key[0]).rstrip()}
 
 ## Authority and lossless scope
 The two approved BAMF-0.2 native Docs, the original complete [{key} issue #{owner_num}](https://github.com/{REPO}/issues/{owner_num}), root #341, ADR-BAMF02-004 and existing source/Factory rights remain controlling. No original algorithm, schema, acceptance, correctness constraint or workload is waived, simplified or removed. The parent's full acceptance remains with its eventual integration. Prior BAV/Grade-B exceptions and the rejected alternate design do not become current policy. All grades use the same functional recursive Factory/teacher/retention machinery with typed source-family-specific rule subsets, not grade-based branches. Live optimizer starts remain human-owned.

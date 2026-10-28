@@ -16,6 +16,22 @@ including its content-addressed test policy and ingestion Skill. These planning 
 semantic assets do not by themselves alter the existing Prometheus student or
 authorize neural updates.
 
+`codex/bamf-unified-base-20261028` is a **living reviewed integration trunk**, not
+a frozen museum branch. The three implementation lanes are:
+
+- Lane A semantics/factory: `codex/bamf02-a-semantics`
+- Lane B neural architecture: `codex/bamf02-b-neural`
+- Lane C runtime/integration: `codex/bamf02-c-runtime`
+
+Before each implementing issue begins, its lane branch fetches and merges the
+current `origin/codex/bamf-unified-base-20261028`, records the unified SHA it
+consumed, resolves any conflicts, and verifies the affected seam before making
+issue-owned edits. Lanes do not merge `main` or sibling lanes directly. When an
+issue satisfies its owned acceptance, its lane pushes and opens a PR back into the
+unified trunk for human sign-off; the issue never authorizes self-merging that PR.
+Accepted cross-lane work becomes available to the other lanes through the next
+issue-boundary sync from unified.
+
 ## CONTROLLING USER CORRECTION — 2026-10-23: factory specs are not semantic-root tickets
 
 Issue #150 is a factory-architecture epic. Its decomposition exists to make the
