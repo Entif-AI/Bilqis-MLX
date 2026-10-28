@@ -183,6 +183,17 @@ class StagedSchoolTests(unittest.TestCase):
         self.assertEqual(migrated.debt_cadence_policy,
                          DebtCadencePolicy.from_legacy_adr094())
 
+    def test_explicit_null_c_frontier_policy_rehydrates_adr094_cadence(self):
+        course = staged_course()
+        state, _ = enter_c(course)
+        payload = asdict(state)
+        payload["debt_cadence_policy"] = None
+
+        restored = _state_from_json(payload, course)
+
+        self.assertEqual(restored.debt_cadence_policy,
+                         DebtCadencePolicy.from_legacy_adr094())
+
     def test_c_frontier_due_b_turn_is_full_imperfect_grade_pass(self):
         course = staged_course()
         state, pointer = enter_c(course)

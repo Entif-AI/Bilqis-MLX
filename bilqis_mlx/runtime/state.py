@@ -56,7 +56,7 @@ def _state_from_json(value: dict, course) -> SchoolState:
     legacy_frontier_priority_epoch = (
         "frontier_priority_visits" not in school and
         "nongating_b_visits" not in school)
-    legacy_debt_cadence_policy = "debt_cadence_policy" not in school
+    legacy_debt_cadence_policy = school.get("debt_cadence_policy") is None
     legacy_b_full_run_epoch = "non_b_training_turns_since_b_run" not in school
     legacy_promotion_sweep_attempt_epoch = restore_promotion_attempt_fields(school)
     school.setdefault("main_sweep_visited", ())

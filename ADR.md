@@ -1854,5 +1854,12 @@ progression prerequisite. ADR-094's bounded B debt turns remain intact; this
 correction prevents their surrounding multi-capability work from reducing the
 actual progression frontier to raw 1/N capability frequency between boundaries.
 
+Historical and migrated C-frontier receipts may carry an explicit
+`debt_cadence_policy: null`. That value is stale compatibility state, not an
+intentional revocation of ADR-094. When B and C are admitted and C is the newest
+active grade, deserialization neural-inertly rehydrates the canonical bounded-B /
+progression-C cadence exactly as it already does when the field is absent. The
+policy remains dormant unless both B and C actually carry unfinished debt.
+
 **Status:** Accepted for bounded implementation and non-neural verification.
 
