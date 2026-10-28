@@ -87,7 +87,7 @@ def _debt_cadence_mode(program, state: SchoolState) -> bool:
 
 def _debt_run_due(program, state: SchoolState) -> bool:
     return (_debt_cadence_mode(program, state) and
-            state.non_b_training_turns_since_b_run >=
+            state.priority_visits_since_bounded_debt >=
             state.debt_cadence_policy.non_debt_turns_per_run)
 
 
@@ -106,10 +106,10 @@ def _debt_run_queue(program, state: SchoolState, scores: dict[str, Score],
         capability in scores and not scores[capability].perfect)
     if not eligible:
         return ()
-    # One debt visit is one candidate-level training turn.  Rotate through the
-    # complete imperfect grade so every admitted B semantic stays in circulation
-    # without expanding one earned turn into a multi-candidate burst.
-    return (eligible[state.nongating_b_visits % len(eligible)],)
+    # One debt visit is one candidate-level training turn. Rotate through the
+    # complete imperfect bounded-debt grade without expanding one earned turn
+    # into a multi-candidate burst.
+    return (eligible[state.bounded_debt_visits % len(eligible)],)
 
 
 def _imperfect_ranked(scores: dict[str, Score],

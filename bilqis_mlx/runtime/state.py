@@ -13,7 +13,7 @@ from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.curriculum.scheduler import (
     DebtCadencePolicy, SchoolState, migrate_legacy_debt_cadence_epoch,
     migrate_legacy_debt_cadence_policy, migrate_legacy_debt_cadence_queue,
-    verify_state,
+    _restore_debt_counter_fields, verify_state,
 )
 from bilqis_mlx.curriculum.promotion import (
     migrate_promotion_sweep_attempt_epoch, restore_promotion_attempt_fields,
@@ -53,11 +53,16 @@ def _durable_json(path: Path, data: dict, *, replace_existing=False):
 
 def _state_from_json(value: dict, course) -> SchoolState:
     school = dict(value)
+    role_neutral_debt_state = (
+        "bounded_debt_visits" in school or
+        "priority_visits_since_bounded_debt" in school)
+    legacy_bounded_counter_epoch, legacy_priority_visit_epoch = (
+        _restore_debt_counter_fields(school))
     legacy_frontier_priority_epoch = (
-        "frontier_priority_visits" not in school and
-        "nongating_b_visits" not in school)
-    legacy_debt_cadence_policy = school.get("debt_cadence_policy") is None
-    legacy_b_full_run_epoch = "non_b_training_turns_since_b_run" not in school
+        "frontier_priority_visits" not in school and legacy_bounded_counter_epoch)
+    legacy_debt_cadence_policy = (
+        school.get("debt_cadence_policy") is None and
+        not role_neutral_debt_state)
     legacy_promotion_sweep_attempt_epoch = restore_promotion_attempt_fields(school)
     school.setdefault("main_sweep_visited", ())
     school.setdefault("frontier_catchup_passes", 0)
@@ -70,8 +75,6 @@ def _state_from_json(value: dict, course) -> SchoolState:
     school.setdefault("promotion_sweep_scores", ())
     school.setdefault("promotion_sweep_retry_scores", ())
     school.setdefault("frontier_priority_visits", 0)
-    school.setdefault("nongating_b_visits", 0)
-    school.setdefault("non_b_training_turns_since_b_run", 0)
     policy_value = school.get("debt_cadence_policy")
     if policy_value is not None:
         if not isinstance(policy_value, dict):
@@ -115,7 +118,7 @@ def _state_from_json(value: dict, course) -> SchoolState:
         result = migrate_legacy_debt_cadence_policy(course, result)
     if legacy_frontier_priority_epoch:
         result = migrate_legacy_debt_cadence_queue(course, result)
-    if legacy_b_full_run_epoch:
+    if legacy_priority_visit_epoch:
         result = migrate_legacy_debt_cadence_epoch(course, result)
     if legacy_promotion_sweep_attempt_epoch:
         result = migrate_promotion_sweep_attempt_epoch(course, result)

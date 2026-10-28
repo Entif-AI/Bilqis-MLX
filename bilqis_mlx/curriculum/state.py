@@ -218,14 +218,11 @@ class SchoolState:
     # Imperfect capabilities from the last failed attempt on this scope.  A
     # fresh checkpoint cannot retry until this blocker set measurably improves.
     promotion_sweep_retry_scores: tuple[tuple[str, int, int], ...] = ()
-    # Historical ADR-090 candidate-visit counters retain their saved receipt
-    # fields. ADR-116 restores candidate-level B effort authority while keeping
-    # the full admitted Grade-B curriculum.
+    # Candidate-level evidence counters are role-neutral. Older receipts used
+    # B-specific wire names; deserializers translate those names at the boundary.
     frontier_priority_visits: int = 0
-    nongating_b_visits: int = 0
-    # Saved under its historical wire name. Under ADR-116 this counts eligible
-    # progression-frontier candidate visits since the last bounded-debt visit.
-    non_b_training_turns_since_b_run: int = 0
+    bounded_debt_visits: int = 0
+    priority_visits_since_bounded_debt: int = 0
     # Absent on old receipts only until the neural-inert ADR-094 migration.
     # New schedules receive a policy only when one is explicitly supplied.
     debt_cadence_policy: DebtCadencePolicy | None = None
@@ -335,10 +332,10 @@ def verify_state(program, state: SchoolState):
             type(state.introduction_stage) is not int or state.introduction_stage < 0 or
             type(state.frontier_priority_visits) is not int or
             state.frontier_priority_visits < 0 or
-            type(state.nongating_b_visits) is not int or
-            state.nongating_b_visits < 0 or
-            type(state.non_b_training_turns_since_b_run) is not int or
-            state.non_b_training_turns_since_b_run < 0 or
+            type(state.bounded_debt_visits) is not int or
+            state.bounded_debt_visits < 0 or
+            type(state.priority_visits_since_bounded_debt) is not int or
+            state.priority_visits_since_bounded_debt < 0 or
             type(state.frontier_catchup_passes) is not int or
             state.frontier_catchup_passes < 0):
         ErrorBus.raise_legacy(SCHOOL.STATE.INVALID_SCHOOL_COUNTER)

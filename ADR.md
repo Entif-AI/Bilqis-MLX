@@ -1786,6 +1786,42 @@ and ordinary retention decides what survives.
 **Status:** Accepted for bounded implementation and non-neural verification.
 
 
+## ADR-117 | 2026-10-28 | Debt cadence is factory-role based, with B/C confined to legacy migration
+
+**Follow-up after ADR-116 restored useful progression.** The current Prometheus
+behavior is now the compatibility specimen, not the schema. Grade B is the
+current bounded-debt grade and Grade C is the current progression-priority grade,
+but later factory progression must not inherit those identities accidentally.
+
+Persist candidate-level cadence state with role-neutral fields:
+`bounded_debt_visits` and `priority_visits_since_bounded_debt`. Historical
+`nongating_b_visits` and `non_b_training_turns_since_b_run` remain accepted only
+at deserialization and are removed before constructing canonical `SchoolState`.
+New state never writes the historical names.
+
+For a factory append with explicit carried mastery debt, derive the cadence roles
+from the admitted transition itself. The bounded-debt role is the latest prior
+grade represented by the carried debt; the progression-priority role is the newly
+appended grade. Preserve an existing cadence value when retargeting; otherwise use
+the current default of four priority visits per bounded-debt visit. Reset the two
+role-local counters when the roles change. A clean append with no carried mastery
+debt clears any stale cadence policy and those counters.
+
+Literal B/C construction remains only in the ADR-094 compatibility adapter for
+historical receipts. A historical receipt with B-named counter fields and a
+missing/null cadence policy may still rehydrate the old bounded-B / priority-C
+contract neural-inertly. Once role-neutral counter fields exist, explicit null is
+authoritative and must not trigger B/C inference.
+
+Synthetic factory tests use non-letter semantic grade IDs and prove that a debt
+append retargets `FOUNDATION -> RELATIONS` into `RELATIONS -> WORLD_MODEL`, that a
+non-default cadence survives retargeting, and that a clean append clears stale
+roles. Existing Prometheus B/C 20% cadence and rotation tests remain unchanged as
+the behavioral compatibility gate.
+
+**Status:** Accepted for bounded implementation and non-neural verification.
+
+
 ## ADR-112 | 2026-10-28 | Full Grade B is the default; reduced Boolean B is explicit only
 
 The canonical U7C Grade B capability set is the normal executable curriculum:

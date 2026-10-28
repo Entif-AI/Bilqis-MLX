@@ -68,7 +68,7 @@ class StagedSchoolTests(unittest.TestCase):
             champions={"A": state.champions["A"]},
             carried_mastery_debt=("b.0", "b.1", *introduced_c),
             main_sweep_visited=(),
-            non_b_training_turns_since_b_run=0,
+            priority_visits_since_bounded_debt=0,
         )
         scores = {
             capability: (8, 8)
@@ -204,13 +204,13 @@ class StagedSchoolTests(unittest.TestCase):
             non_debt_turns_per_run=2)
         state = replace(state, debt_cadence_policy=policy,
                         carried_mastery_debt=("a.0", "c.0"),
-                        non_b_training_turns_since_b_run=1)
+                        priority_visits_since_bounded_debt=1)
         scores = snapshot(course, pointer, all_scores(course, through="C")).scores
         scores["a.0"] = Score(4, 8)
         scores["c.0"] = Score(4, 8)
 
         self.assertFalse(_debt_run_due(course, state))
-        state = replace(state, non_b_training_turns_since_b_run=2)
+        state = replace(state, priority_visits_since_bounded_debt=2)
         self.assertTrue(_debt_run_due(course, state))
         self.assertEqual(_debt_run_queue(course, state, scores), ("a.0",))
         self.assertEqual(
@@ -276,6 +276,9 @@ class StagedSchoolTests(unittest.TestCase):
         state, _ = enter_c(course)
         legacy = asdict(state)
         legacy.pop("debt_cadence_policy")
+        legacy["nongating_b_visits"] = legacy.pop("bounded_debt_visits")
+        legacy["non_b_training_turns_since_b_run"] = legacy.pop(
+            "priority_visits_since_bounded_debt")
 
         migrated = _state_from_json(legacy, course)
 
@@ -283,11 +286,36 @@ class StagedSchoolTests(unittest.TestCase):
         self.assertEqual(migrated.debt_cadence_policy,
                          DebtCadencePolicy.from_legacy_adr094())
 
+    def test_role_neutral_debt_counters_load_without_legacy_b_field_names(self):
+        course = staged_course()
+        state, _ = enter_c(course)
+        payload = asdict(state)
+        self.assertNotIn('nongating_b_visits', payload)
+        self.assertNotIn('non_b_training_turns_since_b_run', payload)
+        restored = _state_from_json(payload, course)
+
+        self.assertEqual(restored.bounded_debt_visits,
+                         state.bounded_debt_visits)
+        self.assertEqual(restored.priority_visits_since_bounded_debt,
+                         state.priority_visits_since_bounded_debt)
+
+    def test_role_neutral_explicit_null_policy_does_not_rehydrate_legacy_bc(self):
+        course = staged_course()
+        state, _ = enter_c(course)
+        payload = asdict(replace(state, debt_cadence_policy=None))
+
+        restored = _state_from_json(payload, course)
+
+        self.assertIsNone(restored.debt_cadence_policy)
+
     def test_explicit_null_c_frontier_policy_rehydrates_adr094_cadence(self):
         course = staged_course()
         state, _ = enter_c(course)
         payload = asdict(state)
         payload["debt_cadence_policy"] = None
+        payload["nongating_b_visits"] = payload.pop("bounded_debt_visits")
+        payload["non_b_training_turns_since_b_run"] = payload.pop(
+            "priority_visits_since_bounded_debt")
 
         restored = _state_from_json(payload, course)
 
@@ -360,14 +388,14 @@ class StagedSchoolTests(unittest.TestCase):
 
         # Start at the first due B visit, then prove it resets the candidate
         # cadence and rotates to the next imperfect B semantic later.
-        state = replace(state, non_b_training_turns_since_b_run=4)
+        state = replace(state, priority_visits_since_bounded_debt=4)
         state = grade_loop(course, state, pointer)
         state = assess(course, state, snapshot(course, pointer, scores))
         self.assertEqual((state.grade, state.queue), ("B", ("b.0",)))
 
         state = visit(course, state, "b.0", pointer)
         state = assess(course, state, snapshot(course, pointer, scores))
-        self.assertEqual(state.non_b_training_turns_since_b_run, 0)
+        self.assertEqual(state.priority_visits_since_bounded_debt, 0)
 
         completed_frontier_visits = 0
         for _ in range(80):
@@ -394,7 +422,7 @@ class StagedSchoolTests(unittest.TestCase):
             state,
             champions={"A": state.champions["A"]},
             carried_mastery_debt=("b.0", "b.1", "c.0", "c.1"),
-            non_b_training_turns_since_b_run=3,
+            priority_visits_since_bounded_debt=3,
         )
         scores = {
             capability: (8, 8)
@@ -431,7 +459,7 @@ class StagedSchoolTests(unittest.TestCase):
             main_sweep_visited=())
         payload = asdict(state)
         payload.pop("frontier_priority_visits")
-        payload.pop("nongating_b_visits")
+        payload.pop("bounded_debt_visits")
 
         restored = _state_from_json(payload, course)
 
@@ -439,7 +467,7 @@ class StagedSchoolTests(unittest.TestCase):
         self.assertEqual(restored.stage, "MAIN")
         self.assertEqual(restored.queue, (f"c.{last_stage}",))
         self.assertEqual(restored.frontier_priority_visits, 0)
-        self.assertEqual(restored.nongating_b_visits, 0)
+        self.assertEqual(restored.bounded_debt_visits, 0)
 
     def test_pre_adr094_receipt_migrates_with_one_full_b_run_due(self):
         course = staged_course()
@@ -453,18 +481,19 @@ class StagedSchoolTests(unittest.TestCase):
             champions={"A": state.champions["A"]},
             carried_mastery_debt=("b.0", "b.1", f"c.{last_stage}"),
             frontier_priority_visits=44,
-            nongating_b_visits=11,
+            bounded_debt_visits=11,
         )
         payload = asdict(state)
-        payload.pop("non_b_training_turns_since_b_run")
+        payload["nongating_b_visits"] = payload.pop("bounded_debt_visits")
+        payload.pop("priority_visits_since_bounded_debt")
 
         restored = _state_from_json(payload, course)
 
         self.assertEqual((restored.grade, restored.stage), ("C", "MAIN"))
         self.assertEqual(restored.queue, (f"c.{last_stage}",))
-        self.assertEqual(restored.non_b_training_turns_since_b_run, 4)
+        self.assertEqual(restored.priority_visits_since_bounded_debt, 4)
         self.assertEqual((restored.frontier_priority_visits,
-                          restored.nongating_b_visits), (44, 11))
+                          restored.bounded_debt_visits), (44, 11))
 
     def test_canonical_exam_item_requires_explicit_earlier_stage_mastery(self):
         course = staged_course()
@@ -540,7 +569,7 @@ class StagedSchoolTests(unittest.TestCase):
         self.assertEqual(
             dict(resumed.introduction_frontiers)["C"], last_stage)
 
-        budgeted = replace(state, non_b_training_turns_since_b_run=4)
+        budgeted = replace(state, priority_visits_since_bounded_debt=4)
         resumed = assess_withheld(
             course, budgeted, snapshot(course, pointer, scores), withheld)
         self.assertEqual((resumed.grade, resumed.stage), ("B", "MAIN"))

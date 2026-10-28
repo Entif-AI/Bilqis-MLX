@@ -165,9 +165,8 @@ def _profile_transition(previous_program, successor_program, school, *,
                         debt_cadence_policy=_UNSPECIFIED_DEBT_CADENCE_POLICY):
     topology = _curriculum_scheduler.classify_schedule_topology(previous_program, successor_program)
     appended = topology is _curriculum_scheduler.ScheduleTopology.APPEND_GRADE
-    policy = (school.debt_cadence_policy
-              if debt_cadence_policy is _UNSPECIFIED_DEBT_CADENCE_POLICY
-              else debt_cadence_policy)
+    explicit_policy = debt_cadence_policy is not _UNSPECIFIED_DEBT_CADENCE_POLICY
+    policy = school.debt_cadence_policy if not explicit_policy else debt_cadence_policy
     if (policy is not None and not isinstance(
             policy, _curriculum_scheduler.DebtCadencePolicy)):
         raise ErrorBus.legacy_error(SCHOOL.SCHEDULE.INVALID_DEBT_CADENCE_POLICY)
@@ -183,16 +182,16 @@ def _profile_transition(previous_program, successor_program, school, *,
     if appended:
         if mastery_debt is None and school.stage == "AWAITING_NEXT_GRADE_WITH_DEBT":
             mastery_debt = school.carried_mastery_debt
-        return (
-            _dataclasses.replace((_curriculum_scheduler.append_next_grade_with_debt(
+        next_state = (_curriculum_scheduler.append_next_grade_with_debt(
                 previous_program, successor_program, school, mastery_debt)
              if mastery_debt is not None else
              _curriculum_scheduler.adopt_appended_program(
-                 previous_program, successor_program, school)),
-                    debt_cadence_policy=policy),
-            None,
-            True,
-        )
+                 previous_program, successor_program, school))
+        if explicit_policy:
+            next_state = _dataclasses.replace(
+                next_state, debt_cadence_policy=policy)
+        _curriculum_scheduler.verify_state(successor_program, next_state)
+        return next_state, None, True
     if revised and mastery_debt is None:
         changed = tuple(
             index for index, (old_grade, new_grade) in

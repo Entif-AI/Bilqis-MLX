@@ -31,6 +31,60 @@ from bilqis_mlx.factory.schedule import ScheduleProgram
 from bilqis_mlx.runtime.disk import atomic_text
 
 
+DEFAULT_PRIORITY_VISITS_PER_BOUNDED_DEBT_VISIT = 4
+
+
+def _restore_debt_counter_fields(raw: dict) -> tuple[bool, bool]:
+    """Translate historical B-named durable counters into role-neutral fields."""
+    bounded_counter_missing = (
+        "bounded_debt_visits" not in raw and "nongating_b_visits" not in raw)
+    priority_epoch_missing = (
+        "priority_visits_since_bounded_debt" not in raw and
+        "non_b_training_turns_since_b_run" not in raw)
+    if "bounded_debt_visits" in raw and "nongating_b_visits" in raw:
+        if raw["bounded_debt_visits"] != raw["nongating_b_visits"]:
+            raise ValueError("SCHOOL_DEBT_COUNTER_MIGRATION_CONFLICT")
+    if ("priority_visits_since_bounded_debt" in raw and
+            "non_b_training_turns_since_b_run" in raw and
+            raw["priority_visits_since_bounded_debt"] !=
+            raw["non_b_training_turns_since_b_run"]):
+        raise ValueError("SCHOOL_DEBT_COUNTER_MIGRATION_CONFLICT")
+    raw["bounded_debt_visits"] = raw.get(
+        "bounded_debt_visits", raw.get("nongating_b_visits", 0))
+    raw["priority_visits_since_bounded_debt"] = raw.get(
+        "priority_visits_since_bounded_debt",
+        raw.get("non_b_training_turns_since_b_run", 0))
+    raw.pop("nongating_b_visits", None)
+    raw.pop("non_b_training_turns_since_b_run", None)
+    return bounded_counter_missing, priority_epoch_missing
+
+
+def _appended_debt_cadence_policy(previous, successor, state: SchoolState,
+                                  mastery_debt: tuple[str, ...]) -> DebtCadencePolicy:
+    """Derive bounded-debt and progression roles from the actual append."""
+    previous, successor = _program(previous), _program(successor)
+    grade_by_capability = {
+        capability.id: grade.id
+        for grade in previous.grades for capability in grade.capabilities
+    }
+    debt_grades = tuple(
+        grade.id for grade in previous.grades
+        if any(grade_by_capability[capability] == grade.id
+               for capability in mastery_debt)
+    )
+    if not debt_grades:
+        raise ValueError("DEBT_GRADE_APPEND_REQUIRES_EXPLICIT_MASTERY_DEBT")
+    cadence = (
+        state.debt_cadence_policy.non_debt_turns_per_run
+        if state.debt_cadence_policy is not None
+        else DEFAULT_PRIORITY_VISITS_PER_BOUNDED_DEBT_VISIT)
+    return DebtCadencePolicy(
+        bounded_debt_grade_id=debt_grades[-1],
+        progression_priority_grade_id=successor.grades[-1].id,
+        non_debt_turns_per_run=cadence,
+    )
+
+
 def _enter_due_debt_run(program, state: SchoolState,
                         snapshot: Assessment, *,
                         allowed_capabilities: tuple[str, ...] | None = None,
@@ -104,10 +158,10 @@ def migrate_legacy_debt_cadence_epoch(program, state: SchoolState) -> SchoolStat
     """Adopt legacy turn accounting without rewriting visits or scores."""
     program = _program(program)
     if not _debt_cadence_mode(program, state):
-        return replace(state, non_b_training_turns_since_b_run=0)
+        return replace(state, priority_visits_since_bounded_debt=0)
     migrated = replace(
         state,
-        non_b_training_turns_since_b_run=(
+        priority_visits_since_bounded_debt=(
             state.debt_cadence_policy.non_debt_turns_per_run))
     if migrated.stage not in ("MAIN", "RECOVERY_1", "RECOVERY_2"):
         return migrated
@@ -201,16 +255,16 @@ def visit(program, state: SchoolState, capability: str,
         raise ValueError("VISIT_NOT_NEXT_SCHEDULED_CAPABILITY")
     rest = state.queue[1:]
     frontier_priority_visits = state.frontier_priority_visits
-    nongating_b_visits = state.nongating_b_visits
-    non_b_training_turns_since_b_run = state.non_b_training_turns_since_b_run
+    bounded_debt_visits = state.bounded_debt_visits
+    priority_visits_since_bounded_debt = state.priority_visits_since_bounded_debt
     if _debt_cadence_mode(program, state):
         policy = state.debt_cadence_policy
         if capability in set(_caps(program, (policy.progression_priority_grade_id,))):
             frontier_priority_visits += 1
-            non_b_training_turns_since_b_run += 1
+            priority_visits_since_bounded_debt += 1
         elif capability in set(_caps(program, (policy.bounded_debt_grade_id,))):
-            nongating_b_visits += 1
-            non_b_training_turns_since_b_run = 0
+            bounded_debt_visits += 1
+            priority_visits_since_bounded_debt = 0
     if state.stage == "PROMOTION_SWEEP":
         after = "ASSESS_PROMOTION_SWEEP"
     else:
@@ -219,9 +273,9 @@ def visit(program, state: SchoolState, capability: str,
     return replace(state, queue=rest, stage=after, visits=state.visits+1,
                    current_student=student_after_visit,
                    frontier_priority_visits=frontier_priority_visits,
-                   nongating_b_visits=nongating_b_visits,
-                   non_b_training_turns_since_b_run=(
-                       non_b_training_turns_since_b_run),
+                   bounded_debt_visits=bounded_debt_visits,
+                   priority_visits_since_bounded_debt=(
+                       priority_visits_since_bounded_debt),
                    mature_grade_debt=_apply_mature_debt_frontier(
                        program, state, retention_frontier))
 
@@ -894,6 +948,9 @@ def adopt_appended_program(previous: ScheduleProgram,
         pending_failures=(),
         teacher_soup_digest=None,
         carried_mastery_debt=(),
+        debt_cadence_policy=None,
+        bounded_debt_visits=0,
+        priority_visits_since_bounded_debt=0,
     )
     return _enter_grade(successor, extended, len(previous.grades))
 
@@ -936,6 +993,8 @@ def append_next_grade_with_debt(
     added = successor.grades[-1].id
     if added in state.champions:
         raise ValueError("GRADE_APPEND_FUTURE_CHAMPION_ALREADY_EXISTS")
+    policy = _appended_debt_cadence_policy(
+        previous, successor, state, tuple(mastery_debt))
     extended = replace(
         state, course_digest=successor.digest(),
         grade_exam_epoch=state.grade_exam_epoch + 1,
@@ -943,7 +1002,10 @@ def append_next_grade_with_debt(
         stage="MAIN", first_recovery=(), main_sweep_visited=(),
         revalidation_target_grade=None, latest_rubric_digest=None,
         pending_failures=(), teacher_soup_digest=None,
-        carried_mastery_debt=tuple(mastery_debt))
+        carried_mastery_debt=tuple(mastery_debt),
+        debt_cadence_policy=policy,
+        bounded_debt_visits=0,
+        priority_visits_since_bounded_debt=0)
     return _enter_grade(successor, extended, len(previous.grades))
 
 
@@ -1130,11 +1192,11 @@ def read_state(path: Path, program) -> SchoolState:
         raw["mature_grade_debt"] = tuple(sorted(totals.items()))
         raw["mature_capability_debt"] = ()
     legacy_debt_cadence_policy = "debt_cadence_policy" not in raw
-    legacy_b_full_run_epoch = "non_b_training_turns_since_b_run" not in raw
+    legacy_bounded_counter_epoch, legacy_priority_visit_epoch = (
+        _restore_debt_counter_fields(raw))
     legacy_promotion_sweep_attempt_epoch = restore_promotion_attempt_fields(raw)
     legacy_frontier_priority_epoch = (
-        "frontier_priority_visits" not in raw and
-        "nongating_b_visits" not in raw)
+        "frontier_priority_visits" not in raw and legacy_bounded_counter_epoch)
     policy_value = raw.get("debt_cadence_policy")
     if policy_value is not None:
         if not isinstance(policy_value, dict):
@@ -1148,8 +1210,6 @@ def read_state(path: Path, program) -> SchoolState:
     raw["promotion_sweep_scores"] = tuple(
         (capability, correct, total)
         for capability, correct, total in raw.get("promotion_sweep_scores", ()))
-    raw["non_b_training_turns_since_b_run"] = raw.get(
-        "non_b_training_turns_since_b_run", 0)
     raw["introduction_frontiers"] = tuple(
         (grade, stage) for grade, stage in raw.get("introduction_frontiers", ()))
     raw["current_student"] = Checkpoint(**raw["current_student"])
@@ -1160,7 +1220,7 @@ def read_state(path: Path, program) -> SchoolState:
         result = migrate_legacy_debt_cadence_policy(program, result)
     if legacy_frontier_priority_epoch:
         result = migrate_legacy_debt_cadence_queue(program, result)
-    if legacy_b_full_run_epoch:
+    if legacy_priority_visit_epoch:
         result = migrate_legacy_debt_cadence_epoch(program, result)
     result = (migrate_promotion_sweep_attempt_epoch(program, result)
               if legacy_promotion_sweep_attempt_epoch else result)
