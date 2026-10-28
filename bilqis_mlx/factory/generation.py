@@ -81,7 +81,7 @@ def draw_execution_rows(
         registry: SourceAdapterRegistry, *, seed: int,
         source_bindings: SourceBindingSet | None = None,
         capability: str | None = None,
-        each: int | None = None, generalization: bool = False) -> list[dict]:
+        each: int | None = None) -> list[dict]:
     """Generate from one compiled execution contract, including profile constraints."""
     adapter_context = curriculum
     if isinstance(curriculum, CurriculumDefinition):
@@ -132,8 +132,7 @@ def draw_execution_rows(
         if execution.provider_parameters:
             arguments["profile_parameters"] = dict(
                 execution.provider_parameters)
-        batch = (adapter.generalization_draw if generalization and
-                 adapter.generalization_draw is not None else adapter.draw)(**arguments)
+        batch = adapter.draw(**arguments)
         if (len(batch) != count or
                 any(row.get("capability") != execution.capability_id
                     for row in batch)):
@@ -165,7 +164,7 @@ def draw_execution_rows(
 def draw_executable_release_rows(
         source_root, graph, release, registry: SourceAdapterRegistry, *,
         seed: int, capability: str | None = None,
-        each: int | None = None, generalization: bool = False) -> list[dict]:
+        each: int | None = None) -> list[dict]:
     """Generate only from one admitted v2 release and its compiled projections."""
     from .executable_release import ExecutableFactoryRelease
 
@@ -190,5 +189,4 @@ def draw_executable_release_rows(
     return draw_execution_rows(
         source_root, graph, release.curriculum, release.execution_plan, registry,
         source_bindings=release.source_bindings,
-        seed=seed, capability=capability, each=each,
-        generalization=generalization)
+        seed=seed, capability=capability, each=each)

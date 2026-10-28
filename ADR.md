@@ -1390,6 +1390,11 @@ Generalization may return only through a future explicit human-directed maturity
 
 ## ADR-098 | 2026-10-27 | Candidate retention protects the current parent, not an older cumulative peak
 
+**SUPERSEDED by ADR-099.** This intermediate repair narrowed the diagnosed fault
+to the historical retention anchor, but the subsequent exact-control experiment
+showed that the correct operational recovery is to excise commit `1324082`
+wholesale rather than retain selected mechanics from it.
+
 **Direct user correction after the step-127096 retention deadlock.** The mature-grade anti-ratchet introduced on 2026-10-27 correctly intended to prevent later-grade learning from spending already-earned Grade-A performance, but its immutable cumulative retention anchor was the wrong baseline for individual candidate admission. Once the retained student itself sat below that older peak, each later candidate was required both to improve its target and to repair historical debt back to the old peak in the same local optimizer update. The run then produced more than two thousand consecutive zero-retention visits despite hundreds of target-positive candidates.
 
 Candidate admission therefore compares the challenger against the **current retained parent** on the current parent's verified fixed whole-school cohort. The current parent SHA and native AdamW optimizer step must match that frontier exactly or the screen fails closed. Fresh target gain remains mandatory. Same-grade, fixed lesson-grade, active developmental-frontier grade, mature-grade, protected-capability and whole-school non-regression remain mandatory relative to that current parent. In particular, a candidate that makes mature Grade A worse than the retained parent is still rejected; Grade A is not currency for later-grade gains.
@@ -1397,4 +1402,40 @@ Candidate admission therefore compares the challenger against the **current reta
 Historical cumulative/high-water frontier receipts remain immutable provenance and may continue to inform recovery, debt analysis and diagnostics. They are not a second candidate parent and MUST NOT veto a challenger merely because the retained parent already carries older debt relative to them. Existing cumulative same-checkpoint mastery and promotion/graduation requirements remain unchanged; this ADR does not forgive debt, mint mastery, alter source-gold, weaken student/native-AdamW custody, or authorize agent-operated production training.
 
 The correction is empirically bounded. From the exact live step-127096 student, a disposable clone using current compatible code with only the candidate-frontier baseline corrected retained a `B.COMPOSITE` candidate on the 22nd actual candidate attempt: target 9→10, same-grade net +1, fixed B 41→41, mature A 58→58, whole school 99→99, and 16 optimizer updates retained. The production lineage was not mutated by that proof.
+
+
+## ADR-099 | 2026-10-27 | Excise commit 1324082 wholesale after exact-old retention control
+
+**Direct user correction after bounded regression isolation.** Do not preserve a
+selected subset of commit `13240828cd15612e9a84f0f6222484cf2e18cb96`
+(`fix(trainer): prevent cumulative mature-grade regression`). The commit is to be
+reverted as a unit while retaining later independent work whose mechanics exist
+without it.
+
+The decisive control used the exact parent commit
+`5b84eca610f471630ee5c2fb27c15359a58f6766`, with its tracked tree unchanged.
+Because that executable cannot legally resume the newer durable factory receipt,
+a one-time disposable initializer loaded only the exact then-current neural
+student and its own AdamW (`7ea07d9d...`, optimizer step `127096`) into a fresh
+old-code school. Actual training then ran with the plain unmodified old CLI. In
+30 teacher-candidate visits it retained 4 candidates and 64 optimizer updates,
+for **13.33% retention**, advancing only the disposable control from step 127096
+to 127160. This restored the healthy retention range the user reported from
+before the regression.
+
+Accordingly, all code introduced by `1324082` is removed. Later changes remain
+when they are independently meaningful after that removal. In particular, the
+same-student unretained-policy rotation, the later fresh retention-support
+selection change, developmental GENERALIZATION suspension, recovery-custody
+repair, dashboard corrections, and unrelated subsequent work remain. A later
+patch whose sole purpose was to modify machinery introduced by `1324082` does
+not require preserving that removed machinery.
+
+Candidate retention therefore returns to the pre-`1324082` contract already
+specified by ADR-054 through ADR-057 and ADR-079: strict source-oracled target
+gain, same-grade and fixed-frontier safeguards, protected-capability budgets,
+exact current-parent frontier identity, and intact student/native-AdamW custody.
+This ADR does not authorize weaker source gold, custody bypass, hand-edited run
+state, or agent-operated production training. The human operator owns the live
+verification run after this code excision.
 

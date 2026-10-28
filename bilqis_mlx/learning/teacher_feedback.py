@@ -41,7 +41,6 @@ _ACTIVE: Final = frozenset((
 
 class WeaknessTargetError(str, Enum):
     TEACHER_WEAKNESS_TARGET_INPUT_INVALID = "TEACHER_WEAKNESS_TARGET_INPUT_INVALID"
-    TEACHER_WEAKNESS_TARGET_IDENTITY_CONFLICT = "TEACHER_WEAKNESS_TARGET_IDENTITY_CONFLICT"
     LEARNING_EXPERIMENT_SUPPORT_CAPACITY_INVALID = "LEARNING_EXPERIMENT_SUPPORT_CAPACITY_INVALID"
     LEARNING_EXPERIMENT_WEAKNESS_TARGET_CAPACITY_DRIFT = "LEARNING_EXPERIMENT_WEAKNESS_TARGET_CAPACITY_DRIFT"
     LEARNING_EXPERIMENT_WEAKNESS_TARGET_OUTSIDE_CURRENT = "LEARNING_EXPERIMENT_WEAKNESS_TARGET_OUTSIDE_CURRENT"
@@ -320,9 +319,7 @@ def _validated_misses(misses: list[dict] | tuple[dict, ...]) -> list[dict]:
     available = []
     seen = set()
     for row in misses:
-        _row_identity(
-            row, seen,
-            WeaknessTargetError.TEACHER_WEAKNESS_TARGET_IDENTITY_CONFLICT.value)
+        _row_identity(row, seen, "TEACHER_WEAKNESS_TARGET_IDENTITY_CONFLICT")
         available.append(row)
     return available
 

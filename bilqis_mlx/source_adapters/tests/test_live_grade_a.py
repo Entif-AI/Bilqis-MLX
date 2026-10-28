@@ -3,9 +3,7 @@ from pathlib import Path
 import unittest
 
 from bilqis_mlx.live_grade_a import draw_predicates, live_course
-from bilqis_mlx.source_adapters.grade_a_presentation import (
-    draw_a_generalization as draw_a_presentation,
-)
+from bilqis_mlx.source_adapters.grade_a_presentation import draw_a as draw_a_presentation
 from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.generated_assessment import make_cohort
 from bilqis_mlx.trainer import _persist_live_cohort, _verify_saved_cohort
@@ -68,24 +66,6 @@ class LiveGradeAGenerationTests(unittest.TestCase):
             self.assertTrue(any(
                 row["id"] != original["id"] and row["tokens"] != original["tokens"]
                 for row, original in zip(rows, base)))
-
-    def test_live_provider_keeps_canonical_grade_a_for_non_generalization(self):
-        import torch
-        from bilqis_mlx.source_adapters.school import live_source_registry
-        graph = torch.load(SOURCE, map_location="cpu", weights_only=True)["graph"]
-        adapter = live_source_registry().require(
-            "bilqis_mlx.grade_a_probe.make_record",
-            "bilqis.mlx.grade-a-record-oracle/v2")
-        expected = draw_predicates(
-            ROOT, graph, seed=491, each=12, capability="A.IDENTITY")
-        ordinary = adapter.draw(
-            source_root=ROOT, graph=graph, course=None,
-            capability="A.IDENTITY", seed=491, each=12)
-        generalized = adapter.generalization_draw(
-            source_root=ROOT, graph=graph, course=None,
-            capability="A.IDENTITY", seed=491, each=12)
-        self.assertEqual(tuple(expected), ordinary)
-        self.assertNotEqual(ordinary, generalized)
 
     def test_member_context_expands_the_fresh_false_size3_source_space(self):
         import torch

@@ -20,10 +20,9 @@ from ..grade_a_probe import read_sources
 from ..live_grade_a import draw_predicates, generator_source_digest
 
 
-VERSION = "bilqis.mlx.grade-a-generalization-presentation/v3"
+VERSION = "bilqis.mlx.grade-a-contextual-presentation/v2"
 MEMBER_CONTEXT_VARIATION = "member-decoy-set-context-v1"
 IRRELEVANT_CONTEXT_VARIATION = "irrelevant-source-context-v2"
-GENERALIZATION_ONLY_VARIATION = "generalization-only-source-context-v3"
 MIN_CONTEXT_ENTITY_COUNT = 2
 
 
@@ -105,8 +104,8 @@ def _development_context_row(row: dict, *, seed: int, source_root) -> dict:
     return _verify_contextual_row(row, record, source_root=source_root)
 
 
-def draw_a_generalization(*, source_root, graph, course, capability, seed, each):
-    """Draw source-valid irrelevant context for fresh generalization only."""
+def draw_a(*, source_root, graph, course, capability, seed, each):
+    """Draw Grade-A with source-valid irrelevant context for every predicate."""
     del course
     rows = draw_predicates(
         source_root, graph, seed=seed, capability=capability, each=each)

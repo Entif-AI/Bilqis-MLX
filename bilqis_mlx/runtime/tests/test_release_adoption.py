@@ -12,8 +12,7 @@ from bilqis_mlx.runtime.release_adoption import (
     _source_presentation_revision_required,
 )
 from bilqis_mlx.source_adapters.grade_a_presentation import (
-    GENERALIZATION_ONLY_VARIATION, IRRELEVANT_CONTEXT_VARIATION,
-    MEMBER_CONTEXT_VARIATION,
+    IRRELEVANT_CONTEXT_VARIATION, MEMBER_CONTEXT_VARIATION,
 )
 from bilqis_mlx.source_adapters.school import live_source_registry
 
@@ -97,29 +96,6 @@ class TeachingOnlyTransitionTests(unittest.TestCase):
             release(member_only), registry))
         self.assertFalse(_grade_a_member_context_revision_required(
             release(current), registry))
-
-    def test_grade_a_generalization_only_revision_detects_v2_predecessor(self):
-        registry = live_source_registry()
-        generator = "bilqis_mlx.grade_a_probe.make_record"
-        oracle = "bilqis.mlx.grade-a-record-oracle/v2"
-        current = registry.require(generator, oracle).descriptor
-        v2 = replace(
-            current,
-            variation_axes=tuple(
-                axis for axis in current.variation_axes
-                if axis != GENERALIZATION_ONLY_VARIATION),
-        )
-        binding = SimpleNamespace(generator_id=generator, oracle_id=oracle)
-        release = SimpleNamespace(
-            execution_plan=SimpleNamespace(capability_map={
-                "A.MEMBER": SimpleNamespace(provider_id=v2.adapter_id),
-            }),
-            source_bindings=SimpleNamespace(by_capability={
-                "A.MEMBER": binding,
-            }),
-            source_adapters=(v2,),
-        )
-        self.assertTrue(_source_presentation_revision_required(release, registry))
 
     def test_source_revision_history_keeps_valid_epoch_custody_records(self):
         from dataclasses import asdict

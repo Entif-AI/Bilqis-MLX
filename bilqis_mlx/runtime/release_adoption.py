@@ -11,7 +11,6 @@ import bilqis_mlx.curriculum.scheduler as _curriculum_scheduler
 import bilqis_mlx.factory.executable_release as _factory_executable_release
 import bilqis_mlx.factory.live_answers as _factory_live_answers
 import bilqis_mlx.factory.schedule as _factory_schedule
-import bilqis_mlx.fixed_frontier as _fixed_frontier
 import bilqis_mlx.learning.championship_identity as _learning_championship_identity
 import bilqis_mlx.profiles.catalog as _profiles_catalog
 import bilqis_mlx.runtime.admission as _runtime_admission
@@ -132,8 +131,7 @@ SOURCE_PRESENTATION_ADMITTED_PROVIDER_MISSING = (
 def _grade_a_member_context_revision_required(predecessor, registry=None) -> bool:
     """Detect the authorized neural-inert expansion of MEMBER source context."""
     from bilqis_mlx.source_adapters.grade_a_presentation import (
-        GENERALIZATION_ONLY_VARIATION, IRRELEVANT_CONTEXT_VARIATION,
-        MEMBER_CONTEXT_VARIATION,
+        IRRELEVANT_CONTEXT_VARIATION, MEMBER_CONTEXT_VARIATION,
     )
     capability = "A.MEMBER"
     execution = predecessor.execution_plan.capability_map.get(capability)
@@ -149,10 +147,7 @@ def _grade_a_member_context_revision_required(predecessor, registry=None) -> boo
     registry = registry or _source_adapters_school.live_source_registry()
     current = registry.require(
         binding.generator_id, binding.oracle_id).descriptor
-    authorized = (
-        MEMBER_CONTEXT_VARIATION, IRRELEVANT_CONTEXT_VARIATION,
-        GENERALIZATION_ONLY_VARIATION,
-    )
+    authorized = (MEMBER_CONTEXT_VARIATION, IRRELEVANT_CONTEXT_VARIATION)
     return any(
         variation in current.variation_axes and variation not in admitted.variation_axes
         for variation in authorized
@@ -273,9 +268,6 @@ def _profile_adoption_receipt(
         graph, *, invalidate_assessment_evidence=False):
     heads = _factory_executable_release.answer_heads_from_executable_release(successor, graph)
     numeric_values = heads.get("numeric_active", {}).get("values")
-    retention_anchor = receipt.get("retention_frontier_exam")
-    if invalidate_assessment_evidence and retention_anchor is None:
-        retention_anchor = _fixed_frontier.frontier_exam(receipt)
     candidate = {
         **receipt,
         "curriculum_mode": compatibility_course.version,
@@ -298,8 +290,6 @@ def _profile_adoption_receipt(
     if invalidate_assessment_evidence:
         candidate.pop("fixed_frontier_exam", None)
         candidate.pop("last_generalization_cohort_v2", None)
-        if retention_anchor and retention_anchor.get("cohort_sha256"):
-            candidate["retention_frontier_exam"] = retention_anchor
     return candidate
 
 
