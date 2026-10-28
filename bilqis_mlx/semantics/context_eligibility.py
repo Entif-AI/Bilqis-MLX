@@ -51,6 +51,40 @@ def _names(value: object) -> bool:
             and value == tuple(sorted(set(value))))
 
 
+def frame_evidence_digest(frame: FrameInstance | AtomicFrame) -> str:
+    """Canonical source evidence identity, including lineage and all bindings."""
+    if not isinstance(frame, (FrameInstance, AtomicFrame)):
+        _invalid("BAMF_CONTEXT_FRAME_EVIDENCE_INVALID")
+    return _digest({"kind": "frame", "frame": asdict(frame)})
+
+
+def member_evidence_digest(
+    frame: FrameInstance | AtomicFrame, member: ContextMember,
+) -> str:
+    """Bind a member handle to one exact source occurrence and visibility."""
+    if not isinstance(frame, (FrameInstance, AtomicFrame)):
+        _invalid("BAMF_CONTEXT_MEMBER_EVIDENCE_INVALID")
+    if not isinstance(member, ContextMember):
+        _invalid("BAMF_CONTEXT_MEMBER_EVIDENCE_INVALID")
+    if isinstance(frame, AtomicFrame):
+        if member.key != ("<atomic>", 0):
+            _invalid("BAMF_CONTEXT_MEMBER_EVIDENCE_INVALID")
+        evidence = {"kind": "atomic-member", "frame": asdict(frame)}
+    else:
+        binding = next(
+            (binding for binding in frame.bindings if binding.key == member.key),
+            None,
+        )
+        if binding is None:
+            _invalid("BAMF_CONTEXT_MEMBER_EVIDENCE_INVALID")
+        evidence = {
+            "kind": "member",
+            "frame_occurrence_id": frame.occurrence_id,
+            "binding": asdict(binding),
+        }
+    return _digest({**evidence, "visible_at_prefix": member.visible_at_prefix})
+
+
 @dataclass(frozen=True)
 class ContextMember:
     role_id: str
@@ -124,6 +158,8 @@ class SourceGrant:
     principal_id: str
     tenant_id: str
     source_regime: str
+    semantic_release: str
+    evidence_digest: str
     permitted_purposes: tuple[str, ...]
     permitted_jurisdictions: tuple[str, ...]
     permitted_scopes: tuple[str, ...]
@@ -142,6 +178,8 @@ class SourceGrant:
                 or not all(_names(item) and bool(item) for item in (
                     self.permitted_purposes, self.permitted_jurisdictions,
                     self.permitted_scopes))
+                or not all(isinstance(item, str) and _SHA256.fullmatch(item)
+                           for item in (self.semantic_release, self.evidence_digest))
                 or not all(_epoch(item) for item in (
                     self.rights_epoch, self.correction_generation,
                     self.observed_at, self.effective_from))
@@ -424,7 +462,14 @@ def check_context_eligibility(
         )
         if tuple(member.key for member in item.members) != expected:
             hold("BAMF_CONTEXT_MEMBER_MISMATCH", handle)
+        expected_evidence = {handle: frame_evidence_digest(item.frame)}
         for member in item.members:
+            if member.key in expected:
+                if member.source_handle in expected_evidence:
+                    hold("BAMF_CONTEXT_HANDLE_REUSED", member.source_handle)
+                else:
+                    expected_evidence[member.source_handle] = member_evidence_digest(
+                        item.frame, member)
             if member.visible_at_prefix > task_scope.causal_prefix_end:
                 hold("BAMF_CONTEXT_INVISIBLE_PREFIX", member.source_handle)
         for source_handle in (handle, *(member.source_handle for member in item.members)):
@@ -433,6 +478,10 @@ def check_context_eligibility(
             if grant is None:
                 hold("BAMF_CONTEXT_SOURCE_UNKNOWN", source_handle)
                 continue
+            if grant.evidence_digest != expected_evidence.get(source_handle):
+                hold("BAMF_CONTEXT_EVIDENCE_MISMATCH", source_handle)
+            if grant.semantic_release != item.semantic_release:
+                hold("BAMF_CONTEXT_RELEASE_MISMATCH", source_handle)
             if grant.revoked:
                 hold("BAMF_CONTEXT_SOURCE_REVOKED", source_handle)
             if (grant.principal_id != task_scope.principal_id

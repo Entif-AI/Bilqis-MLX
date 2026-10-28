@@ -8,7 +8,7 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.semantics.context_eligibility import (
     PUBLIC_FORMAL, ContextEligibility, ContextHold, ContextMember,
     ContextPolicy, EligibleContext, SourceFrontier, SourceGrant, TaskScope,
-    check_context_eligibility,
+    check_context_eligibility, frame_evidence_digest, member_evidence_digest,
 )
 from bilqis_mlx.semantics.frame_schema import (
     ConceptRef, FrameSchema, RoleOccurrence, RoleSpec, SourceSpan,
@@ -64,8 +64,14 @@ def _case(*, count: int = 2, two_roles: bool = False):
             members.append(ContextMember(
                 binding.role_id, binding.occurrence_index, source, 8))
         handles = (frame_source, *(member.source_handle for member in members))
+        evidence = {frame_source: frame_evidence_digest(frame)}
+        evidence.update({
+            member.source_handle: member_evidence_digest(frame, member)
+            for member in members
+        })
         grants.extend(SourceGrant(
             handle, PRINCIPAL, TENANT, PUBLIC_FORMAL,
+            RELEASE, evidence[handle],
             ("TRAINING",), (REGION,), (SCOPE,),
             rights_epoch=1, correction_generation=1,
             observed_at=2, effective_from=0,
@@ -248,3 +254,65 @@ class ContextEligibilityTests(unittest.TestCase):
         updated = check_context_eligibility(frames, task, changed, policy)
         self.assertIsInstance(updated, EligibleContext)
         self.assertEqual(original.digest, updated.digest)
+
+    def test_revoked_evidence_cannot_be_relabelled_with_another_live_handle(self):
+        frames, task, frontier, policy = _case(count=2)
+        revoked_handles = {
+            frames[0].source_handle,
+            *(member.source_handle for member in frames[0].members),
+        }
+        revoked_frontier = replace(
+            frontier,
+            grants=tuple(
+                replace(grant, revoked=True)
+                if grant.source_handle in revoked_handles else grant
+                for grant in frontier.grants
+            ),
+        )
+        self.assertIn(
+            "BAMF_CONTEXT_SOURCE_REVOKED",
+            check_context_eligibility(
+                (frames[0],), task, revoked_frontier, policy).reason_codes,
+        )
+        relabelled = replace(
+            frames[0],
+            source_handle=frames[1].source_handle,
+            members=tuple(
+                replace(member, source_handle=frames[1].members[index].source_handle)
+                for index, member in enumerate(frames[0].members)
+            ),
+        )
+        held = check_context_eligibility(
+            (relabelled,), task, revoked_frontier, policy)
+        self.assertIsInstance(held, ContextHold)
+        self.assertIn("BAMF_CONTEXT_EVIDENCE_MISMATCH", held.reason_codes)
+
+    def test_source_locus_tampering_is_detected_even_when_content_id_is_same(self):
+        frames, task, frontier, policy = _case(count=1)
+        binding = frames[0].frame.bindings[0]
+        forged = replace(
+            binding, concept=replace(
+                binding.concept, source_reference="synthetic:forged-locus"))
+        altered_frame = replace(frames[0].frame, bindings=(forged,))
+        self.assertEqual(
+            altered_frame.content_digest, frames[0].frame.content_digest)
+        held = check_context_eligibility(
+            (replace(frames[0], frame=altered_frame),),
+            task, frontier, policy)
+        self.assertIn("BAMF_CONTEXT_EVIDENCE_MISMATCH", held.reason_codes)
+
+    def test_visibility_cannot_be_backdated_under_an_existing_source_grant(self):
+        frames, task, frontier, policy = _case(count=1)
+        future = replace(frames[0].members[0], visible_at_prefix=9)
+        future_grant = replace(
+            frontier.grants[-1],
+            evidence_digest=member_evidence_digest(frames[0].frame, future))
+        source_frontier = replace(
+            frontier, grants=(*frontier.grants[:-1], future_grant))
+        held = check_context_eligibility(
+            (replace(frames[0], members=(future,)),),
+            task, source_frontier, policy)
+        self.assertIn("BAMF_CONTEXT_INVISIBLE_PREFIX", held.reason_codes)
+        held = check_context_eligibility(
+            frames, task, source_frontier, policy)
+        self.assertIn("BAMF_CONTEXT_EVIDENCE_MISMATCH", held.reason_codes)

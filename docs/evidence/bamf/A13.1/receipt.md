@@ -41,7 +41,7 @@ network request, NLP call, model forward pass or optimizer update.
 ## Executed verification
 
 `scripts/run_tests.py bilqis_mlx/semantics/tests/test_context_eligibility.py`:
-11 passed, 0 failed, 0 skipped.
+14 passed, 0 failed, 0 skipped after the review repair.
 
 Literal cases cover the individually-allowed/forbidden-pair adversary,
 forbidden three-frame set, revocation after a formerly valid view,
@@ -61,3 +61,31 @@ and must not be claimed complete from this isolated proof.
 Fresh independent EGM has not returned in this resumed execution.
 `EGM_PENDING` is recorded for the integrator. No private source data,
 neural state or historical learner was accessed or changed.
+
+## Source-handle evidence-binding review repair
+
+Independent Goldfish review of `926385c` identified a Blocker: source
+grants were checked by opaque handle string but not by the immutable
+frame/member evidence that the handle purported to authorize. The
+original implementation could relabel revoked frame content under a
+different still-live grant and admit it.
+
+`SourceGrant` now carries the source-owned semantic release and
+`evidence_digest`. A frame grant must match the canonical digest of
+the entire immutable frame, including source instance, source span,
+all role bindings and concept source references. A member grant must
+match its exact frame occurrence, role/index, full source binding and
+source-authorized visibility prefix. The eligibility gate compares
+these digests against the trusted source frontier before emitting any
+approved handle, and refuses duplicate frame/member handle reuse.
+The digest functions compute identities; they do not themselves issue
+permissions. Only the source frontier supplies authorized grants.
+
+The relabelled-revoked-evidence adversary was observed incorrectly
+returning `EligibleContext` before this repair. It now returns
+`ContextHold` with `BAMF_CONTEXT_EVIDENCE_MISMATCH`. Additional
+regressions reject source-reference substitution even when the frame
+content digest stays unchanged, and backdated member visibility
+under a still-live grant. The focused suite now passes 14/14.
+Fresh independent review of this repaired immutable head remains
+`EGM_PENDING`; no A13 parent or downstream integration is closed.
