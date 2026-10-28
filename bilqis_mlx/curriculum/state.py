@@ -196,6 +196,10 @@ class SchoolState:
     # current cross-grade sweep. Global weakest-three recovery is due only
     # after every currently imperfect eligible grade has had that pass.
     main_sweep_visited: tuple[str, ...] = ()
+    # Number of completed ordinary MAIN passes given to the newest active
+    # grade in the current school sweep while it is below the school semantic
+    # median. This is a bounded catch-up budget, not permanent grade priority.
+    frontier_catchup_passes: int = 0
     # Explicit human-authorized progression may admit a later grade before all
     # earlier capabilities are mastered.  These identities remain cumulative
     # mastery debt until one intact checkpoint clears the whole active program.
@@ -330,7 +334,9 @@ def verify_state(program, state: SchoolState):
             type(state.nongating_b_visits) is not int or
             state.nongating_b_visits < 0 or
             type(state.non_b_training_turns_since_b_run) is not int or
-            state.non_b_training_turns_since_b_run < 0):
+            state.non_b_training_turns_since_b_run < 0 or
+            type(state.frontier_catchup_passes) is not int or
+            state.frontier_catchup_passes < 0):
         ErrorBus.raise_legacy(SCHOOL.STATE.INVALID_SCHOOL_COUNTER)
     frontiers = state.introduction_frontiers
     grade_lookup = {grade.id: grade for grade in program.grades}

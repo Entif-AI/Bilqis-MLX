@@ -13,7 +13,8 @@ from fractions import Fraction
 from .debt_control import (
     _apply_mature_debt_frontier, _debt_cadence_mode, _debt_run_due,
     _debt_run_queue, _frontier_recovery_queue, _imperfect_ranked,
-    _mature_debt_repair_grade,
+    _frontier_catchup_target_passes, _mature_debt_repair_grade,
+    _next_imperfect_grade_index,
 )
 from .state import (
     SCHOOL_STATE_SCHEMA, STAGES, _program, ScheduleTopology,
@@ -158,6 +159,9 @@ def _enter_grade(program, state: SchoolState, grade_index: int, **changes) -> Sc
              if grade_id in state.champions and grade.teaching_stages
              else frontiers.get(grade_id, 0))
     frontiers[grade_id] = index
+    if (changes.get("main_sweep_visited") == () and
+            "frontier_catchup_passes" not in changes):
+        changes["frontier_catchup_passes"] = 0
     entered = replace(
         state, grade_index=grade_index, introduction_stage=index,
         introduction_frontiers=tuple(
@@ -247,40 +251,6 @@ def _perfect_in_grade(program, grade: str, scores: dict[str, Score]) -> bool:
     return all(c in scores and scores[c].perfect for c in _caps(program, (grade,)))
 
 
-def _next_imperfect_grade_index(program, state: SchoolState,
-                                scores: dict[str, Score], *,
-                                allowed_capabilities: tuple[str, ...] | None = None,
-                                excluded_grades: tuple[str, ...] = ()) -> int | None:
-    """Find the next imperfect eligible grade in canonical wrapped order.
-
-    Start immediately after the current grade, wrap once through canonical
-    admitted order, skip grades already perfect on the latest cumulative
-    assessment, and optionally skip grades already visited in the current
-    ordinary MAIN sweep.
-    """
-    allowed = set(scores) if allowed_capabilities is None else set(allowed_capabilities)
-    if not allowed <= set(scores):
-        raise ValueError("SPIRAL_ALLOWED_CAPABILITY_OUTSIDE_ASSESSMENT")
-    excluded = set(excluded_grades)
-    if not excluded <= set(state.active_grades):
-        raise ValueError("SPIRAL_EXCLUDED_GRADE_OUTSIDE_ACTIVE_PROGRAM")
-    count = len(state.active_grades)
-    for offset in range(1, count + 1):
-        index = (state.grade_index + offset) % count
-        if state.active_grades[index] in excluded:
-            continue
-        grade_caps = _caps(program, (state.active_grades[index],))
-        eligible = tuple(cap for cap in grade_caps if cap in allowed)
-        if not eligible:
-            continue
-        # An ordinary pass is due when any currently eligible capability in the
-        # grade is imperfect. Missing/withheld capabilities are handled by the
-        # caller's explicit containment authority, never synthesized as perfect.
-        if any(not scores[cap].perfect for cap in eligible):
-            return index
-    return None
-
-
 def _resume_ordinary_spiral(program, state: SchoolState,
                             snapshot: Assessment, *,
                             allowed_capabilities: tuple[str, ...] | None = None,
@@ -341,6 +311,20 @@ def _continue_main_sweep(program, state: SchoolState,
     most twice *between* full multi-grade sweeps, not twice after every grade.
     """
     program = _program(program)
+    frontier = state.active_grades[-1]
+    frontier_passes = state.frontier_catchup_passes
+    if state.grade == frontier and state.main_sweep_visited:
+        frontier_passes += 1
+        target_passes = _frontier_catchup_target_passes(
+            program, state, snapshot.scores,
+            allowed_capabilities=allowed_capabilities)
+        if frontier_passes < target_passes:
+            return _enter_grade(
+                program, state, state.grade_index, stage="MAIN",
+                first_recovery=(), main_sweep_visited=state.main_sweep_visited,
+                frontier_catchup_passes=frontier_passes,
+                latest_rubric_digest=snapshot.rubric_digest)
+        state = replace(state, frontier_catchup_passes=frontier_passes)
     visited = state.main_sweep_visited
     if state.grade not in visited:
         visited = visited + (state.grade,)
@@ -1105,6 +1089,7 @@ def read_state(path: Path, program) -> SchoolState:
     raw["first_recovery"] = tuple(raw["first_recovery"])
     raw["pending_failures"] = tuple(raw["pending_failures"])
     raw["main_sweep_visited"] = tuple(raw.get("main_sweep_visited", ()))
+    raw["frontier_catchup_passes"] = int(raw.get("frontier_catchup_passes", 0))
     raw["carried_mastery_debt"] = tuple(raw.get("carried_mastery_debt", ()))
     raw["mature_capability_debt"] = tuple(
         (capability, amount)

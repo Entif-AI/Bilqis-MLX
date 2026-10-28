@@ -1412,7 +1412,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **1935** raw raises across **167** files. The baseline gate permits only reduction.
+Current production scan: **1933** raw raises across **167** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -3096,8 +3096,6 @@ Current production scan: **1935** raw raises across **167** files. The baseline 
 | `SOURCE_PREFETCH_FRAGILE_SEEDS_INVALID` | 1 | `bilqis_mlx/runtime/source_prefetch.py` |
 | `SOURCE_PREFETCH_IDENTITY_INVALID` | 1 | `bilqis_mlx/runtime/source_prefetch.py` |
 | `SOURCE_PREFETCH_REQUEST_SCHEMA_DRIFT` | 1 | `bilqis_mlx/runtime/source_prefetch.py` |
-| `SPIRAL_ALLOWED_CAPABILITY_OUTSIDE_ASSESSMENT` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
-| `SPIRAL_EXCLUDED_GRADE_OUTSIDE_ACTIVE_PROGRAM` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `SPIRAL_RECOVERY_ENDED_WITHOUT_IMPERFECT_GRADE` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `STAGNATION_FIRST_RECOVERY_DUPLICATE` | 1 | `bilqis_mlx/learning/stagnation_control.py` |
 | `STAGNATION_GRACE_ACTIVE_CHANGE_FORBIDDEN` | 1 | `bilqis_mlx/learning/stagnation_control.py` |

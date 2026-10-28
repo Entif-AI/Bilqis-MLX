@@ -1566,3 +1566,34 @@ but poor retention and no active cooldown is `LOW-YIELD`; low-support evidence i
 `UNCERTAIN`; actual strategy mutation remains `EXPLORE`. Presentation history may
 estimate retention probability, but it must not invent retirement authority.
 
+
+## ADR-103 | 2026-10-27 | New frontier grades receive bounded catch-up priority
+
+When a newly introduced highest active grade has far fewer semantics than the
+already mature school, raw capability-count fairness under-allocates learning to
+the frontier. Ten mature A/B semantics plus one new C semantic naturally gives C
+about one eleventh of a plain full-school pass, even when C is dramatically
+behind the rest of the student.
+
+During an ordinary cross-grade MAIN sweep, compare the newest active grade's mean
+accuracy across its currently introduced/eligible semantics with the median
+accuracy of all currently introduced/eligible active semantics. If the frontier
+is at or above that median, no catch-up applies. If it is below the median, give
+that frontier enough separately assessed MAIN passes to target roughly one
+quarter of visit opportunities for the sweep. The total frontier-pass budget is
+`ceil(non_frontier_semantics / (3 * frontier_semantics))`, with a minimum of one.
+Thus the current 10:1 A/B:C shape receives four C passes, about 29% of visits,
+rather than permanent 1/11 capability-count weighting.
+
+Catch-up is deliberately subordinate to existing safety/progression machinery.
+It never replaces promotion-sweep handling, failed-sweep recovery, weakest-three
+recovery, mature-grade debt repair, or explicit debt cadence. It only repeats the
+frontier's ordinary MAIN pass after at least one other grade has already
+completed its MAIN pass in that school sweep. The counter resets when the
+ordinary sweep resets. Old receipts decode with zero catch-up passes.
+
+Operator presentation must make qualification activity explicit. While the
+school stage is `PROMOTION_SWEEP` or `ASSESS_PROMOTION_SWEEP`, the compact header
+shows an explicit `SWEEP = GRADUATION <grade>` field rather than relying on the
+generic phase text alone.
+

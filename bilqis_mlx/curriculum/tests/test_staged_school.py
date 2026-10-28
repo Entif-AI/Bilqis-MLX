@@ -105,6 +105,39 @@ class StagedSchoolTests(unittest.TestCase):
         self.assertEqual(continued.grade, "B")
         self.assertEqual(continued.main_sweep_visited, ("A",))
 
+    def test_new_frontier_gets_bounded_catchup_passes_until_school_median(self):
+        course = staged_course()
+        state, pointer = enter_c(course)
+        state = replace(
+            state, grade_index=2, stage="ASSESS_MAIN", queue=(),
+            main_sweep_visited=("A", "B"), frontier_catchup_passes=0,
+        )
+        scores = all_scores(course, through="C")
+        # Ten introduced A/B semantics sit well above the one introduced C
+        # semantic. The 10:1 shape should grant four total C passes this sweep,
+        # yielding roughly 29% C visits instead of capability-count fairness.
+        for capability in scores:
+            scores[capability] = (7, 8)
+        scores["c.0"] = (3, 8)
+        snap = snapshot(course, pointer, scores)
+
+        for completed in range(1, 4):
+            state = _continue_main_sweep(course, state, snap)
+            self.assertEqual(state.grade, "C")
+            self.assertEqual(state.frontier_catchup_passes, completed)
+            self.assertNotIn("C", state.main_sweep_visited)
+            state = replace(state, stage="ASSESS_MAIN", queue=())
+
+        continued = _continue_main_sweep(course, state, snap)
+        self.assertIsNone(continued)
+
+        caught_up = dict(scores)
+        caught_up["c.0"] = (7, 8)
+        state = replace(state, frontier_catchup_passes=0,
+                        main_sweep_visited=("A", "B"))
+        self.assertIsNone(_continue_main_sweep(
+            course, state, snapshot(course, pointer, caught_up)))
+
     def test_debt_roles_and_cadence_come_from_policy_data(self):
         course = staged_course()
         state, pointer = enter_c(course)

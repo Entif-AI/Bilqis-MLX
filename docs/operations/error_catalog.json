@@ -1,6 +1,6 @@
 {
   "legacy_raw_file_count": 167,
-  "legacy_raw_raise_count": 1935,
+  "legacy_raw_raise_count": 1933,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BACKUP_ARCHIVE_ROOT_SYMLINK",
@@ -1540,20 +1540,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'NOT_AT_WHOLE_SCHOOL_SOUP_BOUNDARY'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "SPIRAL_ALLOWED_CAPABILITY_OUTSIDE_ASSESSMENT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SPIRAL_ALLOWED_CAPABILITY_OUTSIDE_ASSESSMENT'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "SPIRAL_EXCLUDED_GRADE_OUTSIDE_ACTIVE_PROGRAM",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SPIRAL_EXCLUDED_GRADE_OUTSIDE_ACTIVE_PROGRAM'",
       "path": "bilqis_mlx/curriculum/scheduler.py"
     },
     {

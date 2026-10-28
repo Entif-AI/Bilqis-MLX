@@ -959,6 +959,7 @@ class Dashboard:
                 ("BILQIS",school,22,False),
                 ("RUNTIME",_human_duration(elapsed),15,False),
             ]
+            if phase in ("PROMOTION_SWEEP", "ASSESS_PROMOTION_SWEEP"): fields.append(("SWEEP", f"GRADUATION {prefix}", 12, False))
             budget=self.time_budget_seconds
             if isinstance(budget,(int,float)) and budget>0:
                 percent=int(elapsed*100/budget+.5)

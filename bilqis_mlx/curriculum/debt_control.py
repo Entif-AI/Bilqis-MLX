@@ -1,9 +1,76 @@
 """Pure grade-debt scheduling helpers shared by the school state machine."""
 from __future__ import annotations
 
+from fractions import Fraction
+
 import bilqis_mlx.mature_debt as _mature_debt
 
-from .state import Score, SchoolState, _caps, _program, weakest_three
+from .state import Score, SchoolState, _caps, _program, _score_pool, weakest_three
+
+
+FRONTIER_CATCHUP_SHARE_DENOMINATOR = 4
+FRONTIER_CATCHUP_MINIMUM_ACTIVE_GRADES = 2
+MEDIAN_PAIR_DIVISOR = 2
+_ALLOWED_CAPABILITY_OUTSIDE_ASSESSMENT = "SPIRAL_ALLOWED_CAPABILITY_OUTSIDE_ASSESSMENT"
+_EXCLUDED_GRADE_OUTSIDE_ACTIVE_PROGRAM = "SPIRAL_EXCLUDED_GRADE_OUTSIDE_ACTIVE_PROGRAM"
+
+
+def _next_imperfect_grade_index(program, state: SchoolState,
+                                scores: dict[str, Score], *,
+                                allowed_capabilities: tuple[str, ...] | None = None,
+                                excluded_grades: tuple[str, ...] = ()) -> int | None:
+    """Find the next imperfect eligible grade in canonical wrapped order."""
+    program = _program(program)
+    allowed = set(scores) if allowed_capabilities is None else set(allowed_capabilities)
+    if not allowed <= set(scores):
+        raise ValueError(_ALLOWED_CAPABILITY_OUTSIDE_ASSESSMENT)
+    excluded = set(excluded_grades)
+    if not excluded <= set(state.active_grades):
+        raise ValueError(_EXCLUDED_GRADE_OUTSIDE_ACTIVE_PROGRAM)
+    count = len(state.active_grades)
+    for offset in range(1, count + 1):
+        index = (state.grade_index + offset) % count
+        if state.active_grades[index] in excluded:
+            continue
+        grade_caps = _caps(program, (state.active_grades[index],))
+        eligible = tuple(cap for cap in grade_caps if cap in allowed)
+        if eligible and any(not scores[cap].perfect for cap in eligible):
+            return index
+    return None
+
+
+def _frontier_catchup_target_passes(program, state: SchoolState,
+                                    scores: dict[str, Score],
+                                    allowed_capabilities: tuple[str, ...] | None = None
+                                    ) -> int:
+    """Return total frontier MAIN passes due this sweep while below school median."""
+    program = _program(program)
+    if len(state.active_grades) < FRONTIER_CATCHUP_MINIMUM_ACTIVE_GRADES:
+        return 1
+    eligible_pool = set(_score_pool(program, state))
+    allowed = ((set(scores) if allowed_capabilities is None else set(allowed_capabilities)) &
+               eligible_pool)
+    frontier = state.active_grades[-1]
+    frontier_caps = tuple(
+        capability for capability in _caps(program, (frontier,))
+        if capability in allowed and capability in scores)
+    school_caps = tuple(
+        capability for capability in _caps(program, state.active_grades)
+        if capability in allowed and capability in scores)
+    if not frontier_caps or len(school_caps) <= len(frontier_caps):
+        return 1
+    ordered = sorted(scores[capability].accuracy for capability in school_caps)
+    middle = len(ordered) // 2
+    median = (ordered[middle] if len(ordered) % MEDIAN_PAIR_DIVISOR else
+              (ordered[middle - 1] + ordered[middle]) / MEDIAN_PAIR_DIVISOR)
+    frontier_mean = sum(
+        (scores[capability].accuracy for capability in frontier_caps),
+        Fraction(0, 1)) / len(frontier_caps)
+    if frontier_mean >= median:
+        return 1
+    mature_count = len(school_caps) - len(frontier_caps)
+    divisor = (FRONTIER_CATCHUP_SHARE_DENOMINATOR - 1) * len(frontier_caps)
+    return max(1, (mature_count + divisor - 1) // divisor)
 
 
 def _debt_cadence_mode(program, state: SchoolState) -> bool:

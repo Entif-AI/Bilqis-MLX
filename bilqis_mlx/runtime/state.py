@@ -60,6 +60,7 @@ def _state_from_json(value: dict, course) -> SchoolState:
     legacy_b_full_run_epoch = "non_b_training_turns_since_b_run" not in school
     legacy_promotion_sweep_attempt_epoch = restore_promotion_attempt_fields(school)
     school.setdefault("main_sweep_visited", ())
+    school.setdefault("frontier_catchup_passes", 0)
     school.setdefault("carried_mastery_debt", ())
     school.setdefault("mature_capability_debt", ())
     school.setdefault("mature_grade_debt", ())

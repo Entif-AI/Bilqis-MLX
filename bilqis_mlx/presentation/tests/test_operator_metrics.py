@@ -36,6 +36,22 @@ class OperatorMetricsTests(unittest.TestCase):
             values[start:start + len("2.11.18 / 5.28.57")].strip(),
             "2.11.18 / 5.28.57")
 
+    def test_compact_header_explicitly_marks_graduation_sweep(self):
+        board = Dashboard(
+            stream=io.StringIO(), clock=lambda: 1.0,
+            show_all_panels=True, tables=LETTER_TABLES,
+            compact_header=True)
+        board.started = 0.0
+        board.state.update(
+            phase="PROMOTION_SWEEP", prefix="B", visits=12,
+            graduations="0.1.2 / 3.7.11")
+
+        headings, values = board.render(width=260, height=20).splitlines()[:2]
+
+        start = headings.index("SWEEP")
+        self.assertEqual(values[start:start + len("GRADUATION B")].strip(),
+                         "GRADUATION B")
+
     def test_policy_retention_probability_uses_supported_pre_outcome_evidence(self):
         history = {}
         base = {
