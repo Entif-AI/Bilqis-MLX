@@ -72,6 +72,17 @@ SHADOW_HISTORY_SCHEMA = "bilqis.teacher-multifidelity-history/factory-replay-v1"
 SHADOW_HISTORY_LIMIT = 128
 
 
+def target_correct_delta(before_accuracy: float, after_accuracy: float,
+                         row_count: int) -> float:
+    """Convert an accuracy delta to the policy's correct-answer count unit."""
+    if (not isinstance(before_accuracy, (int, float)) or
+            not isinstance(after_accuracy, (int, float)) or
+            not 0 <= before_accuracy <= 1 or not 0 <= after_accuracy <= 1 or
+            type(row_count) is not int or row_count < 1):
+        raise ValueError(TeacherMultifidelityError.OUTCOME_INVALID.value)
+    return round((float(after_accuracy) - float(before_accuracy)) * row_count, 12)
+
+
 def active_rungs(policy: ShadowPolicy, full_budget_steps: int) -> tuple[int, ...]:
     if type(full_budget_steps) is not int or full_budget_steps < 1:
         raise ValueError(TeacherMultifidelityError.BUDGET_INVALID.value)
@@ -103,6 +114,7 @@ def evaluate_shadow(policy: ShadowPolicy, *, probes,
         "schema": SCHEMA,
         "policy_version": policy.version,
         "mode": "SHADOW",
+        "target_delta_unit": "correct_answers",
         "rungs": [step for step, _ in rows],
         "target_deltas": [float(delta) for _, delta in rows],
         "first_would_stop_step": first_stop,

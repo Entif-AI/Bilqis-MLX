@@ -353,7 +353,11 @@ class TeacherVNextReplayTests(unittest.TestCase):
     def test_shadow_policy_waits_until_step_eight_and_preserves_late_recovery(self):
         from bilqis_mlx.learning.teacher_multifidelity import (
             DEFAULT_SHADOW_POLICY, active_rungs, evaluate_shadow,
+            target_correct_delta,
         )
+
+        self.assertEqual(target_correct_delta(.5, .53125, 32), 1.)
+        self.assertEqual(target_correct_delta(.5, .5625, 32), 2.)
 
         self.assertEqual(active_rungs(DEFAULT_SHADOW_POLICY, 16), (2, 4, 8, 16))
         recovered = evaluate_shadow(

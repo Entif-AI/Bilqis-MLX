@@ -543,7 +543,10 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                     "TEACHER_SHADOW_RUNG", capability=cap, visit_step=rung):
                 rung_score = _learning_student_ops._train_score(
                     mx, params, rows, receipt["config"], receipt["answer_ids"])
-            shadow_probes.append((rung, rung_score - before))
+            shadow_probes.append((
+                rung,
+                _learning_teacher_multifidelity.target_correct_delta(
+                    before, rung_score, len(rows))))
         _runtime_timing_trace.trace_mark("OPTIMIZER_STEP_END", capability=cap, visit_step=step + 1,
                    optimizer_step=int(optimizer.state["step"].item()))
     with _runtime_timing_trace.trace_span("TRAIN_SCORE_AFTER", capability=cap, row_count=len(rows)):
@@ -554,7 +557,10 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         raise ValueError("HUMAN_TRAINER_OPTIMIZER_STEP_DRIFT")
     candidate_gain = after-before
     if shadow_rungs:
-        shadow_probes.append((candidate_steps, candidate_gain))
+        shadow_probes.append((
+            candidate_steps,
+            _learning_teacher_multifidelity.target_correct_delta(
+                before, after, len(rows))))
     realized_action = (
         _learning_learning_experiment.realized_teacher_action(
             policy, candidate_steps=candidate_steps, batch_size=batch_size,
