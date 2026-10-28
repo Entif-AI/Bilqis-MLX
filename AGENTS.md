@@ -28,6 +28,27 @@ self-merge that PR. After accepted work lands on unified, the next issue in ever
 lane repeats the sync-in step so reviewed cross-lane interfaces and instrumentation
 arrive early rather than accumulating as end-of-program conflicts.
 
+## BAMF-0.2 successor outcome and admission lease — 2026-10-28
+
+For the BAMF-0.2 successor, evaluate complete-system capability outcomes across
+exact retrieval, declared deterministic computation, learned memory, neural
+prediction and their compositions equally. Apply the same grade-neutral Factory,
+teacher, retention and evaluation policy to every admitted grade, without
+grade-letter-specific quotas or priority. Preserve source-gold, prerequisites,
+whole-school retention, checkpoint/optimizer custody and the
+sovereign MLX writer. These rules do not change an existing student or #324.
+
+New semantic releases default to staging. A human-started BAMF run may authorize
+continued source-valid expansion only through an explicit persisted admission
+lease and the existing Factory/admission owner. First live adoption requires the
+BAMF successor's disposable C16 ([#382](https://github.com/Entif-AI/Bilqis-MLX/issues/382)) source, custody and retained-learning
+witness: a strictly improved fresh target, preserved cumulative retention, complete
+rejection rollback and equivalent cold-resume output and next update. This witness
+precedes the operator's first persistent student start. Historical #324 comparison
+is not its prerequisite. Only the human operator starts, resumes or stops the
+durable student.
+The policy is specified here; it is not yet an executable admission implementation.
+
 ## CONTROLLING USER CORRECTION — 2026-10-27: no developmental generalization
 
 Bilqis is still a tiny developmental student learning a narrow semantic inventory.
