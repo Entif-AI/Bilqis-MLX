@@ -100,4 +100,6 @@ The actual A/B/C source adapters pass their graph and adapter identity
 through the binding boundary. Focused adapter tests: 11/11 passed.
 Frame-schema tests: 14 passed, 0 failed, 1 optional real-Atlas test
 skipped in ordinary mode. Canonical frame v2 is covered by A03.1.
-Fresh independent review is pending; no source release was promoted.
+Independent Goldfish readback at `4c422aa` returned **EGM PASS**,
+zero remaining Blockers/Majors. The reviewer inspected source and
+tests but did not execute them. No source release was promoted.

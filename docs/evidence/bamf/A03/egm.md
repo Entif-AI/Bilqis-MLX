@@ -42,6 +42,10 @@ and declared type, and fails closed without that authority.
 Prime tests after repair: frame-schema 14 passed/1 optional skip,
 actual-source adapters 11 passed, codec 14 passed, context 14 passed.
 
-The worker-2 findings are not silently marked cleared: a fresh
-independent immutable-head re-review is required before A03.1/A03.2
-receive final EGM PASS. A03.3's separate PASS above remains valid.
+Worker-2 independently re-reviewed both repairs at immutable
+`4c422aab0c870279451e8dd084f17bd1641befb6` and returned
+**A03.1/A03.2 EGM PASS, zero remaining Blockers/Majors**. The review
+covered canonical ordering and source type authority through actual
+A/B/C adapter code/tests. The reviewer did not execute tests; those
+counts are prime evidence. A03.3's separate PASS remains valid.
+Parent integration acceptance is not implied.

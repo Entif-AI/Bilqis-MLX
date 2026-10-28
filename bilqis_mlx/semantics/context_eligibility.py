@@ -20,6 +20,9 @@ APPROVED_FRAME_SCHEMA = "bilqis.context-approved-frame/v1"
 ELIGIBLE_CONTEXT_SCHEMA = "bilqis.eligible-context/v1"
 CONTEXT_HOLD_SCHEMA = "bilqis.context-hold/v1"
 PUBLIC_FORMAL = "PUBLIC_FORMAL"
+MAX_CONTEXT_HOLD_DIAGNOSTICS = 16
+JOIN_PAIR_ARITY = 2
+MIN_JOIN_SET_ARITY = 3
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
 
@@ -258,13 +261,13 @@ class ContextPolicy:
                     self.allowed_jurisdictions, self.allowed_scopes,
                     self.allowed_join_classes))
                 or not isinstance(self.allowed_join_pairs, tuple)
-                or any(not isinstance(item, tuple) or len(item) != 2
+                or any(not isinstance(item, tuple) or len(item) != JOIN_PAIR_ARITY
                        or not all(_name(value) for value in item)
                        or item != tuple(sorted(item))
                        for item in self.allowed_join_pairs)
                 or self.allowed_join_pairs != tuple(sorted(set(self.allowed_join_pairs)))
                 or not isinstance(self.allowed_join_sets, tuple)
-                or any(not isinstance(item, tuple) or len(item) < 3
+                or any(not isinstance(item, tuple) or len(item) < MIN_JOIN_SET_ARITY
                        or not all(_name(value) for value in item)
                        or item != tuple(sorted(item))
                        for item in self.allowed_join_sets)
@@ -327,8 +330,8 @@ class ContextHold:
         if (not _names(self.reason_codes) or not self.reason_codes
                 or not _names(self.source_handles)
                 or not isinstance(self.diagnostics, tuple)
-                or len(self.diagnostics) > 16
-                or any(not isinstance(item, tuple) or len(item) != 2
+                or len(self.diagnostics) > MAX_CONTEXT_HOLD_DIAGNOSTICS
+                or any(not isinstance(item, tuple) or len(item) != JOIN_PAIR_ARITY
                        or not all(_name(value) for value in item)
                        for item in self.diagnostics)
                 or self.diagnostics != tuple(sorted(set(self.diagnostics)))
@@ -513,7 +516,7 @@ def check_context_eligibility(
                     hold("BAMF_CONTEXT_FORBIDDEN_JOIN", left.source_handle)
                     hold("BAMF_CONTEXT_FORBIDDEN_JOIN", right.source_handle)
     join_multiset = tuple(sorted(item.join_class for item in frames))
-    if len(frames) > 2 and join_multiset not in policy.allowed_join_sets:
+    if len(frames) > JOIN_PAIR_ARITY and join_multiset not in policy.allowed_join_sets:
         for item in frames:
             hold("BAMF_CONTEXT_FORBIDDEN_JOIN", item.source_handle)
 
@@ -521,7 +524,7 @@ def check_context_eligibility(
         return ContextHold(
             reason_codes=tuple(sorted(reasons)),
             source_handles=tuple(sorted(blocked)),
-            diagnostics=tuple(sorted(diagnostics))[:16],
+            diagnostics=tuple(sorted(diagnostics))[:MAX_CONTEXT_HOLD_DIAGNOSTICS],
         )
 
     approved = tuple(sorted((

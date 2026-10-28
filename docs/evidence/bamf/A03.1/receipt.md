@@ -84,5 +84,7 @@ rejects with `FRAME_BINDING_ORDER_NONCANONICAL`.
 Focused `test_frame_schema.py` after this repair: 14 passed,
 0 failed, 1 optional real-Atlas test skipped in ordinary mode.
 The later A03.2 source-type authority repair and actual A/B/C adapter
-tests are recorded separately. Fresh independent immutable-head
-readback remains pending; no parent integration closure is claimed.
+tests are recorded separately. Independent Goldfish readback at
+`4c422aa` returned **EGM PASS**, zero remaining Blockers/Majors.
+This is source inspection, not another executed test run.
+Parent integration acceptance remains open.

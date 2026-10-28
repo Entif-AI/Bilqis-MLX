@@ -482,7 +482,7 @@ def _formal_source_types(
         if (index != entry.index or node.get("id") != symbol
                 or source_graph["row_contract_sha256"][symbol]
                 != source_node_digest(node)):
-            raise ValueError("source contract drift")
+            _binding_fail("FRAME_CONCEPT_TYPE_AUTHORITY_MISSING", source_span, role_id)
         raw_signature = node["signature"]
         if (isinstance(raw_signature, str) and raw_signature
                 and "->" not in raw_signature
