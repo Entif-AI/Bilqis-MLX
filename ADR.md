@@ -1439,3 +1439,13 @@ This ADR does not authorize weaker source gold, custody bypass, hand-edited run
 state, or agent-operated production training. The human operator owns the live
 verification run after this code excision.
 
+**Rollback compatibility for existing admitted releases.** A run admitted while
+`1324082` was active may still contain the exact Grade-A predicates provider
+descriptor introduced by that commit (`source.micro.predicates/v1`, implementation
+`f8e5aec...`, including `generalization-only-source-context-v3`). After the
+wholesale revert the runtime provider returns to implementation `4295399...`
+without that generalization-only axis. Resume may recognize exactly that one-way
+descriptor pair as the ADR-099 rollback of the same provider. This is not a
+general provider-drift exemption: any other adapter identity, hash, axis, oracle,
+generator, release, teaching option, or profile difference still fails closed.
+
