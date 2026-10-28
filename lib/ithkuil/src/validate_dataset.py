@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import csv
+import hashlib
+import json
 import re
 import subprocess
 from collections import Counter
@@ -66,8 +68,15 @@ def main() -> None:
     require(len(manifest) == 18, f"expected 18 official source identities, found {len(manifest)}")
     require(len(curriculum_manifest) == 8, f"expected 8 curriculum snapshot tabs, found {len(curriculum_manifest)}")
     require(len(sections) == 337, f"expected 337 source sections, found {len(sections)}")
-    require(len(tables) == 324, f"expected 324 HTML tables, found {len(tables)}")
-    require(len(cells) == 5397, f"expected 5,397 non-empty table cells, found {len(cells)}")
+    html_tables = [row for row in tables if row['source_id'] != 'NI-AFFIX-PDF']
+    html_cells = [row for row in cells if row['source_id'] != 'NI-AFFIX-PDF']
+    require(len(html_tables) == 324, f"expected 324 HTML tables, found {len(html_tables)}")
+    require(len(html_cells) == 5397, f"expected 5,397 HTML table cells, found {len(html_cells)}")
+    if __package__:
+        from .affix_admission import validate as validate_affix
+    else:
+        from affix_admission import validate as validate_affix
+    validate_affix(DATA, manifest, tables, cells)
     require(len(crosswalk) == 222, f"expected 222 token crosswalk rows, found {len(crosswalk)}")
     require(len(bridges) == 330, f"expected 330 semantic bridge rows, found {len(bridges)}")
 
@@ -129,9 +138,84 @@ def main() -> None:
     require(asserted_compositions == composition_ids, "not every composition has source assertions")
     require(all(row["affix_root_atomic_id"] in atomic_ids for row in degrees), "affix degree references unknown atomic root")
     require(all(row["atomic_id"] in atomic_ids for row in senses), "root sense references unknown atomic root")
-    require(len(lexicon_roots) == 503, f"expected 503 Chapter-1/2 lexicon roots, found {len(lexicon_roots)}")
-    require(len(lexicon_senses) == 1615, f"expected 1,615 Chapter-1/2 lexicon senses, found {len(lexicon_senses)}")
-    require(len(lexicon_evidence) == 150, f"expected 150 Chapter-1/2 lexicon evidence rows, found {len(lexicon_evidence)}")
+    legacy_groups=[[row for row in rows if row['lexicon_chapter'] in {'1','2'}] for rows in (lexicon_roots,lexicon_senses,lexicon_evidence)]
+    require([len(rows) for rows in legacy_groups]==[503,1615,150],'Chapter-1/2 source counts drift')
+    profile_path=SOURCES/'lexicon_frontier_manifest.json'
+    if profile_path.exists():
+        profile=json.loads(profile_path.read_text())
+        require(profile.get('schema')=='bilqis.ithkuil.lexicon-frontier/v1','lexicon frontier schema invalid')
+        for name,expected in profile['counts'].items():
+            require(len(read_csv(DATA/(name+'.csv')))==expected,'lexicon frontier count drift: '+name)
+        for name,digest in profile['output_sha256'].items():
+            require(hashlib.sha256((DATA/name).read_bytes()).hexdigest()==digest,'lexicon frontier output drift: '+name)
+        for name,rows in zip(('lexicon_roots.csv','lexicon_root_senses.csv','lexicon_root_evidence.csv'),legacy_groups):
+            import io
+            stream=io.StringIO(newline='');writer=csv.DictWriter(stream,fieldnames=list(rows[0]),lineterminator='\n');writer.writeheader();writer.writerows(rows)
+            require(hashlib.sha256(stream.getvalue().encode()).hexdigest()==profile['legacy_table_sha256'][name],'earlier chapter bytes drift: '+name)
+        pins=json.loads((ROOT/'src/lexicon_frontier_pins.json').read_text())
+        receipts=profile.get('chapter_receipts',{})
+        admitted=set(profile.get('admitted_chapters',[]))
+        require(set(receipts)==admitted,'lexicon frontier chapter receipt set drift')
+        parser_digest=hashlib.sha256((ROOT/'src/lexicon_frontier.py').read_bytes()).hexdigest()
+        legacy_parser_digest=hashlib.sha256((ROOT/'src/build_lexicon_chapters.py').read_bytes()).hexdigest()
+        allowed_statuses={'PARSED','DEBT_UNSUPPORTED_SHAPE','DEBT_INSUFFICIENT_SENSE_EVIDENCE','DEBT_AMBIGUOUS_LOCUS','DEBT_CONFLICT'}
+        locus_fields={'table':{'kind','pdf_page','table_index','row','column'},
+                      'prose':{'kind','pdf_page','line_start','line_end'},
+                      'root':{'kind','pdf_page','line','lexicon_section'},
+                      'page':{'kind','pdf_page'}}
+        for chapter in sorted(admitted,key=int):
+            receipt=receipts[chapter]
+            pin=pins.get('chapters',{}).get(chapter)
+            require(pin is not None,'lexicon frontier receipt references unpinned chapter '+chapter)
+            require(receipt.get('chapter')==chapter and receipt.get('source',{}).get('sha256')==pin['sha256'],
+                    'lexicon frontier source pin drift: chapter '+chapter)
+            require(receipt['source'].get('filename')==pin['filename'] and receipt['source'].get('page_count')==pin['page_count'],
+                    'lexicon frontier source identity drift: chapter '+chapter)
+            require(receipt['source'].get('canonical_sha256')==pins['canonical_sha256'],
+                    'lexicon frontier canonical source digest drift: chapter '+chapter)
+            require(receipt.get('parser',{}).get('sha256')==parser_digest and
+                    receipt.get('parser',{}).get('legacy_sha256')==legacy_parser_digest,
+                    'lexicon frontier parser receipt stale: chapter '+chapter)
+            accounting_path=SOURCES/'lexicon_frontier'/('chapter-'+chapter+'-accounting.json')
+            accounting_bytes=accounting_path.read_bytes()
+            require(hashlib.sha256(accounting_bytes).hexdigest()==receipt.get('accounting_sha256'),
+                    'lexicon frontier accounting artifact digest drift: chapter '+chapter)
+            accounting=json.loads(accounting_bytes)
+            require(isinstance(accounting,list),'lexicon frontier accounting artifact invalid: chapter '+chapter)
+            observed=Counter()
+            for item in accounting:
+                status=item.get('status')
+                require(status in allowed_statuses,'lexicon frontier accounting disposition invalid: chapter '+chapter)
+                observed[status]+=1
+                locus=item.get('source_locus')
+                require(isinstance(locus,dict) and locus.get('kind') in locus_fields,
+                        'lexicon frontier accounting source locus missing: chapter '+chapter)
+                require(set(locus)==locus_fields[locus['kind']],
+                        'lexicon frontier accounting source locus shape invalid: chapter '+chapter)
+                require(locus.get('pdf_page')==int(item['source_pdf_page']),
+                        'lexicon frontier accounting source page mismatch: chapter '+chapter)
+                if locus['kind']=='table':
+                    require(locus['table_index']==int(item['source_table_index']) and
+                            locus['row']==int(item['row']) and locus['column']==int(item['column']),
+                            'lexicon frontier table locator mismatch: chapter '+chapter)
+                elif locus['kind']=='prose':
+                    require(not item['source_table_index'] and locus['line_start']<=locus['line_end'],
+                            'lexicon frontier prose locator mismatch: chapter '+chapter)
+                elif locus['kind']=='root':
+                    require(not item['source_table_index'] and locus['line']>0 and locus['lexicon_section'],
+                            'lexicon frontier root locator mismatch: chapter '+chapter)
+                else:
+                    require(not item['source_table_index'] and not item['lexicon_root_id'] and
+                            status=='DEBT_UNSUPPORTED_SHAPE' and 1<=locus['pdf_page']<=pin['page_count'],
+                            'lexicon frontier page locator mismatch: chapter '+chapter)
+            require(len(accounting)==receipt.get('counts',{}).get('source_observations'),
+                    'lexicon frontier observation count drift: chapter '+chapter)
+            require(dict(sorted(observed.items()))==receipt.get('dispositions'),
+                    'lexicon frontier disposition count drift: chapter '+chapter)
+            require(observed['PARSED']==receipt.get('counts',{}).get('parsed_sense_observations'),
+                    'lexicon frontier parsed observation count drift: chapter '+chapter)
+    else:
+        require([len(lexicon_roots),len(lexicon_senses),len(lexicon_evidence)]==[503,1615,150],'unadmitted lexicon expansion')
     require(all(row["source_id"] == "NI-LEXICON-CURRICULUM" for row in lexicon_roots), "lexicon root source identity drift")
     require(all(row["lexicon_root_id"] in lexicon_root_ids for row in lexicon_senses), "lexicon sense references unknown lexicon root")
     require(all(row["lexicon_root_id"] in lexicon_root_ids for row in lexicon_evidence), "lexicon evidence references unknown lexicon root")
@@ -141,10 +225,10 @@ def main() -> None:
     require(all(len(row["source_text_sha256"]) == 64 and int(row["source_text_char_count"]) > 0 for row in lexicon_senses), "lexicon sense lost full-source fingerprint")
     require(all(len(row["evidence_excerpt"]) <= 180 for row in lexicon_evidence), "lexicon evidence excerpt exceeds compact-source limit")
     require(all(len(row["source_text_sha256"]) == 64 and int(row["source_text_char_count"]) > 0 for row in lexicon_evidence), "lexicon evidence lost full-source fingerprint")
-    require(len(lexicon_split_provenance) == 2, "expected two tracked Chapter-1/2 split provenance rows")
+    require(len(lexicon_split_provenance) == 2+(len(profile['admitted_chapters']) if profile_path.exists() else 0), 'lexicon split provenance admission drift')
     require(all(row["bound_source_id"] == "NI-LEXICON-CURRICULUM" for row in lexicon_split_provenance), "split provenance source binding drift")
     require(all(row["bound_source_sha256"] == "d26d5aabc844ba9cafca68c6e1c7459b0f325e745b919a4aac3e08a61e684a21" for row in lexicon_split_provenance), "split provenance canonical digest drift")
-    require(sum(int(row["page_count"]) for row in lexicon_split_provenance) == 96, "split provenance page-count drift")
+    require(sum(int(row['page_count']) for row in lexicon_split_provenance[:2]) == 96, 'legacy split provenance page-count drift')
     lexicon_root_by_form = {row["root_form_raw"]: row for row in lexicon_roots}
     require(lexicon_root_by_form["-Č-"]["lexicon_section"] == "1.3", "copular root lost Chapter 1.3 locus")
     require(lexicon_root_by_form["-PS-"]["lexicon_section"] == "2.0", "event root lost Chapter 2.0 locus")

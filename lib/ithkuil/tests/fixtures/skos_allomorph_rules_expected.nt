@@ -1,0 +1,20 @@
+<https://github.com/Entif-AI/Bilqis-MLX/id/allomorph-rule/ALLO-08d9bb00e7a0dd> <http://purl.org/dc/terms/identifier> "ALLO-08d9bb00e7a0dd" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/allomorph-rule/ALLO-08d9bb00e7a0dd> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2000/01/rdf-schema#Resource> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/allomorph-rule/ALLO-08d9bb00e7a0dd> <https://github.com/Entif-AI/Bilqis-MLX/vocab/allomorphDomain> "C_A affix-complex" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/allomorph-rule/ALLO-08d9bb00e7a0dd> <https://github.com/Entif-AI/Bilqis-MLX/vocab/condition> "Apply when concatenated C_A exponents produce the listed input cluster." .
+<https://github.com/Entif-AI/Bilqis-MLX/id/allomorph-rule/ALLO-08d9bb00e7a0dd> <https://github.com/Entif-AI/Bilqis-MLX/vocab/inputPattern> "fbm" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/allomorph-rule/ALLO-08d9bb00e7a0dd> <https://github.com/Entif-AI/Bilqis-MLX/vocab/intermediatePattern> "fv" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/allomorph-rule/ALLO-08d9bb00e7a0dd> <https://github.com/Entif-AI/Bilqis-MLX/vocab/outputPattern> "vw" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/allomorph-rule/ALLO-3100f4b83b2259> <http://purl.org/dc/terms/identifier> "ALLO-3100f4b83b2259" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/allomorph-rule/ALLO-3100f4b83b2259> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2000/01/rdf-schema#Resource> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/allomorph-rule/ALLO-3100f4b83b2259> <https://github.com/Entif-AI/Bilqis-MLX/vocab/allomorphDomain> "C_A affix-complex" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/allomorph-rule/ALLO-3100f4b83b2259> <https://github.com/Entif-AI/Bilqis-MLX/vocab/condition> "Apply when concatenated C_A exponents produce the listed input cluster." .
+<https://github.com/Entif-AI/Bilqis-MLX/id/allomorph-rule/ALLO-3100f4b83b2259> <https://github.com/Entif-AI/Bilqis-MLX/vocab/inputPattern> "ţbn" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/allomorph-rule/ALLO-3100f4b83b2259> <https://github.com/Entif-AI/Bilqis-MLX/vocab/intermediatePattern> "tḑ" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/allomorph-rule/ALLO-3100f4b83b2259> <https://github.com/Entif-AI/Bilqis-MLX/vocab/outputPattern> "ḑy" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/allomorph-rule/ALLO-1189a0d351344c> <http://purl.org/dc/terms/identifier> "ALLO-1189a0d351344c" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/allomorph-rule/ALLO-1189a0d351344c> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2000/01/rdf-schema#Resource> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/allomorph-rule/ALLO-1189a0d351344c> <https://github.com/Entif-AI/Bilqis-MLX/vocab/allomorphDomain> "C_A affix-complex" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/allomorph-rule/ALLO-1189a0d351344c> <https://github.com/Entif-AI/Bilqis-MLX/vocab/condition> "Apply when concatenated C_A exponents produce the listed input cluster." .
+<https://github.com/Entif-AI/Bilqis-MLX/id/allomorph-rule/ALLO-1189a0d351344c> <https://github.com/Entif-AI/Bilqis-MLX/vocab/inputPattern> "řř" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/allomorph-rule/ALLO-1189a0d351344c> <https://github.com/Entif-AI/Bilqis-MLX/vocab/outputPattern> "ňš" .

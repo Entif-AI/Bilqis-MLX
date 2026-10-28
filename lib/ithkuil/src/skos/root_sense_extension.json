@@ -1,0 +1,19 @@
+{
+  "profile_version": "bilqis-root-sense-relation/1",
+  "term": {
+    "key": "hasSense",
+    "relation_kind": "root_sense",
+    "definition": "Relates one addressable New Ithkuil root resource to one independently identified semantic sense concept parsed for that root.",
+    "domain": "http://www.w3.org/2000/01/rdf-schema#Resource",
+    "range": "http://www.w3.org/2004/02/skos/core#Concept",
+    "source_fixture": "LEXSENSE-e3f64d03c6f6ec",
+    "source_justification": "The real Chapter 2 row LEXSENSE-e3f64d03c6f6ec records the BSC STEM 1 sense of root LEXROOT-01e02023f505ec; the root and sense have separate stable identities.",
+    "skos_gap": "SKOS semantic relations have skos:Concept domain and range, while the root is deliberately an addressable rdfs:Resource rather than a semantic concept; broader/narrower/related would also assert the wrong semantic relation.",
+    "rdf_gap": "dcterms:hasPart states physical or logical inclusion rather than lexical sense membership; OntoLex sense requires adopting LexicalEntry and LexicalSense classes not otherwise used by this profile; generic rdfs:seeAlso cannot state the root-to-sense role.",
+    "negative_fixture": "root-is-not-sense-taxonomy",
+    "recurring": true,
+    "machine_required": true,
+    "subproperty_of": null,
+    "specialization_proof": null
+  }
+}

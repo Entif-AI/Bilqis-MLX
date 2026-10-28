@@ -1,0 +1,237 @@
+{
+  "build_status": "partial",
+  "canonical_rdf": {
+    "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "triple_count": 12
+  },
+  "compiler": {
+    "profile_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "profile_version": "fixture-profile/1",
+    "version": "fixture-compiler/1"
+  },
+  "conflicts": {
+    "blocking": 0,
+    "by_reason": {
+      "SYNTHETIC_HELD": 2
+    }
+  },
+  "domains": {
+    "atomic": {
+      "dispositions": {
+        "EMITTED": 2,
+        "HELD": 1,
+        "IR_ONLY": 0,
+        "REJECTED": 0,
+        "UNSUPPORTED": 0
+      },
+      "frontier_debt": [],
+      "notation_counts": {
+        "urn:datatype:grammar-code": 1,
+        "urn:datatype:new-ithkuil": 2
+      },
+      "rows": [
+        {
+          "key": "ATOM-A1",
+          "owner": "#49",
+          "reason_code": "EMITTED_ATOMIC_SKOS",
+          "semantic_iri": "urn:atomic:a1",
+          "status": "EMITTED",
+          "table": "morphemes_atomic"
+        },
+        {
+          "key": "ATOM-A2",
+          "owner": "#49",
+          "reason_code": "EMITTED_ATOMIC_SKOS",
+          "semantic_iri": "urn:atomic:a2",
+          "status": "EMITTED",
+          "table": "morphemes_atomic"
+        },
+        {
+          "key": "ATOM-A3",
+          "owner": "#47",
+          "reason_code": "NOTATION_COLLISION",
+          "semantic_iri": "urn:atomic:a3",
+          "status": "HELD",
+          "table": "morphemes_atomic"
+        }
+      ],
+      "semantic_counts": {
+        "allomorphs": 0,
+        "compositions": 0,
+        "concepts": 1,
+        "mappings": 0,
+        "roots": 1,
+        "senses": 0
+      },
+      "source_rows": 3
+    },
+    "lexicon": {
+      "dispositions": {
+        "EMITTED": 2,
+        "HELD": 0,
+        "IR_ONLY": 1,
+        "REJECTED": 0,
+        "UNSUPPORTED": 0
+      },
+      "frontier_debt": [
+        {
+          "blocking": false,
+          "code": "LEXICON_CHAPTERS_3_7_OUTSIDE_FRONTIER",
+          "count": 5
+        }
+      ],
+      "notation_counts": {
+        "urn:datatype:new-ithkuil": 1
+      },
+      "rows": [
+        {
+          "key": "LEXROOT-L1",
+          "owner": "#55",
+          "reason_code": "EMITTED_LEXICON_ROOT",
+          "semantic_iri": "urn:lexicon:l1",
+          "status": "EMITTED",
+          "table": "lexicon_roots"
+        },
+        {
+          "key": "LEXSENSE-L2",
+          "owner": "#55",
+          "reason_code": "EMITTED_LEXICON_SENSE",
+          "semantic_iri": "urn:lexicon:l2",
+          "status": "EMITTED",
+          "table": "lexicon_root_senses"
+        },
+        {
+          "key": "EVID-L3",
+          "owner": "#55",
+          "reason_code": "SOURCE_EVIDENCE_IR_ONLY",
+          "semantic_iri": null,
+          "status": "IR_ONLY",
+          "table": "lexicon_root_evidence"
+        }
+      ],
+      "semantic_counts": {
+        "allomorphs": 0,
+        "compositions": 0,
+        "concepts": 0,
+        "mappings": 0,
+        "roots": 1,
+        "senses": 1
+      },
+      "source_rows": 3
+    },
+    "mapping": {
+      "dispositions": {
+        "EMITTED": 0,
+        "HELD": 1,
+        "IR_ONLY": 0,
+        "REJECTED": 1,
+        "UNSUPPORTED": 0
+      },
+      "frontier_debt": [
+        {
+          "blocking": false,
+          "code": "MAPPING_REVIEW_PENDING",
+          "count": 2
+        }
+      ],
+      "notation_counts": {},
+      "rows": [
+        {
+          "key": "MAP-M1",
+          "owner": "#66",
+          "reason_code": "MAPPING_REVIEW_PENDING",
+          "semantic_iri": null,
+          "status": "HELD",
+          "table": "mapping_crosswalk"
+        },
+        {
+          "key": "MAP-M2",
+          "owner": "#66",
+          "reason_code": "MAPPING_SOURCE_REJECTED",
+          "semantic_iri": null,
+          "status": "REJECTED",
+          "table": "mapping_bridge"
+        }
+      ],
+      "semantic_counts": {
+        "allomorphs": 0,
+        "compositions": 0,
+        "concepts": 0,
+        "mappings": 0,
+        "roots": 0,
+        "senses": 0
+      },
+      "source_rows": 2
+    },
+    "residue": {
+      "dispositions": {
+        "EMITTED": 1,
+        "HELD": 0,
+        "IR_ONLY": 0,
+        "REJECTED": 0,
+        "UNSUPPORTED": 0
+      },
+      "frontier_debt": [
+        {
+          "blocking": false,
+          "code": "RESIDUE_UNSUPPORTED_ROW",
+          "count": 1
+        }
+      ],
+      "notation_counts": {},
+      "rows": [
+        {
+          "key": "COMP-R1",
+          "owner": "#61",
+          "reason_code": "EMITTED_RESIDUE_ASSERTION",
+          "semantic_iri": "urn:residue:r1",
+          "status": "EMITTED",
+          "table": "morpheme_compositions"
+        }
+      ],
+      "semantic_counts": {
+        "allomorphs": 0,
+        "compositions": 1,
+        "concepts": 0,
+        "mappings": 0,
+        "roots": 0,
+        "senses": 0
+      },
+      "source_rows": 1
+    }
+  },
+  "frontier_debt_declared": true,
+  "inputs": [
+    {
+      "artifact": "atomic-reconciliation",
+      "domain": "atomic",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "artifact": "lexicon-reconciliation",
+      "domain": "lexicon",
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    {
+      "artifact": "residue-reconciliation",
+      "domain": "residue",
+      "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    },
+    {
+      "artifact": "mapping-reconciliation",
+      "domain": "mapping",
+      "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    }
+  ],
+  "schema": "bilqis.skos.semantic-coverage/v1",
+  "totals": {
+    "dispositions": {
+      "EMITTED": 5,
+      "HELD": 2,
+      "IR_ONLY": 1,
+      "REJECTED": 1,
+      "UNSUPPORTED": 0
+    },
+    "source_rows": 9
+  }
+}

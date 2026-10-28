@@ -1,0 +1,22 @@
+{
+  "registry_version": "bilqis-extension-admission/1",
+  "scope": "admission-fixture-only",
+  "terms": [
+    {
+      "key": "surfaceReplacement",
+      "relation_kind": "allomorph",
+      "definition": "The source-attested replacement surface of an explicit allomorph rule; this does not relate semantic concepts.",
+      "domain": "http://www.w3.org/2000/01/rdf-schema#Resource",
+      "range": "http://www.w3.org/2000/01/rdf-schema#Literal",
+      "source_fixture": "ALLO-08d9bb00e7a0dd",
+      "source_justification": "The source C_A rule maps input fbm via fv to output vw under its stated condition.",
+      "skos_gap": "SKOS semantic relations link concepts; an attested surface replacement is not concept hierarchy or association.",
+      "rdf_gap": "Generic rdf:value cannot distinguish the input, intermediate and replacement roles on the same rule resource.",
+      "negative_fixture": "allomorph-is-not-related",
+      "recurring": true,
+      "machine_required": true,
+      "subproperty_of": null,
+      "specialization_proof": null
+    }
+  ]
+}

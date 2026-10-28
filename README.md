@@ -1,5 +1,21 @@
 # Bilqis MLX
 
+## BAMF-0.2 unified execution base — 2026-10-28
+
+This branch starts from the current Factory implementation and keeps that Factory
+code authoritative for runtime, trainer, scheduler, teacher, retention, admission,
+and controller behavior. Do not reintroduce newer `main` controller logic merely
+because `main` has advanced. BAMF work changes those surfaces only through an
+explicit BAMF issue that is implemented and verified against this branch.
+
+The shared BAMF planning contract is [BAMF-0.2](docs/architecture/BAMF_0_2.md),
+including `ADR-BAMF02-004`, and
+its recursively decomposed workstack under [docs/tasks/bamf-0.2](docs/tasks/bamf-0.2/README.md).
+The New Ithkuil semantic source is the imported SKOS corpus under `lib/ithkuil/`,
+including its content-addressed test policy and ingestion Skill. These planning and
+semantic assets do not by themselves alter the existing Prometheus student or
+authorize neural updates.
+
 ## CONTROLLING USER CORRECTION — 2026-10-23: factory specs are not semantic-root tickets
 
 Issue #150 is a factory-architecture epic. Its decomposition exists to make the

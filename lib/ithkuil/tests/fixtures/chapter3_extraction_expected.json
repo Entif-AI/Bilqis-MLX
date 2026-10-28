@@ -1,0 +1,52 @@
+{
+  "accounting_sha256": "4ec71cee2cf82941d4e154c608e2265177a293822e632b80c8e51c72fd2b17c6",
+  "counts": {
+    "evidence": 228,
+    "parsed_sense_observations": 100,
+    "roots": 122,
+    "roots_without_senses": 94,
+    "senses": 100,
+    "source_observations": 303,
+    "unique_sense_coordinates": 100
+  },
+  "dispositions": {
+    "DEBT_INSUFFICIENT_SENSE_EVIDENCE": 201,
+    "DEBT_UNSUPPORTED_SHAPE": 2,
+    "PARSED": 100
+  },
+  "output_sha256": {
+    "lexicon_root_evidence.csv": "767c8aa49b686113e47ad1009626ac24500f8c514a3204cdb78d94ea510ad184",
+    "lexicon_root_senses.csv": "83b7c9c2a73082f3c29abc438db43996e1bcb57fa9117c7607ffa227edd9312d",
+    "lexicon_roots.csv": "1c6852b9862f54cd7780c034c181762bad7deb4128e9c4db570580d926634f56"
+  },
+  "source": {
+    "canonical_page_start": 99,
+    "canonical_pages": [
+      99,
+      100,
+      101,
+      102,
+      103,
+      104,
+      105,
+      106,
+      107,
+      108,
+      109,
+      110,
+      111,
+      112,
+      113,
+      114,
+      115
+    ],
+    "canonical_sha256": "d26d5aabc844ba9cafca68c6e1c7459b0f325e745b919a4aac3e08a61e684a21",
+    "comparison": "normalized-page-text-exact",
+    "canonical_page_text_variant_pages": [],
+    "min_text_similarity": 1.0,
+    "filename": "New Ithkuil Lexicon - Chapter 03 - Spacetime and Motion.pdf",
+    "format": "PDF 1.3",
+    "page_count": 17,
+    "sha256": "304e44fe561c741841a42f500e19be77ef044be5e4722077edc96e14299499e0"
+  }
+}

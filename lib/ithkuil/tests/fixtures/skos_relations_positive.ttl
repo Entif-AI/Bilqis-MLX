@@ -1,0 +1,6 @@
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix ex: <urn:fixture:> .
+ex:specific a skos:Concept ; skos:broader ex:general .
+ex:general a skos:Concept ; skos:narrower ex:specific .
+ex:associated a skos:Concept ; skos:related ex:specific .
+ex:family a skos:Collection ; skos:member ex:specific .

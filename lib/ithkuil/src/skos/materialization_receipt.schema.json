@@ -1,0 +1,229 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Bilqis owned Falkor materialization receipt",
+  "type": "object",
+  "required": [
+    "schema",
+    "version",
+    "status",
+    "timestamp",
+    "graph",
+    "owner"
+  ],
+  "properties": {
+    "schema": {
+      "const": "bilqis.skos.materialization/v1"
+    },
+    "version": {
+      "const": "1.0.0"
+    },
+    "status": {
+      "enum": [
+        "complete",
+        "incomplete"
+      ]
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "graph": {
+      "type": "string",
+      "minLength": 1
+    },
+    "owner": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "canonical_rdf_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "projection_version": {
+      "const": "1.0.0"
+    },
+    "coverage_status": {
+      "enum": [
+        "complete",
+        "partial",
+        "blocked"
+      ]
+    },
+    "semantic_coverage": {
+      "type": "object",
+      "required": [
+        "ref",
+        "sha256"
+      ],
+      "properties": {
+        "ref": {
+          "const": "coverage.json"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "importer": {
+      "type": "object",
+      "required": [
+        "version",
+        "implementation_sha256",
+        "git_commit",
+        "dirty_source"
+      ],
+      "properties": {
+        "version": {
+          "const": "2.0.0"
+        },
+        "implementation_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "git_commit": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-f0-9]{40,64}$"
+        },
+        "dirty_source": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "nodes_by_label": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "edges_by_type": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "indexes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "label",
+          "property",
+          "present"
+        ],
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "property": {
+            "type": "string"
+          },
+          "present": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "smoke_suite": {
+      "type": "object",
+      "required": [
+        "suite_version",
+        "suite_sha256",
+        "canonical_sha256",
+        "passed",
+        "cases"
+      ],
+      "properties": {
+        "passed": {
+          "const": true
+        },
+        "suite_version": {
+          "const": "1.0.0"
+        },
+        "suite_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "canonical_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "schema": {
+          "const": "bilqis.skos.smoke-report/v1"
+        },
+        "cases": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "passed",
+              "expected",
+              "actual"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "passed": {
+                "const": true
+              },
+              "expected": {
+                "type": "array"
+              },
+              "actual": {
+                "type": "array"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "complete"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "canonical_rdf_sha256",
+          "projection_version",
+          "coverage_status",
+          "semantic_coverage",
+          "importer",
+          "nodes_by_label",
+          "edges_by_type",
+          "indexes",
+          "smoke_suite"
+        ]
+      },
+      "else": {
+        "required": [
+          "reason"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,428 @@
+{
+  "acceptance": {
+    "actual_write_surfaces": "PASS: public_only, staged IR, dedicated outputs and separately authorized owned graphs; no automatic external publication",
+    "no_duplicate_semantic_authority": "PASS: thin subprocess wrapper; canonical repository owns all parsing, projection, conformance and proof logic",
+    "package_validation": "PASS: project governance, installed upstream validator, pinned upstream validator and standard packager",
+    "packaged_cleanroom": "PASS: extracted upstream artifact produced two matching clean-room runs and preserved failure boundaries",
+    "reference_integrity": "PASS: all package Markdown links exist; canonical runtime/authority dependencies are explicitly identified as external repository resources"
+  },
+  "authority_boundary": "IPR-0220; no curriculum admission or neural updates",
+  "cleanroom": {
+    "compared": {
+      "conformance": "d32c5c2a3d9c65f6e9eff479d50c8fd91073f353303a03e14c79741bf0fb1777",
+      "core_manifest": "73589bde9ee7fd8fbed819844dc27a97792374a81d7ea688f7d90e7abb5a95d8",
+      "core_rdf": "a29c50cf030ec2c55407102eead72a75ff332ff6574c4ceba564fffcebd1ea6e",
+      "coverage": "672a70f220f33dc4920e002758462c436756d5339d89e6495a3d27ebb5007e8f",
+      "csv_and_fixture_receipt": {
+        "_data/csv/affix_degrees.csv": "64b600f2bf62e83a21a409f642fb8dea8d6e0a51881c32575d8085fe1f60e8db",
+        "_data/csv/allomorph_rules.csv": "c053d0c6dce878bacb6ccb1f49f4cd6a8be7dd9185d02bb7992ac60f7def051d",
+        "_data/csv/bilqis_ithkuil_crosswalk.csv": "0f6ed046d57e94103d92f573d2f8a0a181487f2e06808b78e797bf3288595930",
+        "_data/csv/bilqis_semantic_bridges.csv": "f939d9eae462c8db38b76faa0161034055aadf412cc3b59f145ec5e8287d0d07",
+        "_data/csv/composition_components.csv": "8e7faf9deaed5e8e8d590d4a1f4a239188dd852333629de4c1e11a26e9c4508a",
+        "_data/csv/grammatical_categories.csv": "0fac7e01c2df1e6caecc4b5d315a0b0d76d6d7f38484e940a048d6b3aeeb4cb8",
+        "_data/csv/lexicon_root_evidence.csv": "ed791eab5c912c4b1c10f683403ae2a73443fd3ac25b8c2fc45108f0221100c5",
+        "_data/csv/lexicon_root_senses.csv": "d59772f3575cfb1698199474f8b951d92bc565274a3c8b58608a235e56214d07",
+        "_data/csv/lexicon_roots.csv": "2670341c1fea9e812753f5276bd3e5863155e5e2242f3664e666b25994af1789",
+        "_data/csv/morpheme_compositions.csv": "3f16cf1ce9bbb33d4d1fa065f4f902b59c394ebf43e19f0f447366676d3fe40d",
+        "_data/csv/morphemes_atomic.csv": "08e8862abf549d1e062dc8a6a624cc96b448f77172fed41059bc7efc478412ed",
+        "_data/csv/root_senses.csv": "f3d5be4afd5db022024dc88caa81627fc21ccd63b32b55ca411a241966ca5351",
+        "_data/csv/source_assertions.csv": "2b6d08ae3633c7431d508a1520be2ece89638dd51fd6d6417319fe81bb1cbd00",
+        "_data/csv/source_sections.csv": "875f676f4f42e8b2c7911d4dbb4bc59fa9e4498dcada3c59fd490b2496af4511",
+        "_data/csv/source_table_cells.csv": "7c052d5e4df64ce4f4c674ea6fad375815f1f636686837bad78441cdec59d47b",
+        "_data/csv/source_tables.csv": "4cdfe12e5333a49175fc15e68257116e77a1510290e873afae50fa6f669179e5",
+        "_data/csv/sources/fixture_frontier.json": "75399505ba9999a5f3ab304d124c05f741911f3fd785cb745bc7d0afd0929b96"
+      },
+      "csv_closure_sha256": "91245af0defaa9bc12638fb5be35b5293b36f8e4074d7ad672bad956bcf0cbe6",
+      "fixture_frontier_sha256": "3b367074f2e75bf6c9e8466982a05dde8d33a11d1ab6daccb965f41817addfbb",
+      "full_bundle": "d8f913499e9b1bced3f280ae3d1451ad9bbc7dc4d5a644ffdf23af6937824033",
+      "full_rdf": "e6c56fd5cb0a3da3c2eb23d0dad499ad7210e5211e98b78367e000a4edf91762",
+      "gates": [
+        {
+          "evidence": {
+            "build_status": "partial",
+            "canonical_rdf": {
+              "sha256": "e6c56fd5cb0a3da3c2eb23d0dad499ad7210e5211e98b78367e000a4edf91762",
+              "triple_count": 928
+            }
+          },
+          "gate": "coverage",
+          "status": "passed",
+          "version": "1.0.0"
+        },
+        {
+          "evidence": {
+            "accounted_rows": 142,
+            "complete": true,
+            "dispositions": {
+              "EMITTED": 110,
+              "HELD": 31,
+              "IR_ONLY": 1,
+              "REJECTED": 0,
+              "UNSUPPORTED": 0
+            },
+            "domain_rows": {
+              "atomic": 68,
+              "lexicon": 8,
+              "residue": 66
+            },
+            "schema": "bilqis.skos.no-omission/v1",
+            "source_rows": 142
+          },
+          "gate": "no-omission",
+          "status": "passed",
+          "version": "1.0.0"
+        },
+        {
+          "evidence": {
+            "after_sha256": "e6c56fd5cb0a3da3c2eb23d0dad499ad7210e5211e98b78367e000a4edf91762",
+            "after_triples": 928,
+            "before_sha256": "e6c56fd5cb0a3da3c2eb23d0dad499ad7210e5211e98b78367e000a4edf91762",
+            "before_triples": 928,
+            "equal": true,
+            "first_added": null,
+            "first_removed": null,
+            "scenario": "independent-build"
+          },
+          "gate": "determinism",
+          "status": "passed",
+          "version": "1.0.0"
+        },
+        {
+          "evidence": {
+            "canonical_sha256": "e6c56fd5cb0a3da3c2eb23d0dad499ad7210e5211e98b78367e000a4edf91762",
+            "conforms": true,
+            "schema": "bilqis.skos.shacl-report/v1",
+            "shapes_sha256": "a69d3d99e55898df36c618f2a006eb70b27050ac74e72f0e8cf244fb2e77f04f",
+            "triple_count": 928,
+            "violations": []
+          },
+          "gate": "shacl",
+          "status": "passed",
+          "version": "1.0.0"
+        }
+      ],
+      "held_ledger": "474962c1dc05a2e593a5b32f4b8709e7c246e89aeddd9dcb896d10ea96c444aa",
+      "source_input": {
+        "configuration_excerpt_sha256": "60f5655e5115960c4bddb325da454a997dbe9e6a5a838d87e532041d8c2edbc2",
+        "descriptor_sha256": "a30b6a8190d667303e32063410517e1075ea7ce825695d8a4c964ab4dc114f2b",
+        "excerpt_sha256": "05b81b70251b313b20aa702b6fb5ff71e533a544434150c427fab9ad4f2078cf"
+      }
+    },
+    "dependencies": {
+      "lxml": "6.1.3",
+      "pyshacl": "0.40.1",
+      "rdflib": "7.6.0"
+    },
+    "differences": [],
+    "excluded_operational_fields": [
+      "repo_root",
+      "python",
+      "output_root",
+      "csv_root",
+      "frontier_path",
+      "artifact paths",
+      "run_identity",
+      "source_stage.result_sha256",
+      "command argv and log paths"
+    ],
+    "exclusion_reason": "Locations and their derived orchestration identities vary; every semantic artifact byte and manifest is compared.",
+    "fixture_only": true,
+    "independent_runtime_workspaces": 2,
+    "python_version": "3.14.4 (main, Apr  7 2026, 13:13:20) [Clang 16.0.0 (clang-1600.0.26.6)]",
+    "schema": "bilqis.ithkuil.cleanroom-proof/v1",
+    "shared_generated_cache": false,
+    "status": "passed"
+  },
+  "commands": [
+    "<python> -B scripts/package_ithkuil_skill.py --repo <repo> --output-root <new-package-root> --governance-validator <project-validator> --upstream-validator <installed-upstream-validator> --skill-creator <pinned-upstream-creator>",
+    "<python> -B <extracted-skill>/scripts/cleanroom.py --repo <repo> --python <python> --output-root <new-proof-root> --verify-failures",
+    "lib.ithkuil.tests.ingestion_graph_proof.prove_graphs(<packaged-proof>, <python>, host=<configured-tunnel-host>, port=<verified-tunnel-port>)",
+    "<python> -B -m unittest discover -s lib/ithkuil/tests -p test_ingestion_*.py -v",
+    "<python> -B -m unittest discover -s lib/ithkuil/tests -p test_skos_*.py -v",
+    "npm run quality:check; npm run abi:verify; <python> -B scripts/check_semantic_boundaries.py; git diff --check"
+  ],
+  "failure_isolation": {
+    "fixture_only": true,
+    "prior_authoritative_artifacts_unchanged": true,
+    "required_graph": "FAILED",
+    "required_graph_failed_stage": "runtime_preflight",
+    "schema": "bilqis.ithkuil.fixture-failure-proof/v1",
+    "semantic_failed_gates": [
+      "no-omission"
+    ],
+    "semantic_retry": "SUCCEEDED",
+    "source": "BLOCKED",
+    "source_error": "FIXTURE_EXCERPT_INVALID:FIXTURE_INPUT_PIN_MISMATCH:source.html",
+    "status": "passed"
+  },
+  "incident_context": "Prior #91 PM-2026-10-26-002, RC-133, PAT-094; no new incident discovered in packaging.",
+  "issue": 92,
+  "limits": [
+    "Bounded #91 fixture only; full-corpus release is owned by #93-#97.",
+    "Fixture coverage remains partial; 110 emitted, 31 held, 1 IR-only among 142 full-domain rows.",
+    "Package requires explicitly selected canonical repository and interpreter; no compiler is bundled.",
+    "Live graph proof retained its two isolated test namespaces; no graphs were deleted."
+  ],
+  "live_graph": {
+    "compared_receipt": {
+      "canonical_rdf_sha256": "e6c56fd5cb0a3da3c2eb23d0dad499ad7210e5211e98b78367e000a4edf91762",
+      "coverage_status": "partial",
+      "edges_by_type": {
+        "RDF": 928
+      },
+      "importer": {
+        "dirty_source": false,
+        "git_commit": "effa5dc8aa3c1a7a1eda02fb9a7f66b8a5690463",
+        "implementation_sha256": "03302b885ff313d077abbb84f4d88e7bec0cac942d39385211573b371fbbe3cb",
+        "version": "2.0.0"
+      },
+      "indexes": [
+        {
+          "label": "RdfTerm",
+          "present": true,
+          "property": "iri"
+        },
+        {
+          "label": "RdfTerm",
+          "present": true,
+          "property": "lexical"
+        },
+        {
+          "label": "RdfTerm",
+          "present": true,
+          "property": "datatype"
+        }
+      ],
+      "nodes_by_label": {
+        "Collection": 6,
+        "Concept": 32,
+        "ConceptScheme": 1,
+        "Literal": 427,
+        "RdfTerm": 587,
+        "Resource": 160
+      },
+      "owner": "codex_ingestion_91",
+      "projection_version": "1.0.0",
+      "schema": "bilqis.skos.materialization/v1",
+      "semantic_coverage": {
+        "ref": "coverage.json",
+        "sha256": "672a70f220f33dc4920e002758462c436756d5339d89e6495a3d27ebb5007e8f"
+      },
+      "smoke_suite": {
+        "canonical_sha256": "e6c56fd5cb0a3da3c2eb23d0dad499ad7210e5211e98b78367e000a4edf91762",
+        "cases": [
+          {
+            "actual": [
+              [
+                "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFF"
+              ]
+            ],
+            "expected": [
+              [
+                "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFF"
+              ]
+            ],
+            "id": "grammar-code",
+            "passed": true
+          },
+          {
+            "actual": [
+              [
+                "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFF"
+              ]
+            ],
+            "expected": [
+              [
+                "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFF"
+              ]
+            ],
+            "id": "utf8-notation",
+            "passed": true
+          },
+          {
+            "actual": [
+              [
+                "MFF",
+                "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code"
+              ],
+              [
+                "\u1e93",
+                "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil"
+              ]
+            ],
+            "expected": [
+              [
+                "MFF",
+                "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code"
+              ],
+              [
+                "\u1e93",
+                "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil"
+              ]
+            ],
+            "id": "concept-notations",
+            "passed": true
+          },
+          {
+            "actual": [
+              [
+                "https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil"
+              ]
+            ],
+            "expected": [
+              [
+                "https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil"
+              ]
+            ],
+            "id": "concept-schemes",
+            "passed": true
+          },
+          {
+            "actual": [
+              [
+                "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/VX_TYPE_1/T1.D6"
+              ],
+              [
+                "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/VX_TYPE_3/T3.D1"
+              ],
+              [
+                "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/VX_TYPE_3/T3.D2"
+              ]
+            ],
+            "expected": [
+              [
+                "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/VX_TYPE_1/T1.D6"
+              ],
+              [
+                "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/VX_TYPE_3/T3.D1"
+              ],
+              [
+                "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/VX_TYPE_3/T3.D2"
+              ]
+            ],
+            "id": "family-members",
+            "passed": true
+          },
+          {
+            "actual": [],
+            "expected": [],
+            "id": "semantic-neighbor",
+            "passed": true
+          },
+          {
+            "actual": [],
+            "expected": [],
+            "id": "admitted-cross-scheme",
+            "passed": true
+          },
+          {
+            "actual": [],
+            "expected": [],
+            "id": "held-exact-excluded",
+            "passed": true
+          },
+          {
+            "actual": [
+              [
+                "https://github.com/Entif-AI/Bilqis-MLX/source/locus/9f390b250fdced5e651cb9c136d2b4c1b20947f3cb5b6ce15c70f2e549b4dfba",
+                "source=NI-WEB-CH03;section=NI-WEB-CH03:3.1;table=NI-WEB-CH03:T003;line=3239",
+                "https://www.ithkuil.net/newithkuil_03_morphology.htm",
+                "NI-WEB-CH03"
+              ]
+            ],
+            "expected": [
+              [
+                "https://github.com/Entif-AI/Bilqis-MLX/source/locus/9f390b250fdced5e651cb9c136d2b4c1b20947f3cb5b6ce15c70f2e549b4dfba",
+                "source=NI-WEB-CH03;section=NI-WEB-CH03:3.1;table=NI-WEB-CH03:T003;line=3239",
+                "https://www.ithkuil.net/newithkuil_03_morphology.htm",
+                "NI-WEB-CH03"
+              ]
+            ],
+            "id": "public-source",
+            "passed": true
+          },
+          {
+            "actual": [
+              [
+                "https://github.com/Entif-AI/Bilqis-MLX/id/sense/NI-LEXICON-CURRICULUM/LEXROOT-0028a4ec750897/STEM%203/BSC",
+                "STEM 3",
+                "BSC"
+              ]
+            ],
+            "expected": [
+              [
+                "https://github.com/Entif-AI/Bilqis-MLX/id/sense/NI-LEXICON-CURRICULUM/LEXROOT-0028a4ec750897/STEM%203/BSC",
+                "STEM 3",
+                "BSC"
+              ]
+            ],
+            "id": "root-sense-dimensions",
+            "passed": true
+          },
+          {
+            "actual": [],
+            "expected": [],
+            "id": "shared-label-is-candidates",
+            "passed": true
+          }
+        ],
+        "passed": true,
+        "schema": "bilqis.skos.smoke-report/v1",
+        "suite_sha256": "9ea964c8e258c369cc90127ffde9fac24346759974b42e6ecad1ff93c3a9e6c4",
+        "suite_version": "1.0.0"
+      },
+      "status": "complete",
+      "version": "1.0.0"
+    },
+    "differences": [],
+    "excluded_fields": [
+      "timestamp",
+      "graph"
+    ],
+    "failure_injection": "wrong smoke expectation fails at materialize_receipt; Akasha skipped; good-suite retry succeeds",
+    "fixture_only": true,
+    "foreign_boundary": "blocked at reset_plan; node census unchanged",
+    "graphs": [
+      "bilqis_skos_91_f25b1875043c",
+      "bilqis_skos_91_9f460b55723f"
+    ],
+    "prior_authoritative_artifacts_unchanged": true,
+    "schema": "bilqis.ithkuil.fixture-graph-proof/v1",
+    "status": "passed"
+  },
+  "package": "ingestion-92-package.json",
+  "schema": "bilqis.ithkuil.issue92-evidence/v1",
+  "source_parent": "effa5dc8aa3c1a7a1eda02fb9a7f66b8a5690463",
+  "validators": {
+    "installed_upstream_skill": {
+      "sha256": "ee6dba90f44d37171c5a6edb8095979c54919ff6822c1a907afca2e78c48738c",
+      "status": "passed"
+    },
+    "project_governance": {
+      "sha256": "3dc2fd37fcfeaa059d41464ca28c1ec4870bb8132c12a683576c6ca69483eab6",
+      "status": "passed"
+    },
+    "upstream_packaging": "passed; exact source commit and file fingerprints in ingestion-92-package.json"
+  },
+  "verification": {
+    "abi": "structural check passed; independent expected fingerprint unavailable locally, so advisory; remote CI owns independent enforcement",
+    "diff_check": "passed",
+    "ingestion": {
+      "failures": 0,
+      "skips": 2,
+      "tests": 27
+    },
+    "package_tests": {
+      "failures": 0,
+      "skips": 0,
+      "tests": 3
+    },
+    "quality": "passed, zero new baseline-relative findings",
+    "semantic_boundaries": "passed",
+    "skos": {
+      "failures": 0,
+      "skips": 12,
+      "tests": 472
+    }
+  }
+}

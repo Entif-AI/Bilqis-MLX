@@ -1,0 +1,10 @@
+{
+  "canonical_algorithm": "bilqis-rdflib-canonical-ntriples/v1",
+  "canonical_byte_count": 30834,
+  "canonical_sha256": "a415febbec9e0b53a6cd251d99853b8c23ac53a0e17af986a1e19a1178ae5b42",
+  "concept_count": 20,
+  "fixture_schema": "bilqis.skos.configuration-expected/v1",
+  "held_issue_count": 0,
+  "rdflib_version": "7.6.0",
+  "triple_count": 169
+}

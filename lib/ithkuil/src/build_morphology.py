@@ -106,7 +106,9 @@ def surface_variants(value: str) -> list[tuple[str, str, str]]:
 
 
 class Builder:
-    def __init__(self) -> None:
+    def __init__(self, *, data_root: Path = DATA, raw_root: Path = RAW) -> None:
+        self.data_root = Path(data_root)
+        self.raw_root = Path(raw_root)
         self.manifest = self._load_manifest()
         self.source_by_id = {row["source_id"]: row for row in self.manifest}
         self.trees: dict[str, html.HtmlElement] = {}
@@ -126,12 +128,12 @@ class Builder:
         self.vx_by_degree_type: dict[tuple[int, int], list[str]] = defaultdict(list)
 
     def _load_manifest(self) -> list[dict[str, str]]:
-        with MANIFEST.open(newline="", encoding="utf-8") as handle:
+        with (self.data_root / "sources/source_manifest.csv").open(newline="", encoding="utf-8") as handle:
             return list(csv.DictReader(handle))
 
     def _load_sections(self) -> dict[str, list[dict[str, str]]]:
         out: dict[str, list[dict[str, str]]] = defaultdict(list)
-        with (DATA / "source_sections.csv").open(newline="", encoding="utf-8") as handle:
+        with (self.data_root / "source_sections.csv").open(newline="", encoding="utf-8") as handle:
             for row in csv.DictReader(handle):
                 out[row["source_id"]].append(row)
         for rows in out.values():
@@ -139,13 +141,13 @@ class Builder:
         return out
 
     def _load_table_loci(self) -> dict[str, dict[str, str]]:
-        with (DATA / "source_tables.csv").open(newline="", encoding="utf-8") as handle:
+        with (self.data_root / "source_tables.csv").open(newline="", encoding="utf-8") as handle:
             return {row["table_id"]: row for row in csv.DictReader(handle)}
 
     def tree(self, source_id: str):
         if source_id not in self.trees:
             local_name = self.source_by_id[source_id]["local_name"]
-            self.trees[source_id] = html.parse(str(RAW / local_name))
+            self.trees[source_id] = html.parse(str(self.raw_root / local_name))
         return self.trees[source_id]
 
     def table(self, source_id: str, table_index: int):

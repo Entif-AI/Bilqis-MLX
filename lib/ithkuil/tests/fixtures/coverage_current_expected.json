@@ -1,0 +1,149 @@
+{
+  "schema": "bilqis.skos.coverage-current-fixture/v1",
+  "build_status": "partial",
+  "canonical_rdf": {
+    "sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e",
+    "triple_count": 130173
+  },
+  "profile_sha256": "7945757f24d5104d52a0880bd6694c7be453ba225e0c7dc73de8b596bbcbb821",
+  "totals": {
+    "source_rows": 25692,
+    "dispositions": {
+      "EMITTED": 15152,
+      "HELD": 1051,
+      "REJECTED": 1,
+      "UNSUPPORTED": 0,
+      "IR_ONLY": 9488
+    }
+  },
+  "inputs": {
+    "atomic": "02a833abc5a116bd651bf50da3c94ef995610612c94c09d31f26cd7d8a6eb540",
+    "lexicon": "4bdc52e672ce3f98a9d27c0392f31600a861dc32be982f3332777454cac6c5df",
+    "mapping": "2e55e16fe287afa36707cc6c6c84901b33d6d8e26673a1cc6af12c819c6658e9",
+    "residue": "198cc83edc44d2804016193ea97f85d269e5ce133cd0b9dd2b4ae343eafae3dd"
+  },
+  "domains": {
+    "atomic": {
+      "source_rows": 772,
+      "dispositions": {
+        "EMITTED": 272,
+        "HELD": 500,
+        "REJECTED": 0,
+        "UNSUPPORTED": 0,
+        "IR_ONLY": 0
+      },
+      "semantic_counts": {
+        "concepts": 104,
+        "roots": 157,
+        "senses": 0,
+        "mappings": 0,
+        "compositions": 0,
+        "allomorphs": 0
+      },
+      "notation_counts": {
+        "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code": 104,
+        "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil": 272
+      },
+      "frontier_debt": []
+    },
+    "lexicon": {
+      "source_rows": 18306,
+      "dispositions": {
+        "EMITTED": 8818,
+        "HELD": 0,
+        "REJECTED": 0,
+        "UNSUPPORTED": 0,
+        "IR_ONLY": 9488
+      },
+      "semantic_counts": {
+        "concepts": 0,
+        "roots": 5810,
+        "senses": 3008,
+        "mappings": 0,
+        "compositions": 0,
+        "allomorphs": 0
+      },
+      "notation_counts": {
+        "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil": 5810
+      },
+      "frontier_debt": [
+        {
+          "code": "LEXICON_EXTRACTION_DEBT_CONFLICT",
+          "count": 43,
+          "blocking": false
+        },
+        {
+          "code": "LEXICON_EXTRACTION_DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+          "count": 8684,
+          "blocking": false
+        },
+        {
+          "code": "LEXICON_EXTRACTION_DEBT_UNSUPPORTED_SHAPE",
+          "count": 191,
+          "blocking": false
+        },
+        {
+          "code": "LEXICON_OUTSIDE_TRACKED_FRONTIER",
+          "count": 1,
+          "blocking": false
+        },
+        {
+          "code": "LEXICON_ROOTS_ZERO_PARSED_SENSES",
+          "count": 5097,
+          "blocking": false
+        }
+      ],
+      "corrected_graph_sha256": "df21d927c97b458ff72e0910d5d120edd32dc14dd3f2273dda75e300c2308731",
+      "corrected_graph_triples": 73946,
+      "corrected_receipt_sha256": "08fde223950e8d0fb6e3eb64946cab78a8b81d1d93df741cbdcf10682f0b61c1"
+    },
+    "residue": {
+      "source_rows": 6062,
+      "dispositions": {
+        "EMITTED": 6062,
+        "HELD": 0,
+        "REJECTED": 0,
+        "UNSUPPORTED": 0,
+        "IR_ONLY": 0
+      },
+      "semantic_counts": {
+        "concepts": 0,
+        "roots": 0,
+        "senses": 0,
+        "mappings": 0,
+        "compositions": 1917,
+        "allomorphs": 19
+      },
+      "notation_counts": {},
+      "frontier_debt": [],
+      "graph_sha256": "f9aaa79e9839c68b1973546002ce8674d70836c9873a5b0cf7c2bbe6365f8bee",
+      "graph_triples": 54271
+    },
+    "mapping": {
+      "source_rows": 552,
+      "dispositions": {
+        "EMITTED": 0,
+        "HELD": 551,
+        "REJECTED": 1,
+        "UNSUPPORTED": 0,
+        "IR_ONLY": 0
+      },
+      "semantic_counts": {
+        "concepts": 0,
+        "roots": 0,
+        "senses": 0,
+        "mappings": 0,
+        "compositions": 0,
+        "allomorphs": 0
+      },
+      "notation_counts": {},
+      "frontier_debt": [
+        {
+          "code": "MAPPING_SEMANTIC_REVIEW_REQUIRED",
+          "count": 552,
+          "blocking": false
+        }
+      ]
+    }
+  }
+}

@@ -1,5 +1,21 @@
 # Bilqis MLX | Agent operating rules
 
+## BAMF-0.2 unified-base contract — 2026-10-28
+
+The BAMF workstreams use this branch as their common base. Its executable authority
+is the current Factory branch `codex/337-replay-349-20261026`. Preserve that runtime,
+trainer, scheduler, teacher, retention, admission, and controller logic unless the
+active BAMF issue explicitly owns a change to it. Do not merge or copy newer `main`
+controller code into this branch simply to catch up with `main`.
+
+The BAMF architecture, including `ADR-BAMF02-004`, and issue hierarchy live in
+`docs/architecture/BAMF_0_2.md` and `docs/tasks/bamf-0.2/`. The imported New Ithkuil/SKOS source lives under
+`lib/ithkuil/` with its ingestion Skill and fingerprinted test policy. Treat those
+assets as source/planning inputs until a BAMF implementation issue wires them into
+the executable Factory. Current Prometheus-specific operating rules below remain
+binding for the existing student; BAMF successor work must express new behavior in
+grade-neutral Factory terms rather than hard-code a future grade letter.
+
 ## CONTROLLING USER CORRECTION — 2026-10-27: no developmental generalization
 
 Bilqis is still a tiny developmental student learning a narrow semantic inventory.

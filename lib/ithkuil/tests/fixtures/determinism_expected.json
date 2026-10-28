@@ -1,0 +1,14 @@
+{
+  "schema": "bilqis.skos.determinism-fixture/v1",
+  "current_core": {
+    "canonical_sha256": "49aaf11d3d2a7d4dd758be022e8a82ce66804ef6b03a2d210b8289ca7d263d60",
+    "triple_count": 67869
+  },
+  "unicode_fixture": {
+    "lexical": "Č / ∅"
+  },
+  "mutation_delta": {
+    "removed": "<urn:determinism:s> <urn:determinism:p> \"old\" .",
+    "added": "<urn:determinism:s> <urn:determinism:p> \"new\" ."
+  }
+}

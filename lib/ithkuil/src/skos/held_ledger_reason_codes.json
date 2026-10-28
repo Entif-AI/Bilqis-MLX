@@ -1,0 +1,49 @@
+{
+  "schema_version": "bilqis.skos.held-ledger-reasons/v1",
+  "ledger_owned": {
+    "ACCOUNTING_CONFLICT": "One source row received incompatible or duplicate outcomes; the ledger is blocking.",
+    "DUPLICATE_ACCOUNTING_REF": "Two closure rows resolve to the same registered table/key; the ledger is blocking.",
+    "DUPLICATE_EXPLICIT_DISPOSITION": "A future owner supplied more than one disposition for the same row; the ledger is blocking.",
+    "EMITTED_CORE_SKOS": "The row contributed to a validated emitted core semantic resource.",
+    "EXPLICIT_REF_NOT_IN_CLOSURE": "A future owner supplied a disposition for a row outside the validated closure; the ledger is blocking.",
+    "HELD_RESOURCE_IN_STRONG_GRAPH": "A held/rejected/unsupported semantic identity still appears as a strong RDF subject or collection member; the ledger is blocking.",
+    "INVALID_PRIMARY_EXPLICIT_STATUS": "A future owner tried to mark a primary semantic row EMITTED or IR_ONLY without builder proof; the ledger is blocking.",
+    "INVALID_EMITTED_RESOURCE": "BuildResult.emitted names an unresolved resource or lacks its required strong RDF type; the ledger is blocking.",
+    "INVALID_EXPLICIT_STATUS": "A future owner supplied a disposition outside the versioned status vocabulary; the ledger is blocking.",
+    "IR_ONLY_SUPPORT": "The row is supporting provenance/IR and has no standalone semantic resource in this compiler stage.",
+    "MISSING_SEMANTIC_OUTCOME": "An in-scope semantic row received no outcome; the ledger is blocking.",
+    "NON_CORE_COMPOSITION_SEMANTICS": "morpheme_compositions is explicit non-core unsupported debt for this compiler stage.",
+    "OUT_OF_SCOPE_RECORD_REF": "An upstream resolver/builder issue refers to a row outside the validated closure; the ledger is blocking.",
+    "PROFILE_DIGEST_REQUIRED": "A profile digest is required to interpret the ledger deterministically; the ledger is blocking.",
+    "PROFILE_VERSION_REQUIRED": "A profile version is required to interpret the ledger deterministically; the ledger is blocking.",
+    "DUPLICATE_RESOLUTION_IRI": "The resolution contains more than one resource object for one canonical IRI; the ledger is blocking.",
+    "RESOLUTION_REF_MULTIPLE_IDENTITIES": "One source row is attached to multiple resolved semantic identities; the ledger is blocking.",
+    "UNACCOUNTED_STRONG_SEMANTIC_SUBJECT": "The strong graph contains a Concept or root Resource subject not named in BuildResult.emitted; the ledger is blocking.",
+    "UNSAFE_LEDGER_IDENTITY_FIELD": "A stable identity field contains a URL/host-path form that cannot be emitted through the public ledger serializer; the value is preserved internally and serialization is rejected.",
+    "UNKNOWN_MANIFEST_TABLE": "The closure contains a future table without an explicit accounting policy; the ledger is blocking."
+  },
+  "initial_semantic_reasons": {
+    "CONFLICTING_SEMANTIC_MEANING": "Conflicting definitions/meaning for one identity.",
+    "INVALID_TARGET_REFERENCE": "Future owner rejected an invalid semantic target.",
+    "IRI_COLLISION": "Distinct semantic identities collide on one IRI.",
+    "NO_PUBLIC_SOURCE_LOCUS": "No permissible public source locus supports strong RDF emission.",
+    "NOTATION_COLLISION": "Notation collision within the governing scheme.",
+    "SOURCE_IDENTITY_CONFLICT": "Source identity/definition conflict.",
+    "UNADMITTED_MAPPING": "Mapping state is not admitted for strong SKOS mapping emission.",
+    "UNKNOWN_ATOM_SHAPE": "Unknown source category/atom shape.",
+    "UNSUPPORTED_RELATION": "Relation is unsupported by the current semantic profile."
+  },
+  "upstream_passthrough_policy": "Stable reason codes produced by the identity resolver, source projector, and core builder are preserved verbatim in row entries. Multiple reasons for one row are retained in related_reason_codes while the row receives exactly one disposition.",
+  "current_upstream_examples": [
+    "CONFLICTING_SEMANTIC_MEANING",
+    "IRI_COLLISION",
+    "NO_PUBLIC_SOURCE_LOCUS",
+    "NOTATION_COLLISION",
+    "SENSE_ROOT_NOT_RESOLVED",
+    "SOURCE_IDENTITY_CONFLICT",
+    "SOURCE_TEXT_TOO_LONG",
+    "UNKNOWN_ATOM_SHAPE",
+    "UNKNOWN_SOURCE_FAMILY"
+  ],
+  "serialization_boundary": "table/key/source-ref/semantic-key identity fields are preserved exactly and never redacted; unsafe URL/host-path forms block and the public serializer rejects them. Canonical project semantic IRIs remain explicit. Free-text explanations, group issue details, and diagnostic details redact unsafe URL/local host-path text."
+}

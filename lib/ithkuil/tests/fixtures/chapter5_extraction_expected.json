@@ -1,0 +1,30 @@
+{
+  "source": {
+    "sha256": "c48b1a83f541c3728b5d2685ec186b64b73b00c417ded234b30c40361e36ef30",
+    "canonical_page_start": 245,
+    "page_count": 16,
+    "canonical_page_text_variant_pages": ["2", "3", "4", "5", "7", "9", "11", "14", "15", "16"],
+    "min_text_similarity": 0.9959432048681541
+  },
+  "counts": {
+    "roots": 257,
+    "senses": 32,
+    "unique_sense_coordinates": 32,
+    "evidence": 531,
+    "roots_without_senses": 246,
+    "source_observations": 502,
+    "parsed_sense_observations": 32
+  },
+  "dispositions": {
+    "DEBT_CONFLICT": 8,
+    "DEBT_INSUFFICIENT_SENSE_EVIDENCE": 430,
+    "DEBT_UNSUPPORTED_SHAPE": 32,
+    "PARSED": 32
+  },
+  "output_sha256": {
+    "lexicon_root_evidence.csv": "515bc3e7276bf05b9a8468fe93057541249e461d973507ed5a35dcfefaf73f61",
+    "lexicon_root_senses.csv": "9f66af4a89a1204e50978be13037c56bd899119d1c8f99dc8652b6aa58e1e862",
+    "lexicon_roots.csv": "7975d40bc66240df938e34dfbb361f57f48627eca0efcfec6bde9aa0975c1a2e"
+  },
+  "accounting_sha256": "27ffdc66a553b228bd7c66ae8d0066060eac5d5f39d896e4276c16dbe32e3930"
+}

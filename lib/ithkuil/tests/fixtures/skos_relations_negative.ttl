@@ -1,0 +1,7 @@
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix ex: <urn:fixture:> .
+ex:family skos:broader ex:member .
+ex:allomorph skos:related ex:replacement .
+ex:composition skos:narrower ex:component .
+ex:root skos:broader ex:sense .
+<urn:source:ALLO-08d9bb00e7a0dd> skos:related <urn:negative:allomorph-is-not-related> .

@@ -1,0 +1,37 @@
+{
+  "schema": "bilqis.skos.falkor-projection/v1",
+  "version": "1.0.0",
+  "canonical_sha256": "78572b996881af69d2c41d7262d0b088bc397ab9b98336e18f11882789cf4c00",
+  "triple_count": 1,
+  "nodes": [
+    {
+      "key": "88527b50fd83ac8cd6aba1a1b7ffaa10cf39fbad5322a7f25e4b65f916e47229",
+      "kind": "iri",
+      "iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/TEST/A",
+      "labels": [
+        "RdfTerm",
+        "Resource"
+      ]
+    },
+    {
+      "key": "f1489ea198974e8fef416c0f834ce823808f2173552b9d04244cbff83ba39b78",
+      "kind": "literal",
+      "lexical": "ẓ",
+      "datatype": "urn:notation",
+      "language": "",
+      "labels": [
+        "Literal",
+        "RdfTerm"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "key": "d91b5e040b7c25ac50484097bdcb9c67b1bb4bdcf380dc20f45cf4629799a73e",
+      "source": "88527b50fd83ac8cd6aba1a1b7ffaa10cf39fbad5322a7f25e4b65f916e47229",
+      "target": "f1489ea198974e8fef416c0f834ce823808f2173552b9d04244cbff83ba39b78",
+      "predicate_iri": "http://www.w3.org/2004/02/skos/core#notation",
+      "type": "RDF"
+    }
+  ]
+}

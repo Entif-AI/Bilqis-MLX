@@ -1,0 +1,80 @@
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<https://github.com/Entif-AI/Bilqis-MLX/id/collection/fixture-family> a skos:Collection ;
+    dcterms:source <https://github.com/Entif-AI/Bilqis-MLX/source/locus/collection/fixture-family-fixture> ;
+    skos:member <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/TEST/A>,
+        <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/TEST/B> .
+
+<https://github.com/Entif-AI/Bilqis-MLX/id/ordered_collection/fixture-order> a skos:OrderedCollection ;
+    dcterms:source <https://github.com/Entif-AI/Bilqis-MLX/source/locus/ordered_collection/fixture-order-fixture> ;
+    skos:memberList ( <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/TEST/A> <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/TEST/B> ) .
+
+<https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-WEB-CH02/ROOT-FIXTURE> a rdfs:Resource ;
+    dcterms:source <https://github.com/Entif-AI/Bilqis-MLX/source/locus/root/NI-WEB-CH02/ROOT-FIXTURE-fixture> ;
+    skos:notation "-Č-"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil> ;
+    skos:prefLabel "root fixture"@en .
+
+<https://github.com/Entif-AI/Bilqis-MLX/id/sense/NI-WEB-CH02/ROOT-FIXTURE/STEM%201/BSC> a skos:Concept ;
+    dcterms:source <https://github.com/Entif-AI/Bilqis-MLX/source/locus/sense/NI-WEB-CH02/ROOT-FIXTURE/STEM%201/BSC-fixture> ;
+    skos:definition "source-defined meaning"@en ;
+    skos:inScheme <https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil> .
+
+<https://github.com/Entif-AI/Bilqis-MLX/id/scheme/fixture-secondary> a skos:ConceptScheme ;
+    dcterms:source <https://github.com/Entif-AI/Bilqis-MLX/source/locus/scheme/fixture-secondary-fixture> .
+
+<https://github.com/Entif-AI/Bilqis-MLX/source/locus/collection/fixture-family-fixture> dcterms:bibliographicCitation "Public fixture citation." ;
+    dcterms:identifier "fixture-locus" ;
+    dcterms:source <https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm> .
+
+<https://github.com/Entif-AI/Bilqis-MLX/source/locus/grammar/TEST/A-fixture> dcterms:bibliographicCitation "Public fixture citation." ;
+    dcterms:identifier "fixture-locus" ;
+    dcterms:source <https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm> .
+
+<https://github.com/Entif-AI/Bilqis-MLX/source/locus/grammar/TEST/B-fixture> dcterms:bibliographicCitation "Public fixture citation." ;
+    dcterms:identifier "fixture-locus" ;
+    dcterms:source <https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm> .
+
+<https://github.com/Entif-AI/Bilqis-MLX/source/locus/ordered_collection/fixture-order-fixture> dcterms:bibliographicCitation "Public fixture citation." ;
+    dcterms:identifier "fixture-locus" ;
+    dcterms:source <https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm> .
+
+<https://github.com/Entif-AI/Bilqis-MLX/source/locus/root/NI-WEB-CH02/ROOT-FIXTURE-fixture> dcterms:bibliographicCitation "Public fixture citation." ;
+    dcterms:identifier "fixture-locus" ;
+    dcterms:source <https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm> .
+
+<https://github.com/Entif-AI/Bilqis-MLX/source/locus/scheme/fixture-secondary-fixture> dcterms:bibliographicCitation "Public fixture citation." ;
+    dcterms:identifier "fixture-locus" ;
+    dcterms:source <https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm> .
+
+<https://github.com/Entif-AI/Bilqis-MLX/source/locus/scheme/new-ithkuil-fixture> dcterms:bibliographicCitation "Public fixture citation." ;
+    dcterms:identifier "fixture-locus" ;
+    dcterms:source <https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm> .
+
+<https://github.com/Entif-AI/Bilqis-MLX/source/locus/sense/NI-WEB-CH02/ROOT-FIXTURE/STEM%201/BSC-fixture> dcterms:bibliographicCitation "Public fixture citation." ;
+    dcterms:identifier "fixture-locus" ;
+    dcterms:source <https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm> .
+
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/TEST/A> a skos:Concept ;
+    dcterms:source <https://github.com/Entif-AI/Bilqis-MLX/source/locus/grammar/TEST/A-fixture> ;
+    skos:inScheme <https://github.com/Entif-AI/Bilqis-MLX/id/scheme/fixture-secondary>,
+        <https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil> ;
+    skos:notation "A"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code>,
+        "∅"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil> ;
+    skos:note "realization evidence"@en ;
+    skos:prefLabel "Alpha"@en .
+
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/TEST/B> a skos:Concept ;
+    dcterms:source <https://github.com/Entif-AI/Bilqis-MLX/source/locus/grammar/TEST/B-fixture> ;
+    skos:inScheme <https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil> ;
+    skos:notation "B"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code>,
+        "ẓ"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil> ;
+    skos:prefLabel "Beta"@en .
+
+<https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil> a skos:ConceptScheme ;
+    dcterms:source <https://github.com/Entif-AI/Bilqis-MLX/source/locus/scheme/new-ithkuil-fixture> .
+
+<https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm> dcterms:bibliographicCitation "New Ithkuil Chapter 2" ;
+    dcterms:identifier "NI-WEB-CH02" .

@@ -1,0 +1,2513 @@
+{
+  "aggregates": {
+    "affix": {
+      "conflicting_tables": 2,
+      "debt_by_reason": {
+        "partial_table_overlap": 3498,
+        "repeated_affix_identity": 2,
+        "unclassified_source_prose": 5962,
+        "unsupported_table_shape": 35
+      },
+      "parsed_cells": 8060,
+      "parsed_tables": 403,
+      "semantic_relationships_inferred": false,
+      "unsupported_observations": 9495,
+      "unsupported_tables": 35
+    },
+    "debt": {
+      "by_reason": {
+        "DEBT_CONFLICT": 43,
+        "DEBT_INSUFFICIENT_SENSE_EVIDENCE": 8757,
+        "DEBT_UNSUPPORTED_SHAPE": 339,
+        "chapter_0_toc_unparsed": 1,
+        "legacy_debt_not_measured": 2,
+        "partial_table_overlap": 3498,
+        "prose_and_semantic_exhaustiveness_unmeasured": 14,
+        "repeated_affix_identity": 2,
+        "roots_without_parsed_senses": 5097,
+        "roots_without_parsed_senses_in_source_receipt": 4898,
+        "unclassified_source_prose": 5962,
+        "unsupported_table_shape": 35
+      }
+    },
+    "grammar": {
+      "semantic_exhaustiveness_debt": 1,
+      "semantic_exhaustiveness_measured": false,
+      "structural_rows": {
+        "source_sections": 337,
+        "source_table_cells": 5397,
+        "source_tables": 324
+      }
+    },
+    "lexicon": {
+      "chapters": {
+        "0": {
+          "evidence": 0,
+          "roots": 0,
+          "roots_without_parsed_senses": 0,
+          "senses": 0
+        },
+        "1": {
+          "evidence": 11,
+          "roots": 39,
+          "roots_without_parsed_senses": 33,
+          "senses": 43
+        },
+        "2": {
+          "evidence": 139,
+          "roots": 464,
+          "roots_without_parsed_senses": 185,
+          "senses": 1572
+        },
+        "3": {
+          "evidence": 228,
+          "roots": 122,
+          "roots_without_parsed_senses": 94,
+          "senses": 100
+        },
+        "4": {
+          "evidence": 2475,
+          "roots": 719,
+          "roots_without_parsed_senses": 456,
+          "senses": 811
+        },
+        "5": {
+          "evidence": 531,
+          "roots": 250,
+          "roots_without_parsed_senses": 240,
+          "senses": 32
+        },
+        "6": {
+          "evidence": 1000,
+          "roots": 730,
+          "roots_without_parsed_senses": 636,
+          "senses": 334
+        },
+        "7": {
+          "evidence": 5104,
+          "roots": 3486,
+          "roots_without_parsed_senses": 3453,
+          "senses": 116
+        }
+      },
+      "evidence": 9488,
+      "roots": 5810,
+      "roots_without_parsed_senses": 5097,
+      "senses": 3008
+    },
+    "morphology": {
+      "affix_degrees": {
+        "count": 271,
+        "sha256": "dac386ab94a843802e5a1e3152f9502184e9c271fe8df5cd46b0957298c33133"
+      },
+      "allomorph_rules": {
+        "count": 19,
+        "sha256": "acb02ad7d6115647b6f9e01b71fb5374e7c3320f51e4a5e7057a648609eddacb"
+      },
+      "composition_components": {
+        "count": 3855,
+        "sha256": "0c50d8f3bbce7e8482db1dac93876bfb17b6c3bb21cf6c1147844ea9baa5f396"
+      },
+      "grammatical_categories": {
+        "count": 35,
+        "sha256": "c3a192c56e487517a9017314466327e861c4f87651b7dfa5a81390f7c1b968bd"
+      },
+      "morpheme_compositions": {
+        "count": 1917,
+        "sha256": "14da797dd47fa9c19de9b3ff1667c507473ea1cd9af1b3e2f87edc464a69721f"
+      },
+      "morphemes_atomic": {
+        "count": 772,
+        "sha256": "59da9b999405756e5b571f9454bfe27f0d323218dc05b92e40945189a7ffc628"
+      },
+      "root_senses": {
+        "count": 200,
+        "sha256": "b1df2a79fda71df00f06537182fee0283afe0a79060696ec71562e7b38528542"
+      },
+      "source_assertions": {
+        "count": 4709,
+        "sha256": "19206fd12725b7fa809ce1bdd036490bc5447937fc93557484a96b5cb5223857"
+      }
+    },
+    "unparsed_artifact_ids": [
+      "NI-LEXICON-CURRICULUM:CHAPTER:0",
+      "NI-LEXICON-SITE",
+      "NI-WEB-INDEX"
+    ]
+  },
+  "claims": {
+    "curriculum_admission": false,
+    "full_new_ithkuil_coverage": false,
+    "semantic_admission": false
+  },
+  "entries": [
+    {
+      "artifact_id": "NI-AFFIX-PDF",
+      "canonical_rows": {
+        "affix_degrees": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "allomorph_rules": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "grammatical_categories": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "morpheme_compositions": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "morphemes_atomic": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "root_senses": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "source_assertions": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "source_table_cells": {
+          "count": 8060,
+          "sha256": "a72f60f725740ea50c5bbdf565bfc44f7fd50256be62c868d917767be247e9ce"
+        },
+        "source_tables": {
+          "count": 403,
+          "sha256": "3a00a7f8fff7b7cc7cb3fcdf7bf5bbca5cc7c357bd38e50960bed6f54ca6bca4"
+        }
+      },
+      "debt_by_reason": {
+        "partial_table_overlap": 3498,
+        "repeated_affix_identity": 2,
+        "unclassified_source_prose": 5962,
+        "unsupported_table_shape": 35
+      },
+      "kind": "affix_reference",
+      "last_success_identity": {
+        "sha256": "fbb3b0cb2c142580d3c2243884aec6bef3b425c8ad7ff010e83c763b3d9d558d"
+      },
+      "observed_sha256": "5b758ff4c79ba6ccb6e241e59507f7849a7c470c4b34b431bf546cd028aea3aa",
+      "parser": {
+        "implementation": "affix_frontier.py",
+        "sha256": "2441b5a597c3e2569b7f760b19f8e7bc0b4ee976591c4e298f9614e55a8e687b",
+        "structure_parser_sha256": "07d799abba0354ea38075a41de22457aa539bc59842e4ebf86767e11f3c35fd7",
+        "version": "1.0.0"
+      },
+      "pinned_sha256": "5b758ff4c79ba6ccb6e241e59507f7849a7c470c4b34b431bf546cd028aea3aa",
+      "scope": "Pinned affix table and text observations; source-only structure, no morphological relations inferred.",
+      "source_id": "NI-AFFIX-PDF",
+      "source_receipt": {
+        "counts": {
+          "cells": 8060,
+          "observations": 19954,
+          "tables": 403
+        },
+        "dispositions": {
+          "CONFLICT": 2,
+          "PARSED": 8463,
+          "TABLE_COVERED": 1994,
+          "UNSUPPORTED": 9495
+        },
+        "engine": "PyMuPDF",
+        "engine_version": "1.27.2.3",
+        "inventory": {
+          "detected_tables": 440,
+          "table_shapes": {
+            "10x2": 150,
+            "10x3": 9,
+            "10x4": 250,
+            "10x5": 9,
+            "10x6": 2,
+            "11x3": 1,
+            "11x9": 1,
+            "12x4": 1,
+            "12x43": 1,
+            "14x3": 3,
+            "14x4": 2,
+            "19x4": 1,
+            "2x4": 1,
+            "3x2": 1,
+            "4x2": 1,
+            "6x2": 1,
+            "7x4": 1,
+            "8x3": 2,
+            "8x7": 1,
+            "9x2": 2
+          }
+        },
+        "observations_sha256": "230e2c1d5f00fe39cfd7fbfa49a9b00f78c85973bc7918859e24688c2c4db04f",
+        "outputs": {
+          "source_table_cells.csv": {
+            "bytes": 2728012,
+            "sha256": "ee2384fa5a917006094106dbdca5d84540271b42cf7841595191c2e4a41d4f8f"
+          },
+          "source_tables.csv": {
+            "bytes": 117962,
+            "sha256": "9b3319a69940bf4dbfab086e9de27a7184a933a23331ff588bf9d1a94f3b927a"
+          }
+        },
+        "page_count": 140,
+        "parser_sha256": "2441b5a597c3e2569b7f760b19f8e7bc0b4ee976591c4e298f9614e55a8e687b",
+        "parser_version": "1.0.0",
+        "pdf_format": "PDF 1.3",
+        "schema": "ithkuil.affix_frontier.receipt.v1",
+        "semantic_relationships_inferred": false,
+        "source_bytes": 833483,
+        "source_id": "NI-AFFIX-PDF",
+        "source_pdf": "newithkuil_affixes.pdf",
+        "source_sha256": "5b758ff4c79ba6ccb6e241e59507f7849a7c470c4b34b431bf546cd028aea3aa",
+        "source_url": "https://www.ithkuil.net/newithkuil_affixes.pdf",
+        "structure_parser_sha256": "07d799abba0354ea38075a41de22457aa539bc59842e4ebf86767e11f3c35fd7",
+        "table_dispositions": {
+          "CONFLICT": 2,
+          "PARSED": 403,
+          "UNSUPPORTED": 35
+        }
+      },
+      "status": "PARSED_WITH_DEBT"
+    },
+    {
+      "artifact_id": "NI-LEXICON-CURRICULUM",
+      "canonical_rows": {
+        "lexicon_root_evidence": {
+          "count": 9488,
+          "sha256": "9c7952211c91e4c4aae88061e7761d4c4d6c517f811856fead635ede1133cbad"
+        },
+        "lexicon_root_senses": {
+          "count": 3008,
+          "sha256": "a2993832be3406c3a354f16c878eb7f2268bfb46066a884348cf3d8e3c7997b9"
+        },
+        "lexicon_roots": {
+          "count": 5810,
+          "sha256": "d3a3f93a12754735900506e91c50f7628928810bf3b5059afda0df87794727a8"
+        }
+      },
+      "debt_by_reason": {
+        "chapter_0_toc_unparsed": 1,
+        "legacy_debt_not_measured": 2
+      },
+      "kind": "lexicon",
+      "last_success_identity": {
+        "sha256": "37c5234acdd23edeebc4493f0adad70f2ec67762e91223868b4a731aa1392f03"
+      },
+      "observed_sha256": "d26d5aabc844ba9cafca68c6e1c7459b0f325e745b919a4aac3e08a61e684a21",
+      "parser": {
+        "implementation": "build_lexicon_chapters.py + lexicon_frontier.py",
+        "legacy_sha256": "44120e04f51d67939a9afb8190101135c37a13a65ed117ad1e7f283c0aaffe4d",
+        "sha256": "cbffd5e856816ee5cac0825364bc0d335c5f518571ca1b2708065acee384eae5",
+        "version": "1.0.6"
+      },
+      "pinned_sha256": "d26d5aabc844ba9cafca68c6e1c7459b0f325e745b919a4aac3e08a61e684a21",
+      "scope": "Canonical relational lexicon rows from bounded chapters 1–7; chapter 0 and full coverage remain unparsed.",
+      "source_id": "NI-LEXICON-CURRICULUM",
+      "source_receipt": {
+        "admitted_chapters": [
+          "3",
+          "4",
+          "5",
+          "6",
+          "7"
+        ],
+        "counts": {
+          "lexicon_root_evidence": 9488,
+          "lexicon_root_senses": 3008,
+          "lexicon_roots": 5810
+        },
+        "output_sha256": {
+          "lexicon_root_evidence.csv": "aaefff67aa4b2ddf058a1926ce874145c1eb2fab4c5821eb7ce04e0cce601b50",
+          "lexicon_root_senses.csv": "fe0701acb57e9257b56bf2feac741171e583fdfab032f3d017cfcc8fa404eb5c",
+          "lexicon_roots.csv": "ddd84523758a5dcbfa86f70cd2c7bb0f63bdea18ee089015390f0d3a8199fc46",
+          "sources/lexicon_split_provenance.csv": "e584df209ec5a1a401d420505200a159b1de9af881a9b74feeed9a00932edf24"
+        },
+        "schema": "bilqis.ithkuil.lexicon-frontier/v1"
+      },
+      "status": "PARSED_WITH_DEBT"
+    },
+    {
+      "artifact_id": "NI-LEXICON-CURRICULUM:CHAPTER:0",
+      "canonical_rows": {
+        "lexicon_root_evidence": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "lexicon_root_senses": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "lexicon_roots": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        }
+      },
+      "debt_by_reason": {},
+      "kind": "lexicon_chapter_slice",
+      "last_success_identity": null,
+      "observed_sha256": "5801addb2e60fc80859ec626c07ff4e32c8fa5805b1623d409d4f9cf913c3f6f",
+      "parser": null,
+      "pinned_sha256": "5801addb2e60fc80859ec626c07ff4e32c8fa5805b1623d409d4f9cf913c3f6f",
+      "scope": "Lexicon chapter 0 slice; source-observation counts are not canonical first-observation row counts.",
+      "source_id": "NI-LEXICON-CURRICULUM",
+      "source_receipt": null,
+      "status": "PINNED_UNPARSED"
+    },
+    {
+      "artifact_id": "NI-LEXICON-CURRICULUM:CHAPTER:1",
+      "canonical_rows": {
+        "lexicon_root_evidence": {
+          "count": 11,
+          "sha256": "d432cbeeb45d10917a23b22508547849b035723961b4056dd6016decbc59cb1f"
+        },
+        "lexicon_root_senses": {
+          "count": 43,
+          "sha256": "d1b61ec235ddb29b3587be11bf864e3dd2de773b01314ef9da48fdc3a00f3d1c"
+        },
+        "lexicon_roots": {
+          "count": 39,
+          "sha256": "a7bdf3660c59bdceba222ab10a42313a478a8625489bcbf4987561b77aeefe1a"
+        }
+      },
+      "debt_by_reason": {
+        "legacy_debt_not_measured": 1
+      },
+      "kind": "lexicon_chapter_slice",
+      "last_success_identity": null,
+      "observed_sha256": "1c60e40374cf6ffd16791b89983db8f6584c2e1feac7a9c965fc8255b2f95609",
+      "parser": {
+        "implementation": "build_lexicon_chapters.py",
+        "sha256": "44120e04f51d67939a9afb8190101135c37a13a65ed117ad1e7f283c0aaffe4d",
+        "version": "unversioned"
+      },
+      "pinned_sha256": "1c60e40374cf6ffd16791b89983db8f6584c2e1feac7a9c965fc8255b2f95609",
+      "scope": "Lexicon chapter 1 slice; source-observation counts are not canonical first-observation row counts.",
+      "source_id": "NI-LEXICON-CURRICULUM",
+      "source_receipt": null,
+      "status": "PARSED_WITH_DEBT"
+    },
+    {
+      "artifact_id": "NI-LEXICON-CURRICULUM:CHAPTER:2",
+      "canonical_rows": {
+        "lexicon_root_evidence": {
+          "count": 139,
+          "sha256": "06a743338430bf80200258184c654449c1cb670b0772a4bd9aba6353d979cf7d"
+        },
+        "lexicon_root_senses": {
+          "count": 1572,
+          "sha256": "10e2ae3d099a41426bb573ec1319a0dd910a8d8036d2ad8bab0adc51be00b1ea"
+        },
+        "lexicon_roots": {
+          "count": 464,
+          "sha256": "da240e345a2b2df2bf6b5d7167304ee4626e230417236c25c3f95e86d0c160ab"
+        }
+      },
+      "debt_by_reason": {
+        "legacy_debt_not_measured": 1
+      },
+      "kind": "lexicon_chapter_slice",
+      "last_success_identity": null,
+      "observed_sha256": "0d8eaa667d26345dfb55e99ee823fb8ecfa4b4a2d72f998d0e0e3c7b94bad9b2",
+      "parser": {
+        "implementation": "build_lexicon_chapters.py",
+        "sha256": "44120e04f51d67939a9afb8190101135c37a13a65ed117ad1e7f283c0aaffe4d",
+        "version": "unversioned"
+      },
+      "pinned_sha256": "0d8eaa667d26345dfb55e99ee823fb8ecfa4b4a2d72f998d0e0e3c7b94bad9b2",
+      "scope": "Lexicon chapter 2 slice; source-observation counts are not canonical first-observation row counts.",
+      "source_id": "NI-LEXICON-CURRICULUM",
+      "source_receipt": null,
+      "status": "PARSED_WITH_DEBT"
+    },
+    {
+      "artifact_id": "NI-LEXICON-CURRICULUM:CHAPTER:3",
+      "canonical_rows": {
+        "lexicon_root_evidence": {
+          "count": 228,
+          "sha256": "5602c92e12bacfaa87b1cb41c85eee480b7071e3f7a73ca8693ca9a13a4d3fe3"
+        },
+        "lexicon_root_senses": {
+          "count": 100,
+          "sha256": "746c937041376aa3c99a127540ac55baf96fc77f2844faeee3a2ac412ed59285"
+        },
+        "lexicon_roots": {
+          "count": 122,
+          "sha256": "d833a5f53b450c3d1b02d804dcb73b8483cf407565a82684a97a96bc8d78cd18"
+        }
+      },
+      "debt_by_reason": {
+        "DEBT_INSUFFICIENT_SENSE_EVIDENCE": 201,
+        "DEBT_UNSUPPORTED_SHAPE": 2,
+        "roots_without_parsed_senses_in_source_receipt": 94
+      },
+      "kind": "lexicon_chapter_slice",
+      "last_success_identity": {
+        "sha256": "600281081a9ec61838abc3b7921dfa56b719d9efdd13b52b7abd8e6541fec17f"
+      },
+      "observed_sha256": "304e44fe561c741841a42f500e19be77ef044be5e4722077edc96e14299499e0",
+      "parser": {
+        "implementation": "lexicon_frontier.py",
+        "legacy_sha256": "44120e04f51d67939a9afb8190101135c37a13a65ed117ad1e7f283c0aaffe4d",
+        "sha256": "cbffd5e856816ee5cac0825364bc0d335c5f518571ca1b2708065acee384eae5",
+        "version": "1.0.6"
+      },
+      "pinned_sha256": "304e44fe561c741841a42f500e19be77ef044be5e4722077edc96e14299499e0",
+      "scope": "Lexicon chapter 3 slice; source-observation counts are not canonical first-observation row counts.",
+      "source_id": "NI-LEXICON-CURRICULUM",
+      "source_receipt": {
+        "accounting_sha256": "4ec71cee2cf82941d4e154c608e2265177a293822e632b80c8e51c72fd2b17c6",
+        "chapter": "3",
+        "counts": {
+          "evidence": 228,
+          "parsed_sense_observations": 100,
+          "roots": 122,
+          "roots_without_senses": 94,
+          "senses": 100,
+          "source_observations": 303,
+          "unique_sense_coordinates": 100
+        },
+        "dispositions": {
+          "DEBT_INSUFFICIENT_SENSE_EVIDENCE": 201,
+          "DEBT_UNSUPPORTED_SHAPE": 2,
+          "PARSED": 100
+        },
+        "output_sha256": {
+          "lexicon_root_evidence.csv": "767c8aa49b686113e47ad1009626ac24500f8c514a3204cdb78d94ea510ad184",
+          "lexicon_root_senses.csv": "83b7c9c2a73082f3c29abc438db43996e1bcb57fa9117c7607ffa227edd9312d",
+          "lexicon_roots.csv": "1c6852b9862f54cd7780c034c181762bad7deb4128e9c4db570580d926634f56"
+        },
+        "parser": {
+          "legacy_sha256": "44120e04f51d67939a9afb8190101135c37a13a65ed117ad1e7f283c0aaffe4d",
+          "pymupdf_version": "1.27.2.3",
+          "sha256": "cbffd5e856816ee5cac0825364bc0d335c5f518571ca1b2708065acee384eae5",
+          "version": "1.0.6"
+        },
+        "schema": "bilqis.ithkuil.chapter-extraction/v1",
+        "source": {
+          "canonical_page_start": 99,
+          "canonical_page_text_variant_pages": [],
+          "canonical_pages": [
+            99,
+            100,
+            101,
+            102,
+            103,
+            104,
+            105,
+            106,
+            107,
+            108,
+            109,
+            110,
+            111,
+            112,
+            113,
+            114,
+            115
+          ],
+          "canonical_sha256": "d26d5aabc844ba9cafca68c6e1c7459b0f325e745b919a4aac3e08a61e684a21",
+          "comparison": "normalized-page-text-exact",
+          "filename": "New Ithkuil Lexicon - Chapter 03 - Spacetime and Motion.pdf",
+          "format": "PDF 1.3",
+          "min_text_similarity": 1.0,
+          "page_count": 17,
+          "sha256": "304e44fe561c741841a42f500e19be77ef044be5e4722077edc96e14299499e0"
+        }
+      },
+      "status": "PARSED_WITH_DEBT"
+    },
+    {
+      "artifact_id": "NI-LEXICON-CURRICULUM:CHAPTER:4",
+      "canonical_rows": {
+        "lexicon_root_evidence": {
+          "count": 2475,
+          "sha256": "66972863e028112256884dbb6f0a735855511f9a9c59ac3b4c8463affc166bd7"
+        },
+        "lexicon_root_senses": {
+          "count": 811,
+          "sha256": "2096c3552ccfda40eb3c600ef59bd2a7efadaf785c8e8604697e8aeec4c56ca0"
+        },
+        "lexicon_roots": {
+          "count": 719,
+          "sha256": "909dc2d8ccf760f0b93d738728add004db0df71c617bfc9a185da07a72f3d839"
+        }
+      },
+      "debt_by_reason": {
+        "DEBT_CONFLICT": 20,
+        "DEBT_INSUFFICIENT_SENSE_EVIDENCE": 2131,
+        "DEBT_UNSUPPORTED_SHAPE": 171,
+        "roots_without_parsed_senses_in_source_receipt": 456
+      },
+      "kind": "lexicon_chapter_slice",
+      "last_success_identity": {
+        "sha256": "2ff65eb919d76a89541a604f56b47fa952190c0e5e07921923d981f9862e3a19"
+      },
+      "observed_sha256": "3bb95d35bc684cdf4c891d32b5c44e8b796db5e0bb97443961ac6cb0fe7e3d34",
+      "parser": {
+        "implementation": "lexicon_frontier.py",
+        "legacy_sha256": "44120e04f51d67939a9afb8190101135c37a13a65ed117ad1e7f283c0aaffe4d",
+        "sha256": "cbffd5e856816ee5cac0825364bc0d335c5f518571ca1b2708065acee384eae5",
+        "version": "1.0.6"
+      },
+      "pinned_sha256": "3bb95d35bc684cdf4c891d32b5c44e8b796db5e0bb97443961ac6cb0fe7e3d34",
+      "scope": "Lexicon chapter 4 slice; source-observation counts are not canonical first-observation row counts.",
+      "source_id": "NI-LEXICON-CURRICULUM",
+      "source_receipt": {
+        "accounting_sha256": "410fc88cdbccacb24e7511583cbf4b5169af411dd525b7d2dd1f0202949f2162",
+        "chapter": "4",
+        "counts": {
+          "evidence": 2475,
+          "parsed_sense_observations": 811,
+          "roots": 719,
+          "roots_without_senses": 456,
+          "senses": 811,
+          "source_observations": 3133,
+          "unique_sense_coordinates": 811
+        },
+        "dispositions": {
+          "DEBT_CONFLICT": 20,
+          "DEBT_INSUFFICIENT_SENSE_EVIDENCE": 2131,
+          "DEBT_UNSUPPORTED_SHAPE": 171,
+          "PARSED": 811
+        },
+        "output_sha256": {
+          "lexicon_root_evidence.csv": "22c3f5a7684e42610a2e8366937a0044c3007ba8a58a017c030e90bbf9e8ac78",
+          "lexicon_root_senses.csv": "a154d3894fbda774f6c31998f5820f7c0288fb182ba2f6ae9872d22ae2030151",
+          "lexicon_roots.csv": "53292b8ec4935c9d748adac1b2266843db1ef4472ff792e1556b016c9e5b1baf"
+        },
+        "parser": {
+          "legacy_sha256": "44120e04f51d67939a9afb8190101135c37a13a65ed117ad1e7f283c0aaffe4d",
+          "pymupdf_version": "1.27.2.3",
+          "sha256": "cbffd5e856816ee5cac0825364bc0d335c5f518571ca1b2708065acee384eae5",
+          "version": "1.0.6"
+        },
+        "schema": "bilqis.ithkuil.chapter-extraction/v1",
+        "source": {
+          "canonical_page_start": 115,
+          "canonical_page_text_variant_pages": [
+            "42",
+            "87",
+            "88",
+            "89"
+          ],
+          "canonical_page_text_variants": {
+            "42": {
+              "canonical_sha256": "f38432affc8b060ce4c6313cb907aa2f5142227bdb3e1438ff5a64ec8d2843d3",
+              "tracked_sha256": "bef0cd4c4f91453bbbeaff621173a0753492eb377a19d97bc04dcdb2534f21ce"
+            },
+            "87": {
+              "canonical_sha256": "5b2abb3355c77c790601801a829f2bcc7add6ec6c00d7e82ff8f9a663b0eb92e",
+              "tracked_sha256": "4d513906e8a3a1327a840dde0ca21f65a80b41200e2197ab815de0af5d4c35a6"
+            },
+            "88": {
+              "canonical_sha256": "0f0804a604658bbabc607709ea0c9e82038de5561ed8aaa91e72b1a255c4bb3b",
+              "tracked_sha256": "b1fe8e54844d2f894c24bb38f3667e89be6aafc520cffe62301ecc52de52c64f"
+            },
+            "89": {
+              "canonical_sha256": "27f27774a14a283642c3eb4324902ad21366e77a5edfd0925a2f4b1d0dcaa8f6",
+              "tracked_sha256": "15bc3bac82b7122f476bdac8d824eaebd34a071017afd3db34bb60470f9e9703"
+            }
+          },
+          "canonical_pages": [
+            115,
+            116,
+            117,
+            118,
+            119,
+            120,
+            121,
+            122,
+            123,
+            124,
+            125,
+            126,
+            127,
+            128,
+            129,
+            130,
+            131,
+            132,
+            133,
+            134,
+            135,
+            136,
+            137,
+            138,
+            139,
+            140,
+            141,
+            142,
+            143,
+            144,
+            145,
+            146,
+            147,
+            148,
+            149,
+            150,
+            151,
+            152,
+            153,
+            154,
+            155,
+            156,
+            157,
+            158,
+            159,
+            160,
+            161,
+            162,
+            163,
+            164,
+            165,
+            166,
+            167,
+            168,
+            169,
+            170,
+            171,
+            172,
+            173,
+            174,
+            175,
+            176,
+            177,
+            178,
+            179,
+            180,
+            181,
+            182,
+            183,
+            184,
+            185,
+            186,
+            187,
+            188,
+            189,
+            190,
+            191,
+            192,
+            193,
+            194,
+            195,
+            196,
+            197,
+            198,
+            199,
+            200,
+            201,
+            202,
+            203,
+            204,
+            205,
+            206,
+            207,
+            208,
+            209,
+            210,
+            211,
+            212,
+            213,
+            214,
+            215,
+            216,
+            217,
+            218,
+            219,
+            220,
+            221,
+            222,
+            223,
+            224,
+            225,
+            226,
+            227,
+            228,
+            229,
+            230,
+            231,
+            232,
+            233,
+            234,
+            235,
+            236,
+            237,
+            238,
+            239,
+            240,
+            241,
+            242,
+            243,
+            244
+          ],
+          "canonical_sha256": "d26d5aabc844ba9cafca68c6e1c7459b0f325e745b919a4aac3e08a61e684a21",
+          "comparison": "normalized-page-text-exact-with-pinned-variants",
+          "filename": "New Ithkuil Lexicon - Chapter 04 - Psychology and Sociology.pdf",
+          "format": "PDF 1.3",
+          "min_text_similarity": 0.9679083094555874,
+          "page_count": 130,
+          "sha256": "3bb95d35bc684cdf4c891d32b5c44e8b796db5e0bb97443961ac6cb0fe7e3d34"
+        }
+      },
+      "status": "PARSED_WITH_DEBT"
+    },
+    {
+      "artifact_id": "NI-LEXICON-CURRICULUM:CHAPTER:5",
+      "canonical_rows": {
+        "lexicon_root_evidence": {
+          "count": 531,
+          "sha256": "79276709c7bde4c2cd2621a8fa38e5ea1c69c1cc2f55ea77352c44dd99f78433"
+        },
+        "lexicon_root_senses": {
+          "count": 32,
+          "sha256": "6c85bd0d32b626a3245fcf28506cc20f70234b86b3e625ccf8415c38fad04485"
+        },
+        "lexicon_roots": {
+          "count": 250,
+          "sha256": "796832ad28312fd7012d0904a89207dbfca77d67d9336bf939d8740c5de44800"
+        }
+      },
+      "debt_by_reason": {
+        "DEBT_CONFLICT": 8,
+        "DEBT_INSUFFICIENT_SENSE_EVIDENCE": 430,
+        "DEBT_UNSUPPORTED_SHAPE": 32,
+        "roots_without_parsed_senses_in_source_receipt": 246
+      },
+      "kind": "lexicon_chapter_slice",
+      "last_success_identity": {
+        "sha256": "7799aa059d5edadeb1af5ea5eaa7cd351e1366e672b113bbea4db699c1d975d2"
+      },
+      "observed_sha256": "c48b1a83f541c3728b5d2685ec186b64b73b00c417ded234b30c40361e36ef30",
+      "parser": {
+        "implementation": "lexicon_frontier.py",
+        "legacy_sha256": "44120e04f51d67939a9afb8190101135c37a13a65ed117ad1e7f283c0aaffe4d",
+        "sha256": "cbffd5e856816ee5cac0825364bc0d335c5f518571ca1b2708065acee384eae5",
+        "version": "1.0.6"
+      },
+      "pinned_sha256": "c48b1a83f541c3728b5d2685ec186b64b73b00c417ded234b30c40361e36ef30",
+      "scope": "Lexicon chapter 5 slice; source-observation counts are not canonical first-observation row counts.",
+      "source_id": "NI-LEXICON-CURRICULUM",
+      "source_receipt": {
+        "accounting_sha256": "27ffdc66a553b228bd7c66ae8d0066060eac5d5f39d896e4276c16dbe32e3930",
+        "chapter": "5",
+        "counts": {
+          "evidence": 531,
+          "parsed_sense_observations": 32,
+          "roots": 257,
+          "roots_without_senses": 246,
+          "senses": 32,
+          "source_observations": 502,
+          "unique_sense_coordinates": 32
+        },
+        "dispositions": {
+          "DEBT_CONFLICT": 8,
+          "DEBT_INSUFFICIENT_SENSE_EVIDENCE": 430,
+          "DEBT_UNSUPPORTED_SHAPE": 32,
+          "PARSED": 32
+        },
+        "output_sha256": {
+          "lexicon_root_evidence.csv": "515bc3e7276bf05b9a8468fe93057541249e461d973507ed5a35dcfefaf73f61",
+          "lexicon_root_senses.csv": "9f66af4a89a1204e50978be13037c56bd899119d1c8f99dc8652b6aa58e1e862",
+          "lexicon_roots.csv": "7975d40bc66240df938e34dfbb361f57f48627eca0efcfec6bde9aa0975c1a2e"
+        },
+        "parser": {
+          "legacy_sha256": "44120e04f51d67939a9afb8190101135c37a13a65ed117ad1e7f283c0aaffe4d",
+          "pymupdf_version": "1.27.2.3",
+          "sha256": "cbffd5e856816ee5cac0825364bc0d335c5f518571ca1b2708065acee384eae5",
+          "version": "1.0.6"
+        },
+        "schema": "bilqis.ithkuil.chapter-extraction/v1",
+        "source": {
+          "canonical_page_start": 245,
+          "canonical_page_text_variant_pages": [
+            "2",
+            "3",
+            "4",
+            "5",
+            "7",
+            "9",
+            "11",
+            "14",
+            "15",
+            "16"
+          ],
+          "canonical_page_text_variants": {
+            "11": {
+              "canonical_sha256": "fddc436e811fa7b76a7cfad446e371b72ee48eaf1bb04909a260092bba129213",
+              "tracked_sha256": "5535e6000d7869096f68a6bd165fd4b77c9c39d4ec446acdd0ea0788c98ecc5d"
+            },
+            "14": {
+              "canonical_sha256": "5ae60c507348323ef97c2201c2c174be4dda3ab04b0b4f4492d0af77e3753e26",
+              "tracked_sha256": "6b1a74bf8cfe90d72096ad8d8ceb7f272a863f8d34ceed9004a8803e90c9b2cb"
+            },
+            "15": {
+              "canonical_sha256": "84eb67cc2ba315b9cfc4956972a4ae9f6bc48684979f221331386124e809920c",
+              "tracked_sha256": "a290303ce5e6f5cb8c15195027c90ac8db545fbbbbbc5fec61c71e52eeec7b0a"
+            },
+            "16": {
+              "canonical_sha256": "57fec0d864a41e06bfb3a6ecdd8b0d96e0de2a79ed2af1c1deb9ec3ec9ca7a7e",
+              "tracked_sha256": "90fc7b70a3e089b62aa10d2e155193686501fee6354ac0d7517c70e4a5bf1c1d"
+            },
+            "2": {
+              "canonical_sha256": "e43245866031b8c3114c3b2903f8c449279e3950512aa90946c5c05fdb9c3d23",
+              "tracked_sha256": "7efba43110ab37e23deb7a4977a34a92b78ce09de0ce1e2fc4ca6bf2ef4c16c6"
+            },
+            "3": {
+              "canonical_sha256": "88804c70f16f37b57710abe41c72c1f1528dfb5c278292a5cdaf3b63eb502e49",
+              "tracked_sha256": "4573d348306ba28db63915db49b0726075c6903242225ed72b70262942e4914d"
+            },
+            "4": {
+              "canonical_sha256": "2aae0c9f1a60bc21bab537e8a3e5d7f50963a6305f20911bf9009e5c57733465",
+              "tracked_sha256": "97aaeedad5d5310c26f8032d370e750798872d21cd3218830f2d59fb56ef06db"
+            },
+            "5": {
+              "canonical_sha256": "c62d5601350eff9373e1a467b2ff9bd7bb2c71b5a79377eea971dd52b84be5fb",
+              "tracked_sha256": "aaa205c6dc24cd35b38c81faff21d8cd92ace585c775517372f5e83d72e6a361"
+            },
+            "7": {
+              "canonical_sha256": "5dadc7388862acfdaac5faa8b6a5804a2a45112169778b7a993f5c654785461b",
+              "tracked_sha256": "4ae4c3851a8fb517c6047e4c8d23d7e87f5195e9725e39f38294add8c861e21e"
+            },
+            "9": {
+              "canonical_sha256": "b8bb0a2a6c943d8a29fbb0a163c6b067eb53d42c69ea1fc5b9c22e90c5e0d007",
+              "tracked_sha256": "589a4816d54845c73e5d1011a029dc095fedcc7c0f8081a2f9a2dd2c070997a8"
+            }
+          },
+          "canonical_pages": [
+            245,
+            246,
+            247,
+            248,
+            249,
+            250,
+            251,
+            252,
+            253,
+            254,
+            255,
+            256,
+            257,
+            258,
+            259,
+            260
+          ],
+          "canonical_sha256": "d26d5aabc844ba9cafca68c6e1c7459b0f325e745b919a4aac3e08a61e684a21",
+          "comparison": "normalized-page-text-exact-with-pinned-variants",
+          "filename": "New Ithkuil Lexicon - Chapter 05 - Miscellaneous Entities.pdf",
+          "format": "PDF 1.3",
+          "min_text_similarity": 0.9959432048681541,
+          "page_count": 16,
+          "sha256": "c48b1a83f541c3728b5d2685ec186b64b73b00c417ded234b30c40361e36ef30"
+        }
+      },
+      "status": "PARSED_WITH_DEBT"
+    },
+    {
+      "artifact_id": "NI-LEXICON-CURRICULUM:CHAPTER:6",
+      "canonical_rows": {
+        "lexicon_root_evidence": {
+          "count": 1000,
+          "sha256": "0aba5295a97b399c73342fcf95cdbf005db76c74581a485ff1ec90a570efc415"
+        },
+        "lexicon_root_senses": {
+          "count": 334,
+          "sha256": "d4681a3557edc7047dcec558397961bec3e89e764536bcb7a17de676798f9c76"
+        },
+        "lexicon_roots": {
+          "count": 730,
+          "sha256": "b4041a4d52b94979f5da314e633d19327babab7108e1d7e09cbb8a51af090b05"
+        }
+      },
+      "debt_by_reason": {
+        "DEBT_CONFLICT": 13,
+        "DEBT_INSUFFICIENT_SENSE_EVIDENCE": 948,
+        "DEBT_UNSUPPORTED_SHAPE": 66,
+        "roots_without_parsed_senses_in_source_receipt": 639
+      },
+      "kind": "lexicon_chapter_slice",
+      "last_success_identity": {
+        "sha256": "b1bcf9d4decb9574fc7db7d6386f90632fdcbff98670c575f1ceea92679ed9dd"
+      },
+      "observed_sha256": "0fd4aa1df217533427f950b86a4b7c4963dc5e66f7be927c8ad56a2ee990fdbd",
+      "parser": {
+        "implementation": "lexicon_frontier.py",
+        "legacy_sha256": "44120e04f51d67939a9afb8190101135c37a13a65ed117ad1e7f283c0aaffe4d",
+        "sha256": "cbffd5e856816ee5cac0825364bc0d335c5f518571ca1b2708065acee384eae5",
+        "version": "1.0.6"
+      },
+      "pinned_sha256": "0fd4aa1df217533427f950b86a4b7c4963dc5e66f7be927c8ad56a2ee990fdbd",
+      "scope": "Lexicon chapter 6 slice; source-observation counts are not canonical first-observation row counts.",
+      "source_id": "NI-LEXICON-CURRICULUM",
+      "source_receipt": {
+        "accounting_sha256": "1d120f091e914c71392be81b4dabdd5af35b29690a88bd12e02a9373c5b53a45",
+        "chapter": "6",
+        "counts": {
+          "evidence": 1000,
+          "parsed_sense_observations": 334,
+          "roots": 733,
+          "roots_without_senses": 639,
+          "senses": 334,
+          "source_observations": 1361,
+          "unique_sense_coordinates": 334
+        },
+        "dispositions": {
+          "DEBT_CONFLICT": 13,
+          "DEBT_INSUFFICIENT_SENSE_EVIDENCE": 948,
+          "DEBT_UNSUPPORTED_SHAPE": 66,
+          "PARSED": 334
+        },
+        "output_sha256": {
+          "lexicon_root_evidence.csv": "6a001d73718765cd89d0431f8bd97a8dcd6332924c5ff3045714f652333fb2ca",
+          "lexicon_root_senses.csv": "08d482abdd9caa8e6a9943ee382e0a98cb8a10796f4ef98340f905173c822b24",
+          "lexicon_roots.csv": "504b7bba8278cbedbfbe065047cf944d71dcb10fea5c3f231e1d86eb70ec5d37"
+        },
+        "parser": {
+          "legacy_sha256": "44120e04f51d67939a9afb8190101135c37a13a65ed117ad1e7f283c0aaffe4d",
+          "pymupdf_version": "1.27.2.3",
+          "sha256": "cbffd5e856816ee5cac0825364bc0d335c5f518571ca1b2708065acee384eae5",
+          "version": "1.0.6"
+        },
+        "schema": "bilqis.ithkuil.chapter-extraction/v1",
+        "source": {
+          "canonical_page_start": 261,
+          "canonical_page_text_variant_pages": [
+            "6",
+            "16",
+            "17",
+            "18",
+            "28",
+            "32",
+            "33",
+            "36",
+            "41",
+            "42",
+            "43",
+            "44",
+            "45",
+            "46",
+            "47",
+            "48",
+            "49",
+            "50",
+            "52",
+            "54",
+            "55",
+            "56",
+            "57",
+            "58"
+          ],
+          "canonical_page_text_variants": {
+            "16": {
+              "canonical_sha256": "71dee433596816390f66dde5d6489de62828f791454033df3385f32ae55adf8f",
+              "tracked_sha256": "602d550a433076cc4757c97b4dd2e3c4e42e1ff5c4e2f5bc559990538a8fd4ab"
+            },
+            "17": {
+              "canonical_sha256": "c32c47bb595ba9f39a80e9c6db7f1e01959242973f33b3fa0c1f364ea80df208",
+              "tracked_sha256": "29904862e427d0714d7508ff3365bc22a332d182faeb5119c7f8927104f99e68"
+            },
+            "18": {
+              "canonical_sha256": "671d72583f4a67e99356d237ada4113c1f83a686c6e4a6de67fc0982837aa0f7",
+              "tracked_sha256": "52496826462d0434b8da601c582deb382a83097a9337092864aee1f73a5262a3"
+            },
+            "28": {
+              "canonical_sha256": "c47b8046afd36be896d0f168759ed8da688a02a866c8ecc2954b977ca99a6f90",
+              "tracked_sha256": "da975dc0327e8cd6fad201e1037def43fbb9b949267ba642e1100f78395e5b8b"
+            },
+            "32": {
+              "canonical_sha256": "c2c74c0c8467d3b23e4ebdd4654f0356d5f9809d0eee183c989a4734ad6e9bb4",
+              "tracked_sha256": "6bf7607ca622543866d0d60ff90e4fbc0b8a1769b38ce3e62118aa10ff71fa74"
+            },
+            "33": {
+              "canonical_sha256": "6671c14ae019a31e5ace3be82f4e851de7b6625267ff334d1653796b242e9229",
+              "tracked_sha256": "f84b56396f69a57109b4ad6efe46ee78d64cb9817d90534cec3b8765719f6da6"
+            },
+            "36": {
+              "canonical_sha256": "0aba6a14ad556e0aabe74de2ede8a73bbfd1e4b14a6b8db36c1d9a8de2ff8a0f",
+              "tracked_sha256": "d84e23e287bac9eba87643443f2026f29b9ac17e70f371cabdd98623a0ecce8e"
+            },
+            "41": {
+              "canonical_sha256": "02e24254f71dc35d8ff8b89a450760245f78d68d9088f9994f181ead1acbcbaa",
+              "tracked_sha256": "d0373af7b70d00e4ce330f2c17e4a64c17aff3a21bd3d2f4ed75a44b94050637"
+            },
+            "42": {
+              "canonical_sha256": "c74ca5c3ba10ac2c325e0ded0daa6d4b5404907efce7dc3fa34601835658836a",
+              "tracked_sha256": "7a293cc37b2eccbbdbf7b16ed9d56c09445652f70b99fa6ec0e78803371245a4"
+            },
+            "43": {
+              "canonical_sha256": "02fd0d662c1000a44eea129f1143c762f58a39228bb59bb3834dd0adf7dc4319",
+              "tracked_sha256": "a1ade9eda40989a8acd23f81ddc2cc35093e94515a64fba14304c555ed8d9b00"
+            },
+            "44": {
+              "canonical_sha256": "6571c5edc5e32fc13dcb85b68c70666d1d4d44ef1563b576f387c3391c7afb12",
+              "tracked_sha256": "622b0cd727e1d9b177477f4d80857bace534d2d251e657077f4b52962a9b4ff1"
+            },
+            "45": {
+              "canonical_sha256": "0257ca9fd0aa8e1521ad6898f3012ff82def1d0b4385c97efbf970f23d9d32e8",
+              "tracked_sha256": "62ff41769f9d63c0f33f6a7c541eb28a3484f4ce36ffad2d0aa5cebd601660d3"
+            },
+            "46": {
+              "canonical_sha256": "6eeab8935484bb6e76945854d1c2c451da78f62392e7d7c0886d5af19258af56",
+              "tracked_sha256": "bfa1b13c4e5560b71af03fc2bf34f53404b69c81a465eb243ecbc0241cbcda1f"
+            },
+            "47": {
+              "canonical_sha256": "0b3221d08b7e86db292b0d5b2360a2a32e1b9c7fc34267245e23ec11a672d37d",
+              "tracked_sha256": "c14ef1468c6182797eaf125ca30cc0e25165b90609422e1342f9c0d7d7839c3f"
+            },
+            "48": {
+              "canonical_sha256": "ad5eb16efc05007439528aebaf72438d7349407f7963c6596ca32263cb35156c",
+              "tracked_sha256": "5c30deb74641b53c3e11872de4f83a4f913b70b54170a189645f80f951a65019"
+            },
+            "49": {
+              "canonical_sha256": "b35b63ab5df3cb7a38d545409e5a9ac0dba137be51b1ff0098fd83fa4e47271e",
+              "tracked_sha256": "b9196d118f58a2c41adf09f737156a0e90a79e302d9e353df1f436e9452d2e05"
+            },
+            "50": {
+              "canonical_sha256": "79f499c665ca4b2d94d24b8c7c71e2a9ce7be806e0126fe0c9029c57dea789d3",
+              "tracked_sha256": "d14231b1c3b0b5a51c3283b132085b3be02f404df6853f7ee07abfcfe597ec14"
+            },
+            "52": {
+              "canonical_sha256": "cea4edc933055b5f88d4a14f51612344a9676752433ce80a8e8df7c7cbed4086",
+              "tracked_sha256": "d9cebc84120cae032b0a4768096956093426f35acc1a1b383e58288bfd55ac5c"
+            },
+            "54": {
+              "canonical_sha256": "6c1bf1d62d5f4b587f9058567b6ab6d1dfb277f5612d3a779eca4e5a852347a2",
+              "tracked_sha256": "584128ee109bf801f6297e9843834f1aefdcf79a2da10aee1cf3cb35c63852a1"
+            },
+            "55": {
+              "canonical_sha256": "dc72d82a94113e0d9c35d6b829068fc8fb1179a903e8b751d8078a5775250254",
+              "tracked_sha256": "3367f8f8d31cb0d181f303741fbf3fc7f303dc0462d741b8dd76b9e4d82a0e22"
+            },
+            "56": {
+              "canonical_sha256": "180d6945f3b1c86dda4944c10e807abc5188383b7a74a2ab8be3238537022b0a",
+              "tracked_sha256": "a2d11ec1c52fdf8bd1a23a3c825d17d428eac96a8ea3e87065debc576c807622"
+            },
+            "57": {
+              "canonical_sha256": "eaa68651a9f6f5371f4b5129c3ceb4fe1c6e61958076f12a4eef3ac1578c5103",
+              "tracked_sha256": "3b61960eb38755a018db9c22e08b764706fadcef89941ea060fface31701cd85"
+            },
+            "58": {
+              "canonical_sha256": "ab3aebeed0e2479b5e012f48302bddf85bff64afae435f325aca354045348e5d",
+              "tracked_sha256": "fd0dc3a85896f918c9138cbbd64367d4d10177267200a47a3b3c9adfaaa84245"
+            },
+            "6": {
+              "canonical_sha256": "71919cc2c6059d1d78bd347810ae2e8a604d34d50d42882b5c0373a5f45eef35",
+              "tracked_sha256": "172348399ffebedff415a8e8e39e4e3ae15ab235ecafa165e3ab32fac6daac51"
+            }
+          },
+          "canonical_pages": [
+            261,
+            262,
+            263,
+            264,
+            265,
+            266,
+            267,
+            268,
+            269,
+            270,
+            271,
+            272,
+            273,
+            274,
+            275,
+            276,
+            277,
+            278,
+            279,
+            280,
+            281,
+            282,
+            283,
+            284,
+            285,
+            286,
+            287,
+            288,
+            289,
+            290,
+            291,
+            292,
+            293,
+            294,
+            295,
+            296,
+            297,
+            298,
+            299,
+            300,
+            301,
+            302,
+            303,
+            304,
+            305,
+            306,
+            307,
+            308,
+            309,
+            310,
+            311,
+            312,
+            313,
+            314,
+            315,
+            316,
+            317,
+            318,
+            319
+          ],
+          "canonical_sha256": "d26d5aabc844ba9cafca68c6e1c7459b0f325e745b919a4aac3e08a61e684a21",
+          "comparison": "normalized-page-text-exact-with-pinned-variants",
+          "filename": "New Ithkuil Lexicon - Chapter 06 - Nature, Non-Biological.pdf",
+          "format": "PDF 1.3",
+          "min_text_similarity": 0.8346055979643766,
+          "page_count": 59,
+          "sha256": "0fd4aa1df217533427f950b86a4b7c4963dc5e66f7be927c8ad56a2ee990fdbd"
+        }
+      },
+      "status": "PARSED_WITH_DEBT"
+    },
+    {
+      "artifact_id": "NI-LEXICON-CURRICULUM:CHAPTER:7",
+      "canonical_rows": {
+        "lexicon_root_evidence": {
+          "count": 5104,
+          "sha256": "9874239febca69607c3b68de2d47eb1f4c334acae813509e72f7130019f5a4ec"
+        },
+        "lexicon_root_senses": {
+          "count": 116,
+          "sha256": "c84aa2b5f80bd170facbd396a88ad26aa20d53351f7760948cf14e099028d091"
+        },
+        "lexicon_roots": {
+          "count": 3486,
+          "sha256": "f3f84d13cafc4dd3f64c7668233d9959e807b1cb0088aadd0daf6878204d6b60"
+        }
+      },
+      "debt_by_reason": {
+        "DEBT_CONFLICT": 2,
+        "DEBT_INSUFFICIENT_SENSE_EVIDENCE": 5047,
+        "DEBT_UNSUPPORTED_SHAPE": 68,
+        "roots_without_parsed_senses_in_source_receipt": 3463
+      },
+      "kind": "lexicon_chapter_slice",
+      "last_success_identity": {
+        "sha256": "5a3db8aebd92a023cdb7a09add309446cf06fb4b5d61ddf5a064cadaf45ee703"
+      },
+      "observed_sha256": "b753012f4df753b3cae476023adff3898a9296640b33e892185ebde22cd478d7",
+      "parser": {
+        "implementation": "lexicon_frontier.py",
+        "legacy_sha256": "44120e04f51d67939a9afb8190101135c37a13a65ed117ad1e7f283c0aaffe4d",
+        "sha256": "cbffd5e856816ee5cac0825364bc0d335c5f518571ca1b2708065acee384eae5",
+        "version": "1.0.6"
+      },
+      "pinned_sha256": "b753012f4df753b3cae476023adff3898a9296640b33e892185ebde22cd478d7",
+      "scope": "Lexicon chapter 7 slice; source-observation counts are not canonical first-observation row counts.",
+      "source_id": "NI-LEXICON-CURRICULUM",
+      "source_receipt": {
+        "accounting_sha256": "0d9c7717476d8035c8494ea18d776fd1eedd81d6d2bd865d78772d4ff0e1f9f5",
+        "chapter": "7",
+        "counts": {
+          "evidence": 5104,
+          "parsed_sense_observations": 116,
+          "roots": 3496,
+          "roots_without_senses": 3463,
+          "senses": 116,
+          "source_observations": 5233,
+          "unique_sense_coordinates": 116
+        },
+        "dispositions": {
+          "DEBT_CONFLICT": 2,
+          "DEBT_INSUFFICIENT_SENSE_EVIDENCE": 5047,
+          "DEBT_UNSUPPORTED_SHAPE": 68,
+          "PARSED": 116
+        },
+        "output_sha256": {
+          "lexicon_root_evidence.csv": "875d6c1726a0c4e9ea152603a9c321c93f6daff116997e8280eb408511118950",
+          "lexicon_root_senses.csv": "7c48543c6faadcb6a0a9efc19f85a0eda5d9a5175c444345b15d14e6a762a4b0",
+          "lexicon_roots.csv": "3f7a8249d63d1e412580ace6afc3b1faf1e1a9dce328d3a51d4fc83aec494f69"
+        },
+        "parser": {
+          "legacy_sha256": "44120e04f51d67939a9afb8190101135c37a13a65ed117ad1e7f283c0aaffe4d",
+          "pymupdf_version": "1.27.2.3",
+          "sha256": "cbffd5e856816ee5cac0825364bc0d335c5f518571ca1b2708065acee384eae5",
+          "version": "1.0.6"
+        },
+        "schema": "bilqis.ithkuil.chapter-extraction/v1",
+        "source": {
+          "canonical_page_start": 319,
+          "canonical_page_text_variant_pages": [],
+          "canonical_pages": [
+            319,
+            320,
+            321,
+            322,
+            323,
+            324,
+            325,
+            326,
+            327,
+            328,
+            329,
+            330,
+            331,
+            332,
+            333,
+            334,
+            335,
+            336,
+            337,
+            338,
+            339,
+            340,
+            341,
+            342,
+            343,
+            344,
+            345,
+            346,
+            347,
+            348,
+            349,
+            350,
+            351,
+            352,
+            353,
+            354,
+            355,
+            356,
+            357,
+            358,
+            359,
+            360,
+            361,
+            362,
+            363,
+            364,
+            365,
+            366,
+            367,
+            368,
+            369,
+            370,
+            371,
+            372,
+            373,
+            374,
+            375,
+            376,
+            377,
+            378,
+            379,
+            380,
+            381,
+            382,
+            383,
+            384,
+            385,
+            386,
+            387,
+            388,
+            389,
+            390,
+            391,
+            392,
+            393,
+            394,
+            395,
+            396,
+            397,
+            398,
+            399,
+            400,
+            401,
+            402,
+            403,
+            404,
+            405,
+            406,
+            407,
+            408,
+            409,
+            410,
+            411,
+            412,
+            413,
+            414,
+            415,
+            416,
+            417,
+            418,
+            419,
+            420,
+            421,
+            422,
+            423,
+            424,
+            425,
+            426,
+            427,
+            428,
+            429,
+            430,
+            431,
+            432,
+            433,
+            434,
+            435,
+            436,
+            437,
+            438,
+            439,
+            440,
+            441,
+            442,
+            443,
+            444,
+            445,
+            446,
+            447,
+            448,
+            449,
+            450,
+            451,
+            452,
+            453,
+            454,
+            455,
+            456,
+            457,
+            458,
+            459,
+            460,
+            461,
+            462,
+            463,
+            464,
+            465,
+            466,
+            467,
+            468,
+            469,
+            470,
+            471,
+            472,
+            473,
+            474,
+            475,
+            476,
+            477,
+            478,
+            479,
+            480,
+            481,
+            482,
+            483,
+            484,
+            485,
+            486,
+            487,
+            488,
+            489,
+            490,
+            491,
+            492,
+            493,
+            494,
+            495,
+            496,
+            497,
+            498,
+            499,
+            500,
+            501,
+            502,
+            503,
+            504,
+            505,
+            506,
+            507,
+            508,
+            509,
+            510,
+            511,
+            512,
+            513,
+            514,
+            515,
+            516,
+            517,
+            518,
+            519,
+            520,
+            521,
+            522,
+            523,
+            524,
+            525,
+            526,
+            527,
+            528,
+            529,
+            530,
+            531,
+            532,
+            533,
+            534,
+            535,
+            536,
+            537,
+            538,
+            539,
+            540,
+            541,
+            542,
+            543,
+            544,
+            545,
+            546,
+            547,
+            548,
+            549,
+            550,
+            551,
+            552,
+            553,
+            554,
+            555,
+            556,
+            557,
+            558,
+            559,
+            560,
+            561,
+            562,
+            563,
+            564,
+            565,
+            566,
+            567,
+            568,
+            569,
+            570
+          ],
+          "canonical_sha256": "d26d5aabc844ba9cafca68c6e1c7459b0f325e745b919a4aac3e08a61e684a21",
+          "comparison": "normalized-page-text-exact",
+          "filename": "New Ithkuil Lexicon - Chapter 07 - Natural Phenomena.pdf",
+          "format": "PDF 1.3",
+          "min_text_similarity": 1.0,
+          "page_count": 252,
+          "sha256": "b753012f4df753b3cae476023adff3898a9296640b33e892185ebde22cd478d7"
+        }
+      },
+      "status": "PARSED_WITH_DEBT"
+    },
+    {
+      "artifact_id": "NI-LEXICON-SITE",
+      "canonical_rows": {},
+      "debt_by_reason": {},
+      "kind": "lexicon",
+      "last_success_identity": null,
+      "observed_sha256": "bfcaeca6350074748ecea2e273eeb7b812ccf59d848461ed4512259fcec51d43",
+      "parser": null,
+      "pinned_sha256": "bfcaeca6350074748ecea2e273eeb7b812ccf59d848461ed4512259fcec51d43",
+      "scope": "Pinned source identity only; no parser output is admitted for this artifact.",
+      "source_id": "NI-LEXICON-SITE",
+      "source_receipt": null,
+      "status": "PINNED_UNPARSED"
+    },
+    {
+      "artifact_id": "NI-WEB-APP",
+      "canonical_rows": {
+        "affix_degrees": {
+          "count": 27,
+          "sha256": "8d68381d76d1b352846f6c66d961d93b1f4a37a38bd41c885fd4c3c5a0053cf9"
+        },
+        "allomorph_rules": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "grammatical_categories": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "morpheme_compositions": {
+          "count": 105,
+          "sha256": "8fe4383971e0605edcde8a055703e7732da34c2b59d53e3d2498a9bddae9ae47"
+        },
+        "morphemes_atomic": {
+          "count": 7,
+          "sha256": "45d6064de329fcf44c92a87e1bba48de59c4fd915e288ebf0df140ac070d22ac"
+        },
+        "root_senses": {
+          "count": 24,
+          "sha256": "20c21eb66250714d21e8e9ee7181a93a5fcbc6a7eb746b6d452d8c2f3fb2c5b6"
+        },
+        "source_assertions": {
+          "count": 112,
+          "sha256": "3a880a6a3f273298f2b888ee8dc62f7531e46851714a3e9c7911081240e69f17"
+        },
+        "source_sections": {
+          "count": 3,
+          "sha256": "5287f9261f09509efa3202151f1c35421ce4ee1131a495aa6605a749c923a6f9"
+        },
+        "source_table_cells": {
+          "count": 685,
+          "sha256": "b37732270de7cdff1e68d66539399fef7c896aac9decd2c5eb8b679c17834c17"
+        },
+        "source_tables": {
+          "count": 12,
+          "sha256": "b18e28b87620bbd723d01fcfa23c43e80b979f93af16394d30389facd0902a8c"
+        }
+      },
+      "debt_by_reason": {
+        "prose_and_semantic_exhaustiveness_unmeasured": 1
+      },
+      "kind": "grammar_appendix",
+      "last_success_identity": null,
+      "observed_sha256": "3dacde8078f779c93db51d7575c231fae1114550bee38099fe74d1f07ff82197",
+      "parser": {
+        "implementation": "build_structure.py + build_morphology.py",
+        "morphology_sha256": "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+        "sha256": "07d799abba0354ea38075a41de22457aa539bc59842e4ebf86767e11f3c35fd7",
+        "version": "unversioned"
+      },
+      "pinned_sha256": "3dacde8078f779c93db51d7575c231fae1114550bee38099fe74d1f07ff82197",
+      "scope": "Structural sections, tables, and cells only; prose and semantic exhaustiveness are unmeasured.",
+      "source_id": "NI-WEB-APP",
+      "source_receipt": null,
+      "status": "PARSED_WITH_DEBT"
+    },
+    {
+      "artifact_id": "NI-WEB-CH01",
+      "canonical_rows": {
+        "affix_degrees": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "allomorph_rules": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "grammatical_categories": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "morpheme_compositions": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "morphemes_atomic": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "root_senses": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "source_assertions": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "source_sections": {
+          "count": 11,
+          "sha256": "db8e2244e36e052550ace469b49e94201f22579cec54052cd0576c1f253d25dc"
+        },
+        "source_table_cells": {
+          "count": 96,
+          "sha256": "2815b38b8b08ea4c72f3d9eb28ef8cebc3566006f3024ec738c3f4ef9aacfaff"
+        },
+        "source_tables": {
+          "count": 4,
+          "sha256": "3f29938403ead7bebd60c18693374c40113d79cfae90e978332a906ed037fef6"
+        }
+      },
+      "debt_by_reason": {
+        "prose_and_semantic_exhaustiveness_unmeasured": 1
+      },
+      "kind": "grammar_chapter",
+      "last_success_identity": null,
+      "observed_sha256": "f97f7d919cd9e0eca9d7221cb0ad03591c3b4a83e30feb208c5a3002a9be8d90",
+      "parser": {
+        "implementation": "build_structure.py + build_morphology.py",
+        "morphology_sha256": "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+        "sha256": "07d799abba0354ea38075a41de22457aa539bc59842e4ebf86767e11f3c35fd7",
+        "version": "unversioned"
+      },
+      "pinned_sha256": "f97f7d919cd9e0eca9d7221cb0ad03591c3b4a83e30feb208c5a3002a9be8d90",
+      "scope": "Structural sections, tables, and cells only; prose and semantic exhaustiveness are unmeasured.",
+      "source_id": "NI-WEB-CH01",
+      "source_receipt": null,
+      "status": "PARSED_WITH_DEBT"
+    },
+    {
+      "artifact_id": "NI-WEB-CH02",
+      "canonical_rows": {
+        "affix_degrees": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "allomorph_rules": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "grammatical_categories": {
+          "count": 5,
+          "sha256": "4f3eb4c7465aa9a5637d9710879222ccde0b4f0b6281230bad11e8db1136b1e3"
+        },
+        "morpheme_compositions": {
+          "count": 1,
+          "sha256": "3150d135f2edef2f0e51216f0c8ddf4e6b0021498c7bbc8e24fb5ea860097c9d"
+        },
+        "morphemes_atomic": {
+          "count": 46,
+          "sha256": "e083a7bfbe7360779efc3601ce44da809a2e04301e67be2ae0ada1b5532fad79"
+        },
+        "root_senses": {
+          "count": 24,
+          "sha256": "f531462d2cac4da843a6b4c713e322743d097b2a4379da38b39113b6e9a74c43"
+        },
+        "source_assertions": {
+          "count": 47,
+          "sha256": "be51aa3151732bcbf35fb584ab20a640687642fbeb2c99dacf7e105eebe82f99"
+        },
+        "source_sections": {
+          "count": 13,
+          "sha256": "b2e97e2fd6da96701ca8942b5c3701c6e9b7b726a0e1b17082d62331562edbee"
+        },
+        "source_table_cells": {
+          "count": 237,
+          "sha256": "f8e129808ea3d40ef3cdd556e918e5d83cf97d58f642a4f62575c48413a93329"
+        },
+        "source_tables": {
+          "count": 9,
+          "sha256": "3d64139e28562e8b4adc65e44f0027c1547b576dbf944b70c597e0fcac20a134"
+        }
+      },
+      "debt_by_reason": {
+        "prose_and_semantic_exhaustiveness_unmeasured": 1
+      },
+      "kind": "grammar_chapter",
+      "last_success_identity": null,
+      "observed_sha256": "5ee3a68497ca3bb242ba79cd3c556fa790a9407413b75242380b4cc1ecd2ffc6",
+      "parser": {
+        "implementation": "build_structure.py + build_morphology.py",
+        "morphology_sha256": "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+        "sha256": "07d799abba0354ea38075a41de22457aa539bc59842e4ebf86767e11f3c35fd7",
+        "version": "unversioned"
+      },
+      "pinned_sha256": "5ee3a68497ca3bb242ba79cd3c556fa790a9407413b75242380b4cc1ecd2ffc6",
+      "scope": "Structural sections, tables, and cells only; prose and semantic exhaustiveness are unmeasured.",
+      "source_id": "NI-WEB-CH02",
+      "source_receipt": null,
+      "status": "PARSED_WITH_DEBT"
+    },
+    {
+      "artifact_id": "NI-WEB-CH03",
+      "canonical_rows": {
+        "affix_degrees": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "allomorph_rules": {
+          "count": 19,
+          "sha256": "acb02ad7d6115647b6f9e01b71fb5374e7c3320f51e4a5e7057a648609eddacb"
+        },
+        "grammatical_categories": {
+          "count": 5,
+          "sha256": "35d5afaf76a73b6bad4ca692ec41868c8835809a5a60aee071985d3b42d14fd7"
+        },
+        "morpheme_compositions": {
+          "count": 1,
+          "sha256": "8805a743972c37a9024cba4eae20e8a19c82bfa0d30ac4a5fe9c32ac03a4a7f8"
+        },
+        "morphemes_atomic": {
+          "count": 92,
+          "sha256": "11c0817b4b4a99b0424d387bbdb2dbb1a94386b5fc43ddea830abc9ef03cd7cb"
+        },
+        "root_senses": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "source_assertions": {
+          "count": 93,
+          "sha256": "78e8e0665def80dc13592d3c0e74930ecb596f8b89d584669600d56ab5a2b882"
+        },
+        "source_sections": {
+          "count": 35,
+          "sha256": "af6de4938c328d4abdb9c341baea9cb03532d0a24b59a594953cf71c0aaaf42c"
+        },
+        "source_table_cells": {
+          "count": 557,
+          "sha256": "75b308e9960696ffffeb76a369c0b7a88e7d7ca59eb5e859fa204ee05ae6e780"
+        },
+        "source_tables": {
+          "count": 43,
+          "sha256": "1442734caa8e73cb6665628454705e4b9294ed74dabb7f0e18b174c65529bfa7"
+        }
+      },
+      "debt_by_reason": {
+        "prose_and_semantic_exhaustiveness_unmeasured": 1
+      },
+      "kind": "grammar_chapter",
+      "last_success_identity": null,
+      "observed_sha256": "93d9d61682fa2d051fc667cf2952a0e521b07ec42629e2788f57b0b2f4c34c0f",
+      "parser": {
+        "implementation": "build_structure.py + build_morphology.py",
+        "morphology_sha256": "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+        "sha256": "07d799abba0354ea38075a41de22457aa539bc59842e4ebf86767e11f3c35fd7",
+        "version": "unversioned"
+      },
+      "pinned_sha256": "93d9d61682fa2d051fc667cf2952a0e521b07ec42629e2788f57b0b2f4c34c0f",
+      "scope": "Structural sections, tables, and cells only; prose and semantic exhaustiveness are unmeasured.",
+      "source_id": "NI-WEB-CH03",
+      "source_receipt": null,
+      "status": "PARSED_WITH_DEBT"
+    },
+    {
+      "artifact_id": "NI-WEB-CH04",
+      "canonical_rows": {
+        "affix_degrees": {
+          "count": 99,
+          "sha256": "13b8561580ac9169e2077b244f4300c2649944807229040a577035af7c8defdf"
+        },
+        "allomorph_rules": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "grammatical_categories": {
+          "count": 3,
+          "sha256": "a40e83d34efa62554a923b84d78cd6b3068cc430b09714b7031aff79836ccb80"
+        },
+        "morpheme_compositions": {
+          "count": 385,
+          "sha256": "da53aeaea113e27d5c4c111319e91633e2213c9ed747be71a9d6c742b52ce2c6"
+        },
+        "morphemes_atomic": {
+          "count": 132,
+          "sha256": "88d5864db14d7c63c5f6f687b952ea4dca56247b8deb76914a27667f85cd0138"
+        },
+        "root_senses": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "source_assertions": {
+          "count": 789,
+          "sha256": "6c356fbfd179f4fe7bc2df7f0b1797221230df0f6f829aac5433a456d9bc70d9"
+        },
+        "source_sections": {
+          "count": 89,
+          "sha256": "2666560d851ab2d4bca8fc90a0dd993850212138da753c1c1918abd91c2e9e82"
+        },
+        "source_table_cells": {
+          "count": 967,
+          "sha256": "a5e1ff4e86d6aa3e10471b7cb993b6f69a5229459d636bdf5ef71fb781ff51bc"
+        },
+        "source_tables": {
+          "count": 104,
+          "sha256": "0c945962518937e8a7343a250cdfc571d2e81e5d5e14e2e0bc8f21b1abb10694"
+        }
+      },
+      "debt_by_reason": {
+        "prose_and_semantic_exhaustiveness_unmeasured": 1
+      },
+      "kind": "grammar_chapter",
+      "last_success_identity": null,
+      "observed_sha256": "d9e322e731a1df0fa6ed6213e15dc039ce7f27839fa06275e66764ff4dea0825",
+      "parser": {
+        "implementation": "build_structure.py + build_morphology.py",
+        "morphology_sha256": "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+        "sha256": "07d799abba0354ea38075a41de22457aa539bc59842e4ebf86767e11f3c35fd7",
+        "version": "unversioned"
+      },
+      "pinned_sha256": "d9e322e731a1df0fa6ed6213e15dc039ce7f27839fa06275e66764ff4dea0825",
+      "scope": "Structural sections, tables, and cells only; prose and semantic exhaustiveness are unmeasured.",
+      "source_id": "NI-WEB-CH04",
+      "source_receipt": null,
+      "status": "PARSED_WITH_DEBT"
+    },
+    {
+      "artifact_id": "NI-WEB-CH05",
+      "canonical_rows": {
+        "affix_degrees": {
+          "count": 64,
+          "sha256": "77f4355055bebb0d21a06af2b87e0c6fb3976482f613d244355affe1f9988b65"
+        },
+        "allomorph_rules": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "grammatical_categories": {
+          "count": 6,
+          "sha256": "9e741ea5cfee9783a9431c914d11db2de733eda61bd71b9874210d237516bb0a"
+        },
+        "morpheme_compositions": {
+          "count": 250,
+          "sha256": "1113d0247a30bb3ea4980ad9121ef781068c7f2d6de0b540522536dc08583fe1"
+        },
+        "morphemes_atomic": {
+          "count": 101,
+          "sha256": "05728dce44d299207edc5e88cf7bd454dddfcf32de51ba5e656913c3dc7d28e0"
+        },
+        "root_senses": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "source_assertions": {
+          "count": 352,
+          "sha256": "876b9a201729635724c55de043bc08b606e367e37d13b08416a14d14f9c77049"
+        },
+        "source_sections": {
+          "count": 85,
+          "sha256": "37e0c96ab2e01570e02e45aaa3099f6bb96afbd5855a7465ef886137ec299608"
+        },
+        "source_table_cells": {
+          "count": 742,
+          "sha256": "189ff18108da264c65f32e95298fe5309219a09d227c95db6ce6e8e3b6dab6b4"
+        },
+        "source_tables": {
+          "count": 79,
+          "sha256": "61781196d2d802ee06fd758ddc09daf0fd82241c0b348fb325a6b5b92fb39bb1"
+        }
+      },
+      "debt_by_reason": {
+        "prose_and_semantic_exhaustiveness_unmeasured": 1
+      },
+      "kind": "grammar_chapter",
+      "last_success_identity": null,
+      "observed_sha256": "4bd65c19301080f1aa96fa512701f88c19223c322535a448b88d70f81efb9c67",
+      "parser": {
+        "implementation": "build_structure.py + build_morphology.py",
+        "morphology_sha256": "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+        "sha256": "07d799abba0354ea38075a41de22457aa539bc59842e4ebf86767e11f3c35fd7",
+        "version": "unversioned"
+      },
+      "pinned_sha256": "4bd65c19301080f1aa96fa512701f88c19223c322535a448b88d70f81efb9c67",
+      "scope": "Structural sections, tables, and cells only; prose and semantic exhaustiveness are unmeasured.",
+      "source_id": "NI-WEB-CH05",
+      "source_receipt": null,
+      "status": "PARSED_WITH_DEBT"
+    },
+    {
+      "artifact_id": "NI-WEB-CH06",
+      "canonical_rows": {
+        "affix_degrees": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "allomorph_rules": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "grammatical_categories": {
+          "count": 2,
+          "sha256": "f94608382656c44652838122eb61cb69798e01c235f64859310765d904499ce7"
+        },
+        "morpheme_compositions": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "morphemes_atomic": {
+          "count": 18,
+          "sha256": "f3b4fc0b4310799e496d63171fe0a369fe6cf63881e88cee7b6abb1acfb5626f"
+        },
+        "root_senses": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "source_assertions": {
+          "count": 18,
+          "sha256": "f5b5452c51985fc96b3d2c216c7fc2b9f5e1347fc4092ec73607947a51781c2a"
+        },
+        "source_sections": {
+          "count": 9,
+          "sha256": "727563518b977b8d1aafa1b85b9cd15ee3772dbbd25b79e64fc84882d907cfbf"
+        },
+        "source_table_cells": {
+          "count": 166,
+          "sha256": "430480d038269a455defffb9b10c1b360d3bd51f314c4aafdedc3bd3014c775c"
+        },
+        "source_tables": {
+          "count": 6,
+          "sha256": "7cf322927970f009cef4097f4e2c32a6123e7114952b1e79d70f1eaf96871172"
+        }
+      },
+      "debt_by_reason": {
+        "prose_and_semantic_exhaustiveness_unmeasured": 1
+      },
+      "kind": "grammar_chapter",
+      "last_success_identity": null,
+      "observed_sha256": "db4f341c928f3432b53e3094c2e00a4995eed09be42bfa07729be18c1f08b91e",
+      "parser": {
+        "implementation": "build_structure.py + build_morphology.py",
+        "morphology_sha256": "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+        "sha256": "07d799abba0354ea38075a41de22457aa539bc59842e4ebf86767e11f3c35fd7",
+        "version": "unversioned"
+      },
+      "pinned_sha256": "db4f341c928f3432b53e3094c2e00a4995eed09be42bfa07729be18c1f08b91e",
+      "scope": "Structural sections, tables, and cells only; prose and semantic exhaustiveness are unmeasured.",
+      "source_id": "NI-WEB-CH06",
+      "source_receipt": null,
+      "status": "PARSED_WITH_DEBT"
+    },
+    {
+      "artifact_id": "NI-WEB-CH07",
+      "canonical_rows": {
+        "affix_degrees": {
+          "count": 54,
+          "sha256": "a446874c58b354683fea579f8abf510dfb2c6a95f3c67bf7097e4365c5c266b9"
+        },
+        "allomorph_rules": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "grammatical_categories": {
+          "count": 7,
+          "sha256": "c162458ab869369299375dc8b007b6978291108ad9a723c9d85640060f1f73be"
+        },
+        "morpheme_compositions": {
+          "count": 791,
+          "sha256": "5e371fee00a63867b0824417aa88c06361a7fdc5d564566aace375da206c7c96"
+        },
+        "morphemes_atomic": {
+          "count": 141,
+          "sha256": "5d39b479757ae45fa318696ff24596daaea5f7ef70e5f57117ea386ae6c42fd0"
+        },
+        "root_senses": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "source_assertions": {
+          "count": 2675,
+          "sha256": "0067bf6ac710fcd32602354c7e2ab84d29699b304854e7e43cf2171b9c5ebbc7"
+        },
+        "source_sections": {
+          "count": 16,
+          "sha256": "e050c89b2470ce4e69d3aa636dd37ac51be70e0919d43c34f7554da35214327c"
+        },
+        "source_table_cells": {
+          "count": 856,
+          "sha256": "0c6ce39d98dcaeb4a594c32c6924a47dcaba4abbddbe2fea4bd26786014ea663"
+        },
+        "source_tables": {
+          "count": 21,
+          "sha256": "929a7ab7f3a0c3c7e7c689fe22a76594fc24ba690a398200c43227501a02c592"
+        }
+      },
+      "debt_by_reason": {
+        "prose_and_semantic_exhaustiveness_unmeasured": 1
+      },
+      "kind": "grammar_chapter",
+      "last_success_identity": null,
+      "observed_sha256": "11f947908bbbfb42705dfff63a40c83d376a39985ac83a28ce588fdcafc314b8",
+      "parser": {
+        "implementation": "build_structure.py + build_morphology.py",
+        "morphology_sha256": "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+        "sha256": "07d799abba0354ea38075a41de22457aa539bc59842e4ebf86767e11f3c35fd7",
+        "version": "unversioned"
+      },
+      "pinned_sha256": "11f947908bbbfb42705dfff63a40c83d376a39985ac83a28ce588fdcafc314b8",
+      "scope": "Structural sections, tables, and cells only; prose and semantic exhaustiveness are unmeasured.",
+      "source_id": "NI-WEB-CH07",
+      "source_receipt": null,
+      "status": "PARSED_WITH_DEBT"
+    },
+    {
+      "artifact_id": "NI-WEB-CH08",
+      "canonical_rows": {
+        "affix_degrees": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "allomorph_rules": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "grammatical_categories": {
+          "count": 4,
+          "sha256": "437a4dcf1240efa5448352788bb3d74e824ad238f72ff70f9506d7875433969e"
+        },
+        "morpheme_compositions": {
+          "count": 275,
+          "sha256": "7cf1a790f2d9ff057fc79749aa4b37f7d2b4b39ddaf076a19d3e77e2fd426828"
+        },
+        "morphemes_atomic": {
+          "count": 78,
+          "sha256": "bb2c60fcc575bce70c4755c7e38ee2d5004acea9b44924f80b3c71f16e6c0a6b"
+        },
+        "root_senses": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "source_assertions": {
+          "count": 353,
+          "sha256": "9840c5a4beac194bb0dbdef513eddb42037d97af21d644e1799e815dd7ac08dc"
+        },
+        "source_sections": {
+          "count": 20,
+          "sha256": "47cd403c81aa97bdfc4afd77e665286f384e9d5a819bab0a8afe9bbafdfc6d17"
+        },
+        "source_table_cells": {
+          "count": 359,
+          "sha256": "0cf9befc0903519689aecb9315f1038b5be6305b93a22dee62c419928db95d34"
+        },
+        "source_tables": {
+          "count": 11,
+          "sha256": "101dcd49d7e929c64ef22c7f2ff10cea70c8546d6d42c5a345ba58646ea3cf3a"
+        }
+      },
+      "debt_by_reason": {
+        "prose_and_semantic_exhaustiveness_unmeasured": 1
+      },
+      "kind": "grammar_chapter",
+      "last_success_identity": null,
+      "observed_sha256": "125625c6377e5e755d65cbf2df02b5f2f2a50a6e847acb80badbf3afb9e0323a",
+      "parser": {
+        "implementation": "build_structure.py + build_morphology.py",
+        "morphology_sha256": "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+        "sha256": "07d799abba0354ea38075a41de22457aa539bc59842e4ebf86767e11f3c35fd7",
+        "version": "unversioned"
+      },
+      "pinned_sha256": "125625c6377e5e755d65cbf2df02b5f2f2a50a6e847acb80badbf3afb9e0323a",
+      "scope": "Structural sections, tables, and cells only; prose and semantic exhaustiveness are unmeasured.",
+      "source_id": "NI-WEB-CH08",
+      "source_receipt": null,
+      "status": "PARSED_WITH_DEBT"
+    },
+    {
+      "artifact_id": "NI-WEB-CH09",
+      "canonical_rows": {
+        "affix_degrees": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "allomorph_rules": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "grammatical_categories": {
+          "count": 1,
+          "sha256": "481f7e78202c21cb986bf3702711e3c8c0eb6ef4af7db6faea2b59668e50eea0"
+        },
+        "morpheme_compositions": {
+          "count": 2,
+          "sha256": "7f1ea48ac2c656e002e1c09696cb3ac3a183f01ae921e350568e5d639838a0bb"
+        },
+        "morphemes_atomic": {
+          "count": 39,
+          "sha256": "bd04ce530ef0cd80e8e929bdd0e55a1e7c3ee964fb97c8e69aa18091684979a7"
+        },
+        "root_senses": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "source_assertions": {
+          "count": 41,
+          "sha256": "d1d20998b40e2a549759be8bd90f4675bed670dd029c28f694b16e798cc28159"
+        },
+        "source_sections": {
+          "count": 7,
+          "sha256": "ac5e5140be14cb28dab75714a61abf33165255dfa6d2a3ce96fddc005cbcf9f7"
+        },
+        "source_table_cells": {
+          "count": 144,
+          "sha256": "2517aaac85994f5b7660a913090215877e3451fe45c5f1fd191d3ac6fc972e10"
+        },
+        "source_tables": {
+          "count": 6,
+          "sha256": "1e4f755221b191700ca463f0efaee3623b5c2faf9c05e10fefb27e2228b1207f"
+        }
+      },
+      "debt_by_reason": {
+        "prose_and_semantic_exhaustiveness_unmeasured": 1
+      },
+      "kind": "grammar_chapter",
+      "last_success_identity": null,
+      "observed_sha256": "bf650d9017ae6c2a31f904aa35335d85364ed824b8585b169cc9e228db6a2dce",
+      "parser": {
+        "implementation": "build_structure.py + build_morphology.py",
+        "morphology_sha256": "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+        "sha256": "07d799abba0354ea38075a41de22457aa539bc59842e4ebf86767e11f3c35fd7",
+        "version": "unversioned"
+      },
+      "pinned_sha256": "bf650d9017ae6c2a31f904aa35335d85364ed824b8585b169cc9e228db6a2dce",
+      "scope": "Structural sections, tables, and cells only; prose and semantic exhaustiveness are unmeasured.",
+      "source_id": "NI-WEB-CH09",
+      "source_receipt": null,
+      "status": "PARSED_WITH_DEBT"
+    },
+    {
+      "artifact_id": "NI-WEB-CH10",
+      "canonical_rows": {
+        "affix_degrees": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "allomorph_rules": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "grammatical_categories": {
+          "count": 1,
+          "sha256": "5ad42c468bb2786d21a1ccab1e757b8549457eb011ea6ffa1447079e665b89c0"
+        },
+        "morpheme_compositions": {
+          "count": 2,
+          "sha256": "04925964003c155f297a107d17854a72dcc0a65bfdee063ace5f4d5bf51d4f77"
+        },
+        "morphemes_atomic": {
+          "count": 74,
+          "sha256": "a1713db4398e4a5154985b973203f8aff929d1875e10fe6e0ad7c9425382f734"
+        },
+        "root_senses": {
+          "count": 116,
+          "sha256": "d534b18c61d8d26f339c53bee4ed1df87cd9053b5b5f356d03fcc4890312272c"
+        },
+        "source_assertions": {
+          "count": 80,
+          "sha256": "aae8d58099de50a4e9ec5221530b3f3d213b546d449559e6b889d0ab72b03ddb"
+        },
+        "source_sections": {
+          "count": 14,
+          "sha256": "5d358548f3fa72b879f0eb6fee1769d09bf0d74dc31daa0e33329d409df97194"
+        },
+        "source_table_cells": {
+          "count": 277,
+          "sha256": "92ad6307741e368bfb11e312cfe149b786f48ad9b9e7ec19d12cd43904b1d8ce"
+        },
+        "source_tables": {
+          "count": 14,
+          "sha256": "02b18c9dab8263efe2dd1d35f4fbeb086209016201da9accbb0460c2c32af56d"
+        }
+      },
+      "debt_by_reason": {
+        "prose_and_semantic_exhaustiveness_unmeasured": 1
+      },
+      "kind": "grammar_chapter",
+      "last_success_identity": null,
+      "observed_sha256": "c664c578ff18c83b5bd209198a1b2fc7b0840697072b4f88faf6701164cb103e",
+      "parser": {
+        "implementation": "build_structure.py + build_morphology.py",
+        "morphology_sha256": "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+        "sha256": "07d799abba0354ea38075a41de22457aa539bc59842e4ebf86767e11f3c35fd7",
+        "version": "unversioned"
+      },
+      "pinned_sha256": "c664c578ff18c83b5bd209198a1b2fc7b0840697072b4f88faf6701164cb103e",
+      "scope": "Structural sections, tables, and cells only; prose and semantic exhaustiveness are unmeasured.",
+      "source_id": "NI-WEB-CH10",
+      "source_receipt": null,
+      "status": "PARSED_WITH_DEBT"
+    },
+    {
+      "artifact_id": "NI-WEB-CH11",
+      "canonical_rows": {
+        "affix_degrees": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "allomorph_rules": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "grammatical_categories": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "morpheme_compositions": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "morphemes_atomic": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "root_senses": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "source_assertions": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "source_sections": {
+          "count": 10,
+          "sha256": "60f49887a08377a909b191ceda84605c24edd4f24807af6fc0013e2f31d5daeb"
+        },
+        "source_table_cells": {
+          "count": 32,
+          "sha256": "0807059b9004337673a00e9c24014a8cb4053caaa01584b2801ea22f660d1b00"
+        },
+        "source_tables": {
+          "count": 2,
+          "sha256": "2170f52cb5ca4bc9337981ff17290a76f6dcb8f71e1d4fc2b6a5d011ef1aa25a"
+        }
+      },
+      "debt_by_reason": {
+        "prose_and_semantic_exhaustiveness_unmeasured": 1
+      },
+      "kind": "grammar_chapter",
+      "last_success_identity": null,
+      "observed_sha256": "0d9d2a65ef2cb3c6e233090dc3d7aea6af16492e167dcfd7c304b06368f378c2",
+      "parser": {
+        "implementation": "build_structure.py + build_morphology.py",
+        "morphology_sha256": "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+        "sha256": "07d799abba0354ea38075a41de22457aa539bc59842e4ebf86767e11f3c35fd7",
+        "version": "unversioned"
+      },
+      "pinned_sha256": "0d9d2a65ef2cb3c6e233090dc3d7aea6af16492e167dcfd7c304b06368f378c2",
+      "scope": "Structural sections, tables, and cells only; prose and semantic exhaustiveness are unmeasured.",
+      "source_id": "NI-WEB-CH11",
+      "source_receipt": null,
+      "status": "PARSED_WITH_DEBT"
+    },
+    {
+      "artifact_id": "NI-WEB-CH12",
+      "canonical_rows": {
+        "affix_degrees": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "allomorph_rules": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "grammatical_categories": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "morpheme_compositions": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "morphemes_atomic": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "root_senses": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "source_assertions": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "source_sections": {
+          "count": 18,
+          "sha256": "683560274ab7c2efba6bec8ef11f849490053c07a9ac2cdfb154cef1fccec4b5"
+        },
+        "source_table_cells": {
+          "count": 44,
+          "sha256": "bacceb11f06b2b9df9e59524e578beea3db5fb2e8b59311dbeb2aa0694f45903"
+        },
+        "source_tables": {
+          "count": 3,
+          "sha256": "d74b423d714e16ec03a4b986fd9ef9567cbf06fb7a30737051a32ed0b864b462"
+        }
+      },
+      "debt_by_reason": {
+        "prose_and_semantic_exhaustiveness_unmeasured": 1
+      },
+      "kind": "grammar_chapter",
+      "last_success_identity": null,
+      "observed_sha256": "1b36aa995d029aceaf9b4b3f8d41984d4a17372c1365e22c026617c794de89d7",
+      "parser": {
+        "implementation": "build_structure.py + build_morphology.py",
+        "morphology_sha256": "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+        "sha256": "07d799abba0354ea38075a41de22457aa539bc59842e4ebf86767e11f3c35fd7",
+        "version": "unversioned"
+      },
+      "pinned_sha256": "1b36aa995d029aceaf9b4b3f8d41984d4a17372c1365e22c026617c794de89d7",
+      "scope": "Structural sections, tables, and cells only; prose and semantic exhaustiveness are unmeasured.",
+      "source_id": "NI-WEB-CH12",
+      "source_receipt": null,
+      "status": "PARSED_WITH_DEBT"
+    },
+    {
+      "artifact_id": "NI-WEB-CH13",
+      "canonical_rows": {
+        "affix_degrees": {
+          "count": 27,
+          "sha256": "53f1eb0b6e407a2c938ae22ed85fb117088659b558c33649dd0807302f0dc003"
+        },
+        "allomorph_rules": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "grammatical_categories": {
+          "count": 1,
+          "sha256": "20bc22861a01de8e89342e0f45d821f6956d08457584c690755410cc1f6222f8"
+        },
+        "morpheme_compositions": {
+          "count": 105,
+          "sha256": "f012ddf4f1d1abf36f92da86abd531da5009d507a72f432251f35a8abd3cd76e"
+        },
+        "morphemes_atomic": {
+          "count": 44,
+          "sha256": "d5bd3038c34a81ed0956ca096ed1e4e3c2e3160182328d7ec768d7e91ecf1f2c"
+        },
+        "root_senses": {
+          "count": 36,
+          "sha256": "7168861ea704e9a46d3a41584cce62838006336ab844cbdee4c43f878a762ca3"
+        },
+        "source_assertions": {
+          "count": 149,
+          "sha256": "5b465386924700c0d4724b3e91fea44efcb1b1b77a47e1ed3aea1abf61b6edaf"
+        },
+        "source_sections": {
+          "count": 7,
+          "sha256": "43abb1074a4196af68eabcfdd901b091725bb4285dab0a90cccf68bb3e22fcbf"
+        },
+        "source_table_cells": {
+          "count": 235,
+          "sha256": "2bc8bdd09ee733cee226cbe7d7d3d453eac743d5c78d799410aa63afd4694bdc"
+        },
+        "source_tables": {
+          "count": 10,
+          "sha256": "0ea36dd4f877d58f0b1a6469fa21153c64e192cbea6d3689c4ca5830b08a36db"
+        }
+      },
+      "debt_by_reason": {
+        "prose_and_semantic_exhaustiveness_unmeasured": 1
+      },
+      "kind": "grammar_chapter",
+      "last_success_identity": null,
+      "observed_sha256": "bfccda659c150949e8f5ae347f987ed6008db8a6fd2d85fd81e9a821f77ff581",
+      "parser": {
+        "implementation": "build_structure.py + build_morphology.py",
+        "morphology_sha256": "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+        "sha256": "07d799abba0354ea38075a41de22457aa539bc59842e4ebf86767e11f3c35fd7",
+        "version": "unversioned"
+      },
+      "pinned_sha256": "bfccda659c150949e8f5ae347f987ed6008db8a6fd2d85fd81e9a821f77ff581",
+      "scope": "Structural sections, tables, and cells only; prose and semantic exhaustiveness are unmeasured.",
+      "source_id": "NI-WEB-CH13",
+      "source_receipt": null,
+      "status": "PARSED_WITH_DEBT"
+    },
+    {
+      "artifact_id": "NI-WEB-INDEX",
+      "canonical_rows": {
+        "affix_degrees": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "allomorph_rules": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "grammatical_categories": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "morpheme_compositions": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "morphemes_atomic": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "root_senses": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "source_assertions": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "source_sections": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "source_table_cells": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "source_tables": {
+          "count": 0,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        }
+      },
+      "debt_by_reason": {},
+      "kind": "grammar_index",
+      "last_success_identity": null,
+      "observed_sha256": "ade3938eb1bbdb9904ead704bd0fadc07fd064ffe0c4906e732a1c05552cec96",
+      "parser": {
+        "implementation": "build_structure.py + build_morphology.py",
+        "morphology_sha256": "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+        "sha256": "07d799abba0354ea38075a41de22457aa539bc59842e4ebf86767e11f3c35fd7",
+        "version": "unversioned"
+      },
+      "pinned_sha256": "ade3938eb1bbdb9904ead704bd0fadc07fd064ffe0c4906e732a1c05552cec96",
+      "scope": "Structural sections, tables, and cells only; prose and semantic exhaustiveness are unmeasured.",
+      "source_id": "NI-WEB-INDEX",
+      "source_receipt": null,
+      "status": "PINNED_UNPARSED"
+    }
+  ],
+  "generator": {
+    "implementation": "source_frontier.py",
+    "sha256": "020a51ee53449f3c16cdc9f3b93a336d0e0ecb81f272544df6d67845b3b015de",
+    "version": "1.0.0"
+  },
+  "inputs": {
+    "_data/pdf/New Ithkuil Lexicon - Chapter 00 - Table of Contents.pdf": "5801addb2e60fc80859ec626c07ff4e32c8fa5805b1623d409d4f9cf913c3f6f",
+    "_data/pdf/New Ithkuil Lexicon - Chapter 01 - Roots and Grammar.pdf": "1c60e40374cf6ffd16791b89983db8f6584c2e1feac7a9c965fc8255b2f95609",
+    "_data/pdf/New Ithkuil Lexicon - Chapter 02 - Tools, States and Acts.pdf": "0d8eaa667d26345dfb55e99ee823fb8ecfa4b4a2d72f998d0e0e3c7b94bad9b2",
+    "_data/pdf/New Ithkuil Lexicon - Chapter 03 - Spacetime and Motion.pdf": "304e44fe561c741841a42f500e19be77ef044be5e4722077edc96e14299499e0",
+    "_data/pdf/New Ithkuil Lexicon - Chapter 04 - Psychology and Sociology.pdf": "3bb95d35bc684cdf4c891d32b5c44e8b796db5e0bb97443961ac6cb0fe7e3d34",
+    "_data/pdf/New Ithkuil Lexicon - Chapter 05 - Miscellaneous Entities.pdf": "c48b1a83f541c3728b5d2685ec186b64b73b00c417ded234b30c40361e36ef30",
+    "_data/pdf/New Ithkuil Lexicon - Chapter 06 - Nature, Non-Biological.pdf": "0fd4aa1df217533427f950b86a4b7c4963dc5e66f7be927c8ad56a2ee990fdbd",
+    "_data/pdf/New Ithkuil Lexicon - Chapter 07 - Natural Phenomena.pdf": "b753012f4df753b3cae476023adff3898a9296640b33e892185ebde22cd478d7",
+    "_raw/New_Ithkuil_Lexicon.pdf": "d26d5aabc844ba9cafca68c6e1c7459b0f325e745b919a4aac3e08a61e684a21",
+    "_raw/index.html": "ade3938eb1bbdb9904ead704bd0fadc07fd064ffe0c4906e732a1c05552cec96",
+    "_raw/newithkuil_01_phonology.htm": "f97f7d919cd9e0eca9d7221cb0ad03591c3b4a83e30feb208c5a3002a9be8d90",
+    "_raw/newithkuil_02_morpho-phonology.htm": "5ee3a68497ca3bb242ba79cd3c556fa790a9407413b75242380b4cc1ecd2ffc6",
+    "_raw/newithkuil_03_morphology.htm": "93d9d61682fa2d051fc667cf2952a0e521b07ec42629e2788f57b0b2f4c34c0f",
+    "_raw/newithkuil_04_case.htm": "d9e322e731a1df0fa6ed6213e15dc039ce7f27839fa06275e66764ff4dea0825",
+    "_raw/newithkuil_05_verbs.htm": "4bd65c19301080f1aa96fa512701f88c19223c322535a448b88d70f81efb9c67",
+    "_raw/newithkuil_06_more_verbs.htm": "db4f341c928f3432b53e3094c2e00a4995eed09be42bfa07729be18c1f08b91e",
+    "_raw/newithkuil_07_affixes.htm": "11f947908bbbfb42705dfff63a40c83d376a39985ac83a28ce588fdcafc314b8",
+    "_raw/newithkuil_08_adjuncts.htm": "125625c6377e5e755d65cbf2df02b5f2f2a50a6e847acb80badbf3afb9e0323a",
+    "_raw/newithkuil_09_referentials.htm": "bf650d9017ae6c2a31f904aa35335d85364ed824b8585b169cc9e228db6a2dce",
+    "_raw/newithkuil_10_spec_constructions.htm": "c664c578ff18c83b5bd209198a1b2fc7b0840697072b4f88faf6701164cb103e",
+    "_raw/newithkuil_11_syntax.htm": "0d9d2a65ef2cb3c6e233090dc3d7aea6af16492e167dcfd7c304b06368f378c2",
+    "_raw/newithkuil_12_script.htm": "1b36aa995d029aceaf9b4b3f8d41984d4a17372c1365e22c026617c794de89d7",
+    "_raw/newithkuil_13_numbers.htm": "bfccda659c150949e8f5ae347f987ed6008db8a6fd2d85fd81e9a821f77ff581",
+    "_raw/newithkuil_affixes.pdf": "5b758ff4c79ba6ccb6e241e59507f7849a7c470c4b34b431bf546cd028aea3aa",
+    "_raw/newithkuil_appendices.htm": "3dacde8078f779c93db51d7575c231fae1114550bee38099fe74d1f07ff82197",
+    "_raw/newithkuil_lexicon.pdf": "bfcaeca6350074748ecea2e273eeb7b812ccf59d848461ed4512259fcec51d43",
+    "affix_degrees.csv": "7eb67d6e39a9798f57da66a0b8840996a9caa46bfb5c0df10b71c4299bdbb2a3",
+    "allomorph_rules.csv": "c053d0c6dce878bacb6ccb1f49f4cd6a8be7dd9185d02bb7992ac60f7def051d",
+    "composition_components.csv": "437e021d05d221ae0fc3b646c54cb33796b006ec9277b735bd3c5d53e238b39c",
+    "grammatical_categories.csv": "005c123f7b7fa0db7bb2a812579f602447a13063b8c4000e450dd4e55710a44e",
+    "lexicon_frontier_pins.json": "18a663eb01fc2ed150ce5efdac7cfd019feeb1af995d9e6653401103f4dd7a0b",
+    "lexicon_root_evidence.csv": "aaefff67aa4b2ddf058a1926ce874145c1eb2fab4c5821eb7ce04e0cce601b50",
+    "lexicon_root_senses.csv": "fe0701acb57e9257b56bf2feac741171e583fdfab032f3d017cfcc8fa404eb5c",
+    "lexicon_roots.csv": "ddd84523758a5dcbfa86f70cd2c7bb0f63bdea18ee089015390f0d3a8199fc46",
+    "morpheme_compositions.csv": "114ae3347d12c0b510ccff196466a27afc13e40b727eaf519f8d93d48ba2c512",
+    "morphemes_atomic.csv": "6c6e2ea64a659b7061bdc3d388201c6219207bc1aa002869537f56d1f7ddf083",
+    "root_senses.csv": "10b5cf14189f94269ed48d96b235a773e90c82623bda04eab4f8f965ed433b93",
+    "source_assertions.csv": "20a197bd4ca9757c19b731652d124139109351294a3b561fb456c81f2e922f7d",
+    "source_sections.csv": "765f30d97c64b68266a45cf77fed69cdba2ce70d5ec368ec1d6c817c259d856f",
+    "source_table_cells.csv": "d43de43ab990876be78cb07ae34ffc6bdc54b18ff8327118baa31814c5631768",
+    "source_tables.csv": "d85cad7573ecb4d22f17a4dd61e0280b05c3cd0c4b1a57edb820a6ef8ec356e5",
+    "sources/affix_frontier_accounting.json": "230e2c1d5f00fe39cfd7fbfa49a9b00f78c85973bc7918859e24688c2c4db04f",
+    "sources/affix_frontier_manifest.json": "0ef57b9f94004caca576a08c49d16c221ca9999432363c230a9b35f7d4f03c9b",
+    "sources/lexicon_frontier/chapter-3-accounting.json": "4ec71cee2cf82941d4e154c608e2265177a293822e632b80c8e51c72fd2b17c6",
+    "sources/lexicon_frontier/chapter-4-accounting.json": "410fc88cdbccacb24e7511583cbf4b5169af411dd525b7d2dd1f0202949f2162",
+    "sources/lexicon_frontier/chapter-5-accounting.json": "27ffdc66a553b228bd7c66ae8d0066060eac5d5f39d896e4276c16dbe32e3930",
+    "sources/lexicon_frontier/chapter-6-accounting.json": "1d120f091e914c71392be81b4dabdd5af35b29690a88bd12e02a9373c5b53a45",
+    "sources/lexicon_frontier/chapter-7-accounting.json": "0d9c7717476d8035c8494ea18d776fd1eedd81d6d2bd865d78772d4ff0e1f9f5",
+    "sources/lexicon_frontier_manifest.json": "aa2f529d17affcf73f1e06c98a59d33f8f219d1d690666825ba1d40490e94075",
+    "sources/source_manifest.csv": "3e151b90b7140db9ee1319d4c16b2da3d8bd3aa675da5e0a9e20e57ce61b4b83"
+  },
+  "receipt_sha256": "4480a0573d5a6f949e15c511bef43967c896a6e005933a424a35846029d6db05",
+  "reconciliation": {
+    "entry_count": 26,
+    "source_manifest_entries": 18,
+    "split_chapter_entries": 8
+  },
+  "schema": "bilqis.ithkuil.extraction-frontier/v1",
+  "version": "1.0.0"
+}

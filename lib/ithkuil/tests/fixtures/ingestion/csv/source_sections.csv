@@ -1,0 +1,24 @@
+section_id,source_id,chapter_number,chapter_title,section_number,section_title,source_heading_text,hierarchy_depth,parent_section_id,source_anchor,source_url,source_line
+NI-WEB-CH02:2.0,NI-WEB-CH02,2,Morpho-Phonology,2.0,MORPHO-PHONOLOGY,MORPHO-PHONOLOGY,1,,,https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm,2589
+NI-WEB-CH02:2.3,NI-WEB-CH02,2,Morpho-Phonology,2.3,The Structure of Formatives,The Structure of Formatives,1,NI-WEB-CH02:2.0,,https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm,3228
+NI-WEB-CH03:3.0,NI-WEB-CH03,3,Morphology,3.0,BASIC MORPHOLOGY,BASIC MORPHOLOGY,1,,,https://www.ithkuil.net/newithkuil_03_morphology.htm,2591
+NI-WEB-CH03:3.1,NI-WEB-CH03,3,Morphology,3.1,Configuration,Configuration,1,NI-WEB-CH03:3.0,,https://www.ithkuil.net/newithkuil_03_morphology.htm,3063
+NI-WEB-CH03:3.6,NI-WEB-CH03,3,Morphology,3.6,The C A Affix-Complex,The C A Affix-Complex,1,NI-WEB-CH03:3.0,Sec3_6,https://www.ithkuil.net/newithkuil_03_morphology.htm,6022
+NI-WEB-CH04:4.0,NI-WEB-CH04,4,Case,4.0,CASE MORPHOLOGY,CASE MORPHOLOGY,1,,,https://www.ithkuil.net/newithkuil_04_case.htm,2868
+NI-WEB-CH04:4.2,NI-WEB-CH04,4,Case,4.2,The Transrelative Cases,The Transrelative Cases,1,NI-WEB-CH04:4.0,,https://www.ithkuil.net/newithkuil_04_case.htm,4028
+NI-WEB-CH04:4.2.1,NI-WEB-CH04,4,Case,4.2.1,,,2,NI-WEB-CH04:4.2,,https://www.ithkuil.net/newithkuil_04_case.htm,4073
+NI-WEB-CH04:4.2.2,NI-WEB-CH04,4,Case,4.2.2,,,2,NI-WEB-CH04:4.2,,https://www.ithkuil.net/newithkuil_04_case.htm,4131
+NI-WEB-CH04:4.2.11,NI-WEB-CH04,4,Case,4.2.11,Specialized Suffixes Used to Expand the Functionality of the Transrelative Cases,Specialized Suffixes Used to Expand the Functionality of the Transrelative Cases,2,NI-WEB-CH04:4.2,Sec4_2_11,https://www.ithkuil.net/newithkuil_04_case.htm,7309
+NI-WEB-CH05:5.0,NI-WEB-CH05,5,Verbs,5.0,VERBAL MORPHOLOGY,VERBAL MORPHOLOGY,1,,,https://www.ithkuil.net/newithkuil_05_verbs.htm,2865
+NI-WEB-CH05:5.2,NI-WEB-CH05,5,Verbs,5.2,Mood,Mood,1,NI-WEB-CH05:5.0,Sec5_2,https://www.ithkuil.net/newithkuil_05_verbs.htm,7854
+NI-WEB-CH05:5.2.7,NI-WEB-CH05,5,Verbs,5.2.7,The Mood + Case-Scoping Affix,The Mood + Case-Scoping Affix,2,NI-WEB-CH05:5.2,,https://www.ithkuil.net/newithkuil_05_verbs.htm,8932
+NI-WEB-CH05:5.5,NI-WEB-CH05,5,Verbs,5.5,Level,Level,1,NI-WEB-CH05:5.0,Sec5_5,https://www.ithkuil.net/newithkuil_05_verbs.htm,10650
+NI-WEB-CH05:5.5.3,NI-WEB-CH05,5,Verbs,5.5.3,Comparison Operators (Levels),Comparison Operators (Levels),2,NI-WEB-CH05:5.5,,https://www.ithkuil.net/newithkuil_05_verbs.htm,11010
+NI-WEB-CH07:7.0,NI-WEB-CH07,7,Affixes,7.0,AFFIXES,AFFIXES,1,,,https://www.ithkuil.net/newithkuil_07_affixes.htm,2596
+NI-WEB-CH07:7.6,NI-WEB-CH07,7,Affixes,7.6,"Case-Accessor , Inverse Case-Accessor, and Case-Stacking Affixes","Case-Accessor , Inverse Case-Accessor, and Case-Stacking Affixes",1,NI-WEB-CH07:7.0,Sec7_6,https://www.ithkuil.net/newithkuil_07_affixes.htm,5686
+NI-WEB-CH07:7.6.1,NI-WEB-CH07,7,Affixes,7.6.1,"The Phonological Structure of Case-Accessor, Inverse Case-Accessor, and Case-Stacking Affixes","The Phonological Structure of Case-Accessor, Inverse Case-Accessor, and Case-Stacking Affixes",2,NI-WEB-CH07:7.6,,https://www.ithkuil.net/newithkuil_07_affixes.htm,10410
+NI-WEB-CH08:8.0,NI-WEB-CH08,8,Adjuncts,8.0,ADJUNCTS,ADJUNCTS,1,,,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,2605
+NI-WEB-CH08:8.2,NI-WEB-CH08,8,Adjuncts,8.2,Modular Adjuncts,Modular Adjuncts,1,NI-WEB-CH08:8.0,,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,3116
+NI-WEB-CH08:8.4,NI-WEB-CH08,8,Adjuncts,8.4,Suppletive Adjuncts,Suppletive Adjuncts,1,NI-WEB-CH08:8.0,,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,4112
+NI-WEB-CH08:8.4.1,NI-WEB-CH08,8,Adjuncts,8.4.1,CAR Carrier Adjunct,CAR Carrier Adjunct,2,NI-WEB-CH08:8.4,Sec8_4_1,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,4161
+NI-WEB-CH08:8.4.3,NI-WEB-CH08,8,Adjuncts,8.4.3,NAM Naming Adjunct,NAM Naming Adjunct,2,NI-WEB-CH08:8.4,,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,4316

@@ -1,0 +1,14 @@
+{
+  "canonical_sha256": "49aaf11d3d2a7d4dd758be022e8a82ce66804ef6b03a2d210b8289ca7d263d60",
+  "emitted_resources": 9279,
+  "ledger_dispositions": {
+    "EMITTED": 9290,
+    "HELD": 500,
+    "IR_ONLY": 15322,
+    "REJECTED": 0,
+    "UNSUPPORTED": 1917
+  },
+  "resolved_resources": 9668,
+  "semantic_rows": 9790,
+  "triple_count": 67869
+}

@@ -1,0 +1,1536 @@
+{
+  "schema": "bilqis.bamf.workstack/v1",
+  "version": "0.2.0",
+  "root_issue": 341,
+  "source_base": "d21797e72365bf93ea7cad3a4ef9020ec9817f23",
+  "skos_merge": "175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8",
+  "egm_commit": "b3a35956759bf7f024af2ff061b2e0b44b438e4c",
+  "items": [
+    {
+      "key": "A01",
+      "title": "Compile the pinned SKOS release into the BAMF semantic authority snapshot",
+      "lane": "A",
+      "deps": [],
+      "owners": [
+        292
+      ],
+      "paths": [
+        "lib/ithkuil/src/skos/identity.py",
+        "lib/ithkuil/src/skos/corpus.py",
+        "lib/ithkuil/src/skos/mapping_admission.py",
+        "lib/ithkuil/src/skos/coverage.py",
+        "bilqis_mlx/semantics/atlas_projection.py (new)",
+        "bilqis_mlx/semantics/tests/test_atlas_projection.py (new)"
+      ],
+      "api": "compile_atlas_release(corpus_dir, coverage_receipt, prior_abi, formal_domain_bindings) -> AtlasRelease; validate_atlas_release(release) -> ReleaseValidation",
+      "steps": "Read the canonical release produced by #291 and verify its source, coverage and RDF digests. Emit stable concept records, admitted types/relations, morphology/sense distinctions, source loci, held mappings and canonical ordering. Preserve root versus Stem x Specification sense identities; emit allomorph/form variants as realizations, not duplicate meanings. Retain the existing formal Boolean/numeric source owners with explicit domain bindings. Derive ABI entries in the prior accepted ordering followed by canonical new-ID ordering. Persist atlas.json, concepts.jsonl, relations.jsonl, held.jsonl and a content-addressed manifest using the repository canonical serializer. Count source rows, RDF terms, semantic concepts, active ABI indices and trainable capabilities separately. Attach an explicit reason to every corpus item that is not yet a teaching candidate. Complete #292's projection contract through this leaf rather than implementing a second registry. The graph materialization receipt may witness the same digest, but canonical RDF/IR bytes supply the build. Expose a pure read API so neural workers consume a frozen snapshot without a database. Predecessor trace: BAMF-REQ-001/002; the implementation follows the explicit BAMF-0.2 contract repeated here.",
+      "tests": "Two clean builds from the same pinned release have identical digests. A literal root with two source-attested senses stays two senses. A held mapping stays held and absent from active indices. Reordering input files does not renumber prior indices. A stale coverage receipt yields an explicit source-owned error before output promotion. Record the real corpus census and one formal-domain binding; do not substitute an empty toy atlas for the corpus build.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/semantics/tests/test_atlas_projection.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n\n<!-- BAMF02:PROOF-REPAIR-345-20261027 -->\n**Adversarial admission request (BAMF-REQ-001/002; F17):** Feed a held SKOS source identity with a plausible public-language gloss, similar admitted concept and explicitly requested learner activation. The ABI compiler and Factory gate must refuse emission/admission, preserve the source-owned hold reason and leave prior active-bank/index/lesson manifests identical. Reordering labels or supplying a convincing paraphrase cannot change the hold; only the source-authorized release/admission transition can. This is an active request test, not merely passive inspection of held.jsonl.",
+      "contracts": [
+        "authority",
+        "identity",
+        "projection",
+        "coverage_completion"
+      ],
+      "number": 345,
+      "body_sha256": "d18eb54e86782d1e66359a6c8d99f21cf830e315e782a4b366192c4d85ff3e38",
+      "children": [
+        "A01.1",
+        "A01.2",
+        "A01.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "A02",
+      "title": "Implement append-only semantic banks and active-vocabulary allocation",
+      "lane": "A",
+      "deps": [
+        "A01",
+        "B01",
+        "A06"
+      ],
+      "owners": [
+        292,
+        320
+      ],
+      "paths": [
+        "bilqis_mlx/vocabulary_growth.py:append_catalog/extend_mlx_student",
+        "bilqis_mlx/semantics/atlas_vocabulary.py (new)",
+        "bilqis_mlx/semantics/tests/test_atlas_vocabulary.py (new)"
+      ],
+      "api": "plan_vocabulary_extension(prior, admissions, shape_policy) -> VocabularyExtension; apply_vocabulary_extension(parent, plan) -> CandidateState",
+      "steps": "Represent global ABI indices as bank\\*8192+offset and keep a stable full-ID map. Start one bank; append another only when qualified admissions exceed existing capacity. Activation within a reserved bank initializes the row from its source features and creates zero moments/count0; inactive rows are not trained through tied softmax. Expansion binds previous generation, allocation-source digest and admitted IDs. Prepare tensors, active mask, output-domain map and registry-mirror delta together, then pass them to the existing admission transaction. Preserve all old row bytes and optimizer state. When count exceeds65535, uint32 extended indices continue without an address-codec redesign; validate uint32 bounds. Full output logits are the ordered concatenation of active bank projections, never a modulo alias. Mirror admitted token descriptions and allocation lineage into the existing Registry evidence/export contract; a spreadsheet remains a navigable mirror, not an independent semantic registry. Provide a resource estimate before materializing new banks and stage until it fits. Predecessor trace: BAMF-REQ-011; the implementation follows the explicit BAMF-0.2 contract repeated here.",
+      "tests": "Exercise indices8191,8192 and16384. Existing rows/moments hash identically before and after accepted extension; inactive logits cannot win. Simulate rejection and crash before pointer publication and recover the exact old bank extent. A stable meaning receives the same index under source reordering; duplicate/mismatched meaning blocks only the new admission. Verify the tied readout and registry mirror have the same active set.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/semantics/tests/test_atlas_vocabulary.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.",
+      "contracts": [
+        "identity",
+        "embedding",
+        "custody",
+        "feature_schema"
+      ],
+      "number": 348,
+      "body_sha256": "385bfa57d175f4dbe4425d0a0eda686132b70c1b0f5030a64e81c8a653f0926b",
+      "children": [
+        "A02.1",
+        "A02.2",
+        "A02.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "A03",
+      "title": "Bind typed AST semantics to role-addressable frame contracts",
+      "lane": "A",
+      "deps": [
+        "A01"
+      ],
+      "owners": [
+        293
+      ],
+      "paths": [
+        "bilqis_mlx/registry_ast.py:RegistryAST",
+        "bilqis_mlx/semantics/core.py",
+        "bilqis_mlx/semantics/frame_schema.py (new)",
+        "bilqis_mlx/semantics/tests/test_frame_schema.py (new)"
+      ],
+      "api": "FrameSchema; RoleSpec; ConceptRef; FrameInstance; bind_ast_frames(ast, AtlasRelease) -> FrameTree",
+      "steps": "Define frozen typed records with schema versions and canonical serialization. Reuse existing AST constructors and approved operator meanings. Introduce FrameInstance occurrence IDs derived from source-instance identity plus structural path, separate from canonical content digest. Use (role_id,occurrence_index) keys and explicit parent/child edges. Specify NONE, UNKNOWN and unresolved alternative bindings through declared typed states, not absent dictionary keys. Validate role counts, allowed types, scope and declared causal prefix. Preserve atomic fallback for AST constructs lacking an approved frame schema. Create released adapters for current A/B/C source ASTs without branching the trainer by grade. Bind each new schema to actual source rules; an executable formal operator may have a formal-domain schema when a New Ithkuil realization is not yet admitted. Return typed errors through the existing error catalog with source span and failed role. Predecessor trace: BAMF-REQ-003/006; the implementation follows the explicit BAMF-0.2 contract repeated here.",
+      "tests": "Literal TRANSFER fixtures swap agent/recipient and yield different bindings/content IDs. Repeated same-type members in distinct roles survive. Singular-role duplication fails; explicitly plural role with occurrence0/1 succeeds. Nested negation/scope round-trips without flattening. Unknown schema takes the atomic fallback with all source data preserved. A foreign semantic-release ID fails before neural use.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/semantics/tests/test_frame_schema.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.",
+      "contracts": [
+        "frame",
+        "identity",
+        "projection"
+      ],
+      "number": 349,
+      "body_sha256": "c76c00f4ece525da779c7d858b4704426c65687836cc85f25807aabe61a9c2e1",
+      "children": [
+        "A03.1",
+        "A03.2",
+        "A03.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "A04",
+      "title": "Build the reversible four-slot frame codec and extended fallback",
+      "lane": "A",
+      "deps": [
+        "A03"
+      ],
+      "owners": [],
+      "paths": [
+        "bilqis_mlx/semantics/frame_codec.py (new)",
+        "bilqis_mlx/semantics/tests/test_frame_codec.py (new)"
+      ],
+      "api": "pack4(indices, schema_tag) -> uint64; unpack4(word, schema_map) -> SlotTuple; pack_frame(frame) -> PackedFrame",
+      "steps": "Implement exact shifts/masks from the frame contract using integer operations. Validate ranges before packing, reserve version1 and record complete presence1111. Keep schema tag lookup release-local and content-addressed. Serialize the u64 in little-endian8 bytes with an explicit codec identifier; JSON may expose its decimal string to avoid floating-point loss. Encode all other frames in extended canonical slot arrays with uint32 indices, child references and occurrence metadata. Select fallback by a typed disposition, never by catching arbitrary exceptions. Use the same exact role-index accessor for both representations so downstream neural code is codec-neutral. Include original constituent order and full source metadata in the sidecar. Empty/zero indices are distinct. This is a compact representation, not a separate semantic identity. Predecessor trace: BAMF-REQ-004; the implementation follows the explicit BAMF-0.2 contract repeated here.",
+      "tests": "Round-trip[0,1,8190,8191], all-zero and all-max words against literal expected integers. Version mismatch and illegal presence mask reject.17th schema, index8192, five-slot frame and nested frame all choose extended encoding and reconstruct exactly. Two frame occurrences with identical contents share content identity but retain distinct occurrence IDs.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/semantics/tests/test_frame_codec.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n\n<!-- BAMF02:PROOF-REPAIR-351-20261027 -->\n**Codec-semantic adversaries (BAMF-REQ-003/004; F02/F03/F04):** Pack/serialize/decode four same-type admitted fillers in four distinct legal role slots: all four canonical IDs and role/occurrence bindings must survive with their source sidecar, not collapse by semantic type. Feed two occupants of one declared singular role without a lawful collective: hold with typed schema/cardinality failure, never overwrite. An in-range but inactive or held semantic index must be rejected before readout. Deliberately reuse a release-local schema tag for a different full schema or decode under wrong release: validate exact sidecar/schema identity and fail or use a lawful extended representation; no truncated 17th tag or silent reinterpretation. Include valid zero-index/presence contrast.",
+      "contracts": [
+        "frame",
+        "identity"
+      ],
+      "number": 351,
+      "body_sha256": "bf059a73dac5c45336eaf8edc796bef14a1b89673e2fb371b7b4f4a6626c6628",
+      "children": [
+        "A04.1",
+        "A04.2",
+        "A04.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "A05",
+      "title": "Compile causally valid mixed frame and atomic sequences",
+      "lane": "A",
+      "deps": [
+        "A03",
+        "A04",
+        "A13"
+      ],
+      "owners": [],
+      "paths": [
+        "bilqis_mlx/semantics/frame_compiler.py (new)",
+        "bilqis_mlx/semantics/tests/test_frame_compiler.py (new)"
+      ],
+      "api": "compile_prefix(ast, visible_end, release, compiler_config) -> CompiledFrameBatch; reconstruct(compiled) -> VisibleAST",
+      "steps": "Implement a streaming partial-frame builder. Close and pack a frame only when its final required constituent is visible. Represent incomplete frames by the visible atoms or explicit partial node; never rewrite an already-consumed prefix position in an incremental cache. For append streaming, emit a closure reference at the closing position; full-prefix compilation may compact the complete frame only in a newly keyed cache epoch. Emit position-to-source maps, source-to-position maps, prefix ends, scope boundaries, padding mask, exact role access and expansion handles. Include policy version in compiler digest. Keep batch rows independent. Compile answers only as target tensors outside the model input view. Bound neural length to1024 and report overflow before padding/allocation; split lawful source sequences at existing boundaries rather than silently truncate. Return actual atoms/frame, fallback shares and sidecar bytes. Predecessor trace: BAMF-REQ-005; the implementation follows the explicit BAMF-0.2 contract repeated here.",
+      "tests": "Compile every prefix of a literal four-member frame and show unavailable members never appear in embeddings or handles. At A05 completion, compare literal compiled source-visible prefix tensors, handles, masks, sidecars and cache identities with changed future suffixes; they must be identical at the fixed prediction prefix. Final neural-logit equivalence is a separate downstream F05 witness owned by B11 #369 and integration C13 #385; A05 may not claim that proof before B11 exists. Mixed atomic/nested/packed sequences reconstruct the same visible AST. Streamed closure changes cache identity rather than mutating old keys. A two-row batch with unequal lengths has no cross-row content or padding visibility.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/semantics/tests/test_frame_compiler.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n\n<!-- BAMF02:PROOF-REPAIR-357-20261027 -->\n**Staged F05/F16 proof ownership (BAMF-REQ-005/015):** At A05 completion test every partial prefix without a neural model and assert no future member, concealed teacher target, gold-only role hint or changed post-prefix source material enters its input/sidecar/cache keys. A simulated change only to gold labels must not change serialized input. Record status `COMPILER_PREFIX_PASS; NEURAL_F05_PENDING_B11` rather than claiming complete F05. Require downstream B11 actual 12-layer logits invariance for full-prefix vs appended future and reject stale decode history before C15 grants full F05 pass.",
+      "contracts": [
+        "frame",
+        "backbone",
+        "custody",
+        "eligibility",
+        "causal_refinement"
+      ],
+      "number": 357,
+      "body_sha256": "f0f13a4a3d1f3f83252d48d63cb2a0b3da8715417375476112b9af159d8961fe",
+      "children": [
+        "A05.1",
+        "A05.2",
+        "A05.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "A06",
+      "title": "Compile source-grounded factorized features once per release",
+      "lane": "A",
+      "deps": [
+        "A01",
+        "A03"
+      ],
+      "owners": [],
+      "paths": [
+        "bilqis_mlx/semantics/atlas_features.py (new)",
+        "lib/ithkuil/src/skos/relations.py",
+        "bilqis_mlx/semantics/tests/test_atlas_features.py (new)"
+      ],
+      "api": "build_feature_manifest(release, feature_schema) -> AtlasFeatures; features_for(concept,role,schema,scope) -> FeatureRow",
+      "steps": "Implement AtlasFeatures/v2 exactly as specified in the shared Feature schema. Materialize maps, graph vectors, exact ID sidecars and predecessor binding for the full admitted corpus. Reuse canonical SKOS relation predicates without deriving curriculum prerequisites from taxonomy. Export the immutable feature manifest consumed by A02 initialization and B02 embeddings. Keep inference/training reads local and preserve held-source reasons. Tests below enforce successor identity stability. Use literal committed fixture vectors computed by a small independent reference script using the stated SHA256 byte rules.",
+      "tests": "Two builds have identical features. Swapping a role changes its feature while leaving concept identity unchanged. Held relations do not enter admitted feature inputs. A disconnected concept receives explicit zero neighborhood plus its own type features. No runtime function in the gradient path opens a network connection. The feature manifest survives source-file reordering. Insert a lexically earlier new category into a successor release; every old learned row retains the same ID. Test two categories beyond512, exact zero graph, signed collision accumulation and independent golden-vector agreement.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/semantics/tests/test_atlas_features.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.",
+      "contracts": [
+        "identity",
+        "embedding",
+        "projection",
+        "feature_schema"
+      ],
+      "number": 352,
+      "body_sha256": "af66aaaf49483867d04e2e655e815617894cf8541307cb04aeec28c50dd958db",
+      "children": [
+        "A06.1",
+        "A06.2"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "A07",
+      "title": "Register exact semantic and deterministic cognitive operators",
+      "lane": "A",
+      "deps": [
+        "A03"
+      ],
+      "owners": [],
+      "paths": [
+        "bilqis_mlx/semantics/functions.py",
+        "bilqis_mlx/semantics/memo.py",
+        "bilqis_mlx/semantics/cognitive_operators.py (new)",
+        "bilqis_mlx/semantics/tests/test_cognitive_operators.py (new)"
+      ],
+      "api": "CognitiveOperatorSpec; OperatorRegistry; execute_pure(operator_id, typed_inputs, binding) -> TypedValue",
+      "steps": "Register role lookup, identity/type inspection, set membership, Boolean functions, bounded integer operations, exact rational duration/unit conversion and released structural relations. Each operator declares input/output signatures, applicability conditions, implementation digest and pure-effect contract. Operands come only from task-visible input and admitted knowledge. Independent evaluation owns target gold. Reuse independently verified source algorithms where runtime use is allowed but keep evaluator entrypoints unreachable from solver dependencies. Return UNKNOWN/UNSUPPORTED for an inapplicable operator rather than coercing null or interpreting a plan as an occurrence. Record operation count and source binding, not verbose internal prose. Known results may be memoized by complete input and operator identity. Make function composition and partial application ordinary typed DAG nodes.",
+      "tests": "Literal2+3=5, Boolean truth cases,0.25h=15min and role lookup work with no neural call. Null differs from0. Planned event cannot satisfy occurred-event predicate. Cached operation with changed release or operator version misses. A repository dependency test prevents solver imports of assessment/gold-label APIs. End-to-end scoring C05 gives full capability credit to this path.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/semantics/tests/test_cognitive_operators.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.",
+      "contracts": [
+        "solver",
+        "frame",
+        "recovery",
+        "route_construction"
+      ],
+      "number": 353,
+      "body_sha256": "ac344a7d121c6774acb8edbef6cbbbe1e913a4a3308f34258cef17117e31c0d7",
+      "children": [
+        "A07.1",
+        "A07.2",
+        "A07.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "A08",
+      "title": "Generate capability and lesson programs across the full SKOS inventory",
+      "lane": "A",
+      "deps": [
+        "A01",
+        "A03",
+        "A06",
+        "A07"
+      ],
+      "owners": [
+        294
+      ],
+      "paths": [
+        "bilqis_mlx/factory/model.py:CapabilityDefinition/ConstructionProgram",
+        "bilqis_mlx/factory/curriculum_definition.py",
+        "bilqis_mlx/factory/skos_curriculum.py (new)",
+        "bilqis_mlx/factory/tests/test_skos_curriculum.py (new)"
+      ],
+      "api": "compile_semantic_curriculum(atlas, source_adapters, learned_frontier) -> CurriculumCandidateSet",
+      "steps": "Build reusable family adapters for positive identity, typed role binding, source-attested relation recognition, morphology composition/decomposition, numeric/Boolean composition, scope/modality/time distinctions and released transformations. Enumerate every semantic concept in the pinned atlas and map it to required source-qualified construction families or a source-qualification hold; missing implementation remains IMPLEMENTATION_UNCOVERED debt. For each family emit positive constructive teaching, source-valid contrasts, canonical answer modality, independent checker reference, prerequisite closure and variation axes. Definitions and source examples supply input facts; do not invent causal laws from English glosses. Qualified source facts can be looked up directly; harder tasks combine/rebind them. Store capability ID as a digest-stable semantic/operator signature, not root ordinal or grade letter. Use existing FactoryRelease/ExecutableFactoryRelease and factory verifier.1-9 capability deltas are data. Additional root breadth reuses the same engine rather than creating one issue or trainer per root.\n\n\n<!-- BAMF02:ADR-004-FUNCTIONAL-FACTORY -->\n**Functional Factory implementation obligation (ADR-BAMF02-004):** Compile coverage and lawful construction/assessment programs from a versioned registry keyed by source-qualified semantic family, typed operator signature and answer modality, never a grade letter. The Boolean rule set covers truth tables, polarity and legal connective patterns; integer rules cover number/successor/arithmetic prerequisites, range and overflow; an admitted world-model family must use source-attested actor, time, state and causal relations. All three feed the identical FactoryRelease and teacher interfaces. Registering a family adds data/adapters and independent oracles, not new scheduler branches.",
+      "tests": "Build the actual full-atlas coverage ledger, with eligible/held counts reconciling to source concept census. Demonstrate current numeric/Boolean family plus one real source-attested morphology/role family. New concept within a supported family changes data only. Missing constructor/checker is IMPLEMENTATION_UNCOVERED with exact owner/reason while unrelated ready families still compile. Teaching construction explicitly contains its declared constituents before composite tests.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/factory/tests/test_skos_curriculum.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n\n<!-- BAMF02:PROOF-REPAIR-358-20261027 -->\n**No false learning-credit gate (BAMF-REQ-015/024):** Produce a complete eligible-corpus lesson program and a missing-constructor coverage ledger without executing a neural step; this may pass A08 software coverage but MUST remain `LEARNING_UNVERIFIED` for BAMF-REQ-024. No generated lesson count, all-source coverage number, or synthetic checker correctness can be substituted for real learner-retained fresh transfer. The C05/C13/C14 independent evidence controls the later learning disposition.\n\n\n**Functional Factory acceptance (ADR-BAMF02-004):** A rule registry switches Boolean, integer and a source-qualified world-model fixture without inspecting grade IDs. The same family instantiated under another grade produces equivalent verified constructions and coverage; unsupported/held families remain visible as implementation/source debt rather than disappearing from the coverage census.",
+      "contracts": [
+        "curriculum",
+        "solver",
+        "learning",
+        "route_construction",
+        "coverage_completion",
+        "learning_witness"
+      ],
+      "number": 358,
+      "body_sha256": "f111ab57e753c29ad624c5c788354b4745ee4d005ba497d9746dc8049a48f2ab",
+      "children": [
+        "A08.1",
+        "A08.2",
+        "A08.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "A09",
+      "title": "Generate a resumable prerequisite-aware curriculum frontier",
+      "lane": "A",
+      "deps": [
+        "A08"
+      ],
+      "owners": [
+        296
+      ],
+      "paths": [
+        "bilqis_mlx/factory/candidate_frontier.py",
+        "bilqis_mlx/factory/jit_curriculum.py:propose_curriculum_delta",
+        "bilqis_mlx/factory/candidate_realizations.py",
+        "bilqis_mlx/factory/atlas_frontier.py (new)",
+        "bilqis_mlx/factory/tests/test_atlas_frontier.py (new)"
+      ],
+      "api": "next_atlas_delta(coverage_epoch, learner_evidence, existing_plan) -> CurriculumDeltaProposal|FrontierStatus",
+      "steps": "Project A08 candidates into the existing CandidateFrontierRelease and CandidateBinding shapes. Resolve prerequisite closure using taught/current capability evidence. Rank eligible deltas first by smallest prerequisite slope, then released downstream unlock count, then oldest unvisited ready item and stable ID. Expose salience features to the existing teacher; priority never alters semantic gold. Resume from content-addressed coverage ledger and cursor; no root can vanish merely because a newer release arrived. Batch up to16 new IDs and1-9 capabilities; recursively schedule constituent introductions before composites. Emit COMPLETE_ATLAS_COVERAGE only when every frozen source-eligible concept has its requested task coverage and implementation-uncovered debt is zero; HELD entries remain enumerated with source/remediation owners. Propose and stage successors continuously. Runtime adoption remains C07's explicit lease/admission boundary.\n\n\n<!-- BAMF02:ADR-004-FUNCTIONAL-FACTORY -->\n**Functional Factory implementation obligation (ADR-BAMF02-004):** Make next_atlas_delta a thin adapter over a deterministic pure planner: plan(snapshot, domain_rule_registry) -> (frontier, coverage_delta, bounded_reasons). Snapshot binds immutable source/release, prerequisite DAG, active/staged/held/uncovered coverage, admitted capability evidence, rule-policy version, rights and resource limits. Recursively close constituent requirements, emit the smallest legal next delta, then stop at a fixed point or a typed actionable hold. Never infer prerequisite edges, graduation authority or priority from the grade label; never mutate a run, teacher, or admission lease inside the planner. Reconcile new accepted events into a new snapshot and replan, preserving old epochs and decisions.",
+      "tests": "Three successive generated deltas advance beyond A/B/C without grade-specific code. Restart after staged delta produces the same next candidate. A blocked prerequisite holds its dependents while unrelated ready work progresses. Corpus reordering changes neither capability IDs nor prior allocation. A release containing only held items returns actionable coverage status, not false graduation or an infinite empty loop.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/factory/tests/test_atlas_frontier.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n**Functional Factory acceptance (ADR-BAMF02-004):** Literal fixtures prove equal source/policy/evidence snapshots yield byte-identical plans, grade-label permutation preserves proposal identity modulo labels, true cross-domain dependency blocks while unrelated ready work proceeds, changed evidence/correction creates only justified replan deltas, repeated replay is idempotent, cycles and all-HELD corpora terminate with typed status rather than spinning, and successive bounded constituent releases reach closure.",
+      "contracts": [
+        "curriculum",
+        "salience",
+        "custody",
+        "coverage_completion"
+      ],
+      "number": 360,
+      "body_sha256": "68580f60aaef262dd2cd90d33c0fce784b99c88ed59a15ad68a4be5ceabad5c7",
+      "children": [
+        "A09.1",
+        "A09.2",
+        "A09.3",
+        "A09.4",
+        "A09.5"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "A10",
+      "title": "Compile BRAVO evidence strata into Factory learning releases",
+      "lane": "A",
+      "deps": [
+        "A08"
+      ],
+      "owners": [
+        326,
+        327,
+        328,
+        329,
+        330,
+        331,
+        332
+      ],
+      "paths": [
+        "bilqis_mlx/source_adapters/evidence_frames.py (new)",
+        "bilqis_mlx/factory/evidence_curriculum.py (new)",
+        "bilqis_mlx/source_adapters/tests/test_evidence_frames.py (new)"
+      ],
+      "api": "compile_evidence_lessons(adjudicated_snapshot, source_rights, semantic_release) -> LessonCandidateSet",
+      "steps": "Consume source-span-linked interpreted frames from the qualified VieDay stratum release. Begin with category/value/unit summaries, then time logs, structured reflections and narrative subsets as each is available. Use PUBLIC_FIXTURE analogues for public tests; PRIVATE_REAL intake uses #327's private boundary. Bind source digest, interpretation revision, concept/role IDs, prerequisite capabilities, positive/negative families, checker, task modality and rights to each lesson. Preserve blank/zero, reported/computed values, planned/occurred status, negation, temporal disagreements and alternate interpretations. Train typed reconstruction and a small declared English template codec initially; free-form narrative stays separate until its qualified semantics exist. Split by immutable original source-family/episode identity for fresh challenges before grouping within a family by template lineage, while ordinary post-exam errors remain teachable under the existing classroom policy. No all-strata gate: one qualified subset can feed an ordinary FactoryRelease. Commit the PUBLIC_FIXTURE source, parsed record, expected Frame/lesson and exact checker result from Bravo fixture.\n\n\n\n<!-- BAMF02:CONFORMANCE-SOURCE-FAMILY-INDEPENDENCE -->\n**Witness independence contract:** A corpus adapter must preserve the common episode, source-family and derivation-chain identity of every paraphrase, template instantiation, translated summary and derived answer. Split by source family before forming any train/validation/holdout cohort and record the independent external witness that validates each gold target. Renaming, paraphrasing, reformatting or duplicating the same underlying source cannot create additional heldout evidence. A family's rights and interpretation revisions propagate to every derivative.",
+      "tests": "One public structured summary becomes a source-linked typed lesson and independent exact check.0.25h/15min match; blank differs from0; planned differs fromcompleted; contradictory dates remain alternatives. Unclassified/private source is rejected by public export. One held narrative span does not block qualified structured summaries. A source interpretation correction changes only dependent lesson families. T1 emits completed and15-minute derived answer; T2 retains PLANNED and cannot satisfy an occurred predicate; T3 has UNKNOWN, not0. A missing qualified private stratum changes only its held count. Existing public snapshots continue through the same Factory.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/source_adapters/tests/test_evidence_frames.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n\n**Required adversarial witness-split proof (BAMF-REQ-021; F10):** Create multiple rendered/paraphrased copies of one source episode and try to place siblings on both sides of a claimed independent training/holdout split. The adapter must reject the independent-witness claim, preserve one family identity and keep its derived observations correlated. Contrast a genuinely separately sourced episode, which may enter the heldout cohort if its rights and gold are independently qualified. Include the split-family receipt in the handoff to C05.\n\n\n\n<!-- BAMF02:PROOF-REPAIR-361-20261027 -->\n**Missing-report and private-lifecycle adversaries (BAMF-REQ-019/021; F06):** A planned public synthetic 09:30 event whose expected report never arrives produces an explicit missing-report/verification-needed state, NOT a confirmed event non-occurrence and NOT a source-gold negative. Only an independent authorized observation may conclude non-occurrence. For PRIVATE_REAL intake, exercise source→interpretation→lesson→trainer preparation with synthetic protected sentinels and scan public worktree/CI/issue/export outputs: only permitted opaque handles/digests may cross the boundary; blocking at the final export stage alone is a FAIL. Keep the original family ID stable through variant templates, translations and splits.",
+      "contracts": [
+        "curriculum",
+        "projection",
+        "recovery",
+        "bravo_fixture"
+      ],
+      "number": 361,
+      "body_sha256": "a402b83088038da27adc583e479f586d9d4502522028782ea0fa4a5f5b18eea5",
+      "children": [
+        "A10.1",
+        "A10.2",
+        "A10.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "A11",
+      "title": "Generate lawful ambiguity and structural contrast lessons",
+      "lane": "A",
+      "deps": [
+        "A03",
+        "A08"
+      ],
+      "owners": [],
+      "paths": [
+        "bilqis_mlx/factory/semantic_contrasts.py (new)",
+        "bilqis_mlx/factory/tests/test_semantic_contrasts.py (new)"
+      ],
+      "api": "generate_contrasts(source_frame, family, seed, allowed_variations) -> tuple[LessonSpec,...]",
+      "steps": "Implement typed transformations: role swap, cardinality change, scope/negation movement, known/unknown substitution, planned/occurred contrast, missing-versus-negative observation, and source-authorized morphology alternatives. Each transformation declares applicability and checker-derived outcome. Maintain original source and generated variant lineage separately. Add bounded ambiguity exploration with at most4 source-compatible interpretations per example, ranked deterministically; preserve unresolved alternatives as the target when evidence cannot choose. Controlled noise operates on presentation or available cues, not canonical identities/gold. Save the noise signature(type,location,amount,seed) so a later lesson can revisit a genuinely different weakness. Feed contrast choices to the teacher's existing strategy interface. Start with structural families already expressible in the current ABI.",
+      "tests": "A role-swapped frame changes the expected role answer. Removing decisive evidence produces UNKNOWN or an alternative set, not a guessed singleton. Re-running a noise seed reproduces the exact variant. Three contrast families pass literal oracle checks and original-source preservation. The same old failure is not relabeled as a novel example merely by paraphrasing.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/factory/tests/test_semantic_contrasts.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.",
+      "contracts": [
+        "frame",
+        "curriculum",
+        "salience"
+      ],
+      "number": 362,
+      "body_sha256": "b63088dcad742ccb405751c286926afe3170dac032d593ce2763637c7ae0a275",
+      "children": [
+        "A11.1",
+        "A11.2",
+        "A11.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "A12",
+      "title": "Complete the single-authority semantic cutover and release receipt",
+      "lane": "A",
+      "deps": [
+        "A02",
+        "A05",
+        "A08",
+        "A09",
+        "A11"
+      ],
+      "owners": [
+        295,
+        309
+      ],
+      "paths": [
+        "bilqis_mlx/semantics/atlas_release_audit.py (new)",
+        "scripts/check_semantic_boundaries.py",
+        "bilqis_mlx/semantics/tests/test_atlas_release_audit.py (new)"
+      ],
+      "api": "audit_atlas_authority(release, abi, ast, lesson_manifest, registry_mirror) -> AuthorityReceipt",
+      "steps": "Trace every current semantic input to one explicit admitted source release or separately declared formal domain. Verify ABI, AST, frames, lesson manifests, graph projection and registry mirror share that binding. Classify old catalogs as historical readers or generated derivatives; remove current-path overrides and duplicate aliases once callers migrate. Extend the existing semantic-boundary guard with declared imports and ownership rules, not a regex ban on every historical filename. Produce a compact source-to-consumer table and a rebuild receipt. Close #295 only after its existing acceptance is met on the exact combined branch; this leaf's completion alone must identify any remaining existing-owner work. Keep the source-grade implementation generic and add one Grade-D-equivalent data-only successor witness.\n\n\n\n<!-- BAMF02:CONFORMANCE-HELD-GLOSS-GATE -->\n**Held-identity exactness:** The release cutover consumes explicit source-qualified semantic admission receipts, never lexical resemblance, English gloss plausibility, equivalent labels or a graph edge as admission authority. A held SKOS identity is observable in coverage diagnostics with its cause but remains absent from active ABI, trainable model rows and qualified lesson constructors until its owning release gate succeeds.",
+      "tests": "Regenerate release/ABI/AST/lessons twice and compare hashes. A stale shadow catalog cannot alter current semantics. Historical receipts still decode. One new released semantic reaches compiled lesson and read-only graph projection with unchanged old indices. A deliberate mismatched digest is caught at the first consumer. Record exact code head and existing-owner completion disposition.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/semantics/tests/test_atlas_release_audit.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n\n**Required held-gloss adversary (BAMF-REQ-001/002; F17):** Offer a plausible English gloss and an existing similar admitted concept for a held/unmapped source ID. Assert that semantic-ABI activation, factor features, Factory lesson emission and teacher-target construction all refuse it with a source-owned held reason. Reorder or rename labels and verify no change to the held disposition. Only an independently approved release/admission can change this result.",
+      "contracts": [
+        "identity",
+        "curriculum",
+        "projection",
+        "custody",
+        "coverage_completion"
+      ],
+      "number": 364,
+      "body_sha256": "7f540d85865a9cd0d58deee9ed4f80095430c9e1761ce8446036d7cfcac9cb67",
+      "children": [
+        "A12.1",
+        "A12.2",
+        "A12.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "A13",
+      "title": "Enforce combined context eligibility before neural or motif access",
+      "lane": "A",
+      "deps": [
+        "A03"
+      ],
+      "owners": [
+        297,
+        302
+      ],
+      "paths": [
+        "bilqis_mlx/semantics/context_eligibility.py (new)",
+        "bilqis_mlx/semantics/tests/test_context_eligibility.py (new)"
+      ],
+      "api": "check_context_eligibility(frames,task_scope,source_frontier,policy) -> EligibleContext|ContextHold",
+      "steps": "Implement versioned ContextEligibility and EligibleContext records using the shared eligibility contract. Validate all member handles and pair/set joins before A05 packing and B08 motif reads. Produce stable reason codes for release mismatch, revoked source, temporal mismatch, forbidden join, unresolved purpose and invisible prefix. Retain blocked evidence only in the authorized source store; return source handles and bounded diagnostics to the caller. Emit a digest over the approved membership and relevant policy/time/rights projections. Runtime exact operators, neural attention and cached transforms consume only this approved view. Provide PUBLIC_FORMAL envelopes for existing source-grounded A/B/C constructors. Public tests use independent synthetic actors/scopes. Changes to eligibility generate C09 invalidations; a live external policy service is not required for each gradient step because the visit pins one approved frontier. Predecessor trace: BAMF-REQ-010/F09; the implementation follows the explicit BAMF-0.2 contract repeated here.",
+      "tests": "Two individually allowed frames with a forbidden joint scope produce ContextHold before any pooling or lookup. Revocation invalidates a formerly permitted view. Different policy/time frontiers produce different cache identities. A future constituent has no eligible handle. PUBLIC_FORMAL A/B/C fixtures remain executable without NLP or network calls. The full-set positive case produces an identical eligibility digest across input enumeration order while preserving source order inside each frame.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/semantics/tests/test_context_eligibility.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.",
+      "contracts": [
+        "eligibility",
+        "frame",
+        "projection",
+        "recovery"
+      ],
+      "number": 354,
+      "body_sha256": "3f4a78f2c66eb8488a33fefa76f12639be0932623fb006fb394eaf4490dda723",
+      "children": [
+        "A13.1",
+        "A13.2",
+        "A13.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "B01",
+      "title": "Declare BAMF v2 topology and generate the complete parameter manifest",
+      "lane": "B",
+      "deps": [],
+      "owners": [
+        320,
+        341
+      ],
+      "paths": [
+        "bilqis_mlx/runtime/model_topology.py",
+        "bilqis_mlx/runtime/topology_lifecycle.py",
+        "bilqis_mlx/runtime/model_topology_v2.py (new)",
+        "configs/models/bamf-0.2.json (new)",
+        "bilqis_mlx/runtime/tests/test_model_topology_v2.py (new)"
+      ],
+      "api": "ModelTopologySpecV2; GenerationExtents; ParameterSpec; expected_bamf_shapes(spec,extents) -> tuple[ParameterSpec,...]",
+      "steps": "Implement explicit v1/v2 deserialization and a model factory dispatch keyed by architecture ID bamf-atlas-v2. Freeze dense geometry, modules, initializer seeds and shape policy. Declare every weight/norm/gate/head/convolution/adapter tensor centrally, with stable names, FP32 type and FAST/SLOW group. Generate initialization, shape validation, parameter count, optimizer tree and serialization order from this declaration. Preserve v1 reader behavior. Initial dense matrices count67,239,936, semantic table6,291,456 and motif table2,097,152; auxiliary tensors must be itemized and final total printed, not forced to a marketing estimate. Three rank8 adapters add36,864 matrix parameters. Frame feature and type tables use their declared separate capacities. Version embedding-bank extents as generation state, while dense geometry remains immutable. Store source/release and teacher identities separately from topology. Make config self-describing and validate contradictory channels/heads, zero sizes and unsupported dtypes before allocation. Predecessor trace: BAMF-REQ-007; the implementation follows the explicit BAMF-0.2 contract repeated here.\n\n\n\n<!-- BAMF02:CONFORMANCE-V1-RESUME-NEGATIVE -->\n**Hard v1/v2 isolation:** Existing six-layer/v1 checkpoint metadata and optimizer trees are historical read-only evidence. The BAMF-0.2 factory must not reinterpret those arrays, positional embeddings, absolute-position contracts, shape-compatible subsets or AdamW moments as a valid 12-layer v2 generation, even if names or dimensions overlap. Import only source-qualified behavioral teaching artifacts through the independently approved teacher interface, never numeric student-state transfer.",
+      "tests": "Exact generated shapes agree with an instantiated tree and serialized tree. Seed equality reproduces initialization. Invalid16Q/7KV, oddRoPE24-mismatch or different FFN method rejects. v1 historical metadata still reads. v2 bank extension changes extent receipt but not stable dense-topology digest. Report all tensors and exact parameters without constructing alternative model sizes.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_model_topology_v2.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n\n**Required topology-adversary proof (BAMF-REQ-007/023; F14):** Attempt to load a real frozen v1 absolute-position/six-layer checkpoint as BAMF-0.2 using the v2 selector. Require explicit typed incompatibility BEFORE any v2 parameter/optimizer allocation or mutation, with old bundle/hash preserved byte-identically. Renaming its architecture field or coercing a subset of tensor shapes must not bypass the gate. Separately verify historical read-only inspection remains possible without migration.\n\n\n\n<!-- BAMF02:PROOF-REPAIR-346-20261027 -->\n**Independent tensor/initializer oracle (BAMF-REQ-007/008):** Against a separately written literal fixture, require stored non-square weight shapes Wq=[384,768], Wk=Wv=[192,768], Wo=[768,384], Wup=[3072,768], Wdown=[768,3072], with Linear(x,W)=x @ W.T and an explicit basis-vector numerical multiplication. Comparing only generated manifest to generated tree is insufficient; a mutually transposed implementation must FAIL. Fixed-seed initialization must match a second independent golden vector/digest for seeded A, zero B, identity centered causal convolution and inactive semantic rows. Verify stable-path/row seeding unaffected by append-only bank growth.",
+      "contracts": [
+        "authority",
+        "identity",
+        "backbone",
+        "plastic",
+        "typed_decoder",
+        "feature_schema",
+        "tensor_ledger"
+      ],
+      "number": 346,
+      "body_sha256": "65e8ed5c285ba527b9a9ec831f1dbad00c1a967cc90e1ee879ff7198626b098d",
+      "children": [
+        "B01.1",
+        "B01.2",
+        "B01.3",
+        "B01.4"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "B02",
+      "title": "Implement tied factorized semantic embeddings and paged readout",
+      "lane": "B",
+      "deps": [
+        "B01",
+        "A02",
+        "A06"
+      ],
+      "owners": [],
+      "paths": [
+        "bilqis_mlx/learning/frame_embeddings.py (new)",
+        "bilqis_mlx/learning/tests/test_frame_embeddings.py (new)"
+      ],
+      "api": "embed_atoms(params, ConceptBatch, AtlasFeatures) -> Tensor[B,A,768]; semantic_logits(hidden, active_banks) -> IndexedLogits",
+      "steps": "Implement the factorized embedding equation and fixed feature shapes. Respect per-row active state both in lookup validation and readout masking. Assemble multi-bank logits in global ABI order and expose an index map so sparse active IDs remain correctly addressed. Treat learned feature gates as parameters. Use deterministic feature-composed initialization only for newly admitted identity rows, leaving established rows intact. Include structural role/schema/position vectors without conflating their IDs with semantic vocabulary. Gather constituent embeddings differentiably; exact indices/sidecar data are nondifferentiable input. Use stable masked logsumexp for loss; reject a task with no legal answers rather than emitNaNs. Record parameter-update coverage for identity, feature and gate tensors in a disposable proof. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.",
+      "tests": "A changed role changes embedding while sameID identity component stays equal. Inactive row receives zero gradient and cannot be predicted. An active row in bank1 decodes to global8192+. Tied output reuses identical parameter object/name, not a copied head. Save/load reproduces logits to1e-6 FP32 on fixedCPU reference where available or declaredMLX tolerance.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/learning/tests/test_frame_embeddings.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.",
+      "contracts": [
+        "identity",
+        "embedding",
+        "custody",
+        "feature_schema"
+      ],
+      "number": 359,
+      "body_sha256": "2472c0dae834f6a3de441e0b53eb83c916837bfb808755968aba4c9ef2eee3c4",
+      "children": [
+        "B02.1",
+        "B02.2",
+        "B02.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "B03",
+      "title": "Build the role-aware frame encoder and constituent handles",
+      "lane": "B",
+      "deps": [
+        "B02",
+        "A05"
+      ],
+      "owners": [],
+      "paths": [
+        "bilqis_mlx/learning/frame_embeddings.py",
+        "bilqis_mlx/learning/frame_encoder.py (new)",
+        "bilqis_mlx/learning/tests/test_frame_encoder.py (new)"
+      ],
+      "api": "encode_frames(compiled, atom_vectors, parameters) -> FrameEncoding(global_seeds,members,handles,features)",
+      "steps": "Implement the exact FrameEncoder equations from B01 Tensor ledger using role-ordered members and explicit occurrence positions. Return global seeds, original member embeddings, immutable source handles and feature summaries. Preserve gradients through original members and the frame pass. Atomic fallback preserves its atom embedding; empty legal structural nodes use the specified seed. Partial frames include only visible members. Source/parent/scope handles preserve nesting. Record frame-fill/fallback counts.",
+      "tests": "Role swap yields a changed encoding and exact sidecar. Repeated concepts with different occurrences remain separately addressable. Nested and atomic paths both reach the same outputshape. Future member changes cannot influence partial-frame encoding. One lossbackward reaches identity, role and frameinteraction weights. Empty legal structural node remains finite.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/learning/tests/test_frame_encoder.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.",
+      "contracts": [
+        "frame",
+        "embedding",
+        "depth"
+      ],
+      "number": 363,
+      "body_sha256": "7455336338144624516b1692befcbb950915bb54f041083e1bf0c0bbdd07535e",
+      "children": [
+        "B03.1",
+        "B03.2",
+        "B03.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "B04",
+      "title": "Implement causal compressed-convolution GQA and incremental RoPE caches",
+      "lane": "B",
+      "deps": [
+        "B01"
+      ],
+      "owners": [],
+      "paths": [
+        "bilqis_mlx/runtime/atlas_attention.py (new)",
+        "bilqis_mlx/runtime/mlx_parity.py:forward_arrays",
+        "bilqis_mlx/runtime/tests/test_atlas_attention.py (new)"
+      ],
+      "api": "ccgqa(params,h,mask,scope,cache=None,offset=0) -> (attended,new_cache)",
+      "steps": "Project Q/K/V with frozen shapes and apply independent per-channel three-tap convolution to projected pre-RoPE arrays. Initialize kernel[0,0,1] under oldest-to-current ordering so initial behavior is identity. Use left padding only; keep last two pre-convolution projected values perhead in decode cache. Scope/sequence boundaries zero the history, including a boundary inside a batch. Apply MLX fast.rope toQ/K with exact offset, then native fast SDPA16:8GQA. Handle allmasked/paddedquery rows by an explicit zero-result mask. Recombine384 and outputproject768. Cache manifest carries layer,scope,prefix,RoPEvariant andgeneration. Include a tiny explicit FP32 reference implementation for equality testing only; production uses fusedSDPA. Store installedMLXversion in runtime identity and use its observed signature, not undocumented flags. Predecessor trace: BAMF-REQ-008; the implementation follows the explicit BAMF-0.2 contract repeated here. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.",
+      "tests": "Compare fused and independent explicit references using the actual production geometry 16 query heads ×24, 8 key/value heads ×24 (group ratio 2) at small literal sequence length, within declared relative/absolute tolerance. A reduced two-head helper may be tested separately but cannot stand in for the production CCGQA proof. Full-prefix versus chunked/single-token outputs agree within tolerance. Perturb future suffix and preserve earlier output exactly within tolerance. Confirm KV storage is8heads, not16tiled. Boundary reset,allmaskedrow and two unequal lengths remain finite. One backward reachesQ/K/V/conv/outputparameters.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_atlas_attention.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n\n<!-- BAMF02:PROOF-REPAIR-350-20261027 -->\n**Production attention/prefix negative (BAMF-REQ-005/008; F05):** A literal 16Q:8KV tiny-T reference must prove grouped K/V is read as eight channels without materializing a 16-KV tile; exact channel grouping, causal depthwise convolution order and RoPE are externally checked against independent golden values. Cache the later extended prefix, then request an earlier prefix using that stale history: reject/miss or recompute it, and require the earlier logits to match an isolated fresh earlier-prefix run. A perturbed future suffix may never alter any earlier fixed-prefix output.",
+      "contracts": [
+        "backbone",
+        "custody"
+      ],
+      "number": 350,
+      "body_sha256": "349fb7c7912a6d398ca985945994b0b21e26545e0962d95404563abcc2f4d9db",
+      "children": [
+        "B04.1",
+        "B04.2",
+        "B04.3",
+        "B04.4"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "B05",
+      "title": "Implement three-group Block AttnRes with stable depth selection",
+      "lane": "B",
+      "deps": [
+        "B01",
+        "B04"
+      ],
+      "owners": [],
+      "paths": [
+        "bilqis_mlx/runtime/block_attnres.py (new)",
+        "bilqis_mlx/runtime/tests/test_block_attnres.py (new)"
+      ],
+      "api": "depth_select(current,available_summaries,frame_features,params) -> Tensor[B,F,768]",
+      "steps": "Implement the exact Q/K/V/output and per-boundary gated residual equations in the depth contract. Retain h0 and summaries at layers4,8,12; shared selector projections have128 inner channels and the residual interface stays768. The type/role composition is computed by the released factor composer and uses no target labels. Source weights are normalized across h0 and completed groups only, with a fixed source order. Capture g1 after the second motif read; apply each plastic adapter after selection. Save all four shared projection matrices and the three gate vectors/biases in B01's registry and B13's checkpoint. Optional diagnostics expose alpha without assigning fixed cognitive functions to layers. Predecessor trace: BAMF-REQ-009; the implementation follows the explicit BAMF-0.2 contract repeated here. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.",
+      "tests": "Source weights sum to1. Changing a future group cannot change an earlier boundary. All three boundaries remain finite. A nondegenerate loss reaches multiple source states and selector weights. Save/load preserves output. Assert that all three group boundaries execute the module, rather than merely declaring it in configuration.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_block_attnres.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.",
+      "contracts": [
+        "depth",
+        "memory",
+        "plastic"
+      ],
+      "number": 355,
+      "body_sha256": "116d085e981ed74a4779d96df57f629582d09433ef9acb37db4fa114cdc2d13a",
+      "children": [
+        "B05.1",
+        "B05.2",
+        "B05.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "B06",
+      "title": "Add bounded recurrent constituent refinement with input recall",
+      "lane": "B",
+      "deps": [
+        "B03",
+        "B05"
+      ],
+      "owners": [],
+      "paths": [
+        "bilqis_mlx/runtime/atlas_refinement.py (new)",
+        "bilqis_mlx/runtime/tests/test_atlas_refinement.py (new)"
+      ],
+      "api": "refine_selected(frame_hidden,member_handles,query_roles,budget,params) -> RefinementResult",
+      "steps": "Use one shared768-wide recurrent-state module with a compressed single-head192-channel member-attention block for at most two additional local passes. Each pass receives current frame hidden state, immutable original frame seed, visible member vectors and requested-role features. Reinject the original input every pass and merge through a residual gate initialized0.01. A small three-class0/1/2 routing head can learn from measured outcomes. Initial policy uses one pass for explicit member questions, zero otherwise, and permits two for unresolved nested queries. Use the prediction-local selection and quota defined in the Causal refinement contract. During training sample0/1/2 passes from the visit seed on eligible frames so the second pass receives training. Missing routing labels mask its auxiliary loss. Main answer loss still propagates through selected passes. Reuse one backbone result; refinement does not rerun all12 layers. Declare Q/K/V projections[192,768], attention output[768,192], recurrent residual gate and its bias in the tensor registry. Exact member handles return768-wide embeddings. For a selected frame, initialize state from the global frame hidden vector; query uses state+immutable_frame_seed+requested_role768; keys/values use only legal visible members. This preserves the predecessor768-wide local-resolution interface while choosing192 inner attention channels. Predecessor trace: BAMF-REQ-012/013; the implementation follows the explicit BAMF-0.2 contract repeated here. Preserve immutable global hidden states and return a separate per-query refinement view. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.",
+      "tests": "Zero passes is identity. One/two passes change only selected frames. Future members remain inaccessible. Original input is re-injected every pass. Backward reaches refinement parameters and two-pass save/resume repeats. Exhausted budget records remaining needs and returns the baseline answer path. One finite disposable update reduces a literal nested-role target loss. Append high-priority future frames across the8-to9 quota boundary; earlier selection IDs, pass counts and logits at fixed p are identical. Repeat with different batch padding and future teacher-forcing targets.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_atlas_refinement.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.",
+      "contracts": [
+        "depth",
+        "frame",
+        "resource",
+        "causal_refinement"
+      ],
+      "number": 365,
+      "body_sha256": "7fdd451c310669d897946ae2cc33aa19530d637f89b69bdaac3292fb461b5458",
+      "children": [
+        "B06.1",
+        "B06.2",
+        "B06.3",
+        "B06.4"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "B07",
+      "title": "Implement transactional motif-key allocation and structural fallback",
+      "lane": "B",
+      "deps": [
+        "B01",
+        "A03"
+      ],
+      "owners": [],
+      "paths": [
+        "bilqis_mlx/learning/atlas_engram.py (new)",
+        "bilqis_mlx/learning/tests/test_atlas_engram_allocation.py (new)"
+      ],
+      "api": "MotifKey; MotifAllocationPlan; prepare_motifs(frames,parent_manifest,budget) -> CandidateMotifView",
+      "steps": "Canonicalize full typed keys. Derive structural keys by replacing permitted fillers with admitted type IDs while retaining roles, scope and relation structure. Look up exact instance first, then structural motif. Allocate missing structural keys before instance keys, ordered by observed use then key digest, at most64 new slots per candidate preparation. When full, add one16384-slot page up to65536 if the resource budget permits; otherwise retain already encoded factorized structural features in h and pending-key evidence; no extra gated motif residual or new parameter is introduced on a miss. Initialize new vectors deterministically. Always compare full keys after hash lookup. Stable slots are append-only. Allocation and counters used for future allocation are copy-on-write candidate state, published only on acceptance. Preserve original release keys; accepted semantics-preserving alias maps are explicit artifacts. Predecessor trace: BAMF-REQ-010; the implementation follows the explicit BAMF-0.2 contract repeated here. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.",
+      "tests": "Inject two distinct canonical full motif keys into the same deterministic test bucket/index through a test-only bucket seam (or explicitly reduced bucket width); exact full-key comparison must discriminate them and never return the other slot. Do not require finding a cryptographic SHA collision. Different fillers share a permitted structural motif; role swap changes the key. Rejection restores allocation, tensor and counters byte-for-byte. Restart reproduces pending slot IDs. Capacity exhaustion uses fallback without overwrite. Page growth preserves all old slots and moments.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/learning/tests/test_atlas_engram_allocation.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n\n<!-- BAMF02:PROOF-REPAIR-356-20261027 -->\n**Executable F11 adversary (BAMF-REQ-010):** The production full canonical key digest remains cryptographic and unchanged. In tests, supply a deterministic bucket/index collision function while leaving the full-key byte comparison real. With two distinct role/scope/instance keys sharing a bucket, lookup must return only the matching key's slot or a miss, not an alias. Verify the test seam cannot be enabled by production configuration or bypass source/scope checks; accepted slot IDs and rejected candidate allocations remain transactionally stable.\n\n\n\n<!-- BAMF02:EGM-MOTIF-356-20261027 -->\n**EGM motif-miss equivalence (BAMF-REQ-010):** With source-qualified factorized frame input already in h but no eligible exact or structural motif slot, both motif sites must return h exactly unchanged; a legitimate hit applies its gated residual at the declared site. Capacity exhaustion cannot fabricate a fallback trainable slot, nor may later allocation retroactively alter an earlier cached miss.",
+      "contracts": [
+        "memory",
+        "identity",
+        "custody"
+      ],
+      "number": 356,
+      "body_sha256": "bbb7ea40bac87a613fc3381e180b401d723627badc54f19c2c7fcb75e20b9f30",
+      "children": [
+        "B07.1",
+        "B07.2",
+        "B07.3",
+        "B07.4"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "B08",
+      "title": "Train two context-gated motif-memory reads inside the model",
+      "lane": "B",
+      "deps": [
+        "B03",
+        "B05",
+        "B07",
+        "A13"
+      ],
+      "owners": [],
+      "paths": [
+        "bilqis_mlx/learning/atlas_engram.py",
+        "bilqis_mlx/learning/tests/test_atlas_engram_reads.py (new)"
+      ],
+      "api": "read_motif(site,hidden,features,slot_view,params) -> Tensor[B,F,768]",
+      "steps": "Implement the two exact gated motif residual reads and the gate equation from B01 Tensor ledger. Check full-key/release/scope eligibility before batched gather. Missing keys return unchanged factorized hidden state. Save every allocated vector, projection, gate and norm; report exact/structural/miss counts and actual participating rows. The second site executes after layer4 and before capturing group1 summary.",
+      "tests": "Both read sites influence a nondegenerate loss and receive finite gradients. Changing a qualified slot affects its applicable frames. Held or foreign-release entries are not read. A missed exact/structural motif lookup returns the already factorized hidden state h unchanged at each of the two read sites; other qualified non-motif paths remain finite and differentiable. Save/load restores values and gates. Rejection after both sites update restores the complete parent.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/learning/tests/test_atlas_engram_reads.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n\n<!-- BAMF02:EGM-MOTIF-366-20261027 -->\n**EGM motif-hit/miss discriminator (BAMF-REQ-010):** Construct the same admitted frame with one eligible full-key hit and one otherwise identical missing key. On the miss, record bitwise/declared-FP32-equal h before and after EACH read site, with zero motif residual and no new vector/moment; on the hit, require the expected gated slot projection and gradients. A source-held or revoked motif is a miss, not a borrowed structural match.",
+      "contracts": [
+        "memory",
+        "backbone",
+        "custody",
+        "eligibility"
+      ],
+      "number": 366,
+      "body_sha256": "066ee8674de4aeeff05d8e006016becfc9d150cd9f97700a7f1cc025ccf83976",
+      "children": [
+        "B08.1",
+        "B08.2"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "B09",
+      "title": "Provision fast adapters and explicit multi-timescale plasticity",
+      "lane": "B",
+      "deps": [
+        "B01",
+        "B05",
+        "B08"
+      ],
+      "owners": [],
+      "paths": [
+        "bilqis_mlx/learning/atlas_plasticity.py (new)",
+        "bilqis_mlx/runtime/tests/test_atlas_plasticity.py (new)"
+      ],
+      "api": "PlasticityPolicy; group_eligibility(mode,manifest,accepted_ages) -> GroupEligibility; step_participation(inputs,semantic_denominator,motif_reads,role_reads) -> StepParticipation; parameter_update_mask(group_eligible,step_participation,active_admitted) -> UpdateMask; next_update_mode(state,teacher_choice) -> FULL|FAST",
+      "steps": "Add three rank8 adapters at group boundaries. Zero B matrices make initial adapters identity. FAST includes adapters, motif parameters and newly activated semantic rows; SLOW includes established embeddings and dense parameters. A new identity row becomes established after8 accepted candidates in which it participated under the shared update-mask contract. FOUNDATION updates the full tree. ADAPTIVE offers FAST candidates, then FULL after eight accepted FAST candidates; the existing teacher can request FULL earlier for foundational remediation. This policy selects update eligibility, while the teacher still selects targets, learning rate and pedagogy. Persist mode, counters, row ages and policy version. Advance clocks by accepted updates rather than wall time. Inference always consumes both groups. Freeze group eligibility at candidate preparation. Derive the final row-update mask separately for every optimizer step from actual participation and active/admitted state, before clipping and AdamW arithmetic. B12 owns optimizer moments and update counts. Apply the exact Plasticity transition contract at the retained promotion-event boundary. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.\n\n\n<!-- BAMF02:ADR-004-FUNCTIONAL-FACTORY -->\n**Functional Factory implementation obligation (ADR-BAMF02-004):** FOUNDATION/ADAPTIVE state, source-qualified foundation_capability_ids and accepted FAST/FULL clocks are serialized run-policy data, never inferred from Grade A/B/C labels. Recursive Factory release additions do not silently reset them; an accepted current-generation qualification receipt, not a grade transition by name, controls the allowed mode transition.",
+      "tests": "Initial adapter output equals its input. FAST changes only eligible parameters and rows. Rejected FAST candidates do not advance clocks. Eight accepted FAST candidates schedule FULL across restart. Row establishment counts once per ACCEPTED participating candidate, not once per internal optimizer step. Teacher-triggered FULL uses the same generic visit path. Test FOUNDATION promotion-with-debt transition, accepted/rejected FAST/FULL schedules, teacher early FULL reset, a new semantic row, and cold resume on either side of the transition.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_atlas_plasticity.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n\n<!-- BAMF02:PROOF-REPAIR-368-20261027 -->\n**Per-step mask and maturation adversary (BAMF-REQ-016/017):** Within one eligible candidate run two optimizer steps involving different semantic/motif rows and assert two different row-participation masks, with the mask applied BEFORE clipping and AdamW. A participating numerical-zero-gradient row advances its correct count/decay; an unparticipating row remains byte-identical even with a huge masked gradient. One accepted candidate with eight internal optimizer steps increments each participating row's establishment age by exactly one; a rejected candidate increments zero. Cold resume preserves these clocks and FULL/FAST policy.\n\n\n**Functional Factory acceptance (ADR-BAMF02-004):** A grade-label permutation with identical initial foundation set, promotion evidence and accepted-candidate history yields byte-identical parameter-group eligibility, consolidation clock and cold-resume policy state.",
+      "contracts": [
+        "plastic",
+        "learning",
+        "custody",
+        "update_semantics",
+        "plasticity_transition"
+      ],
+      "number": 368,
+      "body_sha256": "bf36519f11a8f4850ed10e863cf553f1e48580f1f24bfe34483110fddc094859",
+      "children": [
+        "B09.1",
+        "B09.2",
+        "B09.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "B10",
+      "title": "Implement typed scalar, slot and structured answer heads",
+      "lane": "B",
+      "deps": [
+        "B02",
+        "B03"
+      ],
+      "owners": [],
+      "paths": [
+        "bilqis_mlx/factory/answers.py:AnswerModalityRegistry/compile_answer_heads",
+        "bilqis_mlx/typed_answer_training.py",
+        "bilqis_mlx/learning/atlas_readout.py (new)",
+        "bilqis_mlx/learning/tests/test_atlas_readout.py (new)"
+      ],
+      "api": "predict_typed(hidden,eligible_context,answer_plan,active_semantics,readout_params,teacher_targets=None) -> ModelOutput; answer_loss(output,targets,mask) -> LossParts",
+      "steps": "Reuse current Boolean, numeric and native semantic-token answer bindings. Add released role-selection and structured frame-output modalities. Concept values use the tied semantic head. ROLE selection uses the shared released role-table logits and schema-constrained occurrence indices. A separate finite CONTROL head emits only EMIT_VALUE, EMIT_UNKNOWN, EMIT_ALTERNATIVES and END_FRAME; it does not select or encode role IDs. Legal roles come from the released schema; repeated roles include occurrence indices. Cap output at64 decisions, respecting the combined input/generated1024-position budget. Predict independent roles in parallel only when the answer dependency DAG allows it; dependent decisions consume earlier committed outputs. Teacher forcing exposes earlier targets only. Preserve UNKNOWN and unresolved alternative sets where allowed. Mask losses to legal active answers and actually supplied auxiliary labels. Validate a completed typed answer before publication; invalid neural output becomes an explicit solver failure/fallback request. Implement the exact AnswerPlan/v2 state transition in the Typed decoder contract. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.",
+      "tests": "Current A/B/C answer mappings remain unchanged. Four-role outputs preserve binding under role swaps. A bank1 concept can be predicted and an inactive concept cannot. Earlier output positions cannot inspect later targets. UNKNOWN differs from empty set. The64-decision ceiling returns a typed budget status. Gradients reach identity and role heads. A two-step fixture first chooses a source actor and then its event role; changing step2 gold leaves step1 logits unchanged. Inference step2 receives predicted step1, training receives only prior teacher-forced step1. Missing parent, dependency cycle, END_FRAME before a required role and64-step exhaustion are literal cases.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/learning/tests/test_atlas_readout.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n\n<!-- BAMF02:PROOF-REPAIR-367-20261027 -->\n**Typed-head separation adversary (BAMF-REQ-012/013):** Construct a frame decision requiring a concrete ROLE and a separate CONTROL action. Swapping role ID logits must alter ROLE output but not CONTROL codes; swapping a CONTROL code must not become a valid role binding. A decoder that routes role selection through CONTROL must fail. Validate legal role occurrence, dependency order and END_FRAME requirements before publication.",
+      "contracts": [
+        "solver",
+        "embedding",
+        "frame",
+        "learning",
+        "causal_refinement",
+        "typed_decoder",
+        "route_construction"
+      ],
+      "number": 367,
+      "body_sha256": "a91f0145f17f36a9c42b6a3721e8bf4ec9b6135bc78f9958b7eac56bcf201cc9",
+      "children": [
+        "B10.1",
+        "B10.2",
+        "B10.3",
+        "B10.4"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "B11",
+      "title": "Assemble the real atlas-native model and architecture dispatch",
+      "lane": "B",
+      "deps": [
+        "B03",
+        "B04",
+        "B05",
+        "B06",
+        "B08",
+        "B09",
+        "B10"
+      ],
+      "owners": [],
+      "paths": [
+        "bilqis_mlx/runtime/atlas_model.py (new)",
+        "bilqis_mlx/runtime/model_topology.py",
+        "bilqis_mlx/learning/student_ops.py:_predictions/_train_score",
+        "bilqis_mlx/runtime/tests/test_atlas_model.py (new)"
+      ],
+      "api": "forward_bamf(params,compiled_batch,answer_plan,mode,cache) -> ModelOutput; model_backend(topology) -> Backend",
+      "steps": "Compose factorized inputs, frame encoder, input motif read,12 CCGQA/FFN blocks, three AttnRes selectors, mid-depth motif read, three adapters, local refinement and typed readout. Derive geometry from B01 and assert exact parameter-name/shape agreement. Add one backend dispatch used by inference, gradient construction, retention and championship callers. Migrate existing direct-forward callers in the same patch. Preserve existing historical v1 reader/execution restrictions. Ordinary training returns only needed outputs; detailed diagnostics are opt-in so the reporting layer does not retain all activations. Use FP32 for authoritative computation. Exercise a real mixed atomic/packed/nested batch with MLX forward and backward. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.",
+      "tests": "The actual12-layer forward runs and matches the parameter census. Demonstrate nonzero finite gradients in embeddings, attention, FFN, depth selector, memory, adapters and readout. The adapter A matrix is seeded nonzero and its B matrix starts exactly zero. At the first nondegenerate backward pass B has a finite nonzero gradient while A is initially zero-gradient; update B once, then prove the second backward reaches A. Initial adapter output remains the identity residual. Prefix invariance holds. A complete update changes loss and saves. Old run files remain unchanged. All consumers use the architecture dispatch.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_atlas_model.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n\n<!-- BAMF02:PROOF-REPAIR-369-20261027 -->\n**Adapter wake-up regression (BAMF-REQ-007/008):** Using literal fixed-seed A and zero B, compute the first and second step gradients independently of constructor-shape assertions. Both-zero A/B initialization must fail because it prevents the required first-step B update. Confirm first-pass zero adapter contribution does not imply zero backbone gradient or frozen optimizer state.\n\n\n\n<!-- BAMF02:PROOF-CAUSAL-369-20261027 -->\n**Downstream causal F05 owner (BAMF-REQ-005/008; F05):** Consume A05's compiler-only prefix witness; run the actual instantiated 12-layer model with the same earlier causal prefix and two different future suffixes. Compare fresh/valid single-token, chunked and full-prefix logits within declared deterministic tolerance. Then inject a later-prefix cache into an earlier prediction request: it MUST be rejected/recomputed and never influence earlier logits, even when masked tensors happen to have compatible shapes. Record actual heads/groups, source-handle identity and output deltas. Only this downstream executed neural fixture can close F05, not A05's compiler-only green test.",
+      "contracts": [
+        "backbone",
+        "depth",
+        "memory",
+        "plastic",
+        "custody",
+        "causal_refinement",
+        "typed_decoder"
+      ],
+      "number": 369,
+      "body_sha256": "69d4d40af91f07ee6df21347a1dc9295136878216820064b7cb9460898df6120",
+      "children": [
+        "B11.1",
+        "B11.2",
+        "B11.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "B12",
+      "title": "Extend native AdamW custody to masked plastic groups and candidate transactions",
+      "lane": "B",
+      "deps": [
+        "B11"
+      ],
+      "owners": [],
+      "paths": [
+        "bilqis_mlx/learning/student_ops.py:_train_step",
+        "bilqis_mlx/runtime/mlx_parity.py:native_optimizer_to_mlx",
+        "bilqis_mlx/runtime/atlas_optimizer.py (new)",
+        "bilqis_mlx/runtime/tests/test_atlas_optimizer.py (new)"
+      ],
+      "api": "AdamWStateTree(parameters,m,v,update_counts); candidate_step(parent,batch,update_mask,teacher_hparams) -> CandidateState",
+      "steps": "Preserve native AdamW equations and the teacher-selected learning rate, betas, epsilon and weight decay. Maintain per-parameter update counts for correct bias correction under freezing and activation; identity/motif tables need per-row counts. Increment only eligible parameters on actual steps. Inactive parameters, moments and weight decay remain unchanged. One candidate owner publishes the entire tree as one generation. Accumulate FP32 gradients and apply the existing global norm clip. Newly activated rows begin with zero moments and count0. Rejection discards weights, moments, counts, allocations and plasticity counters together; observational teacher feedback follows its existing owner. Map historical scalar step to all parameter counts only when the historical contract updated them together. The run's global optimizer step remains the count of accepted optimizer steps. Apply participation masking before clip_gradients and before any weight-decay or moment arithmetic. Persist separate per-step optimizer counts and per-retained-candidate row age. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.",
+      "tests": "A FULL step matches existing native AdamW on identical arrays. Two FAST steps followed by FULL match an explicit reference using local counts. Frozen rows are bit-identical. First update of a new row uses count1. Rejection restores all hashes/clocks. A NaN gradient rejects without partial publication. An unused motif row is byte-identical after an update. An output-only semantic row receives its legitimate denominator gradient/update. Arbitrarily huge frozen gradients cannot change the active clipping factor. A zero-gradient participating row and a never-participating row have distinct expected clocks/decay. Reject a multi-step candidate and verify all ages/counts remain unchanged.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_atlas_optimizer.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.",
+      "contracts": [
+        "plastic",
+        "learning",
+        "custody",
+        "update_semantics",
+        "plasticity_transition"
+      ],
+      "number": 370,
+      "body_sha256": "3872ada8436365046e4d2928734261f06bb72807d5d38eb314d3a2dc214cb970",
+      "children": [
+        "B12.1",
+        "B12.2",
+        "B12.3",
+        "B12.4"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "B13",
+      "title": "Persist and cold-resume the complete BAMF learning generation",
+      "lane": "B",
+      "deps": [
+        "B12",
+        "A02",
+        "B07"
+      ],
+      "owners": [],
+      "paths": [
+        "bilqis_mlx/runtime/mlx_checkpoint.py:save_new_bundle/load_bundle",
+        "bilqis_mlx/runtime/checkpoints.py:_bundle_pointer/_advance",
+        "bilqis_mlx/runtime/boundary_commit.py",
+        "bilqis_mlx/runtime/tests/test_bamf_checkpoint.py (new)"
+      ],
+      "api": "BamfGenerationManifest; save_bamf_bundle(candidate,destination); load_bamf_generation(pointer) -> CompleteStudent",
+      "steps": "Extend the existing bundle with a versioned v2 section and sidecars for semantic banks, active ABI, motif keys, plasticity policy/counts, compiler/features and correction frontier. Hash payloads, persist through existing content-addressed storage and atomically publish one generation pointer. Reuse outbox reconciliation and references to unchanged objects. Validate sidecar census and tensor identities before constructing the optimizer. Cold resume in a clean process reconstructs the next visit selection and identical neural output. Keep the human-run lock and100GiB disk reserve. Inference caches remain disposable. Historical bundles retain their existing readers and immutable source bytes. Predecessor trace: BAMF-REQ-016/023; the implementation follows the explicit BAMF-0.2 contract repeated here. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.",
+      "tests": "Save/load reproduces parameters, moments, local counts, teacher context, active ABI and next seed. Crash before pointer keeps the old generation; crash after pointer before outbox delivery replays exactly once without another optimizer step. Wrong motif map, bank extent, compiler, topology or correction epoch fails before mutation. Accepted then rejected candidate followed by cold resume yields only accepted state.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_bamf_checkpoint.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n\n<!-- BAMF02:PROOF-REPAIR-372-20261027 -->\n**Literal historical-v1 and accepted-generation witnesses (BAMF-REQ-007/016/023; F14/F20):** Read a genuine frozen six-layer/absolute-position v1 bundle through its historical reader without mutation; then attempt to resume the same bytes as `bamf-atlas-v2`: a typed incompatibility must happen before building v2 optimizer or copying moments/tensors. A valid accepted source-qualified BAMF lesson must persist exact student/parent/retained generation IDs, optimizer step, row counts/ages, motif keys/slot extent, semantic bank identities, teacher cursor and source release. Cold resume and one next controlled optimizer step must match uninterrupted execution; rejected candidate and old specimen hashes stay unchanged.",
+      "contracts": [
+        "custody",
+        "identity",
+        "memory",
+        "plastic",
+        "projection",
+        "update_semantics",
+        "plasticity_transition",
+        "package_adoption"
+      ],
+      "number": 372,
+      "body_sha256": "febf00349370a13bd38dfa61aad0d9561b96ffe85ada6aa00c40a74d33b25b74",
+      "children": [
+        "B13.1",
+        "B13.2",
+        "B13.3",
+        "B13.4"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "B14",
+      "title": "Implement the derived low-bit KV-cache codec with FP32 fallback",
+      "lane": "B",
+      "deps": [
+        "B04",
+        "B13"
+      ],
+      "owners": [],
+      "paths": [
+        "bilqis_mlx/runtime/atlas_cache_codec.py (new)",
+        "bilqis_mlx/runtime/tests/test_atlas_cache_codec.py (new)"
+      ],
+      "api": "encode_cold_cache(cache,codec_manifest)->CacheArtifact; decode_cache(artifact,expected_binding)->ApproximateCache",
+      "steps": "Implement bamf.rot3/v1 exactly as the cache contract specifies. Generate one seeded orthogonal24x24 transform with deterministic QR sign normalization and persist its digest. Scale rotated unit coordinates by sqrt24 before normal-codebook quantization. Pack3-bit codes little-endian. Per32-vector block store a FP32 maximum norm and8-bit relative norms; preserve zero vectors. Decode, inverse-rotate, renormalize direction and restore the norm. Compress cold K/V records only when at least256 vectors amortize headers; smaller records remain FP32. Bind cache records to lineage, causal prefix, masks and codec manifest. Report actual byte costs. Reference candidate evaluation remains FP32. Interactive inference recomputes when a cache is incompatible or fails declared quality checks. Deliver this after the first complete learning path. Predecessor trace: BAMF-REQ-014; the implementation follows the explicit BAMF-0.2 contract repeated here.\n\n\n\n<!-- BAMF02:CONFORMANCE-CACHE-RIGHTS-PREFIX -->\n**Cache identity completeness:** Before reading a derived cold K/V record, validate the exact source/semantic release, allowed rights-purpose and policy epoch, context eligibility digest, causal prefix/offset/mask, topology, codec/codebook/rotation transform, training generation and model/optimizer-independent inference state. A revoked or superseded source must be rejected before decode or attention even when the record checksum and compressed bytes remain valid. Recompute from qualified canonical FP32 source and persist only an eligible new derived cache record; do not reuse old content by changing its key label.",
+      "tests": "Literal code sequence0..7 round-trips through bit packing. Zero vectors decode exactly zero. Full256-vector records use<=3.5 effective bits/channel. The fixed attention fixture meets relative-L2<=0.10 and exact chosen-answer agreement or selects FP32 fallback. Wrong generation/offset/scope/codebook rejects. No training gradient reads decoded cache tensors.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_atlas_cache_codec.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n\n**Required rights-only adversary (BAMF-REQ-014; F13):** Save a valid compressed cache; change ONLY the source-rights or permission epoch while preserving topology, vector bytes, offset, mask and key hash. The old cache must be invalidated BEFORE decode and not influence chosen output; with a requalified admissible view, recomputation must produce the canonical FP32-equivalent outcome within the declared fidelity contract. Separately change only causal prefix or topology and prove the same failure. Assert no gradient/AdamW/gold or canonical frame sidecar reads the lossy payload.",
+      "contracts": [
+        "cache",
+        "backbone",
+        "custody"
+      ],
+      "number": 375,
+      "body_sha256": "6fcac77b5c46749f4831f8e4d739689a781b49dfcf3bf04016ce0d450a187da6",
+      "children": [
+        "B14.1",
+        "B14.2",
+        "B14.3",
+        "B14.4"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "C01",
+      "title": "Create the three-lane integration baseline and executable EGM work contract",
+      "lane": "C",
+      "deps": [],
+      "owners": [
+        341,
+        308,
+        324,
+        337
+      ],
+      "paths": [
+        "AGENTS.md (scoped amendment)",
+        "ADR.md (append)",
+        "docs/architecture/BAMF_0_2.md (new)",
+        "docs/tasks/bamf-0.2/workstack.json (new)",
+        "scripts/check_bamf_workstack.py (new)"
+      ],
+      "api": "BamfWorkItem(key,issue,lane,depends,files,contract_hash,status); validate_workstack(manifest) -> report",
+      "steps": "Create a successor integration branch from the exact post-324 replay head plus SKOS-bearing main, recording both commit IDs. Preserve the frozen #324 specimen unchanged. Record the owner-authorized BAMF successor gate: the source bridge can be built now; first live adoption follows BAMF's own source/custody/retained-learning witness rather than waiting for the old model-size comparison. Add the scoped outcome-first evaluation and admission-lease amendments to AGENTS/ADR. Install or locate EGM at the pinned commit and create a project-local execution instruction pointing to its real persona/standard paths. Create three lane branches with one writer each: semantics, neural, integration. Lane A owns semantics/factory new modules, B owns neural new modules, C owns shared trainer/CLI/checkpoint wiring; B13 proposes checkpoint patches through C's shared-file queue. Validate the issue DAG and direct dependency receipts. Copy this delivered spec into repository docs without creating a fourth workstream. C16 owns the foundation successor launch witness: at least one source-valid end-to-end retained capability improvement, complete rollback of a deliberately damaging disposable candidate, and cold-resume equivalence. This exact-head receipt satisfies the BAMF foundation launch gate. C13 is the later expanded-system release qualification and is not a prerequisite of C16 or foundation training.\n\n\n<!-- BAMF02:ADR-004-FUNCTIONAL-FACTORY -->\n**Functional Factory implementation obligation (ADR-BAMF02-004):** Treat SPEC-0001 functional Factory architecture and ADR-BAMF02-004 as BAMF successor execution invariants. README.md/AGENTS.md historical Grade-B-specific directives are provenance for older runs only; current code and issues must use grade-neutral source/typed-rule/admission policy. Keep the checked-in 43 issue mirrors synchronized to the exact live issue bodies and workstack body digests, so compaction cannot revive old contracts.",
+      "tests": "Record exact baseline and clean integration diff. Workstack detects a cycle, missing dependency and overlapping shared-file ownership. EGM path resolves and a genuinely fresh reviewer reads one leaf without transcript. Existing Factory/SKOS focused checks run once at the combined baseline; report actual failures by owner. No model/run data or private sources enter the commit. C16 acceptance records parent and retained generation IDs, strictly improved fresh complete-solver target score, preserved cumulative retention, rejected-candidate complete-state identity, and equivalent cold-resume output/next update.\n\nStart with `python3 -B scripts/check_bamf_workstack.py docs/tasks/bamf-0.2/workstack.json`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n**Functional Factory acceptance (ADR-BAMF02-004):** Integration receipt checks mirrored issue-body fingerprints, absence of inherited Grade-B debt-turn/circulation exceptions, and availability of a pure planner and typed rule-policy owner. No claim of executable proof until the live implementation tests run.",
+      "contracts": [
+        "authority",
+        "learning",
+        "custody",
+        "projection"
+      ],
+      "number": 347,
+      "body_sha256": "c3913e355fe9a9aa6a8159d2f71b5317074eeec93c79befd6bb26efb5593e4a7",
+      "children": [
+        "C01.1",
+        "C01.2",
+        "C01.3",
+        "C01.4"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "C02",
+      "title": "Adapt ordinary Factory batches to BAMF inputs and targets",
+      "lane": "C",
+      "deps": [
+        "A05",
+        "A06",
+        "B10",
+        "B11",
+        "C01",
+        "A13"
+      ],
+      "owners": [],
+      "paths": [
+        "bilqis_mlx/learning/student_ops.py:_make_batch/_train_step",
+        "bilqis_mlx/runtime/atlas_training_adapter.py (new)",
+        "bilqis_mlx/runtime/source_execution.py:SourceExecutionContext",
+        "bilqis_mlx/runtime/tests/test_atlas_training_adapter.py (new)"
+      ],
+      "api": "compile_training_batch(delivered_rows,SourceExecutionContext,topology) -> BamfTrainingBatch",
+      "steps": "Consume the delivered rows and answer bindings from the existing executable Factory release. Compile source-visible inputs through A05, attach deterministic atlas features, and build separately masked typed targets. Preserve source row IDs, operation/capability IDs, actual teacher strategy, requested/delivered counts, rehearsal provenance and optimizer-step seed. Support all current answer modalities and new B10 structured outputs through a registry, never a grade switch. Pad only actual batch maxima; cap constituent and frame work through C08. Auxiliary labels come from source or explicit outcome evidence and remain absent otherwise. Route inference and training through the same backend selection. Feed realized delivery into #333's teacher observation capture, retaining exact row and cost attribution. The default path handles current A/B/C with atomic fallbacks before richer frame coverage arrives. Predecessor trace: BAMF-REQ-015; the implementation follows the explicit BAMF-0.2 contract repeated here.\n\n\n\n<!-- BAMF02:CONFORMANCE-TARGET-AND-GRADE-BLIND -->\n**Input/target isolation and grade-neutral adapter:** A prepared example has separate source-visible model inputs and independently held typed answer/auxiliary labels; target fields, future teacher-forced decisions, grading expectations and sealed holdout exemplars cannot enter input embeddings, feature caches, sequence compilation or motif keys. The same registry dispatch applies to every admitted grade/answer modality: no branch keyed to a grade letter, old scheduler debt class or future-frontier label. Store source-family/episode identity so training-versus-holdout splits can be verified downstream.\n\n\n<!-- BAMF02:ADR-004-FUNCTIONAL-FACTORY -->\n**Functional Factory implementation obligation (ADR-BAMF02-004):** Convert every admitted FactoryRelease through one typed construction/teaching/assessment adapter. Resolve domain-specific Boolean, integer or qualified world-model rule sets from released semantic signatures and source-family identity, not a grade ID. The same legal teaching input and assessment obligations must compile identically after a pure grade-label permutation; independently owned gold stays out of the student input.",
+      "tests": "Current A/B/C released fixtures compile and score through one adapter. Inference input contains no target fields. A changed source release rejects a stale prepared batch. A batch with packed, nested and atomic rows preserves each row's target and source identity. Report delivered rows after length packing and a finite MLX gradient step on a disposable model.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_atlas_training_adapter.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n\n**Required causal/grade metamorphic proof (BAMF-REQ-005/015; F16):** Hold identical legal source-visible inputs constant and change only the concealed gold answer and its auxiliary labels; serialized model-input tensors, eligible context digest, prefix features and inference logits must stay identical. Only target/loss may change. Recompile a set of otherwise identical valid lessons with permuted grade labels: packet eligibility, modality mapping, sampling metadata and source/target separation remain unchanged, apart from grade metadata for reporting. Reject training/heldout siblings from one known source family as independent evidence.\n\n\n**Functional Factory acceptance (ADR-BAMF02-004):** Swap grade labels for a source-identical pair of released capabilities and assert matching compiled lessons, task contracts, source evidence and independent gold boundaries. Swap domains while holding the grade label fixed and assert the required rule-set-specific coverage changes without any runtime grade branch.",
+      "contracts": [
+        "frame",
+        "learning",
+        "resource",
+        "custody",
+        "eligibility",
+        "typed_decoder",
+        "update_semantics"
+      ],
+      "number": 371,
+      "body_sha256": "c15634d64be5cc3b3e656ebb29a37644901c670a4352b9337ad4f3aed581bdc4",
+      "children": [
+        "C02.1",
+        "C02.2",
+        "C02.3",
+        "C02.4"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "C03",
+      "title": "Carry the replay-salvaged teacher into the new student lineage",
+      "lane": "C",
+      "deps": [
+        "C01",
+        "C02",
+        "B13"
+      ],
+      "owners": [
+        333,
+        337,
+        321
+      ],
+      "paths": [
+        "bilqis_mlx/learning/teacher_strategy_population.py",
+        "bilqis_mlx/learning/teacher_multifidelity.py",
+        "bilqis_mlx/learning/teacher_vnext_replay.py",
+        "bilqis_mlx/runtime/teacher_observation_capture.py",
+        "bilqis_mlx/learning/tests/test_bamf_teacher.py (new)"
+      ],
+      "api": "bind_teacher_successor(prior_teacher, new_student, replay_contract) -> TeacherEpoch",
+      "steps": "Port the exact replay behavior, using its current owner functions rather than rebuilding the selector. Preserve useful strategy history as prior evidence with explicit old/new student region labels; start checkpoint-local no-gain/interference counters for the new learner. Keep up to16 effective strategies and8 incumbents. Carry the every-fourth existing-policy canary, current UCB/retained exploitation and actual realized-delivery chain. The2/4/8/16 ladder stays shadow evidence under #321/#323 until its separate owner changes execution authority. New bank/plasticity epochs invalidate stale region matches without deleting the historical record. Old6-layer mentors may supply source-gold-checked typed advice under the championship contract; preserve their runtime as read-only and never average tensors into the12-layer student. Expose teacher health from actual observations. Historical Factory-v1 student artifacts remain read-only evidence; mentor inference is allowed only through the currently supported compatibility evaluator and current source binding. Readability never silently enables historical resume or an incompatible optimizer/weight import. Predecessor trace: BAMF-REQ-017; the implementation follows the explicit BAMF-0.2 contract repeated here.\n\n\n\n<!-- BAMF02:CONFORMANCE-TEACHER-GRADE-PARITY -->\n**Grade-neutral dispatch contract:** The BAMF-0.2 adapter may carry grade labels for reporting and content lineage, but must not use a letter, historical B-debt flag, active-frontier label or grade-specific visit counter as a scheduler input, priority override, admission rule, effort quota or retest cadence. Preserve replay teacher strategy/retention evidence while isolating obsolete historical scheduling decisions at the old-run boundary. For otherwise identical source-qualified candidate records, selection inputs and outcomes must be identical regardless of grade label. Legitimate prerequisites, competence observations, source rights and independent scores remain active inputs.\n\n\n<!-- BAMF02:ADR-004-FUNCTIONAL-FACTORY -->\n**Functional Factory implementation obligation (ADR-BAMF02-004):** The replay teacher consumes lawful offers from the generic Factory planner and operates one scheduler/retention/evidence policy for all grades. Grade identifiers remain observation labels only. Carried debt, queue fairness, retry, stagnation and promotion are evidence- and source-dependency-driven; previous Grade-B debt turns, B ceilings and C bypass clauses are not live controls. Domain rule sets change legal exercises, never teacher privileges.",
+      "tests": "Replay a fixed observation sequence and match strategy eligibility, no-gain resets and canary fallback with the baseline functions. Changed retained checkpoint resets same-student retirement. Destructive interference and no-target-gain produce distinct histories. A stale teacher geometry region cannot qualify a canary. Actual proposed/delivered/outcome/cost records survive checkpoint/restart exactly once.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/learning/tests/test_bamf_teacher.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n\n**Required negative/metamorphic proof (BAMF-REQ-017):** Run a fixed, replayable cohort of eligible candidate lessons with equal source qualification, independent learner evidence and priority features but permuted A/B/C/future grade labels. Assert identical teacher eligibility, priority scores, ordered selection, retest opportunity, source-gold/retention decisions and next persisted teacher state. Include independent cases where a concept in any grade carries mastery debt, and show the label alone neither starves it nor forces a special turn. An explicit legacy percentage-cap or periodic B-only turn implementation MUST fail this fixture. Repeat after cold resume and record delivered rows, not merely proposed visits.\n\n\n**Functional Factory acceptance (ADR-BAMF02-004):** Use identical learner evidence and prerequisite graphs under permuted grade IDs and compare delivered opportunities, debt handling, strategy selection inputs and retests. A true source prerequisite prevents selection under either permutation; a missing implied grade-order edge must never be fabricated.",
+      "contracts": [
+        "learning",
+        "custody",
+        "plastic"
+      ],
+      "number": 376,
+      "body_sha256": "1bc2326d1e1d8677d286e1d679be4e197c254aeb2c16611aeb7e45f70b840998",
+      "children": [
+        "C03.1",
+        "C03.2",
+        "C03.3",
+        "C03.4"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "C04",
+      "title": "Compose exact and neural mechanisms behind one capability solver",
+      "lane": "C",
+      "deps": [
+        "A07",
+        "B11",
+        "C02"
+      ],
+      "owners": [],
+      "paths": [
+        "bilqis_mlx/runtime/cognitive_solver.py (new)",
+        "bilqis_mlx/runtime/operator_registry.py (new)",
+        "bilqis_mlx/runtime/tests/test_cognitive_solver.py (new)"
+      ],
+      "api": "solve_task(task, context, generation, budget) -> CapabilityResult",
+      "steps": "Implement a small typed route planner: use an applicable exact operator or qualified cached composition first; use neural role/semantic interpretation and learned composition for the unresolved portion; evaluate a bounded DAG and return one typed answer. Input handles remain source-bound and can be opaque outside the receiving operator's signature. Register applicability and deterministic tie order instead of free-form agent conversations. Initially allow maximum64 pure DAG operations and one backbone call plus B06's local refinements per solve; budgets are explicit per task. Exact known answers receive full score. Neural invalid output routes to a legal deterministic fallback where available or explicit unresolved status. Record only the selected operator IDs, bindings, costs, dependencies and outcome needed for replay. Keep the golden-label evaluator outside the solve dependency graph. Implement TaskGoal/v1 with explicit source-lowered DAG and bounded neural holes; no free-form unbounded planner is part of this leaf.",
+      "tests": "Show three real routes: exact role lookup; deterministic composition of two arithmetic/temporal operations; neural interpretation followed by a pure operator. The complete pipeline solves a new role-binding composition. Wrong release/rights or invalid output is handled explicitly. No route reads evaluation labels. Parent/candidate solver runs have identical information and budgets. Literal ADD(MUL(2,3),4) yields10 with2 pure calls. A hole choosing the qualified actor from three visible candidates feeds an exact duration lookup. Wrong type, cycle, depth9, missing binding and consumed-budget exhaustion are explicit cases. The same registered exact operators stay enabled during parent/candidate scoring.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_cognitive_solver.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.",
+      "contracts": [
+        "solver",
+        "resource",
+        "projection",
+        "causal_refinement",
+        "typed_decoder",
+        "route_construction",
+        "learning_witness"
+      ],
+      "number": 373,
+      "body_sha256": "fd4c3e6eee3d89acfdc878b3273e6d320229ab3d4b9e3f64a94093f59d9f63d1",
+      "children": [
+        "C04.1",
+        "C04.2",
+        "C04.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "C05",
+      "title": "Evaluate and retain end-to-end capabilities with current school safeguards",
+      "lane": "C",
+      "deps": [
+        "C03",
+        "C04",
+        "B12",
+        "B13"
+      ],
+      "owners": [],
+      "paths": [
+        "bilqis_mlx/runtime/candidate_evidence.py",
+        "bilqis_mlx/runtime/exam_execution.py",
+        "bilqis_mlx/learning/championship_runtime.py",
+        "bilqis_mlx/runtime/tests/test_bamf_capability_retention.py (new)"
+      ],
+      "api": "evaluate_capabilities(solver,cohort,generation) -> Assessment; retain_candidate(parent,candidate,paired_assessment) -> Decision",
+      "steps": "Evaluate the same complete solver for retained parent and challenger. Preserve source-correct typed answers, the existing fresh-target improvement rule, grade/school aggregate non-regression and scaled protected-capability loss allowances. For already-perfect exact capabilities, skip pointless neural candidates and advance/rehearse through existing scheduling rules; useful cache/configuration changes receive their own versioned outcome receipt rather than fabricated retained optimizer steps. Run fresh generated compositions inside taught semantic scope, including previously unseen role fillers and legal structural variants. Distinguish progression92/87 from perfect cumulative mastery and championship. Keep fresh same-cohort title inference and settled unordered-pair history. Optional path attribution is diagnostic; no neural-only gate or architecture control-arm requirement is introduced. A whole capability can improve through a changed route, adapter, motif or dense weight.\n\n\n\n<!-- BAMF02:CONFORMANCE-RETENTION-INDEPENDENCE-RUBRIC -->\n**Source-family and rubric fidelity:** Score target improvement on independently held-out source-family/episode evidence under a pinned rubric, not on paraphrase clones or a silent evaluator-version change. Preserve immutable historical results with their original rubric and policy epoch. Any retrospective normalized comparison is a separate versioned translator receipt naming source and destination rubric, scope, source families and uncertainty; it never overwrites historic evidence or upgrades a candidate to retained without fresh valid target improvement and protected-school checks. Apply the same conditions to exact and neural outputs in every grade.\n\n\n<!-- BAMF02:ADR-004-FUNCTIONAL-FACTORY -->\n**Functional Factory implementation obligation (ADR-BAMF02-004):** Evaluate promotion, graduation, retention and carried mastery debt using common FactoryRelease requirements and independently measured capability evidence, not inferred ordinal grade progression. Source-backed prerequisite edges, current approved promotion policy and valid admission authority can block a proposal; an unfinished earlier named grade cannot itself grant or deny a later domain. No special B-nongating/C-advance rule or reciprocal exception exists; the same policy applies to every grade.",
+      "tests": "An exact answer and neural answer with the same correct semantics receive identical task credit. One target gain with admissible protected effects retains the whole candidate; a destructive candidate restores everything. A perfect source-visible lookup does not consume an optimizer visit. Same checkpoint/scope cannot rearm a failed promotion solely via new cohort. Old/new scopes and title evidence remain separated.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_bamf_capability_retention.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n\n**Required adversarial proof (BAMF-REQ-021/024; F10/F18):** Generate a family of paraphrases from one source; place siblings into training and alleged holdout, and require the split checker to reject independence and disallow a retained-gain claim. Recompute a frozen historical result under a changed rubric: its original value/receipt must remain byte-identical, translated value must carry an explicit translator/version and cross-epoch comparison must not count as new learning. A fresh independent source-family target must actually improve with protected-grade outcomes valid; swap grade labels on otherwise equivalent target/protected cohorts and show the same retention decision.\n\n\n**Functional Factory acceptance (ADR-BAMF02-004):** Fixture 1: two independent capabilities under arbitrary labels with identical debt/evidence/policy produce the same eligibility and retained-learning decision after label permutation. Fixture 2: add a real released prerequisite edge and observe the same legal block under both permutations. Fixture 3: a promotion receipt never substitutes for absent source, rights, independent fresh evidence or a required admission lease.",
+      "contracts": [
+        "solver",
+        "learning",
+        "custody",
+        "plasticity_transition",
+        "route_construction",
+        "learning_witness"
+      ],
+      "number": 378,
+      "body_sha256": "d75989b0c67de13eb52c13fb30ad6004c446beb69ce84f6fc46da11503abecbb",
+      "children": [
+        "C05.1",
+        "C05.2",
+        "C05.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "C06",
+      "title": "Route attention and curriculum priorities with SÍ SÉ SON signals",
+      "lane": "C",
+      "deps": [
+        "A06",
+        "A09",
+        "B11",
+        "C03"
+      ],
+      "owners": [],
+      "paths": [
+        "bilqis_mlx/learning/atlas_salience.py (new)",
+        "bilqis_mlx/diagnostics/signals.py",
+        "bilqis_mlx/learning/tests/test_atlas_salience.py (new)"
+      ],
+      "api": "SalienceEvidence(impact,exigency,novelty,basis,scope); propose_attention_options(frontier,history) -> RankedOptions",
+      "steps": "Build three five-class ordinal heads and a deterministic evidence adapter. Impact uses declared task consequences and measured downstream dependency/coverage effects; Exigency uses deadlines, blocked useful work and active repair needs; Novelty compares the event/structure with the current expectation and observed outcomes. UNKNOWN is explicit. Use the dispatcher ordering in the shared contract, not a weighted global sum. The teacher consumes admissible priority features and continues selecting HOW. Maintain local aggregation windows by20 events and capability epoch; repeated small defects can become a process-level candidate. Label source-backed examples and outcome-derived bins by a versioned rule, masking unlabeled heads. Track whether accepted lessons change later actions/routes and whether corrections stop recurring. A surprising assertion stays a conjecture until its ordinary source/admission route qualifies it. Predecessor trace: BAMF-REQ-018; the implementation follows the explicit BAMF-0.2 contract repeated here.\n\n\n\n<!-- BAMF02:CONFORMANCE-SALience-AGGREGATE-RIGHTS -->\n**Aggregation and rights precedence:** The expectation comparator must aggregate multiple independently observed, similarly structured minor discrepancies into a candidate pattern even when each leaf event would not independently attract attention. Distinguish separate events from paraphrases of one source; deduplicate source-lineage repetitions and preserve provenance, time/scope and alternative explanations. Aggregated salience may nominate investigation or qualified teaching, never override revoked source rights, missing gold, consent or a held source. The three SÍ/SÉ/SON dimensions remain separately observable rather than a single weighted truth score.\n\n\n<!-- BAMF02:ADR-004-FUNCTIONAL-FACTORY -->\n**Functional Factory implementation obligation (ADR-BAMF02-004):** SÍ/SÉ/SON signals are typed evidence inputs to the common grade-neutral teaching/priority policy, not a separate scheduler or permission to override a source/release prerequisite. Their outcome-based ordering must be equivariant to grade-ID renaming. Semantic-domain-specific risk or coverage can be expressed in a released source policy, never a letter-graduation shortcut.",
+      "tests": "A time-critical known problem can outrank a novel low-impact curiosity; a useful new cross-domain relation can outrank routine repetition when deadlines are equal. Missing expected report differs from explicitnegative report. Repeated identical failure triggers one grouped repair candidate, not20newdiscoveries. Head losses mask UNKNOWN-without-label cases. Priority changes do not override teacher strategy or fabricate semantic truth.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/learning/tests/test_atlas_salience.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n\n**Required contrast fixtures (BAMF-REQ-018; F08/F19):** A single minor mismatch remains below the declared candidate threshold, but many distinct, source-qualified analogous mismatches produce an aggregate trend candidate with a recorded lineage set; unrelated mismatches and many paraphrases of one event do NOT produce that trend. Revoke training rights on an otherwise high-novelty example: no optimizer input or admitted gold may result, regardless of novelty or impact. The unknown-label auxiliary heads remain masked. Neither the aggregate nor novelty alone may promote a source or turn conjecture into observation.\n\n\n**Functional Factory acceptance (ADR-BAMF02-004):** Permuting grade IDs with fixed salience, source rights, evidence and dependencies preserves proposal ordering and actionable holds. Rights/correction blocks defeat novelty and exigency under every grade label.",
+      "contracts": [
+        "salience",
+        "learning",
+        "projection"
+      ],
+      "number": 379,
+      "body_sha256": "e24975df849e93df7d23fe9b9f881b5572f84ec673ed8f572169d45aa5fe9fd9",
+      "children": [
+        "C06.1",
+        "C06.2",
+        "C06.3",
+        "C06.4"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "C07",
+      "title": "Advance the Factory continuously under an explicit atlas admission lease",
+      "lane": "C",
+      "deps": [
+        "A09",
+        "A12",
+        "C05",
+        "C06"
+      ],
+      "owners": [
+        296
+      ],
+      "paths": [
+        "bilqis_mlx/runtime/autonomy_loop.py",
+        "bilqis_mlx/runtime/autonomy_state.py",
+        "bilqis_mlx/runtime/jit_adoption.py",
+        "bilqis_mlx/runtime/atlas_admission.py (new)",
+        "bilqis_mlx/runtime/tests/test_atlas_admission.py (new)"
+      ],
+      "api": "AtlasAdmissionLease; advance_atlas_frontier(current,proposal,lease) -> AdmissionResult",
+      "steps": "A human-started BAMF command may opt into --admission-policy atlas-release, binding an exact approved atlas release, allowed family/operator set, source rights, bank/resource ceiling and versioned prerequisite/progression policy. Persist this lease with the run. Within it, repeatedly compile, validate, stage and adopt ready deltas through the existing prepared-successor entrypoint. Default without lease remains STAGED with a precise operator action. Check the current checkpoint, optimizer step, source/answer implementations and frontier immediately before adoption. Do not require a new human prompt for every already-authorized concept. A new external semantic release or out-of-scope domain requires a renewed lease, while old authorized learning continues. A/B/C initialize the developmental staircase; proceed into source-attested SKOS families according to prerequisites and useful outcomes, not a fixed D-O list. Read carried debt for every admitted grade, numeric scope and policy version from the current run manifest, never historical grade-specific constants.\n\n\n<!-- BAMF02:ADR-004-FUNCTIONAL-FACTORY -->\n**Functional Factory implementation obligation (ADR-BAMF02-004):** Implement a self-maintaining admission flywheel: fold each verified source, coverage, learning, correction or policy event into an immutable versioned planner snapshot; recompute the pure ready frontier and stage its next minimal prerequisite-closed delta; upon a permitted atomic admission under the existing persisted atlas lease, record the new generation and replan from the accepted receipt. Repeat only while state actually advances; yield a typed FIXED_POINT, WAITING_FOR_EVIDENCE, HELD, IMPLEMENTATION_UNCOVERED or LEASE_REQUIRED status instead of busy-polling. The planner proposes but cannot authorize new source/rights, admit outside the lease, promote a grade by fiat, or initiate MLX training.",
+      "tests": "One lease admits three data-defined successors and resumes from the second without duplicate allocation. An out-of-scope release stages rather than silently adopts. Missing prerequisite blocks only its delta. Existing human-run authority and candidate custody remain. Newly introduced capabilities appear in the current assessment pool; future-stage concepts remain outside it. #296 retains staging semantics for callers without a BAMF lease.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_atlas_admission.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n**Functional Factory acceptance (ADR-BAMF02-004):** Crash/replay before, during and after staging/admission yields the same next legal delta and no duplicate release; introducing a qualified family or a correction reopens only affected frontier obligations. Grade-name permutations and symmetric debt produce equivalent lease/admission decisions; a true source prerequisite or rights hold blocks both. No continuous background optimizer writer is introduced.",
+      "contracts": [
+        "authority",
+        "curriculum",
+        "learning",
+        "custody",
+        "coverage_completion"
+      ],
+      "number": 380,
+      "body_sha256": "c854845e6f9dfafae4a15970d23914e9278b5ecc171e2f37269445cf63414ba4",
+      "children": [
+        "C07.1",
+        "C07.2",
+        "C07.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "C08",
+      "title": "Make batch preparation and resource budgets topology-aware",
+      "lane": "C",
+      "deps": [
+        "C02",
+        "B11"
+      ],
+      "owners": [],
+      "paths": [
+        "bilqis_mlx/runtime/source_prefetch.py",
+        "bilqis_mlx/runtime/mlx_memory.py",
+        "bilqis_mlx/runtime/disk.py",
+        "bilqis_mlx/runtime/atlas_resources.py (new)",
+        "bilqis_mlx/runtime/tests/test_atlas_resources.py (new)"
+      ],
+      "api": "plan_microbatches(delivered_rows,topology,memory_budget) -> BatchPlan",
+      "steps": "Estimate activations from actual frame lengths, constituent expansions, depth summaries, trainable state and candidate copies. Keep one logical teacher batch while splitting into deterministic microbatches; accumulate correctly weighted gradients then clip and apply one AdamW step. Start32 short rows, reduce microbatch through16/8/4/2/1 under the48GiB trainer allocation. Snapshot actual installed MLX memory APIs and record peak allocated/cache memory. On allocation failure, restore the candidate and retry once with the next smaller microbatch using the same delivered examples and stepseed; exhausted budget stops at a safe boundary. CPU workers prepare only immutable source packets; no graph/network call enters a gradient step. Preserve100GiB disk reserve, display required next-bundle bytes and fail normally before writes. Use existing SSH/tunnel only for optional graph readback, not modelstate transport.",
+      "tests": "Accumulated gradient matches an unsplit small batch within declaredFP32 tolerance. Two CPU source workers produce same packets as serial. Stale prepared packet rejects. OOM simulation retries once and retains source/stepidentity. Batch1 exhaustion preserves parent. Disk guard considers complete weights,moments,manifest and publication overhead.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_atlas_resources.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.",
+      "contracts": [
+        "resource",
+        "custody",
+        "learning"
+      ],
+      "number": 374,
+      "body_sha256": "75e35ff39b8c1e569567484b158481e2934875cccc4df03f1364174470831a4c",
+      "children": [
+        "C08.1",
+        "C08.2",
+        "C08.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "C09",
+      "title": "Propagate corrections through reusable cognition and learned support",
+      "lane": "C",
+      "deps": [
+        "A01",
+        "B07",
+        "B13",
+        "C04"
+      ],
+      "owners": [
+        301
+      ],
+      "paths": [
+        "bilqis_mlx/semantics/cognitive_dependencies.py (new)",
+        "bilqis_mlx/runtime/atlas_revalidation.py (new)",
+        "bilqis_mlx/runtime/tests/test_atlas_revalidation.py (new)"
+      ],
+      "api": "apply_correction(event,dependency_index) -> RevalidationQueue; revalidate_node(node,frontier) -> StateTransition",
+      "steps": "Index immediate dependencies for atlas features, packedframes, motifs, exact caches, operator compositions and capability support. Use immutable correction events and reverse direct edges. Hold directly affected artifacts before their next use; revalidate lazily in impact/exigency order. Propagation stops when materialized content and eligibility are unchanged. Record alternatives when concurrent corrections disagree, rather than last-write-wins. A learned capability supported by invalidated material enters REQUALIFICATION_REQUIRED and receives targeted fresh source tasks; valid unrelated capabilities continue. Preserve the original observations and historical tensor checkpoints. Route invalidations to Akasha via C10. Include deterministic expiry/as-of projections as immediate dependencies when time changes validity. Predecessor trace: BAMF-REQ-019/020; the implementation follows the explicit BAMF-0.2 contract repeated here.\n\n\n\n<!-- BAMF02:CONFORMANCE-CORRECTION-ESCALATION -->\n**Stale-fact process-failure contract:** If an accepted correction has invalidated relevant source/context/motif/teacher descendants and the system subsequently claims remediation but repeats the superseded fact, classify that recurrence as an affected-lineage propagation/repair failure, not another ordinary novelty observation or a successful correction. Preserve original source, event time, correction receipt, prior remediation attempt and offending derived path; hold unsafe descendants, emit a typed actionable process-fault reason and require repair/requalification evidence before reuse. An authorized genuinely new observation does not get mislabeled as stale.",
+      "tests": "Change one source premise and repair only its affected direct chain. An unrelated source edit causes no rebuild. Recomputed equal output stops propagation. A revoked motif is ineligible before retraining. Two concurrent incompatible corrections remain branches. Capability requalification is visible while source history remains immutable. A synthetic planned09:30 activity, missing expected report, explicit non-occurrence, later10:20 correction and stale replay remain five distinct cases; a later actor/time fixture exercises the corrected behavior.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_atlas_revalidation.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n\n**Required adversarial proof (BAMF-REQ-019/020; F15):** Construct a public synthetic event, superseding correction, first stale replay and recorded remediation. Force the identical superseded belief to reappear AFTER the remediation is reported complete: the affected path must be held, an explicit propagation/process fault raised with source/correction/derived IDs, and the previously retained learner generation left historically intact but marked for requalification. A separate independent later event with the same wording but legitimate new evidence must not trigger this fault.",
+      "contracts": [
+        "recovery",
+        "memory",
+        "projection",
+        "custody"
+      ],
+      "number": 377,
+      "body_sha256": "f4cea30c4f80682a50ad550e8d7b94fe23ca6039fa92220275ed212e480fc310",
+      "children": [
+        "C09.1",
+        "C09.2",
+        "C09.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "C10",
+      "title": "Publish BAMF learning and release events into Rosetta/Akasha projections",
+      "lane": "C",
+      "deps": [
+        "B13",
+        "C07",
+        "C09"
+      ],
+      "owners": [
+        297,
+        299,
+        300,
+        310
+      ],
+      "paths": [
+        "bilqis_mlx/runtime/outbox_lineage.py",
+        "bilqis_mlx/runtime/bamf_projection.py (new)",
+        "lib/ithkuil/src/skos/akasha_skos.py",
+        "bilqis_mlx/runtime/tests/test_bamf_projection.py (new)"
+      ],
+      "api": "BamfProjectionEvent; project_generation_outbox(events,domain_contract) -> ProjectionReceipt",
+      "steps": "Emit compact application envelopes for release changes, capability outcomes, teacher visits, banks/motifs, correction lineage, plasticity epochs and package exports. Use existing Rosetta artifact/trace meanings and #297's namespaces, consuming #299/#300 projection owners. Enqueue accepted generation events through the existing durable outbox; materialize afterward outside the neural lane. Every view binds as-of/source/release/model/evaluator/rights identities. Deduplicate by eventID and payload digest. A graph outage leaves training running and events queued. Rebuild into a staging projection, verify its census and bounded queries, then atomically promote the active pointer. Raw private inputs and private paths remain outside public logs.",
+      "tests": "Duplicate delivery is idempotent; divergent payload under one eventID rejects. Offline graph later catches up without a neural update. Rebuild yields the same release/capability views. Wrong release and cross-rights query fail. Projection receipt identifies source events, implementation and output digest.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_bamf_projection.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.",
+      "contracts": [
+        "projection",
+        "recovery",
+        "custody"
+      ],
+      "number": 383,
+      "body_sha256": "601e7bd811028e75467cc80aa1a84e8f90b1e0f427a46fc0cdc050527f453302",
+      "children": [
+        "C10.1",
+        "C10.2",
+        "C10.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "C11",
+      "title": "Expose a usable BAMF cockpit and stable launch/resume commands",
+      "lane": "C",
+      "deps": [
+        "C03",
+        "C05",
+        "C07",
+        "C08",
+        "C10"
+      ],
+      "owners": [
+        306
+      ],
+      "paths": [
+        "bilqis_mlx/cli.py",
+        "bilqis_mlx/presentation/dashboard.py",
+        "bilqis_mlx/presentation/atlas_metrics.py (new)",
+        "docs/operations/BAMF_0_2_RUNBOOK.md (new)",
+        "bilqis_mlx/presentation/tests/test_bamf_metrics.py (new)"
+      ],
+      "api": "npm run train -- --model-topology configs/models/bamf-0.2.json --run-dir <new-run>; bamf_status(receipt) -> OperatorView",
+      "steps": "Add BAMF v2 to the existing train, dry-run and resume parser. Preserve human-run and source-prefetch controls. Add --admission-policy atlas-release with --atlas-release-manifest; resume reads saved values and rejects conflicting overrides before mutation. Reuse the existing metric owners for ST/M,R/H,RTN%,GREW,G/RTN,GRAD,P(RET),HEALTH. Add a compact expandable panel with active concepts/banks, ready/held coverage, atoms/frame, fallback, expansion, motif hits, plasticity mode and memory pressure. Keep the main cockpit compact and put detailed data in receipts. Distinguish staged curriculum, gained capability, retained steps, debt and perfect mastery. Publish actual parser-tested commands for preflight, owner launch, resume and read-only status.\n\n\n\n<!-- BAMF02:CONFORMANCE-COCKPIT-GRADE-EVIDENCE -->\n**Grade-neutral operator evidence:** The cockpit may group metrics by grade for comprehension, but scheduler authority remains capability/source/prerequisite evidence, not letter-based quotas. Display candidate provenance, eligible-vs-held source cohorts, actual delivered work, observed grade/capability debt, promotion attempts, whole-school fresh retention and true learned transfer separately. A grade label alone cannot manufacture a priority reason or hide an eligible capability. The existing run's historical grade policies remain visible as lineage metadata rather than falsely applied to BAMF-0.2.",
+      "tests": "Fresh v2 and resume parse; conflicting saved topology fails. Ten retentions with no growth differs visibly from genuine capability improvement. Zero elapsed time or visits never emitsNaN. Stagnation-held active capabilities remain in the proper GREW denominator with measurement status. Status is read-only. Runbook commands pass real dry-run.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/presentation/tests/test_bamf_metrics.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n\n**Required grade-label/UI truth fixture (BAMF-REQ-017/022/024):** Feed equal qualified teacher visits for differently labeled capabilities and verify the cockpit shows identical eligibility and promotion rules without a B-only quota/cadence. Compare a long low-retention loop with an actual fresh retained improvement: the dashboard may report high throughput but MUST NOT label it learned success. Holdout/protected-grader results display their exact source and rubric revisions; no grade, debt or historical rubric is silently reclassified.",
+      "contracts": [
+        "learning",
+        "resource",
+        "custody",
+        "salience",
+        "coverage_completion"
+      ],
+      "number": 384,
+      "body_sha256": "8431857031af7015e56eee99d353652e0588989831e8a6e5f9da5fea93dd30a5",
+      "children": [
+        "C11.1",
+        "C11.2",
+        "C11.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "C12",
+      "title": "Package reusable cognitive capabilities and compatible plastic deltas",
+      "lane": "C",
+      "deps": [
+        "A12",
+        "B13",
+        "C05",
+        "C09"
+      ],
+      "owners": [],
+      "paths": [
+        "bilqis_mlx/runtime/cognitive_package.py (new)",
+        "bilqis_mlx/runtime/tests/test_cognitive_package.py (new)",
+        "docs/operations/BAMF_0_2_PACKAGES.md (new)"
+      ],
+      "api": "export_capability(generation,signature,rights)->CognitivePackage; stage_import(package,receiver)->ImportPlan",
+      "steps": "Create a portable manifest containing semantic signatures, release compatibility, operator/model identity, qualification fixtures, counterexamples, behavioral diff, resource envelope, rights and revocation lineage. Export source-cleared procedures and exact transforms directly. Adapter/weight deltas require identical base checkpoint, parameter schema and semantic binding. Heterogeneous recipients receive semantic teaching packages or fixtures instead. Stage imports and apply the same whole-capability retention before activation. A first local two-node directory exchange suffices; no new server or networking framework is required. Public export whitelists PUBLIC_FIXTURE/PUBLIC_DERIVED and rejects private or unclassified material. Predecessor trace: BAMF-REQ-021; the implementation follows the explicit BAMF-0.2 contract repeated here. Implement the complete receiver-owned state transition from Package adoption.",
+      "tests": "Two local consumers exchange an exact operator package. A compatible adapter delta applies to a disposable clone and rolls back. Wrong base/topology/release rejects. Behavioral diff shows gains and regressions. Private payload cannot enter a public export. Counterexamples and ancestry survive a fork. Two recipients with identical base weights but different optimizer histories both reset changed slices according to the declared policy and retain their own untouched state. Execute one subsequent optimizer step, reject a later candidate, cold-resume, and compare the exact expected local state. A changed motif binding rejects before applying any tensor delta.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_cognitive_package.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.",
+      "contracts": [
+        "projection",
+        "plastic",
+        "recovery",
+        "solver",
+        "package_adoption"
+      ],
+      "number": 381,
+      "body_sha256": "191f75ae06ec8d17e203dce66984061e7e2f665bc577b2f08f8bd16887681729",
+      "children": [
+        "C12.1",
+        "C12.2",
+        "C12.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "C13",
+      "title": "Run the integrated disposable learning and recovery acceptance slice",
+      "lane": "C",
+      "deps": [
+        "A12",
+        "B13",
+        "C05",
+        "C07",
+        "C08",
+        "C09",
+        "C10"
+      ],
+      "owners": [
+        309,
+        310,
+        311,
+        312,
+        313
+      ],
+      "paths": [
+        "tests/system/test_bamf_learning_path.py (new)",
+        "scripts/prove_bamf_delivery.py (new)",
+        "docs/evidence/bamf/integrated/ (new)"
+      ],
+      "api": "prove_bamf_delivery(config,source_release,disposable_dir,max_steps) -> DeliveryReceipt",
+      "steps": "Use the actual Mac Studio for a finite disposable integrated run of the chosen model. Exercise creation, source-bound gradients, paired evaluation, one accepted candidate, one rejected candidate, cold restart and one append-only semantic delta. Allow up to64 attempted optimizer steps for this engineering witness and stop once the required behaviors are observed. Fix a failed witness in its owning source/loss/teacher/adapter seam rather than starting a model tournament. Lessons come from the admitted Factory and constructive constituent rules. Exercise complete solver routes and correction requalification. Run the existing portable, ABI and Factory guards once on the combined candidate. Record actual commands, hashes, outcomes and resource use. The operator's real learner stays untouched.\n\n\n\n<!-- BAMF02:CONFORMANCE-FULL-SCHOOL-WITNESS -->\n**Integrated acceptance must exercise the real retained learner, not a successful operator-only solver:** Freeze an independently qualified source family and current admitted school, measure baseline source-visible complete-solver performance, run a bounded disposable candidate using real MLX/AdamW under the grade-neutral teacher, and compare fresh heldout target performance plus all protected-grade outcomes against the same precommitted rubric. A correct exact primitive may contribute to a complete answer but cannot be counted as neural learning when its answer was already derivable without updates. Record both positive and rejected candidates.",
+      "tests": "Prove finite real updates, a source-grounded retained improvement, complete rollback, equal resumed outputs and AdamW counts, unchanged old indices after admission, and idempotent projection. Negative cases cover future leakage, wrong release, inactive ID, corrupted allocation and stale cache. An unmet learning witness is a named remaining defect, never a success claim.\n\nStart with `python3 -B scripts/run_tests.py tests/system/test_bamf_learning_path.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n\n**Required cross-grade true-learning witness (BAMF-REQ-015/016/017/023/024; F16/F20):** On a predeclared fresh independent target family, prove a strictly improved complete-solver score after at least one real retained neural update, with protected source-gold and grade-agnostic retention valid. Perturb only concealed target labels and prove the earlier inputs/logits cannot change. Under a deliberately damaged candidate require byte-identical rollback of model, motif/semantic ABI, AdamW and teacher state; cold resume the accepted generation, verify exact identity and equal next update. Changing only grade labels on otherwise identical qualified lesson envelopes may not change admissible scheduling or retention decisions. Historical #324 and old six-layer digests remain unchanged.",
+      "contracts": [
+        "authority",
+        "solver",
+        "learning",
+        "custody",
+        "resource",
+        "learning_witness"
+      ],
+      "number": 385,
+      "body_sha256": "d54318a5147c7839a4f052e4e05d534d51d6138904fb4cd7ae664e97cf9da6cb",
+      "children": [
+        "C13.1",
+        "C13.2",
+        "C13.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "C14",
+      "title": "Deliver the continuing BRAVO-to-full-atlas training program",
+      "lane": "C",
+      "deps": [
+        "A10",
+        "A11",
+        "C07",
+        "C11",
+        "C13"
+      ],
+      "owners": [
+        341,
+        326
+      ],
+      "paths": [
+        "configs/curricula/bamf-developmental-v1.json (new)",
+        "docs/operations/BAMF_0_2_TRAINING.md (new)",
+        "bilqis_mlx/factory/tests/test_bamf_training_program.py (new)"
+      ],
+      "api": "BamfDevelopmentalProgram; resolve_training_stage(source_coverage,learner_state) -> StageIntent",
+      "steps": "Encode a continuing program as data. L0 teaches positive identity, direct Boolean and numeric constituents followed by lawful composition. L1 covers released SKOS roles/senses/morphology and individually qualified structured BRAVO category/time frames. L2 continues new concepts, ambiguity, relations and cross-family composition. L3 is optional capacity/hardware extension; L4 packages bounded capabilities. L3/L4 never block earlier education. Interleave qualified L1/L2 subsets according to prerequisites instead of waiting for every source stratum. Read initial A/B/C semantics and numeric scope from the admitted run release, not #324's frozen workload. Preserve previous skills with the existing teacher and retention. Continue until every eligible SKOS item has declared task coverage; enumerate held items and remediation owners. Give the operator exact launch/resume/source-extension instructions, visible daily outcomes and local resource limits. Attach real training results after owner initiation.\n\n\n\n<!-- BAMF02:CONFORMANCE-GRADE-NEUTRAL-PROGRAM -->\n**Curriculum progression without grade-based privileges:** The L0–L2 stages describe constructive source prerequisites and useful concepts, not a hard-coded A→B→C scheduling priority. The continuing program uses the same eligibility, retention, debt, retest and teacher scoring contracts for any admitted grade. Preserve non-gating debt of any source-qualified capability; not only old Boolean debt. One grade cannot be artificially starved, rushed or promoted because its name sorts before/after another grade. New grade introduction is a data/Factory release operation, not a trainer branch.\n\n\n<!-- BAMF02:ADR-004-FUNCTIONAL-FACTORY -->\n**Functional Factory implementation obligation (ADR-BAMF02-004):** L0-L4 are examples of semantic complexity and optional capabilities, not a fixed grade order or imperative A-then-B-then-C curriculum algorithm. Express the continuing program as immutable curriculum policy and domain-rule manifests consumed by the single pure recursive Factory planner. Reuse the same bounded source-qualified prerequisite, evidence, teaching/assessment, promotion/debt and admission rules for Boolean, integer and future world-model semantics. Allow independent eligible domains to progress under the same generic rules; actual cross-domain prerequisites block by their typed edges. Never carry forward a named B-debt exception or assume a C entitlement.",
+      "tests": "Dry-run enumerates the entire pinned atlas into covered/ready/held, creates three successive deltas and consumes one BRAVO public fixture stratum. A source-qualified capability in any grade progresses while independently protected mastery debt exists elsewhere; the reciprocal case passes under equivalent prerequisites and evidence. Unqualified narrative does not block structured summaries. Future grades require data, not trainer branches. Report actual learned outcomes separately from software readiness.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/factory/tests/test_bamf_training_program.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n\n**Required symmetric fixture (BAMF-REQ-015/017/024):** Demonstrate a valid successor capability progressing while a different grade has unresolved, protected debt, then reverse the letters under an equivalent legal prerequisite graph and obtain the same scheduling/assessment disposition. The comparison uses anonymous grade-label permutations, not a named-grade advancement exception. Permuting label-only metadata across a frozen candidate set must leave admitted opportunities, debt visibility, promotion gates and actual delivered workload unchanged. Invalid prerequisites still block regardless of grade; a hold in one family must not block unrelated ready work.\n\n\n**Functional Factory acceptance (ADR-BAMF02-004):** With one synthetic Boolean family, one integer family and one qualified world-model family, show domain-specific lesson/assessment rule selection with a shared scheduler; permute grade labels and preserve legal outcomes, including symmetric debt. Validate three event-driven plan/admit/replan cycles, restart at a staged state, immutable previous evidence, a true cross-domain prerequisite hold and an all-held fixed-point receipt. No fixed grade-by-grade script is permitted.",
+      "contracts": [
+        "curriculum",
+        "learning",
+        "projection",
+        "resource",
+        "plasticity_transition",
+        "coverage_completion",
+        "bravo_fixture"
+      ],
+      "number": 386,
+      "body_sha256": "e33f265eae49c53e5f051d93314e7f904b51d5f386895bd7a783eed7fc983faa",
+      "children": [
+        "C14.1",
+        "C14.2",
+        "C14.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "C15",
+      "title": "Close BAMF delivery with fresh EGM review and three-lane receipts",
+      "lane": "C",
+      "deps": [
+        "B14",
+        "C11",
+        "C12",
+        "C13",
+        "C14",
+        "C16"
+      ],
+      "owners": [
+        341,
+        318
+      ],
+      "paths": [
+        "docs/evidence/bamf/delivery/ (new)",
+        "docs/tasks/bamf-0.2/workstack.json",
+        "docs/architecture/BAMF_0_2.md"
+      ],
+      "api": "BamfDeliveryManifest(components,issues,commits,proofs,egm,operator_commands)",
+      "steps": "Integrate verified lane commits through the sole integration owner. Run a genuinely fresh EGM implementation-readiness/codebase-details review using the public specification, diff, tests and runbook without chat history. Repair blockers/majors, record justified contests and perform one targeted re-audit. Reconcile root outcomes, existing-owner hooks, Development closing links and parser-tested commands. Update the roadmap/registry projections from current receipts while preserving historical rows. Publish one immutable delivery manifest pinning semantic release, Factory/teacher head, topology, compiler, plasticity, codec, tests and artifacts. Keep separate status fields for software delivery and the later student's full-atlas mastery. Actual merge remains an owner decision.\n\n\n\n<!-- BAMF02:CONFORMANCE-BEHAVIORAL-PROOF-CLOSURE -->\n**Behavioral conformance gate (not citation coverage):** Build one machine-readable and human-reviewable matrix for all BAMF-REQ-001…024 and negative F01…F20. Each row binds normative SPEC text/variant revision, directly owning ticket/commit and contract path, literal input fixture, independently specified expected behavior, observed test output, runner/environment, fresh-run evidence/receipt and reviewer decision. `MENTIONED`, `SPECIFIED`, `CODE_PRESENT`, `EXECUTED_PASS`, `EXECUTED_FAIL` and `BLOCKED` are distinct states; a requirement link, label, synthetic green mock, issue closure or test name alone never qualifies as `EXECUTED_PASS`. Treat grade-neutral invariance and no legacy BAV runtime namespace as explicit failure gates, not decorative ADR citations. Attach a cross-document diff for normative conflicts, a dependency-graph check, branch/head and exact source/privacy boundary. Keep private evidence behind protected authority; public summary gives only disclosure-permitted proof dispositions.\n\n\n<!-- BAMF02:ADR-004-FUNCTIONAL-FACTORY -->\n**Functional Factory implementation obligation (ADR-BAMF02-004):** Treat the pure recursive curriculum planner, semantic-family rule dispatch, stage-independent grade neutrality and self-maintaining admitted-lease loop as mandatory BAMF conformance. Audit active Google Docs, the architecture, 43 current issue bodies, their repository mirrors and the workstack. A planned behavior, a source mirror, a passing code linter or a fixture name is never a substitute for an executed current-head Factory proof.",
+      "tests": "Each required leaf has an exact commit, proof and EGM disposition or an owned blocker. Links resolve and the dependency graph is acyclic. Shared paths have one writer. A cold reviewer reconstructs create->learn->retain->expand->resume from the artifacts alone. Delivery manifest reproduces. Root closeout never invents live training or full-atlas mastery.\n\nStart with `python3 -B scripts/check_bamf_workstack.py docs/tasks/bamf-0.2/workstack.json`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n\n**Closeout refusal fixtures:** (1) Provide a ticket with the correct BAMF-REQ/F identifiers but no executed test: status MUST remain unproven and closeout blocked. (2) Feed one F15 stale-recurrence failure, one source-family leak, one Grade-B-only scheduling result, or one failed v1/v2 load guard: the relevant requirement is `EXECUTED_FAIL` even if other tests pass; overall delivery cannot be marked complete. (3) Change a source contract or issue-body hash after green tests: affected evidence becomes `REQUALIFICATION_REQUIRED` until rerun against the new revision. (4) Verify every 24/20 row is either truly passing with a complete receipt or explicitly blocked with named owner, never silently omitted. Distinguish implementation readiness, first operator-run readiness, and later full-atlas demonstrated learning.\n\n\n**Functional Factory acceptance (ADR-BAMF02-004):** Closeout requires observed behavioral witnesses for pure/idempotent planning, grade-label permutations with symmetric debt and true prerequisite holds, source-family/domain-rule variation, recursive automatic replan after admitted events and correction, fixed-point/held termination, single-authority admission and exact cold resume; verify exact live GitHub SHA against each checked-in issue mirror and workstack item.",
+      "contracts": [
+        "authority",
+        "custody",
+        "projection",
+        "resource",
+        "coverage_completion"
+      ],
+      "number": 387,
+      "body_sha256": "e9f779a289f1853fad58a02db4fbd7c2f454d88e60adbf7f062a1f3d16c8b3f5",
+      "children": [
+        "C15.1",
+        "C15.2",
+        "C15.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    },
+    {
+      "key": "C16",
+      "title": "Open the first durable BAMF student path before optional projection work",
+      "lane": "C",
+      "deps": [
+        "B13",
+        "C02",
+        "C03",
+        "C05",
+        "C08"
+      ],
+      "owners": [
+        341
+      ],
+      "paths": [
+        "bilqis_mlx/cli.py",
+        "docs/operations/BAMF_0_2_FIRST_STUDENT.md (new)",
+        "bilqis_mlx/runtime/tests/test_bamf_first_student.py (new)"
+      ],
+      "api": "preflight_bamf_foundation(config,admitted_release,new_run_dir) -> LaunchReceipt",
+      "steps": "Finish the production create/dry-run/resume CLI dispatch for the current admitted source release as soon as the complete neural, teacher and custody path works. This is the same persistent BAMF lineage later expanded by C07, not a disposable model-size contestant. A separate disposable witness checks the command and rollback before the operator starts the new student. Record initial active ABI, source/curriculum/teacher identities, topology, seed, optimizer hyperparameters, parameter-bank shape and all-zero new moments. Require a new empty run directory, not an old student path. Read the currently admitted A/B/C scope and introduce foundations through its ordinary Factory plan. Expose existing dashboard metrics immediately; C11 adds the larger atlas/cockpit views later. Akasha materialization, the low-bit cache and private journal intake are parallel delivery work and do not block the first optimizer update. Publish one exact owner-start command and one cold-resume command after parser/preflight verification. Predecessor trace: BAMF-REQ-022/024; the implementation follows the explicit BAMF-0.2 contract repeated here. C16 owns the foundation successor launch witness: at least one source-valid end-to-end retained capability improvement, complete rollback of a deliberately damaging disposable candidate, and cold-resume equivalence. This exact-head receipt satisfies the BAMF foundation launch gate. C13 is the later expanded-system release qualification and is not a prerequisite of C16 or foundation training.\n\n\n\n<!-- BAMF02:CONFORMANCE-FIRST-RUN-NEUTRALITY -->\n**First-run teacher ownership:** The persistent BAMF-0.2 student's first source release is what the accepted Factory currently admits; A/B/C names are examples of initial corpus content, not privileged scheduling classes or an exclusive hard-coded grade switch. The operator's create/dry-run/resume path binds the same grade-neutral teacher behavior, retention and source-release policy exercised by its disposable foundation witness. Resuming must not re-enable historical Grade-B scheduling decisions from saved old trainer fields.\n\n\n<!-- BAMF02:ADR-004-FUNCTIONAL-FACTORY -->\n**Functional Factory implementation obligation (ADR-BAMF02-004):** Initialize the first persistent student from the currently admitted FactoryRelease and a single pinned generic curriculum policy. Do not encode an A/B/C historical lesson sequence as a privileged student state machine. It consumes the same future pure-planner deltas and domain-specific construction rules under C07 when leased, while the sole neural writer remains under the human-started run boundary.",
+      "tests": "Fresh preflight creates no neural updates and reports the exact run identity. A disposable creation/update/cold-resume traverses the same entrypoint. An old or occupied run directory is protected. Missing optional graph/cache services do not prevent the admitted foundation path. The operator's existing learner is untouched. The disposable foundation witness must demonstrate genuine source-valid retained improvement, complete rejected-candidate rollback and cold-resume equivalence on the actual BAMF/replay code. Its exact-head receipt completes C16 and is sufficient for the operator to start the first persistent lineage. Later persistent-student learning receipts are subsequent operating evidence, not another prerequisite of the launch they follow. C16 acceptance records parent and retained generation IDs, strictly improved fresh complete-solver target score, preserved cumulative retention, rejected-candidate complete-state identity, and equivalent cold-resume output/next update.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_bamf_first_student.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n\n**Required first-start negative (BAMF-REQ-015/017/022; F20):** Before allowing a persistent launch, exercise a disposable generation with at least two differently labeled admitted capability families, verify equivalent source-qualified selection rules and source-gold/retention constraints, then cold-resume and compare next teacher choice and retained optimizer state to uninterrupted execution. Inject an old B-only quota/turn field in a hypothetical legacy config: ignore or explicitly reject it for BAMF-0.2, never silently enforce it. A non-admitted future grade remains blocked by source authority rather than by an assumed A/B/C-only architecture.\n\n\n**Functional Factory acceptance (ADR-BAMF02-004):** A disposable first-run witness compiles/teaches source-valid capabilities from two differently named grade declarations through the same runtime, preserves symmetric debt and a real prerequisite hold, then cold-resumes without any grade-index-dependent scheduler, mode or release mutation. A dry-run never launches optimizer updates.",
+      "contracts": [
+        "authority",
+        "custody",
+        "learning",
+        "resource",
+        "plasticity_transition",
+        "route_construction",
+        "learning_witness"
+      ],
+      "number": 382,
+      "body_sha256": "8c6d5b26d6c02d87cc3d67e5a7d76108bd808adee853b63867542ed4b6718cfc",
+      "children": [
+        "C16.1",
+        "C16.2",
+        "C16.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+allomorph_rule_id,domain,input_pattern,intermediate_pattern,output_pattern,condition_summary,source_id,section_id,table_id,source_line,source_url,source_anchor
+ALLO-08d9bb00e7a0dd,C_A affix-complex,fbm,fv,vw,Apply when concatenated C_A exponents produce the listed input cluster.,NI-WEB-CH03,NI-WEB-CH03:3.6,NI-WEB-CH03:T035,6525,https://www.ithkuil.net/newithkuil_03_morphology.htm,Sec3_6
