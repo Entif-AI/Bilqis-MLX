@@ -105,3 +105,28 @@ regressions. `frame_codec.py` is 696 lines and no codec function exceeds the
 
 `git diff --check`: passed. No neural state, model parameters, optimizer state,
 or grade-specific runtime path is read or written by the codec.
+
+## 2026-10-28 codec review repair
+
+The earlier independent A04.2 review identified a schema-identity hole:
+the canonical payload could carry a different frame schema with identical
+ABI indices while the packed schema sidecar was valid in isolation. The
+codec now binds the decoded `FrameInstance` schema ID/revision and every
+concept's semantic release to the validated packed schema and release
+before returning the frame or allowing `role_index` readout. The mandatory
+typed `FrameSidecar` also binds the full constituent metadata and exact
+payload hash, with comparison against the decoded payload.
+
+The new regression first failed with a coordinated frame-payload and
+sidecar substitution, then passed after the explicit schema/release checks.
+It rejects a foreign schema with identical indices and a foreign semantic
+release even when the attacker recomputes the visible sidecar fields.
+The upper uint32 boundary is now directly witnessed: index
+`4294967295` round-trips through extended encoding; index `4294967296`
+rejects with `FRAME_EXTENDED_SLOT_INVALID`.
+
+Focused `test_frame_codec.py`: 14 passed, 0 failed, 0 skipped.
+Combined adapter/codec suite: 25 passed, 0 failed, 0 skipped.
+The previous independent review findings are repaired and tested locally;
+fresh immutable-head EGM remains `EGM_PENDING` rather than claimed.
+No neural state or source admission was changed.

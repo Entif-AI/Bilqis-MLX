@@ -30,6 +30,8 @@ SLOT_TUPLE_SCHEMA = "bilqis.frame-slot-tuple/v1"
 COMPACT_BYTES_SCHEMA = "bilqis.frame-u64-bytes/v1"
 PACKED_FRAME_SCHEMA = "bilqis.packed-frame/v1"
 EXTENDED_SLOT_SCHEMA = "bilqis.extended-frame-slot/v1"
+FRAME_SIDECAR_SCHEMA = "bilqis.frame-codec-sidecar/v1"
+CONSTITUENT_METADATA_SCHEMA = "bilqis.frame-constituent-metadata/v1"
 EXTENDED_CODEC_ID = "bamf.frame-extended/v1"
 ATOMIC_CODEC_ID = "bamf.frame-atomic/v1"
 
@@ -262,6 +264,122 @@ class ExtendedSlot:
 
 
 @dataclass(frozen=True)
+class ConstituentMetadata:
+    order_index: int
+    role_id: str
+    occurrence_index: int
+    state: str
+    semantic_ids: tuple[str, ...]
+    semantic_releases: tuple[str, ...]
+    abi_indices: tuple[int, ...]
+    type_ids: tuple[tuple[str, ...], ...]
+    source_references: tuple[str, ...]
+    child_occurrence_id: str | None
+    child_content_digest: str | None
+    child_type_ids: tuple[str, ...]
+    schema_version: str = CONSTITUENT_METADATA_SCHEMA
+
+    def __post_init__(self) -> None:
+        widths = {
+            len(self.semantic_ids),
+            len(self.semantic_releases),
+            len(self.abi_indices),
+            len(self.type_ids),
+            len(self.source_references),
+        }
+        if (type(self.order_index) is not int or self.order_index < 0
+                or not isinstance(self.role_id, str) or not self.role_id
+                or type(self.occurrence_index) is not int or self.occurrence_index < 0
+                or self.state not in {item.value for item in BindingState}
+                or len(widths) != 1
+                or any(not isinstance(item, str) or not item
+                       for item in self.semantic_ids)
+                or any(not _SHA256.fullmatch(item)
+                       for item in self.semantic_releases)
+                or any(type(index) is not int or index < 0
+                       for index in self.abi_indices)
+                or any(not isinstance(item, tuple)
+                       or any(not isinstance(value, str) or not value for value in item)
+                       for item in self.type_ids)
+                or any(not isinstance(item, str) or not item
+                       for item in self.source_references)
+                or ((self.child_occurrence_id is None)
+                    != (self.child_content_digest is None))
+                or (self.child_occurrence_id is not None
+                    and not _SHA256.fullmatch(self.child_occurrence_id))
+                or (self.child_content_digest is not None
+                    and not _SHA256.fullmatch(self.child_content_digest))
+                or any(not isinstance(item, str) or not item
+                       for item in self.child_type_ids)
+                or self.schema_version != CONSTITUENT_METADATA_SCHEMA):
+            _fail("FRAME_CONSTITUENT_METADATA_INVALID")
+
+
+@dataclass(frozen=True)
+class FrameSidecar:
+    codec_id: str
+    semantic_release: str
+    schema_map_sha256: str
+    schema_id: str | None
+    schema_revision: int | None
+    schema_sha256: str | None
+    ast_construct: str
+    order_mode: str | None
+    scope: str | None
+    occurrence_id: str
+    content_digest: str
+    source_instance_id: str
+    structural_path: tuple[int, ...]
+    source_span: SourceSpan
+    parent_occurrence_id: str | None
+    causal_prefix_end: int
+    constituents: tuple[ConstituentMetadata, ...]
+    frame_payload_sha256: str
+    schema_version: str = FRAME_SIDECAR_SCHEMA
+
+    def __post_init__(self) -> None:
+        if (self.codec_id not in {
+                COMPACT_CODEC_ID, EXTENDED_CODEC_ID, ATOMIC_CODEC_ID}
+                or not _SHA256.fullmatch(self.semantic_release)
+                or not _SHA256.fullmatch(self.schema_map_sha256)
+                or not _SHA256.fullmatch(self.occurrence_id)
+                or not _SHA256.fullmatch(self.content_digest)
+                or not isinstance(self.source_instance_id, str)
+                or not self.source_instance_id
+                or any(type(item) is not int or item < 0 for item in self.structural_path)
+                or (self.parent_occurrence_id is not None
+                    and not _SHA256.fullmatch(self.parent_occurrence_id))
+                or type(self.causal_prefix_end) is not int
+                or self.causal_prefix_end < self.source_span.end
+                or not _SHA256.fullmatch(self.frame_payload_sha256)
+                or tuple(item.order_index for item in self.constituents)
+                != tuple(range(len(self.constituents)))
+                or self.schema_version != FRAME_SIDECAR_SCHEMA):
+            _fail("FRAME_CODEC_SIDECAR_INVALID")
+        schema_values = (
+            self.schema_id,
+            self.schema_revision,
+            self.schema_sha256,
+            self.order_mode,
+            self.scope,
+        )
+        if self.codec_id == ATOMIC_CODEC_ID:
+            if any(value is not None for value in schema_values):
+                _fail("FRAME_ATOMIC_SIDECAR_SCHEMA_FORBIDDEN")
+        elif (not isinstance(self.schema_id, str) or not self.schema_id
+                or type(self.schema_revision) is not int
+                or self.schema_revision < 1
+                or not _SHA256.fullmatch(self.schema_sha256)
+                or not isinstance(self.order_mode, str) or not self.order_mode
+                or not isinstance(self.scope, str) or not self.scope):
+            _fail("FRAME_SCHEMA_SIDECAR_INVALID")
+
+    @property
+    def digest(self) -> str:
+        return _digest(asdict(self))
+
+
+@dataclass(frozen=True)
 class PackDecision:
     disposition: PackDisposition
     reason: FallbackReason
@@ -282,6 +400,7 @@ class PackedFrame:
     frame_payload: bytes
     compact_word: int | None
     extended_slots: tuple[ExtendedSlot, ...]
+    sidecar: FrameSidecar
     schema_version: str = PACKED_FRAME_SCHEMA
 
     def __post_init__(self) -> None:
@@ -292,6 +411,10 @@ class PackedFrame:
                 or not _SHA256.fullmatch(self.schema_map_sha256)
                 or not isinstance(self.frame_payload, bytes)
                 or not self.frame_payload
+                or not isinstance(self.sidecar, FrameSidecar)
+                or self.sidecar.codec_id != self.codec_id
+                or self.sidecar.semantic_release != self.semantic_release
+                or self.sidecar.schema_map_sha256 != self.schema_map_sha256
                 or self.schema_version != PACKED_FRAME_SCHEMA):
             _fail("FRAME_PACKED_RECORD_INVALID")
         if self.disposition is PackDisposition.COMPACT:
@@ -322,6 +445,17 @@ class PackedFrame:
                         self.schema_payload,
                     ))):
                 _fail("FRAME_PACKED_ATOMIC_INVALID")
+
+    @property
+    def projection_sha256(self) -> str:
+        return _digest({
+            "codec_id": self.codec_id,
+            "disposition": self.disposition.value,
+            "reason": self.reason.value,
+            "compact_word": self.compact_word,
+            "extended_slots": [asdict(item) for item in self.extended_slots],
+            "sidecar_sha256": self.sidecar.digest,
+        })
 
 
 def pack4(indices: tuple[int, int, int, int], schema_tag: int) -> int:
@@ -484,6 +618,86 @@ def _extended_slot(binding: RoleOccurrence) -> ExtendedSlot:
     )
 
 
+def _constituent_metadata(
+    order_index: int,
+    binding: RoleOccurrence,
+) -> ConstituentMetadata:
+    concepts = (
+        (binding.concept,) if binding.concept is not None
+        else binding.alternatives
+    )
+    child = binding.child_frame
+    return ConstituentMetadata(
+        order_index=order_index,
+        role_id=binding.role_id,
+        occurrence_index=binding.occurrence_index,
+        state=binding.state.value,
+        semantic_ids=tuple(item.semantic_id for item in concepts),
+        semantic_releases=tuple(item.semantic_release for item in concepts),
+        abi_indices=tuple(item.abi_index for item in concepts),
+        type_ids=tuple(item.type_ids for item in concepts),
+        source_references=tuple(item.source_reference for item in concepts),
+        child_occurrence_id=None if child is None else child.occurrence_id,
+        child_content_digest=None if child is None else child.content_digest,
+        child_type_ids=() if child is None else child.type_ids,
+    )
+
+
+def _frame_sidecar(
+    frame: FrameInstance | AtomicFrame,
+    schema: FrameSchema | None,
+    schema_map: SchemaTagMap,
+    codec_id: str,
+    frame_payload: bytes,
+) -> FrameSidecar:
+    if isinstance(frame, AtomicFrame):
+        return FrameSidecar(
+            codec_id=codec_id,
+            semantic_release=schema_map.semantic_release,
+            schema_map_sha256=schema_map.digest,
+            schema_id=None,
+            schema_revision=None,
+            schema_sha256=None,
+            ast_construct=frame.ast_construct,
+            order_mode=None,
+            scope=None,
+            occurrence_id=frame.occurrence_id,
+            content_digest=frame.content_digest,
+            source_instance_id=frame.source_instance_id,
+            structural_path=frame.structural_path,
+            source_span=frame.source_span,
+            parent_occurrence_id=frame.parent_occurrence_id,
+            causal_prefix_end=frame.causal_prefix_end,
+            constituents=(),
+            frame_payload_sha256=hashlib.sha256(frame_payload).hexdigest(),
+        )
+    if not isinstance(schema, FrameSchema):
+        _fail("FRAME_SCHEMA_SIDECAR_REQUIRED")
+    return FrameSidecar(
+        codec_id=codec_id,
+        semantic_release=schema_map.semantic_release,
+        schema_map_sha256=schema_map.digest,
+        schema_id=schema.schema_id,
+        schema_revision=schema.revision,
+        schema_sha256=hashlib.sha256(schema.canonical_bytes()).hexdigest(),
+        ast_construct=schema.ast_construct,
+        order_mode=schema.order_mode,
+        scope=schema.scope,
+        occurrence_id=frame.occurrence_id,
+        content_digest=frame.content_digest,
+        source_instance_id=frame.source_instance_id,
+        structural_path=frame.structural_path,
+        source_span=frame.source_span,
+        parent_occurrence_id=frame.parent_occurrence_id,
+        causal_prefix_end=frame.causal_prefix_end,
+        constituents=tuple(
+            _constituent_metadata(index, binding)
+            for index, binding in enumerate(frame.bindings)
+        ),
+        frame_payload_sha256=hashlib.sha256(frame_payload).hexdigest(),
+    )
+
+
 def _atomic_payload(frame: AtomicFrame) -> bytes:
     return _canonical_bytes(asdict(frame))
 
@@ -520,6 +734,9 @@ def pack_frame(
     """Pack a frame for storage; source admission remains a readout concern."""
     decision = classify_frame(frame, schema, schema_map)
     if decision.disposition is PackDisposition.ATOMIC:
+        frame_payload = _atomic_payload(frame)
+        sidecar = _frame_sidecar(
+            frame, None, schema_map, ATOMIC_CODEC_ID, frame_payload)
         return PackedFrame(
             disposition=decision.disposition,
             reason=decision.reason,
@@ -530,9 +747,10 @@ def pack_frame(
             schema_revision=None,
             schema_sha256=None,
             schema_payload=None,
-            frame_payload=_atomic_payload(frame),
+            frame_payload=frame_payload,
             compact_word=None,
             extended_slots=(),
+            sidecar=sidecar,
         )
 
     schema_payload = schema.canonical_bytes()
@@ -541,6 +759,8 @@ def pack_frame(
     if decision.disposition is PackDisposition.COMPACT:
         indices = tuple(binding.concept.abi_index for binding in frame.bindings)
         word = pack4(indices, decision.schema_tag)
+        sidecar = _frame_sidecar(
+            frame, schema, schema_map, COMPACT_CODEC_ID, frame_payload)
         return PackedFrame(
             disposition=decision.disposition,
             reason=decision.reason,
@@ -554,8 +774,11 @@ def pack_frame(
             frame_payload=frame_payload,
             compact_word=word,
             extended_slots=(),
+            sidecar=sidecar,
         )
     slots = tuple(_extended_slot(binding) for binding in frame.bindings)
+    sidecar = _frame_sidecar(
+        frame, schema, schema_map, EXTENDED_CODEC_ID, frame_payload)
     return PackedFrame(
         disposition=decision.disposition,
         reason=decision.reason,
@@ -569,6 +792,7 @@ def pack_frame(
         frame_payload=frame_payload,
         compact_word=None,
         extended_slots=slots,
+        sidecar=sidecar,
     )
 
 
@@ -629,6 +853,37 @@ def _validate_extended_slots(
         _fail("FRAME_EXTENDED_SLOT_SIDECAR_MISMATCH")
 
 
+def _validate_frame_sidecar(
+    packed: PackedFrame,
+    frame: FrameInstance | AtomicFrame,
+    schema: FrameSchema | None,
+    schema_map: SchemaTagMap,
+) -> None:
+    if isinstance(frame, FrameInstance):
+        if schema is None or (
+            frame.frame_schema_id,
+            frame.frame_schema_revision,
+        ) != (schema.schema_id, schema.revision):
+            _fail("FRAME_PACKED_FRAME_SCHEMA_MISMATCH")
+        for binding in frame.bindings:
+            concepts = (
+                (binding.concept,) if binding.concept is not None
+                else binding.alternatives
+            )
+            if any(item.semantic_release != packed.semantic_release
+                   for item in concepts):
+                _fail("FRAME_PACKED_FRAME_RELEASE_MISMATCH")
+    expected = _frame_sidecar(
+        frame,
+        schema,
+        schema_map,
+        packed.codec_id,
+        packed.frame_payload,
+    )
+    if packed.sidecar != expected:
+        _fail("FRAME_CODEC_SIDECAR_MISMATCH")
+
+
 def unpack_frame(
     packed: PackedFrame,
     *,
@@ -636,9 +891,11 @@ def unpack_frame(
 ) -> FrameInstance | AtomicFrame:
     if not isinstance(packed, PackedFrame):
         _fail("FRAME_PACKED_RECORD_REQUIRED")
-    _validate_schema_sidecar(packed, schema_map)
+    schema = _validate_schema_sidecar(packed, schema_map)
     if packed.disposition is PackDisposition.ATOMIC:
-        return _atomic_from_payload(packed.frame_payload)
+        frame = _atomic_from_payload(packed.frame_payload)
+        _validate_frame_sidecar(packed, frame, None, schema_map)
+        return frame
     frame = frame_instance_from_bytes(packed.frame_payload)
     if packed.disposition is PackDisposition.COMPACT:
         decoded = unpack4(packed.compact_word, schema_map)
@@ -648,6 +905,7 @@ def unpack_frame(
             _fail("FRAME_COMPACT_SLOT_SIDECAR_MISMATCH")
     else:
         _validate_extended_slots(frame, packed.extended_slots)
+    _validate_frame_sidecar(packed, frame, schema, schema_map)
     return frame
 
 
