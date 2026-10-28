@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import re
 from typing import Callable
 
 from ..errors import ErrorBus, SEMANTIC_FRAME
@@ -34,6 +35,7 @@ BOOLEAN_CONNECTIVE_ADAPTER = "source.micro.boolean-connectives/v1"
 BOOLEAN_COMPOSITE_ADAPTER = "source.micro.boolean-composite/v1"
 BOOLEAN_IDENTIFICATION_ADAPTER = "source.micro.boolean-identification/v1"
 FINITE_NUMERIC_ADAPTER = "source.finite-numeric/v2"
+_SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
 
 def _adapter_fail(reason: str, adapter_id: str, span: SourceSpan, role_id: str) -> None:
@@ -115,9 +117,7 @@ def _graph_signature(
             raise ValueError(symbol)
         contract_sha256 = graph["row_contract_sha256"][symbol]
         if (not isinstance(contract_sha256, str)
-                or len(contract_sha256) != 64
-                or any(char not in "0123456789abcdef"
-                       for char in contract_sha256)):
+                or not _SHA256.fullmatch(contract_sha256)):
             raise ValueError(symbol)
         raw_roles = node.get("roles")
     except (KeyError, TypeError, ValueError):
