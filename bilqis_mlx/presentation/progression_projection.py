@@ -22,6 +22,12 @@ _GRADE_REACH_EVENTS = frozenset({
     "SCHOOL_EXECUTION_PROFILE_ADOPTED",
     "SCHOOL_SEMANTIC_CATALOG_PROFILE_ADOPTED",
 })
+_GRADE_ADMISSION_EVENTS = frozenset({
+    "SCHOOL_COURSE_ADMITTED",
+    "SCHOOL_NEXT_GRADE_COURSE_ADMITTED",
+    "SCHOOL_SEMANTIC_CATALOG_PROFILE_ADOPTED",
+    "SCHOOL_GRADE_B_COURSE_ADMITTED",
+})
 
 
 @dataclass
@@ -35,11 +41,12 @@ class _Counts:
 
 
 class GraduationProjection:
-    """Project ``grade successes.any successes.any attempts``.
+    """Project ``letter graduations.unique graduations.sweep attempts``.
 
     Historical journals predate an explicit promotion-result event, so a
     same-grade MAIN exit is held pending until the next event proves whether
-    the introduction stage advanced. A grade change proves a major success.
+    the introduction stage advanced. The starting grade is not a graduation,
+    and an already-crossed grade/stage frontier can never graduate twice.
 
     ``current / lifetime`` means the current human execution command versus
     the complete model journal across all commands/runs in this lineage.
@@ -49,6 +56,7 @@ class GraduationProjection:
         self.lifetime = _Counts()
         self.current = _Counts()
         self._grades_reached = set()
+        self._successful_frontiers = set()
         self._active = None
         self._pending = None
         self._current_epoch = False
@@ -67,7 +75,11 @@ class GraduationProjection:
             self.current.attempts += 1
         self._active = (grade, stage, self._current_epoch)
 
-    def _success(self, *, major: bool, current_epoch: bool) -> None:
+    def _success(self, grade: str, stage: int, *, current_epoch: bool) -> None:
+        frontier = (grade, stage)
+        if frontier in self._successful_frontiers:
+            return
+        self._successful_frontiers.add(frontier)
         self.lifetime.successes += 1
         if current_epoch:
             self.current.successes += 1
@@ -80,13 +92,22 @@ class GraduationProjection:
         if current and self._current_epoch:
             self.current.grade_successes += 1
 
+    @staticmethod
+    def _is_grade_admission(event: dict) -> bool:
+        name = event.get("event")
+        if name == "SCHOOL_EXECUTION_PROFILE_ADOPTED":
+            return event.get("transition_kind") == "APPEND_GRADE"
+        return name in _GRADE_ADMISSION_EVENTS
+
     def _resolve_pending(self, event: dict) -> None:
         if self._pending is None:
             return
         grade, stage, current_epoch = self._pending
         event_grade = event.get("grade")
-        if isinstance(event_grade, str) and event_grade and event_grade > grade:
-            self._success(major=True, current_epoch=current_epoch)
+        if (isinstance(event_grade, str) and event_grade and event_grade > grade and
+                event_grade not in self._grades_reached and
+                self._is_grade_admission(event)):
+            self._success(grade, stage, current_epoch=current_epoch)
             self._grade_reached(event_grade, current=current_epoch)
             self._pending = None
             return
@@ -96,7 +117,7 @@ class GraduationProjection:
         if type(next_stage) is not int:
             return
         if event_grade == grade and next_stage > stage:
-            self._success(major=False, current_epoch=current_epoch)
+            self._success(grade, stage, current_epoch=current_epoch)
         self._pending = None
 
     def observe(self, event: dict) -> str:
@@ -122,7 +143,7 @@ class GraduationProjection:
         active_grade, active_stage, current_epoch = self._active
         self._active = None
         if phase in _BOUNDARY_SUCCESS:
-            self._success(major=True, current_epoch=current_epoch)
+            self._success(active_grade, active_stage, current_epoch=current_epoch)
         elif phase not in _DEFINITE_ABORT:
             self._pending = (active_grade, active_stage, current_epoch)
         return self.summary()

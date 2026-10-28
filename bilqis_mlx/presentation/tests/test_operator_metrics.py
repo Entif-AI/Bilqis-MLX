@@ -17,6 +17,40 @@ def promotion_exam(grade, stage, phase, *, generation=1):
 
 
 class OperatorMetricsTests(unittest.TestCase):
+    def test_graduation_projection_never_regraduates_the_same_frontier(self):
+        from bilqis_mlx.presentation.progression_projection import GraduationProjection
+
+        projection = GraduationProjection()
+        projection.observe({"event": "SCHOOL_NEW_RUN_INITIALIZED", "grade": "A"})
+        self.assertEqual(projection.summary(), "0.0.0 / 1.0.0")
+
+        # A really graduates once into B.
+        projection.observe(promotion_exam("A", 0, "PROMOTION_SWEEP", generation=1))
+        projection.observe(promotion_exam(
+            "A", 0, "AWAITING_NEXT_GRADE_WITH_DEBT", generation=2))
+        projection.observe({
+            "event": "SCHOOL_EXECUTION_PROFILE_ADOPTED", "grade": "B",
+            "transition_kind": "APPEND_GRADE",
+        })
+        self.assertEqual(projection.summary(), "0.0.0 / 2.1.1")
+
+        # Later A revalidation is not another graduation merely because the
+        # scheduler returns to already-admitted B afterward.
+        projection.observe(promotion_exam("A", 0, "PROMOTION_SWEEP", generation=3))
+        projection.observe(promotion_exam("A", 0, "MAIN", generation=4))
+        projection.observe({
+            "event": "SCHOOL_TEACHER_VISIT_COMMITTED", "grade": "B",
+            "generation": 5,
+        })
+        self.assertEqual(projection.summary(), "0.0.0 / 2.1.2")
+
+        # Even an old boundary-shaped receipt for the same A frontier cannot
+        # mint the same graduation twice.
+        projection.observe(promotion_exam("A", 0, "PROMOTION_SWEEP", generation=6))
+        projection.observe(promotion_exam(
+            "A", 0, "AWAITING_NEXT_GRADE_WITH_DEBT", generation=7))
+        self.assertEqual(projection.summary(), "0.0.0 / 2.1.3")
+
     def test_graduation_projection_counts_distinct_model_grades_not_repeat_boundaries(self):
         from bilqis_mlx.presentation.progression_projection import GraduationProjection
 
@@ -38,7 +72,7 @@ class OperatorMetricsTests(unittest.TestCase):
             "event": "SCHOOL_SEMANTIC_CATALOG_PROFILE_ADOPTED", "grade": "C",
         })
 
-        self.assertEqual(projection.summary(), "0.0.0 / 3.5.5")
+        self.assertEqual(projection.summary(), "0.0.0 / 3.2.5")
 
     def test_compact_header_reports_active_integer_root_scope(self):
         board = Dashboard(
@@ -170,7 +204,7 @@ class OperatorMetricsTests(unittest.TestCase):
         projection.observe(promotion_exam("B", 1, "PROMOTION_SWEEP", generation=11))
         projection.observe(promotion_exam("B", 1, "MAIN", generation=12))
         projection.observe({
-            "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+            "event": "SCHOOL_SEMANTIC_CATALOG_PROFILE_ADOPTED",
             "grade": "C",
         })
 

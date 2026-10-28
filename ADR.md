@@ -1701,8 +1701,14 @@ lifetime coordinate is reconstructed from distinct grade admission/discovery in
 the full journal; the current-run coordinate increments only when a genuinely new
 grade is admitted/reached during that execution. A model that has reached A, B,
 and C therefore reports lifetime grade count `3` regardless of how many A/B
-promotion sweeps were repeated. For the current replay lineage this corrects
-`0.0.0 / 13.13.25` to `0.0.0 / 3.13.25`.
+promotion sweeps were repeated. The second coordinate is likewise a progression
+count, not a revalidation count: one grade/introduction frontier may contribute at
+most one successful promotion sweep. Re-running an already-crossed A/B frontier,
+or merely returning from an old-grade sweep to a later already-admitted grade,
+must never mint another success. Attempts remain historical attempts and may
+increase on repeated sweeps. For the current replay lineage, A→B and B→C are the
+only two unique successful progression frontiers recorded so far; while the live
+command continues to add attempts its journal reconstructs as `0.0.2 / 3.2.x`.
 
 Grade C owns a mandatory integer-root staircase. Canonical C admission begins at
 `0...4`. Once the student fully masters the current admitted C scope and reaches
