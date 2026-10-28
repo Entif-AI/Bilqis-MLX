@@ -83,6 +83,34 @@ class TeacherVNextReplayTests(unittest.TestCase):
             set(teacher["causal_experiment"]["retired_effective_strategies"]),
         )
 
+    def test_proven_retention_outranks_unproven_newborn_grace(self):
+        teacher, strong, _weak = _teacher()
+        newborn_policy = {
+            "lr": 0.00008, "old": 20, "preview": 0,
+            "depth": 3, "contrast": 1.0, "distill": 0.35,
+        }
+        teacher["strategies"]["newborn"] = newborn_policy
+        newborn = effective_policy_key(newborn_policy)
+        teacher["causal_experiment"]["contexts"][
+            "C.ADD|RECOVERY_1|factory/7"]["newborn"] = {
+                "trials": 1, "retained": 0, "reward_sum": 1.0,
+                "unsafe": 1, "no_target_gain_streak": 0,
+            }
+        teacher["causal_experiment"]["strategy_births"] = {
+            newborn: {
+                "origin_capability": "C.ADD", "origin_grade": "C",
+                "curriculum_scope": "factory/7", "birth_event": 99,
+                "proven_retained": False,
+            },
+        }
+
+        live = rebalance_live_population(
+            teacher, total_capabilities=1, max_effective_override=1)
+
+        # A probationary one-shot child must never evict an effective strategy
+        # that has already demonstrated actual candidate retention.
+        self.assertEqual(live, (strong,))
+
     def test_unproven_bespoke_policy_stays_capability_local_until_retained(self):
         teacher, strong, weak = _teacher()
         channel = teacher["causal_experiment"]

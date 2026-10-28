@@ -75,7 +75,10 @@ def _keep_rank(teacher: dict, effective: str, members: list[str], record: dict):
     mean = reward_sum / trials if trials else _global_prior(teacher, members)
     newborn_grace = bool(
         birth and not birth.get("proven_retained") and trials < NEWBORN_GRACE_TRIALS)
+    # A retained strategy has survived the real admission gate. Newborn grace
+    # protects only unproven policies from other unproven policies.
     return (
+        1 if retained > 0 else 0,
         1 if newborn_grace else 0,
         retained,
         rate,

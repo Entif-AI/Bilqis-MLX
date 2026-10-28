@@ -2041,3 +2041,41 @@ operators can see why a raw regression was accepted or rejected.
 
 **Status:** Accepted for bounded implementation and non-neural verification.
 
+
+## ADR-115 | 2026-10-28 | Retained teacher policies outrank newborn pressure exploration
+
+**Direct user correction after a 40-visit zero-retention run.** The run still
+produced target gains, but the teacher selected a fresh mutated challenger on
+39 of those 40 visits. The last policy that retained a candidate was not reused
+after retention and was later absent from the live strategy population.
+
+Two control-plane rules caused the failure. First, unproven newborn grace ranked
+ahead of retention evidence in live-population pruning. A stream of one-trial
+children could therefore displace a strategy that had passed the real retention
+gate. Second, the sustained-pressure branch minted a child before current-context
+retained evidence could be exploited. Together these rules turned rejection
+pressure into nearly continuous mutation.
+
+Retention evidence now has priority over newborn grace in the live population.
+Newborn grace still protects young unretained strategies from older unretained
+strategies, but it cannot evict an effective strategy with a retained outcome.
+
+Sustained rejection pressure still enables ADR-104 hereditary exploration. It no
+longer makes every pressure visit an exploration visit. If the current context
+contains an active retained effective policy, the teacher uses the best retained
+policy before minting another child. Existing checkpoint-local retirement remains
+the bound: after four unretained or no-target-gain uses on the same student, that
+effective policy leaves the active set and hereditary search resumes. This uses
+the existing failure memory instead of adding a new cadence or timeout.
+
+When no active retained policy exists in the current context, ADR-104 ancestry
+still applies. Retained same-capability evidence from another phase may seed a
+new child, followed by same-grade and reward fallbacks. Teacher vNext keeps its
+bounded existing-policy canary cadence.
+
+This correction changes policy selection and live-population survival only. It
+does not weaken candidate retention, plasticity utility, fixed-frontier checks,
+source or custody rules, fragile replay, or mature-grade debt limits.
+
+**Status:** Accepted for bounded implementation and non-neural verification.
+

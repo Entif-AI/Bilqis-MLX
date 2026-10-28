@@ -2076,6 +2076,79 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         self.assertNotIn(_effective_policy_key(policy), before_effective)
         self.assertEqual(teacher["strategies"][key], policy)
 
+    def test_rejection_pressure_exploits_active_retained_context_before_breeding(self):
+        import bilqis_mlx.compatibility.historical_teacher_policy as policy_engine
+        teacher = strategy_population_teacher(count=24)
+        winner = "policy-007"
+        channel = teacher["causal_experiment"]
+        channel["contexts"]["C.ADD|MAIN|scope"] = {
+            winner: {
+                "trials": 1, "reward_sum": -.06, "unsafe": 0,
+                "retained": 1, "latest": -.06, "no_target_gain_streak": 0,
+            },
+            "policy-008": {
+                "trials": 4, "reward_sum": .8, "unsafe": 4,
+                "retained": 0, "latest": .2, "no_target_gain_streak": 0,
+            },
+        }
+        channel["capability_stagnation"] = {
+            "C.ADD|scope": {
+                "rejection_streak": 8, "no_target_gain_streak": 0,
+                "attempts_since_retained": 8, "total_rejections": 8,
+                "total_retained": 1, "current_rejection_reasons": {},
+            },
+        }
+        before = set(teacher["strategies"])
+
+        key, policy, metadata = contextual_pick(
+            policy_engine, teacher, "C.ADD", "MAIN", random.Random(13),
+            curriculum_scope="scope", return_metadata=True)
+
+        self.assertEqual(key, winner)
+        self.assertEqual(policy, teacher["strategies"][winner])
+        self.assertEqual(metadata["selection_reason"], "PROVEN_RETAINED_CONTEXT")
+        self.assertEqual(set(teacher["strategies"]), before)
+
+    def test_rejection_pressure_resumes_breeding_after_retained_policy_is_checkpoint_retired(self):
+        import bilqis_mlx.compatibility.historical_teacher_policy as policy_engine
+        teacher = strategy_population_teacher(count=24)
+        winner = "policy-007"
+        winner_effective = _effective_policy_key(teacher["strategies"][winner])
+        context_key = "C.ADD|MAIN|scope"
+        checkpoint = "a" * 64
+        channel = teacher["causal_experiment"]
+        channel["contexts"][context_key] = {
+            winner: {
+                "trials": 1, "reward_sum": -.06, "unsafe": 0,
+                "retained": 1, "latest": -.06, "no_target_gain_streak": 0,
+            },
+        }
+        channel["capability_stagnation"] = {
+            "C.ADD|scope": {
+                "rejection_streak": 8, "no_target_gain_streak": 0,
+                "attempts_since_retained": 8, "total_rejections": 8,
+                "total_retained": 1, "current_rejection_reasons": {},
+            },
+        }
+        # The existing same-student rule is the exploitation bound: after four
+        # unretained uses, the proven effective policy leaves the active set.
+        channel["student_policy_epoch"] = {
+            "student_sha256": checkpoint,
+            "contexts": {context_key: {}},
+            "unretained_contexts": {
+                context_key: {winner_effective: 4},
+            },
+        }
+
+        _key, _policy, metadata = contextual_pick(
+            policy_engine, teacher, "C.ADD", "MAIN", random.Random(13),
+            curriculum_scope="scope", return_metadata=True,
+            student_checkpoint_sha256=checkpoint)
+
+        self.assertEqual(metadata["selection_reason"], "FRESH_MUTATED_CHALLENGER")
+        self.assertGreaterEqual(
+            metadata["checkpoint_retired_effective_strategy_count"], 1)
+
     def test_bespoke_exploration_uses_matching_retained_parent_at_nominal_capacity(self):
         import bilqis_mlx.compatibility.historical_teacher_policy as policy_engine
         teacher = strategy_population_teacher(count=12)
@@ -2089,7 +2162,10 @@ class CausalTeacherExperimentTests(unittest.TestCase):
             teacher["grade_stats"]["C"][alias_key] = dict(teacher["grade_stats"]["C"][key])
         self.assertEqual(len(teacher["strategies"]), 24)
         parent = "policy-007"
-        context = "C.ADD|MAIN|scope"
+        # The retained recipe is proven for this capability in another phase.
+        # Current-phase pressure has no retained incumbent, so this visit is an
+        # actual exploration visit and should breed from that proven ancestry.
+        context = "C.ADD|RECOVERY_1|scope"
         diagnostics = {"champion_candidate_count": 2, "unresolved_miss_count": 1,
                        "warnings": ()}
         channel = teacher["causal_experiment"]
@@ -2145,10 +2221,12 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         channel = teacher["causal_experiment"]
         channel["contexts"]["C.ADD|MAIN|scope"] = {
             parent: {
-                "trials": 8, "reward_sum": 2., "unsafe": 2, "retained": 4,
+                "trials": 8, "reward_sum": 2., "unsafe": 8, "retained": 0,
                 "latest": .25, "no_target_gain_streak": 0,
             },
         }
+        teacher["grade_stats"]["C"][parent]["reward_sum"] = 10.
+        teacher["global_stats"][parent]["reward_sum"] = 10.
         channel["capability_stagnation"] = {
             "C.ADD|scope": {
                 "rejection_streak": 4, "no_target_gain_streak": 4,

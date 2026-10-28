@@ -690,7 +690,16 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
             _latest, _mean, _unsafe, policy_key = max(retryable)
             return result(policy_key, teacher["strategies"][policy_key],
                           selection_reason="PLASTICITY_RETRY")
-    if rejection_pressure >= BESPOKE_EXPLORATION_START:
+    effective_scope = {
+        key: record
+        for key, record in _effective_context_scope(teacher, scope).items()
+        if key in active_set
+    } if scope else {}
+    active_retained_context = any(
+        int(record.get("retained", 0)) > 0
+        for record in effective_scope.values())
+    if (rejection_pressure >= BESPOKE_EXPLORATION_START and
+            not active_retained_context):
         challenger = _teacher_breeding.pressure_challenger(
             engine, teacher, rng, capability=capability, phase=phase,
             curriculum_scope=curriculum_scope, diagnostic_key=diagnostic_key,
@@ -702,11 +711,6 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
         original_key, original_policy = _pick_existing_active(
             engine, teacher, grade, rng, active_effective, inventory)
         return result(original_key, original_policy, selection_reason="INHERITED_NO_CONTEXT")
-    effective_scope = {
-        key: record
-        for key, record in _effective_context_scope(teacher, scope).items()
-        if key in active_set
-    }
     if not effective_scope:
         original_key, original_policy = _pick_existing_active(
             engine, teacher, grade, rng, active_effective, inventory)
@@ -769,10 +773,18 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
     best = max(best_record["members"], key=member_rank)
     proven_retained = best_record.get("retained", 0) > 0
     pressure_exploit = rejection_pressure >= REJECTION_PRESSURE_CONTEXTUAL_START
-    if diagnostic_consumed or proven_retained or pressure_exploit:
+    if diagnostic_consumed:
         return result(
             best, teacher["strategies"][best],
             diagnostic_context_consumed=diagnostic_consumed,
+            selection_reason="DIAGNOSTIC_OR_PRESSURE_CONTEXT")
+    if proven_retained:
+        return result(
+            best, teacher["strategies"][best],
+            selection_reason="PROVEN_RETAINED_CONTEXT")
+    if pressure_exploit:
+        return result(
+            best, teacher["strategies"][best],
             selection_reason="DIAGNOSTIC_OR_PRESSURE_CONTEXT")
 
     # Healthy operation and a bounded pressure cadence still consult the
