@@ -55,18 +55,18 @@ def _enter_mature_debt_repair(program, state: SchoolState, *,
                               allowed_capabilities: tuple[str, ...] | None = None,
                               reset_sweep: bool = True) -> SchoolState | None:
     grade = _mature_debt_repair_grade(program, state)
-    if grade is None:
-        return None
-    queue = _mature_debt_repair_queue(
-        program, state, grade, allowed_capabilities=allowed_capabilities)
-    if not queue:
+    if grade is None or (not reset_sweep and grade in state.main_sweep_visited):
         return None
     entered = _enter_grade(
         program, state, state.active_grades.index(grade),
         stage="MAIN", first_recovery=(),
         main_sweep_visited=() if reset_sweep else state.main_sweep_visited,
         latest_rubric_digest=state.latest_rubric_digest)
-    return replace(entered, queue=queue)
+    if allowed_capabilities is None:
+        return entered
+    queue = tuple(capability for capability in entered.queue
+                  if capability in set(allowed_capabilities))
+    return replace(entered, queue=queue) if queue else None
 
 
 def migrate_legacy_debt_cadence_policy(program, state: SchoolState) -> SchoolState:

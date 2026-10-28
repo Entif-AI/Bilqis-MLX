@@ -7,7 +7,8 @@ import unittest
 from bilqis_mlx.curriculum import ExamItem, validate, validate_exam_item
 from bilqis_mlx.curriculum.scheduler import (
     DebtCadencePolicy, _at_introduction_stage, _debt_run_due,
-    _debt_run_queue, _enter_grade, _frontier_recovery_queue, assess,
+    _debt_run_queue, _enter_grade, _enter_mature_debt_repair,
+    _frontier_recovery_queue, assess,
     _mature_debt_repair_grade, _mature_debt_repair_queue,
     assess_withheld, assessment_capabilities, next_capability, start_new,
     visit, Score,
@@ -78,6 +79,25 @@ class StagedSchoolTests(unittest.TestCase):
             course, state, "a.0", pointer, retention_frontier=repaired)
         self.assertEqual(state.mature_capability_debt, (("a.0", 1),))
         self.assertIsNone(_mature_debt_repair_grade(course, state))
+
+    def test_mature_debt_repair_is_one_full_grade_pass_per_school_sweep(self):
+        course = staged_course()
+        state, _ = enter_c(course)
+        state = replace(
+            state, mature_capability_debt=(("a.0", 2),),
+            main_sweep_visited=(),
+        )
+
+        repair = _enter_mature_debt_repair(course, state, reset_sweep=False)
+
+        self.assertEqual(repair.grade, "A")
+        self.assertEqual(
+            repair.queue,
+            tuple(cap.id for cap in course.grades[0].capabilities),
+        )
+        completed = replace(repair, main_sweep_visited=("A",))
+        self.assertIsNone(
+            _enter_mature_debt_repair(course, completed, reset_sweep=False))
 
     def test_debt_roles_and_cadence_come_from_policy_data(self):
         course = staged_course()

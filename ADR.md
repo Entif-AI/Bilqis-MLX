@@ -1469,15 +1469,19 @@ current-parent comparisons. It does not compare a challenger to an older
 checkpoint and cannot resurrect ADR-098's historical-anchor deadlock.
 
 The initial control thresholds are deliberately small and inspectable. A mature
-grade with at least **2** debt answers enters repair priority. The scheduler
-routes the indebted capabilities through their ordinary same-grade MAIN pass,
-which naturally restores direct access to that grade's earned champion and
-frozen-soup guidance. A mature grade may carry at most **4** debt answers without
-additional restriction. A candidate that would increase that grade above 4 is
-rejected as `MATURE_GRADE_DEBT_LIMIT`. Holding or reducing debt is allowed even
-when the ledger is already at or above the limit, so repair is never blocked by
-the safeguard itself. The repair pressure releases once debt falls below the
-2-answer trigger.
+grade with at least **2** debt answers enters repair priority. Debt identifies
+the grade that needs attention; it does **not** narrow training to only the
+capabilities carrying debt. One repair turn is a complete ordinary same-grade
+MAIN pass, restoring direct access to the whole grade's earned champion,
+frozen-soup guidance, miss replay, and neighboring semantics. A mature grade may
+receive at most one such repair pass in one school sweep before the scheduler
+must yield to other eligible work. This prevents a stubborn debt item from
+re-arming the same tiny queue indefinitely. A mature grade may carry at most
+**4** debt answers without additional restriction. A candidate that would
+increase that grade above 4 is rejected as `MATURE_GRADE_DEBT_LIMIT`. Holding or
+reducing debt is allowed even when the ledger is already at or above the limit,
+so repair is never blocked by the safeguard itself. The repair pressure releases
+once debt falls below the 2-answer trigger.
 
 Existing pre-ADR-100 runs decode with an empty prospective ledger. Do not invent
 retroactive debt from fresh-cohort score differences. The current recovery run
