@@ -46,6 +46,45 @@ def dispatch_model_factory(architecture_id, topology_record, *, legacy_factory,
     ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.MISMATCH)
 
 
+def construct_unbound_model(architecture_id, topology_record, *, run_seed, vocab_size=None,
+                            extents=None, checkpoint_path=None):
+    """Construct a disposable unbound tree or inspect an existing v1 bundle.
+
+    The v2 result is not an admitted model or a trainable optimizer. Its backend,
+    source bindings and durable generation loader have separate owners.
+    """
+    from .model_topology_v2 import LEGACY_ARCHITECTURE_ID, create_unbound_bamf_state
+    from ..errors import ErrorBus, SCHOOL
+
+    def legacy_factory(topology):
+        if extents is not None:
+            ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.MISMATCH)
+        if checkpoint_path is not None:
+            if vocab_size is not None:
+                ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.MISMATCH)
+            from .mlx_checkpoint import load_semantically_bound_bundle
+            parameters, optimizer, manifest, catalog = load_semantically_bound_bundle(checkpoint_path)
+            validate_parameter_shapes(parameters, topology, len(catalog["tokens"]))
+            return parameters, optimizer.state, manifest
+        parameters, optimizer = create_student(topology, vocab_size, seed=run_seed)
+        return parameters, optimizer.state, {
+            "schema": "bilqis.mlx.unbound-initialization/v1",
+            "architecture_id": LEGACY_ARCHITECTURE_ID,
+            "model_topology": topology.to_record(),
+            "initialization_status": "UNBOUND",
+            "run_seed": run_seed,
+        }
+
+    def bamf_factory(topology):
+        if vocab_size is not None:
+            ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.MISMATCH)
+        return create_unbound_bamf_state(topology, extents, run_seed=run_seed)
+
+    return dispatch_model_factory(architecture_id, topology_record,
+                                  legacy_factory=legacy_factory, bamf_factory=bamf_factory,
+                                  checkpoint_path=checkpoint_path)
+
+
 def topology_from_file(path: Path | None):
     if path is None:
         return None
