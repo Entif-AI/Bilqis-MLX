@@ -1597,3 +1597,73 @@ school stage is `PROMOTION_SWEEP` or `ASSESS_PROMOTION_SWEEP`, the compact heade
 shows an explicit `SWEEP = GRADUATION <grade>` field rather than relying on the
 generic phase text alone.
 
+
+## ADR-104 | 2026-10-27 | Bespoke hereditary exploration with scalable live strategy ecology
+
+**Direct user correction after renewed rejection hell.** Policy novelty must not
+be confused with useful exploration. A policy that is merely new to one
+capability does not regain epistemic innocence when its broader history is
+already poor, and sustained rejection pressure must not devolve into cycling
+through old archive members labeled `UNCERTAIN`.
+
+When a capability reaches sustained rejection pressure (four consecutive
+rejections), exploration becomes **bespoke hereditary search**. The teacher
+attempts to breed a genuinely novel effective policy for that capability on
+every exploratory visit rather than selecting another untried archive member.
+Parent ancestry is evidence-seeded in this order:
+
+1. retained policy for the same capability under the same diagnostic context;
+2. retained policy for the same capability across phases;
+3. retained same-grade policy under the same diagnostic context;
+4. retained same-grade policy generally;
+5. grade reward history, then global reward history as fallbacks.
+
+Champion-derived weakness evidence participates through the diagnostic-context
+identity, so a policy that previously retained when champion-directed examples
+were present is preferred as ancestry for another champion-bearing attempt.
+Children preserve the chosen parent and mutate one effective knob at a time;
+behaviorally equivalent variants do not count as novelty. Teacher vNext may not
+override a freshly bred challenger on that same visit.
+
+New bespoke policies are capability-local while unproven. They may not
+immediately become `FRESH_ACTIVE_CHALLENGER` material for sibling capabilities.
+A retention on their originating capability marks them proven and permits
+same-grade reuse thereafter. The newest eight unproven bespoke policies per
+capability receive a probationary opportunity; older unproven siblings may be
+retired from the live population.
+
+The teacher population is now an **effective-strategy live ecology**, separate
+from the immutable historical archive. Historical strategy definitions and
+outcomes remain available for provenance and ancestry; pruning means retirement
+from live selection, not deletion of evidence. Population limits scale with the
+number of currently active capabilities:
+
+- live effective capacity = `max(48, 24 * active_capabilities)`;
+- active working set = `min(live_capacity, max(8, 2 * active_capabilities))`.
+
+Thus the present 11-capability school has a 264-effective live population and a
+22-effective active working set rather than a fixed 512/16 regime. Rebalancing
+keeps newborn policies with fewer than four trials long enough to audition, then
+ranks mature strategies by retained outcomes, retention rate, mean contextual
+reward, historical reward, recent use, and birth/usage recency. Old,
+never-retained, low-reward strategies therefore lose live slots before proven
+productive ancestry. When the curriculum grows, capacity grows automatically
+and strong retired historical strategies may re-enter the live population.
+
+The historical nominal strategy ceiling no longer blocks invention merely
+because aliases or retired definitions occupy archive slots. New effective
+children may extend the immutable historical archive while the live effective
+population remains bounded by the curriculum-scaled capacity. Visit receipts
+record historical archive count, live effective count/capacity, active working
+set count/capacity, retired effective count, mutation parent, ancestry basis and
+changed fields.
+
+Dashboard health also becomes cross-context aware. `UNCERTAIN` is reserved for
+policies that are genuinely under-observed at every available evidence scope.
+When exact capability evidence is sparse, health falls back through capability,
+grade-phase, grade and global policy history. A policy with substantial
+zero-retention evidence therefore remains `LOW-YIELD` when first tried on a new
+capability instead of being relabeled `UNCERTAIN` merely because the local tuple
+is new. Selector-visible durable cooldown remains the only authority for
+`EXHAUSTED`.
+

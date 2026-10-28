@@ -14,7 +14,6 @@ import bilqis_mlx.learning.student_ops as _learning_student_ops
 import bilqis_mlx.learning.teacher_feedback as _learning_teacher_feedback
 import bilqis_mlx.learning.teacher_multifidelity as _learning_teacher_multifidelity
 import bilqis_mlx.learning.teacher_strategy_population as _learning_teacher_strategy_population
-import bilqis_mlx.learning.teacher_vnext_replay as _learning_teacher_vnext_replay
 import bilqis_mlx.profiles.catalog as _profiles_catalog
 import bilqis_mlx.profiles.retention as _profiles_retention
 import bilqis_mlx.runtime.admission as _runtime_admission
@@ -24,6 +23,7 @@ import bilqis_mlx.runtime.checkpoints as _runtime_checkpoints
 import bilqis_mlx.runtime.release_adoption as _runtime_release_adoption
 import bilqis_mlx.runtime.state as _runtime_state
 import bilqis_mlx.runtime.timing_trace as _runtime_timing_trace
+from .teacher_policy_selection import select_visit_policy as _select_visit_policy
 from .teacher_observation_capture import ObservationCapture
 import bilqis_mlx.source_adapters.school as _source_adapters_school
 import dataclasses as _dataclasses
@@ -148,6 +148,30 @@ def _selection_feedback(teacher, capability, curriculum_scope, policy,
     return reward, credit, health
 
 
+def _teacher_event_fields(policy_selection, policy_health):
+    result = {
+        "teacher_selection_policy": policy_selection["selection_policy"],
+        "teacher_selection_reason": policy_selection["selection_reason"],
+        "teacher_strategy_population": {
+            key: policy_selection.get(key)
+            for key in ("strategy_archive_count", "active_effective_strategy_count",
+                        "active_effective_strategy_capacity",
+                        "dormant_effective_strategy_count", "live_effective_strategy_count",
+                        "strategy_population_capacity", "retired_effective_strategy_count",
+                        "checkpoint_retired_effective_strategy_count")
+            if policy_selection.get(key) is not None},
+    }
+    if policy_selection.get("mutation_parent_policy_key"):
+        result["teacher_mutation_parent"] = {
+            "policy_key": policy_selection["mutation_parent_policy_key"],
+            "basis": policy_selection.get("mutation_parent_basis"),
+            "changed_fields": policy_selection.get("mutation_changed_fields", []),
+        }
+    if policy_health and policy_health["active"]:
+        result["teacher_policy_health"] = policy_health
+    return result
+
+
 def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 params, optimizer, graph, *, steps_per_visit, batch_size, reserve_gib,
                 source_root=None, learning_settings: _learning_learning_experiment.Settings | None = None,
@@ -207,7 +231,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         _prepare_visit_feedback(receipt, cap, champion_candidates, champion_candidate_ids))
     policy_key, policy, policy_selection = _select_visit_policy(
         engine, teacher, cap, school, rng, learning_settings,
-        teacher_curriculum_scope, previsit_diagnostics, lesson_grade)
+        teacher_curriculum_scope, previsit_diagnostics, lesson_grade,
+        len(_curriculum_scheduler.assessment_capabilities(program, school)))
     capture.select_option(cap, autonomy_teaching_option)
     capture.propose(executable_release, school, cap, policy_key, policy, policy_selection,
         configured_steps=steps_per_visit, effective_steps=candidate_steps, batch_size=batch_size,
@@ -643,14 +668,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         "source_training_accuracy_after": after,
         "teacher_reward": reward,
         "teacher_selection_reward": bandit_credit,
-        "teacher_selection_policy": policy_selection["selection_policy"], "teacher_selection_reason": policy_selection["selection_reason"],
-        **({"teacher_policy_health": policy_health} if policy_health and policy_health["active"] else {}),
-        "teacher_strategy_population": {
-            key: policy_selection.get(key)
-            for key in ("strategy_archive_count", "active_effective_strategy_count",
-                        "dormant_effective_strategy_count",
-                        "checkpoint_retired_effective_strategy_count")
-            if policy_selection.get(key) is not None},
+        **_teacher_event_fields(policy_selection, policy_health),
         **({"realized_teacher_action": realized_action}
            if realized_action is not None else {}),
         "attempted_optimizer_updates": attempted_optimizer_updates,
@@ -845,65 +863,6 @@ def _visit_retention_scope(run_dir, receipt, course, school, cap, learning_setti
     return old_capabilities, retention_support_capabilities
 
 
-def _select_visit_policy(engine, teacher, cap, school, rng, learning_settings, teacher_curriculum_scope, previsit_diagnostics, lesson_grade):
-    """Ask the existing teacher to select the visit policy."""
-    with _runtime_timing_trace.trace_span("POLICY_SELECT", capability=cap):
-        if learning_settings is not None:
-            policy_key, policy, policy_selection = (
-                _learning_learning_experiment.contextual_pick(
-                    engine, teacher, cap, school.stage, rng,
-                    curriculum_scope=teacher_curriculum_scope,
-                    diagnostics=previsit_diagnostics,
-                    return_metadata=True,
-                    student_checkpoint_sha256=school.current_student.sha256))
-            legacy_policy_key = policy_key
-            legacy_selection_reason = policy_selection.get("selection_reason")
-            context_key = cap + "|" + school.stage + "|" + teacher_curriculum_scope
-            channel = teacher.get("causal_experiment", {})
-            scope = channel.get("contexts", {}).get(context_key, {})
-            active_effective, inventory = (
-                _learning_teacher_strategy_population.active_effective_strategy_keys(
-                    teacher, lesson_grade, scope))
-            active_effective, _retired = (
-                _learning_teacher_strategy_population.checkpoint_active_effective_strategy_keys(
-                    teacher, lesson_grade, scope, channel, context_key,
-                    active_effective, inventory, school.current_student.sha256))
-            sibling_penalties = {
-                effective: penalty
-                for effective in active_effective
-                if (penalty := _learning_teacher_strategy_population.sibling_cooldown_penalty(
-                    channel, cap, teacher_curriculum_scope, effective)) > 0
-            }
-            candidate_ordinal = int(
-                teacher.get("causal_experiment", {}).get("events", 0)) + 1
-            canary = _learning_teacher_vnext_replay.select_canary(
-                teacher, capability=cap, phase=school.stage,
-                curriculum_scope=teacher_curriculum_scope,
-                candidate_ordinal=candidate_ordinal, rng=rng,
-                active_effective_policy_keys=active_effective,
-                inventory=inventory,
-                effective_policy_penalties=sibling_penalties)
-            policy_selection = dict(policy_selection)
-            policy_selection["vnext_canary"] = canary
-            policy_selection["actual_authority_changed"] = bool(
-                canary.get("actual_authority_changed"))
-            if canary.get("status") == "SELECTED":
-                policy_key = canary["policy_key"]
-                policy = teacher["strategies"][policy_key]
-                policy_selection.update({
-                    "legacy_policy_key": legacy_policy_key,
-                    "legacy_selection_reason": legacy_selection_reason,
-                    "selection_reason": "VNEXT_CANARY",
-                    "selection_policy": _learning_teacher_vnext_replay.SELECTION_POLICY,
-                })
-        else:
-            policy_key, policy = engine.pick(teacher, lesson_grade, rng)
-            policy_selection = {
-                "diagnostic_context_consumed": False,
-                "diagnostic_context_key": None, "selection_reason": "INHERITED_BANDIT",
-                "selection_policy": "bilqis.mlx.teacher-selection/inherited-v1",
-            }
-    return policy_key, policy, policy_selection
 
 
 def _prepare_retention_trial(mx, run_dir, receipt, course, school, cap, learning_settings, source_root, graph, executable_release, params, optimizer, original_learning_rate, teacher):

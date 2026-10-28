@@ -417,6 +417,22 @@ class SchoolTelemetryTests(unittest.TestCase):
         mutated = dict(event, teacher_selection_reason="FRESH_MUTATED_CHALLENGER")
         self.assertEqual(teacher_fields(mutated, {})["health"], "EXPLORE")
 
+    def test_policy_with_grade_wide_failure_history_is_not_uncertain_on_new_capability(self):
+        from bilqis_mlx.presentation.teacher_vnext import teacher_fields
+        history = {}
+        for _ in range(9):
+            teacher_fields({
+                "grade": "B", "capability": "B.IFF", "teacher_policy": "dead",
+                "candidate_retention": {"phase": "MAIN", "decision": "REJECT"},
+            }, history)
+
+        fields = teacher_fields({
+            "grade": "B", "capability": "B.COMPOSITE", "teacher_policy": "dead",
+            "candidate_retention": {"phase": "MAIN", "decision": "REJECT"},
+        }, history)
+
+        self.assertEqual(fields["health"], "LOW-YIELD")
+
     def test_mastery_growth_keeps_right_and_grew_subcolumns_aligned(self):
         board = Dashboard(stream=io.StringIO(), show_all_panels=True,
                           tables=LETTER_TABLES)

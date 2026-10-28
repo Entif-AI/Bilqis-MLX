@@ -155,11 +155,22 @@ def _group_prior(teacher: dict, grade: str, members: list[str]) -> float:
 
 def active_effective_strategy_keys(
         teacher: dict, grade: str,
-        scope: dict) -> tuple[tuple[str, ...], dict[str, list[str]]]:
+        scope: dict, *, total_capabilities: int | None = None
+        ) -> tuple[tuple[str, ...], dict[str, list[str]]]:
     """Choose <=16 context-local incumbents and rotating challengers."""
     inventory = effective_strategy_inventory(teacher)
-    if len(inventory) <= ACTIVE_EFFECTIVE_STRATEGY_LIMIT:
-        return tuple(sorted(inventory)), inventory
+    eligible = set(inventory)
+    active_limit = ACTIVE_EFFECTIVE_STRATEGY_LIMIT
+    incumbent_limit = ACTIVE_EFFECTIVE_INCUMBENT_LIMIT
+    if total_capabilities is not None:
+        from .teacher_population_control import population_limits, rebalance_live_population
+        eligible = set(rebalance_live_population(
+            teacher, total_capabilities=total_capabilities))
+        limits = population_limits(total_capabilities)
+        active_limit = limits.active_effective
+        incumbent_limit = max(1, active_limit // 2)
+    if len(eligible) <= active_limit:
+        return tuple(sorted(eligible)), inventory
     evidence = effective_context_scope(teacher, scope) if scope else {}
 
     def incumbent_rank(effective_key: str):
@@ -174,12 +185,12 @@ def active_effective_strategy_keys(
         )
 
     proven = [
-        effective_key for effective_key in inventory
+        effective_key for effective_key in eligible
         if int((evidence.get(effective_key) or {}).get("retained", 0)) > 0
     ]
     incumbents = sorted(
-        proven, key=incumbent_rank, reverse=True)[:ACTIVE_EFFECTIVE_INCUMBENT_LIMIT]
-    remaining = [key for key in inventory if key not in incumbents]
+        proven, key=incumbent_rank, reverse=True)[:incumbent_limit]
+    remaining = [key for key in eligible if key not in incumbents]
 
     def challenger_rank(effective_key: str):
         record = evidence.get(effective_key) or {}
@@ -190,7 +201,7 @@ def active_effective_strategy_keys(
             effective_key,
         )
 
-    slots = ACTIVE_EFFECTIVE_STRATEGY_LIMIT - len(incumbents)
+    slots = active_limit - len(incumbents)
     challengers = sorted(remaining, key=challenger_rank)[:slots]
     return tuple((*incumbents, *challengers)), inventory
 

@@ -11,6 +11,10 @@ from bilqis_mlx.learning.teacher_strategy_population import (
     record_checkpoint_policy_outcome,
     sibling_cooldown_penalty,
 )
+from bilqis_mlx.learning.teacher_breeding import filter_active_effective
+from bilqis_mlx.learning.teacher_population_control import (
+    population_limits, rebalance_live_population,
+)
 
 
 def _teacher():
@@ -54,6 +58,56 @@ def _teacher():
 
 
 class TeacherVNextReplayTests(unittest.TestCase):
+    def test_strategy_population_scales_with_capabilities_and_prunes_weak_old_effective_policy(self):
+        small = population_limits(3)
+        larger = population_limits(11)
+        self.assertGreater(larger.max_effective, small.max_effective)
+        self.assertGreater(larger.active_effective, small.active_effective)
+
+        teacher, strong, weak = _teacher()
+        teacher["causal_experiment"]["contexts"]["C.ADD|RECOVERY_1|factory/7"][
+            "p-other"] = {
+                "trials": 10, "retained": 5, "reward_sum": 3.0,
+                "unsafe": 3, "no_target_gain_streak": 0,
+            }
+        # Force a tiny live cap for a deterministic pruning proof. Strong has
+        # retained evidence; weak is old, low-retention and negative-reward;
+        # p-other is also materially productive.
+        live = rebalance_live_population(
+            teacher, total_capabilities=1, max_effective_override=2)
+
+        self.assertIn(strong, live)
+        self.assertNotIn(weak, live)
+        self.assertIn(
+            weak,
+            set(teacher["causal_experiment"]["retired_effective_strategies"]),
+        )
+
+    def test_unproven_bespoke_policy_stays_capability_local_until_retained(self):
+        teacher, strong, weak = _teacher()
+        channel = teacher["causal_experiment"]
+        channel["live_effective_strategies"] = [strong, weak]
+        channel["strategy_births"] = {
+            weak: {
+                "origin_capability": "C.ADD", "origin_grade": "C",
+                "curriculum_scope": "factory/7", "birth_event": 12,
+                "proven_retained": False,
+            },
+        }
+        inventory = effective_strategy_inventory(teacher)
+
+        local = filter_active_effective(
+            teacher, grade="C", capability="C.ADD",
+            curriculum_scope="factory/7", active_effective=(strong, weak),
+            inventory=inventory)
+        sibling = filter_active_effective(
+            teacher, grade="C", capability="C.SUB",
+            curriculum_scope="factory/7", active_effective=(strong, weak),
+            inventory=inventory)
+
+        self.assertIn(weak, local)
+        self.assertNotIn(weak, sibling)
+
     def test_durable_capability_cooldown_requires_two_failed_student_epochs_and_retention_clears(self):
         teacher, strong, _weak = _teacher()
         channel = teacher["causal_experiment"]

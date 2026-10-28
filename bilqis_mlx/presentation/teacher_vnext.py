@@ -38,6 +38,7 @@ def _prediction_before(event: dict, history: dict) -> float:
         ("capability", capability, policy),
         ("grade_phase", grade, phase, policy),
         ("grade", grade, policy),
+        ("global", policy),
     )
     for key in keys:
         row = history.get(key)
@@ -64,15 +65,20 @@ def _derived_health(event: dict, history: dict) -> dict | None:
         ("capability", capability, policy),
         ("grade_phase", grade, phase, policy),
         ("grade", grade, policy),
+        ("global", policy),
     )
     for key in keys:
         row = _record(history, key)
         row["trials"] += 1
         row["retained"] += decision == "PROVISIONAL"
-    record = history[keys[0]]
+    record = next(
+        (history[key] for key in keys
+         if history[key]["trials"] >= MINIMUM_SUPPORT),
+        history[keys[0]],
+    )
     trials, retained = record["trials"], record["retained"]
     rate = retained / trials
-    if trials < MINIMUM_SUPPORT:
+    if record["trials"] < MINIMUM_SUPPORT:
         status = "UNCERTAIN_EXPLORING"
     elif rate < LOW_YIELD_RETENTION_FRACTION:
         status = "LOW_YIELD"
