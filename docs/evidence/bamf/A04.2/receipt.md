@@ -140,4 +140,7 @@ occurrence sequence and types on pack and unpack.
 
 The focused codec suite now passes 17/17, including two
 failing-before negatives and a type-mismatch regression.
-Independent readback remains pending; parent integration is open.
+Independent Goldfish readback at immutable `9e3ec5b` returned
+**EGM PASS, zero remaining Blockers/Majors**. The reviewer inspected
+the source and tests but did not execute them; 17/17 is prime
+evidence. Parent integration remains open.

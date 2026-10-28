@@ -66,4 +66,6 @@ cardinality, occurrence sequence and allowed types on both pack
 and unpack. A valid sidecar cannot make an invalid frame eligible
 for EXTENDED representation. The focused codec suite passes
 17/17 after the repair. Independent review of the new immutable
-head remains pending; no parent or integration gate is closed.
+head returned **EGM PASS at `9e3ec5b`**, with zero remaining
+Blockers/Majors. The reviewer inspected source/tests only; 17/17
+is prime executed evidence. No parent or integration gate is closed.

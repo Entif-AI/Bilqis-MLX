@@ -16,6 +16,13 @@ before pack classification and on decoded frames. A same-ID
 schema with a different role order also fails. The new negative
 tests and existing codec suite pass 17/17.
 
-Disposition: implementation repair pushed for independent
-immutable-head re-review. No EGM PASS is claimed until that
-readback. No live training, source admission or merge occurred.
+The same independent reviewer read back immutable pushed
+`9e3ec5b019c0468e4be762540894ee45f4c31923` and returned
+**A04.2/A04.3 EGM PASS, zero remaining Blockers/Majors**. The
+reviewer verified pack and unpack both enforce the shared schema
+validator before returning any representation. It inspected the
+17-test suite but did not successfully execute it in its older
+worker checkout; the 17/17 result is prime execution evidence.
+
+A04.1's separate compact-bit-layout review remains pending.
+No live training, source admission or merge occurred.
