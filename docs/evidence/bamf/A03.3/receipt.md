@@ -145,3 +145,33 @@ the inherited shared scheduler/plasticity/runtime findings.
 
 `git diff --check`: passed. The production frame modules contain no grade,
 trainer, optimizer, or MLX dispatch and perform no neural write.
+
+## 2026-10-28 source-authority repair after interrupted execution
+
+The resumed serialized writer preserved the previous worker's uncommitted
+adapter and regression work before continuing. Numeric source-contract
+selection no longer relies on whether an operator happens to be the root of
+an expression. The exact source-owned `CONTRACT.append_only_nodes` membership
+determines which operators carry the native append-only contract. Every
+numeric operator still requires its graph row hash to match the canonical
+digest of its source node. Declared append-only nodes must additionally match
+their canonical source fields (ID, semantic identity, signature, arity and
+meaning). Other numeric operators retain their graph-owned row contract.
+These rules apply recursively to nested operators, including COUNT under EQ
+and ADD in a contrast expression.
+
+The new actual-source tests exercise all seven finite-numeric capability
+families, nested ADD contract tampering, a wrong append-only graph digest and
+an altered append-only meaning with an internally recomputed digest. The last
+two negative cases were observed accepting invalid source data before repair
+and now reject through `SEMANTIC_FRAME.ADAPTER.INVALID_SOURCE` with the
+source span, role and adapter identity. Existing graph-contract drift
+continues to use `FRAME_NUMERIC_CONTRACT_DRIFT`; the changed canonical
+append-only meaning uses `FRAME_NUMERIC_APPEND_ONLY_NODE_DRIFT`.
+
+Focused `scripts/run_tests.py` for `test_frame_adapters.py`: 11 passed,
+0 failed, 0 skipped. This is prime-executed regression evidence, not an
+independent Goldfish sign-off. The existing independent review's remaining
+numeric concern is addressed in code and awaits fresh immutable-head review;
+`EGM_PENDING` remains until that review is recorded. No historical
+student, optimizer, teacher, source registry or neural state was changed.

@@ -17,8 +17,10 @@ from bilqis_mlx.boolean_identification import (
     ORACLE as BOOLEAN_IDENTIFICATION_ORACLE,
 )
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.generated_assessment import digest
 from bilqis_mlx.grade_a_probe import read_sources
-from bilqis_mlx.live_grade_c import draw as draw_numeric_rows, registry_graph
+from bilqis_mlx.live_grade_c import PLANS, draw as draw_numeric_rows, registry_graph
+from bilqis_mlx.numeric_curriculum import draw_numeric as draw_numeric_constructions
 from bilqis_mlx.semantics.atlas_projection import AbiEntry, AtlasCounts, FrozenAtlasSnapshot
 from bilqis_mlx.semantics.frame_adapters import (
     BOOLEAN_COMPOSITE_ADAPTER,
@@ -209,8 +211,31 @@ class ReleasedFrameAdapterTests(unittest.TestCase):
             tree.root.frame_schema_id,
             "frame:legacy:school.op.ADD",
         )
+        self.assertIn("school.op.COUNT", row["record"]["symbols"])
         self.assertGreater(len(tuple(_walk(tree))), 1)
         self.assertEqual(validate_frame_tree(tree), tree)
+
+    def test_all_actual_finite_numeric_families_bind_under_owner_contract_rules(self):
+        adapter = self.registry.require(
+            "bilqis_mlx.numeric_curriculum.draw_numeric", C_ORACLE)
+        for capability in (
+                "C.COUNT", "C.NUMBER", "C.SUCCESSOR", "C.ADD",
+                "C.SUB", "C.MUL", "C.DIV"):
+            with self.subTest(capability=capability):
+                row = draw_numeric_constructions(
+                    PLANS,
+                    self.numeric_graph,
+                    seed=29,
+                    maximum=3,
+                    each=3,
+                    capability=capability,
+                )[0]
+                tree = self._bind(adapter, row, self.numeric_graph)
+                self.assertEqual(validate_frame_tree(tree), tree)
+                self.assertEqual(
+                    tree.root.source_instance_id,
+                    row.get("source_id") or row["id"],
+                )
 
     def test_numeric_source_contract_drift_rejects_actual_c_add_row(self):
         adapter = self.registry.require(
@@ -234,6 +259,64 @@ class ReleasedFrameAdapterTests(unittest.TestCase):
             "FRAME_NUMERIC_CONTRACT_DRIFT",
         )
         self.assertEqual(caught.exception.context["role_id"], "<operator>")
+
+    def test_nested_graph_governed_add_contract_drift_rejects_actual_contrast(self):
+        adapter = self.registry.require(
+            "bilqis_mlx.numeric_curriculum.draw_numeric", C_ORACLE)
+        rows = draw_numeric_constructions(
+            PLANS,
+            self.numeric_graph,
+            seed=23,
+            maximum=3,
+            each=3,
+            capability="C.ADD",
+        )
+        row = next(
+            item for item in rows
+            if item["answer_kind"] == "binary"
+            and "school.op.ADD" in item["record"]["symbols"])
+        self.assertIn("school.op.EQ", row["record"]["symbols"])
+        tampered_graph = deepcopy(self.numeric_graph)
+        original = tampered_graph["row_contract_sha256"]["school.op.ADD"]
+        replacement = "0" * 64 if original != "0" * 64 else "8" * 64
+        tampered_graph["row_contract_sha256"]["school.op.ADD"] = replacement
+        with self.assertRaises(BilqisError) as caught:
+            self._bind(adapter, row, tampered_graph)
+        self.assertEqual(
+            caught.exception.code,
+            "SEMANTIC_FRAME.ADAPTER.INVALID_SOURCE",
+        )
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "FRAME_NUMERIC_CONTRACT_DRIFT",
+        )
+        self.assertEqual(caught.exception.context["role_id"], "<operator>")
+
+    def test_append_only_numeric_graph_cannot_rewrite_source_meaning_or_digest(self):
+        adapter = self.registry.require(
+            "bilqis_mlx.numeric_curriculum.draw_numeric", C_ORACLE)
+        row = draw_numeric_constructions(
+            PLANS, self.numeric_graph, seed=29, maximum=3,
+            each=3, capability="C.COUNT",
+        )[0]
+        symbol = "school.op.COUNT"
+        for tamper in ("wrong_digest", "replaced_meaning"):
+            with self.subTest(tamper=tamper):
+                graph = deepcopy(self.numeric_graph)
+                if tamper == "wrong_digest":
+                    graph["row_contract_sha256"][symbol] = "0" * 64
+                    expected = "FRAME_NUMERIC_CONTRACT_DRIFT"
+                else:
+                    node = graph["nodes"][graph["tokens"].index(symbol)]
+                    node["meaning"] = node["meaning"] + " changed"
+                    graph["row_contract_sha256"][symbol] = digest(node)
+                    expected = "FRAME_NUMERIC_APPEND_ONLY_NODE_DRIFT"
+                with self.assertRaises(BilqisError) as caught:
+                    self._bind(adapter, row, graph)
+                self.assertEqual(
+                    caught.exception.code, "SEMANTIC_FRAME.ADAPTER.INVALID_SOURCE")
+                self.assertEqual(caught.exception.context["reason"], expected)
+                self.assertEqual(caught.exception.context["role_id"], "<operator>")
 
     def test_registered_adapter_error_carries_span_role_and_adapter_identity(self):
         adapter = self.registry.require(

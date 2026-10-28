@@ -8,10 +8,12 @@ from typing import Callable
 
 from ..errors import ErrorBus, SEMANTIC_FRAME
 from ..factory.adapters import RegisteredSourceAdapter
+from ..generated_assessment import digest
 from ..source_adapters.numeric import decode as decode_numeric
 from ..source_adapters.structure import inspect_source_query
 from .atlas_projection import FrozenAtlasSnapshot
 from .core import Apply, Literal, Signature
+from .numeric import CONTRACT as NUMERIC_CONTRACT
 from .frame_schema import (
     AtomicFrame,
     ChildFrameRef,
@@ -36,6 +38,8 @@ BOOLEAN_COMPOSITE_ADAPTER = "source.micro.boolean-composite/v1"
 BOOLEAN_IDENTIFICATION_ADAPTER = "source.micro.boolean-identification/v1"
 FINITE_NUMERIC_ADAPTER = "source.finite-numeric/v2"
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
+_APPEND_ONLY_NUMERIC_NODES = {
+    node["id"]: node for node in NUMERIC_CONTRACT["append_only_nodes"]}
 
 
 def _adapter_fail(reason: str, adapter_id: str, span: SourceSpan, role_id: str) -> None:
@@ -339,20 +343,31 @@ def _bind_numeric_expression(
     parent_occurrence_id: str | None,
     causal_prefix_end: int,
 ) -> tuple[FrameTree, str]:
-    is_source_root = not path
+    native_contract_owner = (
+        expression.operator.symbol in _APPEND_ONLY_NUMERIC_NODES)
     schema, graph_signature = _schema_for_symbol(
         snapshot, graph, expression.operator.symbol, ast_construct_id(expression),
         adapter_id=adapter_id, span=span, scope="formal-expression",
         contract_sha256=(
-            None if is_source_root else expression.operator.contract_sha256))
+            expression.operator.contract_sha256 if native_contract_owner else None))
+    symbol = expression.operator.symbol
+    graph_node = graph["nodes"][graph["tokens"].index(symbol)]
+    if digest(graph_node) != graph["row_contract_sha256"][symbol]:
+        _adapter_fail("FRAME_NUMERIC_CONTRACT_DRIFT",
+                      adapter_id, span, "<operator>")
+    if native_contract_owner:
+        declared = _APPEND_ONLY_NUMERIC_NODES[symbol]
+        if any(graph_node.get(field) != declared[field]
+               for field in ("id", "semantic_id", "signature", "arity", "meaning")):
+            _adapter_fail("FRAME_NUMERIC_APPEND_ONLY_NODE_DRIFT",
+                          adapter_id, span, "<operator>")
     if graph_signature != expression.operator.signature:
         _adapter_fail("FRAME_NUMERIC_SIGNATURE_DRIFT",
                       adapter_id, span, "<operator>")
     if expression.operator.token_index != graph["tokens"].index(expression.operator.symbol):
         _adapter_fail("FRAME_NUMERIC_OPERATOR_INDEX_DRIFT",
                       adapter_id, span, "<operator>")
-    if (is_source_root
-            and expression.operator.contract_sha256 != schema.ast_contract_sha256):
+    if expression.operator.contract_sha256 != schema.ast_contract_sha256:
         _adapter_fail("FRAME_NUMERIC_CONTRACT_DRIFT",
                       adapter_id, span, "<operator>")
 
