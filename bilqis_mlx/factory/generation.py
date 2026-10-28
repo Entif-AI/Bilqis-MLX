@@ -8,6 +8,7 @@ from .curriculum_definition import (
     CurriculumDefinition, SourceBindingSet, from_legacy_course,
     validate_source_bindings,
 )
+from ..compatibility.source_adapter_resume import resume_adapter_compatible
 
 
 _GRADE_A_DEVELOPMENT_PRESENTATION_IMPLEMENTATION = (
@@ -68,7 +69,8 @@ def runtime_adapter_for_release(
         if item.adapter_id == execution.provider_id), None)
     if (registered.descriptor != admitted and
             not _is_1324082_rollback_adapter_pair(
-                admitted, registered.descriptor)):
+                admitted, registered.descriptor) and
+            not resume_adapter_compatible(admitted, registered.descriptor)):
         raise ValueError(drift_code + ":" + execution.capability_id)
     return registered
 

@@ -89,6 +89,43 @@ class NumericProviderIdentityTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "FACTORY_EXECUTABLE_GENERATION_ADAPTER_DRIFT"):
                 runtime_adapter_for_release(None, {}, release, registry, execution)
 
+    def test_adr106_staircase_receipt_reuses_unchanged_numeric_provider(self):
+        from dataclasses import replace
+        from types import SimpleNamespace
+        from bilqis_mlx.factory.generation import runtime_adapter_for_release
+        from bilqis_mlx.numeric_staircase import RELEASE as STAIRCASE_RELEASE
+        from bilqis_mlx.source_adapters.school import live_source_registry, C_ORACLE
+        registry = live_source_registry()
+        generator = "bilqis_mlx.numeric_curriculum.draw_numeric"
+        adapter = registry.require(generator, C_ORACLE)
+        current = adapter.descriptor
+        old_staircase_digest = (
+            "ec3b5338fc1604a6250a847ee99eae09956b5a5bb269a63f3ac8372205133e74")
+        admitted = replace(current, cohort_releases=tuple(
+            (release, old_staircase_digest if release == STAIRCASE_RELEASE else digest)
+            for release, digest in current.cohort_releases))
+        release = SimpleNamespace(
+            source_bindings=SimpleNamespace(by_capability={"C.COUNT": SimpleNamespace(
+                generator_id=generator, oracle_id=C_ORACLE)}),
+            source_adapters=(admitted,))
+        execution = SimpleNamespace(
+            capability_id="C.COUNT", provider_id=current.adapter_id)
+
+        self.assertIs(
+            runtime_adapter_for_release(None, {}, release, registry, execution),
+            adapter)
+
+        unknown = replace(admitted, cohort_releases=tuple(
+            (name, "f" * 64 if name == STAIRCASE_RELEASE else digest)
+            for name, digest in admitted.cohort_releases))
+        drifted_release = SimpleNamespace(
+            source_bindings=release.source_bindings,
+            source_adapters=(unknown,))
+        with self.assertRaisesRegex(
+                ValueError, "FACTORY_EXECUTABLE_GENERATION_ADAPTER_DRIFT"):
+            runtime_adapter_for_release(
+                None, {}, drifted_release, registry, execution)
+
 
 class GradeCSourceTests(unittest.TestCase):
     @classmethod
