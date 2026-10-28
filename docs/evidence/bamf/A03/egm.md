@@ -16,6 +16,9 @@ described a superseded root-versus-child rule, contradicting the code
 and its later addendum. The paragraph was corrected to the exact
 append-only membership rule without changing code behavior.
 
-Disposition: code PASS; receipt Major repaired, pending targeted
-independent readback before full EGM clearance. No neural training,
-source admission or merge is authorized by this report.
+Disposition: **PASS** after the targeted independent readback of
+`222fc9b`. The reviewer verified that the corrected receipt matches
+the implementation and that this report faithfully distinguishes its
+own read-only inspection from the prime's 11/11 executed tests.
+No Blocker or Major remains in the reviewed A03.3 scope. No neural
+training, source admission or merge is authorized by this report.

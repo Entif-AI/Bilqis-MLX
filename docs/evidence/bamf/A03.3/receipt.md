@@ -172,6 +172,18 @@ append-only meaning uses `FRAME_NUMERIC_APPEND_ONLY_NODE_DRIFT`.
 Focused `scripts/run_tests.py` for `test_frame_adapters.py`: 11 passed,
 0 failed, 0 skipped. This is prime-executed regression evidence, not an
 independent Goldfish sign-off. The existing independent review's remaining
-numeric concern is addressed in code and awaits fresh immutable-head review;
-`EGM_PENDING` remains until that review is recorded. No historical
+numeric concern is addressed in code; the independent re-review outcome
+is recorded below. No historical
 student, optimizer, teacher, source registry or neural state was changed.
+
+## Independent EGM final readback
+
+Fresh Goldfish worker-3 reviewed the immutable numeric repair at
+`7439f0a`, found zero code Blockers/Majors and identified one stale
+paragraph in this receipt. The paragraph was repaired at `222fc9b`.
+The same independent reviewer then read back that correction and
+confirmed **PASS, zero remaining Blockers/Majors**. The reviewer
+performed source/hash inspection only; the 11/11 executed tests are
+prime evidence. The complete scoped review is preserved in
+`docs/evidence/bamf/A03/egm.md`. This does not close A03's broader
+parent integration acceptance.
