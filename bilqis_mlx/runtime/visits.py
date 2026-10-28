@@ -283,7 +283,9 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 run_dir, receipt,
                 capabilities=_profiles_retention.fragile_preservation_capabilities())
     old_capabilities, retention_support_capabilities = _visit_retention_scope(
-        run_dir, receipt, course, school, cap, learning_settings)
+        run_dir, receipt, course, school, cap, learning_settings,
+        candidate_steps=candidate_steps,
+        fragile_fixed_rows=fragile_fixed_rows)
     delivered_autonomy_rows = []
     autonomy_option_specimen_ids = set()
     prefetch_futures = {}
@@ -370,8 +372,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                         executable_release=executable_release)
                 if retention_support_capabilities:
                     support_capability = retention_support_capabilities[
-                        (school.visits + step) %
-                        len(retention_support_capabilities)]
+                        step % len(retention_support_capabilities)]
                     with _runtime_timing_trace.trace_span(
                             "STEP_RETENTION_SUPPORT", capability=cap,
                             support_capability=support_capability,
@@ -870,7 +871,8 @@ def _methodology_lesson_rows(capability: str, fresh, priority, picked):
     return offered, delivered
 
 
-def _visit_retention_scope(run_dir, receipt, course, school, cap, learning_settings):
+def _visit_retention_scope(run_dir, receipt, course, school, cap, learning_settings,
+                           *, candidate_steps=1, fragile_fixed_rows=()):
     """Resolve admitted prior-grade and support scopes without changing policy."""
     old_capabilities = (
         _learning_learning_experiment.earlier_grade_capabilities(
@@ -884,9 +886,15 @@ def _visit_retention_scope(run_dir, receipt, course, school, cap, learning_setti
         admitted_for_support = _curriculum_scheduler.assessment_capabilities(
             _runtime_release_adoption._schedule_for_receipt(
                 run_dir, receipt, course), school)
+        preserved = tuple(sorted({
+            row.get("capability") for row in fragile_fixed_rows
+            if isinstance(row, dict) and isinstance(row.get("capability"), str)
+        }))
         retention_support_capabilities = (
-            _runtime_candidate_evidence._retention_support_capabilities(
-                admitted_for_support, getattr(school, "active_grades", ()), cap))
+            _runtime_candidate_evidence._retention_support_schedule(
+                admitted_for_support, getattr(school, "active_grades", ()), cap,
+                steps=candidate_steps, rotation=int(getattr(school, "visits", 0)),
+                already_preserved=preserved))
     return old_capabilities, retention_support_capabilities
 
 

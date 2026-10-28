@@ -28,6 +28,41 @@ def _retention_support_capabilities(admitted, active_grades,
         if name != capability and name.partition(".")[0] in protected_grades))
 
 
+def _retention_support_schedule(
+        admitted, active_grades, capability: str, *, steps: int,
+        rotation: int = 0, already_preserved=()) -> tuple[str, ...]:
+    """Spend support steps first on the grade surfaces that can veto admission.
+
+    The fresh lesson grade and latest active frontier are explicit retention
+    gates.  Earlier grades already receive the teacher's ordinary old-grade
+    rehearsal, while fragile capabilities can have a separate preservation
+    channel.  Do not dilute a short candidate across every admitted capability
+    before these hard-gated surfaces have been rehearsed.
+    """
+    if type(steps) is not int or steps < 1 or type(rotation) is not int or rotation < 0:
+        raise ValueError("RETENTION_SUPPORT_SCHEDULE_INVALID")
+    active_grades = tuple(active_grades)
+    if not active_grades:
+        return ()
+    preserved = set(already_preserved)
+    available = tuple(
+        name for name in _retention_support_capabilities(
+            admitted, active_grades, capability)
+        if name not in preserved)
+    if not available:
+        return ()
+    lesson_grade = capability.partition(".")[0]
+    frontier_grade = active_grades[-1]
+    priority = tuple(
+        name for name in available
+        if name.partition(".")[0] in {lesson_grade, frontier_grade})
+    available = priority or available
+    start = (rotation * steps) % len(available)
+    return tuple(
+        available[(start + index) % len(available)]
+        for index in range(steps))
+
+
 def _select_fresh_retention_support_rows(
         rows, *, rotation: int) -> tuple[dict, ...]:
     """Choose one complete fresh source family for preservation rehearsal."""
