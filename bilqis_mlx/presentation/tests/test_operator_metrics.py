@@ -17,6 +17,18 @@ def promotion_exam(grade, stage, phase, *, generation=1):
 
 
 class OperatorMetricsTests(unittest.TestCase):
+    def test_compact_header_reports_active_integer_root_scope(self):
+        board = Dashboard(
+            stream=io.StringIO(), clock=lambda: 1.0,
+            show_all_panels=True, tables=LETTER_TABLES,
+            compact_header=True)
+        board.state.update(numeric_maximum=10)
+
+        headings, values = board.render(width=320, height=20).splitlines()[:2]
+
+        start = headings.index("INTROOT")
+        self.assertEqual(values[start:start + 7].strip(), "0...10")
+
     def test_compact_header_reports_growth_per_retention_and_graduation_triplets(self):
         board = Dashboard(
             stream=io.StringIO(), clock=lambda: 3600.0,

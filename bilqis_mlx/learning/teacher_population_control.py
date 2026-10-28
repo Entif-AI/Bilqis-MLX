@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from .teacher_feedback import LearningExperimentError
 
 
 MIN_LIVE_EFFECTIVE = 48
@@ -19,7 +20,7 @@ class PopulationLimits:
 
 def population_limits(total_capabilities: int) -> PopulationLimits:
     if type(total_capabilities) is not int or total_capabilities < 1:
-        raise ValueError("TEACHER_POPULATION_CAPABILITY_COUNT_INVALID")
+        raise ValueError(LearningExperimentError.POLICY_INVALID.value)
     maximum = max(MIN_LIVE_EFFECTIVE,
                   LIVE_EFFECTIVE_PER_CAPABILITY * total_capabilities)
     active = min(maximum, max(
@@ -96,7 +97,7 @@ def rebalance_live_population(teacher: dict, *, total_capabilities: int,
     limits = population_limits(total_capabilities)
     capacity = limits.max_effective if max_effective_override is None else int(max_effective_override)
     if capacity < 1:
-        raise ValueError("TEACHER_POPULATION_CAPACITY_INVALID")
+        raise ValueError(LearningExperimentError.POLICY_INVALID.value)
     evidence = _evidence(teacher, inventory)
     ranked = sorted(
         inventory,

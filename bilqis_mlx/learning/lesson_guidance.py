@@ -314,7 +314,11 @@ def _champion_directed_rows(mx, mentors, student_weights, rows, config,
             if (student_predictions[identity] != row["gold"] and
                     predictions[identity] == row["gold"]):
                 directed.add(identity)
-    return tuple(row for row in rows if row["id"] in directed)
+    emitted = set()
+    return tuple(
+        row for row in rows
+        if row["id"] in directed and
+        (row["id"] not in emitted and not emitted.add(row["id"])))
 
 
 def _confidence_guidance(mx, mentors, picked, config, answer_ids,

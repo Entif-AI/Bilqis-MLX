@@ -1667,3 +1667,24 @@ capability instead of being relabeled `UNCERTAIN` merely because the local tuple
 is new. Selector-visible durable cooldown remains the only authority for
 `EXHAUSTED`.
 
+
+## ADR-105 | 2026-10-27 | Restore integer-root scope telemetry and normalize repeated champion specimens
+
+The compact operator header must expose the active integer-root training/test
+scope as `INTROOT`, using the durable `numeric_maximum` authority. At startup a
+saved maximum `N` renders as `0...N`; profile-adoption telemetry carries the new
+maximum so the header updates immediately when numeric scope changes instead of
+waiting for dashboard restart. Execution-profile and semantic-catalog adoption
+events share this presentation contract. This restores the final compact 349
+behavior from `c9ed590`/`7fef150` without making presentation state authoritative
+over curriculum admission.
+
+Source lesson cohorts may contain repeated occurrences of the same exact
+specimen. Champion weakness discovery is set-valued evidence: if one or more
+mentors identify the same source row, that exact row is emitted at most once as
+a weakness target. This normalization occurs before weakness-target selection.
+The downstream target identity validator remains strict; duplicate identities
+arriving from any other malformed target construction still raise
+`TEACHER_WEAKNESS_TARGET_IDENTITY_CONFLICT`. Do not weaken that guard to make a
+run proceed.
+

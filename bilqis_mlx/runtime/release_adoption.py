@@ -355,6 +355,7 @@ def _adopt_executable_profile(
         "factory_release_sha256": successor.release_sha256,
         "student_sha256": school.current_student.sha256,
         "optimizer_step": school.current_student.optimizer_step,
+        "numeric_maximum": record.get("numeric_maximum"),
         "actual_neural_updates": 0,
     }
     record = _runtime_checkpoints._persist(
@@ -489,6 +490,7 @@ def _catalog_adoption_event(
         "previous_student_sha256": school.current_student.sha256,
         "student_sha256": pointer.sha256,
         "optimizer_step": pointer.optimizer_step,
+        "numeric_maximum": record.get("numeric_maximum"),
         "factory_release_sha256": successor.release_sha256,
         "actual_neural_updates": 0,
     }
@@ -675,6 +677,7 @@ def _commit_prepared_successor(
             "factory_release_sha256": successor.release_sha256,
             "student_sha256": school.current_student.sha256,
             "optimizer_step": school.current_student.optimizer_step,
+            "numeric_maximum": record.get("numeric_maximum"),
             "actual_neural_updates": 0,
         }
     record = _runtime_checkpoints._persist(

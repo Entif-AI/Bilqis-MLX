@@ -23,6 +23,25 @@ def exam(grade, generation, rubric, scores, *, step, sha="signed-model"):
 
 
 class SchoolTelemetryTests(unittest.TestCase):
+    def test_profile_adoption_refreshes_integer_root_scope_without_release_replacement_shape(self):
+        board = Dashboard(stream=io.StringIO(), show_all_panels=True,
+                          tables=LETTER_TABLES, compact_header=True)
+        board.school_telemetry = SchoolTelemetry(
+            board, active_grades=("C",), champions={})
+
+        ingest(board, {
+            "event": "SCHOOL_EXECUTION_PROFILE_ADOPTED",
+            "grade": "C", "generation": 1, "optimizer_step": 200,
+            "profile_id": "school/u7c-full-b/numeric-0-10",
+            "numeric_maximum": 10,
+            "transition_kind": "REVISE_PROFILE",
+        })
+
+        self.assertEqual(board.state["numeric_maximum"], 10)
+        rendered = board.render(width=320, height=30)
+        self.assertIn("INTROOT", rendered)
+        self.assertIn("0...10", rendered)
+
     def test_compact_header_reports_stable_run_metrics(self):
         board = Dashboard(
             stream=io.StringIO(), clock=lambda: 1800.0,

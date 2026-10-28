@@ -292,3 +292,26 @@ class ChampionConfidenceTests(unittest.TestCase):
                 None, mentors, {"student": True}, rows,
                 {"heads": 1, "layers": 1}, [1, 2])
         self.assertEqual([row["id"] for row in directed], ["miss"])
+
+    def test_champion_directed_rows_collapse_repeated_source_specimens(self):
+        from bilqis_mlx.learning.lesson_guidance import _champion_directed_rows
+
+        repeated = {"id": "same", "capability": "C.COUNT", "gold": "3",
+                    "tokens": [1, 2], "answer_kind": "numeric_active"}
+        rows = [repeated, dict(repeated)]
+        mentors = ({
+            "weights": {"synthetic": True},
+            "graph": {"tokens": list(range(16)), "nodes": [],
+                      "row_contract_sha256": {}},
+            "capabilities": ("C.COUNT",),
+            "breadth": 1,
+        },)
+        with patch(
+            "bilqis_mlx.learning.lesson_guidance._learning_student_ops._predictions",
+            side_effect=[{"same": "2"}, {"same": "3"}],
+        ):
+            directed = _champion_directed_rows(
+                None, mentors, {"student": True}, rows,
+                {"heads": 1, "layers": 1}, [1, 2])
+
+        self.assertEqual([row["id"] for row in directed], ["same"])

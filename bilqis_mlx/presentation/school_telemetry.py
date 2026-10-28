@@ -10,8 +10,8 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any
 import string
-
 from bilqis_mlx.presentation.spiral_dashboard import Column
+from bilqis_mlx.presentation.numeric_scope import PROFILE_ADOPTION_EVENTS, apply_profile_adoption
 from bilqis_mlx.presentation.growth_projection import GrowthProjection
 from bilqis_mlx.presentation.progression_projection import GraduationProjection
 from bilqis_mlx.presentation.teacher_vnext import teacher_fields as _teacher_vnext_fields
@@ -499,6 +499,7 @@ class SchoolTelemetry:
 
     def _curriculum(self, grade, event):
         """Make a release replacement a hard boundary in the active dashboard view."""
+        if event["event"] in PROFILE_ADOPTION_EVENTS: return apply_profile_adoption(self, grade, event)
         self._reset_score_era(reason=event["event"], grade=grade)
         old_caps = tuple(event.get("old_capabilities") or ())
         new_caps = tuple(event.get("new_capabilities") or ())

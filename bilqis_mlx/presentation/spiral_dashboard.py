@@ -16,6 +16,7 @@ from fractions import Fraction
 import re
 from pathlib import Path
 from bilqis_mlx.state_dag import read_current, read_current_fields
+from bilqis_mlx.presentation.numeric_scope import integer_root_scope
 import shutil
 import signal
 import sys
@@ -974,9 +975,7 @@ class Dashboard:
                 ("STEPS",step if step not in (None,'','?') else "-",7,True),
                 ("EXAM",exam if exam not in (None,'','?') else "-",6,True),
                 ("VISITS",visits if visits not in (None,'','?') else "-",7,True),
-                ("TEACHER",teacher if teacher not in (None,'','?') else "-",7,True),
-                ("GRADES",curriculum['grades'],6,True),
-                ("CAPS",curriculum['capabilities'],5,True),
+                ("TEACHER",teacher if teacher not in (None,'','?') else "-",7,True), ("GRADES",curriculum['grades'],6,True), ("CAPS",curriculum['capabilities'],5,True), ("INTROOT",integer_root_scope(state.get("numeric_maximum")),7,False),
                 ("STUDENT LATEST",latest,18,False),
                 ("STUDENT BEST",best,18,False),
                 ("ST/M",round(self._steps_per_min) if isinstance(self._steps_per_min,(int,float)) else "-",5,True),
