@@ -42,6 +42,15 @@ def _spec(
 
 
 class SCHOOL:
+    class BAMF_TRAINING_ADAPTER:
+        INVALID = _spec(
+            ("SCHOOL", "BAMF_TRAINING_ADAPTER", "INVALID"), owner="runtime.atlas_training_adapter",
+            title="Invalid BAMF training input",
+            message_template="The delivered training input violates its contract: {reason}",
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the released source and delivery metadata before retrying.",
+        )
+
     class BAMF_WORKSTACK:
         VALIDATION_INVALID = _spec(
             ("SCHOOL", "BAMF_WORKSTACK", "VALIDATION_INVALID"), owner="scripts.check_bamf_workstack",
@@ -851,6 +860,7 @@ class FACTORY:
 
 
 CATALOG = (
+    SCHOOL.BAMF_TRAINING_ADAPTER.INVALID,
     SCHOOL.BAMF_WORKSTACK.INPUT_INVALID,
     SCHOOL.BAMF_WORKSTACK.VALIDATION_INVALID,
     SCHOOL.QUALIFICATION.INVALID,
