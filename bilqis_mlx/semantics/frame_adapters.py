@@ -43,6 +43,7 @@ BOOLEAN_COMPOSITE_ADAPTER = "source.micro.boolean-composite/v1"
 BOOLEAN_IDENTIFICATION_ADAPTER = "source.micro.boolean-identification/v1"
 FINITE_NUMERIC_ADAPTER = "source.finite-numeric/v2"
 PUBLIC_FORMAL_TIMELESS_EPOCH = 0
+MAX_PUBLIC_FORMAL_DRAW_EACH = 128
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _APPEND_ONLY_NUMERIC_NODES = {
     node["id"]: node for node in NUMERIC_CONTRACT["append_only_nodes"]}
@@ -691,7 +692,7 @@ def public_formal_context(
             adapter_id, source_span, "<public-formal>")
     graph = canonical_graph
     if (type(source_seed) is not int or type(source_each) is not int
-            or not 1 <= source_each <= 128):
+            or not 1 <= source_each <= MAX_PUBLIC_FORMAL_DRAW_EACH):
         _adapter_fail(
             "BAMF_CONTEXT_PUBLIC_FORMAL_DRAW_PROVENANCE_INVALID",
             adapter_id, source_span, "<public-formal>")

@@ -24,10 +24,13 @@ FEATURE_MANIFEST_SCHEMA = "bilqis.atlas-features/v2"
 FEATURE_CONCEPT_SCHEMA = "bilqis.atlas-concept-feature/v2"
 FEATURE_ROW_SCHEMA = "bilqis.atlas-feature-row/v2"
 FACTOR_ROWS = 512
+FIRST_FACTOR_ROW = 2
 FACTOR_DIM = 128
 GRAPH_DIM = 64
 GRAPH_HASH_START = 8
 GRAPH_HASH_WIDTH = 56
+GRAPH_SIGN_BYTE_INDEX = 8
+EDGE_TARGET_INDEX = 2
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _BROADER = SEMANTIC_PREDICATES["subsumption"]
 _NARROWER = SEMANTIC_PREDICATES["inverse_subsumption"]
@@ -73,12 +76,12 @@ def _category_map(
     mapping = dict(prior or (("UNKNOWN", 0), ("NONE", 1)))
     if mapping.get("UNKNOWN") != 0 or mapping.get("NONE") != 1:
         _invalid("BAMF_FEATURE_RESERVED_CATEGORY_DRIFT")
-    used = {row for row in mapping.values() if row >= 2}
-    if (len(used) != sum(row >= 2 for row in mapping.values())
+    used = {row for row in mapping.values() if row >= FIRST_FACTOR_ROW}
+    if (len(used) != sum(row >= FIRST_FACTOR_ROW for row in mapping.values())
             or any(type(row) is not int or not 0 <= row < FACTOR_ROWS
                    for row in mapping.values())):
         _invalid("BAMF_FEATURE_PRIOR_MAP_INVALID")
-    next_row = max(used, default=1) + 1
+    next_row = max(used, default=FIRST_FACTOR_ROW - 1) + 1
     for identifier in _sorted_ids(values):
         if identifier in ("UNKNOWN", "NONE"):
             _invalid("BAMF_FEATURE_RESERVED_ID_COLLISION")
@@ -105,7 +108,8 @@ def _graph_vector(
     relations: tuple[tuple[str, str, str], ...],
     types_by_id: dict[str, tuple[str, ...]],
 ) -> tuple[float, ...]:
-    incoming = [edge for edge in relations if edge[2] == identifier]
+    incoming = [edge for edge in relations
+                if edge[EDGE_TARGET_INDEX] == identifier]
     outgoing = [edge for edge in relations if edge[0] == identifier]
     values = [0.0] * GRAPH_DIM
     counts = (
@@ -130,7 +134,7 @@ def _graph_vector(
             ("bamf.graph.v2|" + signature).encode("utf-8")).digest()
         channel = GRAPH_HASH_START + (
             int.from_bytes(digest[:8], "little") % GRAPH_HASH_WIDTH)
-        sign = 1.0 if digest[8] & 1 == 0 else -1.0
+        sign = 1.0 if digest[GRAPH_SIGN_BYTE_INDEX] & 1 == 0 else -1.0
         values[channel] += sign / len(signatures)
     return tuple(values)
 

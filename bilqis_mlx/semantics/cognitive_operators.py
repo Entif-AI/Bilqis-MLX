@@ -232,9 +232,12 @@ class OperatorRegistry:
                     for name, inputs, output, applicability in _DECLARATIONS
                     if name == operator_id
                 ), None)
-                if (declared is None
-                        or spec.signature != Signature(declared[0], declared[1])
-                        or spec.applicability != declared[2]
+                if declared is None:
+                    _invalid("BAMF_OPERATOR_DECLARATION_DRIFT")
+                declared_inputs, declared_output, declared_applicability = declared
+                if (spec.signature != Signature(
+                            declared_inputs, declared_output)
+                        or spec.applicability != declared_applicability
                         or spec.version != "v1"
                         or spec.semantic_release != self.semantic_release):
                     _invalid("BAMF_OPERATOR_DECLARATION_DRIFT")
