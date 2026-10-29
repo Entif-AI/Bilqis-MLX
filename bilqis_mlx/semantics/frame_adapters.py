@@ -625,6 +625,9 @@ def public_formal_context(
     task_scope: TaskScope,
     source_frontier: SourceFrontier,
     policy: ContextPolicy,
+    source_seed: int,
+    source_each: int,
+    source_profile_parameters: dict | None = None,
     course=None,
 ) -> tuple[ApprovedContextProjection, SourceFrontier] | ContextHold:
     """Source-owned A/B/C admission, separate from the solver import closure.
@@ -687,6 +690,29 @@ def public_formal_context(
             "BAMF_CONTEXT_PUBLIC_FORMAL_GRAPH_DRIFT",
             adapter_id, source_span, "<public-formal>")
     graph = canonical_graph
+    if (type(source_seed) is not int or type(source_each) is not int
+            or not 1 <= source_each <= 128):
+        _adapter_fail(
+            "BAMF_CONTEXT_PUBLIC_FORMAL_DRAW_PROVENANCE_INVALID",
+            adapter_id, source_span, "<public-formal>")
+    draw_args = {
+        "source_root": canonical_root, "graph": graph, "course": course,
+        "capability": row.get("capability"), "seed": source_seed,
+        "each": source_each,
+    }
+    if source_profile_parameters is not None:
+        draw_args["profile_parameters"] = source_profile_parameters
+    try:
+        canonical_rows = canonical.draw(**draw_args)
+    except (KeyError, TypeError, ValueError) as exc:
+        _adapter_fail(
+            "BAMF_CONTEXT_PUBLIC_FORMAL_DRAW_PROVENANCE_INVALID",
+            adapter_id, source_span, "<public-formal>")
+    if not isinstance(canonical_rows, (tuple, list)) or not any(
+            candidate == row for candidate in canonical_rows):
+        _adapter_fail(
+            "BAMF_CONTEXT_PUBLIC_FORMAL_ROW_IDENTITY_UNVERIFIED",
+            adapter_id, source_span, "<public-formal>")
     if (not isinstance(task_scope, TaskScope)
             or not isinstance(source_frontier, SourceFrontier)
             or not isinstance(policy, ContextPolicy)

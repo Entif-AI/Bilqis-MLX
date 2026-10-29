@@ -184,17 +184,19 @@ class ContextEligibilityTests(unittest.TestCase):
         c_row = next(row for row in draw_numeric_rows(
             numeric_graph, seed=19, maximum=3)
             if row["capability"] == "C.ADD")
-        for adapter, row, graph in (
-            (a, a_row, micro_graph),
-            (b, b_row, micro_graph),
-            (c, c_row, numeric_graph),
+        for adapter, row, graph, seed, each, profile in (
+            (a, a_row, micro_graph, 31, 2, None),
+            (b, b_row, micro_graph, 31, 4, None),
+            (c, c_row, numeric_graph, 19, 12,
+             {"numbers": ("0", "1", "2", "3")}),
         ):
             with self.subTest(adapter=adapter.descriptor.adapter_id):
                 result = public_formal_context(
                     adapter, row, snapshot, source_root=source_root,
                     graph=graph,
                     task_scope=task, source_frontier=source_frontier,
-                    policy=policy,
+                    policy=policy, source_seed=seed, source_each=each,
+                    source_profile_parameters=profile,
                 )
                 self.assertIsInstance(result, tuple)
                 projection, admitted = result
@@ -213,14 +215,30 @@ class ContextEligibilityTests(unittest.TestCase):
                     public_formal_context(
                         adapter, row, snapshot, source_root=source_root,
                         graph=graph,
-                        task_scope=task, source_frontier=admitted, policy=policy),
+                        task_scope=task, source_frontier=admitted, policy=policy,
+                        source_seed=seed, source_each=each,
+                        source_profile_parameters=profile),
                     result)
                 with self.assertRaises(TypeError):
                     public_formal_context(
                         adapter, row, snapshot, source_root=source_root,
                         graph=graph, source_span=SourceSpan(0, 1),
                         task_scope=task, source_frontier=admitted,
-                        policy=policy)
+                        policy=policy, source_seed=seed, source_each=each,
+                        source_profile_parameters=profile)
+                spoofed_identity = dict(row)
+                spoofed_identity["id"] = "f" * 64
+                spoofed_identity["source_id"] = "f" * 64
+                with self.assertRaises(BilqisError) as caught:
+                    public_formal_context(
+                        adapter, spoofed_identity, snapshot,
+                        source_root=source_root, graph=graph,
+                        task_scope=task, source_frontier=source_frontier,
+                        policy=policy, source_seed=seed, source_each=each,
+                        source_profile_parameters=profile)
+                self.assertEqual(
+                    caught.exception.context["reason"],
+                    "BAMF_CONTEXT_PUBLIC_FORMAL_ROW_IDENTITY_UNVERIFIED")
         forged = dict(a_row)
         forged["gold"] = "source-tampered"
         with self.assertRaises(BilqisError):
@@ -228,13 +246,14 @@ class ContextEligibilityTests(unittest.TestCase):
                 a, forged, snapshot, source_root=source_root,
                 graph=micro_graph,
                 task_scope=task, source_frontier=source_frontier,
-                policy=policy)
+                policy=policy, source_seed=31, source_each=2)
         forged_adapter = replace(a, check=lambda *args, **kwargs: True)
         with self.assertRaises(BilqisError) as caught:
             public_formal_context(
                 forged_adapter, forged, snapshot, source_root=source_root,
                 graph=micro_graph, task_scope=task,
-                source_frontier=source_frontier, policy=policy)
+                source_frontier=source_frontier, policy=policy,
+                source_seed=31, source_each=2)
         self.assertEqual(caught.exception.context["reason"],
                          "BAMF_CONTEXT_PUBLIC_FORMAL_ADAPTER_UNTRUSTED")
         with self.assertRaises(BilqisError):
@@ -242,12 +261,25 @@ class ContextEligibilityTests(unittest.TestCase):
                 a, a_row, snapshot, source_root=source_root,
                 graph=micro_graph,
                 task_scope=replace(task, semantic_release="b" * 64),
-                source_frontier=source_frontier, policy=policy)
+                source_frontier=source_frontier, policy=policy,
+                source_seed=31, source_each=2)
         with self.assertRaises(BilqisError):
             public_formal_context(
                 a, a_row, snapshot, source_root="synthetic:unverified",
                 graph=micro_graph, task_scope=task,
-                source_frontier=source_frontier, policy=policy)
+                source_frontier=source_frontier, policy=policy,
+                source_seed=31, source_each=2)
+        spoofed = dict(a_row)
+        spoofed["source_id"] = "f" * 64
+        spoofed["id"] = "f" * 64
+        with self.assertRaises(BilqisError) as caught:
+            public_formal_context(
+                a, spoofed, snapshot, source_root=source_root,
+                graph=micro_graph, task_scope=task,
+                source_frontier=source_frontier, policy=policy,
+                source_seed=31, source_each=2)
+        self.assertEqual(caught.exception.context["reason"],
+                         "BAMF_CONTEXT_PUBLIC_FORMAL_ROW_IDENTITY_UNVERIFIED")
 
     def test_public_formal_future_prefix_never_mints_handles(self):
         from bilqis_mlx.grade_a_probe import read_sources
@@ -270,7 +302,7 @@ class ContextEligibilityTests(unittest.TestCase):
             adapter, row, _snapshot(), source_root=source_root,
             graph=micro_graph,
             task_scope=task, source_frontier=SourceFrontier(1, 1, ()),
-            policy=policy)
+            policy=policy, source_seed=31, source_each=2)
         self.assertIsInstance(result, ContextHold)
         self.assertIn("BAMF_CONTEXT_INVISIBLE_PREFIX", result.reason_codes)
 

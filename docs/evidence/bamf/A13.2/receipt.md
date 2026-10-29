@@ -81,6 +81,19 @@ Focused context + adapter suites: **28 passed, 0 failed,
 **61 passed, 0 failed, 1 optional real-Atlas skip**.
 Fresh independent immutable-head readback is pending.
 
+The first targeted re-review at `25928fc` confirmed the
+checker/span Blocker resolved but found one remaining Major:
+the canonical A/B/C checker did not authenticate row ID/source_id.
+The constructor now requires explicit deterministic source-draw
+provenance (seed, per-capability count, optional source profile)
+and reproduces the exact row through the canonical registered
+source generator before minting. No arbitrary ID/source_id can
+pass merely because record/tokens/gold are otherwise valid.
+First-admission ID-only spoof regressions cover A, B and C.
+The source-draw check is a source-owner admission step, never
+a runtime solver dependency. Context+adapter tests remain
+28/28; another immutable-head EGM readback is required.
+
 `git diff --check` passed. Repository module-size and error-control
 checks retain inherited unrelated findings. The existing
 `frame_adapters.py` source-adapter import boundary is not introduced
