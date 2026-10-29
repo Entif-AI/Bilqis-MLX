@@ -45,10 +45,12 @@ No live student, checkpoint or optimizer state was mutated.
 
 `python3 -B scripts/run_tests.py
 bilqis_mlx/learning/tests/test_atlas_engram_allocation.py`:
-**10 passed, 0 failed, 0 skipped**.
+**11 passed, 0 failed, 0 skipped** after the child-frame
+occurrence-identity hardening.
 
 Literal tests cover distinct fillers sharing structural type
-keys, exact role-swap/scope/child differences, NONE/UNKNOWN/
+keys, exact role-swap/scope/child differences, distinct child
+occurrences with identical child content, NONE/UNKNOWN/
 ALTERNATIVES, foreign release/schema/type rejection, exact
 lookup priority, structural-first deterministic use/digest
 ordering, 64-key cap, pending-key evidence, zero-budget

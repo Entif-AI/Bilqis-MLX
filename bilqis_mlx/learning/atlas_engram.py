@@ -256,11 +256,13 @@ def _member(binding, role, release: str, structural: bool) -> MotifMember:
             types = tuple(concept.type_ids)
         else:
             if (child.schema_version != CHILD_SCHEMA
+                    or not _SHA.fullmatch(child.occurrence_id)
                     or not _SHA.fullmatch(child.content_digest)
                     or not set(child.type_ids).intersection(role.allowed_type_ids)):
                 _invalid("BAMF_MOTIF_CHILD_SOURCE_INVALID")
             kind = "CHILD_TYPE" if structural else "CHILD_FRAME"
-            ids = tuple(child.type_ids) if structural else (child.content_digest,)
+            ids = (tuple(child.type_ids) if structural else
+                   (child.occurrence_id, child.content_digest))
             types = tuple(child.type_ids)
     elif state == "ALTERNATIVES":
         alternatives = tuple(binding.alternatives)
