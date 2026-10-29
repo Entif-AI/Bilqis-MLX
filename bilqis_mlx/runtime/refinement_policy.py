@@ -1,0 +1,261 @@
+"""B06.2 prediction-local refinement policy over source-approved frames.
+
+Selection is deterministic and does not mutate backbone, model or source state.
+The source frontier and any salience witnesses must come from their owning
+boundary; this module does not mint source grants or attest salience.
+"""
+from __future__ import annotations
+
+from dataclasses import asdict, dataclass
+import hashlib
+import json
+import math
+import re
+
+from bilqis_mlx.errors import ErrorBus, SCHOOL
+from bilqis_mlx.semantics.context_eligibility import (
+    ApprovedContextProjection, ContextEligibility, ContextHold, ContextPolicy,
+    SourceFrontier, TaskScope, project_context,
+)
+from bilqis_mlx.semantics.frame_schema import FrameInstance
+
+
+POLICY_SCHEMA = "bilqis.mlx.refinement-selection/v1"
+SALIENCE_SCHEMA = "bilqis.mlx.refinement-source-salience/v1"
+MAX_SELECTED_FRAMES = 32
+FRAMES_PER_QUOTA = 8
+MAX_PASSES = 2
+_DIGEST = re.compile(r"[0-9a-f]{64}\Z")
+
+
+def _invalid() -> None:
+    ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+
+
+def _text(value: object) -> bool:
+    return isinstance(value, str) and bool(value)
+
+
+@dataclass(frozen=True)
+class SourceSalience:
+    """A source-owned ranking hint bound to one approved frame envelope.
+
+    This is not an independent permission or gold label. Its issuer must be
+    checked by the upstream source boundary, not inferred from this record.
+    """
+
+    frame_handle: str
+    source_handle: str
+    envelope_digest: str
+    visible_at_prefix: int
+    value: float
+    schema_version: str = SALIENCE_SCHEMA
+
+    def __post_init__(self) -> None:
+        if (not _text(self.frame_handle)
+                or not _text(self.source_handle)
+                or not isinstance(self.envelope_digest, str)
+                or not _DIGEST.fullmatch(self.envelope_digest)
+                or type(self.visible_at_prefix) is not int
+                or self.visible_at_prefix < 0
+                or type(self.value) is not float
+                or not math.isfinite(self.value)
+                or self.schema_version != SALIENCE_SCHEMA):
+            _invalid()
+
+
+def salience_evidence_digest(witness: SourceSalience) -> str:
+    """Content identity for a source-frontier grant to this exact signal."""
+    if not isinstance(witness, SourceSalience):
+        _invalid()
+    payload = json.dumps(
+        asdict(witness), sort_keys=True, separators=(",", ":"),
+        ensure_ascii=False, allow_nan=False,
+    )
+    return hashlib.sha256((payload + "\n").encode("utf-8")).hexdigest()
+
+
+@dataclass(frozen=True)
+class RefinementChoice:
+    frame_handle: str
+    occurrence_id: str
+    source_position: int
+    role_matches: int
+    salience: float
+    passes: int
+    cache_identity: tuple[str, int, str, str]
+
+
+@dataclass(frozen=True)
+class RefinementSelection:
+    """A replayable selection proposal, not a transferable source credential."""
+    input_generation: str
+    prediction_boundary: int
+    query_id: str
+    approved_context_digest: str | None
+    eligible_count: int
+    quota: int
+    selected: tuple[RefinementChoice, ...]
+    remaining_frame_handles: tuple[str, ...]
+    schema_version: str = POLICY_SCHEMA
+
+
+def _sample_passes(
+    run_seed: str, visit_id: str, prediction_boundary: int,
+    query_id: str, occurrence_id: str,
+) -> int:
+    # Canonical length-delimited fields prevent ambiguous concatenations.
+    message = json.dumps(
+        (run_seed, visit_id, prediction_boundary, query_id, occurrence_id),
+        separators=(",", ":"), ensure_ascii=False,
+    ).encode("utf-8")
+    return int.from_bytes(hashlib.sha256(message).digest(), "big") % (MAX_PASSES + 1)
+
+
+def select_prediction_refinements(
+    *,
+    frames: tuple[ContextEligibility, ...],
+    task_scope: TaskScope,
+    source_frontier: SourceFrontier,
+    policy: ContextPolicy,
+    input_generation: str,
+    query_id: str,
+    requested_roles: tuple[str, ...],
+    run_seed: str,
+    visit_id: str,
+    training: bool,
+    explicit_member_question: bool,
+    unresolved_nested_query: bool,
+    source_salience: tuple[SourceSalience, ...] = (),
+) -> RefinementSelection | ContextHold:
+    """Select at most ceil(Fp/8) approved frames, capped at 32.
+
+    V(p) is reconstructed from source frames visible at the *current*
+    prediction boundary, then passed through the existing A13 eligibility
+    gate. Future frames and future source salience never enter that gate.
+    All route choices are local to (visit, prediction, query, occurrence).
+    """
+    if (not isinstance(frames, tuple)
+            or any(not isinstance(frame, ContextEligibility) for frame in frames)
+            or not isinstance(task_scope, TaskScope)
+            or not isinstance(source_frontier, SourceFrontier)
+            or not isinstance(policy, ContextPolicy)
+            or not all(_text(item) for item in (
+                input_generation, query_id, run_seed, visit_id))
+            or not isinstance(requested_roles, tuple)
+            or any(not _text(role) for role in requested_roles)
+            or len(set(requested_roles)) != len(requested_roles)
+            or not isinstance(source_salience, tuple)
+            or any(not isinstance(item, SourceSalience) for item in source_salience)
+            or len({item.frame_handle for item in source_salience}) != len(source_salience)
+            or not all(type(item) is bool for item in (
+                training, explicit_member_question, unresolved_nested_query))):
+        _invalid()
+    p = task_scope.causal_prefix_end
+    if (explicit_member_question and not requested_roles):
+        _invalid()
+    handles = {item.frame_handle for item in frames}
+    if len(handles) != len(frames) or any(
+            item.frame_handle not in handles for item in source_salience):
+        _invalid()
+
+    visible = tuple(item for item in frames
+                    if item.causal_prefix_end <= p
+                    and item.frame.causal_prefix_end <= p
+                    and item.frame.source_span.end <= p
+                    and all(member.visible_at_prefix <= p for member in item.members))
+    if not visible:
+        return RefinementSelection(
+            input_generation, p, query_id, None, 0, 0, (), ())
+
+    projection = project_context(visible, task_scope, source_frontier, policy)
+    if isinstance(projection, ContextHold):
+        return projection
+    if not isinstance(projection, ApprovedContextProjection):
+        _invalid()
+
+    approved = {item.frame_handle: item for item in projection.eligible.frames}
+    salience_by_handle: dict[str, float] = {}
+    grants = {item.source_handle: item for item in source_frontier.grants}
+    occupied_handles = {
+        handle for item in visible
+        for handle in (item.source_handle,
+                       *(member.source_handle for member in item.members))
+    }
+    source_envelopes = {item.frame_handle: item for item in visible}
+    for witness in source_salience:
+        # Ignore future-frame hints entirely: an earlier query is independent
+        # of future observations, including their claimed salience.
+        if witness.frame_handle not in approved:
+            continue
+        envelope = source_envelopes[witness.frame_handle]
+        grant = grants.get(witness.source_handle)
+        if (witness.envelope_digest
+                != approved[witness.frame_handle].envelope_digest
+                or witness.visible_at_prefix > p
+                or witness.source_handle in occupied_handles
+                or grant is None
+                or grant.evidence_digest != salience_evidence_digest(witness)
+                or grant.revoked
+                or grant.semantic_release != task_scope.semantic_release
+                or grant.source_regime != envelope.source_regime
+                or grant.principal_id != task_scope.principal_id
+                or grant.tenant_id != task_scope.tenant_id
+                or task_scope.purpose not in grant.permitted_purposes
+                or task_scope.jurisdiction not in grant.permitted_jurisdictions
+                or task_scope.scope not in grant.permitted_scopes
+                or grant.rights_epoch != source_frontier.rights_epoch
+                or grant.correction_generation != source_frontier.correction_generation
+                or grant.observed_at > task_scope.observed_frontier
+                or grant.effective_from > task_scope.effective_time
+                or (grant.effective_until is not None
+                    and task_scope.effective_time >= grant.effective_until)):
+            _invalid()
+        salience_by_handle[witness.frame_handle] = witness.value
+
+    source_order = tuple(sorted(
+        visible, key=lambda item: (
+            item.frame.source_span.start,
+            item.frame.source_span.end,
+            item.frame.occurrence_id,
+        )))
+    position = {item.frame_handle: index for index, item in enumerate(source_order)}
+    wanted = set(requested_roles)
+
+    def rank(item: ContextEligibility) -> tuple[int, float, int]:
+        roles = ({binding.role_id for binding in item.frame.bindings}
+                 if isinstance(item.frame, FrameInstance) else set())
+        return (-len(roles & wanted),
+                -salience_by_handle.get(item.frame_handle, 0.0),
+                position[item.frame_handle])
+
+    ranked = tuple(sorted(visible, key=rank))
+    quota = min(MAX_SELECTED_FRAMES, (len(visible) + FRAMES_PER_QUOTA - 1)
+                // FRAMES_PER_QUOTA)
+    choices = []
+    for item in ranked[:quota]:
+        frame = item.frame
+        roles = ({binding.role_id for binding in frame.bindings}
+                 if isinstance(frame, FrameInstance) else set())
+        if training:
+            passes = _sample_passes(
+                run_seed, visit_id, p, query_id, frame.occurrence_id)
+        elif (unresolved_nested_query and isinstance(frame, FrameInstance)
+              and any(binding.child_frame is not None for binding in frame.bindings)):
+            passes = 2
+        else:
+            passes = int(explicit_member_question)
+        choices.append(RefinementChoice(
+            frame_handle=item.frame_handle,
+            occurrence_id=frame.occurrence_id,
+            source_position=position[item.frame_handle],
+            role_matches=len(roles & wanted),
+            salience=salience_by_handle.get(item.frame_handle, 0.0),
+            passes=passes,
+            cache_identity=(input_generation, p, query_id, frame.occurrence_id),
+        ))
+    return RefinementSelection(
+        input_generation, p, query_id, projection.digest, len(visible),
+        quota, tuple(choices),
+        tuple(item.frame_handle for item in ranked[quota:]),
+    )

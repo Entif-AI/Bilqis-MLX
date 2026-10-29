@@ -1,0 +1,69 @@
+# B06.2 prediction-local refinement selection: scoped candidate
+
+Issue: [#453](https://github.com/Entif-AI/Bilqis-MLX/issues/453)
+Lane: B, isolated single-writer candidate `codex/bamf02-b06-policy-20261029`
+Consumed Lane B: `7b70b0d4f70c2df7d79ddd69db91a2eaf1da78ae`
+Consumed reviewed unified: `7ad8f8abc9efcc4b9fb5311a1572979c49b22cf4`
+Direct prerequisite: B06.1/#452 provisional numerical kernel `8162096`
+
+## Owned software
+
+`runtime/refinement_policy.py` implements a pure prediction-local selector
+over actual A13 context eligibility. It filters the complete visible frame
+prefix before source-policy projection, then computes Fp and the exact
+`min(32, ceil(Fp/8))` quota. Requested-role matches rank first, followed by
+source-visible salience and stable source span/occurrence order. Salience is
+optional, defaults to a neutral tie, and requires an exact source-frontier
+grant binding the approved frame envelope, value and visibility. It cannot
+authorize a frame, member or learning target.
+
+Each selected record carries the exact
+`(input-generation, prediction-boundary, query-ID, frame-occurrence)`
+cache identity. Inference uses zero passes ordinarily, one for explicit
+member questions and up to two for unresolved nested frames. Training
+samples 0/1/2 deterministically from the complete SHA256 of the run seed,
+visit ID, p, query ID and occurrence, independent of batch length.
+Unselected eligible frames remain recorded as baseline/remaining needs.
+No shared backbone state is mutated.
+
+`runtime/atlas_refinement.py` adds a masked auxiliary route loss:
+missing labels contribute exactly zero route gradient, while the
+separate answer loss still backpropagates through the selected one-
+or two-pass numerical kernel. No teacher target enters selection.
+
+## Verification
+
+Focused affected source and real MLX tests, run with the Mac Studio
+Python 3.14 MLX interpreter and the existing pure-Python RDF dependency
+path:
+
+```
+PYTHONPATH=/Users/emilie/Code/bamf-planning-20261027/.venv/lib/python3.13/site-packages \
+python3 -B scripts/run_tests.py \
+  bilqis_mlx/runtime/tests/test_refinement_policy.py \
+  bilqis_mlx/runtime/tests/test_atlas_refinement.py \
+  bilqis_mlx/runtime/tests/test_block_attnres.py \
+  bilqis_mlx/semantics/tests/test_context_eligibility.py
+```
+
+Result: **44 passed, 0 failed, 0 skipped**. These include the
+8-to-9 quota boundary, future-frame and future-salience isolation,
+source revocation and forged-salience rejection, all three seeded
+training pass counts, nested two-pass policy, masked route gradients
+and retained answer gradients. `git diff --check` passed. The
+error-control-plane checker reported no new findings in either changed
+runtime module; unrelated inherited findings remain.
+
+## Boundaries and disposition
+
+**SCOPED_CANDIDATE_PENDING_INDEPENDENT_EGM_AND_INTEGRATION.**
+This is not the public `refine_selected` source/backbone assembly.
+B03.3/#444 still awaits A05 child-prefix revalidation and B02
+child-binding source factors; B05/B11 must qualify real hidden-state
+and summary origin. Source-frontier issuance, query-ID provenance,
+source salience issuance and trusted seed/visit identity remain
+upstream-owner obligations. The selection record is a replayable
+proposal, never a transferable source or neural authority.
+
+No accepted generation, AdamW, live training, source promotion, issue
+closure, Lane B shared-branch write or unified merge is claimed.

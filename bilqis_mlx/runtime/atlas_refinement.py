@@ -21,6 +21,7 @@ WIDTH = ModelTopologySpecV2.width
 INNER = 192
 MEMBER_RANK = 2
 MAX_LOCAL_PASSES = 2
+ROUTE_LOGIT_DIM = MAX_LOCAL_PASSES + 1
 RESIDUAL_GATE_SCALE = .1
 
 
@@ -99,3 +100,25 @@ def _refine_frame(hidden: mx.array, seed: mx.array, members: mx.array, role: mx.
     if not bool(mx.all(mx.isfinite(state))) or not bool(mx.all(mx.isfinite(route_logits))):
         _invalid()
     return _RefinementResult(state, route_logits, passes)
+
+
+def masked_routing_loss(route_logits: mx.array | None, route_label: int | None) -> mx.array:
+    """Missing route supervision contributes zero, not a fabricated target.
+
+    This auxiliary term never replaces the answer loss, which still backprops
+    through the selected numerical refinement path.
+    """
+    if route_logits is None:
+        if route_label is not None:
+            _invalid()
+        return mx.array(0.0, dtype=mx.float32)
+    if (not isinstance(route_logits, mx.array)
+            or route_logits.shape != (ROUTE_LOGIT_DIM,)
+            or route_logits.dtype != mx.float32
+            or not bool(mx.all(mx.isfinite(route_logits)))
+            or (route_label is not None
+                and (type(route_label) is not int or not 0 <= route_label <= MAX_LOCAL_PASSES))):
+        _invalid()
+    if route_label is None:
+        return mx.sum(route_logits * 0.0)
+    return mx.logsumexp(route_logits) - route_logits[route_label]
