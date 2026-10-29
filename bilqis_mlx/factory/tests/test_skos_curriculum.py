@@ -9,6 +9,7 @@ from pathlib import Path
 import shutil
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory import skos_curriculum as public_curriculum
@@ -115,6 +116,121 @@ def _snapshot(definitions=DEFINITIONS, *, release=RELEASE):
 
 
 class SemanticFamilyInventoryTests(unittest.TestCase):
+    def test_source_checker_replays_facts_without_using_generator(self):
+        definitions = tuple(
+            (identifier, source, AtlasRelation(REL, "urn:lex:root")
+             if identifier == "urn:morph:transform" else relation)
+            for identifier, source, relation in DEFINITIONS)
+        snapshot = _snapshot(definitions)
+        lessons = compile_source_constructive_lessons(snapshot).lessons
+        identity = next(item for item in lessons
+                        if item.family_id == "positive_identity")
+        relation = next(item for item in lessons
+                        if item.family_id == "source_attested_relation")
+        with patch(
+                "bilqis_mlx.factory.skos_curriculum."
+                "_compile_source_constructive_lessons_snapshot",
+                side_effect=AssertionError("checker used lesson generator")):
+            self.assertTrue(check_source_constructive_lesson(
+                identity, identity.semantic_id, snapshot))
+            self.assertTrue(check_source_constructive_lesson(
+                relation, relation.positive_fact, snapshot))
+            self.assertFalse(check_source_constructive_lesson(
+                relation, list(relation.positive_fact), snapshot))
+
+    def test_checker_rejects_forged_contrast_and_prerequisites(self):
+        definitions = tuple(
+            (identifier, source, AtlasRelation(REL, "urn:lex:root")
+             if identifier == "urn:morph:transform" else relation)
+            for identifier, source, relation in DEFINITIONS)
+        snapshot = _snapshot(definitions)
+        lessons = compile_source_constructive_lessons(snapshot).lessons
+        identity = next(item for item in lessons
+                        if item.semantic_id == "urn:lex:root"
+                        and item.family_id == "positive_identity")
+        relation = next(item for item in lessons
+                        if item.semantic_id == "urn:lex:sense"
+                        and item.family_id == "source_attested_relation")
+        for forged in (
+                replace(identity, contrast_fact=(
+                    "identity", identity.contrast_fact[1], "source:invented")),
+                replace(identity, variation_axes=("source-identity", "fantasy")),
+                replace(relation, contrast_fact=(
+                    "urn:lex:sense", REL, "urn:invented")),
+                replace(relation, prerequisite_closure=()),
+                replace(relation, variation_axes=("source-relation", "fantasy"))):
+            with self.subTest(forged=forged):
+                with self.assertRaises(BilqisError) as caught:
+                    check_source_constructive_lesson(
+                        forged, forged.positive_fact, snapshot)
+                self.assertEqual(
+                    caught.exception.context["reason"],
+                    "BAMF_LESSON_SOURCE_EVIDENCE_MISMATCH")
+
+    def test_second_true_relation_from_same_source_is_not_negative(self):
+        snapshot = _snapshot()
+        concepts = tuple(
+            replace(item, concept=replace(
+                item.concept, relations=(
+                    *item.concept.relations,
+                    AtlasRelation(REL, "urn:morph:composition"))))
+            if item.concept.semantic_id == "urn:lex:sense" else item
+            for item in snapshot.concepts)
+        relations = tuple(
+            FrozenAtlasRelation(item.concept.semantic_id, edge.predicate, edge.target)
+            for item in concepts for edge in item.concept.relations)
+        snapshot = replace(snapshot, concepts=concepts, relations=relations)
+        compiled = compile_source_constructive_lessons(snapshot)
+        self.assertFalse(any(
+            item.semantic_id == "urn:lex:sense"
+            and item.family_id == "source_attested_relation"
+            for item in compiled.lessons))
+        self.assertTrue(any(
+            item.semantic_id == "urn:lex:sense"
+            and item.family_id == "source_attested_relation"
+            for item in compiled.uncovered))
+
+    def test_checker_rejects_same_source_contrast_even_with_recomputed_digest(self):
+        definitions = tuple(
+            (identifier, source, AtlasRelation(REL, "urn:lex:root")
+             if identifier == "urn:morph:transform" else relation)
+            for identifier, source, relation in DEFINITIONS)
+        snapshot = _snapshot(definitions)
+        concepts = tuple(
+            replace(item, concept=replace(
+                item.concept, relations=(
+                    *item.concept.relations,
+                    AtlasRelation(REL, "urn:morph:composition"))))
+            if item.concept.semantic_id == "urn:lex:sense" else item
+            for item in snapshot.concepts)
+        relations = tuple(
+            FrozenAtlasRelation(item.concept.semantic_id, edge.predicate, edge.target)
+            for item in concepts for edge in item.concept.relations)
+        snapshot = replace(snapshot, concepts=concepts, relations=relations)
+        lesson = next(
+            item for item in compile_source_constructive_lessons(snapshot).lessons
+            if item.semantic_id == "urn:lex:sense"
+            and item.family_id == "source_attested_relation")
+        same_source = ("urn:lex:sense", REL, "urn:morph:composition")
+        obligation = next(
+            item for item in inventory_source_families(snapshot).obligations
+            if (item.semantic_id, item.family_id)
+            == (lesson.semantic_id, lesson.family_id))
+        constituents = tuple(dict.fromkeys((
+            lesson.positive_fact[0], lesson.positive_fact[2],
+            same_source[0], same_source[2])))
+        forged = replace(
+            lesson, contrast_fact=same_source, constituents=constituents,
+            prerequisite_closure=constituents,
+            source_evidence_sha256=public_curriculum._source_lesson_evidence(
+                obligation, lesson.positive_fact, same_source))
+        with self.assertRaises(BilqisError) as caught:
+            check_source_constructive_lesson(
+                forged, forged.positive_fact, snapshot)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_LESSON_SOURCE_EVIDENCE_MISMATCH")
+
     def test_wrapped_source_strings_do_not_pass_lesson_type_boundary(self):
         class WrappedText(str):
             pass
@@ -218,8 +334,12 @@ class SemanticFamilyInventoryTests(unittest.TestCase):
         self.assertIn(relation.contrast_fact, attested)
         self.assertNotEqual(relation.positive_fact, relation.contrast_fact)
         self.assertEqual(relation.answer_modality, "RELATION_TRIPLE")
-        self.assertNotIn(
+        self.assertIn(
             relation.semantic_id, relation.prerequisite_closure)
+        self.assertEqual(
+            relation.prerequisite_closure, relation.constituents)
+        self.assertNotEqual(
+            relation.contrast_fact[0], relation.semantic_id)
         self.assertTrue(check_source_constructive_lesson(
             relation, relation.positive_fact, snapshot))
         self.assertFalse(check_source_constructive_lesson(
@@ -493,6 +613,12 @@ class SemanticFamilyInventoryTests(unittest.TestCase):
             public_candidate = public_curriculum.compile_semantic_curriculum(
                 pin, SOURCE_FAMILY_ADAPTERS,
                 LearnedFrontier(snapshot.release_sha256))
+            # This A01 source contains no admitted SKOS relation triples.
+            # Synthetic fixtures test relations; the real corpus cannot
+            # manufacture them to inflate the source lesson denominator.
+            self.assertFalse(any(
+                item.family_id == "source_attested_relation"
+                for item in public_candidate.source_lessons))
             identity_lesson = next(
                 item for item in public_candidate.source_lessons
                 if item.family_id == "positive_identity")

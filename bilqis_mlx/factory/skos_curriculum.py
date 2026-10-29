@@ -34,6 +34,9 @@ SOURCE_LESSON_SCHEMA = "bilqis.source-constructive-lesson-proposal/v1"
 SOURCE_LESSON_SET_SCHEMA = "bilqis.source-constructive-lesson-proposal-set/v1"
 LEARNING_UNVERIFIED = "LEARNING_UNVERIFIED"
 SOURCE_PROJECTION_ONLY = "SOURCE_PROJECTION_NOT_AUTHORITY"
+SOURCE_FACT_ARITY = 3
+SOURCE_FACT_PREFIX_ARITY = 2
+SOURCE_FACT_REF_INDEX = 2
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _SEMANTIC_RELATIONS = tuple(sorted(set(SEMANTIC_PREDICATES.values())))
 _SOURCE_TABLES = frozenset({
@@ -660,6 +663,20 @@ class SourceConstructiveLessonSet:
             _fail("BAMF_LESSON_SET_INVALID")
 
 
+def _source_lesson_evidence(
+    obligation: FamilyObligation,
+    positive: tuple[str, ...],
+    contrast: tuple[str, ...],
+) -> str:
+    """Bind each source fact to its A01 family obligation."""
+    return _digest({
+        "schema": "bilqis.source-lesson-evidence/v1",
+        "obligation_sha256": obligation.source_evidence_sha256,
+        "positive_fact": positive,
+        "contrast_fact": contrast,
+    })
+
+
 def _compile_source_constructive_lessons_snapshot(
     atlas: FrozenAtlasSnapshot,
     *, census: SemanticFamilyInventory | None = None,
@@ -703,22 +720,26 @@ def _compile_source_constructive_lessons_snapshot(
             if positive is None:
                 uncovered.append(obligation)
                 continue
-            contrast = next((item for item in relations if item != positive), None)
+            # A second true relation from the queried source is not a
+            # negative example without a separate predicate/target cue.
+            contrast = next(
+                (item for item in relations if item[0] != semantic_id), None)
             if contrast is None:
                 uncovered.append(obligation)
                 continue
             modality = "RELATION_TRIPLE"
             checker = "bilqis.source-checker.attested-relation/v1"
-            constituents = tuple(dict.fromkeys((positive[0], positive[2])))
-            prerequisites = tuple(
-                item for item in constituents if item != semantic_id)
+            constituents = tuple(dict.fromkeys((
+                positive[0], positive[2], contrast[0], contrast[2])))
+            prerequisites = constituents
             axes = ("source-relation", "source-contrast")
         else:
             uncovered.append(obligation)
             continue
         lessons.append(SourceConstructiveLesson(
             atlas.release_sha256, semantic_id, family,
-            obligation.source_evidence_sha256,
+            _source_lesson_evidence(
+                obligation, tuple(positive), tuple(contrast)),
             tuple(positive), tuple(contrast), modality, checker,
             constituents, prerequisites, axes))
     return SourceConstructiveLessonSet(
@@ -749,27 +770,72 @@ def _check_source_constructive_lesson_snapshot(
     lesson: SourceConstructiveLesson, answer: object,
     atlas: FrozenAtlasSnapshot,
 ) -> bool:
-    """Independent source replay; never trust a generator's claimed gold."""
+    """Check against A01 source facts without consulting the lesson generator."""
     if type(lesson) is not SourceConstructiveLesson:
         _fail("BAMF_LESSON_CHECKER_INPUT_INVALID")
-    proposed_bytes = _strict_source_bytes(lesson)
-    verified = _compile_source_constructive_lessons_snapshot(atlas)
+    _strict_source_bytes(lesson)
+    census = _inventory_source_families(atlas)
     matching = tuple(
-        item for item in verified.lessons
+        item for item in census.obligations
         if (item.semantic_id, item.family_id)
         == (lesson.semantic_id, lesson.family_id))
-    if (len(matching) != 1
-            or proposed_bytes != _strict_source_bytes(matching[0])):
+    if (lesson.semantic_release != atlas.release_sha256
+            or len(matching) != 1
+            or lesson.source_evidence_sha256 != _source_lesson_evidence(
+                matching[0], lesson.positive_fact, lesson.contrast_fact)):
         _fail("BAMF_LESSON_SOURCE_EVIDENCE_MISMATCH")
-    if lesson.answer_modality == "SEMANTIC_ID":
+    by_id = {item.semantic_id: item for item in census.concepts}
+    if lesson.family_id == "positive_identity":
+        positive, contrast = lesson.positive_fact, lesson.contrast_fact
+        other = by_id.get(contrast[1]) if len(contrast) == SOURCE_FACT_ARITY else None
+        if (lesson.answer_modality != "SEMANTIC_ID"
+                or lesson.checker_reference != "bilqis.source-checker.identity/v1"
+                or len(positive) != SOURCE_FACT_ARITY
+                or positive[:SOURCE_FACT_PREFIX_ARITY] != (
+                    "identity", lesson.semantic_id)
+                or positive[SOURCE_FACT_REF_INDEX]
+                not in by_id[lesson.semantic_id].source_refs
+                or other is None or contrast[0] != "identity"
+                or contrast[1] == lesson.semantic_id
+                or contrast[SOURCE_FACT_REF_INDEX] not in other.source_refs
+                or lesson.constituents != (lesson.semantic_id,)
+                or lesson.prerequisite_closure != ()
+                or lesson.variation_axes != (
+                    "source-identity", "source-contrast")):
+            _fail("BAMF_LESSON_SOURCE_EVIDENCE_MISMATCH")
         return (type(answer) is str
                 and answer.encode("utf-8")
-                == lesson.positive_fact[1].encode("utf-8"))
-    if lesson.answer_modality == "RELATION_TRIPLE":
+                == lesson.semantic_id.encode("utf-8"))
+    if lesson.family_id == "source_attested_relation":
+        if any(len(fact) != SOURCE_FACT_ARITY
+               or any(type(part) is not str for part in fact)
+               for fact in (lesson.positive_fact, lesson.contrast_fact)):
+            _fail("BAMF_LESSON_SOURCE_EVIDENCE_MISMATCH")
+        eligible = set(census.source_eligible_concept_ids)
+        attested = {
+            (edge.source_semantic_id, edge.predicate, edge.target_semantic_id)
+            for edge in atlas.relations
+            if edge.source_semantic_id in eligible
+            and edge.target_semantic_id in eligible
+            and edge.predicate in _SEMANTIC_RELATIONS}
+        positive, contrast = lesson.positive_fact, lesson.contrast_fact
+        constituents = tuple(dict.fromkeys((
+            positive[0], positive[2], contrast[0], contrast[2])))
+        if (lesson.answer_modality != "RELATION_TRIPLE"
+                or lesson.checker_reference
+                != "bilqis.source-checker.attested-relation/v1"
+                or positive not in attested or contrast not in attested
+                or positive[0] != lesson.semantic_id
+                or contrast[0] == lesson.semantic_id
+                or lesson.constituents != constituents
+                or lesson.prerequisite_closure != constituents
+                or lesson.variation_axes != (
+                    "source-relation", "source-contrast")):
+            _fail("BAMF_LESSON_SOURCE_EVIDENCE_MISMATCH")
         return (type(answer) is tuple
                 and all(type(item) is str for item in answer)
                 and _strict_source_bytes(answer)
-                == _strict_source_bytes(lesson.positive_fact))
+                == _strict_source_bytes(positive))
     _fail("BAMF_LESSON_CHECKER_UNSUPPORTED")
 
 
