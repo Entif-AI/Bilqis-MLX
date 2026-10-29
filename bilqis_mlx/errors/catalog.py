@@ -42,6 +42,16 @@ def _spec(
 
 
 class SCHOOL:
+    class BAMF_AKASHA:
+        INVALID = _spec(
+            ("SCHOOL", "BAMF_AKASHA", "INVALID"),
+            owner="runtime.akasha_outbox",
+            title="BAMF Akasha event or outbox contract invalid",
+            message_template="A source-bound Akasha event or delivery attempt is invalid: {reason}",
+            disposition="PRESERVE_AND_INSPECT",
+            next_action="Keep the append-only history intact; reconcile event identity and source receipts before retry.",
+        )
+
     class BAMF_RESOURCES:
         INVALID = _spec(
             ("SCHOOL", "BAMF_RESOURCES", "INVALID"),
@@ -897,6 +907,7 @@ class FACTORY:
 
 
 CATALOG = (
+    SCHOOL.BAMF_AKASHA.INVALID,
     SCHOOL.BAMF_RESOURCES.INVALID,
     SCHOOL.BAMF_REVALIDATION.INVALID,
     SCHOOL.BAMF_REVALIDATION.PROPAGATION_FAILURE,
