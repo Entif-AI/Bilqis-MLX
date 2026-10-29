@@ -42,6 +42,16 @@ def _spec(
 
 
 class SCHOOL:
+    class BAMF_SOLVER:
+        INVALID = _spec(
+            ("SCHOOL", "BAMF_SOLVER", "INVALID"),
+            owner="runtime.cognitive_solver",
+            title="BAMF cognitive solver route or source binding invalid",
+            message_template="A BAMF cognitive solver route is invalid: {reason}",
+            disposition="PRESERVE_AND_INSPECT",
+            next_action="Retain the source-bound task and generation; reconcile exact operator, cache and neural proposal authority.",
+        )
+
     class BAMF_AKASHA:
         INVALID = _spec(
             ("SCHOOL", "BAMF_AKASHA", "INVALID"),
@@ -950,6 +960,7 @@ class FACTORY:
 
 
 CATALOG = (
+    SCHOOL.BAMF_SOLVER.INVALID,
     SCHOOL.BAMF_AKASHA.INVALID,
     SCHOOL.BAMF_RESOURCES.INVALID,
     SCHOOL.BAMF_REVALIDATION.INVALID,
