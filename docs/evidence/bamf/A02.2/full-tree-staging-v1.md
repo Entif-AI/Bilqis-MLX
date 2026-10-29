@@ -30,3 +30,20 @@ consume this typed candidate under a source-authorized admission
 receipt, preserve rejection and crash/cold-resume state, and publish
 one pointer only after full source/optimizer/retention proof. The
 current historical runtime is not silently switched to BAMF.
+
+## Independent review Major and fail-closed repair
+
+Goldfish worker-25 reproduced a separate full-tree authority
+substitution at c33b08d. The adapter checked exact identity-bank
+weights/moments but accepted a detached shape-valid
+bank_parent.feature_parameters mapping. An injected projection
+could initialize a new row around 50.0 without coming from the
+validated B01 full parameter tree.
+
+The adapter now requires all four A06/B01 factor tensors
+(features.type, features.project_type, features.project_graph and
+features.gates) to be the exact same array objects as the validated
+full B01 tree. The disposable full-model test injects an alternate
+projector and verifies rejection before bank materialization.
+All combined focused tests pass 47/47 with one optional historical
+skip. Independent immutable-head re-review remains pending.

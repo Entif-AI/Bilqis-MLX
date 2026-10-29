@@ -134,6 +134,12 @@ def _verified_prior(prior: VocabularyPrior) -> FrozenAtlasSnapshot:
             or len(prior.generation_id) != 64
             or any(char not in "0123456789abcdef" for char in prior.generation_id)):
         _invalid("BAMF_VOCABULARY_PRIOR_INVALID")
+    # A successor feature-map predecessor must be authenticated by the
+    # accepted generation/checkpoint owner, not by a caller's digest pair.
+    # Until that owner supplies a sealed predecessor receipt, only A01's
+    # source-replayable first-generation map is eligible for this API.
+    if prior.feature_schema.predecessor is not None:
+        _invalid("BAMF_VOCABULARY_PREDECESSOR_FEATURE_AUTHORITY_REQUIRED")
     snapshot = load_pinned_atlas_snapshot(prior.source_selection)
     if build_feature_manifest(snapshot, prior.feature_schema) != prior.features:
         _invalid("BAMF_VOCABULARY_FEATURE_SOURCE_REPLAY_MISMATCH")

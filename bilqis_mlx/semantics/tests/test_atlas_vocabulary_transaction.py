@@ -73,6 +73,16 @@ class AtlasVocabularyTransactionTests(unittest.TestCase):
         ):
             plan = plan_vocabulary_extension(
                 prior, ("urn:concept:8192",), topology)
+            injected = dict(banks.feature_parameters)
+            injected["features.project_type"] = mx.full(
+                (768, 128), 50, dtype=mx.float32)
+            with self.assertRaises(BilqisError) as injected_error:
+                stage_full_vocabulary_extension(
+                    replace(parent, bank_parent=replace(
+                        banks, feature_parameters=injected)), plan)
+            self.assertEqual(
+                injected_error.exception.context["reason"],
+                "BAMF_VOCABULARY_FEATURE_PARAMETER_SLICE_DRIFT")
             with self.assertRaises(BilqisError) as budget:
                 stage_full_vocabulary_extension(
                     replace(parent, observed_available_bytes=0), plan)
