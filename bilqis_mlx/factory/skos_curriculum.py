@@ -6,7 +6,7 @@ A08.1b owns binding constructive lessons and independent checkers to these rows.
 """
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, fields, is_dataclass
 import hashlib
 import json
 import re
@@ -15,7 +15,7 @@ from urllib.parse import urlsplit
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.semantics.atlas_projection import (
     ATLAS_SNAPSHOT_SCHEMA, CorpusCoverageRow, FrozenAtlasConcept,
-    FrozenAtlasRelation, FrozenAtlasSnapshot,
+    FrozenAtlasRelation, FrozenAtlasSnapshot, SourceLocus, SourceRecordRef,
 )
 from bilqis_mlx.semantics.atlas_snapshot import (
     AtlasArtifactSelection, load_pinned_atlas_snapshot,
@@ -65,6 +65,37 @@ def _digest(value: object) -> str:
         value, sort_keys=True, ensure_ascii=False,
         separators=(",", ":"), allow_nan=False,
     ).encode("utf-8")).hexdigest()
+
+
+def _strict_source_primitive(value: object) -> object:
+    """Reject custom equality, dataclass subclasses and tuple subclasses."""
+    if value is None or type(value) in (str, int, bool):
+        return value
+    if type(value) is tuple:
+        return [_strict_source_primitive(item) for item in value]
+    if type(value) is dict:
+        if any(type(key) is not str for key in value):
+            _fail("BAMF_SOURCE_PROPOSAL_NONCANONICAL_TYPE")
+        return {key: _strict_source_primitive(item)
+                for key, item in value.items()}
+    allowed = {
+        CorpusCoverageRow, SourceLocus, SourceRecordRef,
+        ConceptFamilyCoverage, FamilyObligation, FamilyInventoryCounts,
+        SemanticFamilyInventory, SourceFamilyAdapter, LearnedFrontier,
+        CurriculumCandidateSet, SourceConstructiveLesson,
+        SourceConstructiveLessonSet,
+    }
+    if is_dataclass(value) and type(value) in allowed:
+        return {field.name: _strict_source_primitive(getattr(value, field.name))
+                for field in fields(value)}
+    _fail("BAMF_SOURCE_PROPOSAL_NONCANONICAL_TYPE")
+
+
+def _strict_source_bytes(value: object) -> bytes:
+    return (json.dumps(
+        _strict_source_primitive(value), sort_keys=True,
+        ensure_ascii=False, separators=(",", ":"), allow_nan=False,
+    ) + "\n").encode("utf-8")
 
 
 @dataclass(frozen=True)
@@ -390,8 +421,9 @@ def assert_family_inventory_current(
     inventory: SemanticFamilyInventory, atlas: AtlasArtifactSelection,
 ) -> None:
     """A consumer must rederive source truth; the inventory is not a grant."""
-    if (not isinstance(inventory, SemanticFamilyInventory)
-            or inventory != inventory_source_families(atlas)):
+    if (type(inventory) is not SemanticFamilyInventory
+            or _strict_source_bytes(inventory)
+            != _strict_source_bytes(inventory_source_families(atlas))):
         _fail("BAMF_FAMILY_SOURCE_PROJECTION_DRIFT")
 
 
@@ -531,13 +563,14 @@ def compile_semantic_curriculum(
 def assert_curriculum_candidate_current(
     candidate: CurriculumCandidateSet,
     atlas: AtlasArtifactSelection,
-    source_adapters: tuple[SourceFamilyAdapter, ...],
     learned_frontier: LearnedFrontier,
 ) -> None:
-    """No transferable attestation: replay exact A01 and learner claims."""
-    if (not isinstance(candidate, CurriculumCandidateSet)
-            or candidate != compile_semantic_curriculum(
-                atlas, source_adapters, learned_frontier)):
+    """Replay A01 with the code-owned adapter registry, never caller adapters."""
+    if (type(candidate) is not CurriculumCandidateSet
+            or type(learned_frontier) is not LearnedFrontier
+            or _strict_source_bytes(candidate)
+            != _strict_source_bytes(compile_semantic_curriculum(
+                atlas, SOURCE_FAMILY_ADAPTERS, learned_frontier))):
         _fail("BAMF_CANDIDATE_SOURCE_PROJECTION_DRIFT")
 
 
@@ -622,7 +655,10 @@ def _compile_source_constructive_lessons_snapshot(
 ) -> SourceConstructiveLessonSet:
     """Compile only facts provable from A01; other families remain debt."""
     authoritative = _inventory_source_families(atlas)
-    if census is not None and census != authoritative:
+    if (census is not None
+            and (type(census) is not SemanticFamilyInventory
+                 or _strict_source_bytes(census)
+                 != _strict_source_bytes(authoritative))):
         _fail("BAMF_LESSON_CENSUS_DRIFT")
     census = authoritative
     by_id = {item.semantic_id: item for item in census.concepts}
@@ -692,8 +728,9 @@ def assert_source_lesson_set_current(
     atlas: AtlasArtifactSelection,
 ) -> None:
     """Reconstruct source lessons at the consuming boundary, never trust a tag."""
-    if (not isinstance(lessons, SourceConstructiveLessonSet)
-            or lessons != compile_source_constructive_lessons(atlas)):
+    if (type(lessons) is not SourceConstructiveLessonSet
+            or _strict_source_bytes(lessons)
+            != _strict_source_bytes(compile_source_constructive_lessons(atlas))):
         _fail("BAMF_LESSON_SOURCE_PROJECTION_DRIFT")
 
 
@@ -702,10 +739,16 @@ def _check_source_constructive_lesson_snapshot(
     atlas: FrozenAtlasSnapshot,
 ) -> bool:
     """Independent source replay; never trust a generator's claimed gold."""
-    if not isinstance(lesson, SourceConstructiveLesson):
+    if type(lesson) is not SourceConstructiveLesson:
         _fail("BAMF_LESSON_CHECKER_INPUT_INVALID")
+    proposed_bytes = _strict_source_bytes(lesson)
     verified = _compile_source_constructive_lessons_snapshot(atlas)
-    if lesson not in verified.lessons:
+    matching = tuple(
+        item for item in verified.lessons
+        if (item.semantic_id, item.family_id)
+        == (lesson.semantic_id, lesson.family_id))
+    if (len(matching) != 1
+            or proposed_bytes != _strict_source_bytes(matching[0])):
         _fail("BAMF_LESSON_SOURCE_EVIDENCE_MISMATCH")
     if lesson.answer_modality == "SEMANTIC_ID":
         return type(answer) is str and answer == lesson.positive_fact[1]

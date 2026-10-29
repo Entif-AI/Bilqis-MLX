@@ -114,7 +114,39 @@ trusted A01 identity strings fails the consuming assertions.
 
 Real pinned A01 owner suites: **29/29 passed**, zero failures/skips;
 no new static debt. The historical v1 A01 artifact remains unchanged.
-**Fresh independent EGM review of this third repair is pending.**
+The subsequent independent review found the equality-override
+Major documented below.
+
+## Fourth EGM Major: adversarial equality override
+
+Goldfish reviewed `c78bde8` and returned **EGM NOT PASS**, zero
+Blockers and one Major. The source replay assertions still used
+Python dataclass `==` on caller-owned objects. Subclasses
+overriding `__eq__`/`__ne__` could make an eight-concept fake
+inventory, candidate, lesson set or source lesson compare equal
+to the real A01-derived record.
+
+The repair uses **exact root and nested type validation** and
+canonical source-record bytes, never caller-defined equality,
+iteration or deepcopy. The allowed dataclass graph is recursively
+walked with exact built-in tuple/dict/scalar types; subclassed
+records or nested values fail `BAMF_SOURCE_PROPOSAL_NONCANONICAL_TYPE`.
+The independent lesson checker rejects subclasses before
+source replay and compares exact canonical bytes to the
+source-derived lesson. Optional census inputs receive the same
+validation. The consuming curriculum assertion also uses the
+code-owned `SOURCE_FAMILY_ADAPTERS`, not caller-supplied
+adapter declarations.
+
+The real pinned regression now includes adversarial
+`EqAnyInventory`, `EqAnyCandidate`, `EqAnyLessonSet`,
+`EqAnyLesson` and nested equality overrides, alongside
+same-family self-attested A01 repacks and eight-concept
+source-projection drift. **29/29 real owner tests pass**,
+zero failures/skips, with no new static debt. No transferable
+source attestation, A13 rights, learner credit or neural write
+is granted. Fresh independent EGM review of this repair
+remains pending.
 
 ## Rejected alternative
 

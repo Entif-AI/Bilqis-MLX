@@ -1,7 +1,7 @@
 """A08.1a source-family census: literal obligations, holds and no silent debt loss."""
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import fields, replace
 import hashlib
 import json
 import os
@@ -480,7 +480,7 @@ class SemanticFamilyInventoryTests(unittest.TestCase):
             self.assertIsNone(public_curriculum.assert_family_inventory_current(
                 public_census, pin))
             self.assertIsNone(public_curriculum.assert_curriculum_candidate_current(
-                public_candidate, pin, SOURCE_FAMILY_ADAPTERS,
+                public_candidate, pin,
                 LearnedFrontier(snapshot.release_sha256)))
             public_lessons = public_curriculum.compile_source_constructive_lessons(
                 pin)
@@ -498,11 +498,20 @@ class SemanticFamilyInventoryTests(unittest.TestCase):
             with self.assertRaises(BilqisError) as candidate_drift:
                 public_curriculum.assert_curriculum_candidate_current(
                     replace(public_candidate, census=forged_census),
-                    pin, SOURCE_FAMILY_ADAPTERS,
+                    pin,
                     LearnedFrontier(snapshot.release_sha256))
             self.assertEqual(
                 candidate_drift.exception.context["reason"],
                 "BAMF_CANDIDATE_SOURCE_PROJECTION_DRIFT")
+            fake_adapters = (
+                SourceFamilyAdapter("invented_family", all_eligible=True),)
+            with self.assertRaises(BilqisError) as adapter_drift:
+                public_curriculum.compile_semantic_curriculum(
+                    pin, fake_adapters,
+                    LearnedFrontier(snapshot.release_sha256))
+            self.assertEqual(
+                adapter_drift.exception.context["reason"],
+                "BAMF_FAMILY_COMPILER_INPUT_INVALID")
             with self.assertRaises(BilqisError) as lesson_drift:
                 public_curriculum.assert_source_lesson_set_current(
                     replace(public_lessons, lessons=public_lessons.lessons[:8]),
@@ -510,6 +519,68 @@ class SemanticFamilyInventoryTests(unittest.TestCase):
             self.assertEqual(
                 lesson_drift.exception.context["reason"],
                 "BAMF_LESSON_SOURCE_PROJECTION_DRIFT")
+
+            class EqAnyInventory(public_curriculum.SemanticFamilyInventory):
+                def __eq__(self, other):
+                    return True
+                def __ne__(self, other):
+                    return False
+
+            class EqAnyCandidate(public_curriculum.CurriculumCandidateSet):
+                def __eq__(self, other):
+                    return True
+                def __ne__(self, other):
+                    return False
+
+            class EqAnyLessonSet(public_curriculum.SourceConstructiveLessonSet):
+                def __eq__(self, other):
+                    return True
+                def __ne__(self, other):
+                    return False
+
+            class EqAnyLesson(public_curriculum.SourceConstructiveLesson):
+                def __eq__(self, other):
+                    return True
+                def __ne__(self, other):
+                    return False
+
+            def as_subclass(cls, source):
+                return cls(**{
+                    field.name: getattr(source, field.name)
+                    for field in fields(source)})
+
+            evil_inventory = as_subclass(EqAnyInventory, forged_census)
+            evil_candidate = as_subclass(EqAnyCandidate, public_candidate)
+            evil_lessons = as_subclass(EqAnyLessonSet, public_lessons)
+            nested_evil = replace(public_candidate, census=evil_inventory)
+            for action in (
+                    lambda: public_curriculum.assert_family_inventory_current(
+                        evil_inventory, pin),
+                    lambda: public_curriculum.assert_curriculum_candidate_current(
+                        evil_candidate, pin,
+                        LearnedFrontier(snapshot.release_sha256)),
+                    lambda: public_curriculum.assert_curriculum_candidate_current(
+                        nested_evil, pin,
+                        LearnedFrontier(snapshot.release_sha256)),
+                    lambda: public_curriculum.assert_source_lesson_set_current(
+                        evil_lessons, pin)):
+                with self.subTest(equality_override=action):
+                    with self.assertRaises(BilqisError):
+                        action()
+            fake_lesson_fields = {
+                field.name: getattr(identity_lesson, field.name)
+                for field in fields(identity_lesson)}
+            fake_lesson_fields.update({
+                "semantic_id": "urn:invented:NOT-SOURCE",
+                "positive_fact": (
+                    "identity", "urn:invented:NOT-SOURCE", "source:fake")})
+            evil_lesson = EqAnyLesson(**fake_lesson_fields)
+            with self.assertRaises(BilqisError) as evil_checker:
+                public_curriculum.check_source_constructive_lesson(
+                    evil_lesson, "urn:invented:NOT-SOURCE", pin)
+            self.assertEqual(
+                evil_checker.exception.context["reason"],
+                "BAMF_LESSON_CHECKER_INPUT_INVALID")
             for replacement in (
                     ("legacy:cogal.operator.OR",),
                     ("legacy:cogal.operator.OR", "legacy:cogal.operator.XOR")):
