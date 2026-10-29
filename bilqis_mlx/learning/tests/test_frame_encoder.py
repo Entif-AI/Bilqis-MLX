@@ -10,7 +10,9 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.frame_embeddings import (
     ConceptBatch, FeatureRequest, SemanticBankView, embed_atoms,
 )
-from bilqis_mlx.learning.frame_encoder import FrameEncoderInput, encode_frames, frame_encoder_parameter_view
+from bilqis_mlx.learning.frame_encoder import (
+    AtomicEncoderInput, AtomicSourceHandle, FrameEncoderInput, encode_frames, frame_encoder_parameter_view,
+)
 from bilqis_mlx.learning.tests.test_frame_embeddings import _context_for
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes,
@@ -18,7 +20,11 @@ from bilqis_mlx.runtime.model_topology_v2 import (
 from bilqis_mlx.semantics.context_eligibility import (
     frame_evidence_digest, member_evidence_digest, project_context,
 )
-from bilqis_mlx.semantics.frame_schema import ConceptRef, RoleOccurrence, make_frame_instance, FrameSchema, RoleSpec
+from bilqis_mlx.semantics.frame_schema import (
+    ConceptRef, RoleOccurrence, make_frame_instance, FrameSchema, RoleSpec, atomic_fallback,
+)
+from bilqis_mlx.semantics.core import Literal
+from bilqis_mlx.semantics.context_eligibility import ContextMember
 from bilqis_mlx.semantics.tests.test_atlas_features import _features, _snapshot
 from bilqis_mlx.semantics.tests.test_context_eligibility import _case
 
@@ -59,6 +65,20 @@ def _oracle(members, schema, role, parameters):
     pooled = a @ u + (1 / (1 + np.exp(-p["frame.pool_gate"]))) * (a @ v)
     return norm(pooled @ p["frame.project_output"].T +
                 ((schema + role) / 2) @ p["frame.project_summary"].T, "frame.norm")
+
+
+def _atomic_projection():
+    envelopes, task, frontier, policy = _case(count=1)
+    frame = atomic_fallback(Literal(True, "Bool"), source_instance_id="fixture:atomic", structural_path=(),
+                            source_span=envelopes[0].frame.source_span,
+                            parent_occurrence_id=None, causal_prefix_end=8)
+    member = ContextMember("<atomic>", 0, "source:atomic:member", 8)
+    envelope = replace(envelopes[0], frame=frame, members=(member,))
+    evidence = {envelope.source_handle: frame_evidence_digest(frame),
+                member.source_handle: member_evidence_digest(frame, member)}
+    grants = tuple(replace(frontier.grants[0], source_handle=h, evidence_digest=d)
+                   for h, d in sorted(evidence.items()))
+    return project_context((envelope,), task, replace(frontier, grants=grants), policy)
 
 
 class FrameEncoderTests(unittest.TestCase):
@@ -203,6 +223,35 @@ class FrameEncoderTests(unittest.TestCase):
                     {**full, "secret.frame_head": mx.zeros((1,))}):
             with self.assertRaises(BilqisError):
                 frame_encoder_parameter_view(bad, spec=spec, extents=self.extents)
+
+    def test_atomic_fallback_preserves_literal_vector_handles_and_identity_gradient(self):
+        projection = _atomic_projection()
+        handle = AtomicSourceHandle(projection, "frame:0", "source:atomic:member")
+        compiled = AtomicEncoderInput(((handle,),))
+        vector = mx.arange(768, dtype=mx.float32)[None, :]
+        members = ((vector,),)
+        result = encode_frames(compiled, members, self.params)
+        np.testing.assert_array_equal(np.asarray(result.global_seeds), np.arange(768)[None, None, :])
+        self.assertIs(result.members, members)
+        self.assertIs(result.handles, compiled.handles)
+        self.assertEqual(result.features, ((None,),))
+        gradient = mx.grad(lambda x: mx.sum(encode_frames(compiled, ((x,),), {}).global_seeds))(vector)
+        np.testing.assert_array_equal(np.asarray(gradient), np.ones((1, 768)))
+        gradients = mx.grad(lambda p: mx.sum(encode_frames(compiled, members, p).global_seeds))(self.params)
+        self.assertTrue(all(bool(mx.all(value == 0)) for value in gradients.values()))
+
+    def test_atomic_fallback_rejects_nonatomic_or_foreign_handles_and_bad_vectors(self):
+        projection = _atomic_projection()
+        handle = AtomicSourceHandle(projection, "frame:0", "source:atomic:member")
+        for fields in ({"frame_handle": "invented"}, {"member_handle": "invented"},
+                       {"projection": self.inputs()[0].requests[0][0][0].projection}):
+            with self.assertRaises(BilqisError):
+                replace(handle, **fields)
+        compiled = AtomicEncoderInput(((handle,),))
+        for value in (mx.zeros((768,)), mx.zeros((2, 768)), mx.zeros((1, 768), dtype=mx.float16),
+                      mx.full((1, 768), float("nan"))):
+            with self.assertRaises(BilqisError):
+                encode_frames(compiled, ((value,),), {})
 
 
 if __name__ == "__main__":

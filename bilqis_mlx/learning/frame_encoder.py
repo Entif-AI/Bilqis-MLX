@@ -1,8 +1,8 @@
 """B01 frame equations over a provisional, complete concept-member input view.
 
-A05's concrete compiler is not integrated. FrameEncoderInput is a B03 adapter,
-not CompiledFrameBatch or a source-admission credential. Atomic, partial, empty
-and nested inputs require the sibling B03 outcomes and actual compiler receipt.
+A05's concrete compiler is not integrated. Inputs are B03 adapters, not
+CompiledFrameBatch or source-admission credentials. Partial, empty and nested
+assembly require the sibling B03 outcomes and actual compiler receipt.
 """
 from __future__ import annotations
 
@@ -19,12 +19,14 @@ from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes, validate_bamf_parameters,
 )
 from bilqis_mlx.semantics.atlas_features import AtlasFeatures
+from bilqis_mlx.semantics.context_eligibility import ApprovedContextProjection
+from bilqis_mlx.semantics.frame_schema import AtomicFrame
 
 
 WIDTH = ModelTopologySpecV2.width
 INNER = 192
 INPUT_SCHEMA = "bilqis.mlx.frame-encoder-input/provisional-v1"
-OUTPUT_SCHEMA = "bilqis.mlx.frame-encoding/v1"
+OUTPUT_SCHEMA = "bilqis.mlx.frame-encoding/v2"
 
 
 def _invalid():
@@ -64,11 +66,53 @@ class FrameEncoderInput:
 
 
 @dataclass(frozen=True)
+class AtomicSourceHandle:
+    """One existing A13 atomic frame/member pair, without invented factors."""
+
+    projection: ApprovedContextProjection
+    frame_handle: str
+    member_handle: str
+
+    def __post_init__(self):
+        if type(self.projection) is not ApprovedContextProjection:
+            _invalid()
+        source = next((item for item in self.projection.envelopes
+                       if item.frame_handle == self.frame_handle), None)
+        if (source is None or type(source.frame) is not AtomicFrame or len(source.members) != 1 or
+                source.members[0].source_handle != self.member_handle or
+                source.members[0].key != ("<atomic>", 0)):
+            _invalid()
+
+
+@dataclass(frozen=True)
+class AtomicEncoderInput:
+    """Provisional rows of A13 atomic positions; no partial-prefix claim."""
+
+    handles: tuple[tuple[AtomicSourceHandle, ...], ...]
+    schema_version: str = "bilqis.mlx.atomic-encoder-input/provisional-v1"
+
+    def __post_init__(self):
+        if (self.schema_version != "bilqis.mlx.atomic-encoder-input/provisional-v1" or
+                type(self.handles) is not tuple or not self.handles or
+                type(self.handles[0]) is not tuple or not self.handles[0]):
+            _invalid()
+        for row in self.handles:
+            if (type(row) is not tuple or len(row) != len(self.handles[0]) or
+                    any(type(item) is not AtomicSourceHandle for item in row)):
+                _invalid()
+            for item in row:
+                item.__post_init__()
+            if (any(item.projection.digest != row[0].projection.digest for item in row) or
+                    len({item.frame_handle for item in row}) != len(row)):
+                _invalid()
+
+
+@dataclass(frozen=True)
 class FrameEncoding:
     global_seeds: mx.array
     members: tuple[tuple[mx.array, ...], ...]
-    handles: tuple[tuple[tuple[FeatureRequest, ...], ...], ...]
-    features: tuple[tuple[FrameFactorTerms, ...], ...]
+    handles: tuple[tuple[tuple[FeatureRequest, ...], ...], ...] | tuple[tuple[AtomicSourceHandle, ...], ...]
+    features: tuple[tuple[FrameFactorTerms | None, ...], ...]
     schema_version: str = OUTPUT_SCHEMA
 
 
@@ -102,16 +146,30 @@ def _encode_one(members, factors, parameters):
                  summary @ parameters["frame.project_summary"].T, parameters["frame.norm"])
 
 
-def encode_frames(compiled: FrameEncoderInput, atom_vectors: tuple[tuple[mx.array, ...], ...],
+def _validate_vectors(atom_vectors, counts):
+    if (type(atom_vectors) is not tuple or len(atom_vectors) != len(counts) or
+            any(type(row) is not tuple or len(row) != len(count_row)
+                for row, count_row in zip(atom_vectors, counts))):
+        _invalid()
+    for row, count_row in zip(atom_vectors, counts):
+        for members, count in zip(row, count_row):
+            if (not isinstance(members, mx.array) or members.shape != (count, WIDTH) or
+                    members.dtype != mx.float32 or not bool(mx.all(mx.isfinite(members)))):
+                _invalid()
+
+
+def encode_frames(compiled: FrameEncoderInput | AtomicEncoderInput, atom_vectors: tuple[tuple[mx.array, ...], ...],
                   parameters: Mapping[str, mx.array]) -> FrameEncoding:
-    """Encode complete unmasked groups without detaching or replacing members."""
-    if type(compiled) is not FrameEncoderInput or not isinstance(parameters, Mapping):
+    """Encode complete groups or preserve approved atomic vectors without detaching."""
+    if type(compiled) not in (FrameEncoderInput, AtomicEncoderInput) or not isinstance(parameters, Mapping):
         _invalid()
     compiled.__post_init__()
-    if (type(atom_vectors) is not tuple or len(atom_vectors) != len(compiled.requests) or
-            any(type(row) is not tuple or len(row) != len(request_row)
-                for row, request_row in zip(atom_vectors, compiled.requests))):
-        _invalid()
+    if type(compiled) is AtomicEncoderInput:
+        _validate_vectors(atom_vectors, tuple(tuple(1 for _ in row) for row in compiled.handles))
+        seeds = mx.stack([mx.stack([members[0] for members in row]) for row in atom_vectors])
+        return FrameEncoding(seeds, atom_vectors, compiled.handles,
+                             tuple(tuple(None for _ in row) for row in compiled.handles))
+    _validate_vectors(atom_vectors, tuple(tuple(len(group) for group in row) for row in compiled.requests))
     declarations = tuple(item for item in expected_bamf_shapes(ModelTopologySpecV2(), compiled.extents)
                          if item.name.startswith(("frame.", "features.")))
     if ({name for name in parameters if name.startswith(("frame.", "features."))} !=
@@ -121,13 +179,7 @@ def encode_frames(compiled: FrameEncoderInput, atom_vectors: tuple[tuple[mx.arra
         tensor = parameters[item.name]
         if not isinstance(tensor, mx.array) or tensor.shape != item.shape or tensor.dtype != mx.float32:
             _invalid()
-    for row, requests in zip(atom_vectors, compiled.requests):
-        for members, group in zip(row, requests):
-            if (not isinstance(members, mx.array) or members.shape != (len(group), WIDTH) or
-                    members.dtype != mx.float32):
-                _invalid()
-    values = tuple(parameters[item.name] for item in declarations) + tuple(
-        members for row in atom_vectors for members in row)
+    values = tuple(parameters[item.name] for item in declarations)
     if not all(bool(mx.all(mx.isfinite(value))) for value in values):
         _invalid()
     factors = tuple(tuple(frame_factor_terms(parameters, group, compiled.features, extents=compiled.extents)
