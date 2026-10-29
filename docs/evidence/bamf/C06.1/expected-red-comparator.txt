@@ -1,0 +1,50 @@
+test_closed_outcome_only_expectation_is_a_comparable_missing_report (_bilqis_test_928d966f5db0e892379cfd2b95de9a76e79839ec153f324165290ce3ae78604c.AtlasSalienceTests.test_closed_outcome_only_expectation_is_a_comparable_missing_report) ... ERROR
+test_comparable_novelty_and_causal_visibility (_bilqis_test_928d966f5db0e892379cfd2b95de9a76e79839ec153f324165290ce3ae78604c.AtlasSalienceTests.test_comparable_novelty_and_causal_visibility) ... ok
+test_dispatch_tiers_holds_age_and_stable_id_are_not_weighted_scores (_bilqis_test_928d966f5db0e892379cfd2b95de9a76e79839ec153f324165290ce3ae78604c.AtlasSalienceTests.test_dispatch_tiers_holds_age_and_stable_id_are_not_weighted_scores) ... ok
+test_literal_rule_boundaries_required_facts_and_policy_rejection (_bilqis_test_928d966f5db0e892379cfd2b95de9a76e79839ec153f324165290ce3ae78604c.AtlasSalienceTests.test_literal_rule_boundaries_required_facts_and_policy_rejection) ... ok
+test_missing_and_explicit_unknown_remain_distinct (_bilqis_test_928d966f5db0e892379cfd2b95de9a76e79839ec153f324165290ce3ae78604c.AtlasSalienceTests.test_missing_and_explicit_unknown_remain_distinct) ... ok
+test_negative_report_without_expectation_basis_is_unlabelled (_bilqis_test_928d966f5db0e892379cfd2b95de9a76e79839ec153f324165290ce3ae78604c.AtlasSalienceTests.test_negative_report_without_expectation_basis_is_unlabelled) ... FAIL
+test_signed_metric_rules_and_expectation_comparison (_bilqis_test_928d966f5db0e892379cfd2b95de9a76e79839ec153f324165290ce3ae78604c.AtlasSalienceTests.test_signed_metric_rules_and_expectation_comparison) ... ok
+test_source_family_authority_and_label_renaming_boundaries (_bilqis_test_928d966f5db0e892379cfd2b95de9a76e79839ec153f324165290ce3ae78604c.AtlasSalienceTests.test_source_family_authority_and_label_renaming_boundaries) ... ok
+test_sparse_fp32_logits_use_all_six_normative_tensors (_bilqis_test_928d966f5db0e892379cfd2b95de9a76e79839ec153f324165290ce3ae78604c.AtlasSalienceTests.test_sparse_fp32_logits_use_all_six_normative_tensors) ... ok
+
+======================================================================
+ERROR: test_closed_outcome_only_expectation_is_a_comparable_missing_report (_bilqis_test_928d966f5db0e892379cfd2b95de9a76e79839ec153f324165290ce3ae78604c.AtlasSalienceTests.test_closed_outcome_only_expectation_is_a_comparable_missing_report)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/learning/tests/test_atlas_salience.py", line 275, in test_closed_outcome_only_expectation_is_a_comparable_missing_report
+    evidence = _derive((_fact(Metric.NOVELTY_COMPARISON, missing, policy, observed_at=80),), policy)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/learning/tests/test_atlas_salience.py", line 70, in _derive
+    return derive_salience(verify_salience_inputs(tuple(facts), policy, snapshot, context))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/learning/atlas_salience.py", line 66, in verify_salience_inputs
+    return VerifiedSalienceInputs(raw_facts, policy, authority_snapshot, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in __init__
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/learning/atlas_salience.py", line 57, in __post_init__
+    _verify_inputs(self.facts, self.policy, self.snapshot, self.context)
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/learning/atlas_salience.py", line 46, in _verify_inputs
+    _invalid("BAMF_SALIENCE_EXPECTATION_CAUSALITY_INVALID")
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/learning/salience_contracts.py", line 15, in _invalid
+    ErrorBus.raise_(SCHOOL.BAMF_SALIENCE.INVALID, reason=reason)
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/errors/bus.py", line 20, in raise_
+    ErrorBus.Raise(spec, **context)
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/errors/bus.py", line 15, in Raise
+    raise BilqisError(spec, context)
+bilqis_mlx.errors.model.BilqisError: SCHOOL.BAMF_SALIENCE.INVALID
+
+======================================================================
+FAIL: test_negative_report_without_expectation_basis_is_unlabelled (_bilqis_test_928d966f5db0e892379cfd2b95de9a76e79839ec153f324165290ce3ae78604c.AtlasSalienceTests.test_negative_report_without_expectation_basis_is_unlabelled)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/learning/tests/test_atlas_salience.py", line 268, in test_negative_report_without_expectation_basis_is_unlabelled
+    self.assertEqual(evidence.novelty.ordinal, Ordinal.UNKNOWN)
+AssertionError: <Ordinal.LOW: 1> != <Ordinal.UNKNOWN: 0>
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.079s
+
+FAILED (failures=1, errors=1)
+TEST_TOTALS total=9 passed=7 failed=2 skipped=0 errors=1
+7 passed, 2 failed, 0 skipped

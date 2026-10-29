@@ -26,7 +26,7 @@ The exact regular `.DS_Store` file created by Finder inside a bundles directory 
 
 The disk size discrepancy arose from ignored checkpoint histories inside isolated worktrees, not their tracked source. The two experimental runs initially occupied roughly **12.66 GiB** together; the original saved canonical run another **5.95 GiB**. The new canonical copy adds an independently verified current lineage to that inventory rather than magically reclaiming the historical storage. Actual disk recovery requires verified external backup followed by separately authorized retirement.
 
-At the last drive inspection, `/Volumes/Disk Inventory Y` was an **11 MiB, read-only disk image**, unsuitable for model archiving. No other large writable external drive was identified. Do not infer permission to use a drive from its mount name, and do not delete unique historical checkpoints or their receipts until a verified copy exists. The previously prepared `scripts/relocate_legacy_worktrees.py` can organize a fixed allowlist of old worktrees reversibly after checking for live users; it does not free disk space when the destination is on the same volume.
+At the last drive inspection, `/Volumes/Disk Inventory Y` was an **11 MiB, read-only disk image**, unsuitable for model archiving. No other large writable external drive was identified. Do not infer permission to use a drive from its mount name, and do not delete unique historical checkpoints or their receipts until a verified copy exists. The previously prepared `scripts/operations/relocate_legacy_worktrees.py` can organize a fixed allowlist of old worktrees reversibly after checking for live users; it does not free disk space when the destination is on the same volume.
 
 ## Release checks
 

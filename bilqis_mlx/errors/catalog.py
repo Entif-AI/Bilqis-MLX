@@ -42,6 +42,26 @@ def _spec(
 
 
 class SCHOOL:
+    class BAMF_ATLAS_ADMISSION:
+        INVALID = _spec(
+            ("SCHOOL", "BAMF_ATLAS_ADMISSION", "INVALID"),
+            owner="runtime.atlas_admission",
+            title="BAMF Atlas lease or admission boundary invalid",
+            message_template="BAMF Atlas admission is invalid: {reason}",
+            disposition="STAGE_AND_INSPECT",
+            next_action="Keep the retained run unchanged; reconcile explicit human authorization, source rights and exact successor custody.",
+        )
+
+    class BAMF_SALIENCE:
+        INVALID = _spec(
+            ("SCHOOL", "BAMF_SALIENCE", "INVALID"),
+            owner="learning.atlas_salience",
+            title="BAMF salience evidence or policy invalid",
+            message_template="BAMF salience evidence is invalid: {reason}",
+            disposition="PRESERVE_AND_INSPECT",
+            next_action="Preserve the signed facts and source frontier; reconcile policy, scope and causal evidence.",
+        )
+
     class BAMF_CAPABILITY_EVIDENCE:
         INVALID = _spec(
             ("SCHOOL", "BAMF_CAPABILITY_EVIDENCE", "INVALID"),
@@ -60,6 +80,44 @@ class SCHOOL:
             message_template="A BAMF cognitive solver route is invalid: {reason}",
             disposition="PRESERVE_AND_INSPECT",
             next_action="Retain the source-bound task and generation; reconcile exact operator, cache and neural proposal authority.",
+        )
+
+    class BAMF_AKASHA:
+        INVALID = _spec(
+            ("SCHOOL", "BAMF_AKASHA", "INVALID"),
+            owner="runtime.akasha_outbox",
+            title="BAMF Akasha event or outbox contract invalid",
+            message_template="A source-bound Akasha event or delivery attempt is invalid: {reason}",
+            disposition="PRESERVE_AND_INSPECT",
+            next_action="Keep the append-only history intact; reconcile event identity and source receipts before retry.",
+        )
+
+    class BAMF_RESOURCES:
+        INVALID = _spec(
+            ("SCHOOL", "BAMF_RESOURCES", "INVALID"),
+            owner="runtime.atlas_resources",
+            title="BAMF resource plan or gradient boundary invalid",
+            message_template="A BAMF resource or optimizer-step contract is invalid: {reason}",
+            disposition="PRESERVE_AND_INSPECT",
+            next_action="Keep the retained candidate unchanged; reconcile the exact source rows, topology, budget and gradient receipt.",
+        )
+
+    class BAMF_REVALIDATION:
+        INVALID = _spec(
+            ("SCHOOL", "BAMF_REVALIDATION", "INVALID"),
+            owner="runtime.atlas_revalidation",
+            title="BAMF correction dependency or revalidation invalid",
+            message_template="A source-bound correction or derived artifact is not safe to use: {reason}",
+            disposition="PRESERVE_AND_INSPECT",
+            next_action="Hold the affected artifact and reconcile its source-owned evidence before reuse.",
+        )
+        PROPAGATION_FAILURE = _spec(
+            ("SCHOOL", "BAMF_REVALIDATION", "PROPAGATION_FAILURE"),
+            owner="runtime.atlas_temporal_revalidation",
+            title="Correction remediation failed to prevent stale replay",
+            message_template="Superseded source evidence reappeared after remediation: {reason}",
+            disposition="REQUALIFICATION_REQUIRED",
+            next_action="Hold the affected lineage, preserve the original source and remediation receipts, then require fresh source-grounded requalification.",
         )
 
     class BAMF_TEACHER:
@@ -932,8 +990,14 @@ class FACTORY:
 
 
 CATALOG = (
+    SCHOOL.BAMF_ATLAS_ADMISSION.INVALID,
+    SCHOOL.BAMF_SALIENCE.INVALID,
     SCHOOL.BAMF_CAPABILITY_EVIDENCE.INVALID,
     SCHOOL.BAMF_SOLVER.INVALID,
+    SCHOOL.BAMF_AKASHA.INVALID,
+    SCHOOL.BAMF_RESOURCES.INVALID,
+    SCHOOL.BAMF_REVALIDATION.INVALID,
+    SCHOOL.BAMF_REVALIDATION.PROPAGATION_FAILURE,
     SCHOOL.BAMF_TEACHER.INVALID,
     SCHOOL.BAMF_TRAINING_ADAPTER.INVALID,
     SCHOOL.BAMF_WORKSTACK.INPUT_INVALID,

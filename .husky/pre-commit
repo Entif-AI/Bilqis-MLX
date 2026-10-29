@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+set -eu
+
+git diff --cached --check
+python3 -B scripts/check_module_size.py --staged
+python3 -B scripts/quality/check_governance_integrity.py --staged
+python3 -B scripts/code_smell_audit.py --staged --check-baseline docs/evidence/development/code_smell_baseline.json

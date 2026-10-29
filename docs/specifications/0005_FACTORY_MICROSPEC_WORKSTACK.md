@@ -83,7 +83,7 @@ details from the leaf spec. Readiness is graph state, not issue prose.
 The two hashes bind the index to the exact desired-state and execution contracts;
 an execution-ready run fails closed when either bound artifact has drifted.
 
-`scripts/check_factory_workstack.py` validates the manifest with Python stdlib
+`scripts/bamf/check_factory_workstack.py` validates the manifest with Python stdlib
 `graphlib.TopologicalSorter`. No third-party DAG dependency is permitted for this
 control plane.
 
