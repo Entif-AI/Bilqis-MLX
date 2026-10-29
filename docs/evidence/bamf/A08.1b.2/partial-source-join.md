@@ -73,10 +73,26 @@ The output is explicitly
 The bounded source/lesson owner suites use the real pinned A01
 corpus and literal A07/A13 grant fixtures:
 `test_formal_constructive.py` plus `test_formal_lessons.py`,
-**10 passed, 0 failed, 0 skipped**. Independent EGM is pending.
+**12 passed, 0 failed, 0 skipped** after the canonicality
+repair. Independent EGM is pending.
 
 This is still **partial A08.1b.2**: Factory
 `ConstructionProgram` registration, broader exercised variation
 coverage, final A13.1/A07.2 receipt crosswalk and downstream
 admission remain separate gates. Do not close #554 or A08.1b
 on the strength of these task-scoped proposals alone.
+
+## Independent review repair: canonical TypedValue validation
+
+Goldfish worker-11 reviewed immutable `3b0004c` and found one
+Major: a caller could mutate a frozen `EntitySet` into duplicate
+or out-of-order values, reissue the matching A13 evidence grant,
+and have a noncanonical COUNT example accepted. A mutated
+`TypedValue.schema_version` also passed.
+
+The new `_typed_exact` gate now checks the released TypedValue
+schema, exact release/handle/value types and canonical sorted,
+unique EntitySet invariants on every public construction and
+checker invocation, before A07/A13 replay. Both adversaries
+are covered by failing-before regressions. The first review is
+not treated as PASS; a fresh immutable-head re-review is pending.

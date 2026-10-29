@@ -131,6 +131,50 @@ def _selection():
 
 
 class FormalLessonTests(unittest.TestCase):
+    def test_mutated_entity_set_cannot_be_reauthorized_by_new_grant(self):
+        for malformed in (("alpha", "alpha"), ("beta", "alpha")):
+            with self.subTest(malformed=malformed):
+                binding, inputs = _case(
+                    "COUNT", ("EntitySet", ("alpha", "beta")))
+                object.__setattr__(inputs[0], "value", malformed)
+                operand = binding.operands[0]
+                grants = tuple(
+                    replace(grant, evidence_digest=source_operand_digest(operand))
+                    if grant.source_handle == inputs[0].source_handle else grant
+                    for grant in binding.frontier.grants)
+                binding = replace(
+                    binding, frontier=replace(binding.frontier, grants=grants))
+                with patch(
+                        "bilqis_mlx.factory.formal_lessons."
+                        "resolve_formal_source_operators",
+                        return_value=_source()):
+                    with self.assertRaises(BilqisError) as caught:
+                        construct_formal_lesson(
+                            _selection(), FORMAL[2][0], inputs, binding)
+                self.assertEqual(
+                    caught.exception.context["reason"],
+                    "BAMF_FORMAL_LESSON_INPUT_INVALID")
+
+    def test_mutated_typed_schema_cannot_be_reauthorized(self):
+        binding, inputs = _case("SUCC", ("Number", 2))
+        object.__setattr__(inputs[0], "schema_version", "forged/v9")
+        grants = tuple(
+            replace(grant, evidence_digest=source_operand_digest(
+                binding.operands[0]))
+            if grant.source_handle == inputs[0].source_handle else grant
+            for grant in binding.frontier.grants)
+        binding = replace(
+            binding, frontier=replace(binding.frontier, grants=grants))
+        with patch(
+                "bilqis_mlx.factory.formal_lessons.resolve_formal_source_operators",
+                return_value=_source()):
+            with self.assertRaises(BilqisError) as caught:
+                construct_formal_lesson(
+                    _selection(), FORMAL[3][0], inputs, binding)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_FORMAL_LESSON_INPUT_INVALID")
+
     def test_numeric_contrast_requires_another_source_admitted_value(self):
         binding, inputs = _case("COUNT", ("EntitySet", ("alpha", "beta")))
         single = replace(

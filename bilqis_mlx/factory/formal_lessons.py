@@ -12,7 +12,8 @@ import re
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.cognitive_operators import (
-    OperatorBinding, OperatorRegistry, SourceOperand, TypedValue, ValueState, execute_pure,
+    OperatorBinding, OperatorRegistry, SourceOperand, TypedValue, ValueState,
+    VALUE_SCHEMA, execute_pure,
     operator_grant_digest, source_operand_digest,
 )
 from bilqis_mlx.semantics.context_eligibility import (
@@ -43,11 +44,14 @@ def _typed_exact(value: object) -> bool:
     if (type(value) is not TypedValue
             or type(value.type_name) is not str
             or type(value.semantic_release) is not str
+            or not _SHA.fullmatch(value.semantic_release)
             or type(value.state) is not ValueState
             or value.state is not ValueState.VALUE
             or (value.source_handle is not None
-                and type(value.source_handle) is not str)
-            or type(value.schema_version) is not str):
+                and (type(value.source_handle) is not str
+                     or not value.source_handle))
+            or type(value.schema_version) is not str
+            or value.schema_version != VALUE_SCHEMA):
         return False
     if value.type_name == "Boolean":
         return type(value.value) is bool
@@ -55,7 +59,9 @@ def _typed_exact(value: object) -> bool:
         return type(value.value) is int
     if value.type_name == "EntitySet":
         return (type(value.value) is tuple
-                and all(type(item) is str for item in value.value))
+                and all(type(item) is str and bool(item)
+                        for item in value.value)
+                and value.value == tuple(sorted(set(value.value))))
     return False
 
 
