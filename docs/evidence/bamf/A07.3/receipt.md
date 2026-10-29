@@ -9,7 +9,9 @@
   at `819a653` with final receipt `9232a42`
 - Current pushed implementation head:
   `6b7f4daaf89293f5a12a1381e016d01e877128f4`
-- Independent EGM: **PENDING**
+- Independent EGM: **PASS**, zero Blockers/Majors at
+  immutable `6b7f4da`; independent 48/48 test execution
+  recorded on issue #415 (comment `6489015092`).
 
 ## Source-qualified API
 
@@ -115,8 +117,9 @@ Negative tests now cover unauthorized alternative
 ambiguity, revoked/missing internal knowledge,
 frame-content drift, two-hole applicability, candidate
 fanout and a counting memo on budget exhaustion.
-The current source and tests are pushed. Full independent
-immutable-head EGM re-review remains **PENDING**.
+The current source and tests were pushed. At this
+intermediate checkpoint full independent immutable-head
+EGM re-review remained **PENDING**; final PASS is below.
 The pinned EGM checkout is available at
 `../bamf02-egm-b3a359` with verified SHA
 `b3a35956759bf7f024af2ff061b2e0b44b438e4c`.
@@ -136,4 +139,21 @@ executor-computed value witness. Negative tests prove
 unique DIV(4,2) among four typed combinations and
 recompute ADD(2,3)=5 after a caller inserts a forged
 cache value 7. Focused suite **48/48 passed**.
-Final independent immutable-head EGM is still pending.
+At this repair checkpoint final independent immutable-head
+EGM was still pending; the final disposition is below.
+
+## Final review and integration receipt
+
+Independent Goldfish reviewed immutable
+`6b7f4daaf89293f5a12a1381e016d01e877128f4`
+and executed **48/48** owner tests, with zero remaining
+Blockers/Majors. Review: issue #415 comment `6489015092`.
+
+The reviewed receipt head
+`fadbe684140220776f906627a1c4ec28b41ba216`
+is the exact second parent of human-approved unified
+merge `6b5460032fc0b19115843cce95fe8be9582af141`
+through PR #551. Integration receipt: issue #415
+comment `6489034037`. This closes the A07.3 leaf
+review/integration gate, not the separate A07 parent
+acceptance or live neural training.
