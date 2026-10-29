@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from bilqis_mlx.errors import ErrorBus, SOURCE
+from .capability_authority import evaluate_progression_authority
 from .capability_retention import (
     candidate_work_disposition, configuration_outcome, retain_candidate,
 )

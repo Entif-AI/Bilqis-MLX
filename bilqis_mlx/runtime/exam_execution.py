@@ -23,6 +23,7 @@ import bilqis_mlx.runtime.reconciliation as _runtime_reconciliation
 import bilqis_mlx.runtime.state as _runtime_state
 import bilqis_mlx.source_adapters.school as _source_adapters_school
 from .capability_retention import evaluate_capabilities
+from .capability_evidence_history import freeze_assessment, translate_history
 
 import dataclasses as _dataclasses
 
