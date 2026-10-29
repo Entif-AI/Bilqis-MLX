@@ -23,7 +23,7 @@ CANDIDATE = "b" * 64
 def _cases(capability, group, count, prefix):
     cases, contexts = [], {}
     for index in range(count):
-        left, right = index // 3 + 1, index % 3 + 1
+        left, right = (index // 3) % 4 + 1, index % 3 + 1
         binding, values = _case(("Number", left), ("Number", right))
         node = DAGNode("answer", None, tuple(_literal(v) for v in values),
                        "Number", SCOPE, candidate_operator_ids=("ADD", "SUB"))
@@ -86,7 +86,7 @@ def _rescore(pair, before, after):
     contexts = {}
     for case in pair.parent.cohort.cases:
         index = int(case.case_id.rsplit(":", 1)[1])
-        contexts[case.case_id] = _case(("Number", index // 3 + 1),
+        contexts[case.case_id] = _case(("Number", (index // 3) % 4 + 1),
                                      ("Number", index % 3 + 1))[0]
     def selected(counts):
         result = set()
