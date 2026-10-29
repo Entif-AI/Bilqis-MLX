@@ -22,7 +22,7 @@ from bilqis_mlx.semantics.context_eligibility import (
     SourceFrontier, SourceGrant, TaskScope, frame_evidence_digest,
     member_evidence_digest,
 )
-from bilqis_mlx.semantics.core import literal
+from bilqis_mlx.semantics.core import Operation, Signature, literal
 from bilqis_mlx.semantics.domains import (
     FiniteDomain, SourceBinding, ValueCodec,
 )
@@ -246,6 +246,20 @@ class CognitiveOperatorsTests(unittest.TestCase):
             self.assertEqual(
                 default_registry(RELEASE).resolve(name).source_reference,
                 "public-formal-law:" + name)
+
+    def test_new_native_registry_member_cannot_redirect_formal_law_execution(self):
+        binding, values = _case(("Number", 5), ("Number", 3))
+        injected = Operation(
+            9999, "MOD", Signature(("Number", "Number"), "Number"),
+            "0" * 64)
+        with patch.dict(released_numeric.OPERATIONS, {"MOD": injected}):
+            with patch.object(
+                    released_numeric, "calculate",
+                    side_effect=AssertionError("native MOD path reached")):
+                self.assertEqual(execute_pure("MOD", values, binding).value, 2)
+                self.assertEqual(
+                    binding.registry.resolve("MOD").source_reference,
+                    "public-formal-law:MOD")
 
     def test_numeric_inapplicability_does_not_hide_contract_drift(self):
         binding, values = _case(("Number", 2), ("Number", 3))

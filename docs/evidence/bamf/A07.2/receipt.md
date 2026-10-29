@@ -67,3 +67,23 @@ The existing evaluator-owned source memo tests remain green.
 A07.3 owns bounded execution receipts, complete memo keys and
 compositional typed DAG nodes. A07 parent and PR #546
 integration remain open; no live training or merge occurred.
+
+## 2026-10-28 independent review repair: native/formal dispatch drift
+
+Goldfish inspected immutable `2aa6d12` and reproduced one
+Major: a newly inserted native numeric MOD operation could
+redirect the separately source-granted formal-law MOD path
+through the native evaluator without changing the operator's
+declared source contract. The repair dispatches native
+execution only for the explicitly native-owned
+`_NATIVE_NUMERIC` set already used by source-contract
+resolution, never by mutable registry membership.
+
+The adversarial regression injects MOD into the live numeric
+operation registry, traps `released_numeric.calculate`,
+and proves formal-law MOD still returns 5 mod 3 = 2
+without calling the native path. Cognitive tests now
+**23 passed, 0 failed, 0 skipped**; cumulative A07.2
+source/numeric/frame suites **47 passed, 0 failed,
+1 optional real-Atlas skip**. Fresh immutable-head
+independent re-review is required before EGM PASS.

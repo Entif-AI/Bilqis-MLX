@@ -459,7 +459,7 @@ def _compute(operator_id: str, values: tuple[object, ...],
         return Duration(quantity.numerator, quantity.denominator, target)
     if operator_id == "COUNT":
         return len(values[0])
-    if operator_id in released_numeric.OPERATIONS and operator_id != "COUNT":
+    if operator_id in _NATIVE_NUMERIC:
         try:
             expression = released_numeric.calculate(
                 operator_id, *(released_numeric.number(value) for value in values))
