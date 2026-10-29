@@ -97,3 +97,10 @@ integration are also separate gates.
 
 Latest combined B01/B04/B05 native MLX owner preflight:
 **41 passed, 0 failed, 2 optional witness skips**.
+
+Performance caveat before live integration: fail-closed finite
+validation currently batches tensor predicates into one MLX
+evaluation barrier per selector call. This is a correctness
+witness, not a measured training-throughput claim. B05.2/B13
+integration must place the check at a suitable trusted
+boundary or prove the barrier cost acceptable.
