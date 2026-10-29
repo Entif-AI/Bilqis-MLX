@@ -73,6 +73,36 @@ entrypoint. The original v1 artifact identity is preserved. The
 expanded real-corpus tests now reject both self-attested repack forms.
 **Fresh independent immutable-head re-review remains required.**
 
+## Second EGM Major: unverified helper authority separation
+
+Goldfish independently reviewed `f8b90c1` and returned **EGM NOT
+PASS**, zero Blockers and one Major. Although public entrypoints
+reloaded the pinned artifact correctly, four raw-snapshot helpers
+could still emit the same authoritative schemas from a caller-forged
+snapshot bearing the trusted A01 identity strings. The reviewer
+reproduced an eight-concept fake census and a true checker result
+under those strings.
+
+The repair now distinguishes source *projection* from source
+*attestation* mechanically. Raw-snapshot helpers emit only
+`UNVERIFIED_SOURCE_PROJECTION` records with separate unverified
+schema IDs. Their checker returns a typed
+`UnverifiedSourceFactCheck`, whose implicit Boolean conversion
+fails closed. Public A08 entrypoints reload the independently
+registry-pinned artifact, then issue distinct
+`A01_PINNED_SOURCE_ATTESTED` census/candidate/lesson schemas.
+Public checking requires an attested lesson and rechecks the
+underlying source, never accepting a fixture result as authorization.
+
+The exact reviewer attack is a regression: an eight-concept fake
+snapshot with all three trusted A01 identity strings still produces
+only unverified schemas, and its fact-check result cannot be used as
+a Boolean. Public consumers reject raw snapshots, unverified lessons,
+and forged census inputs. The real pinned A01 owner suites now pass
+**29/29**, zero failures/skips. This is source attestation only,
+not live A13 rights or neural admission. Fresh EGM review of this
+second repair is still required.
+
 ## Rejected alternative
 
 Adding a new `release.json` to the existing content-addressed

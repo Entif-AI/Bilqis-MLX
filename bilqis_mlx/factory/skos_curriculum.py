@@ -6,7 +6,7 @@ A08.1b owns binding constructive lessons and independent checkers to these rows.
 """
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 import hashlib
 import json
 import re
@@ -25,14 +25,22 @@ from lib.ithkuil.src.skos.relations import SEMANTIC_PREDICATES
 
 
 FAMILY_INVENTORY_SCHEMA = "bilqis.semantic-family-inventory/v1"
+FAMILY_INVENTORY_UNVERIFIED_SCHEMA = "bilqis.semantic-family-inventory-unverified/v1"
 FAMILY_OBLIGATION_SCHEMA = "bilqis.semantic-family-obligation/v1"
 FAMILY_CONCEPT_SCHEMA = "bilqis.semantic-family-concept/v1"
 FAMILY_RULE_SCHEMA = "bilqis.semantic-family-source-rule/v1"
 CURRICULUM_CANDIDATE_SCHEMA = "bilqis.semantic-curriculum-candidates/v1"
+CURRICULUM_CANDIDATE_UNVERIFIED_SCHEMA = (
+    "bilqis.semantic-curriculum-candidates-unverified/v1")
 LEARNED_FRONTIER_SCHEMA = "bilqis.semantic-learned-frontier/v1"
 SOURCE_LESSON_SCHEMA = "bilqis.source-constructive-lesson/v1"
+SOURCE_LESSON_UNVERIFIED_SCHEMA = "bilqis.source-constructive-lesson-unverified/v1"
 SOURCE_LESSON_SET_SCHEMA = "bilqis.source-constructive-lesson-set/v1"
+SOURCE_LESSON_SET_UNVERIFIED_SCHEMA = (
+    "bilqis.source-constructive-lesson-set-unverified/v1")
 LEARNING_UNVERIFIED = "LEARNING_UNVERIFIED"
+SOURCE_AUTHORITY_UNVERIFIED = "UNVERIFIED_SOURCE_PROJECTION"
+SOURCE_AUTHORITY_PINNED = "A01_PINNED_SOURCE_ATTESTED"
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _SEMANTIC_RELATIONS = tuple(sorted(set(SEMANTIC_PREDICATES.values())))
 _SOURCE_TABLES = frozenset({
@@ -178,7 +186,14 @@ class SemanticFamilyInventory:
     source_nonconcept: tuple[
         tuple[CorpusCoverageRow, tuple[str, ...]], ...]
     counts: FamilyInventoryCounts
-    schema: str = FAMILY_INVENTORY_SCHEMA
+    source_authority: str = SOURCE_AUTHORITY_UNVERIFIED
+    schema: str = FAMILY_INVENTORY_UNVERIFIED_SCHEMA
+
+    def __post_init__(self) -> None:
+        if (self.source_authority, self.schema) not in {
+                (SOURCE_AUTHORITY_UNVERIFIED, FAMILY_INVENTORY_UNVERIFIED_SCHEMA),
+                (SOURCE_AUTHORITY_PINNED, FAMILY_INVENTORY_SCHEMA)}:
+            _fail("BAMF_FAMILY_SOURCE_AUTHORITY_INVALID")
 
     @property
     def digest(self) -> str:
@@ -376,7 +391,10 @@ def _inventory_source_families(atlas: FrozenAtlasSnapshot) -> SemanticFamilyInve
 
 def inventory_source_families(atlas: AtlasArtifactSelection) -> SemanticFamilyInventory:
     """Inventory only an A01 artifact selected by the source-pin registry."""
-    return _inventory_source_families(load_pinned_atlas_snapshot(atlas))
+    return replace(
+        _inventory_source_families(load_pinned_atlas_snapshot(atlas)),
+        source_authority=SOURCE_AUTHORITY_PINNED,
+        schema=FAMILY_INVENTORY_SCHEMA)
 
 
 @dataclass(frozen=True)
@@ -415,7 +433,8 @@ class CurriculumCandidateSet:
     exposed_count: int = 0
     qualified_count: int = 0
     status: str = "IMPLEMENTATION_DEBT"
-    schema: str = CURRICULUM_CANDIDATE_SCHEMA
+    source_authority: str = SOURCE_AUTHORITY_UNVERIFIED
+    schema: str = CURRICULUM_CANDIDATE_UNVERIFIED_SCHEMA
 
     def __post_init__(self) -> None:
         if (not isinstance(self.census, SemanticFamilyInventory)
@@ -424,13 +443,18 @@ class CurriculumCandidateSet:
                 or not isinstance(self.source_lessons, tuple)
                 or any(not isinstance(item, SourceConstructiveLesson)
                        or item.semantic_release != self.census.semantic_release
+                       or item.source_authority != self.source_authority
                        for item in self.source_lessons)
+                or self.source_authority != self.census.source_authority
                 or self.learning_state != LEARNING_UNVERIFIED
                 or any(value != 0 for value in (
                     self.adapter_ready_count, self.exposed_count,
                     self.qualified_count))
                 or self.status != "IMPLEMENTATION_DEBT"
-                or self.schema != CURRICULUM_CANDIDATE_SCHEMA):
+                or (self.source_authority, self.schema) not in {
+                    (SOURCE_AUTHORITY_UNVERIFIED,
+                     CURRICULUM_CANDIDATE_UNVERIFIED_SCHEMA),
+                    (SOURCE_AUTHORITY_PINNED, CURRICULUM_CANDIDATE_SCHEMA)}):
             _fail("BAMF_FAMILY_CANDIDATE_SET_INVALID")
 
     @property
@@ -506,8 +530,20 @@ def compile_semantic_curriculum(
     learned_frontier: LearnedFrontier,
 ) -> CurriculumCandidateSet:
     """Original three-argument API with an A01-pinned source authority."""
-    return _compile_semantic_curriculum_snapshot(
+    candidate = _compile_semantic_curriculum_snapshot(
         load_pinned_atlas_snapshot(atlas), source_adapters, learned_frontier)
+    return replace(
+        candidate,
+        census=replace(
+            candidate.census, source_authority=SOURCE_AUTHORITY_PINNED,
+            schema=FAMILY_INVENTORY_SCHEMA),
+        source_lessons=tuple(
+            replace(
+                lesson, source_authority=SOURCE_AUTHORITY_PINNED,
+                schema=SOURCE_LESSON_SCHEMA)
+            for lesson in candidate.source_lessons),
+        source_authority=SOURCE_AUTHORITY_PINNED,
+        schema=CURRICULUM_CANDIDATE_SCHEMA)
 
 
 @dataclass(frozen=True)
@@ -526,7 +562,8 @@ class SourceConstructiveLesson:
     prerequisite_closure: tuple[str, ...]
     variation_axes: tuple[str, ...]
     learning_state: str = LEARNING_UNVERIFIED
-    schema: str = SOURCE_LESSON_SCHEMA
+    source_authority: str = SOURCE_AUTHORITY_UNVERIFIED
+    schema: str = SOURCE_LESSON_UNVERIFIED_SCHEMA
 
     def __post_init__(self) -> None:
         if (not isinstance(self.semantic_release, str)
@@ -546,7 +583,9 @@ class SourceConstructiveLesson:
                 or not isinstance(self.variation_axes, tuple)
                 or not self.variation_axes
                 or self.learning_state != LEARNING_UNVERIFIED
-                or self.schema != SOURCE_LESSON_SCHEMA):
+                or (self.source_authority, self.schema) not in {
+                    (SOURCE_AUTHORITY_UNVERIFIED, SOURCE_LESSON_UNVERIFIED_SCHEMA),
+                    (SOURCE_AUTHORITY_PINNED, SOURCE_LESSON_SCHEMA)}):
             _fail("BAMF_LESSON_RECORD_INVALID")
 
 
@@ -557,7 +596,8 @@ class SourceConstructiveLessonSet:
     lessons: tuple[SourceConstructiveLesson, ...]
     uncovered: tuple[FamilyObligation, ...]
     learning_state: str = LEARNING_UNVERIFIED
-    schema: str = SOURCE_LESSON_SET_SCHEMA
+    source_authority: str = SOURCE_AUTHORITY_UNVERIFIED
+    schema: str = SOURCE_LESSON_SET_UNVERIFIED_SCHEMA
 
     def __post_init__(self) -> None:
         if (not isinstance(self.lessons, tuple)
@@ -572,13 +612,29 @@ class SourceConstructiveLessonSet:
                 or not _SHA.fullmatch(self.census_digest)
                 or not isinstance(self.uncovered, tuple)
                 or any(item.semantic_release != self.semantic_release
+                       or item.source_authority != self.source_authority
                        for item in self.lessons)
                 or any(not isinstance(item, FamilyObligation)
                        for item in self.uncovered)
                 or len(set(keys)) != len(keys)
                 or self.learning_state != LEARNING_UNVERIFIED
-                or self.schema != SOURCE_LESSON_SET_SCHEMA):
+                or (self.source_authority, self.schema) not in {
+                    (SOURCE_AUTHORITY_UNVERIFIED,
+                     SOURCE_LESSON_SET_UNVERIFIED_SCHEMA),
+                    (SOURCE_AUTHORITY_PINNED, SOURCE_LESSON_SET_SCHEMA)}):
             _fail("BAMF_LESSON_SET_INVALID")
+
+
+@dataclass(frozen=True)
+class UnverifiedSourceFactCheck:
+    """Pure fixture result, never a source or serving authorization."""
+
+    correct: bool
+    source_authority: str = SOURCE_AUTHORITY_UNVERIFIED
+    schema: str = "bilqis.unverified-source-fact-check/v1"
+
+    def __bool__(self) -> bool:
+        _fail("BAMF_UNVERIFIED_FACT_CHECK_NOT_BOOLEAN")
 
 
 def _compile_source_constructive_lessons_snapshot(
@@ -648,24 +704,42 @@ def compile_source_constructive_lessons(
     atlas: AtlasArtifactSelection,
     *, census: SemanticFamilyInventory | None = None,
 ) -> SourceConstructiveLessonSet:
-    return _compile_source_constructive_lessons_snapshot(
-        load_pinned_atlas_snapshot(atlas), census=census)
+    snapshot = load_pinned_atlas_snapshot(atlas)
+    authoritative = replace(
+        _inventory_source_families(snapshot),
+        source_authority=SOURCE_AUTHORITY_PINNED,
+        schema=FAMILY_INVENTORY_SCHEMA)
+    if census is not None and census != authoritative:
+        _fail("BAMF_LESSON_CENSUS_DRIFT")
+    raw = _compile_source_constructive_lessons_snapshot(snapshot)
+    return replace(
+        raw, census_digest=authoritative.digest,
+        lessons=tuple(
+            replace(
+                lesson, source_authority=SOURCE_AUTHORITY_PINNED,
+                schema=SOURCE_LESSON_SCHEMA)
+            for lesson in raw.lessons),
+        source_authority=SOURCE_AUTHORITY_PINNED,
+        schema=SOURCE_LESSON_SET_SCHEMA)
 
 
 def _check_source_constructive_lesson_snapshot(
     lesson: SourceConstructiveLesson, answer: object,
     atlas: FrozenAtlasSnapshot,
-) -> bool:
+) -> UnverifiedSourceFactCheck:
     """Independent source replay; never trust a generator's claimed gold."""
-    if not isinstance(lesson, SourceConstructiveLesson):
+    if (not isinstance(lesson, SourceConstructiveLesson)
+            or lesson.source_authority != SOURCE_AUTHORITY_UNVERIFIED):
         _fail("BAMF_LESSON_CHECKER_INPUT_INVALID")
     verified = _compile_source_constructive_lessons_snapshot(atlas)
     if lesson not in verified.lessons:
         _fail("BAMF_LESSON_SOURCE_EVIDENCE_MISMATCH")
     if lesson.answer_modality == "SEMANTIC_ID":
-        return type(answer) is str and answer == lesson.positive_fact[1]
+        return UnverifiedSourceFactCheck(
+            type(answer) is str and answer == lesson.positive_fact[1])
     if lesson.answer_modality == "RELATION_TRIPLE":
-        return type(answer) is tuple and answer == lesson.positive_fact
+        return UnverifiedSourceFactCheck(
+            type(answer) is tuple and answer == lesson.positive_fact)
     _fail("BAMF_LESSON_CHECKER_UNSUPPORTED")
 
 
@@ -673,5 +747,12 @@ def check_source_constructive_lesson(
     lesson: SourceConstructiveLesson, answer: object,
     atlas: AtlasArtifactSelection,
 ) -> bool:
+    snapshot = load_pinned_atlas_snapshot(atlas)
+    if (not isinstance(lesson, SourceConstructiveLesson)
+            or lesson.source_authority != SOURCE_AUTHORITY_PINNED):
+        _fail("BAMF_LESSON_SOURCE_AUTHORITY_REQUIRED")
+    unverified = replace(
+        lesson, source_authority=SOURCE_AUTHORITY_UNVERIFIED,
+        schema=SOURCE_LESSON_UNVERIFIED_SCHEMA)
     return _check_source_constructive_lesson_snapshot(
-        lesson, answer, load_pinned_atlas_snapshot(atlas))
+        unverified, answer, snapshot).correct

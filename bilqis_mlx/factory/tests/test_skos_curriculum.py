@@ -13,9 +13,11 @@ import unittest
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory import skos_curriculum as public_curriculum
 from bilqis_mlx.factory.skos_curriculum import (
-    LEARNING_UNVERIFIED, SOURCE_FAMILY_ADAPTERS, LearnedFrontier,
+    FAMILY_INVENTORY_UNVERIFIED_SCHEMA,
+    LEARNING_UNVERIFIED, SOURCE_AUTHORITY_PINNED,
+    SOURCE_AUTHORITY_UNVERIFIED, SOURCE_FAMILY_ADAPTERS, LearnedFrontier,
     SourceFamilyAdapter,
-    _check_source_constructive_lesson_snapshot as check_source_constructive_lesson,
+    _check_source_constructive_lesson_snapshot as _check_unverified_source_fact,
     _compile_semantic_curriculum_snapshot as compile_semantic_curriculum,
     _compile_source_constructive_lessons_snapshot as compile_source_constructive_lessons,
     _inventory_source_families as inventory_source_families,
@@ -50,6 +52,11 @@ DEFINITIONS = (
     ("urn:morph:transform", ("residue", "allomorph_rules", "rule"), None),
     ("urn:unknown:source", ("other", "new_source_table", "future"), None),
 )
+
+
+def check_source_constructive_lesson(lesson, answer, snapshot):
+    """Test-only truth assertion; the production helper returns UNVERIFIED."""
+    return _check_unverified_source_fact(lesson, answer, snapshot).correct
 
 
 def _snapshot(definitions=DEFINITIONS, *, release=RELEASE):
@@ -114,6 +121,51 @@ def _snapshot(definitions=DEFINITIONS, *, release=RELEASE):
 
 
 class SemanticFamilyInventoryTests(unittest.TestCase):
+    def test_raw_snapshot_helpers_never_emit_attested_authority(self):
+        snapshot = _snapshot()
+        census = inventory_source_families(snapshot)
+        candidate = compile_semantic_curriculum(
+            snapshot, SOURCE_FAMILY_ADAPTERS,
+            LearnedFrontier(snapshot.release_sha256))
+        lessons = compile_source_constructive_lessons(snapshot)
+        check = _check_unverified_source_fact(
+            lessons.lessons[0], lessons.lessons[0].semantic_id, snapshot)
+        self.assertEqual(census.source_authority, SOURCE_AUTHORITY_UNVERIFIED)
+        self.assertEqual(candidate.source_authority, SOURCE_AUTHORITY_UNVERIFIED)
+        self.assertEqual(lessons.source_authority, SOURCE_AUTHORITY_UNVERIFIED)
+        self.assertTrue(all(
+            item.source_authority == SOURCE_AUTHORITY_UNVERIFIED
+            for item in lessons.lessons))
+        self.assertEqual(check.source_authority, SOURCE_AUTHORITY_UNVERIFIED)
+        with self.assertRaises(BilqisError) as caught:
+            bool(check)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_UNVERIFIED_FACT_CHECK_NOT_BOOLEAN")
+
+        registry = json.loads((
+            Path(__file__).resolve().parents[3]
+            / "bilqis_mlx/semantics/atlas_source_pins_v1.json").read_text())
+        pin = registry["entries"][0]
+        forged = replace(
+            snapshot, bundle_id=pin["bundle_id"],
+            release_sha256=pin["release_sha256"],
+            source_bundle_id=pin["source_bundle_id"])
+        forged_census = inventory_source_families(forged)
+        forged_candidate = compile_semantic_curriculum(
+            forged, SOURCE_FAMILY_ADAPTERS,
+            LearnedFrontier(forged.release_sha256))
+        forged_lessons = compile_source_constructive_lessons(forged)
+        forged_check = _check_unverified_source_fact(
+            forged_lessons.lessons[0],
+            forged_lessons.lessons[0].semantic_id, forged)
+        for record in (forged_census, forged_candidate, forged_lessons,
+                       forged_check):
+            self.assertEqual(
+                record.source_authority, SOURCE_AUTHORITY_UNVERIFIED)
+        with self.assertRaises(BilqisError):
+            bool(forged_check)
+
     def test_public_census_and_lesson_apis_reject_unpinned_snapshots(self):
         raw = _snapshot()
         lesson = compile_source_constructive_lessons(raw).lessons[0]
@@ -442,6 +494,23 @@ class SemanticFamilyInventoryTests(unittest.TestCase):
                 if item.family_id == "positive_identity")
             self.assertTrue(public_curriculum.check_source_constructive_lesson(
                 identity_lesson, identity_lesson.positive_fact[1], pin))
+            raw_lesson = compile_source_constructive_lessons(
+                snapshot).lessons[0]
+            with self.assertRaises(BilqisError) as raw_checker:
+                public_curriculum.check_source_constructive_lesson(
+                    raw_lesson, raw_lesson.positive_fact[1], pin)
+            self.assertEqual(
+                raw_checker.exception.context["reason"],
+                "BAMF_LESSON_SOURCE_AUTHORITY_REQUIRED")
+            forged_census = replace(
+                public_census,
+                source_eligible_concept_ids=public_census.source_eligible_concept_ids[:8])
+            with self.assertRaises(BilqisError) as forged_input:
+                public_curriculum.compile_source_constructive_lessons(
+                    pin, census=forged_census)
+            self.assertEqual(
+                forged_input.exception.context["reason"],
+                "BAMF_LESSON_CENSUS_DRIFT")
             for replacement in (
                     ("legacy:cogal.operator.OR",),
                     ("legacy:cogal.operator.OR", "legacy:cogal.operator.XOR")):
@@ -481,9 +550,20 @@ class SemanticFamilyInventoryTests(unittest.TestCase):
                         replaced_pin.exception.context["reason"],
                         "ATLAS_SOURCE_PIN_NOT_REGISTERED")
         census = inventory_source_families(snapshot)
-        self.assertEqual(public_census, census)
+        self.assertEqual(
+            replace(
+                public_census, source_authority=SOURCE_AUTHORITY_UNVERIFIED,
+                schema=FAMILY_INVENTORY_UNVERIFIED_SCHEMA),
+            census)
+        self.assertEqual(public_census.source_authority, SOURCE_AUTHORITY_PINNED)
         self.assertEqual(pinned, snapshot)
-        self.assertEqual(public_candidate.frozen_census_digest, census.digest)
+        self.assertEqual(
+            public_candidate.frozen_census_digest, public_census.digest)
+        self.assertEqual(
+            public_candidate.source_authority, SOURCE_AUTHORITY_PINNED)
+        self.assertTrue(all(
+            item.source_authority == SOURCE_AUTHORITY_PINNED
+            for item in public_candidate.source_lessons))
         lexicon_root = next(
             item.concept.semantic_id for item in snapshot.concepts
             if item.concept.kind == "root")
