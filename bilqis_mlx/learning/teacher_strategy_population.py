@@ -111,7 +111,7 @@ def effective_context_scope(teacher: dict, scope: dict) -> dict:
 
 def historical_policy_mean(teacher: dict, grade: str, policy_key: str) -> float:
     """Bounded historical reward prior for challenger tie-breaking."""
-    local = teacher.get("grade_stats", {}).get(str(grade), {})
+    local = {} if teacher.get("selection_contract") == BAMF_SUCCESSOR_SELECTION else teacher.get("grade_stats", {}).get(str(grade), {})
     info = local.get(policy_key) or teacher.get("global_stats", {}).get(policy_key)
     if not isinstance(info, dict) or not info.get("trials"):
         return 0.
@@ -278,6 +278,9 @@ def durable_cooled_effective_keys(channel: dict, capability: str,
 def sibling_cooldown_penalty(channel: dict, capability: str,
                              curriculum_scope: str,
                              effective_policy_key: str) -> float:
+    if channel.get("selection_contract") == BAMF_SUCCESSOR_SELECTION:
+        # No source-qualified sibling relation is supplied at this boundary.
+        return 0.
     grade = capability.partition(".")[0]
     siblings = 0
     for bucket_key in channel.get("policy_cooldowns", {}):
@@ -432,13 +435,16 @@ def pick_existing_active(engine, teacher: dict, grade: str, rng,
         for effective_key in active_effective
         for policy_key in inventory[effective_key]
     }
+    if teacher.get("selection_contract") == BAMF_SUCCESSOR_SELECTION:
+        teacher = {**teacher, "grade_stats": {}}
+        grade = ""
     strategies = teacher.get("strategies", {})
     picker = getattr(engine, "pick_existing", None)
     if picker is not None:
         return picker(teacher, grade, rng, exclude=set(strategies) - allowed)
     if allowed == set(strategies):
         return engine.pick(teacher, grade, rng)
-    local = teacher.get("grade_stats", {}).get(str(grade), {})
+    local = {} if teacher.get("selection_contract") == BAMF_SUCCESSOR_SELECTION else teacher.get("grade_stats", {}).get(str(grade), {})
     total = int(teacher.get("events", 0)) + 1
 
     def rank(policy_key: str):

@@ -15,7 +15,11 @@ def select_visit_policy(engine, teacher, cap, school, rng, learning_settings,
     """Select one policy while preserving contextual and vNext authority rules."""
     with _timing_trace.trace_span("POLICY_SELECT", capability=cap):
         if learning_settings is None:
-            key, policy = engine.pick(teacher, lesson_grade, rng)
+            if teacher.get("selection_contract") == _strategy_population.BAMF_SUCCESSOR_SELECTION:
+                active, inventory = _strategy_population.active_effective_strategy_keys(teacher, lesson_grade, {})
+                key, policy = _strategy_population.pick_existing_active(engine, teacher, lesson_grade, rng, active, inventory)
+            else:
+                key, policy = engine.pick(teacher, lesson_grade, rng)
             return key, policy, {
                 "diagnostic_context_consumed": False,
                 "diagnostic_context_key": None,

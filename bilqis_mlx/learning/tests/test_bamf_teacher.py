@@ -138,5 +138,91 @@ class BamfHistoricalMentorTest(unittest.TestCase):
                 historical_mentor_advice(None, mentor, rows, context, purpose=purpose)
 
 
+class BamfGradeNeutralSelectionTest(unittest.TestCase):
+    def teacher(self):
+        from bilqis_mlx.learning.teacher_strategy_population import BAMF_SUCCESSOR_SELECTION
+        teacher, _, _ = _teacher()
+        teacher['selection_contract'] = BAMF_SUCCESSOR_SELECTION
+        from bilqis_mlx.learning.learning_experiment import VERSION
+        teacher['causal_experiment']['version'] = VERSION
+        teacher['events'] = 100
+        teacher['global_stats'] = {key: {'trials': 10, 'reward_sum': index, 'reward_ema': index}
+                                   for index, key in enumerate(teacher['strategies'])}
+        teacher['grade_stats'] = {
+            'A': {'p-strong': {'trials': 1, 'reward_sum': 1000., 'reward_ema': 1000.}},
+            'B': {'p-weak': {'trials': 1, 'reward_sum': 1000., 'reward_ema': 1000.}}}
+        return teacher
+
+    def test_bamf_priors_and_runtime_default_ignore_grade_labels(self):
+        from bilqis_mlx.learning.teacher_strategy_population import historical_policy_mean
+        from bilqis_mlx.runtime.teacher_policy_selection import select_visit_policy
+        from bilqis_mlx.compatibility import historical_teacher_policy as engine
+        teacher = self.teacher()
+        self.assertEqual(historical_policy_mean(teacher, 'A', 'p-strong'),
+                         historical_policy_mean(teacher, 'B', 'p-strong'))
+        selected = []
+        for grade in ('A', 'B', 'C', 'Z'):
+            state = copy.deepcopy(teacher)
+            result = select_visit_policy(engine, state, 'semantic.capability', None, random.Random(17),
+                None, 'same-scope', None, grade, total_capabilities=20)
+            selected.append((result, state))
+        self.assertTrue(all(item == selected[0] for item in selected))
+
+    def test_contextual_runtime_selection_is_grade_permutation_invariant(self):
+        import json
+        from types import SimpleNamespace
+        from bilqis_mlx.runtime.teacher_policy_selection import select_visit_policy
+        from bilqis_mlx.learning.learning_experiment import Settings
+        from bilqis_mlx.compatibility import historical_teacher_policy as engine
+        from bilqis_mlx.factory.tests.test_teaching import closed_source_fixture
+        from bilqis_mlx.runtime.source_execution import SourceExecutionContext
+        _, graph, sources, answers, release = closed_source_fixture()
+        context = SourceExecutionContext(release, graph, None, sources, answers)
+        teacher = self.teacher()
+        school = SimpleNamespace(stage='RECOVERY_1', current_student=SimpleNamespace(sha256='b' * 64))
+        results = []
+        for cold in (False, True):
+            for grade in ('A', 'B', 'C', 'Z'):
+                state = json.loads(json.dumps(teacher)) if cold else copy.deepcopy(teacher)
+                result = select_visit_policy(engine, state, 'Z.C0', school, random.Random(17),
+                    Settings(), 'factory/7', {}, grade, total_capabilities=20)
+                delivered = context.draw_rows(seed=17, capability='Z.C0', each=2)
+                results.append((result, state, delivered))
+        self.assertTrue(all(item == results[0] for item in results))
+        self.assertEqual([row['id'] for row in results[0][2]], ['Z.C0:17:0', 'Z.C0:17:1'])
+
+    def test_bound_sibling_penalty_does_not_use_capability_letter(self):
+        from bilqis_mlx.learning.learning_experiment import _channel
+        from bilqis_mlx.learning.teacher_strategy_population import (
+            record_checkpoint_policy_outcome, effective_policy_key, sibling_cooldown_penalty,
+            durable_policy_cooldown_status)
+        teacher = self.teacher()
+        channel = _channel(teacher)
+        channel['capability_stagnation'] = {'C.ADD|factory/7': {'total_rejections': 0, 'total_retained': 0}}
+        key = effective_policy_key(teacher['strategies']['p-strong'])
+        for sha in ('a' * 64, 'b' * 64):
+            for _ in range(4):
+                channel['capability_stagnation']['C.ADD|factory/7']['total_rejections'] += 1
+                record_checkpoint_policy_outcome(channel, 'C.ADD|RECOVERY_1|factory/7', key, sha,
+                                                 no_target_gain=True, retained=False)
+        self.assertTrue(durable_policy_cooldown_status(channel, 'C.ADD', 'factory/7', key)['active'])
+        for capability in ('A.SUB', 'B.SUB', 'C.SUB', 'Z.SUB'):
+            self.assertEqual(sibling_cooldown_penalty(channel, capability, 'factory/7', key), 0.)
+
+    def test_retained_breeding_ancestry_excludes_grade_reward_fallback(self):
+        from bilqis_mlx.learning.teacher_breeding import _retained_parent_candidates
+        candidates = list(_retained_parent_candidates(self.teacher(), 'A.UNKNOWN', 'factory/7', None))
+        self.assertTrue(candidates)
+        self.assertFalse(any(basis.startswith('GRADE') for _, basis in candidates))
+
+    def test_bamf_canary_does_not_use_another_capability_same_grade(self):
+        from bilqis_mlx.learning.teacher_strategy_population import active_effective_strategy_keys
+        teacher = self.teacher()
+        active, inventory = active_effective_strategy_keys(teacher, 'C', {})
+        result = select_canary(teacher, capability='C.UNTOLD', phase='RECOVERY_1', curriculum_scope='factory/7',
+            candidate_ordinal=4, rng=random.Random(17), active_effective_policy_keys=active, inventory=inventory)
+        self.assertEqual(result['status'], 'FALLBACK_UNDERPOWERED')
+
+
 if __name__ == '__main__':
     unittest.main()

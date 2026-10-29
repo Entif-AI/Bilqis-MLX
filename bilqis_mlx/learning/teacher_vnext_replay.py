@@ -53,7 +53,9 @@ def _aggregate(teacher, *, capability, phase, curriculum_scope,
     strategies = teacher.get("strategies", {})
     contexts = teacher.get("causal_experiment", {}).get("contexts", {})
     allowed = set(allowed_effective_policy_keys)
-    for level in ("EXACT", "CAPABILITY", "GRADE_PHASE", "GRADE"):
+    levels = (("EXACT", "CAPABILITY") if teacher.get("selection_contract") == BAMF_SUCCESSOR_SELECTION
+              else ("EXACT", "CAPABILITY", "GRADE_PHASE", "GRADE"))
+    for level in levels:
         rows = {}
         for context_key, scope in contexts.items():
             parsed = _parse_context(context_key)
@@ -200,6 +202,14 @@ class TeacherEpoch:
         return json.loads(self.prior_json)
 
 
+def _fresh_causal_epoch(student):
+    from bilqis_mlx.learning.learning_experiment import _channel
+    holder = {"selection_contract": BAMF_SUCCESSOR_SELECTION}
+    channel = _channel(holder)
+    channel['student_policy_epoch'] = {'student_sha256': student, 'contexts': {}, 'unretained_contexts': {}}
+    return channel
+
+
 def bind_teacher_successor(prior_teacher, new_student, replay_contract) -> TeacherEpoch:
     """Preserve replay priors while isolating a fresh learner's causal counters."""
     def invalid(reason):
@@ -237,10 +247,7 @@ def bind_teacher_successor(prior_teacher, new_student, replay_contract) -> Teach
         invalid('SUCCESSOR_MUST_BE_DISTINCT')
     current['selection_contract'] = BAMF_SUCCESSOR_SELECTION
     current['grade_stats'] = {}
-    current['causal_experiment'] = {
-        'contexts': {}, 'events': 0,
-        'student_policy_epoch': {'student_sha256': student, 'contexts': {}, 'unretained_contexts': {}},
-    }
+    current['causal_experiment'] = _fresh_causal_epoch(student)
     return TeacherEpoch(prior_region, region, student, head, prior_json,
                         json.dumps(current, sort_keys=True, allow_nan=False))
 
@@ -262,9 +269,7 @@ def refresh_teacher_region(epoch: TeacherEpoch, *, bank_identity: str,
         'grade_stats': teacher.get('grade_stats', {}),
     })
     teacher['grade_stats'] = {}
-    teacher['causal_experiment'] = {'contexts': {}, 'events': 0,
-        'student_policy_epoch': {'student_sha256': epoch.student_sha256,
-                                'contexts': {}, 'unretained_contexts': {}}}
+    teacher['causal_experiment'] = _fresh_causal_epoch(epoch.student_sha256)
     teacher['bamf_region_binding'] = binding
     return replace(epoch, current_region=region,
                    current_json=json.dumps(teacher, sort_keys=True, allow_nan=False))
