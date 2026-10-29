@@ -169,3 +169,90 @@ class PlasticAdapterTests(TestCase):
         with self.assertRaises(BilqisError):
             adapter_forward(mx.zeros((1, 1, 768), dtype=mx.float32),
                             replace(view, B=mx.zeros((768, 7), dtype=mx.float32)))
+
+
+class PlasticityCadenceTests(TestCase):
+    def test_foundation_and_rejection_preserve_cadence(self):
+        from bilqis_mlx.learning.atlas_plasticity import (
+            PlasticityPolicy, next_update_mode, advance_candidate_policy,
+        )
+        parent = PlasticityPolicy(row_ages=(IdentityRowAge(0, 1, 0),))
+        self.assertEqual(next_update_mode(parent, teacher_requests_full=False), "FULL")
+        self.assertIs(advance_candidate_policy(parent, teacher_requests_full=False,
+                      accepted=False, participating_rows=((0, 1),)), parent)
+        actual = advance_candidate_policy(parent, teacher_requests_full=False,
+                     accepted=True, participating_rows=((0, 1),))
+        self.assertEqual(actual.mode, "FOUNDATION")
+        self.assertEqual(actual.accepted_fast_since_full, 0)
+        self.assertEqual(actual.row_ages[0].accepted_age, 1)
+        self.assertEqual(parent.row_ages[0].accepted_age, 0)
+
+    def test_eight_accepted_fast_then_full_across_cold_readback(self):
+        import json
+        from bilqis_mlx.learning.atlas_plasticity import (
+            PlasticityPolicy, next_update_mode, advance_candidate_policy,
+        )
+        state = PlasticityPolicy(mode="ADAPTIVE", row_ages=(IdentityRowAge(0, 1, 0),))
+        for count in range(8):
+            self.assertEqual(next_update_mode(state, teacher_requests_full=False), "FAST")
+            self.assertIs(advance_candidate_policy(state, teacher_requests_full=False,
+                          accepted=False, participating_rows=((0, 1),)), state)
+            state = advance_candidate_policy(state, teacher_requests_full=False,
+                        accepted=True, participating_rows=((0, 1),))
+            state = PlasticityPolicy.from_record(json.loads(json.dumps(state.to_record())))
+            self.assertEqual(state.accepted_fast_since_full, count + 1)
+            self.assertEqual(state.row_ages[0].accepted_age, count + 1)
+        self.assertEqual(next_update_mode(state, teacher_requests_full=False), "FULL")
+        self.assertIs(advance_candidate_policy(state, teacher_requests_full=False,
+                      accepted=False, participating_rows=()), state)
+        state = advance_candidate_policy(state, teacher_requests_full=False,
+                    accepted=True, participating_rows=((0, 1),))
+        self.assertEqual(state.accepted_fast_since_full, 0)
+        self.assertEqual(state.row_ages[0].accepted_age, 8)
+        self.assertEqual(next_update_mode(state, teacher_requests_full=False), "FAST")
+
+    def test_teacher_full_and_idle_rows(self):
+        from bilqis_mlx.learning.atlas_plasticity import (
+            PlasticityPolicy, next_update_mode, advance_candidate_policy,
+        )
+        parent = PlasticityPolicy(mode="ADAPTIVE", accepted_fast_since_full=3,
+                                  row_ages=(IdentityRowAge(0, 1, 7), IdentityRowAge(0, 2, 0)))
+        self.assertEqual(next_update_mode(parent, teacher_requests_full=True), "FULL")
+        self.assertIs(advance_candidate_policy(parent, teacher_requests_full=True,
+                      accepted=False, participating_rows=((0, 1),)), parent)
+        actual = advance_candidate_policy(parent, teacher_requests_full=True,
+                     accepted=True, participating_rows=((0, 1),))
+        self.assertEqual(actual.accepted_fast_since_full, 0)
+        self.assertEqual(tuple(row.accepted_age for row in actual.row_ages), (8, 0))
+        self.assertEqual(actual.mode, "ADAPTIVE")
+
+    def test_policy_records_fail_closed_without_inferred_defaults(self):
+        from bilqis_mlx.learning.atlas_plasticity import PlasticityPolicy, next_update_mode
+        valid = PlasticityPolicy().to_record()
+        for key in valid:
+            changed = dict(valid)
+            del changed[key]
+            with self.assertRaises(BilqisError):
+                PlasticityPolicy.from_record(changed)
+        for patch in ({"mode": "FAST"}, {"accepted_fast_since_full": True},
+                      {"accepted_fast_since_full": -1}, {"policy_version": "other"},
+                      {"extra": 1}, {"row_ages": [{"bank_index": 0}]}):
+            with self.assertRaises(BilqisError):
+                PlasticityPolicy.from_record(dict(valid, **patch))
+        with self.assertRaises(BilqisError):
+            PlasticityPolicy(accepted_fast_since_full=1)
+        with self.assertRaises(BilqisError):
+            next_update_mode(PlasticityPolicy(), teacher_requests_full=1)
+
+    def test_overdue_counter_uses_literal_greater_equal_contract(self):
+        from bilqis_mlx.learning.atlas_plasticity import (
+            PlasticityPolicy, next_update_mode, advance_candidate_policy,
+        )
+        parent = PlasticityPolicy.from_record(
+            PlasticityPolicy(mode="ADAPTIVE", accepted_fast_since_full=9).to_record())
+        self.assertEqual(next_update_mode(parent, teacher_requests_full=False), "FULL")
+        self.assertIs(advance_candidate_policy(parent, teacher_requests_full=False,
+                      accepted=False, participating_rows=()), parent)
+        actual = advance_candidate_policy(parent, teacher_requests_full=False,
+                     accepted=True, participating_rows=())
+        self.assertEqual(actual.accepted_fast_since_full, 0)
