@@ -73,6 +73,49 @@ entrypoint. The original v1 artifact identity is preserved. The
 expanded real-corpus tests now reject both self-attested repack forms.
 **Fresh independent immutable-head re-review remains required.**
 
+## Second EGM Major: unverified helper outputs
+
+Goldfish reviewed `f8b90c1` and returned **EGM NOT PASS**, zero
+Blockers and one Major. Raw-snapshot helper APIs still emitted
+authority-looking census/candidate/lesson records when given a
+forged eight-concept snapshot carrying all three trusted A01 IDs.
+The reviewer also obtained a true checker result from that snapshot.
+
+The next candidate (`0d638ee`) separated unverified schemas and
+status from loader-issued attested schemas. Its real pinned owner
+suites passed 29/29, but the next EGM exposed a transferable-status
+forgery, so this approach was superseded.
+
+## Third EGM Major: no transferable source authority
+
+Goldfish reviewed `0d638ee` and returned **EGM NOT PASS**, zero
+Blockers and one Major. A caller could relabel an unverified
+`dataclasses.replace`d census, candidate or lesson with the
+`A01_PINNED_SOURCE_ATTESTED` status and matching schema. Downstream
+A09.1 and A08.1b.5 did not yet require source replay at consumption.
+
+The replacement design **issues no transferable attestation at all**.
+Every A08 census, candidate and lesson is a
+`SOURCE_PROJECTION_NOT_AUTHORITY` proposal with a proposal-only
+schema and fixed, non-promotable status. Raw-snapshot helpers can
+produce algorithm projections, but never source authority.
+
+The public consuming assertions
+`assert_family_inventory_current`,
+`assert_curriculum_candidate_current` and
+`assert_source_lesson_set_current` reload the independently
+registry-pinned A01 artifact and compare the **entire** proposed
+record. They return no reusable authorization token. A09.1 and
+A08.1b.5 repo contracts now require these assertions at their own
+consuming boundaries, followed by independent live A13 rights.
+Direct `dataclasses.replace` status/schema relabeling fails the
+record constructor. A forged eight-concept proposal with all three
+trusted A01 identity strings fails the consuming assertions.
+
+Real pinned A01 owner suites: **29/29 passed**, zero failures/skips;
+no new static debt. The historical v1 A01 artifact remains unchanged.
+**Fresh independent EGM review of this third repair is pending.**
+
 ## Rejected alternative
 
 Adding a new `release.json` to the existing content-addressed

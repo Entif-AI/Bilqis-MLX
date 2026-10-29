@@ -13,7 +13,8 @@ import unittest
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory import skos_curriculum as public_curriculum
 from bilqis_mlx.factory.skos_curriculum import (
-    LEARNING_UNVERIFIED, SOURCE_FAMILY_ADAPTERS, LearnedFrontier,
+    LEARNING_UNVERIFIED, SOURCE_FAMILY_ADAPTERS, SOURCE_PROJECTION_ONLY,
+    LearnedFrontier,
     SourceFamilyAdapter,
     _check_source_constructive_lesson_snapshot as check_source_constructive_lesson,
     _compile_semantic_curriculum_snapshot as compile_semantic_curriculum,
@@ -114,6 +115,36 @@ def _snapshot(definitions=DEFINITIONS, *, release=RELEASE):
 
 
 class SemanticFamilyInventoryTests(unittest.TestCase):
+    def test_source_proposals_cannot_be_relabelled_as_attestation(self):
+        snapshot = _snapshot()
+        registry = json.loads((
+            Path(__file__).resolve().parents[3]
+            / "bilqis_mlx/semantics/atlas_source_pins_v1.json").read_text())
+        pin = registry["entries"][0]
+        forged = replace(
+            snapshot, bundle_id=pin["bundle_id"],
+            release_sha256=pin["release_sha256"],
+            source_bundle_id=pin["source_bundle_id"])
+        census = inventory_source_families(forged)
+        candidate = compile_semantic_curriculum(
+            forged, SOURCE_FAMILY_ADAPTERS,
+            LearnedFrontier(forged.release_sha256))
+        lessons = compile_source_constructive_lessons(forged)
+        self.assertTrue(all(
+            item.source_authority == SOURCE_PROJECTION_ONLY
+            and "proposal" in item.schema
+            for item in (census, candidate, lessons, lessons.lessons[0])))
+        for item, claimed_schema in (
+                (census, "bilqis.semantic-family-inventory/v1"),
+                (candidate, "bilqis.semantic-curriculum-candidates/v1"),
+                (lessons, "bilqis.source-constructive-lesson-set/v1"),
+                (lessons.lessons[0], "bilqis.source-constructive-lesson/v1")):
+            with self.subTest(item=item):
+                with self.assertRaises(BilqisError):
+                    replace(
+                        item, source_authority="A01_PINNED_SOURCE_ATTESTED",
+                        schema=claimed_schema)
+
     def test_public_census_and_lesson_apis_reject_unpinned_snapshots(self):
         raw = _snapshot()
         lesson = compile_source_constructive_lessons(raw).lessons[0]
@@ -442,6 +473,43 @@ class SemanticFamilyInventoryTests(unittest.TestCase):
                 if item.family_id == "positive_identity")
             self.assertTrue(public_curriculum.check_source_constructive_lesson(
                 identity_lesson, identity_lesson.positive_fact[1], pin))
+            self.assertEqual(
+                public_census.source_authority, SOURCE_PROJECTION_ONLY)
+            self.assertEqual(
+                public_candidate.source_authority, SOURCE_PROJECTION_ONLY)
+            self.assertIsNone(public_curriculum.assert_family_inventory_current(
+                public_census, pin))
+            self.assertIsNone(public_curriculum.assert_curriculum_candidate_current(
+                public_candidate, pin, SOURCE_FAMILY_ADAPTERS,
+                LearnedFrontier(snapshot.release_sha256)))
+            public_lessons = public_curriculum.compile_source_constructive_lessons(
+                pin)
+            self.assertIsNone(public_curriculum.assert_source_lesson_set_current(
+                public_lessons, pin))
+            forged_census = replace(
+                public_census,
+                source_eligible_concept_ids=public_census.source_eligible_concept_ids[:8])
+            with self.assertRaises(BilqisError) as census_drift:
+                public_curriculum.assert_family_inventory_current(
+                    forged_census, pin)
+            self.assertEqual(
+                census_drift.exception.context["reason"],
+                "BAMF_FAMILY_SOURCE_PROJECTION_DRIFT")
+            with self.assertRaises(BilqisError) as candidate_drift:
+                public_curriculum.assert_curriculum_candidate_current(
+                    replace(public_candidate, census=forged_census),
+                    pin, SOURCE_FAMILY_ADAPTERS,
+                    LearnedFrontier(snapshot.release_sha256))
+            self.assertEqual(
+                candidate_drift.exception.context["reason"],
+                "BAMF_CANDIDATE_SOURCE_PROJECTION_DRIFT")
+            with self.assertRaises(BilqisError) as lesson_drift:
+                public_curriculum.assert_source_lesson_set_current(
+                    replace(public_lessons, lessons=public_lessons.lessons[:8]),
+                    pin)
+            self.assertEqual(
+                lesson_drift.exception.context["reason"],
+                "BAMF_LESSON_SOURCE_PROJECTION_DRIFT")
             for replacement in (
                     ("legacy:cogal.operator.OR",),
                     ("legacy:cogal.operator.OR", "legacy:cogal.operator.XOR")):

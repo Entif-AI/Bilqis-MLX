@@ -24,15 +24,16 @@ from lib.ithkuil.src.skos.identity import Identity
 from lib.ithkuil.src.skos.relations import SEMANTIC_PREDICATES
 
 
-FAMILY_INVENTORY_SCHEMA = "bilqis.semantic-family-inventory/v1"
+FAMILY_INVENTORY_SCHEMA = "bilqis.semantic-family-inventory-proposal/v1"
 FAMILY_OBLIGATION_SCHEMA = "bilqis.semantic-family-obligation/v1"
 FAMILY_CONCEPT_SCHEMA = "bilqis.semantic-family-concept/v1"
 FAMILY_RULE_SCHEMA = "bilqis.semantic-family-source-rule/v1"
-CURRICULUM_CANDIDATE_SCHEMA = "bilqis.semantic-curriculum-candidates/v1"
+CURRICULUM_CANDIDATE_SCHEMA = "bilqis.semantic-curriculum-proposal/v1"
 LEARNED_FRONTIER_SCHEMA = "bilqis.semantic-learned-frontier/v1"
-SOURCE_LESSON_SCHEMA = "bilqis.source-constructive-lesson/v1"
-SOURCE_LESSON_SET_SCHEMA = "bilqis.source-constructive-lesson-set/v1"
+SOURCE_LESSON_SCHEMA = "bilqis.source-constructive-lesson-proposal/v1"
+SOURCE_LESSON_SET_SCHEMA = "bilqis.source-constructive-lesson-proposal-set/v1"
 LEARNING_UNVERIFIED = "LEARNING_UNVERIFIED"
+SOURCE_PROJECTION_ONLY = "SOURCE_PROJECTION_NOT_AUTHORITY"
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _SEMANTIC_RELATIONS = tuple(sorted(set(SEMANTIC_PREDICATES.values())))
 _SOURCE_TABLES = frozenset({
@@ -178,7 +179,13 @@ class SemanticFamilyInventory:
     source_nonconcept: tuple[
         tuple[CorpusCoverageRow, tuple[str, ...]], ...]
     counts: FamilyInventoryCounts
+    source_authority: str = SOURCE_PROJECTION_ONLY
     schema: str = FAMILY_INVENTORY_SCHEMA
+
+    def __post_init__(self) -> None:
+        if (self.source_authority != SOURCE_PROJECTION_ONLY
+                or self.schema != FAMILY_INVENTORY_SCHEMA):
+            _fail("BAMF_FAMILY_PROPOSAL_AUTHORITY_INVALID")
 
     @property
     def digest(self) -> str:
@@ -379,6 +386,15 @@ def inventory_source_families(atlas: AtlasArtifactSelection) -> SemanticFamilyIn
     return _inventory_source_families(load_pinned_atlas_snapshot(atlas))
 
 
+def assert_family_inventory_current(
+    inventory: SemanticFamilyInventory, atlas: AtlasArtifactSelection,
+) -> None:
+    """A consumer must rederive source truth; the inventory is not a grant."""
+    if (not isinstance(inventory, SemanticFamilyInventory)
+            or inventory != inventory_source_families(atlas)):
+        _fail("BAMF_FAMILY_SOURCE_PROJECTION_DRIFT")
+
+
 @dataclass(frozen=True)
 class LearnedFrontier:
     """Unverified learner claims; source eligibility never depends on them."""
@@ -415,6 +431,7 @@ class CurriculumCandidateSet:
     exposed_count: int = 0
     qualified_count: int = 0
     status: str = "IMPLEMENTATION_DEBT"
+    source_authority: str = SOURCE_PROJECTION_ONLY
     schema: str = CURRICULUM_CANDIDATE_SCHEMA
 
     def __post_init__(self) -> None:
@@ -430,6 +447,7 @@ class CurriculumCandidateSet:
                     self.adapter_ready_count, self.exposed_count,
                     self.qualified_count))
                 or self.status != "IMPLEMENTATION_DEBT"
+                or self.source_authority != SOURCE_PROJECTION_ONLY
                 or self.schema != CURRICULUM_CANDIDATE_SCHEMA):
             _fail("BAMF_FAMILY_CANDIDATE_SET_INVALID")
 
@@ -510,6 +528,19 @@ def compile_semantic_curriculum(
         load_pinned_atlas_snapshot(atlas), source_adapters, learned_frontier)
 
 
+def assert_curriculum_candidate_current(
+    candidate: CurriculumCandidateSet,
+    atlas: AtlasArtifactSelection,
+    source_adapters: tuple[SourceFamilyAdapter, ...],
+    learned_frontier: LearnedFrontier,
+) -> None:
+    """No transferable attestation: replay exact A01 and learner claims."""
+    if (not isinstance(candidate, CurriculumCandidateSet)
+            or candidate != compile_semantic_curriculum(
+                atlas, source_adapters, learned_frontier)):
+        _fail("BAMF_CANDIDATE_SOURCE_PROJECTION_DRIFT")
+
+
 @dataclass(frozen=True)
 class SourceConstructiveLesson:
     """An exact source-fact teaching contrast, not a learner credit receipt."""
@@ -526,6 +557,7 @@ class SourceConstructiveLesson:
     prerequisite_closure: tuple[str, ...]
     variation_axes: tuple[str, ...]
     learning_state: str = LEARNING_UNVERIFIED
+    source_authority: str = SOURCE_PROJECTION_ONLY
     schema: str = SOURCE_LESSON_SCHEMA
 
     def __post_init__(self) -> None:
@@ -546,6 +578,7 @@ class SourceConstructiveLesson:
                 or not isinstance(self.variation_axes, tuple)
                 or not self.variation_axes
                 or self.learning_state != LEARNING_UNVERIFIED
+                or self.source_authority != SOURCE_PROJECTION_ONLY
                 or self.schema != SOURCE_LESSON_SCHEMA):
             _fail("BAMF_LESSON_RECORD_INVALID")
 
@@ -557,6 +590,7 @@ class SourceConstructiveLessonSet:
     lessons: tuple[SourceConstructiveLesson, ...]
     uncovered: tuple[FamilyObligation, ...]
     learning_state: str = LEARNING_UNVERIFIED
+    source_authority: str = SOURCE_PROJECTION_ONLY
     schema: str = SOURCE_LESSON_SET_SCHEMA
 
     def __post_init__(self) -> None:
@@ -577,6 +611,7 @@ class SourceConstructiveLessonSet:
                        for item in self.uncovered)
                 or len(set(keys)) != len(keys)
                 or self.learning_state != LEARNING_UNVERIFIED
+                or self.source_authority != SOURCE_PROJECTION_ONLY
                 or self.schema != SOURCE_LESSON_SET_SCHEMA):
             _fail("BAMF_LESSON_SET_INVALID")
 
@@ -650,6 +685,16 @@ def compile_source_constructive_lessons(
 ) -> SourceConstructiveLessonSet:
     return _compile_source_constructive_lessons_snapshot(
         load_pinned_atlas_snapshot(atlas), census=census)
+
+
+def assert_source_lesson_set_current(
+    lessons: SourceConstructiveLessonSet,
+    atlas: AtlasArtifactSelection,
+) -> None:
+    """Reconstruct source lessons at the consuming boundary, never trust a tag."""
+    if (not isinstance(lessons, SourceConstructiveLessonSet)
+            or lessons != compile_source_constructive_lessons(atlas)):
+        _fail("BAMF_LESSON_SOURCE_PROJECTION_DRIFT")
 
 
 def _check_source_constructive_lesson_snapshot(
