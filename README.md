@@ -32,6 +32,39 @@ unified trunk for human sign-off; the issue never authorizes self-merging that P
 Accepted cross-lane work becomes available to the other lanes through the next
 issue-boundary sync from unified.
 
+## Mandatory development structure discipline — 2026-10-29
+
+**This rule is a development interruption contract, not a repository-wide cleanup
+order.** Whenever an agent encounters an already-oversized project-authored code
+file, or causes one to cross the trigger while working, it MUST stop the current
+task before continuing ordinary feature work.
+
+- **File trigger:** a project-authored code file with **more than 360 lines of
+  code** (`>360 LoC`). Preserve the complete active task context in **@Entif Work
+  Stack**, pause that task, and refactor the encountered production file into
+  cohesive imported submodules. Refactor its companion tests along the same
+  ownership seams. If code moves to `new_method.py`, its focused tests move to
+  `test_new_method.py`. Continue the interruption until the original production
+  file **and every companion test file are each under 240 LoC** (`<240`). Commit
+  the refactor normally on the already-active feature branch, then resume the
+  preserved Work Stack task.
+- **Directory trigger:** a directory containing **18 or more direct
+  project-authored code files** (`>=18`), excluding child directories and
+  third-party/external libraries. Preserve the active task in Work Stack, then
+  reorganize **that one offending directory only** into cohesive subdirectories
+  until the originally offending directory contains **no more than 12 direct code
+  files** (`<=12`). Do **not** recursively inspect or clean the newly created
+  subdirectories during the same interruption. Commit the reorganization on the
+  current branch and resume the preserved task.
+- **Organic scope:** repair one encountered offender at a time. Do not launch a
+  recursive repository sweep merely because another oversized file or directory
+  probably exists. A later offender is handled when ordinary work encounters it.
+- **Governance integrity:** agents MUST NOT raise these thresholds, weaken the
+  checks, expand/grandfather a quality baseline, add exclusions, or rewrite the
+  rule merely to make a violation disappear. A change to this contract requires
+  explicit human ratification. Mechanical checks complement the encounter-time
+  agent duty; passing CI does not erase an encountered violation.
+
 ## CONTROLLING USER CORRECTION — 2026-10-23: factory specs are not semantic-root tickets
 
 Issue #150 is a factory-architecture epic. Its decomposition exists to make the
