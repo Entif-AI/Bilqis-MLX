@@ -1,7 +1,7 @@
 # A08.1b.2 partial: A01/A07 formal source/operator join
 
-Parent A08.1b #418; granular child issue pending.
-Isolated candidate: `codex/bamf02-a08-formal-lessons-20261029`.
+Parent A08.1b #418; granular child issue #554.
+Original isolated candidate: `codex/bamf02-a08-formal-lessons-20261029`.
 Baseline: A08.1b.1 candidate `024f049`, with A08.1a governed
 source-pin repair `f8b90c1`. Independent EGM: **PENDING**.
 
@@ -45,3 +45,38 @@ typed gold, consume live A13 rights/epochs/visibility, prove
 revocation and wrong-arity/type failures, and obtain independent
 EGM acceptance. This partial source join grants no source admission,
 teacher credit, model/optimizer mutation or live training.
+
+## 2026-10-29 task-scoped formal lesson continuation
+
+The separate `codex/bamf02-a08-formal-final-20261029` candidate
+reuses the reviewed A08.1a and A08.1b.1 foundations and adds
+`formal_lessons.py` with a source-replaying, task-scoped generator
+and independent typed checker for the four A01-attested A07 operators:
+`BOOL_NOT`, `BOOL_AND`, `COUNT` and `SUCC`.
+
+Each public call reloads the governed A01 source pin and A07 operator
+contract, then invokes A07's source-qualified pure executor against
+the caller-supplied A13 task, policy, frontier, operator/operand and
+numeric-domain grants. The checker separately reconstructs the
+Boolean/numeric truth, rather than trusting a lesson's positive
+answer or calling its generator. It rechecks live rights on every
+use, so revocation, correction/rights epoch drift, wrong purpose,
+release, arity and type fail closed. Numeric contrasts must exist
+inside the admitted finite domain; a single-value domain cannot
+invent a false alternative.
+
+The output is explicitly
+`bilqis.formal-constructive-lesson-proposal/v1` with
+`TASK_SCOPED_NOT_ADMITTED`,
+`SOURCE_PROJECTION_NOT_AUTHORITY` and
+`LEARNING_UNVERIFIED`. No A13 grant is created or cached.
+The bounded source/lesson owner suites use the real pinned A01
+corpus and literal A07/A13 grant fixtures:
+`test_formal_constructive.py` plus `test_formal_lessons.py`,
+**10 passed, 0 failed, 0 skipped**. Independent EGM is pending.
+
+This is still **partial A08.1b.2**: Factory
+`ConstructionProgram` registration, broader exercised variation
+coverage, final A13.1/A07.2 receipt crosswalk and downstream
+admission remain separate gates. Do not close #554 or A08.1b
+on the strength of these task-scoped proposals alone.
