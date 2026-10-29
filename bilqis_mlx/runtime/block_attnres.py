@@ -19,6 +19,9 @@ from .model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes,
     validate_bamf_parameters,
 )
+from .depth_summary_capture import (
+    SealedDepthSummary, verify_depth_summaries,
+)
 
 
 WIDTH = ModelTopologySpecV2.width
@@ -256,7 +259,7 @@ def _depth_components(current, available_summaries, frame_features, params):
 
 
 def depth_select(
-    current: mx.array, available_summaries: tuple[DepthSummary, ...],
+    current: mx.array, available_summaries: tuple[SealedDepthSummary, ...],
     frame_features: DepthFrameFeatures, params: DepthParameterView,
 ) -> mx.array:
     """Merge h0 and completed group summaries in their fixed source order.
@@ -271,15 +274,24 @@ def depth_select(
     if (not isinstance(current, mx.array) or current.ndim != FRAME_RANK
             or current.shape[:BATCH_POSITION_AXES] != (len(frame_features.requests), len(frame_features.requests[0]))
             or type(available_summaries) is not tuple or not available_summaries
-            or type(available_summaries[0]) is not DepthSummary):
+            or type(available_summaries[0]) is not SealedDepthSummary):
         _invalid()
+    verify_depth_summaries(
+        available_summaries,
+        boundary_group=params.boundary_group,
+        parameters=params._full_parameters,
+        extents=params._extents,
+        feature_digest=frame_features.features.digest)
+    raw_summaries = tuple(DepthSummary(
+        item.source_id, item.completed_layer, item.hidden)
+        for item in available_summaries)
     type_role = mx.stack([mx.stack([
         mx.mean(compose_factor_features(params._feature_parameters, (members,), frame_features.features,
                                         extents=params._extents).type_role[0], axis=0)
         for members in row]) for row in frame_features.requests])
-    numerical = _DepthFeatureValues(available_summaries[0].hidden, type_role,
+    numerical = _DepthFeatureValues(raw_summaries[0].hidden, type_role,
                                      frame_features.features.semantic_release,
                                      frame_features.features.digest, frame_features.boundary_group)
     output, _, _ = _depth_components(
-        current, available_summaries, numerical, params)
+        current, raw_summaries, numerical, params)
     return output

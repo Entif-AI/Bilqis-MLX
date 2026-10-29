@@ -16,6 +16,9 @@ from bilqis_mlx.runtime.block_attnres import (
     _DepthFeatureValues, _depth_components,
     depth_parameter_view, depth_select,
 )
+from bilqis_mlx.runtime.depth_summary_capture import (
+    _begin_backbone_capture, SealedDepthSummary,
+)
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes,
     initialize_bamf_parameter,
@@ -94,6 +97,16 @@ def _summaries(boundary=1):
         ) if index <= boundary)
 
 
+def _sealed_summaries(parameters, extents, features, boundary=1):
+    capture = _begin_backbone_capture(
+        parameters, spec=ModelTopologySpecV2(), extents=extents,
+        generation_digest="d" * 64, implementation_digest="e" * 64,
+        prediction_digest="f" * 64, feature_digest=features.digest)
+    for item in _summaries(3):
+        capture.capture(item.hidden)
+    return capture.available(boundary)
+
+
 def _numpy_oracle(current, summaries, features, params):
     """Independent NumPy FP32 implementation, not a call to the MLX selector."""
     h = np.asarray(current)
@@ -152,14 +165,18 @@ class DepthSelectionTests(unittest.TestCase):
         for group in (1, 2, 3):
             view = depth_parameter_view(full, spec=ModelTopologySpecV2(), extents=extents, boundary_group=group)
             sources = _summaries(group)
-            actual = depth_select(self.current, sources, replace(released, boundary_group=group), view)
+            actual = depth_select(
+                self.current, _sealed_summaries(full, extents, features, group),
+                replace(released, boundary_group=group), view)
             numerical = replace(self.features, frame_seed=sources[0].hidden, type_role=type_role, boundary_group=group)
             expected, _, _ = _numpy_oracle(self.current, sources, numerical, self.params)
             np.testing.assert_allclose(np.asarray(actual), expected, atol=3e-6, rtol=3e-5)
             self.assertGreater(float(mx.sum(mx.abs(actual-self.current)).item()), 0)
         def objective(parameters):
             local = depth_parameter_view(parameters, spec=ModelTopologySpecV2(), extents=extents, boundary_group=1)
-            output = depth_select(self.current, self.sources, released, local)
+            output = depth_select(
+                self.current, _sealed_summaries(parameters, extents, features),
+                released, local)
             return mx.sum(output*output)
         gradients = mx.grad(objective)(full)
         for path in ("features.type", "features.role", "features.project_type", "features.project_role", "features.gates"):
@@ -305,8 +322,11 @@ class DepthSelectionTests(unittest.TestCase):
                           parameters[f"depth.gate.{group - 1}.bias"])
             self.assertNotIn("features.norm", view)
             self.assertNotIn("blocks.0.query", view)
+            released = _released_features(group)
             output = depth_select(
-                self.current, _summaries(group), _released_features(group), view)
+                self.current,
+                _sealed_summaries(parameters, extents, released.features, group),
+                released, view)
             np.testing.assert_array_equal(
                 np.asarray(output), np.asarray(self.current))
 
