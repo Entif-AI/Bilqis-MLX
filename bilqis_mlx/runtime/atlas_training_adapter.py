@@ -5,7 +5,7 @@ They are the interfaces in their owner contracts, not replacement implementation
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from graphlib import CycleError, TopologicalSorter
 from typing import Any, Callable
 
@@ -13,7 +13,7 @@ from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.factory.adapters import validate_instructional_constituents
 from bilqis_mlx.factory.generation import runtime_adapter_for_release
-from bilqis_mlx.factory.teaching import DeliveredTeaching, describe_delivered_teaching
+from bilqis_mlx.factory.teaching import DeliveredTeaching, describe_delivered_teaching, content_digest
 
 
 @dataclass(frozen=True)
@@ -58,12 +58,14 @@ class BamfTrainingRow:
     target: BamfTarget
     native_target: BamfTarget | None
     provenance: BamfDeliveryProvenance
+    auxiliaries: tuple = ()
 
 
 @dataclass(frozen=True)
 class BamfTrainingBatch:
     release_sha256: str
     generation_binding: str
+    delivered_content_sha256: str
     rows: tuple[BamfTrainingRow, ...]
 
 
@@ -258,4 +260,85 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
         provenance = BamfDeliveryProvenance(identity, source_id, capability, operation_id,
             _freeze(teacher_strategy), requested_count, len(delivered_rows), rehearsal, optimizer_step_seed)
         result.append(BamfTrainingRow(BamfModelInput(prefix, features, eligibility_digest, plan), target, native_target, provenance))
-    return BamfTrainingBatch(release.release_sha256, generation_binding, tuple(result))
+    return BamfTrainingBatch(release.release_sha256, generation_binding, content_digest(delivered_rows), tuple(result))
+
+
+@dataclass(frozen=True)
+class PaddedMicrobatch:
+    row_indices: tuple[int, ...]
+    positions: tuple
+    padding_mask: tuple
+
+
+def pad_microbatches(batch, topology, memory_budget, *, plan_microbatches, indices_for_plan, positions_for):
+    """Consume C08's partition; preserve every logical row and actual lengths."""
+    plan = plan_microbatches(batch.rows, topology, memory_budget)
+    groups = tuple(tuple(group) for group in indices_for_plan(plan))
+    flattened = tuple(index for group in groups for index in group)
+    if (not groups or any(not group for group in groups) or
+            any(type(index) is not int for index in flattened) or
+            flattened != tuple(range(len(batch.rows)))):
+        _invalid('MICROBATCH_PARTITION_INVALID')
+    result = []
+    for group in groups:
+        rows = tuple(tuple(positions_for(batch.rows[index].model_input.prefix)) for index in group)
+        if any(not row or len(row) + dict(batch.rows[index].model_input.answer_plan)['maximum_decisions'] > 1024
+               for index, row in zip(group, rows)):
+            _invalid('COMPILED_CONTEXT_INVALID')
+        width = max(map(len, rows))
+        result.append(PaddedMicrobatch(group,
+            tuple(row + (None,) * (width - len(row)) for row in rows),
+            tuple((True,) * len(row) + (False,) * (width - len(row)) for row in rows)))
+    return tuple(result)
+
+
+def attach_auxiliaries(batch, evidence_by_row, *, verify):
+    """Keep absent labels absent; require the source/outcome owner's verification."""
+    known = {row.provenance.row_id for row in batch.rows}
+    if not isinstance(evidence_by_row, dict) or not set(evidence_by_row) <= known:
+        _invalid('AUXILIARY_EVIDENCE_INVALID')
+    result = []
+    for row in batch.rows:
+        labels = evidence_by_row.get(row.provenance.row_id, {})
+        if not isinstance(labels, dict):
+            _invalid('AUXILIARY_EVIDENCE_INVALID')
+        targets = []
+        for name, evidence in sorted(labels.items()):
+            if (name not in {'role', 'epistemic_state', 'impact', 'exigency', 'novelty', 'frame_atomic_consistency'}
+                    or not isinstance(evidence, (tuple, list)) or len(evidence) != 3):
+                _invalid('AUXILIARY_EVIDENCE_INVALID')
+            value, regime, receipt = evidence
+            if regime not in ('SOURCE', 'OUTCOME') or not receipt or verify(row.provenance.row_id, name, value, regime, receipt) is not True:
+                _invalid('AUXILIARY_EVIDENCE_UNVERIFIED')
+            targets.append((name, _freeze(value), regime, _freeze(receipt)))
+        result.append(replace(row, auxiliaries=tuple(targets)))
+    return replace(batch, rows=tuple(result))
+
+
+def execute_with_backend(batch, source_context, topology, *, generation_binding, training, model_backend, invoke):
+    """Use B11's single selector; inference receives no gold or auxiliary targets."""
+    require_current_release(batch, source_context, generation_binding=generation_binding)
+    if type(training) is not bool:
+        _invalid('EXECUTION_MODE_INVALID')
+    backend = model_backend(topology)
+    inputs = tuple(row.model_input for row in batch.rows)
+    targets = tuple((row.target, row.native_target, row.auxiliaries) for row in batch.rows) if training else None
+    return invoke(backend, inputs, targets)
+
+
+def capture_realized_delivery(batch, source_context, capture, capability, step, rows, *,
+                              generation_binding, option_rows, priority, preservation, support,
+                              enrichment, guidance, controls, seed, cost, prior=(), mentors=None):
+    """Forward actual delivery and measured cost to the existing #333 owner."""
+    from bilqis_mlx.factory.teaching import content_digest
+    require_current_release(batch, source_context, generation_binding=generation_binding)
+    if (type(step) is not int or step < 1 or content_digest(rows) != batch.delivered_content_sha256
+            or tuple(row.get('id') for row in rows) != tuple(row.provenance.row_id for row in batch.rows)
+            or not isinstance(controls, dict) or 'realized_cost' in controls
+            or not isinstance(cost, dict) or not cost):
+        _invalid('OBSERVATION_DELIVERY_INVALID')
+    capture.delivery(source_context.release, capability, step, rows, option_rows=option_rows,
+        priority=priority, preservation=preservation, support=support, enrichment=enrichment,
+        guidance=guidance, controls={**controls, 'realized_cost': cost,
+                                    'delivered_content_sha256': content_digest(rows)},
+        seed=seed, prior=prior, mentors=mentors)
