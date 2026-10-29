@@ -268,3 +268,60 @@ def refresh_teacher_region(epoch: TeacherEpoch, *, bank_identity: str,
     teacher['bamf_region_binding'] = binding
     return replace(epoch, current_region=region,
                    current_json=json.dumps(teacher, sort_keys=True, allow_nan=False))
+
+
+def historical_mentor_advice(mx, mentor, rows, source_context, *, purpose='READ_ONLY_INFERENCE'):
+    """Use the existing v1 evaluator with its own geometry and source-gated votes."""
+    from copy import deepcopy
+    from types import MappingProxyType
+    from bilqis_mlx.learning.student_ops import _predictions, _compatible_graphs
+    from bilqis_mlx.runtime.source_execution import SourceExecutionContext
+    from bilqis_mlx.factory.generation import runtime_adapter_for_release
+    from bilqis_mlx.factory.adapters import validate_instructional_constituents
+    def invalid(reason):
+        ErrorBus.raise_(SCHOOL.BAMF_TEACHER.INVALID, reason=reason)
+    if (purpose != 'READ_ONLY_INFERENCE' or not isinstance(source_context, SourceExecutionContext)
+            or not isinstance(mentor, dict) or not isinstance(rows, (tuple, list)) or not rows):
+        invalid('READ_ONLY_COMPATIBILITY_REQUIRED')
+    release = source_context.release
+    release.verify()
+    release.verify_semantic_catalog(source_context.graph)
+    graph = mentor.get('graph')
+    if (not isinstance(graph, dict) or not graph.get('tokens')
+            or not isinstance(mentor.get('weights'), dict) or not isinstance(mentor.get('config'), dict)
+            or not isinstance(mentor.get('answer_ids'), (list, tuple))):
+        invalid('MENTOR_REFERENCE_INVALID')
+    try:
+        compatible = _compatible_graphs(graph, source_context.graph)
+    except (KeyError, TypeError):
+        invalid('MENTOR_SOURCE_BINDING_INVALID')
+    if not compatible:
+        invalid('MENTOR_SOURCE_BINDING_INVALID')
+    visible = []
+    for row in rows:
+        capability = row.get('capability')
+        execution = release.execution_plan.capability_map.get(capability)
+        if execution is None:
+            invalid('MENTOR_SCOPE_INVALID')
+        adapter = runtime_adapter_for_release(source_context.source_root, source_context.graph, release,
+                                              source_context.source_registry, execution)
+        if adapter.check(row, source_root=source_context.source_root, graph=source_context.graph,
+                         course=release.curriculum) is not True:
+            invalid('MENTOR_GOLD_UNVERIFIED')
+        validate_instructional_constituents(row, curriculum=release.curriculum, plan=release.execution_plan,
+                                            capability=capability, adapter=adapter)
+        tokens = row.get('tokens')
+        if not isinstance(tokens, (list, tuple)) or not tokens or any(type(t) is not int or not 0 <= t < len(graph['tokens']) for t in tokens):
+            invalid('MENTOR_INPUT_OUTSIDE_ABI')
+        kind = row.get('answer_kind', 'binary')
+        item = {'id': row['id'], 'capability': capability, 'tokens': list(tokens), 'answer_kind': kind}
+        if kind == 'binary':
+            # The historical batch builder requires a label even for inference;
+            # its returned labels are discarded. Never pass the actual gold.
+            item['gold'] = 'FALSE'
+        visible.append(item)
+    predictions = _predictions(mx, MappingProxyType(mentor['weights']), visible,
+                               deepcopy(mentor['config']), tuple(mentor['answer_ids']))
+    if not isinstance(predictions, dict) or set(predictions) != {row['id'] for row in rows}:
+        invalid('MENTOR_PREDICTIONS_INVALID')
+    return {row['id']: predictions[row['id']] for row in rows if predictions[row['id']] == row['gold']}

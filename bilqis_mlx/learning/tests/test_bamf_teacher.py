@@ -102,5 +102,41 @@ class BamfTeacherRegionTest(unittest.TestCase):
         self.assertEqual(report['wall_seconds']['value'], 2.)
 
 
+class BamfHistoricalMentorTest(unittest.TestCase):
+    def test_only_supported_read_only_source_bound_mentor_advice(self):
+        from unittest.mock import patch
+        from dataclasses import replace
+        from bilqis_mlx.factory.tests.test_teaching import closed_source_fixture
+        from bilqis_mlx.factory.executable_release import compile_executable_factory_release
+        from bilqis_mlx.factory.execution import CurriculumProfile
+        from bilqis_mlx.factory.curriculum_definition import from_legacy_course
+        from bilqis_mlx.runtime.source_execution import SourceExecutionContext
+        from bilqis_mlx.learning.teacher_vnext_replay import historical_mentor_advice
+        course, graph, sources, answers, _ = closed_source_fixture()
+        graph = {**graph, 'nodes': [{'id': name} for name in graph['tokens']], 'row_contract_sha256': {}}
+        curriculum, bindings = from_legacy_course(course)
+        release = compile_executable_factory_release(curriculum, bindings, CurriculumProfile.full(), sources,
+            answers, source_root=None, graph=graph, verification_seed=17)
+        context = SourceExecutionContext(release, graph, None, sources, answers)
+        rows = [{**context.draw_rows(seed=17, capability='Z.C0', each=1)[0], 'tokens': [1]}]
+        mentor = {'weights': {'sentinel': 'read-only'}, 'config': {'layers': 6, 'heads': 8},
+                  'graph': graph, 'answer_ids': [1, 2]}
+        before = copy.deepcopy(mentor)
+        def infer(mx, weights, received, config, answer_ids):
+            self.assertEqual(config['layers'], 6)
+            self.assertEqual(received[0]['tokens'], rows[0]['tokens'])
+            self.assertNotIn('record', received[0])
+            self.assertEqual(received[0]['gold'], 'FALSE')
+            return {rows[0]['id']: 'FALSE'}
+        with patch('bilqis_mlx.learning.student_ops._predictions', side_effect=infer):
+            self.assertEqual(historical_mentor_advice(None, mentor, rows, context), {rows[0]['id']: 'FALSE'})
+        with patch('bilqis_mlx.learning.student_ops._predictions', return_value={rows[0]['id']: 'TRUE'}):
+            self.assertEqual(historical_mentor_advice(None, mentor, rows, context), {})
+        self.assertEqual(mentor, before)
+        for purpose in ('RESUME', 'IMPORT_WEIGHTS', 'IMPORT_OPTIMIZER'):
+            with self.subTest(purpose=purpose), self.assertRaises(BilqisError):
+                historical_mentor_advice(None, mentor, rows, context, purpose=purpose)
+
+
 if __name__ == '__main__':
     unittest.main()
