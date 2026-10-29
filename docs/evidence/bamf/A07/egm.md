@@ -31,6 +31,26 @@ The reviewer inspected final immutable `ab5ed83` and confirmed
 claim an independent new test run at this final head; the 15/15
 count is prime executed evidence. A07.2 evaluator separation and
 A07.3 compositional DAG/cache receipts remain independent leaves.
+
+## A07.3 independent compositional DAG review
+
+Initial immutable target `ab326694835a1dc46b646fdfca07a3b6c3eb2477`.
+Goldfish independently ran 40/40 focused tests and
+reported four code Majors: hole applicability did not
+filter DIV by source-visible zero/divisibility; an
+ungranted operator could manufacture hole ambiguity;
+memo keys omitted operator-internal UnitConversion
+and frame reads; and compute-budget exhaustion could
+perform an uncounted memo lookup. The receipt still
+said implementation was unpushed.
+
+Repairs `e0ba655` and
+`88621bce14e5d07ac1bf725ffe700b2d26801e28`
+address those findings with executable negative tests.
+Focused suite: **46 passed, 0 failed, 0 skipped**.
+The formal pinned EGM checkout was installed and its
+SHA verified. Independent final immutable-head
+readback is **PENDING**; no A07.3 EGM PASS is claimed.
 No A07 parent integration or neural training is claimed.
 
 ## A07.2 independent evaluator/source separation review

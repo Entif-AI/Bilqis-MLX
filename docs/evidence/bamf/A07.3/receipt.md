@@ -7,7 +7,8 @@
   (already an ancestor; no manufactured no-op merge)
 - Direct prerequisite: A07.2 #414, independent EGM PASS
   at `819a653` with final receipt `9232a42`
-- Implementation head: pending commit/push
+- Current pushed implementation head:
+  `88621bce14e5d07ac1bf725ffe700b2d26801e28`
 - Independent EGM: **PENDING**
 
 ## Source-qualified API
@@ -69,7 +70,7 @@ verbose internal prose.
 ## Verification
 
 - Focused A07.3 plus A07.1/A07.2 owner suite:
-  **40 passed, 0 failed, 0 skipped**.
+  **46 passed, 0 failed, 0 skipped**.
 - Literal `ADD(MUL(2,3),4)` produces `10` in
   two operations; exact replay uses two memo hits
   and zero compute operations.
@@ -94,3 +95,28 @@ A07 parent integration, B10 neural selection, C05
 end-to-end scoring, and live optimizer/trainer execution
 remain separate owner gates. No unified/main merge,
 source promotion or live training is claimed.
+
+## Independent EGM findings and bounded repairs
+
+The first immutable Goldfish review at `ab32669`
+independently executed 40/40 tests and identified four
+code Majors plus a stale implementation-head receipt.
+The `e0ba655` repair filters hole operators and
+candidate operands using independently source-visible
+applicability, including zero-divisor and partial-hole
+preconditions, and bounds candidate fanout. The
+`88621bc` repair fail-closes *all* ungranted hole
+candidates before computation; includes internally
+consulted UnitConversion edges and frame/member rights
+in memo dependencies; and counts an actual memo lookup
+even when a compute-budget miss prevents execution.
+
+Negative tests now cover unauthorized alternative
+ambiguity, revoked/missing internal knowledge,
+frame-content drift, two-hole applicability, candidate
+fanout and a counting memo on budget exhaustion.
+The current source and tests are pushed. Full independent
+immutable-head EGM re-review remains **PENDING**.
+The pinned EGM checkout is available at
+`../bamf02-egm-b3a359` with verified SHA
+`b3a35956759bf7f024af2ff061b2e0b44b438e4c`.
