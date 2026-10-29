@@ -134,7 +134,8 @@ class AtlasVocabularyTests(unittest.TestCase):
                     for row in snapshot.withheld_rows))
             plan = plan_vocabulary_extension(
                 prior, (next_source.semantic_id,), ModelTopologySpecV2())
-            mirror = build_registry_mirror_delta(prior, plan)
+            mirror = build_registry_mirror_delta(
+                prior, plan, source_bundle_path=bundle)
             held = next(
                 row.semantic_id for row in snapshot.withheld_rows
                 if row.semantic_id is not None

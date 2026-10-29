@@ -5,7 +5,10 @@ These are navigable projections, not a second semantic registry or a disk grant.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from typing import Mapping
+from pathlib import Path
+
+from rdflib import Graph, Literal, URIRef
+from rdflib.namespace import SKOS
 
 from ..errors import ErrorBus, SEMANTIC_FRAME
 from ..runtime.model_topology_v2 import (
@@ -13,6 +16,7 @@ from ..runtime.model_topology_v2 import (
 )
 from ..vocabulary_growth import digest
 from .atlas_snapshot import load_pinned_atlas_snapshot
+from .atlas_projection import _verify_bundle
 from .atlas_vocabulary import (
     STAGED_ONLY, VocabularyExtension, VocabularyPrior,
     plan_vocabulary_extension,
@@ -126,9 +130,13 @@ def estimate_vocabulary_resources(
 def build_registry_mirror_delta(
     prior: VocabularyPrior,
     plan: VocabularyExtension,
+    *,
+    source_bundle_path: Path,
 ) -> RegistryMirrorDelta:
-    """Derive descriptions from A01, never from caller-supplied glosses."""
-    if type(prior) is not VocabularyPrior or type(plan) is not VocabularyExtension:
+    """Derive descriptions from verified source SKOS.definition, not labels."""
+    if (type(prior) is not VocabularyPrior
+            or type(plan) is not VocabularyExtension
+            or not isinstance(source_bundle_path, Path)):
         _invalid("BAMF_VOCABULARY_MIRROR_INPUT_INVALID")
     replay = plan_vocabulary_extension(
         prior, tuple(item.semantic_id for item in plan.allocations),
@@ -136,6 +144,12 @@ def build_registry_mirror_delta(
     if replay != plan:
         _invalid("BAMF_VOCABULARY_MIRROR_SOURCE_REPLAY_MISMATCH")
     snapshot = load_pinned_atlas_snapshot(prior.source_selection)
+    source_bundle_id, payloads = _verify_bundle(source_bundle_path)
+    if source_bundle_id != snapshot.source_bundle_id:
+        _invalid("BAMF_VOCABULARY_MIRROR_SOURCE_BUNDLE_MISMATCH")
+    source_graph = Graph()
+    source_graph.parse(
+        data=payloads["canonical.nt"].decode("utf-8"), format="nt")
     concepts = {
         item.concept.semantic_id: item.concept for item in snapshot.concepts}
     formal = {
@@ -144,20 +158,27 @@ def build_registry_mirror_delta(
     }
     rows = []
     for allocation in plan.allocations:
+        definitions = tuple(sorted({
+            (literal.language or "", str(literal))
+            for literal in source_graph.objects(
+                URIRef(allocation.semantic_id), SKOS.definition)
+            if isinstance(literal, Literal)
+        }, key=lambda item: (item[0].encode("utf-8"),
+                             item[1].encode("utf-8"))))
+        if not definitions:
+            _invalid("BAMF_VOCABULARY_MIRROR_DEFINITION_MISSING")
+        description = " ; ".join(value for _, value in definitions)
         concept = concepts.get(allocation.semantic_id)
         if concept is not None:
-            preferred = sorted((
-                label for label in concept.labels if label.role == "pref"
-            ), key=lambda label: ((label.language or "").encode("utf-8"),
-                                  label.value.encode("utf-8")))
-            description = preferred[0].value if preferred else ""
-            source_digest = digest(asdict(concept))
+            source_digest = digest({
+                "concept": asdict(concept), "definitions": definitions})
         else:
             binding = formal.get(allocation.semantic_id)
             if binding is None:
                 _invalid("BAMF_VOCABULARY_MIRROR_SOURCE_MISSING")
-            description = ""
-            source_digest = digest(asdict(binding))
+            source_digest = digest({
+                "formal_binding": asdict(binding),
+                "definitions": definitions})
         rows.append(RegistryMirrorRow(
             allocation.semantic_id, allocation.abi_index,
             allocation.bank, allocation.row, allocation.source_status,
