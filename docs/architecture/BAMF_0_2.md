@@ -12,6 +12,29 @@ The immediate target is a durable student that creates, learns, rejects a harmfu
 
 This document is the shared contract. Every linked implementation issue repeats its relevant contract, named code surfaces, algorithm, direct dependencies, focused checks and execution instructions. The machine-readable workstack and publication ledger bind the exact GitHub objects.
 
+## C01.3 | Delivered contract and foundation witness
+
+The [final delivery receipt](https://github.com/Entif-AI/Bilqis-MLX/issues/341#issuecomment-6447245564) identifies the versioned repository architecture at commit `1e648301414162bdd4d484ef903d91e06b47afde` as a delivered artifact alongside the native planning document. This file is the current amended architecture for the three existing lanes. The complete public C01 owner issue is mirrored at `docs/tasks/bamf-0.2/issues/C01.md`; its live body, mirror, and workstack digest matched at C01.3 review. The restricted native specification remains separately governed. This document does not claim byte identity with it or grant authority to publish protected material.
+
+[C16 #382](https://github.com/Entif-AI/Bilqis-MLX/issues/382) owns the disposable foundation successor witness. Its exact-head receipt must show a source-valid retained capability improvement, complete rollback of a deliberately damaging candidate, and equivalent cold resume. The receipt satisfies the foundation launch gate only after those outcomes are executed and recorded at the relevant head. [C13 #385](https://github.com/Entif-AI/Bilqis-MLX/issues/385) is a later expanded-system qualification, not a prerequisite for the foundation start. A human operator owns the first durable student start.
+
+The witness is **not yet recorded** by this documentation change. This contract describes a required proof; it does not assert model implementation, retained learning, admission or launch readiness.
+
+## C01.4 | Lane integration handoff
+
+For BAMF, historical Prometheus Grade-B cadence is lineage-specific provenance.
+The successor uses the `ADR-BAMF02-004` functional recursive Factory and the same
+source-qualified, typed-rule admission and teaching policy across grades. These
+are intended behavior; executable proof belongs to the relevant implementation
+owners. C13 is later expanded-system qualification and does not gate C16's
+foundation start.
+
+Check current owner issue mirrors and their workstack digests against live GitHub
+with `python3 -B scripts/check_bamf_workstack.py docs/tasks/bamf-0.2/workstack.json --live`.
+An unavailable GitHub check is an error, not a passing receipt. Each implementing
+leaf consumes direct dependency receipts and a synchronized unified head; reviewed
+lane changes enter unified only through human approval.
+
 ## 1. Owner decisions and reconciliation
 
 The 27 October instruction selects an aggressive single architecture and a capability-first build. It supplies the following scoped successor decisions.

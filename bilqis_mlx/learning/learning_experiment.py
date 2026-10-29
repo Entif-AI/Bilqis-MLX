@@ -28,6 +28,7 @@ from bilqis_mlx.learning.teacher_feedback import (
     LearningExperimentError, WeaknessTargetError, WeaknessTargetRequest,
     select_weakness_targets,
 )
+from bilqis_mlx.learning.teacher_strategy_population import BAMF_SUCCESSOR_SELECTION
 from bilqis_mlx.learning.teacher_strategy_population import UCB_EXPLORATION_WEIGHT as TEACHER_UCB_EXPLORATION_WEIGHT, SELECTION_POLICY as TEACHER_SELECTION_POLICY, active_effective_strategy_keys as _active_effective_strategy_keys, checkpoint_active_effective_strategy_keys as _checkpoint_active_effective_strategies, effective_context_scope as _effective_context_scope_impl, effective_policy_key as _effective_policy_key_impl, pick_existing_active as _pick_existing_active, record_checkpoint_policy_outcome as _record_checkpoint_policy_outcome, sibling_cooldown_penalty as _sibling_cooldown_penalty
 from bilqis_mlx.learning.teacher_realized_action import bind_record as _bind_realized_action_record, describe as realized_teacher_action, record_outcome as _record_realized_action_outcome
 
@@ -434,6 +435,8 @@ def decide(paired: dict, *, active_capability: str, phase: str,
 def _channel(teacher: dict) -> dict:
     channel = teacher.setdefault("causal_experiment", {
         "version": VERSION, "contexts": {}, "negative_archetypes": [], "events": 0})
+    if teacher.get("selection_contract") == BAMF_SUCCESSOR_SELECTION:
+        channel["selection_contract"] = BAMF_SUCCESSOR_SELECTION
     if channel.get("version") != VERSION:
         raise ValueError("LEARNING_EXPERIMENT_CHANNEL_VERSION_DRIFT")
     return channel
@@ -482,7 +485,7 @@ def _capability_stagnation_record(channel: dict, capability: str,
 
 
 def _inherited_exploration(teacher: dict, grade: str, policy_key: str) -> float:
-    local = teacher.get("grade_stats", {}).get(str(grade), {})
+    local = {} if teacher.get("selection_contract") == BAMF_SUCCESSOR_SELECTION else teacher.get("grade_stats", {}).get(str(grade), {})
     info = local.get(policy_key) or teacher.get("global_stats", {}).get(policy_key)
     if not info or not info.get("trials"):
         return 0.

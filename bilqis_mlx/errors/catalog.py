@@ -42,6 +42,40 @@ def _spec(
 
 
 class SCHOOL:
+    class BAMF_TEACHER:
+        INVALID = _spec(
+            ("SCHOOL", "BAMF_TEACHER", "INVALID"), owner="learning.teacher_vnext_replay",
+            title="Invalid BAMF teacher successor binding",
+            message_template="The teacher successor binding is invalid: {reason}",
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect replay and student identity without modifying the retained learner.",
+        )
+
+    class BAMF_TRAINING_ADAPTER:
+        INVALID = _spec(
+            ("SCHOOL", "BAMF_TRAINING_ADAPTER", "INVALID"), owner="runtime.atlas_training_adapter",
+            title="Invalid BAMF training input",
+            message_template="The delivered training input violates its contract: {reason}",
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the released source and delivery metadata before retrying.",
+        )
+
+    class BAMF_WORKSTACK:
+        VALIDATION_INVALID = _spec(
+            ("SCHOOL", "BAMF_WORKSTACK", "VALIDATION_INVALID"), owner="scripts.check_bamf_workstack",
+            title="BAMF workstack validation failed",
+            message_template="Workstack validation failed: {reason}",
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the reported workstack invariant and preserve source evidence.",
+        )
+        INPUT_INVALID = _spec(
+            ("SCHOOL", "BAMF_WORKSTACK", "INPUT_INVALID"), owner="scripts.check_bamf_workstack",
+            title="BAMF workstack input unavailable or malformed",
+            message_template="Workstack or registry input could not be read: {error_type}",
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the input file and preserve its current contents.",
+        )
+
     class QUALIFICATION:
         INVALID = _spec(
             ("SCHOOL", "QUALIFICATION", "INVALID"), owner="runtime.qualification_manifest",
@@ -878,6 +912,10 @@ class FACTORY:
 
 
 CATALOG = (
+    SCHOOL.BAMF_TEACHER.INVALID,
+    SCHOOL.BAMF_TRAINING_ADAPTER.INVALID,
+    SCHOOL.BAMF_WORKSTACK.INPUT_INVALID,
+    SCHOOL.BAMF_WORKSTACK.VALIDATION_INVALID,
     SCHOOL.QUALIFICATION.INVALID,
     SCHOOL.TEACHER_OBSERVATION.INVALID,
     SCHOOL.TEACHER_OBSERVATION.CONTENT_MISMATCH,

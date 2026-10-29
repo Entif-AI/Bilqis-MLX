@@ -2220,3 +2220,47 @@ integration-parent issues inherit this lifecycle through their implementing
 descendants and do not create empty bookkeeping code PRs.
 
 **Status:** Accepted as the BAMF branch topology and integration lifecycle.
+
+## ADR-120 | 2026-10-28 | BAMF successor outcome, admission and baseline custody
+
+**Scope:** BAMF-0.2 successor only; issue #486 under #347 and #344. This
+records the selected policy and baseline evidence; it does not implement a
+student, grant admission, authorize neural training or alter #324.
+
+**Decision:** Judge useful capability by complete-system outcomes. Exact retrieval,
+declared deterministic operators, learned memory, neural prediction and their
+compositions each count equally when they solve a source-valid task. All admitted
+grades use the same grade-neutral Factory, teacher, retention and assessment
+policy. Source-gold, prerequisites, whole-school retention, checkpoint and own
+optimizer custody, and the sovereign MLX writer remain binding.
+
+Semantic releases default to staging. A human-started BAMF run may delegate later
+source-valid expansion through an explicit persisted admission lease and the
+existing Factory/admission owner. The source bridge can be built now. Its first
+live adoption requires BAMF's disposable C16 ([#382](https://github.com/Entif-AI/Bilqis-MLX/issues/382)) source/custody/retained-learning
+witness, including a strictly improved fresh target, preserved cumulative retention,
+complete rejection rollback and equivalent cold-resume output and next update,
+before the operator starts the first persistent lineage, rather than waiting for
+the historical #324 model-size comparison. Persistent-student learning receipts
+are subsequent operating evidence. The operator owns every
+durable-student start, resume and stop. This is a desired-state contract, not
+proof the lease or successor learner has been implemented.
+
+**Baseline evidence:** Lane C starts from reviewed unified
+`44f78431709ec3b8fc23f47b45d9b18f167c7354`. Replay
+`d21797e72365bf93ea7cad3a4ef9020ec9817f23` is its Git ancestor. The historical
+SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8` and its PR head
+`0561e67eada816a999841aab3d9d5080e8f99bed` are **not** ancestors of unified.
+Unified commit `77d4f6869b782fc24341e6e6ec8f2601e1dd3873` imported the SKOS
+files. At this baseline, `lib/ithkuil/src/skos` and `lib/ithkuil/_data` match
+the historical SKOS merge; `lib/ithkuil/RELEASE_REBUILD.md` differs. Content
+inclusion is not Git ancestry. No second integration branch or main merge is
+needed. The discrepancy is recorded as PM-2026-10-28-001.
+
+**Custody:** The frozen #324 v3 executable
+`2e5ee21a97a66c683c61f74419da03500c30d2c4` and manifest
+`7f1968f38b2a062df7dbaae586ccecc3327ff5885a72cb7c368938ecec92aea1` remain
+historical controls. Do not modify, substitute or rebase them or their student
+and optimizer state. Disposable-witness retained learning remains unmeasured until
+that witness runs; persistent-student learning remains unmeasured until the
+human-owned successor run produces its own evidence.
