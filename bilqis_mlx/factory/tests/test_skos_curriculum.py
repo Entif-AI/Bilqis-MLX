@@ -636,6 +636,19 @@ class SemanticFamilyInventoryTests(unittest.TestCase):
         self.assertEqual(
             caught.exception.context["reason"],
             "BAMF_FAMILY_FORMAL_SOURCE_INVALID")
+        other_boolean = next((
+            entry.semantic_id for entry in snapshot.abi_entries
+            if entry.semantic_id.startswith("legacy:cogal.operator.")
+            and entry.semantic_id not in
+            snapshot.formal_domain_bindings[0].semantic_ids), None)
+        if other_boolean is not None:
+            same_family_forgery = replace(
+                snapshot, formal_domain_bindings=(
+                    replace(snapshot.formal_domain_bindings[0],
+                            semantic_ids=(other_boolean,)),
+                    *snapshot.formal_domain_bindings[1:]))
+            with self.assertRaises(BilqisError):
+                inventory_source_families(same_family_forgery)
         # Frozen A01.2/A01.3 source census: formal ABI cannot disappear
         # merely because no AtlasConcept record backs its identity.
         self.assertEqual(census.counts.atlas_source_concepts, 9079)
