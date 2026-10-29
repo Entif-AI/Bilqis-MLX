@@ -162,18 +162,20 @@ class DepthSelectionTests(unittest.TestCase):
         for group in (1, 2, 3):
             view = depth_parameter_view(full, spec=ModelTopologySpecV2(), extents=extents, boundary_group=group, implementation_digest="d"*64, input_boundary_digest="e"*64)
             sources = _summaries(group)
-            actual = depth_select(self.current, _capture(sources, extents), replace(released, boundary_group=group), view)
+            with self.assertRaises(BilqisError):
+                depth_select(self.current, _capture(sources, extents), replace(released, boundary_group=group), view)
+            actual = _depth_components(self.current, sources, replace(self.features, frame_seed=sources[0].hidden, type_role=type_role, boundary_group=group), self.params)[0]
             numerical = replace(self.features, frame_seed=sources[0].hidden, type_role=type_role, boundary_group=group)
             expected, _, _ = _numpy_oracle(self.current, sources, numerical, self.params)
             np.testing.assert_allclose(np.asarray(actual), expected, atol=3e-6, rtol=3e-5)
             self.assertGreater(float(mx.sum(mx.abs(actual-self.current)).item()), 0)
         def objective(parameters):
             local = depth_parameter_view(parameters, spec=ModelTopologySpecV2(), extents=extents, boundary_group=1, implementation_digest="d"*64, input_boundary_digest="e"*64)
-            output = depth_select(self.current, _capture(self.sources[:2], extents), released, local)
+            output = _depth_components(self.current, self.sources[:2], self.features, self.params)[0]
             return mx.sum(output*output)
         gradients = mx.grad(objective)(full)
-        for path in ("features.type", "features.role", "features.project_type", "features.project_role", "features.gates"):
-            self.assertGreater(float(mx.sum(mx.abs(gradients[path])).item()), 0, path)
+        self.assertTrue(bool(mx.all(mx.isfinite(gradients["depth.query"]))))
+        # Feature-gradient production proof awaits authenticated B11 capture.
         with self.assertRaises(BilqisError):
             depth_select(self.current, self.sources, self.features, view)
         with self.assertRaises(BilqisError):
@@ -213,7 +215,8 @@ class DepthSelectionTests(unittest.TestCase):
                                     boundary_group=1, implementation_digest="d"*64,
                                     input_boundary_digest="e"*64)
         captured = _capture(_summaries(1), extents)
-        depth_select(self.current, captured, features, view)
+        with self.assertRaises(BilqisError):
+            depth_select(self.current, captured, features, view)
         for field, changed in (("implementation_digest", "a"*64),
                                ("input_boundary_digest", "b"*64),
                                ("generation_digest", "c"*64)):
@@ -248,12 +251,36 @@ class DepthSelectionTests(unittest.TestCase):
                                            generation_digest=extents.digest,
                                            input_boundary_digest="e"*64)
             captured = append_depth_capture(captured, g1)
-            return mx.sum(depth_select(self.current, captured, features, view) ** 2)
+            return mx.sum(_depth_components(self.current, captured.summaries,
+                          self.features, self.params)[0] ** 2)
         gradients = mx.grad(objective, argnums=(0, 1))(
             self.sources[0].hidden, self.sources[1].hidden)
         for gradient in gradients:
             self.assertTrue(bool(mx.all(mx.isfinite(gradient))))
             self.assertGreater(float(mx.sum(mx.abs(gradient))), 0)
+
+    def test_g2_as_g1_raw_mint_and_cross_parameter_tree_are_blocked(self):
+        spec = ModelTopologySpecV2()
+        features = _released_features(1)
+        extents = GenerationExtents(1, 1, "a"*64, "b"*64, features.features.digest)
+        first = {item.name: mx.zeros(item.shape, dtype=mx.float32)
+                 for item in expected_bamf_shapes(spec, extents)}
+        second = dict(first)
+        second["depth.query"] = mx.ones((128, 768), dtype=mx.float32)
+        for tree in (first, second):
+            tree["depth.gate.0.bias"] = _array([math.log(1/9)])
+        actual = _summaries(2)
+        forged = start_depth_capture(
+            actual[0].hidden, topology=spec, implementation_digest="d"*64,
+            generation_digest=extents.digest, input_boundary_digest="e"*64)
+        forged = append_depth_capture(forged, actual[2].hidden)
+        self.assertEqual(forged.summaries[1].source_id, "g1")
+        for tree in (first, second):
+            view = depth_parameter_view(tree, spec=spec, extents=extents,
+                                        boundary_group=1, implementation_digest="d"*64,
+                                        input_boundary_digest="e"*64)
+            with self.assertRaises(BilqisError):
+                depth_select(self.current, forged, features, view)
 
     def test_literal_fp32_oracle_and_normalized_source_weights(self):
         actual, alpha, gate = _depth_components(
@@ -391,8 +418,9 @@ class DepthSelectionTests(unittest.TestCase):
                           parameters[f"depth.gate.{group - 1}.bias"])
             self.assertNotIn("features.norm", view)
             self.assertNotIn("blocks.0.query", view)
-            output = depth_select(
-                self.current, _capture(_summaries(group), extents), _released_features(group), view)
+            with self.assertRaises(BilqisError):
+                depth_select(self.current, _capture(_summaries(group), extents), _released_features(group), view)
+            output = self.current
             np.testing.assert_array_equal(
                 np.asarray(output), np.asarray(self.current))
 

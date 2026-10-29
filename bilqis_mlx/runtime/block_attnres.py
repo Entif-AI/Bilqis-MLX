@@ -208,7 +208,7 @@ def _tensor_digest(hidden: mx.array) -> str:
 
 @dataclass(frozen=True)
 class CapturedDepth:
-    """One producer-bound prefix of h0,g1,g2,g3; no public mintable seal."""
+    """Caller-created numerical fixture; no authoritative producer identity."""
 
     summaries: tuple[DepthSummary, ...]
     topology_digest: str
@@ -255,7 +255,7 @@ def start_depth_capture(
     implementation_digest: str, generation_digest: str,
     input_boundary_digest: str,
 ) -> CapturedDepth:
-    """Start the source producer's immutable capture before the first group."""
+    """Provisional numerical fixture only; never authorizes public selection."""
     if type(topology) is not ModelTopologySpecV2 or not isinstance(h0, mx.array):
         _invalid()
     return _issue_capture(CapturedDepth((DepthSummary("h0", 0, h0),), topology.digest,
@@ -265,7 +265,7 @@ def start_depth_capture(
 
 
 def append_depth_capture(prior: CapturedDepth, group_hidden: mx.array) -> CapturedDepth:
-    """Capture the next completed four-layer group exactly once, in order."""
+    """Append test fixture data; labels do not certify layer ancestry."""
     if type(prior) is not CapturedDepth or not isinstance(group_hidden, mx.array):
         _invalid()
     _validate_capture(prior)
@@ -349,32 +349,9 @@ def depth_select(
     current: mx.array, available_summaries: CapturedDepth,
     frame_features: DepthFrameFeatures, params: DepthParameterView,
 ) -> mx.array:
-    """Merge h0 and completed group summaries in their fixed source order.
-
-    The producer captures h0,g1,...,gk in order; B11 supplies the real
-    backbone group outputs at the declared completion boundaries.
-    """
-    if (type(available_summaries) is not CapturedDepth
-            or available_summaries.topology_digest != ModelTopologySpecV2().digest
-            or available_summaries.generation_digest != params._extents.digest
-            or available_summaries.implementation_digest != params.implementation_digest
-            or available_summaries.input_boundary_digest != params.input_boundary_digest
-            or type(params) is not DepthParameterView
-            or type(frame_features) is not DepthFrameFeatures
-            or params.boundary_group != frame_features.boundary_group):
-        _invalid()
-    _validate_capture(available_summaries)
-    if (len(available_summaries.summaries) != frame_features.boundary_group + 1
-            or not isinstance(current, mx.array) or current.ndim != FRAME_RANK
-            or current.shape[:BATCH_POSITION_AXES] != (len(frame_features.requests), len(frame_features.requests[0]))):
-        _invalid()
-    type_role = mx.stack([mx.stack([
-        mx.mean(compose_factor_features(params._feature_parameters, (members,), frame_features.features,
-                                        extents=params._extents).type_role[0], axis=0)
-        for members in row]) for row in frame_features.requests])
-    numerical = _DepthFeatureValues(available_summaries.summaries[0].hidden, type_role,
-                                     frame_features.features.semantic_release,
-                                     frame_features.features.digest, frame_features.boundary_group)
-    output, _, _ = _depth_components(
-        current, available_summaries.summaries, numerical, params)
-    return output
+    """Fail closed until B11/B04 issues a trustworthy completed-group receipt."""
+    # B05.4 fail-closed: B04 scopes and user-issued captures do not prove
+    # executed backbone group ancestry. B11 must provide a source-owned
+    # completion receipt before a production selector can be admitted.
+    ErrorBus.raise_(SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID,
+                    reason="BLOCKED_PRODUCER_DEPENDENCY")
