@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 from bilqis_mlx.errors import ErrorBus, SOURCE
+from .capability_retention import (
+    candidate_work_disposition, configuration_outcome, retain_candidate,
+)
 
 import bilqis_mlx.curriculum.scheduler as _curriculum_scheduler
 import bilqis_mlx.fixed_frontier as _bilqis_mlx_fixed_frontier
