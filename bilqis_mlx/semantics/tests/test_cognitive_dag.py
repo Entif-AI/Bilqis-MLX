@@ -14,10 +14,12 @@ from bilqis_mlx.semantics.cognitive_dag import (
     DAGBudget, DAGNode, DAGOperand, DAGProgram, DAGResult, RefKind,
     TaskGoal, execute_dag,
 )
-from bilqis_mlx.semantics.cognitive_operators import TypedValue, ValueState
+from bilqis_mlx.semantics.cognitive_operators import (
+    Duration, SourceKind, TypedValue, ValueState,
+)
 from bilqis_mlx.semantics.memo import PureOperationMemo
 from bilqis_mlx.semantics.tests.test_cognitive_operators import (
-    RELEASE, SCOPE, _case, _grant, _with_frame,
+    RELEASE, SCOPE, _case, _grant, _with_frame, _with_unit_edge,
 )
 
 
@@ -201,6 +203,49 @@ class CognitiveDAGTests(TestCase):
         self.assertEqual((second.receipt.operation_count,
                           second.receipt.memo_hit_count), (0, 1))
 
+    def test_memo_tracks_consulted_unit_edge_not_just_explicit_operands(self):
+        binding, values = _case(
+            ("Duration", Duration(1, 4, "h")),
+            ("UnitName", "min"), numbers=False)
+        admitted = _with_unit_edge(binding, "h", "min", 60, 1)
+        program = _program(DAGNode(
+            "convert", "UNIT_CONVERT",
+            tuple(_literal(value) for value in values), "Duration", SCOPE))
+        memo = PureOperationMemo()
+        first = _execute(program, admitted, memo=memo)
+        self.assertEqual(first.answer.value, Duration(15, 1, "min"))
+        without_edge = replace(
+            admitted,
+            operands=tuple(item for item in admitted.operands
+                           if item.kind is not SourceKind.ADMITTED_KNOWLEDGE),
+            frontier=replace(
+                admitted.frontier,
+                grants=tuple(
+                    item for item in admitted.frontier.grants
+                    if not item.source_handle.startswith("source:unit:"))))
+        replay = _execute(program, without_edge, memo=memo)
+        self.assertEqual(replay.answer.state, ValueState.UNSUPPORTED)
+        self.assertEqual((replay.receipt.operation_count,
+                          replay.receipt.memo_hit_count), (1, 0))
+
+    def test_memo_tracks_frame_content_and_member_rights(self):
+        from bilqis_mlx.semantics.frame_schema import BindingState
+        base, values = _case(
+            ("FrameHandle", "frame:one"), ("RoleId", "subject"),
+            ("Index", 0), numbers=False)
+        occupied, _, _ = _with_frame(base, state=BindingState.VALUE)
+        empty, _, _ = _with_frame(base, state=BindingState.NONE)
+        program = _program(DAGNode(
+            "lookup", "ROLE_LOOKUP",
+            tuple(_literal(value) for value in values), "ConceptRef", SCOPE))
+        memo = PureOperationMemo()
+        first = _execute(program, occupied, memo=memo)
+        self.assertEqual(first.answer.state, ValueState.VALUE)
+        second = _execute(program, empty, memo=memo)
+        self.assertEqual(second.answer.state, ValueState.NONE)
+        self.assertEqual((second.receipt.operation_count,
+                          second.receipt.memo_hit_count), (1, 0))
+
     def test_single_legal_operator_hole_binds_without_neural_guess(self):
         binding, values = _case(("Number", 2), ("Number", 3))
         hole = DAGNode(
@@ -221,6 +266,27 @@ class CognitiveDAGTests(TestCase):
         self.assertIsNone(result.answer.value)
         self.assertEqual(result.receipt.operation_count, 0)
         self.assertEqual(result.receipt.unresolved_signature, "answer:Number")
+
+    def test_ungranted_hole_candidate_cannot_create_false_ambiguity(self):
+        binding, values = _case(("Number", 2), ("Number", 3))
+        hole = DAGNode(
+            "answer", None, (_literal(values[0]), _literal(values[1])),
+            "Number", SCOPE, candidate_operator_ids=("ADD", "SUB"))
+        frontier = replace(
+            binding.frontier,
+            grants=tuple(
+                grant for grant in binding.frontier.grants
+                if grant.source_handle != "source:operator:SUB"))
+        ungranted = replace(binding, frontier=frontier)
+        with patch(
+            "bilqis_mlx.semantics.cognitive_dag._compute_after_authorization",
+            side_effect=AssertionError("computed before grant validation"),
+        ):
+            with self.assertRaises(BilqisError) as caught:
+                _execute(_program(hole), ungranted)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_OPERATOR_SOURCE_GRANT_MISSING")
 
     def test_hole_with_one_source_visible_operand_choice_binds(self):
         binding, values = _case(
@@ -370,6 +436,35 @@ class CognitiveDAGTests(TestCase):
         limited = _execute(two, numeric, budget=DAGBudget(max_operations=1))
         self.assertEqual(limited.answer.state, ValueState.UNRESOLVED)
         self.assertEqual(limited.receipt.operation_count, 1)
+        self.assertEqual(limited.receipt.unresolved_signature, "add:Number")
+
+    def test_budget_exhaustion_counts_actual_memo_get_without_compute(self):
+        class CountingMemo(PureOperationMemo):
+            def __init__(self):
+                super().__init__()
+                self.get_calls = 0
+
+            def get(self, key):
+                self.get_calls += 1
+                return super().get(key)
+
+        binding, values = _case(
+            ("Number", 2), ("Number", 3), ("Number", 4))
+        program = _program(
+            DAGNode("mul", "MUL", (_literal(values[0]), _literal(values[1])),
+                    "Number", SCOPE),
+            DAGNode("add", "ADD", (_result("mul"), _literal(values[2])),
+                    "Number", SCOPE))
+        memo = CountingMemo()
+        limited = _execute(
+            program, binding, memo=memo,
+            budget=DAGBudget(max_operations=1))
+        self.assertEqual(limited.answer.state, ValueState.UNRESOLVED)
+        self.assertEqual(memo.get_calls, 2)
+        self.assertEqual((limited.receipt.lookup_count,
+                          limited.receipt.operation_count,
+                          limited.receipt.memo_hit_count), (2, 1, 0))
+        self.assertEqual(limited.receipt.executed_nodes, ("mul",))
         self.assertEqual(limited.receipt.unresolved_signature, "add:Number")
 
     def test_failed_applicability_costs_one_operation(self):

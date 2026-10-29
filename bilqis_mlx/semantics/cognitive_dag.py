@@ -7,7 +7,7 @@ import re
 
 from ..errors import ErrorBus, SEMANTIC_FRAME
 from .cognitive_operators import (
-    OperatorBinding, TypedValue, ValueState, _approved_frames,
+    OperatorBinding, SourceKind, TypedValue, ValueState, _approved_frames,
     _authorize_inputs, _check_grant, _compute_after_authorization,
     _independent_applicability, _number_domain, operator_grant_digest,
 )
@@ -250,7 +250,9 @@ class DAGReceipt:
                 or self.lookup_count > MAX_DAG_NODES
                 or self.memo_hit_count > self.lookup_count
                 or self.operation_count + self.memo_hit_count
-                != self.lookup_count
+                > self.lookup_count
+                or self.lookup_count - (
+                    self.operation_count + self.memo_hit_count) > 1
                 or not isinstance(self.selected_bindings, tuple)
                 or not isinstance(self.executed_nodes, tuple)
                 or any(not isinstance(item, tuple) or len(item) != 3
@@ -262,11 +264,14 @@ class DAGReceipt:
                 != len(self.selected_bindings)
                 or any(not _name(item) for item in self.executed_nodes)
                 or len(set(self.executed_nodes)) != len(self.executed_nodes)
-                or len(self.executed_nodes) != self.lookup_count
+                or len(self.executed_nodes) != (
+                    self.operation_count + self.memo_hit_count)
                 or not set(self.executed_nodes).issubset(
                     {item[0] for item in self.selected_bindings})
                 or (self.unresolved_signature is not None
                     and not _name(self.unresolved_signature))
+                or (self.lookup_count > len(self.executed_nodes)
+                    and self.unresolved_signature is None)
                 or self.schema_version != DAG_RECEIPT_SCHEMA):
             _invalid("BAMF_DAG_RECEIPT_INVALID")
 
@@ -444,6 +449,13 @@ def _prepare(goal: TaskGoal, binding: OperatorBinding):
         if any(spec.operator_id not in goal.allowed_operator_ids
                for spec in candidates):
             _invalid("BAMF_DAG_OPERATOR_NOT_TASK_ALLOWED")
+        # Every proposed choice must be source-granted, not merely the
+        # eventual unique binding. An unauthorized alternative must never
+        # manufacture ambiguity that suppresses an otherwise legal answer.
+        for spec in candidates:
+            _check_grant(
+                "source:operator:" + spec.operator_id,
+                operator_grant_digest(spec), binding)
         resolved = list(node.operands)
         for index, ref in enumerate(node.operands):
             if ref is not None:
@@ -547,6 +559,47 @@ def _dependency_record(
         _grant_record(member.source_handle, binding))
 
 
+def _consulted_dependencies(
+    operator_id: str, inputs: tuple[TypedValue, ...],
+    binding: OperatorBinding,
+) -> tuple:
+    """Memo identity includes source data read *inside* the operator."""
+    if operator_id == "UNIT_CONVERT":
+        duration, target = (value.value for value in inputs)
+        edge = next((
+            item for item in binding.operands
+            if item.kind is SourceKind.ADMITTED_KNOWLEDGE
+            and item.typed.type_name == "UnitConversion"
+            and item.typed.state is ValueState.VALUE
+            and item.typed.value.from_unit == duration.unit
+            and item.typed.value.to_unit == target
+        ), None)
+        if edge is None:
+            return (("unit-edge-absent", duration.unit, target),)
+        return (("unit-edge", edge,
+                 _grant_record(edge.typed.source_handle, binding)),)
+    if operator_id in {"ROLE_LOOKUP", "PARENT_OF", "BEFORE"}:
+        handles = (
+            (inputs[0].value,) if operator_id == "ROLE_LOOKUP"
+            else tuple(value.value for value in inputs))
+        consulted = []
+        for handle in handles:
+            envelope = next((
+                item for item in binding.frames
+                if item.frame_handle == handle
+            ), None)
+            if envelope is None:
+                consulted.append(("frame-absent", handle))
+                continue
+            consulted.append((
+                "frame", envelope,
+                _grant_record(envelope.source_handle, binding),
+                tuple(_grant_record(member.source_handle, binding)
+                      for member in envelope.members)))
+        return tuple(consulted)
+    return ()
+
+
 def execute_dag(
     goal: TaskGoal,
     binding: OperatorBinding,
@@ -606,7 +659,8 @@ def execute_dag(
             return unresolved_answer(node.node_id, node.expected_output_type)
         dependencies = tuple(
             _dependency_record(ref, value, binding, lineage)
-            for ref, value in zip(refs, inputs))
+            for ref, value in zip(refs, inputs)) + _consulted_dependencies(
+                spec.operator_id, inputs, binding)
         authority = (
             binding.task, binding.policy,
             binding.frontier.rights_epoch,
@@ -618,10 +672,14 @@ def execute_dag(
         )
         key = PureOperationMemo.key(
             operator=spec, dependencies=dependencies, authority=authority)
-        cached = memo.get(key) if memo is not None else None
+        cached = None
+        if memo is not None:
+            lookups += 1
+            cached = memo.get(key)
         if cached is None and computed >= budget.max_operations:
             return unresolved_answer(node.node_id, node.expected_output_type)
-        lookups += 1
+        if memo is None:
+            lookups += 1
         if cached is not None:
             if (not isinstance(cached, TypedValue)
                     or cached.type_name != node.expected_output_type
