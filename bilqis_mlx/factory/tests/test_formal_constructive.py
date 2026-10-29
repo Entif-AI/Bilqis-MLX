@@ -10,7 +10,9 @@ import unittest
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory.formal_constructive import (
-    FORMAL_SOURCE_ONLY, _resolve_from_bindings, resolve_formal_source_operators,
+    FORMAL_SOURCE_ONLY, SOURCE_AUTHORITY_PINNED,
+    SOURCE_AUTHORITY_UNVERIFIED, _resolve_from_bindings,
+    resolve_formal_source_operators,
 )
 from bilqis_mlx.semantics.atlas_projection import (
     AbiEntry, FormalDomainBinding, compile_atlas_release, persist_atlas_release,
@@ -58,12 +60,16 @@ class FormalSourceResolutionTests(unittest.TestCase):
             bindings, entries, registry,
             semantic_release=RELEASE, atlas_bundle_id=BUNDLE)
         self.assertEqual(resolved.status, FORMAL_SOURCE_ONLY)
+        self.assertEqual(
+            resolved.source_authority, SOURCE_AUTHORITY_UNVERIFIED)
         self.assertEqual(resolved.uncovered, ())
         self.assertEqual(
             {item.semantic_id: item.operator.operator_id
              for item in resolved.witnesses},
             {semantic_id: operator for semantic_id, _, operator in FORMAL})
         for item in resolved.witnesses:
+            self.assertEqual(
+                item.source_authority, SOURCE_AUTHORITY_UNVERIFIED)
             self.assertEqual(
                 item.operator_grant_sha256,
                 operator_grant_digest(registry.resolve(item.operator.operator_id)))
@@ -87,6 +93,8 @@ class FormalSourceResolutionTests(unittest.TestCase):
             resolved.uncovered, ((unknown, "OPERATOR_UNREGISTERED"),))
         self.assertEqual(len(resolved.witnesses), len(FORMAL))
         self.assertEqual(resolved.status, FORMAL_SOURCE_ONLY)
+        self.assertEqual(
+            resolved.source_authority, SOURCE_AUTHORITY_UNVERIFIED)
 
     def test_wrong_release_and_forged_operator_contract_fail_closed(self):
         bindings, entries = _source()
@@ -151,6 +159,10 @@ class FormalSourceResolutionTests(unittest.TestCase):
             resolved = resolve_formal_source_operators(
                 selection, default_registry(release.digest))
         self.assertEqual(resolved.status, FORMAL_SOURCE_ONLY)
+        self.assertEqual(resolved.source_authority, SOURCE_AUTHORITY_PINNED)
+        self.assertTrue(all(
+            item.source_authority == SOURCE_AUTHORITY_PINNED
+            for item in resolved.witnesses))
         self.assertEqual(resolved.uncovered, ())
         self.assertEqual(
             {item.operator.operator_id for item in resolved.witnesses},

@@ -6,7 +6,7 @@ This module joins the first two without claiming the third.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import re
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
@@ -21,8 +21,13 @@ from bilqis_mlx.semantics.domains import contract_digest
 
 
 FORMAL_SOURCE_SCHEMA = "bilqis.formal-source-operator/v1"
+FORMAL_SOURCE_UNVERIFIED_SCHEMA = "bilqis.formal-source-operator-unverified/v1"
 FORMAL_SOURCE_SET_SCHEMA = "bilqis.formal-source-operator-set/v1"
+FORMAL_SOURCE_SET_UNVERIFIED_SCHEMA = (
+    "bilqis.formal-source-operator-set-unverified/v1")
 FORMAL_SOURCE_ONLY = "SOURCE_BOUND_NOT_EXECUTABLE"
+SOURCE_AUTHORITY_UNVERIFIED = "UNVERIFIED_SOURCE_PROJECTION"
+SOURCE_AUTHORITY_PINNED = "A01_PINNED_SOURCE_ATTESTED"
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _OPERATOR_SUFFIX = re.compile(r"[A-Z][A-Z0-9_]*\Z")
 _PREFIXES = {
@@ -46,7 +51,8 @@ class FormalSourceOperator:
     source_binding_sha256: str
     operator_grant_sha256: str
     capability_ids: tuple[str, ...]
-    schema: str = FORMAL_SOURCE_SCHEMA
+    source_authority: str = SOURCE_AUTHORITY_UNVERIFIED
+    schema: str = FORMAL_SOURCE_UNVERIFIED_SCHEMA
 
     def __post_init__(self) -> None:
         if (not isinstance(self.semantic_id, str) or not self.semantic_id
@@ -57,7 +63,9 @@ class FormalSourceOperator:
                        for value in (
                            self.source_binding_sha256, self.operator_grant_sha256))
                 or not isinstance(self.capability_ids, tuple)
-                or self.schema != FORMAL_SOURCE_SCHEMA):
+                or (self.source_authority, self.schema) not in {
+                    (SOURCE_AUTHORITY_UNVERIFIED, FORMAL_SOURCE_UNVERIFIED_SCHEMA),
+                    (SOURCE_AUTHORITY_PINNED, FORMAL_SOURCE_SCHEMA)}):
             _fail("BAMF_FORMAL_SOURCE_RECORD_INVALID")
 
 
@@ -68,7 +76,8 @@ class FormalSourceOperatorSet:
     witnesses: tuple[FormalSourceOperator, ...]
     uncovered: tuple[tuple[str, str], ...]
     status: str = FORMAL_SOURCE_ONLY
-    schema: str = FORMAL_SOURCE_SET_SCHEMA
+    source_authority: str = SOURCE_AUTHORITY_UNVERIFIED
+    schema: str = FORMAL_SOURCE_SET_UNVERIFIED_SCHEMA
 
     def __post_init__(self) -> None:
         ids = tuple(item.semantic_id for item in self.witnesses)
@@ -77,12 +86,16 @@ class FormalSourceOperatorSet:
                 or not isinstance(self.atlas_bundle_id, str)
                 or not _SHA.fullmatch(self.atlas_bundle_id)
                 or any(not isinstance(item, FormalSourceOperator)
+                       or item.source_authority != self.source_authority
                        for item in self.witnesses)
                 or len(ids) != len(set(ids))
                 or tuple(sorted(ids)) != ids
                 or not isinstance(self.uncovered, tuple)
                 or self.status != FORMAL_SOURCE_ONLY
-                or self.schema != FORMAL_SOURCE_SET_SCHEMA):
+                or (self.source_authority, self.schema) not in {
+                    (SOURCE_AUTHORITY_UNVERIFIED,
+                     FORMAL_SOURCE_SET_UNVERIFIED_SCHEMA),
+                    (SOURCE_AUTHORITY_PINNED, FORMAL_SOURCE_SET_SCHEMA)}):
             _fail("BAMF_FORMAL_SOURCE_SET_INVALID")
 
     @property
@@ -152,7 +165,15 @@ def resolve_formal_source_operators(
 ) -> FormalSourceOperatorSet:
     """Resolve only independently pinned A01 identities against A07 contracts."""
     snapshot = load_pinned_atlas_snapshot(atlas)
-    return _resolve_from_bindings(
+    raw = _resolve_from_bindings(
         snapshot.formal_domain_bindings, snapshot.abi_entries, registry,
         semantic_release=snapshot.release_sha256,
         atlas_bundle_id=snapshot.bundle_id)
+    return replace(
+        raw,
+        witnesses=tuple(
+            replace(item, source_authority=SOURCE_AUTHORITY_PINNED,
+                    schema=FORMAL_SOURCE_SCHEMA)
+            for item in raw.witnesses),
+        source_authority=SOURCE_AUTHORITY_PINNED,
+        schema=FORMAL_SOURCE_SET_SCHEMA)
