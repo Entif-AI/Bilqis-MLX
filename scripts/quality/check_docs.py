@@ -109,7 +109,7 @@ def inspect_docs(root: Path) -> tuple[str, ...]:
 
 def main(argv: list[str] | None = None) -> int:
     del argv
-    issues = inspect_docs(Path(__file__).resolve().parents[1])
+    issues = inspect_docs(Path(__file__).resolve().parents[2])
     for issue in issues:
         print(issue)
     if issues:

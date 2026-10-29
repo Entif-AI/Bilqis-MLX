@@ -10,7 +10,7 @@ import subprocess
 from types import MappingProxyType
 import sys
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from bilqis_mlx.runtime.state import _fingerprint, _durable_json

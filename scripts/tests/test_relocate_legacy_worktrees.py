@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 import unittest
 
-from scripts import relocate_legacy_worktrees as relocate
+from scripts.operations import relocate_legacy_worktrees as relocate
 
 
 def git(*args):

@@ -17,7 +17,7 @@ import re
 import subprocess
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 SCHEMA = "bilqis.operator-contract-debt/v1"
 SYMBOL = re.compile(r"[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\Z")
 STATUS_FIELDS = frozenset(("result", "status", "stop_reason", "reason", "disposition"))

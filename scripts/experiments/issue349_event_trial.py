@@ -17,7 +17,7 @@ from bilqis_mlx.source_adapters.copular_curriculum import expanded_graph as regi
 from bilqis_mlx.source_adapters import event_frames
 from bilqis_mlx.source_adapters.school import live_source_registry
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def _probe_event_capabilities(mx, source, graph, current, params, saved, *, seed=349101):

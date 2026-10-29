@@ -13,7 +13,7 @@ import re
 import sys
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 GENERIC_ROOTS = (
     "bilqis_mlx/factory",
     "bilqis_mlx/runtime",

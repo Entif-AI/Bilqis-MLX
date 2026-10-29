@@ -5,11 +5,11 @@ Only use already-public GitHub issue prose in newly created public child bodies.
 The two approved private native Docs are not source inputs to public tickets.
 
 Modes:
-  python3 scripts/bamf02_groom_backlog.py --audit
-  python3 scripts/bamf02_groom_backlog.py --publish A
-  python3 scripts/bamf02_groom_backlog.py --publish B
-  python3 scripts/bamf02_groom_backlog.py --publish C
-  python3 scripts/bamf02_groom_backlog.py --verify
+  python3 scripts/bamf/bamf02_groom_backlog.py --audit
+  python3 scripts/bamf/bamf02_groom_backlog.py --publish A
+  python3 scripts/bamf/bamf02_groom_backlog.py --publish B
+  python3 scripts/bamf/bamf02_groom_backlog.py --publish C
+  python3 scripts/bamf/bamf02_groom_backlog.py --verify
 
 Public writes require the already-authorized BAMF planning branch, user owner
 instruction, exact live-parent parity, and GitHub authentication. Creating
@@ -29,7 +29,7 @@ from pathlib import Path
 from bamf02_grooming_slices import GROUP_TITLES, NESTED_FIRST_TWO, SLICES
 from bamf02_bind_lane_branches import lifecycle_block
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 TASKS = ROOT / "docs/tasks/bamf-0.2"
 CHILDREN = TASKS / "children"
 REPO = "Entif-AI/Bilqis-MLX"

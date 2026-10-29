@@ -3,10 +3,10 @@
 
 Usage from ~/Code/bilqis-mlx, AFTER human training finishes:
 
-    python3 -B scripts/relocate_legacy_worktrees.py plan
-    python3 -B scripts/relocate_legacy_worktrees.py apply --confirm
-    python3 -B scripts/relocate_legacy_worktrees.py status
-    python3 -B scripts/relocate_legacy_worktrees.py restore --confirm
+    python3 -B scripts/operations/relocate_legacy_worktrees.py plan
+    python3 -B scripts/operations/relocate_legacy_worktrees.py apply --confirm
+    python3 -B scripts/operations/relocate_legacy_worktrees.py status
+    python3 -B scripts/operations/relocate_legacy_worktrees.py restore --confirm
 
 The destination is ~/Archives/Bilqis/worktrees; the manifest is beside it.
 For partial batches, add --only bilqis-candidate-consolidation-v14, etc.

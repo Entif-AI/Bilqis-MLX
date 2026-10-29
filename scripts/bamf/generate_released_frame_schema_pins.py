@@ -39,7 +39,7 @@ from bilqis_mlx.source_adapters.structure import inspect_source_query
 
 PIN_SCHEMA = "bilqis.frame-schema-source-pins/v1"
 PIN_STATUS = "A03_SOURCE_ATTESTED_NOT_NEURAL_ADMITTED"
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 SEMANTICS = ROOT / "bilqis_mlx/semantics"
 SOURCE_ROOT = ROOT / "vendor/legacy-v16"
 
