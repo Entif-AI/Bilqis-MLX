@@ -2,7 +2,6 @@ name: Bilqis MLX portable verification
 
 on:
   pull_request:
-    branches: [main]
   push:
     branches: [main, 'codex/**']
   workflow_dispatch:
@@ -22,17 +21,52 @@ jobs:
           fetch-depth: 0
       - name: Validate release manifests and changelog
         run: python3 -B scripts/release_version.py --check
-      - name: Check historical semantic integrity and code ownership
+      - name: Enforce ratified development structure on changed paths
+        env:
+          QUALITY_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: |
-          python3 -B scripts/check_historical_abi.py
-          python3 -B scripts/check_semantic_boundaries.py
+          BASE_REF="$QUALITY_BASE_REF"
+          case "$BASE_REF" in
+            ""|0000000000000000000000000000000000000000) BASE_REF=HEAD ;;
+          esac
+          python3 -B scripts/check_module_size.py --changed-from "$BASE_REF"
+          python3 -B scripts/quality/check_governance_integrity.py --base-ref "$BASE_REF"
+      - name: Check historical semantic integrity
+        run: python3 -B scripts/check_historical_abi.py
+      - name: Check legacy semantic package ownership
+        if: >-
+          ${{
+            (!contains(github.ref_name, 'bamf') && !contains(github.head_ref, 'bamf'))
+          }}
+        run: python3 -B scripts/check_semantic_boundaries.py
+      - name: Verify portable BAMF semantic contracts
+        if: >-
+          ${{
+            (contains(github.ref_name, 'bamf') || contains(github.head_ref, 'bamf'))
+          }}
+        run: >-
+          python3 -B scripts/run_tests.py
+          bilqis_mlx/factory/tests/test_factory_construction.py
+          bilqis_mlx/factory/tests/test_curriculum_compiler.py
+          bilqis_mlx/factory/tests/test_grade_admission.py
+          bilqis_mlx/semantics/tests/test_domain_contracts.py
+          bilqis_mlx/verification/tests/test_construction_contracts.py
+          bilqis_mlx/factory/tests/test_release_outcome_contracts.py
+      - name: Check architecture, documentation and error contracts
+        run: |
           python3 -B scripts/check_factory_architecture.py
-          python3 -B scripts/check_docs.py
+          python3 -B scripts/quality/check_docs.py
           python3 -B scripts/error_control_plane.py --check
       - name: Reject newly introduced code hygiene regressions
-        run: python3 -B scripts/code_smell_audit.py --check-baseline docs/evidence/development/code_smell_baseline.json
-      - name: Reject new or worsened production size debt
-        run: python3 -B scripts/check_module_size.py
+        env:
+          QUALITY_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          BASE_REF="$QUALITY_BASE_REF"
+          case "$BASE_REF" in
+            ""|0000000000000000000000000000000000000000) BASE_REF=HEAD ;;
+          esac
+          python3 -B scripts/code_smell_audit.py --changed-from "$BASE_REF" \
+            --check-baseline docs/evidence/development/code_smell_baseline.json
       - name: Portable non-neural custody and release tests
         run: >-
           python3 -B scripts/run_tests.py
@@ -48,6 +82,7 @@ jobs:
           scripts/tests/test_docs.py
           scripts/tests/test_run_tests.py
           scripts/tests/test_module_size.py
+          scripts/tests/test_governance_integrity.py
           bilqis_mlx/factory/tests/test_release.py
           bilqis_mlx/factory/tests/test_generation.py
           bilqis_mlx/factory/tests/test_historical_generalization.py
