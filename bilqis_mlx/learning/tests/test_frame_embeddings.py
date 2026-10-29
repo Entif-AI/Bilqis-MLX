@@ -1,6 +1,7 @@
 """Released A06 factor composition feeding B02 and shared depth selection."""
 from dataclasses import replace
 import hashlib
+import json
 import unittest
 
 import mlx.core as mx
@@ -9,6 +10,7 @@ import numpy as np
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.frame_embeddings import (
     ConceptBatch, FeatureRequest, SemanticBankView, _local_position, compose_factor_features, embed_atoms, semantic_logits,
+    IndexedLogits, gather_constituents, masked_semantic_loss, plan_identity_initialization,
 )
 from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes
 from bilqis_mlx.semantics.frame_schema import (
@@ -21,12 +23,12 @@ from bilqis_mlx.semantics.tests.test_context_eligibility import _case
 from bilqis_mlx.semantics.tests.test_atlas_features import _features, _snapshot
 
 
-def _context_for(concept):
+def _context_for(concept, source_instance="fixture:released-source", schema_id="frame:urn:concept:A"):
     envelopes, task, frontier, policy = _case(count=1, two_roles=True)
-    schema = FrameSchema("frame:urn:concept:A", 1, "source:fixture",
+    schema = FrameSchema(schema_id, 1, "source:fixture",
                          tuple(RoleSpec(role, concept.type_ids, 1, 1) for role in ("left", "right")),
                          "ORDERED", "source-expression")
-    frame = make_frame_instance(schema, source_instance_id="fixture:released-source", structural_path=(),
+    frame = make_frame_instance(schema, source_instance_id=source_instance, structural_path=(),
                                 source_span=SourceSpan(0, 8), parent_occurrence_id=None,
                                 bindings=tuple(RoleOccurrence(role, 0, concept=concept) for role in ("left", "right")),
                                 causal_prefix_end=8)
@@ -171,6 +173,95 @@ class FactorCompositionTests(unittest.TestCase):
             np.testing.assert_array_equal(np.asarray(gradient), expected)
         with self.assertRaises(BilqisError):
             semantic_logits(hidden, (replace(banks((first, second))[0], active_rows=()),))
+
+    def test_masked_logsumexp_loss_is_stable_and_illegal_rows_have_zero_gradient(self):
+        values = mx.array([[10000, 9999, 50000]], dtype=mx.float32)
+        legal = mx.array([[True, True, False]])
+        targets = mx.array([8192], dtype=mx.uint32)
+        def objective(logits):
+            return masked_semantic_loss(IndexedLogits(logits, (11, 8192, 8195)), targets, legal)
+        self.assertAlmostEqual(float(objective(values).item()), 1+np.log1p(np.exp(-1)), places=6)
+        gradient = mx.grad(objective)(values)
+        expected = 1/(1+np.exp(-1))
+        np.testing.assert_allclose(np.asarray(gradient), [[expected, -expected, 0]], atol=1e-7)
+        for target, mask in ((targets, mx.zeros((1, 3), dtype=mx.bool_)),
+                             (mx.array([12]), legal), (mx.array([8195]), legal)):
+            with self.assertRaises(BilqisError):
+                masked_semantic_loss(IndexedLogits(values, (11, 8192, 8195)), target, mask)
+        maximal = IndexedLogits(mx.array([[4]], dtype=mx.float32), (4294967295,))
+        self.assertEqual(float(masked_semantic_loss(maximal, mx.array([4294967295], dtype=mx.uint32),
+                                                    mx.array([[True]])).item()), 0)
+        with self.assertRaises(BilqisError):
+            masked_semantic_loss(maximal, mx.array([-1]), mx.array([[True]]))
+        with self.assertRaises(BilqisError):
+            masked_semantic_loss(IndexedLogits(mx.zeros((0, 3)), (11, 8192, 8195)),
+                                  mx.array([], dtype=mx.uint32), mx.zeros((0, 3), dtype=mx.bool_))
+
+    def test_exact_constituent_indices_gather_differentiably_with_padding(self):
+        embeddings = mx.arange(2*3*768, dtype=mx.float32).reshape(2, 3, 768)
+        indices = mx.array([[[2, 0], [2, 1]], [[1, 0], [0, -1]]])
+        valid = mx.array([[[True, True], [True, False]], [[True, True], [True, False]]])
+        gathered = gather_constituents(embeddings, indices, valid)
+        self.assertEqual(gathered.shape, (2, 2, 2, 768))
+        np.testing.assert_array_equal(np.asarray(gathered[0, 0, 0]), np.asarray(embeddings[0, 2]))
+        np.testing.assert_array_equal(np.asarray(gathered[1, 1, 1]), np.zeros(768))
+        gradients = mx.grad(lambda values: mx.sum(gather_constituents(values, indices, valid)))(embeddings)
+        expected = np.array([[1, 0, 2], [2, 1, 0]], dtype=np.float32)
+        np.testing.assert_array_equal(np.asarray(gradients), np.broadcast_to(expected[..., None], (2, 3, 768)))
+        with self.assertRaises(BilqisError):
+            gather_constituents(embeddings, indices, mx.ones(indices.shape, dtype=mx.bool_))
+
+    def test_identity_proposal_is_source_bound_role_invariant_and_preserves_old_rows(self):
+        weights = mx.zeros((8192, 768), dtype=mx.float32).at[12, 0].add(9)
+        params = {**self.params, "identity.bank.0": weights}
+        old_digest = hashlib.sha256(b"[12]").hexdigest()
+        current = (SemanticBankView(0, weights, (12,), "c"*64, old_digest),)
+        prospective = replace(self.extents, active_semantic_digest=hashlib.sha256(b"[11,12]").hexdigest())
+        before = hashlib.sha256(np.asarray(weights).tobytes()).hexdigest()
+        left = plan_identity_initialization(params, ((self.request(),),), self.features,
+                                             current_banks=current, extents=prospective, run_seed=7)
+        right = plan_identity_initialization(params, ((self.request("right"),),), self.features,
+                                              current_banks=current, extents=prospective, run_seed=7)
+        self.assertEqual(len(left), 1)
+        self.assertEqual(left[0].abi_index, 11)
+        np.testing.assert_array_equal(left[0].weights, right[0].weights)
+        factors = np.zeros(768, dtype=np.float32)
+        gate = np.float32(1/(1+np.exp(2)))
+        factors[0] = gate
+        factors[3] = np.float32(np.log(2)/np.log(1025)) * np.float32(5) * gate
+        seed = int.from_bytes(hashlib.sha256(b"bamf.init.v2|7|identity.bank.0|urn:concept:A").digest()[:8], "little")
+        expected = (factors.astype(np.float64) + np.random.Generator(np.random.PCG64(seed)).standard_normal(768)*.001).astype(np.float32)
+        np.testing.assert_allclose(left[0].weights, expected, atol=1e-8, rtol=1e-6)
+        self.assertEqual(hashlib.sha256(np.asarray(weights).tobytes()).hexdigest(), before)
+        already_active = (replace(current[0], active_rows=(11,), active_semantic_digest=hashlib.sha256(b"[11]").hexdigest()),)
+        with self.assertRaises(BilqisError):
+            plan_identity_initialization(params, ((self.request(),),), self.features,
+                                          current_banks=already_active, extents=self.extents, run_seed=7)
+
+    def test_identity_witnesses_are_complete_and_canonical_under_source_reordering(self):
+        weights = mx.zeros((8192, 768), dtype=mx.float32)
+        params = {**self.params, "identity.bank.0": weights}
+        current = (SemanticBankView(0, weights, (12,), "c"*64, hashlib.sha256(b"[12]").hexdigest()),)
+        features = _features(_snapshot(definitions=(("urn:concept:A", ("urn:type:Entity",)),
+                                                    ("urn:concept:B", ("urn:type:Entity",)))),
+                             schemas=("frame:urn:concept:A", "frame:urn:concept:B"))
+        extents = replace(self.extents, active_semantic_digest=hashlib.sha256(b"[11,12]").hexdigest(),
+                          factor_map_digest=features.digest)
+        first = self.request()
+        second = FeatureRequest.from_context(_context_for(self.ref, "fixture:second-source", "frame:urn:concept:B"),
+                                              "frame:0", "source:member:right")
+        forward = plan_identity_initialization(params, ((first, second, first),), features,
+                                                current_banks=current, extents=extents, run_seed=7)[0]
+        backward = plan_identity_initialization(params, ((second, first),), features,
+                                                 current_banks=current, extents=extents, run_seed=7)[0]
+        np.testing.assert_array_equal(forward.weights, backward.weights)
+        self.assertEqual(forward.source_witnesses, backward.source_witnesses)
+        self.assertEqual(len(forward.source_witnesses), 2)
+        self.assertEqual({item.context_digest for item in forward.source_witnesses},
+                         {first.projection.digest, second.projection.digest})
+        standalone = plan_identity_initialization(params, ((second,),), features,
+                                                   current_banks=current, extents=extents, run_seed=7)[0]
+        np.testing.assert_array_equal(forward.weights, standalone.weights)
 
 
 if __name__ == "__main__":
