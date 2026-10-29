@@ -6,10 +6,14 @@ parameters, optimizers, run-state paths, checkpoint authority, or MLX handles.
 from __future__ import annotations
 
 from concurrent.futures import ProcessPoolExecutor
+from dataclasses import dataclass
+import hashlib
+import json
 import multiprocessing
 from pathlib import Path
 import signal
 
+from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.learning.fragile_replay import fresh_preservation_rows
 from bilqis_mlx.profiles.retention import fragile_preservation_policy
 from bilqis_mlx.factory.live_answers import live_answer_registry
@@ -24,7 +28,84 @@ SCHEMA = "bilqis.mlx.source-prefetch/v1"
 FORBIDDEN_AUTHORITY_KEYS = frozenset({
     "parameters", "params", "optimizer", "run_dir", "checkpoint",
     "student", "receipt", "teacher", "school_state",
+    "model_state", "weights", "tensors", "gradient", "network_client",
 })
+FORBIDDEN_NESTED_AUTHORITY_KEYS = FORBIDDEN_AUTHORITY_KEYS - {"receipt"}
+IMMUTABLE_PACKET_SCHEMA = "bilqis.mlx.source-prefetch-immutable/v1"
+MAX_SOURCE_WORKERS = 2
+SOURCE_WORKER_COUNTS = (1, MAX_SOURCE_WORKERS)
+SHA256_HEX_LENGTH = hashlib.sha256().digest_size * 2
+
+
+def _packet_invalid(reason: str) -> None:
+    ErrorBus.raise_(SCHOOL.BAMF_RESOURCES.INVALID, reason=reason)
+
+
+def _freeze_source_value(value):
+    if value is None or type(value) in (str, bool, int, float):
+        return value
+    if isinstance(value, dict) and all(isinstance(key, str) for key in value):
+        # A source row may legitimately carry its *source* receipt. The
+        # top-level run receipt remains forbidden in the worker request.
+        if FORBIDDEN_NESTED_AUTHORITY_KEYS & set(value):
+            _packet_invalid("SOURCE_PREFETCH_FORBIDDEN_AUTHORITY")
+        return tuple((key, _freeze_source_value(value[key])) for key in sorted(value))
+    if isinstance(value, (tuple, list)):
+        return tuple(_freeze_source_value(item) for item in value)
+    _packet_invalid("SOURCE_PREFETCH_UNFREEZABLE_VALUE")
+
+
+@dataclass(frozen=True)
+class ImmutableSourcePacket:
+    identity: str
+    payload: tuple
+    digest: str
+    schema_version: str = IMMUTABLE_PACKET_SCHEMA
+
+    def __post_init__(self):
+        try:
+            fields = dict(self.payload)
+            encoded = json.dumps(
+                self.payload, ensure_ascii=False, sort_keys=True,
+                separators=(",", ":"), allow_nan=False).encode("utf-8")
+            expected_digest = hashlib.sha256(encoded).hexdigest()
+        except (TypeError, ValueError):
+            _packet_invalid("SOURCE_PREFETCH_IMMUTABLE_PACKET_INVALID")
+        if (not isinstance(self.identity, str)
+                or len(self.identity) != SHA256_HEX_LENGTH
+                or any(c not in "0123456789abcdef" for c in self.identity)
+                or not isinstance(self.payload, tuple)
+                or not isinstance(self.digest, str)
+                or len(self.digest) != SHA256_HEX_LENGTH
+                or any(c not in "0123456789abcdef" for c in self.digest)
+                or fields.get("identity") != self.identity
+                or fields.get("schema") != SCHEMA
+                or self.digest != expected_digest
+                or self.schema_version != IMMUTABLE_PACKET_SCHEMA):
+            _packet_invalid("SOURCE_PREFETCH_IMMUTABLE_PACKET_INVALID")
+
+
+def freeze_source_packet(packet: dict) -> ImmutableSourcePacket:
+    """Produce a picklable, recursively immutable CPU-only packet."""
+    expected = {
+        "schema", "identity", "fresh", "prior", "preservation",
+        "retention_support", "teaching_enrichment_rows",
+    }
+    if (not isinstance(packet, dict) or set(packet) != expected
+            or packet.get("schema") != SCHEMA):
+        _packet_invalid("SOURCE_PREFETCH_PACKET_SCHEMA_DRIFT")
+    payload = _freeze_source_value(packet)
+    encoded = json.dumps(
+        payload, ensure_ascii=False, sort_keys=True,
+        separators=(",", ":"), allow_nan=False).encode("utf-8")
+    return ImmutableSourcePacket(
+        identity=packet["identity"], payload=payload,
+        digest=hashlib.sha256(encoded).hexdigest())
+
+
+def prepare_immutable_step_sources(request: dict) -> ImmutableSourcePacket:
+    """BAMF CPU worker entrypoint; legacy mutable packet stays isolated."""
+    return freeze_source_packet(prepare_step_sources(request))
 
 
 def source_prefetch_worker_initializer() -> None:
@@ -33,6 +114,8 @@ def source_prefetch_worker_initializer() -> None:
 
 
 def source_prefetch_pool(workers: int) -> ProcessPoolExecutor:
+    if type(workers) is not int or workers not in SOURCE_WORKER_COUNTS:
+        _packet_invalid("SOURCE_PREFETCH_WORKER_COUNT_INVALID")
     return ProcessPoolExecutor(
         max_workers=workers,
         mp_context=multiprocessing.get_context("spawn"),
