@@ -95,3 +95,13 @@ separate hidden-target custody, source-granted
 lawful segment splitting and actual packing
 statistics without changing the A05.2 maps
 schema. See `docs/evidence/bamf/A05.3/receipt.md`.
+
+## Independent EGM disposition
+
+The final A05.1/A05.2/A05.3 independent Goldfish review at immutable
+`de5bb9c` returned **EGM PASS**, zero remaining Blockers/Majors.
+The A05.2 source-position maps, prefix boundaries, isolated rows and
+policy-versioned cache identity were included in the readback.
+Prime and independent focused A05 tests passed 20/20; adjacent suites
+passed 83 with one optional real-Atlas skip. A05 parent and
+downstream neural integration remain open.

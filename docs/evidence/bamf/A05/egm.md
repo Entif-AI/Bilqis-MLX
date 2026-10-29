@@ -24,6 +24,20 @@ Prime execution after these repairs: owner 20 passed, 0 failed;
 adjacent A03/A04/A13/A05 suites 83 passed, 0 failed, 1 optional
 real-Atlas skip. The reviewer did not execute these tests.
 
-**Disposition: EGM re-review pending.** Do not promote to PASS
-without independent immutable-head readback. No source promotion,
-live optimizer start, parent integration closure or merge is claimed.
+## Final independent immutable-head readback
+
+Fresh Goldfish worker-8 independently reviewed immutable pushed
+`de5bb9c562992e3620a539dc5519f26a7374e772` against the
+pinned Google EGM protocol `b3a35956759bf7f024af2ff061b2e0b44b438e4c`.
+It inspected the exact #408/#409/#410 packets, all four original
+findings, source, tests and literal sidecar fixture. It also
+executed focused and adjacent tests in an isolated immutable archive:
+20/20 owner and 83 adjacent passes with one optional real-Atlas skip.
+The worker independently verified the 2,563-byte fixture SHA-256,
+inclusive 1024 success, missing/revoked/tampered raw-atom rejection,
+and cross-segment correction/observation/effective-time coherence.
+
+**Final scoped disposition: A05.1/A05.2/A05.3 EGM PASS, zero
+remaining Blockers or Majors.** A05 parent integration and downstream
+B11/C13 neural-logit/retained-learning proof remain open. No source
+promotion, live optimizer start, self-merge or parent closure occurred.

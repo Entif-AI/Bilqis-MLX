@@ -155,4 +155,5 @@ remains intact. Focused owner tests: **20 passed, 0 failed**;
 adjacent A03/A04/A13/A05: **83 passed, 0 failed, 1 optional skip**.
 The reviewed unified trunk `6b54600` was consumed via a
 conflict-free merge before this repair. Independent re-review of
-the repaired pushed head remains pending; no self-merge or training.
+the repaired pushed head returned **EGM PASS** at immutable
+`de5bb9c`, zero remaining Blockers/Majors. No self-merge or training.
