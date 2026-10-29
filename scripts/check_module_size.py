@@ -179,9 +179,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.paths:
         problems = explicit_violations(args.paths)
     else:
-        base_ref = "HEAD" if args.staged else effective_base(ROOT, args.changed_from or "HEAD")
-        changes = changed_paths(staged=args.staged, base_ref=None if args.staged else base_ref)
-        problems = violations(changes, base_ref=base_ref, staged=args.staged)
+        requested_base = args.changed_from or "HEAD"
+        measurement_base = "HEAD" if args.staged else effective_base(ROOT, requested_base)
+        changes = changed_paths(staged=args.staged, base_ref=None if args.staged else requested_base)
+        problems = violations(changes, base_ref=measurement_base, staged=args.staged)
     for problem in problems:
         print(problem)
     print(f"DEVELOPMENT_STRUCTURE_CHECK {'FAILED' if problems else 'OK'} violations={len(problems)}")

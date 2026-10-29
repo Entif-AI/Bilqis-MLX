@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 SCRIPT = Path(__file__).parents[2] / "check_module_size.py"
 spec = importlib.util.spec_from_file_location("check_module_size", SCRIPT)
@@ -96,6 +97,16 @@ class DevelopmentStructureTests(unittest.TestCase):
     def test_external_vendor_code_is_not_project_authored(self):
         self.write("vendor/library/huge.py", 500)
         self.assertEqual(check.explicit_violations(["vendor/library/huge.py"]), [])
+
+    def test_main_keeps_requested_base_separate_from_measurement_boundary(self):
+        with patch.object(check, "effective_base", return_value="temporal-boundary") as effective, \
+                patch.object(check, "changed_paths", return_value=[]) as changed, \
+                patch.object(check, "violations", return_value=[]) as violations:
+            result = check.main(["--changed-from", "origin/unified"])
+        self.assertEqual(result, 0)
+        effective.assert_called_once_with(check.ROOT, "origin/unified")
+        changed.assert_called_once_with(staged=False, base_ref="origin/unified")
+        violations.assert_called_once_with([], base_ref="temporal-boundary", staged=False)
 
 
 if __name__ == "__main__":
