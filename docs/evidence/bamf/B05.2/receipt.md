@@ -1,6 +1,6 @@
 # B05.2 scoped boundary candidate
 
-Issue #450, parent #355. Status: NUMERICAL_PROOF_ONLY; EGM_PENDING.
+Issue #450, parent #355. Status: NUMERICAL_PROOF_ONLY; SCOPED_EGM_PASS.
 
 Reviewed unified baseline: 7ad8f8a. Lane B source: ae08c4a.
 Candidate branch: codex/bamf02-b05-2-20261029.
@@ -24,3 +24,16 @@ real backbone capture and causal summaries; B13 must prove checkpoint
 roundtrip; B05 source-summary authority and parent integration remain
 open. The numerical callback is private and not source permission.
 No live student, optimizer, source release or integration merge changed.
+
+## Independent review
+
+Fresh-context Goldfish worker-19 reviewed immutable code head
+`cb22592c7bf07494b865152cf7dd3f1255926bb9` and returned
+**EGM PASS, zero Blockers/Majors for the scoped numerical/diagnostic
+claim**. It independently checked the issue and direct source
+contracts, boundary ordering, sealed B01 parameter identities,
+negative tests and the explicit source-integration exclusions.
+The reviewer ran `git diff --check` successfully but could not
+execute tests in its isolated environment because rdflib was missing.
+The 19/19 focused and 59/59 combined MLX totals are prime-run
+evidence, not a second Goldfish execution.
