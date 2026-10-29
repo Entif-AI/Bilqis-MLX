@@ -8,7 +8,9 @@
 - Existing B04.1/B04.2 source:
   `e40b19d`; B04.3 source:
   `06cc296`.
-- Independent EGM: **PENDING**. No Lane B PR turn-in or merge is claimed.
+- Independent EGM: **PASS**, zero Blockers/Majors, at immutable
+  `fc91591641ad679a792944cc2d3e4dd61eb279cc`.
+- Lane B PR turn-in and human integration remain separate.
 
 ## Exact owner contract
 
@@ -40,5 +42,17 @@ wrong-dtype and invalid-layer inputs. Existing 12 attention tests
 retain the independent 16Q:8KV reference, chunked/causal/gradient
 and cache identity witnesses.
 
-This candidate is not accepted until B04.3's independent review
-and B04.4's own EGM, branch turn-in and GitHub receipt complete.
+## Independent Goldfish EGM
+
+The reviewer used an immutable archive of `fc915916` rather than
+the advancing live worktree, and independently executed the full
+attention suite: **14 passed, 0 failed, 0 skipped**. A separate
+full-ledger probe confirmed 214 unique B01 tensors, seven
+identity-preserving local references, native 16Q:8KV geometry,
+exact agreement with direct attention parameters, and rejection
+of missing, extra, wrong-shape and wrong-dtype tensors anywhere
+in the full model. **Zero Blockers or Majors** remained.
+
+B04.3's separate EGM also returned PASS at `06cc296`.
+Neither leaf review closes B04 parent integration, neural
+training, generation custody or human merge approval.
