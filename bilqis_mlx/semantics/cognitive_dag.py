@@ -9,7 +9,7 @@ from ..errors import ErrorBus, SEMANTIC_FRAME
 from .cognitive_operators import (
     OperatorBinding, TypedValue, ValueState, _approved_frames,
     _authorize_inputs, _check_grant, _compute_after_authorization,
-    _number_domain, operator_grant_digest,
+    _independent_applicability, _number_domain, operator_grant_digest,
 )
 from .domains import contract_digest
 from .frame_schema import BindingState, FrameInstance
@@ -26,6 +26,7 @@ TASK_GOAL_SCHEMA = "bilqis.task-goal/v1"
 MAX_DAG_NODES = 64
 MAX_DAG_DEPTH = 8
 MAX_DAG_DECISIONS = 64
+MAX_DAG_CANDIDATES = 64
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 
 
@@ -118,6 +119,7 @@ class DAGNode:
                 or any(item is not None and not isinstance(item, DAGOperand)
                        for item in self.operands)
                 or not isinstance(self.candidate_operator_ids, tuple)
+                or len(self.candidate_operator_ids) > MAX_DAG_CANDIDATES
                 or any(not _name(item) for item in self.candidate_operator_ids)
                 or self.candidate_operator_ids
                 != tuple(sorted(set(self.candidate_operator_ids)))
@@ -129,6 +131,7 @@ class DAGNode:
                             for index, group in enumerate(
                                 self.candidate_operand_refs)))
                 or any(not isinstance(group, tuple)
+                       or len(group) > MAX_DAG_CANDIDATES
                        or any(not isinstance(ref, DAGOperand) for ref in group)
                        or tuple(sorted(set(group), key=lambda ref: ref.identity))
                        != group for group in self.candidate_operand_refs)
@@ -410,6 +413,27 @@ def _prepare(goal: TaskGoal, binding: OperatorBinding):
                 _invalid("BAMF_DAG_SOURCE_NOT_TASK_VISIBLE")
             visible[ref.identity] = _visible_source(ref, binding, approved)
 
+    def applicable(spec, refs: tuple[DAGOperand | None, ...]) -> bool | None:
+        values = tuple(
+            visible[ref.identity]
+            if ref is not None and ref.kind is not RefKind.RESULT
+            else None for ref in refs)
+        return _independent_applicability(spec, values, binding)
+
+    def hole_candidate_viable(spec, node: DAGNode) -> bool:
+        for index, ref in enumerate(node.operands):
+            if ref is not None:
+                continue
+            if not any(
+                choice.type_name == spec.signature.inputs[index]
+                and applicable(
+                    spec, node.operands[:index] + (choice,)
+                    + node.operands[index + 1:]) is not False
+                for choice in node.candidate_operand_refs[index]
+            ):
+                return False
+        return applicable(spec, node.operands) is not False
+
     for node in order:
         if node.operator_id is None:
             candidates = tuple(
@@ -440,7 +464,9 @@ def _prepare(goal: TaskGoal, binding: OperatorBinding):
                     zip(node.operands, spec.signature.inputs)))
             and (node.operator_id is not None
                  or spec.applicability != "FINITE_NUMBER"
-                 or binding.numeric_domain is not None))
+                 or binding.numeric_domain is not None)
+            and (node.operator_id is not None
+                 or hole_candidate_viable(spec, node)))
         if node.operator_id is not None and not matches:
             _invalid("BAMF_DAG_OPERATOR_SIGNATURE_INVALID")
         ambiguous_slots = 0
@@ -449,8 +475,12 @@ def _prepare(goal: TaskGoal, binding: OperatorBinding):
                 continue
             legal = tuple(
                 choice for choice in node.candidate_operand_refs[index]
-                if any(choice.type_name == spec.signature.inputs[index]
-                       for spec in matches))
+                if any(
+                    choice.type_name == spec.signature.inputs[index]
+                    and applicable(
+                        spec, node.operands[:index] + (choice,)
+                        + node.operands[index + 1:]) is not False
+                    for spec in matches))
             if len(matches) == 1 and len(legal) == 1:
                 resolved[index] = legal[0]
             elif len(legal) > 1:
@@ -459,11 +489,17 @@ def _prepare(goal: TaskGoal, binding: OperatorBinding):
             decisions += ambiguous_slots + (1 if len(matches) > 1 else 0)
             if decisions > budget.max_decisions:
                 _invalid("BAMF_DAG_DECISION_BUDGET_EXCEEDED")
-        if len(matches) != 1 or any(
-                operand is None for operand in resolved):
+        if (len(matches) != 1
+                or any(operand is None for operand in resolved)
+                or (node.operator_id is None and len(matches) == 1
+                    and all(ref is not None for ref in resolved)
+                    and applicable(matches[0], tuple(resolved)) is False)):
             unresolved = unresolved or (
                 node.node_id + ":" + node.expected_output_type)
-        if len(matches) == 1 and all(ref is not None for ref in resolved):
+        if (len(matches) == 1
+                and all(ref is not None for ref in resolved)
+                and (node.operator_id is not None
+                     or applicable(matches[0], tuple(resolved)) is not False)):
             prepared[node.node_id] = (matches[0], tuple(resolved))
             selected.append((node.node_id, matches[0].operator_id,
                              tuple(ref.identity for ref in resolved)))
@@ -563,6 +599,10 @@ def execute_dag(
             else visible[ref.identity]
             for ref in refs)
         if any(value.state is not ValueState.VALUE for value in inputs):
+            return unresolved_answer(node.node_id, node.expected_output_type)
+        if (node.operator_id is None
+                and _independent_applicability(
+                    spec, inputs, binding) is False):
             return unresolved_answer(node.node_id, node.expected_output_type)
         dependencies = tuple(
             _dependency_record(ref, value, binding, lineage)

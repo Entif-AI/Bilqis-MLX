@@ -384,6 +384,58 @@ def _frame(handle: str, binding: OperatorBinding) -> FrameInstance | None:
     return None
 
 
+def _independent_applicability(
+    spec: CognitiveOperatorSpec,
+    inputs: tuple[TypedValue | None, ...],
+    binding: OperatorBinding,
+) -> bool | None:
+    """Source-visible preconditions only; never evaluate a candidate answer.
+
+    None means a predecessor value is not yet available. A False result
+    disqualifies a hole candidate without consuming a pure compute unit.
+    Exact operators still run and count failed applicability normally.
+    """
+    known = tuple(value for value in inputs if value is not None)
+    if any(value.state is not ValueState.VALUE for value in known):
+        return False
+    if spec.applicability == "FINITE_NUMBER":
+        domain = _number_domain(binding)
+        if domain is None:
+            return False
+        allowed = {int(item.value) for item in domain.values}
+        if any(value.type_name == "Number" and value.value not in allowed
+               for value in known):
+            return False
+    if spec.operator_id in {"DIV", "MOD"}:
+        if inputs[1] is not None and inputs[1].value == 0:
+            return False
+    if spec.operator_id in {"ROLE_LOOKUP", "PARENT_OF", "BEFORE"}:
+        if any(_frame(value.value, binding) is None for value in known
+               if value.type_name == "FrameHandle"):
+            return False
+    if any(value is None for value in inputs):
+        return None
+    values = tuple(value.value for value in inputs)
+    if spec.operator_id in {"DIV", "MOD"}:
+        left, right = values
+        return right != 0 and (
+            spec.operator_id != "DIV" or left % right == 0)
+    if spec.operator_id == "UNIT_CONVERT":
+        duration, target = values
+        return any(
+            item.kind is SourceKind.ADMITTED_KNOWLEDGE
+            and item.typed.type_name == "UnitConversion"
+            and item.typed.state is ValueState.VALUE
+            and item.typed.value.from_unit == duration.unit
+            and item.typed.value.to_unit == target
+            for item in binding.operands)
+    if spec.operator_id == "ROLE_LOOKUP":
+        return _frame(values[0], binding) is not None
+    if spec.operator_id in {"PARENT_OF", "BEFORE"}:
+        return all(_frame(handle, binding) is not None for handle in values)
+    return True
+
+
 _UNSUPPORTED = object()
 _UNKNOWN = object()
 _NONE = object()

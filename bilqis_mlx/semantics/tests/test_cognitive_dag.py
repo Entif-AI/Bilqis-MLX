@@ -63,6 +63,23 @@ def _execute(program, binding, *, memo=None, budget=None):
 
 
 class CognitiveDAGTests(TestCase):
+    def test_hole_candidate_fanout_is_bounded_before_registry_or_compute(self):
+        binding, values = _case(("Number", 2), ("Number", 3))
+        candidates = tuple(f"synthetic:operator:{i:03d}" for i in range(65))
+        with self.assertRaises(BilqisError):
+            DAGNode(
+                "answer", None, (_literal(values[0]), _literal(values[1])),
+                "Number", SCOPE, candidate_operator_ids=candidates)
+        refs = tuple(
+            DAGOperand(RefKind.LITERAL, "Number",
+                       source_handle=f"source:choice:{i:03d}")
+            for i in range(65))
+        with self.assertRaises(BilqisError):
+            DAGNode(
+                "answer", None, (None, _literal(values[1])),
+                "Number", SCOPE, candidate_operator_ids=("ADD",),
+                candidate_operand_refs=(refs, ()))
+
     def test_dag_transitive_runtime_imports_exclude_assessment_and_gold(self):
         root = Path(__file__).resolve().parents[3]
         seen = set()
@@ -234,6 +251,36 @@ class CognitiveDAGTests(TestCase):
         self.assertEqual(result.answer.value, 5)
         self.assertEqual(result.receipt.operation_count, 1)
         self.assertEqual(result.receipt.selected_bindings[0][1], "ADD")
+
+    def test_holes_filter_source_inapplicable_division_before_binding(self):
+        binding, values = _case(
+            ("Number", 2), ("Number", 0), ("Number", 4))
+        add_or_div = DAGNode(
+            "answer", None, (_literal(values[0]), _literal(values[1])),
+            "Number", SCOPE, candidate_operator_ids=("ADD", "DIV"))
+        selected = _execute(_program(add_or_div), binding)
+        self.assertEqual(selected.answer.value, 2)
+        self.assertEqual(selected.receipt.selected_bindings[0][1], "ADD")
+        div_only = replace(add_or_div, candidate_operator_ids=("DIV",))
+        unresolved = _execute(_program(div_only), binding)
+        self.assertEqual(unresolved.answer.state, ValueState.UNRESOLVED)
+        self.assertEqual(unresolved.receipt.operation_count, 0)
+        divisor_hole = DAGNode(
+            "answer", None, (_literal(values[2]), None),
+            "Number", SCOPE, candidate_operator_ids=("DIV",),
+            candidate_operand_refs=(
+                (), (_literal(values[0]), _literal(values[1]))))
+        exact = _execute(_program(divisor_hole), binding)
+        self.assertEqual(exact.answer.value, 2)
+        self.assertEqual(exact.receipt.operation_count, 1)
+        zero_fixed = DAGNode(
+            "answer", None, (None, None),
+            "Number", SCOPE, candidate_operator_ids=("ADD", "DIV"),
+            candidate_operand_refs=(
+                (_literal(values[2]),), (_literal(values[1]),)))
+        selected = _execute(_program(zero_fixed), binding)
+        self.assertEqual(selected.answer.value, 4)
+        self.assertEqual(selected.receipt.selected_bindings[0][1], "ADD")
 
     def test_task_goal_limits_visible_sources_and_operator_choices(self):
         binding, values = _case(("Number", 2), ("Number", 3))
