@@ -70,13 +70,15 @@ The repo-owned source pin registry
 `frame_schema_source_pins_v1.json` has SHA-256
 `4c8da914834f8dc5cadef67bbf9b7da1031f07cc80d4775a47d18b68af62a6c1`,
 independently pinned in the loader code. The production consumer
-`load_pinned_released_frame_schemas(source_family, atlas_selection)`
+`lookup_source_pinned_frame_schema(schema_id, revision, *, source_family,
+atlas_selection)` and `verify_source_pinned_frame_schema(candidate, *,
+source_family, atlas_selection)`
 first revalidates A01 against its separate repo-owned pin, then loads
 the fixed A03 pin registry and exact content-addressed manifest.
 No caller-supplied schema registry, manifest path or expected digest
-enters this consumer entrypoint. It returns the distinct
-`SourcePinnedReleasedFrameSchemas` type; self-pinned low-level staging
-objects are not source admission.
+enters these production consumer entrypoints. They return canonical
+source-pinned schemas (and inspectable witnesses), not a caller-supplied
+authority object. Self-pinned low-level staging objects are not admission.
 
 The generator was rerun idempotently and reproduced all three manifest
 digests and the pin-registry digest. The real A01/source-family test
@@ -84,9 +86,27 @@ passed 9/9 without skips using a disposable source artifact.
 
 ## Remaining downstream integration
 
-This is a pushed **candidate** of source-owned A03 pin publication,
-pending independent EGM and Lane A integration. B07.1/B08.1 must
-consume the `SourcePinnedReleasedFrameSchemas` exact type before
-motif-key/readout admission; they may not substitute the low-level
-self-pinned verifier. A13 rights/revocation and cache dependency
-gates remain independent. No neural admission, training or merge occurred.
+## Independent EGM finding and targeted repair
+
+Goldfish worker-17 reviewed immutable `71db092` and found one **Blocker**:
+the initial `SourcePinnedReleasedFrameSchemas` object could be
+caller-minted by importing its module-global constructor sentinel.
+It demonstrated a changed-scope schema passing the forged exact-type
+check using a self-pinned staging manifest. The manifest loader itself,
+all 18 actual source pins, generator and 52 real tests passed review.
+
+The production contract no longer treats an in-process object or
+sentinel as authority. `lookup_source_pinned_frame_schema` and
+`verify_source_pinned_frame_schema` now **re-enter both independent
+repo-owned pin registries on every call**, accept no caller-provided
+manifest, registry, digest or purported trusted object, and compare
+the exact canonical schema body. A new test reproduces the original
+self-pinned forged staging manifest and confirms the production
+verification rejects it across all three source families. The repaired
+combined real suite again passes **52/52, zero skips**.
+
+Fresh independent immutable-head re-review remains pending. B07.1/B08.1
+must call these source-pinned functions themselves before motif-key/readout
+admission; they must not accept caller-provided witnesses as credentials.
+A13 rights/revocation and cache dependency gates remain independent.
+No neural admission, training or merge occurred.
