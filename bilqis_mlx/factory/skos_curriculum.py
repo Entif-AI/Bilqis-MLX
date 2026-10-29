@@ -42,6 +42,10 @@ _SOURCE_TABLES = frozenset({
     "residue/allomorph_rules",
 })
 _FORMAL_FAMILIES = frozenset({"boolean", "numeric"})
+_FORMAL_ID_PREFIXES = {
+    "boolean": ("legacy:cogal.operator.", "urn:formal:boolean:"),
+    "numeric": ("bilqis.numeric/v1:school.op.", "urn:formal:numeric:"),
+}
 _SCOPE_MODALITY_TIME_CATEGORIES = (
     "ASPECT", "CASE_SCOPE", "FUNCTION_SPECIFICATION_CONTEXT",
     "ILLOCUTION", "MOOD", "PHASE", "PERSPECTIVE_ESSENCE",
@@ -217,10 +221,20 @@ def _validate_snapshot(atlas: FrozenAtlasSnapshot) -> None:
             FrozenAtlasRelation(item.concept.semantic_id, edge.predicate, edge.target)
             for item in concepts for edge in item.concept.relations):
         _fail("BAMF_FAMILY_RELATION_SOURCE_INVALID")
-    if any(semantic_id not in by_id
-           for binding in atlas.formal_domain_bindings
-           for semantic_id in binding.semantic_ids):
-        _fail("BAMF_FAMILY_FORMAL_SOURCE_INVALID")
+    concept_ids = {item.concept.semantic_id for item in concepts}
+    seen_formal = set()
+    for binding in atlas.formal_domain_bindings:
+        for semantic_id in binding.semantic_ids:
+            entry = by_id.get(semantic_id)
+            if (entry is None or entry.source not in {
+                    "FORMAL_DOMAIN", "PRIOR_ACCEPTED_NATIVE_REGISTRY"}
+                    or semantic_id in concept_ids
+                    or semantic_id in seen_formal
+                    or (binding.family in _FORMAL_ID_PREFIXES
+                        and not semantic_id.startswith(
+                            _FORMAL_ID_PREFIXES[binding.family]))):
+                _fail("BAMF_FAMILY_FORMAL_SOURCE_INVALID")
+            seen_formal.add(semantic_id)
     held = tuple(row for row in atlas.withheld_rows
                  if row.source_disposition == "SOURCE_HELD")
     ir_only = tuple(row for row in atlas.withheld_rows

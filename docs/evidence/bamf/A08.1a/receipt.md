@@ -72,3 +72,26 @@ constructive curriculum. A08.1b must bind constructors/checkers and
 the parent must prove zero uncovered obligations before claiming
 `COMPLETE_ATLAS_COVERAGE`. Independent EGM and final branch/issue
 turn-in are pending; no A08 parent closure or self-merge is claimed.
+
+## 2026-10-29 independent EGM source-family repair
+
+Fresh Goldfish review of immutable `5c18e87` returned zero Blockers
+and one Major: a Boolean `FormalDomainBinding` could replace its
+semantic IDs with an existing SKOS lexicon root, retaining the
+source owner/digest, and incorrectly assign a Boolean family to
+that root. ABI membership alone was not formal-source authority.
+
+The inventory now requires every formal-bound ID to have an A01
+formal or prior-native-registry source tag, not an SKOS concept
+record, and to match the source family's released semantic-ID
+namespace for known Boolean/numeric families. Cross-family
+substitutions, duplicate formal claims and SKOS-root substitution
+fail closed. Synthetic same-ABI and independent real-corpus
+lexicon-root adversaries are regression tests.
+
+The real corpus's prior accepted native ABI source tag is
+preserved rather than incorrectly requiring all historic formal
+IDs to have the newer `FORMAL_DOMAIN` tag. Owner suite now
+**15 passed, 0 failed, 0 skipped** with the pinned real corpus.
+The 9,307-identity/12,351-obligation denominator is unchanged.
+Fresh immutable-head independent EGM re-review remains pending.

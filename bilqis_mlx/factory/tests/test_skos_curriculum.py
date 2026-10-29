@@ -49,7 +49,8 @@ def _snapshot(definitions=DEFINITIONS, *, release=RELEASE):
     for index, (semantic_id, source, relation) in enumerate(definitions):
         entries.append(AbiEntry(
             index, 0, index, semantic_id, semantic_id,
-            "pinned:source", source is None, source is None,
+            "FORMAL_DOMAIN" if source is None else "CANONICAL_SKOS",
+            source is None, source is None,
             "SOURCE_ADMITTED" if source is None else "IMPLEMENTATION_UNCOVERED"))
         if source is not None:
             concept = AtlasConcept(
@@ -339,6 +340,22 @@ class SemanticFamilyInventoryTests(unittest.TestCase):
         self.assertEqual(caught.exception.context["reason"],
                          "BAMF_FAMILY_FORMAL_SOURCE_INVALID")
 
+    def test_same_abi_formal_family_substitution_fails_closed(self):
+        snapshot = _snapshot()
+        for replacement_id in (
+                "urn:lex:root", "urn:formal:numeric:ADD"):
+            with self.subTest(replacement_id=replacement_id):
+                forged = replace(
+                    snapshot, formal_domain_bindings=(
+                        replace(snapshot.formal_domain_bindings[0],
+                                semantic_ids=(replacement_id,)),
+                        snapshot.formal_domain_bindings[1]))
+                with self.assertRaises(BilqisError) as caught:
+                    inventory_source_families(forged)
+                self.assertEqual(
+                    caught.exception.context["reason"],
+                    "BAMF_FAMILY_FORMAL_SOURCE_INVALID")
+
     def test_forged_relation_without_source_concept_is_not_admitted(self):
         snapshot = _snapshot()
         forged = replace(snapshot, relations=(
@@ -386,6 +403,19 @@ class SemanticFamilyInventoryTests(unittest.TestCase):
             artifact = persist_atlas_release(release, directory)
             snapshot = load_atlas_snapshot(artifact.path)
         census = inventory_source_families(snapshot)
+        lexicon_root = next(
+            item.concept.semantic_id for item in snapshot.concepts
+            if item.concept.kind == "root")
+        forged_formal = replace(
+            snapshot, formal_domain_bindings=(
+                replace(snapshot.formal_domain_bindings[0],
+                        semantic_ids=(lexicon_root,)),
+                *snapshot.formal_domain_bindings[1:]))
+        with self.assertRaises(BilqisError) as caught:
+            inventory_source_families(forged_formal)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_FAMILY_FORMAL_SOURCE_INVALID")
         # Frozen A01.2/A01.3 source census: formal ABI cannot disappear
         # merely because no AtlasConcept record backs its identity.
         self.assertEqual(census.counts.atlas_source_concepts, 9079)

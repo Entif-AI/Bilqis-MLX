@@ -51,3 +51,9 @@ foreign-release rejection and full-denominator preservation.
 No optimizer step, source promotion, live training, self-merge
 or learner-retention claim occurred. Independent EGM of this
 partial candidate remains pending.
+
+The subsequent A08.1a same-ABI formal-source authority repair
+also protects this source-lesson compiler, which consumes the
+same frozen census. Combined owner tests now pass **15/15**
+against the real pinned corpus; A08.1b is still partial and
+has no independent leaf-completion disposition.
