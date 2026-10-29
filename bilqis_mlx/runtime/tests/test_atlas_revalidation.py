@@ -438,6 +438,7 @@ class AtlasRevalidationTests(unittest.TestCase):
                          "BAMF_C09_CORRECTION_EVENT_ID_CONFLICT")
         superseding = _sign_event(replace(
             original, event_id="correction:synthetic:3",
+            supersedes_event_ids=("correction:synthetic:1", "correction:synthetic:2"),
             new_evidence_sha256="9" * 64))
         resolved = add_correction(
             concurrent, superseding,
@@ -447,6 +448,32 @@ class AtlasRevalidationTests(unittest.TestCase):
                          ("correction:synthetic:3",))
         self.assertEqual(len(resolved.branches), 3)
         self.assertEqual(len(concurrent.branches), 2)
+
+    def test_unsigned_supersession_cannot_retire_authenticated_alternatives(self):
+        source = DependencyRef(DependencyKind.SOURCE, 'source:synthetic')
+        original = _event(source)
+        branches = add_correction(CorrectionBranches(source, ()), original)
+        other = _sign_event(replace(original, event_id='correction:other'))
+        with self.assertRaises(BilqisError):
+            add_correction(branches, other, supersedes_event_ids=(original.event_id,))
+        tampered = replace(other, supersedes_event_ids=(original.event_id,))
+        with self.assertRaises(BilqisError) as caught:
+            add_correction(branches, tampered, supersedes_event_ids=(original.event_id,))
+        self.assertEqual(caught.exception.context['reason'], 'BAMF_C09_SOURCE_SIGNATURE_INVALID')
+
+    def test_expiring_intermediate_correction_does_not_resurrect_ancestor(self):
+        a = TemporalEvent('a', 'actor:x', TemporalEventKind.OBSERVED,
+            'a' * 64, '1' * 64, 10, 10, None, 10, 10)
+        b = replace(a, event_id='b', kind=TemporalEventKind.CORRECTION,
+            fact_digest='b' * 64, effective_from=20, effective_until=30,
+            source_time=20, observed_at=20, recorded_at=20, supersedes_event_id='a')
+        c = replace(b, event_id='c', fact_digest='c' * 64, effective_from=25,
+            effective_until=None, source_time=25, observed_at=25, recorded_at=25,
+            supersedes_event_id='b')
+        for time in (26, 31):
+            result = project_as_of((a, b, c), actor_id='actor:x', as_of=time)
+            self.assertEqual(result.status, TemporalStatus.CORRECTED)
+            self.assertEqual(result.fact_digest, 'c' * 64)
 
     def test_invalidated_learned_support_queues_targeted_source_tasks_without_weight_edits(self):
         index, _, _ = _chain()

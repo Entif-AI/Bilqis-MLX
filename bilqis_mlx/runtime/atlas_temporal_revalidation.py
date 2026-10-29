@@ -181,7 +181,11 @@ def project_as_of(
         if (item.kind is TemporalEventKind.PLANNED
             or item.effective_from <= as_of)
         and (item.effective_until is None or as_of < item.effective_until))
-    superseded = {item.supersedes_event_id for item in visible
+    # Effective corrections retain their supersession edges after expiry.
+    # Expiry removes a fact from view; it cannot resurrect replaced evidence.
+    effective_history = tuple(item for item in recorded
+        if item.kind is TemporalEventKind.PLANNED or item.effective_from <= as_of)
+    superseded = {item.supersedes_event_id for item in effective_history
                   if item.supersedes_event_id is not None}
     active = tuple(sorted(
         (item for item in visible if item.event_id not in superseded),

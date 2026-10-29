@@ -107,7 +107,9 @@ def add_correction(
     if not isinstance(authority_registry, SourceAuthorityRegistry):
         _invalid("BAMF_C09_SOURCE_AUTHORITY_MISSING")
     authority_registry.verify_correction(event)
-    proposed = CorrectionBranch(event, supersedes_event_ids)
+    if supersedes_event_ids != event.supersedes_event_ids:
+        _invalid("BAMF_C09_UNSIGNED_SUPERSESSION")
+    proposed = CorrectionBranch(event, event.supersedes_event_ids)
     prior = next((branch for branch in branches.branches
                   if branch.event.event_id == event.event_id), None)
     if prior is not None:

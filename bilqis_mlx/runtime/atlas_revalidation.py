@@ -18,7 +18,7 @@ from ..semantics.cognitive_dependencies import (
 )
 
 
-CORRECTION_EVENT_SCHEMA = "bilqis.c09.correction-event/v2"
+CORRECTION_EVENT_SCHEMA = "bilqis.c09.correction-event/v3"
 REVALIDATED_ARTIFACT_SCHEMA = "bilqis.c09.revalidated-artifact/v3"
 REVALIDATION_FRONTIER_SCHEMA = "bilqis.c09.revalidation-frontier/v1"
 REVALIDATION_TASK_SCHEMA = "bilqis.c09.revalidation-task/v1"
@@ -185,6 +185,7 @@ class CorrectionEvent:
     recorded_at: int
     reason_code: str
     source_signature_hex: str
+    supersedes_event_ids: tuple[str, ...] = ()
     schema_version: str = CORRECTION_EVENT_SCHEMA
 
     def __post_init__(self) -> None:
@@ -200,6 +201,11 @@ class CorrectionEvent:
                 or not _name(self.reason_code)
                 or not isinstance(self.source_signature_hex, str)
                 or not _ED25519_SIGNATURE.fullmatch(self.source_signature_hex)
+                or not isinstance(self.supersedes_event_ids, tuple)
+                or any(not _name(item) for item in self.supersedes_event_ids)
+                or len(set(self.supersedes_event_ids)) != len(self.supersedes_event_ids)
+                or self.event_id in self.supersedes_event_ids
+                or tuple(sorted(self.supersedes_event_ids)) != self.supersedes_event_ids
                 or self.schema_version != CORRECTION_EVENT_SCHEMA):
             _invalid("BAMF_C09_CORRECTION_EVENT_INVALID")
 
@@ -217,6 +223,7 @@ class CorrectionEvent:
             "observed_at": self.observed_at,
             "recorded_at": self.recorded_at,
             "reason_code": self.reason_code,
+            "supersedes_event_ids": self.supersedes_event_ids,
         })
 
 
