@@ -7,7 +7,7 @@ import numpy as np
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.backbone_group_numerical import (
-    UnadmittedGroupNumerical, run_backbone_group_numerical,
+    UnadmittedGroupNumerical, UnadmittedBackboneSession, run_backbone_group_numerical,
 )
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes,
@@ -103,19 +103,18 @@ class BackboneGroupNumericalTests(unittest.TestCase):
         self.assertNotEqual(first.parameter_content_digest, other.parameter_content_digest)
         self.assertNotEqual(first.execution_digest, other.execution_digest)
         self.assertEqual(first.admission_status, "UNADMITTED_NUMERICAL")
-        second = run_backbone_group_numerical(
-            first.hidden, params, group_index=2, spec=SPEC, extents=EXTENTS,
-            scope_ids=mx.zeros((1, 4), dtype=mx.int32),
-            valid=mx.ones((1, 4), dtype=mx.bool_),
-            generation="d"*64, prefix_digest="e"*64, prior=first)
-        self.assertEqual(second.predecessor_digest, first.execution_digest)
+        session = UnadmittedBackboneSession(hidden, params, spec=SPEC, extents=EXTENTS,
+            scope_ids=mx.zeros((1,4),dtype=mx.int32), valid=mx.ones((1,4),dtype=mx.bool_),
+            generation="d"*64, prefix_digest="e"*64)
+        session_first = session.advance()
+        second = session.advance()
+        self.assertEqual(second.predecessor_digest, session_first.execution_digest)
         self.assertEqual(second.layer_start, 4)
         with self.assertRaises(BilqisError):
-            run_backbone_group_numerical(
-                other.hidden, params, group_index=2, spec=SPEC, extents=EXTENTS,
-                scope_ids=mx.zeros((1, 4), dtype=mx.int32),
-                valid=mx.ones((1, 4), dtype=mx.bool_),
-                generation="d"*64, prefix_digest="e"*64, prior=first)
+            run_backbone_group_numerical(first.hidden, params, group_index=2,
+                spec=SPEC, extents=EXTENTS, scope_ids=mx.zeros((1,4),dtype=mx.int32),
+                valid=mx.ones((1,4),dtype=mx.bool_),generation="d"*64,
+                prefix_digest="e"*64,prior=first)
 
     def test_sequence_starts_match_direct_b04_and_break_history(self):
         from bilqis_mlx.runtime.atlas_attention import AttentionScope, ccgqa
@@ -143,19 +142,23 @@ class BackboneGroupNumericalTests(unittest.TestCase):
     def test_forged_predecessor_and_mixed_tree_fail(self):
         params = _params()
         hidden = mx.arange(4*SPEC.width,dtype=mx.float32).reshape(1,4,SPEC.width)/1000
-        first = _run(hidden,params)
-        def second(prior,tree):
-            return run_backbone_group_numerical(first.hidden,tree,group_index=2,
+        session = UnadmittedBackboneSession(hidden,params,spec=SPEC,extents=EXTENTS,
+            scope_ids=mx.zeros((1,4),dtype=mx.int32),valid=mx.ones((1,4),dtype=mx.bool_),
+            generation="d"*64,prefix_digest="e"*64)
+        first = session.advance()
+        forged = replace(first,execution_digest="f"*64,
+                         full_parameter_tree_digest="f"*64)
+        with self.assertRaises(BilqisError):
+            run_backbone_group_numerical(first.hidden, params,group_index=2,
                 spec=SPEC,extents=EXTENTS,scope_ids=mx.zeros((1,4),dtype=mx.int32),
                 valid=mx.ones((1,4),dtype=mx.bool_),generation="d"*64,
-                prefix_digest="e"*64,prior=prior)
-        with self.assertRaises(BilqisError):
-            second(replace(first,execution_digest="f"*64),params)
+                prefix_digest="e"*64,prior=forged)
         changed = dict(params)
         changed["blocks.4.query"] = changed["blocks.4.query"].at[0,0].add(.01)
+        session._parameters["blocks.4.query"] = changed["blocks.4.query"]
         with self.assertRaises(BilqisError):
-            second(first,changed)
-        self.assertEqual(second(first,params).predecessor_digest,first.execution_digest)
+            session.advance()
+        self.assertEqual(len(session.results),1)
 
     def test_wrong_group_and_parameter_geometry_reject(self):
         params = _params()

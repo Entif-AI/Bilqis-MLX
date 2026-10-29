@@ -6,6 +6,7 @@ accept its result as completed-backbone provenance.
 """
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import dataclass
 import hashlib
 import json
@@ -103,7 +104,9 @@ def run_backbone_group_numerical(
     prior: UnadmittedGroupNumerical | None = None,
     sequence_starts: mx.array | None = None,
 ) -> UnadmittedGroupNumerical:
-    """Execute B01/B04 layers. The output is numerical evidence, not authority."""
+    """Execute standalone numerical group; caller predecessors are never authority."""
+    if prior is not None:
+        _invalid()
     if (type(spec) is not ModelTopologySpecV2
             or type(extents) is not GenerationExtents
             or type(group_index) is not int
@@ -144,30 +147,6 @@ def run_backbone_group_numerical(
                                  "valid": _content_digest(valid),
                                  "starts": None if sequence_starts is None else _content_digest(sequence_starts),
                                  "generation": generation, "prefix": prefix_digest})
-    if prior is not None:
-        if (type(prior) is not UnadmittedGroupNumerical or prior.group_index + 1 != group_index
-                or prior.hidden is not hidden or prior.full_parameter_tree_digest != full_digest
-                or prior.scope_content_digest != scope_digest
-):
-            _invalid()
-        # Validate the predecessor against its own actual executed output/cache and
-        # all carried identity fields, rather than trusting replaceable digest text.
-        previous_required = tuple(sorted(name for name in full_names
-            if (prior.group_index - 1) * group_size <= int(name.split(".")[1])
-            < prior.group_index * group_size))
-        if prior.parameter_content_digest != _group_parameter_digest(parameters, previous_required):
-            _invalid()
-        expected_prior = _hash_record({
-            "group": prior.group_index, "layer_start": prior.layer_start,
-            "layer_end": prior.layer_end, "topology": spec.digest,
-            "extents": extents.digest, "generation_claim": generation,
-            "prefix_claim": prefix_digest, "parameters": prior.parameter_content_digest,
-            "full_parameters": prior.full_parameter_tree_digest,
-            "scope": prior.scope_content_digest, "caches": _cache_chain_digest(prior.attention_caches),
-            "input": prior.input_content_digest, "output": _content_digest(prior.hidden),
-            "predecessor": prior.predecessor_digest, "status": UNADMITTED_NUMERICAL})
-        if prior.execution_digest != expected_prior or prior.cache_chain_digest != _cache_chain_digest(prior.attention_caches):
-            _invalid()
     caches = []
     current = hidden
     for layer in range(start, end):
@@ -204,3 +183,63 @@ def run_backbone_group_numerical(
     return UnadmittedGroupNumerical(current, group_index, start, end, tuple(caches),
                                     parameter_digest, full_digest, scope_digest,
                                     _content_digest(hidden), cache_digest, predecessor, execution_digest)
+
+
+class UnadmittedBackboneSession:
+    """Own a single sequential numerical execution, never a B05 credential.
+
+    No API accepts a predecessor result, group number or output tensor once
+    created. The session owns current hidden and the exact parameter mapping.
+    """
+
+    def __init__(self, hidden, parameters, *, spec, extents, scope_ids, valid,
+                 generation, prefix_digest, sequence_starts=None):
+        if type(spec) is not ModelTopologySpecV2 or type(extents) is not GenerationExtents:
+            _invalid()
+        self._hidden = hidden
+        self._parameters = dict(parameters)
+        self._spec = spec
+        self._extents = extents
+        self._scope_ids = scope_ids
+        self._valid = valid
+        self._generation = generation
+        self._prefix_digest = prefix_digest
+        self._sequence_starts = sequence_starts
+        self._results = ()
+        names = tuple(sorted(name for name in self._parameters if name.startswith("blocks.")))
+        self._tree_digest = _group_parameter_digest(self._parameters, names)
+
+    @property
+    def results(self):
+        return self._results
+
+    def advance(self):
+        if len(self._results) >= self._spec.depth_groups:
+            _invalid()
+        names = tuple(sorted(name for name in self._parameters if name.startswith("blocks.")))
+        if _group_parameter_digest(self._parameters, names) != self._tree_digest:
+            _invalid()
+        group_index = len(self._results) + 1
+        result = run_backbone_group_numerical(
+            self._hidden, self._parameters, group_index=group_index,
+            spec=self._spec, extents=self._extents,
+            scope_ids=self._scope_ids, valid=self._valid,
+            generation=self._generation, prefix_digest=self._prefix_digest,
+            sequence_starts=self._sequence_starts)
+        if result.full_parameter_tree_digest != self._tree_digest:
+            _invalid()
+        if self._results:
+            previous = self._results[-1]
+            result = dataclasses.replace(result, predecessor_digest=previous.execution_digest)
+            result = dataclasses.replace(result, execution_digest=_hash_record({
+                "group": result.group_index, "layer_start": result.layer_start,
+                "layer_end": result.layer_end, "topology": self._spec.digest,
+                "extents": self._extents.digest, "generation_claim": self._generation,
+                "prefix_claim": self._prefix_digest, "parameters": result.parameter_content_digest,
+                "full_parameters": result.full_parameter_tree_digest,
+                "scope": result.scope_content_digest, "caches": result.cache_chain_digest,
+                "input": result.input_content_digest, "output": _content_digest(result.hidden),
+                "predecessor": previous.execution_digest, "status": UNADMITTED_NUMERICAL}))
+        self._hidden = result.hidden
+        self._results += (result,)
+        return result
