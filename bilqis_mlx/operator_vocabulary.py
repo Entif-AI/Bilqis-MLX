@@ -66,7 +66,18 @@ AUTONOMY_SAFE_HOLD = OperationalTerm(
 )
 
 
+ATLAS_ADMISSION_STAGED = OperationalTerm(
+    code="ATLAS_ADMISSION_STAGED",
+    kind=OperationalKind.STOP_REASON,
+    owner="runtime.atlas_admission",
+    meaning="An exact source successor remains staged without current Atlas admission authority.",
+    next_action="Retain the staged successor; reconcile the explicit Atlas scope and accepted run-owner admission interface.",
+    neural_effect="No optimizer update or release adoption is authorized by this stop reason.",
+)
+
+
 OPERATIONAL_TERMS = (
+    ATLAS_ADMISSION_STAGED,
     AUTONOMY_SOURCE_DEVELOPMENT_REQUIRED,
     STAGED_SUCCESSOR_BINDING_REQUIRED,
     AUTONOMY_SAFE_HOLD,

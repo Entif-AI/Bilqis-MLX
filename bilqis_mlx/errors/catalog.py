@@ -42,6 +42,16 @@ def _spec(
 
 
 class SCHOOL:
+    class BAMF_ATLAS_ADMISSION:
+        INVALID = _spec(
+            ("SCHOOL", "BAMF_ATLAS_ADMISSION", "INVALID"),
+            owner="runtime.atlas_admission",
+            title="BAMF Atlas lease or admission boundary invalid",
+            message_template="BAMF Atlas admission is invalid: {reason}",
+            disposition="STAGE_AND_INSPECT",
+            next_action="Keep the retained run unchanged; reconcile explicit human authorization, source rights and exact successor custody.",
+        )
+
     class BAMF_SALIENCE:
         INVALID = _spec(
             ("SCHOOL", "BAMF_SALIENCE", "INVALID"),
@@ -980,6 +990,7 @@ class FACTORY:
 
 
 CATALOG = (
+    SCHOOL.BAMF_ATLAS_ADMISSION.INVALID,
     SCHOOL.BAMF_SALIENCE.INVALID,
     SCHOOL.BAMF_CAPABILITY_EVIDENCE.INVALID,
     SCHOOL.BAMF_SOLVER.INVALID,
