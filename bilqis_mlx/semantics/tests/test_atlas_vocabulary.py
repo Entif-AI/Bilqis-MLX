@@ -30,6 +30,9 @@ from bilqis_mlx.semantics.atlas_vocabulary import (
     apply_vocabulary_extension, plan_vocabulary_extension,
     prepare_identity_factors, staged_tied_logits,
 )
+from bilqis_mlx.semantics.atlas_vocabulary_resources import (
+    build_registry_mirror_delta,
+)
 from bilqis_mlx.semantics.tests.test_atlas_features import (
     BROADER, _features, _snapshot,
 )
@@ -131,9 +134,13 @@ class AtlasVocabularyTests(unittest.TestCase):
                     for row in snapshot.withheld_rows))
             plan = plan_vocabulary_extension(
                 prior, (next_source.semantic_id,), ModelTopologySpecV2())
+            mirror = build_registry_mirror_delta(prior, plan)
         self.assertEqual(plan.allocations[0].abi_index, next_source.index)
         self.assertEqual(plan.source_bundle_id, release.source_bundle_id)
         self.assertEqual(plan.status, "STAGED_NOT_ADMITTED")
+        self.assertEqual(mirror.active_indices, plan.active_indices)
+        self.assertEqual(mirror.rows[0].semantic_id, next_source.semantic_id)
+        self.assertTrue(mirror.rows[0].description)
 
     def test_a02_planner_stable_boundary_indices_and_bank_extents(self):
         snapshot, prior = _allocation_fixture()
