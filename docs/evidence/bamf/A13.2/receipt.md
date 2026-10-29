@@ -6,8 +6,9 @@
   (already an ancestor; no no-op merge)
 - Consumed A13.1 source-grant evidence repair: `7895cea`;
   independent EGM receipt: `cba2ae4`
-- Branch: `codex/bamf02-a-semantics`; candidate SHA pending push
-- Independent review: `EGM_PENDING`
+- Final reviewed repair head:
+  `f4245d5edf681467ff24c0854b47158a7cecec69`
+- Independent review: **EGM PASS**, zero remaining Blockers/Majors
 
 ## API and source boundaries
 
@@ -92,7 +93,11 @@ pass merely because record/tokens/gold are otherwise valid.
 First-admission ID-only spoof regressions cover A, B and C.
 The source-draw check is a source-owner admission step, never
 a runtime solver dependency. Context+adapter tests remain
-28/28; another immutable-head EGM readback is required.
+28/28. Independent Goldfish readback at immutable `f4245d5`
+confirmed the first-admission checker/span Blocker and
+source-ID lineage Major resolved, with zero remaining
+Blockers/Majors. The reviewer inspected source/tests but
+did not execute an additional test run. See A13/egm.md.
 
 `git diff --check` passed. Repository module-size and error-control
 checks retain inherited unrelated findings. The existing
