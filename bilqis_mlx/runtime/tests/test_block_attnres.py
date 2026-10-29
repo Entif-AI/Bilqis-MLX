@@ -8,7 +8,8 @@ import numpy as np
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.block_attnres import (
-    DepthFrameFeatures, DepthSummary, PARAMETER_SHAPES, _depth_components,
+    DepthFrameFeatures, DepthParameterView, DepthSummary, PARAMETER_SHAPES,
+    _depth_components,
     depth_parameter_view, depth_select,
 )
 from bilqis_mlx.runtime.model_topology_v2 import (
@@ -126,8 +127,8 @@ class DepthSelectionTests(unittest.TestCase):
                                    np.ones((2, 3)), atol=1e-7)
         np.testing.assert_allclose(np.asarray(gate),
                                    np.full((2, 3, 1), 0.01), atol=1e-7)
-        self.assertEqual(depth_select(
-            self.current, self.sources, self.features, self.params).shape,
+        self.assertEqual(_depth_components(
+            self.current, self.sources, self.features, self.params)[0].shape,
             (2, 3, 768))
 
     def test_completed_group_order_and_no_future_source_admission(self):
@@ -142,25 +143,25 @@ class DepthSelectionTests(unittest.TestCase):
             self.assertEqual(alpha.shape, (2, 3, boundary + 1))
             np.testing.assert_allclose(np.asarray(actual), expected,
                                        atol=3e-6, rtol=3e-5)
-        baseline = depth_select(
-            self.current, self.sources, self.features, self.params)
+        baseline = _depth_components(
+            self.current, self.sources, self.features, self.params)[0]
         unrelated_future = _summaries(3)[2].hidden.at[:].add(100)
         self.assertIsInstance(unrelated_future, mx.array)
         np.testing.assert_array_equal(
-            np.asarray(depth_select(
-                self.current, self.sources, self.features, self.params)),
+            np.asarray(_depth_components(
+                self.current, self.sources, self.features, self.params)[0]),
             np.asarray(baseline))
         for invalid in (
             (self.sources[1], self.sources[0]),
             (*self.sources, _summaries(2)[2]),
         ):
             with self.assertRaises(BilqisError):
-                depth_select(self.current, invalid, self.features, self.params)
+                _depth_components(self.current, invalid, self.features, self.params)
 
     def test_real_gradients_reach_shared_selector_and_boundary_gate(self):
         def objective(params):
-            value = depth_select(
-                self.current, self.sources, self.features, params)
+            value = _depth_components(
+                self.current, self.sources, self.features, params)[0]
             return mx.sum(value * value)
         gradients = mx.grad(objective)(self.params)
         for name in self.params:
@@ -178,8 +179,8 @@ class DepthSelectionTests(unittest.TestCase):
             summaries = tuple(
                 DepthSummary(name, layer, hidden)
                 for (name, layer), hidden in zip(names, (h0, g1, g2, g3)))
-            output = depth_select(
-                self.current, summaries, features, params)
+            output = _depth_components(
+                self.current, summaries, features, params)[0]
             return mx.sum(output * output)
 
         gradients = mx.grad(objective, argnums=(0, 1, 2, 3))(
@@ -199,14 +200,14 @@ class DepthSelectionTests(unittest.TestCase):
             malformed = dict(self.params)
             malformed[name] = value
             with self.subTest(name=name), self.assertRaises(BilqisError):
-                depth_select(self.current, self.sources, self.features, malformed)
+                _depth_components(self.current, self.sources, self.features, malformed)
         with self.assertRaises(BilqisError):
-            depth_select(self.current, self.sources, self.features,
-                         {**self.params, "unexpected": mx.array([1.0])})
+            _depth_components(self.current, self.sources, self.features,
+                              {**self.params, "unexpected": mx.array([1.0])})
         with self.assertRaises(BilqisError):
-            depth_select(self.current, self.sources, self.features,
-                         {key: value for key, value in self.params.items()
-                          if key != "value"})
+            _depth_components(self.current, self.sources, self.features,
+                              {key: value for key, value in self.params.items()
+                               if key != "value"})
         for changes in (
             {"semantic_release": "not-a-release"},
             {"source_evidence_digest": "not-a-digest"},
@@ -218,7 +219,7 @@ class DepthSelectionTests(unittest.TestCase):
             replace(self.features, type_role=mx.zeros((2, 3, 4))),
         ):
             with self.assertRaises(BilqisError):
-                depth_select(self.current, self.sources, changed, self.params)
+                _depth_components(self.current, self.sources, changed, self.params)
         with self.assertRaises(BilqisError):
             DepthSummary("g2", 4, self.sources[0].hidden)
 
@@ -277,6 +278,48 @@ class DepthSelectionTests(unittest.TestCase):
                 depth_parameter_view(
                     parameters, spec=spec, extents=extents,
                     boundary_group=invalid)
+
+    def test_public_selector_rejects_anonymous_or_cross_boundary_weights(self):
+        with self.assertRaises(BilqisError):
+            depth_select(
+                self.current, self.sources, self.features, self.params)
+        with self.assertRaises(BilqisError):
+            DepthParameterView(self.params, 1, object())
+        spec = ModelTopologySpecV2()
+        extents = GenerationExtents(1, 1, "a" * 64, "b" * 64, "c" * 64)
+        parameters = {
+            item.name: mx.zeros(item.shape, dtype=mx.float32)
+            for item in expected_bamf_shapes(spec, extents)
+        }
+        view = depth_parameter_view(
+            parameters, spec=spec, extents=extents, boundary_group=2)
+        with self.assertRaises(BilqisError):
+            depth_select(
+                self.current, self.sources, self.features, view)
+        with self.assertRaises(TypeError):
+            view._tensors["query"] = view["key"]
+
+    def test_nonfinite_source_or_parameter_fails_before_residual_output(self):
+        current_data = np.asarray(self.current).copy()
+        current_data[0, 0, 0] = float("nan")
+        poisoned_current = _array(current_data)
+        with self.assertRaises(BilqisError):
+            _depth_components(
+                poisoned_current, self.sources, self.features, self.params)
+        source_data = np.asarray(self.sources[1].hidden).copy()
+        source_data[0, 0, 0] = float("inf")
+        poisoned_source = replace(self.sources[1], hidden=_array(source_data))
+        with self.assertRaises(BilqisError):
+            _depth_components(
+                self.current, (self.sources[0], poisoned_source),
+                self.features, self.params)
+        poisoned_params = dict(self.params)
+        query_data = np.asarray(self.params["query"]).copy()
+        query_data[0, 0] = float("inf")
+        poisoned_params["query"] = _array(query_data)
+        with self.assertRaises(BilqisError):
+            _depth_components(
+                self.current, self.sources, self.features, poisoned_params)
 
 
 if __name__ == "__main__":

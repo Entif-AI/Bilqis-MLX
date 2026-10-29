@@ -31,8 +31,11 @@ functions to particular depth groups.
 
 `python3 -B scripts/run_tests.py
 bilqis_mlx/runtime/tests/test_block_attnres.py`:
-**7 passed, 0 failed, 0 skipped** on native MLX
-after the independent source-state gradient proof repair.
+**9 passed, 0 failed, 0 skipped** on native MLX
+after source-state gradient, non-finite and sealed-view
+adversarial repairs. The view is now an immutable
+`DepthParameterView` with exact boundary binding;
+the public selector rejects anonymous local mappings.
 Two additional literal tests construct the full B01 ledger,
 verify reference identity for three distinct gate boundaries,
 run the selector through each exact view, and reject

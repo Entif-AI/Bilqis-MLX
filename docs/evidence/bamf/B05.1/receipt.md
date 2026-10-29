@@ -49,7 +49,7 @@ semantics or inspect source labels.
 
 `python3 -B scripts/run_tests.py
 bilqis_mlx/runtime/tests/test_block_attnres.py`:
-**7 passed, 0 failed, 0 skipped** on installed native MLX.
+**9 passed, 0 failed, 0 skipped** on installed native MLX.
 An independent NumPy FP32 oracle recomputes the
 RMSNorm/QKV/source softmax/gate/output equations. Literal
 tests verify weights sum to one, initial gate 0.01,
@@ -72,6 +72,25 @@ differentiated selector parameters but not the h0/g1/g2/g3
 source states. The repair adds a nondegenerate native
 MLX gradient witness for all four completed source
 summaries at boundary 3. The full owner suite now passes
-**7/7**. Independent immutable-head re-review is
-pending; A06 factor-composer and B13 custody integration
-remain separate gates.
+**9/9** after additional adversarial repairs.
+
+Independent adversarial review at `7f40b3a` found
+three Majors. Two are repaired locally: non-finite
+FP32 input/source/parameter tensors now fail closed
+before producing a residual, and public `depth_select`
+now accepts only a sealed, immutable
+`DepthParameterView` produced by full B01-ledger
+validation and bound to the exact boundary group.
+Anonymous local Q/K swaps and cross-boundary gate
+substitution cannot enter the public path. The
+remaining Major is **source-summary provenance**:
+a caller could relabel a genuine future g2 tensor as
+g1 because B05.2's trusted backbone group-capture
+receipt is not yet available. This is not waived.
+Do not wire the candidate into production, push it
+as accepted B05.1, or close the issue until that
+source-owned group-boundary authority is integrated.
+
+Fresh immutable-head re-review of the two repairs
+remains pending. A06 factor-composer and B13 custody
+integration are also separate gates.

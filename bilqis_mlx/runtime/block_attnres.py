@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import re
+from types import MappingProxyType
 from typing import Mapping
 
 import mlx.core as mx
@@ -36,6 +37,8 @@ PARAMETER_SHAPES = {
 }
 FEATURES_SCHEMA = "bilqis.mlx.depth-frame-features/v1"
 SUMMARY_SCHEMA = "bilqis.mlx.depth-summary/v1"
+PARAMETER_VIEW_SCHEMA = "bilqis.mlx.depth-parameter-view/v1"
+_VIEW_SEAL = object()
 SOURCE_ORDER = ("h0", "g1", "g2", "g3")
 COMPLETED_LAYERS = (0, 4, 8, 12)
 
@@ -44,10 +47,36 @@ def _invalid() -> None:
     ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
 
 
+@dataclass(frozen=True)
+class DepthParameterView(Mapping[str, mx.array]):
+    """Sealed, immutable B01-validated references, not anonymous local weights."""
+
+    _tensors: Mapping[str, mx.array]
+    boundary_group: int
+    _seal: object
+    schema_version: str = PARAMETER_VIEW_SCHEMA
+
+    def __post_init__(self) -> None:
+        if (self._seal is not _VIEW_SEAL
+                or self.schema_version != PARAMETER_VIEW_SCHEMA
+                or set(self._tensors) != set(PARAMETER_SHAPES)):
+            _invalid()
+        object.__setattr__(self, "_tensors", MappingProxyType(dict(self._tensors)))
+
+    def __getitem__(self, name: str) -> mx.array:
+        return self._tensors[name]
+
+    def __iter__(self):
+        return iter(self._tensors)
+
+    def __len__(self) -> int:
+        return len(self._tensors)
+
+
 def depth_parameter_view(
     parameters: Mapping[str, mx.array], *, spec: ModelTopologySpecV2,
     extents: GenerationExtents, boundary_group: int,
-) -> dict[str, mx.array]:
+) -> DepthParameterView:
     """Borrow only shared depth tensors and the selected B01 boundary gate."""
     if (type(spec) is not ModelTopologySpecV2
             or type(extents) is not GenerationExtents
@@ -70,7 +99,9 @@ def depth_parameter_view(
                    or declared[name].shape != PARAMETER_SHAPES[local]
                    for local, name in names.items())):
         _invalid()
-    return {local: parameters[name] for local, name in names.items()}
+    return DepthParameterView(
+        {local: parameters[name] for local, name in names.items()},
+        boundary_group, _VIEW_SEAL)
 
 
 @dataclass(frozen=True)
@@ -140,6 +171,12 @@ def _validate(current, available_summaries, frame_features, params) -> None:
         if (not isinstance(value, mx.array) or value.shape != shape
                 or value.dtype != mx.float32):
             _invalid()
+    for value in (
+        current, frame_features.frame_seed, frame_features.type_role,
+        *(item.hidden for item in available_summaries), *params.values(),
+    ):
+        if not bool(mx.all(mx.isfinite(value))):
+            _invalid()
 
 
 def _rms_norm(values: mx.array, gamma: mx.array) -> mx.array:
@@ -172,13 +209,17 @@ def _depth_components(current, available_summaries, frame_features, params):
 
 def depth_select(
     current: mx.array, available_summaries: tuple[DepthSummary, ...],
-    frame_features: DepthFrameFeatures, params: Mapping[str, mx.array],
+    frame_features: DepthFrameFeatures, params: DepthParameterView,
 ) -> mx.array:
     """Merge h0 and completed group summaries in their fixed source order.
 
     The tuple must be (h0,g1,...,gk), k=1..3; future groups are not
     passed and cannot contribute to the source-axis softmax.
     """
+    if (type(params) is not DepthParameterView
+            or type(frame_features) is not DepthFrameFeatures
+            or params.boundary_group != frame_features.boundary_group):
+        _invalid()
     output, _, _ = _depth_components(
         current, available_summaries, frame_features, params)
     return output
