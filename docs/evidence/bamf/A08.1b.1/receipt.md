@@ -69,3 +69,15 @@ rejection and non-string answer rejection. Real pinned A01/A08 owner
 suites: **35 passed, 0 failed, 0 skipped**. A fresh immutable-head
 Goldfish review remains required before final turn-in. This is not
 A13 source-rights issuance or learner retention evidence.
+
+## Final A08.1b.1 independent disposition, 2026-10-29
+
+Goldfish worker-11 independently reviewed immutable
+`9afa1f9ed4c94480837ba1ac0fd243287606cf3e` and returned
+**EGM PASS, zero Blockers/Majors**. From a temporary archive of that
+exact commit, it ran the real pinned A01/A08 owner suites:
+**35 passed, 0 failed, 0 skipped**. It verified independent source
+replay, source-attested contrasts, full constituent closure, forged
+evidence rejection, no transferable source authority and no A13
+rights issuance. The implementation is now on Lane A; the A08.1b
+parent remains open for sibling constructors and Factory integration.

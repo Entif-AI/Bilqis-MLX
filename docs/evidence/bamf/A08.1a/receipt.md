@@ -95,3 +95,20 @@ IDs to have the newer `FORMAL_DOMAIN` tag. Owner suite now
 **15 passed, 0 failed, 0 skipped** with the pinned real corpus.
 The 9,307-identity/12,351-obligation denominator is unchanged.
 Fresh immutable-head independent EGM re-review remains pending.
+
+## Final A08.1a independent disposition, 2026-10-29
+
+Goldfish worker-15 independently reviewed immutable `1f306567d4740204b4b429c8f2903a2b0a9be576`
+and returned **EGM PASS, zero Blockers/Majors**. The reviewer
+verified the repository-pinned A01 registry digest and source receipt,
+replayed custom-equality source-pin/raw-loader/lesson adversaries,
+inspected one-ID and equal-cardinality formal substitutions, and
+checked that downstream A08.1b.5/A09.1 require fresh source replay.
+It independently executed the real pinned Atlas/A08 suites:
+**31 passed, 0 failed, 0 skipped**.
+
+This implementation is now fast-forward integrated into Lane A via
+`9afa1f9`. The frozen denominator remains 9,307 eligible identities
+and 12,351 required obligations. The proposal records remain
+nontransferable and `LEARNING_UNVERIFIED`; neither A08.1 nor A08
+parent coverage is claimed complete.
