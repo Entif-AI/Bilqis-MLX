@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import json
 import hashlib
+from contextlib import redirect_stdout
+from io import StringIO
 import math
 import os
 from pathlib import Path
@@ -14,7 +16,8 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.model_topology import ModelTopologySpec
 from bilqis_mlx.runtime.model_topology_v2 import (
     BAMF_ARCHITECTURE_ID, LEGACY_ARCHITECTURE_ID, ModelTopologySpecV2,
-    GenerationExtents, ParameterGroup, ParameterSpec, Initializer,
+    GenerationExtents, ParameterCategory, ParameterCensus, ParameterGroup, ParameterSpec, Initializer,
+    bamf_parameter_census, print_bamf_parameter_census,
     bamf_deserialize_arrays, bamf_serialization_arrays, bamf_storage_key,
     deserialize_topology,
     expected_bamf_shapes, initialize_bamf_parameter, initialize_bamf_row, initializer_seed,
@@ -88,6 +91,54 @@ class ModelTopologyV2Tests(unittest.TestCase):
         self.assertNotEqual(self.extents().digest, self.extents(banks=2).digest)
         self.assertNotEqual(self.extents().digest, self.extents(pages=2).digest)
         self.assertEqual(spec.digest, ModelTopologySpecV2().digest)
+
+    def test_parameter_census_reconciles_literal_counts_and_capacities(self):
+        spec = ModelTopologySpecV2()
+        census = bamf_parameter_census(spec, self.extents())
+        self.assertEqual(census.total, 79469798)
+        self.assertEqual(census.subtotals, {
+            ParameterCategory.DENSE_MATRICES: 67239936,
+            ParameterCategory.SEMANTIC_TABLES: 6291456,
+            ParameterCategory.MOTIF_TABLES: 2097152,
+            ParameterCategory.ADAPTER_MATRICES: 36864,
+            ParameterCategory.AUXILIARY: 3804390,
+        })
+        self.assertEqual(sum(census.subtotals.values()), census.total)
+        rows = {item.name: item for item in census.parameters}
+        self.assertEqual(len(rows), 214)
+        for kind in ("type", "role", "schema"):
+            self.assertEqual(rows[f"features.{kind}"].shape, (512, 128))
+            self.assertEqual(rows[f"features.{kind}"].parameter_count, 65536)
+        self.assertEqual(rows["features.local_slot"].shape, (16, 768))
+        output = StringIO()
+        with redirect_stdout(output):
+            print_bamf_parameter_census(spec, self.extents())
+        self.assertIn("TOTAL_PARAMETERS 79469798", output.getvalue())
+        for item in census.parameters:
+            self.assertIn("TENSOR " + item.name + " ", output.getvalue())
+        self.assertEqual(census.to_record()["total_parameters"], 79469798)
+
+    def test_parameter_census_tracks_each_independent_table_extent(self):
+        spec = ModelTopologySpecV2()
+        original = bamf_parameter_census(spec, self.extents())
+        for banks, pages, growth in ((2, 1, 6291456), (1, 2, 2097152), (2, 2, 8388608)):
+            with self.subTest(banks=banks, pages=pages):
+                grown = bamf_parameter_census(spec, self.extents(banks, pages))
+                self.assertEqual(grown.total, original.total + growth)
+                self.assertEqual(grown.subtotals[ParameterCategory.DENSE_MATRICES], 67239936)
+                self.assertEqual(grown.subtotals[ParameterCategory.ADAPTER_MATRICES], 36864)
+                self.assertEqual(grown.topology_digest, original.topology_digest)
+                self.assertNotEqual(grown.extents_digest, original.extents_digest)
+
+    def test_parameter_census_rejects_invalid_identity_and_duplicate_rows(self):
+        spec, extents = ModelTopologySpecV2(), self.extents()
+        row = expected_bamf_shapes(spec, extents)[0]
+        for bad_spec, bad_extents in ((None, extents), (spec, None)):
+            with self.assertRaises(BilqisError):
+                bamf_parameter_census(bad_spec, bad_extents)
+        for topology_digest, parameters in (("bad", (row,)), (spec.digest, (row, row))):
+            with self.assertRaises(BilqisError):
+                ParameterCensus(topology_digest, extents.digest, parameters)
 
     def test_independent_initializer_golden_and_linear_orientation(self):
         import numpy as np
@@ -217,6 +268,9 @@ class ModelTopologyV2Tests(unittest.TestCase):
         validate_bamf_parameters(spec, extents, parameters)
         self.assertEqual(manifest["initialization_status"], "UNBOUND")
         self.assertEqual(manifest["parameter_count"], sum(math.prod(x.shape) for x in declared))
+        self.assertEqual(manifest["parameter_count"], sum(value.size for value in parameters.values()))
+        self.assertEqual(manifest["parameter_subtotals"],
+                         bamf_parameter_census(spec, extents).to_record()["subtotals"])
         self.assertEqual(manifest["identity_row_group_policy"],
                          {"before_age": "FAST", "from_age": "SLOW", "established_at": 8,
                           "age_unit": "accepted-participating-candidates"})

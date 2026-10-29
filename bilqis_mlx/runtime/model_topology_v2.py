@@ -139,6 +139,14 @@ class ParameterGroup(str, Enum):
     IDENTITY_ROW_AGE = "IDENTITY_ROW_AGE"
 
 
+class ParameterCategory(str, Enum):
+    DENSE_MATRICES = "DENSE_MATRICES"
+    SEMANTIC_TABLES = "SEMANTIC_TABLES"
+    MOTIF_TABLES = "MOTIF_TABLES"
+    ADAPTER_MATRICES = "ADAPTER_MATRICES"
+    AUXILIARY = "AUXILIARY"
+
+
 class Initializer(str, Enum):
     MATRIX = "M"
     EMBEDDING = "E"
@@ -202,7 +210,64 @@ class ParameterSpec:
                 (self.initializer is Initializer.MOTIF_PAGE and self.shape != MOTIF_PAGE_SHAPE)):
             ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
 
+    @property
+    def parameter_count(self) -> int:
+        return math.prod(self.shape)
 
+    @property
+    def category(self) -> ParameterCategory:
+        if self.initializer is Initializer.IDENTITY_BANK:
+            return ParameterCategory.SEMANTIC_TABLES
+        if self.initializer is Initializer.MOTIF_PAGE:
+            return ParameterCategory.MOTIF_TABLES
+        suffix = self.name.rsplit(".", 1)[-1]
+        if self.name.startswith("blocks.") and suffix in (
+                "query", "key", "value", "output", "ffn_in", "ffn_out"):
+            return ParameterCategory.DENSE_MATRICES
+        if self.name.startswith("plastic.group.") and suffix in ("A", "B"):
+            return ParameterCategory.ADAPTER_MATRICES
+        return ParameterCategory.AUXILIARY
+
+
+@dataclass(frozen=True)
+class ParameterCensus:
+    topology_digest: str
+    extents_digest: str
+    parameters: tuple[ParameterSpec, ...]
+
+    def __post_init__(self) -> None:
+        if (type(self.parameters) is not tuple or not self.parameters or
+                any(type(item) is not ParameterSpec for item in self.parameters) or
+                len({item.name for item in self.parameters}) != len(self.parameters)):
+            ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+        for value in (self.topology_digest, self.extents_digest):
+            if (not isinstance(value, str) or len(value) != SHA256_HEX_LENGTH or
+                    any(character not in "0123456789abcdef" for character in value)):
+                ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+
+    @property
+    def total(self) -> int:
+        return sum(item.parameter_count for item in self.parameters)
+
+    @property
+    def subtotals(self) -> dict[ParameterCategory, int]:
+        result = dict.fromkeys(ParameterCategory, 0)
+        for item in self.parameters:
+            result[item.category] += item.parameter_count
+        return result
+
+    def to_record(self) -> dict:
+        return {
+            "schema": "bilqis.mlx.bamf-parameter-census/v1",
+            "topology_digest": self.topology_digest,
+            "generation_extents_digest": self.extents_digest,
+            "total_parameters": self.total,
+            "subtotals": {kind.value: count for kind, count in self.subtotals.items()},
+            "parameters": [{"name": item.name, "shape": list(item.shape),
+                            "parameters": item.parameter_count, "category": item.category.value,
+                            "dtype": item.dtype, "group": item.group.value}
+                           for item in self.parameters],
+        }
 def _parameter(name, shape, initializer, group=ParameterGroup.SLOW, decay=True):
     return ParameterSpec(name, shape, initializer, group, decay)
 
@@ -328,6 +393,23 @@ def expected_bamf_shapes(spec: ModelTopologySpecV2,
     )
 
 
+def bamf_parameter_census(spec: ModelTopologySpecV2, extents: GenerationExtents) -> ParameterCensus:
+    declared = expected_bamf_shapes(spec, extents)
+    return ParameterCensus(spec.digest, extents.digest, declared)
+
+
+def print_bamf_parameter_census(spec: ModelTopologySpecV2, extents: GenerationExtents) -> ParameterCensus:
+    """Print every declared tensor, category subtotal and the exact final count."""
+    census = bamf_parameter_census(spec, extents)
+    for item in census.parameters:
+        shape = "x".join(str(value) for value in item.shape)
+        print(f"TENSOR {item.name} shape={shape} parameters={item.parameter_count} category={item.category.value}")
+    for category, count in census.subtotals.items():
+        print(f"SUBTOTAL {category.value} {count}")
+    print(f"TOTAL_PARAMETERS {census.total}")
+    return census
+
+
 def initialize_bamf_parameter(parameter: ParameterSpec, *, run_seed: int):
     """Initialize one parameter. Identity and motif tables start unallocated."""
     import numpy as np
@@ -402,7 +484,8 @@ def create_unbound_bamf_state(spec: ModelTopologySpecV2, extents: GenerationExte
     """
     import mlx.core as mx
 
-    declared = expected_bamf_shapes(spec, extents)
+    census = bamf_parameter_census(spec, extents)
+    declared = census.parameters
     initializer_seed(run_seed, "validation")
     parameters = {item.name: mx.array(initialize_bamf_parameter(item, run_seed=run_seed), dtype=mx.float32)
                   for item in declared}
@@ -421,7 +504,8 @@ def create_unbound_bamf_state(spec: ModelTopologySpecV2, extents: GenerationExte
         "shape_policy_digest": spec.shape_policy_digest,
         "generation_extents_digest": extents.digest,
         "run_seed": run_seed,
-        "parameter_count": sum(math.prod(item.shape) for item in declared),
+        "parameter_count": census.total,
+        "parameter_subtotals": {kind.value: count for kind, count in census.subtotals.items()},
         "identity_row_group_policy": {
             "before_age": ParameterGroup.FAST.value,
             "from_age": ParameterGroup.SLOW.value,
@@ -432,6 +516,7 @@ def create_unbound_bamf_state(spec: ModelTopologySpecV2, extents: GenerationExte
                       "betas": list(DEFAULT_OPTIMIZER["betas"]), "eps": DEFAULT_OPTIMIZER["eps"],
                       "weight_decay": DEFAULT_OPTIMIZER["weight_decay"], "bias_correction": True},
         "parameters": [{"name": item.name, "shape": list(item.shape), "dtype": item.dtype,
+                        "parameters": item.parameter_count, "category": item.category.value,
                         "initializer": item.initializer.value, "group": item.group.value,
                         "decay": item.decay,
                         "storage_keys": {part: bamf_storage_key(item.name, part)
