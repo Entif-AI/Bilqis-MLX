@@ -92,6 +92,15 @@ The repaired focused suite passes **15/15**. Fresh independent
 immutable-head re-review remains pending; do not treat the original
 two findings as cleared until that review returns.
 
+The first targeted re-review confirmed ALTERNATIVES resolved but found
+one remaining native-operator fallback: removing ADD before registry
+construction could relabel it a formal law. The second repair fixes
+the native-owned operator set explicitly and fails closed if its
+registered numeric source operation is missing or signature-drifted.
+The negative now removes ADD *before* `default_registry` and asserts
+`BAMF_OPERATOR_NATIVE_SOURCE_MISSING`. The focused suite remains
+15/15; this repair requires another immutable-head readback.
+
 The A07.2 evaluator/source separation and A07.3 compositional DAG,
 memoization and bounded execution receipts remain separate leaves.
 No parent acceptance, integration merge or live training is claimed.

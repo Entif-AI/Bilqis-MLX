@@ -347,6 +347,15 @@ class CognitiveOperatorsTests(unittest.TestCase):
                 execute_pure("ADD", values, binding)
         self.assertEqual(caught.exception.context["reason"],
                          "BAMF_OPERATOR_SOURCE_CONTRACT_DRIFT")
+        missing_native = {
+            name: operation for name, operation in released_numeric.OPERATIONS.items()
+            if name != "ADD"
+        }
+        with patch.dict(released_numeric.OPERATIONS, missing_native, clear=True):
+            with self.assertRaises(BilqisError) as caught:
+                default_registry(RELEASE)
+        self.assertEqual(caught.exception.context["reason"],
+                         "BAMF_OPERATOR_NATIVE_SOURCE_MISSING")
 
     def test_numeric_domain_requires_exact_source_grant_and_version(self):
         binding, values = _case(("Number", 2), ("Number", 3))

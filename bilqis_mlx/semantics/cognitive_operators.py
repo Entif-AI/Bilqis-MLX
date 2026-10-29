@@ -32,6 +32,9 @@ REGISTRY_SCHEMA = "bilqis.cognitive-operator-registry/v1"
 BINDING_SCHEMA = "bilqis.cognitive-operator-binding/v1"
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _UNITS = {"s": 1, "min": 60, "h": 3600}
+_NATIVE_NUMERIC = frozenset({
+    "ADD", "SUB", "MUL", "DIV", "EQ", "LT", "LE", "SUCC",
+})
 
 
 def _invalid(reason: str) -> None:
@@ -481,8 +484,10 @@ def _source_contract(
     operator_id: str, signature: Signature, version: str,
 ) -> tuple[str, str]:
     """Existing released numeric ABI or a separately grant-required formal law."""
-    operation = released_numeric.OPERATIONS.get(operator_id)
-    if operation is not None and operation.signature == signature:
+    if operator_id in _NATIVE_NUMERIC:
+        operation = released_numeric.OPERATIONS.get(operator_id)
+        if operation is None or operation.signature != signature:
+            _invalid("BAMF_OPERATOR_NATIVE_SOURCE_MISSING")
         return (
             "bilqis_mlx.semantics.numeric:" + operation.symbol,
             operation.contract_sha256,
