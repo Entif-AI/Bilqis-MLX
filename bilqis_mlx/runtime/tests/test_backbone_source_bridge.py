@@ -14,3 +14,10 @@ class BackboneSourceBridgeTests(unittest.TestCase):
                 extents=GenerationExtents(1,1,"a"*64,"b"*64,"c"*64))
         with self.assertRaises(BilqisError):
             admit_compiled_backbone_producer(mx.zeros((1,4,768)))
+
+class AtomCustodyTests(unittest.TestCase):
+    def test_raw_atom_vectors_are_not_a_production_credential(self):
+        from bilqis_mlx.runtime.backbone_source_bridge import compute_compiled_h0_from_b01_source
+        with self.assertRaises(BilqisError):
+            compute_compiled_h0_from_b01_source(compiled=mx.zeros((1,4,768)),
+                                                parameters={},banks=())
