@@ -10,9 +10,11 @@ from bilqis_mlx.semantics.cognitive_dependencies import (
     DependencyRef,
 )
 from bilqis_mlx.runtime.atlas_revalidation import (
-    CorrectionEvent, RevalidatedArtifact, RevalidationFrontier,
-    advance_revalidation, apply_correction, next_revalidation_task,
-    read_artifact, revalidate_node,
+    CapabilitySupport, CorrectionBranches, CorrectionEvent,
+    RequalificationLedger, RequalificationStatus,
+    RevalidatedArtifact, RevalidationFrontier, add_correction,
+    advance_revalidation, apply_correction, mark_affected_capabilities,
+    next_revalidation_task, read_artifact, revalidate_node,
 )
 
 
@@ -77,6 +79,121 @@ def _chain() -> tuple[DependencyIndex, DependencyRef, DependencyRef]:
 
 
 class AtlasRevalidationTests(unittest.TestCase):
+    def test_concurrent_corrections_keep_branches_until_explicit_supersession(self):
+        source = _ref(DependencyKind.SOURCE, "source:meeting")
+        original = _event(source)
+        alternative = replace(
+            original, event_id="correction:synthetic:2",
+            new_evidence_sha256="d" * 64,
+            source_receipt_sha256="e" * 64)
+        branches = add_correction(CorrectionBranches(source, ()), original)
+        concurrent = add_correction(branches, alternative)
+        self.assertEqual(
+            tuple(item.event.event_id for item in concurrent.active),
+            ("correction:synthetic:1", "correction:synthetic:2"))
+        self.assertEqual(add_correction(concurrent, alternative), concurrent)
+        with self.assertRaises(BilqisError) as caught:
+            add_correction(concurrent, replace(
+                original, new_evidence_sha256="0" * 64))
+        self.assertEqual(caught.exception.context["reason"],
+                         "BAMF_C09_CORRECTION_EVENT_ID_CONFLICT")
+        superseding = replace(
+            original, event_id="correction:synthetic:3",
+            new_evidence_sha256="9" * 64)
+        resolved = add_correction(
+            concurrent, superseding,
+            supersedes_event_ids=("correction:synthetic:1",
+                                  "correction:synthetic:2"))
+        self.assertEqual(tuple(item.event.event_id for item in resolved.active),
+                         ("correction:synthetic:3",))
+        self.assertEqual(len(resolved.branches), 3)
+        self.assertEqual(len(concurrent.branches), 2)
+
+    def test_invalidated_learned_support_queues_targeted_source_tasks_without_weight_edits(self):
+        index, _, _ = _chain()
+        motif = index.node("motif:alpha")
+        rights = _ref(DependencyKind.RIGHTS, "rights:motif")
+        index = index.replace_node(replace(
+            motif, immediate_dependencies=tuple(sorted((
+                *motif.immediate_dependencies, rights,
+            )))))
+        queue = apply_correction(_event(rights), index)
+        original_alpha = CapabilitySupport(
+            capability_id="capability:alpha",
+            support_artifact_ids=("capability:alpha",),
+            source_anchor_ids=("source:alpha",),
+            retained_generation_sha256="1" * 64,
+            observation_ids=("observation:alpha:1",),
+            status=RequalificationStatus.QUALIFIED,
+        )
+        original_beta = CapabilitySupport(
+            capability_id="capability:beta",
+            support_artifact_ids=("feature:beta",),
+            source_anchor_ids=("source:beta",),
+            retained_generation_sha256="2" * 64,
+            observation_ids=("observation:beta:1",),
+            status=RequalificationStatus.QUALIFIED,
+        )
+        ledger = RequalificationLedger((original_alpha, original_beta))
+        update = mark_affected_capabilities(ledger, index, queue)
+        self.assertEqual(update.affected_capability_ids,
+                         ("capability:alpha",))
+        self.assertEqual(update.ledger.capability(
+            "capability:alpha").status,
+            RequalificationStatus.REQUALIFICATION_REQUIRED)
+        self.assertEqual(update.ledger.capability("capability:beta"),
+                         original_beta)
+        self.assertEqual(update.ledger.historical, (original_alpha,))
+        self.assertEqual(update.ledger.capability(
+            "capability:alpha").retained_generation_sha256, "1" * 64)
+        self.assertEqual(update.ledger.capability(
+            "capability:alpha").observation_ids,
+            ("observation:alpha:1",))
+        self.assertEqual(len(update.new_source_tasks), 1)
+        self.assertEqual(update.new_source_tasks[0].source_anchor_ids,
+                         ("source:alpha",))
+        self.assertEqual(update.new_source_tasks[0].capability_id,
+                         "capability:alpha")
+        self.assertEqual(len(update.new_c10_intents), 1)
+        self.assertEqual(update.new_c10_intents[0].namespace,
+                         "bamf.c09.requalification")
+        self.assertEqual(update.new_c10_intents[0].delivery_state,
+                         "PENDING_C10")
+        with self.assertRaises(BilqisError) as caught:
+            replace(update.new_source_tasks[0], task_id="0" * 64)
+        self.assertEqual(caught.exception.context["reason"],
+                         "BAMF_C09_SOURCE_TASK_INVALID")
+        with self.assertRaises(BilqisError) as caught:
+            replace(update.new_c10_intents[0], payload_digest="0" * 64)
+        self.assertEqual(caught.exception.context["reason"],
+                         "BAMF_C09_C10_INTENT_INVALID")
+        again = mark_affected_capabilities(update.ledger, index, queue)
+        self.assertEqual(again.new_source_tasks, ())
+        self.assertEqual(again.new_c10_intents, ())
+        self.assertEqual(again.ledger, update.ledger)
+        self.assertEqual(ledger.capability("capability:alpha"), original_alpha)
+
+    def test_prior_unrelated_ineligibility_does_not_contaminate_new_correction(self):
+        index, _, source_b = _chain()
+        index = index.replace_node(replace(
+            index.node("motif:alpha"), eligible=False))
+        ledger = RequalificationLedger((
+            CapabilitySupport(
+                capability_id="capability:alpha",
+                support_artifact_ids=("capability:alpha",),
+                source_anchor_ids=("source:alpha",),
+                retained_generation_sha256="1" * 64,
+                observation_ids=("observation:alpha:1",),
+                status=RequalificationStatus.QUALIFIED,
+            ),
+        ))
+        unrelated = mark_affected_capabilities(
+            ledger, index, apply_correction(_event(source_b), index))
+        self.assertEqual(unrelated.affected_capability_ids, ())
+        self.assertEqual(unrelated.new_source_tasks, ())
+        self.assertEqual(unrelated.new_c10_intents, ())
+        self.assertEqual(unrelated.ledger, ledger)
+
     def test_correction_holds_only_direct_dependents_then_stops_at_equal_output(self):
         index, source_a, source_b = _chain()
         original = index
