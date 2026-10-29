@@ -1,0 +1,1 @@
+"""Atlas semantic contract tests."""

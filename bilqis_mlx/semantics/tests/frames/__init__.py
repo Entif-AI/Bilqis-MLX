@@ -1,0 +1,1 @@
+"""Frames semantic contract tests."""

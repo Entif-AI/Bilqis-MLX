@@ -1,0 +1,1 @@
+"""Cognition semantic contract tests."""

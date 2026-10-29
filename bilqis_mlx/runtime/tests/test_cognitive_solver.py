@@ -20,7 +20,7 @@ from bilqis_mlx.semantics.cognitive_dag import (
 from bilqis_mlx.semantics.cognitive_operators import ValueState
 from bilqis_mlx.semantics.domains import contract_digest
 from bilqis_mlx.semantics.memo import PureOperationMemo
-from bilqis_mlx.semantics.tests.test_cognitive_dag import (
+from bilqis_mlx.semantics.tests.cognition.test_cognitive_dag import (
     _goal, _literal, _program,
 )
 from bilqis_mlx.semantics.tests.test_cognitive_operators import (
