@@ -21,7 +21,7 @@ class GenerationProjection:
     schema_version: str = 'bilqis.c10.generation-projection/v1'
 
 
-def project_accepted_generation(run_dir: Path, generation: int, domain):
+def project_accepted_generation(run_dir: Path, generation: int, domain, *, graph):
     """Read accepted immutable history; no transient event dict can enter here.
 
     No checkpoint, teacher, journal or optimizer is written. Source-owned event
@@ -29,7 +29,9 @@ def project_accepted_generation(run_dir: Path, generation: int, domain):
     Unsupported native categories also remain explicit delivery debt.
     """
     record = read_generation(run_dir, generation)
-    if (record.get('factory_release_sha256') != domain.release_digest
+    from .admission import _require_executable_factory_admission
+    release = _require_executable_factory_admission(run_dir, record, graph)
+    if (release.release_sha256 != domain.release_digest
             or record.get('school', {}).get('current_student', {}).get('sha256') != domain.model_digest):
         _invalid('BAMF_C10_NATIVE_GENERATION_DOMAIN_DRIFT')
     outbox = record.get('delivery_outbox')

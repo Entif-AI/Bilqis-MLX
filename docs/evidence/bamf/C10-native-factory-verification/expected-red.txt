@@ -1,0 +1,21 @@
+test_native_committed_visit_replays_and_unknown_kind_remains_delivery_debt (_bilqis_test_42600b5522f4a61e58a9d3ff39078fe64384c4ba6df16dc30222f28de78580d1.GenerationProjectionTests.test_native_committed_visit_replays_and_unknown_kind_remains_delivery_debt) ... ERROR
+test_new_receiving_envelopes_reject_wrong_native_field_types (_bilqis_test_42600b5522f4a61e58a9d3ff39078fe64384c4ba6df16dc30222f28de78580d1.GenerationProjectionTests.test_new_receiving_envelopes_reject_wrong_native_field_types) ... ok
+
+======================================================================
+ERROR: test_native_committed_visit_replays_and_unknown_kind_remains_delivery_debt (_bilqis_test_42600b5522f4a61e58a9d3ff39078fe64384c4ba6df16dc30222f28de78580d1.GenerationProjectionTests.test_native_committed_visit_replays_and_unknown_kind_remains_delivery_debt)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/runtime/tests/test_generation_projection.py", line 39, in test_native_committed_visit_replays_and_unknown_kind_remains_delivery_debt
+    first = project()
+            ^^^^^^^^^
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/runtime/tests/test_generation_projection.py", line 38, in project
+    return project_accepted_generation(root, 1, contract, graph=graph)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: project_accepted_generation() got an unexpected keyword argument 'graph'
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.099s
+
+FAILED (errors=1)
+TEST_TOTALS total=2 passed=1 failed=1 skipped=0 errors=1
+1 passed, 1 failed, 0 skipped
