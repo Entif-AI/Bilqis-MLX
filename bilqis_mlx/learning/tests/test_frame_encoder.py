@@ -286,6 +286,40 @@ class FrameEncoderTests(unittest.TestCase):
                            for index, request in enumerate(compiled.member_requests[0])),))
         return compiled, vectors, ast
 
+    def test_b11_source_bridge_computes_h0_from_actual_compiler_and_preserves_gradients(self):
+        from bilqis_mlx.runtime.backbone_source_bridge import compute_compiled_h0
+        compiled, vectors, _ = self.compiled_inputs()
+        result = compute_compiled_h0(compiled, vectors, self.params,
+                                     spec=ModelTopologySpecV2(), extents=self.extents)
+        self.assertEqual(result.admission_status, "UNADMITTED_NUMERICAL")
+        np.testing.assert_array_equal(
+            np.asarray(result.hidden),
+            np.asarray(encode_frames(compiled, vectors, self.params).global_seeds))
+        self.assertEqual(len(result.compiled_prefix_digest), 64)
+        derivative = mx.grad(lambda atoms: mx.sum(compute_compiled_h0(
+            compiled, replace(vectors, atoms=(atoms,)), self.params,
+            spec=ModelTopologySpecV2(), extents=self.extents).hidden[0, :8]))(vectors.atoms[0])
+        self.assertGreater(float(mx.sum(mx.abs(derivative))), 0)
+
+    def test_source_valid_compiled_closure_cannot_discard_visible_atoms(self):
+        from bilqis_mlx.semantics.frame_compiler import PositionKind
+        compiled, _vectors, _ast = self.compiled_inputs(prefix=8)
+        row = compiled.compiled.rows[0]
+        self.assertTrue(any(position.kind is PositionKind.CLOSURE for position in row.positions))
+        self.assertEqual(sum(position.kind is PositionKind.ATOM for position in row.positions),
+                         row.visible_end)
+        # This is a *real* accepted source prefix, not a synthetic row. A05's
+        # compiler preserves every visible atom and closes frames after atoms.
+        closure_only = tuple(position for position in row.positions
+                             if position.kind is PositionKind.CLOSURE)
+        with self.assertRaises(BilqisError):
+            replace(row, positions=closure_only)
+        self.assertEqual(len(closure_only), 1)
+        # Reducing visible_end to zero does not make this source closure valid:
+        # its closing position belongs to a later causal boundary.
+        with self.assertRaises(BilqisError):
+            replace(row, visible_end=0, positions=closure_only)
+
     def test_actual_a05_atoms_and_closure_keep_source_maps_and_member_gradients(self):
         compiled, vectors, _ = self.compiled_inputs()
         result = encode_frames(compiled, vectors, self.params)
