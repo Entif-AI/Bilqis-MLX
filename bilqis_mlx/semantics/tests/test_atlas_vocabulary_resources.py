@@ -106,6 +106,22 @@ class AtlasVocabularyResourceTests(unittest.TestCase):
             with self.assertRaises(BilqisError):
                 build_registry_mirror_delta(
                     prior, plan, source_bundle_path=Path("/synthetic-source"))
+        with patch(
+            "bilqis_mlx.semantics.atlas_vocabulary.load_pinned_atlas_snapshot",
+            return_value=snapshot,
+        ), patch(
+            "bilqis_mlx.semantics.atlas_vocabulary_resources.load_pinned_atlas_snapshot",
+            return_value=snapshot,
+        ), patch(
+            "bilqis_mlx.semantics.atlas_vocabulary_resources._verify_bundle",
+            return_value=("f" * 64, {"canonical.nt": source_nt}),
+        ):
+            with self.assertRaises(BilqisError) as mismatch:
+                build_registry_mirror_delta(
+                    prior, plan, source_bundle_path=Path("/synthetic-source"))
+            self.assertEqual(
+                mismatch.exception.context["reason"],
+                "BAMF_VOCABULARY_MIRROR_SOURCE_BUNDLE_MISMATCH")
 
 
 if __name__ == "__main__":
