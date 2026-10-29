@@ -56,9 +56,10 @@ def feature_requests_for(prefix):
 
 
 def answer_plan_for(prefix, release, capability, kind):
-    return {'modalityID': 'answer.binary/v1', 'input_prefix_end': prefix.visible_end,
+    head = next(head for head in release.answer_heads if head.kind == kind)
+    return {'modalityID': head.modality_id, 'input_prefix_end': prefix.visible_end,
             'decisions': [{'id': 'value', 'roleID': 'answer', 'occurrence': 0,
-                           'kind': 'VALUE', 'legalValues': ['FALSE', 'TRUE'], 'depends_on': []},
+                           'kind': 'VALUE', 'legalValues': list(head.values), 'depends_on': []},
                           {'id': 'end', 'roleID': 'end', 'occurrence': 0,
                            'kind': 'CONTROL', 'legalValues': ['END_FRAME'], 'depends_on': ['value']}],
             'allowedOutputSchema': 'fixture', 'maximum_decisions': 2,
@@ -88,7 +89,7 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
         self.context = SourceExecutionContext(release, graph, None, sources, answers)
         self.rows = self.context.draw_rows(seed=17, capability='Z.C0', each=1)
 
-    def compile(self, rows, *, release_sha=None, encoders=None, policy='allow', generation=None):
+    def compile(self, rows, *, release_sha=None, encoders=None, policy='allow', generation=None, sealed=()):
         delivery = describe_delivered_teaching(self.context.release, 'Z.C0', 'source.direct/Z.C0', rows)
         return compile_training_batch(rows, self.context, {'context': 1024},
             delivery=delivery, delivery_capability='Z.C0', delivery_release_sha256=release_sha or self.context.release.release_sha256,
@@ -98,7 +99,8 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
             feature_requests_for=feature_requests_for, features_for=features_for, answer_plan_for=answer_plan_for,
             frames_for_ast=frames_for_ast, check_context_eligibility=check_context_eligibility,
             eligible_source_for=eligible_source_for, task_scope='test', source_frontier='release', eligibility_policy=policy,
-            target_encoders=encoders, generation_binding=generation or self.context.release.release_sha256)
+            target_encoders=encoders, generation_binding=generation or self.context.release.release_sha256,
+            sealed_holdout_ids=sealed)
 
     def test_real_factory_rows_and_delivery_bind_typed_source_and_target(self):
         item = self.compile(self.rows).rows[0]
@@ -181,6 +183,45 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
         rows = [self.rows[0], dict(self.rows[0])]
         with self.assertRaises(BilqisError):
             self.compile(rows)
+
+    def test_atomic_binary_operator_and_numeric_release_modalities(self):
+        from bilqis_mlx.curriculum import AnswerFamily
+        from bilqis_mlx.factory.answers import AnswerModality, AnswerModalityRegistry, RegisteredAnswerModality, fixed_domain
+        for kind, values, identities in (
+            ('binary', ('FALSE', 'TRUE'), ('cogal.value.false', 'cogal.value.true')),
+            ('boolean_operator', ('NOT', 'AND'), ('cogal.operator.NOT', 'cogal.operator.AND')),
+            ('numeric_active', ('0', '1'), ('school.number.0', 'school.number.1'))):
+            with self.subTest(kind=kind):
+                course, _, sources, _, _ = closed_source_fixture()
+                grade = course.grades[0]
+                course = replace(course, grades=(replace(grade, capabilities=tuple(
+                    replace(cap, answer_families=(AnswerFamily(kind, values),)) for cap in grade.capabilities)),))
+                graph = {'tokens': ['fixture.padding', *identities]}
+                base = sources.require('fixture.z-generator/v1', 'fixture.z-oracle/v1')
+                def draw(**kwargs):
+                    return tuple({**row, 'answer_kind': kind, 'gold': values[index % 2], 'tokens': [1, 2],
+                        **({'native_output': {'identity': identities[index % 2], 'token_id': index % 2 + 1}}
+                           if kind == 'numeric_active' else {})}
+                        for index, row in enumerate(base.draw(**kwargs)))
+                providers = SourceAdapterRegistry((replace(base, draw=draw, check=lambda row, **kw: row['gold'] in values),))
+                answers = AnswerModalityRegistry((RegisteredAnswerModality(
+                    AnswerModality(kind, 'fixture.answer/' + kind, 'a' * 64), fixed_domain(values),
+                    lambda value: identities[values.index(value)]),))
+                curriculum, bindings = from_legacy_course(course)
+                release = compile_executable_factory_release(curriculum, bindings, CurriculumProfile.full(),
+                    providers, answers, source_root=None, graph=graph, verification_seed=17)
+                self.context = SourceExecutionContext(release, graph, None, providers, answers)
+                rows = self.context.draw_rows(seed=17, capability='Z.C0', each=1)
+                item = self.compile(rows).rows[0]
+                self.assertEqual(item.target.kind, kind)
+                self.assertEqual(item.target.value, values[0])
+                self.assertEqual(item.model_input.prefix.ast, Literal('1,2', 'TokenSequence'))
+                if kind == 'numeric_active':
+                    self.assertEqual(item.native_target.value, 'school.number.0')
+
+    def test_sealed_holdout_identity_cannot_enter_training(self):
+        with self.assertRaises(BilqisError):
+            self.compile(self.rows, sealed=(self.rows[0]['id'],))
 
     def test_current_release_is_checked_again_at_consumption(self):
         batch = self.compile(self.rows)

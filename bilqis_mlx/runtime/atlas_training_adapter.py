@@ -139,7 +139,7 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
                            frames_for_ast: Callable, check_context_eligibility: Callable,
                            eligible_source_for: Callable, task_scope, source_frontier,
                            eligibility_policy, generation_binding: str,
-                           target_encoders: dict | None = None) -> BamfTrainingBatch:
+                           target_encoders: dict | None = None, sealed_holdout_ids=()) -> BamfTrainingBatch:
     """Compile source-oracled delivery using explicit frozen A05/A06 seams."""
     if not isinstance(source_context, SourceExecutionContext):
         _invalid('SOURCE_CONTEXT_REQUIRED')
@@ -167,6 +167,9 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
             or not isinstance(visible_ends, dict) or not isinstance(generation_binding, str) or not generation_binding
             or (target_encoders is not None and not isinstance(target_encoders, dict))):
         _invalid('DELIVERY_METADATA_INVALID')
+    if (not isinstance(sealed_holdout_ids, (tuple, list, frozenset)) or
+            any(not isinstance(identity, str) for identity in sealed_holdout_ids)):
+        _invalid('HOLDOUT_IDENTITIES_INVALID')
     heads = {head.kind: head for head in release.answer_heads}
     result = []
     for row in delivered_rows:
@@ -175,6 +178,8 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
         identity, capability = row.get('id'), row.get('capability')
         if not isinstance(identity, str) or not identity or not isinstance(capability, str) or capability not in capabilities:
             _invalid('ROW_IDENTITY_OR_CAPABILITY_INVALID')
+        if identity in sealed_holdout_ids:
+            _invalid('SEALED_HOLDOUT_IN_TRAINING')
         source_id, operation_id = row.get('source_id'), row.get('operation_id')
         if operation_id is None and isinstance(row.get('record'), dict):
             operation_id = row['record'].get('operator')
