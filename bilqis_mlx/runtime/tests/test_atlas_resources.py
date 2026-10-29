@@ -50,6 +50,7 @@ def _rows(count: int, *, positions: int = 64,
         target_decisions=2,
         optimizer_step_seed=73,
         generation_binding=GENERATION,
+        training_row_sha256="a" * 64, delivered_content_sha256="b" * 64,
     ) for index in range(count))
 
 
@@ -154,13 +155,41 @@ class AtlasResourcesTests(unittest.TestCase):
         )
         stats = _rows(1)[0].frame_stats
         resource = ResourceRow.from_training_row(
-            delivered, stats, generation_binding=GENERATION)
+            delivered, stats, generation_binding=GENERATION, delivered_content_sha256="e" * 64)
         self.assertEqual(resource.row_id, "source:actual")
         self.assertEqual(resource.frame_stats, stats)
         self.assertEqual(resource.target_decisions, 2)
+        changed = ResourceRow.from_training_row(
+            replace(delivered, model_input=replace(delivered.model_input, eligibility_digest='f' * 64),
+                    target=replace(target, value='changed')),
+            stats, generation_binding=GENERATION, delivered_content_sha256='e' * 64)
+        self.assertNotEqual(resource, changed)
+        original_plan = plan_microbatches((resource,), self.topology, self.budget)
+        state = RetryState.start(original_plan, retained_candidate_digest='a' * 64,
+                                 optimizer_snapshot_digest='b' * 64)
+        failure = OOMReceipt('oom:changed-content', original_plan.microbatch_size,
+            original_plan.source_digest, GENERATION, 73, 50 * 1024**3, 0, 720, 'MemoryError')
+        restored = []
+        def restore(candidate, optimizer, generation):
+            restored.append(candidate)
+            return RestorationReceipt(candidate, optimizer, generation, True)
+        with self.assertRaises(BilqisError) as caught:
+            handle_oom(state, failure, (changed,), self.topology, self.budget, restore=restore)
+        self.assertEqual(caught.exception.context['reason'], 'BAMF_C08_OOM_DELIVERY_REPLAY_DRIFT')
+        self.assertEqual(restored, ['a' * 64])
+        for field in ('training_row_sha256', 'delivered_content_sha256'):
+            changed_hash = replace(resource, **{field: '0' * 64})
+            with self.subTest(field=field), self.assertRaises(BilqisError) as caught:
+                handle_oom(state, failure, (changed_hash,), self.topology, self.budget, restore=restore)
+            self.assertEqual(caught.exception.context['reason'], 'BAMF_C08_OOM_DELIVERY_REPLAY_DRIFT')
+
+
+        self.assertNotEqual(plan_microbatches((resource,), self.topology, self.budget).source_digest,
+                            plan_microbatches((changed,), self.topology, self.budget).source_digest)
+
         with self.assertRaises(BilqisError) as caught:
             ResourceRow.from_training_row(
-                delivered, stats, generation_binding="foreign:generation")
+                delivered, stats, generation_binding="foreign:generation", delivered_content_sha256="e" * 64)
         self.assertEqual(caught.exception.context["reason"],
                          "BAMF_C08_DELIVERY_PROFILE_INVALID")
 

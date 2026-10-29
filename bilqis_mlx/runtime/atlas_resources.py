@@ -17,7 +17,7 @@ from .model_topology_v2 import ModelTopologySpecV2, ParameterCensus
 
 
 FRAME_STATS_SCHEMA = "bilqis.c08.frame-stats/v1"
-RESOURCE_ROW_SCHEMA = "bilqis.c08.resource-row/v1"
+RESOURCE_ROW_SCHEMA = "bilqis.c08.resource-row/v2"
 MEMORY_BUDGET_SCHEMA = "bilqis.c08.memory-budget/v1"
 BATCH_PLAN_SCHEMA = "bilqis.c08.batch-plan/v1"
 GRADIENT_CHUNK_SCHEMA = "bilqis.c08.gradient-chunk/v1"
@@ -79,6 +79,8 @@ class ResourceRow:
     target_decisions: int
     optimizer_step_seed: int
     generation_binding: str
+    training_row_sha256: str
+    delivered_content_sha256: str
     schema_version: str = RESOURCE_ROW_SCHEMA
 
     def __post_init__(self) -> None:
@@ -90,18 +92,21 @@ class ResourceRow:
                 or self.optimizer_step_seed < 0
                 or not isinstance(self.generation_binding, str)
                 or not self.generation_binding
+                or not _sha(self.training_row_sha256)
+                or not _sha(self.delivered_content_sha256)
                 or self.schema_version != RESOURCE_ROW_SCHEMA):
             _invalid("BAMF_C08_RESOURCE_ROW_INVALID")
 
     @classmethod
     def from_training_row(
         cls, training_row: object, frame_stats: FrameStats,
-        *, generation_binding: str,
+        *, generation_binding: str, delivered_content_sha256: str,
     ) -> "ResourceRow":
         """Bind exact C02 delivery identity to A05-owned compiler statistics."""
         from .atlas_training_adapter import BamfTrainingRow
 
-        if (not isinstance(training_row, BamfTrainingRow)
+        if (not _sha(delivered_content_sha256)
+                or not isinstance(training_row, BamfTrainingRow)
                 or not isinstance(frame_stats, FrameStats)
                 or not isinstance(training_row.model_input.answer_plan, tuple)):
             _invalid("BAMF_C08_DELIVERY_PROFILE_INVALID")
@@ -115,6 +120,8 @@ class ResourceRow:
             target_decisions=plan["maximum_decisions"],
             optimizer_step_seed=training_row.provenance.optimizer_step_seed,
             generation_binding=generation_binding,
+            training_row_sha256=_digest(asdict(training_row)),
+            delivered_content_sha256=delivered_content_sha256,
         )
 
 

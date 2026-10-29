@@ -55,6 +55,22 @@ def _freeze_source_value(value):
     _packet_invalid("SOURCE_PREFETCH_UNFREEZABLE_VALUE")
 
 
+def _validate_frozen_source_value(value):
+    if value is None or type(value) in (str, bool, int, float):
+        return
+    if not isinstance(value, tuple):
+        _packet_invalid("SOURCE_PREFETCH_IMMUTABLE_PACKET_INVALID")
+    if value and all(isinstance(item, tuple) and len(item) == 2
+                     and isinstance(item[0], str) for item in value):
+        keys = tuple(item[0] for item in value)
+        if len(set(keys)) != len(keys) or tuple(sorted(keys)) != keys:
+            _packet_invalid("SOURCE_PREFETCH_IMMUTABLE_PACKET_INVALID")
+        if FORBIDDEN_NESTED_AUTHORITY_KEYS & set(keys):
+            _packet_invalid("SOURCE_PREFETCH_FORBIDDEN_AUTHORITY")
+    for item in value:
+        _validate_frozen_source_value(item)
+
+
 @dataclass(frozen=True)
 class ImmutableSourcePacket:
     identity: str
@@ -63,8 +79,12 @@ class ImmutableSourcePacket:
     schema_version: str = IMMUTABLE_PACKET_SCHEMA
 
     def __post_init__(self):
+        _validate_frozen_source_value(self.payload)
         try:
             fields = dict(self.payload)
+            if set(fields) != {"schema", "identity", "fresh", "prior", "preservation",
+                               "retention_support", "teaching_enrichment_rows"}:
+                _packet_invalid("SOURCE_PREFETCH_PACKET_SCHEMA_DRIFT")
             encoded = json.dumps(
                 self.payload, ensure_ascii=False, sort_keys=True,
                 separators=(",", ":"), allow_nan=False).encode("utf-8")
