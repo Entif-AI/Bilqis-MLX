@@ -7,7 +7,10 @@
 - Direct predecessor A05.2 #409 implementation:
   `8065c52ee2c4cd4436fa92a3d0ddf7f5599036c7`
   and receipt `a4f76fcdcf9b582ae03a973a4f94b65fc3cad982`
-- Implementation head: pending immutable commit/push
+- Pushed implementation head:
+  `a9e55fb3e993c035655dd19ccf8b3110443c035e`
+- PR #546 native Development closing reference #410
+  verified by GitHub GraphQL readback
 - Independent A05.3 EGM: **PENDING**
 
 ## Hidden answer separation
