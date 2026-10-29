@@ -3,7 +3,8 @@
 Issue: #578 (A03.4). Parent: A03 #349. Lane: A.
 Consumed unified SHA: `7ad8f8abc9efcc4b9fb5311a1572979c49b22cf4`.
 Source lane base: `9fa752b6410c8248aa784a361247a8a7230fb748`.
-Review disposition: **EGM_PENDING**.
+Review disposition: **EGM PASS for A03.4**, zero remaining
+Blockers/Majors at immutable `1297f3d`.
 
 ## Source and consumer contract
 
@@ -105,7 +106,17 @@ self-pinned forged staging manifest and confirms the production
 verification rejects it across all three source families. The repaired
 combined real suite again passes **52/52, zero skips**.
 
-Fresh independent immutable-head re-review remains pending. B07.1/B08.1
+Independent worker-17 read back immutable `1297f3d` and returned
+**EGM PASS, zero remaining Blockers/Majors**. It retried the original
+forged-scope staging attack against both production object and bytes
+verification for micro, boolean and numeric: all failed closed with
+`FRAME_RELEASED_SCHEMA_BODY_MISMATCH`. Wrong A01 artifact-path
+substitution failed at the independent A01 pin. It rederived all 18
+actual source schemas and reproduced all three manifests/maps and
+the source pin-registry hash. The reviewer executed 52/52 real
+A01/A03/A04 tests with zero skips and verified a clean diff.
+
+B07.1/B08.1
 must call these source-pinned functions themselves before motif-key/readout
 admission; they must not accept caller-provided witnesses as credentials.
 A13 rights/revocation and cache dependency gates remain independent.
