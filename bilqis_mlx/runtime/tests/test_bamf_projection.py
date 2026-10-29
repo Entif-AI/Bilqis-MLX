@@ -60,6 +60,24 @@ def _projected(event, contract):
 
 
 class BamfProjectionTests(unittest.TestCase):
+    def test_durable_domain_binding_cannot_be_relabelled_after_restart(self):
+        from bilqis_mlx.runtime.bamf_projection import read_projection_outbox
+        with tempfile.TemporaryDirectory() as folder:
+            domain = _contract(Path(folder) / 'outbox.sqlite3')
+            event = _projected(_event('capability:bound'), domain)
+            project_generation_outbox((event,), domain)
+            self.assertEqual(read_projection_outbox(domain.outbox_path), (event,))
+            for key, value in (('source_id', 'other'), ('release_digest', '5' * 64),
+                               ('model_digest', '6' * 64), ('evaluator_digest', '7' * 64),
+                               ('rights_digest', '8' * 64), ('as_of', 601)):
+                changed = replace(domain, **{key: value})
+                with self.subTest(key=key), self.assertRaises(BilqisError):
+                    project_generation_outbox((_projected(event.event, changed),), changed)
+                self.assertEqual(read_projection_outbox(domain.outbox_path), (event,))
+                with self.assertRaises(BilqisError):
+                    build_staging_projection((_projected(event.event, changed),), changed)
+
+
     def test_staging_census_bounded_queries_and_private_payload_exclusion(self):
         with tempfile.TemporaryDirectory() as folder:
             contract = _contract(Path(folder) / "outbox.sqlite3")

@@ -1,0 +1,21 @@
+test_atomic_staging_promotion_preserves_old_generation_and_pointer (_bilqis_test_2b036867f650c468bb642e876853f04d79478899fb233cdd1129164f92e33b7c.BamfProjectionTests.test_atomic_staging_promotion_preserves_old_generation_and_pointer) ... ok
+test_durable_domain_binding_cannot_be_relabelled_after_restart (_bilqis_test_2b036867f650c468bb642e876853f04d79478899fb233cdd1129164f92e33b7c.BamfProjectionTests.test_durable_domain_binding_cannot_be_relabelled_after_restart) ... ERROR
+test_graph_outage_never_blocks_local_training_or_event_queue (_bilqis_test_2b036867f650c468bb642e876853f04d79478899fb233cdd1129164f92e33b7c.BamfProjectionTests.test_graph_outage_never_blocks_local_training_or_event_queue) ... ok
+test_identity_bound_outbox_is_deduplicated_without_graph_io (_bilqis_test_2b036867f650c468bb642e876853f04d79478899fb233cdd1129164f92e33b7c.BamfProjectionTests.test_identity_bound_outbox_is_deduplicated_without_graph_io) ... ok
+test_rights_release_model_evaluator_or_asof_drift_rejects_before_write (_bilqis_test_2b036867f650c468bb642e876853f04d79478899fb233cdd1129164f92e33b7c.BamfProjectionTests.test_rights_release_model_evaluator_or_asof_drift_rejects_before_write) ... ok
+test_staging_census_bounded_queries_and_private_payload_exclusion (_bilqis_test_2b036867f650c468bb642e876853f04d79478899fb233cdd1129164f92e33b7c.BamfProjectionTests.test_staging_census_bounded_queries_and_private_payload_exclusion) ... ok
+
+======================================================================
+ERROR: test_durable_domain_binding_cannot_be_relabelled_after_restart (_bilqis_test_2b036867f650c468bb642e876853f04d79478899fb233cdd1129164f92e33b7c.BamfProjectionTests.test_durable_domain_binding_cannot_be_relabelled_after_restart)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/runtime/tests/test_bamf_projection.py", line 64, in test_durable_domain_binding_cannot_be_relabelled_after_restart
+    from bilqis_mlx.runtime.bamf_projection import read_projection_outbox
+ImportError: cannot import name 'read_projection_outbox' from 'bilqis_mlx.runtime.bamf_projection' (/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/runtime/bamf_projection.py)
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.027s
+
+FAILED (errors=1)
+TEST_TOTALS total=6 passed=5 failed=1 skipped=0 errors=1
+5 passed, 1 failed, 0 skipped

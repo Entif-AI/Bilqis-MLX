@@ -5,7 +5,7 @@ immutable internal-only events and lets the trainer continue during outages.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 import hashlib
 import json
 from pathlib import Path
@@ -148,18 +148,38 @@ def project_generation_outbox(
     unique = {}
     for item in events:
         prior = unique.get(item.event.event_id)
-        if prior is not None and prior != item.event:
+        if prior is not None and prior != item:
             _invalid("BAMF_C10_EVENT_ID_CONFLICT")
-        unique[item.event.event_id] = item.event
+        unique[item.event.event_id] = item
     appended = sum(
-        append_outbox(domain_contract.outbox_path, event)
-        for event in unique.values())
+        append_outbox(domain_contract.outbox_path, item.event,
+            projection_binding={key: value for key, value in asdict(item).items() if key != "event"})
+        for item in unique.values())
     return ProjectionReceipt(
         event_ids=tuple(unique),
         payload_digests=tuple(
-            event.payload_digest for event in unique.values()),
+            item.event.payload_digest for item in unique.values()),
         appended_count=appended,
         duplicate_count=len(events) - appended,
         pending_count=len(pending_events(domain_contract.outbox_path)),
         domain_digest=domain_contract.digest,
     )
+
+
+def read_projection_outbox(path: Path) -> tuple[BamfProjectionEvent, ...]:
+    """Cold-read complete bound envelopes; bare historical rows remain unbound."""
+    from .akasha_outbox import _outbox_connection, _read_event
+    if not path.exists():
+        return ()
+    with _outbox_connection(path) as connection:
+        rows = connection.execute(
+            'SELECT envelope_json, projection_binding_json FROM akasha_events ORDER BY seq').fetchall()
+    result = []
+    for envelope, binding in rows:
+        if binding is None:
+            _invalid('BAMF_C10_UNBOUND_HISTORICAL_EVENT')
+        try:
+            result.append(BamfProjectionEvent(event=_read_event((envelope,)), **json.loads(binding)))
+        except (ValueError, TypeError):
+            _invalid('BAMF_C10_STORED_DOMAIN_BINDING_INVALID')
+    return tuple(result)

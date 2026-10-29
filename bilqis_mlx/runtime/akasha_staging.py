@@ -173,6 +173,13 @@ def build_staging_projection(
                    for item in events)
             or not isinstance(domain, ProjectionDomainContract)):
         _invalid("BAMF_C10_STAGING_ARGUMENT_INVALID")
+    # Durable queued events cannot be rebound by a caller-created wrapper.
+    from .bamf_projection import read_projection_outbox
+    if domain.outbox_path.exists():
+        stored = {item.event.event_id: item for item in read_projection_outbox(domain.outbox_path)}
+        for event in events:
+            if event.event.event_id in stored and stored[event.event.event_id] != event:
+                _invalid("BAMF_C10_STAGING_DURABLE_BINDING_DRIFT")
     for event in events:
         if (event.source_id != domain.source_id
                 or event.release_digest != domain.release_digest

@@ -242,7 +242,8 @@ CREATE TABLE IF NOT EXISTS akasha_events (
     seq INTEGER PRIMARY KEY AUTOINCREMENT,
     event_id TEXT NOT NULL UNIQUE,
     payload_digest TEXT NOT NULL,
-    envelope_json TEXT NOT NULL
+    envelope_json TEXT NOT NULL,
+    projection_binding_json TEXT
 );
 CREATE TABLE IF NOT EXISTS akasha_delivery_attempts (
     seq INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -275,6 +276,8 @@ def _open_outbox(path: Path) -> sqlite3.Connection:
     connection.execute("PRAGMA foreign_keys=ON")
     connection.execute("PRAGMA journal_mode=WAL")
     connection.executescript(_SCHEMA_SQL)
+    if "projection_binding_json" not in {row[1] for row in connection.execute("PRAGMA table_info(akasha_events)")}:
+        connection.execute("ALTER TABLE akasha_events ADD COLUMN projection_binding_json TEXT")
     return connection
 
 
@@ -288,25 +291,30 @@ def _outbox_connection(path: Path):
         connection.close()
 
 
-def append_outbox(path: Path, event: AkashaEvent) -> bool:
+def append_outbox(path: Path, event: AkashaEvent, *, projection_binding=None) -> bool:
     if not isinstance(event, AkashaEvent):
         _invalid("BAMF_C10_EVENT_ARGUMENT_INVALID")
     event.validate()
+    binding_json = None
+    if projection_binding is not None:
+        from .bamf_projection import BamfProjectionEvent
+        BamfProjectionEvent(event=event, **projection_binding)
+        binding_json = _canonical(projection_binding)
     envelope = _canonical({
         **asdict(event), "kind": event.kind.value})
     with _outbox_connection(path) as connection:
         connection.execute("BEGIN IMMEDIATE")
         prior = connection.execute(
-            "SELECT payload_digest, envelope_json FROM akasha_events "
+            "SELECT payload_digest, envelope_json, projection_binding_json FROM akasha_events "
             "WHERE event_id = ?", (event.event_id,)).fetchone()
         if prior is not None:
-            if prior != (event.payload_digest, envelope):
+            if prior != (event.payload_digest, envelope, binding_json):
                 _invalid("BAMF_C10_EVENT_ID_CONFLICT")
             return False
         connection.execute(
-            "INSERT INTO akasha_events (event_id, payload_digest, envelope_json) "
-            "VALUES (?, ?, ?)",
-            (event.event_id, event.payload_digest, envelope))
+            "INSERT INTO akasha_events (event_id, payload_digest, envelope_json, projection_binding_json) "
+            "VALUES (?, ?, ?, ?)",
+            (event.event_id, event.payload_digest, envelope, binding_json))
         return True
 
 
