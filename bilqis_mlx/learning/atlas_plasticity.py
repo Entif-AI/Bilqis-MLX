@@ -202,3 +202,100 @@ def advance_accepted_row_ages(
             item.bank_index, item.row_index,
             min(ESTABLISHED_AGE, item.accepted_age + int(item.identity in active)))
         for item in parent)
+
+
+POLICY_VERSION = "bilqis.mlx.plasticity-policy/v1"
+POLICY_STATE_SCHEMA = "bilqis.mlx.plasticity-policy-state/v1"
+FOUNDATION_MODE = "FOUNDATION"
+ADAPTIVE_MODE = "ADAPTIVE"
+FAST_UPDATE = "FAST"
+FULL_UPDATE = "FULL"
+ACCEPTED_FAST_INTERVAL = 8
+_POLICY_RECORD_FIELDS = frozenset((
+    "schema_version", "policy_version", "mode", "accepted_fast_since_full", "row_ages"))
+_AGE_RECORD_FIELDS = frozenset(("bank_index", "row_index", "accepted_age", "schema_version"))
+
+
+@dataclass(frozen=True)
+class PlasticityPolicy:
+    """Detached cadence state; the retained-generation owner persists this record.
+
+    Fresh construction starts in FOUNDATION. Loading ADAPTIVE is a cold-reader
+    operation, not authority to transition a running student. B09.3 owns the
+    promotion-receipt transition; no transition is inferred here from grades.
+    """
+
+    mode: str = FOUNDATION_MODE
+    accepted_fast_since_full: int = 0
+    row_ages: tuple[IdentityRowAge, ...] = ()
+    policy_version: str = POLICY_VERSION
+    schema_version: str = POLICY_STATE_SCHEMA
+
+    def __post_init__(self) -> None:
+        self.validate()
+
+    def validate(self) -> None:
+        if (type(self.mode) is not str or self.mode not in (FOUNDATION_MODE, ADAPTIVE_MODE)
+                or type(self.accepted_fast_since_full) is not int
+                or self.accepted_fast_since_full < 0
+                or (self.mode == FOUNDATION_MODE and self.accepted_fast_since_full != 0)
+                or not _valid_ages(self.row_ages)
+                or self.policy_version != POLICY_VERSION or self.schema_version != POLICY_STATE_SCHEMA):
+            _invalid()
+        for row in self.row_ages:
+            row.__post_init__()
+
+    def to_record(self) -> dict:
+        """Exact JSON-compatible state, without checkpoint/publication authority."""
+        self.validate()
+        return {
+            "schema_version": self.schema_version,
+            "policy_version": self.policy_version,
+            "mode": self.mode,
+            "accepted_fast_since_full": self.accepted_fast_since_full,
+            "row_ages": [{"bank_index": row.bank_index, "row_index": row.row_index,
+                          "accepted_age": row.accepted_age, "schema_version": row.schema_version}
+                         for row in self.row_ages],
+        }
+
+    @classmethod
+    def from_record(cls, record: object) -> "PlasticityPolicy":
+        """Reject missing, extra or incompatible fields rather than infer clocks."""
+        if (type(record) is not dict or set(record) != _POLICY_RECORD_FIELDS
+                or type(record["row_ages"]) is not list
+                or any(type(row) is not dict or set(row) != _AGE_RECORD_FIELDS
+                       for row in record["row_ages"])):
+            _invalid()
+        return cls(mode=record["mode"], accepted_fast_since_full=record["accepted_fast_since_full"],
+                   row_ages=tuple(IdentityRowAge(**row) for row in record["row_ages"]),
+                   policy_version=record["policy_version"], schema_version=record["schema_version"])
+
+
+def next_update_mode(state: PlasticityPolicy, *, teacher_requests_full: bool) -> str:
+    """Choose eligibility only; targets, rate and pedagogy stay with the teacher."""
+    if type(state) is not PlasticityPolicy or type(teacher_requests_full) is not bool:
+        _invalid()
+    state.validate()
+    if (state.mode == FOUNDATION_MODE or teacher_requests_full
+            or state.accepted_fast_since_full >= ACCEPTED_FAST_INTERVAL):
+        return FULL_UPDATE
+    return FAST_UPDATE
+
+
+def advance_candidate_policy(
+    parent: PlasticityPolicy, *, teacher_requests_full: bool, accepted: bool,
+    participating_rows: tuple[tuple[int, int], ...],
+) -> PlasticityPolicy:
+    """Compute a retained-candidate proposal, without deciding or publishing it.
+
+    The existing acceptance owner supplies accepted and the deduplicated union
+    of actual masked-step rows. Rejection preserves the parent object. A single
+    acceptance advances each involved row once, irrespective of internal steps.
+    """
+    update_mode = next_update_mode(parent, teacher_requests_full=teacher_requests_full)
+    ages = advance_accepted_row_ages(parent.row_ages, participating_rows, accepted=accepted)
+    if not accepted:
+        return parent
+    counter = (parent.accepted_fast_since_full + 1
+               if parent.mode == ADAPTIVE_MODE and update_mode == FAST_UPDATE else 0)
+    return PlasticityPolicy(parent.mode, counter, ages)

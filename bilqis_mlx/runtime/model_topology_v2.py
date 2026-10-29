@@ -109,6 +109,9 @@ class ModelTopologySpecV2:
 MATRIX_RANK = 2
 FEATURE_NONE_ROW = 1
 FEATURE_RESERVED_ROWS = FEATURE_NONE_ROW + 1
+FEATURE_ROWS = 512
+FEATURE_DIM = 128
+GRAPH_FEATURE_DIM = 64
 MOTIF_CHANNELS = 128
 SHA256_HEX_LENGTH = hashlib.sha256().digest_size * 2
 IDENTITY_BANK_SHAPE = (ModelTopologySpecV2.semantic_bank_rows, ModelTopologySpecV2.width)
@@ -325,11 +328,11 @@ def _parameter(name, shape, initializer, group=ParameterGroup.SLOW, decay=True):
 def _input_parameters() -> tuple[ParameterSpec, ...]:
     M, E, O = Initializer.MATRIX, Initializer.EMBEDDING, Initializer.ONE
     return (
-        *(_parameter(f"features.{kind}", (512, 128), Initializer.FEATURE_TABLE)
+        *(_parameter(f"features.{kind}", (FEATURE_ROWS, FEATURE_DIM), Initializer.FEATURE_TABLE)
           for kind in ("type", "role", "schema")),
-        *(_parameter(f"features.project_{kind}", (768, 128), M)
+        *(_parameter(f"features.project_{kind}", (768, FEATURE_DIM), M)
           for kind in ("type", "role", "schema")),
-        _parameter("features.project_graph", (768, 64), M),
+        _parameter("features.project_graph", (768, GRAPH_FEATURE_DIM), M),
         _parameter("features.gates", (4,), Initializer.MINUS_TWO, decay=False),
         _parameter("features.local_slot", (16, 768), E),
         _parameter("features.norm", (768,), O, decay=False),
@@ -485,6 +488,82 @@ def initialize_bamf_parameter(parameter: ParameterSpec, *, run_seed: int):
     if init == Initializer.FEATURE_TABLE:
         value[FEATURE_NONE_ROW] = 0
     return value
+
+
+def project_identity_source_factor(
+    parameters: Mapping[str, object], *,
+    type_rows: tuple[int, ...],
+    type_overflow: tuple[tuple[float, ...] | None, ...],
+    graph64: tuple[float, ...],
+    extents: GenerationExtents,
+    predecessor_feature_digest: str,
+):
+    """Project source-attested prospective identity features without B02 authority.
+
+    A02 uses this read-only staging primitive before identity-row activation. The
+    caller must bind the source feature plan to the accepted predecessor feature
+    digest. Role/schema/local context deliberately stays outside identity seeding.
+    """
+    import mlx.core as mx
+    import numpy as np
+
+    if (not isinstance(parameters, Mapping)
+            or not isinstance(extents, GenerationExtents)
+            or not isinstance(predecessor_feature_digest, str)
+            or len(predecessor_feature_digest) != SHA256_HEX_LENGTH
+            or any(character not in "0123456789abcdef"
+                   for character in predecessor_feature_digest)
+            or extents.factor_map_digest != predecessor_feature_digest):
+        ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+    expected = {
+        "features.type": (FEATURE_ROWS, FEATURE_DIM),
+        "features.project_type": (ModelTopologySpecV2.width, FEATURE_DIM),
+        "features.project_graph": (ModelTopologySpecV2.width, GRAPH_FEATURE_DIM),
+        "features.gates": (4,),
+    }
+    for name, shape in expected.items():
+        value = parameters.get(name)
+        if (not isinstance(value, mx.array) or value.dtype != mx.float32
+                or value.shape != shape):
+            ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+    if (not isinstance(type_rows, tuple) or not isinstance(type_overflow, tuple)
+            or len(type_rows) != len(type_overflow)
+            or not isinstance(graph64, tuple) or len(graph64) != GRAPH_FEATURE_DIM
+            or any(type(row) is not int or not 0 <= row < FEATURE_ROWS for row in type_rows)):
+        ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+    try:
+        graph = np.asarray(graph64, dtype=np.float32)
+    except (TypeError, ValueError, OverflowError):
+        ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+    if graph.shape != (GRAPH_FEATURE_DIM,) or not np.isfinite(graph).all():
+        ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+
+    type_vectors = []
+    for row, overflow in zip(type_rows, type_overflow):
+        value = parameters["features.type"][row]
+        if overflow is not None:
+            try:
+                overflow_array = np.asarray(overflow, dtype=np.float32)
+            except (TypeError, ValueError, OverflowError):
+                ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+            if (row != 0 or overflow_array.shape != (FEATURE_DIM,)
+                    or not np.isfinite(overflow_array).all()):
+                ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+            value = value + mx.array(overflow_array, dtype=mx.float32)
+        type_vectors.append(value)
+    type_mean = (mx.mean(mx.stack(type_vectors), axis=0) if type_vectors
+                 else parameters["features.type"][FEATURE_NONE_ROW])
+    gates = mx.sigmoid(parameters["features.gates"])
+    factor = (
+        gates[0] * (type_mean @ parameters["features.project_type"].T)
+        + gates[3] * (mx.array(graph, dtype=mx.float32)
+                      @ parameters["features.project_graph"].T)
+    )
+    mx.eval(factor)
+    result = np.asarray(factor, dtype=np.float32)
+    if result.shape != (ModelTopologySpecV2.width,) or not np.isfinite(result).all():
+        ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+    return result
 
 
 def initialize_bamf_row(parameter: ParameterSpec, *, run_seed: int, row_id: str, factor=None):

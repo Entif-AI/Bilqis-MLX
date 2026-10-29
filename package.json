@@ -22,8 +22,11 @@
     "grade-a:verify": "python3 -B -m bilqis_mlx.grade_a_manifest --legacy-code-root vendor/legacy-v16 --champion-checkpoint vendor/legacy-v16/runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt --verify-manifest docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json",
     "learning:report": "python3 -B -m bilqis_mlx.diagnostics.learning_report",
     "mlx:qualify": "python3 -B -m bilqis_mlx.full_student_qualification --legacy-code-root vendor/legacy-v16 --checkpoint vendor/legacy-v16/runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt --grade-a-manifest docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json --verify-disposable-restart --device gpu",
-    "quality:check": "python3 -B scripts/check_factory_architecture.py && python3 -B scripts/check_module_size.py && python3 -B scripts/check_docs.py && python3 -B scripts/error_control_plane.py --check && python3 -B scripts/code_smell_audit.py --check-baseline docs/evidence/development/code_smell_baseline.json",
+    "quality:check": "python3 -B scripts/quality/check_governance_integrity.py && python3 -B scripts/check_factory_architecture.py && python3 -B scripts/quality/check_docs.py && python3 -B scripts/error_control_plane.py --check && python3 -B scripts/code_smell_audit.py --check-baseline docs/evidence/development/code_smell_baseline.json",
+    "quality:changed": "npm run quality:structure && python3 -B scripts/code_smell_audit.py --changed-from \"${BILQIS_QUALITY_BASE_REF:-HEAD}\" --check-baseline docs/evidence/development/code_smell_baseline.json",
     "quality:report": "python3 -B scripts/code_smell_audit.py",
+    "quality:structure": "python3 -B scripts/check_module_size.py --changed-from \"${BILQIS_QUALITY_BASE_REF:-HEAD}\" && python3 -B scripts/quality/check_governance_integrity.py --base-ref \"${BILQIS_QUALITY_BASE_REF:-HEAD}\"",
+    "prepare": "husky",
     "release:check": "python3 -B scripts/release_version.py --check",
     "start": "npm run train -- --human-run --source-prefetch-workers 2 --run-dir ./runs/codex-0001-prometheus --resume --minutes 180",
     "start:flash": "npm run train -- --human-run --run-dir ./runs/codex-0001-prometheus --resume --minutes 180 --flash-mode",
@@ -46,5 +49,8 @@
     "train": "python3 -m bilqis_mlx.cli train",
     "verify": "python3 -B -m bilqis_mlx.cli train --dry-run --verify-source --source-prefetch-workers 2 --run-dir ./runs/codex-0001-prometheus --resume",
     "vocabulary:preflight": "python3 -m bilqis_mlx.vocabulary_probe"
+  },
+  "devDependencies": {
+    "husky": "9.1.7"
   }
 }

@@ -8,8 +8,10 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+import sys
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts" / "bamf"))
 TASKS = ROOT / "docs/tasks/bamf-0.2"
 ITEMS = json.loads((TASKS / "workstack.json").read_text(encoding="utf-8"))["items"]
 CHILDREN = json.loads((TASKS / "children/index.json").read_text(encoding="utf-8"))["entries"]

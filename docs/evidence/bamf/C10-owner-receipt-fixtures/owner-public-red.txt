@@ -1,0 +1,31 @@
+test_artifact_signature_scope_mode_and_identity_tampering_reject (_bilqis_test_272a4ed5adced45e464b0570bf0ad7679a5ea3454019999a85a3b8a831061ef1.OwnerReceiptFixtureTests.test_artifact_signature_scope_mode_and_identity_tampering_reject) ... ok
+test_divergent_attestations_cannot_reuse_one_source_event_identity (_bilqis_test_272a4ed5adced45e464b0570bf0ad7679a5ea3454019999a85a3b8a831061ef1.OwnerReceiptFixtureTests.test_divergent_attestations_cannot_reuse_one_source_event_identity) ... ok
+test_fixture_categories_cannot_lose_maturity_in_public_staging (_bilqis_test_272a4ed5adced45e464b0570bf0ad7679a5ea3454019999a85a3b8a831061ef1.OwnerReceiptFixtureTests.test_fixture_categories_cannot_lose_maturity_in_public_staging) ...
+  test_fixture_categories_cannot_lose_maturity_in_public_staging (_bilqis_test_272a4ed5adced45e464b0570bf0ad7679a5ea3454019999a85a3b8a831061ef1.OwnerReceiptFixtureTests.test_fixture_categories_cannot_lose_maturity_in_public_staging) (category=<AkashaEventKind.BANK_ALLOCATION: 'BANK_ALLOCATION'>) ... FAIL
+test_fixture_categories_cannot_lose_maturity_in_public_staging (_bilqis_test_272a4ed5adced45e464b0570bf0ad7679a5ea3454019999a85a3b8a831061ef1.OwnerReceiptFixtureTests.test_fixture_categories_cannot_lose_maturity_in_public_staging) ... ERROR
+test_three_categories_are_opaque_repeatable_and_explicit_fixtures (_bilqis_test_272a4ed5adced45e464b0570bf0ad7679a5ea3454019999a85a3b8a831061ef1.OwnerReceiptFixtureTests.test_three_categories_are_opaque_repeatable_and_explicit_fixtures) ... ok
+
+======================================================================
+ERROR: test_fixture_categories_cannot_lose_maturity_in_public_staging (_bilqis_test_272a4ed5adced45e464b0570bf0ad7679a5ea3454019999a85a3b8a831061ef1.OwnerReceiptFixtureTests.test_fixture_categories_cannot_lose_maturity_in_public_staging)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/runtime/tests/test_owner_receipt_fixture.py", line 84, in test_fixture_categories_cannot_lose_maturity_in_public_staging
+    self.assertEqual(caught.exception.context['reason'], 'BAMF_C10_FIXTURE_PUBLIC_SCHEMA_REQUIRED')
+                     ^^^^^^^^^^^^^^^^
+AttributeError: '_AssertRaisesContext' object has no attribute 'exception'
+
+======================================================================
+FAIL: test_fixture_categories_cannot_lose_maturity_in_public_staging (_bilqis_test_272a4ed5adced45e464b0570bf0ad7679a5ea3454019999a85a3b8a831061ef1.OwnerReceiptFixtureTests.test_fixture_categories_cannot_lose_maturity_in_public_staging) (category=<AkashaEventKind.BANK_ALLOCATION: 'BANK_ALLOCATION'>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/runtime/tests/test_owner_receipt_fixture.py", line 82, in test_fixture_categories_cannot_lose_maturity_in_public_staging
+    with self.subTest(category=category), self.assertRaises(BilqisError) as caught:
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: BilqisError not raised
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.019s
+
+FAILED (failures=1, errors=1)
+TEST_TOTALS total=4 passed=2 failed=2 skipped=0 errors=1
+2 passed, 2 failed, 0 skipped

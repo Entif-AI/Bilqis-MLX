@@ -66,7 +66,7 @@ compatibility writer ownership is frozen debt for SPEC-0040/0041/0042.
 
 ## SPEC-0015: semantic-root neutrality
 
-Reuse the structural identity rules in `scripts/check_factory_closure.py`.
+Reuse the structural identity rules in `scripts/quality/check_factory_closure.py`.
 Generic factory/runtime code rejects concrete provider imports, control-flow
 dispatch on capability literals matching `^[A-Z][A-Z0-9]*\.[A-Z][A-Z0-9_~-]*$`,
 and concrete release-identity dispatch/reference under the existing
