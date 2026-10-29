@@ -33,6 +33,12 @@ SOURCE_PROJECTION_ONLY = "SOURCE_PROJECTION_NOT_AUTHORITY"
 LEARNING_UNVERIFIED = "LEARNING_UNVERIFIED"
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _SUPPORTED = frozenset({"BOOL_NOT", "BOOL_AND", "COUNT", "SUCC"})
+_VARIATION_AXES = {
+    "BOOL_NOT": ("boolean-input-polarity", "typed-answer-contrast"),
+    "BOOL_AND": ("boolean-pair-combinations", "typed-answer-contrast"),
+    "COUNT": ("entity-set-cardinality", "typed-answer-contrast"),
+    "SUCC": ("numeric-successor-input", "typed-answer-contrast"),
+}
 
 
 def _fail(reason: str) -> None:
@@ -235,7 +241,7 @@ def construct_formal_lesson(
         witness.operator.operator_id, witness.source_binding_sha256,
         witness.operator_grant_sha256, inputs, operand_evidence,
         expected, contrast, constituents, constituents,
-        ("typed-answer-contrast",),
+        _VARIATION_AXES[witness.operator.operator_id],
         _evidence(witness, inputs, operand_evidence, expected, contrast))
 
 
@@ -264,7 +270,7 @@ def check_formal_lesson(
             or contract_digest(lesson.contrast) != contract_digest(contrast)
             or lesson.constituents != constituents
             or lesson.prerequisite_closure != constituents
-            or lesson.variation_axes != ("typed-answer-contrast",)
+            or lesson.variation_axes != _VARIATION_AXES[witness.operator.operator_id]
             or lesson.evidence_sha256 != _evidence(
                 witness, lesson.typed_inputs, operand_evidence,
                 expected, contrast)):

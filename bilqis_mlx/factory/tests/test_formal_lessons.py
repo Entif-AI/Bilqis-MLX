@@ -45,6 +45,12 @@ FORMAL = (
     ("bilqis.numeric/v1:school.op.COUNT", "numeric", "COUNT"),
     ("bilqis.numeric/v1:school.op.SUCC", "numeric", "SUCC"),
 )
+EXPECTED_AXES = {
+    "BOOL_NOT": ("boolean-input-polarity", "typed-answer-contrast"),
+    "BOOL_AND": ("boolean-pair-combinations", "typed-answer-contrast"),
+    "COUNT": ("entity-set-cardinality", "typed-answer-contrast"),
+    "SUCC": ("numeric-successor-input", "typed-answer-contrast"),
+}
 
 
 def _grant(
@@ -245,23 +251,46 @@ class FormalLessonTests(unittest.TestCase):
             selection = AtlasArtifactSelection(
                 artifact.path, artifact.bundle_id, release.digest,
                 release.source_bundle_id)
+            seen = {operator_id: set() for _, _, operator_id in FORMAL}
             for semantic_id, operator_id, operands, expected in (
                     (FORMAL[0][0], "BOOL_NOT", (("Boolean", True),), False),
+                    (FORMAL[0][0], "BOOL_NOT", (("Boolean", False),), True),
+                    (FORMAL[1][0], "BOOL_AND",
+                     (("Boolean", True), ("Boolean", True)), True),
                     (FORMAL[1][0], "BOOL_AND",
                      (("Boolean", True), ("Boolean", False)), False),
+                    (FORMAL[1][0], "BOOL_AND",
+                     (("Boolean", False), ("Boolean", True)), False),
+                    (FORMAL[1][0], "BOOL_AND",
+                     (("Boolean", False), ("Boolean", False)), False),
+                    (FORMAL[2][0], "COUNT",
+                     (("EntitySet", ()),), 0),
+                    (FORMAL[2][0], "COUNT",
+                     (("EntitySet", ("alpha",)),), 1),
                     (FORMAL[2][0], "COUNT",
                      (("EntitySet", ("alpha", "beta")),), 2),
-                    (FORMAL[3][0], "SUCC", (("Number", 2),), 3)):
+                    (FORMAL[2][0], "COUNT",
+                     (("EntitySet", ("alpha", "beta", "gamma")),), 3),
+                    (FORMAL[3][0], "SUCC", (("Number", 0),), 1),
+                    (FORMAL[3][0], "SUCC", (("Number", 2),), 3),
+                    (FORMAL[3][0], "SUCC", (("Number", 9),), 10)):
                 with self.subTest(operator=operator_id):
                     binding, typed = _case(
                         operator_id, *operands, release=release.digest)
                     lesson = construct_formal_lesson(
                         selection, semantic_id, typed, binding)
                     self.assertEqual(lesson.positive.value, expected)
+                    self.assertEqual(
+                        lesson.variation_axes, EXPECTED_AXES[operator_id])
+                    self.assertNotIn(lesson.evidence_sha256, seen[operator_id])
+                    seen[operator_id].add(lesson.evidence_sha256)
                     self.assertTrue(check_formal_lesson(
                         lesson, lesson.positive, selection, binding))
                     self.assertFalse(check_formal_lesson(
                         lesson, lesson.contrast, selection, binding))
+            self.assertEqual(
+                {key: len(value) for key, value in seen.items()},
+                {"BOOL_NOT": 2, "BOOL_AND": 4, "COUNT": 4, "SUCC": 3})
 
     def test_four_released_laws_have_typed_source_contrasts(self):
         cases = (
@@ -286,7 +315,7 @@ class FormalLessonTests(unittest.TestCase):
                     self.assertEqual(
                         lesson.prerequisite_closure, lesson.constituents)
                     self.assertEqual(
-                        lesson.variation_axes, ("typed-answer-contrast",))
+                        lesson.variation_axes, EXPECTED_AXES[operator_id])
                     self.assertEqual(lesson.status, FORMAL_LESSON_STATUS)
                     self.assertEqual(
                         lesson.learning_state, LEARNING_UNVERIFIED)
@@ -294,6 +323,27 @@ class FormalLessonTests(unittest.TestCase):
                         lesson, lesson.positive, _selection(), binding))
                     self.assertFalse(check_formal_lesson(
                         lesson, lesson.contrast, _selection(), binding))
+
+    def test_variation_metadata_and_source_case_cannot_be_substituted(self):
+        original, inputs = _case("BOOL_NOT", ("Boolean", True))
+        changed, _ = _case("BOOL_NOT", ("Boolean", False))
+        with patch(
+                "bilqis_mlx.factory.formal_lessons.resolve_formal_source_operators",
+                return_value=_source()):
+            lesson = construct_formal_lesson(
+                _selection(), FORMAL[0][0], inputs, original)
+            forged_axes = replace(
+                lesson, variation_axes=("boolean-pair-combinations",
+                                        "typed-answer-contrast"))
+            with self.assertRaises(BilqisError) as caught:
+                check_formal_lesson(
+                    forged_axes, lesson.positive, _selection(), original)
+            self.assertEqual(
+                caught.exception.context["reason"],
+                "BAMF_FORMAL_LESSON_SOURCE_EVIDENCE_MISMATCH")
+            with self.assertRaises(BilqisError):
+                check_formal_lesson(
+                    lesson, lesson.positive, _selection(), changed)
 
     def test_checker_rejects_forged_gold_without_calling_generator(self):
         binding, inputs = _case("SUCC", ("Number", 2))

@@ -123,3 +123,56 @@ Factory ConstructionProgram registration, exercised variation
 coverage, final A13.1/A07.2 crosswalk and admission proofs have
 not been completed. No ADAPTER_READY, learner credit or source
 grant was created.
+
+## 2026-10-29 variation-axis and source-boundary continuation
+
+Isolated candidate: `codex/bamf02-a08-formal-variation-20261029`,
+based on Lane A `9fa752b` with reviewed unified `7ad8f8a`
+already an ancestor. This continuation does not supersede the
+earlier scoped EGM: its new diff needs separate independent review.
+
+The four source-attested formal operator families now declare
+their actual candidate variation axes instead of the same
+generic label for every operator:
+
+| A01/A07 operator | Variation axis | Real pinned A01 examples with synthetic, live-checked A13 grants |
+| --- | --- | --- |
+| `BOOL_NOT` | `boolean-input-polarity` | true and false |
+| `BOOL_AND` | `boolean-pair-combinations` | all four Boolean input pairs |
+| `COUNT` | `entity-set-cardinality` | zero, one, two and three distinct entities |
+| `SUCC` | `numeric-successor-input` | 0, 2 and 9 within the declared finite domain |
+
+Every family retains `typed-answer-contrast` as a separate
+axis. The real pinned A01 test exercises **13 distinct source
+cases** rather than merely checking axis strings. Each case
+constructs its own synthetic source-owned A13 operator,
+operand and numeric-domain grants; runs the A07 pure operator;
+compares an independently computed typed answer; rejects the
+contrast through the independent checker; and asserts a
+different immutable evidence digest for each varied input.
+The checker rejects forged variation-axis metadata and a
+source-case substitution under a previously issued lesson.
+
+The authority crosswalk remains strict: A07.2 #414 owns the
+independent-gold separation and source-qualified pure
+operator contract; A13.1 #430 owns purpose/release/rights,
+source evidence, correction and temporal eligibility. The
+lesson generator replays both on each call, and the checker
+replays them again without invoking the generator. An A01
+pin or A07 source law alone is not an A13 grant; a source-valid
+lesson remains `TASK_SCOPED_NOT_ADMITTED`,
+`SOURCE_PROJECTION_NOT_AUTHORITY` and
+`LEARNING_UNVERIFIED`.
+
+Prime test command with the real pinned A01 corpus:
+`scripts/run_tests.py bilqis_mlx/factory/tests/test_formal_constructive.py bilqis_mlx/factory/tests/test_formal_lessons.py`.
+**14 passed, 0 failed, 0 skipped**. `git diff --check`
+passed and the error-control check found no new
+`formal_lessons` violations. Independent review of this
+new variation change is pending.
+
+This is **not completion of #554**. Factory
+`ConstructionProgram` registration, full A08.1b.5
+cross-family integration and real admission/retained
+learning evidence remain separate gates. No source
+promotion, neural training, optimizer mutation or merge.
