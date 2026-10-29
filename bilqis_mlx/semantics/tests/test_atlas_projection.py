@@ -176,6 +176,31 @@ def _rewrite_artifact(bundle: Path, name: str, value) -> Path:
 
 
 class AtlasProjectionTests(unittest.TestCase):
+    def test_pinned_selection_revalidates_mutated_fields(self):
+        class WrappedText(str):
+            pass
+
+        with self.assertRaises(BilqisError) as wrapped:
+            AtlasArtifactSelection(
+                "nonexistent", WrappedText("0" * 64),
+                "1" * 64, "2" * 64)
+        self.assertEqual(
+            wrapped.exception.context["reason"],
+            "ATLAS_SOURCE_SELECTION_INVALID")
+        selection = AtlasArtifactSelection(
+            "nonexistent", "0" * 64, "1" * 64, "2" * 64)
+        object.__setattr__(selection, "bundle_id", 123)
+        with self.assertRaises(BilqisError) as caught:
+            load_pinned_atlas_snapshot(selection)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "ATLAS_SOURCE_SELECTION_INVALID")
+        with self.assertRaises(BilqisError) as invalid_expected:
+            load_atlas_snapshot("nonexistent", expected_bundle_id=123)
+        self.assertEqual(
+            invalid_expected.exception.context["reason"],
+            "ATLAS_SNAPSHOT_EXPECTED_PIN_INVALID")
+
     def test_pinned_atlas_selection_rejects_repacked_same_family_substitutions(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

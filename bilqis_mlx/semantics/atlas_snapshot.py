@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import hashlib
+import hmac
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -54,17 +55,26 @@ class AtlasArtifactSelection:
     schema: str = ATLAS_SELECTION_SCHEMA
 
     def __post_init__(self) -> None:
-        if (self.schema != ATLAS_SELECTION_SCHEMA
-                or not isinstance(self.path, str) or not self.path
-                or any(not isinstance(value, str) or not HEX64.fullmatch(value)
+        if (type(self.schema) is not str
+                or self.schema != ATLAS_SELECTION_SCHEMA
+                or type(self.path) is not str or not self.path
+                or any(type(value) is not str or not HEX64.fullmatch(value)
                        for value in (
                            self.bundle_id, self.release_sha256,
                            self.source_bundle_id))):
             _fail("ATLAS_SOURCE_SELECTION_INVALID")
 
 
+def _validate_selection_exact(selection: AtlasArtifactSelection) -> None:
+    """A frozen dataclass is not a trust boundary: recheck its live fields."""
+    if type(selection) is not AtlasArtifactSelection:
+        _fail("ATLAS_SOURCE_SELECTION_INVALID")
+    AtlasArtifactSelection.__post_init__(selection)
+
+
 def _require_registered_source_pin(selection: AtlasArtifactSelection) -> None:
     """Source admission is repository-owned, never a caller-minted bundle ID."""
+    _validate_selection_exact(selection)
     path = Path(__file__).with_name("atlas_source_pins_v1.json")
     if path.is_symlink() or not path.is_file():
         _fail("ATLAS_SOURCE_PIN_REGISTRY_MISSING")
@@ -97,18 +107,15 @@ def _require_registered_source_pin(selection: AtlasArtifactSelection) -> None:
             for entry in entries)
             or len({entry["bundle_id"] for entry in entries}) != len(entries)):
         _fail("ATLAS_SOURCE_PIN_REGISTRY_INVALID")
-    pin = (selection.bundle_id, selection.release_sha256,
-           selection.source_bundle_id)
-    if not any(pin == (
-            entry["bundle_id"], entry["release_sha256"],
-            entry["source_bundle_id"]) for entry in entries):
+    if not any(all(hmac.compare_digest(
+            getattr(selection, name), entry[name])
+            for name in ("bundle_id", "release_sha256", "source_bundle_id"))
+            for entry in entries):
         _fail("ATLAS_SOURCE_PIN_NOT_REGISTERED")
 
 
 def load_pinned_atlas_snapshot(selection: AtlasArtifactSelection) -> FrozenAtlasSnapshot:
     """Reload a source artifact only under an independently governed A01 pin."""
-    if type(selection) is not AtlasArtifactSelection:
-        _fail("ATLAS_SOURCE_SELECTION_INVALID")
     _require_registered_source_pin(selection)
     return load_atlas_snapshot(
         selection.path,
@@ -206,6 +213,12 @@ def load_atlas_snapshot(
     expected_source_bundle_id: str | None = None,
 ) -> FrozenAtlasSnapshot:
     """Load a fully verified immutable Atlas snapshot without a database."""
+    if any(value is not None and (
+            type(value) is not str or not HEX64.fullmatch(value))
+            for value in (
+                expected_bundle_id, expected_release_sha256,
+                expected_source_bundle_id)):
+        _fail("ATLAS_SNAPSHOT_EXPECTED_PIN_INVALID")
     bundle_id, manifest, payloads = _read_persisted_artifact(bundle_dir)
     if expected_bundle_id is not None and expected_bundle_id != bundle_id:
         _fail("ATLAS_SNAPSHOT_EXPECTED_BUNDLE_MISMATCH")

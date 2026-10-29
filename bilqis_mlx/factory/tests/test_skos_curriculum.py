@@ -115,6 +115,31 @@ def _snapshot(definitions=DEFINITIONS, *, release=RELEASE):
 
 
 class SemanticFamilyInventoryTests(unittest.TestCase):
+    def test_wrapped_source_strings_do_not_pass_lesson_type_boundary(self):
+        class WrappedText(str):
+            pass
+
+        snapshot = _snapshot()
+        lesson = compile_source_constructive_lessons(snapshot).lessons[0]
+        with self.assertRaises(BilqisError) as nested:
+            replace(lesson, positive_fact=(
+                "identity", WrappedText("urn:unverified"), "source:unverified"))
+        self.assertEqual(
+            nested.exception.context["reason"],
+            "BAMF_LESSON_RECORD_INVALID")
+        definitions = tuple(
+            (identifier, source, AtlasRelation(REL, "urn:lex:root")
+             if identifier == "urn:morph:transform" else relation)
+            for identifier, source, relation in DEFINITIONS)
+        related = _snapshot(definitions)
+        relation = next(
+            item for item in compile_source_constructive_lessons(related).lessons
+            if item.family_id == "source_attested_relation")
+        self.assertFalse(check_source_constructive_lesson(
+            relation,
+            tuple(WrappedText(part) for part in relation.positive_fact),
+            related))
+
     def test_source_proposals_cannot_be_relabelled_as_attestation(self):
         snapshot = _snapshot()
         registry = json.loads((
@@ -473,6 +498,11 @@ class SemanticFamilyInventoryTests(unittest.TestCase):
                 if item.family_id == "positive_identity")
             self.assertTrue(public_curriculum.check_source_constructive_lesson(
                 identity_lesson, identity_lesson.positive_fact[1], pin))
+            class WrappedText(str):
+                pass
+            self.assertFalse(public_curriculum.check_source_constructive_lesson(
+                identity_lesson, WrappedText(identity_lesson.positive_fact[1]),
+                pin))
             self.assertEqual(
                 public_census.source_authority, SOURCE_PROJECTION_ONLY)
             self.assertEqual(
@@ -619,6 +649,33 @@ class SemanticFamilyInventoryTests(unittest.TestCase):
                     self.assertEqual(
                         replaced_pin.exception.context["reason"],
                         "ATLAS_SOURCE_PIN_NOT_REGISTERED")
+            other_boolean = tuple(
+                entry.semantic_id for entry in snapshot.abi_entries
+                if entry.semantic_id.startswith("legacy:cogal.operator.")
+                and entry.semantic_id not in
+                snapshot.formal_domain_bindings[0].semantic_ids)
+            for replacement in (
+                    other_boolean[:1],
+                    other_boolean[:len(snapshot.formal_domain_bindings[0].semantic_ids)]):
+                if not replacement:
+                    continue
+                with self.subTest(formal_binding_substitution=replacement):
+                    forged = replace(
+                        snapshot, formal_domain_bindings=(
+                            replace(snapshot.formal_domain_bindings[0],
+                                    semantic_ids=replacement),
+                            *snapshot.formal_domain_bindings[1:]))
+                    # An internal pure projection can represent this forged
+                    # snapshot, but the public consumer must replay pinned A01.
+                    forged_inventory = inventory_source_families(forged)
+                    self.assertNotEqual(
+                        forged_inventory.digest, public_census.digest)
+                    with self.assertRaises(BilqisError) as rejected:
+                        public_curriculum.assert_family_inventory_current(
+                            forged_inventory, pin)
+                    self.assertEqual(
+                        rejected.exception.context["reason"],
+                        "BAMF_FAMILY_SOURCE_PROJECTION_DRIFT")
         census = inventory_source_families(snapshot)
         self.assertEqual(public_census, census)
         self.assertEqual(pinned, snapshot)
@@ -636,19 +693,6 @@ class SemanticFamilyInventoryTests(unittest.TestCase):
         self.assertEqual(
             caught.exception.context["reason"],
             "BAMF_FAMILY_FORMAL_SOURCE_INVALID")
-        other_boolean = next((
-            entry.semantic_id for entry in snapshot.abi_entries
-            if entry.semantic_id.startswith("legacy:cogal.operator.")
-            and entry.semantic_id not in
-            snapshot.formal_domain_bindings[0].semantic_ids), None)
-        if other_boolean is not None:
-            same_family_forgery = replace(
-                snapshot, formal_domain_bindings=(
-                    replace(snapshot.formal_domain_bindings[0],
-                            semantic_ids=(other_boolean,)),
-                    *snapshot.formal_domain_bindings[1:]))
-            with self.assertRaises(BilqisError):
-                inventory_source_families(same_family_forgery)
         # Frozen A01.2/A01.3 source census: formal ABI cannot disappear
         # merely because no AtlasConcept record backs its identity.
         self.assertEqual(census.counts.atlas_source_concepts, 9079)

@@ -160,3 +160,33 @@ Next: commit this isolated candidate, obtain fresh pinned Goldfish
 review against its immutable head, then integrate through the
 serialized Lane A writer after its current unrelated dirty work is
 reconciled. Do not self-merge the lane PR.
+
+## 2026-10-29 isolated follow-on: exact source-boundary types
+
+The subsequent independent review of immutable `96ae15b` found
+three further Majors: subclass-controlled equality at the source-pin
+comparison, at the raw A01 reader's expected-ID comparison, and at
+lesson/checker answer comparison. A read-only Goldfish inspection of
+the separate dirty repair candidate found all three mechanisms
+addressed, but that inspection was not an immutable-head EGM PASS.
+
+An independently isolated follow-on branch
+`codex/bamf02-a08-authority-final-20261029` incorporates the
+reviewed fixes without editing the other candidate worktree.
+It revalidates the exact selection dataclass and field types on
+each public use, compares repository pins without caller-defined
+equality, rejects non-exact expected IDs before artifact access,
+and requires exact nested source-lesson/answer types and canonical
+relation bytes. The original A01 v1 bundle and source-pin registry
+are unchanged. The real-corpus same-family substitution regression
+was moved inside the temporary artifact lifetime: its forged
+internal projection is allowed to exist as a non-authoritative
+proposal, but public A01 replay rejects both one-ID and
+equal-cardinality replacements.
+
+Prime verification: `test_skos_curriculum.py` and
+`test_atlas_projection.py` with the real pinned corpus,
+**31 passed, 0 failed, 0 skipped**. This is an isolated candidate,
+not a new source release, A13 rights grant, neural result, or
+completed A08 parent. A fresh immutable-head independent EGM
+review is still required before integration.

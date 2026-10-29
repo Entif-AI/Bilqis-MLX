@@ -594,24 +594,35 @@ class SourceConstructiveLesson:
     schema: str = SOURCE_LESSON_SCHEMA
 
     def __post_init__(self) -> None:
-        if (not isinstance(self.semantic_release, str)
+        if (type(self.semantic_release) is not str
                 or not _SHA.fullmatch(self.semantic_release)
-                or not isinstance(self.source_evidence_sha256, str)
+                or type(self.source_evidence_sha256) is not str
                 or not _SHA.fullmatch(self.source_evidence_sha256)
-                or not self.semantic_id or not self.family_id
-                or not isinstance(self.positive_fact, tuple)
-                or not isinstance(self.contrast_fact, tuple)
+                or type(self.semantic_id) is not str or not self.semantic_id
+                or type(self.family_id) is not str or not self.family_id
+                or type(self.positive_fact) is not tuple
+                or type(self.contrast_fact) is not tuple
                 or not self.positive_fact or not self.contrast_fact
+                or any(type(item) is not str
+                       for item in (*self.positive_fact, *self.contrast_fact))
                 or self.positive_fact == self.contrast_fact
+                or type(self.answer_modality) is not str
                 or self.answer_modality not in {
                     "SEMANTIC_ID", "RELATION_TRIPLE"}
+                or type(self.checker_reference) is not str
                 or not self.checker_reference
-                or not isinstance(self.constituents, tuple)
-                or not isinstance(self.prerequisite_closure, tuple)
-                or not isinstance(self.variation_axes, tuple)
+                or type(self.constituents) is not tuple
+                or any(type(item) is not str for item in self.constituents)
+                or type(self.prerequisite_closure) is not tuple
+                or any(type(item) is not str for item in self.prerequisite_closure)
+                or type(self.variation_axes) is not tuple
+                or any(type(item) is not str for item in self.variation_axes)
                 or not self.variation_axes
+                or type(self.learning_state) is not str
                 or self.learning_state != LEARNING_UNVERIFIED
+                or type(self.source_authority) is not str
                 or self.source_authority != SOURCE_PROJECTION_ONLY
+                or type(self.schema) is not str
                 or self.schema != SOURCE_LESSON_SCHEMA):
             _fail("BAMF_LESSON_RECORD_INVALID")
 
@@ -751,9 +762,14 @@ def _check_source_constructive_lesson_snapshot(
             or proposed_bytes != _strict_source_bytes(matching[0])):
         _fail("BAMF_LESSON_SOURCE_EVIDENCE_MISMATCH")
     if lesson.answer_modality == "SEMANTIC_ID":
-        return type(answer) is str and answer == lesson.positive_fact[1]
+        return (type(answer) is str
+                and answer.encode("utf-8")
+                == lesson.positive_fact[1].encode("utf-8"))
     if lesson.answer_modality == "RELATION_TRIPLE":
-        return type(answer) is tuple and answer == lesson.positive_fact
+        return (type(answer) is tuple
+                and all(type(item) is str for item in answer)
+                and _strict_source_bytes(answer)
+                == _strict_source_bytes(lesson.positive_fact))
     _fail("BAMF_LESSON_CHECKER_UNSUPPORTED")
 
 

@@ -26,3 +26,20 @@ obligations remain unchanged. Prime owner suite:
 The initial Major is reproduced and repaired, not silently
 cleared by the implementer. A08.1b remains partial; A08 parent
 integration and neural/learning evidence remain open.
+
+## Later candidate review, 2026-10-29
+
+Independent Goldfish review of `96ae15b` reported **0 Blockers,
+3 Majors**. All three exploited caller-defined equality:
+source-pin tuple comparison, raw snapshot expected-ID comparison,
+and lesson/answer equality. Read-only review of a separate
+uncommitted repair candidate found those three mechanisms closed,
+but this did not grant immutable-head clearance.
+
+The isolated `codex/bamf02-a08-authority-final-20261029`
+candidate incorporates exact-type source selection validation,
+safe pin comparison, strict raw expected-ID validation and
+canonical lesson/checker comparisons. Prime real-corpus A01/A08
+tests: **31/31 passed**. Independent EGM of the committed
+candidate remains **PENDING**, not PASS. No source/learning
+admission or Lane A integration is claimed here.
