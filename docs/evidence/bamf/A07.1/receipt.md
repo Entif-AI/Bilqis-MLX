@@ -67,6 +67,31 @@ Consumed A13 source grant: `bilqis.context-source-grant/v1`.
 error-control-plane checks retain inherited unrelated shared-runtime
 findings; no A07.1-specific new finding was observed.
 
+## 2026-10-28 independent Goldfish review repairs
+
+Goldfish independently reviewed immutable `e6a9b30` and reproduced
+two Majors: the registry could instantiate operators for a release
+without an operator-specific source contract, and a frame role with
+valid ALTERNATIVES was treated as UNSUPPORTED rather than unresolved.
+
+The repair adds a source reference, source contract digest and semantic
+release to each operator spec. Native numeric operations bind the
+existing released `semantics.numeric.OPERATIONS` contract and reuse
+its `calculate/evaluate` implementation; source-independent formal
+laws require a distinct explicit source grant before execution.
+Every operator invocation checks an exact grant over its complete
+specification, including implementation digest and release. A
+removed/drifted native operation cannot silently fall back to a
+formal law. A new adversarial test changes the native ADD source
+contract without changing the A07 code or operand/domain grants
+and observes a hard source-contract failure.
+
+ROLE_LOOKUP now maps ALTERNATIVES to UNKNOWN, preserving the
+unresolved distinction from unsupported and explicit NONE.
+The repaired focused suite passes **15/15**. Fresh independent
+immutable-head re-review remains pending; do not treat the original
+two findings as cleared until that review returns.
+
 The A07.2 evaluator/source separation and A07.3 compositional DAG,
 memoization and bounded execution receipts remain separate leaves.
 No parent acceptance, integration merge or live training is claimed.

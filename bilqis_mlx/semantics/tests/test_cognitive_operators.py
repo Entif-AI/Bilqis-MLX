@@ -4,13 +4,14 @@ from __future__ import annotations
 from dataclasses import replace
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.semantics.cognitive_operators import (
     Duration, OperatorBinding, SourceKind, SourceOperand, TypedValue,
     UnitConversion,
     ValueState, default_registry, execute_pure, numeric_domain_digest,
-    source_operand_digest,
+    operator_grant_digest, source_operand_digest,
 )
 from bilqis_mlx.semantics.context_eligibility import (
     PUBLIC_FORMAL, ContextEligibility, ContextMember, ContextPolicy,
@@ -26,6 +27,7 @@ from bilqis_mlx.semantics.frame_schema import (
     SourceSpan, make_frame_instance,
 )
 from bilqis_mlx.semantics.laws import SourceLocator
+from bilqis_mlx.semantics import numeric as released_numeric
 
 
 RELEASE = "a" * 64
@@ -68,6 +70,10 @@ def _base(*, numbers: bool = True):
         )
         domain_handle = "source:numbers"
         grants.append(_grant(domain_handle, numeric_domain_digest(domain, RELEASE)))
+    grants.extend(
+        _grant("source:operator:" + spec.operator_id, operator_grant_digest(spec))
+        for spec in default_registry(RELEASE).specs
+    )
     return task, policy, domain, domain_handle, grants
 
 
@@ -103,7 +109,8 @@ def _with_frame(binding, *, name="one", parent=None, state=BindingState.VALUE,
         "ORDERED", SCOPE)
     occupant = RoleOccurrence(
         "subject", 0, concept=concept if state is BindingState.VALUE else None,
-        state=state)
+        state=state,
+        alternatives=(concept,) if state is BindingState.ALTERNATIVES else ())
     frame = make_frame_instance(
         schema, source_instance_id=name, structural_path=(),
         source_span=SourceSpan(start, end),
@@ -252,7 +259,8 @@ class CognitiveOperatorsTests(unittest.TestCase):
         frame_input = TypedValue(
             "FrameHandle", "frame:one", RELEASE, "source:frame:one")
         for state, expected in ((BindingState.NONE, ValueState.NONE),
-                                (BindingState.UNKNOWN, ValueState.UNKNOWN)):
+                                (BindingState.UNKNOWN, ValueState.UNKNOWN),
+                                (BindingState.ALTERNATIVES, ValueState.UNKNOWN)):
             current, _, _ = _with_frame(binding, state=state)
             self.assertEqual(execute_pure(
                 "ROLE_LOOKUP", (frame_input, *values), current).state, expected)
@@ -320,6 +328,25 @@ class CognitiveOperatorsTests(unittest.TestCase):
                 execute_pure("ADD", values, replace(binding, registry=registry))
         self.assertEqual(execute_pure("ADD", values, binding).state,
                          ValueState.UNSUPPORTED)
+
+    def test_operator_requires_released_source_grant_and_numeric_contract(self):
+        binding, values = _case(("Number", 2), ("Number", 3))
+        self.assertEqual(execute_pure("ADD", values, binding).value, 5)
+        missing = replace(
+            binding.frontier,
+            grants=tuple(grant for grant in binding.frontier.grants
+                         if grant.source_handle != "source:operator:ADD"))
+        with self.assertRaises(BilqisError) as caught:
+            execute_pure("ADD", values, replace(binding, frontier=missing))
+        self.assertEqual(caught.exception.context["reason"],
+                         "BAMF_OPERATOR_SOURCE_GRANT_MISSING")
+        original = released_numeric.OPERATIONS["ADD"]
+        with patch.dict(released_numeric.OPERATIONS, {
+                "ADD": replace(original, contract_sha256="0" * 64)}):
+            with self.assertRaises(BilqisError) as caught:
+                execute_pure("ADD", values, binding)
+        self.assertEqual(caught.exception.context["reason"],
+                         "BAMF_OPERATOR_SOURCE_CONTRACT_DRIFT")
 
     def test_numeric_domain_requires_exact_source_grant_and_version(self):
         binding, values = _case(("Number", 2), ("Number", 3))

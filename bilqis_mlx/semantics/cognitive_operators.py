@@ -22,6 +22,7 @@ from .context_eligibility import (
 from .core import Signature
 from .domains import FiniteDomain, ValueCodec, contract_digest
 from .frame_schema import BindingState, ConceptRef, FrameInstance
+from . import numeric as released_numeric
 
 
 VALUE_SCHEMA = "bilqis.cognitive-typed-value/v1"
@@ -176,6 +177,9 @@ class CognitiveOperatorSpec:
     applicability: str
     version: str
     implementation_sha256: str
+    semantic_release: str
+    source_reference: str
+    source_contract_sha256: str
     effect: str = "PURE"
     schema_version: str = OPERATOR_SCHEMA
 
@@ -186,6 +190,12 @@ class CognitiveOperatorSpec:
                 or not isinstance(self.version, str) or not self.version
                 or not isinstance(self.implementation_sha256, str)
                 or not _SHA.fullmatch(self.implementation_sha256)
+                or not isinstance(self.semantic_release, str)
+                or not _SHA.fullmatch(self.semantic_release)
+                or not isinstance(self.source_reference, str)
+                or not self.source_reference
+                or not isinstance(self.source_contract_sha256, str)
+                or not _SHA.fullmatch(self.source_contract_sha256)
                 or self.effect != "PURE"
                 or self.schema_version != OPERATOR_SCHEMA):
             _invalid("BAMF_OPERATOR_SPEC_INVALID")
@@ -218,8 +228,14 @@ class OperatorRegistry:
                 if (declared is None
                         or spec.signature != Signature(declared[0], declared[1])
                         or spec.applicability != declared[2]
-                        or spec.version != "v1"):
+                        or spec.version != "v1"
+                        or spec.semantic_release != self.semantic_release):
                     _invalid("BAMF_OPERATOR_DECLARATION_DRIFT")
+                source_reference, source_digest = _source_contract(
+                    operator_id, spec.signature, spec.version)
+                if (spec.source_reference != source_reference
+                        or spec.source_contract_sha256 != source_digest):
+                    _invalid("BAMF_OPERATOR_SOURCE_CONTRACT_DRIFT")
                 if spec.implementation_sha256 != _implementation_digest(operator_id):
                     _invalid("BAMF_OPERATOR_IMPLEMENTATION_DRIFT")
                 return spec
@@ -371,7 +387,8 @@ def _compute(operator_id: str, values: tuple[object, ...],
             return _UNSUPPORTED
         occupant = next((item for item in frame.bindings
                          if item.key == (role, index)), None)
-        if occupant is None or occupant.state is BindingState.UNKNOWN:
+        if (occupant is None or occupant.state in (
+                BindingState.UNKNOWN, BindingState.ALTERNATIVES)):
             return _UNKNOWN
         if occupant.state is BindingState.NONE:
             return _NONE
@@ -425,8 +442,13 @@ def _compute(operator_id: str, values: tuple[object, ...],
         return Duration(quantity.numerator, quantity.denominator, target)
     if operator_id == "COUNT":
         return len(values[0])
-    if operator_id == "SUCC":
-        return values[0] + 1
+    if operator_id in released_numeric.OPERATIONS and operator_id != "COUNT":
+        try:
+            expression = released_numeric.calculate(
+                operator_id, *(released_numeric.number(value) for value in values))
+            return released_numeric.evaluate(expression)
+        except ValueError:
+            return _UNSUPPORTED
     if operator_id in {"ADD", "SUB", "MUL", "DIV", "MOD", "EQ", "LT", "LE"}:
         left, right = values
         if operator_id == "ADD":
@@ -453,6 +475,35 @@ def _implementation_digest(operator_id: str) -> str:
     return hashlib.sha256(
         operator_id.encode("utf-8") + b"\0" + Path(__file__).read_bytes()
     ).hexdigest()
+
+
+def _source_contract(
+    operator_id: str, signature: Signature, version: str,
+) -> tuple[str, str]:
+    """Existing released numeric ABI or a separately grant-required formal law."""
+    operation = released_numeric.OPERATIONS.get(operator_id)
+    if operation is not None and operation.signature == signature:
+        return (
+            "bilqis_mlx.semantics.numeric:" + operation.symbol,
+            operation.contract_sha256,
+        )
+    return (
+        "public-formal-law:" + operator_id,
+        contract_digest({
+            "authority": "PUBLIC_FORMAL_LAW_REQUIRES_SOURCE_GRANT",
+            "operator_id": operator_id,
+            "signature": signature,
+            "version": version,
+        }),
+    )
+
+
+def operator_grant_digest(spec: CognitiveOperatorSpec) -> str:
+    """Evidence a source authority must explicitly admit for this operator."""
+    return contract_digest({
+        "schema": "bilqis.cognitive-operator-grant/v1",
+        "operator": spec,
+    })
 
 
 _DECLARATIONS = (
@@ -487,10 +538,14 @@ _DECLARATIONS = (
 def default_registry(semantic_release: str) -> OperatorRegistry:
     return OperatorRegistry(
         semantic_release,
-        tuple(CognitiveOperatorSpec(
-            operator_id, Signature(inputs, output), applicability, "v1",
-            _implementation_digest(operator_id),
-        ) for operator_id, inputs, output, applicability in _DECLARATIONS),
+        tuple(
+            CognitiveOperatorSpec(
+                operator_id, Signature(inputs, output), applicability, "v1",
+                _implementation_digest(operator_id), semantic_release,
+                *_source_contract(operator_id, Signature(inputs, output), "v1"),
+            )
+            for operator_id, inputs, output, applicability in _DECLARATIONS
+        ),
     )
 
 
@@ -505,6 +560,11 @@ def execute_pure(
     if any(not isinstance(item, TypedValue) for item in typed_inputs):
         _invalid("BAMF_OPERATOR_INPUT_NOT_TYPED")
     spec = binding.registry.resolve(operator_id)
+    _check_grant(
+        "source:operator:" + operator_id,
+        operator_grant_digest(spec),
+        binding,
+    )
     if tuple(item.type_name for item in typed_inputs) != spec.signature.inputs:
         _invalid("BAMF_OPERATOR_SIGNATURE_MISMATCH")
     _authorize_inputs(typed_inputs, binding)
