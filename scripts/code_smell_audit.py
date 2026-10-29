@@ -14,9 +14,9 @@ from pathlib import Path
 import subprocess
 
 try:
-    from quality.change_scope import effective_base
+    from quality.change_scope import scoped_name_status
 except ModuleNotFoundError:  # dynamic test import from repository root
-    from scripts.quality.change_scope import effective_base
+    from scripts.quality.change_scope import scoped_name_status
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -95,7 +95,7 @@ def inspect_source(path: str, source: str) -> list[Finding]:
 
 
 def _paths(user_paths):
-    if user_paths:
+    if user_paths is not None:
         return sorted({(ROOT / name).resolve() for name in user_paths
                        if str((ROOT/name).resolve()).startswith(str(ROOT.resolve()) + '/')})
     return sorted(path for name in DEFAULT_DIRS for path in (ROOT/name).rglob('*.py')
@@ -150,10 +150,8 @@ def _staged_records():
 
 
 def _changed_records(base_ref):
-    merge_base=effective_base(ROOT,base_ref)
-    result=subprocess.run(['git','diff','--name-status','-M','--diff-filter=ACMR',merge_base,'HEAD'],
-                          cwd=ROOT,check=True,text=True,stdout=subprocess.PIPE)
-    return merge_base,_records_from_name_status(result.stdout)
+    merge_base,scoped=scoped_name_status(ROOT,base_ref,diff_filter='ACMR')
+    return merge_base,_records_from_name_status(scoped)
 
 
 def _base_findings(merge_base,records):
@@ -188,7 +186,7 @@ def main(argv=None):
         scoped=[new for _,new in changed]
     else:
         scoped=args.paths
-    paths=_paths(scoped)
+    paths=_paths(scoped if args.staged or args.changed_from else (args.paths or None))
     found=audit(paths)
     if args.write_baseline:
         if args.staged or args.changed_from or args.paths:

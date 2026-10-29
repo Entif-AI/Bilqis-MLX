@@ -44,6 +44,10 @@ class ChangeScopeTests(unittest.TestCase):
         subprocess.run(["git", "merge", "--no-ff", "-qm", "adopt governance", "main"], cwd=self.root, check=True)
         self.commit_file("post.py", "VALUE = 2\n", "post adoption")
         self.assertEqual(change_scope.effective_base(self.root, main_head), legacy)
+        _, scoped = change_scope.scoped_name_status(self.root, main_head)
+        self.assertIn("post.py", scoped)
+        self.assertNotIn("legacy.py", scoped)
+        self.assertNotIn("main.txt", scoped)
 
     def test_branch_created_after_adoption_uses_normal_merge_base(self):
         adoption = self.commit_file("governance.txt", "rule\n", "governance")
@@ -52,6 +56,46 @@ class ChangeScopeTests(unittest.TestCase):
         subprocess.run(["git", "switch", "-qc", "feature"], cwd=self.root, check=True)
         self.commit_file("feature.py", "VALUE = 3\n", "feature")
         self.assertEqual(change_scope.effective_base(self.root, main_head), main_head)
+        _, scoped = change_scope.scoped_name_status(self.root, main_head)
+        self.assertIn("feature.py", scoped)
+
+    def test_later_base_merge_does_not_make_imported_file_an_encounter(self):
+        subprocess.run(["git", "branch", "feature", self.root_sha], cwd=self.root, check=True)
+        adoption = self.commit_file("governance.txt", "rule\n", "governance")
+        change_scope.GOVERNANCE_ADOPTION_COMMIT = adoption
+        subprocess.run(["git", "switch", "-q", "feature"], cwd=self.root, check=True)
+        self.commit_file("legacy.py", "VALUE = 1\n", "legacy feature")
+        subprocess.run(["git", "merge", "--no-ff", "-qm", "adopt governance", "main"], cwd=self.root, check=True)
+        self.commit_file("feature.py", "VALUE = 2\n", "post adoption feature")
+        subprocess.run(["git", "switch", "-q", "main"], cwd=self.root, check=True)
+        main_head = self.commit_file("base_only.py", "VALUE = 9\n", "base only")
+        subprocess.run(["git", "switch", "-q", "feature"], cwd=self.root, check=True)
+        subprocess.run(["git", "merge", "--no-ff", "-qm", "sync base", "main"], cwd=self.root, check=True)
+        _, scoped = change_scope.scoped_name_status(self.root, main_head)
+        self.assertIn("feature.py", scoped)
+        self.assertNotIn("base_only.py", scoped)
+
+    def test_custom_merge_resolution_remains_in_scope(self):
+        (self.root / "shared.py").write_text("VALUE = 'root'\n")
+        subprocess.run(["git", "add", "shared.py"], cwd=self.root, check=True)
+        subprocess.run(["git", "commit", "-qm", "shared root"], cwd=self.root, check=True)
+        common = git(self.root, "rev-parse", "HEAD")
+        subprocess.run(["git", "branch", "feature", common], cwd=self.root, check=True)
+        adoption = self.commit_file("governance.txt", "rule\n", "governance")
+        change_scope.GOVERNANCE_ADOPTION_COMMIT = adoption
+        subprocess.run(["git", "switch", "-q", "feature"], cwd=self.root, check=True)
+        self.commit_file("shared.py", "VALUE = 'legacy feature'\n", "legacy shared edit")
+        subprocess.run(["git", "merge", "--no-ff", "-qm", "adopt governance", "main"], cwd=self.root, check=True)
+        subprocess.run(["git", "switch", "-q", "main"], cwd=self.root, check=True)
+        main_head = self.commit_file("shared.py", "VALUE = 'main later'\n", "base shared edit")
+        subprocess.run(["git", "switch", "-q", "feature"], cwd=self.root, check=True)
+        merge = subprocess.run(["git", "merge", "--no-ff", "main"], cwd=self.root, text=True, capture_output=True)
+        self.assertNotEqual(merge.returncode, 0)
+        (self.root / "shared.py").write_text("VALUE = 'custom resolution'\n")
+        subprocess.run(["git", "add", "shared.py"], cwd=self.root, check=True)
+        subprocess.run(["git", "commit", "-qm", "resolve shared"], cwd=self.root, check=True)
+        _, scoped = change_scope.scoped_name_status(self.root, main_head)
+        self.assertIn("shared.py", scoped)
 
 
 if __name__ == "__main__":
