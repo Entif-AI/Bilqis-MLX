@@ -69,18 +69,28 @@ runtime module; unrelated inherited findings remain.
 
 ## Boundaries and disposition
 
-**SCOPED_CANDIDATE_PENDING_INDEPENDENT_EGM_AND_INTEGRATION.**
+**SCOPED_EGM_PASS_INTEGRATION_PENDING.**
 Independent EGM at `f612721` found two Majors: a caller could omit an
 otherwise eligible frame and shrink Fp, and class0 had no trainable
 routing-head path. Both are repaired in the current candidate:
 A05 prefix recompilation plus a separately source-granted compiled
 inventory digest now bind the complete closure inventory;
 `routing_logits_from_state` trains the three-class head without
-altering B06.1's exact zero-pass identity. Fresh immutable-head
-readback remains pending, so no EGM PASS is claimed.
+altering B06.1's exact zero-pass identity. Both repairs were
+subsequently independently read back as described below.
 An intermediate review at `40c6b16` correctly showed that recompiling
 an ungranted caller-truncated AST was insufficient. The additional
 prefix-inventory source grant is the follow-up repair.
+
+Independent Goldfish readback at immutable pushed
+`9609256fe536d4f512f5a700a63212489d260ea1` returned
+**EGM PASS, zero remaining Blockers/Majors**. The reviewer executed
+the truncated-AST and source-grant adversaries, including revoked,
+forged-digest, stale-epoch, future-observed and future-effective
+grants, and confirmed that 66/66 affected tests pass. It performed
+no edits. The source owner must still issue the actual prefix
+inventory grant in production; this PASS does not admit a live
+source, a retained neural generation or the B06 parent.
 This is not the public `refine_selected` source/backbone assembly.
 B03.3/#444 still awaits A05 child-prefix revalidation and B02
 child-binding source factors; B05/B11 must qualify real hidden-state
