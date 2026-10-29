@@ -1532,5 +1532,31 @@
       ],
       "execution_role": "integration_parent_after_recursive_decomposition"
     }
+  ],
+  "shared_file_queues": [
+    {
+      "path": "bilqis_mlx/learning/student_ops.py",
+      "writer_lane": "C",
+      "participants": ["B11", "B12", "C02"],
+      "proposal_lanes": ["B"]
+    },
+    {
+      "path": "bilqis_mlx/runtime/mlx_checkpoint.py",
+      "writer_lane": "C",
+      "participants": ["B13"],
+      "proposal_lanes": ["B"]
+    },
+    {
+      "path": "bilqis_mlx/runtime/checkpoints.py",
+      "writer_lane": "C",
+      "participants": ["B13"],
+      "proposal_lanes": ["B"]
+    },
+    {
+      "path": "bilqis_mlx/runtime/boundary_commit.py",
+      "writer_lane": "C",
+      "participants": ["B13"],
+      "proposal_lanes": ["B"]
+    }
   ]
 }

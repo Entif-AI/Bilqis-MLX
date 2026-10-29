@@ -8,8 +8,12 @@ proposal -> delivery -> outcome -> cost record.
 from __future__ import annotations
 
 import math
+from dataclasses import dataclass, replace
+import json
+import hashlib
+from bilqis_mlx.errors import ErrorBus, SCHOOL
 
-from .teacher_strategy_population import effective_policy_key
+from .teacher_strategy_population import effective_policy_key, BAMF_SUCCESSOR_SELECTION
 
 
 SCHEMA = "bilqis.teacher-vnext-canary/factory-replay-v1"
@@ -49,7 +53,9 @@ def _aggregate(teacher, *, capability, phase, curriculum_scope,
     strategies = teacher.get("strategies", {})
     contexts = teacher.get("causal_experiment", {}).get("contexts", {})
     allowed = set(allowed_effective_policy_keys)
-    for level in ("EXACT", "CAPABILITY", "GRADE_PHASE", "GRADE"):
+    levels = (("EXACT", "CAPABILITY") if teacher.get("selection_contract") == BAMF_SUCCESSOR_SELECTION
+              else ("EXACT", "CAPABILITY", "GRADE_PHASE", "GRADE"))
+    for level in levels:
         rows = {}
         for context_key, scope in contexts.items():
             parsed = _parse_context(context_key)
@@ -175,3 +181,152 @@ def select_canary(teacher: dict, *, capability: str, phase: str,
         "acquisition_score": acquisition,
         "actual_authority_changed": True,
     }
+
+
+
+
+@dataclass(frozen=True)
+class TeacherEpoch:
+    prior_region: str
+    current_region: str
+    student_sha256: str
+    replay_head: str
+    prior_json: str
+    current_json: str
+    schema: str = "bilqis.bamf.teacher-epoch/v1"
+
+    def teacher(self) -> dict:
+        return json.loads(self.current_json)
+
+    def prior_teacher(self) -> dict:
+        return json.loads(self.prior_json)
+
+
+def _fresh_causal_epoch(student):
+    from bilqis_mlx.learning.learning_experiment import _channel
+    holder = {"selection_contract": BAMF_SUCCESSOR_SELECTION}
+    channel = _channel(holder)
+    channel['student_policy_epoch'] = {'student_sha256': student, 'contexts': {}, 'unretained_contexts': {}}
+    return channel
+
+
+def bind_teacher_successor(prior_teacher, new_student, replay_contract) -> TeacherEpoch:
+    """Preserve replay priors while isolating a fresh learner's causal counters."""
+    def invalid(reason):
+        ErrorBus.raise_(SCHOOL.BAMF_TEACHER.INVALID, reason=reason)
+    if not all(isinstance(value, dict) for value in (prior_teacher, new_student, replay_contract)):
+        invalid('BINDING_RECORD_REQUIRED')
+    if (new_student.get('schema') != 'bilqis.bamf.student-reference/v1' or
+            replay_contract.get('schema') != 'bilqis.bamf.teacher-binding/v1'):
+        invalid('BINDING_SCHEMA_INVALID')
+    student = new_student.get('student_sha256')
+    region, prior_region = new_student.get('region'), replay_contract.get('prior_region')
+    head = replay_contract.get('source_head')
+    if (not isinstance(student, str) or len(student) != 64 or any(c not in '0123456789abcdef' for c in student)
+            or not isinstance(region, str) or not region or not isinstance(prior_region, str) or not prior_region
+            or region == prior_region or head != 'd21797e72365bf93ea7cad3a4ef9020ec9817f23'
+            or not isinstance(prior_teacher.get('strategies'), dict) or not prior_teacher['strategies']):
+        invalid('IDENTITY_OR_REPLAY_INVALID')
+    try:
+        prior_json = json.dumps(prior_teacher, sort_keys=True, allow_nan=False)
+        current = json.loads(prior_json)
+    except (ValueError, TypeError):
+        invalid('TEACHER_NOT_SERIALIZABLE')
+    channel = current.get('causal_experiment', {})
+    if not isinstance(channel, dict) or not isinstance(channel.get('student_policy_epoch', {}), dict):
+        invalid('TEACHER_RECORD_INVALID')
+    if any(not isinstance(policy, dict) or not policy for policy in current['strategies'].values()):
+        invalid('STRATEGY_RECORD_INVALID')
+    for policy in current['strategies'].values():
+        try:
+            effective_policy_key(policy)
+        except (ValueError, TypeError):
+            invalid('STRATEGY_RECORD_INVALID')
+    prior_checkpoint = channel.get('student_policy_epoch', {}).get('student_sha256')
+    if prior_checkpoint == student:
+        invalid('SUCCESSOR_MUST_BE_DISTINCT')
+    current['selection_contract'] = BAMF_SUCCESSOR_SELECTION
+    current['grade_stats'] = {}
+    current['causal_experiment'] = _fresh_causal_epoch(student)
+    return TeacherEpoch(prior_region, region, student, head, prior_json,
+                        json.dumps(current, sort_keys=True, allow_nan=False))
+
+
+def refresh_teacher_region(epoch: TeacherEpoch, *, bank_identity: str,
+                           plasticity_identity: str) -> TeacherEpoch:
+    """Archive region evidence when accepted bank or plasticity identity changes."""
+    if (not isinstance(epoch, TeacherEpoch) or not isinstance(bank_identity, str) or not bank_identity
+            or not isinstance(plasticity_identity, str) or not plasticity_identity):
+        ErrorBus.raise_(SCHOOL.BAMF_TEACHER.INVALID, reason='REGION_IDENTITY_INVALID')
+    binding = {'student_sha256': epoch.student_sha256, 'bank_identity': bank_identity,
+               'plasticity_identity': plasticity_identity}
+    region = hashlib.sha256(json.dumps(binding, sort_keys=True).encode()).hexdigest()
+    if region == epoch.current_region:
+        return epoch
+    teacher = epoch.teacher()
+    teacher.setdefault('bamf_region_history', []).append({
+        'region': epoch.current_region, 'evidence': teacher.get('causal_experiment', {}),
+        'grade_stats': teacher.get('grade_stats', {}),
+    })
+    teacher['grade_stats'] = {}
+    teacher['causal_experiment'] = _fresh_causal_epoch(epoch.student_sha256)
+    teacher['bamf_region_binding'] = binding
+    return replace(epoch, current_region=region,
+                   current_json=json.dumps(teacher, sort_keys=True, allow_nan=False))
+
+
+def historical_mentor_advice(mx, mentor, rows, source_context, *, purpose='READ_ONLY_INFERENCE'):
+    """Use the existing v1 evaluator with its own geometry and source-gated votes."""
+    from copy import deepcopy
+    from types import MappingProxyType
+    from bilqis_mlx.learning.student_ops import _predictions, _compatible_graphs
+    from bilqis_mlx.runtime.source_execution import SourceExecutionContext
+    from bilqis_mlx.factory.generation import runtime_adapter_for_release
+    from bilqis_mlx.factory.adapters import validate_instructional_constituents
+    def invalid(reason):
+        ErrorBus.raise_(SCHOOL.BAMF_TEACHER.INVALID, reason=reason)
+    if (purpose != 'READ_ONLY_INFERENCE' or not isinstance(source_context, SourceExecutionContext)
+            or not isinstance(mentor, dict) or not isinstance(rows, (tuple, list)) or not rows):
+        invalid('READ_ONLY_COMPATIBILITY_REQUIRED')
+    release = source_context.release
+    release.verify()
+    release.verify_semantic_catalog(source_context.graph)
+    graph = mentor.get('graph')
+    if (not isinstance(graph, dict) or not graph.get('tokens')
+            or not isinstance(mentor.get('weights'), dict) or not isinstance(mentor.get('config'), dict)
+            or not isinstance(mentor.get('answer_ids'), (list, tuple))):
+        invalid('MENTOR_REFERENCE_INVALID')
+    try:
+        compatible = _compatible_graphs(graph, source_context.graph)
+    except (KeyError, TypeError):
+        invalid('MENTOR_SOURCE_BINDING_INVALID')
+    if not compatible:
+        invalid('MENTOR_SOURCE_BINDING_INVALID')
+    visible = []
+    for row in rows:
+        capability = row.get('capability')
+        execution = release.execution_plan.capability_map.get(capability)
+        if execution is None:
+            invalid('MENTOR_SCOPE_INVALID')
+        adapter = runtime_adapter_for_release(source_context.source_root, source_context.graph, release,
+                                              source_context.source_registry, execution)
+        if adapter.check(row, source_root=source_context.source_root, graph=source_context.graph,
+                         course=release.curriculum) is not True:
+            invalid('MENTOR_GOLD_UNVERIFIED')
+        validate_instructional_constituents(row, curriculum=release.curriculum, plan=release.execution_plan,
+                                            capability=capability, adapter=adapter)
+        tokens = row.get('tokens')
+        if not isinstance(tokens, (list, tuple)) or not tokens or any(type(t) is not int or not 0 <= t < len(graph['tokens']) for t in tokens):
+            invalid('MENTOR_INPUT_OUTSIDE_ABI')
+        kind = row.get('answer_kind', 'binary')
+        item = {'id': row['id'], 'capability': capability, 'tokens': list(tokens), 'answer_kind': kind}
+        if kind == 'binary':
+            # The historical batch builder requires a label even for inference;
+            # its returned labels are discarded. Never pass the actual gold.
+            item['gold'] = 'FALSE'
+        visible.append(item)
+    predictions = _predictions(mx, MappingProxyType(mentor['weights']), visible,
+                               deepcopy(mentor['config']), tuple(mentor['answer_ids']))
+    if not isinstance(predictions, dict) or set(predictions) != {row['id'] for row in rows}:
+        invalid('MENTOR_PREDICTIONS_INVALID')
+    return {row['id']: predictions[row['id']] for row in rows if predictions[row['id']] == row['gold']}

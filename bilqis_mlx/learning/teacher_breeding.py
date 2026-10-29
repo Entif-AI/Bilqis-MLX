@@ -8,7 +8,7 @@ import math
 from .teacher_strategy_population import (
     active_effective_strategy_keys, checkpoint_active_effective_strategy_keys,
     effective_policy_features, effective_policy_key, effective_strategy_inventory,
-    historical_policy_mean,
+    historical_policy_mean, BAMF_SUCCESSOR_SELECTION,
 )
 
 
@@ -201,6 +201,8 @@ def _retained_parent_candidates(teacher: dict, capability: str,
         ("GRADE_DIAGNOSTIC_RETAINED", False, True),
         ("GRADE_RETAINED", False, False),
     )
+    if teacher.get("selection_contract") == BAMF_SUCCESSOR_SELECTION:
+        levels = tuple(level for level in levels if level[1])
     for basis, exact_capability, diagnostic_only in levels:
         candidates = []
         for context_key, scope in contexts.items():
@@ -232,7 +234,7 @@ def _retained_parent_candidates(teacher: dict, capability: str,
             for _rank, _novelty, policy_key in sorted(candidates, reverse=True):
                 yield policy_key, basis
 
-    local = teacher.get("grade_stats", {}).get(grade, {})
+    local = {} if teacher.get("selection_contract") == BAMF_SUCCESSOR_SELECTION else teacher.get("grade_stats", {}).get(grade, {})
     grade_candidates = [
         (historical_policy_mean(teacher, grade, key), key)
         for key, info in local.items()
@@ -462,6 +464,8 @@ def filter_active_effective(teacher: dict, *, grade: str, capability: str,
         if not isinstance(birth, dict):
             return True
         if birth.get("proven_retained"):
+            if teacher.get("selection_contract") == BAMF_SUCCESSOR_SELECTION:
+                return birth.get("curriculum_scope") == curriculum_scope
             return birth.get("origin_grade") == grade
         if birth.get("curriculum_scope") != curriculum_scope:
             return False
