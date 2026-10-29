@@ -40,7 +40,7 @@ class CapabilityHistoryTests(unittest.TestCase):
             retain_candidate(PARENT, CANDIDATE, translated)
         with self.assertRaises(BilqisError):
             FrozenHistory(original + b" ", frozen.sha256)
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex((TypeError, ValueError), r"fresh_learning.*init=False"):
             replace(translated, fresh_learning=True)
 
     def test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed(self):
