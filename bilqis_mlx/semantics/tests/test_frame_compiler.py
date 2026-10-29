@@ -17,7 +17,7 @@ from bilqis_mlx.semantics.frame_codec import (
 )
 from bilqis_mlx.semantics.frame_compiler import (
     FrameCompilerConfig, PositionKind, SourceAtom, StreamingAST,
-    compile_prefix, reconstruct,
+    compile_prefix, compile_prefix_rows, reconstruct,
 )
 from bilqis_mlx.semantics.frame_schema import (
     AtomicFrame, ChildFrameRef, ConceptRef, FrameSchema, FrameTree,
@@ -203,6 +203,88 @@ class FrameCompilerTests(TestCase):
         self.assertEqual(len(left.positions), 5)
         self.assertEqual(len(right.positions), 3)
         self.assertNotEqual(left.cache_key, right.cache_key)
+
+    def test_padded_batch_rows_cannot_expose_other_row_or_future_content(self):
+        ast, config = _case()
+        other = StreamingAST(
+            "synthetic:second-row",
+            tuple(SourceAtom(i, f"other:{i}", f"source:second:{i}")
+                  for i in range(3)), ())
+        other_config = replace(
+            config, approved=None,
+            task=replace(config.task, causal_prefix_end=3))
+        batch = compile_prefix_rows((
+            (ast, 8, config), (other, 3, other_config)), RELEASE)
+        self.assertEqual(len(batch.rows), 2)
+        self.assertEqual(tuple(map(len, batch.padded_positions)), (9, 9))
+        self.assertEqual(batch.padding_mask[0], (True,) * 9)
+        self.assertEqual(
+            batch.padding_mask[1], (True,) * 3 + (False,) * 6)
+        self.assertEqual(batch.padded_positions[1][3:], (None,) * 6)
+        self.assertEqual(
+            tuple(position.atom.token
+                  for position in batch.padded_positions[1][:3]),
+            ("other:0", "other:1", "other:2"))
+        self.assertEqual(batch.rows[1].maps.role_access, ())
+        self.assertEqual(batch.rows[1].maps.prefix_ends, (0, 1, 2, 3))
+        changed_first = replace(
+            ast, atoms=tuple(
+                replace(atom, token=atom.token + ":changed")
+                for atom in ast.atoms))
+        altered = compile_prefix_rows((
+            (changed_first, 8, config), (other, 3, other_config)), RELEASE)
+        self.assertEqual(altered.rows[1], batch.rows[1])
+        self.assertEqual(altered.padded_positions[1],
+                         batch.padded_positions[1])
+
+    def test_exact_source_maps_role_access_expansion_and_prefix_ends(self):
+        ast, config = _case()
+        partial = compile_prefix(ast, 7, RELEASE, config).maps
+        self.assertEqual(partial.prefix_ends, tuple(range(8)))
+        self.assertEqual(partial.role_access, ())
+        self.assertEqual(partial.expansion_handles, ())
+        complete = compile_prefix(ast, 8, RELEASE, config)
+        maps = complete.maps
+        self.assertEqual(maps.prefix_ends, (
+            0, 1, 2, 3, 4, 5, 6, 7, 9))
+        self.assertEqual(len(maps.position_to_source), 9)
+        self.assertEqual(
+            tuple(item.source_reference
+                  for item in maps.position_to_source[:8]),
+            tuple(atom.source_reference for atom in ast.atoms))
+        self.assertEqual(
+            maps.position_to_source[8].source_span, SourceSpan(0, 8))
+        self.assertEqual(
+            maps.source_to_positions[0], (0, 8))
+        self.assertEqual(
+            maps.source_to_positions[7], (7, 8))
+        self.assertEqual(maps.padding_mask, (True,) * 9)
+        self.assertEqual(
+            tuple(item.role_id for item in maps.role_access),
+            ("slot0", "slot1", "slot2", "slot3"))
+        self.assertEqual(
+            tuple(item.abi_indices for item in maps.role_access),
+            ((0,), (1,), (2,), (3,)))
+        self.assertEqual(
+            tuple(item.source_references for item in maps.role_access),
+            tuple((f"source:entity:{i}",) for i in range(4)))
+        self.assertEqual(
+            maps.expansion_handles[0].frame_handle, "frame:quad:0")
+        self.assertEqual(
+            maps.scope_boundaries[0].end_position, 9)
+        self.assertEqual(
+            maps.scope_boundaries[1].scope, "fixture")
+
+    def test_policy_version_changes_compiler_digest_even_without_frames(self):
+        ast, config = _case()
+        original = compile_prefix(ast, 7, RELEASE, config)
+        changed = compile_prefix(
+            ast, 7, RELEASE, replace(
+                config, policy=replace(config.policy, policy_epoch=2)))
+        self.assertNotEqual(original.cache_key, changed.cache_key)
+        self.assertEqual(original.positions, changed.positions)
+        self.assertEqual(original.policy_version[1], 1)
+        self.assertEqual(changed.policy_version[1], 2)
 
     def test_every_four_member_prefix_preserves_only_visible_atoms(self):
         ast, config = _case()

@@ -90,3 +90,13 @@ equivalence claim. A05.2/A05.3 and A05 parent
 integration remain open. No optimizer/student state,
 source-rights promotion, live training, unified merge
 or main merge occurred.
+
+## Successor interface note
+
+A05.2 #409 extends this same branch-local compiler
+with policy-versioned maps and isolated batch padding.
+Its `CompiledFrameBatch` schema advances to v2;
+the v1 schema above remains the exact historical
+contract at the A05.1 implementation head. See
+`docs/evidence/bamf/A05.2/receipt.md` for the
+successor contract and tests.
