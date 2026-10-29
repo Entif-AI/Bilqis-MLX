@@ -17,15 +17,18 @@ from ..semantics.cognitive_dependencies import (
     ArtifactNode, DependencyIndex, DependencyKind, DependencyRef,
 )
 from .atlas_revalidation import (
-    CorrectionEvent, RequalificationLedger,
-    RequalificationUpdate, RevalidationQueue, RevalidationTask,
+    CorrectionEvent, SourceAuthorityRegistry,
+    RevalidationQueue, RevalidationTask,
+)
+from .atlas_requalification import (
+    RequalificationLedger, RequalificationUpdate,
     mark_affected_capabilities,
 )
 
 
 TEMPORAL_EVENT_SCHEMA = "bilqis.c09.temporal-event/v1"
 TEMPORAL_PROJECTION_SCHEMA = "bilqis.c09.temporal-projection/v1"
-REMEDIATION_RECEIPT_SCHEMA = "bilqis.c09.remediation-receipt/v1"
+REMEDIATION_RECEIPT_SCHEMA = "bilqis.c09.remediation-receipt/v2"
 DERIVED_CLAIM_SCHEMA = "bilqis.c09.derived-claim/v1"
 PROCESS_FAULT_SCHEMA = "bilqis.c09.process-fault/v1"
 PROCESS_FAULT_RESULT_SCHEMA = "bilqis.c09.process-fault-result/v1"
@@ -223,7 +226,8 @@ def project_as_of(
         actor_id=actor_id, as_of=as_of, status=status,
         source_event_ids=active_ids, fact_digest=fact,
         time_dependency=DependencyRef(
-            DependencyKind.TIME, "time:asof:" + actor_id + ":" + time_key),
+            DependencyKind.TIME,
+            "time:asof:" + str(len(actor_id)) + ":" + actor_id + ":" + time_key),
     )
 
 
@@ -234,7 +238,9 @@ def bind_as_of_dependency(
     if (not isinstance(node, ArtifactNode)
             or not isinstance(projection, TemporalProjection)):
         _invalid("BAMF_C09_TEMPORAL_BINDING_INVALID")
-    actor_prefix = "time:asof:" + projection.actor_id + ":"
+    actor_prefix = (
+        "time:asof:" + str(len(projection.actor_id))
+        + ":" + projection.actor_id + ":")
     if not projection.time_dependency.key.startswith(actor_prefix):
         _invalid("BAMF_C09_TEMPORAL_BINDING_INVALID")
     dependencies = tuple(sorted({
@@ -257,6 +263,7 @@ class RemediationReceipt:
     remediation_id: str
     correction_event_id: str
     correction_receipt_sha256: str
+    original_actor_id: str
     original_source_event_id: str
     original_source_time: int
     superseded_fact_digest: str
@@ -270,7 +277,7 @@ class RemediationReceipt:
     def __post_init__(self) -> None:
         if (not all(_name(item) for item in (
                     self.remediation_id, self.correction_event_id,
-                    self.original_source_event_id))
+                    self.original_actor_id, self.original_source_event_id))
                 or not all(_digest(item) for item in (
                     self.correction_receipt_sha256,
                     self.superseded_fact_digest,
@@ -363,6 +370,7 @@ def escalate_stale_replay(
     correction: CorrectionEvent,
     index: DependencyIndex,
     ledger: RequalificationLedger,
+    authority_registry: SourceAuthorityRegistry | None = None,
 ) -> ProcessFaultResult | None:
     """Escalate a repeated superseded fact only on its proven affected path."""
     if (not isinstance(remediation, RemediationReceipt)
@@ -371,6 +379,9 @@ def escalate_stale_replay(
             or not isinstance(index, DependencyIndex)
             or not isinstance(ledger, RequalificationLedger)):
         _invalid("BAMF_C09_PROCESS_FAULT_ARGUMENT_INVALID")
+    if not isinstance(authority_registry, SourceAuthorityRegistry):
+        _invalid("BAMF_C09_SOURCE_AUTHORITY_MISSING")
+    authority_registry.verify_correction(correction)
     if (remediation.correction_event_id != correction.event_id
             or remediation.correction_receipt_sha256
             != correction.source_receipt_sha256):
@@ -386,9 +397,8 @@ def escalate_stale_replay(
             _invalid("BAMF_C09_DERIVED_PATH_INVALID")
     if (remediation.status is not RemediationStatus.COMPLETED
             or claim.observed_at <= remediation.completed_at
+            or claim.actor_id != remediation.original_actor_id
             or claim.source_time != remediation.original_source_time
-            or claim.source_receipt_sha256
-            != remediation.superseded_source_receipt_sha256
             or claim.fact_digest != remediation.superseded_fact_digest):
         return None
     roots = set(remediation.affected_artifact_ids).intersection(

@@ -4,23 +4,83 @@ from __future__ import annotations
 from dataclasses import replace
 import unittest
 
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.semantics.cognitive_dependencies import (
     ArtifactKind, ArtifactNode, DependencyIndex, DependencyKind,
     DependencyRef,
 )
 from bilqis_mlx.runtime.atlas_revalidation import (
-    CapabilitySupport, CorrectionBranches, CorrectionEvent,
-    RequalificationLedger, RequalificationStatus,
-    RevalidatedArtifact, RevalidationFrontier, add_correction,
-    advance_revalidation, apply_correction, mark_affected_capabilities,
-    next_revalidation_task, read_artifact, revalidate_node,
+    CorrectionEvent, RevalidatedArtifact, RevalidationFrontier,
+    SourceAuthorityKey, SourceAuthorityRegistry,
+    advance_revalidation as _advance_revalidation,
+    apply_correction as _apply_correction,
+    next_revalidation_task, read_artifact,
+    revalidate_node as _revalidate_node,
+)
+from bilqis_mlx.runtime.atlas_requalification import (
+    CapabilitySupport, CorrectionBranches, RequalificationLedger,
+    RequalificationStatus, add_correction as _add_correction,
+    mark_affected_capabilities,
 )
 from bilqis_mlx.runtime.atlas_temporal_revalidation import (
     DerivedClaim, RemediationReceipt, RemediationStatus, TemporalEvent,
     TemporalEventKind, TemporalStatus, bind_as_of_dependency,
-    escalate_stale_replay, project_as_of,
+    escalate_stale_replay as _escalate_stale_replay, project_as_of,
 )
+
+_TEST_PRIVATE = Ed25519PrivateKey.from_private_bytes(bytes.fromhex("11" * 32))
+_TEST_PUBLIC = _TEST_PRIVATE.public_key().public_bytes(
+    Encoding.Raw, PublicFormat.Raw).hex()
+_SOURCE_OWNER = "synthetic:source-authority"
+AUTHORITY = SourceAuthorityRegistry((
+    SourceAuthorityKey(
+        _SOURCE_OWNER, _TEST_PUBLIC,
+        tuple(sorted(DependencyKind, key=lambda kind: kind.value)),
+        tuple(sorted((
+            "source:", "rights:", "fixture:", "time:asof:",
+            "feature:", "frame:", "motif:", "cache:",
+            "composition:", "capability:", "artifact:",
+            "a", "b", "c", "d", "feature", "frame",
+        )))),
+))
+
+
+def _sign_event(event: CorrectionEvent) -> CorrectionEvent:
+    return replace(
+        event, source_signature_hex=_TEST_PRIVATE.sign(
+            event.signing_bytes()).hex())
+
+
+def _sign_result(result: RevalidatedArtifact) -> RevalidatedArtifact:
+    return replace(
+        result, source_signature_hex=_TEST_PRIVATE.sign(
+            result.signing_bytes()).hex())
+
+
+def apply_correction(event, index):
+    return _apply_correction(event, index, AUTHORITY)
+
+
+def revalidate_node(node, frontier):
+    return _revalidate_node(node, frontier, AUTHORITY)
+
+
+def advance_revalidation(index, queue, transition):
+    return _advance_revalidation(index, queue, transition, AUTHORITY)
+
+
+def add_correction(branches, event, *, supersedes_event_ids=()):
+    return _add_correction(
+        branches, event, authority_registry=AUTHORITY,
+        supersedes_event_ids=supersedes_event_ids)
+
+
+def escalate_stale_replay(remediation, claim, correction, index, ledger):
+    return _escalate_stale_replay(
+        remediation, claim, correction, index, ledger, AUTHORITY)
 
 
 def _ref(kind: DependencyKind, key: str) -> DependencyRef:
@@ -39,27 +99,30 @@ def _node(
 
 
 def _event(dependency: DependencyRef) -> CorrectionEvent:
-    return CorrectionEvent(
+    return _sign_event(CorrectionEvent(
         event_id="correction:synthetic:1",
         dependency=dependency,
-        source_owner="synthetic:source-authority",
+        source_owner=_SOURCE_OWNER,
         source_receipt_sha256="f" * 64,
         old_evidence_sha256="a" * 64,
         new_evidence_sha256="b" * 64,
         source_time=570, effective_time=620, observed_at=625,
         recorded_at=630, reason_code="SOURCE_CORRECTION",
-    )
+        source_signature_hex="0" * 128,
+    ))
 
 
 def _result(node: ArtifactNode, *, digest: str = "a" * 64,
             eligible: bool = True) -> RevalidationFrontier:
     return RevalidationFrontier((
-        RevalidatedArtifact(
+        _sign_result(RevalidatedArtifact(
             artifact_id=node.artifact_id,
             immediate_dependencies=node.immediate_dependencies,
             content_digest=digest, eligible=eligible,
             source_receipt_sha256="c" * 64,
-        ),
+            source_owner=_SOURCE_OWNER,
+            source_signature_hex="0" * 128,
+        )),
     ))
 
 
@@ -84,6 +147,41 @@ def _chain() -> tuple[DependencyIndex, DependencyRef, DependencyRef]:
 
 
 class AtlasRevalidationTests(unittest.TestCase):
+    def test_forged_source_owner_and_revalidation_receipts_cannot_mutate_state(self):
+        index, source, _ = _chain()
+        event = _event(source)
+        with self.assertRaises(BilqisError) as caught:
+            _apply_correction(event, index)
+        self.assertEqual(caught.exception.context["reason"],
+                         "BAMF_C09_SOURCE_AUTHORITY_MISSING")
+        with self.assertRaises(BilqisError) as caught:
+            apply_correction(replace(
+                event, source_owner="unrelated:caller"), index)
+        self.assertEqual(caught.exception.context["reason"],
+                         "BAMF_C09_SOURCE_AUTHORITY_UNREGISTERED")
+        with self.assertRaises(BilqisError) as caught:
+            apply_correction(_sign_event(replace(
+                event, dependency=_ref(
+                    DependencyKind.SOURCE, "foreign:unowned"))), index)
+        self.assertEqual(caught.exception.context["reason"],
+                         "BAMF_C09_SOURCE_AUTHORITY_SCOPE_MISMATCH")
+        node = index.node("feature:alpha")
+        forged = replace(
+            _result(node).results[0],
+            content_digest="b" * 64, eligible=False,
+            source_receipt_sha256="3" * 64)
+        with self.assertRaises(BilqisError) as caught:
+            revalidate_node(node, RevalidationFrontier((forged,)))
+        self.assertEqual(caught.exception.context["reason"],
+                         "BAMF_C09_SOURCE_SIGNATURE_INVALID")
+        valid = revalidate_node(node, _result(node, digest="b" * 64))
+        with self.assertRaises(BilqisError) as caught:
+            advance_revalidation(
+                index, apply_correction(event, index),
+                replace(valid, new_content_digest="c" * 64))
+        self.assertEqual(caught.exception.context["reason"],
+                         "BAMF_C09_SOURCE_SIGNATURE_INVALID")
+
     def test_temporal_projection_distinguishes_plan_silence_negative_and_correction(self):
         planned = TemporalEvent(
             event_id="event:planned", actor_id="actor:alpha",
@@ -165,6 +263,18 @@ class AtlasRevalidationTests(unittest.TestCase):
                          refreshed.immediate_dependencies)
         self.assertIn(missing.time_dependency,
                       refreshed.immediate_dependencies)
+        actor_a = replace(planned, actor_id="a")
+        actor_ab = replace(planned, event_id="event:actor-ab", actor_id="a:b")
+        projection_a = project_as_of(
+            (actor_a,), actor_id="a", as_of=575)
+        projection_ab = project_as_of(
+            (actor_ab,), actor_id="a:b", as_of=575)
+        both = bind_as_of_dependency(
+            bind_as_of_dependency(cache, projection_ab), projection_a)
+        rebound = bind_as_of_dependency(
+            both, project_as_of((actor_a,), actor_id="a", as_of=590))
+        self.assertIn(projection_ab.time_dependency,
+                      rebound.immediate_dependencies)
 
     def test_post_remediation_stale_replay_escalates_but_new_evidence_does_not(self):
         index, source_a, _ = _chain()
@@ -173,6 +283,7 @@ class AtlasRevalidationTests(unittest.TestCase):
             remediation_id="remediation:alpha",
             correction_event_id=correction.event_id,
             correction_receipt_sha256=correction.source_receipt_sha256,
+            original_actor_id="actor:alpha",
             original_source_event_id="event:planned",
             original_source_time=570,
             superseded_fact_digest="a" * 64,
@@ -227,6 +338,11 @@ class AtlasRevalidationTests(unittest.TestCase):
             source_event_id="event:relabelled")
         self.assertIsNotNone(escalate_stale_replay(
             remediation, relabelled, correction, index, ledger))
+        receipt_relabelled = replace(
+            stale, claim_id="claim:receipt-relabelled",
+            source_receipt_sha256="2" * 64)
+        self.assertIsNotNone(escalate_stale_replay(
+            remediation, receipt_relabelled, correction, index, ledger))
         self.assertEqual(escalate_stale_replay(
             remediation, replace(stale, observed_at=640),
             correction, index, ledger), None)
@@ -259,10 +375,10 @@ class AtlasRevalidationTests(unittest.TestCase):
     def test_concurrent_corrections_keep_branches_until_explicit_supersession(self):
         source = _ref(DependencyKind.SOURCE, "source:meeting")
         original = _event(source)
-        alternative = replace(
+        alternative = _sign_event(replace(
             original, event_id="correction:synthetic:2",
             new_evidence_sha256="d" * 64,
-            source_receipt_sha256="e" * 64)
+            source_receipt_sha256="e" * 64))
         branches = add_correction(CorrectionBranches(source, ()), original)
         concurrent = add_correction(branches, alternative)
         self.assertEqual(
@@ -270,13 +386,13 @@ class AtlasRevalidationTests(unittest.TestCase):
             ("correction:synthetic:1", "correction:synthetic:2"))
         self.assertEqual(add_correction(concurrent, alternative), concurrent)
         with self.assertRaises(BilqisError) as caught:
-            add_correction(concurrent, replace(
-                original, new_evidence_sha256="0" * 64))
+            add_correction(concurrent, _sign_event(replace(
+                original, new_evidence_sha256="0" * 64)))
         self.assertEqual(caught.exception.context["reason"],
                          "BAMF_C09_CORRECTION_EVENT_ID_CONFLICT")
-        superseding = replace(
+        superseding = _sign_event(replace(
             original, event_id="correction:synthetic:3",
-            new_evidence_sha256="9" * 64)
+            new_evidence_sha256="9" * 64))
         resolved = add_correction(
             concurrent, superseding,
             supersedes_event_ids=("correction:synthetic:1",
@@ -471,6 +587,24 @@ class AtlasRevalidationTests(unittest.TestCase):
         self.assertEqual(finished.queue.pending, ())
         self.assertEqual(read_artifact(finished.index, finished.queue, "frame"),
                          frame)
+
+    def test_transitive_held_ancestor_blocks_high_priority_descendant(self):
+        source = _ref(DependencyKind.SOURCE, "source:x")
+        a = _node("a", ArtifactKind.ATLAS_FEATURE, (source,),
+                  exigency=0, impact=0)
+        b = _node("b", ArtifactKind.PACKED_FRAME, (a.reference,),
+                  exigency=1, impact=1)
+        c = _node("c", ArtifactKind.MOTIF, tuple(sorted((
+            source, b.reference))), exigency=4, impact=4)
+        index = DependencyIndex.build((a, b, c))
+        queue = apply_correction(_event(source), index)
+        self.assertEqual(tuple(task.artifact_id for task in queue.pending),
+                         ("c", "a"))
+        self.assertEqual(next_revalidation_task(index, queue).artifact_id, "a")
+        with self.assertRaises(BilqisError) as caught:
+            advance_revalidation(index, queue, revalidate_node(c, _result(c)))
+        self.assertEqual(caught.exception.context["reason"],
+                         "BAMF_C09_REVALIDATION_OUT_OF_ORDER")
 
     def test_priority_uses_exigency_then_impact_then_stable_id(self):
         source = _ref(DependencyKind.SOURCE, "source:one")
