@@ -27,6 +27,8 @@ FAMILY_CONCEPT_SCHEMA = "bilqis.semantic-family-concept/v1"
 FAMILY_RULE_SCHEMA = "bilqis.semantic-family-source-rule/v1"
 CURRICULUM_CANDIDATE_SCHEMA = "bilqis.semantic-curriculum-candidates/v1"
 LEARNED_FRONTIER_SCHEMA = "bilqis.semantic-learned-frontier/v1"
+SOURCE_LESSON_SCHEMA = "bilqis.source-constructive-lesson/v1"
+SOURCE_LESSON_SET_SCHEMA = "bilqis.source-constructive-lesson-set/v1"
 LEARNING_UNVERIFIED = "LEARNING_UNVERIFIED"
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _SEMANTIC_RELATIONS = tuple(sorted(set(SEMANTIC_PREDICATES.values())))
@@ -385,6 +387,7 @@ class CurriculumCandidateSet:
     source_adapter_ids: tuple[str, ...]
     unverified_exposure_claims: tuple[str, ...]
     unverified_qualification_claims: tuple[str, ...]
+    source_lessons: tuple["SourceConstructiveLesson", ...] = ()
     learning_state: str = LEARNING_UNVERIFIED
     adapter_ready_count: int = 0
     exposed_count: int = 0
@@ -396,6 +399,10 @@ class CurriculumCandidateSet:
         if (not isinstance(self.census, SemanticFamilyInventory)
                 or self.source_adapter_ids
                 != tuple(sorted(set(self.source_adapter_ids)))
+                or not isinstance(self.source_lessons, tuple)
+                or any(not isinstance(item, SourceConstructiveLesson)
+                       or item.semantic_release != self.census.semantic_release
+                       for item in self.source_lessons)
                 or self.learning_state != LEARNING_UNVERIFIED
                 or any(value != 0 for value in (
                     self.adapter_ready_count, self.exposed_count,
@@ -440,6 +447,10 @@ class CurriculumCandidateSet:
     def frozen_census_digest(self) -> str:
         return self.census.digest
 
+    @property
+    def source_lesson_count(self) -> int:
+        return len(self.source_lessons)
+
 
 def compile_semantic_curriculum(
     atlas: FrozenAtlasSnapshot,
@@ -462,4 +473,157 @@ def compile_semantic_curriculum(
         source_adapter_ids=tuple(sorted(
             item.family_id for item in source_adapters)),
         unverified_exposure_claims=learned_frontier.claimed_exposed,
-        unverified_qualification_claims=learned_frontier.claimed_qualified)
+        unverified_qualification_claims=learned_frontier.claimed_qualified,
+        source_lessons=compile_source_constructive_lessons(
+            atlas, census=census).lessons)
+
+
+@dataclass(frozen=True)
+class SourceConstructiveLesson:
+    """An exact source-fact teaching contrast, not a learner credit receipt."""
+
+    semantic_release: str
+    semantic_id: str
+    family_id: str
+    source_evidence_sha256: str
+    positive_fact: tuple[str, ...]
+    contrast_fact: tuple[str, ...]
+    answer_modality: str
+    checker_reference: str
+    constituents: tuple[str, ...]
+    prerequisite_closure: tuple[str, ...]
+    variation_axes: tuple[str, ...]
+    learning_state: str = LEARNING_UNVERIFIED
+    schema: str = SOURCE_LESSON_SCHEMA
+
+    def __post_init__(self) -> None:
+        if (not isinstance(self.semantic_release, str)
+                or not _SHA.fullmatch(self.semantic_release)
+                or not isinstance(self.source_evidence_sha256, str)
+                or not _SHA.fullmatch(self.source_evidence_sha256)
+                or not self.semantic_id or not self.family_id
+                or not isinstance(self.positive_fact, tuple)
+                or not isinstance(self.contrast_fact, tuple)
+                or not self.positive_fact or not self.contrast_fact
+                or self.positive_fact == self.contrast_fact
+                or self.answer_modality not in {
+                    "SEMANTIC_ID", "RELATION_TRIPLE"}
+                or not self.checker_reference
+                or not isinstance(self.constituents, tuple)
+                or not isinstance(self.prerequisite_closure, tuple)
+                or not isinstance(self.variation_axes, tuple)
+                or not self.variation_axes
+                or self.learning_state != LEARNING_UNVERIFIED
+                or self.schema != SOURCE_LESSON_SCHEMA):
+            _fail("BAMF_LESSON_RECORD_INVALID")
+
+
+@dataclass(frozen=True)
+class SourceConstructiveLessonSet:
+    semantic_release: str
+    census_digest: str
+    lessons: tuple[SourceConstructiveLesson, ...]
+    uncovered: tuple[FamilyObligation, ...]
+    learning_state: str = LEARNING_UNVERIFIED
+    schema: str = SOURCE_LESSON_SET_SCHEMA
+
+    def __post_init__(self) -> None:
+        if (not isinstance(self.lessons, tuple)
+                or any(not isinstance(item, SourceConstructiveLesson)
+                       for item in self.lessons)):
+            _fail("BAMF_LESSON_SET_INVALID")
+        keys = tuple(
+            (item.semantic_id, item.family_id) for item in self.lessons)
+        if (not isinstance(self.semantic_release, str)
+                or not _SHA.fullmatch(self.semantic_release)
+                or not isinstance(self.census_digest, str)
+                or not _SHA.fullmatch(self.census_digest)
+                or not isinstance(self.uncovered, tuple)
+                or any(item.semantic_release != self.semantic_release
+                       for item in self.lessons)
+                or any(not isinstance(item, FamilyObligation)
+                       for item in self.uncovered)
+                or len(set(keys)) != len(keys)
+                or self.learning_state != LEARNING_UNVERIFIED
+                or self.schema != SOURCE_LESSON_SET_SCHEMA):
+            _fail("BAMF_LESSON_SET_INVALID")
+
+
+def compile_source_constructive_lessons(
+    atlas: FrozenAtlasSnapshot,
+    *, census: SemanticFamilyInventory | None = None,
+) -> SourceConstructiveLessonSet:
+    """Compile only facts provable from A01; other families remain debt."""
+    authoritative = inventory_source_families(atlas)
+    if census is not None and census != authoritative:
+        _fail("BAMF_LESSON_CENSUS_DRIFT")
+    census = authoritative
+    by_id = {item.semantic_id: item for item in census.concepts}
+    eligible = census.source_eligible_concept_ids
+    position = {identifier: index for index, identifier in enumerate(eligible)}
+    relations = tuple(sorted(
+        (edge.source_semantic_id, edge.predicate, edge.target_semantic_id)
+        for edge in atlas.relations
+        if edge.source_semantic_id in by_id
+        and edge.target_semantic_id in by_id
+        and edge.predicate in _SEMANTIC_RELATIONS))
+    relations_by_source: dict[str, tuple[str, str, str]] = {}
+    for triple in relations:
+        relations_by_source.setdefault(triple[0], triple)
+    lessons = []
+    uncovered = []
+    for obligation in census.obligations:
+        semantic_id = obligation.semantic_id
+        family = obligation.family_id
+        if family == "positive_identity" and len(eligible) > 1:
+            contrast_id = eligible[(position[semantic_id] + 1) % len(eligible)]
+            positive = ("identity", semantic_id, by_id[semantic_id].source_refs[0])
+            contrast = ("identity", contrast_id, by_id[contrast_id].source_refs[0])
+            modality = "SEMANTIC_ID"
+            checker = "bilqis.source-checker.identity/v1"
+            constituents = (semantic_id,)
+            prerequisites = ()
+            axes = ("source-identity", "source-contrast", "fresh-seed")
+        elif family == "source_attested_relation" and len(relations) > 1:
+            positive = relations_by_source.get(semantic_id)
+            if positive is None:
+                uncovered.append(obligation)
+                continue
+            contrast = next((item for item in relations if item != positive), None)
+            if contrast is None:
+                uncovered.append(obligation)
+                continue
+            modality = "RELATION_TRIPLE"
+            checker = "bilqis.source-checker.attested-relation/v1"
+            constituents = tuple(dict.fromkeys((positive[0], positive[2])))
+            prerequisites = tuple(
+                item for item in constituents if item != semantic_id)
+            axes = ("source-relation", "source-contrast", "fresh-seed")
+        else:
+            uncovered.append(obligation)
+            continue
+        lessons.append(SourceConstructiveLesson(
+            atlas.release_sha256, semantic_id, family,
+            obligation.source_evidence_sha256,
+            tuple(positive), tuple(contrast), modality, checker,
+            constituents, prerequisites, axes))
+    return SourceConstructiveLessonSet(
+        atlas.release_sha256, census.digest, tuple(lessons),
+        tuple(uncovered))
+
+
+def check_source_constructive_lesson(
+    lesson: SourceConstructiveLesson, answer: object,
+    atlas: FrozenAtlasSnapshot,
+) -> bool:
+    """Independent source replay; never trust a generator's claimed gold."""
+    if not isinstance(lesson, SourceConstructiveLesson):
+        _fail("BAMF_LESSON_CHECKER_INPUT_INVALID")
+    verified = compile_source_constructive_lessons(atlas)
+    if lesson not in verified.lessons:
+        _fail("BAMF_LESSON_SOURCE_EVIDENCE_MISMATCH")
+    if lesson.answer_modality == "SEMANTIC_ID":
+        return type(answer) is str and answer == lesson.positive_fact[1]
+    if lesson.answer_modality == "RELATION_TRIPLE":
+        return type(answer) is tuple and answer == lesson.positive_fact
+    _fail("BAMF_LESSON_CHECKER_UNSUPPORTED")

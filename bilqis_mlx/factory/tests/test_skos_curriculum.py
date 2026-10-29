@@ -11,7 +11,8 @@ import unittest
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory.skos_curriculum import (
     LEARNING_UNVERIFIED, SOURCE_FAMILY_ADAPTERS, LearnedFrontier,
-    SourceFamilyAdapter, compile_semantic_curriculum,
+    SourceFamilyAdapter, check_source_constructive_lesson,
+    compile_semantic_curriculum, compile_source_constructive_lessons,
     inventory_source_families,
 )
 from bilqis_mlx.semantics.atlas_projection import (
@@ -103,6 +104,66 @@ def _snapshot(definitions=DEFINITIONS, *, release=RELEASE):
 
 
 class SemanticFamilyInventoryTests(unittest.TestCase):
+    def test_source_identity_and_attested_relation_constructive_checkers(self):
+        definitions = tuple(
+            (identifier, source, AtlasRelation(REL, "urn:lex:root")
+             if identifier == "urn:morph:transform" else relation)
+            for identifier, source, relation in DEFINITIONS)
+        snapshot = _snapshot(definitions)
+        compiled = compile_source_constructive_lessons(snapshot)
+        identity = next(
+            item for item in compiled.lessons
+            if item.family_id == "positive_identity"
+            and item.semantic_id == "urn:lex:root")
+        self.assertEqual(identity.answer_modality, "SEMANTIC_ID")
+        self.assertEqual(identity.constituents, ("urn:lex:root",))
+        self.assertEqual(identity.prerequisite_closure, ())
+        self.assertNotEqual(identity.positive_fact, identity.contrast_fact)
+        self.assertTrue(check_source_constructive_lesson(
+            identity, "urn:lex:root", snapshot))
+        self.assertFalse(check_source_constructive_lesson(
+            identity, identity.contrast_fact[1], snapshot))
+        relation = next(
+            item for item in compiled.lessons
+            if item.family_id == "source_attested_relation"
+            and item.semantic_id == "urn:lex:sense")
+        attested = {
+            (edge.source_semantic_id, edge.predicate, edge.target_semantic_id)
+            for edge in snapshot.relations}
+        self.assertIn(relation.positive_fact, attested)
+        self.assertIn(relation.contrast_fact, attested)
+        self.assertNotEqual(relation.positive_fact, relation.contrast_fact)
+        self.assertEqual(relation.answer_modality, "RELATION_TRIPLE")
+        self.assertNotIn(
+            relation.semantic_id, relation.prerequisite_closure)
+        self.assertTrue(check_source_constructive_lesson(
+            relation, relation.positive_fact, snapshot))
+        self.assertFalse(check_source_constructive_lesson(
+            relation, relation.contrast_fact, snapshot))
+        self.assertTrue(any(
+            row.family_id == "numeric_composition"
+            for row in compiled.uncovered))
+        self.assertEqual(compiled.learning_state, LEARNING_UNVERIFIED)
+
+    def test_source_lesson_checker_rejects_forged_gold_and_foreign_release(self):
+        snapshot = _snapshot()
+        lesson = next(
+            item for item in compile_source_constructive_lessons(snapshot).lessons
+            if item.semantic_id == "urn:lex:root"
+            and item.family_id == "positive_identity")
+        with self.assertRaises(BilqisError) as caught:
+            check_source_constructive_lesson(
+                replace(lesson, positive_fact=(
+                    "identity", "urn:invented", "source:fake")),
+                "urn:invented", snapshot)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_LESSON_SOURCE_EVIDENCE_MISMATCH")
+        with self.assertRaises(BilqisError):
+            check_source_constructive_lesson(
+                lesson, lesson.semantic_id,
+                replace(snapshot, release_sha256="f" * 64))
+
     def test_owner_api_preserves_denominator_and_unverified_learning_claims(self):
         snapshot = _snapshot()
         self.assertTrue(any(not item.active for item in snapshot.concepts))
@@ -347,6 +408,10 @@ class SemanticFamilyInventoryTests(unittest.TestCase):
                          len(set(census.source_eligible_concept_ids)))
         self.assertGreater(census.counts.required_family_obligations,
                            census.counts.source_eligible_concepts)
+        lesson_set = compile_source_constructive_lessons(snapshot, census=census)
+        self.assertEqual(len(lesson_set.lessons), 9307)
+        self.assertEqual(len(lesson_set.uncovered), 3044)
+        self.assertEqual(lesson_set.learning_state, LEARNING_UNVERIFIED)
 
 
 if __name__ == "__main__":
