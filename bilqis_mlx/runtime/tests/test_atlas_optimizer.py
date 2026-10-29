@@ -173,6 +173,37 @@ class AdamWCountsTests(unittest.TestCase):
                 np.testing.assert_array_equal(np.asarray(getattr(actual, field)["fixture.bank"][row]),
                                               np.asarray(getattr(parent, field)["fixture.bank"][row]))
 
+    def test_mask_precedes_global_clip_even_for_huge_frozen_gradients(self):
+        from bilqis_mlx.runtime.atlas_optimizer import _masked_clipped_gradients
+        parent = self.state()
+        mask = {"fixture.bank": mx.array([True, False, False])}
+        small = {"fixture.bank": mx.array([[3., 4.], [0., 0.], [0., 0.]])}
+        huge = {"fixture.bank": mx.array([[3., 4.], [3e38, -3e38], [3e38, 3e38]])}
+        clipped, norm = _masked_clipped_gradients(parent, huge, mask, max_norm=1.)
+        reference, reference_norm = _masked_clipped_gradients(parent, small, mask, max_norm=1.)
+        self.assertEqual(float(norm), 5.)
+        self.assertEqual(float(reference_norm), 5.)
+        np.testing.assert_array_equal(np.asarray(clipped["fixture.bank"]), np.asarray(reference["fixture.bank"]))
+        np.testing.assert_allclose(np.asarray(clipped["fixture.bank"])[0],
+                                   np.array([3., 4.]) / (5. + 1e-6), rtol=1e-6)
+        actual = _adamw_update(parent, huge, mask, self.hp, decay={"fixture.bank": True}, max_norm=1.)
+        expected = _adamw_update(parent, reference, mask, self.hp, decay={"fixture.bank": True})
+        for field in ("parameters", "m", "v", "update_counts"):
+            np.testing.assert_array_equal(np.asarray(getattr(actual, field)["fixture.bank"]),
+                                          np.asarray(getattr(expected, field)["fixture.bank"]))
+
+    def test_clipping_rejects_nonfinite_norm_and_invalid_limit(self):
+        from bilqis_mlx.runtime.atlas_optimizer import _masked_clipped_gradients
+        parent = self.state(False)
+        gradient = {"fixture.bank": mx.full((3, 2), 3e38)}
+        mask = {"fixture.bank": mx.array(True)}
+        for limit in (0., -1., float("nan"), True):
+            with self.assertRaises(BilqisError):
+                _masked_clipped_gradients(parent, gradient, mask, max_norm=limit)
+        with self.assertRaises(BilqisError):
+            _masked_clipped_gradients(parent, gradient, mask, max_norm=1.)
+        self.assertEqual(int(parent.update_counts["fixture.bank"]), 0)
+
 
 if __name__ == "__main__":
     unittest.main()

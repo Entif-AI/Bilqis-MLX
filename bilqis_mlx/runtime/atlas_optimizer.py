@@ -15,6 +15,7 @@ import mlx.optimizers as optim
 import numpy as np
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
+from bilqis_mlx.runtime.mlx_parity import clip_gradients
 
 
 ROW_COUNT_RANK = 1
@@ -95,37 +96,74 @@ class AdamWStateTree:
                 _invalid()
 
 
-def _preflight(parent, gradients, participation, hyperparameters, decay, loss_bearing):
-    if (type(parent) is not AdamWStateTree or type(hyperparameters) is not AdamWHyperparameters or
-            type(loss_bearing) is not bool or
+def _validate_step_inputs(parent, gradients, participation):
+    if (type(parent) is not AdamWStateTree or
             any(not isinstance(tree, Mapping) or set(tree) != set(parent.parameters)
-                for tree in (gradients, participation, decay))):
+                for tree in (gradients, participation))):
         _invalid()
     parent.validate()
-    hyperparameters.__post_init__()
     for name, parameter in parent.parameters.items():
-        gradient, mask, count = gradients[name], participation[name], parent.update_counts[name]
+        gradient, mask = gradients[name], participation[name]
         if (not isinstance(gradient, mx.array) or gradient.shape != parameter.shape or gradient.dtype != mx.float32 or
-                not bool(mx.all(mx.isfinite(gradient))) or type(decay[name]) is not bool or
-                not isinstance(mask, mx.array) or mask.dtype != mx.bool_ or mask.shape != count.shape):
+                not bool(mx.all(mx.isfinite(gradient))) or
+                not isinstance(mask, mx.array) or mask.dtype != mx.bool_ or
+                mask.shape != parent.update_counts[name].shape):
             _invalid()
-        if loss_bearing and bool(mx.any(mask & (count == mx.array(np.array(UINT64_MAX, dtype=np.uint64))))):
+
+
+def _preflight(parent, gradients, participation, hyperparameters, decay, loss_bearing):
+    _validate_step_inputs(parent, gradients, participation)
+    if (type(hyperparameters) is not AdamWHyperparameters or type(loss_bearing) is not bool or
+            not isinstance(decay, Mapping) or set(decay) != set(parent.parameters) or
+            any(type(value) is not bool for value in decay.values())):
+        _invalid()
+    hyperparameters.__post_init__()
+    for name, count in parent.update_counts.items():
+        if loss_bearing and bool(mx.any(participation[name] &
+                                       (count == mx.array(np.array(UINT64_MAX, dtype=np.uint64))))):
             _invalid()
+
+
+def _masked_clipped_gradients(parent, gradients, participation, *, max_norm):
+    """Mask supplied participation before the existing global FP32 norm clip.
+
+    This numerical adapter does not attest that masks came from actual model
+    execution. The full-model owner must supply that independent provenance.
+    """
+    _validate_step_inputs(parent, gradients, participation)
+    if not _finite_number(max_norm) or max_norm <= 0:
+        _invalid()
+    masked = {}
+    for name, gradient in gradients.items():
+        mask = participation[name]
+        if mask.ndim == ROW_COUNT_RANK:
+            mask = mask.reshape((-1,) + (1,) * (gradient.ndim - 1))
+        masked[name] = mx.where(mask, gradient, mx.zeros_like(gradient))
+    clipped, norm = clip_gradients(mx, masked, max_norm=max_norm)
+    if not bool(mx.isfinite(norm)):
+        _invalid()
+    return clipped, norm
 
 
 def _adamw_update(parent: AdamWStateTree, gradients: Mapping[str, mx.array],
                   participation: Mapping[str, mx.array], hyperparameters: AdamWHyperparameters, *,
-                  decay: Mapping[str, bool], loss_bearing: bool = True) -> AdamWStateTree:
+                  decay: Mapping[str, bool], loss_bearing: bool = True,
+                  max_norm: float | None = None) -> AdamWStateTree:
     """Apply native AdamW only to selected numerical leaves/rows, without publication.
 
-    Supplied gradients must already follow the caller's clipping contract.
+    max_norm uses the existing global clip after participation masking. When
+    omitted, supplied gradients must already follow the clipping contract.
     Masks are explicit Boolean scalars or row vectors, never inferred from
     nonzero gradients. Selected zero gradients still advance moments/counts.
     No-loss and wholly frozen steps return the original state object.
     """
     _preflight(parent, gradients, participation, hyperparameters, decay, loss_bearing)
+    if max_norm is not None and (not _finite_number(max_norm) or max_norm <= 0):
+        _invalid()
     if not loss_bearing or not any(bool(mx.any(mask)) for mask in participation.values()):
         return parent
+    if max_norm is not None:
+        gradients, _ = _masked_clipped_gradients(parent, gradients, participation, max_norm=max_norm)
     parameters, first, second, counts = (dict(tree) for tree in
                                          (parent.parameters, parent.m, parent.v, parent.update_counts))
     for name, parameter in parent.parameters.items():
