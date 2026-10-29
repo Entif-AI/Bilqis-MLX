@@ -93,9 +93,12 @@ verbose internal prose.
   gold-label, Factory and oracle dependencies; a socket
   trap covers the two-node pure execution.
 
-A07 parent integration, B10 neural selection, C05
-end-to-end scoring, and live optimizer/trainer execution
-remain separate owner gates. No unified/main merge,
+At this initial candidate checkpoint, A07 parent
+integration, B10 neural selection, C05 end-to-end
+scoring and live optimizer/trainer execution were
+separate owner gates. No unified/main merge was
+claimed **at that time**. The subsequent reviewed
+unified merge is recorded below; no main merge,
 source promotion or live training is claimed.
 
 ## Independent EGM findings and bounded repairs
