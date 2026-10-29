@@ -5,6 +5,8 @@ contract-fixture provenance cannot authorize a saved human learner.
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
+
 from dataclasses import asdict, dataclass, field
 import json
 from pathlib import Path
@@ -199,7 +201,7 @@ def _lease_from_json(payload):
         _invalid('BAMF_ATLAS_LEASE_PAYLOAD_INVALID')
 
 
-def read_atlas_lease(run_dir, independently_loaded_run, *, registry):
+def _read_atlas_lease(run_dir, independently_loaded_run, *, registry, current_authority=True):
     directory = _store(run_dir)
     reference = directory / 'current.json'
     if reference.is_symlink():
@@ -224,11 +226,12 @@ def read_atlas_lease(run_dir, independently_loaded_run, *, registry):
         _invalid('BAMF_ATLAS_LEASE_READ_FAILED')
     if lease.digest() != payload['lease_sha256'] or lease.run_identity != independently_loaded_run:
         _invalid('BAMF_ATLAS_LEASE_RUN_OR_CONTENT_DRIFT')
-    lease.source_approval.verify(registry)
+    if current_authority:
+        lease.source_approval.verify(registry)
     return lease
 
 
-def persist_atlas_lease(run_dir, lease, *, independently_loaded_run, registry):
+def _persist_atlas_lease_locked(run_dir, lease, *, independently_loaded_run, registry):
     if (not isinstance(lease, AtlasAdmissionLease)
             or not isinstance(independently_loaded_run, LeaseRunIdentity)
             or lease.run_identity != independently_loaded_run):
@@ -331,3 +334,83 @@ def stage_unleased_atlas_proposal(run_dir, proposal):
     if json.loads(path.read_text(encoding='utf-8')) != payload:
         _invalid('BAMF_ATLAS_STAGED_DECISION_READBACK_DRIFT')
     return result
+
+
+
+
+@contextmanager
+def _atlas_lease_lock(run_dir):
+    import fcntl
+    import os
+    import stat
+    directory = _store(run_dir)
+    directory.mkdir(parents=True, exist_ok=True)
+    lock = directory / 'writer.lock'
+    descriptor = os.open(lock, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+    try:
+        if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+            _invalid('BAMF_ATLAS_LEASE_UNSAFE_LOCK')
+        fcntl.flock(descriptor, fcntl.LOCK_EX)
+        yield
+    finally:
+        os.close(descriptor)
+
+
+def read_atlas_lease(run_dir, independently_loaded_run, *, registry):
+    return _read_atlas_lease(run_dir, independently_loaded_run, registry=registry)
+
+
+def persist_atlas_lease(run_dir, lease, *, independently_loaded_run, registry):
+    with _atlas_lease_lock(run_dir):
+        return _persist_atlas_lease_locked(run_dir, lease,
+            independently_loaded_run=independently_loaded_run, registry=registry)
+
+
+def renew_atlas_lease(run_dir, lease, *, independently_loaded_run, registry,
+                      expected_prior_lease_sha256, human_started):
+    """Renew disposable scope explicitly; caller assertions do not prove human identity."""
+    if (human_started is not True or not _sha(expected_prior_lease_sha256)
+            or not isinstance(lease, AtlasAdmissionLease)
+            or lease.run_identity != independently_loaded_run):
+        _invalid('BAMF_ATLAS_LEASE_RENEWAL_ARGUMENT_INVALID')
+    lease.source_approval.verify(registry)
+    with _atlas_lease_lock(run_dir):
+        directory = _store(run_dir)
+        prior = _read_atlas_lease(run_dir, independently_loaded_run,
+                                 registry=registry, current_authority=False)
+        edge = {'schema': 'bilqis.c07.lease-renewal/v1',
+                'prior_lease_sha256': expected_prior_lease_sha256,
+                'replacement_lease_sha256': lease.digest(),
+                'human_command_sha256': lease.human_command_sha256}
+        edges = directory / 'renewals'
+        if edges.is_symlink() or (edges.exists() and not edges.is_dir()):
+            _invalid('BAMF_ATLAS_LEASE_UNSAFE_PATH')
+        edge_path = edges / (lease.digest() + '.json')
+        if edge_path.is_symlink():
+            _invalid('BAMF_ATLAS_LEASE_UNSAFE_PATH')
+        if prior == lease:
+            if not edge_path.is_file() or json.loads(edge_path.read_text()) != edge:
+                _invalid('BAMF_ATLAS_LEASE_RENEWAL_PREDECESSOR_DRIFT')
+            return directory / 'current.json'
+        if (prior is None or prior.digest() != expected_prior_lease_sha256
+                or prior.lease_id == lease.lease_id
+                or prior.human_command_sha256 == lease.human_command_sha256
+                or lease.requested_at <= prior.requested_at):
+            _invalid('BAMF_ATLAS_LEASE_RENEWAL_PREDECESSOR_DRIFT')
+        relative = 'autonomy/atlas-admission/leases/' + lease.digest() + '.json'
+        path = Path(run_dir) / relative
+        for artifact, payload in ((path, asdict(lease)), (edge_path, edge)):
+            if artifact.is_symlink():
+                _invalid('BAMF_ATLAS_LEASE_UNSAFE_PATH')
+            if artifact.exists():
+                if json.loads(artifact.read_text()) != json.loads(json.dumps(payload)):
+                    _invalid('BAMF_ATLAS_LEASE_IMMUTABLE_DRIFT')
+            else:
+                _durable_json(artifact, payload)
+        reference = directory / 'current.json'
+        _durable_json(reference, {'schema': 'bilqis.c07.atlas-lease-reference/v1',
+            'run_identity_digest': contract_digest(independently_loaded_run),
+            'lease_sha256': lease.digest(), 'lease_file': relative}, replace_existing=True)
+        if read_atlas_lease(run_dir, independently_loaded_run, registry=registry) != lease:
+            _invalid('BAMF_ATLAS_LEASE_READBACK_DRIFT')
+        return reference
