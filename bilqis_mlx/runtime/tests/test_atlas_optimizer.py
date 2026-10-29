@@ -204,6 +204,35 @@ class AdamWCountsTests(unittest.TestCase):
             _masked_clipped_gradients(parent, gradient, mask, max_norm=1.)
         self.assertEqual(int(parent.update_counts["fixture.bank"]), 0)
 
+    def test_unbound_constructor_consumes_complete_b01_ledger(self):
+        from bilqis_mlx.runtime.atlas_optimizer import _create_unbound_bamf_optimizer
+        from bilqis_mlx.runtime.model_topology_v2 import (
+            ModelTopologySpecV2, GenerationExtents, expected_bamf_shapes,
+        )
+        spec = ModelTopologySpecV2()
+        extents = GenerationExtents(1, 1, "a" * 64, "b" * 64, "c" * 64)
+        state, decay, manifest = _create_unbound_bamf_optimizer(spec, extents, run_seed=474)
+        ledger = expected_bamf_shapes(spec, extents)
+        self.assertEqual(set(state.parameters), {item.name for item in ledger})
+        self.assertEqual(dict(decay), {item.name: item.decay for item in ledger})
+        self.assertEqual(manifest["initialization_status"], "UNBOUND")
+        self.assertEqual(manifest["topology_digest"], spec.digest)
+        self.assertEqual(manifest["generation_extents_digest"], extents.digest)
+        for item in ledger:
+            self.assertEqual(state.parameters[item.name].shape, item.shape)
+            for field in ("m", "v", "update_counts"):
+                self.assertTrue(bool(mx.all(getattr(state, field)[item.name] == 0)))
+            self.assertEqual(state.update_counts[item.name].dtype, mx.uint64)
+        for name, count_shape in (("identity.bank.0", (8192,)), ("motif.page.0", (16384,)),
+                                  ("features.type", (512,)), ("features.role", (512,)),
+                                  ("features.schema", (512,)), ("features.local_slot", (16,)),
+                                  ("blocks.0.query", ()), ("frame.empty_seed", ())):
+            self.assertEqual(state.update_counts[name].shape, count_shape)
+        self.assertEqual(float(state.parameters["frame.pool_gate"][0]), -2.)
+        self.assertTrue(bool(mx.all(state.parameters["plastic.group.0.B"] == 0)))
+        self.assertFalse(decay["features.norm"])
+        self.assertTrue(decay["blocks.0.query"])
+
 
 if __name__ == "__main__":
     unittest.main()
