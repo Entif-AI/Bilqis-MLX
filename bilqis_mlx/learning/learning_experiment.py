@@ -502,6 +502,12 @@ def _diagnostic_context(channel: dict, capability: str, curriculum_scope: str,
         "rejection_pressure": int(stagnation.get("rejection_streak", 0)) > 0,
         "dominant_rejection_reason": dominant,
     }
+    if (channel.get("selection_contract") == BAMF_SUCCESSOR_SELECTION
+            and "salience_evidence" in diagnostics):
+        from .atlas_salience import salience_priority_features
+        payload["salience"] = salience_priority_features(
+            diagnostics["salience_evidence"], capability, curriculum_scope,
+            diagnostics.get("teacher_epoch_digest"))
     identity = hashlib.sha256(
         json.dumps(payload, sort_keys=True).encode()).hexdigest()[:16]
     known = channel.setdefault("diagnostic_contexts", {})

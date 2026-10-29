@@ -1,0 +1,98 @@
+# C09.1 | Direct correction dependencies and lazy revalidation
+
+Issue: #516, parent C09 #377. Lane C branch:
+`codex/bamf02-c-runtime`. Reviewed unified baseline consumed:
+`6e83c0f6618f81a6d41f82503f16a80b8e14164f`.
+Candidate implementation: `d0fd5ab5a7586ce57f1b14cf767acf448145a584`.
+Draft human-review PR: #550.
+
+## Exact owned behavior
+
+- The immutable `bilqis.c09.dependency-index/v1` records direct reverse
+  edges for atlas features, packed frames, motifs, exact caches,
+  operator compositions and learned capability support.
+- Each artifact declares immediate source, operator, release, policy,
+  time, rights or artifact dependencies. Missing artifact owners and
+  cycles reject before the index is usable.
+- `bilqis.c09.correction-event/v2` binds a source-owner receipt and
+  separate source/effective/observed/recorded times. A correction
+  holds its direct dependents before reuse.
+- `bilqis.c09.revalidation-queue/v1` orders lazy work by exigency,
+  impact and stable ID, subject to upstream dependency holds.
+  Descendants cannot be read through a held or ineligible ancestor.
+- `bilqis.c09.state-transition/v3` propagates to immediate consumers
+  only when content identity or eligibility changes. Equal results
+  stop propagation; immutable prior nodes remain available as history.
+
+## Verification and limits
+
+`python3 -B scripts/run_tests.py
+bilqis_mlx/runtime/tests/test_atlas_revalidation.py
+bilqis_mlx/runtime/tests/test_error_control_plane.py`:
+**12 passed, 0 failed, 0 skipped** (8 C09.1, 4 error-control).
+The C09.1 test module first failed because the implementation was
+absent, then passed after implementation. Adversaries cover held
+ancestor readout, revoked motif eligibility, topological priority,
+cycles, missing recomputation evidence, and exact reverse edges.
+
+Static error-control and module-size scans showed no new C09.1
+findings; inherited repository debt remains outside this leaf.
+
+This is a source-owned recomputation *consumer*, not a new rights
+issuer. Source correction qualification and actual upstream
+A01/B07/B13/C04 interfaces require later integration requalification.
+C09.2 owns concurrent alternatives and learned requalification;
+C09.3 owns time projections and stale-remediation escalation.
+The C09 parent acceptance, live learner, and downstream integration
+are **not** claimed complete. Independent Goldfish EGM is pending.
+No neural/optimizer state, live run, or private source was changed.
+
+## 2026-10-29 independent-review repairs
+
+Goldfish review of `d0fd5ab` found two Majors: readiness checked
+only immediate held ancestors, and source-owner/receipt hashes
+were caller-self-attested.
+
+Repair `cd3ec533a823eea3bd407d5e9ac13c87cfb42230` traverses
+the full dependency DAG before selecting a revalidation task.
+The exact high-priority descendant/unheld-intermediate/held-ancestor
+repro now selects the held ancestor first.
+
+Versioned v2 correction and v3 recomputation/state-transition
+contracts now require Ed25519 signatures. A host-provisioned
+`bilqis.c09.source-authority-registry/v2` pins public keys,
+allowed dependency kinds and key scopes. Apply, revalidation,
+transition, branch admission and process-fault escalation reject
+unsigned or foreign receipts. Absent authority fails closed.
+The test-only private key is synthetic, not a production key.
+Actual A01/B07/B13/C04 key provisioning remains an explicit
+integration dependency; this layer does not issue source rights.
+
+C09.2 was separated into `atlas_requalification.py` to keep
+modules below the size-review threshold. Focused C09 and
+error-control tests: **20 passed, 0 failed**.
+
+## 2026-10-29 second independent-review repairs
+
+Goldfish's targeted review of `cd3ec53` found two additional
+Majors: an authentic old signed recomputation could clear a
+newer correction hold, and independent allowed kinds/prefixes
+created a Cartesian cross-scope authority grant.
+
+Repair `8ee79c23ec7e88b7915bc185e8c5c61ccc7fce79`
+binds the signed v3 recomputation and transition to the
+exact active correction event ID and source receipt.
+`advance_revalidation` refuses stale correction bindings
+before clearing any hold. The test reproduces a valid old
+signature and verifies the new hold stays intact.
+
+`SourceAuthorityKey/v2` now contains explicit
+`SourceAuthorityScope(kind, key_prefix)` pairs, not two
+independent allowlists. A registered key authorized for
+SOURCE/source: and ARTIFACT/feature: cannot sign
+ARTIFACT/source: even with a valid Ed25519 signature.
+
+Combined C09/C08/C10/C02/source/error-control focused tests:
+**90 passed, 0 failed, 1 optional skip**. A fresh
+independent re-review is pending; no parent integration
+or live source admission is claimed.

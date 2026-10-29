@@ -1,0 +1,36 @@
+test_first_instruction_skipping_a_simpler_offered_example_is_flagged (_bilqis_test_39ec24cba3f4feb16eba281e8aa7b9281481534723d22bcf367962f9cd20e3c7.TeachingMethodologyTests.test_first_instruction_skipping_a_simpler_offered_example_is_flagged) ... ok
+test_missing_earlier_semantic_construction_is_detected_without_question_ids (_bilqis_test_39ec24cba3f4feb16eba281e8aa7b9281481534723d22bcf367962f9cd20e3c7.TeachingMethodologyTests.test_missing_earlier_semantic_construction_is_detected_without_question_ids) ... FAIL
+test_real_grade_b_examples_link_source_semantics_to_grade_a (_bilqis_test_39ec24cba3f4feb16eba281e8aa7b9281481534723d22bcf367962f9cd20e3c7.TeachingMethodologyTests.test_real_grade_b_examples_link_source_semantics_to_grade_a) ... FAIL
+test_unsupported_semantic_root_and_unoffered_example_fail_closed (_bilqis_test_39ec24cba3f4feb16eba281e8aa7b9281481534723d22bcf367962f9cd20e3c7.TeachingMethodologyTests.test_unsupported_semantic_root_and_unoffered_example_fail_closed) ... FAIL
+
+======================================================================
+FAIL: test_missing_earlier_semantic_construction_is_detected_without_question_ids (_bilqis_test_39ec24cba3f4feb16eba281e8aa7b9281481534723d22bcf367962f9cd20e3c7.TeachingMethodologyTests.test_missing_earlier_semantic_construction_is_detected_without_question_ids)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/diagnostics/tests/test_teaching_methodology.py", line 56, in test_missing_earlier_semantic_construction_is_detected_without_question_ids
+    self.assertEqual(s4.status, DiagnosticStatus.OBSERVED_IN_INSTRUCTION)
+AssertionError: <DiagnosticStatus.NOT_APPLICABLE: 'NOT_APPLICABLE'> != <DiagnosticStatus.OBSERVED_IN_INSTRUCTION: 'OBSERVED_IN_INSTRUCTION'>
+
+======================================================================
+FAIL: test_real_grade_b_examples_link_source_semantics_to_grade_a (_bilqis_test_39ec24cba3f4feb16eba281e8aa7b9281481534723d22bcf367962f9cd20e3c7.TeachingMethodologyTests.test_real_grade_b_examples_link_source_semantics_to_grade_a)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/diagnostics/tests/test_teaching_methodology.py", line 41, in test_real_grade_b_examples_link_source_semantics_to_grade_a
+    self.assertTrue(step.prerequisite_capabilities)
+AssertionError: () is not true
+
+======================================================================
+FAIL: test_unsupported_semantic_root_and_unoffered_example_fail_closed (_bilqis_test_39ec24cba3f4feb16eba281e8aa7b9281481534723d22bcf367962f9cd20e3c7.TeachingMethodologyTests.test_unsupported_semantic_root_and_unoffered_example_fail_closed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/diagnostics/tests/test_teaching_methodology.py", line 79, in test_unsupported_semantic_root_and_unoffered_example_fail_closed
+    with self.assertRaisesRegex(ValueError, "UNADMITTED_CONSTITUENT"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.039s
+
+FAILED (failures=3)
+TEST_TOTALS total=4 passed=1 failed=3 skipped=0 errors=0
+1 passed, 3 failed, 0 skipped
