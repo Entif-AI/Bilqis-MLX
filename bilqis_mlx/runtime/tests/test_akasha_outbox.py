@@ -29,6 +29,11 @@ from bilqis_mlx.semantics.cognitive_dependencies import (
 
 
 PAYLOADS = {
+    **{kind: {"native_event_id": "b" * 64, "native_event_digest": "a" * 64,
+              "run_id": "fixture:run", "generation": 1, "native_event_type": {AkashaEventKind.TEACHER_VISIT: "SCHOOL_TEACHER_VISIT_COMMITTED",
+                  AkashaEventKind.FACTORY_RELEASE: "SCHOOL_FACTORY_RELEASE_MIGRATED",
+                  AkashaEventKind.CAPABILITY_OUTCOME: "SCHOOL_CAPABILITY_BEST_COMMITTED"}[kind]}
+       for kind in (AkashaEventKind.TEACHER_VISIT, AkashaEventKind.FACTORY_RELEASE, AkashaEventKind.CAPABILITY_OUTCOME)},
     AkashaEventKind.SOURCE_CORRECTION: {
         "correction_event_id": "correction:1",
         "source_owner": "source:owner",

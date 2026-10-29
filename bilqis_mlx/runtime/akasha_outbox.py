@@ -53,6 +53,9 @@ def _time(value: object) -> bool:
 
 
 class AkashaEventKind(str, Enum):
+    TEACHER_VISIT = "TEACHER_VISIT"
+    FACTORY_RELEASE = "FACTORY_RELEASE"
+    CAPABILITY_OUTCOME = "CAPABILITY_OUTCOME"
     SOURCE_CORRECTION = "SOURCE_CORRECTION"
     REVALIDATION = "REVALIDATION"
     REQUALIFICATION = "REQUALIFICATION"
@@ -62,7 +65,18 @@ class AkashaEventKind(str, Enum):
     CHECKPOINT_PUBLICATION = "CHECKPOINT_PUBLICATION"
 
 
+NATIVE_EVENT_KINDS = {
+    'SCHOOL_TEACHER_VISIT_COMMITTED': AkashaEventKind.TEACHER_VISIT,
+    'SCHOOL_FACTORY_RELEASE_MIGRATED': AkashaEventKind.FACTORY_RELEASE,
+    'SCHOOL_EXECUTION_PROFILE_ADOPTED': AkashaEventKind.FACTORY_RELEASE,
+    'SCHOOL_SEMANTIC_CATALOG_PROFILE_ADOPTED': AkashaEventKind.FACTORY_RELEASE,
+    'SCHOOL_CAPABILITY_BEST_COMMITTED': AkashaEventKind.CAPABILITY_OUTCOME,
+}
+
+
 _REQUIRED_FIELDS = {
+    **{kind: frozenset({"native_event_id", "native_event_digest", "run_id", "generation", "native_event_type"})
+       for kind in (AkashaEventKind.TEACHER_VISIT, AkashaEventKind.FACTORY_RELEASE, AkashaEventKind.CAPABILITY_OUTCOME)},
     AkashaEventKind.SOURCE_CORRECTION: frozenset({
         "correction_event_id", "source_owner", "dependency_key",
         "old_digest", "new_digest"}),
@@ -81,6 +95,7 @@ _REQUIRED_FIELDS = {
         "checkpoint_digest", "generation_sha256", "manifest_digest"}),
 }
 _DIGEST_FIELDS = frozenset({
+    "native_event_digest",
     "old_digest", "new_digest", "retained_generation_sha256",
     "generation_sha256", "assessment_receipt_sha256",
     "eligibility_digest", "checkpoint_digest", "manifest_digest",
@@ -108,6 +123,12 @@ def _payload_for(kind: AkashaEventKind, payload_json: str) -> dict:
                 and (not isinstance(value, list)
                      or not value
                      or any(not _name(item) for item in value))):
+            _invalid("BAMF_C10_PROJECTION_FIELDS_INVALID")
+    if kind in NATIVE_EVENT_KINDS.values():
+        if (type(payload['generation']) is not int or payload['generation'] < 0
+                or not _name(payload['run_id']) or not _sha(payload['native_event_id'])
+                or not _name(payload['native_event_type'])
+                or NATIVE_EVENT_KINDS.get(payload['native_event_type']) is not kind):
             _invalid("BAMF_C10_PROJECTION_FIELDS_INVALID")
     if (kind is AkashaEventKind.REVALIDATION
             and type(payload["eligible"]) is not bool):
