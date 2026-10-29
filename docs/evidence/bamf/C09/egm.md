@@ -42,3 +42,21 @@ No new C09-specific static error-control or module-size debt.
 silently marked EGM PASS. Actual source-owner A01/B07/B13/C04
 keys, C10 delivery, C09 parent integration and neural runtime
 remain separate gates. No merge or live training occurred.
+
+## Second targeted C09.1 review
+
+Worker-7 inspected immutable `cd3ec53` and found **0 Blockers,
+2 new Majors**: signed old recomputation evidence was not
+bound to the active correction, and the key's independent
+kind/prefix allowlists created cross-scope authority.
+
+Repair `8ee79c23ec7e88b7915bc185e8c5c61ccc7fce79`
+binds v3 signed recomputation/transition records to the
+exact active correction event and receipt. It replaces
+Cartesian allowlists with v2 explicit kind+prefix scope
+pairs. Both failing-before adversaries now reject.
+Combined focused prime tests: **90 passed, 1 optional skip**.
+
+**Latest C09.1 EGM: RE-REVIEW PENDING.** Earlier C09.3
+actor-prefix and receipt-relabel repairs also await
+independent readback. No scoped EGM PASS is inferred.

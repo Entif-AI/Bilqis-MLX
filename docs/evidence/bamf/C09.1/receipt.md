@@ -20,7 +20,7 @@ Draft human-review PR: #550.
 - `bilqis.c09.revalidation-queue/v1` orders lazy work by exigency,
   impact and stable ID, subject to upstream dependency holds.
   Descendants cannot be read through a held or ineligible ancestor.
-- `bilqis.c09.state-transition/v2` propagates to immediate consumers
+- `bilqis.c09.state-transition/v3` propagates to immediate consumers
   only when content identity or eligibility changes. Equal results
   stop propagation; immutable prior nodes remain available as history.
 
@@ -58,9 +58,9 @@ the full dependency DAG before selecting a revalidation task.
 The exact high-priority descendant/unheld-intermediate/held-ancestor
 repro now selects the held ancestor first.
 
-Versioned v2 correction, recomputation and state-transition
+Versioned v2 correction and v3 recomputation/state-transition
 contracts now require Ed25519 signatures. A host-provisioned
-`bilqis.c09.source-authority-registry/v1` pins public keys,
+`bilqis.c09.source-authority-registry/v2` pins public keys,
 allowed dependency kinds and key scopes. Apply, revalidation,
 transition, branch admission and process-fault escalation reject
 unsigned or foreign receipts. Absent authority fails closed.
@@ -70,5 +70,29 @@ integration dependency; this layer does not issue source rights.
 
 C09.2 was separated into `atlas_requalification.py` to keep
 modules below the size-review threshold. Focused C09 and
-error-control tests: **19 passed, 0 failed**.
-Independent targeted re-review remains pending.
+error-control tests: **20 passed, 0 failed**.
+
+## 2026-10-29 second independent-review repairs
+
+Goldfish's targeted review of `cd3ec53` found two additional
+Majors: an authentic old signed recomputation could clear a
+newer correction hold, and independent allowed kinds/prefixes
+created a Cartesian cross-scope authority grant.
+
+Repair `8ee79c23ec7e88b7915bc185e8c5c61ccc7fce79`
+binds the signed v3 recomputation and transition to the
+exact active correction event ID and source receipt.
+`advance_revalidation` refuses stale correction bindings
+before clearing any hold. The test reproduces a valid old
+signature and verifies the new hold stays intact.
+
+`SourceAuthorityKey/v2` now contains explicit
+`SourceAuthorityScope(kind, key_prefix)` pairs, not two
+independent allowlists. A registered key authorized for
+SOURCE/source: and ARTIFACT/feature: cannot sign
+ARTIFACT/source: even with a valid Ed25519 signature.
+
+Combined C09/C08/C10/C02/source/error-control focused tests:
+**90 passed, 0 failed, 1 optional skip**. A fresh
+independent re-review is pending; no parent integration
+or live source admission is claimed.
