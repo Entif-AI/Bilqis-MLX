@@ -19,14 +19,15 @@ from ..semantics.cognitive_dependencies import (
 
 
 CORRECTION_EVENT_SCHEMA = "bilqis.c09.correction-event/v2"
-REVALIDATED_ARTIFACT_SCHEMA = "bilqis.c09.revalidated-artifact/v2"
+REVALIDATED_ARTIFACT_SCHEMA = "bilqis.c09.revalidated-artifact/v3"
 REVALIDATION_FRONTIER_SCHEMA = "bilqis.c09.revalidation-frontier/v1"
 REVALIDATION_TASK_SCHEMA = "bilqis.c09.revalidation-task/v1"
 REVALIDATION_QUEUE_SCHEMA = "bilqis.c09.revalidation-queue/v1"
-STATE_TRANSITION_SCHEMA = "bilqis.c09.state-transition/v2"
+STATE_TRANSITION_SCHEMA = "bilqis.c09.state-transition/v3"
 REVALIDATION_PROGRESS_SCHEMA = "bilqis.c09.revalidation-progress/v1"
-SOURCE_AUTHORITY_KEY_SCHEMA = "bilqis.c09.source-authority-key/v1"
-SOURCE_AUTHORITY_REGISTRY_SCHEMA = "bilqis.c09.source-authority-registry/v1"
+SOURCE_AUTHORITY_SCOPE_SCHEMA = "bilqis.c09.source-authority-scope/v1"
+SOURCE_AUTHORITY_KEY_SCHEMA = "bilqis.c09.source-authority-key/v2"
+SOURCE_AUTHORITY_REGISTRY_SCHEMA = "bilqis.c09.source-authority-registry/v2"
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _ED25519_SIGNATURE = re.compile(r"[0-9a-f]{128}\Z")
 MAX_REVALIDATION_PRIORITY = 4
@@ -63,28 +64,36 @@ def _refs_payload(refs: tuple[DependencyRef, ...]) -> list[dict[str, str]]:
 
 
 @dataclass(frozen=True)
+class SourceAuthorityScope:
+    kind: DependencyKind
+    key_prefix: str
+    schema_version: str = SOURCE_AUTHORITY_SCOPE_SCHEMA
+
+    def __post_init__(self) -> None:
+        if (not isinstance(self.kind, DependencyKind)
+                or not _name(self.key_prefix)
+                or self.schema_version != SOURCE_AUTHORITY_SCOPE_SCHEMA):
+            _invalid("BAMF_C09_SOURCE_AUTHORITY_SCOPE_INVALID")
+
+
+@dataclass(frozen=True)
 class SourceAuthorityKey:
     owner_id: str
     public_key_hex: str
-    allowed_dependency_kinds: tuple[DependencyKind, ...]
-    allowed_key_prefixes: tuple[str, ...]
+    allowed_scopes: tuple[SourceAuthorityScope, ...]
     schema_version: str = SOURCE_AUTHORITY_KEY_SCHEMA
 
     def __post_init__(self) -> None:
         if (not _name(self.owner_id)
                 or not isinstance(self.public_key_hex, str)
                 or not _SHA256.fullmatch(self.public_key_hex)
-                or not isinstance(self.allowed_dependency_kinds, tuple)
-                or not self.allowed_dependency_kinds
-                or any(not isinstance(kind, DependencyKind)
-                       for kind in self.allowed_dependency_kinds)
-                or self.allowed_dependency_kinds != tuple(sorted(
-                    set(self.allowed_dependency_kinds), key=lambda kind: kind.value))
-                or not isinstance(self.allowed_key_prefixes, tuple)
-                or not self.allowed_key_prefixes
-                or any(not _name(prefix) for prefix in self.allowed_key_prefixes)
-                or self.allowed_key_prefixes != tuple(
-                    sorted(set(self.allowed_key_prefixes)))
+                or not isinstance(self.allowed_scopes, tuple)
+                or not self.allowed_scopes
+                or any(not isinstance(scope, SourceAuthorityScope)
+                       for scope in self.allowed_scopes)
+                or self.allowed_scopes != tuple(sorted(
+                    set(self.allowed_scopes),
+                    key=lambda scope: (scope.kind.value, scope.key_prefix)))
                 or self.schema_version != SOURCE_AUTHORITY_KEY_SCHEMA):
             _invalid("BAMF_C09_SOURCE_AUTHORITY_KEY_INVALID")
 
@@ -111,12 +120,12 @@ class SourceAuthorityRegistry:
     ) -> None:
         authority = next(
             (key for key in self.keys if key.owner_id == owner_id), None)
-        if (authority is None
-                or dependency_kind not in authority.allowed_dependency_kinds):
+        if authority is None:
             _invalid("BAMF_C09_SOURCE_AUTHORITY_UNREGISTERED")
         if not any(
-            dependency_key.startswith(prefix)
-            for prefix in authority.allowed_key_prefixes
+            scope.kind is dependency_kind
+            and dependency_key.startswith(scope.key_prefix)
+            for scope in authority.allowed_scopes
         ):
             _invalid("BAMF_C09_SOURCE_AUTHORITY_SCOPE_MISMATCH")
         try:
@@ -208,6 +217,8 @@ class RevalidatedArtifact:
     content_digest: str
     eligible: bool
     source_receipt_sha256: str
+    correction_event_id: str
+    correction_receipt_sha256: str
     source_owner: str
     source_signature_hex: str
     schema_version: str = REVALIDATED_ARTIFACT_SCHEMA
@@ -222,6 +233,8 @@ class RevalidatedArtifact:
                 or not _digest(self.content_digest)
                 or type(self.eligible) is not bool
                 or not _digest(self.source_receipt_sha256)
+                or not _name(self.correction_event_id)
+                or not _digest(self.correction_receipt_sha256)
                 or not _name(self.source_owner)
                 or not isinstance(self.source_signature_hex, str)
                 or not _ED25519_SIGNATURE.fullmatch(self.source_signature_hex)
@@ -237,6 +250,8 @@ class RevalidatedArtifact:
             "content_digest": self.content_digest,
             "eligible": self.eligible,
             "source_receipt_sha256": self.source_receipt_sha256,
+            "correction_event_id": self.correction_event_id,
+            "correction_receipt_sha256": self.correction_receipt_sha256,
             "source_owner": self.source_owner,
         })
 
@@ -284,6 +299,8 @@ class StateTransition:
     previous_eligible: bool
     new_eligible: bool
     source_receipt_sha256: str
+    correction_event_id: str
+    correction_receipt_sha256: str
     source_owner: str
     source_signature_hex: str
     immediate_dependencies: tuple[DependencyRef, ...]
@@ -303,6 +320,8 @@ class StateTransition:
                 or type(self.changed) is not bool
                 or self.changed != actual_change
                 or not _name(self.source_owner)
+                or not _name(self.correction_event_id)
+                or not _digest(self.correction_receipt_sha256)
                 or not isinstance(self.source_signature_hex, str)
                 or not _ED25519_SIGNATURE.fullmatch(self.source_signature_hex)
                 or not isinstance(self.immediate_dependencies, tuple)
@@ -320,6 +339,8 @@ class StateTransition:
             "content_digest": self.new_content_digest,
             "eligible": self.new_eligible,
             "source_receipt_sha256": self.source_receipt_sha256,
+            "correction_event_id": self.correction_event_id,
+            "correction_receipt_sha256": self.correction_receipt_sha256,
             "source_owner": self.source_owner,
         })
 
@@ -489,6 +510,8 @@ def revalidate_node(
         previous_eligible=node.eligible,
         new_eligible=candidate.eligible,
         source_receipt_sha256=candidate.source_receipt_sha256,
+        correction_event_id=candidate.correction_event_id,
+        correction_receipt_sha256=candidate.correction_receipt_sha256,
         source_owner=candidate.source_owner,
         source_signature_hex=candidate.source_signature_hex,
         immediate_dependencies=candidate.immediate_dependencies,
@@ -512,6 +535,10 @@ def advance_revalidation(
         _invalid("BAMF_C09_SOURCE_AUTHORITY_MISSING")
     authority_registry.verify_correction(queue.event)
     authority_registry.verify_transition(transition)
+    if (transition.correction_event_id != queue.event.event_id
+            or transition.correction_receipt_sha256
+            != queue.event.source_receipt_sha256):
+        _invalid("BAMF_C09_REVALIDATION_CORRECTION_MISMATCH")
     selected = next_revalidation_task(dependency_index, queue)
     if selected is None or selected.artifact_id != transition.artifact_id:
         _invalid("BAMF_C09_REVALIDATION_OUT_OF_ORDER")

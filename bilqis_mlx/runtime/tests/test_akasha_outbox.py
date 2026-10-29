@@ -17,6 +17,7 @@ from bilqis_mlx.runtime.akasha_outbox import (
 )
 from bilqis_mlx.runtime.atlas_revalidation import (
     CorrectionEvent, SourceAuthorityKey, SourceAuthorityRegistry,
+    SourceAuthorityScope,
 )
 from bilqis_mlx.runtime.atlas_requalification import (
     C10InvalidationIntent, CapabilitySupport, RequalificationLedger,
@@ -87,7 +88,7 @@ class AkashaOutboxTests(unittest.TestCase):
         authority = SourceAuthorityRegistry((
             SourceAuthorityKey(
                 "source:owner", public,
-                (DependencyKind.SOURCE,), ("source:",)),
+                (SourceAuthorityScope(DependencyKind.SOURCE, "source:"),)),
         ))
         correction = CorrectionEvent(
             event_id="correction:fixture",

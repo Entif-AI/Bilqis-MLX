@@ -14,7 +14,7 @@ from bilqis_mlx.semantics.cognitive_dependencies import (
 )
 from bilqis_mlx.runtime.atlas_revalidation import (
     CorrectionEvent, RevalidatedArtifact, RevalidationFrontier,
-    SourceAuthorityKey, SourceAuthorityRegistry,
+    SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
     advance_revalidation as _advance_revalidation,
     apply_correction as _apply_correction,
     next_revalidation_task, read_artifact,
@@ -35,16 +35,19 @@ _TEST_PRIVATE = Ed25519PrivateKey.from_private_bytes(bytes.fromhex("11" * 32))
 _TEST_PUBLIC = _TEST_PRIVATE.public_key().public_bytes(
     Encoding.Raw, PublicFormat.Raw).hex()
 _SOURCE_OWNER = "synthetic:source-authority"
+_TEST_PREFIXES = (
+    "source:", "rights:", "fixture:", "time:asof:",
+    "feature:", "frame:", "motif:", "cache:",
+    "composition:", "capability:", "artifact:",
+    "a", "b", "c", "d", "feature", "frame",
+)
 AUTHORITY = SourceAuthorityRegistry((
     SourceAuthorityKey(
         _SOURCE_OWNER, _TEST_PUBLIC,
-        tuple(sorted(DependencyKind, key=lambda kind: kind.value)),
         tuple(sorted((
-            "source:", "rights:", "fixture:", "time:asof:",
-            "feature:", "frame:", "motif:", "cache:",
-            "composition:", "capability:", "artifact:",
-            "a", "b", "c", "d", "feature", "frame",
-        )))),
+            SourceAuthorityScope(kind, prefix)
+            for kind in DependencyKind for prefix in _TEST_PREFIXES
+        ), key=lambda scope: (scope.kind.value, scope.key_prefix)))),
 ))
 
 
@@ -113,13 +116,18 @@ def _event(dependency: DependencyRef) -> CorrectionEvent:
 
 
 def _result(node: ArtifactNode, *, digest: str = "a" * 64,
-            eligible: bool = True) -> RevalidationFrontier:
+            eligible: bool = True,
+            correction: CorrectionEvent | None = None) -> RevalidationFrontier:
+    correction = correction or _event(
+        _ref(DependencyKind.SOURCE, "source:alpha"))
     return RevalidationFrontier((
         _sign_result(RevalidatedArtifact(
             artifact_id=node.artifact_id,
             immediate_dependencies=node.immediate_dependencies,
             content_digest=digest, eligible=eligible,
             source_receipt_sha256="c" * 64,
+            correction_event_id=correction.event_id,
+            correction_receipt_sha256=correction.source_receipt_sha256,
             source_owner=_SOURCE_OWNER,
             source_signature_hex="0" * 128,
         )),
@@ -147,6 +155,28 @@ def _chain() -> tuple[DependencyIndex, DependencyRef, DependencyRef]:
 
 
 class AtlasRevalidationTests(unittest.TestCase):
+    def test_authentic_old_revalidation_receipt_cannot_clear_new_correction_hold(self):
+        index, source, _ = _chain()
+        current = _event(source)
+        queue = apply_correction(current, index)
+        node = index.node("feature:alpha")
+        older = _sign_event(replace(
+            current, event_id="correction:older",
+            source_receipt_sha256="f" * 64))
+        stale = revalidate_node(
+            node, _result(node, correction=older))
+        self.assertFalse(stale.changed)
+        with self.assertRaises(BilqisError) as caught:
+            advance_revalidation(index, queue, stale)
+        self.assertEqual(caught.exception.context["reason"],
+                         "BAMF_C09_REVALIDATION_CORRECTION_MISMATCH")
+        self.assertEqual(queue.held_artifact_ids, ("feature:alpha",))
+        fresh = revalidate_node(
+            node, _result(node, correction=current))
+        progressed = advance_revalidation(index, queue, fresh)
+        self.assertEqual(progressed.queue.pending, ())
+        self.assertEqual(progressed.index.node("feature:alpha"), node)
+
     def test_forged_source_owner_and_revalidation_receipts_cannot_mutate_state(self):
         index, source, _ = _chain()
         event = _event(source)
@@ -163,6 +193,22 @@ class AtlasRevalidationTests(unittest.TestCase):
             apply_correction(_sign_event(replace(
                 event, dependency=_ref(
                     DependencyKind.SOURCE, "foreign:unowned"))), index)
+        self.assertEqual(caught.exception.context["reason"],
+                         "BAMF_C09_SOURCE_AUTHORITY_SCOPE_MISMATCH")
+        narrow = SourceAuthorityRegistry((
+            SourceAuthorityKey(
+                _SOURCE_OWNER, _TEST_PUBLIC, (
+                    SourceAuthorityScope(
+                        DependencyKind.ARTIFACT, "feature:"),
+                    SourceAuthorityScope(
+                        DependencyKind.SOURCE, "source:"),
+                )),
+        ))
+        cross_pair = _sign_event(replace(
+            event, dependency=DependencyRef(
+                DependencyKind.ARTIFACT, "source:alpha")))
+        with self.assertRaises(BilqisError) as caught:
+            _apply_correction(cross_pair, index, narrow)
         self.assertEqual(caught.exception.context["reason"],
                          "BAMF_C09_SOURCE_AUTHORITY_SCOPE_MISMATCH")
         node = index.node("feature:alpha")
