@@ -46,3 +46,14 @@ real backbone execution. The present fixture proves relabelling
 and custody checks, not that missing future B11 assembly. Fresh
 independent EGM and the actual producer witness are required before
 closing B05.4 or unblocking B05.1.
+
+Explicit unresolved attack: a caller who can invoke the private
+producer hook can capture h0 and then feed actual g2 bytes as its
+second input; the hook assigns that second tensor the g1 position.
+The weak receipt registry proves constructor custody but cannot
+establish that B11 executed the correct first four layers. This is
+a known producer-authenticity blocker, not an accepted proof.
+Parallel draft PR #584 explores the same issue. Neither candidate
+should be merged as the authoritative B05.4 producer until the
+actual B11/B13 source boundary is implemented and independently
+reviewed.
