@@ -17,7 +17,7 @@ from bilqis_mlx.runtime.model_topology_v2 import (
     initialize_bamf_row, initializer_seed,
     validate_bamf_parameters,
 )
-from bilqis_mlx.semantics.atlas_features import AtlasFeatures
+from bilqis_mlx.semantics.atlas_features import AtlasFeatures, _factor_overflow
 from bilqis_mlx.semantics.context_eligibility import ApprovedContextProjection
 from bilqis_mlx.semantics.frame_schema import ConceptRef, FrameInstance
 
@@ -131,18 +131,23 @@ def _local_position(table, slot):
     return mx.array(values)
 
 
-def _validate_composer(parameters, requests, features, extents):
+def _validate_feature_parameters(parameters, features, extents):
     if (not isinstance(parameters, Mapping) or type(features) is not AtlasFeatures or
-            type(extents) is not GenerationExtents or extents.factor_map_digest != features.digest or
-            type(requests) is not tuple or not requests or type(requests[0]) is not tuple or
-            not requests[0] or any(type(row) is not tuple or len(row) != len(requests[0]) or
-                                  any(type(item) is not FeatureRequest for item in row) for row in requests)):
+            type(extents) is not GenerationExtents or extents.factor_map_digest != features.digest):
         _invalid()
     for item in expected_bamf_shapes(ModelTopologySpecV2(), extents):
         if item.name.startswith("features."):
             value = parameters.get(item.name)
             if not isinstance(value, mx.array) or value.shape != item.shape or value.dtype != mx.float32:
                 _invalid()
+
+
+def _validate_composer(parameters, requests, features, extents):
+    _validate_feature_parameters(parameters, features, extents)
+    if (type(requests) is not tuple or not requests or type(requests[0]) is not tuple or
+            not requests[0] or any(type(row) is not tuple or len(row) != len(requests[0]) or
+                                  any(type(item) is not FeatureRequest for item in row) for row in requests)):
+        _invalid()
 
 
 def _released_factor_terms(parameters, row):
@@ -230,6 +235,47 @@ def frame_factor_terms(parameters: Mapping[str, mx.array], requests: tuple[Featu
                       for row in rows])
     return FrameFactorTerms(schema, mx.mean(roles, axis=0), mx.mean(composed.type_role[0], axis=0),
                             requests, features.digest, features.semantic_release)
+
+
+@dataclass(frozen=True)
+class EmptyFrameFactorTerms:
+    """Source-bound empty factors; legal cardinality is the compiler's proof."""
+
+    schema128: mx.array
+    mean_role128: mx.array
+    type_role768: mx.array
+    projection: ApprovedContextProjection
+    frame_handle: str
+    feature_digest: str
+    semantic_release: str
+    requests: tuple[FeatureRequest, ...] = ()
+    schema_version: str = "bilqis.mlx.empty-frame-factor-terms/v1"
+
+
+def empty_frame_factor_terms(parameters: Mapping[str, mx.array], projection: ApprovedContextProjection,
+                             frame_handle: str, features: AtlasFeatures, *,
+                             extents: GenerationExtents) -> EmptyFrameFactorTerms:
+    """Read raw schema and explicit NONE factors from one approved empty frame."""
+    _validate_feature_parameters(parameters, features, extents)
+    if type(projection) is not ApprovedContextProjection:
+        _invalid()
+    frame = projection.frame(frame_handle)
+    envelope = next(item for item in projection.envelopes if item.frame_handle == frame_handle)
+    if (type(frame) is not FrameInstance or frame.bindings or envelope.members or
+            envelope.semantic_release != features.semantic_release or
+            frame.frame_schema_id not in dict(features.schema_map)):
+        _invalid()
+    schema_row = dict(features.schema_map)[frame.frame_schema_id]
+    overflow = (_factor_overflow("schema", frame.frame_schema_id)
+                if schema_row == 0 and frame.frame_schema_id != "UNKNOWN" else None)
+    schema = _factor_vector(parameters["features.schema"], schema_row, overflow)
+    role = parameters["features.role"][FEATURE_NONE_ROW]
+    gates = mx.sigmoid(parameters["features.gates"])
+    type_role = (gates[FactorGate.TYPE] * (parameters["features.type"][FEATURE_NONE_ROW] @
+                                         parameters["features.project_type"].T) +
+                 gates[FactorGate.ROLE] * (role @ parameters["features.project_role"].T))
+    return EmptyFrameFactorTerms(schema, role, type_role, projection, frame_handle,
+                                 features.digest, features.semantic_release)
 
 
 BANK_ROWS = ModelTopologySpecV2.semantic_bank_rows

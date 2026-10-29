@@ -12,7 +12,7 @@ from bilqis_mlx.learning.frame_embeddings import (
 )
 from bilqis_mlx.learning.frame_encoder import (
     AtomicEncoderInput, AtomicSourceHandle, FrameEncoderInput, encode_frames, frame_encoder_parameter_view,
-    CompiledEncoderInput, CompiledEmbeddingVectors, MemberEmbedding,
+    CompiledEncoderInput, CompiledEmbeddingVectors, MemberEmbedding, AtomicFrameEmbedding,
 )
 from bilqis_mlx.learning.tests.test_frame_embeddings import _context_for
 from bilqis_mlx.runtime.model_topology_v2 import (
@@ -346,6 +346,76 @@ class FrameEncoderTests(unittest.TestCase):
             replace(compiled,compiler_configs=(changed_schema,))
         with self.assertRaises(BilqisError):
             encode_frames(compiled,replace(vectors,atoms=(mx.zeros((9,768)),)),self.params)
+
+    def empty_inputs(self):
+        full,vectors,ast=self.compiled_inputs()
+        config=full.compiler_configs[0]
+        old=config.approved.envelopes[0]
+        schema=replace(config.schemas[0],roles=tuple(replace(role,min_cardinality=0) for role in config.schemas[0].roles))
+        frame=make_frame_instance(schema,source_instance_id=old.frame.source_instance_id,structural_path=(),
+                                  source_span=old.frame.source_span,parent_occurrence_id=None,
+                                  bindings=(),causal_prefix_end=8)
+        envelope=replace(old,frame=frame,members=())
+        frontier=replace(config.frontier,grants=tuple(replace(grant,evidence_digest=frame_evidence_digest(frame))
+                         if grant.source_handle==envelope.source_handle else grant for grant in config.frontier.grants))
+        projection=project_context((envelope,),config.task,frontier,config.policy)
+        config=replace(config,schemas=(schema,),schema_map=SchemaTagMap.from_schemas(self.features.semantic_release,(schema,)),
+                       approved=projection,frontier=frontier)
+        ast=replace(ast,frames=(FrameTree(frame),))
+        rows=compile_prefix_rows(((ast,8,config),),self.features.semantic_release)
+        return CompiledEncoderInput(rows,(config,),self.features,self.extents),replace(vectors,members=((),)),ast
+
+    def test_actual_legal_empty_frame_uses_none_summary_and_empty_seed(self):
+        compiled,vectors,_=self.empty_inputs()
+        result=encode_frames(compiled,vectors,self.params)
+        summary=(self.params["features.schema"][2]+self.params["features.role"][1])/2
+        expected=self.params["frame.empty_seed"]+summary @ self.params["frame.project_summary"].T
+        expected=expected*mx.rsqrt(mx.mean(expected*expected)+1e-5)*self.params["frame.norm"]
+        np.testing.assert_allclose(np.asarray(result.global_seeds[0,-1]),np.asarray(expected),atol=1e-7)
+        self.assertTrue(bool(mx.all(mx.isfinite(result.global_seeds))))
+        self.assertEqual(result.features[0][-1].requests,())
+        self.assertEqual(result.features[0][-1].frame_handle,"frame:0")
+        self.assertEqual(compiled.member_requests,((),))
+        gradients=mx.grad(lambda p: mx.sum(encode_frames(compiled,vectors,p).global_seeds[0,-1]*
+                                          mx.arange(768,dtype=mx.float32)))(self.params)
+        for name in ("frame.empty_seed","frame.project_summary","frame.norm","features.schema","features.role"):
+            self.assertGreater(float(mx.sum(mx.abs(gradients[name]))),0,name)
+        for name in ("frame.query_schema","frame.member_key","frame.member_value","frame.pool_gate"):
+            self.assertEqual(float(mx.sum(mx.abs(gradients[name]))),0,name)
+
+    def test_empty_frame_with_required_roles_is_rejected_by_actual_schema_contract(self):
+        compiled,_,ast=self.empty_inputs()
+        config=compiled.compiler_configs[0]
+        required=replace(config.schemas[0],roles=tuple(replace(role,min_cardinality=1) for role in config.schemas[0].roles))
+        config=replace(config,schemas=(required,),schema_map=SchemaTagMap.from_schemas(self.features.semantic_release,(required,)))
+        with self.assertRaises(BilqisError):
+            compile_prefix_rows(((ast,8,config),),self.features.semantic_release)
+
+    def test_actual_a05_atomic_closure_preserves_its_supplied_embedding(self):
+        full,vectors,ast=self.compiled_inputs()
+        config=full.compiler_configs[0]
+        projection=_atomic_projection()
+        envelope=projection.envelopes[0]
+        evidence={envelope.source_handle:frame_evidence_digest(envelope.frame),
+                  **{member.source_handle:member_evidence_digest(envelope.frame,member) for member in envelope.members}}
+        grants=tuple(replace(config.frontier.grants[0],source_handle=handle,evidence_digest=digest)
+                     for handle,digest in sorted(evidence.items()))
+        config=replace(config,schemas=(),schema_map=SchemaTagMap.from_schemas(self.features.semantic_release,()),
+                       approved=projection,frontier=replace(config.frontier,grants=grants))
+        ast=replace(ast,source_instance_id=envelope.frame.source_instance_id,frames=(FrameTree(envelope.frame),))
+        config=_with_atom_grants(ast,config)
+        rows=compile_prefix_rows(((ast,8,config),),self.features.semantic_release)
+        compiled=CompiledEncoderInput(rows,(config,),self.features,self.extents)
+        atom=AtomicFrameEmbedding(compiled.atomic_handles[0][0],mx.arange(768,dtype=mx.float32))
+        vectors=replace(vectors,members=((),),atomic_frames=((atom,),))
+        result=encode_frames(compiled,vectors,self.params)
+        np.testing.assert_array_equal(np.asarray(result.global_seeds[0,-1]),np.asarray(atom.vector))
+        self.assertIsNone(result.features[0][-1])
+        gradient=mx.grad(lambda p:mx.sum(encode_frames(compiled,vectors,p).global_seeds))(self.params)
+        self.assertTrue(all(bool(mx.all(value==0)) for value in gradient.values()))
+        for atoms in ((),((atom,atom),)):
+            with self.assertRaises(BilqisError):
+                encode_frames(compiled,replace(vectors,atomic_frames=atoms),self.params)
 
 
 if __name__ == "__main__":
