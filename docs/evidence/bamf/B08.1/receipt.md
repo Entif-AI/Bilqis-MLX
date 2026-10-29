@@ -50,7 +50,8 @@ python3 -B scripts/run_tests.py \
   bilqis_mlx/runtime/tests/test_model_topology_v2.py
 ```
 
-**77 total, 75 passed, 0 failed, 2 existing optional skips.**
+After fail-closed public-entrypoint mitigation: **78 total, 76 passed,
+0 failed, 2 existing optional skips.**
 The new tests verify both site gates against the literal sigmoid(-4)
 equation, exact-over-structural precedence, bitwise no-op misses,
 revoked/forged schema and frame grants, foreign-release and
@@ -63,7 +64,20 @@ were observed in the new module.
 
 ## Disposition
 
-**SCOPED_CANDIDATE_EGM_PENDING_SOURCE_AND_GENERATION_INTEGRATION.**
+**EGM_BLOCKED_SOURCE_SCHEMA_AUTHORITY_AND_CACHE_IDENTITY.**
+Independent Goldfish review at immutable `4225b2c` found one
+Blocker and one Major, documented with exact adversaries in
+`docs/evidence/bamf/B08.1/egm.md`. A same-ID/revision forged
+schema with a matching caller-minted grant could authorize an
+EXACT neural gather; schema-grant state also was not included in
+the returned A13 context digest. The numerical kernel tests remain
+useful. The public `read_motif` entrypoint now **fails closed
+unconditionally**; only the private experimental numerical helper
+remains testable. **This branch must not be integrated or wired into
+the runtime** until the A03/B07.1 source owner supplies a
+verifiable released-schema witness and B08 binds the complete
+read-cache dependency identity. No EGM PASS is claimed.
+
 The B07.1 source key probe, B02 feature provenance, B03.3 nested
 source closure, B08.2 placement, B11 orchestration and B13/C
 retained-generation authority remain independent integration gates.

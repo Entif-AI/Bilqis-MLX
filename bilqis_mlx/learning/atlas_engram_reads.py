@@ -1,7 +1,10 @@
-"""B08.1 source-gated exact/structural motif reads at the two B01 sites.
+"""B08.1 experimental exact/structural motif reads at the two B01 sites.
 
 No slot allocation, optimizer write, checkpoint publication or depth placement
 occurs here. B08.2/B11 own placement and the complete neural generation.
+EGM_BLOCKED: the local schema-grant convention is caller-mintable and MUST NOT
+be wired into a production reader until A03/B07.1 source-owned schema authority
+and a complete cache identity are integrated. See B08.1/egm.md.
 """
 from __future__ import annotations
 
@@ -29,6 +32,9 @@ READ_SCHEMA = "bilqis.mlx.motif-read-result/v1"
 POSITION_SCHEMA = "bilqis.mlx.motif-read-position/v1"
 WIDTH = ModelTopologySpecV2.width
 MOTIF_WIDTH = 128
+READ_TENSOR_RANK = 3
+FEATURE_AXIS = 2
+BATCH_PREFIX_AXES = 2
 DISPOSITIONS = frozenset({"EXACT", "STRUCTURAL", "MISS", "HELD", "FOREIGN_RELEASE"})
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 
@@ -106,8 +112,8 @@ class MotifReadResult:
 
     def __post_init__(self) -> None:
         if (not isinstance(self.hidden, mx.array)
-                or self.hidden.ndim != 3
-                or self.hidden.shape[2] != WIDTH
+                or self.hidden.ndim != READ_TENSOR_RANK
+                or self.hidden.shape[FEATURE_AXIS] != WIDTH
                 or self.hidden.dtype != mx.float32
                 or not isinstance(self.dispositions, tuple)
                 or len(self.dispositions) != self.hidden.shape[0]
@@ -130,7 +136,7 @@ class MotifReadResult:
             _invalid()
 
 
-def read_motif(
+def _read_motif_unqualified_candidate(
     *,
     site_index: int,
     hidden: mx.array,
@@ -142,7 +148,7 @@ def read_motif(
     manifest: MotifManifest,
     parameters: MotifParameterView,
 ) -> MotifReadResult:
-    """Read one of two B01 sites, preserving exact h on any miss.
+    """Experimental numerical proof only; not a source-authorized entrypoint.
 
     A row is source-gated as a *set* before a slot is gathered, so a
     disallowed join cannot leak through individually eligible frames.
@@ -154,10 +160,10 @@ def read_motif(
             or type(parameters) is not MotifParameterView
             or parameters.site_index != site_index
             or manifest.capacity > parameters.page_count * INITIAL_MOTIF_CAPACITY
-            or not isinstance(hidden, mx.array) or hidden.ndim != 3
-            or hidden.shape[2] != WIDTH or hidden.dtype != mx.float32
+            or not isinstance(hidden, mx.array) or hidden.ndim != READ_TENSOR_RANK
+            or hidden.shape[FEATURE_AXIS] != WIDTH or hidden.dtype != mx.float32
             or not isinstance(features, mx.array)
-            or features.shape != (*hidden.shape[:2], MOTIF_WIDTH)
+            or features.shape != (*hidden.shape[:BATCH_PREFIX_AXES], MOTIF_WIDTH)
             or features.dtype != mx.float32
             or not isinstance(positions, tuple)
             or not isinstance(tasks, tuple)
@@ -257,3 +263,13 @@ def read_motif(
         tuple(dispositions), tuple(sorted(participating)),
         tuple(context_digests),
     )
+
+
+def read_motif(**_unqualified: object) -> MotifReadResult:
+    """Fail closed until the A03/B07.1 released-schema issuer is available.
+
+    The experimental numerical helper above is intentionally not exposed as
+    an authorized runtime read. A caller-supplied SourceGrant is insufficient
+    to mint canonical source-schema authority.
+    """
+    _invalid()
