@@ -583,7 +583,7 @@ def compile_source_constructive_lessons(
             checker = "bilqis.source-checker.identity/v1"
             constituents = (semantic_id,)
             prerequisites = ()
-            axes = ("source-identity", "source-contrast", "fresh-seed")
+            axes = ("source-identity", "source-contrast")
         elif family == "source_attested_relation" and len(relations) > 1:
             positive = relations_by_source.get(semantic_id)
             if positive is None:
@@ -598,7 +598,7 @@ def compile_source_constructive_lessons(
             constituents = tuple(dict.fromkeys((positive[0], positive[2])))
             prerequisites = tuple(
                 item for item in constituents if item != semantic_id)
-            axes = ("source-relation", "source-contrast", "fresh-seed")
+            axes = ("source-relation", "source-contrast")
         else:
             uncovered.append(obligation)
             continue
