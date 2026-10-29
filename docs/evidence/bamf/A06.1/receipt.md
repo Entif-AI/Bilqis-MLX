@@ -71,3 +71,31 @@ shared-runtime findings; no new A06.1 module-size finding.
 A06.2 owns corpus-wide persisted manifest/readback,
 release pinning and successor proofs. A06 parent integration
 and downstream training admission remain open.
+
+## 2026-10-28 unified sync and independent review repairs
+
+Consumed current unified `6e83c0f6618f81a6d41f82503f16a80b8e14164f`
+through Lane A merge `982ba51127b7e851cd795039644565bc3625ebaa`.
+The three initial Goldfish Majors at `a02a64d` were:
+root-side sense count missing source-owned sense links;
+arbitrary role/schema IDs admitted as learned categories;
+and a foreign predecessor accepted without A01 lineage proof.
+
+The feature compiler now counts attested sense concepts
+linked to a root by canonical qualified hasSense or admitted
+SKOS narrower/broader source edges. A source sense is counted
+only if its own frozen concept carries a lexicon_root_senses
+source row. Role and schema IDs are checked against A03's
+exact pinned source graph, active frozen ABI index/symbol
+and released FrameSchema construction; a caller cannot
+allocate invented source rules. Synthetic overflow maps
+are tested as pure factor-map fixtures, not as source
+admission. The predecessor feature manifest carries the
+exact A01 atlas bundle ID, and a successor's
+`prior_abi_sha256` must equal that bundle ID.
+
+Focused owner suite remains **10 passed, 0 failed**,
+including root/sense link fixtures, forged source
+role/schema and ABI-index negatives, foreign predecessor
+and 512-row overflow. Independent immutable-head EGM
+re-review is pending; this is not an A06 parent closeout.

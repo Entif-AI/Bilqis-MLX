@@ -9,6 +9,7 @@ from dataclasses import asdict, dataclass
 import hashlib
 import json
 import math
+from pathlib import Path
 import re
 
 from ..errors import ErrorBus, SEMANTIC_FRAME
@@ -16,6 +17,7 @@ from rdflib.namespace import SKOS
 from .atlas_projection import FrozenAtlasSnapshot
 from .domains import contract_digest
 from .frame_schema import ConceptRef
+from lib.ithkuil.src.skos.identity import Identity
 from lib.ithkuil.src.skos.relations import SEMANTIC_PREDICATES
 
 
@@ -34,8 +36,10 @@ EDGE_TARGET_INDEX = 2
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _BROADER = SEMANTIC_PREDICATES["subsumption"]
 _NARROWER = SEMANTIC_PREDICATES["inverse_subsumption"]
+_ROOT_SENSE = Identity("term", ("hasSense",)).iri
 _ADMITTED_GRAPH_PREDICATES = frozenset({
     *SEMANTIC_PREDICATES.values(), str(SKOS.member), str(SKOS.memberList),
+    _ROOT_SENSE,
 })
 
 
@@ -97,6 +101,40 @@ def _normalized_count(count: int) -> float:
     if type(count) is not int or count < 0:
         _invalid("BAMF_FEATURE_SOURCE_COUNT_INVALID")
     return min(math.log1p(count) / math.log(1025), 1.0)
+
+
+def _source_rule_categories(
+    release: FrozenAtlasSnapshot,
+    requested_schemas: tuple[str, ...],
+) -> tuple[str, ...]:
+    """Prove schema IDs and roles against A03's pinned released source graph."""
+    if not requested_schemas:
+        return ()
+    from ..grade_a_probe import read_sources
+    from .frame_adapters import _schema_for_symbol
+    from .frame_schema import SourceSpan
+
+    source_root = Path(__file__).resolve().parents[2] / "vendor/legacy-v16"
+    graph = read_sources(source_root)[2]
+    entries = {
+        "frame:" + entry.semantic_id: entry
+        for entry in release.abi_entries if entry.active
+    }
+    roles: set[str] = set()
+    for schema_id in _sorted_ids(requested_schemas):
+        entry = entries.get(schema_id)
+        if (entry is None or entry.symbol is None
+                or not 0 <= entry.index < len(graph["tokens"])
+                or graph["tokens"][entry.index] != entry.symbol):
+            _invalid("BAMF_FEATURE_SOURCE_SCHEMA_UNVERIFIED")
+        source_schema, _ = _schema_for_symbol(
+            release, graph, entry.symbol, "source:" + entry.symbol,
+            adapter_id="source.verified-frame-rule/v1",
+            span=SourceSpan(0, 1), scope="source-rule")
+        if source_schema.schema_id != schema_id:
+            _invalid("BAMF_FEATURE_SOURCE_SCHEMA_UNVERIFIED")
+        roles.update(role.role_id for role in source_schema.roles)
+    return _sorted_ids(tuple(roles))
 
 
 def _graph_vector(
@@ -189,6 +227,7 @@ class FeatureRow:
 @dataclass(frozen=True)
 class AtlasFeatures:
     semantic_release: str
+    atlas_bundle_id: str
     source_bundle_id: str
     predecessor_digest: str | None
     type_map: tuple[tuple[str, int], ...]
@@ -258,8 +297,13 @@ def build_feature_manifest(
             or not _SHA.fullmatch(release.release_sha256)):
         _invalid("BAMF_FEATURE_RELEASE_INVALID")
     prior = feature_schema.predecessor
-    if prior is not None and prior.semantic_release == release.release_sha256:
-        _invalid("BAMF_FEATURE_PREDECESSOR_RELEASE_UNCHANGED")
+    if prior is not None and (
+            prior.semantic_release == release.release_sha256
+            or release.prior_abi_sha256 != prior.atlas_bundle_id):
+        _invalid("BAMF_FEATURE_PREDECESSOR_LINEAGE_INVALID")
+    if (_sorted_ids(feature_schema.role_ids)
+            != _source_rule_categories(release, feature_schema.schema_ids)):
+        _invalid("BAMF_FEATURE_SOURCE_ROLE_UNVERIFIED")
     active = {
         entry.semantic_id: entry for entry in release.abi_entries if entry.active
     }
@@ -281,6 +325,23 @@ def build_feature_manifest(
             and edge.target_semantic_id in active
             and edge.predicate in _ADMITTED_GRAPH_PREDICATES)
     ), key=lambda edge: tuple(_utf8(part) for part in edge)))
+    source_sense_targets = {
+        identifier for identifier, concept in source_concepts.items()
+        if concept.kind == "sense" and any(
+            ref.table == "lexicon_root_senses"
+            for ref in concept.source_rows)
+    }
+    senses_by_root: dict[str, set[str]] = {}
+    for source_id, predicate, target_id in admitted_relations:
+        if (predicate in (_ROOT_SENSE, _NARROWER)
+                and target_id in source_sense_targets
+                and source_id in source_concepts
+                and source_concepts[source_id].kind == "root"):
+            senses_by_root.setdefault(source_id, set()).add(target_id)
+        if (predicate == _BROADER and source_id in source_sense_targets
+                and target_id in source_concepts
+                and source_concepts[target_id].kind == "root"):
+            senses_by_root.setdefault(target_id, set()).add(source_id)
     type_map = _category_map(
         tuple(type_id for types in types_by_id.values() for type_id in types),
         prior.type_map if prior else None)
@@ -296,9 +357,7 @@ def build_feature_manifest(
     for identifier in _sorted_ids(tuple(active)):
         source = source_concepts.get(identifier)
         forms = len(source.realizations) if source else 0
-        senses = sum(
-            ref.table == "lexicon_root_senses" for ref in source.source_rows
-        ) if source else 0
+        senses = len(senses_by_root.get(identifier, ()))
         concept_rows.append(ConceptFeature(
             identifier, active[identifier].index, types_by_id[identifier],
             _graph_vector(
@@ -312,7 +371,7 @@ def build_feature_manifest(
         for item in release.withheld_rows
     ), key=lambda item: (_utf8(item[0]), _utf8(item[1]))))
     return AtlasFeatures(
-        release.release_sha256, release.source_bundle_id,
+        release.release_sha256, release.bundle_id, release.source_bundle_id,
         prior.digest if prior else None,
         type_map, role_map, schema_map, tuple(concept_rows),
         held_reasons,
