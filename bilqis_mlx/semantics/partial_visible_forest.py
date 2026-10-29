@@ -4,7 +4,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 import re
 
-from .context_eligibility import ContextEligibility
+from .context_eligibility import (
+    ContextEligibility,
+    ContextHold,
+    check_context_eligibility,
+)
 from .domains import contract_digest
 from .frame_compiler import (
     CompiledFrameBatch,
@@ -214,6 +218,26 @@ def _hidden_parent_provenance(
     )
 
 
+def _validate_hidden_parent_current_authority(
+    envelope: ContextEligibility,
+    compiler_config: FrameCompilerConfig,
+) -> None:
+    """Recheck hidden source authority against the live A13 frontier.
+
+    This consumes the hidden envelope only as validation input. The resulting
+    A13 projection, member evidence, and member handles never enter the p4
+    receipt or compiler cache identity.
+    """
+    current = check_context_eligibility(
+        (envelope,),
+        compiler_config.task,
+        compiler_config.frontier,
+        compiler_config.policy,
+    )
+    if isinstance(current, ContextHold):
+        _invalid("BAMF_PREFIX_PARTIAL_SOURCE_AUTHORITY_INVALID")
+
+
 def validate_partial_visible_forest(
     compiled: CompiledFrameBatch,
     source_ast: StreamingAST,
@@ -305,6 +329,8 @@ def validate_partial_visible_forest(
                 or parent_envelope.semantic_release != compiled.semantic_release
                 or parent_envelope.scope != compiled.scope):
             _invalid("BAMF_PREFIX_PARTIAL_AUTHORITY_DRIFT")
+        _validate_hidden_parent_current_authority(
+            parent_envelope, compiler_config)
         if _closure_end(parent, envelopes) <= compiled.visible_end:
             _invalid("BAMF_PREFIX_PARTIAL_VISIBILITY_DRIFT")
         hidden_parents.append(_hidden_parent_provenance(
