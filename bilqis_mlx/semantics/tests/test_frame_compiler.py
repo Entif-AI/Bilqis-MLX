@@ -1,7 +1,9 @@
 """A05.1 causal incremental source-prefix compiler witnesses."""
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import asdict, replace
+from hashlib import sha256
+from pathlib import Path
 import socket
 from unittest import TestCase
 from unittest.mock import patch
@@ -13,11 +15,12 @@ from bilqis_mlx.semantics.context_eligibility import (
     frame_evidence_digest, member_evidence_digest, project_context,
 )
 from bilqis_mlx.semantics.frame_codec import (
-    PackDisposition, SchemaTagMap,
+    PackDisposition, SchemaTagMap, _canonical_bytes,
 )
 from bilqis_mlx.semantics.frame_compiler import (
     FrameCompilerConfig, HiddenAnswerTargets, LawfulSourceSegment,
-    PositionKind, SourceAtom, StreamingAST, boundary_evidence_digest,
+    PositionKind, SourceAtom, StreamingAST, atom_evidence_digest,
+    boundary_evidence_digest,
     compile_lawful_segments,
     compile_prefix, compile_prefix_rows, compile_training_example,
     reconstruct,
@@ -34,6 +37,28 @@ PRINCIPAL = "synthetic:alice"
 TENANT = "synthetic:tenant"
 REGION = "synthetic:region"
 SCOPE = "synthetic:public"
+
+
+def _with_atom_grants(ast, config):
+    """Source fixture grants exact raw atoms, independently of frame grants."""
+    grants = {item.source_handle: item for item in config.frontier.grants}
+    for atom in ast.atoms:
+        digest = atom_evidence_digest(ast.source_instance_id, atom, RELEASE)
+        existing = grants.get(atom.source_reference)
+        grants[atom.source_reference] = (
+            replace(existing, evidence_digest=digest)
+            if existing is not None else SourceGrant(
+                atom.source_reference, PRINCIPAL, TENANT,
+                PUBLIC_FORMAL, RELEASE, digest,
+                ("TRAINING",), (REGION,), (SCOPE,),
+                rights_epoch=config.frontier.rights_epoch,
+                correction_generation=config.frontier.correction_generation,
+                observed_at=2, effective_from=0))
+    return replace(
+        config, frontier=replace(
+            config.frontier,
+            grants=tuple(sorted(
+                grants.values(), key=lambda item: item.source_handle))))
 
 
 def _case():
@@ -93,7 +118,7 @@ def _case():
         tuple(SourceAtom(i, f"token{i}", f"source:atom:{i}")
               for i in range(8)),
         (FrameTree(frame),))
-    return ast, config
+    return ast, _with_atom_grants(ast, config)
 
 
 def _mixed_case():
@@ -171,10 +196,59 @@ def _mixed_case():
         approved, base_config.task, frontier, base_config.policy)
     ast = replace(base_ast, frames=(
         FrameTree(parent, (FrameTree(child),)), FrameTree(atomic)))
-    return ast, config
+    return ast, _with_atom_grants(ast, config)
 
 
 class FrameCompilerTests(TestCase):
+    def test_compact_frame_sidecar_matches_literal_canonical_wire_bytes(self):
+        ast, config = _case()
+        compiled = compile_prefix(ast, 8, RELEASE, config)
+        closure = next(
+            item for item in compiled.positions
+            if item.kind is PositionKind.CLOSURE)
+        actual = _canonical_bytes(asdict(closure.packed.sidecar))
+        literal = (
+            Path(__file__).parent / "fixtures" / "a05_quad_sidecar.json"
+        ).read_bytes()
+        self.assertEqual(len(literal), 2563)
+        self.assertEqual(
+            sha256(literal).hexdigest(),
+            "cd2485f302d7e05bea293493e7f697315763fbf0cc8c0df4dbbe99167a7e43fc")
+        self.assertEqual(actual, literal)
+
+    def test_first_admission_raw_atom_requires_source_owned_grant(self):
+        ast, config = _case()
+        first = ast.atoms[0]
+        no_frame = replace(config, approved=None)
+        ungranted = replace(
+            no_frame, frontier=replace(
+                no_frame.frontier, grants=tuple(
+                    grant for grant in no_frame.frontier.grants
+                    if grant.source_handle != first.source_reference)))
+        with self.assertRaises(BilqisError) as caught:
+            compile_prefix(ast, 1, RELEASE, ungranted)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_PREFIX_ATOM_SOURCE_UNAUTHORIZED")
+        revoked = replace(
+            no_frame, frontier=replace(
+                no_frame.frontier, grants=tuple(
+                    replace(grant, revoked=True)
+                    if grant.source_handle == first.source_reference else grant
+                    for grant in no_frame.frontier.grants)))
+        with self.assertRaises(BilqisError) as caught:
+            compile_prefix(ast, 1, RELEASE, revoked)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_PREFIX_ATOM_SOURCE_UNAUTHORIZED")
+        tampered = replace(
+            ast, atoms=(replace(first, token="unattested"), *ast.atoms[1:]))
+        with self.assertRaises(BilqisError) as caught:
+            compile_prefix(tampered, 1, RELEASE, no_frame)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_PREFIX_ATOM_SOURCE_UNAUTHORIZED")
+
     def test_hidden_teacher_targets_are_not_model_input_or_cache_identity(self):
         ast, config = _case()
         target_a = HiddenAnswerTargets(
@@ -230,6 +304,7 @@ class FrameCompilerTests(TestCase):
         full_config = replace(
             config, task=replace(
                 config.task, causal_prefix_end=1024))
+        full_config = _with_atom_grants(expanded, full_config)
         atoms_only = compile_prefix(
             replace(expanded, frames=()), 1024, RELEASE,
             replace(full_config, approved=None))
@@ -261,6 +336,7 @@ class FrameCompilerTests(TestCase):
                 config, approved=None,
                 task=replace(
                     config.task, causal_prefix_end=end - start))
+            scoped = _with_atom_grants(ast, scoped)
             segment = LawfulSourceSegment(
                 "synthetic:original", SourceSpan(start, end),
                 f"source:lawful-boundary:{end}", ast, scoped)
@@ -301,6 +377,30 @@ class FrameCompilerTests(TestCase):
                             segments[1].config.task,
                             tenant_id="synthetic:other")))),
                 RELEASE)
+        second = segments[1]
+        changed_generation = replace(
+            second, config=replace(
+                second.config, frontier=replace(
+                    second.config.frontier, correction_generation=2,
+                    grants=tuple(
+                        replace(grant, correction_generation=2)
+                        for grant in second.config.frontier.grants))))
+        with self.assertRaises(BilqisError) as caught:
+            compile_lawful_segments(
+                (segments[0], changed_generation), RELEASE)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_PREFIX_SPLIT_BOUNDARY_INVALID")
+        backdated_view = replace(
+            second, config=replace(
+                second.config, task=replace(
+                    second.config.task, observed_frontier=4)))
+        with self.assertRaises(BilqisError) as caught:
+            compile_lawful_segments(
+                (segments[0], backdated_view), RELEASE)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_PREFIX_SPLIT_BOUNDARY_INVALID")
         ungranted = replace(
             segments[0], config=replace(
                 segments[0].config, frontier=replace(
@@ -366,9 +466,10 @@ class FrameCompilerTests(TestCase):
                   for i in range(3)),
             ())
         right = compile_prefix(
-            other, 3, RELEASE, replace(
-                config, approved=None,
-                task=replace(config.task, causal_prefix_end=3)))
+            other, 3, RELEASE, _with_atom_grants(
+                other, replace(
+                    config, approved=None,
+                    task=replace(config.task, causal_prefix_end=3))))
         self.assertEqual(
             tuple(item.atom.token for item in right.positions),
             ("other:0", "other:1", "other:2"))
@@ -385,6 +486,7 @@ class FrameCompilerTests(TestCase):
         other_config = replace(
             config, approved=None,
             task=replace(config.task, causal_prefix_end=3))
+        other_config = _with_atom_grants(other, other_config)
         batch = compile_prefix_rows((
             (ast, 8, config), (other, 3, other_config)), RELEASE)
         self.assertEqual(len(batch.rows), 2)
@@ -404,7 +506,8 @@ class FrameCompilerTests(TestCase):
                 replace(atom, token=atom.token + ":changed")
                 for atom in ast.atoms))
         altered = compile_prefix_rows((
-            (changed_first, 8, config), (other, 3, other_config)), RELEASE)
+            (changed_first, 8, _with_atom_grants(changed_first, config)),
+            (other, 3, other_config)), RELEASE)
         self.assertEqual(altered.rows[1], batch.rows[1])
         self.assertEqual(altered.padded_positions[1],
                          batch.padded_positions[1])
@@ -667,6 +770,7 @@ class FrameCompilerTests(TestCase):
             ast, atoms=ast.atoms + (
                 SourceAtom(8, "token8", "source:atom:8"),
                 SourceAtom(9, "token9", "source:atom:9")))
+        delayed_config = _with_atom_grants(extended, delayed_config)
         before = compile_prefix(extended, 8, RELEASE, delayed_config)
         closed = compile_prefix(extended, 9, RELEASE, delayed_config)
         after = compile_prefix(extended, 10, RELEASE, delayed_config)

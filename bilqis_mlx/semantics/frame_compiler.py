@@ -13,7 +13,7 @@ import re
 from ..errors import ErrorBus, SEMANTIC_FRAME
 from .context_eligibility import (
     ApprovedContextProjection, ContextHold, ContextPolicy,
-    SourceFrontier, TaskScope, project_context,
+    SourceFrontier, SourceGrant, TaskScope, project_context,
 )
 from .domains import contract_digest
 from .frame_codec import (
@@ -39,7 +39,10 @@ HIDDEN_TARGET_SCHEMA = "bilqis.hidden-answer-targets/v1"
 LAWFUL_SEGMENT_SCHEMA = "bilqis.lawful-source-segment/v1"
 COMPILED_SEGMENTS_SCHEMA = "bilqis.compiled-frame-segments/v1"
 BOUNDARY_EVIDENCE_SCHEMA = "bilqis.source-segment-boundary/v1"
+ATOM_EVIDENCE_SCHEMA = "bilqis.source-atom-evidence/v1"
 MAX_NEURAL_POSITIONS = 1024
+POLICY_VERSION_ARITY = 4
+ROW_COMPILER_INPUT_ARITY = 3
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 
 
@@ -49,6 +52,19 @@ def _invalid(reason: str) -> None:
         reason=reason, role_id="<prefix-compiler>",
         span_start=0, span_end=0,
     )
+
+
+def atom_evidence_digest(
+    source_instance_id: str, atom: "SourceAtom", release: str,
+) -> str:
+    """Bind one raw token to source-owned, prefix-stable rights evidence."""
+    if (not isinstance(source_instance_id, str) or not source_instance_id
+            or not isinstance(atom, SourceAtom)
+            or not isinstance(release, str) or not _SHA.fullmatch(release)):
+        _invalid("BAMF_PREFIX_ATOM_EVIDENCE_INVALID")
+    return contract_digest((
+        ATOM_EVIDENCE_SCHEMA, source_instance_id, release,
+        atom.index, atom.token, atom.source_reference))
 
 
 @dataclass(frozen=True)
@@ -114,6 +130,44 @@ class FrameCompilerConfig:
                 or self.task.semantic_release != self.schema_map.semantic_release
                 or self.schema_version != COMPILER_CONFIG_SCHEMA):
             _invalid("BAMF_PREFIX_CONFIG_INVALID")
+
+
+def _grant_allows(
+    grant: SourceGrant | None, evidence_digest: str,
+    config: FrameCompilerConfig, release: str,
+) -> bool:
+    task, policy, frontier = config.task, config.policy, config.frontier
+    return (
+        grant is not None and not grant.revoked
+        and grant.evidence_digest == evidence_digest
+        and grant.semantic_release == release
+        and grant.principal_id == task.principal_id
+        and grant.tenant_id == task.tenant_id
+        and task.purpose in grant.permitted_purposes
+        and task.jurisdiction in grant.permitted_jurisdictions
+        and task.scope in grant.permitted_scopes
+        and grant.source_regime in policy.allowed_regimes
+        and task.purpose in policy.allowed_purposes
+        and task.jurisdiction in policy.allowed_jurisdictions
+        and task.scope in policy.allowed_scopes
+        and grant.rights_epoch == frontier.rights_epoch
+        and grant.rights_epoch == policy.rights_epoch
+        and grant.correction_generation == frontier.correction_generation
+        and grant.observed_at <= task.observed_frontier
+        and grant.effective_from <= task.effective_time
+        and (grant.effective_until is None
+             or task.effective_time < grant.effective_until))
+
+
+def _segment_authority(config: FrameCompilerConfig) -> tuple:
+    task = config.task
+    return (
+        task.principal_id, task.tenant_id, task.purpose,
+        task.jurisdiction, task.scope, task.semantic_release,
+        task.observed_frontier, task.effective_time,
+        config.policy, config.schema_map.digest,
+        config.frontier.rights_epoch,
+        config.frontier.correction_generation)
 
 
 class PositionKind(str, Enum):
@@ -226,7 +280,7 @@ class CompiledFrameBatch:
                          or not _SHA.fullmatch(self.context_digest)))
                 or not isinstance(self.scope, str) or not self.scope
                 or not isinstance(self.policy_version, tuple)
-                or len(self.policy_version) != 4
+                or len(self.policy_version) != POLICY_VERSION_ARITY
                 or not isinstance(self.policy_version[0], str)
                 or not self.policy_version[0]
                 or any(type(epoch) is not int or epoch < 0
@@ -589,6 +643,15 @@ def compile_prefix(
     # No silent truncation is permitted at this boundary.
     if visible_end + len(closed) > MAX_NEURAL_POSITIONS:
         _invalid("BAMF_PREFIX_NEURAL_LENGTH_EXCEEDED")
+    grants = {
+        grant.source_handle: grant
+        for grant in compiler_config.frontier.grants}
+    for atom in ast.atoms[:visible_end]:
+        if not _grant_allows(
+                grants.get(atom.source_reference),
+                atom_evidence_digest(ast.source_instance_id, atom, release),
+                compiler_config, release):
+            _invalid("BAMF_PREFIX_ATOM_SOURCE_UNAUTHORIZED")
     envelopes = []
     for frame in closed:
         if frame.occurrence_id in duplicates:
@@ -823,30 +886,14 @@ def compile_lawful_segments(
                    for item in segments)):
         _invalid("BAMF_PREFIX_SPLIT_INPUT_INVALID")
     origin = segments[0].origin_source_id
-    first = segments[0].config
-    authority = (
-        first.task.principal_id, first.task.tenant_id,
-        first.task.purpose, first.task.jurisdiction,
-        first.task.scope, first.task.semantic_release,
-        first.policy.policy_id, first.policy.policy_epoch,
-        first.policy.rights_epoch)
+    authority = _segment_authority(segments[0].config)
     cursor = 0
     handles = set()
     for segment in segments:
         if (segment.origin_source_id != origin
                 or segment.global_span.start != cursor
                 or segment.boundary_source_handle in handles
-                or (
-                    segment.config.task.principal_id,
-                    segment.config.task.tenant_id,
-                    segment.config.task.purpose,
-                    segment.config.task.jurisdiction,
-                    segment.config.task.scope,
-                    segment.config.task.semantic_release,
-                    segment.config.policy.policy_id,
-                    segment.config.policy.policy_epoch,
-                    segment.config.policy.rights_epoch,
-                ) != authority):
+                or _segment_authority(segment.config) != authority):
             _invalid("BAMF_PREFIX_SPLIT_BOUNDARY_INVALID")
         cursor = segment.global_span.end
         handles.add(segment.boundary_source_handle)
@@ -854,31 +901,9 @@ def compile_lawful_segments(
             item for item in segment.config.frontier.grants
             if item.source_handle == segment.boundary_source_handle
         ), None)
-        task = segment.config.task
-        if (grant is None or grant.revoked
-                or grant.evidence_digest != boundary_evidence_digest(segment)
-                or grant.semantic_release != release
-                or grant.principal_id != task.principal_id
-                or grant.tenant_id != task.tenant_id
-                or task.purpose not in grant.permitted_purposes
-                or task.jurisdiction not in grant.permitted_jurisdictions
-                or task.scope not in grant.permitted_scopes
-                or grant.source_regime
-                not in segment.config.policy.allowed_regimes
-                or task.purpose
-                not in segment.config.policy.allowed_purposes
-                or task.jurisdiction
-                not in segment.config.policy.allowed_jurisdictions
-                or task.scope not in segment.config.policy.allowed_scopes
-                or grant.rights_epoch != segment.config.frontier.rights_epoch
-                or grant.rights_epoch
-                != segment.config.policy.rights_epoch
-                or grant.correction_generation
-                != segment.config.frontier.correction_generation
-                or grant.observed_at > task.observed_frontier
-                or grant.effective_from > task.effective_time
-                or (grant.effective_until is not None
-                    and task.effective_time >= grant.effective_until)):
+        if not _grant_allows(
+                grant, boundary_evidence_digest(segment),
+                segment.config, release):
             _invalid("BAMF_PREFIX_SPLIT_SOURCE_UNAUTHORIZED")
         if len(segment.ast.atoms) > MAX_NEURAL_POSITIONS:
             _invalid("BAMF_PREFIX_NEURAL_LENGTH_EXCEEDED")
@@ -906,7 +931,8 @@ def compile_prefix_rows(
 ) -> CompiledFrameRows:
     """Compile each source row in isolation; padding is never source."""
     if (not isinstance(rows, tuple)
-            or any(not isinstance(row, tuple) or len(row) != 3
+            or any(not isinstance(row, tuple)
+                   or len(row) != ROW_COMPILER_INPUT_ARITY
                    for row in rows)):
         _invalid("BAMF_PREFIX_ROWS_INPUT_INVALID")
     compiled = tuple(

@@ -100,3 +100,20 @@ the v1 schema above remains the exact historical
 contract at the A05.1 implementation head. See
 `docs/evidence/bamf/A05.2/receipt.md` for the
 successor contract and tests.
+
+## 2026-10-29 source-authority review repair
+
+The initial independent EGM found a Blocker: an atom-only prefix
+could emit source tokens without any A13 grant. Every raw atom now
+requires a source-owned `SourceGrant` in the A13 `SourceFrontier`,
+keyed by its exact source reference. The new
+`bilqis.source-atom-evidence/v1` digest binds source instance,
+release, index, token and source reference, without future suffix
+content. Rights, revocation, scope, principal, tenant, temporal and
+correction checks apply before a raw atom enters compiled input.
+Missing, revoked and tampered first-admission atoms fail closed even
+when `approved=None`; tests mint source-owned fixture grants explicitly.
+
+Focused owner tests now pass 20/20; adjacent A03/A04/A13/A05 suites
+pass 83 with one optional skip. Independent immutable-head re-review
+is pending. No neural proof, source promotion or parent closure.

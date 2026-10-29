@@ -134,3 +134,25 @@ while the existing 1025-position negatives still
 fail before packing. This closes the reported
 boundary discriminator gap without changing the
 implementation's limit.
+
+## 2026-10-29 independent-review follow-up
+
+The independent EGM identified two further source-authority gaps:
+atom-only prefixes lacked grants, and lawful segments could mix
+different correction generations or observation frontiers. The raw
+atom repair is recorded in A05.1. `compile_lawful_segments` now
+requires all segments to share the complete policy contract,
+semantic/schema release, source-frontier rights/correction generation
+and task observation/effective-time frontier. It still permits
+distinct source-owned boundary and atom grants per segment. Two
+negative tests prove that even self-consistent per-segment grants
+cannot smuggle cross-segment correction or observation drift.
+
+The exact canonical 2,563-byte four-member compact sidecar is now
+frozen in `tests/fixtures/a05_quad_sidecar.json`, with a literal
+SHA-256 and byte-for-byte test. The inclusive 1024 success test
+remains intact. Focused owner tests: **20 passed, 0 failed**;
+adjacent A03/A04/A13/A05: **83 passed, 0 failed, 1 optional skip**.
+The reviewed unified trunk `6b54600` was consumed via a
+conflict-free merge before this repair. Independent re-review of
+the repaired pushed head remains pending; no self-merge or training.
