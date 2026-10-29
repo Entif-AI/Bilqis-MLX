@@ -1,6 +1,6 @@
 # A02.2 complete B01 tensor-tree staging candidate
 
-Disposition: SCOPED_IMPLEMENTATION_EGM_PENDING. This does not close
+Disposition: SCOPED_IMPLEMENTATION_EGM_PASS. This does not close
 A02.2/#400 or authorize an optimizer, source release or checkpoint write.
 
 The source-side bank candidate from A02.1 now has a complete
@@ -46,4 +46,6 @@ features.gates) to be the exact same array objects as the validated
 full B01 tree. The disposable full-model test injects an alternate
 projector and verifies rejection before bank materialization.
 All combined focused tests pass 47/47 with one optional historical
-skip. Independent immutable-head re-review remains pending.
+skip. Independent immutable-head re-review returned **scoped EGM
+PASS** at f797bf0, zero remaining Blockers/Majors. See A02/egm.md.
+Factory admission and recovery remain open.

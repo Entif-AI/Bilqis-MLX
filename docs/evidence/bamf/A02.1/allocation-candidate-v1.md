@@ -70,8 +70,8 @@ disposable directory, reloads through the registered source pin,
 and exercises the public allocation planner. It never starts a
 learner or promotes a source.
 
-Scoped EGM disposition: PENDING targeted readback of the final
-immutable candidate. No leaf or parent closure is claimed.
+Scoped EGM disposition: PASS after targeted immutable-head readback
+documented below. No leaf or parent closure is claimed.
 
 ## Independent review Major and fail-closed repair
 
@@ -92,4 +92,6 @@ planning instead of accepting caller-owned authority.
 Prime focused combined A02/A06/B01 suites after both EGM repairs:
 47 passed, 0 failed, 1 optional historical-v1 skip with real A01
 source and full disposable B01 state. Fresh immutable-head EGM
-readback of this repair remains pending.
+readback of this repair returned **scoped EGM PASS** at f797bf0,
+zero remaining Blockers/Majors. See A02/egm.md. The admitted
+generation and parent acceptance gates remain open.
