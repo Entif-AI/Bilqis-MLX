@@ -114,6 +114,10 @@ class DepthSummaryCaptureTests(unittest.TestCase):
             g1, hidden=g1.hidden.at[0, 0, 0].add(1))
         with self.assertRaises(BilqisError):
             depth_select(current, (h0, forged), features, view)
+        with self.assertRaises(BilqisError):
+            SealedDepthSummary(
+                "g1", 4, g1.hidden, g1.provenance,
+                "caller-minted", object())
         self.assertIsInstance(g1, SealedDepthSummary)
         np.testing.assert_array_equal(
             np.asarray(g1.hidden), np.asarray(_summaries(1)[1].hidden))
