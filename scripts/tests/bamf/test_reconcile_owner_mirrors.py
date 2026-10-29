@@ -80,5 +80,51 @@ class OwnerMirrorReconciliationTests(unittest.TestCase):
                 reconcile(root, ('A03',), lambda _: b'alpha\nreplacement\n')
 
 
+    def test_retry_repairs_manifest_first_partial_commit(self):
+        with TemporaryDirectory() as temp:
+            root = Path(temp) / 'repo'
+            private = Path(temp) / 'private'
+            fixture(root)
+            new = b'alpha\nnew\nbeta\n'
+            reconcile(root, ('A03',), lambda _: new, apply=True, preserve=private)
+            # Crash window: mirror + manifest committed, registry still old.
+            (root / 'children/registry.json').write_bytes(
+                (private / 'registry.before.json').read_bytes())
+            reconcile(root, ('A03',), lambda _: new, apply=True, preserve=private)
+            self.assertEqual(json.loads((root / 'children/registry.json').read_text())
+                             ['entries'][0]['source_parent_sha256'], sha(new.decode()))
+            self.assertEqual((private / 'A03.before.md').read_text(), 'alpha\nbeta\n')
+
+    def test_forged_descendant_parent_hash_is_rejected(self):
+        with TemporaryDirectory() as temp:
+            root = Path(temp) / 'repo'
+            private = Path(temp) / 'private'
+            fixture(root)
+            new = b'alpha\nnew\nbeta\n'
+            reconcile(root, ('A03',), lambda _: new, apply=True, preserve=private)
+            registry = root / 'children/registry.json'
+            data = json.loads(registry.read_text())
+            data['entries'][0]['source_parent_sha256'] = 'f' * 64
+            registry.write_text(json.dumps(data))
+            with self.assertRaisesRegex(ValueError, 'DESCENDANT_PARENT_HASH_DRIFT'):
+                reconcile(root, ('A03',), lambda _: new, apply=True, preserve=private)
+            self.assertEqual(json.loads(registry.read_text())['entries'][0]
+                             ['source_parent_sha256'], 'f' * 64)
+
+    def test_metadata_preflight_failure_does_not_touch_mirror(self):
+        with TemporaryDirectory() as temp:
+            root = Path(temp) / 'repo'
+            private = Path(temp) / 'private'
+            fixture(root)
+            manifest = root / 'workstack.json'
+            data = json.loads(manifest.read_text())
+            data['duplicate_digest'] = data['items'][0]['body_sha256']
+            manifest.write_text(json.dumps(data))
+            with self.assertRaisesRegex(ValueError, 'MANIFEST_HASH_OCCURRENCE_INVALID'):
+                reconcile(root, ('A03',), lambda _: b'alpha\nnew\nbeta\n',
+                          apply=True, preserve=private)
+            self.assertEqual((root / 'issues/A03.md').read_text(), 'alpha\nbeta\n')
+
+
 if __name__ == '__main__':
     unittest.main()

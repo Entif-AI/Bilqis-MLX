@@ -26,3 +26,9 @@ No neural training, source admission, learner promotion, parent closure or self-
 ## Combined dependency verification
 
 The isolated A09.1 mirror repair from draft PR #605 was consumed on this branch at merge `44c198a`, without modifying its reviewed source. With both metadata repairs present, the actual workstack validator returns **valid, 157 children, zero issues** in both local and `--live` GitHub reconciliation modes. The combined 32-test suite passes without skips, and the changed-path structural check reports zero violations. The seven-owner cut remains dependent on human review and integration of #605; the branch is not self-merged.
+
+## Interruption/retry hardening
+
+A further audit found that a crash after publishing the updated manifest but before publishing the descendant registry could leave stale `source_parent_sha256` values that the first reconciler version would refuse to recover. The tool now validates all metadata replacements **before any mirror write**, preserves preimages without overwriting them on retry, accepts only a stale descendant hash proven by the preserved original owner body, and completes partial manifest/registry publication idempotently. A forged descendant hash without that preservation proof still fails closed.
+
+Three additional literal tests cover manifest-first crash recovery, forged descendant hash rejection, and metadata-preflight failure without mirror mutation. The combined focused suite now passes **35/35 tests**, and both local and live workstack validation remain valid for the registered 157 children. No source authority or owner requirement was relaxed.
