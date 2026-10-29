@@ -234,6 +234,8 @@ def plan_microbatches(
     delivered_rows: tuple[ResourceRow, ...],
     topology: ModelTopologySpecV2,
     memory_budget: MemoryBudget,
+    *,
+    max_microbatch_size: int | None = None,
 ) -> BatchPlan:
     """One logical teacher visit, deterministic contiguous source partition."""
     if (not isinstance(delivered_rows, tuple) or not delivered_rows
@@ -242,6 +244,9 @@ def plan_microbatches(
             or not isinstance(memory_budget, MemoryBudget)
             or memory_budget.census.topology_digest != topology.digest):
         _invalid("BAMF_C08_PLAN_ARGUMENT_INVALID")
+    if (max_microbatch_size is not None
+            and max_microbatch_size not in MICROBATCH_SIZES):
+        _invalid("BAMF_C08_MICROBATCH_SIZE_INVALID")
     row_ids = tuple(row.row_id for row in delivered_rows)
     seeds = {row.optimizer_step_seed for row in delivered_rows}
     generations = {row.generation_binding for row in delivered_rows}
@@ -253,6 +258,8 @@ def plan_microbatches(
     resident = memory_budget.resident_bytes
     chosen = None
     for size in MICROBATCH_SIZES:
+        if max_microbatch_size is not None and size > max_microbatch_size:
+            continue
         groups = tuple(
             tuple(range(start, min(start + size, len(delivered_rows))))
             for start in range(0, len(delivered_rows), size))
