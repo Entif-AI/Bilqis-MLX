@@ -6,7 +6,11 @@
   `9fa752b6410c8248aa784a361247a8a7230fb748`.
 - Implementation commit:
   `ad14c7fc1bf1af3258cc7c9795e7ab4694c1dc31`.
-- Independent EGM: **PENDING**.
+- First independent EGM at candidate `c345a1d54909c47a611e2df4840d13e7b406e0d4`:
+  **MAJOR**, hidden-parent current grants were not rechecked.
+- EGM repair commit:
+  `d19ccc7f1b989062bcf3fe54c95e322b4a7b7432`.
+- Independent EGM re-review: **PENDING**.
 
 ## Source-owned contract
 
@@ -28,6 +32,10 @@ plus its full source-owned `StreamingAST` and `FrameCompilerConfig`. It:
 - keeps the visible child's original `parent_occurrence_id` unchanged;
 - returns only source-visible frame trees and visible frame handles;
 - records a hidden parent as opaque provenance, never as a synthetic frame;
+- rechecks that hidden parent through A13 `check_context_eligibility` against
+  the current task, source frontier and policy before provenance is accepted;
+- therefore requires current frame/member grants with exact A13 evidence,
+  release, scope/purpose/regime, rights/correction and temporal validity;
 - binds hidden parent source locus, structural path, schema/scope, release,
   source handle and policy/rights/correction authority in a digest;
 - deliberately excludes hidden parent bindings, content digest and member
@@ -52,7 +60,18 @@ Failing-before owner run after adding the #575 tests and before production code:
 - new #575 tests: **4 errors**, all solely because
   `frame_compiler.validate_partial_visible_forest` did not yet exist.
 
-Final owner `test_frame_compiler.py`: **25 passed, 0 failed, 0 skipped**.
+The first independent EGM found that `compiler_config.approved` could remain
+stale after the hidden parent's current source or member grant was removed or
+revoked. At prefix 4 the compiler output correctly remained unchanged, but the
+old receipt was still accepted. The repair adds a direct live A13 recheck of
+the hidden parent before emitting provenance.
+
+EGM-repair failing-before owner run: **22 passed, 4 failed**. All four failures
+were the intended missing/revoked current-grant cases for
+`source:frame:mixed:2` and `source:member:mixed:2:0`; the p4 compilation itself
+remained unchanged in every case.
+
+Final owner `test_frame_compiler.py`: **26 passed, 0 failed, 0 skipped**.
 The discriminating witnesses prove:
 
 - the B03.3 nested witness: child closes at prefix 4 and parent at prefix 8;
@@ -70,7 +89,13 @@ The discriminating witnesses prove:
   and content identities;
 - changing valid hidden parent member content changes the hidden parent's full
   content digest but leaves the prefix-4 compiler object and partial-forest
-  receipt identical.
+  receipt identical;
+- removing or revoking either the hidden parent source grant or member grant
+  now fails closed with `BAMF_PREFIX_PARTIAL_SOURCE_AUTHORITY_INVALID` while
+  the p4 compiler output remains unchanged;
+- hidden-parent source-grant evidence digest, semantic release, rights epoch,
+  correction generation, observed frontier and effective-time drift likewise
+  fail closed through the same live A13 owner check.
 
 Adjacent source-owner suites on the same isolated worktree:
 
@@ -79,7 +104,7 @@ Adjacent source-owner suites on the same isolated worktree:
 - released frame adapters: **11 passed**;
 - A13 `test_context_eligibility.py`: **21 passed**.
 
-`git diff --check` passes. `partial_visible_forest.py` is 345 lines and
+`git diff --check` passes. `partial_visible_forest.py` is 371 lines and
 `frame_compiler.py` is 1,029 lines, both below the 1,200-line module hard limit.
 The repository-wide module-size check still reports the three pre-existing
 unrelated regressions in `curriculum/scheduler.py`,
