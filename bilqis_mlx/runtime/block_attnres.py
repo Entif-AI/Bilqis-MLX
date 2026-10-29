@@ -171,12 +171,13 @@ def _validate(current, available_summaries, frame_features, params) -> None:
         if (not isinstance(value, mx.array) or value.shape != shape
                 or value.dtype != mx.float32):
             _invalid()
-    for value in (
+    finite_flags = tuple(mx.all(mx.isfinite(value)) for value in (
         current, frame_features.frame_seed, frame_features.type_role,
         *(item.hidden for item in available_summaries), *params.values(),
-    ):
-        if not bool(mx.all(mx.isfinite(value))):
-            _invalid()
+    ))
+    mx.eval(*finite_flags)
+    if not all(bool(flag) for flag in finite_flags):
+        _invalid()
 
 
 def _rms_norm(values: mx.array, gamma: mx.array) -> mx.array:
