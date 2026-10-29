@@ -371,7 +371,7 @@ def child_frame_source_context(
     _validate_feature_parameters(parameters, features, extents)
     type_role = _child_factor_terms(parameters, request, features)[2]
     slot = (parameters["features.local_slot"][request.local_slot]
-            if request.local_slot < 32
+            if request.local_slot < parameters["features.local_slot"].shape[0]
             else _sinusoid_768(request.local_slot))
     return type_role + slot
 
