@@ -42,6 +42,14 @@ def _spec(
 
 
 class SCHOOL:
+    class BAMF_SOLVER:
+        INVALID = _spec(
+            ("SCHOOL", "BAMF_SOLVER", "INVALID"), owner="runtime.cognitive_solver",
+            title="Invalid BAMF solver contract", message_template="The solver contract is invalid: {reason}",
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect source bindings, pure operator signatures and the declared budget.",
+        )
+
     class BAMF_TEACHER:
         INVALID = _spec(
             ("SCHOOL", "BAMF_TEACHER", "INVALID"), owner="learning.teacher_vnext_replay",
@@ -869,6 +877,7 @@ class FACTORY:
 
 
 CATALOG = (
+    SCHOOL.BAMF_SOLVER.INVALID,
     SCHOOL.BAMF_TEACHER.INVALID,
     SCHOOL.BAMF_TRAINING_ADAPTER.INVALID,
     SCHOOL.BAMF_WORKSTACK.INPUT_INVALID,
