@@ -8,7 +8,6 @@ import json
 import re
 
 from ..errors import BilqisError, ErrorBus, SEMANTIC_FRAME, SCHOOL
-from ..generated_assessment import digest as source_node_digest
 from .atlas_projection import FrozenAtlasSnapshot
 from .core import Apply, Expression, Literal, Signature, expression_digest
 
@@ -46,6 +45,14 @@ def _bytes(value: object) -> bytes:
 
 def _digest(value: object) -> str:
     return hashlib.sha256(_bytes(value)).hexdigest()
+
+
+def source_node_digest(value: object) -> str:
+    """Exact legacy source-node wire hash without importing assessment code."""
+    return hashlib.sha256(
+        json.dumps(value, sort_keys=True, separators=(",", ":"),
+                   allow_nan=False).encode("utf-8")
+    ).hexdigest()
 
 
 def _occurrence_digest(source_instance_id: str, structural_path: tuple[int, ...]) -> str:

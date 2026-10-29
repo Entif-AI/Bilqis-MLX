@@ -1,7 +1,11 @@
 """Literal witnesses for source-qualified pure cognition, without neural calls."""
 from __future__ import annotations
 
-from dataclasses import replace
+import ast
+from dataclasses import fields, replace
+import hashlib
+import importlib.util
+import json
 from pathlib import Path
 import unittest
 from unittest.mock import patch
@@ -28,6 +32,7 @@ from bilqis_mlx.semantics.frame_schema import (
 )
 from bilqis_mlx.semantics.laws import SourceLocator
 from bilqis_mlx.semantics import numeric as released_numeric
+from bilqis_mlx.semantics.frame_schema import source_node_digest
 
 
 RELEASE = "a" * 64
@@ -160,6 +165,151 @@ def _with_unit_edge(binding, from_unit: str, to_unit: str, numerator: int,
 
 
 class CognitiveOperatorsTests(unittest.TestCase):
+    def test_solver_runtime_import_closure_has_no_gold_or_assessment_path(self):
+        """Transitive production dependency guard, not a source-text smoke test."""
+        root = Path(__file__).resolve().parents[3]
+        seen = set()
+        pending = ["bilqis_mlx.semantics.cognitive_operators"]
+
+        def local_path(name):
+            stem = root.joinpath(*name.split("."))
+            if stem.with_suffix(".py").is_file():
+                return stem.with_suffix(".py"), False
+            if (stem / "__init__.py").is_file():
+                return stem / "__init__.py", True
+            return None, False
+
+        while pending:
+            name = pending.pop()
+            if name in seen:
+                continue
+            path, is_package = local_path(name)
+            if path is None:
+                continue
+            seen.add(name)
+            package = name if is_package else name.rpartition(".")[0]
+            for node in ast.walk(ast.parse(path.read_text())):
+                imports = []
+                if isinstance(node, ast.Import):
+                    imports.extend(alias.name for alias in node.names)
+                elif isinstance(node, ast.ImportFrom):
+                    base = importlib.util.resolve_name(
+                        "." * node.level + (node.module or ""), package)
+                    imports.append(base)
+                    imports.extend(base + "." + alias.name for alias in node.names)
+                pending.extend(
+                    candidate for candidate in imports
+                    if candidate.startswith("bilqis_mlx.")
+                    and local_path(candidate)[0] is not None)
+        self.assertIn("bilqis_mlx.semantics.numeric", seen)
+        forbidden = (
+            "bilqis_mlx.verification", "bilqis_mlx.source_adapters",
+            "bilqis_mlx.generated_assessment", "bilqis_mlx.assessment",
+            "bilqis_mlx.factory", "bilqis_mlx.runtime",
+        )
+        self.assertFalse(
+            [name for name in sorted(seen)
+             if name.startswith(forbidden) or name.endswith("_oracle")],
+            seen)
+        self.assertFalse(
+            {"gold", "answer_key", "oracle", "target_label"}
+            & {field.name for record in (OperatorBinding, TypedValue)
+               for field in fields(record)})
+
+    def test_native_numeric_execution_matches_released_source_semantics(self):
+        cases = (
+            ("ADD", (2, 3), 5),
+            ("SUB", (3, 2), 1),
+            ("MUL", (2, 3), 6),
+            ("DIV", (6, 3), 2),
+            ("EQ", (2, 2), True),
+            ("LT", (2, 3), True),
+            ("LE", (3, 3), True),
+            ("SUCC", (2,), 3),
+        )
+        for operator_id, numbers, expected in cases:
+            with self.subTest(operator=operator_id):
+                binding, inputs = _case(
+                    *(("Number", number) for number in numbers))
+                actual = execute_pure(operator_id, inputs, binding)
+                source = released_numeric.evaluate(
+                    released_numeric.calculate(
+                        operator_id, *(released_numeric.number(value)
+                                       for value in numbers)))
+                self.assertEqual(actual.state, ValueState.VALUE)
+                self.assertEqual(actual.value, expected)
+                self.assertEqual(actual.value, source)
+                self.assertTrue(binding.registry.resolve(
+                    operator_id).source_reference.startswith(
+                        "bilqis_mlx.semantics.numeric:"))
+        for name in ("COUNT", "MOD"):
+            self.assertEqual(
+                default_registry(RELEASE).resolve(name).source_reference,
+                "public-formal-law:" + name)
+
+    def test_numeric_inapplicability_does_not_hide_contract_drift(self):
+        binding, values = _case(("Number", 2), ("Number", 3))
+        self.assertEqual(execute_pure("DIV", values, binding).state,
+                         ValueState.UNSUPPORTED)
+        with patch.object(
+                released_numeric, "evaluate_pure",
+                side_effect=ValueError("NUMERIC_OPERATOR_CONTRACT_DRIFT")):
+            with self.assertRaises(BilqisError) as caught:
+                execute_pure("ADD", values, binding)
+        self.assertEqual(caught.exception.context["reason"],
+                         "BAMF_OPERATOR_SOURCE_EXECUTION_DRIFT")
+
+    def test_runtime_bypasses_evaluator_owned_source_cache(self):
+        binding, values = _case(("Number", 2), ("Number", 3))
+
+        def evaluator_cache_trap(*args, **kwargs):
+            raise AssertionError("evaluator-owned cache reached by solver")
+
+        with patch.object(released_numeric, "evaluate", evaluator_cache_trap):
+            self.assertEqual(execute_pure("ADD", values, binding).value, 5)
+
+    def test_source_node_digest_keeps_legacy_wire_without_assessment_import(self):
+        node = {"id": "café", "arity": 2, "signature": "Number*Number->Number"}
+        expected = hashlib.sha256(
+            json.dumps(node, sort_keys=True, separators=(",", ":"),
+                       allow_nan=False).encode("utf-8")).hexdigest()
+        self.assertEqual(source_node_digest(node), expected)
+
+    def test_source_numeric_abi_bound_is_independent_of_admitted_domain(self):
+        binding, values = _case(("Number", 101), ("Number", 1))
+        expanded = replace(
+            binding.numeric_domain,
+            values=tuple(literal(str(index), "Number") for index in range(110)))
+        grants = tuple(
+            replace(grant, evidence_digest=numeric_domain_digest(expanded, RELEASE))
+            if grant.source_handle == binding.numeric_source_handle else grant
+            for grant in binding.frontier.grants)
+        binding = replace(
+            binding, numeric_domain=expanded,
+            frontier=replace(binding.frontier, grants=grants))
+        self.assertEqual(execute_pure("ADD", values, binding).state,
+                         ValueState.UNSUPPORTED)
+
+    def test_event_unknown_and_none_never_become_occurred(self):
+        binding, values = _case(("EventStatus", "PLANNED"), numbers=False)
+        self.assertIs(execute_pure("IS_OCCURRED", values, binding).value, False)
+        for state, expected in (
+            (ValueState.UNKNOWN, ValueState.UNKNOWN),
+            (ValueState.NONE, ValueState.UNSUPPORTED),
+        ):
+            input_value = replace(values[0], value=None, state=state)
+            operand = replace(binding.operands[0], typed=input_value)
+            grants = tuple(
+                replace(grant, evidence_digest=source_operand_digest(operand))
+                if grant.source_handle == input_value.source_handle else grant
+                for grant in binding.frontier.grants)
+            scoped = replace(
+                binding, operands=(operand,),
+                frontier=replace(binding.frontier, grants=grants))
+            self.assertEqual(
+                execute_pure("IS_OCCURRED", (input_value,), scoped).state,
+                expected)
+
     def test_registry_declares_pure_typed_implementations(self):
         registry = default_registry(RELEASE)
         self.assertEqual(registry.semantic_release, RELEASE)

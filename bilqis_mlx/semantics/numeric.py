@@ -46,7 +46,8 @@ def calculate(name: str, *arguments: Literal | Apply) -> Apply:
     return result
 
 
-def evaluate(expression: Literal | Apply):
+def evaluate_pure(expression: Literal | Apply):
+    """Uncached source semantics for solver use; recurse without evaluator hooks."""
     if isinstance(expression, Literal):
         if expression.type_name == "Number":
             value = int(expression.value)
@@ -62,7 +63,7 @@ def evaluate(expression: Literal | Apply):
     name = expression.operator.symbol.removeprefix("school.op.")
     if expression.operator != OPERATIONS.get(name):
         raise ValueError("NUMERIC_OPERATOR_CONTRACT_DRIFT")
-    args = tuple(evaluate(child) for child in expression.arguments)
+    args = tuple(evaluate_pure(child) for child in expression.arguments)
     if name == "COUNT":
         result = len(args[0])
     elif name == "SUCC":
@@ -88,3 +89,8 @@ def evaluate(expression: Literal | Apply):
             raise ValueError("NUMERIC_OPERATOR_NOT_IMPLEMENTED")
     number(result)
     return result
+
+
+def evaluate(expression: Literal | Apply):
+    """Preserved source API; evaluator-owned memoization may wrap this name."""
+    return evaluate_pure(expression)

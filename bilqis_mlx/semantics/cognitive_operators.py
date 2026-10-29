@@ -35,6 +35,10 @@ _UNITS = {"s": 1, "min": 60, "h": 3600}
 _NATIVE_NUMERIC = frozenset({
     "ADD", "SUB", "MUL", "DIV", "EQ", "LT", "LE", "SUCC",
 })
+_SOURCE_INAPPLICABLE = frozenset({
+    "NUMERIC_LITERAL_OUTSIDE_SOURCE_ABI",
+    "NUMERIC_EXACT_DIVISION_UNDEFINED",
+})
 
 
 def _invalid(reason: str) -> None:
@@ -381,6 +385,16 @@ _UNKNOWN = object()
 _NONE = object()
 
 
+def _evaluate_native_numeric(expression) -> object:
+    """Use the pure source implementation, not evaluator-owned memoization."""
+    source_function = getattr(released_numeric, "evaluate_pure", None)
+    if (not callable(source_function)
+            or source_function.__module__ != "bilqis_mlx.semantics.numeric"
+            or source_function.__qualname__ != "evaluate_pure"):
+        _invalid("BAMF_OPERATOR_NATIVE_RUNTIME_UNAVAILABLE")
+    return source_function(expression)
+
+
 def _compute(operator_id: str, values: tuple[object, ...],
              binding: OperatorBinding) -> object:
     if operator_id == "ROLE_LOOKUP":
@@ -449,9 +463,11 @@ def _compute(operator_id: str, values: tuple[object, ...],
         try:
             expression = released_numeric.calculate(
                 operator_id, *(released_numeric.number(value) for value in values))
-            return released_numeric.evaluate(expression)
-        except ValueError:
-            return _UNSUPPORTED
+            return _evaluate_native_numeric(expression)
+        except ValueError as exc:
+            if str(exc) in _SOURCE_INAPPLICABLE:
+                return _UNSUPPORTED
+            _invalid("BAMF_OPERATOR_SOURCE_EXECUTION_DRIFT")
     if operator_id in {"ADD", "SUB", "MUL", "DIV", "MOD", "EQ", "LT", "LE"}:
         left, right = values
         if operator_id == "ADD":
