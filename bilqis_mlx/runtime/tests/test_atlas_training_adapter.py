@@ -12,27 +12,85 @@ from bilqis_mlx.factory.tests.test_teaching import closed_source_fixture
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.runtime.atlas_training_adapter import BamfTarget, compile_training_batch, require_current_release
 from bilqis_mlx.semantics.core import Literal
+from bilqis_mlx.semantics.context_eligibility import (
+    PUBLIC_FORMAL, ContextEligibility, ContextMember, ContextPolicy,
+    SourceFrontier, SourceGrant, TaskScope, frame_evidence_digest,
+    member_evidence_digest,
+)
+from bilqis_mlx.semantics.frame_schema import (
+    ConceptRef, FrameSchema, RoleOccurrence, RoleSpec, SourceSpan,
+    make_frame_instance,
+)
 
 
-@dataclass(frozen=True)
-class EligibleFixture:
-    frames: tuple
-    digest: str
-    allowed: bool
-
-
-def frames_for_ast(ast):
-    return (ast,)
-
-
-def check_context_eligibility(frames, task_scope, source_frontier, policy):
-    return EligibleFixture(frames, 'e' * 64, policy == 'allow')
-
-
-def eligible_source_for(result):
-    if not result.allowed:
-        raise ValueError('context held')
-    return result.frames[0], result.digest
+def _source_context(rows, release, visible_ends, policy_mode):
+    """Issue real A13 synthetic source grants for the actual visible ASTs."""
+    principal, tenant = "synthetic:person", "synthetic:tenant"
+    region, scope = "synthetic:region", "synthetic:task"
+    schema = FrameSchema(
+        "fixture:training-frame", 1, "source:factory-fixture",
+        (RoleSpec("subject", ("Entity",), 1, 1),),
+        "ORDERED", "synthetic")
+    envelopes = {}
+    grants = {}
+    for row in rows:
+        tokens = row.get("tokens", ())
+        end = visible_ends.get(
+            row.get("id"), len(tokens) if isinstance(tokens, (tuple, list)) else 0)
+        if not isinstance(tokens, (tuple, list)) or not 0 < end <= len(tokens):
+            continue
+        ast = source_ast_for(tuple(tokens[:end]))
+        if ast.value in envelopes:
+            continue
+        identity = "synthetic:ast:" + ast.value
+        frame = make_frame_instance(
+            schema, source_instance_id=identity,
+            structural_path=(), source_span=SourceSpan(0, end),
+            parent_occurrence_id=None,
+            bindings=(RoleOccurrence(
+                "subject", 0, concept=ConceptRef(
+                    "fixture:entity:" + ast.value, release, 0,
+                    ("Entity",), identity)),),
+            causal_prefix_end=end)
+        member = ContextMember("subject", 0, "source:member:" + ast.value, end)
+        frame_source = "source:frame:" + ast.value
+        evidence = (
+            (frame_source, frame_evidence_digest(frame)),
+            (member.source_handle, member_evidence_digest(frame, member)),
+        )
+        for handle, digest in evidence:
+            grants[handle] = SourceGrant(
+                handle, principal, tenant, PUBLIC_FORMAL, release, digest,
+                ("TRAINING",), (region,), (scope,),
+                rights_epoch=1, correction_generation=1,
+                observed_at=2, effective_from=0)
+        envelopes[ast.value] = ContextEligibility(
+            frame_handle="frame:" + ast.value, frame=frame,
+            source_handle=frame_source, members=(member,),
+            principal_id=principal, tenant_id=tenant,
+            purpose="TRAINING", source_regime=PUBLIC_FORMAL,
+            semantic_release=release, jurisdiction=region,
+            scope=scope, join_class=PUBLIC_FORMAL,
+            policy_epoch=1, rights_epoch=1,
+            correction_generation=1, observed_at=2,
+            effective_from=0, effective_until=None,
+            causal_prefix_end=end)
+    prefix = max((item.causal_prefix_end for item in envelopes.values()), default=1)
+    task = TaskScope(
+        principal, tenant, "TRAINING", release, region, scope,
+        observed_frontier=3, effective_time=5, causal_prefix_end=prefix)
+    allowed_purposes = ("TRAINING",) if policy_mode == "allow" else ("SERVING",)
+    policy = ContextPolicy(
+        "synthetic:policy", 1, 1,
+        allowed_purposes, (PUBLIC_FORMAL,), (region,), (scope,),
+        (PUBLIC_FORMAL,), ((PUBLIC_FORMAL, PUBLIC_FORMAL),),
+        ((PUBLIC_FORMAL, PUBLIC_FORMAL, PUBLIC_FORMAL),))
+    frontier = SourceFrontier(
+        1, 1, tuple(sorted(grants.values(), key=lambda item: item.source_handle)))
+    def frames_for_ast(ast):
+        item = envelopes.get(ast.value)
+        return (item,) if item is not None else ()
+    return frames_for_ast, task, frontier, policy
 
 
 @dataclass(frozen=True)
@@ -90,18 +148,28 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
         self.model_generation = 'fixture-model-generation'
         self.rows = self.context.draw_rows(seed=17, capability='Z.C0', each=1)
 
-    def compile(self, rows, *, release_sha=None, encoders=None, policy='allow', generation=None, sealed=()):
+    def compile(self, rows, *, release_sha=None, encoders=None, policy='allow',
+                generation=None, sealed=(), context_mutator=None,
+                frames_override=None, extra_kwargs=None):
         delivery = describe_delivered_teaching(self.context.release, 'Z.C0', 'source.direct/Z.C0', rows)
+        visible_ends = {rows[0]['id']: 2}
+        frames_for_ast, task, frontier, context_policy = _source_context(
+            rows, self.context.release.release_sha256, visible_ends, policy)
+        if context_mutator is not None:
+            task, frontier, context_policy = context_mutator(
+                task, frontier, context_policy)
+        if frames_override is not None:
+            frames_for_ast = frames_override
         return compile_training_batch(rows, self.context, {'context': 1024},
             delivery=delivery, delivery_capability='Z.C0', delivery_release_sha256=release_sha or self.context.release.release_sha256,
             teacher_strategy={'policy': 'focused'}, requested_count=3, optimizer_step_seed=42,
-            rehearsal_by_id={rows[0]['id']: 'prior'}, visible_ends={rows[0]['id']: 2},
+            rehearsal_by_id={rows[0]['id']: 'prior'}, visible_ends=visible_ends,
             source_ast_for=source_ast_for, compile_prefix=compile_prefix,
             feature_requests_for=feature_requests_for, features_for=features_for, answer_plan_for=lambda *args: {**answer_plan_for(*args), 'generation_binding': self.model_generation},
-            frames_for_ast=frames_for_ast, check_context_eligibility=check_context_eligibility,
-            eligible_source_for=eligible_source_for, task_scope='test', source_frontier='release', eligibility_policy=policy,
+            frames_for_ast=frames_for_ast, task_scope=task,
+            source_frontier=frontier, eligibility_policy=context_policy,
             target_encoders=encoders, generation_binding=generation or self.model_generation,
-            sealed_holdout_ids=sealed)
+            sealed_holdout_ids=sealed, **(extra_kwargs or {}))
 
     def test_real_factory_rows_and_delivery_bind_typed_source_and_target(self):
         item = self.compile(self.rows).rows[0]
@@ -109,7 +177,8 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
         self.assertEqual(item.model_input.features, (('1,2', 'subject', 'fixture.schema', 'public'),))
         self.assertEqual(item.target.value, 'FALSE')
         self.assertEqual(item.target.token_id, 1)
-        self.assertEqual(item.model_input.eligibility_digest, 'e' * 64)
+        self.assertEqual(len(item.model_input.eligibility_digest), 64)
+        self.assertNotEqual(item.model_input.eligibility_digest, 'e' * 64)
         self.assertIn(('modalityID', 'answer.binary/v1'), item.model_input.answer_plan)
         self.assertEqual(item.provenance.row_id, self.rows[0]['id'])
         self.assertEqual(item.provenance.source_id, 'source-1')
@@ -157,6 +226,51 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
     def test_ineligible_source_is_held_before_compilation(self):
         with self.assertRaises(BilqisError):
             self.compile(self.rows, policy='deny')
+
+    def test_injected_eligibility_callbacks_cannot_authorize_model_input(self):
+        with self.assertRaises(TypeError):
+            self.compile(
+                self.rows,
+                extra_kwargs={
+                    "check_context_eligibility":
+                        lambda *_: type("Forged", (), {"digest": "e" * 64})(),
+                    "eligible_source_for":
+                        lambda result: (Literal("forged", "TokenSequence"),
+                                        result.digest),
+                })
+
+    def test_untyped_policy_or_revoked_source_grant_fails_closed(self):
+        with self.assertRaises(BilqisError) as caught:
+            self.compile(
+                self.rows, context_mutator=lambda task, frontier, policy:
+                ("not-a-task", frontier, policy))
+        self.assertEqual(
+            caught.exception.context["reason"], "CONTEXT_AUTHORITY_REQUIRED")
+        with self.assertRaises(BilqisError) as caught:
+            self.compile(
+                self.rows, context_mutator=lambda task, frontier, policy:
+                (task, frontier, "DENY"))
+        self.assertEqual(
+            caught.exception.context["reason"], "CONTEXT_AUTHORITY_REQUIRED")
+        for mutation in (
+                lambda grant: replace(grant, revoked=True),
+                lambda grant: replace(grant, evidence_digest="e" * 64),
+        ):
+            with self.subTest(mutation=mutation):
+                def revoke(task, frontier, policy):
+                    grants = (mutation(frontier.grants[0]), *frontier.grants[1:])
+                    return task, replace(frontier, grants=grants), policy
+                with self.assertRaises(BilqisError) as caught:
+                    self.compile(self.rows, context_mutator=revoke)
+                self.assertEqual(
+                    caught.exception.context["reason"], "CONTEXT_NOT_ELIGIBLE")
+
+    def test_unverified_frame_adapter_cannot_supply_eligibility(self):
+        for frames in (lambda ast: (), lambda ast: (ast,)):
+            with self.subTest(frames=frames), self.assertRaises(BilqisError) as caught:
+                self.compile(self.rows, frames_override=frames)
+            self.assertEqual(
+                caught.exception.context["reason"], "CONTEXT_SOURCE_FRAMES_REQUIRED")
 
     def test_native_output_is_bound_to_released_semantic_identity(self):
         row = {**self.rows[0], 'native_output': {'identity': 'cogal.value.false', 'token_id': 1}}
@@ -248,7 +362,15 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
             self.context.source_registry, self.context.answer_registry)
         second = self.compile(self.rows)
         self.assertNotEqual(first.release_sha256, second.release_sha256)
-        self.assertEqual(first.rows, second.rows)
+        self.assertNotEqual(
+            first.rows[0].model_input.eligibility_digest,
+            second.rows[0].model_input.eligibility_digest)
+        self.assertEqual(
+            replace(first.rows[0].model_input,
+                    eligibility_digest=second.rows[0].model_input.eligibility_digest),
+            second.rows[0].model_input)
+        self.assertEqual(first.rows[0].target, second.rows[0].target)
+        self.assertEqual(first.rows[0].provenance, second.rows[0].provenance)
 
     def test_released_signatures_select_rules_without_grade_input(self):
         from bilqis_mlx.runtime.atlas_training_adapter import resolve_batch_rules
@@ -278,14 +400,16 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
     def test_delivery_content_tampering_is_rejected(self):
         delivery = describe_delivered_teaching(self.context.release, 'Z.C0', 'source.direct/Z.C0', self.rows)
         changed = [{**self.rows[0], 'gold': 'TRUE'}]
+        frames_for_ast, task, frontier, policy = _source_context(
+            changed, self.context.release.release_sha256, {}, "allow")
         with self.assertRaises(BilqisError):
             compile_training_batch(changed, self.context, {}, delivery=delivery, delivery_capability='Z.C0',
                 delivery_release_sha256=self.context.release.release_sha256,
                 teacher_strategy={'policy': 'focused'}, requested_count=3, optimizer_step_seed=42,
                 rehearsal_by_id={}, visible_ends={}, source_ast_for=source_ast_for,
                 compile_prefix=compile_prefix, feature_requests_for=feature_requests_for, features_for=features_for, answer_plan_for=lambda *args: {**answer_plan_for(*args), 'generation_binding': self.model_generation},
-            frames_for_ast=frames_for_ast, check_context_eligibility=check_context_eligibility,
-            eligible_source_for=eligible_source_for, task_scope='test', source_frontier='release', eligibility_policy='allow',
+            frames_for_ast=frames_for_ast, task_scope=task,
+            source_frontier=frontier, eligibility_policy=policy,
             generation_binding=self.model_generation)
 
 
