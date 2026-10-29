@@ -301,6 +301,25 @@ class FrameEncoderTests(unittest.TestCase):
             spec=ModelTopologySpecV2(), extents=self.extents).hidden[0, :8]))(vectors.atoms[0])
         self.assertGreater(float(mx.sum(mx.abs(derivative))), 0)
 
+    def test_source_valid_compiled_closure_cannot_discard_visible_atoms(self):
+        from bilqis_mlx.semantics.frame_compiler import PositionKind
+        compiled, _vectors, _ast = self.compiled_inputs(prefix=8)
+        row = compiled.compiled.rows[0]
+        self.assertTrue(any(position.kind is PositionKind.CLOSURE for position in row.positions))
+        self.assertEqual(sum(position.kind is PositionKind.ATOM for position in row.positions),
+                         row.visible_end)
+        # This is a *real* accepted source prefix, not a synthetic row. A05's
+        # compiler preserves every visible atom and closes frames after atoms.
+        closure_only = tuple(position for position in row.positions
+                             if position.kind is PositionKind.CLOSURE)
+        with self.assertRaises(BilqisError):
+            replace(row, positions=closure_only)
+        self.assertEqual(len(closure_only), 1)
+        # Reducing visible_end to zero does not make this source closure valid:
+        # its closing position belongs to a later causal boundary.
+        with self.assertRaises(BilqisError):
+            replace(row, visible_end=0, positions=closure_only)
+
     def test_actual_a05_atoms_and_closure_keep_source_maps_and_member_gradients(self):
         compiled, vectors, _ = self.compiled_inputs()
         result = encode_frames(compiled, vectors, self.params)
