@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from pathlib import Path
 
 from .atlas_projection import (
@@ -33,6 +34,88 @@ from .atlas_projection import (
     _fail,
     _validate_abi_entries,
 )
+
+
+ATLAS_SELECTION_SCHEMA = "bilqis.atlas-artifact-selection/v1"
+
+
+@dataclass(frozen=True)
+class AtlasArtifactSelection:
+    """An A01 release pin supplied by the trusted source-admission caller.
+
+    Never derive these expected values from a snapshot under inspection.
+    The selection is an authority input, not a digest claimed by the data.
+    """
+
+    path: str
+    bundle_id: str
+    release_sha256: str
+    source_bundle_id: str
+    schema: str = ATLAS_SELECTION_SCHEMA
+
+    def __post_init__(self) -> None:
+        if (self.schema != ATLAS_SELECTION_SCHEMA
+                or not isinstance(self.path, str) or not self.path
+                or any(not isinstance(value, str) or not HEX64.fullmatch(value)
+                       for value in (
+                           self.bundle_id, self.release_sha256,
+                           self.source_bundle_id))):
+            _fail("ATLAS_SOURCE_SELECTION_INVALID")
+
+
+_PINNED_VIEW_ISSUER = object()
+
+
+class PinnedAtlasSnapshot:
+    """Immutable loader-issued view of an independently selected A01 artifact."""
+
+    __slots__ = ("_snapshot", "_selection")
+
+    def __init__(
+        self, snapshot: FrozenAtlasSnapshot, selection: AtlasArtifactSelection,
+        *, _issuer: object | None = None,
+    ) -> None:
+        if _issuer is not _PINNED_VIEW_ISSUER:
+            _fail("ATLAS_PINNED_VIEW_ISSUER_REQUIRED")
+        object.__setattr__(self, "_snapshot", snapshot)
+        object.__setattr__(self, "_selection", selection)
+
+    def __setattr__(self, name: str, value: object) -> None:
+        _fail("ATLAS_PINNED_VIEW_IMMUTABLE")
+
+    @property
+    def snapshot(self) -> FrozenAtlasSnapshot:
+        return self._snapshot
+
+    @property
+    def selection(self) -> AtlasArtifactSelection:
+        return self._selection
+
+
+def require_pinned_atlas_snapshot(value: PinnedAtlasSnapshot) -> FrozenAtlasSnapshot:
+    """Refuse raw, caller-replaced snapshots at the source authority boundary."""
+    if type(value) is not PinnedAtlasSnapshot:
+        _fail("ATLAS_PINNED_VIEW_REQUIRED")
+    atlas = value.snapshot
+    pin = value.selection
+    if ((atlas.bundle_id, atlas.release_sha256, atlas.source_bundle_id)
+            != (pin.bundle_id, pin.release_sha256, pin.source_bundle_id)):
+        _fail("ATLAS_PINNED_VIEW_IDENTITY_DRIFT")
+    return atlas
+
+
+def load_pinned_atlas_snapshot(selection: AtlasArtifactSelection) -> PinnedAtlasSnapshot:
+    """Verify the content-addressed A01 artifact against independent pins."""
+    if type(selection) is not AtlasArtifactSelection:
+        _fail("ATLAS_SOURCE_SELECTION_INVALID")
+    snapshot = load_atlas_snapshot(
+        selection.path,
+        expected_bundle_id=selection.bundle_id,
+        expected_release_sha256=selection.release_sha256,
+        expected_source_bundle_id=selection.source_bundle_id,
+    )
+    return PinnedAtlasSnapshot(
+        snapshot, selection, _issuer=_PINNED_VIEW_ISSUER)
 
 
 def _read_persisted_artifact(bundle_dir: str | Path) -> tuple[str, dict, dict[str, bytes]]:

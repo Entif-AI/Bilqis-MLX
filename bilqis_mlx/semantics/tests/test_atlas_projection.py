@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import shutil
 import tempfile
 import unittest
 from collections import Counter
@@ -23,6 +24,10 @@ from bilqis_mlx.semantics.atlas_projection import (
     load_atlas_snapshot,
     persist_atlas_release,
     validate_atlas_release,
+)
+from bilqis_mlx.semantics.atlas_snapshot import (
+    AtlasArtifactSelection, load_pinned_atlas_snapshot,
+    require_pinned_atlas_snapshot,
 )
 from lib.ithkuil.src.skos.canonical import canonicalize
 from lib.ithkuil.src.skos.identity import Identity
@@ -172,6 +177,57 @@ def _rewrite_artifact(bundle: Path, name: str, value) -> Path:
 
 
 class AtlasProjectionTests(unittest.TestCase):
+    def test_pinned_atlas_selection_rejects_repacked_same_family_substitutions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            bundle, coverage, *_ = _fixture_bundle(root)
+            release = compile_atlas_release(bundle, coverage, PRIOR_ABI, _bindings())
+            receipt = persist_atlas_release(release, root / "artifacts")
+            pin = AtlasArtifactSelection(
+                receipt.path, receipt.bundle_id, release.digest,
+                release.source_bundle_id)
+            issued = load_pinned_atlas_snapshot(pin)
+            self.assertEqual(
+                require_pinned_atlas_snapshot(issued).formal_domain_bindings,
+                release.formal_domain_bindings)
+            with self.assertRaises(BilqisError) as unpinned:
+                require_pinned_atlas_snapshot(issued.snapshot)
+            self.assertEqual(
+                unpinned.exception.context["reason"], "ATLAS_PINNED_VIEW_REQUIRED")
+            with self.assertRaises(BilqisError) as wrong_release:
+                load_pinned_atlas_snapshot(AtlasArtifactSelection(
+                    receipt.path, receipt.bundle_id, "0" * 64,
+                    release.source_bundle_id))
+            self.assertEqual(
+                wrong_release.exception.context["reason"],
+                "ATLAS_SNAPSHOT_EXPECTED_RELEASE_MISMATCH")
+            with self.assertRaises(BilqisError) as immutable:
+                issued._snapshot = replace(issued.snapshot, formal_domain_bindings=())
+            self.assertEqual(
+                immutable.exception.context["reason"],
+                "ATLAS_PINNED_VIEW_IMMUTABLE")
+
+            for replacement in (
+                    ("legacy:cogal.operator.OR",),
+                    ("legacy:cogal.operator.OR", "legacy:cogal.operator.XOR")):
+                with self.subTest(replacement=replacement):
+                    trial_root = root / ("trial-" + str(len(replacement)))
+                    trial_root.mkdir()
+                    copy = trial_root / receipt.bundle_id
+                    shutil.copytree(receipt.path, copy)
+                    atlas = json.loads((copy / "atlas.json").read_text())
+                    atlas["formal_domain_bindings"][0]["semantic_ids"] = list(
+                        replacement)
+                    repacked = _rewrite_artifact(copy, "atlas.json", atlas)
+                    self.assertNotEqual(repacked.name, receipt.bundle_id)
+                    with self.assertRaises(BilqisError) as caught:
+                        load_pinned_atlas_snapshot(AtlasArtifactSelection(
+                            str(repacked), receipt.bundle_id, release.digest,
+                            release.source_bundle_id))
+                    self.assertEqual(
+                        caught.exception.context["reason"],
+                        "ATLAS_SNAPSHOT_EXPECTED_BUNDLE_MISMATCH")
+
     def test_source_qualified_root_senses_realizations_and_hold_are_distinct(self):
         with tempfile.TemporaryDirectory() as directory:
             bundle, coverage, root_id, sense_a, sense_b, held_id = _fixture_bundle(Path(directory))

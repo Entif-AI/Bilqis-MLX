@@ -9,11 +9,14 @@ import tempfile
 import unittest
 
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.factory import skos_curriculum as public_curriculum
 from bilqis_mlx.factory.skos_curriculum import (
     LEARNING_UNVERIFIED, SOURCE_FAMILY_ADAPTERS, LearnedFrontier,
-    SourceFamilyAdapter, check_source_constructive_lesson,
-    compile_semantic_curriculum, compile_source_constructive_lessons,
-    inventory_source_families,
+    SourceFamilyAdapter,
+    _check_source_constructive_lesson_snapshot as check_source_constructive_lesson,
+    _compile_semantic_curriculum_snapshot as compile_semantic_curriculum,
+    _compile_source_constructive_lessons_snapshot as compile_source_constructive_lessons,
+    _inventory_source_families as inventory_source_families,
 )
 from bilqis_mlx.semantics.atlas_projection import (
     ATLAS_SNAPSHOT_SCHEMA, AbiEntry, AtlasConcept, AtlasCounts,
@@ -21,6 +24,9 @@ from bilqis_mlx.semantics.atlas_projection import (
     FrozenAtlasConcept, FrozenAtlasRelation, FrozenAtlasSnapshot,
     SourceRecordRef, compile_atlas_release, load_atlas_snapshot,
     persist_atlas_release,
+)
+from bilqis_mlx.semantics.atlas_snapshot import (
+    AtlasArtifactSelection, load_pinned_atlas_snapshot,
 )
 from lib.ithkuil.src.skos.identity import Identity
 from lib.ithkuil.src.skos.relations import SEMANTIC_PREDICATES
@@ -105,6 +111,24 @@ def _snapshot(definitions=DEFINITIONS, *, release=RELEASE):
 
 
 class SemanticFamilyInventoryTests(unittest.TestCase):
+    def test_public_census_and_lesson_apis_reject_unpinned_snapshots(self):
+        raw = _snapshot()
+        lesson = compile_source_constructive_lessons(raw).lessons[0]
+        actions = (
+            lambda: public_curriculum.inventory_source_families(raw),
+            lambda: public_curriculum.compile_semantic_curriculum(
+                raw, SOURCE_FAMILY_ADAPTERS, LearnedFrontier(raw.release_sha256)),
+            lambda: public_curriculum.compile_source_constructive_lessons(raw),
+            lambda: public_curriculum.check_source_constructive_lesson(
+                lesson, lesson.positive_fact[1], raw),
+        )
+        for action in actions:
+            with self.subTest(action=action):
+                with self.assertRaises(BilqisError) as caught:
+                    action()
+                self.assertEqual(
+                    caught.exception.context["reason"], "ATLAS_PINNED_VIEW_REQUIRED")
+
     def test_source_identity_and_attested_relation_constructive_checkers(self):
         definitions = tuple(
             (identifier, source, AtlasRelation(REL, "urn:lex:root")
@@ -402,7 +426,21 @@ class SemanticFamilyInventoryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             artifact = persist_atlas_release(release, directory)
             snapshot = load_atlas_snapshot(artifact.path)
+            pinned = load_pinned_atlas_snapshot(AtlasArtifactSelection(
+                artifact.path, artifact.bundle_id, release.digest,
+                release.source_bundle_id))
+        public_census = public_curriculum.inventory_source_families(pinned)
         census = inventory_source_families(snapshot)
+        self.assertEqual(public_census, census)
+        public_candidate = public_curriculum.compile_semantic_curriculum(
+            pinned, SOURCE_FAMILY_ADAPTERS,
+            LearnedFrontier(snapshot.release_sha256))
+        self.assertEqual(public_candidate.frozen_census_digest, census.digest)
+        identity_lesson = next(
+            item for item in public_candidate.source_lessons
+            if item.family_id == "positive_identity")
+        self.assertTrue(public_curriculum.check_source_constructive_lesson(
+            identity_lesson, identity_lesson.positive_fact[1], pinned))
         lexicon_root = next(
             item.concept.semantic_id for item in snapshot.concepts
             if item.concept.kind == "root")

@@ -17,6 +17,9 @@ from bilqis_mlx.semantics.atlas_projection import (
     ATLAS_SNAPSHOT_SCHEMA, CorpusCoverageRow, FrozenAtlasConcept,
     FrozenAtlasRelation, FrozenAtlasSnapshot,
 )
+from bilqis_mlx.semantics.atlas_snapshot import (
+    PinnedAtlasSnapshot, require_pinned_atlas_snapshot,
+)
 from lib.ithkuil.src.skos.identity import Identity
 from lib.ithkuil.src.skos.relations import SEMANTIC_PREDICATES
 
@@ -252,7 +255,7 @@ def _validate_snapshot(atlas: FrozenAtlasSnapshot) -> None:
         _fail("BAMF_FAMILY_SOURCE_HOLD_CENSUS_INVALID")
 
 
-def inventory_source_families(atlas: FrozenAtlasSnapshot) -> SemanticFamilyInventory:
+def _inventory_source_families(atlas: FrozenAtlasSnapshot) -> SemanticFamilyInventory:
     """Freeze every source-qualified concept/family before inspecting implementations.
 
     An unavailable constructor/checker is implementation debt, never a reason
@@ -371,6 +374,11 @@ def inventory_source_families(atlas: FrozenAtlasSnapshot) -> SemanticFamilyInven
     )
 
 
+def inventory_source_families(atlas: PinnedAtlasSnapshot) -> SemanticFamilyInventory:
+    """Inventory only an A01 artifact loaded with independent source pins."""
+    return _inventory_source_families(require_pinned_atlas_snapshot(atlas))
+
+
 @dataclass(frozen=True)
 class LearnedFrontier:
     """Unverified learner claims; source eligibility never depends on them."""
@@ -466,13 +474,13 @@ class CurriculumCandidateSet:
         return len(self.source_lessons)
 
 
-def compile_semantic_curriculum(
+def _compile_semantic_curriculum_snapshot(
     atlas: FrozenAtlasSnapshot,
     source_adapters: tuple[SourceFamilyAdapter, ...],
     learned_frontier: LearnedFrontier,
 ) -> CurriculumCandidateSet:
     """Original A08 owner API, staged without constructor/learning promotion."""
-    census = inventory_source_families(atlas)
+    census = _inventory_source_families(atlas)
     if (not isinstance(source_adapters, tuple)
             or any(not isinstance(item, SourceFamilyAdapter)
                    or item not in SOURCE_FAMILY_ADAPTERS
@@ -488,8 +496,18 @@ def compile_semantic_curriculum(
             item.family_id for item in source_adapters)),
         unverified_exposure_claims=learned_frontier.claimed_exposed,
         unverified_qualification_claims=learned_frontier.claimed_qualified,
-        source_lessons=compile_source_constructive_lessons(
+        source_lessons=_compile_source_constructive_lessons_snapshot(
             atlas, census=census).lessons)
+
+
+def compile_semantic_curriculum(
+    atlas: PinnedAtlasSnapshot,
+    source_adapters: tuple[SourceFamilyAdapter, ...],
+    learned_frontier: LearnedFrontier,
+) -> CurriculumCandidateSet:
+    """Original three-argument API with an A01-pinned source authority."""
+    return _compile_semantic_curriculum_snapshot(
+        require_pinned_atlas_snapshot(atlas), source_adapters, learned_frontier)
 
 
 @dataclass(frozen=True)
@@ -563,12 +581,12 @@ class SourceConstructiveLessonSet:
             _fail("BAMF_LESSON_SET_INVALID")
 
 
-def compile_source_constructive_lessons(
+def _compile_source_constructive_lessons_snapshot(
     atlas: FrozenAtlasSnapshot,
     *, census: SemanticFamilyInventory | None = None,
 ) -> SourceConstructiveLessonSet:
     """Compile only facts provable from A01; other families remain debt."""
-    authoritative = inventory_source_families(atlas)
+    authoritative = _inventory_source_families(atlas)
     if census is not None and census != authoritative:
         _fail("BAMF_LESSON_CENSUS_DRIFT")
     census = authoritative
@@ -626,14 +644,22 @@ def compile_source_constructive_lessons(
         tuple(uncovered))
 
 
-def check_source_constructive_lesson(
+def compile_source_constructive_lessons(
+    atlas: PinnedAtlasSnapshot,
+    *, census: SemanticFamilyInventory | None = None,
+) -> SourceConstructiveLessonSet:
+    return _compile_source_constructive_lessons_snapshot(
+        require_pinned_atlas_snapshot(atlas), census=census)
+
+
+def _check_source_constructive_lesson_snapshot(
     lesson: SourceConstructiveLesson, answer: object,
     atlas: FrozenAtlasSnapshot,
 ) -> bool:
     """Independent source replay; never trust a generator's claimed gold."""
     if not isinstance(lesson, SourceConstructiveLesson):
         _fail("BAMF_LESSON_CHECKER_INPUT_INVALID")
-    verified = compile_source_constructive_lessons(atlas)
+    verified = _compile_source_constructive_lessons_snapshot(atlas)
     if lesson not in verified.lessons:
         _fail("BAMF_LESSON_SOURCE_EVIDENCE_MISMATCH")
     if lesson.answer_modality == "SEMANTIC_ID":
@@ -641,3 +667,11 @@ def check_source_constructive_lesson(
     if lesson.answer_modality == "RELATION_TRIPLE":
         return type(answer) is tuple and answer == lesson.positive_fact
     _fail("BAMF_LESSON_CHECKER_UNSUPPORTED")
+
+
+def check_source_constructive_lesson(
+    lesson: SourceConstructiveLesson, answer: object,
+    atlas: PinnedAtlasSnapshot,
+) -> bool:
+    return _check_source_constructive_lesson_snapshot(
+        lesson, answer, require_pinned_atlas_snapshot(atlas))
