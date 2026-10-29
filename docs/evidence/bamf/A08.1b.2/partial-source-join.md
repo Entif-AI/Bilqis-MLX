@@ -15,12 +15,14 @@ law from a gloss or substitutes a different operator under an ABI
 index. Unknown operators remain explicit `OPERATOR_UNREGISTERED`
 debt, without shrinking the source denominator.
 
-The pure source-binding resolver deliberately emits separate
-`UNVERIFIED_SOURCE_PROJECTION` schemas. Only the public resolver
-can issue `A01_PINNED_SOURCE_ATTESTED` operator-source records,
-after loading the repo-pinned A01 artifact. Both states remain
-`SOURCE_BOUND_NOT_EXECUTABLE`: source attestation is not an A13
-permission or a lesson checker.
+The source-binding resolver emits **only**
+`SOURCE_PROJECTION_NOT_AUTHORITY` proposal schemas. Even its public
+form does not mint a transferable attestation. A consuming Factory
+boundary must call `assert_formal_source_operator_set_current`
+with the independently governed A01 selection and A07 registry;
+this rederives the entire join and returns no reusable credential.
+All proposals remain `SOURCE_BOUND_NOT_EXECUTABLE`: source replay
+is not an A13 permission or a lesson checker.
 
 The real pinned A01 corpus resolves four source-bound operators:
 `BOOL_NOT`, `BOOL_AND`, `COUNT`, `SUCC`. The exact focused
