@@ -50,6 +50,8 @@ class BamfDeliveryProvenance:
     delivered_count: int
     rehearsal: str | None
     optimizer_step_seed: int
+    source_family_id: str | None = None
+    episode_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -59,6 +61,7 @@ class BamfTrainingRow:
     native_target: BamfTarget | None
     provenance: BamfDeliveryProvenance
     auxiliaries: tuple = ()
+    rule_policy: tuple = ()
 
 
 @dataclass(frozen=True)
@@ -181,6 +184,9 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
         if identity in sealed_holdout_ids:
             _invalid('SEALED_HOLDOUT_IN_TRAINING')
         source_id, operation_id = row.get('source_id'), row.get('operation_id')
+        family, episode = row.get('source_family_id'), row.get('episode_id')
+        if any(value is not None and (not isinstance(value, str) or not value) for value in (family, episode)):
+            _invalid('SOURCE_FAMILY_IDENTITY_INVALID')
         if operation_id is None and isinstance(row.get('record'), dict):
             operation_id = row['record'].get('operator')
         if ((source_id is not None and (not isinstance(source_id, str) or not source_id)) or
@@ -263,7 +269,7 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
                 _invalid('NATIVE_TARGET_MISMATCH')
             native_target = BamfTarget('semantic_token', native['identity'], native['token_id'], True)
         provenance = BamfDeliveryProvenance(identity, source_id, capability, operation_id,
-            _freeze(teacher_strategy), requested_count, len(delivered_rows), rehearsal, optimizer_step_seed)
+            _freeze(teacher_strategy), requested_count, len(delivered_rows), rehearsal, optimizer_step_seed, family, episode)
         result.append(BamfTrainingRow(BamfModelInput(prefix, features, eligibility_digest, plan), target, native_target, provenance))
     return BamfTrainingBatch(release.release_sha256, generation_binding, content_digest(delivered_rows), tuple(result))
 
@@ -347,3 +353,41 @@ def capture_realized_delivery(batch, source_context, capture, capability, step, 
         guidance=guidance, controls={**controls, 'realized_cost': cost,
                                     'delivered_content_sha256': content_digest(rows)},
         seed=seed, prior=prior, mentors=mentors)
+
+
+def require_independent_cohorts(training, holdout):
+    """Refuse missing provenance and known family/episode siblings as independent."""
+    def identities(batch):
+        families, episodes = set(), set()
+        for row in batch.rows:
+            family, episode = row.provenance.source_family_id, row.provenance.episode_id
+            if not family or not episode:
+                _invalid('SOURCE_INDEPENDENCE_NOT_MEASURED')
+            families.add(family)
+            episodes.add(episode)
+        return families, episodes
+    train_families, train_episodes = identities(training)
+    test_families, test_episodes = identities(holdout)
+    if train_families & test_families or train_episodes & test_episodes:
+        _invalid('SOURCE_FAMILY_LEAK')
+
+
+def resolve_batch_rules(batch, source_context, *, released_signatures_for, rule_set_for):
+    """Dispatch source-domain rules from released signatures without grade metadata."""
+    require_current_release(batch, source_context, generation_binding=batch.generation_binding)
+    release = source_context.release
+    result = []
+    for row in batch.rows:
+        family = row.provenance.source_family_id
+        if not family:
+            _invalid('RULE_SOURCE_FAMILY_REQUIRED')
+        capability = release.curriculum.capability_map[row.provenance.capability_id]
+        binding = release.source_bindings.by_capability[row.provenance.capability_id]
+        signatures = _freeze(released_signatures_for(release, source_context.graph, capability.taught_roots))
+        if not signatures:
+            _invalid('RELEASED_SIGNATURES_REQUIRED')
+        policy = _freeze(rule_set_for(binding.source_anchor, signatures, family))
+        if not isinstance(policy, tuple) or not policy:
+            _invalid('SOURCE_RULE_POLICY_REQUIRED')
+        result.append(replace(row, rule_policy=policy))
+    return replace(batch, rows=tuple(result))

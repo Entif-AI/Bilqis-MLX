@@ -75,7 +75,7 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
         course, graph, sources, answers, _ = closed_source_fixture()
         registered = sources.require('fixture.z-generator/v1', 'fixture.z-oracle/v1')
         def draw(**kwargs):
-            return tuple({**row, 'source_id': 'source-1', 'tokens': [1, 2, 1]}
+            return tuple({**row, 'source_id': 'source-1', 'source_family_id': 'family-1', 'episode_id': 'episode-1', 'tokens': [1, 2, 1]}
                          for row in registered.draw(**kwargs))
         def check(row, **kwargs):
             gold = row.get('gold')
@@ -87,6 +87,7 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
         release = compile_executable_factory_release(curriculum, bindings, CurriculumProfile.full(),
             sources, answers, source_root=None, graph=graph, verification_seed=17)
         self.context = SourceExecutionContext(release, graph, None, sources, answers)
+        self.model_generation = 'fixture-model-generation'
         self.rows = self.context.draw_rows(seed=17, capability='Z.C0', each=1)
 
     def compile(self, rows, *, release_sha=None, encoders=None, policy='allow', generation=None, sealed=()):
@@ -96,10 +97,10 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
             teacher_strategy={'policy': 'focused'}, requested_count=3, optimizer_step_seed=42,
             rehearsal_by_id={rows[0]['id']: 'prior'}, visible_ends={rows[0]['id']: 2},
             source_ast_for=source_ast_for, compile_prefix=compile_prefix,
-            feature_requests_for=feature_requests_for, features_for=features_for, answer_plan_for=answer_plan_for,
+            feature_requests_for=feature_requests_for, features_for=features_for, answer_plan_for=lambda *args: {**answer_plan_for(*args), 'generation_binding': self.model_generation},
             frames_for_ast=frames_for_ast, check_context_eligibility=check_context_eligibility,
             eligible_source_for=eligible_source_for, task_scope='test', source_frontier='release', eligibility_policy=policy,
-            target_encoders=encoders, generation_binding=generation or self.context.release.release_sha256,
+            target_encoders=encoders, generation_binding=generation or self.model_generation,
             sealed_holdout_ids=sealed)
 
     def test_real_factory_rows_and_delivery_bind_typed_source_and_target(self):
@@ -223,11 +224,52 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
         with self.assertRaises(BilqisError):
             self.compile(self.rows, sealed=(self.rows[0]['id'],))
 
+    def test_source_family_and_episode_independence(self):
+        from bilqis_mlx.runtime.atlas_training_adapter import require_independent_cohorts
+        batch = self.compile(self.rows)
+        self.assertEqual(batch.rows[0].provenance.source_family_id, 'family-1')
+        self.assertEqual(batch.rows[0].provenance.episode_id, 'episode-1')
+        with self.assertRaises(BilqisError):
+            require_independent_cohorts(batch, batch)
+        sibling = self.compile([{**self.rows[0], 'id': 'other', 'source_family_id': 'family-2', 'episode_id': 'episode-2'}])
+        require_independent_cohorts(batch, sibling)
+        missing = self.compile([{key: value for key, value in self.rows[0].items() if key != 'source_family_id'}])
+        with self.assertRaises(BilqisError):
+            require_independent_cohorts(missing, sibling)
+
+    def test_actual_release_grade_permutation_preserves_prepared_semantics(self):
+        first = self.compile(self.rows)
+        release = self.context.release
+        curriculum = replace(release.curriculum, grades=tuple(replace(grade, grade_id='Q') for grade in release.curriculum.grades))
+        changed = compile_executable_factory_release(curriculum, release.source_bindings, CurriculumProfile.full(),
+            self.context.source_registry, self.context.answer_registry, source_root=None,
+            graph=self.context.graph, verification_seed=17)
+        self.context = SourceExecutionContext(changed, self.context.graph, None,
+            self.context.source_registry, self.context.answer_registry)
+        second = self.compile(self.rows)
+        self.assertNotEqual(first.release_sha256, second.release_sha256)
+        self.assertEqual(first.rows, second.rows)
+
+    def test_released_signatures_select_rules_without_grade_input(self):
+        from bilqis_mlx.runtime.atlas_training_adapter import resolve_batch_rules
+        batch = self.compile(self.rows)
+        def signatures(release, graph, roots):
+            return (('fixture.operator', 'Boolean*Boolean->Boolean'),)
+        def rules(source_anchor, semantic_signatures, family):
+            self.assertEqual(family, 'family-1')
+            return ('boolean-rules/v1',) if semantic_signatures[0][1].startswith('Boolean') else ('integer-rules/v1',)
+        first = resolve_batch_rules(batch, self.context, released_signatures_for=signatures, rule_set_for=rules)
+        self.assertEqual(first.rows[0].rule_policy, ('boolean-rules/v1',))
+        second = resolve_batch_rules(batch, self.context,
+            released_signatures_for=lambda *args: (('fixture.operator', 'Integer*Integer->Integer'),), rule_set_for=rules)
+        self.assertEqual(second.rows[0].rule_policy, ('integer-rules/v1',))
+        self.assertEqual(first.rows[0].model_input, second.rows[0].model_input)
+
     def test_current_release_is_checked_again_at_consumption(self):
         batch = self.compile(self.rows)
-        require_current_release(batch, self.context, generation_binding=self.context.release.release_sha256)
+        require_current_release(batch, self.context, generation_binding=self.model_generation)
         with self.assertRaises(BilqisError):
-            require_current_release(replace(batch, release_sha256='f' * 64), self.context, generation_binding=self.context.release.release_sha256)
+            require_current_release(replace(batch, release_sha256='f' * 64), self.context, generation_binding=self.model_generation)
         with self.assertRaises(BilqisError):
             require_current_release(batch, self.context, generation_binding='stale-generation')
         with self.assertRaises(BilqisError):
@@ -241,10 +283,10 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
                 delivery_release_sha256=self.context.release.release_sha256,
                 teacher_strategy={'policy': 'focused'}, requested_count=3, optimizer_step_seed=42,
                 rehearsal_by_id={}, visible_ends={}, source_ast_for=source_ast_for,
-                compile_prefix=compile_prefix, feature_requests_for=feature_requests_for, features_for=features_for, answer_plan_for=answer_plan_for,
+                compile_prefix=compile_prefix, feature_requests_for=feature_requests_for, features_for=features_for, answer_plan_for=lambda *args: {**answer_plan_for(*args), 'generation_binding': self.model_generation},
             frames_for_ast=frames_for_ast, check_context_eligibility=check_context_eligibility,
             eligible_source_for=eligible_source_for, task_scope='test', source_frontier='release', eligibility_policy='allow',
-            generation_binding=self.context.release.release_sha256)
+            generation_binding=self.model_generation)
 
 
 class AtlasAdapterExecutionTest(AtlasTrainingAdapterTest):
