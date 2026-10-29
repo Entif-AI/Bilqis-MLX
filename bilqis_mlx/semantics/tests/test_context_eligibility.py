@@ -108,6 +108,55 @@ def _case(*, count: int = 2, two_roles: bool = False):
 
 
 class ContextEligibilityTests(unittest.TestCase):
+    # C09 boundary records are checked independently of transition orchestration.
+    def test_c09_boundary_rejects_malformed_event(self):
+        frames, task, frontier, policy = _case(count=1)
+        prior = project_context(frames, task, frontier, policy)
+        revoked = replace(frontier, grants=(
+            replace(frontier.grants[0], revoked=True), *frontier.grants[1:]))
+        transition = transition_context(prior, frames, task, revoked, policy)
+        event = transition.invalidations[0]
+        bad_fields = (
+            ("old_context_digest", "bad"),
+            ("new_context_digest", "bad"),
+            ("new_context_digest", event.old_context_digest),
+            ("reason_codes", ()),
+            ("reason_codes", ("same", "same")),
+            ("principal_id", ""),
+            ("tenant_id", ""),
+            ("scope", ""),
+            ("semantic_release", "bad"),
+            ("policy_epoch", -1),
+            ("rights_epoch", -1),
+            ("correction_generation", -1),
+            ("causal_prefix_end", -1),
+            ("invalidated_handles", ()),
+            ("invalidated_handles", ("same", "same")),
+            ("schema_version", "wrong"),
+        )
+        for field, value in bad_fields:
+            with self.subTest(field=field, value=value):
+                with self.assertRaises(BilqisError) as caught:
+                    replace(event, **{field: value})
+                self.assertEqual(
+                    caught.exception.context["reason"],
+                    "BAMF_CONTEXT_C09_INVALIDATION_INVALID")
+        invalid_transitions = (
+            {"current": "not-a-projection"},
+            {"invalidations": ("not-an-event",)},
+            {"invalidations": (event, event)},
+            {"invalidations": (replace(
+                event, new_context_digest="b" * 64),)},
+            {"schema_version": "wrong"},
+        )
+        for changed in invalid_transitions:
+            with self.subTest(transition=changed):
+                with self.assertRaises(BilqisError) as caught:
+                    replace(transition, **changed)
+                self.assertEqual(
+                    caught.exception.context["reason"],
+                    "BAMF_CONTEXT_TRANSITION_INVALID")
+
     def test_c09_transition_is_pure_and_unchanged_or_reordered_views_do_not_invalidate(self):
         frames, task, frontier, policy = _case(count=2, two_roles=True)
         prior = project_context(frames, task, frontier, policy)

@@ -56,3 +56,26 @@ eligibility and PUBLIC_FORMAL A/B/C fixture tests remain green.
 
 No A13 parent integration, neural training, external outbox
 delivery or source promotion is claimed.
+
+## 2026-10-28 unified sync and independent review repair
+
+Consumed current unified `6e83c0f6618f81a6d41f82503f16a80b8e14164f`
+through Lane A merge `982ba51127b7e851cd795039644565bc3625ebaa`.
+Goldfish inspected immutable `982ba51` and found one Major:
+the new frozen C09 invalidation/transition records lacked
+boundary validators and accepted malformed digests, empty
+actor/scope IDs, negative epochs, duplicate reasons/handles
+and wrong schema versions while still minting event IDs.
+
+Both records now validate at construction through the
+existing ErrorBus/catalog. The invalidation enforces exact
+SHA-256 digest/release identities, nonempty actor/scope,
+nonnegative epochs, sorted unique nonempty reasons/handles,
+and the versioned schema. A transition accepts only an
+approved projection or hold, canonical unique invalidations,
+and events targeting its actual current digest/hold.
+An adversarial table covers malformed fields and invalid
+transition shapes.
+
+Focused context suite: **21 passed, 0 failed, 0 skipped**.
+Independent immutable-head targeted re-review is pending.

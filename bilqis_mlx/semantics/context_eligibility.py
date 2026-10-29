@@ -663,6 +663,26 @@ class C09ContextInvalidation:
     invalidated_handles: tuple[str, ...]
     schema_version: str = C09_INVALIDATION_SCHEMA
 
+    def __post_init__(self) -> None:
+        if (not isinstance(self.old_context_digest, str)
+                or not _SHA256.fullmatch(self.old_context_digest)
+                or (self.new_context_digest is not None
+                    and (not isinstance(self.new_context_digest, str)
+                         or not _SHA256.fullmatch(self.new_context_digest)
+                         or self.new_context_digest == self.old_context_digest))
+                or not _names(self.reason_codes) or not self.reason_codes
+                or not all(_name(item) for item in (
+                    self.principal_id, self.tenant_id, self.scope))
+                or not isinstance(self.semantic_release, str)
+                or not _SHA256.fullmatch(self.semantic_release)
+                or not all(_epoch(item) for item in (
+                    self.policy_epoch, self.rights_epoch,
+                    self.correction_generation, self.causal_prefix_end))
+                or not _names(self.invalidated_handles)
+                or not self.invalidated_handles
+                or self.schema_version != C09_INVALIDATION_SCHEMA):
+            _invalid("BAMF_CONTEXT_C09_INVALIDATION_INVALID")
+
     @property
     def event_id(self) -> str:
         return contract_digest(self)
@@ -674,6 +694,21 @@ class ContextTransition:
     invalidations: tuple[C09ContextInvalidation, ...]
     schema_version: str = CONTEXT_TRANSITION_SCHEMA
 
+    def __post_init__(self) -> None:
+        if (not isinstance(self.current, (ApprovedContextProjection, ContextHold))
+                or not isinstance(self.invalidations, tuple)
+                or any(not isinstance(item, C09ContextInvalidation)
+                       for item in self.invalidations)
+                or tuple(item.event_id for item in self.invalidations)
+                != tuple(sorted({item.event_id for item in self.invalidations}))
+                or any(
+                    item.new_context_digest != (
+                        self.current.digest
+                        if isinstance(self.current, ApprovedContextProjection)
+                        else None)
+                    for item in self.invalidations)
+                or self.schema_version != CONTEXT_TRANSITION_SCHEMA):
+            _invalid("BAMF_CONTEXT_TRANSITION_INVALID")
 
 def transition_context(
     previous: ApprovedContextProjection | None,
