@@ -6,10 +6,13 @@ from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.semantics.context_eligibility import (
-    PUBLIC_FORMAL, ContextEligibility, ContextHold, ContextMember,
+    PUBLIC_FORMAL, ApprovedContextProjection, ContextEligibility,
+    ContextHold, ContextMember,
     ContextPolicy, EligibleContext, SourceFrontier, SourceGrant, TaskScope,
     check_context_eligibility, frame_evidence_digest, member_evidence_digest,
+    project_context,
 )
+from bilqis_mlx.semantics.frame_adapters import public_formal_context
 from bilqis_mlx.semantics.frame_schema import (
     ConceptRef, FrameSchema, RoleOccurrence, RoleSpec, SourceSpan,
     make_frame_instance,
@@ -105,6 +108,145 @@ def _case(*, count: int = 2, two_roles: bool = False):
 
 
 class ContextEligibilityTests(unittest.TestCase):
+    def test_approved_projection_is_the_only_readout_and_cache_identity(self):
+        frames, task, frontier, policy = _case(count=2, two_roles=True)
+        projected = project_context(frames, task, frontier, policy)
+        self.assertIsInstance(projected, ApprovedContextProjection)
+        self.assertEqual(
+            projected.digest,
+            check_context_eligibility(frames, task, frontier, policy).digest)
+        self.assertEqual(
+            projected.attention_handles,
+            (("frame:0", "source:member:0:subject"),
+             ("frame:0", "source:member:0:object"),
+             ("frame:1", "source:member:1:subject")),
+        )
+        self.assertEqual(projected.frame("frame:0"), frames[0].frame)
+        self.assertEqual(
+            projected.member("source:member:0:object"),
+            frames[0].frame.bindings[1])
+        self.assertNotEqual(projected.cache_key("node:A"),
+                            projected.cache_key("node:B"))
+        later = project_context(
+            frames, replace(task, effective_time=6), frontier, policy)
+        self.assertNotEqual(projected.cache_key("node:A"),
+                            later.cache_key("node:A"))
+        with self.assertRaises(BilqisError):
+            projected.member("source:member:future")
+        with self.assertRaises(BilqisError):
+            projected.frame("frame:future")
+        denied = project_context(
+            frames, task, frontier,
+            replace(policy, allowed_join_pairs=()))
+        self.assertIsInstance(denied, ContextHold)
+        self.assertFalse(hasattr(denied, "attention_handles"))
+
+    def test_real_public_formal_a_b_c_source_constructors(self):
+        from bilqis_mlx.grade_a_probe import read_sources
+        from bilqis_mlx.live_grade_c import draw as draw_numeric_rows, registry_graph
+        from bilqis_mlx.source_adapters.school import (
+            A_ORACLE, B_ORACLE, C_ORACLE, live_source_registry,
+        )
+        from bilqis_mlx.semantics.tests.test_frame_adapters import _snapshot
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parents[3]
+        source_root = root / "vendor/legacy-v16"
+        _, _, micro_graph, _, _ = read_sources(source_root)
+        numeric_graph = registry_graph()
+        registry = live_source_registry()
+        snapshot = _snapshot()
+        task = TaskScope(
+            PRINCIPAL, TENANT, "TRAINING", snapshot.release_sha256,
+            REGION, SCOPE, observed_frontier=3, effective_time=5,
+            causal_prefix_end=30,
+        )
+        policy = ContextPolicy(
+            "synthetic:policy", 1, 1,
+            ("TRAINING",), (PUBLIC_FORMAL,), (REGION,), (SCOPE,),
+            (PUBLIC_FORMAL,),
+            ((PUBLIC_FORMAL, PUBLIC_FORMAL),),
+            tuple((PUBLIC_FORMAL,) * count for count in range(3, 25)),
+        )
+        source_frontier = SourceFrontier(1, 1, ())
+        a = registry.require(
+            "bilqis_mlx.grade_a_probe.make_record", A_ORACLE)
+        a_row = a.draw(
+            source_root=source_root, graph=micro_graph, course=None,
+            capability="A.IDENTITY", seed=31, each=2)[0]
+        b = registry.require(
+            "bilqis_mlx.live_grade_b.draw_connectives", B_ORACLE)
+        b_row = b.draw(
+            source_root=source_root, graph=micro_graph, course=None,
+            capability="B.AND", seed=31, each=4)[0]
+        c = registry.require(
+            "bilqis_mlx.numeric_curriculum.draw_numeric", C_ORACLE)
+        c_row = next(row for row in draw_numeric_rows(
+            numeric_graph, seed=19, maximum=3)
+            if row["capability"] == "C.ADD")
+        for adapter, row, graph in (
+            (a, a_row, micro_graph),
+            (b, b_row, micro_graph),
+            (c, c_row, numeric_graph),
+        ):
+            with self.subTest(adapter=adapter.descriptor.adapter_id):
+                result = public_formal_context(
+                    adapter, row, snapshot, source_root=source_root,
+                    graph=graph, source_span=SourceSpan(10, 30),
+                    task_scope=task, source_frontier=source_frontier,
+                    policy=policy,
+                )
+                self.assertIsInstance(result, tuple)
+                projection, admitted = result
+                self.assertIsInstance(projection, ApprovedContextProjection)
+                self.assertTrue(projection.attention_handles)
+                self.assertTrue(all(
+                    handle.startswith("public-formal:")
+                    for _, handle in projection.attention_handles))
+                self.assertEqual(
+                    project_context(projection.envelopes, task, admitted, policy),
+                    projection)
+                self.assertEqual(
+                    public_formal_context(
+                        adapter, row, snapshot, source_root=source_root,
+                        graph=graph, source_span=SourceSpan(10, 30),
+                        task_scope=task, source_frontier=admitted, policy=policy),
+                    result)
+                with self.assertRaises(BilqisError):
+                    public_formal_context(
+                        adapter, row, snapshot, source_root=source_root,
+                        graph=graph, source_span=SourceSpan(0, 20),
+                        task_scope=task, source_frontier=admitted,
+                        policy=policy)
+        forged = dict(a_row)
+        forged["gold"] = "source-tampered"
+        with self.assertRaises(BilqisError):
+            public_formal_context(
+                a, forged, snapshot, source_root=source_root,
+                graph=micro_graph, source_span=SourceSpan(10, 30),
+                task_scope=task, source_frontier=source_frontier,
+                policy=policy)
+        with self.assertRaises(BilqisError):
+            public_formal_context(
+                a, a_row, snapshot, source_root=source_root,
+                graph=micro_graph, source_span=SourceSpan(10, 30),
+                task_scope=replace(task, semantic_release="b" * 64),
+                source_frontier=source_frontier, policy=policy)
+
+    def test_public_formal_future_prefix_never_mints_handles(self):
+        from bilqis_mlx.semantics.tests.test_frame_adapters import _snapshot
+        task = TaskScope(
+            PRINCIPAL, TENANT, "TRAINING", _snapshot().release_sha256,
+            REGION, SCOPE, 3, 5, 10)
+        _, _, frontier, policy = _case(count=1)
+        result = public_formal_context(
+            None, {}, _snapshot(), source_root="synthetic",
+            graph={}, source_span=SourceSpan(10, 30),
+            task_scope=task, source_frontier=SourceFrontier(1, 1, ()),
+            policy=policy)
+        self.assertIsInstance(result, ContextHold)
+        self.assertIn("BAMF_CONTEXT_INVISIBLE_PREFIX", result.reason_codes)
+
     def test_public_formal_full_set_is_order_invariant_but_members_keep_order(self):
         frames, task, frontier, policy = _case(count=3, two_roles=True)
         with patch("socket.socket", side_effect=AssertionError("network forbidden")):

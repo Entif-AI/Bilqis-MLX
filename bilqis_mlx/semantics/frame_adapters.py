@@ -12,6 +12,11 @@ from ..generated_assessment import digest
 from ..source_adapters.numeric import decode as decode_numeric
 from ..source_adapters.structure import inspect_source_query
 from .atlas_projection import FrozenAtlasSnapshot
+from .context_eligibility import (
+    PUBLIC_FORMAL, ApprovedContextProjection, ContextEligibility, ContextHold,
+    ContextMember, ContextPolicy, SourceFrontier, SourceGrant, TaskScope,
+    frame_evidence_digest, member_evidence_digest, project_context,
+)
 from .core import Apply, Literal, Signature
 from .numeric import CONTRACT as NUMERIC_CONTRACT
 from .frame_schema import (
@@ -607,3 +612,111 @@ def bind_registered_source_row(
         span=source_span,
         causal_prefix_end=causal_prefix_end,
     )
+
+
+def public_formal_context(
+    source_adapter: RegisteredSourceAdapter,
+    row: dict,
+    snapshot: FrozenAtlasSnapshot,
+    *,
+    source_root: str | Path,
+    graph: dict,
+    source_span: SourceSpan,
+    task_scope: TaskScope,
+    source_frontier: SourceFrontier,
+    policy: ContextPolicy,
+    course=None,
+) -> tuple[ApprovedContextProjection, SourceFrontier] | ContextHold:
+    """Source-owned A/B/C admission, separate from the solver import closure.
+
+    The registered source adapter verifies the row before this constructor
+    mints any PUBLIC_FORMAL grants. Runtime readers consume only the resulting
+    approved context projection, never this source-admission entrypoint.
+    """
+    adapter_id = getattr(
+        getattr(source_adapter, "descriptor", None), "adapter_id", "<unknown>")
+    if (not isinstance(task_scope, TaskScope)
+            or not isinstance(source_frontier, SourceFrontier)
+            or not isinstance(policy, ContextPolicy)
+            or not isinstance(source_span, SourceSpan)
+            or not isinstance(snapshot, FrozenAtlasSnapshot)
+            or snapshot.release_sha256 != task_scope.semantic_release
+            or task_scope.purpose is None
+            or task_scope.purpose not in policy.allowed_purposes
+            or PUBLIC_FORMAL not in policy.allowed_regimes
+            or PUBLIC_FORMAL not in policy.allowed_join_classes
+            or policy.rights_epoch != source_frontier.rights_epoch):
+        _adapter_fail(
+            "BAMF_CONTEXT_PUBLIC_FORMAL_POLICY_INVALID",
+            adapter_id, source_span if isinstance(source_span, SourceSpan)
+            else SourceSpan(0, 0), "<public-formal>")
+    if source_span.end > task_scope.causal_prefix_end:
+        return ContextHold(("BAMF_CONTEXT_INVISIBLE_PREFIX",), (), ())
+    released = released_frame_adapter(source_adapter, span=source_span)
+    tree = bind_registered_source_row(
+        source_adapter, row, snapshot, source_root=source_root, graph=graph,
+        source_span=source_span, causal_prefix_end=source_span.end,
+        course=course)
+
+    def walk(node: FrameTree):
+        yield node.root
+        for child in node.children:
+            yield from walk(child)
+
+    envelopes = []
+    grants = {item.source_handle: item for item in source_frontier.grants}
+    for frame in walk(tree):
+        prefix = "public-formal:" + released.source_adapter_id + ":" + frame.occurrence_id
+        members = (
+            tuple(ContextMember(
+                binding.role_id, binding.occurrence_index,
+                prefix + ":member:" + binding.role_id + ":" + str(binding.occurrence_index),
+                frame.causal_prefix_end)
+                for binding in frame.bindings)
+            if isinstance(frame, FrameInstance)
+            else (ContextMember(
+                "<atomic>", 0, prefix + ":member:<atomic>:0",
+                frame.causal_prefix_end),)
+        )
+        envelope = ContextEligibility(
+            frame_handle=prefix + ":frame", frame=frame,
+            source_handle=prefix + ":source", members=members,
+            principal_id=task_scope.principal_id,
+            tenant_id=task_scope.tenant_id, purpose=task_scope.purpose,
+            source_regime=PUBLIC_FORMAL,
+            semantic_release=task_scope.semantic_release,
+            jurisdiction=task_scope.jurisdiction, scope=task_scope.scope,
+            join_class=PUBLIC_FORMAL, policy_epoch=policy.policy_epoch,
+            rights_epoch=source_frontier.rights_epoch,
+            correction_generation=source_frontier.correction_generation,
+            observed_at=0, effective_from=0, effective_until=None,
+            causal_prefix_end=frame.causal_prefix_end,
+        )
+        evidence = {envelope.source_handle: frame_evidence_digest(frame)}
+        evidence.update({
+            member.source_handle: member_evidence_digest(frame, member)
+            for member in members
+        })
+        for handle, digest in evidence.items():
+            grant = SourceGrant(
+                handle, task_scope.principal_id, task_scope.tenant_id,
+                PUBLIC_FORMAL, task_scope.semantic_release, digest,
+                (task_scope.purpose,), (task_scope.jurisdiction,),
+                (task_scope.scope,), source_frontier.rights_epoch,
+                source_frontier.correction_generation, 0, 0,
+            )
+            prior = grants.get(handle)
+            if prior is not None and prior != grant:
+                _adapter_fail(
+                    "BAMF_CONTEXT_PUBLIC_FORMAL_GRANT_COLLISION",
+                    adapter_id, source_span, "<public-formal>")
+            grants[handle] = grant
+        envelopes.append(envelope)
+    frontier = SourceFrontier(
+        source_frontier.rights_epoch, source_frontier.correction_generation,
+        tuple(sorted(grants.values(), key=lambda grant: grant.source_handle)))
+    projected = project_context(
+        tuple(envelopes), task_scope, frontier, policy)
+    if isinstance(projected, ContextHold):
+        return projected
+    return projected, frontier
