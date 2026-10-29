@@ -15,7 +15,7 @@ from .context_eligibility import (
     ApprovedContextProjection, ContextHold, ContextPolicy,
     SourceFrontier, SourceGrant, TaskScope, project_context,
 )
-from .domains import contract_digest
+from .foundation.domains import contract_digest
 from .frame_codec import (
     PackDisposition, PackedFrame, SchemaTagMap, _canonical_bytes,
     pack_frame, unpack_frame,

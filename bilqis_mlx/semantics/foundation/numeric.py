@@ -12,7 +12,7 @@ from .core import Apply, Literal, Operation, Signature, literal
 from .functions import curry
 
 
-CONTRACT_PATH = Path(__file__).with_name("numeric_v1.json")
+CONTRACT_PATH = Path(__file__).resolve().parents[1] / "numeric_v1.json"
 CONTRACT = json.loads(CONTRACT_PATH.read_text())
 OPERATIONS = {row["symbol"].removeprefix("school.op."): Operation(
     row["token_index"], row["symbol"], Signature.parse(row["signature"]),

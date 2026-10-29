@@ -9,10 +9,10 @@ from dataclasses import dataclass, field, replace
 
 from ..curriculum_contracts import (CapabilityConstructionContract, ConstructionFamily,
     FamilyDisposition, FamilyObligation)
-from ..semantics.catalog import Catalog, SemanticCatalog
-from ..semantics.core import Apply, Expression, Literal, TypedError, expression_digest, literal
-from ..semantics.domains import AnswerContract, AnswerMode, contract_digest, require_sha256
-from ..semantics.laws import LawCandidate
+from ..semantics.foundation.catalog import Catalog, SemanticCatalog
+from ..semantics.foundation.core import Apply, Expression, Literal, TypedError, expression_digest, literal
+from ..semantics.foundation.domains import AnswerContract, AnswerMode, contract_digest, require_sha256
+from ..semantics.foundation.laws import LawCandidate
 from .cases import verify_constituents
 from .expressions import Backend, Proof
 from .laws import LawCheck, check_finite_equivalence

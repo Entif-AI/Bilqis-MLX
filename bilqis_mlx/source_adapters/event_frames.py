@@ -18,7 +18,7 @@ from ..factory.model import SourceAdapter
 from ..factory.curriculum_definition import CapabilitySpec, CapabilitySourceBinding, GradeSpec
 from ..factory.executable_release import compile_executable_factory_release
 from ..factory.execution import CurriculumProfile
-from ..semantics.core import Apply, Operation, Signature, literal
+from ..semantics.foundation.core import Apply, Operation, Signature, literal
 from ..factory.verification import (
     EVENT_FRAME_ORACLE as ORACLE, event_frame_answer as independent_answer,
 )

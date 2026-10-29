@@ -14,7 +14,7 @@ from bilqis_mlx.curriculum.scheduler import (
     verify_state,
 )
 from ..curriculum import Course
-from ..semantics.core import Operation
+from ..semantics.foundation.core import Operation
 from ..curriculum_compiler import TypedCandidatePackage, compile_ast
 from ..verification.curriculum import candidate_package_problems
 from ..verification.expressions import Backend

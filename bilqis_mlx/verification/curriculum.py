@@ -9,10 +9,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from ..curriculum_contracts import ConstructionContractPlan, plan_construction_contracts
-from ..semantics.domains import contract_digest, require_sha256
+from ..semantics.foundation.domains import contract_digest, require_sha256
 from .construction_contracts import DomainWitness, verify_domain_witness
 
-from ..semantics.core import Apply, expression_digest
+from ..semantics.foundation.core import Apply, expression_digest
 from .cases import verify_constituents
 from .expressions import Backend
 

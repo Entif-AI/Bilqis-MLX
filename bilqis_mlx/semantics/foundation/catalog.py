@@ -147,7 +147,7 @@ class SemanticCatalog:
             raise TypedError(CatalogErrorCode.LEGACY_ABI_DRIFT.value)
 
 
-CATALOG_PATH = Path(__file__).with_name("original_catalog_v1.json")
+CATALOG_PATH = Path(__file__).resolve().parents[1] / "original_catalog_v1.json"
 
 
 def load_catalog(path: Path = CATALOG_PATH) -> SemanticCatalog:

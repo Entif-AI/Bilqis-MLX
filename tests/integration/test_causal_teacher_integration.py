@@ -259,7 +259,7 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
         self.assertEqual(graph,self.fixture.graph)
 
     def test_old_model_metadata_222_never_overrides_expanded_graph_vocabulary(self):
-        from bilqis_mlx.semantics.abi import HISTORICAL_PREFIX_SIZE
+        from bilqis_mlx.semantics.foundation.abi import HISTORICAL_PREFIX_SIZE
         actual=len(self.fixture.graph["tokens"])
         self.assertGreater(actual,HISTORICAL_PREFIX_SIZE)
         # Deliberately reconstruct a historical pre-fix *receipt* in a

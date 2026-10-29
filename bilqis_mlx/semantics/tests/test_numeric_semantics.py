@@ -1,7 +1,7 @@
 """Concrete number-set meaning and partial arithmetic, independently verified."""
 import unittest
 
-from bilqis_mlx.semantics.numeric import number, number_set, calculate, evaluate
+from bilqis_mlx.semantics.foundation.numeric import number, number_set, calculate, evaluate
 from bilqis_mlx.source_adapters.numeric import encode, decode
 from bilqis_mlx.verification.numeric import independent_value
 

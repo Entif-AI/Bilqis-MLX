@@ -24,6 +24,14 @@ VERIFIER_FILES = (
     "verification/laws.py", "grade_release_plan.py", "selection_outcomes.py",
 )
 
+_VERIFIER_PHYSICAL_PATHS = {
+    "semantics/core.py": "semantics/foundation/core.py",
+    "semantics/functions.py": "semantics/foundation/functions.py",
+    "semantics/catalog.py": "semantics/foundation/catalog.py",
+    "semantics/domains.py": "semantics/foundation/domains.py",
+    "semantics/laws.py": "semantics/foundation/laws.py",
+}
+
 
 def verifier_digest() -> str:
     """Bind attestations to the source-only checks that consume them.
@@ -32,8 +40,12 @@ def verifier_digest() -> str:
     The independently supplied manifest fingerprint governs both bindings.
     """
     root = Path(__file__).resolve().parents[1]
-    payload = {name: hashlib.sha256((root / name).read_bytes()).hexdigest()
-               for name in VERIFIER_FILES}
+    payload = {
+        name: hashlib.sha256(
+            (root / _VERIFIER_PHYSICAL_PATHS.get(name, name)).read_bytes()
+        ).hexdigest()
+        for name in VERIFIER_FILES
+    }
     return hashlib.sha256(json.dumps(payload, sort_keys=True,
                                      separators=(",", ":")).encode()).hexdigest()
 

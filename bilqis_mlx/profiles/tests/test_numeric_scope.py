@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import patch
 
 from bilqis_mlx.profiles.catalog import numeric_row_in_scope, partition_numeric_scope
-from bilqis_mlx.semantics.numeric import calculate, number
+from bilqis_mlx.semantics.foundation.numeric import calculate, number
 from bilqis_mlx.source_adapters.numeric import decode, encode
 
 

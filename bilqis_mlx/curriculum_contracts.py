@@ -12,7 +12,7 @@ from typing import Mapping
 
 from .curriculum_compiler import CurriculumAST, FiniteTypedInput, TypedExpressionTemplate
 from .curriculum_compiler import dependency_coverage_plan
-from .semantics.domains import AnswerContract, FiniteDomain, SourceBinding, contract_digest
+from .semantics.foundation.domains import AnswerContract, FiniteDomain, SourceBinding, contract_digest
 
 
 class ConstructionFamily(str, Enum):

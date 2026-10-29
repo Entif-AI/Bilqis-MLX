@@ -9,7 +9,7 @@ import re
 
 from ..errors import BilqisError, ErrorBus, SEMANTIC_FRAME, SCHOOL
 from .atlas_projection import FrozenAtlasSnapshot
-from .core import Apply, Expression, Literal, Signature, expression_digest
+from .foundation.core import Apply, Expression, Literal, Signature, expression_digest
 
 
 FRAME_SCHEMA_RECORD = "bilqis.semantic-frame-schema/v1"

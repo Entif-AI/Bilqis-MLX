@@ -8,7 +8,7 @@ import sys
 import tempfile
 import unittest
 
-from bilqis_mlx.semantics.abi import (
+from bilqis_mlx.semantics.foundation.abi import (
     HISTORICAL_ABI, HISTORICAL_PREFIX_SIZE, fingerprint_graph_prefix,
     fingerprint_sheet_prefix, fingerprint_sheet_source_fields,
     prefix_preserving_vocab_size, require_external_expected,

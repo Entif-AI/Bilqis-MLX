@@ -12,7 +12,7 @@ import unittest
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.grade_a_probe import read_sources
 from bilqis_mlx.semantics.atlas_projection import AbiEntry
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.atlas_projection import (
     AtlasCounts, FrozenAtlasSnapshot,
 )

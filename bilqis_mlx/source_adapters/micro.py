@@ -5,9 +5,9 @@ derived, allocated or declared here: token references resolve through Catalog.
 """
 from __future__ import annotations
 
-from ..semantics.catalog import Catalog
-from ..semantics.core import Apply, Expression, TypedError, literal
-from ..semantics.functions import curry
+from ..semantics.foundation.catalog import Catalog
+from ..semantics.foundation.core import Apply, Expression, TypedError, literal
+from ..semantics.foundation.functions import curry
 
 
 _ROOT_PREFIX = {

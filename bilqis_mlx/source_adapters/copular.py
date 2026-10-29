@@ -12,7 +12,7 @@ import random
 
 from ..factory.adapters import RegisteredSourceAdapter
 from ..factory.model import SourceAdapter
-from ..semantics.copular import (
+from ..semantics.foundation.copular import (
     SYMBOL, ENTITIES, ReferentWorld, bind_operation, identify, evaluate, references,
 )
 ORACLE = "bilqis.ithkuil-reference-identity-oracle/v1"
@@ -193,11 +193,16 @@ check = check_copular
 
 def registered_adapter() -> RegisteredSourceAdapter:
     home = Path(__file__).resolve().parents[1]
+    files = (
+        ("source_adapters/copular.py", "source_adapters/copular.py"),
+        ("semantics/copular.py", "semantics/foundation/copular.py"),
+        ("verification/copular.py", "verification/copular.py"),
+        ("factory/verification.py", "factory/verification.py"),
+    )
     implementation = digest(dict(
         source=_expected_witness(),
-        files={name: hashlib.sha256((home / name).read_bytes()).hexdigest()
-               for name in ("source_adapters/copular.py", "semantics/copular.py",
-                            "verification/copular.py", "factory/verification.py")}))
+        files={logical: hashlib.sha256((home / physical).read_bytes()).hexdigest()
+               for logical, physical in files}))
     return RegisteredSourceAdapter(SourceAdapter(
         adapter_id="source.ithkuil-reference-identity/v1", generator_id=GENERATOR,
         accepted_oracle_ids=(ORACLE,), implementation_sha256=implementation,

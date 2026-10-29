@@ -1,7 +1,7 @@
 """Unqualified finite-domain proposals on the existing literal/token ABI.
 
 These declarations allocate no tokens and certify no source or morphology.
-Decimal text preserves the wire representation used by semantics.numeric;
+Decimal text preserves the wire representation used by semantics.foundation.numeric;
 native integer results must be encoded explicitly at the adapter boundary.
 """
 from __future__ import annotations

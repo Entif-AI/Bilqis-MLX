@@ -9,12 +9,12 @@ from dataclasses import dataclass
 import random
 
 from .generated_assessment import digest
-from .semantics.core import Literal
-from .semantics.numeric import calculate, evaluate, number, number_set
+from .semantics.foundation.core import Literal
+from .semantics.foundation.numeric import calculate, evaluate, number, number_set
 from .source_adapters.numeric import DIALECT, encode
 from .verification.numeric import independent_value
-from .semantics.abi import HISTORICAL_ABI, fingerprint_graph_prefix
-from .semantics.numeric import CONTRACT
+from .semantics.foundation.abi import HISTORICAL_ABI, fingerprint_graph_prefix
+from .semantics.foundation.numeric import CONTRACT
 
 GENERATOR = "bilqis.finite-numeric-constructions/v1"
 ORACLE = "bilqis.independent-finite-numeric/v1"

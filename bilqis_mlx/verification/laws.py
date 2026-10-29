@@ -5,9 +5,9 @@ from dataclasses import dataclass
 import re
 from typing import Iterable
 
-from ..semantics.catalog import Catalog
-from ..semantics.core import Apply, Expression, TypedError, expression_digest
-from ..semantics.laws import LawCandidate, LawErrorCode, SourceLocator
+from ..semantics.foundation.catalog import Catalog
+from ..semantics.foundation.core import Apply, Expression, TypedError, expression_digest
+from ..semantics.foundation.laws import LawCandidate, LawErrorCode, SourceLocator
 from .expressions import Backend, verify
 from .outcomes import LawCheckStatus
 

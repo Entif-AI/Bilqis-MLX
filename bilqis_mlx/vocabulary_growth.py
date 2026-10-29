@@ -108,7 +108,7 @@ def _check_admission(entry: AdmittedToken, prior: set[str], additional: set[str]
     if type(entry.arity) is not int or entry.arity < 0:
         raise ValueError("VOCAB_TYPED_ARITY_INVALID")
     if entry.arity:
-        from .semantics.core import Signature
+        from .semantics.foundation.core import Signature
         signature = Signature.parse(entry.signature)
         if len(signature.inputs) != entry.arity:
             raise ValueError("VOCAB_TYPED_SIGNATURE_ARITY_MISMATCH")

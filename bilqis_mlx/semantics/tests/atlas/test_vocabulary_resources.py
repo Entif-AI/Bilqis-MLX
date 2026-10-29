@@ -9,19 +9,19 @@ from unittest.mock import patch
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.semantics.atlas_projection import AtlasLabel
-from bilqis_mlx.semantics.atlas_vocabulary import plan_vocabulary_extension
-from bilqis_mlx.semantics.atlas_vocabulary_resources import (
+from bilqis_mlx.semantics.atlas.vocabulary import plan_vocabulary_extension
+from bilqis_mlx.semantics.atlas.vocabulary_resources import (
     DEFAULT_DISK_RESERVE_BYTES, DEFAULT_EXTRA_PLANNING_BYTES,
     build_registry_mirror_delta, estimate_vocabulary_resources,
 )
-from bilqis_mlx.semantics.tests.test_atlas_vocabulary import _allocation_fixture
+from bilqis_mlx.semantics.tests.atlas.vocabulary_fixtures import _allocation_fixture
 
 
 class AtlasVocabularyResourceTests(unittest.TestCase):
     def test_exact_bank_cost_and_preserved_100gib_disk_reserve(self):
         snapshot, prior = _allocation_fixture()
         with patch(
-            "bilqis_mlx.semantics.atlas_vocabulary.load_pinned_atlas_snapshot",
+            "bilqis_mlx.semantics.atlas.vocabulary_planning.load_pinned_atlas_snapshot",
             return_value=snapshot,
         ):
             plan = plan_vocabulary_extension(
@@ -62,13 +62,13 @@ class AtlasVocabularyResourceTests(unittest.TestCase):
             '<urn:concept:8192> <http://www.w3.org/2004/02/skos/core#definition> "semantic role 8192"@en .\n'
         ).encode("utf-8")
         with patch(
-            "bilqis_mlx.semantics.atlas_vocabulary.load_pinned_atlas_snapshot",
+            "bilqis_mlx.semantics.atlas.vocabulary_planning.load_pinned_atlas_snapshot",
             return_value=snapshot,
         ), patch(
-            "bilqis_mlx.semantics.atlas_vocabulary_resources.load_pinned_atlas_snapshot",
+            "bilqis_mlx.semantics.atlas.vocabulary_resources.load_pinned_atlas_snapshot",
             return_value=snapshot,
         ), patch(
-            "bilqis_mlx.semantics.atlas_vocabulary_resources._verify_bundle",
+            "bilqis_mlx.semantics.atlas.vocabulary_resources._verify_bundle",
             return_value=(snapshot.source_bundle_id, {"canonical.nt": source_nt}),
         ):
             plan = plan_vocabulary_extension(
@@ -94,26 +94,26 @@ class AtlasVocabularyResourceTests(unittest.TestCase):
                     prior, replace(plan, active_indices=(0, 8191)),
                     source_bundle_path=Path("/synthetic-source"))
         with patch(
-            "bilqis_mlx.semantics.atlas_vocabulary.load_pinned_atlas_snapshot",
+            "bilqis_mlx.semantics.atlas.vocabulary_planning.load_pinned_atlas_snapshot",
             return_value=snapshot,
         ), patch(
-            "bilqis_mlx.semantics.atlas_vocabulary_resources.load_pinned_atlas_snapshot",
+            "bilqis_mlx.semantics.atlas.vocabulary_resources.load_pinned_atlas_snapshot",
             return_value=snapshot,
         ), patch(
-            "bilqis_mlx.semantics.atlas_vocabulary_resources._verify_bundle",
+            "bilqis_mlx.semantics.atlas.vocabulary_resources._verify_bundle",
             return_value=(snapshot.source_bundle_id, {"canonical.nt": b""}),
         ):
             with self.assertRaises(BilqisError):
                 build_registry_mirror_delta(
                     prior, plan, source_bundle_path=Path("/synthetic-source"))
         with patch(
-            "bilqis_mlx.semantics.atlas_vocabulary.load_pinned_atlas_snapshot",
+            "bilqis_mlx.semantics.atlas.vocabulary_planning.load_pinned_atlas_snapshot",
             return_value=snapshot,
         ), patch(
-            "bilqis_mlx.semantics.atlas_vocabulary_resources.load_pinned_atlas_snapshot",
+            "bilqis_mlx.semantics.atlas.vocabulary_resources.load_pinned_atlas_snapshot",
             return_value=snapshot,
         ), patch(
-            "bilqis_mlx.semantics.atlas_vocabulary_resources._verify_bundle",
+            "bilqis_mlx.semantics.atlas.vocabulary_resources._verify_bundle",
             return_value=("f" * 64, {"canonical.nt": source_nt}),
         ):
             with self.assertRaises(BilqisError) as mismatch:

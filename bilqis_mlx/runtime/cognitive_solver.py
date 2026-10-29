@@ -12,8 +12,8 @@ from ..semantics.cognitive_dag import (
 from ..semantics.cognitive_operators import (
     OperatorBinding, TypedValue, ValueState,
 )
-from ..semantics.domains import contract_digest
-from ..semantics.memo import PureOperationMemo
+from ..semantics.foundation.domains import contract_digest
+from ..semantics.foundation.memo import PureOperationMemo
 from .operator_registry import (
     RouteKind, RouteRegistry, default_route_registry,
 )

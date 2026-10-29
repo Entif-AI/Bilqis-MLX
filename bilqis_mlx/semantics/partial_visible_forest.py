@@ -9,7 +9,7 @@ from .context_eligibility import (
     ContextHold,
     check_context_eligibility,
 )
-from .domains import contract_digest
+from .foundation.domains import contract_digest
 from .frame_compiler import (
     CompiledFrameBatch,
     FrameCompilerConfig,

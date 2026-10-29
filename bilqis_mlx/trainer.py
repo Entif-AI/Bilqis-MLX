@@ -122,7 +122,7 @@ from bilqis_mlx.learning.stagnation_control import (
     quarantined_capabilities, record_visit as record_stagnation_visit,
     start_session as start_stagnation_session,
 )
-from .semantics.abi import HISTORICAL_PREFIX_SIZE
+from .semantics.foundation.abi import HISTORICAL_PREFIX_SIZE
 from .source import AUDITED_PARENT
 from .vocabulary_growth import extend_mlx_student
 from bilqis_mlx.learning.teacher_feedback import (

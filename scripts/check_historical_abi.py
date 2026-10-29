@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from bilqis_mlx.semantics.abi import (
+from bilqis_mlx.semantics.foundation.abi import (
     HISTORICAL_ABI, HISTORICAL_PREFIX_SIZE, fingerprint_sheet_prefix,
     require_external_expected, require_historical_prefix,
 )

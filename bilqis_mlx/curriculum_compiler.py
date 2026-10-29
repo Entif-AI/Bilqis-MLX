@@ -13,9 +13,9 @@ import random
 from typing import Mapping
 
 from .curriculum import Course, validate
-from .semantics.core import Apply, Expression, Operation, TypedError, literal
-from .semantics.functions import curry
-from .semantics.catalog import Catalog
+from .semantics.foundation.core import Apply, Expression, Operation, TypedError, literal
+from .semantics.foundation.functions import curry
+from .semantics.foundation.catalog import Catalog
 from .verification.cases import verify_constituents
 from .verification.expressions import Backend, Proof
 
@@ -197,7 +197,7 @@ def compile_typed_candidate_package(
 ) -> TypedCandidatePackage:
     """Compile a bounded, source-only candidate package from existing typed ASTs.
 
-    Templates are declarative compositions over ``semantics.functions`` and
+    Templates are declarative compositions over ``semantics.foundation.functions`` and
     finite typed inputs, so seeded instantiation has no capability-specific
     constructor dispatch. Qualification inputs are labels only: compilation
     cannot prove source pinning, morphology, catalog admission, or mastery.

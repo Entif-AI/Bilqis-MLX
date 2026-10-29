@@ -13,13 +13,13 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.model_topology_v2 import (
     ModelTopologySpecV2, create_unbound_bamf_state,
 )
-from bilqis_mlx.semantics.atlas_vocabulary import (
+from bilqis_mlx.semantics.atlas.vocabulary import (
     VocabularyBankParent, plan_vocabulary_extension,
 )
-from bilqis_mlx.semantics.atlas_vocabulary_transaction import (
+from bilqis_mlx.semantics.atlas.vocabulary_transaction import (
     FullVocabularyParent, stage_full_vocabulary_extension,
 )
-from bilqis_mlx.semantics.tests.test_atlas_vocabulary import _allocation_fixture
+from bilqis_mlx.semantics.tests.atlas.vocabulary_fixtures import _allocation_fixture
 
 
 class AtlasVocabularyTransactionTests(unittest.TestCase):
@@ -34,7 +34,7 @@ class AtlasVocabularyTransactionTests(unittest.TestCase):
             {"step": mx.array(0, dtype=mx.uint64)},
             observed_available_bytes=200 * 1024 ** 3)
         with patch(
-            "bilqis_mlx.semantics.atlas_vocabulary.load_pinned_atlas_snapshot",
+            "bilqis_mlx.semantics.atlas.vocabulary_planning.load_pinned_atlas_snapshot",
             return_value=snapshot,
         ):
             plan = plan_vocabulary_extension(
@@ -68,7 +68,7 @@ class AtlasVocabularyTransactionTests(unittest.TestCase):
             banks, topology, parameters, optimizer_state,
             observed_available_bytes=200 * 1024 ** 3)
         with patch(
-            "bilqis_mlx.semantics.atlas_vocabulary.load_pinned_atlas_snapshot",
+            "bilqis_mlx.semantics.atlas.vocabulary_planning.load_pinned_atlas_snapshot",
             return_value=snapshot,
         ):
             plan = plan_vocabulary_extension(

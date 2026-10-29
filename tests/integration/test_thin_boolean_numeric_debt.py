@@ -29,7 +29,7 @@ class ThinBooleanNumericDebtTests(unittest.TestCase):
         from bilqis_mlx.live_grade_a import live_course as live_a
         from bilqis_mlx.live_grade_b import live_course as live_b
         from bilqis_mlx.live_grade_c import registry_graph
-        from bilqis_mlx.semantics.abi import HISTORICAL_PREFIX_SIZE
+        from bilqis_mlx.semantics.foundation.abi import HISTORICAL_PREFIX_SIZE
 
         cls.manifest = json.loads((Path(__file__).resolve().parents[2] /
             "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json").read_text())

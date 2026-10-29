@@ -10,7 +10,7 @@ from bilqis_mlx.live_grade_b import live_course as b_course
 from bilqis_mlx.live_grade_c import PLANS, draw, live_course, proposed_graph, registry_graph
 from bilqis_mlx.pedagogical_parity import _source_stack
 from bilqis_mlx.source_adapters.numeric import decode
-from bilqis_mlx.semantics.numeric import evaluate
+from bilqis_mlx.semantics.foundation.numeric import evaluate
 from bilqis_mlx.verification.numeric import independent_value
 import json
 from copy import deepcopy

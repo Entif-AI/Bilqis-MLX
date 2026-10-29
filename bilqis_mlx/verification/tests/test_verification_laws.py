@@ -2,10 +2,10 @@
 from pathlib import Path
 import unittest
 
-from bilqis_mlx.semantics.catalog import Catalog
-from bilqis_mlx.semantics.core import Operation, Signature, TypedError, literal
-from bilqis_mlx.semantics.functions import curry
-from bilqis_mlx.semantics.laws import LawCandidate, LawErrorCode, SourceLocator
+from bilqis_mlx.semantics.foundation.catalog import Catalog
+from bilqis_mlx.semantics.foundation.core import Operation, Signature, TypedError, literal
+from bilqis_mlx.semantics.foundation.functions import curry
+from bilqis_mlx.semantics.foundation.laws import LawCandidate, LawErrorCode, SourceLocator
 from bilqis_mlx.verification.laws import LawCheck, check_finite_equivalence
 from bilqis_mlx.verification.outcomes import LawCheckStatus
 from bilqis_mlx.grade_a_probe import read_sources

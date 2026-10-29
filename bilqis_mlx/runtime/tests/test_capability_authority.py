@@ -24,7 +24,7 @@ from bilqis_mlx.runtime.capability_retention import (
 from bilqis_mlx.runtime.cognitive_solver import NeuralProposal, SolveBudget, SolveContext
 from bilqis_mlx.semantics.cognitive_dag import DAGBudget, DAGNode
 from bilqis_mlx.semantics.cognitive_operators import TypedValue
-from bilqis_mlx.semantics.domains import contract_digest
+from bilqis_mlx.semantics.foundation.domains import contract_digest
 from bilqis_mlx.semantics.tests.test_cognitive_dag import _goal, _literal, _program
 from bilqis_mlx.semantics.tests.test_cognitive_operators import RELEASE, SCOPE, _case
 

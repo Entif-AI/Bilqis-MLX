@@ -15,7 +15,7 @@ from .curriculum import AnswerFamily, BINARY, Capability, Grade
 from .generated_assessment import digest
 from .integer_curriculum import IntegerScope
 from .numeric_curriculum import GENERATOR, ORACLE, NumericLesson, draw_numeric
-from .semantics.numeric import CONTRACT, CONTRACT_PATH
+from .semantics.foundation.numeric import CONTRACT, CONTRACT_PATH
 from .token_atlas import COLUMNS, rows_for_graph
 from .vocabulary_growth import AdmittedToken, append_catalog
 
@@ -57,11 +57,22 @@ def constructor_digest():
 def provider_implementation_digest():
     """Exact current implementation, independently bound by factory receipts."""
     root = Path(__file__).resolve().parent
-    files = ("live_grade_c.py", "numeric_curriculum.py", "semantics/numeric.py",
-             "semantics/numeric_v1.json", "source_adapters/numeric.py", "verification/numeric.py",
-             "source_adapters/school.py", "compatibility/numeric_constructor_v1.json")
+    files = (
+        ("live_grade_c.py", "live_grade_c.py"),
+        ("numeric_curriculum.py", "numeric_curriculum.py"),
+        ("semantics/numeric.py", "semantics/foundation/numeric.py"),
+        ("semantics/numeric_v1.json", "semantics/numeric_v1.json"),
+        ("source_adapters/numeric.py", "source_adapters/numeric.py"),
+        ("verification/numeric.py", "verification/numeric.py"),
+        ("source_adapters/school.py", "source_adapters/school.py"),
+        ("compatibility/numeric_constructor_v1.json",
+         "compatibility/numeric_constructor_v1.json"),
+    )
     import hashlib
-    return digest({name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in files})
+    return digest({
+        logical: hashlib.sha256((root / physical).read_bytes()).hexdigest()
+        for logical, physical in files
+    })
 
 
 def admissions():
@@ -102,7 +113,7 @@ def registry_graph():
     """Load the checked native projection; actual-model admission is separate."""
     evidence = json.loads(REGISTRY_PATH.read_text())
     graph = evidence["graph"]
-    from .semantics.abi import HISTORICAL_ABI, HISTORICAL_PREFIX_SIZE, fingerprint_graph_prefix
+    from .semantics.foundation.abi import HISTORICAL_ABI, HISTORICAL_PREFIX_SIZE, fingerprint_graph_prefix
     if fingerprint_graph_prefix(graph) != HISTORICAL_ABI.index_contract_sha256:
         raise ValueError("GRADE_C_HISTORICAL_PREFIX_DRIFT")
     parent = {**graph, "tokens": graph["tokens"][:HISTORICAL_PREFIX_SIZE],

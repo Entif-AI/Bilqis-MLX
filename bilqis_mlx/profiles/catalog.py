@@ -11,8 +11,8 @@ from ..factory.execution import (
     GradeProfile,
 )
 from ..live_grade_c import expanded_graph
-from ..semantics.core import Literal
-from ..semantics.numeric import evaluate
+from ..semantics.foundation.core import Literal
+from ..semantics.foundation.numeric import evaluate
 from ..source_adapters.numeric import decode
 from .school import (
     boolean_entry_profile,

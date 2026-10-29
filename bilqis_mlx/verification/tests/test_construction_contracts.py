@@ -4,11 +4,11 @@ import unittest
 
 from bilqis_mlx.curriculum_contracts import (ConstructionFamily, FamilyDisposition,
     FamilyObligation, LeafDomainBinding)
-from bilqis_mlx.semantics.catalog import Catalog, SemanticCatalog, SemanticToken
-from bilqis_mlx.semantics.core import Operation, Signature, TypedError, literal
-from bilqis_mlx.semantics.domains import AnswerContract, AnswerMode, contract_digest
-from bilqis_mlx.semantics.functions import curry
-from bilqis_mlx.semantics.laws import LawCandidate
+from bilqis_mlx.semantics.foundation.catalog import Catalog, SemanticCatalog, SemanticToken
+from bilqis_mlx.semantics.foundation.core import Operation, Signature, TypedError, literal
+from bilqis_mlx.semantics.foundation.domains import AnswerContract, AnswerMode, contract_digest
+from bilqis_mlx.semantics.foundation.functions import curry
+from bilqis_mlx.semantics.foundation.laws import LawCandidate
 from bilqis_mlx.verification.construction_contracts import verify_domain_witness, verify_transformation_family
 from bilqis_mlx.verification.outcomes import LawCheckStatus
 from tests.support.contract_fixtures import BooleanBackend, SOURCE, construction, domain
@@ -111,7 +111,7 @@ class ConstructionWitnessTests(unittest.TestCase):
                 source=self.source, independent=self.independent)
 
     def test_numeric_wire_results_and_output_scope_do_not_broaden_core_literal(self):
-        from bilqis_mlx.semantics.domains import ValueCodec
+        from bilqis_mlx.semantics.foundation.domains import ValueCodec
         numbers = domain(kind="Number", values=("0", "1"), codec=ValueCodec.DECIMAL_INTEGER_TEXT)
         op = Operation(1, "fixture.copy", Signature(("Number",), "Number"), "c" * 64)
         expression = curry(op)(literal("1", "Number"))

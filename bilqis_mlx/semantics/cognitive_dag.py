@@ -14,9 +14,9 @@ from .cognitive_operators import (
     _authorize_inputs, _check_grant, _compute_after_authorization,
     _independent_applicability, _number_domain, operator_grant_digest,
 )
-from .domains import contract_digest
+from .foundation.domains import contract_digest
 from .frame_schema import BindingState, FrameInstance
-from .memo import PureOperationMemo
+from .foundation.memo import PureOperationMemo
 
 
 DAG_REF_SCHEMA = "bilqis.cognitive-dag-operand/v1"

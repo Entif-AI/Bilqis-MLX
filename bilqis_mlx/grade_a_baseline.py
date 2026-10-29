@@ -19,7 +19,7 @@ from .grade_a_manifest import verify_manifest
 from .grade_a_probe import candidate_course
 from bilqis_mlx.runtime.mlx_parity import forward
 from .source import AUDITED_PARENT
-from .semantics.abi import HISTORICAL_PREFIX_SIZE
+from .semantics.foundation.abi import HISTORICAL_PREFIX_SIZE
 
 
 def _fixed_batch(rows: list[dict]):

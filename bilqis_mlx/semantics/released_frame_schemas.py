@@ -16,7 +16,7 @@ import re
 
 from ..errors import BilqisError, ErrorBus, SEMANTIC_FRAME
 from .atlas_projection import FrozenAtlasSnapshot
-from .atlas_snapshot import AtlasArtifactSelection, load_pinned_atlas_snapshot
+from .atlas.snapshot import AtlasArtifactSelection, load_pinned_atlas_snapshot
 from .frame_codec import (
     SchemaTagEntry, SchemaTagMap, _canonical_bytes,
 )

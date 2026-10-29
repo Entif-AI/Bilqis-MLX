@@ -1,8 +1,8 @@
 """Unambiguous, versioned numeric prefix codec over catalog token symbols."""
 from __future__ import annotations
 
-from ..semantics.core import Apply, Literal
-from ..semantics.numeric import (OPERATIONS, SET_SYMBOL, GROUPS_SYMBOL,
+from ..semantics.foundation.core import Apply, Literal
+from ..semantics.foundation.numeric import (OPERATIONS, SET_SYMBOL, GROUPS_SYMBOL,
                                 calculate, evaluate, number, number_set)
 
 DIALECT = "bilqis.finite-number-prefix/v1"

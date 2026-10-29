@@ -17,10 +17,10 @@ from bilqis_mlx.grade_a_probe import read_sources
 from bilqis_mlx.grade_b_oracle import CONNECTIVES
 from bilqis_mlx.live_grade_c import PLANS, registry_graph
 from bilqis_mlx.numeric_curriculum import draw_numeric
-from bilqis_mlx.semantics.atlas_snapshot import (
+from bilqis_mlx.semantics.atlas.snapshot import (
     AtlasArtifactSelection, load_pinned_atlas_snapshot,
 )
-from bilqis_mlx.semantics.core import Apply
+from bilqis_mlx.semantics.foundation.core import Apply
 from bilqis_mlx.semantics.frame_adapters import (
     _APPEND_ONLY_NUMERIC_NODES, _schema_for_symbol,
     bind_registered_source_row,

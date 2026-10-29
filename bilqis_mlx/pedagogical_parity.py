@@ -17,7 +17,7 @@ from pathlib import Path
 from .backup import digest_file
 from .grade_a_probe import PINNED_FULL_STUDENT_GRAPH_SHA256, read_sources
 from .source import AUDITED_PARENT
-from .semantics.abi import HISTORICAL_PREFIX_SIZE
+from .semantics.foundation.abi import HISTORICAL_PREFIX_SIZE
 
 
 SCHEMA = "bilqis.mlx.predecessor-pedagogy/v2"

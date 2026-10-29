@@ -17,8 +17,8 @@ from .context_eligibility import (
     ContextMember, ContextPolicy, SourceFrontier, SourceGrant, TaskScope,
     frame_evidence_digest, member_evidence_digest, project_context,
 )
-from .core import Apply, Literal, Signature
-from .numeric import CONTRACT as NUMERIC_CONTRACT
+from .foundation.core import Apply, Literal, Signature
+from .foundation.numeric import CONTRACT as NUMERIC_CONTRACT
 from .frame_schema import (
     AtomicFrame,
     ChildFrameRef,

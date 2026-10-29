@@ -3,8 +3,8 @@ from dataclasses import replace
 from unittest import TestCase
 from unittest.mock import patch
 
-from bilqis_mlx.semantics.memo import memoize_source
-from bilqis_mlx.semantics import numeric
+from bilqis_mlx.semantics.foundation.memo import memoize_source
+from bilqis_mlx.semantics.foundation import numeric
 from bilqis_mlx.verification.numeric import independent_value
 
 

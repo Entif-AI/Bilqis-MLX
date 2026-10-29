@@ -7,7 +7,7 @@ import json
 import re
 
 from ..errors import ErrorBus, SEMANTIC_FRAME
-from .domains import contract_digest
+from .foundation.domains import contract_digest
 from .frame_schema import AtomicFrame, FrameInstance, RoleOccurrence
 
 

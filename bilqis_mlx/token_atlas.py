@@ -13,7 +13,7 @@ import json
 from pathlib import Path
 
 from .backup import digest_file
-from .semantics.abi import HISTORICAL_ABI, HISTORICAL_PREFIX_SIZE, prefix_preserving_vocab_size, fingerprint_graph_prefix
+from .semantics.foundation.abi import HISTORICAL_ABI, HISTORICAL_PREFIX_SIZE, prefix_preserving_vocab_size, fingerprint_graph_prefix
 from .source import AUDITED_PARENT
 from .vocabulary_growth import _check_catalog, digest
 

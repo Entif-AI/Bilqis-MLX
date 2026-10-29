@@ -11,7 +11,7 @@ from pathlib import Path
 
 from ..curriculum import AnswerFamily, BINARY
 from ..live_grade_c import registry_graph as numeric_registry_graph
-from ..semantics.copular import SYMBOL, SEMANTIC_ID
+from ..semantics.foundation.copular import SYMBOL, SEMANTIC_ID
 from ..source_adapters.copular import (
     CAPABILITY, GENERATOR, ORACLE, SENSE_ID, TEXT_SHA256, MEANING, registered_adapter,
 )

@@ -3,10 +3,10 @@ from bilqis_mlx.curriculum_compiler import (CapabilityNode, CurriculumAST,
     FiniteTypedInput, TypedExpressionTemplate)
 from bilqis_mlx.curriculum_contracts import (CapabilityConstructionContract,
     ConstructionFamily, FamilyDisposition, FamilyObligation, LeafDomainBinding)
-from bilqis_mlx.semantics.core import Operation, Signature, literal
-from bilqis_mlx.semantics.domains import (AnswerContract, AnswerMode, FiniteDomain,
+from bilqis_mlx.semantics.foundation.core import Operation, Signature, literal
+from bilqis_mlx.semantics.foundation.domains import (AnswerContract, AnswerMode, FiniteDomain,
     SourceBinding, ValueCodec)
-from bilqis_mlx.semantics.laws import SourceLocator
+from bilqis_mlx.semantics.foundation.laws import SourceLocator
 
 SOURCE = SourceBinding(SourceLocator("synthetic:contract", "fixture/v1", "finite-domain"), "a" * 64)
 

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import json
-from ..semantics.core import Apply, Literal
+from ..semantics.foundation.core import Apply, Literal
 
 
 def independent_value(expression: Literal | Apply):

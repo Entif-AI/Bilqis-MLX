@@ -22,16 +22,16 @@ from bilqis_mlx.semantics.context_eligibility import (
     SourceFrontier, SourceGrant, TaskScope, frame_evidence_digest,
     member_evidence_digest,
 )
-from bilqis_mlx.semantics.core import Operation, Signature, literal
-from bilqis_mlx.semantics.domains import (
+from bilqis_mlx.semantics.foundation.core import Operation, Signature, literal
+from bilqis_mlx.semantics.foundation.domains import (
     FiniteDomain, SourceBinding, ValueCodec,
 )
 from bilqis_mlx.semantics.frame_schema import (
     BindingState, ConceptRef, FrameSchema, RoleOccurrence, RoleSpec,
     SourceSpan, make_frame_instance,
 )
-from bilqis_mlx.semantics.laws import SourceLocator
-from bilqis_mlx.semantics import numeric as released_numeric
+from bilqis_mlx.semantics.foundation.laws import SourceLocator
+from bilqis_mlx.semantics.foundation import numeric as released_numeric
 from bilqis_mlx.semantics.frame_schema import source_node_digest
 
 
@@ -201,7 +201,7 @@ class CognitiveOperatorsTests(unittest.TestCase):
                     candidate for candidate in imports
                     if candidate.startswith("bilqis_mlx.")
                     and local_path(candidate)[0] is not None)
-        self.assertIn("bilqis_mlx.semantics.numeric", seen)
+        self.assertIn("bilqis_mlx.semantics.foundation.numeric", seen)
         forbidden = (
             "bilqis_mlx.verification", "bilqis_mlx.source_adapters",
             "bilqis_mlx.generated_assessment", "bilqis_mlx.assessment",

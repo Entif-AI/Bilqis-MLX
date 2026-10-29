@@ -15,7 +15,7 @@ import re
 from ..errors import ErrorBus, SEMANTIC_FRAME
 from rdflib.namespace import SKOS
 from .atlas_projection import FrozenAtlasSnapshot
-from .domains import contract_digest
+from .foundation.domains import contract_digest
 from .frame_schema import ConceptRef
 from lib.ithkuil.src.skos.identity import Identity
 from lib.ithkuil.src.skos.relations import SEMANTIC_PREDICATES

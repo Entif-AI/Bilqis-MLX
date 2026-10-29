@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum
 
-from .semantics.domains import contract_digest, require_sha256
+from .semantics.foundation.domains import contract_digest, require_sha256
 
 
 @dataclass(frozen=True)

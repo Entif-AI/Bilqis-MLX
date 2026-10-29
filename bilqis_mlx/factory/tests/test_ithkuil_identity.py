@@ -23,7 +23,7 @@ from bilqis_mlx.factory.live_answers import live_answer_registry
 from bilqis_mlx.grade_a_probe import read_sources
 from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.live_grade_c import registry_graph
-from bilqis_mlx.semantics.abi import HISTORICAL_PREFIX_SIZE
+from bilqis_mlx.semantics.foundation.abi import HISTORICAL_PREFIX_SIZE
 from bilqis_mlx.source_adapters.school import live_source_registry
 from bilqis_mlx.source_adapters.copular import CAPABILITY, check
 from bilqis_mlx.token_atlas import COLUMNS, rows_for_graph

@@ -10,7 +10,7 @@ from ..runtime.capability_retention import (
     Assessment, AssessmentPair, CompleteSolver, EvaluationCohort,
     _answer_identity, _invalid, _names, _sha, evaluate_capabilities,
 )
-from ..semantics.domains import contract_digest
+from ..semantics.foundation.domains import contract_digest
 from .champions import Checkpoint
 from .championship_policy import CONTEXT_KEYS
 from .championship_witnesses import verified_battery

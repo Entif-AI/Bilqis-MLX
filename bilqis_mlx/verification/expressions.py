@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
 
-from ..semantics.core import Apply, Expression, Literal, Operation, TypedError, expression_digest
+from ..semantics.foundation.core import Apply, Expression, Literal, Operation, TypedError, expression_digest
 from .outcomes import ProofStatus
 
 class Backend(Protocol):

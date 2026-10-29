@@ -13,7 +13,7 @@ from bilqis_mlx.curriculum_compiler import (compile_ast, compile_probe_plan,
                                           FiniteTypedInput, TypedExpressionTemplate)
 from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.grade_a_probe import read_sources
-from bilqis_mlx.semantics.core import Apply, Operation, Signature
+from bilqis_mlx.semantics.foundation.core import Apply, Operation, Signature
 
 
 class CurriculumCompilerTests(unittest.TestCase):

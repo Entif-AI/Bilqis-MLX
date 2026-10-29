@@ -3,7 +3,7 @@ from unittest import TestCase
 from bilqis_mlx.learning.championship_identity import (
     build_school_identity, enforce_school_identity)
 from bilqis_mlx.learning.mentor_epoch import begin_initial_epoch, reference_checkpoints
-from bilqis_mlx.semantics.abi import HISTORICAL_PREFIX_SIZE
+from bilqis_mlx.semantics.foundation.abi import HISTORICAL_PREFIX_SIZE
 
 
 def _identity(course="a", graph="b", release="c", width=8):

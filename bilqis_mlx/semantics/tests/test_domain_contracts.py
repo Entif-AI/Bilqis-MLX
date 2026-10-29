@@ -5,8 +5,8 @@ import unittest
 
 from bilqis_mlx.curriculum_contracts import (ConstructionFamily, ContractPlanStatus,
     FamilyDisposition, FamilyObligation, LeafDomainBinding, plan_construction_contracts)
-from bilqis_mlx.semantics.core import TypedError, literal
-from bilqis_mlx.semantics.domains import (AnswerContract, AnswerMode, ValueCodec, contract_digest)
+from bilqis_mlx.semantics.foundation.core import TypedError, literal
+from bilqis_mlx.semantics.foundation.domains import (AnswerContract, AnswerMode, ValueCodec, contract_digest)
 from tests.support.contract_fixtures import SOURCE, construction, domain
 
 

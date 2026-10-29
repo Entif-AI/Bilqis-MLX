@@ -9,15 +9,15 @@ from dataclasses import dataclass
 import hashlib
 from typing import Mapping
 
-from ..errors import ErrorBus, SEMANTIC_FRAME
-from ..runtime.model_topology_v2 import (
+from ...errors import ErrorBus, SEMANTIC_FRAME
+from ...runtime.model_topology_v2 import (
     ModelTopologySpecV2, bamf_serialization_arrays,
 )
-from .atlas_vocabulary import (
+from .vocabulary import (
     CandidateState, VocabularyBankParent, VocabularyExtension,
     STAGED_ONLY, apply_vocabulary_extension,
 )
-from .atlas_vocabulary_resources import (
+from .vocabulary_resources import (
     DEFAULT_DISK_RESERVE_BYTES, DEFAULT_EXTRA_PLANNING_BYTES,
     VocabularyResourceEstimate, estimate_vocabulary_resources,
 )

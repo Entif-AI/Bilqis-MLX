@@ -19,10 +19,10 @@ from .context_eligibility import (
     ContextEligibility, ContextHold, ContextPolicy, SourceFrontier, SourceGrant,
     TaskScope, check_context_eligibility,
 )
-from .core import Signature
-from .domains import FiniteDomain, ValueCodec, contract_digest
+from .foundation.core import Signature
+from .foundation.domains import FiniteDomain, ValueCodec, contract_digest
 from .frame_schema import BindingState, ConceptRef, FrameInstance
-from . import numeric as released_numeric
+from .foundation import numeric as released_numeric
 
 
 VALUE_SCHEMA = "bilqis.cognitive-typed-value/v1"
@@ -445,7 +445,7 @@ def _evaluate_native_numeric(expression) -> object:
     """Use the pure source implementation, not evaluator-owned memoization."""
     source_function = getattr(released_numeric, "evaluate_pure", None)
     if (not callable(source_function)
-            or source_function.__module__ != "bilqis_mlx.semantics.numeric"
+            or source_function.__module__ != "bilqis_mlx.semantics.foundation.numeric"
             or source_function.__qualname__ != "evaluate_pure"):
         _invalid("BAMF_OPERATOR_NATIVE_RUNTIME_UNAVAILABLE")
     return source_function(expression)

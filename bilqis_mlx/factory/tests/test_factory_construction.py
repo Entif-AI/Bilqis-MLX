@@ -6,7 +6,7 @@ from bilqis_mlx.curriculum_compiler import (
     CapabilityNode, CurriculumAST, FiniteTypedInput, TypedExpressionTemplate,
     compile_typed_candidate_package, invalidated_typed_packages,
 )
-from bilqis_mlx.semantics.core import Operation, Signature
+from bilqis_mlx.semantics.foundation.core import Operation, Signature
 from bilqis_mlx.verification.curriculum import candidate_package_problems
 
 

@@ -18,8 +18,8 @@ from bilqis_mlx.semantics.cognitive_dag import (
     DAGBudget, DAGNode, DAGOperand, RefKind,
 )
 from bilqis_mlx.semantics.cognitive_operators import ValueState
-from bilqis_mlx.semantics.domains import contract_digest
-from bilqis_mlx.semantics.memo import PureOperationMemo
+from bilqis_mlx.semantics.foundation.domains import contract_digest
+from bilqis_mlx.semantics.foundation.memo import PureOperationMemo
 from bilqis_mlx.semantics.tests.test_cognitive_dag import (
     _goal, _literal, _program,
 )

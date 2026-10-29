@@ -8,8 +8,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from itertools import product
 
-from ..semantics.core import Apply, Operation, TypedError, expression_digest, literal
-from ..semantics.functions import curry
+from ..semantics.foundation.core import Apply, Operation, TypedError, expression_digest, literal
+from ..semantics.foundation.functions import curry
 from .expressions import Backend, Proof, verify
 from .outcomes import CoverageStatus
 

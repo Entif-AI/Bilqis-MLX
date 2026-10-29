@@ -166,7 +166,7 @@ def graph_matches_release(version: str | None, graph: dict, manifest: dict,
         return graph == numeric_registry_graph()
     if version in (None, INITIAL_RELEASE, BOOLEAN_RELEASE, BOOLEAN_COMPOSITE_RELEASE,
                    BOOLEAN_IDENTIFICATION_RELEASE, MINIMAL_BOOLEAN_RELEASE):
-        from ..semantics.abi import HISTORICAL_PREFIX_SIZE
+        from ..semantics.foundation.abi import HISTORICAL_PREFIX_SIZE
         return (len(graph["tokens"]) == HISTORICAL_PREFIX_SIZE and
                 fingerprint(graph) == manifest["parent_student"]["full_student_graph_sha256"])
     raise ValueError("FACTORY_UNKNOWN_RELEASE:" + str(version))

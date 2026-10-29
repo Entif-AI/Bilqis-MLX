@@ -7,7 +7,7 @@ import numpy as np
 
 from bilqis_mlx import trainer, typed_answer_training
 from bilqis_mlx.generated_assessment import make_cohort, score
-from bilqis_mlx.semantics.numeric import calculate, evaluate, number
+from bilqis_mlx.semantics.foundation.numeric import calculate, evaluate, number
 from bilqis_mlx.verification.numeric import independent_value
 
 

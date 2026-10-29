@@ -5,7 +5,7 @@ from dataclasses import replace
 
 from .curriculum import Course
 from .grade_a_probe import candidate_course
-from .semantics.abi import HISTORICAL_PREFIX_SIZE
+from .semantics.foundation.abi import HISTORICAL_PREFIX_SIZE
 
 RELEASE = "bilqis.mlx.grade-a-user-accepted/20261015"
 AUTHORITY = "user-explicit-grade-a-acceptance/20261015"

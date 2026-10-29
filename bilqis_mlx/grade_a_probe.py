@@ -21,7 +21,7 @@ import types
 from .curriculum import AnswerFamily, BINARY, Capability, Course, Grade, ExamItem, validate_exam_item
 from .grade_a_oracle import VERSION as INDEPENDENT_ORACLE, evaluate as third_oracle
 from .source import AUDITED_PARENT
-from .semantics.abi import HISTORICAL_ABI
+from .semantics.foundation.abi import HISTORICAL_ABI
 from .backup import digest_file
 
 SCHEMA = "bilqis.mlx.direct-grade-a-source-probe/v2"

@@ -7,8 +7,8 @@ from pathlib import Path
 
 from .generated_assessment import digest
 from .live_grade_c import REGISTRY_COUNTING_TARGET, answer_heads, live_course
-from .semantics.core import Literal
-from .semantics.numeric import evaluate
+from .semantics.foundation.core import Literal
+from .semantics.foundation.numeric import evaluate
 from .source_adapters.numeric import decode
 
 RELEASE = 'bilqis.mlx.numeric-staircase/20261017-v1'

@@ -48,7 +48,7 @@ LIVE_PROFILE_PROBE = textwrap.dedent(r'''
             from bilqis_mlx.grade_a_probe import read_sources
             from bilqis_mlx.grade_a_release import accepted_grade_a
             from bilqis_mlx.live_grade_c import registry_graph
-            from bilqis_mlx.semantics.abi import HISTORICAL_PREFIX_SIZE
+            from bilqis_mlx.semantics.foundation.abi import HISTORICAL_PREFIX_SIZE
             from bilqis_mlx.source_adapters.school import live_source_registry
             from bilqis_mlx.profiles.catalog import (
                 next_numeric_scope_profile, numeric_entry_transition,

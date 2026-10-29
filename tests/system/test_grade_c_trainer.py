@@ -33,7 +33,7 @@ class GradeTransitionCompatibilityDisposableTests(unittest.TestCase):
     def setUpClass(cls):
         from bilqis_mlx.compatibility import historical_teacher_policy as policy
         from bilqis_mlx.live_grade_c import registry_graph
-        from bilqis_mlx.semantics.abi import HISTORICAL_PREFIX_SIZE
+        from bilqis_mlx.semantics.foundation.abi import HISTORICAL_PREFIX_SIZE
 
         cls.manifest = json.loads(MANIFEST.read_text())
         cls.grade_a = a_course(accepted_grade_a(cls.manifest))

@@ -21,7 +21,7 @@ from bilqis_mlx.semantics.atlas_projection import (
     load_atlas_snapshot,
     persist_atlas_release,
 )
-from bilqis_mlx.semantics.core import (
+from bilqis_mlx.semantics.foundation.core import (
     Apply,
     Operation,
     Signature,

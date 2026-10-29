@@ -10,7 +10,7 @@ from ..errors import BilqisError
 from ..factory.assessment import AssessmentScopeContract, assessment_scope_contract
 from ..factory.executable_release import ExecutableAdmissionReceipt, ExecutableFactoryRelease
 from ..learning.capability_championship import ReplayBinding
-from ..semantics.domains import contract_digest
+from ..semantics.foundation.domains import contract_digest
 from .capability_retention import Assessment, EvidenceKind, _invalid, _names, _sha
 
 

@@ -13,7 +13,7 @@ from pathlib import Path
 import re
 
 from .curriculum_compiler import CurriculumAST
-from .semantics.abi import HISTORICAL_PREFIX_SIZE
+from .semantics.foundation.abi import HISTORICAL_PREFIX_SIZE
 from .token_atlas import ORIGINAL_GRAPH_DIGEST
 
 

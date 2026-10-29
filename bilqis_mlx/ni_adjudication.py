@@ -12,7 +12,7 @@ import json
 from pathlib import Path
 
 from .registry_versions import REVIEW_COLUMNS
-from .semantics.abi import HISTORICAL_PREFIX_SIZE
+from .semantics.foundation.abi import HISTORICAL_PREFIX_SIZE
 from .token_atlas import ORIGINAL_GRAPH_DIGEST, rows_for_graph
 from .vocabulary_growth import digest
 

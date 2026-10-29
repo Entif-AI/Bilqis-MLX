@@ -10,14 +10,14 @@ from pathlib import Path
 from rdflib import Graph, Literal, URIRef
 from rdflib.namespace import SKOS
 
-from ..errors import ErrorBus, SEMANTIC_FRAME
-from ..runtime.model_topology_v2 import (
+from ...errors import ErrorBus, SEMANTIC_FRAME
+from ...runtime.model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, bamf_parameter_census,
 )
-from ..vocabulary_growth import digest
-from .atlas_snapshot import load_pinned_atlas_snapshot
-from .atlas_projection import _verify_bundle
-from .atlas_vocabulary import (
+from ...vocabulary_growth import digest
+from .snapshot import load_pinned_atlas_snapshot
+from ..atlas_projection import _verify_bundle
+from .vocabulary import (
     STAGED_ONLY, VocabularyExtension, VocabularyPrior,
     plan_vocabulary_extension,
 )

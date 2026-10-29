@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 from bilqis_mlx.grade_a_probe import read_sources
-from bilqis_mlx.semantics.copular import (
+from bilqis_mlx.semantics.foundation.copular import (
     SYMBOL, SEMANTIC_ID, ReferentWorld, bind_operation, identify, evaluate,
 )
 from bilqis_mlx.source_adapters.copular import (

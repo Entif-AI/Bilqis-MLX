@@ -14,7 +14,7 @@ __all__ = (
 
 # Independent checking owns a separate cache from the source implementation.
 from . import numeric as _numeric
-from ..semantics.memo import memoize_source as _memoize_source
+from ..semantics.foundation.memo import memoize_source as _memoize_source
 
 _numeric.independent_value = _memoize_source(
     semantics="bilqis.independent-finite-numeric/v1")(_numeric.independent_value)

@@ -17,7 +17,7 @@ from bilqis_mlx.semantics.cognitive_dag import (
 from bilqis_mlx.semantics.cognitive_operators import (
     Duration, SourceKind, TypedValue, ValueState,
 )
-from bilqis_mlx.semantics.memo import PureOperationMemo
+from bilqis_mlx.semantics.foundation.memo import PureOperationMemo
 from bilqis_mlx.semantics.tests.test_cognitive_operators import (
     RELEASE, SCOPE, _case, _grant, _with_frame, _with_unit_edge,
 )

@@ -10,7 +10,7 @@ from ..errors import ErrorBus, SCHOOL
 from ..learning.retention_policy import retention_reason, scaled_loss_allowance
 from ..semantics.cognitive_dag import TaskGoal
 from ..semantics.cognitive_operators import TypedValue, ValueState
-from ..semantics.domains import contract_digest
+from ..semantics.foundation.domains import contract_digest
 from .cognitive_solver import (
     CapabilityResult, GenerationBinding, SolveBudget, SolveContext, solve_task,
 )

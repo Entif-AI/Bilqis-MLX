@@ -1058,7 +1058,7 @@ def load_atlas_snapshot(
     expected_source_bundle_id: str | None = None,
 ) -> FrozenAtlasSnapshot:
     """Compatibility facade for the frozen snapshot reader."""
-    from .atlas_snapshot import load_atlas_snapshot as _load_atlas_snapshot
+    from .atlas.snapshot import load_atlas_snapshot as _load_atlas_snapshot
     return _load_atlas_snapshot(
         bundle_dir,
         expected_bundle_id=expected_bundle_id,

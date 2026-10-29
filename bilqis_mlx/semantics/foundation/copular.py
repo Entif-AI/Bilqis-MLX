@@ -10,7 +10,7 @@ from dataclasses import dataclass
 
 from .core import Apply, Literal, Operation, Signature, literal
 from .functions import curry
-from ..vocabulary_growth import _check_catalog
+from ...vocabulary_growth import _check_catalog
 
 
 SYMBOL = "ithkuil.op.COPULAR_IDENTITY"

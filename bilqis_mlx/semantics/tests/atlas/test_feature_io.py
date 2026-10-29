@@ -12,7 +12,7 @@ from unittest.mock import patch
 import socket
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.semantics.atlas_feature_io import (
+from bilqis_mlx.semantics.atlas.feature_io import (
     load_feature_manifest, persist_feature_manifest,
 )
 from bilqis_mlx.semantics.tests.test_atlas_features import (
@@ -39,7 +39,7 @@ class AtlasFeatureIOTests(TestCase):
             self.assertEqual(first.path, second.path)
             self.assertEqual(load_feature_manifest(second.path), original)
     def test_committed_reference_vectors_are_independent_and_exact(self):
-        root = Path(__file__).resolve().parents[3]
+        root = Path(__file__).resolve().parents[4]
         script = root / "bilqis_mlx/semantics/tests/reference_atlas_features.py"
         golden = root / "docs/evidence/bamf/A06.2/golden_vectors.json"
         reference = subprocess.run(
@@ -183,7 +183,7 @@ class AtlasFeatureIOTests(TestCase):
     def test_publish_io_failure_is_a_catalogued_boundary_error(self):
         with TemporaryDirectory() as root:
             with patch(
-                "bilqis_mlx.semantics.atlas_feature_io.tempfile.mkdtemp",
+                "bilqis_mlx.semantics.atlas.feature_io_storage.tempfile.mkdtemp",
                 side_effect=OSError("disk unavailable"),
             ):
                 with self.assertRaises(BilqisError) as caught:
@@ -225,10 +225,10 @@ class AtlasFeatureIOTests(TestCase):
         features = _features()
         with TemporaryDirectory() as root:
             with patch(
-                "bilqis_mlx.semantics.atlas_feature_io.Path.open",
+                "bilqis_mlx.semantics.atlas.feature_io_storage.Path.open",
                 side_effect=OSError("write fail"),
             ), patch(
-                "bilqis_mlx.semantics.atlas_feature_io.shutil.rmtree",
+                "bilqis_mlx.semantics.atlas.feature_io_storage.shutil.rmtree",
                 side_effect=OSError("cleanup fail"),
             ):
                 with self.assertRaises(BilqisError) as caught:
@@ -236,8 +236,3 @@ class AtlasFeatureIOTests(TestCase):
             self.assertEqual(
                 caught.exception.context["reason"],
                 "BAMF_FEATURE_ARTIFACT_CLEANUP_FAILED")
-
-
-if __name__ == "__main__":
-    import unittest
-    unittest.main()

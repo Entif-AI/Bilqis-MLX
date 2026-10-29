@@ -15,7 +15,7 @@ import re
 from typing import Mapping
 
 
-ABI_MANIFEST = Path(__file__).with_name("legacy_abi_v1.json")
+ABI_MANIFEST = Path(__file__).resolve().parents[1] / "legacy_abi_v1.json"
 ABI_SCHEMA = "bilqis.semantic-abi/v1"
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 

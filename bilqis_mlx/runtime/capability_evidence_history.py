@@ -7,7 +7,7 @@ import json
 from typing import Callable
 
 from ..errors import BilqisError
-from ..semantics.domains import contract_digest
+from ..semantics.foundation.domains import contract_digest
 from .capability_retention import Assessment, _invalid, _names, _sha
 from .cognitive_solver import SOLVE_REPLAY_SCHEMA
 from .operator_registry import RouteKind

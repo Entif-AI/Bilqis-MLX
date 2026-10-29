@@ -11,7 +11,7 @@ from bilqis_mlx.factory.teaching import describe_delivered_teaching
 from bilqis_mlx.factory.tests.test_teaching import closed_source_fixture
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.runtime.atlas_training_adapter import BamfTarget, compile_training_batch, require_current_release
-from bilqis_mlx.semantics.core import Literal
+from bilqis_mlx.semantics.foundation.core import Literal
 
 
 @dataclass(frozen=True)
