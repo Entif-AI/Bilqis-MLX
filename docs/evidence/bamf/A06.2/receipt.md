@@ -29,6 +29,12 @@ the parsed typed record against the manifest's feature digest
 and release/source/Atlas provenance. The reader rejects
 noncanonical payloads, foreign pins, unexpected files, symlinks,
 malformed maps and mismatched predecessor assignments.
+Initial factor maps must allocate canonical UTF-8 IDs densely
+from row 2, without early overflow. Successor export and load
+both require the exact predecessor manifest and prove its
+digest, retained assignments, and next-row allocation. A
+successor cannot bypass identity stability by omitting the
+predecessor argument.
 
 Publication uses a same-directory temporary bundle, fsynced
 payloads, directory sync, atomic directory rename, and a
@@ -58,7 +64,8 @@ fixture without updating it.
 ## Verification
 
 - Focused A06.2 and A06.1 suites: **20 passed, 0 failed,
-  0 skipped** before independent review.
+  0 skipped** at the first candidate, then **23 passed,
+  0 failed, 0 skipped** after targeted repair.
 - Reordered source rows produce the same content-addressed
   artifact and local readback.
 - A successor preserves prior category rows and held-source
@@ -69,7 +76,19 @@ fixture without updating it.
   symlink aliases and non-finite JSON fail closed through
   the ErrorBus.
 - An injected disk publication failure is reported as a
-  catalogued boundary error rather than leaking a raw OSError.
+  catalogued boundary error rather than leaking a raw OSError,
+  including a second failure during temporary-directory cleanup.
+
+## First independent EGM findings and repair
+
+Goldfish reviewed immutable `4a5800e0f37ae1a40107d60772aa18d8c8b2a0e6`,
+independently ran 20/20 tests, and found two Majors:
+(1) the persisted boundary accepted row gaps, early overflow,
+and successor row drift when the caller omitted the predecessor;
+(2) cleanup failure could override a catalogued publish error
+with a raw `OSError`. Both paths now have executable
+failing-before regressions and targeted fixes. A fresh
+immutable-head EGM re-review is required before PASS.
 
 Parent A06 remains open for its integration gate. No public
 source promotion, live training, merge into unified, or merge

@@ -108,7 +108,8 @@ class AtlasFeatureIOTests(TestCase):
             predecessor=base)
         with TemporaryDirectory() as root:
             base_receipt = persist_feature_manifest(base, root)
-            next_receipt = persist_feature_manifest(successor, root)
+            next_receipt = persist_feature_manifest(
+                successor, root, predecessor=base)
             loaded_base = load_feature_manifest(base_receipt.path)
             loaded_next = load_feature_manifest(
                 next_receipt.path, predecessor=loaded_base)
@@ -128,10 +129,9 @@ class AtlasFeatureIOTests(TestCase):
                     (identifier, 3 if identifier == "urn:type:Entity"
                      else 2 if identifier == "urn:type:!new" else row)
                     for identifier, row in successor.type_map))
-            poisoned_receipt = persist_feature_manifest(poisoned, root)
             with self.assertRaises(BilqisError) as caught:
-                load_feature_manifest(
-                    poisoned_receipt.path, predecessor=loaded_base)
+                persist_feature_manifest(
+                    poisoned, root, predecessor=loaded_base)
             self.assertEqual(
                 caught.exception.context["reason"],
                 "BAMF_FEATURE_ARTIFACT_PREDECESSOR_MAP_DRIFT")
@@ -191,6 +191,51 @@ class AtlasFeatureIOTests(TestCase):
             self.assertEqual(
                 caught.exception.context["reason"],
                 "BAMF_FEATURE_ARTIFACT_PUBLISH_FAILED")
+
+    def test_initial_map_rejects_holes_and_early_overflow(self):
+        base = _features()
+        for invalid_row in (0, 3):
+            forged = replace(
+                base, type_map=tuple(
+                    (identifier, invalid_row if identifier == "urn:type:Entity"
+                     else row) for identifier, row in base.type_map))
+            with self.subTest(row=invalid_row), TemporaryDirectory() as root:
+                with self.assertRaises(BilqisError):
+                    persist_feature_manifest(forged, root)
+
+    def test_successor_requires_predecessor_proof_on_write_and_read(self):
+        base = _features()
+        successor = _features(
+            replace(_snapshot((
+                ("urn:concept:A", ("urn:type:!new", "urn:type:Entity")),),
+                release="b" * 64), prior_abi_sha256=base.atlas_bundle_id),
+            predecessor=base)
+        with TemporaryDirectory() as root:
+            with self.assertRaises(BilqisError):
+                persist_feature_manifest(successor, root)
+            receipt = persist_feature_manifest(
+                successor, root, predecessor=base)
+            with self.assertRaises(BilqisError):
+                load_feature_manifest(receipt.path)
+            self.assertEqual(
+                load_feature_manifest(receipt.path, predecessor=base),
+                successor)
+
+    def test_cleanup_failure_never_leaks_raw_os_error(self):
+        features = _features()
+        with TemporaryDirectory() as root:
+            with patch(
+                "bilqis_mlx.semantics.atlas_feature_io.Path.open",
+                side_effect=OSError("write fail"),
+            ), patch(
+                "bilqis_mlx.semantics.atlas_feature_io.shutil.rmtree",
+                side_effect=OSError("cleanup fail"),
+            ):
+                with self.assertRaises(BilqisError) as caught:
+                    persist_feature_manifest(features, root)
+            self.assertEqual(
+                caught.exception.context["reason"],
+                "BAMF_FEATURE_ARTIFACT_CLEANUP_FAILED")
 
 
 if __name__ == "__main__":

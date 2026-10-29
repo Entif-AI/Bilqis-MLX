@@ -57,7 +57,9 @@ class FeatureArtifactReceipt:
     schema_version: str = RECEIPT_SCHEMA
 
 
-def _validate_map(mapping: tuple[tuple[str, int], ...]) -> None:
+def _validate_map(
+    mapping: tuple[tuple[str, int], ...], *, initial: bool,
+) -> None:
     if (not isinstance(mapping, tuple)
             or any(not isinstance(pair, tuple) or len(pair) != 2
                    or not isinstance(pair[0], str) or not pair[0]
@@ -75,9 +77,28 @@ def _validate_map(mapping: tuple[tuple[str, int], ...]) -> None:
             or any(identifier != "NONE" and row == 1
                    for identifier, row in mapping)):
         _invalid("BAMF_FEATURE_ARTIFACT_CATEGORY_MAP_INVALID")
+    if (sorted(learned) != list(range(2, 2 + len(learned)))
+            or (len(learned) < FACTOR_ROWS - 2
+                and any(identifier not in ("UNKNOWN", "NONE") and row == 0
+                        for identifier, row in mapping))):
+        _invalid("BAMF_FEATURE_ARTIFACT_CATEGORY_ALLOCATION_INVALID")
+    if initial:
+        ids = sorted(
+            (identifier for identifier in rows
+             if identifier not in ("UNKNOWN", "NONE")),
+            key=str.encode)
+        if any(rows[identifier] != (
+                index + 2 if index + 2 < FACTOR_ROWS else 0)
+                for index, identifier in enumerate(ids)):
+            _invalid("BAMF_FEATURE_ARTIFACT_CATEGORY_ALLOCATION_INVALID")
 
 
-def _validate_features(value: AtlasFeatures) -> None:
+def _validate_features(
+    value: AtlasFeatures,
+    predecessor: AtlasFeatures | None = None,
+    *,
+    require_lineage: bool = True,
+) -> None:
     if not isinstance(value, AtlasFeatures):
         _invalid("BAMF_FEATURE_ARTIFACT_TYPE_INVALID")
     if (value.schema_version != FEATURE_MANIFEST_SCHEMA
@@ -90,7 +111,8 @@ def _validate_features(value: AtlasFeatures) -> None:
                      or not _SHA.fullmatch(value.predecessor_digest)))):
         _invalid("BAMF_FEATURE_ARTIFACT_IDENTITY_INVALID")
     for mapping in (value.type_map, value.role_map, value.schema_map):
-        _validate_map(mapping)
+        _validate_map(
+            mapping, initial=value.predecessor_digest is None)
     if (not isinstance(value.concepts, tuple)
             or any(not isinstance(item, ConceptFeature)
                    or not isinstance(item.semantic_id, str)
@@ -129,9 +151,48 @@ def _validate_features(value: AtlasFeatures) -> None:
                                 item[1].encode("utf-8"))))
             != value.held_reasons):
         _invalid("BAMF_FEATURE_ARTIFACT_HELD_INVALID")
+    if require_lineage:
+        _validate_lineage(value, predecessor)
 
 
-def _parse_features(payload: bytes) -> AtlasFeatures:
+def _validate_lineage(
+    value: AtlasFeatures, predecessor: AtlasFeatures | None,
+) -> None:
+    if value.predecessor_digest is None:
+        if predecessor is not None:
+            _invalid("BAMF_FEATURE_ARTIFACT_UNEXPECTED_PREDECESSOR")
+        return
+    if predecessor is None:
+        _invalid("BAMF_FEATURE_ARTIFACT_PREDECESSOR_REQUIRED")
+    _validate_features(predecessor, require_lineage=False)
+    if value.predecessor_digest != predecessor.digest:
+        _invalid("BAMF_FEATURE_ARTIFACT_PREDECESSOR_MISMATCH")
+    for old_map, new_map in (
+        (predecessor.type_map, value.type_map),
+        (predecessor.role_map, value.role_map),
+        (predecessor.schema_map, value.schema_map),
+    ):
+        old_rows, new_rows = dict(old_map), dict(new_map)
+        if any(new_rows.get(identifier) != row
+               for identifier, row in old_rows.items()):
+            _invalid("BAMF_FEATURE_ARTIFACT_PREDECESSOR_MAP_DRIFT")
+        new_ids = sorted(
+            (identifier for identifier in new_rows
+             if identifier not in old_rows), key=str.encode)
+        next_row = max(
+            (row for row in old_rows.values() if row >= 2),
+            default=1) + 1
+        for identifier in new_ids:
+            expected = next_row if next_row < FACTOR_ROWS else 0
+            if new_rows[identifier] != expected:
+                _invalid("BAMF_FEATURE_ARTIFACT_SUCCESSOR_ALLOCATION_DRIFT")
+            if expected:
+                next_row += 1
+
+
+def _parse_features(
+    payload: bytes, predecessor: AtlasFeatures | None,
+) -> AtlasFeatures:
     try:
         data = json.loads(payload, parse_constant=_reject_nonfinite)
         if not isinstance(data, dict) or set(data) != {
@@ -160,7 +221,7 @@ def _parse_features(payload: bytes) -> AtlasFeatures:
         )
     except (ValueError, TypeError, KeyError, UnicodeError):
         _invalid("BAMF_FEATURE_ARTIFACT_PAYLOAD_INVALID")
-    _validate_features(value)
+    _validate_features(value, predecessor)
     if _canonical(asdict(value)) != payload:
         _invalid("BAMF_FEATURE_ARTIFACT_NONCANONICAL")
     return value
@@ -177,7 +238,9 @@ def _sync_directory(path: Path) -> None:
         _invalid("BAMF_FEATURE_ARTIFACT_SYNC_FAILED")
 
 
-def _read_bundle(bundle_dir: str | Path) -> tuple[AtlasFeatures, str]:
+def _read_bundle(
+    bundle_dir: str | Path, predecessor: AtlasFeatures | None,
+) -> tuple[AtlasFeatures, str]:
     root = Path(bundle_dir)
     if (root.is_symlink() or not root.is_dir()
             or not _SHA.fullmatch(root.name)):
@@ -222,7 +285,7 @@ def _read_bundle(bundle_dir: str | Path) -> tuple[AtlasFeatures, str]:
             or len(feature_payload) != descriptor['bytes']
             or _digest(feature_payload) != descriptor['sha256']):
         _invalid('BAMF_FEATURE_ARTIFACT_FILE_DIGEST_INVALID')
-    features = _parse_features(feature_payload)
+    features = _parse_features(feature_payload, predecessor)
     if (features.digest != manifest['feature_digest']
             or any(getattr(features, field) != manifest[field]
                    for field in ('semantic_release', 'source_bundle_id',
@@ -233,9 +296,10 @@ def _read_bundle(bundle_dir: str | Path) -> tuple[AtlasFeatures, str]:
 
 def persist_feature_manifest(
     features: AtlasFeatures, output_root: str | Path,
+    *, predecessor: AtlasFeatures | None = None,
 ) -> FeatureArtifactReceipt:
     """Publish a local immutable feature artifact; retry verifies existing bytes."""
-    _validate_features(features)
+    _validate_features(features, predecessor)
     feature_payload = _canonical(asdict(features))
     manifest = {
         'schema': ARTIFACT_SCHEMA,
@@ -285,9 +349,12 @@ def persist_feature_manifest(
         except OSError:
             _invalid('BAMF_FEATURE_ARTIFACT_PUBLISH_FAILED')
         finally:
-            if temp.exists():
-                shutil.rmtree(temp)
-    stored, stored_id = _read_bundle(target)
+            try:
+                if temp.exists():
+                    shutil.rmtree(temp)
+            except OSError:
+                _invalid('BAMF_FEATURE_ARTIFACT_CLEANUP_FAILED')
+    stored, stored_id = _read_bundle(target, predecessor)
     if stored_id != bundle_id or stored != features:
         _invalid('BAMF_FEATURE_ARTIFACT_EXISTING_DRIFT')
     _sync_directory(root)
@@ -307,7 +374,7 @@ def load_feature_manifest(
     predecessor: AtlasFeatures | None = None,
 ) -> AtlasFeatures:
     """Verify once from local disk, then use features_for without I/O."""
-    features, bundle_id = _read_bundle(bundle_dir)
+    features, bundle_id = _read_bundle(bundle_dir, predecessor)
     pins = (
         (bundle_id, expected_bundle_id),
         (features.digest, expected_feature_digest),
@@ -318,17 +385,4 @@ def load_feature_manifest(
     if any(expected is not None and actual != expected
            for actual, expected in pins):
         _invalid('BAMF_FEATURE_ARTIFACT_PIN_MISMATCH')
-    if predecessor is not None:
-        _validate_features(predecessor)
-        if features.predecessor_digest != predecessor.digest:
-            _invalid('BAMF_FEATURE_ARTIFACT_PREDECESSOR_MISMATCH')
-        for old_map, new_map in (
-            (predecessor.type_map, features.type_map),
-            (predecessor.role_map, features.role_map),
-            (predecessor.schema_map, features.schema_map),
-        ):
-            new_rows = dict(new_map)
-            if any(new_rows.get(identifier) != row
-                   for identifier, row in old_map):
-                _invalid('BAMF_FEATURE_ARTIFACT_PREDECESSOR_MAP_DRIFT')
     return features
