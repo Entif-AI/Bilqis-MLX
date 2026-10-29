@@ -10,6 +10,7 @@ from bilqis_mlx.learning.teacher_feedback import LearningExperimentError
 
 UCB_EXPLORATION_WEIGHT = 0.6
 SELECTION_POLICY = "bilqis.mlx.teacher-selection/349-replay-v1"
+BAMF_SUCCESSOR_SELECTION = "bilqis.bamf.teacher-selection/replay-16-8-v1"
 ACTIVE_EFFECTIVE_STRATEGY_LIMIT = 16
 ACTIVE_EFFECTIVE_INCUMBENT_LIMIT = 8
 DEEP_POLICY_DEPTH_MINIMUM = 3
@@ -162,7 +163,7 @@ def active_effective_strategy_keys(
     eligible = set(inventory)
     active_limit = ACTIVE_EFFECTIVE_STRATEGY_LIMIT
     incumbent_limit = ACTIVE_EFFECTIVE_INCUMBENT_LIMIT
-    if total_capabilities is not None:
+    if total_capabilities is not None and teacher.get("selection_contract") != BAMF_SUCCESSOR_SELECTION:
         from .teacher_population_control import population_limits, rebalance_live_population
         eligible = set(rebalance_live_population(
             teacher, total_capabilities=total_capabilities))

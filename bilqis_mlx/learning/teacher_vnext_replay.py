@@ -8,8 +8,11 @@ proposal -> delivery -> outcome -> cost record.
 from __future__ import annotations
 
 import math
+from dataclasses import dataclass
+import json
+from bilqis_mlx.errors import ErrorBus, SCHOOL
 
-from .teacher_strategy_population import effective_policy_key
+from .teacher_strategy_population import effective_policy_key, BAMF_SUCCESSOR_SELECTION
 
 
 SCHEMA = "bilqis.teacher-vnext-canary/factory-replay-v1"
@@ -175,3 +178,67 @@ def select_canary(teacher: dict, *, capability: str, phase: str,
         "acquisition_score": acquisition,
         "actual_authority_changed": True,
     }
+
+
+
+
+@dataclass(frozen=True)
+class TeacherEpoch:
+    prior_region: str
+    current_region: str
+    student_sha256: str
+    replay_head: str
+    prior_json: str
+    current_json: str
+    schema: str = "bilqis.bamf.teacher-epoch/v1"
+
+    def teacher(self) -> dict:
+        return json.loads(self.current_json)
+
+    def prior_teacher(self) -> dict:
+        return json.loads(self.prior_json)
+
+
+def bind_teacher_successor(prior_teacher, new_student, replay_contract) -> TeacherEpoch:
+    """Preserve replay priors while isolating a fresh learner's causal counters."""
+    def invalid(reason):
+        ErrorBus.raise_(SCHOOL.BAMF_TEACHER.INVALID, reason=reason)
+    if not all(isinstance(value, dict) for value in (prior_teacher, new_student, replay_contract)):
+        invalid('BINDING_RECORD_REQUIRED')
+    if (new_student.get('schema') != 'bilqis.bamf.student-reference/v1' or
+            replay_contract.get('schema') != 'bilqis.bamf.teacher-binding/v1'):
+        invalid('BINDING_SCHEMA_INVALID')
+    student = new_student.get('student_sha256')
+    region, prior_region = new_student.get('region'), replay_contract.get('prior_region')
+    head = replay_contract.get('source_head')
+    if (not isinstance(student, str) or len(student) != 64 or any(c not in '0123456789abcdef' for c in student)
+            or not isinstance(region, str) or not region or not isinstance(prior_region, str) or not prior_region
+            or region == prior_region or head != 'd21797e72365bf93ea7cad3a4ef9020ec9817f23'
+            or not isinstance(prior_teacher.get('strategies'), dict) or not prior_teacher['strategies']):
+        invalid('IDENTITY_OR_REPLAY_INVALID')
+    try:
+        prior_json = json.dumps(prior_teacher, sort_keys=True, allow_nan=False)
+        current = json.loads(prior_json)
+    except (ValueError, TypeError):
+        invalid('TEACHER_NOT_SERIALIZABLE')
+    channel = current.get('causal_experiment', {})
+    if not isinstance(channel, dict) or not isinstance(channel.get('student_policy_epoch', {}), dict):
+        invalid('TEACHER_RECORD_INVALID')
+    if any(not isinstance(policy, dict) or not policy for policy in current['strategies'].values()):
+        invalid('STRATEGY_RECORD_INVALID')
+    for policy in current['strategies'].values():
+        try:
+            effective_policy_key(policy)
+        except (ValueError, TypeError):
+            invalid('STRATEGY_RECORD_INVALID')
+    prior_checkpoint = channel.get('student_policy_epoch', {}).get('student_sha256')
+    if prior_checkpoint == student:
+        invalid('SUCCESSOR_MUST_BE_DISTINCT')
+    current['selection_contract'] = BAMF_SUCCESSOR_SELECTION
+    current['grade_stats'] = {}
+    current['causal_experiment'] = {
+        'contexts': {}, 'events': 0,
+        'student_policy_epoch': {'student_sha256': student, 'contexts': {}, 'unretained_contexts': {}},
+    }
+    return TeacherEpoch(prior_region, region, student, head, prior_json,
+                        json.dumps(current, sort_keys=True, allow_nan=False))

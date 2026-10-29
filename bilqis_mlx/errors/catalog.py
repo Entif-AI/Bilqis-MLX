@@ -42,6 +42,15 @@ def _spec(
 
 
 class SCHOOL:
+    class BAMF_TEACHER:
+        INVALID = _spec(
+            ("SCHOOL", "BAMF_TEACHER", "INVALID"), owner="learning.teacher_vnext_replay",
+            title="Invalid BAMF teacher successor binding",
+            message_template="The teacher successor binding is invalid: {reason}",
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect replay and student identity without modifying the retained learner.",
+        )
+
     class BAMF_TRAINING_ADAPTER:
         INVALID = _spec(
             ("SCHOOL", "BAMF_TRAINING_ADAPTER", "INVALID"), owner="runtime.atlas_training_adapter",
@@ -860,6 +869,7 @@ class FACTORY:
 
 
 CATALOG = (
+    SCHOOL.BAMF_TEACHER.INVALID,
     SCHOOL.BAMF_TRAINING_ADAPTER.INVALID,
     SCHOOL.BAMF_WORKSTACK.INPUT_INVALID,
     SCHOOL.BAMF_WORKSTACK.VALIDATION_INVALID,
