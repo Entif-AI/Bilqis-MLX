@@ -159,6 +159,18 @@ class NestedFrameConstituentTests(unittest.TestCase):
                     compiled.partial_forest_receipts[0]))
         with self.assertRaises(BilqisError):
             replace(compiled, source_asts=(None, ast))
+        revoked_frontier = replace(
+            config.frontier,
+            grants=tuple(
+                replace(grant, revoked=True)
+                if grant.source_handle in {
+                    "source:frame:mixed:2",
+                    "source:member:mixed:2:0"} else grant
+                for grant in config.frontier.grants))
+        with self.assertRaises(BilqisError):
+            replace(
+                compiled, compiler_configs=(
+                    replace(config, frontier=revoked_frontier), config))
         with self.assertRaises(BilqisError):
             CompiledEncoderInput(
                 compile_prefix_rows(((ast, 8, config),), RELEASE),

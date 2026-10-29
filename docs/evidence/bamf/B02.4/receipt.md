@@ -43,6 +43,11 @@ The new nested test initially failed to import the missing
   valid future parent-member change.
 - `test_frame_embeddings.py` + `test_frame_encoder.py` + nested:
   **34 passed, 0 failed, 0 skipped** on Apple MLX.
+- After provisional A05.4 current-grant repair `8f1b61e`, the combined
+  MLX/B02/B03/A05/A13/A04 suite passes **98/98, zero skips**. The
+  B02.4 adversary now revokes hidden-parent A13 grants while leaving
+  the p4 compiler object unchanged; B03 rejects through the A05.4
+  source validator rather than trusting stale approved metadata.
 - `git diff --check`: passed.
 - Error-control and module-size audits: no new B02.4/B03.3 finding.
   Existing semantic import-boundary findings in A03 remain separate.
@@ -50,8 +55,9 @@ The new nested test initially failed to import the missing
 ## Dependency and integration boundary
 
 The isolated branch temporarily cherry-picks A05.4 implementation
-`ad14c7f` as `f1c8b8b` solely to compile and verify the dependent
-neural path. This is **not** an independent B-lane publication of A05
+`ad14c7f` as `f1c8b8b` and its live-grant repair `d19ccc7`
+as `8f1b61e` solely to compile and verify the dependent
+neural path. These are **not** independent B-lane publications of A05
 authority. Before merging into Lane B, reconcile the accepted A05.4
 source through the reviewed unified integration branch and remove
 the provisional duplicate source commit. The B02.4 PR remains draft
