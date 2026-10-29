@@ -85,6 +85,8 @@ class ModelTopologyV2Tests(unittest.TestCase):
         grown = {row.name: row for row in expected_bamf_shapes(spec, self.extents(banks=2))}
         self.assertEqual(grown["identity.bank.0"], by_name["identity.bank.0"])
         self.assertEqual(grown["identity.bank.1"].shape, (8192, 768))
+        self.assertNotEqual(self.extents().digest, self.extents(banks=2).digest)
+        self.assertNotEqual(self.extents().digest, self.extents(pages=2).digest)
         self.assertEqual(spec.digest, ModelTopologySpecV2().digest)
 
     def test_independent_initializer_golden_and_linear_orientation(self):
@@ -242,27 +244,32 @@ class ModelTopologyV2Tests(unittest.TestCase):
             self.assertEqual(set(restored_state), set(state))
             for name, value in arrays.items():
                 self.assertTrue(mx.array_equal(restored[name], value).item(), name)
-            grown_extents = self.extents(banks=2, pages=2)
-            grown_parameters, grown_state = dict(parameters), dict(state)
-            for item in expected_bamf_shapes(spec, grown_extents):
-                if item.name not in grown_parameters:
-                    grown_parameters[item.name] = mx.zeros(item.shape, dtype=mx.float32)
-                    grown_state[item.name] = {"m": mx.zeros(item.shape, dtype=mx.float32),
-                                              "v": mx.zeros(item.shape, dtype=mx.float32)}
-            grown_arrays = bamf_serialization_arrays(spec, grown_extents, grown_parameters, grown_state)
-            self.assertTrue(set(arrays) <= set(grown_arrays))
-            grown_path = Path(temporary) / "grown.safetensors"
-            assert_headroom(grown_path.parent, required_bytes=sum(x.nbytes for x in grown_arrays.values()))
-            mx.save_safetensors(str(grown_path), grown_arrays)
-            grown_restored = mx.load(str(grown_path))
-            mx.eval(grown_restored)
-            grown_parameters_read, grown_state_read = bamf_deserialize_arrays(spec, grown_extents, grown_restored)
-            self.assertEqual(set(grown_parameters_read), set(grown_parameters))
-            self.assertEqual(set(grown_state_read), set(grown_state))
-            for name in arrays:
-                self.assertTrue(mx.array_equal(grown_restored[name], restored[name]).item(), name)
-            self.assertEqual(float(grown_restored[bamf_storage_key("blocks.0.query", "m")][0, 0].item()), 0.125)
-            self.assertEqual(float(grown_restored[bamf_storage_key("blocks.0.query", "v")][0, 0].item()), 0.25)
+            for banks, pages in ((2, 1), (1, 2), (2, 2)):
+                with self.subTest(banks=banks, pages=pages):
+                    grown_extents = self.extents(banks=banks, pages=pages)
+                    self.assertNotEqual(grown_extents.digest, extents.digest)
+                    self.assertEqual(manifest["topology_digest"], spec.digest)
+                    grown_parameters, grown_state = dict(parameters), dict(state)
+                    for item in expected_bamf_shapes(spec, grown_extents):
+                        if item.name not in grown_parameters:
+                            grown_parameters[item.name] = mx.zeros(item.shape, dtype=mx.float32)
+                            grown_state[item.name] = {"m": mx.zeros(item.shape, dtype=mx.float32),
+                                                      "v": mx.zeros(item.shape, dtype=mx.float32)}
+                    grown_arrays = bamf_serialization_arrays(spec, grown_extents, grown_parameters, grown_state)
+                    self.assertTrue(set(arrays) <= set(grown_arrays))
+                    grown_path = Path(temporary) / f"grown-{banks}-{pages}.safetensors"
+                    assert_headroom(grown_path.parent, required_bytes=sum(x.nbytes for x in grown_arrays.values()))
+                    mx.save_safetensors(str(grown_path), grown_arrays)
+                    grown_restored = mx.load(str(grown_path))
+                    mx.eval(grown_restored)
+                    grown_parameters_read, grown_state_read = bamf_deserialize_arrays(spec, grown_extents, grown_restored)
+                    self.assertEqual(set(grown_parameters_read), set(grown_parameters))
+                    self.assertEqual(set(grown_state_read), set(grown_state))
+                    for name in arrays:
+                        self.assertTrue(mx.array_equal(grown_restored[name], restored[name]).item(), name)
+                    self.assertEqual(float(grown_restored[bamf_storage_key("blocks.0.query", "m")][0, 0].item()), 0.125)
+                    self.assertEqual(float(grown_restored[bamf_storage_key("blocks.0.query", "v")][0, 0].item()), 0.25)
+                    grown_path.unlink()
 
     def test_factory_dispatch_and_legacy_checkpoint_rejection(self):
         legacy = ModelTopologySpec(6, 24, 384, 1536, 96)

@@ -103,6 +103,16 @@ class ModelTopologySpecV2:
         return topology
 
 
+# Fixed structural dimensions belong to the selected topology and tensor ledger.
+MATRIX_RANK = 2
+FEATURE_NONE_ROW = 1
+FEATURE_RESERVED_ROWS = FEATURE_NONE_ROW + 1
+MOTIF_CHANNELS = 128
+SHA256_HEX_LENGTH = hashlib.sha256().digest_size * 2
+IDENTITY_BANK_SHAPE = (ModelTopologySpecV2.semantic_bank_rows, ModelTopologySpecV2.width)
+MOTIF_PAGE_SHAPE = (ModelTopologySpecV2.motif_page_rows, MOTIF_CHANNELS)
+
+
 def deserialize_topology(record: Mapping[str, object]) -> ModelTopologySpec | ModelTopologySpecV2:
     """Select by persisted schema, never by a caller's preferred architecture."""
     if not isinstance(record, Mapping):
@@ -155,10 +165,11 @@ class GenerationExtents:
 
     def __post_init__(self) -> None:
         if (type(self.semantic_bank_count) is not int or self.semantic_bank_count < 1 or
-                type(self.motif_page_count) is not int or not 1 <= self.motif_page_count <= 4):
+                type(self.motif_page_count) is not int or
+                not 1 <= self.motif_page_count <= ModelTopologySpecV2.max_motif_pages):
             ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
         for value in (self.active_semantic_digest, self.motif_key_map_digest, self.factor_map_digest):
-            if (not isinstance(value, str) or len(value) != 64 or
+            if (not isinstance(value, str) or len(value) != SHA256_HEX_LENGTH or
                     any(character not in "0123456789abcdef" for character in value)):
                 ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
 
@@ -182,14 +193,120 @@ class ParameterSpec:
                 type(self.initializer) is not Initializer or type(self.group) is not ParameterGroup or
                 type(self.decay) is not bool or self.dtype != "float32"):
             ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
-        if ((self.initializer is Initializer.MATRIX and len(self.shape) != 2) or
+        if ((self.initializer is Initializer.MATRIX and len(self.shape) != MATRIX_RANK) or
                 (self.initializer is Initializer.CONV_IDENTITY and
-                 (len(self.shape) != 2 or self.shape[1] != 3)) or
+                 (len(self.shape) != MATRIX_RANK or self.shape[1] != ModelTopologySpecV2.convolution_kernel)) or
                 (self.initializer is Initializer.FEATURE_TABLE and
-                 (len(self.shape) != 2 or self.shape[0] < 2)) or
-                (self.initializer is Initializer.IDENTITY_BANK and self.shape != (8192, 768)) or
-                (self.initializer is Initializer.MOTIF_PAGE and self.shape != (16384, 128))):
+                 (len(self.shape) != MATRIX_RANK or self.shape[0] < FEATURE_RESERVED_ROWS)) or
+                (self.initializer is Initializer.IDENTITY_BANK and self.shape != IDENTITY_BANK_SHAPE) or
+                (self.initializer is Initializer.MOTIF_PAGE and self.shape != MOTIF_PAGE_SHAPE)):
             ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+
+
+def _parameter(name, shape, initializer, group=ParameterGroup.SLOW, decay=True):
+    return ParameterSpec(name, shape, initializer, group, decay)
+
+
+def _input_parameters() -> tuple[ParameterSpec, ...]:
+    M, E, O = Initializer.MATRIX, Initializer.EMBEDDING, Initializer.ONE
+    return (
+        *(_parameter(f"features.{kind}", (512, 128), Initializer.FEATURE_TABLE)
+          for kind in ("type", "role", "schema")),
+        *(_parameter(f"features.project_{kind}", (768, 128), M)
+          for kind in ("type", "role", "schema")),
+        _parameter("features.project_graph", (768, 64), M),
+        _parameter("features.gates", (4,), Initializer.MINUS_TWO, decay=False),
+        _parameter("features.local_slot", (16, 768), E),
+        _parameter("features.norm", (768,), O, decay=False),
+        _parameter("frame.query_schema", (192, 128), M),
+        *(_parameter(f"frame.member_{kind}", (192, 768), M) for kind in ("key", "value")),
+        *(_parameter(f"frame.interact_{kind}", (192, 192), M)
+          for kind in ("query", "key", "value", "output")),
+        _parameter("frame.interact_norm", (192,), O, decay=False),
+        _parameter("frame.project_output", (768, 192), M),
+        _parameter("frame.project_summary", (768, 128), M),
+        _parameter("frame.pool_gate", (1,), Initializer.MINUS_TWO, decay=False),
+        _parameter("frame.empty_seed", (768,), E),
+        _parameter("frame.norm", (768,), O, decay=False),
+    )
+
+
+def _block_parameters(index: int) -> tuple[ParameterSpec, ...]:
+    M, O = Initializer.MATRIX, Initializer.ONE
+    prefix = f"blocks.{index}."
+    return (
+        *(_parameter(prefix + name, (768,), O, decay=False) for name in ("attn_norm", "ffn_norm")),
+        _parameter(prefix + "query", (384, 768), M),
+        _parameter(prefix + "key", (192, 768), M),
+        _parameter(prefix + "value", (192, 768), M),
+        _parameter(prefix + "output", (768, 384), M),
+        _parameter(prefix + "conv_q", (384, 3), Initializer.CONV_IDENTITY),
+        _parameter(prefix + "conv_k", (192, 3), Initializer.CONV_IDENTITY),
+        _parameter(prefix + "conv_v", (192, 3), Initializer.CONV_IDENTITY),
+        _parameter(prefix + "ffn_in", (3072, 768), M),
+        _parameter(prefix + "ffn_out", (768, 3072), M),
+    )
+
+
+def _depth_parameters(groups: int) -> tuple[ParameterSpec, ...]:
+    M, O, Z = Initializer.MATRIX, Initializer.ONE, Initializer.ZERO
+    return (
+        _parameter("depth.norm", (768,), O, decay=False),
+        *(_parameter(f"depth.{kind}", (128, 768), M) for kind in ("query", "key", "value")),
+        _parameter("depth.output", (768, 128), M),
+        *(item for index in range(groups) for item in (
+            _parameter(f"depth.gate.{index}.vector", (768,), Z),
+            _parameter(f"depth.gate.{index}.bias", (1,), Initializer.LOG_ONE_NINTH, decay=False),
+        )),
+    )
+
+
+def _motif_site_parameters(index: int) -> tuple[ParameterSpec, ...]:
+    fast = ParameterGroup.FAST
+    prefix = f"motif.site.{index}."
+    return (
+        _parameter(prefix + "projection", (768, 128), Initializer.MATRIX, fast),
+        _parameter(prefix + "norm", (768,), Initializer.ONE, fast, False),
+        _parameter(prefix + "gate_hidden", (768,), Initializer.ZERO, fast),
+        _parameter(prefix + "gate_feature", (128,), Initializer.ZERO, fast),
+        _parameter(prefix + "bias", (1,), Initializer.MINUS_FOUR, fast, False),
+    )
+
+
+def _plastic_parameters(index: int) -> tuple[ParameterSpec, ...]:
+    fast = ParameterGroup.FAST
+    prefix = f"plastic.group.{index}."
+    return (
+        _parameter(prefix + "norm", (768,), Initializer.ONE, fast, False),
+        _parameter(prefix + "A", (8, 768), Initializer.MATRIX, fast),
+        _parameter(prefix + "B", (768, 8), Initializer.ZERO, fast),
+    )
+
+
+def _output_parameters() -> tuple[ParameterSpec, ...]:
+    M, O, Z = Initializer.MATRIX, Initializer.ONE, Initializer.ZERO
+    return (
+        _parameter("refine.norm", (768,), O, decay=False),
+        *(_parameter(f"refine.{kind}", (192, 768), M) for kind in ("query", "key", "value")),
+        _parameter("refine.output", (768, 192), M),
+        _parameter("refine.gate_vector", (768,), Z),
+        _parameter("refine.bias", (1,), Initializer.LOG_ONE_NINTH, decay=False),
+        _parameter("refine.route", (3, 768), M),
+        _parameter("refine.route_bias", (3,), Z, decay=False),
+        *(_parameter(f"readout.{kind}_norm", (768,), O, decay=False) for kind in ("state", "output")),
+        *(_parameter(f"readout.{kind}", (192, 768), M) for kind in ("query", "key", "value")),
+        _parameter("readout.output", (768, 192), M),
+        _parameter("readout.feedback", (768, 768), M),
+        _parameter("readout.role_query", (128, 768), M),
+        *(item for kind, count in (("control", 4), ("epistemic", 5)) for item in (
+            _parameter(f"readout.{kind}", (count, 768), M),
+            _parameter(f"readout.{kind}_bias", (count,), Z, decay=False),
+        )),
+        *(item for kind in ("impact", "exigency", "novelty") for item in (
+            _parameter(f"readout.salience.{kind}", (5, 768), M),
+            _parameter(f"readout.salience_bias.{kind}", (5,), Z, decay=False),
+        )),
+    )
 
 
 def expected_bamf_shapes(spec: ModelTopologySpecV2,
@@ -197,90 +314,18 @@ def expected_bamf_shapes(spec: ModelTopologySpecV2,
     """Expand the normative tensor ledger in stable serialization order."""
     if type(spec) is not ModelTopologySpecV2 or type(extents) is not GenerationExtents:
         ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
-    entries: list[ParameterSpec] = []
-    slow, fast, age = ParameterGroup.SLOW, ParameterGroup.FAST, ParameterGroup.IDENTITY_ROW_AGE
-    M, E, Z, O = Initializer.MATRIX, Initializer.EMBEDDING, Initializer.ZERO, Initializer.ONE
-
-    def add(name, shape, initializer, group=slow, decay=True):
-        entries.append(ParameterSpec(name, shape, initializer, group, decay))
-
-    for bank in range(extents.semantic_bank_count):
-        add(f"identity.bank.{bank}", (8192, 768), Initializer.IDENTITY_BANK, age)
-    for kind in ("type", "role", "schema"):
-        add(f"features.{kind}", (512, 128), Initializer.FEATURE_TABLE)
-    for kind in ("type", "role", "schema"):
-        add(f"features.project_{kind}", (768, 128), M)
-    add("features.project_graph", (768, 64), M)
-    add("features.gates", (4,), Initializer.MINUS_TWO, decay=False)
-    add("features.local_slot", (16, 768), E)
-    add("features.norm", (768,), O, decay=False)
-    add("frame.query_schema", (192, 128), M)
-    for kind in ("key", "value"):
-        add(f"frame.member_{kind}", (192, 768), M)
-    for kind in ("query", "key", "value", "output"):
-        add(f"frame.interact_{kind}", (192, 192), M)
-    add("frame.interact_norm", (192,), O, decay=False)
-    add("frame.project_output", (768, 192), M)
-    add("frame.project_summary", (768, 128), M)
-    add("frame.pool_gate", (1,), Initializer.MINUS_TWO, decay=False)
-    add("frame.empty_seed", (768,), E)
-    add("frame.norm", (768,), O, decay=False)
-    for index in range(spec.layers):
-        prefix = f"blocks.{index}."
-        for name in ("attn_norm", "ffn_norm"):
-            add(prefix + name, (768,), O, decay=False)
-        add(prefix + "query", (384, 768), M)
-        add(prefix + "key", (192, 768), M)
-        add(prefix + "value", (192, 768), M)
-        add(prefix + "output", (768, 384), M)
-        add(prefix + "conv_q", (384, 3), Initializer.CONV_IDENTITY)
-        add(prefix + "conv_k", (192, 3), Initializer.CONV_IDENTITY)
-        add(prefix + "conv_v", (192, 3), Initializer.CONV_IDENTITY)
-        add(prefix + "ffn_in", (3072, 768), M)
-        add(prefix + "ffn_out", (768, 3072), M)
-    add("depth.norm", (768,), O, decay=False)
-    for kind in ("query", "key", "value"):
-        add(f"depth.{kind}", (128, 768), M)
-    add("depth.output", (768, 128), M)
-    for index in range(spec.depth_groups):
-        add(f"depth.gate.{index}.vector", (768,), Z)
-        add(f"depth.gate.{index}.bias", (1,), Initializer.LOG_ONE_NINTH, decay=False)
-    for page in range(extents.motif_page_count):
-        add(f"motif.page.{page}", (16384, 128), Initializer.MOTIF_PAGE, fast)
-    for index in range(2):
-        prefix = f"motif.site.{index}."
-        add(prefix + "projection", (768, 128), M, fast)
-        add(prefix + "norm", (768,), O, fast, False)
-        add(prefix + "gate_hidden", (768,), Z, fast)
-        add(prefix + "gate_feature", (128,), Z, fast)
-        add(prefix + "bias", (1,), Initializer.MINUS_FOUR, fast, False)
-    for index in range(spec.depth_groups):
-        prefix = f"plastic.group.{index}."
-        add(prefix + "norm", (768,), O, fast, False)
-        add(prefix + "A", (8, 768), M, fast)
-        add(prefix + "B", (768, 8), Z, fast)
-    add("refine.norm", (768,), O, decay=False)
-    for kind in ("query", "key", "value"):
-        add(f"refine.{kind}", (192, 768), M)
-    add("refine.output", (768, 192), M)
-    add("refine.gate_vector", (768,), Z)
-    add("refine.bias", (1,), Initializer.LOG_ONE_NINTH, decay=False)
-    add("refine.route", (3, 768), M)
-    add("refine.route_bias", (3,), Z, decay=False)
-    for kind in ("state", "output"):
-        add(f"readout.{kind}_norm", (768,), O, decay=False)
-    for kind in ("query", "key", "value"):
-        add(f"readout.{kind}", (192, 768), M)
-    add("readout.output", (768, 192), M)
-    add("readout.feedback", (768, 768), M)
-    add("readout.role_query", (128, 768), M)
-    for kind, count in (("control", 4), ("epistemic", 5)):
-        add(f"readout.{kind}", (count, 768), M)
-        add(f"readout.{kind}_bias", (count,), Z, decay=False)
-    for kind in ("impact", "exigency", "novelty"):
-        add(f"readout.salience.{kind}", (5, 768), M)
-        add(f"readout.salience_bias.{kind}", (5,), Z, decay=False)
-    return tuple(entries)
+    return (
+        *(_parameter(f"identity.bank.{bank}", IDENTITY_BANK_SHAPE, Initializer.IDENTITY_BANK,
+                     ParameterGroup.IDENTITY_ROW_AGE) for bank in range(extents.semantic_bank_count)),
+        *_input_parameters(),
+        *(item for index in range(spec.layers) for item in _block_parameters(index)),
+        *_depth_parameters(spec.depth_groups),
+        *(_parameter(f"motif.page.{page}", MOTIF_PAGE_SHAPE, Initializer.MOTIF_PAGE,
+                     ParameterGroup.FAST) for page in range(extents.motif_page_count)),
+        *(item for index in range(2) for item in _motif_site_parameters(index)),
+        *(item for index in range(spec.depth_groups) for item in _plastic_parameters(index)),
+        *_output_parameters(),
+    )
 
 
 def initialize_bamf_parameter(parameter: ParameterSpec, *, run_seed: int):
@@ -306,7 +351,7 @@ def initialize_bamf_parameter(parameter: ParameterSpec, *, run_seed: int):
     scale = 1.0 / math.sqrt(parameter.shape[-1]) if init == Initializer.MATRIX else 0.02
     value = (np.random.Generator(np.random.PCG64(seed)).standard_normal(parameter.shape) * scale).astype(np.float32)
     if init == Initializer.FEATURE_TABLE:
-        value[1] = 0
+        value[FEATURE_NONE_ROW] = 0
     return value
 
 
@@ -314,7 +359,7 @@ def initialize_bamf_row(parameter: ParameterSpec, *, run_seed: int, row_id: str,
     """Compute a row value; source admission and allocation remain upstream."""
     import numpy as np
 
-    if (type(parameter) is not ParameterSpec or len(parameter.shape) != 2 or
+    if (type(parameter) is not ParameterSpec or len(parameter.shape) != MATRIX_RANK or
             not isinstance(row_id, str) or not row_id):
         ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
     seed = initializer_seed(run_seed, parameter.name, row_id)
