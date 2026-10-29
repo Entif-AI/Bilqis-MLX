@@ -32,6 +32,11 @@ depth-selector oracle and new capture/forgery/gradient suite.
 The public sealed path retains nonzero gradients to captured source
 states. No live training or optimizer writes occurred.
 
+Broader native B01/B04/B05/B09-adjacent regression pass across
+model_topology_v2, atlas_attention, atlas_plasticity,
+block_attnres and depth_summary_capture: 54 passed, 0 failed,
+2 optional skips. No new boundary or module-size debt was introduced.
+
 Remaining producer authority: B11 must invoke the private capture
 hook only at its actual completed four-layer group boundaries and
 bind the capture epoch to its B13-verified generation/prediction
