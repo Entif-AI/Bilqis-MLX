@@ -8,7 +8,10 @@
 - Consumed A03.3 #404, A04.3 #407, A13.3 #432
   source/codec/context contracts. Independent leaf
   EGM PASS is recorded in A03/A04/A13 `egm.md`.
-- Implementation head: pending immutable commit/push
+- Pushed implementation head:
+  `84bba19cd00206f6d3fa55f76c23866f584315c8`
+- PR #546 native Development closing reference #408
+  verified by GitHub GraphQL readback
 - Independent A05.1 EGM: **PENDING**
 
 ## Owned behavior
