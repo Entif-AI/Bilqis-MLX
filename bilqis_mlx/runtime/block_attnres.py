@@ -1,11 +1,14 @@
 """Shared depth selection with recomputed source-member factor features.
 
 The public feature interface reads approved A13 coordinates and actual A06/B01
-factors. Trusted backbone-summary capture remains an assembly qualification gate.
+factors. Producer-side depth capture seals ordered backbone states for later assembly.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import hashlib
+import numpy as np
+from weakref import WeakValueDictionary
 import re
 from types import MappingProxyType
 from typing import Mapping
@@ -42,6 +45,8 @@ RELEASED_FEATURES_SCHEMA = "bilqis.mlx.depth-frame-features/v2"
 SUMMARY_SCHEMA = "bilqis.mlx.depth-summary/v1"
 PARAMETER_VIEW_SCHEMA = "bilqis.mlx.depth-parameter-view/v1"
 _VIEW_SEAL = object()
+_CAPTURE_SEAL = object()
+_CAPTURE_ISSUED: WeakValueDictionary[int, CapturedDepth] = WeakValueDictionary()
 SOURCE_ORDER = ("h0", "g1", "g2", "g3")
 COMPLETED_LAYERS = (0, 4, 8, 12)
 
@@ -67,6 +72,8 @@ class DepthParameterView(Mapping[str, mx.array]):
     _full_parameters: Mapping[str, mx.array] | None = None
     _extents: GenerationExtents | None = None
     _feature_parameters: Mapping[str, mx.array] = field(init=False, repr=False, compare=False)
+    implementation_digest: str | None = None
+    input_boundary_digest: str | None = None
     schema_version: str = PARAMETER_VIEW_SCHEMA
 
     def __post_init__(self) -> None:
@@ -77,7 +84,9 @@ class DepthParameterView(Mapping[str, mx.array]):
                 or not isinstance(self._tensors, Mapping)
                 or set(self._tensors) != set(PARAMETER_SHAPES)
                 or not isinstance(self._full_parameters, Mapping)
-                or type(self._extents) is not GenerationExtents):
+                or type(self._extents) is not GenerationExtents
+                or any(value is not None and (type(value) is not str or not _SHA.fullmatch(value))
+                       for value in (self.implementation_digest, self.input_boundary_digest))):
             _invalid()
         validate_bamf_parameters(ModelTopologySpecV2(), self._extents, self._full_parameters)
         if any(self._tensors[local] is not self._full_parameters[path]
@@ -101,6 +110,7 @@ class DepthParameterView(Mapping[str, mx.array]):
 def depth_parameter_view(
     parameters: Mapping[str, mx.array], *, spec: ModelTopologySpecV2,
     extents: GenerationExtents, boundary_group: int,
+    implementation_digest: str | None = None, input_boundary_digest: str | None = None,
 ) -> DepthParameterView:
     """Borrow only shared depth tensors and the selected B01 boundary gate."""
     if (type(spec) is not ModelTopologySpecV2
@@ -118,7 +128,8 @@ def depth_parameter_view(
         _invalid()
     return DepthParameterView(
         {local: parameters[name] for local, name in names.items()},
-        boundary_group, _VIEW_SEAL, parameters, extents)
+        boundary_group, _VIEW_SEAL, parameters, extents, implementation_digest=implementation_digest,
+        input_boundary_digest=input_boundary_digest)
 
 
 @dataclass(frozen=True)
@@ -189,6 +200,85 @@ class DepthSummary:
             _invalid()
 
 
+
+def _tensor_digest(hidden: mx.array) -> str:
+    """Fingerprint values without detaching the tensor used by the selector."""
+    return hashlib.sha256(np.asarray(mx.stop_gradient(hidden)).tobytes()).hexdigest()
+
+
+@dataclass(frozen=True)
+class CapturedDepth:
+    """One producer-bound prefix of h0,g1,g2,g3; no public mintable seal."""
+
+    summaries: tuple[DepthSummary, ...]
+    topology_digest: str
+    implementation_digest: str
+    generation_digest: str
+    input_boundary_digest: str
+    source_tensor_digests: tuple[str, ...]
+    source_tensor_identities: tuple[int, ...]
+    _seal: object = field(repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        if (self._seal is not _CAPTURE_SEAL
+                or any(not isinstance(value, str) or not _SHA.fullmatch(value)
+                       for value in (self.topology_digest, self.implementation_digest,
+                                     self.generation_digest, self.input_boundary_digest))
+                or not 1 <= len(self.summaries) <= 4
+                or len(self.summaries) != len(self.source_tensor_digests)
+                or len(self.summaries) != len(self.source_tensor_identities)
+                or tuple(item.source_id for item in self.summaries) != SOURCE_ORDER[:len(self.summaries)]
+                or any(type(item) is not DepthSummary or
+                       item.completed_layer != COMPLETED_LAYERS[index] or
+                       not isinstance(item.hidden, mx.array) or
+                       item.hidden.ndim != FRAME_RANK or item.hidden.shape[-1] != WIDTH or
+                       item.hidden.dtype != mx.float32 or
+                       id(item.hidden) != self.source_tensor_identities[index] or
+                       _tensor_digest(item.hidden) != self.source_tensor_digests[index]
+                       for index, item in enumerate(self.summaries))):
+            _invalid()
+
+
+def _issue_capture(value: CapturedDepth) -> CapturedDepth:
+    _CAPTURE_ISSUED[id(value)] = value
+    return value
+
+
+def _validate_capture(value: CapturedDepth) -> None:
+    if type(value) is not CapturedDepth or _CAPTURE_ISSUED.get(id(value)) is not value:
+        _invalid()
+    value.__post_init__()
+
+
+def start_depth_capture(
+    h0: mx.array, *, topology: ModelTopologySpecV2,
+    implementation_digest: str, generation_digest: str,
+    input_boundary_digest: str,
+) -> CapturedDepth:
+    """Start the source producer's immutable capture before the first group."""
+    if type(topology) is not ModelTopologySpecV2 or not isinstance(h0, mx.array):
+        _invalid()
+    return _issue_capture(CapturedDepth((DepthSummary("h0", 0, h0),), topology.digest,
+                         implementation_digest, generation_digest,
+                         input_boundary_digest, (_tensor_digest(h0),),
+                         (id(h0),), _CAPTURE_SEAL))
+
+
+def append_depth_capture(prior: CapturedDepth, group_hidden: mx.array) -> CapturedDepth:
+    """Capture the next completed four-layer group exactly once, in order."""
+    if type(prior) is not CapturedDepth or not isinstance(group_hidden, mx.array):
+        _invalid()
+    _validate_capture(prior)
+    index = len(prior.summaries)
+    if index > MAX_COMPLETED_GROUPS or any(group_hidden is item.hidden for item in prior.summaries):
+        _invalid()
+    return _issue_capture(CapturedDepth(
+        prior.summaries + (DepthSummary(SOURCE_ORDER[index], COMPLETED_LAYERS[index], group_hidden),),
+        prior.topology_digest, prior.implementation_digest, prior.generation_digest,
+        prior.input_boundary_digest, prior.source_tensor_digests + (_tensor_digest(group_hidden),),
+        prior.source_tensor_identities + (id(group_hidden),), _CAPTURE_SEAL))
+
+
 def _validate(current, available_summaries, frame_features, params) -> None:
     if (not isinstance(current, mx.array) or current.ndim != FRAME_RANK
             or current.shape[-1] != WIDTH or current.dtype != mx.float32
@@ -256,30 +346,35 @@ def _depth_components(current, available_summaries, frame_features, params):
 
 
 def depth_select(
-    current: mx.array, available_summaries: tuple[DepthSummary, ...],
+    current: mx.array, available_summaries: CapturedDepth,
     frame_features: DepthFrameFeatures, params: DepthParameterView,
 ) -> mx.array:
     """Merge h0 and completed group summaries in their fixed source order.
 
-    The tuple is ordered (h0,g1,...,gk), k=1..3. Its actual backbone
-    provenance must be qualified by the group-capture assembly owner.
+    The producer captures h0,g1,...,gk in order; B11 supplies the real
+    backbone group outputs at the declared completion boundaries.
     """
-    if (type(params) is not DepthParameterView
+    if (type(available_summaries) is not CapturedDepth
+            or available_summaries.topology_digest != ModelTopologySpecV2().digest
+            or available_summaries.generation_digest != params._extents.digest
+            or available_summaries.implementation_digest != params.implementation_digest
+            or available_summaries.input_boundary_digest != params.input_boundary_digest
+            or type(params) is not DepthParameterView
             or type(frame_features) is not DepthFrameFeatures
             or params.boundary_group != frame_features.boundary_group):
         _invalid()
-    if (not isinstance(current, mx.array) or current.ndim != FRAME_RANK
-            or current.shape[:BATCH_POSITION_AXES] != (len(frame_features.requests), len(frame_features.requests[0]))
-            or type(available_summaries) is not tuple or not available_summaries
-            or type(available_summaries[0]) is not DepthSummary):
+    _validate_capture(available_summaries)
+    if (len(available_summaries.summaries) != frame_features.boundary_group + 1
+            or not isinstance(current, mx.array) or current.ndim != FRAME_RANK
+            or current.shape[:BATCH_POSITION_AXES] != (len(frame_features.requests), len(frame_features.requests[0]))):
         _invalid()
     type_role = mx.stack([mx.stack([
         mx.mean(compose_factor_features(params._feature_parameters, (members,), frame_features.features,
                                         extents=params._extents).type_role[0], axis=0)
         for members in row]) for row in frame_features.requests])
-    numerical = _DepthFeatureValues(available_summaries[0].hidden, type_role,
+    numerical = _DepthFeatureValues(available_summaries.summaries[0].hidden, type_role,
                                      frame_features.features.semantic_release,
                                      frame_features.features.digest, frame_features.boundary_group)
     output, _, _ = _depth_components(
-        current, available_summaries, numerical, params)
+        current, available_summaries.summaries, numerical, params)
     return output
