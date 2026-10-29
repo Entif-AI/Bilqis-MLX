@@ -7,7 +7,7 @@
 - Consumed A13.1 source-grant gate EGM `cba2ae4`;
   A13.2 approved projection EGM `f351334`
 - Branch: `codex/bamf02-a-semantics`; candidate head pending push
-- Independent EGM: `PENDING`
+- Independent EGM: **PASS**, zero remaining Blockers/Majors
 
 ## Contract and bounded local invalidation
 
@@ -78,4 +78,10 @@ An adversarial table covers malformed fields and invalid
 transition shapes.
 
 Focused context suite: **21 passed, 0 failed, 0 skipped**.
-Independent immutable-head targeted re-review is pending.
+Independent Goldfish targeted readback at immutable
+`d23c5999e2783a99617871dc69a1484d764d7011`
+returned **PASS, zero remaining Blockers/Majors**.
+The reviewer independently executed 21 focused tests from
+the immutable archive and confirmed the invalidation and
+transition records reject the previously accepted malformed
+values. See `docs/evidence/bamf/A13/egm.md`.

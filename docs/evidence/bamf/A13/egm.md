@@ -54,3 +54,23 @@ The reviewer inspected immutable source and tests; 28/28
 is prime executed evidence. A13.3 and parent integration
 remain open, and no neural/optimizer or source promotion
 was authorized.
+
+## A13.3 independent C09 contextual invalidation review
+
+Initial target `982ba51127b7e851cd795039644565bc3625ebaa`
+consumed unified `6e83c0f`. Independent Goldfish
+worker-5 executed the focused context suite from a
+disposable immutable archive: 20/20 passed, but found
+one Major. The new frozen C09 event and transition
+records lacked constructor boundary validation and
+accepted invalid digests, actor/scope, epochs, duplicate
+handles/reasons and schema versions.
+
+Repair `d23c5999e2783a99617871dc69a1484d764d7011`
+added ErrorBus-backed validation for both records and
+table-driven negative tests. The targeted independent
+readback returned **A13.3 EGM PASS**, zero remaining
+Blockers/Majors, and independently executed 21/21
+focused tests. C09 durable outbox delivery, reverse
+dependency propagation and Akasha routing remain
+Lane C ownership. No live training or merge occurred.
