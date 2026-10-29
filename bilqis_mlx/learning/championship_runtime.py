@@ -20,6 +20,12 @@ import copy as _copy
 import dataclasses as _dataclasses
 import json as _json
 
+from .capability_championship import (
+    assessment_exam as complete_solver_championship_exam,
+    assessment_path_attribution, assessment_progress,
+    fresh_title_match as fresh_complete_solver_title_match,
+)
+
 
 def _championship_identity(receipt, course):
     return _learning_championship_identity.build_school_identity(
