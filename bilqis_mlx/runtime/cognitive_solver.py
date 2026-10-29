@@ -14,6 +14,7 @@ from ..semantics.cognitive_operators import (
 )
 from ..semantics.domains import contract_digest
 from ..semantics.memo import PureOperationMemo
+from .cognitive_replay import SolveReplayReceipt, make_replay_receipt
 from .operator_registry import (
     RouteKind, RouteRegistry, default_route_registry,
 )
@@ -25,7 +26,7 @@ SOLVE_BUDGET_SCHEMA = "bilqis.c04.solve-budget/v2"
 SOLVE_CONTEXT_SCHEMA = "bilqis.c04.solve-context/v2"
 NEURAL_REQUEST_SCHEMA = "bilqis.c04.neural-request/v1"
 NEURAL_PROPOSAL_SCHEMA = "bilqis.c04.neural-proposal/v1"
-CAPABILITY_RESULT_SCHEMA = "bilqis.c04.capability-result/v2"
+CAPABILITY_RESULT_SCHEMA = "bilqis.c04.capability-result/v3"
 MAX_CACHED_COMPOSITIONS = 16
 MAX_NEURAL_CALLS = 1
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
@@ -182,6 +183,7 @@ class CapabilityResult:
     generation_digest: str
     source_binding_digest: str
     score: float | None
+    replay_receipt: SolveReplayReceipt
     local_refinement_calls: int = 0
     fallback_reason: str | None = None
     schema_version: str = CAPABILITY_RESULT_SCHEMA
@@ -204,6 +206,19 @@ class CapabilityResult:
                     and not _name(self.fallback_reason))
                 or not _sha(self.generation_digest)
                 or not _sha(self.source_binding_digest)
+                or not isinstance(self.replay_receipt, SolveReplayReceipt)
+                or self.replay_receipt.route is not self.route
+                or self.replay_receipt.outcome_digest
+                != contract_digest(self.answer)
+                or self.replay_receipt.generation_digest
+                != self.generation_digest
+                or self.replay_receipt.source_binding_digest
+                != self.source_binding_digest
+                or self.replay_receipt.neural_calls != self.neural_calls
+                or self.replay_receipt.local_refinement_calls
+                != self.local_refinement_calls
+                or self.replay_receipt.score != self.score
+                or self.replay_receipt.fallback_reason != self.fallback_reason
                 or (exact and (self.score != 1.0
                                or (self.route is not
                                    RouteKind.DETERMINISTIC_FALLBACK
@@ -265,13 +280,23 @@ def solve_task(
     fallback_reason = None
 
     def result(answer: TypedValue, route: RouteKind, calls: int) -> CapabilityResult:
+        score = (1.0 if route in (
+            RouteKind.EXACT, RouteKind.CACHED_COMPOSITION,
+            RouteKind.DETERMINISTIC_FALLBACK) else None)
+        replay = make_replay_receipt(
+            goal_id=task.goal_id, route=route,
+            receipts=tuple(receipts), answer=answer,
+            neural_calls=calls,
+            local_refinement_calls=local_refinement_calls,
+            source_binding_digest=source_digest,
+            generation_digest=generation.generation_digest,
+            rights_epoch=binding.frontier.rights_epoch,
+            correction_generation=binding.frontier.correction_generation,
+            score=score, fallback_reason=fallback_reason)
         return CapabilityResult(
             answer, route, tuple(receipts), calls,
             generation.generation_digest, source_digest,
-            1.0 if route in (
-                RouteKind.EXACT, RouteKind.CACHED_COMPOSITION,
-                RouteKind.DETERMINISTIC_FALLBACK) else None,
-            local_refinement_calls, fallback_reason)
+            score, replay, local_refinement_calls, fallback_reason)
 
     def qualified(cached: QualifiedComposition) -> bool:
         return (

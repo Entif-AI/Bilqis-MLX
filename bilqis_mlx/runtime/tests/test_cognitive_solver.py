@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import ast
+from pathlib import Path
 import unittest
 
 from bilqis_mlx.errors import BilqisError
@@ -40,6 +42,38 @@ def _fixture():
 
 
 class CognitiveSolverTests(unittest.TestCase):
+    def test_replay_receipt_records_only_bound_operations_costs_and_outcome(self):
+        binding, generation, budget, add, _ = _fixture()
+        solved = solve_task(
+            add, SolveContext(binding), generation, budget)
+        receipt = solved.replay_receipt
+        self.assertEqual(receipt.route, RouteKind.EXACT)
+        self.assertEqual(receipt.goal_id, add.goal_id)
+        self.assertEqual(receipt.operation_count, 1)
+        self.assertEqual(receipt.neural_calls, 0)
+        self.assertEqual(receipt.local_refinement_calls, 0)
+        self.assertEqual(receipt.selected_bindings[0][2], "ADD")
+        self.assertEqual(receipt.outcome_digest,
+                         contract_digest(solved.answer))
+        self.assertEqual(receipt.visibility, "INTERNAL_ONLY")
+        self.assertNotIn("raw_private_input", receipt.canonical_json)
+        with self.assertRaises(BilqisError):
+            replace(receipt, outcome_digest="0" * 64)
+        runtime = Path(__file__).resolve().parents[1]
+        for name in (
+                "cognitive_solver.py", "cognitive_replay.py",
+                "operator_registry.py"):
+            tree = ast.parse((runtime / name).read_text())
+            imports = [
+                alias.name for node in ast.walk(tree)
+                if isinstance(node, (ast.Import, ast.ImportFrom))
+                for alias in node.names
+            ]
+            self.assertFalse(any(
+                token in imported.lower()
+                for imported in imports
+                for token in ("gold", "assessment", "evaluator")))
+
     def test_applicable_exact_operator_wins_with_full_score_no_neural(self):
         binding, generation, budget, add, _ = _fixture()
         result = solve_task(
