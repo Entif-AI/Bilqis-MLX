@@ -21,6 +21,8 @@ APPROVED_FRAME_SCHEMA = "bilqis.context-approved-frame/v1"
 ELIGIBLE_CONTEXT_SCHEMA = "bilqis.eligible-context/v1"
 CONTEXT_HOLD_SCHEMA = "bilqis.context-hold/v1"
 PROJECTION_SCHEMA = "bilqis.context-approved-projection/v1"
+C09_INVALIDATION_SCHEMA = "bilqis.c09-context-invalidation/v1"
+CONTEXT_TRANSITION_SCHEMA = "bilqis.context-transition/v1"
 PUBLIC_FORMAL = "PUBLIC_FORMAL"
 MAX_CONTEXT_HOLD_DIAGNOSTICS = 16
 JOIN_PAIR_ARITY = 2
@@ -642,3 +644,86 @@ def project_context(
         return approved
     return ApprovedContextProjection(
         approved, tuple(sorted(frames, key=lambda item: item.frame_handle)))
+
+
+@dataclass(frozen=True)
+class C09ContextInvalidation:
+    """Local invalidation receipt; downstream C09 owns durable outbox delivery."""
+    old_context_digest: str
+    new_context_digest: str | None
+    reason_codes: tuple[str, ...]
+    principal_id: str
+    tenant_id: str
+    scope: str
+    semantic_release: str
+    policy_epoch: int
+    rights_epoch: int
+    correction_generation: int
+    causal_prefix_end: int
+    invalidated_handles: tuple[str, ...]
+    schema_version: str = C09_INVALIDATION_SCHEMA
+
+    @property
+    def event_id(self) -> str:
+        return contract_digest(self)
+
+
+@dataclass(frozen=True)
+class ContextTransition:
+    current: ApprovedContextProjection | ContextHold
+    invalidations: tuple[C09ContextInvalidation, ...]
+    schema_version: str = CONTEXT_TRANSITION_SCHEMA
+
+
+def transition_context(
+    previous: ApprovedContextProjection | None,
+    frames: tuple[ContextEligibility, ...],
+    task_scope: TaskScope,
+    source_frontier: SourceFrontier,
+    policy: ContextPolicy,
+) -> ContextTransition:
+    """Compare pinned frontiers and emit C09 on loss/change of eligibility.
+
+    This is a pure local transition. It never calls a policy service or
+    mutates a learner, cache, source owner, outbox or external graph.
+    """
+    current = project_context(
+        frames, task_scope, source_frontier, policy)
+    if previous is None:
+        return ContextTransition(current, ())
+    if not isinstance(previous, ApprovedContextProjection):
+        _invalid("BAMF_CONTEXT_TRANSITION_PRIOR_INVALID")
+    if any(
+        envelope.principal_id != task_scope.principal_id
+        or envelope.tenant_id != task_scope.tenant_id
+        or envelope.scope != task_scope.scope
+        for envelope in previous.envelopes
+    ):
+        _invalid("BAMF_CONTEXT_TRANSITION_ACTOR_SCOPE_DRIFT")
+    prior = previous.eligible
+    new_digest = (
+        current.digest if isinstance(current, ApprovedContextProjection)
+        else None)
+    if prior.digest == new_digest:
+        return ContextTransition(current, ())
+    reason_codes = (
+        current.reason_codes if isinstance(current, ContextHold)
+        else ("BAMF_CONTEXT_APPROVED_VIEW_CHANGED",))
+    invalidation = C09ContextInvalidation(
+        old_context_digest=prior.digest,
+        new_context_digest=new_digest,
+        reason_codes=tuple(sorted(set(reason_codes))),
+        principal_id=task_scope.principal_id,
+        tenant_id=task_scope.tenant_id,
+        scope=task_scope.scope,
+        semantic_release=task_scope.semantic_release,
+        policy_epoch=policy.policy_epoch,
+        rights_epoch=source_frontier.rights_epoch,
+        correction_generation=source_frontier.correction_generation,
+        causal_prefix_end=task_scope.causal_prefix_end,
+        invalidated_handles=tuple(sorted({
+            handle for frame in prior.frames
+            for handle in (frame.frame_handle, *frame.member_handles)
+        })),
+    )
+    return ContextTransition(current, (invalidation,))

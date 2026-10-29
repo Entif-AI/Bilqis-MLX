@@ -6,11 +6,11 @@ from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.semantics.context_eligibility import (
-    PUBLIC_FORMAL, ApprovedContextProjection, ContextEligibility,
-    ContextHold, ContextMember,
+    PUBLIC_FORMAL, ApprovedContextProjection, C09ContextInvalidation,
+    ContextEligibility, ContextHold, ContextMember, ContextTransition,
     ContextPolicy, EligibleContext, SourceFrontier, SourceGrant, TaskScope,
     check_context_eligibility, frame_evidence_digest, member_evidence_digest,
-    project_context,
+    project_context, transition_context,
 )
 from bilqis_mlx.semantics.frame_adapters import public_formal_context
 from bilqis_mlx.semantics.frame_schema import (
@@ -108,6 +108,80 @@ def _case(*, count: int = 2, two_roles: bool = False):
 
 
 class ContextEligibilityTests(unittest.TestCase):
+    def test_c09_transition_is_pure_and_unchanged_or_reordered_views_do_not_invalidate(self):
+        frames, task, frontier, policy = _case(count=2, two_roles=True)
+        prior = project_context(frames, task, frontier, policy)
+        initial = transition_context(None, frames, task, frontier, policy)
+        self.assertIsInstance(initial, ContextTransition)
+        self.assertEqual(initial.invalidations, ())
+        self.assertEqual(initial.current.digest, prior.digest)
+        same = transition_context(prior, frames, task, frontier, policy)
+        reordered = transition_context(
+            prior, tuple(reversed(frames)), task, frontier, policy)
+        self.assertEqual(same.invalidations, ())
+        self.assertEqual(reordered.invalidations, ())
+        self.assertEqual(reordered.current.digest, prior.digest)
+
+    def test_c09_revocation_and_policy_time_changes_emit_exact_local_receipts(self):
+        frames, task, frontier, policy = _case(count=1)
+        prior = project_context(frames, task, frontier, policy)
+        revoked_grant = replace(frontier.grants[0], revoked=True)
+        revoked = replace(
+            frontier, grants=(revoked_grant, *frontier.grants[1:]))
+        lost = transition_context(prior, frames, task, revoked, policy)
+        self.assertIsInstance(lost.current, ContextHold)
+        self.assertEqual(len(lost.invalidations), 1)
+        event = lost.invalidations[0]
+        self.assertIsInstance(event, C09ContextInvalidation)
+        self.assertEqual(event.schema_version, "bilqis.c09-context-invalidation/v1")
+        self.assertEqual(event.old_context_digest, prior.digest)
+        self.assertIsNone(event.new_context_digest)
+        self.assertEqual(
+            event.invalidated_handles,
+            ("frame:0", "source:member:0:subject"))
+        self.assertEqual(len(event.event_id), 64)
+        self.assertEqual(
+            event.event_id,
+            transition_context(prior, frames, task, revoked, policy)
+            .invalidations[0].event_id)
+        later = transition_context(
+            prior, frames, replace(task, effective_time=6), frontier, policy)
+        self.assertIsInstance(later.current, ApprovedContextProjection)
+        self.assertNotEqual(later.current.digest, prior.digest)
+        self.assertEqual(
+            later.invalidations[0].reason_codes,
+            ("BAMF_CONTEXT_APPROVED_VIEW_CHANGED",))
+        changed_policy = transition_context(
+            prior, frames, task, frontier,
+            replace(policy, policy_epoch=2))
+        self.assertIsInstance(changed_policy.current, ContextHold)
+        self.assertEqual(len(changed_policy.invalidations), 1)
+
+    def test_c09_public_fixture_actor_and_scope_isolation(self):
+        frames, task, frontier, policy = _case(count=1)
+        prior = project_context(frames, task, frontier, policy)
+        actor = "synthetic:independent-actor"
+        other_task = replace(task, principal_id=actor)
+        other_frames = tuple(
+            replace(envelope, principal_id=actor) for envelope in frames)
+        other_frontier = replace(
+            frontier, grants=tuple(
+                replace(grant, principal_id=actor)
+                for grant in frontier.grants))
+        other_view = project_context(
+            other_frames, other_task, other_frontier, policy)
+        self.assertIsInstance(other_view, ApprovedContextProjection)
+        self.assertNotEqual(other_view.digest, prior.digest)
+        with self.assertRaises(BilqisError) as caught:
+            transition_context(
+                prior, other_frames, other_task, other_frontier, policy)
+        self.assertEqual(caught.exception.context["reason"],
+                         "BAMF_CONTEXT_TRANSITION_ACTOR_SCOPE_DRIFT")
+        with self.assertRaises(BilqisError):
+            transition_context(
+                prior, frames, replace(task, scope="synthetic:other-scope"),
+                frontier, policy)
+
     def test_approved_projection_is_the_only_readout_and_cache_identity(self):
         frames, task, frontier, policy = _case(count=2, two_roles=True)
         projected = project_context(frames, task, frontier, policy)
