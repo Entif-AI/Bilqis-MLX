@@ -3,10 +3,13 @@
 - Issue: #411; parent A06 #352; Lane A
 - Consumed unified trunk:
   `44f78431709ec3b8fc23f47b45d9b18f167c7354`
-  (already an ancestor; no no-op merge)
+  (original ancestor), then
+  `6e83c0f6618f81a6d41f82503f16a80b8e14164f`
+  through merge `982ba51127b7e851cd795039644565bc3625ebaa`
 - Consumed A01 frozen Atlas source and A03 typed frame/ConceptRef contracts
-- Branch: `codex/bamf02-a-semantics`; candidate head pending push
-- Independent EGM: `PENDING`
+- Final reviewed implementation head:
+  `b3bea14fe241f5f11c68d11a41af3d938aebd8ae`
+- Independent EGM: **PASS**, zero remaining Blockers/Majors
 
 ## Contract and exact mapping
 
@@ -131,4 +134,10 @@ The expanded tests prove a signed hash collision,
 full golden overflow vectors, and network isolation
 through feature lookup. The fourth finding concerns
 PR Development closing-link metadata. Focused owner
-suite: 12 passed, 0 failed. Full EGM is pending.
+suite: 12 passed, 0 failed. Full-issue independent
+Goldfish re-review at immutable `b3bea14` returned
+**PASS, zero remaining Blockers/Majors**, and independently
+executed all 12 tests. GitHub GraphQL PR #546
+`closingIssuesReferences` returned both #411 and #432;
+PR receipt comment 6487365093 is present. See
+`docs/evidence/bamf/A06/egm.md`.

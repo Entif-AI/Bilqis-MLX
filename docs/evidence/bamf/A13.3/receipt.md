@@ -7,8 +7,8 @@
 - Consumed A13.1 source-grant gate EGM `cba2ae4`;
   A13.2 approved projection EGM `f351334`
 - Branch: `codex/bamf02-a-semantics`; candidate head pending push
-- Independent EGM: **PENDING full issue clearance**;
-  typed-record subreview PASS at `d23c599`
+- Independent EGM: **PASS**, full-issue clearance at
+  `b3bea14fe241f5f11c68d11a41af3d938aebd8ae`
 
 ## Contract and bounded local invalidation
 
@@ -100,4 +100,11 @@ approved handles to the new task. Synthetic negative
 tests exercise all six authority partitions. The final
 Major is PR Development closing-link/receipt metadata,
 which must be verified after the code is pushed.
-Full-issue independent EGM remains pending until then.
+The full-issue independent Goldfish re-review at immutable
+`b3bea14` returned **PASS, zero remaining Blockers/Majors**.
+It independently executed 21/21 owner tests and verified
+all six authority-partition dimensions and both typed
+record validators. PR #546 Development closing references
+for #432 and #411 were confirmed through GitHub GraphQL
+`closingIssuesReferences`, not inferred from prose.
+The PR remains draft/unmerged and parent A13 stays open.
