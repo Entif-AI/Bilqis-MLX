@@ -219,4 +219,6 @@ def diagnose_history(observations: Iterable[ExamObservation]) -> tuple[Diagnosti
 
 
 # C06 receipts remain separate from the five source-scored learning warning identities.
-from .salience import observe_salience_priority
+def observe_salience_priority(frontier, history, program, *, aggregation_policy=None, annotations=()):
+    from .salience import observe_salience_priority as observe
+    return observe(frontier, history, program, aggregation_policy=aggregation_policy, annotations=annotations)

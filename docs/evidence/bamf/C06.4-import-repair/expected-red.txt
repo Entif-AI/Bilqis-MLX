@@ -1,0 +1,74 @@
+test_fresh_native_teacher_and_operating_loop_import_without_neural_execution (_bilqis_test_e07271397086c530bdebebbf0dabb18d5db23d935255714b69514114abadbfe7.SalienceImportTests.test_fresh_native_teacher_and_operating_loop_import_without_neural_execution) ... 
+  test_fresh_native_teacher_and_operating_loop_import_without_neural_execution (_bilqis_test_e07271397086c530bdebebbf0dabb18d5db23d935255714b69514114abadbfe7.SalienceImportTests.test_fresh_native_teacher_and_operating_loop_import_without_neural_execution) (module='bilqis_mlx.learning.learning_experiment') ... FAIL
+  test_fresh_native_teacher_and_operating_loop_import_without_neural_execution (_bilqis_test_e07271397086c530bdebebbf0dabb18d5db23d935255714b69514114abadbfe7.SalienceImportTests.test_fresh_native_teacher_and_operating_loop_import_without_neural_execution) (module='bilqis_mlx.runtime.operating_loop') ... FAIL
+
+======================================================================
+FAIL: test_fresh_native_teacher_and_operating_loop_import_without_neural_execution (_bilqis_test_e07271397086c530bdebebbf0dabb18d5db23d935255714b69514114abadbfe7.SalienceImportTests.test_fresh_native_teacher_and_operating_loop_import_without_neural_execution) (module='bilqis_mlx.learning.learning_experiment')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/diagnostics/tests/test_salience_imports.py", line 15, in test_fresh_native_teacher_and_operating_loop_import_without_neural_execution
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/learning/learning_experiment.py", line 28, in <module>
+    import bilqis_mlx.learning.teacher_breeding as _teacher_breeding
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/learning/teacher_breeding.py", line 8, in <module>
+    from .teacher_strategy_population import (
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/learning/teacher_strategy_population.py", line 8, in <module>
+    from bilqis_mlx.learning.teacher_feedback import LearningExperimentError
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/learning/teacher_feedback.py", line 14, in <module>
+    from bilqis_mlx.diagnostics.signals import DiagnosticStatus, LearningSignal
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/diagnostics/__init__.py", line 5, in <module>
+    from .signals import (DiagnosticFinding, DiagnosticStatus, DiagnosticTarget,
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/diagnostics/signals.py", line 222, in <module>
+    from .salience import observe_salience_priority
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/diagnostics/salience.py", line 13, in <module>
+    from ..learning.salience_teacher import AttentionFrontier, propose_attention_options
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/learning/salience_teacher.py", line 9, in <module>
+    from ..runtime.teacher_policy_selection import select_visit_policy
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/runtime/teacher_policy_selection.py", line 7, in <module>
+    import bilqis_mlx.learning.teacher_vnext_replay as _teacher_vnext
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/learning/teacher_vnext_replay.py", line 16, in <module>
+    from .teacher_strategy_population import effective_policy_key, BAMF_SUCCESSOR_SELECTION
+ImportError: cannot import name 'effective_policy_key' from partially initialized module 'bilqis_mlx.learning.teacher_strategy_population' (most likely due to a circular import) (/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/learning/teacher_strategy_population.py)
+
+
+======================================================================
+FAIL: test_fresh_native_teacher_and_operating_loop_import_without_neural_execution (_bilqis_test_e07271397086c530bdebebbf0dabb18d5db23d935255714b69514114abadbfe7.SalienceImportTests.test_fresh_native_teacher_and_operating_loop_import_without_neural_execution) (module='bilqis_mlx.runtime.operating_loop')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/diagnostics/tests/test_salience_imports.py", line 15, in test_fresh_native_teacher_and_operating_loop_import_without_neural_execution
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/runtime/operating_loop.py", line 12, in <module>
+    import bilqis_mlx.learning.learning_experiment as _learning_learning_experiment
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/learning/learning_experiment.py", line 28, in <module>
+    import bilqis_mlx.learning.teacher_breeding as _teacher_breeding
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/learning/teacher_breeding.py", line 8, in <module>
+    from .teacher_strategy_population import (
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/learning/teacher_strategy_population.py", line 8, in <module>
+    from bilqis_mlx.learning.teacher_feedback import LearningExperimentError
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/learning/teacher_feedback.py", line 14, in <module>
+    from bilqis_mlx.diagnostics.signals import DiagnosticStatus, LearningSignal
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/diagnostics/__init__.py", line 5, in <module>
+    from .signals import (DiagnosticFinding, DiagnosticStatus, DiagnosticTarget,
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/diagnostics/signals.py", line 222, in <module>
+    from .salience import observe_salience_priority
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/diagnostics/salience.py", line 13, in <module>
+    from ..learning.salience_teacher import AttentionFrontier, propose_attention_options
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/learning/salience_teacher.py", line 9, in <module>
+    from ..runtime.teacher_policy_selection import select_visit_policy
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/runtime/teacher_policy_selection.py", line 7, in <module>
+    import bilqis_mlx.learning.teacher_vnext_replay as _teacher_vnext
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/learning/teacher_vnext_replay.py", line 16, in <module>
+    from .teacher_strategy_population import effective_policy_key, BAMF_SUCCESSOR_SELECTION
+ImportError: cannot import name 'effective_policy_key' from partially initialized module 'bilqis_mlx.learning.teacher_strategy_population' (most likely due to a circular import) (/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/learning/teacher_strategy_population.py)
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.518s
+
+FAILED (failures=2)
+TEST_TOTALS total=1 passed=-1 failed=2 skipped=0 errors=0
+-1 passed, 2 failed, 0 skipped
