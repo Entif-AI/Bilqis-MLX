@@ -7,7 +7,10 @@ import mlx.core as mx
 import numpy as np
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.runtime.atlas_refinement import _refine_frame, refinement_parameter_view
+from bilqis_mlx.runtime.atlas_refinement import (
+    _refine_frame, masked_routing_loss, refinement_parameter_view,
+    routing_logits_from_state,
+)
 from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes
 
 
@@ -118,6 +121,50 @@ class RefinementKernelTests(unittest.TestCase):
         with self.assertRaises(BilqisError):
             refinement_parameter_view({**full, "unregistered.head": mx.zeros((1,))},
                                        spec=self.spec, extents=self.extents)
+
+    def test_missing_route_label_masks_auxiliary_gradient_but_not_answer_gradient(self):
+        logits = mx.array([0.2, -0.4, 0.7], dtype=mx.float32)
+        self.assertEqual(float(masked_routing_loss(logits, None)), 0.0)
+        np.testing.assert_array_equal(
+            np.asarray(mx.grad(lambda x: masked_routing_loss(x, None))(logits)),
+            np.zeros(3, dtype=np.float32))
+        self.assertGreater(float(masked_routing_loss(logits, 2)), 0)
+        self.assertGreater(
+            float(mx.sum(mx.abs(mx.grad(
+                lambda x: masked_routing_loss(x, 2))(logits)))), 0)
+        for passes in (1, 2):
+            def loss(parameters):
+                result = self.run_kernel(passes, parameters=parameters)
+                return mx.sum(result.hidden * mx.arange(768, dtype=mx.float32)) + (
+                    masked_routing_loss(result.route_logits, None))
+            gradients = mx.grad(loss)(self.params)
+            self.assertGreater(
+                float(mx.sum(mx.abs(gradients["refine.output"]))), 0)
+            self.assertGreater(
+                float(mx.sum(mx.abs(gradients["refine.query"]))), 0)
+        for label in (-1, 3, True, 1.0):
+            with self.assertRaises(BilqisError):
+                masked_routing_loss(logits, label)
+        with self.assertRaises(BilqisError):
+            masked_routing_loss(None, 1)
+
+    def test_measured_zero_pass_route_label_trains_head_without_refinement(self):
+        zero = self.run_kernel(0)
+        self.assertIs(zero.hidden, self.hidden)
+        self.assertIsNone(zero.route_logits)
+        logits = routing_logits_from_state(self.hidden, self.params)
+        np.testing.assert_allclose(
+            np.asarray(logits),
+            np.asarray(self.hidden) @ np.asarray(self.params["refine.route"]).T
+            + np.asarray(self.params["refine.route_bias"]), atol=1e-7)
+        def zero_route_loss(parameters):
+            return masked_routing_loss(
+                routing_logits_from_state(self.hidden, parameters), 0)
+        gradients = mx.grad(zero_route_loss)(self.params)
+        for name in ("refine.route", "refine.route_bias"):
+            self.assertGreater(float(mx.sum(mx.abs(gradients[name]))), 0)
+        self.assertEqual(
+            float(masked_routing_loss(logits, None)), 0.0)
 
 
 if __name__ == "__main__":
