@@ -43,3 +43,27 @@ the candidate and evidence.
 A06.2 and A06 parent integration remain open.
 This review does not authorize live training,
 source promotion, or merging the draft PR.
+
+## A06.2 independent EGM | local export and reference vectors
+
+Initial immutable candidate `4a5800e0f37ae1a40107d60772aa18d8c8b2a0e6`
+passed 20/20 focused owner tests, but Goldfish found
+two Majors: factor-map row gaps/early overflow and
+caller-optional successor lineage at the persisted
+boundary; and a raw OSError escaping during failed
+temporary-directory cleanup.
+
+Repair `a4be8062988e84b3f0a053dbc5067e44471ff89d`
+enforces dense learned rows, canonical initial UTF-8
+allocation, mandatory predecessor proof for successor
+publish/load, stable prior assignments and exact new
+row allocation. Cleanup failures now raise a catalogued
+ErrorBus error. Independent targeted re-review executed
+**23 passed, 0 failed, 0 skipped** from immutable source,
+reproduced the original adversaries, checked role/schema
+maps and a valid three-generation successor chain, and
+returned **A06.2 EGM PASS, zero remaining Blockers/Majors**.
+
+PR #546 native Development closing references include
+#411, #412 and #432. A06 parent integration remains
+open; no merge or live training occurred.

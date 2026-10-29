@@ -5,8 +5,9 @@
   (already an ancestor through merge `982ba51127b7e851cd795039644565bc3625ebaa`;
   no no-op merge)
 - Direct prerequisite: A06.1 #411, independent EGM PASS at `b3bea14`
-- Implementation head: pending commit/push
-- Independent EGM: **PENDING**
+- Final reviewed implementation head:
+  `a4be8062988e84b3f0a053dbc5067e44471ff89d`
+- Independent EGM: **PASS**, zero remaining Blockers/Majors
 
 ## Owned API and source boundaries
 
@@ -89,6 +90,20 @@ and successor row drift when the caller omitted the predecessor;
 with a raw `OSError`. Both paths now have executable
 failing-before regressions and targeted fixes. A fresh
 immutable-head EGM re-review is required before PASS.
+
+## Final independent readback
+
+Goldfish independently reviewed immutable `a4be806`,
+re-executed **23/23 focused A06.1+A06.2 tests**, and
+returned **PASS, zero remaining Blockers/Majors**.
+The reviewer reran both original bypasses, exercised
+role/schema allocation drift, and verified a legitimate
+three-generation successor chain with stable learned rows.
+The combined write/cleanup failure now raises a catalogued
+`BAMF_FEATURE_ARTIFACT_CLEANUP_FAILED` error. PR #546
+head and native GitHub closing link for #412 were verified.
+This clears the leaf's EGM gate, not parent A06 integration
+or the human-controlled unified merge.
 
 Parent A06 remains open for its integration gate. No public
 source promotion, live training, merge into unified, or merge
