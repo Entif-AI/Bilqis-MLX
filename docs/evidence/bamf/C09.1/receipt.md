@@ -14,13 +14,13 @@ Draft human-review PR: #550.
 - Each artifact declares immediate source, operator, release, policy,
   time, rights or artifact dependencies. Missing artifact owners and
   cycles reject before the index is usable.
-- `bilqis.c09.correction-event/v1` binds a source-owner receipt and
+- `bilqis.c09.correction-event/v2` binds a source-owner receipt and
   separate source/effective/observed/recorded times. A correction
   holds its direct dependents before reuse.
 - `bilqis.c09.revalidation-queue/v1` orders lazy work by exigency,
   impact and stable ID, subject to upstream dependency holds.
   Descendants cannot be read through a held or ineligible ancestor.
-- `bilqis.c09.state-transition/v1` propagates to immediate consumers
+- `bilqis.c09.state-transition/v2` propagates to immediate consumers
   only when content identity or eligibility changes. Equal results
   stop propagation; immutable prior nodes remain available as history.
 
@@ -46,3 +46,29 @@ C09.3 owns time projections and stale-remediation escalation.
 The C09 parent acceptance, live learner, and downstream integration
 are **not** claimed complete. Independent Goldfish EGM is pending.
 No neural/optimizer state, live run, or private source was changed.
+
+## 2026-10-29 independent-review repairs
+
+Goldfish review of `d0fd5ab` found two Majors: readiness checked
+only immediate held ancestors, and source-owner/receipt hashes
+were caller-self-attested.
+
+Repair `cd3ec533a823eea3bd407d5e9ac13c87cfb42230` traverses
+the full dependency DAG before selecting a revalidation task.
+The exact high-priority descendant/unheld-intermediate/held-ancestor
+repro now selects the held ancestor first.
+
+Versioned v2 correction, recomputation and state-transition
+contracts now require Ed25519 signatures. A host-provisioned
+`bilqis.c09.source-authority-registry/v1` pins public keys,
+allowed dependency kinds and key scopes. Apply, revalidation,
+transition, branch admission and process-fault escalation reject
+unsigned or foreign receipts. Absent authority fails closed.
+The test-only private key is synthetic, not a production key.
+Actual A01/B07/B13/C04 key provisioning remains an explicit
+integration dependency; this layer does not issue source rights.
+
+C09.2 was separated into `atlas_requalification.py` to keep
+modules below the size-review threshold. Focused C09 and
+error-control tests: **19 passed, 0 failed**.
+Independent targeted re-review remains pending.

@@ -22,7 +22,7 @@ Draft PR #550 remains unmerged.
   current interval. `bind_as_of_dependency` replaces only that
   actor's prior boundary on an immutable artifact, enabling exact
   reverse-edge invalidation when validity changes.
-- `bilqis.c09.remediation-receipt/v1` and
+- `bilqis.c09.remediation-receipt/v2` and
   `bilqis.c09.derived-claim/v1` retain original source event/time,
   superseded evidence, correction receipt, completed remediation
   attempt and ordered derived path.
@@ -56,3 +56,20 @@ pending. The new C09.3 helper module separates temporal and
 process-fault semantics from the existing C09.1/.2 revalidation
 owner. Independent EGM is pending. No live neural run, optimizer
 mutation, source-rights expansion, private data or merge occurred.
+
+## 2026-10-29 independent-review repairs
+
+Goldfish review of `053f6f4` found two Majors: actor `a`
+could erase actor `a:b`'s TIME dependency via ambiguous prefix,
+and relabeling only the source receipt of an identical stale
+post-remediation belief avoided the process-fault gate.
+
+Repair `cd3ec53` length-prefixes actor identity in TIME keys,
+preserving other actors' independent invalidation edges.
+The remediation receipt now binds the original actor as well
+as source event/time; identical actor/source-time/fact/path replay
+after completed remediation faults even if source receipt or
+event ID is relabeled. A genuinely later actor/time/source
+observation remains non-fault. The correction itself is
+Ed25519-verified against host-provisioned source authority
+before escalation. Independent re-review remains pending.

@@ -49,3 +49,13 @@ actual C10 outbox/projection, source-owner A01/B07/B13/C04
 qualification and learned-capability reassessment remain separate
 integration gates. No claim of completed delivery or retained
 learning is made.
+
+## 2026-10-29 dependency and source-authentication hardening
+
+The C09.2 owner moved into `atlas_requalification.py` in
+`cd3ec53`; behavior and wire schemas remain unchanged.
+`add_correction` now requires a host-provisioned Ed25519
+source-authority registry and validates exact event signature,
+owner, dependency kind and key scope before adding alternatives.
+Actual source key provisioning and C10 delivery remain upstream
+integration gates. No EGM closure is inferred from this change.
