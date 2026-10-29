@@ -42,6 +42,16 @@ def _spec(
 
 
 class SCHOOL:
+    class BAMF_REVALIDATION:
+        INVALID = _spec(
+            ("SCHOOL", "BAMF_REVALIDATION", "INVALID"),
+            owner="runtime.atlas_revalidation",
+            title="BAMF correction dependency or revalidation invalid",
+            message_template="A source-bound correction or derived artifact is not safe to use: {reason}",
+            disposition="PRESERVE_AND_INSPECT",
+            next_action="Hold the affected artifact and reconcile its source-owned evidence before reuse.",
+        )
+
     class BAMF_TEACHER:
         INVALID = _spec(
             ("SCHOOL", "BAMF_TEACHER", "INVALID"), owner="learning.teacher_vnext_replay",
@@ -869,6 +879,7 @@ class FACTORY:
 
 
 CATALOG = (
+    SCHOOL.BAMF_REVALIDATION.INVALID,
     SCHOOL.BAMF_TEACHER.INVALID,
     SCHOOL.BAMF_TRAINING_ADAPTER.INVALID,
     SCHOOL.BAMF_WORKSTACK.INPUT_INVALID,
