@@ -6,7 +6,8 @@ import unittest
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.refinement_policy import (
-    RefinementSelection, SourceSalience, salience_evidence_digest,
+    RefinementSelection, SourceSalience, prefix_inventory_evidence_digest,
+    prefix_inventory_handle, salience_evidence_digest,
     select_prediction_refinements,
 )
 from bilqis_mlx.semantics.context_eligibility import (
@@ -17,6 +18,7 @@ from bilqis_mlx.semantics.context_eligibility import (
 from bilqis_mlx.semantics.frame_codec import SchemaTagMap
 from bilqis_mlx.semantics.frame_compiler import (
     FrameCompilerConfig, SourceAtom, StreamingAST, atom_evidence_digest,
+    compile_prefix,
 )
 from bilqis_mlx.semantics.frame_schema import (
     ConceptRef, FrameSchema, FrameTree, RoleOccurrence, RoleSpec, SourceSpan,
@@ -131,6 +133,21 @@ def _case(count=9, *, target_indices=(4, 8)):
     )
     ast = StreamingAST(
         SOURCE_ID, atoms, tuple(FrameTree(item.frame) for item in frames))
+    inventory_grants = []
+    for p in range(count + 1):
+        compiled = compile_prefix(ast, p, RELEASE, config)
+        inventory_grants.append(SourceGrant(
+            prefix_inventory_handle(SOURCE_ID, p),
+            PRINCIPAL, TENANT, PUBLIC_FORMAL, RELEASE,
+            prefix_inventory_evidence_digest(compiled),
+            ("TRAINING",), (REGION,), (SCOPE,),
+            rights_epoch=1, correction_generation=1,
+            observed_at=0, effective_from=0,
+        ))
+    frontier = replace(frontier, grants=tuple(sorted(
+        (*frontier.grants, *inventory_grants),
+        key=lambda item: item.source_handle)))
+    config = replace(config, frontier=frontier)
     return SourceCase(tuple(frames), task, frontier, policy, ast, config)
 
 
@@ -171,7 +188,27 @@ class RefinementPolicyTests(unittest.TestCase):
             case.select(frames=case.frames[:8])
         with self.assertRaises(BilqisError):
             case.select(frames=())
+        with self.assertRaises(BilqisError):
+            case.select(
+                frames=case.frames[:8],
+                source_ast=replace(case.ast, frames=case.ast.frames[:8]))
+        with self.assertRaises(BilqisError):
+            case.select(
+                frames=case.frames[:8],
+                source_ast=replace(case.ast, frames=case.ast.frames[:8]),
+                compiler_config=replace(case.config, approved=project_context(
+                    case.frames[:8], case.task, case.frontier, case.policy)))
         self.assertEqual(case.select().quota, 2)
+
+    def test_revoked_complete_prefix_inventory_fails_closed(self):
+        case = _case()
+        handle = prefix_inventory_handle(SOURCE_ID, case.task.causal_prefix_end)
+        revoked = replace(case.frontier, grants=tuple(
+            replace(grant, revoked=True)
+            if grant.source_handle == handle else grant
+            for grant in case.frontier.grants))
+        with self.assertRaises(BilqisError):
+            case.select(frontier=revoked)
 
     def test_role_priority_then_attested_salience_then_source_order(self):
         case = _case()

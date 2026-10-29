@@ -12,7 +12,12 @@ Direct prerequisite: B06.1/#452 provisional numerical kernel `8162096`
 over the actual A05 compiled source AST and A13 context eligibility.
 It replays `compile_prefix` at p against the source-owned AST/config,
 requires exact agreement with every compiled closure and the approved
-context digest, and refuses omitted visible frames before computing Fp.
+context digest, **and requires an independent source-frontier grant for
+the complete compiled p-local cache identity**. An omitted AST frame
+changes the inventory digest and cannot be silently reauthorized by
+ordinary atom/frame grants. The source owner, not this selector, must
+issue that inventory grant. The selector refuses omitted visible frames
+before computing Fp.
 It filters future frames before source-policy projection and computes the exact
 `min(32, ceil(Fp/8))` quota. Requested-role matches rank first, followed by
 source-visible salience and stable source span/occurrence order. Salience is
@@ -52,9 +57,10 @@ python3 -B scripts/run_tests.py \
   bilqis_mlx/semantics/tests/test_frame_compiler.py
 ```
 
-Result after independent-review repair: **65 passed, 0 failed, 0 skipped**. These include the
+Result after independent-review repair: **66 passed, 0 failed, 0 skipped**. These include the
 8-to-9 quota boundary, future-frame and future-salience isolation,
-missing-eligible-frame adversary, source revocation and forged-salience
+missing-eligible-frame and truncated-AST adversaries, revoked prefix
+inventory grant, source revocation and forged-salience
 rejection, all three seeded training pass counts, nested two-pass policy,
 measured class0 routing gradients, masked route gradients and retained
 answer gradients. `git diff --check` passed. The
@@ -67,10 +73,14 @@ runtime module; unrelated inherited findings remain.
 Independent EGM at `f612721` found two Majors: a caller could omit an
 otherwise eligible frame and shrink Fp, and class0 had no trainable
 routing-head path. Both are repaired in the current candidate:
-A05 prefix recompilation now binds the complete closure inventory;
+A05 prefix recompilation plus a separately source-granted compiled
+inventory digest now bind the complete closure inventory;
 `routing_logits_from_state` trains the three-class head without
 altering B06.1's exact zero-pass identity. Fresh immutable-head
 readback remains pending, so no EGM PASS is claimed.
+An intermediate review at `40c6b16` correctly showed that recompiling
+an ungranted caller-truncated AST was insufficient. The additional
+prefix-inventory source grant is the follow-up repair.
 This is not the public `refine_selected` source/backbone assembly.
 B03.3/#444 still awaits A05 child-prefix revalidation and B02
 child-binding source factors; B05/B11 must qualify real hidden-state

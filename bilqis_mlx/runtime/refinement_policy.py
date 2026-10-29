@@ -19,12 +19,14 @@ from bilqis_mlx.semantics.context_eligibility import (
 )
 from bilqis_mlx.semantics.frame_schema import FrameInstance
 from bilqis_mlx.semantics.frame_compiler import (
-    FrameCompilerConfig, PositionKind, StreamingAST, compile_prefix,
+    CompiledFrameBatch, FrameCompilerConfig, PositionKind, StreamingAST,
+    compile_prefix,
 )
 
 
 POLICY_SCHEMA = "bilqis.mlx.refinement-selection/v1"
 SALIENCE_SCHEMA = "bilqis.mlx.refinement-source-salience/v1"
+PREFIX_INVENTORY_SCHEMA = "bilqis.mlx.refinement-prefix-inventory/v1"
 MAX_SELECTED_FRAMES = 32
 FRAMES_PER_QUOTA = 8
 MAX_PASSES = 2
@@ -76,6 +78,57 @@ def salience_evidence_digest(witness: SourceSalience) -> str:
         ensure_ascii=False, allow_nan=False,
     )
     return hashlib.sha256((payload + "\n").encode("utf-8")).hexdigest()
+
+
+def prefix_inventory_handle(source_id: str, p: int) -> str:
+    """Stable handle that the A05 source owner must grant for this prefix."""
+    if not _text(source_id) or type(p) is not int or p < 0:
+        _invalid()
+    return f"source:refinement-prefix:{source_id}:{p}"
+
+
+def prefix_inventory_evidence_digest(compiled: CompiledFrameBatch) -> str:
+    """Bind the complete p-local closure inventory, not a supplied subset."""
+    if type(compiled) is not CompiledFrameBatch:
+        _invalid()
+    compiled.__post_init__()
+    payload = json.dumps({
+        "schema": PREFIX_INVENTORY_SCHEMA,
+        "source_instance_id": compiled.source_instance_id,
+        "prediction_boundary": compiled.visible_end,
+        "semantic_release": compiled.semantic_release,
+        "compiled_cache_key": compiled.cache_key,
+        "context_digest": compiled.context_digest,
+    }, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256((payload + "\n").encode("utf-8")).hexdigest()
+
+
+def _verify_prefix_inventory(
+    compiled: CompiledFrameBatch, task: TaskScope,
+    frontier: SourceFrontier, policy: ContextPolicy,
+) -> None:
+    """A05's complete inventory needs its own source grant, not just atom grants."""
+    handle = prefix_inventory_handle(
+        compiled.source_instance_id, compiled.visible_end)
+    grant = next(
+        (item for item in frontier.grants if item.source_handle == handle),
+        None)
+    if (grant is None or grant.revoked
+            or grant.evidence_digest != prefix_inventory_evidence_digest(compiled)
+            or grant.semantic_release != task.semantic_release
+            or grant.principal_id != task.principal_id
+            or grant.tenant_id != task.tenant_id
+            or grant.source_regime not in policy.allowed_regimes
+            or task.purpose not in grant.permitted_purposes
+            or task.jurisdiction not in grant.permitted_jurisdictions
+            or task.scope not in grant.permitted_scopes
+            or grant.rights_epoch != frontier.rights_epoch
+            or grant.correction_generation != frontier.correction_generation
+            or grant.observed_at > task.observed_frontier
+            or grant.effective_from > task.effective_time
+            or (grant.effective_until is not None
+                and task.effective_time >= grant.effective_until)):
+        _invalid()
 
 
 @dataclass(frozen=True)
@@ -178,6 +231,7 @@ def select_prediction_refinements(
     if not visible:
         compiled = compile_prefix(
             source_ast, p, task_scope.semantic_release, compiler_config)
+        _verify_prefix_inventory(compiled, task_scope, source_frontier, policy)
         if any(item.kind is PositionKind.CLOSURE for item in compiled.positions):
             _invalid()
         return RefinementSelection(
@@ -190,6 +244,7 @@ def select_prediction_refinements(
         _invalid()
     compiled = compile_prefix(
         source_ast, p, task_scope.semantic_release, compiler_config)
+    _verify_prefix_inventory(compiled, task_scope, source_frontier, policy)
     closure_handles = tuple(
         item.frame_handle for item in compiled.positions
         if item.kind is PositionKind.CLOSURE)
