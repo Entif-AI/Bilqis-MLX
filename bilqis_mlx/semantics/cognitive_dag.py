@@ -605,4 +605,3 @@ def execute_dag(
                 node.node_id != program.output_node_id):
             return unresolved_answer(node.node_id, node.expected_output_type)
     return finish(results[program.output_node_id])
-
