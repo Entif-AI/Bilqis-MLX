@@ -43,3 +43,22 @@ canonical lesson/checker comparisons. Prime real-corpus A01/A08
 tests: **31/31 passed**. Independent EGM of the committed
 candidate remains **PENDING**, not PASS. No source/learning
 admission or Lane A integration is claimed here.
+
+## Final scoped independent dispositions, 2026-10-29
+
+**A08.1a #417: EGM PASS** at immutable `1f30656`, zero
+Blockers/Majors. Independent reviewer worker-15 ran the pinned
+real-corpus A01/A08 suites: 31/31 passed. The three equality
+seams, formal-family substitution and proposal-transfer attacks
+were checked.
+
+**A08.1b.1 #553: EGM PASS** at immutable `9afa1f9`, zero
+Blockers/Majors. Independent reviewer worker-11 ran the pinned
+real-corpus A01/A08 suites: 35/35 passed and verified source-only
+checker independence and attested relation contrast semantics.
+
+Both reviewed commits have been fast-forward integrated into
+`codex/bamf02-a-semantics` from reviewed unified `6b54600`.
+These are scoped leaf reviews only. A08.1b sibling constructors,
+A08.1/A08 parent integration, live A13 grants and actual learner
+retention remain separate gates.
