@@ -19,12 +19,15 @@ from bilqis_mlx.runtime.model_topology_v2 import (
 )
 from bilqis_mlx.semantics.atlas_features import AtlasFeatures, _factor_overflow
 from bilqis_mlx.semantics.context_eligibility import ApprovedContextProjection
-from bilqis_mlx.semantics.frame_schema import ConceptRef, FrameInstance
+from bilqis_mlx.semantics.frame_schema import (
+    ChildFrameRef, ConceptRef, FrameInstance,
+)
 
 
 WIDTH = ModelTopologySpecV2.width
 COMPOSITION_SCHEMA = "bilqis.mlx.factor-composition/v1"
 FEATURE_REQUEST_SCHEMA = "bilqis.mlx.factor-request/v1"
+CHILD_FRAME_REQUEST_SCHEMA = "bilqis.mlx.child-frame-constituent-request/v1"
 ACTIVE_BANK_SCHEMA = "bilqis.mlx.semantic-bank-view/v1"
 EMBEDDING_INPUT_SCHEMA = "bilqis.mlx.concept-batch/v1"
 INDEXED_LOGITS_SCHEMA = "bilqis.mlx.indexed-logits/v1"
@@ -67,6 +70,44 @@ def _source_coordinates(projection, frame_handle, member_handle):
     _invalid()
 
 
+def _child_source_coordinates(projection, frame_handle, member_handle):
+    if type(projection) is not ApprovedContextProjection:
+        _invalid()
+    envelope = next((
+        item for item in projection.envelopes
+        if item.frame_handle == frame_handle), None)
+    if envelope is None or type(envelope.frame) is not FrameInstance:
+        _invalid()
+    member = next((
+        item for item in envelope.members
+        if item.source_handle == member_handle), None)
+    if member is None:
+        _invalid()
+    for slot, binding in enumerate(envelope.frame.bindings):
+        if binding.key != member.key or binding.child_frame is None:
+            continue
+        child = binding.child_frame
+        child_envelopes = tuple(
+            item for item in projection.envelopes
+            if item.frame.occurrence_id == child.occurrence_id)
+        if len(child_envelopes) != 1:
+            _invalid()
+        child_envelope = child_envelopes[0]
+        actual = child_envelope.frame
+        if (actual.content_digest != child.content_digest
+                or actual.parent_occurrence_id
+                != envelope.frame.occurrence_id
+                or actual.source_instance_id
+                != envelope.frame.source_instance_id
+                or child_envelope.semantic_release
+                != envelope.semantic_release
+                or child_envelope.scope != envelope.scope):
+            _invalid()
+        return (child, binding.role_id, envelope.frame.frame_schema_id,
+                envelope.scope, slot, child_envelope.frame_handle)
+    _invalid()
+
+
 @dataclass(frozen=True)
 class FeatureRequest:
     """Target-free source coordinates for one visible atomic occurrence."""
@@ -101,6 +142,51 @@ class FeatureRequest:
                      member_handle: str) -> "FeatureRequest":
         coordinates = _source_coordinates(projection, frame_handle, member_handle)
         return cls(*coordinates, projection, frame_handle, member_handle)
+
+
+@dataclass(frozen=True)
+class ChildFrameRequest:
+    """An approved child closure, not a ConceptRef or a semantic ABI row."""
+
+    child: ChildFrameRef
+    role_id: str
+    schema_id: str
+    scope: str
+    local_slot: int
+    projection: ApprovedContextProjection
+    frame_handle: str
+    member_handle: str
+    child_frame_handle: str
+    schema_version: str = CHILD_FRAME_REQUEST_SCHEMA
+
+    def __post_init__(self) -> None:
+        if (self.schema_version != CHILD_FRAME_REQUEST_SCHEMA
+                or type(self.child) is not ChildFrameRef
+                or type(self.local_slot) is not int
+                or self.local_slot < 0
+                or not all(isinstance(item, str) and item for item in (
+                    self.role_id, self.schema_id, self.scope,
+                    self.frame_handle, self.member_handle,
+                    self.child_frame_handle))
+                or (self.child, self.role_id, self.schema_id, self.scope,
+                    self.local_slot, self.child_frame_handle)
+                != _child_source_coordinates(
+                    self.projection, self.frame_handle, self.member_handle)):
+            _invalid()
+
+    @classmethod
+    def from_context(
+        cls, projection: ApprovedContextProjection,
+        frame_handle: str, member_handle: str,
+    ) -> "ChildFrameRequest":
+        child, role, schema, scope, slot, child_handle = (
+            _child_source_coordinates(
+                projection, frame_handle, member_handle))
+        return cls(child, role, schema, scope, slot, projection,
+                   frame_handle, member_handle, child_handle)
+
+
+FrameConstituentRequest = FeatureRequest | ChildFrameRequest
 
 
 @dataclass(frozen=True)
@@ -192,10 +278,13 @@ def compose_factor_features(parameters: Mapping[str, mx.array], requests: tuple[
                              requests)
 
 
-def validate_frame_members(requests: tuple[FeatureRequest, ...]) -> FrameInstance:
-    """Require every concept-valued binding once, in canonical source order."""
+def validate_frame_members(
+    requests: tuple[FrameConstituentRequest, ...],
+) -> FrameInstance:
+    """Require every source binding once, without casting child frames to concepts."""
     if (type(requests) is not tuple or not requests or
-            any(type(item) is not FeatureRequest for item in requests)):
+            any(type(item) not in (FeatureRequest, ChildFrameRequest)
+                for item in requests)):
         _invalid()
     first = requests[0]
     frame = first.projection.frame(first.frame_handle)
@@ -204,8 +293,16 @@ def validate_frame_members(requests: tuple[FeatureRequest, ...]) -> FrameInstanc
             any((item.projection.digest, item.frame_handle) !=
                 (first.projection.digest, first.frame_handle) for item in requests)):
         _invalid()
-    for item in requests:
-        if item != FeatureRequest.from_context(item.projection, item.frame_handle, item.member_handle):
+    for item, binding in zip(requests, frame.bindings):
+        if (item.role_id != binding.role_id
+                or (type(item) is FeatureRequest)
+                != (binding.concept is not None)):
+            _invalid()
+        constructor = (
+            FeatureRequest if type(item) is FeatureRequest
+            else ChildFrameRequest)
+        if item != constructor.from_context(
+                item.projection, item.frame_handle, item.member_handle):
             _invalid()
     return frame
 
@@ -217,24 +314,94 @@ class FrameFactorTerms:
     schema128: mx.array
     mean_role128: mx.array
     type_role768: mx.array
-    requests: tuple[FeatureRequest, ...]
+    requests: tuple[FrameConstituentRequest, ...]
     feature_digest: str
     semantic_release: str
     schema_version: str = "bilqis.mlx.frame-factor-terms/v1"
 
 
-def frame_factor_terms(parameters: Mapping[str, mx.array], requests: tuple[FeatureRequest, ...],
-                       features: AtlasFeatures, *, extents: GenerationExtents) -> FrameFactorTerms:
-    """Gather raw shared 128-wide factors, including released overflow vectors."""
+def _child_factor_terms(parameters, request, features):
+    """Typed child-frame factors; there is no invented semantic or graph row."""
+    types = dict(features.type_map)
+    roles = dict(features.role_map)
+    schemas = dict(features.schema_map)
+    source = next((
+        envelope for envelope in request.projection.envelopes
+        if envelope.frame_handle == request.frame_handle), None)
+    if (request.role_id not in roles or request.schema_id not in schemas
+            or source is None
+            or features.semantic_release != source.semantic_release):
+        _invalid()
+    type_vectors = tuple(_factor_vector(
+        parameters["features.type"], types.get(type_id, 0),
+        _factor_overflow("type", type_id)
+        if types.get(type_id, 0) == 0 else None)
+        for type_id in request.child.type_ids)
+    type_mean = mx.mean(mx.stack(type_vectors), axis=0)
+    role_row = roles[request.role_id]
+    role = _factor_vector(
+        parameters["features.role"], role_row,
+        _factor_overflow("role", request.role_id)
+        if role_row == 0 and request.role_id != "UNKNOWN" else None)
+    schema_row = schemas[request.schema_id]
+    schema = _factor_vector(
+        parameters["features.schema"], schema_row,
+        _factor_overflow("schema", request.schema_id)
+        if schema_row == 0 and request.schema_id != "UNKNOWN" else None)
+    gates = mx.sigmoid(parameters["features.gates"])
+    type_role = (
+        gates[FactorGate.TYPE]
+        * (type_mean @ parameters["features.project_type"].T)
+        + gates[FactorGate.ROLE]
+        * (role @ parameters["features.project_role"].T))
+    return schema, role, type_role
+
+
+def child_frame_type_role(
+    parameters: Mapping[str, mx.array],
+    request: ChildFrameRequest,
+    features: AtlasFeatures,
+    *,
+    extents: GenerationExtents,
+) -> mx.array:
+    """Typed source factor added to a prior child closure, never an ABI lookup."""
+    if type(request) is not ChildFrameRequest:
+        _invalid()
+    request.__post_init__()
+    _validate_feature_parameters(parameters, features, extents)
+    return _child_factor_terms(parameters, request, features)[2]
+
+
+def frame_factor_terms(
+    parameters: Mapping[str, mx.array],
+    requests: tuple[FrameConstituentRequest, ...],
+    features: AtlasFeatures, *, extents: GenerationExtents,
+) -> FrameFactorTerms:
+    """Gather actual A06 factors for concepts and typed child closures."""
     validate_frame_members(requests)
-    composed = compose_factor_features(parameters, (requests,), features, extents=extents)
-    rows = tuple(features.features_for(item.concept, item.role_id, item.schema_id, item.scope)
-                 for item in requests)
-    schema = _factor_vector(parameters["features.schema"], rows[0].schema_row, rows[0].schema_overflow)
-    roles = mx.stack([_factor_vector(parameters["features.role"], row.role_row, row.role_overflow)
-                      for row in rows])
-    return FrameFactorTerms(schema, mx.mean(roles, axis=0), mx.mean(composed.type_role[0], axis=0),
-                            requests, features.digest, features.semantic_release)
+    _validate_feature_parameters(parameters, features, extents)
+    values = []
+    for request in requests:
+        if type(request) is ChildFrameRequest:
+            values.append(_child_factor_terms(parameters, request, features))
+            continue
+        row = features.features_for(
+            request.concept, request.role_id, request.schema_id,
+            request.scope)
+        terms = _released_factor_terms(parameters, row)
+        values.append((
+            _factor_vector(
+                parameters["features.schema"], row.schema_row,
+                row.schema_overflow),
+            _factor_vector(
+                parameters["features.role"], row.role_row,
+                row.role_overflow),
+            terms[FactorGate.TYPE] + terms[FactorGate.ROLE]))
+    return FrameFactorTerms(
+        values[0][0],
+        mx.mean(mx.stack([item[1] for item in values]), axis=0),
+        mx.mean(mx.stack([item[2] for item in values]), axis=0),
+        requests, features.digest, features.semantic_release)
 
 
 @dataclass(frozen=True)
