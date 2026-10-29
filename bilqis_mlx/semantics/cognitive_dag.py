@@ -3,7 +3,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+from itertools import product
 import re
+from threading import RLock
+from weakref import WeakKeyDictionary
 
 from ..errors import ErrorBus, SEMANTIC_FRAME
 from .cognitive_operators import (
@@ -27,7 +30,11 @@ MAX_DAG_NODES = 64
 MAX_DAG_DEPTH = 8
 MAX_DAG_DECISIONS = 64
 MAX_DAG_CANDIDATES = 64
+MAX_DAG_BINDING_CHECKS = 4096
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
+_MEMO_WITNESS_LOCK = RLock()
+_MEMO_WITNESSES: WeakKeyDictionary[PureOperationMemo, dict[str, str]] = (
+    WeakKeyDictionary())
 
 
 def _invalid(reason: str) -> None:
@@ -35,6 +42,26 @@ def _invalid(reason: str) -> None:
         SEMANTIC_FRAME.BINDING.INVALID,
         reason=reason, role_id="<dag>", span_start=0, span_end=0,
     )
+
+
+def _memo_get_verified(memo: PureOperationMemo, key: str) -> TypedValue | None:
+    """Only executor-computed values have an independent local witness."""
+    value = memo.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, TypedValue):
+        _invalid("BAMF_DAG_MEMO_VALUE_INVALID")
+    with _MEMO_WITNESS_LOCK:
+        expected = _MEMO_WITNESSES.get(memo, {}).get(key)
+    return value if expected == contract_digest(value) else None
+
+
+def _memo_put_verified(
+    memo: PureOperationMemo, key: str, value: TypedValue,
+) -> None:
+    memo.put(key, value)
+    with _MEMO_WITNESS_LOCK:
+        _MEMO_WITNESSES.setdefault(memo, {})[key] = contract_digest(value)
 
 
 def _name(value: object) -> bool:
@@ -406,6 +433,7 @@ def _prepare(goal: TaskGoal, binding: OperatorBinding):
     selected = []
     unresolved = None
     decisions = 0
+    binding_checks = 0
 
     def validate_ref(ref: DAGOperand) -> None:
         if ref.kind is RefKind.RESULT:
@@ -456,7 +484,6 @@ def _prepare(goal: TaskGoal, binding: OperatorBinding):
             _check_grant(
                 "source:operator:" + spec.operator_id,
                 operator_grant_digest(spec), binding)
-        resolved = list(node.operands)
         for index, ref in enumerate(node.operands):
             if ref is not None:
                 validate_ref(ref)
@@ -481,40 +508,56 @@ def _prepare(goal: TaskGoal, binding: OperatorBinding):
                  or hole_candidate_viable(spec, node)))
         if node.operator_id is not None and not matches:
             _invalid("BAMF_DAG_OPERATOR_SIGNATURE_INVALID")
-        ambiguous_slots = 0
-        for index, operand in enumerate(node.operands):
-            if operand is not None:
-                continue
-            legal = tuple(
-                choice for choice in node.candidate_operand_refs[index]
-                if any(
-                    choice.type_name == spec.signature.inputs[index]
-                    and applicable(
-                        spec, node.operands[:index] + (choice,)
-                        + node.operands[index + 1:]) is not False
-                    for spec in matches))
-            if len(matches) == 1 and len(legal) == 1:
-                resolved[index] = legal[0]
-            elif len(legal) > 1:
-                ambiguous_slots += 1
         if node.operator_id is None:
-            decisions += ambiguous_slots + (1 if len(matches) > 1 else 0)
+            decisions += (
+                (1 if len(matches) > 1 else 0)
+                + sum(1 for index, operand in enumerate(node.operands)
+                      if operand is None
+                      and len(node.candidate_operand_refs[index]) > 1))
             if decisions > budget.max_decisions:
                 _invalid("BAMF_DAG_DECISION_BUDGET_EXCEEDED")
+        if any(ref is None for ref in node.operands):
+            # Bounded *local* legality check, not speculative DAG/tree search.
+            # Never execute candidates or inspect evaluation gold.
+            viable = []
+            exhausted = False
+            for spec in matches:
+                groups = tuple(
+                    (ref,) if ref is not None else tuple(
+                        choice for choice in node.candidate_operand_refs[index]
+                        if choice.type_name == spec.signature.inputs[index])
+                    for index, ref in enumerate(node.operands))
+                for refs in product(*groups):
+                    if binding_checks >= MAX_DAG_BINDING_CHECKS:
+                        exhausted = True
+                        break
+                    binding_checks += 1
+                    if applicable(spec, refs) is not False:
+                        viable.append((spec, refs))
+                        if len(viable) > 1:
+                            break
+                if exhausted or len(viable) > 1:
+                    break
+            if not exhausted and len(viable) == 1:
+                spec, refs = viable[0]
+                prepared[node.node_id] = (spec, refs)
+                selected.append((
+                    node.node_id, spec.operator_id,
+                    tuple(ref.identity for ref in refs)))
+            else:
+                unresolved = unresolved or (
+                    node.node_id + ":" + node.expected_output_type)
+            continue
         if (len(matches) != 1
-                or any(operand is None for operand in resolved)
-                or (node.operator_id is None and len(matches) == 1
-                    and all(ref is not None for ref in resolved)
-                    and applicable(matches[0], tuple(resolved)) is False)):
+                or (node.operator_id is None
+                    and applicable(matches[0], node.operands) is False)):
             unresolved = unresolved or (
                 node.node_id + ":" + node.expected_output_type)
-        if (len(matches) == 1
-                and all(ref is not None for ref in resolved)
-                and (node.operator_id is not None
-                     or applicable(matches[0], tuple(resolved)) is not False)):
-            prepared[node.node_id] = (matches[0], tuple(resolved))
-            selected.append((node.node_id, matches[0].operator_id,
-                             tuple(ref.identity for ref in resolved)))
+            continue
+        prepared[node.node_id] = (matches[0], node.operands)
+        selected.append((
+            node.node_id, matches[0].operator_id,
+            tuple(ref.identity for ref in node.operands)))
     _authorize_inputs(tuple(visible.values()), binding)
     for spec, _ in prepared.values():
         _check_grant(
@@ -675,7 +718,7 @@ def execute_dag(
         cached = None
         if memo is not None:
             lookups += 1
-            cached = memo.get(key)
+            cached = _memo_get_verified(memo, key)
         if cached is None and computed >= budget.max_operations:
             return unresolved_answer(node.node_id, node.expected_output_type)
         if memo is None:
@@ -695,7 +738,7 @@ def execute_dag(
             value = _compute_after_authorization(spec, inputs, binding)
             if memo is not None and value.state in (
                     ValueState.VALUE, ValueState.NONE):
-                memo.put(key, value)
+                _memo_put_verified(memo, key, value)
         results[node.node_id] = value
         lineage[node.node_id] = key
         executed.append(node.node_id)

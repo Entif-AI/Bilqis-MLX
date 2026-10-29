@@ -183,6 +183,28 @@ class CognitiveDAGTests(TestCase):
         self.assertEqual((miss.receipt.operation_count,
                           miss.receipt.memo_hit_count), (1, 0))
 
+    def test_caller_poisoned_memo_never_becomes_source_truth(self):
+        binding, values = _case(("Number", 2), ("Number", 3))
+        program = _program(DAGNode(
+            "sum", "ADD", (_literal(values[0]), _literal(values[1])),
+            "Number", SCOPE))
+        memo = PureOperationMemo()
+        first = _execute(program, binding, memo=memo)
+        self.assertEqual(first.answer.value, 5)
+        key = next(iter(memo._values))
+        forged = TypedValue("Number", 7, RELEASE)
+        memo.put(key, forged)
+        replay = _execute(program, binding, memo=memo)
+        self.assertEqual(replay.answer.value, 5)
+        self.assertEqual((replay.receipt.operation_count,
+                          replay.receipt.memo_hit_count), (1, 0))
+        new_memo = PureOperationMemo()
+        new_memo.put(key, forged)
+        untrusted = _execute(program, binding, memo=new_memo)
+        self.assertEqual(untrusted.answer.value, 5)
+        self.assertEqual((untrusted.receipt.operation_count,
+                          untrusted.receipt.memo_hit_count), (1, 0))
+
     def test_source_attested_none_can_be_cached_without_becoming_zero(self):
         from bilqis_mlx.semantics.frame_schema import BindingState
         binding, values = _case(
@@ -347,6 +369,24 @@ class CognitiveDAGTests(TestCase):
         selected = _execute(_program(zero_fixed), binding)
         self.assertEqual(selected.answer.value, 4)
         self.assertEqual(selected.receipt.selected_bindings[0][1], "ADD")
+
+    def test_two_operand_holes_bind_unique_jointly_applicable_pair(self):
+        binding, values = _case(
+            ("Number", 4), ("Number", 5),
+            ("Number", 2), ("Number", 0))
+        hole = DAGNode(
+            "answer", None, (None, None), "Number", SCOPE,
+            candidate_operator_ids=("DIV",),
+            candidate_operand_refs=(
+                (_literal(values[0]), _literal(values[1])),
+                (_literal(values[2]), _literal(values[3]))))
+        result = _execute(_program(hole), binding)
+        self.assertEqual(result.answer.value, 2)
+        self.assertEqual(result.receipt.operation_count, 1)
+        self.assertEqual(result.receipt.selected_bindings, (
+            ("answer", "DIV", (
+                _literal(values[0]).identity,
+                _literal(values[2]).identity)),))
 
     def test_task_goal_limits_visible_sources_and_operator_choices(self):
         binding, values = _case(("Number", 2), ("Number", 3))
