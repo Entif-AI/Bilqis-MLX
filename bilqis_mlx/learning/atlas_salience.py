@@ -240,3 +240,25 @@ def rank_attention_options(options, evidence_by_id, snapshot) -> RankedOptions:
     ranked.sort(key=lambda item: item[:3])
     return RankedOptions(tuple(item[3] for item in ranked),
                          tuple((item[2], item[0]) for item in ranked), tuple(sorted(held)))
+
+
+def salience_priority_features(evidence, capability, scope, teacher_epoch_digest):
+    if (not isinstance(evidence, SalienceEvidence)
+            or evidence.scope.capability_id != capability or evidence.scope.scope != scope
+            or evidence.scope.teacher_epoch_digest != teacher_epoch_digest):
+        _invalid("BAMF_SALIENCE_TEACHER_CONTEXT_DRIFT")
+    basis = evidence.basis
+    verified = verify_salience_inputs(basis.facts, basis.policy, basis.snapshot, basis.context)
+    if derive_salience(verified) != evidence:
+        _invalid("BAMF_SALIENCE_TEACHER_EVIDENCE_DRIFT")
+    metrics = (evidence.impact, evidence.exigency, evidence.novelty)
+    return {"schema": "bilqis.c06.teacher-priority-features/v1",
+            "policy_digest": basis.policy.digest(),
+            "ordinals": [int(metric.ordinal) for metric in metrics],
+            "known": [metric.supervised_label is not None for metric in metrics]}
+
+
+
+def propose_attention_options(frontier, history):
+    from .salience_teacher import propose_attention_options as propose
+    return propose(frontier, history)
