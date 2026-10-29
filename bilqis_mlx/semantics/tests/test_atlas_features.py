@@ -114,6 +114,25 @@ def _features(snapshot=None, *, roles=("left", "right"),
 
 
 class AtlasFeatureTests(unittest.TestCase):
+    def test_unresolved_channel_uses_source_hold_not_implementation_debt(self):
+        base = _snapshot()
+        debt = CorpusCoverageRow(
+            "synthetic", "source", "candidate", "urn:concept:A",
+            "SOURCE_ELIGIBLE", "IMPLEMENTATION_UNCOVERED",
+            False, "IMPLEMENTATION_UNCOVERED",
+            "IMPLEMENTATION_UNCOVERED", "synthetic:owner")
+        source_held = replace(
+            debt, source_disposition="SOURCE_HELD",
+            implementation_status="NOT_APPLICABLE",
+            reason_code="NOTATION_COLLISION")
+        debt_row = _features(replace(base, withheld_rows=(debt,))).features_for(
+            "urn:concept:A", "left", "frame:urn:concept:A", "task:scope")
+        held_row = _features(replace(
+            base, withheld_rows=(source_held,))).features_for(
+            "urn:concept:A", "left", "frame:urn:concept:A", "task:scope")
+        self.assertEqual(debt_row.graph64[7], 0.0)
+        self.assertEqual(held_row.graph64[7], 1.0)
+
     def test_disconnected_one_type_literal_graph_and_reserved_rows(self):
         manifest = _features()
         self.assertEqual(dict(manifest.type_map)["UNKNOWN"], 0)
