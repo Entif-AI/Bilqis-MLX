@@ -121,3 +121,14 @@ role sets and source authority; a mismatched numeric role
 is rejected. Focused owner suite **11 passed, 0 failed,
 0 skipped**. Fresh immutable-head independent re-review
 is required before EGM PASS.
+
+## Additional full-issue EGM findings
+
+The separate review on #411 (comment 6486698167)
+found four further Majors. UNKNOWN and NONE now retain
+their reserved row identities without overflow vectors.
+The expanded tests prove a signed hash collision,
+full golden overflow vectors, and network isolation
+through feature lookup. The fourth finding concerns
+PR Development closing-link metadata. Focused owner
+suite: 12 passed, 0 failed. Full EGM is pending.

@@ -302,10 +302,10 @@ class AtlasFeatures:
                 for identifier in item.type_ids if types[identifier] == 0),
             role_id=role, role_row=roles[role],
             role_overflow=_factor_overflow("role", role)
-            if roles[role] == 0 else None,
+            if roles[role] == 0 and role != "UNKNOWN" else None,
             schema_id=schema, schema_row=schemas[schema],
             schema_overflow=_factor_overflow("schema", schema)
-            if schemas[schema] == 0 else None,
+            if schemas[schema] == 0 and schema != "UNKNOWN" else None,
             graph64=item.graph64, source_status=item.source_status,
         )
 

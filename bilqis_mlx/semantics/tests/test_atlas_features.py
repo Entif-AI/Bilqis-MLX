@@ -30,6 +30,18 @@ SYMBOLS = {
     "urn:concept:A": ("cogal.operator.AND", 11),
     "urn:concept:B": ("cogal.operator.OR", 12),
 }
+OVERFLOW_GOLDEN_HEX = {
+    "urn:type:0510": (
+        "2a72c33e6a305a921f3da649e5ae39aa5799016cab3d955ded8959c8b90bf525"
+        "765dfe780ca174d3b67aeba534dcba80f1675fb6e45a81c252f03ad30645bc21"
+        "7f4b512d65b663b2836534e8306ee1581eb580481cfc54f1faaf17fece959e1c"
+        "82df4834bf623d7b0bf5f7cbedac61a2e8dfd0149442d34b1b658a434c358837"),
+    "urn:type:0511": (
+        "4cca325d6afe74f661522049ac6de9b00878af32aed3d33c9592d613804ce8c9"
+        "27352e1d3dc965a410a6cd24364606498f63cdfe71d1b83db3738dde028a674f"
+        "cf55471c7313afde0c414b76b9349d67ce6c4f3ae4558d9d1e8ba69ef4f9f163"
+        "c9c5d98d267aa3a357d5d5b2618b927b7a5dac235a9e1881ea76d5d1215a2ad5"),
+}
 
 
 def _snapshot(
@@ -121,6 +133,16 @@ class AtlasFeatureTests(unittest.TestCase):
         self.assertEqual(row.semantic_id, "urn:concept:A")
         self.assertEqual(row.abi_index, 11)
         self.assertEqual(row.source_status, "ADMITTED_SOURCE")
+        unknown = manifest.features_for(
+            "urn:concept:A", "UNKNOWN", "UNKNOWN", "task:scope")
+        self.assertEqual((unknown.role_row, unknown.schema_row), (0, 0))
+        self.assertIsNone(unknown.role_overflow)
+        self.assertIsNone(unknown.schema_overflow)
+        none = manifest.features_for(
+            "urn:concept:A", "NONE", "NONE", "task:scope")
+        self.assertEqual((none.role_row, none.schema_row), (1, 1))
+        self.assertIsNone(none.role_overflow)
+        self.assertIsNone(none.schema_overflow)
 
     def test_graph_channels_signed_hash_and_role_swap_are_deterministic(self):
         snapshot = _snapshot(
@@ -149,6 +171,30 @@ class AtlasFeatureTests(unittest.TestCase):
         channel = 8 + (int.from_bytes(digest[:8], "little") % 56)
         sign = 1.0 if digest[8] & 1 == 0 else -1.0
         self.assertAlmostEqual(left.graph64[channel], sign)
+
+    def test_signed_hash_collision_accumulates_opposite_signs(self):
+        first = "urn:type:collision-016"
+        second = "urn:type:collision-020"
+        snapshot = _snapshot(
+            (("urn:concept:A", ("urn:type:Entity",)),
+             ("urn:concept:B", (first,)),
+             ("urn:concept:C", (second,))),
+            relations=(("urn:concept:A", BROADER, "urn:concept:B"),
+                       ("urn:concept:A", BROADER, "urn:concept:C")))
+        row = _features(snapshot).features_for(
+            "urn:concept:A", "left", "frame:urn:concept:A", "task:scope")
+        self.assertEqual(row.graph64[47], 0.0)
+        self.assertEqual(
+            hashlib.sha256(("bamf.graph.v2|out|" + BROADER + "|" + first)
+                           .encode()).hexdigest(),
+            "e7b8fd26bc3906642f1fa6f1153e0ec3e1672dc29b686b62bcb57e12df4718d3")
+        self.assertEqual(
+            hashlib.sha256(("bamf.graph.v2|out|" + BROADER + "|" + second)
+                           .encode()).hexdigest(),
+            "2fad1cd42f8e7e6d62c06766af742ede474d95864311c56be0b55dd8a0e2d6a7")
+        self.assertEqual(row.graph64[8:], (0.0,) * 56)
+        self.assertAlmostEqual(row.graph64[1], math.log(3) / math.log(1025))
+        self.assertAlmostEqual(row.graph64[2], math.log(3) / math.log(1025))
 
     def test_held_relations_and_unadmitted_targets_do_not_leak(self):
         snapshot = _snapshot(
@@ -235,6 +281,16 @@ class AtlasFeatureTests(unittest.TestCase):
         self.assertEqual(len(row.role_overflow), FACTOR_DIM)
         self.assertEqual(len(row.schema_overflow), FACTOR_DIM)
         self.assertEqual(len(row.type_overflow), 2)
+        self.assertEqual(
+            tuple(identifier for identifier, _ in row.type_overflow),
+            ("urn:type:0510", "urn:type:0511"))
+        for identifier, actual in row.type_overflow:
+            golden_bytes = bytes.fromhex(OVERFLOW_GOLDEN_HEX[identifier])
+            self.assertEqual(len(golden_bytes), FACTOR_DIM)
+            expected = tuple(
+                (byte / 127.5 - 1.0) / math.sqrt(FACTOR_DIM)
+                for byte in golden_bytes)
+            self.assertEqual(actual, expected)
         material = hashlib.sha256(
             b"bamf.factor.v2|role|role:0511|0").digest()
         self.assertAlmostEqual(
@@ -317,15 +373,14 @@ class AtlasFeatureTests(unittest.TestCase):
         snapshot = _snapshot()
         with patch.object(socket, "socket", side_effect=AssertionError("network")):
             manifest = _features(snapshot, roles=(), schemas=())
+            row = manifest.features_for(
+                snapshot.abi_entries[0].semantic_id,
+                "NONE", "NONE", "task:scope")
         self.assertEqual(len(manifest.concepts), len(snapshot.abi_entries))
         self.assertTrue(all(
             item.source_status == "ADMITTED_FORMAL_ABI_UNTYPED"
             for item in manifest.concepts))
-        self.assertEqual(
-            manifest.features_for(
-                snapshot.abi_entries[0].semantic_id,
-                "NONE", "NONE", "task:scope").graph64[7],
-            1.0)
+        self.assertEqual(row.graph64[7], 1.0)
 
     def test_actual_a03_micro_and_numeric_schema_authority_is_admitted(self):
         from bilqis_mlx.semantics.tests.test_frame_adapters import _snapshot
