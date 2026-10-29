@@ -151,6 +151,7 @@ def _verified_prior(prior: VocabularyPrior) -> FrozenAtlasSnapshot:
     except (KeyError, TypeError):
         _invalid("BAMF_VOCABULARY_PRIOR_ACTIVE_ID_UNKNOWN")
     if (active != tuple(sorted(set(active)))
+            or any(index > UINT32_MAX for index in active)
             or tuple(item.semantic_id for item in prior.features.concepts)
             != tuple(sorted(prior.active_semantic_ids, key=lambda name: name.encode("utf-8")))
             or _atlas_sha256(_atlas_bytes(list(active))) != prior.extents.active_semantic_digest
@@ -246,6 +247,7 @@ def _validate_bank_parent(parent: VocabularyBankParent) -> None:
     import mlx.core as mx
 
     if (type(parent) is not VocabularyBankParent
+            or type(parent.prior) is not VocabularyPrior
             or type(parent.run_seed) is not int or parent.run_seed < 0
             or type(parent.resource_budget_bytes) is not int
             or parent.resource_budget_bytes < 0
@@ -282,7 +284,10 @@ def apply_vocabulary_extension(
     import numpy as np
 
     _validate_bank_parent(parent)
-    if type(plan) is not VocabularyExtension:
+    if (type(plan) is not VocabularyExtension
+            or not isinstance(plan.allocations, tuple)
+            or any(type(item) is not VocabularyAllocation
+                   for item in plan.allocations)):
         _invalid("BAMF_VOCABULARY_PLAN_INVALID")
     snapshot = _verified_prior(parent.prior)
     expected = _plan_from_snapshot(
