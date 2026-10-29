@@ -1,6 +1,8 @@
 """Lease scope uses actual native proposals/packages, with no adoption executor."""
 from dataclasses import replace
+from types import SimpleNamespace
 import unittest
+from unittest.mock import Mock
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.atlas_admission import advance_atlas_frontier
@@ -24,9 +26,10 @@ class AtlasAdmissionPolicyTests(unittest.TestCase):
         self.addCleanup(self.native.doCleanups)
         self.addCleanup(self.native.fixture.doCleanups)
         self.lease = _lease()
+        fixture = self.native.fixture.fixture
         self.context = AtlasAdmissionContext(self.lease.run_identity, self.native.current,
             self.native.frontier, self.native.ledger, self.native.plan, self.native.checkpoint,
-            self.lease.source_approval, _REGISTRY)
+            self.lease.source_approval, _REGISTRY, fixture.registry, fixture.answers)
         self.envelope = self.envelope_for(self.native.proposal)
 
     def envelope_for(self, proposal):
@@ -81,3 +84,35 @@ class AtlasAdmissionPolicyTests(unittest.TestCase):
         with self.assertRaises(BilqisError):
             advance_atlas_frontier(replace(self.context, checkpoint=replace(self.native.checkpoint,
                 optimizer_step=1)), self.envelope, self.lease)
+
+    def test_unleased_staging_needs_no_live_implementation_registry(self):
+        context = replace(self.context, source_registry=None, answer_registry=None)
+        result = advance_atlas_frontier(context, self.envelope, None)
+        self.assertEqual(result.reason, 'EXPLICIT_ATLAS_LEASE_REQUIRED')
+        self.assertFalse(result.state_adopted)
+        with self.assertRaises(BilqisError) as caught:
+            advance_atlas_frontier(context, self.envelope, self.lease)
+        self.assertEqual(caught.exception.context['reason'],
+                         'BAMF_ATLAS_CURRENT_IMPLEMENTATION_REGISTRIES_REQUIRED')
+
+    def test_source_and_answer_code_drift_fail_before_any_adoption(self):
+        fixture = self.native.fixture.fixture
+        successor = self.native.staged.successor
+        binding = successor.source_bindings.bindings[0]
+        source = fixture.registry.require(binding.generator_id, binding.oracle_id)
+        answer = fixture.answers.require(successor.answer_modalities[0].kind)
+        changed_source = SimpleNamespace(require=Mock(return_value=replace(
+            source, descriptor=replace(source.descriptor, implementation_sha256='f' * 64))))
+        changed_answer = SimpleNamespace(require=Mock(return_value=replace(
+            answer, descriptor=replace(answer.descriptor, implementation_sha256='f' * 64))))
+        for overrides, reason in (
+            ({'source_registry': changed_source}, 'BAMF_ATLAS_SOURCE_IMPLEMENTATION_DRIFT'),
+            ({'answer_registry': changed_answer}, 'BAMF_ATLAS_ANSWER_IMPLEMENTATION_DRIFT'),
+        ):
+            with self.subTest(reason=reason), self.assertRaises(BilqisError) as caught:
+                advance_atlas_frontier(replace(self.context, **overrides),
+                                       self.envelope, self.lease)
+            self.assertEqual(caught.exception.context['reason'], reason)
+        self.assertEqual(advance_atlas_frontier(
+            self.context, self.envelope, self.lease).reason,
+            'ADOPTION_EXECUTOR_UNAVAILABLE')

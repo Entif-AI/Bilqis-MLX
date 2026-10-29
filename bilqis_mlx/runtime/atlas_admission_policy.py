@@ -14,7 +14,7 @@ from ..semantics.domains import contract_digest
 from .atlas_admission import (AtlasAdmissionLease, AtlasSourceApproval, LeaseRunIdentity,
                               _invalid, _name, _names, _sha)
 from .atlas_revalidation import SourceAuthorityRegistry
-from .jit_adoption import resolve_ready_candidate
+from .jit_adoption import resolve_ready_candidate, verify_current_implementations
 
 
 @dataclass(frozen=True)
@@ -40,11 +40,14 @@ class AtlasAdmissionContext:
     checkpoint: Checkpoint
     source_approval: AtlasSourceApproval
     registry: SourceAuthorityRegistry
+    source_registry: object | None = None
+    answer_registry: object | None = None
 
     def __post_init__(self):
         if (not isinstance(self.run_identity, LeaseRunIdentity) or not isinstance(self.checkpoint, Checkpoint)
                 or not isinstance(self.source_approval, AtlasSourceApproval)
-                or not isinstance(self.registry, SourceAuthorityRegistry)):
+                or not isinstance(self.registry, SourceAuthorityRegistry)
+                or (self.source_registry is None) != (self.answer_registry is None)):
             _invalid('BAMF_ATLAS_ADMISSION_CONTEXT_INVALID')
 
 
@@ -143,6 +146,17 @@ def advance_atlas_frontier(current, proposal, lease):
     if (len(proposal.staged.successor.transition.added_capabilities) > budget.max_capabilities
             or proposal.new_semantic_identities > budget.max_new_semantic_identities):
         return staged('DELTA_BUDGET', 'Split the qualified closure under its versioned per-delta admission budget.')
+    if current.source_registry is None or current.answer_registry is None:
+        _invalid('BAMF_ATLAS_CURRENT_IMPLEMENTATION_REGISTRIES_REQUIRED')
+    try:
+        verify_current_implementations(
+            proposal.staged.successor, current.source_registry, current.answer_registry)
+    except (ValueError, TypeError, AttributeError) as error:
+        reason = {
+            'JIT_ADOPTION_SOURCE_IMPLEMENTATION_DRIFT': 'BAMF_ATLAS_SOURCE_IMPLEMENTATION_DRIFT',
+            'JIT_ADOPTION_ANSWER_IMPLEMENTATION_DRIFT': 'BAMF_ATLAS_ANSWER_IMPLEMENTATION_DRIFT',
+        }.get(str(error), 'BAMF_ATLAS_IMPLEMENTATION_REVALIDATION_FAILED')
+        _invalid(reason)
     # #510 owns the concrete, freshly revalidated prepared-successor transaction.
     # No callback can turn disposable contract evidence into committed admission.
     return staged('ADOPTION_EXECUTOR_UNAVAILABLE', 'Keep this exact successor staged until the accepted run-owner and #510 adoption executor are available.')
