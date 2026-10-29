@@ -10,7 +10,7 @@ import json
 from collections import Counter
 from pathlib import Path
 
-ROOT=Path(__file__).resolve().parents[1]
+ROOT=Path(__file__).resolve().parents[2]
 TASKS=ROOT/'docs/tasks/bamf-0.2'
 WS=json.loads((TASKS/'workstack.json').read_text(encoding='utf-8'))
 INDEX=json.loads((TASKS/'children/registry.json').read_text(encoding='utf-8'))

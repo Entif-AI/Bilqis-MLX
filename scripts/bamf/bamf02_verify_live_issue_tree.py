@@ -6,7 +6,7 @@ import subprocess
 from collections import defaultdict
 from pathlib import Path
 
-TASKS=Path(__file__).resolve().parents[1]/'docs/tasks/bamf-0.2'
+TASKS=Path(__file__).resolve().parents[2]/'docs/tasks/bamf-0.2'
 REPO='repos/Entif-AI/Bilqis-MLX'
 
 def gh(path):

@@ -6,9 +6,9 @@ human-reviewed lane -> unified pull request. Direct main or sibling-lane merges
 are not part of the issue lifecycle.
 
 Modes:
-  python3 -B scripts/bamf02_bind_lane_branches.py --local
-  python3 -B scripts/bamf02_bind_lane_branches.py --publish
-  python3 -B scripts/bamf02_bind_lane_branches.py --verify
+  python3 -B scripts/bamf/bamf02_bind_lane_branches.py --local
+  python3 -B scripts/bamf/bamf02_bind_lane_branches.py --publish
+  python3 -B scripts/bamf/bamf02_bind_lane_branches.py --verify
 
 `--publish` is intentionally preservation-gated: for the 200 owner/child issue
 mirrors, the live GitHub body must equal either the current checked-in HEAD body
@@ -25,7 +25,7 @@ import subprocess
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 TASKS = ROOT / "docs/tasks/bamf-0.2"
 ISSUES = TASKS / "issues"
 CHILDREN = TASKS / "children"

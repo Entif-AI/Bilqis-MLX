@@ -137,6 +137,54 @@ This repository's authoritative working root is `~/Code/bilqis-mlx`. The old cod
 
 Authority: user's latest directives, protected `IPR-0220`, `ADR.md`, and approved issue #1. **This repository and its implementation are public.** Code, tests, architecture, ordinary implementation notes, and project handoffs may be published directly. Protected source material remains protected unless separately released; refer to it publicly only by opaque authority ID such as `IPR-0220`, without copying private-only text, credentials, attachments, or private repository URLs.
 
+### MANDATORY DEVELOPMENT STRUCTURE INTERRUPTION CONTRACT — 2026-10-29
+
+This is an always-on development rule. It applies when an agent **encounters** an
+existing violation during ordinary work as well as when the agent **causes** a
+violation. It is intentionally local and interrupt-driven, not a recursive debt
+sweep.
+
+1. **Code-file trigger and Work Stack preservation:** If a project-authored code
+   file is **>360 LoC**, immediately pause the work that led to the encounter.
+   Record **all current working context** for that task in **@Entif Work Stack**
+   before doing more feature work. The same interruption is mandatory if an edit
+   would cause a file to cross `>360 LoC`.
+2. **Mirrored file remediation:** Refactor the offending production file into
+   cohesive imported submodules until the original file is **<240 LoC**. Refactor
+   every companion test file along the same module boundaries until **each
+   companion test file is also <240 LoC**. Production/test ownership must mirror:
+   moving a method to `new_method.py` moves its focused tests to
+   `test_new_method.py`.
+3. **Branch and resume semantics:** The structural refactor remains on the
+   already-active feature branch because the encountered code is presumed germane
+   to that work. Commit the refactor as a normal coherent change. After the
+   offender satisfies the remediation target, mark the interruption complete in
+   Work Stack and resume the preserved original task.
+4. **Directory trigger:** If an agent encounters a directory containing **>=18
+   direct project-authored code files**, excluding directories themselves and
+   third-party/external libraries, preserve the current task in Work Stack and
+   reorganize **only that offending directory** into thoughtful subdirectories
+   until the original directory has **<=12 direct code files**.
+5. **No recursive cleanup cascade:** During that directory interruption, do not
+   recursively inspect or reorganize the newly created subdirectories merely to
+   hunt for more debt. Resume the preserved task. Handle another file/directory
+   offender only when it is encountered organically in later normal work. If an
+   individual oversized file is directly encountered while performing the current
+   repair, it becomes the next single interruption after the current one reaches a
+   committed, resumable state.
+6. **No governance laundering:** Never raise the `>360`, `<240`, `>=18`, or
+   `<=12` thresholds, weaken enforcement, add exclusions, expand/grandfather a
+   quality baseline, or rewrite governance merely to make a violation or CI result
+   disappear. Existing debt is evidence to remediate when encountered, not
+   permission to normalize more debt. Any change to this contract requires
+   explicit human ratification.
+7. **Mechanical enforcement is necessary but not sufficient:** commit hooks,
+   local checks, Codex/ChatGPT execution, and CI must enforce every deterministic
+   part of this contract that their surface can actually observe. A hook or CI job
+   cannot prove which files an agent read, so **encounter-time interruption remains
+   an agent duty even when repository-state checks are green**. Do not claim that
+   CI detected a read it could not observe.
+
 **MANDATORY AUTHORITY-CONVERGENCE CONTRACT:** Read [`docs/architecture/10_CURRICULUM_AUTHORITY_CONVERGENCE_20261019.md`](docs/architecture/10_CURRICULUM_AUTHORITY_CONVERGENCE_20261019.md) before changing curriculum semantics, execution profiles, source bindings, answer modalities, factory release identity, assessment scope, championship dependencies, New Ithkuil ingestion, telemetry inventory, or the factory migration plan. Preserve source roles: direct user decisions and current normative specs govern; the Ledger normalizes; the Curriculum Registry and Ithkuil corpus provide evidence/provenance; roadmaps and research seeds guide sequencing; historical releases remain compatibility evidence. Do not silently promote a historical experiment into current architecture or collapse a recorded conflict into implementation.
 
 **MANDATORY CURRICULUM FACTORY CONTRACT:** Read [`docs/specifications/0001_GENERATIVE_CURRICULUM_FACTORY.md`](docs/specifications/0001_GENERATIVE_CURRICULUM_FACTORY.md) before changing semantics, source construction, lessons, grades, assessment lifetime, admission, graduation, curriculum runtime, or documentation architecture. The factory is the only permitted production route from admitted semantics to an executable grade: **no factory release, no grade**. New grades must be declarative factory instances and must not add canonical `live_grade_*`, `grade_*_trainer`, grade-specific scheduler/evaluator/dashboard branches, or alternative runtime paths. Unit/contract tests belong beside their owning packages; top-level tests are integration/system only. SPEC-0001 requires the generic runtime cutover, A/B/C migration, routine/promotion developmental assessment, and synthetic Grade Z extensibility test. Fresh generalization is explicitly inactive until a future human-directed maturity policy re-admits it.

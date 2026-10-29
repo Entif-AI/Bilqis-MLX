@@ -12,9 +12,9 @@ from pathlib import Path
 import re
 
 if __package__:
-    from . import check_factory_closure as closure
+    from .quality import check_factory_closure as closure
 else:
-    import check_factory_closure as closure
+    from quality import check_factory_closure as closure
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]

@@ -125,16 +125,48 @@ def compare_to_baseline(findings, baseline):
             for _ in range(max(0,count-prior[key]))]
 
 
-def _staged_paths():
-    result = subprocess.run(['git','diff','--cached','--name-only','--diff-filter=ACMR','-z'],
-                            cwd=ROOT,check=True,stdout=subprocess.PIPE)
-    return [x.decode('utf-8') for x in result.stdout.split(b'\0') if x.endswith(b'.py')]
+def _records_from_name_status(text):
+    records=[]
+    for line in text.splitlines():
+        fields=line.split('\t')
+        if fields[0].startswith(('R','C')):
+            old,new=fields[1],fields[2]
+        else:
+            old=new=fields[1]
+        if new.endswith('.py'):
+            records.append((old,new))
+    return records
+
+
+def _staged_records():
+    result=subprocess.run(['git','diff','--cached','--name-status','-M','--diff-filter=ACMR'],
+                          cwd=ROOT,check=True,text=True,stdout=subprocess.PIPE)
+    return 'HEAD',_records_from_name_status(result.stdout)
+
+
+def _changed_records(base_ref):
+    merge_base=subprocess.check_output(['git','merge-base',base_ref,'HEAD'],cwd=ROOT,text=True).strip()
+    result=subprocess.run(['git','diff','--name-status','-M','--diff-filter=ACMR',merge_base,'HEAD'],
+                          cwd=ROOT,check=True,text=True,stdout=subprocess.PIPE)
+    return merge_base,_records_from_name_status(result.stdout)
+
+
+def _base_findings(merge_base,records):
+    found=[]
+    for old,new in records:
+        result=subprocess.run(['git','show',f'{merge_base}:{old}'],cwd=ROOT,text=True,
+                              capture_output=True)
+        if result.returncode==0:
+            found.extend(inspect_source(new,result.stdout))
+    return sorted(found,key=lambda f:(f.path,f.line,f.rule))
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('paths',nargs='*',help='Relative Python paths, default core packages')
-    parser.add_argument('--staged',action='store_true',help='Audit staged Python files only')
+    scope=parser.add_mutually_exclusive_group()
+    scope.add_argument('--staged',action='store_true',help='Audit staged Python files only')
+    scope.add_argument('--changed-from',help='Audit Python files changed from merge-base with REF')
     parser.add_argument('--json',action='store_true',help='Output machine-readable findings')
     parser.add_argument('--strict',action='store_true',help='Exit nonzero on any finding; explicit opt-in')
     parser.add_argument('--write-baseline',type=Path,
@@ -142,10 +174,19 @@ def main(argv=None):
     parser.add_argument('--check-baseline',type=Path,
                         help='Fail on new findings relative to an acknowledged baseline')
     args=parser.parse_args(argv)
-    paths=_paths(_staged_paths() if args.staged else args.paths)
+    changed=None
+    if args.staged:
+        merge_base,changed=_staged_records()
+        scoped=[new for _,new in changed]
+    elif args.changed_from:
+        merge_base,changed=_changed_records(args.changed_from)
+        scoped=[new for _,new in changed]
+    else:
+        scoped=args.paths
+    paths=_paths(scoped)
     found=audit(paths)
     if args.write_baseline:
-        if args.staged or args.paths:
+        if args.staged or args.changed_from or args.paths:
             raise ValueError('HYGIENE_BASELINE_REQUIRES_WHOLE_CURRENT_CORE')
         output={'schema':'bilqis.code-smell-baseline/v1',
                 'description':'Review findings only; not proven defects or frozen-source rewrite authority',
@@ -153,7 +194,10 @@ def main(argv=None):
         args.write_baseline.parent.mkdir(parents=True,exist_ok=True)
         args.write_baseline.write_text(json.dumps(output,indent=2)+'\n',encoding='utf-8')
     new=[]
-    if args.check_baseline:
+    if args.staged or args.changed_from:
+        prior={'fingerprints':[list(fingerprint(item)) for item in _base_findings(merge_base,changed)]}
+        new=compare_to_baseline(found,prior)
+    elif args.check_baseline:
         baseline=json.loads(args.check_baseline.read_text(encoding='utf-8'))
         if baseline.get('schema')!='bilqis.code-smell-baseline/v1':
             raise ValueError('HYGIENE_UNKNOWN_BASELINE_SCHEMA')
@@ -166,8 +210,9 @@ def main(argv=None):
         for item in found[:60]:
             print(f'{item.path}:{item.line} [{item.rule}] {item.context}')
         if len(found)>60:print(f'... {len(found)-60} further findings; use --json')
-        if args.check_baseline:
-            print(f'New baseline-relative findings: {len(new)}')
+        if args.check_baseline or args.staged or args.changed_from:
+            label='changed-file' if args.staged or args.changed_from else 'baseline-relative'
+            print(f'New {label} findings: {len(new)}')
             for path,rule,context in new[:30]:print(f'NEW {path} [{rule}] {context}')
     return 2 if new else 1 if args.strict and found else 0
 

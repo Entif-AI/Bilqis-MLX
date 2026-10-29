@@ -179,7 +179,7 @@ def _parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
-    root = Path(__file__).resolve().parents[1]
+    root = Path(__file__).resolve().parents[2]
     manifest_path = args.manifest
     if not manifest_path.is_absolute():
         manifest_path = root / manifest_path
