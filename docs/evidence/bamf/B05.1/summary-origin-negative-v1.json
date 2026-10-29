@@ -1,0 +1,9 @@
+{
+  "schema": "bilqis.mlx.depth-summary-negative/v1",
+  "fixture": "synthetic-future-labelled-summary",
+  "forged_origin_accepted": true,
+  "output_delta_l1": 3.296421766281128,
+  "source_feature_boundary_repaired": true,
+  "trusted_summary_capture": "UNQUALIFIED",
+  "actual_student_or_future_state_used": false
+}

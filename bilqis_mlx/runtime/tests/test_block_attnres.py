@@ -7,9 +7,13 @@ import mlx.core as mx
 import numpy as np
 
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.learning.frame_embeddings import FeatureRequest
+from bilqis_mlx.learning.tests.test_frame_embeddings import _context_for
+from bilqis_mlx.semantics.tests.test_atlas_features import _features as _atlas_features
+from bilqis_mlx.semantics.frame_schema import ConceptRef
 from bilqis_mlx.runtime.block_attnres import (
     DepthFrameFeatures, DepthParameterView, DepthSummary, PARAMETER_SHAPES,
-    _depth_components,
+    _DepthFeatureValues, _depth_components,
     depth_parameter_view, depth_select,
 )
 from bilqis_mlx.runtime.model_topology_v2 import (
@@ -55,10 +59,25 @@ def _params(boundary=1):
 
 
 def _features(boundary=1):
-    return DepthFrameFeatures(
+    return _DepthFeatureValues(
         _hidden([[0.1, 0.2, 0.3], [0.2, 0.1, 0.4]]),
         _hidden([[0.3, 0.1, 0.2], [0.2, 0.4, 0.1]]),
         RELEASE, EVIDENCE, boundary)
+
+
+def _released_features(boundary=1):
+    features = _atlas_features()
+    ref = ConceptRef("urn:concept:A", features.semantic_release, 11,
+                     ("urn:type:Entity",), "fixture:source")
+    requests = []
+    for batch in range(2):
+        row = []
+        for position in range(3):
+            context = _context_for(ref, f"fixture:depth:{batch}:{position}")
+            row.append(tuple(FeatureRequest.from_context(context, "frame:0", "source:member:"+role)
+                             for role in ("left", "right")))
+        requests.append(tuple(row))
+    return DepthFrameFeatures(tuple(requests), features, boundary)
 
 
 def _summaries(boundary=1):
@@ -111,6 +130,44 @@ class DepthSelectionTests(unittest.TestCase):
         self.params = _params()
         self.features = _features()
         self.sources = _summaries()
+
+    def test_public_depth_features_are_recomputed_from_actual_released_source_members(self):
+        released = _released_features()
+        features = released.features
+        extents = GenerationExtents(1, 1, "a"*64, "b"*64, features.digest)
+        full = {item.name: mx.zeros(item.shape, dtype=mx.float32)
+                for item in expected_bamf_shapes(ModelTopologySpecV2(), extents)}
+        for local, value in self.params.items():
+            path = {"gate_vector": "depth.gate.0.vector", "gate_bias": "depth.gate.0.bias"}.get(local, "depth."+local)
+            full[path] = value
+        for group in range(3):
+            full[f"depth.gate.{group}.bias"] = _array([math.log(1/9)])
+        full["features.role"] = full["features.role"].at[2, 0].add(1).at[3, 0].add(2)
+        full["features.project_role"] = full["features.project_role"].at[0, 0].add(1)
+        full["features.type"] = full["features.type"].at[2, 0].add(.25)
+        full["features.project_type"] = full["features.project_type"].at[1, 0].add(1)
+        full["features.gates"] = mx.full((4,), -2, dtype=mx.float32)
+        type_role = (mx.zeros((2, 3, 768), dtype=mx.float32).at[:, :, 0].add(1.5/(1+math.exp(2)))
+                     .at[:, :, 1].add(.25/(1+math.exp(2))))
+        for group in (1, 2, 3):
+            view = depth_parameter_view(full, spec=ModelTopologySpecV2(), extents=extents, boundary_group=group)
+            sources = _summaries(group)
+            actual = depth_select(self.current, sources, replace(released, boundary_group=group), view)
+            numerical = replace(self.features, frame_seed=sources[0].hidden, type_role=type_role, boundary_group=group)
+            expected, _, _ = _numpy_oracle(self.current, sources, numerical, self.params)
+            np.testing.assert_allclose(np.asarray(actual), expected, atol=3e-6, rtol=3e-5)
+            self.assertGreater(float(mx.sum(mx.abs(actual-self.current)).item()), 0)
+        def objective(parameters):
+            local = depth_parameter_view(parameters, spec=ModelTopologySpecV2(), extents=extents, boundary_group=1)
+            output = depth_select(self.current, self.sources, released, local)
+            return mx.sum(output*output)
+        gradients = mx.grad(objective)(full)
+        for path in ("features.type", "features.role", "features.project_type", "features.project_role", "features.gates"):
+            self.assertGreater(float(mx.sum(mx.abs(gradients[path])).item()), 0, path)
+        with self.assertRaises(BilqisError):
+            depth_select(self.current, self.sources, self.features, view)
+        with self.assertRaises(BilqisError):
+            replace(released, requests=((released.requests[0][0][:1],),))
 
     def test_literal_fp32_oracle_and_normalized_source_weights(self):
         actual, alpha, gate = _depth_components(
@@ -225,7 +282,7 @@ class DepthSelectionTests(unittest.TestCase):
 
     def test_depth_view_borrows_exact_shared_and_per_boundary_b01_tensors(self):
         spec = ModelTopologySpecV2()
-        extents = GenerationExtents(1, 1, "a" * 64, "b" * 64, "c" * 64)
+        extents = GenerationExtents(1, 1, "a" * 64, "b" * 64, _atlas_features().digest)
         ledger = expected_bamf_shapes(spec, extents)
         parameters = {
             item.name: mx.zeros(item.shape, dtype=mx.float32)
@@ -249,7 +306,7 @@ class DepthSelectionTests(unittest.TestCase):
             self.assertNotIn("features.norm", view)
             self.assertNotIn("blocks.0.query", view)
             output = depth_select(
-                self.current, _summaries(group), _features(group), view)
+                self.current, _summaries(group), _released_features(group), view)
             np.testing.assert_array_equal(
                 np.asarray(output), np.asarray(self.current))
 
@@ -298,6 +355,8 @@ class DepthSelectionTests(unittest.TestCase):
                 self.current, self.sources, self.features, view)
         with self.assertRaises(TypeError):
             view._tensors["query"] = view["key"]
+        with self.assertRaises(BilqisError):
+            replace(view, _tensors={**view, "query": view["key"]})
 
     def test_nonfinite_source_or_parameter_fails_before_residual_output(self):
         current_data = np.asarray(self.current).copy()
