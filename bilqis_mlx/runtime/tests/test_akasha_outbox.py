@@ -29,6 +29,9 @@ from bilqis_mlx.semantics.cognitive_dependencies import (
 
 
 PAYLOADS = {
+    **{kind: {"owner_source_event_id": "fixture:event", "producer_id": "fixture:producer",
+              "artifact_schema": "fixture:opaque/v1", "artifact_sha256": "a" * 64, "verification_mode": "DISPOSABLE_CONTRACT"}
+       for kind in (AkashaEventKind.BANK_ALLOCATION, AkashaEventKind.PLASTICITY_EPOCH, AkashaEventKind.PACKAGE_EXPORT)},
     **{kind: {"native_event_id": "b" * 64, "native_event_digest": "a" * 64,
               "run_id": "fixture:run", "generation": 1, "native_event_type": {AkashaEventKind.TEACHER_VISIT: "SCHOOL_TEACHER_VISIT_COMMITTED",
                   AkashaEventKind.FACTORY_RELEASE: "SCHOOL_FACTORY_RELEASE_MIGRATED",

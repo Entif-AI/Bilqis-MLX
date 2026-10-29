@@ -14,7 +14,7 @@ import re
 import sqlite3
 
 from ..errors import ErrorBus, SCHOOL
-from .akasha_outbox import AkashaEventKind
+from .akasha_outbox import AkashaEventKind, OWNER_FIXTURE_KINDS
 from .bamf_projection import BamfProjectionEvent, ProjectionDomainContract
 
 
@@ -66,6 +66,8 @@ class PublicEvent:
     schema_version: str = PUBLIC_EVENT_SCHEMA
 
     def __post_init__(self) -> None:
+        if self.kind in OWNER_FIXTURE_KINDS:
+            _invalid("BAMF_C10_FIXTURE_PUBLIC_SCHEMA_REQUIRED")
         if (not isinstance(self.kind, AkashaEventKind)
                 or not all(_sha(value) for value in (
                     self.event_id, self.subject_digest,

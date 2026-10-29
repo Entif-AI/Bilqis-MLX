@@ -53,6 +53,9 @@ def _time(value: object) -> bool:
 
 
 class AkashaEventKind(str, Enum):
+    BANK_ALLOCATION = "BANK_ALLOCATION"
+    PLASTICITY_EPOCH = "PLASTICITY_EPOCH"
+    PACKAGE_EXPORT = "PACKAGE_EXPORT"
     TEACHER_VISIT = "TEACHER_VISIT"
     FACTORY_RELEASE = "FACTORY_RELEASE"
     CAPABILITY_OUTCOME = "CAPABILITY_OUTCOME"
@@ -74,7 +77,12 @@ NATIVE_EVENT_KINDS = {
 }
 
 
+OWNER_FIXTURE_KINDS = (AkashaEventKind.BANK_ALLOCATION, AkashaEventKind.PLASTICITY_EPOCH, AkashaEventKind.PACKAGE_EXPORT)
+
+
 _REQUIRED_FIELDS = {
+    **{kind: frozenset({"owner_source_event_id", "producer_id", "artifact_schema", "artifact_sha256", "verification_mode"})
+       for kind in OWNER_FIXTURE_KINDS},
     **{kind: frozenset({"native_event_id", "native_event_digest", "run_id", "generation", "native_event_type"})
        for kind in (AkashaEventKind.TEACHER_VISIT, AkashaEventKind.FACTORY_RELEASE, AkashaEventKind.CAPABILITY_OUTCOME)},
     AkashaEventKind.SOURCE_CORRECTION: frozenset({
@@ -95,7 +103,7 @@ _REQUIRED_FIELDS = {
         "checkpoint_digest", "generation_sha256", "manifest_digest"}),
 }
 _DIGEST_FIELDS = frozenset({
-    "native_event_digest",
+    "native_event_digest", "artifact_sha256",
     "old_digest", "new_digest", "retained_generation_sha256",
     "generation_sha256", "assessment_receipt_sha256",
     "eligibility_digest", "checkpoint_digest", "manifest_digest",
@@ -123,6 +131,10 @@ def _payload_for(kind: AkashaEventKind, payload_json: str) -> dict:
                 and (not isinstance(value, list)
                      or not value
                      or any(not _name(item) for item in value))):
+            _invalid("BAMF_C10_PROJECTION_FIELDS_INVALID")
+    if kind in OWNER_FIXTURE_KINDS:
+        if (payload['verification_mode'] != 'DISPOSABLE_CONTRACT'
+                or any(not _name(payload[key]) for key in ('owner_source_event_id', 'producer_id', 'artifact_schema'))):
             _invalid("BAMF_C10_PROJECTION_FIELDS_INVALID")
     if kind in NATIVE_EVENT_KINDS.values():
         if (type(payload['generation']) is not int or payload['generation'] < 0
@@ -264,7 +276,8 @@ CREATE TABLE IF NOT EXISTS akasha_events (
     event_id TEXT NOT NULL UNIQUE,
     payload_digest TEXT NOT NULL,
     envelope_json TEXT NOT NULL,
-    projection_binding_json TEXT
+    projection_binding_json TEXT,
+    owner_source_key TEXT
 );
 CREATE TABLE IF NOT EXISTS akasha_delivery_attempts (
     seq INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -299,6 +312,9 @@ def _open_outbox(path: Path) -> sqlite3.Connection:
     connection.executescript(_SCHEMA_SQL)
     if "projection_binding_json" not in {row[1] for row in connection.execute("PRAGMA table_info(akasha_events)")}:
         connection.execute("ALTER TABLE akasha_events ADD COLUMN projection_binding_json TEXT")
+    if "owner_source_key" not in {row[1] for row in connection.execute("PRAGMA table_info(akasha_events)")}:
+        connection.execute("ALTER TABLE akasha_events ADD COLUMN owner_source_key TEXT")
+    connection.execute("CREATE UNIQUE INDEX IF NOT EXISTS akasha_owner_source_identity ON akasha_events(owner_source_key)")
     return connection
 
 
@@ -316,6 +332,10 @@ def append_outbox(path: Path, event: AkashaEvent, *, projection_binding=None) ->
     if not isinstance(event, AkashaEvent):
         _invalid("BAMF_C10_EVENT_ARGUMENT_INVALID")
     event.validate()
+    owner_source_key = None
+    if event.kind in OWNER_FIXTURE_KINDS:
+        fields = json.loads(event.payload_json)
+        owner_source_key = _digest(_canonical([event.kind.value, fields["producer_id"], fields["owner_source_event_id"]]).encode())
     binding_json = None
     if projection_binding is not None:
         from .bamf_projection import BamfProjectionEvent
@@ -325,6 +345,10 @@ def append_outbox(path: Path, event: AkashaEvent, *, projection_binding=None) ->
         **asdict(event), "kind": event.kind.value})
     with _outbox_connection(path) as connection:
         connection.execute("BEGIN IMMEDIATE")
+        if owner_source_key is not None:
+            source_prior = connection.execute("SELECT event_id FROM akasha_events WHERE owner_source_key = ?", (owner_source_key,)).fetchone()
+            if source_prior is not None and source_prior[0] != event.event_id:
+                _invalid("BAMF_C10_OWNER_SOURCE_EVENT_CONFLICT")
         prior = connection.execute(
             "SELECT payload_digest, envelope_json, projection_binding_json FROM akasha_events "
             "WHERE event_id = ?", (event.event_id,)).fetchone()
@@ -333,9 +357,9 @@ def append_outbox(path: Path, event: AkashaEvent, *, projection_binding=None) ->
                 _invalid("BAMF_C10_EVENT_ID_CONFLICT")
             return False
         connection.execute(
-            "INSERT INTO akasha_events (event_id, payload_digest, envelope_json, projection_binding_json) "
-            "VALUES (?, ?, ?, ?)",
-            (event.event_id, event.payload_digest, envelope, binding_json))
+            "INSERT INTO akasha_events (event_id, payload_digest, envelope_json, projection_binding_json, owner_source_key) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (event.event_id, event.payload_digest, envelope, binding_json, owner_source_key))
         return True
 
 
