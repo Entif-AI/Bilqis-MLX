@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 import re
 from typing import Callable
 
-from ..errors import ErrorBus, SCHOOL
+from ..errors import BilqisError, ErrorBus, SCHOOL
 from ..semantics.cognitive_dag import (
     DAGBudget, DAGReceipt, TaskGoal, execute_dag,
 )
@@ -21,11 +21,11 @@ from .operator_registry import (
 
 GENERATION_BINDING_SCHEMA = "bilqis.c04.generation-binding/v1"
 QUALIFIED_COMPOSITION_SCHEMA = "bilqis.c04.qualified-composition/v1"
-SOLVE_BUDGET_SCHEMA = "bilqis.c04.solve-budget/v1"
-SOLVE_CONTEXT_SCHEMA = "bilqis.c04.solve-context/v1"
+SOLVE_BUDGET_SCHEMA = "bilqis.c04.solve-budget/v2"
+SOLVE_CONTEXT_SCHEMA = "bilqis.c04.solve-context/v2"
 NEURAL_REQUEST_SCHEMA = "bilqis.c04.neural-request/v1"
 NEURAL_PROPOSAL_SCHEMA = "bilqis.c04.neural-proposal/v1"
-CAPABILITY_RESULT_SCHEMA = "bilqis.c04.capability-result/v1"
+CAPABILITY_RESULT_SCHEMA = "bilqis.c04.capability-result/v2"
 MAX_CACHED_COMPOSITIONS = 16
 MAX_NEURAL_CALLS = 1
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
@@ -82,6 +82,7 @@ class SolveBudget:
     dag_budget: DAGBudget
     max_neural_calls: int = MAX_NEURAL_CALLS
     max_cached_candidates: int = MAX_CACHED_COMPOSITIONS
+    max_local_refinements: int = 0
     schema_version: str = SOLVE_BUDGET_SCHEMA
 
     def __post_init__(self) -> None:
@@ -91,6 +92,9 @@ class SolveBudget:
                 or type(self.max_cached_candidates) is not int
                 or not 0 <= self.max_cached_candidates
                 <= MAX_CACHED_COMPOSITIONS
+                or type(self.max_local_refinements) is not int
+                or not 0 <= self.max_local_refinements
+                <= self.dag_budget.max_decisions
                 or self.schema_version != SOLVE_BUDGET_SCHEMA):
             _invalid("BAMF_C04_SOLVE_BUDGET_INVALID")
 
@@ -142,6 +146,8 @@ class SolveContext:
     qualified_compositions: tuple[QualifiedComposition, ...] = ()
     qualification_verifier: Callable[[QualifiedComposition], bool] | None = None
     neural_proposer: Callable[[NeuralRequest], NeuralProposal | None] | None = None
+    local_refiner: Callable[[NeuralRequest, int], NeuralProposal | None] | None = None
+    deterministic_fallback: QualifiedComposition | None = None
     memo: PureOperationMemo | None = None
     route_registry: RouteRegistry = field(default_factory=default_route_registry)
     schema_version: str = SOLVE_CONTEXT_SCHEMA
@@ -155,6 +161,11 @@ class SolveContext:
                     and not callable(self.qualification_verifier))
                 or (self.neural_proposer is not None
                     and not callable(self.neural_proposer))
+                or (self.local_refiner is not None
+                    and not callable(self.local_refiner))
+                or (self.deterministic_fallback is not None
+                    and not isinstance(self.deterministic_fallback,
+                                       QualifiedComposition))
                 or (self.memo is not None
                     and not isinstance(self.memo, PureOperationMemo))
                 or not isinstance(self.route_registry, RouteRegistry)
@@ -171,10 +182,14 @@ class CapabilityResult:
     generation_digest: str
     source_binding_digest: str
     score: float | None
+    local_refinement_calls: int = 0
+    fallback_reason: str | None = None
     schema_version: str = CAPABILITY_RESULT_SCHEMA
 
     def __post_init__(self) -> None:
-        exact = self.route in (RouteKind.EXACT, RouteKind.CACHED_COMPOSITION)
+        exact = self.route in (
+            RouteKind.EXACT, RouteKind.CACHED_COMPOSITION,
+            RouteKind.DETERMINISTIC_FALLBACK)
         if (not isinstance(self.answer, TypedValue)
                 or not isinstance(self.route, RouteKind)
                 or not isinstance(self.dag_receipts, tuple)
@@ -183,10 +198,16 @@ class CapabilityResult:
                        for item in self.dag_receipts)
                 or type(self.neural_calls) is not int
                 or self.neural_calls not in (0, MAX_NEURAL_CALLS)
+                or type(self.local_refinement_calls) is not int
+                or self.local_refinement_calls < 0
+                or (self.fallback_reason is not None
+                    and not _name(self.fallback_reason))
                 or not _sha(self.generation_digest)
                 or not _sha(self.source_binding_digest)
                 or (exact and (self.score != 1.0
-                               or self.neural_calls != 0
+                               or (self.route is not
+                                   RouteKind.DETERMINISTIC_FALLBACK
+                                   and self.neural_calls != 0)
                                or self.answer.state is not ValueState.VALUE))
                 or (self.route is RouteKind.NEURAL_COMPOSITION
                     and (self.neural_calls != 1
@@ -240,12 +261,51 @@ def solve_task(
         _invalid("BAMF_C04_CACHED_CANDIDATE_BUDGET_EXCEEDED")
     receipts = []
 
+    local_refinement_calls = 0
+    fallback_reason = None
+
     def result(answer: TypedValue, route: RouteKind, calls: int) -> CapabilityResult:
         return CapabilityResult(
             answer, route, tuple(receipts), calls,
             generation.generation_digest, source_digest,
             1.0 if route in (
-                RouteKind.EXACT, RouteKind.CACHED_COMPOSITION) else None)
+                RouteKind.EXACT, RouteKind.CACHED_COMPOSITION,
+                RouteKind.DETERMINISTIC_FALLBACK) else None,
+            local_refinement_calls, fallback_reason)
+
+    def qualified(cached: QualifiedComposition) -> bool:
+        return (
+            cached.source_binding_digest == source_digest
+            and cached.rights_epoch == binding.frontier.rights_epoch
+            and cached.correction_generation
+            == binding.frontier.correction_generation
+            and context.qualification_verifier is not None
+            and context.qualification_verifier(cached) is True
+            and _goal_allowed(cached.goal, task, budget))
+
+    def execute_proposal(
+        proposal: NeuralProposal | None, request: NeuralRequest,
+    ):
+        if proposal is None:
+            return None, "BAMF_C04_NEURAL_NO_PROPOSAL"
+        if not isinstance(proposal, NeuralProposal):
+            return None, "BAMF_C04_NEURAL_PROPOSAL_INVALID"
+        if (proposal.source_binding_digest != source_digest
+                or proposal.generation_digest
+                != generation.generation_digest
+                or proposal.unresolved_signature
+                != request.unresolved_signature
+                or not _goal_allowed(proposal.goal, task, budget)):
+            return None, "BAMF_C04_NEURAL_PROPOSAL_SCOPE_DRIFT"
+        try:
+            evaluated = execute_dag(
+                proposal.goal, binding, memo=context.memo)
+        except BilqisError:
+            return None, "BAMF_C04_NEURAL_DAG_REJECTED"
+        receipts.append(evaluated.receipt)
+        if evaluated.answer.state is not ValueState.VALUE:
+            return evaluated, "BAMF_C04_NEURAL_UNRESOLVED"
+        return evaluated, None
 
     ordered_cache = tuple(sorted(
         context.qualified_compositions,
@@ -266,15 +326,14 @@ def solve_task(
                 exact.receipt.unresolved_signature or "UNRESOLVED")
         elif route.kind is RouteKind.CACHED_COMPOSITION:
             for cached in ordered_cache:
-                if (cached.source_binding_digest != source_digest
-                        or cached.rights_epoch != binding.frontier.rights_epoch
-                        or cached.correction_generation
-                        != binding.frontier.correction_generation
-                        or context.qualification_verifier is None
-                        or context.qualification_verifier(cached) is not True
-                        or not _goal_allowed(cached.goal, task, budget)):
+                if not qualified(cached):
                     continue
-                solved = execute_dag(cached.goal, binding, memo=context.memo)
+                try:
+                    solved = execute_dag(
+                        cached.goal, binding, memo=context.memo)
+                except BilqisError:
+                    fallback_reason = "BAMF_C04_CACHED_DAG_REJECTED"
+                    continue
                 receipts.append(solved.receipt)
                 if solved.answer.state is ValueState.VALUE:
                     return result(
@@ -287,24 +346,42 @@ def solve_task(
                 source_digest, generation.generation_digest,
                 task.allowed_operator_ids)
             neural_calls = 1
-            proposal = context.neural_proposer(request)
-            if proposal is None:
-                continue
-            if not isinstance(proposal, NeuralProposal):
-                _invalid("BAMF_C04_NEURAL_PROPOSAL_INVALID")
-            if (proposal.source_binding_digest != source_digest
-                    or proposal.generation_digest
-                    != generation.generation_digest
-                    or proposal.unresolved_signature
-                    != request.unresolved_signature
-                    or not _goal_allowed(proposal.goal, task, budget)):
-                _invalid("BAMF_C04_NEURAL_PROPOSAL_SCOPE_DRIFT")
-            neural = execute_dag(proposal.goal, binding, memo=context.memo)
-            receipts.append(neural.receipt)
-            if neural.answer.state is ValueState.VALUE:
+            neural, fallback_reason = execute_proposal(
+                context.neural_proposer(request), request)
+            if neural is not None and neural.answer.state is ValueState.VALUE:
                 return result(
                     neural.answer, RouteKind.NEURAL_COMPOSITION, neural_calls)
-            unresolved_answer = neural.answer
+            if neural is not None:
+                unresolved_answer = neural.answer
+            if context.local_refiner is not None:
+                for attempt in range(1, budget.max_local_refinements + 1):
+                    local_refinement_calls += 1
+                    refined, reason = execute_proposal(
+                        context.local_refiner(request, attempt), request)
+                    if refined is not None:
+                        unresolved_answer = refined.answer
+                    if refined is not None and (
+                            refined.answer.state is ValueState.VALUE):
+                        fallback_reason = None
+                        return result(
+                            refined.answer, RouteKind.NEURAL_COMPOSITION,
+                            neural_calls)
+                    fallback_reason = reason
+        elif route.kind is RouteKind.DETERMINISTIC_FALLBACK:
+            cached = context.deterministic_fallback
+            if cached is None or not qualified(cached):
+                continue
+            try:
+                fallback = execute_dag(
+                    cached.goal, binding, memo=context.memo)
+            except BilqisError:
+                fallback_reason = "BAMF_C04_FALLBACK_DAG_REJECTED"
+                continue
+            receipts.append(fallback.receipt)
+            if fallback.answer.state is ValueState.VALUE:
+                return result(
+                    fallback.answer, RouteKind.DETERMINISTIC_FALLBACK,
+                    neural_calls)
         else:
             return result(
                 unresolved_answer, RouteKind.UNRESOLVED, neural_calls)
