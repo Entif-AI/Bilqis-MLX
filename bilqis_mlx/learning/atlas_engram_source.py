@@ -23,11 +23,12 @@ from .atlas_engram import (
 )
 
 APPROVED_MOTIF_SCHEMA = "bilqis.motif-approved-candidate/v1"
+SOURCE_AUTHORITY_FIELDS = 2  # Source graph and registered adapter identity.
 
 
 @dataclass(frozen=True)
 class ApprovedMotifCandidate:
-    """A13-approved source view bound to one immutable candidate plan."""
+    """Experimental projection/plan binding, not a source-admission credential."""
     approved_context_digest: str
     candidate: CandidateMotifView
     schema_version: str = APPROVED_MOTIF_SCHEMA
@@ -72,7 +73,7 @@ def _probe_approved_motifs(
     authorities = {} if source_authorities is None else source_authorities
     if (not isinstance(authorities, Mapping)
             or any(not isinstance(key, str) or not isinstance(value, tuple)
-                   or len(value) != 2 for key, value in authorities.items())
+                   or len(value) != SOURCE_AUTHORITY_FIELDS for key, value in authorities.items())
             or set(authorities) - {item.frame_handle for item in envelopes}):
         _invalid("BAMF_MOTIF_SOURCE_AUTHORITY_INVALID")
     projection = project_context(envelopes, task, frontier, policy)

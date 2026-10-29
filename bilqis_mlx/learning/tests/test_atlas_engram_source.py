@@ -1,4 +1,4 @@
-"""B07 source-qualified motif planning against real A03/A13 records."""
+"""Private B07 protocol probe with caller-supplied native A03/A13 record types."""
 from dataclasses import replace
 from unittest import TestCase
 
@@ -23,7 +23,7 @@ from bilqis_mlx.semantics.frame_schema import (
 
 RELEASE = "a" * 64
 
-def approved_source_case(*, forged_type: bool = False):
+def protocol_source_case(*, forged_type: bool = False):
     concept = ConceptRef(
         "formal:entity.0", RELEASE, 0,
         ("Number",) if forged_type else ("Entity",), "source:fixture:entity.0")
@@ -83,8 +83,8 @@ def approved_source_case(*, forged_type: bool = False):
 
 
 class ApprovedMotifSourceTests(TestCase):
-    def test_real_a03_frame_and_a13_grants_gate_motif_allocation(self):
-        envelopes, task, frontier, policy, schemas, snapshot = approved_source_case()
+    def test_native_record_protocol_proposes_without_admission_authority(self):
+        envelopes, task, frontier, policy, schemas, snapshot = protocol_source_case()
         result = _probe_approved_motifs(
             envelopes, task, frontier, policy, schemas, snapshot,
             MotifManifest(RELEASE), MotifBudget(2))
@@ -95,7 +95,7 @@ class ApprovedMotifSourceTests(TestCase):
         self.assertEqual(result.candidate.plan.allocated[0].key.kind, "STRUCTURAL")
 
     def test_revoked_source_member_does_not_allocate_motif(self):
-        envelopes, task, frontier, policy, schemas, snapshot = approved_source_case()
+        envelopes, task, frontier, policy, schemas, snapshot = protocol_source_case()
         revoked = replace(frontier, grants=tuple(
             replace(grant, revoked=True)
             if grant.source_handle == "source:member:actor" else grant
@@ -107,7 +107,7 @@ class ApprovedMotifSourceTests(TestCase):
         self.assertIn("BAMF_CONTEXT_SOURCE_REVOKED", result.reason_codes)
 
     def test_source_owned_types_reject_forged_but_role_allowed_type(self):
-        envelopes, task, frontier, policy, schemas, snapshot = approved_source_case(
+        envelopes, task, frontier, policy, schemas, snapshot = protocol_source_case(
             forged_type=True)
         with self.assertRaises(BilqisError) as caught:
             _probe_approved_motifs(
@@ -117,8 +117,8 @@ class ApprovedMotifSourceTests(TestCase):
             caught.exception.context["reason"],
             "FRAME_CONCEPT_TYPE_AUTHORITY_MISMATCH")
 
-    def test_source_qualified_but_inactive_abi_cannot_become_motif(self):
-        envelopes, task, frontier, policy, schemas, snapshot = approved_source_case()
+    def test_protocol_inactive_abi_is_rejected(self):
+        envelopes, task, frontier, policy, schemas, snapshot = protocol_source_case()
         inactive = replace(
             snapshot,
             abi_entries=(replace(snapshot.abi_entries[0], active=False),),
@@ -132,7 +132,7 @@ class ApprovedMotifSourceTests(TestCase):
             "BAMF_MOTIF_SEMANTIC_NOT_ADMITTED")
 
     def test_source_schema_or_release_mismatch_fails_closed(self):
-        envelopes, task, frontier, policy, schemas, snapshot = approved_source_case()
+        envelopes, task, frontier, policy, schemas, snapshot = protocol_source_case()
         for changed in (
             {"schemas": ()},
             {"snapshot": replace(snapshot, release_sha256="9" * 64)},

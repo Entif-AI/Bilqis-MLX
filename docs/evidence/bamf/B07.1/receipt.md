@@ -91,30 +91,31 @@ frame/schema and A13 context eligibility modules. The isolated
 B07.2 continuation branch consumed that exact unified head at
 `590c1cb`, then added `atlas_engram_source.py` as a narrow
 **private integration probe**, not a production admission entrypoint.
-It calls A13 `project_context` before
-any motif preparation, returns a `ContextHold` without allocating
-when rights or visibility fail, and reuses A03
-`validate_frame_bindings` against the frozen source snapshot.
-It requires exact native FrameInstance/FrameSchema records and
-active admitted ABI identities. Atomic fallback positions remain
-source-visible without minting a motif slot.
+It calls A13 `project_context` before motif preparation and returns
+a `ContextHold` when the supplied policy/frontier checks fail. It
+reuses A03 `validate_frame_bindings` against the supplied typed
+snapshot, requires native FrameInstance/FrameSchema record types
+and checks their ABI active flags. These checks do not authenticate
+the records' issuer. The probe skips atomic fallback positions
+instead of proposing motif slots for them.
 
-The new package-local `test_atlas_engram_source.py` uses real A03
-FrameInstance/FrameSchema and A13 SourceGrant/SourceFrontier
-records. **5/5 tests passed**, covering successful source-approved
-allocation, revoked member grants, forged but role-allowed concept
-types, inactive source-qualified ABI, and missing/foreign
-schema or release. The pure B07.1/B07.2 planner remains separately
+The package-local `test_atlas_engram_source.py` uses caller-supplied
+synthetic fixtures of the native A03 FrameInstance/FrameSchema and
+A13 SourceGrant/SourceFrontier record types. **5/5 protocol tests
+passed**, covering prospective plans, revoked member-grant flags,
+forged but role-allowed concept types, inactive ABI flags, and
+missing/foreign schema or release. These fixture passes do not prove
+source approval or admission authority. The pure B07.1/B07.2 planner remains separately
 testable without importing the Atlas RDF dependency.
 
-This provides a source integration testbed, but is **not B07.1
+This provides a native-API protocol testbed, but is **not B07.1
 acceptance**. No public/source rights or neural custody were promoted.
 
 ## Independent adversarial disposition: BLOCKED
 
 Goldfish review at immutable `db724ba`, using pinned EGM
-`b3a3595`, reproduced **two Blockers** despite 5/5 source
-integration tests passing:
+`b3a3595`, reproduced **two Blockers** despite 5/5 protocol
+tests passing:
 
 1. A same-ID/revision caller-supplied FrameSchema can change
    `ast_construct` or `scope` and produce different motif keys.

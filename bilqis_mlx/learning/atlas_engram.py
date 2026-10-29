@@ -1,8 +1,8 @@
 """Pure B07 motif-key canonicalization and candidate-only slot planning.
 
-A03 FrameInstance v2 is consumed through narrow read-only protocols. The
-source-owned A03/A13 gate lives in atlas_engram_source; this module neither
-allocates MLX parameters nor publishes a generation.
+A03 FrameInstance v2 is consumed through narrow read-only protocols. These
+key/allocation calculations carry no source-admission authority; the separate
+atlas_engram_source experiment remains quarantined. No generation is published.
 """
 from __future__ import annotations
 
