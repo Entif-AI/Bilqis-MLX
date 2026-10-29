@@ -409,9 +409,13 @@ def build_feature_manifest(
         feature_schema.role_ids, prior.role_map if prior else None)
     schema_map = _category_map(
         feature_schema.schema_ids, prior.schema_map if prior else None)
+    # A01 records implementation-uncovered, source-eligible rows in held.jsonl
+    # too. Only a source-owned hold can represent unresolved source mapping;
+    # missing downstream teaching machinery is not a graph feature.
     unresolved = {
         item.semantic_id for item in release.withheld_rows
         if item.semantic_id is not None
+        and item.source_disposition == "SOURCE_HELD"
     }
     concept_rows = []
     for identifier in _sorted_ids(tuple(active)):
@@ -547,6 +551,7 @@ def plan_prospective_identity_features(
     unresolved = {
         item.semantic_id for item in release.withheld_rows
         if item.semantic_id is not None
+        and item.source_disposition == "SOURCE_HELD"
     }
     planned = []
     for semantic_id, entry in sorted(entries.items(), key=lambda item: item[1].index):
