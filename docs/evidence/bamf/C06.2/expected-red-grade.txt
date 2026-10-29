@@ -1,0 +1,21 @@
+test_actual_selector_equivalence_and_immutable_input (_bilqis_test_5dc111de80f5318bf079188ee8f5a0d2ecb201f52e23561ae7acf7fda726dac5.PriorityTeacherTests.test_actual_selector_equivalence_and_immutable_input) ... ok
+test_holds_and_correction_do_not_select_teaching (_bilqis_test_5dc111de80f5318bf079188ee8f5a0d2ecb201f52e23561ae7acf7fda726dac5.PriorityTeacherTests.test_holds_and_correction_do_not_select_teaching) ... ok
+test_reject_stale_teacher_and_no_contextual_settings (_bilqis_test_5dc111de80f5318bf079188ee8f5a0d2ecb201f52e23561ae7acf7fda726dac5.PriorityTeacherTests.test_reject_stale_teacher_and_no_contextual_settings) ... ok
+test_selected_capability_resolves_grade_from_actual_factory_roster (_bilqis_test_5dc111de80f5318bf079188ee8f5a0d2ecb201f52e23561ae7acf7fda726dac5.PriorityTeacherTests.test_selected_capability_resolves_grade_from_actual_factory_roster) ... ERROR
+test_stable_features_do_not_fragment_on_receipt_identity (_bilqis_test_5dc111de80f5318bf079188ee8f5a0d2ecb201f52e23561ae7acf7fda726dac5.PriorityTeacherTests.test_stable_features_do_not_fragment_on_receipt_identity) ... ok
+
+======================================================================
+ERROR: test_selected_capability_resolves_grade_from_actual_factory_roster (_bilqis_test_5dc111de80f5318bf079188ee8f5a0d2ecb201f52e23561ae7acf7fda726dac5.PriorityTeacherTests.test_selected_capability_resolves_grade_from_actual_factory_roster)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/learning/tests/test_salience_teacher.py", line 112, in test_selected_capability_resolves_grade_from_actual_factory_roster
+    result = choose_priority_teaching(frontier, history, epoch, engine, school,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: choose_priority_teaching() got an unexpected keyword argument 'program'
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.013s
+
+FAILED (errors=1)
+TEST_TOTALS total=5 passed=4 failed=1 skipped=0 errors=1
+4 passed, 1 failed, 0 skipped

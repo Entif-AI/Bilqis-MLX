@@ -12,9 +12,9 @@ from pathlib import Path
 import subprocess
 
 try:
-    from quality.change_scope import effective_base
+    from quality.change_scope import effective_base, scoped_name_status
 except ModuleNotFoundError:  # dynamic test import from repository root
-    from scripts.quality.change_scope import effective_base
+    from scripts.quality.change_scope import effective_base, scoped_name_status
 
 ROOT = Path(__file__).resolve().parents[1]
 FILE_TRIGGER = 360
@@ -80,8 +80,8 @@ def changed_paths(*, staged: bool = False, base_ref: str | None = None) -> list[
     else:
         if not base_ref:
             raise ValueError("BASE_REF_REQUIRED")
-        comparison_base = effective_base(ROOT, base_ref)
-        result = _git("diff", "--name-status", "-M", "--diff-filter=ACMRD", comparison_base, "HEAD")
+        _, scoped = scoped_name_status(ROOT, base_ref, diff_filter="ACMRD")
+        return _parse_name_status(scoped)
     return _parse_name_status(result.stdout)
 
 

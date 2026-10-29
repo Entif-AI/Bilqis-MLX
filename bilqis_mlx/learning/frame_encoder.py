@@ -12,8 +12,9 @@ import mlx.core as mx
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.learning.frame_embeddings import (
-    FeatureRequest, FrameFactorTerms, EmptyFrameFactorTerms, empty_frame_factor_terms,
-    frame_factor_terms, validate_frame_members,
+    ChildFrameRequest, FeatureRequest, FrameConstituentRequest,
+    FrameFactorTerms, EmptyFrameFactorTerms, empty_frame_factor_terms,
+    child_frame_source_context, frame_factor_terms, validate_frame_members,
 )
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes, validate_bamf_parameters,
@@ -23,6 +24,9 @@ from bilqis_mlx.semantics.context_eligibility import ApprovedContextProjection, 
 from bilqis_mlx.semantics.frame_schema import AtomicFrame, FrameInstance
 from bilqis_mlx.semantics.frame_compiler import (
     CompiledFrameRows, CompiledPosition, FrameCompilerConfig, PositionKind, StreamingAST, compile_prefix, reconstruct,
+)
+from bilqis_mlx.semantics.partial_visible_forest import (
+    PartialVisibleForestReceipt, validate_partial_visible_forest,
 )
 
 
@@ -41,9 +45,9 @@ def _invalid():
 class FrameEncoderInput:
     """Batch rows of complete frames, each with canonical source member requests.
 
-    A05_COMPILER_SCHEMA_PENDING: arrays supplied to encode_frames follow this
-    same row/frame/member order. Their B02 embedding provenance is the caller's
-    responsibility until the actual compiler-to-embedding assembly is qualified.
+    The raw numerical entrypoint is concept-only. Nested child closures are
+    admitted exclusively through CompiledEncoderInput and A05.4 source proof;
+    callers cannot provide an arbitrary child embedding in this path.
     """
 
     requests: tuple[tuple[tuple[FeatureRequest, ...], ...], ...]
@@ -62,6 +66,8 @@ class FrameEncoderInput:
             if type(row) is not tuple or len(row) != len(self.requests[0]):
                 _invalid()
             for group in row:
+                if any(type(item) is not FeatureRequest for item in group):
+                    _invalid()
                 validate_frame_members(group)
             first = row[0][0]
             if (any(group[0].projection.digest != first.projection.digest for group in row) or
@@ -115,19 +121,38 @@ class AtomicEncoderInput:
 class FrameEncoding:
     global_seeds: mx.array
     members: tuple[tuple[mx.array, ...], ...]
-    handles: (tuple[tuple[tuple[FeatureRequest, ...], ...], ...] |
+    handles: (tuple[tuple[tuple[FrameConstituentRequest, ...], ...], ...] |
               tuple[tuple[AtomicSourceHandle, ...], ...] | tuple[tuple[CompiledPosition | None, ...], ...])
     features: tuple[tuple[FrameFactorTerms | EmptyFrameFactorTerms | None, ...], ...]
     schema_version: str = OUTPUT_SCHEMA
     compiled: CompiledFrameRows | None = None
 
 
-def _compiled_groups(row, config):
-    visible = reconstruct(row)
-    rebuilt = compile_prefix(StreamingAST(visible.source_instance_id, visible.atoms, visible.frames),
-                             row.visible_end, row.semantic_release, config)
-    if rebuilt != row:
-        _invalid()
+def _compiled_groups(row, config, source_ast=None, receipt=None):
+    if source_ast is None:
+        if receipt is not None:
+            _invalid()
+        visible = reconstruct(row)
+        def has_child_edge(tree):
+            return (
+                (type(tree.root) is FrameInstance
+                 and any(binding.child_frame is not None
+                         for binding in tree.root.bindings))
+                or any(has_child_edge(child) for child in tree.children))
+        if any(has_child_edge(tree) for tree in visible.frames):
+            _invalid()
+        rebuilt = compile_prefix(
+            StreamingAST(
+                visible.source_instance_id, visible.atoms, visible.frames),
+            row.visible_end, row.semantic_release, config)
+        if rebuilt != row:
+            _invalid()
+    else:
+        if type(source_ast) is not StreamingAST or type(
+                receipt) is not PartialVisibleForestReceipt:
+            _invalid()
+        validate_partial_visible_forest(
+            row, source_ast, config, expected_receipt=receipt)
     closures = tuple(position for position in row.positions if position.kind is PositionKind.CLOSURE)
     projection = None
     if closures:
@@ -147,12 +172,25 @@ def _compiled_groups(row, config):
         if type(frame) is AtomicFrame:
             groups.append(())
             continue
-        if (type(frame) is not FrameInstance or
-                any(binding.concept is None for binding in frame.bindings)):
+        if type(frame) is not FrameInstance:
             _invalid()
         envelope = next(item for item in projection.envelopes if item.frame_handle == position.frame_handle)
-        group = tuple(FeatureRequest.from_context(projection, position.frame_handle, member.source_handle)
-                      for member in envelope.members)
+        group = []
+        for member in envelope.members:
+            binding = next((
+                item for item in frame.bindings
+                if item.key == member.key), None)
+            if binding is None:
+                _invalid()
+            constructor = (
+                FeatureRequest if binding.concept is not None
+                else ChildFrameRequest if binding.child_frame is not None
+                else None)
+            if constructor is None:
+                _invalid()
+            group.append(constructor.from_context(
+                projection, position.frame_handle, member.source_handle))
+        group = tuple(group)
         if group:
             validate_frame_members(group)
         groups.append(group)
@@ -167,9 +205,11 @@ class CompiledEncoderInput:
     compiler_configs: tuple[FrameCompilerConfig, ...]
     features: AtlasFeatures
     extents: GenerationExtents
+    source_asts: tuple[StreamingAST, ...] | None = None
+    partial_forest_receipts: tuple[PartialVisibleForestReceipt, ...] | None = None
     member_requests: tuple[tuple[FeatureRequest, ...], ...] = field(init=False)
     atomic_handles: tuple[tuple[AtomicSourceHandle, ...], ...] = field(init=False)
-    _groups: tuple[tuple[tuple[FeatureRequest, ...], ...], ...] = field(init=False, repr=False)
+    _groups: tuple[tuple[tuple[FrameConstituentRequest, ...], ...], ...] = field(init=False, repr=False)
     _projections: tuple[ApprovedContextProjection | None, ...] = field(init=False, repr=False)
     schema_version: str = "bilqis.mlx.compiled-encoder-input/v1"
 
@@ -180,15 +220,28 @@ class CompiledEncoderInput:
                 any(type(config) is not FrameCompilerConfig for config in self.compiler_configs) or
                 type(self.features) is not AtlasFeatures or type(self.extents) is not GenerationExtents or
                 self.extents.factor_map_digest != self.features.digest or
-                any(row.semantic_release != self.features.semantic_release for row in self.compiled.rows)):
+                any(row.semantic_release != self.features.semantic_release for row in self.compiled.rows)
+                or ((self.source_asts is None)
+                    != (self.partial_forest_receipts is None))
+                or (self.source_asts is not None
+                    and (type(self.source_asts) is not tuple
+                         or type(self.partial_forest_receipts) is not tuple
+                         or len(self.source_asts) != len(self.compiled.rows)
+                         or len(self.partial_forest_receipts) != len(self.compiled.rows)))):
             _invalid()
         self.compiled.__post_init__()
-        checked = tuple(_compiled_groups(row, config)
-                        for row, config in zip(self.compiled.rows, self.compiler_configs))
+        source_asts = self.source_asts or (None,) * len(self.compiled.rows)
+        receipts = self.partial_forest_receipts or (None,) * len(self.compiled.rows)
+        checked = tuple(
+            _compiled_groups(row, config, source_ast, receipt)
+            for row, config, source_ast, receipt in zip(
+                self.compiled.rows, self.compiler_configs,
+                source_asts, receipts))
         groups = tuple(item[0] for item in checked)
         object.__setattr__(self, "_groups", groups)
         object.__setattr__(self, "_projections", tuple(item[1] for item in checked))
-        object.__setattr__(self, "member_requests", tuple(tuple(item for group in row for item in group)
+        object.__setattr__(self, "member_requests", tuple(tuple(item for group in row for item in group
+                                                                if type(item) is FeatureRequest)
                                                          for row in groups))
         atomic_handles = []
         for row, (_, projection) in zip(self.compiled.rows, checked):
@@ -243,6 +296,7 @@ class CompiledEmbeddingVectors:
 
 def _encode_compiled(compiled, vectors, parameters):
     compiled.__post_init__()
+    _validate_encoder_parameters(parameters, compiled.extents)
     if (type(vectors) is not CompiledEmbeddingVectors or
             vectors.schema_version != COMPILED_VECTORS_SCHEMA or
             type(vectors.atoms) is not tuple or type(vectors.members) is not tuple or
@@ -270,6 +324,7 @@ def _encode_compiled(compiled, vectors, parameters):
             item.__post_init__()
         cursor = 0
         atomic_cursor = 0
+        closure_outputs = {}
         row_seeds, row_members, row_factors = [], [], []
         for position, group in zip(row.positions, groups):
             if position.kind is PositionKind.ATOM:
@@ -277,16 +332,38 @@ def _encode_compiled(compiled, vectors, parameters):
                 row_seeds.append(matrix[0])
                 row_factors.append(None)
             elif group:
-                matrix = mx.stack([item.vector for item in supplied[cursor:cursor+len(group)]])
-                cursor += len(group)
-                numerical = encode_frames(FrameEncoderInput(((group,),), compiled.features, compiled.extents),
-                                           ((matrix,),), parameters)
-                row_seeds.append(numerical.global_seeds[0, 0])
-                row_factors.append(numerical.features[0][0])
+                selected = []
+                for request in group:
+                    if type(request) is FeatureRequest:
+                        if (cursor >= len(supplied)
+                                or supplied[cursor].request != request):
+                            _invalid()
+                        selected.append(supplied[cursor].vector)
+                        cursor += 1
+                    elif type(request) is ChildFrameRequest:
+                        child_vector = closure_outputs.get(
+                            request.child_frame_handle)
+                        if child_vector is None:
+                            _invalid()
+                        selected.append(
+                            child_vector + child_frame_source_context(
+                                parameters, request, compiled.features,
+                                extents=compiled.extents))
+                    else:
+                        _invalid()
+                matrix = mx.stack(selected)
+                factor = frame_factor_terms(
+                    parameters, group, compiled.features,
+                    extents=compiled.extents)
+                seed = _encode_one(matrix, factor, parameters)
+                row_seeds.append(seed)
+                closure_outputs[position.frame_handle] = seed
+                row_factors.append(factor)
             elif type(projection.frame(position.frame_handle)) is AtomicFrame:
                 vector = atomic_frames[atomic_cursor].vector
                 atomic_cursor += 1
                 row_seeds.append(vector)
+                closure_outputs[position.frame_handle] = vector
                 row_factors.append(None)
                 matrix = vector[None, :]
             else:
@@ -294,12 +371,17 @@ def _encode_compiled(compiled, vectors, parameters):
                 terms = empty_frame_factor_terms(parameters, projection, position.frame_handle,
                                                  compiled.features, extents=compiled.extents)
                 summary = (terms.schema128 + terms.mean_role128) / 2
-                row_seeds.append(_norm(parameters["frame.empty_seed"] +
-                                       summary @ parameters["frame.project_summary"].T,
-                                       parameters["frame.norm"]))
+                seed = _norm(
+                    parameters["frame.empty_seed"]
+                    + summary @ parameters["frame.project_summary"].T,
+                    parameters["frame.norm"])
+                row_seeds.append(seed)
+                closure_outputs[position.frame_handle] = seed
                 row_factors.append(terms)
                 matrix = mx.zeros((0, WIDTH), dtype=mx.float32)
             row_members.append(matrix)
+        if cursor != len(supplied) or atomic_cursor != len(atomic_frames):
+            _invalid()
         row_seeds.extend(mx.zeros((WIDTH,), dtype=mx.float32) for _ in range(width-len(row_seeds)))
         seeds.append(mx.stack(row_seeds) if row_seeds else mx.zeros((0, WIDTH), dtype=mx.float32))
         members.append(tuple(row_members))

@@ -41,6 +41,9 @@ class ChangedPathSmellTests(unittest.TestCase):
                                   for item in audit._base_findings(base, records)]}
         return audit.compare_to_baseline(current, prior)
 
+    def test_explicit_empty_scope_does_not_expand_to_whole_repository(self):
+        self.assertEqual(audit._paths([]), [])
+
     def test_staged_rename_preserves_existing_smell_identity(self):
         self.commit("old.py", "VALUES = []\n")
         subprocess.run(["git", "mv", "old.py", "new.py"], cwd=self.root, check=True)
