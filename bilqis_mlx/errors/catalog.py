@@ -51,6 +51,14 @@ class SCHOOL:
             disposition="PRESERVE_AND_INSPECT",
             next_action="Hold the affected artifact and reconcile its source-owned evidence before reuse.",
         )
+        PROPAGATION_FAILURE = _spec(
+            ("SCHOOL", "BAMF_REVALIDATION", "PROPAGATION_FAILURE"),
+            owner="runtime.atlas_temporal_revalidation",
+            title="Correction remediation failed to prevent stale replay",
+            message_template="Superseded source evidence reappeared after remediation: {reason}",
+            disposition="REQUALIFICATION_REQUIRED",
+            next_action="Hold the affected lineage, preserve the original source and remediation receipts, then require fresh source-grounded requalification.",
+        )
 
     class BAMF_TEACHER:
         INVALID = _spec(
@@ -880,6 +888,7 @@ class FACTORY:
 
 CATALOG = (
     SCHOOL.BAMF_REVALIDATION.INVALID,
+    SCHOOL.BAMF_REVALIDATION.PROPAGATION_FAILURE,
     SCHOOL.BAMF_TEACHER.INVALID,
     SCHOOL.BAMF_TRAINING_ADAPTER.INVALID,
     SCHOOL.BAMF_WORKSTACK.INPUT_INVALID,

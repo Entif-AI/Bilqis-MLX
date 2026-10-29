@@ -16,6 +16,11 @@ from bilqis_mlx.runtime.atlas_revalidation import (
     advance_revalidation, apply_correction, mark_affected_capabilities,
     next_revalidation_task, read_artifact, revalidate_node,
 )
+from bilqis_mlx.runtime.atlas_temporal_revalidation import (
+    DerivedClaim, RemediationReceipt, RemediationStatus, TemporalEvent,
+    TemporalEventKind, TemporalStatus, bind_as_of_dependency,
+    escalate_stale_replay, project_as_of,
+)
 
 
 def _ref(kind: DependencyKind, key: str) -> DependencyRef:
@@ -79,6 +84,178 @@ def _chain() -> tuple[DependencyIndex, DependencyRef, DependencyRef]:
 
 
 class AtlasRevalidationTests(unittest.TestCase):
+    def test_temporal_projection_distinguishes_plan_silence_negative_and_correction(self):
+        planned = TemporalEvent(
+            event_id="event:planned", actor_id="actor:alpha",
+            kind=TemporalEventKind.PLANNED, fact_digest="a" * 64,
+            source_receipt_sha256="1" * 64,
+            source_time=570, effective_from=570, effective_until=None,
+            observed_at=565, recorded_at=565, expected_report_by=585,
+        )
+        nonoccurrence = TemporalEvent(
+            event_id="event:nonoccurrence", actor_id="actor:alpha",
+            kind=TemporalEventKind.EXPLICIT_NONOCCURRENCE,
+            fact_digest="b" * 64, source_receipt_sha256="2" * 64,
+            source_time=600, effective_from=600, effective_until=None,
+            observed_at=601, recorded_at=601,
+            supersedes_event_id="event:planned",
+        )
+        corrected = TemporalEvent(
+            event_id="event:corrected", actor_id="actor:alpha",
+            kind=TemporalEventKind.CORRECTION, fact_digest="c" * 64,
+            source_receipt_sha256="3" * 64,
+            source_time=620, effective_from=620, effective_until=None,
+            observed_at=621, recorded_at=621,
+            supersedes_event_id="event:nonoccurrence",
+        )
+        events = (planned, nonoccurrence, corrected)
+        before = project_as_of(events, actor_id="actor:alpha", as_of=575)
+        missing = project_as_of(events, actor_id="actor:alpha", as_of=590)
+        explicit = project_as_of(events, actor_id="actor:alpha", as_of=605)
+        correction = project_as_of(events, actor_id="actor:alpha", as_of=625)
+        self.assertEqual(
+            (before.status, missing.status, explicit.status, correction.status),
+            (TemporalStatus.PLANNED, TemporalStatus.MISSING_EXPECTED_REPORT,
+             TemporalStatus.EXPLICIT_NONOCCURRENCE, TemporalStatus.CORRECTED))
+        self.assertEqual(correction.fact_digest, "c" * 64)
+        self.assertEqual(missing.fact_digest, "a" * 64)
+        self.assertNotEqual(before.time_dependency, missing.time_dependency)
+        self.assertEqual(
+            project_as_of((planned,), actor_id="actor:alpha", as_of=590),
+            missing)
+        self.assertEqual(missing.time_dependency.kind, DependencyKind.TIME)
+        self.assertEqual(
+            project_as_of(events, actor_id="actor:alpha", as_of=567).status,
+            TemporalStatus.PLANNED)
+        changed_deadline = replace(planned, expected_report_by=600)
+        self.assertNotEqual(
+            project_as_of((changed_deadline,), actor_id="actor:alpha",
+                          as_of=575).time_dependency,
+            before.time_dependency)
+        expiring = replace(planned, effective_until=580)
+        self.assertEqual(
+            project_as_of((expiring,), actor_id="actor:alpha",
+                          as_of=580).status, TemporalStatus.UNKNOWN)
+        self.assertNotEqual(
+            project_as_of((expiring,), actor_id="actor:alpha",
+                          as_of=575).time_dependency,
+            project_as_of((expiring,), actor_id="actor:alpha",
+                          as_of=580).time_dependency)
+        concurrent = replace(
+            corrected, event_id="event:concurrent",
+            supersedes_event_id=None, fact_digest="d" * 64)
+        self.assertEqual(project_as_of(
+            (planned, nonoccurrence, corrected, concurrent),
+            actor_id="actor:alpha", as_of=625).status,
+            TemporalStatus.CONFLICTING_ALTERNATIVES)
+        retroactive = replace(corrected, effective_from=600)
+        self.assertEqual(project_as_of(
+            (planned, nonoccurrence, retroactive),
+            actor_id="actor:alpha", as_of=610).status,
+            TemporalStatus.EXPLICIT_NONOCCURRENCE)
+        cache = _node("cache:asof", ArtifactKind.EXACT_CACHE, (
+            _ref(DependencyKind.SOURCE, "source:plan"),))
+        bound = bind_as_of_dependency(cache, before)
+        self.assertEqual(apply_correction(
+            _event(before.time_dependency),
+            DependencyIndex.build((bound,))).held_artifact_ids,
+            ("cache:asof",))
+        refreshed = bind_as_of_dependency(bound, missing)
+        self.assertNotIn(before.time_dependency,
+                         refreshed.immediate_dependencies)
+        self.assertIn(missing.time_dependency,
+                      refreshed.immediate_dependencies)
+
+    def test_post_remediation_stale_replay_escalates_but_new_evidence_does_not(self):
+        index, source_a, _ = _chain()
+        correction = _event(source_a)
+        remediation = RemediationReceipt(
+            remediation_id="remediation:alpha",
+            correction_event_id=correction.event_id,
+            correction_receipt_sha256=correction.source_receipt_sha256,
+            original_source_event_id="event:planned",
+            original_source_time=570,
+            superseded_fact_digest="a" * 64,
+            superseded_source_receipt_sha256="1" * 64,
+            affected_artifact_ids=("motif:alpha",),
+            retained_generation_sha256="9" * 64,
+            completed_at=650, status=RemediationStatus.COMPLETED,
+        )
+        stale = DerivedClaim(
+            claim_id="claim:stale", actor_id="actor:alpha",
+            source_event_id="event:planned", source_time=570,
+            source_receipt_sha256="1" * 64,
+            fact_digest="a" * 64, observed_at=660,
+            derived_path=(
+                "feature:alpha", "frame:alpha", "motif:alpha",
+                "cache:alpha", "composition:alpha", "capability:alpha",
+            ),
+        )
+        ledger = RequalificationLedger((
+            CapabilitySupport(
+                capability_id="capability:alpha",
+                support_artifact_ids=("capability:alpha",),
+                source_anchor_ids=("source:alpha",),
+                retained_generation_sha256="9" * 64,
+                observation_ids=("observation:historical:1",),
+                status=RequalificationStatus.QUALIFIED,
+            ),
+        ))
+        result = escalate_stale_replay(remediation, stale, correction,
+                                       index, ledger)
+        self.assertIsNotNone(result)
+        self.assertEqual(result.fault.reason_code,
+                         "BAMF_C09_PROPAGATION_REPAIR_FAILED")
+        self.assertEqual(result.fault.original_source_event_id,
+                         "event:planned")
+        self.assertEqual(result.fault.correction_event_id,
+                         correction.event_id)
+        self.assertEqual(result.fault.offending_derived_path,
+                         stale.derived_path)
+        self.assertEqual(result.queue.held_artifact_ids, (
+            "cache:alpha", "capability:alpha", "composition:alpha",
+            "motif:alpha"))
+        self.assertEqual(result.requalification.ledger.capability(
+            "capability:alpha").status,
+            RequalificationStatus.REQUALIFICATION_REQUIRED)
+        self.assertEqual(result.requalification.ledger.capability(
+            "capability:alpha").retained_generation_sha256, "9" * 64)
+        self.assertEqual(ledger.capability("capability:alpha").status,
+                         RequalificationStatus.QUALIFIED)
+        relabelled = replace(
+            stale, claim_id="claim:relabelled",
+            source_event_id="event:relabelled")
+        self.assertIsNotNone(escalate_stale_replay(
+            remediation, relabelled, correction, index, ledger))
+        self.assertEqual(escalate_stale_replay(
+            remediation, replace(stale, observed_at=640),
+            correction, index, ledger), None)
+        self.assertIsNone(escalate_stale_replay(
+            replace(remediation, status=RemediationStatus.PENDING),
+            stale, correction, index, ledger))
+        new_evidence = replace(
+            stale, claim_id="claim:new", actor_id="actor:beta",
+            source_event_id="event:new", source_time=700,
+            source_receipt_sha256="2" * 64, observed_at=705)
+        self.assertIsNone(escalate_stale_replay(
+            remediation, new_evidence, correction, index, ledger))
+        self.assertIsNone(escalate_stale_replay(
+            remediation, replace(stale, derived_path=("feature:beta",)),
+            correction, index, ledger))
+        with self.assertRaises(BilqisError) as caught:
+            escalate_stale_replay(
+                remediation, replace(stale, derived_path=(
+                    "feature:beta", "motif:alpha")),
+                correction, index, ledger)
+        self.assertEqual(caught.exception.context["reason"],
+                         "BAMF_C09_DERIVED_PATH_INVALID")
+        with self.assertRaises(BilqisError) as caught:
+            escalate_stale_replay(
+                replace(remediation, completed_at=620),
+                stale, correction, index, ledger)
+        self.assertEqual(caught.exception.context["reason"],
+                         "BAMF_C09_REMEDIATION_BEFORE_CORRECTION")
+
     def test_concurrent_corrections_keep_branches_until_explicit_supersession(self):
         source = _ref(DependencyKind.SOURCE, "source:meeting")
         original = _event(source)
