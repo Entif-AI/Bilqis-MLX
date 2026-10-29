@@ -22,9 +22,10 @@ from bilqis_mlx.semantics.frame_adapters import (
 from bilqis_mlx.semantics.frame_codec import SchemaTagMap
 from bilqis_mlx.semantics.frame_schema import FrameSchema, RoleSpec, SourceSpan
 from bilqis_mlx.semantics.released_frame_schemas import (
-    SourcePinnedReleasedFrameSchemas, load_pinned_released_frame_schemas,
+    lookup_source_pinned_frame_schema,
     load_released_frame_schemas, persist_released_frame_schemas,
-    seal_released_frame_schemas,
+    seal_released_frame_schemas, verify_source_pinned_frame_schema,
+    verify_source_pinned_frame_schema_bytes,
 )
 from bilqis_mlx.source_adapters.school import A_ORACLE, live_source_registry
 from bilqis_mlx.source_adapters.structure import inspect_source_query
@@ -139,8 +140,6 @@ class ReleasedFrameSchemaTests(unittest.TestCase):
         self.assertEqual(verified.require_schema(schema, witness), schema)
         self.assertEqual(
             verified.canonical_bytes(), payload)
-        with self.assertRaises(BilqisError):
-            SourcePinnedReleasedFrameSchemas("micro", verified, object())
 
     @unittest.skipUnless(
         os.environ.get("BILQIS_ATLAS_REAL_ARTIFACT"),
@@ -156,23 +155,69 @@ class ReleasedFrameSchemaTests(unittest.TestCase):
         )
         for family in ("micro", "boolean", "numeric"):
             with self.subTest(family=family):
-                pinned = load_pinned_released_frame_schemas(
+                from bilqis_mlx.semantics.released_frame_schemas import (
+                    _load_pinned_released_frame_schemas,
+                )
+                staged = _load_pinned_released_frame_schemas(
                     family, selection)
-                self.assertIs(type(pinned), SourcePinnedReleasedFrameSchemas)
-                self.assertEqual(pinned.source_family, family)
-                self.assertEqual(len(pinned.manifest.bodies), 6)
-                for body in pinned.manifest.bodies:
-                    schema = body.parse()
-                    witness = pinned.lookup(schema.schema_id, schema.revision)
-                    self.assertEqual(pinned.require_schema(schema, witness), schema)
+                self.assertEqual(len(staged.manifest.bodies), 6)
+                for body in staged.manifest.bodies:
+                    schema, witness = lookup_source_pinned_frame_schema(
+                        body.schema_id, body.revision,
+                        source_family=family, atlas_selection=selection)
+                    self.assertEqual(witness.schema_body_sha256,
+                                     body.schema_body_sha256)
+                    self.assertEqual(
+                        verify_source_pinned_frame_schema(
+                            schema, source_family=family,
+                            atlas_selection=selection), schema)
                     with self.assertRaises(BilqisError):
-                        pinned.require_schema(
-                            replace(schema, scope="caller:forged"), witness)
+                        verify_source_pinned_frame_schema(
+                            replace(schema, scope="caller:forged"),
+                            source_family=family, atlas_selection=selection)
+                    reordered = json.dumps(
+                        dict(reversed(tuple(
+                            json.loads(schema.canonical_bytes()).items()))),
+                        separators=(",", ":")).encode()
+                    self.assertEqual(
+                        verify_source_pinned_frame_schema_bytes(
+                            reordered, source_family=family,
+                            atlas_selection=selection), schema)
+                # The EGM attack: caller may self-pin a forged staging
+                # manifest, but the production gate re-enters repo pins.
+                schema = staged.manifest.bodies[0].parse()
+                forged = replace(schema, scope="caller:forged")
+                forged_map = SchemaTagMap.from_schemas(
+                    staged.manifest.semantic_release, (forged,))
+                staging_snapshot = replace(
+                    _snapshot(),
+                    release_sha256=staged.manifest.semantic_release,
+                    bundle_id=staged.manifest.atlas_bundle_id,
+                    source_bundle_id=staged.manifest.source_bundle_id)
+                forged_manifest = seal_released_frame_schemas(
+                    (forged,), forged_map, staging_snapshot)
+                self_pinned = load_released_frame_schemas(
+                    forged_manifest.canonical_bytes(),
+                    expected_sha256=forged_manifest.digest,
+                    snapshot=staging_snapshot)
+                self.assertEqual(
+                    self_pinned.require_schema(
+                        forged, self_pinned.lookup(
+                            forged.schema_id, forged.revision)),
+                    forged)
+                with self.assertRaises(BilqisError):
+                    verify_source_pinned_frame_schema(
+                        forged, source_family=family,
+                        atlas_selection=selection)
         with self.assertRaises(BilqisError):
-            load_pinned_released_frame_schemas("caller:unreleased", selection)
+            lookup_source_pinned_frame_schema(
+                "frame:missing", 1, source_family="caller:unreleased",
+                atlas_selection=selection)
         with self.assertRaises(BilqisError):
-            load_pinned_released_frame_schemas(
-                "micro", replace(selection, release_sha256="0" * 64))
+            lookup_source_pinned_frame_schema(
+                "frame:missing", 1, source_family="micro",
+                atlas_selection=replace(
+                    selection, release_sha256="0" * 64))
 
     def test_same_id_revision_cannot_substitute_any_semantic_body(self):
         schema, _, _, _, verified = _release()

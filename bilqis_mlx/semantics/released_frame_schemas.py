@@ -30,7 +30,6 @@ SOURCE_PIN_REGISTRY_SCHEMA = "bilqis.frame-schema-source-pins/v1"
 SOURCE_PIN_REGISTRY_SHA256 = (
     "4c8da914834f8dc5cadef67bbf9b7da1031f07cc80d4775a47d18b68af62a6c1")
 SOURCE_PIN_STATUS = "A03_SOURCE_ATTESTED_NOT_NEURAL_ADMITTED"
-_SOURCE_PIN_SEAL = object()
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 
 
@@ -208,47 +207,6 @@ class VerifiedReleasedFrameSchemas:
         return self.require_schema(schema, witness)
 
 
-class SourcePinnedReleasedFrameSchemas:
-    """Only the repo-owned A03 pin loader may issue this consumer authority."""
-    __slots__ = ("_source_family", "_verified")
-
-    def __init__(
-        self, source_family: str, verified: VerifiedReleasedFrameSchemas,
-        _seal: object = None,
-    ) -> None:
-        if (_seal is not _SOURCE_PIN_SEAL
-                or not isinstance(source_family, str)
-                or not source_family
-                or type(verified) is not VerifiedReleasedFrameSchemas):
-            _fail("FRAME_RELEASED_SOURCE_PIN_AUTHORITY_INVALID")
-        object.__setattr__(self, "_source_family", source_family)
-        object.__setattr__(self, "_verified", verified)
-
-    def __setattr__(self, name, value):
-        raise AttributeError("source-pinned A03 schema releases are immutable")
-
-    @property
-    def source_family(self) -> str:
-        return self._source_family
-
-    @property
-    def manifest(self) -> ReleasedFrameSchemaManifest:
-        return self._verified.manifest
-
-    def lookup(self, schema_id: str, revision: int) -> ReleasedSchemaBodyWitness:
-        return self._verified.lookup(schema_id, revision)
-
-    def require_schema(
-        self, schema: FrameSchema, witness: ReleasedSchemaBodyWitness,
-    ) -> FrameSchema:
-        return self._verified.require_schema(schema, witness)
-
-    def require_schema_bytes(
-        self, payload: bytes, witness: ReleasedSchemaBodyWitness,
-    ) -> FrameSchema:
-        return self._verified.require_schema_bytes(payload, witness)
-
-
 def seal_released_frame_schemas(
     schemas: tuple[FrameSchema, ...],
     schema_map: SchemaTagMap,
@@ -387,9 +345,9 @@ def _source_pins() -> tuple[dict, ...]:
     return entries
 
 
-def load_pinned_released_frame_schemas(
+def _load_pinned_released_frame_schemas(
     source_family: str, atlas_selection: AtlasArtifactSelection,
-) -> SourcePinnedReleasedFrameSchemas:
+) -> VerifiedReleasedFrameSchemas:
     """Offline source-owner lookup; no caller-supplied schema registry or hash."""
     if not isinstance(source_family, str) or not source_family:
         _fail("FRAME_RELEASED_SOURCE_FAMILY_INVALID")
@@ -412,10 +370,48 @@ def load_pinned_released_frame_schemas(
         payload = path.read_bytes()
     except OSError:
         _fail("FRAME_RELEASED_MANIFEST_SOURCE_MISSING")
-    verified = load_released_frame_schemas(
+    return load_released_frame_schemas(
         payload, expected_sha256=entry["schema_manifest_sha256"],
         snapshot=snapshot,
         expected_semantic_release=entry["semantic_release"],
         expected_schema_map_sha256=entry["schema_map_sha256"])
-    return SourcePinnedReleasedFrameSchemas(
-        source_family, verified, _SOURCE_PIN_SEAL)
+
+
+def lookup_source_pinned_frame_schema(
+    schema_id: str, revision: int, *,
+    source_family: str, atlas_selection: AtlasArtifactSelection,
+) -> tuple[FrameSchema, ReleasedSchemaBodyWitness]:
+    """Resolve an A03 body from repo pins, never from a caller-provided registry."""
+    pinned = _load_pinned_released_frame_schemas(
+        source_family, atlas_selection)
+    witness = pinned.lookup(schema_id, revision)
+    body = next(item for item in pinned.manifest.bodies
+                if (item.schema_id, item.revision)
+                == (schema_id, revision))
+    return pinned.require_schema(body.parse(), witness), witness
+
+
+def verify_source_pinned_frame_schema(
+    candidate: FrameSchema, *,
+    source_family: str, atlas_selection: AtlasArtifactSelection,
+) -> FrameSchema:
+    """Production gate: re-enter A01/A03 pins on every candidate verification."""
+    if type(candidate) is not FrameSchema:
+        _fail("FRAME_RELEASED_SCHEMA_BODY_INVALID")
+    canonical, _ = lookup_source_pinned_frame_schema(
+        candidate.schema_id, candidate.revision,
+        source_family=source_family, atlas_selection=atlas_selection)
+    if candidate.canonical_bytes() != canonical.canonical_bytes():
+        _fail("FRAME_RELEASED_SCHEMA_BODY_MISMATCH")
+    return canonical
+
+
+def verify_source_pinned_frame_schema_bytes(
+    payload: bytes, *,
+    source_family: str, atlas_selection: AtlasArtifactSelection,
+) -> FrameSchema:
+    """JSON key order is ignored, but source-pinned role order and body are not."""
+    candidate = frame_schema_from_bytes(_canonical_bytes(_json(payload)))
+    return verify_source_pinned_frame_schema(
+        candidate, source_family=source_family,
+        atlas_selection=atlas_selection)
