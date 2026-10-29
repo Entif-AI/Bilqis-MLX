@@ -172,6 +172,24 @@ def _prefix_digest(
     ))
 
 
+def _canonical_position_order(
+    positions: tuple[CompiledPosition, ...], visible_end: int,
+) -> bool:
+    next_atom = 0
+    last_source = -1
+    for position in positions:
+        if position.source_index < last_source:
+            return False
+        if position.kind is PositionKind.ATOM:
+            if position.source_index != next_atom:
+                return False
+            next_atom += 1
+        elif position.source_index >= next_atom:
+            return False
+        last_source = position.source_index
+    return next_atom == visible_end
+
+
 @dataclass(frozen=True)
 class CompiledFrameBatch:
     source_instance_id: str
@@ -196,6 +214,11 @@ class CompiledFrameBatch:
                 or any(not isinstance(item, CompiledPosition)
                        or item.source_index >= self.visible_end
                        for item in self.positions)
+                or not _canonical_position_order(
+                    self.positions, self.visible_end)
+                or (self.context_digest is None
+                    and any(item.kind is PositionKind.CLOSURE
+                            for item in self.positions))
                 or not isinstance(self.schema_map, SchemaTagMap)
                 or self.schema_map.semantic_release != self.semantic_release
                 or (self.context_digest is not None
@@ -549,10 +572,17 @@ def compile_prefix(
             or release != compiler_config.schema_map.semantic_release):
         _invalid("BAMF_PREFIX_COMPILE_INPUT_INVALID")
 
-    approved_by_occurrence = (
-        {envelope.frame.occurrence_id: envelope
-         for envelope in compiler_config.approved.envelopes}
-        if compiler_config.approved is not None else {})
+    approved_by_occurrence = {}
+    duplicates = set()
+    if compiler_config.approved is not None:
+        for envelope in compiler_config.approved.envelopes:
+            occurrence = envelope.frame.occurrence_id
+            if occurrence in approved_by_occurrence:
+                duplicates.add(occurrence)
+            else:
+                approved_by_occurrence[occurrence] = envelope
+        for occurrence in duplicates:
+            approved_by_occurrence[occurrence] = None
     closed = _source_frames(
         ast, visible_end, approved_by_occurrence)
     # Preflight before packing frames, allocating model positions or padding.
@@ -561,6 +591,8 @@ def compile_prefix(
         _invalid("BAMF_PREFIX_NEURAL_LENGTH_EXCEEDED")
     envelopes = []
     for frame in closed:
+        if frame.occurrence_id in duplicates:
+            _invalid("BAMF_PREFIX_APPROVED_OCCURRENCE_DUPLICATE")
         envelope = approved_by_occurrence.get(frame.occurrence_id)
         if (envelope is None or envelope.frame != frame
                 or envelope.causal_prefix_end != frame.causal_prefix_end):
@@ -574,8 +606,9 @@ def compile_prefix(
             compiler_config.frontier, compiler_config.policy)
         if isinstance(projected, ContextHold):
             _invalid("BAMF_PREFIX_CONTEXT_HELD")
-        if {item.frame_handle for item in projected.eligible.frames} != {
-                item.frame_handle for item in envelopes}:
+        if (len(projected.eligible.frames) != len(envelopes)
+                or {item.frame_handle for item in projected.eligible.frames} != {
+                item.frame_handle for item in envelopes}):
             _invalid("BAMF_PREFIX_APPROVAL_DRIFT")
         context_digest = projected.digest
 
@@ -715,6 +748,7 @@ class LawfulSourceSegment:
         if (not isinstance(self.origin_source_id, str)
                 or not self.origin_source_id
                 or not isinstance(self.global_span, SourceSpan)
+                or self.global_span.end <= self.global_span.start
                 or not isinstance(self.ast, StreamingAST)
                 or self.global_span.end - self.global_span.start
                 != len(self.ast.atoms)
