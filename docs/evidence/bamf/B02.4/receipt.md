@@ -48,6 +48,20 @@ The new nested test initially failed to import the missing
   B02.4 adversary now revokes hidden-parent A13 grants while leaving
   the p4 compiler object unchanged; B03 rejects through the A05.4
   source validator rather than trusting stale approved metadata.
+- Independent Goldfish worker-19 reviewed immutable `0d8571b` and found
+  one **B02.4 Major**: a source-valid child at parent local slot 0 versus
+  slot 1 had identical type/role/schema factors because the child path
+  omitted `features.local_slot` and the extended sinusoid.
+  The failing-before source-valid fixture uses one parent schema with an
+  optional preceding `prefix` role; the same child, role and schema
+  occupies slot 0 without the prefix and slot 1 with it. Both requests
+  are exact A13-approved source members.
+  `child_frame_source_context` now adds the existing B02 local-slot
+  table or extended sinusoid to the child closure/type-role vector.
+  The repaired fixture proves different vectors and nonzero gradient
+  to the exact slot-1 row, with slot-0 gradient remaining zero.
+  Combined MLX/B02/B03/A05/A13/A04 suite: **99/99, zero skips**.
+  Fresh independent immutable-head EGM re-review is pending.
 - `git diff --check`: passed.
 - Error-control and module-size audits: no new B02.4/B03.3 finding.
   Existing semantic import-boundary findings in A03 remain separate.

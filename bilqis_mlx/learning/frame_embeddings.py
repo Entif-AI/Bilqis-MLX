@@ -357,19 +357,23 @@ def _child_factor_terms(parameters, request, features):
     return schema, role, type_role
 
 
-def child_frame_type_role(
+def child_frame_source_context(
     parameters: Mapping[str, mx.array],
     request: ChildFrameRequest,
     features: AtlasFeatures,
     *,
     extents: GenerationExtents,
 ) -> mx.array:
-    """Typed source factor added to a prior child closure, never an ABI lookup."""
+    """Typed child factors plus the exact parent occurrence slot; no ABI lookup."""
     if type(request) is not ChildFrameRequest:
         _invalid()
     request.__post_init__()
     _validate_feature_parameters(parameters, features, extents)
-    return _child_factor_terms(parameters, request, features)[2]
+    type_role = _child_factor_terms(parameters, request, features)[2]
+    slot = (parameters["features.local_slot"][request.local_slot]
+            if request.local_slot < 32
+            else _sinusoid_768(request.local_slot))
+    return type_role + slot
 
 
 def frame_factor_terms(

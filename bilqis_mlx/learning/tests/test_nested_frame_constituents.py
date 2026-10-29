@@ -7,7 +7,7 @@ import numpy as np
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.frame_embeddings import (
-    ChildFrameRequest, FeatureRequest,
+    ChildFrameRequest, FeatureRequest, child_frame_source_context,
 )
 from bilqis_mlx.learning.frame_encoder import (
     AtomicFrameEmbedding, AtomicSourceHandle, CompiledEmbeddingVectors,
@@ -18,14 +18,15 @@ from bilqis_mlx.runtime.model_topology_v2 import (
 )
 from bilqis_mlx.semantics.atlas_features import ConceptFeature
 from bilqis_mlx.semantics.context_eligibility import (
-    ApprovedContextProjection, frame_evidence_digest,
-    member_evidence_digest, project_context,
+    ApprovedContextProjection, ContextMember, SourceFrontier,
+    frame_evidence_digest, member_evidence_digest, project_context,
 )
 from bilqis_mlx.semantics.frame_compiler import (
     PositionKind, compile_prefix_rows, validate_partial_visible_forest,
 )
 from bilqis_mlx.semantics.frame_schema import (
-    ChildFrameRef, FrameTree, RoleOccurrence, make_frame_instance,
+    ChildFrameRef, FrameSchema, FrameTree, RoleOccurrence, RoleSpec,
+    SourceSpan, make_frame_instance,
 )
 from bilqis_mlx.semantics.tests.test_atlas_features import _features
 from bilqis_mlx.semantics.tests.test_frame_compiler import _mixed_case, RELEASE
@@ -83,7 +84,110 @@ def _case():
     return ast, config, compiled, vectors, params
 
 
+def _source_valid_child_slot_variants():
+    ast, config = _mixed_case()
+    child = ast.frames[0].children[0].root
+    original_parent = ast.frames[0].root
+    schema = FrameSchema(
+        "frame:parent-slot", 1, "source:parent",
+        (RoleSpec("prefix", ("Entity",), 0, 1),
+         RoleSpec("child", ("Frame",), 1, 1)),
+        "ORDERED", "synthetic", ast_contract_sha256="b" * 64)
+    child_ref = ChildFrameRef(
+        child.occurrence_id, child.content_digest, ("Frame",))
+    parent_variants = (
+        (RoleOccurrence("child", 0, child_frame=child_ref),),
+        (RoleOccurrence(
+            "prefix", 0, concept=child.bindings[0].concept),
+         RoleOccurrence("child", 0, child_frame=child_ref)),
+    )
+    child_envelope = next(
+        item for item in config.approved.envelopes
+        if item.frame.occurrence_id == child.occurrence_id)
+    parent_template = next(
+        item for item in config.approved.envelopes
+        if item.frame.occurrence_id == original_parent.occurrence_id)
+    grant_template = config.frontier.grants[0]
+    requests = []
+    for bindings in parent_variants:
+        parent = make_frame_instance(
+            schema, source_instance_id=original_parent.source_instance_id,
+            structural_path=original_parent.structural_path,
+            source_span=original_parent.source_span,
+            parent_occurrence_id=None, bindings=bindings,
+            causal_prefix_end=original_parent.causal_prefix_end)
+        members = tuple(
+            ContextMember(
+                binding.role_id, binding.occurrence_index,
+                "source:member:slot:" + binding.role_id,
+                visible_at_prefix=8)
+            for binding in parent.bindings)
+        parent_envelope = replace(
+            parent_template, frame_handle="frame:slot:parent",
+            source_handle="source:frame:slot:parent",
+            frame=parent, members=members)
+        envelopes = (child_envelope, parent_envelope)
+        grants = []
+        for envelope in envelopes:
+            grants.append(replace(
+                grant_template, source_handle=envelope.source_handle,
+                evidence_digest=frame_evidence_digest(envelope.frame)))
+            for member in envelope.members:
+                grants.append(replace(
+                    grant_template, source_handle=member.source_handle,
+                    evidence_digest=member_evidence_digest(
+                        envelope.frame, member)))
+        frontier = SourceFrontier(
+            config.frontier.rights_epoch,
+            config.frontier.correction_generation,
+            tuple(sorted(grants, key=lambda grant: grant.source_handle)))
+        projection = project_context(
+            envelopes, config.task, frontier, config.policy)
+        requests.append(ChildFrameRequest.from_context(
+            projection, parent_envelope.frame_handle,
+            "source:member:slot:child"))
+    features = replace(
+        _source_features(),
+        schema_map=(("NONE", 1), ("UNKNOWN", 0),
+                    ("frame:child", 2), ("frame:parent", 3),
+                    ("frame:parent-slot", 4)))
+    extents = GenerationExtents(
+        1, 1, "a" * 64, "b" * 64, features.digest)
+    rng = np.random.default_rng(578)
+    params = {
+        item.name: mx.array(
+            rng.normal(0, 0.02, item.shape).astype(np.float32))
+        for item in expected_bamf_shapes(ModelTopologySpecV2(), extents)
+        if item.name.startswith(("frame.", "features."))
+    }
+    return requests, features, extents, params
+
+
 class NestedFrameConstituentTests(unittest.TestCase):
+    def test_source_valid_parent_slot_changes_child_factor_and_gradient(self):
+        requests, features, extents, params = _source_valid_child_slot_variants()
+        first, second = requests
+        self.assertEqual((first.local_slot, second.local_slot), (0, 1))
+        self.assertEqual(first.child, second.child)
+        self.assertEqual(first.role_id, second.role_id)
+        self.assertEqual(first.schema_id, second.schema_id)
+        first_vector = child_frame_source_context(
+            params, first, features, extents=extents)
+        second_vector = child_frame_source_context(
+            params, second, features, extents=extents)
+        self.assertGreater(
+            float(mx.sum(mx.abs(first_vector - second_vector))), 0)
+        def slot_objective(table):
+            changed = dict(params)
+            changed["features.local_slot"] = table
+            return mx.sum(child_frame_source_context(
+                changed, second, features, extents=extents)
+                * mx.arange(768, dtype=mx.float32))
+        derivative = mx.grad(slot_objective)(
+            params["features.local_slot"])
+        self.assertGreater(float(mx.sum(mx.abs(derivative[1]))), 0)
+        self.assertEqual(float(mx.sum(mx.abs(derivative[0]))), 0)
+
     def test_nested_child_source_is_typed_and_parent_uses_earlier_closure(self):
         ast, config, compiled, vectors, params = _case()
         child = ChildFrameRequest.from_context(
@@ -133,6 +237,18 @@ class NestedFrameConstituentTests(unittest.TestCase):
         factor_grad = mx.grad(factor_objective)(params["features.type"])
         self.assertGreater(
             float(mx.sum(mx.abs(factor_grad[3]))), 0)
+        def slot_objective(slot_table):
+            changed = dict(params)
+            changed["features.local_slot"] = slot_table
+            return mx.sum(encode_frames(
+                compiled, vectors, changed).global_seeds[1, parent_index]
+                * mx.arange(768, dtype=mx.float32))
+        slot_grad = mx.grad(slot_objective)(
+            params["features.local_slot"])
+        self.assertGreater(
+            float(mx.sum(mx.abs(slot_grad[0]))), 0)
+        self.assertEqual(
+            float(mx.sum(mx.abs(slot_grad[1]))), 0)
 
     def test_orphan_relabel_future_and_unqualified_reconstruction_reject(self):
         ast, config, compiled, vectors, params = _case()

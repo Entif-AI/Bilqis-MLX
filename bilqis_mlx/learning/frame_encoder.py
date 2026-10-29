@@ -14,7 +14,7 @@ from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.learning.frame_embeddings import (
     ChildFrameRequest, FeatureRequest, FrameConstituentRequest,
     FrameFactorTerms, EmptyFrameFactorTerms, empty_frame_factor_terms,
-    child_frame_type_role, frame_factor_terms, validate_frame_members,
+    child_frame_source_context, frame_factor_terms, validate_frame_members,
 )
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes, validate_bamf_parameters,
@@ -346,7 +346,7 @@ def _encode_compiled(compiled, vectors, parameters):
                         if child_vector is None:
                             _invalid()
                         selected.append(
-                            child_vector + child_frame_type_role(
+                            child_vector + child_frame_source_context(
                                 parameters, request, compiled.features,
                                 extents=compiled.extents))
                     else:
