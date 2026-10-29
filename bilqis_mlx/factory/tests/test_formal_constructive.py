@@ -10,9 +10,8 @@ import unittest
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory.formal_constructive import (
-    FORMAL_SOURCE_ONLY, SOURCE_AUTHORITY_PINNED,
-    SOURCE_AUTHORITY_UNVERIFIED, _resolve_from_bindings,
-    resolve_formal_source_operators,
+    FORMAL_SOURCE_ONLY, SOURCE_PROJECTION_ONLY, _resolve_from_bindings,
+    assert_formal_source_operator_set_current, resolve_formal_source_operators,
 )
 from bilqis_mlx.semantics.atlas_projection import (
     AbiEntry, FormalDomainBinding, compile_atlas_release, persist_atlas_release,
@@ -61,7 +60,7 @@ class FormalSourceResolutionTests(unittest.TestCase):
             semantic_release=RELEASE, atlas_bundle_id=BUNDLE)
         self.assertEqual(resolved.status, FORMAL_SOURCE_ONLY)
         self.assertEqual(
-            resolved.source_authority, SOURCE_AUTHORITY_UNVERIFIED)
+            resolved.source_authority, SOURCE_PROJECTION_ONLY)
         self.assertEqual(resolved.uncovered, ())
         self.assertEqual(
             {item.semantic_id: item.operator.operator_id
@@ -69,7 +68,7 @@ class FormalSourceResolutionTests(unittest.TestCase):
             {semantic_id: operator for semantic_id, _, operator in FORMAL})
         for item in resolved.witnesses:
             self.assertEqual(
-                item.source_authority, SOURCE_AUTHORITY_UNVERIFIED)
+                item.source_authority, SOURCE_PROJECTION_ONLY)
             self.assertEqual(
                 item.operator_grant_sha256,
                 operator_grant_digest(registry.resolve(item.operator.operator_id)))
@@ -94,7 +93,7 @@ class FormalSourceResolutionTests(unittest.TestCase):
         self.assertEqual(len(resolved.witnesses), len(FORMAL))
         self.assertEqual(resolved.status, FORMAL_SOURCE_ONLY)
         self.assertEqual(
-            resolved.source_authority, SOURCE_AUTHORITY_UNVERIFIED)
+            resolved.source_authority, SOURCE_PROJECTION_ONLY)
 
     def test_wrong_release_and_forged_operator_contract_fail_closed(self):
         bindings, entries = _source()
@@ -158,16 +157,29 @@ class FormalSourceResolutionTests(unittest.TestCase):
                 release.source_bundle_id)
             resolved = resolve_formal_source_operators(
                 selection, default_registry(release.digest))
+            self.assertIsNone(assert_formal_source_operator_set_current(
+                resolved, selection, default_registry(release.digest)))
+            with self.assertRaises(BilqisError) as forged:
+                assert_formal_source_operator_set_current(
+                    replace(resolved, witnesses=resolved.witnesses[:2]),
+                    selection, default_registry(release.digest))
+            self.assertEqual(
+                forged.exception.context["reason"],
+                "BAMF_FORMAL_SOURCE_PROPOSAL_DRIFT")
         self.assertEqual(resolved.status, FORMAL_SOURCE_ONLY)
-        self.assertEqual(resolved.source_authority, SOURCE_AUTHORITY_PINNED)
+        self.assertEqual(resolved.source_authority, SOURCE_PROJECTION_ONLY)
         self.assertTrue(all(
-            item.source_authority == SOURCE_AUTHORITY_PINNED
+            item.source_authority == SOURCE_PROJECTION_ONLY
             for item in resolved.witnesses))
         self.assertEqual(resolved.uncovered, ())
         self.assertEqual(
             {item.operator.operator_id for item in resolved.witnesses},
             {"BOOL_NOT", "BOOL_AND", "COUNT", "SUCC"})
         self.assertEqual(len(resolved.witnesses), len(FORMAL))
+        with self.assertRaises(BilqisError):
+            replace(
+                resolved, source_authority="A01_PINNED_SOURCE_ATTESTED",
+                schema="bilqis.formal-source-operator-set/v1")
 
 
 if __name__ == "__main__":
