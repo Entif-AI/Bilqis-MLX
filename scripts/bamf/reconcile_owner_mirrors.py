@@ -50,37 +50,37 @@ def reconcile(root: Path, keys: tuple[str, ...],
     registry_path = root / 'children/registry.json'
     original_manifest = manifest_path.read_bytes()
     original_registry = registry_path.read_bytes()
-    manifest = json.loads(original_manifest)
-    registry = json.loads(original_registry)
-    owners = {item['key']: item for item in manifest['items']}
-    entries = registry['entries']
+    owners = {item['key']: item for item in json.loads(original_manifest)['items']}
+    entries = json.loads(original_registry)['entries']
     plans = []
     for key in keys:
         if key not in owners:
             raise ValueError(f'UNKNOWN_OWNER:{key}')
         row = owners[key]
         path = root / 'issues' / f'{key}.md'
-        old = path.read_bytes()
-        live = fetch(row['number'])
+        old, live = path.read_bytes(), fetch(row['number'])
         old_sha, live_sha = digest(old), digest(live)
         manifest_sha = row['body_sha256']
-        if old_sha != manifest_sha and old_sha != live_sha:
+        if old_sha not in (manifest_sha, live_sha):
             raise ValueError(f'LOCAL_OWNER_HASH_MISMATCH:{key}')
         if old_sha != live_sha and not additive_only(
                 old.decode('utf-8'), live.decode('utf-8')):
             raise ValueError(f'NON_ADDITIVE_LIVE_CHANGE:{key}')
-        descendants = [entry for entry in entries
-                       if entry['source_parent_sha256'] in (manifest_sha, live_sha)
-                       and entry['parent_key'] == key]
+        descendants = [entry for entry in entries if entry['parent_key'] == key]
         if not descendants:
             raise ValueError(f'OWNER_DESCENDANTS_MISSING:{key}')
-        if any(entry['source_parent_sha256'] not in (manifest_sha, live_sha)
-               for entry in entries if entry['parent_key'] == key):
-            raise ValueError(f'DESCENDANT_PARENT_HASH_DRIFT:{key}')
+        parent_hashes = {entry['source_parent_sha256'] for entry in descendants}
+        for prior in parent_hashes:
+            if prior in (old_sha, manifest_sha, live_sha):
+                continue
+            preserved = preserve / f'{key}.before.md' if preserve else None
+            if preserved is None or not preserved.is_file() or digest(
+                    preserved.read_bytes()) != prior:
+                raise ValueError(f'DESCENDANT_PARENT_HASH_DRIFT:{key}')
         plans.append({'key': key, 'number': row['number'], 'path': path,
                       'old': old, 'live': live, 'old_sha': old_sha,
                       'manifest_sha': manifest_sha, 'new_sha': live_sha,
-                      'descendants': len(descendants)})
+                      'descendants': len(descendants), 'parent_hashes': parent_hashes})
     report = {'schema': 'bilqis.owner-mirror-reconciliation/v1',
               'applied': apply,
               'owners': [{k: p[k] for k in ('key', 'number', 'old_sha',
@@ -88,29 +88,33 @@ def reconcile(root: Path, keys: tuple[str, ...],
     if not apply:
         return report
     assert preserve is not None
-    preserve.mkdir(parents=True, exist_ok=True)
-    atomic_write(preserve / 'workstack.before.json', original_manifest)
-    atomic_write(preserve / 'registry.before.json', original_registry)
-    for p in plans:
-        atomic_write(preserve / f'{p["key"]}.before.md', p['old'])
-        atomic_write(p['path'], p['live'])
-        owners[p['key']]['body_sha256'] = p['new_sha']
-        for entry in entries:
-            if entry['parent_key'] == p['key']:
-                entry['source_parent_sha256'] = p['new_sha']
-    # Preserve formatting and unrelated manifest metadata exactly.
+    # Validate all metadata edits before touching even one mirror.
     manifest_text = original_manifest.decode('utf-8')
     registry_text = original_registry.decode('utf-8')
     for p in plans:
         old_sha, new_sha = p['manifest_sha'], p['new_sha']
-        if old_sha == new_sha:
-            continue
-        if manifest_text.count(old_sha) != 1:
-            raise ValueError(f'MANIFEST_HASH_OCCURRENCE_INVALID:{p["key"]}')
-        manifest_text = manifest_text.replace(old_sha, new_sha)
-        if registry_text.count(old_sha) < p['descendants']:
-            raise ValueError(f'REGISTRY_HASH_OCCURRENCE_INVALID:{p["key"]}')
-        registry_text = registry_text.replace(old_sha, new_sha)
+        if old_sha != new_sha:
+            if manifest_text.count(old_sha) != 1:
+                raise ValueError(f'MANIFEST_HASH_OCCURRENCE_INVALID:{p["key"]}')
+            manifest_text = manifest_text.replace(old_sha, new_sha)
+        for prior in p['parent_hashes']:
+            if prior == new_sha:
+                continue
+            expected = sum(entry['source_parent_sha256'] == prior
+                           for entry in entries if entry['parent_key'] == p['key'])
+            if registry_text.count(prior) != expected:
+                raise ValueError(f'REGISTRY_HASH_OCCURRENCE_INVALID:{p["key"]}')
+            registry_text = registry_text.replace(prior, new_sha)
+    preserve.mkdir(parents=True, exist_ok=True)
+    for path, raw in ((preserve / 'workstack.before.json', original_manifest),
+                      (preserve / 'registry.before.json', original_registry)):
+        if not path.exists():
+            atomic_write(path, raw)
+    for p in plans:
+        original_path = preserve / f'{p["key"]}.before.md'
+        if not original_path.exists():
+            atomic_write(original_path, p['old'])
+        atomic_write(p['path'], p['live'])
     atomic_write(manifest_path, manifest_text.encode('utf-8'))
     atomic_write(registry_path, registry_text.encode('utf-8'))
     atomic_write(preserve / 'reconciliation.json',
