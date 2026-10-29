@@ -57,7 +57,16 @@ error-control-plane inspection found no new B07 findings.
 
 ## Disposition
 
-**SCOPED_CANDIDATE_EGM_PENDING_SOURCE_AND_RETAINED_COMMIT.**
+**SCOPED_EGM_PASS_SOURCE_AND_RETAINED_COMMIT_PENDING.**
+Independent Goldfish review at immutable pushed
+`242972c99bbac7f65dbe1d3f524c11bac5c6797c`
+returned **EGM PASS, zero Blockers/Majors** for candidate
+preparation/replay. The reviewer inspected source, tests and exact
+Git objects but did not independently execute the tests; the
+47-pass/2-optional-skip counts are prime execution evidence.
+The review expressly did not grant source-equivalence or B13/C
+retained-generation acceptance.
+
 No accepted-generation pointer, model/optimizer state, source release,
 teacher, live student or training run was changed. B07.1/.2 source
 authority and the B13/C atomic retained-generation boundary must
