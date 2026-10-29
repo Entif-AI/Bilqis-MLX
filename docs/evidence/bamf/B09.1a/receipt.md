@@ -57,7 +57,15 @@ observed in the new module; `git diff --check` passed.
 
 ## Disposition
 
-**SCOPED_CANDIDATE_EGM_PENDING_B09_AND_OPTIMIZER_INTEGRATION.**
+**SCOPED_EGM_PASS_B09_AND_OPTIMIZER_INTEGRATION_PENDING.**
+Independent Goldfish readback at immutable pushed
+`8ba5b8ae3c24221ab3e317a805ffcce62baa7b37`
+returned **EGM PASS, zero Blockers/Majors** for the exact
+B09.1a scoped numerical and static eligibility obligations.
+The reviewer inspected source, B01 ledger and tests but did not
+independently execute them; the 28-pass/2-optional-skip counts are
+prime execution evidence.
+
 No native AdamW state, row update mask, teacher strategy, retained
 checkpoint, accepted generation or live learner was mutated.
 Source-qualified row admission, B09.1b/.1c policy and B12/C
