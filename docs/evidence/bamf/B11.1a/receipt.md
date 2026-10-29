@@ -40,18 +40,21 @@ It verified B01 tensor names and geometry, pre-RMSNorm/CCGQA/FFN
 equations, causal masking, real gradients and the explicit
 `UNADMITTED_NUMERICAL` boundary. A later static-only guard cleanup
 `22410ec` preserves those equations and removes two opaque numeric
-guards. This PASS does **not** attest the source producer, B08 motif
-read or B13 generation custody.
+guards. This PASS does **not** attest the source producer or B08 motif
+read. B13 final-generation publication is a separate downstream gate.
 
 ## Next authority gate
 
-The next B11.1a unit must take B03/A05.4-approved source h0 and
-source-owned B13 generation/prediction custody, execute this fixed
-group path internally, apply the B08 second motif read at group 1,
-and bind the actual output tensor and ordered predecessor chain to
-an immutable producer receipt. No public raw-array or metadata-only
-constructor may issue that receipt. Until this exists and passes
-independent EGM, #577 stays fail-closed.
+The next B11.1a unit must take B03/A05.4-approved source h0, derive
+the actual B01 parameter-tree content identity and execution
+generation/prefix, execute this fixed group path internally, record
+the B08 second motif-read boundary (explicit no-hit while quarantined),
+and bind the actual output tensor, B04 cache chain and ordered
+predecessor chain to an immutable producer receipt. B13 final
+retained-generation publication remains separate and is not a
+prerequisite. No public raw-array or metadata-only constructor may
+issue the receipt. Until this exists and passes independent EGM,
+#577 stays fail-closed.
 
 No live training, optimizer mutation, source promotion, issue closure
 or lane merge occurred.
