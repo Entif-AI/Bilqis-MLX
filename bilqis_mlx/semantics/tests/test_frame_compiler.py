@@ -221,6 +221,31 @@ class FrameCompilerTests(TestCase):
                     task=replace(
                         expanded_config.task, causal_prefix_end=1025)))
 
+    def test_exact_1024_neural_positions_are_admitted(self):
+        ast, config = _case()
+        expanded = replace(
+            ast, atoms=ast.atoms + tuple(
+                SourceAtom(i, f"extra:{i}", f"source:extra:{i}")
+                for i in range(8, 1024)))
+        full_config = replace(
+            config, task=replace(
+                config.task, causal_prefix_end=1024))
+        atoms_only = compile_prefix(
+            replace(expanded, frames=()), 1024, RELEASE,
+            replace(full_config, approved=None))
+        self.assertEqual(len(atoms_only.positions), 1024)
+        self.assertEqual(atoms_only.stats.actual_atoms, 1024)
+        self.assertEqual(atoms_only.stats.actual_frames, 0)
+        one_frame = compile_prefix(
+            replace(expanded, atoms=expanded.atoms[:1023]),
+            1023, RELEASE, replace(
+                full_config, task=replace(
+                    full_config.task, causal_prefix_end=1023)))
+        self.assertEqual(len(one_frame.positions), 1024)
+        self.assertEqual(
+            (one_frame.stats.actual_atoms,
+             one_frame.stats.actual_frames), (1023, 1))
+
     def test_lawful_source_boundaries_split_without_truncation(self):
         _, config = _case()
         segments = []

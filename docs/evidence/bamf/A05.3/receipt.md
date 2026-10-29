@@ -90,7 +90,7 @@ from a desired model size or from padding.
 
 ## Executed evidence and predecessor trace
 
-Owner `test_frame_compiler.py`: **17 passed,
+Owner `test_frame_compiler.py`: **18 passed,
 0 failed, 0 skipped**. A target-only change
 preserves input and cache identity. A 1024-atom
 stream with one frame closure and a 1025-atom
@@ -100,7 +100,7 @@ while missing grants, cross-tenant mixing, gaps
 and oversized segments are rejected.
 
 Adjacent A03/A04/A13 and A05 owner suites:
-**69 passed, 0 failed, 1 optional skip**.
+**70 passed, 0 failed, 1 optional skip**.
 
 Predecessor: **BAMF-REQ-005**, causal input
 noninterference and source-visible frame compilation.
@@ -121,5 +121,16 @@ their frame becomes causally visible. This prevents
 future malformed approvals from poisoning an
 earlier source prefix while failing closed at the
 actual closure boundary. It also rejects empty
-lawful segments. Owner tests remain **17/17 PASS**.
+lawful segments. Owner tests remain **18/18 PASS**.
 Independent A05.3 EGM remains pending.
+
+The independent boundary-proof review identified
+an additional test gap: previous overflow negatives
+did not distinguish a correct inclusive 1024 limit
+from an erroneous 1023 limit. The added literal
+positive witness admits both exactly 1024 raw atoms
+and 1023 raw atoms plus one completed frame closure,
+while the existing 1025-position negatives still
+fail before packing. This closes the reported
+boundary discriminator gap without changing the
+implementation's limit.
