@@ -8,7 +8,7 @@ import sys
 import tempfile
 import unittest
 
-SCRIPT = Path(__file__).parents[1] / "check_module_size.py"
+SCRIPT = Path(__file__).parents[2] / "check_module_size.py"
 spec = importlib.util.spec_from_file_location("check_module_size", SCRIPT)
 check = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = check

@@ -13,6 +13,11 @@ import json
 from pathlib import Path
 import subprocess
 
+try:
+    from quality.change_scope import effective_base
+except ModuleNotFoundError:  # dynamic test import from repository root
+    from scripts.quality.change_scope import effective_base
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DIRS = tuple(sorted(
@@ -145,7 +150,7 @@ def _staged_records():
 
 
 def _changed_records(base_ref):
-    merge_base=subprocess.check_output(['git','merge-base',base_ref,'HEAD'],cwd=ROOT,text=True).strip()
+    merge_base=effective_base(ROOT,base_ref)
     result=subprocess.run(['git','diff','--name-status','-M','--diff-filter=ACMR',merge_base,'HEAD'],
                           cwd=ROOT,check=True,text=True,stdout=subprocess.PIPE)
     return merge_base,_records_from_name_status(result.stdout)

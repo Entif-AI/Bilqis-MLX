@@ -10,8 +10,10 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[2]
 STRUCTURE_CHECK = "scripts/check_module_size.py"
+CHANGE_SCOPE = "scripts/quality/change_scope.py"
 SMELL_BASELINE = "docs/evidence/development/code_smell_baseline.json"
 SIZE_BASELINE = "docs/evidence/development/module_size_baseline.json"
+EXPECTED_ADOPTION_COMMIT = "f3c33e2ef06650a04914d2660ca9cc5e14f0f08b"
 EXPECTED = (
     ("FILE_TRIGGER", 360),
     ("FILE_TARGET", 240),
@@ -66,6 +68,14 @@ def threshold_problems(*, staged: bool) -> list[str]:
             missing.append("@Entif Work Stack")
         if missing:
             problems.append(f"STRUCTURE_GOVERNANCE_TEXT_DRIFT {path} missing={','.join(missing)}")
+    scope = (current_bytes(CHANGE_SCOPE, staged=staged) or b"").decode("utf-8")
+    match = re.search(r'(?m)^GOVERNANCE_ADOPTION_COMMIT\s*=\s*"([0-9a-f]{40})"\s*$', scope)
+    actual_adoption = match.group(1) if match else None
+    if actual_adoption != EXPECTED_ADOPTION_COMMIT:
+        problems.append(
+            "STRUCTURE_ADOPTION_SCOPE_DRIFT "
+            f"expected={EXPECTED_ADOPTION_COMMIT} actual={actual_adoption}"
+        )
     return problems
 
 
