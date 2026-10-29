@@ -19,6 +19,8 @@ _COUNT = 0
 class Role:
     role_id: str
     allowed_type_ids: tuple[str, ...]
+    min_cardinality: int = 0
+    max_cardinality: int = 1
 
 
 @dataclass(frozen=True)
@@ -149,6 +151,37 @@ class MotifKeyTests(TestCase):
         b_exact, b_structural = motif_keys(second, RELEASE)
         self.assertNotEqual(a_exact, b_exact)
         self.assertEqual(a_structural, b_structural)
+
+    def test_structural_child_filler_abstracts_exact_content_but_keeps_relation(self):
+        first = source(child=True)
+        original = first.frame.bindings[0]
+        second = replace(first, frame=replace(
+            first.frame, bindings=(
+                replace(original, child_frame=replace(
+                    original.child_frame, occurrence_id="e" * 64,
+                    content_digest="f" * 64)),
+                first.frame.bindings[1])))
+        exact_a, structural_a = motif_keys(first, RELEASE)
+        exact_b, structural_b = motif_keys(second, RELEASE)
+        self.assertNotEqual(exact_a.relation_signature,
+                            exact_b.relation_signature)
+        self.assertEqual(structural_a.relation_signature,
+                         structural_b.relation_signature)
+        self.assertNotEqual(exact_a, exact_b)
+        self.assertEqual(structural_a, structural_b)
+
+    def test_valid_empty_optional_frame_has_canonical_motif_key(self):
+        schema = Schema((Role("optional", ("Person",), 0, 1),))
+        frame = Frame((), ("optional",))
+        source_frame = MotifFrameInput(frame, schema)
+        exact, structural = motif_keys(source_frame, RELEASE)
+        self.assertEqual(exact.members, ())
+        self.assertEqual(structural.members, ())
+        self.assertNotEqual(exact, structural)
+        view = prepare_motifs(
+            (source_frame,), MotifManifest(RELEASE), MotifBudget(2))
+        self.assertEqual([slot.key.kind for slot in view.plan.allocated],
+                         ["STRUCTURAL", "EXACT"])
 
     def test_foreign_release_schema_and_type_reject_before_key_admission(self):
         valid = source()
