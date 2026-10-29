@@ -233,6 +233,33 @@ class AtlasVocabularyTests(unittest.TestCase):
             caught.exception.context["reason"],
             "BAMF_VOCABULARY_FEATURE_SOURCE_REPLAY_MISMATCH")
 
+    def test_a02_rejects_coherent_caller_minted_feature_predecessor(self):
+        snapshot, prior = _allocation_fixture()
+        invented_predecessor = replace(
+            prior.features, type_map=(
+                ("NONE", 1), ("UNKNOWN", 0), ("urn:type:Entity", 77)),
+            semantic_release="9" * 64,
+            atlas_bundle_id=snapshot.prior_abi_sha256)
+        forged_schema = replace(
+            prior.feature_schema, predecessor=invented_predecessor)
+        forged_features = build_feature_manifest(snapshot, forged_schema)
+        self.assertEqual(dict(forged_features.type_map)["urn:type:Entity"], 77)
+        forged_prior = replace(
+            prior, feature_schema=forged_schema, features=forged_features,
+            extents=replace(
+                prior.extents, factor_map_digest=forged_features.digest))
+        with patch(
+            "bilqis_mlx.semantics.atlas_vocabulary.load_pinned_atlas_snapshot",
+            return_value=snapshot,
+        ):
+            with self.assertRaises(BilqisError) as caught:
+                plan_vocabulary_extension(
+                    forged_prior, ("urn:concept:8191",),
+                    ModelTopologySpecV2())
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_VOCABULARY_PREDECESSOR_FEATURE_AUTHORITY_REQUIRED")
+
     def test_a02_bank_candidate_preserves_prior_and_masks_inactive_logits(self):
         snapshot, prior = _allocation_fixture()
         parameters = {

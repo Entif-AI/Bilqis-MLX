@@ -72,3 +72,24 @@ learner or promotes a source.
 
 Scoped EGM disposition: PENDING targeted readback of the final
 immutable candidate. No leaf or parent closure is claimed.
+
+## Independent review Major and fail-closed repair
+
+Goldfish worker-25 reproduced a coherent caller-minted predecessor
+feature-map attack at c33b08d. A forged A06 predecessor could move
+the Entity type row from 2 to 77 while satisfying caller-provided
+factor digests and the replayed current manifest. A01's source pin
+did not independently authenticate that predecessor map.
+
+The planner now refuses any feature_schema.predecessor until the
+existing accepted-generation/checkpoint owner provides a separately
+verifiable predecessor feature receipt. First-generation A01 source
+replay remains supported. A new negative constructs the coherent
+forged predecessor and confirms the boundary fails closed before
+planning. This deliberately holds later successor-generation
+planning instead of accepting caller-owned authority.
+
+Prime focused combined A02/A06/B01 suites after both EGM repairs:
+47 passed, 0 failed, 1 optional historical-v1 skip with real A01
+source and full disposable B01 state. Fresh immutable-head EGM
+readback of this repair remains pending.

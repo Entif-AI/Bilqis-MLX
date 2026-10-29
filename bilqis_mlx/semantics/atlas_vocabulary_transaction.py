@@ -85,6 +85,14 @@ def stage_full_vocabulary_extension(
                 or banks.moments_m[bank] is not parent.optimizer_state[name]["m"]
                 or banks.moments_v[bank] is not parent.optimizer_state[name]["v"]):
             _invalid("BAMF_VOCABULARY_BANK_SLICE_DRIFT")
+    factor_names = (
+        "features.type", "features.project_type",
+        "features.project_graph", "features.gates",
+    )
+    if (set(banks.feature_parameters) != set(factor_names)
+            or any(banks.feature_parameters[name] is not parent.parameters[name]
+                   for name in factor_names)):
+        _invalid("BAMF_VOCABULARY_FEATURE_PARAMETER_SLICE_DRIFT")
     estimate = estimate_vocabulary_resources(
         banks.prior, plan,
         observed_available_bytes=parent.observed_available_bytes,
