@@ -6,7 +6,7 @@ boundary; this module does not mint source grants or attest salience.
 """
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 import hashlib
 import json
 import math
@@ -18,6 +18,9 @@ from bilqis_mlx.semantics.context_eligibility import (
     SourceFrontier, TaskScope, project_context,
 )
 from bilqis_mlx.semantics.frame_schema import FrameInstance
+from bilqis_mlx.semantics.frame_compiler import (
+    FrameCompilerConfig, PositionKind, StreamingAST, compile_prefix,
+)
 
 
 POLICY_SCHEMA = "bilqis.mlx.refinement-selection/v1"
@@ -115,6 +118,8 @@ def _sample_passes(
 def select_prediction_refinements(
     *,
     frames: tuple[ContextEligibility, ...],
+    source_ast: StreamingAST,
+    compiler_config: FrameCompilerConfig,
     task_scope: TaskScope,
     source_frontier: SourceFrontier,
     policy: ContextPolicy,
@@ -130,13 +135,15 @@ def select_prediction_refinements(
 ) -> RefinementSelection | ContextHold:
     """Select at most ceil(Fp/8) approved frames, capped at 32.
 
-    V(p) is reconstructed from source frames visible at the *current*
-    prediction boundary, then passed through the existing A13 eligibility
-    gate. Future frames and future source salience never enter that gate.
-    All route choices are local to (visit, prediction, query, occurrence).
+    V(p) is reconstructed from the complete A05 source AST and current
+    compiler configuration, not merely a caller-supplied frame subset.
+    The source compiler replays the exact prefix and A13 eligibility before
+    the proposed visible frame inventory can determine the quota.
     """
     if (not isinstance(frames, tuple)
             or any(not isinstance(frame, ContextEligibility) for frame in frames)
+            or type(source_ast) is not StreamingAST
+            or type(compiler_config) is not FrameCompilerConfig
             or not isinstance(task_scope, TaskScope)
             or not isinstance(source_frontier, SourceFrontier)
             or not isinstance(policy, ContextPolicy)
@@ -152,6 +159,10 @@ def select_prediction_refinements(
                 training, explicit_member_question, unresolved_nested_query))):
         _invalid()
     p = task_scope.causal_prefix_end
+    if (replace(compiler_config.task, causal_prefix_end=p) != task_scope
+            or compiler_config.frontier != source_frontier
+            or compiler_config.policy != policy):
+        _invalid()
     if (explicit_member_question and not requested_roles):
         _invalid()
     handles = {item.frame_handle for item in frames}
@@ -165,6 +176,10 @@ def select_prediction_refinements(
                     and item.frame.source_span.end <= p
                     and all(member.visible_at_prefix <= p for member in item.members))
     if not visible:
+        compiled = compile_prefix(
+            source_ast, p, task_scope.semantic_release, compiler_config)
+        if any(item.kind is PositionKind.CLOSURE for item in compiled.positions):
+            _invalid()
         return RefinementSelection(
             input_generation, p, query_id, None, 0, 0, (), ())
 
@@ -172,6 +187,15 @@ def select_prediction_refinements(
     if isinstance(projection, ContextHold):
         return projection
     if not isinstance(projection, ApprovedContextProjection):
+        _invalid()
+    compiled = compile_prefix(
+        source_ast, p, task_scope.semantic_release, compiler_config)
+    closure_handles = tuple(
+        item.frame_handle for item in compiled.positions
+        if item.kind is PositionKind.CLOSURE)
+    if (len(closure_handles) != len(visible)
+            or set(closure_handles) != {item.frame_handle for item in visible}
+            or compiled.context_digest != projection.digest):
         _invalid()
 
     approved = {item.frame_handle: item for item in projection.eligible.frames}

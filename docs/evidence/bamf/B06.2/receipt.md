@@ -9,8 +9,11 @@ Direct prerequisite: B06.1/#452 provisional numerical kernel `8162096`
 ## Owned software
 
 `runtime/refinement_policy.py` implements a pure prediction-local selector
-over actual A13 context eligibility. It filters the complete visible frame
-prefix before source-policy projection, then computes Fp and the exact
+over the actual A05 compiled source AST and A13 context eligibility.
+It replays `compile_prefix` at p against the source-owned AST/config,
+requires exact agreement with every compiled closure and the approved
+context digest, and refuses omitted visible frames before computing Fp.
+It filters future frames before source-policy projection and computes the exact
 `min(32, ceil(Fp/8))` quota. Requested-role matches rank first, followed by
 source-visible salience and stable source span/occurrence order. Salience is
 optional, defaults to a neutral tie, and requires an exact source-frontier
@@ -29,7 +32,9 @@ No shared backbone state is mutated.
 `runtime/atlas_refinement.py` adds a masked auxiliary route loss:
 missing labels contribute exactly zero route gradient, while the
 separate answer loss still backpropagates through the selected one-
-or two-pass numerical kernel. No teacher target enters selection.
+or two-pass numerical kernel. A separate pre-refinement route readout
+trains class0 even when the zero-pass numerical kernel returns the
+original hidden object and no logits. No teacher target enters selection.
 
 ## Verification
 
@@ -43,20 +48,29 @@ python3 -B scripts/run_tests.py \
   bilqis_mlx/runtime/tests/test_refinement_policy.py \
   bilqis_mlx/runtime/tests/test_atlas_refinement.py \
   bilqis_mlx/runtime/tests/test_block_attnres.py \
-  bilqis_mlx/semantics/tests/test_context_eligibility.py
+  bilqis_mlx/semantics/tests/test_context_eligibility.py \
+  bilqis_mlx/semantics/tests/test_frame_compiler.py
 ```
 
-Result: **44 passed, 0 failed, 0 skipped**. These include the
+Result after independent-review repair: **65 passed, 0 failed, 0 skipped**. These include the
 8-to-9 quota boundary, future-frame and future-salience isolation,
-source revocation and forged-salience rejection, all three seeded
-training pass counts, nested two-pass policy, masked route gradients
-and retained answer gradients. `git diff --check` passed. The
+missing-eligible-frame adversary, source revocation and forged-salience
+rejection, all three seeded training pass counts, nested two-pass policy,
+measured class0 routing gradients, masked route gradients and retained
+answer gradients. `git diff --check` passed. The
 error-control-plane checker reported no new findings in either changed
 runtime module; unrelated inherited findings remain.
 
 ## Boundaries and disposition
 
 **SCOPED_CANDIDATE_PENDING_INDEPENDENT_EGM_AND_INTEGRATION.**
+Independent EGM at `f612721` found two Majors: a caller could omit an
+otherwise eligible frame and shrink Fp, and class0 had no trainable
+routing-head path. Both are repaired in the current candidate:
+A05 prefix recompilation now binds the complete closure inventory;
+`routing_logits_from_state` trains the three-class head without
+altering B06.1's exact zero-pass identity. Fresh immutable-head
+readback remains pending, so no EGM PASS is claimed.
 This is not the public `refine_selected` source/backbone assembly.
 B03.3/#444 still awaits A05 child-prefix revalidation and B02
 child-binding source factors; B05/B11 must qualify real hidden-state
