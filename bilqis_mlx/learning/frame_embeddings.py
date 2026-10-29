@@ -15,6 +15,7 @@ from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.runtime.model_topology_v2 import (
     FEATURE_NONE_ROW, GenerationExtents, ModelTopologySpecV2, SHA256_HEX_LENGTH, expected_bamf_shapes,
     initialize_bamf_row, initializer_seed,
+    validate_bamf_parameters,
 )
 from bilqis_mlx.semantics.atlas_features import AtlasFeatures
 from bilqis_mlx.semantics.context_eligibility import ApprovedContextProjection
@@ -40,6 +41,15 @@ class FactorGate(IntEnum):
 
 def _invalid():
     ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+
+
+def embedding_parameter_view(parameters: Mapping[str, mx.array], *, spec: ModelTopologySpecV2,
+                             extents: GenerationExtents) -> dict[str, mx.array]:
+    """Borrow the exact identity/feature prefix after validating the whole B01 tree."""
+    validate_bamf_parameters(spec, extents, parameters)
+    names = tuple(item.name for item in expected_bamf_shapes(spec, extents)
+                  if item.name.startswith(("identity.bank.", "features.")))
+    return {name: parameters[name] for name in names}
 
 
 def _source_coordinates(projection, frame_handle, member_handle):
