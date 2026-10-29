@@ -69,8 +69,13 @@ handles/reasons and schema versions.
 Repair `d23c5999e2783a99617871dc69a1484d764d7011`
 added ErrorBus-backed validation for both records and
 table-driven negative tests. The targeted independent
-readback returned **A13.3 EGM PASS**, zero remaining
-Blockers/Majors, and independently executed 21/21
-focused tests. C09 durable outbox delivery, reverse
+readback returned **A13.3 typed-record subreview PASS**,
+zero remaining Blockers/Majors in that scoped check,
+and independently executed 21/21 focused tests.
+The separate full-issue fresh-context review on #432
+also required purpose/jurisdiction/release isolation and
+PR closing-link evidence. Those findings are being
+reconciled before full-issue EGM PASS. C09 durable
+outbox delivery, reverse
 dependency propagation and Akasha routing remain
 Lane C ownership. No live training or merge occurred.

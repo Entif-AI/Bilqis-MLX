@@ -230,6 +230,18 @@ class ContextEligibilityTests(unittest.TestCase):
             transition_context(
                 prior, frames, replace(task, scope="synthetic:other-scope"),
                 frontier, policy)
+        for changed in (
+            replace(task, purpose="synthetic:other-purpose"),
+            replace(task, jurisdiction="synthetic:other-region"),
+            replace(task, semantic_release="b" * 64),
+        ):
+            with self.subTest(partition=changed):
+                with self.assertRaises(BilqisError) as caught:
+                    transition_context(
+                        prior, frames, changed, frontier, policy)
+                self.assertEqual(
+                    caught.exception.context["reason"],
+                    "BAMF_CONTEXT_TRANSITION_ACTOR_SCOPE_DRIFT")
 
     def test_approved_projection_is_the_only_readout_and_cache_identity(self):
         frames, task, frontier, policy = _case(count=2, two_roles=True)

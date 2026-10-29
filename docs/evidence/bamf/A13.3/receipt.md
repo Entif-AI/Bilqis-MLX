@@ -7,7 +7,8 @@
 - Consumed A13.1 source-grant gate EGM `cba2ae4`;
   A13.2 approved projection EGM `f351334`
 - Branch: `codex/bamf02-a-semantics`; candidate head pending push
-- Independent EGM: **PASS**, zero remaining Blockers/Majors
+- Independent EGM: **PENDING full issue clearance**;
+  typed-record subreview PASS at `d23c599`
 
 ## Contract and bounded local invalidation
 
@@ -85,3 +86,18 @@ The reviewer independently executed 21 focused tests from
 the immutable archive and confirmed the invalidation and
 transition records reject the previously accepted malformed
 values. See `docs/evidence/bamf/A13/egm.md`.
+
+## Full-issue EGM reconciliation
+
+The separate fresh-context EGM receipt on #432
+(`6486695979`) found three Majors at the original
+`29f3d9b` target. The typed-boundary Major above is
+cleared, but that scoped PASS did not review the other
+two. The transition now also fail-closes changes of
+purpose, jurisdiction and semantic release, in addition
+to principal, tenant and scope, before attributing prior
+approved handles to the new task. Synthetic negative
+tests exercise all six authority partitions. The final
+Major is PR Development closing-link/receipt metadata,
+which must be verified after the code is pushed.
+Full-issue independent EGM remains pending until then.

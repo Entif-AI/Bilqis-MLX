@@ -731,6 +731,9 @@ def transition_context(
     if any(
         envelope.principal_id != task_scope.principal_id
         or envelope.tenant_id != task_scope.tenant_id
+        or envelope.purpose != task_scope.purpose
+        or envelope.jurisdiction != task_scope.jurisdiction
+        or envelope.semantic_release != task_scope.semantic_release
         or envelope.scope != task_scope.scope
         for envelope in previous.envelopes
     ):
