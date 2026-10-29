@@ -1,6 +1,8 @@
 """Immutable championship history plus evolving per-capability defense batteries."""
 from __future__ import annotations
 
+import json
+
 from bilqis_mlx.generated_assessment import digest
 from .championship_policy import CONTEXT_KEYS
 
@@ -17,6 +19,19 @@ def _context_payload(context: dict) -> dict:
         if not isinstance(cohort_rubric, str) or len(cohort_rubric) != 64:
             raise ValueError("CHAMPIONSHIP_COHORT_RUBRIC_IDENTITY_DRIFT")
         payload[COHORT_RUBRIC_KEY] = cohort_rubric
+    if "complete_solver_provenance" in context:
+        provenance = context["complete_solver_provenance"]
+        if (not isinstance(provenance, dict)
+                or provenance.get("schema_version") != "bilqis.c05.complete-solver-provenance/v1"
+                or any(not isinstance(provenance.get(key), str)
+                       or len(provenance[key]) != 64
+                       for key in ("generation_digest", "weight_sha256"))
+                or not isinstance(provenance.get("solver_contracts"), (tuple, list))
+                or not provenance["solver_contracts"]
+                or any(not isinstance(value, str) or len(value) != 64
+                       for value in provenance["solver_contracts"])):
+            raise ValueError("CHAMPIONSHIP_COMPLETE_SOLVER_PROVENANCE_INVALID")
+        payload["complete_solver_provenance"] = provenance
     return payload
 
 
@@ -26,14 +41,18 @@ def _context_identity(context: dict) -> tuple:
         *(payload[key] for key in CONTEXT_KEYS),
         COHORT_RUBRIC_KEY in payload,
         payload.get(COHORT_RUBRIC_KEY),
+        "complete_solver_provenance" in payload,
+        json.dumps(payload.get("complete_solver_provenance"), sort_keys=True, separators=(",", ":")),
     )
 
 
 def _context_from_identity(identity: tuple) -> dict:
     core = dict(zip(CONTEXT_KEYS, identity[:len(CONTEXT_KEYS)]))
-    present, value = identity[len(CONTEXT_KEYS):]
+    present, value, solver_present, solver_json = identity[len(CONTEXT_KEYS):]
     if present:
         core[COHORT_RUBRIC_KEY] = value
+    if solver_present:
+        core["complete_solver_provenance"] = json.loads(solver_json)
     return core
 
 
@@ -177,6 +196,7 @@ def refresh_battery(role: dict, *, gate_exam: dict, fresh_exam: dict,
     """Keep only questions the winner answered correctly in the latest title match."""
     segments = list(battery_from_exam(gate_exam, qualification_scope))
     segments.extend(battery_from_exam(fresh_exam, qualification_scope))
+    current_segment_count = len(segments)
     for segment in verified_battery(role):
         correct = set(battery_correct.get(segment["sha256"], ()))
         offered = {question["id"]: question for question in segment["questions"]}
@@ -186,6 +206,9 @@ def refresh_battery(role: dict, *, gate_exam: dict, fresh_exam: dict,
         if questions:
             segments.append(_battery_segment(segment, questions))
 
+    if "complete_solver_provenance" in role:
+        # Preserve original replay provenance when a question survives deduplication.
+        segments = segments[current_segment_count:] + segments[:current_segment_count]
     return _dedup_battery_segments(segments)
 
 

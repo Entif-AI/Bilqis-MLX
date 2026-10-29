@@ -1,7 +1,7 @@
 """C04.1 source-bound exact/cache/neural DAG routing without grade branches."""
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 import re
 from typing import Callable
 
@@ -14,7 +14,6 @@ from ..semantics.cognitive_operators import (
 )
 from ..semantics.domains import contract_digest
 from ..semantics.memo import PureOperationMemo
-from .cognitive_replay import SolveReplayReceipt, make_replay_receipt
 from .operator_registry import (
     RouteKind, RouteRegistry, default_route_registry,
 )
@@ -27,6 +26,7 @@ SOLVE_CONTEXT_SCHEMA = "bilqis.c04.solve-context/v2"
 NEURAL_REQUEST_SCHEMA = "bilqis.c04.neural-request/v1"
 NEURAL_PROPOSAL_SCHEMA = "bilqis.c04.neural-proposal/v1"
 CAPABILITY_RESULT_SCHEMA = "bilqis.c04.capability-result/v3"
+SOLVE_REPLAY_SCHEMA = "bilqis.c04.solve-replay/v1"
 MAX_CACHED_COMPOSITIONS = 16
 MAX_NEURAL_CALLS = 1
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
@@ -183,7 +183,11 @@ class CapabilityResult:
     generation_digest: str
     source_binding_digest: str
     score: float | None
-    replay_receipt: SolveReplayReceipt
+    task_sha256: str
+    rights_epoch: int
+    correction_generation: int
+    operation_limit: int
+    reserved_operations: int
     local_refinement_calls: int = 0
     fallback_reason: str | None = None
     schema_version: str = CAPABILITY_RESULT_SCHEMA
@@ -206,19 +210,17 @@ class CapabilityResult:
                     and not _name(self.fallback_reason))
                 or not _sha(self.generation_digest)
                 or not _sha(self.source_binding_digest)
-                or not isinstance(self.replay_receipt, SolveReplayReceipt)
-                or self.replay_receipt.route is not self.route
-                or self.replay_receipt.outcome_digest
-                != contract_digest(self.answer)
-                or self.replay_receipt.generation_digest
-                != self.generation_digest
-                or self.replay_receipt.source_binding_digest
-                != self.source_binding_digest
-                or self.replay_receipt.neural_calls != self.neural_calls
-                or self.replay_receipt.local_refinement_calls
-                != self.local_refinement_calls
-                or self.replay_receipt.score != self.score
-                or self.replay_receipt.fallback_reason != self.fallback_reason
+                or not _sha(self.task_sha256)
+                or any(type(value) is not int or value < 0 for value in (
+                    self.rights_epoch, self.correction_generation,
+                    self.reserved_operations))
+                or type(self.operation_limit) is not int
+                or not 1 <= self.operation_limit <= 64
+                or sum(item.operation_count for item in self.dag_receipts)
+                + self.reserved_operations > self.operation_limit
+                or any(item.source_binding_digest != self.source_binding_digest
+                       or item.semantic_release != self.answer.semantic_release
+                       for item in self.dag_receipts)
                 or (exact and (self.score != 1.0
                                or (self.route is not
                                    RouteKind.DETERMINISTIC_FALLBACK
@@ -234,12 +236,82 @@ class CapabilityResult:
                 or self.schema_version != CAPABILITY_RESULT_SCHEMA):
             _invalid("BAMF_C04_CAPABILITY_RESULT_INVALID")
 
+    def replay_record(self) -> dict:
+        """Export replay identities and measured costs without source/gold payloads."""
+        return {
+            "schema_version": SOLVE_REPLAY_SCHEMA,
+            "task_sha256": self.task_sha256,
+            "generation_digest": self.generation_digest,
+            "source_binding_digest": self.source_binding_digest,
+            "semantic_release": self.answer.semantic_release,
+            "rights_epoch": self.rights_epoch,
+            "correction_generation": self.correction_generation,
+            "route": self.route.value,
+            "dag_receipts": tuple(asdict(item) for item in self.dag_receipts),
+            "costs": {
+                "pure_operations": sum(item.operation_count for item in self.dag_receipts),
+                "reserved_operations": self.reserved_operations,
+                "operation_limit": self.operation_limit,
+                "lookups": sum(item.lookup_count for item in self.dag_receipts),
+                "memo_hits": sum(item.memo_hit_count for item in self.dag_receipts),
+                "backbone_calls": self.neural_calls,
+                "local_refinements": self.local_refinement_calls,
+                "decoder_decisions": None,
+            },
+            "outcome": {
+                "type": self.answer.type_name,
+                "state": self.answer.state.value,
+                "sha256": contract_digest(self.answer),
+            },
+            "fallback_reason": self.fallback_reason,
+        }
+
+
+def _fills_declared_holes(candidate: TaskGoal, original: TaskGoal) -> bool:
+    proposed = candidate.expression_or_holes
+    declared = original.expression_or_holes
+    if (proposed.output_node_id != declared.output_node_id
+            or proposed.scope != declared.scope
+            or {node.node_id for node in proposed.nodes}
+            != {node.node_id for node in declared.nodes}):
+        return False
+    originals = {node.node_id: node for node in declared.nodes}
+    for node in proposed.nodes:
+        source = originals[node.node_id]
+        if (node.scope != source.scope
+                or node.expected_output_type != source.expected_output_type
+                or len(node.operands) != len(source.operands)):
+            return False
+        if source.operator_id is not None:
+            if node != source:
+                return False
+            continue
+        if node.operator_id is None:
+            if (not set(node.candidate_operator_ids).issubset(
+                    source.candidate_operator_ids)
+                    or node.constraints != source.constraints):
+                return False
+        elif node.operator_id not in source.candidate_operator_ids:
+            return False
+        for index, (fixed, chosen) in enumerate(zip(source.operands, node.operands)):
+            if fixed is not None:
+                if chosen != fixed:
+                    return False
+            elif chosen is not None:
+                if chosen not in source.candidate_operand_refs[index]:
+                    return False
+            elif not set(node.candidate_operand_refs[index]).issubset(
+                    source.candidate_operand_refs[index]):
+                return False
+    return True
+
 
 def _goal_allowed(
     candidate: TaskGoal, original: TaskGoal, budget: SolveBudget,
 ) -> bool:
     return (
-        candidate.semantic_release == original.semantic_release
+        _fills_declared_holes(candidate, original)
+        and candidate.semantic_release == original.semantic_release
         and candidate.scope == original.scope
         and candidate.output_signature == original.output_signature
         and set(candidate.source_visible_bindings).issubset(
@@ -275,28 +347,44 @@ def solve_task(
     if len(context.qualified_compositions) > budget.max_cached_candidates:
         _invalid("BAMF_C04_CACHED_CANDIDATE_BUDGET_EXCEEDED")
     receipts = []
+    remaining_operations = task.budget.max_operations
+    reserved_operations = 0
+
+    def evaluate(goal: TaskGoal):
+        nonlocal remaining_operations, reserved_operations
+        try:
+            evaluated = execute_dag(
+                goal, binding, memo=context.memo,
+                operation_limit=min(remaining_operations, goal.budget.max_operations))
+        except BilqisError:
+            # A failed executor has no cost receipt; reserve all remaining compute.
+            reserved_operations += remaining_operations
+            remaining_operations = 0
+            raise
+        remaining_operations -= evaluated.receipt.operation_count
+        receipts.append(evaluated.receipt)
+        return evaluated
+
+    def decode(callback, *args):
+        try:
+            return callback(*args)
+        except (BilqisError, ValueError):
+            # Decoder construction is an external typed-payload boundary.
+            return None
 
     local_refinement_calls = 0
     fallback_reason = None
 
     def result(answer: TypedValue, route: RouteKind, calls: int) -> CapabilityResult:
-        score = (1.0 if route in (
-            RouteKind.EXACT, RouteKind.CACHED_COMPOSITION,
-            RouteKind.DETERMINISTIC_FALLBACK) else None)
-        replay = make_replay_receipt(
-            goal_id=task.goal_id, route=route,
-            receipts=tuple(receipts), answer=answer,
-            neural_calls=calls,
-            local_refinement_calls=local_refinement_calls,
-            source_binding_digest=source_digest,
-            generation_digest=generation.generation_digest,
-            rights_epoch=binding.frontier.rights_epoch,
-            correction_generation=binding.frontier.correction_generation,
-            score=score, fallback_reason=fallback_reason)
         return CapabilityResult(
             answer, route, tuple(receipts), calls,
             generation.generation_digest, source_digest,
-            score, replay, local_refinement_calls, fallback_reason)
+            1.0 if route in (
+                RouteKind.EXACT, RouteKind.CACHED_COMPOSITION,
+                RouteKind.DETERMINISTIC_FALLBACK) else None,
+            contract_digest(task), binding.frontier.rights_epoch,
+            binding.frontier.correction_generation, task.budget.max_operations,
+            reserved_operations, local_refinement_calls, fallback_reason)
 
     def qualified(cached: QualifiedComposition) -> bool:
         return (
@@ -323,11 +411,9 @@ def solve_task(
                 or not _goal_allowed(proposal.goal, task, budget)):
             return None, "BAMF_C04_NEURAL_PROPOSAL_SCOPE_DRIFT"
         try:
-            evaluated = execute_dag(
-                proposal.goal, binding, memo=context.memo)
+            evaluated = evaluate(proposal.goal)
         except BilqisError:
             return None, "BAMF_C04_NEURAL_DAG_REJECTED"
-        receipts.append(evaluated.receipt)
         if evaluated.answer.state is not ValueState.VALUE:
             return evaluated, "BAMF_C04_NEURAL_UNRESOLVED"
         return evaluated, None
@@ -342,8 +428,7 @@ def solve_task(
     neural_calls = 0
     for route in context.route_registry.specs:
         if route.kind is RouteKind.EXACT:
-            exact = execute_dag(task, binding, memo=context.memo)
-            receipts.append(exact.receipt)
+            exact = evaluate(task)
             if exact.answer.state is ValueState.VALUE:
                 return result(exact.answer, RouteKind.EXACT, 0)
             unresolved_answer = exact.answer
@@ -354,12 +439,10 @@ def solve_task(
                 if not qualified(cached):
                     continue
                 try:
-                    solved = execute_dag(
-                        cached.goal, binding, memo=context.memo)
+                    solved = evaluate(cached.goal)
                 except BilqisError:
                     fallback_reason = "BAMF_C04_CACHED_DAG_REJECTED"
                     continue
-                receipts.append(solved.receipt)
                 if solved.answer.state is ValueState.VALUE:
                     return result(
                         solved.answer, RouteKind.CACHED_COMPOSITION, 0)
@@ -372,7 +455,7 @@ def solve_task(
                 task.allowed_operator_ids)
             neural_calls = 1
             neural, fallback_reason = execute_proposal(
-                context.neural_proposer(request), request)
+                decode(context.neural_proposer, request), request)
             if neural is not None and neural.answer.state is ValueState.VALUE:
                 return result(
                     neural.answer, RouteKind.NEURAL_COMPOSITION, neural_calls)
@@ -382,7 +465,7 @@ def solve_task(
                 for attempt in range(1, budget.max_local_refinements + 1):
                     local_refinement_calls += 1
                     refined, reason = execute_proposal(
-                        context.local_refiner(request, attempt), request)
+                        decode(context.local_refiner, request, attempt), request)
                     if refined is not None:
                         unresolved_answer = refined.answer
                     if refined is not None and (
@@ -397,12 +480,10 @@ def solve_task(
             if cached is None or not qualified(cached):
                 continue
             try:
-                fallback = execute_dag(
-                    cached.goal, binding, memo=context.memo)
+                fallback = evaluate(cached.goal)
             except BilqisError:
                 fallback_reason = "BAMF_C04_FALLBACK_DAG_REJECTED"
                 continue
-            receipts.append(fallback.receipt)
             if fallback.answer.state is ValueState.VALUE:
                 return result(
                     fallback.answer, RouteKind.DETERMINISTIC_FALLBACK,

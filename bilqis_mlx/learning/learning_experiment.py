@@ -6,6 +6,8 @@ parent/challenger questions; an approximate failure signature is never gold.
 """
 from __future__ import annotations
 
+from .retention_policy import retention_reason as _retention_reason, scaled_loss_allowance
+
 from .source_selection import (
     COMPOSITION_DEPTH_POLICY_THRESHOLD, _choose_binary_rows, _choose_typed_rows,
     _fresh_support_rows,
@@ -268,34 +270,6 @@ def _fixed_frontier_retention_evidence(value, protected_frontier_grade):
     return frontier, after < before, active_grade_regression, after - before
 
 
-def _retention_reason(*, no_target_gain, same_grade_net_gain,
-                      fixed_grade_regression, active_grade_regression,
-                      whole_school_regression, frontier_measured,
-                      fragile_losses, exceeded):
-    if no_target_gain:
-        return "NO_MEASURABLE_TARGET_GAIN"
-    if not frontier_measured and fragile_losses:
-        return "FRAGILE_COMPOSITION_REPLAY_REGRESSION"
-    if exceeded: return "PROTECTED_CAPABILITY_REGRESSION"
-    if not frontier_measured:
-        if same_grade_net_gain < 0:
-            return "SAME_GRADE_NET_REGRESSION"
-        if same_grade_net_gain == 0:
-            return "NO_POSITIVE_SAME_GRADE_GAIN"
-        if fixed_grade_regression:
-            return "FIXED_GRADE_COHORT_REGRESSION"
-        return "PAIRED_SCREEN_WITHIN_BUDGET"
-    if same_grade_net_gain < 0:
-        return "SAME_GRADE_NET_REGRESSION"
-    if fixed_grade_regression:
-        return "FIXED_LESSON_GRADE_REGRESSION"
-    if active_grade_regression:
-        return "ACTIVE_SCHOOL_GRADE_REGRESSION"
-    if whole_school_regression:
-        return "WHOLE_SCHOOL_NET_REGRESSION"
-    return "PAIRED_SCREEN_WITHIN_BUDGET"
-
-
 def _protected_diagnostics(paired, protected, active_capability, phase,
                            settings, mature_grades):
     deltas, regressions = _paired_screen(
@@ -312,9 +286,8 @@ def _protected_diagnostics(paired, protected, active_capability, phase,
     # not absolute answer counts. Preserve the original 1/6 (or MAIN 3/6)
     # risk appetite when a capability is measured on a larger paired panel.
     tolerances = {
-        cap: min(
-            paired[cap]["total"],
-            paired[cap]["total"] * reference_losses[cap] // settings.probe_each)
+        cap: scaled_loss_allowance(
+            paired[cap]["total"], reference_losses[cap], settings.probe_each)
         for cap in sorted(regressions)
     }
     exceeded = {
