@@ -11,6 +11,11 @@ from dataclasses import dataclass
 from pathlib import Path
 import subprocess
 
+try:
+    from quality.change_scope import effective_base
+except ModuleNotFoundError:  # dynamic test import from repository root
+    from scripts.quality.change_scope import effective_base
+
 ROOT = Path(__file__).resolve().parents[1]
 FILE_TRIGGER = 360
 FILE_TARGET = 240
@@ -75,8 +80,8 @@ def changed_paths(*, staged: bool = False, base_ref: str | None = None) -> list[
     else:
         if not base_ref:
             raise ValueError("BASE_REF_REQUIRED")
-        merge_base = _git("merge-base", base_ref, "HEAD").stdout.strip()
-        result = _git("diff", "--name-status", "-M", "--diff-filter=ACMRD", merge_base, "HEAD")
+        comparison_base = effective_base(ROOT, base_ref)
+        result = _git("diff", "--name-status", "-M", "--diff-filter=ACMRD", comparison_base, "HEAD")
     return _parse_name_status(result.stdout)
 
 
@@ -174,7 +179,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.paths:
         problems = explicit_violations(args.paths)
     else:
-        base_ref = "HEAD" if args.staged else _git("merge-base", args.changed_from or "HEAD", "HEAD").stdout.strip()
+        base_ref = "HEAD" if args.staged else effective_base(ROOT, args.changed_from or "HEAD")
         changes = changed_paths(staged=args.staged, base_ref=None if args.staged else base_ref)
         problems = violations(changes, base_ref=base_ref, staged=args.staged)
     for problem in problems:

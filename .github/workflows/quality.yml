@@ -81,8 +81,8 @@ jobs:
           scripts/tests/test_release_version.py
           scripts/tests/test_docs.py
           scripts/tests/test_run_tests.py
-          scripts/tests/test_module_size.py
-          scripts/tests/test_governance_integrity.py
+          scripts/tests/governance/test_module_size.py
+          scripts/tests/governance/test_governance_integrity.py
           bilqis_mlx/factory/tests/test_release.py
           bilqis_mlx/factory/tests/test_generation.py
           bilqis_mlx/factory/tests/test_historical_generalization.py

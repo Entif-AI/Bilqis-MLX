@@ -8,7 +8,7 @@ import sys
 import tempfile
 import unittest
 
-SCRIPT = Path(__file__).resolve().parents[1] / 'check_bamf_workstack.py'
+SCRIPT = Path(__file__).resolve().parents[2] / 'check_bamf_workstack.py'
 
 
 def item(key, lane, dependencies=(), paths=()):
