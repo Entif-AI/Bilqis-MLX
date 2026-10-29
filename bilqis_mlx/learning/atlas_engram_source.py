@@ -1,4 +1,9 @@
-"""Source-qualified A03/A13 admission gate for candidate-only B07 motifs."""
+"""B07.1 source-gate integration probe, not a production admission authority.
+
+The released A03 schema body and A13 grant issuer are not yet authenticated
+by this candidate. Keep the probe private until those source owners expose
+verifiable artifacts; do not wire it into neural or allocation production.
+"""
 from __future__ import annotations
 
 from collections.abc import Mapping
@@ -34,7 +39,7 @@ class ApprovedMotifCandidate:
             _invalid("BAMF_MOTIF_APPROVED_CANDIDATE_INVALID")
 
 
-def prepare_approved_motifs(
+def _probe_approved_motifs(
     envelopes: tuple[ContextEligibility, ...],
     task: TaskScope,
     frontier: SourceFrontier,
@@ -46,7 +51,7 @@ def prepare_approved_motifs(
     *,
     source_authorities: Mapping[str, tuple[dict | None, str | None]] | None = None,
 ) -> ApprovedMotifCandidate | ContextHold:
-    """Reuse A13 grants and A03 source binding before any motif allocation."""
+    """Exercise A03/A13 checks; caller-issued grants and schemas remain untrusted."""
     if (not isinstance(schemas, tuple)
             or any(type(item) is not FrameSchema for item in schemas)
             or type(task) is not TaskScope

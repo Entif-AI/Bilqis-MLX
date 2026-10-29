@@ -90,7 +90,8 @@ The reviewed unified head `6b54600` now contains the actual A03
 frame/schema and A13 context eligibility modules. The isolated
 B07.2 continuation branch consumed that exact unified head at
 `590c1cb`, then added `atlas_engram_source.py` as a narrow
-source-owned entrypoint. It calls A13 `project_context` before
+**private integration probe**, not a production admission entrypoint.
+It calls A13 `project_context` before
 any motif preparation, returns a `ContextHold` without allocating
 when rights or visibility fail, and reuses A03
 `validate_frame_bindings` against the frozen source snapshot.
@@ -106,9 +107,29 @@ types, inactive source-qualified ABI, and missing/foreign
 schema or release. The pure B07.1/B07.2 planner remains separately
 testable without importing the Atlas RDF dependency.
 
-This resolves the prior *missing integration entrypoint* in an
-isolated candidate, but it is **not yet a B07.1 final acceptance**:
-independent review of the new source gate, source-grant provenance
-at the issuing owner, and human-reviewed Lane B integration are
-still required. No public/source rights or neural custody were
-promoted.
+This provides a source integration testbed, but is **not B07.1
+acceptance**. No public/source rights or neural custody were promoted.
+
+## Independent adversarial disposition: BLOCKED
+
+Goldfish review at immutable `db724ba`, using pinned EGM
+`b3a3595`, reproduced **two Blockers** despite 5/5 source
+integration tests passing:
+
+1. A same-ID/revision caller-supplied FrameSchema can change
+   `ast_construct` or `scope` and produce different motif keys.
+   Neither A03's FrameInstance nor the current source snapshot
+   carries a verified immutable schema-body authority for B07.
+2. Caller-minted A13 SourceGrant records with recomputed evidence
+   digests can authorize a forged frame. A caller-supplied formal
+   source graph can likewise reassign types while matching its own
+   digest. The current API lacks independently verified source
+   issuer provenance for the schema/grants.
+
+The experiment is therefore renamed `_probe_approved_motifs`
+and explicitly forbidden as a production admission API.
+Actual B07.1 closure requires A03-owned immutable released
+schema authority and A13 source-issued grant provenance,
+followed by fresh EGM and human-reviewed Lane B integration.
+No acceptance was inferred from matching source IDs, local
+hashes or synthetic grants.

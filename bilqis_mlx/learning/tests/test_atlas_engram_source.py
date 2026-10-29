@@ -5,7 +5,7 @@ from unittest import TestCase
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_engram import MotifBudget, MotifManifest
 from bilqis_mlx.learning.atlas_engram_source import (
-    ApprovedMotifCandidate, prepare_approved_motifs,
+    ApprovedMotifCandidate, _probe_approved_motifs,
 )
 from bilqis_mlx.semantics.atlas_projection import (
     AbiEntry, AtlasConcept, AtlasCounts, FrozenAtlasConcept,
@@ -85,7 +85,7 @@ def approved_source_case(*, forged_type: bool = False):
 class ApprovedMotifSourceTests(TestCase):
     def test_real_a03_frame_and_a13_grants_gate_motif_allocation(self):
         envelopes, task, frontier, policy, schemas, snapshot = approved_source_case()
-        result = prepare_approved_motifs(
+        result = _probe_approved_motifs(
             envelopes, task, frontier, policy, schemas, snapshot,
             MotifManifest(RELEASE), MotifBudget(2))
         self.assertIsInstance(result, ApprovedMotifCandidate)
@@ -100,7 +100,7 @@ class ApprovedMotifSourceTests(TestCase):
             replace(grant, revoked=True)
             if grant.source_handle == "source:member:actor" else grant
             for grant in frontier.grants))
-        result = prepare_approved_motifs(
+        result = _probe_approved_motifs(
             envelopes, task, revoked, policy, schemas, snapshot,
             MotifManifest(RELEASE), MotifBudget(2))
         self.assertIsInstance(result, ContextHold)
@@ -110,7 +110,7 @@ class ApprovedMotifSourceTests(TestCase):
         envelopes, task, frontier, policy, schemas, snapshot = approved_source_case(
             forged_type=True)
         with self.assertRaises(BilqisError) as caught:
-            prepare_approved_motifs(
+            _probe_approved_motifs(
                 envelopes, task, frontier, policy, schemas, snapshot,
                 MotifManifest(RELEASE), MotifBudget(2))
         self.assertEqual(
@@ -124,7 +124,7 @@ class ApprovedMotifSourceTests(TestCase):
             abi_entries=(replace(snapshot.abi_entries[0], active=False),),
             concepts=(replace(snapshot.concepts[0], active=False),))
         with self.assertRaises(BilqisError) as caught:
-            prepare_approved_motifs(
+            _probe_approved_motifs(
                 envelopes, task, frontier, policy, schemas, inactive,
                 MotifManifest(RELEASE), MotifBudget(2))
         self.assertEqual(
@@ -144,4 +144,4 @@ class ApprovedMotifSourceTests(TestCase):
                 parent_manifest=MotifManifest(RELEASE), budget=MotifBudget(2))
             args.update(changed)
             with self.subTest(changed=changed), self.assertRaises(BilqisError):
-                prepare_approved_motifs(**args)
+                _probe_approved_motifs(**args)
