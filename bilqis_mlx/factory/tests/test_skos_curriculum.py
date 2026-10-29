@@ -10,7 +10,9 @@ import unittest
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory.skos_curriculum import (
-    SOURCE_FAMILY_ADAPTERS, inventory_source_families,
+    LEARNING_UNVERIFIED, SOURCE_FAMILY_ADAPTERS, LearnedFrontier,
+    SourceFamilyAdapter, compile_semantic_curriculum,
+    inventory_source_families,
 )
 from bilqis_mlx.semantics.atlas_projection import (
     ATLAS_SNAPSHOT_SCHEMA, AbiEntry, AtlasConcept, AtlasCounts,
@@ -101,6 +103,67 @@ def _snapshot(definitions=DEFINITIONS, *, release=RELEASE):
 
 
 class SemanticFamilyInventoryTests(unittest.TestCase):
+    def test_owner_api_preserves_denominator_and_unverified_learning_claims(self):
+        snapshot = _snapshot()
+        self.assertTrue(any(not item.active for item in snapshot.concepts))
+        concept_ids = {
+            item.concept.semantic_id for item in snapshot.concepts}
+        formal_ids = {
+            identifier for binding in snapshot.formal_domain_bindings
+            for identifier in binding.semantic_ids}
+        self.assertTrue(any(
+            entry.semantic_id in formal_ids
+            and entry.semantic_id not in concept_ids
+            for entry in snapshot.abi_entries))
+        frontier = LearnedFrontier(
+            snapshot.release_sha256,
+            claimed_exposed=("urn:formal:boolean:AND",),
+            claimed_qualified=("urn:formal:numeric:ADD",))
+        with_adapters = compile_semantic_curriculum(
+            snapshot, SOURCE_FAMILY_ADAPTERS, frontier)
+        without_adapters = compile_semantic_curriculum(
+            snapshot, (), frontier)
+        self.assertEqual(
+            with_adapters.frozen_census_digest,
+            without_adapters.frozen_census_digest)
+        self.assertEqual(
+            with_adapters.source_eligible_concept_ids,
+            without_adapters.source_eligible_concept_ids)
+        self.assertEqual(len(with_adapters.source_eligible_concept_ids), 8)
+        self.assertEqual(with_adapters.adapter_ready_count, 0)
+        self.assertEqual(with_adapters.exposed_count, 0)
+        self.assertEqual(with_adapters.qualified_count, 0)
+        self.assertEqual(with_adapters.learning_state, LEARNING_UNVERIFIED)
+        self.assertEqual(
+            with_adapters.unverified_exposure_claims,
+            ("urn:formal:boolean:AND",))
+        self.assertEqual(
+            with_adapters.unverified_qualification_claims,
+            ("urn:formal:numeric:ADD",))
+        self.assertTrue(all(
+            row.learning_state == LEARNING_UNVERIFIED
+            and row.source_disposition == "SOURCE_ELIGIBLE"
+            and row.implementation_status == "IMPLEMENTATION_UNCOVERED"
+            for row in with_adapters.coverage_rows))
+
+    def test_owner_api_rejects_forged_family_and_foreign_learning_release(self):
+        snapshot = _snapshot()
+        frontier = LearnedFrontier(snapshot.release_sha256)
+        forged = SourceFamilyAdapter(
+            "numeric_composition",
+            source_tables=("lexicon/lexicon_root_senses",))
+        with self.assertRaises(BilqisError) as caught:
+            compile_semantic_curriculum(snapshot, (forged,), frontier)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_FAMILY_COMPILER_INPUT_INVALID")
+        with self.assertRaises(BilqisError) as caught:
+            compile_semantic_curriculum(
+                snapshot, (), LearnedFrontier("f" * 64))
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_FAMILY_COMPILER_INPUT_INVALID")
+
     def test_literal_source_qualified_families_and_full_denominator(self):
         census = inventory_source_families(_snapshot())
         by_id = {row.semantic_id: row for row in census.concepts}
@@ -135,8 +198,13 @@ class SemanticFamilyInventoryTests(unittest.TestCase):
         self.assertEqual(set(by_id["urn:unknown:source"].required_family_ids),
                          {"positive_identity", "source:other/new_source_table"})
         self.assertNotIn("urn:held", census.source_eligible_concept_ids)
-        self.assertIn(("mapping", "bilqis_semantic_bridges", "held",
-                       "MAPPING_REVIEW_PENDING"), census.source_held)
+        self.assertIn(CorpusCoverageRow(
+            "mapping", "bilqis_semantic_bridges", "held", "urn:held",
+            "SOURCE_HELD", "NOT_APPLICABLE", False,
+            "MAPPING_REVIEW_PENDING", "MAPPING_REVIEW_PENDING",
+            "source:owner"), census.source_held)
+        self.assertEqual(
+            census.source_nonconcept[0][0].owner, "source:owner")
 
     def test_source_eligibility_does_not_depend_on_available_constructors(self):
         snapshot = _snapshot()
@@ -257,6 +325,11 @@ class SemanticFamilyInventoryTests(unittest.TestCase):
             artifact = persist_atlas_release(release, directory)
             snapshot = load_atlas_snapshot(artifact.path)
         census = inventory_source_families(snapshot)
+        # Frozen A01.2/A01.3 source census: formal ABI cannot disappear
+        # merely because no AtlasConcept record backs its identity.
+        self.assertEqual(census.counts.atlas_source_concepts, 9079)
+        self.assertEqual(census.counts.formal_only_abi_identities, 228)
+        self.assertEqual(census.counts.source_eligible_concepts, 9307)
         self.assertEqual(census.counts.atlas_source_concepts,
                          release.counts.semantic_concepts)
         self.assertEqual(census.counts.source_eligible_concepts,

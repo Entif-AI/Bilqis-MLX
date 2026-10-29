@@ -9,12 +9,13 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 import hashlib
 import json
+import re
 from urllib.parse import urlsplit
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.semantics.atlas_projection import (
-    ATLAS_SNAPSHOT_SCHEMA, FrozenAtlasConcept, FrozenAtlasRelation,
-    FrozenAtlasSnapshot,
+    ATLAS_SNAPSHOT_SCHEMA, CorpusCoverageRow, FrozenAtlasConcept,
+    FrozenAtlasRelation, FrozenAtlasSnapshot,
 )
 from lib.ithkuil.src.skos.identity import Identity
 from lib.ithkuil.src.skos.relations import SEMANTIC_PREDICATES
@@ -24,6 +25,10 @@ FAMILY_INVENTORY_SCHEMA = "bilqis.semantic-family-inventory/v1"
 FAMILY_OBLIGATION_SCHEMA = "bilqis.semantic-family-obligation/v1"
 FAMILY_CONCEPT_SCHEMA = "bilqis.semantic-family-concept/v1"
 FAMILY_RULE_SCHEMA = "bilqis.semantic-family-source-rule/v1"
+CURRICULUM_CANDIDATE_SCHEMA = "bilqis.semantic-curriculum-candidates/v1"
+LEARNED_FRONTIER_SCHEMA = "bilqis.semantic-learned-frontier/v1"
+LEARNING_UNVERIFIED = "LEARNING_UNVERIFIED"
+_SHA = re.compile(r"[0-9a-f]{64}\Z")
 _SEMANTIC_RELATIONS = tuple(sorted(set(SEMANTIC_PREDICATES.values())))
 _SOURCE_TABLES = frozenset({
     "atomic/morphemes_atomic",
@@ -118,6 +123,7 @@ class ConceptFamilyCoverage:
     implementation_status: str
     required_family_ids: tuple[str, ...]
     source_refs: tuple[str, ...]
+    learning_state: str = LEARNING_UNVERIFIED
     schema: str = FAMILY_CONCEPT_SCHEMA
 
 
@@ -128,6 +134,8 @@ class FamilyObligation:
     source_evidence_sha256: str
     implementation_status: str
     reason: str
+    learning_state: str = LEARNING_UNVERIFIED
+    source_disposition: str = "SOURCE_ELIGIBLE"
     schema: str = FAMILY_OBLIGATION_SCHEMA
 
 
@@ -156,11 +164,10 @@ class SemanticFamilyInventory:
     pending_source_family_ids: tuple[str, ...]
     concepts: tuple[ConceptFamilyCoverage, ...]
     obligations: tuple[FamilyObligation, ...]
-    source_held: tuple[tuple[str, str, str, str], ...]
-    source_ir_only: tuple[tuple[str, str, str, str], ...]
+    source_held: tuple[CorpusCoverageRow, ...]
+    source_ir_only: tuple[CorpusCoverageRow, ...]
     source_nonconcept: tuple[
-        tuple[str, str, str, str | None, str, tuple[str, ...]], ...
-    ]
+        tuple[CorpusCoverageRow, tuple[str, ...]], ...]
     counts: FamilyInventoryCounts
     schema: str = FAMILY_INVENTORY_SCHEMA
 
@@ -171,13 +178,16 @@ class SemanticFamilyInventory:
 
 def _grammar_category(semantic_id: str) -> str | None:
     """Only the source-owned grammar IRI category, never English gloss text."""
-    parts = urlsplit(semantic_id).path.split("/")
-    for index, part in enumerate(parts):
-        if part == "id" and parts[index + 1:index + 2] == ["grammar"]:
-            if len(parts) == index + 4:
-                category, value = parts[index + 2:index + 4]
-                if Identity("grammar", (category, value)).iri == semantic_id:
-                    return category
+    path = urlsplit(semantic_id).path
+    marker = "/id/grammar/"
+    if marker not in path:
+        return None
+    try:
+        category, value = path.split(marker, 1)[1].split("/")
+    except ValueError:
+        return None
+    if Identity("grammar", (category, value)).iri == semantic_id:
+        return category
     return None
 
 
@@ -296,31 +306,25 @@ def inventory_source_families(atlas: FrozenAtlasSnapshot) -> SemanticFamilyInven
                 if family.startswith(("source:", "formal:"))
                 else "FAMILY_CONSTRUCTOR_CHECKER_NOT_BOUND"))
     family_ids = tuple(sorted({item.family_id for item in obligations}))
+    source_order = lambda row: (
+        row.domain, row.table, row.key, row.semantic_id or "", row.reason_code)
     held = tuple(sorted(
-        (row.domain, row.table, row.key, row.reason_code)
-        for row in atlas.withheld_rows
-        if row.source_disposition == "SOURCE_HELD"))
+        (row for row in atlas.withheld_rows
+         if row.source_disposition == "SOURCE_HELD"), key=source_order))
     ir_only = tuple(sorted(
-        (row.domain, row.table, row.key, row.reason_code)
-        for row in atlas.withheld_rows
-        if row.source_disposition == "SOURCE_IR_ONLY"))
-    nonconcept = tuple(sorted(
-        (
-            row.domain, row.table, row.key, row.semantic_id,
-            row.reason_code,
-            tuple(sorted(
-                (
-                    rule.family_id for rule in SOURCE_FAMILY_ADAPTERS
-                    if f"{row.domain}/{row.table}" in rule.source_tables
-                )
-            )) if f"{row.domain}/{row.table}" in _SOURCE_TABLES else (
-                f"source:{row.domain}/{row.table}",),
-        )
+        (row for row in atlas.withheld_rows
+         if row.source_disposition == "SOURCE_IR_ONLY"), key=source_order))
+    nonconcept = tuple(sorted((
+        (row, tuple(sorted(
+            rule.family_id for rule in SOURCE_FAMILY_ADAPTERS
+            if f"{row.domain}/{row.table}" in rule.source_tables))
+         if f"{row.domain}/{row.table}" in _SOURCE_TABLES else (
+             f"source:{row.domain}/{row.table}",))
         for row in atlas.withheld_rows
         if row.source_disposition == "SOURCE_EMITTED_NON_CONCEPT"
-    ))
+    ), key=lambda item: source_order(item[0])))
     pending = tuple(sorted({
-        family for _, _, _, _, _, families in nonconcept
+        family for _, families in nonconcept
         for family in families
     }))
     return SemanticFamilyInventory(
@@ -349,3 +353,113 @@ def inventory_source_families(atlas: FrozenAtlasSnapshot) -> SemanticFamilyInven
             implementation_uncovered_obligations=len(obligations),
         ),
     )
+
+
+@dataclass(frozen=True)
+class LearnedFrontier:
+    """Unverified learner claims; source eligibility never depends on them."""
+
+    semantic_release: str
+    claimed_exposed: tuple[str, ...] = ()
+    claimed_qualified: tuple[str, ...] = ()
+    schema: str = LEARNED_FRONTIER_SCHEMA
+
+    def __post_init__(self) -> None:
+        if (not isinstance(self.semantic_release, str)
+                or not _SHA.fullmatch(self.semantic_release)
+                or any(not isinstance(group, tuple)
+                       or group != tuple(sorted(set(group)))
+                       or any(not isinstance(item, str) or not item
+                              for item in group)
+                       for group in (
+                           self.claimed_exposed, self.claimed_qualified))
+                or self.schema != LEARNED_FRONTIER_SCHEMA):
+            _fail("BAMF_FAMILY_LEARNED_FRONTIER_INVALID")
+
+
+@dataclass(frozen=True)
+class CurriculumCandidateSet:
+    """A08.1a census-only bridge; A08.1b owns constructive readiness."""
+
+    census: SemanticFamilyInventory
+    source_adapter_ids: tuple[str, ...]
+    unverified_exposure_claims: tuple[str, ...]
+    unverified_qualification_claims: tuple[str, ...]
+    learning_state: str = LEARNING_UNVERIFIED
+    adapter_ready_count: int = 0
+    exposed_count: int = 0
+    qualified_count: int = 0
+    status: str = "IMPLEMENTATION_DEBT"
+    schema: str = CURRICULUM_CANDIDATE_SCHEMA
+
+    def __post_init__(self) -> None:
+        if (not isinstance(self.census, SemanticFamilyInventory)
+                or self.source_adapter_ids
+                != tuple(sorted(set(self.source_adapter_ids)))
+                or self.learning_state != LEARNING_UNVERIFIED
+                or any(value != 0 for value in (
+                    self.adapter_ready_count, self.exposed_count,
+                    self.qualified_count))
+                or self.status != "IMPLEMENTATION_DEBT"
+                or self.schema != CURRICULUM_CANDIDATE_SCHEMA):
+            _fail("BAMF_FAMILY_CANDIDATE_SET_INVALID")
+
+    @property
+    def semantic_release(self) -> str:
+        return self.census.semantic_release
+
+    @property
+    def atlas_bundle_id(self) -> str:
+        return self.census.atlas_bundle_id
+
+    @property
+    def source_eligible_concept_ids(self) -> tuple[str, ...]:
+        return self.census.source_eligible_concept_ids
+
+    @property
+    def required_source_family_ids(self) -> tuple[str, ...]:
+        return self.census.required_source_family_ids
+
+    @property
+    def coverage_rows(self) -> tuple[FamilyObligation, ...]:
+        return self.census.obligations
+
+    @property
+    def source_hold_rows(self) -> tuple[CorpusCoverageRow, ...]:
+        return self.census.source_held
+
+    @property
+    def source_held_count(self) -> int:
+        return self.census.counts.source_held_rows
+
+    @property
+    def implementation_uncovered_count(self) -> int:
+        return self.census.counts.implementation_uncovered_obligations
+
+    @property
+    def frozen_census_digest(self) -> str:
+        return self.census.digest
+
+
+def compile_semantic_curriculum(
+    atlas: FrozenAtlasSnapshot,
+    source_adapters: tuple[SourceFamilyAdapter, ...],
+    learned_frontier: LearnedFrontier,
+) -> CurriculumCandidateSet:
+    """Original A08 owner API, staged without constructor/learning promotion."""
+    census = inventory_source_families(atlas)
+    if (not isinstance(source_adapters, tuple)
+            or any(not isinstance(item, SourceFamilyAdapter)
+                   or item not in SOURCE_FAMILY_ADAPTERS
+                   for item in source_adapters)
+            or len(set(item.family_id for item in source_adapters))
+            != len(source_adapters)
+            or not isinstance(learned_frontier, LearnedFrontier)
+            or learned_frontier.semantic_release != census.semantic_release):
+        _fail("BAMF_FAMILY_COMPILER_INPUT_INVALID")
+    return CurriculumCandidateSet(
+        census=census,
+        source_adapter_ids=tuple(sorted(
+            item.family_id for item in source_adapters)),
+        unverified_exposure_claims=learned_frontier.claimed_exposed,
+        unverified_qualification_claims=learned_frontier.claimed_qualified)
