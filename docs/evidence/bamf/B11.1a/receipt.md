@@ -1,8 +1,9 @@
 # B11.1a numerical group producer foundation
 
-Issue: #587. Parent: B11.1 #471. Consumer: B05.4 #577.
+Issue: canonical #586 (#587 duplicate closed). Parent: B11.1 #471.
+Consumer: B05.4 #577.
 Lane B base: `ae08c4aa6c9eee86cbc28142de626f382662876d`.
-Disposition: **UNADMITTED_NUMERICAL, EGM_PENDING**.
+Disposition: **UNADMITTED_NUMERICAL; numerical-only EGM PASS**.
 
 The fixed `run_backbone_group_numerical` executes the four B01/B04
 layers selected by group index. It uses the B01 parameter ledger,
@@ -32,6 +33,15 @@ After implementation:
   FFN input matrix are finite and nonzero;
 - `git diff --check` passes, with no new error-control/module-size
   findings in this module.
+
+Independent B04 expert worker-20 reviewed immutable `19ebb05` and
+returned **B11.1a numerical-only EGM PASS, zero Blockers/Majors**.
+It verified B01 tensor names and geometry, pre-RMSNorm/CCGQA/FFN
+equations, causal masking, real gradients and the explicit
+`UNADMITTED_NUMERICAL` boundary. A later static-only guard cleanup
+`22410ec` preserves those equations and removes two opaque numeric
+guards. This PASS does **not** attest the source producer, B08 motif
+read or B13 generation custody.
 
 ## Next authority gate
 
