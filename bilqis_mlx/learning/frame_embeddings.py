@@ -187,6 +187,51 @@ def compose_factor_features(parameters: Mapping[str, mx.array], requests: tuple[
                              requests)
 
 
+def validate_frame_members(requests: tuple[FeatureRequest, ...]) -> FrameInstance:
+    """Require every concept-valued binding once, in canonical source order."""
+    if (type(requests) is not tuple or not requests or
+            any(type(item) is not FeatureRequest for item in requests)):
+        _invalid()
+    first = requests[0]
+    frame = first.projection.frame(first.frame_handle)
+    if (type(frame) is not FrameInstance or
+            tuple(item.local_slot for item in requests) != tuple(range(len(frame.bindings))) or
+            any((item.projection.digest, item.frame_handle) !=
+                (first.projection.digest, first.frame_handle) for item in requests)):
+        _invalid()
+    for item in requests:
+        if item != FeatureRequest.from_context(item.projection, item.frame_handle, item.member_handle):
+            _invalid()
+    return frame
+
+
+@dataclass(frozen=True)
+class FrameFactorTerms:
+    """Raw frame-summary factors and shared depth features with source provenance."""
+
+    schema128: mx.array
+    mean_role128: mx.array
+    type_role768: mx.array
+    requests: tuple[FeatureRequest, ...]
+    feature_digest: str
+    semantic_release: str
+    schema_version: str = "bilqis.mlx.frame-factor-terms/v1"
+
+
+def frame_factor_terms(parameters: Mapping[str, mx.array], requests: tuple[FeatureRequest, ...],
+                       features: AtlasFeatures, *, extents: GenerationExtents) -> FrameFactorTerms:
+    """Gather raw shared 128-wide factors, including released overflow vectors."""
+    validate_frame_members(requests)
+    composed = compose_factor_features(parameters, (requests,), features, extents=extents)
+    rows = tuple(features.features_for(item.concept, item.role_id, item.schema_id, item.scope)
+                 for item in requests)
+    schema = _factor_vector(parameters["features.schema"], rows[0].schema_row, rows[0].schema_overflow)
+    roles = mx.stack([_factor_vector(parameters["features.role"], row.role_row, row.role_overflow)
+                      for row in rows])
+    return FrameFactorTerms(schema, mx.mean(roles, axis=0), mx.mean(composed.type_role[0], axis=0),
+                            requests, features.digest, features.semantic_release)
+
+
 BANK_ROWS = ModelTopologySpecV2.semantic_bank_rows
 UINT32_MAX = int(np.iinfo(np.uint32).max)
 
