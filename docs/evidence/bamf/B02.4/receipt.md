@@ -61,7 +61,12 @@ The new nested test initially failed to import the missing
   The repaired fixture proves different vectors and nonzero gradient
   to the exact slot-1 row, with slot-0 gradient remaining zero.
   Combined MLX/B02/B03/A05/A13/A04 suite: **99/99, zero skips**.
-  Fresh independent immutable-head EGM re-review is pending.
+  Fresh independent worker-19 readback at immutable `1bc68a0`
+  returned **B02.4 scoped EGM PASS, zero remaining Blockers/Majors**.
+  It independently reproduced the source-valid slot0/slot1 distinction
+  and exact gradient, reran 99/99 tests and found no new static debt.
+  This PASS does not certify provisional A05.4 source ownership or
+  authorize cross-lane merge.
 - `git diff --check`: passed.
 - Error-control and module-size audits: no new B02.4/B03.3 finding.
   Existing semantic import-boundary findings in A03 remain separate.
