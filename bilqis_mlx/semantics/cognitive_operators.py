@@ -53,6 +53,7 @@ class ValueState(str, Enum):
     NONE = "NONE"
     UNKNOWN = "UNKNOWN"
     UNSUPPORTED = "UNSUPPORTED"
+    UNRESOLVED = "UNRESOLVED"
 
 
 class SourceKind(str, Enum):
@@ -578,7 +579,7 @@ def execute_pure(
     typed_inputs: tuple[TypedValue, ...],
     binding: OperatorBinding,
 ) -> TypedValue:
-    """Execute one source-qualified PURE operator, never an evaluation oracle."""
+    """Public source-qualified PURE entrypoint, never an evaluation oracle."""
     if not isinstance(binding, OperatorBinding) or not isinstance(typed_inputs, tuple):
         _invalid("BAMF_OPERATOR_CALL_INVALID")
     if any(not isinstance(item, TypedValue) for item in typed_inputs):
@@ -592,6 +593,15 @@ def execute_pure(
     if tuple(item.type_name for item in typed_inputs) != spec.signature.inputs:
         _invalid("BAMF_OPERATOR_SIGNATURE_MISMATCH")
     _authorize_inputs(typed_inputs, binding)
+    return _compute_after_authorization(spec, typed_inputs, binding)
+
+
+def _compute_after_authorization(
+    spec: CognitiveOperatorSpec,
+    typed_inputs: tuple[TypedValue, ...],
+    binding: OperatorBinding,
+) -> TypedValue:
+    """Pure computation after a caller has proved source and operator grants."""
     release = binding.task.semantic_release
     def unresolved(state: ValueState) -> TypedValue:
         return TypedValue(spec.signature.output, None, release, state=state)
@@ -611,7 +621,8 @@ def execute_pure(
                     domain.encode(item.value)
                 except ValueError:
                     return unresolved(ValueState.UNSUPPORTED)
-    result = _compute(operator_id, tuple(item.value for item in typed_inputs), binding)
+    result = _compute(
+        spec.operator_id, tuple(item.value for item in typed_inputs), binding)
     if result is _UNKNOWN:
         return unresolved(ValueState.UNKNOWN)
     if result is _NONE:

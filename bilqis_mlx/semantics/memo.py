@@ -8,6 +8,34 @@ from threading import RLock
 from .domains import contract_digest
 
 
+class PureOperationMemo:
+    """Explicit solver-owned cache; no evaluator/oracle state is shared."""
+
+    def __init__(self) -> None:
+        self._values: dict[str, object] = {}
+        self._lock = RLock()
+
+    @staticmethod
+    def key(
+        *, operator: object, dependencies: tuple, authority: object,
+    ) -> str:
+        # Only consulted source, predecessor, rights and operator identities.
+        return contract_digest({
+            "schema": "bilqis.cognitive-pure-memo-key/v1",
+            "operator": operator,
+            "dependencies": dependencies,
+            "authority": authority,
+        })
+
+    def get(self, key: str) -> object | None:
+        with self._lock:
+            return self._values.get(key)
+
+    def put(self, key: str, value: object) -> None:
+        with self._lock:
+            self._values[key] = value
+
+
 def memoize_source(*, semantics):
     """Hash typed arguments and semantic contracts in an evaluator-owned cache.
 
