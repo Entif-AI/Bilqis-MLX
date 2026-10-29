@@ -135,6 +135,16 @@ class SourceAuthorityRegistry:
         except (InvalidSignature, ValueError):
             _invalid("BAMF_C09_SOURCE_SIGNATURE_INVALID")
 
+    def verify_detached(self, owner_id: str, dependency: DependencyRef,
+                        signature_hex: str, payload: bytes) -> None:
+        """Verify another domain's signed payload under the same scoped key registry."""
+        if (not _name(owner_id) or not isinstance(dependency, DependencyRef)
+                or not isinstance(signature_hex, str)
+                or not _ED25519_SIGNATURE.fullmatch(signature_hex)
+                or not isinstance(payload, bytes)):
+            _invalid("BAMF_SOURCE_DETACHED_SIGNATURE_INPUT_INVALID")
+        self._verify(owner_id, dependency.kind, dependency.key, signature_hex, payload)
+
     def verify_correction(self, event: "CorrectionEvent") -> None:
         if not isinstance(event, CorrectionEvent):
             _invalid("BAMF_C09_SOURCE_AUTHORITY_MISSING")

@@ -42,6 +42,16 @@ def _spec(
 
 
 class SCHOOL:
+    class BAMF_SALIENCE:
+        INVALID = _spec(
+            ("SCHOOL", "BAMF_SALIENCE", "INVALID"),
+            owner="learning.atlas_salience",
+            title="BAMF salience evidence or policy invalid",
+            message_template="BAMF salience evidence is invalid: {reason}",
+            disposition="PRESERVE_AND_INSPECT",
+            next_action="Preserve the signed facts and source frontier; reconcile policy, scope and causal evidence.",
+        )
+
     class BAMF_CAPABILITY_EVIDENCE:
         INVALID = _spec(
             ("SCHOOL", "BAMF_CAPABILITY_EVIDENCE", "INVALID"),
@@ -970,6 +980,7 @@ class FACTORY:
 
 
 CATALOG = (
+    SCHOOL.BAMF_SALIENCE.INVALID,
     SCHOOL.BAMF_CAPABILITY_EVIDENCE.INVALID,
     SCHOOL.BAMF_SOLVER.INVALID,
     SCHOOL.BAMF_AKASHA.INVALID,
