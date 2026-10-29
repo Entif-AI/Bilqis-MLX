@@ -240,8 +240,7 @@ def select_prediction_refinements(
         if training:
             passes = _sample_passes(
                 run_seed, visit_id, p, query_id, frame.occurrence_id)
-        elif (unresolved_nested_query and isinstance(frame, FrameInstance)
-              and any(binding.child_frame is not None for binding in frame.bindings)):
+        elif unresolved_nested_query:
             passes = 2
         else:
             passes = int(explicit_member_question)

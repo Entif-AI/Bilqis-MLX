@@ -163,6 +163,9 @@ class RefinementPolicyTests(unittest.TestCase):
 
     def test_unresolved_nested_query_permits_two_passes_without_reusing_backbone(self):
         frames, task, frontier, policy = _case(count=1, target_indices=(0,))
+        self.assertEqual(
+            _select(frames, task, frontier, policy,
+                    unresolved_nested_query=True).selected[0].passes, 2)
         schema = FrameSchema(
             "synthetic:nested", 1, "source:synthetic",
             (RoleSpec("target", ("Frame",), 1, 1),),
