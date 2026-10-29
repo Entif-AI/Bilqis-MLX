@@ -648,13 +648,19 @@ def execute_dag(
     binding: OperatorBinding,
     *,
     memo: PureOperationMemo | None = None,
+    operation_limit: int | None = None,
 ) -> DAGResult:
     """Run one fully source-validated typed DAG without neural or gold inputs."""
     if memo is not None and not isinstance(memo, PureOperationMemo):
         _invalid("BAMF_DAG_MEMO_INVALID")
     order, prepared, visible, selected, unresolved = _prepare(goal, binding)
+    if operation_limit is not None and (
+            type(operation_limit) is not int
+            or not 0 <= operation_limit <= goal.budget.max_operations):
+        _invalid("BAMF_DAG_OPERATION_LIMIT_INVALID")
     program = goal.expression_or_holes
-    budget = goal.budget
+    compute_limit = (goal.budget.max_operations if operation_limit is None
+                     else operation_limit)
     release = binding.task.semantic_release
     source_digest = contract_digest(binding)
     output_type = next(
@@ -719,7 +725,7 @@ def execute_dag(
         if memo is not None:
             lookups += 1
             cached = _memo_get_verified(memo, key)
-        if cached is None and computed >= budget.max_operations:
+        if cached is None and computed >= compute_limit:
             return unresolved_answer(node.node_id, node.expected_output_type)
         if memo is None:
             lookups += 1
