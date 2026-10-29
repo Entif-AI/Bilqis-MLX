@@ -1,12 +1,11 @@
-"""B01 frame equations over a provisional, complete concept-member input view.
+"""B01 frame equations and source-revalidated A05 atom/closure encoding.
 
-A05's concrete compiler is not integrated. Inputs are B03 adapters, not
-CompiledFrameBatch or source-admission credentials. Partial, empty and nested
-assembly require the sibling B03 outcomes and actual compiler receipt.
+Actual A05 rows consume current compiler authority. Numerical group inputs
+remain bounded fixtures. Empty and nested closures require sibling outcomes.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
 from typing import Mapping
 
 import mlx.core as mx
@@ -19,14 +18,17 @@ from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes, validate_bamf_parameters,
 )
 from bilqis_mlx.semantics.atlas_features import AtlasFeatures
-from bilqis_mlx.semantics.context_eligibility import ApprovedContextProjection
-from bilqis_mlx.semantics.frame_schema import AtomicFrame
+from bilqis_mlx.semantics.context_eligibility import ApprovedContextProjection, project_context
+from bilqis_mlx.semantics.frame_schema import AtomicFrame, FrameInstance
+from bilqis_mlx.semantics.frame_compiler import (
+    CompiledFrameRows, CompiledPosition, FrameCompilerConfig, PositionKind, StreamingAST, compile_prefix, reconstruct,
+)
 
 
 WIDTH = ModelTopologySpecV2.width
 INNER = 192
 INPUT_SCHEMA = "bilqis.mlx.frame-encoder-input/provisional-v1"
-OUTPUT_SCHEMA = "bilqis.mlx.frame-encoding/v2"
+OUTPUT_SCHEMA = "bilqis.mlx.frame-encoding/v3"
 
 
 def _invalid():
@@ -111,9 +113,137 @@ class AtomicEncoderInput:
 class FrameEncoding:
     global_seeds: mx.array
     members: tuple[tuple[mx.array, ...], ...]
-    handles: tuple[tuple[tuple[FeatureRequest, ...], ...], ...] | tuple[tuple[AtomicSourceHandle, ...], ...]
+    handles: (tuple[tuple[tuple[FeatureRequest, ...], ...], ...] |
+              tuple[tuple[AtomicSourceHandle, ...], ...] | tuple[tuple[CompiledPosition | None, ...], ...])
     features: tuple[tuple[FrameFactorTerms | None, ...], ...]
     schema_version: str = OUTPUT_SCHEMA
+    compiled: CompiledFrameRows | None = None
+
+
+def _compiled_groups(row, config):
+    visible = reconstruct(row)
+    rebuilt = compile_prefix(StreamingAST(visible.source_instance_id, visible.atoms, visible.frames),
+                             row.visible_end, row.semantic_release, config)
+    if rebuilt != row:
+        _invalid()
+    closures = tuple(position for position in row.positions if position.kind is PositionKind.CLOSURE)
+    projection = None
+    if closures:
+        if config.approved is None:
+            _invalid()
+        handles = {position.frame_handle for position in closures}
+        projection = project_context(tuple(item for item in config.approved.envelopes if item.frame_handle in handles),
+                                     replace(config.task, causal_prefix_end=row.visible_end), config.frontier, config.policy)
+        if type(projection) is not ApprovedContextProjection or projection.digest != row.context_digest:
+            _invalid()
+    groups = []
+    for position in row.positions:
+        if position.kind is PositionKind.ATOM:
+            groups.append(())
+            continue
+        frame = projection.frame(position.frame_handle)
+        if (type(frame) is not FrameInstance or not frame.bindings or
+                any(binding.concept is None for binding in frame.bindings)):
+            _invalid()
+        envelope = next(item for item in projection.envelopes if item.frame_handle == position.frame_handle)
+        group = tuple(FeatureRequest.from_context(projection, position.frame_handle, member.source_handle)
+                      for member in envelope.members)
+        validate_frame_members(group)
+        groups.append(group)
+    return tuple(groups)
+
+
+@dataclass(frozen=True)
+class CompiledEncoderInput:
+    """Actual A05 rows, current compiler authority and released B02 features."""
+
+    compiled: CompiledFrameRows
+    compiler_configs: tuple[FrameCompilerConfig, ...]
+    features: AtlasFeatures
+    extents: GenerationExtents
+    member_requests: tuple[tuple[FeatureRequest, ...], ...] = field(init=False)
+    _groups: tuple[tuple[tuple[FeatureRequest, ...], ...], ...] = field(init=False, repr=False)
+    schema_version: str = "bilqis.mlx.compiled-encoder-input/v1"
+
+    def __post_init__(self):
+        if (self.schema_version != "bilqis.mlx.compiled-encoder-input/v1" or
+                type(self.compiled) is not CompiledFrameRows or not self.compiled.rows or
+                type(self.compiler_configs) is not tuple or len(self.compiler_configs) != len(self.compiled.rows) or
+                any(type(config) is not FrameCompilerConfig for config in self.compiler_configs) or
+                type(self.features) is not AtlasFeatures or type(self.extents) is not GenerationExtents or
+                self.extents.factor_map_digest != self.features.digest or
+                any(row.semantic_release != self.features.semantic_release for row in self.compiled.rows)):
+            _invalid()
+        self.compiled.__post_init__()
+        groups = tuple(_compiled_groups(row, config)
+                       for row, config in zip(self.compiled.rows, self.compiler_configs))
+        object.__setattr__(self, "_groups", groups)
+        object.__setattr__(self, "member_requests", tuple(tuple(item for group in row for item in group)
+                                                         for row in groups))
+
+
+@dataclass(frozen=True)
+class MemberEmbedding:
+    """One supplied B02 vector bound to its exact source occurrence request."""
+
+    request: FeatureRequest
+    vector: mx.array
+
+    def __post_init__(self):
+        if (type(self.request) is not FeatureRequest or not isinstance(self.vector, mx.array) or
+                self.vector.shape != (WIDTH,) or self.vector.dtype != mx.float32 or
+                not bool(mx.all(mx.isfinite(self.vector)))):
+            _invalid()
+
+
+@dataclass(frozen=True)
+class CompiledEmbeddingVectors:
+    """Unpadded raw atom rows and exact ordered closure-member vectors."""
+
+    atoms: tuple[mx.array, ...]
+    members: tuple[tuple[MemberEmbedding, ...], ...]
+    schema_version: str = "bilqis.mlx.compiled-embedding-vectors/v1"
+
+
+def _encode_compiled(compiled, vectors, parameters):
+    compiled.__post_init__()
+    if (type(vectors) is not CompiledEmbeddingVectors or
+            vectors.schema_version != "bilqis.mlx.compiled-embedding-vectors/v1" or
+            type(vectors.atoms) is not tuple or type(vectors.members) is not tuple or
+            len(vectors.atoms) != len(compiled.compiled.rows) or len(vectors.members) != len(vectors.atoms)):
+        _invalid()
+    seeds, members, factors = [], [], []
+    width = len(compiled.compiled.padded_positions[0])
+    for row, groups, atoms, supplied, expected in zip(compiled.compiled.rows, compiled._groups,
+                                                     vectors.atoms, vectors.members, compiled.member_requests):
+        if (not isinstance(atoms, mx.array) or atoms.shape != (row.visible_end, WIDTH) or atoms.dtype != mx.float32 or
+                not bool(mx.all(mx.isfinite(atoms))) or type(supplied) is not tuple or
+                any(type(item) is not MemberEmbedding for item in supplied) or
+                tuple(item.request for item in supplied) != expected):
+            _invalid()
+        for item in supplied:
+            item.__post_init__()
+        cursor = 0
+        row_seeds, row_members, row_factors = [], [], []
+        for position, group in zip(row.positions, groups):
+            if position.kind is PositionKind.ATOM:
+                matrix = atoms[position.source_index:position.source_index+1]
+                row_seeds.append(matrix[0])
+                row_factors.append(None)
+            else:
+                matrix = mx.stack([item.vector for item in supplied[cursor:cursor+len(group)]])
+                cursor += len(group)
+                numerical = encode_frames(FrameEncoderInput(((group,),), compiled.features, compiled.extents),
+                                           ((matrix,),), parameters)
+                row_seeds.append(numerical.global_seeds[0, 0])
+                row_factors.append(numerical.features[0][0])
+            row_members.append(matrix)
+        row_seeds.extend(mx.zeros((WIDTH,), dtype=mx.float32) for _ in range(width-len(row_seeds)))
+        seeds.append(mx.stack(row_seeds) if row_seeds else mx.zeros((0, WIDTH), dtype=mx.float32))
+        members.append(tuple(row_members))
+        factors.append(tuple(row_factors))
+    return FrameEncoding(mx.stack(seeds), tuple(members), compiled.compiled.padded_positions,
+                         tuple(factors), compiled=compiled.compiled)
 
 
 def frame_encoder_parameter_view(parameters: Mapping[str, mx.array], *, spec: ModelTopologySpecV2,
@@ -158,10 +288,15 @@ def _validate_vectors(atom_vectors, counts):
                 _invalid()
 
 
-def encode_frames(compiled: FrameEncoderInput | AtomicEncoderInput, atom_vectors: tuple[tuple[mx.array, ...], ...],
+def encode_frames(compiled: FrameEncoderInput | AtomicEncoderInput | CompiledEncoderInput,
+                  atom_vectors: tuple[tuple[mx.array, ...], ...] | CompiledEmbeddingVectors,
                   parameters: Mapping[str, mx.array]) -> FrameEncoding:
     """Encode complete groups or preserve approved atomic vectors without detaching."""
-    if type(compiled) not in (FrameEncoderInput, AtomicEncoderInput) or not isinstance(parameters, Mapping):
+    if not isinstance(parameters, Mapping):
+        _invalid()
+    if type(compiled) is CompiledEncoderInput:
+        return _encode_compiled(compiled, atom_vectors, parameters)
+    if type(compiled) not in (FrameEncoderInput, AtomicEncoderInput):
         _invalid()
     compiled.__post_init__()
     if type(compiled) is AtomicEncoderInput:
