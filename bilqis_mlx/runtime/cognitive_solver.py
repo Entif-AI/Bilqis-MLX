@@ -1,7 +1,7 @@
 """C04.1 source-bound exact/cache/neural DAG routing without grade branches."""
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 import re
 from typing import Callable
 
@@ -25,7 +25,8 @@ SOLVE_BUDGET_SCHEMA = "bilqis.c04.solve-budget/v2"
 SOLVE_CONTEXT_SCHEMA = "bilqis.c04.solve-context/v2"
 NEURAL_REQUEST_SCHEMA = "bilqis.c04.neural-request/v1"
 NEURAL_PROPOSAL_SCHEMA = "bilqis.c04.neural-proposal/v1"
-CAPABILITY_RESULT_SCHEMA = "bilqis.c04.capability-result/v2"
+CAPABILITY_RESULT_SCHEMA = "bilqis.c04.capability-result/v3"
+SOLVE_REPLAY_SCHEMA = "bilqis.c04.solve-replay/v1"
 MAX_CACHED_COMPOSITIONS = 16
 MAX_NEURAL_CALLS = 1
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
@@ -182,6 +183,11 @@ class CapabilityResult:
     generation_digest: str
     source_binding_digest: str
     score: float | None
+    task_sha256: str
+    rights_epoch: int
+    correction_generation: int
+    operation_limit: int
+    reserved_operations: int
     local_refinement_calls: int = 0
     fallback_reason: str | None = None
     schema_version: str = CAPABILITY_RESULT_SCHEMA
@@ -204,6 +210,17 @@ class CapabilityResult:
                     and not _name(self.fallback_reason))
                 or not _sha(self.generation_digest)
                 or not _sha(self.source_binding_digest)
+                or not _sha(self.task_sha256)
+                or any(type(value) is not int or value < 0 for value in (
+                    self.rights_epoch, self.correction_generation,
+                    self.reserved_operations))
+                or type(self.operation_limit) is not int
+                or not 1 <= self.operation_limit <= 64
+                or sum(item.operation_count for item in self.dag_receipts)
+                + self.reserved_operations > self.operation_limit
+                or any(item.source_binding_digest != self.source_binding_digest
+                       or item.semantic_release != self.answer.semantic_release
+                       for item in self.dag_receipts)
                 or (exact and (self.score != 1.0
                                or (self.route is not
                                    RouteKind.DETERMINISTIC_FALLBACK
@@ -218,6 +235,36 @@ class CapabilityResult:
                          or self.score is not None))
                 or self.schema_version != CAPABILITY_RESULT_SCHEMA):
             _invalid("BAMF_C04_CAPABILITY_RESULT_INVALID")
+
+    def replay_record(self) -> dict:
+        """Export replay identities and measured costs without source/gold payloads."""
+        return {
+            "schema_version": SOLVE_REPLAY_SCHEMA,
+            "task_sha256": self.task_sha256,
+            "generation_digest": self.generation_digest,
+            "source_binding_digest": self.source_binding_digest,
+            "semantic_release": self.answer.semantic_release,
+            "rights_epoch": self.rights_epoch,
+            "correction_generation": self.correction_generation,
+            "route": self.route.value,
+            "dag_receipts": tuple(asdict(item) for item in self.dag_receipts),
+            "costs": {
+                "pure_operations": sum(item.operation_count for item in self.dag_receipts),
+                "reserved_operations": self.reserved_operations,
+                "operation_limit": self.operation_limit,
+                "lookups": sum(item.lookup_count for item in self.dag_receipts),
+                "memo_hits": sum(item.memo_hit_count for item in self.dag_receipts),
+                "backbone_calls": self.neural_calls,
+                "local_refinements": self.local_refinement_calls,
+                "decoder_decisions": None,
+            },
+            "outcome": {
+                "type": self.answer.type_name,
+                "state": self.answer.state.value,
+                "sha256": contract_digest(self.answer),
+            },
+            "fallback_reason": self.fallback_reason,
+        }
 
 
 def _fills_declared_holes(candidate: TaskGoal, original: TaskGoal) -> bool:
@@ -301,15 +348,17 @@ def solve_task(
         _invalid("BAMF_C04_CACHED_CANDIDATE_BUDGET_EXCEEDED")
     receipts = []
     remaining_operations = task.budget.max_operations
+    reserved_operations = 0
 
     def evaluate(goal: TaskGoal):
-        nonlocal remaining_operations
+        nonlocal remaining_operations, reserved_operations
         try:
             evaluated = execute_dag(
                 goal, binding, memo=context.memo,
                 operation_limit=min(remaining_operations, goal.budget.max_operations))
         except BilqisError:
             # A failed executor has no cost receipt; reserve all remaining compute.
+            reserved_operations += remaining_operations
             remaining_operations = 0
             raise
         remaining_operations -= evaluated.receipt.operation_count
@@ -333,7 +382,9 @@ def solve_task(
             1.0 if route in (
                 RouteKind.EXACT, RouteKind.CACHED_COMPOSITION,
                 RouteKind.DETERMINISTIC_FALLBACK) else None,
-            local_refinement_calls, fallback_reason)
+            contract_digest(task), binding.frontier.rights_epoch,
+            binding.frontier.correction_generation, task.budget.max_operations,
+            reserved_operations, local_refinement_calls, fallback_reason)
 
     def qualified(cached: QualifiedComposition) -> bool:
         return (
