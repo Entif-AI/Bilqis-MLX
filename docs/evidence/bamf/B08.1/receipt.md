@@ -83,3 +83,52 @@ source closure, B08.2 placement, B11 orchestration and B13/C
 retained-generation authority remain independent integration gates.
 The candidate does not admit a source, authorize an unretained motif
 manifest, alter historical learners or close B08/B08.1.
+
+## 2026-10-29 source-qualified group-1 second-read repair candidate
+
+The historical EGM Blocker above remains the reason motif **hits** stay
+quarantined.  A new isolated repair branch based on current Lane B `7907889`
+does not import Lane A as accepted authority and does not merge a sibling lane.
+Its consumed tree contains the repo-owned A03.4 source-pin implementation as a
+provisional cross-lane dependency; the exact A03.4 bytes match the independently
+reviewed Lane A candidate, but unified acceptance is still treated as pending.
+
+The public `read_motif` boundary now implements only the minimum safe B11
+group-1 second-read contract:
+
+- site 1 only (after the first four-layer group);
+- each non-atomic schema is reloaded through
+  `lookup_source_pinned_frame_schema`, so caller-minted same-ID/revision schema
+  bodies cannot become read authority;
+- the current A13 `project_context` path rechecks frame/member grants,
+  revocation, rights/correction epochs, time and causal prefix;
+- the returned dependency/cache digest binds the A13 approved-context digest,
+  A03.4 schema witness, motif manifest digest, Atlas source bundle, retained
+  generation digest and parameter-tree digest;
+- an optional expected cache digest fails closed on retained-generation or
+  parameter/cache drift;
+- even when an exact motif slot exists, the public result is the exact input
+  tensor with `QUARANTINED_NO_HIT` and no participating slot.  No caller
+  digest, provisional A03 bytes or local manifest can mint an authorized hit.
+
+The real repo-pinned A01 artifact
+`5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7`
+was used for the A03.4 lookup.  The focused adversary proves: a forged
+same-ID/revision schema fails; stale rights, revoked frame grant and a future
+prefix hold before readout; retained-generation cache drift rejects; and an
+existing exact slot still produces no residual while cross-lane authority is
+quarantined.
+
+Affected real-source suite: **89 total, 87 passed, 0 failed, 2 existing
+optional skips** across B08 reads/allocation/parameter custody, A13 context,
+A03.4 released schemas and B01 topology. `git diff --check` passes. The new
+module is 389 lines. Repository static checks show only inherited semantic
+import-boundary debt and three pre-existing module-size regressions; no new
+B08.1 finding was introduced.
+
+**Disposition: EGM_PENDING / SOURCE_HIT_ADMISSION_BLOCKED_ON_REVIEWED_UNIFIED.**
+This repair is sufficient for B11 to execute a truthful second-read **no-hit**
+boundary while source authority is quarantined. It does not complete #460,
+#586 or #577, authorize a motif hit, publish a retained generation, start
+training, mutate Lane B, or close an issue. Fresh independent EGM is required
+before any integration decision.
