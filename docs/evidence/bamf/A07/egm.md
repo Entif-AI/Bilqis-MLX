@@ -51,6 +51,17 @@ Focused suite: **46 passed, 0 failed, 0 skipped**.
 The formal pinned EGM checkout was installed and its
 SHA verified. Independent final immutable-head
 readback is **PENDING**; no A07.3 EGM PASS is claimed.
+
+Second independent review at `e0ba655` ran 42/42
+tests with the pinned EGM standards and identified
+remaining joint-hole and memo-poisoning Majors,
+plus the already-addressed internal source dependency
+and stale receipt. Repair
+`6b7f4daaf89293f5a12a1381e016d01e877128f4`
+adds bounded, non-speculative local joint applicability
+proof and process-local executor-witnessed cache reads.
+Focused owner suite: **48 passed, 0 failed, 0 skipped**.
+Final Goldfish re-review is still pending.
 No A07 parent integration or neural training is claimed.
 
 ## A07.2 independent evaluator/source separation review

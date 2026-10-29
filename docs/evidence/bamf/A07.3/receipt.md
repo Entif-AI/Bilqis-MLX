@@ -8,7 +8,7 @@
 - Direct prerequisite: A07.2 #414, independent EGM PASS
   at `819a653` with final receipt `9232a42`
 - Current pushed implementation head:
-  `88621bce14e5d07ac1bf725ffe700b2d26801e28`
+  `6b7f4daaf89293f5a12a1381e016d01e877128f4`
 - Independent EGM: **PENDING**
 
 ## Source-qualified API
@@ -70,7 +70,7 @@ verbose internal prose.
 ## Verification
 
 - Focused A07.3 plus A07.1/A07.2 owner suite:
-  **46 passed, 0 failed, 0 skipped**.
+  **48 passed, 0 failed, 0 skipped**.
 - Literal `ADD(MUL(2,3),4)` produces `10` in
   two operations; exact replay uses two memo hits
   and zero compute operations.
@@ -120,3 +120,20 @@ immutable-head EGM re-review remains **PENDING**.
 The pinned EGM checkout is available at
 `../bamf02-egm-b3a359` with verified SHA
 `b3a35956759bf7f024af2ff061b2e0b44b438e4c`.
+
+The second independent Goldfish review at `e0ba655`
+found two additional behavioral Majors not resolved
+by that target: a multi-slot hole with exactly one
+jointly applicable operand combination was left
+unresolved, and a caller-poisoned memo could supply a
+type-valid but false cached answer. The intervening
+`88621bc` commit already fixed the reviewer's
+internal source-dependency Major. Repair `6b7f4da`
+performs bounded local combination checks (maximum
+4096 per DAG, no speculative tree execution) and
+accepts memo hits only with a process-local
+executor-computed value witness. Negative tests prove
+unique DIV(4,2) among four typed combinations and
+recompute ADD(2,3)=5 after a caller inserts a forged
+cache value 7. Focused suite **48/48 passed**.
+Final independent immutable-head EGM is still pending.
