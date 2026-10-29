@@ -31,7 +31,8 @@ functions to particular depth groups.
 
 `python3 -B scripts/run_tests.py
 bilqis_mlx/runtime/tests/test_block_attnres.py`:
-**6 passed, 0 failed, 0 skipped** on native MLX.
+**7 passed, 0 failed, 0 skipped** on native MLX
+after the independent source-state gradient proof repair.
 Two additional literal tests construct the full B01 ledger,
 verify reference identity for three distinct gate boundaries,
 run the selector through each exact view, and reject

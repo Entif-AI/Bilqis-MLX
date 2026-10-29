@@ -168,6 +168,28 @@ class DepthSelectionTests(unittest.TestCase):
             self.assertTrue(np.isfinite(array).all(), name)
             self.assertGreater(float(np.abs(array).sum()), 0, name)
 
+    def test_nonzero_gradients_reach_all_completed_source_states(self):
+        sources = _summaries(3)
+        features = _features(3)
+        params = _params(3)
+        names = (("h0", 0), ("g1", 4), ("g2", 8), ("g3", 12))
+
+        def objective(h0, g1, g2, g3):
+            summaries = tuple(
+                DepthSummary(name, layer, hidden)
+                for (name, layer), hidden in zip(names, (h0, g1, g2, g3)))
+            output = depth_select(
+                self.current, summaries, features, params)
+            return mx.sum(output * output)
+
+        gradients = mx.grad(objective, argnums=(0, 1, 2, 3))(
+            *(item.hidden for item in sources))
+        for (name, _), gradient in zip(names, gradients):
+            array = np.asarray(gradient)
+            self.assertEqual(array.shape, (2, 3, 768))
+            self.assertTrue(np.isfinite(array).all(), name)
+            self.assertGreater(float(np.abs(array).sum()), 0, name)
+
     def test_invalid_tensor_shapes_dtype_source_order_and_release_fail_closed(self):
         for name, value in (
             ("query", mx.zeros((64, 768), dtype=mx.float32)),

@@ -49,16 +49,29 @@ semantics or inspect source labels.
 
 `python3 -B scripts/run_tests.py
 bilqis_mlx/runtime/tests/test_block_attnres.py`:
-**4 passed, 0 failed, 0 skipped** on installed native MLX.
+**7 passed, 0 failed, 0 skipped** on installed native MLX.
 An independent NumPy FP32 oracle recomputes the
 RMSNorm/QKV/source softmax/gate/output equations. Literal
 tests verify weights sum to one, initial gate 0.01,
 boundaries 1/2/3 use exactly 2/3/4 ordered sources,
 future/reordered groups reject, all shared selector
-and gate tensors receive finite nonzero gradients, and
+and gate tensors and all four completed source states
+receive finite nonzero gradients, and
 wrong-shape/dtype/source release/parameter names fail.
 
 This is an isolated implementation candidate. The final
 source-qualified factor-composer integration, per-boundary
 B01 tensor-ledger view, independent EGM and human-reviewed
 Lane B turn-in are still required.
+
+## Independent review repair
+
+Goldfish worker-4 found zero Blockers and one Major proof gap
+at immutable `7f40b3a`: the existing gradient test
+differentiated selector parameters but not the h0/g1/g2/g3
+source states. The repair adds a nondegenerate native
+MLX gradient witness for all four completed source
+summaries at boundary 3. The full owner suite now passes
+**7/7**. Independent immutable-head re-review is
+pending; A06 factor-composer and B13 custody integration
+remain separate gates.
