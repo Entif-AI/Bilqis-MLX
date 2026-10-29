@@ -87,3 +87,11 @@ NEURAL_F05_PENDING_B11`. A05.3 and A05 parent
 integration remain open. This does not authorize
 student/optimizer training, source promotion or
 merging the draft Lane A PR.
+
+## Successor interface note
+
+A05.3 #410 adds a 1024-position guard,
+separate hidden-target custody, source-granted
+lawful segment splitting and actual packing
+statistics without changing the A05.2 maps
+schema. See `docs/evidence/bamf/A05.3/receipt.md`.

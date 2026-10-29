@@ -16,8 +16,11 @@ from bilqis_mlx.semantics.frame_codec import (
     PackDisposition, SchemaTagMap,
 )
 from bilqis_mlx.semantics.frame_compiler import (
-    FrameCompilerConfig, PositionKind, SourceAtom, StreamingAST,
-    compile_prefix, compile_prefix_rows, reconstruct,
+    FrameCompilerConfig, HiddenAnswerTargets, LawfulSourceSegment,
+    PositionKind, SourceAtom, StreamingAST, boundary_evidence_digest,
+    compile_lawful_segments,
+    compile_prefix, compile_prefix_rows, compile_training_example,
+    reconstruct,
 )
 from bilqis_mlx.semantics.frame_schema import (
     AtomicFrame, ChildFrameRef, ConceptRef, FrameSchema, FrameTree,
@@ -172,6 +175,148 @@ def _mixed_case():
 
 
 class FrameCompilerTests(TestCase):
+    def test_hidden_teacher_targets_are_not_model_input_or_cache_identity(self):
+        ast, config = _case()
+        target_a = HiddenAnswerTargets(
+            ast.source_instance_id, (3, 5), (True, True))
+        target_b = HiddenAnswerTargets(
+            ast.source_instance_id, (9, 0), (True, False))
+        first = compile_training_example(
+            ast, target_a, 7, RELEASE, config)
+        second = compile_training_example(
+            ast, target_b, 7, RELEASE, config)
+        self.assertEqual(first.input_view, second.input_view)
+        self.assertEqual(
+            first.input_view.cache_key, second.input_view.cache_key)
+        self.assertNotEqual(first.target_view, second.target_view)
+        self.assertFalse(hasattr(first.input_view, "target_indices"))
+        self.assertFalse(hasattr(first.input_view, "target_view"))
+
+    def test_overflow_fails_before_packing_or_padding(self):
+        ast, config = _case()
+        extended = replace(
+            ast, atoms=ast.atoms + tuple(
+                SourceAtom(i, f"extra:{i}", f"source:extra:{i}")
+                for i in range(8, 1024)))
+        expanded_config = replace(
+            config, task=replace(
+                config.task, causal_prefix_end=1024))
+        with patch(
+            "bilqis_mlx.semantics.frame_compiler.pack_frame",
+            side_effect=AssertionError("packed before length guard"),
+        ):
+            with self.assertRaises(BilqisError) as caught:
+                compile_prefix(
+                    extended, 1024, RELEASE, expanded_config)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_PREFIX_NEURAL_LENGTH_EXCEEDED")
+        atoms_only = replace(
+            extended, frames=(), atoms=extended.atoms + (
+                SourceAtom(1024, "extra:1024", "source:extra:1024"),))
+        with self.assertRaises(BilqisError):
+            compile_prefix(
+                atoms_only, 1025, RELEASE, replace(
+                    expanded_config, approved=None,
+                    task=replace(
+                        expanded_config.task, causal_prefix_end=1025)))
+
+    def test_lawful_source_boundaries_split_without_truncation(self):
+        _, config = _case()
+        segments = []
+        for index, (start, end) in enumerate(((0, 800), (800, 1500))):
+            ast = StreamingAST(
+                f"synthetic:segment:{index}",
+                tuple(SourceAtom(
+                    local, f"token:{global_index}",
+                    f"source:token:{global_index}")
+                    for local, global_index in enumerate(
+                        range(start, end))), ())
+            scoped = replace(
+                config, approved=None,
+                task=replace(
+                    config.task, causal_prefix_end=end - start))
+            segment = LawfulSourceSegment(
+                "synthetic:original", SourceSpan(start, end),
+                f"source:lawful-boundary:{end}", ast, scoped)
+            grant = SourceGrant(
+                segment.boundary_source_handle, PRINCIPAL, TENANT,
+                PUBLIC_FORMAL, RELEASE, boundary_evidence_digest(segment),
+                ("TRAINING",), (REGION,), (SCOPE,),
+                rights_epoch=1, correction_generation=1,
+                observed_at=2, effective_from=0)
+            scoped = replace(
+                scoped, frontier=replace(
+                    scoped.frontier, grants=tuple(sorted(
+                        (*scoped.frontier.grants, grant),
+                        key=lambda item: item.source_handle))))
+            segments.append(replace(segment, config=scoped))
+        compiled = compile_lawful_segments(tuple(segments), RELEASE)
+        self.assertEqual(compiled.total_source_atoms, 1500)
+        self.assertEqual(compiled.total_neural_positions, 1500)
+        self.assertEqual(
+            tuple(len(item.positions) for item in compiled.segments),
+            (800, 700))
+        self.assertEqual(
+            compiled.segments[0].positions[0].atom.source_reference,
+            "source:token:0")
+        self.assertEqual(
+            compiled.segments[-1].positions[-1].atom.source_reference,
+            "source:token:1499")
+        with self.assertRaises(BilqisError):
+            compile_lawful_segments((
+                segments[0], replace(
+                    segments[1], global_span=SourceSpan(801, 1501))),
+                RELEASE)
+        with self.assertRaises(BilqisError):
+            compile_lawful_segments((
+                segments[0], replace(
+                    segments[1], config=replace(
+                        segments[1].config, task=replace(
+                            segments[1].config.task,
+                            tenant_id="synthetic:other")))),
+                RELEASE)
+        ungranted = replace(
+            segments[0], config=replace(
+                segments[0].config, frontier=replace(
+                    segments[0].config.frontier,
+                    grants=tuple(
+                        grant for grant in segments[0].config.frontier.grants
+                        if grant.source_handle
+                        != segments[0].boundary_source_handle))))
+        with self.assertRaises(BilqisError) as caught:
+            compile_lawful_segments((ungranted, segments[1]), RELEASE)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_PREFIX_SPLIT_SOURCE_UNAUTHORIZED")
+        overlong_ast = StreamingAST(
+            "synthetic:overlong",
+            tuple(SourceAtom(i, f"token:{i}", f"source:token:{i}")
+                  for i in range(1025)), ())
+        overlong_config = replace(
+            config, approved=None,
+            task=replace(config.task, causal_prefix_end=1025))
+        overlong = LawfulSourceSegment(
+            "synthetic:overlong-origin", SourceSpan(0, 1025),
+            "source:overlong-boundary", overlong_ast, overlong_config)
+        grant = SourceGrant(
+            overlong.boundary_source_handle, PRINCIPAL, TENANT,
+            PUBLIC_FORMAL, RELEASE, boundary_evidence_digest(overlong),
+            ("TRAINING",), (REGION,), (SCOPE,),
+            rights_epoch=1, correction_generation=1,
+            observed_at=2, effective_from=0)
+        overlong = replace(
+            overlong, config=replace(
+                overlong_config, frontier=replace(
+                    overlong_config.frontier, grants=tuple(sorted(
+                        (*overlong_config.frontier.grants, grant),
+                        key=lambda item: item.source_handle)))))
+        with self.assertRaises(BilqisError) as caught:
+            compile_lawful_segments((overlong,), RELEASE)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_PREFIX_NEURAL_LENGTH_EXCEEDED")
+
     def test_atom_only_stream_needs_no_future_frame_approval(self):
         ast, config = _case()
         atoms_only = replace(ast, frames=())
@@ -184,6 +329,8 @@ class FrameCompilerTests(TestCase):
             self.assertEqual(
                 reconstruct(compiled).atoms, ast.atoms[:prefix])
             self.assertEqual(reconstruct(compiled).frames, ())
+            self.assertEqual(compiled.stats.actual_frames, 0)
+            self.assertEqual(compiled.stats.sidecar_bytes, 0)
 
     def test_unequal_source_rows_have_separate_positions_and_cache_keys(self):
         ast, config = _case()
@@ -274,6 +421,14 @@ class FrameCompilerTests(TestCase):
             maps.scope_boundaries[0].end_position, 9)
         self.assertEqual(
             maps.scope_boundaries[1].scope, "fixture")
+        self.assertEqual(
+            (complete.stats.actual_atoms,
+             complete.stats.actual_frames,
+             complete.stats.neural_positions), (8, 1, 9))
+        self.assertEqual(complete.stats.disposition_shares, (
+            ("COMPACT", 1, 1), ("EXTENDED", 0, 1),
+            ("ATOMIC", 0, 1)))
+        self.assertGreater(complete.stats.sidecar_bytes, 0)
 
     def test_policy_version_changes_compiler_digest_even_without_frames(self):
         ast, config = _case()
@@ -416,6 +571,10 @@ class FrameCompilerTests(TestCase):
         self.assertEqual(
             parent.children[0].root.frame_schema_id, "frame:child")
         self.assertEqual(visible.atoms, ast.atoms)
+        self.assertEqual(at_eight.stats.disposition_shares, (
+            ("COMPACT", 0, 3), ("EXTENDED", 2, 3),
+            ("ATOMIC", 1, 3)))
+        self.assertGreater(at_eight.stats.sidecar_bytes, 0)
 
     def test_parent_cannot_close_while_child_is_future(self):
         ast, config = _mixed_case()

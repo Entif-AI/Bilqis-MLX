@@ -6,7 +6,7 @@ No assessment labels, future source suffix or mutable cache state is consumed.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import asdict, dataclass, replace
 from enum import Enum
 import re
 
@@ -16,7 +16,10 @@ from .context_eligibility import (
     SourceFrontier, TaskScope, project_context,
 )
 from .domains import contract_digest
-from .frame_codec import PackedFrame, SchemaTagMap, pack_frame, unpack_frame
+from .frame_codec import (
+    PackDisposition, PackedFrame, SchemaTagMap, _canonical_bytes,
+    pack_frame, unpack_frame,
+)
 from .frame_schema import (
     AtomicFrame, FrameInstance, FrameSchema, FrameTree, SourceSpan,
     validate_frame_tree,
@@ -31,6 +34,12 @@ COMPILED_BATCH_SCHEMA = "bilqis.compiled-frame-batch/v2"
 VISIBLE_AST_SCHEMA = "bilqis.visible-source-ast/v1"
 PREFIX_MAPS_SCHEMA = "bilqis.compiled-prefix-maps/v1"
 COMPILED_ROWS_SCHEMA = "bilqis.compiled-frame-rows/v1"
+TRAINING_EXAMPLE_SCHEMA = "bilqis.compiled-training-example/v1"
+HIDDEN_TARGET_SCHEMA = "bilqis.hidden-answer-targets/v1"
+LAWFUL_SEGMENT_SCHEMA = "bilqis.lawful-source-segment/v1"
+COMPILED_SEGMENTS_SCHEMA = "bilqis.compiled-frame-segments/v1"
+BOUNDARY_EVIDENCE_SCHEMA = "bilqis.source-segment-boundary/v1"
+MAX_NEURAL_POSITIONS = 1024
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 
 
@@ -183,6 +192,7 @@ class CompiledFrameBatch:
                 or not _SHA.fullmatch(self.semantic_release)
                 or type(self.visible_end) is not int or self.visible_end < 0
                 or not isinstance(self.positions, tuple)
+                or len(self.positions) > MAX_NEURAL_POSITIONS
                 or any(not isinstance(item, CompiledPosition)
                        or item.source_index >= self.visible_end
                        for item in self.positions)
@@ -210,6 +220,57 @@ class CompiledFrameBatch:
     @property
     def maps(self) -> "PrefixMaps":
         return _derive_maps(self)
+
+    @property
+    def stats(self) -> "CompileStats":
+        return _compile_stats(self)
+
+
+@dataclass(frozen=True)
+class CompileStats:
+    actual_atoms: int
+    actual_frames: int
+    neural_positions: int
+    disposition_shares: tuple[tuple[str, int, int], ...]
+    sidecar_bytes: int
+
+    def __post_init__(self) -> None:
+        if (any(type(value) is not int or value < 0
+                for value in (
+                    self.actual_atoms, self.actual_frames,
+                    self.neural_positions, self.sidecar_bytes))
+                or self.actual_atoms + self.actual_frames
+                != self.neural_positions
+                or not isinstance(self.disposition_shares, tuple)
+                or tuple(item[0] for item in self.disposition_shares)
+                != ("COMPACT", "EXTENDED", "ATOMIC")
+                or any(type(count) is not int or count < 0
+                       or type(total) is not int
+                       or total != self.actual_frames
+                       for _, count, total in self.disposition_shares)
+                or sum(count for _, count, _ in self.disposition_shares)
+                != self.actual_frames):
+            _invalid("BAMF_PREFIX_STATS_INVALID")
+
+
+def _compile_stats(compiled: CompiledFrameBatch) -> CompileStats:
+    closures = tuple(
+        position.packed for position in compiled.positions
+        if position.kind is PositionKind.CLOSURE)
+    count = len(closures)
+    shares = tuple(
+        (disposition.name,
+         sum(packed.disposition is disposition for packed in closures),
+         count)
+        for disposition in (
+            PackDisposition.COMPACT,
+            PackDisposition.EXTENDED,
+            PackDisposition.ATOMIC))
+    return CompileStats(
+        len(compiled.positions) - count, count,
+        len(compiled.positions), shares,
+        sum(len(_canonical_bytes(asdict(packed.sidecar)))
+            for packed in closures))
 
 
 @dataclass(frozen=True)
@@ -494,6 +555,10 @@ def compile_prefix(
         if compiler_config.approved is not None else {})
     closed = _source_frames(
         ast, visible_end, approved_by_occurrence)
+    # Preflight before packing frames, allocating model positions or padding.
+    # No silent truncation is permitted at this boundary.
+    if visible_end + len(closed) > MAX_NEURAL_POSITIONS:
+        _invalid("BAMF_PREFIX_NEURAL_LENGTH_EXCEEDED")
     envelopes = []
     for frame in closed:
         envelope = approved_by_occurrence.get(frame.occurrence_id)
@@ -584,6 +649,221 @@ class CompiledFrameRows:
                         (True,) * len(row.positions)
                         + (False,) * (width - len(row.positions)))):
                 _invalid("BAMF_PREFIX_ROWS_PADDING_INVALID")
+
+
+@dataclass(frozen=True)
+class HiddenAnswerTargets:
+    """Teacher-only target indices, never a member of CompiledFrameBatch."""
+    source_instance_id: str
+    target_indices: tuple[int, ...]
+    target_mask: tuple[bool, ...]
+    schema_version: str = HIDDEN_TARGET_SCHEMA
+
+    def __post_init__(self) -> None:
+        if (not isinstance(self.source_instance_id, str)
+                or not self.source_instance_id
+                or not isinstance(self.target_indices, tuple)
+                or len(self.target_indices) > MAX_NEURAL_POSITIONS
+                or any(type(item) is not int or item < 0
+                       for item in self.target_indices)
+                or not isinstance(self.target_mask, tuple)
+                or any(type(item) is not bool for item in self.target_mask)
+                or len(self.target_indices) != len(self.target_mask)
+                or self.schema_version != HIDDEN_TARGET_SCHEMA):
+            _invalid("BAMF_PREFIX_TARGETS_INVALID")
+
+
+@dataclass(frozen=True)
+class CompiledTrainingExample:
+    input_view: CompiledFrameBatch
+    target_view: HiddenAnswerTargets
+    schema_version: str = TRAINING_EXAMPLE_SCHEMA
+
+    def __post_init__(self) -> None:
+        if (not isinstance(self.input_view, CompiledFrameBatch)
+                or not isinstance(self.target_view, HiddenAnswerTargets)
+                or self.input_view.source_instance_id
+                != self.target_view.source_instance_id
+                or self.schema_version != TRAINING_EXAMPLE_SCHEMA):
+            _invalid("BAMF_PREFIX_TRAINING_EXAMPLE_INVALID")
+
+
+def compile_training_example(
+    ast: StreamingAST, targets: HiddenAnswerTargets,
+    visible_end: int, release: str,
+    config: FrameCompilerConfig,
+) -> CompiledTrainingExample:
+    """Keep hidden answer tensors outside the model-input/cache contract."""
+    if (not isinstance(targets, HiddenAnswerTargets)
+            or targets.source_instance_id != ast.source_instance_id):
+        _invalid("BAMF_PREFIX_TARGET_SOURCE_MISMATCH")
+    return CompiledTrainingExample(
+        compile_prefix(ast, visible_end, release, config), targets)
+
+
+@dataclass(frozen=True)
+class LawfulSourceSegment:
+    """Source-adapter-declared segment, not an arbitrary compiler cut."""
+    origin_source_id: str
+    global_span: SourceSpan
+    boundary_source_handle: str
+    ast: StreamingAST
+    config: FrameCompilerConfig
+    schema_version: str = LAWFUL_SEGMENT_SCHEMA
+
+    def __post_init__(self) -> None:
+        if (not isinstance(self.origin_source_id, str)
+                or not self.origin_source_id
+                or not isinstance(self.global_span, SourceSpan)
+                or not isinstance(self.ast, StreamingAST)
+                or self.global_span.end - self.global_span.start
+                != len(self.ast.atoms)
+                or not isinstance(self.boundary_source_handle, str)
+                or not self.boundary_source_handle
+                or not isinstance(self.config, FrameCompilerConfig)
+                or self.schema_version != LAWFUL_SEGMENT_SCHEMA):
+            _invalid("BAMF_PREFIX_LAWFUL_SEGMENT_INVALID")
+
+
+def boundary_evidence_digest(segment: LawfulSourceSegment) -> str:
+    """Source-adapter evidence identity for a declared lawful split."""
+    if not isinstance(segment, LawfulSourceSegment):
+        _invalid("BAMF_PREFIX_SPLIT_INPUT_INVALID")
+    return contract_digest((
+        BOUNDARY_EVIDENCE_SCHEMA, segment.origin_source_id,
+        segment.global_span.start, segment.global_span.end,
+        segment.ast.source_instance_id, segment.boundary_source_handle))
+
+
+@dataclass(frozen=True)
+class CompiledFrameSegments:
+    origin_source_id: str
+    global_spans: tuple[SourceSpan, ...]
+    boundary_source_handles: tuple[str, ...]
+    segments: tuple[CompiledFrameBatch, ...]
+    total_source_atoms: int
+    total_neural_positions: int
+    schema_version: str = COMPILED_SEGMENTS_SCHEMA
+
+    def __post_init__(self) -> None:
+        if (not isinstance(self.origin_source_id, str)
+                or not self.origin_source_id
+                or not isinstance(self.global_spans, tuple)
+                or not isinstance(self.boundary_source_handles, tuple)
+                or not isinstance(self.segments, tuple)
+                or not (len(self.global_spans)
+                        == len(self.boundary_source_handles)
+                        == len(self.segments))
+                or any(not isinstance(item, CompiledFrameBatch)
+                       for item in self.segments)
+                or any(not isinstance(span, SourceSpan)
+                       for span in self.global_spans)
+                or any(not isinstance(handle, str) or not handle
+                       for handle in self.boundary_source_handles)
+                or len(set(self.boundary_source_handles))
+                != len(self.boundary_source_handles)
+                or any(span.end - span.start != segment.visible_end
+                       for span, segment in zip(
+                           self.global_spans, self.segments))
+                or any(span.start != (
+                    self.global_spans[index - 1].end if index else 0)
+                    for index, span in enumerate(self.global_spans))
+                or any(len(item.positions) > MAX_NEURAL_POSITIONS
+                       for item in self.segments)
+                or type(self.total_source_atoms) is not int
+                or self.total_source_atoms != sum(
+                    item.visible_end for item in self.segments)
+                or type(self.total_neural_positions) is not int
+                or self.total_neural_positions != sum(
+                    len(item.positions) for item in self.segments)
+                or self.schema_version != COMPILED_SEGMENTS_SCHEMA):
+            _invalid("BAMF_PREFIX_COMPILED_SEGMENTS_INVALID")
+
+
+def compile_lawful_segments(
+    segments: tuple[LawfulSourceSegment, ...], release: str,
+) -> CompiledFrameSegments:
+    """Compile only source-declared contiguous boundaries, never truncate."""
+    if (not isinstance(segments, tuple) or not segments
+            or any(not isinstance(item, LawfulSourceSegment)
+                   for item in segments)):
+        _invalid("BAMF_PREFIX_SPLIT_INPUT_INVALID")
+    origin = segments[0].origin_source_id
+    first = segments[0].config
+    authority = (
+        first.task.principal_id, first.task.tenant_id,
+        first.task.purpose, first.task.jurisdiction,
+        first.task.scope, first.task.semantic_release,
+        first.policy.policy_id, first.policy.policy_epoch,
+        first.policy.rights_epoch)
+    cursor = 0
+    handles = set()
+    for segment in segments:
+        if (segment.origin_source_id != origin
+                or segment.global_span.start != cursor
+                or segment.boundary_source_handle in handles
+                or (
+                    segment.config.task.principal_id,
+                    segment.config.task.tenant_id,
+                    segment.config.task.purpose,
+                    segment.config.task.jurisdiction,
+                    segment.config.task.scope,
+                    segment.config.task.semantic_release,
+                    segment.config.policy.policy_id,
+                    segment.config.policy.policy_epoch,
+                    segment.config.policy.rights_epoch,
+                ) != authority):
+            _invalid("BAMF_PREFIX_SPLIT_BOUNDARY_INVALID")
+        cursor = segment.global_span.end
+        handles.add(segment.boundary_source_handle)
+        grant = next((
+            item for item in segment.config.frontier.grants
+            if item.source_handle == segment.boundary_source_handle
+        ), None)
+        task = segment.config.task
+        if (grant is None or grant.revoked
+                or grant.evidence_digest != boundary_evidence_digest(segment)
+                or grant.semantic_release != release
+                or grant.principal_id != task.principal_id
+                or grant.tenant_id != task.tenant_id
+                or task.purpose not in grant.permitted_purposes
+                or task.jurisdiction not in grant.permitted_jurisdictions
+                or task.scope not in grant.permitted_scopes
+                or grant.source_regime
+                not in segment.config.policy.allowed_regimes
+                or task.purpose
+                not in segment.config.policy.allowed_purposes
+                or task.jurisdiction
+                not in segment.config.policy.allowed_jurisdictions
+                or task.scope not in segment.config.policy.allowed_scopes
+                or grant.rights_epoch != segment.config.frontier.rights_epoch
+                or grant.rights_epoch
+                != segment.config.policy.rights_epoch
+                or grant.correction_generation
+                != segment.config.frontier.correction_generation
+                or grant.observed_at > task.observed_frontier
+                or grant.effective_from > task.effective_time
+                or (grant.effective_until is not None
+                    and task.effective_time >= grant.effective_until)):
+            _invalid("BAMF_PREFIX_SPLIT_SOURCE_UNAUTHORIZED")
+        if len(segment.ast.atoms) > MAX_NEURAL_POSITIONS:
+            _invalid("BAMF_PREFIX_NEURAL_LENGTH_EXCEEDED")
+        approved = (
+            {item.frame.occurrence_id: item
+             for item in segment.config.approved.envelopes}
+            if segment.config.approved is not None else {})
+        closed = _source_frames(
+            segment.ast, len(segment.ast.atoms), approved)
+        if len(segment.ast.atoms) + len(closed) > MAX_NEURAL_POSITIONS:
+            _invalid("BAMF_PREFIX_NEURAL_LENGTH_EXCEEDED")
+    compiled = tuple(
+        compile_prefix(
+            segment.ast, len(segment.ast.atoms), release, segment.config)
+        for segment in segments)
+    return CompiledFrameSegments(
+        origin, tuple(item.global_span for item in segments),
+        tuple(item.boundary_source_handle for item in segments),
+        compiled, cursor, sum(len(item.positions) for item in compiled))
 
 
 def compile_prefix_rows(
