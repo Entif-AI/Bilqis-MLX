@@ -25,3 +25,9 @@ Issue: #556. This is a repository-structure checkpoint, not the scope/modality/t
 - `scripts/check_semantic_boundaries.py` retains the three pre-existing `frame_adapters` source-adapter import-boundary findings. No new boundary finding was observed.
 - Source admission, rights, neural training and learner-retention claims remain unchanged. A08.1b.4 still needs source-attested constructive lessons, typed checkers, variation witnesses and independent EGM.
 - Next mandatory structural interruption: split a directly encountered oversized subsystem package and its companion tests below 240 lines before resuming the feature, then revalidate. No parent or lane PR is self-merged.
+
+## Follow-on file-size interruption: A02 vocabulary staging
+
+The next directly encountered oversized source file was the 452-line `atlas_vocabulary/__init__.py`, with a 425-line `test_atlas_vocabulary.py`. It has been split by responsibility into immutable contracts (`models.py`), source-replayed planning and factor projection (`planning.py`), detached MLX candidate staging (`staging.py`), and active-row readout (`readout.py`), with a thin public package API. The test suite is divided into planning, source-authority adversaries, and staging witnesses. Every new vocabulary production file and companion test is below 240 lines. The original public `load_pinned_atlas_snapshot` patch seam remains usable for source-fixture tests; no source authority is relaxed.
+
+A real MLX-capable interpreter executed the available semantic test corpus after both structural changes: **267 passed, 0 failed, 12 optional source/checkpoint skips** across 279 tests. Three unrelated suites requiring unavailable Torch or SymPy were not executed. The earlier 242/250 and 30/32 figures remain independent evidence from the lighter environment. The complete B01 80M-parameter disposable witness is still explicitly skipped, not treated as passed.
