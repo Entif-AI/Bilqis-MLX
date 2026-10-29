@@ -17,7 +17,7 @@ without invoking either trainer or any neural execution.
 
 Red: both subprocess import cases failed. The existing runner subtracts failed
 subtests from whole-test counts and prints a negative passed subtotal; that is a
-runner reporting artifact, not successful proof. Full raw receipt is retained.
+runner reporting artifact, not successful proof. Full raw bytes are retained in expected-red.txt.gz; the readable .txt trims only trailing display whitespace.
 Green: **87 affected tests passed**, zero failures/errors/skips. Independent
 fresh-context Goldfish /root/c06_4_fresh_goldfish inspected the small repair,
 red evidence and87/87 receipt using Google EGM pin
