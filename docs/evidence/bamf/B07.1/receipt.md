@@ -45,8 +45,8 @@ No live student, checkpoint or optimizer state was mutated.
 
 `python3 -B scripts/run_tests.py
 bilqis_mlx/learning/tests/test_atlas_engram_allocation.py`:
-**11 passed, 0 failed, 0 skipped** after the child-frame
-occurrence-identity hardening.
+**13 passed, 0 failed, 0 skipped** after the child-frame
+and empty-optional-frame review repairs.
 
 Literal tests cover distinct fillers sharing structural type
 keys, exact role-swap/scope/child differences, distinct child
@@ -59,6 +59,27 @@ bucket collision without false hits.
 
 The tests currently use an exact-shape A03 v2 protocol fixture,
 not a copy of A03 constructors. A real FrameInstance/FrameSchema
-integration witness is required after the upstream source
-reaches unified. This is a bounded candidate, not a completed
-source-admission or neural-memory release.
+integration witness and authoritative source-grant boundary are
+required after the upstream source reaches unified. This is a
+bounded candidate, not a completed source-admission or
+neural-memory release.
+
+## Independent review findings and scoped repair
+
+Goldfish worker-4 found two Majors at immutable `5c75f04`:
+structural child relations retained an exact child content
+digest, and legal A03 frames with zero bindings were rejected.
+Both are reproduced and repaired locally. Exact child keys
+retain occurrence/content identity, while structural relation
+signatures use admitted child types and role/occurrence shape.
+An empty frame with optional roles now receives distinct
+canonical exact and structural keys. The focused suite passes
+**13/13**; a fresh immutable-head review is required.
+
+Independent adversarial review separately identified that
+duck-typed protocol fixtures cannot prove A03 source/ABI
+admission or canonical frame construction. This is an
+**unresolved source-authority gate**, not a waiver. The
+candidate must not be wired into a production training or
+allocation path, pushed as accepted B07.1, or closed until
+real A03/A13 source authority can be consumed through unified.

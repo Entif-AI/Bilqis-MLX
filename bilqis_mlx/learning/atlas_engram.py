@@ -119,7 +119,6 @@ class MotifKey:
                 or not self.frame_schema_id
                 or type(self.frame_schema_revision) is not int
                 or self.frame_schema_revision < 1
-                or not self.members
                 or not isinstance(self.members, tuple)
                 or any(type(member) is not MotifMember
                        or member.target_kind not in target_kinds
@@ -303,8 +302,7 @@ def motif_keys(source: MotifFrameInput, release: str) -> tuple[MotifKey, MotifKe
                 or frame.schema_role_order != role_order
                 or not schema.scope or not schema.ast_construct
                 or not _SHA.fullmatch(frame.occurrence_id)
-                or not _SHA.fullmatch(frame.content_digest)
-                or not bindings):
+                or not _SHA.fullmatch(frame.content_digest)):
             _invalid("BAMF_MOTIF_FRAME_SCHEMA_MISMATCH")
         role_map = {role.role_id: role for role in schema.roles}
         if len(role_map) != len(role_order):
@@ -320,20 +318,27 @@ def motif_keys(source: MotifFrameInput, release: str) -> tuple[MotifKey, MotifKe
                       for binding in bindings)
         structural = tuple(_member(binding, role_map[binding.role_id], release, True)
                            for binding in bindings)
-        relations = tuple(
+        exact_relations = tuple(
             (binding.role_id, binding.occurrence_index,
+             binding.child_frame.occurrence_id,
              binding.child_frame.content_digest)
             for binding in bindings if binding.child_frame is not None)
-        signature = _digest((
+        structural_relations = tuple(
+            (binding.role_id, binding.occurrence_index,
+             tuple(binding.child_frame.type_ids))
+            for binding in bindings if binding.child_frame is not None)
+        signature_base = (
             schema.ast_construct, schema.ast_contract_sha256,
-            schema.order_mode, relations))
+            schema.order_mode)
+        exact_signature = _digest((*signature_base, exact_relations))
+        structural_signature = _digest((*signature_base, structural_relations))
     except (AttributeError, TypeError, ValueError) as error:
         _invalid("BAMF_MOTIF_FRAME_INPUT_INVALID:" + type(error).__name__)
     return (
         MotifKey("EXACT", release, schema.schema_id, schema.revision,
-                 exact, signature, schema.scope),
+                 exact, exact_signature, schema.scope),
         MotifKey("STRUCTURAL", release, schema.schema_id, schema.revision,
-                 structural, signature, schema.scope),
+                 structural, structural_signature, schema.scope),
     )
 
 
