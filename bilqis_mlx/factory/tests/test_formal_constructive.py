@@ -1,7 +1,7 @@
 """Literal A01/A07 formal source join witnesses, without learner credit."""
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import fields, replace
 import hashlib
 import os
 from pathlib import Path
@@ -10,7 +10,8 @@ import unittest
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory.formal_constructive import (
-    FORMAL_SOURCE_ONLY, SOURCE_PROJECTION_ONLY, _resolve_from_bindings,
+    FORMAL_SOURCE_ONLY, SOURCE_PROJECTION_ONLY,
+    FormalSourceOperator, FormalSourceOperatorSet, _resolve_from_bindings,
     assert_formal_source_operator_set_current, resolve_formal_source_operators,
 )
 from bilqis_mlx.semantics.atlas_projection import (
@@ -166,6 +167,30 @@ class FormalSourceResolutionTests(unittest.TestCase):
             self.assertEqual(
                 forged.exception.context["reason"],
                 "BAMF_FORMAL_SOURCE_PROPOSAL_DRIFT")
+            class EqAnySet(FormalSourceOperatorSet):
+                def __eq__(self, other):
+                    return True
+                def __ne__(self, other):
+                    return False
+
+            class EqAnyWitness(FormalSourceOperator):
+                def __eq__(self, other):
+                    return True
+                def __ne__(self, other):
+                    return False
+
+            evil_set = EqAnySet(**{
+                field.name: getattr(resolved, field.name)
+                for field in fields(resolved)})
+            evil_witness = EqAnyWitness(**{
+                field.name: getattr(resolved.witnesses[0], field.name)
+                for field in fields(resolved.witnesses[0])})
+            nested_evil = replace(
+                resolved, witnesses=(evil_witness, *resolved.witnesses[1:]))
+            for proposal in (evil_set, nested_evil):
+                with self.assertRaises(BilqisError):
+                    assert_formal_source_operator_set_current(
+                        proposal, selection, default_registry(release.digest))
         self.assertEqual(resolved.status, FORMAL_SOURCE_ONLY)
         self.assertEqual(resolved.source_authority, SOURCE_PROJECTION_ONLY)
         self.assertTrue(all(

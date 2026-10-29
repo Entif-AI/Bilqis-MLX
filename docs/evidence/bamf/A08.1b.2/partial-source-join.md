@@ -24,6 +24,12 @@ this rederives the entire join and returns no reusable credential.
 All proposals remain `SOURCE_BOUND_NOT_EXECUTABLE`: source replay
 is not an A13 permission or a lesson checker.
 
+The consuming assertion compares exact canonical record bytes
+after recursively checking root and nested dataclass types,
+not Python `__eq__`. A caller-owned `EqAnySet` or nested
+`EqAnyWitness` with overridden equality cannot pass as the
+real A01/A07 join. The focused real-corpus suite remains 5/5.
+
 The real pinned A01 corpus resolves four source-bound operators:
 `BOOL_NOT`, `BOOL_AND`, `COUNT`, `SUCC`. The exact focused
 `test_formal_constructive.py` suite passes **5/5**, including real
