@@ -22,3 +22,7 @@ Four live owner bodies (A03, A05, B02, B05) had trailing blank lines. Their GitH
 - New owner child links are preserved, but new children #575 through #559 are not silently added to the original 157-child registry. Recursive registry expansion is a separate governed change.
 
 No neural training, source admission, learner promotion, parent closure or self-merge occurred. Original mirror preimages remain preserved outside the public repository.
+
+## Combined dependency verification
+
+The isolated A09.1 mirror repair from draft PR #605 was consumed on this branch at merge `44c198a`, without modifying its reviewed source. With both metadata repairs present, the actual workstack validator returns **valid, 157 children, zero issues** in both local and `--live` GitHub reconciliation modes. The combined 32-test suite passes without skips, and the changed-path structural check reports zero violations. The seven-owner cut remains dependent on human review and integration of #605; the branch is not self-merged.
