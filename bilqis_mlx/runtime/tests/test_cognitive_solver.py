@@ -119,12 +119,59 @@ class CognitiveSolverTests(unittest.TestCase):
                 request.unresolved_signature,
                 "b" * 64)
 
-        with self.assertRaises(BilqisError) as caught:
-            solve_task(
-                ambiguous, SolveContext(binding, neural_proposer=neural),
-                generation, budget)
-        self.assertEqual(caught.exception.context["reason"],
+        result = solve_task(
+            ambiguous, SolveContext(binding, neural_proposer=neural),
+            generation, budget)
+        self.assertEqual(result.route, RouteKind.UNRESOLVED)
+        self.assertEqual(result.neural_calls, 1)
+        self.assertEqual(result.fallback_reason,
                          "BAMF_C04_NEURAL_PROPOSAL_SCOPE_DRIFT")
+
+    def test_invalid_neural_uses_verified_deterministic_fallback(self):
+        binding, generation, budget, add, ambiguous = _fixture()
+        fallback = QualifiedComposition(
+            add, generation.source_binding_digest,
+            binding.frontier.rights_epoch,
+            binding.frontier.correction_generation,
+            "a" * 64)
+        result = solve_task(
+            ambiguous, SolveContext(
+                binding,
+                qualification_verifier=lambda item: True,
+                neural_proposer=lambda request: "invalid neural payload",
+                deterministic_fallback=fallback),
+            generation, budget)
+        self.assertEqual(result.route, RouteKind.DETERMINISTIC_FALLBACK)
+        self.assertEqual(result.answer.value, 5)
+        self.assertEqual(result.score, 1.0)
+        self.assertEqual(result.neural_calls, 1)
+        self.assertEqual(result.fallback_reason,
+                         "BAMF_C04_NEURAL_PROPOSAL_INVALID")
+
+    def test_one_backbone_plus_bounded_local_refinement(self):
+        binding, generation, _, add, ambiguous = _fixture()
+        budget = SolveBudget(DAGBudget(), max_local_refinements=1)
+        calls = []
+
+        def refine(request, attempt):
+            calls.append(attempt)
+            return NeuralProposal(
+                add, request.source_binding_digest,
+                request.generation_digest,
+                request.unresolved_signature,
+                "b" * 64)
+
+        result = solve_task(
+            ambiguous, SolveContext(
+                binding,
+                neural_proposer=lambda request: None,
+                local_refiner=refine),
+            generation, budget)
+        self.assertEqual(result.route, RouteKind.NEURAL_COMPOSITION)
+        self.assertEqual(result.answer.value, 5)
+        self.assertEqual(result.neural_calls, 1)
+        self.assertEqual(result.local_refinement_calls, 1)
+        self.assertEqual(calls, [1])
 
     def test_unresolved_without_neural_preserves_typed_state_and_no_score(self):
         binding, generation, budget, _, ambiguous = _fixture()

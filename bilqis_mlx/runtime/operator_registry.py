@@ -8,7 +8,7 @@ from ..errors import ErrorBus, SCHOOL
 
 
 ROUTE_SPEC_SCHEMA = "bilqis.c04.route-spec/v1"
-ROUTE_REGISTRY_SCHEMA = "bilqis.c04.route-registry/v1"
+ROUTE_REGISTRY_SCHEMA = "bilqis.c04.route-registry/v2"
 
 
 def _invalid(reason: str) -> None:
@@ -19,6 +19,7 @@ class RouteKind(str, Enum):
     EXACT = "EXACT"
     CACHED_COMPOSITION = "CACHED_COMPOSITION"
     NEURAL_COMPOSITION = "NEURAL_COMPOSITION"
+    DETERMINISTIC_FALLBACK = "DETERMINISTIC_FALLBACK"
     UNRESOLVED = "UNRESOLVED"
 
 
@@ -66,5 +67,7 @@ def default_route_registry() -> RouteRegistry:
                   "QUALIFIED_SAME_SOURCE_AND_RIGHTS"),
         RouteSpec(RouteKind.NEURAL_COMPOSITION, 2,
                   "BOUNDED_UNRESOLVED_DAG_PROPOSAL"),
-        RouteSpec(RouteKind.UNRESOLVED, 3, "NO_ADMISSIBLE_ROUTE"),
+        RouteSpec(RouteKind.DETERMINISTIC_FALLBACK, 3,
+                  "SOURCE_QUALIFIED_FALLBACK_AFTER_INVALID_NEURAL"),
+        RouteSpec(RouteKind.UNRESOLVED, 4, "NO_ADMISSIBLE_ROUTE"),
     ))
