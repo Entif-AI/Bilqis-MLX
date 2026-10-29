@@ -34,16 +34,35 @@ def _params():
     return values
 
 
-def _run(hidden, params, group_index=1):
+def _run(hidden, params, group_index=1, sequence_starts=None):
     return run_backbone_group_numerical(
         hidden, params, group_index=group_index,
         spec=SPEC, extents=EXTENTS,
         scope_ids=mx.zeros(hidden.shape[:2], dtype=mx.int32),
         valid=mx.ones(hidden.shape[:2], dtype=mx.bool_),
-        generation="d" * 64, prefix_digest="e" * 64)
+        generation="d" * 64, prefix_digest="e" * 64,
+        sequence_starts=sequence_starts)
 
 
 class BackboneGroupNumericalTests(unittest.TestCase):
+    def test_internal_sequence_boundary_blocks_cross_sequence_history(self):
+        params = _params()
+        hidden = mx.arange(4 * SPEC.width, dtype=mx.float32).reshape(
+            1, 4, SPEC.width) / 1000
+        starts = mx.array([[False, False, True, False]])
+        changed = mx.concatenate((
+            mx.ones((1, 2, SPEC.width), dtype=mx.float32) * 100,
+            hidden[:, 2:]), axis=1)
+        original = _run(
+            hidden, params, sequence_starts=starts).hidden
+        altered = _run(
+            changed, params, sequence_starts=starts).hidden
+        self.assertTrue(bool(mx.all(
+            mx.abs(original[:, 2:] - altered[:, 2:]) < 1e-4)))
+        with self.assertRaises(BilqisError):
+            _run(hidden, params, sequence_starts=mx.zeros(
+                (1, 3), dtype=mx.bool_))
+
     def test_four_real_layers_emit_only_unadmitted_numerical_result(self):
         params = _params()
         hidden = mx.arange(4 * SPEC.width, dtype=mx.float32).reshape(

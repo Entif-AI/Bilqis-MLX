@@ -34,6 +34,23 @@ After implementation:
 - `git diff --check` passes, with no new error-control/module-size
   findings in this module.
 
+## 2026-10-29 B04 internal sequence-boundary repair
+
+Independent worker-20's review of follow-on PR #590 found a Major
+inherited from this numerical precursor: the wrapper did not forward
+`AttentionScope.sequence_starts` to the actual B04 layer calls.
+For a single scope ID with an internal sequence reset, convolution
+history could cross the reset even though direct B04 execution
+would isolate it.
+
+The failing-before regression changes the first two tokens while
+keeping the post-reset tokens fixed. It now proves the post-reset
+group output is unchanged with an internal sequence start. The
+wrapper validates the source mask's exact boolean shape and forwards
+it to every layer's B04 scope using the named field, not the
+parent-prefix slot. The focused suite now passes **4/4**.
+This repair remains numerical-only; it does not issue producer authority.
+
 Independent B04 expert worker-20 reviewed immutable `19ebb05` and
 returned **B11.1a numerical-only EGM PASS, zero Blockers/Majors**.
 It verified B01 tensor names and geometry, pre-RMSNorm/CCGQA/FFN

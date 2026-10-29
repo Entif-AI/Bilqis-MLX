@@ -70,6 +70,7 @@ def run_backbone_group_numerical(
     valid: mx.array,
     generation: str,
     prefix_digest: str,
+    sequence_starts: mx.array | None = None,
 ) -> UnadmittedGroupNumerical:
     """Execute B01/B04 layers. The output is numerical evidence, not authority."""
     if (type(spec) is not ModelTopologySpecV2
@@ -87,6 +88,10 @@ def run_backbone_group_numerical(
             or type(valid) is not mx.array
             or valid.dtype != mx.bool_
             or valid.shape != hidden.shape[:-1]
+            or (sequence_starts is not None
+                and (type(sequence_starts) is not mx.array
+                     or sequence_starts.dtype != mx.bool_
+                     or sequence_starts.shape != hidden.shape[:-1]))
             or not isinstance(parameters, Mapping)
             or spec.layers % spec.depth_groups):
         _invalid()
@@ -110,7 +115,8 @@ def run_backbone_group_numerical(
             current, parameters[prefix + "attn_norm"],
             spec.rms_norm_epsilon)
         scope = AttentionScope(
-            scope_ids, layer, generation, prefix_digest)
+            scope_ids, layer, generation, prefix_digest,
+            sequence_starts=sequence_starts)
         attention, cache = ccgqa({
                 name: parameters[prefix + name]
                 for name in _ATTENTION_PARAMETERS},
