@@ -8,7 +8,8 @@
   `bilqis_mlx/runtime/model_topology_v2.py`.
 - Candidate output schema:
   `bilqis.mlx.motif-parameter-view/v1`.
-- Independent EGM: **PENDING**.
+- Independent EGM: **PASS**, scoped to B07.4 at immutable
+  `2274cdda4a32bdb4f139576a86e04bb0cc7ddd87`.
 - Direct prerequisite B07.3: **NOT YET ACCEPTED**.
 
 `motif_parameter_view` first validates the **entire** B01
@@ -50,8 +51,18 @@ parameter. The source tensors are retained behind
 private name-mangled custody rather than exposed
 through the public mapping. The focused suite now
 passes **4/4** with a literal write-through and
-gradient regression. Fresh immutable-head EGM
-re-review is still required.
+gradient regression.
+
+Independent Goldfish re-reviewed immutable `2274cdd`
+against pinned EGM `b3a3595` and returned **PASS,
+zero remaining Blockers/Majors**. It independently
+executed 4/4 owner tests and B01 18 pass/2 optional
+skips, reproduced the former write-through adversary
+with unchanged B01 and other-site tensors, and proved
+autodiff still accumulates onto the original shared
+page (gradient 8.0) and local site bias (gradient 6.0).
+This scoped PASS does not waive B07.3 accepted-generation
+custody or human-reviewed Lane B integration.
 
 This is a **staged candidate**, not B07.4 turn-in.
 B07.3's accepted-generation custody and independent
