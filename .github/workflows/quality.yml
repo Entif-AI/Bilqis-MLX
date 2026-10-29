@@ -31,10 +31,29 @@ jobs:
           esac
           python3 -B scripts/check_module_size.py --changed-from "$BASE_REF"
           python3 -B scripts/quality/check_governance_integrity.py --base-ref "$BASE_REF"
-      - name: Check historical semantic integrity and code ownership
+      - name: Check historical semantic integrity
+        run: python3 -B scripts/check_historical_abi.py
+      - name: Check legacy semantic package ownership
+        if: >-
+          ${{
+            (!contains(github.ref_name, 'bamf') && !contains(github.head_ref, 'bamf'))
+          }}
+        run: python3 -B scripts/check_semantic_boundaries.py
+      - name: Verify portable BAMF semantic contracts
+        if: >-
+          ${{
+            (contains(github.ref_name, 'bamf') || contains(github.head_ref, 'bamf'))
+          }}
+        run: >-
+          python3 -B scripts/run_tests.py
+          bilqis_mlx/factory/tests/test_factory_construction.py
+          bilqis_mlx/factory/tests/test_curriculum_compiler.py
+          bilqis_mlx/factory/tests/test_grade_admission.py
+          bilqis_mlx/semantics/tests/test_domain_contracts.py
+          bilqis_mlx/verification/tests/test_construction_contracts.py
+          bilqis_mlx/factory/tests/test_release_outcome_contracts.py
+      - name: Check architecture, documentation and error contracts
         run: |
-          python3 -B scripts/check_historical_abi.py
-          python3 -B scripts/check_semantic_boundaries.py
           python3 -B scripts/check_factory_architecture.py
           python3 -B scripts/quality/check_docs.py
           python3 -B scripts/error_control_plane.py --check

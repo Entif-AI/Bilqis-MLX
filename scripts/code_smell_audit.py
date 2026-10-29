@@ -125,18 +125,9 @@ def compare_to_baseline(findings, baseline):
             for _ in range(max(0,count-prior[key]))]
 
 
-def _staged_paths():
-    result = subprocess.run(['git','diff','--cached','--name-only','--diff-filter=ACMR','-z'],
-                            cwd=ROOT,check=True,stdout=subprocess.PIPE)
-    return [x.decode('utf-8') for x in result.stdout.split(b'\0') if x.endswith(b'.py')]
-
-
-def _changed_records(base_ref):
-    merge_base=subprocess.check_output(['git','merge-base',base_ref,'HEAD'],cwd=ROOT,text=True).strip()
-    result=subprocess.run(['git','diff','--name-status','-M','--diff-filter=ACMR',merge_base,'HEAD'],
-                          cwd=ROOT,check=True,text=True,stdout=subprocess.PIPE)
+def _records_from_name_status(text):
     records=[]
-    for line in result.stdout.splitlines():
+    for line in text.splitlines():
         fields=line.split('\t')
         if fields[0].startswith(('R','C')):
             old,new=fields[1],fields[2]
@@ -144,7 +135,20 @@ def _changed_records(base_ref):
             old=new=fields[1]
         if new.endswith('.py'):
             records.append((old,new))
-    return merge_base,records
+    return records
+
+
+def _staged_records():
+    result=subprocess.run(['git','diff','--cached','--name-status','-M','--diff-filter=ACMR'],
+                          cwd=ROOT,check=True,text=True,stdout=subprocess.PIPE)
+    return 'HEAD',_records_from_name_status(result.stdout)
+
+
+def _changed_records(base_ref):
+    merge_base=subprocess.check_output(['git','merge-base',base_ref,'HEAD'],cwd=ROOT,text=True).strip()
+    result=subprocess.run(['git','diff','--name-status','-M','--diff-filter=ACMR',merge_base,'HEAD'],
+                          cwd=ROOT,check=True,text=True,stdout=subprocess.PIPE)
+    return merge_base,_records_from_name_status(result.stdout)
 
 
 def _base_findings(merge_base,records):
@@ -171,11 +175,14 @@ def main(argv=None):
                         help='Fail on new findings relative to an acknowledged baseline')
     args=parser.parse_args(argv)
     changed=None
-    if args.changed_from:
+    if args.staged:
+        merge_base,changed=_staged_records()
+        scoped=[new for _,new in changed]
+    elif args.changed_from:
         merge_base,changed=_changed_records(args.changed_from)
         scoped=[new for _,new in changed]
     else:
-        scoped=_staged_paths() if args.staged else args.paths
+        scoped=args.paths
     paths=_paths(scoped)
     found=audit(paths)
     if args.write_baseline:
@@ -187,7 +194,7 @@ def main(argv=None):
         args.write_baseline.parent.mkdir(parents=True,exist_ok=True)
         args.write_baseline.write_text(json.dumps(output,indent=2)+'\n',encoding='utf-8')
     new=[]
-    if args.changed_from:
+    if args.staged or args.changed_from:
         prior={'fingerprints':[list(fingerprint(item)) for item in _base_findings(merge_base,changed)]}
         new=compare_to_baseline(found,prior)
     elif args.check_baseline:
@@ -203,8 +210,8 @@ def main(argv=None):
         for item in found[:60]:
             print(f'{item.path}:{item.line} [{item.rule}] {item.context}')
         if len(found)>60:print(f'... {len(found)-60} further findings; use --json')
-        if args.check_baseline or args.changed_from:
-            label='changed-file' if args.changed_from else 'baseline-relative'
+        if args.check_baseline or args.staged or args.changed_from:
+            label='changed-file' if args.staged or args.changed_from else 'baseline-relative'
             print(f'New {label} findings: {len(new)}')
             for path,rule,context in new[:30]:print(f'NEW {path} [{rule}] {context}')
     return 2 if new else 1 if args.strict and found else 0
