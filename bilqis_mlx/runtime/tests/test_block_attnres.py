@@ -8,7 +8,8 @@ import numpy as np
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.block_attnres import (
-    DepthFrameFeatures, DepthSummary, _depth_components, depth_select,
+    DepthFrameFeatures, DepthSummary, PARAMETER_SHAPES, _depth_components,
+    depth_parameter_view, depth_select,
 )
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes,
@@ -198,6 +199,62 @@ class DepthSelectionTests(unittest.TestCase):
                 depth_select(self.current, self.sources, changed, self.params)
         with self.assertRaises(BilqisError):
             DepthSummary("g2", 4, self.sources[0].hidden)
+
+    def test_depth_view_borrows_exact_shared_and_per_boundary_b01_tensors(self):
+        spec = ModelTopologySpecV2()
+        extents = GenerationExtents(1, 1, "a" * 64, "b" * 64, "c" * 64)
+        ledger = expected_bamf_shapes(spec, extents)
+        parameters = {
+            item.name: mx.zeros(item.shape, dtype=mx.float32)
+            for item in ledger
+        }
+        parameters["depth.norm"] = mx.ones((768,), dtype=mx.float32)
+        for index in range(3):
+            parameters[f"depth.gate.{index}.bias"] = _array([math.log(1 / 9)])
+        views = tuple(depth_parameter_view(
+            parameters, spec=spec, extents=extents, boundary_group=group)
+            for group in (1, 2, 3))
+        self.assertEqual(len(parameters), len(ledger))
+        for group, view in enumerate(views, 1):
+            self.assertEqual(set(view), set(PARAMETER_SHAPES))
+            for name in ("norm", "query", "key", "value", "output"):
+                self.assertIs(view[name], parameters[f"depth.{name}"])
+            self.assertIs(view["gate_vector"],
+                          parameters[f"depth.gate.{group - 1}.vector"])
+            self.assertIs(view["gate_bias"],
+                          parameters[f"depth.gate.{group - 1}.bias"])
+            self.assertNotIn("features.norm", view)
+            self.assertNotIn("blocks.0.query", view)
+            output = depth_select(
+                self.current, _summaries(group), _features(group), view)
+            np.testing.assert_array_equal(
+                np.asarray(output), np.asarray(self.current))
+
+    def test_depth_view_rejects_wrong_full_ledger_or_boundary(self):
+        spec = ModelTopologySpecV2()
+        extents = GenerationExtents(1, 1, "a" * 64, "b" * 64, "c" * 64)
+        parameters = {
+            item.name: mx.zeros(item.shape, dtype=mx.float32)
+            for item in expected_bamf_shapes(spec, extents)
+        }
+        for change in (
+            {"depth.query": None},
+            {"depth.gate.1.bias": mx.zeros((2,), dtype=mx.float32)},
+            {"features.norm": mx.zeros((768,), dtype=mx.float16)},
+            {"unexpected.tensor": mx.zeros((1,), dtype=mx.float32)},
+        ):
+            malformed = dict(parameters)
+            malformed.update(change)
+            if "depth.query" in change:
+                malformed.pop("depth.query")
+            with self.subTest(change=tuple(change)), self.assertRaises(BilqisError):
+                depth_parameter_view(
+                    malformed, spec=spec, extents=extents, boundary_group=2)
+        for invalid in (-1, 0, 4, True):
+            with self.assertRaises(BilqisError):
+                depth_parameter_view(
+                    parameters, spec=spec, extents=extents,
+                    boundary_group=invalid)
 
 
 if __name__ == "__main__":

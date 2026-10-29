@@ -13,7 +13,10 @@ from typing import Mapping
 import mlx.core as mx
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
-from .model_topology_v2 import ModelTopologySpecV2
+from .model_topology_v2 import (
+    GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes,
+    validate_bamf_parameters,
+)
 
 
 WIDTH = ModelTopologySpecV2.width
@@ -39,6 +42,35 @@ COMPLETED_LAYERS = (0, 4, 8, 12)
 
 def _invalid() -> None:
     ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+
+
+def depth_parameter_view(
+    parameters: Mapping[str, mx.array], *, spec: ModelTopologySpecV2,
+    extents: GenerationExtents, boundary_group: int,
+) -> dict[str, mx.array]:
+    """Borrow only shared depth tensors and the selected B01 boundary gate."""
+    if (type(spec) is not ModelTopologySpecV2
+            or type(extents) is not GenerationExtents
+            or type(boundary_group) is not int
+            or not MIN_COMPLETED_GROUPS <= boundary_group <= MAX_COMPLETED_GROUPS):
+        _invalid()
+    validate_bamf_parameters(spec, extents, parameters)
+    declared = {item.name: item for item in expected_bamf_shapes(spec, extents)}
+    names = {
+        "norm": "depth.norm",
+        "query": "depth.query",
+        "key": "depth.key",
+        "value": "depth.value",
+        "output": "depth.output",
+        "gate_vector": f"depth.gate.{boundary_group - 1}.vector",
+        "gate_bias": f"depth.gate.{boundary_group - 1}.bias",
+    }
+    if (set(names) != set(PARAMETER_SHAPES)
+            or any(name not in declared
+                   or declared[name].shape != PARAMETER_SHAPES[local]
+                   for local, name in names.items())):
+        _invalid()
+    return {local: parameters[name] for local, name in names.items()}
 
 
 @dataclass(frozen=True)
