@@ -1016,3 +1016,14 @@ def reconstruct(compiled: CompiledFrameBatch) -> VisibleAST:
     return VisibleAST(
         compiled.source_instance_id, compiled.visible_end,
         tuple(atoms), roots)
+
+
+def validate_partial_visible_forest(
+    compiled, source_ast, compiler_config, *, expected_receipt=None,
+):
+    """A05.4 compatibility entrypoint for source-owned partial-forest validation."""
+    from .partial_visible_forest import validate_partial_visible_forest as validate
+
+    return validate(
+        compiled, source_ast, compiler_config,
+        expected_receipt=expected_receipt)
