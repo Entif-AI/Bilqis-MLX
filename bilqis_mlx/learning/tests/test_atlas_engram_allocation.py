@@ -44,6 +44,7 @@ class Concept:
 
 @dataclass(frozen=True)
 class Child:
+    occurrence_id: str = "c" * 64
     content_digest: str = "d" * 64
     type_ids: tuple[str, ...] = ("Frame",)
     schema_version: str = "bilqis.semantic-child-frame-ref/v1"
@@ -135,6 +136,19 @@ class MotifKeyTests(TestCase):
         self.assertEqual(
             [item[0].members[0].state for item in keys],
             ["VALUE", "NONE", "UNKNOWN", "ALTERNATIVES"])
+
+    def test_distinct_child_occurrences_preserve_exact_identity(self):
+        first = source(child=True)
+        changed_binding = replace(
+            first.frame.bindings[0],
+            child_frame=replace(first.frame.bindings[0].child_frame,
+                                occurrence_id="e" * 64))
+        second = replace(first, frame=replace(
+            first.frame, bindings=(changed_binding, first.frame.bindings[1])))
+        a_exact, a_structural = motif_keys(first, RELEASE)
+        b_exact, b_structural = motif_keys(second, RELEASE)
+        self.assertNotEqual(a_exact, b_exact)
+        self.assertEqual(a_structural, b_structural)
 
     def test_foreign_release_schema_and_type_reject_before_key_admission(self):
         valid = source()
