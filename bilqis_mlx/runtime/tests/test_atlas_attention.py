@@ -8,7 +8,10 @@ import mlx.core as mx
 import numpy as np
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.runtime.atlas_attention import AttentionScope, ccgqa, project_convolved_qkv
+from bilqis_mlx.runtime.atlas_attention import (
+    ATTENTION_PARAMETER_NAMES, AttentionScope, attention_parameter_view,
+    ccgqa, project_convolved_qkv,
+)
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes, initialize_bamf_parameter,
 )
@@ -318,6 +321,62 @@ class AtlasGQATests(unittest.TestCase):
             with self.assertRaises(BilqisError):
                 ccgqa(self.params, self.hidden[:, :1], self.valid[:, :1], next_scope,
                        cache=changed, offset=5)
+
+    def test_attention_view_borrows_exact_b01_tensor_prefix_without_new_parameters(self):
+        spec = ModelTopologySpecV2()
+        extents = GenerationExtents(1, 1, "a" * 64, "b" * 64, "c" * 64)
+        ledger = expected_bamf_shapes(spec, extents)
+        parameters = {
+            item.name: mx.zeros(item.shape, dtype=mx.float32)
+            for item in ledger
+        }
+        first = attention_parameter_view(
+            parameters, spec=spec, extents=extents, layer=0)
+        second = attention_parameter_view(
+            parameters, spec=spec, extents=extents, layer=1)
+        self.assertEqual(tuple(first), ATTENTION_PARAMETER_NAMES)
+        self.assertEqual(tuple(second), ATTENTION_PARAMETER_NAMES)
+        for suffix in ATTENTION_PARAMETER_NAMES:
+            self.assertIs(first[suffix], parameters["blocks.0." + suffix])
+            self.assertIs(second[suffix], parameters["blocks.1." + suffix])
+            self.assertIsNot(first[suffix], second[suffix])
+        self.assertEqual(first["query"].shape, (384, 768))
+        self.assertEqual(first["key"].shape, (192, 768))
+        self.assertEqual(first["conv_q"].shape, (384, 3))
+        self.assertNotIn("features.norm", first)
+        self.assertNotIn("attn_norm", first)
+        self.assertEqual(len(parameters), len(ledger))
+        output, _ = ccgqa(
+            first, self.hidden[:, :2], self.valid[:, :2],
+            self.scope(self.ids[:, :2], self.starts[:, :2]))
+        np.testing.assert_array_equal(
+            np.asarray(output), np.zeros((2, 2, 768), dtype=np.float32))
+
+    def test_attention_view_rejects_missing_extra_or_malformed_b01_tensors(self):
+        spec = ModelTopologySpecV2()
+        extents = GenerationExtents(1, 1, "a" * 64, "b" * 64, "c" * 64)
+        parameters = {
+            item.name: mx.zeros(item.shape, dtype=mx.float32)
+            for item in expected_bamf_shapes(spec, extents)
+        }
+        changes = (
+            {"blocks.0.output": None},
+            {"blocks.0.conv_q": mx.zeros((384, 2), dtype=mx.float32)},
+            {"features.norm": mx.zeros((768,), dtype=mx.float16)},
+            {"unexpected.trainable": mx.zeros((1,), dtype=mx.float32)},
+        )
+        for change in changes:
+            malformed = dict(parameters)
+            malformed.update(change)
+            if "blocks.0.output" in change:
+                malformed.pop("blocks.0.output")
+            with self.subTest(change=tuple(change)), self.assertRaises(BilqisError):
+                attention_parameter_view(
+                    malformed, spec=spec, extents=extents, layer=0)
+        for layer in (-1, 12, True):
+            with self.assertRaises(BilqisError):
+                attention_parameter_view(
+                    parameters, spec=spec, extents=extents, layer=layer)
 
 
 if __name__ == "__main__":
