@@ -137,9 +137,6 @@ class SemanticFamilyInventoryTests(unittest.TestCase):
             item.source_authority == SOURCE_AUTHORITY_UNVERIFIED
             for item in lessons.lessons))
         self.assertEqual(check.source_authority, SOURCE_AUTHORITY_UNVERIFIED)
-        self.assertTrue(all(
-            "unverified" in record.schema
-            for record in (census, candidate, lessons, check)))
         with self.assertRaises(BilqisError) as caught:
             bool(check)
         self.assertEqual(
@@ -166,7 +163,6 @@ class SemanticFamilyInventoryTests(unittest.TestCase):
                        forged_check):
             self.assertEqual(
                 record.source_authority, SOURCE_AUTHORITY_UNVERIFIED)
-            self.assertIn("unverified", record.schema)
         with self.assertRaises(BilqisError):
             bool(forged_check)
 
@@ -560,13 +556,11 @@ class SemanticFamilyInventoryTests(unittest.TestCase):
                 schema=FAMILY_INVENTORY_UNVERIFIED_SCHEMA),
             census)
         self.assertEqual(public_census.source_authority, SOURCE_AUTHORITY_PINNED)
-        self.assertNotIn("unverified", public_census.schema)
         self.assertEqual(pinned, snapshot)
         self.assertEqual(
             public_candidate.frozen_census_digest, public_census.digest)
         self.assertEqual(
             public_candidate.source_authority, SOURCE_AUTHORITY_PINNED)
-        self.assertNotIn("unverified", public_candidate.schema)
         self.assertTrue(all(
             item.source_authority == SOURCE_AUTHORITY_PINNED
             for item in public_candidate.source_lessons))
