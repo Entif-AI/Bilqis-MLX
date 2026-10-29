@@ -22,6 +22,7 @@ from lib.ithkuil.src.skos.relations import SEMANTIC_PREDICATES
 
 
 FEATURE_SCHEMA = "bilqis.atlas-feature-schema/v2"
+# The source owner must attest each selected rule family.
 FEATURE_MANIFEST_SCHEMA = "bilqis.atlas-features/v2"
 FEATURE_CONCEPT_SCHEMA = "bilqis.atlas-concept-feature/v2"
 FEATURE_ROW_SCHEMA = "bilqis.atlas-feature-row/v2"
@@ -105,31 +106,45 @@ def _normalized_count(count: int) -> float:
 
 def _source_rule_categories(
     release: FrozenAtlasSnapshot,
-    requested_schemas: tuple[str, ...],
+    source_bindings: tuple[tuple[str, str], ...],
 ) -> tuple[str, ...]:
     """Prove schema IDs and roles against A03's pinned released source graph."""
-    if not requested_schemas:
+    if not source_bindings:
         return ()
     from ..grade_a_probe import read_sources
-    from .frame_adapters import _schema_for_symbol
+    from ..live_grade_c import registry_graph
+    from .frame_adapters import (
+        BOOLEAN_COMPOSITE_ADAPTER, BOOLEAN_CONNECTIVE_ADAPTER,
+        BOOLEAN_IDENTIFICATION_ADAPTER, FINITE_NUMERIC_ADAPTER,
+        MICRO_PREDICATE_ADAPTER, _schema_for_symbol,
+    )
     from .frame_schema import SourceSpan
 
     source_root = Path(__file__).resolve().parents[2] / "vendor/legacy-v16"
-    graph = read_sources(source_root)[2]
+    micro_graph = read_sources(source_root)[2]
+    numeric_graph = registry_graph()
+    graphs = {
+        MICRO_PREDICATE_ADAPTER: micro_graph,
+        BOOLEAN_CONNECTIVE_ADAPTER: micro_graph,
+        BOOLEAN_COMPOSITE_ADAPTER: micro_graph,
+        BOOLEAN_IDENTIFICATION_ADAPTER: micro_graph,
+        FINITE_NUMERIC_ADAPTER: numeric_graph,
+    }
     entries = {
         "frame:" + entry.semantic_id: entry
         for entry in release.abi_entries if entry.active
     }
     roles: set[str] = set()
-    for schema_id in _sorted_ids(requested_schemas):
+    for schema_id, adapter_id in source_bindings:
         entry = entries.get(schema_id)
-        if (entry is None or entry.symbol is None
+        graph = graphs.get(adapter_id)
+        if (entry is None or entry.symbol is None or graph is None
                 or not 0 <= entry.index < len(graph["tokens"])
                 or graph["tokens"][entry.index] != entry.symbol):
             _invalid("BAMF_FEATURE_SOURCE_SCHEMA_UNVERIFIED")
         source_schema, _ = _schema_for_symbol(
             release, graph, entry.symbol, "source:" + entry.symbol,
-            adapter_id="source.verified-frame-rule/v1",
+            adapter_id=adapter_id,
             span=SourceSpan(0, 1), scope="source-rule")
         if source_schema.schema_id != schema_id:
             _invalid("BAMF_FEATURE_SOURCE_SCHEMA_UNVERIFIED")
@@ -182,11 +197,19 @@ class FeatureSchema:
     role_ids: tuple[str, ...]
     schema_ids: tuple[str, ...]
     predecessor: "AtlasFeatures | None" = None
+    source_bindings: tuple[tuple[str, str], ...] = ()
     schema_version: str = FEATURE_SCHEMA
 
     def __post_init__(self) -> None:
         if (not isinstance(self.role_ids, tuple)
                 or not isinstance(self.schema_ids, tuple)
+                or not isinstance(self.source_bindings, tuple)
+                or any(not isinstance(item, tuple) or len(item) != 2
+                       or not all(isinstance(value, str) and value
+                                  for value in item)
+                       for item in self.source_bindings)
+                or tuple(item[0] for item in self.source_bindings)
+                != _sorted_ids(self.schema_ids)
                 or self.schema_version != FEATURE_SCHEMA
                 or (self.predecessor is not None
                     and not isinstance(self.predecessor, AtlasFeatures))):
@@ -302,7 +325,7 @@ def build_feature_manifest(
             or release.prior_abi_sha256 != prior.atlas_bundle_id):
         _invalid("BAMF_FEATURE_PREDECESSOR_LINEAGE_INVALID")
     if (_sorted_ids(feature_schema.role_ids)
-            != _source_rule_categories(release, feature_schema.schema_ids)):
+            != _source_rule_categories(release, feature_schema.source_bindings)):
         _invalid("BAMF_FEATURE_SOURCE_ROLE_UNVERIFIED")
     active = {
         entry.semantic_id: entry for entry in release.abi_entries if entry.active

@@ -99,3 +99,25 @@ including root/sense link fixtures, forged source
 role/schema and ABI-index negatives, foreign predecessor
 and 512-row overflow. Independent immutable-head EGM
 re-review is pending; this is not an A06 parent closeout.
+
+## Second targeted EGM repair: distinct A03 source dialects
+
+The first targeted re-review of `335f792` confirmed
+root-sense and predecessor fixes but found a remaining Major:
+the schema verifier used only the pinned legacy A/B graph
+and rejected A03's actually released C finite-numeric rules.
+The repair now requires an explicit per-schema
+`(schema_id, source_adapter_id)` binding. It selects A03's
+source-pinned legacy graph for A/B adapters and the separately
+verified `live_grade_c.registry_graph()` for the
+finite-numeric adapter. No cross-dialect row-contract
+equivalence is presumed. The same frozen ABI index/symbol
+and source-owned FrameSchema check apply in either dialect.
+
+The new real A03 fixture admits both
+`frame:legacy:cogal.operator.AND` and
+`frame:legacy:school.op.ADD`, preserving their respective
+role sets and source authority; a mismatched numeric role
+is rejected. Focused owner suite **11 passed, 0 failed,
+0 skipped**. Fresh immutable-head independent re-review
+is required before EGM PASS.

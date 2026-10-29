@@ -95,7 +95,10 @@ def _features(snapshot=None, *, roles=("left", "right"),
               predecessor=None):
     return build_feature_manifest(
         snapshot or _snapshot(),
-        FeatureSchema(tuple(roles), tuple(schemas), predecessor))
+        FeatureSchema(
+            tuple(roles), tuple(schemas), predecessor,
+            tuple((schema, "source.micro.boolean-connectives/v1")
+                  for schema in sorted(set(schemas)))))
 
 
 class AtlasFeatureTests(unittest.TestCase):
@@ -323,6 +326,31 @@ class AtlasFeatureTests(unittest.TestCase):
                 snapshot.abi_entries[0].semantic_id,
                 "NONE", "NONE", "task:scope").graph64[7],
             1.0)
+
+    def test_actual_a03_micro_and_numeric_schema_authority_is_admitted(self):
+        from bilqis_mlx.semantics.tests.test_frame_adapters import _snapshot
+
+        snapshot = _snapshot()
+        schema_ids = (
+            "frame:legacy:cogal.operator.AND",
+            "frame:legacy:school.op.ADD",
+        )
+        manifest = build_feature_manifest(
+            snapshot, FeatureSchema(
+                ("arg0", "arg1", "left", "right"), schema_ids,
+                source_bindings=((schema_ids[0], "source.micro.boolean-connectives/v1"), (schema_ids[1], "source.finite-numeric/v2"))))
+        numeric = manifest.features_for(
+            "legacy:school.op.ADD", "arg0", schema_ids[1], "task:scope")
+        micro = manifest.features_for(
+            "legacy:cogal.operator.AND", "left", schema_ids[0], "task:scope")
+        self.assertEqual(numeric.abi_index, 114)
+        self.assertEqual(micro.abi_index, 11)
+        self.assertNotEqual(numeric.schema_row, micro.schema_row)
+        with self.assertRaises(BilqisError):
+            build_feature_manifest(
+                snapshot, FeatureSchema(
+                    ("left", "right"), (schema_ids[1],),
+                    source_bindings=((schema_ids[1], "source.finite-numeric/v2"),)))
 
 
 if __name__ == "__main__":
