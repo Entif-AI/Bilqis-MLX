@@ -224,7 +224,7 @@ class CapturedDepth:
                 or any(not isinstance(value, str) or not _SHA.fullmatch(value)
                        for value in (self.topology_digest, self.implementation_digest,
                                      self.generation_digest, self.input_boundary_digest))
-                or not 1 <= len(self.summaries) <= 4
+                or not 1 <= len(self.summaries) <= len(COMPLETED_LAYERS)
                 or len(self.summaries) != len(self.source_tensor_digests)
                 or len(self.summaries) != len(self.source_tensor_identities)
                 or tuple(item.source_id for item in self.summaries) != SOURCE_ORDER[:len(self.summaries)]
