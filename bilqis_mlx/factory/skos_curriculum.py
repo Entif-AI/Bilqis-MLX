@@ -18,7 +18,7 @@ from bilqis_mlx.semantics.atlas_projection import (
     FrozenAtlasRelation, FrozenAtlasSnapshot,
 )
 from bilqis_mlx.semantics.atlas_snapshot import (
-    PinnedAtlasSnapshot, require_pinned_atlas_snapshot,
+    AtlasArtifactSelection, load_pinned_atlas_snapshot,
 )
 from lib.ithkuil.src.skos.identity import Identity
 from lib.ithkuil.src.skos.relations import SEMANTIC_PREDICATES
@@ -374,9 +374,9 @@ def _inventory_source_families(atlas: FrozenAtlasSnapshot) -> SemanticFamilyInve
     )
 
 
-def inventory_source_families(atlas: PinnedAtlasSnapshot) -> SemanticFamilyInventory:
-    """Inventory only an A01 artifact loaded with independent source pins."""
-    return _inventory_source_families(require_pinned_atlas_snapshot(atlas))
+def inventory_source_families(atlas: AtlasArtifactSelection) -> SemanticFamilyInventory:
+    """Inventory only an A01 artifact selected by the source-pin registry."""
+    return _inventory_source_families(load_pinned_atlas_snapshot(atlas))
 
 
 @dataclass(frozen=True)
@@ -501,13 +501,13 @@ def _compile_semantic_curriculum_snapshot(
 
 
 def compile_semantic_curriculum(
-    atlas: PinnedAtlasSnapshot,
+    atlas: AtlasArtifactSelection,
     source_adapters: tuple[SourceFamilyAdapter, ...],
     learned_frontier: LearnedFrontier,
 ) -> CurriculumCandidateSet:
     """Original three-argument API with an A01-pinned source authority."""
     return _compile_semantic_curriculum_snapshot(
-        require_pinned_atlas_snapshot(atlas), source_adapters, learned_frontier)
+        load_pinned_atlas_snapshot(atlas), source_adapters, learned_frontier)
 
 
 @dataclass(frozen=True)
@@ -645,11 +645,11 @@ def _compile_source_constructive_lessons_snapshot(
 
 
 def compile_source_constructive_lessons(
-    atlas: PinnedAtlasSnapshot,
+    atlas: AtlasArtifactSelection,
     *, census: SemanticFamilyInventory | None = None,
 ) -> SourceConstructiveLessonSet:
     return _compile_source_constructive_lessons_snapshot(
-        require_pinned_atlas_snapshot(atlas), census=census)
+        load_pinned_atlas_snapshot(atlas), census=census)
 
 
 def _check_source_constructive_lesson_snapshot(
@@ -671,7 +671,7 @@ def _check_source_constructive_lesson_snapshot(
 
 def check_source_constructive_lesson(
     lesson: SourceConstructiveLesson, answer: object,
-    atlas: PinnedAtlasSnapshot,
+    atlas: AtlasArtifactSelection,
 ) -> bool:
     return _check_source_constructive_lesson_snapshot(
-        lesson, answer, require_pinned_atlas_snapshot(atlas))
+        lesson, answer, load_pinned_atlas_snapshot(atlas))

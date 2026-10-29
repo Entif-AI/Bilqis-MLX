@@ -1,0 +1,12 @@
+{
+  "entries": [
+    {
+      "bundle_id": "5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7",
+      "release_sha256": "58e0c281b5da18b9b7e6c803709b29eeeb0a88f16b06f48de692808e2fb88306",
+      "source_bundle_id": "f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec",
+      "source_receipt": "docs/evidence/bamf/A01.2/receipt.md",
+      "status": "A01_SOURCE_ATTESTED_NOT_NEURAL_ADMITTED"
+    }
+  ],
+  "schema": "bilqis.atlas-source-pin-registry/v1"
+}

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -37,15 +38,14 @@ from .atlas_projection import (
 
 
 ATLAS_SELECTION_SCHEMA = "bilqis.atlas-artifact-selection/v1"
+ATLAS_SOURCE_PIN_REGISTRY_SCHEMA = "bilqis.atlas-source-pin-registry/v1"
+ATLAS_SOURCE_PIN_REGISTRY_SHA256 = (
+    "842b66ad7b19ddb333610668410820b3f5d703fa1e452d014755c2c5cc308cee")
 
 
 @dataclass(frozen=True)
 class AtlasArtifactSelection:
-    """An A01 release pin supplied by the trusted source-admission caller.
-
-    Never derive these expected values from a snapshot under inspection.
-    The selection is an authority input, not a digest claimed by the data.
-    """
+    """An A01 artifact locator checked against the repo-owned source pin."""
 
     path: str
     bundle_id: str
@@ -63,59 +63,59 @@ class AtlasArtifactSelection:
             _fail("ATLAS_SOURCE_SELECTION_INVALID")
 
 
-_PINNED_VIEW_ISSUER = object()
+def _require_registered_source_pin(selection: AtlasArtifactSelection) -> None:
+    """Source admission is repository-owned, never a caller-minted bundle ID."""
+    path = Path(__file__).with_name("atlas_source_pins_v1.json")
+    if path.is_symlink() or not path.is_file():
+        _fail("ATLAS_SOURCE_PIN_REGISTRY_MISSING")
+    try:
+        payload = path.read_bytes()
+        registry = json.loads(payload)
+    except (OSError, ValueError, UnicodeError) as error:
+        _fail("ATLAS_SOURCE_PIN_REGISTRY_INVALID:" + type(error).__name__)
+    if (hashlib.sha256(payload).hexdigest()
+            != ATLAS_SOURCE_PIN_REGISTRY_SHA256
+            or not isinstance(registry, dict)
+            or set(registry) != {"schema", "entries"}
+            or registry["schema"] != ATLAS_SOURCE_PIN_REGISTRY_SCHEMA
+            or payload != _canonical_bytes(registry)
+            or not isinstance(registry["entries"], list)):
+        _fail("ATLAS_SOURCE_PIN_REGISTRY_INVALID")
+    expected_keys = {
+        "bundle_id", "release_sha256", "source_bundle_id",
+        "source_receipt", "status"}
+    entries = registry["entries"]
+    if (not entries or any(
+            not isinstance(entry, dict)
+            or set(entry) != expected_keys
+            or any(not isinstance(entry[name], str)
+                   or not HEX64.fullmatch(entry[name])
+                   for name in ("bundle_id", "release_sha256", "source_bundle_id"))
+            or entry["status"] != "A01_SOURCE_ATTESTED_NOT_NEURAL_ADMITTED"
+            or not isinstance(entry["source_receipt"], str)
+            or not entry["source_receipt"].startswith("docs/evidence/bamf/A01.")
+            for entry in entries)
+            or len({entry["bundle_id"] for entry in entries}) != len(entries)):
+        _fail("ATLAS_SOURCE_PIN_REGISTRY_INVALID")
+    pin = (selection.bundle_id, selection.release_sha256,
+           selection.source_bundle_id)
+    if not any(pin == (
+            entry["bundle_id"], entry["release_sha256"],
+            entry["source_bundle_id"]) for entry in entries):
+        _fail("ATLAS_SOURCE_PIN_NOT_REGISTERED")
 
 
-class PinnedAtlasSnapshot:
-    """Immutable loader-issued view of an independently selected A01 artifact."""
-
-    __slots__ = ("_snapshot", "_selection")
-
-    def __init__(
-        self, snapshot: FrozenAtlasSnapshot, selection: AtlasArtifactSelection,
-        *, _issuer: object | None = None,
-    ) -> None:
-        if _issuer is not _PINNED_VIEW_ISSUER:
-            _fail("ATLAS_PINNED_VIEW_ISSUER_REQUIRED")
-        object.__setattr__(self, "_snapshot", snapshot)
-        object.__setattr__(self, "_selection", selection)
-
-    def __setattr__(self, name: str, value: object) -> None:
-        _fail("ATLAS_PINNED_VIEW_IMMUTABLE")
-
-    @property
-    def snapshot(self) -> FrozenAtlasSnapshot:
-        return self._snapshot
-
-    @property
-    def selection(self) -> AtlasArtifactSelection:
-        return self._selection
-
-
-def require_pinned_atlas_snapshot(value: PinnedAtlasSnapshot) -> FrozenAtlasSnapshot:
-    """Refuse raw, caller-replaced snapshots at the source authority boundary."""
-    if type(value) is not PinnedAtlasSnapshot:
-        _fail("ATLAS_PINNED_VIEW_REQUIRED")
-    atlas = value.snapshot
-    pin = value.selection
-    if ((atlas.bundle_id, atlas.release_sha256, atlas.source_bundle_id)
-            != (pin.bundle_id, pin.release_sha256, pin.source_bundle_id)):
-        _fail("ATLAS_PINNED_VIEW_IDENTITY_DRIFT")
-    return atlas
-
-
-def load_pinned_atlas_snapshot(selection: AtlasArtifactSelection) -> PinnedAtlasSnapshot:
-    """Verify the content-addressed A01 artifact against independent pins."""
+def load_pinned_atlas_snapshot(selection: AtlasArtifactSelection) -> FrozenAtlasSnapshot:
+    """Reload a source artifact only under an independently governed A01 pin."""
     if type(selection) is not AtlasArtifactSelection:
         _fail("ATLAS_SOURCE_SELECTION_INVALID")
-    snapshot = load_atlas_snapshot(
+    _require_registered_source_pin(selection)
+    return load_atlas_snapshot(
         selection.path,
         expected_bundle_id=selection.bundle_id,
         expected_release_sha256=selection.release_sha256,
         expected_source_bundle_id=selection.source_bundle_id,
     )
-    return PinnedAtlasSnapshot(
-        snapshot, selection, _issuer=_PINNED_VIEW_ISSUER)
 
 
 def _read_persisted_artifact(bundle_dir: str | Path) -> tuple[str, dict, dict[str, bytes]]:

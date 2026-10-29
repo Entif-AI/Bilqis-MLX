@@ -15,18 +15,24 @@ bindings. A bare `FrozenAtlasSnapshot` is constructible and can be
 replaced while retaining the old identity strings, so A08 must not
 accept it as source authority.
 
-`AtlasArtifactSelection/v1` now carries the **independently selected**
-A01 artifact path and expected bundle, release and source-bundle
-digests. `load_pinned_atlas_snapshot` verifies those pins through
-the existing database-free A01 reader and issues an immutable
-`PinnedAtlasSnapshot`. All four public A08 census, compiler,
-lesson and checker entrypoints require that loader-issued view.
-The internal pure snapshot functions remain separate so literal
-source-family tests can exercise construction without impersonating
-source admission.
+`AtlasArtifactSelection/v1` carries an A01 artifact path and claimed
+bundle/release/source IDs, but those caller fields are **not** an
+authority. The A01 reader first checks them against the repository-owned
+`atlas_source_pins_v1.json` whose exact canonical bytes are pinned by
+`ATLAS_SOURCE_PIN_REGISTRY_SHA256` in source code. The registry contains
+the A01.2 real-corpus receipt identity and explicitly labels it
+`A01_SOURCE_ATTESTED_NOT_NEURAL_ADMITTED`. Only then does the existing
+database-free reader verify every artifact member and manifest digest.
 
-The trusted source-admission caller must obtain selection pins from
-the approved A01 receipt/config, **not** from the candidate snapshot.
+All four public A08 census, compiler, lesson and checker entrypoints
+take a selection and **reload the verified artifact at the consuming
+boundary**. There is no caller-constructible in-memory authority
+wrapper. Internal pure snapshot functions remain separate for literal
+algorithm tests, not for public source admission.
+
+Adding a future source release requires an explicit, reviewed registry
+and code-pinned digest update; a caller cannot self-attest a repacked
+artifact by changing the expected bundle ID.
 This repair does not itself grant a new semantic release or source
 admission. It changes no A01 v1 artifact files, schema, bundle ID,
 release digest, neural state, or optimizer.
@@ -39,16 +45,33 @@ release digest, neural state, or optimizer.
 - Adjacent `test_frame_adapters.py` and `test_atlas_features.py`:
   **23 passed, 0 failed, 0 skipped**.
 - Repacking a same-family Boolean binding to OR or OR/XOR produces a
-  different A01 bundle ID and fails the **original** trusted bundle
-  pin, even when the release string is retained.
-- All public A08 paths reject raw caller-replaced snapshots; the
-  pinned view rejects reassignment and a wrong release pin.
+  different A01 bundle ID. It fails both the **original** trusted pin
+  and a forged **self-attested replacement** pin before any public
+  census is returned.
+- All public A08 paths reject raw caller-replaced snapshots. The
+  removed wrapper cannot be forged with a leaked issuer or mutated
+  with `object.__setattr__` because no such wrapper exists.
 - The original real A01 bundle identity
   `5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7`
   remains unchanged. The real census remains 9,307 eligible identities
   and 12,351 required obligations, with no learning credit.
 - `git diff --check`: clean. Static error-control and module-size
   checks introduce no new findings beyond inherited unrelated debt.
+
+## Independent review and repair history
+
+Goldfish reviewed immutable `ae2faa1` and returned **EGM NOT PASS**:
+zero Blockers, one Major. The initial implementation treated a
+caller-mintable selection and an in-process wrapper as source authority.
+The reviewer reproduced single-ID and equal-cardinality same-family
+substitution using a repacked manifest/new caller pin, plus issuer-token
+and `object.__setattr__` wrapper forgery.
+
+The repair removes the wrapper entirely, introduces the repo-owned
+SHA-pinned A01 source registry, and reloads the artifact at each public
+entrypoint. The original v1 artifact identity is preserved. The
+expanded real-corpus tests now reject both self-attested repack forms.
+**Fresh independent immutable-head re-review remains required.**
 
 ## Rejected alternative
 

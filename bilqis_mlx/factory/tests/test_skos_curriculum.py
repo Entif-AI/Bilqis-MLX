@@ -3,8 +3,10 @@ from __future__ import annotations
 
 from dataclasses import replace
 import hashlib
+import json
 import os
 from pathlib import Path
+import shutil
 import tempfile
 import unittest
 
@@ -29,6 +31,7 @@ from bilqis_mlx.semantics.atlas_snapshot import (
     AtlasArtifactSelection, load_pinned_atlas_snapshot,
 )
 from lib.ithkuil.src.skos.identity import Identity
+from lib.ithkuil.src.skos.publication import json_bytes
 from lib.ithkuil.src.skos.relations import SEMANTIC_PREDICATES
 
 
@@ -127,7 +130,7 @@ class SemanticFamilyInventoryTests(unittest.TestCase):
                 with self.assertRaises(BilqisError) as caught:
                     action()
                 self.assertEqual(
-                    caught.exception.context["reason"], "ATLAS_PINNED_VIEW_REQUIRED")
+                    caught.exception.context["reason"], "ATLAS_SOURCE_SELECTION_INVALID")
 
     def test_source_identity_and_attested_relation_constructive_checkers(self):
         definitions = tuple(
@@ -426,21 +429,61 @@ class SemanticFamilyInventoryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             artifact = persist_atlas_release(release, directory)
             snapshot = load_atlas_snapshot(artifact.path)
-            pinned = load_pinned_atlas_snapshot(AtlasArtifactSelection(
+            pin = AtlasArtifactSelection(
                 artifact.path, artifact.bundle_id, release.digest,
-                release.source_bundle_id))
-        public_census = public_curriculum.inventory_source_families(pinned)
+                release.source_bundle_id)
+            pinned = load_pinned_atlas_snapshot(pin)
+            public_census = public_curriculum.inventory_source_families(pin)
+            public_candidate = public_curriculum.compile_semantic_curriculum(
+                pin, SOURCE_FAMILY_ADAPTERS,
+                LearnedFrontier(snapshot.release_sha256))
+            identity_lesson = next(
+                item for item in public_candidate.source_lessons
+                if item.family_id == "positive_identity")
+            self.assertTrue(public_curriculum.check_source_constructive_lesson(
+                identity_lesson, identity_lesson.positive_fact[1], pin))
+            for replacement in (
+                    ("legacy:cogal.operator.OR",),
+                    ("legacy:cogal.operator.OR", "legacy:cogal.operator.XOR")):
+                with self.subTest(repacked_formal=replacement):
+                    trial_root = Path(directory) / (
+                        "repacked-" + str(len(replacement)))
+                    trial_root.mkdir()
+                    copy = trial_root / artifact.bundle_id
+                    shutil.copytree(artifact.path, copy)
+                    atlas_record = json.loads((copy / "atlas.json").read_bytes())
+                    atlas_record["formal_domain_bindings"][0]["semantic_ids"] = (
+                        list(replacement))
+                    atlas_bytes = json_bytes(atlas_record)
+                    (copy / "atlas.json").write_bytes(atlas_bytes)
+                    manifest = json.loads((copy / "manifest.json").read_bytes())
+                    manifest["files"]["atlas.json"] = {
+                        "sha256": hashlib.sha256(atlas_bytes).hexdigest(),
+                        "bytes": len(atlas_bytes)}
+                    manifest_bytes = json_bytes(manifest)
+                    (copy / "manifest.json").write_bytes(manifest_bytes)
+                    repacked = trial_root / hashlib.sha256(
+                        manifest_bytes).hexdigest()
+                    copy.rename(repacked)
+                    with self.assertRaises(BilqisError) as self_attested:
+                        public_curriculum.inventory_source_families(
+                            AtlasArtifactSelection(
+                                str(repacked), repacked.name, release.digest,
+                                release.source_bundle_id))
+                    self.assertEqual(
+                        self_attested.exception.context["reason"],
+                        "ATLAS_SOURCE_PIN_NOT_REGISTERED")
+                    with self.assertRaises(BilqisError) as replaced_pin:
+                        public_curriculum.inventory_source_families(
+                            replace(pin, path=str(repacked),
+                                    bundle_id=repacked.name))
+                    self.assertEqual(
+                        replaced_pin.exception.context["reason"],
+                        "ATLAS_SOURCE_PIN_NOT_REGISTERED")
         census = inventory_source_families(snapshot)
         self.assertEqual(public_census, census)
-        public_candidate = public_curriculum.compile_semantic_curriculum(
-            pinned, SOURCE_FAMILY_ADAPTERS,
-            LearnedFrontier(snapshot.release_sha256))
+        self.assertEqual(pinned, snapshot)
         self.assertEqual(public_candidate.frozen_census_digest, census.digest)
-        identity_lesson = next(
-            item for item in public_candidate.source_lessons
-            if item.family_id == "positive_identity")
-        self.assertTrue(public_curriculum.check_source_constructive_lesson(
-            identity_lesson, identity_lesson.positive_fact[1], pinned))
         lexicon_root = next(
             item.concept.semantic_id for item in snapshot.concepts
             if item.concept.kind == "root")
