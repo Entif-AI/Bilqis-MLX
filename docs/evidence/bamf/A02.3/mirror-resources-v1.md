@@ -1,6 +1,6 @@
 # A02.3 source-derived Registry mirror and bank resource candidate
 
-Disposition: SCOPED_IMPLEMENTATION_EGM_PENDING. This is not the final
+Disposition: SCOPED_IMPLEMENTATION_EGM_PASS. This is not the final
 Registry export or A02.3/#401 integration closure.
 
 The source-side mirror builder reloads A01's registered immutable
@@ -51,8 +51,10 @@ and the verified definitions.
 The synthetic regression supplies a prefLabel deliberately different
 from the definition, plus a definition-only source and missing
 definition negative. The real A01 source-bundle witness also
-passes. The Registry export owner still needs to persist/read back
-this derivative; scoped EGM re-review remains pending.
+passes. Worker-25 re-reviewed a2cd37c and worker-26 re-reviewed
+the final foreign-bundle negative at 97c6935: **scoped EGM PASS**,
+zero remaining Blockers/Majors. See A02/egm.md. The Registry
+export owner still needs to persist/read back this derivative.
 
 Remaining owner work: integrate this derivative into the existing
 Registry evidence/export contract, reconcile its actual persisted
