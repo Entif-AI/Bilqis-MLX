@@ -9,7 +9,7 @@ import unittest
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.semantics.atlas_features import (
     FACTOR_DIM, FACTOR_ROWS, GRAPH_DIM, FeatureSchema,
-    _category_map, build_feature_manifest,
+    _category_map, build_feature_manifest, plan_prospective_identity_features,
 )
 from bilqis_mlx.semantics.atlas_projection import (
     AbiEntry, AtlasConcept, AtlasCounts, AtlasRealization,
@@ -114,6 +114,25 @@ def _features(snapshot=None, *, roles=("left", "right"),
 
 
 class AtlasFeatureTests(unittest.TestCase):
+    def test_unresolved_channel_uses_source_hold_not_implementation_debt(self):
+        base = _snapshot()
+        debt = CorpusCoverageRow(
+            "synthetic", "source", "candidate", "urn:concept:A",
+            "SOURCE_ELIGIBLE", "IMPLEMENTATION_UNCOVERED",
+            False, "IMPLEMENTATION_UNCOVERED",
+            "IMPLEMENTATION_UNCOVERED", "synthetic:owner")
+        source_held = replace(
+            debt, source_disposition="SOURCE_HELD",
+            implementation_status="NOT_APPLICABLE",
+            reason_code="NOTATION_COLLISION")
+        debt_row = _features(replace(base, withheld_rows=(debt,))).features_for(
+            "urn:concept:A", "left", "frame:urn:concept:A", "task:scope")
+        held_row = _features(replace(
+            base, withheld_rows=(source_held,))).features_for(
+            "urn:concept:A", "left", "frame:urn:concept:A", "task:scope")
+        self.assertEqual(debt_row.graph64[7], 0.0)
+        self.assertEqual(held_row.graph64[7], 1.0)
+
     def test_disconnected_one_type_literal_graph_and_reserved_rows(self):
         manifest = _features()
         self.assertEqual(dict(manifest.type_map)["UNKNOWN"], 0)
@@ -406,6 +425,52 @@ class AtlasFeatureTests(unittest.TestCase):
                 snapshot, FeatureSchema(
                     ("left", "right"), (schema_ids[1],),
                     source_bindings=((schema_ids[1], "source.finite-numeric/v2"),)))
+
+
+    def test_prospective_inactive_identity_features_are_source_bound(self):
+        snapshot = _snapshot(
+            definitions=(("urn:concept:A", ("urn:type:Entity",)),
+                         ("urn:concept:B", ("urn:type:Future",))),
+            relations=(("urn:concept:B", BROADER, "urn:concept:A"),))
+        inactive_entries = tuple(
+            replace(entry, source="CANONICAL_SKOS", active=False, teaching_candidate=False,
+                    reason="IMPLEMENTATION_UNCOVERED")
+            if entry.semantic_id == "urn:concept:B" else entry
+            for entry in snapshot.abi_entries)
+        inactive_concepts = tuple(
+            replace(item, active=False, implementation_status="IMPLEMENTATION_UNCOVERED",
+                    teaching_candidate=False, teaching_reason="IMPLEMENTATION_UNCOVERED")
+            if item.concept.semantic_id == "urn:concept:B" else item
+            for item in snapshot.concepts)
+        snapshot = replace(snapshot, abi_entries=inactive_entries, concepts=inactive_concepts)
+        current = _features(snapshot, roles=(), schemas=())
+
+        plan = plan_prospective_identity_features(
+            snapshot, current, ("urn:concept:B",),
+            expected_feature_digest=current.digest)
+
+        self.assertEqual(plan.predecessor_feature_digest, current.digest)
+        self.assertEqual(dict(plan.type_map)["urn:type:Entity"], 2)
+        self.assertEqual(dict(plan.type_map)["urn:type:Future"], 3)
+        self.assertEqual(len(plan.identities), 1)
+        candidate = plan.identities[0]
+        self.assertEqual(candidate.semantic_id, "urn:concept:B")
+        self.assertEqual(candidate.type_ids, ("urn:type:Future",))
+        self.assertEqual(candidate.type_rows, (3,))
+        self.assertEqual(candidate.type_overflow, (None,))
+        self.assertEqual(candidate.source_status, "SOURCE_ELIGIBLE_NOT_ADMITTED")
+        self.assertGreater(candidate.graph64[1], 0.0)
+        self.assertEqual(current, _features(snapshot, roles=(), schemas=()))
+
+        with self.assertRaises(BilqisError):
+            plan_prospective_identity_features(
+                snapshot, current, ("urn:concept:B",),
+                expected_feature_digest="0" * 64)
+        with self.assertRaises(BilqisError):
+            plan_prospective_identity_features(
+                _snapshot(), _features(roles=(), schemas=()),
+                ("urn:concept:A",),
+                expected_feature_digest=_features(roles=(), schemas=()).digest)
 
 
 if __name__ == "__main__":
