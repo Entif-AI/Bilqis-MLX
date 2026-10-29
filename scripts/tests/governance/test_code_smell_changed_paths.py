@@ -8,7 +8,7 @@ import sys
 import tempfile
 import unittest
 
-SCRIPT = Path(__file__).parents[1] / "code_smell_audit.py"
+SCRIPT = Path(__file__).parents[2] / "code_smell_audit.py"
 spec = importlib.util.spec_from_file_location("code_smell_audit", SCRIPT)
 audit = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = audit

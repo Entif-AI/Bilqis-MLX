@@ -5,7 +5,7 @@ import importlib.util
 from pathlib import Path
 import unittest
 
-SCRIPT = Path(__file__).parents[1] / "quality/check_governance_integrity.py"
+SCRIPT = Path(__file__).parents[2] / "quality/check_governance_integrity.py"
 spec = importlib.util.spec_from_file_location("check_governance_integrity", SCRIPT)
 check = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(check)
