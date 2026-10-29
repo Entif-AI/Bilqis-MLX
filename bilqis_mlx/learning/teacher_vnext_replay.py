@@ -8,8 +8,9 @@ proposal -> delivery -> outcome -> cost record.
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import json
+import hashlib
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 
 from .teacher_strategy_population import effective_policy_key, BAMF_SUCCESSOR_SELECTION
@@ -242,3 +243,28 @@ def bind_teacher_successor(prior_teacher, new_student, replay_contract) -> Teach
     }
     return TeacherEpoch(prior_region, region, student, head, prior_json,
                         json.dumps(current, sort_keys=True, allow_nan=False))
+
+
+def refresh_teacher_region(epoch: TeacherEpoch, *, bank_identity: str,
+                           plasticity_identity: str) -> TeacherEpoch:
+    """Archive region evidence when accepted bank or plasticity identity changes."""
+    if (not isinstance(epoch, TeacherEpoch) or not isinstance(bank_identity, str) or not bank_identity
+            or not isinstance(plasticity_identity, str) or not plasticity_identity):
+        ErrorBus.raise_(SCHOOL.BAMF_TEACHER.INVALID, reason='REGION_IDENTITY_INVALID')
+    binding = {'student_sha256': epoch.student_sha256, 'bank_identity': bank_identity,
+               'plasticity_identity': plasticity_identity}
+    region = hashlib.sha256(json.dumps(binding, sort_keys=True).encode()).hexdigest()
+    if region == epoch.current_region:
+        return epoch
+    teacher = epoch.teacher()
+    teacher.setdefault('bamf_region_history', []).append({
+        'region': epoch.current_region, 'evidence': teacher.get('causal_experiment', {}),
+        'grade_stats': teacher.get('grade_stats', {}),
+    })
+    teacher['grade_stats'] = {}
+    teacher['causal_experiment'] = {'contexts': {}, 'events': 0,
+        'student_policy_epoch': {'student_sha256': epoch.student_sha256,
+                                'contexts': {}, 'unretained_contexts': {}}}
+    teacher['bamf_region_binding'] = binding
+    return replace(epoch, current_region=region,
+                   current_json=json.dumps(teacher, sort_keys=True, allow_nan=False))
