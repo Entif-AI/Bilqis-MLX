@@ -105,3 +105,21 @@ checker now reruns the exact lesson-record invariants before
 source replay. Four live-field mutation regressions reject all
 these relabellings. Real pinned owner suites: **13/13 passed**.
 Fresh immutable-head EGM remains pending.
+
+## Scoped independent EGM disposition
+
+Goldfish worker-11 independently re-reviewed immutable
+`ecbb788ff5dbead7c02c38d192eef5d8c92911a3` and returned
+**SCOPED EGM PASS, zero remaining Blockers/Majors**. It verified
+both previously observed canonicality and admission-metadata
+repairs, including all four live-field relabellings and a
+string-subclass spoof. From an immutable archive it executed
+the real pinned A01/A07/A13 owner suites: **13 passed, 0 failed,
+0 skipped**.
+
+This PASS covers the task-scoped source-backed formal lesson
+proposal and checker only. #554 remains **open and partial**:
+Factory ConstructionProgram registration, exercised variation
+coverage, final A13.1/A07.2 crosswalk and admission proofs have
+not been completed. No ADAPTER_READY, learner credit or source
+grant was created.
