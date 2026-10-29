@@ -15,7 +15,8 @@ from bilqis_mlx.learning.atlas_engram import (
 )
 from bilqis_mlx.learning.atlas_engram_parameters import motif_parameter_view
 from bilqis_mlx.learning.atlas_engram_reads import (
-    MotifReadPosition, read_motif, schema_evidence_digest,
+    MotifReadPosition, _read_motif_unqualified_candidate as read_motif,
+    read_motif as guarded_read_motif, schema_evidence_digest,
     schema_source_handle,
 )
 from bilqis_mlx.runtime.model_topology_v2 import (
@@ -134,6 +135,10 @@ def _read(position, task, frontier, policy, manifest, view, *, site=0,
 
 
 class MotifReadTests(TestCase):
+    def test_public_read_entrypoint_fails_closed_until_source_owner_issuer_exists(self):
+        with self.assertRaises(BilqisError):
+            guarded_read_motif()
+
     def test_exact_hit_both_sites_use_literal_gate_and_keep_padding_unchanged(self):
         position, task, frontier, policy = _source()
         exact, structural = motif_keys(
