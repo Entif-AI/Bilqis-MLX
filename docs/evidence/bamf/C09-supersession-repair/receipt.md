@@ -9,3 +9,7 @@ CorrectionEvent/v3 binds sorted, unique supersedes_event_ids into source signing
 Temporal projection retains all recorded, already-effective supersession edges after a fact expires. Future-recorded/effective corrections remain excluded. Expiry removes current fact availability without resurrecting replaced evidence. A→B→C with B valid[20,30) and C valid[25,infinity) selects C both at26 and31.
 
 Regression red:16 passed,2 assertion failures. Targeted C09/error-control:22 passed. Affected C09/C06 signed evidence/history/pattern suites:38 passed. No actual MLX, learner/own AdamW, graph or generation writes. Independent targeted re-audit remains required; issues517/518 stay open and PR550 draft/unmerged. A01/B07/B13/C04 and C10 integration remain pending.
+
+## Independent targeted re-audit
+
+Fresh Goldfish c09_supersession_reaudit reviewed immutable2f8e79ef7bcb15b81488837189740ba371b28546 using pinned EGM codebase-details/implementation-readiness guidance. Scoped PASS, zero Blockers/Majors for both repairs. Reviewer independently executed22 owner/error-control tests plus seven temporal boundary assertions: expiry without successor is UNKNOWN; earlier projections preserve A; future-recorded/effective corrections do not retire A early. Prior EGM_PENDING is superseded only for these two repairs. Full C09 and upstream integration remain pending. Concurrent C07 edits were excluded.
