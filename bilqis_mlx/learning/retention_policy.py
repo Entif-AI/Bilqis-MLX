@@ -31,4 +31,3 @@ def retention_reason(*, no_target_gain, same_grade_net_gain,
     if whole_school_regression:
         return "WHOLE_SCHOOL_NET_REGRESSION"
     return "PAIRED_SCREEN_WITHIN_BUDGET"
-
