@@ -94,3 +94,6 @@ source-owned group-boundary authority is integrated.
 Fresh immutable-head re-review of the two repairs
 remains pending. A06 factor-composer and B13 custody
 integration are also separate gates.
+
+Latest combined B01/B04/B05 native MLX owner preflight:
+**41 passed, 0 failed, 2 optional witness skips**.

@@ -48,3 +48,6 @@ No optimizer, source admission, checkpoint, historical
 run or live student training state was mutated. This is
 a candidate pending independent review, B13 custody
 integration and human-reviewed Lane B turn-in.
+
+Latest combined B01/B04/B05 native MLX owner preflight:
+**41 passed, 0 failed, 2 optional witness skips**.
