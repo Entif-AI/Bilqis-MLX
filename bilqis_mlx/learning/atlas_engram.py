@@ -32,6 +32,7 @@ FRAME_SCHEMA = "bilqis.semantic-frame-schema/v1"
 CONCEPT_SCHEMA = "bilqis.semantic-concept-ref/v1"
 CHILD_SCHEMA = "bilqis.semantic-child-frame-ref/v1"
 MAX_CANDIDATE_ALLOCATIONS = 64
+OBSERVED_USE_ARITY = 2
 INITIAL_MOTIF_CAPACITY, MOTIF_VECTOR_WIDTH = MOTIF_PAGE_SHAPE
 MAX_MOTIF_CAPACITY = INITIAL_MOTIF_CAPACITY * ModelTopologySpecV2.max_motif_pages
 # Minimum state reservation for a new FP32 page: weights plus AdamW m and v.
@@ -418,22 +419,46 @@ def prepare_motifs(
     frames: tuple[MotifFrameInput, ...],
     parent_manifest: MotifManifest,
     budget: MotifBudget,
+    *,
+    prior_observed_uses: tuple[tuple[str, int], ...] = (),
+    prior_pending: tuple[MotifKey, ...] = (),
 ) -> CandidateMotifView:
     """Plan structural-before-instance slots without mutating accepted state."""
     if (not isinstance(frames, tuple)
             or any(not isinstance(item, MotifFrameInput) for item in frames)
             or type(parent_manifest) is not MotifManifest
-            or type(budget) is not MotifBudget):
+            or type(budget) is not MotifBudget
+            or not isinstance(prior_observed_uses, tuple)
+            or any(not isinstance(item, tuple) or len(item) != OBSERVED_USE_ARITY
+                   or not isinstance(item[0], str) or not _SHA.fullmatch(item[0])
+                   or type(item[1]) is not int or item[1] < 1
+                   for item in prior_observed_uses)
+            or prior_observed_uses != tuple(sorted(set(prior_observed_uses)))
+            or len({item[0] for item in prior_observed_uses})
+            != len(prior_observed_uses)
+            or not isinstance(prior_pending, tuple)
+            or any(type(key) is not MotifKey
+                   or key.semantic_release != parent_manifest.semantic_release
+                   for key in prior_pending)
+            or len({key.digest for key in prior_pending}) != len(prior_pending)):
         _invalid("BAMF_MOTIF_PREPARATION_INVALID")
     pairs = tuple(motif_keys(item, parent_manifest.semantic_release)
                   for item in frames)
     observed = Counter(key for pair in pairs for key in pair)
+    cumulative_uses = Counter(dict(prior_observed_uses))
+    cumulative_uses.update({key.digest: count for key, count in observed.items()})
     existing = {slot.key: slot.slot_id for slot in parent_manifest.slots}
     missing_structural = {
         structural for exact, structural in pairs
         if exact not in existing and structural not in existing}
     missing_exact = {exact for exact, _ in pairs if exact not in existing}
-    sort_key = lambda key: (-observed[key], key.digest)
+    missing_structural.update(
+        key for key in prior_pending
+        if key.kind == "STRUCTURAL" and key not in existing)
+    missing_exact.update(
+        key for key in prior_pending
+        if key.kind == "EXACT" and key not in existing)
+    sort_key = lambda key: (-cumulative_uses[key.digest], key.digest)
     ordered = (
         *sorted(missing_structural, key=sort_key),
         *sorted(missing_exact, key=sort_key),
@@ -464,7 +489,7 @@ def prepare_motifs(
         tuple(matches),
         MotifAllocationPlan(
             parent_manifest.digest, allocated, pending,
-            tuple(sorted((key.digest, count) for key, count in observed.items()))),
+            tuple(sorted(cumulative_uses.items()))),
         growth,
     )
 
