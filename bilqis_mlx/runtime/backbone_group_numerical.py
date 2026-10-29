@@ -7,6 +7,9 @@ accept its result as completed-backbone provenance.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
+import json
+import numpy as np
 from typing import Mapping
 
 import mlx.core as mx
@@ -40,6 +43,10 @@ class UnadmittedGroupNumerical:
     layer_start: int
     layer_end: int
     attention_caches: tuple[AttentionCache, ...]
+    parameter_content_digest: str = ""
+    cache_chain_digest: str = ""
+    predecessor_digest: str = ""
+    execution_digest: str = ""
     admission_status: str = UNADMITTED_NUMERICAL
 
     def __post_init__(self) -> None:
@@ -54,8 +61,29 @@ class UnadmittedGroupNumerical:
                 or type(self.attention_caches) is not tuple
                 or len(self.attention_caches)
                 != self.layer_end - self.layer_start
-                or self.admission_status != UNADMITTED_NUMERICAL):
+                or self.admission_status != UNADMITTED_NUMERICAL
+                or any(len(value) != 64 for value in (self.parameter_content_digest,
+                    self.cache_chain_digest, self.predecessor_digest, self.execution_digest))):
             _invalid()
+
+
+def _hash_record(record: object) -> str:
+    return hashlib.sha256(json.dumps(record, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def _content_digest(value: mx.array) -> str:
+    # Fingerprints never replace the differentiable original tensor.
+    return hashlib.sha256(np.asarray(mx.stop_gradient(value)).tobytes()).hexdigest()
+
+
+def _group_parameter_digest(parameters: Mapping[str, mx.array], names: tuple[str, ...]) -> str:
+    return _hash_record([(name, tuple(parameters[name].shape), str(parameters[name].dtype),
+                          _content_digest(parameters[name])) for name in names])
+
+
+def _cache_chain_digest(caches: tuple[AttentionCache, ...]) -> str:
+    return _hash_record([dict(cache.to_record(), key=_content_digest(cache.key),
+                              value=_content_digest(cache.value)) for cache in caches])
 
 
 def run_backbone_group_numerical(
@@ -69,6 +97,7 @@ def run_backbone_group_numerical(
     valid: mx.array,
     generation: str,
     prefix_digest: str,
+    prior: UnadmittedGroupNumerical | None = None,
 ) -> UnadmittedGroupNumerical:
     """Execute B01/B04 layers. The output is numerical evidence, not authority."""
     if (type(spec) is not ModelTopologySpecV2
@@ -88,6 +117,10 @@ def run_backbone_group_numerical(
             or not isinstance(parameters, Mapping)
             or spec.layers % spec.depth_groups):
         _invalid()
+    if prior is not None and (type(prior) is not UnadmittedGroupNumerical
+            or prior.group_index + 1 != group_index
+            or prior.hidden is not hidden):
+        _invalid()
     group_size = spec.layers // spec.depth_groups
     start = (group_index - 1) * group_size
     end = start + group_size
@@ -100,6 +133,7 @@ def run_backbone_group_numerical(
         if (type(value) is not mx.array or value.dtype != mx.float32
                 or value.shape != shape):
             _invalid()
+    parameter_digest = _group_parameter_digest(parameters, tuple(sorted(required)))
     caches = []
     current = hidden
     for layer in range(start, end):
@@ -122,5 +156,16 @@ def run_backbone_group_numerical(
         current = current + (
             (activated * activated) @ parameters[prefix + "ffn_out"].T)
         caches.append(cache)
-    return UnadmittedGroupNumerical(
-        current, group_index, start, end, tuple(caches))
+    cache_digest = _cache_chain_digest(tuple(caches))
+    predecessor = prior.execution_digest if prior is not None else _content_digest(hidden)
+    execution_digest = _hash_record({
+        "group": group_index, "layer_start": start, "layer_end": end,
+        "topology": spec.digest, "extents": extents.digest,
+        "generation_claim": generation, "prefix_claim": prefix_digest,
+        "parameters": parameter_digest, "caches": cache_digest,
+        "input": _content_digest(hidden), "output": _content_digest(current),
+        "predecessor": predecessor, "status": UNADMITTED_NUMERICAL,
+    })
+    return UnadmittedGroupNumerical(current, group_index, start, end, tuple(caches),
+                                    parameter_digest, cache_digest, predecessor,
+                                    execution_digest)

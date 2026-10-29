@@ -89,6 +89,34 @@ class BackboneGroupNumericalTests(unittest.TestCase):
                 self.assertGreater(
                     float(mx.sum(mx.abs(parameter_grad))), 0)
 
+    def test_executed_parameter_content_and_cache_chain_distinguish_models(self):
+        params = _params()
+        hidden = mx.arange(4*SPEC.width, dtype=mx.float32).reshape(1, 4, SPEC.width)/1000
+        first = _run(hidden, params)
+        again = _run(hidden, params)
+        self.assertEqual(first.execution_digest, again.execution_digest)
+        self.assertEqual(len(first.parameter_content_digest), 64)
+        self.assertEqual(len(first.cache_chain_digest), 64)
+        changed = dict(params)
+        changed["blocks.0.query"] = changed["blocks.0.query"].at[0, 0].add(.01)
+        other = _run(hidden, changed)
+        self.assertNotEqual(first.parameter_content_digest, other.parameter_content_digest)
+        self.assertNotEqual(first.execution_digest, other.execution_digest)
+        self.assertEqual(first.admission_status, "UNADMITTED_NUMERICAL")
+        second = run_backbone_group_numerical(
+            first.hidden, params, group_index=2, spec=SPEC, extents=EXTENTS,
+            scope_ids=mx.zeros((1, 4), dtype=mx.int32),
+            valid=mx.ones((1, 4), dtype=mx.bool_),
+            generation="d"*64, prefix_digest="e"*64, prior=first)
+        self.assertEqual(second.predecessor_digest, first.execution_digest)
+        self.assertEqual(second.layer_start, 4)
+        with self.assertRaises(BilqisError):
+            run_backbone_group_numerical(
+                other.hidden, params, group_index=2, spec=SPEC, extents=EXTENTS,
+                scope_ids=mx.zeros((1, 4), dtype=mx.int32),
+                valid=mx.ones((1, 4), dtype=mx.bool_),
+                generation="d"*64, prefix_digest="e"*64, prior=first)
+
     def test_wrong_group_and_parameter_geometry_reject(self):
         params = _params()
         hidden = mx.zeros((1, 4, SPEC.width), dtype=mx.float32)
