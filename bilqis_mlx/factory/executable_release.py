@@ -225,6 +225,18 @@ class ExecutableAdmissionReceipt:
                      _ReleaseError.SEMANTIC_GRAPH_DRIFT)
 
 
+    def verify_baseline(self, *, student_sha256: str, optimizer_step: int,
+                        semantic_graph_sha256: str) -> None:
+        """Preserve the admitted baseline while its causal student advances."""
+        _require_sha256(student_sha256, "FACTORY_EXECUTABLE_ADMISSION_CURRENT_STUDENT_INVALID")
+        _require_sha256(semantic_graph_sha256, "FACTORY_EXECUTABLE_ADMISSION_CURRENT_GRAPH_INVALID")
+        if (type(optimizer_step) is not int or optimizer_step < 0
+                or self.semantic_graph_sha256 != semantic_graph_sha256
+                or self.optimizer_step > optimizer_step
+                or (self.optimizer_step == optimizer_step and self.student_sha256 != student_sha256)):
+            raise ValueError("FACTORY_EXECUTABLE_ADMISSION_BASELINE_DRIFT")
+
+
 @dataclass(frozen=True)
 class ExecutableFactoryRelease:
     """Version-2 FactoryRelease; the complete executable authority artifact."""

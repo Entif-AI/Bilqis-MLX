@@ -65,6 +65,26 @@ def _execute(program, binding, *, memo=None, budget=None):
 
 
 class CognitiveDAGTests(TestCase):
+    def test_remaining_compute_limit_allows_only_verified_memo_at_zero(self):
+        binding, values = _case(("Number", 2), ("Number", 3))
+        goal = _goal(_program(DAGNode(
+            "answer", "ADD", (_literal(values[0]), _literal(values[1])),
+            "Number", SCOPE)), binding)
+        memo = PureOperationMemo()
+        missed = execute_dag(goal, binding, memo=memo, operation_limit=0)
+        self.assertEqual(missed.answer.state, ValueState.UNRESOLVED)
+        self.assertEqual(missed.receipt.operation_count, 0)
+        self.assertEqual(execute_dag(goal, binding, memo=memo).answer.value, 5)
+        hit = execute_dag(goal, binding, memo=memo, operation_limit=0)
+        self.assertEqual(hit.answer.value, 5)
+        self.assertEqual((hit.receipt.operation_count, hit.receipt.memo_hit_count),
+                         (0, 1))
+        with self.assertRaises(BilqisError):
+            execute_dag(None, binding, operation_limit=0)
+        for invalid in (-1, True, 1.5, 65):
+            with self.subTest(limit=invalid), self.assertRaises(BilqisError):
+                execute_dag(goal, binding, operation_limit=invalid)
+
     def test_hole_candidate_fanout_is_bounded_before_registry_or_compute(self):
         binding, values = _case(("Number", 2), ("Number", 3))
         candidates = tuple(f"synthetic:operator:{i:03d}" for i in range(65))

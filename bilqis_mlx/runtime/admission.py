@@ -237,11 +237,9 @@ def _require_executable_factory_admission(
         raise ValueError("FACTORY_EXECUTABLE_ADMISSION_RECEIPT_INVALID") from exc
     admission.verify(release)
     current = receipt["school"]["current_student"]
-    if (admission.semantic_graph_sha256 != receipt.get("semantic_graph_sha256") or
-            admission.optimizer_step > current["optimizer_step"] or
-            (admission.optimizer_step == current["optimizer_step"] and
-             admission.student_sha256 != current["sha256"])):
-        raise ValueError("FACTORY_EXECUTABLE_ADMISSION_BASELINE_DRIFT")
+    admission.verify_baseline(
+        student_sha256=current["sha256"], optimizer_step=current["optimizer_step"],
+        semantic_graph_sha256=receipt.get("semantic_graph_sha256"))
     return release
 
 
