@@ -14,21 +14,29 @@ import re
 from typing import Protocol
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
+from bilqis_mlx.runtime.model_topology_v2 import (
+    GenerationExtents, Initializer, ModelTopologySpecV2, MOTIF_PAGE_SHAPE,
+    expected_bamf_shapes, initialize_bamf_row,
+)
 
 
 KEY_SCHEMA = "bilqis.motif-key/v1"
 MEMBER_SCHEMA = "bilqis.motif-member/v1"
 MANIFEST_SCHEMA = "bilqis.motif-manifest/v1"
 PLAN_SCHEMA = "bilqis.motif-allocation-plan/v1"
-VIEW_SCHEMA = "bilqis.motif-candidate-view/v1"
+VIEW_SCHEMA = "bilqis.motif-candidate-view/v2"
+PAGE_GROWTH_SCHEMA = "bilqis.motif-page-growth/v1"
 FRAME_INPUT_SCHEMA = "bilqis.motif-frame-input/v1"
 FRAME_INSTANCE_SCHEMA = "bilqis.semantic-frame-instance/v2"
 FRAME_SCHEMA = "bilqis.semantic-frame-schema/v1"
 CONCEPT_SCHEMA = "bilqis.semantic-concept-ref/v1"
 CHILD_SCHEMA = "bilqis.semantic-child-frame-ref/v1"
 MAX_CANDIDATE_ALLOCATIONS = 64
-INITIAL_MOTIF_CAPACITY = 16384
-MAX_MOTIF_CAPACITY = 65536
+INITIAL_MOTIF_CAPACITY, MOTIF_VECTOR_WIDTH = MOTIF_PAGE_SHAPE
+MAX_MOTIF_CAPACITY = INITIAL_MOTIF_CAPACITY * ModelTopologySpecV2.max_motif_pages
+# Minimum state reservation for a new FP32 page: weights plus AdamW m and v.
+# Checkpoint staging and the global disk reserve remain the custody owner's job.
+MOTIF_PAGE_STATE_BYTES = INITIAL_MOTIF_CAPACITY * MOTIF_VECTOR_WIDTH * 4 * 3
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _STATES = frozenset({"VALUE", "NONE", "UNKNOWN", "ALTERNATIVES"})
 
@@ -193,10 +201,13 @@ class MotifManifest:
 @dataclass(frozen=True)
 class MotifBudget:
     new_slot_limit: int = MAX_CANDIDATE_ALLOCATIONS
+    page_growth_bytes: int = 0
 
     def __post_init__(self) -> None:
         if (type(self.new_slot_limit) is not int
-                or not 0 <= self.new_slot_limit <= MAX_CANDIDATE_ALLOCATIONS):
+                or not 0 <= self.new_slot_limit <= MAX_CANDIDATE_ALLOCATIONS
+                or type(self.page_growth_bytes) is not int
+                or self.page_growth_bytes < 0):
             _invalid("BAMF_MOTIF_BUDGET_INVALID")
 
 
@@ -219,10 +230,71 @@ class MotifMatch:
 
 
 @dataclass(frozen=True)
+class MotifPageGrowth:
+    parent_capacity: int
+    candidate_capacity: int
+    added_pages: int
+    reserved_state_bytes: int
+    declared_budget_bytes: int
+    schema_version: str = PAGE_GROWTH_SCHEMA
+
+    def __post_init__(self) -> None:
+        if (type(self.parent_capacity) is not int
+                or type(self.candidate_capacity) is not int
+                or type(self.added_pages) is not int
+                or type(self.reserved_state_bytes) is not int
+                or type(self.declared_budget_bytes) is not int
+                or self.declared_budget_bytes < 0
+                or not INITIAL_MOTIF_CAPACITY <= self.parent_capacity <= MAX_MOTIF_CAPACITY
+                or self.parent_capacity % INITIAL_MOTIF_CAPACITY
+                or self.added_pages not in (0, 1)
+                or self.candidate_capacity != (
+                    self.parent_capacity + self.added_pages * INITIAL_MOTIF_CAPACITY)
+                or self.candidate_capacity > MAX_MOTIF_CAPACITY
+                or self.reserved_state_bytes != self.added_pages * MOTIF_PAGE_STATE_BYTES
+                or self.reserved_state_bytes > self.declared_budget_bytes
+                or self.schema_version != PAGE_GROWTH_SCHEMA):
+            _invalid("BAMF_MOTIF_PAGE_GROWTH_INVALID")
+
+
+@dataclass(frozen=True)
 class CandidateMotifView:
     matches: tuple[MotifMatch, ...]
     plan: MotifAllocationPlan
+    page_growth: MotifPageGrowth
     schema_version: str = VIEW_SCHEMA
+
+    def __post_init__(self) -> None:
+        if (type(self.matches) is not tuple
+                or any(type(item) is not MotifMatch for item in self.matches)
+                or type(self.plan) is not MotifAllocationPlan
+                or type(self.page_growth) is not MotifPageGrowth
+                or self.schema_version != VIEW_SCHEMA):
+            _invalid("BAMF_MOTIF_CANDIDATE_VIEW_INVALID")
+
+
+def _plan_page_growth(
+    parent_capacity: int, occupied: int, requested: int, budget_bytes: int,
+) -> MotifPageGrowth:
+    if (type(parent_capacity) is not int
+            or not INITIAL_MOTIF_CAPACITY <= parent_capacity <= MAX_MOTIF_CAPACITY
+            or parent_capacity % INITIAL_MOTIF_CAPACITY
+            or type(occupied) is not int or not 0 <= occupied <= parent_capacity
+            or type(requested) is not int or requested < 0
+            or type(budget_bytes) is not int or budget_bytes < 0):
+        _invalid("BAMF_MOTIF_PAGE_GROWTH_INVALID")
+    add_page = (
+        requested > parent_capacity - occupied
+        and parent_capacity < MAX_MOTIF_CAPACITY
+        and budget_bytes >= MOTIF_PAGE_STATE_BYTES
+    )
+    return MotifPageGrowth(
+        parent_capacity,
+        parent_capacity + (INITIAL_MOTIF_CAPACITY if add_page else 0),
+        int(add_page),
+        MOTIF_PAGE_STATE_BYTES if add_page else 0,
+        budget_bytes,
+    )
 
 
 def _state(binding) -> str:
@@ -366,9 +438,11 @@ def prepare_motifs(
         *sorted(missing_structural, key=sort_key),
         *sorted(missing_exact, key=sort_key),
     )
-    available = min(
-        budget.new_slot_limit,
-        parent_manifest.capacity - len(parent_manifest.slots))
+    requested = min(budget.new_slot_limit, len(ordered))
+    growth = _plan_page_growth(
+        parent_manifest.capacity, len(parent_manifest.slots),
+        requested, budget.page_growth_bytes)
+    available = min(requested, growth.candidate_capacity - len(parent_manifest.slots))
     allocated = tuple(
         MotifSlot(len(parent_manifest.slots) + index, key)
         for index, key in enumerate(ordered[:available]))
@@ -391,4 +465,56 @@ def prepare_motifs(
         MotifAllocationPlan(
             parent_manifest.digest, allocated, pending,
             tuple(sorted((key.digest, count) for key, count in observed.items()))),
+        growth,
     )
+
+
+def candidate_motif_manifest(
+    parent: MotifManifest, candidate: CandidateMotifView,
+) -> MotifManifest:
+    """Construct a frozen candidate manifest, never publish the parent."""
+    if (type(parent) is not MotifManifest
+            or type(candidate) is not CandidateMotifView
+            or candidate.schema_version != VIEW_SCHEMA
+            or candidate.plan.parent_manifest_digest != parent.digest
+            or candidate.page_growth.parent_capacity != parent.capacity
+            or (candidate.page_growth.added_pages > 0
+                and len(parent.slots) + len(candidate.plan.allocated)
+                <= parent.capacity)
+            or tuple(slot.slot_id for slot in candidate.plan.allocated) != tuple(
+                range(len(parent.slots),
+                      len(parent.slots) + len(candidate.plan.allocated)))):
+        _invalid("BAMF_MOTIF_CANDIDATE_PARENT_MISMATCH")
+    return MotifManifest(
+        parent.semantic_release,
+        parent.slots + candidate.plan.allocated,
+        candidate.page_growth.candidate_capacity,
+    )
+
+
+def initialize_planned_motif_slot(
+    candidate: CandidateMotifView, slot_id: int, *,
+    run_seed: int, topology: ModelTopologySpecV2, extents: GenerationExtents,
+):
+    """Use B01's seeded row initializer, not a second motif parameter registry."""
+    if (type(candidate) is not CandidateMotifView
+            or type(slot_id) is not int
+            or type(topology) is not ModelTopologySpecV2
+            or type(extents) is not GenerationExtents
+            or extents.motif_page_count != (
+                candidate.page_growth.candidate_capacity // INITIAL_MOTIF_CAPACITY)):
+        _invalid("BAMF_MOTIF_INITIALIZATION_AUTHORITY_INVALID")
+    slot = next(
+        (item for item in candidate.plan.allocated if item.slot_id == slot_id), None)
+    if slot is None:
+        _invalid("BAMF_MOTIF_INITIALIZATION_SLOT_NOT_PLANNED")
+    page = slot_id // INITIAL_MOTIF_CAPACITY
+    name = f"motif.page.{page}"
+    parameter = next(
+        (item for item in expected_bamf_shapes(topology, extents)
+         if item.name == name), None)
+    if (parameter is None or parameter.initializer is not Initializer.MOTIF_PAGE
+            or parameter.shape != MOTIF_PAGE_SHAPE):
+        _invalid("BAMF_MOTIF_INITIALIZATION_AUTHORITY_INVALID")
+    return initialize_bamf_row(
+        parameter, run_seed=run_seed, row_id=slot.key.digest)
