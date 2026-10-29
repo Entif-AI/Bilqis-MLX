@@ -42,6 +42,16 @@ def _spec(
 
 
 class SCHOOL:
+    class BAMF_RESOURCES:
+        INVALID = _spec(
+            ("SCHOOL", "BAMF_RESOURCES", "INVALID"),
+            owner="runtime.atlas_resources",
+            title="BAMF resource plan or gradient boundary invalid",
+            message_template="A BAMF resource or optimizer-step contract is invalid: {reason}",
+            disposition="PRESERVE_AND_INSPECT",
+            next_action="Keep the retained candidate unchanged; reconcile the exact source rows, topology, budget and gradient receipt.",
+        )
+
     class BAMF_REVALIDATION:
         INVALID = _spec(
             ("SCHOOL", "BAMF_REVALIDATION", "INVALID"),
@@ -887,6 +897,7 @@ class FACTORY:
 
 
 CATALOG = (
+    SCHOOL.BAMF_RESOURCES.INVALID,
     SCHOOL.BAMF_REVALIDATION.INVALID,
     SCHOOL.BAMF_REVALIDATION.PROPAGATION_FAILURE,
     SCHOOL.BAMF_TEACHER.INVALID,
