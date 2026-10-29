@@ -135,12 +135,21 @@ class AtlasVocabularyTests(unittest.TestCase):
             plan = plan_vocabulary_extension(
                 prior, (next_source.semantic_id,), ModelTopologySpecV2())
             mirror = build_registry_mirror_delta(prior, plan)
+            held = next(
+                row.semantic_id for row in snapshot.withheld_rows
+                if row.semantic_id is not None
+                and row.source_disposition == "SOURCE_HELD"
+                and row.semantic_id not in active)
+            with self.assertRaises(BilqisError):
+                plan_vocabulary_extension(
+                    prior, (held,), ModelTopologySpecV2())
         self.assertEqual(plan.allocations[0].abi_index, next_source.index)
         self.assertEqual(plan.source_bundle_id, release.source_bundle_id)
         self.assertEqual(plan.status, "STAGED_NOT_ADMITTED")
         self.assertEqual(mirror.active_indices, plan.active_indices)
         self.assertEqual(mirror.rows[0].semantic_id, next_source.semantic_id)
         self.assertTrue(mirror.rows[0].description)
+        self.assertEqual(prior.extents.semantic_bank_count, 1)
 
     def test_a02_planner_stable_boundary_indices_and_bank_extents(self):
         snapshot, prior = _allocation_fixture()
