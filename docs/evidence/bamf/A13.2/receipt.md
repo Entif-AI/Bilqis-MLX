@@ -51,6 +51,36 @@ hold without minted handles, real source-registered A/B/C PUBLIC_FORMAL
 rows without NLP/network calls, deterministic re-admission, tampered
 source rejection, release mismatch and source-span grant collision.
 
+## 2026-10-28 independent review repair: first-admission authority
+
+Goldfish reviewed immutable `e959100` and found one Blocker:
+the PUBLIC_FORMAL constructor trusted a caller-replaceable
+`RegisteredSourceAdapter.check` callable and caller-supplied
+source span. An unverified row or backdated first-admission
+span could therefore mint a fresh grant.
+
+The repaired constructor resolves the exact canonical A/B/C
+registered adapter and verifies descriptor plus every callback
+identity before using its canonical checker. It pins the
+source root to the repository's current formal source bundle
+and rechecks the supplied graph against its canonical source
+graph. It no longer accepts `source_span`: the only formal
+source span is `SourceSpan(0, len(row["tokens"]))` over the
+fully checked source sequence. Frame/member handles bind a
+digest of source-visible ID/record/tokens, deliberately excluding
+gold/assessment labels. The public formal `observed_at=0`
+and `effective_from=0` values denote the explicit timeless
+formal-source epoch, not an observed external event.
+
+New negatives forge a checker while retaining a real adapter
+descriptor, attempt a first-admission source-span override,
+tamper the canonical row, change the release, and point at an
+unverified source root. All reject without minting grants.
+Focused context + adapter suites: **28 passed, 0 failed,
+0 skipped**. Cumulative affected source/frame/operator tests:
+**61 passed, 0 failed, 1 optional real-Atlas skip**.
+Fresh independent immutable-head readback is pending.
+
 `git diff --check` passed. Repository module-size and error-control
 checks retain inherited unrelated findings. The existing
 `frame_adapters.py` source-adapter import boundary is not introduced

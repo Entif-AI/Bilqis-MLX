@@ -192,7 +192,7 @@ class ContextEligibilityTests(unittest.TestCase):
             with self.subTest(adapter=adapter.descriptor.adapter_id):
                 result = public_formal_context(
                     adapter, row, snapshot, source_root=source_root,
-                    graph=graph, source_span=SourceSpan(10, 30),
+                    graph=graph,
                     task_scope=task, source_frontier=source_frontier,
                     policy=policy,
                 )
@@ -203,19 +203,22 @@ class ContextEligibilityTests(unittest.TestCase):
                 self.assertTrue(all(
                     handle.startswith("public-formal:")
                     for _, handle in projection.attention_handles))
+                self.assertTrue(all(
+                    envelope.frame.source_span == SourceSpan(0, len(row["tokens"]))
+                    for envelope in projection.envelopes))
                 self.assertEqual(
                     project_context(projection.envelopes, task, admitted, policy),
                     projection)
                 self.assertEqual(
                     public_formal_context(
                         adapter, row, snapshot, source_root=source_root,
-                        graph=graph, source_span=SourceSpan(10, 30),
+                        graph=graph,
                         task_scope=task, source_frontier=admitted, policy=policy),
                     result)
-                with self.assertRaises(BilqisError):
+                with self.assertRaises(TypeError):
                     public_formal_context(
                         adapter, row, snapshot, source_root=source_root,
-                        graph=graph, source_span=SourceSpan(0, 20),
+                        graph=graph, source_span=SourceSpan(0, 1),
                         task_scope=task, source_frontier=admitted,
                         policy=policy)
         forged = dict(a_row)
@@ -223,25 +226,49 @@ class ContextEligibilityTests(unittest.TestCase):
         with self.assertRaises(BilqisError):
             public_formal_context(
                 a, forged, snapshot, source_root=source_root,
-                graph=micro_graph, source_span=SourceSpan(10, 30),
+                graph=micro_graph,
                 task_scope=task, source_frontier=source_frontier,
                 policy=policy)
+        forged_adapter = replace(a, check=lambda *args, **kwargs: True)
+        with self.assertRaises(BilqisError) as caught:
+            public_formal_context(
+                forged_adapter, forged, snapshot, source_root=source_root,
+                graph=micro_graph, task_scope=task,
+                source_frontier=source_frontier, policy=policy)
+        self.assertEqual(caught.exception.context["reason"],
+                         "BAMF_CONTEXT_PUBLIC_FORMAL_ADAPTER_UNTRUSTED")
         with self.assertRaises(BilqisError):
             public_formal_context(
                 a, a_row, snapshot, source_root=source_root,
-                graph=micro_graph, source_span=SourceSpan(10, 30),
+                graph=micro_graph,
                 task_scope=replace(task, semantic_release="b" * 64),
+                source_frontier=source_frontier, policy=policy)
+        with self.assertRaises(BilqisError):
+            public_formal_context(
+                a, a_row, snapshot, source_root="synthetic:unverified",
+                graph=micro_graph, task_scope=task,
                 source_frontier=source_frontier, policy=policy)
 
     def test_public_formal_future_prefix_never_mints_handles(self):
+        from bilqis_mlx.grade_a_probe import read_sources
+        from bilqis_mlx.source_adapters.school import A_ORACLE, live_source_registry
         from bilqis_mlx.semantics.tests.test_frame_adapters import _snapshot
+        from pathlib import Path
+        source_root = Path(__file__).resolve().parents[3] / "vendor/legacy-v16"
+        micro_graph = read_sources(source_root)[2]
+        adapter = live_source_registry().require(
+            "bilqis_mlx.grade_a_probe.make_record", A_ORACLE)
+        row = adapter.draw(
+            source_root=source_root, graph=micro_graph, course=None,
+            capability="A.IDENTITY", seed=31, each=2)[0]
+        self.assertGreater(len(row["tokens"]), 10)
         task = TaskScope(
             PRINCIPAL, TENANT, "TRAINING", _snapshot().release_sha256,
             REGION, SCOPE, 3, 5, 10)
         _, _, frontier, policy = _case(count=1)
         result = public_formal_context(
-            None, {}, _snapshot(), source_root="synthetic",
-            graph={}, source_span=SourceSpan(10, 30),
+            adapter, row, _snapshot(), source_root=source_root,
+            graph=micro_graph,
             task_scope=task, source_frontier=SourceFrontier(1, 1, ()),
             policy=policy)
         self.assertIsInstance(result, ContextHold)

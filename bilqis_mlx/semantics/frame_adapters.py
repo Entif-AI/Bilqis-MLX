@@ -42,6 +42,7 @@ BOOLEAN_CONNECTIVE_ADAPTER = "source.micro.boolean-connectives/v1"
 BOOLEAN_COMPOSITE_ADAPTER = "source.micro.boolean-composite/v1"
 BOOLEAN_IDENTIFICATION_ADAPTER = "source.micro.boolean-identification/v1"
 FINITE_NUMERIC_ADAPTER = "source.finite-numeric/v2"
+PUBLIC_FORMAL_TIMELESS_EPOCH = 0
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _APPEND_ONLY_NUMERIC_NODES = {
     node["id"]: node for node in NUMERIC_CONTRACT["append_only_nodes"]}
@@ -621,7 +622,6 @@ def public_formal_context(
     *,
     source_root: str | Path,
     graph: dict,
-    source_span: SourceSpan,
     task_scope: TaskScope,
     source_frontier: SourceFrontier,
     policy: ContextPolicy,
@@ -633,12 +633,63 @@ def public_formal_context(
     mints any PUBLIC_FORMAL grants. Runtime readers consume only the resulting
     approved context projection, never this source-admission entrypoint.
     """
+    tokens = row.get("tokens") if isinstance(row, dict) else None
+    if not isinstance(tokens, list) or not tokens:
+        _adapter_fail(
+            "BAMF_CONTEXT_PUBLIC_FORMAL_TOKENS_MISSING",
+            "<unknown>", SourceSpan(0, 0), "<public-formal>")
+    # Registered formal A/B/C rows are complete source sequences. Their
+    # canonical span is the full verified token sequence, never a caller-
+    # supplied timestamp or position that could be backdated on first grant.
+    source_span = SourceSpan(0, len(tokens))
     adapter_id = getattr(
         getattr(source_adapter, "descriptor", None), "adapter_id", "<unknown>")
+    # RegisteredSourceAdapter is a frozen record, not an authority token:
+    # a caller can replace its checker. Resolve the canonical source owner
+    # and execute *that* checker, never a supplied callable.
+    from ..source_adapters.school import live_source_registry
+    if not isinstance(source_adapter, RegisteredSourceAdapter):
+        _adapter_fail(
+            "BAMF_CONTEXT_PUBLIC_FORMAL_ADAPTER_UNTRUSTED",
+            adapter_id, source_span, "<public-formal>")
+    try:
+        canonical = live_source_registry().require(
+            source_adapter.descriptor.generator_id,
+            source_adapter.descriptor.accepted_oracle_ids[0])
+    except (IndexError, TypeError, ValueError):
+        _adapter_fail(
+            "BAMF_CONTEXT_PUBLIC_FORMAL_ADAPTER_UNTRUSTED",
+            adapter_id, source_span, "<public-formal>")
+    if (source_adapter.descriptor != canonical.descriptor
+            or source_adapter.check is not canonical.check
+            or source_adapter.draw is not canonical.draw
+            or source_adapter.enrich is not canonical.enrich
+            or source_adapter.witness is not canonical.witness
+            or source_adapter.dependencies is not canonical.dependencies
+            or source_adapter.semantic_footprint is not canonical.semantic_footprint):
+        _adapter_fail(
+            "BAMF_CONTEXT_PUBLIC_FORMAL_ADAPTER_UNTRUSTED",
+            adapter_id, source_span, "<public-formal>")
+    source_adapter = canonical
+    canonical_root = Path(__file__).resolve().parents[2] / "vendor/legacy-v16"
+    if Path(source_root).resolve() != canonical_root.resolve():
+        _adapter_fail(
+            "BAMF_CONTEXT_PUBLIC_FORMAL_SOURCE_ROOT_DRIFT",
+            adapter_id, source_span, "<public-formal>")
+    if adapter_id == FINITE_NUMERIC_ADAPTER:
+        from ..live_grade_c import registry_graph
+        canonical_graph = registry_graph()
+    else:
+        from ..grade_a_probe import read_sources
+        canonical_graph = read_sources(canonical_root)[2]
+    if digest(graph) != digest(canonical_graph):
+        _adapter_fail(
+            "BAMF_CONTEXT_PUBLIC_FORMAL_GRAPH_DRIFT",
+            adapter_id, source_span, "<public-formal>")
+    graph = canonical_graph
     if (not isinstance(task_scope, TaskScope)
             or not isinstance(source_frontier, SourceFrontier)
             or not isinstance(policy, ContextPolicy)
-            or not isinstance(source_span, SourceSpan)
             or not isinstance(snapshot, FrozenAtlasSnapshot)
             or snapshot.release_sha256 != task_scope.semantic_release
             or task_scope.purpose is None
@@ -648,8 +699,7 @@ def public_formal_context(
             or policy.rights_epoch != source_frontier.rights_epoch):
         _adapter_fail(
             "BAMF_CONTEXT_PUBLIC_FORMAL_POLICY_INVALID",
-            adapter_id, source_span if isinstance(source_span, SourceSpan)
-            else SourceSpan(0, 0), "<public-formal>")
+            adapter_id, source_span, "<public-formal>")
     if source_span.end > task_scope.causal_prefix_end:
         return ContextHold(("BAMF_CONTEXT_INVISIBLE_PREFIX",), (), ())
     released = released_frame_adapter(source_adapter, span=source_span)
@@ -665,8 +715,15 @@ def public_formal_context(
 
     envelopes = []
     grants = {item.source_handle: item for item in source_frontier.grants}
+    source_visible_digest = digest({
+        "source_id": row.get("source_id") or row.get("id"),
+        "record": row.get("record"),
+        "tokens": row.get("tokens"),
+    })
     for frame in walk(tree):
-        prefix = "public-formal:" + released.source_adapter_id + ":" + frame.occurrence_id
+        prefix = (
+            "public-formal:" + released.source_adapter_id + ":"
+            + source_visible_digest + ":" + frame.occurrence_id)
         members = (
             tuple(ContextMember(
                 binding.role_id, binding.occurrence_index,
@@ -689,7 +746,9 @@ def public_formal_context(
             join_class=PUBLIC_FORMAL, policy_epoch=policy.policy_epoch,
             rights_epoch=source_frontier.rights_epoch,
             correction_generation=source_frontier.correction_generation,
-            observed_at=0, effective_from=0, effective_until=None,
+            observed_at=PUBLIC_FORMAL_TIMELESS_EPOCH,
+            effective_from=PUBLIC_FORMAL_TIMELESS_EPOCH,
+            effective_until=None,
             causal_prefix_end=frame.causal_prefix_end,
         )
         evidence = {envelope.source_handle: frame_evidence_digest(frame)}
@@ -697,13 +756,14 @@ def public_formal_context(
             member.source_handle: member_evidence_digest(frame, member)
             for member in members
         })
-        for handle, digest in evidence.items():
+        for handle, evidence_sha in evidence.items():
             grant = SourceGrant(
                 handle, task_scope.principal_id, task_scope.tenant_id,
-                PUBLIC_FORMAL, task_scope.semantic_release, digest,
+                PUBLIC_FORMAL, task_scope.semantic_release, evidence_sha,
                 (task_scope.purpose,), (task_scope.jurisdiction,),
                 (task_scope.scope,), source_frontier.rights_epoch,
-                source_frontier.correction_generation, 0, 0,
+                source_frontier.correction_generation,
+                PUBLIC_FORMAL_TIMELESS_EPOCH, PUBLIC_FORMAL_TIMELESS_EPOCH,
             )
             prior = grants.get(handle)
             if prior is not None and prior != grant:
