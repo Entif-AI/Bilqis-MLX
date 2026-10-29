@@ -7,8 +7,9 @@
   `44f78431709ec3b8fc23f47b45d9b18f167c7354`
   (already an ancestor at leaf start; no synthetic merge)
 - Consumed A03 implementation: `4c422aa`, A03 EGM: `5e84ffb`
-- Candidate head: pending commit/push verification
-- Independent review: `EGM_PENDING` until immutable-head Goldfish readback
+- Final reviewed implementation head:
+  `ab5ed833a4bb529cc153f0f2d9c0da98a5d14044`
+- Independent review: **EGM PASS**, zero remaining Blockers/Majors
 
 ## Source and API
 
@@ -99,7 +100,11 @@ the native-owned operator set explicitly and fails closed if its
 registered numeric source operation is missing or signature-drifted.
 The negative now removes ADD *before* `default_registry` and asserts
 `BAMF_OPERATOR_NATIVE_SOURCE_MISSING`. The focused suite remains
-15/15; this repair requires another immutable-head readback.
+15/15. Independent Goldfish readback at immutable `ab5ed83` confirmed
+both original Majors and the additional missing-native-source
+adversary resolved, with zero remaining Blockers/Majors. Reviewer
+source inspection and prime test execution are recorded separately
+in `docs/evidence/bamf/A07/egm.md`.
 
 The A07.2 evaluator/source separation and A07.3 compositional DAG,
 memoization and bounded execution receipts remain separate leaves.
