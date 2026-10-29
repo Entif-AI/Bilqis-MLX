@@ -7,8 +7,8 @@ The experimental fork shares unmodified physical blocks via APFS clonefile.
 No full-byte-copy fallback is permitted, and disposition awaits human review.
 
 Usage:
-  python3 -B scripts/prepare_learning_experiment.py --source ~/Code/bilqis-mlx/runs/school-mlx-v1
-  python3 -B scripts/prepare_learning_experiment.py --source ~/Code/bilqis-mlx/runs/school-mlx-v1 --confirm-clone
+  python3 -B scripts/experiments/prepare_learning_experiment.py --source ~/Code/bilqis-mlx/runs/school-mlx-v1
+  python3 -B scripts/experiments/prepare_learning_experiment.py --source ~/Code/bilqis-mlx/runs/school-mlx-v1 --confirm-clone
 """
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ import sys
 import tempfile
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 DESTINATION = ROOT / "runs" / "teacher-soup-parity-experiment"
 GiB = 1024**3
 APFS_PLATFORM_ERROR = "EXPERIMENT_APFS_CLONE_REQUIRES_MACOS"

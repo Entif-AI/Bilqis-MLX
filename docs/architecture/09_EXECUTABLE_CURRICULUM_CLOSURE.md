@@ -379,7 +379,7 @@ This redesign is an architectural cutover, not permission to maintain both execu
 
 Build `CurriculumDefinition`, `SourceBindingSet`, `CurriculumProfile`, `ExecutionPlan`, scoped projection digests, answer-modality adapters, lineage classification, and mutation tests. The reduced Boolean kernel must compile and generate from the real full-B providers and pinned source without importing or naming a minimal-B release/provider.
 
-Exit gate: mutation tests distinguish roster, schedule, assessment, source, answer-schema, coverage, and teaching dependencies; unrelated capability digests remain unchanged; real pinned-source constrained generation passes; and `scripts/check_factory_closure.py` records the current split-authority baseline.
+Exit gate: mutation tests distinguish roster, schedule, assessment, source, answer-schema, coverage, and teaching dependencies; unrelated capability digests remain unchanged; real pinned-source constrained generation passes; and `scripts/quality/check_factory_closure.py` records the current split-authority baseline.
 
 ### Wave 1: make FactoryRelease carry the executable plan
 
@@ -462,7 +462,7 @@ Exit gate: SPEC-0001 §11.1 is satisfied in the actual runtime rather than in is
 
 ### Wave 6: close the checker to zero
 
-`python3 scripts/check_factory_closure.py` must print `FACTORY_CLOSURE_OK`.
+`python3 scripts/quality/check_factory_closure.py` must print `FACTORY_CLOSURE_OK`.
 
 The existing weaker architecture checker remains useful for its original checks, but the closure checker becomes the acceptance gate for split curriculum authority.
 

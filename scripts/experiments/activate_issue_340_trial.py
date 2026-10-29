@@ -50,7 +50,7 @@ def _graduation(run_dir, step):
 
 
 def prepare(run_dir: Path, *, graduation_step: int, activate: bool) -> dict:
-    root = Path(__file__).resolve().parents[1]
+    root = Path(__file__).resolve().parents[2]
     run_dir = run_dir.expanduser().resolve(strict=True)
     if (run_dir.parent != (root / "runs").resolve() or
             not run_dir.with_name(run_dir.name + ".fork-manifest.json").is_file()):

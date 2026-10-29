@@ -23,7 +23,7 @@ from bilqis_mlx.source_adapters.school import live_source_registry
 from bilqis_mlx.trainer import operator_lock, _predictions, _state_from_json
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def sha(path):

@@ -17,7 +17,7 @@ from bilqis_mlx.source_adapters.school import live_source_registry
 from bilqis_mlx.trainer import _predictions, _state_from_json, operator_lock
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 SEEDS = (2026102101, 2026102102, 2026102103)
 CAPABILITIES = ("A.IDENTITY", "A.MAPS")
 
