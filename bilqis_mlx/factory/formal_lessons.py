@@ -115,9 +115,13 @@ class FormalConstructiveLesson:
                            self.constituents, self.prerequisite_closure,
                            self.variation_axes) for item in group)
                 or self.positive.value == self.contrast.value
+                or type(self.status) is not str
                 or self.status != FORMAL_LESSON_STATUS
+                or type(self.source_authority) is not str
                 or self.source_authority != SOURCE_PROJECTION_ONLY
+                or type(self.learning_state) is not str
                 or self.learning_state != LEARNING_UNVERIFIED
+                or type(self.schema) is not str
                 or self.schema != FORMAL_LESSON_SCHEMA):
             _fail("BAMF_FORMAL_LESSON_INVALID")
 
@@ -242,6 +246,7 @@ def check_formal_lesson(
     """Independently replay A01/A07/A13; never trust generator-provided gold."""
     if type(lesson) is not FormalConstructiveLesson:
         _fail("BAMF_FORMAL_LESSON_CHECKER_INPUT_INVALID")
+    FormalConstructiveLesson.__post_init__(lesson)
     witness, result, operand_evidence = _source_case(
         atlas, lesson.semantic_id, lesson.typed_inputs, binding)
     expected = TypedValue(result.type_name, _independent_truth(

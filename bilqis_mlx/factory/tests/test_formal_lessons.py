@@ -131,6 +131,27 @@ def _selection():
 
 
 class FormalLessonTests(unittest.TestCase):
+    def test_checker_rejects_mutated_admission_and_authority_metadata(self):
+        binding, inputs = _case("SUCC", ("Number", 2))
+        with patch(
+                "bilqis_mlx.factory.formal_lessons.resolve_formal_source_operators",
+                return_value=_source()):
+            for field, forged in (
+                    ("status", "ADAPTER_READY"),
+                    ("learning_state", "LEARNING_VERIFIED"),
+                    ("source_authority", "A13_TRANSFERABLE_AUTHORITY"),
+                    ("schema", "forged/formal-lesson/v9")):
+                with self.subTest(field=field):
+                    lesson = construct_formal_lesson(
+                        _selection(), FORMAL[3][0], inputs, binding)
+                    object.__setattr__(lesson, field, forged)
+                    with self.assertRaises(BilqisError) as caught:
+                        check_formal_lesson(
+                            lesson, lesson.positive, _selection(), binding)
+                    self.assertEqual(
+                        caught.exception.context["reason"],
+                        "BAMF_FORMAL_LESSON_INVALID")
+
     def test_mutated_entity_set_cannot_be_reauthorized_by_new_grant(self):
         for malformed in (("alpha", "alpha"), ("beta", "alpha")):
             with self.subTest(malformed=malformed):

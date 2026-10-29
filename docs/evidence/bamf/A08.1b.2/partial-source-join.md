@@ -73,7 +73,7 @@ The output is explicitly
 The bounded source/lesson owner suites use the real pinned A01
 corpus and literal A07/A13 grant fixtures:
 `test_formal_constructive.py` plus `test_formal_lessons.py`,
-**12 passed, 0 failed, 0 skipped** after the canonicality
+**13 passed, 0 failed, 0 skipped** after the canonicality
 repair. Independent EGM is pending.
 
 This is still **partial A08.1b.2**: Factory
@@ -96,3 +96,12 @@ unique EntitySet invariants on every public construction and
 checker invocation, before A07/A13 replay. Both adversaries
 are covered by failing-before regressions. The first review is
 not treated as PASS; a fresh immutable-head re-review is pending.
+
+Targeted review of `13cf945` cleared the TypedValue Major but found
+a second Major: a live-mutated lesson could falsely claim
+`ADAPTER_READY`, `LEARNING_VERIFIED`, transferable source authority
+or a substituted schema while still passing the checker. The
+checker now reruns the exact lesson-record invariants before
+source replay. Four live-field mutation regressions reject all
+these relabellings. Real pinned owner suites: **13/13 passed**.
+Fresh immutable-head EGM remains pending.
