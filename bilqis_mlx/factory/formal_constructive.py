@@ -6,7 +6,8 @@ This module joins the first two without claiming the third.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
+import json
 import re
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
@@ -17,6 +18,7 @@ from bilqis_mlx.semantics.atlas_snapshot import (
 from bilqis_mlx.semantics.cognitive_operators import (
     CognitiveOperatorSpec, OperatorRegistry, operator_grant_digest,
 )
+from bilqis_mlx.semantics.core import Signature
 from bilqis_mlx.semantics.domains import contract_digest
 
 
@@ -36,6 +38,26 @@ _FORMAL_ABI_SOURCES = frozenset({
 
 def _fail(reason: str) -> None:
     ErrorBus.raise_(SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID, reason=reason)
+
+
+def _strict_formal_primitive(value: object) -> object:
+    if value is None or type(value) in (str, int, bool):
+        return value
+    if type(value) is tuple:
+        return [_strict_formal_primitive(item) for item in value]
+    if type(value) in {
+            FormalSourceOperator, FormalSourceOperatorSet,
+            CognitiveOperatorSpec, Signature}:
+        return {field.name: _strict_formal_primitive(getattr(value, field.name))
+                for field in fields(value)}
+    _fail("BAMF_FORMAL_SOURCE_PROPOSAL_NONCANONICAL_TYPE")
+
+
+def _strict_formal_bytes(value: object) -> bytes:
+    return (json.dumps(
+        _strict_formal_primitive(value), sort_keys=True,
+        ensure_ascii=False, separators=(",", ":"), allow_nan=False,
+    ) + "\n").encode("utf-8")
 
 
 @dataclass(frozen=True)
@@ -170,6 +192,8 @@ def assert_formal_source_operator_set_current(
     registry: OperatorRegistry,
 ) -> None:
     """No reusable source credential: rederive the entire A01/A07 join."""
-    if (not isinstance(proposal, FormalSourceOperatorSet)
-            or proposal != resolve_formal_source_operators(atlas, registry)):
+    if (type(proposal) is not FormalSourceOperatorSet
+            or _strict_formal_bytes(proposal)
+            != _strict_formal_bytes(
+                resolve_formal_source_operators(atlas, registry))):
         _fail("BAMF_FORMAL_SOURCE_PROPOSAL_DRIFT")
