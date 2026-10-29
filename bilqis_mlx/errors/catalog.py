@@ -42,6 +42,16 @@ def _spec(
 
 
 class SCHOOL:
+    class BAMF_CAPABILITY_EVIDENCE:
+        INVALID = _spec(
+            ("SCHOOL", "BAMF_CAPABILITY_EVIDENCE", "INVALID"),
+            owner="runtime.capability_retention",
+            title="BAMF paired capability evidence invalid",
+            message_template="BAMF paired capability evidence is invalid: {reason}",
+            disposition="PRESERVE_AND_INSPECT",
+            next_action="Preserve both generations; reconcile source, cohort, rubric and complete capability coverage.",
+        )
+
     class BAMF_SOLVER:
         INVALID = _spec(
             ("SCHOOL", "BAMF_SOLVER", "INVALID"),
@@ -922,6 +932,7 @@ class FACTORY:
 
 
 CATALOG = (
+    SCHOOL.BAMF_CAPABILITY_EVIDENCE.INVALID,
     SCHOOL.BAMF_SOLVER.INVALID,
     SCHOOL.BAMF_TEACHER.INVALID,
     SCHOOL.BAMF_TRAINING_ADAPTER.INVALID,
