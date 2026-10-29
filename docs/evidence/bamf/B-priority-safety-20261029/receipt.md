@@ -25,8 +25,8 @@ The source-owner B lane was not mutated.
 
 ## Integration proof
 
-The combined B05/B11/B04/B01 suite passed **50 tests, 0 failures,
-2 existing optional skips** on Apple MLX. A new cross-module test
+The combined B05/B11/B04/B01 suite initially passed 50 tests,
+0 failures, 2 existing optional skips on Apple MLX. A new cross-module test
 executes a real four-layer B11 group and then attempts to pass its
 `UnadmittedGroupNumerical` output to the public B05 selector.
 The selector rejects with `BLOCKED_PRODUCER_DEPENDENCY`, proving
@@ -34,15 +34,24 @@ that actual numerical execution alone is not a producer credential.
 
 `git diff --check` passes. No new B05/B11 error-control-plane or
 module-size finding remains after the owner branches' static guard
-repairs.
+repairs. Subsequent B11.1a independent review found an inherited
+internal sequence-reset Major. The fixed numerical wrapper now
+passes `AttentionScope.sequence_starts` to every B04 layer; its
+failing-before regression proves post-reset output isolation even
+when the scope ID stays constant. After this owner repair, the
+combined suite passes **51 tests, 0 failures, 2 existing optional
+skips**. It remains unadmitted producer evidence.
 
 ## Remaining source authority
 
 This is a **safety integration**, not completed #577 or #586.
-The B11 producer must bind B03/A05.4-approved source h0, B08
-group-1 motif read ordering, B13 parameter-generation/prediction
-custody and the actual executed group chain before B05 may admit
-summaries. Worker18's separate draft PR #590 explores observed
+The B11 producer must bind B03/A05.4-approved source h0, the
+actual B01 parameter-tree content digest and execution prefix,
+B04 cache scope chain, B08 group-1 motif-read disposition (explicit
+no-hit while source authority is quarantined), and the executed
+group chain before B05 may admit summaries. B13 final-generation
+publication is a separate downstream gate, not a prerequisite.
+Worker18's separate draft PR #590 explores observed
 execution-chain fingerprints but is not included in this proof
 until its own independent review and reconciliation.
 
