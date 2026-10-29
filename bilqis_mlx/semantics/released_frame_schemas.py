@@ -9,12 +9,14 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 import hashlib
+import hmac
 import json
 from pathlib import Path
 import re
 
 from ..errors import BilqisError, ErrorBus, SEMANTIC_FRAME
 from .atlas_projection import FrozenAtlasSnapshot
+from .atlas_snapshot import AtlasArtifactSelection, load_pinned_atlas_snapshot
 from .frame_codec import (
     SchemaTagEntry, SchemaTagMap, _canonical_bytes,
 )
@@ -24,6 +26,11 @@ from .frame_schema import FrameSchema, frame_schema_from_bytes
 MANIFEST_SCHEMA = "bilqis.released-frame-schema-manifest/v1"
 BODY_SCHEMA = "bilqis.released-frame-schema-body/v1"
 WITNESS_SCHEMA = "bilqis.released-frame-schema-body-witness/v1"
+SOURCE_PIN_REGISTRY_SCHEMA = "bilqis.frame-schema-source-pins/v1"
+SOURCE_PIN_REGISTRY_SHA256 = (
+    "4c8da914834f8dc5cadef67bbf9b7da1031f07cc80d4775a47d18b68af62a6c1")
+SOURCE_PIN_STATUS = "A03_SOURCE_ATTESTED_NOT_NEURAL_ADMITTED"
+_SOURCE_PIN_SEAL = object()
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 
 
@@ -201,6 +208,47 @@ class VerifiedReleasedFrameSchemas:
         return self.require_schema(schema, witness)
 
 
+class SourcePinnedReleasedFrameSchemas:
+    """Only the repo-owned A03 pin loader may issue this consumer authority."""
+    __slots__ = ("_source_family", "_verified")
+
+    def __init__(
+        self, source_family: str, verified: VerifiedReleasedFrameSchemas,
+        _seal: object = None,
+    ) -> None:
+        if (_seal is not _SOURCE_PIN_SEAL
+                or not isinstance(source_family, str)
+                or not source_family
+                or type(verified) is not VerifiedReleasedFrameSchemas):
+            _fail("FRAME_RELEASED_SOURCE_PIN_AUTHORITY_INVALID")
+        object.__setattr__(self, "_source_family", source_family)
+        object.__setattr__(self, "_verified", verified)
+
+    def __setattr__(self, name, value):
+        raise AttributeError("source-pinned A03 schema releases are immutable")
+
+    @property
+    def source_family(self) -> str:
+        return self._source_family
+
+    @property
+    def manifest(self) -> ReleasedFrameSchemaManifest:
+        return self._verified.manifest
+
+    def lookup(self, schema_id: str, revision: int) -> ReleasedSchemaBodyWitness:
+        return self._verified.lookup(schema_id, revision)
+
+    def require_schema(
+        self, schema: FrameSchema, witness: ReleasedSchemaBodyWitness,
+    ) -> FrameSchema:
+        return self._verified.require_schema(schema, witness)
+
+    def require_schema_bytes(
+        self, payload: bytes, witness: ReleasedSchemaBodyWitness,
+    ) -> FrameSchema:
+        return self._verified.require_schema_bytes(payload, witness)
+
+
 def seal_released_frame_schemas(
     schemas: tuple[FrameSchema, ...],
     schema_map: SchemaTagMap,
@@ -294,3 +342,80 @@ def persist_released_frame_schemas(
         if path.read_bytes() != payload:
             _fail("FRAME_RELEASED_MANIFEST_EXISTING_DRIFT")
     return path
+
+
+def _source_pins() -> tuple[dict, ...]:
+    """Repository-owned pin ledger, itself hash-pinned like the A01 registry."""
+    path = Path(__file__).with_name("frame_schema_source_pins_v1.json")
+    if path.is_symlink() or not path.is_file():
+        _fail("FRAME_RELEASED_SOURCE_PIN_REGISTRY_MISSING")
+    try:
+        payload = path.read_bytes()
+    except OSError:
+        _fail("FRAME_RELEASED_SOURCE_PIN_REGISTRY_MISSING")
+    if not hmac.compare_digest(_sha(payload), SOURCE_PIN_REGISTRY_SHA256):
+        _fail("FRAME_RELEASED_SOURCE_PIN_REGISTRY_INVALID")
+    registry = _json(payload)
+    if (set(registry) != {"schema", "entries"}
+            or registry["schema"] != SOURCE_PIN_REGISTRY_SCHEMA
+            or payload != _canonical_bytes(registry)
+            or not isinstance(registry["entries"], list)
+            or not registry["entries"]):
+        _fail("FRAME_RELEASED_SOURCE_PIN_REGISTRY_INVALID")
+    required = {
+        "family", "semantic_release", "atlas_bundle_id",
+        "source_bundle_id", "schema_manifest_sha256",
+        "schema_map_sha256", "source_receipt", "status"}
+    for entry in registry["entries"]:
+        if (not isinstance(entry, dict) or set(entry) != required
+                or not isinstance(entry["family"], str)
+                or not entry["family"]
+                or any(not isinstance(entry[name], str)
+                       or not _SHA.fullmatch(entry[name])
+                       for name in (
+                           "semantic_release", "atlas_bundle_id",
+                           "source_bundle_id", "schema_manifest_sha256",
+                           "schema_map_sha256"))
+                or entry["status"] != SOURCE_PIN_STATUS
+                or entry["source_receipt"]
+                != "docs/evidence/bamf/A03.4/receipt.md"):
+            _fail("FRAME_RELEASED_SOURCE_PIN_REGISTRY_INVALID")
+    entries = tuple(registry["entries"])
+    if len({(entry["family"], entry["semantic_release"])
+            for entry in entries}) != len(entries):
+        _fail("FRAME_RELEASED_SOURCE_PIN_REGISTRY_INVALID")
+    return entries
+
+
+def load_pinned_released_frame_schemas(
+    source_family: str, atlas_selection: AtlasArtifactSelection,
+) -> SourcePinnedReleasedFrameSchemas:
+    """Offline source-owner lookup; no caller-supplied schema registry or hash."""
+    if not isinstance(source_family, str) or not source_family:
+        _fail("FRAME_RELEASED_SOURCE_FAMILY_INVALID")
+    # The A01 source pin is checked against its own independent repository
+    # ledger before any A03 schema manifest can gain consumer authority.
+    snapshot = load_pinned_atlas_snapshot(atlas_selection)
+    matches = tuple(entry for entry in _source_pins()
+                    if entry["family"] == source_family
+                    and entry["semantic_release"] == snapshot.release_sha256
+                    and entry["atlas_bundle_id"] == snapshot.bundle_id
+                    and entry["source_bundle_id"] == snapshot.source_bundle_id)
+    if len(matches) != 1:
+        _fail("FRAME_RELEASED_SOURCE_PIN_NOT_REGISTERED")
+    entry = matches[0]
+    path = Path(__file__).with_name("frame_schema_releases") / (
+        "frame-schemas-" + entry["schema_manifest_sha256"] + ".json")
+    if path.is_symlink() or not path.is_file():
+        _fail("FRAME_RELEASED_MANIFEST_SOURCE_MISSING")
+    try:
+        payload = path.read_bytes()
+    except OSError:
+        _fail("FRAME_RELEASED_MANIFEST_SOURCE_MISSING")
+    verified = load_released_frame_schemas(
+        payload, expected_sha256=entry["schema_manifest_sha256"],
+        snapshot=snapshot,
+        expected_semantic_release=entry["semantic_release"],
+        expected_schema_map_sha256=entry["schema_map_sha256"])
+    return SourcePinnedReleasedFrameSchemas(
+        source_family, verified, _SOURCE_PIN_SEAL)
