@@ -15,6 +15,8 @@ from .model_topology import DEFAULT_OPTIMIZER, ModelTopologySpec, SCHEMA as LEGA
 SCHEMA = "bilqis.mlx.model-topology/v2"
 BAMF_ARCHITECTURE_ID = "bamf-atlas-v2"
 LEGACY_ARCHITECTURE_ID = "bilqis.mlx.causal-tied-fp32/v1"
+EXTENTS_SCHEMA = "bilqis.mlx.generation-extents/v1"
+PROVENANCE_SCHEMA = "bilqis.mlx.generation-provenance/v1"
 IDENTITY_ESTABLISHED_AGE = 8
 
 
@@ -183,7 +185,55 @@ class GenerationExtents:
 
     @property
     def digest(self) -> str:
-        return _digest({"schema": "bilqis.mlx.generation-extents/v1", **asdict(self)})
+        return _digest({"schema": EXTENTS_SCHEMA, **asdict(self)})
+
+    def to_record(self) -> dict:
+        return {"schema": EXTENTS_SCHEMA, **asdict(self), "digest": self.digest}
+
+    @classmethod
+    def from_record(cls, record: Mapping[str, object]) -> "GenerationExtents":
+        return _generation_from_record(cls, record, EXTENTS_SCHEMA)
+
+
+@dataclass(frozen=True)
+class GenerationProvenance:
+    """Source/release and teacher bindings; validation does not grant admission."""
+
+    source_identity: str
+    release_digest: str
+    teacher_identity: str
+    teacher_epoch: int
+
+    def __post_init__(self) -> None:
+        for identity in (self.source_identity, self.teacher_identity):
+            if not isinstance(identity, str) or not identity.strip():
+                ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+        if (not isinstance(self.release_digest, str) or len(self.release_digest) != SHA256_HEX_LENGTH or
+                any(character not in "0123456789abcdef" for character in self.release_digest) or
+                type(self.teacher_epoch) is not int or self.teacher_epoch < 0):
+            ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+
+    @property
+    def digest(self) -> str:
+        return _digest({"schema": PROVENANCE_SCHEMA, **asdict(self)})
+
+    def to_record(self) -> dict:
+        return {"schema": PROVENANCE_SCHEMA, **asdict(self), "digest": self.digest}
+
+    @classmethod
+    def from_record(cls, record: Mapping[str, object]) -> "GenerationProvenance":
+        return _generation_from_record(cls, record, PROVENANCE_SCHEMA)
+
+
+def _generation_from_record(cls, record: Mapping[str, object], schema: str):
+    names = {field.name for field in fields(cls)}
+    if (not isinstance(record, Mapping) or set(record) != names | {"schema", "digest"} or
+            record.get("schema") != schema):
+        ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.RECORD_INVALID)
+    generation = cls(**{name: record[name] for name in names})
+    if record.get("digest") != generation.digest:
+        ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.RECORD_INVALID)
+    return generation
 
 
 @dataclass(frozen=True)
@@ -503,6 +553,7 @@ def create_unbound_bamf_state(spec: ModelTopologySpecV2, extents: GenerationExte
         "topology_digest": spec.digest,
         "shape_policy_digest": spec.shape_policy_digest,
         "generation_extents_digest": extents.digest,
+        "generation_extents": extents.to_record(),
         "run_seed": run_seed,
         "parameter_count": census.total,
         "parameter_subtotals": {kind.value: count for kind, count in census.subtotals.items()},
