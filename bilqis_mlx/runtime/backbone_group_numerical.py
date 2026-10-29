@@ -19,6 +19,7 @@ from .model_topology_v2 import (
 
 
 UNADMITTED_NUMERICAL = "UNADMITTED_NUMERICAL"
+HIDDEN_TENSOR_RANK = 3
 _ATTENTION_PARAMETERS = (
     "query", "key", "value", "output", "conv_q", "conv_k", "conv_v")
 
@@ -45,7 +46,7 @@ class UnadmittedGroupNumerical:
     def __post_init__(self) -> None:
         if (type(self.hidden) is not mx.array
                 or self.hidden.dtype != mx.float32
-                or self.hidden.ndim != 3
+                or self.hidden.ndim != HIDDEN_TENSOR_RANK
                 or type(self.group_index) is not int
                 or type(self.layer_start) is not int
                 or type(self.layer_end) is not int
@@ -76,15 +77,16 @@ def run_backbone_group_numerical(
             or type(group_index) is not int
             or not 1 <= group_index <= spec.depth_groups
             or type(hidden) is not mx.array
-            or hidden.dtype != mx.float32 or hidden.ndim != 3
+            or hidden.dtype != mx.float32
+            or hidden.ndim != HIDDEN_TENSOR_RANK
             or hidden.shape[-1] != spec.width
             or not 1 <= hidden.shape[1] <= spec.context
             or type(scope_ids) is not mx.array
             or scope_ids.dtype != mx.int32
-            or scope_ids.shape != hidden.shape[:2]
+            or scope_ids.shape != hidden.shape[:-1]
             or type(valid) is not mx.array
             or valid.dtype != mx.bool_
-            or valid.shape != hidden.shape[:2]
+            or valid.shape != hidden.shape[:-1]
             or not isinstance(parameters, Mapping)
             or spec.layers % spec.depth_groups):
         _invalid()
