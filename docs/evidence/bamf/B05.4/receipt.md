@@ -1,0 +1,11 @@
+# B05.4 #577 fail-closed interim, producer dependency unresolved
+
+Isolated branch `codex/bamf02-b05-4-depth-provenance-20261029`; original B lane base `ae08c4a`.
+
+**Status: BLOCKED_PRODUCER_DEPENDENCY.** The earlier raw start/append capture APIs accepted arbitrary tensors and caller-declared digests. A real g2 tensor supplied as the first appended group was automatically labelled g1, and a capture could be reused with a different B01 parameter tree sharing extents. The previous candidate was not a valid provenance proof.
+
+Public `depth_select` now rejects all candidate captures with `BLOCKED_PRODUCER_DEPENDENCY` before numerical selection. `start_depth_capture` and `append_depth_capture` are provisional numerical fixtures and confer no production authority. `_depth_components` remains the private differentiable numerical test seam. No production selector succeeds or claims source provenance.
+
+B11 must provide an executable producer interface to record the actual h0 at prediction input boundary and g1/g2/g3 only after completed groups of four real backbone blocks, including the required second motif read before g1 capture. The B04-provided scope/cache identity must be derived from the actual execution and bound to the model implementation digest, exact parameter generation/tree fingerprint, input-prefix/prediction boundary, completed layer/group, ordered source tensor identities/digests and typed source/release context. The receipt must be authenticated against that producer, prevent caller-minted/relabelled group content and reject cross-tree/prefix/replay. B05 will admit production selection only after B11/B04 provider and independent negative/gradient proof exist. A module-global token or self-asserted digest cannot satisfy this contract.
+
+Verified with `uv run --no-project --with mlx --with rdflib --with numpy python -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_block_attnres.py bilqis_mlx/runtime/tests/test_model_topology_v2.py`: **34 total, 32 pass, 0 fail, 2 optional skips**. Exact g2-as-g1 and cross-parameter-tree public-path attacks reject. Numerical tests and gradients remain non-admission witnesses. No student training, optimizer mutation, Lane B merge, or issue closure.
