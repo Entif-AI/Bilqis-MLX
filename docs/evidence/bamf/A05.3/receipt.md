@@ -9,6 +9,8 @@
   and receipt `a4f76fcdcf9b582ae03a973a4f94b65fc3cad982`
 - Pushed implementation head:
   `a9e55fb3e993c035655dd19ccf8b3110443c035e`
+  (initial), then hardening
+  `3d34d70e5eb9da9e683f85c6fa398209ccda8044`
 - PR #546 native Development closing reference #410
   verified by GitHub GraphQL readback
 - Independent A05.3 EGM: **PENDING**
@@ -108,3 +110,16 @@ The required actual 12-layer neural-logit witness
 belongs to B11 #369 and C13 #385. A05 parent
 integration remains open; no live training, source
 promotion, optimizer mutation or merge occurred.
+
+## Post-candidate boundary hardening
+
+The follow-up `3d34d70` validates canonical
+ATOM-before-CLOSURE ordering, complete contiguous
+visible atom positions, required closure authority,
+and duplicate approved occurrence IDs only when
+their frame becomes causally visible. This prevents
+future malformed approvals from poisoning an
+earlier source prefix while failing closed at the
+actual closure boundary. It also rejects empty
+lawful segments. Owner tests remain **17/17 PASS**.
+Independent A05.3 EGM remains pending.
