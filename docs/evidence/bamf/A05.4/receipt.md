@@ -10,7 +10,8 @@
   **MAJOR**, hidden-parent current grants were not rechecked.
 - EGM repair commit:
   `d19ccc7f1b989062bcf3fe54c95e322b4a7b7432`.
-- Independent EGM re-review: **PENDING**.
+- Independent EGM re-review at immutable candidate
+  `ee6c75bd470c0046b742e8d74fde9150a3ddc4af`: **PASS**, zero Blockers/Majors.
 
 ## Source-owned contract
 
@@ -104,6 +105,22 @@ Adjacent source-owner suites on the same isolated worktree:
 - released frame adapters: **11 passed**;
 - A13 `test_context_eligibility.py`: **21 passed**.
 
+Independent worker-25 re-review at immutable `ee6c75b` independently reproduced
+the repaired authority boundary and returned scoped **EGM PASS** with zero
+Blockers/Majors. The reviewer specifically reconfirmed that:
+
+- removing or revoking either hidden-parent source/member grant fails closed
+  while the prefix-4 compilation remains unchanged;
+- changing valid future hidden-parent member content still leaves the prefix-4
+  partial-forest receipt identical;
+- A05 passed **26/26**, A13 passed **21/21**, A03 schema passed **14** with the
+  same **1 intentional skip**, A04 codec passed **17/17**, and released frame
+  adapters passed **11/11**.
+
+This PASS is scoped to A05.4 #575 source-owned partial-visible-forest validation.
+It does not assert B03.3 neural-gradient completion, Lane A integration, parent
+A05 closure, merge authority, or live training authority.
+
 `git diff --check` passes. `partial_visible_forest.py` is 371 lines and
 `frame_compiler.py` is 1,029 lines, both below the 1,200-line module hard limit.
 The repository-wide module-size check still reports the three pre-existing
@@ -114,8 +131,7 @@ unrelated debt and no A05.4 path.
 
 ## Remaining gates
 
-Fresh independent EGM is required before Lane A integration. B03.3 #444 must
-rerun its child-only future-isolation and nested-gradient proof against this
-exact source contract after review. No live learner/training, parent A05 close,
-shared Lane A mutation, PR merge or unified integration is authorized or claimed
-by this candidate.
+The A05.4 independent EGM gate is satisfied. B03.3 #444 must still rerun its
+child-only future-isolation and nested-gradient proof against this exact source
+contract. No live learner/training, parent A05 close, shared Lane A mutation,
+PR merge or unified integration is authorized or claimed by this candidate.
