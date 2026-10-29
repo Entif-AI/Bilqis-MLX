@@ -9,6 +9,7 @@ from unittest import TestCase
 from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.semantics import frame_compiler
 from bilqis_mlx.semantics.context_eligibility import (
     PUBLIC_FORMAL, ApprovedContextProjection, ContextEligibility,
     ContextMember, ContextPolicy, SourceFrontier, SourceGrant, TaskScope,
@@ -703,6 +704,306 @@ class FrameCompilerTests(TestCase):
             ("COMPACT", 0, 3), ("EXTENDED", 2, 3),
             ("ATOMIC", 1, 3)))
         self.assertGreater(at_eight.stats.sidecar_bytes, 0)
+
+    def test_partial_visible_forest_preserves_hidden_parent_provenance(self):
+        ast, config = _mixed_case()
+        parent = ast.frames[0].root
+        child = ast.frames[0].children[0].root
+        compiled = compile_prefix(ast, 4, RELEASE, config)
+
+        visible = reconstruct(compiled)
+        temporary = StreamingAST(
+            visible.source_instance_id, visible.atoms, visible.frames)
+        with self.assertRaises(BilqisError) as caught:
+            compile_prefix(temporary, 4, RELEASE, config)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_PREFIX_ROOT_PARENT_INVALID")
+
+        receipt = frame_compiler.validate_partial_visible_forest(
+            compiled, ast, config)
+
+        self.assertEqual(receipt.compiler_cache_key, compiled.cache_key)
+        self.assertEqual(receipt.visible_end, 4)
+        self.assertEqual(len(receipt.visible_forest), 1)
+        self.assertEqual(receipt.visible_forest[0].root, child)
+        self.assertEqual(
+            receipt.visible_forest[0].root.parent_occurrence_id,
+            parent.occurrence_id)
+        self.assertEqual(len(receipt.hidden_parents), 1)
+        self.assertEqual(
+            receipt.hidden_parents[0].child_occurrence_id,
+            child.occurrence_id)
+        self.assertEqual(
+            receipt.hidden_parents[0].parent_occurrence_id,
+            parent.occurrence_id)
+        self.assertNotIn(parent, tuple(tree.root for tree in receipt.visible_forest))
+
+    def test_partial_visible_forest_rejects_forged_orphan_parent(self):
+        ast, config = _mixed_case()
+        compiled = compile_prefix(ast, 4, RELEASE, config)
+        parent_tree, atomic_tree = ast.frames
+        child = parent_tree.children[0].root
+        forged = replace(child, parent_occurrence_id="f" * 64)
+        forged_ast = replace(
+            ast, frames=(
+                FrameTree(parent_tree.root, (FrameTree(forged),)),
+                atomic_tree))
+
+        with self.assertRaises(BilqisError) as caught:
+            frame_compiler.validate_partial_visible_forest(
+                compiled, forged_ast, config)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_PREFIX_PARTIAL_PARENT_ORPHAN")
+
+    def test_partial_visible_forest_receipt_rejects_source_scope_release_drift(self):
+        ast, config = _mixed_case()
+        compiled = compile_prefix(ast, 4, RELEASE, config)
+        receipt = frame_compiler.validate_partial_visible_forest(
+            compiled, ast, config)
+
+        changed_source = replace(ast, source_instance_id="synthetic:other-source")
+        with self.assertRaises(BilqisError) as caught:
+            frame_compiler.validate_partial_visible_forest(
+                compiled, changed_source, config, expected_receipt=receipt)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_PREFIX_PARTIAL_AUTHORITY_DRIFT")
+
+        parent_tree, atomic_tree = ast.frames
+        changed_parent = replace(
+            parent_tree.root, source_span=SourceSpan(0, 7))
+        changed_parent_source = replace(
+            ast, frames=(
+                FrameTree(changed_parent, parent_tree.children),
+                atomic_tree))
+        with self.assertRaises(BilqisError) as caught:
+            frame_compiler.validate_partial_visible_forest(
+                compiled, changed_parent_source, config,
+                expected_receipt=receipt)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_PREFIX_PARTIAL_AUTHORITY_DRIFT")
+
+        changed_schemas = tuple(
+            replace(schema, scope="forged:hidden-parent-scope")
+            if schema.schema_id == parent_tree.root.frame_schema_id
+            else schema
+            for schema in config.schemas)
+        changed_parent_scope = replace(config, schemas=changed_schemas)
+        with self.assertRaises(BilqisError) as caught:
+            frame_compiler.validate_partial_visible_forest(
+                compiled, ast, changed_parent_scope,
+                expected_receipt=receipt)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_PREFIX_PARTIAL_RECEIPT_DRIFT")
+
+        changed_scope = replace(
+            config, task=replace(config.task, scope="synthetic:other-scope"))
+        with self.assertRaises(BilqisError) as caught:
+            frame_compiler.validate_partial_visible_forest(
+                compiled, ast, changed_scope, expected_receipt=receipt)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_PREFIX_PARTIAL_AUTHORITY_DRIFT")
+
+        other_release = "b" * 64
+        changed_release = replace(
+            config,
+            schema_map=SchemaTagMap.from_schemas(
+                other_release, config.schemas),
+            task=replace(config.task, semantic_release=other_release))
+        with self.assertRaises(BilqisError) as caught:
+            frame_compiler.validate_partial_visible_forest(
+                compiled, ast, changed_release, expected_receipt=receipt)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_PREFIX_PARTIAL_AUTHORITY_DRIFT")
+
+    def test_partial_visible_forest_excludes_future_and_preserves_full_identities(self):
+        ast, config = _mixed_case()
+        parent = ast.frames[0].root
+        child = ast.frames[0].children[0].root
+        before = (
+            parent.occurrence_id, parent.content_digest,
+            child.occurrence_id, child.content_digest)
+
+        at_three = frame_compiler.validate_partial_visible_forest(
+            compile_prefix(ast, 3, RELEASE, config), ast, config)
+        self.assertEqual(at_three.visible_forest, ())
+        self.assertEqual(at_three.hidden_parents, ())
+
+        at_four = frame_compiler.validate_partial_visible_forest(
+            compile_prefix(ast, 4, RELEASE, config), ast, config)
+        self.assertEqual(
+            tuple(tree.root.occurrence_id for tree in at_four.visible_forest),
+            (child.occurrence_id,))
+        self.assertFalse(any(
+            tree.root.occurrence_id == parent.occurrence_id
+            for tree in at_four.visible_forest))
+
+        at_eight = frame_compiler.validate_partial_visible_forest(
+            compile_prefix(ast, 8, RELEASE, config), ast, config)
+        full_parent = next(
+            tree for tree in at_eight.visible_forest
+            if tree.root.occurrence_id == parent.occurrence_id)
+        after = (
+            full_parent.root.occurrence_id, full_parent.root.content_digest,
+            full_parent.children[0].root.occurrence_id,
+            full_parent.children[0].root.content_digest)
+        self.assertEqual(after, before)
+        self.assertEqual(at_eight.hidden_parents, ())
+
+    def test_partial_visible_forest_ignores_hidden_parent_member_content(self):
+        ast, config = _mixed_case()
+        parent_tree, atomic_tree = ast.frames
+        parent = parent_tree.root
+        child = parent_tree.children[0].root
+        parent_schema = next(
+            schema for schema in config.schemas
+            if schema.schema_id == parent.frame_schema_id)
+        changed_reference = ChildFrameRef(
+            child.occurrence_id,
+            child.content_digest,
+            ("Frame", "SyntheticFutureVariant"))
+        changed_parent = make_frame_instance(
+            parent_schema,
+            source_instance_id=parent.source_instance_id,
+            structural_path=parent.structural_path,
+            source_span=parent.source_span,
+            parent_occurrence_id=parent.parent_occurrence_id,
+            bindings=(RoleOccurrence(
+                "child", 0, child_frame=changed_reference),),
+            causal_prefix_end=parent.causal_prefix_end)
+        changed_ast = replace(
+            ast, frames=(
+                FrameTree(changed_parent, parent_tree.children),
+                atomic_tree))
+
+        parent_envelope = next(
+            envelope for envelope in config.approved.envelopes
+            if envelope.frame.occurrence_id == parent.occurrence_id)
+        changed_envelope = replace(parent_envelope, frame=changed_parent)
+        evidence = {
+            changed_envelope.source_handle:
+                frame_evidence_digest(changed_parent)}
+        evidence.update({
+            member.source_handle: member_evidence_digest(
+                changed_parent, member)
+            for member in changed_envelope.members})
+        changed_frontier = replace(
+            config.frontier,
+            grants=tuple(
+                replace(grant, evidence_digest=evidence[grant.source_handle])
+                if grant.source_handle in evidence else grant
+                for grant in config.frontier.grants))
+        changed_envelopes = tuple(
+            changed_envelope
+            if envelope.frame.occurrence_id == parent.occurrence_id
+            else envelope
+            for envelope in config.approved.envelopes)
+        changed_approved = project_context(
+            changed_envelopes, config.task,
+            changed_frontier, config.policy)
+        self.assertIsInstance(
+            changed_approved, ApprovedContextProjection)
+        changed_config = replace(
+            config, approved=changed_approved,
+            frontier=changed_frontier)
+
+        original_prefix = compile_prefix(ast, 4, RELEASE, config)
+        changed_prefix = compile_prefix(
+            changed_ast, 4, RELEASE, changed_config)
+        self.assertEqual(changed_prefix, original_prefix)
+        self.assertEqual(
+            frame_compiler.validate_partial_visible_forest(
+                original_prefix, ast, config),
+            frame_compiler.validate_partial_visible_forest(
+                changed_prefix, changed_ast, changed_config))
+        self.assertNotEqual(
+            changed_parent.content_digest, parent.content_digest)
+
+    def test_partial_visible_forest_rechecks_hidden_parent_current_grants(self):
+        ast, config = _mixed_case()
+        compiled = compile_prefix(ast, 4, RELEASE, config)
+        receipt = frame_compiler.validate_partial_visible_forest(
+            compiled, ast, config)
+        hidden_handles = (
+            "source:frame:mixed:2",
+            "source:member:mixed:2:0",
+        )
+
+        for handle in hidden_handles:
+            with self.subTest(handle=handle, mode="missing"):
+                missing = replace(
+                    config,
+                    frontier=replace(
+                        config.frontier,
+                        grants=tuple(
+                            grant for grant in config.frontier.grants
+                            if grant.source_handle != handle)))
+                self.assertEqual(
+                    compile_prefix(ast, 4, RELEASE, missing),
+                    compiled)
+                with self.assertRaises(BilqisError) as caught:
+                    frame_compiler.validate_partial_visible_forest(
+                        compiled, ast, missing,
+                        expected_receipt=receipt)
+                self.assertEqual(
+                    caught.exception.context["reason"],
+                    "BAMF_PREFIX_PARTIAL_SOURCE_AUTHORITY_INVALID")
+
+            with self.subTest(handle=handle, mode="revoked"):
+                revoked = replace(
+                    config,
+                    frontier=replace(
+                        config.frontier,
+                        grants=tuple(
+                            replace(grant, revoked=True)
+                            if grant.source_handle == handle else grant
+                            for grant in config.frontier.grants)))
+                self.assertEqual(
+                    compile_prefix(ast, 4, RELEASE, revoked),
+                    compiled)
+                with self.assertRaises(BilqisError) as caught:
+                    frame_compiler.validate_partial_visible_forest(
+                        compiled, ast, revoked,
+                        expected_receipt=receipt)
+                self.assertEqual(
+                    caught.exception.context["reason"],
+                    "BAMF_PREFIX_PARTIAL_SOURCE_AUTHORITY_INVALID")
+
+        grant_drift = (
+            ("evidence", {"evidence_digest": "0" * 64}),
+            ("release", {"semantic_release": "b" * 64}),
+            ("rights", {"rights_epoch": 2}),
+            ("correction", {"correction_generation": 2}),
+            ("observed-time", {"observed_at": 4}),
+            ("effective-time", {"effective_from": 6}),
+        )
+        for mode, fields in grant_drift:
+            with self.subTest(handle=hidden_handles[0], mode=mode):
+                drifted = replace(
+                    config,
+                    frontier=replace(
+                        config.frontier,
+                        grants=tuple(
+                            replace(grant, **fields)
+                            if grant.source_handle == hidden_handles[0]
+                            else grant
+                            for grant in config.frontier.grants)))
+                self.assertEqual(
+                    compile_prefix(ast, 4, RELEASE, drifted),
+                    compiled)
+                with self.assertRaises(BilqisError) as caught:
+                    frame_compiler.validate_partial_visible_forest(
+                        compiled, ast, drifted,
+                        expected_receipt=receipt)
+                self.assertEqual(
+                    caught.exception.context["reason"],
+                    "BAMF_PREFIX_PARTIAL_SOURCE_AUTHORITY_INVALID")
 
     def test_parent_cannot_close_while_child_is_future(self):
         ast, config = _mixed_case()
