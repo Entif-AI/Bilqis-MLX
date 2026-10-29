@@ -8,7 +8,10 @@ from typing import Mapping
 import mlx.core as mx
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
-from .model_topology_v2 import ModelTopologySpecV2, SHA256_HEX_LENGTH
+from .model_topology_v2 import (
+    GenerationExtents, ModelTopologySpecV2, SHA256_HEX_LENGTH,
+    expected_bamf_shapes, validate_bamf_parameters,
+)
 
 
 WIDTH = ModelTopologySpecV2.width
@@ -22,6 +25,33 @@ BATCH_SEQUENCE_AXES = 2
 HEAD_ARRAY_RANK = 4
 QKV_LAYOUT = (("query", "conv_q", QUERY_HEADS),
               ("key", "conv_k", KV_HEADS), ("value", "conv_v", KV_HEADS))
+ATTENTION_PARAMETER_NAMES = (
+    "query", "key", "value", "output", "conv_q", "conv_k", "conv_v",
+)
+
+
+def attention_parameter_view(
+    parameters: Mapping[str, mx.array], *, spec: ModelTopologySpecV2,
+    extents: GenerationExtents, layer: int,
+) -> dict[str, mx.array]:
+    """Borrow only this block's declared attention tensors from a full B01 tree.
+
+    The normative ledger validates the *entire* tree before exposing references.
+    This view creates no trainable arrays, aliases no shared feature/depth
+    tensors, and leaves optimizer and checkpoint custody with their owners.
+    """
+    if (type(spec) is not ModelTopologySpecV2 or
+            type(extents) is not GenerationExtents or
+            type(layer) is not int or not 0 <= layer < spec.layers):
+        ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+    validate_bamf_parameters(spec, extents, parameters)
+    prefix = f"blocks.{layer}."
+    declared = {item.name: item for item in expected_bamf_shapes(spec, extents)}
+    names = tuple(prefix + suffix for suffix in ATTENTION_PARAMETER_NAMES)
+    if any(name not in declared for name in names):
+        ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.PARAMETER_SHAPES_INVALID)
+    return {suffix: parameters[prefix + suffix]
+            for suffix in ATTENTION_PARAMETER_NAMES}
 
 
 @dataclass(frozen=True)
