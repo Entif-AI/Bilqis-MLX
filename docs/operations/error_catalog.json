@@ -1,6 +1,6 @@
 {
-  "legacy_raw_file_count": 167,
-  "legacy_raw_raise_count": 1933,
+  "legacy_raw_file_count": 178,
+  "legacy_raw_raise_count": 1957,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BACKUP_ARCHIVE_ROOT_SYMLINK",
@@ -1432,7 +1432,7 @@
     },
     {
       "code_hint": "DEBT_GRADE_APPEND_REQUIRES_EXPLICIT_MASTERY_DEBT",
-      "count": 1,
+      "count": 2,
       "exception": "ValueError",
       "expression": "'DEBT_GRADE_APPEND_REQUIRES_EXPLICIT_MASTERY_DEBT'",
       "path": "bilqis_mlx/curriculum/scheduler.py"
@@ -1540,6 +1540,13 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'NOT_AT_WHOLE_SCHOOL_SOUP_BOUNDARY'",
+      "path": "bilqis_mlx/curriculum/scheduler.py"
+    },
+    {
+      "code_hint": "SCHOOL_DEBT_COUNTER_MIGRATION_CONFLICT",
+      "count": 2,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_DEBT_COUNTER_MIGRATION_CONFLICT'",
       "path": "bilqis_mlx/curriculum/scheduler.py"
     },
     {
@@ -3521,6 +3528,13 @@
       "count": 1,
       "exception": "TypeError",
       "expression": "'FACTORY_EXECUTABLE_RELEASE_REQUIRED'",
+      "path": "bilqis_mlx/factory/executable_release.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_ADMISSION_BASELINE_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_ADMISSION_BASELINE_DRIFT'",
       "path": "bilqis_mlx/factory/executable_release.py"
     },
     {
@@ -5848,6 +5862,13 @@
       "path": "bilqis_mlx/learning/championship_witnesses.py"
     },
     {
+      "code_hint": "CHAMPIONSHIP_COMPLETE_SOLVER_PROVENANCE_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'CHAMPIONSHIP_COMPLETE_SOLVER_PROVENANCE_INVALID'",
+      "path": "bilqis_mlx/learning/championship_witnesses.py"
+    },
+    {
       "code_hint": "CHAMPIONSHIP_QUESTION_IDENTITY_DRIFT",
       "count": 1,
       "exception": "ValueError",
@@ -5880,6 +5901,13 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'CHAMPIONSHIP_ACTIVE_ROLE_CAPABILITY_UNKNOWN'",
+      "path": "bilqis_mlx/learning/epoch_championships.py"
+    },
+    {
+      "code_hint": "CHAMPIONSHIP_CAPABILITY_GROUP_AMBIGUOUS_OR_ABSENT",
+      "count": 2,
+      "exception": "ValueError",
+      "expression": "'CHAMPIONSHIP_CAPABILITY_GROUP_AMBIGUOUS_OR_ABSENT'",
       "path": "bilqis_mlx/learning/epoch_championships.py"
     },
     {
@@ -6805,6 +6833,27 @@
       "exception": "ValueError",
       "expression": "'MENTOR_EPOCH_WHOLE_STUDENT_OWN_ADAMW_REQUIRED'",
       "path": "bilqis_mlx/learning/mentor_epoch.py"
+    },
+    {
+      "code_hint": "PLASTICITY_MASTERY_DEBT_SCOPE_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'PLASTICITY_MASTERY_DEBT_SCOPE_INVALID'",
+      "path": "bilqis_mlx/learning/plasticity_escape.py"
+    },
+    {
+      "code_hint": "PLASTICITY_MASTERY_DEBT_SCORES_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'PLASTICITY_MASTERY_DEBT_SCORES_INVALID'",
+      "path": "bilqis_mlx/learning/plasticity_escape.py"
+    },
+    {
+      "code_hint": "PLASTICITY_MASTERY_DEBT_SCORE_INVALID",
+      "count": 2,
+      "exception": "ValueError",
+      "expression": "'PLASTICITY_MASTERY_DEBT_SCORE_INVALID'",
+      "path": "bilqis_mlx/learning/plasticity_escape.py"
     },
     {
       "code_hint": "STAGNATION_FIRST_RECOVERY_DUPLICATE",
@@ -8445,13 +8494,6 @@
       "path": "bilqis_mlx/runtime/admission.py"
     },
     {
-      "code_hint": "FACTORY_EXECUTABLE_ADMISSION_BASELINE_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_ADMISSION_BASELINE_DRIFT'",
-      "path": "bilqis_mlx/runtime/admission.py"
-    },
-    {
       "code_hint": "FACTORY_EXECUTABLE_ADMISSION_RECEIPT_INVALID",
       "count": 1,
       "exception": "ValueError",
@@ -9254,6 +9296,13 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'LEARNING_EXPERIMENT_PROBE_SCOPE_INCOMPLETE'",
+      "path": "bilqis_mlx/runtime/candidate_evidence.py"
+    },
+    {
+      "code_hint": "RETENTION_SUPPORT_SCHEDULE_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'RETENTION_SUPPORT_SCHEDULE_INVALID'",
       "path": "bilqis_mlx/runtime/candidate_evidence.py"
     },
     {
@@ -10370,11 +10419,81 @@
       "path": "bilqis_mlx/runtime/source_prefetch.py"
     },
     {
+      "code_hint": "disposable interruption before pointer publication",
+      "count": 1,
+      "exception": "OSError",
+      "expression": "'disposable interruption before pointer publication'",
+      "path": "bilqis_mlx/runtime/tests/test_atlas_lease_renewal.py"
+    },
+    {
+      "code_hint": "snapshot must not mutate MLX telemetry",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'snapshot must not mutate MLX telemetry'",
+      "path": "bilqis_mlx/runtime/tests/test_atlas_resources.py"
+    },
+    {
+      "code_hint": "A05 requires a typed source AST",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'A05 requires a typed source AST'",
+      "path": "bilqis_mlx/runtime/tests/test_atlas_training_adapter.py"
+    },
+    {
+      "code_hint": "context held",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'context held'",
+      "path": "bilqis_mlx/runtime/tests/test_atlas_training_adapter.py"
+    },
+    {
+      "code_hint": "GRAPH_UNAVAILABLE",
+      "count": 1,
+      "exception": "RuntimeError",
+      "expression": "'GRAPH_UNAVAILABLE'",
+      "path": "bilqis_mlx/runtime/tests/test_bamf_projection.py"
+    },
+    {
+      "code_hint": "missing source manifest",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'missing source manifest'",
+      "path": "bilqis_mlx/runtime/tests/test_capability_authority.py"
+    },
+    {
+      "code_hint": "malformed translated score",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'malformed translated score'",
+      "path": "bilqis_mlx/runtime/tests/test_capability_evidence_history.py"
+    },
+    {
+      "code_hint": "exact cached route must preempt neural",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'exact cached route must preempt neural'",
+      "path": "bilqis_mlx/runtime/tests/test_cognitive_solver.py"
+    },
+    {
+      "code_hint": "malformed decoder payload",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'malformed decoder payload'",
+      "path": "bilqis_mlx/runtime/tests/test_cognitive_solver.py"
+    },
+    {
       "code_hint": "boom",
       "count": 1,
       "exception": "RuntimeError",
       "expression": "'boom'",
       "path": "bilqis_mlx/runtime/tests/test_mlx_memory.py"
+    },
+    {
+      "code_hint": "Rosetta owner revision drift requires requalification",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'Rosetta owner revision drift requires requalification'",
+      "path": "bilqis_mlx/runtime/tests/test_rosetta_observation.py"
     },
     {
       "code_hint": "TIMING_TRACE_PATH_ALREADY_EXISTS",
@@ -10451,6 +10570,13 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'LEARNING_EXPERIMENT_RETAINED_ADAMW_STEP_DRIFT'",
+      "path": "bilqis_mlx/runtime/visits.py"
+    },
+    {
+      "code_hint": "LESSON_EVIDENCE_OFFERED_IDENTITY_CONFLICT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'LESSON_EVIDENCE_OFFERED_IDENTITY_CONFLICT'",
       "path": "bilqis_mlx/runtime/visits.py"
     },
     {
@@ -10944,571 +11070,585 @@
       "path": "bilqis_mlx/semantic_transformations.py"
     },
     {
+      "code_hint": "non-finite JSON literal",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'non-finite JSON literal: ' + value",
+      "path": "bilqis_mlx/semantics/atlas/feature_io_contracts.py"
+    },
+    {
       "code_hint": "HISTORICAL_ABI_DIGEST_INVALID",
       "count": 1,
       "exception": "ValueError",
       "expression": "'HISTORICAL_ABI_DIGEST_INVALID:' + field",
-      "path": "bilqis_mlx/semantics/abi.py"
+      "path": "bilqis_mlx/semantics/foundation/abi.py"
     },
     {
       "code_hint": "HISTORICAL_ABI_EXTERNAL_REFERENCE_INVALID",
       "count": 1,
       "exception": "ValueError",
       "expression": "'HISTORICAL_ABI_EXTERNAL_REFERENCE_INVALID'",
-      "path": "bilqis_mlx/semantics/abi.py"
+      "path": "bilqis_mlx/semantics/foundation/abi.py"
     },
     {
       "code_hint": "HISTORICAL_ABI_EXTERNAL_REFERENCE_MISMATCH",
       "count": 1,
       "exception": "ValueError",
       "expression": "'HISTORICAL_ABI_EXTERNAL_REFERENCE_MISMATCH'",
-      "path": "bilqis_mlx/semantics/abi.py"
+      "path": "bilqis_mlx/semantics/foundation/abi.py"
     },
     {
       "code_hint": "HISTORICAL_ABI_EXTERNAL_REFERENCE_MISSING",
       "count": 1,
       "exception": "ValueError",
       "expression": "'HISTORICAL_ABI_EXTERNAL_REFERENCE_MISSING'",
-      "path": "bilqis_mlx/semantics/abi.py"
+      "path": "bilqis_mlx/semantics/foundation/abi.py"
     },
     {
       "code_hint": "HISTORICAL_ABI_FIELDS_INVALID",
       "count": 1,
       "exception": "ValueError",
       "expression": "'HISTORICAL_ABI_FIELDS_INVALID'",
-      "path": "bilqis_mlx/semantics/abi.py"
+      "path": "bilqis_mlx/semantics/foundation/abi.py"
     },
     {
       "code_hint": "HISTORICAL_ABI_GRAPH_INVALID",
       "count": 1,
       "exception": "ValueError",
       "expression": "'HISTORICAL_ABI_GRAPH_INVALID'",
-      "path": "bilqis_mlx/semantics/abi.py"
+      "path": "bilqis_mlx/semantics/foundation/abi.py"
     },
     {
       "code_hint": "HISTORICAL_ABI_MODEL_GRAPH_COUNT_DRIFT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'HISTORICAL_ABI_MODEL_GRAPH_COUNT_DRIFT'",
-      "path": "bilqis_mlx/semantics/abi.py"
+      "path": "bilqis_mlx/semantics/foundation/abi.py"
     },
     {
       "code_hint": "HISTORICAL_ABI_MODEL_TOO_SMALL",
       "count": 1,
       "exception": "ValueError",
       "expression": "'HISTORICAL_ABI_MODEL_TOO_SMALL'",
-      "path": "bilqis_mlx/semantics/abi.py"
+      "path": "bilqis_mlx/semantics/foundation/abi.py"
     },
     {
       "code_hint": "HISTORICAL_ABI_NOT_ORIGINAL_RELEASE",
       "count": 1,
       "exception": "ValueError",
       "expression": "'HISTORICAL_ABI_NOT_ORIGINAL_RELEASE'",
-      "path": "bilqis_mlx/semantics/abi.py"
+      "path": "bilqis_mlx/semantics/foundation/abi.py"
     },
     {
       "code_hint": "HISTORICAL_ABI_PREFIX_MISMATCH",
       "count": 1,
       "exception": "ValueError",
       "expression": "'HISTORICAL_ABI_PREFIX_MISMATCH'",
-      "path": "bilqis_mlx/semantics/abi.py"
+      "path": "bilqis_mlx/semantics/foundation/abi.py"
     },
     {
       "code_hint": "HISTORICAL_ABI_RELEASE_INVALID",
       "count": 1,
       "exception": "ValueError",
       "expression": "'HISTORICAL_ABI_RELEASE_INVALID'",
-      "path": "bilqis_mlx/semantics/abi.py"
+      "path": "bilqis_mlx/semantics/foundation/abi.py"
     },
     {
       "code_hint": "HISTORICAL_ABI_SCHEMA_INVALID",
       "count": 1,
       "exception": "ValueError",
       "expression": "'HISTORICAL_ABI_SCHEMA_INVALID'",
-      "path": "bilqis_mlx/semantics/abi.py"
+      "path": "bilqis_mlx/semantics/foundation/abi.py"
     },
     {
       "code_hint": "HISTORICAL_ABI_SIZE_INVALID",
       "count": 1,
       "exception": "ValueError",
       "expression": "'HISTORICAL_ABI_SIZE_INVALID'",
-      "path": "bilqis_mlx/semantics/abi.py"
+      "path": "bilqis_mlx/semantics/foundation/abi.py"
     },
     {
       "code_hint": "HISTORICAL_ABI_SNAPSHOT_INDEX_DRIFT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'HISTORICAL_ABI_SNAPSHOT_INDEX_DRIFT'",
-      "path": "bilqis_mlx/semantics/abi.py"
+      "path": "bilqis_mlx/semantics/foundation/abi.py"
     },
     {
       "code_hint": "HISTORICAL_ABI_SNAPSHOT_INVALID",
       "count": 1,
       "exception": "ValueError",
       "expression": "'HISTORICAL_ABI_SNAPSHOT_INVALID'",
-      "path": "bilqis_mlx/semantics/abi.py"
+      "path": "bilqis_mlx/semantics/foundation/abi.py"
     },
     {
       "code_hint": "HISTORICAL_ABI_SOURCE_FIELDS_MISMATCH",
       "count": 1,
       "exception": "ValueError",
       "expression": "'HISTORICAL_ABI_SOURCE_FIELDS_MISMATCH'",
-      "path": "bilqis_mlx/semantics/abi.py"
+      "path": "bilqis_mlx/semantics/foundation/abi.py"
     },
     {
       "code_hint": "HISTORICAL_ABI_SOURCE_NODE_DRIFT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'HISTORICAL_ABI_SOURCE_NODE_DRIFT'",
-      "path": "bilqis_mlx/semantics/abi.py"
+      "path": "bilqis_mlx/semantics/foundation/abi.py"
     },
     {
       "code_hint": "COMPOSITION_DUPLICATE_CATALOG_BINDING",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_DUPLICATE_CATALOG_BINDING'",
-      "path": "bilqis_mlx/semantics/catalog.py"
+      "path": "bilqis_mlx/semantics/foundation/catalog.py"
     },
     {
       "code_hint": "COMPOSITION_INVALID_CATALOG_ID",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_INVALID_CATALOG_ID'",
-      "path": "bilqis_mlx/semantics/catalog.py"
+      "path": "bilqis_mlx/semantics/foundation/catalog.py"
     },
     {
       "code_hint": "COMPOSITION_UNKNOWN_CATALOG_ID",
       "count": 2,
       "exception": "TypedError",
       "expression": "'COMPOSITION_UNKNOWN_CATALOG_ID'",
-      "path": "bilqis_mlx/semantics/catalog.py"
+      "path": "bilqis_mlx/semantics/foundation/catalog.py"
     },
     {
       "code_hint": "COMPOSITION_UNKNOWN_EXTERNAL_ALIAS",
       "count": 2,
       "exception": "TypedError",
       "expression": "'COMPOSITION_UNKNOWN_EXTERNAL_ALIAS'",
-      "path": "bilqis_mlx/semantics/catalog.py"
+      "path": "bilqis_mlx/semantics/foundation/catalog.py"
     },
     {
       "code_hint": "COPULAR_QUERY_OUTSIDE_SOURCE_SCOPE",
       "count": 1,
       "exception": "ValueError",
       "expression": "'COPULAR_QUERY_OUTSIDE_SOURCE_SCOPE'",
-      "path": "bilqis_mlx/semantics/copular.py"
+      "path": "bilqis_mlx/semantics/foundation/copular.py"
     },
     {
       "code_hint": "COPULAR_REFERENCE_UNDECLARED",
       "count": 1,
       "exception": "ValueError",
       "expression": "'COPULAR_REFERENCE_UNDECLARED'",
-      "path": "bilqis_mlx/semantics/copular.py"
+      "path": "bilqis_mlx/semantics/foundation/copular.py"
     },
     {
       "code_hint": "COPULAR_TOKEN_CONTRACT_DRIFT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'COPULAR_TOKEN_CONTRACT_DRIFT'",
-      "path": "bilqis_mlx/semantics/copular.py"
+      "path": "bilqis_mlx/semantics/foundation/copular.py"
     },
     {
       "code_hint": "COPULAR_TOKEN_NOT_ADMITTED",
       "count": 1,
       "exception": "ValueError",
       "expression": "'COPULAR_TOKEN_NOT_ADMITTED'",
-      "path": "bilqis_mlx/semantics/copular.py"
+      "path": "bilqis_mlx/semantics/foundation/copular.py"
     },
     {
       "code_hint": "COPULAR_WORLD_NOT_TOTAL_SINGLE_VALUED",
       "count": 1,
       "exception": "ValueError",
       "expression": "'COPULAR_WORLD_NOT_TOTAL_SINGLE_VALUED'",
-      "path": "bilqis_mlx/semantics/copular.py"
+      "path": "bilqis_mlx/semantics/foundation/copular.py"
     },
     {
       "code_hint": "COMPOSITION_ARITY_ZERO_UNSUPPORTED",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_ARITY_ZERO_UNSUPPORTED'",
-      "path": "bilqis_mlx/semantics/core.py"
+      "path": "bilqis_mlx/semantics/foundation/core.py"
     },
     {
       "code_hint": "COMPOSITION_BOOLEAN_LITERAL_TYPE_DRIFT",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_BOOLEAN_LITERAL_TYPE_DRIFT'",
-      "path": "bilqis_mlx/semantics/core.py"
+      "path": "bilqis_mlx/semantics/foundation/core.py"
     },
     {
       "code_hint": "COMPOSITION_INCOMPATIBLE_WORLD_CONTRACT",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_INCOMPATIBLE_WORLD_CONTRACT'",
-      "path": "bilqis_mlx/semantics/core.py"
+      "path": "bilqis_mlx/semantics/foundation/core.py"
     },
     {
       "code_hint": "COMPOSITION_INVALID_APPLICATION",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_INVALID_APPLICATION'",
-      "path": "bilqis_mlx/semantics/core.py"
+      "path": "bilqis_mlx/semantics/foundation/core.py"
     },
     {
       "code_hint": "COMPOSITION_INVALID_APPLICATION_TYPES",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_INVALID_APPLICATION_TYPES'",
-      "path": "bilqis_mlx/semantics/core.py"
+      "path": "bilqis_mlx/semantics/foundation/core.py"
     },
     {
       "code_hint": "COMPOSITION_INVALID_APPLICATION_WORLD",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_INVALID_APPLICATION_WORLD'",
-      "path": "bilqis_mlx/semantics/core.py"
+      "path": "bilqis_mlx/semantics/foundation/core.py"
     },
     {
       "code_hint": "COMPOSITION_INVALID_CATALOG_ID",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_INVALID_CATALOG_ID'",
-      "path": "bilqis_mlx/semantics/core.py"
+      "path": "bilqis_mlx/semantics/foundation/core.py"
     },
     {
       "code_hint": "COMPOSITION_INVALID_LITERAL",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_INVALID_LITERAL'",
-      "path": "bilqis_mlx/semantics/core.py"
+      "path": "bilqis_mlx/semantics/foundation/core.py"
     },
     {
       "code_hint": "COMPOSITION_INVALID_SIGNATURE",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_INVALID_SIGNATURE'",
-      "path": "bilqis_mlx/semantics/core.py"
+      "path": "bilqis_mlx/semantics/foundation/core.py"
     },
     {
       "code_hint": "COMPOSITION_INVALID_SOURCE_CONTRACT",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_INVALID_SOURCE_CONTRACT'",
-      "path": "bilqis_mlx/semantics/core.py"
+      "path": "bilqis_mlx/semantics/foundation/core.py"
     },
     {
       "code_hint": "COMPOSITION_INVALID_SYMBOL",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_INVALID_SYMBOL'",
-      "path": "bilqis_mlx/semantics/core.py"
+      "path": "bilqis_mlx/semantics/foundation/core.py"
     },
     {
       "code_hint": "COMPOSITION_INVALID_TYPE_NAME",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_INVALID_TYPE_NAME'",
-      "path": "bilqis_mlx/semantics/core.py"
+      "path": "bilqis_mlx/semantics/foundation/core.py"
     },
     {
       "code_hint": "DOMAIN_BINARY_CONTRACT_MISMATCH",
       "count": 1,
       "exception": "TypedError",
       "expression": "'DOMAIN_BINARY_CONTRACT_MISMATCH'",
-      "path": "bilqis_mlx/semantics/domains.py"
+      "path": "bilqis_mlx/semantics/foundation/domains.py"
     },
     {
       "code_hint": "DOMAIN_CONTRACT_MAPPING_KEY_NOT_TEXT",
       "count": 1,
       "exception": "TypedError",
       "expression": "'DOMAIN_CONTRACT_MAPPING_KEY_NOT_TEXT'",
-      "path": "bilqis_mlx/semantics/domains.py"
+      "path": "bilqis_mlx/semantics/foundation/domains.py"
     },
     {
       "code_hint": "DOMAIN_DUPLICATE_LITERAL",
       "count": 1,
       "exception": "TypedError",
       "expression": "'DOMAIN_DUPLICATE_LITERAL'",
-      "path": "bilqis_mlx/semantics/domains.py"
+      "path": "bilqis_mlx/semantics/foundation/domains.py"
     },
     {
       "code_hint": "DOMAIN_INCOMPLETE_CLOSED_BOOLEAN",
       "count": 1,
       "exception": "TypedError",
       "expression": "'DOMAIN_INCOMPLETE_CLOSED_BOOLEAN'",
-      "path": "bilqis_mlx/semantics/domains.py"
+      "path": "bilqis_mlx/semantics/foundation/domains.py"
     },
     {
       "code_hint": "DOMAIN_INTEGER_RESULT_REQUIRED",
       "count": 1,
       "exception": "TypedError",
       "expression": "'DOMAIN_INTEGER_RESULT_REQUIRED'",
-      "path": "bilqis_mlx/semantics/domains.py"
+      "path": "bilqis_mlx/semantics/foundation/domains.py"
     },
     {
       "code_hint": "DOMAIN_INVALID_ANSWER_CONTRACT",
       "count": 1,
       "exception": "TypedError",
       "expression": "'DOMAIN_INVALID_ANSWER_CONTRACT'",
-      "path": "bilqis_mlx/semantics/domains.py"
+      "path": "bilqis_mlx/semantics/foundation/domains.py"
     },
     {
       "code_hint": "DOMAIN_INVALID_DECLARATION",
       "count": 1,
       "exception": "TypedError",
       "expression": "'DOMAIN_INVALID_DECLARATION'",
-      "path": "bilqis_mlx/semantics/domains.py"
+      "path": "bilqis_mlx/semantics/foundation/domains.py"
     },
     {
       "code_hint": "DOMAIN_INVALID_SHA256",
       "count": 1,
       "exception": "TypedError",
       "expression": "'DOMAIN_INVALID_SHA256'",
-      "path": "bilqis_mlx/semantics/domains.py"
+      "path": "bilqis_mlx/semantics/foundation/domains.py"
     },
     {
       "code_hint": "DOMAIN_LITERAL_OUTSIDE_DECLARED_SCOPE",
       "count": 1,
       "exception": "TypedError",
       "expression": "'DOMAIN_LITERAL_OUTSIDE_DECLARED_SCOPE'",
-      "path": "bilqis_mlx/semantics/domains.py"
+      "path": "bilqis_mlx/semantics/foundation/domains.py"
     },
     {
       "code_hint": "DOMAIN_LITERAL_RESULT_REQUIRED",
       "count": 1,
       "exception": "TypedError",
       "expression": "'DOMAIN_LITERAL_RESULT_REQUIRED'",
-      "path": "bilqis_mlx/semantics/domains.py"
+      "path": "bilqis_mlx/semantics/foundation/domains.py"
     },
     {
       "code_hint": "DOMAIN_LITERAL_SCOPE_MISMATCH",
       "count": 1,
       "exception": "TypedError",
       "expression": "'DOMAIN_LITERAL_SCOPE_MISMATCH'",
-      "path": "bilqis_mlx/semantics/domains.py"
+      "path": "bilqis_mlx/semantics/foundation/domains.py"
     },
     {
       "code_hint": "DOMAIN_NATIVE_IDENTITY_BINDINGS_INVALID",
       "count": 2,
       "exception": "TypedError",
       "expression": "'DOMAIN_NATIVE_IDENTITY_BINDINGS_INVALID'",
-      "path": "bilqis_mlx/semantics/domains.py"
+      "path": "bilqis_mlx/semantics/foundation/domains.py"
     },
     {
       "code_hint": "DOMAIN_NATIVE_MAPPING_NOT_BIJECTIVE",
       "count": 2,
       "exception": "TypedError",
       "expression": "'DOMAIN_NATIVE_MAPPING_NOT_BIJECTIVE'",
-      "path": "bilqis_mlx/semantics/domains.py"
+      "path": "bilqis_mlx/semantics/foundation/domains.py"
     },
     {
       "code_hint": "DOMAIN_NATIVE_TOKEN_NOT_DECLARED",
       "count": 1,
       "exception": "TypedError",
       "expression": "'DOMAIN_NATIVE_TOKEN_NOT_DECLARED'",
-      "path": "bilqis_mlx/semantics/domains.py"
+      "path": "bilqis_mlx/semantics/foundation/domains.py"
     },
     {
       "code_hint": "DOMAIN_NONCANONICAL_DECIMAL_TEXT",
       "count": 1,
       "exception": "TypedError",
       "expression": "'DOMAIN_NONCANONICAL_DECIMAL_TEXT'",
-      "path": "bilqis_mlx/semantics/domains.py"
+      "path": "bilqis_mlx/semantics/foundation/domains.py"
     },
     {
       "code_hint": "DOMAIN_RESULT_OUTSIDE_DECLARED_SCOPE",
       "count": 1,
       "exception": "TypedError",
       "expression": "'DOMAIN_RESULT_OUTSIDE_DECLARED_SCOPE'",
-      "path": "bilqis_mlx/semantics/domains.py"
+      "path": "bilqis_mlx/semantics/foundation/domains.py"
     },
     {
       "code_hint": "DOMAIN_SOURCE_LOCATOR_REQUIRED",
       "count": 1,
       "exception": "TypedError",
       "expression": "'DOMAIN_SOURCE_LOCATOR_REQUIRED'",
-      "path": "bilqis_mlx/semantics/domains.py"
+      "path": "bilqis_mlx/semantics/foundation/domains.py"
     },
     {
       "code_hint": "DOMAIN_UNEXPECTED_NATIVE_MAPPING",
       "count": 1,
       "exception": "TypedError",
       "expression": "'DOMAIN_UNEXPECTED_NATIVE_MAPPING'",
-      "path": "bilqis_mlx/semantics/domains.py"
+      "path": "bilqis_mlx/semantics/foundation/domains.py"
     },
     {
       "code_hint": "DOMAIN_UNSERIALIZABLE_CONTRACT_VALUE",
       "count": 1,
       "exception": "TypedError",
       "expression": "'DOMAIN_UNSERIALIZABLE_CONTRACT_VALUE:' + type(item).__name__",
-      "path": "bilqis_mlx/semantics/domains.py"
+      "path": "bilqis_mlx/semantics/foundation/domains.py"
     },
     {
       "code_hint": "COMPOSITION_ARGUMENT_TYPE_MISMATCH",
       "count": 3,
       "exception": "TypedError",
       "expression": "'COMPOSITION_ARGUMENT_TYPE_MISMATCH'",
-      "path": "bilqis_mlx/semantics/functions.py"
+      "path": "bilqis_mlx/semantics/foundation/functions.py"
     },
     {
       "code_hint": "COMPOSITION_INNER_NOT_FULLY_APPLIED",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_INNER_NOT_FULLY_APPLIED'",
-      "path": "bilqis_mlx/semantics/functions.py"
+      "path": "bilqis_mlx/semantics/foundation/functions.py"
     },
     {
       "code_hint": "COMPOSITION_INTERNAL_LIFT_CONTRACT",
       "count": 2,
       "exception": "TypedError",
       "expression": "'COMPOSITION_INTERNAL_LIFT_CONTRACT'",
-      "path": "bilqis_mlx/semantics/functions.py"
+      "path": "bilqis_mlx/semantics/foundation/functions.py"
     },
     {
       "code_hint": "COMPOSITION_INVALID_CURRIED_BINDINGS",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_INVALID_CURRIED_BINDINGS'",
-      "path": "bilqis_mlx/semantics/functions.py"
+      "path": "bilqis_mlx/semantics/foundation/functions.py"
     },
     {
       "code_hint": "COMPOSITION_LIFT_REQUIRES_BINARY_OPERATOR",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_LIFT_REQUIRES_BINARY_OPERATOR'",
-      "path": "bilqis_mlx/semantics/functions.py"
+      "path": "bilqis_mlx/semantics/foundation/functions.py"
     },
     {
       "code_hint": "COMPOSITION_NOT_TYPED_EXPRESSION",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_NOT_TYPED_EXPRESSION'",
-      "path": "bilqis_mlx/semantics/functions.py"
+      "path": "bilqis_mlx/semantics/foundation/functions.py"
     },
     {
       "code_hint": "COMPOSITION_OUTER_NOT_FULLY_APPLIED",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_OUTER_NOT_FULLY_APPLIED'",
-      "path": "bilqis_mlx/semantics/functions.py"
+      "path": "bilqis_mlx/semantics/foundation/functions.py"
     },
     {
       "code_hint": "COMPOSITION_PARTIAL_BINDINGS_REQUIRED",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_PARTIAL_BINDINGS_REQUIRED'",
-      "path": "bilqis_mlx/semantics/functions.py"
+      "path": "bilqis_mlx/semantics/foundation/functions.py"
     },
     {
       "code_hint": "COMPOSITION_PARTIAL_SLOT_OUT_OF_RANGE",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_PARTIAL_SLOT_OUT_OF_RANGE'",
-      "path": "bilqis_mlx/semantics/functions.py"
+      "path": "bilqis_mlx/semantics/foundation/functions.py"
     },
     {
       "code_hint": "COMPOSITION_TOO_MANY_ARGUMENTS",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_TOO_MANY_ARGUMENTS'",
-      "path": "bilqis_mlx/semantics/functions.py"
+      "path": "bilqis_mlx/semantics/foundation/functions.py"
     },
     {
       "code_hint": "COMPOSITION_UNIFICATION_FAILED",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_UNIFICATION_FAILED'",
-      "path": "bilqis_mlx/semantics/functions.py"
+      "path": "bilqis_mlx/semantics/foundation/functions.py"
     },
     {
       "code_hint": "NUMERIC_EXACT_DIVISION_UNDEFINED",
       "count": 1,
       "exception": "ValueError",
       "expression": "'NUMERIC_EXACT_DIVISION_UNDEFINED'",
-      "path": "bilqis_mlx/semantics/numeric.py"
+      "path": "bilqis_mlx/semantics/foundation/numeric.py"
     },
     {
       "code_hint": "NUMERIC_LITERAL_OUTSIDE_SOURCE_ABI",
       "count": 1,
       "exception": "ValueError",
       "expression": "'NUMERIC_LITERAL_OUTSIDE_SOURCE_ABI'",
-      "path": "bilqis_mlx/semantics/numeric.py"
+      "path": "bilqis_mlx/semantics/foundation/numeric.py"
     },
     {
       "code_hint": "NUMERIC_MODULO_UNDEFINED",
       "count": 1,
       "exception": "ValueError",
       "expression": "'NUMERIC_MODULO_UNDEFINED'",
-      "path": "bilqis_mlx/semantics/numeric.py"
+      "path": "bilqis_mlx/semantics/foundation/numeric.py"
     },
     {
       "code_hint": "NUMERIC_NONCANONICAL_LITERAL",
       "count": 1,
       "exception": "ValueError",
       "expression": "'NUMERIC_NONCANONICAL_LITERAL'",
-      "path": "bilqis_mlx/semantics/numeric.py"
+      "path": "bilqis_mlx/semantics/foundation/numeric.py"
     },
     {
       "code_hint": "NUMERIC_NONCANONICAL_SET",
       "count": 1,
       "exception": "ValueError",
       "expression": "'NUMERIC_NONCANONICAL_SET'",
-      "path": "bilqis_mlx/semantics/numeric.py"
+      "path": "bilqis_mlx/semantics/foundation/numeric.py"
     },
     {
       "code_hint": "NUMERIC_OPERATOR_CONTRACT_DRIFT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'NUMERIC_OPERATOR_CONTRACT_DRIFT'",
-      "path": "bilqis_mlx/semantics/numeric.py"
+      "path": "bilqis_mlx/semantics/foundation/numeric.py"
     },
     {
       "code_hint": "NUMERIC_OPERATOR_INCOMPLETE",
       "count": 1,
       "exception": "ValueError",
       "expression": "'NUMERIC_OPERATOR_INCOMPLETE'",
-      "path": "bilqis_mlx/semantics/numeric.py"
+      "path": "bilqis_mlx/semantics/foundation/numeric.py"
     },
     {
       "code_hint": "NUMERIC_OPERATOR_NOT_IMPLEMENTED",
       "count": 1,
       "exception": "ValueError",
       "expression": "'NUMERIC_OPERATOR_NOT_IMPLEMENTED'",
-      "path": "bilqis_mlx/semantics/numeric.py"
+      "path": "bilqis_mlx/semantics/foundation/numeric.py"
     },
     {
       "code_hint": "NUMERIC_OPERATOR_NOT_IN_RELEASE",
       "count": 1,
       "exception": "ValueError",
       "expression": "'NUMERIC_OPERATOR_NOT_IN_RELEASE'",
-      "path": "bilqis_mlx/semantics/numeric.py"
+      "path": "bilqis_mlx/semantics/foundation/numeric.py"
     },
     {
       "code_hint": "NUMERIC_SET_DUPLICATE_OR_UNTYPED_MEMBERS",
       "count": 1,
       "exception": "ValueError",
       "expression": "'NUMERIC_SET_DUPLICATE_OR_UNTYPED_MEMBERS'",
-      "path": "bilqis_mlx/semantics/numeric.py"
+      "path": "bilqis_mlx/semantics/foundation/numeric.py"
     },
     {
       "code_hint": "NUMERIC_UNSUPPORTED_LITERAL_TYPE",
       "count": 1,
       "exception": "ValueError",
       "expression": "'NUMERIC_UNSUPPORTED_LITERAL_TYPE'",
-      "path": "bilqis_mlx/semantics/numeric.py"
+      "path": "bilqis_mlx/semantics/foundation/numeric.py"
     },
     {
       "code_hint": "Historical source token identity drift",
       "count": 1,
       "exception": "AssertionError",
       "expression": "'Historical source token identity drift'",
-      "path": "bilqis_mlx/semantics/tests/test_semantics_algebra.py"
+      "path": "bilqis_mlx/semantics/tests/foundation/test_semantics_algebra.py"
     },
     {
       "code_hint": "undefined",
       "count": 1,
       "exception": "ValueError",
       "expression": "'undefined'",
-      "path": "bilqis_mlx/semantics/tests/test_source_memo.py"
+      "path": "bilqis_mlx/semantics/tests/foundation/test_source_memo.py"
+    },
+    {
+      "code_hint": "evaluator-owned cache reached by solver",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'evaluator-owned cache reached by solver'",
+      "path": "bilqis_mlx/semantics/tests/operators/test_cognitive_operator_native.py"
     },
     {
       "code_hint": "SOUP_MODEL_GEOMETRY_MISMATCH",
@@ -12878,6 +13018,15 @@
   ],
   "operational_terms": [
     {
+      "aliases": [],
+      "code": "ATLAS_ADMISSION_STAGED",
+      "kind": "STOP_REASON",
+      "meaning": "An exact source successor remains staged without current Atlas admission authority.",
+      "neural_effect": "No optimizer update or release adoption is authorized by this stop reason.",
+      "next_action": "Retain the staged successor; reconcile the explicit Atlas scope and accepted run-owner admission interface.",
+      "owner": "runtime.atlas_admission"
+    },
+    {
       "aliases": [
         "SCHOOL_AUTONOMY_SOURCE_DEVELOPMENT_REQUIRED"
       ],
@@ -12911,6 +13060,174 @@
   ],
   "schema": "bilqis.error-catalog/v1",
   "typed_errors": [
+    {
+      "code": "SCHOOL.BAMF_ATLAS_ADMISSION.INVALID",
+      "disposition": "STAGE_AND_INSPECT",
+      "legacy_codes": [],
+      "message_key": "errors.school.bamf_atlas_admission.invalid.message",
+      "message_template": "BAMF Atlas admission is invalid: {reason}",
+      "next_action": "Keep the retained run unchanged; reconcile explicit human authorization, source rights and exact successor custody.",
+      "operator_steps": [],
+      "owner": "runtime.atlas_admission",
+      "preserve_state": true,
+      "recovery_key": "errors.school.bamf_atlas_admission.invalid.recovery",
+      "self_heal_owner": null,
+      "title": "BAMF Atlas lease or admission boundary invalid"
+    },
+    {
+      "code": "SCHOOL.BAMF_SALIENCE.INVALID",
+      "disposition": "PRESERVE_AND_INSPECT",
+      "legacy_codes": [],
+      "message_key": "errors.school.bamf_salience.invalid.message",
+      "message_template": "BAMF salience evidence is invalid: {reason}",
+      "next_action": "Preserve the signed facts and source frontier; reconcile policy, scope and causal evidence.",
+      "operator_steps": [],
+      "owner": "learning.atlas_salience",
+      "preserve_state": true,
+      "recovery_key": "errors.school.bamf_salience.invalid.recovery",
+      "self_heal_owner": null,
+      "title": "BAMF salience evidence or policy invalid"
+    },
+    {
+      "code": "SCHOOL.BAMF_CAPABILITY_EVIDENCE.INVALID",
+      "disposition": "PRESERVE_AND_INSPECT",
+      "legacy_codes": [],
+      "message_key": "errors.school.bamf_capability_evidence.invalid.message",
+      "message_template": "BAMF paired capability evidence is invalid: {reason}",
+      "next_action": "Preserve both generations; reconcile source, cohort, rubric and complete capability coverage.",
+      "operator_steps": [],
+      "owner": "runtime.capability_retention",
+      "preserve_state": true,
+      "recovery_key": "errors.school.bamf_capability_evidence.invalid.recovery",
+      "self_heal_owner": null,
+      "title": "BAMF paired capability evidence invalid"
+    },
+    {
+      "code": "SCHOOL.BAMF_SOLVER.INVALID",
+      "disposition": "PRESERVE_AND_INSPECT",
+      "legacy_codes": [],
+      "message_key": "errors.school.bamf_solver.invalid.message",
+      "message_template": "A BAMF cognitive solver route is invalid: {reason}",
+      "next_action": "Retain the source-bound task and generation; reconcile exact operator, cache and neural proposal authority.",
+      "operator_steps": [],
+      "owner": "runtime.cognitive_solver",
+      "preserve_state": true,
+      "recovery_key": "errors.school.bamf_solver.invalid.recovery",
+      "self_heal_owner": null,
+      "title": "BAMF cognitive solver route or source binding invalid"
+    },
+    {
+      "code": "SCHOOL.BAMF_AKASHA.INVALID",
+      "disposition": "PRESERVE_AND_INSPECT",
+      "legacy_codes": [],
+      "message_key": "errors.school.bamf_akasha.invalid.message",
+      "message_template": "A source-bound Akasha event or delivery attempt is invalid: {reason}",
+      "next_action": "Keep the append-only history intact; reconcile event identity and source receipts before retry.",
+      "operator_steps": [],
+      "owner": "runtime.akasha_outbox",
+      "preserve_state": true,
+      "recovery_key": "errors.school.bamf_akasha.invalid.recovery",
+      "self_heal_owner": null,
+      "title": "BAMF Akasha event or outbox contract invalid"
+    },
+    {
+      "code": "SCHOOL.BAMF_RESOURCES.INVALID",
+      "disposition": "PRESERVE_AND_INSPECT",
+      "legacy_codes": [],
+      "message_key": "errors.school.bamf_resources.invalid.message",
+      "message_template": "A BAMF resource or optimizer-step contract is invalid: {reason}",
+      "next_action": "Keep the retained candidate unchanged; reconcile the exact source rows, topology, budget and gradient receipt.",
+      "operator_steps": [],
+      "owner": "runtime.atlas_resources",
+      "preserve_state": true,
+      "recovery_key": "errors.school.bamf_resources.invalid.recovery",
+      "self_heal_owner": null,
+      "title": "BAMF resource plan or gradient boundary invalid"
+    },
+    {
+      "code": "SCHOOL.BAMF_REVALIDATION.INVALID",
+      "disposition": "PRESERVE_AND_INSPECT",
+      "legacy_codes": [],
+      "message_key": "errors.school.bamf_revalidation.invalid.message",
+      "message_template": "A source-bound correction or derived artifact is not safe to use: {reason}",
+      "next_action": "Hold the affected artifact and reconcile its source-owned evidence before reuse.",
+      "operator_steps": [],
+      "owner": "runtime.atlas_revalidation",
+      "preserve_state": true,
+      "recovery_key": "errors.school.bamf_revalidation.invalid.recovery",
+      "self_heal_owner": null,
+      "title": "BAMF correction dependency or revalidation invalid"
+    },
+    {
+      "code": "SCHOOL.BAMF_REVALIDATION.PROPAGATION_FAILURE",
+      "disposition": "REQUALIFICATION_REQUIRED",
+      "legacy_codes": [],
+      "message_key": "errors.school.bamf_revalidation.propagation_failure.message",
+      "message_template": "Superseded source evidence reappeared after remediation: {reason}",
+      "next_action": "Hold the affected lineage, preserve the original source and remediation receipts, then require fresh source-grounded requalification.",
+      "operator_steps": [],
+      "owner": "runtime.atlas_temporal_revalidation",
+      "preserve_state": true,
+      "recovery_key": "errors.school.bamf_revalidation.propagation_failure.recovery",
+      "self_heal_owner": null,
+      "title": "Correction remediation failed to prevent stale replay"
+    },
+    {
+      "code": "SCHOOL.BAMF_TEACHER.INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [],
+      "message_key": "errors.school.bamf_teacher.invalid.message",
+      "message_template": "The teacher successor binding is invalid: {reason}",
+      "next_action": "Inspect replay and student identity without modifying the retained learner.",
+      "operator_steps": [],
+      "owner": "learning.teacher_vnext_replay",
+      "preserve_state": true,
+      "recovery_key": "errors.school.bamf_teacher.invalid.recovery",
+      "self_heal_owner": null,
+      "title": "Invalid BAMF teacher successor binding"
+    },
+    {
+      "code": "SCHOOL.BAMF_TRAINING_ADAPTER.INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [],
+      "message_key": "errors.school.bamf_training_adapter.invalid.message",
+      "message_template": "The delivered training input violates its contract: {reason}",
+      "next_action": "Inspect the released source and delivery metadata before retrying.",
+      "operator_steps": [],
+      "owner": "runtime.atlas_training_adapter",
+      "preserve_state": true,
+      "recovery_key": "errors.school.bamf_training_adapter.invalid.recovery",
+      "self_heal_owner": null,
+      "title": "Invalid BAMF training input"
+    },
+    {
+      "code": "SCHOOL.BAMF_WORKSTACK.INPUT_INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [],
+      "message_key": "errors.school.bamf_workstack.input_invalid.message",
+      "message_template": "Workstack or registry input could not be read: {error_type}",
+      "next_action": "Inspect the input file and preserve its current contents.",
+      "operator_steps": [],
+      "owner": "scripts.check_bamf_workstack",
+      "preserve_state": true,
+      "recovery_key": "errors.school.bamf_workstack.input_invalid.recovery",
+      "self_heal_owner": null,
+      "title": "BAMF workstack input unavailable or malformed"
+    },
+    {
+      "code": "SCHOOL.BAMF_WORKSTACK.VALIDATION_INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [],
+      "message_key": "errors.school.bamf_workstack.validation_invalid.message",
+      "message_template": "Workstack validation failed: {reason}",
+      "next_action": "Inspect the reported workstack invariant and preserve source evidence.",
+      "operator_steps": [],
+      "owner": "scripts.check_bamf_workstack",
+      "preserve_state": true,
+      "recovery_key": "errors.school.bamf_workstack.validation_invalid.recovery",
+      "self_heal_owner": null,
+      "title": "BAMF workstack validation failed"
+    },
     {
       "code": "SCHOOL.QUALIFICATION.INVALID",
       "disposition": "CORRECT_INPUT_OR_STATE",
@@ -14425,6 +14742,48 @@
       "recovery_key": "errors.semantic_coverage.audit.invalid_budget.recovery",
       "self_heal_owner": null,
       "title": "Semantic coverage audit budget violates sampling policy"
+    },
+    {
+      "code": "SEMANTIC_FRAME.BINDING.INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [],
+      "message_key": "errors.semantic_frame.binding.invalid.message",
+      "message_template": "Frame binding failed for role {role_id!r} at source span [{span_start}, {span_end}]: {reason}.",
+      "next_action": "Preserve the source row and semantic release; correct the role, type, scope, release, occurrence, or causal-prefix binding.",
+      "operator_steps": [],
+      "owner": "semantics.frame_schema",
+      "preserve_state": true,
+      "recovery_key": "errors.semantic_frame.binding.invalid.recovery",
+      "self_heal_owner": null,
+      "title": "Semantic frame binding violates the released schema"
+    },
+    {
+      "code": "SEMANTIC_FRAME.ADAPTER.INVALID_SOURCE",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [],
+      "message_key": "errors.semantic_frame.adapter.invalid_source.message",
+      "message_template": "Frame adapter {adapter_id!r} rejected role {role_id!r} at source span [{span_start}, {span_end}]: {reason}.",
+      "next_action": "Preserve the source row and use the released source adapter and frame schema that own this source dialect.",
+      "operator_steps": [],
+      "owner": "semantics.frame_adapters",
+      "preserve_state": true,
+      "recovery_key": "errors.semantic_frame.adapter.invalid_source.recovery",
+      "self_heal_owner": null,
+      "title": "Semantic frame adapter cannot bind the source row"
+    },
+    {
+      "code": "SEMANTIC_FRAME.CODEC.INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [],
+      "message_key": "errors.semantic_frame.codec.invalid.message",
+      "message_template": "Frame codec rejected the value: {reason}.",
+      "next_action": "Preserve the frame sidecar and semantic release; correct the index, schema tag, codec version, presence mask, or release-local schema map before retrying.",
+      "operator_steps": [],
+      "owner": "semantics.frame_codec",
+      "preserve_state": true,
+      "recovery_key": "errors.semantic_frame.codec.invalid.recovery",
+      "self_heal_owner": null,
+      "title": "Semantic frame codec input violates the released codec contract"
     },
     {
       "code": "SOURCE.SAMPLING.BALANCED_BINARY_COUNT_INVALID",
