@@ -33,18 +33,18 @@ class MotifParameterViewTests(TestCase):
             parameters, spec=spec, extents=extents, site_index=1)
         self.assertEqual(set(first), {"page.0", *SITE_NAMES})
         self.assertEqual(set(second), set(first))
-        self.assertIs(first["page.0"], parameters["motif.page.0"])
-        self.assertIs(second["page.0"], first["page.0"])
+        self.assertIsNot(first["page.0"], parameters["motif.page.0"])
+        self.assertIsNot(second["page.0"], first["page.0"])
         for name in SITE_NAMES:
-            self.assertIs(first[name], parameters[f"motif.site.0.{name}"])
-            self.assertIs(second[name], parameters[f"motif.site.1.{name}"])
+            self.assertIsNot(first[name], parameters[f"motif.site.0.{name}"])
+            self.assertIsNot(second[name], parameters[f"motif.site.1.{name}"])
             self.assertIsNot(first[name], second[name])
         self.assertEqual(tuple(parameters), before_keys)
         self.assertNotIn("depth.query", first)
         self.assertNotIn("features.norm", first)
         self.assertNotIn("identity.bank.0", first)
-        with self.assertRaises(TypeError):
-            first._tensors["page.0"] = second["page.0"]
+        with self.assertRaises(AttributeError):
+            first._tensors
         with self.assertRaises(BilqisError):
             MotifParameterView(dict(first), 0, 1, object())
 
@@ -53,10 +53,40 @@ class MotifParameterViewTests(TestCase):
         view = motif_parameter_view(
             parameters, spec=spec, extents=extents, site_index=1)
         self.assertEqual(set(view), {"page.0", "page.1", *SITE_NAMES})
-        self.assertIs(view["page.0"], parameters["motif.page.0"])
-        self.assertIs(view["page.1"], parameters["motif.page.1"])
+        self.assertIsNot(view["page.0"], parameters["motif.page.0"])
+        self.assertIsNot(view["page.1"], parameters["motif.page.1"])
         self.assertEqual(view["page.1"].shape, (16384, 128))
         self.assertEqual(len(parameters), len(expected_bamf_shapes(spec, extents)))
+
+    def test_copy_on_read_prevents_neural_write_through_and_preserves_gradient(self):
+        spec, extents, parameters = _ledger()
+        site0 = motif_parameter_view(
+            parameters, spec=spec, extents=extents, site_index=0)
+        site1 = motif_parameter_view(
+            parameters, spec=spec, extents=extents, site_index=1)
+        page = site0["page.0"]
+        bias = site0["bias"]
+        page[0, 0] = 7.0
+        bias[0] = 3.0
+        mx.eval(page, bias, parameters["motif.page.0"],
+                parameters["motif.site.0.bias"])
+        self.assertEqual(float(page[0, 0].item()), 7.0)
+        self.assertEqual(float(bias[0].item()), 3.0)
+        self.assertEqual(float(parameters["motif.page.0"][0, 0].item()), 0.0)
+        self.assertEqual(float(parameters["motif.site.0.bias"][0].item()), 0.0)
+        self.assertEqual(float(site1["page.0"][0, 0].item()), 0.0)
+        self.assertEqual(float(site0["bias"][0].item()), 0.0)
+
+        def loss(original_bias):
+            modified = dict(parameters)
+            modified["motif.site.0.bias"] = original_bias
+            read = motif_parameter_view(
+                modified, spec=spec, extents=extents, site_index=0)["bias"]
+            return mx.sum(read * read)
+
+        gradient = mx.grad(loss)(mx.array([2.0], dtype=mx.float32))
+        mx.eval(gradient)
+        self.assertEqual(gradient.tolist(), [4.0])
 
     def test_full_ledger_and_site_authority_fail_closed(self):
         spec, extents, parameters = _ledger()

@@ -26,9 +26,9 @@ def _invalid() -> None:
 
 @dataclass(frozen=True)
 class MotifParameterView(Mapping[str, mx.array]):
-    """Sealed borrowed references, never a second trainable parameter bank."""
+    """Sealed differentiable copy-on-read tensors, never trainable aliases."""
 
-    _tensors: Mapping[str, mx.array]
+    __source_tensors: Mapping[str, mx.array]
     site_index: int
     page_count: int
     _seal: object
@@ -42,19 +42,23 @@ class MotifParameterView(Mapping[str, mx.array]):
                 or not 0 <= self.site_index < SITE_COUNT
                 or type(self.page_count) is not int
                 or not 1 <= self.page_count <= ModelTopologySpecV2.max_motif_pages
-                or set(self._tensors) != expected
+                or set(self.__source_tensors) != expected
                 or self.schema_version != VIEW_SCHEMA):
             _invalid()
-        object.__setattr__(self, "_tensors", MappingProxyType(dict(self._tensors)))
+        object.__setattr__(
+            self, "_MotifParameterView__source_tensors",
+            MappingProxyType(dict(self.__source_tensors)))
 
     def __getitem__(self, name: str) -> mx.array:
-        return self._tensors[name]
+        # mx.array creates a differentiable COW handle. In-place writes to a
+        # returned value cannot mutate the B01-owned parameter or other sites.
+        return mx.array(self.__source_tensors[name])
 
     def __iter__(self):
-        return iter(self._tensors)
+        return iter(self.__source_tensors)
 
     def __len__(self) -> int:
-        return len(self._tensors)
+        return len(self.__source_tensors)
 
 
 def motif_parameter_view(
