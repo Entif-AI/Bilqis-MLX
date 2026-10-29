@@ -83,3 +83,32 @@ admission or canonical frame construction. This is an
 candidate must not be wired into a production training or
 allocation path, pushed as accepted B07.1, or closed until
 real A03/A13 source authority can be consumed through unified.
+
+## 2026-10-29 source-authority integration candidate
+
+The reviewed unified head `6b54600` now contains the actual A03
+frame/schema and A13 context eligibility modules. The isolated
+B07.2 continuation branch consumed that exact unified head at
+`590c1cb`, then added `atlas_engram_source.py` as a narrow
+source-owned entrypoint. It calls A13 `project_context` before
+any motif preparation, returns a `ContextHold` without allocating
+when rights or visibility fail, and reuses A03
+`validate_frame_bindings` against the frozen source snapshot.
+It requires exact native FrameInstance/FrameSchema records and
+active admitted ABI identities. Atomic fallback positions remain
+source-visible without minting a motif slot.
+
+The new package-local `test_atlas_engram_source.py` uses real A03
+FrameInstance/FrameSchema and A13 SourceGrant/SourceFrontier
+records. **5/5 tests passed**, covering successful source-approved
+allocation, revoked member grants, forged but role-allowed concept
+types, inactive source-qualified ABI, and missing/foreign
+schema or release. The pure B07.1/B07.2 planner remains separately
+testable without importing the Atlas RDF dependency.
+
+This resolves the prior *missing integration entrypoint* in an
+isolated candidate, but it is **not yet a B07.1 final acceptance**:
+independent review of the new source gate, source-grant provenance
+at the issuing owner, and human-reviewed Lane B integration are
+still required. No public/source rights or neural custody were
+promoted.
