@@ -32,3 +32,30 @@ claim an independent new test run at this final head; the 15/15
 count is prime executed evidence. A07.2 evaluator separation and
 A07.3 compositional DAG/cache receipts remain independent leaves.
 No A07 parent integration or neural training is claimed.
+
+## A07.2 independent evaluator/source separation review
+
+Initial immutable head:
+`2aa6d127e91391830aad238be39160e10e00f053`.
+Repair immutable head:
+`819a6533ddb4eb8aafce85184e32daa6f19aa3a1`.
+Reviewer: fresh-context Goldfish worker-5, read-only.
+Prime source/numeric/frame tests: 47 passed, 0 failed,
+1 optional real-Atlas skip.
+
+The first review found one Major: a newly registered
+native MOD operation could silently redirect the
+separately granted formal-law MOD through the native
+numeric evaluator without changing the operator's
+declared source contract. The repair dispatches native
+execution exclusively through the fixed native-owned
+operator set already used for source contract binding.
+An adversarial test injects MOD into the numeric registry
+and traps native calculate; the formal law still returns
+5 mod 3 = 2 with no native call.
+
+Independent targeted readback at `819a653` returned
+**A07.2 EGM PASS, zero remaining Blockers/Majors**.
+The reviewer inspected immutable source and tests, not
+an additional executed test run. A07.3 and parent
+integration remain open.

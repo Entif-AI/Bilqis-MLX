@@ -6,8 +6,9 @@
   (already ancestor; no no-op merge)
 - Consumed A07.1 reviewed implementation `ab5ed83`,
   EGM receipt `f950944`
-- Branch: `codex/bamf02-a-semantics`; candidate head pending push
-- Independent review: `EGM_PENDING`
+- Final reviewed implementation head:
+  `819a6533ddb4eb8aafce85184e32daa6f19aa3a1`
+- Independent review: **EGM PASS**, zero remaining Blockers/Majors
 
 ## Owned behavior
 
@@ -85,5 +86,9 @@ and proves formal-law MOD still returns 5 mod 3 = 2
 without calling the native path. Cognitive tests now
 **23 passed, 0 failed, 0 skipped**; cumulative A07.2
 source/numeric/frame suites **47 passed, 0 failed,
-1 optional real-Atlas skip**. Fresh immutable-head
-independent re-review is required before EGM PASS.
+1 optional real-Atlas skip**. Independent Goldfish
+readback at immutable `819a653` confirmed the
+native/formal dispatch authority-switch Major resolved,
+with zero remaining Blockers/Majors. Reviewer inspected
+source/tests but did not execute a new test run. See
+`docs/evidence/bamf/A07/egm.md`.
