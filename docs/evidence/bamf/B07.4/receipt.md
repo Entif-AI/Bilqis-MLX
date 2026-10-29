@@ -15,22 +15,43 @@
 `ModelTopologySpecV2` / `GenerationExtents` parameter tree
 against `expected_bamf_shapes` and
 `validate_bamf_parameters`. It then returns a sealed,
-read-only mapping of references to all declared motif
+read-only mapping of differentiable copy-on-read handles to all declared motif
 pages and exactly one site's five local tensors:
 projection, norm, hidden gate, feature gate and bias.
-Both sites share page tensors, but their site parameters
-are distinct. No new parameter, optimizer, checkpoint,
+Both sites share the same B01-owned page parameter, but their site parameters
+are distinct. Returned arrays are copy-on-write values, not mutable
+aliases into that shared state. No new parameter, optimizer, checkpoint,
 identity, depth, feature or neural-write authority is
 created. The view cannot be constructed with anonymous
 weights or modified after construction.
 
-Owner `test_atlas_engram_parameters.py`: **3 passed,
+Owner `test_atlas_engram_parameters.py`: **4 passed,
 0 failed, 0 skipped** on native MLX. Tests verify exact
-B01 reference identity across both sites, two-page
+B01 parameter source identity across both sites, two-page
 extent expansion without reindexing, complete ledger
 name/shape/dtype enforcement (including unrelated
-tensors), invalid site rejection and immutable view
-semantics.
+tensors), invalid site rejection, copy-on-read mutation
+isolation and preserved gradients back to B01 parameters.
+
+## Independent review repair
+
+Fresh Goldfish at immutable `3af6977` found **one Major**:
+the original view returned mutable `mx.array` objects
+directly. Writing through `site0["page.0"]` or
+`site0["bias"]` mutated B01-owned parameters and the
+shared page observed at site1, despite the mapping
+itself being sealed. This was reproduced.
+
+The repair returns `mx.array(original)` on each public
+read. Native MLX confirms this is a differentiable
+copy-on-write handle: mutation changes only the returned
+value, while gradients still reach the original B01
+parameter. The source tensors are retained behind
+private name-mangled custody rather than exposed
+through the public mapping. The focused suite now
+passes **4/4** with a literal write-through and
+gradient regression. Fresh immutable-head EGM
+re-review is still required.
 
 This is a **staged candidate**, not B07.4 turn-in.
 B07.3's accepted-generation custody and independent
