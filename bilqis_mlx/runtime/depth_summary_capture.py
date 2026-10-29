@@ -129,7 +129,7 @@ class _BackboneCapture:
 
     def capture(self, hidden: mx.array) -> SealedDepthSummary:
         index = len(self._summaries)
-        if index >= len(SOURCE_ORDER):
+        if index >= len(SOURCE_ORDER) or not isinstance(hidden, mx.array):
             _invalid()
         if self._summaries and hidden.shape != self._summaries[0].hidden.shape:
             _invalid()
