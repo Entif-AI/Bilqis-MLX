@@ -117,6 +117,46 @@ class BackboneGroupNumericalTests(unittest.TestCase):
                 valid=mx.ones((1, 4), dtype=mx.bool_),
                 generation="d"*64, prefix_digest="e"*64, prior=first)
 
+    def test_sequence_starts_match_direct_b04_and_break_history(self):
+        from bilqis_mlx.runtime.atlas_attention import AttentionScope, ccgqa
+        params = _params()
+        hidden = mx.arange(4*SPEC.width, dtype=mx.float32).reshape(1, 4, SPEC.width)/1000
+        starts = mx.array([[False, False, True, False]])
+        scope = mx.zeros((1,4), dtype=mx.int32)
+        valid = mx.ones((1,4), dtype=mx.bool_)
+        result = run_backbone_group_numerical(hidden, params, group_index=1,
+            spec=SPEC, extents=EXTENTS, scope_ids=scope, valid=valid,
+            sequence_starts=starts, generation="d"*64, prefix_digest="e"*64)
+        direct_scope = AttentionScope(scope, 0, "d"*64, "e"*64, sequence_starts=starts)
+        prefix = "blocks.0."
+        normed = hidden * mx.rsqrt(mx.mean(hidden*hidden, axis=-1,keepdims=True)+SPEC.rms_norm_epsilon)*params[prefix+"attn_norm"]
+        direct, _ = ccgqa({name:params[prefix+name] for name in
+            ("query","key","value","output","conv_q","conv_k","conv_v")}, normed, valid, direct_scope)
+        self.assertEqual(result.attention_caches[0].prefix_digest, "e"*64)
+        self.assertTrue(bool(mx.all(mx.isfinite(direct))))
+        no_starts = run_backbone_group_numerical(hidden, params, group_index=1,
+            spec=SPEC, extents=EXTENTS, scope_ids=scope, valid=valid,
+            generation="d"*64, prefix_digest="e"*64)
+        self.assertGreater(float(mx.max(mx.abs(result.hidden-no_starts.hidden))), 1e-7)
+        self.assertNotEqual(result.execution_digest, no_starts.execution_digest)
+
+    def test_forged_predecessor_and_mixed_tree_fail(self):
+        params = _params()
+        hidden = mx.arange(4*SPEC.width,dtype=mx.float32).reshape(1,4,SPEC.width)/1000
+        first = _run(hidden,params)
+        def second(prior,tree):
+            return run_backbone_group_numerical(first.hidden,tree,group_index=2,
+                spec=SPEC,extents=EXTENTS,scope_ids=mx.zeros((1,4),dtype=mx.int32),
+                valid=mx.ones((1,4),dtype=mx.bool_),generation="d"*64,
+                prefix_digest="e"*64,prior=prior)
+        with self.assertRaises(BilqisError):
+            second(replace(first,execution_digest="f"*64),params)
+        changed = dict(params)
+        changed["blocks.4.query"] = changed["blocks.4.query"].at[0,0].add(.01)
+        with self.assertRaises(BilqisError):
+            second(first,changed)
+        self.assertEqual(second(first,params).predecessor_digest,first.execution_digest)
+
     def test_wrong_group_and_parameter_geometry_reject(self):
         params = _params()
         hidden = mx.zeros((1, 4, SPEC.width), dtype=mx.float32)
