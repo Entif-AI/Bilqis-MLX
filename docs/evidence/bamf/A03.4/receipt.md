@@ -34,9 +34,10 @@ cache dependencies remain separate source-owner obligations.
 Initial red: new owner test module failed to import the absent A03.4 API.
 After implementation:
 
-- 8/8 new A03.4 tests pass, including one actual registered A source row;
-- combined A03 schema/adapters, A04 codec and A03.4: 49 passed, 0 failed,
-  1 optional real-Atlas skip;
+- 9/9 new A03.4 tests pass with the real A01 artifact mounted, including
+  actual registered A source rows and all three source-family pin lookups;
+- combined A03 schema/adapters, A04 codec and A03.4 with real A01
+  artifact and canonical corpus mounted: **52 passed, 0 failed, 0 skipped**;
 - `git diff --check` passes;
 - static module/error audits report no new A03.4 findings; inherited
   repository-wide findings remain outside this leaf.
@@ -46,11 +47,46 @@ cardinality, scope, order mode, contract SHA, forged local catalog,
 foreign release/map, A01 source-bundle mismatch, duplicate/noncanonical
 manifest controls, append-only file drift and key-order canonicalization.
 
-## Remaining source admission and downstream integration
+## 2026-10-29 source-owned pin publication candidate
 
-This candidate supplies the versioned issuer/consumer mechanism, but does
-not claim that an actual production A03 release manifest has been admitted
-and pinned in a trusted source-owner release ledger. That publication must
-be explicit and verified before B07/B08 treat a catalog as authority.
-The B07.1/B08.1 consuming changes and their independent EGM remain separate
-work. No neural admission, training or merge occurred.
+The source-owner generator
+`scripts/generate_released_frame_schema_pins.py` reloaded the *existing*
+repo-pinned A01 artifact (bundle
+`5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7`,
+release `58e0c281b5da18b9b7e6c803709b29eeeb0a88f16b06f48de692808e2fb88306`)
+and checked actual registered A/B/C source rows and recursive ASTs. It
+rederived six unique exact frame-schema bodies in each of three source
+families: `micro`, `boolean`, `numeric`. Same-ID/revision body conflicts
+fail rather than silently selecting a new schema.
+
+Three append-only canonical manifests are staged in
+`bilqis_mlx/semantics/frame_schema_releases/`. Their SHA-256 identities:
+
+- micro: `937f0309dd46e37fa8dc1e5022963baefb1bc3511f40dd03e5b1a0a45b5413ac`
+- boolean: `639f102ee55ef11d2c4860ccad06a9d90cc0abfcec52acefa2f7bcb576a21cf7`
+- numeric: `d89f845fbeedfda69d95f156a6d424174698d8b65480e3db9764530dec7f439b`
+
+The repo-owned source pin registry
+`frame_schema_source_pins_v1.json` has SHA-256
+`4c8da914834f8dc5cadef67bbf9b7da1031f07cc80d4775a47d18b68af62a6c1`,
+independently pinned in the loader code. The production consumer
+`load_pinned_released_frame_schemas(source_family, atlas_selection)`
+first revalidates A01 against its separate repo-owned pin, then loads
+the fixed A03 pin registry and exact content-addressed manifest.
+No caller-supplied schema registry, manifest path or expected digest
+enters this consumer entrypoint. It returns the distinct
+`SourcePinnedReleasedFrameSchemas` type; self-pinned low-level staging
+objects are not source admission.
+
+The generator was rerun idempotently and reproduced all three manifest
+digests and the pin-registry digest. The real A01/source-family test
+passed 9/9 without skips using a disposable source artifact.
+
+## Remaining downstream integration
+
+This is a pushed **candidate** of source-owned A03 pin publication,
+pending independent EGM and Lane A integration. B07.1/B08.1 must
+consume the `SourcePinnedReleasedFrameSchemas` exact type before
+motif-key/readout admission; they may not substitute the low-level
+self-pinned verifier. A13 rights/revocation and cache dependency
+gates remain independent. No neural admission, training or merge occurred.

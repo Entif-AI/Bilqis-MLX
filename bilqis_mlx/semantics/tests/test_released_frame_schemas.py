@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import replace
 import hashlib
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -11,6 +12,7 @@ import unittest
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.grade_a_probe import read_sources
 from bilqis_mlx.semantics.atlas_projection import AbiEntry
+from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.atlas_projection import (
     AtlasCounts, FrozenAtlasSnapshot,
 )
@@ -20,6 +22,7 @@ from bilqis_mlx.semantics.frame_adapters import (
 from bilqis_mlx.semantics.frame_codec import SchemaTagMap
 from bilqis_mlx.semantics.frame_schema import FrameSchema, RoleSpec, SourceSpan
 from bilqis_mlx.semantics.released_frame_schemas import (
+    SourcePinnedReleasedFrameSchemas, load_pinned_released_frame_schemas,
     load_released_frame_schemas, persist_released_frame_schemas,
     seal_released_frame_schemas,
 )
@@ -136,6 +139,40 @@ class ReleasedFrameSchemaTests(unittest.TestCase):
         self.assertEqual(verified.require_schema(schema, witness), schema)
         self.assertEqual(
             verified.canonical_bytes(), payload)
+        with self.assertRaises(BilqisError):
+            SourcePinnedReleasedFrameSchemas("micro", verified, object())
+
+    @unittest.skipUnless(
+        os.environ.get("BILQIS_ATLAS_REAL_ARTIFACT"),
+        "real repo-pinned A01 artifact supplied at source turn-in",
+    )
+    def test_repo_owned_pins_load_all_actual_source_schema_families(self):
+        artifact = os.environ["BILQIS_ATLAS_REAL_ARTIFACT"]
+        selection = AtlasArtifactSelection(
+            artifact,
+            "5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7",
+            "58e0c281b5da18b9b7e6c803709b29eeeb0a88f16b06f48de692808e2fb88306",
+            "f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec",
+        )
+        for family in ("micro", "boolean", "numeric"):
+            with self.subTest(family=family):
+                pinned = load_pinned_released_frame_schemas(
+                    family, selection)
+                self.assertIs(type(pinned), SourcePinnedReleasedFrameSchemas)
+                self.assertEqual(pinned.source_family, family)
+                self.assertEqual(len(pinned.manifest.bodies), 6)
+                for body in pinned.manifest.bodies:
+                    schema = body.parse()
+                    witness = pinned.lookup(schema.schema_id, schema.revision)
+                    self.assertEqual(pinned.require_schema(schema, witness), schema)
+                    with self.assertRaises(BilqisError):
+                        pinned.require_schema(
+                            replace(schema, scope="caller:forged"), witness)
+        with self.assertRaises(BilqisError):
+            load_pinned_released_frame_schemas("caller:unreleased", selection)
+        with self.assertRaises(BilqisError):
+            load_pinned_released_frame_schemas(
+                "micro", replace(selection, release_sha256="0" * 64))
 
     def test_same_id_revision_cannot_substitute_any_semantic_body(self):
         schema, _, _, _, verified = _release()
