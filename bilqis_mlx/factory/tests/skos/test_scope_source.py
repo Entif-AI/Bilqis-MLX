@@ -8,6 +8,7 @@ from unittest import TestCase, skipUnless
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory.skos_curriculum.scope_source import (
     SourceScopeContrast, check_scope_contrast, source_scope_contrasts,
+    source_scope_debt,
 )
 from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
 
@@ -23,6 +24,19 @@ _SELECTION = AtlasArtifactSelection(
 
 @skipUnless(_ATLAS, "verified A01 bundle not supplied")
 class ScopeSourceTests(TestCase):
+    def test_unadmitted_source_families_remain_visible(self):
+        ledger = source_scope_debt(_SELECTION)
+        self.assertEqual(ledger.status, "IMPLEMENTATION_UNCOVERED")
+        self.assertEqual(len(ledger.source_held_atomic_rows), 500)
+        self.assertEqual(len(ledger.nonconcept_transformations), 19)
+        self.assertTrue(all(
+            row.owner and row.reason_code
+            for row in (*ledger.source_held_atomic_rows,
+                        *ledger.nonconcept_transformations)))
+        self.assertTrue(any(
+            row.key == "ALLO-08d9bb00e7a0dd"
+            for row in ledger.nonconcept_transformations))
+
     def test_real_source_notations_preserve_case_scope_and_illocution(self):
         cases, held = source_scope_contrasts(_SELECTION)
         self.assertEqual(len(cases), 13)

@@ -9,7 +9,9 @@ from dataclasses import dataclass
 import hashlib
 import json
 
-from bilqis_mlx.semantics.atlas_projection import FrozenAtlasSnapshot
+from bilqis_mlx.semantics.atlas_projection import (
+    CorpusCoverageRow, FrozenAtlasSnapshot,
+)
 from bilqis_mlx.semantics.atlas_snapshot import (
     AtlasArtifactSelection, load_pinned_atlas_snapshot,
 )
@@ -22,6 +24,7 @@ _GRAMMAR_CODE = "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code
 _SURFACE_FORM = "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil"
 _SCHEMA = "bilqis.scope-source-contrast-proposal/v1"
 _STATUS = "SOURCE_NOTATION_NOT_CONTEXTUAL_LAW"
+_DEBT_SCHEMA = "bilqis.scope-source-implementation-debt/v1"
 
 
 def _digest(value: object) -> str:
@@ -65,6 +68,37 @@ class SourceScopeContrast:
                            self.source_evidence_sha256))
                 or self.status != _STATUS or self.schema != _SCHEMA):
             _fail("BAMF_SCOPE_SOURCE_CONTRAST_INVALID")
+
+
+@dataclass(frozen=True)
+class SourceScopeDebtLedger:
+    """Preserve A01 source holds and unadmitted transformation row identities."""
+
+    semantic_release: str
+    source_held_atomic_rows: tuple[CorpusCoverageRow, ...]
+    nonconcept_transformations: tuple[CorpusCoverageRow, ...]
+    status: str = "IMPLEMENTATION_UNCOVERED"
+    schema: str = _DEBT_SCHEMA
+
+    def __post_init__(self) -> None:
+        if (type(self.semantic_release) is not str
+                or len(self.semantic_release) != 64
+                or any(ch not in "0123456789abcdef"
+                       for ch in self.semantic_release)
+                or any(type(row) is not CorpusCoverageRow
+                       or (row.domain, row.table,
+                           row.source_disposition) != (
+                               "atomic", "morphemes_atomic", "SOURCE_HELD")
+                       for row in self.source_held_atomic_rows)
+                or any(type(row) is not CorpusCoverageRow
+                       or (row.domain, row.table,
+                           row.source_disposition) != (
+                               "residue", "allomorph_rules",
+                               "SOURCE_EMITTED_NON_CONCEPT")
+                       for row in self.nonconcept_transformations)
+                or self.status != "IMPLEMENTATION_UNCOVERED"
+                or self.schema != _DEBT_SCHEMA):
+            _fail("BAMF_SCOPE_SOURCE_DEBT_LEDGER_INVALID")
 
 
 def _source_realizations(concept) -> tuple[str, str] | None:
@@ -133,6 +167,23 @@ def source_scope_contrasts(
 ) -> tuple[tuple[SourceScopeContrast, ...], tuple[str, ...]]:
     """Rebuild from independently pinned source, never caller-supplied records."""
     return _source_scope_contrasts(load_pinned_atlas_snapshot(selection))
+
+
+def source_scope_debt(selection: AtlasArtifactSelection) -> SourceScopeDebtLedger:
+    """Report source-held atomic rows and transformation rows without IDs.
+
+    An atomic row held for a notation collision is not presumed to be a
+    scope/mood row. A nonconcept allomorph record cannot be an executable
+    transformation until a separately governed semantic identity exists.
+    """
+    snapshot = load_pinned_atlas_snapshot(selection)
+    census = _inventory_source_families(snapshot)
+    held = tuple(row for row in census.source_held
+                 if (row.domain, row.table)
+                 == ("atomic", "morphemes_atomic"))
+    nonconcept = tuple(row for row, families in census.source_nonconcept
+                       if "released_transformations" in families)
+    return SourceScopeDebtLedger(snapshot.release_sha256, held, nonconcept)
 
 
 def check_scope_contrast(

@@ -22,6 +22,11 @@ spoofs. Its answer is the source semantic identity, not an unverified
 surface morphology derivation.
 
 Source status is deliberately `SOURCE_NOTATION_NOT_CONTEXTUAL_LAW`.
+The independent `source_scope_debt` projection retains **500** exact A01
+source-held atomic rows (without mislabelling all as scope/mood) and
+**19** nonconcept allomorph-source rows with their original owner,
+disposition and reason. Those 19 are `IMPLEMENTATION_UNCOVERED`:
+they are not silently given invented semantic identities, methods or rights.
 No A13 task grant, rights/revocation, prefix, temporal scope, A03 frame
 role law, A07 executable transformation, Factory registration, learner
 admission, training, or new root is inferred from this identity evidence.
@@ -34,7 +39,7 @@ lessons from a grammar category or a table name.
 With `BILQIS_A01_ATLAS_BUNDLE` pointing to the exact recorded
 `5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7`
 artifact, `python3 -m pytest -q
-bilqis_mlx/factory/tests/skos/test_scope_source.py` passed **3 tests,
+bilqis_mlx/factory/tests/skos/test_scope_source.py` passed **4 tests,
 22 subtests, zero skips**. Adjacent source construct/checker tests
 passed **9 tests and 8 subtests**. Changed-file structure and
 governance checks each returned **zero violations**. No neural run.
