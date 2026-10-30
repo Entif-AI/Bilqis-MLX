@@ -56,9 +56,10 @@ DEFINITIONS = (
 
 from bilqis_mlx.factory.tests.test_skos_curriculum import _snapshot
 
-def verify_real_source_adversaries(
-    test, directory, artifact, pin, release, snapshot, public_candidate,
-    public_lessons, public_census, identity_lesson, forged_census,
+
+def _assert_equality_override_rejected(
+    test, pin, snapshot, public_candidate, public_lessons,
+    identity_lesson, forged_census,
 ):
     class EqAnyInventory(public_curriculum.SemanticFamilyInventory):
         def __eq__(self, other):
@@ -121,6 +122,9 @@ def verify_real_source_adversaries(
     test.assertEqual(
         evil_checker.exception.context["reason"],
         "BAMF_LESSON_CHECKER_INPUT_INVALID")
+
+
+def _assert_repacked_formal_rejected(test, directory, artifact, pin, release):
     for replacement in (
             ("legacy:cogal.operator.OR",),
             ("legacy:cogal.operator.OR", "legacy:cogal.operator.XOR")):
@@ -159,14 +163,18 @@ def verify_real_source_adversaries(
             test.assertEqual(
                 replaced_pin.exception.context["reason"],
                 "ATLAS_SOURCE_PIN_NOT_REGISTERED")
+
+
+def _assert_formal_substitution_rejected(test, snapshot, public_census, pin):
     other_boolean = tuple(
         entry.semantic_id for entry in snapshot.abi_entries
         if entry.semantic_id.startswith("legacy:cogal.operator.")
         and entry.semantic_id not in
         snapshot.formal_domain_bindings[0].semantic_ids)
-    for replacement in (
-            other_boolean[:1],
-            other_boolean[:len(snapshot.formal_domain_bindings[0].semantic_ids)]):
+    replacements = (
+        other_boolean[:1],
+        other_boolean[:len(snapshot.formal_domain_bindings[0].semantic_ids)])
+    for replacement in replacements:
         if not replacement:
             continue
         with test.subTest(formal_binding_substitution=replacement):
@@ -175,8 +183,6 @@ def verify_real_source_adversaries(
                     replace(snapshot.formal_domain_bindings[0],
                             semantic_ids=replacement),
                     *snapshot.formal_domain_bindings[1:]))
-            # An internal pure projection can represent this forged
-            # snapshot, but the public consumer must replay pinned A01.
             forged_inventory = inventory_source_families(forged)
             test.assertNotEqual(
                 forged_inventory.digest, public_census.digest)
@@ -186,3 +192,16 @@ def verify_real_source_adversaries(
             test.assertEqual(
                 rejected.exception.context["reason"],
                 "BAMF_FAMILY_SOURCE_PROJECTION_DRIFT")
+
+
+def verify_real_source_adversaries(
+    test, directory, artifact, pin, release, snapshot, public_candidate,
+    public_lessons, public_census, identity_lesson, forged_census,
+):
+    _assert_equality_override_rejected(
+        test, pin, snapshot, public_candidate, public_lessons,
+        identity_lesson, forged_census)
+    _assert_repacked_formal_rejected(
+        test, directory, artifact, pin, release)
+    _assert_formal_substitution_rejected(
+        test, snapshot, public_census, pin)

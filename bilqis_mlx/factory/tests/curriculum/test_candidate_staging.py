@@ -10,7 +10,7 @@ from bilqis_mlx.factory.candidate_staging import (
 )
 from bilqis_mlx.factory.curriculum_definition import from_legacy_course
 from bilqis_mlx.factory.jit_curriculum import ProposalDisposition, propose_curriculum_delta
-from bilqis_mlx.factory.tests.test_jit_curriculum import JitCurriculumTests
+from bilqis_mlx.factory.tests.curriculum.test_jit_curriculum import JitCurriculumTests
 from bilqis_mlx.factory.tests.test_execution_plan import _synthetic_course
 
 

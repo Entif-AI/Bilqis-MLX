@@ -24,7 +24,7 @@ from bilqis_mlx.live_grade_b import draw_connectives, live_course as grade_b_cou
 from bilqis_mlx.live_grade_c import draw as draw_numbers, live_course as grade_c_course, registry_graph
 
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[4]
 SOURCE = ROOT / "vendor" / "legacy-v16"
 
 

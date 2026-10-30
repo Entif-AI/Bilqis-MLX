@@ -16,7 +16,7 @@ from bilqis_mlx.semantic_coverage import (
 from bilqis_mlx.errors import BilqisError, SEMANTIC_COVERAGE
 
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[4]
 LEGACY = ROOT / "vendor" / "legacy-v16"
 
 

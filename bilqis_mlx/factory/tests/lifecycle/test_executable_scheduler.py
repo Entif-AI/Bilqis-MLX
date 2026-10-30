@@ -11,7 +11,7 @@ from bilqis_mlx.factory.executable_release import compile_executable_factory_rel
 from bilqis_mlx.factory.executable_release import compile_successor_profile_release
 from bilqis_mlx.factory.execution import CurriculumProfile, GradeProfile
 from bilqis_mlx.factory.schedule import schedule_program_from_executable_release
-from bilqis_mlx.factory.tests.test_executable_consumers import _profile
+from bilqis_mlx.factory.tests.lifecycle.test_executable_consumers import _profile
 from bilqis_mlx.factory.tests.test_executable_release import _boolean_answers
 from bilqis_mlx.factory.tests.test_execution_plan import _synthetic_boolean_course
 from bilqis_mlx.learning.champions import Checkpoint
