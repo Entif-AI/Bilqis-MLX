@@ -43,4 +43,3 @@ class StagingTests(unittest.TestCase):
                 stage_db, first.stage.stage_digest), first.stage)
             self.assertEqual(read_staging_projection(
                 stage_db, second.stage.stage_digest), second.stage)
-

@@ -108,4 +108,3 @@ def read_active_projection(path: Path) -> StagingProjection | None:
         ).fetchone()
     return (read_staging_projection(path, row[0])
             if row is not None else None)
-
