@@ -80,7 +80,7 @@ class TeacherObservationTests(unittest.TestCase):
         self.assertEqual(result["target"]["before"]["status"], "NOT_MEASURED")
 
     def test_fully_measured_fixture_bridges_to_unchanged_portable_v1(self):
-        fixture_path = Path(__file__).parents[1] / "fixtures" / "teacher_vnext_conformance_v1.json"
+        fixture_path = Path(__file__).parents[2] / "fixtures" / "teacher_vnext_conformance_v1.json"
         fixture = json.loads(fixture_path.read_text())
         region = student_region({"last_exam": {"scores": {
             key: {"correct": pair[0], "total": pair[1]}

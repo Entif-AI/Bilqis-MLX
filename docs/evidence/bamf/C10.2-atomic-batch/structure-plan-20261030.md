@@ -123,3 +123,15 @@ Split candidate_evidence415lines into retention_support.py (support capability/s
 The exact companion search organically encountered learning/tests/test_learning_experiment.py2574lines and test_fragile_replay.py568lines. Preserve their shared fixtures under the existing import names. Split every distinct method unchanged into focused source, retention, teacher and replay subdirectories; import only required fixture globals and inherit only preserved setUp. Each new file is bounded below240lines and grouped by behavior, with a180-line method-body budget per file. Move candidate scoring, fixed replay and retention-support methods to the corresponding runtime/tests/batch owners. The96-line runtime retention-frontier companion gives its first three support tests to test_retention_support.py; its remaining scheduling/recovery checks stay with their owner.
 
 Baseline92tests:91pass,one existing MLX-unavailable optimizer-custody error. Require identical distinct method bodies and the same sole failure identity after extraction. Preserve all comments, shared helper functions and setUp bodies. The learning/tests directory is a recorded subsequent directory interruption; this operation does not recursively reorganize unrelated learning tests. No feature work resumes while structural obligations remain.
+
+## Learning-test directory interruption
+
+The encountered learning/tests directory has 33 direct code files. Move these 21 exact files into cohesive groups, leaving 12 direct files. Preserve every test body and canonical shared-fixture import through tests.__path__. Only test_teacher_observations changes its fixture path from Path(__file__).parents[1] to parents[2] after moving one directory. No newly grouped directory is recursively inspected for unrelated debt.
+
+- `engram/`: `test_atlas_engram_parameters.py`, `test_atlas_engram_source.py`.
+- `championship/`: `test_bamf_capability_championship.py`, `test_capability_frontier.py`, `test_championship_history.py`, `test_championship_identity.py`, `test_championship_policy.py`, `test_championship_witnesses.py`, `test_grade_soup.py`, `test_soup.py`, `test_teacher_votes.py`.
+- `salience/`: `test_atlas_salience.py`, `test_salience_history.py`, `test_salience_patterns.py`, `test_salience_teacher.py`.
+- `teaching/`: `test_bamf_teacher.py`, `test_teacher_feedback.py`, `test_teacher_observations.py`.
+- `custody/`: `test_matrix_strain.py`, `test_student_ops.py`, `test_whole_student_retention.py`.
+
+Baseline: 313 tests, 301 passed, 12 errors. Require identical failure/error identities and all moved source bytes unchanged except the one documented fixture path. The root oversized files encountered during this directory repair remain the following sequential file interruptions; they are not waived by directory compliance.
