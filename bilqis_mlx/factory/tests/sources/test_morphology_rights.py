@@ -34,7 +34,8 @@ LAW = MorphologySourceLaw(
     RELEASE, SOURCE_BUNDLE, COMPOSITION,
     ("ATOM-b062726ad5143d", "ATOM-7671e7f56ccfb8"),
     ("a", "sw"), "asw", "NI-WEB-CH07", "NI-WEB-CH07:T011", "5709",
-    "d" * 64, "e" * 64, "1" * 64, LAW_SHA,
+    "#61", ("source=NI-WEB-CH07;table=NI-WEB-CH07:T011;line=5709",),
+    "d" * 64, "e" * 64, "1" * 64, "2" * 64, LAW_SHA,
 )
 SELECTION = AtlasArtifactSelection(
     "synthetic:atlas", BUNDLE, RELEASE, SOURCE_BUNDLE)
