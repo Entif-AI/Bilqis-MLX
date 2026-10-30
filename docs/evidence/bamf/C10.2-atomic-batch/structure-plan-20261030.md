@@ -139,3 +139,7 @@ Baseline: 313 tests, 301 passed, 12 errors. Require identical failure/error iden
 ## Engram allocation companion interruption
 
 The directly encountered 584-line test_atlas_engram_allocation.py retains its first123lines as shared source/frame fixtures. Move the complete unchanged MotifKeyTests, MotifPreparationTests and MotifTransactionTests classes into engram/test_motif_keys.py, test_motif_preparation.py and test_motif_transactions.py respectively. Import only their original required fixture globals. All files remain below240lines; compare complete class ASTs and preserve every existing comment. Baseline25/25passes; require the same25afterward. No production code changes.
+
+## Engram-read companion interruption
+
+The encountered428-line test_atlas_engram_reads.py keeps its first143lines as unchanged source/parameter/read fixtures. Move methods0/1/8 into engram/test_motif_read_boundaries.py, methods2–5 into test_motif_read_inference.py and methods6/7 into test_motif_read_gradients.py. Preserve all9 method ASTs, class base and decorators, including quarantined group1 behavior; each output remains<240lines. MLX proof runs only on the named M3 Ultra, using an immutable tracked-source snapshot and a temporary dependency directory. Existing learner/optimizer paths remain untouched.
