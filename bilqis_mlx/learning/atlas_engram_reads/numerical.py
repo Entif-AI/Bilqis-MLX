@@ -49,6 +49,33 @@ def _validate_candidate_inputs(
     parameters.__post_init__()
 
 
+def _lookup_slot(item, manifest):
+    exact, structural = motif_keys(
+        MotifFrameInput(item.envelope.frame, item.schema),
+        manifest.semantic_release)
+    slot_id = manifest.lookup(exact)
+    disposition = "EXACT"
+    if slot_id is None:
+        slot_id = manifest.lookup(structural)
+        disposition = "STRUCTURAL"
+    return slot_id, disposition
+
+
+def _gated_residual(state, feature, slot_id, parameters, projections):
+    page_index, local_index = divmod(slot_id, INITIAL_MOTIF_CAPACITY)
+    slot_vector = parameters[f"page.{page_index}"][local_index]
+    normalized = mx.fast.rms_norm(
+        state, projections["norm"], ModelTopologySpecV2.rms_norm_epsilon)
+    gate_logit = (
+        mx.sum(projections["gate_hidden"] * normalized) / math.sqrt(WIDTH)
+        + mx.sum(projections["gate_feature"] * feature)
+        / math.sqrt(MOTIF_WIDTH)
+        + projections["bias"][0]
+    )
+    gate = mx.sigmoid(gate_logit)
+    return state + gate * (projections["projection"] @ slot_vector)
+
+
 def _read_motif_unqualified_candidate(
     *,
     site_index: int,
@@ -116,30 +143,13 @@ def _read_motif_unqualified_candidate(
                 output.append(state)
                 status.append("HELD")
                 continue
-            exact, structural = motif_keys(
-                MotifFrameInput(item.envelope.frame, item.schema),
-                manifest.semantic_release)
-            slot_id = manifest.lookup(exact)
-            disposition = "EXACT"
-            if slot_id is None:
-                slot_id = manifest.lookup(structural)
-                disposition = "STRUCTURAL"
+            slot_id, disposition = _lookup_slot(item, manifest)
             if slot_id is None:
                 output.append(state)
                 status.append("MISS")
                 continue
-            page_index, local_index = divmod(slot_id, INITIAL_MOTIF_CAPACITY)
-            slot_vector = parameters[f"page.{page_index}"][local_index]
-            normalized = mx.fast.rms_norm(
-                state, projections["norm"], ModelTopologySpecV2.rms_norm_epsilon)
-            gate_logit = (
-                mx.sum(projections["gate_hidden"] * normalized) / math.sqrt(WIDTH)
-                + mx.sum(projections["gate_feature"] * features[row_index, index])
-                / math.sqrt(MOTIF_WIDTH)
-                + projections["bias"][0]
-            )
-            gate = mx.sigmoid(gate_logit)
-            output.append(state + gate * (projections["projection"] @ slot_vector))
+            output.append(_gated_residual(
+                state, features[row_index, index], slot_id, parameters, projections))
             status.append(disposition)
             participating.add(slot_id)
             any_hit = True

@@ -41,6 +41,37 @@ def _source_witnesses(row, projection, atlas_selection):
     return source_witnesses, row_status
 
 
+def _validate_guarded_inputs(
+    site_index, hidden, positions, tasks, frontiers, policies, manifest,
+    atlas_selection, retained_generation_digest, parameter_tree_digest,
+    expected_cache_digests,
+):
+    if (site_index != 1
+            or not isinstance(hidden, mx.array)
+            or hidden.ndim != READ_TENSOR_RANK
+            or hidden.shape[FEATURE_AXIS] != WIDTH
+            or hidden.dtype != mx.float32
+            or type(manifest) is not MotifManifest
+            or type(atlas_selection) is not AtlasArtifactSelection
+            or not isinstance(positions, tuple)
+            or not isinstance(tasks, tuple)
+            or not isinstance(frontiers, tuple)
+            or not isinstance(policies, tuple)
+            or not (len(positions) == len(tasks) == len(frontiers)
+                    == len(policies) == hidden.shape[0])
+            or any(not isinstance(value, str) or not _SHA.fullmatch(value)
+                   for value in (retained_generation_digest,
+                                 parameter_tree_digest))
+            or (expected_cache_digests is not None
+                and (not isinstance(expected_cache_digests, tuple)
+                     or len(expected_cache_digests) != hidden.shape[0]
+                     or any(value is not None
+                            and (not isinstance(value, str)
+                                 or not _SHA.fullmatch(value))
+                            for value in expected_cache_digests)))):
+        _invalid()
+
+
 def read_motif(
     *,
     site_index: int,
@@ -66,30 +97,10 @@ def read_motif(
     while that qualification remains open, the public path returns the exact
     input tensor with an explicit QUARANTINED_NO_HIT disposition.
     """
-    if (site_index != 1
-            or not isinstance(hidden, mx.array)
-            or hidden.ndim != READ_TENSOR_RANK
-            or hidden.shape[FEATURE_AXIS] != WIDTH
-            or hidden.dtype != mx.float32
-            or type(manifest) is not MotifManifest
-            or type(atlas_selection) is not AtlasArtifactSelection
-            or not isinstance(positions, tuple)
-            or not isinstance(tasks, tuple)
-            or not isinstance(frontiers, tuple)
-            or not isinstance(policies, tuple)
-            or not (len(positions) == len(tasks) == len(frontiers)
-                    == len(policies) == hidden.shape[0])
-            or any(not isinstance(value, str) or not _SHA.fullmatch(value)
-                   for value in (retained_generation_digest,
-                                 parameter_tree_digest))
-            or (expected_cache_digests is not None
-                and (not isinstance(expected_cache_digests, tuple)
-                     or len(expected_cache_digests) != hidden.shape[0]
-                     or any(value is not None
-                            and (not isinstance(value, str)
-                                 or not _SHA.fullmatch(value))
-                            for value in expected_cache_digests)))):
-        _invalid()
+    _validate_guarded_inputs(
+        site_index, hidden, positions, tasks, frontiers, policies, manifest,
+        atlas_selection, retained_generation_digest, parameter_tree_digest,
+        expected_cache_digests)
 
     dispositions = []
     cache_digests = []

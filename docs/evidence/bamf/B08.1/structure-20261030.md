@@ -14,8 +14,9 @@ below 240 lines. Public record pickle identities remain
 
 The initial extraction compared all eight original production declarations and
 nine original tests/decorators equal to unified. The final moved-path hygiene
-pass additionally extracts the unchanged candidate-input validation, canonical
-source-witness loop and optional source-test setup into focused helpers. No
+pass additionally extracts the unchanged candidate/public-input validation,
+canonical source-witness loop, key lookup, gated residual equation and optional
+source-test setup into focused helpers. No
 equation, schema, grant check, cache key, status, parameter, error identity or
 quarantine changes. The public
 read still returns the exact hidden tensor with `QUARANTINED_NO_HIT` and no
