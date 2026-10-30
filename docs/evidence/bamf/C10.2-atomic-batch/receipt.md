@@ -23,6 +23,7 @@ owner-fixture, and native-generation receiving suites. The additional regression
 checks conflict between two new source identities in the same batch. The existing
 duplicate, restart, immutable binding, graph outage, and staging tests also pass.
 Independent fresh-context EGM review and upstream/service qualification are pending.
-The changed-path module-size check passes. The repository-wide operator-contract
-check fails with 30 findings; its output is byte-identical to unmodified Lane C
-at `57f8d9d`, so this repair adds no observed findings to that existing failure.
+The earlier local changed-path structure check ran before the repair commit and
+did not include its files. Hosted CI reports eight structure violations. The
+repository-wide operator-contract check fails with 30 findings; its output is
+byte-identical to unmodified Lane C at `57f8d9d`.
