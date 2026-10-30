@@ -149,6 +149,11 @@ class VisitObservationTests(unittest.TestCase):
                         observation=observation, event=event, release=release.release_sha256, published=published)
 
     def test_schedule_projection_visit_uses_release_curriculum_for_methodology(self):
+        try:
+            import mlx.core  # noqa: F401
+            import numpy  # noqa: F401
+        except ImportError:
+            self.skipTest("native MLX unavailable")
         from bilqis_mlx.factory.curriculum_definition import CurriculumDefinition
         from bilqis_mlx.runtime import visits
         seen = []

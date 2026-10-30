@@ -32,7 +32,7 @@ class RosettaObservationTests(unittest.TestCase):
             cwd=root, check=True, capture_output=True)
 
         subprocess.run([str(root / 'node_modules/.bin/esbuild'),
-            str(Path(__file__).resolve().parents[3] / 'scripts/operations/c10_rosetta_owner_bridge.ts'),
+            str(Path(__file__).resolve().parents[3] / 'scripts/c10_rosetta_owner_bridge.ts'),
             '--bundle', '--platform=node', '--format=cjs', '--conditions=@entif-ai/source',
             '--alias:@entif-ai/rosetta-core=' + str(root / 'packages/rosetta-core/src/index.ts'),
             '--define:__ROSETTA_SOURCE_REVISION__=' + repr(cls.revision).replace("'", '"'),

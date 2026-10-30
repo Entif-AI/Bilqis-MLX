@@ -22,7 +22,7 @@ BUNDLE_PATHS = (
     Path("lib/ithkuil/requirements-extraction.txt"),
     Path("lib/ithkuil/requirements-falkor.txt"),
     Path("lib/ithkuil/requirements-semantic.txt"),
-    Path("scripts/package_ithkuil_skill.py"),
+    Path("scripts/quality/package_ithkuil_skill.py"),
     Path("skills/ithkuil-ingestion"),
 )
 
@@ -150,7 +150,7 @@ def _is_bundle_path(path: str) -> bool:
     return (
         path.startswith("lib/ithkuil/")
         or path.startswith("skills/ithkuil-ingestion/")
-        or path in {"scripts/package_ithkuil_skill.py", "scripts/run_tests.py",
+        or path in {"scripts/quality/package_ithkuil_skill.py", "scripts/run_tests.py",
                     "scripts/skos_test_policy.py"}
     )
 
@@ -191,7 +191,7 @@ def classify_changes(root: Path, changed_paths: tuple[str, ...]) -> TestPlan:
     if any(path.startswith("lib/ithkuil/_data/") for path in relevant):
         return TestPlan("FULL", reason="CANONICAL_CORPUS_CHANGED")
     if any(path.startswith("skills/ithkuil-ingestion/")
-           or path == "scripts/package_ithkuil_skill.py"
+           or path == "scripts/quality/package_ithkuil_skill.py"
            or path in {"lib/ithkuil/ingestion_contract.json",
                        "lib/ithkuil/requirements-extraction.txt",
                        "lib/ithkuil/requirements-falkor.txt",
