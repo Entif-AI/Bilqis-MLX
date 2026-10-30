@@ -1,6 +1,7 @@
 """Immutable event kinds and payload contracts."""
 from __future__ import annotations
 from enum import Enum
+from types import MappingProxyType
 import hashlib
 import json
 import re
@@ -58,19 +59,19 @@ class AkashaEventKind(str, Enum):
     CHECKPOINT_PUBLICATION = "CHECKPOINT_PUBLICATION"
 
 
-NATIVE_EVENT_KINDS = {
+NATIVE_EVENT_KINDS = MappingProxyType({
     'SCHOOL_TEACHER_VISIT_COMMITTED': AkashaEventKind.TEACHER_VISIT,
     'SCHOOL_FACTORY_RELEASE_MIGRATED': AkashaEventKind.FACTORY_RELEASE,
     'SCHOOL_EXECUTION_PROFILE_ADOPTED': AkashaEventKind.FACTORY_RELEASE,
     'SCHOOL_SEMANTIC_CATALOG_PROFILE_ADOPTED': AkashaEventKind.FACTORY_RELEASE,
     'SCHOOL_CAPABILITY_BEST_COMMITTED': AkashaEventKind.CAPABILITY_OUTCOME,
-}
+})
 
 
 OWNER_FIXTURE_KINDS = (AkashaEventKind.BANK_ALLOCATION, AkashaEventKind.PLASTICITY_EPOCH, AkashaEventKind.PACKAGE_EXPORT)
 
 
-_REQUIRED_FIELDS = {
+_REQUIRED_FIELDS = MappingProxyType({
     **{kind: frozenset({"owner_source_event_id", "producer_id", "artifact_schema", "artifact_sha256", "verification_mode"})
        for kind in OWNER_FIXTURE_KINDS},
     **{kind: frozenset({"native_event_id", "native_event_digest", "run_id", "generation", "native_event_type"})
@@ -91,7 +92,7 @@ _REQUIRED_FIELDS = {
         "remediation_id", "derived_path"}),
     AkashaEventKind.CHECKPOINT_PUBLICATION: frozenset({
         "checkpoint_digest", "generation_sha256", "manifest_digest"}),
-}
+})
 _DIGEST_FIELDS = frozenset({
     "native_event_digest", "artifact_sha256",
     "old_digest", "new_digest", "retained_generation_sha256",

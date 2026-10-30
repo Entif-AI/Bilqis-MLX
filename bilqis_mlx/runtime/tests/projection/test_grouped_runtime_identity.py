@@ -6,14 +6,14 @@ from pathlib import Path
 from pkgutil import iter_modules
 import subprocess
 import sys
-from types import SimpleNamespace
+from types import MappingProxyType, SimpleNamespace
 import unittest
 from unittest.mock import patch
 
 import bilqis_mlx.runtime as runtime
 
 
-GROUPS = {
+GROUPS = MappingProxyType({
     "_source": ("source_development", "source_execution", "source_prefetch"),
     "_model": ("atlas_attention", "atlas_optimizer", "atlas_refinement",
                "backbone_group_numerical", "backbone_source_bridge", "model_topology",
@@ -39,7 +39,7 @@ GROUPS = {
                     "candidate_staging", "capability_retention"),
     "_projection": ("akasha_outbox", "akasha_staging", "bamf_projection",
                     "generation_projection", "owner_receipt_fixture", "rosetta_observation"),
-}
+})
 
 
 class GroupedRuntimeIdentityTests(unittest.TestCase):
@@ -70,7 +70,7 @@ for group, names in groups.items():
                 raise AssertionError(alternate)
 """
         import json
-        result = subprocess.run([sys.executable, "-B", "-c", probe, json.dumps(GROUPS)],
+        result = subprocess.run([sys.executable, "-B", "-c", probe, json.dumps(dict(GROUPS))],
                                 capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
 
