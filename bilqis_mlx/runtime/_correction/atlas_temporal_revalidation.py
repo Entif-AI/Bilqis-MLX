@@ -21,10 +21,7 @@ from .atlas_stale_replay import (
 )
 
 
-def project_as_of(
-    events: tuple[TemporalEvent, ...], *, actor_id: str, as_of: int,
-) -> TemporalProjection:
-    """Use only observed and effective evidence at this prefix/as-of time."""
+def _validate_temporal_events(events, actor_id, as_of):
     if (not isinstance(events, tuple)
             or any(not isinstance(item, TemporalEvent) for item in events)
             or len({item.event_id for item in events}) != len(events)
@@ -47,6 +44,13 @@ def project_as_of(
         }).static_order())
     except CycleError:
         _invalid("BAMF_C09_TEMPORAL_SUPERSESSION_CYCLE")
+
+
+def project_as_of(
+    events: tuple[TemporalEvent, ...], *, actor_id: str, as_of: int,
+) -> TemporalProjection:
+    """Use only observed and effective evidence at this prefix/as-of time."""
+    _validate_temporal_events(events, actor_id, as_of)
     recorded = tuple(
         item for item in events
         if item.actor_id == actor_id and item.recorded_at <= as_of)

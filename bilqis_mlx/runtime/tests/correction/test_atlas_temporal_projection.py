@@ -9,32 +9,37 @@ from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
 )
 
 
+def _temporal_events():
+    planned = TemporalEvent(
+        event_id="event:planned", actor_id="actor:alpha",
+        kind=TemporalEventKind.PLANNED, fact_digest="a" * 64,
+        source_receipt_sha256="1" * 64,
+        source_time=570, effective_from=570, effective_until=None,
+        observed_at=565, recorded_at=565, expected_report_by=585,
+    )
+    nonoccurrence = TemporalEvent(
+        event_id="event:nonoccurrence", actor_id="actor:alpha",
+        kind=TemporalEventKind.EXPLICIT_NONOCCURRENCE,
+        fact_digest="b" * 64, source_receipt_sha256="2" * 64,
+        source_time=600, effective_from=600, effective_until=None,
+        observed_at=601, recorded_at=601,
+        supersedes_event_id="event:planned",
+    )
+    corrected = TemporalEvent(
+        event_id="event:corrected", actor_id="actor:alpha",
+        kind=TemporalEventKind.CORRECTION, fact_digest="c" * 64,
+        source_receipt_sha256="3" * 64,
+        source_time=620, effective_from=620, effective_until=None,
+        observed_at=621, recorded_at=621,
+        supersedes_event_id="event:nonoccurrence",
+    )
+    events = (planned, nonoccurrence, corrected)
+    return planned, nonoccurrence, corrected, events
+
+
 class TemporalProjectionTests(unittest.TestCase):
     def test_temporal_projection_distinguishes_plan_silence_negative_and_correction(self):
-        planned = TemporalEvent(
-            event_id="event:planned", actor_id="actor:alpha",
-            kind=TemporalEventKind.PLANNED, fact_digest="a" * 64,
-            source_receipt_sha256="1" * 64,
-            source_time=570, effective_from=570, effective_until=None,
-            observed_at=565, recorded_at=565, expected_report_by=585,
-        )
-        nonoccurrence = TemporalEvent(
-            event_id="event:nonoccurrence", actor_id="actor:alpha",
-            kind=TemporalEventKind.EXPLICIT_NONOCCURRENCE,
-            fact_digest="b" * 64, source_receipt_sha256="2" * 64,
-            source_time=600, effective_from=600, effective_until=None,
-            observed_at=601, recorded_at=601,
-            supersedes_event_id="event:planned",
-        )
-        corrected = TemporalEvent(
-            event_id="event:corrected", actor_id="actor:alpha",
-            kind=TemporalEventKind.CORRECTION, fact_digest="c" * 64,
-            source_receipt_sha256="3" * 64,
-            source_time=620, effective_from=620, effective_until=None,
-            observed_at=621, recorded_at=621,
-            supersedes_event_id="event:nonoccurrence",
-        )
-        events = (planned, nonoccurrence, corrected)
+        planned, nonoccurrence, corrected, events = _temporal_events()
         before = project_as_of(events, actor_id="actor:alpha", as_of=575)
         missing = project_as_of(events, actor_id="actor:alpha", as_of=590)
         explicit = project_as_of(events, actor_id="actor:alpha", as_of=605)
