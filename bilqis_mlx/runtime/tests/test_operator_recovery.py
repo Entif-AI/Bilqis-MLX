@@ -21,6 +21,15 @@ class OperatorRecoveryTests(TestCase):
         self.assertEqual(advice.disposition, "PRESERVE_AND_REPAIR")
         self.assertIn("durable checkpoint", advice.next_action)
 
+    def test_lesson_capacity_drift_is_not_reported_as_custody_mismatch(self):
+        advice = recovery_advice(ValueError(
+            "LEARNING_EXPERIMENT_WEAKNESS_TARGET_CAPACITY_DRIFT"))
+        self.assertEqual(advice.disposition, "INTERNAL_RECOVERY_REQUIRED")
+        self.assertIn("lesson capacity", advice.next_action)
+        self.assertNotIn(
+            "identity or custody evidence disagrees",
+            advice.next_action.lower())
+
     def test_school_state_drift_has_specific_operator_diagnostics(self):
         advice = recovery_advice(ValueError(
             "INVALID_OR_DRIFTED_SCHOOL_STATE: course_digest saved=abc expected=def"))

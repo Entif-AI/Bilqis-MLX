@@ -11,6 +11,39 @@ import bilqis_mlx.runtime.release_adoption as _runtime_release_adoption
 import bilqis_mlx.runtime.state as _runtime_state
 
 
+def _retention_support_capabilities(admitted, active_grades,
+                                    capability: str) -> tuple[str, ...]:
+    """Return fresh-source support matching the surfaces retention protects."""
+    admitted = tuple(admitted)
+    active_grades = tuple(active_grades)
+    if (not active_grades or not isinstance(capability, str) or
+            "." not in capability):
+        return ()
+    target_grade = capability.partition(".")[0]
+    frontier_grade = active_grades[-1]
+    support_grade = (
+        frontier_grade if target_grade != frontier_grade else target_grade)
+    return tuple(sorted(
+        name for name in admitted
+        if name != capability and name.partition(".")[0] == support_grade))
+
+
+def _select_fresh_retention_support_rows(
+        rows, *, rotation: int) -> tuple[dict, ...]:
+    """Choose one complete fresh source family for preservation rehearsal."""
+    if type(rotation) is not int or rotation < 0:
+        raise ValueError(RETENTION_SUPPORT_ROTATION_INVALID)
+    groups = {}
+    for row in rows:
+        if not isinstance(row, dict) or not isinstance(row.get("id"), str):
+            raise ValueError(RETENTION_SUPPORT_ROW_INVALID)
+        groups.setdefault(row.get("source_id", row["id"]), []).append(row)
+    if not groups:
+        return ()
+    keys = sorted(groups, key=str)
+    return tuple(groups[keys[rotation % len(keys)]])
+
+
 def _learning_probe_rows(source_root, graph, receipt, course, school, capability,
                          settings, *, schedule_program=None,
                          executable_release=None):
@@ -376,3 +409,5 @@ def _inject_preservation_rows(chosen, preservation, *, reserved_ids=()):
     if len(delivered) != len(preservation):
         raise ValueError("FRAGILE_PRESERVATION_BATCH_CAPACITY_EXHAUSTED")
     return result, tuple(delivered)
+RETENTION_SUPPORT_ROTATION_INVALID = "RETENTION_SUPPORT_ROTATION_INVALID"
+RETENTION_SUPPORT_ROW_INVALID = "RETENTION_SUPPORT_ROW_INVALID"

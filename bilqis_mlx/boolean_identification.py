@@ -15,8 +15,10 @@ from .boolean_identification_oracle import TASK, VERSION as ORACLE
 from .boolean_identification_oracle import evaluate as independent_evaluate
 from .curriculum import AnswerFamily, BINARY, BOOLEAN_OPERATORS, Capability, Course
 from .grade_a_probe import read_sources
-from .grade_b_oracle import operand_truth
-from .live_grade_b import PREREQUISITES, _operand, _random_world, source_attestation
+from .live_grade_b import (
+    PREREQUISITES, capability_row_identity, source_attestation,
+    source_record_identity,
+)
 
 
 CAPABILITY = "B.IDBOOLOPS"
@@ -24,6 +26,11 @@ GENERATOR = "bilqis.mlx.grade-b-idboolops-constructor/v1"
 RELEASE = "bilqis.mlx.grade-a-b-idboolops/20261019-v1"
 ANSWER_KIND = "boolean_operator"
 ASSESSMENT_ITEMS = 12
+MIN_OPERATOR_DOMAIN_SIZE = 2
+PROPOSITIONS = ("P", "Q")
+REPRESENTATION_VARIATION = "named-proposition-bindings"
+RECORD_SHAPE_ERROR = "GRADE_B_IDBOOLOPS_RECORD_SHAPE"
+OBSERVATION_SHAPE_ERROR = "GRADE_B_IDBOOLOPS_OBSERVATION_SHAPE"
 
 
 def _digest(value) -> str:
@@ -59,7 +66,8 @@ def _require_historical_graph(legacy_root: Path, graph: dict):
 
 def _operator_domain(operators) -> tuple[str, ...]:
     operators = tuple(operators)
-    if (len(operators) < 2 or len(set(operators)) != len(operators) or
+    if (len(operators) < MIN_OPERATOR_DOMAIN_SIZE or
+            len(set(operators)) != len(operators) or
             not set(operators) <= set(BOOLEAN_OPERATORS) or
             operators != tuple(
                 operator for operator in BOOLEAN_OPERATORS
@@ -99,50 +107,41 @@ def _apply(operator: str, values: tuple[bool, ...]) -> bool:
     }[operator]()
 
 
-def _operand_with_truth(micro, rng, world, wanted: bool):
-    for _ in range(512):
-        candidate = _operand(micro, rng, world)
-        if operand_truth(world, candidate) == wanted:
-            return candidate
-    raise ValueError("GRADE_B_IDBOOLOPS_OPERAND_TRUTH_EXHAUSTED")
-
-
-def _operand_prefix(micro, graph, world, operand):
-    encoded = list(micro.encode(micro.record(world, operand)))
-    query = graph["tokens"].index("micro.syntax.query")
-    end = graph["tokens"].index("syntax.end")
-    try:
-        index = encoded.index(query)
-    except ValueError as exc:
-        raise ValueError("GRADE_B_IDBOOLOPS_QUERY_MARKER_MISSING") from exc
-    if encoded[-1] != end:
-        raise ValueError("GRADE_B_IDBOOLOPS_SOURCE_ENCODING_DRIFT")
-    return encoded[:index + 1], encoded[index + 1:-1]
-
-
 def encode_record(record: dict, legacy_root: Path, graph: dict) -> list[int]:
-    """Serialize shown evidence with no operator token present in the input."""
-    micro, _, _, _, _ = read_sources(legacy_root)
+    """Serialize shuffled truth observations with explicit proposition landmarks."""
     _require_historical_graph(legacy_root, graph)
+    if (record.get("task") != TASK or "world" in record or
+            set(record) != {"task", "observations", "options"}):
+        raise ValueError(RECORD_SHAPE_ERROR)
+    names = graph["tokens"]
+    premise = names.index("micro.proof.premise")
+    conclusion = names.index("micro.proof.conclusion")
+    bind = names.index("syntax.bind")
+    separator = names.index("syntax.separator")
+    end = names.index("syntax.end")
+    false_id = names.index("cogal.value.false")
+    true_id = names.index("cogal.value.true")
+    proposition_ids = {
+        name: names.index("cogal.variable." + name)
+        for name in PROPOSITIONS
+    }
+    tokens = [names.index("task.evaluate")]
     observations = record.get("observations") or []
     if not observations:
         raise ValueError("GRADE_B_IDBOOLOPS_OBSERVATIONS_MISSING")
-    first = observations[0]["operands"][0]
-    prefix, _ = _operand_prefix(micro, graph, record["world"], first)
-    premise = graph["tokens"].index("micro.proof.premise")
-    conclusion = graph["tokens"].index("micro.proof.conclusion")
-    separator = graph["tokens"].index("syntax.separator")
-    end = graph["tokens"].index("syntax.end")
-    false_id = graph["tokens"].index("cogal.value.false")
-    true_id = graph["tokens"].index("cogal.value.true")
-    tokens = list(prefix)
     for observation in observations:
-        for operand in observation["operands"]:
-            current_prefix, encoded_operand = _operand_prefix(
-                micro, graph, record["world"], operand)
-            if current_prefix != prefix:
-                raise ValueError("GRADE_B_IDBOOLOPS_WORLD_ENCODING_DRIFT")
-            tokens.extend((premise, *encoded_operand))
+        assignments = observation.get("assignments")
+        if (not isinstance(assignments, dict) or
+                tuple(assignments) != PROPOSITIONS or
+                any(type(assignments[name]) is not bool for name in PROPOSITIONS) or
+                set(observation) != {"assignments", "result"} or
+                type(observation.get("result")) is not bool):
+            raise ValueError(OBSERVATION_SHAPE_ERROR)
+        for name in PROPOSITIONS:
+            tokens.extend((
+                premise, proposition_ids[name], bind,
+                true_id if assignments[name] else false_id,
+            ))
         tokens.extend((conclusion, true_id if observation["result"] else false_id,
                        separator))
     tokens[-1] = end
@@ -154,7 +153,6 @@ def encode_record(record: dict, legacy_root: Path, graph: dict) -> list[int]:
 def _cycle(legacy_root: Path, graph: dict, *, seed: int, cycle: int,
            operators=BOOLEAN_OPERATORS) -> tuple[dict, ...]:
     operators = _operator_domain(operators)
-    micro, _, _, _, _ = read_sources(legacy_root)
     _require_historical_graph(legacy_root, graph)
     logic = _logic_source(legacy_root)
     material = ([GENERATOR, seed, cycle]
@@ -176,10 +174,9 @@ def _cycle(legacy_root: Path, graph: dict, *, seed: int, cycle: int,
         patterns = [(False, False), (False, True), (True, False), (True, True)]
         rng.shuffle(patterns)
         for _ in range(5000):
-            world = _random_world(micro, rng, rng.choice((3, 4)))
+            rng.shuffle(patterns)
             observations = []
             for pattern in patterns:
-                operands = [_operand_with_truth(micro, rng, world, bit) for bit in pattern]
                 generator_truth = _apply(target, pattern)
                 source_values = ((pattern[0],) if target == "NOT" else pattern)
                 source_expr = logic.apply(
@@ -187,20 +184,24 @@ def _cycle(legacy_root: Path, graph: dict, *, seed: int, cycle: int,
                 if (logic.evaluate(source_expr, {}) != generator_truth or
                         logic.independent_evaluate(source_expr, {}) != generator_truth):
                     raise ValueError("GRADE_B_IDBOOLOPS_SOURCE_TRUTH_DISAGREEMENT")
-                observations.append({"operands": operands, "result": generator_truth})
-            record = {"task": TASK, "world": world,
-                      "observations": observations, "options": list(operators)}
+                observations.append({
+                    "assignments": dict(zip(PROPOSITIONS, pattern)),
+                    "result": generator_truth,
+                })
+            record = {"task": TASK, "observations": observations,
+                      "options": list(operators)}
             gold = independent_evaluate(record)
             if gold != target:
                 raise ValueError("GRADE_B_IDBOOLOPS_INDEPENDENT_ORACLE_DISAGREEMENT")
             tokens = encode_record(record, legacy_root, graph)
-            identity = _digest(record)
+            source_id = source_record_identity(record)
+            identity = capability_row_identity(CAPABILITY, record)
             if identity not in {row["id"] for row in rows}:
                 break
         else:
             raise ValueError("GRADE_B_IDBOOLOPS_VARIATION_EXHAUSTED")
         rows.append({
-            "id": identity, "source_id": identity, "capability": CAPABILITY,
+            "id": identity, "source_id": source_id, "capability": CAPABILITY,
             "answer_kind": ANSWER_KIND, "gold": gold, "record": record,
             "tokens": tokens, "oracle": ORACLE, "generator": GENERATOR,
             "operator_options": list(operators),

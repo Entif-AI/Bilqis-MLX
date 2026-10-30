@@ -1142,3 +1142,706 @@ grade or replacing the active semantic program starts a new score era, clears
 the active TOP/cumulative-best projection, and leaves the immutable historical
 events intact. Operator telemetry names the era, cohort count, and the fact that
 TOP is cross-cohort context rather than a paired delta.
+
+## ADR-090 | 2026-10-23 | C progression owns at least 80% of candidate work while B is nongating debt
+
+**Direct user correction after live Prometheus evidence.** Grade B remains
+developmental mastery debt and must continue receiving occasional instruction,
+but the currently admitted B capabilities are explicitly not prerequisites for
+opening the next C semantic stages. They therefore may not dominate the
+candidate/retention-probe budget while C is the active progression frontier.
+
+While C is the latest active grade and both unfinished B debt and unfinished C
+progression debt remain, C owns the primary learning lane. B may consume **no
+more than one candidate visit in five (20%)** from the start of this policy
+epoch. Four C visits must accrue before each supplemental B visit becomes
+eligible. The budget is prefix-safe rather than an eventual average, so a short
+window cannot begin with a burst of B work and claim later compensation.
+
+This cap applies to the candidate-level training and paired retention-testing
+work induced by those visits. Routine cumulative assessment may continue to
+measure B as explicit debt, provided B does not become the scheduling actuator
+for C progression; in the observed A+B+C rubric B already accounts for less
+than 20% of scored exam rows. Promotion sweeps remain C-only progression
+authority. B debt is neither forgiven nor marked mastered, and its scores,
+mistakes and eventual bounded supplemental visits remain durable evidence.
+
+This supersedes ADR-085 only where that decision required every imperfect
+earlier grade to receive a full ordinary MAIN pass during staged C instruction,
+and supersedes ADR-086 only where unrestricted B fallback would exceed the 20%
+budget when C is unavailable. B remains non-quarantining developmental debt;
+once four frontier visits have earned one B visit, that visit may still occur.
+Source-gold authority, candidate retention gates, student/AdamW custody,
+stagnation evidence, and the C promotion criteria are unchanged.
+
+## ADR-091 | 2026-10-23 | Weakness evidence biases fresh teaching; it does not replace the curriculum
+
+**Repair decision from live candidate-retention evidence.** The teacher's
+unresolved-miss ledger had conflated an exact generated specimen with a semantic
+teaching target. Freshly seeded worlds, entity orderings and numeric
+permutations therefore accumulated as thousands of nominally distinct misses.
+Exact replay could consume every current-capability slot in an optimizer batch,
+and visit-local teacher reward was measured on a cohort polluted by those same
+historical replay rows. In the live C.COUNT case, 40 consecutive candidates
+improved that mixed training score while every candidate worsened the fresh
+target probe.
+
+Exact failed rows remain immutable evidence in their scored exam/cohort
+provenance. Active teaching debt is instead reconciled by a source-grounded
+structural class. Boolean connective classes preserve truth pattern, operand
+kind and universe structure; composite/identification classes preserve their
+source-expression/operator structure; numeric classes preserve capability,
+answer kind/gold, operation shape and witness geometry. Unknown providers fail
+back to exact identity rather than receiving a guessed equivalence. A freshly
+scored source-equivalent construction can therefore clear an older teaching
+miss even when its exact generated row ID differs.
+
+Weakness replay may bias a lesson but may not erase fresh current-capability
+variation. With replay active, structured Boolean lessons retain fresh coverage
+of their source truth patterns and typed lessons retain one complete fresh
+source family. Historical replay rows remain eligible in the remaining
+capacity. Teacher local-gain/selection reward is measured only on the newly
+drawn source cohort, never on exact historical replay rows, so memorizing the
+ledger cannot masquerade as fresh capability acquisition.
+
+Candidate preservation is aligned with what the optimizer sees. A B debt lesson
+under a C frontier receives rotating fresh C source support; a C lesson receives
+rotating fresh non-target C sibling support. Support uses newly generated
+source-oracled rows, never fixed exam rows, and preserves one complete source
+family rather than inventing an arbitrary replay percentage. Existing fresh
+target, same-grade, fixed-grade, protected-frontier and whole-school retention
+gates remain unchanged. This repairs the training geometry that was producing
+validly rejected destructive candidates rather than weakening admission to make
+the retention percentage look healthier.
+
+
+## ADR-092 | 2026-10-23 | Bilqis-MLX repository and implementation are public
+
+**Direct user governance change.** `Entif-AI/bilqis-mlx` is now a public
+repository and its implementation posture is public. Repository-owned source
+code, tests, architecture, specifications, implementation notes, evidence, and
+ordinary project handoffs may be published directly without compiling a separate
+screened implementation projection. This supersedes the earlier private-
+implementation posture recorded in historical ADRs and agent instructions.
+
+Protected source authority remains a distinct boundary. `IPR-0220` and any other
+still-private source repository, message, attachment, credential, or verbatim
+private instruction remain protected unless the user separately releases that
+source material. Public repository artifacts should cite such authority by an
+opaque stable identifier when needed and must not require or reproduce a private
+repository URL. Public implementation derived from protected requirements is
+permitted; protected source text is not thereby declassified.
+
+Going forward, publication classification for ordinary Bilqis-MLX repository
+work is **public by default**. A private/split classification is required only
+when the artifact itself contains still-protected source material or another
+independently private datum. This change does not alter human-only neural-update
+authority, student/AdamW custody, source-truth requirements, or historical
+provenance.
+
+
+## ADR-093 | 2026-10-23 | Promotion sweeps update one semantic at a time
+
+**Direct user correction of ADR-084's sweep interpretation.** The >90% trigger
+remains a fresh complete assessment of the currently introduced active grade,
+but that assessment also freezes the initial score vector for the promotion
+sweep. The sweep then revisits each introduced semantic exactly once in canonical
+order. After a semantic visit, only that semantic receives a fresh authoritative
+score in the running sweep vector. Unswept semantics retain their score from the
+triggering vector, and already swept semantics retain their most recent sweep
+score.
+
+The running grade mean is recomputed after each replacement. A mean of at least
+90% continues the sweep; a mean below 90% aborts it. This means a semantic may
+individually remain below 90% so long as the grade mean stays at or above the
+floor. A rejected candidate with zero retained optimizer updates must not appear
+to regress unrelated semantics merely because a new whole-grade cohort happened
+to be harder. Fresh cumulative exams remain truthful evidence and may still be
+recorded, but unrelated fresh-cohort variance does not overwrite unswept entries
+inside the promotion-sweep decision vector.
+
+Completing the sweep still opens exactly one next semantic stage or grade and
+carries every imperfect semantic as mastery debt. It does not mint a champion,
+clear debt, or fabricate mastery. This ADR supersedes ADR-084 and the ADR-085
+cross-reference only for how scores are updated *during* a promotion sweep; the
+strict >90% trigger, canonical one-pass order, >=90% continuation floor, staged
+progression, cumulative evidence, and human-only neural custody remain unchanged.
+
+
+## ADR-094 | 2026-10-23 | Nongating Grade B receives bounded complete training turns
+
+**Direct user correction after continued Prometheus starvation.** ADR-090 solved a
+real failure mode, namely Grade B consuming most of the run while C was the actual
+progression frontier, but it bounded the wrong unit. Its one-B-candidate-per-five
+candidate-visits rule gave B only isolated crumbs. Because the scheduler always
+selected the weakest eligible B capability, `B.IDBOOLOPS` could repeatedly consume
+those crumbs while the rest of the admitted Boolean grade received little or no
+direct instruction. At generation 27187 all eight admitted B capabilities were
+imperfect and the fresh cumulative B score was 51/96 (53.1%), so treating one weak
+capability visit as an adequate Grade-B turn was not serving the developmental debt.
+
+While C is the latest active progression grade and both unfinished B debt and
+unfinished C debt remain, scheduling fairness is measured in **grade training
+turns**, not candidate-capability visits. A training turn is one scheduled teaching
+queue that reaches its assessment boundary. After **no more than four completed
+non-B training turns**, B becomes due for one contiguous `MAIN` pass over **every
+currently imperfect, admitted, eligible B capability** in canonical B order. A
+temporarily perfect B capability need not be retrained merely to pad the pass. If an
+otherwise imperfect B capability is explicitly withheld, it remains debt and is
+not synthesized into the runnable queue.
+
+Completing that B pass resets the cadence. B may not receive another ordinary
+training pass until four additional non-B turns complete. C-frontier weakest-three
+recovery is therefore C-only; it must not smuggle a single weakest B capability into
+the recovery queue. This produces a hard anti-monopoly boundary at the grade-turn
+level while still giving weak B semantics enough contiguous training time to learn.
+The number of candidate visits inside a B pass may exceed ADR-090's former 20%
+candidate-share ceiling because a full grade pass intentionally contains multiple
+capabilities. ADR-090 is superseded on that allocation metric.
+
+This cadence does **not** make B a promotion gate, C prerequisite, championship
+shortcut, stagnation actuator, or permission to weaken retention/source-gold
+requirements. Promotion sweeps remain owned by the active progression grade. B
+scores, misses and mastery debt remain cumulative evidence. Existing pre-ADR-094
+receipts migrate neural-inertly with one B pass due at the next safe assessment
+boundary, avoiding another starvation epoch without rewriting historical visits or
+claiming neural progress.
+
+
+## ADR-095 | 2026-10-25 | IDBOOLOPS restores proposition landmarks without restoring worlds
+
+**Direct user decision after comparing pre- and post-U7C learning behavior.** Keep
+`B.IDBOOLOPS` as a genuine inverse Boolean-identification problem: the target
+operator stays absent from the student input, the complete FF/FT/TF/TT observation
+set stays shuffled, and the answer remains the admitted Boolean-operator head.
+Do not canonicalize row order or reintroduce `A.LINK`, `A.IDENTITY`, or a finite
+world merely to make the task easier.
+
+The direct-U7C representation may, however, restore **structural landmarks** that
+make each shuffled observation internally bindable. Each observation now names the
+already-admitted Boolean proposition slots `P` and `Q` and uses the existing
+`syntax.bind` token to attach each slot to its TRUE/FALSE value before the observed
+result. The representation therefore exposes `P=<value>, Q=<value> -> <result>`
+without exposing the hidden operator. These landmarks are answer-independent and
+add no new semantic token or world-model prerequisite.
+
+This is a source/presentation revision, not claimed neural mastery. Existing cohorts,
+scores, checkpoints, student weights and own AdamW remain immutable historical
+evidence. A live run whose admitted factory release predates the landmark contract
+must adopt one verified same-profile source successor with **zero neural updates**
+before drawing new IDBOOLOPS rows. The scheduler projection and causal student are
+preserved, stale assessment evidence is invalidated, and the changed factory-release
+identity follows the existing championship-identity reset/archive rules rather than
+silently comparing old and new presentation strata.
+
+
+## ADR-096 | 2026-10-25 | AND/IMPLIES complete truth cells and expose outer operand roles
+
+**Direct user decision after observing repeated Grade-B frontier-loss rejections.**
+Extend the narrow information-geometry repair to `B.AND` and `B.IMPLIES` without
+reintroducing world models, hidden-state auxiliary losses, or a new token ABI. The
+source AST, independent Boolean oracle, answer modality, scheduler, retention gates,
+student/AdamW custody and historical evidence remain unchanged.
+
+For 12-row source cohorts, keep exact 6/6 TRUE/FALSE balance while restoring the
+previously omitted truth cells. `B.AND` uses `TT=6, TF=2, FT=2, FF=2`;
+`B.IMPLIES` uses `TF=6, TT=2, FF=2, FT=2`. The original U7C causal-core cells remain
+present as a subset, so the earlier counterfactual influence witness is preserved,
+but the full released source family now exposes all four operand truth combinations.
+This intentionally favors semantic closure over keeping the full 12-row marginal
+distribution optimized for the old sparse single-arm-baseline heuristic.
+
+The student-facing encoding now makes only the two **outer operand roles** explicit:
+`premise P bind <left source expression> ; premise Q bind <right source expression>`.
+The original source-expression diversity and P/Q variable bindings inside those
+expressions remain available; the landmarks factor the outer tree without replacing
+the source expressions with bare truth values. `B.NOT`, `B.OR`, `B.XOR` and `B.IFF`
+retain the historical logic codec. This is narrower than the AST-boundary and
+auxiliary-hidden-state experiments rejected by ADR-066 and makes no claim of neural
+improvement before live evidence exists.
+
+Because the canonical full-B factory currently routes atomic Boolean capabilities
+through the umbrella Boolean-identification provider, that provider explicitly
+declares this presentation variation as well. A run whose admitted release predates
+the marker adopts one verified same-profile `REVISE_SOURCE` successor with zero
+neural updates. The causal student and scheduler projection are preserved while
+stale assessment/championship authority is handled by the existing source-revision
+identity rules.
+
+
+## ADR-097 | 2026-10-25 | Teacher evidence follows teaching geometry; interference throttling is consecutive
+
+**Direct user decision after revising IDBOOLOPS, AND and IMPLIES presentation.**
+Adaptive teacher evidence is causally comparable only while the student's teaching
+surface is unchanged. A capability-local teaching-geometry epoch therefore becomes
+part of contextual policy identity for the revised `B.IDBOOLOPS`, `B.AND` and
+`B.IMPLIES` surfaces. Unchanged capabilities keep their historical context keys.
+The strategy inventory is preserved, but the revised capabilities start fresh
+contextual reward, rejection-pressure and diagnostic evidence. Historical grade/global
+bandit reward is at most a weak prior and is not mutated by geometry-epoch visits
+while the causal experiment channel is active.
+
+Contextual strategy identity also follows behavior rather than nominal knob spelling.
+`preview` remains unavailable and excluded; `depth=1/2` share the shallow policy,
+`depth=3/4` share the deep policy, and `contrast=0.5/1.0` share the diversity policy
+because those are the actual selector thresholds. This prevents the finite strategy
+inventory from fragmenting evidence across behaviorally identical variants.
+
+Exact unresolved-miss specimens from a retired geometry are not replayed into the
+new one. Their historical events/exposure receipts remain evidence, while fresh
+source-equivalent misses may repopulate the active queue under the current admitted
+representation. Negative interference archetypes are likewise compared only inside
+the current teacher context scope rather than across incompatible presentations.
+
+The disposable candidate-step controller is also corrected to match its documented
+intent. Halving/quartering depends on **consecutive interference rejections**, not the
+cumulative count of every interference reason since the last retained candidate.
+`NO_MEASURABLE_TARGET_GAIN` breaks that interference streak; retained candidates
+reset current rejection pressure. Pre-fix receipts lack the new consecutive counter
+and therefore resume at the configured candidate horizon instead of inheriting an
+indefinite 4/16 or 8/16 throttle from old failures. Retention criteria themselves are
+unchanged: full-horizon candidates remain disposable until the same source-grounded
+retention gates accept them.
+
+This corrects a self-locking failure mode observed in the live Prometheus run: many
+capabilities had accumulated old frontier/interference rejects, were permanently
+reduced to four or eight attempted updates, then repeatedly failed to produce target
+gain at that shortened horizon. The resulting rejected attempts did not advance the
+durable optimizer step, causing command-level retained-step progress to collapse even
+while hundreds of disposable updates were being attempted.
+
+
+## ADR-098 | 2026-10-25 | Teacher strategies use a bounded active population
+
+**Direct user decision after retention remained poor despite restoring candidate
+horizons.** Preserve the inherited 512-strategy teacher inventory as historical
+provenance, but stop treating every nominal strategy as a live arm. The current
+trainer first canonicalizes behaviorally equivalent policies, then admits at most 16
+effective strategies into each capability/phase/teaching-geometry context. Up to
+eight active slots are context-local incumbents that have actually retained at least
+one candidate, ranked conservatively by retention evidence; remaining slots are the
+least-observed challengers. Failed challengers rotate back to the dormant bench as
+untried alternatives receive their turn. Dormant policies are not deleted and may
+become active again when context or teaching geometry changes.
+
+Contextual selection is **archive-immutable**. The historical teacher's original
+mutation function remains available for compatibility, but the live contextual path
+uses a non-mutating existing-policy picker and cannot regrow or rewrite the archive.
+This turns `512` from an active-search-space target into a provenance ceiling. The
+active/dormant population is derived from evidence and need not be serialized as a
+second source of truth. Visit telemetry records archive, active-effective and dormant-
+effective counts so policy-space dilution is observable.
+
+
+## ADR-099 | 2026-10-25 | 90% starts stability qualification and telemetry must not round upward across the gate
+
+**Direct user correction after Grade C appeared to reach 90% without sweeping.**
+A grade mean of exactly 90% is sufficient to start
+the existing stability/promotion sweep. The previous strict `> 90%` comparison is
+replaced by `>= 90%`; no downstream graduation or retention criterion is weakened.
+Live history also showed that genuinely above-90% Grade-C exams already entered
+`PROMOTION_SWEEP` (for example 208/231 and 210/231), while compact operator telemetry
+could round a sub-threshold 89.899% score to `90%`. Compact score summaries therefore
+show one decimal place so a displayed `90.0%` corresponds to an actual qualifying
+boundary rather than display rounding.
+
+
+## ADR-100 | 2026-10-25 | COMPOSITE exposes recursive proof-role factorization
+
+**Direct user decision:** apply the previously deferred information-geometry repair to
+`B.COMPOSITE`. Preserve the exact mixed-operator source ASTs, operator-width schedule,
+leaf randomization, P/Q bindings, gold labels, answer modality, and independent oracle,
+but make the recursive compositional roles visible in the student token stream.
+
+Each connective node is now introduced with `micro.proof.conclusion`; each child
+operand or nested subtree is introduced with `micro.proof.premise`; binary siblings
+are separated with the existing `syntax.separator`. The complete tree is followed by
+the historical `syntax.bind` assignment block and one final `syntax.end`. No hidden
+target, intermediate truth label, new semantic root, or auxiliary neural loss is
+introduced. Historical pre-landmark COMPOSITE records remain readable through the
+legacy codec.
+
+This is deliberately **not** a resurrection of ADR-066's failed generic syntax-end,
+child-query/end, postfix, or auxiliary operand-truth experiments. Those variants used
+generic structural delimiters or extra supervision. This revision uses already-known
+proof-role tokens to label the semantic edge relation itself: result node versus
+premise subtree. It therefore remains an empirical representation experiment, not a
+claim that COMPOSITE is solved.
+
+The new presentation is an explicit factory variation axis on both the standalone
+COMPOSITE provider and the canonical umbrella Boolean-identification provider. Runs
+whose admitted release predates it adopt one same-profile `REVISE_SOURCE` successor
+with zero neural updates. `B.COMPOSITE` also opens a fresh teacher geometry epoch so
+old policy rewards, exact miss specimens, and interference evidence do not govern the
+new representation. Retention, student/AdamW custody, and promotion authority remain
+unchanged.
+
+
+## ADR-101 | 2026-10-25 | Quarantine re-probes, decayed foundations rehearse, qualification state is explicit
+
+**Direct user decision after a long-lived Grade-C run exposed three liveness and
+operator-visibility failures.** Stagnation containment remains valid, but a
+quarantined progression-gating capability may not disappear until the human command
+happens to end. After one complete intervening recovery cycle, quarantined debt in
+the current grade is released for one bounded re-probe cycle and injected at the
+front of the recovery queue. It is judged by the same ordinary fresh-score,
+same-checkpoint retention and two-round stagnation evidence. If it again satisfies
+the quarantine predicate it is re-contained; otherwise it remains released. No
+synthetic score, promotion shortcut, or weakened retention rule is introduced.
+
+Previously mastered foundation grades also remain live learning territory when
+current cumulative evidence shows decay. In the three-grade priority topology, the
+immediate predecessor continues its existing one-in-four nongating debt cadence; a
+mastered grade older than that pair receives a bounded imperfect-capability rehearsal
+turn after twice that interval. The policy is grade-neutral and evidence-driven: only
+currently imperfect capabilities are queued, and the cadence resets when the
+foundational run completes. Legacy long-lived receipts begin with one rehearsal due
+check so existing foundation decay is not forced to wait through a new full interval.
+
+Operator telemetry must distinguish a partial active-scope score from qualification
+authority. If any capability in the displayed grade is withheld, the mastery row and
+operator summary explicitly say `ACTIVE-SCOPE` and `QUALIFICATION BLOCKED`, naming
+the withheld capabilities. Likewise, `PROMOTION_SWEEP` and
+`ASSESS_PROMOTION_SWEEP` are rendered as `GRADUATION SWEEP IN PROGRESS` so repeated
+90%+ observations cannot look like an inert ordinary mean while stability
+qualification is actually being rechecked capability by capability.
+
+
+## ADR-102 | 2026-10-25 | Teacher credit follows realized lesson delivery
+
+**Evidence-driven completion of the contextual teacher experiment.** After the
+candidate horizon and active-strategy population repairs, the live run continued to
+show that most rejected teacher visits produced no measurable target gain even though
+full-horizon candidates were again the normal case. Inspection of the delivery
+receipts established a distinct causal problem: source availability, weakness replay,
+fragile preservation, retention support and reserved batch capacity can make the
+lesson actually delivered to the optimizer differ materially from the strategy that
+requested it. Rewarding only the nominal request therefore merges unlike experiments
+and can teach the selector the wrong causal lesson.
+
+The immutable historical strategy archive remains the request/provenance surface, but
+new contextual evidence is additionally keyed by a **realized teacher action** derived
+from what the optimizer actually received. The realized identity includes learning
+rate and candidate horizon, observed depth and contrast modes, actual old-grade,
+preservation, retention-support and fresh-support delivery, weakness-target and
+semantic-pattern coverage, applied confidence/distillation guidance, enrichment and
+answer-kind geometry. A nominal field that did not change delivery does not by itself
+split realized-action evidence.
+
+Each nominal policy retains its historical compatibility record and its sequence of
+realized actions. Contextual selection and the bounded active-population evidence use
+the latest realized action when present, while pre-ADR-102 records remain readable and
+fall back to their existing nominal effective-policy identity. This is a forward-only
+evidence refinement: previous reward is not rewritten or fabricated.
+
+When source-paired contextual retention evidence exists, new outcomes no longer feed
+the legacy nominal grade/global bandit as though the requested strategy alone caused
+the delivered lesson. Historical grade/global statistics remain available only as the
+existing bounded exploration prior. Retention, source-gold, custody, promotion,
+qualification and student/AdamW rules are unchanged.
+
+
+## ADR-103 | 2026-10-25 | Promotion sweep retries are bound to student checkpoint and semantic scope
+
+**Direct user correction after live Grade-C qualification repeatedly fired on an
+unchanged student.** Fresh generated assessment cohorts are intentionally variable,
+so a fixed student can drift above and below the 90% promotion floor without any
+retained neural update. That score flux is useful assessment evidence, but it is not
+new learning and may not repeatedly manufacture graduation attempts.
+
+Each promotion-sweep attempt is therefore durably bound to the exact causal student
+checkpoint and the exact introduced semantic scope that triggered it. The first
+qualifying assessment for a previously unattempted checkpoint/scope pair may start the
+sweep. If that sweep fails, later cohorts for the same unchanged student and same
+scope remain ordinary assessment evidence and cannot re-enter `PROMOTION_SWEEP`.
+A retained candidate changes the causal student checkpoint and may re-arm that same
+scope. A successful sweep that expands the introduced semantic scope also creates a
+new qualification contract and may receive one attempt even if the student itself did
+not change between the two scopes.
+
+Historical receipts predate this attempt memory. On resume, they migrate
+neural-inertly by treating the currently loaded student and current introduced scope
+as already attempted. This conservative migration prevents an immediate score-flux
+retry while preserving all historical exams, weights, own AdamW, retention evidence,
+mastery debt and promotion criteria. No threshold is lowered and no score is
+discarded; the change only prevents repeated qualification authority from being
+created by question-set variance alone.
+
+
+## ADR-104 | 2026-10-25 | Teacher selection exploits retained incumbents and aggregates realized-delivery outcomes
+
+**Direct user correction after a long no-retention interval following the bounded
+teacher-strategy and realized-delivery changes.** The 16-strategy active population
+bounded the search space but did not bound novelty pressure inside that population.
+The inherited UCB still assigned every untried challenger an overwhelming novelty
+bonus, so contexts with a proven retained incumbent could repeatedly choose unseen
+challengers instead. This defeated the purpose of maintaining an incumbent bench.
+
+Contextual selection now prefers the best retained active strategy whenever one exists
+and remains in force while that incumbent continues to work. Exploration is not
+removed: after four consecutive rejected attempts for the capability/scope, one
+selection slot is returned to challenger exploration before incumbent exploitation
+resumes. Contexts with no retained evidence continue to explore normally. Retention,
+source-gold, custody, AdamW, promotion and qualification criteria are unchanged.
+
+This ADR also supersedes ADR-102's rule that contextual selection should use only the
+**latest** realized-action identity. Exact realized deliveries remain individually
+receipted and outcome-credited for diagnostics, but they are post-action facts: the
+next exact delivery signature is not knowable until after a nominal policy has already
+been chosen and the lesson assembled. Selection therefore uses the aggregate outcome
+distribution produced by each nominal effective policy across all of its exact
+realized deliveries. This preserves realized-delivery provenance without fragmenting
+predictive evidence across batch-level signatures that may never repeat, and a later
+failed realized variant no longer erases earlier retained evidence for the same policy.
+
+
+## ADR-105 | 2026-10-25 | Teacher vNext begins as portable evidence and shadow control
+
+**Issue #321 creates the successor teacher-learning control plane without granting it
+new neural authority.** The current strategy bandit remains the actual Prometheus
+selector while vNext records an architecture-neutral learner/action/outcome ledger,
+estimates retention probability plus target/protected/cost effects with uncertainty,
+and evaluates multi-fidelity and proposal-family decisions in shadow mode.
+
+The predictive learner state is a coarse `StudentRegion`, not an exact checkpoint or
+generated-batch identity. Exact student, source, cohort, proposal and realized-delivery
+identities remain immutable provenance outside the generalization key. This prevents
+the evidence fragmentation observed during the first realized-action experiment.
+The region nevertheless preserves material learner topology: active-grade capability
+score bands, mastery-debt shape and differentiated high rejection-pressure bands keep
+distinct learner states from aliasing merely because they share one aggregate grade
+mean. This is semantic state generalization, not checkpoint identity.
+
+Candidate evaluation now supports neural-inert target probes at a versioned
+multi-fidelity ladder (`2/4/8/16` in the first policy). The candidate still runs its
+existing full authorized horizon and the existing retention decision remains the sole
+durable student/AdamW admission authority. Shadow receipts measure hypothetical early
+stops, false kills/continues and compute savings. An explicit evidence gate can report
+that active early stopping appears qualified, but that receipt does not activate it.
+
+The shadow proposal layer distinguishes incumbent replay, local incumbent mutation,
+neighbor transfer, global challenge and a learned local proposal distribution. It may
+recommend parameter combinations absent from the historical 512-strategy archive;
+the archive itself remains immutable. Thompson-style acquisition uses predicted
+retention, target gain, protected risk, compute cost and uncertainty instead of an
+unbounded unseen-arm novelty bonus. No shadow proposal changes actual policy selection
+in this epoch.
+
+The portable contract and fixture are shared authority for the divergent developmental
+teacher in #130. Shared code is optional; compatible evidence semantics, replay,
+calibration, multi-fidelity authority boundaries and final-retention authority are
+mandatory. See `docs/architecture/TEACHER_VNEXT_PORTABLE_CONTRACT_V1.md`.
+
+
+## ADR-106 | 2026-10-25 | Incumbent evidence is checkpoint-local when the student is unchanged
+
+**Live evidence falsified the assumption that a strategy which retained on an older
+student remains a useful incumbent for the current student.** The same effective
+policy can improve a capability at one durable checkpoint and push that capability in
+the opposite direction after later retained learning, even when capability, phase,
+curriculum scope and teaching geometry are otherwise unchanged.
+
+Prometheus therefore treats repeated failures of one effective policy against one
+unchanged durable student as checkpoint-local negative evidence. After a bounded
+number of failures, that policy rotates out of the active contextual bench for the
+remainder of that exact student checkpoint and a fresh eligible challenger rotates in.
+The historical strategy/archive record is not deleted or rewritten. A retained update
+changes the student checkpoint and automatically gives the policy a clean opportunity
+against the new learner state.
+
+This is a liveness/efficiency correction, not a retention shortcut. Candidate
+retention, source/oracle truth, custody, AdamW, promotion and qualification authority
+are unchanged. Teacher vNext's `StudentRegion` remains the longer-term generalization
+surface; exact checkpoint identity here is used only to prevent redundant retries
+against an actually unchanged learner, not as the predictive region key.
+
+
+## ADR-107 | 2026-10-25 | Trainer software identity is SemVer-governed and run-owned
+
+**Direct user request to make fast-moving trainer changes operationally legible.**
+Bilqis MLX software releases use Semantic Versioning, a dated checked-in changelog,
+and one version value shared by the Python package, Python project manifest and npm
+manifest. Compatible fixes increment PATCH, backward-compatible capability additions
+increment MINOR, and breaking software/runtime contracts increment MAJOR. A release
+tranche updates its version and changelog together; immutable release tags remain
+`vMAJOR.MINOR.PATCH` after reviewed integration.
+
+The dashboard distinguishes the version of the trainer that produced the run from the
+version of the dashboard code rendering it. `SCHOOL_SESSION_STARTED` records the
+trainer `software_version`, and the active receipt carries the same value for durable
+readback. A detached dashboard displays that run-owned value when available and its
+own UI package version separately. Historical sessions that predate software-version
+telemetry are explicitly displayed as `unversioned`; they must never borrow the
+version number of a newer observer checkout.
+
+The first release under this clarified operator contract is `0.3.0`. This versioning
+surface is provenance and operator telemetry only: it does not alter neural state,
+curriculum authority, retention, custody, promotion, qualification or championship
+semantics.
+
+
+## ADR-108 | 2026-10-25 | Release Please owns future SemVer transitions
+
+**ADR-107 established software-version provenance; this ADR clarifies who advances
+that version.** `v0.2.0` remains the last actually tagged source release. Ordinary
+feature/fix branches retain the last released SemVer and express release intent through
+Conventional Commit history instead of pre-claiming a future version. After reviewed
+changes reach `main`, Release Please computes the next SemVer, updates the generated
+release changelog and all checked-in version surfaces in one release PR, and creates
+the immutable tag/GitHub Release only after that PR passes review and merges. The first
+expected generated successor from the present feature set is `v0.3.0`; it is not
+considered released until that automation completes on `main`.
+
+The local commit-msg Husky hook and GitHub PR workflow both enforce Conventional
+Commits. Release Please uses `fix` as PATCH evidence, `feat` as MINOR evidence, and a
+breaking marker as MAJOR evidence. The release PR is the sole ordinary writer of
+`CHANGELOG.md`, `package.json`, `package-lock.json`, `pyproject.toml`,
+`bilqis_mlx.__version__`, and `.release-please-manifest.json` for release advancement.
+The existing tag workflow becomes verification-only so there is exactly one release
+publisher. No synthetic check-run attestation or branch-protection bypass is adopted;
+bot-created PR CI follows GitHub's normal approval-required security gate when it
+applies.
+
+This release automation remains source provenance only. It cannot start neural
+training, alter a student or AdamW, certify curriculum mastery, or convert a source
+release into a neural qualification claim.
+
+
+## ADR-109 | 2026-10-26 | Same-student retirement requires consecutive target inertia
+
+**A completed 57-minute control run on the pre-vNext controller refined ADR-106 before
+its checkpoint-retirement rule reached production.** The run ended at optimizer step
+147376 after 290 command visits. Its append-only teacher ledger contained 273 actual
+teacher proposals: 182 (66.7%) failed with `NO_MEASURABLE_TARGET_GAIN`, 72 moved the
+target but failed a preservation/interference gate, and 19 were retained. The run was
+still executing source commit `13e5252`, so it did not exercise ADR-106 or Teacher
+vNext and is treated as control evidence rather than validation of those changes.
+
+Replay showed that retiring an effective policy after two arbitrary rejections was
+too aggressive: across the available post-generation-39000 history it would suppress
+several later retained winners, including one C.SUB winner in this control run. A
+rejection that measurably moves the target is not evidence that the teaching policy is
+target-inert; it may instead be an interference problem. Checkpoint-local retirement
+therefore counts only **consecutive `NO_MEASURABLE_TARGET_GAIN` outcomes** for the
+same effective policy/context/unchanged student. Any measurable target movement resets
+that policy-local streak even if the candidate is rejected by a later preservation
+gate. Retirement begins after four consecutive no-target-gain outcomes. Historical
+replay at that threshold removed 73 later failed retries / 1,160 attempted optimizer
+steps with zero observed retained winners in the blocked class. This replay is evidence
+for containment, not a guarantee of future retention probability.
+
+The same control run exposed a dashboard accounting defect: command-local `visits`
+reset at `SCHOOL_SESSION_STARTED`, while attempted steps, retained steps and retained
+visits did not. Ratios shown across those counters could therefore mix different
+execution epochs. `begin_execution` now resets all four command-local counters together
+and resets the attempted-step rate sampler. Historical append-only events remain
+unchanged; this is an operator-telemetry correction only.
+
+Candidate retention, source/oracle truth, student/AdamW custody, promotion,
+qualification and human ownership of neural training remain unchanged.
+
+## ADR-110 | 2026-10-26 | Shadow early stopping requires target inertia through step eight
+
+The first completed human calibration run on merged Teacher vNext ended normally at
+generation 43120 / optimizer step 148016 after 292 command visits. Its append-only
+ledger contains 267 actual teacher proposals, 17 retained candidates and 228 retained
+optimizer updates, for 6.37% proposal retention. Legacy UCB selected all 267 actual
+policies; Teacher vNext remained evidence/shadow-only. `NO_MEASURABLE_TARGET_GAIN`
+remained dominant at 175/267 proposals (65.54%), so this run is evidence about the
+legacy selector plus vNext calibration, not a test of learned proposal authority.
+
+The original multi-fidelity shadow rule was too eager: stopping at the first inert
+2/4/8-step probe would have recommended 231 stops and falsely killed 9 eventual
+retentions. Replay of the completed run establishes a safer shadow policy: **do not
+recommend an early stop before step 8, and at step 8 stop only when no earlier probe
+through that rung has shown the configured positive target gain.** This preserves a
+candidate such as `[0, 1, 0, 2]`, whose transient step-4 gain is evidence against target
+inertia even though its step-8 cumulative delta returns to zero.
+
+Under this v2 shadow rule, the completed run yields 125 hypothetical stops, one false
+kill (generation 42833, `C.COUNT`, trajectory `[0, 0, 0, 2]`) and 1,000 saved candidate
+optimizer steps out of 3,996 attempted (25.03%). The false-kill rate among stop
+recommendations is 0.8% and mean savings are 3.75 steps/review, satisfying the current
+shadow activation evidence thresholds on this run. **Qualification is evidence, not
+authority:** actual early stopping remains disabled, full candidate execution and the
+existing retention gate remain authoritative, and another human-operated run is
+required before any separate activation decision.
+
+The same run also reveals support starvation in the learned local proposal model:
+267 visits produced 223 exact `StudentRegion` keys, with no exact region receiving more
+than four observations, while the learned distribution requires at least 16 observations
+and three retentions. Do not lower those evidence thresholds or collapse materially
+different learner states merely to force qualification. Any future pooling/backoff or
+authority-transition design requires separate evidence and review.
+
+## ADR-111 | 2026-10-26 | Teacher vNext receives bounded proposal canary authority
+
+The first merged vNext calibration established that exact `StudentRegion` evidence was
+too fragmented to support a learned proposer: 267 candidate observations produced 223
+exact regions. The predictive contract therefore keeps every exact region and receipt
+unchanged while adding a versioned hierarchical evidence backoff. Prediction first uses
+exact evidence when supported, then progressively compatible capability+phase,
+capability, grade+phase, and grade neighborhoods. Curriculum scope, geometry epoch and
+numeric scope remain compatibility boundaries; exact checkpoint identity remains
+forbidden as a predictive region key.
+
+The learned local proposal distribution may use the nearest compatible backoff level,
+but its evidence gate remains unchanged at **16 observations and 3 retentions**. The
+system does not manufacture qualification by lowering support thresholds. Replay over
+160 states from the clean first merged-vNext run changes learned-distribution status
+from structurally starved to `QUALIFIED` in 95 states and `NOT_QUALIFIED` in 65.
+
+Teacher vNext now receives a deliberately bounded **real proposal-selection canary**.
+Every fourth actual teacher candidate is eligible. A canary proposal must map to an
+existing executable strategy, have at least eight compatible observations and at least
+one retained observation, and remain inside the legacy selector's post-retirement active
+effective-policy set. If any condition is missing, selection falls back to the inherited
+controller. Novel local/learned parameter proposals remain shadow-only until a separate
+non-archive custody and causal-credit path exists. This preserves the immutable
+historical strategy archive and prevents vNext from resurrecting a policy retired for
+same-student target inertia.
+
+The inherited controller still computes its selection first on every visit. Canary
+receipts preserve that `legacy_policy_key` as a counterfactual and explicitly record
+selector origin, actual authority change, vNext policy version, evidence level/support,
+selected family/policy and predicted retention. This makes the next bounded human run a
+direct vNext-versus-legacy experiment instead of another shadow-only observation hour.
+On a clean-run replay of the last 160 states, 40 canary slots were scheduled, 14 had
+enough retained evidence to select a vNext policy and 26 safely fell back; selected
+policies had mean predicted retention about 11.3% with a 6.25% minimum. These are
+counterfactual support diagnostics, not claimed realized improvement.
+
+This authority is only over **which valid teaching policy to try**. Source/oracle truth,
+lesson validation, candidate execution, retention admission, student/AdamW custody,
+promotion, qualification and championship authority are unchanged. Multi-fidelity
+early stopping remains shadow-only and is not activated by this decision. Neural
+training remains human-operated.
+
+## ADR-112 | 2026-10-26 | Promotion sweeps use 92/87 hysteresis
+
+**Direct user correction after live sweep diagnosis.** The one-attempt-per-student and
+introduced-scope latch from ADR-103 is working: unchanged failed attempts do not re-arm
+from cohort reshuffling alone. The remaining failure is the sweep threshold itself.
+Across 31 observed sweep attempts, the median trigger mean was 90.91%; 24 attempts had
+no retained student update, yet 22 of those still crossed below the old 90% continuation
+floor. The final-stage C attempt demonstrated the mechanism cleanly: the unchanged
+student entered at 208/231 = 90.04%, C.COUNT was already perfect so no neural update
+occurred, and the next fresh cohort scored that capability 32/33 instead of 33/33,
+dropping the stitched mean to 207/231 = 89.61% and aborting immediately.
+
+The active promotion policy therefore uses explicit hysteresis. A previously unattempted
+student+scope pair may enter `PROMOTION_SWEEP` only when the fresh introduced-grade mean
+is **at least 92%**. Once the sweep is active, the running stitched grade mean may vary
+inside the hysteresis band and the sweep aborts only when that mean falls **below 87%**.
+Exactly 92% starts; exactly 87% continues. Every other sweep invariant remains intact:
+canonical capability order, per-capability fresh authoritative replacement, frozen
+unswept scores, checkpoint/scope-bound attempt memory, mastery-debt carry-forward,
+source/oracle truth, retention custody, student+own-AdamW custody, championship
+authority, and human ownership of neural training.
+
+This intentionally supersedes the single-threshold portions of ADR-084/085/093/099/103
+without rewriting those historical decisions. It is a pragmatic buffer, not a claim
+that 92/87 is statistically optimal. Future evidence may replace these constants with a
+calibrated readiness model, but until then no first-crossing near 90% may launch a sweep.
+Replay of those 31 historical launches shows that only 4 began at or above 92%; the
+entry buffer would therefore have suppressed 27/31 (87.1%) of the observed launches.

@@ -88,12 +88,12 @@ def four_grade_course():
 
 
 class SchoolTests(unittest.TestCase):
-    def test_stable_above_ninety_grade_mean_enters_next_grade_with_debt(self):
+    def test_stable_above_ninety_two_grade_mean_enters_next_grade_with_debt(self):
         course = self.course
         student = cp("mean-promoted-A", 105)
         state = grade_loop(course, start_new(course, self.init), student)
         scores = {f"a.{i}": (8, 8) for i in range(6)}
-        scores["a.0"] = (4, 8)
+        scores["a.0"] = (5, 8)
 
         state = assess_and_settle(course, state, student, scores)
 
@@ -101,7 +101,7 @@ class SchoolTests(unittest.TestCase):
         self.assertEqual(state.carried_mastery_debt, ("a.0",))
         self.assertNotIn("A", state.champions)
 
-    def test_stable_above_ninety_partial_grade_waits_at_debt_boundary(self):
+    def test_stable_above_ninety_two_partial_grade_waits_at_debt_boundary(self):
         full = self.course
         a_only = replace(
             full, grades=(full.grades[0],), version="partial-A-mean/v1",
@@ -110,7 +110,7 @@ class SchoolTests(unittest.TestCase):
         student = cp("mean-promoted-partial-A", 106)
         state = grade_loop(a_only, start_new(a_only, self.init), student)
         scores = {f"a.{i}": (8, 8) for i in range(6)}
-        scores["a.0"] = (4, 8)
+        scores["a.0"] = (5, 8)
 
         state = assess_and_settle(a_only, state, student, scores)
 

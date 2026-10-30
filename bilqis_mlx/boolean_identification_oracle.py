@@ -7,6 +7,10 @@ from .curriculum import BOOLEAN_OPERATORS
 VERSION = "bilqis.mlx.grade-b-idboolops-record-oracle/v1"
 CAPABILITY = "B.IDBOOLOPS"
 TASK = "identify_boolean_operator"
+PROBE_ARITY = 2
+PROPOSITIONS = ("P", "Q")
+DIRECT_OPERAND_ERROR = "GRADE_B_IDBOOLOPS_ORACLE_DIRECT_OPERAND_INVALID"
+OBSERVATION_SHAPE_ERROR = "GRADE_B_IDBOOLOPS_ORACLE_OBSERVATION_SHAPE"
 
 
 def _entity(node):
@@ -40,7 +44,7 @@ def _apply(operator: str, values: tuple[bool, ...]) -> bool:
     # IDBOOLOPS normalizes every candidate to the same two-slot experimental
     # surface. Unary NOT acts on the first proposition; the second proposition
     # is controlled irrelevant context. This keeps arity from leaking identity.
-    if len(values) != 2:
+    if len(values) != PROBE_ARITY:
         raise ValueError("GRADE_B_IDBOOLOPS_ORACLE_PROBE_ARITY")
     if operator == "NOT":
         return not values[0]
@@ -57,7 +61,9 @@ def _apply(operator: str, values: tuple[bool, ...]) -> bool:
 def evaluate(record: dict, capability: str = CAPABILITY) -> str:
     """Return the one admitted operator compatible with every shown observation."""
     if (not isinstance(record, dict) or record.get("task") != TASK or
-            capability != CAPABILITY or set(record) != {"task", "world", "observations", "options"}):
+            capability != CAPABILITY or set(record) not in (
+                {"task", "world", "observations", "options"},
+                {"task", "observations", "options"})):
         raise ValueError("GRADE_B_IDBOOLOPS_ORACLE_UNKNOWN_TASK_OR_CAPABILITY")
     options = record["options"]
     if (not isinstance(options, list) or len(options) < 2 or
@@ -72,13 +78,30 @@ def evaluate(record: dict, capability: str = CAPABILITY) -> str:
     truth_patterns = set()
     parsed = []
     for observation in observations:
-        if (not isinstance(observation, dict) or set(observation) != {"operands", "result"} or
-                not isinstance(observation["operands"], list) or
-                len(observation["operands"]) != 2 or
-                type(observation["result"]) is not bool):
-            raise ValueError("GRADE_B_IDBOOLOPS_ORACLE_OBSERVATION_SHAPE")
-        values = tuple(_primitive_truth(record["world"], operand)
-                       for operand in observation["operands"])
+        if not isinstance(observation, dict) or type(observation.get("result")) is not bool:
+            raise ValueError(OBSERVATION_SHAPE_ERROR)
+        if set(observation) == {"assignments", "result"}:
+            assignments = observation["assignments"]
+            if (not isinstance(assignments, dict) or
+                    tuple(assignments) != PROPOSITIONS or
+                    any(type(assignments[name]) is not bool for name in PROPOSITIONS)):
+                raise ValueError(OBSERVATION_SHAPE_ERROR)
+            values = tuple(assignments[name] for name in PROPOSITIONS)
+        elif (set(observation) == {"operands", "result"} and
+              isinstance(observation["operands"], list) and
+              len(observation["operands"]) == PROBE_ARITY and "world" in record):
+            values = tuple(_primitive_truth(record["world"], operand)
+                           for operand in observation["operands"])
+        elif (set(observation) == {"operands", "result"} and
+              isinstance(observation["operands"], list) and
+              len(observation["operands"]) == PROBE_ARITY):
+            values = tuple(operand["value"] for operand in observation["operands"]
+                           if isinstance(operand, dict) and operand.get("kind") == "literal"
+                           and type(operand.get("value")) is bool)
+            if len(values) != PROBE_ARITY:
+                raise ValueError(DIRECT_OPERAND_ERROR)
+        else:
+            raise ValueError(OBSERVATION_SHAPE_ERROR)
         truth_patterns.add(values)
         parsed.append((values, observation["result"]))
     required = {(False, False), (False, True), (True, False), (True, True)}

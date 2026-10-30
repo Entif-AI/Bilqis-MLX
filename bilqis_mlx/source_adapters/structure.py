@@ -15,8 +15,9 @@ _SOURCE_NODES = {
     "apply": ("cogal.operator.", "operator"),
     "op": ("development.op.", "op"),
 }
-_TERMINALS = frozenset(("entity", "const", "literal"))
+_TERMINALS = frozenset(("entity", "const", "literal", "variable"))
 MAX_INSPECTION_DEPTH = 64  # bounded parsing, not a curriculum complexity rule
+IDENTIFICATION_OPERANDS_MISSING = "LESSON_SOURCE_IDENTIFICATION_OPERANDS_MISSING"
 
 
 @dataclass(frozen=True)
@@ -70,10 +71,20 @@ def inspect_boolean_identification(record: dict, root: str) -> SourceExpressionS
     operations = 1
     deepest = 1
     for observation in observations:
-        operands = observation.get("operands") if isinstance(observation, dict) else None
+        if not isinstance(observation, dict):
+            raise ValueError(IDENTIFICATION_OPERANDS_MISSING)
+        assignments = observation.get("assignments")
+        if assignments is not None:
+            if (not isinstance(assignments, dict) or tuple(assignments) != ("P", "Q") or
+                    any(type(assignments[name]) is not bool for name in ("P", "Q"))):
+                raise ValueError(IDENTIFICATION_OPERANDS_MISSING)
+            continue
+        operands = observation.get("operands")
         if not isinstance(operands, list) or not operands:
-            raise ValueError("LESSON_SOURCE_IDENTIFICATION_OPERANDS_MISSING")
+            raise ValueError(IDENTIFICATION_OPERANDS_MISSING)
         for operand in operands:
+            if isinstance(operand, dict) and operand.get("kind") == "literal":
+                continue
             shape = inspect_source_query(operand)
             rooted.extend(shape.rooted_operators)
             operations += shape.semantic_operations

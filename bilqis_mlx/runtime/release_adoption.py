@@ -21,6 +21,11 @@ import pathlib as _pathlib
 import uuid as _uuid
 
 
+IDBOOLOPS_ADMITTED_PROVIDER_MISSING = "FACTORY_IDBOOLOPS_ADMITTED_PROVIDER_MISSING"
+SOURCE_PRESENTATION_ADMITTED_PROVIDER_MISSING = (
+    "FACTORY_SOURCE_PRESENTATION_ADMITTED_PROVIDER_MISSING")
+
+
 def _ensure_factory_admission(run_dir, receipt, course, graph):
     """Neural-inert migration for historical runs that predate FactoryRelease."""
     if receipt.get("factory_admission") is not None:
@@ -125,6 +130,93 @@ def _verify_profile_successor(predecessor, successor, graph, profile):
         raise ValueError("FACTORY_EXECUTABLE_PROFILE_TRANSITION_MISMATCH")
 
 
+def _idboolops_landmark_revision_required(predecessor, registry=None) -> bool:
+    """Return whether this admitted release predates the named P/Q row landmarks."""
+    from bilqis_mlx.boolean_identification import (
+        CAPABILITY, REPRESENTATION_VARIATION,
+    )
+    execution = predecessor.execution_plan.capability_map.get(CAPABILITY)
+    binding = predecessor.source_bindings.by_capability.get(CAPABILITY)
+    if execution is None or binding is None:
+        return False
+    admitted = next(
+        (provider for provider in predecessor.source_adapters
+         if provider.adapter_id == execution.provider_id),
+        None,
+    )
+    if admitted is None:
+        raise ValueError(IDBOOLOPS_ADMITTED_PROVIDER_MISSING)
+    registry = registry or _source_adapters_school.live_source_registry()
+    current = registry.require(
+        binding.generator_id, binding.oracle_id).descriptor
+    return (
+        REPRESENTATION_VARIATION in current.variation_axes and
+        REPRESENTATION_VARIATION not in admitted.variation_axes
+    )
+
+
+def _atomic_boolean_landmark_revision_required(predecessor, registry=None) -> bool:
+    """Return whether admitted AND/IMPLIES rows predate outer P/Q landmarks."""
+    from bilqis_mlx.live_grade_b import (
+        OUTER_LANDMARK_CONNECTIVES, OUTER_LANDMARK_VARIATION,
+    )
+    registry = registry or _source_adapters_school.live_source_registry()
+    for operator in OUTER_LANDMARK_CONNECTIVES:
+        capability = "B." + operator
+        execution = predecessor.execution_plan.capability_map.get(capability)
+        binding = predecessor.source_bindings.by_capability.get(capability)
+        if execution is None or binding is None:
+            continue
+        admitted = next(
+            (provider for provider in predecessor.source_adapters
+             if provider.adapter_id == execution.provider_id),
+            None,
+        )
+        if admitted is None:
+            raise ValueError(SOURCE_PRESENTATION_ADMITTED_PROVIDER_MISSING)
+        current = registry.require(
+            binding.generator_id, binding.oracle_id).descriptor
+        if (OUTER_LANDMARK_VARIATION in current.variation_axes and
+                OUTER_LANDMARK_VARIATION not in admitted.variation_axes):
+            return True
+    return False
+
+
+def _composite_landmark_revision_required(predecessor, registry=None) -> bool:
+    """Return whether admitted COMPOSITE rows predate recursive proof-role landmarks."""
+    from bilqis_mlx.boolean_composite import (
+        CAPABILITY, REPRESENTATION_VARIATION,
+    )
+    execution = predecessor.execution_plan.capability_map.get(CAPABILITY)
+    binding = predecessor.source_bindings.by_capability.get(CAPABILITY)
+    if execution is None or binding is None:
+        return False
+    admitted = next(
+        (provider for provider in predecessor.source_adapters
+         if provider.adapter_id == execution.provider_id),
+        None,
+    )
+    if admitted is None:
+        raise ValueError(SOURCE_PRESENTATION_ADMITTED_PROVIDER_MISSING)
+    registry = registry or _source_adapters_school.live_source_registry()
+    current = registry.require(
+        binding.generator_id, binding.oracle_id).descriptor
+    return (
+        REPRESENTATION_VARIATION in current.variation_axes and
+        REPRESENTATION_VARIATION not in admitted.variation_axes
+    )
+
+
+def _source_presentation_revision_required(predecessor, registry=None) -> bool:
+    """Collect explicitly authorized neural-inert source-presentation revisions."""
+    registry = registry or _source_adapters_school.live_source_registry()
+    return (
+        _idboolops_landmark_revision_required(predecessor, registry) or
+        _atomic_boolean_landmark_revision_required(predecessor, registry) or
+        _composite_landmark_revision_required(predecessor, registry)
+    )
+
+
 def _profile_transition(previous_program, successor_program, school, *, mastery_debt=None):
     appended = len(successor_program.grades) == len(previous_program.grades) + 1
     if previous_program == successor_program and mastery_debt is None:
@@ -145,8 +237,17 @@ def _profile_transition(previous_program, successor_program, school, *, mastery_
             True,
         )
     if revised and mastery_debt is None:
-        next_state, revised_grade = _curriculum_scheduler.adopt_revised_program(
-            previous_program, successor_program, school)
+        changed = tuple(
+            index for index, (old_grade, new_grade) in
+            enumerate(zip(previous_program.grades, successor_program.grades))
+            if (old_grade.capabilities != new_grade.capabilities or
+                old_grade.teaching_stages != new_grade.teaching_stages))
+        if len(changed) == 1 and changed[0] < school.grade_index:
+            next_state, revised_grade = _curriculum_scheduler.adopt_expanded_prior_grade(
+                previous_program, successor_program, school)
+        else:
+            next_state, revised_grade = _curriculum_scheduler.adopt_revised_program(
+                previous_program, successor_program, school)
         return next_state, revised_grade, False
     raise ValueError("FACTORY_EXECUTABLE_PROFILE_TRANSITION_UNSUPPORTED")
 
@@ -204,7 +305,7 @@ def _profile_championship_state(
 def _profile_adoption_receipt(
         receipt, compatibility_course, successor, successor_program,
         release_file, admission, identity, epoch, history, revised_grade,
-        graph):
+        graph, *, invalidate_assessment_evidence=False):
     heads = _factory_executable_release.answer_heads_from_executable_release(successor, graph)
     numeric_values = heads.get("numeric_active", {}).get("values")
     candidate = {
@@ -219,17 +320,23 @@ def _profile_adoption_receipt(
         "championship_school_identity": identity,
         "mentor_epoch": epoch,
         "championship_epoch_history": history,
-        "last_exam": None if revised_grade is not None else receipt.get("last_exam"),
+        "last_exam": (
+            None if revised_grade is not None or invalidate_assessment_evidence
+            else receipt.get("last_exam")),
     }
     if numeric_values is not None:
         candidate["numeric_maximum"] = len(numeric_values) - 1
     candidate.pop("qualification_cohort_v2", None)
+    if invalidate_assessment_evidence:
+        candidate.pop("fixed_frontier_exam", None)
+        candidate.pop("last_generalization_cohort_v2", None)
     return candidate
 
 
 def _adopt_executable_profile(
         run_dir, receipt, grade_a_course, source_root, graph, profile, *,
-        compiled_successor=None, allow_mastery_debt=False):
+        compiled_successor=None, allow_mastery_debt=False,
+        invalidate_assessment_evidence=False):
     """Adopt one same-ABI v2 profile change without release-name dispatch."""
     predecessor = _runtime_admission._require_executable_factory_admission(run_dir, receipt, graph)
     previous_program = _factory_schedule.schedule_program_from_executable_release(predecessor)
@@ -261,19 +368,27 @@ def _adopt_executable_profile(
         mastery_debt=mastery_debt)
     candidate = _profile_adoption_receipt(
         receipt, compatibility_course, successor, successor_program,
-        release_file, admission, identity, epoch, history, revised_grade, graph)
+        release_file, admission, identity, epoch, history, revised_grade, graph,
+        invalidate_assessment_evidence=invalidate_assessment_evidence)
     if allow_mastery_debt:
         candidate["last_exam"] = receipt["debt_admission_boundary_exam"]
         candidate.pop("fixed_frontier_exam", None)
     record = _runtime_checkpoints._advance(
         run_dir, candidate, next_state,
         result="ACTIVE_GRADE_" + next_state.grade, persist=False)
+    source_only_revision = (
+        not appended and revised_grade is None and
+        successor.profile == predecessor.profile and
+        previous_program == successor_program)
     event = {
         "event": "SCHOOL_EXECUTION_PROFILE_ADOPTED",
         "generation": record["generation"],
         "grade": next_state.grade,
         "profile_id": successor.profile.profile_id,
-        "transition_kind": "APPEND_GRADE" if appended else "REVISE_PROFILE",
+        "transition_kind": (
+            "APPEND_GRADE" if appended else
+            "REVISE_SOURCE" if source_only_revision else
+            "REVISE_PROFILE"),
         "revised_grade": revised_grade,
         "debt_admission": allow_mastery_debt,
         "carried_mastery_debt": list(next_state.carried_mastery_debt),
@@ -287,6 +402,33 @@ def _adopt_executable_profile(
         run_dir, _runtime_checkpoints._with_delivery_outbox(record, (event,)))
     _runtime_checkpoints._reconcile_delivery_outbox(run_dir, record)
     return record, compatibility_course, successor, successor_program
+
+
+def _adopt_source_presentation_revision_if_needed(
+        run_dir, receipt, grade_a_course, source_root, graph, predecessor):
+    """Adopt authorized Boolean presentation revisions with zero neural updates."""
+    program = _factory_schedule.schedule_program_from_executable_release(predecessor)
+    compatibility_course = _compatibility_executable_projection.legacy_course_for_profile(
+        grade_a_course, source_root, predecessor.profile)
+    registry = _source_adapters_school.live_source_registry()
+    if not _source_presentation_revision_required(predecessor, registry):
+        return receipt, compatibility_course, predecessor, program
+    successor = _factory_executable_release.compile_successor_profile_release(
+        predecessor,
+        predecessor.profile,
+        registry,
+        _factory_live_answers.live_answer_registry(),
+        source_root=source_root,
+        graph=graph,
+        verification_seed=2026102502,
+        legacy_course=compatibility_course,
+    )
+    return _adopt_executable_profile(
+        run_dir, receipt, grade_a_course, source_root, graph,
+        predecessor.profile,
+        compiled_successor=successor,
+        invalidate_assessment_evidence=True,
+    )
 
 
 def _require_complete_profile_boundary(program, school, receipt):
@@ -542,8 +684,13 @@ def _activate_replaced_admitted_grade(run_dir, receipt, previous_course, success
 def _advance_numeric_profile(run_dir, receipt, grade_a_course, source_root, graph,
                              course, release, program, *, numeric_staircase):
     """Rebind a wide historical scope, then advance the admitted staircase."""
+    from bilqis_mlx.numeric_staircase import (
+        FINAL_MAXIMUM,
+        FULL_OPERATION_MAXIMUM,
+        INITIAL_MAXIMUM,
+        PREVIOUS_FINAL_MAXIMUM,
+    )
     if numeric_staircase:
-        from bilqis_mlx.numeric_staircase import INITIAL_MAXIMUM, FINAL_MAXIMUM
         if receipt.get("numeric_maximum", 0) > FINAL_MAXIMUM:
             current = _runtime_admission._require_executable_factory_admission(
                 run_dir, receipt, graph)
@@ -555,6 +702,13 @@ def _advance_numeric_profile(run_dir, receipt, grade_a_course, source_root, grap
                     grade_a_course, source_root, graph,
                     _profiles_catalog.numeric_scope_profile(current, INITIAL_MAXIMUM))
     final_scope = receipt.get("numeric_scope_final_maximum")
+    # Existing Prometheus receipts may retain either historical bounded
+    # ceiling. Keep the same one-step profile-revision mechanism while the
+    # temporary Grade C continuation policy extends through the registry target.
+    if (final_scope in (FULL_OPERATION_MAXIMUM, PREVIOUS_FINAL_MAXIMUM) and
+            FINAL_MAXIMUM > final_scope):
+        receipt = {**receipt, "numeric_scope_final_maximum": FINAL_MAXIMUM}
+        final_scope = FINAL_MAXIMUM
     if final_scope is not None:
         current = _runtime_admission._require_executable_factory_admission(
             run_dir, receipt, graph)

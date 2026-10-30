@@ -1,5 +1,19 @@
 # Bilqis MLX
 
+## CONTROLLING USER CORRECTION — 2026-10-23: full U7C Grade B
+
+The active Prometheus curriculum now admits the complete direct-U7C Boolean set:
+`B.NOT`, `B.AND`, `B.OR`, `B.XOR`, `B.IMPLIES`, `B.IFF`, plus derived
+`B.COMPOSITE` and `B.IDBOOLOPS`. These are direct typed Boolean-AST lessons, not
+world-model lessons. Grade B remains nongating developmental debt while Grade C is
+the progression frontier. **ADR-094 replaces the old one-B-candidate-per-five cap
+with a bounded grade-turn cadence:** after at most four completed non-B training
+turns, B receives one contiguous pass over every currently imperfect admitted B
+capability, then yields for four more non-B turns before another B pass can occur.
+
+Do not narrow Prometheus back to a historical reduced Boolean profile, and do not
+add Boolean mastery as a Grade-C prerequisite.
+
 New Ithkuil semantic corpus: [release artifacts, rebuild and consumer guide](lib/ithkuil/RELEASE_REBUILD.md).
 The guide separates canonical RDF/SKOS from optional Falkor state and curriculum/training authority.
 
@@ -31,17 +45,16 @@ source order, the provisional D–O map, or availability of an easy generator as
 pedagogical readiness. Transfer checks should test the taught construction at the
 current step, not demand untaught cognitive machinery.
 
-**Current work:** the registered `primary` experiment now has A, thin B (NOT and
-AND), and the designed C foundation sequence admitted. Continue COUNT → NUMBER →
-SUCCESSOR → ADD → SUB, initially 0..3 and at most 0..4 in current issue trials.
-Unresolved A/B skills remain cumulative debt and teaching targets; NOT/AND mastery
-must not gate C access. Teach the actual numeric constituents as each C stage opens.
+**Current work:** Prometheus now has A, the complete direct-U7C Grade B roster,
+and the designed C foundation sequence admitted. Continue COUNT → NUMBER →
+SUCCESSOR → ADD → SUB at the current bounded numeric scope. Unresolved A/B skills
+remain cumulative debt and teaching targets; Boolean mastery must not gate C access. Teach the actual numeric constituents as each C stage opens.
 Physics and further lexical admissions wait for their conceptual ingredients.
 Use small lessons, cheap observations and the existing teacher/factory/retention
 owners. See ADR-087/088 and HANDOFF.md for exact state and the next action. Canonical
 training boundaries and the issue-owned two-run/100-GB exception remain unchanged.
 
-Source-oracled MLX training for a compositional semantic transformer. **This is the one active repository:** `~/Code/bilqis-mlx`. The human operator owns ordinary and long-running neural training. During trainer repair, the user's standing authorization also permits agents to run short, explicitly finite trainer tests against the current student when needed to reproduce and verify failures. Those bounded repair runs must preserve the student and its own AdamW, may not reset or replace the canonical lineage, and are not authority for unattended or open-ended training.
+Source-oracled MLX training for a compositional semantic transformer. **This is the one active repository:** `~/Code/bilqis-mlx`. **The repository and its implementation are public.** Repository-owned code, tests, architecture, specifications, evidence, and ordinary handoffs may be published directly; still-protected source authorities such as `IPR-0220` remain protected unless separately released. The human operator owns ordinary and long-running neural training. During trainer repair, the user's standing authorization also permits agents to run short, explicitly finite trainer tests against the current student when needed to reproduce and verify failures. Those bounded repair runs must preserve the student and its own AdamW, may not reset or replace the canonical lineage, and are not authority for unattended or open-ended training.
 
 The former Bilqis implementations are preserved as pinned, read-only source dependencies under `vendor/legacy-v16/`. They are not separate runtime repositories. The native historical bootstrap checkpoint and inherited teacher state live in the ignored `vendor/legacy-v16/runs/`. The current model, its matching AdamW, learning history, champions and soups live under ignored `runs/`. None of those binaries are committed to Git.
 
@@ -49,7 +62,7 @@ The former Bilqis implementations are preserved as pinned, read-only source depe
 
 ![Bilqis live training dashboard showing a two-row run cockpit above candidate evaluation, sentinel and teacher telemetry, system qualification state, and per-capability curriculum mastery.](docs/evidence/diagnostics/images/bilqis-dashboard-prometheus.png)
 
-*A live Bilqis training run in the operator dashboard. The cockpit summarizes runtime and whole-student progress while the panes expose candidate retention, sentinel and teacher evidence, qualification state, and curriculum mastery at a glance.*
+*A live Bilqis training run in the operator dashboard. The cockpit summarizes runtime and whole-student progress while the panes expose candidate retention, sentinel and teacher evidence, qualification state, and curriculum mastery at a glance. `VER RUN/UI` shows the trainer session's recorded SemVer first and the observer/dashboard checkout second. Historical runs that predate version telemetry display `legacy/<ui-version>` rather than borrowing the observer version.*
 
 ## Keep training the existing student
 
@@ -106,7 +119,7 @@ npm run diagnostics -- --run-dir ./runs/school-mlx-v1
 
 **Staged scoring refinement (ADR-055/057):** Check the candidate's target first and reject immediately if it makes no gain. Fill only still-missing fresh capabilities in its lesson grade next. Before a complete fixed school frontier exists, keep the original stricter positive-grade/protected-item guards. Once a complete fixed frontier exists, late-stage retention becomes aggregate: the fresh lesson grade, fixed lesson grade, active school grade and whole-school fixed total may tie but must not regress; individual rows/capabilities may trade errors. The saved frontier must belong to the exact current retained parent SHA and native AdamW step; stale-parent frontier evidence fails closed. Protected and OR/XOR item regressions remain diagnostics rather than late-stage vetoes. Champion scoring is separate and unchanged.
 
-The source-backed Grade C staircase teaches established counting, number, successor, addition and subtraction operations on gradually expanded domains before introducing multiplication and division. New semantics enter an append-only native registry. The vocabulary size is graph-bound, not permanently 222 tokens. A/B retention is assessed on the same whole student; individual best champions and frozen grade soups remain distinct from live student promotion. **Automatic stability promotion (ADR-084)** prevents one imperfect semantic from indefinitely sealing off the next tier: when the arithmetic mean across all currently introduced semantics in the active grade is freshly above 90%, the scheduler makes one canonical pass over that entire introduced semantic set. After every semantic visit it freshly rescores the whole introduced grade; individual semantics may be below 90%, but the fresh grade mean must remain at least 90% at every step. A successful sweep opens exactly one next semantic stage or grade while carrying every imperfect semantic as mastery debt. This progression does not mint a champion or substitute for 100% clean graduation.
+The source-backed Grade C staircase teaches established counting, number, successor, addition and subtraction operations on gradually expanded domains before introducing multiplication and division. New semantics enter an append-only native registry. The vocabulary size is graph-bound, not permanently 222 tokens. A/B retention is assessed on the same whole student; individual best champions and frozen grade soups remain distinct from live student promotion. **Automatic stability promotion (ADR-084, clarified by ADR-093/099/103/112)** prevents one imperfect semantic from indefinitely sealing off the next tier while damping fresh-cohort threshold jitter. A sweep now starts only when the arithmetic mean across all currently introduced semantics in the active grade is freshly at least **92%**. Once started, the scheduler freezes that score vector and makes one canonical pass over the entire introduced semantic set; the sweep aborts only if the running stitched grade mean falls below **87%**. Qualification attempts remain checkpoint/scope-bound: the same unchanged student may attempt a given introduced semantic scope only once. If that sweep fails, reshuffling or regenerating a fresh question cohort cannot re-arm graduation by itself; retrying the same scope requires a retained student change. A successfully expanded semantic scope may receive its own one-time attempt because it is a genuinely different qualification contract. After each semantic visit, only that semantic's fresh authoritative score replaces its prior sweep score before the grade mean is recomputed. Unswept semantics retain their most recent sweep scores, so unrelated fresh-cohort variance cannot abort a sweep when the student did not change on those semantics. A successful sweep opens exactly one next semantic stage or grade while carrying every imperfect semantic as mastery debt. This progression does not mint a champion or substitute for 100% clean graduation.
 
 **Capability championships:** Titles are capability-local, grade-isolated and defended, not historical high-water trophies. After a title field is cleared, an empty capability slot stays vacant until one same-grade checkpoint reaches at least 66% on that capability (8/12 on the current exams); its first defense battery is exactly the questions it got right on that threshold-crossing exam. A later contender that improves the current same-grade comparison or reaches the capability ceiling earns one lifetime title fight against that incumbent checkpoint for that capability; both checkpoints infer again, and cached model answers never decide the belt. The same checkpoint pair never rematches for that capability. A successful takeover may trigger one non-recursive same-grade sweep for sibling title fights. Quarantine of another capability does not suppress a complete source-valid title challenge. Title ownership and title challenges never cross grades. Teaching advice is a separate contract. See [`SPEC-0002`](docs/specifications/0002_CHAMPIONSHIP_LIFECYCLE_V1.md).
 
@@ -165,6 +178,6 @@ python3 -B scripts/check_historical_abi.py
 python3 -B scripts/check_semantic_boundaries.py
 ```
 
-The portable Linux GitHub Actions jobs verify source, semantic ABI, release manifests, selected neural-inert tests and regression-aware code hygiene. Full neural testing is Apple Silicon only. Conventional Commits, Semantic Versioning and a dated `CHANGELOG.md` govern private releases. Tag an immutable annotated `vMAJOR.MINOR.PATCH` on a verified clean `main`; the tag workflow validates and publishes private release notes. See [contribution and release rules](CONTRIBUTING.md).
+The portable Linux GitHub Actions jobs verify source, semantic ABI, release manifests, selected neural-inert tests and regression-aware code hygiene. Full neural testing is Apple Silicon only. Conventional Commits, Semantic Versioning and a dated `CHANGELOG.md` govern source releases. Release Please watches reviewed commits on `main`, maintains the next version/changelog PR, and creates the immutable `vMAJOR.MINOR.PATCH` tag plus GitHub Release only after that release PR merges. The tag workflow independently verifies the resulting source/tag contract. See [contribution and release rules](CONTRIBUTING.md).
 
 For detailed historical decision-making and source provenance, read [ADR.md](ADR.md), [AGENTS.md](AGENTS.md) and the [archived pre-consolidation README](docs/history/README_PRE_CANONICAL_20261017.md). Historical example paths in old research papers are **provenance**, not current operator commands. Protected research contracts must not be copied into public repositories.

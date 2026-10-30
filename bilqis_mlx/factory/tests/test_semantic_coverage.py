@@ -47,71 +47,28 @@ class SemanticCoverageTests(unittest.TestCase):
         self.assertEqual(set(by_producer), {n.id for n in self.a_ast.nodes})
         self.assertEqual({e["producer"] for e in plan["obligations"]
                           if not e["declared_prerequisite"]},
-                         {"A.MEMBER", "A.EDGE", "A.MAPS"})
+                         {n.id for n in self.a_ast.nodes})
         self.assertEqual(sum(e["status"] == "CROSS_SOURCE_AST_BRIDGE_UNVERIFIED"
-                             for e in plan["obligations"]), 33)
+                             for e in plan["obligations"]), 66)
         self.assertEqual(sum(e["status"] == "AWAITING_SOURCE_WITNESS"
-                             for e in plan["obligations"]), 33)
+                             for e in plan["obligations"]), 0)
         self.assertTrue(all(e["coverage_debt"] and not e["training_authorized"]
                             for e in plan["obligations"]))
 
-    def test_actual_source_generated_compositions_require_independent_gold(self):
+    def test_direct_boolean_rows_do_not_claim_micro_world_transfer_evidence(self):
         plan = self._plan()
         rows = draw_connectives(LEGACY, self.graph, seed=2026101601, each=12)
-        verified = verify_micro_composition_witnesses(
-            plan, rows, micro=self.micro, graph=self.graph)
-        confirmed = [edge for edge in verified["obligations"]
-                     if edge["status"] == "SOURCE_CONTRAST_COVERED"]
-        self.assertTrue(confirmed)
-        self.assertTrue(all(len(edge["witness_ids"]) >= 2 for edge in confirmed))
-        self.assertTrue(all(set(edge["expected_truth_pairs"]) ==
-                            set(edge["observed_truth_pairs"]) for edge in confirmed))
-        self.assertEqual(len(verified["source_witness_cohort_sha256"]), 64)
-        self.assertTrue(all(edge["coverage_debt"] for edge in verified["obligations"]
-                            if edge["producer"] in ("A.MEMBER", "A.EDGE", "A.MAPS")))
-        self.assertEqual(verified, verify_micro_composition_witnesses(
-            plan, rows, micro=self.micro, graph=self.graph))
-        self.assertFalse(verified["training_authorized"])
+        self.assertTrue(rows)
+        self.assertTrue(all(row["record"]["task"] == "evaluate" for row in rows))
+        self.assertTrue(all("world" not in row["record"] for row in rows))
+        self.assertTrue(all(edge["status"] == "CROSS_SOURCE_AST_BRIDGE_UNVERIFIED"
+                            for edge in plan["obligations"]))
+        self.assertFalse(plan["training_authorized"])
 
-        poisoned = list(copy.deepcopy(rows))
-        poisoned[0]["gold"] = ("FALSE" if poisoned[0]["gold"] == "TRUE"
-                               else "TRUE")
-        with self.assertRaisesRegex(ValueError, "COMPOSED_ORACLE_DRIFT"):
-            verify_micro_composition_witnesses(
-                plan, tuple(poisoned), micro=self.micro, graph=self.graph)
-        poisoned = list(copy.deepcopy(rows))
-        poisoned[0]["tokens"][0] = -1
-        with self.assertRaisesRegex(ValueError, "WITNESS_TOKEN_DRIFT"):
-            verify_micro_composition_witnesses(
-                plan, tuple(poisoned), micro=self.micro, graph=self.graph)
-        poisoned = list(copy.deepcopy(rows))
-        poisoned[0]["root"] = "cogal.operator.AND" if poisoned[0]["root"] != "cogal.operator.AND" else "cogal.operator.XOR"
-        with self.assertRaisesRegex(ValueError, "WITNESS_SOURCE_CONTRACT_DRIFT"):
-            verify_micro_composition_witnesses(
-                plan, tuple(poisoned), micro=self.micro, graph=self.graph)
-        poisoned = list(copy.deepcopy(rows))
-        poisoned[0]["operand_truths"][0] = not poisoned[0]["operand_truths"][0]
-        with self.assertRaisesRegex(ValueError, "OPERAND_ORACLE_DRIFT"):
-            verify_micro_composition_witnesses(
-                plan, tuple(poisoned), micro=self.micro, graph=self.graph)
-
-    def test_source_audit_reports_remaining_debt_and_reproducible_proof(self):
+    def test_direct_boolean_plan_does_not_request_historical_micro_audit(self):
         plan = self._plan()
-        first = audit_pinned_micro_generator(plan, LEGACY, max_rounds=1)
-        self.assertEqual(first["rounds_used"], 1)
-        self.assertEqual(first["constructed_record_count"], 72)
-        self.assertTrue(any(e["status"] in ("AWAITING_SOURCE_WITNESS",
-                                               "SOURCE_CONTRAST_PARTIAL")
-                            for e in first["obligations"]))
-        improved = audit_pinned_micro_generator(plan, LEGACY, max_rounds=8)
-        self.assertEqual(sum(e["status"] == "SOURCE_CONTRAST_COVERED"
-                             for e in improved["obligations"]), 33)
-        self.assertEqual(sum(e["status"] == "CROSS_SOURCE_AST_BRIDGE_UNVERIFIED"
-                             for e in improved["obligations"]), 33)
-        self.assertFalse(improved["student_exposure_measured"])
-        self.assertFalse(improved["training_authorized"])
-        self.assertEqual(improved, audit_pinned_micro_generator(
-            plan, LEGACY, max_rounds=8))
+        self.assertFalse(any(edge["status"] == "AWAITING_SOURCE_WITNESS"
+                             for edge in plan["obligations"]))
         with self.assertRaises(BilqisError) as caught:
             audit_pinned_micro_generator(plan, LEGACY, max_rounds=0)
         self.assertIs(
@@ -173,7 +130,7 @@ class SemanticCoverageTests(unittest.TestCase):
                      if edge["producer"] == "A.SYNTHETIC"]
         self.assertEqual(len(new_edges), 11)
         self.assertTrue(all(not e["declared_prerequisite"] and
-                            e["status"] == "AWAITING_SOURCE_WITNESS"
+                            e["status"] == "CROSS_SOURCE_AST_BRIDGE_UNVERIFIED"
                             for e in new_edges))
         revised_token = replace(new_token, signature="Entity*Entity->Number",
                                 contract_sha256="c"*64)

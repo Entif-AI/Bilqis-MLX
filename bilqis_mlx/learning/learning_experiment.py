@@ -10,20 +10,43 @@ from dataclasses import asdict, dataclass
 import hashlib
 import json
 import math
-import random
 from typing import Mapping
 
 import numpy as np
 
 from bilqis_mlx.learning.teacher_feedback import (
-    LearningExperimentError, WeaknessTargetError, WeaknessTargetRequest,
-    select_weakness_targets,
+    LearningExperimentError,
+)
+from bilqis_mlx.learning.lesson_selection import (
+    earlier_grade_capabilities, reserve_weakness_targets, select_source_lesson,
+)
+from bilqis_mlx.learning.teacher_geometry import is_geometry_scope
+from bilqis_mlx.learning.teacher_realized_action import (
+    bind_record as _bind_realized_action_record,
+    context_scope as _realized_context_scope,
+    describe as realized_teacher_action,
+    record_outcome as _record_realized_action_outcome,
+    selection_record as _context_selection_record,
+)
+from bilqis_mlx.learning.teacher_strategy_population import (
+    UCB_EXPLORATION_WEIGHT as TEACHER_UCB_EXPLORATION_WEIGHT,
+    active_effective_strategy_keys as _active_effective_strategy_keys,
+    effective_context_scope as _effective_context_scope,
+    effective_policy_key as _effective_policy_key,
+    historical_policy_mean as _historical_policy_mean,
+    pick_existing_active as _pick_existing_active,
 )
 
 
 VERSION = "bilqis.mlx.causal-teacher-experiment/v1"
 MAX_FAILURE_ARCHETYPES = 24
-TEACHER_UCB_EXPLORATION_WEIGHT = 0.6
+INTERFERENCE_REJECTIONS_FOR_HALF_BUDGET = 2
+INTERFERENCE_REJECTIONS_FOR_QUARTER_BUDGET = 4
+REJECTION_PRESSURE_CONTEXTUAL_START = 2
+REJECTION_PRESSURE_EXPLORATION_INTERVAL = 4
+GEOMETRY_HISTORICAL_PRIOR_WEIGHT = 0.25
+SAME_STUDENT_POLICY_NO_TARGET_GAIN_LIMIT = 4
+STUDENT_SHA256_HEX_LENGTH = 64
 
 
 @dataclass(frozen=True)
@@ -452,6 +475,7 @@ def _capability_stagnation_record(channel: dict, capability: str,
     record = channel.setdefault("capability_stagnation", {}).setdefault(
         _stagnation_key(capability, curriculum_scope), {
             "rejection_streak": 0,
+            "consecutive_interference_rejections": 0,
             "no_target_gain_streak": 0,
             "attempts_since_retained": 0,
             "total_rejections": 0,
@@ -459,7 +483,93 @@ def _capability_stagnation_record(channel: dict, capability: str,
             "current_rejection_reasons": {},
         })
     record.setdefault("current_rejection_reasons", {})
+    record.setdefault("consecutive_interference_rejections", 0)
     return record
+
+
+def _validated_student_checkpoint(student_checkpoint_sha256: str | None) -> str | None:
+    if student_checkpoint_sha256 is None:
+        return None
+    if (not isinstance(student_checkpoint_sha256, str) or
+            len(student_checkpoint_sha256) != STUDENT_SHA256_HEX_LENGTH or
+            any(char not in "0123456789abcdef" for char in student_checkpoint_sha256)):
+        raise ValueError(LearningExperimentError.STUDENT_CHECKPOINT_INVALID.value)
+    return student_checkpoint_sha256
+
+
+def _checkpoint_policy_no_gain_streaks(channel: dict, context_key: str,
+                                       student_checkpoint_sha256: str | None) -> dict:
+    checkpoint = _validated_student_checkpoint(student_checkpoint_sha256)
+    if checkpoint is None:
+        return {}
+    epoch = channel.get("student_policy_epoch")
+    if not isinstance(epoch, dict) or epoch.get("student_sha256") != checkpoint:
+        return {}
+    if not isinstance(epoch.get("contexts"), dict):
+        raise ValueError(LearningExperimentError.STUDENT_POLICY_EPOCH_INVALID.value)
+    failures = epoch["contexts"].get(context_key, {})
+    if (not isinstance(failures, dict) or any(
+            not isinstance(key, str) or type(value) is not int or value < 0
+            for key, value in failures.items())):
+        raise ValueError(LearningExperimentError.STUDENT_POLICY_FAILURE_INVALID.value)
+    return failures
+
+
+def _record_checkpoint_policy_outcome(
+        channel: dict, context_key: str, effective_policy_key: str,
+        student_checkpoint_sha256: str | None, *, no_target_gain: bool) -> None:
+    checkpoint = _validated_student_checkpoint(student_checkpoint_sha256)
+    if checkpoint is None:
+        return
+    epoch = channel.get("student_policy_epoch")
+    if not isinstance(epoch, dict) or epoch.get("student_sha256") != checkpoint:
+        epoch = {"student_sha256": checkpoint, "contexts": {}}
+        channel["student_policy_epoch"] = epoch
+    if not isinstance(epoch.get("contexts"), dict):
+        raise ValueError(LearningExperimentError.STUDENT_POLICY_EPOCH_INVALID.value)
+    streaks = epoch["contexts"].setdefault(context_key, {})
+    if no_target_gain:
+        streaks[effective_policy_key] = streaks.get(effective_policy_key, 0) + 1
+    else:
+        streaks.pop(effective_policy_key, None)
+
+
+def _checkpoint_active_effective_strategies(
+        teacher: dict, grade: str, scope: dict, channel: dict,
+        context_key: str, active_effective: tuple[str, ...],
+        inventory: dict[str, list[str]],
+        student_checkpoint_sha256: str | None) -> tuple[tuple[str, ...], set[str]]:
+    checkpoint_failures = _checkpoint_policy_no_gain_streaks(
+        channel, context_key, student_checkpoint_sha256)
+    retired = {
+        key for key, failures in checkpoint_failures.items()
+        if failures >= SAME_STUDENT_POLICY_NO_TARGET_GAIN_LIMIT
+    }
+    if not retired:
+        return active_effective, retired
+    evidence = _effective_context_scope(teacher, scope) if scope else {}
+    eligible = [key for key in active_effective if key not in retired]
+    replacements = [
+        key for key in inventory if key not in retired and key not in eligible
+    ]
+
+    def replacement_rank(key):
+        record = evidence.get(key) or {}
+        members = inventory[key]
+        return (
+            int(record.get("trials", 0)),
+            int(record.get("retained", 0)),
+            -sum(_historical_policy_mean(teacher, grade, member)
+                 for member in members) / len(members),
+            key,
+        )
+
+    replacements.sort(key=replacement_rank)
+    eligible.extend(replacements[:max(0, len(active_effective) - len(eligible))])
+    if not eligible:
+        eligible = [min(
+            inventory, key=lambda key: (checkpoint_failures.get(key, 0), key))]
+    return tuple(eligible), retired
 
 
 def _inherited_exploration(teacher: dict, grade: str, policy_key: str) -> float:
@@ -472,51 +582,67 @@ def _inherited_exploration(teacher: dict, grade: str, policy_key: str) -> float:
         math.log(total+2)/(1+info["trials"]))
 
 
-_CONTEXT_INEFFECTIVE_POLICY_FIELDS = frozenset({"preview"})
+def _geometry_context_pick(teacher: dict, grade: str, scope: dict, rng,
+                           active_effective: tuple[str, ...],
+                           inventory: dict[str, list[str]]):
+    """Explore the existing toolbox using fresh geometry-local evidence.
 
-
-def _effective_policy_key(policy: dict) -> str:
-    """Identity for knobs that actually change the current source lesson.
-
-    Future-grade preview is deliberately unavailable in the admitted-source
-    trainer, so preview-only legacy variants are one effective contextual
-    strategy even though their historical policy IDs remain distinct.
+    Historical grade/global rewards contribute only a quarter pseudo-trial.
+    They can break an otherwise empty tie, but cannot masquerade as trials
+    observed under the revised teaching surface.
     """
-    if not isinstance(policy, dict):
-        raise ValueError(LearningExperimentError.POLICY_INVALID.value)
-    effective = {
-        key: value for key, value in sorted(policy.items())
-        if key not in _CONTEXT_INEFFECTIVE_POLICY_FIELDS
-    }
-    return hashlib.sha256(
-        json.dumps(effective, sort_keys=True).encode()).hexdigest()[:12]
-
-
-def _effective_context_scope(teacher: dict, scope: dict) -> dict:
-    """Aggregate contextual evidence across behaviorally identical policies."""
-    groups = {}
     strategies = teacher.get("strategies", {})
-    for policy_key, record in scope.items():
-        policy = strategies.get(policy_key)
-        if policy is None:
-            raise ValueError(LearningExperimentError.STRATEGY_ID_DRIFT.value)
-        effective_key = _effective_policy_key(policy)
-        group = groups.setdefault(effective_key, {
-            "trials": 0,
-            "reward_sum": 0.,
-            "unsafe": 0,
-            "retained": 0,
-            "no_target_gain_streak": 0,
-            "members": [],
-        })
-        group["trials"] += int(record.get("trials", 0))
-        group["reward_sum"] += float(record.get("reward_sum", 0.))
-        group["unsafe"] += int(record.get("unsafe", 0))
-        group["retained"] += int(record.get("retained", 0))
-        group["no_target_gain_streak"] += int(
-            record.get("no_target_gain_streak", 0))
-        group["members"].append(policy_key)
-    return groups
+    if not isinstance(strategies, dict) or not strategies:
+        raise ValueError(LearningExperimentError.POLICY_INVALID.value)
+    inventory = {
+        effective_key: inventory[effective_key]
+        for effective_key in active_effective
+    }
+    effective_scope = (
+        {
+            key: record
+            for key, record in _effective_context_scope(teacher, scope).items()
+            if key in inventory
+        }
+        if scope else {}
+    )
+    total_trials = sum(record["trials"] for record in effective_scope.values())
+
+    def group_score(item):
+        effective_key, members = item
+        record = effective_scope.get(effective_key)
+        trials = int(record["trials"]) if record else 0
+        reward_sum = float(record["reward_sum"]) if record else 0.
+        prior = sum(
+            _historical_policy_mean(teacher, grade, member)
+            for member in members
+        ) / len(members)
+        mean = reward_sum / trials if trials else 0.
+        prior_bonus = (
+            GEOMETRY_HISTORICAL_PRIOR_WEIGHT * prior / (trials + 1))
+        exploration = TEACHER_UCB_EXPLORATION_WEIGHT * math.sqrt(
+            math.log(total_trials + 2) / (trials + 1))
+        return mean + prior_bonus + exploration + rng.random() * 1e-9
+
+    effective_key, members = max(inventory.items(), key=group_score)
+    tried = [member for member in members if member in scope]
+    if tried:
+        def tried_rank(member):
+            record = scope[member]
+            trials = int(record.get("trials", 0))
+            mean = float(record.get("reward_sum", 0.)) / max(1, trials)
+            return (int(record.get("retained", 0)), mean, trials, member)
+        policy_key = max(tried, key=tried_rank)
+    else:
+        policy_key = max(
+            members,
+            key=lambda member: (
+                _historical_policy_mean(teacher, grade, member),
+                rng.random(),
+                member,
+            ),
+        )
+    return policy_key, strategies[policy_key]
 
 
 def _diagnostic_context(channel: dict, capability: str, curriculum_scope: str,
@@ -621,11 +747,12 @@ def candidate_step_budget(default_steps: int, teacher: dict, capability: str,
     """Shrink disposable candidate horizon under sustained retention failure.
 
     The configured horizon remains authoritative in the healthy regime.
-    Once a capability has gone half a configured candidate-horizon without a
-    retained update, halve the disposable trial. After a full horizon of
-    rejected candidates, quarter it. This keeps the adaptation relative to
-    the operator-selected default rather than introducing a second absolute
-    step-count policy.
+    Candidate attempts and optimizer steps are different units: a rejected
+    16-step candidate is one failed candidate, not one sixteenth of a failure.
+    After two consecutive interference-rejected candidates, halve the next
+    disposable trial. After four, quarter it. A no-target-gain outcome breaks
+    the interference streak, while a retained candidate resets all current
+    rejection pressure through the existing capability-stagnation owner.
     """
     if type(default_steps) is not int or default_steps < 1:
         raise ValueError(LearningExperimentError.CANDIDATE_STEPS_INVALID.value)
@@ -634,43 +761,84 @@ def candidate_step_budget(default_steps: int, teacher: dict, capability: str,
         return default_steps
     stagnation = _capability_stagnation(
         channel, capability, curriculum_scope)
-    attempts = stagnation.get("attempts_since_retained", 0)
-    if type(attempts) is not int or attempts < 0:
+    reasons = stagnation.get("current_rejection_reasons", {})
+    interference_rejections = stagnation.get(
+        "consecutive_interference_rejections", 0)
+    if (not isinstance(reasons, dict) or any(
+            not isinstance(reason, str) or type(count) is not int or count < 0
+            for reason, count in reasons.items()) or
+            type(interference_rejections) is not int or
+            interference_rejections < 0):
         raise ValueError(LearningExperimentError.CANDIDATE_STAGNATION_INVALID.value)
     half = max(1, default_steps // 2)
     quarter = max(1, default_steps // 4)
-    if attempts >= default_steps:
+    if interference_rejections >= INTERFERENCE_REJECTIONS_FOR_QUARTER_BUDGET:
         return quarter
-    if attempts >= half:
+    if interference_rejections >= INTERFERENCE_REJECTIONS_FOR_HALF_BUDGET:
         return half
     return default_steps
 
 
 def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
                     *, curriculum_scope: str = "", diagnostics: dict | None = None,
-                    return_metadata: bool = False):
+                    return_metadata: bool = False,
+                    student_checkpoint_sha256: str | None = None):
     """Preserve the inherited bandit's exploration; prefer proven safe context."""
     grade = capability.partition(".")[0]
-    original_key, original_policy = engine.pick(teacher, grade, rng)
     channel = _channel(teacher)
+    geometry_context = is_geometry_scope(curriculum_scope)
     diagnostic_key, _diagnostic_payload = _diagnostic_context(
         channel, capability, curriculum_scope, diagnostics)
+
+    context_key = capability+"|"+phase+"|"+curriculum_scope
+    scope = channel["contexts"].get(context_key, {})
+    active_effective, inventory = _active_effective_strategy_keys(
+        teacher, grade, scope)
+    active_effective, retired_effective = _checkpoint_active_effective_strategies(
+        teacher, grade, scope, channel, context_key, active_effective, inventory,
+        student_checkpoint_sha256)
+    active_set = set(active_effective)
+
+    def population_metadata():
+        return {
+            "active_effective_strategy_count": len(active_effective),
+            "active_effective_strategy_keys": list(active_effective),
+            "dormant_effective_strategy_count": len(inventory) - len(active_effective),
+            "strategy_archive_count": len(teacher.get("strategies", {})),
+            "checkpoint_retired_effective_strategy_count": len(retired_effective),
+        }
 
     def result(key, policy, *, diagnostic_context_consumed=False):
         if return_metadata:
             return key, policy, {
                 "diagnostic_context_consumed": diagnostic_context_consumed,
                 "diagnostic_context_key": diagnostic_key,
+                "geometry_context": geometry_context,
+                **population_metadata(),
             }
         return key, policy
 
-    context_key = capability+"|"+phase+"|"+curriculum_scope
-    scope = channel["contexts"].get(context_key, {})
     if not scope:
+        if geometry_context:
+            original_key, original_policy = _geometry_context_pick(
+                teacher, grade, scope, rng, active_effective, inventory)
+        else:
+            original_key, original_policy = _pick_existing_active(
+                engine, teacher, grade, rng, active_effective, inventory)
         return result(original_key, original_policy)
-    effective_scope = _effective_context_scope(teacher, scope)
-    diagnostic_scope = _diagnostic_effective_scope(
-        teacher, scope, diagnostic_key)
+    effective_scope = _realized_context_scope(
+        teacher, scope, active_effective=active_set)
+    if not effective_scope:
+        if geometry_context:
+            original_key, original_policy = _geometry_context_pick(
+                teacher, grade, scope, rng, active_effective, inventory)
+        else:
+            original_key, original_policy = _pick_existing_active(
+                engine, teacher, grade, rng, active_effective, inventory)
+        return result(original_key, original_policy)
+    diagnostic_scope = _realized_context_scope(
+        teacher, scope, active_effective=active_set,
+        diagnostic_key=diagnostic_key)
     usable_diagnostic = {
         key: record for key, record in diagnostic_scope.items()
         if record.get("retained", 0) > 0
@@ -709,33 +877,60 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
                        math.sqrt(math.log(trials+2)/(record["trials"]+1)))
         stagnation = record["no_target_gain_streak"]
         return mean + exploration/(1+stagnation+rejection_pressure)
-    best_effective = max(selection_scope, key=score_effective)
+    retained_scope = {
+        key: record for key, record in selection_scope.items()
+        if record.get("retained", 0) > 0
+    }
+    best_effective = max(retained_scope or selection_scope, key=score_effective)
     best_record = selection_scope[best_effective]
 
     def member_rank(key):
-        record = scope[key]
+        record = best_record["member_records"][key]
         mean = record["reward_sum"] / record["trials"]
         return (record.get("retained", 0), mean, record["trials"], key)
 
     best = max(best_record["members"], key=member_rank)
-    original_effective = _effective_policy_key(original_policy)
+    proven_retained = best_record.get("retained", 0) > 0
+    exploration_due = (
+        proven_retained and rejection_pressure > 0 and
+        rejection_pressure % REJECTION_PRESSURE_EXPLORATION_INTERVAL == 0)
+    pressure_exploit = (
+        rejection_pressure >= REJECTION_PRESSURE_CONTEXTUAL_START and
+        rejection_pressure % REJECTION_PRESSURE_EXPLORATION_INTERVAL != 0)
+    if diagnostic_consumed or (proven_retained and not exploration_due) or pressure_exploit:
+        return result(
+            best, teacher["strategies"][best],
+            diagnostic_context_consumed=diagnostic_consumed)
+
+    # Healthy operation and a bounded pressure cadence still consult the
+    # inherited bandit. Avoid calling it on pressure-exploitation visits:
+    # pick() may mutate the strategy inventory, and discarded mutations would
+    # otherwise consume the finite 512-strategy budget without being tried.
+    if geometry_context:
+        original_key, original_policy = _geometry_context_pick(
+            teacher, grade, scope, rng, active_effective, inventory)
+    else:
+        original_key, original_policy = _pick_existing_active(
+            engine, teacher, grade, rng, active_effective, inventory)
+    original_record = scope.get(original_key)
+    original_effective = (
+        _context_selection_record(original_policy, original_record)[0]
+        if isinstance(original_record, dict)
+        else "nominal:" + _effective_policy_key(original_policy)
+    )
     if original_effective == best_effective:
         return result(
             original_key, original_policy,
             diagnostic_context_consumed=diagnostic_consumed)
-    if diagnostic_consumed:
-        return result(
-            best, teacher["strategies"][best],
-            diagnostic_context_consumed=True)
     # Require evidence, but keep inherited exploration alive. The base pick
     # still gets a chance whenever it lacks direct context observations.
-    proven_retained = best_record.get("retained", 0) > 0
-    if (proven_retained and rejection_pressure > 0 and
+    if (not exploration_due and proven_retained and rejection_pressure > 0 and
             (original_effective not in effective_scope or
              score_effective(best_effective) >
              score_effective(original_effective))):
         return result(best, teacher["strategies"][best])
-    if ((best_record["trials"] >= 2 or proven_retained) and
+    if (not exploration_due and
+            (best_record["trials"] >= 2 or proven_retained) and
             original_effective in effective_scope and
             score_effective(best_effective) > score_effective(original_effective)):
         return result(best, teacher["strategies"][best])
@@ -744,10 +939,13 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
 
 def _stagnation_feedback(teacher: dict, capability: str, policy_key: str,
                          decision: dict, reward: float, record: dict,
-                         shared_stagnation: dict) -> tuple[float, float]:
+                         shared_stagnation: dict,
+                         curriculum_scope: str) -> tuple[float, float]:
     no_target_gain = decision.get("reason") == "NO_MEASURABLE_TARGET_GAIN"
-    inherited_exploration = _inherited_exploration(
-        teacher, capability.partition(".")[0], policy_key)
+    inherited_exploration = (
+        0. if is_geometry_scope(curriculum_scope) else
+        _inherited_exploration(
+            teacher, capability.partition(".")[0], policy_key))
     selection_reward = reward
     repayment = 0.-inherited_exploration
     if no_target_gain and repayment < selection_reward:
@@ -764,7 +962,9 @@ def _stagnation_feedback(teacher: dict, capability: str, policy_key: str,
 def observe_context(teacher: dict, *, capability: str, phase: str,
                     policy_key: str, decision: dict, local_gain: float,
                     curriculum_scope: str = "",
-                    diagnostics: dict | None = None) -> dict:
+                    diagnostics: dict | None = None,
+                    realized_action: dict | None = None,
+                    student_checkpoint_sha256: str | None = None) -> dict:
     """Source-paired trial outcome; never rewrite historical UCB rewards."""
     if (policy_key not in teacher.get("strategies", {}) or
             not math.isfinite(local_gain) or
@@ -777,14 +977,17 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
     diagnostic_key, _diagnostic_payload = _diagnostic_context(
         channel, capability, curriculum_scope, diagnostics)
     scope = channel["contexts"].setdefault(capability+"|"+phase+"|"+curriculum_scope, {})
+    context_key = capability+"|"+phase+"|"+curriculum_scope
     record = scope.setdefault(policy_key, {"trials": 0, "reward_sum": 0.,
                                             "unsafe": 0, "retained": 0,
                                             "latest": None,
                                             "no_target_gain_streak": 0})
     record.setdefault("no_target_gain_streak", 0)
     record.setdefault("retained", 0)
+    action_key, action_record, stagnation_key = _bind_realized_action_record(
+        record, realized_action, policy_key)
     shared_stagnation = _shared_stagnation_record(
-        channel, capability, curriculum_scope, policy_key)
+        channel, capability, curriculum_scope, stagnation_key)
     capability_stagnation = _capability_stagnation_record(
         channel, capability, curriculum_scope)
     # Normalized worst-case retention cost stops many small wins concealing
@@ -823,19 +1026,29 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
             raise ValueError(LearningExperimentError.REJECTION_REASON_INVALID.value)
         reasons = capability_stagnation["current_rejection_reasons"]
         reasons[reason] = reasons.get(reason, 0) + 1
+        if reason == "NO_MEASURABLE_TARGET_GAIN":
+            capability_stagnation["consecutive_interference_rejections"] = 0
+        else:
+            capability_stagnation["consecutive_interference_rejections"] += 1
     else:
         record["retained"] += 1
         capability_stagnation["rejection_streak"] = 0
+        capability_stagnation["consecutive_interference_rejections"] = 0
         capability_stagnation["attempts_since_retained"] = 0
         capability_stagnation["total_retained"] += 1
         capability_stagnation["current_rejection_reasons"] = {}
+    _record_checkpoint_policy_outcome(
+        channel, context_key,
+        _effective_policy_key(teacher["strategies"][policy_key]),
+        student_checkpoint_sha256,
+        no_target_gain=no_target_gain)
     if no_target_gain:
         capability_stagnation["no_target_gain_streak"] += 1
     else:
         capability_stagnation["no_target_gain_streak"] = 0
     inherited_exploration, selection_reward = _stagnation_feedback(
         teacher, capability, policy_key, decision, reward, record,
-        shared_stagnation)
+        shared_stagnation, curriculum_scope)
     record["trials"] += 1
     record["reward_sum"] += reward
     record["latest"] = reward
@@ -849,6 +1062,10 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
         diagnostic["unsafe"] += 1
     else:
         diagnostic["retained"] += 1
+    _record_realized_action_outcome(
+        action_record, rejected=decision["decision"] == "REJECT",
+        no_target_gain=no_target_gain, reward=reward,
+        diagnostic_key=diagnostic_key)
     strain = decision.get("matrix_strain") or {}
     if strain.get("status") == "MEASURED":
         # A bounded teacher-observable geometric feature; outcome rewards
@@ -879,9 +1096,12 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
                 capability_stagnation["rejection_streak"],
             "capability_no_target_gain_streak":
                 capability_stagnation["no_target_gain_streak"],
+            "consecutive_interference_rejections":
+                capability_stagnation["consecutive_interference_rejections"],
             "attempts_since_retained":
                 capability_stagnation["attempts_since_retained"],
             "diagnostic_context_key": diagnostic_key,
+            **({"realized_action_key": action_key} if action_key is not None else {}),
             "inherited_exploration_credit": inherited_exploration,
             "teacher_selection_reward": selection_reward,
             "legacy_reward_reinterpreted": False,
@@ -941,248 +1161,3 @@ def commit_trial(parameters: dict, optimizer, trial_parameters: dict, trial_opti
     parameters.update(trial_parameters)
     optimizer.state = trial_optimizer.state
     optimizer.learning_rate = trial_optimizer.learning_rate
-
-
-def earlier_grade_capabilities(program, graduated_grades, target: str, *,
-                               carried_mastery_debt=()) -> tuple[str, ...]:
-    """Earlier graduated skills and explicitly carried debt supply old lessons.
-
-    A champion for the active grade does not make its own rows earlier-grade
-    rehearsal; future grades must not leak into the pool during recovery.
-    """
-    from bilqis_mlx.factory.schedule import ScheduleProgram
-    if not isinstance(program, ScheduleProgram):
-        raise TypeError("LEARNING_EXPERIMENT_SCHEDULE_PROGRAM_REQUIRED")
-    target_index = next((
-        index for index, grade in enumerate(program.grades)
-        if target in {capability.id for capability in grade.capabilities}
-    ), None)
-    if target_index is None:
-        raise ValueError("LEARNING_EXPERIMENT_UNKNOWN_TARGET_GRADE")
-    graduated = set(graduated_grades)
-    debt = set(carried_mastery_debt)
-    return tuple(sorted(
-        capability.id
-        for grade in program.grades[:target_index]
-        for capability in grade.capabilities
-        if grade.id in graduated or capability.id in debt))
-
-
-def _choose_binary_rows(source, count, policy, rng):
-    if count == 0:
-        return []
-    if not source:
-        raise ValueError("LEARNING_EXPERIMENT_MISSING_SOURCE_ROWS")
-    groups = {}
-    for row in source:
-        groups.setdefault(tuple(row["operand_truths"]), []).append(row)
-    if count < len(groups):
-        raise ValueError("LEARNING_EXPERIMENT_BINARY_PATTERN_CAPACITY")
-    chosen = []
-    for pattern in sorted(groups):
-        options = list(groups[pattern])
-        if policy.get("depth", 1) >= 3:
-            options.sort(key=lambda row: (-len(row["tokens"]), row["id"]))
-            chosen.append(options[0])
-        else:
-            chosen.append(rng.choice(options))
-
-    remaining = count-len(chosen)
-    pools = {gold: [row for row in source if row["gold"] == gold]
-             for gold in ("FALSE", "TRUE")}
-    if any(not pool for pool in pools.values()):
-        raise ValueError("LEARNING_EXPERIMENT_BINARY_CLASS_MISSING")
-    if policy.get("depth", 1) >= 3:
-        for pool in pools.values():
-            pool.sort(key=lambda row: (-len(row["tokens"]), row["id"]))
-    else:
-        for pool in pools.values():
-            rng.shuffle(pool)
-    used = {row["id"] for row in chosen}
-    counts = {gold: sum(row["gold"] == gold for row in chosen)
-              for gold in pools}
-    while remaining:
-        gold = min(pools, key=lambda item: (counts[item], item))
-        options = [row for row in pools[gold] if row["id"] not in used]
-        if not options:
-            options = pools[gold]
-        row = options[0] if policy.get("depth", 1) >= 3 else rng.choice(options)
-        chosen.append(row)
-        used.add(row["id"])
-        counts[gold] += 1
-        remaining -= 1
-    rng.shuffle(chosen)
-    return chosen
-
-
-def _choose_typed_rows(source, count, policy, rng):
-    if count == 0:
-        return []
-    if not source:
-        raise ValueError("LEARNING_EXPERIMENT_MISSING_SOURCE_ROWS")
-    groups = {}
-    for row in source:
-        groups.setdefault(row.get("source_id", row["id"]), []).append(row)
-    chunks = list(groups.values())
-    if policy.get("depth", 1) >= 3:
-        chunks.sort(key=lambda group: -max(len(row["tokens"]) for row in group))
-        # Sample certified input-token depth; this does not claim AST depth.
-        chunks = chunks[:max(1, (len(chunks)+1)//2)]
-    if policy.get("contrast", 0.) >= .5:
-        families = {}
-        for chunk in chunks:
-            key = tuple(sorted(set(row["gold"] for row in chunk)))
-            families.setdefault(key, []).append(chunk)
-        keys = sorted(families)
-        result = []
-        while len(result) < count:
-            for key in keys:
-                result.extend(rng.choice(families[key]))
-                if len(result) >= count:
-                    break
-        return result[:count]
-    result = []
-    while len(result) < count:
-        result.extend(rng.choice(chunks))
-    return result[:count]
-
-
-def reserve_weakness_targets(chosen: list[dict],
-                             targets: list[dict]) -> tuple[list[dict], tuple[dict, ...]]:
-    """Replace generic current rows with weak semantics without changing batch size."""
-    result = list(chosen)
-    consumed = set()
-    delivered = []
-    for target in targets:
-        existing = next((
-            index for index, row in enumerate(result)
-            if index not in consumed and row["id"] == target["id"]
-        ), None)
-        if existing is not None:
-            consumed.add(existing)
-            delivered.append(target)
-            continue
-
-        pattern = target.get("operand_truths")
-        answer_kind = target.get("answer_kind", "binary")
-        replacement = None
-        if isinstance(pattern, list):
-            replacement = next((
-                index for index, row in enumerate(result)
-                if index not in consumed and row.get("operand_truths") == pattern
-            ), None)
-        if replacement is None and answer_kind == "binary":
-            replacement = next((
-                index for index, row in enumerate(result)
-                if index not in consumed and row.get("gold") == target.get("gold")
-            ), None)
-        if replacement is None:
-            replacement = next((
-                index for index, row in enumerate(result)
-                if index not in consumed and
-                row.get("answer_kind", "binary") == answer_kind
-            ), None)
-        if replacement is None:
-            replacement = next((
-                index for index in range(len(result)) if index not in consumed
-            ), None)
-        if replacement is None:
-            raise ValueError(WeaknessTargetError.LEARNING_EXPERIMENT_WEAKNESS_TARGET_CAPACITY_DRIFT.value)
-        result[replacement] = target
-        consumed.add(replacement)
-        delivered.append(target)
-    return result, tuple(delivered)
-
-
-def select_source_lesson(current: list[dict], prior: list[dict], policy: dict,
-                         *, seed: int, batch_size: int,
-                         targets: list[dict] | tuple[dict, ...] = (),
-                         priority_target_ids: set[str] | frozenset[str] = frozenset(),
-                         target_exposures: Mapping[str, int] | None = None,
-                         reserved_support_slots: int = 0
-                         ) -> tuple[list[dict], dict]:
-    """Make inherited old/contrast/depth knobs effective for every answer type.
-
-    'old' means actual examples originating in already-graduated grades, not
-    embedded prerequisites or a source-unverified fixed teaching mix.
-    'depth' uses token-count emphasis only when that proxy is named as such.
-    Future-grade preview is intentionally inapplicable: never teach new roots.
-    """
-    if not current or type(batch_size) is not int or batch_size < 2:
-        raise ValueError("LEARNING_EXPERIMENT_EMPTY_TYPED_LESSON")
-    if (type(reserved_support_slots) is not int or
-            not 0 <= reserved_support_slots <= batch_size):
-        raise ValueError(WeaknessTargetError.LEARNING_EXPERIMENT_SUPPORT_CAPACITY_INVALID.value)
-    rng = random.Random(seed)
-    requested_old = int(policy.get("old", 0))
-    if not 0 <= requested_old <= 32:
-        raise ValueError("LEARNING_EXPERIMENT_INVALID_OLD_POLICY")
-    semantic_patterns = sorted({
-        tuple(row["operand_truths"]) for row in current
-        if isinstance(row.get("operand_truths"), list)
-    })
-    structured_binary = bool(semantic_patterns) and all(
-        isinstance(row.get("operand_truths"), list) for row in current)
-    minimum_current = len(semantic_patterns) if structured_binary else 2
-    old_count = min(batch_size-minimum_current,
-                    round(requested_old*batch_size/32)) if prior else 0
-    present_count = batch_size-old_count
-    choose_current = _choose_binary_rows if structured_binary else _choose_typed_rows
-    current_ids = {row["id"] for row in current}
-    if any(row.get("id") not in current_ids for row in targets):
-        raise ValueError(WeaknessTargetError.LEARNING_EXPERIMENT_WEAKNESS_TARGET_OUTSIDE_CURRENT.value)
-    priority_target_ids = set(priority_target_ids)
-    target_ids = {row["id"] for row in targets}
-    if (any(not isinstance(identity, str) or not identity
-            for identity in priority_target_ids) or
-            not priority_target_ids <= target_ids):
-        raise ValueError(LearningExperimentError.PRIORITY_TARGET_INVALID.value)
-    target_capacity = max(
-        0, present_count - min(reserved_support_slots, present_count))
-    if targets and not target_capacity:
-        target_capacity = 1
-    priority_targets = [
-        row for row in targets if row["id"] in priority_target_ids]
-    ordinary_targets = [
-        row for row in targets if row["id"] not in priority_target_ids]
-    selected_priority = select_weakness_targets(
-        priority_targets,
-        WeaknessTargetRequest(
-            exposures=dict(target_exposures or {}),
-            capacity=target_capacity,
-        ))
-    selected_ordinary = select_weakness_targets(
-        ordinary_targets,
-        WeaknessTargetRequest(
-            exposures=dict(target_exposures or {}),
-            capacity=max(0, target_capacity-len(selected_priority)),
-        ))
-    selected_targets = [*selected_priority, *selected_ordinary]
-    current_rows = choose_current(current, present_count, policy, rng)
-    current_rows, delivered_targets = reserve_weakness_targets(
-        current_rows, selected_targets)
-    result = current_rows + _choose_typed_rows(prior, old_count, policy, rng)
-    rng.shuffle(result)
-    delivered_patterns = ({tuple(row["operand_truths"]) for row in result
-                           if isinstance(row.get("operand_truths"), list)}
-                          if structured_binary else set())
-    return ([{**row, "answer_kind": row.get("answer_kind", "binary")}
-             for row in result],
-            {"effective_old_grade_examples": old_count,
-             "requested_old_per_32": requested_old,
-             "weakness_targets_available": len(targets),
-             "weakness_targets_requested": len(selected_targets),
-             "weakness_targets_delivered": len(delivered_targets),
-             "weakness_target_ids": [row["id"] for row in delivered_targets],
-             "priority_weakness_targets_available": len(priority_targets),
-             "priority_weakness_targets_requested": len(selected_priority),
-             "priority_weakness_targets_delivered": sum(
-                 row["id"] in priority_target_ids for row in delivered_targets),
-             "reserved_support_slots": reserved_support_slots,
-             "current_semantic_patterns_required": len(semantic_patterns),
-             "current_semantic_patterns_delivered": len(delivered_patterns),
-             "depth_control": "SOURCE_TOKEN_LENGTH_PROXY" if policy.get("depth", 1) >= 3
-                              else "UNBIASED_SOURCE_GROUPS",
-             "contrast_control": "SOURCE_GROUP_DIVERSITY" if policy.get("contrast", 0.) >= .5
-                                 else "SOURCE_GROUP_RANDOM",
-             "preview_control": "NOT_AVAILABLE_UNADMITTED_FUTURE_GRADE"})

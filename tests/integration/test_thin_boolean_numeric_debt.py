@@ -62,7 +62,7 @@ class ThinBooleanNumericDebtTests(unittest.TestCase):
                     measured = {**measured, 'school': {**measured['school'],
                         'stage': 'AWAITING_NEXT_GRADE_WITH_DEBT', 'queue': [],
                         'carried_mastery_debt': list(measured['debt_admission_boundary_exam']['scores'])},
-                        'numeric_scope_final_maximum': 4}
+                        'numeric_scope_final_maximum': 6}
                     from bilqis_mlx.runtime.release_adoption import _auto_adopt_known_grade_boundary
                     with patch('bilqis_mlx.profiles.school.boolean_entry_profile', return_value=profile):
                         _, _, _, admitted, course, changed = _auto_adopt_known_grade_boundary(
@@ -82,7 +82,7 @@ class ThinBooleanNumericDebtTests(unittest.TestCase):
                 measured = _measure_debt_admission_boundary(
                     mx, run, admitted, fixture.manifest, course, SOURCE, params, graph)
                 transition = replace(numeric_entry_transition(
-                    release, graph, full_boolean=False, maximum=3), numeric_scope_final_maximum=4)
+                    release, graph, full_boolean=False, maximum=3), numeric_scope_final_maximum=6)
                 if automatic:
                     measured = {**measured, 'school': {**measured['school'],
                         'stage': 'AWAITING_NEXT_GRADE_WITH_DEBT', 'queue': [],
@@ -103,7 +103,7 @@ class ThinBooleanNumericDebtTests(unittest.TestCase):
         self.assertTrue({'B.NOT', 'B.AND'} <= set(numeric['school']['carried_mastery_debt']))
         self.assertFalse(numeric['school']['champions'])
         self.assertEqual(numeric['numeric_maximum'], 3)
-        self.assertEqual(numeric['numeric_scope_final_maximum'], 4)
+        self.assertEqual(numeric['numeric_scope_final_maximum'], 6)
         self.assertEqual(int(grown_own.state['step'].item()), int(own.state['step'].item()))
         self.assertEqual(numeric['mentor_epoch']['previous_boundary_checkpoint'],
                          admitted['school']['current_student'])

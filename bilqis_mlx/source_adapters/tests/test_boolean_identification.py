@@ -17,7 +17,6 @@ from bilqis_mlx.factory.live_releases import initial_course, boolean_successor
 from bilqis_mlx.factory.release import compile_factory_release
 from bilqis_mlx.grade_a_probe import read_sources
 from bilqis_mlx.grade_a_release import accepted_grade_a
-from bilqis_mlx.grade_b_oracle import operand_truth
 from bilqis_mlx.grade_c_preflight import qualify as qualify_grade_c
 from bilqis_mlx.source_adapters.school import live_source_registry
 from bilqis_mlx.diagnostics.teaching import inspect_lesson_step
@@ -52,7 +51,7 @@ class BooleanIdentificationTests(unittest.TestCase):
         self.assertEqual(cap.id, CAPABILITY)
         self.assertEqual(cap.taught_roots, roots)
         self.assertEqual(cap.examined_roots, roots)
-        self.assertEqual(cap.prerequisites, ("A.IDENTITY", "A.PARENT", "A.LINK"))
+        self.assertEqual(cap.prerequisites, ())
         self.assertEqual(cap.composed_of, ())
         self.assertEqual(cap.answer_families[0].kind, ANSWER_KIND)
         self.assertEqual(cap.answer_families[0].values, BOOLEAN_OPERATORS)
@@ -85,16 +84,42 @@ class BooleanIdentificationTests(unittest.TestCase):
         rows = draw_identification(SOURCE, self.graph, seed=41)
         for row in rows:
             observations = row["record"]["observations"]
-            self.assertEqual({len(observation["operands"])
-                              for observation in observations}, {2})
+            self.assertNotIn("world", row["record"])
             patterns = {
-                tuple(operand_truth(row["record"]["world"], operand)
-                      for operand in observation["operands"])
+                (observation["assignments"]["P"], observation["assignments"]["Q"])
                 for observation in observations
             }
             expected = {(False, False), (False, True), (True, False), (True, True)}
             self.assertEqual(patterns, expected)
             self.assertEqual(len(observations), len(expected))
+
+    def test_inverse_rows_use_named_proposition_bindings_and_keep_rows_shuffled(self):
+        rows = draw_identification(SOURCE, self.graph, seed=41)
+        canonical = ((False, False), (False, True), (True, False), (True, True))
+        shuffled = False
+        operator_ids = {
+            self.graph["tokens"].index("cogal.operator." + operator)
+            for operator in BOOLEAN_OPERATORS
+        }
+        for row in rows:
+            observations = row["record"]["observations"]
+            patterns = tuple(
+                (observation["assignments"]["P"], observation["assignments"]["Q"])
+                for observation in observations
+            )
+            shuffled = shuffled or patterns != canonical
+            self.assertEqual(set(patterns), set(canonical))
+            self.assertTrue(all(
+                set(observation) == {"assignments", "result"} and
+                tuple(observation["assignments"]) == ("P", "Q")
+                for observation in observations
+            ))
+            token_names = [self.graph["tokens"][token] for token in row["tokens"]]
+            self.assertEqual(token_names.count("cogal.variable.P"), 4)
+            self.assertEqual(token_names.count("cogal.variable.Q"), 4)
+            self.assertEqual(token_names.count("syntax.bind"), 8)
+            self.assertTrue(operator_ids.isdisjoint(row["tokens"]))
+        self.assertTrue(shuffled)
 
     def test_all_six_operator_signatures_are_unique_without_arity_signal(self):
         rows = draw_identification(SOURCE, self.graph, seed=73)
@@ -103,12 +128,26 @@ class BooleanIdentificationTests(unittest.TestCase):
             if row["gold"] in signatures:
                 continue
             ordered = sorted(
-                (tuple(operand_truth(row["record"]["world"], operand)
-                       for operand in observation["operands"]), observation["result"])
+                ((observation["assignments"]["P"], observation["assignments"]["Q"]),
+                 observation["result"])
                 for observation in row["record"]["observations"])
             signatures[row["gold"]] = tuple(result for _, result in ordered)
         self.assertEqual(set(signatures), set(BOOLEAN_OPERATORS))
         self.assertEqual(len(set(signatures.values())), len(BOOLEAN_OPERATORS))
+
+    def test_oracle_still_reads_pre_landmark_direct_records(self):
+        record = {
+            "task": "identify_boolean_operator",
+            "observations": [
+                {"operands": [{"kind": "literal", "value": left},
+                              {"kind": "literal", "value": right}],
+                 "result": left != right}
+                for left, right in ((True, False), (False, False),
+                                    (True, True), (False, True))
+            ],
+            "options": list(BOOLEAN_OPERATORS),
+        }
+        self.assertEqual(independent_evaluate(record), "XOR")
 
     def test_factory_uses_one_adapter_and_generates_ninety_six_b_rows(self):
         registry = live_source_registry()
@@ -149,8 +188,7 @@ class BooleanIdentificationTests(unittest.TestCase):
         evidence = inspect_lesson_step(self.course, CAPABILITY, rows, rows[:4])
         self.assertEqual(evidence.offered_count, 12)
         self.assertEqual(evidence.delivered_count, 4)
-        self.assertTrue(set(evidence.prerequisite_capabilities) <= {
-            "A.IDENTITY", "A.PARENT", "A.LINK"})
+        self.assertEqual(evidence.prerequisite_capabilities, ())
 
     def test_grade_c_preflight_requires_full_168_item_idboolops_parent(self):
         manifest = json.loads(MANIFEST.read_text())

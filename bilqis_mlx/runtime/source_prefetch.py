@@ -118,6 +118,20 @@ def _teaching_enrichment_rows(request: dict):
         seed=request["teaching_seed"], enabled=request["teaching_enrichment_enabled"])
 
 
+def _retention_support_rows(request: dict):
+    capability = request["retention_support_capability"]
+    if capability is None:
+        return ()
+    from bilqis_mlx.runtime.candidate_evidence import (
+        _select_fresh_retention_support_rows,
+    )
+    rows = _source_rows(
+        request, seed=request["retention_support_seed"],
+        capability=capability, each=max(request["batch_size"], 6))
+    return _select_fresh_retention_support_rows(
+        rows, rotation=request["retention_support_rotation"])
+
+
 def prepare_step_sources(request: dict) -> dict:
     """Prepare one optimizer step without access to neural or writable run state."""
     if not isinstance(request, dict) or FORBIDDEN_AUTHORITY_KEYS & set(request):
@@ -126,7 +140,9 @@ def prepare_step_sources(request: dict) -> dict:
         "identity", "source_root", "graph", "course", "capability",
         "batch_size", "fresh_seed", "prior_capability",
         "prior_seed", "fragile_fixed_rows", "fragile_requested", "fragile_seeds",
-        "fragile_rotation", "teaching_seed", "teaching_enrichment_enabled",
+        "fragile_rotation", "retention_support_capability",
+        "retention_support_seed", "retention_support_rotation",
+        "teaching_seed", "teaching_enrichment_enabled",
     }
     if set(request) not in (required, required | {"executable_release"}):
         raise ValueError("SOURCE_PREFETCH_REQUEST_SCHEMA_DRIFT")
@@ -145,6 +161,7 @@ def prepare_step_sources(request: dict) -> dict:
             request, seed=request["prior_seed"],
             capability=request["prior_capability"], each=max(batch_size, 6))
     preservation = _fragile_rows(request)
+    retention_support = _retention_support_rows(request)
     enrichment = _teaching_enrichment_rows(request)
     return {
         "schema": SCHEMA,
@@ -152,5 +169,6 @@ def prepare_step_sources(request: dict) -> dict:
         "fresh": list(fresh),
         "prior": list(prior),
         "preservation": list(preservation),
+        "retention_support": list(retention_support),
         "teaching_enrichment_rows": list(enrichment),
     }

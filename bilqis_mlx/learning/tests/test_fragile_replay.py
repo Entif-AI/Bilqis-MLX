@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from collections import Counter
 
 from bilqis_mlx.learning.fragile_replay import (
     load_replay_rows, screen_replay, select_preservation_rows,
@@ -42,7 +43,124 @@ def _v2_replay_rows():
     return rows
 
 
+def _direct_u7c_replay_rows():
+    rows = []
+    patterns = {
+        "B.OR": ((False, False),) * 6 + ((True, False),) * 3 + ((False, True),) * 3,
+        "B.XOR": ((False, False),) * 3 + ((False, True),) * 3 +
+                 ((True, False),) * 3 + ((True, True),) * 3,
+    }
+    for capability in ("B.OR", "B.XOR"):
+        operator = capability[2:]
+        for index, bits in enumerate(patterns[capability]):
+            args = [
+                {"kind": "literal", "value": bits[0]},
+                {"kind": "literal", "value": bits[1]},
+            ]
+            gold = ("TRUE" if (any(bits) if capability == "B.OR"
+                               else bits[0] != bits[1]) else "FALSE")
+            expression = {"kind": "apply", "operator": operator, "args": args}
+            rows.append({
+                "id": f"direct:{capability}:{index}",
+                "source_id": f"source:{capability}:{index}",
+                "capability": capability,
+                "gold": gold,
+                "operand_truths": list(bits),
+                "runtime_sampler": "bilqis.mlx.grade-b-u7c-runtime-sampler/v3",
+                "tokens": [17, 24, 5],
+                "record": {
+                    "task": "evaluate",
+                    "assignments": {},
+                    "expression": expression,
+                    "query": expression,
+                },
+            })
+    return rows
+
+
 class FragileReplayTests(unittest.TestCase):
+    def test_saved_direct_u7c_cohort_replay_does_not_require_world(self):
+        rows = _direct_u7c_replay_rows()
+        rubric = "b" * 64
+        release = "c" * 64
+        cohort = make_cohort(
+            rows, generator_version="test-direct-u7c", seed=37,
+            rubric_version=rubric)
+        digest = cohort.digest
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "cohorts"
+            path.mkdir()
+            (path / f"{digest}.json").write_text(json.dumps({
+                "schema": "bilqis.mlx.generated-cohort/v2",
+                "factory_release_sha256": release,
+                "rubric_sha256": rubric,
+                "cohort_sha256": digest,
+                "rows": rows,
+                "seed": 37,
+                "generator_version": "test-direct-u7c",
+            }))
+            receipt = {"last_exam": {
+                "cohort_sha256": digest,
+                "cohort_file": f"cohorts/{digest}.json",
+                "rubric_sha256": rubric,
+                "factory_release_sha256": release,
+                "scores": {
+                    "B.OR": {"correct": 12, "total": 12},
+                    "B.XOR": {"correct": 12, "total": 12},
+                },
+            }}
+
+            replay = load_replay_rows(
+                Path(tmp), receipt,
+                capabilities=fragile_preservation_capabilities())
+
+        self.assertEqual(len(replay), 24)
+        self.assertTrue(all("world" not in row["record"] for row in replay))
+
+    def test_direct_u7c_preservation_uses_causal_quota_not_full_or_truth_table(self):
+        rows = _direct_u7c_replay_rows()
+        selected = select_preservation_rows(
+            rows, capabilities=fragile_preservation_capabilities())
+
+        self.assertEqual(len(selected), 8)
+        or_patterns = [tuple(row["operand_truths"]) for row in selected
+                       if row["capability"] == "B.OR"]
+        xor_patterns = [tuple(row["operand_truths"]) for row in selected
+                        if row["capability"] == "B.XOR"]
+        self.assertEqual(or_patterns.count((False, False)), 2)
+        self.assertEqual(or_patterns.count((True, False)), 1)
+        self.assertEqual(or_patterns.count((False, True)), 1)
+        self.assertNotIn((True, True), or_patterns)
+        self.assertEqual(set(xor_patterns), {
+            (False, False), (False, True), (True, False), (True, True)})
+
+    def test_direct_u7c_structural_preservation_keeps_balanced_causal_quota(self):
+        fixed = _direct_u7c_replay_rows()
+        fresh = [
+            {**row, "id": "fresh:" + row["id"],
+             "source_id": "fresh:" + row["source_id"]}
+            for row in fixed
+        ]
+        for capability in fragile_preservation_capabilities():
+            selected = select_structural_preservation_rows(
+                [row for row in fresh if row["capability"] == capability],
+                [row for row in fixed if row["capability"] == capability],
+                rotation=0, limit=4)
+            patterns = Counter(tuple(row["operand_truths"]) for row in selected)
+            if capability == "B.OR":
+                self.assertEqual(patterns, Counter({
+                    (False, False): 2,
+                    (False, True): 1,
+                    (True, False): 1,
+                }))
+            else:
+                self.assertEqual(patterns, Counter({
+                    (False, False): 1,
+                    (False, True): 1,
+                    (True, False): 1,
+                    (True, True): 1,
+                }))
+
     def test_saved_v2_cohort_replay_uses_rubric_digest_and_release_binding(self):
         rows = _v2_replay_rows()
         rubric = "b" * 64

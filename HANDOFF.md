@@ -1,3 +1,133 @@
+# CURRENT SUPERSESSION | 2026-10-26 | Promotion sweep hysteresis + Teacher vNext canary
+
+The canonical repository is `/Users/emilie/Code/bilqis-mlx` on branch
+`349-bouta-tree-fitty`. Teacher vNext has moved beyond shadow-only proposal ranking:
+the pending implementation gives it bounded real proposal-selection authority while
+leaving all neural admission/safety authority unchanged. The assistant did not start,
+stop or otherwise manipulate neural training.
+
+Promotion-sweep diagnosis over generations 42711+ found 31 sweep attempts: 12 at C
+introduction stage 4, 16 at stage 5, and 3 final-stage attempts at stage 6. Twenty-four
+attempts had no retained update; 22 of those still fell below the
+old 90% continuation floor on an unchanged student. The final-stage attempt began at
+208/231 = 90.04%; a perfect-target C.COUNT skip performed no neural update, then one
+fresh-cohort miss changed only C.COUNT from 33/33 to 32/33 and immediately dropped the
+stitched mean to 207/231 = 89.61%. The governing user correction therefore replaces
+the old single 90% threshold with **92% entry / 87% failure hysteresis**. A sweep starts
+only at mean >=92% and continues while the running stitched mean is >=87%; below 87%
+aborts. Replay of all 31 historical launches shows only 4 would have entered at 92%,
+suppressing 27/31 (87.1%) of the observed sweep launches. The existing
+one-attempt-per-student+scope latch remains unchanged.
+
+The append-only ledger contains **267 actual teacher proposals, 17 retained visits and
+228 retained optimizer updates**: 6.37% proposal retention. The dominant failure remains
+`NO_MEASURABLE_TARGET_GAIN` at **175/267 (65.54%)**. Every actual policy-selection
+receipt still reports `INHERITED_LEGACY_UCB`, so this result does **not** establish that
+Teacher vNext proposal selection failed; vNext was observing and shadow-ranking only.
+
+Teacher vNext multi-fidelity calibration now uses shadow policy v2. It waits through
+step 8 and recommends stopping there only when no probe through step 8 has shown a
+positive target gain. Replay of the completed run gives **125 hypothetical stops, one
+false kill (0.8%), and 1,000/3,996 candidate optimizer steps saved (25.03%)**. The
+configured shadow gate reports `QUALIFIED` on this run, but `authority_changed=false`:
+actual candidates still run their full authorized horizon and the existing retention
+decision remains sovereign. A second human-operated calibration run is required before
+considering a separate activation patch.
+
+The learned local proposal distribution's structural starvation is repaired with a
+hierarchical evidence backoff. Exact `StudentRegion` identity and all receipts remain
+unchanged; prediction may back off through compatible capability+phase, capability,
+grade+phase and grade neighborhoods while preserving curriculum scope, geometry epoch
+and numeric scope. The learned distribution still requires **16 observations / 3
+retentions**. On a clean replay of 160 states from the completed first calibration run,
+95 states now qualify and 65 remain underpowered.
+
+The bounded canary schedules one opportunity every four actual teacher candidates. A
+vNext proposal receives real authority only if it maps to an existing executable
+strategy, has at least eight compatible observations plus one retained observation, and
+remains in the inherited controller's post-retirement active effective-policy set.
+Otherwise the visit falls back to legacy selection. Legacy selection is still computed
+first and retained as a counterfactual receipt. Novel learned/local policies remain
+shadow-only. Clean first-run replay of the last 160 states schedules 40 canary slots;
+14 have enough retained evidence for vNext selection and 26 safely fall back. This is a
+support/coverage replay, not a claim that those counterfactual choices would retain.
+
+Multi-fidelity early stopping remains shadow-only. Source/oracle truth, lesson
+validation, candidate retention, student/AdamW custody, promotion, qualification,
+championship authority and human ownership of neural training are unchanged. A later
+human run advanced the durable run head to generation 43286 while this checkout was
+dirty during implementation; treat that run as exploratory only because exact code
+provenance is ambiguous. There is currently no live trainer process. Verify the exact
+Git SHA and remote state after the pending commit/push before the next human rerun.
+
+---
+
+# PRIOR SUPERSESSION | 2026-10-23 | Prometheus direct-U7C + C promotion sweep
+
+This supersedes the issue-349 run snapshot below for current operator state. The active
+run is `runs/codex-0001-prometheus`, generation **27343**, factory release
+`83f9f052e40983b879a9e0495ad93d3d3fce31d10e0d12395e0b12499b17c654`.
+The causal student is SHA `83322a22071e2ecaee149b6f0990e9ef73f21afe66ceff65466f0ddafe865c63`
+at native AdamW step **142748**, Grade B `MAIN`, queue
+`B.AND → B.OR → B.XOR → B.IMPLIES → B.IFF → B.COMPOSITE → B.IDBOOLOPS`,
+visit **19463**. A bounded repair reproduction consumed the already-due `B.NOT` visit
+but retained no candidate update; student SHA and AdamW step remained unchanged.
+Canonical open-ended optimization remains human-only.
+
+Grade B now admits `NOT, AND, OR, XOR, IMPLIES, IFF`, plus `COMPOSITE` and
+`IDBOOLOPS`, all through direct typed Boolean-AST/U7C source construction with no
+world records. B remains nongating debt. Historical ADR-090's at-most-20% candidate-
+visit policy is superseded by **ADR-094's bounded grade-turn cadence**: after at most four completed non-B
+training turns, B receives one complete pass over every currently imperfect admitted
+B capability, then yields for four further non-B turns. At generation 27189, the
+next reconstructed B pass is already due and contains all eight admitted B capabilities;
+the latest cumulative B slice is 49/96 (51.0%). The active C promotion sweep remains
+uninterrupted and B takes the next ordinary training turn after it resolves. Commit
+`2ed45db` also separates capability-scoped row identity
+from record-scoped source identity, repairing the teacher-miss collision that caused
+`TEACHER_MISS_HISTORY_IDENTITY_CONFLICT`. Generation 27116 removed obsolete
+world-based B miss debt and rekeyed direct-U7C misses; immutable historical evidence
+was not rewritten. Fragile OR/XOR replay now understands direct-U7C records and
+reserves mandatory preservation capacity before optional fresh support, preventing
+`FRAGILE_PRESERVATION_BATCH_CAPACITY_EXHAUSTED` without weakening source truth.
+The later `TEACHER_WEAKNESS_TARGET_IDENTITY_CONFLICT` was a distinct source-generator
+defect: `B.COMPOSITE` deduplicated identities only inside each 12-row generation
+cycle, while trainer draws request 32 rows and concatenate multiple cycles. A later
+cycle could therefore repeat the same capability-scoped semantic row with different
+`composition_pass` metadata. The public draw now deduplicates across the complete
+requested batch, and the generic factory boundary independently rejects any adapter
+that returns duplicate row IDs.
+
+The repository quality gate that was previously hidden behind
+`GENERIC_GRADE_IDENTITY_DISPATCH` is also repaired. ADR-094's historical B/C
+behavior is now expressed structurally: once at least three grades are active, the
+latest active grade is the progression frontier and its immediate predecessor may
+receive the bounded nongating-debt turn when both still carry mastery debt. Generic
+scheduler code no longer branches on literal grade letters. The cleanup extracted
+typed school state/program adoption and lesson-selection modules, reduced
+`_take_visit` below its inherited size ceiling, named the recent U7C operator
+contracts, and regenerated the error manual/catalog. No module-size, operator-contract,
+or code-smell baseline was expanded. `npm run quality:check` is green; focused
+curriculum/learning/runtime coverage is 476 tests + 25 subtests and full-B/factory
+coverage is 22 tests + 12 subtests. The repository-wide runner still has seven
+unrelated pre-existing failures (source-prefetch fixture schema, two typed-soup
+fixtures, one historical Grade-C compatibility fixture, and three teaching-methodology
+fixtures); each reproduces on untouched commit `8a0c19b`. The one full-suite
+scheduler regression introduced during this refactor was fixed before publication.
+Prometheus resume preflight remains neural-inert with no blockers or migration.
+
+ADR-093 clarifies the automatic C mean-stability sweep. A fresh complete grade mean
+strictly above 90% freezes the initial current-grade score vector. The canonical
+one-pass sweep then replaces only the semantic just rescored; unrelated fresh-cohort
+variance cannot overwrite unswept entries. Generation 27151 did enter this sweep at
+179/198 = 90.404%. Its first `C.COUNT` rescore moved 32/33 to 31/33 with zero retained
+optimizer updates, which alone would move the running mean to 178/198 = 89.899% and
+correctly abort. The old implementation additionally replaced all other C scores from
+the new cohort, exaggerating that apparent drop to 84.848%. Resume preflight at the
+current generation reports no blockers, no migration, and zero neural updates.
+
+---
+
 # Issue349 handoff | 2026-10-22 | COUNT opens NUMBER
 
 ## Read this first: the user's controlling course
@@ -26,9 +156,9 @@ Main `025bca51c78509acd0b1b898f16e9fcf84d25941` is integrated through staging
 `94c2e500523b45472ee257cf4021730309f5b848`, including the B-stagnation fix and DAG
 retry correction. Read actual HEAD/PR for the final merge SHA. Feature preservation
 ref: `codex/349-before-premerge-20261022` at b73f47e.
-IPR-0220 remediation and execution issues remain OPEN; read their protected current
+IPR-0220 remediation and execution authorities remain relevant; when authorized, read their protected current
 checkpoints before changing semantics or custody. Issue346 remains excluded.
-Publication of this feature is user-authorized; keep protected URLs out of public prose.
+**Bilqis-MLX and its implementation are public.** Publish repository-owned code, tests, architecture, and ordinary handoffs directly; keep private-only source text, credentials, attachments, and protected repository URLs out of tracked public artifacts unless separately released.
 
 Selected run: `runs/issue-349-experiments/primary`, generation **492**.
 Native step **117296**, student + own AdamW SHA

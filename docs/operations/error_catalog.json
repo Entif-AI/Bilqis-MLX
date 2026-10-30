@@ -1,6 +1,6 @@
 {
-  "legacy_raw_file_count": 167,
-  "legacy_raw_raise_count": 2004,
+  "legacy_raw_file_count": 168,
+  "legacy_raw_raise_count": 1945,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BACKUP_ARCHIVE_ROOT_SYMLINK",
@@ -381,13 +381,6 @@
       "path": "bilqis_mlx/boolean_composite_oracle.py"
     },
     {
-      "code_hint": "GRADE_B_COMPOSITE_ORACLE_COMPOSITION_WIDTH",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_COMPOSITE_ORACLE_COMPOSITION_WIDTH'",
-      "path": "bilqis_mlx/boolean_composite_oracle.py"
-    },
-    {
       "code_hint": "GRADE_B_COMPOSITE_ORACLE_CONNECTIVE_ARITY",
       "count": 1,
       "exception": "ValueError",
@@ -420,13 +413,6 @@
       "count": 2,
       "exception": "ValueError",
       "expression": "'GRADE_B_COMPOSITE_ORACLE_UNKNOWN_OPERATOR'",
-      "path": "bilqis_mlx/boolean_composite_oracle.py"
-    },
-    {
-      "code_hint": "GRADE_B_COMPOSITE_ORACLE_UNKNOWN_TASK_OR_CAPABILITY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_COMPOSITE_ORACLE_UNKNOWN_TASK_OR_CAPABILITY'",
       "path": "bilqis_mlx/boolean_composite_oracle.py"
     },
     {
@@ -500,13 +486,6 @@
       "path": "bilqis_mlx/boolean_identification.py"
     },
     {
-      "code_hint": "GRADE_B_IDBOOLOPS_OPERAND_TRUTH_EXHAUSTED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_IDBOOLOPS_OPERAND_TRUTH_EXHAUSTED'",
-      "path": "bilqis_mlx/boolean_identification.py"
-    },
-    {
       "code_hint": "GRADE_B_IDBOOLOPS_OPERATOR_BALANCE_DRIFT",
       "count": 1,
       "exception": "ValueError",
@@ -521,13 +500,6 @@
       "path": "bilqis_mlx/boolean_identification.py"
     },
     {
-      "code_hint": "GRADE_B_IDBOOLOPS_QUERY_MARKER_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_IDBOOLOPS_QUERY_MARKER_MISSING'",
-      "path": "bilqis_mlx/boolean_identification.py"
-    },
-    {
       "code_hint": "GRADE_B_IDBOOLOPS_RELEASE_NOT_EXECUTABLE",
       "count": 1,
       "exception": "ValueError",
@@ -539,13 +511,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'GRADE_B_IDBOOLOPS_REQUIRES_COMPOSITE_PARENT'",
-      "path": "bilqis_mlx/boolean_identification.py"
-    },
-    {
-      "code_hint": "GRADE_B_IDBOOLOPS_SOURCE_ENCODING_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_IDBOOLOPS_SOURCE_ENCODING_DRIFT'",
       "path": "bilqis_mlx/boolean_identification.py"
     },
     {
@@ -570,13 +535,6 @@
       "path": "bilqis_mlx/boolean_identification.py"
     },
     {
-      "code_hint": "GRADE_B_IDBOOLOPS_WORLD_ENCODING_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_IDBOOLOPS_WORLD_ENCODING_DRIFT'",
-      "path": "bilqis_mlx/boolean_identification.py"
-    },
-    {
       "code_hint": "GRADE_B_IDBOOLOPS_ORACLE_ENTITY_OUTSIDE_WORLD",
       "count": 1,
       "exception": "ValueError",
@@ -595,13 +553,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'GRADE_B_IDBOOLOPS_ORACLE_OBSERVATIONS_MISSING'",
-      "path": "bilqis_mlx/boolean_identification_oracle.py"
-    },
-    {
-      "code_hint": "GRADE_B_IDBOOLOPS_ORACLE_OBSERVATION_SHAPE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_IDBOOLOPS_ORACLE_OBSERVATION_SHAPE'",
       "path": "bilqis_mlx/boolean_identification_oracle.py"
     },
     {
@@ -1508,55 +1459,6 @@
       "path": "bilqis_mlx/curriculum/__init__.py"
     },
     {
-      "code_hint": "FACTORY_SCHEDULE_PROGRAM_REQUIRED",
-      "count": 2,
-      "exception": "TypeError",
-      "expression": "'FACTORY_SCHEDULE_PROGRAM_REQUIRED'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "ASSESSMENT_HAS_NO_REPRESENTED_GRADE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'ASSESSMENT_HAS_NO_REPRESENTED_GRADE'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "ASSESSMENT_INVALID_SCORE_TYPE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'ASSESSMENT_INVALID_SCORE_TYPE'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "ASSESSMENT_NOT_COMPLETE_ACTIVE_POOL",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'ASSESSMENT_NOT_COMPLETE_ACTIVE_POOL'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "ASSESSMENT_NOT_COURSE_SEALED_RUBRIC",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'ASSESSMENT_NOT_COURSE_SEALED_RUBRIC'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "ASSESSMENT_NOT_GRADE_SEALED_RUBRIC",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'ASSESSMENT_NOT_GRADE_SEALED_RUBRIC'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "ASSESSMENT_NOT_SAME_CHECKPOINT_OR_COURSE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'ASSESSMENT_NOT_SAME_CHECKPOINT_OR_COURSE'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
       "code_hint": "ASSESSMENT_NOT_SCHEDULED_AT_DURABLE_BOUNDARY",
       "count": 1,
       "exception": "ValueError",
@@ -1571,66 +1473,10 @@
       "path": "bilqis_mlx/curriculum/scheduler.py"
     },
     {
-      "code_hint": "ASSESSMENT_RUBRIC_IDENTITY_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'ASSESSMENT_RUBRIC_IDENTITY_MISSING'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "ASSESSMENT_RUBRIC_SCOPE_DOES_NOT_COVER_ACTIVE_POOL",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'ASSESSMENT_RUBRIC_SCOPE_DOES_NOT_COVER_ACTIVE_POOL'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "ASSESSMENT_TOTAL_DIFFERS_FROM_SEALED_ITEM_COUNT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'ASSESSMENT_TOTAL_DIFFERS_FROM_SEALED_ITEM_COUNT'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
       "code_hint": "CARRIED_MASTERY_DEBT_AT_COMPLETION_BOUNDARY",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CARRIED_MASTERY_DEBT_AT_COMPLETION_BOUNDARY'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "DEBT_GRADE_APPEND_DEBT_OUTSIDE_PREVIOUS_PROGRAM",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'DEBT_GRADE_APPEND_DEBT_OUTSIDE_PREVIOUS_PROGRAM'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "DEBT_GRADE_APPEND_DURING_REVALIDATION_FORBIDDEN",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'DEBT_GRADE_APPEND_DURING_REVALIDATION_FORBIDDEN'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "DEBT_GRADE_APPEND_NONDEBT_GRADE_NOT_MASTERED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'DEBT_GRADE_APPEND_NONDEBT_GRADE_NOT_MASTERED'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "DEBT_GRADE_APPEND_REQUIRES_EXPLICIT_MASTERY_DEBT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'DEBT_GRADE_APPEND_REQUIRES_EXPLICIT_MASTERY_DEBT'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "DEBT_GRADE_APPEND_REQUIRES_PARTIAL_PROGRAM",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'DEBT_GRADE_APPEND_REQUIRES_PARTIAL_PROGRAM'",
       "path": "bilqis_mlx/curriculum/scheduler.py"
     },
     {
@@ -1648,41 +1494,6 @@
       "path": "bilqis_mlx/curriculum/scheduler.py"
     },
     {
-      "code_hint": "FACTORY_SCHEDULE_APPEND_FUTURE_CHAMPION_EXISTS",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_SCHEDULE_APPEND_FUTURE_CHAMPION_EXISTS'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "FACTORY_SCHEDULE_APPEND_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_SCHEDULE_APPEND_INVALID'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "FACTORY_SCHEDULE_APPEND_REQUIRES_GRADUATED_PREFIX",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_SCHEDULE_APPEND_REQUIRES_GRADUATED_PREFIX'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "FACTORY_SCHEDULE_REVISION_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_SCHEDULE_REVISION_INVALID'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "FACTORY_SCHEDULE_REVISION_REQUIRES_ACTIVE_GRADE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_SCHEDULE_REVISION_REQUIRES_ACTIVE_GRADE'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
       "code_hint": "FINAL_WHOLE_SCHOOL_SNAPSHOT_INCOMPLETE",
       "count": 1,
       "exception": "ValueError",
@@ -1694,41 +1505,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'FLASH_MODE_CANNOT_REQUIRE_ASSESSMENT_FROM_STAGE'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "GRADE_APPEND_FUTURE_CHAMPION_ALREADY_EXISTS",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_APPEND_FUTURE_CHAMPION_ALREADY_EXISTS'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "GRADE_APPEND_REQUIRES_EXACTLY_ONE_NEW_GRADE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_APPEND_REQUIRES_EXACTLY_ONE_NEW_GRADE'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "GRADE_APPEND_UNSEALED_PREVIOUS_GRADE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_APPEND_UNSEALED_PREVIOUS_GRADE'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "GRADE_APPEND_WOULD_CHANGE_PREVIOUS_GRADE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_APPEND_WOULD_CHANGE_PREVIOUS_GRADE'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "INVALID_CAPABILITY_SCORE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'INVALID_CAPABILITY_SCORE'",
       "path": "bilqis_mlx/curriculum/scheduler.py"
     },
     {
@@ -4245,6 +4021,13 @@
       "path": "bilqis_mlx/factory/generation.py"
     },
     {
+      "code_hint": "",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "error_code + ':' + capability",
+      "path": "bilqis_mlx/factory/generation.py"
+    },
+    {
       "code_hint": "JIT_CURRICULUM_INPUT_INVALID",
       "count": 1,
       "exception": "TypeError",
@@ -5295,13 +5078,6 @@
       "path": "bilqis_mlx/grade_a_release.py"
     },
     {
-      "code_hint": "GRADE_B_ORACLE_CONNECTIVE_SHAPE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_ORACLE_CONNECTIVE_SHAPE'",
-      "path": "bilqis_mlx/grade_b_oracle.py"
-    },
-    {
       "code_hint": "GRADE_B_ORACLE_ENTITY_OUTSIDE_WORLD",
       "count": 1,
       "exception": "ValueError",
@@ -5327,13 +5103,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'GRADE_B_ORACLE_UNATTESTED_ENTITY'",
-      "path": "bilqis_mlx/grade_b_oracle.py"
-    },
-    {
-      "code_hint": "GRADE_B_ORACLE_UNKNOWN_TASK_OR_CAPABILITY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_ORACLE_UNKNOWN_TASK_OR_CAPABILITY'",
       "path": "bilqis_mlx/grade_b_oracle.py"
     },
     {
@@ -6471,13 +6240,6 @@
       "path": "bilqis_mlx/learning/fragile_replay.py"
     },
     {
-      "code_hint": "FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT'",
-      "path": "bilqis_mlx/learning/fragile_replay.py"
-    },
-    {
       "code_hint": "FRAGILE_REPLAY_UNBOUND_EXAM_COHORT",
       "count": 1,
       "exception": "ValueError",
@@ -6667,31 +6429,10 @@
       "path": "bilqis_mlx/learning/grade_soup.py"
     },
     {
-      "code_hint": "LEARNING_EXPERIMENT_SCHEDULE_PROGRAM_REQUIRED",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'LEARNING_EXPERIMENT_SCHEDULE_PROGRAM_REQUIRED'",
-      "path": "bilqis_mlx/learning/learning_experiment.py"
-    },
-    {
       "code_hint": "LEARNING_EXPERIMENT_ADAMW_DRIFT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'LEARNING_EXPERIMENT_ADAMW_DRIFT'",
-      "path": "bilqis_mlx/learning/learning_experiment.py"
-    },
-    {
-      "code_hint": "LEARNING_EXPERIMENT_BINARY_CLASS_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'LEARNING_EXPERIMENT_BINARY_CLASS_MISSING'",
-      "path": "bilqis_mlx/learning/learning_experiment.py"
-    },
-    {
-      "code_hint": "LEARNING_EXPERIMENT_BINARY_PATTERN_CAPACITY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'LEARNING_EXPERIMENT_BINARY_PATTERN_CAPACITY'",
       "path": "bilqis_mlx/learning/learning_experiment.py"
     },
     {
@@ -6713,13 +6454,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'LEARNING_EXPERIMENT_DUPLICATE_ROW'",
-      "path": "bilqis_mlx/learning/learning_experiment.py"
-    },
-    {
-      "code_hint": "LEARNING_EXPERIMENT_EMPTY_TYPED_LESSON",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'LEARNING_EXPERIMENT_EMPTY_TYPED_LESSON'",
       "path": "bilqis_mlx/learning/learning_experiment.py"
     },
     {
@@ -6800,13 +6534,6 @@
       "path": "bilqis_mlx/learning/learning_experiment.py"
     },
     {
-      "code_hint": "LEARNING_EXPERIMENT_INVALID_OLD_POLICY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'LEARNING_EXPERIMENT_INVALID_OLD_POLICY'",
-      "path": "bilqis_mlx/learning/learning_experiment.py"
-    },
-    {
       "code_hint": "LEARNING_EXPERIMENT_INVALID_PAIRED_SCORE",
       "count": 1,
       "exception": "ValueError",
@@ -6835,13 +6562,6 @@
       "path": "bilqis_mlx/learning/learning_experiment.py"
     },
     {
-      "code_hint": "LEARNING_EXPERIMENT_MISSING_SOURCE_ROWS",
-      "count": 2,
-      "exception": "ValueError",
-      "expression": "'LEARNING_EXPERIMENT_MISSING_SOURCE_ROWS'",
-      "path": "bilqis_mlx/learning/learning_experiment.py"
-    },
-    {
       "code_hint": "LEARNING_EXPERIMENT_PARAMETER_IDENTITY_DRIFT",
       "count": 1,
       "exception": "ValueError",
@@ -6867,13 +6587,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'LEARNING_EXPERIMENT_UNKNOWN_OPTIMIZER_STATE'",
-      "path": "bilqis_mlx/learning/learning_experiment.py"
-    },
-    {
-      "code_hint": "LEARNING_EXPERIMENT_UNKNOWN_TARGET_GRADE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'LEARNING_EXPERIMENT_UNKNOWN_TARGET_GRADE'",
       "path": "bilqis_mlx/learning/learning_experiment.py"
     },
     {
@@ -7535,13 +7248,6 @@
       "path": "bilqis_mlx/live_grade_b.py"
     },
     {
-      "code_hint": "GRADE_B_OPERATOR_NOT_BINARY_DISCRIMINATING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_OPERATOR_NOT_BINARY_DISCRIMINATING'",
-      "path": "bilqis_mlx/live_grade_b.py"
-    },
-    {
       "code_hint": "GRADE_B_OPERATOR_VARIATION_EXHAUSTED",
       "count": 1,
       "exception": "ValueError",
@@ -7581,13 +7287,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'GRADE_B_THREE_ORACLE_DISAGREEMENT'",
-      "path": "bilqis_mlx/live_grade_b.py"
-    },
-    {
-      "code_hint": "GRADE_B_UNKNOWN_OPERATOR",
-      "count": 2,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_UNKNOWN_OPERATOR'",
       "path": "bilqis_mlx/live_grade_b.py"
     },
     {
@@ -7640,34 +7339,6 @@
       "path": "bilqis_mlx/minimal_boolean_identification_oracle.py"
     },
     {
-      "code_hint": "GRADE_B_MINIMAL_IDBOOLOPS_OBSERVATIONS_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_MINIMAL_IDBOOLOPS_OBSERVATIONS_MISSING'",
-      "path": "bilqis_mlx/minimal_boolean_identification_oracle.py"
-    },
-    {
-      "code_hint": "GRADE_B_MINIMAL_IDBOOLOPS_OBSERVATION_SHAPE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_MINIMAL_IDBOOLOPS_OBSERVATION_SHAPE'",
-      "path": "bilqis_mlx/minimal_boolean_identification_oracle.py"
-    },
-    {
-      "code_hint": "GRADE_B_MINIMAL_IDBOOLOPS_OPTION_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_MINIMAL_IDBOOLOPS_OPTION_DRIFT'",
-      "path": "bilqis_mlx/minimal_boolean_identification_oracle.py"
-    },
-    {
-      "code_hint": "GRADE_B_MINIMAL_IDBOOLOPS_SIGNATURE_INCOMPLETE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_MINIMAL_IDBOOLOPS_SIGNATURE_INCOMPLETE'",
-      "path": "bilqis_mlx/minimal_boolean_identification_oracle.py"
-    },
-    {
       "code_hint": "GRADE_B_MINIMAL_IDBOOLOPS_UNKNOWN_TASK_OR_CAPABILITY",
       "count": 1,
       "exception": "ValueError",
@@ -7686,41 +7357,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'GRADE_B_MINIMAL_ANSWER_HEAD_TOKEN_MISSING'",
-      "path": "bilqis_mlx/minimal_grade_b.py"
-    },
-    {
-      "code_hint": "GRADE_B_MINIMAL_COMPOSITE_VARIATION_EXHAUSTED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_MINIMAL_COMPOSITE_VARIATION_EXHAUSTED'",
-      "path": "bilqis_mlx/minimal_grade_b.py"
-    },
-    {
-      "code_hint": "GRADE_B_MINIMAL_FROZEN_TOKEN_PREFIX_MISMATCH",
-      "count": 2,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_MINIMAL_FROZEN_TOKEN_PREFIX_MISMATCH'",
-      "path": "bilqis_mlx/minimal_grade_b.py"
-    },
-    {
-      "code_hint": "GRADE_B_MINIMAL_IDBOOLOPS_BALANCED_COUNT_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_MINIMAL_IDBOOLOPS_BALANCED_COUNT_REQUIRED'",
-      "path": "bilqis_mlx/minimal_grade_b.py"
-    },
-    {
-      "code_hint": "GRADE_B_MINIMAL_IDBOOLOPS_BALANCE_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_MINIMAL_IDBOOLOPS_BALANCE_DRIFT'",
-      "path": "bilqis_mlx/minimal_grade_b.py"
-    },
-    {
-      "code_hint": "GRADE_B_MINIMAL_IDBOOLOPS_VARIATION_EXHAUSTED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_MINIMAL_IDBOOLOPS_VARIATION_EXHAUSTED'",
       "path": "bilqis_mlx/minimal_grade_b.py"
     },
     {
@@ -12330,13 +11966,6 @@
       "path": "bilqis_mlx/source_adapters/school.py"
     },
     {
-      "code_hint": "FACTORY_BOOLEAN_MINIMUM_SAMPLE_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_BOOLEAN_MINIMUM_SAMPLE_REQUIRED'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
       "code_hint": "FACTORY_BOOLEAN_PROFILE_PARAMETER_SCOPE_DRIFT",
       "count": 1,
       "exception": "ValueError",
@@ -12348,20 +11977,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'FACTORY_BOOLEAN_PROFILE_PARAMETER_UNKNOWN'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FACTORY_BOOLEAN_RUNTIME_SAMPLE_EXHAUSTED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_BOOLEAN_RUNTIME_SAMPLE_EXHAUSTED'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FACTORY_BOOLEAN_TRUTH_PATTERN_COVERAGE_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_BOOLEAN_TRUTH_PATTERN_COVERAGE_MISSING'",
       "path": "bilqis_mlx/source_adapters/school.py"
     },
     {
@@ -12470,13 +12085,6 @@
       "path": "bilqis_mlx/source_adapters/structure.py"
     },
     {
-      "code_hint": "LESSON_SOURCE_IDENTIFICATION_OPERANDS_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'LESSON_SOURCE_IDENTIFICATION_OPERANDS_MISSING'",
-      "path": "bilqis_mlx/source_adapters/structure.py"
-    },
-    {
       "code_hint": "LESSON_SOURCE_IDENTIFICATION_STRUCTURE_INVALID",
       "count": 1,
       "exception": "ValueError",
@@ -12510,6 +12118,13 @@
       "exception": "ValueError",
       "expression": "'LESSON_SOURCE_STRUCTURE_UNSUPPORTED'",
       "path": "bilqis_mlx/source_adapters/structure.py"
+    },
+    {
+      "code_hint": "lacks U7C pattern",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "f'{operation} lacks U7C pattern {pattern}: {len(by_pattern[pattern])}/{count}'",
+      "path": "bilqis_mlx/source_adapters/tests/test_grade_b_u7c_causal_cells.py"
     },
     {
       "code_hint": "Pinned original token identity drift",

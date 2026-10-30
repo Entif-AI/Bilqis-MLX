@@ -13,15 +13,22 @@ from .curriculum import AnswerFamily, BINARY, Capability, Course
 from .grade_a_probe import read_sources
 from .grade_b_oracle import CONNECTIVES
 from .live_grade_b import (
+    MAX_BOOLEAN_CONTEXT_TOKENS,
     PREREQUISITES, RELEASE as PARENT_RELEASE,
+    _encode_logic_record, _logic_source, capability_row_identity,
+    source_record_identity,
     constructor_digest as parent_boolean_constructor_digest,
 )
-from .live_grade_b import _operand, _random_world
 
 CAPABILITY = "B.COMPOSITE"
 GENERATOR = "bilqis.mlx.grade-b-composite-constructor/v1"
 RELEASE = "bilqis.mlx.grade-a-b-composite/20261019-v1"
 ASSESSMENT_ITEMS = 12
+PRESENTATION = "proof-role-tree-landmarks/v1"
+REPRESENTATION_VARIATION = "composite-proof-role-tree-landmarks"
+COMPOSITE_RECORD_INVALID = "GRADE_B_COMPOSITE_RECORD_INVALID"
+COMPOSITE_TOKEN_ABI_DRIFT = "GRADE_B_COMPOSITE_TOKEN_ABI_DRIFT"
+COMPOSITE_CONTEXT_LENGTH = "GRADE_B_COMPOSITE_CONTEXT_LENGTH"
 
 
 def _digest(value) -> str:
@@ -43,28 +50,91 @@ def _leaf_count(operators: tuple[str, ...]) -> int:
     return len(operators) + 1 - (1 if "NOT" in operators else 0)
 
 
-def _expression(micro, operators: tuple[str, ...], leaves: tuple[dict, ...]):
+def _expression(logic, operators: tuple[str, ...], leaves: tuple[dict, ...]):
     if len(operators) == 2:
         outer, inner = operators
         if outer == "NOT":
-            return micro.logic("NOT", micro.logic(inner, leaves[0], leaves[1]))
+            return logic.apply("NOT", logic.apply(inner, leaves[0], leaves[1]))
         if inner == "NOT":
-            return micro.logic(outer, micro.logic("NOT", leaves[0]), leaves[1])
-        return micro.logic(outer, micro.logic(inner, leaves[0], leaves[1]), leaves[2])
+            return logic.apply(outer, logic.apply("NOT", leaves[0]), leaves[1])
+        return logic.apply(outer, logic.apply(inner, leaves[0], leaves[1]), leaves[2])
     if len(operators) != 3:
         raise ValueError("GRADE_B_COMPOSITE_OPERATOR_WIDTH")
     outer, left, right = operators
     if outer == "NOT":
-        return micro.logic("NOT", micro.logic(
-            left, micro.logic(right, leaves[0], leaves[1]), leaves[2]))
+        return logic.apply("NOT", logic.apply(
+            left, logic.apply(right, leaves[0], leaves[1]), leaves[2]))
     if left == "NOT":
-        return micro.logic(outer, micro.logic("NOT", leaves[0]),
-                           micro.logic(right, leaves[1], leaves[2]))
+        return logic.apply(outer, logic.apply("NOT", leaves[0]),
+                           logic.apply(right, leaves[1], leaves[2]))
     if right == "NOT":
-        return micro.logic(outer, micro.logic(left, leaves[0], leaves[1]),
-                           micro.logic("NOT", leaves[2]))
-    return micro.logic(outer, micro.logic(left, leaves[0], leaves[1]),
-                       micro.logic(right, leaves[2], leaves[3]))
+        return logic.apply(outer, logic.apply(left, leaves[0], leaves[1]),
+                           logic.apply("NOT", leaves[2]))
+    return logic.apply(outer, logic.apply(left, leaves[0], leaves[1]),
+                       logic.apply(right, leaves[2], leaves[3]))
+
+
+def _encode_tree(node: dict, graph: dict) -> list[int]:
+    names = graph["tokens"]
+    kind = node.get("kind") if isinstance(node, dict) else None
+    if kind == "literal" and type(node.get("value")) is bool:
+        return [names.index(
+            "cogal.value.true" if node["value"] else "cogal.value.false")]
+    if kind == "variable" and node.get("name") in ("P", "Q"):
+        return [names.index("cogal.variable." + node["name"])]
+    if kind != "apply":
+        raise ValueError(COMPOSITE_RECORD_INVALID)
+    operator = node.get("operator")
+    args = node.get("args")
+    if (operator not in CONNECTIVES or not isinstance(args, list) or
+            len(args) != (1 if operator == "NOT" else 2)):
+        raise ValueError(COMPOSITE_RECORD_INVALID)
+    try:
+        tokens = [
+            names.index("micro.proof.conclusion"),
+            names.index("cogal.operator." + operator),
+        ]
+        for index, child in enumerate(args):
+            if index:
+                tokens.append(names.index("syntax.separator"))
+            tokens.append(names.index("micro.proof.premise"))
+            tokens.extend(_encode_tree(child, graph))
+        return tokens
+    except ValueError as exc:
+        raise ValueError(COMPOSITE_TOKEN_ABI_DRIFT) from exc
+
+
+def encode_record(record: dict, legacy_root: Path, graph: dict) -> list[int]:
+    """Encode revised COMPOSITE rows while preserving historical row readability."""
+    logic = _logic_source(legacy_root)
+    if record.get("presentation") != PRESENTATION:
+        return _encode_logic_record(logic, record, graph)
+    query = record.get("query")
+    assignments = record.get("assignments")
+    if (record.get("task") != "evaluate" or not isinstance(query, dict) or
+            not isinstance(assignments, dict) or
+            logic.free_variables(query) != set(assignments)):
+        raise ValueError(COMPOSITE_RECORD_INVALID)
+    names = graph["tokens"]
+    try:
+        tokens = [names.index("task.evaluate"), *_encode_tree(query, graph),
+                  names.index("syntax.bind")]
+        for name, value in sorted(assignments.items()):
+            if name not in ("P", "Q") or type(value) is not bool:
+                raise ValueError(COMPOSITE_RECORD_INVALID)
+            tokens.extend((
+                names.index("cogal.variable." + name),
+                names.index(
+                    "cogal.value.true" if value else "cogal.value.false"),
+            ))
+        tokens.append(names.index("syntax.end"))
+    except ValueError as exc:
+        if str(exc) == COMPOSITE_RECORD_INVALID:
+            raise
+        raise ValueError(COMPOSITE_TOKEN_ABI_DRIFT) from exc
+    if not 1 <= len(tokens) <= MAX_BOOLEAN_CONTEXT_TOKENS:
+        raise ValueError(COMPOSITE_CONTEXT_LENGTH)
+    return tokens
 
 
 def _operator_domain(operators) -> tuple[str, ...]:
@@ -109,7 +179,8 @@ def _schedule(rng: random.Random, operators=CONNECTIVES
 def _cycle(legacy_root: Path, graph: dict, *, seed: int, cycle: int,
            operators=CONNECTIVES) -> tuple[dict, ...]:
     operators = _operator_domain(operators)
-    micro, _, source_graph, _, _ = read_sources(legacy_root)
+    logic = _logic_source(legacy_root)
+    _, _, source_graph, _, _ = read_sources(legacy_root)
     if (graph["tokens"][:len(source_graph["tokens"])] != source_graph["tokens"] or
             len(graph["tokens"]) < len(source_graph["tokens"])):
         raise ValueError("GRADE_B_COMPOSITE_FROZEN_TOKEN_PREFIX_MISMATCH")
@@ -128,31 +199,49 @@ def _cycle(legacy_root: Path, graph: dict, *, seed: int, cycle: int,
     rng.shuffle(expected)
     result, seen = [], set()
     for index, ((width, pass_index, operators), wanted) in enumerate(zip(schedule, expected)):
-        n = 3 if index % 2 == 0 else 4
         for _ in range(5000):
-            world = _random_world(micro, rng, n)
-            leaves = tuple(_operand(micro, rng, world)
-                           for _ in range(_leaf_count(operators)))
-            query = _expression(micro, operators, leaves)
-            record = micro.record(world, query)
-            gold = micro.evaluate(record)
-            if (gold != micro.independent_evaluate(record) or
-                    gold != independent_evaluate(record) or
-                    (gold == "TRUE") != wanted):
+            leaf_truths = tuple(rng.choice((False, True))
+                                for _ in range(_leaf_count(operators)))
+            variants = []
+            env = {}
+            conflict = False
+            for truth in leaf_truths:
+                choice = rng.randrange(3)
+                if choice == 0:
+                    variants.append(logic.literal(truth))
+                    continue
+                name = "P" if choice == 1 else "Q"
+                if name in env and env[name] != truth:
+                    conflict = True
+                    break
+                env[name] = truth
+                variants.append(logic.variable(name))
+            if conflict:
                 continue
-            tokens = list(micro.encode(record))
-            identity = _digest(record)
-            if (identity in seen or not 1 <= len(tokens) <= 96 or
-                    min(tokens) < 0 or max(tokens) >= len(graph["tokens"])):
+            leaves = tuple(variants)
+            query = _expression(logic, operators, leaves)
+            record = logic.evaluation_record(query, env)
+            record["query"] = query
+            record["presentation"] = PRESENTATION
+            gold_bool = logic.gold(record)
+            gold = "TRUE" if gold_bool else "FALSE"
+            if (gold_bool != logic.gold(record, independent=True) or
+                    gold != independent_evaluate(record) or
+                    gold_bool != wanted):
+                continue
+            tokens = encode_record(record, legacy_root, graph)
+            source_id = source_record_identity(record)
+            identity = capability_row_identity(CAPABILITY, record)
+            if identity in seen:
                 continue
             break
         else:
             raise ValueError("GRADE_B_COMPOSITE_VARIATION_EXHAUSTED")
         seen.add(identity)
         result.append({
-            "id": identity, "source_id": identity, "capability": CAPABILITY,
+            "id": identity, "source_id": source_id, "capability": CAPABILITY,
             "answer_kind": "binary", "gold": gold, "record": record,
-            "tokens": tokens, "universe_size": n, "oracle": ORACLE,
+            "tokens": tokens, "oracle": ORACLE,
             "generator": GENERATOR, "operators": list(operators),
             "operator_roots": ["cogal.operator." + op for op in operators],
             "composition_width": width, "composition_pass": pass_index,
@@ -171,13 +260,20 @@ def draw_composite(legacy_root: Path, graph: dict, *, seed: int,
         raise ValueError("GRADE_B_COMPOSITE_UNKNOWN_CAPABILITY")
     operators = _operator_domain(operators)
     rows = []
+    seen = set()
     cycle = 0
     while len(rows) < each:
-        rows.extend(_cycle(
-            legacy_root, graph, seed=seed, cycle=cycle,
-            operators=operators))
+        for row in _cycle(
+                legacy_root, graph, seed=seed, cycle=cycle,
+                operators=operators):
+            if row["id"] in seen:
+                continue
+            seen.add(row["id"])
+            rows.append(row)
+            if len(rows) == each:
+                break
         cycle += 1
-    return tuple(rows[:each])
+    return tuple(rows)
 
 
 def build_course(previous: Course, legacy_root: Path) -> Course:
@@ -191,7 +287,7 @@ def build_course(previous: Course, legacy_root: Path) -> Course:
     roots = tuple("cogal.operator." + op for op in CONNECTIVES)
     cap = Capability(
         id=CAPABILITY, difficulty=previous.grades[-1].capabilities[0].difficulty,
-        source_anchor="repo:bilqis_micro/kernel.py::_operation+_table",
+        source_anchor="repo:bilqis_logic/kernel.py::TABLES+encode",
         taught_roots=roots, examined_roots=roots, prerequisites=PREREQUISITES,
         composed_of=(), answer_families=(AnswerFamily("binary", BINARY),),
         lesson_generator=GENERATOR, independent_oracle=ORACLE,

@@ -12,6 +12,20 @@ from typing import Any
 import string
 
 from bilqis_mlx.presentation.spiral_dashboard import Column
+from bilqis_mlx.presentation.growth_projection import GrowthProjection
+from bilqis_mlx.presentation.operator_status import (
+    PROFILE_ADOPTION_EVENTS, apply_profile_adoption,
+    display_metric as _display, exam_qualification_display,
+    inventory_scope as _inventory_scope, notify_grade_admitted,
+    withheld_inventory_change_explains as _withheld_inventory_change_explains,
+)
+from bilqis_mlx.presentation.teacher_vnext import (
+    health_transition as _teacher_health_transition,
+    teacher_fields as _teacher_vnext_fields,
+)
+from bilqis_mlx.presentation.retention_projection import (
+    candidate_retention_row as _candidate_retention_row,
+)
 from ..compatibility.telemetry_events import (
     HISTORICAL_EVENT_KINDS,
     historical_event_grade,
@@ -156,44 +170,6 @@ def _instruction_method_text(event: dict) -> str:
     return "-"
 
 
-def _candidate_retention_row(event: dict, grade: str, attempt: int) -> dict | None:
-    retention = event.get("candidate_retention")
-    if not isinstance(retention, dict):
-        return None
-    capability = retention.get("active_capability") or event.get("capability") or "-"
-    before = retention.get("active_probe_before")
-    after = retention.get("active_probe_after")
-    total = retention.get("active_probe_total")
-    target = (f"{before}>{after}/{total}"
-              if all(type(value) is int for value in (before, after, total)) and total > 0
-              else "-")
-    local = retention.get("local_correct_delta")
-    protected = retention.get("protected_net_correct_delta")
-    worst = retention.get("worst_protected_loss")
-    reason = str(retention.get("reason") or "UNKNOWN")
-    unsampled = retention.get("unsampled_admitted_capabilities")
-    evidence = reason
-    if type(unsampled) is int:
-        evidence += f" | unsampled {unsampled}"
-    frontier_grade = retention.get("protected_frontier_grade")
-    frontier_delta = retention.get("protected_frontier_grade_net_correct_delta")
-    if isinstance(frontier_grade, str) and type(frontier_delta) is int:
-        evidence += f" | frontier {frontier_grade} {frontier_delta:+d}"
-    return {
-        "grade": grade,
-        "capability": capability,
-        "attempt": attempt,
-        "target": target,
-        "target_delta": f"{local:+d}" if type(local) is int else "-",
-        "protected": f"{protected:+d}" if type(protected) is int else "-",
-        "worst": ("0" if worst == 0 else f"-{worst}"
-                  if type(worst) is int and worst > 0 else "-"),
-        "decision": str(retention.get("decision") or "UNKNOWN"),
-        "result": str(retention.get("decision") or "UNKNOWN"),
-        "evidence": evidence,
-    }
-
-
 def _diagnostic_system_rows(event: dict, grade: str) -> tuple[dict, ...]:
     rows = []
     diagnostics = event.get("learning_diagnostics")
@@ -290,7 +266,10 @@ LETTER_TABLES = (
         Column("C", 1, "contrast", right=True),
         Column("OLD", 3, "old", optional=True, right=True),
         Column("DSTIL", 5, "distill", optional=True, right=True),
-        Column("CREDIT", 7, "credit", right=True))),
+        Column("CREDIT", 7, "credit", right=True),
+        Column("P(RET)", 6, "p_ret", optional=True, right=True),
+        Column("HEALTH", 9, "health", optional=True),
+        Column("SHADOW", 8, "shadow", optional=True))),
     ("GRADES & MASTERY", (
         Column("CAPABILITY", 10, "subject"),
         Column("WAS/TOP/NOW/ALL", 15, "score_line", right=True),
@@ -334,34 +313,6 @@ EVENT_KINDS = {
 }
 
 
-def _display(value: Any, *, decimals: int = 3) -> str:
-    if type(value) in (float, int):
-        if value and abs(value) < 0.5 * 10 ** (-decimals):
-            return f"{value:.2e}"
-        return f"{value:.{decimals}f}"
-    return "-"
-
-
-def _inventory_scope(scope: str, caps: dict) -> str:
-    """Internal comparison identity for the capability inventory actually scored."""
-    return scope + "|inventory:" + ",".join(sorted(caps))
-
-
-def _withheld_inventory_change_explains(event: dict, grade: str,
-                                        previous, current) -> bool:
-    """Recognize the historical scope-receipt bug caused by withholding."""
-    withheld = {
-        cap for cap in event.get("withheld_capabilities", ())
-        if isinstance(cap, str) and _grade_from_capability(cap, grade) == grade
-    }
-    if not withheld:
-        return False
-    before, after = dict(previous), dict(current)
-    changed = set(before) ^ set(after)
-    return (bool(changed) and changed <= withheld and
-            all(before[cap] == after[cap] for cap in set(before) & set(after)))
-
-
 def _scaled_lr(value: Any) -> str:
     if type(value) not in (float, int):
         return "-"
@@ -401,7 +352,6 @@ def _grade_from_capability(name: str, event_grade: str) -> str:
     prefix = name.split(".", 1)[0]
     return prefix if len(prefix) == 1 and prefix.isalpha() else event_grade
 
-
 def _source_provenance(event: dict):
     """Independent metrics must identify their validation set and whole student."""
     for key in ("dataset_sha256", "student_sha256"):
@@ -438,6 +388,7 @@ class SchoolTelemetry:
         self.best = {}
         self.last_cap = {}  # (capability, complete-rubric) -> (correct,total)
         self.start_cap = {}
+        self.growth = GrowthProjection(active_grades)
         self.last_source_training = {}  # capability -> (accuracy, optimizer_step)
         self.exam_cohorts = {}  # (grade, semantic rubric) -> last sampled cohort
         self.reported_scope_inventory = {}
@@ -452,12 +403,10 @@ class SchoolTelemetry:
         self.execution_start_step = None
         self.live_projected_generations = set()
         self.board.grade_program = tuple(self.grades)
-
     def _grade(self, name):
         if name not in self.grades:
             self.grades.append(name)
             self.board.grade_program = tuple(self.grades)
-
     def _reset_score_era(self, *, reason: str, grade: str | None) -> None:
         """Start a new longitudinal-score era without deleting event history."""
         self.score_era += 1
@@ -472,7 +421,6 @@ class SchoolTelemetry:
             "kind": "SCORE ERA", "grade": grade or "-",
             "detail": f"ERA {self.score_era} | RESET {reason}",
         }, redraw=False)
-
     def ingest(self, event: dict):
         if (event.get("event", "").startswith("SCHOOL_") and
                 event.get("telemetry_schema", TELEMETRY_VERSION) != TELEMETRY_VERSION):
@@ -513,19 +461,23 @@ class SchoolTelemetry:
                         if event.get("event") == "SCHOOL_NEXT_GRADE_COURSE_ADMITTED"
                         else "COURSE_ADMITTED"),
                 grade=grade)
+            notify_grade_admitted(self.board,grade,event.get("generation","-"))
         self.board.state["step"] = event.get("optimizer_step", self.board.state.get("step"))
         self.board.state["_rate_sample_eligible"] = True
 
     def _curriculum(self, grade, event):
         """Make a release replacement a hard boundary in the active dashboard view."""
+        if event["event"] in PROFILE_ADOPTION_EVENTS:
+            apply_profile_adoption(self,grade,event)
+            return
         self._reset_score_era(reason=event["event"], grade=grade)
         old_caps = tuple(event.get("old_capabilities") or ())
         new_caps = tuple(event.get("new_capabilities") or ())
         if (not grade or not old_caps or not new_caps or
                 any(not isinstance(cap, str) for cap in (*old_caps, *new_caps))):
             raise ValueError("SCHOOL_TELEMETRY_CURRICULUM_REPLACEMENT_INVALID")
+        self.board.state["grew"] = self.growth.replace_grade(grade, old_caps, new_caps, event.get("withheld_capabilities", ()))
         old_set = set(old_caps)
-
         # Rows before this event describe the superseded curriculum. Keep them
         # in the immutable event log, not in the operator's active curriculum.
         for table in ("CANDIDATES", "SOUP & TEACHER", "BRIDGE FAMILIES",
@@ -578,8 +530,10 @@ class SchoolTelemetry:
                 step=step, prefix=grade or self.board.state.get("prefix"),
                 _rate_sample_eligible=True)
             return
+        self.visits = 0
         self.start = dict(self.latest)
         self.start_cap = dict(self.last_cap)
+        self.board.state["grew"] = self.growth.begin_execution()
         self.execution_start_step = step if type(step) is int else None
         # Emit current snapshots immediately so START is truthful before the
         # first new exam in this execution command.
@@ -615,10 +569,17 @@ class SchoolTelemetry:
             ]
         self.board.state.update(
             step=step if type(step) is int else self.board.state.get("step"),
-            prefix=grade or self.board.state.get("prefix"),
+            prefix=grade or self.board.state.get("prefix"), visits=0,
+            attempted_steps=0, retained_steps=0, retained_visits=0,
             _rate_sample_eligible=True)
+        self.board._rate_step = None
+        self.board._rate_time = None
+        self.board._steps_per_min = None
 
     def _start(self, grade, event):
+        version = event.get("software_version")
+        if isinstance(version, str) and version:
+            self.board.run_version = version
         self.begin_execution(grade=grade, step=event.get("optimizer_step"))
 
     def _progress(self, grade, event):
@@ -753,6 +714,12 @@ class SchoolTelemetry:
                 teacher[field] = "OFF" if field in unavailable else _whole(strategy.get(field))
             else:
                 teacher[field] = "OFF" if field in unavailable else _display(strategy.get(field))
+        teacher.update(_teacher_vnext_fields(event))
+        status, system = _teacher_health_transition(
+            event, self.board.state.get("teacher_health_status"))
+        if system is not None:
+            self.board.push("system", {**system, "grade": grade}, redraw=False)
+            self.board.state["teacher_health_status"] = status
         self.board.rows["SOUP & TEACHER"].append(teacher)
         attempted = event.get("attempted_optimizer_updates", 0)
         if type(attempted) is not int or attempted < 0:
@@ -854,6 +821,7 @@ class SchoolTelemetry:
             if live:
                 self.era_cohorts[key].add(cohort_sha)
             for cap, (score, count) in sorted(caps.items()):
+                self.board.state["grew"] = self.growth.observe(g, cap, score, count)
                 cap_key = (cap, rubric, effective_scope)
                 baseline = self.start_cap.setdefault(cap_key, (score, count))
                 earlier = self.last_cap.get(cap_key)
@@ -878,7 +846,12 @@ class SchoolTelemetry:
             withheld = tuple(
                 cap for cap in event.get("withheld_capabilities", ())
                 if isinstance(cap, str))
-            if event.get("flash_scheduler_only") is True:
+            phase = event.get("phase", "?")
+            qualification_label, _qualification_banner = exam_qualification_display(
+                g, event, correct, total, live=live)
+            if qualification_label is not None:
+                label = qualification_label
+            elif event.get("flash_scheduler_only") is True:
                 label = f"FLASH SAMPLE {correct}/{total} | NO TITLES"
             elif earned:
                 label = f"TITLE MOVED {len(earned)} | SAMPLE {correct}/{total}"
@@ -918,7 +891,7 @@ class SchoolTelemetry:
             elif correct == total:
                 label = "100% EXAM; GATE PENDING"
             else:
-                label = f"{'GENERATED' if live else 'SEALED'} EXAM {correct}/{total} | {event.get('phase', '?')}"
+                label = f"{'GENERATED' if live else 'SEALED'} EXAM {correct}/{total} | {phase}"
             self.board.rows["GRADES & MASTERY"].append({
                 "visit": self.visits, "grade": g, "step": step or "-",
                 "attempt": report.generation,
@@ -948,6 +921,8 @@ class SchoolTelemetry:
         self.board.state.update(phase=event.get("phase", self.board.state.get("phase")),
                                 prefix=grade, step=step,
                                 _rate_sample_eligible=True)
+        if target_evaluated:
+            self.board.notify_school_phase(grade,event.get("phase"))
         if not target_evaluated:
             observed = "+".join(sorted(cohort))
             detail = (
@@ -965,6 +940,12 @@ class SchoolTelemetry:
             self.board.push("system", system_row, redraw=False)
         if target_evaluated:
             self._summary()
+            _label, banner = exam_qualification_display(
+                grade, event,
+                sum(score[0] for score in cohort[grade].values()),
+                sum(score[1] for score in cohort[grade].values()), live=live)
+            if banner is not None:
+                self.board.operator_lines.insert(0, banner)
 
     def _cumulative_exam(self, cohort, rubric, scope, step, phase):
         """Show one checkpoint's complete grade-prefix exam, never summed bests."""

@@ -1,5 +1,6 @@
 """Contract tests for the user-approved B.COMPOSITE derived capability."""
 from collections import Counter
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -7,7 +8,7 @@ import unittest
 
 from bilqis_mlx.boolean_composite import (
     CAPABILITY, GENERATOR, ORACLE, RELEASE, build_course, draw_composite,
-    independent_evaluate,
+    encode_record, independent_evaluate,
 )
 from bilqis_mlx.factory.generation import draw_release_rows
 from bilqis_mlx.factory.live_releases import initial_course, boolean_successor
@@ -15,6 +16,7 @@ from bilqis_mlx.factory.release import compile_factory_release
 from bilqis_mlx.grade_a_probe import read_sources
 from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.grade_b_oracle import CONNECTIVES
+from bilqis_mlx.live_grade_b import _encode_logic_record, _logic_source
 from bilqis_mlx.diagnostics.teaching import inspect_lesson_step
 from bilqis_mlx.source_adapters.school import live_source_registry
 
@@ -46,7 +48,7 @@ class BooleanCompositeTests(unittest.TestCase):
         self.assertEqual(len(grade.capabilities), 7)
         self.assertEqual(cap.taught_roots, roots)
         self.assertEqual(cap.examined_roots, roots)
-        self.assertEqual(cap.prerequisites, ("A.IDENTITY", "A.PARENT", "A.LINK"))
+        self.assertEqual(cap.prerequisites, ())
         self.assertEqual(cap.composed_of, ())
         self.assertEqual(cap.lesson_generator, GENERATOR)
         self.assertEqual(cap.independent_oracle, ORACLE)
@@ -76,12 +78,71 @@ class BooleanCompositeTests(unittest.TestCase):
             self.assertEqual(row["capability"], CAPABILITY)
             self.assertEqual(row["generator"], GENERATOR)
             self.assertEqual(row["oracle"], ORACLE)
-            self.assertEqual(row["gold"], self.micro.evaluate(row["record"]))
-            self.assertEqual(row["gold"], self.micro.independent_evaluate(row["record"]))
+            self.assertNotIn("world", row["record"])
+            self.assertEqual(row["record"]["task"], "evaluate")
             self.assertEqual(row["gold"], independent_evaluate(row["record"]))
-            self.assertEqual(tuple(row["tokens"]), tuple(self.micro.encode(row["record"])))
+            self.assertEqual(
+                row["tokens"], encode_record(row["record"], SOURCE, self.graph))
             self.assertTrue(1 <= len(row["tokens"]) <= 96)
             self.assertEqual(len(row["operators"]), row["composition_width"])
+
+    def test_pre_landmark_composite_records_keep_the_historical_codec(self):
+        logic = _logic_source(SOURCE)
+        row = draw_composite(SOURCE, self.graph, seed=2026102518, each=1)[0]
+        historical = dict(row["record"])
+        historical.pop("presentation")
+
+        self.assertEqual(
+            encode_record(historical, SOURCE, self.graph),
+            _encode_logic_record(logic, historical, self.graph))
+        self.assertEqual(independent_evaluate(historical), row["gold"])
+
+    def test_nested_rows_expose_recursive_proof_role_landmarks(self):
+        rows = draw_composite(SOURCE, self.graph, seed=2026102517, each=12)
+        names = self.graph["tokens"]
+
+        def tree_shape(node):
+            if node["kind"] != "apply":
+                return 0, 0
+            nodes, edges = 1, len(node["args"])
+            for child in node["args"]:
+                child_nodes, child_edges = tree_shape(child)
+                nodes += child_nodes
+                edges += child_edges
+            return nodes, edges
+
+        for row in rows:
+            token_names = [names[token] for token in row["tokens"]]
+            nodes, edges = tree_shape(row["record"]["query"])
+            self.assertEqual(
+                row["record"].get("presentation"),
+                "proof-role-tree-landmarks/v1")
+            self.assertEqual(token_names[0], "task.evaluate")
+            self.assertEqual(token_names[1], "micro.proof.conclusion")
+            self.assertEqual(
+                token_names.count("micro.proof.conclusion"), nodes)
+            self.assertEqual(
+                token_names.count("micro.proof.premise"), edges)
+            self.assertEqual(token_names.count("syntax.end"), 1)
+            self.assertEqual(token_names[-1], "syntax.end")
+
+    def test_multi_cycle_draw_preserves_unique_semantic_row_identity(self):
+        rows = draw_composite(SOURCE, self.graph, seed=10, each=32)
+
+        self.assertEqual(len(rows), 32)
+        self.assertEqual(len({row["id"] for row in rows}), 32)
+
+    def test_composite_row_identity_is_capability_scoped(self):
+        row = draw_composite(SOURCE, self.graph, seed=2026102311, each=12)[0]
+        canonical = lambda value: json.dumps(
+            value, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+            allow_nan=False).encode()
+        source_id = hashlib.sha256(canonical(row["record"])).hexdigest()
+        row_id = hashlib.sha256(canonical([
+            row["capability"], row["record"]])).hexdigest()
+        self.assertEqual(row["source_id"], source_id)
+        self.assertEqual(row["id"], row_id)
+        self.assertNotEqual(row["id"], row["source_id"])
 
     def test_answer_balance_varies_without_returning_to_six_six(self):
         balances = set()

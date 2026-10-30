@@ -37,16 +37,26 @@ def check_predicate(row, *, source_root, **_):
             list(library.encode(row["record"])) == row["tokens"])
 
 
-def check_connective(row, *, source_root, **_):
+def check_connective(row, *, source_root, graph, **_):
     from ..grade_b_oracle import evaluate
+    if row["record"].get("task") == "evaluate":
+        from ..live_grade_b import _encode_connective_record, _logic_source
+        logic = _logic_source(source_root)
+        return (evaluate(row["record"], row["capability"]) == row["gold"] and
+                _encode_connective_record(
+                    logic, row["record"], graph, row["capability"]) == row["tokens"])
     from ..grade_a_probe import read_sources
     micro, *_ = read_sources(source_root)
     return (evaluate(row["record"], row["capability"]) == row["gold"] and
             list(micro.encode(row["record"])) == row["tokens"])
 
 
-def check_boolean_composite(row, *, source_root, **_):
+def check_boolean_composite(row, *, source_root, graph, **_):
     from ..boolean_composite_oracle import evaluate
+    if row["record"].get("task") == "evaluate":
+        from ..boolean_composite import encode_record
+        return (evaluate(row["record"], row["capability"]) == row["gold"] and
+                encode_record(row["record"], source_root, graph) == row["tokens"])
     from ..grade_a_probe import read_sources
     micro, *_ = read_sources(source_root)
     return (evaluate(row["record"], row["capability"]) == row["gold"] and

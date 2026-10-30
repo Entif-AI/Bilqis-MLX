@@ -47,6 +47,22 @@ class GenericGenerationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "SOURCE_ORACLE_DISAGREEMENT"):
             draw_release_rows(None, {}, release, registry, seed=1)
 
+    def test_generation_rejects_duplicate_row_identity_from_adapter(self):
+        course, registered = synthetic_release_inputs()
+        release = compile_factory_release(course, registered)
+
+        def duplicate_identity(**kwargs):
+            rows = list(_rows(**kwargs))
+            rows[1] = dict(rows[0])
+            return tuple(rows)
+
+        registry = SourceAdapterRegistry((RegisteredSourceAdapter(
+            release.source_adapters[0], duplicate_identity,
+            lambda row, **_: True),))
+        with self.assertRaisesRegex(
+                ValueError, "FACTORY_GENERATION_IDENTITY_COLLISION"):
+            draw_release_rows(None, {}, release, registry, seed=1)
+
     def test_synthetic_grade_uses_only_declarative_adapter_registration(self):
         caps = tuple(Capability(
             id=f"Z.C{i}", difficulty="fixture", source_anchor="repo:fixture/z",

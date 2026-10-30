@@ -20,3 +20,4 @@ lib/ithkuil/_private/
 *.tar
 *.tmp
 .DS_Store
+node_modules/

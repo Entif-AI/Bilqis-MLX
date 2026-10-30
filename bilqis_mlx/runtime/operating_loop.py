@@ -1,6 +1,7 @@
 """Serialized operator session and school phase dispatch."""
 from __future__ import annotations
 
+from bilqis_mlx import __version__ as _software_version
 from bilqis_mlx import paths as _paths
 
 import bilqis_mlx.compatibility.executable_projection as _compatibility_executable_projection
@@ -143,8 +144,9 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
                 run_dir, manifest, historical_course, course_a, source_root, teacher_sha)
             admitted_v2 = _runtime_admission._require_executable_factory_admission(
                 run_dir, receipt, graph)
-            course = _compatibility_executable_projection.legacy_course_for_profile(
-                course_a, source_root, admitted_v2.profile)
+            receipt, course, admitted_v2, _ = (
+                _runtime_release_adoption._adopt_source_presentation_revision_if_needed(
+                    run_dir, receipt, course_a, source_root, graph, admitted_v2))
             active_grade_count = len(admitted_v2.execution_plan.grades)
             target_boolean_profile = None
             if (active_grade_count <= 2 and not autonomous_curriculum and
@@ -185,8 +187,10 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
                     full_boolean=full_grade_b,
                     maximum=3 if numeric_staircase or experiment_budget is not None else 10)
                 if experiment_budget is not None:
+                    from bilqis_mlx.numeric_staircase import FINAL_MAXIMUM
                     catalog_transition = _dataclasses.replace(
-                        catalog_transition, numeric_scope_final_maximum=4)
+                        catalog_transition,
+                        numeric_scope_final_maximum=FINAL_MAXIMUM)
                 params, optimizer, graph, receipt, course = (
                     _runtime_release_adoption._adopt_catalog_profile(
                         mx, run_dir, receipt, course_a, source_root, graph,
@@ -205,7 +209,8 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
                     (".experiment-run.json",)
                     if experiment_budget is not None else ()))
         if experiment_budget is not None and receipt.get("numeric_scope_final_maximum") is None:
-            receipt = {**receipt, "numeric_scope_final_maximum": 4}
+            from bilqis_mlx.numeric_staircase import FINAL_MAXIMUM
+            receipt = {**receipt, "numeric_scope_final_maximum": FINAL_MAXIMUM}
         params, optimizer, graph, receipt, course, _ = (
             _runtime_release_adoption._auto_adopt_known_grade_boundary(
                 mx, run_dir, receipt, course, course_a, source_root, manifest,
@@ -308,8 +313,10 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
             pending.append(rehabilitation_event)
             receipt["_pending_visit_events"] = pending
         school = _runtime_state._state_from_json(receipt["school"], _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course))
+        receipt["software_version"] = _software_version
         _runtime_checkpoints._record(run_dir, {
             "event": "SCHOOL_SESSION_STARTED",
+            "software_version": _software_version,
             "generation": receipt["generation"],
             "run_id": receipt["run_id"],
             "grade": school.grade,

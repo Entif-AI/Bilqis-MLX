@@ -3,9 +3,13 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from collections import Counter
 
 from bilqis_mlx.generated_assessment import verify_stored_cohort
-from bilqis_mlx.grade_b_oracle import evaluate as grade_b_gold, operand_truth
+from bilqis_mlx.grade_b_oracle import (
+    _direct_truth, evaluate as grade_b_gold, operand_truth,
+)
+from bilqis_mlx.live_grade_b import _u7c_pattern_counts
 
 
 TRUTH_PATTERNS = (
@@ -16,6 +20,68 @@ TRUTH_PATTERNS = (
 )
 _SOURCE_GOLD_DRIFT = "FRAGILE_PRESERVATION_SOURCE_GOLD_DRIFT"
 _COHORT_IDENTITY_DRIFT = "FRAGILE_REPLAY_COHORT_IDENTITY_DRIFT"
+_U7C_RUNTIME_SAMPLER = "bilqis.mlx.grade-b-u7c-runtime-sampler/v3"
+_DIRECT_BOOLEAN_UNIVERSE = "DIRECT_BOOLEAN_AST"
+_BINARY_OPERAND_COUNT = 2
+_MIN_U7C_STRUCTURAL_ROWS = 4
+_U7C_PATTERN_CONTRACT_INVALID = (
+    "FRAGILE_PRESERVATION_U7C_PATTERN_CONTRACT_INVALID")
+_MIXED_REPRESENTATION = "FRAGILE_PRESERVATION_MIXED_REPRESENTATION"
+_U7C_STRUCTURAL_REQUEST_INVALID = (
+    "FRAGILE_PRESERVATION_U7C_STRUCTURAL_REQUEST_INVALID")
+_ORACLE_OR_COMPOSITION_DRIFT = "FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT"
+_U7C_PATTERN_DRIFT = "FRAGILE_REPLAY_U7C_PATTERN_DRIFT"
+
+
+def _is_direct_u7c_row(row: dict) -> bool:
+    record = row.get("record") if isinstance(row, dict) else None
+    return (isinstance(record, dict) and record.get("task") == "evaluate" and
+            row.get("runtime_sampler") == _U7C_RUNTIME_SAMPLER)
+
+
+def _preservation_pattern_counts(capability: str, rows, *, each: int) -> dict:
+    relevant = [row for row in rows if row.get("capability") == capability]
+    if relevant and all(_is_direct_u7c_row(row) for row in relevant):
+        try:
+            return _u7c_pattern_counts(capability.removeprefix("B."), each)
+        except ValueError as exc:
+            raise ValueError(_U7C_PATTERN_CONTRACT_INVALID) from exc
+    if any(_is_direct_u7c_row(row) for row in relevant):
+        raise ValueError(_MIXED_REPRESENTATION)
+    return {pattern: 1 for pattern in TRUTH_PATTERNS}
+
+
+def _replay_operand_pattern(record: dict) -> list[bool]:
+    """Recompute OR/XOR operand truth for historical worlds or direct U7C ASTs."""
+    if not isinstance(record, dict):
+        raise ValueError(_ORACLE_OR_COMPOSITION_DRIFT)
+    if record.get("task") == "evaluate":
+        expression = record.get("expression")
+        query = record.get("query")
+        assignments = record.get("assignments")
+        if (not isinstance(expression, dict) or expression != query or
+                not isinstance(assignments, dict)):
+            raise ValueError(_ORACLE_OR_COMPOSITION_DRIFT)
+        args = expression.get("args")
+        if (not isinstance(args, list) or
+                len(args) != _BINARY_OPERAND_COUNT):
+            raise ValueError(_ORACLE_OR_COMPOSITION_DRIFT)
+        try:
+            return [_direct_truth(arg, assignments) for arg in args]
+        except ValueError as exc:
+            raise ValueError(_ORACLE_OR_COMPOSITION_DRIFT) from exc
+    if record.get("task") == "micro":
+        world = record.get("world")
+        query = record.get("query")
+        args = query.get("args") if isinstance(query, dict) else None
+        if (not isinstance(world, dict) or not isinstance(args, list) or
+                len(args) != _BINARY_OPERAND_COUNT):
+            raise ValueError(_ORACLE_OR_COMPOSITION_DRIFT)
+        try:
+            return [operand_truth(world, arg) for arg in args]
+        except ValueError as exc:
+            raise ValueError(_ORACLE_OR_COMPOSITION_DRIFT) from exc
+    raise ValueError(_ORACLE_OR_COMPOSITION_DRIFT)
 
 
 def _operand_kind(node: dict) -> str:
@@ -38,15 +104,97 @@ def structural_signature(row: dict) -> tuple:
     record = row.get("record") or {}
     query = record.get("query") or {}
     args = query.get("args")
-    universe = row.get("universe_size")
+    universe = (_DIRECT_BOOLEAN_UNIVERSE if _is_direct_u7c_row(row)
+                else row.get("universe_size"))
     if (not isinstance(capability, str) or not capability or
-            not isinstance(raw, (list, tuple)) or len(raw) != 2 or
+            not isinstance(raw, (list, tuple)) or
+            len(raw) != _BINARY_OPERAND_COUNT or
             any(type(value) is not bool for value in raw) or
-            not isinstance(args, list) or len(args) != 2 or
-            type(universe) is not int or universe < 1):
+            not isinstance(args, list) or
+            len(args) != _BINARY_OPERAND_COUNT or
+            (universe != _DIRECT_BOOLEAN_UNIVERSE and
+             (type(universe) is not int or universe < 1))):
         raise ValueError("FRAGILE_PRESERVATION_STRUCTURAL_SIGNATURE_INVALID")
     return (capability, tuple(raw), tuple(_operand_kind(arg) for arg in args),
             universe)
+
+
+def _structural_candidates(rows, excluded, *, direct_only: bool):
+    candidates = []
+    for row in rows:
+        if row.get("id") in excluded:
+            continue
+        if direct_only and not _is_direct_u7c_row(row):
+            continue
+        try:
+            signature = structural_signature(row)
+        except ValueError:
+            continue
+        candidates.append((row, signature))
+    return candidates
+
+
+def _match_structural_candidates(candidates, desired, *, require_all: bool):
+    selected, used = [], set()
+    for wanted in desired:
+        chosen = None
+        for width in (len(wanted), 3, 2):
+            chosen = next((
+                row for row, signature in candidates
+                if row["id"] not in used and
+                signature[:width] == wanted[:width]
+            ), None)
+            if chosen is not None:
+                break
+        if chosen is None:
+            if require_all:
+                return ()
+            continue
+        selected.append(chosen)
+        used.add(chosen["id"])
+    return tuple(selected)
+
+
+def _select_direct_structural_rows(
+        rows, fixed_rows, excluded, *, rotation: int, limit: int):
+    capabilities = {row.get("capability") for row in fixed_rows}
+    if (len(capabilities) != 1 or
+            limit < _MIN_U7C_STRUCTURAL_ROWS or
+            limit % _BINARY_OPERAND_COUNT):
+        raise ValueError(_U7C_STRUCTURAL_REQUEST_INVALID)
+    capability = next(iter(capabilities))
+    required = _preservation_pattern_counts(
+        capability, fixed_rows, each=limit)
+    desired = []
+    for pattern, count in sorted(required.items()):
+        signatures = sorted({
+            structural_signature(row) for row in fixed_rows
+            if tuple(row.get("operand_truths") or ()) == pattern
+        })
+        if not signatures:
+            return ()
+        shift = rotation % len(signatures)
+        ordered = signatures[shift:] + signatures[:shift]
+        desired.extend(
+            ordered[index % len(ordered)] for index in range(count))
+    candidates = _structural_candidates(
+        rows, excluded, direct_only=True)
+    return _match_structural_candidates(
+        candidates, desired, require_all=True)
+
+
+def _select_historical_structural_rows(
+        rows, fixed_rows, excluded, *, rotation: int, limit: int):
+    desired = sorted({structural_signature(row) for row in fixed_rows})
+    if not desired:
+        return ()
+    shift = rotation % len(desired)
+    desired = (
+        desired[shift:] + desired[:shift])[:min(limit, len(desired))]
+    candidates = _structural_candidates(
+        rows, excluded, direct_only=False)
+    return _match_structural_candidates(
+        candidates, desired, require_all=False)
 
 
 def select_structural_preservation_rows(rows, fixed_rows, *, excluded_ids=frozenset(),
@@ -61,40 +209,14 @@ def select_structural_preservation_rows(rows, fixed_rows, *, excluded_ids=frozen
     if type(rotation) is not int or rotation < 0 or type(limit) is not int or limit < 1:
         raise ValueError("FRAGILE_PRESERVATION_ROTATION_INVALID")
     excluded = set(excluded_ids)
-    desired = sorted({structural_signature(row) for row in fixed_rows})
-    if not desired:
-        return ()
-    shift = rotation % len(desired)
-    desired = (desired[shift:] + desired[:shift])[:min(limit, len(desired))]
-    candidates = []
-    for row in rows:
-        if row.get("id") in excluded:
-            continue
-        try:
-            signature = structural_signature(row)
-        except ValueError:
-            continue
-        candidates.append((row, signature))
-    selected, used = [], set()
-    for wanted in desired:
-        chosen = next((
-            row for row, signature in candidates
-            if row["id"] not in used and signature == wanted
-        ), None)
-        if chosen is None:
-            chosen = next((
-                row for row, signature in candidates
-                if row["id"] not in used and signature[:3] == wanted[:3]
-            ), None)
-        if chosen is None:
-            chosen = next((
-                row for row, signature in candidates
-                if row["id"] not in used and signature[:2] == wanted[:2]
-            ), None)
-        if chosen is not None:
-            selected.append(chosen)
-            used.add(chosen["id"])
-    return tuple(selected)
+    direct_fixed = tuple(row for row in fixed_rows if _is_direct_u7c_row(row))
+    if direct_fixed:
+        if len(direct_fixed) != len(tuple(fixed_rows)):
+            raise ValueError(_MIXED_REPRESENTATION)
+        return _select_direct_structural_rows(
+            rows, direct_fixed, excluded, rotation=rotation, limit=limit)
+    return _select_historical_structural_rows(
+        rows, fixed_rows, excluded, rotation=rotation, limit=limit)
 
 
 def select_preservation_rows(rows, *, capabilities=None,
@@ -118,34 +240,36 @@ def select_preservation_rows(rows, *, capabilities=None,
                 for capability in requested)):
         raise ValueError("FRAGILE_PRESERVATION_INVALID_CAPABILITY_SET")
     excluded = set(excluded_ids)
-    selected = {}
-    gold_by_cell = {}
-    for row in rows:
-        capability = row.get("capability")
-        if capability not in requested or row.get("id") in excluded:
-            continue
-        raw = row.get("operand_truths")
-        if (not isinstance(raw, (list, tuple)) or len(raw) != 2 or
-                any(type(value) is not bool for value in raw)):
-            raise ValueError("FRAGILE_PRESERVATION_OPERAND_PATTERN_INVALID")
-        pattern = tuple(raw)
-        gold = row.get("gold")
-        if pattern not in TRUTH_PATTERNS or gold not in ("TRUE", "FALSE"):
-            raise ValueError(_SOURCE_GOLD_DRIFT)
-        cell = (capability, pattern)
-        prior_gold = gold_by_cell.setdefault(cell, gold)
-        if prior_gold != gold:
-            raise ValueError(_SOURCE_GOLD_DRIFT)
-        if not row.get("tokens"):
-            raise ValueError("FRAGILE_PRESERVATION_SOURCE_TOKENS_MISSING")
-        selected.setdefault(cell, row)
-    required = {(capability, pattern)
-                for capability in requested for pattern in TRUTH_PATTERNS}
-    missing = required - set(selected)
-    if missing:
-        raise ValueError("FRAGILE_PRESERVATION_INCOMPLETE_TRUTH_TABLE")
-    return tuple(selected[key] for key in sorted(selected)
-                 if key in required)
+    selected = []
+    for capability in requested:
+        candidates = [row for row in rows
+                      if row.get("capability") == capability and
+                      row.get("id") not in excluded]
+        required = _preservation_pattern_counts(capability, candidates, each=4)
+        by_pattern = {}
+        gold_by_pattern = {}
+        for row in candidates:
+            raw = row.get("operand_truths")
+            if (not isinstance(raw, (list, tuple)) or
+                    len(raw) != _BINARY_OPERAND_COUNT or
+                    any(type(value) is not bool for value in raw)):
+                raise ValueError("FRAGILE_PRESERVATION_OPERAND_PATTERN_INVALID")
+            pattern = tuple(raw)
+            gold = row.get("gold")
+            if pattern not in TRUTH_PATTERNS or gold not in ("TRUE", "FALSE"):
+                raise ValueError(_SOURCE_GOLD_DRIFT)
+            prior_gold = gold_by_pattern.setdefault(pattern, gold)
+            if prior_gold != gold:
+                raise ValueError(_SOURCE_GOLD_DRIFT)
+            if not row.get("tokens"):
+                raise ValueError("FRAGILE_PRESERVATION_SOURCE_TOKENS_MISSING")
+            by_pattern.setdefault(pattern, []).append(row)
+        for pattern, count in sorted(required.items()):
+            available = by_pattern.get(pattern, ())
+            if len(available) < count:
+                raise ValueError("FRAGILE_PRESERVATION_INCOMPLETE_TRUTH_TABLE")
+            selected.extend(available[:count])
+    return tuple(selected)
 
 
 def load_replay_rows(run_dir: Path, receipt: dict, *, capabilities) -> tuple[dict, ...]:
@@ -187,18 +311,23 @@ def load_replay_rows(run_dir: Path, receipt: dict, *, capabilities) -> tuple[dic
     for name in requested:
         group = [row for row in rows if row["capability"] == name]
         expected = scores[name].get("total")
-        if type(expected) is not int or expected < 4 or len(group) != expected:
+        if (type(expected) is not int or
+                expected < _MIN_U7C_STRUCTURAL_ROWS or
+                len(group) != expected):
             raise ValueError("FRAGILE_REPLAY_INCOMPLETE_B_CAPABILITY")
-        observed_patterns = set()
+        observed_patterns = Counter()
         for row in group:
-            args = row["record"]["query"]["args"]
-            pattern = [operand_truth(row["record"]["world"], arg) for arg in args]
+            pattern = _replay_operand_pattern(row["record"])
             if (row.get("operand_truths") != pattern or
                     grade_b_gold(row["record"], name) != row["gold"] or
                     not row.get("tokens")):
-                raise ValueError("FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT")
-            observed_patterns.add(tuple(pattern))
-        if observed_patterns != set(TRUTH_PATTERNS):
+                raise ValueError(_ORACLE_OR_COMPOSITION_DRIFT)
+            observed_patterns[tuple(pattern)] += 1
+        required = _preservation_pattern_counts(name, group, each=expected)
+        if all(_is_direct_u7c_row(row) for row in group):
+            if observed_patterns != Counter(required):
+                raise ValueError(_U7C_PATTERN_DRIFT)
+        elif set(observed_patterns) != set(required):
             raise ValueError("FRAGILE_REPLAY_INCOMPLETE_TRUTH_TABLE")
     return rows
 

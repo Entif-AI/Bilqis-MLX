@@ -65,11 +65,12 @@ class LiveFactoryReleaseTests(unittest.TestCase):
         pool_ids = {row["id"] for row in source_pool}
         self.assertEqual(len(actual_b), 12)
         self.assertTrue({row["id"] for row in actual_b} <= pool_ids)
-        self.assertNotEqual(sum(row["gold"] == "TRUE" for row in actual_b), 6)
+        self.assertEqual(sum(row["gold"] == "TRUE" for row in actual_b), 6)
         self.assertEqual({tuple(row["operand_truths"]) for row in actual_b},
-                         {(False,False), (False,True), (True,False), (True,True)})
+                         {(False,False), (True,False), (True,True)})
+        self.assertTrue(all("world" not in row["record"] for row in actual_b))
         self.assertEqual({row["runtime_sampler"] for row in actual_b},
-                         {"bilqis.mlx.grade-b-runtime-sampler/v2"})
+                         {"bilqis.mlx.grade-b-u7c-runtime-sampler/v3"})
 
     def test_generic_generation_matches_existing_numeric_source_contract(self):
         release = compile_factory_release(self.c, self.historical_registry)
@@ -83,7 +84,7 @@ class LiveFactoryReleaseTests(unittest.TestCase):
                          "legacy/full Grade B compatibility tests are opt-in")
     def test_same_grade_b_releases_preserve_history_and_precede_c(self):
         self.assertEqual(self.full_b.digest(),
-                         "fde5e7e3be6d3903fc46dedcc7c1d23907c713d64ce75b3fefd4d8c9a36aa5e2")
+                         "b6904a67849a8788f90b0c62cdbd4b3abeb3f24e686cf11e289895991bda470a")
         old_release = compile_factory_release(self.full_b, self.registry)
         sealed = json.loads(json.dumps(old_release.manifest()))
         self.assertEqual(type(old_release).from_manifest(sealed, old_release.release_sha256),

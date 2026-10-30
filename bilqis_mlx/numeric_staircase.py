@@ -6,14 +6,16 @@ import hashlib
 from pathlib import Path
 
 from .generated_assessment import digest
-from .live_grade_c import answer_heads, live_course
+from .live_grade_c import REGISTRY_COUNTING_TARGET, answer_heads, live_course
 from .semantics.core import Literal
 from .semantics.numeric import evaluate
 from .source_adapters.numeric import decode
 
 RELEASE = 'bilqis.mlx.numeric-staircase/20261017-v1'
 INITIAL_MAXIMUM = 3
-FINAL_MAXIMUM = 4
+FULL_OPERATION_MAXIMUM = 4
+PREVIOUS_FINAL_MAXIMUM = 6
+FINAL_MAXIMUM = REGISTRY_COUNTING_TARGET
 FOUNDATIONS = ('C.COUNT', 'C.NUMBER', 'C.SUCCESSOR', 'C.ADD', 'C.SUB')
 
 

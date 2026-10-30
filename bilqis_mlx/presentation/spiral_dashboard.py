@@ -15,12 +15,27 @@ from dataclasses import dataclass
 from fractions import Fraction
 import re
 from pathlib import Path
+from bilqis_mlx import __version__ as SOFTWARE_VERSION
 from bilqis_mlx.state_dag import read_current, read_current_fields
+from .operator_status import (
+    NOTICE_TTL_SECONDS,
+    active_notice as _active_notice,
+    add_notice as _add_notice,
+    cell as _cell,
+    clean as _clean,
+    header_table as _header_table,
+    human_duration as _human_duration,
+    normalize_number_semantics as _normalize_number_semantics,
+    number_semantics_from_profile as _number_semantics_from_profile,
+    number_semantics_text as _number_semantics_text,
+    right_header as _right_header,
+    school_phase_notice as _school_phase_notice,
+    score_summary as _score_summary,
+)
 import shutil
 import signal
 import sys
 import time
-
 @dataclass(frozen=True)
 class Column:
     name: str
@@ -96,12 +111,6 @@ WIDE_ROW_FRACTIONS = {
     "BRIDGE FAMILIES": .11,
     "GRADES & MASTERY": .22,
 }
-
-
-def _clean(value):
-    return str(value if value is not None else "-").replace("\n", " ").encode(
-        "ascii", "replace").decode("ascii")
-
 
 def _score_tuple(value):
     if not isinstance(value,str) or "/" not in value:
@@ -249,39 +258,6 @@ def _compact_summary_outcome(value):
     return text.strip() or "-"
 
 
-def _cell(value, width, *, right=False):
-    text = _clean(value)
-    if len(text) > width:
-        text = text[:width - 1] + "~" if width > 1 else "~"
-    return text.rjust(width) if right else text.ljust(width)
-
-
-def _human_duration(seconds):
-    value=max(0,int(seconds))
-    days,value=divmod(value,86400)
-    hours,value=divmod(value,3600)
-    minutes,seconds=divmod(value,60)
-    parts=[]
-    if days:
-        parts.append(f"{days}d")
-    if hours:
-        parts.append(f"{hours}h")
-    if minutes:
-        parts.append(f"{minutes}m")
-    if seconds or not parts:
-        parts.append(f"{seconds}s")
-    return " ".join(parts)
-
-
-def _header_table(fields):
-    headings=" ".join(
-        _cell(label,width) for label,_value,width,_right in fields).rstrip()
-    values=" ".join(
-        _cell(value,width,right=right)
-        for _label,value,width,right in fields).rstrip()
-    return headings,values
-
-
 def _columns(specs, width):
     """Choose and shrink columns without wrapping or erasing core semantics."""
     chosen = [s for s in specs if not s.optional]
@@ -315,36 +291,6 @@ def _table_line(row, columns):
 
 def _section_heading(name,label):
     return label if name=="GRADES & MASTERY" else f"{name}   [{label}]"
-
-
-def _right_header(left,summary,width):
-    """Keep the means visible on short windows, without hidden line wrapping."""
-    if len(summary)>width-2:return summary[:width]
-    left=left[:max(0,width-len(summary)-2)]
-    return left+' '*max(2,width-len(left)-len(summary))+summary
-
-
-def _score_summary(progress,label,width):
-    """Prefer all four actual percentages to clipping one at narrow widths."""
-    full=progress.summary(label)
-    if label=='LATEST*':
-        missing=progress.remaining_to_perfect()
-        if missing is not None:
-            overall=progress.current_means()['ALL']
-            full+=(f' | TO100 {missing["total"]}/{getattr(progress,"question_count",616)} wrong '
-                   f'(G{missing["G"]} B{missing["B"]} N{missing["N"]}); '
-                   f'ALL +{100-overall:.1f}pp')
-    if len(full)<=width:return full
-    means=progress.start_means() if label=='START' else progress.current_means()
-    compact=label+' '+' '.join(
-        f'{group}{means[group]:.0f}%' if means[group] is not None else f'{group}-'
-        for group in ('G','B','N','ALL'))
-    if label=='LATEST*':
-        missing=progress.remaining_to_perfect()
-        denominator=getattr(progress,'question_count',616)
-        if missing is not None and len(compact)+len(f' TO100 {missing["total"]}/{denominator}')<=width:
-            compact+=f' TO100 {missing["total"]}/{denominator}'
-    return compact
 
 
 def _pane_widths(width):
@@ -470,6 +416,7 @@ class Dashboard:
         self.mode="LIVE"
         self.log_hint=""
         self.run_name=""
+        self.run_version=None; self.ui_version=SOFTWARE_VERSION
         self.time_budget_seconds=None
         self.title=title
         self.compact_header=compact_header
@@ -488,9 +435,50 @@ class Dashboard:
         self.current_course={}
         self.current_graduation_line=None
         self.operator_lines=[]
+        self.number_semantics=()
+        self.replaying_journal=False
+        self._notifications=deque(maxlen=8)
         self._rate_step=None
         self._rate_time=None
         self._steps_per_min=None
+
+    def set_number_semantics(self, values, *, notify=False):
+        """Project the exact active numeric answer values into operator UI state."""
+        normalized=_normalize_number_semantics(values)
+        if normalized==self.number_semantics:
+            return False
+        self.number_semantics=normalized
+        if notify and normalized:
+            self.notify(
+                "INT ROOTS NOW " + self._number_semantics_text(),
+                key="number-semantics:" + ",".join(normalized))
+        return True
+
+    def set_numeric_profile(self, profile_id, *, notify=False):
+        """Read the bounded numeric domain encoded in a factory profile id."""
+        values=_number_semantics_from_profile(profile_id)
+        return self.set_number_semantics(values,notify=notify) if values else False
+
+    def notify(self, message, *, key=None, ttl_seconds=NOTICE_TTL_SECONDS):
+        """Show one bounded, read-only operator notice without replaying old news."""
+        if self.replaying_journal:
+            return
+        _add_notice(
+            self._notifications,self.clock(),message,key=key,
+            ttl_seconds=ttl_seconds)
+        self.dirty=True
+
+    def notify_school_phase(self, grade, phase):
+        """Translate qualification states into deliberately obvious milestones."""
+        message=_school_phase_notice(grade,phase)
+        if message:
+            self.notify(message,key=f"school-phase:{grade}:{phase}")
+
+    def _active_notification(self):
+        return _active_notice(self._notifications,self.clock())
+
+    def _number_semantics_text(self):
+        return f'{self.number_semantics[0]}...{self.number_semantics[-1]}' if len(self.number_semantics)>1 else _number_semantics_text(self.number_semantics)
 
     def _refresh_champions(self):
         """Read canonical champion inventory if a grade checkpoint changed."""
@@ -541,7 +529,7 @@ class Dashboard:
                                         row['title_step']
                                         if type(row['title_step']) is int else -1),
                         reverse=True)
-                    for row in ranked[:6]:
+                    for row in ranked:
                         row.pop('_score',None)
                         row.pop('_breadth',None)
                         rows.append(row)
@@ -766,7 +754,12 @@ class Dashboard:
             return f'CURRICULUM [{shown}/{len(available)} visible]{score}'
         elif name=='SYSTEM & QUALIFICATION':
             return f'{shown}/{len(available)} states'
-        return f'{shown}/{len(available)} visible'
+        visible=f'{shown}/{len(available)} visible'
+        if name=='CANDIDATES':
+            notice=self._active_notification()
+            if notice:
+                return f'! {notice} | {visible}'
+        return visible
 
     def _section_rows(self,name):
         rows=list(self.rows[name])
@@ -920,14 +913,17 @@ class Dashboard:
         width=max(30,size.columns if width is None else width)
         height=max(6,size.lines if height is None else height)
         state=self.state
-        headline=(f"{self.title}     {self.mode}   "
-                  f"{self.clock()-self.started:.0f}s elapsed")
+        run_version=(f"v{self.run_version}" if self.run_version else "unversioned")
+        headline=(f"{self.title} RUN {run_version} | UI v{self.ui_version}     "
+                  f"{self.mode}   {self.clock()-self.started:.0f}s elapsed")
         status=(f"{state.get('phase','INIT')}  next {state.get('next','-')} "
                 f"| prefix {state.get('prefix','-')} "
                 f"| fail {state.get('failures','-')}/{state.get('max_failures','-')} "
                 f"| step {state.get('step','-')} "
                 f"| visits {state.get('visits','-')} "
                 f"| T {state.get('teacher','-')}")
+        if self.number_semantics:
+            status+=f" | int roots {self._number_semantics_text()}"
         footer=f"{state.get('stop','RUNNING')} {state.get('halt','')} | raw log: {self.log_hint or 'read-only'}"
         retained=state.get("retained_visits",0)
         retained_suffix=(f" ({retained:,} retained)" if type(retained) is int else "")
@@ -956,33 +952,38 @@ class Dashboard:
                 latest=f"{latest_score[0]}/{latest_score[1]} @{latest_score[2]}"
                 best=f"{best_score[0]}/{best_score[1]} @{best_score[2]}"
             fields=[
-                ("BILQIS",school,22,False),
-                ("RUNTIME",_human_duration(elapsed),15,False),
+                ("ENTIF-AI/BILQIS-MLX",school,19,False),
+                ("V RUN/UI",f"{self.run_version or 'legacy'}/{self.ui_version}",12,False),
+                ("RUNTIME",_human_duration(elapsed),12,False),
             ]
             budget=self.time_budget_seconds
             if isinstance(budget,(int,float)) and budget>0:
                 percent=int(elapsed*100/budget+.5)
                 fields.append((
                     "MAX TIME",
-                    f"{percent}% / {_human_duration(budget)} max",
-                    16,
+                    f"{percent}% / {_human_duration(budget)}",
+                    12,
                     False,
                 ))
             fields.extend([
                 ("RUN",self.run_name or "-",23,False),
-                ("STEPS",step if step not in (None,'','?') else "-",7,True),
-                ("EXAM",exam if exam not in (None,'','?') else "-",6,True),
-                ("VISITS",visits if visits not in (None,'','?') else "-",7,True),
+                ("STEPS",step if step not in (None,'','?') else "-",6,True),
+                ("EXAM",exam if exam not in (None,'','?') else "-",5,True),
+                ("VISITS",visits if visits not in (None,'','?') else "-",6,True),
                 ("TEACHER",teacher if teacher not in (None,'','?') else "-",7,True),
                 ("GRADES",curriculum['grades'],6,True),
-                ("CAPS",curriculum['capabilities'],5,True),
-                ("STUDENT LATEST",latest,18,False),
-                ("STUDENT BEST",best,18,False),
-                ("STEPS/MIN",
-                 round(self._steps_per_min)
-                 if isinstance(self._steps_per_min,(int,float)) else "-",
-                 9,True),
-                ("RETAINED",retained if type(retained) is int else "-",8,True),
+                ("CAPS",curriculum['capabilities'],4,True),
+                ("INTROOT",self._number_semantics_text(),7,False),
+                ("STUDENT LATEST",latest,17,False),
+                ("STUDENT BEST",best,17,False),
+                ("ST/M",round(self._steps_per_min)
+                 if isinstance(self._steps_per_min,(int,float)) else "-",4,True),
+                ("RTN",retained if type(retained) is int else "-",3,True),
+                ("RTN%",round(retained*100/visits)
+                 if type(retained) is int and type(visits) is int and visits>0 else "-",4,True),
+                ("GREW",(f"{state['grew']:+d}"
+                          if type(state.get('grew')) is int else "-"),4,True),
+                ("R/H",round(retained*3600/elapsed) if type(retained) is int and elapsed>0 else "-",3,True),
             ])
             halt=state.get('halt')
             if halt:
@@ -1083,19 +1084,16 @@ class Dashboard:
             self.dirty=True
 
     def _sample_step_rate(self):
-        """Measure attempted optimizer throughput only at real dashboard draws."""
+        """Normalize attempted optimizer throughput across the full run runtime."""
         if self.state.get("_rate_sample_eligible", True) is False:
             return
         step=self.state.get("attempted_steps")
         now=self.clock()
         if type(step) is not int:
             return
-        if self._rate_step is None:
-            self._rate_step,self._rate_time=step,now
-            return
-        elapsed=now-self._rate_time
-        if elapsed>0 and step!=self._rate_step:
-            self._steps_per_min=(step-self._rate_step)/elapsed*60
+        elapsed=now-self.started
+        if elapsed>0:
+            self._steps_per_min=step/elapsed*60
             self._rate_step,self._rate_time=step,now
 
     def _latest_all_grade_score(self):

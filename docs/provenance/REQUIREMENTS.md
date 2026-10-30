@@ -1,6 +1,6 @@
-# IPR-0220 | Internal implementation requirements and status
+# IPR-0220 | Implementation requirements and status
 
-Source: protected issue `IPR-0220` (private issue #335). This document summarizes executable obligations, **not** a replacement for the user's verbatim instructions. All requirements below are private experimental implementation policy, not public Rosetta contracts.
+Source authority: protected `IPR-0220`. This public document summarizes executable Bilqis-MLX obligations; it is **not** a replacement for the user's verbatim protected instructions and does not make protected source material public. The implementation policy below is public Bilqis-MLX project policy, not a public Rosetta contract.
 
 | ID | Obligation | Current status |
 |---|---|---|
@@ -17,7 +17,7 @@ Source: protected issue `IPR-0220` (private issue #335). This document summarize
 | BMLX-011 | MLX backend with verified model/optimizer conversion and parity; fail closed until proven | Full historical model forward and 39/39 moments checked read-only; fixture saved/reloaded 116760-step AdamW with four matching updates and tiny-gradient parity; real training remains unproved |
 | BMLX-012 | Existing six-panel School50, stable npm scripts, neural-inert status/dashboard/preflight | Original six-panel renderer reused, npm status/dashboard/dry-run tested; training hard blocked |
 | BMLX-013 | External disk backup of every explicitly retired model and code tree, verified readback, no deletion or broad `~/Code` mutations | Plan/external copy/hash readback tool and symlink manifest fallback tested; no actual external drive mounted or bulk copy performed |
-| BMLX-014 | Historical source/archive immutability, bounded disk budgets, private authority and reliable checkpoint recovery | Continuous acceptance gate |
+| BMLX-014 | Historical source/archive immutability, bounded disk budgets, protected source authority and reliable checkpoint recovery | Continuous acceptance gate |
 | BMLX-015 | Unbounded append-only semantic growth, source-attested new Ithkuil/external/lexical roots, no silent old-token changes or premature mastery | Historical 113→222 code path audited; 330 registry IDs counted read-only; MLX real-parent in-memory 222→223 fixture growth passes old-logit/AdamW preservation; actual root admission and training remain blocked |
 | BMLX-016 | One-to-one token ⇄ interpretable pasigraphy catalog identity; exhaustive token tracking in canonical live workbook throughout NI training | ADR-006 codified; all 222 historical tokens mapped to separate native Token Atlas sheet and exact source readback verified; new allocations require complete registry projection; NI semantic review and training integration pending |
 | BMLX-017 | NI curriculum and assessments as faithful, source-grounded grammar/lexicon conformance suite with multi-token composition, form validity, decomposition and retention | Foundational requirement formalized; full NI lesson/oracle compiler and real student conformance are pending |
@@ -27,7 +27,7 @@ Source: protected issue `IPR-0220` (private issue #335). This document summarize
 
 **Important:** 1,150/1,150 belongs to the old version, not the new school-wide graduation policy. Capability-to-grade partition and new rubric need source-anchored review. Unknown/unsupported lesson semantics block training, they do not get substitute Boolean labels. Agent-initiated neural training remains disabled; only a human may invoke real-student `--human-run`.
 
-### Current private implementation update: 2026-10-15 Grade A repair
+### Historical implementation update: 2026-10-15 Grade A repair
 
 The earlier BMLX-001/004/010/011 status summaries above are retained as point-in-time evidence. ADR-012 and [Grade A repair/MLX parity receipts](../evidence/grades/GRADE_A_REPAIR_AND_BACKEND_20261015.md) now provide stronger, separately qualified proof: corrected six direct candidate predicates; an independent third oracle; 144 complete teaching + 72 fixed exam records with source AST/token/gold and item-level hashes; fixed 12-item per-capability graduation totals; Grade A-only terminal distinction and explicit future append-only grade migration; and one real-shape disposable, GPU-verified full 39-parameter/moment step with a complete semantic-bundle restart, zero original model mutation. The Grade A source/lesson and New Ithkuil admission decision, adaptive teacher and actual long-running human MLX trainer remain outstanding. Do not promote the source record or this documentation alone into training authorization.
 
