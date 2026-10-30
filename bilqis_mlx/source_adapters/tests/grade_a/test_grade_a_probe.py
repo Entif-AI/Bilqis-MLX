@@ -9,7 +9,7 @@ from bilqis_mlx.grade_a_probe import (FAMILIES, PINNED_GRAPH_SHA256,
   PINNED_SOURCES, PINNED_FULL_STUDENT_GRAPH_SHA256, candidate_course,
   make_record, probe, read_sources)
 
-LEGACY_ROOT = Path(__file__).resolve().parents[3] / "vendor" / "legacy-v16"
+LEGACY_ROOT = Path(__file__).resolve().parents[4] / "vendor" / "legacy-v16"
 
 
 @unittest.skipUnless(LEGACY_ROOT.joinpath("bilqis_micro/kernel.py").is_file(),
@@ -81,7 +81,7 @@ micro, development, graph, hashes, graph_sha = read_sources(Path(r"'''+str(LEGAC
 print(len(graph["tokens"]), graph_sha, micro.evaluate(micro.record(micro.world(["A","B"]), micro.compare("EQ", micro.entity("A"), micro.entity("A")))))
 '''
         result = subprocess.run(
-            [sys.executable, "-B", "-c", code], cwd=Path(__file__).resolve().parents[3],
+            [sys.executable, "-B", "-c", code], cwd=Path(__file__).resolve().parents[4],
             text=True, capture_output=True, check=False)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn(PINNED_GRAPH_SHA256, result.stdout)
@@ -89,7 +89,7 @@ print(len(graph["tokens"]), graph_sha, micro.evaluate(micro.record(micro.world([
 
     def test_sealed_manifest_verification_does_not_require_torch(self):
         """Runtime startup may verify the audited legacy checkpoint without PyTorch."""
-        manifest = Path(__file__).resolve().parents[3] / "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json"
+        manifest = Path(__file__).resolve().parents[4] / "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json"
         checkpoint = (LEGACY_ROOT / "runs/primitive-consolidation-v16-triplets" /
                       "student-116760-7e9af4651f28.pt")
         if not checkpoint.is_file():
@@ -113,7 +113,7 @@ result = verify_manifest(manifest, Path(r"'''+str(LEGACY_ROOT)+r'''"), Path(r"''
 print(result["verified_items"], result["model_unchanged"])
 '''
         result = subprocess.run(
-            [sys.executable, "-B", "-c", code], cwd=Path(__file__).resolve().parents[3],
+            [sys.executable, "-B", "-c", code], cwd=Path(__file__).resolve().parents[4],
             text=True, capture_output=True, check=False)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.strip(), "216 True")

@@ -10,6 +10,7 @@ from ..semantics.source_atom_binding import (
     SourceAtomHandoff, SourceRowWitness, _resolve_visible_atoms,
 )
 from .school import live_source_registry
+from .atoms.authority import project_verified_row, require_canonical_graph
 
 
 def _invalid(reason: str) -> None:
@@ -42,13 +43,17 @@ def verify_source_row(
             or not all(_text(row.get(name)) for name in (
                 "generator", "oracle", "capability"))
             or type(source_seed) is not int or type(source_each) is not int
-            or source_each < 1):
+            or not 1 <= source_each <= 128):
         return None, "SOURCE_ATOM_SOURCE_ROW_INVALID"
     try:
         canonical = live_source_registry().require(
             row["generator"], row["oracle"])
     except (KeyError, TypeError, ValueError, BilqisError):
         return None, "SOURCE_ATOM_SOURCE_ADAPTER_UNSUPPORTED"
+    try:
+        graph = require_canonical_graph(row, graph, source_root)
+    except (KeyError, OSError, TypeError, ValueError, BilqisError):
+        return None, "SOURCE_ATOM_CANONICAL_GRAPH_OR_ROOT_UNVERIFIED"
     draw_args = {
         "source_root": Path(source_root),
         "graph": graph,
@@ -107,7 +112,9 @@ def build_source_atom_handoff(
     )
     if witness is None:
         _invalid("BAMF_SOURCE_ATOM_SOURCE_ROW_HELD:" + str(reason))
-    return _resolve_visible_atoms(compiled, config, snapshot, witness, graph)
+    source_projection = project_verified_row(source_row, graph, snapshot, witness)
+    return _resolve_visible_atoms(
+        compiled, config, snapshot, witness, graph, source_projection=source_projection)
 
 
 def revalidate_source_atom_handoff(
