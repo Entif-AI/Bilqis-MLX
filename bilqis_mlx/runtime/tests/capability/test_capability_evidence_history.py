@@ -9,7 +9,7 @@ from bilqis_mlx.runtime.capability_evidence_history import (
     FrozenHistory, TranslatorSpec, freeze_assessment, translate_history,
 )
 from bilqis_mlx.runtime.capability_retention import AssessmentPair, retain_candidate
-from bilqis_mlx.runtime.tests.test_bamf_capability_retention import _evidence, PARENT, CANDIDATE
+from bilqis_mlx.runtime.tests.capability.test_bamf_capability_retention import _evidence, PARENT, CANDIDATE
 
 
 class CapabilityHistoryTests(unittest.TestCase):

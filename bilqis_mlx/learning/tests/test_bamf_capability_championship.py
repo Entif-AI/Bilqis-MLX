@@ -16,7 +16,7 @@ from bilqis_mlx.runtime.capability_retention import (
 )
 from bilqis_mlx.runtime.cognitive_solver import QualifiedComposition, SolveBudget, SolveContext
 from bilqis_mlx.semantics.domains import contract_digest
-from bilqis_mlx.runtime.tests.test_bamf_capability_retention import _cases, _solver
+from bilqis_mlx.runtime.tests.capability.test_bamf_capability_retention import _cases, _solver
 from bilqis_mlx.semantics.cognitive_dag import DAGBudget
 
 PARENT, CANDIDATE = "a" * 64, "b" * 64
