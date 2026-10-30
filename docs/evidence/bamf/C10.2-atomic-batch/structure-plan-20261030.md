@@ -89,3 +89,9 @@ For cognitive_solver, model_topology_v2(two sites), and typed_answer_training, r
 ## Packaging finding
 
 The existing setuptools configuration explicitly included only bilqis_mlx. A freshly built0.5.0 wheel contains zero runtime files; this is observed baseline packaging debt. Replace that one-package list with package discovery restricted to bilqis_mlx*. Rebuild and install without dependencies into a disposable environment, then run the namespace/discovery proof outside the checkout. This proves inclusion and import identity, not complete application-resource packaging or executable model qualification.
+
+## File interruption1: Atlas lease
+
+Split atlas_admission.py416lines into atlas_lease_contracts.py (validation helpers, LeaseRunIdentity, DeltaBudgetPolicy, AtlasSourceApproval, ResourceCeiling, AtlasAdmissionLease) and atlas_lease_storage.py (_store, _lease_from_json, _read_atlas_lease, _persist_atlas_lease_locked, _atlas_lease_lock). Keep issue_atlas_lease, command request/staging, public read/persist wrappers and renew_atlas_lease in atlas_admission.py, with explicit imports preserving current callers. The storage helper uses its local reader directly; public read wrapper already delegates there. Renewal and its _durable_json patch seam stay in the original owner. All signatures, schemas, validation and write ordering remain unchanged.
+
+Move scope/signature and lookup-only tests to test_atlas_lease_contracts.py; move roundtrip/idempotence, tampered payload and unsafe-root tests to test_atlas_lease_storage.py. Keep the original106-line test module's shared fixtures in place for existing consumers. Each resulting production and companion test must be<240lines. Before proof:41/41 admission tests. After proof:the identical41 tests plus grouped canonical import tests. Structural red is the recorded416-line file finding; no intentionally broken runtime behavior is needed for a behavior-preserving extraction.
