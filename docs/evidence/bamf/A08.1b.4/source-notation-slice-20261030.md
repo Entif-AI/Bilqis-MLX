@@ -28,8 +28,10 @@ Source status is deliberately `SOURCE_NOTATION_NOT_CONTEXTUAL_LAW`.
 The independent `source_scope_debt` projection retains **500** exact A01
 source-held atomic rows (without mislabelling all as scope/mood) and
 **19** nonconcept allomorph-source rows with their original owner,
-disposition and reason. Those 19 are `IMPLEMENTATION_UNCOVERED`:
-they are not silently given invented semantic identities, methods or rights.
+disposition and reason. Those 19 raw rows remain
+`SOURCE_EMITTED_NON_CONCEPT` / `NOT_APPLICABLE`; they underlie the pending
+`released_transformations` implementation debt and are not silently given
+invented semantic identities, methods or rights.
 No A13 task grant, rights/revocation, prefix, temporal scope, A03 frame
 role law, A07 executable transformation, Factory registration, learner
 admission, training, or new root is inferred from this identity evidence.
@@ -77,7 +79,11 @@ owns that revocation regression. This leaf's checker-spoof, foreign-release
 and source-replay negatives remain local and complete for the source-qualified
 projection it actually owns.
 
-Fresh independent EGM remains required before #556 can be called accepted or
-merged. Until that review clears the ownership interpretation above, this
-receipt makes no `ADAPTER_READY`, `LEARNING_VERIFIED`, Factory-admission or
-source-to-neural claim.
+Fresh independent pinned EGM at immutable `d70acc2` returned **PASS, zero
+Blockers and zero Majors**. Its sole wording nit is corrected above. The
+review confirmed that the executable context seam is owned by #557 under the
+committed decomposition and is not a missing #556 implementation. See
+`docs/evidence/bamf/A08.1b.4/egm.md`.
+
+This receipt makes no `ADAPTER_READY`, `LEARNING_VERIFIED`,
+Factory-admission or source-to-neural claim.
