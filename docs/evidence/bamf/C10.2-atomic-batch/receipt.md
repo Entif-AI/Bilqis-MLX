@@ -27,3 +27,10 @@ The earlier local changed-path structure check ran before the repair commit and
 did not include its files. Hosted CI reports eight structure violations. The
 repository-wide operator-contract check fails with 30 findings; its output is
 byte-identical to unmodified Lane C at `57f8d9d`.
+
+The original public projection import paths are preserved and tested. The
+projection-owner tests now live under `bilqis_mlx/runtime/tests/projection/`;
+the test-only move updates fixture imports and the Rosetta bridge's repository
+root lookup. With the local Rosetta owner selected, all 26 tests pass. Runtime
+and test directory restructuring remains incomplete; independent review and
+exact-head hosted checks remain pending.
