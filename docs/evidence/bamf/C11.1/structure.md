@@ -89,3 +89,24 @@ registry/coverage/generation/parity owners and the numeric-staircase integration
 companion. Handle them as subsequent single interruptions, not a recursive sweep.
 Full #522/#384 and integrated BAMF acceptance remain open. Human review/merge and
 the durable-student start remain separate authority.
+
+## Numeric companion continuation
+
+The next 736-line numeric-staircase integration companion is split by enrollment,
+checkpoint/answer custody, and numeric profile/preview behavior. The original is
+109 lines; every extracted fixture/test is below 240. A fresh-context Goldfish
+verified all 21 original methods once, all 13 test methods AST-identical, and the
+sole fixture adjustment from physical `__file__` ancestry to canonical `REPO_ROOT`.
+
+Both clean Lane C `89398df` and this candidate were exercised on isolated M3
+snapshots using the same MLX environment and deterministic public fixtures. Before:
+13 total, 5 passed, 5 assertion failures and 3 errors. After: 13 total, 6 passed,
+5 assertion failures and 2 errors. No new nonpassing test identity appeared. This
+is structural non-regression evidence, not a green numeric lifecycle suite. The
+remaining boundary/progression fixture failures stay open. Local CPU discovery
+also preserves all 13 tests; it cannot execute their MLX fixtures.
+
+Exact nonpassing identities and machine-readable totals are in
+`numeric-structure-result.json`. Hosted run `41105548030` failed on the inherited
+`GENERIC_GRADE_IDENTITY_DISPATCH A,B` architecture finding; that failure is not
+waived by the independently passing portable test selection.

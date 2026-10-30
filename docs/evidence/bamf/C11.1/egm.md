@@ -26,3 +26,10 @@ writer separately ran the verification recorded in `structure.md`. Installed-whe
 proof subsequently passed 9/9 after the required Ithkuil compiler namespace was
 included. This disposition covers structural behavior and provenance only, not
 production #522 completion, live learning, semantic admission or merge authority.
+
+A subsequent fresh-context Goldfish reviewed the numeric companion split against
+`43eaeb3`: all 21 methods remain once, the 13 tests are AST-identical, inherited
+fixtures add no duplicate tests, and the sole setup change preserves canonical
+root resolution. Zero structural Blockers/Majors. The writer's isolated M3
+comparison retains the inherited failing lifecycle cases and introduces no new
+nonpassing identity; full numeric lifecycle acceptance remains red.
