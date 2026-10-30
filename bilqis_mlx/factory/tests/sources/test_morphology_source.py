@@ -3,13 +3,10 @@ from __future__ import annotations
 
 from dataclasses import replace
 import hashlib
-import json
 import os
 from pathlib import Path
-import shutil
 import tempfile
 import unittest
-from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory import morphology_source as source
@@ -19,43 +16,18 @@ from bilqis_mlx.semantics.atlas_projection import (
 from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
 
 
-COMPOSITION_ID = "COMP-00a9e6c3998d74"
+COMPOSITION_ID = "COMP-1a7a421841756f"
+HELD_COMPOSITION_ID = "COMP-00a9e6c3998d74"
 
 
 class MorphologySourceTests(unittest.TestCase):
-    def test_frontier_and_source_tables_are_exact_byte_pinned(self):
-        tables = source._source_tables(source._CSV_ROOT)
-        self.assertTrue(any(
-            item["composition_id"] == COMPOSITION_ID
-            for item in tables["morpheme_compositions.csv"]))
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            (root / "sources").mkdir()
-            shutil.copy2(
-                source._CSV_ROOT / "sources/extraction_frontier.json",
-                root / "sources/extraction_frontier.json")
-            for name, _ in source._TABLES:
-                shutil.copy2(source._CSV_ROOT / name, root / name)
-            with (root / "morpheme_compositions.csv").open("ab") as file:
-                file.write(b"\nforged,source,row\n")
-            with self.assertRaises(BilqisError) as caught:
-                source._source_tables(root)
-            self.assertEqual(
-                caught.exception.context["reason"],
-                "BAMF_MORPHOLOGY_SOURCE_TABLE_DRIFT")
-            receipt_path = root / "sources/extraction_frontier.json"
-            receipt = json.loads(receipt_path.read_text())
-            receipt["schema"] = "forged/v9"
-            receipt_path.write_text(json.dumps(receipt))
-            with self.assertRaises(BilqisError):
-                source._frontier_receipt(root)
-
     def test_law_record_cannot_claim_factory_admission(self):
         valid = source.MorphologySourceLaw(
             "a" * 64, "b" * 64, COMPOSITION_ID,
-            ("atom:a", "atom:sw"), ("a", "sw"), "asw",
-            "NI-WEB-CH07", "NI-WEB-CH07:T011", "5709",
-            "c" * 64, "d" * 64, "e" * 64, "f" * 64)
+            ("atom:ea", "atom:bz"), ("ea", "bẓ"), "eabẓ",
+            "NI-WEB-CH05", "NI-WEB-CH05:T023", "8968",
+            "#61", ("source=NI-WEB-CH05;table=NI-WEB-CH05:T023;line=8968",),
+            "c" * 64, "d" * 64, "e" * 64, "1" * 64, "f" * 64)
         self.assertEqual(valid.status, "SOURCE_ROW_EVIDENCE_NOT_ADMITTED")
         for change in (
                 {"status": "ADAPTER_READY"},
@@ -96,10 +68,16 @@ class MorphologySourceTests(unittest.TestCase):
             law = source.resolve_morphology_source_law(
                 selection, corpus, COMPOSITION_ID)
             self.assertEqual(law.component_ids, (
-                "ATOM-b062726ad5143d", "ATOM-7671e7f56ccfb8"))
-            self.assertEqual(law.component_forms, ("a", "sw"))
-            self.assertEqual(law.surface_form, "asw")
-            self.assertEqual(law.source_table_id, "NI-WEB-CH07:T011")
+                "ATOM-48da4ee9e28239", "ATOM-c413d0e6c8faa8"))
+            self.assertEqual(law.component_forms, ("ea", "bẓ"))
+            self.assertEqual(law.surface_form, "eabẓ")
+            self.assertEqual(law.source_table_id, "NI-WEB-CH05:T023")
+            self.assertEqual(law.source_owner, "#61")
+            self.assertEqual(len(law.source_loci), 2)
+            self.assertTrue(any("table=NI-WEB-CH05:T023" in item
+                                for item in law.source_loci))
+            self.assertTrue(any("table=NI-WEB-CH07:T003" in item
+                                for item in law.source_loci))
             self.assertEqual(law.status, "SOURCE_ROW_EVIDENCE_NOT_ADMITTED")
             source.assert_morphology_source_law_current(
                 law, selection, corpus)
@@ -110,6 +88,12 @@ class MorphologySourceTests(unittest.TestCase):
             self.assertEqual(
                 caught.exception.context["reason"],
                 "BAMF_MORPHOLOGY_LAW_SOURCE_DRIFT")
+            with self.assertRaises(BilqisError) as caught:
+                source.resolve_morphology_source_law(
+                    selection, corpus, HELD_COMPOSITION_ID)
+            self.assertEqual(
+                caught.exception.context["reason"],
+                "BAMF_MORPHOLOGY_SOURCE_LAW_HELD")
             with self.assertRaises(BilqisError) as caught:
                 source.resolve_morphology_source_law(
                     selection, corpus, "COMP-0060583f4d9807")

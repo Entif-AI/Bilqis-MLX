@@ -124,55 +124,39 @@ coverage, final A13.1/A07.2 crosswalk and admission proofs have
 not been completed. No ADAPTER_READY, learner credit or source
 grant was created.
 
-## 2026-10-29 variation-axis and source-boundary continuation
+## 2026-10-30 acceptance correction and final bounded disposition
 
-Isolated candidate: `codex/bamf02-a08-formal-variation-20261029`,
-based on Lane A `9fa752b` with reviewed unified `7ad8f8a`
-already an ancestor. This continuation does not supersede the
-earlier scoped EGM: its new diff needs separate independent review.
+The earlier four-operator wording above is historical evidence from the
+pre-recut implementation and is **superseded for acceptance**. Fresh review
+found that A01's released \`school.op.COUNT\` law is
+\`NumberSet -> Number\`, while A07's cognitive \`COUNT\` is
+\`EntitySet -> Number\`. Matching those two laws by semantic-ID suffix was an
+authority error.
 
-The four source-attested formal operator families now declare
-their actual candidate variation axes instead of the same
-generic label for every operator:
+The current resolver now reads the exact source-owned numeric contract only
+when the A01 binding names the released numeric owner, verifies the complete
+contract SHA against the binding, parses the append-only node signature, and
+requires exact equality with the executable A07 signature. The real pinned
+source census therefore resolves lawful witnesses for \`BOOL_NOT\`, \`BOOL_AND\`
+and \`SUCC\`; the A01 \`COUNT\` identity remains visible as
+\`OPERATOR_SOURCE_SIGNATURE_MISMATCH\` implementation debt and cannot construct
+a lesson. No denominator was shrunk and no replacement COUNT law was invented.
 
-| A01/A07 operator | Variation axis | Real pinned A01 examples with synthetic, live-checked A13 grants |
-| --- | --- | --- |
-| `BOOL_NOT` | `boolean-input-polarity` | true and false |
-| `BOOL_AND` | `boolean-pair-combinations` | all four Boolean input pairs |
-| `COUNT` | `entity-set-cardinality` | zero, one, two and three distinct entities |
-| `SUCC` | `numeric-successor-input` | 0, 2 and 9 within the declared finite domain |
+Variation coverage remains thirteen explicit cases: ten lawful NOT/AND/SUCC
+executions and three COUNT refusal witnesses. Real pinned source verification
+passes **16 tests and 29 subtests with zero skips**. Changed-path structure and
+governance checks return zero violations, and the changed-file smell audit
+reports zero new findings.
 
-Every family retains `typed-answer-contrast` as a separate
-axis. The real pinned A01 test exercises **13 distinct source
-cases** rather than merely checking axis strings. Each case
-constructs its own synthetic source-owned A13 operator,
-operand and numeric-domain grants; runs the A07 pure operator;
-compares an independently computed typed answer; rejects the
-contrast through the independent checker; and asserts a
-different immutable evidence digest for each varied input.
-The checker rejects forged variation-axis metadata and a
-source-case substitution under a previously issued lesson.
+Fresh independent pinned EGM re-review of immutable
+\`537c6e8987bed16af4fefe85c10ba94b0406b75a\` returned **PASS, zero Blockers,
+zero Majors**. The review independently reproduced the exact COUNT mismatch,
+the lawful witness set, refusal to construct COUNT, live A13/A07 replay,
+checker independence, prerequisite closure, source-valid contrasts, spoof and
+arity/type negatives, rights/release revocation, and \`LEARNING_UNVERIFIED\`
+boundaries. See \`egm.md\`.
 
-The authority crosswalk remains strict: A07.2 #414 owns the
-independent-gold separation and source-qualified pure
-operator contract; A13.1 #430 owns purpose/release/rights,
-source evidence, correction and temporal eligibility. The
-lesson generator replays both on each call, and the checker
-replays them again without invoking the generator. An A01
-pin or A07 source law alone is not an A13 grant; a source-valid
-lesson remains `TASK_SCOPED_NOT_ADMITTED`,
-`SOURCE_PROJECTION_NOT_AUTHORITY` and
-`LEARNING_UNVERIFIED`.
-
-Prime test command with the real pinned A01 corpus:
-`scripts/run_tests.py bilqis_mlx/factory/tests/test_formal_constructive.py bilqis_mlx/factory/tests/test_formal_lessons.py`.
-**14 passed, 0 failed, 0 skipped**. `git diff --check`
-passed and the error-control check found no new
-`formal_lessons` violations. Independent review of this
-new variation change is pending.
-
-This is **not completion of #554**. Factory
-`ConstructionProgram` registration, full A08.1b.5
-cross-family integration and real admission/retained
-learning evidence remain separate gates. No source
-promotion, neural training, optimizer mutation or merge.
+This closes the A08.1b.2-owned formal lesson/variation acceptance slice. It
+does not perform the A08.1b.5 Factory/source-owner integration crosswalk and
+does not claim \`ADAPTER_READY\`, learner retention, neural training, or main
+branch admission.
