@@ -1,8 +1,11 @@
 # A08.1b.4 source-qualified scope/modality slice
 
-Issue: #556. Parent: A08.1b #418. Lane A. Re-cut directly from current
-unified `a02b9ed45ead1801be6dff655866b73be0ffc8ff` after the reviewed
-Factory structure and A05.5 integrations.
+Issue: #556. Parent: A08.1b #418. Lane A. Re-cut from reviewed unified
+`a02b9ed45ead1801be6dff655866b73be0ffc8ff`, then synchronized at the
+issue boundary with current unified
+`8a7b00be062b5706196d8506f02129de5f24598e`. The latter adds the
+independent B10.1 readout slice and does not overlap this leaf's Factory
+scope/modality files.
 
 ## Verified bounded behavior
 
