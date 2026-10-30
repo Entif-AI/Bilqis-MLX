@@ -1,6 +1,5 @@
 """Experimental gated motif arithmetic; no source-admission authority."""
 from __future__ import annotations
-from __future__ import annotations
 
 import math
 
@@ -18,25 +17,10 @@ from ..atlas_engram_parameters import MotifParameterView, SITE_COUNT
 from .records import _invalid, WIDTH, MOTIF_WIDTH, READ_TENSOR_RANK, FEATURE_AXIS, BATCH_PREFIX_AXES, MotifReadPosition, MotifReadResult
 from .source import _schema_grant_live
 
-def _read_motif_unqualified_candidate(
-    *,
-    site_index: int,
-    hidden: mx.array,
-    features: mx.array,
-    positions: tuple[tuple[MotifReadPosition | None, ...], ...],
-    tasks: tuple[TaskScope, ...],
-    frontiers: tuple[SourceFrontier, ...],
-    policies: tuple[ContextPolicy, ...],
-    manifest: MotifManifest,
-    parameters: MotifParameterView,
-) -> MotifReadResult:
-    """Experimental numerical proof only; not a source-authorized entrypoint.
-
-    A row is source-gated as a *set* before a slot is gathered, so a
-    disallowed join cannot leak through individually eligible frames.
-    Caller-supplied feature128 must be bound to B02 source features by
-    the B11 integration owner; it grants no source eligibility here.
-    """
+def _validate_candidate_inputs(
+    site_index, hidden, features, positions, tasks, frontiers, policies,
+    manifest, parameters,
+):
     if (type(site_index) is not int or not 0 <= site_index < SITE_COUNT
             or type(manifest) is not MotifManifest
             or type(parameters) is not MotifParameterView
@@ -63,6 +47,30 @@ def _read_motif_unqualified_candidate(
             or not bool(mx.all(mx.isfinite(features)))):
         _invalid()
     parameters.__post_init__()
+
+
+def _read_motif_unqualified_candidate(
+    *,
+    site_index: int,
+    hidden: mx.array,
+    features: mx.array,
+    positions: tuple[tuple[MotifReadPosition | None, ...], ...],
+    tasks: tuple[TaskScope, ...],
+    frontiers: tuple[SourceFrontier, ...],
+    policies: tuple[ContextPolicy, ...],
+    manifest: MotifManifest,
+    parameters: MotifParameterView,
+) -> MotifReadResult:
+    """Experimental numerical proof only; not a source-authorized entrypoint.
+
+    A row is source-gated as a *set* before a slot is gathered, so a
+    disallowed join cannot leak through individually eligible frames.
+    Caller-supplied feature128 must be bound to B02 source features by
+    the B11 integration owner; it grants no source eligibility here.
+    """
+    _validate_candidate_inputs(
+        site_index, hidden, features, positions, tasks, frontiers, policies,
+        manifest, parameters)
     projections = {name: parameters[name] for name in (
         "projection", "norm", "gate_hidden", "gate_feature", "bias")}
     output_rows = []

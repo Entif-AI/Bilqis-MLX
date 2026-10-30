@@ -1,6 +1,5 @@
 """Source-qualified public boundary preserving the no-hit quarantine."""
 from __future__ import annotations
-from __future__ import annotations
 
 from dataclasses import asdict
 
@@ -16,6 +15,31 @@ from ..atlas_engram import MotifManifest
 
 
 from .records import _invalid, _SHA, WIDTH, READ_TENSOR_RANK, FEATURE_AXIS, MotifReadPosition, MotifReadResult
+
+def _source_witnesses(row, projection, atlas_selection):
+    source_witnesses = []
+    row_status = []
+    for item in row:
+        if item is None or type(item.envelope.frame) is AtomicFrame:
+            row_status.append("MISS")
+            continue
+        if item.schema is None or item.source_family is None:
+            _invalid()
+        canonical, witness = lookup_source_pinned_frame_schema(
+            item.schema.schema_id, item.schema.revision,
+            source_family=item.source_family,
+            atlas_selection=atlas_selection,
+        )
+        if item.schema.canonical_bytes() != canonical.canonical_bytes():
+            _invalid()
+        if (projection.frame(item.envelope.frame_handle)
+                != item.envelope.frame):
+            _invalid()
+        source_witnesses.append((item.source_family, asdict(witness)))
+        row_status.append("QUARANTINED_NO_HIT")
+
+    return source_witnesses, row_status
+
 
 def read_motif(
     *,
@@ -33,13 +57,13 @@ def read_motif(
 ) -> MotifReadResult:
     """Source-qualified group-1 second motif boundary, quarantined to no-hit.
 
-    This is the smallest production-safe bridge for B11 while A03.4 is present
-    in the consumed tree but has not yet become accepted cross-lane authority.
+    A03.4 is now present in reviewed unified. The public boundary remains
+    quarantined pending source/feature/retained-parameter qualification.
     Every non-atomic frame re-enters the repository-owned A03.4 source pins and
     current A13 eligibility.  The returned cache identity binds those source
     witnesses, live rights state, manifest, retained generation and parameter
     tree.  None of those caller-visible digests can authorize a motif hit here:
-    until reviewed unified acceptance lands, the public path returns the exact
+    while that qualification remains open, the public path returns the exact
     input tensor with an explicit QUARANTINED_NO_HIT disposition.
     """
     if (site_index != 1
@@ -90,26 +114,8 @@ def read_motif(
         if type(projection) is not ApprovedContextProjection:
             _invalid()
 
-        source_witnesses = []
-        row_status = []
-        for item in row:
-            if item is None or type(item.envelope.frame) is AtomicFrame:
-                row_status.append("MISS")
-                continue
-            if item.schema is None or item.source_family is None:
-                _invalid()
-            canonical, witness = lookup_source_pinned_frame_schema(
-                item.schema.schema_id, item.schema.revision,
-                source_family=item.source_family,
-                atlas_selection=atlas_selection,
-            )
-            if item.schema.canonical_bytes() != canonical.canonical_bytes():
-                _invalid()
-            if (projection.frame(item.envelope.frame_handle)
-                    != item.envelope.frame):
-                _invalid()
-            source_witnesses.append((item.source_family, asdict(witness)))
-            row_status.append("QUARANTINED_NO_HIT")
+        source_witnesses, row_status = _source_witnesses(
+            row, projection, atlas_selection)
 
         cache_digests.append(projection.cache_key(
             "B08.1_GROUP1_SECOND_MOTIF_NO_HIT",

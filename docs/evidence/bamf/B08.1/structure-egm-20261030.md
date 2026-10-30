@@ -21,8 +21,14 @@ Proof: original 9 total / 8 passed / 1 optional missing-pinned-A01 skip; extract
 owner plus pickle test 10 total / 9 passed / same skip. Affected union with the
 canonical motif-parameter borrowing/write-through/gradient tests is **14 total /
 13 passed / 1 same skip**, zero failures/errors, on disposable CPU arrays. All
-original production/test AST comparisons pass. Changed structure/governance and
-diff checks pass. Full integration and source qualification are not asserted.
+initial production/test AST comparisons pass. The committed moved-path hygiene
+pass exposed three inherited long functions; focused helper extraction preserves
+validation order, source lookup and optional test setup without expanding the
+baseline. Final helper review found no source/cache/quarantine regression and
+requested an explicit distinction between the 10-test focused suite and 14-test
+union. The structure receipt now names both scopes and the final union result.
+Changed structure/governance and diff checks pass. Full integration and source
+qualification are not asserted.
 
 IPR-0220 remains OPEN. Existing PM-2026-10-29-004/PAT-028 and
 PM-2026-10-30-002/RC-112/PAT-035 controls remain applicable. No durable student,

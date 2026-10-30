@@ -12,14 +12,22 @@ Mirrored fixtures, guarded, numerical, gradient and record-identity tests are ea
 below 240 lines. Public record pickle identities remain
 `bilqis_mlx.learning.atlas_engram_reads`; the old test path retains fixture imports.
 
-All eight original production function/class ASTs and all nine original test
-method/decorator ASTs compare equal to unified. No equation, schema, grant check,
-cache key, status, parameter, error identity or quarantine changes. The public
+The initial extraction compared all eight original production declarations and
+nine original tests/decorators equal to unified. The final moved-path hygiene
+pass additionally extracts the unchanged candidate-input validation, canonical
+source-witness loop and optional source-test setup into focused helpers. No
+equation, schema, grant check, cache key, status, parameter, error identity or
+quarantine changes. The public
 read still returns the exact hidden tensor with `QUARANTINED_NO_HIT` and no
 participating slots; the private numerical helper remains experimental.
 
-Baseline: 9 total, 8 passed, 1 existing missing-A01-artifact skip. Post-extraction:
-10 total, 9 passed, the same skip (new public-record pickle test). Run:
+Baseline focused suite: 9 total, 8 passed, 1 existing missing-A01-artifact skip.
+Final focused suite: 10 total, 9 passed, the same skip (new pickle test).
+Final affected union adds the four canonical motif-parameter tests: **14 total,
+13 passed, 1 same skip**, zero failures/errors, after the final helper extraction.
+The command below runs the focused suite; add
+`bilqis_mlx.learning._engram.tests.test_atlas_engram_parameters` through the same
+unittest loader for the affected union.
 
 ```sh
 node ~/.codex/hooks/validation-output-runner.mjs -- python3 -B -c '

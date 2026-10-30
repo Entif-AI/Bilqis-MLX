@@ -29,6 +29,8 @@ RELEASE = "a" * 64
 
 from .fixtures import ACCESS_SCOPE, REAL_RELEASE, REAL_BUNDLE, REAL_SOURCE_BUNDLE
 
+from .fixtures import _source_bound_read_case
+
 class GuardedReadTests(TestCase):
     def test_public_read_entrypoint_requires_source_qualified_contract(self):
         with self.assertRaises(TypeError):
@@ -40,62 +42,8 @@ class GuardedReadTests(TestCase):
         "real repo-pinned A01 artifact supplied at source turn-in",
     )
     def test_group1_second_read_is_source_qualified_but_quarantined_no_hit(self):
-        selection = AtlasArtifactSelection(
-            os.environ["BILQIS_ATLAS_REAL_ARTIFACT"],
-            REAL_BUNDLE, REAL_RELEASE, REAL_SOURCE_BUNDLE,
-        )
-        schema, _witness = lookup_source_pinned_frame_schema(
-            "frame:legacy:development.op.EDGE", 1,
-            source_family="micro", atlas_selection=selection)
-        frame = make_frame_instance(
-            schema, source_instance_id="synthetic:real-source",
-            structural_path=(), source_span=SourceSpan(0, 2),
-            parent_occurrence_id=None,
-            bindings=(
-                RoleOccurrence("arg0", 0, concept=ConceptRef(
-                    "formal:alice", REAL_RELEASE, 0, ("Entity",),
-                    "source:arg0")),
-                RoleOccurrence("arg1", 0, concept=ConceptRef(
-                    "formal:bob", REAL_RELEASE, 1, ("Entity",),
-                    "source:arg1")),
-            ), causal_prefix_end=2,
-        )
-        members = (
-            ContextMember("arg0", 0, "source:member:arg0", 2),
-            ContextMember("arg1", 0, "source:member:arg1", 2),
-        )
-        envelope = ContextEligibility(
-            "frame:real:0", frame, "source:frame:real:0", members,
-            "synthetic:student", "synthetic:tenant", "TRAINING",
-            PUBLIC_FORMAL, REAL_RELEASE, "synthetic:region", ACCESS_SCOPE,
-            PUBLIC_FORMAL, 1, 1, 1, 0, 0, None, 2,
-        )
-        evidence = {
-            envelope.source_handle: frame_evidence_digest(frame),
-            **{member.source_handle: member_evidence_digest(frame, member)
-               for member in members},
-        }
-        frontier = SourceFrontier(1, 1, tuple(sorted((
-            SourceGrant(
-                handle, envelope.principal_id, envelope.tenant_id,
-                PUBLIC_FORMAL, REAL_RELEASE, digest, ("TRAINING",),
-                ("synthetic:region",), (ACCESS_SCOPE,),
-                rights_epoch=1, correction_generation=1,
-                observed_at=0, effective_from=0)
-            for handle, digest in evidence.items()),
-            key=lambda grant: grant.source_handle)))
-        task = TaskScope(
-            envelope.principal_id, envelope.tenant_id, "TRAINING",
-            REAL_RELEASE, "synthetic:region", ACCESS_SCOPE, 1, 1, 2)
-        policy = ContextPolicy(
-            "synthetic:policy", 1, 1, ("TRAINING",),
-            (PUBLIC_FORMAL,), ("synthetic:region",), (ACCESS_SCOPE,),
-            (PUBLIC_FORMAL,), ((PUBLIC_FORMAL, PUBLIC_FORMAL),), ())
-        position = MotifReadPosition(envelope, schema, "micro")
-        exact, _structural = motif_keys(
-            MotifFrameInput(frame, schema), REAL_RELEASE)
-        manifest = MotifManifest(REAL_RELEASE, (MotifSlot(0, exact),))
-        hidden = mx.arange(2 * 768, dtype=mx.float32).reshape(1, 2, 768)
+        (selection, schema, frame, envelope, frontier, task, policy,
+         position, manifest, hidden) = _source_bound_read_case()
 
         result = guarded_read_motif(
             site_index=1, hidden=hidden,
