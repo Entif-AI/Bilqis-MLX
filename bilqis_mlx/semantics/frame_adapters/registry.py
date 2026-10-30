@@ -2,7 +2,8 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Mapping
+from types import MappingProxyType
 from ...factory.adapters import RegisteredSourceAdapter
 from ..atlas_projection import FrozenAtlasSnapshot
 from ..frame_schema import FrameTree, SourceSpan, atomic_fallback, validate_frame_tree
@@ -37,13 +38,13 @@ def _bind_identification_row(
 
 RowBinder = Callable[..., FrameTree]
 
-_ROW_BINDERS: dict[str, RowBinder] = {
+_ROW_BINDERS: Mapping[str, RowBinder] = MappingProxyType({
     MICRO_PREDICATE_ADAPTER: _bind_source_row,
     BOOLEAN_CONNECTIVE_ADAPTER: _bind_source_row,
     BOOLEAN_COMPOSITE_ADAPTER: _bind_source_row,
     BOOLEAN_IDENTIFICATION_ADAPTER: _bind_identification_row,
     FINITE_NUMERIC_ADAPTER: _bind_numeric_row,
-}
+})
 
 @dataclass(frozen=True)
 class ReleasedFrameAdapter:
