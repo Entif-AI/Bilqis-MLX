@@ -176,3 +176,39 @@ This is **not completion of #554**. Factory
 cross-family integration and real admission/retained
 learning evidence remain separate gates. No source
 promotion, neural training, optimizer mutation or merge.
+## 2026-10-30 acceptance correction and final bounded disposition
+
+The earlier four-operator wording above is historical evidence from the
+pre-recut implementation and is **superseded for acceptance**. Fresh review
+found that A01's released \`school.op.COUNT\` law is
+\`NumberSet -> Number\`, while A07's cognitive \`COUNT\` is
+\`EntitySet -> Number\`. Matching those two laws by semantic-ID suffix was an
+authority error.
+
+The current resolver now reads the exact source-owned numeric contract only
+when the A01 binding names the released numeric owner, verifies the complete
+contract SHA against the binding, parses the append-only node signature, and
+requires exact equality with the executable A07 signature. The real pinned
+source census therefore resolves lawful witnesses for \`BOOL_NOT\`, \`BOOL_AND\`
+and \`SUCC\`; the A01 \`COUNT\` identity remains visible as
+\`OPERATOR_SOURCE_SIGNATURE_MISMATCH\` implementation debt and cannot construct
+a lesson. No denominator was shrunk and no replacement COUNT law was invented.
+
+Variation coverage remains thirteen explicit cases: ten lawful NOT/AND/SUCC
+executions and three COUNT refusal witnesses. Real pinned source verification
+passes **16 tests and 29 subtests with zero skips**. Changed-path structure and
+governance checks return zero violations, and the changed-file smell audit
+reports zero new findings.
+
+Fresh independent pinned EGM re-review of immutable
+\`537c6e8987bed16af4fefe85c10ba94b0406b75a\` returned **PASS, zero Blockers,
+zero Majors**. The review independently reproduced the exact COUNT mismatch,
+the lawful witness set, refusal to construct COUNT, live A13/A07 replay,
+checker independence, prerequisite closure, source-valid contrasts, spoof and
+arity/type negatives, rights/release revocation, and \`LEARNING_UNVERIFIED\`
+boundaries. See \`egm.md\`.
+
+This closes the A08.1b.2-owned formal lesson/variation acceptance slice. It
+does not perform the A08.1b.5 Factory/source-owner integration crosswalk and
+does not claim \`ADAPTER_READY\`, learner retention, neural training, or main
+branch admission.
