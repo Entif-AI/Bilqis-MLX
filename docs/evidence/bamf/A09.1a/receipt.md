@@ -24,7 +24,7 @@ The mandatory structure interruption starts at
 The Factory and Factory-test
 roots are each reduced to 12 direct Python files while preserving the existing
 `bilqis_mlx.factory.<module>` import surface. The A09.1a production code is
-split into a 196-line builder and 211-line immutable-contract module; its
+split into a 197-line builder and 211-line immutable-contract module; its
 companion test is 236 lines. No structure threshold or governance baseline was
 weakened.
 
@@ -52,7 +52,8 @@ Validation:
 
 The full Factory unit surface retains baseline failure parity. Untouched
 `e024b9b` runs 371 tests with 345 passed, 19 failed, and 7 skipped. The feature
-worktree runs the same inherited 19 failures plus the A09.1a tests; no new
+worktree runs 376 tests with 349 passed, the same inherited 19 failures, and 8
+skipped; no new
 existing-test failure is introduced. The inherited architecture failure is
 `bilqis_mlx/runtime/model_topology_v2.py:280 GENERIC_GRADE_IDENTITY_DISPATCH A,B`
 on both baseline and feature worktrees.
