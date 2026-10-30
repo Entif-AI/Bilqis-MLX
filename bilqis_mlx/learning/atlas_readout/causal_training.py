@@ -85,7 +85,11 @@ def _concept_vector(value: ConceptRef, snapshot, banks) -> mx.array:
             or entry.active is not True):
         invalid()
     bank_index, row = divmod(value.abi_index, ModelTopologySpecV2.semantic_bank_rows)
-    if (bank_index >= len(banks)
+    if (tuple(bank.bank_index for bank in banks) != tuple(range(len(banks)))
+            or any((bank.semantic_release, bank.active_semantic_digest) !=
+                   (snapshot.release_sha256, snapshot.active_set_sha256)
+                   for bank in banks)
+            or bank_index >= len(banks)
             or banks[bank_index].bank_index != bank_index
             or row not in banks[bank_index].active_rows
             or banks[bank_index].semantic_release != value.semantic_release):
@@ -113,7 +117,15 @@ def _parent_values(
     if decision is None or any(parent not in teacher_targets for parent in decision.depends_on):
         invalid()
     # Deliberately index only declared parents. Current/descendant targets are loss-only.
-    return tuple(teacher_targets[parent] for parent in decision.depends_on)
+    lookup = {item.decision_id: item for item in state.plan.decisions}
+    forced = []
+    for parent in decision.depends_on:
+        target = teacher_targets[parent]
+        legal = lookup[parent].legal_values
+        if not any(type(target) is type(value) and target == value for value in legal):
+            invalid()
+        forced.append(target)
+    return tuple(forced)
 
 
 def decision_hidden(

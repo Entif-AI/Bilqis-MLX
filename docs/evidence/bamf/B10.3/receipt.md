@@ -40,19 +40,21 @@ failed 5/5 cases with
 
 After implementation:
 
-- B10.3 focused: **6 passed**
-- Complete compartmentalized atlas-readout suite: **47 passed + 39 subtests**
+- B10.3 focused: **8 passed**
+- Complete compartmentalized atlas-readout suite: **49 passed + 39 subtests**
 - Development structure: **0 violations**
 - Governance integrity: **0 violations**
 - Changed-file smell audit: **0 new findings**
 - `git diff --check`: PASS
 
 The tests prove that changing current/future gold cannot change the current
-decision feedback state; training step 2 may use only the teacher-forced step 1
-target; inference step 2 uses committed predicted step 1; illegal CONTROL logits
-are excluded from loss with zero gradient; missing auxiliary labels contribute
-zero; and an illegal neural output returns a fallback request without mutating
-the decode state.
+decision feedback state; training step 2 may use only a legal teacher-forced
+step 1 target; inference step 2 uses committed predicted step 1; a forged parent
+teacher target fails closed; ConceptRef feedback is the exact active tied
+identity row and rejects active-set drift; illegal CONTROL logits are excluded
+from loss with zero gradient; missing auxiliary labels contribute zero; and an
+illegal neural output returns a fallback request without mutating the decode
+state.
 
 ## Boundary
 

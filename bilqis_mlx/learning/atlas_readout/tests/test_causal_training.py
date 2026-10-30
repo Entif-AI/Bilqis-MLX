@@ -1,8 +1,10 @@
 """B10.3 causal teacher forcing, legal loss masking, and fallback behavior."""
+from dataclasses import replace
 import unittest
 
 import mlx.core as mx
 
+from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_readout.control import ControlAction as C
 from bilqis_mlx.learning.atlas_readout.decisions import (
     DecisionOutput as O,
@@ -14,7 +16,9 @@ from bilqis_mlx.learning.atlas_readout.plan import (
     DecisionSpec as D,
 )
 from bilqis_mlx.learning.atlas_readout.records import TypedHeadLogits
+from bilqis_mlx.learning.atlas_readout.tests.helpers import banks, snapshot
 from bilqis_mlx.learning.atlas_readout.tests.plan_helpers import plan
+from bilqis_mlx.semantics.frame_schema import ConceptRef
 
 
 class CausalTrainingTests(unittest.TestCase):
@@ -72,6 +76,45 @@ class CausalTrainingTests(unittest.TestCase):
             teacher_targets={"parent": "known"})
         self.assertFalse(bool(mx.allclose(inferred, forced)))
 
+    def test_teacher_forcing_rejects_illegal_parent_target(self):
+        from bilqis_mlx.learning.atlas_readout.causal_training import decision_hidden
+
+        state = self._state()
+        with self.assertRaises(BilqisError):
+            decision_hidden(
+                mx.zeros((768,), dtype=mx.float32),
+                state,
+                "child",
+                {"readout.feedback": mx.eye(768, dtype=mx.float32)},
+                teacher_targets={"parent": "forged"})
+
+    def test_concept_feedback_is_exact_active_tied_identity_row(self):
+        from bilqis_mlx.learning.atlas_readout.causal_training import encode_feedback_value
+
+        source = snapshot()
+        source = replace(
+            source,
+            semantic_lookup=tuple(sorted(
+                (entry.semantic_id, position)
+                for position, entry in enumerate(source.abi_entries))),
+        )
+        entry = source.abi_entries[0]
+        concept = ConceptRef(
+            entry.semantic_id, source.release_sha256, entry.index,
+            ("urn:type:Entity",), "synthetic:source")
+        active_banks = banks(source)
+        encoded = encode_feedback_value(
+            concept, snapshot=source, banks=active_banks)
+        bank_index, row = divmod(entry.index, 8192)
+        self.assertTrue(bool(mx.array_equal(
+            encoded, active_banks[bank_index].weights[row])))
+        changed = (
+            replace(active_banks[0], active_semantic_digest="e" * 64),
+            *active_banks[1:],
+        )
+        with self.assertRaises(BilqisError):
+            encode_feedback_value(concept, snapshot=source, banks=changed)
+
     def test_legal_mask_excludes_illegal_control_logit_and_missing_auxiliary(self):
         from bilqis_mlx.learning.atlas_readout.causal_training import typed_decision_loss
 
@@ -111,7 +154,6 @@ class CausalTrainingTests(unittest.TestCase):
 
     def test_illegal_target_fails_closed_instead_of_entering_loss(self):
         from bilqis_mlx.learning.atlas_readout.causal_training import typed_decision_loss
-        from bilqis_mlx.errors import BilqisError
 
         head = TypedHeadLogits(
             mx.array([0.0, 1.0, 2.0, 3.0], dtype=mx.float32),
