@@ -13,7 +13,7 @@ from pathlib import Path
 import re
 import sqlite3
 
-from ..errors import ErrorBus, SCHOOL
+from ...errors import ErrorBus, SCHOOL
 from .akasha_outbox import AkashaEventKind, OWNER_FIXTURE_KINDS
 from .bamf_projection import BamfProjectionEvent, ProjectionDomainContract
 

@@ -11,7 +11,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.runtime.akasha_outbox import (
+from bilqis_mlx.runtime.projection.akasha_outbox import (
     AkashaEvent, AkashaEventKind, append_c09_intent, append_outbox, pending_events,
     project_event, read_outbox, record_delivery_attempt,
 )

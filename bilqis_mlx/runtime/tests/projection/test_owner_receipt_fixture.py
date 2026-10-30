@@ -5,8 +5,8 @@ import unittest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.runtime.owner_receipt_fixture import OwnerReceiptFixture, project_owner_receipt_fixture
-from bilqis_mlx.runtime.akasha_outbox import AkashaEventKind
+from bilqis_mlx.runtime.projection.owner_receipt_fixture import OwnerReceiptFixture, project_owner_receipt_fixture
+from bilqis_mlx.runtime.projection.akasha_outbox import AkashaEventKind
 from bilqis_mlx.runtime.atlas_revalidation import SourceAuthorityKey, SourceAuthorityScope, SourceAuthorityRegistry
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
 
@@ -56,7 +56,7 @@ class OwnerReceiptFixtureTests(unittest.TestCase):
     def test_divergent_attestations_cannot_reuse_one_source_event_identity(self):
         from pathlib import Path
         import tempfile
-        from bilqis_mlx.runtime.akasha_outbox import append_outbox, read_outbox
+        from bilqis_mlx.runtime.projection.akasha_outbox import append_outbox, read_outbox
         receipt = self.receipt(AkashaEventKind.PACKAGE_EXPORT)
         first = project_owner_receipt_fixture(receipt, b'PRIVATE_OPAQUE_ARTIFACT', REGISTRY)
         second = project_owner_receipt_fixture(signed(replace(receipt, recorded_at=586)), b'PRIVATE_OPAQUE_ARTIFACT', REGISTRY)
@@ -71,8 +71,8 @@ class OwnerReceiptFixtureTests(unittest.TestCase):
     def test_fixture_categories_cannot_lose_maturity_in_public_staging(self):
         from pathlib import Path
         import tempfile
-        from bilqis_mlx.runtime.akasha_staging import build_staging_projection
-        from bilqis_mlx.runtime.tests.test_bamf_projection import _contract, _projected
+        from bilqis_mlx.runtime.projection.akasha_staging import build_staging_projection
+        from bilqis_mlx.runtime.tests.projection.test_bamf_projection import _contract, _projected
         for category in (AkashaEventKind.BANK_ALLOCATION, AkashaEventKind.PLASTICITY_EPOCH,
                          AkashaEventKind.PACKAGE_EXPORT):
             receipt = self.receipt(category)
@@ -89,8 +89,8 @@ class OwnerReceiptFixtureTests(unittest.TestCase):
         import json
         from pathlib import Path
         import tempfile
-        from bilqis_mlx.runtime.akasha_staging import build_staging_projection, StagingProjection, _digest
-        from bilqis_mlx.runtime.tests.test_bamf_projection import _contract, _projected, _event
+        from bilqis_mlx.runtime.projection.akasha_staging import build_staging_projection, StagingProjection, _digest
+        from bilqis_mlx.runtime.tests.projection.test_bamf_projection import _contract, _projected, _event
         with tempfile.TemporaryDirectory() as folder:
             domain = _contract(Path(folder) / 'outbox.sqlite3')
             ordinary = build_staging_projection((_projected(_event('capability:public'), domain),), domain)

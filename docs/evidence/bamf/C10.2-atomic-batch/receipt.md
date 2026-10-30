@@ -27,3 +27,13 @@ The earlier local changed-path structure check ran before the repair commit and
 did not include its files. Hosted CI reports eight structure violations. The
 repository-wide operator-contract check fails with 30 findings; its output is
 byte-identical to unmodified Lane C at `57f8d9d`.
+
+The structure interruption groups C10 projection owners and tests under
+`bilqis_mlx/runtime/projection/` and `bilqis_mlx/runtime/tests/projection/`.
+Internal import paths and the error-catalog owner were updated. With the Rosetta
+owner checkout selected, all 25 projection tests pass, including three native
+Rosetta tests. The separate error-control and semantic-boundary suite reports
+six passes and one failure on both this worktree and unmodified Lane C; the
+failure lists the existing `semantics/frame_adapters.py` import-boundary findings.
+The runtime and test directories remain over the required limit, and independent
+review is still pending. No live model or run was used.

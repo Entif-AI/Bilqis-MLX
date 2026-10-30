@@ -85,7 +85,7 @@ class SCHOOL:
     class BAMF_AKASHA:
         INVALID = _spec(
             ("SCHOOL", "BAMF_AKASHA", "INVALID"),
-            owner="runtime.akasha_outbox",
+            owner="runtime.projection.akasha_outbox",
             title="BAMF Akasha event or outbox contract invalid",
             message_template="A source-bound Akasha event or delivery attempt is invalid: {reason}",
             disposition="PRESERVE_AND_INSPECT",

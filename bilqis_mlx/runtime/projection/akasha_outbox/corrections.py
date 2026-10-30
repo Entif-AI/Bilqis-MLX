@@ -7,8 +7,8 @@ from .store import append_outbox
 
 def events_from_c09_intent(intent, correction, ledger, authority_registry):
     """Bridge signed C09 source invalidations into C10's durable event IDs."""
-    from ..atlas_revalidation import CorrectionEvent, SourceAuthorityRegistry
-    from ..atlas_requalification import (
+    from ...atlas_revalidation import CorrectionEvent, SourceAuthorityRegistry
+    from ...atlas_requalification import (
         C10InvalidationIntent, RequalificationLedger,
         RequalificationStatus,
     )
