@@ -2,6 +2,7 @@ from lib.ithkuil.tests.paths import FIXTURES, ITHKUIL_ROOT, REPO_ROOT, TEST_ROOT
 import csv
 import json
 from pathlib import Path
+from types import MappingProxyType
 import unicodedata
 import unittest
 
@@ -26,10 +27,10 @@ ROOT = ITHKUIL_ROOT
 FIXTURE = json.loads(
     (ROOT / "tests/fixtures/skos_notation.json").read_text(encoding="utf-8")
 )
-DATATYPES = {
+DATATYPES = MappingProxyType({
     "new-ithkuil": NEW_ITHKUIL_DATATYPE_IRI,
     "grammar-code": GRAMMAR_CODE_DATATYPE_IRI,
-}
+})
 
 
 class NotationContractTests(unittest.TestCase):

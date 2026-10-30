@@ -4,7 +4,7 @@
 - Consumed unified: `9104ce733e04fb9c82420428b18dfdbf5db49535`
 - Synchronized Lane A: `c18419b500216fb7e25a460ecc45aa1b522f3fb4`
 - Learning state: `LEARNING_UNVERIFIED`
-- Independent EGM: pending
+- Independent EGM: pending; current fresh-worker launcher failed before reviewer start
 
 ## Owned integration
 
@@ -48,6 +48,16 @@ binding, missing constructor, wrong oracle/checker authority, preserved denomina
 no learning-credit promotion, source-row byte identity, exact A01 source identity,
 source-local prefix semantics, frame/member grant requirements, contrast-only
 revocation, and rejection of ABI/relation attempts to mint source-row provenance.
+
+Follow-up executable-path proof adds an explicit non-admitting Factory-release
+family execution seam. It replays A08 currentness, resolves the exact existing
+Factory capability/program/source-adapter binding, executes the registered
+heterogeneous constructor, and requires its independent checker to accept the
+artifact. A regression test copied onto pre-fix head `7411161a` fails at import
+because that executable seam does not exist there; the repaired worktree passes
+15 tests plus 5 subtests across the family-registry and source-context suites.
+Structure and governance checks remain at zero violations and `git diff --check`
+passes.
 
 No neural update, capability admission, A08.2 identity allocation, or self-merge is
 claimed.

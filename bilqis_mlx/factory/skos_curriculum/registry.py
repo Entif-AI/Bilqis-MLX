@@ -161,6 +161,14 @@ class FactoryReleaseFamilyBindings:
                 or self.learning_state != LEARNING_UNVERIFIED):
             _fail("BAMF_FACTORY_FAMILY_BINDINGS_INVALID")
 
+    def require(self, capability_id: str) -> BoundFamilyProgram:
+        matches = tuple(
+            item for item in self.bound_programs
+            if item.capability_id == capability_id)
+        if len(matches) != 1:
+            _fail("BAMF_FACTORY_FAMILY_BINDING_MISSING")
+        return matches[0]
+
 
 def _source_draw(*args, **kwargs):
     """Dispatch through the existing source registry without inspecting grade."""
@@ -201,6 +209,32 @@ def default_family_program_registry() -> FamilyProgramRegistry:
             "bilqis.factory.source-registry-check/v1",
             _source_draw, _source_check),
     ))
+
+
+def execute_bound_family_program(
+    registry: FamilyProgramRegistry,
+    binding: BoundFamilyProgram,
+    *,
+    construct_args: tuple = (),
+    construct_kwargs: dict | None = None,
+    check_args: tuple = (),
+    check_kwargs: dict | None = None,
+):
+    """Execute one already-bound family program without inventing a uniform ABI."""
+    if type(registry) is not FamilyProgramRegistry or type(binding) is not BoundFamilyProgram:
+        _fail("BAMF_FAMILY_PROGRAM_EXECUTION_INPUT_INVALID")
+    registration = registry.require(binding.family_id)
+    if (registration.constructor_ref != binding.constructor_ref
+            or registration.checker_ref != binding.checker_ref
+            or binding.source_adapter_id not in registration.accepted_source_adapter_ids):
+        _fail("BAMF_FAMILY_PROGRAM_EXECUTION_AUTHORITY_MISMATCH")
+    artifact = registration.construct(
+        *construct_args, **({} if construct_kwargs is None else construct_kwargs))
+    checked = registration.check(
+        artifact, *check_args, **({} if check_kwargs is None else check_kwargs))
+    if checked is not True:
+        _fail("BAMF_FAMILY_PROGRAM_CHECK_FAILED")
+    return artifact
 
 
 def bind_existing_family_program(
