@@ -121,9 +121,20 @@ def resolve_morphology_source_law(
            for item in witness.component_ids):
         _fail("BAMF_MORPHOLOGY_SOURCE_LAW_HELD")
     try:
+        atomic_rows = coverage["domains"]["atomic"]["rows"]
         residue_rows = coverage["domains"]["residue"]["rows"]
     except (KeyError, TypeError):
         _fail("BAMF_MORPHOLOGY_SOURCE_ROWS_INVALID")
+    atomic_dispositions = {
+        row.get("key"): row
+        for row in atomic_rows
+        if row.get("table") == "morphemes_atomic"
+    }
+    if any(
+            item not in atomic_dispositions
+            or atomic_dispositions[item].get("status") != "EMITTED"
+            for item in witness.component_ids):
+        _fail("BAMF_MORPHOLOGY_SOURCE_LAW_HELD")
     owner_rows = tuple(
         row for row in residue_rows
         if row.get("table") == "morpheme_compositions"

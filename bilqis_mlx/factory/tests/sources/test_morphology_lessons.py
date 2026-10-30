@@ -35,6 +35,7 @@ BUNDLE = "b" * 64
 SOURCE_BUNDLE = "c" * 64
 LAW_SHA = "f" * 64
 COMPOSITION = "COMP-00a9e6c3998d74"
+REAL_COMPOSITION = "COMP-1a7a421841756f"
 LAW = MorphologySourceLaw(
     RELEASE, SOURCE_BUNDLE, COMPOSITION,
     ("ATOM-b062726ad5143d", "ATOM-7671e7f56ccfb8"),
@@ -143,12 +144,12 @@ class MorphologyLessonTests(unittest.TestCase):
                 artifact.path, artifact.bundle_id, release.digest,
                 release.source_bundle_id)
             lesson = lessons.construct_morphology_lesson(
-                selection, corpus, COMPOSITION, MorphologyDirection.COMPOSE)
-            self.assertEqual(lesson.positive.answer.value, "asw")
+                selection, corpus, REAL_COMPOSITION, MorphologyDirection.COMPOSE)
+            self.assertEqual(lesson.positive.answer.value, "eabẓ")
             self.assertTrue(lessons.check_morphology_lesson(
                 lesson, lesson.positive.answer, selection, corpus))
             law = lessons.resolve_morphology_source_law(
-                selection, corpus, COMPOSITION)
+                selection, corpus, REAL_COMPOSITION)
             task = TaskScope(
                 "synthetic:person", "synthetic:tenant", "TRAINING",
                 law.semantic_release, "synthetic:region", "synthetic:task",
