@@ -5,7 +5,7 @@ import unittest
 
 
 def _checker_module():
-    path = Path(__file__).parents[1] / "quality" / "check_docs.py"
+    path = Path(__file__).parents[1] / "check_docs.py"
     spec = importlib.util.spec_from_file_location("bilqis_check_docs", path)
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None

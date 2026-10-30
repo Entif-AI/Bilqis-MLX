@@ -262,19 +262,16 @@ def write_docs() -> None:
     MANUAL.write_text(render_manual(payload), encoding="utf-8")
 
 
-def check(base_ref: str | None = None) -> int:
+def check() -> int:
     if not BASELINE.is_file():
         print("ERROR_CONTROL_BASELINE_MISSING", file=sys.stderr)
         return 2
     from operations.operator_contract_audit import (
-        _read_baseline, debt_counter, new_debt, scan_git_tree, scan_tree,
+        _read_baseline, debt_counter, new_debt, scan_tree,
     )
     source_report = scan_tree(ROOT)
-    allowed = _read_baseline(BASELINE)
-    if base_ref:
-        allowed = debt_counter(scan_git_tree(ROOT, base_ref).debt)
     introduced = new_debt(
-        debt_counter(source_report.debt), allowed)
+        debt_counter(source_report.debt), _read_baseline(BASELINE))
     if introduced:
         print("NEW_OPAQUE_OPERATOR_CONTRACT_DEBT_FORBIDDEN", file=sys.stderr)
         for item in introduced[:30]:
@@ -304,16 +301,11 @@ def main() -> int:
     actions = parser.add_mutually_exclusive_group(required=True)
     actions.add_argument("--write-docs", action="store_true")
     actions.add_argument("--check", action="store_true")
-    parser.add_argument(
-        "--base-ref",
-        help=("For a pull request, reject debt added beyond this exact base "
-              "tree instead of charging the PR for debt already present there."),
-    )
     args = parser.parse_args()
     if args.write_docs:
         write_docs()
         return 0
-    return check(args.base_ref)
+    return check()
 
 
 if __name__ == "__main__":

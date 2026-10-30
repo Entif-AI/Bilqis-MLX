@@ -5,7 +5,7 @@ Bilqis-MLX checkout containing the canonical ingestion actions and #91 proof
 runner. It is not a standalone compiler. Resolve that checkout and its compatible
 interpreter explicitly; install its declared extraction and semantic dependencies.
 
-The repository's `scripts/quality/package_ithkuil_skill.py` stages the exact Skill resource
+The repository's `scripts/package_ithkuil_skill.py` stages the exact Skill resource
 closure and copies the canonical #91 bounded fixture into `assets/fixture`.
 These generated package assets are selected test inputs, not a production corpus.
 The repository fixture remains their authoring authority. The packager rejects
