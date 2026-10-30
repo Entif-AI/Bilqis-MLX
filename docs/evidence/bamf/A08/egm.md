@@ -62,3 +62,15 @@ Both reviewed commits have been fast-forward integrated into
 These are scoped leaf reviews only. A08.1b sibling constructors,
 A08.1/A08 parent integration, live A13 grants and actual learner
 retention remain separate gates.
+
+## A08.1b.2 task-scoped formal lesson review
+
+The four A01-attested A07 Boolean/numeric operators now have a
+task-scoped source/rights-replaying formal lesson generator and
+independent typed checker. Goldfish worker-11 found and cleared
+two Majors: mutable TypedValue canonicality and forged lesson
+admission/learning/source-authority metadata. Final immutable
+`ecbb788` review: **SCOPED EGM PASS, 0 Blockers/Majors**,
+real pinned A01/A07/A13 owner suites **13/13 passed**.
+This does not close A08.1b.2 #554, Factory registration,
+variation coverage or any A08 parent integration gate.
