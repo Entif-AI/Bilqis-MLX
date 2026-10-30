@@ -385,7 +385,7 @@ class AtlasFeatureTests(unittest.TestCase):
                 "left", "frame:urn:concept:A", "task:scope")
 
     def test_existing_formal_source_abi_is_projected_without_oracle_or_network(self):
-        from bilqis_mlx.semantics.tests.test_frame_adapters import _snapshot
+        from bilqis_mlx.semantics.tests.frame_adapters.helpers import _snapshot
         from unittest.mock import patch
         import socket
 
@@ -402,7 +402,7 @@ class AtlasFeatureTests(unittest.TestCase):
         self.assertEqual(row.graph64[7], 1.0)
 
     def test_actual_a03_micro_and_numeric_schema_authority_is_admitted(self):
-        from bilqis_mlx.semantics.tests.test_frame_adapters import _snapshot
+        from bilqis_mlx.semantics.tests.frame_adapters.helpers import _snapshot
 
         snapshot = _snapshot()
         schema_ids = (

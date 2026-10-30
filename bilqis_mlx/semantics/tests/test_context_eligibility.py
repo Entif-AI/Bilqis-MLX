@@ -282,7 +282,7 @@ class ContextEligibilityTests(unittest.TestCase):
         from bilqis_mlx.source_adapters.school import (
             A_ORACLE, B_ORACLE, C_ORACLE, live_source_registry,
         )
-        from bilqis_mlx.semantics.tests.test_frame_adapters import _snapshot
+        from bilqis_mlx.semantics.tests.frame_adapters.helpers import _snapshot
         from pathlib import Path
 
         root = Path(__file__).resolve().parents[3]
@@ -419,7 +419,7 @@ class ContextEligibilityTests(unittest.TestCase):
     def test_public_formal_future_prefix_never_mints_handles(self):
         from bilqis_mlx.grade_a_probe import read_sources
         from bilqis_mlx.source_adapters.school import A_ORACLE, live_source_registry
-        from bilqis_mlx.semantics.tests.test_frame_adapters import _snapshot
+        from bilqis_mlx.semantics.tests.frame_adapters.helpers import _snapshot
         from pathlib import Path
         source_root = Path(__file__).resolve().parents[3] / "vendor/legacy-v16"
         micro_graph = read_sources(source_root)[2]
