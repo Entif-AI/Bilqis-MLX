@@ -1,5 +1,6 @@
 """Atomic projection batches preserve durable outbox state on conflict."""
 from dataclasses import replace
+from importlib import import_module
 from pathlib import Path
 import tempfile
 import unittest
@@ -11,6 +12,18 @@ from bilqis_mlx.runtime.tests.test_bamf_projection import _contract, _event, _pr
 
 
 class BamfProjectionBatchTests(unittest.TestCase):
+    def test_existing_projection_import_paths_remain_usable(self):
+        for module, name in (
+            ('bilqis_mlx.runtime.akasha_outbox', 'AkashaEvent'),
+            ('bilqis_mlx.runtime.akasha_staging', 'build_staging_projection'),
+            ('bilqis_mlx.runtime.bamf_projection', 'BamfProjectionEvent'),
+            ('bilqis_mlx.runtime.generation_projection', 'project_accepted_generation'),
+            ('bilqis_mlx.runtime.owner_receipt_fixture', 'OwnerReceiptFixture'),
+            ('bilqis_mlx.runtime.rosetta_observation', 'project_rosetta_observation'),
+        ):
+            with self.subTest(module=module):
+                self.assertTrue(hasattr(import_module(module), name))
+
     def test_late_durable_conflict_rolls_back_entire_batch(self):
         from bilqis_mlx.runtime.bamf_projection import read_projection_outbox
         with tempfile.TemporaryDirectory() as folder:
