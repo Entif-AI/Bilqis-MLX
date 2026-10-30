@@ -73,12 +73,12 @@ jobs:
         run: >-
           python3 -B scripts/run_tests.py
           bilqis_mlx/learning/_teaching/tests/test_teacher_observations.py
-          bilqis_mlx/runtime/tests/test_teacher_observation_capture.py
-          bilqis_mlx/runtime/tests/test_teacher_observation_replay.py
-          bilqis_mlx/runtime/tests/test_qualification.py
-          bilqis_mlx/runtime/tests/test_model_topology.py
-          bilqis_mlx/runtime/tests/test_topology_lifecycle.py
-          bilqis_mlx/runtime/tests/test_state_archive.py
+          bilqis_mlx/runtime/tests/teacher/test_teacher_observation_capture.py
+          bilqis_mlx/runtime/tests/teacher/test_teacher_observation_replay.py
+          bilqis_mlx/runtime/tests/operator/test_qualification.py
+          bilqis_mlx/runtime/tests/model/test_model_topology.py
+          bilqis_mlx/runtime/tests/model/test_topology_lifecycle.py
+          bilqis_mlx/runtime/tests/custody/test_state_archive.py
           bilqis_mlx/learning/_retention/tests/test_whole_student_retention.py
           scripts/tests/test_release_version.py
           scripts/tests/test_docs.py
@@ -88,7 +88,7 @@ jobs:
           bilqis_mlx/factory/tests/lifecycle/test_release.py
           bilqis_mlx/factory/tests/lifecycle/test_generation.py
           bilqis_mlx/factory/tests/curriculum/test_historical_generalization.py
-          bilqis_mlx/runtime/tests/test_admission.py
+          bilqis_mlx/runtime/tests/operator/test_admission.py
       - name: Plan semantic profile verification
         id: skos
         env:
