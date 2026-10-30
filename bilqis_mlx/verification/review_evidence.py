@@ -16,10 +16,10 @@ SCHEMA = "bilqis.review-evidence/v1"
 
 VERIFIER_FILES = (
     "cli.py", "curriculum/__init__.py", "curriculum_compiler.py", "grade_transition.py",
-    "next_grade_review.py", "curriculum/scheduler.py", "semantics/core.py", "semantics/functions.py",
+    "next_grade_review.py", "curriculum/scheduler.py", "semantics/foundation/core.py", "semantics/foundation/functions.py",
     "verification/cases.py", "verification/expressions.py",
     "verification/review_evidence.py", "verification/curriculum.py",
-    "semantics/catalog.py", "semantics/domains.py", "semantics/laws.py",
+    "semantics/foundation/catalog.py", "semantics/foundation/domains.py", "semantics/foundation/laws.py",
     "curriculum_contracts.py", "verification/construction_contracts.py",
     "verification/laws.py", "grade_release_plan.py", "selection_outcomes.py",
 )

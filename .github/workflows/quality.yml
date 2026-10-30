@@ -49,7 +49,7 @@ jobs:
           bilqis_mlx/factory/tests/test_factory_construction.py
           bilqis_mlx/factory/tests/test_curriculum_compiler.py
           bilqis_mlx/factory/tests/test_grade_admission.py
-          bilqis_mlx/semantics/tests/test_domain_contracts.py
+          bilqis_mlx/semantics/tests/foundation/test_domain_contracts.py
           bilqis_mlx/verification/tests/test_construction_contracts.py
           bilqis_mlx/factory/tests/test_release_outcome_contracts.py
       - name: Check architecture, documentation and error contracts
