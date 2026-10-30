@@ -18,7 +18,9 @@ from bilqis_mlx.semantics.atlas_snapshot import (
     AtlasArtifactSelection, load_pinned_atlas_snapshot,
 )
 from lib.ithkuil.src.skos.errors import ProfileError
-from lib.ithkuil.src.skos.residue_source import composition_law_witness
+from lib.ithkuil.src.skos.source_owner.composition_law import (
+    composition_law_witness,
+)
 
 
 MORPHOLOGY_SOURCE_SCHEMA = "bilqis.morphology-source-law-proposal/v1"
