@@ -78,8 +78,9 @@ def policy_epoch(receipt, release, *, configured_steps, batch_size, settings, en
               "runtime/candidate_evidence.py", "runtime/state.py",
               "profiles/retention.py", "compatibility/historical_teacher_policy.py")
     def owner_path(name):
-        if name.startswith("runtime/"):
-            module = "bilqis_mlx.runtime." + Path(name).stem
+        if name.startswith(("runtime/", "learning/")):
+            package, filename = name.split("/", 1)
+            module = f"bilqis_mlx.{package}.{Path(filename).stem}"
             return Path(importlib.util.find_spec(module).origin)
         return root / name
 
