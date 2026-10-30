@@ -328,7 +328,7 @@ def _outbox_connection(path: Path):
         connection.close()
 
 
-def append_outbox(path: Path, event: AkashaEvent, *, projection_binding=None) -> bool:
+def _prepare_outbox_entry(event: AkashaEvent, projection_binding):
     if not isinstance(event, AkashaEvent):
         _invalid("BAMF_C10_EVENT_ARGUMENT_INVALID")
     event.validate()
@@ -343,24 +343,39 @@ def append_outbox(path: Path, event: AkashaEvent, *, projection_binding=None) ->
         binding_json = _canonical(projection_binding)
     envelope = _canonical({
         **asdict(event), "kind": event.kind.value})
+    return event, envelope, binding_json, owner_source_key
+
+
+def append_outbox_batch(path: Path, entries: tuple) -> int:
+    """Append a complete batch in one transaction, or leave all rows unchanged."""
+    prepared = tuple(_prepare_outbox_entry(event, binding) for event, binding in entries)
+    if not prepared:
+        return 0
+    appended = 0
     with _outbox_connection(path) as connection:
         connection.execute("BEGIN IMMEDIATE")
-        if owner_source_key is not None:
-            source_prior = connection.execute("SELECT event_id FROM akasha_events WHERE owner_source_key = ?", (owner_source_key,)).fetchone()
-            if source_prior is not None and source_prior[0] != event.event_id:
-                _invalid("BAMF_C10_OWNER_SOURCE_EVENT_CONFLICT")
-        prior = connection.execute(
-            "SELECT payload_digest, envelope_json, projection_binding_json FROM akasha_events "
-            "WHERE event_id = ?", (event.event_id,)).fetchone()
-        if prior is not None:
-            if prior != (event.payload_digest, envelope, binding_json):
-                _invalid("BAMF_C10_EVENT_ID_CONFLICT")
-            return False
-        connection.execute(
-            "INSERT INTO akasha_events (event_id, payload_digest, envelope_json, projection_binding_json, owner_source_key) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (event.event_id, event.payload_digest, envelope, binding_json, owner_source_key))
-        return True
+        for event, envelope, binding_json, owner_source_key in prepared:
+            if owner_source_key is not None:
+                source_prior = connection.execute("SELECT event_id FROM akasha_events WHERE owner_source_key = ?", (owner_source_key,)).fetchone()
+                if source_prior is not None and source_prior[0] != event.event_id:
+                    _invalid("BAMF_C10_OWNER_SOURCE_EVENT_CONFLICT")
+            prior = connection.execute(
+                "SELECT payload_digest, envelope_json, projection_binding_json FROM akasha_events "
+                "WHERE event_id = ?", (event.event_id,)).fetchone()
+            if prior is not None:
+                if prior != (event.payload_digest, envelope, binding_json):
+                    _invalid("BAMF_C10_EVENT_ID_CONFLICT")
+                continue
+            connection.execute(
+                "INSERT INTO akasha_events (event_id, payload_digest, envelope_json, projection_binding_json, owner_source_key) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (event.event_id, event.payload_digest, envelope, binding_json, owner_source_key))
+            appended += 1
+    return appended
+
+
+def append_outbox(path: Path, event: AkashaEvent, *, projection_binding=None) -> bool:
+    return bool(append_outbox_batch(path, ((event, projection_binding),)))
 
 
 def _read_event(row: tuple[str]) -> AkashaEvent:
