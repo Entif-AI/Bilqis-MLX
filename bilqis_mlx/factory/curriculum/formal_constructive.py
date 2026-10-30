@@ -7,6 +7,7 @@ This module joins the first two without claiming the third.
 from __future__ import annotations
 
 from dataclasses import dataclass, fields
+import hashlib
 import json
 import re
 
@@ -20,6 +21,7 @@ from bilqis_mlx.semantics.cognitive_operators import (
 )
 from bilqis_mlx.semantics.core import Signature
 from bilqis_mlx.semantics.domains import contract_digest
+from bilqis_mlx.semantics.foundation import numeric as released_numeric
 
 
 FORMAL_SOURCE_SCHEMA = "bilqis.formal-source-operator-proposal/v1"
@@ -34,6 +36,7 @@ _PREFIXES = {
 }
 _FORMAL_ABI_SOURCES = frozenset({
     "FORMAL_DOMAIN", "PRIOR_ACCEPTED_NATIVE_REGISTRY"})
+_NUMERIC_SOURCE_OWNER = "bilqis_mlx/semantics/numeric_v1.json"
 
 
 def _fail(reason: str) -> None:
@@ -127,6 +130,27 @@ def _operator_id(family: str, semantic_id: str) -> str | None:
     return None
 
 
+def _numeric_source_signature(
+    binding: FormalDomainBinding, semantic_id: str,
+) -> Signature | None:
+    """Return the exact released numeric signature, never infer it from a label."""
+    if binding.family != "numeric":
+        return None
+    if binding.source_owner != _NUMERIC_SOURCE_OWNER:
+        return None
+    payload = released_numeric.CONTRACT_PATH.read_bytes()
+    if hashlib.sha256(payload).hexdigest() != binding.source_sha256:
+        _fail("BAMF_FORMAL_SOURCE_BINDING_DRIFT")
+    node = next(
+        (item for item in released_numeric.CONTRACT["append_only_nodes"]
+         if item.get("semantic_id") == semantic_id),
+        None,
+    )
+    if node is None or not isinstance(node.get("signature"), str):
+        return None
+    return Signature.parse(node["signature"])
+
+
 def _resolve_from_bindings(
     bindings: tuple[FormalDomainBinding, ...],
     abi_entries: tuple[AbiEntry, ...],
@@ -164,6 +188,15 @@ def _resolve_from_bindings(
                 uncovered.append((semantic_id, "OPERATOR_UNREGISTERED"))
                 continue
             spec = registry.resolve(operator_id)
+            source_signature = _numeric_source_signature(binding, semantic_id)
+            if binding.family == "numeric" and source_signature is None:
+                uncovered.append(
+                    (semantic_id, "SOURCE_SIGNATURE_UNAVAILABLE"))
+                continue
+            if source_signature is not None and source_signature != spec.signature:
+                uncovered.append(
+                    (semantic_id, "OPERATOR_SOURCE_SIGNATURE_MISMATCH"))
+                continue
             witnesses.append(FormalSourceOperator(
                 semantic_id, binding.family, abi.index, spec,
                 contract_digest(binding), operator_grant_digest(spec),

@@ -14,31 +14,34 @@ from bilqis_mlx.factory.tests.formal_lesson_fixtures import (
 )
 
 
-_CASES = (
+_EXECUTABLE_CASES = (
     ("BOOL_NOT", (("Boolean", True),), False),
     ("BOOL_NOT", (("Boolean", False),), True),
     ("BOOL_AND", (("Boolean", True), ("Boolean", True)), True),
     ("BOOL_AND", (("Boolean", True), ("Boolean", False)), False),
     ("BOOL_AND", (("Boolean", False), ("Boolean", True)), False),
     ("BOOL_AND", (("Boolean", False), ("Boolean", False)), False),
-    ("COUNT", (("EntitySet", ()),), 0),
-    ("COUNT", (("EntitySet", ("alpha",)),), 1),
-    ("COUNT", (("EntitySet", ("alpha", "beta")),), 2),
     ("SUCC", (("Number", 0),), 1),
     ("SUCC", (("Number", 1),), 2),
     ("SUCC", (("Number", 4),), 5),
     ("SUCC", (("Number", 9),), 10),
 )
+_HELD_COUNT_CASES = (
+    (("EntitySet", ()),),
+    (("EntitySet", ("alpha",)),),
+    (("EntitySet", ("alpha", "beta")),),
+)
 _SEMANTIC = {operator_id: semantic_id for semantic_id, _, operator_id in FORMAL}
 
 
 class FormalVariationTests(TestCase):
-    def test_thirteen_cases_exercise_each_declared_axis(self):
+    def test_thirteen_cases_separate_lawful_variation_from_count_debt(self):
         seen = {operator_id: set() for operator_id in _SEMANTIC}
+        source = _source()
         with patch(
                 "bilqis_mlx.factory.formal_lessons.resolve_formal_source_operators",
-                return_value=_source()):
-            for operator_id, operands, expected in _CASES:
+                return_value=source):
+            for operator_id, operands, expected in _EXECUTABLE_CASES:
                 with self.subTest(operator_id=operator_id, operands=operands):
                     binding, typed_inputs = _case(operator_id, *operands)
                     lesson = construct_formal_lesson(
@@ -50,6 +53,18 @@ class FormalVariationTests(TestCase):
                     self.assertTrue(check_formal_lesson(
                         lesson, lesson.positive, _selection(), binding))
                     seen[operator_id].add(
+                        tuple(item.value for item in typed_inputs))
+            for operands in _HELD_COUNT_CASES:
+                with self.subTest(operator_id="COUNT", operands=operands):
+                    binding, typed_inputs = _case("COUNT", *operands)
+                    with self.assertRaises(BilqisError) as caught:
+                        construct_formal_lesson(
+                            _selection(), _SEMANTIC["COUNT"],
+                            typed_inputs, binding)
+                    self.assertEqual(
+                        caught.exception.context["reason"],
+                        "BAMF_FORMAL_LESSON_SOURCE_UNCOVERED")
+                    seen["COUNT"].add(
                         tuple(item.value for item in typed_inputs))
 
         self.assertEqual(len(seen["BOOL_NOT"]), 2)

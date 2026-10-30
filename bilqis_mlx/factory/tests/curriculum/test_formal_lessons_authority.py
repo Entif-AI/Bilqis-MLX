@@ -56,8 +56,6 @@ class FormalLessonAuthorityTests(unittest.TestCase):
                     (FORMAL[0][0], "BOOL_NOT", (("Boolean", True),), False),
                     (FORMAL[1][0], "BOOL_AND",
                      (("Boolean", True), ("Boolean", False)), False),
-                    (FORMAL[2][0], "COUNT",
-                     (("EntitySet", ("alpha", "beta")),), 2),
                     (FORMAL[3][0], "SUCC", (("Number", 2),), 3)):
                 with self.subTest(operator=operator_id):
                     binding, typed = _case(
@@ -70,13 +68,11 @@ class FormalLessonAuthorityTests(unittest.TestCase):
                     self.assertFalse(check_formal_lesson(
                         lesson, lesson.contrast, selection, binding))
 
-    def test_four_released_laws_have_typed_source_contrasts(self):
+    def test_lawful_released_laws_have_typed_source_contrasts(self):
         cases = (
             (FORMAL[0][0], "BOOL_NOT", (("Boolean", True),), False),
             (FORMAL[1][0], "BOOL_AND",
              (("Boolean", True), ("Boolean", False)), False),
-            (FORMAL[2][0], "COUNT",
-             (("EntitySet", ("alpha", "beta")),), 2),
             (FORMAL[3][0], "SUCC", (("Number", 2),), 3),
         )
         with patch(
@@ -102,6 +98,23 @@ class FormalLessonAuthorityTests(unittest.TestCase):
                         lesson, lesson.positive, _selection(), binding))
                     self.assertFalse(check_formal_lesson(
                         lesson, lesson.contrast, _selection(), binding))
+
+    def test_a01_numberset_count_cannot_be_relabelled_as_entityset_count(self):
+        binding, typed = _case(
+            "COUNT", ("EntitySet", ("alpha", "beta")))
+        source = _source()
+        self.assertIn(
+            (FORMAL[2][0], "OPERATOR_SOURCE_SIGNATURE_MISMATCH"),
+            source.uncovered)
+        with patch(
+                "bilqis_mlx.factory.formal_lessons.resolve_formal_source_operators",
+                return_value=source):
+            with self.assertRaises(BilqisError) as caught:
+                construct_formal_lesson(
+                    _selection(), FORMAL[2][0], typed, binding)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_FORMAL_LESSON_SOURCE_UNCOVERED")
 
     def test_checker_rejects_forged_gold_without_calling_generator(self):
         binding, inputs = _case("SUCC", ("Number", 2))
