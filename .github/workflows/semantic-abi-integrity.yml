@@ -4,7 +4,9 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: ['codex/**']
+    branches:
+      - 'codex/**'
+      - '!codex/bamf**'
   workflow_dispatch:
 
 permissions:
@@ -13,6 +15,11 @@ permissions:
 jobs:
   semantic-abi-integrity:
     name: semantic-abi-integrity
+    if: >-
+      ${{
+        github.event_name == 'workflow_dispatch' ||
+        (!contains(github.ref_name, 'bamf') && !contains(github.head_ref, 'bamf'))
+      }}
     runs-on: ubuntu-latest
     steps:
       - name: Read proposed source

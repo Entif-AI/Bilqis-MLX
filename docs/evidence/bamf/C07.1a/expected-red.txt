@@ -1,0 +1,22 @@
+load test module /Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/runtime/tests/test_atlas_admission.py ... ERROR
+
+======================================================================
+ERROR: load test module /Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/runtime/tests/test_atlas_admission.py
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf02-c-runtime/scripts/run_tests.py", line 48, in runTest
+    raise self._error.with_traceback(self._traceback)
+  File "/Users/cr8s/Code/bamf02-c-runtime/scripts/run_tests.py", line 99, in load_test_files
+    spec.loader.exec_module(module)
+  File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/runtime/tests/test_atlas_admission.py", line 10, in <module>
+    from bilqis_mlx.runtime.atlas_admission import (
+ModuleNotFoundError: No module named 'bilqis_mlx.runtime.atlas_admission'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+FAILED (errors=1)
+TEST_TOTALS total=1 passed=0 failed=1 skipped=0 errors=1
+0 passed, 1 failed, 0 skipped

@@ -475,6 +475,8 @@ def parse_args(argv=None):
         p=actions.add_parser(name)
         p.add_argument("--run-dir",type=Path,default=DEFAULT_RUN)
         if name=="train":
+            from .runtime.atlas_admission import add_atlas_admission_arguments
+            add_atlas_admission_arguments(p)
             p.add_argument("--legacy-code-root", type=Path,
                            help="Explicit pinned predecessor source for an independent worktree")
             p.add_argument("--champion-checkpoint", type=Path,
@@ -747,6 +749,8 @@ def _main(args):
         if args.action=="diagnostics":return diagnostics(args.run_dir)
         if args.action in ("explain", "explain-error"):
             return _explain_code(args.code)
+        from .runtime.atlas_admission import validate_atlas_command_request
+        validate_atlas_command_request(args)
         _guard_independent_no_retention(args)
         from .runtime.topology_lifecycle import topology_from_file, operator_topology
         topology = topology_from_file(args.model_topology)

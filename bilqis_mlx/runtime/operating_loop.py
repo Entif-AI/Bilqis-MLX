@@ -38,6 +38,19 @@ import time as _time
 import uuid as _uuid
 
 
+def _stage_atlas_frontier_attempt(run_dir, receipt, proposal, proposal_file, *,
+                                  record=_runtime_checkpoints._record):
+    from .atlas_admission import stage_unleased_atlas_proposal
+    result = stage_unleased_atlas_proposal(run_dir, proposal)
+    record(run_dir, {
+        "event": "SCHOOL_ATLAS_ADMISSION_STAGED", "generation": receipt["generation"],
+        "proposal_sha256": result.proposal_sha256, "proposal_file": proposal_file,
+        "lease_sha256": result.lease_sha256, "reason": result.reason,
+        "operator_action": result.operator_action, "actual_neural_updates": 0,
+    })
+    return _bilqis_mlx_operator_vocabulary.ATLAS_ADMISSION_STAGED.code
+
+
 def _numeric_entry_transition(release, graph, *, full_grade_b, experiment_budget):
     initial, terminal = _profiles_catalog.numeric_scope_bounds()
     transition = _profiles_catalog.numeric_entry_transition(
@@ -382,23 +395,9 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
                 proposal, proposal_file = autonomy_session.propose_source_frontier_work(
                     school.current_student, graph)
                 if proposal.disposition.value == "PROPOSAL":
-                    params, optimizer, graph, receipt, course = _runtime_release_adoption._adopt_jit_proposal(
-                        mx, run_dir, receipt, course_a, source_root, graph, params, optimizer,
-                        autonomy_session, proposal, reserve_gib=reserve_gib)
-                    executable_release = _runtime_admission._read_executable_factory_release_artifact(
-                        run_dir, receipt)
-                    schedule_program = _factory_schedule.schedule_program_from_executable_release(executable_release)
-                    course = schedule_program
-                    autonomy_session.refresh_release(executable_release)
-                    _runtime_checkpoints._record(run_dir, {
-                        "event": "SCHOOL_AUTONOMY_JIT_PROPOSAL_ADOPTED",
-                        "generation": receipt["generation"],
-                        "proposal_sha256": proposal.proposal_sha256,
-                        "proposal_file": proposal_file,
-                        "factory_release_sha256": receipt["factory_release_sha256"],
-                        "actual_neural_updates": 0,
-                    })
-                    continue
+                    reason = _stage_atlas_frontier_attempt(
+                        run_dir, receipt, proposal, proposal_file)
+                    break
             reason = _runtime_session.session_stop_reason(
                 stage=("MAIN" if autonomy_session is not None and
                        school.stage == "AWAITING_NEXT_GRADE" else school.stage),
