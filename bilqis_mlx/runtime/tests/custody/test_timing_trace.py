@@ -44,7 +44,7 @@ class TimingTraceTests(unittest.TestCase):
     def test_marker_survives_process_exit_without_context_unwind(self):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / "trace.jsonl"
-            repo = Path(__file__).resolve().parents[3]
+            repo = Path(__file__).resolve().parents[4]
             script = (
                 "import os,sys\n"
                 f"sys.path.insert(0,{str(repo)!r})\n"

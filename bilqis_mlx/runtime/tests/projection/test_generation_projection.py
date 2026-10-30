@@ -9,7 +9,7 @@ from bilqis_mlx.state_dag import persist
 from bilqis_mlx.runtime.checkpoints import _with_delivery_outbox
 from bilqis_mlx.runtime.generation_projection import project_accepted_generation
 from bilqis_mlx.runtime.bamf_projection import read_projection_outbox
-from bilqis_mlx.runtime.tests.test_bamf_projection import _contract
+from bilqis_mlx.runtime.tests.projection.test_bamf_projection import _contract
 
 
 class GenerationProjectionTests(unittest.TestCase):

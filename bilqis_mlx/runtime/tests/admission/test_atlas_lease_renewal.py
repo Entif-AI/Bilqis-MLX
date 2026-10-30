@@ -8,7 +8,7 @@ from unittest.mock import patch
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.atlas_admission import persist_atlas_lease, read_atlas_lease
 from bilqis_mlx.runtime.atlas_admission import renew_atlas_lease
-from bilqis_mlx.runtime.tests.test_atlas_admission import _lease, _run, _REGISTRY, _signed
+from bilqis_mlx.runtime.tests.admission.test_atlas_admission import _lease, _run, _REGISTRY, _signed
 
 
 class AtlasLeaseRenewalTests(unittest.TestCase):

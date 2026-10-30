@@ -10,7 +10,7 @@ from unittest.mock import patch
 from bilqis_mlx import cli
 from bilqis_mlx.runtime import operating_loop, release_adoption
 from bilqis_mlx.runtime.atlas_admission import stage_unleased_atlas_proposal
-from bilqis_mlx.runtime.tests.test_atlas_admission import _lease
+from bilqis_mlx.runtime.tests.admission.test_atlas_admission import _lease
 from bilqis_mlx.runtime.tests import test_jit_adoption as native_fixture
 from dataclasses import asdict
 
