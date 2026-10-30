@@ -18,7 +18,7 @@ from .akasha_staging_contracts import (
     _public_payload,
     StagingProjection,
     PromotionReceipt,
- )
+)
 
 from .akasha_staging_queries import (
     VERIFIED_STAGE_SCHEMA,
@@ -28,7 +28,7 @@ from .akasha_staging_queries import (
     VerifiedStage,
     _query_digest,
     verify_staging_projection,
- )
+)
 
 from .akasha_staging_store import (
     _STAGE_SCHEMA_SQL,
@@ -36,4 +36,4 @@ from .akasha_staging_store import (
     promote_staging_projection,
     read_staging_projection,
     read_active_projection,
- )
+)

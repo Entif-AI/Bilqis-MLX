@@ -121,6 +121,7 @@ class StagingProjection:
             _invalid("BAMF_C10_STAGING_PROJECTION_INVALID")
         counts = {}
         for event in self.public_events:
+            PublicEvent.__post_init__(event)
             counts[event.kind.value] = counts.get(event.kind.value, 0) + 1
         if self.census != tuple(sorted(counts.items())):
             _invalid("BAMF_C10_STAGING_CENSUS_DRIFT")

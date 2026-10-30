@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from pathlib import Path
 import sqlite3
 from .akasha_staging_contracts import (
-    StagingProjection, PromotionReceipt, _invalid, _sha,
+    StagingProjection, PromotionReceipt, _invalid, _sha, _digest,
 )
 from .akasha_staging_queries import VerifiedStage, verify_staging_projection
 
@@ -91,10 +91,14 @@ def read_staging_projection(
         return None
     with _stage_connection(path) as connection:
         row = connection.execute(
-            "SELECT canonical_json FROM akasha_stages "
+            "SELECT canonical_json, census_digest FROM akasha_stages "
             "WHERE stage_digest=?", (stage_digest,)).fetchone()
-    return (StagingProjection.from_canonical_json(row[0])
-            if row is not None else None)
+    if row is None:
+        return None
+    stage = StagingProjection.from_canonical_json(row[0])
+    if stage.stage_digest != stage_digest or _digest(stage.census) != row[1]:
+        _invalid("BAMF_C10_STAGING_STORED_INVALID")
+    return stage
 
 
 def read_active_projection(path: Path) -> StagingProjection | None:
@@ -108,4 +112,3 @@ def read_active_projection(path: Path) -> StagingProjection | None:
         ).fetchone()
     return (read_staging_projection(path, row[0])
             if row is not None else None)
-
