@@ -404,11 +404,11 @@ handling.
 
 ### Wave 6: closure
 
-`python3 scripts/check_factory_closure.py` must report `FACTORY_CLOSURE_OK`.
+`python3 scripts/quality/check_factory_closure.py` must report `FACTORY_CLOSURE_OK`.
 
 Static closure is necessary but insufficient. Real-provider behavior and the full Grade Z runtime proof are also required.
 
-**Status: complete.** `scripts/check_factory_closure.py` reports
+**Status: complete.** `scripts/quality/check_factory_closure.py` reports
 `FACTORY_CLOSURE_OK`, the original architecture guard reports
 `FACTORY_ARCHITECTURE_OK`, pinned real-provider profile tests pass, and the
 Grade-Z system proof passes.

@@ -38,7 +38,7 @@ Do not broaden this list during ordinary execution. Exact-symbol reference check
 
 ## Write allowlist
 
-- `scripts/check_factory_workstack.py`
+- `scripts/bamf/check_factory_workstack.py`
 - `scripts/tests/test_check_factory_workstack.py`
 
 No other tracked path may be modified by this leaf.

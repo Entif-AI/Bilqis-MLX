@@ -39,7 +39,7 @@ Do not broaden this list during ordinary execution. Exact-symbol reference check
 ## Write allowlist
 
 - `docs/tasks/0003_FACTORY_CLOSURE_CODEX_RUN_PROTOCOL.md`
-- `scripts/check_factory_workstack.py`
+- `scripts/bamf/check_factory_workstack.py`
 - `scripts/tests/test_check_factory_workstack.py`
 
 No other tracked path may be modified by this leaf.
@@ -71,7 +71,7 @@ Owned tests:
 
 Commands:
 - `python3 -m unittest scripts.tests.test_check_factory_workstack`
-- `python3 scripts/check_docs.py`
+- `python3 scripts/quality/check_docs.py`
 
 **Verification tier:** `T0_UNIT`.
 

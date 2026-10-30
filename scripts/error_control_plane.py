@@ -51,7 +51,7 @@ def _code_hint(node: ast.AST) -> str:
 
 def raw_error_sites() -> tuple[dict, ...]:
     """Return grouped production raise sites whose identity contains raw prose."""
-    from operator_contract_audit import _repository_python_files
+    from operations.operator_contract_audit import _repository_python_files
 
     counts: Counter[tuple[str, str, str, str]] = Counter()
     for path in _repository_python_files(ROOT):
@@ -266,7 +266,7 @@ def check() -> int:
     if not BASELINE.is_file():
         print("ERROR_CONTROL_BASELINE_MISSING", file=sys.stderr)
         return 2
-    from operator_contract_audit import (
+    from operations.operator_contract_audit import (
         _read_baseline, debt_counter, new_debt, scan_tree,
     )
     source_report = scan_tree(ROOT)
