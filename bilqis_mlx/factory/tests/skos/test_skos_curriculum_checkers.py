@@ -54,7 +54,7 @@ DEFINITIONS = (
 )
 
 
-from bilqis_mlx.factory.tests.test_skos_curriculum import _snapshot
+from bilqis_mlx.factory.tests.sources.test_skos_curriculum import _snapshot
 
 class SemanticFamilyCheckerTests(unittest.TestCase):
     def test_second_true_relation_from_same_source_is_not_negative(self):

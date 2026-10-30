@@ -5,7 +5,7 @@ from bilqis_mlx.factory.assessment import assessment_scope_contract
 from bilqis_mlx.factory.curriculum_definition import from_legacy_course
 from bilqis_mlx.factory.executable_release import compile_executable_factory_release
 from bilqis_mlx.factory.execution import CurriculumProfile
-from bilqis_mlx.factory.tests.test_executable_consumers import _profile
+from bilqis_mlx.factory.tests.lifecycle.test_executable_consumers import _profile
 from bilqis_mlx.factory.tests.test_executable_release import _boolean_answers
 from bilqis_mlx.factory.tests.test_execution_plan import _synthetic_boolean_course
 

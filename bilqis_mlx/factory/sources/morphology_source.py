@@ -22,7 +22,7 @@ from bilqis_mlx.semantics.atlas_snapshot import (
 
 MORPHOLOGY_SOURCE_SCHEMA = "bilqis.morphology-source-law-proposal/v1"
 MORPHOLOGY_SOURCE_STATUS = "SOURCE_ROW_EVIDENCE_NOT_ADMITTED"
-_CSV_ROOT = Path(__file__).resolve().parents[2] / "lib/ithkuil/_data/csv"
+_CSV_ROOT = Path(__file__).resolve().parents[3] / "lib/ithkuil/_data/csv"
 _TABLES = (
     ("morpheme_compositions.csv", "composition_id"),
     ("composition_components.csv", "component_id"),

@@ -6,7 +6,7 @@ from bilqis_mlx.factory.assessment import qualification_complete
 from bilqis_mlx.factory.model import AssessmentClass, LearningEvidence
 
 
-FIXTURE = Path(__file__).parent / "fixtures/historical_b_false_mastery.json"
+FIXTURE = Path(__file__).resolve().parents[1] / "fixtures/historical_b_false_mastery.json"
 
 
 class HistoricalGeneralizationRegressionTests(unittest.TestCase):

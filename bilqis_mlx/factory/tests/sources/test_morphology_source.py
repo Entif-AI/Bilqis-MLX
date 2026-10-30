@@ -70,7 +70,7 @@ class MorphologySourceTests(unittest.TestCase):
         corpus = os.environ.get("BILQIS_ATLAS_REAL_CORPUS")
         if not corpus:
             self.skipTest("real pinned A01 corpus not supplied")
-        root = Path(__file__).resolve().parents[3]
+        root = Path(__file__).resolve().parents[4]
         prior = root / "bilqis_mlx/semantics/copular_registry_v1.json"
         boolean = root / "bilqis_mlx/semantics/legacy_abi_v1.json"
         numeric = root / "bilqis_mlx/semantics/numeric_v1.json"
