@@ -1,0 +1,91 @@
+"""Pinned source-owner boundary for raw-atom semantic candidates."""
+from dataclasses import replace
+import os
+from unittest import TestCase, skipUnless
+
+from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.frame_codec import SchemaTagMap
+from bilqis_mlx.semantics.frame_compiler import atom_evidence_digest, compile_prefix
+from bilqis_mlx.semantics.source_atom_binding import AtomBindingDisposition
+from bilqis_mlx.semantics.tests.source_atom_binding.helpers import ROOT, case
+from bilqis_mlx.source_adapters.atom_binding import (
+    build_source_atom_handoff, require_pinned_embedding_ready,
+    revalidate_source_atom_handoff, verify_source_row,
+)
+from bilqis_mlx.source_adapters.copular import CAPABILITY, SYMBOL
+from bilqis_mlx.source_adapters.copular_curriculum import proposed_graph
+from bilqis_mlx.source_adapters.school import live_source_registry
+from bilqis_mlx.live_grade_c import registry_graph
+
+REAL_BUNDLE = os.environ.get("BILQIS_A01_ATLAS_BUNDLE", "")
+
+
+class SourceAtomAdapterTests(TestCase):
+    def test_unsupported_or_unreproducible_source_row_has_no_witness(self):
+        row = {"generator": "missing.generator", "oracle": "missing.oracle",
+               "capability": "x", "tokens": [0]}
+        witness, reason = verify_source_row(
+            row, {"tokens": ["alpha"]}, source_root=ROOT,
+            source_seed=1, source_each=1, course=None,
+            source_profile_parameters=None)
+        self.assertIsNone(witness)
+        self.assertEqual(reason, "SOURCE_ATOM_SOURCE_ADAPTER_UNSUPPORTED")
+
+    @skipUnless(REAL_BUNDLE, "real pinned A01 artifact not mounted")
+    def test_real_pinned_copular_row_reaches_abi_227_but_remains_source_held(self):
+        graph = proposed_graph(registry_graph())
+        adapter = live_source_registry().require(
+            "bilqis.ithkuil-reference-identity-constructor/v1",
+            "bilqis.ithkuil-reference-identity-oracle/v1")
+        row = adapter.draw(source_root=ROOT, graph=graph, course=None,
+                           capability=CAPABILITY, seed=17, each=1)[0]
+        symbols = tuple(graph["tokens"][index] for index in row["tokens"])
+        ast, config, _ = case(symbols)
+        release = "58e0c281b5da18b9b7e6c803709b29eeeb0a88f16b06f48de692808e2fb88306"
+        ast = replace(ast, source_instance_id=row["source_id"])
+        task = replace(config.task, semantic_release=release)
+        schema_map = SchemaTagMap.from_schemas(release, ())
+        atoms_by_reference = {atom.source_reference: atom for atom in ast.atoms}
+        grants = tuple(replace(
+            grant, semantic_release=release,
+            evidence_digest=atom_evidence_digest(
+                ast.source_instance_id, atoms_by_reference[grant.source_handle], release))
+            for grant in config.frontier.grants)
+        config = replace(config, task=task, schema_map=schema_map,
+                         frontier=replace(config.frontier, grants=grants))
+        compiled = compile_prefix(ast, len(ast.atoms), release, config)
+        selection = AtlasArtifactSelection(
+            REAL_BUNDLE,
+            "5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7",
+            release,
+            "f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec")
+        handoff = build_source_atom_handoff(
+            compiled, config, selection, row, graph,
+            source_root=ROOT, source_seed=17, source_each=1, course=None)
+        binding = handoff.bindings[symbols.index(SYMBOL)]
+        self.assertEqual(binding.candidate_abi_index, 227)
+        self.assertEqual(binding.candidate_semantic_id,
+                         "ithkuil:LEXSENSE-5286ade9db42c7/finite-reference-identity/v1")
+        self.assertEqual(binding.disposition, AtomBindingDisposition.SOURCE_HELD)
+        self.assertIn("SOURCE_ATOM_REFERENCE_AUTHORITY_UNAVAILABLE", binding.reason_codes)
+        self.assertIn("SOURCE_ATOM_INSTANCE_AUTHORITY_UNAVAILABLE", binding.reason_codes)
+        self.assertIn("SOURCE_ATOM_TYPE_AUTHORITY_UNAVAILABLE", binding.reason_codes)
+        self.assertFalse(handoff.embedding_ready)
+        revalidate_source_atom_handoff(
+            handoff, compiled, config, selection, row, graph,
+            source_root=ROOT, source_seed=17, source_each=1, course=None)
+        with self.assertRaises(BilqisError) as caught:
+            require_pinned_embedding_ready(
+                handoff, compiled, config, selection, row, graph,
+                source_root=ROOT, source_seed=17, source_each=1, course=None)
+        self.assertEqual(caught.exception.context["reason"], "BAMF_SOURCE_ATOM_BINDING_HELD")
+        for changed in (replace(selection, release_sha256="9" * 64),
+                        replace(selection, bundle_id="8" * 64)):
+            with self.assertRaises(BilqisError):
+                build_source_atom_handoff(
+                    compiled, config, changed, row, graph,
+                    source_root=ROOT, source_seed=17, source_each=1, course=None)
+        with self.assertRaises(BilqisError):
+            replace(handoff, visible_end=handoff.visible_end + 1,
+                    bindings=(*handoff.bindings, handoff.bindings[-1]))
