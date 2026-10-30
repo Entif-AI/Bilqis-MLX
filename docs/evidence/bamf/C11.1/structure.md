@@ -110,3 +110,30 @@ Exact nonpassing identities and machine-readable totals are in
 `numeric-structure-result.json`. Hosted run `41105548030` failed on the inherited
 `GENERIC_GRADE_IDENTITY_DISPATCH A,B` architecture finding; that failure is not
 waived by the independently passing portable test selection.
+
+## Generated-test owner continuation
+
+The next encountered `semantic_test_generation.py` owner was 399 lines. Its
+71-line public CLI now imports cohesive contracts, case construction, storage,
+publication and validation modules. Every owner and mirrored companion is below
+240 lines. All seven historical test methods are retained unchanged.
+
+Five independent contract-fixture tests pass. The immutable manifest, pointer and
+Boolean-suite bytes match a fixture captured before extraction exactly; restart,
+tampered gold and interrupted pointer replacement are exercised against real
+filesystem artifacts. These are explicitly declared software contract fixtures,
+not source admission or retained-learning evidence. Normal commands still require
+explicit regeneration before writing artifacts.
+
+The original source-backed tests were attempted before mutation. Their setup is
+blocked by the absent pinned historical `student-116760-7e9af4651f28.pt`; installing
+the test-only Torch dependency did not waive that check. This witness is a limit
+of these historical generated-test proofs, not a new BAMF/C16 prerequisite. No
+historical checkpoint was substituted or manufactured.
+
+Fresh-context EGM comparison preserved all 15 original functions/classes and all
+seven test methods. The only function-body difference names the identical
+repeated unsafe-release error string once. Original comments, selectors, CLI,
+serialization and atomic publication are preserved. No Blockers/Majors found;
+reviewers did not execute the writer's tests. Staged structure/governance and
+changed-file hygiene remain clean.
