@@ -24,7 +24,7 @@ from bilqis_mlx.live_grade_b import independent_truth, live_course
 from bilqis_mlx.source_adapters.school import draw_b
 
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[4]
 SOURCE_ROOT = ROOT / "vendor" / "legacy-v16"
 MANIFEST = ROOT / "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json"
 

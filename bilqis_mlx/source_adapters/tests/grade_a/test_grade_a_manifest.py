@@ -7,7 +7,7 @@ import unittest
 from bilqis_mlx.grade_a_manifest import build_manifest, verify_manifest
 from bilqis_mlx.grade_a_oracle import evaluate
 
-ROOT = Path(__file__).resolve().parents[3] / "vendor" / "legacy-v16"
+ROOT = Path(__file__).resolve().parents[4] / "vendor" / "legacy-v16"
 CHECKPOINT = ROOT / "runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt"
 
 
@@ -48,7 +48,7 @@ class GradeAManifestTests(unittest.TestCase):
             verify_manifest(changed, ROOT, CHECKPOINT)
 
     def test_committed_candidate_manifest_reproduces_all_exact_source_items(self):
-        path = Path(__file__).resolve().parents[3] / "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json"
+        path = Path(__file__).resolve().parents[4] / "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json"
         recorded = json.loads(path.read_text(encoding="utf-8"))
         self.assertEqual(recorded, self.manifest)
         self.assertEqual(recorded["exam_rubric_sha256"],

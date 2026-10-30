@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from ...errors import BilqisError
 from ..atlas_projection import FrozenAtlasSnapshot
+from ..context_eligibility import PUBLIC_FORMAL
 from ..domains import contract_digest
 from ..frame_compiler import (
     CompiledFrameBatch, FrameCompilerConfig, PositionKind,
@@ -11,7 +12,7 @@ from ..frame_compiler import (
 from .binding import make_binding
 from .common import AtomBindingDisposition, SOURCE_ATOM_RIGHTS_SCHEMA, invalid
 from .handoff import SourceAtomHandoff, make_handoff
-from .witness import SourceRowWitness
+from .witness import SourceAtomOwnerProjection, SourceRowWitness
 
 
 def _rights_digest(config: FrameCompilerConfig, atom, source_id: str) -> tuple[str, bool]:
@@ -31,8 +32,9 @@ def _rights_digest(config: FrameCompilerConfig, atom, source_id: str) -> tuple[s
         config.frontier.correction_generation,
         grant,
     )
-    return contract_digest(state), _grant_allows(
-        grant, evidence, config, config.task.semantic_release)
+    return contract_digest(state), (
+        grant is not None and grant.source_regime == PUBLIC_FORMAL
+        and _grant_allows(grant, evidence, config, config.task.semantic_release))
 
 
 def _resolve_visible_atoms(
@@ -41,8 +43,9 @@ def _resolve_visible_atoms(
     snapshot: FrozenAtlasSnapshot,
     witness: SourceRowWitness,
     graph: dict,
+    *, source_projection: SourceAtomOwnerProjection | None = None,
 ) -> SourceAtomHandoff:
-    """Resolve only candidates; no current path may mint a BOUND atom."""
+    """Resolve candidates; only rederived source projections can bind an atom."""
     if (type(compiled) is not CompiledFrameBatch
             or type(config) is not FrameCompilerConfig
             or type(snapshot) is not FrozenAtlasSnapshot
@@ -52,11 +55,18 @@ def _resolve_visible_atoms(
             or compiled.semantic_release != snapshot.release_sha256
             or config.task.semantic_release != compiled.semantic_release
             or config.schema_map.semantic_release != compiled.semantic_release
+            or compiled.visible_end > config.task.causal_prefix_end
             or config.frontier.rights_epoch != config.policy.rights_epoch):
         invalid("BAMF_SOURCE_ATOM_AUTHORITY_INPUT_INVALID")
     compiled.__post_init__()
     config.__post_init__()
     witness.__post_init__()
+    if source_projection is not None and (
+            type(source_projection) is not SourceAtomOwnerProjection
+            or len(source_projection.ast.atoms) != len(witness.token_indices)
+            or len(source_projection.formal_signatures) != len(witness.token_indices)
+            or len(source_projection.mapping_digests) != len(witness.token_indices)):
+        invalid("BAMF_SOURCE_ATOM_OWNER_PROJECTION_INVALID")
     atoms = tuple(
         item.atom for item in compiled.positions
         if item.kind is PositionKind.ATOM)
@@ -75,6 +85,10 @@ def _resolve_visible_atoms(
         candidate_semantic_id = None
         candidate_abi_index = None
         candidate_type_ids: tuple[str, ...] = ()
+        owned = (source_projection is not None
+                 and source_projection.ast.source_instance_id == compiled.source_instance_id
+                 and atom.index < len(source_projection.ast.atoms)
+                 and source_projection.ast.atoms[atom.index] == atom)
 
         if atom.index >= len(witness.token_indices):
             reasons.add("SOURCE_ATOM_ROW_POSITION_UNMAPPED")
@@ -98,6 +112,8 @@ def _resolve_visible_atoms(
                                     if item.concept.semantic_id == entry.semantic_id), None)
                     if concept is not None:
                         candidate_type_ids = tuple(sorted(set(concept.concept.types)))
+                    if owned:
+                        candidate_type_ids = (source_projection.formal_signatures[atom.index],)
                     if not candidate_type_ids:
                         reasons.add("SOURCE_ATOM_TYPE_AUTHORITY_UNAVAILABLE")
 
@@ -106,9 +122,11 @@ def _resolve_visible_atoms(
 
         candidate_present = candidate_semantic_id is not None
         if candidate_present:
-            reasons.add("SOURCE_ATOM_REFERENCE_AUTHORITY_UNAVAILABLE")
-            reasons.add("SOURCE_ATOM_INSTANCE_AUTHORITY_UNAVAILABLE")
-            disposition = AtomBindingDisposition.SOURCE_HELD
+            if not owned:
+                reasons.add("SOURCE_ATOM_REFERENCE_AUTHORITY_UNAVAILABLE")
+                reasons.add("SOURCE_ATOM_INSTANCE_AUTHORITY_UNAVAILABLE")
+            disposition = (AtomBindingDisposition.SOURCE_HELD if reasons
+                           else AtomBindingDisposition.BOUND)
         else:
             disposition = AtomBindingDisposition.UNMAPPED
 
@@ -117,6 +135,8 @@ def _resolve_visible_atoms(
             token_index if token_index is not None else 0,
             atom.token,
         )
+        if owned:
+            mapping_digest = source_projection.mapping_digests[atom.index]
         bindings.append(make_binding(
             source_instance_id=compiled.source_instance_id,
             atom_index=atom.index,

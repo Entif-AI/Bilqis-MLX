@@ -15,9 +15,9 @@ import json
 import tempfile
 
 
-ROOT = Path(__file__).resolve().parents[3] / "vendor" / "legacy-v16"
+ROOT = Path(__file__).resolve().parents[4] / "vendor" / "legacy-v16"
 SOURCE = ROOT / "runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt"
-MANIFEST = Path(__file__).resolve().parents[3] / "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json"
+MANIFEST = Path(__file__).resolve().parents[4] / "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json"
 
 
 @unittest.skipUnless(SOURCE.is_file(), "Pinned original source not available")

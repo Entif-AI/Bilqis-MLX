@@ -6,7 +6,7 @@ import unittest
 from bilqis_mlx.grade_a_oracle import evaluate
 from bilqis_mlx.grade_a_probe import FAMILIES, make_record, read_sources, _draw
 
-ROOT = Path(__file__).resolve().parents[3] / "vendor" / "legacy-v16"
+ROOT = Path(__file__).resolve().parents[4] / "vendor" / "legacy-v16"
 
 
 class IndependentOracleTests(unittest.TestCase):

@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ..domains import contract_digest
+from ..frame_compiler import StreamingAST
 from .common import SOURCE_ATOM_MAPPING_SCHEMA, SOURCE_ROW_WITNESS_SCHEMA
 from .common import invalid, is_text
 
@@ -43,3 +44,16 @@ class SourceRowWitness:
             token_index,
             token,
         ))
+
+
+@dataclass(frozen=True)
+class SourceAtomOwnerProjection:
+    """Internal source result, rederived at every pinned consumer boundary.
+
+    Formal signatures preserve complete native input/output contracts. They
+    are separate from the categorical type IDs in an A06 feature release.
+    """
+
+    ast: StreamingAST
+    formal_signatures: tuple[str, ...]
+    mapping_digests: tuple[str, ...]
