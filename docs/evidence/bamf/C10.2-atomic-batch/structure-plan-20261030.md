@@ -135,3 +135,7 @@ The encountered learning/tests directory has 33 direct code files. Move these 21
 - `custody/`: `test_matrix_strain.py`, `test_student_ops.py`, `test_whole_student_retention.py`.
 
 Baseline: 313 tests, 301 passed, 12 errors. Require identical failure/error identities and all moved source bytes unchanged except the one documented fixture path. The root oversized files encountered during this directory repair remain the following sequential file interruptions; they are not waived by directory compliance.
+
+## Engram allocation companion interruption
+
+The directly encountered 584-line test_atlas_engram_allocation.py retains its first123lines as shared source/frame fixtures. Move the complete unchanged MotifKeyTests, MotifPreparationTests and MotifTransactionTests classes into engram/test_motif_keys.py, test_motif_preparation.py and test_motif_transactions.py respectively. Import only their original required fixture globals. All files remain below240lines; compare complete class ASTs and preserve every existing comment. Baseline25/25passes; require the same25afterward. No production code changes.
