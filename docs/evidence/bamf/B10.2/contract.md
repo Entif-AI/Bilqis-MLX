@@ -133,3 +133,58 @@ plan construction and publication, supplementing the existing frame validator's
 role/type rules. No inactive row can be published merely because its semantic ID
 and type exist. Output records preserve the complete typed plan for validation;
 FrameAnswer exposes schema ID/revision, source release and generation as properties.
+
+## Exact carrier and validation details
+
+CONTROL results have modality_id `answer.control/v1`. For input shape
+`[...,768]`, CONTROL logits retain every leading dimension and have final axis4
+when END_FRAME is permitted, otherwise3. Candidates are the corresponding ordered
+string tuple. This reuses [B10.1 TypedHeadLogits](../B10.1/contract.md): finite
+nonempty FP32 data, uniform unique candidate type, matching final axis and
+64-hex source release. No softmax or argmax is applied by this head.
+
+The new records are immutable in-memory dataclasses with explicit schema fields;
+this slice does not add a checkpoint serializer or storage publication format.
+`DecisionOutput(decision_id,value,schema_version)` defaults to
+`bilqis.mlx.decision-output/v1`. The ID is a nonempty exact str. Value is exactly
+ControlAction, ConceptRef, RoleOccurrence, RoleCandidate or nonempty str;
+source record constructors are rerun. DecisionKind then narrows that union and
+commit validates exact type plus equality against the declared legal values.
+
+`DecodeState(plan,committed,schema_version)` defaults to
+`bilqis.mlx.decode-state/v1`; committed defaults to the empty tuple. It requires
+an exact AnswerPlan and tuple of exact DecisionOutput records, not exceeding the
+plan's combined capacity. Construction replays every output in order: reject
+unknown/duplicate IDs, missing earlier dependencies, illegal values, mismatched
+control/value pairs, any output after END_FRAME, and duplicate bound coordinates.
+This validates externally reconstructed state as well as normal commit returns.
+
+`FrameAnswer(plan,bindings,schema_version)` defaults to
+`bilqis.mlx.frame-answer/v1`. Both plan and each RoleOccurrence are exact typed
+records; bindings is a tuple. Construction reruns plan and full source binding
+validation and requires canonical schema-role/occurrence ordering. The plan
+supplies schema ID/revision, semantic release and generation properties. Only
+`publish_frame` additionally requires a COMPLETE DecodeState; callers cannot
+publish an unchecked or budget-exhausted state through that API.
+
+Active-source validation inspects a ConceptRef itself, a RoleOccurrence's concept,
+or each of its alternatives. NONE/UNKNOWN carry no concepts to inspect. Every
+concept must have the snapshot's semantic release; snapshot.abi_for_semantic must
+return its exact semantic ID and ABI index with active **is True**. A malformed
+snapshot lookup IndexError/TypeError becomes the existing topology ErrorBus error;
+canonical source lookup failures retain their own typed errors. The same checks
+run on all VALUE choices before execution and on actual bindings before ending
+or constructing an answer. Existing source validation separately checks type,
+cardinality, repeated indices, source release and scope. These checks do not
+issue rights, context grants or semantic admission.
+
+Terminology and owners: A01 is the canonical semantic Atlas snapshot
+(`semantics.atlas_projection.FrozenAtlasSnapshot`), ABI is its stable semantic
+index allocation, A03 is the immutable released frame-schema authority
+(`semantics.released_frame_schemas`), and B01 is the frozen neural tensor ledger
+(`runtime.model_topology_v2`). A source bundle is the snapshot's immutable source
+artifact identity. B10.1 FrameOutputDomain retains a schema and its A03 witness;
+its complete contract and definitions are linked above. ErrorBus is the existing
+`errors.bus` typed catalog boundary, raising BilqisError. The overarching owner
+prescription is [BAMF architecture section25.2](../../../architecture/BAMF_0_2.md)
+and the public issue #468; this document describes this child's bounded API.
