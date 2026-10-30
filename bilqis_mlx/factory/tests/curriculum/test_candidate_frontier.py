@@ -16,7 +16,7 @@ from bilqis_mlx.factory.candidate_frontier import (
 )
 
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[4]
 BUILDER = ROOT / "lib/ithkuil/src/build_curriculum_frontier.py"
 SOURCE = ROOT / "lib/ithkuil/_data/csv"
 OUTPUT_NAMES = (
