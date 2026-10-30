@@ -5,7 +5,8 @@ Issue: #556. Parent: A08.1b #418. Lane A. Re-cut from reviewed unified
 issue boundary with current unified
 `8a7b00be062b5706196d8506f02129de5f24598e`. The latter adds the
 independent B10.1 readout slice and does not overlap this leaf's Factory
-scope/modality files.
+scope/modality files. Final turn-in synchronization also consumed B10.2 at
+`dde9398249cb1dc23c9c979f0e7162436aaae894`, again with no overlap.
 
 ## Verified bounded behavior
 
