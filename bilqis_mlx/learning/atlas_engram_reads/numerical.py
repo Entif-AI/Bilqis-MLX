@@ -88,12 +88,10 @@ def _read_motif_unqualified_candidate(
     manifest: MotifManifest,
     parameters: MotifParameterView,
 ) -> MotifReadResult:
-    """Experimental numerical proof only; not a source-authorized entrypoint.
+    """Experimental helper; set eligibility precedes every row's slot gather.
 
-    A row is source-gated as a *set* before a slot is gathered, so a
-    disallowed join cannot leak through individually eligible frames.
-    Caller-supplied feature128 must be bound to B02 source features by
-    the B11 integration owner; it grants no source eligibility here.
+    B11 must bind feature128 to B02 source features. Caller vectors confer
+    no source authority; individually eligible frames cannot bypass join checks.
     """
     _validate_candidate_inputs(
         site_index, hidden, features, positions, tasks, frontiers, policies,

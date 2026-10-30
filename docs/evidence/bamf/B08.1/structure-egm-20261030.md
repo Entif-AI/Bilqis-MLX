@@ -30,6 +30,12 @@ union. The structure receipt now names both scopes and the final union result.
 Changed structure/governance and diff checks pass. Full integration and source
 qualification are not asserted.
 
+Final targeted review of committed `5cf0fcdc`: **PASS; zero findings**. The
+reviewer verified the corrected focused/union counts, public validation before
+the row loop, exact-first/structural-second lookup and unchanged gated residual
+arithmetic. The final edit only condenses the numerical helper's docstring while
+preserving the set-eligibility and B02/B11 source-binding requirements.
+
 IPR-0220 remains OPEN. Existing PM-2026-10-29-004/PAT-028 and
 PM-2026-10-30-002/RC-112/PAT-035 controls remain applicable. No durable student,
 own AdamW, teacher, champion or human-run change. Human integration remains
