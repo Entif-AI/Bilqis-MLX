@@ -143,3 +143,7 @@ The directly encountered 584-line test_atlas_engram_allocation.py retains its fi
 ## Engram-read companion interruption
 
 The encountered428-line test_atlas_engram_reads.py keeps its first143lines as unchanged source/parameter/read fixtures. Move methods0/1/8 into engram/test_motif_read_boundaries.py, methods2–5 into test_motif_read_inference.py and methods6/7 into test_motif_read_gradients.py. Preserve all9 method ASTs, class base and decorators, including quarantined group1 behavior; each output remains<240lines. MLX proof runs only on the named M3 Ultra, using an immutable tracked-source snapshot and a temporary dependency directory. Existing learner/optimizer paths remain untouched.
+
+## Epoch-championship companion interruption
+
+The encountered660-line epoch test keeps its original shared evidence helpers and _fanout_fixture in a compact fixture class. Move all26 unchanged test methods into championship/test_epoch_authority.py, test_epoch_competition.py, test_epoch_settled_ledger.py, test_epoch_fanout.py and test_epoch_reset.py, grouped by the corresponding authority boundary. Each subclass inherits only the unchanged fan-out fixture helper. Preserve settled-match lifetime, independent title batteries, grade origin, one non-recursive fan-out and reset custody assertions without changing production policy. Require every output<240lines, all26methodASTs unchanged and26/26CPUtests.
