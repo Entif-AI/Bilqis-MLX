@@ -1,5 +1,18 @@
 """Canonical curriculum-factory contracts and grade-neutral runtime adapters."""
 
+from pathlib import Path as _Path
+
+# Keep the long-standing bilqis_mlx.factory module import identities while
+# physically compartmentalizing the crowded Factory root. Python resolves
+# submodules across every entry in the package search path, so callers remain
+# source-compatible without one wrapper file per moved module.
+_PACKAGE_ROOT = _Path(__file__).resolve().parent
+__path__.extend(
+    str(_PACKAGE_ROOT / compartment)
+    for compartment in ("curriculum", "lifecycle", "sources")
+)
+del _PACKAGE_ROOT, _Path
+
 from .autonomy import (
     AutonomyAction,
     AutonomyActionKind,
