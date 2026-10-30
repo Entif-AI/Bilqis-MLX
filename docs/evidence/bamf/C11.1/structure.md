@@ -137,3 +137,19 @@ repeated unsafe-release error string once. Original comments, selectors, CLI,
 serialization and atomic publication are preserved. No Blockers/Majors found;
 reviewers did not execute the writer's tests. Staged structure/governance and
 changed-file hygiene remain clean.
+
+## Final integration-gate correction
+
+The full consumed-base comparison caught a scripts-root interruption that the
+staged-only comparison had not exposed: 13 direct code files remained against the
+12-file target. The unchanged Rosetta Observation bridge now lives under
+`scripts/bridges/`; its sole repository caller follows that path. The bridge bytes
+are unchanged. The native owner test remains skipped without its configured
+Rosetta witness. After this repair, the consumed-base structure check is clean.
+
+The source-wide operator-contract gate is also **red**. It reports 1,171 new
+path-qualified debt keys against its existing baseline after the structural owner
+moves. This is an additional unresolved integration gate; it must not be described
+as only the already-known architecture failure or as a clean global quality run.
+No baseline entries, exclusions, thresholds or governance rules were changed to
+hide these findings. The PR remains draft and is not ready for integration.
