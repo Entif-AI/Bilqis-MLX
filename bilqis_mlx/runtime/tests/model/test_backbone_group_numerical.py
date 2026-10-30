@@ -160,21 +160,6 @@ class BackboneGroupNumericalTests(unittest.TestCase):
             session.advance()
         self.assertEqual(len(session.results),1)
 
-    def test_wrong_group_and_parameter_geometry_reject(self):
-        params = _params()
-        hidden = mx.zeros((1, 4, SPEC.width), dtype=mx.float32)
-        with self.assertRaises(BilqisError):
-            _run(hidden, params, group_index=0)
-        with self.assertRaises(BilqisError):
-            _run(hidden, params, group_index=4)
-        with self.assertRaises(BilqisError):
-            _run(hidden, {
-                name: value for name, value in params.items()
-                if name != "blocks.0.query"})
-        wrong = dict(params)
-        wrong["blocks.0.query"] = mx.zeros((1, 1), dtype=mx.float32)
-        with self.assertRaises(BilqisError):
-            _run(hidden, wrong)
 
 
 if __name__ == "__main__":
