@@ -48,15 +48,15 @@ class GroupedRuntimeIdentityTests(unittest.TestCase):
                     spec = importlib.util.find_spec("bilqis_mlx.runtime." + name)
                     self.assertIn(group, Path(spec.origin).parts)
 
-    def test_alternate_names_fail_in_both_import_orders(self):
+    def test_alternate_names_fail_before_and_after_canonical_discovery(self):
         probe = """
 import importlib, importlib.util, json, sys
 groups = json.loads(sys.argv[1])
 for group, names in groups.items():
     for name in names:
         alternate = 'bilqis_mlx.runtime.' + group + '.' + name
-        for canonical_first in (False, True):
-            if canonical_first:
+        for discovery_first in (False, True):
+            if discovery_first:
                 assert importlib.util.find_spec('bilqis_mlx.runtime.' + name)
             try:
                 importlib.import_module(alternate)
