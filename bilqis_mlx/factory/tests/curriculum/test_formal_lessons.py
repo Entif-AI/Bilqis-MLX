@@ -79,8 +79,8 @@ class FormalLessonCoreTests(unittest.TestCase):
             caught.exception.context["reason"],
             "BAMF_FORMAL_LESSON_INPUT_INVALID")
 
-    def test_numeric_contrast_requires_another_source_admitted_value(self):
-        binding, inputs = _case("COUNT", ("EntitySet", ("alpha", "beta")))
+    def test_numeric_result_must_stay_inside_source_domain(self):
+        binding, inputs = _case("SUCC", ("Number", 2))
         single = replace(
             binding.numeric_domain, values=(literal("2", "Number"),))
         grants = tuple(
@@ -96,10 +96,10 @@ class FormalLessonCoreTests(unittest.TestCase):
                 return_value=_source()):
             with self.assertRaises(BilqisError) as caught:
                 construct_formal_lesson(
-                    _selection(), FORMAL[2][0], inputs, restricted)
+                    _selection(), FORMAL[3][0], inputs, restricted)
         self.assertEqual(
             caught.exception.context["reason"],
-            "BAMF_FORMAL_LESSON_CONTRAST_UNAVAILABLE")
+            "BAMF_FORMAL_LESSON_SOURCE_INAPPLICABLE")
 
 
 if __name__ == '__main__':

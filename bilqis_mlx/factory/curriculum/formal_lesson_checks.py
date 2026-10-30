@@ -60,7 +60,7 @@ def _source_case(
 
 
 def _independent_truth(operator_id: str, inputs: tuple[TypedValue, ...]) -> object:
-    """Four literal source-released laws, independent of A07's executor."""
+    """Literal law truth, used only after exact source/executable authority joins."""
     values = tuple(item.value for item in inputs)
     if operator_id == "BOOL_NOT":
         return not values[0]

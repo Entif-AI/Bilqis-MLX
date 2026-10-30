@@ -1,5 +1,6 @@
 """Shared fixtures for task-scoped formal lesson tests."""
 from __future__ import annotations
+import hashlib
 
 from bilqis_mlx.factory.formal_constructive import _resolve_from_bindings
 from bilqis_mlx.semantics.atlas_projection import AbiEntry, FormalDomainBinding
@@ -14,6 +15,7 @@ from bilqis_mlx.semantics.context_eligibility import (
 from bilqis_mlx.semantics.core import literal
 from bilqis_mlx.semantics.domains import FiniteDomain, SourceBinding, ValueCodec
 from bilqis_mlx.semantics.laws import SourceLocator
+from bilqis_mlx.semantics.foundation import numeric as released_numeric
 
 
 
@@ -55,7 +57,9 @@ def _source():
             tuple(item[0] for item in FORMAL if item[1] == "boolean"),
             ("B.NOT", "B.AND")),
         FormalDomainBinding(
-            "numeric", "synthetic:numeric-source", "e" * 64,
+            "numeric", "bilqis_mlx/semantics/numeric_v1.json",
+            hashlib.sha256(
+                released_numeric.CONTRACT_PATH.read_bytes()).hexdigest(),
             tuple(item[0] for item in FORMAL if item[1] == "numeric"),
             ("C.COUNT", "C.SUCCESSOR")))
     return _resolve_from_bindings(

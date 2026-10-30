@@ -21,11 +21,12 @@ from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.cognitive_operators import (
     OperatorRegistry, default_registry, operator_grant_digest,
 )
+from bilqis_mlx.semantics.foundation import numeric as released_numeric
 
 
 RELEASE = "a" * 64
 BUNDLE = "b" * 64
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[4]
 FORMAL = (
     ("legacy:cogal.operator.NOT", "boolean", "BOOL_NOT"),
     ("legacy:cogal.operator.AND", "boolean", "BOOL_AND"),
@@ -45,7 +46,9 @@ def _source():
             tuple(item[0] for item in FORMAL if item[1] == "boolean"),
             ("B.NOT", "B.AND")),
         FormalDomainBinding(
-            "numeric", "synthetic:numeric-source", "d" * 64,
+            "numeric", "bilqis_mlx/semantics/numeric_v1.json",
+            hashlib.sha256(
+                released_numeric.CONTRACT_PATH.read_bytes()).hexdigest(),
             tuple(item[0] for item in FORMAL if item[1] == "numeric"),
             ("C.COUNT", "C.SUCCESSOR")),
     )
@@ -62,11 +65,14 @@ class FormalSourceResolutionTests(unittest.TestCase):
         self.assertEqual(resolved.status, FORMAL_SOURCE_ONLY)
         self.assertEqual(
             resolved.source_authority, SOURCE_PROJECTION_ONLY)
-        self.assertEqual(resolved.uncovered, ())
+        self.assertEqual(
+            resolved.uncovered,
+            ((FORMAL[2][0], "OPERATOR_SOURCE_SIGNATURE_MISMATCH"),))
         self.assertEqual(
             {item.semantic_id: item.operator.operator_id
              for item in resolved.witnesses},
-            {semantic_id: operator for semantic_id, _, operator in FORMAL})
+            {semantic_id: operator for semantic_id, _, operator in FORMAL
+             if operator != "COUNT"})
         for item in resolved.witnesses:
             self.assertEqual(
                 item.source_authority, SOURCE_PROJECTION_ONLY)
@@ -90,8 +96,11 @@ class FormalSourceResolutionTests(unittest.TestCase):
             (altered, bindings[1]), entries, default_registry(RELEASE),
             semantic_release=RELEASE, atlas_bundle_id=BUNDLE)
         self.assertEqual(
-            resolved.uncovered, ((unknown, "OPERATOR_UNREGISTERED"),))
-        self.assertEqual(len(resolved.witnesses), len(FORMAL))
+            resolved.uncovered, (
+                (FORMAL[2][0], "OPERATOR_SOURCE_SIGNATURE_MISMATCH"),
+                (unknown, "OPERATOR_UNREGISTERED"),
+            ))
+        self.assertEqual(len(resolved.witnesses), len(FORMAL) - 1)
         self.assertEqual(resolved.status, FORMAL_SOURCE_ONLY)
         self.assertEqual(
             resolved.source_authority, SOURCE_PROJECTION_ONLY)
@@ -158,6 +167,9 @@ class FormalSourceResolutionTests(unittest.TestCase):
                 release.source_bundle_id)
             resolved = resolve_formal_source_operators(
                 selection, default_registry(release.digest))
+            self.assertEqual(
+                resolved.uncovered,
+                ((FORMAL[2][0], "OPERATOR_SOURCE_SIGNATURE_MISMATCH"),))
             self.assertIsNone(assert_formal_source_operator_set_current(
                 resolved, selection, default_registry(release.digest)))
             with self.assertRaises(BilqisError) as forged:
@@ -196,11 +208,13 @@ class FormalSourceResolutionTests(unittest.TestCase):
         self.assertTrue(all(
             item.source_authority == SOURCE_PROJECTION_ONLY
             for item in resolved.witnesses))
-        self.assertEqual(resolved.uncovered, ())
+        self.assertEqual(
+            resolved.uncovered,
+            ((FORMAL[2][0], "OPERATOR_SOURCE_SIGNATURE_MISMATCH"),))
         self.assertEqual(
             {item.operator.operator_id for item in resolved.witnesses},
-            {"BOOL_NOT", "BOOL_AND", "COUNT", "SUCC"})
-        self.assertEqual(len(resolved.witnesses), len(FORMAL))
+            {"BOOL_NOT", "BOOL_AND", "SUCC"})
+        self.assertEqual(len(resolved.witnesses), len(FORMAL) - 1)
         with self.assertRaises(BilqisError):
             replace(
                 resolved, source_authority="A01_PINNED_SOURCE_ATTESTED",
