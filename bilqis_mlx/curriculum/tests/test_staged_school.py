@@ -7,12 +7,15 @@ import unittest
 from bilqis_mlx.curriculum import ExamItem, validate, validate_exam_item
 from bilqis_mlx.curriculum.scheduler import (
     DebtCadencePolicy, _at_introduction_stage, _debt_run_due,
-    _debt_run_queue, _enter_grade, _frontier_recovery_queue, assess,
+    _debt_run_queue, _enter_grade, _enter_mature_debt_repair,
+    _continue_main_sweep, _frontier_recovery_queue, assess,
+    _mature_debt_repair_grade,
     assess_withheld, assessment_capabilities, next_capability, start_new,
     visit, Score,
 )
 from bilqis_mlx.trainer import _state_from_json
 from bilqis_mlx.curriculum.tests.test_school import all_scores, cp, grade_loop, snapshot, three_grade_course
+from bilqis_mlx.learning.stagnation_control import begin_recovery_cycle, start_session
 
 
 def staged_course():
@@ -49,6 +52,149 @@ def enter_c(course):
 
 
 class StagedSchoolTests(unittest.TestCase):
+    def test_c_frontier_caps_nongating_b_candidate_effort_at_twenty_percent(self):
+        course = staged_course()
+        state, pointer = enter_c(course)
+        last_stage = len(course.grades[-1].teaching_stages) - 1
+        state = _at_introduction_stage(
+            state, last_stage, stage="MAIN",
+            queue=course.grades[-1].teaching_stages[last_stage])
+        introduced_c = tuple(
+            capability
+            for stage in course.grades[-1].teaching_stages
+            for capability in stage)
+        state = replace(
+            state,
+            champions={"A": state.champions["A"]},
+            carried_mastery_debt=("b.0", "b.1", *introduced_c),
+            main_sweep_visited=(),
+            priority_visits_since_bounded_debt=0,
+        )
+        scores = {
+            capability: (8, 8)
+            for capability in assessment_capabilities(course, state)
+        }
+        for capability in ("b.0", "b.1", *introduced_c):
+            scores[capability] = (4, 8)
+
+        scheduled = []
+        while len(scheduled) < 48:
+            capability = next_capability(state)
+            self.assertIsNotNone(capability)
+            scheduled.append(capability)
+            state = visit(course, state, capability, pointer)
+            if state.stage.startswith("ASSESS_"):
+                state = assess(
+                    course, state, snapshot(course, pointer, scores))
+
+        grades = [capability.partition(".")[0] for capability in scheduled]
+        self.assertIn("b", grades)
+        for length in range(1, len(grades) + 1):
+            prefix = grades[:length]
+            self.assertLessEqual(
+                prefix.count("b") * 5,
+                length,
+                f"B exceeded 20% of candidate visits in prefix {prefix}",
+            )
+        # B stays in circulation without letting one due turn expand into a
+        # seven-capability burst.  Canonical rotation eventually reaches both.
+        self.assertIn("b.0", scheduled)
+        self.assertIn("b.1", scheduled)
+
+    def test_mature_grade_debt_tracks_fixed_frontier_net_loss_and_repair(self):
+        course = staged_course()
+        state, pointer = enter_c(course)
+        state = replace(state, grade_index=1, stage="MAIN", queue=("b.0",))
+        lost = {"status": "MEASURED", "grades": {
+            "A": {"before": 48, "after": 46, "net_correct_delta": -2}}}
+
+        state = visit(
+            course, state, "b.0", pointer, retention_frontier=lost)
+        self.assertEqual(state.mature_grade_debt, (("A", 2),))
+        self.assertEqual(_mature_debt_repair_grade(course, state), "A")
+
+        state = replace(state, grade_index=0, stage="MAIN", queue=("a.0",))
+        repaired = {"status": "MEASURED", "grades": {
+            "A": {"before": 46, "after": 47, "net_correct_delta": 1}}}
+        state = visit(
+            course, state, "a.0", pointer, retention_frontier=repaired)
+        self.assertEqual(state.mature_grade_debt, (("A", 1),))
+        self.assertIsNone(_mature_debt_repair_grade(course, state))
+
+    def test_mature_debt_repair_is_one_full_grade_pass_per_school_sweep(self):
+        course = staged_course()
+        state, _ = enter_c(course)
+        state = replace(
+            state, mature_grade_debt=(("A", 2),),
+            main_sweep_visited=(),
+        )
+
+        repair = _enter_mature_debt_repair(course, state, reset_sweep=False)
+
+        self.assertEqual(repair.grade, "A")
+        self.assertEqual(
+            repair.queue,
+            tuple(cap.id for cap in course.grades[0].capabilities),
+        )
+        completed = replace(repair, main_sweep_visited=("A",))
+        self.assertIsNone(
+            _enter_mature_debt_repair(course, completed, reset_sweep=False))
+
+    def test_completed_mature_repair_pass_yields_to_next_imperfect_grade(self):
+        course = staged_course()
+        state, pointer = enter_c(course)
+        state = replace(
+            state, grade_index=0, stage="ASSESS_MAIN", queue=(),
+            main_sweep_visited=(), mature_grade_debt=(("A", 2),),
+        )
+        scores = all_scores(course, imperfect=("a.0", "b.0", "c.0"))
+
+        continued = _continue_main_sweep(
+            course, state, snapshot(course, pointer, scores))
+
+        self.assertEqual(continued.grade, "B")
+        self.assertEqual(continued.main_sweep_visited, ("A",))
+
+    def test_progression_frontier_keeps_bounded_priority_until_mastered(self):
+        course = staged_course()
+        state, pointer = enter_c(course)
+        state = replace(
+            state, grade_index=2, stage="ASSESS_MAIN", queue=(),
+            main_sweep_visited=("A", "B"), frontier_catchup_passes=0,
+        )
+        scores = all_scores(course, through="C")
+        # Ten introduced A/B semantics sit well above the one introduced C
+        # semantic. The 10:1 shape should grant four total C passes this sweep,
+        # yielding roughly 29% C visits instead of capability-count fairness.
+        for capability in scores:
+            scores[capability] = (7, 8)
+        scores["c.0"] = (3, 8)
+        snap = snapshot(course, pointer, scores)
+
+        for completed in range(1, 4):
+            state = _continue_main_sweep(course, state, snap)
+            self.assertEqual(state.grade, "C")
+            self.assertEqual(state.frontier_catchup_passes, completed)
+            self.assertNotIn("C", state.main_sweep_visited)
+            state = replace(state, stage="ASSESS_MAIN", queue=())
+
+        continued = _continue_main_sweep(course, state, snap)
+        self.assertIsNone(continued)
+
+        caught_up = dict(scores)
+        caught_up["c.0"] = (7, 8)
+        state = replace(state, frontier_catchup_passes=0,
+                        main_sweep_visited=("A", "B"))
+        continued = _continue_main_sweep(
+            course, state, snapshot(course, pointer, caught_up))
+        self.assertEqual((continued.grade, continued.frontier_catchup_passes),
+                         ("C", 1))
+
+        mastered = dict(caught_up)
+        mastered["c.0"] = (8, 8)
+        self.assertIsNone(_continue_main_sweep(
+            course, state, snapshot(course, pointer, mastered)))
+
     def test_debt_roles_and_cadence_come_from_policy_data(self):
         course = staged_course()
         state, pointer = enter_c(course)
@@ -58,18 +204,68 @@ class StagedSchoolTests(unittest.TestCase):
             non_debt_turns_per_run=2)
         state = replace(state, debt_cadence_policy=policy,
                         carried_mastery_debt=("a.0", "c.0"),
-                        non_b_training_turns_since_b_run=1)
+                        priority_visits_since_bounded_debt=1)
         scores = snapshot(course, pointer, all_scores(course, through="C")).scores
         scores["a.0"] = Score(4, 8)
         scores["c.0"] = Score(4, 8)
 
         self.assertFalse(_debt_run_due(course, state))
-        state = replace(state, non_b_training_turns_since_b_run=2)
+        state = replace(state, priority_visits_since_bounded_debt=2)
         self.assertTrue(_debt_run_due(course, state))
         self.assertEqual(_debt_run_queue(course, state, scores), ("a.0",))
         self.assertEqual(
             _frontier_recovery_queue(course, state, scores, ("a.0", "c.0")),
             ("c.0",))
+
+    def test_frontier_recovery_weights_large_school_mean_deficit(self):
+        course = staged_course()
+        state, pointer = enter_c(course)
+        state = _at_introduction_stage(
+            state, len(course.grades[-1].teaching_stages) - 1,
+            stage="ASSESS_MAIN", queue=(), first_recovery=())
+        scores = snapshot(course, pointer, all_scores(course, through="C")).scores
+        priority_caps = tuple(cap.id for cap in course.grades[-1].capabilities)
+        state = replace(
+            state,
+            carried_mastery_debt=("b.0", priority_caps[0]),
+        )
+        # Model the live shape: school roughly 90%, one progression blocker ~50%,
+        # and two secondary C misses close to the school mean.
+        for capability in scores:
+            scores[capability] = Score(9, 10)
+        scores[priority_caps[0]] = Score(5, 10)
+        scores[priority_caps[1]] = Score(8, 10)
+        scores[priority_caps[2]] = Score(9, 10)
+
+        queue = _frontier_recovery_queue(
+            course, state, scores, tuple(scores))
+
+        self.assertGreaterEqual(queue.count(priority_caps[0]), 4)
+        self.assertGreater(queue.count(priority_caps[0]),
+                           queue.count(priority_caps[1]))
+        self.assertGreater(queue.count(priority_caps[1]),
+                           queue.count(priority_caps[2]))
+
+        assessed = assess(
+            course, state,
+            snapshot(
+                course, pointer,
+                {capability: (score.correct, score.total)
+                 for capability, score in scores.items()}))
+        self.assertEqual(assessed.queue, queue)
+        self.assertEqual(assessed.first_recovery,
+                         tuple(dict.fromkeys(queue)))
+        self.assertEqual(len(set(assessed.first_recovery)),
+                         len(assessed.first_recovery))
+        stagnation = start_session(
+            session_id="weighted-recovery",
+            generation=1,
+            required_capabilities=tuple(scores),
+        )
+        stagnation = begin_recovery_cycle(
+            stagnation, first_recovery=assessed.first_recovery)
+        self.assertEqual(
+            stagnation["cycle_first_recovery"], list(assessed.first_recovery))
 
     def test_new_state_does_not_infer_historical_debt_cadence(self):
         state = start_new(staged_course(), cp("new-school"))
@@ -80,6 +276,9 @@ class StagedSchoolTests(unittest.TestCase):
         state, _ = enter_c(course)
         legacy = asdict(state)
         legacy.pop("debt_cadence_policy")
+        legacy["nongating_b_visits"] = legacy.pop("bounded_debt_visits")
+        legacy["non_b_training_turns_since_b_run"] = legacy.pop(
+            "priority_visits_since_bounded_debt")
 
         migrated = _state_from_json(legacy, course)
 
@@ -87,7 +286,43 @@ class StagedSchoolTests(unittest.TestCase):
         self.assertEqual(migrated.debt_cadence_policy,
                          DebtCadencePolicy.from_legacy_adr094())
 
-    def test_c_frontier_due_b_turn_is_full_imperfect_grade_pass(self):
+    def test_role_neutral_debt_counters_load_without_legacy_b_field_names(self):
+        course = staged_course()
+        state, _ = enter_c(course)
+        payload = asdict(state)
+        self.assertNotIn('nongating_b_visits', payload)
+        self.assertNotIn('non_b_training_turns_since_b_run', payload)
+        restored = _state_from_json(payload, course)
+
+        self.assertEqual(restored.bounded_debt_visits,
+                         state.bounded_debt_visits)
+        self.assertEqual(restored.priority_visits_since_bounded_debt,
+                         state.priority_visits_since_bounded_debt)
+
+    def test_role_neutral_explicit_null_policy_does_not_rehydrate_legacy_bc(self):
+        course = staged_course()
+        state, _ = enter_c(course)
+        payload = asdict(replace(state, debt_cadence_policy=None))
+
+        restored = _state_from_json(payload, course)
+
+        self.assertIsNone(restored.debt_cadence_policy)
+
+    def test_explicit_null_c_frontier_policy_rehydrates_adr094_cadence(self):
+        course = staged_course()
+        state, _ = enter_c(course)
+        payload = asdict(state)
+        payload["debt_cadence_policy"] = None
+        payload["nongating_b_visits"] = payload.pop("bounded_debt_visits")
+        payload["non_b_training_turns_since_b_run"] = payload.pop(
+            "priority_visits_since_bounded_debt")
+
+        restored = _state_from_json(payload, course)
+
+        self.assertEqual(restored.debt_cadence_policy,
+                         DebtCadencePolicy.from_legacy_adr094())
+
+    def test_c_frontier_due_b_turn_is_one_rotating_imperfect_capability(self):
         course = staged_course()
         state, pointer = enter_c(course)
         last_stage = len(course.grades[-1].teaching_stages) - 1
@@ -111,7 +346,7 @@ class StagedSchoolTests(unittest.TestCase):
         for capability in ("b.0", "b.1", *introduced_c):
             scores[capability] = (4, 8)
 
-        for _ in range(20):
+        for _ in range(80):
             capability = next_capability(state)
             self.assertIsNotNone(capability)
             if capability.startswith("b."):
@@ -125,9 +360,9 @@ class StagedSchoolTests(unittest.TestCase):
 
         self.assertEqual(state.grade, "B")
         self.assertEqual(state.stage, "MAIN")
-        self.assertEqual(state.queue, ("b.0", "b.1"))
+        self.assertEqual(state.queue, ("b.0",))
 
-    def test_c_frontier_b_full_run_yields_four_non_b_turns_before_repeating(self):
+    def test_c_frontier_b_visit_yields_four_frontier_candidates_before_repeating(self):
         course = staged_course()
         state, pointer = enter_c(course)
         last_stage = len(course.grades[-1].teaching_stages) - 1
@@ -151,32 +386,33 @@ class StagedSchoolTests(unittest.TestCase):
         for capability in ("b.0", "b.1", *introduced_c):
             scores[capability] = (4, 8)
 
-        # Start at the first due B turn, then prove the complete B pass resets
-        # the cadence and cannot recur until four non-B training queues finish.
-        state = replace(state, non_b_training_turns_since_b_run=4)
+        # Start at the first due B visit, then prove it resets the candidate
+        # cadence and rotates to the next imperfect B semantic later.
+        state = replace(state, priority_visits_since_bounded_debt=4)
         state = grade_loop(course, state, pointer)
         state = assess(course, state, snapshot(course, pointer, scores))
-        self.assertEqual((state.grade, state.queue), ("B", ("b.0", "b.1")))
+        self.assertEqual((state.grade, state.queue), ("B", ("b.0",)))
 
-        while state.grade == "B":
-            state = visit(course, state, next_capability(state), pointer)
-            if state.stage.startswith("ASSESS_"):
-                state = assess(
-                    course, state, snapshot(course, pointer, scores))
-        self.assertEqual(state.non_b_training_turns_since_b_run, 0)
+        state = visit(course, state, "b.0", pointer)
+        state = assess(course, state, snapshot(course, pointer, scores))
+        self.assertEqual(state.priority_visits_since_bounded_debt, 0)
 
-        completed_non_b_turns = 0
-        while completed_non_b_turns < 4:
+        completed_frontier_visits = 0
+        for _ in range(80):
             self.assertNotEqual(state.grade, "B")
-            while not state.stage.startswith("ASSESS_"):
-                state = visit(course, state, next_capability(state), pointer)
-            completed_non_b_turns += 1
-            state = assess(course, state, snapshot(course, pointer, scores))
-            if completed_non_b_turns < 4:
-                self.assertNotEqual(state.grade, "B")
+            capability = next_capability(state)
+            if capability.startswith("c."):
+                completed_frontier_visits += 1
+            state = visit(course, state, capability, pointer)
+            if state.stage.startswith("ASSESS_"):
+                state = assess(course, state, snapshot(course, pointer, scores))
+            if state.grade == "B":
+                break
+        else:
+            self.fail("B never received its next bounded candidate turn")
 
-        self.assertEqual(completed_non_b_turns, 4)
-        self.assertEqual((state.grade, state.queue), ("B", ("b.0", "b.1")))
+        self.assertGreaterEqual(completed_frontier_visits, 4)
+        self.assertEqual((state.grade, state.queue), ("B", ("b.1",)))
 
     def test_due_b_run_follows_promotion_stage_advance_without_blocking_advance(self):
         course = staged_course()
@@ -186,7 +422,7 @@ class StagedSchoolTests(unittest.TestCase):
             state,
             champions={"A": state.champions["A"]},
             carried_mastery_debt=("b.0", "b.1", "c.0", "c.1"),
-            non_b_training_turns_since_b_run=3,
+            priority_visits_since_bounded_debt=3,
         )
         scores = {
             capability: (8, 8)
@@ -203,7 +439,7 @@ class StagedSchoolTests(unittest.TestCase):
         state = finish_promotion_sweep(course, state, pointer, scores)
 
         self.assertEqual((state.grade, state.stage), ("B", "MAIN"))
-        self.assertEqual(state.queue, ("b.0", "b.1"))
+        self.assertEqual(state.queue, ("b.0",))
         self.assertEqual(dict(state.introduction_frontiers)["C"], 2)
 
     def test_legacy_b_queue_reanchors_to_saved_c_frontier_on_resume(self):
@@ -223,7 +459,7 @@ class StagedSchoolTests(unittest.TestCase):
             main_sweep_visited=())
         payload = asdict(state)
         payload.pop("frontier_priority_visits")
-        payload.pop("nongating_b_visits")
+        payload.pop("bounded_debt_visits")
 
         restored = _state_from_json(payload, course)
 
@@ -231,7 +467,7 @@ class StagedSchoolTests(unittest.TestCase):
         self.assertEqual(restored.stage, "MAIN")
         self.assertEqual(restored.queue, (f"c.{last_stage}",))
         self.assertEqual(restored.frontier_priority_visits, 0)
-        self.assertEqual(restored.nongating_b_visits, 0)
+        self.assertEqual(restored.bounded_debt_visits, 0)
 
     def test_pre_adr094_receipt_migrates_with_one_full_b_run_due(self):
         course = staged_course()
@@ -245,18 +481,19 @@ class StagedSchoolTests(unittest.TestCase):
             champions={"A": state.champions["A"]},
             carried_mastery_debt=("b.0", "b.1", f"c.{last_stage}"),
             frontier_priority_visits=44,
-            nongating_b_visits=11,
+            bounded_debt_visits=11,
         )
         payload = asdict(state)
-        payload.pop("non_b_training_turns_since_b_run")
+        payload["nongating_b_visits"] = payload.pop("bounded_debt_visits")
+        payload.pop("priority_visits_since_bounded_debt")
 
         restored = _state_from_json(payload, course)
 
         self.assertEqual((restored.grade, restored.stage), ("C", "MAIN"))
         self.assertEqual(restored.queue, (f"c.{last_stage}",))
-        self.assertEqual(restored.non_b_training_turns_since_b_run, 4)
+        self.assertEqual(restored.priority_visits_since_bounded_debt, 4)
         self.assertEqual((restored.frontier_priority_visits,
-                          restored.nongating_b_visits), (44, 11))
+                          restored.bounded_debt_visits), (44, 11))
 
     def test_canonical_exam_item_requires_explicit_earlier_stage_mastery(self):
         course = staged_course()
@@ -332,7 +569,7 @@ class StagedSchoolTests(unittest.TestCase):
         self.assertEqual(
             dict(resumed.introduction_frontiers)["C"], last_stage)
 
-        budgeted = replace(state, non_b_training_turns_since_b_run=4)
+        budgeted = replace(state, priority_visits_since_bounded_debt=4)
         resumed = assess_withheld(
             course, budgeted, snapshot(course, pointer, scores), withheld)
         self.assertEqual((resumed.grade, resumed.stage), ("B", "MAIN"))
@@ -404,7 +641,7 @@ class StagedSchoolTests(unittest.TestCase):
         self.assertIn("c.1", state.carried_mastery_debt)
         self.assertNotIn("C", state.champions)
 
-    def test_exactly_ninety_mean_does_not_start_promotion_sweep(self):
+    def test_promotion_sweep_requires_ninety_two_percent_entry_mean(self):
         course = staged_course()
         state, pointer = enter_c(course)
         state = grade_loop(course, state, pointer)
@@ -412,19 +649,36 @@ class StagedSchoolTests(unittest.TestCase):
         state = assess(course, state, snapshot(course, pointer, perfect))
         state = finish_promotion_sweep(course, state, pointer, perfect)
         state = grade_loop(course, state, pointer)
-        exactly_ninety = {
+        below_entry = {
             c: (8, 8) for c in assessment_capabilities(course, state)
         }
-        exactly_ninety["c.1"] = (16, 20)
+        below_entry["c.1"] = (419, 500)  # (100% + 83.8%) / 2 = 91.9%
 
         state = assess(
-            course, state, snapshot(course, pointer, exactly_ninety))
+            course, state, snapshot(course, pointer, below_entry))
 
         self.assertNotEqual(state.stage, "PROMOTION_SWEEP")
         self.assertEqual(state.introduction_stage, 1)
+        state, pointer = enter_c(course)
+        state = grade_loop(course, state, pointer)
+        perfect = {c: (8, 8) for c in assessment_capabilities(course, state)}
+        state = assess(course, state, snapshot(course, pointer, perfect))
+        state = finish_promotion_sweep(course, state, pointer, perfect)
+        state = grade_loop(course, state, pointer)
+        exactly_entry = {
+            c: (8, 8) for c in assessment_capabilities(course, state)
+        }
+        exactly_entry["c.1"] = (21, 25)  # (100% + 84%) / 2 = 92%
+
+        state = assess(
+            course, state, snapshot(course, pointer, exactly_entry))
+
+        self.assertEqual(state.stage, "PROMOTION_SWEEP")
+        self.assertEqual(state.queue, ("c.0", "c.1"))
+        self.assertEqual(state.introduction_stage, 1)
         self.assertNotIn("c.2", assessment_capabilities(course, state))
 
-    def test_grade_mean_promotion_sweep_aborts_only_when_mean_falls_below_ninety(self):
+    def test_promotion_sweep_hysteresis_aborts_only_below_eighty_seven_percent(self):
         course = staged_course()
         state, pointer = enter_c(course)
         state = grade_loop(course, state, pointer)
@@ -433,20 +687,169 @@ class StagedSchoolTests(unittest.TestCase):
         state = finish_promotion_sweep(course, state, pointer, perfect)
         state = grade_loop(course, state, pointer)
         scores = {c: (8, 8) for c in assessment_capabilities(course, state)}
-        scores["c.1"] = (17, 20)
+        scores["c.1"] = (21, 25)
         state = assess(course, state, snapshot(course, pointer, scores))
 
         state = visit(course, state, "c.0", pointer)
         state = assess(course, state, snapshot(course, pointer, scores))
         state = visit(course, state, "c.1", pointer)
-        below_ninety = dict(scores)
-        below_ninety["c.1"] = (15, 20)
-        state = assess(course, state, snapshot(course, pointer, below_ninety))
+        exactly_exit = dict(scores)
+        exactly_exit["c.1"] = (37, 50)  # (100% + 74%) / 2 = 87%
+        state = assess(course, state, snapshot(course, pointer, exactly_exit))
+
+        self.assertEqual(state.introduction_stage, 2)
+        self.assertEqual(state.queue, ("c.2",))
+
+        state, pointer = enter_c(course)
+        state = grade_loop(course, state, pointer)
+        perfect = {c: (8, 8) for c in assessment_capabilities(course, state)}
+        state = assess(course, state, snapshot(course, pointer, perfect))
+        state = finish_promotion_sweep(course, state, pointer, perfect)
+        state = grade_loop(course, state, pointer)
+        scores = {c: (8, 8) for c in assessment_capabilities(course, state)}
+        scores["c.1"] = (21, 25)
+        state = assess(course, state, snapshot(course, pointer, scores))
+
+        state = visit(course, state, "c.0", pointer)
+        state = assess(course, state, snapshot(course, pointer, scores))
+        state = visit(course, state, "c.1", pointer)
+        below_exit = dict(scores)
+        below_exit["c.1"] = (369, 500)  # (100% + 73.8%) / 2 = 86.9%
+        state = assess(course, state, snapshot(course, pointer, below_exit))
 
         self.assertEqual(state.introduction_stage, 1)
         self.assertNotEqual(state.stage, "PROMOTION_SWEEP")
         self.assertNotEqual(state.stage, "ASSESS_PROMOTION_SWEEP")
         self.assertNotIn("c.2", assessment_capabilities(course, state))
+        self.assertEqual(
+            state.promotion_sweep_retry_scores, (("c.1", 369, 500),))
+
+    def test_failed_promotion_sweep_does_not_retrigger_on_same_student_flux(self):
+        course = staged_course()
+        state, pointer = enter_c(course)
+        state = grade_loop(course, state, pointer)
+        perfect = {c: (8, 8) for c in assessment_capabilities(course, state)}
+        state = assess(course, state, snapshot(course, pointer, perfect))
+        state = finish_promotion_sweep(course, state, pointer, perfect)
+        state = grade_loop(course, state, pointer)
+
+        qualifying = {c: (8, 8) for c in assessment_capabilities(course, state)}
+        qualifying["c.1"] = (21, 25)
+        state = assess(course, state, snapshot(course, pointer, qualifying))
+        self.assertEqual(state.stage, "PROMOTION_SWEEP")
+
+        state = visit(course, state, "c.0", pointer)
+        state = assess(course, state, snapshot(course, pointer, qualifying))
+        state = visit(course, state, "c.1", pointer)
+        below_floor = dict(qualifying)
+        below_floor["c.1"] = (7, 10)
+        state = assess(course, state, snapshot(course, pointer, below_floor))
+        self.assertEqual(state.stage, "RECOVERY_1")
+
+        state = grade_loop(course, state, pointer)
+        reranked = {c: (8, 8) for c in assessment_capabilities(course, state)}
+        reranked["c.1"] = (21, 25)
+        state = assess(course, state, snapshot(course, pointer, reranked))
+
+        self.assertNotEqual(state.stage, "PROMOTION_SWEEP")
+        self.assertNotEqual(state.stage, "ASSESS_PROMOTION_SWEEP")
+        self.assertEqual(state.current_student, pointer)
+
+        retained = cp("whole-student-after-retention", step=pointer.optimizer_step + 1)
+        state = grade_loop(course, state, retained)
+        reranked_after_learning = {
+            c: (8, 8) for c in assessment_capabilities(course, state)
+        }
+        reranked_after_learning["c.1"] = (21, 25)
+        state = assess(
+            course, state,
+            snapshot(course, retained, reranked_after_learning))
+
+        self.assertEqual(state.stage, "PROMOTION_SWEEP")
+        self.assertEqual(state.current_student, retained)
+
+    def test_failed_older_grade_sweep_retries_only_after_blocker_improves(self):
+        course = staged_course()
+        state, pointer = enter_c(course)
+        state = replace(
+            state, champions={"A": state.champions["A"]},
+            promotion_sweep_attempt_student_sha256=None,
+            promotion_sweep_attempt_scope=(),
+        )
+        state = _enter_grade(
+            course, state, 1, stage="MAIN", first_recovery=())
+        b_scores = {
+            capability: (8, 8)
+            for capability in assessment_capabilities(course, state)
+        }
+        b_scores["b.0"] = (6, 8)  # 93.75% B mean: eligible, but not mastered.
+        state = grade_loop(course, state, pointer)
+        state = assess(course, state, snapshot(course, pointer, b_scores))
+        self.assertEqual(state.stage, "PROMOTION_SWEEP")
+        state = finish_promotion_sweep(course, state, pointer, b_scores)
+        self.assertEqual(state.grade, "C")
+        self.assertEqual(state.promotion_sweep_retry_scores, (("b.0", 6, 8),))
+        state = _state_from_json(json.loads(json.dumps(asdict(state))), course)
+        self.assertEqual(state.promotion_sweep_retry_scores, (("b.0", 6, 8),))
+
+        unrelated = cp("retained-elsewhere", step=pointer.optimizer_step + 1)
+        state = _enter_grade(
+            course, state, 1, stage="MAIN", first_recovery=())
+        same_blockers = {
+            capability: (8, 8)
+            for capability in assessment_capabilities(course, state)
+        }
+        same_blockers["b.0"] = (6, 8)
+        state = grade_loop(course, state, unrelated)
+        state = assess(course, state, snapshot(course, unrelated, same_blockers))
+        self.assertNotEqual(state.stage, "PROMOTION_SWEEP")
+
+        improved = dict(same_blockers)
+        improved["b.0"] = (7, 8)
+        targeted = cp("retained-blocker-gain", step=unrelated.optimizer_step + 1)
+        state = _enter_grade(
+            course, state, 1, stage="MAIN", first_recovery=())
+        state = grade_loop(course, state, targeted)
+        state = assess(course, state, snapshot(course, targeted, improved))
+        self.assertEqual(state.stage, "PROMOTION_SWEEP")
+
+    def test_new_promotion_scope_clears_prior_scope_retry_blockers(self):
+        course = staged_course()
+        state, pointer = enter_c(course)
+        state = _at_introduction_stage(
+            state, len(course.grades[-1].teaching_stages) - 1,
+            stage="ASSESS_MAIN", queue=(), first_recovery=())
+        state = replace(
+            state,
+            promotion_sweep_attempt_student_sha256=pointer.sha256,
+            promotion_sweep_attempt_scope=("b.0", "b.1"),
+            promotion_sweep_retry_scores=(("b.0", 6, 8),),
+        )
+        scores = {
+            capability: (8, 8)
+            for capability in assessment_capabilities(course, state)
+        }
+        scores["c.0"] = (7, 8)
+
+        started = assess(course, state, snapshot(course, pointer, scores))
+
+        self.assertEqual(started.stage, "PROMOTION_SWEEP")
+        self.assertTrue(started.promotion_sweep_attempt_scope)
+        self.assertTrue(all(cap.startswith("c.")
+                            for cap in started.promotion_sweep_attempt_scope))
+        self.assertEqual(started.promotion_sweep_retry_scores, ())
+
+    def test_state_loader_repairs_retry_blockers_from_different_scope(self):
+        course = staged_course()
+        state, pointer = enter_c(course)
+        raw = asdict(state)
+        raw["promotion_sweep_attempt_student_sha256"] = pointer.sha256
+        raw["promotion_sweep_attempt_scope"] = ["c.0"]
+        raw["promotion_sweep_retry_scores"] = [["b.0", 6, 8]]
+
+        repaired = _state_from_json(raw, course)
+
+        self.assertEqual(repaired.promotion_sweep_retry_scores, ())
 
     def test_promotion_sweep_only_replaces_the_semantic_just_rescored(self):
         course = staged_course()

@@ -5,12 +5,16 @@ import bilqis_mlx.curriculum.scheduler as _curriculum_scheduler
 import bilqis_mlx.diagnostics.teaching as _diagnostics_teaching
 import bilqis_mlx.factory.schedule as _factory_schedule
 import bilqis_mlx.learning.champion_confidence as _learning_champion_confidence
+import bilqis_mlx.mature_debt as _mature_debt
 import bilqis_mlx.learning.championship_runtime as _learning_championship_runtime
 import bilqis_mlx.learning.learning_experiment as _learning_learning_experiment
 import bilqis_mlx.learning.lesson_guidance as _learning_lesson_guidance
+import bilqis_mlx.learning.plasticity_escape as _learning_plasticity_escape
 import bilqis_mlx.learning.stagnation_control as _learning_stagnation_control
 import bilqis_mlx.learning.student_ops as _learning_student_ops
 import bilqis_mlx.learning.teacher_feedback as _learning_teacher_feedback
+import bilqis_mlx.learning.teacher_multifidelity as _learning_teacher_multifidelity
+import bilqis_mlx.learning.teacher_strategy_population as _learning_teacher_strategy_population
 import bilqis_mlx.profiles.catalog as _profiles_catalog
 import bilqis_mlx.profiles.retention as _profiles_retention
 import bilqis_mlx.runtime.admission as _runtime_admission
@@ -20,6 +24,7 @@ import bilqis_mlx.runtime.checkpoints as _runtime_checkpoints
 import bilqis_mlx.runtime.release_adoption as _runtime_release_adoption
 import bilqis_mlx.runtime.state as _runtime_state
 import bilqis_mlx.runtime.timing_trace as _runtime_timing_trace
+from .teacher_policy_selection import select_visit_policy as _select_visit_policy
 from .teacher_observation_capture import ObservationCapture
 import bilqis_mlx.source_adapters.school as _source_adapters_school
 import dataclasses as _dataclasses
@@ -132,6 +137,42 @@ def _skip_stagnant_target_visit(run_dir, receipt, school, course, capability,
     return result
 
 
+def _selection_feedback(teacher, capability, curriculum_scope, policy,
+                        outcome, before, after, context_credit):
+    reward = after - before
+    credit = _learning_learning_experiment.selection_credit(
+        reward, outcome, context_credit)
+    health = None if outcome is None else (
+        _learning_teacher_strategy_population.durable_policy_cooldown_status(
+            teacher.get("causal_experiment", {}), capability, curriculum_scope,
+            _learning_teacher_strategy_population.effective_policy_key(policy)))
+    return reward, credit, health
+
+
+def _teacher_event_fields(policy_selection, policy_health):
+    result = {
+        "teacher_selection_policy": policy_selection["selection_policy"],
+        "teacher_selection_reason": policy_selection["selection_reason"],
+        "teacher_strategy_population": {
+            key: policy_selection.get(key)
+            for key in ("strategy_archive_count", "active_effective_strategy_count",
+                        "active_effective_strategy_capacity",
+                        "dormant_effective_strategy_count", "live_effective_strategy_count",
+                        "strategy_population_capacity", "retired_effective_strategy_count",
+                        "checkpoint_retired_effective_strategy_count", "realized_action_ecology_count")
+            if policy_selection.get(key) is not None},
+    }
+    if policy_selection.get("mutation_parent_policy_key"):
+        result["teacher_mutation_parent"] = {
+            "policy_key": policy_selection["mutation_parent_policy_key"],
+            "basis": policy_selection.get("mutation_parent_basis"),
+            "changed_fields": policy_selection.get("mutation_changed_fields", []), "mode": policy_selection.get("mutation_mode"),
+        }
+    if policy_health and policy_health["active"]:
+        result["teacher_policy_health"] = policy_health
+    return result
+
+
 def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 params, optimizer, graph, *, steps_per_visit, batch_size, reserve_gib,
                 source_root=None, learning_settings: _learning_learning_experiment.Settings | None = None,
@@ -167,6 +208,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     rng = _random.Random(_runtime_state._seed(receipt, capability=cap))
     teacher_curriculum_scope = (str(receipt.get("curriculum_mode", "")) + "/" +
                                 str(receipt.get("numeric_maximum", "")))
+    plasticity_escape = _learning_plasticity_escape.activation(
+        teacher, cap, teacher_curriculum_scope, school, program, receipt=receipt)
     candidate_steps = _learning_learning_experiment.candidate_step_budget(
         steps_per_visit, teacher, cap,
         curriculum_scope=teacher_curriculum_scope)
@@ -191,7 +234,9 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         _prepare_visit_feedback(receipt, cap, champion_candidates, champion_candidate_ids))
     policy_key, policy, policy_selection = _select_visit_policy(
         engine, teacher, cap, school, rng, learning_settings,
-        teacher_curriculum_scope, previsit_diagnostics, lesson_grade)
+        teacher_curriculum_scope, previsit_diagnostics, lesson_grade,
+        len(_curriculum_scheduler.assessment_capabilities(program, school)),
+        plasticity_escape)
     capture.select_option(cap, autonomy_teaching_option)
     capture.propose(executable_release, school, cap, policy_key, policy, policy_selection,
         configured_steps=steps_per_visit, effective_steps=candidate_steps, batch_size=batch_size,
@@ -206,6 +251,11 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     with _runtime_timing_trace.trace_span("TRAIN_SCORE_BEFORE", capability=cap, row_count=len(rows)):
         before = _learning_student_ops._train_score(mx, params, rows, receipt["config"],
                               receipt["answer_ids"])
+    shadow_rungs = (
+        _learning_teacher_multifidelity.active_rungs(
+            _learning_teacher_multifidelity.DEFAULT_SHADOW_POLICY, candidate_steps)
+        if learning_settings is not None else ())
+    shadow_probes = []
     parent_parameters, parent_optimizer = params, optimizer
     probe_rows, protected_caps, parent_predictions, params, optimizer, skipped = (
         _prepare_retention_trial(
@@ -233,7 +283,9 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 run_dir, receipt,
                 capabilities=_profiles_retention.fragile_preservation_capabilities())
     old_capabilities, retention_support_capabilities = _visit_retention_scope(
-        run_dir, receipt, course, school, cap, learning_settings)
+        run_dir, receipt, course, school, cap, learning_settings,
+        candidate_steps=candidate_steps,
+        fragile_fixed_rows=fragile_fixed_rows)
     delivered_autonomy_rows = []
     autonomy_option_specimen_ids = set()
     prefetch_futures = {}
@@ -320,8 +372,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                         executable_release=executable_release)
                 if retention_support_capabilities:
                     support_capability = retention_support_capabilities[
-                        (school.visits + step) %
-                        len(retention_support_capabilities)]
+                        step % len(retention_support_capabilities)]
                     with _runtime_timing_trace.trace_span(
                             "STEP_RETENTION_SUPPORT", capability=cap,
                             support_capability=support_capability,
@@ -438,8 +489,11 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                         visit_step=step + 1):
             if methodology_unavailable is None:
                 try:
+                    methodology_offered, methodology_delivered = (
+                        _methodology_lesson_rows(cap, fresh, priority, picked))
                     methodology_steps.append(_diagnostics_teaching.inspect_lesson_step(
-                        executable_release.curriculum, cap, fresh, picked))
+                        executable_release.curriculum, cap,
+                        methodology_offered, methodology_delivered))
                 except ValueError as exc:
                     # A diagnostic implementation gap must not invent a new
                     # training gate or silently change the evolved teacher.
@@ -483,6 +537,16 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             last_loss, last_norm = _learning_student_ops._train_step(
                 mx, params, optimizer, training_rows, receipt["config"],
                 receipt["answer_ids"], champion_guidance=training_guidance)
+        rung = step + 1
+        if shadow_rungs and rung in shadow_rungs and rung < candidate_steps:
+            with _runtime_timing_trace.trace_span(
+                    "TEACHER_SHADOW_RUNG", capability=cap, visit_step=rung):
+                rung_score = _learning_student_ops._train_score(
+                    mx, params, rows, receipt["config"], receipt["answer_ids"])
+            shadow_probes.append((
+                rung,
+                _learning_teacher_multifidelity.target_correct_delta(
+                    before, rung_score, len(rows))))
         _runtime_timing_trace.trace_mark("OPTIMIZER_STEP_END", capability=cap, visit_step=step + 1,
                    optimizer_step=int(optimizer.state["step"].item()))
     with _runtime_timing_trace.trace_span("TRAIN_SCORE_AFTER", capability=cap, row_count=len(rows)):
@@ -492,6 +556,18 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     if attempted_step != step_before+candidate_steps:
         raise ValueError("HUMAN_TRAINER_OPTIMIZER_STEP_DRIFT")
     candidate_gain = after-before
+    if shadow_rungs:
+        shadow_probes.append((
+            candidate_steps,
+            _learning_teacher_multifidelity.target_correct_delta(
+                before, after, len(rows))))
+    realized_action = (
+        _learning_learning_experiment.realized_teacher_action(
+            policy, candidate_steps=candidate_steps, batch_size=batch_size,
+            policy_controls=policy_control_receipts,
+            guidance_applied_steps=confidence_applied_steps,
+            enrichment_examples=enrichment_examples)
+        if learning_settings is not None else None)
     outcome = context_credit = None
     if learning_settings is not None:
         with _runtime_timing_trace.trace_span("RETENTION_CANDIDATE_EVIDENCE", capability=cap):
@@ -499,7 +575,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 _runtime_candidate_evidence._candidate_grade_evidence(
                     mx, run_dir, receipt, course, school, cap,
                     parent_parameters, params, probe_rows,
-                    parent_predictions, learning_settings))
+                    parent_predictions, learning_settings, plasticity_escape))
         with _runtime_timing_trace.trace_span("RETENTION_DECIDE", capability=cap):
             outcome = _learning_learning_experiment.decide(
                 pair, active_capability=cap, phase=school.stage,
@@ -508,12 +584,12 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 fixed_grade_replay=fixed_grade_evidence,
                 fixed_frontier_replay=frontier,
                 protected_frontier_grade=_retention_frontier_grade(school),
-                mature_grades=frozenset(school.champions),
+                mature_grades=frozenset(school.champions), mature_grade_debt=_mature_debt.as_mapping(school),
                 negative_prototypes=teacher["causal_experiment"]["negative_archetypes"],
                 source_cohort_sha256=_runtime_state._fingerprint([
                     (r["id"],r["capability"],r["gold"],r["tokens"]) for r in probe_rows
                     if r["capability"] in pair]),
-                fragile_replay=replay)
+                fragile_replay=replay, plasticity_escape=plasticity_escape)
         outcome["qualification_stage"] = stage
         from bilqis_mlx.learning.matrix_strain import observe as observe_matrix_strain
         with _runtime_timing_trace.trace_span("MATRIX_STRAIN", capability=cap):
@@ -527,7 +603,9 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 teacher, capability=cap, phase=school.stage, policy_key=policy_key,
                 decision=outcome, local_gain=candidate_gain,
                 curriculum_scope=teacher_curriculum_scope,
-                diagnostics=previsit_diagnostics)
+                diagnostics=previsit_diagnostics,
+                realized_action=realized_action,
+                student_checkpoint_sha256=school.current_student.sha256)
             if outcome["decision"] == "PROVISIONAL":
                 _learning_learning_experiment.commit_trial(parent_parameters, parent_optimizer, params, optimizer)
             else:
@@ -555,10 +633,11 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         if row["capability"] != cap
     ] + deferred_misses + remaining_priority
     all_teacher_misses.sort(key=lambda row: (row["capability"], row["id"]))
-    reward = after - before
-    bandit_credit = _learning_learning_experiment.selection_credit(reward, outcome, context_credit)
+    reward, bandit_credit, policy_health = _selection_feedback(teacher, cap, teacher_curriculum_scope, policy, outcome, before, after, context_credit)
     with _runtime_timing_trace.trace_span("TEACHER_OBSERVE", capability=cap):
         engine.observe(teacher, lesson_grade, policy_key, bandit_credit)
+    _learning_plasticity_escape.record_school_visit(
+        teacher, retained=bool(outcome and outcome["decision"] == "PROVISIONAL"))
     expected_retained = (step_before if outcome is not None and
                          outcome["decision"] == "REJECT" else attempted_step)
     attempted_optimizer_updates = attempted_step - step_before
@@ -571,9 +650,9 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         raise ValueError("LEARNING_EXPERIMENT_RETAINED_ADAMW_STEP_DRIFT")
     # No new archive exists yet. The retained checkpoint is the last complete
     # recovery point, NOT a representation of these newly updated RAM weights.
-    school = _curriculum_scheduler.visit(_runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course), school, cap, school.current_student)
+    school = _curriculum_scheduler.visit(_runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course), school, cap, school.current_student, retention_frontier=_mature_debt.retained_frontier(outcome))
     methodology = _diagnostics_teaching.summarize_teaching_visit(
-        course, cap, tuple(methodology_steps),
+        executable_release.curriculum, cap, tuple(methodology_steps),
         introductory=introduction_pass,
         unmeasured_reason=methodology_unavailable)
     teacher_decision = _learning_teacher_feedback.summarize_teacher_decision(_learning_teacher_feedback.TeacherDecisionInput(
@@ -605,6 +684,9 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         "source_training_accuracy_after": after,
         "teacher_reward": reward,
         "teacher_selection_reward": bandit_credit,
+        **_teacher_event_fields(policy_selection, policy_health),
+        **({"realized_teacher_action": realized_action}
+           if realized_action is not None else {}),
         "attempted_optimizer_updates": attempted_optimizer_updates,
         "candidate_step_control": {
             "configured_steps": steps_per_visit,
@@ -686,11 +768,23 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         teaching_file = ("autonomy/teaching/" + delivery.specimen_content_sha256 + ".json")
         _runtime_state._durable_json(run_dir / teaching_file, {"rows": delivered_autonomy_rows})
         event["autonomy_teaching"] = {**_dataclasses.asdict(delivery), "specimen_file": teaching_file}
+    shadow_review = shadow_activation = None
+    if learning_settings is not None and outcome is not None:
+        shadow_review = _learning_teacher_multifidelity.evaluate_shadow(
+            _learning_teacher_multifidelity.DEFAULT_SHADOW_POLICY,
+            probes=shadow_probes,
+            final_retained=outcome["decision"] == "PROVISIONAL",
+            full_budget_steps=candidate_steps)
+        shadow_activation = _learning_teacher_multifidelity.record_review(
+            teacher, shadow_review)
+        event["teacher_multifidelity_shadow"] = shadow_review
+        event["teacher_multifidelity_activation"] = shadow_activation
     capture.finish(event, decision=outcome,
         paired=pair if learning_settings is not None else None,
         protected=probed if learning_settings is not None else None,
         stage=stage if learning_settings is not None else "UNPROTECTED_VISIT",
-        attempted=attempted_optimizer_updates, retained=retained_optimizer_updates)
+        attempted=attempted_optimizer_updates, retained=retained_optimizer_updates,
+        shadow_review=shadow_review, shadow_activation=shadow_activation)
     stagnation = receipt.get("stagnation_session")
     if stagnation is not None:
         stagnation = _learning_stagnation_control.record_visit(
@@ -765,7 +859,26 @@ def _direct_mentor_votes(confidence_champions):
     return direct_capability_votes, direct_capabilities
 
 
-def _visit_retention_scope(run_dir, receipt, course, school, cap, learning_settings):
+def _methodology_lesson_rows(capability: str, fresh, priority, picked):
+    """Return target teaching evidence without injected preservation rows."""
+    offered = []
+    offered_by_id = {}
+    for row in (*fresh, *priority):
+        if row.get("capability") != capability:
+            continue
+        identity = row.get("id")
+        if identity in offered_by_id:
+            if offered_by_id[identity] != row:
+                raise ValueError("LESSON_EVIDENCE_OFFERED_IDENTITY_CONFLICT")
+            continue
+        offered_by_id[identity] = row
+        offered.append(row)
+    delivered = [row for row in picked if row.get("capability") == capability]
+    return offered, delivered
+
+
+def _visit_retention_scope(run_dir, receipt, course, school, cap, learning_settings,
+                           *, candidate_steps=1, fragile_fixed_rows=()):
     """Resolve admitted prior-grade and support scopes without changing policy."""
     old_capabilities = (
         _learning_learning_experiment.earlier_grade_capabilities(
@@ -779,29 +892,18 @@ def _visit_retention_scope(run_dir, receipt, course, school, cap, learning_setti
         admitted_for_support = _curriculum_scheduler.assessment_capabilities(
             _runtime_release_adoption._schedule_for_receipt(
                 run_dir, receipt, course), school)
+        preserved = tuple(sorted({
+            row.get("capability") for row in fragile_fixed_rows
+            if isinstance(row, dict) and isinstance(row.get("capability"), str)
+        }))
         retention_support_capabilities = (
-            _runtime_candidate_evidence._retention_support_capabilities(
-                admitted_for_support, getattr(school, "active_grades", ()), cap))
+            _runtime_candidate_evidence._retention_support_schedule(
+                admitted_for_support, getattr(school, "active_grades", ()), cap,
+                steps=candidate_steps, rotation=int(getattr(school, "visits", 0)),
+                already_preserved=preserved))
     return old_capabilities, retention_support_capabilities
 
 
-def _select_visit_policy(engine, teacher, cap, school, rng, learning_settings, teacher_curriculum_scope, previsit_diagnostics, lesson_grade):
-    """Ask the existing teacher to select the visit policy."""
-    with _runtime_timing_trace.trace_span("POLICY_SELECT", capability=cap):
-        if learning_settings is not None:
-            policy_key, policy, policy_selection = (
-                _learning_learning_experiment.contextual_pick(
-                    engine, teacher, cap, school.stage, rng,
-                    curriculum_scope=teacher_curriculum_scope,
-                    diagnostics=previsit_diagnostics,
-                    return_metadata=True))
-        else:
-            policy_key, policy = engine.pick(teacher, lesson_grade, rng)
-            policy_selection = {
-                "diagnostic_context_consumed": False,
-                "diagnostic_context_key": None, "selection_reason": "INHERITED_BANDIT",
-            }
-    return policy_key, policy, policy_selection
 
 
 def _prepare_retention_trial(mx, run_dir, receipt, course, school, cap, learning_settings, source_root, graph, executable_release, params, optimizer, original_learning_rate, teacher):

@@ -7,6 +7,11 @@ from enum import Enum
 import hashlib
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
+from bilqis_mlx.mature_debt import (
+    HARD_LIMIT as MATURE_DEBT_HARD_LIMIT,
+    REPAIR_THRESHOLD as MATURE_DEBT_REPAIR_THRESHOLD,
+    RELEASE_THRESHOLD as MATURE_DEBT_RELEASE_THRESHOLD,
+)
 from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.factory.schedule import ScheduleProgram
 from .promotion import PromotionError, _verify_promotion_sweep_state
@@ -191,6 +196,10 @@ class SchoolState:
     # current cross-grade sweep. Global weakest-three recovery is due only
     # after every currently imperfect eligible grade has had that pass.
     main_sweep_visited: tuple[str, ...] = ()
+    # Number of completed ordinary MAIN passes given to the newest active
+    # grade in the current school sweep while it is below the school semantic
+    # median. This is a bounded catch-up budget, not permanent grade priority.
+    frontier_catchup_passes: int = 0
     # Explicit human-authorized progression may admit a later grade before all
     # earlier capabilities are mastered.  These identities remain cumulative
     # mastery debt until one intact checkpoint clears the whole active program.
@@ -202,16 +211,27 @@ class SchoolState:
     # assessment freezes the baseline; each sweep visit replaces only the
     # semantic that was just rescored.
     promotion_sweep_scores: tuple[tuple[str, int, int], ...] = ()
-    # Historical ADR-090 candidate-visit counters retain their saved receipt
-    # fields. ADR-094 moved scheduling authority to whole grade-turns.
+    # A promotion attempt is owned by one exact learner state and semantic
+    # scope. Fresh cohort flux alone cannot re-arm an unchanged student.
+    promotion_sweep_attempt_student_sha256: str | None = None
+    promotion_sweep_attempt_scope: tuple[str, ...] = ()
+    # Imperfect capabilities from the last failed attempt on this scope.  A
+    # fresh checkpoint cannot retry until this blocker set measurably improves.
+    promotion_sweep_retry_scores: tuple[tuple[str, int, int], ...] = ()
+    # Candidate-level evidence counters are role-neutral. Older receipts used
+    # B-specific wire names; deserializers translate those names at the boundary.
     frontier_priority_visits: int = 0
-    nongating_b_visits: int = 0
-    # Saved under its historical wire name; policy supplies the active roles
-    # and number of completed non-debt turns.
-    non_b_training_turns_since_b_run: int = 0
+    bounded_debt_visits: int = 0
+    priority_visits_since_bounded_debt: int = 0
     # Absent on old receipts only until the neural-inert ADR-094 migration.
     # New schedules receive a policy only when one is explicitly supplied.
     debt_cadence_policy: DebtCadencePolicy | None = None
+    # Net fixed-cohort damage carried by already-graduated capabilities.
+    # Counts are local parent-to-candidate losses accumulated across retained
+    # updates. Repair candidates pay these counts back; no historical
+    # checkpoint becomes an admission baseline.
+    mature_capability_debt: tuple[tuple[str, int], ...] = ()
+    mature_grade_debt: tuple[tuple[str, int], ...] = ()
 
     @property
     def grade(self) -> str:
@@ -312,10 +332,12 @@ def verify_state(program, state: SchoolState):
             type(state.introduction_stage) is not int or state.introduction_stage < 0 or
             type(state.frontier_priority_visits) is not int or
             state.frontier_priority_visits < 0 or
-            type(state.nongating_b_visits) is not int or
-            state.nongating_b_visits < 0 or
-            type(state.non_b_training_turns_since_b_run) is not int or
-            state.non_b_training_turns_since_b_run < 0):
+            type(state.bounded_debt_visits) is not int or
+            state.bounded_debt_visits < 0 or
+            type(state.priority_visits_since_bounded_debt) is not int or
+            state.priority_visits_since_bounded_debt < 0 or
+            type(state.frontier_catchup_passes) is not int or
+            state.frontier_catchup_passes < 0):
         ErrorBus.raise_legacy(SCHOOL.STATE.INVALID_SCHOOL_COUNTER)
     frontiers = state.introduction_frontiers
     grade_lookup = {grade.id: grade for grade in program.grades}
@@ -335,6 +357,16 @@ def verify_state(program, state: SchoolState):
     if state.carried_mastery_debt and state.stage in (
             "AWAITING_NEXT_GRADE", "WHOLE_SCHOOL_MASTERED"):
         ErrorBus.raise_legacy(SCHOOL.STATE.CARRIED_MASTERY_DEBT_AT_COMPLETION_BOUNDARY)
+    mature_debt = state.mature_capability_debt
+    if (len({capability for capability, _ in mature_debt}) != len(mature_debt) or
+            any(capability not in all_active_caps or type(amount) is not int or amount < 1
+                for capability, amount in mature_debt)):
+        ErrorBus.raise_legacy(SCHOOL.STATE.INVALID_MATURE_CAPABILITY_DEBT)
+    grade_debt = state.mature_grade_debt
+    if (len({grade for grade, _ in grade_debt}) != len(grade_debt) or
+            any(grade not in state.active_grades or type(amount) is not int or amount < 1
+                for grade, amount in grade_debt)):
+        ErrorBus.raise_legacy(SCHOOL.STATE.INVALID_MATURE_CAPABILITY_DEBT)
     current = next(g for g in program.grades if g.id == state.grade)
     if state.introduction_stage >= max(1, len(current.teaching_stages)):
         ErrorBus.raise_legacy(SCHOOL.STATE.INVALID_INTRODUCTION_STAGE)

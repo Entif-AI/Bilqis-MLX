@@ -6,6 +6,7 @@ from bilqis_mlx.errors import ErrorBus, SOURCE
 import bilqis_mlx.curriculum.scheduler as _curriculum_scheduler
 import bilqis_mlx.fixed_frontier as _bilqis_mlx_fixed_frontier
 import bilqis_mlx.learning.learning_experiment as _learning_learning_experiment
+import bilqis_mlx.learning.plasticity_escape as _learning_plasticity_escape
 import bilqis_mlx.learning.student_ops as _learning_student_ops
 import bilqis_mlx.profiles.retention as _profiles_retention
 import bilqis_mlx.runtime.assessment as _runtime_assessment
@@ -21,13 +22,45 @@ def _retention_support_capabilities(admitted, active_grades,
     if (not active_grades or not isinstance(capability, str) or
             "." not in capability):
         return ()
-    target_grade = capability.partition(".")[0]
-    frontier_grade = active_grades[-1]
-    support_grade = (
-        frontier_grade if target_grade != frontier_grade else target_grade)
+    protected_grades = set(active_grades)
     return tuple(sorted(
         name for name in admitted
-        if name != capability and name.partition(".")[0] == support_grade))
+        if name != capability and name.partition(".")[0] in protected_grades))
+
+
+def _retention_support_schedule(
+        admitted, active_grades, capability: str, *, steps: int,
+        rotation: int = 0, already_preserved=()) -> tuple[str, ...]:
+    """Spend support steps first on the grade surfaces that can veto admission.
+
+    The fresh lesson grade and latest active frontier are explicit retention
+    gates.  Earlier grades already receive the teacher's ordinary old-grade
+    rehearsal, while fragile capabilities can have a separate preservation
+    channel.  Do not dilute a short candidate across every admitted capability
+    before these hard-gated surfaces have been rehearsed.
+    """
+    if type(steps) is not int or steps < 1 or type(rotation) is not int or rotation < 0:
+        raise ValueError("RETENTION_SUPPORT_SCHEDULE_INVALID")
+    active_grades = tuple(active_grades)
+    if not active_grades:
+        return ()
+    preserved = set(already_preserved)
+    available = tuple(
+        name for name in _retention_support_capabilities(
+            admitted, active_grades, capability)
+        if name not in preserved)
+    if not available:
+        return ()
+    lesson_grade = capability.partition(".")[0]
+    frontier_grade = active_grades[-1]
+    priority = tuple(
+        name for name in available
+        if name.partition(".")[0] in {lesson_grade, frontier_grade})
+    available = priority or available
+    start = (rotation * steps) % len(available)
+    return tuple(
+        available[(start + index) % len(available)]
+        for index in range(steps))
 
 
 def _select_fresh_retention_support_rows(
@@ -171,6 +204,7 @@ def _frontier_fixed_evidence(
                 "before": sum(value["before"] for value in grade_scores.values()),
                 "after": sum(value["after"] for value in grade_scores.values()),
                 "total": sum(value["total"] for value in grade_scores.values()),
+                "capabilities": grade_scores,
             }
             frontier_candidate = dict(grade_candidate)
         else:
@@ -211,6 +245,7 @@ def _same_grade_fixed_evidence(
         "before": sum(value["before"] for value in scores.values()),
         "after": sum(value["after"] for value in scores.values()),
         "total": sum(value["total"] for value in scores.values()),
+        "capabilities": scores,
     }
 
 
@@ -262,7 +297,7 @@ def _candidate_fixed_evidence(mx, run_dir, receipt, course, school, capability,
 
 def _candidate_grade_evidence(mx, run_dir, receipt, course, school, capability,
                               parent, candidate, probe_rows, target_parent,
-                              settings):
+                              settings, plasticity_escape=None):
     """Complete missing candidate scores only after a target gain is observed.
 
     Parent/candidate predictions are never reused across candidate weights,
@@ -301,7 +336,8 @@ def _candidate_grade_evidence(mx, run_dir, receipt, course, school, capability,
     protected = set(pair)-set(required)
     protected.update(name for name in required if name != capability)
     grade_net = sum(pair[name]["after"]-pair[name]["before"] for name in required)
-    if grade_net < 0:
+    if grade_net < 0 and not _learning_plasticity_escape.allows_early_grade_net(
+            plasticity_escape, pair, required):
         return (pair, protected, required,
                 {"status": "NOT_MEASURED",
                  "reason": "SAME_GRADE_NET_REGRESSION"},

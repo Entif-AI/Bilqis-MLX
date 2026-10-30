@@ -10,8 +10,11 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any
 import string
-
 from bilqis_mlx.presentation.spiral_dashboard import Column
+from bilqis_mlx.presentation.numeric_scope import PROFILE_ADOPTION_EVENTS, apply_profile_adoption
+from bilqis_mlx.presentation.growth_projection import GrowthProjection
+from bilqis_mlx.presentation.progression_projection import GraduationProjection
+from bilqis_mlx.presentation.teacher_vnext import teacher_fields as _teacher_vnext_fields
 from ..compatibility.telemetry_events import (
     historical_capability_grade,
     historical_course_admission,
@@ -20,7 +23,6 @@ from ..compatibility.telemetry_events import (
     historical_live_exam,
     historical_withheld_inventory_change_explains,
 )
-
 
 TELEMETRY_VERSION = "bilqis.school50.telemetry/v1"
 _SIGNAL_LABELS = {
@@ -31,11 +33,8 @@ _SIGNAL_LABELS = {
     "EXCESSIVE_INTRODUCTORY_COMPLEXITY": "S5",
 }
 
-
 def _signal_label(signal) -> str:
     return _SIGNAL_LABELS.get(str(signal), str(signal))
-
-
 def _teacher_decision_text(decision: object) -> str:
     if not isinstance(decision, dict):
         return "LESSON COMMITTED; exam pending"
@@ -53,7 +52,6 @@ def _teacher_decision_text(decision: object) -> str:
         parts.append(f"champ {champion}")
     return " | ".join(parts) + "; exam pending" if parts else "LESSON COMMITTED; exam pending"
 
-
 _REASON_LABELS = {
     "NO_MEASURABLE_TARGET_GAIN": "NO TARGET GAIN",
     "FRAGILE_COMPOSITION_REPLAY_REGRESSION": "OR/XOR LOSS",
@@ -61,16 +59,12 @@ _REASON_LABELS = {
     "ACTIVE_SCHOOL_GRADE_REGRESSION": "FRONTIER LOSS",
     "PAIRED_SCREEN_WITHIN_BUDGET": "WITHIN BUDGET",
 }
-
-
 def _warning_text(event: dict) -> str:
     decision = event.get("teacher_decision")
     if not isinstance(decision, dict):
         return "-"
     warnings = [_signal_label(signal) for signal in decision.get("warning_signals", ())]
     return ",".join(warnings) if warnings else "-"
-
-
 def _candidate_result_reason(event: dict) -> tuple[str, str]:
     candidate = event.get("candidate_retention")
     steps = event.get("retained_optimizer_updates")
@@ -293,7 +287,7 @@ LETTER_TABLES = (
         Column("C", 1, "contrast", right=True),
         Column("OLD", 3, "old", optional=True, right=True),
         Column("DSTIL", 5, "distill", optional=True, right=True),
-        Column("CREDIT", 7, "credit", right=True))),
+        Column("CREDIT", 7, "credit", right=True), Column("P(RET)", 6, "p_ret", optional=True, right=True), Column("HEALTH", 9, "health", optional=True))),
     ("GRADES & MASTERY", (
         Column("CAPABILITY", 10, "subject"),
         Column("WAS/TOP/NOW/ALL", 15, "score_line", right=True),
@@ -420,6 +414,7 @@ class SchoolTelemetry:
         self.best = {}
         self.last_cap = {}  # (capability, complete-rubric) -> (correct,total)
         self.start_cap = {}
+        self.growth = GrowthProjection(active_grades)
         self.last_source_training = {}  # capability -> (accuracy, optimizer_step)
         self.exam_cohorts = {}  # (grade, semantic rubric) -> last sampled cohort
         self.reported_scope_inventory = {}
@@ -433,6 +428,8 @@ class SchoolTelemetry:
         self.last_exam_grade = None
         self.execution_start_step = None
         self.live_projected_generations = set()
+        self.teacher_policy_health = {}
+        self.graduations = GraduationProjection(); self.board.state["graduations"] = self.graduations.summary()
         self.board.grade_program = tuple(self.grades)
 
     def _grade(self, name):
@@ -485,6 +482,7 @@ class SchoolTelemetry:
             "progress": self._progress,
             "autonomy": self._autonomy,
         }[kind](grade, event)
+        self.board.state["graduations"] = self.graduations.observe(event)
 
     def _init(self, grade, event):
         if event.get("event") in {
@@ -501,12 +499,15 @@ class SchoolTelemetry:
 
     def _curriculum(self, grade, event):
         """Make a release replacement a hard boundary in the active dashboard view."""
+        if event["event"] in PROFILE_ADOPTION_EVENTS: return apply_profile_adoption(self, grade, event)
         self._reset_score_era(reason=event["event"], grade=grade)
         old_caps = tuple(event.get("old_capabilities") or ())
         new_caps = tuple(event.get("new_capabilities") or ())
         if (not grade or not old_caps or not new_caps or
                 any(not isinstance(cap, str) for cap in (*old_caps, *new_caps))):
             raise ValueError("SCHOOL_TELEMETRY_CURRICULUM_REPLACEMENT_INVALID")
+        self.board.state["grew"] = self.growth.replace_grade(
+            grade, old_caps, new_caps, event.get("withheld_capabilities", ()))
         old_set = set(old_caps)
 
         # Rows before this event describe the superseded curriculum. Keep them
@@ -561,8 +562,11 @@ class SchoolTelemetry:
                 step=step, prefix=grade or self.board.state.get("prefix"),
                 _rate_sample_eligible=True)
             return
+        self.visits = 0
         self.start = dict(self.latest)
         self.start_cap = dict(self.last_cap)
+        self.board.state["grew"] = self.growth.begin_execution()
+        self.board.state["graduations"] = self.graduations.begin_execution()
         self.execution_start_step = step if type(step) is int else None
         # Emit current snapshots immediately so START is truthful before the
         # first new exam in this execution command.
@@ -598,8 +602,12 @@ class SchoolTelemetry:
             ]
         self.board.state.update(
             step=step if type(step) is int else self.board.state.get("step"),
-            prefix=grade or self.board.state.get("prefix"),
+            prefix=grade or self.board.state.get("prefix"), visits=0,
+            attempted_steps=0, retained_steps=0, retained_visits=0,
             _rate_sample_eligible=True)
+        self.board.started = self.board.clock()
+        self.board._rate_step = None
+        self.board._rate_time = None
 
     def _start(self, grade, event):
         self.begin_execution(grade=grade, step=event.get("optimizer_step"))
@@ -736,6 +744,7 @@ class SchoolTelemetry:
                 teacher[field] = "OFF" if field in unavailable else _whole(strategy.get(field))
             else:
                 teacher[field] = "OFF" if field in unavailable else _display(strategy.get(field))
+        teacher.update(_teacher_vnext_fields(event, self.teacher_policy_health))
         self.board.rows["SOUP & TEACHER"].append(teacher)
         attempted = event.get("attempted_optimizer_updates", 0)
         if type(attempted) is not int or attempted < 0:
@@ -794,6 +803,10 @@ class SchoolTelemetry:
                     total <= 0 or not 0 <= correct <= total):
                 raise ValueError("SCHOOL_TELEMETRY_SCORE_INVALID")
             cohort[score_grade][cap] = (correct, total)
+        if event.get("exam_plane") == "GENERALIZATION":
+            self.board.push("system", {"kind": "HISTORICAL GENERALIZATION", "grade": grade,
+                "detail": "PRESERVED IN LEDGER; EXCLUDED FROM ACTIVE MASTERY"}, redraw=False)
+            return
         target_evaluated = grade in cohort
 
         # Validate the full exam before emitting any dashboard rows. Historical
@@ -838,6 +851,8 @@ class SchoolTelemetry:
             if live:
                 self.era_cohorts[key].add(cohort_sha)
             for cap, (score, count) in sorted(caps.items()):
+                self.board.state["grew"] = self.growth.observe(
+                    g, cap, score, count)
                 cap_key = (cap, rubric, effective_scope)
                 baseline = self.start_cap.setdefault(cap_key, (score, count))
                 earlier = self.last_cap.get(cap_key)

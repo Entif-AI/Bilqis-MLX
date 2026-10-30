@@ -308,6 +308,10 @@ class OperatorTests(unittest.TestCase):
 
     def test_retention_defaults_on_and_explicit_independent_opt_out(self):
         self.assertFalse(parse_args(["train", "--resume"]).no_retention)
+        self.assertTrue(parse_args(["train", "--resume"]).full_grade_b)
+        self.assertFalse(parse_args([
+            "train", "--resume", "--reduced-grade-b"]
+        ).full_grade_b)
         self.assertTrue(parse_args([
             "train", "--resume", "--boolean-association-bridge"]
         ).boolean_association_bridge)
@@ -563,8 +567,8 @@ class OperatorTests(unittest.TestCase):
             self.assertNotIn("next_grade", report)
             self.assertEqual(report["blockers"], [])
             self.assertEqual(
-                report["legacy_profile"]["profile"], "MINIMAL_DEFAULT")
-            self.assertTrue(report["legacy_profile"]["migration_required"])
+                report["legacy_profile"]["profile"], "FULL_DEFAULT")
+            self.assertFalse(report["legacy_profile"]["migration_required"])
             self.assertTrue((run / "state.json").is_file())
 
     def test_old_grade_b_preflight_requires_profile_migration_not_release_ladder(self):
@@ -597,8 +601,8 @@ class OperatorTests(unittest.TestCase):
         self.assertNotIn("next_profile_transition", report)
         self.assertNotIn("next_grade", report)
         self.assertEqual(
-            report["legacy_profile"]["profile"], "MINIMAL_DEFAULT")
-        self.assertTrue(report["legacy_profile"]["migration_required"])
+            report["legacy_profile"]["profile"], "FULL_DEFAULT")
+        self.assertFalse(report["legacy_profile"]["migration_required"])
         self.assertEqual(report["blockers"], [])
 
     def test_composite_grade_b_preflight_requires_profile_migration_not_release_ladder(self):
@@ -633,8 +637,8 @@ class OperatorTests(unittest.TestCase):
         self.assertNotIn("next_profile_transition", report)
         self.assertNotIn("next_grade", report)
         self.assertEqual(
-            report["legacy_profile"]["profile"], "MINIMAL_DEFAULT")
-        self.assertTrue(report["legacy_profile"]["migration_required"])
+            report["legacy_profile"]["profile"], "FULL_DEFAULT")
+        self.assertFalse(report["legacy_profile"]["migration_required"])
         self.assertEqual(report["blockers"], [])
 
     def test_resume_terminal_clears_previous_session_stop_before_training(self):

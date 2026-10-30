@@ -201,6 +201,13 @@ def _mentor_epoch_references(receipt):
                      *(item["checkpoint"] for item in _learning_epoch_championships.active_frontier(epoch).values())))
 
 
+def _regression_recovery_checkpoint(receipt):
+    """Keep the explicitly abandoned terminal student as forensic custody."""
+    recovery = receipt.get("student_regression_recovery")
+    return (recovery.get("abandoned_student")
+            if isinstance(recovery, dict) else None)
+
+
 def _verify_frozen_soup_custody(run_dir, receipt):
     """Verify current soup bytes and rollback predecessor; history is metadata."""
     for grade, soup in sorted(_data_plane.live_grade_soups(receipt).items()):
@@ -229,6 +236,10 @@ def _verify_best_custody(run_dir, receipt):
                        school["current_student"], school["champions"])
     protected |= _learning_capability_frontier.pinned(receipt.get("graduation_perfect", {}),
                         school["current_student"], school["champions"])
+    abandoned = _regression_recovery_checkpoint(receipt)
+    if abandoned is not None:
+        sources.append(abandoned)
+        protected |= _learning_capability_frontier.pinned({}, abandoned, {})
     if historical_pending:
         protected |= _learning_capability_frontier.pinned(historical_pending,
                             school["current_student"], school["champions"])
@@ -563,6 +574,9 @@ def _publish_boundary(run_dir, record, pending, roles, *, exam_event=None):
         retained |= _learning_capability_frontier.pinned({}, source, {})
     retained |= _learning_capability_frontier.pinned(record.get("graduation_perfect", {}),
                        school["current_student"], school["champions"])
+    abandoned = _regression_recovery_checkpoint(record)
+    if abandoned is not None:
+        retained |= _learning_capability_frontier.pinned({}, abandoned, {})
     for item in record.get("historical_grade_champions", {}).values():
         retained |= _learning_capability_frontier.pinned({}, item, {})
     if record.get("legacy_frontier_pending_replay"):

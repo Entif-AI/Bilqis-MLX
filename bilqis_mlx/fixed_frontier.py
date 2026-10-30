@@ -183,6 +183,7 @@ def screen_frontier(rows, parent_predictions, candidate_predictions,
         raise ValueError("FIXED_FRONTIER_MISSING_PAIRED_PREDICTION")
     regressions, repaired = [], []
     grades = {}
+    capabilities = {}
     before_correct = after_correct = 0
     for row in rows:
         identity, gold = row["id"], row["gold"]
@@ -204,7 +205,14 @@ def screen_frontier(rows, parent_predictions, candidate_predictions,
         entry["before"] += int(old_ok)
         entry["after"] += int(new_ok)
         entry["total"] += 1
+        capability_entry = capabilities.setdefault(
+            row["capability"], {"before": 0, "after": 0, "total": 0})
+        capability_entry["before"] += int(old_ok)
+        capability_entry["after"] += int(new_ok)
+        capability_entry["total"] += 1
     for entry in grades.values():
+        entry["net_correct_delta"] = entry["after"] - entry["before"]
+    for entry in capabilities.values():
         entry["net_correct_delta"] = entry["after"] - entry["before"]
     return {
         "status": "MEASURED",
@@ -216,4 +224,5 @@ def screen_frontier(rows, parent_predictions, candidate_predictions,
         "regressions": regressions,
         "repaired": repaired,
         "grades": grades,
+        "capabilities": capabilities,
     }

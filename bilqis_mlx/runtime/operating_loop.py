@@ -38,6 +38,49 @@ import time as _time
 import uuid as _uuid
 
 
+def _numeric_entry_transition(release, graph, *, full_grade_b, experiment_budget):
+    initial, terminal = _profiles_catalog.numeric_scope_bounds()
+    transition = _profiles_catalog.numeric_entry_transition(
+        release, graph, full_boolean=full_grade_b, maximum=initial)
+    return _dataclasses.replace(
+        transition,
+        numeric_scope_final_maximum=(initial if experiment_budget is not None else terminal))
+
+
+def _resume_boolean_profile(run_dir, receipt, course_a, source_root, graph,
+                            admitted_v2, *, full_grade_b, autonomous_curriculum):
+    """Apply the operator-selected Boolean profile without neural updates."""
+    course = _factory_schedule.schedule_program_from_executable_release(admitted_v2)
+    active_grade_count = len(admitted_v2.execution_plan.grades)
+    target = None
+    if (not autonomous_curriculum and
+            _compatibility_executable_projection.profile_has_legacy_inventory(
+                admitted_v2, course)):
+        if active_grade_count == 1:
+            target = _profiles_school.with_disabled_future_grades(
+                _profiles_school.boolean_entry_profile(full=full_grade_b),
+                tuple(grade.grade_id for grade in admitted_v2.curriculum.grades[2:]))
+        elif full_grade_b:
+            target = _profiles_school.full_boolean_upgrade_profile(admitted_v2.profile)
+        elif active_grade_count <= 2:
+            target = _profiles_school.with_disabled_future_grades(
+                _profiles_school.boolean_entry_profile(full=False),
+                tuple(grade.grade_id for grade in admitted_v2.curriculum.grades[2:]))
+    if target is None or admitted_v2.profile == target:
+        return receipt, course, admitted_v2
+    if receipt["school"]["stage"] == "AWAITING_NEXT_GRADE" and active_grade_count == 1:
+        return _runtime_release_adoption._adopt_executable_profile(
+            run_dir, receipt, course_a, source_root, graph, target)[:3]
+    if active_grade_count < 2:
+        return receipt, course, admitted_v2
+    school = _runtime_state._state_from_json(receipt["school"], course)
+    if not full_grade_b and school.grade != course.grades[-1].id:
+        return receipt, course, admitted_v2
+    return _runtime_release_adoption._adopt_executable_profile(
+        run_dir, receipt, course_a, source_root, graph, target,
+        invalidate_assessment_evidence=full_grade_b)[:3]
+
+
 def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoint: _pathlib.Path,
             manifest_path: _pathlib.Path, *, resume: bool = False, minutes: int = 90,
             max_visits: int = 0, steps_per_visit: int = 16,
@@ -45,7 +88,7 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
             numeric_staircase: bool = False,
             boolean_composite: bool = False,
             boolean_idboolops: bool = False,
-            full_grade_b: bool = False,
+            full_grade_b: bool = True,
             retention_enabled: bool = True,
             experiment_probe_each: int = 6,
             experiment_mature_max_loss: int = 1,
@@ -144,33 +187,13 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
                 run_dir, manifest, historical_course, course_a, source_root, teacher_sha)
             admitted_v2 = _runtime_admission._require_executable_factory_admission(
                 run_dir, receipt, graph)
-            course = _factory_schedule.schedule_program_from_executable_release(admitted_v2)
-            active_grade_count = len(admitted_v2.execution_plan.grades)
-            target_boolean_profile = None
-            if (active_grade_count <= 2 and not autonomous_curriculum and
-                    _compatibility_executable_projection.profile_has_legacy_inventory(admitted_v2, course)):
-                target_boolean_profile = _profiles_school.with_disabled_future_grades(
-                    _profiles_school.boolean_entry_profile(full=full_grade_b),
-                    tuple(
-                        grade.grade_id
-                        for grade in admitted_v2.curriculum.grades[2:]))
-            if (target_boolean_profile is not None and
-                    receipt["school"]["stage"] == "AWAITING_NEXT_GRADE" and
-                    active_grade_count == 1):
-                receipt, course, admitted_v2, _ = _runtime_release_adoption._adopt_executable_profile(
-                    run_dir, receipt, course_a, source_root, graph,
-                    target_boolean_profile)
-            elif (target_boolean_profile is not None and
-                  active_grade_count == 2 and
-                  admitted_v2.profile != target_boolean_profile):
-                current_program = _factory_schedule.schedule_program_from_executable_release(
-                    admitted_v2)
-                current_school = _runtime_state._state_from_json(
-                    receipt["school"], current_program)
-                if current_school.grade == current_program.grades[-1].id:
-                    receipt, course, admitted_v2, _ = _runtime_release_adoption._adopt_executable_profile(
-                        run_dir, receipt, course_a, source_root, graph,
-                        target_boolean_profile)
+            receipt, _, admitted_v2, _ = (
+                _runtime_release_adoption._adopt_source_presentation_revision_if_needed(
+                    run_dir, receipt, course_a, source_root, graph, admitted_v2))
+            receipt, course, admitted_v2 = _resume_boolean_profile(
+                run_dir, receipt, course_a, source_root, graph, admitted_v2,
+                full_grade_b=full_grade_b,
+                autonomous_curriculum=autonomous_curriculum)
             admitted_v2 = _runtime_admission._require_executable_factory_admission(
                 run_dir, receipt, graph)
             course = _factory_schedule.schedule_program_from_executable_release(admitted_v2)
@@ -181,13 +204,9 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
                     receipt = _runtime_exam_execution._measure_debt_admission_boundary(
                         mx, run_dir, receipt, manifest, course, source_root,
                         params, graph)
-                catalog_transition = _profiles_catalog.numeric_entry_transition(
-                    admitted_v2, graph,
-                    full_boolean=full_grade_b,
-                    maximum=3 if numeric_staircase or experiment_budget is not None else 10)
-                if experiment_budget is not None:
-                    catalog_transition = _dataclasses.replace(
-                        catalog_transition, numeric_scope_final_maximum=4)
+                catalog_transition = _numeric_entry_transition(
+                    admitted_v2, graph, full_grade_b=full_grade_b,
+                    experiment_budget=experiment_budget)
                 params, optimizer, graph, receipt, course = (
                     _runtime_release_adoption._adopt_catalog_profile(
                         mx, run_dir, receipt, course_a, source_root, graph,
@@ -209,7 +228,8 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
                     (".experiment-run.json",)
                     if experiment_budget is not None else ()))
         if experiment_budget is not None and receipt.get("numeric_scope_final_maximum") is None:
-            receipt = {**receipt, "numeric_scope_final_maximum": 4}
+            receipt = {**receipt, "numeric_scope_final_maximum":
+                       _profiles_catalog.numeric_scope_bounds()[0]}
         params, optimizer, graph, receipt, course, _ = (
             _runtime_release_adoption._auto_adopt_known_grade_boundary(
                 mx, run_dir, receipt, course, course_a, source_root, manifest,

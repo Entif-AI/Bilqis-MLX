@@ -40,18 +40,35 @@ def full_boolean_profile() -> CurriculumProfile:
     return CurriculumProfile("school/boolean/full")
 
 
-def boolean_entry_profile(*, full: bool = False) -> CurriculumProfile:
+def _require_profile(profile: CurriculumProfile) -> None:
+    if not isinstance(profile, CurriculumProfile):
+        raise TypeError("FACTORY_PROFILE_REQUIRED")
+
+
+def boolean_entry_profile(*, full: bool = True) -> CurriculumProfile:
     """Operator policy selects data; execution remains profile-generic."""
     if type(full) is not bool:
         raise TypeError("FACTORY_BOOLEAN_PROFILE_SELECTION_INVALID")
     return full_boolean_profile() if full else boolean_kernel_profile()
 
 
+def full_boolean_upgrade_profile(profile: CurriculumProfile) -> CurriculumProfile:
+    """Restore canonical Grade B while preserving all non-B profile overrides."""
+    _require_profile(profile)
+    suffix = ""
+    marker = "/numeric-"
+    if marker in profile.profile_id:
+        suffix = profile.profile_id[profile.profile_id.index(marker):]
+    return CurriculumProfile(
+        "school/boolean/full" + suffix,
+        grades=tuple(grade for grade in profile.grades if grade.grade_id != "B"),
+    )
+
+
 def with_disabled_future_grades(
         profile: CurriculumProfile, grade_ids) -> CurriculumProfile:
     """Keep an execution profile as a canonical active-grade prefix."""
-    if not isinstance(profile, CurriculumProfile):
-        raise TypeError("FACTORY_PROFILE_REQUIRED")
+    _require_profile(profile)
     existing = {grade.grade_id for grade in profile.grades}
     additions = tuple(
         GradeProfile(grade_id, enabled_capabilities=())
@@ -72,9 +89,10 @@ def numeric_foundation_profile(
     capability_ids = tuple(capability_ids)
     if not capability_ids:
         raise ValueError("FACTORY_NUMERIC_PROFILE_CAPABILITIES_REQUIRED")
+    from ..numeric_staircase import FULL_OPERATION_MAXIMUM
     active = (
         capability_ids
-        if maximum >= 6 else capability_ids[:5])
+        if maximum >= FULL_OPERATION_MAXIMUM else capability_ids[:5])
     numbers = tuple(str(index) for index in range(maximum + 1))
     overrides = tuple(CapabilityProfile(
         capability_id,

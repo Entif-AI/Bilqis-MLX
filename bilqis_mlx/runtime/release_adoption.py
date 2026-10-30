@@ -124,14 +124,49 @@ def _verify_profile_successor(predecessor, successor, graph, profile):
 _UNSPECIFIED_DEBT_CADENCE_POLICY = object()
 
 
+SOURCE_PRESENTATION_ADMITTED_PROVIDER_MISSING = (
+    "FACTORY_SOURCE_PRESENTATION_ADMITTED_PROVIDER_MISSING")
+
+
+def _grade_a_member_context_revision_required(predecessor, registry=None) -> bool:
+    """Detect the authorized neural-inert expansion of MEMBER source context."""
+    from bilqis_mlx.source_adapters.grade_a_presentation import (
+        IRRELEVANT_CONTEXT_VARIATION, MEMBER_CONTEXT_VARIATION,
+    )
+    capability = "A.MEMBER"
+    execution = predecessor.execution_plan.capability_map.get(capability)
+    binding = predecessor.source_bindings.by_capability.get(capability)
+    if execution is None or binding is None:
+        return False
+    admitted = next((
+        provider for provider in predecessor.source_adapters
+        if provider.adapter_id == execution.provider_id
+    ), None)
+    if admitted is None:
+        raise ValueError(SOURCE_PRESENTATION_ADMITTED_PROVIDER_MISSING)
+    registry = registry or _source_adapters_school.live_source_registry()
+    current = registry.require(
+        binding.generator_id, binding.oracle_id).descriptor
+    authorized = (MEMBER_CONTEXT_VARIATION, IRRELEVANT_CONTEXT_VARIATION)
+    return any(
+        variation in current.variation_axes and variation not in admitted.variation_axes
+        for variation in authorized
+    )
+
+
+def _source_presentation_revision_required(predecessor, registry=None) -> bool:
+    """Collect explicitly authorized neural-inert source-presentation revisions."""
+    registry = registry or _source_adapters_school.live_source_registry()
+    return _grade_a_member_context_revision_required(predecessor, registry)
+
+
 def _profile_transition(previous_program, successor_program, school, *,
                         mastery_debt=None,
                         debt_cadence_policy=_UNSPECIFIED_DEBT_CADENCE_POLICY):
     topology = _curriculum_scheduler.classify_schedule_topology(previous_program, successor_program)
     appended = topology is _curriculum_scheduler.ScheduleTopology.APPEND_GRADE
-    policy = (school.debt_cadence_policy
-              if debt_cadence_policy is _UNSPECIFIED_DEBT_CADENCE_POLICY
-              else debt_cadence_policy)
+    explicit_policy = debt_cadence_policy is not _UNSPECIFIED_DEBT_CADENCE_POLICY
+    policy = school.debt_cadence_policy if not explicit_policy else debt_cadence_policy
     if (policy is not None and not isinstance(
             policy, _curriculum_scheduler.DebtCadencePolicy)):
         raise ErrorBus.legacy_error(SCHOOL.SCHEDULE.INVALID_DEBT_CADENCE_POLICY)
@@ -147,16 +182,16 @@ def _profile_transition(previous_program, successor_program, school, *,
     if appended:
         if mastery_debt is None and school.stage == "AWAITING_NEXT_GRADE_WITH_DEBT":
             mastery_debt = school.carried_mastery_debt
-        return (
-            _dataclasses.replace((_curriculum_scheduler.append_next_grade_with_debt(
+        next_state = (_curriculum_scheduler.append_next_grade_with_debt(
                 previous_program, successor_program, school, mastery_debt)
              if mastery_debt is not None else
              _curriculum_scheduler.adopt_appended_program(
-                 previous_program, successor_program, school)),
-                    debt_cadence_policy=policy),
-            None,
-            True,
-        )
+                 previous_program, successor_program, school))
+        if explicit_policy:
+            next_state = _dataclasses.replace(
+                next_state, debt_cadence_policy=policy)
+        _curriculum_scheduler.verify_state(successor_program, next_state)
+        return next_state, None, True
     if revised and mastery_debt is None:
         changed = tuple(
             index for index, (old_grade, new_grade) in
@@ -229,7 +264,7 @@ def _profile_championship_state(
 def _profile_adoption_receipt(
         receipt, compatibility_course, successor, successor_program,
         release_file, admission, identity, epoch, history, revised_grade,
-        graph):
+        graph, *, invalidate_assessment_evidence=False):
     heads = _factory_executable_release.answer_heads_from_executable_release(successor, graph)
     numeric_values = heads.get("numeric_active", {}).get("values")
     candidate = {
@@ -244,18 +279,24 @@ def _profile_adoption_receipt(
         "championship_school_identity": identity,
         "mentor_epoch": epoch,
         "championship_epoch_history": history,
-        "last_exam": None if revised_grade is not None else receipt.get("last_exam"),
+        "last_exam": (
+            None if revised_grade is not None or invalidate_assessment_evidence
+            else receipt.get("last_exam")),
     }
     if numeric_values is not None:
         candidate["numeric_maximum"] = len(numeric_values) - 1
     candidate.pop("qualification_cohort_v2", None)
+    if invalidate_assessment_evidence:
+        candidate.pop("fixed_frontier_exam", None)
+        candidate.pop("last_generalization_cohort_v2", None)
     return candidate
 
 
 def _adopt_executable_profile(
         run_dir, receipt, grade_a_course, source_root, graph, profile, *,
         compiled_successor=None, allow_mastery_debt=False,
-        debt_cadence_policy=_UNSPECIFIED_DEBT_CADENCE_POLICY):
+        debt_cadence_policy=_UNSPECIFIED_DEBT_CADENCE_POLICY,
+        invalidate_assessment_evidence=False):
     """Adopt one same-ABI v2 profile change without release-name dispatch."""
     predecessor = _runtime_admission._require_executable_factory_admission(run_dir, receipt, graph)
     previous_program = _factory_schedule.schedule_program_from_executable_release(predecessor)
@@ -287,7 +328,8 @@ def _adopt_executable_profile(
         mastery_debt=mastery_debt)
     candidate = _profile_adoption_receipt(
         receipt, compatibility_course, successor, successor_program,
-        release_file, admission, identity, epoch, history, revised_grade, graph)
+        release_file, admission, identity, epoch, history, revised_grade, graph,
+        invalidate_assessment_evidence=invalidate_assessment_evidence)
     if allow_mastery_debt:
         candidate["last_exam"] = receipt["debt_admission_boundary_exam"]
         candidate.pop("fixed_frontier_exam", None)
@@ -299,7 +341,12 @@ def _adopt_executable_profile(
         "generation": record["generation"],
         "grade": next_state.grade,
         "profile_id": successor.profile.profile_id,
-        "transition_kind": "APPEND_GRADE" if appended else "REVISE_PROFILE",
+        "transition_kind": (
+            "APPEND_GRADE" if appended else
+            "REVISE_SOURCE" if (
+                revised_grade is None and successor.profile == predecessor.profile and
+                previous_program == successor_program) else
+            "REVISE_PROFILE"),
         "revised_grade": revised_grade,
         "debt_admission": allow_mastery_debt,
         "carried_mastery_debt": list(next_state.carried_mastery_debt),
@@ -307,12 +354,32 @@ def _adopt_executable_profile(
         "factory_release_sha256": successor.release_sha256,
         "student_sha256": school.current_student.sha256,
         "optimizer_step": school.current_student.optimizer_step,
+        "numeric_maximum": record.get("numeric_maximum"),
         "actual_neural_updates": 0,
     }
     record = _runtime_checkpoints._persist(
         run_dir, _runtime_checkpoints._with_delivery_outbox(record, (event,)))
     _runtime_checkpoints._reconcile_delivery_outbox(run_dir, record)
     return record, compatibility_course, successor, successor_program
+
+
+def _adopt_source_presentation_revision_if_needed(
+        run_dir, receipt, grade_a_course, source_root, graph, predecessor):
+    """Adopt authorized source presentation revisions with zero neural updates."""
+    program = _factory_schedule.schedule_program_from_executable_release(predecessor)
+    compatibility_course = _compatibility_executable_projection.legacy_course_for_profile(
+        grade_a_course, source_root, predecessor.profile)
+    registry = _source_adapters_school.live_source_registry()
+    if not _source_presentation_revision_required(predecessor, registry):
+        return receipt, compatibility_course, predecessor, program
+    successor = _factory_executable_release.compile_successor_profile_release(
+        predecessor, predecessor.profile, registry,
+        _factory_live_answers.live_answer_registry(),
+        source_root=source_root, graph=graph, verification_seed=2026102701)
+    return _adopt_executable_profile(
+        run_dir, receipt, grade_a_course, source_root, graph,
+        predecessor.profile, compiled_successor=successor,
+        invalidate_assessment_evidence=True)
 
 
 def _require_complete_profile_boundary(program, school, receipt):
@@ -422,6 +489,7 @@ def _catalog_adoption_event(
         "previous_student_sha256": school.current_student.sha256,
         "student_sha256": pointer.sha256,
         "optimizer_step": pointer.optimizer_step,
+        "numeric_maximum": record.get("numeric_maximum"),
         "factory_release_sha256": successor.release_sha256,
         "actual_neural_updates": 0,
     }
@@ -608,6 +676,7 @@ def _commit_prepared_successor(
             "factory_release_sha256": successor.release_sha256,
             "student_sha256": school.current_student.sha256,
             "optimizer_step": school.current_student.optimizer_step,
+            "numeric_maximum": record.get("numeric_maximum"),
             "actual_neural_updates": 0,
         }
     record = _runtime_checkpoints._persist(
@@ -657,18 +726,21 @@ def _advance_numeric_profile(run_dir, receipt, grade_a_course, source_root, grap
         from .qualification_manifest import require
         require(release.release_sha256 in receipt["qualification"].get("allowed_releases", [receipt["qualification"]["release_sha256"]]), "FROZEN_RELEASE_DRIFT")
         return receipt, course, release, program
-    if numeric_staircase:
-        initial_maximum, final_maximum = _profiles_catalog.numeric_scope_bounds()
-        if receipt.get("numeric_maximum", 0) > final_maximum:
-            current = _runtime_admission._require_executable_factory_admission(
-                run_dir, receipt, graph)
-            active = _factory_schedule.schedule_program_from_executable_release(current)
-            school = _runtime_state._state_from_json(receipt["school"], active)
-            if school.grade == active.grades[-1].id:
-                receipt, course, release, program = _adopt_executable_profile(
-                    run_dir, {**receipt, "numeric_scope_final_maximum": final_maximum},
-                    grade_a_course, source_root, graph,
-                    _profiles_catalog.numeric_scope_profile(current, initial_maximum))
+    initial_maximum, final_maximum = _profiles_catalog.numeric_scope_bounds()
+    current = _runtime_admission._require_executable_factory_admission(
+        run_dir, receipt, graph)
+    active = _factory_schedule.schedule_program_from_executable_release(current)
+    school = _runtime_state._state_from_json(receipt["school"], active)
+    wide_unscoped_entry = _wide_numeric_entry_rebind_due(
+        receipt, current, final_maximum=final_maximum)
+    legacy_oversized_scope = (
+        numeric_staircase and receipt.get("numeric_maximum", 0) > final_maximum)
+    if ((wide_unscoped_entry or legacy_oversized_scope) and
+            school.grade == active.grades[-1].id):
+        receipt, course, release, program = _adopt_executable_profile(
+            run_dir, {**receipt, "numeric_scope_final_maximum": final_maximum},
+            grade_a_course, source_root, graph,
+            _profiles_catalog.numeric_scope_profile(current, initial_maximum))
     final_scope = receipt.get("numeric_scope_final_maximum")
     if final_scope is not None:
         current = _runtime_admission._require_executable_factory_admission(
@@ -681,6 +753,16 @@ def _advance_numeric_profile(run_dir, receipt, grade_a_course, source_root, grap
             receipt, course, release, program = _adopt_executable_profile(
                 run_dir, receipt, grade_a_course, source_root, graph, next_profile)
     return receipt, course, release, program
+
+
+def _wide_numeric_entry_rebind_due(receipt, release, *, final_maximum: int) -> bool:
+    """Recognize one-shot wide C admission, not a legitimately completed staircase."""
+    profile_id = getattr(getattr(release, "profile", None), "profile_id", None)
+    return (
+        receipt.get("numeric_scope_final_maximum") is None and
+        receipt.get("numeric_maximum") == final_maximum and
+        isinstance(profile_id, str) and
+        profile_id.endswith(f"/numeric-0-{final_maximum}"))
 
 
 def _auto_adopt_known_grade_boundary(

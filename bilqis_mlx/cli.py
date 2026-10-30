@@ -248,7 +248,7 @@ def _boolean_revision_preflight(run_dir: Path, legacy_root: Path, *, resume: boo
 def preflight(run_dir: Path, *, resume=False, verify_source=False,
               legacy_code_root: Path | None = None, champion_checkpoint: Path | None = None,
               numeric_staircase=False, boolean_composite=False, boolean_idboolops=False,
-              full_grade_b=False,
+              full_grade_b=True,
               retention_enabled=True,
               boolean_association_bridge=False, model_topology=None):
     from .runtime.model_topology import CURRENT_DEFAULT_TOPOLOGY
@@ -311,12 +311,16 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
         requested_profile = legacy_boolean_profile_request(
             full_grade_b=full_grade_b)
         if factory is not None:
+            active_profile_id = factory["profile_id"]
+            migration_required = (
+                active_profile_id.startswith("school/boolean-kernel/and-iff")
+                if full_grade_b else
+                (len(factory["active_grades"]) <= 2 and
+                 active_profile_id.startswith("school/boolean/full")))
             snapshot["execution_profile"] = {
-                "active_profile_id": factory["profile_id"],
+                "active_profile_id": active_profile_id,
                 "requested_boolean_profile_id": requested_profile,
-                "migration_required": (
-                    len(factory["active_grades"]) <= 2 and
-                    factory["profile_id"] != requested_profile),
+                "migration_required": migration_required,
                 "active_capabilities": list(factory["active_capabilities"]),
                 "neural_updates": 0,
             }
@@ -452,6 +456,18 @@ def human_stop_summary(result: dict) -> str:
     return message + "\nHistorical dashboard: npm run dashboard"
 
 
+def _add_boolean_profile_args(parser) -> None:
+    boolean_profile = parser.add_mutually_exclusive_group()
+    boolean_profile.add_argument(
+        '--full-grade-b', dest='full_grade_b', action='store_true',
+        help='Use the full canonical Grade B capability set (default).')
+    boolean_profile.add_argument(
+        '--reduced-grade-b', '--minimal-grade-b', dest='full_grade_b',
+        action='store_false',
+        help='Explicitly opt into the historical reduced AND/IFF Grade B profile.')
+    parser.set_defaults(full_grade_b=True)
+
+
 def parse_args(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     actions=parser.add_subparsers(dest="action",required=True)
@@ -475,8 +491,7 @@ def parse_args(argv=None):
                            help='Neural-inertly enroll B.COMPOSITE into the current Grade-B release')
             p.add_argument('--boolean-idboolops', action='store_true',
                            help='Neural-inertly enroll inverse Boolean primitive identification into Grade B')
-            p.add_argument('--full-grade-b', action='store_true',
-                           help='Opt into/retain the legacy full six-operator Grade B; default admission and existing A/B resume use reduced AND/IFF B')
+            _add_boolean_profile_args(p)
             retention = p.add_mutually_exclusive_group()
             retention.add_argument('--no-retention', action='store_true',
                                    help='Explicit unprotected legacy teaching (separate independent --run-dir only)')

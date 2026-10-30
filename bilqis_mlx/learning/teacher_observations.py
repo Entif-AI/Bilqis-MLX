@@ -313,6 +313,10 @@ def summarize_observations(receipts) -> dict:
     publications_known = all(isinstance(item.get("publication"), Mapping) for item in accepted)
     durable = (sum(item["publication"].get("status") == "DURABLE_CHECKPOINT_OUTBOX"
                    for item in accepted) if publications_known else None)
+    shadow_reviews = [item.get("teacher_multifidelity_shadow") for item in envelopes
+                      if isinstance(item.get("teacher_multifidelity_shadow"), Mapping)]
+    shadow_activations = [item.get("teacher_multifidelity_activation") for item in envelopes
+                          if isinstance(item.get("teacher_multifidelity_activation"), Mapping)]
     totals = {name: _total(outcomes, name) for name in ("attempted_steps", "retained_steps", "wall_seconds")}
     return {"schema": SUMMARY_SCHEMA, "observation_count": len(outcomes),
             "predictions": _unmeasured("NO_PREDICTION_EVIDENCE"),
@@ -342,5 +346,13 @@ def summarize_observations(receipts) -> dict:
                                            "delivered_teaching_steps": _unmeasured("STEPS_NOT_EXPANDED"),
                                            "roles": _unmeasured("STEPS_NOT_EXPANDED")}),
             "scheduling": scheduling,
-            "calibration": _unmeasured("NO_PREDICTION_EVIDENCE"),
-            "shadow_probes": _unmeasured("NO_SHADOW_PROBE_EVIDENCE")}
+            "calibration": (_measured(shadow_activations[-1]) if shadow_activations
+                            else _unmeasured("NO_PREDICTION_EVIDENCE")),
+            "shadow_probes": (_measured({
+                "reviews": len(shadow_reviews),
+                "early_stop_recommendations": sum(
+                    row.get("first_would_stop_step") is not None for row in shadow_reviews),
+                "false_kills": sum(bool(row.get("false_kill")) for row in shadow_reviews),
+                "shadow_steps_saved": sum(
+                    int(row.get("shadow_steps_saved", 0)) for row in shadow_reviews),
+            }) if shadow_reviews else _unmeasured("NO_SHADOW_PROBE_EVIDENCE"))}

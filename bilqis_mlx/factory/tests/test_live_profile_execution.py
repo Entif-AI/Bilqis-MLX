@@ -253,7 +253,7 @@ LIVE_PROFILE_PROBE = textwrap.dedent(r'''
 
             numeric_transition = numeric_entry_transition(
                 projected_release, graph,
-                full_boolean=False, maximum=3)
+                full_boolean=False)
             numeric_course = legacy_course_for_profile(
                 grade_a, source, numeric_transition.profile)
             numeric_release = compile_successor_profile_release(
@@ -271,11 +271,12 @@ LIVE_PROFILE_PROBE = textwrap.dedent(r'''
                 for grade in numeric_release.execution_plan.grades
             ) == ("A", "B", "C")
             assert numeric_release.execution_plan.grade_map["C"].capabilities == (
-                "C.COUNT", "C.NUMBER", "C.SUCCESSOR", "C.ADD", "C.SUB")
+                "C.COUNT", "C.NUMBER", "C.SUCCESSOR", "C.ADD", "C.SUB",
+                "C.MUL", "C.DIV")
             numeric_heads = answer_heads_from_executable_release(
                 numeric_release, numeric_transition.graph)
             assert numeric_heads["numeric_active"]["values"] == [
-                "0", "1", "2", "3"]
+                "0", "1", "2", "3", "4"]
             numeric_rows = []
             for capability in numeric_release.execution_plan.grade_map["C"].capabilities:
                 numeric_rows.extend(draw_executable_release_rows(
@@ -286,6 +287,7 @@ LIVE_PROFILE_PROBE = textwrap.dedent(r'''
             assert numeric_rows
             assert all(
                 row["gold"] in {"0", "1", "2", "3"}
+                or row["gold"] == "4"
                 for row in numeric_rows
                 if row.get("answer_kind") == "numeric_active")
             assert "source.micro.boolean-minimal/v1" not in {
@@ -296,7 +298,7 @@ LIVE_PROFILE_PROBE = textwrap.dedent(r'''
             assert next_numeric is not None
             next_numeric_course = legacy_course_for_profile(
                 grade_a, source, next_numeric)
-            numeric_four = compile_successor_profile_release(
+            numeric_five = compile_successor_profile_release(
                 numeric_release,
                 next_numeric,
                 registry,
@@ -306,13 +308,13 @@ LIVE_PROFILE_PROBE = textwrap.dedent(r'''
                 verification_seed=2026101906)
             assert numeric_four.transition.semantic_geometry == "UNCHANGED"
             assert answer_heads_from_executable_release(
-                numeric_four, numeric_transition.graph
-            )["numeric_active"]["values"] == ["0", "1", "2", "3", "4"]
+                numeric_five, numeric_transition.graph
+            )["numeric_active"]["values"] == ["0", "1", "2", "3", "4", "5"]
             from bilqis_mlx.factory.schedule import (
                 schedule_program_from_executable_release,
             )
             assert (
-                schedule_program_from_executable_release(numeric_four).digest()
+                schedule_program_from_executable_release(numeric_five).digest()
                 != schedule_program_from_executable_release(numeric_release).digest()
             )
             print("LIVE_PROFILE_EXECUTION_OK")

@@ -62,9 +62,8 @@ def mutate(teacher, rng):
     return None
 
 
-def pick(teacher, grade, rng, exclude=None):
-    if teacher["events"] and teacher["events"] % MUTATION_EVENT_INTERVAL == 0:
-        mutate(teacher, rng)
+def pick_existing(teacher, grade, rng, exclude=None):
+    """Pick from the existing archive without growing the strategy inventory."""
     local = teacher["grade_stats"].get(str(grade), {})
     total = teacher["events"] + 1
     excluded = set(exclude or ())
@@ -85,6 +84,12 @@ def pick(teacher, grade, rng, exclude=None):
     if not choices:
         raise ValueError(NO_UNTRIED_TEACHER_STRATEGY_ERROR)
     return max(choices, key=rank)
+
+
+def pick(teacher, grade, rng, exclude=None):
+    if teacher["events"] and teacher["events"] % MUTATION_EVENT_INTERVAL == 0:
+        mutate(teacher, rng)
+    return pick_existing(teacher, grade, rng, exclude=exclude)
 
 
 def observe(teacher, grade, policy_key, reward):

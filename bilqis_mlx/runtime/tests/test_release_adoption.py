@@ -1,11 +1,20 @@
 """A source/teaching revision need not change the scheduler projection."""
 from dataclasses import replace
+from types import SimpleNamespace
 import unittest
 
-from bilqis_mlx.curriculum.scheduler import start_new
+from bilqis_mlx.curriculum.scheduler import DebtCadencePolicy, start_new
 from bilqis_mlx.factory.schedule import ScheduleCapability, ScheduleGrade, ScheduleProgram
 from bilqis_mlx.learning.champions import Checkpoint
-from bilqis_mlx.runtime.release_adoption import _profile_transition
+from bilqis_mlx.runtime.release_adoption import (
+    _grade_a_member_context_revision_required,
+    _profile_transition,
+    _source_presentation_revision_required,
+)
+from bilqis_mlx.source_adapters.grade_a_presentation import (
+    IRRELEVANT_CONTEXT_VARIATION, MEMBER_CONTEXT_VARIATION,
+)
+from bilqis_mlx.source_adapters.school import live_source_registry
 
 
 class TeachingOnlyTransitionTests(unittest.TestCase):
@@ -26,6 +35,67 @@ class TeachingOnlyTransitionTests(unittest.TestCase):
         changed = replace(self.program, program_digest='d' * 64)
         with self.assertRaisesRegex(ValueError, 'FACTORY_SCHEDULE_REVISION_INVALID'):
             _profile_transition(self.program, changed, self.school)
+
+    def test_grade_a_member_context_requires_one_explicit_source_revision(self):
+        registry = live_source_registry()
+        generator = "bilqis_mlx.grade_a_probe.make_record"
+        oracle = "bilqis.mlx.grade-a-record-oracle/v2"
+        current = registry.require(generator, oracle).descriptor
+        historical = replace(
+            current,
+            variation_axes=tuple(
+                axis for axis in current.variation_axes
+                if axis != MEMBER_CONTEXT_VARIATION),
+        )
+        binding = SimpleNamespace(generator_id=generator, oracle_id=oracle)
+
+        def release(provider):
+            return SimpleNamespace(
+                execution_plan=SimpleNamespace(capability_map={
+                    "A.MEMBER": SimpleNamespace(provider_id=provider.adapter_id),
+                }),
+                source_bindings=SimpleNamespace(by_capability={
+                    "A.MEMBER": binding,
+                }),
+                source_adapters=(provider,),
+            )
+
+        self.assertTrue(_grade_a_member_context_revision_required(
+            release(historical), registry))
+        self.assertFalse(_grade_a_member_context_revision_required(
+            release(current), registry))
+        self.assertTrue(_source_presentation_revision_required(
+            release(historical), registry))
+
+    def test_grade_a_context_revision_detects_member_fixed_predecessor(self):
+        registry = live_source_registry()
+        generator = "bilqis_mlx.grade_a_probe.make_record"
+        oracle = "bilqis.mlx.grade-a-record-oracle/v2"
+        current = registry.require(generator, oracle).descriptor
+        member_only = replace(
+            current,
+            variation_axes=tuple(
+                axis for axis in current.variation_axes
+                if axis != IRRELEVANT_CONTEXT_VARIATION),
+        )
+        self.assertIn(MEMBER_CONTEXT_VARIATION, member_only.variation_axes)
+        binding = SimpleNamespace(generator_id=generator, oracle_id=oracle)
+
+        def release(provider):
+            return SimpleNamespace(
+                execution_plan=SimpleNamespace(capability_map={
+                    "A.MEMBER": SimpleNamespace(provider_id=provider.adapter_id),
+                }),
+                source_bindings=SimpleNamespace(by_capability={
+                    "A.MEMBER": binding,
+                }),
+                source_adapters=(provider,),
+            )
+
+        self.assertTrue(_grade_a_member_context_revision_required(
+            release(member_only), registry))
+        self.assertFalse(_grade_a_member_context_revision_required(
+            release(current), registry))
 
     def test_source_revision_history_keeps_valid_epoch_custody_records(self):
         from dataclasses import asdict
@@ -69,10 +139,84 @@ class ExplicitProfileDebtTests(unittest.TestCase):
         self.assertEqual(state.carried_mastery_debt, ('A.IDENTITY',))
         self.assertEqual(state.current_student, self.school.current_student)
         self.assertEqual(state.champions, {})
+        self.assertEqual(
+            state.debt_cadence_policy,
+            DebtCadencePolicy('A', 'B', 4),
+        )
 
     def test_ordinary_append_still_requires_the_graduated_boundary(self):
         with self.assertRaises(ValueError):
             _profile_transition(self.previous, self.successor, self.school)
+
+    def test_factory_append_retargets_debt_roles_without_grade_letters(self):
+        student = Checkpoint('9' * 64, 'bundles/generic-student', 25, True)
+        previous = ScheduleProgram('1' * 64, (
+            ScheduleGrade('FOUNDATION', (
+                ScheduleCapability('foundation.identity', 12),), (), '2' * 64),
+            ScheduleGrade('RELATIONS', (
+                ScheduleCapability('relations.compose', 12),), (), '3' * 64),
+        ), False)
+        successor = ScheduleProgram('4' * 64, (*previous.grades,
+            ScheduleGrade('WORLD_MODEL', (
+                ScheduleCapability('world_model.predict', 12),), (), '5' * 64)),
+            False)
+        school = replace(
+            start_new(previous, student),
+            active_grades=('FOUNDATION', 'RELATIONS'), grade_index=1,
+            stage='MAIN', queue=('relations.compose',),
+            champions={'FOUNDATION': student},
+            carried_mastery_debt=('relations.compose',),
+            debt_cadence_policy=DebtCadencePolicy(
+                'FOUNDATION', 'RELATIONS', 6),
+        )
+
+        state, revised, appended = _profile_transition(
+            previous, successor, school,
+            mastery_debt=('relations.compose',))
+
+        self.assertTrue(appended)
+        self.assertIsNone(revised)
+        self.assertEqual(state.grade, 'WORLD_MODEL')
+        self.assertEqual(
+            state.debt_cadence_policy,
+            DebtCadencePolicy('RELATIONS', 'WORLD_MODEL', 6),
+        )
+        self.assertEqual(state.bounded_debt_visits, 0)
+        self.assertEqual(state.priority_visits_since_bounded_debt, 0)
+
+    def test_factory_clean_append_clears_stale_debt_roles_without_grade_letters(self):
+        student = Checkpoint('8' * 64, 'bundles/generic-graduate', 30, True)
+        previous = ScheduleProgram('6' * 64, (
+            ScheduleGrade('FOUNDATION', (
+                ScheduleCapability('foundation.identity', 12),), (), '7' * 64),
+            ScheduleGrade('RELATIONS', (
+                ScheduleCapability('relations.compose', 12),), (), '8' * 64),
+        ), False)
+        successor = ScheduleProgram('9' * 64, (*previous.grades,
+            ScheduleGrade('WORLD_MODEL', (
+                ScheduleCapability('world_model.predict', 12),), (), 'a' * 64)),
+            False)
+        school = replace(
+            start_new(previous, student),
+            active_grades=('FOUNDATION', 'RELATIONS'), grade_index=1,
+            stage='AWAITING_NEXT_GRADE', queue=(),
+            champions={'FOUNDATION': student, 'RELATIONS': student},
+            carried_mastery_debt=(),
+            debt_cadence_policy=DebtCadencePolicy(
+                'FOUNDATION', 'RELATIONS', 4),
+            bounded_debt_visits=7,
+            priority_visits_since_bounded_debt=3,
+        )
+
+        state, revised, appended = _profile_transition(
+            previous, successor, school)
+
+        self.assertTrue(appended)
+        self.assertIsNone(revised)
+        self.assertEqual(state.grade, 'WORLD_MODEL')
+        self.assertIsNone(state.debt_cadence_policy)
+        self.assertEqual(state.bounded_debt_visits, 0)
+        self.assertEqual(state.priority_visits_since_bounded_debt, 0)
 
 
 class EarlierGradeExpansionTests(unittest.TestCase):
@@ -93,7 +237,7 @@ class EarlierGradeExpansionTests(unittest.TestCase):
         self.school = replace(base, active_grades=('A', 'B', 'C'), grade_index=2,
             stage='RECOVERY_1', queue=('C.NUMBER', 'B.AND'), visits=123,
             carried_mastery_debt=('B.AND', 'C.COUNT'),
-            frontier_priority_visits=17, nongating_b_visits=4)
+            frontier_priority_visits=17, bounded_debt_visits=4)
 
     def test_additive_prior_grade_revision_preserves_frontier_and_adds_debt(self):
         state, revised, appended = _profile_transition(self.previous, self.successor, self.school)
@@ -101,6 +245,6 @@ class EarlierGradeExpansionTests(unittest.TestCase):
         self.assertEqual(revised, 'B')
         self.assertEqual((state.grade, state.stage, state.queue), ('C', 'RECOVERY_1', ('C.NUMBER', 'B.AND')))
         self.assertEqual(state.current_student, self.school.current_student)
-        self.assertEqual((state.visits, state.frontier_priority_visits, state.nongating_b_visits), (123, 17, 4))
+        self.assertEqual((state.visits, state.frontier_priority_visits, state.bounded_debt_visits), (123, 17, 4))
         self.assertEqual(state.carried_mastery_debt, ('B.AND', 'C.COUNT', 'B.NOT', 'B.OR', 'B.XOR', 'B.IMPLIES', 'B.COMPOSITE', 'B.IDBOOLOPS'))
         self.assertEqual(state.course_digest, self.successor.digest())

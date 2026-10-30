@@ -232,8 +232,7 @@ def _visit_source_seeds(step_index, policy, old_capabilities, school, retention_
         selected = old_capabilities[(school.visits + step_index) % len(old_capabilities)]
     retention_support_capability = (
         retention_support_capabilities[
-            (school.visits + step_index) %
-            len(retention_support_capabilities)]
+            step_index % len(retention_support_capabilities)]
         if retention_support_capabilities else None)
     fresh_seed = _runtime_state._seed(receipt, capability=cap, step=step_index + 1)
     prior_seed = (_runtime_state._seed(

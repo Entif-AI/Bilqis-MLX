@@ -85,7 +85,7 @@ def policy_epoch(receipt, release, *, configured_steps, batch_size, settings, en
         "semantic_graph_sha256": receipt.get("semantic_graph_sha256"),
         "source_manifest_sha256": receipt.get("source_manifest_sha256"),
         "feature_schema": "bilqis.teacher-student-region/v1",
-        "selector": "existing-contextual-pick-or-inherited-bandit/v1",
+        "selector": "349-replay-v2-contextual-plus-bounded-vnext-canary",
         "option_rule": "ordinary-source-direct; autonomy-existing-selected-option",
         "fallback": "existing-engine-pick; unchanged-diagnostic-context-rules",
         "seed_derivation": "runtime.state._seed(qualification_training_seed-or-run_id,generation,capability,step)",
@@ -94,7 +94,7 @@ def policy_epoch(receipt, release, *, configured_steps, batch_size, settings, en
         "retention_settings": asdict(settings) if settings is not None else None,
         "teaching_enrichment_enabled": enrichment,
         "cost_boundary": "host-monotonic-visit-entry-to-observation-finalization; includes capture and existing inference",
-        "new_inference": False, "new_early_termination": False,
+        "new_inference": True, "new_early_termination": False,
     }
 
 
@@ -195,7 +195,8 @@ class ObservationCapture:
             "realization_changed": [row["id"] for row in rows] != [row["id"] for row in option_rows]}
         self.steps.append(store_sidecar(self.run_dir, payload))
 
-    def finish(self, event, *, decision, paired, protected, stage, attempted, retained):
+    def finish(self, event, *, decision, paired, protected, stage, attempted, retained,
+               shadow_review=None, shadow_activation=None):
         if not self.enabled:
             return
         from ..learning.teacher_observations import (
@@ -218,6 +219,10 @@ class ObservationCapture:
             "attempt_status": "SELECTION_SKIPPED" if not attempted else "CANDIDATE_ATTEMPTED",
             "publication_status": "PROVISIONAL_RAM_ACCEPTANCE" if retained else "NOT_RETAINED_IN_RAM",
             "selection_skip": {key: event[key] for key in ("reason", "target_probe_correct", "target_probe_total") if key in event}}
+        if shadow_review is not None:
+            envelope["teacher_multifidelity_shadow"] = _plain(shadow_review)
+        if shadow_activation is not None:
+            envelope["teacher_multifidelity_activation"] = _plain(shadow_activation)
         event["teacher_observation"] = {"attempt_id": self.attempt_id,
             "proposal_id": self.proposal_id, "envelope": store_sidecar(self.run_dir, envelope)}
 

@@ -202,6 +202,20 @@ Recovery: Inspect the owning contract and inputs; preserve recorded state.
 
 Legacy aliases: `INVALID_CARRIED_MASTERY_DEBT`
 
+### `SCHOOL.STATE.INVALID_MATURE_CAPABILITY_DEBT`
+
+Invalid mature capability debt.
+
+Owner: `curriculum.state`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Invalid mature capability debt
+
+Recovery: Inspect the mature capability debt ledger; preserve student and AdamW state.
+
+Legacy aliases: `INVALID_MATURE_CAPABILITY_DEBT`
+
 ### `SCHOOL.STATE.CARRIED_MASTERY_DEBT_AT_COMPLETION_BOUNDARY`
 
 Carried mastery debt at completion boundary.
@@ -509,6 +523,76 @@ Message: Learning experiment missing fresh current rows
 Recovery: Inspect the owning contract and inputs; preserve recorded state.
 
 Legacy aliases: `LEARNING_EXPERIMENT_MISSING_FRESH_CURRENT_ROWS`
+
+### `SOURCE.GRADE_A.CONTEXT_ORACLE_DRIFT`
+
+Grade A contextual presentation oracle drift.
+
+Owner: `source_adapters.grade_a_presentation`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: A contextual Grade A row changed source-oracled meaning.
+
+Recovery: Preserve the run and inspect the contextual presentation constructor and source oracle agreement.
+
+Legacy aliases: `FACTORY_GRADE_A_CONTEXT_ORACLE_DRIFT`
+
+### `SOURCE.GRADE_A.MICRO_CONTEXT_SOURCE_SHAPE_INVALID`
+
+Grade A Micro contextual source shape invalid.
+
+Owner: `source_adapters.grade_a_presentation`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: A Micro Grade A row cannot accept the admitted irrelevant relation context.
+
+Recovery: Preserve the row and inspect the source world shape before contextualization.
+
+Legacy aliases: `FACTORY_GRADE_A_MICRO_CONTEXT_SOURCE_SHAPE_INVALID`
+
+### `SOURCE.GRADE_A.MICRO_CONTEXT_EXHAUSTED`
+
+Grade A Micro contextual source space exhausted.
+
+Owner: `source_adapters.grade_a_presentation`
+Disposition: `REGENERATE_SOURCE`
+Self-heal owner: `none`
+
+Message: No source-valid irrelevant relation fact remains for the Micro Grade A row.
+
+Recovery: Regenerate from a fresh source-valid base row; do not weaken source or oracle requirements.
+
+Legacy aliases: `FACTORY_GRADE_A_MICRO_CONTEXT_EXHAUSTED`
+
+### `SOURCE.GRADE_A.DEVELOPMENT_CONTEXT_SOURCE_SHAPE_INVALID`
+
+Grade A Development contextual source shape invalid.
+
+Owner: `source_adapters.grade_a_presentation`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: A Development Grade A row cannot accept the admitted irrelevant set context.
+
+Recovery: Preserve the row and inspect the source world shape before contextualization.
+
+Legacy aliases: `FACTORY_GRADE_A_DEVELOPMENT_CONTEXT_SOURCE_SHAPE_INVALID`
+
+### `SOURCE.GRADE_A.CONTEXT_IDENTITY_COLLISION`
+
+Grade A contextual identity collision.
+
+Owner: `source_adapters.grade_a_presentation`
+Disposition: `REGENERATE_SOURCE`
+Self-heal owner: `none`
+
+Message: A contextual Grade A draw produced duplicate specimen identities.
+
+Recovery: Regenerate the source-valid contextual cohort and preserve the conflicting rows for diagnosis.
+
+Legacy aliases: `FACTORY_GRADE_A_CONTEXT_IDENTITY_COLLISION`
 
 ### `SOURCE.BOOLEAN.BOOLEAN_CONTEXT_LENGTH`
 
@@ -1328,7 +1412,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **1935** raw raises across **167** files. The baseline gate permits only reduction.
+Current production scan: **1933** raw raises across **167** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -3012,8 +3096,6 @@ Current production scan: **1935** raw raises across **167** files. The baseline 
 | `SOURCE_PREFETCH_FRAGILE_SEEDS_INVALID` | 1 | `bilqis_mlx/runtime/source_prefetch.py` |
 | `SOURCE_PREFETCH_IDENTITY_INVALID` | 1 | `bilqis_mlx/runtime/source_prefetch.py` |
 | `SOURCE_PREFETCH_REQUEST_SCHEMA_DRIFT` | 1 | `bilqis_mlx/runtime/source_prefetch.py` |
-| `SPIRAL_ALLOWED_CAPABILITY_OUTSIDE_ASSESSMENT` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
-| `SPIRAL_EXCLUDED_GRADE_OUTSIDE_ACTIVE_PROGRAM` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `SPIRAL_RECOVERY_ENDED_WITHOUT_IMPERFECT_GRADE` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `STAGNATION_FIRST_RECOVERY_DUPLICATE` | 1 | `bilqis_mlx/learning/stagnation_control.py` |
 | `STAGNATION_GRACE_ACTIVE_CHANGE_FORBIDDEN` | 1 | `bilqis_mlx/learning/stagnation_control.py` |

@@ -21,20 +21,22 @@ import random
 from typing import Mapping
 
 import numpy as np
-
+import bilqis_mlx.mature_debt as _mature_debt
+import bilqis_mlx.learning.plasticity_escape as _plasticity_escape
+import bilqis_mlx.learning.teacher_breeding as _teacher_breeding
 from bilqis_mlx.learning.teacher_feedback import (
     LearningExperimentError, WeaknessTargetError, WeaknessTargetRequest,
     select_weakness_targets,
 )
-
+from bilqis_mlx.learning.teacher_strategy_population import UCB_EXPLORATION_WEIGHT as TEACHER_UCB_EXPLORATION_WEIGHT, SELECTION_POLICY as TEACHER_SELECTION_POLICY, active_effective_strategy_keys as _active_effective_strategy_keys, checkpoint_active_effective_strategy_keys as _checkpoint_active_effective_strategies, effective_context_scope as _effective_context_scope_impl, effective_policy_key as _effective_policy_key_impl, pick_existing_active as _pick_existing_active, record_checkpoint_policy_outcome as _record_checkpoint_policy_outcome, sibling_cooldown_penalty as _sibling_cooldown_penalty
+from bilqis_mlx.learning.teacher_realized_action import bind_record as _bind_realized_action_record, describe as realized_teacher_action, record_outcome as _record_realized_action_outcome
 
 VERSION = "bilqis.mlx.causal-teacher-experiment/v1"
 MAX_FAILURE_ARCHETYPES = 24
-TEACHER_UCB_EXPLORATION_WEIGHT = 0.6
 INTERFERENCE_REJECTIONS_FOR_HALF_BUDGET = 2
 INTERFERENCE_REJECTIONS_FOR_QUARTER_BUDGET = 4
 REJECTION_PRESSURE_CONTEXTUAL_START = 2
-REJECTION_PRESSURE_EXPLORATION_INTERVAL = 4
+BESPOKE_EXPLORATION_START = 4
 
 
 @dataclass(frozen=True)
@@ -273,8 +275,7 @@ def _retention_reason(*, no_target_gain, same_grade_net_gain,
         return "NO_MEASURABLE_TARGET_GAIN"
     if not frontier_measured and fragile_losses:
         return "FRAGILE_COMPOSITION_REPLAY_REGRESSION"
-    if exceeded:
-        return "PROTECTED_CAPABILITY_REGRESSION"
+    if exceeded: return "PROTECTED_CAPABILITY_REGRESSION"
     if not frontier_measured:
         if same_grade_net_gain < 0:
             return "SAME_GRADE_NET_REGRESSION"
@@ -331,18 +332,17 @@ def _validate_source_cohort_sha256(value):
             (len(value) != 64 or
              any(char not in "0123456789abcdef" for char in value))):
         raise ValueError("LEARNING_EXPERIMENT_COHORT_DIGEST_INVALID")
-
-
 def decide(paired: dict, *, active_capability: str, phase: str,
            protected: set[str], settings: Settings,
-           mature_grades: frozenset[str] = frozenset(),
+           mature_grades: frozenset[str] = frozenset(), mature_grade_debt: dict[str, int] | None = None,
            negative_prototypes: list[dict] | None = None,
            source_cohort_sha256: str | None = None,
            fragile_replay: dict | None = None,
            same_grade_capabilities: tuple[str, ...] | None = None,
            fixed_grade_replay: dict | None = None,
            fixed_frontier_replay: dict | None = None,
-           protected_frontier_grade: str | None = None) -> dict:
+           protected_frontier_grade: str | None = None,
+           plasticity_escape: dict | None = None) -> dict:
     """Retain only target gains that do not sacrifice their own grade.
 
     The parent/student and native AdamW remain untouched on rejection.
@@ -362,35 +362,39 @@ def decide(paired: dict, *, active_capability: str, phase: str,
     # The same, source-oracled parent/challenger probe must improve strictly.
     no_target_gain = active_gain <= 0
     frontier, whole_school_regression, active_grade_regression, frontier_net = (
-        _fixed_frontier_retention_evidence(
-            fixed_frontier_replay, protected_frontier_grade))
+        _fixed_frontier_retention_evidence(fixed_frontier_replay, protected_frontier_grade))
     frontier_measured = frontier.get("status") == "MEASURED"
     protected_frontier_delta = None
     if frontier_measured and protected_frontier_grade is not None:
         grades = frontier.get("grades")
-        grade = (grades.get(protected_frontier_grade)
-                 if isinstance(grades, dict) else None)
+        grade = grades.get(protected_frontier_grade) if isinstance(grades, dict) else None
         if isinstance(grade, dict):
             protected_frontier_delta = grade["after"] - grade["before"]
-    fixed_grade_regression = (
-        fixed.get("status") == "MEASURED" and
-        fixed["net_correct_delta"] < 0)
-    fragile_losses = bool(
-        fragile_replay and fragile_replay.get("regressions"))
-    if fragile_replay is not None and fragile_replay.get("status") not in (
-            "MEASURED", "NOT_MEASURED"):
+    fixed_grade_regression = (fixed.get("status") == "MEASURED" and fixed["net_correct_delta"] < 0)
+    fragile_losses = bool(fragile_replay and fragile_replay.get("regressions"))
+    if fragile_replay is not None and fragile_replay.get("status") not in ("MEASURED", "NOT_MEASURED"):
         raise ValueError("LEARNING_EXPERIMENT_INVALID_FRAGILE_REPLAY")
     fingerprint = json.dumps(paired, sort_keys=True, separators=(",", ":"))
     _validate_source_cohort_sha256(source_cohort_sha256)
     reason = _retention_reason(
-        no_target_gain=no_target_gain,
-        same_grade_net_gain=same_grade_net_gain,
-        fixed_grade_regression=fixed_grade_regression,
-        active_grade_regression=active_grade_regression,
-        whole_school_regression=whole_school_regression,
-        frontier_measured=frontier_measured,
-        fragile_losses=fragile_losses,
-        exceeded=exceeded)
+        no_target_gain=no_target_gain, same_grade_net_gain=same_grade_net_gain,
+        fixed_grade_regression=fixed_grade_regression, active_grade_regression=active_grade_regression,
+        whole_school_regression=whole_school_regression, frontier_measured=frontier_measured,
+        fragile_losses=fragile_losses, exceeded=exceeded)
+    reason, plasticity = _plasticity_escape.maybe_relax(
+        reason, state=plasticity_escape, no_target_gain=no_target_gain,
+        paired=paired, same_grade_capabilities=required,
+        fixed_grade_scores=(fixed.get("capabilities")
+                            if fixed.get("status") == "MEASURED" else None),
+        frontier_scores=(frontier.get("capabilities")
+                         if frontier.get("status") == "MEASURED" else None),
+        protected_frontier_grade=protected_frontier_grade,
+        fixed_grade_net_gain=(fixed.get("net_correct_delta")
+                              if fixed.get("status") == "MEASURED" else None),
+        active_frontier_grade_net_gain=protected_frontier_delta,
+        whole_school_net_gain=frontier_net if frontier_measured else None,
+        fragile_losses=fragile_losses)
+    projected_mature_debt, reason = _mature_debt.retention_reason(reason, frontier, mature_grades, mature_grade_debt or {})
     return {
         "version": VERSION,
         "decision": ("REJECT" if reason != "PAIRED_SCREEN_WITHIN_BUDGET"
@@ -411,6 +415,8 @@ def decide(paired: dict, *, active_capability: str, phase: str,
         "protected_tolerances": tolerances,
         "mature_protected_capabilities": sorted(cap for cap in regressions
                                                  if cap.partition(".")[0] in mature_grades),
+        "projected_mature_grade_debt": projected_mature_debt, "mature_grade_debt_hard_limit": _mature_debt.HARD_LIMIT,
+        "plasticity_escape": plasticity,
         "exceeded": exceeded,
         "worst_protected_loss": max(regressions.values(), default=0),
         "local_correct_delta": active_gain,
@@ -463,6 +469,7 @@ def _capability_stagnation_record(channel: dict, capability: str,
     record = channel.setdefault("capability_stagnation", {}).setdefault(
         _stagnation_key(capability, curriculum_scope), {
             "rejection_streak": 0,
+            "consecutive_interference_rejections": 0,
             "no_target_gain_streak": 0,
             "attempts_since_retained": 0,
             "total_rejections": 0,
@@ -470,6 +477,7 @@ def _capability_stagnation_record(channel: dict, capability: str,
             "current_rejection_reasons": {},
         })
     record.setdefault("current_rejection_reasons", {})
+    record.setdefault("consecutive_interference_rejections", 0)
     return record
 
 
@@ -483,51 +491,12 @@ def _inherited_exploration(teacher: dict, grade: str, policy_key: str) -> float:
         math.log(total+2)/(1+info["trials"]))
 
 
-_CONTEXT_INEFFECTIVE_POLICY_FIELDS = frozenset({"preview"})
-
-
 def _effective_policy_key(policy: dict) -> str:
-    """Identity for knobs that actually change the current source lesson.
-
-    Future-grade preview is deliberately unavailable in the admitted-source
-    trainer, so preview-only legacy variants are one effective contextual
-    strategy even though their historical policy IDs remain distinct.
-    """
-    if not isinstance(policy, dict):
-        raise ValueError(LearningExperimentError.POLICY_INVALID.value)
-    effective = {
-        key: value for key, value in sorted(policy.items())
-        if key not in _CONTEXT_INEFFECTIVE_POLICY_FIELDS
-    }
-    return hashlib.sha256(
-        json.dumps(effective, sort_keys=True).encode()).hexdigest()[:12]
+    return _effective_policy_key_impl(policy)
 
 
 def _effective_context_scope(teacher: dict, scope: dict) -> dict:
-    """Aggregate contextual evidence across behaviorally identical policies."""
-    groups = {}
-    strategies = teacher.get("strategies", {})
-    for policy_key, record in scope.items():
-        policy = strategies.get(policy_key)
-        if policy is None:
-            raise ValueError(LearningExperimentError.STRATEGY_ID_DRIFT.value)
-        effective_key = _effective_policy_key(policy)
-        group = groups.setdefault(effective_key, {
-            "trials": 0,
-            "reward_sum": 0.,
-            "unsafe": 0,
-            "retained": 0,
-            "no_target_gain_streak": 0,
-            "members": [],
-        })
-        group["trials"] += int(record.get("trials", 0))
-        group["reward_sum"] += float(record.get("reward_sum", 0.))
-        group["unsafe"] += int(record.get("unsafe", 0))
-        group["retained"] += int(record.get("retained", 0))
-        group["no_target_gain_streak"] += int(
-            record.get("no_target_gain_streak", 0))
-        group["members"].append(policy_key)
-    return groups
+    return _effective_context_scope_impl(teacher, scope)
 
 
 def _diagnostic_context(channel: dict, capability: str, curriculum_scope: str,
@@ -634,9 +603,10 @@ def candidate_step_budget(default_steps: int, teacher: dict, capability: str,
     The configured horizon remains authoritative in the healthy regime.
     Candidate attempts and optimizer steps are different units: a rejected
     16-step candidate is one failed candidate, not one sixteenth of a failure.
-    After two consecutive rejected candidates, halve the next disposable
-    trial. After four, quarter it. A retained candidate resets the rejection
-    streak through the existing capability-stagnation owner.
+    After two consecutive interference-rejected candidates, halve the next
+    disposable trial. After four, quarter it. A no-target-gain outcome breaks
+    the interference streak, while a retained candidate resets all current
+    rejection pressure through the existing capability-stagnation owner.
     """
     if type(default_steps) is not int or default_steps < 1:
         raise ValueError(LearningExperimentError.CANDIDATE_STEPS_INVALID.value)
@@ -646,13 +616,14 @@ def candidate_step_budget(default_steps: int, teacher: dict, capability: str,
     stagnation = _capability_stagnation(
         channel, capability, curriculum_scope)
     reasons = stagnation.get("current_rejection_reasons", {})
+    interference_rejections = stagnation.get(
+        "consecutive_interference_rejections", 0)
     if (not isinstance(reasons, dict) or any(
             not isinstance(reason, str) or type(count) is not int or count < 0
-            for reason, count in reasons.items())):
+            for reason, count in reasons.items()) or
+            type(interference_rejections) is not int or
+            interference_rejections < 0):
         raise ValueError(LearningExperimentError.CANDIDATE_STAGNATION_INVALID.value)
-    interference_rejections = sum(
-        count for reason, count in reasons.items()
-        if reason != "NO_MEASURABLE_TARGET_GAIN")
     half = max(1, default_steps // 2)
     quarter = max(1, default_steps // 4)
     if interference_rejections >= INTERFERENCE_REJECTIONS_FOR_QUARTER_BUDGET:
@@ -664,29 +635,94 @@ def candidate_step_budget(default_steps: int, teacher: dict, capability: str,
 
 def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
                     *, curriculum_scope: str = "", diagnostics: dict | None = None,
-                    return_metadata: bool = False):
+                    return_metadata: bool = False,
+                    student_checkpoint_sha256: str | None = None,
+                    total_capabilities: int | None = None,
+                    plasticity_active: bool = False):
     """Preserve the inherited bandit's exploration; prefer proven safe context."""
     grade = capability.partition(".")[0]
     channel = _channel(teacher)
     diagnostic_key, _diagnostic_payload = _diagnostic_context(
         channel, capability, curriculum_scope, diagnostics)
 
-    def result(key, policy, *, diagnostic_context_consumed=False, selection_reason="INHERITED_FALLBACK"):
-        if return_metadata:
-            return key, policy, {
-                "diagnostic_context_consumed": diagnostic_context_consumed,
-                "diagnostic_context_key": diagnostic_key, "selection_reason": selection_reason,
-            }
-        return key, policy
-
     context_key = capability+"|"+phase+"|"+curriculum_scope
     scope = channel["contexts"].get(context_key, {})
+    active_effective, inventory, retired_effective = _teacher_breeding.selection_population(
+        teacher, grade=grade, capability=capability, curriculum_scope=curriculum_scope,
+        scope=scope, channel=channel, context_key=context_key,
+        student_checkpoint_sha256=student_checkpoint_sha256, total_capabilities=total_capabilities)
+    active_set = set(active_effective)
+    capability_stagnation = _capability_stagnation(channel, capability, curriculum_scope)
+    rejection_pressure = int(capability_stagnation.get("rejection_streak", 0))
+    def result(key, policy, *, diagnostic_context_consumed=False, selection_reason="INHERITED_FALLBACK", selection_detail=None):
+        if return_metadata:
+            return key, policy, _teacher_breeding.selection_metadata(
+                teacher, channel=channel, inventory=inventory,
+                active_effective=active_effective, checkpoint_retired=retired_effective,
+                total_capabilities=total_capabilities,
+                diagnostic_context_consumed=diagnostic_context_consumed,
+                diagnostic_context_key=diagnostic_key,
+                selection_reason=selection_reason, selection_policy=TEACHER_SELECTION_POLICY,
+                selection_detail=selection_detail)
+        return key, policy
+    if plasticity_active and scope:
+        retryable = []
+        for policy_key, record in scope.items():
+            policy = teacher.get("strategies", {}).get(policy_key)
+            if policy is None or not isinstance(record, dict):
+                continue
+            if _effective_policy_key(policy) not in active_set:
+                continue
+            if (int(record.get("unsafe", 0)) < 1 or
+                    int(record.get("retained", 0)) > 0 or
+                    int(record.get("no_target_gain_streak", 0)) > 0 or
+                    bool(record.get("last_plasticity_active", False))):
+                continue
+            trials = int(record.get("trials", 0))
+            if trials < 1:
+                continue
+            retryable.append((
+                float(record.get("latest", float("-inf"))),
+                float(record.get("reward_sum", 0.)) / trials,
+                -int(record.get("unsafe", 0)), policy_key,
+            ))
+        if retryable:
+            _latest, _mean, _unsafe, policy_key = max(retryable)
+            return result(policy_key, teacher["strategies"][policy_key],
+                          selection_reason="PLASTICITY_RETRY")
+    effective_scope = {
+        key: record
+        for key, record in _effective_context_scope(teacher, scope).items()
+        if key in active_set
+    } if scope else {}
+    active_retained_context = any(
+        int(record.get("retained", 0)) > 0
+        for record in effective_scope.values())
+    if (rejection_pressure >= BESPOKE_EXPLORATION_START and
+            not active_retained_context):
+        challenger = _teacher_breeding.pressure_challenger(
+            engine, teacher, rng, capability=capability, phase=phase,
+            curriculum_scope=curriculum_scope, diagnostic_key=diagnostic_key,
+            total_capabilities=total_capabilities or 1)
+        if challenger is not None:
+            return result(challenger[0], challenger[1],
+                          selection_reason=challenger[2], selection_detail=challenger[3])
     if not scope:
-        original_key, original_policy = engine.pick(teacher, grade, rng)
+        original_key, original_policy = _pick_existing_active(
+            engine, teacher, grade, rng, active_effective, inventory)
         return result(original_key, original_policy, selection_reason="INHERITED_NO_CONTEXT")
-    effective_scope = _effective_context_scope(teacher, scope)
+    if not effective_scope:
+        original_key, original_policy = _pick_existing_active(
+            engine, teacher, grade, rng, active_effective, inventory)
+        return result(
+            original_key, original_policy,
+            selection_reason="FRESH_ACTIVE_CHALLENGER")
     diagnostic_scope = _diagnostic_effective_scope(
         teacher, scope, diagnostic_key)
+    diagnostic_scope = {
+        key: record for key, record in diagnostic_scope.items()
+        if key in active_set
+    }
     usable_diagnostic = {
         key: record for key, record in diagnostic_scope.items()
         if record.get("retained", 0) > 0
@@ -694,9 +730,6 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
     selection_scope = usable_diagnostic or effective_scope
     diagnostic_consumed = bool(usable_diagnostic)
     trials = sum(v["trials"] for v in effective_scope.values())
-    capability_stagnation = _capability_stagnation(
-        channel, capability, curriculum_scope)
-    rejection_pressure = int(capability_stagnation.get("rejection_streak", 0))
     learning_rate_priors = (_learning_rate_prior_scope(
         teacher, channel, capability, curriculum_scope, context_key)
         if rejection_pressure > 0 else {})
@@ -724,8 +757,12 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
         exploration = (TEACHER_UCB_EXPLORATION_WEIGHT *
                        math.sqrt(math.log(trials+2)/(record["trials"]+1)))
         stagnation = record["no_target_gain_streak"]
-        return mean + exploration/(1+stagnation+rejection_pressure)
-    best_effective = max(selection_scope, key=score_effective)
+        return mean + exploration/(1+stagnation+rejection_pressure) - _sibling_cooldown_penalty(channel, capability, curriculum_scope, key)
+    retained_scope = {
+        key: record for key, record in selection_scope.items()
+        if record.get("retained", 0) > 0
+    }
+    best_effective = max(retained_scope or selection_scope, key=score_effective)
     best_record = selection_scope[best_effective]
 
     def member_rank(key):
@@ -734,20 +771,28 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
         return (record.get("retained", 0), mean, record["trials"], key)
 
     best = max(best_record["members"], key=member_rank)
-    pressure_exploit = (
-        rejection_pressure >= REJECTION_PRESSURE_CONTEXTUAL_START and
-        rejection_pressure % REJECTION_PRESSURE_EXPLORATION_INTERVAL != 0)
-    if diagnostic_consumed or pressure_exploit:
+    proven_retained = best_record.get("retained", 0) > 0
+    pressure_exploit = rejection_pressure >= REJECTION_PRESSURE_CONTEXTUAL_START
+    if diagnostic_consumed:
         return result(
             best, teacher["strategies"][best],
             diagnostic_context_consumed=diagnostic_consumed,
+            selection_reason="DIAGNOSTIC_OR_PRESSURE_CONTEXT")
+    if proven_retained:
+        return result(
+            best, teacher["strategies"][best],
+            selection_reason="PROVEN_RETAINED_CONTEXT")
+    if pressure_exploit:
+        return result(
+            best, teacher["strategies"][best],
             selection_reason="DIAGNOSTIC_OR_PRESSURE_CONTEXT")
 
     # Healthy operation and a bounded pressure cadence still consult the
     # inherited bandit. Avoid calling it on pressure-exploitation visits:
     # pick() may mutate the strategy inventory, and discarded mutations would
     # otherwise consume the finite 512-strategy budget without being tried.
-    original_key, original_policy = engine.pick(teacher, grade, rng)
+    original_key, original_policy = _pick_existing_active(
+        engine, teacher, grade, rng, active_effective, inventory)
     original_effective = _effective_policy_key(original_policy)
     if original_effective == best_effective:
         return result(
@@ -755,7 +800,6 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
             diagnostic_context_consumed=diagnostic_consumed, selection_reason="INHERITED_MATCHES_CONTEXT")
     # Require evidence, but keep inherited exploration alive. The base pick
     # still gets a chance whenever it lacks direct context observations.
-    proven_retained = best_record.get("retained", 0) > 0
     if (proven_retained and rejection_pressure > 0 and
             (original_effective not in effective_scope or
              score_effective(best_effective) >
@@ -790,7 +834,9 @@ def _stagnation_feedback(teacher: dict, capability: str, policy_key: str,
 def observe_context(teacher: dict, *, capability: str, phase: str,
                     policy_key: str, decision: dict, local_gain: float,
                     curriculum_scope: str = "",
-                    diagnostics: dict | None = None) -> dict:
+                    diagnostics: dict | None = None,
+                    realized_action: dict | None = None,
+                    student_checkpoint_sha256: str | None = None) -> dict:
     """Source-paired trial outcome; never rewrite historical UCB rewards."""
     if (policy_key not in teacher.get("strategies", {}) or
             not math.isfinite(local_gain) or
@@ -802,15 +848,17 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
     channel = _channel(teacher)
     diagnostic_key, _diagnostic_payload = _diagnostic_context(
         channel, capability, curriculum_scope, diagnostics)
-    scope = channel["contexts"].setdefault(capability+"|"+phase+"|"+curriculum_scope, {})
+    context_key = capability+"|"+phase+"|"+curriculum_scope
+    scope = channel["contexts"].setdefault(context_key, {})
     record = scope.setdefault(policy_key, {"trials": 0, "reward_sum": 0.,
                                             "unsafe": 0, "retained": 0,
                                             "latest": None,
                                             "no_target_gain_streak": 0})
     record.setdefault("no_target_gain_streak", 0)
     record.setdefault("retained", 0)
+    action_key, action_record, stagnation_key = _bind_realized_action_record(record, realized_action, policy_key)
     shared_stagnation = _shared_stagnation_record(
-        channel, capability, curriculum_scope, policy_key)
+        channel, capability, curriculum_scope, stagnation_key)
     capability_stagnation = _capability_stagnation_record(
         channel, capability, curriculum_scope)
     # Normalized worst-case retention cost stops many small wins concealing
@@ -849,12 +897,28 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
             raise ValueError(LearningExperimentError.REJECTION_REASON_INVALID.value)
         reasons = capability_stagnation["current_rejection_reasons"]
         reasons[reason] = reasons.get(reason, 0) + 1
+        if reason == "NO_MEASURABLE_TARGET_GAIN":
+            capability_stagnation["consecutive_interference_rejections"] = 0
+        else:
+            capability_stagnation["consecutive_interference_rejections"] += 1
     else:
         record["retained"] += 1
         capability_stagnation["rejection_streak"] = 0
+        capability_stagnation["consecutive_interference_rejections"] = 0
         capability_stagnation["attempts_since_retained"] = 0
         capability_stagnation["total_retained"] += 1
         capability_stagnation["current_rejection_reasons"] = {}
+    effective_policy = _effective_policy_key(teacher["strategies"][policy_key])
+    _record_checkpoint_policy_outcome(
+        channel, context_key,
+        effective_policy,
+        student_checkpoint_sha256,
+        no_target_gain=no_target_gain,
+        retained=decision["decision"] != "REJECT")
+    _teacher_breeding.record_policy_outcome_side_effects(
+        channel, effective_policy, capability=capability,
+        curriculum_scope=curriculum_scope, retained=decision["decision"] != "REJECT",
+        realized_action_key=action_key)
     if no_target_gain:
         capability_stagnation["no_target_gain_streak"] += 1
     else:
@@ -865,6 +929,8 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
     record["trials"] += 1
     record["reward_sum"] += reward
     record["latest"] = reward
+    record["last_plasticity_active"] = bool(
+        (decision.get("plasticity_escape") or {}).get("active"))
     diagnostic_stats = record.setdefault("diagnostic_stats", {})
     diagnostic = diagnostic_stats.setdefault(diagnostic_key, {
         "trials": 0, "reward_sum": 0., "unsafe": 0, "retained": 0,
@@ -875,6 +941,9 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
         diagnostic["unsafe"] += 1
     else:
         diagnostic["retained"] += 1
+    _record_realized_action_outcome(
+        action_record, rejected=decision["decision"] == "REJECT",
+        no_target_gain=no_target_gain, reward=reward, diagnostic_key=diagnostic_key)
     strain = decision.get("matrix_strain") or {}
     if strain.get("status") == "MEASURED":
         # A bounded teacher-observable geometric feature; outcome rewards
@@ -905,9 +974,12 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
                 capability_stagnation["rejection_streak"],
             "capability_no_target_gain_streak":
                 capability_stagnation["no_target_gain_streak"],
+            "consecutive_interference_rejections":
+                capability_stagnation["consecutive_interference_rejections"],
             "attempts_since_retained":
                 capability_stagnation["attempts_since_retained"],
             "diagnostic_context_key": diagnostic_key,
+            **({"realized_action_key": action_key} if action_key is not None else {}),
             "inherited_exploration_credit": inherited_exploration,
             "teacher_selection_reward": selection_reward,
             "legacy_reward_reinterpreted": False,

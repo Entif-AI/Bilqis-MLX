@@ -5,6 +5,8 @@
 **Scope:** Curriculum semantics, execution profiles, factory releases, assessment, championship dependencies, New Ithkuil ingestion, telemetry, and migration sequencing.
 **Training authority:** This document does not authorize neural optimization. The human operator alone starts or resumes the real Bilqis trainer.
 
+**2026-10-27 controlling correction:** fresh GENERALIZATION is not part of the current developmental runtime or graduation contract. Preserve historical cohort/readback machinery, but do not schedule it, gate graduation on it, or feed its misses into the teacher. Routine plus fixed promotion are the active assessment lifecycle until a future explicit human maturity decision re-admits generalization. This supersedes older statements below that described live generalization as mandatory.
+
 ## Purpose
 
 Bilqis has accumulated several valid but differently scoped authorities: direct user decisions, protected operational requirements, repository specifications, the Specs and Failures Ledger, the Curriculum Registry, research roadmaps, New Ithkuil source artifacts, and historical release evidence.
@@ -366,7 +368,7 @@ Historical live-release construction/lookup has now moved wholesale under `compa
 
 Exact assessment scope now has a grade-neutral v2 contract. The rubric identity hashes only the selected capabilities' assessment projections. The source identity hashes only their source projections plus verified source receipts. The enclosing factory-release SHA and semantic-catalog SHA remain separate identities. This prevents the prior scope/rubric conflation where a broader admitted course could relabel evidence for a narrower scored scope.
 
-V2 assessment custody implements the governing lifetime distinctions without grade/release switches: fresh routine measurement, fixed-within-attempt promotion, and fresh/burnable generalization all receive the exact active capability scope explicitly. Persisted cohort evidence keeps scope rubric/source identities separate from holistic release identity. The live exam loop, candidate screen, championship replay and human stop boundary use this v2 lifecycle; historical cohort readers are compatibility-only.
+V2 assessment custody implements the governing developmental lifetime distinctions without grade/release switches: fresh routine measurement and fixed-within-attempt promotion receive the exact active capability scope explicitly. Persisted historical generalization evidence keeps scope rubric/source identities separate from holistic release identity, but live execution does not schedule it. Historical cohort readers are compatibility-only.
 
 ### Wave 3: typed release transitions
 
@@ -390,13 +392,13 @@ adapters/releases/assessment readers remain explicitly under `compatibility/`.
 
 ### Wave 5: disposable Grade Z
 
-Run one synthetic grade through the same top-level orchestration used by the human shell: admission, teaching, routine assessment, recovery, promotion/generalization, championship, stagnation, telemetry, checkpoint/recovery, and stop handling.
+Run one synthetic grade through the same top-level orchestration used by the human shell: admission, teaching, routine assessment, recovery, promotion, championship, stagnation, telemetry, checkpoint/recovery, and stop handling. Historical generalization primitives may be tested separately as compatibility/research surfaces but are not part of the live developmental path.
 
 Adding Grade Z must require no generic runtime edit.
 
 **Status: complete.** `tests/system/test_factory_grade_z.py` declares Z only
 inside the disposable test and proves generic v2 compilation, admission,
-generation, scheduling, routine/promotion/generalization assessment,
+generation, scheduling, routine/promotion assessment,
 stagnation, championship, telemetry, recovery, teacher evidence and stop
 handling.
 

@@ -16,6 +16,7 @@ from fractions import Fraction
 import re
 from pathlib import Path
 from bilqis_mlx.state_dag import read_current, read_current_fields
+from bilqis_mlx.presentation.numeric_scope import integer_root_scope
 import shutil
 import signal
 import sys
@@ -541,7 +542,7 @@ class Dashboard:
                                         row['title_step']
                                         if type(row['title_step']) is int else -1),
                         reverse=True)
-                    for row in ranked[:6]:
+                    for row in ranked:
                         row.pop('_score',None)
                         row.pop('_breadth',None)
                         rows.append(row)
@@ -959,6 +960,7 @@ class Dashboard:
                 ("BILQIS",school,22,False),
                 ("RUNTIME",_human_duration(elapsed),15,False),
             ]
+            if phase in ("PROMOTION_SWEEP", "ASSESS_PROMOTION_SWEEP"): fields.append(("SWEEP", f"GRADUATION {prefix}", 12, False))
             budget=self.time_budget_seconds
             if isinstance(budget,(int,float)) and budget>0:
                 percent=int(elapsed*100/budget+.5)
@@ -973,16 +975,16 @@ class Dashboard:
                 ("STEPS",step if step not in (None,'','?') else "-",7,True),
                 ("EXAM",exam if exam not in (None,'','?') else "-",6,True),
                 ("VISITS",visits if visits not in (None,'','?') else "-",7,True),
-                ("TEACHER",teacher if teacher not in (None,'','?') else "-",7,True),
-                ("GRADES",curriculum['grades'],6,True),
-                ("CAPS",curriculum['capabilities'],5,True),
+                ("TEACHER",teacher if teacher not in (None,'','?') else "-",7,True), ("GRADES",curriculum['grades'],6,True), ("CAPS",curriculum['capabilities'],5,True), ("INTROOT",integer_root_scope(state.get("numeric_maximum")),7,False),
                 ("STUDENT LATEST",latest,18,False),
                 ("STUDENT BEST",best,18,False),
-                ("STEPS/MIN",
-                 round(self._steps_per_min)
-                 if isinstance(self._steps_per_min,(int,float)) else "-",
-                 9,True),
-                ("RETAINED",retained if type(retained) is int else "-",8,True),
+                ("ST/M",round(self._steps_per_min) if isinstance(self._steps_per_min,(int,float)) else "-",5,True),
+                ("RTN",retained if type(retained) is int else "-",4,True),
+                ("RTN%",round(retained*100/visits) if type(retained) is int and type(visits) is int and visits>0 else "-",5,True),
+                ("GREW",f"{state['grew']:+d}" if type(state.get('grew')) is int else "-",5,True),
+                ("R/H",round(retained*3600/elapsed) if type(retained) is int and elapsed>0 else "-",5,True),
+                ("G/RTN",f"{state['grew']/retained:+.2f}" if type(state.get('grew')) is int and type(retained) is int and retained>0 else "-",6,True),
+                ("GRAD",state.get("graduations","0.0.0 / 0.0.0"),18,False),
             ])
             halt=state.get('halt')
             if halt:
@@ -1083,19 +1085,16 @@ class Dashboard:
             self.dirty=True
 
     def _sample_step_rate(self):
-        """Measure attempted optimizer throughput only at real dashboard draws."""
+        """Normalize attempted optimizer throughput across the current run."""
         if self.state.get("_rate_sample_eligible", True) is False:
             return
         step=self.state.get("attempted_steps")
         now=self.clock()
         if type(step) is not int:
             return
-        if self._rate_step is None:
-            self._rate_step,self._rate_time=step,now
-            return
-        elapsed=now-self._rate_time
-        if elapsed>0 and step!=self._rate_step:
-            self._steps_per_min=(step-self._rate_step)/elapsed*60
+        elapsed=now-self.started
+        if elapsed>0:
+            self._steps_per_min=step/elapsed*60
             self._rate_step,self._rate_time=step,now
 
     def _latest_all_grade_score(self):

@@ -23,6 +23,75 @@ def exam(grade, generation, rubric, scores, *, step, sha="signed-model"):
 
 
 class SchoolTelemetryTests(unittest.TestCase):
+    def test_profile_adoption_refreshes_integer_root_scope_without_release_replacement_shape(self):
+        board = Dashboard(stream=io.StringIO(), show_all_panels=True,
+                          tables=LETTER_TABLES, compact_header=True)
+        board.school_telemetry = SchoolTelemetry(
+            board, active_grades=("C",), champions={})
+
+        ingest(board, {
+            "event": "SCHOOL_EXECUTION_PROFILE_ADOPTED",
+            "grade": "C", "generation": 1, "optimizer_step": 200,
+            "profile_id": "school/u7c-full-b/numeric-0-10",
+            "numeric_maximum": 10,
+            "transition_kind": "REVISE_PROFILE",
+        })
+
+        self.assertEqual(board.state["numeric_maximum"], 10)
+        rendered = board.render(width=320, height=30)
+        self.assertIn("INTROOT", rendered)
+        self.assertIn("0...10", rendered)
+
+    def test_compact_header_reports_stable_run_metrics(self):
+        board = Dashboard(
+            stream=io.StringIO(), clock=lambda: 1800.0,
+            show_all_panels=True, tables=LETTER_TABLES,
+            compact_header=True)
+        board.started = 0.0
+        board.state.update(retained_visits=5, visits=20, attempted_steps=5400)
+        board._rate_step = 5383
+        board._rate_time = 1740.0
+
+        board._sample_step_rate()
+        headings, values = board.render(width=260, height=20).splitlines()[:2]
+
+        start = headings.index("R/H")
+        self.assertEqual(values[start:start + 5].strip(), "10")
+        start = headings.index("RTN%")
+        self.assertEqual(values[start:start + 5].strip(), "25")
+        start = headings.index("ST/M")
+        self.assertEqual(values[start:start + 5].strip(), "180")
+
+    def test_grew_averages_active_capabilities_including_stagnation_withheld(self):
+        board = Dashboard(
+            stream=io.StringIO(), clock=lambda: 3600.0,
+            show_all_panels=True, tables=LETTER_TABLES,
+            compact_header=True)
+        board.started = 0.0
+        board.school_telemetry = SchoolTelemetry(
+            board, active_grades=("A", "B"), champions={})
+        for grade, scores in (
+                ("A", {"A.IDENTITY": (5, 10), "A.LINK": (5, 10)}),
+                ("B", {"B.AND": (5, 10), "B.OR": (5, 10)})):
+            ingest(board, exam(grade, 1, f"rubric-{grade}", scores, step=100))
+        board.school_telemetry.begin_execution(grade="B", step=100)
+        ingest(board, exam("A", 2, "rubric-A", {
+            "A.IDENTITY": (7, 10), "A.LINK": (6, 10)}, step=120))
+        ingest(board, exam("B", 2, "rubric-B", {
+            "B.AND": (4, 10), "B.OR": (7, 10)}, step=120))
+        ingest(board, {
+            "event": "SCHOOL_GRADE_RELEASE_REPLACED", "grade": "B",
+            "generation": 3, "optimizer_step": 120,
+            "old_capabilities": ["B.AND", "B.OR"],
+            "new_capabilities": ["B.AND"],
+            "withheld_capabilities": ["B.OR"],
+        })
+
+        self.assertEqual(board.state["grew"], 10)
+        headings, values = board.render(width=260, height=20).splitlines()[:2]
+        start = headings.index("GREW")
+        self.assertEqual(values[start:start + 5].strip(), "+10")
+
     def test_merkle_state_keeps_champion_inventory_visible(self):
         from bilqis_mlx.data_plane import close_data_planes
         from bilqis_mlx.state_dag import persist
@@ -113,6 +182,28 @@ class SchoolTelemetryTests(unittest.TestCase):
             display = board.render(width=180, height=42)
             self.assertNotIn("START", display)
             self.assertNotIn("FIRST", display)
+
+    def test_begin_execution_resets_command_local_visit_and_rate_counters(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            for generation in (10, 11):
+                ingest(board, {
+                    "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+                    "grade": "B", "generation": generation,
+                    "capability": "B.AND", "optimizer_step": 100,
+                    "attempted_optimizer_updates": 16,
+                    "retained_optimizer_updates": 0,
+                })
+            self.assertEqual(board.school_telemetry.visits, 2)
+            self.assertEqual(board.state["visits"], 2)
+
+            board.school_telemetry.begin_execution(grade="B", step=100)
+
+            self.assertEqual(board.school_telemetry.visits, 0)
+            self.assertEqual(board.state["visits"], 0)
+            self.assertEqual(board.state["attempted_steps"], 0)
+            self.assertEqual(board.state["retained_steps"], 0)
+            self.assertEqual(board.state["retained_visits"], 0)
 
     def test_method_column_projects_actual_instruction_mechanism(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -259,7 +350,7 @@ class SchoolTelemetryTests(unittest.TestCase):
                 [
                     ("CAPABILITY", 10), ("VISIT", 5), ("POLICY", 10),
                     ("LR", 2), ("D", 1), ("C", 1), ("OLD", 3),
-                    ("DSTIL", 5), ("CREDIT", 7),
+                    ("DSTIL", 5), ("CREDIT", 7), ("P(RET)", 6), ("HEALTH", 9),
                 ],
             )
             self.assertEqual(
@@ -267,16 +358,12 @@ class SchoolTelemetryTests(unittest.TestCase):
                  for column in tables["SYSTEM & QUALIFICATION"]],
                 [("TYPE", 7), ("DETAILS", 32)],
             )
-
             board.rows["SYSTEM & QUALIFICATION"].append({
                 "kind": "DIAGNOSTIC", "grade": "B",
                 "detail": "active S2:B.OR | 14 NOT MEASURED",
             })
             system = board._section_rows("SYSTEM & QUALIFICATION")[-1]
-            self.assertEqual(
-                system["detail"],
-                "S2[OR] 14 NM",
-            )
+            self.assertEqual(system["detail"], "S2[OR] 14 NM")
 
             rendered = board.render(width=210, height=40)
             self.assertIn(" | ", rendered.splitlines()[5])
@@ -287,6 +374,83 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertNotIn("PREVIEW", rendered)
             self.assertNotIn("PAR_KL", rendered)
             self.assertNotIn("BRG_CE", rendered)
+
+    def test_teacher_policy_health_is_visible_in_soup_and_teacher(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            self.assertIn(
+                ("HEALTH", 9),
+                [(column.name, column.width)
+                 for column in dict(board.tables)["SOUP & TEACHER"]],
+            )
+            for attempt in range(16):
+                ingest(board, {
+                    "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+                    "grade": "C", "generation": attempt + 2,
+                    "capability": "C.ADD", "optimizer_step": 120 + attempt,
+                    "teacher_policy": "policy-low",
+                    "strategy": {
+                        "lr": .00013, "depth": 3, "contrast": .5,
+                        "old": 8, "preview": 0, "distill": .15,
+                    },
+                    "source_training_accuracy_before": .5,
+                    "source_training_accuracy_after": .6,
+                    "teacher_reward": .1, "gradient_norm": 1.0, "loss": .4,
+                    "next_phase": "RECOVERY_1",
+                    "teacher_decision": {"selected": {}},
+                    "candidate_retention": {
+                        "active_capability": "C.ADD",
+                        "phase": "RECOVERY_1",
+                        "decision": "PROVISIONAL" if attempt == 0 else "REJECT",
+                        "reason": "FIXTURE",
+                        "local_correct_delta": 1 if attempt == 0 else 0,
+                        "protected_net_correct_delta": 0,
+                        "worst_protected_loss": 0,
+                    },
+                })
+            self.assertEqual(
+                board.rows["SOUP & TEACHER"][-1]["health"], "LOW-YIELD")
+
+    def test_teacher_policy_health_marks_unproven_and_exhausted_policies(self):
+        from bilqis_mlx.presentation.teacher_vnext import teacher_fields
+        history = {}
+        event = {
+            "capability": "C.SUB", "teacher_policy": "policy-zero",
+            "candidate_retention": {
+                "phase": "RECOVERY_2", "decision": "REJECT",
+            },
+        }
+        for _ in range(7):
+            fields = teacher_fields(event, history)
+        self.assertEqual(fields["health"], "UNCERTAIN")
+        for _ in range(9):
+            fields = teacher_fields(event, history)
+        self.assertEqual(fields["health"], "LOW-YIELD")
+
+        cooled = dict(event, teacher_policy_health={
+            "status": "SEARCH_NEIGHBORHOOD_EXHAUSTED",
+            "remaining_capability_visits": 8,
+        })
+        self.assertEqual(teacher_fields(cooled, history)["health"], "EXHAUSTED")
+
+        mutated = dict(event, teacher_selection_reason="FRESH_MUTATED_CHALLENGER")
+        self.assertEqual(teacher_fields(mutated, {})["health"], "EXPLORE")
+
+    def test_policy_with_grade_wide_failure_history_is_not_uncertain_on_new_capability(self):
+        from bilqis_mlx.presentation.teacher_vnext import teacher_fields
+        history = {}
+        for _ in range(9):
+            teacher_fields({
+                "grade": "B", "capability": "B.IFF", "teacher_policy": "dead",
+                "candidate_retention": {"phase": "MAIN", "decision": "REJECT"},
+            }, history)
+
+        fields = teacher_fields({
+            "grade": "B", "capability": "B.COMPOSITE", "teacher_policy": "dead",
+            "candidate_retention": {"phase": "MAIN", "decision": "REJECT"},
+        }, history)
+
+        self.assertEqual(fields["health"], "LOW-YIELD")
 
     def test_mastery_growth_keeps_right_and_grew_subcolumns_aligned(self):
         board = Dashboard(stream=io.StringIO(), show_all_panels=True,
@@ -408,7 +572,7 @@ class SchoolTelemetryTests(unittest.TestCase):
         for heading in (
                 "BILQIS", "RUNTIME", "MAX TIME", "STEPS", "EXAM", "VISITS",
                 "TEACHER", "GRADES", "CAPS", "STUDENT LATEST", "STUDENT BEST",
-                "STEPS/MIN", "RETAINED", "RUN"):
+                "ST/M", "RTN", "RTN%", "GREW", "R/H", "RUN"):
             self.assertIn(heading, headings)
         self.assertIn("A:MAIN", values)
         self.assertIn("1d 13h 47m 25s", values)
@@ -479,7 +643,7 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertEqual(row["decision"], "REJECT")
             self.assertIn("NO_MEASURABLE_TARGET_GAIN", row["evidence"])
 
-    def test_mastery_panel_lists_up_to_six_highest_scoring_champions_per_grade(self):
+    def test_mastery_panel_preserves_every_active_capability_champion(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             roles = {}
@@ -533,13 +697,16 @@ class SchoolTelemetryTests(unittest.TestCase):
             rows = board._section_rows("GRADES & MASTERY")
             a_rows = [row for row in rows
                       if row.get("row_type") == "champion" and row["grade"] == "A"]
-            self.assertEqual(len(a_rows), 6)
+            self.assertEqual(len(a_rows), 7)
             self.assertEqual(
                 {row["capability"] for row in a_rows},
-                {"A.ONE", "A.TWO", "A.THREE", "A.FOUR", "A.FIVE", "A.SIX"},
+                {"A.ONE", "A.TWO", "A.THREE", "A.FOUR", "A.FIVE", "A.SIX",
+                 "A.SEVEN"},
             )
             seven = next(row for row in rows if row.get("capability") == "A.SEVEN")
-            self.assertEqual(seven["row_type"], "family")
+            self.assertEqual(seven["row_type"], "champion")
+            self.assertEqual(seven["best"], "7/12")
+            self.assertIn("CHAMP @106", seven["outcome"])
             three = next(row for row in a_rows if row["capability"] == "A.THREE")
             self.assertEqual(three["latest"], "12/12")
             self.assertEqual(three["best"], "12/12")
@@ -1238,7 +1405,7 @@ class SchoolTelemetryTests(unittest.TestCase):
                 },
             })
             ingest(board, {
-                **common, "generation": 2, "exam_plane": "GENERALIZATION",
+                **common, "generation": 2, "exam_plane": "ROUTINE",
                 "cohort_sha256": "3" * 64,
                 "cohort_file": f"cohorts/{'3' * 64}.json",
                 "scores": {
@@ -1251,6 +1418,28 @@ class SchoolTelemetryTests(unittest.TestCase):
                        board.school_telemetry.latest.items() if grade == "B"]
             self.assertEqual(len(reports), 2)
             self.assertEqual({report.total for report in reports}, {24, 36})
+
+    def test_historical_generalization_does_not_replace_active_mastery(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            common = {
+                "event": "SCHOOL_LIVE_EXAM_COMMITTED", "grade": "B",
+                "rubric": "b" * 64, "assessment_scope_sha256": "1" * 64,
+                "generator_version": "factory-live/v1", "optimizer_step": 127096,
+                "student_sha256": "d" * 64,
+            }
+            ingest(board, {**common, "generation": 1, "exam_plane": "ROUTINE",
+                "cohort_sha256": "2" * 64, "cohort_file": f"cohorts/{'2' * 64}.json",
+                "scores": {"B.AND": {"correct": 12, "total": 12}}})
+            ingest(board, {**common, "generation": 2, "exam_plane": "GENERALIZATION",
+                "cohort_sha256": "3" * 64, "cohort_file": f"cohorts/{'3' * 64}.json",
+                "scores": {"B.AND": {"correct": 5, "total": 12}}})
+
+            report = next(iter(board.school_telemetry.latest.values()))
+            self.assertEqual((report.correct, report.total), (12, 12))
+            self.assertIn("LATEST B 12/12", " ".join(board.operator_lines))
+            self.assertTrue(any(row.get("kind") == "HISTORICAL GENERALIZATION"
+                                for row in board.rows["SYSTEM & QUALIFICATION"]))
 
     def test_first_latest_best_and_regression_use_same_sealed_rubric(self):
         with tempfile.TemporaryDirectory() as tmp:

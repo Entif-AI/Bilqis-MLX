@@ -8,6 +8,50 @@ from .curriculum_definition import (
     CurriculumDefinition, SourceBindingSet, from_legacy_course,
     validate_source_bindings,
 )
+from ..compatibility.source_adapter_resume import resume_adapter_compatible
+
+
+_GRADE_A_DEVELOPMENT_PRESENTATION_IMPLEMENTATION = (
+    "c451c3e6bf5ab538450c691d504230036b9a729ddfc67b53163c6a1f106d62a9")
+_GRADE_A_1324082_IMPLEMENTATION = (
+    "f8e5aec9398538adc633deabe9c41c485e69a96044b9b86a5f1075ce6e201778")
+_GRADE_A_BASE_VARIATION_AXES = (
+    "source-valid", "balanced-gold", "fresh-seed",
+    "member-decoy-set-context-v1", "irrelevant-source-context-v2",
+)
+_GRADE_A_1324082_VARIATION_AXES = (
+    *_GRADE_A_BASE_VARIATION_AXES, "generalization-only-source-context-v3",
+)
+
+
+def _is_1324082_rollback_adapter_pair(admitted, current) -> bool:
+    """Recognize the exact Grade-A provider identity removed by ADR-099.
+
+    This is intentionally one-way: a durable release admitted while 1324082 was
+    active may resume on the reverted provider. No other implementation drift is
+    accepted, and the reverted provider may not impersonate the removed one in a
+    newly admitted release.
+    """
+    if admitted is None:
+        return False
+    return (
+        admitted.adapter_id == current.adapter_id == "source.micro.predicates/v1" and
+        admitted.generator_id == current.generator_id ==
+        "bilqis_mlx.grade_a_probe.make_record" and
+        admitted.accepted_oracle_ids == current.accepted_oracle_ids ==
+        ("bilqis.mlx.grade-a-record-oracle/v2",) and
+        admitted.cohort_generator_id == current.cohort_generator_id ==
+        "bilqis.mlx.grade-a-live-constructor/v1" and
+        admitted.teaching_option_ids == current.teaching_option_ids == () and
+        admitted.profile_dimensions == current.profile_dimensions == () and
+        admitted.implementation_sha256 == _GRADE_A_1324082_IMPLEMENTATION and
+        current.implementation_sha256 == _GRADE_A_DEVELOPMENT_PRESENTATION_IMPLEMENTATION and
+        len(admitted.cohort_releases) == len(current.cohort_releases) == 1 and
+        admitted.cohort_releases[0][0] == current.cohort_releases[0][0] and
+        admitted.cohort_releases[0][1] == _GRADE_A_1324082_IMPLEMENTATION and
+        current.cohort_releases[0][1] == _GRADE_A_DEVELOPMENT_PRESENTATION_IMPLEMENTATION and
+        admitted.variation_axes == _GRADE_A_1324082_VARIATION_AXES and
+        current.variation_axes == _GRADE_A_BASE_VARIATION_AXES)
 
 
 def runtime_adapter_for_release(
@@ -23,7 +67,10 @@ def runtime_adapter_for_release(
     admitted = next((
         item for item in release.source_adapters
         if item.adapter_id == execution.provider_id), None)
-    if registered.descriptor != admitted:
+    if (registered.descriptor != admitted and
+            not _is_1324082_rollback_adapter_pair(
+                admitted, registered.descriptor) and
+            not resume_adapter_compatible(admitted, registered.descriptor)):
         raise ValueError(drift_code + ":" + execution.capability_id)
     return registered
 

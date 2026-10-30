@@ -14,7 +14,10 @@ from bilqis_mlx.learning.learning_experiment import (
     fork_student, commit_trial, sampled_protection, whole_grade_protection,
     missing_grade_capabilities,
     selection_credit, select_source_lesson, candidate_step_budget,
+    _active_effective_strategy_keys, _effective_policy_key,
+    _diagnostic_context,
 )
+from bilqis_mlx.learning.teacher_strategy_population import effective_policy_features
 
 
 def rows():
@@ -85,6 +88,39 @@ def live_scale_teacher():
                                   "no_target_gain_streak": 0},
                 }
             },
+        },
+    }
+
+
+def strategy_population_teacher(count=24):
+    policies = []
+    for old in (4, 8, 12, 16, 20):
+        for depth in (1, 3):
+            for contrast in (0., .5):
+                for lr in (.00004, .00008, .00013, .0002, .0003):
+                    for distill in (0., .15, .35, .65):
+                        policies.append({
+                            "old": old, "preview": 0, "depth": depth,
+                            "contrast": contrast, "lr": lr,
+                            "distill": distill,
+                        })
+    strategies = {
+        f"policy-{index:03d}": policy
+        for index, policy in enumerate(policies[:count])
+    }
+    stats = {
+        key: {"trials": 10, "reward_sum": 0., "reward_ema": 0., "latest": 0.}
+        for key in strategies
+    }
+    return {
+        "strategies": strategies,
+        "global_stats": stats,
+        "grade_stats": {"C": {key: dict(value) for key, value in stats.items()}},
+        "events": 30,
+        "mutations": 0,
+        "causal_experiment": {
+            "version": "bilqis.mlx.causal-teacher-experiment/v1",
+            "negative_archetypes": [], "events": 0, "contexts": {},
         },
     }
 
@@ -430,6 +466,39 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         self.assertEqual(controls, {"B.IFF", "B.NOT", "A.EDGE"})
         self.assertEqual(fixed["status"], "NOT_MEASURED")
 
+    def test_starvation_plasticity_rejects_raw_small_loss_when_mastery_debt_grows(self):
+        from pathlib import Path
+        from bilqis_mlx import trainer as trainer
+        grade = ("B.IFF", "B.NOT", "B.XOR")
+        rows = [{"id": cap + str(i), "capability": cap,
+                 "gold": "TRUE"} for cap in (*grade, "A.EDGE") for i in range(2)]
+        parent = predicted(rows, {"B.XOR0", "B.NOT0"})
+        candidate = dict(parent)
+        candidate["B.XOR0"] = "TRUE"
+        candidate["B.IFF0"] = "FALSE"
+        candidate["B.NOT0"] = "FALSE"
+        candidate["B.NOT1"] = "FALSE"
+        with (patch('bilqis_mlx.curriculum.scheduler.assessment_capabilities',
+                           return_value=(*grade, "A.EDGE")),
+              patch('bilqis_mlx.learning.student_ops._predictions',
+                           side_effect=lambda _mx, identity, selected, *_:
+                           {row["id"]: (parent if identity == "parent"
+                                        else candidate)[row["id"]]
+                            for row in selected}),
+              patch('bilqis_mlx.runtime.candidate_evidence._fixed_same_grade_rows',
+                    return_value=())):
+            program = schedule_program(("A", ("A.EDGE",)), ("B", grade))
+            _, _, _, fixed, _, _, stage = trainer._candidate_grade_evidence(
+                None, Path("/not-used"), {"config": {}, "answer_ids": []},
+                program, object(), "B.XOR", "parent", "candidate", rows,
+                {"B.XOR0": parent["B.XOR0"], "B.XOR1": parent["B.XOR1"]},
+                Settings(), plasticity_escape={"active": True})
+        # The historical rule allowed any raw -1 grade trade under plasticity.
+        # Quadratic mastery debt correctly rejects this one: the +1 XOR repair
+        # is outweighed by damage to already-weaker NOT plus perfect IFF.
+        self.assertEqual(stage, "GRADE_NET_REJECTED")
+        self.assertEqual(fixed["status"], "NOT_MEASURED")
+
     def test_b_recovery_uses_whole_school_frontier_even_when_scheduler_is_c(self):
         from pathlib import Path
         from bilqis_mlx import trainer as trainer
@@ -538,6 +607,279 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         self.assertEqual(result["local_correct_delta"], 1)
         self.assertEqual(result["same_grade_net_correct_delta"], -1)
 
+    def test_starvation_plasticity_can_temporarily_accept_bounded_same_grade_loss(self):
+        paired = {
+            "C.COUNT": {"before": 4, "after": 5, "total": 6},
+            "C.NUMBER": {"before": 6, "after": 5, "total": 6},
+            "C.ORDER": {"before": 6, "after": 6, "total": 6},
+        }
+        result = decide(
+            paired, active_capability="C.COUNT", phase="MAIN",
+            protected={"C.NUMBER", "C.ORDER"}, settings=Settings(),
+            same_grade_capabilities=("C.COUNT", "C.NUMBER", "C.ORDER"),
+            plasticity_escape={
+                "active": True, "attempts_since_retained": 94,
+                "activation_threshold": 16, "frontier_priority": True,
+            })
+        self.assertEqual(result["decision"], "PROVISIONAL")
+        self.assertEqual(result["reason"], "PAIRED_SCREEN_WITHIN_BUDGET")
+        self.assertEqual(result["plasticity_escape"]["waived_reason"],
+                         "NO_POSITIVE_SAME_GRADE_GAIN")
+        self.assertTrue(result["plasticity_escape"]["applied"])
+
+    def test_starvation_plasticity_still_rejects_no_gain_or_excessive_regression(self):
+        escape = {
+            "active": True, "attempts_since_retained": 94,
+            "activation_threshold": 16, "frontier_priority": True,
+        }
+        no_gain = decide(
+            {
+                "C.COUNT": {"before": 4, "after": 4, "total": 6},
+                "C.NUMBER": {"before": 6, "after": 6, "total": 6},
+            }, active_capability="C.COUNT", phase="MAIN",
+            protected={"C.NUMBER"}, settings=Settings(),
+            same_grade_capabilities=("C.COUNT", "C.NUMBER"),
+            plasticity_escape=escape)
+        self.assertEqual(no_gain["reason"], "NO_MEASURABLE_TARGET_GAIN")
+
+        excessive = decide(
+            {
+                "C.COUNT": {"before": 3, "after": 5, "total": 6},
+                "C.NUMBER": {"before": 6, "after": 3, "total": 6},
+            }, active_capability="C.COUNT", phase="RECOVERY_1",
+            protected={"C.NUMBER"}, settings=Settings(),
+            same_grade_capabilities=("C.COUNT", "C.NUMBER"),
+            plasticity_escape=escape)
+        self.assertEqual(excessive["decision"], "REJECT")
+        self.assertEqual(excessive["same_grade_net_correct_delta"], -1)
+        self.assertEqual(excessive["reason"], "PROTECTED_CAPABILITY_REGRESSION")
+
+    def test_starvation_plasticity_allows_one_extra_protected_loss(self):
+        result = decide(
+            {
+                "C.COUNT": {"before": 3, "after": 5, "total": 6},
+                "B.IFF": {"before": 6, "after": 4, "total": 6},
+            }, active_capability="C.COUNT", phase="RECOVERY_1",
+            protected={"B.IFF"}, settings=Settings(),
+            mature_grades=frozenset({"B"}),
+            same_grade_capabilities=("C.COUNT",),
+            plasticity_escape={"active": True})
+        self.assertEqual(result["decision"], "PROVISIONAL")
+        self.assertEqual(result["plasticity_escape"]["waived_reason"],
+                         "PROTECTED_CAPABILITY_REGRESSION")
+        self.assertEqual(result["worst_protected_loss"], 2)
+
+    def test_plasticity_values_frontier_gain_by_normalized_mastery_debt(self):
+        # SUB gains four percentage points while a mastered COUNT gives back six.
+        # Raw answer accounting is -2, but normalized quadratic mastery debt says
+        # the weak capability's repair is substantially more valuable.
+        result = decide(
+            {
+                "C.SUB": {"before": 56, "after": 60, "total": 100},
+                "C.COUNT": {"before": 100, "after": 94, "total": 100},
+            }, active_capability="C.SUB", phase="RECOVERY_1",
+            protected={"C.COUNT"}, settings=Settings(),
+            same_grade_capabilities=("C.SUB", "C.COUNT"),
+            plasticity_escape={"active": True})
+        self.assertEqual(result["same_grade_net_correct_delta"], -2)
+        self.assertEqual(result["decision"], "PROVISIONAL")
+        utility = result["plasticity_escape"]["mastery_debt_utility"]
+        self.assertEqual(utility["power"], 2)
+        self.assertGreater(utility["same_grade"]["net"], 0)
+        self.assertAlmostEqual(
+            utility["same_grade"]["capabilities"]["C.SUB"]["utility_delta"],
+            .0336)
+        self.assertAlmostEqual(
+            utility["same_grade"]["capabilities"]["C.COUNT"]["utility_delta"],
+            -.0036)
+
+    def test_plasticity_can_waive_six_answer_protected_loss_when_debt_trade_wins(self):
+        paired = {
+            "C.SUB": {"before": 18, "after": 22, "total": 33},
+            "C.COUNT": {"before": 33, "after": 27, "total": 33},
+        }
+        ordinary = decide(
+            paired, active_capability="C.SUB", phase="RECOVERY_1",
+            protected={"C.COUNT"}, settings=Settings(),
+            same_grade_capabilities=("C.SUB", "C.COUNT"))
+        self.assertEqual(ordinary["decision"], "REJECT")
+        self.assertEqual(ordinary["reason"], "PROTECTED_CAPABILITY_REGRESSION")
+        self.assertEqual(ordinary["exceeded"], {"C.COUNT": 6})
+
+        plastic = decide(
+            paired, active_capability="C.SUB", phase="RECOVERY_1",
+            protected={"C.COUNT"}, settings=Settings(),
+            same_grade_capabilities=("C.SUB", "C.COUNT"),
+            plasticity_escape={"active": True})
+        self.assertEqual(plastic["decision"], "PROVISIONAL")
+        self.assertEqual(plastic["plasticity_escape"]["waived_reason"],
+                         "PROTECTED_CAPABILITY_REGRESSION")
+        self.assertGreater(
+            plastic["plasticity_escape"]["mastery_debt_utility"]
+                   ["same_grade"]["net"], 0)
+
+    def test_plasticity_rejects_trade_when_normalized_mastery_debt_grows(self):
+        # The same +4/-6 raw trade is bad when the sacrificed capability is
+        # already materially weak rather than sitting at mastery surplus.
+        result = decide(
+            {
+                "C.SUB": {"before": 60, "after": 64, "total": 100},
+                "C.COUNT": {"before": 70, "after": 64, "total": 100},
+            }, active_capability="C.SUB", phase="RECOVERY_1",
+            protected={"C.COUNT"}, settings=Settings(),
+            same_grade_capabilities=("C.SUB", "C.COUNT"),
+            plasticity_escape={"active": True})
+        self.assertEqual(result["decision"], "REJECT")
+        self.assertEqual(result["reason"], "SAME_GRADE_NET_REGRESSION")
+        self.assertLess(
+            result["plasticity_escape"]["mastery_debt_utility"]
+                  ["same_grade"]["net"], 0)
+
+    def test_mastery_debt_utility_gives_each_capability_one_normalized_vote(self):
+        from bilqis_mlx.learning.plasticity_escape import mastery_debt_utility
+        utility = mastery_debt_utility({
+            "C.SMALL_PANEL": {"before": 6, "after": 9, "total": 12},
+            "C.LARGE_PANEL": {"before": 30, "after": 45, "total": 60},
+        })
+        small = utility["capabilities"]["C.SMALL_PANEL"]["utility_delta"]
+        large = utility["capabilities"]["C.LARGE_PANEL"]["utility_delta"]
+        self.assertAlmostEqual(small, large)
+        self.assertAlmostEqual(utility["net"], small + large)
+
+    def test_starvation_plasticity_uses_frontier_mastery_debt_not_raw_slack(self):
+        paired = {
+            "C.COUNT": {"before": 4, "after": 5, "total": 6},
+            "C.ORDER": {"before": 6, "after": 6, "total": 6},
+        }
+        fixed = {"status": "MEASURED", "grade": "C",
+                 "before": 60, "after": 61, "total": 72,
+                 "cohort_sha256": "a" * 64}
+        base_frontier = {
+            "status": "MEASURED", "cohort_sha256": "b" * 64,
+            "rows": 144, "before_correct": 130, "after_correct": 129,
+            "regressions": [{"id": "c-loss", "capability": "C.ORDER"}],
+            "repaired": [],
+            "grades": {"C": {"before": 61, "after": 60, "total": 72,
+                              "net_correct_delta": -1}},
+            "capabilities": {
+                "C.COUNT": {"before": 25, "after": 27, "total": 36,
+                            "net_correct_delta": 2},
+                "C.ORDER": {"before": 36, "after": 33, "total": 36,
+                            "net_correct_delta": -3},
+            },
+        }
+        allowed = decide(
+            paired, active_capability="C.COUNT", phase="MAIN",
+            protected={"C.ORDER"}, settings=Settings(),
+            same_grade_capabilities=("C.COUNT", "C.ORDER"),
+            fixed_grade_replay=fixed, fixed_frontier_replay=base_frontier,
+            protected_frontier_grade="C", plasticity_escape={"active": True})
+        self.assertEqual(allowed["decision"], "PROVISIONAL")
+        self.assertEqual(allowed["plasticity_escape"]["waived_reason"],
+                         "ACTIVE_SCHOOL_GRADE_REGRESSION")
+
+        bad_trade = decide(
+            paired, active_capability="C.COUNT", phase="MAIN",
+            protected={"C.ORDER"}, settings=Settings(),
+            same_grade_capabilities=("C.COUNT", "C.ORDER"),
+            fixed_grade_replay=fixed,
+            fixed_frontier_replay={**base_frontier,
+                "before_correct": 55, "after_correct": 52,
+                "grades": {"C": {"before": 55, "after": 52, "total": 72,
+                                  "net_correct_delta": -3}},
+                "capabilities": {
+                    "C.COUNT": {"before": 25, "after": 27, "total": 36,
+                                "net_correct_delta": 2},
+                    "C.ORDER": {"before": 30, "after": 25, "total": 36,
+                                "net_correct_delta": -5},
+                }},
+            protected_frontier_grade="C", plasticity_escape={"active": True})
+        self.assertEqual(bad_trade["decision"], "REJECT")
+        self.assertEqual(bad_trade["reason"], "ACTIVE_SCHOOL_GRADE_REGRESSION")
+
+    def test_plasticity_activation_is_starvation_local_and_closes_after_retention(self):
+        from types import SimpleNamespace
+        from bilqis_mlx.learning.plasticity_escape import activation, record_school_visit
+
+        program = SimpleNamespace(grades=(
+            SimpleNamespace(id="A", teaching_stages=()),
+            SimpleNamespace(id="C", teaching_stages=(("C.COUNT",), ("C.ORDER",))),
+        ))
+        school = SimpleNamespace(
+            active_grades=("A", "C"), grade="C", stage="MAIN",
+            introduction_stage=0)
+        scope = "fixture/4"
+        teacher = {"causal_experiment": {"capability_stagnation": {
+            "C.COUNT|" + scope: {"attempts_since_retained": 16},
+        }}}
+        frontier = activation(teacher, "C.COUNT", scope, school, program)
+        self.assertTrue(frontier["active"])
+        self.assertEqual(frontier["activation_threshold"], 16)
+        self.assertTrue(frontier["frontier_priority"])
+
+        teacher["causal_experiment"]["capability_stagnation"][
+            "C.COUNT|" + scope]["attempts_since_retained"] = 0
+        self.assertFalse(activation(
+            teacher, "C.COUNT", scope, school, program)["active"])
+        teacher["causal_experiment"]["capability_stagnation"]["A.MAPS|" + scope] = {
+            "attempts_since_retained": 31}
+        self.assertFalse(activation(teacher, "A.MAPS", scope, school, program)["active"])
+        teacher["causal_experiment"]["capability_stagnation"]["A.MAPS|" + scope][
+            "attempts_since_retained"] = 32
+        self.assertTrue(activation(teacher, "A.MAPS", scope, school, program)["active"])
+        sweep = SimpleNamespace(**{**school.__dict__, "stage": "PROMOTION_SWEEP"})
+        teacher["causal_experiment"]["capability_stagnation"][
+            "C.COUNT|" + scope]["attempts_since_retained"] = 100
+        self.assertFalse(activation(
+            teacher, "C.COUNT", scope, sweep, program)["active"])
+
+        # School-wide drought is a second trigger that does not require this
+        # capability to have accumulated its own local starvation count.
+        teacher["causal_experiment"]["school_attempts_since_retained"] = 24
+        receipt = {"last_exam": {"scores": {
+            "A.MAPS": {"correct": 6, "total": 12},
+            "C.COUNT": {"correct": 20, "total": 33},
+            "C.ORDER": {"correct": 33, "total": 33},
+        }}}
+        teacher["causal_experiment"]["capability_stagnation"][
+            "C.COUNT|" + scope]["attempts_since_retained"] = 0
+        drought = activation(
+            teacher, "C.COUNT", scope, school, program, receipt=receipt)
+        self.assertTrue(drought["active"])
+        self.assertEqual(drought["activation_triggers"],
+                         ["SCHOOL_RETENTION_DROUGHT_BELOW_MEAN"])
+        self.assertEqual(drought["school_attempts_since_retained"], 24)
+        self.assertEqual(drought["school_drought_threshold"], 24)
+        self.assertEqual(drought["current_capability_score"],
+                         {"correct": 20, "total": 33})
+        self.assertLess(drought["current_capability_accuracy"],
+                        drought["school_mean_accuracy"])
+
+        # Equal/above-mean capabilities do not receive drought plasticity.
+        self.assertFalse(activation(
+            teacher, "C.ORDER", scope, school, program, receipt=receipt)["active"])
+        self.assertFalse(activation(
+            teacher, "C.MISSING", scope, school, program, receipt=receipt)["active"])
+
+        # A single retention anywhere in the school closes the global path.
+        record_school_visit(teacher, retained=True)
+        self.assertEqual(
+            teacher["causal_experiment"]["school_attempts_since_retained"], 0)
+        self.assertFalse(activation(
+            teacher, "C.COUNT", scope, school, program, receipt=receipt)["active"])
+
+    def test_school_drought_counter_counts_committed_nonretentions(self):
+        from bilqis_mlx.learning.plasticity_escape import record_school_visit
+
+        teacher = {"causal_experiment": {}}
+        for _ in range(24):
+            record_school_visit(teacher, retained=False)
+        self.assertEqual(
+            teacher["causal_experiment"]["school_attempts_since_retained"], 24)
+        record_school_visit(teacher, retained=True)
+        self.assertEqual(
+            teacher["causal_experiment"]["school_attempts_since_retained"], 0)
+
     def test_target_only_gain_with_same_grade_tie_is_not_progress(self):
         paired = {
             "B.XOR": {"before": 7, "after": 8, "total": 12},
@@ -599,6 +941,62 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         self.assertEqual(result["fixed_frontier_replay"]["regressions"],
                          frontier["regressions"])
         self.assertEqual(result["fixed_whole_school_net_correct_delta"], 0)
+
+    def test_mature_debt_budget_blocks_only_new_loss_beyond_hard_limit(self):
+        paired = {
+            "B.IFF": {"before": 8, "after": 9, "total": 12},
+            "B.NOT": {"before": 10, "after": 10, "total": 12},
+        }
+        frontier = {
+            "status": "MEASURED", "cohort_sha256": "a" * 64,
+            "rows": 144, "before_correct": 120, "after_correct": 121,
+            "regressions": [{"id": "a-loss", "capability": "A.MAPS"}],
+            "repaired": [
+                {"id": "b-gain-1", "capability": "B.IFF"},
+                {"id": "b-gain-2", "capability": "B.IFF"},
+            ],
+            "grades": {
+                "A": {"before": 58, "after": 57, "total": 72,
+                      "net_correct_delta": -1},
+                "B": {"before": 62, "after": 64, "total": 72,
+                      "net_correct_delta": 2},
+            },
+        }
+        common = dict(
+            active_capability="B.IFF", phase="RECOVERY_2",
+            protected={"B.NOT"}, settings=Settings(),
+            mature_grades=frozenset({"A"}),
+            same_grade_capabilities=("B.IFF", "B.NOT"),
+            fixed_grade_replay={"status": "MEASURED", "grade": "B",
+                                "before": 62, "after": 64, "total": 72,
+                                "cohort_sha256": "a" * 64},
+            fixed_frontier_replay=frontier,
+            protected_frontier_grade="B",
+        )
+
+        improving = dict(common)
+        improving["fixed_frontier_replay"] = {
+            **frontier,
+            "grades": {
+                "A": {"before": 58, "after": 60, "total": 72,
+                      "net_correct_delta": 2},
+                "B": {"before": 62, "after": 63, "total": 72,
+                      "net_correct_delta": 1},
+            },
+            "before_correct": 120, "after_correct": 123,
+            "regressions": [], "repaired": [],
+        }
+        within_budget = decide(
+            paired, mature_grade_debt={"A": 4}, **improving)
+        self.assertEqual(within_budget["decision"], "PROVISIONAL")
+        self.assertEqual(within_budget["projected_mature_grade_debt"], {"A": 2})
+
+        blocked = decide(
+            paired, mature_grade_debt={"A": 4},
+            plasticity_escape={"active": True}, **common)
+        self.assertEqual(blocked["decision"], "REJECT")
+        self.assertEqual(blocked["reason"], "MATURE_GRADE_DEBT_LIMIT")
+        self.assertEqual(blocked["projected_mature_grade_debt"], {"A": 5})
 
     def test_fixed_frontier_rejects_when_school_loses_more_than_grade_gains(self):
         paired = {
@@ -1170,8 +1568,66 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         picked, _ = contextual_pick(
             Legacy, teacher, "C.SUB", "RECOVERY_1", random.Random(2),
             curriculum_scope="scope")
-        self.assertEqual(picked, "novel")
-        self.assertEqual(Legacy.calls, 1)
+        # Engines without the bounded knob vocabulary cannot breed a bespoke
+        # challenger; under sustained pressure they stay on the best evidenced
+        # incumbent rather than sampling an unseen archive policy.
+        self.assertEqual(picked, "less_bad")
+        self.assertEqual(Legacy.calls, 0)
+
+    def test_plasticity_retries_preplasticity_target_gain_before_breeding_again(self):
+        near_miss = {
+            "contrast": 1., "depth": 1, "distill": .33,
+            "lr": .000042, "old": 20, "preview": 4,
+        }
+        parent = {
+            "contrast": 0., "depth": 1, "distill": .33,
+            "lr": .0002, "old": 12, "preview": 4,
+        }
+        teacher = {
+            "strategies": {"near_miss": near_miss, "parent": parent},
+            "global_stats": {
+                "near_miss": {"trials": 4, "reward_sum": -.4,
+                              "reward_ema": -.1, "latest": -.1},
+                "parent": {"trials": 20, "reward_sum": 2.,
+                           "reward_ema": .1, "latest": .1},
+            },
+            "grade_stats": {"C": {
+                "parent": {"trials": 20, "reward_sum": 2.,
+                           "reward_ema": .1, "latest": .1},
+            }},
+            "events": 60,
+        }
+        rejected = decide({
+            "C.DIV": {"before": 10, "after": 11, "total": 33},
+            "C.MUL": {"before": 30, "after": 28, "total": 33},
+        }, active_capability="C.DIV", phase="RECOVERY_1",
+            protected=set(), settings=Settings(),
+            same_grade_capabilities=("C.DIV", "C.MUL"))
+        self.assertEqual(rejected["reason"], "SAME_GRADE_NET_REGRESSION")
+        observe_context(
+            teacher, capability="C.DIV", phase="RECOVERY_1",
+            policy_key="near_miss", decision=rejected, local_gain=.1,
+            curriculum_scope="scope")
+        teacher["causal_experiment"]["capability_stagnation"][
+            "C.DIV|scope"]["rejection_streak"] = 8
+
+        class Legacy:
+            KNOBS = {
+                "contrast": (0., 1.), "depth": (1, 4),
+                "distill": (0., .33), "lr": (.00004, .00008, .0002, .0003),
+                "old": (4, 8, 12, 20), "preview": (0, 4),
+            }
+
+            @staticmethod
+            def pick(_teacher, _grade, _rng):
+                return "parent", _teacher["strategies"]["parent"]
+
+        picked, _policy, metadata = contextual_pick(
+            Legacy, teacher, "C.DIV", "RECOVERY_1", random.Random(2),
+            curriculum_scope="scope", return_metadata=True,
+            plasticity_active=True)
+        self.assertEqual(picked, "near_miss")
+        self.assertEqual(metadata["selection_reason"], "PLASTICITY_RETRY")
 
     def test_rejection_pressure_pools_learning_rate_evidence_across_phases(self):
         teacher = {
@@ -1546,6 +2002,547 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         commit_trial(weights, parent, branch, branch_opt)
         self.assertEqual(int(parent.state["step"].item()), parent_step+1)
         self.assertFalse(np.array_equal(np.asarray(weights["embedding.weight"]), parent_weight))
+
+    def test_active_strategy_population_is_bounded_and_preserves_proven_incumbent(self):
+        teacher = strategy_population_teacher()
+        proven = "policy-023"
+        retained = decide({
+            "C.ADD": {"before": 3, "after": 5, "total": 6},
+        }, active_capability="C.ADD", phase="MAIN", protected=set(),
+            settings=Settings())
+        for _ in range(5):
+            observe_context(
+                teacher, capability="C.ADD", phase="MAIN",
+                policy_key=proven, decision=retained, local_gain=.4,
+                curriculum_scope="scope")
+        scope = teacher["causal_experiment"]["contexts"]["C.ADD|MAIN|scope"]
+
+        active, inventory = _active_effective_strategy_keys(
+            teacher, "C", scope)
+
+        self.assertLessEqual(len(active), 16)
+        self.assertGreater(len(inventory), len(active))
+        self.assertIn(
+            _effective_policy_key(teacher["strategies"][proven]), active)
+
+    def test_contextual_pick_keeps_strategy_archive_immutable(self):
+        import bilqis_mlx.compatibility.historical_teacher_policy as policy_engine
+        teacher = strategy_population_teacher()
+        before_keys = set(teacher["strategies"])
+        before_mutations = teacher["mutations"]
+
+        for seed in range(12):
+            contextual_pick(
+                policy_engine, teacher, "C.ADD", "MAIN", random.Random(seed),
+                curriculum_scope="scope")
+
+        self.assertEqual(set(teacher["strategies"]), before_keys)
+        self.assertEqual(teacher["mutations"], before_mutations)
+        _, _, metadata = contextual_pick(
+            policy_engine, teacher, "C.ADD", "MAIN", random.Random(99),
+            curriculum_scope="scope", return_metadata=True)
+        self.assertEqual(
+            metadata["selection_policy"],
+            "bilqis.mlx.teacher-selection/349-replay-v1")
+
+    def test_rejection_pressure_exploration_mints_novel_effective_strategy(self):
+        import bilqis_mlx.compatibility.historical_teacher_policy as policy_engine
+        teacher = strategy_population_teacher(count=24)
+        teacher["causal_experiment"]["contexts"]["C.ADD|MAIN|scope"] = {
+            "policy-000": {
+                "trials": 4, "reward_sum": 0., "unsafe": 4, "retained": 0,
+                "latest": -.1, "no_target_gain_streak": 4,
+            },
+        }
+        teacher["causal_experiment"]["capability_stagnation"] = {
+            "C.ADD|scope": {
+                "rejection_streak": 4, "no_target_gain_streak": 2,
+                "attempts_since_retained": 4, "total_rejections": 4,
+                "total_retained": 0, "current_rejection_reasons": {},
+            },
+        }
+        before_effective = {
+            _effective_policy_key(policy)
+            for policy in teacher["strategies"].values()
+        }
+        before_count = len(teacher["strategies"])
+
+        key, policy, metadata = contextual_pick(
+            policy_engine, teacher, "C.ADD", "MAIN", random.Random(9),
+            curriculum_scope="scope", return_metadata=True)
+
+        self.assertEqual(metadata["selection_reason"], "FRESH_MUTATED_CHALLENGER")
+        self.assertEqual(len(teacher["strategies"]), before_count + 1)
+        self.assertNotIn(_effective_policy_key(policy), before_effective)
+        self.assertEqual(teacher["strategies"][key], policy)
+
+    def test_rejection_pressure_exploits_active_retained_context_before_breeding(self):
+        import bilqis_mlx.compatibility.historical_teacher_policy as policy_engine
+        teacher = strategy_population_teacher(count=24)
+        winner = "policy-007"
+        channel = teacher["causal_experiment"]
+        channel["contexts"]["C.ADD|MAIN|scope"] = {
+            winner: {
+                "trials": 1, "reward_sum": -.06, "unsafe": 0,
+                "retained": 1, "latest": -.06, "no_target_gain_streak": 0,
+            },
+            "policy-008": {
+                "trials": 4, "reward_sum": .8, "unsafe": 4,
+                "retained": 0, "latest": .2, "no_target_gain_streak": 0,
+            },
+        }
+        channel["capability_stagnation"] = {
+            "C.ADD|scope": {
+                "rejection_streak": 8, "no_target_gain_streak": 0,
+                "attempts_since_retained": 8, "total_rejections": 8,
+                "total_retained": 1, "current_rejection_reasons": {},
+            },
+        }
+        before = set(teacher["strategies"])
+
+        key, policy, metadata = contextual_pick(
+            policy_engine, teacher, "C.ADD", "MAIN", random.Random(13),
+            curriculum_scope="scope", return_metadata=True)
+
+        self.assertEqual(key, winner)
+        self.assertEqual(policy, teacher["strategies"][winner])
+        self.assertEqual(metadata["selection_reason"], "PROVEN_RETAINED_CONTEXT")
+        self.assertEqual(set(teacher["strategies"]), before)
+
+    def test_rejection_pressure_resumes_breeding_after_retained_policy_is_checkpoint_retired(self):
+        import bilqis_mlx.compatibility.historical_teacher_policy as policy_engine
+        teacher = strategy_population_teacher(count=24)
+        winner = "policy-007"
+        winner_effective = _effective_policy_key(teacher["strategies"][winner])
+        context_key = "C.ADD|MAIN|scope"
+        checkpoint = "a" * 64
+        channel = teacher["causal_experiment"]
+        channel["contexts"][context_key] = {
+            winner: {
+                "trials": 1, "reward_sum": -.06, "unsafe": 0,
+                "retained": 1, "latest": -.06, "no_target_gain_streak": 0,
+            },
+        }
+        channel["capability_stagnation"] = {
+            "C.ADD|scope": {
+                "rejection_streak": 8, "no_target_gain_streak": 0,
+                "attempts_since_retained": 8, "total_rejections": 8,
+                "total_retained": 1, "current_rejection_reasons": {},
+            },
+        }
+        # The existing same-student rule is the exploitation bound: after four
+        # unretained uses, the proven effective policy leaves the active set.
+        channel["student_policy_epoch"] = {
+            "student_sha256": checkpoint,
+            "contexts": {context_key: {}},
+            "unretained_contexts": {
+                context_key: {winner_effective: 4},
+            },
+        }
+
+        _key, _policy, metadata = contextual_pick(
+            policy_engine, teacher, "C.ADD", "MAIN", random.Random(13),
+            curriculum_scope="scope", return_metadata=True,
+            student_checkpoint_sha256=checkpoint)
+
+        self.assertEqual(metadata["selection_reason"], "FRESH_MUTATED_CHALLENGER")
+        self.assertGreaterEqual(
+            metadata["checkpoint_retired_effective_strategy_count"], 1)
+
+    def test_bespoke_exploration_uses_matching_retained_parent_at_nominal_capacity(self):
+        import bilqis_mlx.compatibility.historical_teacher_policy as policy_engine
+        teacher = strategy_population_teacher(count=12)
+        # Fill the legacy nominal ceiling with behaviorally duplicate preview
+        # aliases. Effective capacity remains available.
+        for index, (key, policy) in enumerate(list(teacher["strategies"].items())):
+            alias = dict(policy, preview=2)
+            alias_key = f"alias-{index:03d}"
+            teacher["strategies"][alias_key] = alias
+            teacher["global_stats"][alias_key] = dict(teacher["global_stats"][key])
+            teacher["grade_stats"]["C"][alias_key] = dict(teacher["grade_stats"]["C"][key])
+        self.assertEqual(len(teacher["strategies"]), 24)
+        parent = "policy-007"
+        # The retained recipe is proven for this capability in another phase.
+        # Current-phase pressure has no retained incumbent, so this visit is an
+        # actual exploration visit and should breed from that proven ancestry.
+        context = "C.ADD|RECOVERY_1|scope"
+        diagnostics = {"champion_candidate_count": 2, "unresolved_miss_count": 1,
+                       "warnings": ()}
+        channel = teacher["causal_experiment"]
+        channel["capability_stagnation"] = {
+            "C.ADD|scope": {
+                "rejection_streak": 4, "no_target_gain_streak": 4,
+                "attempts_since_retained": 4, "total_rejections": 4,
+                "total_retained": 0,
+                "current_rejection_reasons": {"NO_MEASURABLE_TARGET_GAIN": 4},
+            },
+        }
+        diagnostic_key, _ = _diagnostic_context(
+            channel, "C.ADD", "scope", diagnostics)
+        channel["contexts"][context] = {
+            parent: {
+                "trials": 6, "reward_sum": 1.2, "unsafe": 2, "retained": 3,
+                "latest": .2, "no_target_gain_streak": 0,
+                "diagnostic_stats": {
+                    diagnostic_key: {
+                        "trials": 2, "reward_sum": .6, "unsafe": 0, "retained": 2,
+                    },
+                },
+            },
+            "policy-008": {
+                "trials": 12, "reward_sum": 4., "unsafe": 2, "retained": 6,
+                "latest": .3, "no_target_gain_streak": 0,
+            },
+        }
+        before = {_effective_policy_key(p) for p in teacher["strategies"].values()}
+
+        with patch.object(policy_engine, "MAX_STRATEGIES", 24):
+            key, policy, metadata = contextual_pick(
+                policy_engine, teacher, "C.ADD", "MAIN", random.Random(11),
+                curriculum_scope="scope", diagnostics=diagnostics,
+                return_metadata=True)
+
+        self.assertEqual(metadata["selection_reason"], "FRESH_MUTATED_CHALLENGER")
+        self.assertEqual(metadata["mutation_parent_policy_key"], parent)
+        self.assertEqual(metadata["mutation_parent_basis"], "CAPABILITY_DIAGNOSTIC_RETAINED")
+        self.assertNotIn(_effective_policy_key(policy), before)
+        parent_features = effective_policy_features(teacher["strategies"][parent])
+        child_features = effective_policy_features(policy)
+        self.assertEqual(sum(parent_features[k] != child_features[k]
+                             for k in parent_features), 1)
+        self.assertEqual(
+            teacher["causal_experiment"]["strategy_births"][_effective_policy_key(policy)]["origin_capability"],
+            "C.ADD")
+
+    def test_saturated_legacy_lattice_refines_one_numeric_gene(self):
+        import bilqis_mlx.compatibility.historical_teacher_policy as policy_engine
+        teacher = strategy_population_teacher(count=400)
+        parent = "policy-000"
+        channel = teacher["causal_experiment"]
+        channel["contexts"]["C.ADD|MAIN|scope"] = {
+            parent: {
+                "trials": 8, "reward_sum": 2., "unsafe": 8, "retained": 0,
+                "latest": .25, "no_target_gain_streak": 0,
+            },
+        }
+        teacher["grade_stats"]["C"][parent]["reward_sum"] = 10.
+        teacher["global_stats"][parent]["reward_sum"] = 10.
+        channel["capability_stagnation"] = {
+            "C.ADD|scope": {
+                "rejection_streak": 4, "no_target_gain_streak": 4,
+                "attempts_since_retained": 4, "total_rejections": 4,
+                "total_retained": 0,
+                "current_rejection_reasons": {"NO_MEASURABLE_TARGET_GAIN": 4},
+            },
+        }
+        before = {_effective_policy_key(p) for p in teacher["strategies"].values()}
+        self.assertEqual(len(before), 400)
+
+        key, policy, metadata = contextual_pick(
+            policy_engine, teacher, "C.ADD", "MAIN", random.Random(7),
+            curriculum_scope="scope", return_metadata=True)
+
+        self.assertEqual(metadata["selection_reason"], "FRESH_MUTATED_CHALLENGER")
+        self.assertEqual(metadata["mutation_mode"], "ADAPTIVE_LOCAL_REFINEMENT")
+        self.assertNotIn(_effective_policy_key(policy), before)
+        parent_policy = teacher["strategies"][parent]
+        parent_features = effective_policy_features(parent_policy)
+        child_features = effective_policy_features(policy)
+        changed = [name for name in parent_features
+                   if parent_features[name] != child_features[name]]
+        self.assertEqual(len(changed), 1)
+        self.assertIn(changed[0], {"old", "lr", "distill"})
+        self.assertGreaterEqual(policy["old"], min(policy_engine.KNOBS["old"]))
+        self.assertLessEqual(policy["old"], max(policy_engine.KNOBS["old"]))
+        self.assertGreaterEqual(policy["lr"], min(policy_engine.KNOBS["lr"]))
+        self.assertLessEqual(policy["lr"], max(policy_engine.KNOBS["lr"]))
+        self.assertGreaterEqual(policy["distill"], min(policy_engine.KNOBS["distill"]))
+        self.assertLessEqual(policy["distill"], max(policy_engine.KNOBS["distill"]))
+        self.assertEqual(teacher["strategies"][key], policy)
+
+    def test_realized_action_novelty_breaks_otherwise_equal_parent_tie(self):
+        from bilqis_mlx.learning.teacher_breeding import _retained_parent_candidates
+
+        first = {"old": 4, "preview": 0, "depth": 1, "contrast": 0.,
+                 "lr": .00004, "distill": 0.}
+        second = dict(first, lr=.00008)
+        first_effective = _effective_policy_key(first)
+        second_effective = _effective_policy_key(second)
+        record = {
+            "trials": 8, "reward_sum": 2., "unsafe": 2, "retained": 4,
+            "latest": .25, "no_target_gain_streak": 0,
+        }
+        teacher = {
+            "strategies": {"first": first, "second": second},
+            "global_stats": {}, "grade_stats": {},
+            "causal_experiment": {
+                "contexts": {"C.ADD|MAIN|scope": {
+                    "first": dict(record), "second": dict(record),
+                }},
+                "strategy_births": {
+                    first_effective: {"novel_realized_action_count": 0},
+                    second_effective: {
+                        "novel_realized_action_count": 2,
+                        "retained_novel_realized_action_count": 1,
+                    },
+                },
+            },
+        }
+
+        candidates = list(_retained_parent_candidates(
+            teacher, "C.ADD", "scope", diagnostic_key=None))
+
+        self.assertEqual(candidates[0][0], "second")
+
+    def test_scope_revision_retries_proven_capability_policy_before_fresh_search(self):
+        import bilqis_mlx.compatibility.historical_teacher_policy as policy_engine
+
+        winner = {
+            "old": 8, "preview": 0, "depth": 3, "contrast": 0.,
+            "lr": .00004, "distill": .35,
+        }
+        current = dict(winner, lr=.00013)
+        winner_effective = _effective_policy_key(winner)
+        teacher = {
+            "strategies": {"winner": winner, "current": current},
+            "global_stats": {
+                "winner": {"trials": 4, "reward_sum": .2,
+                           "reward_ema": .05, "latest": .05},
+                "current": {"trials": 8, "reward_sum": -.8,
+                            "reward_ema": -.1, "latest": -.1},
+            },
+            "grade_stats": {"C": {
+                "winner": {"trials": 4, "reward_sum": .2,
+                           "reward_ema": .05, "latest": .05},
+                "current": {"trials": 8, "reward_sum": -.8,
+                            "reward_ema": -.1, "latest": -.1},
+            }},
+            "events": 20, "mutations": 0,
+            "causal_experiment": {
+                "version": "bilqis.mlx.causal-teacher-experiment/v1",
+                "events": 12, "negative_archetypes": [],
+                "contexts": {
+                    "C.ADD|MAIN|release/10": {
+                        "winner": {"trials": 4, "reward_sum": .2,
+                                   "unsafe": 0, "retained": 2,
+                                   "latest": .05, "no_target_gain_streak": 0},
+                    },
+                    "C.ADD|MAIN|release/4": {
+                        "current": {"trials": 4, "reward_sum": -.8,
+                                    "unsafe": 0, "retained": 0,
+                                    "latest": -.2, "no_target_gain_streak": 4},
+                    },
+                },
+                "capability_stagnation": {
+                    "C.ADD|release/4": {
+                        "rejection_streak": 4, "no_target_gain_streak": 4,
+                        "attempts_since_retained": 4, "total_rejections": 4,
+                        "total_retained": 0,
+                        "current_rejection_reasons": {"NO_MEASURABLE_TARGET_GAIN": 4},
+                    },
+                },
+                "strategy_births": {
+                    winner_effective: {
+                        "origin_capability": "C.ADD", "origin_grade": "C",
+                        "curriculum_scope": "release/10",
+                        "parent_policy_key": "current",
+                        "parent_effective_policy_key": _effective_policy_key(current),
+                        "parent_basis": "CAPABILITY_RETAINED",
+                        "changed_fields": ["lr"], "birth_event": 3,
+                        "proven_retained": True,
+                    },
+                },
+            },
+        }
+
+        # Both effective knob values already exist, so the old code cannot
+        # escape by minting a third policy. The proven /10 winner must instead
+        # get one fresh trial under /4 without importing its old reward record.
+        with patch.object(policy_engine, "KNOBS", {"lr": [.00004, .00013]}):
+            key, _policy, metadata = contextual_pick(
+                policy_engine, teacher, "C.ADD", "MAIN", random.Random(7),
+                curriculum_scope="release/4", return_metadata=True)
+
+        self.assertEqual(key, "winner")
+        self.assertEqual(metadata["selection_reason"],
+                         "PORTABLE_RETAINED_CHALLENGER")
+        self.assertNotIn(
+            "winner", teacher["causal_experiment"]["contexts"][
+                "C.ADD|MAIN|release/4"])
+
+    def test_candidate_step_budget_recovers_when_interference_streak_breaks(self):
+        teacher = {
+            "strategies": {"policy": {"lr": .00013}},
+            "global_stats": {
+                "policy": {"trials": 20, "reward_sum": 0.,
+                           "reward_ema": 0., "latest": 0.},
+            },
+            "grade_stats": {}, "events": 20,
+        }
+        interference = decide({
+            "C.SUB": {"before": 22, "after": 23, "total": 33},
+            "A.EDGE": {"before": 6, "after": 4, "total": 6},
+        }, active_capability="C.SUB", phase="RECOVERY_1",
+            protected={"A.EDGE"}, settings=Settings())
+        no_gain = decide({
+            "C.SUB": {"before": 22, "after": 22, "total": 33},
+        }, active_capability="C.SUB", phase="RECOVERY_1", protected=set(),
+            settings=Settings())
+
+        for _ in range(4):
+            observe_context(
+                teacher, capability="C.SUB", phase="RECOVERY_1",
+                policy_key="policy", decision=interference, local_gain=.03,
+                curriculum_scope="scope")
+        self.assertEqual(
+            candidate_step_budget(
+                16, teacher, "C.SUB", curriculum_scope="scope"), 4)
+
+        observe_context(
+            teacher, capability="C.SUB", phase="RECOVERY_1",
+            policy_key="policy", decision=no_gain, local_gain=0.,
+            curriculum_scope="scope")
+        self.assertEqual(
+            candidate_step_budget(
+                16, teacher, "C.SUB", curriculum_scope="scope"), 16)
+
+    def test_same_student_no_gain_streak_retires_policy_until_checkpoint_changes(self):
+        import bilqis_mlx.compatibility.historical_teacher_policy as policy_engine
+
+        teacher = strategy_population_teacher(count=17)
+        policy = "policy-000"
+        teacher["global_stats"][policy].update(
+            trials=10, reward_sum=2., reward_ema=.2, latest=.2)
+        teacher["causal_experiment"]["contexts"]["C.ADD|MAIN|scope"] = {
+            policy: {"trials": 5, "reward_sum": 2., "unsafe": 0,
+                     "retained": 5, "latest": .4, "no_target_gain_streak": 0},
+        }
+        checkpoint_a = "a" * 64
+        checkpoint_b = "b" * 64
+        no_gain = decide({
+            "C.ADD": {"before": 5, "after": 4, "total": 6},
+        }, active_capability="C.ADD", phase="MAIN", protected=set(),
+            settings=Settings())
+        interference = decide({
+            "C.ADD": {"before": 3, "after": 4, "total": 6},
+            "B.XOR": {"before": 6, "after": 4, "total": 6},
+        }, active_capability="C.ADD", phase="MAIN", protected={"B.XOR"},
+            settings=Settings(), mature_grades=frozenset({"B"}))
+
+        for _ in range(3):
+            observe_context(
+                teacher, capability="C.ADD", phase="MAIN",
+                policy_key=policy, decision=no_gain, local_gain=-.2,
+                curriculum_scope="scope",
+                student_checkpoint_sha256=checkpoint_a)
+        still_active = contextual_pick(
+            policy_engine, teacher, "C.ADD", "MAIN", random.Random(3),
+            curriculum_scope="scope", student_checkpoint_sha256=checkpoint_a,
+            return_metadata=True)
+        self.assertEqual(
+            still_active[2]["checkpoint_retired_effective_strategy_count"], 0)
+
+        observe_context(
+            teacher, capability="C.ADD", phase="MAIN",
+            policy_key=policy, decision=interference, local_gain=.2,
+            curriculum_scope="scope", student_checkpoint_sha256=checkpoint_a)
+        self.assertEqual(
+            teacher["causal_experiment"]["stagnation"]["C.ADD|scope"]
+                   [policy]["no_target_gain_streak"], 0)
+        retired = contextual_pick(
+            policy_engine, teacher, "C.ADD", "MAIN", random.Random(3),
+            curriculum_scope="scope", student_checkpoint_sha256=checkpoint_a,
+            return_metadata=True)
+        self.assertEqual(
+            retired[2]["checkpoint_retired_effective_strategy_count"], 1)
+        self.assertNotEqual(retired[0], policy)
+
+        new_student = contextual_pick(
+            policy_engine, teacher, "C.ADD", "MAIN", random.Random(3),
+            curriculum_scope="scope", student_checkpoint_sha256=checkpoint_b,
+            return_metadata=True)
+        self.assertEqual(
+            new_student[2]["checkpoint_retired_effective_strategy_count"], 0)
+
+    def test_realized_delivery_variants_keep_separate_outcome_evidence(self):
+        import bilqis_mlx.learning.learning_experiment as experiment
+        teacher = {
+            "strategies": {
+                "variable": {"lr": .0001, "old": 16, "depth": 3,
+                             "contrast": 1.0},
+            },
+            "global_stats": {}, "grade_stats": {}, "events": 0,
+        }
+        retained = decide({
+            "C.ADD": {"before": 3, "after": 5, "total": 6},
+        }, active_capability="C.ADD", phase="MAIN", protected=set(),
+            settings=Settings())
+        rejected = decide({
+            "C.ADD": {"before": 3, "after": 3, "total": 6},
+        }, active_capability="C.ADD", phase="MAIN", protected=set(),
+            settings=Settings())
+        common = dict(candidate_steps=16, batch_size=32,
+                      guidance_applied_steps=0, enrichment_examples=0)
+        first_action = experiment.realized_teacher_action(
+            teacher["strategies"]["variable"],
+            policy_controls=({"effective_old_grade_examples": 12},), **common)
+        second_action = experiment.realized_teacher_action(
+            teacher["strategies"]["variable"],
+            policy_controls=({"effective_old_grade_examples": 9},), **common)
+        self.assertNotEqual(first_action["key"], second_action["key"])
+
+        first = observe_context(
+            teacher, capability="C.ADD", phase="MAIN", policy_key="variable",
+            decision=retained, local_gain=.4, curriculum_scope="scope",
+            realized_action=first_action)
+        second = observe_context(
+            teacher, capability="C.ADD", phase="MAIN", policy_key="variable",
+            decision=rejected, local_gain=0., curriculum_scope="scope",
+            realized_action=second_action)
+        record = teacher["causal_experiment"]["contexts"]["C.ADD|MAIN|scope"][
+            "variable"]
+
+        self.assertEqual(record["trials"], 2)
+        self.assertEqual(record["retained"], 1)
+        self.assertEqual(record["realized_actions"][first_action["key"]]["retained"], 1)
+        self.assertEqual(record["realized_actions"][second_action["key"]]["unsafe"], 1)
+        self.assertEqual(first["realized_action_key"], first_action["key"])
+        self.assertEqual(second["realized_action_key"], second_action["key"])
+        ecology = teacher["causal_experiment"]["realized_action_ecology"]
+        self.assertEqual(ecology[first_action["key"]]["trials"], 1)
+        self.assertEqual(ecology[first_action["key"]]["retained"], 1)
+        self.assertEqual(ecology[second_action["key"]]["trials"], 1)
+        self.assertEqual(ecology[second_action["key"]]["retained"], 0)
+        self.assertEqual(
+            ecology[first_action["key"]]["effective_policy_keys"],
+            [_effective_policy_key(teacher["strategies"]["variable"])])
+
+    def test_realized_delivery_identity_tracks_delivery_not_requested_old_mix(self):
+        import bilqis_mlx.learning.learning_experiment as experiment
+        controls = ({
+            "effective_old_grade_examples": 5,
+            "depth_control": "SOURCE_TOKEN_LENGTH_PROXY",
+            "contrast_control": "SOURCE_GROUP_DIVERSITY",
+        },)
+        common = dict(
+            candidate_steps=16, batch_size=32, policy_controls=controls,
+            guidance_applied_steps=0, enrichment_examples=0)
+        requested_four = experiment.realized_teacher_action(
+            {"lr": .0001, "old": 4, "distill": .15}, **common)
+        requested_twenty = experiment.realized_teacher_action(
+            {"lr": .0001, "old": 20, "distill": .15}, **common)
+        changed_delivery = experiment.realized_teacher_action(
+            {"lr": .0001, "old": 20, "distill": .15}, **{
+                **common,
+                "policy_controls": ({
+                    "effective_old_grade_examples": 6,
+                    "depth_control": "SOURCE_TOKEN_LENGTH_PROXY",
+                    "contrast_control": "SOURCE_GROUP_DIVERSITY",
+                },),
+            })
+
+        self.assertEqual(requested_four["key"], requested_twenty["key"])
+        self.assertNotEqual(requested_four["key"], changed_delivery["key"])
 
 
 

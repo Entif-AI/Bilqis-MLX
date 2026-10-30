@@ -1377,3 +1377,777 @@ The Conjoined Triangle tracker is temporary. Mission Control replaces bespoke pr
 
 The user agrees with the core direction that canonical mutations must pass through governed authority and that Mission Control or arbitrary workers must not write source meaning or canonical evidence directly. The detailed information-flow model, including writer topology, command brokering, authorization stages and propagation mechanics, is intentionally **not frozen by this ADR**. That design remains open for the next architecture discussion. Future implementation must not infer a more specific write topology from this ADR.
 
+## ADR-097 | 2026-10-27 | Suspend developmental generalization until explicit maturity admission
+
+**Direct user correction; supersedes the active-generalization portions of ADR-067 and SPEC-0001 as they existed before this decision.** Bilqis is currently a small developmental student learning a narrow semantic inventory. Fresh GENERALIZATION assessment is not appropriate as a routine, promotion-adjacent, or graduation-gating mechanism at this stage and must not be inferred from ordinary LLM evaluation practice.
+
+The active developmental assessment lifecycle is therefore **fresh routine measurement plus fixed-within-attempt promotion**. The live runtime MUST NOT automatically generate fresh generalization cohorts, require generalization evidence for grade or whole-school graduation, inject generalization-only misses into teacher priorities, or mix generalization scores into routine/promotion longitudinal telemetry. Historical generalization cohorts, burn ledgers, readers, enums, and research fixtures remain preserved as compatibility evidence. They are not current execution authority.
+
+Promotion authority is also narrowed structurally. Ordinary recovery, debt, spiral, or grade/stage movement does not open promotion. A promotion attempt may be created only when the scheduler records an actual qualification transition by advancing `grade_exam_epoch` after a complete assessment. This prevents recovery movement from manufacturing promotion/generalization work for an imperfect grade.
+
+Generalization may return only through a future explicit human-directed maturity decision that defines when the student's semantic base is sufficiently stable, what kind of transfer/invariance is pedagogically appropriate, how the evidence is scored, and whether it can affect training or graduation. Until then, "generalization" is a dormant research/compatibility capability, not part of the school.
+
+
+## ADR-098 | 2026-10-27 | Candidate retention protects the current parent, not an older cumulative peak
+
+**SUPERSEDED by ADR-099.** This intermediate repair narrowed the diagnosed fault
+to the historical retention anchor, but the subsequent exact-control experiment
+showed that the correct operational recovery is to excise commit `1324082`
+wholesale rather than retain selected mechanics from it.
+
+**Direct user correction after the step-127096 retention deadlock.** The mature-grade anti-ratchet introduced on 2026-10-27 correctly intended to prevent later-grade learning from spending already-earned Grade-A performance, but its immutable cumulative retention anchor was the wrong baseline for individual candidate admission. Once the retained student itself sat below that older peak, each later candidate was required both to improve its target and to repair historical debt back to the old peak in the same local optimizer update. The run then produced more than two thousand consecutive zero-retention visits despite hundreds of target-positive candidates.
+
+Candidate admission therefore compares the challenger against the **current retained parent** on the current parent's verified fixed whole-school cohort. The current parent SHA and native AdamW optimizer step must match that frontier exactly or the screen fails closed. Fresh target gain remains mandatory. Same-grade, fixed lesson-grade, active developmental-frontier grade, mature-grade, protected-capability and whole-school non-regression remain mandatory relative to that current parent. In particular, a candidate that makes mature Grade A worse than the retained parent is still rejected; Grade A is not currency for later-grade gains.
+
+Historical cumulative/high-water frontier receipts remain immutable provenance and may continue to inform recovery, debt analysis and diagnostics. They are not a second candidate parent and MUST NOT veto a challenger merely because the retained parent already carries older debt relative to them. Existing cumulative same-checkpoint mastery and promotion/graduation requirements remain unchanged; this ADR does not forgive debt, mint mastery, alter source-gold, weaken student/native-AdamW custody, or authorize agent-operated production training.
+
+The correction is empirically bounded. From the exact live step-127096 student, a disposable clone using current compatible code with only the candidate-frontier baseline corrected retained a `B.COMPOSITE` candidate on the 22nd actual candidate attempt: target 9→10, same-grade net +1, fixed B 41→41, mature A 58→58, whole school 99→99, and 16 optimizer updates retained. The production lineage was not mutated by that proof.
+
+
+## ADR-099 | 2026-10-27 | Excise commit 1324082 wholesale after exact-old retention control
+
+**Direct user correction after bounded regression isolation.** Do not preserve a
+selected subset of commit `13240828cd15612e9a84f0f6222484cf2e18cb96`
+(`fix(trainer): prevent cumulative mature-grade regression`). The commit is to be
+reverted as a unit while retaining later independent work whose mechanics exist
+without it.
+
+The decisive control used the exact parent commit
+`5b84eca610f471630ee5c2fb27c15359a58f6766`, with its tracked tree unchanged.
+Because that executable cannot legally resume the newer durable factory receipt,
+a one-time disposable initializer loaded only the exact then-current neural
+student and its own AdamW (`7ea07d9d...`, optimizer step `127096`) into a fresh
+old-code school. Actual training then ran with the plain unmodified old CLI. In
+30 teacher-candidate visits it retained 4 candidates and 64 optimizer updates,
+for **13.33% retention**, advancing only the disposable control from step 127096
+to 127160. This restored the healthy retention range the user reported from
+before the regression.
+
+Accordingly, all code introduced by `1324082` is removed. Later changes remain
+when they are independently meaningful after that removal. In particular, the
+same-student unretained-policy rotation, the later fresh retention-support
+selection change, developmental GENERALIZATION suspension, recovery-custody
+repair, dashboard corrections, and unrelated subsequent work remain. A later
+patch whose sole purpose was to modify machinery introduced by `1324082` does
+not require preserving that removed machinery.
+
+Candidate retention therefore returns to the pre-`1324082` contract already
+specified by ADR-054 through ADR-057 and ADR-079: strict source-oracled target
+gain, same-grade and fixed-frontier safeguards, protected-capability budgets,
+exact current-parent frontier identity, and intact student/native-AdamW custody.
+This ADR does not authorize weaker source gold, custody bypass, hand-edited run
+state, or agent-operated production training. The human operator owns the live
+verification run after this code excision.
+
+**Rollback compatibility for existing admitted releases.** A run admitted while
+`1324082` was active may still contain the exact Grade-A predicates provider
+descriptor introduced by that commit (`source.micro.predicates/v1`, implementation
+`f8e5aec...`, including `generalization-only-source-context-v3`). After the
+wholesale revert and ADR-100 developmental-presentation correction, the runtime
+provider uses implementation `c451c3e...` without that generalization-only axis.
+Resume may recognize exactly that one-way
+descriptor pair as the ADR-099 rollback of the same provider. This is not a
+general provider-drift exemption: any other adapter identity, hash, axis, oracle,
+generator, release, teaching option, or profile difference still fails closed.
+
+
+## ADR-100 | 2026-10-27 | Bounded mature-grade debt with active repair
+
+**User-directed replacement for the failed cumulative anti-ratchet.** Later-grade
+optimization may temporarily spend a small amount of already-graduated skill,
+because requiring every local candidate to match an older historical peak made
+the admissible region collapse. The opposite extreme is also unacceptable:
+before the failed anti-ratchet, Grade-B optimization could slowly erode Grade A
+for hours. Retention therefore needs a bounded memory budget plus an explicit
+repair loop.
+
+For every retained candidate with measured fixed-frontier evidence, mature debt
+is updated from the **net fixed-grade delta** for each already-graduated grade.
+A net loss of two A answers adds two units of `mature_grade_debt`; a later net
+gain of three pays three units back, clamped at zero. Do not carry row-level or
+capability-local debt across changing fixed cohorts: those identities are useful
+diagnostics inside one parent-versus-candidate screen, but they are not a stable
+cross-visit currency. This ledger is derived only from successive current-parent
+comparisons. It does not compare a challenger to an older checkpoint and cannot
+resurrect ADR-098's historical-anchor deadlock.
+
+The initial control thresholds are deliberately small and inspectable. A mature
+grade with at least **2** debt answers enters repair priority. Debt identifies
+the grade that needs attention; it does **not** narrow training to only the
+capabilities carrying debt. One repair turn is a complete ordinary same-grade
+MAIN pass, restoring direct access to the whole grade's earned champion,
+frozen-soup guidance, miss replay, and neighboring semantics. A mature grade may
+receive at most one such repair pass in one school sweep before the scheduler
+must yield to other eligible work. This prevents a stubborn debt item from
+re-arming the same tiny queue indefinitely. A mature grade may carry at most
+**4** debt answers without additional restriction. A candidate that would
+increase that grade above 4 is rejected as `MATURE_GRADE_DEBT_LIMIT`. Holding or
+reducing debt is allowed even when the ledger is already at or above the limit,
+so repair is never blocked by the safeguard itself. The repair pressure releases
+once debt falls below the 2-answer trigger.
+
+Existing pre-ADR-100 runs decode with an empty prospective ledger. Runs produced
+by the initial ADR-100 implementation may contain legacy per-capability debt;
+resume migrates that ledger by summing each capability amount into its owning
+grade, then clears the obsolete capability ledger. Do not invent additional
+retroactive debt from fresh-cohort score differences.
+
+Separately, ordinary developmental Grade-A presentation returns to plain
+`draw_predicates()` rows. The source-valid contextual/irrelevant presentation is
+retained as dormant research machinery rather than mixed into routine learning
+or examination. This is the presentation separation that was useful inside
+`1324082`, reintroduced independently under ADR-097 without restoring any of the
+offending commit's retention mechanics.
+
+
+## ADR-101 | 2026-10-27 | Exploration must mean novel teacher strategy
+
+**User-directed correction after repeated zero-retention loops.** The dashboard
+previously rendered `UNCERTAIN_EXPLORING` as `EXPLORE`, although that health state
+only meant that an exact capability/phase/policy tuple had fewer than eight
+observations. Meanwhile the contextual teacher's rejection-pressure exploration
+path deliberately called `pick_existing()`, so it could repeatedly select known
+policies while the UI claimed exploration. Historical evidence confirmed this:
+in one 90-visit zero-retention streak, 58 nominal policy IDs represented 55
+effective strategies, but several exact effective policies recurred four to
+eight times and some capabilities repeated the same policy before trying a new
+one.
+
+`EXPLORE` is therefore reserved for an actual fresh mutation. Low-support policy
+health renders as `UNCERTAIN`. On every fourth sustained rejection-pressure
+attempt for a capability/context, the teacher now tries to mint one genuinely
+novel **effective** strategy from the existing bounded knob vocabulary. Novelty
+is checked against the effective strategy inventory, so preview-only or other
+behaviorally equivalent aliases do not count as exploration. The existing
+512-strategy archive ceiling, knob ranges, context-size limit, and bounded
+mutation-attempt count remain authoritative. If the active engine does not
+expose that bounded mutation vocabulary, selection falls back to the existing
+non-mutating compatibility behavior.
+
+Each visit records `teacher_selection_reason`; a genuinely minted policy uses
+`FRESH_MUTATED_CHALLENGER`. This makes later forensic review able to distinguish
+real search expansion from ordinary UCB rotation through the existing archive.
+
+
+## ADR-102 | 2026-10-27 | Capability cooldown survives checkpoints without permanent exile
+
+**Conservative response to repeated incumbent resurrection.** A strategy that is
+locally exhausted must not become immediately eligible merely because some other
+capability retained and changed the student SHA. Conversely, historically useful
+strategies must not be permanently blacklisted because one student neighborhood
+was hostile.
+
+The existing same-student retirement remains the first line of defense: four
+unretained attempts against one exact capability/phase/student checkpoint retire
+that effective strategy for the current checkpoint. Durable capability cooldown
+requires stronger evidence: the same effective strategy must independently hit
+that same-student unretained limit on **two distinct student checkpoints** for the
+same capability and curriculum scope. Phase does not partition the durable
+cooldown, because repeated failure in MAIN versus recovery is still evidence
+about the capability neighborhood.
+
+Once triggered, cooldown lasts for only **eight subsequent visits to that
+capability**. Visits elsewhere do not consume it. Expiry decays one failed-student
+epoch rather than deleting all evidence, so a reopened policy needs another
+materially bad student epoch before cooling again. A retained candidate using
+that policy on the cooled capability clears the durable cooldown immediately.
+There is no permanent blacklist.
+
+Cooldown is authoritative for exact-capability selection and therefore applies
+to both contextual selection and Teacher vNext canary selection. Sibling
+capabilities in the same grade receive only a small ranking penalty while the
+cooldown is active: `0.025` per cooled sibling, capped at `0.05`. This is evidence
+sharing, not exclusion; a policy exhausted for `B.IFF` may still be tried for
+`B.COMPOSITE` when its own evidence warrants it.
+
+Dashboard semantics must reflect selector authority. `EXHAUSTED` is reserved for
+an active selector-visible durable cooldown. A policy with enough observations
+but poor retention and no active cooldown is `LOW-YIELD`; low-support evidence is
+`UNCERTAIN`; actual strategy mutation remains `EXPLORE`. Presentation history may
+estimate retention probability, but it must not invent retirement authority.
+
+
+## ADR-103 | 2026-10-27 | New frontier grades receive bounded catch-up priority
+
+When a newly introduced highest active grade has far fewer semantics than the
+already mature school, raw capability-count fairness under-allocates learning to
+the frontier. Ten mature A/B semantics plus one new C semantic naturally gives C
+about one eleventh of a plain full-school pass, even when C is dramatically
+behind the rest of the student.
+
+During an ordinary cross-grade MAIN sweep, compare the newest active grade's mean
+accuracy across its currently introduced/eligible semantics with the median
+accuracy of all currently introduced/eligible active semantics. If the frontier
+is at or above that median, no catch-up applies. If it is below the median, give
+that frontier enough separately assessed MAIN passes to target roughly one
+quarter of visit opportunities for the sweep. The total frontier-pass budget is
+`ceil(non_frontier_semantics / (3 * frontier_semantics))`, with a minimum of one.
+Thus the current 10:1 A/B:C shape receives four C passes, about 29% of visits,
+rather than permanent 1/11 capability-count weighting.
+
+Catch-up is deliberately subordinate to existing safety/progression machinery.
+It never replaces promotion-sweep handling, failed-sweep recovery, weakest-three
+recovery, mature-grade debt repair, or explicit debt cadence. It only repeats the
+frontier's ordinary MAIN pass after at least one other grade has already
+completed its MAIN pass in that school sweep. The counter resets when the
+ordinary sweep resets. Old receipts decode with zero catch-up passes.
+
+Operator presentation must make qualification activity explicit. While the
+school stage is `PROMOTION_SWEEP` or `ASSESS_PROMOTION_SWEEP`, the compact header
+shows an explicit `SWEEP = GRADUATION <grade>` field rather than relying on the
+generic phase text alone.
+
+
+## ADR-104 | 2026-10-27 | Bespoke hereditary exploration with scalable live strategy ecology
+
+**Direct user correction after renewed rejection hell.** Policy novelty must not
+be confused with useful exploration. A policy that is merely new to one
+capability does not regain epistemic innocence when its broader history is
+already poor, and sustained rejection pressure must not devolve into cycling
+through old archive members labeled `UNCERTAIN`.
+
+When a capability reaches sustained rejection pressure (four consecutive
+rejections), exploration becomes **bespoke hereditary search**. The teacher
+attempts to breed a genuinely novel effective policy for that capability on
+every exploratory visit rather than selecting another untried archive member.
+Parent ancestry is evidence-seeded in this order:
+
+1. retained policy for the same capability under the same diagnostic context;
+2. retained policy for the same capability across phases;
+3. retained same-grade policy under the same diagnostic context;
+4. retained same-grade policy generally;
+5. grade reward history, then global reward history as fallbacks.
+
+Champion-derived weakness evidence participates through the diagnostic-context
+identity, so a policy that previously retained when champion-directed examples
+were present is preferred as ancestry for another champion-bearing attempt.
+Children preserve the chosen parent and mutate one effective knob at a time;
+behaviorally equivalent variants do not count as novelty. Teacher vNext may not
+override a freshly bred challenger on that same visit.
+
+New bespoke policies are capability-local while unproven. They may not
+immediately become `FRESH_ACTIVE_CHALLENGER` material for sibling capabilities.
+Once a bespoke policy has actually retained, that locality restriction is
+released: a later numeric-scope revision within the same release family may give
+the proven policy one fresh challenger trial for the same capability. Prior-scope
+reward/context evidence is not copied forward; the revised scope must earn its
+own evidence normally. Unproven children remain scope-local.
+A retention on their originating capability marks them proven and permits
+same-grade reuse thereafter. The newest eight unproven bespoke policies per
+capability receive a probationary opportunity; older unproven siblings may be
+retired from the live population.
+
+The teacher population is now an **effective-strategy live ecology**, separate
+from the immutable historical archive. Historical strategy definitions and
+outcomes remain available for provenance and ancestry; pruning means retirement
+from live selection, not deletion of evidence. Population limits scale with the
+number of currently active capabilities:
+
+- live effective capacity = `max(48, 24 * active_capabilities)`;
+- active working set = `min(live_capacity, max(8, 2 * active_capabilities))`.
+
+Thus the present 11-capability school has a 264-effective live population and a
+22-effective active working set rather than a fixed 512/16 regime. Rebalancing
+keeps newborn policies with fewer than four trials long enough to audition, then
+ranks mature strategies by retained outcomes, retention rate, mean contextual
+reward, historical reward, recent use, and birth/usage recency. Old,
+never-retained, low-reward strategies therefore lose live slots before proven
+productive ancestry. When the curriculum grows, capacity grows automatically
+and strong retired historical strategies may re-enter the live population.
+
+The historical nominal strategy ceiling no longer blocks invention merely
+because aliases or retired definitions occupy archive slots. New effective
+children may extend the immutable historical archive while the live effective
+population remains bounded by the curriculum-scaled capacity. Visit receipts
+record historical archive count, live effective count/capacity, active working
+set count/capacity, retired effective count, mutation parent, ancestry basis and
+changed fields.
+
+Dashboard health also becomes cross-context aware. `UNCERTAIN` is reserved for
+policies that are genuinely under-observed at every available evidence scope.
+When exact capability evidence is sparse, health falls back through capability,
+grade-phase, grade and global policy history. A policy with substantial
+zero-retention evidence therefore remains `LOW-YIELD` when first tried on a new
+capability instead of being relabeled `UNCERTAIN` merely because the local tuple
+is new. Selector-visible durable cooldown remains the only authority for
+`EXHAUSTED`.
+
+
+## ADR-105 | 2026-10-27 | Restore integer-root scope telemetry and normalize repeated champion specimens
+
+The compact operator header must expose the active integer-root training/test
+scope as `INTROOT`, using the durable `numeric_maximum` authority. At startup a
+saved maximum `N` renders as `0...N`; profile-adoption telemetry carries the new
+maximum so the header updates immediately when numeric scope changes instead of
+waiting for dashboard restart. Execution-profile and semantic-catalog adoption
+events share this presentation contract. This restores the final compact 349
+behavior from `c9ed590`/`7fef150` without making presentation state authoritative
+over curriculum admission.
+
+Source lesson cohorts may contain repeated occurrences of the same exact
+specimen. Champion weakness discovery is set-valued evidence: if one or more
+mentors identify the same source row, that exact row is emitted at most once as
+a weakness target. This normalization occurs before weakness-target selection.
+The downstream target identity validator remains strict; duplicate identities
+arriving from any other malformed target construction still raise
+`TEACHER_WEAKNESS_TARGET_IDENTITY_CONFLICT`. Do not weaken that guard to make a
+run proceed.
+
+
+## ADR-106 | 2026-10-27 | GRAD counts distinct model grades; Grade C climbs integer roots 4 through 10
+
+The compact `GRAD` field has three coordinates on each side of `current / lifetime`:
+
+`distinct grades reached . successful promotion sweeps . promotion-sweep attempts`.
+
+The first coordinate is a model-progression count, not a count of repeated grade
+boundary successes. Revalidating or re-promoting A/B must never inflate it. The
+lifetime coordinate is reconstructed from distinct grade admission/discovery in
+the full journal; the current-run coordinate increments only when a genuinely new
+grade is admitted/reached during that execution. A model that has reached A, B,
+and C therefore reports lifetime grade count `3` regardless of how many A/B
+promotion sweeps were repeated. The second coordinate is likewise a progression
+count, not a revalidation count: one grade/introduction frontier may contribute at
+most one successful promotion sweep. Re-running an already-crossed A/B frontier,
+or merely returning from an old-grade sweep to a later already-admitted grade,
+must never mint another success. Attempts remain historical attempts and may
+increase on repeated sweeps. For the current replay lineage, A→B and B→C are the
+only two unique successful progression frontiers recorded so far; while the live
+command continues to add attempts its journal reconstructs as `0.0.2 / 3.2.x`.
+
+Grade C owns a mandatory integer-root staircase. Canonical C admission begins at
+`0...4`. Once the student fully masters the current admitted C scope and reaches
+the normal grade boundary, the runtime performs a neural-inert profile revision
+to the next scope exactly one root wider: `0...5`, then `0...6`, through
+`0...10`. Scope 10 is terminal for Grade C; no further numeric profile is
+generated after it. The terminal numeric ceiling is the registry counting target
+(`10`), while `4` is both the entry scope and the full-operation unlock.
+
+The staircase is intrinsic to canonical Grade-C progression. It must not depend
+on the legacy `--numeric-staircase` CLI flag. Normal B→C admission therefore
+records `numeric_maximum=4` and `numeric_scope_final_maximum=10` (except bounded
+experiment runs that intentionally cap themselves at the entry scope).
+
+Existing replay state that was incorrectly admitted directly to profile
+`numeric-0-10` with `numeric_maximum=10` and **no**
+`numeric_scope_final_maximum` is treated as a one-shot wide-admission migration
+signature, not as evidence that the model legitimately climbed the staircase.
+When C next becomes the scheduler's active grade, the runtime rebinds that grade
+neural-inertly to `numeric-0-4`, sets terminal scope 10, preserves the student and
+native AdamW, and resumes ordinary staged C learning. A legitimately completed
+scope-10 run has `numeric_scope_final_maximum=10` and is never rewound.
+
+The current executable curriculum contains grades A/B/C only. Grade-D source
+adapters exist, but no executable D grade is presently admitted in this release;
+do not fabricate a D curriculum as part of the numeric staircase repair. Once a
+future executable curriculum actually contains D, ordinary next-grade admission
+is eligible only after terminal C@0...10 mastery.
+
+
+## ADR-107 | 2026-10-28 | Teacher evolution refines bounded numeric genes and measures realized-action novelty
+
+ADR-104 remains the governing ancestry, evidence, locality, population, and
+retention contract, but exhausting the legacy discrete policy lattice must not
+terminate invention. The immutable historical archive may contain every legacy
+effective policy without making the teacher evolutionarily sterile.
+
+The teacher first preserves the existing one-effective-knob hereditary search.
+When that discrete neighborhood cannot produce a novel effective child, it may
+refine exactly one controllable numeric gene locally around a retained parent:
+
+- `old` remains an integer inside the historical `old` envelope;
+- `lr` remains positive inside the historical learning-rate envelope;
+- `distill` remains inside the historical distillation envelope;
+- `depth` and `contrast` remain categorical until runtime behavior actually
+  supports more than SHALLOW/DEEP and RANDOM/DIVERSE;
+- `preview` remains excluded from effective identity while future-grade preview
+  is intentionally unavailable.
+
+Adaptive mutation bisects the local gap between the parent and its nearest
+already-observed numeric neighbor, with deterministic bounded quantization. It
+does not invent out-of-envelope optimizer or guidance settings, mutate more than
+one effective gene in a child, rewrite any historical policy, or weaken
+retention, source, custody, preservation, mature-debt, or frontier gates.
+
+Static genotype novelty is insufficient evidence of useful exploration. Every
+delivered candidate already emits a `teacher-realized-action` receipt describing
+the optimizer experience that actually occurred. The teacher therefore maintains
+an append-only realized-action ecology recording first-seen action identities,
+trials, retained outcomes, and the effective policies that produced them.
+Bespoke birth receipts record which realized actions they caused and whether
+those actions were novel. Realized-action novelty may break otherwise-equal
+exploration/ancestry ties, but is never retention credit and cannot authorize an
+otherwise rejected candidate.
+
+This keeps the proven ADR-104 control plane intact: evidence chooses ancestry,
+mutation remains local and bounded, actual delivered behavior measures novelty,
+and ordinary retention decides what survives.
+
+**Status:** Accepted for bounded implementation and non-neural verification.
+
+
+## ADR-117 | 2026-10-28 | Debt cadence is factory-role based, with B/C confined to legacy migration
+
+**Follow-up after ADR-116 restored useful progression.** The current Prometheus
+behavior is now the compatibility specimen, not the schema. Grade B is the
+current bounded-debt grade and Grade C is the current progression-priority grade,
+but later factory progression must not inherit those identities accidentally.
+
+Persist candidate-level cadence state with role-neutral fields:
+`bounded_debt_visits` and `priority_visits_since_bounded_debt`. Historical
+`nongating_b_visits` and `non_b_training_turns_since_b_run` remain accepted only
+at deserialization and are removed before constructing canonical `SchoolState`.
+New state never writes the historical names.
+
+For a factory append with explicit carried mastery debt, derive the cadence roles
+from the admitted transition itself. The bounded-debt role is the latest prior
+grade represented by the carried debt; the progression-priority role is the newly
+appended grade. Preserve an existing cadence value when retargeting; otherwise use
+the current default of four priority visits per bounded-debt visit. Reset the two
+role-local counters when the roles change. A clean append with no carried mastery
+debt clears any stale cadence policy and those counters.
+
+Literal B/C construction remains only in the ADR-094 compatibility adapter for
+historical receipts. A historical receipt with B-named counter fields and a
+missing/null cadence policy may still rehydrate the old bounded-B / priority-C
+contract neural-inertly. Once role-neutral counter fields exist, explicit null is
+authoritative and must not trigger B/C inference.
+
+Synthetic factory tests use non-letter semantic grade IDs and prove that a debt
+append retargets `FOUNDATION -> RELATIONS` into `RELATIONS -> WORLD_MODEL`, that a
+non-default cadence survives retargeting, and that a clean append clears stale
+roles. Existing Prometheus B/C 20% cadence and rotation tests remain unchanged as
+the behavioral compatibility gate.
+
+**Status:** Accepted for bounded implementation and non-neural verification.
+
+
+## ADR-112 | 2026-10-28 | Full Grade B is the default; reduced Boolean B is explicit only
+
+The canonical U7C Grade B capability set is the normal executable curriculum:
+`B.NOT`, `B.AND`, `B.OR`, `B.XOR`, `B.IMPLIES`, `B.IFF`, `B.COMPOSITE`, and
+`B.IDBOOLOPS`. The historical reduced AND/IFF kernel is retained only as an
+explicit experimental profile selected by `--reduced-grade-b` (alias
+`--minimal-grade-b`). `--full-grade-b` remains accepted but is now the default.
+
+Existing durable runs admitted under the known historical reduced profile must
+not remain narrowed forever merely because later grades have already been
+admitted. On resume under the default policy, the runtime performs a neural-inert
+same-school profile expansion that restores the missing B semantics while
+preserving the exact causal student and its native AdamW. Added B semantics become
+carried mastery debt, stale B championship/assessment authority is invalidated,
+and the scheduler returns to the newest active progression frontier before normal
+debt cadence resumes. No historical score is fabricated for newly restored
+semantics.
+
+This expansion is curriculum/profile state only. It does not itself perform a
+neural update, declare the restored semantics mastered, lower B's bounded debt
+share, or weaken source/custody/promotion/retention gates.
+
+**Status:** Accepted for implementation and neural-inert migration verification.
+
+
+## ADR-113 | 2026-10-28 | Frontier recovery effort scales with measured weakness
+
+Weakest-first recovery must allocate effort proportionally enough to matter. A
+progression blocker near 50% while the school mean is near 90% must not receive
+the same single recovery visit as a near-mastered capability around 90%.
+
+Within the ADR-094/109 progression-priority recovery path, rank the up-to-three
+imperfect frontier capabilities by accuracy as before, then assign each a bounded
+visit weight from its deficit below the unweighted whole-school capability mean.
+Each imperfect frontier capability receives one maintenance visit; for every
+additional 10 percentage points below the school mean it receives one additional
+visit, capped at six visits in one recovery queue. Interleave weighted visits by
+rank rather than running one capability's entire weight consecutively.
+
+Weighted visit multiplicity belongs only to the executable recovery `queue`.
+`first_recovery` is stagnation-control membership metadata and must remain the
+unique ordered capability set underlying that queue. Never copy repeated weighted
+visits into `first_recovery`; doing so violates the stagnation cycle invariant and
+can block resume with `STAGNATION_FIRST_RECOVERY_DUPLICATE`.
+
+This is scheduling pressure, not evidence or retention credit. Exams remain
+unchanged, near-mastered imperfect semantics still receive maintenance exposure,
+and B debt cadence, promotion thresholds, plasticity bounds, mature-debt repair,
+source/custody and retention gates remain authoritative. The weighting exists to
+turn large measured deficits into correspondingly larger learning effort instead
+of merely labeling them "weakest" once.
+
+**Status:** Accepted for bounded implementation and scheduler verification.
+
+
+## ADR-110 | 2026-10-28 | School-wide retention drought can activate plasticity for below-mean semantics
+
+**Direct user correction to ADR-108's scaling behavior.** Capability-local
+starvation remains useful for one stubborn semantic, but it scales poorly when
+the school contains many active semantics and failures are distributed across
+them. Plasticity therefore gains a second, school-wide activation path.
+
+The teacher maintains a durable `school_attempts_since_retained` counter in its
+causal state. It increments once for every committed teacher visit that does not
+retain a candidate and resets to zero on any retained/provisional candidate whose
+trial is actually committed. This counter is independent of which capability was
+visited.
+
+For each visit, plasticity activates when either:
+
+1. the existing ADR-108 capability-local starvation threshold is reached; **or**
+2. at least 24 school-wide visits have elapsed since any retention **and** the
+   current capability's latest examination accuracy is strictly below the
+   unweighted mean of all valid capability accuracies in the latest whole-school
+   exam.
+
+Each capability receives one vote in the school mean regardless of exam-row
+count. A capability absent from the latest exam cannot activate the global-drought
+path until it has authoritative score evidence. Equality with the mean is not
+below mean. The global path remains disabled outside developmental MAIN /
+RECOVERY_1 / RECOVERY_2 stages, exactly like local plasticity.
+
+The new path changes only *eligibility for ADR-108's existing bounded slack*.
+It does not widen any loss tolerance: strict positive target gain remains
+mandatory; same-grade/fixed/frontier losses remain capped by ADR-108; fragile
+replay, source/custody/semantic identity and mature-debt hard limits remain hard.
+A single retained candidate anywhere in the school closes the global drought path
+for subsequent visits by resetting the counter to zero.
+
+Telemetry must distinguish `LOCAL_STARVATION` from
+`SCHOOL_RETENTION_DROUGHT_BELOW_MEAN`, report the school-wide drought count and
+threshold, and report the current capability score and school mean used by the
+global predicate.
+
+**Status:** Accepted for bounded implementation and non-neural verification.
+
+
+## ADR-111 | 2026-10-28 | Failed promotion sweeps require blocker improvement before retry
+
+**Direct user correction after repeated graduation attempts failed without
+converging.** A changed whole-student checkpoint is not sufficient evidence that
+the reason a promotion sweep failed has changed. Retentions on unrelated
+capabilities must not repeatedly re-arm the same expensive sweep against an
+unchanged blocker profile.
+
+When a promotion sweep aborts below its hysteresis floor, or completes on an
+already-admitted older grade without advancing that grade, the scheduler records
+the imperfect capabilities in that sweep and their exact correct/total scores as
+the retry baseline. A later assessment for the same promotion scope may re-arm the
+sweep only when both ordinary entry eligibility is satisfied **and** the unweighted
+mean accuracy across those recorded blockers is strictly better than the failed
+baseline. A new student hash by itself is insufficient.
+
+Successful semantic introduction, actual grade promotion, or reaching an
+authorized next-grade boundary clears the failed-sweep blocker baseline. A changed
+promotion scope also supersedes it naturally. The blocker baseline is evidence
+about retry eligibility, not a new mastery threshold: existing 92% entry, 87%
+hysteresis, promotion, retention, source/custody, and mature-debt rules remain
+unchanged.
+
+This is deliberately compatible with ADR-094 and ADR-109. Failed B revalidation
+sweeps do not create extra B training share; B continues to receive its bounded
+debt turns, and another B sweep waits until those turns have measurably improved
+the B blocker set. Failed progression-frontier sweeps continue ordinary frontier
+recovery, but unrelated A/B retentions cannot manufacture another nominal
+graduation attempt.
+
+**Status:** Accepted for bounded implementation and non-neural verification.
+
+
+## ADR-108 | 2026-10-28 | Retention starvation opens a bounded plasticity escape hatch
+
+**Direct user correction after sustained zero-retention calcification.** Normal
+retention remains conservative, but a capability that has gone a long time
+without retaining must not be forced to preserve every local optimum forever.
+When the teacher has positive source-paired evidence that the active capability
+actually improved, sustained retention starvation may temporarily tolerate a
+small amount of collateral regression so the learner can move to a different
+basin and repair displaced skills afterward.
+
+This is a derived, capability-local mode, not a persistent switch. It activates
+after 32 consecutive attempts without a retained candidate for an ordinary
+capability, or after 16 for the newest active grade or a semantic in the current
+introduction stage. A retained candidate resets `attempts_since_retained` to zero
+and therefore closes the escape hatch immediately on the next visit.
+
+Plasticity escape never waives the requirement for a strict positive gain on the
+active capability. It also never waives fragile-composition replay, source-gold,
+custody/provenance, semantic identity, or the mature-grade debt hard limit. When
+active, it may relax only these retention boundaries:
+
+- same-grade net change may be as low as `-1` correct answer;
+- a protected capability may exceed its ordinary per-capability loss tolerance
+  by at most one additional wrong answer;
+- fixed same-grade cohort net change may be as low as `-1`;
+- protected active-grade frontier change may be as low as `-1`;
+- whole-school fixed-frontier net change may be as low as `-1`.
+
+Anything worse remains rejected. Candidates with no measurable target gain remain
+rejected. When frontier evidence makes mature-grade debt exceed its existing hard
+limit, the candidate remains rejected even if every plasticity bound otherwise
+passes. Accepted escape candidates carry explicit telemetry naming the ordinary
+rejection reason that was conditionally waived, the starvation count, activation
+threshold, frontier-priority status, and each temporary loss bound. Ordinary
+assessment, recovery, and mature-debt repair then own earning displaced
+capabilities back; plasticity mode itself does not declare those regressions
+repaired.
+
+**Status:** Accepted for bounded implementation and non-neural verification.
+
+
+## ADR-109 | 2026-10-28 | Progression-frontier visit priority persists until advancement
+
+**Direct user correction after `C.COUNT` fell back to roughly one visit in ten.**
+ADR-103 correctly recognized that raw capability-count fairness starves a newly
+introduced frontier semantic, but it ended catch-up priority once the frontier
+mean reached the school median. That statistical condition is not the progression
+condition. A frontier semantic can be near or above the school median and still be
+the sole blocker preventing introduction of the next semantic.
+
+While the newest active grade is the explicit progression-priority grade and any
+currently introduced eligible semantic in that grade remains imperfect, its
+ordinary MAIN sweep retains the existing ADR-103 visit-allocation floor of roughly
+one quarter of candidate opportunities. The existing bounded pass formula remains:
+
+`ceil(non_frontier_semantics / (3 * frontier_semantics))`
+
+with a minimum of one frontier pass. The school-median comparison is no longer an
+off-switch for this progression allocation. Once every currently introduced
+frontier semantic is perfect, the extra passes disappear normally and ordinary
+promotion/semantic-introduction machinery decides the next transition.
+
+This is scheduler priority only. It does not lower promotion thresholds, change
+retention gates, suppress mature-grade repair, erase A/B debt, or make B a
+progression prerequisite. ADR-094's bounded B debt turns remain intact; this
+correction prevents their surrounding multi-capability work from reducing the
+actual progression frontier to raw 1/N capability frequency between boundaries.
+
+Historical and migrated C-frontier receipts may carry an explicit
+`debt_cadence_policy: null`. That value is stale compatibility state, not an
+intentional revocation of ADR-094. When B and C are admitted and C is the newest
+active grade, deserialization neural-inertly rehydrates the canonical bounded-B /
+progression-C cadence exactly as it already does when the field is absent. The
+policy remains dormant unless both B and C actually carry unfinished debt.
+
+**Status:** Accepted for bounded implementation and non-neural verification.
+
+
+## ADR-114 | 2026-10-28 | Plasticity trades normalized mastery debt, not raw correct-answer counts
+
+**Direct user correction after active Grade-C plasticity still rejected useful
+frontier trades.** A correct-answer loss has different developmental cost at
+100% mastery than it has in an already weak capability. Plasticity therefore
+must not compare collateral changes as raw answer counts or as one fixed
+`-1` allowance across heterogeneous capability cohorts.
+
+When plasticity is active, every measured capability receives one vote
+independent of its row count. For capability accuracy `a`, define normalized
+mastery debt `d = 1 - a` and mastery-debt energy `E = d^2`. The utility of a
+candidate on one capability is `E_before - E_after`; scope utility is the sum of
+those capability utilities. Positive utility means the candidate reduced total
+normalized mastery debt. The square is deliberate: borrowing a few points from
+a nearly perfect capability is cheap, but repeatedly degrading the same
+capability becomes progressively more expensive.
+
+The active capability must still show a strict positive source-paired gain.
+Plasticity may relax an otherwise raw-count-based same-grade or protected-loss
+rejection only when both the complete same-grade paired scope and the complete
+paired protection scope have strictly positive mastery-debt utility. A negative
+fixed same-grade, active-frontier, or whole-school fixed-frontier raw delta may
+likewise be waived only when that exact evidence surface has detailed
+per-capability scores and strictly positive mastery-debt utility. If an older
+evidence surface lacks per-capability paired scores, a negative raw delta remains
+non-relaxable rather than guessing a utility value.
+
+This supersedes ADR-108's fixed `-1` plasticity loss caps and one-extra-answer
+protected tolerance as the plasticity trade criterion. Ordinary retention outside
+active plasticity remains unchanged. Fragile-composition replay, source-gold,
+semantic identity, custody/provenance, strict target gain, and the mature-grade
+debt hard limit remain hard gates. Plasticity still does not declare displaced
+skills repaired; normal assessment and recovery own that work.
+
+Because activation changes candidate admissibility, the teacher must not discard
+a previously observed target-improving near miss merely because it was rejected
+before plasticity opened. On the first eligible active-plasticity opportunity,
+selection may retry an otherwise active, previously rejected target-gaining
+policy that has not yet been evaluated under plasticity before breeding another
+pressure challenger. The retry receives fresh source-paired scoring and ordinary
+retention authority; historical rejection evidence is never rewritten.
+
+Telemetry records the quadratic power and per-surface, per-capability utility so
+operators can see why a raw regression was accepted or rejected.
+
+**Status:** Accepted for bounded implementation and non-neural verification.
+
+
+## ADR-115 | 2026-10-28 | Retained teacher policies outrank newborn pressure exploration
+
+**Direct user correction after a 40-visit zero-retention run.** The run still
+produced target gains, but the teacher selected a fresh mutated challenger on
+39 of those 40 visits. The last policy that retained a candidate was not reused
+after retention and was later absent from the live strategy population.
+
+Two control-plane rules caused the failure. First, unproven newborn grace ranked
+ahead of retention evidence in live-population pruning. A stream of one-trial
+children could therefore displace a strategy that had passed the real retention
+gate. Second, the sustained-pressure branch minted a child before current-context
+retained evidence could be exploited. Together these rules turned rejection
+pressure into nearly continuous mutation.
+
+Retention evidence now has priority over newborn grace in the live population.
+Newborn grace still protects young unretained strategies from older unretained
+strategies, but it cannot evict an effective strategy with a retained outcome.
+
+Sustained rejection pressure still enables ADR-104 hereditary exploration. It no
+longer makes every pressure visit an exploration visit. If the current context
+contains an active retained effective policy, the teacher uses the best retained
+policy before minting another child. Existing checkpoint-local retirement remains
+the bound: after four unretained or no-target-gain uses on the same student, that
+effective policy leaves the active set and hereditary search resumes. This uses
+the existing failure memory instead of adding a new cadence or timeout.
+
+When no active retained policy exists in the current context, ADR-104 ancestry
+still applies. Retained same-capability evidence from another phase may seed a
+new child, followed by same-grade and reward fallbacks. Teacher vNext keeps its
+bounded existing-policy canary cadence.
+
+This correction changes policy selection and live-population survival only. It
+does not weaken candidate retention, plasticity utility, fixed-frontier checks,
+source or custody rules, fragile replay, or mature-grade debt limits.
+
+**Status:** Accepted for bounded implementation and non-neural verification.
+
+
+## ADR-116 | 2026-10-28 | Retention support follows veto surfaces; B returns to a 20% candidate-effort ceiling
+
+**Direct correction after the restarted run remained near 3% retention.** The
+post-restart session retained only about one candidate in forty even though many
+rejected candidates still improved their target probe. Two allocation defects
+were visible in the live receipts.
+
+First, generic retention support rotated uniformly across the whole admitted
+school. After full Grade B was restored, the same optimizer batch also reserved
+four fresh B.OR and four fresh B.XOR preservation siblings. Generic support could
+therefore spend another turn on those already-preserved connectives while a hard
+lesson-grade or active-frontier surface received little rehearsal. Candidate
+construction now spends generic support on the complete lesson grade and latest
+active progression frontier. Verified fragile-preservation capabilities are
+removed from that generic schedule. Short budgets rotate across the priority
+surface between visits. Earlier-grade rehearsal remains controlled by the
+teacher's existing `old` policy.
+
+Second, ADR-094's full-grade B turn no longer matches the user's later operating
+constraint. A due B turn could expand into seven consecutive candidate visits,
+so B consumed roughly one quarter of live candidate work while C remained the
+progression frontier. Full U7C B remains admitted, but allocation returns to a
+candidate-effort boundary: four progression-frontier candidate visits earn one B
+candidate visit. Each earned visit teaches one currently imperfect B semantic,
+rotating in canonical order so no admitted Boolean semantic starves. The cadence
+resets after that B visit. This supersedes ADR-094 only for the allocation unit;
+it does not restore a reduced B curriculum or make B a C prerequisite.
+
+These changes do not relax target gain, lesson-grade, active-frontier,
+whole-school, protected-capability, fragile replay, mature-debt, source-gold,
+semantic identity or AdamW custody requirements. They change what is taught
+before those gates judge the candidate.
+
+**Status:** Accepted for bounded implementation and non-neural verification.
+
