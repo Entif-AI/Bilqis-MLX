@@ -2,6 +2,7 @@
 from dataclasses import replace
 from importlib import import_module
 from pathlib import Path
+from pkgutil import iter_modules
 import tempfile
 import unittest
 
@@ -13,6 +14,8 @@ from bilqis_mlx.runtime.tests.projection.test_bamf_projection import _contract, 
 
 class BamfProjectionBatchTests(unittest.TestCase):
     def test_existing_projection_import_paths_remain_usable(self):
+        import bilqis_mlx.runtime as runtime
+        available = {item.name for item in iter_modules(runtime.__path__)}
         for module, name in (
             ('bilqis_mlx.runtime.akasha_outbox', 'AkashaEvent'),
             ('bilqis_mlx.runtime.akasha_staging', 'build_staging_projection'),
@@ -22,7 +25,10 @@ class BamfProjectionBatchTests(unittest.TestCase):
             ('bilqis_mlx.runtime.rosetta_observation', 'project_rosetta_observation'),
         ):
             with self.subTest(module=module):
-                self.assertTrue(hasattr(import_module(module), name))
+                self.assertIn(module.rsplit('.', 1)[-1], available)
+                loaded = import_module(module)
+                self.assertEqual(loaded.__name__, module)
+                self.assertTrue(hasattr(loaded, name))
 
     def test_late_durable_conflict_rolls_back_entire_batch(self):
         from bilqis_mlx.runtime.bamf_projection import read_projection_outbox

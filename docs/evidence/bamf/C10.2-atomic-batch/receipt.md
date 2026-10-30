@@ -34,3 +34,14 @@ the test-only move updates fixture imports and the Rosetta bridge's repository
 root lookup. With the local Rosetta owner selected, all 26 tests pass. Runtime
 and test directory restructuring remains incomplete; independent review and
 exact-head hosted checks remain pending.
+
+Projection owners are physically grouped under `runtime/_projection/` while
+`runtime.__path__` includes that directory to retain the established public
+module names and relative imports. The import regression verifies all six
+original names, their module identities, and package discovery. The 26-test
+projection suite passes with the local Rosetta owner; three other grouped suites
+pass 63 tests with one optional skip. This is a partial directory interruption,
+not evidence that all runtime packaging or downstream deployment is qualified.
+The unchanged Lane C baseline and this worktree both fail the factory
+architecture check at `model_topology_v2.py:280`; their operator-contract
+check output is also byte-identical with 30 findings.
