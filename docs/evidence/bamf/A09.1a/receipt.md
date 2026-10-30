@@ -5,6 +5,9 @@ Feature branch: `codex/a09-1a-390-worker3-20261030`.
 Starting sync: `e024b9b405b7097bcefe962283c71a91a392dcd5`, whose parents are
 Lane A `66e907bc54beba63ed4a8dea943076d0797f401d` and reviewed unified
 `d468b1af1c70a8dc0c0a7aa5ffa6d19b55cb2e18`.
+Refreshed on 2026-10-30 by merge commit
+`3d771b34354784b5fedeca835a6b2feaa18dbd0b` against current unified
+`9104ce733e04fb9c82420428b18dfdbf5db49535`.
 Source candidate: `765b9b2749fa0ef60b0fbde244784e76b79d0a23`.
 Disposition: **implementation ready for review; not integrated or admitted**.
 
@@ -21,9 +24,10 @@ authority.
 The mandatory structure interruption starts at
 `523d4e2c134cca23ee4977a3ef2bfa7036a579c1`; compatibility cleanup is
 `351393b`, and audit-exposed real-corpus test helpers are split at `92b302b`.
-The Factory and Factory-test
-roots are each reduced to 12 direct Python files while preserving the existing
-`bilqis_mlx.factory.<module>` import surface. The A09.1a production code is
+The current unified refresh converges on the reviewed canonical compartments
+and removes four superseded pre-compartment shadow modules. The Factory and
+Factory-test roots now contain 11 direct Python files each while preserving the
+reviewed `bilqis_mlx.factory.<module>` import surface. The A09.1a production code is
 split into a 197-line builder and 211-line immutable-contract module; its
 companion test is 236 lines. No structure threshold or governance baseline was
 weakened.
@@ -47,13 +51,13 @@ unqualified/cyclic source prerequisites, and leaves qualification at epoch 0.
 Validation:
 
 - `BILQIS_ATLAS_REAL_CORPUS=<pinned-a01-corpus> python3 -B scripts/run_tests.py bilqis_mlx/factory/tests/curriculum/test_atlas_frontier.py`
-- `python3 -B scripts/check_module_size.py --changed-from e024b9b405b7097bcefe962283c71a91a392dcd5`
-- `python3 -B scripts/quality/check_governance_integrity.py --base-ref e024b9b405b7097bcefe962283c71a91a392dcd5`
+- `BILQIS_QUALITY_BASE_REF=9104ce733e04fb9c82420428b18dfdbf5db49535 npm run quality:changed`
+- `python3 -B scripts/verify_bamf_0_2_contracts.py`
 
 The full Factory unit surface retains baseline failure parity. Untouched
-`e024b9b` runs 371 tests with 345 passed, 19 failed, and 7 skipped. The feature
-worktree runs 376 tests with 349 passed, the same inherited 19 failures, and 8
-skipped; no new
+`9104ce7` runs 387 tests with 355 passed, 19 failed, and 13 skipped. The
+refreshed feature worktree runs 392 tests with 359 passed, the same inherited
+19 failures, and 14 skipped; no new
 existing-test failure is introduced. The inherited architecture failure is
 `bilqis_mlx/runtime/model_topology_v2.py:280 GENERIC_GRADE_IDENTITY_DISPATCH A,B`
 on both baseline and feature worktrees.
