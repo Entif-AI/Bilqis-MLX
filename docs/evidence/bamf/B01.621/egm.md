@@ -40,3 +40,6 @@ the earlier B10.1 asynchronous status mistake. These are different incidents.
 No persistent learner, native AdamW, teacher, champion or historical bundle changed.
 No human-run command was invoked. Parent B01 and BAMF source/model/learning gates
 remain distinct from this maintenance acceptance.
+
+Source-wide error-control remains FAIL with exactly30 ordered findings, identical
+to clean consumed unified and zero new B01 findings. Its baseline is unchanged.
