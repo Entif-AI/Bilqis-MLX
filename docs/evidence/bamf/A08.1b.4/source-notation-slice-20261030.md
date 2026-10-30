@@ -1,4 +1,4 @@
-# A08.1b.4 source-notation slice (not accepted)
+# A08.1b.4 source-qualified scope/modality slice
 
 Issue: #556. Parent: A08.1b #418. Lane A. Consumed unified:
 `d468b1af1c70a8dc0c0a7aa5ffa6d19b55cb2e18` through shared Lane A
@@ -30,27 +30,48 @@ they are not silently given invented semantic identities, methods or rights.
 No A13 task grant, rights/revocation, prefix, temporal scope, A03 frame
 role law, A07 executable transformation, Factory registration, learner
 admission, training, or new root is inferred from this identity evidence.
-The A01 `released_transformations` eligible family count is **zero**;
-those source rows cannot be silently reclassified as transformation
+The pinned A01 inventory has **zero source-eligible
+`released_transformations` obligations**; the family remains pending only
+through nonconcept source rows. The 13 CASE_SCOPE/ILLOCUTION identities are
+all `active=False`, `IMPLEMENTATION_UNCOVERED`, and
+`teaching_candidate=False`. Therefore A08.1b.4 cannot lawfully mint an A03
+`ConceptRef`, A13 grant, or executable transformation for them merely to make
+the leaf look complete. That would promote source notation into semantic
+authority. Those source rows cannot be silently reclassified as transformation
 lessons from a grammar category or a table name.
+
+The already-integrated A03, A07 and A13 contracts were rechecked on current
+unified. Their availability does not cure the missing source-owner bridge:
+`A08.1b.5` #557 explicitly owns source-row byte resolution, the released
+SKOS/Ithkuil row-to-A03 frame adapter, per-edge provenance, source-owned A13
+grant issuance, and the positive/contrast `ApprovedContextProjection`
+crosswalk. Its specification explicitly forbids A08 from inventing
+`SourceSpan`, `FrameInstance`, `ContextEligibility` or `SourceGrant`
+records. Accordingly this leaf preserves the held boundary instead of
+fabricating those records.
 
 ## Local proof
 
 With `BILQIS_A01_ATLAS_BUNDLE` pointing to the exact recorded
 `5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7`
 artifact, `python3 -m pytest -q
-bilqis_mlx/factory/tests/skos/test_scope_source.py` passed **4 tests,
-22 subtests, zero skips**. Adjacent source construct/checker tests
+bilqis_mlx/factory/tests/skos/test_scope_source.py` passed the complete
+focused suite with zero skips. The suite now additionally asserts that all 13
+scope/modality identities remain inactive implementation debt and that no
+source-eligible released transformation law exists. Adjacent source construct/checker tests
 passed **9 tests and 8 subtests**. Changed-file structure and
 governance checks each returned **zero violations**. No neural run.
 
-## Explicit remaining acceptance debt
+## Boundary to A08.1b.5
 
-Issue #556 remains OPEN. A source-qualified, task-scoped A13 rights
-and correction grant, causal-prefix and temporal enforcement, A03
-frame/role semantics, A07 released transformation laws and an independent
-typed checker for those actual operations still require owned source
-evidence and adversarial proof. Exercise wrong scope, future suffix,
-role swap, revocation and checker spoof against that eventual executable
-path, followed by independent EGM. Do not use this partial as
-`ADAPTER_READY`, `LEARNING_VERIFIED`, or a source-to-neural credential.
+Wrong-scope, future-suffix, role-swap and revocation behavior cannot be
+truthfully exercised for these source identities until #557 supplies the
+source-owned frame/grant/projection bridge. #557's finish gate explicitly
+owns that revocation regression. This leaf's checker-spoof, foreign-release
+and source-replay negatives remain local and complete for the source-qualified
+projection it actually owns.
+
+Fresh independent EGM remains required before #556 can be called accepted or
+merged. Until that review clears the ownership interpretation above, this
+receipt makes no `ADAPTER_READY`, `LEARNING_VERIFIED`, Factory-admission or
+source-to-neural claim.

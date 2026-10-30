@@ -10,7 +10,10 @@ from bilqis_mlx.factory.skos_curriculum.scope_source import (
     SourceScopeContrast, check_scope_contrast, source_scope_contrasts,
     source_scope_debt,
 )
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.factory.skos_curriculum import inventory_source_families
+from bilqis_mlx.semantics.atlas_snapshot import (
+    AtlasArtifactSelection, load_pinned_atlas_snapshot,
+)
 
 
 _ATLAS = os.environ.get("BILQIS_A01_ATLAS_BUNDLE", "")
@@ -60,6 +63,25 @@ class ScopeSourceTests(TestCase):
                     case, case.contrast_semantic_id, _SELECTION))
                 self.assertFalse(check_scope_contrast(
                     case, (case.semantic_id,), _SELECTION))
+
+    def test_scope_notations_stay_inactive_until_factory_integration(self):
+        snapshot = load_pinned_atlas_snapshot(_SELECTION)
+        cases, _ = source_scope_contrasts(_SELECTION)
+        for case in cases:
+            with self.subTest(semantic_id=case.semantic_id):
+                concept = snapshot.concept(case.semantic_id)
+                self.assertFalse(concept.active)
+                self.assertEqual(
+                    concept.implementation_status, "IMPLEMENTATION_UNCOVERED")
+                self.assertFalse(concept.teaching_candidate)
+
+        inventory = inventory_source_families(_SELECTION)
+        released = tuple(
+            item for item in inventory.obligations
+            if item.family_id == "released_transformations")
+        self.assertEqual(released, ())
+        self.assertIn(
+            "released_transformations", inventory.pending_source_family_ids)
 
     def test_self_attested_changed_source_and_answer_spoof_fail(self):
         cases, _ = source_scope_contrasts(_SELECTION)
