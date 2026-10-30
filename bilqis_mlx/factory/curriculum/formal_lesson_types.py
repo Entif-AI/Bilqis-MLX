@@ -13,12 +13,20 @@ SOURCE_PROJECTION_ONLY = "SOURCE_PROJECTION_NOT_AUTHORITY"
 LEARNING_UNVERIFIED = "LEARNING_UNVERIFIED"
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _SUPPORTED = frozenset({"BOOL_NOT", "BOOL_AND", "COUNT", "SUCC"})
-FORMAL_VARIATION_AXES = {
-    "BOOL_NOT": ("boolean-input-polarity", "typed-answer-contrast"),
-    "BOOL_AND": ("boolean-pair-combinations", "typed-answer-contrast"),
-    "COUNT": ("entity-set-cardinality", "typed-answer-contrast"),
-    "SUCC": ("numeric-successor-input", "typed-answer-contrast"),
-}
+_FORMAL_VARIATION_AXES = (
+    ("BOOL_NOT", ("boolean-input-polarity", "typed-answer-contrast")),
+    ("BOOL_AND", ("boolean-pair-combinations", "typed-answer-contrast")),
+    ("COUNT", ("entity-set-cardinality", "typed-answer-contrast")),
+    ("SUCC", ("numeric-successor-input", "typed-answer-contrast")),
+)
+
+
+def formal_variation_axes(operator_id: str) -> tuple[str, ...]:
+    for candidate, axes in _FORMAL_VARIATION_AXES:
+        if operator_id == candidate:
+            return axes
+    _fail("BAMF_FORMAL_LESSON_INVALID")
+    raise AssertionError("unreachable")
 
 
 def _fail(reason: str) -> None:
@@ -96,7 +104,7 @@ class FormalConstructiveLesson:
                 or type(self.constituents) is not tuple
                 or type(self.prerequisite_closure) is not tuple
                 or type(self.variation_axes) is not tuple
-                or self.variation_axes != FORMAL_VARIATION_AXES[self.operator_id]
+                or self.variation_axes != formal_variation_axes(self.operator_id)
                 or any(type(item) is not str or not item
                        for group in (
                            self.constituents, self.prerequisite_closure,

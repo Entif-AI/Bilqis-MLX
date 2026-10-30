@@ -5,7 +5,7 @@ from unittest import TestCase
 from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.factory.curriculum.formal_lesson_types import FORMAL_VARIATION_AXES
+from bilqis_mlx.factory.curriculum.formal_lesson_types import formal_variation_axes
 from bilqis_mlx.factory.formal_lessons import (
     check_formal_lesson, construct_formal_lesson,
 )
@@ -34,7 +34,7 @@ _SEMANTIC = {operator_id: semantic_id for semantic_id, _, operator_id in FORMAL}
 
 class FormalVariationTests(TestCase):
     def test_thirteen_cases_exercise_each_declared_axis(self):
-        seen = {operator_id: set() for operator_id in FORMAL_VARIATION_AXES}
+        seen = {operator_id: set() for operator_id in _SEMANTIC}
         with patch(
                 "bilqis_mlx.factory.formal_lessons.resolve_formal_source_operators",
                 return_value=_source()):
@@ -46,7 +46,7 @@ class FormalVariationTests(TestCase):
                         typed_inputs, binding)
                     self.assertEqual(lesson.positive.value, expected)
                     self.assertEqual(
-                        lesson.variation_axes, FORMAL_VARIATION_AXES[operator_id])
+                        lesson.variation_axes, formal_variation_axes(operator_id))
                     self.assertTrue(check_formal_lesson(
                         lesson, lesson.positive, _selection(), binding))
                     seen[operator_id].add(
