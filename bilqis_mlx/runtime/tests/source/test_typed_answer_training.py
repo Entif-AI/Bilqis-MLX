@@ -18,7 +18,7 @@ from bilqis_mlx.typed_answer_training import (
 )
 
 
-ROOT = Path(__file__).resolve().parents[3] / "vendor" / "legacy-v16"
+ROOT = Path(__file__).resolve().parents[4] / "vendor" / "legacy-v16"
 
 
 class TypedAnswerTests(unittest.TestCase):

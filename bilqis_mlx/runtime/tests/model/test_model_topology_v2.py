@@ -42,7 +42,7 @@ class ModelTopologyV2Tests(unittest.TestCase):
         self.assertEqual((spec.semantic_bank_rows, spec.motif_page_rows), (8192, 16384))
         self.assertEqual(spec.ffn_activation, "squared-relu")
         self.assertEqual(spec.initializer, "sha256-pcg64-v2")
-        config = Path(__file__).resolve().parents[3] / "configs/models/bamf-0.2.json"
+        config = Path(__file__).resolve().parents[4] / "configs/models/bamf-0.2.json"
         self.assertEqual(json.loads(config.read_text()), spec.to_record())
         self.assertEqual(deserialize_topology(spec.to_record()), spec)
 
@@ -442,7 +442,7 @@ class ModelTopologyV2Tests(unittest.TestCase):
                 legacy_factory=legacy_factory, bamf_factory=bamf_factory)
 
     def test_config_is_read_but_legacy_runtime_cannot_start_v2(self):
-        config = Path(__file__).resolve().parents[3] / "configs/models/bamf-0.2.json"
+        config = Path(__file__).resolve().parents[4] / "configs/models/bamf-0.2.json"
         requested = topology_from_file(config)
         self.assertEqual(requested, ModelTopologySpecV2())
         with self.assertRaises(BilqisError) as error:

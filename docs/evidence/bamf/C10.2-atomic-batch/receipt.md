@@ -72,3 +72,13 @@ before the move. After the move, the suite and two import-identity tests passed
 tests, including the native Rosetta checks. Ordinary alternate-name imports
 are rejected for both moved capability modules. This is not a full runtime
 qualification or a proof of behavior under untested packaging layouts.
+
+## Directory interruption,30 October2026
+
+The dedicated issue branch codex/bamf02-c10-520-structure-20261030 was created from LaneC57f8d9d, consuming unifiedd468b1a, then fast-forwarded through the prior repair branch's local339c9cc without rewriting its history. Runtime and runtime/tests each now contain12 direct Python files. Exact move inventory and preservation requirements are in structure-plan-20261030.md. This directory phase is committed separately before the encountered file repairs.
+
+41 moved source files retain their bytes except qualification's package-root lookup and teacher_observation_capture's package-root/source-hash lookup. directory-owner-hashes-20261030.json records exact before/after digests. Canonical teacher implementation keys remain unchanged. The runtime behavioral suite reports467 total,423 pass,1 failure,22 errors,21 skips. All23 failure/error identities match baseline exactly; directory-failure-parity-20261030.json preserves that comparison. These baseline failures remain failures. Five additional import/root tests are now present; the recorded full-suite run included the first four.
+
+A baseline-built wheel contained no runtime modules. Package discovery now includes bilqis_mlx subpackages and their JSON resources. A clean disposable environment installed the rebuilt wheel; four grouped-owner tests passed from /tmp, outside the checkout. This proves package inclusion, discoverability, alternate-name rejection, canonical source-class identity and teacher source hashing for the tested installed layout. It does not qualify the full application, external corpus resources or MLX. A subsequently added qualification-root test still requires its final exact-wheel rerun.
+
+Fresh EGM implementation-readiness review of the exact directory plan is READY for that phase only. Independent implementation review and the subsequent file interruptions remain pending. The staged structure check records14 remaining file findings and zero directory findings; the inherited akasha_staging offender also remains in the full feature diff. No structure threshold, baseline or exclusion was changed. C10.2 qualification is paused until these interruptions are repaired.
