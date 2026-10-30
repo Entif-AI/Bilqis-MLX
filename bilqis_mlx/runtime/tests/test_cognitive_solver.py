@@ -108,7 +108,7 @@ class CognitiveSolverTests(unittest.TestCase):
         self.assertEqual(result.replay_record()["costs"]["reserved_operations"], 64)
 
     def test_solver_transitive_imports_exclude_gold_evaluator(self):
-        root = Path(__file__).resolve().parents[4]
+        root = Path(__file__).resolve().parents[3]
         pending = ["bilqis_mlx.runtime.cognitive_solver"]
         seen = set()
         while pending:
