@@ -1,8 +1,8 @@
 # A08.1b.4 source-qualified scope/modality slice
 
-Issue: #556. Parent: A08.1b #418. Lane A. Consumed unified:
-`d468b1af1c70a8dc0c0a7aa5ffa6d19b55cb2e18` through shared Lane A
-`e024b9b405b7097bcefe962283c71a91a392dcd5`.
+Issue: #556. Parent: A08.1b #418. Lane A. Re-cut directly from current
+unified `a02b9ed45ead1801be6dff655866b73be0ffc8ff` after the reviewed
+Factory structure and A05.5 integrations.
 
 ## Verified bounded behavior
 
@@ -55,12 +55,15 @@ fabricating those records.
 With `BILQIS_A01_ATLAS_BUNDLE` pointing to the exact recorded
 `5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7`
 artifact, `python3 -m pytest -q
-bilqis_mlx/factory/tests/skos/test_scope_source.py` passed the complete
-focused suite with zero skips. The suite now additionally asserts that all 13
+bilqis_mlx/factory/tests/skos/test_scope_source.py` passed **5 tests,
+35 subtests, zero skips**. The suite additionally asserts that all 13
 scope/modality identities remain inactive implementation debt and that no
-source-eligible released transformation law exists. Adjacent source construct/checker tests
-passed **9 tests and 8 subtests**. Changed-file structure and
-governance checks each returned **zero violations**. No neural run.
+source-eligible released transformation law exists. The focused plus adjacent
+SKOS real/checker batch passed **10 tests, 43 subtests, with one unrelated
+optional real-source skip**. Changed-path structure, governance and smell
+checks each returned **zero violations/new findings**. BAMF contract mirrors
+passed **43/43** and the recursive workstack validated **157** child issues.
+No neural run.
 
 ## Boundary to A08.1b.5
 
