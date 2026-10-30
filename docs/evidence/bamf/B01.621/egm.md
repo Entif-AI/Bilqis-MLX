@@ -26,8 +26,8 @@ The reviewer did not execute tests; the following receipts were executed locally
 - Full topology+extent+census+storage-key JSON is byte-identical before/after:
   40,013 bytes. All30 original top-level definitions remain; only the schema-owned
   suffix producer/category consumer have intentional AST changes.
-- Source-wide architecture guard, changed-module-size guard, changed-code smell,
-  documentation guard, historical ABI and diff checks pass. External expected
+- Source-wide architecture guard, changed-code smell, documentation guard,
+  historical ABI and diff checks pass. External expected
   ABI-fingerprint enforcement remains advisory locally.
 
 The full command and optional historical-bundle preconditions are in `contract.md`.
@@ -43,3 +43,18 @@ remain distinct from this maintenance acceptance.
 
 Source-wide error-control remains FAIL with exactly30 ordered findings, identical
 to clean consumed unified and zero new B01 findings. Its baseline is unchanged.
+
+## Hosted structural gate: BLOCKED_UPSTREAM_DIRECTORY_REPAIR
+
+Exact committed-head local and hosted size checks fail on runtime (67 direct
+files) and runtime/tests (68 remaining direct files), both requiring <=12.
+The earlier precommit check inspected committed HEAD and therefore did not see
+the pending patch; its PASS was not exact-candidate proof. PM-2026-10-30-003 is
+enriched with this same receipt-scope failure. The correct gate result is FAIL.
+
+Lane C #520 / draft PR #614 already owns runtime-directory compartmentalization.
+This branch does not duplicate that writer. Keep #622 draft until that reviewed
+repair reaches unified, merge current unified here, rerun exact-head checks and
+reconcile the moved topology facade with its source owner. Numerical/custody and
+scoped code-review proof above remains valid, but does not grant turn-in readiness.
+No thresholds, directory exclusions or baselines are weakened.
