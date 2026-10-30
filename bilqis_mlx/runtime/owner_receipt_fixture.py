@@ -4,8 +4,8 @@ import hashlib
 import json
 
 from .akasha_outbox import AkashaEvent, AkashaEventKind, OWNER_FIXTURE_KINDS, _invalid, _sha, _name
-from ..atlas_revalidation import SourceAuthorityRegistry
-from ...semantics.cognitive_dependencies import DependencyKind, DependencyRef
+from .atlas_revalidation import SourceAuthorityRegistry
+from ..semantics.cognitive_dependencies import DependencyKind, DependencyRef
 
 
 def _canonical(value):

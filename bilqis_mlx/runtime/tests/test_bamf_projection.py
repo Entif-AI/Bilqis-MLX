@@ -7,14 +7,14 @@ import tempfile
 import unittest
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.runtime.projection.akasha_outbox import (
+from bilqis_mlx.runtime.akasha_outbox import (
     AkashaEvent, AkashaEventKind, pending_events,
 )
-from bilqis_mlx.runtime.projection.bamf_projection import (
+from bilqis_mlx.runtime.bamf_projection import (
     BamfProjectionEvent, ProjectionDomainContract,
     project_generation_outbox,
 )
-from bilqis_mlx.runtime.projection.akasha_staging import (
+from bilqis_mlx.runtime.akasha_staging import (
     build_staging_projection, promote_staging_projection,
     query_public_projection, read_active_projection,
     read_staging_projection, verify_staging_projection,
@@ -61,7 +61,7 @@ def _projected(event, contract):
 
 class BamfProjectionTests(unittest.TestCase):
     def test_durable_domain_binding_cannot_be_relabelled_after_restart(self):
-        from bilqis_mlx.runtime.projection.bamf_projection import read_projection_outbox
+        from bilqis_mlx.runtime.bamf_projection import read_projection_outbox
         with tempfile.TemporaryDirectory() as folder:
             domain = _contract(Path(folder) / 'outbox.sqlite3')
             event = _projected(_event('capability:bound'), domain)

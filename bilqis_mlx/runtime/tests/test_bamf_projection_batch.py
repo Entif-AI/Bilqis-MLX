@@ -5,14 +5,14 @@ import tempfile
 import unittest
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.runtime.projection.akasha_outbox import AkashaEventKind
-from bilqis_mlx.runtime.projection.bamf_projection import project_generation_outbox
-from bilqis_mlx.runtime.tests.projection.test_bamf_projection import _contract, _event, _projected
+from bilqis_mlx.runtime.akasha_outbox import AkashaEventKind
+from bilqis_mlx.runtime.bamf_projection import project_generation_outbox
+from bilqis_mlx.runtime.tests.test_bamf_projection import _contract, _event, _projected
 
 
 class BamfProjectionBatchTests(unittest.TestCase):
     def test_late_durable_conflict_rolls_back_entire_batch(self):
-        from bilqis_mlx.runtime.projection.bamf_projection import read_projection_outbox
+        from bilqis_mlx.runtime.bamf_projection import read_projection_outbox
         with tempfile.TemporaryDirectory() as folder:
             original = _contract(Path(folder) / 'outbox.sqlite3')
             existing = _projected(_event('capability:existing'), original)
@@ -26,9 +26,9 @@ class BamfProjectionBatchTests(unittest.TestCase):
             self.assertEqual(read_projection_outbox(original.outbox_path), (existing,))
 
     def test_late_source_identity_conflict_rolls_back_entire_batch(self):
-        from bilqis_mlx.runtime.projection.bamf_projection import read_projection_outbox
-        from bilqis_mlx.runtime.projection.owner_receipt_fixture import project_owner_receipt_fixture
-        from bilqis_mlx.runtime.tests.projection.test_owner_receipt_fixture import OwnerReceiptFixtureTests, REGISTRY, signed
+        from bilqis_mlx.runtime.bamf_projection import read_projection_outbox
+        from bilqis_mlx.runtime.owner_receipt_fixture import project_owner_receipt_fixture
+        from bilqis_mlx.runtime.tests.test_owner_receipt_fixture import OwnerReceiptFixtureTests, REGISTRY, signed
         receipt = OwnerReceiptFixtureTests().receipt(AkashaEventKind.PACKAGE_EXPORT)
         original_event = project_owner_receipt_fixture(receipt, b'PRIVATE_OPAQUE_ARTIFACT', REGISTRY)
         conflicting_event = project_owner_receipt_fixture(
@@ -44,9 +44,9 @@ class BamfProjectionBatchTests(unittest.TestCase):
             self.assertEqual(read_projection_outbox(domain.outbox_path), (existing,))
 
     def test_conflicting_source_identities_in_new_batch_leave_no_events(self):
-        from bilqis_mlx.runtime.projection.bamf_projection import read_projection_outbox
-        from bilqis_mlx.runtime.projection.owner_receipt_fixture import project_owner_receipt_fixture
-        from bilqis_mlx.runtime.tests.projection.test_owner_receipt_fixture import OwnerReceiptFixtureTests, REGISTRY, signed
+        from bilqis_mlx.runtime.bamf_projection import read_projection_outbox
+        from bilqis_mlx.runtime.owner_receipt_fixture import project_owner_receipt_fixture
+        from bilqis_mlx.runtime.tests.test_owner_receipt_fixture import OwnerReceiptFixtureTests, REGISTRY, signed
         receipt = OwnerReceiptFixtureTests().receipt(AkashaEventKind.PACKAGE_EXPORT)
         first = project_owner_receipt_fixture(receipt, b'PRIVATE_OPAQUE_ARTIFACT', REGISTRY)
         second = project_owner_receipt_fixture(

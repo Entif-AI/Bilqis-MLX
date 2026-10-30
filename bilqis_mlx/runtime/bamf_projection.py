@@ -11,7 +11,7 @@ import json
 from pathlib import Path
 import re
 
-from ...errors import ErrorBus, SCHOOL
+from ..errors import ErrorBus, SCHOOL
 from .akasha_outbox import AkashaEvent, append_outbox_batch, pending_events
 
 

@@ -2,9 +2,9 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from ...state_dag import read_generation
-from ..checkpoints import _outbox_source_generation, _expected_outbox_events
-from ..state import _fingerprint
+from ..state_dag import read_generation
+from .checkpoints import _outbox_source_generation, _expected_outbox_events
+from .state import _fingerprint
 from .akasha_outbox import AkashaEvent, NATIVE_EVENT_KINDS
 from .bamf_projection import BamfProjectionEvent, project_generation_outbox, _invalid
 
@@ -29,7 +29,7 @@ def project_accepted_generation(run_dir: Path, generation: int, domain, *, graph
     Unsupported native categories also remain explicit delivery debt.
     """
     record = read_generation(run_dir, generation)
-    from ..admission import _require_executable_factory_admission
+    from .admission import _require_executable_factory_admission
     release = _require_executable_factory_admission(run_dir, record, graph)
     if (release.release_sha256 != domain.release_digest
             or record.get('school', {}).get('current_student', {}).get('sha256') != domain.model_digest):

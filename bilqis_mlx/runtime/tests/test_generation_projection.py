@@ -7,9 +7,9 @@ import unittest
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.state_dag import persist
 from bilqis_mlx.runtime.checkpoints import _with_delivery_outbox
-from bilqis_mlx.runtime.projection.generation_projection import project_accepted_generation
-from bilqis_mlx.runtime.projection.bamf_projection import read_projection_outbox
-from bilqis_mlx.runtime.tests.projection.test_bamf_projection import _contract
+from bilqis_mlx.runtime.generation_projection import project_accepted_generation
+from bilqis_mlx.runtime.bamf_projection import read_projection_outbox
+from bilqis_mlx.runtime.tests.test_bamf_projection import _contract
 
 
 class GenerationProjectionTests(unittest.TestCase):
@@ -59,7 +59,7 @@ class GenerationProjectionTests(unittest.TestCase):
 
 
     def test_new_receiving_envelopes_reject_wrong_native_field_types(self):
-        from bilqis_mlx.runtime.projection.akasha_outbox import AkashaEvent, AkashaEventKind
+        from bilqis_mlx.runtime.akasha_outbox import AkashaEvent, AkashaEventKind
         payload = dict(generation=1, run_id='fixture:run', native_event_id='b' * 64,
             native_event_type='SCHOOL_TEACHER_VISIT_COMMITTED', native_event_digest='a' * 64)
         for key, value in (('generation', False), ('run_id', {}), ('native_event_id', {}),
