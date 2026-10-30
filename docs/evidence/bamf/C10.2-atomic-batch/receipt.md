@@ -64,3 +64,11 @@ passed 68 tests, including native Rosetta. The physical admission subpackage
 also rejects ordinary alternate-name traversal. The saved student, optimizer,
 teacher state and existing run directories were not opened for mutation. This
 is not a training, installation-distribution or full integration proof.
+
+Two capability owners were grouped with their source bytes and established
+runtime module names unchanged. Their prior 41-test behavioral suite passed
+before the move. After the move, the suite and two import-identity tests passed
+43 tests; the combined projection, admission and capability run passed 111
+tests, including the native Rosetta checks. Ordinary alternate-name imports
+are rejected for both moved capability modules. This is not a full runtime
+qualification or a proof of behavior under untested packaging layouts.

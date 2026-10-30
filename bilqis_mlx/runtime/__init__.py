@@ -5,4 +5,4 @@ names and relative imports.
 """
 from pathlib import Path
 
-__path__.extend(str(Path(__file__).parent / name) for name in ("_projection", "_admission"))
+__path__.extend(str(Path(__file__).parent / name) for name in ("_projection", "_admission", "_capability"))
