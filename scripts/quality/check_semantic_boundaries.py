@@ -1,6 +1,6 @@
 """Rerunnable import/status-ownership audit for the Bilqis semantic engine.
 
-Usage: python3 -B scripts/check_semantic_boundaries.py
+Usage: python3 -B scripts/quality/check_semantic_boundaries.py
 Run in CI/tests when reorganizing semantic, adapter, or verifier packages.
 """
 from __future__ import annotations
@@ -10,7 +10,7 @@ from pathlib import Path
 import sys
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
