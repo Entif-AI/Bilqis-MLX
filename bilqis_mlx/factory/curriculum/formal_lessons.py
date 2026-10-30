@@ -11,7 +11,8 @@ from .formal_lesson_checks import (
 )
 from .formal_lesson_types import (
     FORMAL_LESSON_SCHEMA, FORMAL_LESSON_STATUS, LEARNING_UNVERIFIED,
-    SOURCE_PROJECTION_ONLY, FormalConstructiveLesson, _fail, _typed_exact,
+    SOURCE_PROJECTION_ONLY, FORMAL_VARIATION_AXES, FormalConstructiveLesson,
+    _fail, _typed_exact,
 )
 
 def construct_formal_lesson(
@@ -32,7 +33,7 @@ def construct_formal_lesson(
         witness.operator.operator_id, witness.source_binding_sha256,
         witness.operator_grant_sha256, inputs, operand_evidence,
         expected, contrast, constituents, constituents,
-        ("typed-answer-contrast",),
+        FORMAL_VARIATION_AXES[witness.operator.operator_id],
         _evidence(witness, inputs, operand_evidence, expected, contrast))
 
 
@@ -61,7 +62,7 @@ def check_formal_lesson(
             or contract_digest(lesson.contrast) != contract_digest(contrast)
             or lesson.constituents != constituents
             or lesson.prerequisite_closure != constituents
-            or lesson.variation_axes != ("typed-answer-contrast",)
+            or lesson.variation_axes != FORMAL_VARIATION_AXES[lesson.operator_id]
             or lesson.evidence_sha256 != _evidence(
                 witness, lesson.typed_inputs, operand_evidence,
                 expected, contrast)):

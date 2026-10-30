@@ -12,6 +12,7 @@ from bilqis_mlx.factory.formal_lessons import (
     FORMAL_LESSON_STATUS, LEARNING_UNVERIFIED,
     check_formal_lesson, construct_formal_lesson,
 )
+from bilqis_mlx.factory.curriculum.formal_lesson_types import FORMAL_VARIATION_AXES
 from bilqis_mlx.semantics.atlas_projection import (
     FormalDomainBinding, compile_atlas_release, persist_atlas_release,
 )
@@ -92,7 +93,8 @@ class FormalLessonAuthorityTests(unittest.TestCase):
                     self.assertEqual(
                         lesson.prerequisite_closure, lesson.constituents)
                     self.assertEqual(
-                        lesson.variation_axes, ("typed-answer-contrast",))
+                        lesson.variation_axes,
+                        FORMAL_VARIATION_AXES[operator_id])
                     self.assertEqual(lesson.status, FORMAL_LESSON_STATUS)
                     self.assertEqual(
                         lesson.learning_state, LEARNING_UNVERIFIED)
