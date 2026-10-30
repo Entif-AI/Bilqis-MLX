@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import asdict
 import hashlib
+import importlib.util
 import json
 from pathlib import Path
 import time
@@ -76,9 +77,17 @@ def policy_epoch(receipt, release, *, configured_steps, batch_size, settings, en
               "learning/source_selection.py", "learning/lesson_guidance.py",
               "runtime/candidate_evidence.py", "runtime/state.py",
               "profiles/retention.py", "compatibility/historical_teacher_policy.py")
+    def owner_path(name):
+        if name.startswith(("runtime/", "learning/")):
+            package, filename = name.split("/", 1)
+            module = f"bilqis_mlx.{package}.{Path(filename).stem}"
+            spec = importlib.util.find_spec(module)
+            if spec is not None and spec.origin:
+                return Path(spec.origin)
+        return root / name
     return {
         "schema": EPOCH_SCHEMA,
-        "implementation": {name: hashlib.sha256((root / name).read_bytes()).hexdigest()
+        "implementation": {name: hashlib.sha256(owner_path(name).read_bytes()).hexdigest()
                            for name in owners},
         "teacher_source_sha256": receipt.get("teacher_source_sha256"),
         "factory_release_sha256": release.release_sha256,
