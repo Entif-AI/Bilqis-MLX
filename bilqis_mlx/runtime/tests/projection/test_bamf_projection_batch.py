@@ -3,6 +3,8 @@ from dataclasses import replace
 from importlib import import_module
 from pathlib import Path
 from pkgutil import iter_modules
+import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -13,6 +15,25 @@ from bilqis_mlx.runtime.tests.projection.test_bamf_projection import _contract, 
 
 
 class BamfProjectionBatchTests(unittest.TestCase):
+    def test_physical_directory_cannot_create_an_alternate_module_identity(self):
+        probe = '''
+import importlib, sys
+import bilqis_mlx.errors
+sys.modules["bilqis_mlx.runtime.errors"] = bilqis_mlx.errors
+original = importlib.import_module("bilqis_mlx.runtime.bamf_projection")
+for name in ("akasha_outbox", "akasha_staging", "bamf_projection", "generation_projection", "owner_receipt_fixture", "rosetta_observation"):
+    alternate = "bilqis_mlx.runtime._projection." + name
+    try:
+        importlib.import_module(alternate)
+    except ModuleNotFoundError as error:
+        assert error.name == alternate, (alternate, error.name)
+    else:
+        raise AssertionError("alternate module identity loaded: " + alternate)
+assert original.BamfProjectionEvent.__module__ == "bilqis_mlx.runtime.bamf_projection"
+'''
+        completed = subprocess.run([sys.executable, '-B', '-c', probe], capture_output=True, text=True)
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+
     def test_existing_projection_import_paths_remain_usable(self):
         import bilqis_mlx.runtime as runtime
         available = {item.name for item in iter_modules(runtime.__path__)}

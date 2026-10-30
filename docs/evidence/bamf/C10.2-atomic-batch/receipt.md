@@ -45,3 +45,13 @@ not evidence that all runtime packaging or downstream deployment is qualified.
 The unchanged Lane C baseline and this worktree both fail the factory
 architecture check at `model_topology_v2.py:280`; their operator-contract
 check output is also byte-identical with 30 findings.
+
+PM-2026-10-29-010 records the duplicate-module risk in physical search-path
+grouping. A fresh-process negative test registered a plausible sibling module
+and reproduced distinct `BamfProjectionEvent` classes through the physical
+subpackage path. The physical subpackage now exposes an empty search path, so
+ordinary import traversal cannot load the six owners under alternate names.
+The regression asserts the exact missing alternate module name for each owner;
+it does not treat arbitrary transitive import failures as success. All 27
+projection tests pass with the local Rosetta owner. This is not a security
+sandbox or proof of installation packaging; independent review remains pending.
