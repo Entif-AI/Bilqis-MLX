@@ -1,7 +1,6 @@
 """Resolve visible raw atoms without promoting missing source authority."""
 from __future__ import annotations
 
-from ...errors import BilqisError
 from ..atlas_projection import FrozenAtlasSnapshot
 from ..context_eligibility import PUBLIC_FORMAL
 from ..domains import contract_digest
@@ -10,6 +9,7 @@ from ..frame_compiler import (
     _grant_allows, atom_evidence_digest,
 )
 from .binding import make_binding
+from .candidate import find_candidate
 from .common import AtomBindingDisposition, SOURCE_ATOM_RIGHTS_SCHEMA, invalid
 from .handoff import SourceAtomHandoff, make_handoff
 from .witness import SourceAtomOwnerProjection, SourceRowWitness
@@ -35,6 +35,44 @@ def _rights_digest(config: FrameCompilerConfig, atom, source_id: str) -> tuple[s
     return contract_digest(state), (
         grant is not None and grant.source_regime == PUBLIC_FORMAL
         and _grant_allows(grant, evidence, config, config.task.semantic_release))
+
+
+def _resolve_atom(atom, compiled, config, snapshot, witness, graph, source_projection):
+    rights_digest, rights_ok = _rights_digest(config, atom, compiled.source_instance_id)
+    owned = (source_projection is not None
+             and source_projection.ast.source_instance_id == compiled.source_instance_id
+             and atom.index < len(source_projection.ast.atoms)
+             and source_projection.ast.atoms[atom.index] == atom)
+    candidate = find_candidate(
+        atom, witness, snapshot, graph, source_projection if owned else None)
+    reasons = set(candidate.reason_codes)
+    if not rights_ok:
+        reasons.add("SOURCE_ATOM_CURRENT_RIGHTS_HELD")
+    if candidate.semantic_id is None:
+        disposition = AtomBindingDisposition.UNMAPPED
+    else:
+        if not owned:
+            reasons.update(("SOURCE_ATOM_REFERENCE_AUTHORITY_UNAVAILABLE",
+                            "SOURCE_ATOM_INSTANCE_AUTHORITY_UNAVAILABLE"))
+        disposition = (AtomBindingDisposition.SOURCE_HELD if reasons
+                       else AtomBindingDisposition.BOUND)
+    mapping_digest = (source_projection.mapping_digests[atom.index] if owned
+                      else witness.mapping_digest(atom.index, candidate.token_index or 0, atom.token))
+    return make_binding(
+        source_instance_id=compiled.source_instance_id,
+        atom_index=atom.index, token=atom.token, source_reference=atom.source_reference,
+        source_evidence_digest=atom_evidence_digest(
+            compiled.source_instance_id, atom, compiled.semantic_release),
+        semantic_release=compiled.semantic_release,
+        a01_bundle_id=snapshot.bundle_id, a01_source_bundle_id=snapshot.source_bundle_id,
+        source_adapter_id=witness.source_adapter_id, source_token_index=candidate.token_index,
+        mapping_record_digest=mapping_digest,
+        candidate_semantic_id=candidate.semantic_id, candidate_abi_index=candidate.abi_index,
+        candidate_type_ids=candidate.type_ids, rights_epoch=config.frontier.rights_epoch,
+        correction_generation=config.frontier.correction_generation, rights_digest=rights_digest,
+        visible_at_prefix=atom.index + 1, disposition=disposition,
+        reason_codes=tuple(sorted(reasons)),
+    )
 
 
 def _resolve_visible_atoms(
@@ -74,91 +112,8 @@ def _resolve_visible_atoms(
             or tuple(atom.index for atom in atoms) != tuple(range(compiled.visible_end))):
         invalid("BAMF_SOURCE_ATOM_COMPILED_PREFIX_INVALID")
 
-    bindings = []
-    for atom in atoms:
-        rights_digest, rights_ok = _rights_digest(
-            config, atom, compiled.source_instance_id)
-        source_evidence = atom_evidence_digest(
-            compiled.source_instance_id, atom, compiled.semantic_release)
-        reasons = set()
-        token_index = None
-        candidate_semantic_id = None
-        candidate_abi_index = None
-        candidate_type_ids: tuple[str, ...] = ()
-        owned = (source_projection is not None
-                 and source_projection.ast.source_instance_id == compiled.source_instance_id
-                 and atom.index < len(source_projection.ast.atoms)
-                 and source_projection.ast.atoms[atom.index] == atom)
-
-        if atom.index >= len(witness.token_indices):
-            reasons.add("SOURCE_ATOM_ROW_POSITION_UNMAPPED")
-        else:
-            token_index = witness.token_indices[atom.index]
-            graph_tokens = graph.get("tokens")
-            if (token_index >= len(graph_tokens)
-                    or graph_tokens[token_index] != atom.token):
-                reasons.add("SOURCE_ATOM_ROW_TOKEN_MISMATCH")
-            else:
-                try:
-                    entry = snapshot.abi(token_index)
-                except BilqisError:
-                    entry = None
-                if (entry is None or entry.symbol != atom.token or not entry.active):
-                    reasons.add("SOURCE_ATOM_A01_ABI_UNMAPPED")
-                else:
-                    candidate_semantic_id = entry.semantic_id
-                    candidate_abi_index = entry.index
-                    concept = next((item for item in snapshot.concepts
-                                    if item.concept.semantic_id == entry.semantic_id), None)
-                    if concept is not None:
-                        candidate_type_ids = tuple(sorted(set(concept.concept.types)))
-                    if owned:
-                        candidate_type_ids = (source_projection.formal_signatures[atom.index],)
-                    if not candidate_type_ids:
-                        reasons.add("SOURCE_ATOM_TYPE_AUTHORITY_UNAVAILABLE")
-
-        if not rights_ok:
-            reasons.add("SOURCE_ATOM_CURRENT_RIGHTS_HELD")
-
-        candidate_present = candidate_semantic_id is not None
-        if candidate_present:
-            if not owned:
-                reasons.add("SOURCE_ATOM_REFERENCE_AUTHORITY_UNAVAILABLE")
-                reasons.add("SOURCE_ATOM_INSTANCE_AUTHORITY_UNAVAILABLE")
-            disposition = (AtomBindingDisposition.SOURCE_HELD if reasons
-                           else AtomBindingDisposition.BOUND)
-        else:
-            disposition = AtomBindingDisposition.UNMAPPED
-
-        mapping_digest = witness.mapping_digest(
-            atom.index,
-            token_index if token_index is not None else 0,
-            atom.token,
-        )
-        if owned:
-            mapping_digest = source_projection.mapping_digests[atom.index]
-        bindings.append(make_binding(
-            source_instance_id=compiled.source_instance_id,
-            atom_index=atom.index,
-            token=atom.token,
-            source_reference=atom.source_reference,
-            source_evidence_digest=source_evidence,
-            semantic_release=compiled.semantic_release,
-            a01_bundle_id=snapshot.bundle_id,
-            a01_source_bundle_id=snapshot.source_bundle_id,
-            source_adapter_id=witness.source_adapter_id,
-            source_token_index=token_index,
-            mapping_record_digest=mapping_digest,
-            candidate_semantic_id=candidate_semantic_id,
-            candidate_abi_index=candidate_abi_index,
-            candidate_type_ids=candidate_type_ids,
-            rights_epoch=config.frontier.rights_epoch,
-            correction_generation=config.frontier.correction_generation,
-            rights_digest=rights_digest,
-            visible_at_prefix=atom.index + 1,
-            disposition=disposition,
-            reason_codes=tuple(sorted(reasons)),
-        ))
+    bindings = tuple(_resolve_atom(
+        atom, compiled, config, snapshot, witness, graph, source_projection) for atom in atoms)
     return make_handoff(
         source_instance_id=compiled.source_instance_id,
         visible_end=compiled.visible_end,

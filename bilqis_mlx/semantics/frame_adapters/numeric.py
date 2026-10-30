@@ -34,18 +34,7 @@ def _numeric_literal_tree(
     )
     return None, FrameTree(atomic)
 
-def _bind_numeric_expression(
-    expression: Apply,
-    *,
-    snapshot: FrozenAtlasSnapshot,
-    graph: dict,
-    adapter_id: str,
-    source_instance_id: str,
-    path: tuple[int, ...],
-    span: SourceSpan,
-    parent_occurrence_id: str | None,
-    causal_prefix_end: int,
-) -> tuple[FrameTree, str]:
+def _numeric_schema(expression, snapshot, graph, adapter_id, span):
     native_contract_owner = (
         expression.operator.symbol in _APPEND_ONLY_NUMERIC_NODES)
     schema, graph_signature = _schema_for_symbol(
@@ -73,6 +62,21 @@ def _bind_numeric_expression(
     if expression.operator.contract_sha256 != schema.ast_contract_sha256:
         _adapter_fail("FRAME_NUMERIC_CONTRACT_DRIFT",
                       adapter_id, span, "<operator>")
+    return schema
+
+def _bind_numeric_expression(
+    expression: Apply,
+    *,
+    snapshot: FrozenAtlasSnapshot,
+    graph: dict,
+    adapter_id: str,
+    source_instance_id: str,
+    path: tuple[int, ...],
+    span: SourceSpan,
+    parent_occurrence_id: str | None,
+    causal_prefix_end: int,
+) -> tuple[FrameTree, str]:
+    schema = _numeric_schema(expression, snapshot, graph, adapter_id, span)
 
     current_occurrence = occurrence_id(source_instance_id, path)
     bindings = []

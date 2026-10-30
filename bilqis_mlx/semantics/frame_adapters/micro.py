@@ -6,32 +6,8 @@ from ..frame_schema import ChildFrameRef, FrameTree, RoleOccurrence, SourceSpan,
 from .common import _adapter_fail, _schema_for_symbol, _source_id, _source_terminal
 
 
-def _bind_source_expression(
-    node: dict,
-    *,
-    snapshot: FrozenAtlasSnapshot,
-    graph: dict,
-    assignments: dict,
-    adapter_id: str,
-    source_instance_id: str,
-    path: tuple[int, ...],
-    span: SourceSpan,
-    parent_occurrence_id: str | None,
-    causal_prefix_end: int,
-) -> tuple[FrameTree, str]:
-    try:
-        shape = inspect_source_query(node)
-    except ValueError:
-        _adapter_fail("FRAME_SOURCE_QUERY_INVALID", adapter_id, span, "<operator>")
-    symbol = shape.root
-    schema, signature = _schema_for_symbol(
-        snapshot, graph, symbol, "source:" + str(node.get("kind")),
-        adapter_id=adapter_id, span=span, scope="source-query")
-    args = node.get("args")
-    if not isinstance(args, list) or len(args) != len(signature.inputs):
-        _adapter_fail("FRAME_SOURCE_QUERY_ARITY_INVALID",
-                      adapter_id, span, "<operator>")
-
+def _bind_source_members(args, signature, schema, *, snapshot, graph, assignments,
+                         adapter_id, source_instance_id, path, span, causal_prefix_end):
     current_occurrence = occurrence_id(source_instance_id, path)
     bindings = []
     children = []
@@ -83,6 +59,38 @@ def _bind_source_expression(
                     role_id=role_id,
                 ),
             ))
+    return bindings, children
+
+def _bind_source_expression(
+    node: dict,
+    *,
+    snapshot: FrozenAtlasSnapshot,
+    graph: dict,
+    assignments: dict,
+    adapter_id: str,
+    source_instance_id: str,
+    path: tuple[int, ...],
+    span: SourceSpan,
+    parent_occurrence_id: str | None,
+    causal_prefix_end: int,
+) -> tuple[FrameTree, str]:
+    try:
+        shape = inspect_source_query(node)
+    except ValueError:
+        _adapter_fail("FRAME_SOURCE_QUERY_INVALID", adapter_id, span, "<operator>")
+    symbol = shape.root
+    schema, signature = _schema_for_symbol(
+        snapshot, graph, symbol, "source:" + str(node.get("kind")),
+        adapter_id=adapter_id, span=span, scope="source-query")
+    args = node.get("args")
+    if not isinstance(args, list) or len(args) != len(signature.inputs):
+        _adapter_fail("FRAME_SOURCE_QUERY_ARITY_INVALID",
+                      adapter_id, span, "<operator>")
+
+    bindings, children = _bind_source_members(
+        args, signature, schema, snapshot=snapshot, graph=graph, assignments=assignments,
+        adapter_id=adapter_id, source_instance_id=source_instance_id, path=path,
+        span=span, causal_prefix_end=causal_prefix_end)
     frame = bind_frame_instance(
         schema,
         snapshot,
