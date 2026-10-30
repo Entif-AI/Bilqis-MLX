@@ -18,7 +18,6 @@ LEGACY_ARCHITECTURE_ID = "bilqis.mlx.causal-tied-fp32/v1"
 EXTENTS_SCHEMA = "bilqis.mlx.generation-extents/v1"
 PROVENANCE_SCHEMA = "bilqis.mlx.generation-provenance/v1"
 IDENTITY_ESTABLISHED_AGE = 8
-ADAPTER_FACTOR_SUFFIXES = frozenset(("A", "B"))
 
 
 def _digest(value: object) -> str:
@@ -278,7 +277,7 @@ class ParameterSpec:
         if self.name.startswith("blocks.") and suffix in (
                 "query", "key", "value", "output", "ffn_in", "ffn_out"):
             return ParameterCategory.DENSE_MATRICES
-        if self.name.startswith("plastic.group.") and suffix in ADAPTER_FACTOR_SUFFIXES:
+        if self.name.startswith("plastic.group.") and suffix in ("A", "B"):
             return ParameterCategory.ADAPTER_MATRICES
         return ParameterCategory.AUXILIARY
 
