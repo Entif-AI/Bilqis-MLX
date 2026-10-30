@@ -82,3 +82,15 @@ class DecisionTests(unittest.TestCase):
         after = commit_decisions(state, (O('child', child_value),))
         self.assertEqual(after.committed[-1].value, 'known')
         self.assertIs(after.status, DecodeStatus.UNRESOLVED)
+
+    def test_end_frame_is_a_single_commit_publication_barrier(self):
+        nodes = (D('control', 'agent', 0, K.CONTROL, (C.EMIT_UNKNOWN,)),
+                 D('aux', None, 0, K.EPISTEMIC, ('UNKNOWN',), ('control',)),
+                 D('end', None, 0, K.CONTROL, (C.END_FRAME,), ('control',)))
+        state = commit_decisions(start_decoding(plan(nodes)), (O('control', C.EMIT_UNKNOWN),))
+        self.assertEqual([d.decision_id for d in ready_decisions(state)], ['aux', 'end'])
+        with self.assertRaises(BilqisError):
+            commit_decisions(state, (O('aux', 'UNKNOWN'), O('end', C.END_FRAME)))
+        closed = commit_decisions(state, (O('end', C.END_FRAME),))
+        self.assertIs(closed.status, DecodeStatus.COMPLETE)
+        self.assertEqual([o.decision_id for o in closed.committed], ['control', 'end'])
