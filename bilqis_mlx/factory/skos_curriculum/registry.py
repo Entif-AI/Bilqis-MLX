@@ -5,17 +5,28 @@ from dataclasses import dataclass
 from typing import Callable
 
 from bilqis_mlx.factory.adapters import SourceAdapterRegistry
-from bilqis_mlx.factory.model import CapabilityDefinition, ConstructionProgram
+from bilqis_mlx.factory.model import (
+    CapabilityDefinition, ConstructionProgram, FactoryRelease,
+)
 from bilqis_mlx.factory.curriculum.formal_lessons import (
     check_formal_lesson, construct_formal_lesson,
 )
 from bilqis_mlx.source_adapters.school import live_source_registry
 
+from .adapters import SOURCE_FAMILY_ADAPTERS
+from .checkers import (
+    assert_source_lesson_set_current, compile_source_constructive_lessons,
+)
 from .common import LEARNING_UNVERIFIED, _fail
+from .curriculum import (
+    LearnedFrontier, assert_curriculum_candidate_current,
+    compile_semantic_curriculum,
+)
+from .inventory import assert_family_inventory_current, inventory_source_families
 from .types import FamilyObligation, SemanticFamilyInventory
 
 
-ADAPTER_READY = "ADAPTER_READY"
+PROGRAM_BOUND = "FACTORY_PROGRAM_BOUND_UNADMITTED"
 IMPLEMENTATION_UNCOVERED = "IMPLEMENTATION_UNCOVERED"
 FAMILY_PROGRAM_SCHEMA = "bilqis.family-program/v1"
 BOUND_FAMILY_PROGRAM_SCHEMA = "bilqis.bound-family-program/v1"
@@ -59,7 +70,7 @@ class BoundFamilyProgram:
     oracle_id: str
     constructor_ref: str
     checker_ref: str
-    implementation_status: str = ADAPTER_READY
+    implementation_status: str = PROGRAM_BOUND
     learning_state: str = LEARNING_UNVERIFIED
     schema: str = BOUND_FAMILY_PROGRAM_SCHEMA
 
@@ -68,7 +79,7 @@ class BoundFamilyProgram:
                 self.family_id, self.capability_id, self.source_adapter_id,
                 self.generator_id, self.oracle_id, self.constructor_ref,
                 self.checker_ref))
-                or self.implementation_status != ADAPTER_READY
+                or self.implementation_status != PROGRAM_BOUND
                 or self.learning_state != LEARNING_UNVERIFIED
                 or self.schema != BOUND_FAMILY_PROGRAM_SCHEMA):
             _fail("BAMF_BOUND_FAMILY_PROGRAM_INVALID")
@@ -128,6 +139,27 @@ class FamilyProgramRegistry:
         if program is None:
             _fail("BAMF_FAMILY_PROGRAM_MISSING")
         return program
+
+    @property
+    def programs(self) -> tuple[RegisteredFamilyProgram, ...]:
+        return tuple(self._programs[key] for key in sorted(self._programs))
+
+
+@dataclass(frozen=True)
+class FactoryReleaseFamilyBindings:
+    factory_release_sha256: str
+    semantic_release: str
+    census_digest: str
+    bound_programs: tuple[BoundFamilyProgram, ...]
+    coverage: FamilyProgramCoverage
+    learning_state: str = LEARNING_UNVERIFIED
+
+    def __post_init__(self) -> None:
+        if (not self.factory_release_sha256 or not self.semantic_release
+                or self.coverage.census_digest != self.census_digest
+                or self.coverage.semantic_release != self.semantic_release
+                or self.learning_state != LEARNING_UNVERIFIED):
+            _fail("BAMF_FACTORY_FAMILY_BINDINGS_INVALID")
 
 
 def _source_draw(*args, **kwargs):
@@ -194,6 +226,52 @@ def bind_existing_family_program(
         registration.family_id, capability.capability_id,
         source.descriptor.adapter_id, program.generator_id, program.oracle_id,
         registration.constructor_ref, registration.checker_ref)
+
+
+def bind_factory_release_families(
+    release: FactoryRelease,
+    registry: FamilyProgramRegistry,
+    source_registry: SourceAdapterRegistry,
+    atlas,
+    learned_frontier: LearnedFrontier,
+) -> FactoryReleaseFamilyBindings:
+    """Production boundary: replay A08.1a before binding existing release programs.
+
+    This proves program installation only. It does not grant A13 context rights or
+    learning/admission credit; source-backed lesson execution still goes through
+    ``issue_source_lesson_contexts`` / ``project_source_lesson_contexts``.
+    """
+    if (type(release) is not FactoryRelease
+            or type(registry) is not FamilyProgramRegistry
+            or type(source_registry) is not SourceAdapterRegistry
+            or type(learned_frontier) is not LearnedFrontier):
+        _fail("BAMF_FACTORY_FAMILY_BINDING_INPUT_INVALID")
+    release.verify()
+    census = inventory_source_families(atlas)
+    candidate = compile_semantic_curriculum(
+        atlas, SOURCE_FAMILY_ADAPTERS, learned_frontier)
+    lessons = compile_source_constructive_lessons(atlas)
+    assert_family_inventory_current(census, atlas)
+    assert_curriculum_candidate_current(candidate, atlas, learned_frontier)
+    assert_source_lesson_set_current(lessons, atlas)
+
+    program_by_capability = {
+        item.capability_id: item for item in release.construction_programs}
+    bound = []
+    for capability in release.capabilities:
+        program = program_by_capability[capability.capability_id]
+        matches = tuple(
+            item for item in registry.programs
+            if capability.source_adapter_id in item.accepted_source_adapter_ids)
+        if len(matches) > 1:
+            _fail("BAMF_FAMILY_PROGRAM_SOURCE_FAMILY_AMBIGUOUS")
+        if matches:
+            bound.append(bind_existing_family_program(
+                matches[0], capability, program, source_registry))
+    coverage = uncovered_family_obligations(census)
+    return FactoryReleaseFamilyBindings(
+        release.release_sha256, census.semantic_release, census.digest,
+        tuple(bound), coverage)
 
 
 def uncovered_family_obligations(

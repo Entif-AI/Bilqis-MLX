@@ -18,11 +18,11 @@ from .curriculum import (LearnedFrontier, CurriculumCandidateSet,
 from .checkers import (compile_source_constructive_lessons,
     assert_source_lesson_set_current, check_source_constructive_lesson,
     _check_source_constructive_lesson_snapshot)
-from .registry import (ADAPTER_READY, IMPLEMENTATION_UNCOVERED,
-    BoundFamilyProgram, FamilyCoverageDisposition, FamilyProgramCoverage,
-    FamilyProgramRegistry, RegisteredFamilyProgram,
-    bind_existing_family_program, default_family_program_registry,
-    uncovered_family_obligations)
+from .registry import (IMPLEMENTATION_UNCOVERED, PROGRAM_BOUND,
+    BoundFamilyProgram, FactoryReleaseFamilyBindings,
+    FamilyCoverageDisposition, FamilyProgramCoverage, FamilyProgramRegistry,
+    RegisteredFamilyProgram, bind_factory_release_families,
+    default_family_program_registry, uncovered_family_obligations)
 from .source_context import (SourceLessonContexts, issue_source_lesson_contexts,
     project_source_lesson_contexts)
 
@@ -34,10 +34,11 @@ __all__ = [
     "assert_family_inventory_current", "compile_semantic_curriculum",
     "assert_curriculum_candidate_current", "compile_source_constructive_lessons",
     "assert_source_lesson_set_current", "check_source_constructive_lesson",
-    "ADAPTER_READY", "IMPLEMENTATION_UNCOVERED", "BoundFamilyProgram",
-    "FamilyCoverageDisposition", "FamilyProgramCoverage", "FamilyProgramRegistry",
-    "RegisteredFamilyProgram", "bind_existing_family_program",
-    "default_family_program_registry", "uncovered_family_obligations",
+    "IMPLEMENTATION_UNCOVERED", "PROGRAM_BOUND", "BoundFamilyProgram",
+    "FactoryReleaseFamilyBindings", "FamilyCoverageDisposition",
+    "FamilyProgramCoverage", "FamilyProgramRegistry", "RegisteredFamilyProgram",
+    "bind_factory_release_families", "default_family_program_registry",
+    "uncovered_family_obligations",
     "SourceLessonContexts", "issue_source_lesson_contexts",
     "project_source_lesson_contexts",
 ]
