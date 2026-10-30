@@ -38,13 +38,13 @@ jobs:
       - name: Check legacy semantic package ownership
         if: >-
           ${{
-            (!contains(github.ref_name, 'bamf') && !contains(github.head_ref, 'bamf'))
+            (!contains(github.ref_name, 'bamf') && !contains(github.head_ref, 'bamf') && !contains(github.base_ref, 'bamf'))
           }}
         run: python3 -B scripts/check_semantic_boundaries.py
       - name: Verify portable BAMF semantic contracts
         if: >-
           ${{
-            (contains(github.ref_name, 'bamf') || contains(github.head_ref, 'bamf'))
+            (contains(github.ref_name, 'bamf') || contains(github.head_ref, 'bamf') || contains(github.base_ref, 'bamf'))
           }}
         run: >-
           python3 -B scripts/run_tests.py
