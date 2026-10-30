@@ -31,6 +31,8 @@ jobs:
           esac
           python3 -B scripts/check_module_size.py --changed-from "$BASE_REF"
           python3 -B scripts/quality/check_governance_integrity.py --base-ref "$BASE_REF"
+      - name: Install historical semantic integrity dependencies
+        run: python3 -m pip install -r lib/ithkuil/requirements-semantic.txt
       - name: Check historical semantic integrity
         run: python3 -B scripts/check_historical_abi.py
       - name: Check legacy semantic package ownership
