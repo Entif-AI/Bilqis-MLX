@@ -1,8 +1,8 @@
 """Serialized student execution, immutable artifacts and assessment custody.
 
-Projection owners live in a dedicated directory while keeping their established
-``bilqis_mlx.runtime`` module names and relative imports.
+Grouped runtime owners keep their established ``bilqis_mlx.runtime`` module
+names and relative imports.
 """
 from pathlib import Path
 
-__path__.append(str(Path(__file__).parent / "_projection"))
+__path__.extend(str(Path(__file__).parent / name) for name in ("_projection", "_admission"))

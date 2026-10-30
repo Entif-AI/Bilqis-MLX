@@ -55,3 +55,12 @@ The regression asserts the exact missing alternate module name for each owner;
 it does not treat arbitrary transitive import failures as success. All 27
 projection tests pass with the local Rosetta owner. This is not a security
 sandbox or proof of installation packaging; independent review remains pending.
+
+The subsequent admission-owner grouping preserves the exact bytes of six moved
+source files and their established runtime module names. Before the move, 39
+affected admission and autonomy tests passed. Afterward, those tests plus two
+new import-identity tests passed; the combined admission and projection run
+passed 68 tests, including native Rosetta. The physical admission subpackage
+also rejects ordinary alternate-name traversal. The saved student, optimizer,
+teacher state and existing run directories were not opened for mutation. This
+is not a training, installation-distribution or full integration proof.
