@@ -25,7 +25,7 @@ from bilqis_mlx.semantics.cognitive_operators import (
 
 RELEASE = "a" * 64
 BUNDLE = "b" * 64
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[4]
 FORMAL = (
     ("legacy:cogal.operator.NOT", "boolean", "BOOL_NOT"),
     ("legacy:cogal.operator.AND", "boolean", "BOOL_AND"),
