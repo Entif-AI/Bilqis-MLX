@@ -62,6 +62,12 @@ def discover_test_files(root: Path) -> tuple[Path, ...]:
     return tuple(sorted(files))
 
 
+def exclude_ithkuil_tests(paths: tuple[Path, ...], root: Path) -> tuple[Path, ...]:
+    ithkuil_tests = (root / "lib" / "ithkuil" / "tests").resolve()
+    return tuple(path for path in paths
+                 if not path.resolve().is_relative_to(ithkuil_tests))
+
+
 def _module_name(path: Path, root: Path) -> str:
     digest = hashlib.sha256(str(path.relative_to(root)).encode()).hexdigest()
     return f"_bilqis_test_{digest}"
@@ -101,11 +107,26 @@ def load_test_files(paths: tuple[Path, ...], root: Path) -> unittest.TestSuite:
 
 
 def _load_targets(targets: tuple[str, ...], root: Path) -> unittest.TestSuite:
-    paths = tuple(Path(target).resolve() for target in targets if target.endswith(".py"))
-    suite = load_test_files(paths, root)
+    root = root.resolve()
+    paths = []
+    names = []
     for target in targets:
-        if not target.endswith(".py"):
-            suite.addTests(unittest.defaultTestLoader.loadTestsFromName(target))
+        path = Path(target)
+        if path.is_dir():
+            paths.extend(
+                candidate for candidate in path.resolve().rglob("test_*.py")
+                if candidate.is_file()
+                and not any(part in IGNORED_DIRECTORIES
+                            for part in candidate.relative_to(path.resolve()).parts)
+            )
+        elif target.endswith(".py"):
+            paths.append(path.resolve())
+        else:
+            names.append(target)
+    paths = tuple(sorted(set(paths)))
+    suite = load_test_files(paths, root)
+    for target in names:
+        suite.addTests(unittest.defaultTestLoader.loadTestsFromName(target))
     return suite
 
 
@@ -129,9 +150,26 @@ def main(argv: list[str] | None = None, *, root: Path | None = None, stream=None
     stream = stream or sys.stdout
     shimmed = _install_source_only_legacy_geometry_shim()
     try:
-        suite = (_load_targets(tuple(arguments.targets), root)
-                 if arguments.targets else
-                 load_test_files(discover_test_files(root), root))
+        if arguments.targets:
+            suite = _load_targets(tuple(arguments.targets), root)
+        else:
+            paths = discover_test_files(root)
+            try:
+                from scripts.skos_test_policy import plan
+                skos = plan(root)
+            except Exception as error:
+                print(f"SKOS_TEST_POLICY_UNAVAILABLE {type(error).__name__}: {error}",
+                      file=stream)
+            else:
+                if skos.action == "SKIP":
+                    paths = exclude_ithkuil_tests(paths, root)
+                    print(
+                        f"SKOS_VERIFIED_BUNDLE_UNCHANGED {skos.sha256} "
+                        "FULL_SUITE_SKIPPED",
+                        file=stream)
+                else:
+                    print(f"SKOS_TEST_PLAN {skos.action} {skos.reason}", file=stream)
+            suite = load_test_files(paths, root)
         if suite.countTestCases() == 0:
             print("TEST_TOTALS total=0 passed=0 failed=0 skipped=0 errors=0", file=stream)
             print("0 passed, 0 failed, 0 skipped", file=stream)

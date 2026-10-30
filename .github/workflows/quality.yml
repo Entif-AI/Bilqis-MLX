@@ -13,12 +13,13 @@ permissions:
 jobs:
   portable:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - name: Checkout private source without persisted credentials
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
+          fetch-depth: 0
       - name: Validate release manifests and changelog
         run: python3 -B scripts/release_version.py --check
       - name: Check historical semantic integrity and code ownership
@@ -45,7 +46,22 @@ jobs:
           bilqis_mlx/factory/tests/test_generation.py
           bilqis_mlx/factory/tests/test_historical_generalization.py
           bilqis_mlx/runtime/tests/test_admission.py
+      - name: Plan semantic profile verification
+        id: skos
+        env:
+          SKOS_BASE_REF: ${{ github.event.before || github.event.pull_request.base.sha }}
+        run: |
+          python3 -B scripts/skos_test_policy.py plan \
+            --base-ref "$SKOS_BASE_REF" \
+            --github-output "$GITHUB_OUTPUT"
       - name: Install semantic profile dependencies
-        run: python3 -m pip install -r lib/ithkuil/requirements-falkor.txt
+        if: steps.skos.outputs.action != 'SKIP'
+        run: >-
+          python3 -m pip install
+          -r lib/ithkuil/requirements-extraction.txt
+          -r lib/ithkuil/requirements-falkor.txt
       - name: Verify deterministic source semantic profile
-        run: python3 -B -m unittest discover -s lib/ithkuil/tests -p 'test_skos_*.py' -v
+        if: steps.skos.outputs.action != 'SKIP'
+        env:
+          SKOS_BASE_REF: ${{ github.event.before || github.event.pull_request.base.sha }}
+        run: python3 -B scripts/skos_test_policy.py run --base-ref "$SKOS_BASE_REF"
