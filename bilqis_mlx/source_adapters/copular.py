@@ -196,7 +196,7 @@ def registered_adapter() -> RegisteredSourceAdapter:
     implementation = digest(dict(
         source=_expected_witness(),
         files={name: hashlib.sha256((home / name).read_bytes()).hexdigest()
-               for name in ("source_adapters/copular.py", "semantics/copular.py",
+               for name in ("source_adapters/copular.py", "semantics/foundation/copular.py",
                             "verification/copular.py", "factory/verification.py")}))
     return RegisteredSourceAdapter(SourceAdapter(
         adapter_id="source.ithkuil-reference-identity/v1", generator_id=GENERATOR,
