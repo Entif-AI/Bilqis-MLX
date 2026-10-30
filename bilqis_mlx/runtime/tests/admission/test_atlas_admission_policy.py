@@ -7,7 +7,7 @@ from unittest.mock import Mock
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.atlas_admission import advance_atlas_frontier
 from bilqis_mlx.runtime.atlas_admission_policy import AtlasAdmissionContext, AtlasDeltaEnvelope, PostAdmissionTotals
-from bilqis_mlx.runtime.tests.test_atlas_admission import _lease, _REGISTRY, _signed
+from bilqis_mlx.runtime.tests.admission.test_atlas_admission import _lease, _REGISTRY, _signed
 from bilqis_mlx.runtime.tests import test_jit_adoption as native_fixture
 from bilqis_mlx.runtime.atlas_revalidation import SourceAuthorityRegistry, SourceAuthorityScope
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
