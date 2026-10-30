@@ -1,12 +1,35 @@
 """New raw diagnostic identities and opaque numeric guards must not grow."""
 import unittest
+from pathlib import Path
 
-from scripts.operator_contract_audit import (
-    analyze_source, debt_counter, new_debt,
+from scripts.operations.operator_contract_audit import (
+    analyze_source, debt_counter, logical_source_path, new_debt,
 )
 
 
 class OperatorContractAuditTests(unittest.TestCase):
+    def test_physical_compartments_keep_canonical_module_debt_identity(self):
+        root = Path("/repo")
+        self.assertEqual(
+            logical_source_path(
+                root / "bilqis_mlx/factory/curriculum/candidate_staging.py", root),
+            "bilqis_mlx/factory/candidate_staging.py",
+        )
+        self.assertEqual(
+            logical_source_path(
+                root / "bilqis_mlx/learning/_championship/capability_frontier.py", root),
+            "bilqis_mlx/learning/capability_frontier.py",
+        )
+        self.assertEqual(
+            logical_source_path(
+                root / "bilqis_mlx/semantics/foundation/abi.py", root),
+            "bilqis_mlx/semantics/abi.py",
+        )
+        self.assertEqual(
+            logical_source_path(root / "bilqis_mlx/runtime/visits.py", root),
+            "bilqis_mlx/runtime/visits.py",
+        )
+
     def test_recover_exact_error_status_and_gate_code_without_guessing_semantics(self):
         source = '''
 def work(debt, events):

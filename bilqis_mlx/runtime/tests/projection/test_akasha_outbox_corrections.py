@@ -5,6 +5,7 @@ from dataclasses import replace
 from pathlib import Path
 import sqlite3
 import tempfile
+from types import MappingProxyType
 import unittest
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -28,7 +29,7 @@ from bilqis_mlx.semantics.cognitive_dependencies import (
 )
 
 
-PAYLOADS = {
+PAYLOADS = MappingProxyType({
     **{kind: {"owner_source_event_id": "fixture:event", "producer_id": "fixture:producer",
               "artifact_schema": "fixture:opaque/v1", "artifact_sha256": "a" * 64, "verification_mode": "DISPOSABLE_CONTRACT"}
        for kind in (AkashaEventKind.BANK_ALLOCATION, AkashaEventKind.PLASTICITY_EPOCH, AkashaEventKind.PACKAGE_EXPORT)},
@@ -75,7 +76,7 @@ PAYLOADS = {
         "generation_sha256": "c" * 64,
         "manifest_digest": "1" * 64,
     },
-}
+})
 
 
 def _event(kind=AkashaEventKind.SOURCE_CORRECTION):

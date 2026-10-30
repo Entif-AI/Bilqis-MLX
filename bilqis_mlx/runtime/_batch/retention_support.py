@@ -17,6 +17,9 @@ import bilqis_mlx.runtime.assessment as _runtime_assessment
 import bilqis_mlx.runtime.release_adoption as _runtime_release_adoption
 import bilqis_mlx.runtime.state as _runtime_state
 
+RETENTION_SUPPORT_SCHEDULE_INVALID = "RETENTION_SUPPORT_SCHEDULE_INVALID"
+FRAGILE_PRESERVATION_BATCH_CAPACITY_EXHAUSTED = "FRAGILE_PRESERVATION_BATCH_CAPACITY_EXHAUSTED"
+
 
 def _retention_support_capabilities(admitted, active_grades,
                                     capability: str) -> tuple[str, ...]:
@@ -44,7 +47,7 @@ def _retention_support_schedule(
     before these hard-gated surfaces have been rehearsed.
     """
     if type(steps) is not int or steps < 1 or type(rotation) is not int or rotation < 0:
-        raise ValueError("RETENTION_SUPPORT_SCHEDULE_INVALID")
+        raise ValueError(RETENTION_SUPPORT_SCHEDULE_INVALID)
     active_grades = tuple(active_grades)
     if not active_grades:
         return ()
@@ -136,5 +139,5 @@ def _inject_preservation_rows(chosen, preservation, *, reserved_ids=()):
         consumed.add(replacement)
         delivered.append(item)
     if len(delivered) != len(preservation):
-        raise ValueError("FRAGILE_PRESERVATION_BATCH_CAPACITY_EXHAUSTED")
+        raise ValueError(FRAGILE_PRESERVATION_BATCH_CAPACITY_EXHAUSTED)
     return result, tuple(delivered)

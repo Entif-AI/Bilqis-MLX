@@ -13,10 +13,16 @@ import copy as _copy
 import dataclasses as _dataclasses
 import json as _json
 
+SHA256_HEX_LENGTH = 64
+CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CUSTODY_DRIFT = "CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CUSTODY_DRIFT"
+CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_IDENTITY_DRIFT = "CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_IDENTITY_DRIFT"
+CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_COHORT_MISSING = "CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_COHORT_MISSING"
+CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CONTENT_DRIFT = "CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CONTENT_DRIFT"
+
 
 def _require_championship_source_context_custody(condition: bool) -> None:
     if not condition:
-        raise ValueError("CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CUSTODY_DRIFT")
+        raise ValueError(CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CUSTODY_DRIFT)
 
 
 def _affected_championship_source_context(run_dir, epoch) -> set[str]:
@@ -30,12 +36,12 @@ def _affected_championship_source_context(run_dir, epoch) -> set[str]:
             sha = item.get("cohort_sha256")
             assessment_rubric = item.get("rubric_sha256")
             source_oracle = item.get("source_oracle_sha256")
-            if not all(isinstance(value, str) and len(value) == 64
+            if not all(isinstance(value, str) and len(value) == SHA256_HEX_LENGTH
                        for value in (sha, assessment_rubric, source_oracle)):
-                raise ValueError("CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_IDENTITY_DRIFT")
+                raise ValueError(CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_IDENTITY_DRIFT)
             path = run_dir / "cohorts" / (sha + ".json")
             if path.is_symlink() or not path.is_file():
-                raise ValueError("CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_COHORT_MISSING")
+                raise ValueError(CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_COHORT_MISSING)
             stored = _json.loads(path.read_text())
             _require_championship_source_context_custody(
                 stored.get("cohort_sha256") == sha and
@@ -44,7 +50,7 @@ def _affected_championship_source_context(run_dir, epoch) -> set[str]:
                 _bilqis_mlx_generated_assessment.verify_stored_cohort(stored, sha)
             except ValueError as exc:
                 raise ValueError(
-                    "CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CONTENT_DRIFT") from exc
+                    CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CONTENT_DRIFT) from exc
             declared_cohort_rubric = item.get("cohort_rubric_sha256")
             if declared_cohort_rubric is not None:
                 # A modern witness has a distinct, authenticated source

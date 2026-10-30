@@ -9,7 +9,7 @@ from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
 
 
 class StaleReplayTests(unittest.TestCase):
-    def test_post_remediation_stale_replay_escalates_but_new_evidence_does_not(self):
+    def _stale_replay_fixture(self):
         index, source_a, _ = _chain()
         correction = _event(source_a)
         remediation = RemediationReceipt(
@@ -45,6 +45,10 @@ class StaleReplayTests(unittest.TestCase):
                 status=RequalificationStatus.QUALIFIED,
             ),
         ))
+        return index, correction, remediation, stale, ledger
+
+    def test_post_remediation_stale_replay_escalates_but_new_evidence_does_not(self):
+        index, correction, remediation, stale, ledger = self._stale_replay_fixture()
         result = escalate_stale_replay(remediation, stale, correction,
                                        index, ledger)
         self.assertIsNotNone(result)

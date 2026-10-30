@@ -17,11 +17,7 @@ class MotifReadBoundariesTests(TestCase):
         with self.assertRaises(TypeError):
             guarded_read_motif()
 
-    @unittest.skipUnless(
-        os.environ.get("BILQIS_ATLAS_REAL_ARTIFACT"),
-        "real repo-pinned A01 artifact supplied at source turn-in",
-    )
-    def test_group1_second_read_is_source_qualified_but_quarantined_no_hit(self):
+    def _real_source_read_fixture(self):
         selection = AtlasArtifactSelection(
             os.environ["BILQIS_ATLAS_REAL_ARTIFACT"],
             REAL_BUNDLE, REAL_RELEASE, REAL_SOURCE_BUNDLE,
@@ -78,6 +74,15 @@ class MotifReadBoundariesTests(TestCase):
             MotifFrameInput(frame, schema), REAL_RELEASE)
         manifest = MotifManifest(REAL_RELEASE, (MotifSlot(0, exact),))
         hidden = mx.arange(2 * 768, dtype=mx.float32).reshape(1, 2, 768)
+        return selection, schema, position, task, frontier, policy, manifest, hidden
+
+    @unittest.skipUnless(
+        os.environ.get("BILQIS_ATLAS_REAL_ARTIFACT"),
+        "real repo-pinned A01 artifact supplied at source turn-in",
+    )
+    def test_group1_second_read_is_source_qualified_but_quarantined_no_hit(self):
+        (selection, schema, position, task, frontier, policy,
+         manifest, hidden) = self._real_source_read_fixture()
 
         result = guarded_read_motif(
             site_index=1, hidden=hidden,

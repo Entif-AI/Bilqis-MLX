@@ -11,6 +11,9 @@ from ..semantics.cognitive_dependencies import DependencyKind, DependencyRef
 from ..semantics.domains import contract_digest
 from .atlas_revalidation import SourceAuthorityRegistry
 
+DEFAULT_MAX_CAPABILITIES = 9
+DEFAULT_MAX_NEW_SEMANTIC_IDENTITIES = 16
+
 
 def _invalid(reason):
     ErrorBus.raise_(SCHOOL.BAMF_ATLAS_ADMISSION.INVALID, reason=reason)
@@ -47,16 +50,16 @@ class LeaseRunIdentity:
 @dataclass(frozen=True)
 class DeltaBudgetPolicy:
     version: str = 'bilqis.c07.initial-delta/v1'
-    max_capabilities: int = 9
-    max_new_semantic_identities: int = 16
+    max_capabilities: int = DEFAULT_MAX_CAPABILITIES
+    max_new_semantic_identities: int = DEFAULT_MAX_NEW_SEMANTIC_IDENTITIES
 
     def __post_init__(self):
         if (not _name(self.version) or type(self.max_capabilities) is not int
-                or not 1 <= self.max_capabilities <= 9
+                or not 1 <= self.max_capabilities <= DEFAULT_MAX_CAPABILITIES
                 or type(self.max_new_semantic_identities) is not int
                 or self.max_new_semantic_identities < 1
                 or (self.version == 'bilqis.c07.initial-delta/v1'
-                    and self.max_new_semantic_identities != 16)):
+                    and self.max_new_semantic_identities != DEFAULT_MAX_NEW_SEMANTIC_IDENTITIES)):
             _invalid('BAMF_ATLAS_DELTA_BUDGET_POLICY_INVALID')
 
 

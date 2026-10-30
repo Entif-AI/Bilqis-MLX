@@ -7,6 +7,9 @@ from .atlas_training_contracts import (
     PaddedMicrobatch, _invalid, _freeze, require_current_release,
 )
 
+MAX_COMPILED_CONTEXT_POSITIONS = 1024
+AUXILIARY_EVIDENCE_ARITY = 3
+
 
 def pad_microbatches(batch, topology, memory_budget, *, plan_microbatches, indices_for_plan, positions_for):
     """Consume C08's partition; preserve every logical row and actual lengths."""
@@ -20,7 +23,7 @@ def pad_microbatches(batch, topology, memory_budget, *, plan_microbatches, indic
     result = []
     for group in groups:
         rows = tuple(tuple(positions_for(batch.rows[index].model_input.prefix)) for index in group)
-        if any(not row or len(row) + dict(batch.rows[index].model_input.answer_plan)['maximum_decisions'] > 1024
+        if any(not row or len(row) + dict(batch.rows[index].model_input.answer_plan)['maximum_decisions'] > MAX_COMPILED_CONTEXT_POSITIONS
                for index, row in zip(group, rows)):
             _invalid('COMPILED_CONTEXT_INVALID')
         width = max(map(len, rows))
@@ -43,7 +46,7 @@ def attach_auxiliaries(batch, evidence_by_row, *, verify):
         targets = []
         for name, evidence in sorted(labels.items()):
             if (name not in {'role', 'epistemic_state', 'impact', 'exigency', 'novelty', 'frame_atomic_consistency'}
-                    or not isinstance(evidence, (tuple, list)) or len(evidence) != 3):
+                    or not isinstance(evidence, (tuple, list)) or len(evidence) != AUXILIARY_EVIDENCE_ARITY):
                 _invalid('AUXILIARY_EVIDENCE_INVALID')
             value, regime, receipt = evidence
             if regime not in ('SOURCE', 'OUTCOME') or not receipt or verify(row.provenance.row_id, name, value, regime, receipt) is not True:

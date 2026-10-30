@@ -17,6 +17,13 @@ import bilqis_mlx.runtime.assessment as _runtime_assessment
 import bilqis_mlx.runtime.release_adoption as _runtime_release_adoption
 import bilqis_mlx.runtime.state as _runtime_state
 
+MAX_FIXED_EXAM_ROWS_PER_CAPABILITY = 48
+SHA256_HEX_LENGTH = 64
+LEARNING_EXPERIMENT_FIXED_GRADE_COHORT_MISSING = "LEARNING_EXPERIMENT_FIXED_GRADE_COHORT_MISSING"
+LEARNING_EXPERIMENT_FIXED_GRADE_COHORT_INCOMPLETE = "LEARNING_EXPERIMENT_FIXED_GRADE_COHORT_INCOMPLETE"
+HUMAN_TRAINER_REUSABLE_EXAM_COHORT_IDENTITY_INVALID = "HUMAN_TRAINER_REUSABLE_EXAM_COHORT_IDENTITY_INVALID"
+FIXED_FRONTIER_PARENT_IDENTITY_DRIFT = "FIXED_FRONTIER_PARENT_IDENTITY_DRIFT"
+
 
 def _fixed_same_grade_rows(run_dir, receipt, course, school, capability, settings):
     """Reuse the last independently scored full-grade cohort, if available.
@@ -37,15 +44,15 @@ def _fixed_same_grade_rows(run_dir, receipt, course, school, capability, setting
         return ()
     cohort = _runtime_assessment._verify_saved_cohort(run_dir, receipt, course)
     if cohort is None:
-        raise ValueError("LEARNING_EXPERIMENT_FIXED_GRADE_COHORT_MISSING")
+        raise ValueError(LEARNING_EXPERIMENT_FIXED_GRADE_COHORT_MISSING)
     rows = tuple(r for r in cohort.rows if r["capability"] in required)
     if (len(rows) != len({r["id"] for r in rows}) or
-            len(rows) > len(required) * 48 or
+            len(rows) > len(required) * MAX_FIXED_EXAM_ROWS_PER_CAPABILITY or
             any(type(exam_scores[cap].get("total")) is not int or
                 exam_scores[cap]["total"] < 1 or
                 sum(row["capability"] == cap for row in rows) !=
                 exam_scores[cap]["total"] for cap in required)):
-        raise ValueError("LEARNING_EXPERIMENT_FIXED_GRADE_COHORT_INCOMPLETE")
+        raise ValueError(LEARNING_EXPERIMENT_FIXED_GRADE_COHORT_INCOMPLETE)
     return rows
 
 
@@ -62,9 +69,9 @@ def _reusable_exam_identity(receipt, school, *, rubric_sha256,
             exam.get("assessment_scope_sha256") != assessment_scope_sha256):
         return None
     cohort_sha = exam.get("cohort_sha256")
-    if (not isinstance(cohort_sha, str) or len(cohort_sha) != 64 or
+    if (not isinstance(cohort_sha, str) or len(cohort_sha) != SHA256_HEX_LENGTH or
             any(c not in "0123456789abcdef" for c in cohort_sha)):
-        raise ValueError("HUMAN_TRAINER_REUSABLE_EXAM_COHORT_IDENTITY_INVALID")
+        raise ValueError(HUMAN_TRAINER_REUSABLE_EXAM_COHORT_IDENTITY_INVALID)
     return (student.sha256, student.optimizer_step, cohort_sha,
             rubric_sha256, assessment_scope_sha256)
 
@@ -86,7 +93,7 @@ def _frontier_fixed_evidence(
                           exam.get("optimizer_step") != school.current_student.optimizer_step):
         if (type(exam.get("optimizer_step")) is not int or
                 school.current_student.optimizer_step <= exam["optimizer_step"]):
-            raise ValueError("FIXED_FRONTIER_PARENT_IDENTITY_DRIFT")
+            raise ValueError(FIXED_FRONTIER_PARENT_IDENTITY_DRIFT)
         frontier_parent = _learning_student_ops._predictions(
             mx, parent, list(frontier_rows), config, answer_ids)
     if frontier_rows:
