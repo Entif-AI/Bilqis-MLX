@@ -52,7 +52,7 @@ class FrameFactorTerms:
     semantic_release: str
     schema_version: str = "bilqis.mlx.frame-factor-terms/v1"
 
-def _child_factor_terms(parameters, request, features):
+def _child_categorical_factors(parameters, request, features):
     """Typed child-frame factors; there is no invented semantic or graph row."""
     types = dict(features.type_map)
     roles = dict(features.role_map)
@@ -80,6 +80,10 @@ def _child_factor_terms(parameters, request, features):
         parameters["features.schema"], schema_row,
         _factor_overflow("schema", request.schema_id)
         if schema_row == 0 and request.schema_id != "UNKNOWN" else None)
+    return schema, role, type_mean
+
+def _child_factor_terms(parameters, request, features):
+    schema, role, type_mean = _child_categorical_factors(parameters, request, features)
     gates = mx.sigmoid(parameters["features.gates"])
     type_role = (
         gates[FactorGate.TYPE]
