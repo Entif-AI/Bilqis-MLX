@@ -1,4 +1,5 @@
 """Stable B01 imports; cohesive owners live in runtime.bamf_topology."""
+from .model_topology import DEFAULT_OPTIMIZER, ModelTopologySpec, SCHEMA as LEGACY_SCHEMA
 from .bamf_topology.config import (
     SCHEMA, BAMF_ARCHITECTURE_ID, LEGACY_ARCHITECTURE_ID, EXTENTS_SCHEMA, PROVENANCE_SCHEMA, IDENTITY_ESTABLISHED_AGE, MATRIX_RANK, FEATURE_NONE_ROW, FEATURE_RESERVED_ROWS, FEATURE_ROWS, FEATURE_DIM, GRAPH_FEATURE_DIM, MOTIF_CHANNELS, SHA256_HEX_LENGTH, IDENTITY_BANK_SHAPE, MOTIF_PAGE_SHAPE, _digest, ModelTopologySpecV2, deserialize_topology,
 )

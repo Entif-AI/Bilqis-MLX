@@ -124,3 +124,9 @@ class CompatibilityTests(unittest.TestCase):
         self.assertEqual(len([name for name in parameters if name.endswith(".qkv.weight")]), 6)
         self.assertEqual(int(state["step"].item()), saved["optimizer_step"])
         self.assertEqual(hashes(), before)
+
+    def test_facade_preserves_legacy_topology_and_optimizer_exports(self):
+        from bilqis_mlx.runtime import model_topology, model_topology_v2
+        self.assertIs(model_topology_v2.ModelTopologySpec, model_topology.ModelTopologySpec)
+        self.assertIs(model_topology_v2.DEFAULT_OPTIMIZER, model_topology.DEFAULT_OPTIMIZER)
+        self.assertEqual(model_topology_v2.LEGACY_SCHEMA, model_topology.SCHEMA)
