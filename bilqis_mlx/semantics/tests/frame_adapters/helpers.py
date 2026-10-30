@@ -113,5 +113,3 @@ class FrameAdapterTestCase(unittest.TestCase):
             source_span=SourceSpan(start, end),
             causal_prefix_end=end,
         )
-
-
