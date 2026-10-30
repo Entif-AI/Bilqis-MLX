@@ -6,3 +6,15 @@ from .values import bind_value_head, value_logits
 __all__ = ('FrameOutputDomain', 'RoleCandidate', 'TypedHeadLogits',
            'ValueHeadBinding', 'compile_frame_output', 'role_logits',
            'bind_value_head', 'value_logits')
+
+from .control import ControlAction, control_logits
+from .plan import AnswerPlan, DecisionKind, DecisionSpec
+from .decisions import (DecodeState, DecodeStatus, DecisionOutput, start_decoding,
+                        ready_decisions, parent_outputs, allowed_values, commit_decisions)
+from .frames import FrameAnswer, can_end_frame, frame_bindings, publish_frame
+
+__all__ += ('ControlAction', 'control_logits', 'AnswerPlan', 'DecisionKind',
+            'DecisionSpec', 'DecodeState', 'DecodeStatus', 'DecisionOutput',
+            'start_decoding', 'ready_decisions', 'parent_outputs', 'allowed_values',
+            'commit_decisions', 'FrameAnswer', 'can_end_frame', 'frame_bindings',
+            'publish_frame')
