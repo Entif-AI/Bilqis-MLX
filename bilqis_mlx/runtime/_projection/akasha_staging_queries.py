@@ -67,6 +67,7 @@ def query_public_projection(
             or (kind is not None and not isinstance(kind, AkashaEventKind))
             or (as_of is not None and not _time(as_of))):
         _invalid("BAMF_C10_PUBLIC_QUERY_INVALID")
+    StagingProjection.__post_init__(stage)
     return tuple(
         event for event in stage.public_events
         if (kind is None or event.kind is kind)

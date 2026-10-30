@@ -13,7 +13,8 @@ from bilqis_mlx.runtime.tests.projection.staging_helpers import _event, _contrac
 
 class StagingRevalidationTests(unittest.TestCase):
     def test_promotion_rejects_mutated_public_event_and_keeps_prior_pointer(self):
-        for field, value in (('kind', 'REQUALIFICATION'), ('recorded_at', -1),
+        for field, value in (('kind', 'REQUALIFICATION'), ('kind', []),
+                             ('event_id', []), ('recorded_at', -1),
                              ('subject_digest', '/private/source'),
                              ('payload_digest', 'not-a-digest')):
             with self.subTest(field=field), tempfile.TemporaryDirectory() as folder:
@@ -42,3 +43,12 @@ class StagingRevalidationTests(unittest.TestCase):
                 object.__setattr__(stage, field, value)
                 with self.assertRaises(BilqisError):
                     verify_staging_projection(stage)
+
+    def test_public_query_rejects_mutated_private_text_before_returning_records(self):
+        from bilqis_mlx.runtime.akasha_staging import query_public_projection
+        domain = _contract(Path('/tmp/nonexistent-c521-private-query-outbox'))
+        stage = build_staging_projection(
+            (_projected(_event('capability:private-query'), domain),), domain)
+        object.__setattr__(stage.public_events[0], 'subject_digest', '/private/source.txt')
+        with self.assertRaises(BilqisError):
+            query_public_projection(stage, limit=1)
