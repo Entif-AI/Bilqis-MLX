@@ -54,7 +54,7 @@ DEFINITIONS = (
 )
 
 
-from bilqis_mlx.factory.tests.sources.test_skos_curriculum import _snapshot
+from bilqis_mlx.factory.tests.test_skos_curriculum import _snapshot
 
 from bilqis_mlx.factory.tests.skos.real_adversarial_helpers import verify_real_source_adversaries
 

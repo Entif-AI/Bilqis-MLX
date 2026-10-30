@@ -54,7 +54,7 @@ DEFINITIONS = (
 )
 
 
-from bilqis_mlx.factory.tests.sources.test_skos_curriculum import _snapshot
+from bilqis_mlx.factory.tests.test_skos_curriculum import _snapshot
 
 class SemanticFamilyConstructiveTests(unittest.TestCase):
     def test_source_identity_and_attested_relation_constructive_checkers(self):
