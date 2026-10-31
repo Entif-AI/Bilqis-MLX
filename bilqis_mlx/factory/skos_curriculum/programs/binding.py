@@ -18,6 +18,7 @@ def bind_existing_family_program(
     capability: CapabilityDefinition,
     program: ConstructionProgram,
     source_registry: SourceAdapterRegistry,
+    *, semantic_roots: tuple[str, ...] = (),
 ) -> BoundFamilyProgram:
     """Attach behavior only after existing Factory identity/source checks pass."""
     if (type(registration) is not RegisteredFamilyProgram
@@ -35,7 +36,9 @@ def bind_existing_family_program(
     return BoundFamilyProgram(
         registration.family_id, capability.capability_id,
         source.descriptor.adapter_id, program.generator_id, program.oracle_id,
-        registration.constructor_ref, registration.checker_ref)
+        registration.constructor_ref, registration.checker_ref,
+        semantic_roots=semantic_roots,
+        source_implementation_sha256=source.descriptor.implementation_sha256)
 
 
 def bind_factory_release_families(
@@ -76,8 +79,12 @@ def bind_factory_release_families(
         if len(matches) > 1:
             _fail("BAMF_FAMILY_PROGRAM_SOURCE_FAMILY_AMBIGUOUS")
         if matches:
+            source = source_registry.require(program.generator_id, program.oracle_id)
+            if source.descriptor != release.source_adapter_map[capability.source_adapter_id]:
+                _fail("BAMF_FAMILY_PROGRAM_RELEASE_PROVIDER_DRIFT")
             bound.append(bind_existing_family_program(
-                matches[0], capability, program, source_registry))
+                matches[0], capability, program, source_registry,
+                semantic_roots=release.course.capability_map[capability.capability_id].examined_roots))
     coverage = uncovered_family_obligations(census)
     return FactoryReleaseFamilyBindings(
         release.release_sha256, census.semantic_release, census.digest,

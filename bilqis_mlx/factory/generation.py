@@ -168,7 +168,8 @@ def execute_release_family_program(
     return execute_bound_family_program(
         family_registry, binding,
         construct_args=construct_args, construct_kwargs=construct_kwargs,
-        check_args=check_args, check_kwargs=check_kwargs)
+        check_args=check_args, check_kwargs=check_kwargs,
+        source_registry=registry, atlas=atlas)
 
 
 def draw_execution_rows(

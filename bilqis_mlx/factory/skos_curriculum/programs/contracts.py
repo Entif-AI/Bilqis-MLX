@@ -31,6 +31,8 @@ class RegisteredFamilyProgram:
     construct: Construct
     check: Check
     schema: str = FAMILY_PROGRAM_SCHEMA
+    invoke_bound: Callable[..., object] | None = None
+    native_capability_id: str | None = None
 
     def __post_init__(self) -> None:
         if (not self.family_id
@@ -39,6 +41,9 @@ class RegisteredFamilyProgram:
                    != tuple(sorted(set(self.accepted_source_adapter_ids)))
                 or not self.constructor_ref or not self.checker_ref
                 or not callable(self.construct) or not callable(self.check)
+                or (self.invoke_bound is not None and not callable(self.invoke_bound))
+                or (self.native_capability_id is not None
+                    and (type(self.native_capability_id) is not str or not self.native_capability_id))
                 or self.schema != FAMILY_PROGRAM_SCHEMA):
             _fail("BAMF_FAMILY_PROGRAM_INVALID")
 
@@ -57,6 +62,8 @@ class BoundFamilyProgram:
     implementation_status: str = PROGRAM_BOUND
     learning_state: str = LEARNING_UNVERIFIED
     schema: str = BOUND_FAMILY_PROGRAM_SCHEMA
+    semantic_roots: tuple[str, ...] = ()
+    source_implementation_sha256: str | None = None
 
     def __post_init__(self) -> None:
         if (not all(isinstance(item, str) and item for item in (
@@ -65,8 +72,32 @@ class BoundFamilyProgram:
                 self.checker_ref))
                 or self.implementation_status != PROGRAM_BOUND
                 or self.learning_state != LEARNING_UNVERIFIED
+                or type(self.semantic_roots) is not tuple
+                or any(type(root) is not str or not root for root in self.semantic_roots)
                 or self.schema != BOUND_FAMILY_PROGRAM_SCHEMA):
             _fail("BAMF_BOUND_FAMILY_PROGRAM_INVALID")
+
+
+@dataclass(frozen=True)
+class SourceFamilyBatch:
+    """Factory identity alongside unchanged independently checked source rows."""
+
+    capability_id: str
+    source_adapter_id: str
+    native_capability_id: str
+    generator_id: str
+    oracle_id: str
+    rows: tuple[dict, ...]
+    learning_state: str = LEARNING_UNVERIFIED
+
+    def __post_init__(self) -> None:
+        if (any(type(value) is not str or not value for value in (
+                self.capability_id, self.source_adapter_id, self.native_capability_id,
+                self.generator_id, self.oracle_id))
+                or type(self.rows) is not tuple or not self.rows
+                or any(type(row) is not dict for row in self.rows)
+                or self.learning_state != LEARNING_UNVERIFIED):
+            _fail("BAMF_FAMILY_PROGRAM_SOURCE_BATCH_INVALID")
 
 
 @dataclass(frozen=True)
