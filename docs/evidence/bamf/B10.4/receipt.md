@@ -5,8 +5,10 @@
 - Feature branch: `feature/bamf-b10-4-470-20261030`
 - Candidate implementation head: `b0fa18ec08f202b4e343b8e1b849b16df9847c21`
 - Direct prerequisite: B10.3 #469 exact candidate receipt at
-  current turn-in repair head `6218f8b8adde8d29dff10e15e40aa87ac63c224e`; final B10.4 turn-in must
-  consume B10.3 after its independent-review gate.
+  independently reviewed candidate head `b9ebf447b870471c62d0be188ef641fd0ee7c2b5`;
+  pinned EGM `b3a35956759bf7f024af2ff061b2e0b44b438e4c` reports 0 Blockers,
+  0 Majors and 0 Nits for B10.3 owned scope. Final B10.4 turn-in must consume
+  B10.3 after that reviewed candidate is integrated into unified.
 - Learning state: software-only; no learner or optimizer mutation
 - Independent EGM: pending
 
@@ -64,7 +66,7 @@ After implementation:
 This is a branch candidate against the frozen #469 interface. It does not claim
 B10.3 acceptance, parent B10 integration, learner improvement, live training or
 merge readiness. Fresh independent EGM remains required, and final turn-in must
-consume the accepted B10.3 receipt rather than treating its open state as closed.
+consume the integrated B10.3 receipt rather than treating review-clear as merged.
 
 Next integration boundary after accepted B10.4: parent B10 / issue #367 reconciles
 all four B10 child clauses against the original full acceptance contract.
