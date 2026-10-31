@@ -2,6 +2,7 @@
 import json
 from pathlib import Path
 import unittest
+import typing
 import subprocess
 import sys
 
@@ -12,6 +13,18 @@ from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.grade_a_probe import read_sources
 
 class CurriculumCompilerTests(_graph.GraphProbeCases, _package.TypedPackageCases, unittest.TestCase):
+    def test_public_record_type_hints_resolve_from_historical_module(self):
+        import bilqis_mlx.curriculum_compiler as compiler
+        records = (
+            compiler.CapabilityNode, compiler.CurriculumAST,
+            compiler.FiniteTypedInput, compiler.TypedExpressionTemplate,
+            compiler.TypedCandidateSpecimen, compiler.FiniteConstructionCoverage,
+            compiler.TypedCandidatePackage,
+        )
+        hints = {record.__name__: typing.get_type_hints(record) for record in records}
+        self.assertIs(hints["TypedCandidateSpecimen"]["expression"], compiler.Expression)
+        self.assertIs(hints["TypedCandidateSpecimen"]["proof"], compiler.Proof)
+
     def test_private_owners_import_without_public_facade_order_dependency(self):
         code = (
             "import bilqis_mlx._curriculum_compiler.helpers; "

@@ -9,9 +9,9 @@ import random
 from typing import Mapping
 
 from .semantics.catalog import Catalog
-from .semantics.core import Operation, TypedError
+from .semantics.core import Expression, Operation, TypedError
 from .verification.cases import verify_constituents
-from .verification.expressions import Backend
+from .verification.expressions import Backend, Proof
 from ._curriculum_compiler.types import (
     CapabilityNode, CurriculumAST, FiniteTypedInput, TypedExpressionTemplate,
     TypedCandidateSpecimen, FiniteConstructionCoverage, TypedCandidatePackage,

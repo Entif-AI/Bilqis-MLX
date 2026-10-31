@@ -46,3 +46,9 @@ A cross-facade ABI audit found that re-exported compiler functions retained priv
 ## Fresh review repair
 
 Fresh independent review of `aa083208` found one Major: internal owner modules imported types back from the public facade, so direct owner-first imports were circular/order-dependent. The same failure reproduced through installed-wheel private-owner import. The repair introduces `_curriculum_compiler/types.py`, rewires every private owner to private types/helpers only, and keeps the public facade as a one-way re-export boundary. A new subprocess regression imports all private owners before the public facade and passes. Fresh quality checks report zero new changed-file smell findings.
+
+## Public annotation introspection repair
+
+Final aggregate review found one additional public-ABI Major after the ownership split: moved record classes correctly reported `bilqis_mlx.curriculum_compiler` as `__module__`, but the facade no longer bound the historical annotation globals `Expression` and `Proof`. As a result, `typing.get_type_hints(TypedCandidateSpecimen)` failed with `NameError` even though pickle/module identity passed.
+
+A new failing-before regression resolves type hints for all seven public record classes and asserts the `TypedCandidateSpecimen.expression` and `.proof` annotations resolve to the public facade's `Expression` and `Proof`. The facade now re-binds those two historical annotation names from their canonical owners. Focused compiler proof is 13/13 and the four-owner structural aggregate is 50/50 after the repair. No implementation body, source rule, or admission policy changed.
