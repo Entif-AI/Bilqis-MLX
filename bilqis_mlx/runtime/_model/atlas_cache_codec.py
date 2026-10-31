@@ -38,6 +38,7 @@ NORMAL_CODEBOOK = np.array(
     ),
     dtype=np.float32,
 )
+NORMAL_CODEBOOK.setflags(write=False)
 
 
 def _invalid() -> None:
@@ -64,6 +65,7 @@ def _seeded_rotation(seed: int) -> np.ndarray:
 
 
 ROTATION = _seeded_rotation(ROTATION_SEED)
+ROTATION.setflags(write=False)
 ROTATION_DIGEST = _fp32_digest(ROTATION)
 CODEBOOK_DIGEST = _fp32_digest(NORMAL_CODEBOOK)
 EXPECTED_ROTATION_DIGEST = "7876ebc965309065c0428efe03ced3104c7f29297e9b983e5fc89036f2e84baa"
@@ -89,8 +91,14 @@ class Rot3Manifest:
             or self.rotation_seed != ROTATION_SEED
             or self.rotation_digest != EXPECTED_ROTATION_DIGEST
             or self.codebook_digest != EXPECTED_CODEBOOK_DIGEST
-            or ROTATION_DIGEST != EXPECTED_ROTATION_DIGEST
-            or CODEBOOK_DIGEST != EXPECTED_CODEBOOK_DIGEST
+            or not isinstance(ROTATION, np.ndarray)
+            or not isinstance(NORMAL_CODEBOOK, np.ndarray)
+            or ROTATION.shape != (HEAD_WIDTH, HEAD_WIDTH)
+            or NORMAL_CODEBOOK.shape != (CODE_COUNT,)
+            or ROTATION.dtype != np.float32
+            or NORMAL_CODEBOOK.dtype != np.float32
+            or _fp32_digest(ROTATION) != EXPECTED_ROTATION_DIGEST
+            or _fp32_digest(NORMAL_CODEBOOK) != EXPECTED_CODEBOOK_DIGEST
         ):
             _invalid()
 
@@ -157,14 +165,25 @@ def quantize_directions(vectors: np.ndarray) -> np.ndarray:
     if (
         values.ndim < MIN_VECTOR_DIMS
         or values.shape[-1] != HEAD_WIDTH
-        or not np.issubdtype(values.dtype, np.floating)
+        or values.dtype != np.float32
         or not np.isfinite(values).all()
     ):
         _invalid()
-    values = values.astype(np.float32, copy=False)
-    norms = np.linalg.norm(values, axis=-1, keepdims=True)
-    units = np.divide(values, norms, out=np.zeros_like(values), where=norms != 0)
+    norms = np.linalg.norm(
+        values.astype(np.float64), axis=-1, keepdims=True)
+    if not np.isfinite(norms).all():
+        _invalid()
+    units = np.divide(
+        values,
+        norms,
+        out=np.zeros_like(values, dtype=np.float32),
+        where=norms != 0,
+    )
+    if not np.isfinite(units).all():
+        _invalid()
     scaled = (units @ ROTATION) * np.float32(math.sqrt(HEAD_WIDTH))
+    if not np.isfinite(scaled).all():
+        _invalid()
     distances = np.abs(scaled[..., None] - NORMAL_CODEBOOK)
     return np.argmin(distances, axis=-1).astype(np.uint8)
 
