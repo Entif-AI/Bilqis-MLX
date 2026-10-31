@@ -45,3 +45,7 @@ A detached `a1392726` reproduction prints `BUG_PRESENT_PATCH_BYPASSED` when the 
 The repair does not change any original production definition body. The new regression test is additional coverage for the historical monkeypatch seam.
 
 A later byte-for-byte CLI-help comparison against pre-extraction head `500b6d2f` found the same module-relocation `__doc__` drift in the state-DAG CLI description. The internal history/CLI owner now carries the exact historical public module docstring. `python -m bilqis_mlx.state_dag --help` is byte-identical to `500b6d2f`; no CLI action or logic changed.
+
+## Public module identity repair
+
+A cross-facade ABI audit found that re-exported public objects retained their private owner module in `__module__`. A new regression failed first for `StateDagError`, `migrate_current_head`, `persist`, `head_summary`, `migrate_history`, and `main`. The public facade now restores their historical `bilqis_mlx.state_dag` module identity after import. The same regression passes without changing any extracted implementation body.

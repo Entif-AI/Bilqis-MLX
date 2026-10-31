@@ -37,3 +37,7 @@ The wheel builds with the new private owners. An empty isolated venv cannot impo
 ## Remaining C11.1 state
 
 This is structural only. It does not satisfy production B13/A12 source/run authority or complete #522. The next queued root interruption is `registry_ast.py`.
+
+## Public function identity repair
+
+A cross-facade ABI audit found that re-exported compiler functions retained private owner modules in `__module__`. A new regression failed first for all eight moved public compiler functions. The public facade now restores their historical `bilqis_mlx.curriculum_compiler` module identity after import. Public record classes never moved and retain their original module identity. The regression passes without changing any extracted compiler function body.

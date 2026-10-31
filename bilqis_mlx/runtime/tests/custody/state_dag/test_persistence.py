@@ -5,6 +5,15 @@ from .base import StateDagCase
 from bilqis_mlx.state_dag import migrate_current_head, persist, read_current, read_generation
 
 class StateDagPersistenceTests(StateDagCase):
+    def test_public_symbols_keep_historical_module_identity(self):
+        import bilqis_mlx.state_dag as state_dag
+        names = ("StateDagError", "migrate_current_head", "persist",
+                 "head_summary", "migrate_history", "main")
+        self.assertEqual(
+            {name: getattr(state_dag, name).__module__ for name in names},
+            {name: "bilqis_mlx.state_dag" for name in names},
+        )
+
     def test_facade_durable_patch_intercepts_latest_pointer_write(self):
         first = self.receipt()
         (self.root / "state.json").write_text(json.dumps(first))

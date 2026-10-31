@@ -10,6 +10,17 @@ from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.grade_a_probe import read_sources
 
 class CurriculumCompilerTests(_graph.GraphProbeCases, _package.TypedPackageCases, unittest.TestCase):
+    def test_public_functions_keep_historical_module_identity(self):
+        import bilqis_mlx.curriculum_compiler as compiler
+        names = ("compile_typed_candidate_package", "invalidated_typed_packages",
+                 "compile_ast", "dependency_coverage_plan",
+                 "affected_dependency_closure", "compile_probe_plan",
+                 "diagnose_coverage", "materialize_probes")
+        self.assertEqual(
+            {name: getattr(compiler, name).__module__ for name in names},
+            {name: "bilqis_mlx.curriculum_compiler" for name in names},
+        )
+
     @classmethod
     def setUpClass(cls):
         root = Path(__file__).resolve().parents[3]

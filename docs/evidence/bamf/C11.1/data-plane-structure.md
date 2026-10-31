@@ -45,3 +45,7 @@ Fresh independent scoped review of `83701b1` found no Blocker or Major. The revi
 An isolated wheel built from the candidate installs outside the checkout, imports `bilqis_mlx._data_plane.store`, retains `bilqis_mlx.data_plane.DataPlane` as the public class, and executes `data_plane status` successfully. The operator-contract/error census remains 30 findings, unchanged from the branch baseline.
 
 A direct old/new CLI-help comparison found that moving `main()` changed `description=__doc__` from the historical public module text to the new internal-owner docstring. The internal CLI owner now carries the exact historical public module docstring. `python -m bilqis_mlx.data_plane --help` is byte-identical to pre-extraction head `63b1acd1`.
+
+## Public module identity repair
+
+A cross-facade ABI audit found that re-exported public objects retained their private owner module in `__module__`. A new regression failed first for `DataPlaneError`, `default_path`, `event_payload_digest`, `live_grade_soups`, `referenced_custody_files`, `dedupe_bundle_payloads`, and `main`. The public facade now restores their historical `bilqis_mlx.data_plane` module identity after import. The same regression passes without changing any extracted implementation body.

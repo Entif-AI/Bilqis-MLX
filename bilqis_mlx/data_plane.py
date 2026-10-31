@@ -64,5 +64,12 @@ def event_observations(run_dir: Path, event_ids) -> dict:
 from ._data_plane.custody import live_grade_soups, referenced_custody_files, dedupe_bundle_payloads
 from ._data_plane.cli import main
 
+_PUBLIC_MODULE = "bilqis_mlx.data_plane"
+for _public_object in (DataPlaneError, default_path, event_payload_digest,
+                       live_grade_soups, referenced_custody_files,
+                       dedupe_bundle_payloads, main):
+    _public_object.__module__ = _PUBLIC_MODULE
+del _public_object
+
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -4,6 +4,16 @@ from .base import DataPlaneCase
 from bilqis_mlx.data_plane import data_plane, verify_file_digest
 
 class DataPlaneStoreTests(DataPlaneCase):
+    def test_public_symbols_keep_historical_module_identity(self):
+        import bilqis_mlx.data_plane as data_plane_module
+        names = ("DataPlaneError", "default_path", "event_payload_digest",
+                 "live_grade_soups", "referenced_custody_files",
+                 "dedupe_bundle_payloads", "main")
+        self.assertEqual(
+            {name: getattr(data_plane_module, name).__module__ for name in names},
+            {name: "bilqis_mlx.data_plane" for name in names},
+        )
+
     def test_verified_file_cache_is_shared_and_invalidates_on_file_change(self):
         import hashlib
         target = self.root / "artifact.bin"

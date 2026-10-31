@@ -118,5 +118,11 @@ from ._state_dag.persistence import (
 )
 from ._state_dag.history import migrate_history, main
 
+_PUBLIC_MODULE = "bilqis_mlx.state_dag"
+for _public_object in (StateDagError, migrate_current_head, persist, head_summary,
+                       migrate_history, main):
+    _public_object.__module__ = _PUBLIC_MODULE
+del _public_object
+
 if __name__ == "__main__":
     raise SystemExit(main())

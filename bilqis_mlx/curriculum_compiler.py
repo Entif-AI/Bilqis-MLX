@@ -168,3 +168,12 @@ from ._curriculum_compiler.packages import (
 from ._curriculum_compiler.probes import (
     compile_probe_plan, diagnose_coverage, materialize_probes,
 )
+
+_PUBLIC_MODULE = "bilqis_mlx.curriculum_compiler"
+for _public_object in (
+    compile_typed_candidate_package, invalidated_typed_packages, compile_ast,
+    dependency_coverage_plan, affected_dependency_closure, compile_probe_plan,
+    diagnose_coverage, materialize_probes,
+):
+    _public_object.__module__ = _PUBLIC_MODULE
+del _public_object
