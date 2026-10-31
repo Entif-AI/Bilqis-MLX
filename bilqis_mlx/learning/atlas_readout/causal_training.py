@@ -124,11 +124,30 @@ def _canonical_legal_value(value, legal_values: tuple):
     return None
 
 
-def _teacher_prefix_state(
-        state: DecodeState, end_index: int,
+def _ancestor_ids(state: DecodeState, decision_id: str) -> frozenset[str]:
+    lookup = {item.decision_id: item for item in state.plan.decisions}
+    if decision_id not in lookup:
+        invalid()
+    pending = list(lookup[decision_id].depends_on)
+    ancestors = set()
+    while pending:
+        current = pending.pop()
+        if current in ancestors:
+            continue
+        ancestors.add(current)
+        pending.extend(lookup[current].depends_on)
+    return frozenset(ancestors)
+
+
+def _teacher_ancestor_state(
+        state: DecodeState, decision_id: str,
         teacher_targets: Mapping[str, object]) -> DecodeState:
+    ancestors = _ancestor_ids(state, decision_id)
     prefix = start_decoding(state.plan)
-    for output in state.committed[:end_index]:
+    replayed = set()
+    for output in state.committed:
+        if output.decision_id not in ancestors:
+            continue
         value = teacher_targets.get(output.decision_id, output.value)
         canonical = _canonical_legal_value(
             value, allowed_values(prefix, output.decision_id))
@@ -136,6 +155,9 @@ def _teacher_prefix_state(
             invalid()
         prefix = commit_decisions(
             prefix, (DecisionOutput(output.decision_id, canonical),))
+        replayed.add(output.decision_id)
+    if replayed != ancestors:
+        invalid()
     return prefix
 
 
@@ -153,14 +175,10 @@ def _parent_values(
     if decision is None or any(parent not in teacher_targets for parent in decision.depends_on):
         invalid()
     # Deliberately index only declared parents. Current/descendant targets are loss-only.
-    committed_index = {
-        output.decision_id: index for index, output in enumerate(state.committed)
-    }
     forced = []
     for parent in decision.depends_on:
         target = teacher_targets[parent]
-        index = committed_index[parent]
-        parent_state = _teacher_prefix_state(state, index, teacher_targets)
+        parent_state = _teacher_ancestor_state(state, parent, teacher_targets)
         canonical = _canonical_legal_value(
             target, allowed_values(parent_state, parent))
         if canonical is None:

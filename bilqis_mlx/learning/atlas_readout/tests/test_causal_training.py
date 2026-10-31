@@ -64,21 +64,34 @@ class CausalTrainingTests(unittest.TestCase):
         self.assertTrue(bool(mx.allclose(first, changed_future)))
         self.assertFalse(bool(mx.allclose(first, changed_parent)))
 
-    def test_teacher_legality_replays_the_teacher_forced_prefix(self):
+    def test_teacher_legality_replays_only_causal_ancestors(self):
         from bilqis_mlx.learning.atlas_readout.causal_training import (
-            _teacher_prefix_state,
+            decision_hidden,
         )
 
+        value = concept()
         state = start_decoding(plan((
             D("control", "agent", 0, K.CONTROL,
               (C.EMIT_VALUE, C.EMIT_UNKNOWN)),
-            D("later", None, 0, K.EPISTEMIC, ("yes", "no"), ("control",)),
+            D("value", "agent", 0, K.VALUE, (value,), ("control",)),
+            D("parent", None, 0, K.EPISTEMIC, ("yes", "no"), ("control",)),
+            D("child", None, 0, K.EPISTEMIC, ("up", "down"), ("parent",)),
         )))
         state = commit_decisions(state, (O("control", C.EMIT_VALUE),))
-        replayed = _teacher_prefix_state(
-            state, 1, {"control": C.EMIT_UNKNOWN})
-        self.assertEqual(
-            replayed.committed, (O("control", C.EMIT_UNKNOWN),))
+        state = commit_decisions(state, (O("value", value),))
+        state = commit_decisions(state, (O("parent", "yes"),))
+        anchor = mx.arange(768, dtype=mx.float32) / 1000
+        parameters = {"readout.feedback": mx.eye(768, dtype=mx.float32)}
+        result = decision_hidden(
+            anchor, state, "child", parameters,
+            teacher_targets={"control": C.EMIT_UNKNOWN, "parent": "no"})
+        expected_state = start_decoding(state.plan)
+        expected_state = commit_decisions(
+            expected_state, (O("control", C.EMIT_UNKNOWN),))
+        expected_state = commit_decisions(expected_state, (O("parent", "no"),))
+        expected = decision_hidden(
+            anchor, expected_state, "child", parameters)
+        self.assertTrue(bool(mx.allclose(result, expected)))
 
     def test_inference_feedback_uses_committed_parent_not_teacher_target(self):
         from bilqis_mlx.learning.atlas_readout.causal_training import decision_hidden
