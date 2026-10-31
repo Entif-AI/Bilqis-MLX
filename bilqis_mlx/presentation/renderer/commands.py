@@ -15,7 +15,7 @@ import sys
 import time
 from .scores import _next_grade
 from .layout import _clean
-from ..spiral_dashboard import Dashboard
+from .core import Dashboard
 
 """Read-only, top-style operator display for staged School50 training.
 
