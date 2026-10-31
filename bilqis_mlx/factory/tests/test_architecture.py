@@ -191,6 +191,31 @@ class FactoryArchitectureTests(unittest.TestCase):
             problems = inspect_factory_architecture(root)
             self.assertTrue(any("GENERIC_GRADE_IDENTITY_DISPATCH B" in item for item in problems))
 
+    def test_adapter_matrix_factor_suffixes_are_not_grade_dispatch(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "bilqis_mlx/factory").mkdir(parents=True)
+            (root / "bilqis_mlx/factory/__init__.py").write_text("")
+            runtime = root / "bilqis_mlx/runtime"
+            runtime.mkdir()
+            (runtime / "adapter.py").write_text(
+                "def category(name):\n"
+                "    suffix = name.rsplit('.', 1)[-1]\n"
+                "    if name.startswith('plastic.group.') and suffix in ('A', 'B'):\n"
+                "        return 'adapter'\n"
+            )
+            (root / "bilqis_mlx/live_curriculum.py").write_text("")
+            (root / "bilqis_mlx/trainer.py").write_text(
+                "def operate():\n _require_factory_admission()\n"
+                "def _activate_next_admitted_grade():\n _factory_admission()\n")
+            (root / "bilqis_mlx/grade_transition.py").write_text(
+                "# Historical evidence digests only.\n")
+            (root / "bilqis_mlx/numeric_staircase.py").write_text(
+                "def _rebind():\n _factory_admission()\n")
+            problems = inspect_factory_architecture(root)
+            self.assertFalse(any("GENERIC_GRADE_IDENTITY_DISPATCH" in item
+                                 for item in problems))
+
     def test_training_entrypoint_without_release_gate_is_rejected(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
