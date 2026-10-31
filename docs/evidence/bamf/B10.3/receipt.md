@@ -3,8 +3,27 @@
 - Issue: #469; parent B10 #367; Lane B
 - Consumed unified: `9104ce733e04fb9c82420428b18dfdbf5db49535`
 - Feature branch: `feature/bamf-b10-3-469-20261030`
+- Candidate head: `25aefe08cad687971256f21ade6bf3a2673282fd`
 - Learning state: software-only; no learner or optimizer mutation
 - Independent EGM: pending
+
+## Contract identity
+
+- Answer plan: `bilqis.mlx.answer-plan/v2`
+- Decision spec: `bilqis.mlx.decision-spec/v1`
+- Decision output: `bilqis.mlx.decision-output/v1`
+- Decode state: `bilqis.mlx.decode-state/v1`
+- Typed-head logits: `bilqis.mlx.typed-head-logits/v1`
+- Frame answer: `bilqis.mlx.frame-answer/v1`
+- Structured-frame modality: `answer.structured-frame/v1`
+
+Changed paths at this candidate head:
+
+- `bilqis_mlx/learning/atlas_readout/__init__.py`
+- `bilqis_mlx/learning/atlas_readout/causal_training.py`
+- `bilqis_mlx/learning/atlas_readout/tests/test_causal_training.py`
+- `docs/tasks/bamf-0.2/children/B10.3.md`
+- `docs/evidence/bamf/B10.3/receipt.md`
 
 ## Owned behavior
 
@@ -61,3 +80,6 @@ state.
 This candidate does not claim full B10 parent integration, learner improvement,
 source promotion, checkpoint publication, or live training. Fresh independent
 EGM remains required before #469 can be called acceptance-complete.
+
+Next child after accepted #469: B10.4 / issue #470. Its turn-in must consume the
+accepted B10.3 receipt before claiming its own dependency complete.
