@@ -16,6 +16,7 @@ from .causal_training import (
     NeuralDecisionResult, NeuralDecisionStatus, commit_neural_decision,
     decision_hidden, encode_feedback_value, typed_decision_loss,
 )
+from .parameters import bind_readout_parameters, readout_parameter_specs
 
 __all__ += ('ControlAction', 'control_logits', 'AnswerPlan', 'DecisionKind',
             'DecisionSpec', 'DecodeState', 'DecodeStatus', 'DecisionOutput',
@@ -23,4 +24,5 @@ __all__ += ('ControlAction', 'control_logits', 'AnswerPlan', 'DecisionKind',
             'commit_decisions', 'FrameAnswer', 'can_end_frame', 'frame_bindings',
             'publish_frame', 'NeuralDecisionResult', 'NeuralDecisionStatus',
             'commit_neural_decision', 'decision_hidden', 'encode_feedback_value',
-            'typed_decision_loss')
+            'typed_decision_loss', 'bind_readout_parameters',
+            'readout_parameter_specs')
