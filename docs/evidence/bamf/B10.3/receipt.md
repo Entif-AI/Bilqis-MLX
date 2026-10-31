@@ -69,8 +69,8 @@ failed 5/5 cases with
 
 After implementation:
 
-- B10.3 focused: **10 passed**
-- Complete compartmentalized atlas-readout suite: **51 passed + 39 subtests**
+- B10.3 focused: **11 passed**
+- Complete compartmentalized atlas-readout suite: **52 passed + 39 subtests**
 - Development structure: **0 violations**
 - Governance integrity: **0 violations**
 - Changed-file smell audit: **0 new findings**
@@ -85,7 +85,8 @@ from loss with zero gradient; typed `ConceptRef` and `RoleOccurrence` VALUE
 domains are accepted directly and illegal VALUE candidates are masked; missing
 auxiliary labels contribute zero; and an
 illegal neural output returns a fallback request without mutating the decode
-state.
+state. Unknown or no-longer-ready decision IDs remain ErrorBus boundary failures
+instead of being mislabeled as invalid neural output.
 
 ## Boundary
 

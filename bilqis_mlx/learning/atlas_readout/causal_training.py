@@ -10,7 +10,6 @@ from typing import Mapping
 
 import mlx.core as mx
 
-from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.semantics.frame_schema import ConceptRef, RoleOccurrence
 from .decisions import (
@@ -199,10 +198,10 @@ def typed_decision_loss(
 def commit_neural_decision(
         state: DecodeState, decision_id: str, value) -> NeuralDecisionResult:
     """Turn an illegal neural choice into an explicit solver fallback request."""
-    try:
-        advanced = commit_decisions(
-            state, (DecisionOutput(decision_id, value),))
-    except BilqisError:
+    legal_values = allowed_values(state, decision_id)
+    if value not in legal_values:
         return NeuralDecisionResult(
             NeuralDecisionStatus.FALLBACK_REQUIRED, state, FALLBACK_REASON)
+    advanced = commit_decisions(
+        state, (DecisionOutput(decision_id, value),))
     return NeuralDecisionResult(NeuralDecisionStatus.COMMITTED, advanced)

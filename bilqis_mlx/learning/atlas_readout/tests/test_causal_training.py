@@ -233,6 +233,19 @@ class CausalTrainingTests(unittest.TestCase):
         self.assertIs(accepted.status, NeuralDecisionStatus.COMMITTED)
         self.assertEqual(accepted.state.committed, (O("control", C.EMIT_UNKNOWN),))
 
+    def test_neural_decision_boundary_errors_remain_errorbus_failures(self):
+        from bilqis_mlx.learning.atlas_readout import commit_neural_decision
+
+        state = start_decoding(plan((
+            D("control", "agent", 0, K.CONTROL, (C.EMIT_UNKNOWN,)),
+            D("end", None, 0, K.CONTROL, (C.END_FRAME,), ("control",)),
+        )))
+        with self.assertRaises(BilqisError):
+            commit_neural_decision(state, "missing", C.EMIT_UNKNOWN)
+        committed = commit_decisions(state, (O("control", C.EMIT_UNKNOWN),))
+        with self.assertRaises(BilqisError):
+            commit_neural_decision(committed, "control", C.EMIT_UNKNOWN)
+
     def test_current_gold_cannot_change_current_decision_hidden_state(self):
         from bilqis_mlx.learning.atlas_readout import decision_hidden
 
