@@ -1,12 +1,35 @@
 """New raw diagnostic identities and opaque numeric guards must not grow."""
 import unittest
+from pathlib import Path
 
-from scripts.operator_contract_audit import (
-    analyze_source, debt_counter, new_debt,
+from scripts.operations.operator_contract_audit import (
+    analyze_source, debt_counter, logical_source_path, new_debt,
 )
 
 
 class OperatorContractAuditTests(unittest.TestCase):
+    def test_physical_compartments_keep_canonical_module_debt_identity(self):
+        root = Path("/repo")
+        self.assertEqual(
+            logical_source_path(
+                root / "bilqis_mlx/factory/curriculum/candidate_staging.py", root),
+            "bilqis_mlx/factory/candidate_staging.py",
+        )
+        self.assertEqual(
+            logical_source_path(
+                root / "bilqis_mlx/learning/_championship/capability_frontier.py", root),
+            "bilqis_mlx/learning/capability_frontier.py",
+        )
+        self.assertEqual(
+            logical_source_path(
+                root / "bilqis_mlx/semantics/foundation/abi.py", root),
+            "bilqis_mlx/semantics/abi.py",
+        )
+        self.assertEqual(
+            logical_source_path(root / "bilqis_mlx/runtime/visits.py", root),
+            "bilqis_mlx/runtime/visits.py",
+        )
+
     def test_recover_exact_error_status_and_gate_code_without_guessing_semantics(self):
         source = '''
 def work(debt, events):
@@ -65,6 +88,68 @@ def audit(each, max_rounds, policy):
         self.assertEqual({item[2] for item in new_debt(
             debt_counter(added.debt), debt_counter(before.debt))},
             {"NEW_CODE", "4"})
+
+    def test_one_for_one_module_relocation_is_not_new_debt(self):
+        before = analyze_source(
+            "bilqis_mlx/old_owner.py",
+            'def run():\n raise ValueError("OLD_CODE")\n',
+        )
+        moved = analyze_source(
+            "bilqis_mlx/new_owner.py",
+            'def run():\n raise ValueError("OLD_CODE")\n',
+        )
+        self.assertEqual(
+            new_debt(debt_counter(moved.debt), debt_counter(before.debt)),
+            (),
+        )
+
+    def test_copying_a_relocated_contract_still_grows_debt(self):
+        old = analyze_source(
+            "bilqis_mlx/old_owner.py",
+            'def run():\n raise ValueError("OLD_CODE")\n',
+        )
+        copied = analyze_source(
+            "bilqis_mlx/new_owner.py",
+            'def run():\n raise ValueError("OLD_CODE")\n',
+        )
+        current = debt_counter(old.debt + copied.debt)
+        self.assertEqual(
+            new_debt(current, debt_counter(old.debt)),
+            (("bilqis_mlx/new_owner.py", "literal-error-identity", "OLD_CODE"),),
+        )
+
+    def test_move_plus_extra_copy_fails_exactly_one_occurrence(self):
+        before = analyze_source(
+            "bilqis_mlx/old_owner.py",
+            'def run():\n raise ValueError("OLD_CODE")\n',
+        )
+        moved_twice = analyze_source(
+            "bilqis_mlx/new_owner.py",
+            'def run(v):\n'
+            ' if v: raise ValueError("OLD_CODE")\n'
+            ' raise ValueError("OLD_CODE")\n',
+        )
+        self.assertEqual(
+            new_debt(debt_counter(moved_twice.debt), debt_counter(before.debt)),
+            (("bilqis_mlx/new_owner.py", "literal-error-identity", "OLD_CODE"),),
+        )
+
+    def test_module_constant_raw_exception_identity_is_counted(self):
+        source = '''
+_ERROR = "RAW_ERROR_CODE"
+
+def crash():
+    raise ValueError(_ERROR)
+'''
+        findings = analyze_source("bilqis_mlx/another.py", source)
+        self.assertIn(
+            ("literal-error-identity", "RAW_ERROR_CODE"),
+            {(item.kind, item.token) for item in findings.debt},
+        )
+        self.assertIn(
+            ("RAW_ERROR_CODE", "exception"),
+            {(item.code, item.kind) for item in findings.codes},
+        )
 
     def test_plain_english_raw_exception_literal_is_not_an_escape_hatch(self):
         source = '''
