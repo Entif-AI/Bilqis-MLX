@@ -103,4 +103,3 @@ def _decode_teacher(run_dir: Path, spec: dict) -> dict:
         else:
             result[key] = _decode_field(run_dir, field)
     return result
-

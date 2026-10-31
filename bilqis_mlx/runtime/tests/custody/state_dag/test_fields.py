@@ -127,4 +127,3 @@ class StateDagFieldTests(StateDagCase):
 
         self.assertEqual(selected, {"school": receipt["school"]})
         self.assertEqual(decode.call_count, 1)
-

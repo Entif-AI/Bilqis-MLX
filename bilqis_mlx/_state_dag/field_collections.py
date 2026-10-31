@@ -146,4 +146,3 @@ def _decode_epoch_history(run_dir: Path, spec: dict) -> list:
     if len(result) != spec["count"]:
         raise ValueError(StateDagError.OBJECT_LIST_COUNT_DRIFT.value)
     return result
-

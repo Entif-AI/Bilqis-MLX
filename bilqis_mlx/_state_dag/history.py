@@ -149,4 +149,3 @@ def main(argv=None) -> int:
                 "data_plane": data_plane().stats(),
             }, sort_keys=True))
     return 0
-

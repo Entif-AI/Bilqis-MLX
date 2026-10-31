@@ -94,4 +94,3 @@ def _get_object(run_dir: Path, digest: str):
         raise ValueError(StateDagError.OBJECT_DIGEST_INVALID.value)
     raw = data_plane().get_object(digest)
     return json.loads(raw)
-

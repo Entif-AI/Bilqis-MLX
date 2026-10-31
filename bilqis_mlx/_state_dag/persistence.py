@@ -155,4 +155,3 @@ def head_summary(run_dir: Path) -> dict:
                 "head_bytes": (run_dir / "state.json").stat().st_size}
     return {"mode": "MERKLE_DAG", **pointer,
             "head_bytes": (run_dir / "state.json").stat().st_size}
-

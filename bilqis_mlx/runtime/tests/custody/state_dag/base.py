@@ -36,4 +36,3 @@ class StateDagCase(unittest.TestCase):
             "championship_epoch_history": [{"schema": "epoch/v1", "n": 1}],
             "large": {"payload": "x" * 40000},
         }
-

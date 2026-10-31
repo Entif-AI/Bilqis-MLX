@@ -123,4 +123,3 @@ class StateDagPersistenceTests(StateDagCase):
         self.assertEqual((self.root / "state.json").read_bytes(), second_head)
         self.assertEqual(read_current(self.root), second)
         self.assertEqual(data_plane().stats()["nodes"], nodes_before)
-

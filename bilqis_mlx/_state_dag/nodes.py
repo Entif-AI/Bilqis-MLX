@@ -78,4 +78,3 @@ def _write_node(run_dir: Path, receipt: dict, *, parent: str | None) -> tuple[di
     pointer = {"schema": HEAD_SCHEMA, "generation": generation,
                "node_sha256": digest, "receipt_sha256": receipt_sha256}
     return pointer, fields, normalized
-

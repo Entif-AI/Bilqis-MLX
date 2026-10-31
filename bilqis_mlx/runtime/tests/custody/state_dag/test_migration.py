@@ -81,4 +81,3 @@ class StateDagMigrationTests(StateDagCase):
         second_node = json.loads(data_plane().get_node(second_pointer["node_sha256"]))
         self.assertEqual(second_node["parent_sha256"], first_pointer["node_sha256"])
         self.assertEqual(head_pointer, second_pointer)
-
