@@ -14,7 +14,7 @@ from bilqis_mlx.trainer import (
 )
 
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 LEGACY = ROOT / "vendor" / "legacy-v16"
 
 

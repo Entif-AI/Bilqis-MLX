@@ -1549,6 +1549,18 @@ Recovery: Preserve the artifact. Decode it with the schema version that minted i
 
 Legacy aliases: `FACTORY_RELEASE_MANIFEST_CONTENT_DRIFT`
 
+### `SCHOOL.BAMF_OPERATOR.INVALID`
+
+BAMF operator evidence is invalid.
+
+Owner: `presentation.atlas_metrics`
+Disposition: `PRESERVE_AND_INSPECT`
+Self-heal owner: `none`
+
+Message: The BAMF operator observation is invalid: {reason}
+
+Recovery: Keep the last valid view and retained run unchanged; reconcile the source census, measurement and identity bindings.
+
 ## Operational signals and blockers
 
 These terms are not exceptions. They describe a controlled stop, handoff, or gate.
@@ -1603,7 +1615,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **1939** raw raises across **179** files. The baseline gate permits only reduction.
+Current production scan: **1939** raw raises across **185** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -2070,8 +2082,8 @@ Current production scan: **1939** raw raises across **179** files. The baseline 
 | `CUTOVER_INVALID_COMPLETE_BUNDLE_REFERENCE` | 1 | `bilqis_mlx/grade_release_plan.py` |
 | `CUTOVER_INVALID_INTENT` | 1 | `bilqis_mlx/grade_release_plan.py` |
 | `CUTOVER_INVALID_OBSERVATION` | 1 | `bilqis_mlx/grade_release_plan.py` |
-| `DASHBOARD_PARTIAL_CANDIDATE_LEDGER` | 1 | `bilqis_mlx/presentation/spiral_dashboard.py` |
-| `DASHBOARD_REQUIRES_INTERACTIVE_TTY_USE_PLAIN_MODE` | 1 | `bilqis_mlx/presentation/spiral_dashboard.py` |
+| `DASHBOARD_PARTIAL_CANDIDATE_LEDGER` | 1 | `bilqis_mlx/presentation/renderer/commands.py` |
+| `DASHBOARD_REQUIRES_INTERACTIVE_TTY_USE_PLAIN_MODE` | 1 | `bilqis_mlx/presentation/renderer/commands.py` |
 | `DEBT_ADMISSION_REQUIRES_EXACT_COMPLETE_BOUNDARY` | 1 | `bilqis_mlx/runtime/release_adoption.py` |
 | `DEBT_GRADE_ADMISSION_INCOMPATIBLE_WITH_NUMERIC_STAIRCASE` | 1 | `bilqis_mlx/runtime/operating_loop.py` |
 | `DEBT_GRADE_ADMISSION_REQUIRES_RESUME` | 1 | `bilqis_mlx/runtime/operating_loop.py` |
@@ -3143,35 +3155,35 @@ Current production scan: **1939** raw raises across **179** files. The baseline 
 | `REGISTRY_UNRESOLVED_LESSON_REFERENCE` | 2 | `bilqis_mlx/registry_ast.py` |
 | `RESUME_EXPLICIT_BUT_NO_SAVED_NEW_SCHOOL_RUN` | 1 | `bilqis_mlx/cli.py` |
 | `Rosetta owner revision drift requires requalification` | 1 | `bilqis_mlx/runtime/tests/projection/test_rosetta_observation.py` |
-| `SCHOOL_AUTONOMY_EVIDENCE_RECEIPT_INVALID` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_AUTONOMY_SOURCE_COVERAGE_RECEIPT_INVALID` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_AUTONOMY_TEACHING_RECEIPT_INVALID` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_AUTONOMY_VISIT_RECEIPT_INVALID` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_CAPABILITY_BEST_PROVENANCE_REQUIRED` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
+| `SCHOOL_AUTONOMY_EVIDENCE_RECEIPT_INVALID` | 1 | `bilqis_mlx/presentation/school50/evidence.py` |
+| `SCHOOL_AUTONOMY_SOURCE_COVERAGE_RECEIPT_INVALID` | 1 | `bilqis_mlx/presentation/school50/evidence.py` |
+| `SCHOOL_AUTONOMY_TEACHING_RECEIPT_INVALID` | 1 | `bilqis_mlx/presentation/school50/evidence.py` |
+| `SCHOOL_AUTONOMY_VISIT_RECEIPT_INVALID` | 1 | `bilqis_mlx/presentation/school50/evidence.py` |
+| `SCHOOL_CAPABILITY_BEST_PROVENANCE_REQUIRED` | 1 | `bilqis_mlx/presentation/school50/candidates.py` |
 | `SCHOOL_DEBT_COUNTER_MIGRATION_CONFLICT` | 2 | `bilqis_mlx/curriculum/scheduler.py` |
-| `SCHOOL_TELEMETRY_ATTEMPTED_OPTIMIZER_UPDATES_INVALID` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_CANDIDATE_COHORT_REQUIRED` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_CAPABILITY_REQUIRED` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_CURRICULUM_REPLACEMENT_INVALID` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_DISK_BUDGET_INVALID` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_EXAM_CHECKPOINT_MISMATCH` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_EXAM_CHECKPOINT_REQUIRED` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_EXAM_RUBRIC_ITEMS_DRIFT` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_EXAM_RUBRIC_REQUIRED` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_EXAM_SCORES_REQUIRED` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_FAMILY_RUBRIC_COUNT_DRIFT` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_FAMILY_SCORE_INVALID` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_FAMILY_SCORE_REQUIRED` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_FAMILY_UNKNOWN_PARTITION` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
+| `SCHOOL_TELEMETRY_ATTEMPTED_OPTIMIZER_UPDATES_INVALID` | 1 | `bilqis_mlx/presentation/school50/candidates.py` |
+| `SCHOOL_TELEMETRY_CANDIDATE_COHORT_REQUIRED` | 1 | `bilqis_mlx/presentation/school50/candidates.py` |
+| `SCHOOL_TELEMETRY_CAPABILITY_REQUIRED` | 1 | `bilqis_mlx/presentation/school50/candidates.py` |
+| `SCHOOL_TELEMETRY_CURRICULUM_REPLACEMENT_INVALID` | 1 | `bilqis_mlx/presentation/school50/curriculum.py` |
+| `SCHOOL_TELEMETRY_DISK_BUDGET_INVALID` | 1 | `bilqis_mlx/presentation/school50/evidence.py` |
+| `SCHOOL_TELEMETRY_EXAM_CHECKPOINT_MISMATCH` | 1 | `bilqis_mlx/presentation/school50/exams.py` |
+| `SCHOOL_TELEMETRY_EXAM_CHECKPOINT_REQUIRED` | 1 | `bilqis_mlx/presentation/school50/exams.py` |
+| `SCHOOL_TELEMETRY_EXAM_RUBRIC_ITEMS_DRIFT` | 1 | `bilqis_mlx/presentation/school50/exams.py` |
+| `SCHOOL_TELEMETRY_EXAM_RUBRIC_REQUIRED` | 1 | `bilqis_mlx/presentation/school50/exams.py` |
+| `SCHOOL_TELEMETRY_EXAM_SCORES_REQUIRED` | 1 | `bilqis_mlx/presentation/school50/exams.py` |
+| `SCHOOL_TELEMETRY_FAMILY_RUBRIC_COUNT_DRIFT` | 1 | `bilqis_mlx/presentation/school50/evidence.py` |
+| `SCHOOL_TELEMETRY_FAMILY_SCORE_INVALID` | 1 | `bilqis_mlx/presentation/school50/evidence.py` |
+| `SCHOOL_TELEMETRY_FAMILY_SCORE_REQUIRED` | 1 | `bilqis_mlx/presentation/school50/evidence.py` |
+| `SCHOOL_TELEMETRY_FAMILY_UNKNOWN_PARTITION` | 1 | `bilqis_mlx/presentation/school50/evidence.py` |
 | `SCHOOL_TELEMETRY_GRADE_REQUIRED` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_LIVE_COHORT_PROVENANCE_REQUIRED` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_LIVE_VISIT_GENERATION_REQUIRED` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_RETAINED_OPTIMIZER_UPDATES_INVALID` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_SCORE_INVALID` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_SENTINEL_PARTITION_NOT_INDEPENDENT` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_SOUP_SOURCE_PROVENANCE_REQUIRED` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_SOUP_TEACHER_ONLY_REQUIRED` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_SOURCE_PROVENANCE_REQUIRED` | 2 | `bilqis_mlx/presentation/school_telemetry.py` |
+| `SCHOOL_TELEMETRY_LIVE_COHORT_PROVENANCE_REQUIRED` | 1 | `bilqis_mlx/presentation/school50/exams.py` |
+| `SCHOOL_TELEMETRY_LIVE_VISIT_GENERATION_REQUIRED` | 1 | `bilqis_mlx/presentation/school50/candidates.py` |
+| `SCHOOL_TELEMETRY_RETAINED_OPTIMIZER_UPDATES_INVALID` | 1 | `bilqis_mlx/presentation/school50/candidates.py` |
+| `SCHOOL_TELEMETRY_SCORE_INVALID` | 1 | `bilqis_mlx/presentation/school50/exams.py` |
+| `SCHOOL_TELEMETRY_SENTINEL_PARTITION_NOT_INDEPENDENT` | 1 | `bilqis_mlx/presentation/school50/evidence.py` |
+| `SCHOOL_TELEMETRY_SOUP_SOURCE_PROVENANCE_REQUIRED` | 1 | `bilqis_mlx/presentation/school50/evidence.py` |
+| `SCHOOL_TELEMETRY_SOUP_TEACHER_ONLY_REQUIRED` | 1 | `bilqis_mlx/presentation/school50/evidence.py` |
+| `SCHOOL_TELEMETRY_SOURCE_PROVENANCE_REQUIRED` | 2 | `bilqis_mlx/presentation/school50/formatting.py` |
 | `SCHOOL_TELEMETRY_UNSUPPORTED_SCHEMA` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
 | `SELECTION_DISTINCT_CANDIDATES_REQUIRED` | 1 | `bilqis_mlx/selection_outcomes.py` |
 | `SELECTION_INVALID_CAPABILITY_OUTCOME` | 1 | `bilqis_mlx/selection_outcomes.py` |
@@ -3355,7 +3367,7 @@ Current production scan: **1939** raw raises across **179** files. The baseline 
 | `UNDERSTANDING_TARGET_REQUIRED` | 1 | `bilqis_mlx/factory/curriculum/understanding.py` |
 | `UNKNOWN_ACTIVE_GRADE` | 1 | `bilqis_mlx/learning/_championship/champions.py` |
 | `UNKNOWN_CAPABILITY_ANSWER_FAMILY` | 1 | `bilqis_mlx/curriculum/__init__.py` |
-| `UNKNOWN_DASHBOARD_EVENT` | 1 | `bilqis_mlx/presentation/spiral_dashboard.py` |
+| `UNKNOWN_DASHBOARD_EVENT` | 1 | `bilqis_mlx/presentation/renderer/events.py` |
 | `UNKNOWN_EXAM_GRADE` | 1 | `bilqis_mlx/curriculum/__init__.py` |
 | `UNKNOWN_OR_MISSING_NUMERAL_CASE` | 1 | `bilqis_mlx/ni_construction.py` |
 | `UNRECOGNIZED_SCHOOL_RUN_SCHEMA` | 1 | `bilqis_mlx/cli.py` |
