@@ -40,7 +40,7 @@ Do not broaden this list during ordinary execution. Exact-symbol reference check
 
 - `bilqis_mlx/runtime/release_adoption.py`
 - `bilqis_mlx/compatibility/trainer_transitions.py`
-- `tests/integration/test_thin_boolean_numeric_debt.py`
+- `tests/integration/teaching/test_thin_boolean_numeric_debt.py`
 
 No other tracked path may be modified by this leaf.
 
@@ -70,10 +70,10 @@ Use repository mechanisms first. Import-layer/independence concepts may be borro
 ## Focused proof
 
 Owned tests:
-- `tests/integration/test_thin_boolean_numeric_debt.py`
+- `tests/integration/teaching/test_thin_boolean_numeric_debt.py`
 
 Commands:
-- `python -m pytest tests/integration/test_thin_boolean_numeric_debt.py`
+- `python -m pytest tests/integration/teaching/test_thin_boolean_numeric_debt.py`
 
 **Verification tier:** `T1_INTEGRATION`.
 
