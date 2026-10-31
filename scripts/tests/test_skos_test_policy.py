@@ -153,6 +153,15 @@ class SkosTestPolicyTests(unittest.TestCase):
             self.assertEqual(plan.action, "DIFF")
             self.assertIn("lib/ithkuil/tests/test_skos_notation.py", plan.tests)
 
+    def test_policy_helper_change_is_full_without_receipt_refresh(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._root(temporary)
+            self._write_current_receipt(root)
+            plan = skos_test_policy.plan_for_changes(
+                root, ("scripts/skos_policy/impact.py",))
+            self.assertEqual(plan.action, "FULL")
+            self.assertEqual(plan.reason, "TEST_POLICY_CHANGED")
+
     def test_forced_exhaustive_ignores_differential_classification(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = self._root(temporary)
