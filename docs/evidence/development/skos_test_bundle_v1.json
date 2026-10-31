@@ -1,8 +1,8 @@
 {
-  "byte_count": 44657430,
-  "evidence": "GitHub Actions run 41233135855 exhaustive semantic profile PASS on the identical 326-file semantic bundle; issue #653 refreshes the stale content-addressed receipt without changing semantic bytes",
-  "file_count": 326,
-  "release_commit": "f0ecc3f6031f2e227134dc0745cfcce9fe4230c4",
+  "byte_count": 44663598,
+  "evidence": "PR #657 A08 current-base refresh after unified d790dc69; local A08/source-authority proof 24 pass + 6 explicit pinned-A01 skips; source-row witness 2/2; operator/structure/hygiene/architecture/governance/docs/diff green; hosted planner requested current semantic bundle receipt",
+  "file_count": 329,
+  "release_commit": "HEAD",
   "schema": "bilqis.skos-test-bundle/v1",
-  "sha256": "07964f20d702771ce0977f21286687f386ca943cc86d2b502b5edee6fb251fdd"
+  "sha256": "907f5bb92e93601f0b4f93319111df6e565aeb8dbd13de8014ed07904b237d81"
 }
