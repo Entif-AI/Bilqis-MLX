@@ -123,6 +123,56 @@ def draw_release_rows(source_root, graph, release: FactoryRelease,
     return rows
 
 
+def execute_release_family_program(
+        release: FactoryRelease, registry: SourceAdapterRegistry,
+        family_registry, atlas, learned_frontier, capability_id: str, *,
+        construct_args: tuple = (), construct_kwargs: dict | None = None,
+        check_args: tuple = (), check_kwargs: dict | None = None):
+    """Explicit non-admitting A08 family execution against one verified release.
+
+    This does not enter the admitted student draw path. It replays the current A08
+    source/census authority, resolves the exact release capability/provider tuple,
+    then delegates heterogeneous construction/checking to the registered family.
+    """
+    from .skos_curriculum.registry import (
+        FamilyProgramRegistry, bind_factory_release_families,
+        execute_bound_family_program,
+    )
+    from .skos_curriculum.common import _fail
+    from .skos_curriculum.curriculum import LearnedFrontier
+
+    if (type(release) is not FactoryRelease
+            or not isinstance(registry, SourceAdapterRegistry)
+            or type(family_registry) is not FamilyProgramRegistry
+            or type(learned_frontier) is not LearnedFrontier
+            or not isinstance(capability_id, str) or not capability_id):
+        _fail("FACTORY_FAMILY_EXECUTION_INPUT_INVALID")
+    release.verify()
+    bindings = bind_factory_release_families(
+        release, family_registry, registry, atlas, learned_frontier)
+    binding = bindings.require(capability_id)
+    capability = next((
+        item for item in release.capabilities
+        if item.capability_id == capability_id), None)
+    program = next((
+        item for item in release.construction_programs
+        if item.capability_id == capability_id), None)
+    if (capability is None or program is None
+            or binding.source_adapter_id != capability.source_adapter_id
+            or binding.generator_id != program.generator_id
+            or binding.oracle_id != program.oracle_id
+            or binding.capability_id != program.capability_id):
+        _fail("FACTORY_FAMILY_EXECUTION_RELEASE_BINDING_DRIFT")
+    registered = registry.require(program.generator_id, program.oracle_id)
+    if registered.descriptor.adapter_id != binding.source_adapter_id:
+        _fail("FACTORY_FAMILY_EXECUTION_SOURCE_ADAPTER_DRIFT")
+    return execute_bound_family_program(
+        family_registry, binding,
+        construct_args=construct_args, construct_kwargs=construct_kwargs,
+        check_args=check_args, check_kwargs=check_kwargs,
+        source_registry=registry, atlas=atlas)
+
+
 def draw_execution_rows(
         source_root, graph, curriculum, plan: ExecutionPlan,
         registry: SourceAdapterRegistry, *, seed: int,
