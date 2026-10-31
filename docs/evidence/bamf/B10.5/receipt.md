@@ -5,9 +5,10 @@
 Feature branch `codex/bamf02-b10-5-635-20261030` was cut from synchronized Lane B
 `9104ce733e04fb9c82420428b18dfdbf5db49535`, also the consumed reviewed unified head.
 The lane is checked out in another clean worktree and already equals unified;
-no no-op merge was manufactured. Same-lane prerequisite #633 is consumed at
-`ab54b9d00836fffe4250574f437ef41ff9ae5850`; #634 at
-`035607123645fc113f9040c3cda1ce339e3aa4e9`. Both remain separate draft turn-ins;
+no no-op merge was manufactured. Same-lane prerequisite #633 is consumed at its
+independently reviewed candidate head
+`b9ebf447b870471c62d0be188ef641fd0ee7c2b5`; #634 is tracked at prerequisite-
+refresh head `9e9fb9f1c3fe7a28a54474ce561d3b8c22310cc4`. Both remain separate draft turn-ins;
 this child does not close #469/#470 or qualify their independent review gates.
 No main or sibling-lane merge occurred.
 
