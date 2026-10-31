@@ -1,0 +1,9 @@
+test_alternate_names_fail_in_both_import_orders (bilqis_mlx.runtime.tests.projection.test_grouped_runtime_identity.GroupedRuntimeIdentityTests.test_alternate_names_fail_in_both_import_orders) ... ok
+test_public_module_discovery_and_physical_groups (bilqis_mlx.runtime.tests.projection.test_grouped_runtime_identity.GroupedRuntimeIdentityTests.test_public_module_discovery_and_physical_groups) ... ok
+test_source_context_has_one_class_identity (bilqis_mlx.runtime.tests.projection.test_grouped_runtime_identity.GroupedRuntimeIdentityTests.test_source_context_has_one_class_identity) ... ok
+test_teacher_epoch_hashes_canonical_owner_bytes (bilqis_mlx.runtime.tests.projection.test_grouped_runtime_identity.GroupedRuntimeIdentityTests.test_teacher_epoch_hashes_canonical_owner_bytes) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.076s
+
+OK
