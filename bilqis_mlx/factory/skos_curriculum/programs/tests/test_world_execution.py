@@ -7,7 +7,7 @@ from bilqis_mlx.factory.skos_curriculum.registry import (
     bind_existing_family_program, default_family_program_registry, execute_bound_family_program,
 )
 from bilqis_mlx.live_grade_c import registry_graph
-from bilqis_mlx.source_adapters.copular import CAPABILITY, GENERATOR, ORACLE, SYMBOL, check_copular
+from bilqis_mlx.source_adapters.copular import CAPABILITY, GENERATOR, ORACLE, SYMBOL
 from bilqis_mlx.source_adapters.copular_curriculum import expanded_graph
 from bilqis_mlx.source_adapters.school import live_source_registry
 

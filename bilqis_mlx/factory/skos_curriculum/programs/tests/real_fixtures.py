@@ -1,7 +1,6 @@
 """Pinned A01 and genuine source providers; disposable formal operand grants."""
 import json
 import os
-from pathlib import Path
 
 from bilqis_mlx.factory.live_releases import boolean_successor
 from bilqis_mlx.factory.release import compile_factory_release
@@ -30,3 +29,15 @@ def full_boolean_release():
 
 def formal_case(operator, *values):
     return _case(operator, *values, release=selection().release_sha256)
+
+
+def numeric_factory_release():
+    from bilqis_mlx.live_grade_c import REGISTRY_COUNTING_TARGET
+    from bilqis_mlx.factory.live_releases import (
+        boolean_composite_successor, boolean_identification_successor, numeric_successor,
+    )
+    release, registry = full_boolean_release()
+    composite = boolean_composite_successor(release.course, LEGACY_SOURCE)
+    identified = boolean_identification_successor(composite, LEGACY_SOURCE)
+    course, _ = numeric_successor(identified, maximum=REGISTRY_COUNTING_TARGET)
+    return compile_factory_release(course, registry), registry

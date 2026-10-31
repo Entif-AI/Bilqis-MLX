@@ -8,6 +8,7 @@ from bilqis_mlx.factory.skos_curriculum.registry import default_family_program_r
 from bilqis_mlx.semantics.cognitive_operators import TypedValue
 from bilqis_mlx.factory.skos_curriculum.programs.tests.real_fixtures import (
     ARTIFACT, selection, full_boolean_release, formal_case,
+    numeric_factory_release,
 )
 
 
@@ -42,3 +43,13 @@ class FormalProgramExecutionTests(TestCase):
         with self.assertRaises(BilqisError):
             self.execute("legacy:cogal.operator.NOT", "BOOL_NOT",
                          (("Boolean", True),), ("Boolean", False))
+
+    def test_numeric_successor_runs_under_its_own_released_binding(self):
+        release, sources = numeric_factory_release()
+        binding, inputs = formal_case("SUCC", ("Number", 2))
+        result = execute_release_family_program(
+            release, sources, default_family_program_registry(), self.atlas,
+            LearnedFrontier(self.atlas.release_sha256), "C.SUCCESSOR",
+            construct_args=(self.atlas, "bilqis.numeric/v1:school.op.SUCC", inputs, binding),
+            check_args=(TypedValue("Number", 3, self.atlas.release_sha256), self.atlas, binding))
+        self.assertEqual((result.operator_id, result.positive.value), ("SUCC", 3))
