@@ -30,26 +30,26 @@ GATE_COLLECTION_NAMES = frozenset(
 # via package search paths / aliases, so quality debt must remain keyed to
 # that canonical identity rather than being reclassified as "new" merely
 # because anti-monolith governance moved the source file on disk.
-LOGICAL_SOURCE_COMPARTMENTS = {
-    ("bilqis_mlx", "factory", "curriculum"): ("bilqis_mlx", "factory"),
-    ("bilqis_mlx", "factory", "lifecycle"): ("bilqis_mlx", "factory"),
-    ("bilqis_mlx", "factory", "sources"): ("bilqis_mlx", "factory"),
-    ("bilqis_mlx", "learning", "_championship"): ("bilqis_mlx", "learning"),
-    ("bilqis_mlx", "learning", "_engram"): ("bilqis_mlx", "learning"),
-    ("bilqis_mlx", "learning", "_retention"): ("bilqis_mlx", "learning"),
-    ("bilqis_mlx", "learning", "_salience"): ("bilqis_mlx", "learning"),
-    ("bilqis_mlx", "learning", "_teaching"): ("bilqis_mlx", "learning"),
-    ("bilqis_mlx", "semantics", "foundation"): ("bilqis_mlx", "semantics"),
-}
+LOGICAL_SOURCE_COMPARTMENTS = (
+    (("bilqis_mlx", "factory", "curriculum"), ("bilqis_mlx", "factory")),
+    (("bilqis_mlx", "factory", "lifecycle"), ("bilqis_mlx", "factory")),
+    (("bilqis_mlx", "factory", "sources"), ("bilqis_mlx", "factory")),
+    (("bilqis_mlx", "learning", "_championship"), ("bilqis_mlx", "learning")),
+    (("bilqis_mlx", "learning", "_engram"), ("bilqis_mlx", "learning")),
+    (("bilqis_mlx", "learning", "_retention"), ("bilqis_mlx", "learning")),
+    (("bilqis_mlx", "learning", "_salience"), ("bilqis_mlx", "learning")),
+    (("bilqis_mlx", "learning", "_teaching"), ("bilqis_mlx", "learning")),
+    (("bilqis_mlx", "semantics", "foundation"), ("bilqis_mlx", "semantics")),
+)
 
 
 def logical_source_path(path: Path, root: Path) -> str:
     relative = path.relative_to(root)
     parts = relative.parts
-    prefix = LOGICAL_SOURCE_COMPARTMENTS.get(parts[:3])
-    if prefix is None:
-        return relative.as_posix()
-    return Path(*prefix, *parts[3:]).as_posix()
+    for physical, canonical in LOGICAL_SOURCE_COMPARTMENTS:
+        if parts[:3] == physical:
+            return Path(*canonical, *parts[3:]).as_posix()
+    return relative.as_posix()
 
 
 @dataclass(frozen=True)
