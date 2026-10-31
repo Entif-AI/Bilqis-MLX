@@ -17,7 +17,7 @@ from bilqis_mlx.runtime import source_prefetch
 from bilqis_mlx.runtime.source_prefetch import prepare_step_sources
 
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[4]
 SOURCE_ROOT = ROOT / "vendor" / "legacy-v16"
 CHECKPOINT = (SOURCE_ROOT / "runs/primitive-consolidation-v16-triplets/"
               "student-116760-7e9af4651f28.pt")
