@@ -65,7 +65,7 @@ def _source_fact_context(
                         if item.concept.semantic_id == fact[1]), None)
         if (concept is None or not any(
                 (ref.domain, ref.table, ref.key) == (domain, table, key)
-                for ref in concept.source_refs)):
+                for ref in concept.source_rows)):
             _fail("BAMF_SOURCE_LESSON_A01_SOURCE_IDENTITY_MISMATCH")
         witness = source_row_byte_witness(
             _CANONICAL_SOURCE_ROOT, domain, table, key)

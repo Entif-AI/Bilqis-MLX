@@ -34,7 +34,7 @@ def _policy():
 
 def _snapshot(semantic_id, domain, table, key):
     ref = SimpleNamespace(domain=domain, table=table, key=key)
-    concept = SimpleNamespace(semantic_id=semantic_id, source_refs=(ref,))
+    concept = SimpleNamespace(semantic_id=semantic_id, source_rows=(ref,))
     return SimpleNamespace(
         concepts=(SimpleNamespace(concept=concept),),
         source_bundle_id=SOURCE_BUNDLE,
