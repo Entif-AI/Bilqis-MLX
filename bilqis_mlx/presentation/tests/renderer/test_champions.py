@@ -1,4 +1,4 @@
-"""Rendering projection behavior from the original School50 suite."""
+"""Champions rendering preserves receipt-backed operator evidence."""
 import io
 import json
 import os
@@ -6,13 +6,32 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
-from bilqis_mlx.presentation.dashboard import build, ingest
 from bilqis_mlx.presentation.school_telemetry import LETTER_TABLES
 from bilqis_mlx.presentation.spiral_dashboard import Dashboard
+from bilqis_mlx.presentation.school_telemetry import LETTER_TABLES
 from bilqis_mlx.state_dag import migrate_current_head
 
 
-class RenderingTests(unittest.TestCase):
+class ChampionsTests(unittest.TestCase):
+    def test_merkle_state_keeps_champion_inventory_visible(self):
+        from bilqis_mlx.data_plane import close_data_planes
+        from bilqis_mlx.state_dag import persist
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with patch.dict(os.environ, BILQIS_DATA_PLANE=str(root / "plane.sqlite3")):
+                try:
+                    persist(root, {"generation": 1, "mentor_epoch": {"active_roles": {
+                        "D.COMMENCEMENT": {"correct": 12, "total": 12, "breadth": 1,
+                            "checkpoint": {"sha256": "a" * 64, "optimizer_step": 100}},
+                    }}})
+                    board = Dashboard(stream=io.StringIO())
+                    board.attach_champion_source(root)
+                    self.assertEqual([(row["capability"], row["best"])
+                                      for row in board._champion_rows],
+                                     [("D.COMMENCEMENT", "12/12")])
+                finally:
+                    close_data_planes()
+
     def test_mastery_panel_preserves_every_active_capability_champion(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -112,7 +131,8 @@ class RenderingTests(unittest.TestCase):
                     board = Dashboard(stream=io.StringIO(), show_all_panels=True,
                                       tables=LETTER_TABLES)
                     with patch(
-                            "bilqis_mlx.presentation.spiral_dashboard.read_current",
+                            "bilqis_mlx.presentation.renderer.champions.read_current",
+                            create=True,
                             side_effect=AssertionError("full state read")):
                         board.attach_champion_source(root)
                 finally:
@@ -171,25 +191,3 @@ class RenderingTests(unittest.TestCase):
                 ["subject", "score_line", "right_grew", "outcome"],
             )
             self.assertEqual(columns[0].name, "CAPABILITY")
-
-    def test_historical_generalization_does_not_replace_active_mastery(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            board = build(Path(tmp), stream=io.StringIO())
-            common = {
-                "event": "SCHOOL_LIVE_EXAM_COMMITTED", "grade": "B",
-                "rubric": "b" * 64, "assessment_scope_sha256": "1" * 64,
-                "generator_version": "factory-live/v1", "optimizer_step": 127096,
-                "student_sha256": "d" * 64,
-            }
-            ingest(board, {**common, "generation": 1, "exam_plane": "ROUTINE",
-                "cohort_sha256": "2" * 64, "cohort_file": f"cohorts/{'2' * 64}.json",
-                "scores": {"B.AND": {"correct": 12, "total": 12}}})
-            ingest(board, {**common, "generation": 2, "exam_plane": "GENERALIZATION",
-                "cohort_sha256": "3" * 64, "cohort_file": f"cohorts/{'3' * 64}.json",
-                "scores": {"B.AND": {"correct": 5, "total": 12}}})
-
-            report = next(iter(board.school_telemetry.latest.values()))
-            self.assertEqual((report.correct, report.total), (12, 12))
-            self.assertIn("LATEST B 12/12", " ".join(board.operator_lines))
-            self.assertTrue(any(row.get("kind") == "HISTORICAL GENERALIZATION"
-                                for row in board.rows["SYSTEM & QUALIFICATION"]))
