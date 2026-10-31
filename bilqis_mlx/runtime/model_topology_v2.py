@@ -40,6 +40,8 @@ from .topology_v2.dimensions import (
 from .topology_v2.records import (
     ParameterGroup,
     ParameterCategory,
+    AdapterMatrixComponent,
+    ADAPTER_MATRIX_SUFFIXES,
     Initializer,
     GenerationExtents,
     GenerationProvenance,
@@ -83,6 +85,7 @@ for _record in (
     ModelTopologySpecV2,
     ParameterGroup,
     ParameterCategory,
+    AdapterMatrixComponent,
     Initializer,
     GenerationExtents,
     GenerationProvenance,

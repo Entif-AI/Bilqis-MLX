@@ -1,11 +1,14 @@
 """B01 records conformance and compatibility."""
 import pickle
 from bilqis_mlx.runtime.tests.model.topology.helpers import (
+    ADAPTER_MATRIX_SUFFIXES,
+    AdapterMatrixComponent,
     BilqisError,
     GenerationExtents,
     GenerationProvenance,
     Initializer,
     ModelTopologySpecV2,
+    ParameterCategory,
     ParameterCensus,
     ParameterGroup,
     ParameterSpec,
@@ -87,6 +90,21 @@ class TopologyRecordsTests(TopologyFixture):
         for topology_digest, parameters in (("bad", (row,)), (spec.digest, (row, row))):
             with self.assertRaises(BilqisError):
                 ParameterCensus(topology_digest, extents.digest, parameters)
+
+    def test_adapter_matrix_categories_preserve_wire_names_and_auxiliaries(self):
+        self.assertEqual(ADAPTER_MATRIX_SUFFIXES, frozenset({"A", "B"}))
+        self.assertEqual(tuple(item.value for item in AdapterMatrixComponent), ("A", "B"))
+        declared = expected_bamf_shapes(ModelTopologySpecV2(), self.extents())
+        adapters = {item.name: item for item in declared if item.name.startswith("plastic.group.")}
+        self.assertEqual(tuple(adapters), tuple(
+            f"plastic.group.{group}.{suffix}"
+            for group in range(3) for suffix in ("norm", "A", "B")))
+        for group in range(3):
+            for suffix in ADAPTER_MATRIX_SUFFIXES:
+                self.assertIs(adapters[f"plastic.group.{group}.{suffix}"].category,
+                              ParameterCategory.ADAPTER_MATRICES)
+            self.assertIs(adapters[f"plastic.group.{group}.norm"].category,
+                          ParameterCategory.AUXILIARY)
 
     def test_historical_enum_and_record_pickle_identity(self):
         historical=b'cbilqis_mlx.runtime.model_topology_v2\nParameterGroup\n(VFAST\ntR.'

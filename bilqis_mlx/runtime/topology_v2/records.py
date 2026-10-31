@@ -24,6 +24,17 @@ class ParameterCategory(str, Enum):
     ADAPTER_MATRICES = "ADAPTER_MATRICES"
     AUXILIARY = "AUXILIARY"
 
+
+class AdapterMatrixComponent(str, Enum):
+    """Existing low-rank matrix wire suffixes, independent of curriculum grades."""
+
+    INPUT = "A"
+    OUTPUT = "B"
+
+
+ADAPTER_MATRIX_SUFFIXES = frozenset(item.value for item in AdapterMatrixComponent)
+
+
 class Initializer(str, Enum):
     MATRIX = "M"
     EMBEDDING = "E"
@@ -145,7 +156,7 @@ class ParameterSpec:
         if self.name.startswith("blocks.") and suffix in (
                 "query", "key", "value", "output", "ffn_in", "ffn_out"):
             return ParameterCategory.DENSE_MATRICES
-        if self.name.startswith("plastic.group.") and suffix in ("A", "B"):
+        if self.name.startswith("plastic.group.") and suffix in ADAPTER_MATRIX_SUFFIXES:
             return ParameterCategory.ADAPTER_MATRICES
         return ParameterCategory.AUXILIARY
 
