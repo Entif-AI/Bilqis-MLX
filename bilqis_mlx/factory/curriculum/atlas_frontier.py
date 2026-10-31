@@ -27,6 +27,8 @@ from .skos_curriculum import (
     assert_curriculum_candidate_current,
 )
 
+_SHA256_HEX_LENGTH = 64
+
 
 def _source_edges(candidate: CurriculumCandidateSet) -> tuple[PrerequisiteEdge, ...]:
     eligible = set(candidate.source_eligible_concept_ids)
@@ -91,7 +93,7 @@ def _validate_snapshot_inputs(
             or type(ready_candidate_ids) is not tuple
             or any(type(item) is not str or not item for item in ready_candidate_ids)
             or type(candidate_frontier_sha256) is not str
-            or len(candidate_frontier_sha256) != 64
+            or len(candidate_frontier_sha256) != _SHA256_HEX_LENGTH
             or any(char not in "0123456789abcdef" for char in candidate_frontier_sha256)
             or type(teacher_epoch) is not int or teacher_epoch < 0
             or type(qualification_epoch) is not int or qualification_epoch < 0):
