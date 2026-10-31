@@ -184,3 +184,15 @@ def decode_directions(codes: np.ndarray) -> np.ndarray:
         out=np.zeros_like(reconstructed, dtype=np.float32),
         where=norms != 0,
     ).astype(np.float32, copy=False)
+
+
+from .atlas_cache_records import (  # noqa: E402
+    BLOCK_VECTORS,
+    CACHE_MODE_FP32,
+    CACHE_MODE_ROT3,
+    MIN_COMPRESSED_VECTORS,
+    CacheArtifact,
+    CacheBinding,
+    decode_cache,
+    encode_cold_cache,
+)
