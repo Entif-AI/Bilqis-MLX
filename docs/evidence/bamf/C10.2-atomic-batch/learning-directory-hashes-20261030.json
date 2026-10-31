@@ -1,0 +1,51 @@
+{
+  "before": {
+    "test_atlas_engram_parameters": "7782729d7165b8c22612bab077cd71a9a1af9af7894cd290d155fb92e05d4246",
+    "test_atlas_engram_source": "fc113f52812342996e3501e55bef97b3eaca62accdf93057dfb4ac6371e9be21",
+    "test_bamf_capability_championship": "3ac9a1032fee6ca4bbe2dbc45620b459ac4adae3c2ae3fc81284e1f8caf12999",
+    "test_capability_frontier": "2cbd565026b33f8c0ce66bf3575ad46028c575f85962b9a7a786ba3ce82e19e9",
+    "test_championship_history": "7ecbb7c2cb53e20252c2abc989d4d85243483389a7d8a0079e81e1e6810e8899",
+    "test_championship_identity": "a3b0cb34a343179a46ca6999d014f529bcfd94bc4acf91103d12b2e17a33644a",
+    "test_championship_policy": "0f03a243fc419cba802ca3f72e7564248fb698f2372b8c8e2711aa08073c3134",
+    "test_championship_witnesses": "a19ec424e0d91b2a614ca21a094f7a0560d39208c1ecdba4046ee717e2c9367e",
+    "test_grade_soup": "17b1fdc9ca639a1cdc0c342c7cf8e1a7326dd4f5e55f1ee05c0e6fdfa3351f2b",
+    "test_soup": "766c5e312b4b50de5f7a7e7cc78da1c9f72b1e7a425de5107d1107a961c484fa",
+    "test_teacher_votes": "03085195c4619209d103c5ff294c8c3ceccba37e566bf79c32fa188f11f4b89c",
+    "test_atlas_salience": "0647c325c915371726dc6ee92f17159349890188421689ab9f8955ea8e86ec5a",
+    "test_salience_history": "97d2734c01ee01947517844d1384782886f9da78bec8a0caf4474aa13a7d1115",
+    "test_salience_patterns": "7307cd6f6778bed17bec881563827d7b48f5cd68a57dfcaa0553ffaa75621c6e",
+    "test_salience_teacher": "db722eb484fb44e2aac2f906f59f2432f1563d6fe0d1d0a07d4146cae248479d",
+    "test_bamf_teacher": "068d3fce4019e972ab8b0a05883823e111d5e2c9f791a8f8f0921e9551e3a70d",
+    "test_teacher_feedback": "14dc139def9376128f8e086487b1176bc10b59f591e3fbbc71a9fb2538796334",
+    "test_teacher_observations": "fb95dbd5c10218768c43c3fa2ef60f413fb826b19d667df16654c37ec8fbc93e",
+    "test_matrix_strain": "a83892c0bd9217ec4feb2e13ce5b0c0ce3470d724d64b042568762b8bb4f7947",
+    "test_student_ops": "04977f096b089ee8faa6a22093a3fc598824231df61469685e51f2ebce80072e",
+    "test_whole_student_retention": "a5082deea6dfdf32ccf427e6b9d2133d7140979e6e1653e5ddc465bf5a30b891"
+  },
+  "after": {
+    "test_atlas_engram_parameters": "7782729d7165b8c22612bab077cd71a9a1af9af7894cd290d155fb92e05d4246",
+    "test_atlas_engram_source": "fc113f52812342996e3501e55bef97b3eaca62accdf93057dfb4ac6371e9be21",
+    "test_bamf_capability_championship": "3ac9a1032fee6ca4bbe2dbc45620b459ac4adae3c2ae3fc81284e1f8caf12999",
+    "test_capability_frontier": "2cbd565026b33f8c0ce66bf3575ad46028c575f85962b9a7a786ba3ce82e19e9",
+    "test_championship_history": "7ecbb7c2cb53e20252c2abc989d4d85243483389a7d8a0079e81e1e6810e8899",
+    "test_championship_identity": "a3b0cb34a343179a46ca6999d014f529bcfd94bc4acf91103d12b2e17a33644a",
+    "test_championship_policy": "0f03a243fc419cba802ca3f72e7564248fb698f2372b8c8e2711aa08073c3134",
+    "test_championship_witnesses": "a19ec424e0d91b2a614ca21a094f7a0560d39208c1ecdba4046ee717e2c9367e",
+    "test_grade_soup": "17b1fdc9ca639a1cdc0c342c7cf8e1a7326dd4f5e55f1ee05c0e6fdfa3351f2b",
+    "test_soup": "766c5e312b4b50de5f7a7e7cc78da1c9f72b1e7a425de5107d1107a961c484fa",
+    "test_teacher_votes": "03085195c4619209d103c5ff294c8c3ceccba37e566bf79c32fa188f11f4b89c",
+    "test_atlas_salience": "0647c325c915371726dc6ee92f17159349890188421689ab9f8955ea8e86ec5a",
+    "test_salience_history": "97d2734c01ee01947517844d1384782886f9da78bec8a0caf4474aa13a7d1115",
+    "test_salience_patterns": "7307cd6f6778bed17bec881563827d7b48f5cd68a57dfcaa0553ffaa75621c6e",
+    "test_salience_teacher": "db722eb484fb44e2aac2f906f59f2432f1563d6fe0d1d0a07d4146cae248479d",
+    "test_bamf_teacher": "068d3fce4019e972ab8b0a05883823e111d5e2c9f791a8f8f0921e9551e3a70d",
+    "test_teacher_feedback": "14dc139def9376128f8e086487b1176bc10b59f591e3fbbc71a9fb2538796334",
+    "test_teacher_observations": "da9df1c419b8da471a267390e9469a97a3d2a94611391512263e36fd7111003c",
+    "test_matrix_strain": "a83892c0bd9217ec4feb2e13ce5b0c0ce3470d724d64b042568762b8bb4f7947",
+    "test_student_ops": "04977f096b089ee8faa6a22093a3fc598824231df61469685e51f2ebce80072e",
+    "test_whole_student_retention": "a5082deea6dfdf32ccf427e6b9d2133d7140979e6e1653e5ddc465bf5a30b891"
+  },
+  "intentional_edits": [
+    "test_teacher_observations: fixture lookup parent depth"
+  ]
+}
