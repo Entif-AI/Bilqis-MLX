@@ -1,0 +1,12 @@
+{
+  "schema": "bilqis.bamf.scoped-debt-parity/v1",
+  "baseline": "f9290e3c130e4a8eea7fca5b799533a81469ef48",
+  "candidate": "79b5e23d36ecbc9c0a5050e86fa57c190e65291b",
+  "command": "python3 -B scripts/error_control_plane.py --check",
+  "baseline_exit": 1,
+  "candidate_exit": 1,
+  "diagnostics": 30,
+  "byte_identical": true,
+  "output_sha256": "9a7f7f6af3cd04939559ea27532bb252b3cc0b63afa19fbad45e50bb22dc99e8",
+  "scope": "Inherited whole-branch guard remains red; no baseline or guard changed."
+}

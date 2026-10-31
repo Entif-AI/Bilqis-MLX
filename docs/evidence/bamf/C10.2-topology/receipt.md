@@ -115,3 +115,9 @@ venv's actual site-packages. Its214-tensor/79,469,798 census, independent adapte
 initializer golden, literal stable storage key, eight public type identities and
 historical pickle GLOBAL all passed. This is package/import/tensor-contract proof,
 not source corpus packaging, production admission or actual training.
+
+Whole-branch error-control gate remains red: `NEW_OPAQUE_OPERATOR_CONTRACT_DEBT_FORBIDDEN`.
+The exact pre-edit C baseline and committed candidate each emit the same30 diagnostics,
+with byte-identical complete output. `operator-debt-parity.json` binds the two
+heads, exits and output SHA. No new finding is introduced by this extraction,
+but the branch is not aggregate-green and no debt baseline is changed.
