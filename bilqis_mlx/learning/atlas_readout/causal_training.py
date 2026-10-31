@@ -13,7 +13,13 @@ import mlx.core as mx
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.semantics.frame_schema import ConceptRef
-from .decisions import DecodeState, DecisionOutput, commit_decisions, parent_outputs
+from .decisions import (
+    DecodeState,
+    DecisionOutput,
+    allowed_values,
+    commit_decisions,
+    parent_outputs,
+)
 from .records import RoleCandidate, TypedHeadLogits, WIDTH, invalid, validate_hidden
 
 
@@ -117,11 +123,15 @@ def _parent_values(
     if decision is None or any(parent not in teacher_targets for parent in decision.depends_on):
         invalid()
     # Deliberately index only declared parents. Current/descendant targets are loss-only.
-    lookup = {item.decision_id: item for item in state.plan.decisions}
+    committed_index = {
+        output.decision_id: index for index, output in enumerate(state.committed)
+    }
     forced = []
     for parent in decision.depends_on:
         target = teacher_targets[parent]
-        legal = lookup[parent].legal_values
+        index = committed_index[parent]
+        parent_state = DecodeState(state.plan, state.committed[:index])
+        legal = allowed_values(parent_state, parent)
         if not any(type(target) is type(value) and target == value for value in legal):
             invalid()
         forced.append(target)

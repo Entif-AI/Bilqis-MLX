@@ -88,6 +88,19 @@ class CausalTrainingTests(unittest.TestCase):
                 {"readout.feedback": mx.eye(768, dtype=mx.float32)},
                 teacher_targets={"parent": "forged"})
 
+        dynamic = start_decoding(plan((
+            D("parent", "agent", 0, K.CONTROL, (C.EMIT_UNKNOWN, C.END_FRAME)),
+            D("child", None, 0, K.EPISTEMIC, ("known", "unknown"), ("parent",)),
+        )))
+        dynamic = commit_decisions(dynamic, (O("parent", C.EMIT_UNKNOWN),))
+        with self.assertRaises(BilqisError):
+            decision_hidden(
+                mx.zeros((768,), dtype=mx.float32),
+                dynamic,
+                "child",
+                {"readout.feedback": mx.eye(768, dtype=mx.float32)},
+                teacher_targets={"parent": C.END_FRAME})
+
     def test_concept_feedback_is_exact_active_tied_identity_row(self):
         from bilqis_mlx.learning.atlas_readout.causal_training import encode_feedback_value
 
