@@ -26,10 +26,22 @@ class Rot3NormAndFallbackTests(unittest.TestCase):
     def setUp(self):
         self.manifest = codec_manifest()
         self.binding = CacheBinding(
-            self.manifest, generation_sha256="1"*64, lineage_sha256="2"*64,
-            topology_sha256="3"*64, source_rights_sha256="4"*64,
-            causal_prefix_sha256="5"*64, masks_sha256="6"*64,
-            scope_sha256="7"*64, key_sha256="8"*64, offset=17,
+            self.manifest,
+            generation_sha256="1" * 64,
+            lineage_sha256="2" * 64,
+            topology_sha256="3" * 64,
+            source_release_sha256="4" * 64,
+            semantic_release_sha256="5" * 64,
+            source_rights_sha256="6" * 64,
+            rights_purpose_sha256="7" * 64,
+            policy_epoch_sha256="8" * 64,
+            context_eligibility_sha256="9" * 64,
+            causal_prefix_sha256="a" * 64,
+            masks_sha256="b" * 64,
+            scope_sha256="c" * 64,
+            key_sha256="d" * 64,
+            inference_state_sha256="e" * 64,
+            offset=17,
         )
 
     def test_direct_records_import_is_order_independent(self):

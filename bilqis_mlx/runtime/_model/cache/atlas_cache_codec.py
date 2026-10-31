@@ -230,3 +230,9 @@ from .atlas_cache_policy import (
     CacheInferenceResult, CacheQualityObservation, CacheQualityPolicy,
     interactive_cache_inference, reference_candidate_evaluation,
 )
+from .atlas_cache_rebuild import (  # noqa: E402
+    CacheEligibilityReceipt,
+    CacheRebuildResult,
+    rebuild_revoked_cache,
+    validate_eligibility,
+)
