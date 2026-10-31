@@ -1,6 +1,6 @@
 {
-  "legacy_raw_file_count": 186,
-  "legacy_raw_raise_count": 1968,
+  "legacy_raw_file_count": 185,
+  "legacy_raw_raise_count": 1957,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BACKUP_ARCHIVE_ROOT_SYMLINK",
@@ -11628,83 +11628,6 @@
       "exception": "ValueError",
       "expression": "'NUMERIC_UNSUPPORTED_LITERAL_TYPE'",
       "path": "bilqis_mlx/semantics/foundation/numeric.py"
-    },
-    {
-      "code_hint": "NUMERIC_EXACT_DIVISION_UNDEFINED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'NUMERIC_EXACT_DIVISION_UNDEFINED'",
-      "path": "bilqis_mlx/semantics/numeric.py"
-    },
-    {
-      "code_hint": "NUMERIC_LITERAL_OUTSIDE_SOURCE_ABI",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'NUMERIC_LITERAL_OUTSIDE_SOURCE_ABI'",
-      "path": "bilqis_mlx/semantics/numeric.py"
-    },
-    {
-      "code_hint": "NUMERIC_MODULO_UNDEFINED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'NUMERIC_MODULO_UNDEFINED'",
-      "path": "bilqis_mlx/semantics/numeric.py"
-    },
-    {
-      "code_hint": "NUMERIC_NONCANONICAL_LITERAL",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'NUMERIC_NONCANONICAL_LITERAL'",
-      "path": "bilqis_mlx/semantics/numeric.py"
-    },
-    {
-      "code_hint": "NUMERIC_NONCANONICAL_SET",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'NUMERIC_NONCANONICAL_SET'",
-      "path": "bilqis_mlx/semantics/numeric.py"
-    },
-    {
-      "code_hint": "NUMERIC_OPERATOR_CONTRACT_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'NUMERIC_OPERATOR_CONTRACT_DRIFT'",
-      "path": "bilqis_mlx/semantics/numeric.py"
-    },
-    {
-      "code_hint": "NUMERIC_OPERATOR_INCOMPLETE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'NUMERIC_OPERATOR_INCOMPLETE'",
-      "path": "bilqis_mlx/semantics/numeric.py"
-    },
-    {
-      "code_hint": "NUMERIC_OPERATOR_NOT_IMPLEMENTED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'NUMERIC_OPERATOR_NOT_IMPLEMENTED'",
-      "path": "bilqis_mlx/semantics/numeric.py"
-    },
-    {
-      "code_hint": "NUMERIC_OPERATOR_NOT_IN_RELEASE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'NUMERIC_OPERATOR_NOT_IN_RELEASE'",
-      "path": "bilqis_mlx/semantics/numeric.py"
-    },
-    {
-      "code_hint": "NUMERIC_SET_DUPLICATE_OR_UNTYPED_MEMBERS",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'NUMERIC_SET_DUPLICATE_OR_UNTYPED_MEMBERS'",
-      "path": "bilqis_mlx/semantics/numeric.py"
-    },
-    {
-      "code_hint": "NUMERIC_UNSUPPORTED_LITERAL_TYPE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'NUMERIC_UNSUPPORTED_LITERAL_TYPE'",
-      "path": "bilqis_mlx/semantics/numeric.py"
     },
     {
       "code_hint": "Historical source token identity drift",

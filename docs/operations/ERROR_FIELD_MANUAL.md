@@ -1615,7 +1615,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **1968** raw raises across **186** files. The baseline gate permits only reduction.
+Current production scan: **1957** raw raises across **185** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -3052,28 +3052,28 @@ Current production scan: **1968** raw raises across **186** files. The baseline 
 | `NUMERIC_CONSTRUCTION_UNKNOWN_CAPABILITY` | 1 | `bilqis_mlx/numeric_curriculum.py` |
 | `NUMERIC_CONTRAST_ORACLE_DISAGREEMENT` | 1 | `bilqis_mlx/numeric_curriculum.py` |
 | `NUMERIC_DISJOINT_GROUP_OUTSIDE_SCOPE` | 1 | `bilqis_mlx/numeric_curriculum.py` |
-| `NUMERIC_EXACT_DIVISION_UNDEFINED` | 2 | `bilqis_mlx/semantics/foundation/numeric.py`, `bilqis_mlx/semantics/numeric.py` |
+| `NUMERIC_EXACT_DIVISION_UNDEFINED` | 1 | `bilqis_mlx/semantics/foundation/numeric.py` |
 | `NUMERIC_GROUPS_NOT_EQUAL_AND_DISJOINT` | 1 | `bilqis_mlx/source_adapters/numeric.py` |
 | `NUMERIC_GROUPS_NOT_EXHAUSTIVE` | 1 | `bilqis_mlx/source_adapters/numeric.py` |
 | `NUMERIC_GROUP_CONTEXT_REQUIRES_PRODUCT_OR_QUOTIENT` | 1 | `bilqis_mlx/source_adapters/numeric.py` |
 | `NUMERIC_GROUP_CONTEXT_TYPE` | 1 | `bilqis_mlx/source_adapters/numeric.py` |
 | `NUMERIC_GROUP_CONTEXT_UNCLOSED` | 1 | `bilqis_mlx/source_adapters/numeric.py` |
 | `NUMERIC_HISTORICAL_TOKEN_ABI_DRIFT` | 1 | `bilqis_mlx/numeric_curriculum.py` |
-| `NUMERIC_LITERAL_OUTSIDE_SOURCE_ABI` | 2 | `bilqis_mlx/semantics/foundation/numeric.py`, `bilqis_mlx/semantics/numeric.py` |
-| `NUMERIC_MODULO_UNDEFINED` | 2 | `bilqis_mlx/semantics/foundation/numeric.py`, `bilqis_mlx/semantics/numeric.py` |
+| `NUMERIC_LITERAL_OUTSIDE_SOURCE_ABI` | 1 | `bilqis_mlx/semantics/foundation/numeric.py` |
+| `NUMERIC_MODULO_UNDEFINED` | 1 | `bilqis_mlx/semantics/foundation/numeric.py` |
 | `NUMERIC_NEW_OPERATION_MEANING_DRIFT` | 1 | `bilqis_mlx/numeric_curriculum.py` |
-| `NUMERIC_NONCANONICAL_LITERAL` | 2 | `bilqis_mlx/semantics/foundation/numeric.py`, `bilqis_mlx/semantics/numeric.py` |
-| `NUMERIC_NONCANONICAL_SET` | 2 | `bilqis_mlx/semantics/foundation/numeric.py`, `bilqis_mlx/semantics/numeric.py` |
-| `NUMERIC_OPERATOR_CONTRACT_DRIFT` | 3 | `bilqis_mlx/numeric_curriculum.py`, `bilqis_mlx/semantics/foundation/numeric.py`, `bilqis_mlx/semantics/numeric.py` |
-| `NUMERIC_OPERATOR_INCOMPLETE` | 2 | `bilqis_mlx/semantics/foundation/numeric.py`, `bilqis_mlx/semantics/numeric.py` |
-| `NUMERIC_OPERATOR_NOT_IMPLEMENTED` | 2 | `bilqis_mlx/semantics/foundation/numeric.py`, `bilqis_mlx/semantics/numeric.py` |
-| `NUMERIC_OPERATOR_NOT_IN_RELEASE` | 2 | `bilqis_mlx/semantics/foundation/numeric.py`, `bilqis_mlx/semantics/numeric.py` |
+| `NUMERIC_NONCANONICAL_LITERAL` | 1 | `bilqis_mlx/semantics/foundation/numeric.py` |
+| `NUMERIC_NONCANONICAL_SET` | 1 | `bilqis_mlx/semantics/foundation/numeric.py` |
+| `NUMERIC_OPERATOR_CONTRACT_DRIFT` | 2 | `bilqis_mlx/numeric_curriculum.py`, `bilqis_mlx/semantics/foundation/numeric.py` |
+| `NUMERIC_OPERATOR_INCOMPLETE` | 1 | `bilqis_mlx/semantics/foundation/numeric.py` |
+| `NUMERIC_OPERATOR_NOT_IMPLEMENTED` | 1 | `bilqis_mlx/semantics/foundation/numeric.py` |
+| `NUMERIC_OPERATOR_NOT_IN_RELEASE` | 1 | `bilqis_mlx/semantics/foundation/numeric.py` |
 | `NUMERIC_ORACLE_DUPLICATE_SET_MEMBER` | 1 | `bilqis_mlx/verification/numeric.py` |
 | `NUMERIC_ORACLE_EXACT_DIVISION_UNDEFINED` | 2 | `bilqis_mlx/verification/numeric.py` |
 | `NUMERIC_ORACLE_MODULO_UNDEFINED` | 1 | `bilqis_mlx/verification/numeric.py` |
 | `NUMERIC_ORACLE_NEGATIVE_RESULT` | 1 | `bilqis_mlx/verification/numeric.py` |
 | `NUMERIC_ORACLE_UNSUPPORTED_OPERATOR` | 1 | `bilqis_mlx/verification/numeric.py` |
-| `NUMERIC_SET_DUPLICATE_OR_UNTYPED_MEMBERS` | 2 | `bilqis_mlx/semantics/foundation/numeric.py`, `bilqis_mlx/semantics/numeric.py` |
+| `NUMERIC_SET_DUPLICATE_OR_UNTYPED_MEMBERS` | 1 | `bilqis_mlx/semantics/foundation/numeric.py` |
 | `NUMERIC_SOURCE_NODE_CONTENT_DRIFT` | 1 | `bilqis_mlx/numeric_curriculum.py` |
 | `NUMERIC_STAIRCASE_FOUNDATIONS_NOT_MASTERED` | 1 | `bilqis_mlx/numeric_staircase.py` |
 | `NUMERIC_STAIRCASE_REQUIRES_ACTIVE_C` | 1 | `bilqis_mlx/numeric_staircase.py` |
@@ -3083,7 +3083,7 @@ Current production scan: **1968** raw raises across **186** files. The baseline 
 | `NUMERIC_STAIRCASE_SCOPE_INVALID` | 1 | `bilqis_mlx/numeric_staircase.py` |
 | `NUMERIC_TOKEN_BINDING_DRIFT` | 1 | `bilqis_mlx/numeric_curriculum.py` |
 | `NUMERIC_UNREGISTERED_TOKEN` | 1 | `bilqis_mlx/numeric_curriculum.py` |
-| `NUMERIC_UNSUPPORTED_LITERAL_TYPE` | 2 | `bilqis_mlx/semantics/foundation/numeric.py`, `bilqis_mlx/semantics/numeric.py` |
+| `NUMERIC_UNSUPPORTED_LITERAL_TYPE` | 1 | `bilqis_mlx/semantics/foundation/numeric.py` |
 | `NUMERIC_WRONG_SOURCE_DIALECT` | 1 | `bilqis_mlx/source_adapters/numeric.py` |
 | `No Bilqis state or event journal under` | 1 | `bilqis_mlx/presentation/dashboard_watch.py` |
 | `Non-object event` | 1 | `bilqis_mlx/presentation/dashboard_watch.py` |
