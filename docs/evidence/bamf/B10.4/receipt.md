@@ -3,11 +3,26 @@
 - Issue: #470; parent B10 #367; Lane B
 - Consumed unified: `9104ce733e04fb9c82420428b18dfdbf5db49535`
 - Feature branch: `feature/bamf-b10-4-470-20261030`
+- Candidate implementation head: `b0fa18ec08f202b4e343b8e1b849b16df9847c21`
 - Direct prerequisite: B10.3 #469 exact candidate receipt at
-  `7f074d00097ba8147ebf02261e5b49592eda9d1b`; final B10.4 turn-in must
+  current turn-in repair head `6218f8b8adde8d29dff10e15e40aa87ac63c224e`; final B10.4 turn-in must
   consume B10.3 after its independent-review gate.
 - Learning state: software-only; no learner or optimizer mutation
 - Independent EGM: pending
+
+## Contract identity
+
+- Answer plan input: `bilqis.mlx.answer-plan/v2`
+- Decision spec input: `bilqis.mlx.decision-spec/v1`
+- Readout parameter authority: B01 `expected_bamf_shapes(ModelTopologySpecV2, GenerationExtents)` `ParameterSpec` rows
+- Bound parameter output: immutable `MappingProxyType[str, mlx.core.array]` containing exactly the 18 B01-declared `readout.` rows
+
+Changed paths at this candidate head:
+
+- `bilqis_mlx/learning/atlas_readout/__init__.py`
+- `bilqis_mlx/learning/atlas_readout/parameters.py`
+- `bilqis_mlx/learning/atlas_readout/tests/test_parameter_contract.py`
+- `docs/evidence/bamf/B10.4/receipt.md`
 
 ## Owned behavior
 
@@ -50,3 +65,6 @@ This is a branch candidate against the frozen #469 interface. It does not claim
 B10.3 acceptance, parent B10 integration, learner improvement, live training or
 merge readiness. Fresh independent EGM remains required, and final turn-in must
 consume the accepted B10.3 receipt rather than treating its open state as closed.
+
+Next integration boundary after accepted B10.4: parent B10 / issue #367 reconciles
+all four B10 child clauses against the original full acceptance contract.
