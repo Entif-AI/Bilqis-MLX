@@ -55,10 +55,16 @@ jobs:
           bilqis_mlx/verification/tests/test_construction_contracts.py
           bilqis_mlx/factory/tests/lifecycle/test_release_outcome_contracts.py
       - name: Check architecture, documentation and error contracts
+        env:
+          QUALITY_BASE_REF: ${{ github.event.pull_request.base.sha || '' }}
         run: |
           python3 -B scripts/check_factory_architecture.py
           python3 -B scripts/quality/check_docs.py
-          python3 -B scripts/error_control_plane.py --check
+          if [ -n "$QUALITY_BASE_REF" ]; then
+            python3 -B scripts/error_control_plane.py --check --base-ref "$QUALITY_BASE_REF"
+          else
+            python3 -B scripts/error_control_plane.py --check
+          fi
       - name: Reject newly introduced code hygiene regressions
         env:
           QUALITY_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
@@ -69,6 +75,8 @@ jobs:
           esac
           python3 -B scripts/code_smell_audit.py --changed-from "$BASE_REF" \
             --check-baseline docs/evidence/development/code_smell_baseline.json
+      - name: Install portable custody dependencies
+        run: python3 -m pip install numpy==2.4.4
       - name: Portable non-neural custody and release tests
         run: >-
           python3 -B scripts/run_tests.py
