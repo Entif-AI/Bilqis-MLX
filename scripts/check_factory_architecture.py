@@ -92,11 +92,45 @@ def _grade_literal_dispatch(path: Path, root: Path) -> tuple[str, ...]:
         values = {item.value for item in ast.walk(decision)
                   if isinstance(item, ast.Constant) and isinstance(item.value, str)}
         used = sorted(values & GRADE_LITERAL)
+        if used and _is_adapter_factor_suffix_decision(decision):
+            continue
         if used:
             problems.append(
                 f"{path.relative_to(root)}:{node.lineno} "
                 f"GENERIC_GRADE_IDENTITY_DISPATCH {','.join(used)}")
     return tuple(problems)
+
+
+def _is_adapter_factor_suffix_decision(decision: ast.AST) -> bool:
+    """Recognize BAMF adapter matrix factor names without treating them as grades.
+
+    The topology schema has long used ``plastic.group.<id>.A`` and ``.B`` as the
+    two matrix-factor wire suffixes.  They are parameter names, not curriculum
+    identities.  Keep this exception structural and narrow so ordinary grade
+    comparisons such as ``grade == 'B'`` remain forbidden.
+    """
+    has_plastic_prefix = any(
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr == "startswith"
+        and any(isinstance(arg, ast.Constant) and arg.value == "plastic.group."
+                for arg in node.args)
+        for node in ast.walk(decision)
+    )
+    has_factor_membership = any(
+        isinstance(node, ast.Compare)
+        and isinstance(node.left, ast.Name)
+        and node.left.id == "suffix"
+        and any(isinstance(op, ast.In) for op in node.ops)
+        and any(
+            isinstance(comp, (ast.Tuple, ast.List, ast.Set))
+            and {item.value for item in comp.elts
+                 if isinstance(item, ast.Constant)} == {"A", "B"}
+            for comp in node.comparators
+        )
+        for node in ast.walk(decision)
+    )
+    return has_plastic_prefix and has_factor_membership
 
 
 def _legacy_course_usage(path: Path, root: Path) -> tuple[str, ...]:
