@@ -5,12 +5,15 @@ from pathlib import Path
 import json
 
 from bilqis_mlx.data_plane import data_plane
-from .contracts import HEAD_SCHEMA, StateDagError, _FIELD_CACHE, _canonical, _durable
+from .contracts import HEAD_SCHEMA, StateDagError, _FIELD_CACHE, _canonical
 from .nodes import _read_pointer, _write_node
 
 def _facade():
     import bilqis_mlx.state_dag as facade
     return facade
+
+def _durable(*args, **kwargs):
+    return _facade()._durable(*args, **kwargs)
 
 def _load_pointer(*args, **kwargs):
     return _facade()._load_pointer(*args, **kwargs)

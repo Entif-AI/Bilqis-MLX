@@ -6,13 +6,16 @@ import os
 from pathlib import Path
 
 from bilqis_mlx.data_plane import data_plane
-from .contracts import StateDagError, _FIELD_CACHE, _canonical, _durable
+from .contracts import StateDagError, _FIELD_CACHE, _canonical
 from .nodes import _read_pointer, _write_node
 from .persistence import head_summary, migrate_current_head
 
 def _facade():
     import bilqis_mlx.state_dag as facade
     return facade
+
+def _durable(*args, **kwargs):
+    return _facade()._durable(*args, **kwargs)
 
 def read_current(*args, **kwargs):
     return _facade().read_current(*args, **kwargs)

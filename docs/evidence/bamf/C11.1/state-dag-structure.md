@@ -35,3 +35,11 @@ PASS
 ## Remaining C11.1 state
 
 This is a structural checkpoint only. It does not satisfy production BAMF create/resume or accepted B13/A12 run/source authority. The next queued structure interruptions remain `data_plane.py`, `curriculum_compiler.py`, and `registry_ast.py`, one owner at a time. Durable student start and PR merge remain human-owned.
+
+## Fresh review repair
+
+Fresh independent review found one Major after the first pushed checkpoint `a1392726`: internal persistence and history owners bound `_durable` directly from the contracts module. Existing fault-injection callers patch `bilqis_mlx.state_dag._durable`, so the split bypassed that compatibility seam.
+
+A detached `a1392726` reproduction prints `BUG_PRESENT_PATCH_BYPASSED` when the facade patch should interrupt the latest-pointer write. The repair routes internal durable writes through the public facade dynamically. A focused regression now patches the facade and confirms the pointer interruption reaches `persist`. The complete state-DAG suite passes 14/14 after the repair.
+
+The repair does not change any original production definition body. The new regression test is additional coverage for the historical monkeypatch seam.

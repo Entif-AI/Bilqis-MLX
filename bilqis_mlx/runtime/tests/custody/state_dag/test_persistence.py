@@ -1,9 +1,31 @@
 import json
+from unittest.mock import patch
 
 from .base import StateDagCase
 from bilqis_mlx.state_dag import migrate_current_head, persist, read_current, read_generation
 
 class StateDagPersistenceTests(StateDagCase):
+    def test_facade_durable_patch_intercepts_latest_pointer_write(self):
+        first = self.receipt()
+        (self.root / "state.json").write_text(json.dumps(first))
+        migrate_current_head(self.root, first)
+        successor = self.receipt(8)
+        import bilqis_mlx.state_dag as state_dag
+        original = state_dag._durable
+        observed = []
+
+        def interrupt(path, value, **kwargs):
+            observed.append(path.name)
+            if path.name == "state.json":
+                raise RuntimeError("pointer interrupted")
+            return original(path, value, **kwargs)
+
+        with patch.object(state_dag, "_durable", side_effect=interrupt):
+            with self.assertRaisesRegex(RuntimeError, "pointer interrupted"):
+                persist(self.root, successor)
+
+        self.assertIn("state.json", observed)
+
     def test_orphan_dag_successor_replays_from_verified_legacy_head(self):
         legacy = self.receipt(7)
         raw = json.dumps(legacy)
