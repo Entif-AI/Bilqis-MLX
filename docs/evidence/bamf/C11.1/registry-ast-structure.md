@@ -39,3 +39,9 @@ A wheel built from the candidate installs into a clean target outside the checko
 ## Remaining C11.1 state
 
 This completes the last queued root structure interruption for #522. Production C11.1 acceptance still requires the issue's accepted B13/A12 run/source authority and complete production launch/resume proof. No durable learner, optimizer, graph service, or live-training state is changed by this repair.
+
+## Fresh review repair
+
+Fresh independent review of `13523f9` found two Majors. First, moving `_grade_refs` into a private helper moved the acknowledged `REGISTRY_DUPLICATE_GRADE_REFERENCE` operator-contract fingerprint to a new path, falsely growing path-qualified error debt. Second, the split removed the historical non-underscore `registry_ast.CurriculumAST` binding.
+
+Commit `ba80882cfc668fe03898c8aa773e1e29ef548e1e` moves the exact `_grade_refs` body back to the historical public path and restores `CurriculumAST` plus the harmless historical `dataclass`/`hashlib` public bindings. A focused public-binding regression covers `CurriculumAST`. Registry tests remain 14/14. The operator-contract census returns to the inherited 30 findings with no registry-path addition. No parser, graph, admission, or construction behavior changed.
