@@ -25,6 +25,7 @@ GENERIC_RUNTIME = (
     "bilqis_mlx/curriculum",
     "bilqis_mlx/presentation",
     "bilqis_mlx/live_curriculum.py",
+    "bilqis_mlx/_release_views/live_curriculum.py",
     "bilqis_mlx/trainer.py",
     "bilqis_mlx/cli.py",
 )
@@ -276,6 +277,8 @@ def inspect_factory_architecture(root: Path) -> tuple[str, ...]:
             problems.append("bilqis_mlx/grade_a_trainer.py LEGACY_RUNTIME_OWNS_BEHAVIOR")
 
     transition = src / "grade_transition.py"
+    if not transition.is_file():
+        transition = src / "_release_views/grade_transition.py"
     if transition.is_file():
         tree = ast.parse(_source(transition))
         for node in ast.walk(tree):
@@ -287,6 +290,8 @@ def inspect_factory_architecture(root: Path) -> tuple[str, ...]:
                     for item in node.names):
                 problems.append("bilqis_mlx/grade_transition.py RETIRED_CURRENT_TRANSITION")
     staircase = src / "numeric_staircase.py"
+    if not staircase.is_file():
+        staircase = src / "_numeric_sources/numeric_staircase.py"
     if "_factory_admission" not in _function_calls(staircase, "_rebind"):
         problems.append("bilqis_mlx/numeric_staircase.py SCOPE_RELEASE_BYPASSES_FACTORY_RELEASE")
 

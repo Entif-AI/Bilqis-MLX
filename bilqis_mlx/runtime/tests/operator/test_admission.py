@@ -178,7 +178,7 @@ class RuntimeAdmissionTests(unittest.TestCase):
     def test_cli_preflight_and_artifact_readback_preserve_all_run_bytes(self):
         import io
         from contextlib import redirect_stdout
-        from bilqis_mlx import cli
+        from bilqis_mlx.presentation.operator_cli import preflight as cli
         from bilqis_mlx.runtime.admission import _read_executable_factory_release_artifact
 
         release, graph = _executable_fixture()
