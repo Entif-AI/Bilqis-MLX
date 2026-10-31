@@ -620,6 +620,33 @@ class SEMANTIC_FRAME:
                 "Preserve the source row and use the released source adapter and "
                 "frame schema that own this source dialect."),
         )
+        SOURCE_ROW_CONTEXT_REQUIRED = _spec(
+            ("SEMANTIC_FRAME", "ADAPTER", "SOURCE_ROW_CONTEXT_REQUIRED"),
+            owner="semantics.frame_adapters.source_rows",
+            title="Source-row digest requires a SourceRowContext",
+            message_template="Source-row digest requires a SourceRowContext.",
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Pass the exact source-row context produced by the released adapter.",
+            legacy_codes=("value must be SourceRowContext",),
+        )
+        SOURCE_ROW_WITNESS_REQUIRED = _spec(
+            ("SEMANTIC_FRAME", "ADAPTER", "SOURCE_ROW_WITNESS_REQUIRED"),
+            owner="semantics.frame_adapters.source_rows",
+            title="Source-row adapter requires an exact byte witness",
+            message_template="Source-row adapter requires a SourceRowByteWitness.",
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Reconstruct the exact source-row byte witness before binding the frame.",
+            legacy_codes=("witness must be SourceRowByteWitness",),
+        )
+        SOURCE_ROW_CAUSAL_PREFIX_INVALID = _spec(
+            ("SEMANTIC_FRAME", "ADAPTER", "SOURCE_ROW_CAUSAL_PREFIX_INVALID"),
+            owner="semantics.frame_adapters.source_rows",
+            title="Source-row causal prefix does not expose the atomic row",
+            message_template="The source-row causal prefix ends before the atomic source span.",
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Preserve source custody and use a causal prefix that includes the source row.",
+            legacy_codes=("FRAME_SOURCE_ROW_CAUSAL_PREFIX_INVALID",),
+        )
 
     class CODEC:
         INVALID = _spec(
@@ -931,6 +958,33 @@ class FACTORY:
         )
 
     class EXECUTION:
+        FAMILY_EXECUTION_INPUT_INVALID = _spec(
+            ("FACTORY", "EXECUTION", "FAMILY_EXECUTION_INPUT_INVALID"),
+            owner="factory.generation",
+            title="Factory family execution input is invalid",
+            message_template="Factory family execution received an invalid release, registry, frontier, or capability identity.",
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Preserve the release and pass the exact typed execution authorities.",
+            legacy_codes=("FACTORY_FAMILY_EXECUTION_INPUT_INVALID",),
+        )
+        FAMILY_EXECUTION_RELEASE_BINDING_DRIFT = _spec(
+            ("FACTORY", "EXECUTION", "FAMILY_EXECUTION_RELEASE_BINDING_DRIFT"),
+            owner="factory.generation",
+            title="Factory family execution release binding drift",
+            message_template="The resolved family binding no longer matches the sealed Factory release.",
+            disposition="PRESERVE_AND_REPAIR",
+            next_action="Preserve the release and restore its exact capability, generator, and oracle binding.",
+            legacy_codes=("FACTORY_FAMILY_EXECUTION_RELEASE_BINDING_DRIFT",),
+        )
+        FAMILY_EXECUTION_SOURCE_ADAPTER_DRIFT = _spec(
+            ("FACTORY", "EXECUTION", "FAMILY_EXECUTION_SOURCE_ADAPTER_DRIFT"),
+            owner="factory.generation",
+            title="Factory family execution source adapter drift",
+            message_template="The runtime source adapter does not match the sealed family binding.",
+            disposition="PRESERVE_AND_REPAIR",
+            next_action="Use the source adapter identity sealed by the Factory release.",
+            legacy_codes=("FACTORY_FAMILY_EXECUTION_SOURCE_ADAPTER_DRIFT",),
+        )
         CURRICULUM_DEFINITION_REQUIRED = _spec(
             ('FACTORY', 'EXECUTION', 'CURRICULUM_DEFINITION_REQUIRED'), owner='factory.curriculum_definition',
             title='Factory curriculum definition required', message_template='Factory curriculum definition required',

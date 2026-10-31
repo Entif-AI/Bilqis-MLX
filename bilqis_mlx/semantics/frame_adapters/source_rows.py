@@ -4,12 +4,16 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 
 from lib.ithkuil.src.skos.source_owner.row_witness import SourceRowByteWitness
+from bilqis_mlx.errors import ErrorBus, SEMANTIC_FRAME
 
 from ..context_eligibility import (
     PUBLIC_FORMAL, ContextEligibility, ContextMember, SourceGrant,
     frame_evidence_digest, member_evidence_digest,
 )
 from ..frame_schema import SourceSpan, atomic_fallback
+
+
+_SHA256_HEX_LENGTH = 64
 
 
 @dataclass(frozen=True)
@@ -95,15 +99,17 @@ def _source_row_context(
     """Bind exact row bytes without promoting the row into an admitted concept."""
     if (not isinstance(witness, SourceRowByteWitness)
             or not isinstance(a01_source_bundle_id, str)
-            or len(a01_source_bundle_id) != 64):
-        raise TypeError("witness must be SourceRowByteWitness")
+            or len(a01_source_bundle_id) != _SHA256_HEX_LENGTH):
+        ErrorBus.raise_legacy(
+            SEMANTIC_FRAME.ADAPTER.SOURCE_ROW_WITNESS_REQUIRED)
     # A03/A13 visibility is source-local, not an offset into a repository CSV.
     # Preserve absolute byte custody in the payload/witness, but expose this one
     # atomic row as the first source-local span so unrelated file ordering cannot
     # change causal visibility.
     span = SourceSpan(0, 1)
     if causal_prefix_end < span.end:
-        raise ValueError("FRAME_SOURCE_ROW_CAUSAL_PREFIX_INVALID")
+        ErrorBus.raise_legacy(
+            SEMANTIC_FRAME.ADAPTER.SOURCE_ROW_CAUSAL_PREFIX_INVALID)
     payload = _source_row_payload(witness, semantic_id, a01_source_bundle_id)
     frame = atomic_fallback(
         payload,
@@ -137,7 +143,8 @@ def _source_row_context(
 def source_row_context_digest(value: SourceRowContext) -> dict:
     """Plain canonical material for integration receipts and independent checks."""
     if not isinstance(value, SourceRowContext):
-        raise TypeError("value must be SourceRowContext")
+        ErrorBus.raise_legacy(
+            SEMANTIC_FRAME.ADAPTER.SOURCE_ROW_CONTEXT_REQUIRED)
     return {
         "envelope": asdict(value.envelope),
         "grants": [asdict(item) for item in value.grants],

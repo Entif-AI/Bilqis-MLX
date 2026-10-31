@@ -24,6 +24,9 @@ from .lesson_types import SourceConstructiveLesson, SourceConstructiveLessonSet
 
 SOURCE_CONTEXT_SCHEMA = "bilqis.source-lesson-context/v1"
 _CANONICAL_SOURCE_ROOT = Path(__file__).resolve().parents[3] / "lib/ithkuil/_data/csv"
+_SOURCE_FACT_ARITY = 3
+_SOURCE_FACT_SPLIT_LIMIT = 2
+_SOURCE_FACT_REFERENCE_INDEX = 2
 
 
 @dataclass(frozen=True)
@@ -55,11 +58,12 @@ def _source_fact_context(
     fact: tuple[str, ...], atlas: AtlasArtifactSelection, task: TaskScope,
     policy: ContextPolicy, *, rights_epoch: int, correction_generation: int,
 ) -> SourceRowContext:
-    if (type(fact) is not tuple or len(fact) != 3 or fact[0] != "identity"
-            or fact[2].startswith("abi:")):
+    if (type(fact) is not tuple or len(fact) != _SOURCE_FACT_ARITY or fact[0] != "identity"
+            or fact[_SOURCE_FACT_REFERENCE_INDEX].startswith("abi:")):
         _fail("BAMF_SOURCE_LESSON_ROW_PROVENANCE_UNAVAILABLE")
     try:
-        domain, table, key = fact[2].split("/", 2)
+        domain, table, key = fact[_SOURCE_FACT_REFERENCE_INDEX].split(
+            "/", _SOURCE_FACT_SPLIT_LIMIT)
         snapshot = load_pinned_atlas_snapshot(atlas)
         concept = next((item.concept for item in snapshot.concepts
                         if item.concept.semantic_id == fact[1]), None)
