@@ -1,30 +1,42 @@
-"""Structural extraction from capability_retention.py; behavior preserved."""
+"""Evaluator-side complete-solver measurements and advisory paired eligibility."""
 from __future__ import annotations
-from dataclasses import dataclass
+
+from dataclasses import dataclass, field
 from enum import Enum
 import re
 from typing import Callable
+
 from ..errors import ErrorBus, SCHOOL
+from ..learning.retention_policy import retention_reason, scaled_loss_allowance
 from ..semantics.cognitive_dag import TaskGoal
 from ..semantics.cognitive_operators import TypedValue, ValueState
 from ..semantics.domains import contract_digest
-from .cognitive_solver import CapabilityResult, GenerationBinding, SolveBudget, SolveContext, solve_task
+from .cognitive_solver import (
+    CapabilityResult, GenerationBinding, SolveBudget, SolveContext, solve_task,
+)
+
+CAPABILITY_GROUP_ARITY = 2
+
 
 def _invalid(reason):
     ErrorBus.raise_(SCHOOL.BAMF_CAPABILITY_EVIDENCE.INVALID, reason=reason)
 
+
 def _sha(value):
     return isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value) is not None
+
 
 def _names(values):
     return (isinstance(values, tuple)
             and all(isinstance(value, str) and value for value in values)
             and len(set(values)) == len(values))
 
+
 class EvidenceKind(str, Enum):
     FRESH_TARGET = "FRESH_TARGET"
     FRESH_LESSON = "FRESH_LESSON"
     FIXED_SCHOOL = "FIXED_SCHOOL"
+
 
 @dataclass(frozen=True)
 class EvaluationCase:
@@ -47,9 +59,11 @@ class EvaluationCase:
                 or self.gold.state is ValueState.UNRESOLVED):
             _invalid("BAMF_EVALUATION_CASE_INVALID")
 
+
 def case_census_digest(cases: tuple[EvaluationCase, ...]) -> str:
     """Bind the independent source draw, including exact rows and evaluator gold."""
     return contract_digest(cases)
+
 
 @dataclass(frozen=True)
 class EvaluationCohort:
@@ -70,7 +84,7 @@ class EvaluationCohort:
                 or not isinstance(self.cases, tuple) or not self.cases
                 or any(not isinstance(case, EvaluationCase) for case in self.cases)
                 or not isinstance(self.capability_groups, tuple)
-                or any(not isinstance(pair, tuple) or len(pair) != 2
+                or any(not isinstance(pair, tuple) or len(pair) != CAPABILITY_GROUP_ARITY
                        or not all(isinstance(item, str) and item for item in pair)
                        for pair in self.capability_groups)
                 or len(dict(self.capability_groups)) != len(self.capability_groups)
@@ -94,6 +108,7 @@ class EvaluationCohort:
                 & set(self.training_episode_ids)):
             _invalid("BAMF_EVALUATION_TRAINING_PROVENANCE_OVERLAP")
 
+
 @dataclass(frozen=True)
 class CompleteSolver:
     """Bind the actual solver to task-local source and one opaque generation ID."""
@@ -116,9 +131,11 @@ class CompleteSolver:
             "operators": context.binding.registry})
         return result, tools
 
+
 def _answer_identity(answer):
     return (answer.type_name, answer.state, answer.semantic_release,
             contract_digest(answer.value))
+
 
 @dataclass(frozen=True)
 class Assessment:
@@ -158,6 +175,7 @@ class Assessment:
             "generation": self.generation_digest, "contracts": self.solver_contracts,
             "results": tuple(result.replay_record() for result in self.results)})
 
+
 def evaluate_capabilities(solver, cohort, generation) -> Assessment:
     if (not isinstance(solver, CompleteSolver)
             or not isinstance(cohort, EvaluationCohort) or not _sha(generation)):
@@ -165,3 +183,9 @@ def evaluate_capabilities(solver, cohort, generation) -> Assessment:
     measurements = tuple(solver.evaluate(case.goal, generation) for case in cohort.cases)
     return Assessment(cohort, generation, tuple(item[0] for item in measurements),
                       tuple(item[1] for item in measurements))
+
+EvidenceKind.__module__ = "bilqis_mlx.runtime.capability_retention"
+EvaluationCase.__module__ = "bilqis_mlx.runtime.capability_retention"
+EvaluationCohort.__module__ = "bilqis_mlx.runtime.capability_retention"
+CompleteSolver.__module__ = "bilqis_mlx.runtime.capability_retention"
+Assessment.__module__ = "bilqis_mlx.runtime.capability_retention"

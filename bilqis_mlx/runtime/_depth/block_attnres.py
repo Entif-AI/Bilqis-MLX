@@ -1,13 +1,35 @@
-"""Structural extraction from block_attnres.py; behavior preserved."""
+"""Shared depth selection with recomputed source-member factor features.
+
+The public feature interface reads approved A13 coordinates and actual A06/B01
+factors. Trusted backbone-summary capture remains an assembly qualification gate.
+"""
 from __future__ import annotations
-from dataclasses import dataclass
+
+from dataclasses import dataclass, field
+import re
+from types import MappingProxyType
 from typing import Callable, Mapping
+
 import mlx.core as mx
-from bilqis_mlx.learning.frame_embeddings import compose_factor_features
+
+from bilqis_mlx.errors import ErrorBus, SCHOOL
+from bilqis_mlx.learning.frame_embeddings import FeatureRequest, compose_factor_features
 from bilqis_mlx.learning.atlas_plasticity import AdapterParameters, adapter_forward
-from .model_topology_v2 import ModelTopologySpecV2
-from .depth_contracts import BATCH_POSITION_AXES, COMPLETED_LAYERS, DIAGNOSTICS_SCHEMA, DepthFrameFeatures, DepthParameterView, DepthSummary, FRAME_RANK, INNER, MAX_COMPLETED_GROUPS, MIN_COMPLETED_GROUPS, PARAMETER_SHAPES, SOURCE_ORDER, WIDTH, _DepthFeatureValues, _invalid
-from .depth_contracts import (BATCH_POSITION_AXES, COMPLETED_LAYERS, DIAGNOSTICS_SCHEMA, DepthFrameFeatures, DepthParameterView, DepthSummary, FEATURES_SCHEMA, FRAME_RANK, INNER, MAX_COMPLETED_GROUPS, MIN_COMPLETED_GROUPS, PARAMETER_SHAPES, PARAMETER_VIEW_SCHEMA, RELEASED_FEATURES_SCHEMA, SOURCE_ORDER, SUMMARY_SCHEMA, WIDTH, _DepthFeatureValues, _SHA, _VIEW_SEAL, _depth_names, _invalid, depth_parameter_view)
+from bilqis_mlx.semantics.atlas_features import AtlasFeatures
+from .model_topology_v2 import (
+    GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes,
+    validate_bamf_parameters,
+)
+
+
+from .depth_contracts import (
+    WIDTH, INNER, MIN_COMPLETED_GROUPS, MAX_COMPLETED_GROUPS, FRAME_RANK,
+    BATCH_POSITION_AXES, PARAMETER_SHAPES, FEATURES_SCHEMA, RELEASED_FEATURES_SCHEMA,
+    SUMMARY_SCHEMA, DIAGNOSTICS_SCHEMA, PARAMETER_VIEW_SCHEMA, _SHA, _VIEW_SEAL,
+    SOURCE_ORDER, COMPLETED_LAYERS, _invalid, _depth_names, DepthParameterView,
+    depth_parameter_view, _DepthFeatureValues, DepthFrameFeatures, DepthSummary,
+)
+
 
 def _validate(current, available_summaries, frame_features, params) -> None:
     if (not isinstance(current, mx.array) or current.ndim != FRAME_RANK
@@ -46,10 +68,12 @@ def _validate(current, available_summaries, frame_features, params) -> None:
     if not all(bool(flag) for flag in finite_flags):
         _invalid()
 
+
 def _rms_norm(values: mx.array, gamma: mx.array) -> mx.array:
     epsilon = ModelTopologySpecV2.rms_norm_epsilon
     return values * mx.rsqrt(
         mx.mean(values * values, axis=-1, keepdims=True) + epsilon) * gamma
+
 
 def _depth_components(current, available_summaries, frame_features, params):
     """Return output and proof-only alpha/gate values, without mutable caches."""
@@ -72,6 +96,7 @@ def _depth_components(current, available_summaries, frame_features, params):
     output = current + gate * (mix @ params["output"].T)
     return output, alpha, gate
 
+
 @dataclass(frozen=True)
 class DepthSelectionDiagnostics:
     """Source-qualified selector output and optional source-axis weights."""
@@ -80,6 +105,7 @@ class DepthSelectionDiagnostics:
     alpha: mx.array
     gate: mx.array
     schema_version: str = DIAGNOSTICS_SCHEMA
+
 
 def depth_select(
     current: mx.array, available_summaries: tuple[DepthSummary, ...],
@@ -92,6 +118,7 @@ def depth_select(
     """
     return depth_select_with_diagnostics(
         current, available_summaries, frame_features, params).output
+
 
 def depth_select_with_diagnostics(
     current: mx.array, available_summaries: tuple[DepthSummary, ...],
@@ -118,6 +145,7 @@ def depth_select_with_diagnostics(
         current, available_summaries, numerical, params)
     return DepthSelectionDiagnostics(output, alpha, gate)
 
+
 @dataclass(frozen=True)
 class _NumericalGroupBoundary:
     """Private assembly proof; not a B08 source-authorized motif read."""
@@ -127,6 +155,7 @@ class _NumericalGroupBoundary:
     adapted: mx.array
     alpha: mx.array
     gate: mx.array
+
 
 def _group_boundary_numerical(
     current: mx.array, previous: tuple[DepthSummary, ...],

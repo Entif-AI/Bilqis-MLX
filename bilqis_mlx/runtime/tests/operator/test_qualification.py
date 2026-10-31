@@ -278,7 +278,7 @@ class QualificationTests(unittest.TestCase):
 
     def test_staged_workload_examines_only_its_introduced_prefix(self):
         from dataclasses import replace
-        from scripts.freeze_learning_qualification import compile_stages
+        from scripts.bamf.freeze_learning_qualification import compile_stages
         from bilqis_mlx.factory.tests.test_executable_release import ExecutableFactoryReleaseTests
         from bilqis_mlx.factory.curriculum_definition import GradeSpec
         from bilqis_mlx.factory.executable_release import compile_executable_factory_release
@@ -319,7 +319,7 @@ class QualificationTests(unittest.TestCase):
 
     def test_freezer_reuses_the_current_operator_manifest_location(self):
         from types import SimpleNamespace
-        from scripts.freeze_learning_qualification import source_inputs
+        from scripts.bamf.freeze_learning_qualification import source_inputs
         from bilqis_mlx.runtime.qualification_manifest import file_digest
         source = self.root/'source'
         folder = source/'runs/primitive-consolidation-v16-triplets'

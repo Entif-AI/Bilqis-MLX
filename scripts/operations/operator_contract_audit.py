@@ -16,12 +16,18 @@ import subprocess
 
 try:
     from .operator_contract_scan import (
-        CodeSite, ContractDebt, SourceReport, analyze_source,
+        CodeSite,
+        ContractDebt,
+        SourceReport,
+        analyze_source,
         logical_source_path,
     )
 except ImportError:  # direct script execution
     from operator_contract_scan import (
-        CodeSite, ContractDebt, SourceReport, analyze_source,
+        CodeSite,
+        ContractDebt,
+        SourceReport,
+        analyze_source,
         logical_source_path,
     )
 

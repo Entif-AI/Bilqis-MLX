@@ -1,30 +1,35 @@
-"""Structural extraction from atlas_temporal_revalidation.py; behavior preserved."""
+"""Immutable source-time events, projections and canonical boundary validation."""
 from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum
 import hashlib
 import json
 import re
+
 from ..errors import ErrorBus, SCHOOL
 from ..semantics.cognitive_dependencies import DependencyKind, DependencyRef
 
 TEMPORAL_EVENT_SCHEMA = "bilqis.c09.temporal-event/v1"
-
 TEMPORAL_PROJECTION_SCHEMA = "bilqis.c09.temporal-projection/v1"
-
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
+
 
 def _invalid(reason: str) -> None:
     ErrorBus.raise_(SCHOOL.BAMF_REVALIDATION.INVALID, reason=reason)
 
+
 def _name(value: object) -> bool:
     return isinstance(value, str) and bool(value)
+
 
 def _digest(value: object) -> bool:
     return isinstance(value, str) and bool(_SHA256.fullmatch(value))
 
+
 def _time(value: object) -> bool:
     return type(value) is int and value >= 0
+
 
 def _names(value: object, *, sorted_names: bool = True) -> bool:
     return (isinstance(value, tuple) and bool(value)
@@ -32,17 +37,20 @@ def _names(value: object, *, sorted_names: bool = True) -> bool:
             and len(value) == len(set(value))
             and (not sorted_names or value == tuple(sorted(value))))
 
+
 def _hash(value: object) -> str:
     return hashlib.sha256(
         (json.dumps(value, sort_keys=True, separators=(",", ":"),
                     ensure_ascii=False, allow_nan=False) + "\n").encode("utf-8")
     ).hexdigest()
 
+
 class TemporalEventKind(str, Enum):
     PLANNED = "PLANNED"
     OBSERVED = "OBSERVED"
     EXPLICIT_NONOCCURRENCE = "EXPLICIT_NONOCCURRENCE"
     CORRECTION = "CORRECTION"
+
 
 class TemporalStatus(str, Enum):
     UNKNOWN = "UNKNOWN"
@@ -52,6 +60,7 @@ class TemporalStatus(str, Enum):
     EXPLICIT_NONOCCURRENCE = "EXPLICIT_NONOCCURRENCE"
     CORRECTED = "CORRECTED"
     CONFLICTING_ALTERNATIVES = "CONFLICTING_ALTERNATIVES"
+
 
 @dataclass(frozen=True)
 class TemporalEvent:
@@ -92,6 +101,7 @@ class TemporalEvent:
                          or self.supersedes_event_id == self.event_id))
                 or self.schema_version != TEMPORAL_EVENT_SCHEMA):
             _invalid("BAMF_C09_TEMPORAL_EVENT_INVALID")
+
 
 @dataclass(frozen=True)
 class TemporalProjection:

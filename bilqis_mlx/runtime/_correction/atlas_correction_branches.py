@@ -1,15 +1,18 @@
-"""Structural extraction from atlas_requalification.py; behavior preserved."""
+"""Authenticated correction branches preserve incompatible source alternatives."""
 from __future__ import annotations
+
 from dataclasses import dataclass
 from graphlib import CycleError, TopologicalSorter
 import hashlib
 import json
+
 from ..semantics.cognitive_dependencies import DependencyRef
 from .atlas_revalidation import CorrectionEvent, SourceAuthorityRegistry, _invalid, _name
 
+# C09.2 preserves incompatible corrections as alternative source branches.
 CORRECTION_BRANCH_SCHEMA = "bilqis.c09.correction-branch/v1"
-
 CORRECTION_BRANCHES_SCHEMA = "bilqis.c09.correction-branches/v1"
+
 
 def _identity(value: object) -> str:
     return hashlib.sha256(
@@ -17,11 +20,13 @@ def _identity(value: object) -> str:
                     ensure_ascii=False, allow_nan=False) + "\n").encode("utf-8")
     ).hexdigest()
 
+
 def _canonical_names(names: object, *, nonempty: bool = True) -> bool:
     return (isinstance(names, tuple)
             and (bool(names) or not nonempty)
             and all(_name(item) for item in names)
             and names == tuple(sorted(set(names))))
+
 
 @dataclass(frozen=True)
 class CorrectionBranch:
@@ -36,6 +41,7 @@ class CorrectionBranch:
                 or self.event.event_id in self.supersedes_event_ids
                 or self.schema_version != CORRECTION_BRANCH_SCHEMA):
             _invalid("BAMF_C09_CORRECTION_BRANCH_INVALID")
+
 
 @dataclass(frozen=True)
 class CorrectionBranches:
@@ -75,6 +81,7 @@ class CorrectionBranches:
         }
         return tuple(branch for branch in self.branches
                      if branch.event.event_id not in superseded)
+
 
 def add_correction(
     branches: CorrectionBranches,

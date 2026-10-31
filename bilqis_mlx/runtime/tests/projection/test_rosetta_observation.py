@@ -9,7 +9,7 @@ import unittest
 from dataclasses import replace
 
 from bilqis_mlx.runtime.rosetta_observation import RosettaRuntime, project_rosetta_observation
-from bilqis_mlx.runtime.tests.test_bamf_projection import _contract, _projected, _event
+from bilqis_mlx.runtime.tests.projection.test_bamf_projection import _contract, _projected, _event
 from bilqis_mlx.errors import BilqisError
 
 
@@ -32,7 +32,7 @@ class RosettaObservationTests(unittest.TestCase):
             cwd=root, check=True, capture_output=True)
 
         subprocess.run([str(root / 'node_modules/.bin/esbuild'),
-            str(Path(__file__).resolve().parents[4] / 'scripts/c10_rosetta_owner_bridge.ts'),
+            str(Path(__file__).resolve().parents[4] / 'scripts/operations/c10_rosetta_owner_bridge.ts'),
             '--bundle', '--platform=node', '--format=cjs', '--conditions=@entif-ai/source',
             '--alias:@entif-ai/rosetta-core=' + str(root / 'packages/rosetta-core/src/index.ts'),
             '--define:__ROSETTA_SOURCE_REVISION__=' + repr(cls.revision).replace("'", '"'),

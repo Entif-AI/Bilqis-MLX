@@ -1,25 +1,30 @@
-"""Structural extraction from atlas_temporal_revalidation.py; behavior preserved."""
+"""Post-remediation stale replay holds only proven affected dependency paths."""
 from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum
+
 from ..errors import SCHOOL
 from ..semantics.cognitive_dependencies import DependencyIndex, DependencyKind, DependencyRef
-from .atlas_revalidation import CorrectionEvent, SourceAuthorityRegistry, RevalidationQueue, RevalidationTask
-from .atlas_requalification import RequalificationLedger, RequalificationUpdate, mark_affected_capabilities
-from .atlas_temporal_contracts import _digest, _invalid, _name, _names, _time
+from .atlas_revalidation import (
+    CorrectionEvent, SourceAuthorityRegistry, RevalidationQueue, RevalidationTask,
+)
+from .atlas_requalification import (
+    RequalificationLedger, RequalificationUpdate, mark_affected_capabilities,
+)
+from .atlas_temporal_contracts import _invalid, _name, _digest, _time, _names
 
 REMEDIATION_RECEIPT_SCHEMA = "bilqis.c09.remediation-receipt/v2"
-
 DERIVED_CLAIM_SCHEMA = "bilqis.c09.derived-claim/v1"
-
 PROCESS_FAULT_SCHEMA = "bilqis.c09.process-fault/v1"
-
 PROCESS_FAULT_RESULT_SCHEMA = "bilqis.c09.process-fault-result/v1"
+
 
 class RemediationStatus(str, Enum):
     PENDING = "PENDING"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
+
 
 @dataclass(frozen=True)
 class RemediationReceipt:
@@ -53,6 +58,7 @@ class RemediationReceipt:
                 or self.schema_version != REMEDIATION_RECEIPT_SCHEMA):
             _invalid("BAMF_C09_REMEDIATION_RECEIPT_INVALID")
 
+
 @dataclass(frozen=True)
 class DerivedClaim:
     claim_id: str
@@ -76,6 +82,7 @@ class DerivedClaim:
                 or not _names(self.derived_path, sorted_names=False)
                 or self.schema_version != DERIVED_CLAIM_SCHEMA):
             _invalid("BAMF_C09_DERIVED_CLAIM_INVALID")
+
 
 @dataclass(frozen=True)
 class ProcessFault:
@@ -109,6 +116,7 @@ class ProcessFault:
                 or self.schema_version != PROCESS_FAULT_SCHEMA):
             _invalid("BAMF_C09_PROCESS_FAULT_INVALID")
 
+
 @dataclass(frozen=True)
 class ProcessFaultResult:
     fault: ProcessFault
@@ -122,6 +130,7 @@ class ProcessFaultResult:
                 or not isinstance(self.requalification, RequalificationUpdate)
                 or self.schema_version != PROCESS_FAULT_RESULT_SCHEMA):
             _invalid("BAMF_C09_PROCESS_FAULT_RESULT_INVALID")
+
 
 def escalate_stale_replay(
     remediation: RemediationReceipt,

@@ -1,14 +1,31 @@
-"""Structural extraction from atlas_training_adapter.py; behavior preserved."""
+"""Release-bound, source-visible BAMF input preparation.
+
+The compiler and feature callables are explicit seams until A05 and A06 land.
+They are the interfaces in their owner contracts, not replacement implementations.
+"""
 from __future__ import annotations
+
 from graphlib import CycleError, TopologicalSorter
 from typing import Callable
+
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.factory.adapters import validate_instructional_constituents
 from bilqis_mlx.factory.generation import runtime_adapter_for_release
 from bilqis_mlx.factory.teaching import DeliveredTeaching, describe_delivered_teaching, content_digest
-from .atlas_training_contracts import BamfDeliveryProvenance, BamfModelInput, BamfTarget, BamfTargetEvidence, BamfTrainingBatch, BamfTrainingRow, _freeze, _invalid
-from .atlas_training_contracts import (BamfDeliveryProvenance, BamfModelInput, BamfTarget, BamfTargetEvidence, BamfTrainingBatch, BamfTrainingRow, PaddedMicrobatch, _freeze, _invalid, require_current_release)
-from .atlas_training_delivery import (attach_auxiliaries, capture_realized_delivery, execute_with_backend, pad_microbatches, require_independent_cohorts, resolve_batch_rules)
+from bilqis_mlx.semantics.context_eligibility import (
+    ContextEligibility, ContextPolicy, EligibleContext, SourceFrontier,
+    TaskScope, check_context_eligibility as _check_context_eligibility,
+)
+from .atlas_training_contracts import (
+    BamfModelInput, BamfTarget, BamfTargetEvidence, BamfDeliveryProvenance,
+    BamfTrainingRow, BamfTrainingBatch, PaddedMicrobatch,
+    _invalid, _freeze, require_current_release,
+)
+from .atlas_training_delivery import (
+    pad_microbatches, attach_auxiliaries, execute_with_backend,
+    capture_realized_delivery, require_independent_cohorts, resolve_batch_rules,
+)
+
 
 def _answer_plan(plan, head, visible_end, generation_binding):
     fields = {'modalityID', 'input_prefix_end', 'decisions', 'allowedOutputSchema',
@@ -42,6 +59,7 @@ def _answer_plan(plan, head, visible_end, generation_binding):
         _invalid('ANSWER_PLAN_INVALID')
     return _freeze(plan)
 
+
 def compile_training_batch(delivered_rows, source_context: SourceExecutionContext,
                            topology, *, delivery: DeliveredTeaching, delivery_capability: str,
                            delivery_release_sha256: str, teacher_strategy: dict,
@@ -49,9 +67,9 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
                            rehearsal_by_id: dict, visible_ends: dict,
                            source_ast_for: Callable, compile_prefix: Callable,
                            feature_requests_for: Callable, features_for: Callable, answer_plan_for: Callable,
-                           frames_for_ast: Callable, check_context_eligibility: Callable,
-                           eligible_source_for: Callable, task_scope, source_frontier,
-                           eligibility_policy, generation_binding: str,
+                           frames_for_ast: Callable, task_scope: TaskScope,
+                           source_frontier: SourceFrontier,
+                           eligibility_policy: ContextPolicy, generation_binding: str,
                            target_encoders: dict | None = None, sealed_holdout_ids=()) -> BamfTrainingBatch:
     """Compile source-oracled delivery using explicit frozen A05/A06 seams."""
     if not isinstance(source_context, SourceExecutionContext):
@@ -59,8 +77,12 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
     if not isinstance(delivered_rows, (tuple, list)) or not delivered_rows:
         _invalid('DELIVERED_ROWS_REQUIRED')
     if any(not callable(fn) for fn in (source_ast_for, compile_prefix, feature_requests_for, features_for,
-                                           frames_for_ast, check_context_eligibility, eligible_source_for, answer_plan_for)):
+                                           frames_for_ast, answer_plan_for)):
         _invalid('UPSTREAM_INTERFACES_REQUIRED')
+    if (type(task_scope) is not TaskScope
+            or type(source_frontier) is not SourceFrontier
+            or type(eligibility_policy) is not ContextPolicy):
+        _invalid('CONTEXT_AUTHORITY_REQUIRED')
     source_context.release.verify()
     source_context.release.verify_semantic_catalog(source_context.graph)
     release = source_context.release
@@ -134,15 +156,16 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
         head = heads[kind]
         visible = tuple(tokens[:end])
         ast = source_ast_for(visible)
-        eligible = check_context_eligibility(frames_for_ast(ast), task_scope, source_frontier, eligibility_policy)
-        try:
-            eligible_ast, eligibility_digest = eligible_source_for(eligible)
-        except (TypeError, ValueError):
+        frames = frames_for_ast(ast)
+        if (type(frames) is not tuple or not frames
+                or any(type(frame) is not ContextEligibility for frame in frames)):
+            _invalid('CONTEXT_SOURCE_FRAMES_REQUIRED')
+        eligible = _check_context_eligibility(
+            frames, task_scope, source_frontier, eligibility_policy)
+        if type(eligible) is not EligibleContext:
             _invalid('CONTEXT_NOT_ELIGIBLE')
-        if (not isinstance(eligibility_digest, str) or len(eligibility_digest) != 64
-                or any(c not in '0123456789abcdef' for c in eligibility_digest)):
-            _invalid('ELIGIBILITY_DIGEST_INVALID')
-        prefix = compile_prefix(eligible_ast, len(visible), release, topology)
+        eligibility_digest = eligible.digest
+        prefix = compile_prefix(ast, len(visible), release, topology)
         queries = feature_requests_for(prefix)
         if not isinstance(queries, (list, tuple)) or any(not isinstance(q, (list, tuple)) or len(q) != 4 for q in queries):
             _invalid('FEATURE_REQUESTS_INVALID')

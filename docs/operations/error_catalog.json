@@ -1,6 +1,6 @@
 {
-  "legacy_raw_file_count": 184,
-  "legacy_raw_raise_count": 1956,
+  "legacy_raw_file_count": 179,
+  "legacy_raw_raise_count": 1939,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BACKUP_ARCHIVE_ROOT_SYMLINK",
@@ -8718,48 +8718,6 @@
       "path": "bilqis_mlx/runtime/_batch/candidate_evidence.py"
     },
     {
-      "code_hint": "FIXED_FRONTIER_PARENT_IDENTITY_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FIXED_FRONTIER_PARENT_IDENTITY_DRIFT'",
-      "path": "bilqis_mlx/runtime/_batch/fixed_frontier_evidence.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_REUSABLE_EXAM_COHORT_IDENTITY_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_REUSABLE_EXAM_COHORT_IDENTITY_INVALID'",
-      "path": "bilqis_mlx/runtime/_batch/fixed_frontier_evidence.py"
-    },
-    {
-      "code_hint": "LEARNING_EXPERIMENT_FIXED_GRADE_COHORT_INCOMPLETE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'LEARNING_EXPERIMENT_FIXED_GRADE_COHORT_INCOMPLETE'",
-      "path": "bilqis_mlx/runtime/_batch/fixed_frontier_evidence.py"
-    },
-    {
-      "code_hint": "LEARNING_EXPERIMENT_FIXED_GRADE_COHORT_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'LEARNING_EXPERIMENT_FIXED_GRADE_COHORT_MISSING'",
-      "path": "bilqis_mlx/runtime/_batch/fixed_frontier_evidence.py"
-    },
-    {
-      "code_hint": "FRAGILE_PRESERVATION_BATCH_CAPACITY_EXHAUSTED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FRAGILE_PRESERVATION_BATCH_CAPACITY_EXHAUSTED'",
-      "path": "bilqis_mlx/runtime/_batch/retention_support.py"
-    },
-    {
-      "code_hint": "RETENTION_SUPPORT_SCHEDULE_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'RETENTION_SUPPORT_SCHEDULE_INVALID'",
-      "path": "bilqis_mlx/runtime/_batch/retention_support.py"
-    },
-    {
       "code_hint": "CANDIDATE_STAGING_AMBIGUOUS_SUCCESSOR",
       "count": 1,
       "exception": "ValueError",
@@ -8814,34 +8772,6 @@
       "exception": "ValueError",
       "expression": "'STAGNATION_STOP_EVALUATION_HAS_NO_ACTIVE_CAPABILITIES'",
       "path": "bilqis_mlx/runtime/_custody/boundary_commit.py"
-    },
-    {
-      "code_hint": "CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_COHORT_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_COHORT_MISSING'",
-      "path": "bilqis_mlx/runtime/_custody/championship_source_repair.py"
-    },
-    {
-      "code_hint": "CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CONTENT_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CONTENT_DRIFT'",
-      "path": "bilqis_mlx/runtime/_custody/championship_source_repair.py"
-    },
-    {
-      "code_hint": "CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CUSTODY_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CUSTODY_DRIFT'",
-      "path": "bilqis_mlx/runtime/_custody/championship_source_repair.py"
-    },
-    {
-      "code_hint": "CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_IDENTITY_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_IDENTITY_DRIFT'",
-      "path": "bilqis_mlx/runtime/_custody/championship_source_repair.py"
     },
     {
       "code_hint": "DISK_BUDGET_EXHAUSTED",
@@ -9164,48 +9094,6 @@
       "exception": "ValueError",
       "expression": "'WHOLE_STUDENT_PEAK_SEED_ADAMW_DRIFT'",
       "path": "bilqis_mlx/runtime/_custody/reconciliation.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_CURRENT_VOCAB_ANSWER_HEAD_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_CURRENT_VOCAB_ANSWER_HEAD_DRIFT'",
-      "path": "bilqis_mlx/runtime/_custody/resume_metadata.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_CURRENT_VOCAB_GRAPH_EMBEDDING_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_CURRENT_VOCAB_GRAPH_EMBEDDING_DRIFT'",
-      "path": "bilqis_mlx/runtime/_custody/resume_metadata.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_UNVERIFIED_VOCAB_METADATA_MIGRATION",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_UNVERIFIED_VOCAB_METADATA_MIGRATION'",
-      "path": "bilqis_mlx/runtime/_custody/resume_metadata.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_VOCAB_RECONCILE_OWN_ADAMW_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_VOCAB_RECONCILE_OWN_ADAMW_DRIFT'",
-      "path": "bilqis_mlx/runtime/_custody/resume_metadata.py"
-    },
-    {
-      "code_hint": "LEARNING_EXPERIMENT_HISTORY_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'LEARNING_EXPERIMENT_HISTORY_INVALID'",
-      "path": "bilqis_mlx/runtime/_custody/resume_metadata.py"
-    },
-    {
-      "code_hint": "LEARNING_EXPERIMENT_POLICY_OWN_ADAMW_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'LEARNING_EXPERIMENT_POLICY_OWN_ADAMW_DRIFT'",
-      "path": "bilqis_mlx/runtime/_custody/resume_metadata.py"
     },
     {
       "code_hint": "HUMAN_TRAINER_ANOTHER_OPERATOR_ACTIVE",
@@ -10437,28 +10325,7 @@
       "count": 1,
       "exception": "AssertionError",
       "expression": "'A05 requires a typed source AST'",
-      "path": "bilqis_mlx/runtime/tests/batch/test_atlas_training_adapter_helpers.py"
-    },
-    {
-      "code_hint": "context held",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'context held'",
-      "path": "bilqis_mlx/runtime/tests/batch/test_atlas_training_adapter_helpers.py"
-    },
-    {
-      "code_hint": "exact cached route must preempt neural",
-      "count": 1,
-      "exception": "AssertionError",
-      "expression": "'exact cached route must preempt neural'",
-      "path": "bilqis_mlx/runtime/tests/capability/cognitive_solver_methods_part2.py"
-    },
-    {
-      "code_hint": "malformed decoder payload",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'malformed decoder payload'",
-      "path": "bilqis_mlx/runtime/tests/capability/cognitive_solver_methods_part3.py"
+      "path": "bilqis_mlx/runtime/tests/batch/test_atlas_training_adapter.py"
     },
     {
       "code_hint": "missing source manifest",
@@ -10475,11 +10342,25 @@
       "path": "bilqis_mlx/runtime/tests/capability/test_capability_evidence_history.py"
     },
     {
+      "code_hint": "exact cached route must preempt neural",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'exact cached route must preempt neural'",
+      "path": "bilqis_mlx/runtime/tests/capability/test_cognitive_solver.py"
+    },
+    {
+      "code_hint": "malformed decoder payload",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'malformed decoder payload'",
+      "path": "bilqis_mlx/runtime/tests/capability/test_cognitive_solver.py"
+    },
+    {
       "code_hint": "snapshot must not mutate MLX telemetry",
       "count": 1,
       "exception": "AssertionError",
       "expression": "'snapshot must not mutate MLX telemetry'",
-      "path": "bilqis_mlx/runtime/tests/model/test_atlas_resources_part3.py"
+      "path": "bilqis_mlx/runtime/tests/model/resources/test_memory_retry.py"
     },
     {
       "code_hint": "boom",

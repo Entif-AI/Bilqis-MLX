@@ -72,7 +72,7 @@ class OwnerReceiptFixtureTests(unittest.TestCase):
         from pathlib import Path
         import tempfile
         from bilqis_mlx.runtime.akasha_staging import build_staging_projection
-        from bilqis_mlx.runtime.tests.test_bamf_projection import _contract, _projected
+        from bilqis_mlx.runtime.tests.projection.test_bamf_projection import _contract, _projected
         for category in (AkashaEventKind.BANK_ALLOCATION, AkashaEventKind.PLASTICITY_EPOCH,
                          AkashaEventKind.PACKAGE_EXPORT):
             receipt = self.receipt(category)
@@ -90,7 +90,7 @@ class OwnerReceiptFixtureTests(unittest.TestCase):
         from pathlib import Path
         import tempfile
         from bilqis_mlx.runtime.akasha_staging import build_staging_projection, StagingProjection, _digest
-        from bilqis_mlx.runtime.tests.test_bamf_projection import _contract, _projected, _event
+        from bilqis_mlx.runtime.tests.projection.test_bamf_projection import _contract, _projected, _event
         with tempfile.TemporaryDirectory() as folder:
             domain = _contract(Path(folder) / 'outbox.sqlite3')
             ordinary = build_staging_projection((_projected(_event('capability:public'), domain),), domain)

@@ -1,3 +1,3 @@
-"""Physical owner grouping; canonical runtime module names remain stable."""
+"""Physical grouping only; canonical owners retain their runtime module names."""
 
 __path__ = []

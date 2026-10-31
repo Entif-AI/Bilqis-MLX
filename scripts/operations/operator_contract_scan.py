@@ -13,10 +13,31 @@ EVENT_FIELDS = frozenset(("event",))
 GATE_COLLECTION_NAMES = frozenset(
     ("debt", "blockers", "required_source_work", "reasons"))
 
-try:
-    from .operator_contract_paths import logical_source_path
-except ImportError:  # direct script execution
-    from operator_contract_paths import logical_source_path
+# These directories are physical source compartments only. Their parent
+# packages deliberately preserve the long-standing public module identities
+# via package search paths / aliases, so quality debt must remain keyed to
+# that canonical identity rather than being reclassified as "new" merely
+# because anti-monolith governance moved the source file on disk.
+LOGICAL_SOURCE_COMPARTMENTS = (
+    (("bilqis_mlx", "factory", "curriculum"), ("bilqis_mlx", "factory")),
+    (("bilqis_mlx", "factory", "lifecycle"), ("bilqis_mlx", "factory")),
+    (("bilqis_mlx", "factory", "sources"), ("bilqis_mlx", "factory")),
+    (("bilqis_mlx", "learning", "_championship"), ("bilqis_mlx", "learning")),
+    (("bilqis_mlx", "learning", "_engram"), ("bilqis_mlx", "learning")),
+    (("bilqis_mlx", "learning", "_retention"), ("bilqis_mlx", "learning")),
+    (("bilqis_mlx", "learning", "_salience"), ("bilqis_mlx", "learning")),
+    (("bilqis_mlx", "learning", "_teaching"), ("bilqis_mlx", "learning")),
+    (("bilqis_mlx", "semantics", "foundation"), ("bilqis_mlx", "semantics")),
+)
+
+
+def logical_source_path(path: Path, root: Path) -> str:
+    relative = path.relative_to(root)
+    parts = relative.parts
+    for physical, canonical in LOGICAL_SOURCE_COMPARTMENTS:
+        if parts[:3] == physical:
+            return Path(*canonical, *parts[3:]).as_posix()
+    return relative.as_posix()
 
 
 @dataclass(frozen=True)

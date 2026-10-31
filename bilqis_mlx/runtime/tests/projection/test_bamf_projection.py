@@ -21,42 +21,13 @@ from bilqis_mlx.runtime.akasha_staging import (
 )
 
 
-def _event(subject):
-    return AkashaEvent.from_payload(
-        kind=AkashaEventKind.REQUALIFICATION,
-        subject_id=subject, source_receipt_sha256="9" * 64,
-        payload={
-            "capability_id": subject,
-            "retained_generation_sha256": "a" * 64,
-            "status": "REQUALIFICATION_REQUIRED",
-        },
-        source_time=570, effective_time=575,
-        observed_at=580, recorded_at=585,
-    )
 
 
-def _contract(path):
-    return ProjectionDomainContract(
-        outbox_path=path,
-        source_id="source:fixture",
-        release_digest="1" * 64,
-        model_digest="2" * 64,
-        evaluator_digest="3" * 64,
-        rights_digest="4" * 64,
-        as_of=600,
-    )
 
 
-def _projected(event, contract):
-    return BamfProjectionEvent(
-        event=event,
-        source_id=contract.source_id,
-        release_digest=contract.release_digest,
-        model_digest=contract.model_digest,
-        evaluator_digest=contract.evaluator_digest,
-        rights_digest=contract.rights_digest,
-        as_of=contract.as_of,
-    )
+
+
+from bilqis_mlx.runtime.tests.projection.staging_helpers import _event, _contract, _projected
 
 
 class BamfProjectionTests(unittest.TestCase):
@@ -78,90 +49,7 @@ class BamfProjectionTests(unittest.TestCase):
                     build_staging_projection((_projected(event.event, changed),), changed)
 
 
-    def test_staging_census_bounded_queries_and_private_payload_exclusion(self):
-        with tempfile.TemporaryDirectory() as folder:
-            contract = _contract(Path(folder) / "outbox.sqlite3")
-            private = AkashaEvent.from_payload(
-                kind=AkashaEventKind.REQUALIFICATION,
-                subject_id="/private/users/alpha",
-                source_receipt_sha256="9" * 64,
-                payload={
-                    "capability_id": "capability:private",
-                    "retained_generation_sha256": "a" * 64,
-                    "status": "REQUALIFICATION_REQUIRED",
-                    "raw_private_input": "SECRET_SOURCE_TEXT",
-                    "private_path": "/private/users/alpha/source.txt",
-                },
-                source_time=570, effective_time=575,
-                observed_at=580, recorded_at=585,
-            )
-            events = (
-                _projected(private, contract),
-                _projected(_event("capability:public"), contract),
-            )
-            stage = build_staging_projection(events, contract)
-            verified = verify_staging_projection(stage)
-            self.assertEqual(len(stage.public_events), 2)
-            self.assertEqual(stage.census, (("REQUALIFICATION", 2),))
-            self.assertNotIn("SECRET_SOURCE_TEXT", stage.canonical_json)
-            self.assertNotIn("/private/users/alpha", stage.canonical_json)
-            self.assertNotIn("private_path", stage.canonical_json)
-            self.assertEqual(len(query_public_projection(stage, limit=1)), 1)
-            self.assertEqual(len(query_public_projection(stage, limit=2)), 2)
-            self.assertEqual(
-                query_public_projection(stage, limit=2, as_of=580), ())
-            with self.assertRaises(BilqisError):
-                query_public_projection(stage, limit=101)
-            self.assertEqual(verified.stage.stage_digest, stage.stage_digest)
-            future_effective = AkashaEvent.from_payload(
-                kind=AkashaEventKind.REQUALIFICATION,
-                subject_id="capability:future",
-                source_receipt_sha256="9" * 64,
-                payload={
-                    "capability_id": "capability:future",
-                    "retained_generation_sha256": "a" * 64,
-                    "status": "REQUALIFICATION_REQUIRED",
-                },
-                source_time=570, effective_time=620,
-                observed_at=580, recorded_at=585,
-            )
-            future_stage = build_staging_projection(
-                (_projected(future_effective, contract),), contract)
-            self.assertEqual(
-                query_public_projection(future_stage, limit=1, as_of=600), ())
-            self.assertEqual(len(query_public_projection(
-                future_stage, limit=1, as_of=630)), 1)
 
-    def test_atomic_staging_promotion_preserves_old_generation_and_pointer(self):
-        with tempfile.TemporaryDirectory() as folder:
-            contract = _contract(Path(folder) / "outbox.sqlite3")
-            stage_db = Path(folder) / "staging.sqlite3"
-            first = verify_staging_projection(build_staging_projection(
-                (_projected(_event("capability:1"), contract),), contract))
-            receipt = promote_staging_projection(
-                stage_db, first, expected_active_digest=None)
-            self.assertEqual(receipt.active_digest, first.stage.stage_digest)
-            self.assertEqual(read_active_projection(stage_db), first.stage)
-            second = verify_staging_projection(build_staging_projection(
-                tuple(_projected(
-                    _event("capability:" + str(index)), contract)
-                    for index in range(2)), contract))
-            with self.assertRaises(BilqisError) as caught:
-                promote_staging_projection(
-                    stage_db, second, expected_active_digest=None)
-            self.assertEqual(caught.exception.context["reason"],
-                             "BAMF_C10_STAGING_POINTER_CONFLICT")
-            self.assertEqual(read_active_projection(stage_db), first.stage)
-            promoted = promote_staging_projection(
-                stage_db, second,
-                expected_active_digest=first.stage.stage_digest)
-            self.assertEqual(promoted.previous_digest,
-                             first.stage.stage_digest)
-            self.assertEqual(read_active_projection(stage_db), second.stage)
-            self.assertEqual(read_staging_projection(
-                stage_db, first.stage.stage_digest), first.stage)
-            self.assertEqual(read_staging_projection(
-                stage_db, second.stage.stage_digest), second.stage)
 
     def test_identity_bound_outbox_is_deduplicated_without_graph_io(self):
         with tempfile.TemporaryDirectory() as folder:

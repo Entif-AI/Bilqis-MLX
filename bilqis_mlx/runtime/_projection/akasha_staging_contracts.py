@@ -1,4 +1,4 @@
-"""Structural extraction from akasha_staging.py; behavior preserved."""
+"""Immutable public event and staging identities for C10.3."""
 from __future__ import annotations
 from dataclasses import asdict, dataclass
 import hashlib
@@ -10,28 +10,37 @@ from .bamf_projection import BamfProjectionEvent
 
 PUBLIC_EVENT_SCHEMA = "bilqis.c10.public-event/v1"
 
+
 STAGING_PROJECTION_SCHEMA = "bilqis.c10.staging-projection/v1"
+
 
 PROMOTION_RECEIPT_SCHEMA = "bilqis.c10.promotion-receipt/v1"
 
+
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
+
 
 def _invalid(reason: str) -> None:
     ErrorBus.raise_(SCHOOL.BAMF_AKASHA.INVALID, reason=reason)
 
+
 def _sha(value: object) -> bool:
     return isinstance(value, str) and bool(_SHA256.fullmatch(value))
 
+
 def _time(value: object) -> bool:
     return type(value) is int and value >= 0
+
 
 def _canonical(value: object) -> str:
     return json.dumps(
         value, sort_keys=True, separators=(",", ":"),
         ensure_ascii=False, allow_nan=False)
 
+
 def _digest(value: object) -> str:
     return hashlib.sha256(_canonical(value).encode("utf-8")).hexdigest()
+
 
 @dataclass(frozen=True)
 class PublicEvent:
@@ -66,6 +75,7 @@ class PublicEvent:
                 or self.schema_version != PUBLIC_EVENT_SCHEMA):
             _invalid("BAMF_C10_PUBLIC_EVENT_INVALID")
 
+
 def _public_event(event: BamfProjectionEvent) -> PublicEvent:
     return PublicEvent(
         event_id=event.event.event_id,
@@ -83,8 +93,10 @@ def _public_event(event: BamfProjectionEvent) -> PublicEvent:
         recorded_at=event.event.recorded_at,
     )
 
+
 def _public_payload(event: PublicEvent) -> dict:
     return {**asdict(event), "kind": event.kind.value}
+
 
 @dataclass(frozen=True)
 class StagingProjection:
@@ -147,6 +159,7 @@ class StagingProjection:
         except (TypeError, ValueError, KeyError):
             _invalid("BAMF_C10_STAGING_STORED_INVALID")
 
+
 @dataclass(frozen=True)
 class PromotionReceipt:
     previous_digest: str | None
@@ -161,3 +174,10 @@ class PromotionReceipt:
                 or not _sha(self.census_digest)
                 or self.schema_version != PROMOTION_RECEIPT_SCHEMA):
             _invalid("BAMF_C10_PROMOTION_RECEIPT_INVALID")
+
+
+PublicEvent.__module__ = "bilqis_mlx.runtime.akasha_staging"
+
+StagingProjection.__module__ = "bilqis_mlx.runtime.akasha_staging"
+
+PromotionReceipt.__module__ = "bilqis_mlx.runtime.akasha_staging"

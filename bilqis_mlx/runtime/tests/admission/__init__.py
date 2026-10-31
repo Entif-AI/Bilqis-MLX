@@ -1,1 +1,1 @@
-"""Package-local tests for the corresponding runtime owners."""
+"""Atlas lease, admission and debt tests."""

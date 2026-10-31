@@ -1,11 +1,25 @@
-"""Structural extraction from capability_retention.py; behavior preserved."""
+"""Evaluator-side complete-solver measurements and advisory paired eligibility."""
 from __future__ import annotations
+
 from dataclasses import dataclass, field
 from enum import Enum
+import re
+from typing import Callable
+
+from ..errors import ErrorBus, SCHOOL
 from ..learning.retention_policy import retention_reason, scaled_loss_allowance
+from ..semantics.cognitive_dag import TaskGoal
+from ..semantics.cognitive_operators import TypedValue, ValueState
 from ..semantics.domains import contract_digest
-from .capability_evaluation import Assessment, EvidenceKind, _invalid, _names, _sha
-from .capability_evaluation import (Assessment, CompleteSolver, EvaluationCase, EvaluationCohort, EvidenceKind, _answer_identity, _invalid, _names, _sha, case_census_digest, evaluate_capabilities)
+from .cognitive_solver import (
+    CapabilityResult, GenerationBinding, SolveBudget, SolveContext, solve_task,
+)
+
+from .capability_evaluation import (
+    _invalid, _sha, _names, EvidenceKind, EvaluationCase, case_census_digest,
+    EvaluationCohort, CompleteSolver, _answer_identity, Assessment, evaluate_capabilities,
+)
+
 
 @dataclass(frozen=True)
 class AssessmentPair:
@@ -23,6 +37,7 @@ class AssessmentPair:
 
     def delta(self, capability):
         return self.candidate.score(capability)[0] - self.parent.score(capability)[0]
+
 
 @dataclass(frozen=True)
 class RetentionPolicy:
@@ -59,6 +74,7 @@ class RetentionPolicy:
 
     def digest(self):
         return contract_digest(self)
+
 
 @dataclass(frozen=True)
 class PairedRetentionEvidence:
@@ -107,13 +123,16 @@ class PairedRetentionEvidence:
                                      for pair in (self.target, self.fresh_lesson,
                                                   self.fixed_school)))
 
+
 class DecisionStatus(str, Enum):
     ELIGIBLE = "ELIGIBLE"
     REJECT = "REJECT"
 
+
 class WorkDisposition(str, Enum):
     REHEARSE_OR_ADVANCE = "REHEARSE_OR_ADVANCE"
     OPTIMIZER_CANDIDATE = "OPTIMIZER_CANDIDATE"
+
 
 @dataclass(frozen=True)
 class Decision:
@@ -134,6 +153,7 @@ class Decision:
                 or self.schema_version != "bilqis.c05.retention-decision/v1"):
             _invalid("BAMF_RETENTION_DECISION_INVALID")
 
+
 @dataclass(frozen=True)
 class ConfigurationOutcome:
     parent_assessment_sha256: str
@@ -142,12 +162,14 @@ class ConfigurationOutcome:
     optimizer_steps: int = field(default=0, init=False)
     schema_version: str = field(default="bilqis.c05.configuration-outcome/v1", init=False)
 
+
 def configuration_outcome(pair: AssessmentPair) -> ConfigurationOutcome:
     if not isinstance(pair, AssessmentPair):
         _invalid("BAMF_CONFIGURATION_ASSESSMENT_REQUIRED")
     return ConfigurationOutcome(
         pair.parent.digest(), pair.candidate.digest(),
         sum(pair.delta(capability) for capability, _ in pair.parent.cohort.capability_groups))
+
 
 def candidate_work_disposition(parent: Assessment, capability: str) -> WorkDisposition:
     if not isinstance(parent, Assessment):
@@ -158,6 +180,7 @@ def candidate_work_disposition(parent: Assessment, capability: str) -> WorkDispo
                       if case.capability_id == capability)
     return (WorkDisposition.REHEARSE_OR_ADVANCE if correct == total and source_only
             else WorkDisposition.OPTIMIZER_CANDIDATE)
+
 
 def retain_candidate(parent, candidate, paired_assessment) -> Decision:
     """Return eligibility evidence; B12/B13 alone own actual state publication."""

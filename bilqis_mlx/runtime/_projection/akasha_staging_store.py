@@ -1,9 +1,11 @@
-"""Structural extraction from akasha_staging.py; behavior preserved."""
+"""Append-only staging ledger and transactional active-pointer promotion."""
 from __future__ import annotations
 from contextlib import contextmanager
 from pathlib import Path
 import sqlite3
-from .akasha_staging_contracts import PromotionReceipt, StagingProjection, _invalid, _sha
+from .akasha_staging_contracts import (
+    StagingProjection, PromotionReceipt, _invalid, _sha,
+)
 from .akasha_staging_queries import VerifiedStage, verify_staging_projection
 
 _STAGE_SCHEMA_SQL = """
@@ -24,6 +26,7 @@ BEFORE DELETE ON akasha_stages
 BEGIN SELECT RAISE(ABORT, 'AKASHA_STAGE_APPEND_ONLY'); END;
 """
 
+
 @contextmanager
 def _stage_connection(path: Path):
     if not isinstance(path, Path) or not path.parent.is_dir():
@@ -37,6 +40,7 @@ def _stage_connection(path: Path):
             yield connection
     finally:
         connection.close()
+
 
 def promote_staging_projection(
     path: Path, verified: VerifiedStage,
@@ -77,6 +81,7 @@ def promote_staging_projection(
     return PromotionReceipt(
         previous, stage.stage_digest, verified.census_digest)
 
+
 def read_staging_projection(
     path: Path, stage_digest: str,
 ) -> StagingProjection | None:
@@ -90,6 +95,7 @@ def read_staging_projection(
             "WHERE stage_digest=?", (stage_digest,)).fetchone()
     return (StagingProjection.from_canonical_json(row[0])
             if row is not None else None)
+
 
 def read_active_projection(path: Path) -> StagingProjection | None:
     if not isinstance(path, Path):

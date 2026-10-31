@@ -1,23 +1,23 @@
-"""Structural extraction from atlas_requalification.py; behavior preserved."""
+"""Immutable learned-support, source-task and projection-invalidation contracts."""
 from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum
+
+from .atlas_correction_branches import _identity, _canonical_names
 from .atlas_revalidation import CorrectionEvent, _digest, _invalid, _name
-from .atlas_correction_branches import _canonical_names, _identity
 
 CAPABILITY_SUPPORT_SCHEMA = "bilqis.c09.capability-support/v1"
-
 TARGETED_SOURCE_TASK_SCHEMA = "bilqis.c09.targeted-source-task/v1"
-
 C10_INTENT_SCHEMA = "bilqis.c09.c10-invalidation-intent/v1"
-
 REQUALIFICATION_LEDGER_SCHEMA = "bilqis.c09.requalification-ledger/v1"
-
 REQUALIFICATION_UPDATE_SCHEMA = "bilqis.c09.requalification-update/v1"
+
 
 class RequalificationStatus(str, Enum):
     QUALIFIED = "QUALIFIED"
     REQUALIFICATION_REQUIRED = "REQUALIFICATION_REQUIRED"
+
 
 @dataclass(frozen=True)
 class CapabilitySupport:
@@ -38,6 +38,7 @@ class CapabilitySupport:
                 or not isinstance(self.status, RequalificationStatus)
                 or self.schema_version != CAPABILITY_SUPPORT_SCHEMA):
             _invalid("BAMF_C09_CAPABILITY_SUPPORT_INVALID")
+
 
 @dataclass(frozen=True)
 class TargetedSourceTask:
@@ -82,6 +83,7 @@ class TargetedSourceTask:
             correction_event_id=event.event_id,
             retained_generation_sha256=support.retained_generation_sha256,
         )
+
 
 @dataclass(frozen=True)
 class C10InvalidationIntent:
@@ -138,6 +140,7 @@ class C10InvalidationIntent:
             capability_ids=capability_ids,
         )
 
+
 @dataclass(frozen=True)
 class RequalificationLedger:
     capabilities: tuple[CapabilitySupport, ...]
@@ -176,6 +179,7 @@ class RequalificationLedger:
             if support.capability_id == capability_id:
                 return support
         _invalid("BAMF_C09_CAPABILITY_UNKNOWN")
+
 
 @dataclass(frozen=True)
 class RequalificationUpdate:

@@ -1,11 +1,25 @@
-"""Structural extraction from candidate_evidence.py; behavior preserved."""
+"""Fresh preservation support for candidate retention."""
 from __future__ import annotations
+
 from bilqis_mlx.errors import ErrorBus, SOURCE
+from .capability_authority import evaluate_progression_authority
+from .capability_retention import (
+    candidate_work_disposition, configuration_outcome, retain_candidate,
+)
+
 import bilqis_mlx.curriculum.scheduler as _curriculum_scheduler
+import bilqis_mlx.fixed_frontier as _bilqis_mlx_fixed_frontier
+import bilqis_mlx.learning.learning_experiment as _learning_learning_experiment
+import bilqis_mlx.learning.plasticity_escape as _learning_plasticity_escape
+import bilqis_mlx.learning.student_ops as _learning_student_ops
 import bilqis_mlx.profiles.retention as _profiles_retention
 import bilqis_mlx.runtime.assessment as _runtime_assessment
 import bilqis_mlx.runtime.release_adoption as _runtime_release_adoption
 import bilqis_mlx.runtime.state as _runtime_state
+
+RETENTION_SUPPORT_SCHEDULE_INVALID = "RETENTION_SUPPORT_SCHEDULE_INVALID"
+FRAGILE_PRESERVATION_BATCH_CAPACITY_EXHAUSTED = "FRAGILE_PRESERVATION_BATCH_CAPACITY_EXHAUSTED"
+
 
 def _retention_support_capabilities(admitted, active_grades,
                                     capability: str) -> tuple[str, ...]:
@@ -20,6 +34,7 @@ def _retention_support_capabilities(admitted, active_grades,
         name for name in admitted
         if name != capability and name.partition(".")[0] in protected_grades))
 
+
 def _retention_support_schedule(
         admitted, active_grades, capability: str, *, steps: int,
         rotation: int = 0, already_preserved=()) -> tuple[str, ...]:
@@ -32,7 +47,7 @@ def _retention_support_schedule(
     before these hard-gated surfaces have been rehearsed.
     """
     if type(steps) is not int or steps < 1 or type(rotation) is not int or rotation < 0:
-        raise ValueError("RETENTION_SUPPORT_SCHEDULE_INVALID")
+        raise ValueError(RETENTION_SUPPORT_SCHEDULE_INVALID)
     active_grades = tuple(active_grades)
     if not active_grades:
         return ()
@@ -54,6 +69,7 @@ def _retention_support_schedule(
         available[(start + index) % len(available)]
         for index in range(steps))
 
+
 def _select_fresh_retention_support_rows(
         rows, *, rotation: int) -> tuple[dict, ...]:
     """Choose one complete fresh source family for preservation rehearsal."""
@@ -68,6 +84,7 @@ def _select_fresh_retention_support_rows(
         return ()
     keys = sorted(groups, key=str)
     return tuple(groups[keys[rotation % len(keys)]])
+
 
 def _fresh_fragile_preservation_rows(run_dir, source_root, graph, receipt,
                                      course, school, capability, *, step,
@@ -95,6 +112,7 @@ def _fresh_fragile_preservation_rows(run_dir, source_root, graph, receipt,
         draw_rows=lambda **kwargs: _runtime_assessment._draw_live_rows(
             source_root, graph, executable_release=executable_release, course=course, **kwargs))
 
+
 def _inject_preservation_rows(chosen, preservation, *, reserved_ids=()):
     """Reserve preservation slots without displacing selected weakness targets."""
     result = list(chosen)
@@ -121,5 +139,5 @@ def _inject_preservation_rows(chosen, preservation, *, reserved_ids=()):
         consumed.add(replacement)
         delivered.append(item)
     if len(delivered) != len(preservation):
-        raise ValueError("FRAGILE_PRESERVATION_BATCH_CAPACITY_EXHAUSTED")
+        raise ValueError(FRAGILE_PRESERVATION_BATCH_CAPACITY_EXHAUSTED)
     return result, tuple(delivered)

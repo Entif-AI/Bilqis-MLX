@@ -1,29 +1,34 @@
-"""Structural extraction from block_attnres.py; behavior preserved."""
+"""Shared depth selection with recomputed source-member factor features.
+
+The public feature interface reads approved A13 coordinates and actual A06/B01
+factors. Trusted backbone-summary capture remains an assembly qualification gate.
+"""
 from __future__ import annotations
+
 from dataclasses import dataclass, field
 import re
 from types import MappingProxyType
-from typing import Mapping
+from typing import Callable, Mapping
+
 import mlx.core as mx
+
 from bilqis_mlx.errors import ErrorBus, SCHOOL
-from bilqis_mlx.learning.frame_embeddings import FeatureRequest
+from bilqis_mlx.learning.frame_embeddings import FeatureRequest, compose_factor_features
+from bilqis_mlx.learning.atlas_plasticity import AdapterParameters, adapter_forward
 from bilqis_mlx.semantics.atlas_features import AtlasFeatures
-from .model_topology_v2 import GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes, validate_bamf_parameters
+from .model_topology_v2 import (
+    GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes,
+    validate_bamf_parameters,
+)
+
 
 WIDTH = ModelTopologySpecV2.width
-
 INNER = 128
-
 MIN_COMPLETED_GROUPS = 1
-
 MAX_COMPLETED_GROUPS = ModelTopologySpecV2.depth_groups
-
 FRAME_RANK = 3
-
 BATCH_POSITION_AXES = 2
-
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
-
 PARAMETER_SHAPES = MappingProxyType({
     "norm": (WIDTH,),
     "query": (INNER, WIDTH),
@@ -33,31 +38,26 @@ PARAMETER_SHAPES = MappingProxyType({
     "gate_vector": (WIDTH,),
     "gate_bias": (1,),
 })
-
 FEATURES_SCHEMA = "bilqis.mlx.depth-frame-features/v1"
-
 RELEASED_FEATURES_SCHEMA = "bilqis.mlx.depth-frame-features/v2"
-
 SUMMARY_SCHEMA = "bilqis.mlx.depth-summary/v1"
-
 DIAGNOSTICS_SCHEMA = "bilqis.mlx.depth-diagnostics/v1"
-
 PARAMETER_VIEW_SCHEMA = "bilqis.mlx.depth-parameter-view/v1"
-
 _VIEW_SEAL = object()
-
 SOURCE_ORDER = ("h0", "g1", "g2", "g3")
-
 COMPLETED_LAYERS = (0, 4, 8, 12)
+
 
 def _invalid() -> None:
     ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+
 
 def _depth_names(boundary_group):
     return {"norm": "depth.norm", "query": "depth.query", "key": "depth.key",
             "value": "depth.value", "output": "depth.output",
             "gate_vector": f"depth.gate.{boundary_group - 1}.vector",
             "gate_bias": f"depth.gate.{boundary_group - 1}.bias"}
+
 
 @dataclass(frozen=True)
 class DepthParameterView(Mapping[str, mx.array]):
@@ -99,6 +99,7 @@ class DepthParameterView(Mapping[str, mx.array]):
     def __len__(self) -> int:
         return len(self._tensors)
 
+
 def depth_parameter_view(
     parameters: Mapping[str, mx.array], *, spec: ModelTopologySpecV2,
     extents: GenerationExtents, boundary_group: int,
@@ -121,6 +122,7 @@ def depth_parameter_view(
         {local: parameters[name] for local, name in names.items()},
         boundary_group, _VIEW_SEAL, parameters, extents)
 
+
 @dataclass(frozen=True)
 class _DepthFeatureValues:
     """Private numerical test seam; these arrays are not source authority."""
@@ -141,6 +143,7 @@ class _DepthFeatureValues:
                 or not MIN_COMPLETED_GROUPS <= self.boundary_group <= MAX_COMPLETED_GROUPS
                 or self.schema_version != FEATURES_SCHEMA):
             _invalid()
+
 
 @dataclass(frozen=True)
 class DepthFrameFeatures:
@@ -171,6 +174,7 @@ class DepthFrameFeatures:
                                (first.projection.digest, first.frame_handle) for item in members)):
                     _invalid()
 
+
 @dataclass(frozen=True)
 class DepthSummary:
     source_id: str
@@ -185,3 +189,8 @@ class DepthSummary:
                     SOURCE_ORDER.index(self.source_id)]
                 or self.schema_version != SUMMARY_SCHEMA):
             _invalid()
+
+DepthParameterView.__module__ = "bilqis_mlx.runtime.block_attnres"
+_DepthFeatureValues.__module__ = "bilqis_mlx.runtime.block_attnres"
+DepthFrameFeatures.__module__ = "bilqis_mlx.runtime.block_attnres"
+DepthSummary.__module__ = "bilqis_mlx.runtime.block_attnres"

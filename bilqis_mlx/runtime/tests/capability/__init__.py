@@ -1,1 +1,1 @@
-"""Package-local tests for the corresponding runtime owners."""
+"""Capability and retention tests."""

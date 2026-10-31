@@ -1,13 +1,29 @@
-"""Structural extraction from atlas_temporal_revalidation.py; behavior preserved."""
+"""C09.3 bitemporal source projections and post-remediation fault escalation.
+
+Only source-qualified fixture events enter these pure functions. C10 owns
+durable outbox delivery and source owners retain rights/observation authority.
+"""
 from __future__ import annotations
+
 from dataclasses import replace
 from graphlib import CycleError, TopologicalSorter
-from ..semantics.cognitive_dependencies import ArtifactNode, DependencyKind, DependencyRef
-from .atlas_temporal_contracts import TemporalEvent, TemporalEventKind, TemporalProjection, TemporalStatus, _hash, _invalid, _name, _time
-from .atlas_temporal_contracts import (TEMPORAL_EVENT_SCHEMA, TEMPORAL_PROJECTION_SCHEMA, TemporalEvent, TemporalEventKind, TemporalProjection, TemporalStatus, _SHA256, _digest, _hash, _invalid, _name, _names, _time)
-from .atlas_stale_replay import (DERIVED_CLAIM_SCHEMA, DerivedClaim, PROCESS_FAULT_RESULT_SCHEMA, PROCESS_FAULT_SCHEMA, ProcessFault, ProcessFaultResult, REMEDIATION_RECEIPT_SCHEMA, RemediationReceipt, RemediationStatus, escalate_stale_replay)
 
-def project_as_of(events: tuple[TemporalEvent, ...], *, actor_id: str, as_of: int) -> TemporalProjection:
+from ..semantics.cognitive_dependencies import ArtifactNode, DependencyKind, DependencyRef
+from .atlas_temporal_contracts import (
+    TemporalEventKind, TemporalStatus, TemporalEvent, TemporalProjection,
+    TEMPORAL_EVENT_SCHEMA, TEMPORAL_PROJECTION_SCHEMA,
+    _invalid, _name, _digest, _time, _names, _hash,
+)
+from .atlas_stale_replay import (
+    RemediationStatus, RemediationReceipt, DerivedClaim, ProcessFault,
+    ProcessFaultResult, escalate_stale_replay, REMEDIATION_RECEIPT_SCHEMA,
+    DERIVED_CLAIM_SCHEMA, PROCESS_FAULT_SCHEMA, PROCESS_FAULT_RESULT_SCHEMA,
+)
+
+
+def project_as_of(
+    events: tuple[TemporalEvent, ...], *, actor_id: str, as_of: int,
+) -> TemporalProjection:
     """Use only observed and effective evidence at this prefix/as-of time."""
     if (not isinstance(events, tuple)
             or any(not isinstance(item, TemporalEvent) for item in events)
@@ -91,6 +107,7 @@ def project_as_of(events: tuple[TemporalEvent, ...], *, actor_id: str, as_of: in
             DependencyKind.TIME,
             "time:asof:" + str(len(actor_id)) + ":" + actor_id + ":" + time_key),
     )
+
 
 def bind_as_of_dependency(
     node: ArtifactNode, projection: TemporalProjection,

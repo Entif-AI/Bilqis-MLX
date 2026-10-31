@@ -1,15 +1,29 @@
-"""Structural extraction from reconciliation.py; behavior preserved."""
+"""Neural-inert repair of checkpoint-bound runtime metadata."""
 from __future__ import annotations
+
+import bilqis_mlx.curriculum.scheduler as _curriculum_scheduler
 import bilqis_mlx.generated_assessment as _bilqis_mlx_generated_assessment
+import bilqis_mlx.learning.learning_experiment as _learning_learning_experiment
+import bilqis_mlx.learning.stagnation_control as _learning_stagnation_control
+import bilqis_mlx.learning.whole_student_retention as _learning_whole_student_retention
 import bilqis_mlx.runtime.checkpoints as _runtime_checkpoints
 import bilqis_mlx.runtime.release_adoption as _runtime_release_adoption
 import bilqis_mlx.runtime.state as _runtime_state
 import copy as _copy
+import dataclasses as _dataclasses
 import json as _json
+
+SHA256_HEX_LENGTH = 64
+CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CUSTODY_DRIFT = "CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CUSTODY_DRIFT"
+CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_IDENTITY_DRIFT = "CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_IDENTITY_DRIFT"
+CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_COHORT_MISSING = "CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_COHORT_MISSING"
+CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CONTENT_DRIFT = "CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CONTENT_DRIFT"
+
 
 def _require_championship_source_context_custody(condition: bool) -> None:
     if not condition:
-        raise ValueError("CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CUSTODY_DRIFT")
+        raise ValueError(CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CUSTODY_DRIFT)
+
 
 def _affected_championship_source_context(run_dir, epoch) -> set[str]:
     affected = set()
@@ -22,12 +36,12 @@ def _affected_championship_source_context(run_dir, epoch) -> set[str]:
             sha = item.get("cohort_sha256")
             assessment_rubric = item.get("rubric_sha256")
             source_oracle = item.get("source_oracle_sha256")
-            if not all(isinstance(value, str) and len(value) == 64
+            if not all(isinstance(value, str) and len(value) == SHA256_HEX_LENGTH
                        for value in (sha, assessment_rubric, source_oracle)):
-                raise ValueError("CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_IDENTITY_DRIFT")
+                raise ValueError(CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_IDENTITY_DRIFT)
             path = run_dir / "cohorts" / (sha + ".json")
             if path.is_symlink() or not path.is_file():
-                raise ValueError("CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_COHORT_MISSING")
+                raise ValueError(CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_COHORT_MISSING)
             stored = _json.loads(path.read_text())
             _require_championship_source_context_custody(
                 stored.get("cohort_sha256") == sha and
@@ -36,7 +50,7 @@ def _affected_championship_source_context(run_dir, epoch) -> set[str]:
                 _bilqis_mlx_generated_assessment.verify_stored_cohort(stored, sha)
             except ValueError as exc:
                 raise ValueError(
-                    "CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CONTENT_DRIFT") from exc
+                    CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CONTENT_DRIFT) from exc
             declared_cohort_rubric = item.get("cohort_rubric_sha256")
             if declared_cohort_rubric is not None:
                 # A modern witness has a distinct, authenticated source
@@ -50,6 +64,7 @@ def _affected_championship_source_context(run_dir, epoch) -> set[str]:
                 affected.add(capability)
                 break
     return affected
+
 
 def _invalidate_championship_source_context(epoch, affected: set[str]):
     reset = _copy.deepcopy(epoch)
@@ -70,6 +85,7 @@ def _invalidate_championship_source_context(epoch, affected: set[str]):
                 "active_grade_soup": prior_soup,
             })
     return reset
+
 
 def _repair_championship_source_context(run_dir, receipt, course):
     """Archive titles minted while cohort-source and assessment rubrics were conflated."""

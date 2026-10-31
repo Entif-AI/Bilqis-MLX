@@ -1,14 +1,24 @@
-"""Structural extraction from reconciliation.py; behavior preserved."""
+"""Neural-inert repair of checkpoint-bound runtime metadata."""
 from __future__ import annotations
+
 import bilqis_mlx.curriculum.scheduler as _curriculum_scheduler
+import bilqis_mlx.generated_assessment as _bilqis_mlx_generated_assessment
+import bilqis_mlx.learning.learning_experiment as _learning_learning_experiment
 import bilqis_mlx.learning.stagnation_control as _learning_stagnation_control
 import bilqis_mlx.learning.whole_student_retention as _learning_whole_student_retention
 import bilqis_mlx.runtime.checkpoints as _runtime_checkpoints
 import bilqis_mlx.runtime.release_adoption as _runtime_release_adoption
 import bilqis_mlx.runtime.state as _runtime_state
+import copy as _copy
 import dataclasses as _dataclasses
-from .championship_source_repair import (_affected_championship_source_context, _invalidate_championship_source_context, _repair_championship_source_context, _require_championship_source_context_custody)
-from .resume_metadata import (_reconcile_learning_settings, _reconcile_vocabulary_metadata)
+import json as _json
+
+
+from .championship_source_repair import (
+    _require_championship_source_context_custody, _affected_championship_source_context,
+    _invalidate_championship_source_context, _repair_championship_source_context,
+)
+from .resume_metadata import _reconcile_vocabulary_metadata, _reconcile_learning_settings
 
 def _seed_saved_whole_student_peak(run_dir, receipt, course, optimizer):
     """Protect the already saved live exam before the next neural visit.
@@ -48,6 +58,7 @@ def _seed_saved_whole_student_peak(run_dir, receipt, course, optimizer):
     _runtime_checkpoints._reconcile_delivery_outbox(run_dir, result)
     return result
 
+
 def _rehabilitate_sole_grade_debt(
         program, school, stagnation, debt, *, generation):
     """Keep training when containment debt is the only work left in one grade."""
@@ -61,6 +72,7 @@ def _rehabilitate_sole_grade_debt(
         stagnation, capabilities=tuple(debt), generation=generation)
     school = _curriculum_scheduler.reactivate_stagnation_debt(program, school, tuple(debt))
     return stagnation, school, (event,)
+
 
 def _reconcile_stagnation_scope(run_dir, receipt, course, school):
     """Keep command-local stagnation state aligned with the live scheduler scope."""
@@ -96,6 +108,7 @@ def _reconcile_stagnation_scope(run_dir, receipt, course, school):
     record = _runtime_checkpoints._persist(run_dir, _runtime_checkpoints._with_delivery_outbox(record, (event,)))
     _runtime_checkpoints._reconcile_delivery_outbox(run_dir, record)
     return record
+
 
 def _advance_stagnation_after_routine(
         *, program, school, routine_assessment, routine_advanced,

@@ -1,26 +1,36 @@
-"""Structural extraction from atlas_admission.py; behavior preserved."""
+"""Immutable Atlas admission lease records and disposable source authority."""
 from __future__ import annotations
+
 from dataclasses import asdict, dataclass, field
 import json
 import re
+
 from ..errors import ErrorBus, SCHOOL
 from ..learning.champions import Checkpoint
 from ..semantics.cognitive_dependencies import DependencyKind, DependencyRef
 from ..semantics.domains import contract_digest
 from .atlas_revalidation import SourceAuthorityRegistry
 
+DEFAULT_MAX_CAPABILITIES = 9
+DEFAULT_MAX_NEW_SEMANTIC_IDENTITIES = 16
+
+
 def _invalid(reason):
     ErrorBus.raise_(SCHOOL.BAMF_ATLAS_ADMISSION.INVALID, reason=reason)
+
 
 def _sha(value):
     return isinstance(value, str) and re.fullmatch('[0-9a-f]{64}', value) is not None
 
+
 def _name(value):
     return isinstance(value, str) and bool(value)
+
 
 def _names(values, *, allow_empty=False):
     return (isinstance(values, tuple) and (allow_empty or bool(values)) and all(_name(value) for value in values)
             and values == tuple(sorted(set(values))))
+
 
 @dataclass(frozen=True)
 class LeaseRunIdentity:
@@ -36,20 +46,22 @@ class LeaseRunIdentity:
                 or not _sha(self.topology_digest) or not isinstance(self.origin_checkpoint, Checkpoint)):
             _invalid('BAMF_ATLAS_LEASE_RUN_IDENTITY_INVALID')
 
+
 @dataclass(frozen=True)
 class DeltaBudgetPolicy:
     version: str = 'bilqis.c07.initial-delta/v1'
-    max_capabilities: int = 9
-    max_new_semantic_identities: int = 16
+    max_capabilities: int = DEFAULT_MAX_CAPABILITIES
+    max_new_semantic_identities: int = DEFAULT_MAX_NEW_SEMANTIC_IDENTITIES
 
     def __post_init__(self):
         if (not _name(self.version) or type(self.max_capabilities) is not int
-                or not 1 <= self.max_capabilities <= 9
+                or not 1 <= self.max_capabilities <= DEFAULT_MAX_CAPABILITIES
                 or type(self.max_new_semantic_identities) is not int
                 or self.max_new_semantic_identities < 1
                 or (self.version == 'bilqis.c07.initial-delta/v1'
-                    and self.max_new_semantic_identities != 16)):
+                    and self.max_new_semantic_identities != DEFAULT_MAX_NEW_SEMANTIC_IDENTITIES)):
             _invalid('BAMF_ATLAS_DELTA_BUDGET_POLICY_INVALID')
+
 
 @dataclass(frozen=True)
 class AtlasSourceApproval:
@@ -101,6 +113,7 @@ class AtlasSourceApproval:
         if not self.audit_passed or not self.rights_compatible:
             _invalid('BAMF_ATLAS_SOURCE_OR_RIGHTS_HELD')
 
+
 @dataclass(frozen=True)
 class ResourceCeiling:
     max_semantic_banks: int
@@ -112,6 +125,7 @@ class ResourceCeiling:
     def __post_init__(self):
         if any(type(value) is not int or value < 1 for value in asdict(self).values()):
             _invalid('BAMF_ATLAS_RESOURCE_CEILING_INVALID')
+
 
 @dataclass(frozen=True)
 class AtlasAdmissionLease:

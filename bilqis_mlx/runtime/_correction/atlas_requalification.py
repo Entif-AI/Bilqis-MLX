@@ -1,11 +1,21 @@
-"""Structural extraction from atlas_requalification.py; behavior preserved."""
+"""C09.2 immutable correction alternatives and learned support requalification."""
 from __future__ import annotations
+
 from dataclasses import replace
+
 from ..semantics.cognitive_dependencies import DependencyIndex, DependencyKind
 from .atlas_revalidation import RevalidationQueue, _invalid
-from .atlas_requalification_contracts import C10InvalidationIntent, CapabilitySupport, RequalificationLedger, RequalificationStatus, RequalificationUpdate, TargetedSourceTask
-from .atlas_correction_branches import (CORRECTION_BRANCHES_SCHEMA, CORRECTION_BRANCH_SCHEMA, CorrectionBranch, CorrectionBranches, _canonical_names, _identity, add_correction)
-from .atlas_requalification_contracts import (C10InvalidationIntent, C10_INTENT_SCHEMA, CAPABILITY_SUPPORT_SCHEMA, CapabilitySupport, REQUALIFICATION_LEDGER_SCHEMA, REQUALIFICATION_UPDATE_SCHEMA, RequalificationLedger, RequalificationStatus, RequalificationUpdate, TARGETED_SOURCE_TASK_SCHEMA, TargetedSourceTask)
+from .atlas_correction_branches import (
+    CorrectionBranch, CorrectionBranches, add_correction, _identity, _canonical_names,
+    CORRECTION_BRANCH_SCHEMA, CORRECTION_BRANCHES_SCHEMA,
+)
+from .atlas_requalification_contracts import (
+    CapabilitySupport, TargetedSourceTask, C10InvalidationIntent, RequalificationStatus,
+    RequalificationLedger, RequalificationUpdate, CAPABILITY_SUPPORT_SCHEMA,
+    TARGETED_SOURCE_TASK_SCHEMA, C10_INTENT_SCHEMA, REQUALIFICATION_LEDGER_SCHEMA,
+    REQUALIFICATION_UPDATE_SCHEMA,
+)
+
 
 def _support_impacted_artifacts(
     support: CapabilitySupport,
@@ -26,6 +36,7 @@ def _support_impacted_artifacts(
         unseen.extend(ref.key for ref in node.immediate_dependencies
                       if ref.kind is DependencyKind.ARTIFACT)
     return tuple(sorted(found))
+
 
 def mark_affected_capabilities(
     ledger: RequalificationLedger,

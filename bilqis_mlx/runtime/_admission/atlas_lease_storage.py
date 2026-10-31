@@ -1,13 +1,19 @@
-"""Structural extraction from atlas_admission.py; behavior preserved."""
+"""Immutable lease storage, readback and exclusive disposable-writer locking."""
 from __future__ import annotations
+
 from contextlib import contextmanager
 from dataclasses import asdict
 import json
 from pathlib import Path
+
 from ..learning.champions import Checkpoint
 from ..semantics.domains import contract_digest
+from .atlas_lease_contracts import (
+    AtlasAdmissionLease, AtlasSourceApproval, DeltaBudgetPolicy, LeaseRunIdentity,
+    ResourceCeiling, _invalid, _sha,
+)
 from .state import _durable_json
-from .atlas_lease_contracts import AtlasAdmissionLease, AtlasSourceApproval, DeltaBudgetPolicy, LeaseRunIdentity, ResourceCeiling, _invalid, _sha
+
 
 def _store(root, *, fixture_authority=True):
     root = Path(root)
@@ -22,6 +28,7 @@ def _store(root, *, fixture_authority=True):
         if path.is_symlink() or (path.exists() and not path.is_dir()):
             _invalid('BAMF_ATLAS_LEASE_UNSAFE_PATH')
     return root / 'autonomy/atlas-admission'
+
 
 def _lease_from_json(payload):
     try:
@@ -43,6 +50,7 @@ def _lease_from_json(payload):
         return record
     except (KeyError, TypeError, ValueError):
         _invalid('BAMF_ATLAS_LEASE_PAYLOAD_INVALID')
+
 
 def _read_atlas_lease(run_dir, independently_loaded_run, *, registry, current_authority=True):
     directory = _store(run_dir)
@@ -72,6 +80,7 @@ def _read_atlas_lease(run_dir, independently_loaded_run, *, registry, current_au
     if current_authority:
         lease.source_approval.verify(registry)
     return lease
+
 
 def _persist_atlas_lease_locked(run_dir, lease, *, independently_loaded_run, registry):
     if (not isinstance(lease, AtlasAdmissionLease)
@@ -104,6 +113,7 @@ def _persist_atlas_lease_locked(run_dir, lease, *, independently_loaded_run, reg
     if _read_atlas_lease(run_dir, independently_loaded_run, registry=registry) != lease:
         _invalid('BAMF_ATLAS_LEASE_READBACK_DRIFT')
     return reference
+
 
 @contextmanager
 def _atlas_lease_lock(run_dir):

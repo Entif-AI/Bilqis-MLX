@@ -1,14 +1,25 @@
-"""Structural extraction from atlas_admission.py; behavior preserved."""
+"""C07 lease contracts and disposable persistence, pending accepted run authority.
+
+These C-owned boundary records do not implement A09, A12 or B13. Their explicit
+contract-fixture provenance cannot authorize a saved human learner.
+"""
 from __future__ import annotations
+
 from dataclasses import asdict
 import json
 from pathlib import Path
+
 from ..semantics.domains import contract_digest
+from .atlas_lease_contracts import (
+    AtlasAdmissionLease, AtlasSourceApproval, DeltaBudgetPolicy, LeaseRunIdentity,
+    ResourceCeiling, _invalid, _sha, _name, _names,
+)
+from .atlas_lease_storage import (
+    _atlas_lease_lock, _lease_from_json, _persist_atlas_lease_locked,
+    _read_atlas_lease, _store,
+)
 from .state import _durable_json
-from .atlas_lease_contracts import AtlasAdmissionLease, AtlasSourceApproval, _invalid, _sha
-from .atlas_lease_storage import _atlas_lease_lock, _lease_from_json, _persist_atlas_lease_locked, _read_atlas_lease, _store
-from .atlas_lease_contracts import (AtlasAdmissionLease, AtlasSourceApproval, DeltaBudgetPolicy, LeaseRunIdentity, ResourceCeiling, _invalid, _name, _names, _sha)
-from .atlas_lease_storage import (_atlas_lease_lock, _lease_from_json, _persist_atlas_lease_locked, _read_atlas_lease, _store)
+
 
 def issue_atlas_lease(lease_id, run_identity, source_approval, resource_ceiling, *,
                       requested_at, human_command_sha256, human_started, registry):
@@ -18,15 +29,18 @@ def issue_atlas_lease(lease_id, run_identity, source_approval, resource_ceiling,
     return AtlasAdmissionLease(lease_id, run_identity, source_approval, resource_ceiling,
                                requested_at, human_command_sha256)
 
+
 def advance_atlas_frontier(current, proposal, lease):
     from .atlas_admission_policy import advance_atlas_frontier as advance
     return advance(current, proposal, lease)
+
 
 def add_atlas_admission_arguments(parser):
     parser.add_argument('--admission-policy', choices=('staged', 'atlas-release'), default='staged',
                         help='Stage new source successors unless an explicit Atlas admission lease authorizes them.')
     parser.add_argument('--atlas-admission-scope', type=Path,
                         help='Exact versioned Atlas lease request; accepted run/source authority is required.')
+
 
 def validate_atlas_command_request(args):
     if args.admission_policy == 'staged':
@@ -47,6 +61,7 @@ def validate_atlas_command_request(args):
     # B13's accepted BAMF run owner and the actual A12 authority audit have not
     # arrived through unified. Disposable projections cannot authorize this CLI.
     _invalid('BAMF_ATLAS_ACCEPTED_RUN_AUTHORITY_UNAVAILABLE')
+
 
 def stage_unleased_atlas_proposal(run_dir, proposal):
     from dataclasses import asdict
@@ -86,13 +101,16 @@ def stage_unleased_atlas_proposal(run_dir, proposal):
         _invalid('BAMF_ATLAS_STAGED_DECISION_READBACK_DRIFT')
     return result
 
+
 def read_atlas_lease(run_dir, independently_loaded_run, *, registry):
     return _read_atlas_lease(run_dir, independently_loaded_run, registry=registry)
+
 
 def persist_atlas_lease(run_dir, lease, *, independently_loaded_run, registry):
     with _atlas_lease_lock(run_dir):
         return _persist_atlas_lease_locked(run_dir, lease,
             independently_loaded_run=independently_loaded_run, registry=registry)
+
 
 def renew_atlas_lease(run_dir, lease, *, independently_loaded_run, registry,
                       expected_prior_lease_sha256, human_started):

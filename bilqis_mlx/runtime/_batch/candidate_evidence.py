@@ -1,16 +1,32 @@
-"""Structural extraction from candidate_evidence.py; behavior preserved."""
+"""Fresh and fixed source evidence for candidate retention."""
 from __future__ import annotations
+
+from bilqis_mlx.errors import ErrorBus, SOURCE
+from .capability_authority import evaluate_progression_authority
+from .capability_retention import (
+    candidate_work_disposition, configuration_outcome, retain_candidate,
+)
+
 import bilqis_mlx.curriculum.scheduler as _curriculum_scheduler
 import bilqis_mlx.fixed_frontier as _bilqis_mlx_fixed_frontier
 import bilqis_mlx.learning.learning_experiment as _learning_learning_experiment
 import bilqis_mlx.learning.plasticity_escape as _learning_plasticity_escape
 import bilqis_mlx.learning.student_ops as _learning_student_ops
+import bilqis_mlx.profiles.retention as _profiles_retention
 import bilqis_mlx.runtime.assessment as _runtime_assessment
 import bilqis_mlx.runtime.release_adoption as _runtime_release_adoption
 import bilqis_mlx.runtime.state as _runtime_state
-from .fixed_frontier_evidence import _fixed_same_grade_rows, _fragile_replay_evidence, _frontier_fixed_evidence
-from .retention_support import (_fresh_fragile_preservation_rows, _inject_preservation_rows, _retention_support_capabilities, _retention_support_schedule, _select_fresh_retention_support_rows)
-from .fixed_frontier_evidence import (_fixed_same_grade_rows, _fragile_replay_evidence, _frontier_fixed_evidence, _reusable_exam_identity)
+
+
+from .retention_support import (
+    _retention_support_capabilities, _retention_support_schedule, _select_fresh_retention_support_rows,
+    _fresh_fragile_preservation_rows, _inject_preservation_rows,
+)
+from .fixed_frontier_evidence import (
+    _fixed_same_grade_rows, _reusable_exam_identity, _frontier_fixed_evidence,
+    _fragile_replay_evidence,
+)
+
 
 def _learning_probe_rows(source_root, graph, receipt, course, school, capability,
                          settings, *, schedule_program=None,
@@ -47,6 +63,7 @@ def _learning_probe_rows(source_root, graph, receipt, course, school, capability
         raise ValueError("LEARNING_EXPERIMENT_PROBE_SCOPE_INCOMPLETE")
     return rows, selected, len(eligible)-len(sampled)
 
+
 def _same_grade_fixed_evidence(
         mx, run_dir, receipt, course, school, capability, parent, candidate,
         settings, config, answer_ids):
@@ -72,6 +89,7 @@ def _same_grade_fixed_evidence(
         "capabilities": scores,
     }
 
+
 def _candidate_fixed_evidence(mx, run_dir, receipt, course, school, capability,
                               parent, candidate, settings):
     """Score only the fixed evidence needed after fresh grade gain is proven."""
@@ -89,6 +107,7 @@ def _candidate_fixed_evidence(mx, run_dir, receipt, course, school, capability,
         mx, run_dir, receipt, parent, candidate, config, answer_ids,
         frontier_parent, frontier_candidate)
     return fixed, replay, frontier
+
 
 def _candidate_grade_evidence(mx, run_dir, receipt, course, school, capability,
                               parent, candidate, probe_rows, target_parent,

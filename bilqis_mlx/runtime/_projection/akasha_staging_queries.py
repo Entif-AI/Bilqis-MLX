@@ -1,13 +1,18 @@
-"""Structural extraction from akasha_staging.py; behavior preserved."""
+"""Private-safe staging construction, bounded reads and verification."""
 from __future__ import annotations
 from dataclasses import dataclass
 from .akasha_outbox import AkashaEventKind
 from .bamf_projection import BamfProjectionEvent, ProjectionDomainContract
-from .akasha_staging_contracts import PublicEvent, STAGING_PROJECTION_SCHEMA, StagingProjection, _digest, _invalid, _public_event, _public_payload, _sha, _time
+from .akasha_staging_contracts import (
+    StagingProjection, PublicEvent, STAGING_PROJECTION_SCHEMA,
+    _invalid, _sha, _time, _digest, _public_event, _public_payload,
+)
 
 VERIFIED_STAGE_SCHEMA = "bilqis.c10.verified-stage/v1"
 
+
 MAX_PUBLIC_QUERY_LIMIT = 100
+
 
 def build_staging_projection(
     events: tuple[BamfProjectionEvent, ...],
@@ -51,6 +56,7 @@ def build_staging_projection(
     return StagingProjection(
         public, census, domain.digest, _digest(identity))
 
+
 def query_public_projection(
     stage: StagingProjection, *, limit: int,
     kind: AkashaEventKind | None = None, as_of: int | None = None,
@@ -67,6 +73,7 @@ def query_public_projection(
         and (as_of is None or event.recorded_at <= as_of)
         and (as_of is None or event.effective_time <= as_of)
     )[:limit]
+
 
 @dataclass(frozen=True)
 class VerifiedStage:
@@ -91,6 +98,7 @@ class VerifiedStage:
                 or self.schema_version != VERIFIED_STAGE_SCHEMA):
             _invalid("BAMF_C10_STAGING_PROOF_INVALID")
 
+
 def _query_digest(stage: StagingProjection) -> str:
     queries = tuple(
         (kind.value, tuple(item.event_id for item in
@@ -99,6 +107,7 @@ def _query_digest(stage: StagingProjection) -> str:
         for kind in AkashaEventKind
     )
     return _digest(queries)
+
 
 def verify_staging_projection(stage: StagingProjection) -> VerifiedStage:
     if not isinstance(stage, StagingProjection):
@@ -112,3 +121,6 @@ def verify_staging_projection(stage: StagingProjection) -> VerifiedStage:
             "census_digest": census_digest,
             "bounded_query_digest": query_digest,
         }))
+
+
+VerifiedStage.__module__ = "bilqis_mlx.runtime.akasha_staging"

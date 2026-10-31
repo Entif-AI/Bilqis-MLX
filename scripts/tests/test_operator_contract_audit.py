@@ -29,20 +29,6 @@ class OperatorContractAuditTests(unittest.TestCase):
             logical_source_path(root / "bilqis_mlx/runtime/visits.py", root),
             "bilqis_mlx/runtime/visits.py",
         )
-        self.assertEqual(
-            logical_source_path(
-                root / "bilqis_mlx/runtime/_teacher/teacher_observation_capture.py",
-                root,
-            ),
-            "bilqis_mlx/runtime/teacher_observation_capture.py",
-        )
-        self.assertEqual(
-            logical_source_path(
-                root / "bilqis_mlx/runtime/_admission/atlas_lease_contracts.py",
-                root,
-            ),
-            "bilqis_mlx/runtime/atlas_admission.py",
-        )
 
     def test_recover_exact_error_status_and_gate_code_without_guessing_semantics(self):
         source = '''

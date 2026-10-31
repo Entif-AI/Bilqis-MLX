@@ -1,9 +1,12 @@
-"""Structural extraction from atlas_training_adapter.py; behavior preserved."""
+"""Immutable BAMF batch records and exact release-consumption boundary."""
 from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Any
+
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
+
 
 @dataclass(frozen=True)
 class BamfModelInput:
@@ -12,6 +15,7 @@ class BamfModelInput:
     eligibility_digest: str
     answer_plan: tuple
 
+
 @dataclass(frozen=True)
 class BamfTarget:
     kind: str
@@ -19,11 +23,13 @@ class BamfTarget:
     token_id: Any
     mask: bool | tuple[bool, ...]
 
+
 @dataclass(frozen=True)
 class BamfTargetEvidence:
     gold: Any
     answer_plan: Any
     auxiliary_labels: Any
+
 
 @dataclass(frozen=True)
 class BamfDeliveryProvenance:
@@ -39,6 +45,7 @@ class BamfDeliveryProvenance:
     source_family_id: str | None = None
     episode_id: str | None = None
 
+
 @dataclass(frozen=True)
 class BamfTrainingRow:
     model_input: BamfModelInput
@@ -48,6 +55,7 @@ class BamfTrainingRow:
     auxiliaries: tuple = ()
     rule_policy: tuple = ()
 
+
 @dataclass(frozen=True)
 class BamfTrainingBatch:
     release_sha256: str
@@ -55,8 +63,17 @@ class BamfTrainingBatch:
     delivered_content_sha256: str
     rows: tuple[BamfTrainingRow, ...]
 
+
+@dataclass(frozen=True)
+class PaddedMicrobatch:
+    row_indices: tuple[int, ...]
+    positions: tuple
+    padding_mask: tuple
+
+
 def _invalid(reason: str) -> None:
     ErrorBus.raise_(SCHOOL.BAMF_TRAINING_ADAPTER.INVALID, reason=reason)
+
 
 def _freeze(value):
     if value is None or isinstance(value, (str, bool, int, float)):
@@ -66,6 +83,7 @@ def _freeze(value):
     if isinstance(value, dict) and all(isinstance(key, str) for key in value):
         return tuple((key, _freeze(value[key])) for key in sorted(value))
     _invalid('UNSUPPORTED_SOURCE_OR_PROVENANCE_VALUE')
+
 
 def require_current_release(batch: BamfTrainingBatch, source_context: SourceExecutionContext, *,
                             generation_binding: str) -> None:
@@ -78,9 +96,3 @@ def require_current_release(batch: BamfTrainingBatch, source_context: SourceExec
             not isinstance(generation_binding, str) or not generation_binding or
             batch.generation_binding != generation_binding):
         _invalid('STALE_FACTORY_RELEASE')
-
-@dataclass(frozen=True)
-class PaddedMicrobatch:
-    row_indices: tuple[int, ...]
-    positions: tuple
-    padding_mask: tuple

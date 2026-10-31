@@ -1,1 +1,1 @@
-"""Package-local tests for the corresponding runtime owners."""
+"""Source preparation and execution tests."""
