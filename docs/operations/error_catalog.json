@@ -1,6 +1,6 @@
 {
   "legacy_raw_file_count": 184,
-  "legacy_raw_raise_count": 1958,
+  "legacy_raw_raise_count": 1956,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BACKUP_ARCHIVE_ROOT_SYMLINK",
@@ -9205,13 +9205,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'LEARNING_EXPERIMENT_POLICY_OWN_ADAMW_DRIFT'",
-      "path": "bilqis_mlx/runtime/_custody/resume_metadata.py"
-    },
-    {
-      "code_hint": "LEARNING_EXPERIMENT_RESUME_REQUIRES_IDENTICAL_OPT_IN",
-      "count": 2,
-      "exception": "ValueError",
-      "expression": "'LEARNING_EXPERIMENT_RESUME_REQUIRES_IDENTICAL_OPT_IN'",
       "path": "bilqis_mlx/runtime/_custody/resume_metadata.py"
     },
     {

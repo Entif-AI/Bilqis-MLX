@@ -6,6 +6,8 @@ import bilqis_mlx.runtime.release_adoption as _runtime_release_adoption
 import bilqis_mlx.runtime.state as _runtime_state
 import dataclasses as _dataclasses
 
+_IDENTICAL_OPT_IN_REQUIRED = "LEARNING_EXPERIMENT_RESUME_REQUIRES_IDENTICAL_OPT_IN"
+
 def _reconcile_vocabulary_metadata(run_dir, receipt, course, parameters,
                                    optimizer, graph):
     """Repair historical stale size metadata by a NEW immutable generation.
@@ -56,7 +58,7 @@ def _reconcile_learning_settings(run_dir, receipt, course, settings, optimizer):
     if inherited is None:
         return receipt
     if settings is None or inherited.get("version") != _learning_learning_experiment.VERSION:
-        raise ValueError("LEARNING_EXPERIMENT_RESUME_REQUIRES_IDENTICAL_OPT_IN")
+        raise ValueError(_IDENTICAL_OPT_IN_REQUIRED)
     new = _dataclasses.asdict(settings)
     previous = inherited.get("settings")
     if previous == new:
@@ -68,7 +70,7 @@ def _reconcile_learning_settings(run_dir, receipt, course, settings, optimizer):
             new["protected_cap_limit"] != old["protected_cap_limit"] or
             new["introduction_extra_loss"] != old["introduction_extra_loss"] or
             new["mature_max_loss"] >= old["mature_max_loss"]):
-        raise ValueError("LEARNING_EXPERIMENT_RESUME_REQUIRES_IDENTICAL_OPT_IN")
+        raise ValueError(_IDENTICAL_OPT_IN_REQUIRED)
     school = _runtime_state._state_from_json(receipt["school"], _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course))
     if int(optimizer.state["step"].item()) != school.current_student.optimizer_step:
         raise ValueError("LEARNING_EXPERIMENT_POLICY_OWN_ADAMW_DRIFT")

@@ -1603,7 +1603,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **1958** raw raises across **184** files. The baseline gate permits only reduction.
+Current production scan: **1956** raw raises across **184** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -2898,7 +2898,7 @@ Current production scan: **1958** raw raises across **184** files. The baseline 
 | `LEARNING_EXPERIMENT_PROTECTED_CAPABILITY_NOT_MEASURED` | 1 | `bilqis_mlx/learning/learning_experiment.py` |
 | `LEARNING_EXPERIMENT_PROTECTED_RESUME_REQUIRES_RETENTION` | 1 | `bilqis_mlx/runtime/operating_loop.py` |
 | `LEARNING_EXPERIMENT_REQUIRES_ISOLATED_WORKTREE_RUN` | 1 | `bilqis_mlx/runtime/_custody/experiment_runs.py` |
-| `LEARNING_EXPERIMENT_RESUME_REQUIRES_IDENTICAL_OPT_IN` | 3 | `bilqis_mlx/cli.py`, `bilqis_mlx/runtime/_custody/resume_metadata.py` |
+| `LEARNING_EXPERIMENT_RESUME_REQUIRES_IDENTICAL_OPT_IN` | 1 | `bilqis_mlx/cli.py` |
 | `LEARNING_EXPERIMENT_RETAINED_ADAMW_STEP_DRIFT` | 1 | `bilqis_mlx/runtime/visits.py` |
 | `LEARNING_EXPERIMENT_SCHEDULE_PROGRAM_REQUIRED` | 1 | `bilqis_mlx/learning/learning_experiment.py` |
 | `LEARNING_EXPERIMENT_UNKNOWN_OPTIMIZER_STATE` | 1 | `bilqis_mlx/learning/learning_experiment.py` |

@@ -30,6 +30,49 @@ from bilqis_mlx.runtime.atlas_temporal_revalidation import (
 from bilqis_mlx.runtime.tests.correction.test_atlas_revalidation_helpers import (_SOURCE_OWNER, _TEST_PUBLIC, _chain, _event, _node, _ref, _result, _sign_event, add_correction, advance_revalidation, apply_correction, escalate_stale_replay, revalidate_node)
 
 class AtlasRevalidationTests(unittest.TestCase):
+        def _assert_stale_replay_rejections(
+                self, remediation, stale, correction, index, ledger):
+            relabelled = replace(
+                stale, claim_id="claim:relabelled",
+                source_event_id="event:relabelled")
+            self.assertIsNotNone(escalate_stale_replay(
+                remediation, relabelled, correction, index, ledger))
+            receipt_relabelled = replace(
+                stale, claim_id="claim:receipt-relabelled",
+                source_receipt_sha256="2" * 64)
+            self.assertIsNotNone(escalate_stale_replay(
+                remediation, receipt_relabelled, correction, index, ledger))
+            self.assertEqual(escalate_stale_replay(
+                remediation, replace(stale, observed_at=640),
+                correction, index, ledger), None)
+            self.assertIsNone(escalate_stale_replay(
+                replace(remediation, status=RemediationStatus.PENDING),
+                stale, correction, index, ledger))
+            new_evidence = replace(
+                stale, claim_id="claim:new", actor_id="actor:beta",
+                source_event_id="event:new", source_time=700,
+                source_receipt_sha256="2" * 64, observed_at=705)
+            self.assertIsNone(escalate_stale_replay(
+                remediation, new_evidence, correction, index, ledger))
+            self.assertIsNone(escalate_stale_replay(
+                remediation, replace(stale, derived_path=("feature:beta",)),
+                correction, index, ledger))
+            with self.assertRaises(BilqisError) as caught:
+                escalate_stale_replay(
+                    remediation, replace(stale, derived_path=(
+                        "feature:beta", "motif:alpha")),
+                    correction, index, ledger)
+            self.assertEqual(
+                caught.exception.context["reason"],
+                "BAMF_C09_DERIVED_PATH_INVALID")
+            with self.assertRaises(BilqisError) as caught:
+                escalate_stale_replay(
+                    replace(remediation, completed_at=620),
+                    stale, correction, index, ledger)
+            self.assertEqual(
+                caught.exception.context["reason"],
+                "BAMF_C09_REMEDIATION_BEFORE_CORRECTION")
+
         def test_post_remediation_stale_replay_escalates_but_new_evidence_does_not(self):
             index, source_a, _ = _chain()
             correction = _event(source_a)
@@ -87,44 +130,8 @@ class AtlasRevalidationTests(unittest.TestCase):
                 "capability:alpha").retained_generation_sha256, "9" * 64)
             self.assertEqual(ledger.capability("capability:alpha").status,
                              RequalificationStatus.QUALIFIED)
-            relabelled = replace(
-                stale, claim_id="claim:relabelled",
-                source_event_id="event:relabelled")
-            self.assertIsNotNone(escalate_stale_replay(
-                remediation, relabelled, correction, index, ledger))
-            receipt_relabelled = replace(
-                stale, claim_id="claim:receipt-relabelled",
-                source_receipt_sha256="2" * 64)
-            self.assertIsNotNone(escalate_stale_replay(
-                remediation, receipt_relabelled, correction, index, ledger))
-            self.assertEqual(escalate_stale_replay(
-                remediation, replace(stale, observed_at=640),
-                correction, index, ledger), None)
-            self.assertIsNone(escalate_stale_replay(
-                replace(remediation, status=RemediationStatus.PENDING),
-                stale, correction, index, ledger))
-            new_evidence = replace(
-                stale, claim_id="claim:new", actor_id="actor:beta",
-                source_event_id="event:new", source_time=700,
-                source_receipt_sha256="2" * 64, observed_at=705)
-            self.assertIsNone(escalate_stale_replay(
-                remediation, new_evidence, correction, index, ledger))
-            self.assertIsNone(escalate_stale_replay(
-                remediation, replace(stale, derived_path=("feature:beta",)),
-                correction, index, ledger))
-            with self.assertRaises(BilqisError) as caught:
-                escalate_stale_replay(
-                    remediation, replace(stale, derived_path=(
-                        "feature:beta", "motif:alpha")),
-                    correction, index, ledger)
-            self.assertEqual(caught.exception.context["reason"],
-                             "BAMF_C09_DERIVED_PATH_INVALID")
-            with self.assertRaises(BilqisError) as caught:
-                escalate_stale_replay(
-                    replace(remediation, completed_at=620),
-                    stale, correction, index, ledger)
-            self.assertEqual(caught.exception.context["reason"],
-                             "BAMF_C09_REMEDIATION_BEFORE_CORRECTION")
+            self._assert_stale_replay_rejections(
+                remediation, stale, correction, index, ledger)
 
         def test_concurrent_corrections_keep_branches_until_explicit_supersession(self):
             source = _ref(DependencyKind.SOURCE, "source:meeting")

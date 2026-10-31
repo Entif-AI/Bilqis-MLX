@@ -7,9 +7,7 @@ from .atlas_temporal_contracts import TemporalEvent, TemporalEventKind, Temporal
 from .atlas_temporal_contracts import (TEMPORAL_EVENT_SCHEMA, TEMPORAL_PROJECTION_SCHEMA, TemporalEvent, TemporalEventKind, TemporalProjection, TemporalStatus, _SHA256, _digest, _hash, _invalid, _name, _names, _time)
 from .atlas_stale_replay import (DERIVED_CLAIM_SCHEMA, DerivedClaim, PROCESS_FAULT_RESULT_SCHEMA, PROCESS_FAULT_SCHEMA, ProcessFault, ProcessFaultResult, REMEDIATION_RECEIPT_SCHEMA, RemediationReceipt, RemediationStatus, escalate_stale_replay)
 
-def project_as_of(
-    events: tuple[TemporalEvent, ...], *, actor_id: str, as_of: int,
-) -> TemporalProjection:
+def project_as_of(events: tuple[TemporalEvent, ...], *, actor_id: str, as_of: int) -> TemporalProjection:
     """Use only observed and effective evidence at this prefix/as-of time."""
     if (not isinstance(events, tuple)
             or any(not isinstance(item, TemporalEvent) for item in events)

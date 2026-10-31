@@ -1,5 +1,6 @@
 """Canonical logical paths for physically compartmentalized source owners."""
 from pathlib import Path
+from types import MappingProxyType
 
 
 LOGICAL_SOURCE_COMPARTMENTS = (
@@ -25,7 +26,7 @@ LOGICAL_SOURCE_COMPARTMENTS = (
     (("bilqis_mlx", "semantics", "foundation"), ("bilqis_mlx", "semantics")),
 )
 
-LOGICAL_SOURCE_ALIASES = {
+LOGICAL_SOURCE_ALIASES = MappingProxyType({
     "bilqis_mlx/runtime/_admission/atlas_lease_contracts.py":
         "bilqis_mlx/runtime/atlas_admission.py",
     "bilqis_mlx/runtime/_admission/atlas_lease_storage.py":
@@ -68,7 +69,7 @@ LOGICAL_SOURCE_ALIASES = {
         "bilqis_mlx/runtime/akasha_staging.py",
     "bilqis_mlx/runtime/_projection/akasha_staging_store.py":
         "bilqis_mlx/runtime/akasha_staging.py",
-}
+})
 
 
 def logical_source_path(path: Path, root: Path) -> str:

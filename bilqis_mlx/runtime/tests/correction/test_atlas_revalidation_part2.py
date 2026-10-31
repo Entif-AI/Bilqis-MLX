@@ -30,6 +30,21 @@ from bilqis_mlx.runtime.atlas_temporal_revalidation import (
 from bilqis_mlx.runtime.tests.correction.test_atlas_revalidation_helpers import (_SOURCE_OWNER, _TEST_PUBLIC, _chain, _event, _node, _ref, _result, _sign_event, add_correction, advance_revalidation, apply_correction, escalate_stale_replay, revalidate_node)
 
 class AtlasRevalidationTests(unittest.TestCase):
+        def _assert_actor_prefixes_do_not_collide(self, planned, cache):
+            actor_a = replace(planned, actor_id="a")
+            actor_ab = replace(
+                planned, event_id="event:actor-ab", actor_id="a:b")
+            projection_a = project_as_of(
+                (actor_a,), actor_id="a", as_of=575)
+            projection_ab = project_as_of(
+                (actor_ab,), actor_id="a:b", as_of=575)
+            both = bind_as_of_dependency(
+                bind_as_of_dependency(cache, projection_ab), projection_a)
+            rebound = bind_as_of_dependency(
+                both, project_as_of((actor_a,), actor_id="a", as_of=590))
+            self.assertIn(
+                projection_ab.time_dependency, rebound.immediate_dependencies)
+
         def test_temporal_projection_distinguishes_plan_silence_negative_and_correction(self):
             planned = TemporalEvent(
                 event_id="event:planned", actor_id="actor:alpha",
@@ -111,15 +126,4 @@ class AtlasRevalidationTests(unittest.TestCase):
                              refreshed.immediate_dependencies)
             self.assertIn(missing.time_dependency,
                           refreshed.immediate_dependencies)
-            actor_a = replace(planned, actor_id="a")
-            actor_ab = replace(planned, event_id="event:actor-ab", actor_id="a:b")
-            projection_a = project_as_of(
-                (actor_a,), actor_id="a", as_of=575)
-            projection_ab = project_as_of(
-                (actor_ab,), actor_id="a:b", as_of=575)
-            both = bind_as_of_dependency(
-                bind_as_of_dependency(cache, projection_ab), projection_a)
-            rebound = bind_as_of_dependency(
-                both, project_as_of((actor_a,), actor_id="a", as_of=590))
-            self.assertIn(projection_ab.time_dependency,
-                          rebound.immediate_dependencies)
+            self._assert_actor_prefixes_do_not_collide(planned, cache)
