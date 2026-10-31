@@ -1,63 +1,61 @@
 # A08.1b.5 Factory family integration candidate
 
 - Issue: #557; parent A08.1b #418; Lane A
-- Consumed unified: `9104ce733e04fb9c82420428b18dfdbf5db49535`
-- Synchronized Lane A: `c18419b500216fb7e25a460ecc45aa1b522f3fb4`
+- Replacement PR: #657; supersedes historical stacked PR #642
+- Consumed unified: `4bac5323701d198a6782b424cd5e24633b337b56`
+- Feature/proof head before this receipt-only refresh: `f59a105a7f8c96e3eb582121735ccf2d15b7307b`
 - Learning state: `LEARNING_UNVERIFIED`
-- Independent EGM: pending; current fresh-worker launcher failed before reviewer start
+- Independent review outcome is recorded on the PR review/comment surface and is not asserted by this static candidate receipt.
 
 ## Owned integration
 
-`skos_curriculum.registry` is behavior-only: it binds a constructive family to an
-already-existing `CapabilityDefinition`, `ConstructionProgram`, and exact source
-adapter/oracle. It never derives a capability ID from a semantic ID, family, source
-row, operator, root, or grade; A08.2 retains stable capability/release identity.
-Boolean and numeric formal behavior and the existing copular source fixture dispatch
-by family/provider, not grade. Missing identity bindings remain
-`IMPLEMENTATION_UNCOVERED`, preserving the complete A08.1a denominator and separate
-source-held rows. A successful binding remains `LEARNING_UNVERIFIED`.
+The current-base replacement keeps `skos_curriculum.registry` behavior-only: it
+binds a constructive family to an already-existing `CapabilityDefinition`,
+`ConstructionProgram`, and exact source adapter/oracle. It does not derive a
+capability ID from semantic ID, family, source row, operator, root, or grade;
+A08.2 retains stable capability/release identity. Missing identity bindings remain
+`IMPLEMENTATION_UNCOVERED`, preserving the complete A08.1a denominator and
+separate source-held rows. A successful binding remains `LEARNING_UNVERIFIED`.
 
-Source-backed positive-identity lessons now have an A03/A13 bridge. Exact tracked
-CSV rows are verified against the canonical extraction frontier, preserve the full
-A01 `(domain, table, key)` identity and row/file hashes, and are checked against the
-pinned A01 concept before grants are issued. A03 visibility uses a source-local
-atomic span; absolute CSV byte custody remains in the witness instead of being
-misused as task causal-prefix coordinates. A13 frame/member grants are merged into
-the current `SourceFrontier`; a revoked contrast grant conflicts on reissuance and
-cannot be silently resurrected. The public Factory surface exports only the
-A01-current lesson issuance/projection boundary, not the lower row-to-frame helper.
+The executable Factory boundary revalidates current A08 authority before
+execution. Boolean capability bindings cannot execute numeric or foreign Boolean
+operators. World-family programs execute against the exact supplied source
+registry and released adapter identity.
 
-The constructive lesson compiler prefers a contrast from the same source-authority
-class where possible, so a source-row positive identity is not paired with an ABI-only
-contrast when a source-row contrast exists.
+Source-backed positive-identity lessons retain the A03/A13 bridge: exact tracked
+CSV rows are verified against the canonical extraction frontier, preserve the A01
+`(domain, table, key)` identity and row/file hashes, and are checked against the
+pinned A01 concept before grants are issued. A13 frame/member grants are merged
+into the current `SourceFrontier`; revoked contrast authority cannot be silently
+resurrected. Source-row evidence stays atomic, source-local, and non-admitting.
 
-## Structural interruption
+The replacement deliberately does **not** reintroduce the historical
+`bilqis_mlx/errors/catalog.py` edits that caused the first current-base hosted
+structure failure. Newly introduced family/source-row failures use the existing
+local typed error pathways instead.
 
-Repository governance required local structural remediation before #557 feature
-work continued. The issue branch splits `factory/model.py` into focused lifecycle
-owners, reduces root `scripts/` to 12 direct code files, and compartmentalizes the
-90-file Ithkuil test root into source/semantic subdirectories. Oversized notation,
-mapping, and SKOS-policy modules/tests were split below the required limits. Broad
-moved semantic suites passed 464/464; focused split suites passed 93/93; structure
-and governance checks report zero violations.
+## Current-base proof
 
-## Focused proof
+The code at `f59a105a7f8c96e3eb582121735ccf2d15b7307b` is the current-base feature
+state consumed by this receipt refresh. It differs from the preceding feature
+proof only by merging unified's shared Semantic ABI workflow repair; no A08 feature
+code changed in that merge.
 
-Current #557 suites pass 31/31 before final EGM, covering family/grade-neutral
-binding, missing constructor, wrong oracle/checker authority, preserved denominator,
-no learning-credit promotion, source-row byte identity, exact A01 source identity,
-source-local prefix semantics, frame/member grant requirements, contrast-only
-revocation, and rejection of ABI/relation attempts to mint source-row provenance.
+- Focused A08/source-authority union: **24 passed / 6 explicit pinned-A01 skips / 0 failures**.
+- The six skips are tests that require the real pinned A01 artifact through
+  `BILQIS_A01_ATLAS_BUNDLE`; no fixture or substitute authority was introduced.
+- Operator-contract ratchet: **0 new debt**.
+- Development structure: **0 violations**.
+- Changed-file hygiene: **0 new findings**.
+- Factory architecture: **PASS**.
+- Governance integrity: **0 violations**.
+- Docs and `git diff --check`: **PASS**.
+- Hosted full sharded semantic-profile run `#41240739990`: **SUCCESS** on all
+  eight semantic shards plus portable-core/final portable jobs.
 
-Follow-up executable-path proof adds an explicit non-admitting Factory-release
-family execution seam. It replays A08 currentness, resolves the exact existing
-Factory capability/program/source-adapter binding, executes the registered
-heterogeneous constructor, and requires its independent checker to accept the
-artifact. A regression test copied onto pre-fix head `7411161a` fails at import
-because that executable seam does not exist there; the repaired worktree passes
-15 tests plus 5 subtests across the family-registry and source-context suites.
-Structure and governance checks remain at zero violations and `git diff --check`
-passes.
+## Acceptance boundary
 
-No neural update, capability admission, A08.2 identity allocation, or self-merge is
-claimed.
+This leaf claims only the A08.1b.5 family/source-authority execution seam. It does
+not claim capability admission, A08.2 identity allocation, learner/optimizer or
+checkpoint mutation, graph mutation, parent A08 closure, or neural training.
+Parent #418/#358 and downstream A08.2 remain separate acceptance surfaces.
