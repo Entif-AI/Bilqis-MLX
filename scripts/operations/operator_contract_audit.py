@@ -112,6 +112,19 @@ def analyze_source(path: str, source: str) -> SourceReport:
     tree = ast.parse(source, filename=path)
     parents = {child: parent for parent in ast.walk(tree)
                for child in ast.iter_child_nodes(parent)}
+    module_strings: dict[str, str] = {}
+    for statement in tree.body:
+        if (isinstance(statement, ast.Assign)
+                and isinstance(statement.value, ast.Constant)
+                and isinstance(statement.value.value, str)):
+            for target in statement.targets:
+                if isinstance(target, ast.Name):
+                    module_strings[target.id] = statement.value.value
+        elif (isinstance(statement, ast.AnnAssign)
+              and isinstance(statement.target, ast.Name)
+              and isinstance(statement.value, ast.Constant)
+              and isinstance(statement.value.value, str)):
+            module_strings[statement.target.id] = statement.value.value
     codes: list[CodeSite] = []
     debt: list[ContractDebt] = []
     owners: list[str] = []
@@ -141,6 +154,23 @@ def analyze_source(path: str, source: str) -> SourceReport:
                 ))
             if SYMBOL.fullmatch(node.value):
                 codes.append(CodeSite(node.value, kind, path, node.lineno, owner))
+
+        def visit_Raise(self, node: ast.Raise) -> None:
+            if (isinstance(node.exc, ast.Call) and node.exc.args
+                    and isinstance(node.exc.args[0], ast.Name)):
+                reference = node.exc.args[0]
+                token = module_strings.get(reference.id)
+                if token is not None:
+                    owner = ".".join(owners) if owners else "<module>"
+                    debt.append(ContractDebt(
+                        path, "literal-error-identity", token,
+                        owner, reference.lineno,
+                    ))
+                    if SYMBOL.fullmatch(token):
+                        codes.append(CodeSite(
+                            token, "exception", path, reference.lineno, owner,
+                        ))
+            self.generic_visit(node)
 
         def _numeric_guard(self, node: ast.AST) -> None:
             owner = ".".join(owners) if owners else "<module>"
@@ -250,8 +280,27 @@ def debt_counter(debt: tuple[ContractDebt, ...]) -> Counter[tuple[str, ...]]:
 def new_debt(
     current: Counter[tuple[str, ...]], baseline: Counter[tuple[str, ...]],
 ) -> tuple[tuple[str, ...], ...]:
-    return tuple(key for key, count in sorted(current.items())
-                 for _ in range(max(0, count - baseline[key])))
+    """Return net-new debt while allowing one-for-one module relocation.
+
+    Exact path-qualified matches consume first. A current excess occurrence may
+    then consume only a disappeared occurrence of the same ``(kind, token)``.
+    Copies and genuinely new opaque contracts therefore remain debt while a
+    structural move keeps its existing debt identity.
+    """
+    exact_excess = current - baseline
+    disappeared = baseline - current
+    relocation_credit: Counter[tuple[str, str]] = Counter()
+    for (_, kind, token), count in disappeared.items():
+        relocation_credit[(kind, token)] += count
+
+    introduced: list[tuple[str, ...]] = []
+    for key, count in sorted(exact_excess.items()):
+        _, kind, token = key
+        credit_key = (kind, token)
+        relocated = min(count, relocation_credit[credit_key])
+        relocation_credit[credit_key] -= relocated
+        introduced.extend([key] * (count - relocated))
+    return tuple(introduced)
 
 
 def _baseline(counter: Counter[tuple[str, ...]]) -> dict:
