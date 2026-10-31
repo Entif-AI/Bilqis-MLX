@@ -5,13 +5,15 @@ Only the separately approved Course + source/assessment seals can authorize
 teaching; this compiler can enumerate and order *proposed* constructions.
 """
 from __future__ import annotations
-from dataclasses import asdict, replace
+from dataclasses import asdict, dataclass, replace
+import hashlib
 import json
 from pathlib import Path
 import re
+from .curriculum_compiler import CurriculumAST
 from .semantics.abi import HISTORICAL_PREFIX_SIZE
 from .token_atlas import ORIGINAL_GRAPH_DIGEST
-from ._registry_ast.helpers import _digest, _grade_refs, _text
+from ._registry_ast.helpers import _digest, _text
 from ._registry_ast.types import (Origin, TokenNode, LessonNode, PrerequisiteNode, GradeNode, BridgeNode, RegistryAST, StagePlan, ConstructionTask, _origin)
 from ._registry_ast.planning import bind_course_tokens, stage_plan, construction_frontier
 
@@ -26,6 +28,16 @@ REQUIRED_HEADERS = {
  "Token Atlas": ("0-based Token ID", "Bilqis token symbol", "Pasigraphy identity", "Source-grounded semantic role/function", "Formal signature", "Semantic family", "Source subtype", "NI bridge or grammar locus", "Lesson provenance", "Token mastery evidence", "Meaning-review status", "Arity", "Source stage", "Node contract SHA-256", "Source graph SHA-256", "Historical source / notes"),
  "Semantic Bridges": ("Bridge ID", "Source locus / era", "Ithkuil category / root", "Source-grounded semantic meaning", "Link type", "Prior Bilqis concepts (NOT asserted mastered)", "Proposed constructive exercise / varied context", "Assessment / retention probe (PROPOSED)", "Registry links / reserved lesson", "Status / gate", "Primary source", "Semantic caution / dependencies"),
 }
+
+def _grade_refs(value: str) -> tuple[str, ...]:
+    if not value:
+        return ()
+    grades = tuple(s for s in re.split(r"[,;\s]+", value) if s)
+    if not grades or any(not GRADE_ID.fullmatch(g) for g in grades):
+        raise ValueError("REGISTRY_UNRESOLVED_GRADE_REFERENCE:" + value)
+    if len(set(grades)) != len(grades):
+        raise ValueError("REGISTRY_DUPLICATE_GRADE_REFERENCE")
+    return grades
 
 def _table(snapshot: dict, tab: str):
     entry = snapshot.get("tabs", {}).get(tab)

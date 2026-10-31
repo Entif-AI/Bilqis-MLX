@@ -29,6 +29,8 @@ class RegistryASTTests(unittest.TestCase):
             {name: getattr(registry, name).__module__ for name in names},
             {name: "bilqis_mlx.registry_ast" for name in names},
         )
+        from bilqis_mlx.curriculum_compiler import CurriculumAST
+        self.assertIs(registry.CurriculumAST, CurriculumAST)
 
     def test_private_owners_import_before_public_facade(self):
         code = (
