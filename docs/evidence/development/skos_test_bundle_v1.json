@@ -1,8 +1,8 @@
 {
-  "byte_count": 44651032,
-  "evidence": "PR #291 merged release-97 exhaustive audit; test-policy control-plane changes do not alter released semantic bytes",
-  "file_count": 324,
-  "release_commit": "175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8",
+  "byte_count": 44670485,
+  "evidence": "Local exhaustive 8-shard semantic profile PASS for all 66 nested test_skos files while merging unified d790dc692a11c052b7ee44a181aac54e8fb2585e into PR #642",
+  "file_count": 344,
+  "release_commit": "HEAD",
   "schema": "bilqis.skos-test-bundle/v1",
-  "sha256": "572926819c70e390faf419c6fe522344fec7b9fe3a2c219d96a7b515c07e88ae"
+  "sha256": "e2188602e3a73968c113e2c428eb206da85187fb3fd2b390c7fc3ac936c75441"
 }
