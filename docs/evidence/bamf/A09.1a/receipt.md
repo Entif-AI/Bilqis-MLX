@@ -33,15 +33,19 @@ split into a 290-line builder and 237-line immutable-contract module; its
 companion test is 316 lines. No structure threshold or governance baseline was
 weakened.
 
-The real pinned A01 corpus replay passes with **9,307 source-eligible semantic
+The repaired-schema real pinned A01 corpus replay passes with **9,307 source-eligible semantic
 IDs, 12,351 required family obligations, and 1,052 source-held rows**. The
-replay identities are:
+replay binds those real source artifacts to the test's valid synthetic
+`CandidateFrontierRelease` fixture because accepted A08 frontier authority is
+still an explicit open prerequisite. This does not claim an A08 release exists.
+The replay identities are:
 
 - semantic release `58e0c281b5da18b9b7e6c803709b29eeeb0a88f16b06f48de692808e2fb88306`
 - Atlas bundle `5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7`
 - source bundle `f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec`
 - frozen census `09445728d79c6d1fa0dd4a1a0b061f2fd3c17ca4a1e8d91f17b456f1fbab7853`
-- initial snapshot `4e0671a62c0cb51e72dd4af1330623bb9f7977a94abb22708b53a27df4c5a1d0`
+- synthetic candidate-frontier fixture `1fac163890bd9de235bcba1201ff0967642839f6b6fd5d25690f3022d9eecc12`
+- repaired-schema initial snapshot `dda187f279d0bfe095ef2bbbc2728c1c2ed7d9183ef62629f402b3b3c9d1cd6e`
 
 The
 snapshot replay preserves deterministic order and digest, keeps SOURCE_HELD
@@ -63,6 +67,9 @@ skip** when `BILQIS_ATLAS_REAL_CORPUS` is absent. Added regressions prove that
 reversing otherwise key-equal retained evidence cannot change snapshot bytes and
 that candidate-frontier / named learning-state changes are visible in snapshot
 identity.
+
+With the pinned corpus path supplied, the same repaired suite is **7 passed,
+0 failed, 0 skipped** and produces the repaired-schema snapshot identity above.
 
 The full Factory unit surface retains baseline failure parity. Untouched
 `9104ce7` runs 387 tests with 355 passed, 19 failed, and 13 skipped. The
