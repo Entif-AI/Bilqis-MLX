@@ -43,3 +43,26 @@ class StagingTests(unittest.TestCase):
                 stage_db, first.stage.stage_digest), first.stage)
             self.assertEqual(read_staging_projection(
                 stage_db, second.stage.stage_digest), second.stage)
+
+
+class StoredStageIdentityTests(unittest.TestCase):
+    def test_read_rejects_valid_stage_substituted_under_another_digest(self):
+        import sqlite3
+        with tempfile.TemporaryDirectory() as folder:
+            domain = _contract(Path(folder) / 'outbox.sqlite3')
+            database = Path(folder) / 'staging.sqlite3'
+            first = verify_staging_projection(build_staging_projection(
+                (_projected(_event('capability:first'), domain),), domain))
+            other = verify_staging_projection(build_staging_projection(
+                (_projected(_event('capability:other'), domain),), domain))
+            promote_staging_projection(database, first, expected_active_digest=None)
+            # Simulate corruption outside the append-only writer, without
+            # modifying either canonical stage or its independently valid digest.
+            with sqlite3.connect(database) as connection:
+                connection.execute('DROP TRIGGER akasha_stages_no_update')
+                connection.execute('UPDATE akasha_stages SET canonical_json=?',
+                                   (other.stage.canonical_json,))
+            with self.assertRaises(BilqisError):
+                read_staging_projection(database, first.stage.stage_digest)
+            with self.assertRaises(BilqisError):
+                read_active_projection(database)

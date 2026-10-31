@@ -67,6 +67,7 @@ def query_public_projection(
             or (kind is not None and not isinstance(kind, AkashaEventKind))
             or (as_of is not None and not _time(as_of))):
         _invalid("BAMF_C10_PUBLIC_QUERY_INVALID")
+    StagingProjection.__post_init__(stage)
     return tuple(
         event for event in stage.public_events
         if (kind is None or event.kind is kind)
@@ -112,6 +113,7 @@ def _query_digest(stage: StagingProjection) -> str:
 def verify_staging_projection(stage: StagingProjection) -> VerifiedStage:
     if not isinstance(stage, StagingProjection):
         _invalid("BAMF_C10_STAGING_ARGUMENT_INVALID")
+    StagingProjection.__post_init__(stage)
     census_digest = _digest(stage.census)
     query_digest = _query_digest(stage)
     return VerifiedStage(
