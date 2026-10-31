@@ -18,6 +18,7 @@ from .decisions import (
     allowed_values,
     commit_decisions,
     parent_outputs,
+    start_decoding,
 )
 from .records import RoleCandidate, TypedHeadLogits, WIDTH, invalid, validate_hidden
 
@@ -108,6 +109,58 @@ def encode_feedback_value(value, *, snapshot=None, banks=()) -> mx.array:
             if type(value) is ConceptRef else _structural_vector(value))
 
 
+def _canonical_legal_value(value, legal_values: tuple):
+    exact = tuple(
+        legal for legal in legal_values
+        if type(value) is type(legal) and value == legal)
+    if len(exact) == 1:
+        return exact[0]
+    if type(value) is str:
+        enum_match = tuple(
+            legal for legal in legal_values
+            if isinstance(legal, Enum) and legal.value == value)
+        if len(enum_match) == 1:
+            return enum_match[0]
+    return None
+
+
+def _ancestor_ids(state: DecodeState, decision_id: str) -> frozenset[str]:
+    lookup = {item.decision_id: item for item in state.plan.decisions}
+    if decision_id not in lookup:
+        invalid()
+    pending = list(lookup[decision_id].depends_on)
+    ancestors = set()
+    while pending:
+        current = pending.pop()
+        if current in ancestors:
+            continue
+        ancestors.add(current)
+        pending.extend(lookup[current].depends_on)
+    return frozenset(ancestors)
+
+
+def _teacher_ancestor_state(
+        state: DecodeState, decision_id: str,
+        teacher_targets: Mapping[str, object]) -> DecodeState:
+    ancestors = _ancestor_ids(state, decision_id)
+    prefix = start_decoding(state.plan)
+    replayed = set()
+    for output in state.committed:
+        if output.decision_id not in ancestors:
+            continue
+        value = teacher_targets.get(output.decision_id, output.value)
+        canonical = _canonical_legal_value(
+            value, allowed_values(prefix, output.decision_id))
+        if canonical is None:
+            invalid()
+        prefix = commit_decisions(
+            prefix, (DecisionOutput(output.decision_id, canonical),))
+        replayed.add(output.decision_id)
+    if replayed != ancestors:
+        invalid()
+    return prefix
+
+
 def _parent_values(
         state: DecodeState, decision_id: str,
         teacher_targets: Mapping[str, object] | None):
@@ -122,18 +175,15 @@ def _parent_values(
     if decision is None or any(parent not in teacher_targets for parent in decision.depends_on):
         invalid()
     # Deliberately index only declared parents. Current/descendant targets are loss-only.
-    committed_index = {
-        output.decision_id: index for index, output in enumerate(state.committed)
-    }
     forced = []
     for parent in decision.depends_on:
         target = teacher_targets[parent]
-        index = committed_index[parent]
-        parent_state = DecodeState(state.plan, state.committed[:index])
-        legal = allowed_values(parent_state, parent)
-        if not any(type(target) is type(value) and target == value for value in legal):
+        parent_state = _teacher_ancestor_state(state, parent, teacher_targets)
+        canonical = _canonical_legal_value(
+            target, allowed_values(parent_state, parent))
+        if canonical is None:
             invalid()
-        forced.append(target)
+        forced.append(canonical)
     return tuple(forced)
 
 
@@ -199,9 +249,10 @@ def commit_neural_decision(
         state: DecodeState, decision_id: str, value) -> NeuralDecisionResult:
     """Turn an illegal neural choice into an explicit solver fallback request."""
     legal_values = allowed_values(state, decision_id)
-    if value not in legal_values:
+    canonical = _canonical_legal_value(value, legal_values)
+    if canonical is None:
         return NeuralDecisionResult(
             NeuralDecisionStatus.FALLBACK_REQUIRED, state, FALLBACK_REASON)
     advanced = commit_decisions(
-        state, (DecisionOutput(decision_id, value),))
+        state, (DecisionOutput(decision_id, canonical),))
     return NeuralDecisionResult(NeuralDecisionStatus.COMMITTED, advanced)
