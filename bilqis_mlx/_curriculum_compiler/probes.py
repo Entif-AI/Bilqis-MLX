@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import random
-from bilqis_mlx.curriculum_compiler import CurriculumAST
+from .types import CurriculumAST
 
 def compile_probe_plan(ast: CurriculumAST, *, variants_per_axis: int = 4):
     """Reusable factorized probe design, separate from admission and golds.

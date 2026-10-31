@@ -1,7 +1,7 @@
 """Curriculum graph projection and dependency closure."""
 from __future__ import annotations
 from bilqis_mlx.curriculum import Course, validate
-from bilqis_mlx.curriculum_compiler import CapabilityNode, CurriculumAST
+from .types import CapabilityNode, CurriculumAST
 
 def compile_ast(course: Course) -> CurriculumAST:
     """Build one canonical topological projection; never promote proposals."""

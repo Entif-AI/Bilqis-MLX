@@ -3,7 +3,6 @@ from __future__ import annotations
 import hashlib
 import random
 from bilqis_mlx.semantics.core import Apply, Expression, Operation
-from bilqis_mlx.curriculum_compiler import CapabilityNode
 
 def _coverage_debt(code: str, *parts: str) -> ValueError:
     return ValueError("CURRICULUM_GENERIC_COVERAGE_DEBT:" + code + ":" + ":".join(parts))

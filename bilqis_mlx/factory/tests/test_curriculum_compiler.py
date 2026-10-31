@@ -2,6 +2,8 @@
 import json
 from pathlib import Path
 import unittest
+import subprocess
+import sys
 
 from bilqis_mlx.factory.tests.curriculum_compiler import graph_cases as _graph
 from bilqis_mlx.factory.tests.curriculum_compiler import package_cases as _package
@@ -10,6 +12,18 @@ from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.grade_a_probe import read_sources
 
 class CurriculumCompilerTests(_graph.GraphProbeCases, _package.TypedPackageCases, unittest.TestCase):
+    def test_private_owners_import_without_public_facade_order_dependency(self):
+        code = (
+            "import bilqis_mlx._curriculum_compiler.helpers; "
+            "import bilqis_mlx._curriculum_compiler.graph; "
+            "import bilqis_mlx._curriculum_compiler.packages; "
+            "import bilqis_mlx._curriculum_compiler.probes"
+        )
+        completed = subprocess.run(
+            [sys.executable, "-c", code], capture_output=True, text=True, check=False
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+
     def test_public_functions_keep_historical_module_identity(self):
         import bilqis_mlx.curriculum_compiler as compiler
         names = ("compile_typed_candidate_package", "invalidated_typed_packages",

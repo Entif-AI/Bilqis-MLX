@@ -5,175 +5,156 @@ admission. This module has no optimizer, checkpoint, or grade-release effects.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
-from itertools import product
-import hashlib
-import json
 import random
 from typing import Mapping
 
-from .curriculum import Course, validate
-from .semantics.core import Apply, Expression, Operation, TypedError, literal
-from .semantics.functions import curry
 from .semantics.catalog import Catalog
+from .semantics.core import Operation, TypedError
 from .verification.cases import verify_constituents
-from .verification.expressions import Backend, Proof
-
-@dataclass(frozen=True)
-class CapabilityNode:
-    id: str
-    grade: str
-    roots: tuple[str, ...]
-    requires: tuple[str, ...]
-    composed_of: tuple[str, ...]
-    answers: tuple[str, ...]
-    oracle: str | None
-    source: str
-    stage: int = 0
-
-@dataclass(frozen=True)
-class CurriculumAST:
-    version: str
-    nodes: tuple[CapabilityNode, ...]
-    authorized_for_training: bool = False
-
-    def digest(self):
-        from dataclasses import asdict
-        value = json.dumps(asdict(self), sort_keys=True, separators=(",", ":"))
-        return hashlib.sha256(value.encode()).hexdigest()
-
-@dataclass(frozen=True)
-class FiniteTypedInput:
-    """A bounded typed leaf domain for declarative candidate construction."""
-
-    type_name: str
-    values: tuple[str | bool, ...]
-    world_contract: str | None = None
-
-    def __post_init__(self) -> None:
-        if not self.values:
-            raise ValueError("CURRICULUM_GENERIC_EMPTY_TYPED_DOMAIN")
-        if len({(type(value), value) for value in self.values}) != len(self.values):
-            raise ValueError("CURRICULUM_GENERIC_DUPLICATE_TYPED_DOMAIN_VALUE")
-        for value in self.values:
-            literal(value, self.type_name, world_contract=self.world_contract)
-
-    def instantiate(self, rng: random.Random) -> Expression:
-        return literal(rng.choice(self.values), self.type_name,
-                       world_contract=self.world_contract)
-
-@dataclass(frozen=True)
-class TypedExpressionTemplate:
-    """Declarative composition over the existing immutable semantic AST."""
-
-    operation: Operation
-    arguments: tuple["TypedExpressionTemplate | FiniteTypedInput", ...]
-
-    def __post_init__(self) -> None:
-        if len(self.arguments) != len(self.operation.signature.inputs):
-            raise ValueError("CURRICULUM_GENERIC_TEMPLATE_ARITY_MISMATCH")
-        for argument, expected in zip(self.arguments, self.operation.signature.inputs):
-            actual = (argument.operation.signature.output
-                      if isinstance(argument, TypedExpressionTemplate)
-                      else argument.type_name if isinstance(argument, FiniteTypedInput)
-                      else None)
-            if actual != expected:
-                raise ValueError("CURRICULUM_GENERIC_TEMPLATE_TYPE_MISMATCH")
-
-    def instantiate(self, rng: random.Random) -> Apply:
-        arguments = tuple(argument.instantiate(rng) for argument in self.arguments)
-        expression = curry(self.operation)(*arguments)
-        if not isinstance(expression, Apply):
-            raise ValueError("CURRICULUM_GENERIC_TEMPLATE_NOT_FULLY_APPLIED")
-        return expression
-
-    @property
-    def construction_count(self) -> int:
-        count = 1
-        for argument in self.arguments:
-            count *= (argument.construction_count if isinstance(argument, TypedExpressionTemplate)
-                      else len(argument.values))
-        return count
-
-    @property
-    def complete_boolean_inputs(self) -> bool:
-        return all(argument.complete_boolean_inputs if isinstance(argument, TypedExpressionTemplate)
-                   else argument.type_name != "Boolean" or set(argument.values) == {False, True}
-                   for argument in self.arguments)
-
-    def finite_cases(self, budget: int) -> tuple[Apply, ...]:
-        """Enumerate the declared finite domain before any seeded draw."""
-        if self.construction_count > budget:
-            raise _coverage_debt("FINITE_CONSTRUCTION_BUDGET", self.operation.symbol)
-        domains = tuple(
-            argument.finite_cases(budget) if isinstance(argument, TypedExpressionTemplate)
-            else tuple(literal(value, argument.type_name, world_contract=argument.world_contract)
-                       for value in argument.values)
-            for argument in self.arguments)
-        return tuple(curry(self.operation)(*arguments) for arguments in product(*domains))
-
-@dataclass(frozen=True)
-class TypedCandidateSpecimen:
-    capability: str
-    split: str
-    ordinal: int
-    seed: int
-    expression: Expression
-    proof: Proof
-    type_name: str
-    world_contract: str | None
-    admitted: bool = False
-    constituent_proofs: tuple[Proof, ...] = ()
-
-@dataclass(frozen=True)
-class FiniteConstructionCoverage:
-    capability: str
-    expected_constructions: int
-    lesson_constructions: int
-    test_constructions: int
-
-@dataclass(frozen=True)
-class TypedCandidatePackage:
-    """Seeded, source-verified candidate lessons and tests for a typed AST.
-
-    This is deliberately a read-only proposal artifact.  Its receipts make a
-    semantic-contract edit observable, while leaving old candidate packages
-    inspectable and leaving every admission and neural action outside this
-    module.
-    """
-
-    ast_sha256: str
-    ast_version: str
-    ast_nodes: tuple[CapabilityNode, ...]
-    operation_bindings: tuple[Operation, ...]
-    lessons: tuple[TypedCandidateSpecimen, ...]
-    tests: tuple[TypedCandidateSpecimen, ...]
-    coverage_debt: tuple[str, ...] = ()
-    source_status: str = "SOURCE_ONLY_CANDIDATE"
-    training_authorized: bool = False
-    construction_coverage: tuple[FiniteConstructionCoverage, ...] = ()
-    construction_templates: tuple[tuple[str, TypedExpressionTemplate], ...] = ()
-    construction_budget: int = 256
-    target_capabilities: tuple[str, ...] = ()
-
+from .verification.expressions import Backend
+from ._curriculum_compiler.types import (
+    CapabilityNode, CurriculumAST, FiniteTypedInput, TypedExpressionTemplate,
+    TypedCandidateSpecimen, FiniteConstructionCoverage, TypedCandidatePackage,
+)
 from ._curriculum_compiler.helpers import (
-    _coverage_debt, _seeded_rng, _operations, _validate_answer_type,
+    _coverage_debt, _operations, _seeded_rng, _validate_answer_type,
 )
 from ._curriculum_compiler.graph import (
     compile_ast, dependency_coverage_plan, affected_dependency_closure,
 )
-from ._curriculum_compiler.packages import (
-    compile_typed_candidate_package, invalidated_typed_packages,
-)
+
+def compile_typed_candidate_package(
+    ast: CurriculumAST, *, operations: Mapping[str, Operation],
+    templates: Mapping[str, TypedExpressionTemplate],
+    source: Backend, independent: Backend, qualified_prerequisites=(),
+    seed: int = 0, specimens_per_split: int = 2, construction_budget: int = 256,
+    target_capabilities: tuple[str, ...] | None = None,
+) -> TypedCandidatePackage:
+    """Compile a bounded, source-only candidate package from existing typed ASTs.
+
+    Templates are declarative compositions over ``semantics.functions`` and
+    finite typed inputs, so seeded instantiation has no capability-specific
+    constructor dispatch. Qualification inputs are labels only: compilation
+    cannot prove source pinning, morphology, catalog admission, or mastery.
+    """
+    if type(seed) is not int or type(specimens_per_split) is not int or specimens_per_split < 1:
+        raise ValueError("CURRICULUM_GENERIC_INVALID_SEED_OR_SPECIMEN_COUNT")
+    if type(construction_budget) is not int or construction_budget < 1:
+        raise ValueError("CURRICULUM_GENERIC_INVALID_CONSTRUCTION_BUDGET")
+    if not isinstance(ast, CurriculumAST) or not isinstance(templates, Mapping):
+        raise ValueError("CURRICULUM_GENERIC_INVALID_COMPILATION_INPUT")
+    dependency_coverage_plan(ast)
+    Catalog(tuple(operations.values()))
+    if not getattr(source, "identity", None) or not getattr(independent, "identity", None):
+        raise _coverage_debt("MISSING_INDEPENDENT_ORACLE_IDENTITY")
+    known = {node.id for node in ast.nodes}
+    targets = set(target_capabilities) if target_capabilities is not None else known
+    if not targets or targets - known:
+        raise _coverage_debt("INVALID_TARGET_CAPABILITIES")
+    qualified = set(qualified_prerequisites)
+    unknown = qualified - known
+    if unknown:
+        raise _coverage_debt("UNKNOWN_QUALIFIED_PREREQUISITE", *sorted(unknown))
+    for node in ast.nodes:
+        if node.id not in targets:
+            continue
+        if not node.source or not node.oracle:
+            raise _coverage_debt("MISSING_SOURCE_OR_ORACLE", node.id)
+        if not node.roots:
+            raise _coverage_debt("MISSING_TYPED_SOURCE_ROOT", node.id)
+        if node.id not in templates:
+            raise _coverage_debt("MISSING_DECLARATIVE_TEMPLATE", node.id)
+        if not isinstance(templates[node.id], TypedExpressionTemplate):
+            raise _coverage_debt("INVALID_DECLARATIVE_TEMPLATE", node.id)
+        for root in node.roots:
+            operation = operations.get(root)
+            if not isinstance(operation, Operation) or operation.symbol != root:
+                raise _coverage_debt("MISSING_TYPED_SOURCE_OPERATION", node.id, root)
+        for prerequisite in (*node.requires, *node.composed_of):
+            if prerequisite not in known:
+                raise _coverage_debt("MISSING_PREREQUISITE", node.id, prerequisite)
+            if prerequisite not in qualified:
+                raise _coverage_debt("MISSING_PREREQUISITE", node.id, prerequisite)
+
+    extra_templates = set(templates) - targets
+    if extra_templates:
+        raise _coverage_debt("UNDECLARED_TEMPLATE", *sorted(extra_templates))
+
+    nodes = {node.id: node for node in ast.nodes}
+    ordered = sorted((node for node in ast.nodes if node.id in targets),
+                     key=lambda node: (len(node.grade), node.grade, node.stage, node.id))
+    finite, coverage, debt = {}, [], []
+    for node in ordered:
+        if not templates[node.id].complete_boolean_inputs:
+            debt.append("INCOMPLETE_BOOLEAN_DOMAIN:" + node.id)
+        try:
+            cases = templates[node.id].finite_cases(construction_budget)
+            witnesses = []
+            for expression in cases:
+                nested = _operations(expression)
+                if expression.operator.symbol not in node.roots:
+                    raise _coverage_debt("UNDECLARED_ROOT_OPERATOR", node.id, expression.operator.symbol)
+                if not set(node.roots) <= {operation.symbol for operation in nested}:
+                    raise _coverage_debt("TEMPLATE_MISSING_DECLARED_ROOT", node.id)
+                for operation in nested:
+                    if operations.get(operation.symbol) != operation:
+                        raise _coverage_debt("UNBOUND_NESTED_OPERATION", node.id, operation.symbol)
+                prerequisites = (*node.requires, *node.composed_of)
+                nested_roots = {operation.symbol for operation in nested[1:]}
+                for constituent in node.composed_of:
+                    if not nested_roots.intersection(nodes[constituent].roots):
+                        raise _coverage_debt("MISSING_COMPOSED_CONSTITUENT", node.id, constituent)
+                for operation in nested[1:]:
+                    if not any(operation.symbol in nodes[pre].roots for pre in prerequisites):
+                        raise _coverage_debt("UNQUALIFIED_CONSTITUENT", node.id, operation.symbol)
+                _validate_answer_type(node, expression)
+                proofs = verify_constituents(expression, source=source, independent=independent)
+                witnesses.append((expression, proofs[-1], proofs[:-1]))
+            finite[node.id] = witnesses
+        except TypedError as exc:
+            code = ("ORACLE_DISAGREEMENT" if str(exc) == "COMPOSITION_ORACLE_DISAGREEMENT"
+                    else "INVALID_TYPED_SOURCE_WITNESS")
+            raise _coverage_debt(code, node.id) from exc
+        covered = min(specimens_per_split, len(cases))
+        coverage.append(FiniteConstructionCoverage(node.id, len(cases), covered, covered))
+        if covered < len(cases):
+            debt.extend(f"INCOMPLETE_FINITE_COVERAGE:{node.id}:{split}:{covered}/{len(cases)}"
+                        for split in ("lesson", "test"))
+
+    compiled = {"lesson": [], "test": []}
+    for split in ("lesson", "test"):
+        for node in ordered:
+            witnesses = list(finite[node.id])
+            _seeded_rng(seed, node.id, split, 0).shuffle(witnesses)
+            for ordinal in range(specimens_per_split):
+                expression, proof, constituents = witnesses[ordinal % len(witnesses)]
+                compiled[split].append(TypedCandidateSpecimen(
+                    node.id, split, ordinal, seed, expression, proof,
+                    expression.type_name, expression.world_contract,
+                    constituent_proofs=constituents))
+    bindings = {operation.symbol: operation
+                for template in templates.values()
+                for operation in _operations(template.instantiate(random.Random(0)))}
+    return TypedCandidatePackage(ast.digest(), ast.version, ast.nodes,
+                                 tuple(sorted(bindings.values(), key=lambda item: item.symbol)),
+                                 tuple(compiled["lesson"]), tuple(compiled["test"]),
+                                 coverage_debt=tuple(debt), construction_coverage=tuple(coverage),
+                                 construction_templates=tuple((node.id, templates[node.id]) for node in ordered),
+                                 construction_budget=construction_budget,
+                                 target_capabilities=tuple(node.id for node in ordered))
+
+from ._curriculum_compiler.packages import invalidated_typed_packages
 from ._curriculum_compiler.probes import (
     compile_probe_plan, diagnose_coverage, materialize_probes,
 )
 
 _PUBLIC_MODULE = "bilqis_mlx.curriculum_compiler"
 for _public_object in (
-    compile_typed_candidate_package, invalidated_typed_packages, compile_ast,
-    dependency_coverage_plan, affected_dependency_closure, compile_probe_plan,
-    diagnose_coverage, materialize_probes,
+    CapabilityNode, CurriculumAST, FiniteTypedInput, TypedExpressionTemplate,
+    TypedCandidateSpecimen, FiniteConstructionCoverage, TypedCandidatePackage,
+    invalidated_typed_packages, compile_ast, dependency_coverage_plan,
+    affected_dependency_closure, compile_probe_plan, diagnose_coverage,
+    materialize_probes,
 ):
     _public_object.__module__ = _PUBLIC_MODULE
 del _public_object
