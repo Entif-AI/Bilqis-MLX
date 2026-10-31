@@ -201,3 +201,17 @@ from .atlas_cache_records import (  # noqa: E402
     decode_cache,
     encode_cold_cache,
 )
+from .atlas_cache_binding import (  # noqa: E402
+    CacheByteCost,
+    binding_digest,
+    cache_byte_cost,
+    record_header_bytes,
+    require_cache_binding,
+)
+from .atlas_cache_policy import (  # noqa: E402
+    CacheInferenceResult,
+    CacheQualityObservation,
+    CacheQualityPolicy,
+    interactive_cache_inference,
+    reference_candidate_evaluation,
+)
