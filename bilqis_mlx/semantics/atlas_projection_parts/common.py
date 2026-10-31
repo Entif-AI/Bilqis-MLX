@@ -6,6 +6,8 @@ from lib.ithkuil.src.skos.publication import json_bytes
 from typing import NoReturn
 import hashlib
 import json
+from types import MappingProxyType
+from collections.abc import Mapping
 import re
 
 
@@ -39,7 +41,7 @@ NATIVE_REGISTRY_SYMBOL_COLUMN = 1
 
 NATIVE_REGISTRY_IDENTITY_COLUMN = 2
 
-SHAPE_POLICY = {
+SHAPE_POLICY = MappingProxyType({
     "schema": "bilqis.semantic-abi-shape-policy/v1",
     "bank_size": BANK_SIZE,
     "index_formula": "8192*bank+row",
@@ -47,7 +49,7 @@ SHAPE_POLICY = {
     "fast_codec_max_exclusive": BANK_SIZE,
     "allocation_order": "prior-accepted-then-canonical-new-id",
     "new_row_state": "MASKED_UNTIL_ADMISSION",
-}
+})
 
 REQUIRED_GATES = frozenset({"coverage", "no-omission", "determinism", "shacl"})
 
@@ -69,7 +71,7 @@ REQUIRED_BUNDLE_FILES = frozenset({
 HEX64 = re.compile(r"[0-9a-f]{64}\Z")
 
 def _canonical_bytes(value: object) -> bytes:
-    return json_bytes(value)
+    return json_bytes(dict(value) if isinstance(value, Mapping) else value)
 
 def _canonical_line(value: object) -> bytes:
     return (json.dumps(value, ensure_ascii=False, sort_keys=True,

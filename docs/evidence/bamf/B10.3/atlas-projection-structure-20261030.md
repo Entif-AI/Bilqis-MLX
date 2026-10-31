@@ -9,7 +9,11 @@ This is structural evidence, not a replacement algorithm or admission specificat
 The historical projection facade now imports cohesive constants, concept/release/
 snapshot records, ABI allocation, source coverage/bundle/RDF validation, compiler,
 release validation, artifact encoding and durable persistence owners from
-`atlas_projection_parts/`. Original functions and classes retain their exact ASTs.
+`atlas_projection_parts/`. Initial extraction preserved all 41 original function/class ASTs. Committed-head
+hygiene then required cohesive extraction of source-input validation and concept
+construction from the long compiler and graph construction from the long fixture.
+Validation order and artifact goldens remain unchanged. SHAPE_POLICY is now a
+read-only mapping; canonical serialization explicitly copies its unchanged values.
 Historical public record module names and pickle resolution remain unchanged.
 Mirrored tests moved to `semantics/tests/atlas/projection/`; the historical test
 module retains fixture imports used by other packages. The fsync fault injection

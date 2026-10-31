@@ -60,27 +60,7 @@ def _bindings():
 
 
 def _fixture_bundle(root: Path):
-    source_id = "NI-LEXICON-CURRICULUM"
-    root_id = Identity("root", (source_id, "ROOT-TEST")).iri
-    sense_a = Identity("sense", (source_id, "ROOT-TEST", "STEM 1", "BSC")).iri
-    sense_b = Identity("sense", (source_id, "ROOT-TEST", "STEM 2", "OBJ")).iri
-    held_id = Identity("sense", (source_id, "ROOT-HELD", "STEM 1", "BSC")).iri
-
-    graph = Graph()
-    for subject, label in ((root_id, "source root"), (sense_a, "first sense"),
-                           (sense_b, "second sense"), (held_id, "tempting held sense")):
-        iri = URIRef(subject)
-        graph.add((iri, RDF.type, SKOS.Concept))
-        graph.add((iri, SKOS.prefLabel, Literal(label, lang="en")))
-        graph.add((iri, DCTERMS.source, URIRef("urn:fixture:source")))
-    graph.add((URIRef(root_id), SKOS.notation, Literal("-T-")))
-    graph.add((URIRef(root_id), SKOS.notation, Literal("-T-", datatype=XSD.string)))
-    graph.add((URIRef(root_id), SKOS.notation, Literal("-Tʼ-")))
-    graph.add((URIRef(root_id), SKOS.altLabel, Literal("variant")))
-    graph.add((URIRef(root_id), SKOS.altLabel, Literal("variant", lang="en")))
-    graph.add((URIRef(root_id), SKOS.narrower, URIRef(sense_a)))
-    graph.add((URIRef(root_id), SKOS.narrower, URIRef(sense_b)))
-    canonical = canonicalize(graph)
+    canonical, root_id, sense_a, sense_b, held_id = _fixture_graph()
 
     coverage = json.loads((FIXTURES / "coverage_valid.json").read_text())
     coverage["canonical_rdf"] = {"sha256": canonical.sha256,
@@ -175,3 +155,29 @@ def _rewrite_artifact(bundle: Path, name: str, value) -> Path:
     return target
 
 
+
+
+def _fixture_graph():
+    source_id = "NI-LEXICON-CURRICULUM"
+    root_id = Identity("root", (source_id, "ROOT-TEST")).iri
+    sense_a = Identity("sense", (source_id, "ROOT-TEST", "STEM 1", "BSC")).iri
+    sense_b = Identity("sense", (source_id, "ROOT-TEST", "STEM 2", "OBJ")).iri
+    held_id = Identity("sense", (source_id, "ROOT-HELD", "STEM 1", "BSC")).iri
+
+    graph = Graph()
+    for subject, label in ((root_id, "source root"), (sense_a, "first sense"),
+                           (sense_b, "second sense"), (held_id, "tempting held sense")):
+        iri = URIRef(subject)
+        graph.add((iri, RDF.type, SKOS.Concept))
+        graph.add((iri, SKOS.prefLabel, Literal(label, lang="en")))
+        graph.add((iri, DCTERMS.source, URIRef("urn:fixture:source")))
+    graph.add((URIRef(root_id), SKOS.notation, Literal("-T-")))
+    graph.add((URIRef(root_id), SKOS.notation, Literal("-T-", datatype=XSD.string)))
+    graph.add((URIRef(root_id), SKOS.notation, Literal("-Tʼ-")))
+    graph.add((URIRef(root_id), SKOS.altLabel, Literal("variant")))
+    graph.add((URIRef(root_id), SKOS.altLabel, Literal("variant", lang="en")))
+    graph.add((URIRef(root_id), SKOS.narrower, URIRef(sense_a)))
+    graph.add((URIRef(root_id), SKOS.narrower, URIRef(sense_b)))
+    canonical = canonicalize(graph)
+
+    return canonical, root_id, sense_a, sense_b, held_id

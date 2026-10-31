@@ -56,79 +56,9 @@ def compile_atlas_release(
     formal_domain_bindings,
 ) -> AtlasRelease:
     """Compile a source-qualified immutable Atlas projection from one pinned bundle."""
-    bundle_id, payloads = _verify_bundle(Path(corpus_dir))
-    try:
-        coverage = json.loads(payloads["coverage.json"])
-        conformance = json.loads(payloads["conformance.json"])
-        source_rows = json.loads(payloads["source-rows.json"])
-    except (ValueError, TypeError, UnicodeError) as error:
-        _fail("ATLAS_SOURCE_JSON_INVALID:" + type(error).__name__)
-
-    supplied_coverage, supplied_bytes = _json_input(
-        coverage_receipt, reason="ATLAS_COVERAGE_RECEIPT_INVALID")
-    supplied_canonical = (_canonical_bytes(supplied_coverage)
-                          if isinstance(coverage_receipt, Mapping) else supplied_bytes)
-    if supplied_coverage != coverage or supplied_canonical != payloads["coverage.json"]:
-        _fail("ATLAS_COVERAGE_RECEIPT_STALE")
-    if coverage.get("schema") != COVERAGE_SCHEMA:
-        ErrorBus.raise_(SEMANTIC_COVERAGE.PLAN.VERSION_MISMATCH,
-                        actual_schema=coverage.get("schema"), expected_schema=COVERAGE_SCHEMA)
-    try:
-        validate_coverage_receipt(coverage)
-    except ProfileError as error:
-        _fail("ATLAS_COVERAGE_INVALID:" + error.code)
-
-    if (not isinstance(conformance, dict) or conformance.get("schema") != CONFORMANCE_SCHEMA
-            or conformance.get("status") != "complete" or conformance.get("failed_gates") != []):
-        _fail("ATLAS_CONFORMANCE_NOT_COMPLETE")
-    gates = _validated_gates(conformance, payloads)
-
-    graph = read_canonical_graph(payloads["canonical.nt"])
-    canonical = canonicalize(graph)
-    if (canonical.payload != payloads["canonical.nt"]
-            or coverage.get("canonical_rdf") != {
-                "sha256": canonical.sha256, "triple_count": canonical.triple_count}
-            or conformance.get("canonical_sha256") != canonical.sha256
-            or payloads["comparison.nt"] != canonical.payload):
-        _fail("ATLAS_CANONICAL_RDF_MISMATCH")
-
-    _validate_source_census(coverage, source_rows)
-    no_omission = gates["no-omission"]
-    if (no_omission["evidence"].get("source_rows") != len(source_rows)
-            or no_omission["evidence"].get("accounted_rows") != len(source_rows)):
-        _fail("ATLAS_SOURCE_CENSUS_GATE_MISMATCH")
-
-    source_by_semantic: dict[str, list[SourceRecordRef]] = {}
-    held = []
-    held_semantic_ids = set()
-    for domain, domain_receipt in sorted(coverage["domains"].items()):
-        for row in domain_receipt["rows"]:
-            semantic_id = row.get("semantic_iri")
-            ref = SourceRecordRef(domain, row["table"], row["key"])
-            if row["status"] == "EMITTED" and isinstance(semantic_id, str) and semantic_id:
-                source_by_semantic.setdefault(semantic_id, []).append(ref)
-            elif row["status"] in {"HELD", "REJECTED", "UNSUPPORTED"}:
-                if isinstance(semantic_id, str) and semantic_id:
-                    held_semantic_ids.add(semantic_id)
-                if domain == "mapping":
-                    held.append(HeldMapping(
-                        domain=domain,
-                        table=row["table"],
-                        key=row["key"],
-                        status=row["status"],
-                        reason_code=row["reason_code"],
-                        owner=row.get("owner", ""),
-                        semantic_id=semantic_id if isinstance(semantic_id, str) and semantic_id else None,
-                    ))
-
-    concepts = []
-    for semantic_id, refs in sorted(source_by_semantic.items()):
-        subject = URIRef(semantic_id)
-        kind = _concept_kind(semantic_id)
-        if kind in {"root", "sense"} or (subject, RDF.type, SKOS.Concept) in graph:
-            concepts.append(_concept(graph, semantic_id, tuple(refs)))
-
-    concepts = tuple(concepts)
+    bundle_id, payloads, coverage, conformance, source_rows, graph, canonical = _source_inputs(
+        corpus_dir, coverage_receipt)
+    concepts, held, held_semantic_ids = _source_concepts(coverage, graph)
     bindings = _normalize_bindings(formal_domain_bindings)
     prior_schema, prior_digest, prior_entries = _prior_abi(prior_abi)
     abi_entries = _build_abi_entries(
@@ -183,3 +113,83 @@ def compile_atlas_release(
     )
     validate_atlas_release(release)
     return release
+
+
+def _source_inputs(corpus_dir, coverage_receipt):
+    bundle_id, payloads = _verify_bundle(Path(corpus_dir))
+    try:
+        coverage = json.loads(payloads["coverage.json"])
+        conformance = json.loads(payloads["conformance.json"])
+        source_rows = json.loads(payloads["source-rows.json"])
+    except (ValueError, TypeError, UnicodeError) as error:
+        _fail("ATLAS_SOURCE_JSON_INVALID:" + type(error).__name__)
+
+    supplied_coverage, supplied_bytes = _json_input(
+        coverage_receipt, reason="ATLAS_COVERAGE_RECEIPT_INVALID")
+    supplied_canonical = (_canonical_bytes(supplied_coverage)
+                          if isinstance(coverage_receipt, Mapping) else supplied_bytes)
+    if supplied_coverage != coverage or supplied_canonical != payloads["coverage.json"]:
+        _fail("ATLAS_COVERAGE_RECEIPT_STALE")
+    if coverage.get("schema") != COVERAGE_SCHEMA:
+        ErrorBus.raise_(SEMANTIC_COVERAGE.PLAN.VERSION_MISMATCH,
+                        actual_schema=coverage.get("schema"), expected_schema=COVERAGE_SCHEMA)
+    try:
+        validate_coverage_receipt(coverage)
+    except ProfileError as error:
+        _fail("ATLAS_COVERAGE_INVALID:" + error.code)
+
+    if (not isinstance(conformance, dict) or conformance.get("schema") != CONFORMANCE_SCHEMA
+            or conformance.get("status") != "complete" or conformance.get("failed_gates") != []):
+        _fail("ATLAS_CONFORMANCE_NOT_COMPLETE")
+    gates = _validated_gates(conformance, payloads)
+
+    graph = read_canonical_graph(payloads["canonical.nt"])
+    canonical = canonicalize(graph)
+    if (canonical.payload != payloads["canonical.nt"]
+            or coverage.get("canonical_rdf") != {
+                "sha256": canonical.sha256, "triple_count": canonical.triple_count}
+            or conformance.get("canonical_sha256") != canonical.sha256
+            or payloads["comparison.nt"] != canonical.payload):
+        _fail("ATLAS_CANONICAL_RDF_MISMATCH")
+
+    _validate_source_census(coverage, source_rows)
+    no_omission = gates["no-omission"]
+    if (no_omission["evidence"].get("source_rows") != len(source_rows)
+            or no_omission["evidence"].get("accounted_rows") != len(source_rows)):
+        _fail("ATLAS_SOURCE_CENSUS_GATE_MISMATCH")
+
+    return bundle_id, payloads, coverage, conformance, source_rows, graph, canonical
+
+
+def _source_concepts(coverage, graph):
+    source_by_semantic: dict[str, list[SourceRecordRef]] = {}
+    held = []
+    held_semantic_ids = set()
+    for domain, domain_receipt in sorted(coverage["domains"].items()):
+        for row in domain_receipt["rows"]:
+            semantic_id = row.get("semantic_iri")
+            ref = SourceRecordRef(domain, row["table"], row["key"])
+            if row["status"] == "EMITTED" and isinstance(semantic_id, str) and semantic_id:
+                source_by_semantic.setdefault(semantic_id, []).append(ref)
+            elif row["status"] in {"HELD", "REJECTED", "UNSUPPORTED"}:
+                if isinstance(semantic_id, str) and semantic_id:
+                    held_semantic_ids.add(semantic_id)
+                if domain == "mapping":
+                    held.append(HeldMapping(
+                        domain=domain,
+                        table=row["table"],
+                        key=row["key"],
+                        status=row["status"],
+                        reason_code=row["reason_code"],
+                        owner=row.get("owner", ""),
+                        semantic_id=semantic_id if isinstance(semantic_id, str) and semantic_id else None,
+                    ))
+
+    concepts = []
+    for semantic_id, refs in sorted(source_by_semantic.items()):
+        subject = URIRef(semantic_id)
+        kind = _concept_kind(semantic_id)
+        if kind in {"root", "sense"} or (subject, RDF.type, SKOS.Concept) in graph:
+            concepts.append(_concept(graph, semantic_id, tuple(refs)))
+
+    return tuple(concepts), held, held_semantic_ids
