@@ -1,4 +1,9 @@
-"""Historical state migration and state-DAG command-line entrypoint."""
+"""Content-addressed immutable DAG for School50 resumable state.
+
+The live head and per-generation files are tiny pointers. Logical receipt fields
+are immutable Merkle objects, so unchanged state is shared across generations.
+Legacy monolithic JSON remains readable for migration and old evidence.
+"""
 from __future__ import annotations
 
 import json

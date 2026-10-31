@@ -1,4 +1,4 @@
-"""Data-plane command-line owner."""
+"""Shared workstation data plane for immutable state and integrity cache."""
 from __future__ import annotations
 import json
 import time

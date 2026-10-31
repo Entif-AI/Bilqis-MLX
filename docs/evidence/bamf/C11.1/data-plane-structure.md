@@ -37,3 +37,11 @@ PASS
 ## Remaining C11.1 state
 
 This is structural only. It does not supply production B13/A12 source/run authority or complete #522. The next queued interruptions are `curriculum_compiler.py` and `registry_ast.py`, one owner at a time.
+
+## Fresh review and installed-wheel proof
+
+Fresh independent scoped review of `83701b1` found no Blocker or Major. The review independently confirmed AST parity, decorator preservation, collision-free `DataPlane -> DataPlaneStoreMixin -> DataPlaneEventMixin` MRO, the historical `_digest_file` monkeypatch seam, both data-plane/state-DAG import orders, 7/7 focused tests, and the <240-LoC contract.
+
+An isolated wheel built from the candidate installs outside the checkout, imports `bilqis_mlx._data_plane.store`, retains `bilqis_mlx.data_plane.DataPlane` as the public class, and executes `data_plane status` successfully. The operator-contract/error census remains 30 findings, unchanged from the branch baseline.
+
+A direct old/new CLI-help comparison found that moving `main()` changed `description=__doc__` from the historical public module text to the new internal-owner docstring. The internal CLI owner now carries the exact historical public module docstring. `python -m bilqis_mlx.data_plane --help` is byte-identical to pre-extraction head `63b1acd1`.
