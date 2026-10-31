@@ -5,201 +5,27 @@ Only the separately approved Course + source/assessment seals can authorize
 teaching; this compiler can enumerate and order *proposed* constructions.
 """
 from __future__ import annotations
-
-from dataclasses import asdict, dataclass, replace
-import hashlib
+from dataclasses import asdict, replace
 import json
 from pathlib import Path
 import re
-
-from .curriculum_compiler import CurriculumAST
 from .semantics.abi import HISTORICAL_PREFIX_SIZE
 from .token_atlas import ORIGINAL_GRAPH_DIGEST
-
+from ._registry_ast.helpers import _digest, _grade_refs, _text
+from ._registry_ast.types import (Origin, TokenNode, LessonNode, PrerequisiteNode, GradeNode, BridgeNode, RegistryAST, StagePlan, ConstructionTask, _origin)
+from ._registry_ast.planning import bind_course_tokens, stage_plan, construction_frontier
 
 SCHEMA = "bilqis.curriculum.registry-snapshot/v1"
 SOURCE_ID = "1xtOjO0jGCxjU2bgcg0TKpVruJ4Z5O3vW9ixu6oMQ-so"
 LESSON_ID = re.compile(r"LESSON-\d{3}")
 GRADE_ID = re.compile(r"[A-Z]")
 REQUIRED_HEADERS = {
-    "Lessons": ("Legacy ID", "Proposed neutral Lesson ID", "Legacy domain",
-                "Historical title", "What the lesson represents",
-                "Present teaching / scope", "Prerequisite roots to establish",
-                "Current assessment criterion", "Evidence status",
-                "Naming issue / gate", "Source path",
-                "Verified run PR / immutable release URL"),
-    "Prerequisites": ("Sequence", "New concept / capability", "Earlier mastered root",
-                      "Construction teaching required", "Allowed assessment",
-                      "Status / decision", "Source", "Candidate Grade",
-                      "Proposed Lesson ID", "Required Earlier Grade(s)",
-                      "Required Earlier Lesson (within grade)", "Admission evidence gate"),
-    "Grade Tranches": ("Grade/tranche ID", "Provisional subject family",
-                       "Relationship to previous grade", "Capabilities that belong here",
-                       "Referential construction evidence", "Qualifying metric roster",
-                       "Independent teacher vote", "Status",
-                       "Version(s) used for provenance", "Notes",
-                       "GitHub Issue (proposed grade)", "Official grammar coverage"),
-    "Token Atlas": ("0-based Token ID", "Bilqis token symbol", "Pasigraphy identity",
-                    "Source-grounded semantic role/function", "Formal signature",
-                    "Semantic family", "Source subtype", "NI bridge or grammar locus",
-                    "Lesson provenance", "Token mastery evidence", "Meaning-review status",
-                    "Arity", "Source stage", "Node contract SHA-256",
-                    "Source graph SHA-256", "Historical source / notes"),
-    "Semantic Bridges": ("Bridge ID", "Source locus / era", "Ithkuil category / root",
-                         "Source-grounded semantic meaning", "Link type",
-                         "Prior Bilqis concepts (NOT asserted mastered)",
-                         "Proposed constructive exercise / varied context",
-                         "Assessment / retention probe (PROPOSED)",
-                         "Registry links / reserved lesson", "Status / gate",
-                         "Primary source", "Semantic caution / dependencies"),
+ "Lessons": ("Legacy ID", "Proposed neutral Lesson ID", "Legacy domain", "Historical title", "What the lesson represents", "Present teaching / scope", "Prerequisite roots to establish", "Current assessment criterion", "Evidence status", "Naming issue / gate", "Source path", "Verified run PR / immutable release URL"),
+ "Prerequisites": ("Sequence", "New concept / capability", "Earlier mastered root", "Construction teaching required", "Allowed assessment", "Status / decision", "Source", "Candidate Grade", "Proposed Lesson ID", "Required Earlier Grade(s)", "Required Earlier Lesson (within grade)", "Admission evidence gate"),
+ "Grade Tranches": ("Grade/tranche ID", "Provisional subject family", "Relationship to previous grade", "Capabilities that belong here", "Referential construction evidence", "Qualifying metric roster", "Independent teacher vote", "Status", "Version(s) used for provenance", "Notes", "GitHub Issue (proposed grade)", "Official grammar coverage"),
+ "Token Atlas": ("0-based Token ID", "Bilqis token symbol", "Pasigraphy identity", "Source-grounded semantic role/function", "Formal signature", "Semantic family", "Source subtype", "NI bridge or grammar locus", "Lesson provenance", "Token mastery evidence", "Meaning-review status", "Arity", "Source stage", "Node contract SHA-256", "Source graph SHA-256", "Historical source / notes"),
+ "Semantic Bridges": ("Bridge ID", "Source locus / era", "Ithkuil category / root", "Source-grounded semantic meaning", "Link type", "Prior Bilqis concepts (NOT asserted mastered)", "Proposed constructive exercise / varied context", "Assessment / retention probe (PROPOSED)", "Registry links / reserved lesson", "Status / gate", "Primary source", "Semantic caution / dependencies"),
 }
-
-
-@dataclass(frozen=True)
-class Origin:
-    tab: str
-    row: int
-    sheet_id: int
-
-
-@dataclass(frozen=True)
-class TokenNode:
-    id: int
-    symbol: str
-    identity: str
-    meaning: str
-    signature: str
-    family: str
-    subtype: str
-    arity: str
-    ni_locus: str
-    graph_sha256: str
-    contract_sha256: str
-    meaning_review: str
-    origin: Origin
-
-
-@dataclass(frozen=True)
-class LessonNode:
-    id: str
-    legacy_alias: str
-    title: str
-    semantics: str
-    teaching_intent: str
-    prerequisite_text: str
-    assessment_intent: str
-    evidence_status: str
-    gate: str
-    source_claim: str
-    grade: str | None
-    requires_grades: tuple[str, ...]
-    requires_lessons: tuple[str, ...]
-    construction: str
-    intended_probe: str
-    origin: Origin
-
-
-@dataclass(frozen=True)
-class PrerequisiteNode:
-    sequence: str
-    concept: str
-    prerequisite_text: str
-    construction: str
-    assessment: str
-    status: str
-    source_claim: str
-    grade: str
-    proposed_lesson: str
-    requires_grades: tuple[str, ...]
-    requires_lessons: tuple[str, ...]
-    evidence_gate: str
-    origin: Origin
-
-
-@dataclass(frozen=True)
-class GradeNode:
-    id: str
-    title: str
-    status: str
-    planned_capabilities: str
-    notes: str
-    origin: Origin
-
-
-@dataclass(frozen=True)
-class BridgeNode:
-    id: str
-    concept: str
-    meaning: str
-    link_type: str
-    construction: str
-    probe: str
-    status: str
-    source_claim: str
-    caution: str
-    related_lessons: tuple[str, ...]
-    origin: Origin
-
-
-@dataclass(frozen=True)
-class RegistryAST:
-    source_id: str
-    source_sha256: str
-    tokens: tuple[TokenNode, ...]
-    lessons: tuple[LessonNode, ...]
-    prerequisites: tuple[PrerequisiteNode, ...]
-    grades: tuple[GradeNode, ...]
-    bridges: tuple[BridgeNode, ...]
-    supplemental_constraints: tuple[PrerequisiteNode, ...]
-    training_authorized: bool = False
-
-    def digest(self) -> str:
-        return _digest(asdict(self))
-
-
-@dataclass(frozen=True)
-class StagePlan:
-    grade: str
-    status: str
-    lessons: tuple[LessonNode, ...]
-    blockers: tuple[str, ...]
-    training_authorized: bool = False
-
-    def digest(self) -> str:
-        return _digest(asdict(self))
-
-
-@dataclass(frozen=True)
-class ConstructionTask:
-    id: str
-    concept: str
-    instruction: str
-    proposed_probe: str
-    unmet_grades: tuple[str, ...]
-    unmet_lessons: tuple[str, ...]
-    ready_to_construct: bool
-    training_authorized: bool = False
-
-
-def _digest(obj: object) -> str:
-    return hashlib.sha256(json.dumps(obj, sort_keys=True, separators=(",", ":"),
-                                     ensure_ascii=False).encode("utf-8")).hexdigest()
-
-
-def _text(row: list, i: int) -> str:
-    return str(row[i]).strip() if i < len(row) and row[i] is not None else ""
-
-
-def _grade_refs(value: str) -> tuple[str, ...]:
-    if not value:
-        return ()
-    grades = tuple(s for s in re.split(r"[,;\s]+", value) if s)
-    if not grades or any(not GRADE_ID.fullmatch(g) for g in grades):
-        raise ValueError("REGISTRY_UNRESOLVED_GRADE_REFERENCE:" + value)
-    if len(set(grades)) != len(grades):
-        raise ValueError("REGISTRY_DUPLICATE_GRADE_REFERENCE")
-    return grades
-
 
 def _table(snapshot: dict, tab: str):
     entry = snapshot.get("tabs", {}).get(tab)
@@ -212,11 +38,6 @@ def _table(snapshot: dict, tab: str):
     if not isinstance(entry.get("sheet_id"), int):
         raise ValueError("REGISTRY_SHEET_ID_MISSING:" + tab)
     return rows[1:], entry["sheet_id"]
-
-
-def _origin(tab: str, i: int, sheet_id: int) -> Origin:
-    return Origin(tab, i, sheet_id)
-
 
 def parse_registry(snapshot: dict) -> RegistryAST:
     """Compile exact bounded Sheet rows without inferring any admission state."""
@@ -326,75 +147,8 @@ def parse_registry(snapshot: dict) -> RegistryAST:
     return RegistryAST(SOURCE_ID, _digest(snapshot), tokens, lessons,
                        tuple(prereqs), grades, bridges, tuple(supplemental))
 
-
 def load_registry(path: Path) -> RegistryAST:
     return parse_registry(json.loads(Path(path).read_text(encoding="utf-8")))
-
-
-def bind_course_tokens(course: CurriculumAST, registry: RegistryAST) -> dict[str, tuple[int, ...]]:
-    """Fail closed unless every currently taught root binds to a known token."""
-    index = {token.symbol: token for token in registry.tokens}
-    result = {}
-    for cap in course.nodes:
-        if any(root not in index for root in cap.roots):
-            raise ValueError("REGISTRY_ADMITTED_COURSE_HAS_UNKNOWN_TOKEN:" + cap.id)
-        result[cap.id] = tuple(index[root].id for root in cap.roots)
-    return result
-
-
-def stage_plan(registry: RegistryAST, grade: str) -> StagePlan:
-    """Topological authoring plan, not approval to train the proposed stage."""
-    found = next((g for g in registry.grades if g.id == grade), None)
-    if found is None:
-        raise ValueError("REGISTRY_UNKNOWN_PROPOSED_GRADE:" + grade)
-    rank = {p.proposed_lesson: i for i, p in enumerate(registry.prerequisites)}
-    members = tuple(sorted((x for x in registry.lessons if x.grade == grade),
-                           key=lambda item: rank[item.id]))
-    requires = tuple(dict.fromkeys(g for lesson in members
-                                   for g in lesson.requires_grades))
-    blockers = ["REGISTRY_PROPOSAL_NOT_NEURAL_TRAINING_RELEASE"]
-    if "HISTORICAL" in found.status or "CONTINUITY" in found.status:
-        blockers.append("HISTORICAL_GRADE_ALIAS_NOT_EXECUTABLE")
-    if requires:
-        blockers.append("REQUIRES_EARLIER_GRADES:" + ",".join(requires))
-    if not members:
-        blockers.append("NO_STRUCTURED_ADMITTED_LESSON_MEMBERS")
-    annotations = [note for note in registry.supplemental_constraints
-                   if grade in re.split(r"[^A-Z]+", note.grade)]
-    if annotations:
-        blockers.append("ADDITIONAL_UNCOMPILED_QUALIFICATION_CONSTRAINTS:" +
-                        str(len(annotations)))
-    return StagePlan(grade, found.status, members, tuple(blockers))
-
-
-def construction_frontier(plan: StagePlan, *, mastered_grades=(),
-                          constructed_lessons=()) -> tuple[ConstructionTask, ...]:
-    """Deterministically discover the next eligible *authoring* tasks.
-
-    Completed grades/lessons must be independently evidenced by the caller.
-    An eligible task is NOT a semantic certification, exam or optimizer update.
-    """
-    mastered = set(mastered_grades)
-    constructed = set(constructed_lessons)
-    valid = {item.id for item in plan.lessons}
-    if constructed - valid:
-        raise ValueError("REGISTRY_UNKNOWN_CONSTRUCTED_LESSON:" + ",".join(sorted(constructed - valid)))
-    unresolved_qualification = any(
-        "UNCOMPILED_QUALIFICATION_CONSTRAINTS" in blocker
-        for blocker in plan.blockers)
-    tasks = []
-    for item in plan.lessons:
-        if item.id in constructed:
-            continue
-        missing_grades = tuple(g for g in item.requires_grades if g not in mastered)
-        missing_lessons = tuple(l for l in item.requires_lessons if l not in constructed)
-        tasks.append(ConstructionTask(item.id, item.semantics, item.construction,
-                                      item.intended_probe, missing_grades,
-                                      missing_lessons,
-                                      not missing_grades and not missing_lessons and
-                                      not unresolved_qualification))
-    return tuple(tasks)
-
 
 def compiler_report(snapshot: Path, *, grade: str = "C",
                     assumed_mastered_grades=(), constructed_lessons=()) -> dict:
@@ -435,7 +189,6 @@ def compiler_report(snapshot: Path, *, grade: str = "C",
         "neural_optimizer_updates": 0,
     }
 
-
 def main(argv=None):
     import argparse
     parser = argparse.ArgumentParser(description="Neural-inert Registry AST construction planning")
@@ -451,6 +204,10 @@ def main(argv=None):
         assumed_mastered_grades=args.assume_mastered,
         constructed_lessons=args.constructed), sort_keys=True, indent=2))
 
+_PUBLIC_MODULE = "bilqis_mlx.registry_ast"
+for _public_object in (Origin, TokenNode, LessonNode, PrerequisiteNode, GradeNode, BridgeNode, RegistryAST, StagePlan, ConstructionTask, bind_course_tokens, stage_plan, construction_frontier):
+    _public_object.__module__ = _PUBLIC_MODULE
+del _public_object
 
 if __name__ == "__main__":
     main()

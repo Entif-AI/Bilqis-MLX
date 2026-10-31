@@ -3,6 +3,8 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import unittest
+import subprocess
+import sys
 
 from bilqis_mlx.curriculum_compiler import compile_ast
 from bilqis_mlx.grade_a_release import accepted_grade_a
@@ -17,6 +19,29 @@ MANIFEST = ROOT / 'docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json'
 
 
 class RegistryASTTests(unittest.TestCase):
+    def test_public_symbols_keep_historical_module_identity(self):
+        import bilqis_mlx.registry_ast as registry
+        names = ("Origin", "TokenNode", "LessonNode", "PrerequisiteNode",
+                 "GradeNode", "BridgeNode", "RegistryAST", "StagePlan",
+                 "ConstructionTask", "bind_course_tokens", "stage_plan",
+                 "construction_frontier")
+        self.assertEqual(
+            {name: getattr(registry, name).__module__ for name in names},
+            {name: "bilqis_mlx.registry_ast" for name in names},
+        )
+
+    def test_private_owners_import_before_public_facade(self):
+        code = (
+            "import bilqis_mlx._registry_ast.helpers; "
+            "import bilqis_mlx._registry_ast.types; "
+            "import bilqis_mlx._registry_ast.planning; "
+            "import bilqis_mlx.registry_ast"
+        )
+        completed = subprocess.run(
+            [sys.executable, "-c", code], capture_output=True, text=True, check=False
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+
     @classmethod
     def setUpClass(cls):
         cls.registry = load_registry(SNAPSHOT)
