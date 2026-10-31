@@ -1,0 +1,31 @@
+{
+  "identical": true,
+  "before": [
+    "ERROR: load test module test_atlas_engram_parameters.py",
+    "ERROR: load test module test_atlas_engram_reads.py",
+    "ERROR: load test module test_frame_embeddings.py",
+    "ERROR: load test module test_frame_encoder.py",
+    "ERROR: load test module test_nested_frame_constituents.py",
+    "ERROR: test_frozen_file_is_exclusive_hash_verified_and_idempotent (LOADER.GradeSoupTests.test_frozen_file_is_exclusive_hash_verified_and_idempotent)",
+    "ERROR: test_matrix_motion_and_shape_guard (LOADER.MatrixStrainTests.test_matrix_motion_and_shape_guard)",
+    "ERROR: test_mlx_supervised_step_absorbs_advice_without_modifying_exam_inference (LOADER.ChampionConfidenceTests.test_mlx_supervised_step_absorbs_advice_without_modifying_exam_inference)",
+    "ERROR: test_parent_adamw_remains_unchanged_until_trial_committed (LOADER.OptimizerCustodyTests.test_parent_adamw_remains_unchanged_until_trial_committed)",
+    "ERROR: test_partitioned_mixed_source_catalogs_are_separate_frozen_teachers (LOADER.GradeSoupTests.test_partitioned_mixed_source_catalogs_are_separate_frozen_teachers)",
+    "ERROR: test_superseded_older_snapshots_retire_only_after_new_one_is_pinned (LOADER.GradeSoupTests.test_superseded_older_snapshots_retire_only_after_new_one_is_pinned)",
+    "ERROR: test_weight_soup_averages_per_role_and_cannot_mutate_ingredients (LOADER.GradeSoupTests.test_weight_soup_averages_per_role_and_cannot_mutate_ingredients)"
+  ],
+  "after": [
+    "ERROR: load test module test_atlas_engram_parameters.py",
+    "ERROR: load test module test_atlas_engram_reads.py",
+    "ERROR: load test module test_frame_embeddings.py",
+    "ERROR: load test module test_frame_encoder.py",
+    "ERROR: load test module test_nested_frame_constituents.py",
+    "ERROR: test_frozen_file_is_exclusive_hash_verified_and_idempotent (LOADER.GradeSoupTests.test_frozen_file_is_exclusive_hash_verified_and_idempotent)",
+    "ERROR: test_matrix_motion_and_shape_guard (LOADER.MatrixStrainTests.test_matrix_motion_and_shape_guard)",
+    "ERROR: test_mlx_supervised_step_absorbs_advice_without_modifying_exam_inference (LOADER.ChampionConfidenceTests.test_mlx_supervised_step_absorbs_advice_without_modifying_exam_inference)",
+    "ERROR: test_parent_adamw_remains_unchanged_until_trial_committed (LOADER.OptimizerCustodyTests.test_parent_adamw_remains_unchanged_until_trial_committed)",
+    "ERROR: test_partitioned_mixed_source_catalogs_are_separate_frozen_teachers (LOADER.GradeSoupTests.test_partitioned_mixed_source_catalogs_are_separate_frozen_teachers)",
+    "ERROR: test_superseded_older_snapshots_retire_only_after_new_one_is_pinned (LOADER.GradeSoupTests.test_superseded_older_snapshots_retire_only_after_new_one_is_pinned)",
+    "ERROR: test_weight_soup_averages_per_role_and_cannot_mutate_ingredients (LOADER.GradeSoupTests.test_weight_soup_averages_per_role_and_cannot_mutate_ingredients)"
+  ]
+}

@@ -1,0 +1,6 @@
+----------------------------------------------------------------------
+Ran 41 tests in 9.569s
+
+OK
+TEST_TOTALS total=41 passed=41 failed=0 skipped=0 errors=0
+41 passed, 0 failed, 0 skipped
