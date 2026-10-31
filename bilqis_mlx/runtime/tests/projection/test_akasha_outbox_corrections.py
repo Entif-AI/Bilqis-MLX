@@ -5,6 +5,7 @@ from dataclasses import replace
 from pathlib import Path
 import sqlite3
 import tempfile
+from types import MappingProxyType
 import unittest
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -27,6 +28,65 @@ from bilqis_mlx.semantics.cognitive_dependencies import (
     DependencyKind, DependencyRef,
 )
 
+
+PAYLOADS = MappingProxyType({
+    **{kind: {"owner_source_event_id": "fixture:event", "producer_id": "fixture:producer",
+              "artifact_schema": "fixture:opaque/v1", "artifact_sha256": "a" * 64, "verification_mode": "DISPOSABLE_CONTRACT"}
+       for kind in (AkashaEventKind.BANK_ALLOCATION, AkashaEventKind.PLASTICITY_EPOCH, AkashaEventKind.PACKAGE_EXPORT)},
+    **{kind: {"native_event_id": "b" * 64, "native_event_digest": "a" * 64,
+              "run_id": "fixture:run", "generation": 1, "native_event_type": {AkashaEventKind.TEACHER_VISIT: "SCHOOL_TEACHER_VISIT_COMMITTED",
+                  AkashaEventKind.FACTORY_RELEASE: "SCHOOL_FACTORY_RELEASE_MIGRATED",
+                  AkashaEventKind.CAPABILITY_OUTCOME: "SCHOOL_CAPABILITY_BEST_COMMITTED"}[kind]}
+       for kind in (AkashaEventKind.TEACHER_VISIT, AkashaEventKind.FACTORY_RELEASE, AkashaEventKind.CAPABILITY_OUTCOME)},
+    AkashaEventKind.SOURCE_CORRECTION: {
+        "correction_event_id": "correction:1",
+        "source_owner": "source:owner",
+        "dependency_key": "source:row",
+        "old_digest": "a" * 64, "new_digest": "b" * 64,
+    },
+    AkashaEventKind.REVALIDATION: {
+        "artifact_id": "frame:1",
+        "old_digest": "a" * 64, "new_digest": "b" * 64,
+        "eligible": True,
+    },
+    AkashaEventKind.REQUALIFICATION: {
+        "capability_id": "capability:1",
+        "retained_generation_sha256": "c" * 64,
+        "status": "REQUALIFICATION_REQUIRED",
+    },
+    AkashaEventKind.CAPABILITY_GRADUATION: {
+        "capability_id": "capability:1",
+        "generation_sha256": "c" * 64,
+        "assessment_receipt_sha256": "d" * 64,
+    },
+    AkashaEventKind.MOTIF_CANDIDATE: {
+        "motif_id": "motif:1",
+        "source_refs": ["source:row"],
+        "eligibility_digest": "e" * 64,
+    },
+    AkashaEventKind.PROCESS_FAULT: {
+        "fault_id": "fault:1",
+        "original_source_event_id": "event:1",
+        "correction_event_id": "correction:1",
+        "remediation_id": "remediation:1",
+        "derived_path": ["feature:1", "motif:1"],
+    },
+    AkashaEventKind.CHECKPOINT_PUBLICATION: {
+        "checkpoint_digest": "f" * 64,
+        "generation_sha256": "c" * 64,
+        "manifest_digest": "1" * 64,
+    },
+})
+
+
+def _event(kind=AkashaEventKind.SOURCE_CORRECTION):
+    return AkashaEvent.from_payload(
+        kind=kind, subject_id="subject:fixture",
+        source_receipt_sha256="9" * 64,
+        payload=PAYLOADS[kind],
+        source_time=570, effective_time=575,
+        observed_at=580, recorded_at=585,
+    )
 
 
 class AkashaOutboxCorrectionTests(unittest.TestCase):

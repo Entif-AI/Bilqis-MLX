@@ -91,6 +91,10 @@ class ModelTopologyV2Tests(ModelTopologyFixture):
             with self.assertRaises(BilqisError):
                 bamf_deserialize_arrays(spec, extents, bad)
 
+    @unittest.skipUnless(
+        os.environ.get("BILQIS_BAMF_FULL_WITNESS"),
+        "set BILQIS_BAMF_FULL_WITNESS for full disposable MLX allocation",
+    )
     def test_full_parameter_optimizer_and_serialization_tree(self):
         import mlx.core as mx
         from bilqis_mlx.runtime.disk import assert_headroom

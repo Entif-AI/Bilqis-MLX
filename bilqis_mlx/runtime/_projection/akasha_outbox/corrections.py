@@ -1,5 +1,6 @@
-"""Translate correction intents into immutable local events."""
+"""C09 correction intent projection into the local outbox."""
 from pathlib import Path
+
 from .contracts import AkashaEventKind, _invalid
 from .events import AkashaEvent
 from .store import append_outbox

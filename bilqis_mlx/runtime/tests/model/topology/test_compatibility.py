@@ -74,6 +74,10 @@ class ModelTopologyV2Tests(ModelTopologyFixture):
         self.assertEqual(manifest["architecture_id"], LEGACY_ARCHITECTURE_ID)
         self.assertEqual(manifest["initialization_status"], "UNBOUND")
 
+    @unittest.skipUnless(
+        os.environ.get("BILQIS_V1_BUNDLE_WITNESS"),
+        "set BILQIS_V1_BUNDLE_WITNESS to a frozen historical bundle",
+    )
     def test_real_legacy_bundle_is_rejected_and_remains_readable(self):
         import mlx.core as mx
         from bilqis_mlx.runtime.disk import assert_headroom

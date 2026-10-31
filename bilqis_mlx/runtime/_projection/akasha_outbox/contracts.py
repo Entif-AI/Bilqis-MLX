@@ -1,10 +1,20 @@
-"""Immutable event kinds and payload contracts."""
+"""C10.1 append-only Akasha projection intents and idempotent SQLite outbox.
+
+Transport is at-least-once; stable event IDs permit semantic deduplication
+at the eventual Akasha receiver. C10.2 owns visibility/redaction policy.
+"""
 from __future__ import annotations
+
+from dataclasses import asdict, dataclass
+from contextlib import contextmanager
 from enum import Enum
-from types import MappingProxyType
 import hashlib
 import json
+from types import MappingProxyType
+from pathlib import Path
 import re
+import sqlite3
+
 from ...errors import ErrorBus, SCHOOL
 
 
