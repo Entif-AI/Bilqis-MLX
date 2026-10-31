@@ -26,6 +26,8 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # audited checkout 4.2.2
         with:
           persist-credentials: false
+      - name: Install historical semantic integrity dependencies
+        run: python3 -m pip install -r lib/ithkuil/requirements-semantic.txt
       - name: Verify original model semantic ABI
         shell: bash
         env:
