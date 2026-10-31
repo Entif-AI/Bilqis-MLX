@@ -25,6 +25,32 @@ EVENT_FIELDS = frozenset(("event",))
 GATE_COLLECTION_NAMES = frozenset(
     ("debt", "blockers", "required_source_work", "reasons"))
 
+# These directories are physical source compartments only. Their parent
+# packages deliberately preserve the long-standing public module identities
+# via package search paths / aliases, so quality debt must remain keyed to
+# that canonical identity rather than being reclassified as "new" merely
+# because anti-monolith governance moved the source file on disk.
+LOGICAL_SOURCE_COMPARTMENTS = (
+    (("bilqis_mlx", "factory", "curriculum"), ("bilqis_mlx", "factory")),
+    (("bilqis_mlx", "factory", "lifecycle"), ("bilqis_mlx", "factory")),
+    (("bilqis_mlx", "factory", "sources"), ("bilqis_mlx", "factory")),
+    (("bilqis_mlx", "learning", "_championship"), ("bilqis_mlx", "learning")),
+    (("bilqis_mlx", "learning", "_engram"), ("bilqis_mlx", "learning")),
+    (("bilqis_mlx", "learning", "_retention"), ("bilqis_mlx", "learning")),
+    (("bilqis_mlx", "learning", "_salience"), ("bilqis_mlx", "learning")),
+    (("bilqis_mlx", "learning", "_teaching"), ("bilqis_mlx", "learning")),
+    (("bilqis_mlx", "semantics", "foundation"), ("bilqis_mlx", "semantics")),
+)
+
+
+def logical_source_path(path: Path, root: Path) -> str:
+    relative = path.relative_to(root)
+    parts = relative.parts
+    for physical, canonical in LOGICAL_SOURCE_COMPARTMENTS:
+        if parts[:3] == physical:
+            return Path(*canonical, *parts[3:]).as_posix()
+    return relative.as_posix()
+
 
 @dataclass(frozen=True)
 class CodeSite:
@@ -157,8 +183,10 @@ def _repository_python_files(root: Path) -> tuple[Path, ...]:
     files = []
     for relative in result.stdout.splitlines():
         path = Path(relative)
-        if path.suffix == ".py" and path.parts and path.parts[0] == "bilqis_mlx":
-            files.append(root / path)
+        candidate = root / path
+        if (path.suffix == ".py" and path.parts and path.parts[0] == "bilqis_mlx"
+                and not candidate.is_symlink()):
+            files.append(candidate)
     return tuple(sorted(files))
 
 
@@ -169,7 +197,41 @@ def scan_tree(root: Path) -> SourceReport:
         if ("tests" in file.relative_to(root).parts or
                 file.name.startswith("test_")):
             continue
-        report = analyze_source(str(file.relative_to(root)), file.read_text())
+        report = analyze_source(logical_source_path(file, root), file.read_text())
+        sites.extend(report.codes)
+        debt.extend(report.debt)
+    return SourceReport(tuple(sites), tuple(debt))
+
+
+def scan_git_tree(root: Path, ref: str) -> SourceReport:
+    """Scan one committed tree using today's canonical owner mapping.
+
+    PR gates compare the candidate tree with the exact base SHA. Reading the
+    base through Git avoids mutating the worktree and, importantly, preserves
+    the same logical-module normalization on both sides of a physical move.
+    """
+    listed = subprocess.run(
+        ["git", "-C", str(root), "ls-tree", "-r", ref],
+        check=True, capture_output=True, text=True,
+    )
+    sites: list[CodeSite] = []
+    debt: list[ContractDebt] = []
+    for row in listed.stdout.splitlines():
+        metadata, raw_relative = row.split("\t", 1)
+        mode = metadata.split(" ", 1)[0]
+        relative = Path(raw_relative)
+        if (relative.suffix != ".py" or not relative.parts
+                or relative.parts[0] != "bilqis_mlx"
+                or mode == "120000"
+                or "tests" in relative.parts
+                or relative.name.startswith("test_")):
+            continue
+        shown = subprocess.run(
+            ["git", "-C", str(root), "show", f"{ref}:{relative.as_posix()}"],
+            check=True, capture_output=True, text=True,
+        )
+        report = analyze_source(
+            logical_source_path(root / relative, root), shown.stdout)
         sites.extend(report.codes)
         debt.extend(report.debt)
     return SourceReport(tuple(sites), tuple(debt))
