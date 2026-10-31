@@ -9,7 +9,6 @@ from .curriculum_definition import (
     validate_source_bindings,
 )
 from ..compatibility.source_adapter_resume import resume_adapter_compatible
-from ..errors import ErrorBus, FACTORY
 
 
 _GRADE_A_DEVELOPMENT_PRESENTATION_IMPLEMENTATION = (
@@ -139,6 +138,7 @@ def execute_release_family_program(
         FamilyProgramRegistry, bind_factory_release_families,
         execute_bound_family_program,
     )
+    from .skos_curriculum.common import _fail
     from .skos_curriculum.curriculum import LearnedFrontier
 
     if (type(release) is not FactoryRelease
@@ -146,7 +146,7 @@ def execute_release_family_program(
             or type(family_registry) is not FamilyProgramRegistry
             or type(learned_frontier) is not LearnedFrontier
             or not isinstance(capability_id, str) or not capability_id):
-        ErrorBus.raise_legacy(FACTORY.EXECUTION.FAMILY_EXECUTION_INPUT_INVALID)
+        _fail("FACTORY_FAMILY_EXECUTION_INPUT_INVALID")
     release.verify()
     bindings = bind_factory_release_families(
         release, family_registry, registry, atlas, learned_frontier)
@@ -162,12 +162,10 @@ def execute_release_family_program(
             or binding.generator_id != program.generator_id
             or binding.oracle_id != program.oracle_id
             or binding.capability_id != program.capability_id):
-        ErrorBus.raise_legacy(
-            FACTORY.EXECUTION.FAMILY_EXECUTION_RELEASE_BINDING_DRIFT)
+        _fail("FACTORY_FAMILY_EXECUTION_RELEASE_BINDING_DRIFT")
     registered = registry.require(program.generator_id, program.oracle_id)
     if registered.descriptor.adapter_id != binding.source_adapter_id:
-        ErrorBus.raise_legacy(
-            FACTORY.EXECUTION.FAMILY_EXECUTION_SOURCE_ADAPTER_DRIFT)
+        _fail("FACTORY_FAMILY_EXECUTION_SOURCE_ADAPTER_DRIFT")
     return execute_bound_family_program(
         family_registry, binding,
         construct_args=construct_args, construct_kwargs=construct_kwargs,
