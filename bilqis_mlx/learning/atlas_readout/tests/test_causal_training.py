@@ -180,7 +180,7 @@ class CausalTrainingTests(unittest.TestCase):
                 legal_values=(C.EMIT_VALUE, C.EMIT_UNKNOWN))
 
     def test_value_loss_accepts_typed_concept_domain_and_masks_illegal_value(self):
-        from bilqis_mlx.learning.atlas_readout.causal_training import typed_decision_loss
+        from bilqis_mlx.learning.atlas_readout import typed_decision_loss
 
         allowed = concept()
         other = replace(allowed, semantic_id="urn:concept:B", abi_index=12)
@@ -213,7 +213,7 @@ class CausalTrainingTests(unittest.TestCase):
             float(typed_decision_loss(head, value, legal_values=(value,))), 0.0)
 
     def test_invalid_neural_decision_returns_explicit_fallback_request(self):
-        from bilqis_mlx.learning.atlas_readout.causal_training import (
+        from bilqis_mlx.learning.atlas_readout import (
             NeuralDecisionStatus,
             commit_neural_decision,
         )
@@ -234,7 +234,7 @@ class CausalTrainingTests(unittest.TestCase):
         self.assertEqual(accepted.state.committed, (O("control", C.EMIT_UNKNOWN),))
 
     def test_current_gold_cannot_change_current_decision_hidden_state(self):
-        from bilqis_mlx.learning.atlas_readout.causal_training import decision_hidden
+        from bilqis_mlx.learning.atlas_readout import decision_hidden
 
         state = start_decoding(plan((
             D("step1", None, 0, K.EPISTEMIC, ("known", "unknown")),

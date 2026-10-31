@@ -3,7 +3,10 @@
 - Issue: #469; parent B10 #367; Lane B
 - Consumed unified: `9104ce733e04fb9c82420428b18dfdbf5db49535`
 - Feature branch: `feature/bamf-b10-3-469-20261030`
-- Candidate head: `25aefe08cad687971256f21ade6bf3a2673282fd`
+- Implementation head: `c8b2734bb405ed8177bbaa497c857035bbdc5dfa`
+- Turn-in head: recorded by remote SHA readback in the PR/issue receipt comment after
+  this file is committed; a checked-in file cannot embed the SHA of the commit
+  that contains itself without changing that commit.
 - Learning state: software-only; no learner or optimizer mutation
 - Independent EGM: pending
 
@@ -24,6 +27,7 @@ Changed paths at this candidate head:
 - `bilqis_mlx/learning/atlas_readout/records.py`
 - `bilqis_mlx/learning/atlas_readout/tests/test_causal_training.py`
 - `docs/tasks/bamf-0.2/children/B10.3.md`
+- `docs/tasks/bamf-0.2/children/registry.json`
 - `docs/evidence/bamf/B10.3/receipt.md`
 
 ## Owned behavior
