@@ -19,6 +19,9 @@ CODEC_ID = "bamf.rot3/v1"
 HEAD_WIDTH = 24
 CODE_BITS = 3
 CODE_COUNT = 1 << CODE_BITS
+MIN_VECTOR_DIMS = 2
+SEED_BITS = 64
+BYTE_BITS = 8
 ROTATION_SEED = int.from_bytes(
     hashlib.sha256(CODEC_ID.encode("ascii")).digest()[:8], "little"
 )
@@ -48,7 +51,7 @@ def _fp32_digest(value: np.ndarray) -> str:
 
 def _seeded_rotation(seed: int) -> np.ndarray:
     """Generate one Haar-style orthogonal transform with fixed QR orientation."""
-    if type(seed) is not int or not 0 <= seed < 1 << 64:
+    if type(seed) is not int or not 0 <= seed < 1 << SEED_BITS:
         _invalid()
     generator = np.random.Generator(np.random.PCG64(seed))
     gaussian = generator.standard_normal((HEAD_WIDTH, HEAD_WIDTH))
@@ -113,10 +116,10 @@ def pack_3bit(codes: np.ndarray) -> bytes:
     for code in integers.tolist():
         accumulator |= int(code) << bit_count
         bit_count += CODE_BITS
-        while bit_count >= 8:
+        while bit_count >= BYTE_BITS:
             output.append(accumulator & 0xFF)
-            accumulator >>= 8
-            bit_count -= 8
+            accumulator >>= BYTE_BITS
+            bit_count -= BYTE_BITS
     if bit_count:
         output.append(accumulator & 0xFF)
     return bytes(output)
@@ -126,7 +129,7 @@ def unpack_3bit(payload: bytes, count: int) -> np.ndarray:
     """Decode exactly ``count`` codes and reject truncated/noncanonical tails."""
     if type(payload) is not bytes or type(count) is not int or count < 0:
         _invalid()
-    expected_bytes = (count * CODE_BITS + 7) // 8
+    expected_bytes = (count * CODE_BITS + (BYTE_BITS - 1)) // BYTE_BITS
     if len(payload) != expected_bytes:
         _invalid()
     output = np.empty((count,), dtype=np.uint8)
@@ -137,11 +140,13 @@ def unpack_3bit(payload: bytes, count: int) -> np.ndarray:
         while bit_count < CODE_BITS:
             accumulator |= payload[offset] << bit_count
             offset += 1
-            bit_count += 8
+            bit_count += BYTE_BITS
         output[index] = accumulator & (CODE_COUNT - 1)
         accumulator >>= CODE_BITS
         bit_count -= CODE_BITS
-    if accumulator != 0 or (bit_count and payload[-1] >> (8 - bit_count)):
+    if accumulator != 0 or (
+        bit_count and payload[-1] >> (BYTE_BITS - bit_count)
+    ):
         _invalid()
     return output
 
@@ -150,7 +155,7 @@ def quantize_directions(vectors: np.ndarray) -> np.ndarray:
     """Rotate unit directions, scale by sqrt(24), and emit nearest 3-bit codes."""
     values = np.asarray(vectors)
     if (
-        values.ndim < 2
+        values.ndim < MIN_VECTOR_DIMS
         or values.shape[-1] != HEAD_WIDTH
         or not np.issubdtype(values.dtype, np.floating)
         or not np.isfinite(values).all()
@@ -168,7 +173,7 @@ def decode_directions(codes: np.ndarray) -> np.ndarray:
     """Reconstruct unit directions only; B14.2 restores stored vector norms."""
     values = np.asarray(codes)
     if (
-        values.ndim < 2
+        values.ndim < MIN_VECTOR_DIMS
         or values.shape[-1] != HEAD_WIDTH
         or not np.issubdtype(values.dtype, np.integer)
         or np.any(values < 0)
