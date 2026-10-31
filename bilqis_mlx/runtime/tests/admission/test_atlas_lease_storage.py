@@ -64,5 +64,3 @@ class AtlasLeaseStorageTests(unittest.TestCase):
             with self.assertRaises(BilqisError):
                 persist_atlas_lease(root, _lease(), independently_loaded_run=_run(), registry=_REGISTRY)
             self.assertEqual(tuple(outside.iterdir()), ())
-
-

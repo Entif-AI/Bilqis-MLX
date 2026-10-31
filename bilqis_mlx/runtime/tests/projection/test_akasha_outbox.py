@@ -89,7 +89,6 @@ def _event(kind=AkashaEventKind.SOURCE_CORRECTION):
 
 
 class AkashaOutboxTests(unittest.TestCase):
-
     def test_all_seven_projection_kinds_are_typed_and_source_bound(self):
         for kind in AkashaEventKind:
             with self.subTest(kind=kind):

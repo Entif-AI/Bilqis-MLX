@@ -15,6 +15,8 @@ from .cognitive_solver import (
     CapabilityResult, GenerationBinding, SolveBudget, SolveContext, solve_task,
 )
 
+CAPABILITY_GROUP_ARITY = 2
+
 
 def _invalid(reason):
     ErrorBus.raise_(SCHOOL.BAMF_CAPABILITY_EVIDENCE.INVALID, reason=reason)
@@ -82,7 +84,7 @@ class EvaluationCohort:
                 or not isinstance(self.cases, tuple) or not self.cases
                 or any(not isinstance(case, EvaluationCase) for case in self.cases)
                 or not isinstance(self.capability_groups, tuple)
-                or any(not isinstance(pair, tuple) or len(pair) != 2
+                or any(not isinstance(pair, tuple) or len(pair) != CAPABILITY_GROUP_ARITY
                        or not all(isinstance(item, str) and item for item in pair)
                        for pair in self.capability_groups)
                 or len(dict(self.capability_groups)) != len(self.capability_groups)

@@ -32,5 +32,3 @@ class AtlasLeaseContractsTests(unittest.TestCase):
         lease = issue_atlas_lease('lookup-only', _run(), approval, _lease().resource_ceiling,
             requested_at=100, human_command_sha256='f' * 64, human_started=True, registry=_REGISTRY)
         self.assertEqual(lease.source_approval.operator_ids, ())
-
-

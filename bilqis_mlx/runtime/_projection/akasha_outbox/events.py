@@ -1,12 +1,8 @@
-"""Validated immutable event envelopes and projections."""
-from __future__ import annotations
-from dataclasses import asdict, dataclass
-import json
-from .contracts import (
-    AKASHA_EVENT_SCHEMA, AKASHA_PROJECTION_SCHEMA, AkashaEventKind,
-    NATIVE_EVENT_KINDS, OWNER_FIXTURE_KINDS, _payload_for, _invalid,
-    _name, _sha, _time, _digest, _canonical,
-)
+"""Immutable Akasha event and projection records."""
+from dataclasses import dataclass
+
+from .contracts import (AKASHA_EVENT_SCHEMA, AKASHA_PROJECTION_SCHEMA, AkashaEventKind,
+    _canonical, _digest, _invalid, _name, _payload_for, _sha, _time)
 
 @dataclass(frozen=True)
 class AkashaEvent:

@@ -59,8 +59,8 @@ groups = json.loads(sys.argv[1])
 for group, names in groups.items():
     for name in names:
         alternate = 'bilqis_mlx.runtime.' + group + '.' + name
-        for discover_first in (False, True):
-            if discover_first:
+        for discovery_first in (False, True):
+            if discovery_first:
                 assert importlib.util.find_spec('bilqis_mlx.runtime.' + name)
             try:
                 importlib.import_module(alternate)

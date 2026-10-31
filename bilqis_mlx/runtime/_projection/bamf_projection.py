@@ -12,7 +12,7 @@ from pathlib import Path
 import re
 
 from ..errors import ErrorBus, SCHOOL
-from .akasha_outbox import AkashaEvent, append_outbox, pending_events
+from .akasha_outbox import AkashaEvent, append_outbox_batch, pending_events
 
 
 PROJECTION_DOMAIN_SCHEMA = "bilqis.c10.projection-domain/v1"
@@ -151,10 +151,9 @@ def project_generation_outbox(
         if prior is not None and prior != item:
             _invalid("BAMF_C10_EVENT_ID_CONFLICT")
         unique[item.event.event_id] = item
-    appended = sum(
-        append_outbox(domain_contract.outbox_path, item.event,
-            projection_binding={key: value for key, value in asdict(item).items() if key != "event"})
-        for item in unique.values())
+    appended = append_outbox_batch(domain_contract.outbox_path, tuple(
+        (item.event, {key: value for key, value in asdict(item).items() if key != "event"})
+        for item in unique.values()))
     return ProjectionReceipt(
         event_ids=tuple(unique),
         payload_digests=tuple(

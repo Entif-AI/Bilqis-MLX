@@ -8,48 +8,47 @@ from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
 )
 
 
-def _stale_fixture():
-    index, source_a, _ = _chain()
-    correction = _event(source_a)
-    remediation = RemediationReceipt(
-        remediation_id="remediation:alpha",
-        correction_event_id=correction.event_id,
-        correction_receipt_sha256=correction.source_receipt_sha256,
-        original_actor_id="actor:alpha",
-        original_source_event_id="event:planned",
-        original_source_time=570,
-        superseded_fact_digest="a" * 64,
-        superseded_source_receipt_sha256="1" * 64,
-        affected_artifact_ids=("motif:alpha",),
-        retained_generation_sha256="9" * 64,
-        completed_at=650, status=RemediationStatus.COMPLETED,
-    )
-    stale = DerivedClaim(
-        claim_id="claim:stale", actor_id="actor:alpha",
-        source_event_id="event:planned", source_time=570,
-        source_receipt_sha256="1" * 64,
-        fact_digest="a" * 64, observed_at=660,
-        derived_path=(
-            "feature:alpha", "frame:alpha", "motif:alpha",
-            "cache:alpha", "composition:alpha", "capability:alpha",
-        ),
-    )
-    ledger = RequalificationLedger((
-        CapabilitySupport(
-            capability_id="capability:alpha",
-            support_artifact_ids=("capability:alpha",),
-            source_anchor_ids=("source:alpha",),
-            retained_generation_sha256="9" * 64,
-            observation_ids=("observation:historical:1",),
-            status=RequalificationStatus.QUALIFIED,
-        ),
-    ))
-    return index, correction, remediation, stale, ledger
-
-
 class StaleReplayTests(unittest.TestCase):
+    def _stale_replay_fixture(self):
+        index, source_a, _ = _chain()
+        correction = _event(source_a)
+        remediation = RemediationReceipt(
+            remediation_id="remediation:alpha",
+            correction_event_id=correction.event_id,
+            correction_receipt_sha256=correction.source_receipt_sha256,
+            original_actor_id="actor:alpha",
+            original_source_event_id="event:planned",
+            original_source_time=570,
+            superseded_fact_digest="a" * 64,
+            superseded_source_receipt_sha256="1" * 64,
+            affected_artifact_ids=("motif:alpha",),
+            retained_generation_sha256="9" * 64,
+            completed_at=650, status=RemediationStatus.COMPLETED,
+        )
+        stale = DerivedClaim(
+            claim_id="claim:stale", actor_id="actor:alpha",
+            source_event_id="event:planned", source_time=570,
+            source_receipt_sha256="1" * 64,
+            fact_digest="a" * 64, observed_at=660,
+            derived_path=(
+                "feature:alpha", "frame:alpha", "motif:alpha",
+                "cache:alpha", "composition:alpha", "capability:alpha",
+            ),
+        )
+        ledger = RequalificationLedger((
+            CapabilitySupport(
+                capability_id="capability:alpha",
+                support_artifact_ids=("capability:alpha",),
+                source_anchor_ids=("source:alpha",),
+                retained_generation_sha256="9" * 64,
+                observation_ids=("observation:historical:1",),
+                status=RequalificationStatus.QUALIFIED,
+            ),
+        ))
+        return index, correction, remediation, stale, ledger
+
     def test_post_remediation_stale_replay_escalates_but_new_evidence_does_not(self):
-        index, correction, remediation, stale, ledger = _stale_fixture()
+        index, correction, remediation, stale, ledger = self._stale_replay_fixture()
         result = escalate_stale_replay(remediation, stale, correction,
                                        index, ledger)
         self.assertIsNotNone(result)
