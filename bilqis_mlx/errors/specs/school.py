@@ -10,6 +10,7 @@ class STATE(StateIdentity, StateAssessment):
 
 
 class SCHOOL:
+    from .school_operator import BAMF_OPERATOR as BAMF_OPERATOR
     from .school_bamf import BAMF_ATLAS_ADMISSION as BAMF_ATLAS_ADMISSION
     from .school_bamf import BAMF_SALIENCE as BAMF_SALIENCE
     from .school_bamf import BAMF_CAPABILITY_EVIDENCE as BAMF_CAPABILITY_EVIDENCE

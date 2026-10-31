@@ -1,6 +1,6 @@
 {
-  "legacy_raw_file_count": 178,
-  "legacy_raw_raise_count": 1957,
+  "legacy_raw_file_count": 186,
+  "legacy_raw_raise_count": 1968,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BACKUP_ARCHIVE_ROOT_SYMLINK",
@@ -2432,132 +2432,6 @@
       "path": "bilqis_mlx/factory/adapters.py"
     },
     {
-      "code_hint": "FACTORY_ANSWER_HEAD_COMPILATION_INVALID_INPUT",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'FACTORY_ANSWER_HEAD_COMPILATION_INVALID_INPUT'",
-      "path": "bilqis_mlx/factory/answers.py"
-    },
-    {
-      "code_hint": "FACTORY_ANSWER_MODALITY_PLAN_REQUIRED",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'FACTORY_ANSWER_MODALITY_PLAN_REQUIRED'",
-      "path": "bilqis_mlx/factory/answers.py"
-    },
-    {
-      "code_hint": "FACTORY_INVALID_REGISTERED_ANSWER_MODALITY",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'FACTORY_INVALID_REGISTERED_ANSWER_MODALITY'",
-      "path": "bilqis_mlx/factory/answers.py"
-    },
-    {
-      "code_hint": "FACTORY_ANSWER_HEAD_GRAPH_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_ANSWER_HEAD_GRAPH_INVALID'",
-      "path": "bilqis_mlx/factory/answers.py"
-    },
-    {
-      "code_hint": "FACTORY_ANSWER_MODALITY_CANONICAL_DOMAIN_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_ANSWER_MODALITY_CANONICAL_DOMAIN_INVALID'",
-      "path": "bilqis_mlx/factory/answers.py"
-    },
-    {
-      "code_hint": "FACTORY_ANSWER_MODALITY_IDENTITY_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_ANSWER_MODALITY_IDENTITY_INVALID'",
-      "path": "bilqis_mlx/factory/answers.py"
-    },
-    {
-      "code_hint": "FACTORY_ANSWER_MODALITY_IMPLEMENTATION_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_ANSWER_MODALITY_IMPLEMENTATION_REQUIRED'",
-      "path": "bilqis_mlx/factory/answers.py"
-    },
-    {
-      "code_hint": "FACTORY_ANSWER_MODALITY_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_ANSWER_MODALITY_MISSING:' + str(kind)",
-      "path": "bilqis_mlx/factory/answers.py"
-    },
-    {
-      "code_hint": "FACTORY_ANSWER_MODALITY_SEMANTIC_BINDING_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_ANSWER_MODALITY_SEMANTIC_BINDING_MISSING:' + kind",
-      "path": "bilqis_mlx/factory/answers.py"
-    },
-    {
-      "code_hint": "FACTORY_DUPLICATE_ANSWER_MODALITY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_DUPLICATE_ANSWER_MODALITY:' + kind",
-      "path": "bilqis_mlx/factory/answers.py"
-    },
-    {
-      "code_hint": "FACTORY_ASSESSMENT_EXECUTABLE_RELEASE_REQUIRED",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'FACTORY_ASSESSMENT_EXECUTABLE_RELEASE_REQUIRED'",
-      "path": "bilqis_mlx/factory/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_QUALIFICATION_EVIDENCE_REQUIRED",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'FACTORY_QUALIFICATION_EVIDENCE_REQUIRED'",
-      "path": "bilqis_mlx/factory/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_ASSESSMENT_SCOPE_DUPLICATE_CAPABILITY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_ASSESSMENT_SCOPE_DUPLICATE_CAPABILITY'",
-      "path": "bilqis_mlx/factory/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_ASSESSMENT_SCOPE_EMPTY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_ASSESSMENT_SCOPE_EMPTY'",
-      "path": "bilqis_mlx/factory/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_ASSESSMENT_SCOPE_UNKNOWN_CAPABILITY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_ASSESSMENT_SCOPE_UNKNOWN_CAPABILITY:' + ','.join(sorted(unknown))",
-      "path": "bilqis_mlx/factory/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_GENERALIZATION_MUST_USE_DISTINCT_COHORT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_GENERALIZATION_MUST_USE_DISTINCT_COHORT'",
-      "path": "bilqis_mlx/factory/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_QUALIFICATION_CHECKPOINT_MISMATCH",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_QUALIFICATION_CHECKPOINT_MISMATCH'",
-      "path": "bilqis_mlx/factory/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_QUALIFICATION_EVIDENCE_CLASS_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_QUALIFICATION_EVIDENCE_CLASS_INVALID'",
-      "path": "bilqis_mlx/factory/assessment.py"
-    },
-    {
       "code_hint": "AUTONOMY_INVALID_EVIDENCE_RECEIPT",
       "count": 1,
       "exception": "TypeError",
@@ -3136,42 +3010,322 @@
       "count": 1,
       "exception": "TypeError",
       "expression": "'CANDIDATE_STAGING_INPUT_INVALID'",
-      "path": "bilqis_mlx/factory/candidate_staging.py"
+      "path": "bilqis_mlx/factory/curriculum/candidate_staging.py"
     },
     {
       "code_hint": "CANDIDATE_STAGING_DELTA_SCOPE_MISMATCH",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CANDIDATE_STAGING_DELTA_SCOPE_MISMATCH'",
-      "path": "bilqis_mlx/factory/candidate_staging.py"
+      "path": "bilqis_mlx/factory/curriculum/candidate_staging.py"
     },
     {
       "code_hint": "CANDIDATE_STAGING_EXACT_TARGET_REQUIRED",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CANDIDATE_STAGING_EXACT_TARGET_REQUIRED'",
-      "path": "bilqis_mlx/factory/candidate_staging.py"
+      "path": "bilqis_mlx/factory/curriculum/candidate_staging.py"
     },
     {
       "code_hint": "CANDIDATE_STAGING_EXISTING_AUTHORITY_CHANGED",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CANDIDATE_STAGING_EXISTING_AUTHORITY_CHANGED'",
-      "path": "bilqis_mlx/factory/candidate_staging.py"
+      "path": "bilqis_mlx/factory/curriculum/candidate_staging.py"
     },
     {
       "code_hint": "CANDIDATE_STAGING_FRONTIER_MISMATCH",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CANDIDATE_STAGING_FRONTIER_MISMATCH'",
-      "path": "bilqis_mlx/factory/candidate_staging.py"
+      "path": "bilqis_mlx/factory/curriculum/candidate_staging.py"
     },
     {
       "code_hint": "CANDIDATE_STAGING_PREREQUISITE_ACCOUNTING_REQUIRED",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CANDIDATE_STAGING_PREREQUISITE_ACCOUNTING_REQUIRED'",
-      "path": "bilqis_mlx/factory/candidate_staging.py"
+      "path": "bilqis_mlx/factory/curriculum/candidate_staging.py"
+    },
+    {
+      "code_hint": "",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'DEVELOPMENT_COMPLETION_PREREQUISITE_GAP:' + identity + ':' + ','.join(sorted(missing))",
+      "path": "bilqis_mlx/factory/curriculum/development.py"
+    },
+    {
+      "code_hint": "DEVELOPMENT_COMPLETION_SCOPE_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'DEVELOPMENT_COMPLETION_SCOPE_INVALID'",
+      "path": "bilqis_mlx/factory/curriculum/development.py"
+    },
+    {
+      "code_hint": "DEVELOPMENT_STAIRCASE_CYCLE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'DEVELOPMENT_STAIRCASE_CYCLE'",
+      "path": "bilqis_mlx/factory/curriculum/development.py"
+    },
+    {
+      "code_hint": "DEVELOPMENT_STAIRCASE_DUPLICATE_TARGET",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'DEVELOPMENT_STAIRCASE_DUPLICATE_TARGET'",
+      "path": "bilqis_mlx/factory/curriculum/development.py"
+    },
+    {
+      "code_hint": "DEVELOPMENT_STAIRCASE_IDENTITY_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'DEVELOPMENT_STAIRCASE_IDENTITY_INVALID'",
+      "path": "bilqis_mlx/factory/curriculum/development.py"
+    },
+    {
+      "code_hint": "DEVELOPMENT_STAIRCASE_PREREQUISITE_NOT_EARLIER",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'DEVELOPMENT_STAIRCASE_PREREQUISITE_NOT_EARLIER'",
+      "path": "bilqis_mlx/factory/curriculum/development.py"
+    },
+    {
+      "code_hint": "DEVELOPMENT_STAIRCASE_UNKNOWN_PREREQUISITE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'DEVELOPMENT_STAIRCASE_UNKNOWN_PREREQUISITE'",
+      "path": "bilqis_mlx/factory/curriculum/development.py"
+    },
+    {
+      "code_hint": "DEVELOPMENT_TARGET_IDENTITY_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'DEVELOPMENT_TARGET_IDENTITY_INVALID'",
+      "path": "bilqis_mlx/factory/curriculum/development.py"
+    },
+    {
+      "code_hint": "DEVELOPMENT_BINDING_INVALID_INPUT",
+      "count": 1,
+      "exception": "TypeError",
+      "expression": "'DEVELOPMENT_BINDING_INVALID_INPUT'",
+      "path": "bilqis_mlx/factory/curriculum/development_binding.py"
+    },
+    {
+      "code_hint": "DEVELOPMENT_BINDING_BASELINE_NOT_IN_RELEASE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'DEVELOPMENT_BINDING_BASELINE_NOT_IN_RELEASE'",
+      "path": "bilqis_mlx/factory/curriculum/development_binding.py"
+    },
+    {
+      "code_hint": "DEVELOPMENT_BINDING_CAPABILITY_NOT_IN_RELEASE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'DEVELOPMENT_BINDING_CAPABILITY_NOT_IN_RELEASE'",
+      "path": "bilqis_mlx/factory/curriculum/development_binding.py"
+    },
+    {
+      "code_hint": "DEVELOPMENT_BINDING_DUPLICATE_UNDERSTANDING_PLAN",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'DEVELOPMENT_BINDING_DUPLICATE_UNDERSTANDING_PLAN'",
+      "path": "bilqis_mlx/factory/curriculum/development_binding.py"
+    },
+    {
+      "code_hint": "DEVELOPMENT_BINDING_IDENTITY_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'DEVELOPMENT_BINDING_IDENTITY_INVALID'",
+      "path": "bilqis_mlx/factory/curriculum/development_binding.py"
+    },
+    {
+      "code_hint": "DEVELOPMENT_BINDING_NOT_ONE_TO_ONE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'DEVELOPMENT_BINDING_NOT_ONE_TO_ONE'",
+      "path": "bilqis_mlx/factory/curriculum/development_binding.py"
+    },
+    {
+      "code_hint": "DEVELOPMENT_BINDING_PREREQUISITE_MISMATCH",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'DEVELOPMENT_BINDING_PREREQUISITE_MISMATCH:' + binding.target_id",
+      "path": "bilqis_mlx/factory/curriculum/development_binding.py"
+    },
+    {
+      "code_hint": "",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'DEVELOPMENT_BINDING_PREREQUISITE_TARGET_UNBOUND:' + binding.target_id + ':' + ','.join(sorted(unresolved))",
+      "path": "bilqis_mlx/factory/curriculum/development_binding.py"
+    },
+    {
+      "code_hint": "DEVELOPMENT_BINDING_PROJECTION_SCOPE_MISMATCH",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'DEVELOPMENT_BINDING_PROJECTION_SCOPE_MISMATCH:' + binding.target_id",
+      "path": "bilqis_mlx/factory/curriculum/development_binding.py"
+    },
+    {
+      "code_hint": "DEVELOPMENT_BINDING_UNBOUND_UNDERSTANDING_PLAN",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'DEVELOPMENT_BINDING_UNBOUND_UNDERSTANDING_PLAN'",
+      "path": "bilqis_mlx/factory/curriculum/development_binding.py"
+    },
+    {
+      "code_hint": "DEVELOPMENT_BINDING_UNKNOWN_TARGET",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'DEVELOPMENT_BINDING_UNKNOWN_TARGET'",
+      "path": "bilqis_mlx/factory/curriculum/development_binding.py"
+    },
+    {
+      "code_hint": "DEVELOPMENT_FRONTIER_EVIDENCE_SCOPE_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'DEVELOPMENT_FRONTIER_EVIDENCE_SCOPE_INVALID'",
+      "path": "bilqis_mlx/factory/curriculum/development_binding.py"
+    },
+    {
+      "code_hint": "DEVELOPMENT_RELEASE_PLAN_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'DEVELOPMENT_RELEASE_PLAN_INVALID'",
+      "path": "bilqis_mlx/factory/curriculum/development_binding.py"
+    },
+    {
+      "code_hint": "unreachable",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'unreachable'",
+      "path": "bilqis_mlx/factory/curriculum/formal_lesson_types.py"
+    },
+    {
+      "code_hint": "JIT_CURRICULUM_INPUT_INVALID",
+      "count": 1,
+      "exception": "TypeError",
+      "expression": "'JIT_CURRICULUM_INPUT_INVALID'",
+      "path": "bilqis_mlx/factory/curriculum/jit_curriculum.py"
+    },
+    {
+      "code_hint": "JIT_CANDIDATE_BINDING_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'JIT_CANDIDATE_BINDING_INVALID'",
+      "path": "bilqis_mlx/factory/curriculum/jit_curriculum.py"
+    },
+    {
+      "code_hint": "JIT_CURRICULUM_BINDING_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'JIT_CURRICULUM_BINDING_INVALID'",
+      "path": "bilqis_mlx/factory/curriculum/jit_curriculum.py"
+    },
+    {
+      "code_hint": "JIT_CURRICULUM_DEFERRED_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'JIT_CURRICULUM_DEFERRED_INVALID'",
+      "path": "bilqis_mlx/factory/curriculum/jit_curriculum.py"
+    },
+    {
+      "code_hint": "JIT_CURRICULUM_PROPOSAL_DIGEST_MISMATCH",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'JIT_CURRICULUM_PROPOSAL_DIGEST_MISMATCH'",
+      "path": "bilqis_mlx/factory/curriculum/jit_curriculum.py"
+    },
+    {
+      "code_hint": "JIT_CURRICULUM_PROPOSAL_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'JIT_CURRICULUM_PROPOSAL_INVALID'",
+      "path": "bilqis_mlx/factory/curriculum/jit_curriculum.py"
+    },
+    {
+      "code_hint": "JIT_CURRICULUM_PROPOSAL_SELECTION_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'JIT_CURRICULUM_PROPOSAL_SELECTION_INVALID'",
+      "path": "bilqis_mlx/factory/curriculum/jit_curriculum.py"
+    },
+    {
+      "code_hint": "JIT_CURRICULUM_SOURCE_DEVELOPMENT_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'JIT_CURRICULUM_SOURCE_DEVELOPMENT_INVALID'",
+      "path": "bilqis_mlx/factory/curriculum/jit_curriculum.py"
+    },
+    {
+      "code_hint": "JIT_CURRICULUM_STEP_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'JIT_CURRICULUM_STEP_INVALID'",
+      "path": "bilqis_mlx/factory/curriculum/jit_curriculum.py"
+    },
+    {
+      "code_hint": "UNDERSTANDING_CONTRACT_REQUIRED",
+      "count": 1,
+      "exception": "TypeError",
+      "expression": "'UNDERSTANDING_CONTRACT_REQUIRED'",
+      "path": "bilqis_mlx/factory/curriculum/understanding.py"
+    },
+    {
+      "code_hint": "UNDERSTANDING_TARGET_REQUIRED",
+      "count": 1,
+      "exception": "TypeError",
+      "expression": "'UNDERSTANDING_TARGET_REQUIRED'",
+      "path": "bilqis_mlx/factory/curriculum/understanding.py"
+    },
+    {
+      "code_hint": "UNDERSTANDING_AUTONOMY_INPUT_INVALID",
+      "count": 2,
+      "exception": "ValueError",
+      "expression": "'UNDERSTANDING_AUTONOMY_INPUT_INVALID'",
+      "path": "bilqis_mlx/factory/curriculum/understanding.py"
+    },
+    {
+      "code_hint": "UNDERSTANDING_CAPABILITY_ID_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'UNDERSTANDING_CAPABILITY_ID_INVALID'",
+      "path": "bilqis_mlx/factory/curriculum/understanding.py"
+    },
+    {
+      "code_hint": "UNDERSTANDING_CONTRACT_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'UNDERSTANDING_CONTRACT_INVALID'",
+      "path": "bilqis_mlx/factory/curriculum/understanding.py"
+    },
+    {
+      "code_hint": "UNDERSTANDING_EVIDENCE_PLAN_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'UNDERSTANDING_EVIDENCE_PLAN_INVALID'",
+      "path": "bilqis_mlx/factory/curriculum/understanding.py"
+    },
+    {
+      "code_hint": "UNDERSTANDING_EVIDENCE_SCOPE_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'UNDERSTANDING_EVIDENCE_SCOPE_INVALID'",
+      "path": "bilqis_mlx/factory/curriculum/understanding.py"
+    },
+    {
+      "code_hint": "UNDERSTANDING_PROJECTION_SPEC_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'UNDERSTANDING_PROJECTION_SPEC_INVALID'",
+      "path": "bilqis_mlx/factory/curriculum/understanding.py"
+    },
+    {
+      "code_hint": "UNDERSTANDING_SUPPORT_OUTSIDE_CONTRACT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'UNDERSTANDING_SUPPORT_OUTSIDE_CONTRACT'",
+      "path": "bilqis_mlx/factory/curriculum/understanding.py"
     },
     {
       "code_hint": "FACTORY_LEGACY_COURSE_REQUIRED",
@@ -3305,195 +3459,6 @@
       "exception": "ValueError",
       "expression": "'FACTORY_SOURCE_BINDING_IDENTITY_INVALID'",
       "path": "bilqis_mlx/factory/curriculum_definition.py"
-    },
-    {
-      "code_hint": "",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'DEVELOPMENT_COMPLETION_PREREQUISITE_GAP:' + identity + ':' + ','.join(sorted(missing))",
-      "path": "bilqis_mlx/factory/development.py"
-    },
-    {
-      "code_hint": "DEVELOPMENT_COMPLETION_SCOPE_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'DEVELOPMENT_COMPLETION_SCOPE_INVALID'",
-      "path": "bilqis_mlx/factory/development.py"
-    },
-    {
-      "code_hint": "DEVELOPMENT_STAIRCASE_CYCLE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'DEVELOPMENT_STAIRCASE_CYCLE'",
-      "path": "bilqis_mlx/factory/development.py"
-    },
-    {
-      "code_hint": "DEVELOPMENT_STAIRCASE_DUPLICATE_TARGET",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'DEVELOPMENT_STAIRCASE_DUPLICATE_TARGET'",
-      "path": "bilqis_mlx/factory/development.py"
-    },
-    {
-      "code_hint": "DEVELOPMENT_STAIRCASE_IDENTITY_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'DEVELOPMENT_STAIRCASE_IDENTITY_INVALID'",
-      "path": "bilqis_mlx/factory/development.py"
-    },
-    {
-      "code_hint": "DEVELOPMENT_STAIRCASE_PREREQUISITE_NOT_EARLIER",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'DEVELOPMENT_STAIRCASE_PREREQUISITE_NOT_EARLIER'",
-      "path": "bilqis_mlx/factory/development.py"
-    },
-    {
-      "code_hint": "DEVELOPMENT_STAIRCASE_UNKNOWN_PREREQUISITE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'DEVELOPMENT_STAIRCASE_UNKNOWN_PREREQUISITE'",
-      "path": "bilqis_mlx/factory/development.py"
-    },
-    {
-      "code_hint": "DEVELOPMENT_TARGET_IDENTITY_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'DEVELOPMENT_TARGET_IDENTITY_INVALID'",
-      "path": "bilqis_mlx/factory/development.py"
-    },
-    {
-      "code_hint": "DEVELOPMENT_BINDING_INVALID_INPUT",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'DEVELOPMENT_BINDING_INVALID_INPUT'",
-      "path": "bilqis_mlx/factory/development_binding.py"
-    },
-    {
-      "code_hint": "DEVELOPMENT_BINDING_BASELINE_NOT_IN_RELEASE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'DEVELOPMENT_BINDING_BASELINE_NOT_IN_RELEASE'",
-      "path": "bilqis_mlx/factory/development_binding.py"
-    },
-    {
-      "code_hint": "DEVELOPMENT_BINDING_CAPABILITY_NOT_IN_RELEASE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'DEVELOPMENT_BINDING_CAPABILITY_NOT_IN_RELEASE'",
-      "path": "bilqis_mlx/factory/development_binding.py"
-    },
-    {
-      "code_hint": "DEVELOPMENT_BINDING_DUPLICATE_UNDERSTANDING_PLAN",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'DEVELOPMENT_BINDING_DUPLICATE_UNDERSTANDING_PLAN'",
-      "path": "bilqis_mlx/factory/development_binding.py"
-    },
-    {
-      "code_hint": "DEVELOPMENT_BINDING_IDENTITY_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'DEVELOPMENT_BINDING_IDENTITY_INVALID'",
-      "path": "bilqis_mlx/factory/development_binding.py"
-    },
-    {
-      "code_hint": "DEVELOPMENT_BINDING_NOT_ONE_TO_ONE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'DEVELOPMENT_BINDING_NOT_ONE_TO_ONE'",
-      "path": "bilqis_mlx/factory/development_binding.py"
-    },
-    {
-      "code_hint": "DEVELOPMENT_BINDING_PREREQUISITE_MISMATCH",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'DEVELOPMENT_BINDING_PREREQUISITE_MISMATCH:' + binding.target_id",
-      "path": "bilqis_mlx/factory/development_binding.py"
-    },
-    {
-      "code_hint": "",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'DEVELOPMENT_BINDING_PREREQUISITE_TARGET_UNBOUND:' + binding.target_id + ':' + ','.join(sorted(unresolved))",
-      "path": "bilqis_mlx/factory/development_binding.py"
-    },
-    {
-      "code_hint": "DEVELOPMENT_BINDING_PROJECTION_SCOPE_MISMATCH",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'DEVELOPMENT_BINDING_PROJECTION_SCOPE_MISMATCH:' + binding.target_id",
-      "path": "bilqis_mlx/factory/development_binding.py"
-    },
-    {
-      "code_hint": "DEVELOPMENT_BINDING_UNBOUND_UNDERSTANDING_PLAN",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'DEVELOPMENT_BINDING_UNBOUND_UNDERSTANDING_PLAN'",
-      "path": "bilqis_mlx/factory/development_binding.py"
-    },
-    {
-      "code_hint": "DEVELOPMENT_BINDING_UNKNOWN_TARGET",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'DEVELOPMENT_BINDING_UNKNOWN_TARGET'",
-      "path": "bilqis_mlx/factory/development_binding.py"
-    },
-    {
-      "code_hint": "DEVELOPMENT_FRONTIER_EVIDENCE_SCOPE_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'DEVELOPMENT_FRONTIER_EVIDENCE_SCOPE_INVALID'",
-      "path": "bilqis_mlx/factory/development_binding.py"
-    },
-    {
-      "code_hint": "DEVELOPMENT_RELEASE_PLAN_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'DEVELOPMENT_RELEASE_PLAN_INVALID'",
-      "path": "bilqis_mlx/factory/development_binding.py"
-    },
-    {
-      "code_hint": "FACTORY_EVIDENCE_OBLIGATION_REQUIRED",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'FACTORY_EVIDENCE_OBLIGATION_REQUIRED'",
-      "path": "bilqis_mlx/factory/evidence.py"
-    },
-    {
-      "code_hint": "FACTORY_EVIDENCE_PREDICTOR_REQUIRED",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'FACTORY_EVIDENCE_PREDICTOR_REQUIRED'",
-      "path": "bilqis_mlx/factory/evidence.py"
-    },
-    {
-      "code_hint": "FACTORY_EVIDENCE_REGISTRY_REQUIRED",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'FACTORY_EVIDENCE_REGISTRY_REQUIRED'",
-      "path": "bilqis_mlx/factory/evidence.py"
-    },
-    {
-      "code_hint": "FACTORY_EVIDENCE_DRAW_ARGUMENT_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EVIDENCE_DRAW_ARGUMENT_INVALID'",
-      "path": "bilqis_mlx/factory/evidence.py"
-    },
-    {
-      "code_hint": "FACTORY_EVIDENCE_UNKNOWN_CAPABILITY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EVIDENCE_UNKNOWN_CAPABILITY'",
-      "path": "bilqis_mlx/factory/evidence.py"
-    },
-    {
-      "code_hint": "FACTORY_EVIDENCE_WITNESS_EXHAUSTED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EVIDENCE_WITNESS_EXHAUSTED:' + obligation.obligation_id",
-      "path": "bilqis_mlx/factory/evidence.py"
     },
     {
       "code_hint": "FACTORY_EXECUTABLE_ADMISSION_RELEASE_REQUIRED",
@@ -3986,67 +3951,298 @@
       "path": "bilqis_mlx/factory/generation.py"
     },
     {
-      "code_hint": "JIT_CURRICULUM_INPUT_INVALID",
+      "code_hint": "FACTORY_ANSWER_HEAD_COMPILATION_INVALID_INPUT",
       "count": 1,
       "exception": "TypeError",
-      "expression": "'JIT_CURRICULUM_INPUT_INVALID'",
-      "path": "bilqis_mlx/factory/jit_curriculum.py"
+      "expression": "'FACTORY_ANSWER_HEAD_COMPILATION_INVALID_INPUT'",
+      "path": "bilqis_mlx/factory/lifecycle/answers.py"
     },
     {
-      "code_hint": "JIT_CANDIDATE_BINDING_INVALID",
+      "code_hint": "FACTORY_ANSWER_MODALITY_PLAN_REQUIRED",
       "count": 1,
-      "exception": "ValueError",
-      "expression": "'JIT_CANDIDATE_BINDING_INVALID'",
-      "path": "bilqis_mlx/factory/jit_curriculum.py"
+      "exception": "TypeError",
+      "expression": "'FACTORY_ANSWER_MODALITY_PLAN_REQUIRED'",
+      "path": "bilqis_mlx/factory/lifecycle/answers.py"
     },
     {
-      "code_hint": "JIT_CURRICULUM_BINDING_INVALID",
+      "code_hint": "FACTORY_INVALID_REGISTERED_ANSWER_MODALITY",
       "count": 1,
-      "exception": "ValueError",
-      "expression": "'JIT_CURRICULUM_BINDING_INVALID'",
-      "path": "bilqis_mlx/factory/jit_curriculum.py"
+      "exception": "TypeError",
+      "expression": "'FACTORY_INVALID_REGISTERED_ANSWER_MODALITY'",
+      "path": "bilqis_mlx/factory/lifecycle/answers.py"
     },
     {
-      "code_hint": "JIT_CURRICULUM_DEFERRED_INVALID",
+      "code_hint": "FACTORY_ANSWER_HEAD_GRAPH_INVALID",
       "count": 1,
       "exception": "ValueError",
-      "expression": "'JIT_CURRICULUM_DEFERRED_INVALID'",
-      "path": "bilqis_mlx/factory/jit_curriculum.py"
+      "expression": "'FACTORY_ANSWER_HEAD_GRAPH_INVALID'",
+      "path": "bilqis_mlx/factory/lifecycle/answers.py"
     },
     {
-      "code_hint": "JIT_CURRICULUM_PROPOSAL_DIGEST_MISMATCH",
+      "code_hint": "FACTORY_ANSWER_MODALITY_CANONICAL_DOMAIN_INVALID",
       "count": 1,
       "exception": "ValueError",
-      "expression": "'JIT_CURRICULUM_PROPOSAL_DIGEST_MISMATCH'",
-      "path": "bilqis_mlx/factory/jit_curriculum.py"
+      "expression": "'FACTORY_ANSWER_MODALITY_CANONICAL_DOMAIN_INVALID'",
+      "path": "bilqis_mlx/factory/lifecycle/answers.py"
     },
     {
-      "code_hint": "JIT_CURRICULUM_PROPOSAL_INVALID",
+      "code_hint": "FACTORY_ANSWER_MODALITY_IDENTITY_INVALID",
       "count": 1,
       "exception": "ValueError",
-      "expression": "'JIT_CURRICULUM_PROPOSAL_INVALID'",
-      "path": "bilqis_mlx/factory/jit_curriculum.py"
+      "expression": "'FACTORY_ANSWER_MODALITY_IDENTITY_INVALID'",
+      "path": "bilqis_mlx/factory/lifecycle/answers.py"
     },
     {
-      "code_hint": "JIT_CURRICULUM_PROPOSAL_SELECTION_INVALID",
+      "code_hint": "FACTORY_ANSWER_MODALITY_IMPLEMENTATION_REQUIRED",
       "count": 1,
       "exception": "ValueError",
-      "expression": "'JIT_CURRICULUM_PROPOSAL_SELECTION_INVALID'",
-      "path": "bilqis_mlx/factory/jit_curriculum.py"
+      "expression": "'FACTORY_ANSWER_MODALITY_IMPLEMENTATION_REQUIRED'",
+      "path": "bilqis_mlx/factory/lifecycle/answers.py"
     },
     {
-      "code_hint": "JIT_CURRICULUM_SOURCE_DEVELOPMENT_INVALID",
+      "code_hint": "FACTORY_ANSWER_MODALITY_MISSING",
       "count": 1,
       "exception": "ValueError",
-      "expression": "'JIT_CURRICULUM_SOURCE_DEVELOPMENT_INVALID'",
-      "path": "bilqis_mlx/factory/jit_curriculum.py"
+      "expression": "'FACTORY_ANSWER_MODALITY_MISSING:' + str(kind)",
+      "path": "bilqis_mlx/factory/lifecycle/answers.py"
     },
     {
-      "code_hint": "JIT_CURRICULUM_STEP_INVALID",
+      "code_hint": "FACTORY_ANSWER_MODALITY_SEMANTIC_BINDING_MISSING",
       "count": 1,
       "exception": "ValueError",
-      "expression": "'JIT_CURRICULUM_STEP_INVALID'",
-      "path": "bilqis_mlx/factory/jit_curriculum.py"
+      "expression": "'FACTORY_ANSWER_MODALITY_SEMANTIC_BINDING_MISSING:' + kind",
+      "path": "bilqis_mlx/factory/lifecycle/answers.py"
+    },
+    {
+      "code_hint": "FACTORY_DUPLICATE_ANSWER_MODALITY",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_DUPLICATE_ANSWER_MODALITY:' + kind",
+      "path": "bilqis_mlx/factory/lifecycle/answers.py"
+    },
+    {
+      "code_hint": "FACTORY_ASSESSMENT_EXECUTABLE_RELEASE_REQUIRED",
+      "count": 1,
+      "exception": "TypeError",
+      "expression": "'FACTORY_ASSESSMENT_EXECUTABLE_RELEASE_REQUIRED'",
+      "path": "bilqis_mlx/factory/lifecycle/assessment.py"
+    },
+    {
+      "code_hint": "FACTORY_QUALIFICATION_EVIDENCE_REQUIRED",
+      "count": 1,
+      "exception": "TypeError",
+      "expression": "'FACTORY_QUALIFICATION_EVIDENCE_REQUIRED'",
+      "path": "bilqis_mlx/factory/lifecycle/assessment.py"
+    },
+    {
+      "code_hint": "FACTORY_ASSESSMENT_SCOPE_DUPLICATE_CAPABILITY",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_ASSESSMENT_SCOPE_DUPLICATE_CAPABILITY'",
+      "path": "bilqis_mlx/factory/lifecycle/assessment.py"
+    },
+    {
+      "code_hint": "FACTORY_ASSESSMENT_SCOPE_EMPTY",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_ASSESSMENT_SCOPE_EMPTY'",
+      "path": "bilqis_mlx/factory/lifecycle/assessment.py"
+    },
+    {
+      "code_hint": "FACTORY_ASSESSMENT_SCOPE_UNKNOWN_CAPABILITY",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_ASSESSMENT_SCOPE_UNKNOWN_CAPABILITY:' + ','.join(sorted(unknown))",
+      "path": "bilqis_mlx/factory/lifecycle/assessment.py"
+    },
+    {
+      "code_hint": "FACTORY_GENERALIZATION_MUST_USE_DISTINCT_COHORT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_GENERALIZATION_MUST_USE_DISTINCT_COHORT'",
+      "path": "bilqis_mlx/factory/lifecycle/assessment.py"
+    },
+    {
+      "code_hint": "FACTORY_QUALIFICATION_CHECKPOINT_MISMATCH",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_QUALIFICATION_CHECKPOINT_MISMATCH'",
+      "path": "bilqis_mlx/factory/lifecycle/assessment.py"
+    },
+    {
+      "code_hint": "FACTORY_QUALIFICATION_EVIDENCE_CLASS_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_QUALIFICATION_EVIDENCE_CLASS_INVALID'",
+      "path": "bilqis_mlx/factory/lifecycle/assessment.py"
+    },
+    {
+      "code_hint": "FACTORY_EVIDENCE_OBLIGATION_REQUIRED",
+      "count": 1,
+      "exception": "TypeError",
+      "expression": "'FACTORY_EVIDENCE_OBLIGATION_REQUIRED'",
+      "path": "bilqis_mlx/factory/lifecycle/evidence.py"
+    },
+    {
+      "code_hint": "FACTORY_EVIDENCE_PREDICTOR_REQUIRED",
+      "count": 1,
+      "exception": "TypeError",
+      "expression": "'FACTORY_EVIDENCE_PREDICTOR_REQUIRED'",
+      "path": "bilqis_mlx/factory/lifecycle/evidence.py"
+    },
+    {
+      "code_hint": "FACTORY_EVIDENCE_REGISTRY_REQUIRED",
+      "count": 1,
+      "exception": "TypeError",
+      "expression": "'FACTORY_EVIDENCE_REGISTRY_REQUIRED'",
+      "path": "bilqis_mlx/factory/lifecycle/evidence.py"
+    },
+    {
+      "code_hint": "FACTORY_EVIDENCE_DRAW_ARGUMENT_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EVIDENCE_DRAW_ARGUMENT_INVALID'",
+      "path": "bilqis_mlx/factory/lifecycle/evidence.py"
+    },
+    {
+      "code_hint": "FACTORY_EVIDENCE_UNKNOWN_CAPABILITY",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EVIDENCE_UNKNOWN_CAPABILITY'",
+      "path": "bilqis_mlx/factory/lifecycle/evidence.py"
+    },
+    {
+      "code_hint": "FACTORY_EVIDENCE_WITNESS_EXHAUSTED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EVIDENCE_WITNESS_EXHAUSTED:' + obligation.obligation_id",
+      "path": "bilqis_mlx/factory/lifecycle/evidence.py"
+    },
+    {
+      "code_hint": "FACTORY_RELEASE_INVALID_INPUT",
+      "count": 1,
+      "exception": "TypeError",
+      "expression": "'FACTORY_RELEASE_INVALID_INPUT'",
+      "path": "bilqis_mlx/factory/lifecycle/release.py"
+    },
+    {
+      "code_hint": "FACTORY_RELEASE_REQUIRES_EXECUTABLE_COURSE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_RELEASE_REQUIRES_EXECUTABLE_COURSE'",
+      "path": "bilqis_mlx/factory/lifecycle/release.py"
+    },
+    {
+      "code_hint": "FACTORY_SCHEDULE_EXECUTABLE_RELEASE_REQUIRED",
+      "count": 1,
+      "exception": "TypeError",
+      "expression": "'FACTORY_SCHEDULE_EXECUTABLE_RELEASE_REQUIRED'",
+      "path": "bilqis_mlx/factory/lifecycle/schedule.py"
+    },
+    {
+      "code_hint": "FACTORY_SCHEDULE_ASSESSMENT_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_SCHEDULE_ASSESSMENT_INVALID'",
+      "path": "bilqis_mlx/factory/lifecycle/schedule.py"
+    },
+    {
+      "code_hint": "FACTORY_SCHEDULE_ASSESSMENT_PROJECTIONS_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_SCHEDULE_ASSESSMENT_PROJECTIONS_INVALID'",
+      "path": "bilqis_mlx/factory/lifecycle/schedule.py"
+    },
+    {
+      "code_hint": "FACTORY_SCHEDULE_ASSESSMENT_SCOPE_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_SCHEDULE_ASSESSMENT_SCOPE_INVALID'",
+      "path": "bilqis_mlx/factory/lifecycle/schedule.py"
+    },
+    {
+      "code_hint": "FACTORY_SCHEDULE_CAPABILITY_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_SCHEDULE_CAPABILITY_INVALID'",
+      "path": "bilqis_mlx/factory/lifecycle/schedule.py"
+    },
+    {
+      "code_hint": "FACTORY_SCHEDULE_DUPLICATE_CAPABILITY",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_SCHEDULE_DUPLICATE_CAPABILITY'",
+      "path": "bilqis_mlx/factory/lifecycle/schedule.py"
+    },
+    {
+      "code_hint": "FACTORY_SCHEDULE_DUPLICATE_GRADE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_SCHEDULE_DUPLICATE_GRADE'",
+      "path": "bilqis_mlx/factory/lifecycle/schedule.py"
+    },
+    {
+      "code_hint": "FACTORY_SCHEDULE_GRADE_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_SCHEDULE_GRADE_INVALID'",
+      "path": "bilqis_mlx/factory/lifecycle/schedule.py"
+    },
+    {
+      "code_hint": "FACTORY_SCHEDULE_MANIFEST_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_SCHEDULE_MANIFEST_INVALID'",
+      "path": "bilqis_mlx/factory/lifecycle/schedule.py"
+    },
+    {
+      "code_hint": "FACTORY_SCHEDULE_PROGRAM_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_SCHEDULE_PROGRAM_INVALID'",
+      "path": "bilqis_mlx/factory/lifecycle/schedule.py"
+    },
+    {
+      "code_hint": "FACTORY_SCHEDULE_STAGES_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_SCHEDULE_STAGES_INVALID'",
+      "path": "bilqis_mlx/factory/lifecycle/schedule.py"
+    },
+    {
+      "code_hint": "FACTORY_TEACHING_DELIVERY_UNPROVEN",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_TEACHING_DELIVERY_UNPROVEN'",
+      "path": "bilqis_mlx/factory/lifecycle/teaching.py"
+    },
+    {
+      "code_hint": "FACTORY_TEACHING_OPTION_EMPTY",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_TEACHING_OPTION_EMPTY'",
+      "path": "bilqis_mlx/factory/lifecycle/teaching.py"
+    },
+    {
+      "code_hint": "FACTORY_TEACHING_OPTION_HAS_NO_IMPLEMENTATION",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_TEACHING_OPTION_HAS_NO_IMPLEMENTATION'",
+      "path": "bilqis_mlx/factory/lifecycle/teaching.py"
+    },
+    {
+      "code_hint": "FACTORY_TEACHING_OPTION_NOT_RELEASED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_TEACHING_OPTION_NOT_RELEASED'",
+      "path": "bilqis_mlx/factory/lifecycle/teaching.py"
+    },
+    {
+      "code_hint": "FACTORY_TEACHING_SOURCE_ORACLE_DISAGREEMENT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_TEACHING_SOURCE_ORACLE_DISAGREEMENT'",
+      "path": "bilqis_mlx/factory/lifecycle/teaching.py"
     },
     {
       "code_hint": "FACTORY_ADMISSION_OPTIMIZER_STEP_INVALID",
@@ -4280,200 +4476,11 @@
       "path": "bilqis_mlx/factory/model.py"
     },
     {
-      "code_hint": "FACTORY_RELEASE_INVALID_INPUT",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'FACTORY_RELEASE_INVALID_INPUT'",
-      "path": "bilqis_mlx/factory/release.py"
-    },
-    {
-      "code_hint": "FACTORY_RELEASE_REQUIRES_EXECUTABLE_COURSE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_RELEASE_REQUIRES_EXECUTABLE_COURSE'",
-      "path": "bilqis_mlx/factory/release.py"
-    },
-    {
-      "code_hint": "FACTORY_SCHEDULE_EXECUTABLE_RELEASE_REQUIRED",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'FACTORY_SCHEDULE_EXECUTABLE_RELEASE_REQUIRED'",
-      "path": "bilqis_mlx/factory/schedule.py"
-    },
-    {
-      "code_hint": "FACTORY_SCHEDULE_ASSESSMENT_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_SCHEDULE_ASSESSMENT_INVALID'",
-      "path": "bilqis_mlx/factory/schedule.py"
-    },
-    {
-      "code_hint": "FACTORY_SCHEDULE_ASSESSMENT_PROJECTIONS_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_SCHEDULE_ASSESSMENT_PROJECTIONS_INVALID'",
-      "path": "bilqis_mlx/factory/schedule.py"
-    },
-    {
-      "code_hint": "FACTORY_SCHEDULE_ASSESSMENT_SCOPE_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_SCHEDULE_ASSESSMENT_SCOPE_INVALID'",
-      "path": "bilqis_mlx/factory/schedule.py"
-    },
-    {
-      "code_hint": "FACTORY_SCHEDULE_CAPABILITY_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_SCHEDULE_CAPABILITY_INVALID'",
-      "path": "bilqis_mlx/factory/schedule.py"
-    },
-    {
-      "code_hint": "FACTORY_SCHEDULE_DUPLICATE_CAPABILITY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_SCHEDULE_DUPLICATE_CAPABILITY'",
-      "path": "bilqis_mlx/factory/schedule.py"
-    },
-    {
-      "code_hint": "FACTORY_SCHEDULE_DUPLICATE_GRADE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_SCHEDULE_DUPLICATE_GRADE'",
-      "path": "bilqis_mlx/factory/schedule.py"
-    },
-    {
-      "code_hint": "FACTORY_SCHEDULE_GRADE_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_SCHEDULE_GRADE_INVALID'",
-      "path": "bilqis_mlx/factory/schedule.py"
-    },
-    {
-      "code_hint": "FACTORY_SCHEDULE_MANIFEST_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_SCHEDULE_MANIFEST_INVALID'",
-      "path": "bilqis_mlx/factory/schedule.py"
-    },
-    {
-      "code_hint": "FACTORY_SCHEDULE_PROGRAM_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_SCHEDULE_PROGRAM_INVALID'",
-      "path": "bilqis_mlx/factory/schedule.py"
-    },
-    {
-      "code_hint": "FACTORY_SCHEDULE_STAGES_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_SCHEDULE_STAGES_INVALID'",
-      "path": "bilqis_mlx/factory/schedule.py"
-    },
-    {
-      "code_hint": "FACTORY_TEACHING_DELIVERY_UNPROVEN",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_TEACHING_DELIVERY_UNPROVEN'",
-      "path": "bilqis_mlx/factory/teaching.py"
-    },
-    {
-      "code_hint": "FACTORY_TEACHING_OPTION_EMPTY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_TEACHING_OPTION_EMPTY'",
-      "path": "bilqis_mlx/factory/teaching.py"
-    },
-    {
-      "code_hint": "FACTORY_TEACHING_OPTION_HAS_NO_IMPLEMENTATION",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_TEACHING_OPTION_HAS_NO_IMPLEMENTATION'",
-      "path": "bilqis_mlx/factory/teaching.py"
-    },
-    {
-      "code_hint": "FACTORY_TEACHING_OPTION_NOT_RELEASED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_TEACHING_OPTION_NOT_RELEASED'",
-      "path": "bilqis_mlx/factory/teaching.py"
-    },
-    {
-      "code_hint": "FACTORY_TEACHING_SOURCE_ORACLE_DISAGREEMENT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_TEACHING_SOURCE_ORACLE_DISAGREEMENT'",
-      "path": "bilqis_mlx/factory/teaching.py"
-    },
-    {
       "code_hint": "UNSUPPORTED_FIXTURE_OPERATION",
       "count": 1,
       "exception": "ValueError",
       "expression": "'UNSUPPORTED_FIXTURE_OPERATION'",
-      "path": "bilqis_mlx/factory/tests/test_factory_construction.py"
-    },
-    {
-      "code_hint": "UNDERSTANDING_CONTRACT_REQUIRED",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'UNDERSTANDING_CONTRACT_REQUIRED'",
-      "path": "bilqis_mlx/factory/understanding.py"
-    },
-    {
-      "code_hint": "UNDERSTANDING_TARGET_REQUIRED",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'UNDERSTANDING_TARGET_REQUIRED'",
-      "path": "bilqis_mlx/factory/understanding.py"
-    },
-    {
-      "code_hint": "UNDERSTANDING_AUTONOMY_INPUT_INVALID",
-      "count": 2,
-      "exception": "ValueError",
-      "expression": "'UNDERSTANDING_AUTONOMY_INPUT_INVALID'",
-      "path": "bilqis_mlx/factory/understanding.py"
-    },
-    {
-      "code_hint": "UNDERSTANDING_CAPABILITY_ID_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'UNDERSTANDING_CAPABILITY_ID_INVALID'",
-      "path": "bilqis_mlx/factory/understanding.py"
-    },
-    {
-      "code_hint": "UNDERSTANDING_CONTRACT_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'UNDERSTANDING_CONTRACT_INVALID'",
-      "path": "bilqis_mlx/factory/understanding.py"
-    },
-    {
-      "code_hint": "UNDERSTANDING_EVIDENCE_PLAN_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'UNDERSTANDING_EVIDENCE_PLAN_INVALID'",
-      "path": "bilqis_mlx/factory/understanding.py"
-    },
-    {
-      "code_hint": "UNDERSTANDING_EVIDENCE_SCOPE_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'UNDERSTANDING_EVIDENCE_SCOPE_INVALID'",
-      "path": "bilqis_mlx/factory/understanding.py"
-    },
-    {
-      "code_hint": "UNDERSTANDING_PROJECTION_SPEC_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'UNDERSTANDING_PROJECTION_SPEC_INVALID'",
-      "path": "bilqis_mlx/factory/understanding.py"
-    },
-    {
-      "code_hint": "UNDERSTANDING_SUPPORT_OUTSIDE_CONTRACT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'UNDERSTANDING_SUPPORT_OUTSIDE_CONTRACT'",
-      "path": "bilqis_mlx/factory/understanding.py"
+      "path": "bilqis_mlx/factory/tests/curriculum/test_factory_construction.py"
     },
     {
       "code_hint": "FIXED_FRONTIER_COHORT_CONTENT_DRIFT",
@@ -5278,329 +5285,945 @@
       "count": 2,
       "exception": "ValueError",
       "expression": "'CAPABILITY_FRONTIER_CUSTODY_PROTECTED_BUNDLE_MISSING'",
-      "path": "bilqis_mlx/learning/capability_frontier.py"
+      "path": "bilqis_mlx/learning/_championship/capability_frontier.py"
     },
     {
       "code_hint": "CAPABILITY_FRONTIER_CUSTODY_SOURCE_CHANGED",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CAPABILITY_FRONTIER_CUSTODY_SOURCE_CHANGED'",
-      "path": "bilqis_mlx/learning/capability_frontier.py"
+      "path": "bilqis_mlx/learning/_championship/capability_frontier.py"
     },
     {
       "code_hint": "CAPABILITY_FRONTIER_CUSTODY_STAGED_FILE_CHANGED",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CAPABILITY_FRONTIER_CUSTODY_STAGED_FILE_CHANGED'",
-      "path": "bilqis_mlx/learning/capability_frontier.py"
+      "path": "bilqis_mlx/learning/_championship/capability_frontier.py"
     },
     {
       "code_hint": "CAPABILITY_FRONTIER_CUSTODY_STAGING_COLLISION",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CAPABILITY_FRONTIER_CUSTODY_STAGING_COLLISION'",
-      "path": "bilqis_mlx/learning/capability_frontier.py"
+      "path": "bilqis_mlx/learning/_championship/capability_frontier.py"
     },
     {
       "code_hint": "CAPABILITY_FRONTIER_CUSTODY_SYMLINK",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CAPABILITY_FRONTIER_CUSTODY_SYMLINK'",
-      "path": "bilqis_mlx/learning/capability_frontier.py"
+      "path": "bilqis_mlx/learning/_championship/capability_frontier.py"
     },
     {
       "code_hint": "CAPABILITY_FRONTIER_CUSTODY_UNRECOGNIZED_BUNDLE",
       "count": 2,
       "exception": "ValueError",
       "expression": "'CAPABILITY_FRONTIER_CUSTODY_UNRECOGNIZED_BUNDLE'",
-      "path": "bilqis_mlx/learning/capability_frontier.py"
+      "path": "bilqis_mlx/learning/_championship/capability_frontier.py"
     },
     {
       "code_hint": "CAPABILITY_FRONTIER_CUSTODY_UNRECOGNIZED_CONTENT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CAPABILITY_FRONTIER_CUSTODY_UNRECOGNIZED_CONTENT'",
-      "path": "bilqis_mlx/learning/capability_frontier.py"
+      "path": "bilqis_mlx/learning/_championship/capability_frontier.py"
     },
     {
       "code_hint": "CAPABILITY_FRONTIER_CUSTODY_UNSAFE_STAGING",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CAPABILITY_FRONTIER_CUSTODY_UNSAFE_STAGING'",
-      "path": "bilqis_mlx/learning/capability_frontier.py"
+      "path": "bilqis_mlx/learning/_championship/capability_frontier.py"
     },
     {
       "code_hint": "CAPABILITY_FRONTIER_DUPLICATE_MODEL_ID",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CAPABILITY_FRONTIER_DUPLICATE_MODEL_ID'",
-      "path": "bilqis_mlx/learning/capability_frontier.py"
+      "path": "bilqis_mlx/learning/_championship/capability_frontier.py"
     },
     {
       "code_hint": "CAPABILITY_FRONTIER_EMPTY_TEST",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CAPABILITY_FRONTIER_EMPTY_TEST'",
-      "path": "bilqis_mlx/learning/capability_frontier.py"
+      "path": "bilqis_mlx/learning/_championship/capability_frontier.py"
     },
     {
       "code_hint": "CAPABILITY_FRONTIER_EXAM_BUNDLE_MISSING",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CAPABILITY_FRONTIER_EXAM_BUNDLE_MISSING'",
-      "path": "bilqis_mlx/learning/capability_frontier.py"
+      "path": "bilqis_mlx/learning/_championship/capability_frontier.py"
     },
     {
       "code_hint": "CAPABILITY_FRONTIER_HISTORIC_INCOMPLETE_EXAM",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CAPABILITY_FRONTIER_HISTORIC_INCOMPLETE_EXAM'",
-      "path": "bilqis_mlx/learning/capability_frontier.py"
+      "path": "bilqis_mlx/learning/_championship/capability_frontier.py"
     },
     {
       "code_hint": "CAPABILITY_FRONTIER_HISTORIC_RUBRIC_DRIFT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CAPABILITY_FRONTIER_HISTORIC_RUBRIC_DRIFT'",
-      "path": "bilqis_mlx/learning/capability_frontier.py"
+      "path": "bilqis_mlx/learning/_championship/capability_frontier.py"
     },
     {
       "code_hint": "CAPABILITY_FRONTIER_INCOMPLETE_RUBRIC",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CAPABILITY_FRONTIER_INCOMPLETE_RUBRIC'",
-      "path": "bilqis_mlx/learning/capability_frontier.py"
+      "path": "bilqis_mlx/learning/_championship/capability_frontier.py"
     },
     {
       "code_hint": "CAPABILITY_FRONTIER_INVALID_SCORE",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CAPABILITY_FRONTIER_INVALID_SCORE'",
-      "path": "bilqis_mlx/learning/capability_frontier.py"
+      "path": "bilqis_mlx/learning/_championship/capability_frontier.py"
     },
     {
       "code_hint": "CAPABILITY_FRONTIER_ROLE_SELECTION_DRIFT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CAPABILITY_FRONTIER_ROLE_SELECTION_DRIFT'",
-      "path": "bilqis_mlx/learning/capability_frontier.py"
+      "path": "bilqis_mlx/learning/_championship/capability_frontier.py"
     },
     {
       "code_hint": "CAPABILITY_FRONTIER_RUBRIC_IDENTITY_MISSING",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CAPABILITY_FRONTIER_RUBRIC_IDENTITY_MISSING'",
-      "path": "bilqis_mlx/learning/capability_frontier.py"
+      "path": "bilqis_mlx/learning/_championship/capability_frontier.py"
     },
     {
       "code_hint": "CAPABILITY_FRONTIER_TEST_TOTAL_DRIFT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CAPABILITY_FRONTIER_TEST_TOTAL_DRIFT'",
-      "path": "bilqis_mlx/learning/capability_frontier.py"
+      "path": "bilqis_mlx/learning/_championship/capability_frontier.py"
     },
     {
       "code_hint": "CAPABILITY_FRONTIER_UNSAFE_PIN",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CAPABILITY_FRONTIER_UNSAFE_PIN'",
-      "path": "bilqis_mlx/learning/capability_frontier.py"
+      "path": "bilqis_mlx/learning/_championship/capability_frontier.py"
     },
     {
       "code_hint": "CAPABILITY_FRONTIER_WHOLE_STUDENT_REQUIRED",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CAPABILITY_FRONTIER_WHOLE_STUDENT_REQUIRED'",
-      "path": "bilqis_mlx/learning/capability_frontier.py"
+      "path": "bilqis_mlx/learning/_championship/capability_frontier.py"
     },
     {
       "code_hint": "GRADUATION_PERFECT_CONFLICTING_HISTORY",
       "count": 1,
       "exception": "ValueError",
       "expression": "'GRADUATION_PERFECT_CONFLICTING_HISTORY'",
-      "path": "bilqis_mlx/learning/capability_frontier.py"
+      "path": "bilqis_mlx/learning/_championship/capability_frontier.py"
     },
     {
       "code_hint": "GRADUATION_PERFECT_HISTORICAL_EVIDENCE_MISSING",
       "count": 1,
       "exception": "ValueError",
       "expression": "'GRADUATION_PERFECT_HISTORICAL_EVIDENCE_MISSING'",
-      "path": "bilqis_mlx/learning/capability_frontier.py"
+      "path": "bilqis_mlx/learning/_championship/capability_frontier.py"
     },
     {
       "code_hint": "GRADUATION_PERFECT_HISTORICAL_SCORE_DRIFT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'GRADUATION_PERFECT_HISTORICAL_SCORE_DRIFT'",
-      "path": "bilqis_mlx/learning/capability_frontier.py"
+      "path": "bilqis_mlx/learning/_championship/capability_frontier.py"
     },
     {
       "code_hint": "GRADUATION_PERFECT_LEGACY_BREADTH_UNVERIFIED",
       "count": 1,
       "exception": "ValueError",
       "expression": "'GRADUATION_PERFECT_LEGACY_BREADTH_UNVERIFIED'",
-      "path": "bilqis_mlx/learning/capability_frontier.py"
+      "path": "bilqis_mlx/learning/_championship/capability_frontier.py"
     },
     {
       "code_hint": "GRADUATION_PERFECT_MISSING_EXAM_EVIDENCE",
       "count": 1,
       "exception": "ValueError",
       "expression": "'GRADUATION_PERFECT_MISSING_EXAM_EVIDENCE'",
-      "path": "bilqis_mlx/learning/capability_frontier.py"
+      "path": "bilqis_mlx/learning/_championship/capability_frontier.py"
     },
     {
       "code_hint": "GRADUATION_PERFECT_REQUIRES_WHOLE_STUDENT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'GRADUATION_PERFECT_REQUIRES_WHOLE_STUDENT'",
-      "path": "bilqis_mlx/learning/capability_frontier.py"
+      "path": "bilqis_mlx/learning/_championship/capability_frontier.py"
     },
     {
       "code_hint": "CHAMPION_CONFIDENCE_ACTIVE_GRADE_ROLE_DRIFT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CHAMPION_CONFIDENCE_ACTIVE_GRADE_ROLE_DRIFT'",
-      "path": "bilqis_mlx/learning/champion_confidence.py"
+      "path": "bilqis_mlx/learning/_championship/champion_confidence.py"
     },
     {
       "code_hint": "CHAMPION_CONFIDENCE_ACTIVE_ROLE_ENTITLEMENT_DRIFT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CHAMPION_CONFIDENCE_ACTIVE_ROLE_ENTITLEMENT_DRIFT'",
-      "path": "bilqis_mlx/learning/champion_confidence.py"
+      "path": "bilqis_mlx/learning/_championship/champion_confidence.py"
     },
     {
       "code_hint": "CHAMPION_CONFIDENCE_ACTIVE_ROLE_PROVENANCE_DRIFT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CHAMPION_CONFIDENCE_ACTIVE_ROLE_PROVENANCE_DRIFT'",
-      "path": "bilqis_mlx/learning/champion_confidence.py"
+      "path": "bilqis_mlx/learning/_championship/champion_confidence.py"
     },
     {
       "code_hint": "CHAMPION_CONFIDENCE_ACTIVE_ROLE_SCORE_DRIFT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CHAMPION_CONFIDENCE_ACTIVE_ROLE_SCORE_DRIFT'",
-      "path": "bilqis_mlx/learning/champion_confidence.py"
+      "path": "bilqis_mlx/learning/_championship/champion_confidence.py"
     },
     {
       "code_hint": "CHAMPION_CONFIDENCE_INVALID_INPUT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CHAMPION_CONFIDENCE_INVALID_INPUT'",
-      "path": "bilqis_mlx/learning/champion_confidence.py"
+      "path": "bilqis_mlx/learning/_championship/champion_confidence.py"
     },
     {
       "code_hint": "CHAMPION_CONFIDENCE_PERFECT_ROLE_DRIFT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CHAMPION_CONFIDENCE_PERFECT_ROLE_DRIFT'",
-      "path": "bilqis_mlx/learning/champion_confidence.py"
+      "path": "bilqis_mlx/learning/_championship/champion_confidence.py"
     },
     {
       "code_hint": "CHAMPION_CONFIDENCE_RANK_NOT_VERIFIED",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CHAMPION_CONFIDENCE_RANK_NOT_VERIFIED'",
-      "path": "bilqis_mlx/learning/champion_confidence.py"
+      "path": "bilqis_mlx/learning/_championship/champion_confidence.py"
     },
     {
       "code_hint": "CHAMPION_CONFIDENCE_ROLE_ROSTER_INVALID",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CHAMPION_CONFIDENCE_ROLE_ROSTER_INVALID'",
-      "path": "bilqis_mlx/learning/champion_confidence.py"
+      "path": "bilqis_mlx/learning/_championship/champion_confidence.py"
     },
     {
       "code_hint": "CANNOT_REPOINT_UNGRADUATED_GRADE",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CANNOT_REPOINT_UNGRADUATED_GRADE'",
-      "path": "bilqis_mlx/learning/champions.py"
+      "path": "bilqis_mlx/learning/_championship/champions.py"
     },
     {
       "code_hint": "CHAMPION_POINTER_UNKNOWN_GRADE",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CHAMPION_POINTER_UNKNOWN_GRADE'",
-      "path": "bilqis_mlx/learning/champions.py"
+      "path": "bilqis_mlx/learning/_championship/champions.py"
     },
     {
       "code_hint": "INCOMPLETE_STUDENT_CHECKPOINT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'INCOMPLETE_STUDENT_CHECKPOINT'",
-      "path": "bilqis_mlx/learning/champions.py"
+      "path": "bilqis_mlx/learning/_championship/champions.py"
     },
     {
       "code_hint": "UNKNOWN_ACTIVE_GRADE",
       "count": 1,
       "exception": "ValueError",
       "expression": "'UNKNOWN_ACTIVE_GRADE'",
-      "path": "bilqis_mlx/learning/champions.py"
+      "path": "bilqis_mlx/learning/_championship/champions.py"
     },
     {
       "code_hint": "CHAMPIONSHIP_SCHOOL_IDENTITY_PARAMETER_SHAPES_INVALID",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CHAMPIONSHIP_SCHOOL_IDENTITY_PARAMETER_SHAPES_INVALID'",
-      "path": "bilqis_mlx/learning/championship_identity.py"
+      "path": "bilqis_mlx/learning/_championship/championship_identity.py"
     },
     {
       "code_hint": "CHAMPIONSHIP_SCHOOL_IDENTITY_RESET_INVALID",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CHAMPIONSHIP_SCHOOL_IDENTITY_RESET_INVALID'",
-      "path": "bilqis_mlx/learning/championship_identity.py"
+      "path": "bilqis_mlx/learning/_championship/championship_identity.py"
     },
     {
       "code_hint": "CHAMPIONSHIP_SCHOOL_IDENTITY_SHA_INVALID",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CHAMPIONSHIP_SCHOOL_IDENTITY_SHA_INVALID'",
-      "path": "bilqis_mlx/learning/championship_identity.py"
+      "path": "bilqis_mlx/learning/_championship/championship_identity.py"
     },
     {
       "code_hint": "CHAMPIONSHIP_INCOMPARABLE_CUMULATIVE_COHORT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CHAMPIONSHIP_INCOMPARABLE_CUMULATIVE_COHORT'",
-      "path": "bilqis_mlx/learning/championship_policy.py"
+      "path": "bilqis_mlx/learning/_championship/championship_policy.py"
     },
     {
       "code_hint": "CHAMPIONSHIP_INCOMPARABLE_EXAM_CONTEXT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CHAMPIONSHIP_INCOMPARABLE_EXAM_CONTEXT'",
-      "path": "bilqis_mlx/learning/championship_policy.py"
+      "path": "bilqis_mlx/learning/_championship/championship_policy.py"
     },
     {
       "code_hint": "CHAMPIONSHIP_INCOMPLETE_CUMULATIVE_SCHOOL",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CHAMPIONSHIP_INCOMPLETE_CUMULATIVE_SCHOOL'",
-      "path": "bilqis_mlx/learning/championship_policy.py"
+      "path": "bilqis_mlx/learning/_championship/championship_policy.py"
     },
     {
       "code_hint": "CHAMPIONSHIP_INCOMPLETE_TARGET_GRADE_OR_INCUMBENTS",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CHAMPIONSHIP_INCOMPLETE_TARGET_GRADE_OR_INCUMBENTS'",
-      "path": "bilqis_mlx/learning/championship_policy.py"
+      "path": "bilqis_mlx/learning/_championship/championship_policy.py"
     },
     {
       "code_hint": "CHAMPIONSHIP_INVALID_SOURCE_SCORES",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CHAMPIONSHIP_INVALID_SOURCE_SCORES'",
-      "path": "bilqis_mlx/learning/championship_policy.py"
+      "path": "bilqis_mlx/learning/_championship/championship_policy.py"
     },
     {
       "code_hint": "CHAMPIONSHIP_WHOLE_STUDENT_OWN_ADAMW_REQUIRED",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CHAMPIONSHIP_WHOLE_STUDENT_OWN_ADAMW_REQUIRED'",
-      "path": "bilqis_mlx/learning/championship_policy.py"
+      "path": "bilqis_mlx/learning/_championship/championship_policy.py"
+    },
+    {
+      "code_hint": "CHAMPIONSHIP_BATTERY_CURRENT_EVIDENCE_MISSING",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'CHAMPIONSHIP_BATTERY_CURRENT_EVIDENCE_MISSING'",
+      "path": "bilqis_mlx/learning/_championship/championship_witnesses.py"
+    },
+    {
+      "code_hint": "CHAMPIONSHIP_BATTERY_DRIFT",
+      "count": 2,
+      "exception": "ValueError",
+      "expression": "'CHAMPIONSHIP_BATTERY_DRIFT'",
+      "path": "bilqis_mlx/learning/_championship/championship_witnesses.py"
+    },
+    {
+      "code_hint": "CHAMPIONSHIP_BATTERY_INVALID",
+      "count": 2,
+      "exception": "ValueError",
+      "expression": "'CHAMPIONSHIP_BATTERY_INVALID'",
+      "path": "bilqis_mlx/learning/_championship/championship_witnesses.py"
+    },
+    {
+      "code_hint": "CHAMPIONSHIP_BATTERY_QUESTION_DRIFT",
+      "count": 2,
+      "exception": "ValueError",
+      "expression": "'CHAMPIONSHIP_BATTERY_QUESTION_DRIFT'",
+      "path": "bilqis_mlx/learning/_championship/championship_witnesses.py"
+    },
+    {
+      "code_hint": "CHAMPIONSHIP_BATTERY_QUESTION_INVALID",
+      "count": 2,
+      "exception": "ValueError",
+      "expression": "'CHAMPIONSHIP_BATTERY_QUESTION_INVALID'",
+      "path": "bilqis_mlx/learning/_championship/championship_witnesses.py"
+    },
+    {
+      "code_hint": "CHAMPIONSHIP_BATTERY_RESULT_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'CHAMPIONSHIP_BATTERY_RESULT_DRIFT'",
+      "path": "bilqis_mlx/learning/_championship/championship_witnesses.py"
+    },
+    {
+      "code_hint": "CHAMPIONSHIP_COHORT_RUBRIC_IDENTITY_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'CHAMPIONSHIP_COHORT_RUBRIC_IDENTITY_DRIFT'",
+      "path": "bilqis_mlx/learning/_championship/championship_witnesses.py"
+    },
+    {
+      "code_hint": "CHAMPIONSHIP_COMPLETE_SOLVER_PROVENANCE_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'CHAMPIONSHIP_COMPLETE_SOLVER_PROVENANCE_INVALID'",
+      "path": "bilqis_mlx/learning/_championship/championship_witnesses.py"
+    },
+    {
+      "code_hint": "CHAMPIONSHIP_QUESTION_IDENTITY_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'CHAMPIONSHIP_QUESTION_IDENTITY_DRIFT'",
+      "path": "bilqis_mlx/learning/_championship/championship_witnesses.py"
+    },
+    {
+      "code_hint": "CHAMPIONSHIP_QUESTION_SCORE_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'CHAMPIONSHIP_QUESTION_SCORE_DRIFT'",
+      "path": "bilqis_mlx/learning/_championship/championship_witnesses.py"
+    },
+    {
+      "code_hint": "CHAMPIONSHIP_QUESTION_WITNESS_DRIFT",
+      "count": 2,
+      "exception": "ValueError",
+      "expression": "'CHAMPIONSHIP_QUESTION_WITNESS_DRIFT'",
+      "path": "bilqis_mlx/learning/_championship/championship_witnesses.py"
+    },
+    {
+      "code_hint": "CHAMPIONSHIP_ROLE_MAXED_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'CHAMPIONSHIP_ROLE_MAXED_INVALID'",
+      "path": "bilqis_mlx/learning/_championship/championship_witnesses.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_COVERAGE_PEAK_REGRESSED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_COVERAGE_PEAK_REGRESSED'",
+      "path": "bilqis_mlx/learning/_championship/grade_soup.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_EXISTING_RECIPE_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_EXISTING_RECIPE_DRIFT'",
+      "path": "bilqis_mlx/learning/_championship/grade_soup.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_EXISTING_SCHEMA_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_EXISTING_SCHEMA_DRIFT'",
+      "path": "bilqis_mlx/learning/_championship/grade_soup.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_INVALID_ADMITTED_CAPABILITIES",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_INVALID_ADMITTED_CAPABILITIES'",
+      "path": "bilqis_mlx/learning/_championship/grade_soup.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_INVALID_FROZEN_TENSORS",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_INVALID_FROZEN_TENSORS'",
+      "path": "bilqis_mlx/learning/_championship/grade_soup.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_INVALID_INGREDIENT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_INVALID_INGREDIENT'",
+      "path": "bilqis_mlx/learning/_championship/grade_soup.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_INVALID_VOTE_SCOPE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_INVALID_VOTE_SCOPE'",
+      "path": "bilqis_mlx/learning/_championship/grade_soup.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_NO_INGREDIENTS",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_NO_INGREDIENTS'",
+      "path": "bilqis_mlx/learning/_championship/grade_soup.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_PARAMETER_GEOMETRY_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_PARAMETER_GEOMETRY_DRIFT'",
+      "path": "bilqis_mlx/learning/_championship/grade_soup.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_PARTITIONED_SNAPSHOT_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_PARTITIONED_SNAPSHOT_DRIFT'",
+      "path": "bilqis_mlx/learning/_championship/grade_soup.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_PARTITION_GRAPH_UNVERIFIED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_PARTITION_GRAPH_UNVERIFIED'",
+      "path": "bilqis_mlx/learning/_championship/grade_soup.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_PARTITION_LOST_VOTES",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_PARTITION_LOST_VOTES'",
+      "path": "bilqis_mlx/learning/_championship/grade_soup.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_PARTITION_UNRECOGNIZED_RECIPE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_PARTITION_UNRECOGNIZED_RECIPE'",
+      "path": "bilqis_mlx/learning/_championship/grade_soup.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_PARTITION_VOTE_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_PARTITION_VOTE_DRIFT'",
+      "path": "bilqis_mlx/learning/_championship/grade_soup.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_PREVIOUS_BACKUP_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_PREVIOUS_BACKUP_DRIFT'",
+      "path": "bilqis_mlx/learning/_championship/grade_soup.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_REQUIRES_FP32_WEIGHTS",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_REQUIRES_FP32_WEIGHTS'",
+      "path": "bilqis_mlx/learning/_championship/grade_soup.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_RETIRE_UNSAFE_ARTIFACT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_RETIRE_UNSAFE_ARTIFACT'",
+      "path": "bilqis_mlx/learning/_championship/grade_soup.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_RETIRE_UNSAFE_DIRECTORY",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_RETIRE_UNSAFE_DIRECTORY'",
+      "path": "bilqis_mlx/learning/_championship/grade_soup.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_SAVED_ARTIFACT_CHANGED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_SAVED_ARTIFACT_CHANGED'",
+      "path": "bilqis_mlx/learning/_championship/grade_soup.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_SAVED_ARTIFACT_MISSING",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_SAVED_ARTIFACT_MISSING'",
+      "path": "bilqis_mlx/learning/_championship/grade_soup.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_SAVED_PATH_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_SAVED_PATH_DRIFT'",
+      "path": "bilqis_mlx/learning/_championship/grade_soup.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_SAVED_SCHEMA_DRIFT",
+      "count": 2,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_SAVED_SCHEMA_DRIFT'",
+      "path": "bilqis_mlx/learning/_championship/grade_soup.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_UNSAFE_DIRECTORY",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_UNSAFE_DIRECTORY'",
+      "path": "bilqis_mlx/learning/_championship/grade_soup.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_UNVERIFIED_CHAMPION",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_UNVERIFIED_CHAMPION'",
+      "path": "bilqis_mlx/learning/_championship/grade_soup.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_WRITEBACK_TENSOR_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_WRITEBACK_TENSOR_DRIFT'",
+      "path": "bilqis_mlx/learning/_championship/grade_soup.py"
+    },
+    {
+      "code_hint": "CHAMPIONSHIP_INITIAL_EPOCH_IDENTITY_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'CHAMPIONSHIP_INITIAL_EPOCH_IDENTITY_REQUIRED'",
+      "path": "bilqis_mlx/learning/_championship/mentor_epoch.py"
+    },
+    {
+      "code_hint": "CHAMPIONSHIP_INITIAL_EPOCH_ROLE_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'CHAMPIONSHIP_INITIAL_EPOCH_ROLE_DRIFT'",
+      "path": "bilqis_mlx/learning/_championship/mentor_epoch.py"
+    },
+    {
+      "code_hint": "CHAMPIONSHIP_INITIAL_EPOCH_SOUPS_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'CHAMPIONSHIP_INITIAL_EPOCH_SOUPS_REQUIRED'",
+      "path": "bilqis_mlx/learning/_championship/mentor_epoch.py"
+    },
+    {
+      "code_hint": "MENTOR_EPOCH_CHECKPOINT_POINTER_CONFLICT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'MENTOR_EPOCH_CHECKPOINT_POINTER_CONFLICT'",
+      "path": "bilqis_mlx/learning/_championship/mentor_epoch.py"
+    },
+    {
+      "code_hint": "MENTOR_EPOCH_COMPLETE_PREVIOUS_BOUNDARY_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'MENTOR_EPOCH_COMPLETE_PREVIOUS_BOUNDARY_REQUIRED'",
+      "path": "bilqis_mlx/learning/_championship/mentor_epoch.py"
+    },
+    {
+      "code_hint": "MENTOR_EPOCH_COMPLETE_PREVIOUS_GRADUATION_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'MENTOR_EPOCH_COMPLETE_PREVIOUS_GRADUATION_REQUIRED'",
+      "path": "bilqis_mlx/learning/_championship/mentor_epoch.py"
+    },
+    {
+      "code_hint": "MENTOR_EPOCH_FRESH_CHAMPIONS_RESET_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'MENTOR_EPOCH_FRESH_CHAMPIONS_RESET_REQUIRED'",
+      "path": "bilqis_mlx/learning/_championship/mentor_epoch.py"
+    },
+    {
+      "code_hint": "MENTOR_EPOCH_INCOMPLETE_PAIRED_SCOPE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'MENTOR_EPOCH_INCOMPLETE_PAIRED_SCOPE'",
+      "path": "bilqis_mlx/learning/_championship/mentor_epoch.py"
+    },
+    {
+      "code_hint": "MENTOR_EPOCH_INCOMPLETE_SCORES",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'MENTOR_EPOCH_INCOMPLETE_SCORES'",
+      "path": "bilqis_mlx/learning/_championship/mentor_epoch.py"
+    },
+    {
+      "code_hint": "MENTOR_EPOCH_INVALID_ADVISER_SCOPE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'MENTOR_EPOCH_INVALID_ADVISER_SCOPE'",
+      "path": "bilqis_mlx/learning/_championship/mentor_epoch.py"
+    },
+    {
+      "code_hint": "MENTOR_EPOCH_INVALID_DEBT_BOUNDARY",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'MENTOR_EPOCH_INVALID_DEBT_BOUNDARY'",
+      "path": "bilqis_mlx/learning/_championship/mentor_epoch.py"
+    },
+    {
+      "code_hint": "MENTOR_EPOCH_INVALID_GRADE_BOUNDARY",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'MENTOR_EPOCH_INVALID_GRADE_BOUNDARY'",
+      "path": "bilqis_mlx/learning/_championship/mentor_epoch.py"
+    },
+    {
+      "code_hint": "MENTOR_EPOCH_INVALID_MATURE_LOSS_POLICY",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'MENTOR_EPOCH_INVALID_MATURE_LOSS_POLICY'",
+      "path": "bilqis_mlx/learning/_championship/mentor_epoch.py"
+    },
+    {
+      "code_hint": "MENTOR_EPOCH_INVALID_SOURCE_SCORE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'MENTOR_EPOCH_INVALID_SOURCE_SCORE'",
+      "path": "bilqis_mlx/learning/_championship/mentor_epoch.py"
+    },
+    {
+      "code_hint": "MENTOR_EPOCH_MASTERY_DEBT_MISMATCH",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'MENTOR_EPOCH_MASTERY_DEBT_MISMATCH'",
+      "path": "bilqis_mlx/learning/_championship/mentor_epoch.py"
+    },
+    {
+      "code_hint": "MENTOR_EPOCH_MISMATCHED_EXAMINATION",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'MENTOR_EPOCH_MISMATCHED_EXAMINATION'",
+      "path": "bilqis_mlx/learning/_championship/mentor_epoch.py"
+    },
+    {
+      "code_hint": "MENTOR_EPOCH_UNKNOWN_SCHEMA",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'MENTOR_EPOCH_UNKNOWN_SCHEMA'",
+      "path": "bilqis_mlx/learning/_championship/mentor_epoch.py"
+    },
+    {
+      "code_hint": "MENTOR_EPOCH_WHOLE_STUDENT_OWN_ADAMW_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'MENTOR_EPOCH_WHOLE_STUDENT_OWN_ADAMW_REQUIRED'",
+      "path": "bilqis_mlx/learning/_championship/mentor_epoch.py"
+    },
+    {
+      "code_hint": "FRAGILE_PRESERVATION_INCOMPLETE_TRUTH_TABLE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FRAGILE_PRESERVATION_INCOMPLETE_TRUTH_TABLE'",
+      "path": "bilqis_mlx/learning/_retention/fragile_replay.py"
+    },
+    {
+      "code_hint": "FRAGILE_PRESERVATION_INVALID_CAPABILITY_SET",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FRAGILE_PRESERVATION_INVALID_CAPABILITY_SET'",
+      "path": "bilqis_mlx/learning/_retention/fragile_replay.py"
+    },
+    {
+      "code_hint": "FRAGILE_PRESERVATION_ROTATION_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FRAGILE_PRESERVATION_ROTATION_INVALID'",
+      "path": "bilqis_mlx/learning/_retention/fragile_replay.py"
+    },
+    {
+      "code_hint": "FRAGILE_PRESERVATION_SOURCE_TOKENS_MISSING",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FRAGILE_PRESERVATION_SOURCE_TOKENS_MISSING'",
+      "path": "bilqis_mlx/learning/_retention/fragile_replay.py"
+    },
+    {
+      "code_hint": "FRAGILE_REPLAY_CAPABILITY_SET_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FRAGILE_REPLAY_CAPABILITY_SET_INVALID'",
+      "path": "bilqis_mlx/learning/_retention/fragile_replay.py"
+    },
+    {
+      "code_hint": "FRAGILE_REPLAY_COHORT_CONTENT_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FRAGILE_REPLAY_COHORT_CONTENT_DRIFT'",
+      "path": "bilqis_mlx/learning/_retention/fragile_replay.py"
+    },
+    {
+      "code_hint": "FRAGILE_REPLAY_INCOMPLETE_B_CAPABILITY",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FRAGILE_REPLAY_INCOMPLETE_B_CAPABILITY'",
+      "path": "bilqis_mlx/learning/_retention/fragile_replay.py"
+    },
+    {
+      "code_hint": "FRAGILE_REPLAY_INCOMPLETE_B_COHORT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FRAGILE_REPLAY_INCOMPLETE_B_COHORT'",
+      "path": "bilqis_mlx/learning/_retention/fragile_replay.py"
+    },
+    {
+      "code_hint": "FRAGILE_REPLAY_INCOMPLETE_TRUTH_TABLE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FRAGILE_REPLAY_INCOMPLETE_TRUTH_TABLE'",
+      "path": "bilqis_mlx/learning/_retention/fragile_replay.py"
+    },
+    {
+      "code_hint": "FRAGILE_REPLAY_INVALID_PREDICTION",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FRAGILE_REPLAY_INVALID_PREDICTION'",
+      "path": "bilqis_mlx/learning/_retention/fragile_replay.py"
+    },
+    {
+      "code_hint": "FRAGILE_REPLAY_MISSING_PAIRED_PREDICTION",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FRAGILE_REPLAY_MISSING_PAIRED_PREDICTION'",
+      "path": "bilqis_mlx/learning/_retention/fragile_replay.py"
+    },
+    {
+      "code_hint": "FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT'",
+      "path": "bilqis_mlx/learning/_retention/fragile_replay.py"
+    },
+    {
+      "code_hint": "FRAGILE_REPLAY_UNBOUND_EXAM_COHORT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FRAGILE_REPLAY_UNBOUND_EXAM_COHORT'",
+      "path": "bilqis_mlx/learning/_retention/fragile_replay.py"
+    },
+    {
+      "code_hint": "FRAGILE_REPLAY_UNSAFE_COHORT_PATH",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FRAGILE_REPLAY_UNSAFE_COHORT_PATH'",
+      "path": "bilqis_mlx/learning/_retention/fragile_replay.py"
+    },
+    {
+      "code_hint": "MATRIX_STRAIN_PARAMETER_SET_MISMATCH",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'MATRIX_STRAIN_PARAMETER_SET_MISMATCH'",
+      "path": "bilqis_mlx/learning/_retention/matrix_strain.py"
+    },
+    {
+      "code_hint": "MATRIX_STRAIN_REFERENCE_BLOB_CHANGED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'MATRIX_STRAIN_REFERENCE_BLOB_CHANGED'",
+      "path": "bilqis_mlx/learning/_retention/matrix_strain.py"
+    },
+    {
+      "code_hint": "MATRIX_STRAIN_REFERENCE_PARAMETER_IDENTITY_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'MATRIX_STRAIN_REFERENCE_PARAMETER_IDENTITY_DRIFT'",
+      "path": "bilqis_mlx/learning/_retention/matrix_strain.py"
+    },
+    {
+      "code_hint": "MATRIX_STRAIN_REFERENCE_SEMANTIC_GRAPH_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'MATRIX_STRAIN_REFERENCE_SEMANTIC_GRAPH_DRIFT'",
+      "path": "bilqis_mlx/learning/_retention/matrix_strain.py"
+    },
+    {
+      "code_hint": "MATRIX_STRAIN_TENSOR_SHAPE_OR_DTYPE_MISMATCH",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'MATRIX_STRAIN_TENSOR_SHAPE_OR_DTYPE_MISMATCH'",
+      "path": "bilqis_mlx/learning/_retention/matrix_strain.py"
+    },
+    {
+      "code_hint": "PLASTICITY_MASTERY_DEBT_SCOPE_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'PLASTICITY_MASTERY_DEBT_SCOPE_INVALID'",
+      "path": "bilqis_mlx/learning/_retention/plasticity_escape.py"
+    },
+    {
+      "code_hint": "PLASTICITY_MASTERY_DEBT_SCORES_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'PLASTICITY_MASTERY_DEBT_SCORES_INVALID'",
+      "path": "bilqis_mlx/learning/_retention/plasticity_escape.py"
+    },
+    {
+      "code_hint": "PLASTICITY_MASTERY_DEBT_SCORE_INVALID",
+      "count": 2,
+      "exception": "ValueError",
+      "expression": "'PLASTICITY_MASTERY_DEBT_SCORE_INVALID'",
+      "path": "bilqis_mlx/learning/_retention/plasticity_escape.py"
+    },
+    {
+      "code_hint": "WHOLE_STUDENT_PEAK_EMPTY_EXAM",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'WHOLE_STUDENT_PEAK_EMPTY_EXAM'",
+      "path": "bilqis_mlx/learning/_retention/whole_student_retention.py"
+    },
+    {
+      "code_hint": "WHOLE_STUDENT_PEAK_INCOMPLETE_SOURCE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'WHOLE_STUDENT_PEAK_INCOMPLETE_SOURCE'",
+      "path": "bilqis_mlx/learning/_retention/whole_student_retention.py"
+    },
+    {
+      "code_hint": "WHOLE_STUDENT_PEAK_INVALID_SCORE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'WHOLE_STUDENT_PEAK_INVALID_SCORE'",
+      "path": "bilqis_mlx/learning/_retention/whole_student_retention.py"
+    },
+    {
+      "code_hint": "CHAMPION_CONFIDENCE_TRAINING_GUIDANCE_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'CHAMPION_CONFIDENCE_TRAINING_GUIDANCE_INVALID'",
+      "path": "bilqis_mlx/learning/_teaching/student_ops.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_EMPTY_BATCH",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_EMPTY_BATCH'",
+      "path": "bilqis_mlx/learning/_teaching/student_ops.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_HISTORICAL_SEMANTIC_ABI_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_HISTORICAL_SEMANTIC_ABI_INVALID'",
+      "path": "bilqis_mlx/learning/_teaching/student_ops.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_SEQUENCE_OUTSIDE_LEGACY_CONTEXT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_SEQUENCE_OUTSIDE_LEGACY_CONTEXT'",
+      "path": "bilqis_mlx/learning/_teaching/student_ops.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_UNKNOWN_TYPED_ANSWER_CONFIG",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_UNKNOWN_TYPED_ANSWER_CONFIG'",
+      "path": "bilqis_mlx/learning/_teaching/student_ops.py"
+    },
+    {
+      "code_hint": "INVALID_TEACHER_GRADE_ROSTER",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'INVALID_TEACHER_GRADE_ROSTER'",
+      "path": "bilqis_mlx/learning/_teaching/teacher_votes.py"
+    },
+    {
+      "code_hint": "TEACHER_BALLOTS_NOT_COMPLETE_OR_INCLUDE_UNREGISTERED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'TEACHER_BALLOTS_NOT_COMPLETE_OR_INCLUDE_UNREGISTERED'",
+      "path": "bilqis_mlx/learning/_teaching/teacher_votes.py"
+    },
+    {
+      "code_hint": "TEACHER_EMPTY_BALLOT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'TEACHER_EMPTY_BALLOT'",
+      "path": "bilqis_mlx/learning/_teaching/teacher_votes.py"
     },
     {
       "code_hint": "unreachable",
@@ -5813,90 +6436,6 @@
       "path": "bilqis_mlx/learning/championship_runtime.py"
     },
     {
-      "code_hint": "CHAMPIONSHIP_BATTERY_CURRENT_EVIDENCE_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CHAMPIONSHIP_BATTERY_CURRENT_EVIDENCE_MISSING'",
-      "path": "bilqis_mlx/learning/championship_witnesses.py"
-    },
-    {
-      "code_hint": "CHAMPIONSHIP_BATTERY_DRIFT",
-      "count": 2,
-      "exception": "ValueError",
-      "expression": "'CHAMPIONSHIP_BATTERY_DRIFT'",
-      "path": "bilqis_mlx/learning/championship_witnesses.py"
-    },
-    {
-      "code_hint": "CHAMPIONSHIP_BATTERY_INVALID",
-      "count": 2,
-      "exception": "ValueError",
-      "expression": "'CHAMPIONSHIP_BATTERY_INVALID'",
-      "path": "bilqis_mlx/learning/championship_witnesses.py"
-    },
-    {
-      "code_hint": "CHAMPIONSHIP_BATTERY_QUESTION_DRIFT",
-      "count": 2,
-      "exception": "ValueError",
-      "expression": "'CHAMPIONSHIP_BATTERY_QUESTION_DRIFT'",
-      "path": "bilqis_mlx/learning/championship_witnesses.py"
-    },
-    {
-      "code_hint": "CHAMPIONSHIP_BATTERY_QUESTION_INVALID",
-      "count": 2,
-      "exception": "ValueError",
-      "expression": "'CHAMPIONSHIP_BATTERY_QUESTION_INVALID'",
-      "path": "bilqis_mlx/learning/championship_witnesses.py"
-    },
-    {
-      "code_hint": "CHAMPIONSHIP_BATTERY_RESULT_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CHAMPIONSHIP_BATTERY_RESULT_DRIFT'",
-      "path": "bilqis_mlx/learning/championship_witnesses.py"
-    },
-    {
-      "code_hint": "CHAMPIONSHIP_COHORT_RUBRIC_IDENTITY_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CHAMPIONSHIP_COHORT_RUBRIC_IDENTITY_DRIFT'",
-      "path": "bilqis_mlx/learning/championship_witnesses.py"
-    },
-    {
-      "code_hint": "CHAMPIONSHIP_COMPLETE_SOLVER_PROVENANCE_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CHAMPIONSHIP_COMPLETE_SOLVER_PROVENANCE_INVALID'",
-      "path": "bilqis_mlx/learning/championship_witnesses.py"
-    },
-    {
-      "code_hint": "CHAMPIONSHIP_QUESTION_IDENTITY_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CHAMPIONSHIP_QUESTION_IDENTITY_DRIFT'",
-      "path": "bilqis_mlx/learning/championship_witnesses.py"
-    },
-    {
-      "code_hint": "CHAMPIONSHIP_QUESTION_SCORE_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CHAMPIONSHIP_QUESTION_SCORE_DRIFT'",
-      "path": "bilqis_mlx/learning/championship_witnesses.py"
-    },
-    {
-      "code_hint": "CHAMPIONSHIP_QUESTION_WITNESS_DRIFT",
-      "count": 2,
-      "exception": "ValueError",
-      "expression": "'CHAMPIONSHIP_QUESTION_WITNESS_DRIFT'",
-      "path": "bilqis_mlx/learning/championship_witnesses.py"
-    },
-    {
-      "code_hint": "CHAMPIONSHIP_ROLE_MAXED_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CHAMPIONSHIP_ROLE_MAXED_INVALID'",
-      "path": "bilqis_mlx/learning/championship_witnesses.py"
-    },
-    {
       "code_hint": "CHAMPIONSHIP_ACTIVE_ROLE_CAPABILITY_UNKNOWN",
       "count": 1,
       "exception": "ValueError",
@@ -6084,279 +6623,6 @@
       "exception": "ValueError",
       "expression": "'CHAMPIONSHIP_TITLE_MATCH_TOTAL_DRIFT'",
       "path": "bilqis_mlx/learning/epoch_championships.py"
-    },
-    {
-      "code_hint": "FRAGILE_PRESERVATION_INCOMPLETE_TRUTH_TABLE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FRAGILE_PRESERVATION_INCOMPLETE_TRUTH_TABLE'",
-      "path": "bilqis_mlx/learning/fragile_replay.py"
-    },
-    {
-      "code_hint": "FRAGILE_PRESERVATION_INVALID_CAPABILITY_SET",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FRAGILE_PRESERVATION_INVALID_CAPABILITY_SET'",
-      "path": "bilqis_mlx/learning/fragile_replay.py"
-    },
-    {
-      "code_hint": "FRAGILE_PRESERVATION_ROTATION_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FRAGILE_PRESERVATION_ROTATION_INVALID'",
-      "path": "bilqis_mlx/learning/fragile_replay.py"
-    },
-    {
-      "code_hint": "FRAGILE_PRESERVATION_SOURCE_TOKENS_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FRAGILE_PRESERVATION_SOURCE_TOKENS_MISSING'",
-      "path": "bilqis_mlx/learning/fragile_replay.py"
-    },
-    {
-      "code_hint": "FRAGILE_REPLAY_CAPABILITY_SET_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FRAGILE_REPLAY_CAPABILITY_SET_INVALID'",
-      "path": "bilqis_mlx/learning/fragile_replay.py"
-    },
-    {
-      "code_hint": "FRAGILE_REPLAY_COHORT_CONTENT_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FRAGILE_REPLAY_COHORT_CONTENT_DRIFT'",
-      "path": "bilqis_mlx/learning/fragile_replay.py"
-    },
-    {
-      "code_hint": "FRAGILE_REPLAY_INCOMPLETE_B_CAPABILITY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FRAGILE_REPLAY_INCOMPLETE_B_CAPABILITY'",
-      "path": "bilqis_mlx/learning/fragile_replay.py"
-    },
-    {
-      "code_hint": "FRAGILE_REPLAY_INCOMPLETE_B_COHORT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FRAGILE_REPLAY_INCOMPLETE_B_COHORT'",
-      "path": "bilqis_mlx/learning/fragile_replay.py"
-    },
-    {
-      "code_hint": "FRAGILE_REPLAY_INCOMPLETE_TRUTH_TABLE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FRAGILE_REPLAY_INCOMPLETE_TRUTH_TABLE'",
-      "path": "bilqis_mlx/learning/fragile_replay.py"
-    },
-    {
-      "code_hint": "FRAGILE_REPLAY_INVALID_PREDICTION",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FRAGILE_REPLAY_INVALID_PREDICTION'",
-      "path": "bilqis_mlx/learning/fragile_replay.py"
-    },
-    {
-      "code_hint": "FRAGILE_REPLAY_MISSING_PAIRED_PREDICTION",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FRAGILE_REPLAY_MISSING_PAIRED_PREDICTION'",
-      "path": "bilqis_mlx/learning/fragile_replay.py"
-    },
-    {
-      "code_hint": "FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT'",
-      "path": "bilqis_mlx/learning/fragile_replay.py"
-    },
-    {
-      "code_hint": "FRAGILE_REPLAY_UNBOUND_EXAM_COHORT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FRAGILE_REPLAY_UNBOUND_EXAM_COHORT'",
-      "path": "bilqis_mlx/learning/fragile_replay.py"
-    },
-    {
-      "code_hint": "FRAGILE_REPLAY_UNSAFE_COHORT_PATH",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FRAGILE_REPLAY_UNSAFE_COHORT_PATH'",
-      "path": "bilqis_mlx/learning/fragile_replay.py"
-    },
-    {
-      "code_hint": "GRADE_SOUP_COVERAGE_PEAK_REGRESSED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_COVERAGE_PEAK_REGRESSED'",
-      "path": "bilqis_mlx/learning/grade_soup.py"
-    },
-    {
-      "code_hint": "GRADE_SOUP_EXISTING_RECIPE_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_EXISTING_RECIPE_DRIFT'",
-      "path": "bilqis_mlx/learning/grade_soup.py"
-    },
-    {
-      "code_hint": "GRADE_SOUP_EXISTING_SCHEMA_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_EXISTING_SCHEMA_DRIFT'",
-      "path": "bilqis_mlx/learning/grade_soup.py"
-    },
-    {
-      "code_hint": "GRADE_SOUP_INVALID_ADMITTED_CAPABILITIES",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_INVALID_ADMITTED_CAPABILITIES'",
-      "path": "bilqis_mlx/learning/grade_soup.py"
-    },
-    {
-      "code_hint": "GRADE_SOUP_INVALID_FROZEN_TENSORS",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_INVALID_FROZEN_TENSORS'",
-      "path": "bilqis_mlx/learning/grade_soup.py"
-    },
-    {
-      "code_hint": "GRADE_SOUP_INVALID_INGREDIENT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_INVALID_INGREDIENT'",
-      "path": "bilqis_mlx/learning/grade_soup.py"
-    },
-    {
-      "code_hint": "GRADE_SOUP_INVALID_VOTE_SCOPE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_INVALID_VOTE_SCOPE'",
-      "path": "bilqis_mlx/learning/grade_soup.py"
-    },
-    {
-      "code_hint": "GRADE_SOUP_NO_INGREDIENTS",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_NO_INGREDIENTS'",
-      "path": "bilqis_mlx/learning/grade_soup.py"
-    },
-    {
-      "code_hint": "GRADE_SOUP_PARAMETER_GEOMETRY_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_PARAMETER_GEOMETRY_DRIFT'",
-      "path": "bilqis_mlx/learning/grade_soup.py"
-    },
-    {
-      "code_hint": "GRADE_SOUP_PARTITIONED_SNAPSHOT_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_PARTITIONED_SNAPSHOT_DRIFT'",
-      "path": "bilqis_mlx/learning/grade_soup.py"
-    },
-    {
-      "code_hint": "GRADE_SOUP_PARTITION_GRAPH_UNVERIFIED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_PARTITION_GRAPH_UNVERIFIED'",
-      "path": "bilqis_mlx/learning/grade_soup.py"
-    },
-    {
-      "code_hint": "GRADE_SOUP_PARTITION_LOST_VOTES",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_PARTITION_LOST_VOTES'",
-      "path": "bilqis_mlx/learning/grade_soup.py"
-    },
-    {
-      "code_hint": "GRADE_SOUP_PARTITION_UNRECOGNIZED_RECIPE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_PARTITION_UNRECOGNIZED_RECIPE'",
-      "path": "bilqis_mlx/learning/grade_soup.py"
-    },
-    {
-      "code_hint": "GRADE_SOUP_PARTITION_VOTE_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_PARTITION_VOTE_DRIFT'",
-      "path": "bilqis_mlx/learning/grade_soup.py"
-    },
-    {
-      "code_hint": "GRADE_SOUP_PREVIOUS_BACKUP_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_PREVIOUS_BACKUP_DRIFT'",
-      "path": "bilqis_mlx/learning/grade_soup.py"
-    },
-    {
-      "code_hint": "GRADE_SOUP_REQUIRES_FP32_WEIGHTS",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_REQUIRES_FP32_WEIGHTS'",
-      "path": "bilqis_mlx/learning/grade_soup.py"
-    },
-    {
-      "code_hint": "GRADE_SOUP_RETIRE_UNSAFE_ARTIFACT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_RETIRE_UNSAFE_ARTIFACT'",
-      "path": "bilqis_mlx/learning/grade_soup.py"
-    },
-    {
-      "code_hint": "GRADE_SOUP_RETIRE_UNSAFE_DIRECTORY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_RETIRE_UNSAFE_DIRECTORY'",
-      "path": "bilqis_mlx/learning/grade_soup.py"
-    },
-    {
-      "code_hint": "GRADE_SOUP_SAVED_ARTIFACT_CHANGED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_SAVED_ARTIFACT_CHANGED'",
-      "path": "bilqis_mlx/learning/grade_soup.py"
-    },
-    {
-      "code_hint": "GRADE_SOUP_SAVED_ARTIFACT_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_SAVED_ARTIFACT_MISSING'",
-      "path": "bilqis_mlx/learning/grade_soup.py"
-    },
-    {
-      "code_hint": "GRADE_SOUP_SAVED_PATH_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_SAVED_PATH_DRIFT'",
-      "path": "bilqis_mlx/learning/grade_soup.py"
-    },
-    {
-      "code_hint": "GRADE_SOUP_SAVED_SCHEMA_DRIFT",
-      "count": 2,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_SAVED_SCHEMA_DRIFT'",
-      "path": "bilqis_mlx/learning/grade_soup.py"
-    },
-    {
-      "code_hint": "GRADE_SOUP_UNSAFE_DIRECTORY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_UNSAFE_DIRECTORY'",
-      "path": "bilqis_mlx/learning/grade_soup.py"
-    },
-    {
-      "code_hint": "GRADE_SOUP_UNVERIFIED_CHAMPION",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_UNVERIFIED_CHAMPION'",
-      "path": "bilqis_mlx/learning/grade_soup.py"
-    },
-    {
-      "code_hint": "GRADE_SOUP_WRITEBACK_TENSOR_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_WRITEBACK_TENSOR_DRIFT'",
-      "path": "bilqis_mlx/learning/grade_soup.py"
     },
     {
       "code_hint": "LEARNING_EXPERIMENT_SCHEDULE_PROGRAM_REQUIRED",
@@ -6674,188 +6940,6 @@
       "path": "bilqis_mlx/learning/lesson_guidance.py"
     },
     {
-      "code_hint": "MATRIX_STRAIN_PARAMETER_SET_MISMATCH",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'MATRIX_STRAIN_PARAMETER_SET_MISMATCH'",
-      "path": "bilqis_mlx/learning/matrix_strain.py"
-    },
-    {
-      "code_hint": "MATRIX_STRAIN_REFERENCE_BLOB_CHANGED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'MATRIX_STRAIN_REFERENCE_BLOB_CHANGED'",
-      "path": "bilqis_mlx/learning/matrix_strain.py"
-    },
-    {
-      "code_hint": "MATRIX_STRAIN_REFERENCE_PARAMETER_IDENTITY_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'MATRIX_STRAIN_REFERENCE_PARAMETER_IDENTITY_DRIFT'",
-      "path": "bilqis_mlx/learning/matrix_strain.py"
-    },
-    {
-      "code_hint": "MATRIX_STRAIN_REFERENCE_SEMANTIC_GRAPH_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'MATRIX_STRAIN_REFERENCE_SEMANTIC_GRAPH_DRIFT'",
-      "path": "bilqis_mlx/learning/matrix_strain.py"
-    },
-    {
-      "code_hint": "MATRIX_STRAIN_TENSOR_SHAPE_OR_DTYPE_MISMATCH",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'MATRIX_STRAIN_TENSOR_SHAPE_OR_DTYPE_MISMATCH'",
-      "path": "bilqis_mlx/learning/matrix_strain.py"
-    },
-    {
-      "code_hint": "CHAMPIONSHIP_INITIAL_EPOCH_IDENTITY_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CHAMPIONSHIP_INITIAL_EPOCH_IDENTITY_REQUIRED'",
-      "path": "bilqis_mlx/learning/mentor_epoch.py"
-    },
-    {
-      "code_hint": "CHAMPIONSHIP_INITIAL_EPOCH_ROLE_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CHAMPIONSHIP_INITIAL_EPOCH_ROLE_DRIFT'",
-      "path": "bilqis_mlx/learning/mentor_epoch.py"
-    },
-    {
-      "code_hint": "CHAMPIONSHIP_INITIAL_EPOCH_SOUPS_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CHAMPIONSHIP_INITIAL_EPOCH_SOUPS_REQUIRED'",
-      "path": "bilqis_mlx/learning/mentor_epoch.py"
-    },
-    {
-      "code_hint": "MENTOR_EPOCH_CHECKPOINT_POINTER_CONFLICT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'MENTOR_EPOCH_CHECKPOINT_POINTER_CONFLICT'",
-      "path": "bilqis_mlx/learning/mentor_epoch.py"
-    },
-    {
-      "code_hint": "MENTOR_EPOCH_COMPLETE_PREVIOUS_BOUNDARY_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'MENTOR_EPOCH_COMPLETE_PREVIOUS_BOUNDARY_REQUIRED'",
-      "path": "bilqis_mlx/learning/mentor_epoch.py"
-    },
-    {
-      "code_hint": "MENTOR_EPOCH_COMPLETE_PREVIOUS_GRADUATION_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'MENTOR_EPOCH_COMPLETE_PREVIOUS_GRADUATION_REQUIRED'",
-      "path": "bilqis_mlx/learning/mentor_epoch.py"
-    },
-    {
-      "code_hint": "MENTOR_EPOCH_FRESH_CHAMPIONS_RESET_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'MENTOR_EPOCH_FRESH_CHAMPIONS_RESET_REQUIRED'",
-      "path": "bilqis_mlx/learning/mentor_epoch.py"
-    },
-    {
-      "code_hint": "MENTOR_EPOCH_INCOMPLETE_PAIRED_SCOPE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'MENTOR_EPOCH_INCOMPLETE_PAIRED_SCOPE'",
-      "path": "bilqis_mlx/learning/mentor_epoch.py"
-    },
-    {
-      "code_hint": "MENTOR_EPOCH_INCOMPLETE_SCORES",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'MENTOR_EPOCH_INCOMPLETE_SCORES'",
-      "path": "bilqis_mlx/learning/mentor_epoch.py"
-    },
-    {
-      "code_hint": "MENTOR_EPOCH_INVALID_ADVISER_SCOPE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'MENTOR_EPOCH_INVALID_ADVISER_SCOPE'",
-      "path": "bilqis_mlx/learning/mentor_epoch.py"
-    },
-    {
-      "code_hint": "MENTOR_EPOCH_INVALID_DEBT_BOUNDARY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'MENTOR_EPOCH_INVALID_DEBT_BOUNDARY'",
-      "path": "bilqis_mlx/learning/mentor_epoch.py"
-    },
-    {
-      "code_hint": "MENTOR_EPOCH_INVALID_GRADE_BOUNDARY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'MENTOR_EPOCH_INVALID_GRADE_BOUNDARY'",
-      "path": "bilqis_mlx/learning/mentor_epoch.py"
-    },
-    {
-      "code_hint": "MENTOR_EPOCH_INVALID_MATURE_LOSS_POLICY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'MENTOR_EPOCH_INVALID_MATURE_LOSS_POLICY'",
-      "path": "bilqis_mlx/learning/mentor_epoch.py"
-    },
-    {
-      "code_hint": "MENTOR_EPOCH_INVALID_SOURCE_SCORE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'MENTOR_EPOCH_INVALID_SOURCE_SCORE'",
-      "path": "bilqis_mlx/learning/mentor_epoch.py"
-    },
-    {
-      "code_hint": "MENTOR_EPOCH_MASTERY_DEBT_MISMATCH",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'MENTOR_EPOCH_MASTERY_DEBT_MISMATCH'",
-      "path": "bilqis_mlx/learning/mentor_epoch.py"
-    },
-    {
-      "code_hint": "MENTOR_EPOCH_MISMATCHED_EXAMINATION",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'MENTOR_EPOCH_MISMATCHED_EXAMINATION'",
-      "path": "bilqis_mlx/learning/mentor_epoch.py"
-    },
-    {
-      "code_hint": "MENTOR_EPOCH_UNKNOWN_SCHEMA",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'MENTOR_EPOCH_UNKNOWN_SCHEMA'",
-      "path": "bilqis_mlx/learning/mentor_epoch.py"
-    },
-    {
-      "code_hint": "MENTOR_EPOCH_WHOLE_STUDENT_OWN_ADAMW_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'MENTOR_EPOCH_WHOLE_STUDENT_OWN_ADAMW_REQUIRED'",
-      "path": "bilqis_mlx/learning/mentor_epoch.py"
-    },
-    {
-      "code_hint": "PLASTICITY_MASTERY_DEBT_SCOPE_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'PLASTICITY_MASTERY_DEBT_SCOPE_INVALID'",
-      "path": "bilqis_mlx/learning/plasticity_escape.py"
-    },
-    {
-      "code_hint": "PLASTICITY_MASTERY_DEBT_SCORES_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'PLASTICITY_MASTERY_DEBT_SCORES_INVALID'",
-      "path": "bilqis_mlx/learning/plasticity_escape.py"
-    },
-    {
-      "code_hint": "PLASTICITY_MASTERY_DEBT_SCORE_INVALID",
-      "count": 2,
-      "exception": "ValueError",
-      "expression": "'PLASTICITY_MASTERY_DEBT_SCORE_INVALID'",
-      "path": "bilqis_mlx/learning/plasticity_escape.py"
-    },
-    {
       "code_hint": "STAGNATION_FIRST_RECOVERY_DUPLICATE",
       "count": 1,
       "exception": "ValueError",
@@ -7017,41 +7101,6 @@
       "path": "bilqis_mlx/learning/stagnation_control.py"
     },
     {
-      "code_hint": "CHAMPION_CONFIDENCE_TRAINING_GUIDANCE_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CHAMPION_CONFIDENCE_TRAINING_GUIDANCE_INVALID'",
-      "path": "bilqis_mlx/learning/student_ops.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_EMPTY_BATCH",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_EMPTY_BATCH'",
-      "path": "bilqis_mlx/learning/student_ops.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_HISTORICAL_SEMANTIC_ABI_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_HISTORICAL_SEMANTIC_ABI_INVALID'",
-      "path": "bilqis_mlx/learning/student_ops.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_SEQUENCE_OUTSIDE_LEGACY_CONTEXT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_SEQUENCE_OUTSIDE_LEGACY_CONTEXT'",
-      "path": "bilqis_mlx/learning/student_ops.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_UNKNOWN_TYPED_ANSWER_CONFIG",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_UNKNOWN_TYPED_ANSWER_CONFIG'",
-      "path": "bilqis_mlx/learning/student_ops.py"
-    },
-    {
       "code_hint": "TEACHER_DECISION_INPUT_INVALID",
       "count": 1,
       "exception": "ValueError",
@@ -7071,48 +7120,6 @@
       "exception": "ValueError",
       "expression": "'TEACHER_MISS_PREDICTION_MISSING'",
       "path": "bilqis_mlx/learning/teacher_feedback.py"
-    },
-    {
-      "code_hint": "INVALID_TEACHER_GRADE_ROSTER",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'INVALID_TEACHER_GRADE_ROSTER'",
-      "path": "bilqis_mlx/learning/teacher_votes.py"
-    },
-    {
-      "code_hint": "TEACHER_BALLOTS_NOT_COMPLETE_OR_INCLUDE_UNREGISTERED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'TEACHER_BALLOTS_NOT_COMPLETE_OR_INCLUDE_UNREGISTERED'",
-      "path": "bilqis_mlx/learning/teacher_votes.py"
-    },
-    {
-      "code_hint": "TEACHER_EMPTY_BALLOT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'TEACHER_EMPTY_BALLOT'",
-      "path": "bilqis_mlx/learning/teacher_votes.py"
-    },
-    {
-      "code_hint": "WHOLE_STUDENT_PEAK_EMPTY_EXAM",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'WHOLE_STUDENT_PEAK_EMPTY_EXAM'",
-      "path": "bilqis_mlx/learning/whole_student_retention.py"
-    },
-    {
-      "code_hint": "WHOLE_STUDENT_PEAK_INCOMPLETE_SOURCE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'WHOLE_STUDENT_PEAK_INCOMPLETE_SOURCE'",
-      "path": "bilqis_mlx/learning/whole_student_retention.py"
-    },
-    {
-      "code_hint": "WHOLE_STUDENT_PEAK_INVALID_SCORE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'WHOLE_STUDENT_PEAK_INVALID_SCORE'",
-      "path": "bilqis_mlx/learning/whole_student_retention.py"
     },
     {
       "code_hint": "FACTORY_ASSESSMENT_SCOPE_EMPTY",
@@ -7927,137 +7934,221 @@
       "path": "bilqis_mlx/presentation/dashboard_watch.py"
     },
     {
-      "code_hint": "SCHOOL_AUTONOMY_EVIDENCE_RECEIPT_INVALID",
+      "code_hint": "DASHBOARD_PARTIAL_CANDIDATE_LEDGER",
       "count": 1,
       "exception": "ValueError",
-      "expression": "'SCHOOL_AUTONOMY_EVIDENCE_RECEIPT_INVALID'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
+      "expression": "'DASHBOARD_PARTIAL_CANDIDATE_LEDGER'",
+      "path": "bilqis_mlx/presentation/renderer/commands.py"
     },
     {
-      "code_hint": "SCHOOL_AUTONOMY_SOURCE_COVERAGE_RECEIPT_INVALID",
+      "code_hint": "DASHBOARD_REQUIRES_INTERACTIVE_TTY_USE_PLAIN_MODE",
       "count": 1,
       "exception": "ValueError",
-      "expression": "'SCHOOL_AUTONOMY_SOURCE_COVERAGE_RECEIPT_INVALID'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
+      "expression": "'DASHBOARD_REQUIRES_INTERACTIVE_TTY_USE_PLAIN_MODE'",
+      "path": "bilqis_mlx/presentation/renderer/commands.py"
     },
     {
-      "code_hint": "SCHOOL_AUTONOMY_TEACHING_RECEIPT_INVALID",
+      "code_hint": "UNKNOWN_DASHBOARD_EVENT",
       "count": 1,
       "exception": "ValueError",
-      "expression": "'SCHOOL_AUTONOMY_TEACHING_RECEIPT_INVALID'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "SCHOOL_AUTONOMY_VISIT_RECEIPT_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_AUTONOMY_VISIT_RECEIPT_INVALID'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
+      "expression": "'UNKNOWN_DASHBOARD_EVENT'",
+      "path": "bilqis_mlx/presentation/renderer/events.py"
     },
     {
       "code_hint": "SCHOOL_CAPABILITY_BEST_PROVENANCE_REQUIRED",
       "count": 1,
       "exception": "ValueError",
       "expression": "'SCHOOL_CAPABILITY_BEST_PROVENANCE_REQUIRED'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
+      "path": "bilqis_mlx/presentation/school50/candidates.py"
     },
     {
       "code_hint": "SCHOOL_TELEMETRY_ATTEMPTED_OPTIMIZER_UPDATES_INVALID",
       "count": 1,
       "exception": "ValueError",
       "expression": "'SCHOOL_TELEMETRY_ATTEMPTED_OPTIMIZER_UPDATES_INVALID'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
+      "path": "bilqis_mlx/presentation/school50/candidates.py"
     },
     {
       "code_hint": "SCHOOL_TELEMETRY_CANDIDATE_COHORT_REQUIRED",
       "count": 1,
       "exception": "ValueError",
       "expression": "'SCHOOL_TELEMETRY_CANDIDATE_COHORT_REQUIRED'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
+      "path": "bilqis_mlx/presentation/school50/candidates.py"
     },
     {
       "code_hint": "SCHOOL_TELEMETRY_CAPABILITY_REQUIRED",
       "count": 1,
       "exception": "ValueError",
       "expression": "'SCHOOL_TELEMETRY_CAPABILITY_REQUIRED'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
+      "path": "bilqis_mlx/presentation/school50/candidates.py"
+    },
+    {
+      "code_hint": "SCHOOL_TELEMETRY_LIVE_VISIT_GENERATION_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_TELEMETRY_LIVE_VISIT_GENERATION_REQUIRED'",
+      "path": "bilqis_mlx/presentation/school50/candidates.py"
+    },
+    {
+      "code_hint": "SCHOOL_TELEMETRY_RETAINED_OPTIMIZER_UPDATES_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_TELEMETRY_RETAINED_OPTIMIZER_UPDATES_INVALID'",
+      "path": "bilqis_mlx/presentation/school50/candidates.py"
     },
     {
       "code_hint": "SCHOOL_TELEMETRY_CURRICULUM_REPLACEMENT_INVALID",
       "count": 1,
       "exception": "ValueError",
       "expression": "'SCHOOL_TELEMETRY_CURRICULUM_REPLACEMENT_INVALID'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
+      "path": "bilqis_mlx/presentation/school50/curriculum.py"
+    },
+    {
+      "code_hint": "SCHOOL_AUTONOMY_EVIDENCE_RECEIPT_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_AUTONOMY_EVIDENCE_RECEIPT_INVALID'",
+      "path": "bilqis_mlx/presentation/school50/evidence.py"
+    },
+    {
+      "code_hint": "SCHOOL_AUTONOMY_SOURCE_COVERAGE_RECEIPT_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_AUTONOMY_SOURCE_COVERAGE_RECEIPT_INVALID'",
+      "path": "bilqis_mlx/presentation/school50/evidence.py"
+    },
+    {
+      "code_hint": "SCHOOL_AUTONOMY_TEACHING_RECEIPT_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_AUTONOMY_TEACHING_RECEIPT_INVALID'",
+      "path": "bilqis_mlx/presentation/school50/evidence.py"
+    },
+    {
+      "code_hint": "SCHOOL_AUTONOMY_VISIT_RECEIPT_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_AUTONOMY_VISIT_RECEIPT_INVALID'",
+      "path": "bilqis_mlx/presentation/school50/evidence.py"
     },
     {
       "code_hint": "SCHOOL_TELEMETRY_DISK_BUDGET_INVALID",
       "count": 1,
       "exception": "ValueError",
       "expression": "'SCHOOL_TELEMETRY_DISK_BUDGET_INVALID:' + field",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "SCHOOL_TELEMETRY_EXAM_CHECKPOINT_MISMATCH",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_TELEMETRY_EXAM_CHECKPOINT_MISMATCH'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "SCHOOL_TELEMETRY_EXAM_CHECKPOINT_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_TELEMETRY_EXAM_CHECKPOINT_REQUIRED'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "SCHOOL_TELEMETRY_EXAM_RUBRIC_ITEMS_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_TELEMETRY_EXAM_RUBRIC_ITEMS_DRIFT'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "SCHOOL_TELEMETRY_EXAM_RUBRIC_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_TELEMETRY_EXAM_RUBRIC_REQUIRED'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "SCHOOL_TELEMETRY_EXAM_SCORES_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_TELEMETRY_EXAM_SCORES_REQUIRED'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
+      "path": "bilqis_mlx/presentation/school50/evidence.py"
     },
     {
       "code_hint": "SCHOOL_TELEMETRY_FAMILY_RUBRIC_COUNT_DRIFT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'SCHOOL_TELEMETRY_FAMILY_RUBRIC_COUNT_DRIFT'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
+      "path": "bilqis_mlx/presentation/school50/evidence.py"
     },
     {
       "code_hint": "SCHOOL_TELEMETRY_FAMILY_SCORE_INVALID",
       "count": 1,
       "exception": "ValueError",
       "expression": "'SCHOOL_TELEMETRY_FAMILY_SCORE_INVALID'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
+      "path": "bilqis_mlx/presentation/school50/evidence.py"
     },
     {
       "code_hint": "SCHOOL_TELEMETRY_FAMILY_SCORE_REQUIRED",
       "count": 1,
       "exception": "ValueError",
       "expression": "'SCHOOL_TELEMETRY_FAMILY_SCORE_REQUIRED'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
+      "path": "bilqis_mlx/presentation/school50/evidence.py"
     },
     {
       "code_hint": "SCHOOL_TELEMETRY_FAMILY_UNKNOWN_PARTITION",
       "count": 1,
       "exception": "ValueError",
       "expression": "'SCHOOL_TELEMETRY_FAMILY_UNKNOWN_PARTITION'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
+      "path": "bilqis_mlx/presentation/school50/evidence.py"
+    },
+    {
+      "code_hint": "SCHOOL_TELEMETRY_SENTINEL_PARTITION_NOT_INDEPENDENT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_TELEMETRY_SENTINEL_PARTITION_NOT_INDEPENDENT'",
+      "path": "bilqis_mlx/presentation/school50/evidence.py"
+    },
+    {
+      "code_hint": "SCHOOL_TELEMETRY_SOUP_SOURCE_PROVENANCE_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_TELEMETRY_SOUP_SOURCE_PROVENANCE_REQUIRED'",
+      "path": "bilqis_mlx/presentation/school50/evidence.py"
+    },
+    {
+      "code_hint": "SCHOOL_TELEMETRY_SOUP_TEACHER_ONLY_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_TELEMETRY_SOUP_TEACHER_ONLY_REQUIRED'",
+      "path": "bilqis_mlx/presentation/school50/evidence.py"
+    },
+    {
+      "code_hint": "SCHOOL_TELEMETRY_EXAM_CHECKPOINT_MISMATCH",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_TELEMETRY_EXAM_CHECKPOINT_MISMATCH'",
+      "path": "bilqis_mlx/presentation/school50/exams.py"
+    },
+    {
+      "code_hint": "SCHOOL_TELEMETRY_EXAM_CHECKPOINT_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_TELEMETRY_EXAM_CHECKPOINT_REQUIRED'",
+      "path": "bilqis_mlx/presentation/school50/exams.py"
+    },
+    {
+      "code_hint": "SCHOOL_TELEMETRY_EXAM_RUBRIC_ITEMS_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_TELEMETRY_EXAM_RUBRIC_ITEMS_DRIFT'",
+      "path": "bilqis_mlx/presentation/school50/exams.py"
+    },
+    {
+      "code_hint": "SCHOOL_TELEMETRY_EXAM_RUBRIC_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_TELEMETRY_EXAM_RUBRIC_REQUIRED'",
+      "path": "bilqis_mlx/presentation/school50/exams.py"
+    },
+    {
+      "code_hint": "SCHOOL_TELEMETRY_EXAM_SCORES_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_TELEMETRY_EXAM_SCORES_REQUIRED'",
+      "path": "bilqis_mlx/presentation/school50/exams.py"
+    },
+    {
+      "code_hint": "SCHOOL_TELEMETRY_LIVE_COHORT_PROVENANCE_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_TELEMETRY_LIVE_COHORT_PROVENANCE_REQUIRED'",
+      "path": "bilqis_mlx/presentation/school50/exams.py"
+    },
+    {
+      "code_hint": "SCHOOL_TELEMETRY_SCORE_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_TELEMETRY_SCORE_INVALID'",
+      "path": "bilqis_mlx/presentation/school50/exams.py"
+    },
+    {
+      "code_hint": "SCHOOL_TELEMETRY_SOURCE_PROVENANCE_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_TELEMETRY_SOURCE_PROVENANCE_REQUIRED:' + key",
+      "path": "bilqis_mlx/presentation/school50/formatting.py"
+    },
+    {
+      "code_hint": "SCHOOL_TELEMETRY_SOURCE_PROVENANCE_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_TELEMETRY_SOURCE_PROVENANCE_REQUIRED:optimizer_step'",
+      "path": "bilqis_mlx/presentation/school50/formatting.py"
     },
     {
       "code_hint": "SCHOOL_TELEMETRY_GRADE_REQUIRED",
@@ -8067,95 +8158,11 @@
       "path": "bilqis_mlx/presentation/school_telemetry.py"
     },
     {
-      "code_hint": "SCHOOL_TELEMETRY_LIVE_COHORT_PROVENANCE_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_TELEMETRY_LIVE_COHORT_PROVENANCE_REQUIRED'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "SCHOOL_TELEMETRY_LIVE_VISIT_GENERATION_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_TELEMETRY_LIVE_VISIT_GENERATION_REQUIRED'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "SCHOOL_TELEMETRY_RETAINED_OPTIMIZER_UPDATES_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_TELEMETRY_RETAINED_OPTIMIZER_UPDATES_INVALID'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "SCHOOL_TELEMETRY_SCORE_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_TELEMETRY_SCORE_INVALID'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "SCHOOL_TELEMETRY_SENTINEL_PARTITION_NOT_INDEPENDENT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_TELEMETRY_SENTINEL_PARTITION_NOT_INDEPENDENT'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "SCHOOL_TELEMETRY_SOUP_SOURCE_PROVENANCE_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_TELEMETRY_SOUP_SOURCE_PROVENANCE_REQUIRED'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "SCHOOL_TELEMETRY_SOUP_TEACHER_ONLY_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_TELEMETRY_SOUP_TEACHER_ONLY_REQUIRED'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "SCHOOL_TELEMETRY_SOURCE_PROVENANCE_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_TELEMETRY_SOURCE_PROVENANCE_REQUIRED:' + key",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "SCHOOL_TELEMETRY_SOURCE_PROVENANCE_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_TELEMETRY_SOURCE_PROVENANCE_REQUIRED:optimizer_step'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
       "code_hint": "SCHOOL_TELEMETRY_UNSUPPORTED_SCHEMA",
       "count": 1,
       "exception": "ValueError",
       "expression": "'SCHOOL_TELEMETRY_UNSUPPORTED_SCHEMA'",
       "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "DASHBOARD_PARTIAL_CANDIDATE_LEDGER",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'DASHBOARD_PARTIAL_CANDIDATE_LEDGER'",
-      "path": "bilqis_mlx/presentation/spiral_dashboard.py"
-    },
-    {
-      "code_hint": "DASHBOARD_REQUIRES_INTERACTIVE_TTY_USE_PLAIN_MODE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'DASHBOARD_REQUIRES_INTERACTIVE_TTY_USE_PLAIN_MODE'",
-      "path": "bilqis_mlx/presentation/spiral_dashboard.py"
-    },
-    {
-      "code_hint": "UNKNOWN_DASHBOARD_EVENT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'UNKNOWN_DASHBOARD_EVENT'",
-      "path": "bilqis_mlx/presentation/spiral_dashboard.py"
     },
     {
       "code_hint": "FACTORY_CATALOG_RELEASE_REQUIRED",
@@ -10440,13 +10447,6 @@
       "path": "bilqis_mlx/runtime/tests/test_atlas_training_adapter.py"
     },
     {
-      "code_hint": "context held",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'context held'",
-      "path": "bilqis_mlx/runtime/tests/test_atlas_training_adapter.py"
-    },
-    {
       "code_hint": "GRAPH_UNAVAILABLE",
       "count": 1,
       "exception": "RuntimeError",
@@ -11630,6 +11630,83 @@
       "path": "bilqis_mlx/semantics/foundation/numeric.py"
     },
     {
+      "code_hint": "NUMERIC_EXACT_DIVISION_UNDEFINED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'NUMERIC_EXACT_DIVISION_UNDEFINED'",
+      "path": "bilqis_mlx/semantics/numeric.py"
+    },
+    {
+      "code_hint": "NUMERIC_LITERAL_OUTSIDE_SOURCE_ABI",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'NUMERIC_LITERAL_OUTSIDE_SOURCE_ABI'",
+      "path": "bilqis_mlx/semantics/numeric.py"
+    },
+    {
+      "code_hint": "NUMERIC_MODULO_UNDEFINED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'NUMERIC_MODULO_UNDEFINED'",
+      "path": "bilqis_mlx/semantics/numeric.py"
+    },
+    {
+      "code_hint": "NUMERIC_NONCANONICAL_LITERAL",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'NUMERIC_NONCANONICAL_LITERAL'",
+      "path": "bilqis_mlx/semantics/numeric.py"
+    },
+    {
+      "code_hint": "NUMERIC_NONCANONICAL_SET",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'NUMERIC_NONCANONICAL_SET'",
+      "path": "bilqis_mlx/semantics/numeric.py"
+    },
+    {
+      "code_hint": "NUMERIC_OPERATOR_CONTRACT_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'NUMERIC_OPERATOR_CONTRACT_DRIFT'",
+      "path": "bilqis_mlx/semantics/numeric.py"
+    },
+    {
+      "code_hint": "NUMERIC_OPERATOR_INCOMPLETE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'NUMERIC_OPERATOR_INCOMPLETE'",
+      "path": "bilqis_mlx/semantics/numeric.py"
+    },
+    {
+      "code_hint": "NUMERIC_OPERATOR_NOT_IMPLEMENTED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'NUMERIC_OPERATOR_NOT_IMPLEMENTED'",
+      "path": "bilqis_mlx/semantics/numeric.py"
+    },
+    {
+      "code_hint": "NUMERIC_OPERATOR_NOT_IN_RELEASE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'NUMERIC_OPERATOR_NOT_IN_RELEASE'",
+      "path": "bilqis_mlx/semantics/numeric.py"
+    },
+    {
+      "code_hint": "NUMERIC_SET_DUPLICATE_OR_UNTYPED_MEMBERS",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'NUMERIC_SET_DUPLICATE_OR_UNTYPED_MEMBERS'",
+      "path": "bilqis_mlx/semantics/numeric.py"
+    },
+    {
+      "code_hint": "NUMERIC_UNSUPPORTED_LITERAL_TYPE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'NUMERIC_UNSUPPORTED_LITERAL_TYPE'",
+      "path": "bilqis_mlx/semantics/numeric.py"
+    },
+    {
       "code_hint": "Historical source token identity drift",
       "count": 1,
       "exception": "AssertionError",
@@ -12180,7 +12257,7 @@
       "count": 1,
       "exception": "AssertionError",
       "expression": "f'{operation} lacks U7C pattern {pattern}: {len(by_pattern[pattern])}/{count}'",
-      "path": "bilqis_mlx/source_adapters/tests/test_grade_b_u7c_causal_cells.py"
+      "path": "bilqis_mlx/source_adapters/tests/boolean/test_grade_b_u7c_causal_cells.py"
     },
     {
       "code_hint": "Pinned original token identity drift",
@@ -14817,6 +14894,20 @@
       "recovery_key": "errors.factory.release.manifest_content_drift.recovery",
       "self_heal_owner": "compatibility.factory_release_v1",
       "title": "Sealed factory release content does not match its wire identity"
+    },
+    {
+      "code": "SCHOOL.BAMF_OPERATOR.INVALID",
+      "disposition": "PRESERVE_AND_INSPECT",
+      "legacy_codes": [],
+      "message_key": "errors.school.bamf_operator.invalid.message",
+      "message_template": "The BAMF operator observation is invalid: {reason}",
+      "next_action": "Keep the last valid view and retained run unchanged; reconcile the source census, measurement and identity bindings.",
+      "operator_steps": [],
+      "owner": "presentation.atlas_metrics",
+      "preserve_state": true,
+      "recovery_key": "errors.school.bamf_operator.invalid.recovery",
+      "self_heal_owner": null,
+      "title": "BAMF operator evidence is invalid"
     }
   ]
 }

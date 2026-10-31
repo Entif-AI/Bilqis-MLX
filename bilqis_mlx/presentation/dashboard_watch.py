@@ -77,7 +77,7 @@ def watch(
     run_dir: Path, *, stream=None, follow: bool = True,
     poll_seconds: float = DEFAULT_REFRESH_SECONDS,
     wait: Callable[[float], None] = time.sleep,
-    max_polls: int | None = None,
+    max_polls: int | None = None, atlas_details: bool = False,
 ):
     """Replay the chosen run, then follow only append-complete new events."""
     run_dir = Path(run_dir).expanduser().resolve()
@@ -91,6 +91,7 @@ def watch(
 
     def snapshot():
         board = build(run_dir, stream=stream)
+        board.atlas_expanded = atlas_details
         board.log_hint = str(journal)
         board.mode = "FOLLOW | READ-ONLY" if follow else "SNAPSHOT | READ-ONLY"
         # The compact dashboard does not render .mode; make detached monitoring
@@ -146,6 +147,8 @@ def main(argv: list[str] | None = None) -> int:
                         help="Render one historical snapshot and exit")
     parser.add_argument("--poll-seconds", type=float, default=DEFAULT_REFRESH_SECONDS,
                         help="Refresh interval while following the journal (default: 1s)")
+    parser.add_argument("--atlas-details", action="store_true",
+                        help="Expand source-bound BAMF observations when present")
     args = parser.parse_args(argv)
     try:
         if args.run_dir is not None:
@@ -156,7 +159,8 @@ def main(argv: list[str] | None = None) -> int:
                 print("NO ACTIVE TRAINER DETECTED: showing the canonical saved run. "
                       "Specify --run-dir to view a different saved/remote Codex run.",
                       file=sys.stderr, flush=True)
-        watch(run_dir, follow=not args.once, poll_seconds=args.poll_seconds)
+        watch(run_dir, follow=not args.once, poll_seconds=args.poll_seconds,
+              atlas_details=args.atlas_details)
     except KeyboardInterrupt:
         return 0  # Detach the viewer without signaling or modifying the trainer.
     except (AmbiguousActiveRun, FileNotFoundError, PermissionError, ValueError) as exc:

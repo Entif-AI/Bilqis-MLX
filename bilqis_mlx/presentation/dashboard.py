@@ -198,6 +198,9 @@ def build(run_dir: Path, *, stream=None, reserve_gib: float = 100.) -> Dashboard
         board, run_dir, state, active, current_grade, reserve_gib=reserve_gib)
     _push_saved_school_evidence(board, state, active, current_grade)
     board.push("system", {"kind": "RESTART", "detail": "Saved run: train --human-run --resume"}, redraw=False)
+    if state and state.get("bamf_operator_status") is not None:
+        from .atlas_metrics import bamf_status
+        board.bamf_operator_view = bamf_status(state["bamf_operator_status"])
     _replay_dashboard_journal(board, run_dir)
     _rebuild_graduation_projection(board, run_dir)
     if active and not board.rows["GRADES & MASTERY"]:
@@ -210,6 +213,10 @@ def build(run_dir: Path, *, stream=None, reserve_gib: float = 100.) -> Dashboard
 
 def ingest(board: Dashboard, event: dict) -> None:
     """Incrementally update the same renderer used by past/future grades."""
+    if event.get("event") == "BAMF_OPERATOR_STATUS_OBSERVED":
+        from .atlas_metrics import bamf_status
+        board.bamf_operator_view = bamf_status(event.get("receipt"))
+        return
     board.school_telemetry.ingest(event)
 
 

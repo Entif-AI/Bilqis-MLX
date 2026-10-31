@@ -109,6 +109,11 @@ class RenderView:
                 headers.append(self.current_graduation_line)
             if self.operator_lines:
                 headers.extend(self.operator_lines)
+        view = getattr(self, "bamf_operator_view", None)
+        if view is not None:
+            from ..atlas_metrics import render_panel
+            headers.extend(render_panel(view, state,
+                                        expanded=getattr(self, "atlas_expanded", False), width=width))
         if width>=WIDE_MIN_WIDTH and height>=WIDE_MIN_HEIGHT:
             return self._render_wide(headers,footer,width=width,height=height)
         groups=list(self.tables) if self.show_all_panels else [

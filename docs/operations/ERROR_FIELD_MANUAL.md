@@ -1549,6 +1549,18 @@ Recovery: Preserve the artifact. Decode it with the schema version that minted i
 
 Legacy aliases: `FACTORY_RELEASE_MANIFEST_CONTENT_DRIFT`
 
+### `SCHOOL.BAMF_OPERATOR.INVALID`
+
+BAMF operator evidence is invalid.
+
+Owner: `presentation.atlas_metrics`
+Disposition: `PRESERVE_AND_INSPECT`
+Self-heal owner: `none`
+
+Message: The BAMF operator observation is invalid: {reason}
+
+Recovery: Keep the last valid view and retained run unchanged; reconcile the source census, measurement and identity bindings.
+
 ## Operational signals and blockers
 
 These terms are not exceptions. They describe a controlled stop, handoff, or gate.
@@ -1603,11 +1615,11 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **1957** raw raises across **178** files. The baseline gate permits only reduction.
+Current production scan: **1968** raw raises across **186** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
-| `<dynamic/raw prose>` | 8 | `bilqis_mlx/factory/development.py`, `bilqis_mlx/factory/development_binding.py`, `bilqis_mlx/factory/generation.py`, `bilqis_mlx/factory/model.py`, plus 3 more |
+| `<dynamic/raw prose>` | 8 | `bilqis_mlx/factory/curriculum/development.py`, `bilqis_mlx/factory/curriculum/development_binding.py`, `bilqis_mlx/factory/generation.py`, `bilqis_mlx/factory/model.py`, plus 3 more |
 | `A05 requires a typed source AST` | 1 | `bilqis_mlx/runtime/tests/test_atlas_training_adapter.py` |
 | `ANSWER_CASTE_EMPTY_LESSON` | 1 | `bilqis_mlx/typed_answer_training.py` |
 | `ANSWER_CASTE_FULL_101_ABI_DRIFT` | 1 | `bilqis_mlx/typed_answer_training.py` |
@@ -1802,50 +1814,50 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `CANDIDATE_FRONTIER_SENSE_INVENTORY_MISMATCH` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
 | `CANDIDATE_FRONTIER_SENSE_SOURCE_MISMATCH` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
 | `CANDIDATE_STAGING_AMBIGUOUS_SUCCESSOR` | 1 | `bilqis_mlx/runtime/candidate_staging.py` |
-| `CANDIDATE_STAGING_DELTA_SCOPE_MISMATCH` | 1 | `bilqis_mlx/factory/candidate_staging.py` |
-| `CANDIDATE_STAGING_EXACT_TARGET_REQUIRED` | 1 | `bilqis_mlx/factory/candidate_staging.py` |
-| `CANDIDATE_STAGING_EXISTING_AUTHORITY_CHANGED` | 1 | `bilqis_mlx/factory/candidate_staging.py` |
-| `CANDIDATE_STAGING_FRONTIER_MISMATCH` | 1 | `bilqis_mlx/factory/candidate_staging.py` |
+| `CANDIDATE_STAGING_DELTA_SCOPE_MISMATCH` | 1 | `bilqis_mlx/factory/curriculum/candidate_staging.py` |
+| `CANDIDATE_STAGING_EXACT_TARGET_REQUIRED` | 1 | `bilqis_mlx/factory/curriculum/candidate_staging.py` |
+| `CANDIDATE_STAGING_EXISTING_AUTHORITY_CHANGED` | 1 | `bilqis_mlx/factory/curriculum/candidate_staging.py` |
+| `CANDIDATE_STAGING_FRONTIER_MISMATCH` | 1 | `bilqis_mlx/factory/curriculum/candidate_staging.py` |
 | `CANDIDATE_STAGING_IMMUTABLE_DRIFT` | 1 | `bilqis_mlx/runtime/candidate_staging.py` |
-| `CANDIDATE_STAGING_INPUT_INVALID` | 1 | `bilqis_mlx/factory/candidate_staging.py` |
-| `CANDIDATE_STAGING_PREREQUISITE_ACCOUNTING_REQUIRED` | 1 | `bilqis_mlx/factory/candidate_staging.py` |
-| `CANNOT_REPOINT_UNGRADUATED_GRADE` | 1 | `bilqis_mlx/learning/champions.py` |
-| `CAPABILITY_FRONTIER_CUSTODY_PROTECTED_BUNDLE_MISSING` | 2 | `bilqis_mlx/learning/capability_frontier.py` |
-| `CAPABILITY_FRONTIER_CUSTODY_SOURCE_CHANGED` | 1 | `bilqis_mlx/learning/capability_frontier.py` |
-| `CAPABILITY_FRONTIER_CUSTODY_STAGED_FILE_CHANGED` | 1 | `bilqis_mlx/learning/capability_frontier.py` |
-| `CAPABILITY_FRONTIER_CUSTODY_STAGING_COLLISION` | 1 | `bilqis_mlx/learning/capability_frontier.py` |
-| `CAPABILITY_FRONTIER_CUSTODY_SYMLINK` | 1 | `bilqis_mlx/learning/capability_frontier.py` |
-| `CAPABILITY_FRONTIER_CUSTODY_UNRECOGNIZED_BUNDLE` | 2 | `bilqis_mlx/learning/capability_frontier.py` |
-| `CAPABILITY_FRONTIER_CUSTODY_UNRECOGNIZED_CONTENT` | 1 | `bilqis_mlx/learning/capability_frontier.py` |
-| `CAPABILITY_FRONTIER_CUSTODY_UNSAFE_STAGING` | 1 | `bilqis_mlx/learning/capability_frontier.py` |
-| `CAPABILITY_FRONTIER_DUPLICATE_MODEL_ID` | 1 | `bilqis_mlx/learning/capability_frontier.py` |
-| `CAPABILITY_FRONTIER_EMPTY_TEST` | 1 | `bilqis_mlx/learning/capability_frontier.py` |
-| `CAPABILITY_FRONTIER_EXAM_BUNDLE_MISSING` | 1 | `bilqis_mlx/learning/capability_frontier.py` |
-| `CAPABILITY_FRONTIER_HISTORIC_INCOMPLETE_EXAM` | 1 | `bilqis_mlx/learning/capability_frontier.py` |
-| `CAPABILITY_FRONTIER_HISTORIC_RUBRIC_DRIFT` | 1 | `bilqis_mlx/learning/capability_frontier.py` |
-| `CAPABILITY_FRONTIER_INCOMPLETE_RUBRIC` | 1 | `bilqis_mlx/learning/capability_frontier.py` |
-| `CAPABILITY_FRONTIER_INVALID_SCORE` | 1 | `bilqis_mlx/learning/capability_frontier.py` |
-| `CAPABILITY_FRONTIER_ROLE_SELECTION_DRIFT` | 1 | `bilqis_mlx/learning/capability_frontier.py` |
-| `CAPABILITY_FRONTIER_RUBRIC_IDENTITY_MISSING` | 1 | `bilqis_mlx/learning/capability_frontier.py` |
-| `CAPABILITY_FRONTIER_TEST_TOTAL_DRIFT` | 1 | `bilqis_mlx/learning/capability_frontier.py` |
-| `CAPABILITY_FRONTIER_UNSAFE_PIN` | 1 | `bilqis_mlx/learning/capability_frontier.py` |
-| `CAPABILITY_FRONTIER_WHOLE_STUDENT_REQUIRED` | 1 | `bilqis_mlx/learning/capability_frontier.py` |
+| `CANDIDATE_STAGING_INPUT_INVALID` | 1 | `bilqis_mlx/factory/curriculum/candidate_staging.py` |
+| `CANDIDATE_STAGING_PREREQUISITE_ACCOUNTING_REQUIRED` | 1 | `bilqis_mlx/factory/curriculum/candidate_staging.py` |
+| `CANNOT_REPOINT_UNGRADUATED_GRADE` | 1 | `bilqis_mlx/learning/_championship/champions.py` |
+| `CAPABILITY_FRONTIER_CUSTODY_PROTECTED_BUNDLE_MISSING` | 2 | `bilqis_mlx/learning/_championship/capability_frontier.py` |
+| `CAPABILITY_FRONTIER_CUSTODY_SOURCE_CHANGED` | 1 | `bilqis_mlx/learning/_championship/capability_frontier.py` |
+| `CAPABILITY_FRONTIER_CUSTODY_STAGED_FILE_CHANGED` | 1 | `bilqis_mlx/learning/_championship/capability_frontier.py` |
+| `CAPABILITY_FRONTIER_CUSTODY_STAGING_COLLISION` | 1 | `bilqis_mlx/learning/_championship/capability_frontier.py` |
+| `CAPABILITY_FRONTIER_CUSTODY_SYMLINK` | 1 | `bilqis_mlx/learning/_championship/capability_frontier.py` |
+| `CAPABILITY_FRONTIER_CUSTODY_UNRECOGNIZED_BUNDLE` | 2 | `bilqis_mlx/learning/_championship/capability_frontier.py` |
+| `CAPABILITY_FRONTIER_CUSTODY_UNRECOGNIZED_CONTENT` | 1 | `bilqis_mlx/learning/_championship/capability_frontier.py` |
+| `CAPABILITY_FRONTIER_CUSTODY_UNSAFE_STAGING` | 1 | `bilqis_mlx/learning/_championship/capability_frontier.py` |
+| `CAPABILITY_FRONTIER_DUPLICATE_MODEL_ID` | 1 | `bilqis_mlx/learning/_championship/capability_frontier.py` |
+| `CAPABILITY_FRONTIER_EMPTY_TEST` | 1 | `bilqis_mlx/learning/_championship/capability_frontier.py` |
+| `CAPABILITY_FRONTIER_EXAM_BUNDLE_MISSING` | 1 | `bilqis_mlx/learning/_championship/capability_frontier.py` |
+| `CAPABILITY_FRONTIER_HISTORIC_INCOMPLETE_EXAM` | 1 | `bilqis_mlx/learning/_championship/capability_frontier.py` |
+| `CAPABILITY_FRONTIER_HISTORIC_RUBRIC_DRIFT` | 1 | `bilqis_mlx/learning/_championship/capability_frontier.py` |
+| `CAPABILITY_FRONTIER_INCOMPLETE_RUBRIC` | 1 | `bilqis_mlx/learning/_championship/capability_frontier.py` |
+| `CAPABILITY_FRONTIER_INVALID_SCORE` | 1 | `bilqis_mlx/learning/_championship/capability_frontier.py` |
+| `CAPABILITY_FRONTIER_ROLE_SELECTION_DRIFT` | 1 | `bilqis_mlx/learning/_championship/capability_frontier.py` |
+| `CAPABILITY_FRONTIER_RUBRIC_IDENTITY_MISSING` | 1 | `bilqis_mlx/learning/_championship/capability_frontier.py` |
+| `CAPABILITY_FRONTIER_TEST_TOTAL_DRIFT` | 1 | `bilqis_mlx/learning/_championship/capability_frontier.py` |
+| `CAPABILITY_FRONTIER_UNSAFE_PIN` | 1 | `bilqis_mlx/learning/_championship/capability_frontier.py` |
+| `CAPABILITY_FRONTIER_WHOLE_STUDENT_REQUIRED` | 1 | `bilqis_mlx/learning/_championship/capability_frontier.py` |
 | `CAPABILITY_PREREQUISITE_NOT_MASTERED_IN_EARLIER_GRADE` | 1 | `bilqis_mlx/curriculum/__init__.py` |
 | `CAPABILITY_ROOT_OR_PROVENANCE_MISSING` | 1 | `bilqis_mlx/curriculum/__init__.py` |
 | `CHAMPIONSHIP_ACTIVE_ROLE_CAPABILITY_UNKNOWN` | 1 | `bilqis_mlx/learning/epoch_championships.py` |
 | `CHAMPIONSHIP_BATTERY_BATCH_DUPLICATE_QUESTION` | 1 | `bilqis_mlx/learning/championship_runtime.py` |
 | `CHAMPIONSHIP_BATTERY_CHECKPOINT_INCOMPARABLE` | 1 | `bilqis_mlx/learning/championship_runtime.py` |
-| `CHAMPIONSHIP_BATTERY_CURRENT_EVIDENCE_MISSING` | 1 | `bilqis_mlx/learning/championship_witnesses.py` |
-| `CHAMPIONSHIP_BATTERY_DRIFT` | 2 | `bilqis_mlx/learning/championship_witnesses.py` |
-| `CHAMPIONSHIP_BATTERY_INVALID` | 2 | `bilqis_mlx/learning/championship_witnesses.py` |
-| `CHAMPIONSHIP_BATTERY_QUESTION_DRIFT` | 3 | `bilqis_mlx/learning/championship_runtime.py`, `bilqis_mlx/learning/championship_witnesses.py` |
-| `CHAMPIONSHIP_BATTERY_QUESTION_INVALID` | 2 | `bilqis_mlx/learning/championship_witnesses.py` |
-| `CHAMPIONSHIP_BATTERY_RESULT_DRIFT` | 1 | `bilqis_mlx/learning/championship_witnesses.py` |
+| `CHAMPIONSHIP_BATTERY_CURRENT_EVIDENCE_MISSING` | 1 | `bilqis_mlx/learning/_championship/championship_witnesses.py` |
+| `CHAMPIONSHIP_BATTERY_DRIFT` | 2 | `bilqis_mlx/learning/_championship/championship_witnesses.py` |
+| `CHAMPIONSHIP_BATTERY_INVALID` | 2 | `bilqis_mlx/learning/_championship/championship_witnesses.py` |
+| `CHAMPIONSHIP_BATTERY_QUESTION_DRIFT` | 3 | `bilqis_mlx/learning/_championship/championship_witnesses.py`, `bilqis_mlx/learning/championship_runtime.py` |
+| `CHAMPIONSHIP_BATTERY_QUESTION_INVALID` | 2 | `bilqis_mlx/learning/_championship/championship_witnesses.py` |
+| `CHAMPIONSHIP_BATTERY_RESULT_DRIFT` | 1 | `bilqis_mlx/learning/_championship/championship_witnesses.py` |
 | `CHAMPIONSHIP_CAPABILITY_GROUP_AMBIGUOUS_OR_ABSENT` | 2 | `bilqis_mlx/learning/epoch_championships.py` |
 | `CHAMPIONSHIP_CHECKPOINT_ORIGIN_PROVENANCE_CONFLICT` | 2 | `bilqis_mlx/learning/championship_runtime.py` |
 | `CHAMPIONSHIP_CHECKPOINT_ORIGIN_PROVENANCE_INVALID` | 2 | `bilqis_mlx/learning/championship_runtime.py`, `bilqis_mlx/learning/epoch_championships.py` |
-| `CHAMPIONSHIP_COHORT_RUBRIC_IDENTITY_DRIFT` | 1 | `bilqis_mlx/learning/championship_witnesses.py` |
-| `CHAMPIONSHIP_COMPLETE_SOLVER_PROVENANCE_INVALID` | 1 | `bilqis_mlx/learning/championship_witnesses.py` |
+| `CHAMPIONSHIP_COHORT_RUBRIC_IDENTITY_DRIFT` | 1 | `bilqis_mlx/learning/_championship/championship_witnesses.py` |
+| `CHAMPIONSHIP_COMPLETE_SOLVER_PROVENANCE_INVALID` | 1 | `bilqis_mlx/learning/_championship/championship_witnesses.py` |
 | `CHAMPIONSHIP_EARNING_CHECKPOINT_UNSAFE` | 1 | `bilqis_mlx/learning/championship_runtime.py` |
 | `CHAMPIONSHIP_EARNING_COHORT_CONTENT_DRIFT` | 1 | `bilqis_mlx/runtime/assessment.py` |
 | `CHAMPIONSHIP_EARNING_COHORT_IDENTITY_REQUIRED` | 1 | `bilqis_mlx/runtime/assessment.py` |
@@ -1875,27 +1887,27 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `CHAMPIONSHIP_FANOUT_SCREEN_SCORE_DRIFT` | 1 | `bilqis_mlx/learning/epoch_championships.py` |
 | `CHAMPIONSHIP_FANOUT_UNSAFE_INCUMBENT` | 1 | `bilqis_mlx/learning/championship_runtime.py` |
 | `CHAMPIONSHIP_HISTORICAL_SETTLEMENT_INVALID` | 1 | `bilqis_mlx/learning/championship_runtime.py` |
-| `CHAMPIONSHIP_INCOMPARABLE_CUMULATIVE_COHORT` | 1 | `bilqis_mlx/learning/championship_policy.py` |
-| `CHAMPIONSHIP_INCOMPARABLE_EXAM_CONTEXT` | 1 | `bilqis_mlx/learning/championship_policy.py` |
-| `CHAMPIONSHIP_INCOMPLETE_CUMULATIVE_SCHOOL` | 1 | `bilqis_mlx/learning/championship_policy.py` |
-| `CHAMPIONSHIP_INCOMPLETE_TARGET_GRADE_OR_INCUMBENTS` | 1 | `bilqis_mlx/learning/championship_policy.py` |
-| `CHAMPIONSHIP_INITIAL_EPOCH_IDENTITY_REQUIRED` | 1 | `bilqis_mlx/learning/mentor_epoch.py` |
-| `CHAMPIONSHIP_INITIAL_EPOCH_ROLE_DRIFT` | 1 | `bilqis_mlx/learning/mentor_epoch.py` |
-| `CHAMPIONSHIP_INITIAL_EPOCH_SOUPS_REQUIRED` | 1 | `bilqis_mlx/learning/mentor_epoch.py` |
+| `CHAMPIONSHIP_INCOMPARABLE_CUMULATIVE_COHORT` | 1 | `bilqis_mlx/learning/_championship/championship_policy.py` |
+| `CHAMPIONSHIP_INCOMPARABLE_EXAM_CONTEXT` | 1 | `bilqis_mlx/learning/_championship/championship_policy.py` |
+| `CHAMPIONSHIP_INCOMPLETE_CUMULATIVE_SCHOOL` | 1 | `bilqis_mlx/learning/_championship/championship_policy.py` |
+| `CHAMPIONSHIP_INCOMPLETE_TARGET_GRADE_OR_INCUMBENTS` | 1 | `bilqis_mlx/learning/_championship/championship_policy.py` |
+| `CHAMPIONSHIP_INITIAL_EPOCH_IDENTITY_REQUIRED` | 1 | `bilqis_mlx/learning/_championship/mentor_epoch.py` |
+| `CHAMPIONSHIP_INITIAL_EPOCH_ROLE_DRIFT` | 1 | `bilqis_mlx/learning/_championship/mentor_epoch.py` |
+| `CHAMPIONSHIP_INITIAL_EPOCH_SOUPS_REQUIRED` | 1 | `bilqis_mlx/learning/_championship/mentor_epoch.py` |
 | `CHAMPIONSHIP_INITIAL_TITLE_SCORE_INVALID` | 1 | `bilqis_mlx/learning/epoch_championships.py` |
-| `CHAMPIONSHIP_INVALID_SOURCE_SCORES` | 1 | `bilqis_mlx/learning/championship_policy.py` |
+| `CHAMPIONSHIP_INVALID_SOURCE_SCORES` | 1 | `bilqis_mlx/learning/_championship/championship_policy.py` |
 | `CHAMPIONSHIP_LAST_RETAINED_GRADE_INVALID` | 1 | `bilqis_mlx/learning/championship_runtime.py` |
-| `CHAMPIONSHIP_QUESTION_IDENTITY_DRIFT` | 1 | `bilqis_mlx/learning/championship_witnesses.py` |
-| `CHAMPIONSHIP_QUESTION_SCORE_DRIFT` | 1 | `bilqis_mlx/learning/championship_witnesses.py` |
-| `CHAMPIONSHIP_QUESTION_WITNESS_DRIFT` | 2 | `bilqis_mlx/learning/championship_witnesses.py` |
+| `CHAMPIONSHIP_QUESTION_IDENTITY_DRIFT` | 1 | `bilqis_mlx/learning/_championship/championship_witnesses.py` |
+| `CHAMPIONSHIP_QUESTION_SCORE_DRIFT` | 1 | `bilqis_mlx/learning/_championship/championship_witnesses.py` |
+| `CHAMPIONSHIP_QUESTION_WITNESS_DRIFT` | 2 | `bilqis_mlx/learning/_championship/championship_witnesses.py` |
 | `CHAMPIONSHIP_REBASE_INVALID_GENERATION` | 1 | `bilqis_mlx/learning/epoch_championships.py` |
 | `CHAMPIONSHIP_REBASE_PREDATES_PREVIOUS_GRADUATE` | 1 | `bilqis_mlx/learning/epoch_championships.py` |
 | `CHAMPIONSHIP_RESET_INVALID_STUDENT_OR_GENERATION` | 1 | `bilqis_mlx/learning/epoch_championships.py` |
-| `CHAMPIONSHIP_ROLE_MAXED_INVALID` | 1 | `bilqis_mlx/learning/championship_witnesses.py` |
-| `CHAMPIONSHIP_SCHOOL_IDENTITY_PARAMETER_SHAPES_INVALID` | 1 | `bilqis_mlx/learning/championship_identity.py` |
-| `CHAMPIONSHIP_SCHOOL_IDENTITY_RESET_INVALID` | 1 | `bilqis_mlx/learning/championship_identity.py` |
+| `CHAMPIONSHIP_ROLE_MAXED_INVALID` | 1 | `bilqis_mlx/learning/_championship/championship_witnesses.py` |
+| `CHAMPIONSHIP_SCHOOL_IDENTITY_PARAMETER_SHAPES_INVALID` | 1 | `bilqis_mlx/learning/_championship/championship_identity.py` |
+| `CHAMPIONSHIP_SCHOOL_IDENTITY_RESET_INVALID` | 1 | `bilqis_mlx/learning/_championship/championship_identity.py` |
 | `CHAMPIONSHIP_SCHOOL_IDENTITY_RESET_REQUIRED` | 2 | `bilqis_mlx/runtime/exam_execution.py`, `bilqis_mlx/runtime/visits.py` |
-| `CHAMPIONSHIP_SCHOOL_IDENTITY_SHA_INVALID` | 1 | `bilqis_mlx/learning/championship_identity.py` |
+| `CHAMPIONSHIP_SCHOOL_IDENTITY_SHA_INVALID` | 1 | `bilqis_mlx/learning/_championship/championship_identity.py` |
 | `CHAMPIONSHIP_SETTLED_MATCH_LEDGER_INVALID` | 2 | `bilqis_mlx/learning/championship_runtime.py`, `bilqis_mlx/learning/epoch_championships.py` |
 | `CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_COHORT_MISSING` | 1 | `bilqis_mlx/runtime/reconciliation.py` |
 | `CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CONTENT_DRIFT` | 1 | `bilqis_mlx/runtime/reconciliation.py` |
@@ -1914,20 +1926,20 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `CHAMPIONSHIP_TITLE_MATCH_RESULTS_INVALID` | 1 | `bilqis_mlx/learning/epoch_championships.py` |
 | `CHAMPIONSHIP_TITLE_MATCH_TOTAL_DRIFT` | 1 | `bilqis_mlx/learning/epoch_championships.py` |
 | `CHAMPIONSHIP_TITLE_MATCH_UNSAFE_INCUMBENT` | 1 | `bilqis_mlx/learning/championship_runtime.py` |
-| `CHAMPIONSHIP_WHOLE_STUDENT_OWN_ADAMW_REQUIRED` | 1 | `bilqis_mlx/learning/championship_policy.py` |
-| `CHAMPION_CONFIDENCE_ACTIVE_GRADE_ROLE_DRIFT` | 1 | `bilqis_mlx/learning/champion_confidence.py` |
-| `CHAMPION_CONFIDENCE_ACTIVE_ROLE_ENTITLEMENT_DRIFT` | 1 | `bilqis_mlx/learning/champion_confidence.py` |
-| `CHAMPION_CONFIDENCE_ACTIVE_ROLE_PROVENANCE_DRIFT` | 1 | `bilqis_mlx/learning/champion_confidence.py` |
-| `CHAMPION_CONFIDENCE_ACTIVE_ROLE_SCORE_DRIFT` | 1 | `bilqis_mlx/learning/champion_confidence.py` |
+| `CHAMPIONSHIP_WHOLE_STUDENT_OWN_ADAMW_REQUIRED` | 1 | `bilqis_mlx/learning/_championship/championship_policy.py` |
+| `CHAMPION_CONFIDENCE_ACTIVE_GRADE_ROLE_DRIFT` | 1 | `bilqis_mlx/learning/_championship/champion_confidence.py` |
+| `CHAMPION_CONFIDENCE_ACTIVE_ROLE_ENTITLEMENT_DRIFT` | 1 | `bilqis_mlx/learning/_championship/champion_confidence.py` |
+| `CHAMPION_CONFIDENCE_ACTIVE_ROLE_PROVENANCE_DRIFT` | 1 | `bilqis_mlx/learning/_championship/champion_confidence.py` |
+| `CHAMPION_CONFIDENCE_ACTIVE_ROLE_SCORE_DRIFT` | 1 | `bilqis_mlx/learning/_championship/champion_confidence.py` |
 | `CHAMPION_CONFIDENCE_BUNDLE_DRIFT` | 2 | `bilqis_mlx/learning/lesson_guidance.py` |
 | `CHAMPION_CONFIDENCE_GRADE_SOUPS_MISSING_FOR_ACTIVE_ROLES` | 1 | `bilqis_mlx/learning/lesson_guidance.py` |
-| `CHAMPION_CONFIDENCE_INVALID_INPUT` | 1 | `bilqis_mlx/learning/champion_confidence.py` |
-| `CHAMPION_CONFIDENCE_PERFECT_ROLE_DRIFT` | 1 | `bilqis_mlx/learning/champion_confidence.py` |
-| `CHAMPION_CONFIDENCE_RANK_NOT_VERIFIED` | 1 | `bilqis_mlx/learning/champion_confidence.py` |
-| `CHAMPION_CONFIDENCE_ROLE_ROSTER_INVALID` | 1 | `bilqis_mlx/learning/champion_confidence.py` |
-| `CHAMPION_CONFIDENCE_TRAINING_GUIDANCE_INVALID` | 1 | `bilqis_mlx/learning/student_ops.py` |
+| `CHAMPION_CONFIDENCE_INVALID_INPUT` | 1 | `bilqis_mlx/learning/_championship/champion_confidence.py` |
+| `CHAMPION_CONFIDENCE_PERFECT_ROLE_DRIFT` | 1 | `bilqis_mlx/learning/_championship/champion_confidence.py` |
+| `CHAMPION_CONFIDENCE_RANK_NOT_VERIFIED` | 1 | `bilqis_mlx/learning/_championship/champion_confidence.py` |
+| `CHAMPION_CONFIDENCE_ROLE_ROSTER_INVALID` | 1 | `bilqis_mlx/learning/_championship/champion_confidence.py` |
+| `CHAMPION_CONFIDENCE_TRAINING_GUIDANCE_INVALID` | 1 | `bilqis_mlx/learning/_teaching/student_ops.py` |
 | `CHAMPION_CONFIDENCE_UNSAFE_BUNDLE` | 1 | `bilqis_mlx/learning/lesson_guidance.py` |
-| `CHAMPION_POINTER_UNKNOWN_GRADE` | 1 | `bilqis_mlx/learning/champions.py` |
+| `CHAMPION_POINTER_UNKNOWN_GRADE` | 1 | `bilqis_mlx/learning/_championship/champions.py` |
 | `COHORT_COMPLETE_CHECKPOINT_REQUIRED` | 1 | `bilqis_mlx/generated_assessment.py` |
 | `COHORT_EMPTY` | 1 | `bilqis_mlx/generated_assessment.py` |
 | `COHORT_IDENTITY_OR_GOLD_INVALID` | 1 | `bilqis_mlx/generated_assessment.py` |
@@ -2074,8 +2086,8 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `CUTOVER_INVALID_COMPLETE_BUNDLE_REFERENCE` | 1 | `bilqis_mlx/grade_release_plan.py` |
 | `CUTOVER_INVALID_INTENT` | 1 | `bilqis_mlx/grade_release_plan.py` |
 | `CUTOVER_INVALID_OBSERVATION` | 1 | `bilqis_mlx/grade_release_plan.py` |
-| `DASHBOARD_PARTIAL_CANDIDATE_LEDGER` | 1 | `bilqis_mlx/presentation/spiral_dashboard.py` |
-| `DASHBOARD_REQUIRES_INTERACTIVE_TTY_USE_PLAIN_MODE` | 1 | `bilqis_mlx/presentation/spiral_dashboard.py` |
+| `DASHBOARD_PARTIAL_CANDIDATE_LEDGER` | 1 | `bilqis_mlx/presentation/renderer/commands.py` |
+| `DASHBOARD_REQUIRES_INTERACTIVE_TTY_USE_PLAIN_MODE` | 1 | `bilqis_mlx/presentation/renderer/commands.py` |
 | `DEBT_ADMISSION_REQUIRES_EXACT_COMPLETE_BOUNDARY` | 1 | `bilqis_mlx/runtime/release_adoption.py` |
 | `DEBT_GRADE_ADMISSION_INCOMPATIBLE_WITH_NUMERIC_STAIRCASE` | 1 | `bilqis_mlx/runtime/operating_loop.py` |
 | `DEBT_GRADE_ADMISSION_REQUIRES_RESUME` | 1 | `bilqis_mlx/runtime/operating_loop.py` |
@@ -2086,25 +2098,25 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `DEBT_GRADE_APPEND_REQUIRES_PARTIAL_PROGRAM` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `DEBT_PROMOTION_REQUIRES_COMPLETE_ACTIVE_ASSESSMENT` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `DEBT_SPIRAL_HAS_NO_IMPERFECT_GRADE` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
-| `DEVELOPMENT_BINDING_BASELINE_NOT_IN_RELEASE` | 1 | `bilqis_mlx/factory/development_binding.py` |
-| `DEVELOPMENT_BINDING_CAPABILITY_NOT_IN_RELEASE` | 1 | `bilqis_mlx/factory/development_binding.py` |
-| `DEVELOPMENT_BINDING_DUPLICATE_UNDERSTANDING_PLAN` | 1 | `bilqis_mlx/factory/development_binding.py` |
-| `DEVELOPMENT_BINDING_IDENTITY_INVALID` | 1 | `bilqis_mlx/factory/development_binding.py` |
-| `DEVELOPMENT_BINDING_INVALID_INPUT` | 1 | `bilqis_mlx/factory/development_binding.py` |
-| `DEVELOPMENT_BINDING_NOT_ONE_TO_ONE` | 1 | `bilqis_mlx/factory/development_binding.py` |
-| `DEVELOPMENT_BINDING_PREREQUISITE_MISMATCH` | 1 | `bilqis_mlx/factory/development_binding.py` |
-| `DEVELOPMENT_BINDING_PROJECTION_SCOPE_MISMATCH` | 1 | `bilqis_mlx/factory/development_binding.py` |
-| `DEVELOPMENT_BINDING_UNBOUND_UNDERSTANDING_PLAN` | 1 | `bilqis_mlx/factory/development_binding.py` |
-| `DEVELOPMENT_BINDING_UNKNOWN_TARGET` | 1 | `bilqis_mlx/factory/development_binding.py` |
-| `DEVELOPMENT_COMPLETION_SCOPE_INVALID` | 1 | `bilqis_mlx/factory/development.py` |
-| `DEVELOPMENT_FRONTIER_EVIDENCE_SCOPE_INVALID` | 1 | `bilqis_mlx/factory/development_binding.py` |
-| `DEVELOPMENT_RELEASE_PLAN_INVALID` | 1 | `bilqis_mlx/factory/development_binding.py` |
-| `DEVELOPMENT_STAIRCASE_CYCLE` | 1 | `bilqis_mlx/factory/development.py` |
-| `DEVELOPMENT_STAIRCASE_DUPLICATE_TARGET` | 1 | `bilqis_mlx/factory/development.py` |
-| `DEVELOPMENT_STAIRCASE_IDENTITY_INVALID` | 1 | `bilqis_mlx/factory/development.py` |
-| `DEVELOPMENT_STAIRCASE_PREREQUISITE_NOT_EARLIER` | 1 | `bilqis_mlx/factory/development.py` |
-| `DEVELOPMENT_STAIRCASE_UNKNOWN_PREREQUISITE` | 1 | `bilqis_mlx/factory/development.py` |
-| `DEVELOPMENT_TARGET_IDENTITY_INVALID` | 1 | `bilqis_mlx/factory/development.py` |
+| `DEVELOPMENT_BINDING_BASELINE_NOT_IN_RELEASE` | 1 | `bilqis_mlx/factory/curriculum/development_binding.py` |
+| `DEVELOPMENT_BINDING_CAPABILITY_NOT_IN_RELEASE` | 1 | `bilqis_mlx/factory/curriculum/development_binding.py` |
+| `DEVELOPMENT_BINDING_DUPLICATE_UNDERSTANDING_PLAN` | 1 | `bilqis_mlx/factory/curriculum/development_binding.py` |
+| `DEVELOPMENT_BINDING_IDENTITY_INVALID` | 1 | `bilqis_mlx/factory/curriculum/development_binding.py` |
+| `DEVELOPMENT_BINDING_INVALID_INPUT` | 1 | `bilqis_mlx/factory/curriculum/development_binding.py` |
+| `DEVELOPMENT_BINDING_NOT_ONE_TO_ONE` | 1 | `bilqis_mlx/factory/curriculum/development_binding.py` |
+| `DEVELOPMENT_BINDING_PREREQUISITE_MISMATCH` | 1 | `bilqis_mlx/factory/curriculum/development_binding.py` |
+| `DEVELOPMENT_BINDING_PROJECTION_SCOPE_MISMATCH` | 1 | `bilqis_mlx/factory/curriculum/development_binding.py` |
+| `DEVELOPMENT_BINDING_UNBOUND_UNDERSTANDING_PLAN` | 1 | `bilqis_mlx/factory/curriculum/development_binding.py` |
+| `DEVELOPMENT_BINDING_UNKNOWN_TARGET` | 1 | `bilqis_mlx/factory/curriculum/development_binding.py` |
+| `DEVELOPMENT_COMPLETION_SCOPE_INVALID` | 1 | `bilqis_mlx/factory/curriculum/development.py` |
+| `DEVELOPMENT_FRONTIER_EVIDENCE_SCOPE_INVALID` | 1 | `bilqis_mlx/factory/curriculum/development_binding.py` |
+| `DEVELOPMENT_RELEASE_PLAN_INVALID` | 1 | `bilqis_mlx/factory/curriculum/development_binding.py` |
+| `DEVELOPMENT_STAIRCASE_CYCLE` | 1 | `bilqis_mlx/factory/curriculum/development.py` |
+| `DEVELOPMENT_STAIRCASE_DUPLICATE_TARGET` | 1 | `bilqis_mlx/factory/curriculum/development.py` |
+| `DEVELOPMENT_STAIRCASE_IDENTITY_INVALID` | 1 | `bilqis_mlx/factory/curriculum/development.py` |
+| `DEVELOPMENT_STAIRCASE_PREREQUISITE_NOT_EARLIER` | 1 | `bilqis_mlx/factory/curriculum/development.py` |
+| `DEVELOPMENT_STAIRCASE_UNKNOWN_PREREQUISITE` | 1 | `bilqis_mlx/factory/curriculum/development.py` |
+| `DEVELOPMENT_TARGET_IDENTITY_INVALID` | 1 | `bilqis_mlx/factory/curriculum/development.py` |
 | `DIAGNOSTIC_CACHED_EVIDENCE_UNSAFE_PATH` | 1 | `bilqis_mlx/diagnostics/observations.py` |
 | `DIAGNOSTIC_COHORT_CONTENT_DRIFT` | 1 | `bilqis_mlx/diagnostics/observations.py` |
 | `DIAGNOSTIC_COHORT_OUTSIDE_RUN` | 2 | `bilqis_mlx/diagnostics/observations.py` |
@@ -2208,18 +2220,18 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `FACTORY_ADMISSION_SEALED_COURSE_MISMATCH` | 1 | `bilqis_mlx/compatibility/executable_projection.py` |
 | `FACTORY_ADMISSION_SEALED_GRAPH_DRIFT` | 1 | `bilqis_mlx/compatibility/executable_projection.py` |
 | `FACTORY_ADMISSION_SEALED_RESUME_IDENTITY_DRIFT` | 1 | `bilqis_mlx/runtime/admission.py` |
-| `FACTORY_ANSWER_HEAD_COMPILATION_INVALID_INPUT` | 1 | `bilqis_mlx/factory/answers.py` |
-| `FACTORY_ANSWER_HEAD_GRAPH_INVALID` | 1 | `bilqis_mlx/factory/answers.py` |
-| `FACTORY_ANSWER_MODALITY_CANONICAL_DOMAIN_INVALID` | 1 | `bilqis_mlx/factory/answers.py` |
-| `FACTORY_ANSWER_MODALITY_IDENTITY_INVALID` | 1 | `bilqis_mlx/factory/answers.py` |
-| `FACTORY_ANSWER_MODALITY_IMPLEMENTATION_REQUIRED` | 1 | `bilqis_mlx/factory/answers.py` |
-| `FACTORY_ANSWER_MODALITY_MISSING` | 1 | `bilqis_mlx/factory/answers.py` |
-| `FACTORY_ANSWER_MODALITY_PLAN_REQUIRED` | 1 | `bilqis_mlx/factory/answers.py` |
-| `FACTORY_ANSWER_MODALITY_SEMANTIC_BINDING_MISSING` | 1 | `bilqis_mlx/factory/answers.py` |
-| `FACTORY_ASSESSMENT_EXECUTABLE_RELEASE_REQUIRED` | 1 | `bilqis_mlx/factory/assessment.py` |
-| `FACTORY_ASSESSMENT_SCOPE_DUPLICATE_CAPABILITY` | 1 | `bilqis_mlx/factory/assessment.py` |
-| `FACTORY_ASSESSMENT_SCOPE_EMPTY` | 2 | `bilqis_mlx/factory/assessment.py`, `bilqis_mlx/live_curriculum.py` |
-| `FACTORY_ASSESSMENT_SCOPE_UNKNOWN_CAPABILITY` | 1 | `bilqis_mlx/factory/assessment.py` |
+| `FACTORY_ANSWER_HEAD_COMPILATION_INVALID_INPUT` | 1 | `bilqis_mlx/factory/lifecycle/answers.py` |
+| `FACTORY_ANSWER_HEAD_GRAPH_INVALID` | 1 | `bilqis_mlx/factory/lifecycle/answers.py` |
+| `FACTORY_ANSWER_MODALITY_CANONICAL_DOMAIN_INVALID` | 1 | `bilqis_mlx/factory/lifecycle/answers.py` |
+| `FACTORY_ANSWER_MODALITY_IDENTITY_INVALID` | 1 | `bilqis_mlx/factory/lifecycle/answers.py` |
+| `FACTORY_ANSWER_MODALITY_IMPLEMENTATION_REQUIRED` | 1 | `bilqis_mlx/factory/lifecycle/answers.py` |
+| `FACTORY_ANSWER_MODALITY_MISSING` | 1 | `bilqis_mlx/factory/lifecycle/answers.py` |
+| `FACTORY_ANSWER_MODALITY_PLAN_REQUIRED` | 1 | `bilqis_mlx/factory/lifecycle/answers.py` |
+| `FACTORY_ANSWER_MODALITY_SEMANTIC_BINDING_MISSING` | 1 | `bilqis_mlx/factory/lifecycle/answers.py` |
+| `FACTORY_ASSESSMENT_EXECUTABLE_RELEASE_REQUIRED` | 1 | `bilqis_mlx/factory/lifecycle/assessment.py` |
+| `FACTORY_ASSESSMENT_SCOPE_DUPLICATE_CAPABILITY` | 1 | `bilqis_mlx/factory/lifecycle/assessment.py` |
+| `FACTORY_ASSESSMENT_SCOPE_EMPTY` | 2 | `bilqis_mlx/factory/lifecycle/assessment.py`, `bilqis_mlx/live_curriculum.py` |
+| `FACTORY_ASSESSMENT_SCOPE_UNKNOWN_CAPABILITY` | 1 | `bilqis_mlx/factory/lifecycle/assessment.py` |
 | `FACTORY_BOOLEAN_EVIDENCE_PRODUCER_UNRESOLVED` | 1 | `bilqis_mlx/source_adapters/school.py` |
 | `FACTORY_BOOLEAN_PROFILE_PARAMETER_SCOPE_DRIFT` | 1 | `bilqis_mlx/source_adapters/school.py` |
 | `FACTORY_BOOLEAN_PROFILE_PARAMETER_UNKNOWN` | 1 | `bilqis_mlx/source_adapters/school.py` |
@@ -2250,17 +2262,17 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `FACTORY_CURRICULUM_PREREQUISITE_NOT_EARLIER` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
 | `FACTORY_CURRICULUM_STAGES_INVALID` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
 | `FACTORY_CURRICULUM_UNTAUGHT_EXAM_ROOT` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
-| `FACTORY_DUPLICATE_ANSWER_MODALITY` | 1 | `bilqis_mlx/factory/answers.py` |
+| `FACTORY_DUPLICATE_ANSWER_MODALITY` | 1 | `bilqis_mlx/factory/lifecycle/answers.py` |
 | `FACTORY_DUPLICATE_GENERATOR_ADAPTER` | 1 | `bilqis_mlx/factory/adapters.py` |
 | `FACTORY_EVIDENCE_DEPENDENCY_DUPLICATE` | 1 | `bilqis_mlx/factory/adapters.py` |
 | `FACTORY_EVIDENCE_DEPENDENCY_RESULT_INVALID` | 1 | `bilqis_mlx/factory/adapters.py` |
-| `FACTORY_EVIDENCE_DRAW_ARGUMENT_INVALID` | 1 | `bilqis_mlx/factory/evidence.py` |
-| `FACTORY_EVIDENCE_OBLIGATION_REQUIRED` | 1 | `bilqis_mlx/factory/evidence.py` |
-| `FACTORY_EVIDENCE_PREDICTOR_REQUIRED` | 1 | `bilqis_mlx/factory/evidence.py` |
-| `FACTORY_EVIDENCE_REGISTRY_REQUIRED` | 1 | `bilqis_mlx/factory/evidence.py` |
-| `FACTORY_EVIDENCE_UNKNOWN_CAPABILITY` | 3 | `bilqis_mlx/factory/adapters.py`, `bilqis_mlx/factory/evidence.py` |
+| `FACTORY_EVIDENCE_DRAW_ARGUMENT_INVALID` | 1 | `bilqis_mlx/factory/lifecycle/evidence.py` |
+| `FACTORY_EVIDENCE_OBLIGATION_REQUIRED` | 1 | `bilqis_mlx/factory/lifecycle/evidence.py` |
+| `FACTORY_EVIDENCE_PREDICTOR_REQUIRED` | 1 | `bilqis_mlx/factory/lifecycle/evidence.py` |
+| `FACTORY_EVIDENCE_REGISTRY_REQUIRED` | 1 | `bilqis_mlx/factory/lifecycle/evidence.py` |
+| `FACTORY_EVIDENCE_UNKNOWN_CAPABILITY` | 3 | `bilqis_mlx/factory/adapters.py`, `bilqis_mlx/factory/lifecycle/evidence.py` |
 | `FACTORY_EVIDENCE_WITNESS_ADAPTER_REQUIRED` | 1 | `bilqis_mlx/factory/adapters.py` |
-| `FACTORY_EVIDENCE_WITNESS_EXHAUSTED` | 1 | `bilqis_mlx/factory/evidence.py` |
+| `FACTORY_EVIDENCE_WITNESS_EXHAUSTED` | 1 | `bilqis_mlx/factory/lifecycle/evidence.py` |
 | `FACTORY_EVIDENCE_WITNESS_RESULT_INVALID` | 1 | `bilqis_mlx/factory/adapters.py` |
 | `FACTORY_EXECUTABLE_ADMISSION_BASELINE_DRIFT` | 1 | `bilqis_mlx/factory/executable_release.py` |
 | `FACTORY_EXECUTABLE_ADMISSION_RECEIPT_INVALID` | 1 | `bilqis_mlx/runtime/admission.py` |
@@ -2333,7 +2345,7 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `FACTORY_EXECUTION_PLAN_LINEAGE_REQUIRED` | 1 | `bilqis_mlx/factory/execution.py` |
 | `FACTORY_EXECUTION_PLAN_REGISTRY_REQUIRED` | 1 | `bilqis_mlx/factory/execution.py` |
 | `FACTORY_EXECUTION_PLAN_SOURCE_BINDINGS_REQUIRED` | 1 | `bilqis_mlx/factory/execution.py` |
-| `FACTORY_GENERALIZATION_MUST_USE_DISTINCT_COHORT` | 1 | `bilqis_mlx/factory/assessment.py` |
+| `FACTORY_GENERALIZATION_MUST_USE_DISTINCT_COHORT` | 1 | `bilqis_mlx/factory/lifecycle/assessment.py` |
 | `FACTORY_GENERATION_ADAPTER_DRIFT` | 1 | `bilqis_mlx/factory/generation.py` |
 | `FACTORY_GENERATION_ADAPTER_SCOPE_DRIFT` | 1 | `bilqis_mlx/factory/generation.py` |
 | `FACTORY_GENERATION_ANSWER_CONTRACT_DRIFT` | 1 | `bilqis_mlx/factory/generation.py` |
@@ -2343,7 +2355,7 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `FACTORY_GENERATION_REGISTRY_REQUIRED` | 1 | `bilqis_mlx/factory/generation.py` |
 | `FACTORY_GENERATION_SOURCE_ORACLE_DISAGREEMENT` | 1 | `bilqis_mlx/factory/generation.py` |
 | `FACTORY_GENERATION_UNKNOWN_CAPABILITY` | 1 | `bilqis_mlx/factory/generation.py` |
-| `FACTORY_INVALID_REGISTERED_ANSWER_MODALITY` | 1 | `bilqis_mlx/factory/answers.py` |
+| `FACTORY_INVALID_REGISTERED_ANSWER_MODALITY` | 1 | `bilqis_mlx/factory/lifecycle/answers.py` |
 | `FACTORY_INVALID_REGISTERED_SOURCE_ADAPTER` | 1 | `bilqis_mlx/factory/adapters.py` |
 | `FACTORY_LEARNING_EVIDENCE_CLASS_INVALID` | 1 | `bilqis_mlx/factory/model.py` |
 | `FACTORY_LEARNING_EVIDENCE_VALUE_INVALID` | 1 | `bilqis_mlx/factory/model.py` |
@@ -2397,9 +2409,9 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `FACTORY_PROFILE_STAGES_MUST_PARTITION_ENABLED_CAPABILITIES` | 1 | `bilqis_mlx/factory/execution.py` |
 | `FACTORY_PROFILE_UNKNOWN_ANSWER_FAMILY` | 1 | `bilqis_mlx/factory/execution.py` |
 | `FACTORY_PROFILE_UNKNOWN_GRADE` | 1 | `bilqis_mlx/factory/execution.py` |
-| `FACTORY_QUALIFICATION_CHECKPOINT_MISMATCH` | 1 | `bilqis_mlx/factory/assessment.py` |
-| `FACTORY_QUALIFICATION_EVIDENCE_CLASS_INVALID` | 1 | `bilqis_mlx/factory/assessment.py` |
-| `FACTORY_QUALIFICATION_EVIDENCE_REQUIRED` | 1 | `bilqis_mlx/factory/assessment.py` |
+| `FACTORY_QUALIFICATION_CHECKPOINT_MISMATCH` | 1 | `bilqis_mlx/factory/lifecycle/assessment.py` |
+| `FACTORY_QUALIFICATION_EVIDENCE_CLASS_INVALID` | 1 | `bilqis_mlx/factory/lifecycle/assessment.py` |
+| `FACTORY_QUALIFICATION_EVIDENCE_REQUIRED` | 1 | `bilqis_mlx/factory/lifecycle/assessment.py` |
 | `FACTORY_RELEASE_ADAPTER_WIRE_MIXED` | 1 | `bilqis_mlx/factory/model.py` |
 | `FACTORY_RELEASE_ARTIFACT_DIGEST_DRIFT` | 1 | `bilqis_mlx/runtime/admission.py` |
 | `FACTORY_RELEASE_ASSESSMENT_CONTRACT_DRIFT` | 1 | `bilqis_mlx/factory/model.py` |
@@ -2421,7 +2433,7 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `FACTORY_RELEASE_GRADE_CONTRACT_DRIFT` | 1 | `bilqis_mlx/factory/model.py` |
 | `FACTORY_RELEASE_HAS_NO_LEGACY_GENERATOR_LABEL` | 1 | `bilqis_mlx/compatibility/live_releases.py` |
 | `FACTORY_RELEASE_HAS_NO_PREDECESSOR` | 1 | `bilqis_mlx/compatibility/live_releases.py` |
-| `FACTORY_RELEASE_INVALID_INPUT` | 1 | `bilqis_mlx/factory/release.py` |
+| `FACTORY_RELEASE_INVALID_INPUT` | 1 | `bilqis_mlx/factory/lifecycle/release.py` |
 | `FACTORY_RELEASE_LEGACY_ADAPTER_SCOPE_DRIFT` | 1 | `bilqis_mlx/factory/model.py` |
 | `FACTORY_RELEASE_MANIFEST_CONTENT_DRIFT` | 1 | `bilqis_mlx/factory/model.py` |
 | `FACTORY_RELEASE_MANIFEST_INVALID` | 1 | `bilqis_mlx/factory/model.py` |
@@ -2429,7 +2441,7 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `FACTORY_RELEASE_PREDECESSOR_AMBIGUOUS` | 1 | `bilqis_mlx/compatibility/live_releases.py` |
 | `FACTORY_RELEASE_PROVIDER_DIGEST_DRIFT` | 1 | `bilqis_mlx/compatibility/live_releases.py` |
 | `FACTORY_RELEASE_REQUIRED_FOR_SOURCE_GENERATION` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `FACTORY_RELEASE_REQUIRES_EXECUTABLE_COURSE` | 1 | `bilqis_mlx/factory/release.py` |
+| `FACTORY_RELEASE_REQUIRES_EXECUTABLE_COURSE` | 1 | `bilqis_mlx/factory/lifecycle/release.py` |
 | `FACTORY_RELEASE_RUNTIME_SOURCE_ADAPTER_DRIFT` | 1 | `bilqis_mlx/runtime/admission.py` |
 | `FACTORY_RELEASE_SEMANTIC_BINDING_DRIFT` | 1 | `bilqis_mlx/factory/model.py` |
 | `FACTORY_RELEASE_SOURCE_ORACLE_BINDING_INVALID` | 1 | `bilqis_mlx/factory/model.py` |
@@ -2438,19 +2450,19 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `FACTORY_SCHEDULE_APPEND_FUTURE_CHAMPION_EXISTS` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `FACTORY_SCHEDULE_APPEND_INVALID` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `FACTORY_SCHEDULE_APPEND_REQUIRES_GRADUATED_PREFIX` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
-| `FACTORY_SCHEDULE_ASSESSMENT_INVALID` | 1 | `bilqis_mlx/factory/schedule.py` |
-| `FACTORY_SCHEDULE_ASSESSMENT_PROJECTIONS_INVALID` | 1 | `bilqis_mlx/factory/schedule.py` |
-| `FACTORY_SCHEDULE_ASSESSMENT_SCOPE_INVALID` | 1 | `bilqis_mlx/factory/schedule.py` |
-| `FACTORY_SCHEDULE_CAPABILITY_INVALID` | 1 | `bilqis_mlx/factory/schedule.py` |
-| `FACTORY_SCHEDULE_DUPLICATE_CAPABILITY` | 1 | `bilqis_mlx/factory/schedule.py` |
-| `FACTORY_SCHEDULE_DUPLICATE_GRADE` | 1 | `bilqis_mlx/factory/schedule.py` |
-| `FACTORY_SCHEDULE_EXECUTABLE_RELEASE_REQUIRED` | 1 | `bilqis_mlx/factory/schedule.py` |
-| `FACTORY_SCHEDULE_GRADE_INVALID` | 1 | `bilqis_mlx/factory/schedule.py` |
-| `FACTORY_SCHEDULE_MANIFEST_INVALID` | 1 | `bilqis_mlx/factory/schedule.py` |
-| `FACTORY_SCHEDULE_PROGRAM_INVALID` | 1 | `bilqis_mlx/factory/schedule.py` |
+| `FACTORY_SCHEDULE_ASSESSMENT_INVALID` | 1 | `bilqis_mlx/factory/lifecycle/schedule.py` |
+| `FACTORY_SCHEDULE_ASSESSMENT_PROJECTIONS_INVALID` | 1 | `bilqis_mlx/factory/lifecycle/schedule.py` |
+| `FACTORY_SCHEDULE_ASSESSMENT_SCOPE_INVALID` | 1 | `bilqis_mlx/factory/lifecycle/schedule.py` |
+| `FACTORY_SCHEDULE_CAPABILITY_INVALID` | 1 | `bilqis_mlx/factory/lifecycle/schedule.py` |
+| `FACTORY_SCHEDULE_DUPLICATE_CAPABILITY` | 1 | `bilqis_mlx/factory/lifecycle/schedule.py` |
+| `FACTORY_SCHEDULE_DUPLICATE_GRADE` | 1 | `bilqis_mlx/factory/lifecycle/schedule.py` |
+| `FACTORY_SCHEDULE_EXECUTABLE_RELEASE_REQUIRED` | 1 | `bilqis_mlx/factory/lifecycle/schedule.py` |
+| `FACTORY_SCHEDULE_GRADE_INVALID` | 1 | `bilqis_mlx/factory/lifecycle/schedule.py` |
+| `FACTORY_SCHEDULE_MANIFEST_INVALID` | 1 | `bilqis_mlx/factory/lifecycle/schedule.py` |
+| `FACTORY_SCHEDULE_PROGRAM_INVALID` | 1 | `bilqis_mlx/factory/lifecycle/schedule.py` |
 | `FACTORY_SCHEDULE_REVISION_INVALID` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `FACTORY_SCHEDULE_REVISION_REQUIRES_ACTIVE_GRADE` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
-| `FACTORY_SCHEDULE_STAGES_INVALID` | 1 | `bilqis_mlx/factory/schedule.py` |
+| `FACTORY_SCHEDULE_STAGES_INVALID` | 1 | `bilqis_mlx/factory/lifecycle/schedule.py` |
 | `FACTORY_SEALED_COHORT_ADAPTER_AMBIGUOUS` | 1 | `bilqis_mlx/compatibility/assessment.py` |
 | `FACTORY_SEMANTIC_RELEASE_VERSION_REQUIRED` | 1 | `bilqis_mlx/factory/model.py` |
 | `FACTORY_SOURCE_ADAPTER_COHORT_GENERATOR_INVALID` | 1 | `bilqis_mlx/factory/model.py` |
@@ -2466,13 +2478,13 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `FACTORY_SOURCE_BINDING_IDENTITY_INVALID` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
 | `FACTORY_SOURCE_CONSTRUCTOR_AND_CHECKER_REQUIRED` | 1 | `bilqis_mlx/factory/adapters.py` |
 | `FACTORY_SOURCE_ORACLE_NOT_ADAPTER_OWNED` | 1 | `bilqis_mlx/factory/adapters.py` |
-| `FACTORY_TEACHING_DELIVERY_UNPROVEN` | 1 | `bilqis_mlx/factory/teaching.py` |
+| `FACTORY_TEACHING_DELIVERY_UNPROVEN` | 1 | `bilqis_mlx/factory/lifecycle/teaching.py` |
 | `FACTORY_TEACHING_ENRICHMENT_SCOPE_DRIFT` | 1 | `bilqis_mlx/factory/adapters.py` |
-| `FACTORY_TEACHING_OPTION_EMPTY` | 1 | `bilqis_mlx/factory/teaching.py` |
-| `FACTORY_TEACHING_OPTION_HAS_NO_IMPLEMENTATION` | 2 | `bilqis_mlx/factory/adapters.py`, `bilqis_mlx/factory/teaching.py` |
+| `FACTORY_TEACHING_OPTION_EMPTY` | 1 | `bilqis_mlx/factory/lifecycle/teaching.py` |
+| `FACTORY_TEACHING_OPTION_HAS_NO_IMPLEMENTATION` | 2 | `bilqis_mlx/factory/adapters.py`, `bilqis_mlx/factory/lifecycle/teaching.py` |
 | `FACTORY_TEACHING_OPTION_ID_REQUIRED` | 1 | `bilqis_mlx/runtime/admission.py` |
-| `FACTORY_TEACHING_OPTION_NOT_RELEASED` | 1 | `bilqis_mlx/factory/teaching.py` |
-| `FACTORY_TEACHING_SOURCE_ORACLE_DISAGREEMENT` | 1 | `bilqis_mlx/factory/teaching.py` |
+| `FACTORY_TEACHING_OPTION_NOT_RELEASED` | 1 | `bilqis_mlx/factory/lifecycle/teaching.py` |
+| `FACTORY_TEACHING_SOURCE_ORACLE_DISAGREEMENT` | 1 | `bilqis_mlx/factory/lifecycle/teaching.py` |
 | `FACTORY_TEACHING_UNKNOWN_CAPABILITY` | 3 | `bilqis_mlx/factory/adapters.py` |
 | `FACTORY_TYPED_SAME_GRADE_REVISION_REQUIRES_GRAPH` | 1 | `bilqis_mlx/compatibility/live_releases.py` |
 | `FACTORY_UNKNOWN_BOOLEAN_TEACHING_OPTION` | 1 | `bilqis_mlx/source_adapters/school.py` |
@@ -2505,20 +2517,20 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `FLASH_MODE_REQUIRES_RESUME` | 2 | `bilqis_mlx/cli.py`, `bilqis_mlx/runtime/operating_loop.py` |
 | `FLASH_SCHEDULER_EXAM_REQUIRES_CHECKPOINTED_STUDENT` | 1 | `bilqis_mlx/runtime/exam_execution.py` |
 | `FRAGILE_PRESERVATION_BATCH_CAPACITY_EXHAUSTED` | 1 | `bilqis_mlx/runtime/candidate_evidence.py` |
-| `FRAGILE_PRESERVATION_INCOMPLETE_TRUTH_TABLE` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
-| `FRAGILE_PRESERVATION_INVALID_CAPABILITY_SET` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
-| `FRAGILE_PRESERVATION_ROTATION_INVALID` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
-| `FRAGILE_PRESERVATION_SOURCE_TOKENS_MISSING` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
-| `FRAGILE_REPLAY_CAPABILITY_SET_INVALID` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
-| `FRAGILE_REPLAY_COHORT_CONTENT_DRIFT` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
-| `FRAGILE_REPLAY_INCOMPLETE_B_CAPABILITY` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
-| `FRAGILE_REPLAY_INCOMPLETE_B_COHORT` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
-| `FRAGILE_REPLAY_INCOMPLETE_TRUTH_TABLE` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
-| `FRAGILE_REPLAY_INVALID_PREDICTION` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
-| `FRAGILE_REPLAY_MISSING_PAIRED_PREDICTION` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
-| `FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
-| `FRAGILE_REPLAY_UNBOUND_EXAM_COHORT` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
-| `FRAGILE_REPLAY_UNSAFE_COHORT_PATH` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
+| `FRAGILE_PRESERVATION_INCOMPLETE_TRUTH_TABLE` | 1 | `bilqis_mlx/learning/_retention/fragile_replay.py` |
+| `FRAGILE_PRESERVATION_INVALID_CAPABILITY_SET` | 1 | `bilqis_mlx/learning/_retention/fragile_replay.py` |
+| `FRAGILE_PRESERVATION_ROTATION_INVALID` | 1 | `bilqis_mlx/learning/_retention/fragile_replay.py` |
+| `FRAGILE_PRESERVATION_SOURCE_TOKENS_MISSING` | 1 | `bilqis_mlx/learning/_retention/fragile_replay.py` |
+| `FRAGILE_REPLAY_CAPABILITY_SET_INVALID` | 1 | `bilqis_mlx/learning/_retention/fragile_replay.py` |
+| `FRAGILE_REPLAY_COHORT_CONTENT_DRIFT` | 1 | `bilqis_mlx/learning/_retention/fragile_replay.py` |
+| `FRAGILE_REPLAY_INCOMPLETE_B_CAPABILITY` | 1 | `bilqis_mlx/learning/_retention/fragile_replay.py` |
+| `FRAGILE_REPLAY_INCOMPLETE_B_COHORT` | 1 | `bilqis_mlx/learning/_retention/fragile_replay.py` |
+| `FRAGILE_REPLAY_INCOMPLETE_TRUTH_TABLE` | 1 | `bilqis_mlx/learning/_retention/fragile_replay.py` |
+| `FRAGILE_REPLAY_INVALID_PREDICTION` | 1 | `bilqis_mlx/learning/_retention/fragile_replay.py` |
+| `FRAGILE_REPLAY_MISSING_PAIRED_PREDICTION` | 1 | `bilqis_mlx/learning/_retention/fragile_replay.py` |
+| `FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT` | 1 | `bilqis_mlx/learning/_retention/fragile_replay.py` |
+| `FRAGILE_REPLAY_UNBOUND_EXAM_COHORT` | 1 | `bilqis_mlx/learning/_retention/fragile_replay.py` |
+| `FRAGILE_REPLAY_UNSAFE_COHORT_PATH` | 1 | `bilqis_mlx/learning/_retention/fragile_replay.py` |
 | `FULL_CONTINUATION_DISPOSABLE_RESTART_DRIFT` | 1 | `bilqis_mlx/full_student_qualification.py` |
 | `FULL_CONTINUATION_MISSING_MLX_GRADIENT` | 1 | `bilqis_mlx/full_student_qualification.py` |
 | `FULL_CONTINUATION_NOT_FP32` | 1 | `bilqis_mlx/full_student_qualification.py` |
@@ -2666,44 +2678,44 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `GRADE_REVISION_REQUIRES_EXACTLY_ONE_CHANGED_GRADE` | 1 | `bilqis_mlx/compatibility/scheduler_transitions.py` |
 | `GRADE_REVISION_REQUIRES_SAME_PARTIAL_GRADE_PROGRAM` | 1 | `bilqis_mlx/compatibility/scheduler_transitions.py` |
 | `GRADE_SOUP_CHAMPION_CUSTODY_DRIFT` | 1 | `bilqis_mlx/learning/lesson_guidance.py` |
-| `GRADE_SOUP_COVERAGE_PEAK_REGRESSED` | 1 | `bilqis_mlx/learning/grade_soup.py` |
+| `GRADE_SOUP_COVERAGE_PEAK_REGRESSED` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
 | `GRADE_SOUP_CUSTODY_GRADE_DRIFT` | 1 | `bilqis_mlx/runtime/checkpoints.py` |
-| `GRADE_SOUP_EXISTING_RECIPE_DRIFT` | 1 | `bilqis_mlx/learning/grade_soup.py` |
-| `GRADE_SOUP_EXISTING_SCHEMA_DRIFT` | 1 | `bilqis_mlx/learning/grade_soup.py` |
+| `GRADE_SOUP_EXISTING_RECIPE_DRIFT` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
+| `GRADE_SOUP_EXISTING_SCHEMA_DRIFT` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
 | `GRADE_SOUP_FROZEN_MODEL_SHAPE_DRIFT` | 1 | `bilqis_mlx/learning/lesson_guidance.py` |
 | `GRADE_SOUP_GRADE_POINTER_DRIFT` | 1 | `bilqis_mlx/learning/lesson_guidance.py` |
 | `GRADE_SOUP_INGREDIENT_GRAPH_DIGEST_COLLISION` | 1 | `bilqis_mlx/learning/lesson_guidance.py` |
-| `GRADE_SOUP_INVALID_ADMITTED_CAPABILITIES` | 1 | `bilqis_mlx/learning/grade_soup.py` |
-| `GRADE_SOUP_INVALID_FROZEN_TENSORS` | 1 | `bilqis_mlx/learning/grade_soup.py` |
-| `GRADE_SOUP_INVALID_INGREDIENT` | 1 | `bilqis_mlx/learning/grade_soup.py` |
-| `GRADE_SOUP_INVALID_VOTE_SCOPE` | 1 | `bilqis_mlx/learning/grade_soup.py` |
-| `GRADE_SOUP_NO_INGREDIENTS` | 1 | `bilqis_mlx/learning/grade_soup.py` |
-| `GRADE_SOUP_PARAMETER_GEOMETRY_DRIFT` | 1 | `bilqis_mlx/learning/grade_soup.py` |
-| `GRADE_SOUP_PARTITIONED_SNAPSHOT_DRIFT` | 1 | `bilqis_mlx/learning/grade_soup.py` |
-| `GRADE_SOUP_PARTITION_GRAPH_UNVERIFIED` | 1 | `bilqis_mlx/learning/grade_soup.py` |
-| `GRADE_SOUP_PARTITION_LOST_VOTES` | 1 | `bilqis_mlx/learning/grade_soup.py` |
-| `GRADE_SOUP_PARTITION_UNRECOGNIZED_RECIPE` | 1 | `bilqis_mlx/learning/grade_soup.py` |
-| `GRADE_SOUP_PARTITION_VOTE_DRIFT` | 1 | `bilqis_mlx/learning/grade_soup.py` |
-| `GRADE_SOUP_PREVIOUS_BACKUP_DRIFT` | 2 | `bilqis_mlx/learning/grade_soup.py`, `bilqis_mlx/runtime/checkpoints.py` |
-| `GRADE_SOUP_REQUIRES_FP32_WEIGHTS` | 1 | `bilqis_mlx/learning/grade_soup.py` |
-| `GRADE_SOUP_RETIRE_UNSAFE_ARTIFACT` | 1 | `bilqis_mlx/learning/grade_soup.py` |
-| `GRADE_SOUP_RETIRE_UNSAFE_DIRECTORY` | 1 | `bilqis_mlx/learning/grade_soup.py` |
-| `GRADE_SOUP_SAVED_ARTIFACT_CHANGED` | 2 | `bilqis_mlx/learning/grade_soup.py`, `bilqis_mlx/learning/lesson_guidance.py` |
-| `GRADE_SOUP_SAVED_ARTIFACT_MISSING` | 1 | `bilqis_mlx/learning/grade_soup.py` |
-| `GRADE_SOUP_SAVED_PATH_DRIFT` | 1 | `bilqis_mlx/learning/grade_soup.py` |
-| `GRADE_SOUP_SAVED_SCHEMA_DRIFT` | 2 | `bilqis_mlx/learning/grade_soup.py` |
+| `GRADE_SOUP_INVALID_ADMITTED_CAPABILITIES` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
+| `GRADE_SOUP_INVALID_FROZEN_TENSORS` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
+| `GRADE_SOUP_INVALID_INGREDIENT` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
+| `GRADE_SOUP_INVALID_VOTE_SCOPE` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
+| `GRADE_SOUP_NO_INGREDIENTS` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
+| `GRADE_SOUP_PARAMETER_GEOMETRY_DRIFT` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
+| `GRADE_SOUP_PARTITIONED_SNAPSHOT_DRIFT` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
+| `GRADE_SOUP_PARTITION_GRAPH_UNVERIFIED` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
+| `GRADE_SOUP_PARTITION_LOST_VOTES` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
+| `GRADE_SOUP_PARTITION_UNRECOGNIZED_RECIPE` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
+| `GRADE_SOUP_PARTITION_VOTE_DRIFT` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
+| `GRADE_SOUP_PREVIOUS_BACKUP_DRIFT` | 2 | `bilqis_mlx/learning/_championship/grade_soup.py`, `bilqis_mlx/runtime/checkpoints.py` |
+| `GRADE_SOUP_REQUIRES_FP32_WEIGHTS` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
+| `GRADE_SOUP_RETIRE_UNSAFE_ARTIFACT` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
+| `GRADE_SOUP_RETIRE_UNSAFE_DIRECTORY` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
+| `GRADE_SOUP_SAVED_ARTIFACT_CHANGED` | 2 | `bilqis_mlx/learning/_championship/grade_soup.py`, `bilqis_mlx/learning/lesson_guidance.py` |
+| `GRADE_SOUP_SAVED_ARTIFACT_MISSING` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
+| `GRADE_SOUP_SAVED_PATH_DRIFT` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
+| `GRADE_SOUP_SAVED_SCHEMA_DRIFT` | 2 | `bilqis_mlx/learning/_championship/grade_soup.py` |
 | `GRADE_SOUP_UNSAFE_CHAMPION_BUNDLE` | 1 | `bilqis_mlx/learning/lesson_guidance.py` |
-| `GRADE_SOUP_UNSAFE_DIRECTORY` | 1 | `bilqis_mlx/learning/grade_soup.py` |
+| `GRADE_SOUP_UNSAFE_DIRECTORY` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
 | `GRADE_SOUP_UNSAFE_SAVED_PATH` | 1 | `bilqis_mlx/learning/lesson_guidance.py` |
-| `GRADE_SOUP_UNVERIFIED_CHAMPION` | 1 | `bilqis_mlx/learning/grade_soup.py` |
-| `GRADE_SOUP_WRITEBACK_TENSOR_DRIFT` | 1 | `bilqis_mlx/learning/grade_soup.py` |
+| `GRADE_SOUP_UNVERIFIED_CHAMPION` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
+| `GRADE_SOUP_WRITEBACK_TENSOR_DRIFT` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
 | `GRADE_TEACHING_STAGES_MUST_PARTITION_CAPABILITIES_IN_ORDER` | 1 | `bilqis_mlx/curriculum/__init__.py` |
-| `GRADUATION_PERFECT_CONFLICTING_HISTORY` | 1 | `bilqis_mlx/learning/capability_frontier.py` |
-| `GRADUATION_PERFECT_HISTORICAL_EVIDENCE_MISSING` | 1 | `bilqis_mlx/learning/capability_frontier.py` |
-| `GRADUATION_PERFECT_HISTORICAL_SCORE_DRIFT` | 1 | `bilqis_mlx/learning/capability_frontier.py` |
-| `GRADUATION_PERFECT_LEGACY_BREADTH_UNVERIFIED` | 1 | `bilqis_mlx/learning/capability_frontier.py` |
-| `GRADUATION_PERFECT_MISSING_EXAM_EVIDENCE` | 1 | `bilqis_mlx/learning/capability_frontier.py` |
-| `GRADUATION_PERFECT_REQUIRES_WHOLE_STUDENT` | 1 | `bilqis_mlx/learning/capability_frontier.py` |
+| `GRADUATION_PERFECT_CONFLICTING_HISTORY` | 1 | `bilqis_mlx/learning/_championship/capability_frontier.py` |
+| `GRADUATION_PERFECT_HISTORICAL_EVIDENCE_MISSING` | 1 | `bilqis_mlx/learning/_championship/capability_frontier.py` |
+| `GRADUATION_PERFECT_HISTORICAL_SCORE_DRIFT` | 1 | `bilqis_mlx/learning/_championship/capability_frontier.py` |
+| `GRADUATION_PERFECT_LEGACY_BREADTH_UNVERIFIED` | 1 | `bilqis_mlx/learning/_championship/capability_frontier.py` |
+| `GRADUATION_PERFECT_MISSING_EXAM_EVIDENCE` | 1 | `bilqis_mlx/learning/_championship/capability_frontier.py` |
+| `GRADUATION_PERFECT_REQUIRES_WHOLE_STUDENT` | 1 | `bilqis_mlx/learning/_championship/capability_frontier.py` |
 | `GRAPH_UNAVAILABLE` | 1 | `bilqis_mlx/runtime/tests/test_bamf_projection.py` |
 | `HISTORICAL_ABI_DIGEST_INVALID` | 1 | `bilqis_mlx/semantics/foundation/abi.py` |
 | `HISTORICAL_ABI_EXTERNAL_REFERENCE_INVALID` | 1 | `bilqis_mlx/semantics/foundation/abi.py` |
@@ -2743,7 +2755,7 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `HUMAN_TRAINER_COMPLETE_CHECKPOINT_READBACK_DRIFT` | 1 | `bilqis_mlx/runtime/checkpoints.py` |
 | `HUMAN_TRAINER_CURRENT_VOCAB_ANSWER_HEAD_DRIFT` | 1 | `bilqis_mlx/runtime/reconciliation.py` |
 | `HUMAN_TRAINER_CURRENT_VOCAB_GRAPH_EMBEDDING_DRIFT` | 1 | `bilqis_mlx/runtime/reconciliation.py` |
-| `HUMAN_TRAINER_EMPTY_BATCH` | 1 | `bilqis_mlx/learning/student_ops.py` |
+| `HUMAN_TRAINER_EMPTY_BATCH` | 1 | `bilqis_mlx/learning/_teaching/student_ops.py` |
 | `HUMAN_TRAINER_EXAM_OUTSIDE_SCHEDULED_BOUNDARY` | 1 | `bilqis_mlx/runtime/exam_execution.py` |
 | `HUMAN_TRAINER_EXAM_SCORE_SCOPE_DRIFT` | 1 | `bilqis_mlx/runtime/exam_execution.py` |
 | `HUMAN_TRAINER_EXTERNAL_SOURCE_ROOT_FORBIDDEN` | 1 | `bilqis_mlx/cli.py` |
@@ -2757,7 +2769,7 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `HUMAN_TRAINER_HISTORICAL_EXAM_ADMISSION_REQUIRED` | 1 | `bilqis_mlx/runtime/admission.py` |
 | `HUMAN_TRAINER_HISTORICAL_EXAM_LINEAGE_DRIFT` | 1 | `bilqis_mlx/runtime/admission.py` |
 | `HUMAN_TRAINER_HISTORICAL_EXAM_RELEASE_INVALID` | 1 | `bilqis_mlx/runtime/admission.py` |
-| `HUMAN_TRAINER_HISTORICAL_SEMANTIC_ABI_INVALID` | 1 | `bilqis_mlx/learning/student_ops.py` |
+| `HUMAN_TRAINER_HISTORICAL_SEMANTIC_ABI_INVALID` | 1 | `bilqis_mlx/learning/_teaching/student_ops.py` |
 | `HUMAN_TRAINER_HISTORICAL_TEACHER_STATE_INCOMPLETE` | 1 | `bilqis_mlx/runtime/session.py` |
 | `HUMAN_TRAINER_INCUMBENT_CHECKPOINT_DRIFT` | 1 | `bilqis_mlx/learning/championship_runtime.py` |
 | `HUMAN_TRAINER_INCUMBENT_UNSAFE_PATH` | 1 | `bilqis_mlx/learning/championship_runtime.py` |
@@ -2801,21 +2813,21 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `HUMAN_TRAINER_SAVED_COHORT_MISSING` | 1 | `bilqis_mlx/compatibility/assessment.py` |
 | `HUMAN_TRAINER_SAVED_COHORT_REFERENCE_DRIFT` | 1 | `bilqis_mlx/compatibility/assessment.py` |
 | `HUMAN_TRAINER_SAVED_COHORT_RELEASE_NOT_ADMITTED` | 1 | `bilqis_mlx/compatibility/assessment.py` |
-| `HUMAN_TRAINER_SEQUENCE_OUTSIDE_LEGACY_CONTEXT` | 1 | `bilqis_mlx/learning/student_ops.py` |
+| `HUMAN_TRAINER_SEQUENCE_OUTSIDE_LEGACY_CONTEXT` | 1 | `bilqis_mlx/learning/_teaching/student_ops.py` |
 | `HUMAN_TRAINER_SOURCE_PREFETCH_IDENTITY_DRIFT` | 1 | `bilqis_mlx/runtime/visits.py` |
 | `HUMAN_TRAINER_UNCOMMITTED_BUNDLE_SOURCE_DRIFT` | 1 | `bilqis_mlx/runtime/checkpoints.py` |
 | `HUMAN_TRAINER_UNCOMMITTED_BUNDLE_UNSAFE_PATH` | 2 | `bilqis_mlx/runtime/checkpoints.py` |
 | `HUMAN_TRAINER_UNKNOWN_LESSON_GRADE` | 1 | `bilqis_mlx/runtime/visits.py` |
 | `HUMAN_TRAINER_UNKNOWN_STAGED_BUNDLE` | 1 | `bilqis_mlx/runtime/checkpoints.py` |
 | `HUMAN_TRAINER_UNKNOWN_STAGED_BUNDLE_CONTENT` | 1 | `bilqis_mlx/runtime/checkpoints.py` |
-| `HUMAN_TRAINER_UNKNOWN_TYPED_ANSWER_CONFIG` | 1 | `bilqis_mlx/learning/student_ops.py` |
+| `HUMAN_TRAINER_UNKNOWN_TYPED_ANSWER_CONFIG` | 1 | `bilqis_mlx/learning/_teaching/student_ops.py` |
 | `HUMAN_TRAINER_UNSAFE_BUNDLE_QUARANTINE` | 2 | `bilqis_mlx/runtime/checkpoints.py` |
 | `HUMAN_TRAINER_UNSAFE_STAGING_ROOT` | 2 | `bilqis_mlx/runtime/checkpoints.py` |
 | `HUMAN_TRAINER_UNVERIFIED_VOCAB_METADATA_MIGRATION` | 1 | `bilqis_mlx/runtime/reconciliation.py` |
 | `HUMAN_TRAINER_VOCAB_RECONCILE_OWN_ADAMW_DRIFT` | 1 | `bilqis_mlx/runtime/reconciliation.py` |
 | `Historical source token identity drift` | 1 | `bilqis_mlx/semantics/tests/foundation/test_semantics_algebra.py` |
 | `INCOMPLETE_OR_PREMATURE_ITHKUIL_BRIDGE` | 1 | `bilqis_mlx/ithkuil_alignment.py` |
-| `INCOMPLETE_STUDENT_CHECKPOINT` | 1 | `bilqis_mlx/learning/champions.py` |
+| `INCOMPLETE_STUDENT_CHECKPOINT` | 1 | `bilqis_mlx/learning/_championship/champions.py` |
 | `INDEPENDENT_FINITE_UNKNOWN_ROOT` | 1 | `bilqis_mlx/source_adapters/tests/test_source_adapters_micro.py` |
 | `INDEPENDENT_FINITE_WORLD_MISMATCH` | 1 | `bilqis_mlx/source_adapters/tests/test_source_adapters_micro.py` |
 | `INTEGER_SCOPE_ANSWER_EXCEEDS_CAP` | 1 | `bilqis_mlx/integer_curriculum.py` |
@@ -2848,7 +2860,7 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `INVALID_INTEGER_0_3_ANSWER_LABELS` | 1 | `bilqis_mlx/curriculum/__init__.py` |
 | `INVALID_OR_DUPLICATE_CAPABILITY_ID` | 1 | `bilqis_mlx/curriculum/__init__.py` |
 | `INVALID_OR_DUPLICATE_LETTER_GRADE` | 1 | `bilqis_mlx/curriculum/__init__.py` |
-| `INVALID_TEACHER_GRADE_ROSTER` | 1 | `bilqis_mlx/learning/teacher_votes.py` |
+| `INVALID_TEACHER_GRADE_ROSTER` | 1 | `bilqis_mlx/learning/_teaching/teacher_votes.py` |
 | `ISSUE349_EXISTING_RUN_REQUIRES_RESUME` | 1 | `bilqis_mlx/cli.py` |
 | `ISSUE349_EXPERIMENT_RUN_MUST_BE_DIRECT_CHILD` | 1 | `bilqis_mlx/cli.py` |
 | `JIT_ADOPTION_ANSWER_IMPLEMENTATION_DRIFT` | 1 | `bilqis_mlx/runtime/jit_adoption.py` |
@@ -2856,16 +2868,16 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `JIT_ADOPTION_PROPOSAL_CONTEXT_CHANGED` | 1 | `bilqis_mlx/runtime/jit_adoption.py` |
 | `JIT_ADOPTION_READY_PROPOSAL_REQUIRED` | 1 | `bilqis_mlx/runtime/jit_adoption.py` |
 | `JIT_ADOPTION_SOURCE_IMPLEMENTATION_DRIFT` | 1 | `bilqis_mlx/runtime/jit_adoption.py` |
-| `JIT_CANDIDATE_BINDING_INVALID` | 1 | `bilqis_mlx/factory/jit_curriculum.py` |
+| `JIT_CANDIDATE_BINDING_INVALID` | 1 | `bilqis_mlx/factory/curriculum/jit_curriculum.py` |
 | `JIT_CANDIDATE_NATIVE_CATALOG_REQUIRED` | 1 | `bilqis_mlx/factory/candidate_realizations.py` |
-| `JIT_CURRICULUM_BINDING_INVALID` | 1 | `bilqis_mlx/factory/jit_curriculum.py` |
-| `JIT_CURRICULUM_DEFERRED_INVALID` | 1 | `bilqis_mlx/factory/jit_curriculum.py` |
-| `JIT_CURRICULUM_INPUT_INVALID` | 1 | `bilqis_mlx/factory/jit_curriculum.py` |
-| `JIT_CURRICULUM_PROPOSAL_DIGEST_MISMATCH` | 1 | `bilqis_mlx/factory/jit_curriculum.py` |
-| `JIT_CURRICULUM_PROPOSAL_INVALID` | 1 | `bilqis_mlx/factory/jit_curriculum.py` |
-| `JIT_CURRICULUM_PROPOSAL_SELECTION_INVALID` | 1 | `bilqis_mlx/factory/jit_curriculum.py` |
-| `JIT_CURRICULUM_SOURCE_DEVELOPMENT_INVALID` | 1 | `bilqis_mlx/factory/jit_curriculum.py` |
-| `JIT_CURRICULUM_STEP_INVALID` | 1 | `bilqis_mlx/factory/jit_curriculum.py` |
+| `JIT_CURRICULUM_BINDING_INVALID` | 1 | `bilqis_mlx/factory/curriculum/jit_curriculum.py` |
+| `JIT_CURRICULUM_DEFERRED_INVALID` | 1 | `bilqis_mlx/factory/curriculum/jit_curriculum.py` |
+| `JIT_CURRICULUM_INPUT_INVALID` | 1 | `bilqis_mlx/factory/curriculum/jit_curriculum.py` |
+| `JIT_CURRICULUM_PROPOSAL_DIGEST_MISMATCH` | 1 | `bilqis_mlx/factory/curriculum/jit_curriculum.py` |
+| `JIT_CURRICULUM_PROPOSAL_INVALID` | 1 | `bilqis_mlx/factory/curriculum/jit_curriculum.py` |
+| `JIT_CURRICULUM_PROPOSAL_SELECTION_INVALID` | 1 | `bilqis_mlx/factory/curriculum/jit_curriculum.py` |
+| `JIT_CURRICULUM_SOURCE_DEVELOPMENT_INVALID` | 1 | `bilqis_mlx/factory/curriculum/jit_curriculum.py` |
+| `JIT_CURRICULUM_STEP_INVALID` | 1 | `bilqis_mlx/factory/curriculum/jit_curriculum.py` |
 | `LEARNING_EXPERIMENT_ADAMW_DRIFT` | 1 | `bilqis_mlx/learning/learning_experiment.py` |
 | `LEARNING_EXPERIMENT_CHANNEL_VERSION_DRIFT` | 1 | `bilqis_mlx/learning/learning_experiment.py` |
 | `LEARNING_EXPERIMENT_COHORT_DIGEST_INVALID` | 1 | `bilqis_mlx/learning/learning_experiment.py` |
@@ -2927,29 +2939,29 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `LIVE_GRADE_A_UNATTESTED_TOKENS_OR_CONTEXT` | 1 | `bilqis_mlx/live_grade_a.py` |
 | `LIVE_GRADE_A_UNEXPECTED_PREDICATE_SCOPE` | 1 | `bilqis_mlx/live_grade_a.py` |
 | `LIVE_GRADE_A_UNKNOWN_CAPABILITY` | 1 | `bilqis_mlx/live_grade_a.py` |
-| `MATRIX_STRAIN_PARAMETER_SET_MISMATCH` | 1 | `bilqis_mlx/learning/matrix_strain.py` |
-| `MATRIX_STRAIN_REFERENCE_BLOB_CHANGED` | 1 | `bilqis_mlx/learning/matrix_strain.py` |
-| `MATRIX_STRAIN_REFERENCE_PARAMETER_IDENTITY_DRIFT` | 1 | `bilqis_mlx/learning/matrix_strain.py` |
-| `MATRIX_STRAIN_REFERENCE_SEMANTIC_GRAPH_DRIFT` | 1 | `bilqis_mlx/learning/matrix_strain.py` |
-| `MATRIX_STRAIN_TENSOR_SHAPE_OR_DTYPE_MISMATCH` | 1 | `bilqis_mlx/learning/matrix_strain.py` |
-| `MENTOR_EPOCH_CHECKPOINT_POINTER_CONFLICT` | 1 | `bilqis_mlx/learning/mentor_epoch.py` |
-| `MENTOR_EPOCH_COMPLETE_PREVIOUS_BOUNDARY_REQUIRED` | 1 | `bilqis_mlx/learning/mentor_epoch.py` |
-| `MENTOR_EPOCH_COMPLETE_PREVIOUS_GRADUATION_REQUIRED` | 1 | `bilqis_mlx/learning/mentor_epoch.py` |
-| `MENTOR_EPOCH_FRESH_CHAMPIONS_RESET_REQUIRED` | 2 | `bilqis_mlx/learning/lesson_guidance.py`, `bilqis_mlx/learning/mentor_epoch.py` |
-| `MENTOR_EPOCH_INCOMPLETE_PAIRED_SCOPE` | 1 | `bilqis_mlx/learning/mentor_epoch.py` |
-| `MENTOR_EPOCH_INCOMPLETE_SCORES` | 1 | `bilqis_mlx/learning/mentor_epoch.py` |
-| `MENTOR_EPOCH_INVALID_ADVISER_SCOPE` | 1 | `bilqis_mlx/learning/mentor_epoch.py` |
-| `MENTOR_EPOCH_INVALID_DEBT_BOUNDARY` | 1 | `bilqis_mlx/learning/mentor_epoch.py` |
-| `MENTOR_EPOCH_INVALID_GRADE_BOUNDARY` | 1 | `bilqis_mlx/learning/mentor_epoch.py` |
-| `MENTOR_EPOCH_INVALID_MATURE_LOSS_POLICY` | 1 | `bilqis_mlx/learning/mentor_epoch.py` |
-| `MENTOR_EPOCH_INVALID_SOURCE_SCORE` | 1 | `bilqis_mlx/learning/mentor_epoch.py` |
-| `MENTOR_EPOCH_MASTERY_DEBT_MISMATCH` | 1 | `bilqis_mlx/learning/mentor_epoch.py` |
-| `MENTOR_EPOCH_MISMATCHED_EXAMINATION` | 1 | `bilqis_mlx/learning/mentor_epoch.py` |
+| `MATRIX_STRAIN_PARAMETER_SET_MISMATCH` | 1 | `bilqis_mlx/learning/_retention/matrix_strain.py` |
+| `MATRIX_STRAIN_REFERENCE_BLOB_CHANGED` | 1 | `bilqis_mlx/learning/_retention/matrix_strain.py` |
+| `MATRIX_STRAIN_REFERENCE_PARAMETER_IDENTITY_DRIFT` | 1 | `bilqis_mlx/learning/_retention/matrix_strain.py` |
+| `MATRIX_STRAIN_REFERENCE_SEMANTIC_GRAPH_DRIFT` | 1 | `bilqis_mlx/learning/_retention/matrix_strain.py` |
+| `MATRIX_STRAIN_TENSOR_SHAPE_OR_DTYPE_MISMATCH` | 1 | `bilqis_mlx/learning/_retention/matrix_strain.py` |
+| `MENTOR_EPOCH_CHECKPOINT_POINTER_CONFLICT` | 1 | `bilqis_mlx/learning/_championship/mentor_epoch.py` |
+| `MENTOR_EPOCH_COMPLETE_PREVIOUS_BOUNDARY_REQUIRED` | 1 | `bilqis_mlx/learning/_championship/mentor_epoch.py` |
+| `MENTOR_EPOCH_COMPLETE_PREVIOUS_GRADUATION_REQUIRED` | 1 | `bilqis_mlx/learning/_championship/mentor_epoch.py` |
+| `MENTOR_EPOCH_FRESH_CHAMPIONS_RESET_REQUIRED` | 2 | `bilqis_mlx/learning/_championship/mentor_epoch.py`, `bilqis_mlx/learning/lesson_guidance.py` |
+| `MENTOR_EPOCH_INCOMPLETE_PAIRED_SCOPE` | 1 | `bilqis_mlx/learning/_championship/mentor_epoch.py` |
+| `MENTOR_EPOCH_INCOMPLETE_SCORES` | 1 | `bilqis_mlx/learning/_championship/mentor_epoch.py` |
+| `MENTOR_EPOCH_INVALID_ADVISER_SCOPE` | 1 | `bilqis_mlx/learning/_championship/mentor_epoch.py` |
+| `MENTOR_EPOCH_INVALID_DEBT_BOUNDARY` | 1 | `bilqis_mlx/learning/_championship/mentor_epoch.py` |
+| `MENTOR_EPOCH_INVALID_GRADE_BOUNDARY` | 1 | `bilqis_mlx/learning/_championship/mentor_epoch.py` |
+| `MENTOR_EPOCH_INVALID_MATURE_LOSS_POLICY` | 1 | `bilqis_mlx/learning/_championship/mentor_epoch.py` |
+| `MENTOR_EPOCH_INVALID_SOURCE_SCORE` | 1 | `bilqis_mlx/learning/_championship/mentor_epoch.py` |
+| `MENTOR_EPOCH_MASTERY_DEBT_MISMATCH` | 1 | `bilqis_mlx/learning/_championship/mentor_epoch.py` |
+| `MENTOR_EPOCH_MISMATCHED_EXAMINATION` | 1 | `bilqis_mlx/learning/_championship/mentor_epoch.py` |
 | `MENTOR_EPOCH_SCHOOL_IDENTITY_RESET_REQUIRED` | 1 | `bilqis_mlx/learning/lesson_guidance.py` |
 | `MENTOR_EPOCH_SOURCE_GRAPH_DRIFT` | 1 | `bilqis_mlx/learning/lesson_guidance.py` |
 | `MENTOR_EPOCH_TITLE_ORIGIN_PROVENANCE_INVALID` | 1 | `bilqis_mlx/learning/lesson_guidance.py` |
-| `MENTOR_EPOCH_UNKNOWN_SCHEMA` | 1 | `bilqis_mlx/learning/mentor_epoch.py` |
-| `MENTOR_EPOCH_WHOLE_STUDENT_OWN_ADAMW_REQUIRED` | 1 | `bilqis_mlx/learning/mentor_epoch.py` |
+| `MENTOR_EPOCH_UNKNOWN_SCHEMA` | 1 | `bilqis_mlx/learning/_championship/mentor_epoch.py` |
+| `MENTOR_EPOCH_WHOLE_STUDENT_OWN_ADAMW_REQUIRED` | 1 | `bilqis_mlx/learning/_championship/mentor_epoch.py` |
 | `MINIMAL_GRADE_B_REPLACEMENT_REQUIRES_DIRECT_SUCCESSOR` | 1 | `bilqis_mlx/compatibility/live_releases.py` |
 | `MISSING_OR_DUPLICATE_ANSWER_FAMILY` | 1 | `bilqis_mlx/curriculum/__init__.py` |
 | `MLX_ATTENTION_HEAD_GEOMETRY_DRIFT` | 1 | `bilqis_mlx/runtime/mlx_parity.py` |
@@ -3040,28 +3052,28 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `NUMERIC_CONSTRUCTION_UNKNOWN_CAPABILITY` | 1 | `bilqis_mlx/numeric_curriculum.py` |
 | `NUMERIC_CONTRAST_ORACLE_DISAGREEMENT` | 1 | `bilqis_mlx/numeric_curriculum.py` |
 | `NUMERIC_DISJOINT_GROUP_OUTSIDE_SCOPE` | 1 | `bilqis_mlx/numeric_curriculum.py` |
-| `NUMERIC_EXACT_DIVISION_UNDEFINED` | 1 | `bilqis_mlx/semantics/foundation/numeric.py` |
+| `NUMERIC_EXACT_DIVISION_UNDEFINED` | 2 | `bilqis_mlx/semantics/foundation/numeric.py`, `bilqis_mlx/semantics/numeric.py` |
 | `NUMERIC_GROUPS_NOT_EQUAL_AND_DISJOINT` | 1 | `bilqis_mlx/source_adapters/numeric.py` |
 | `NUMERIC_GROUPS_NOT_EXHAUSTIVE` | 1 | `bilqis_mlx/source_adapters/numeric.py` |
 | `NUMERIC_GROUP_CONTEXT_REQUIRES_PRODUCT_OR_QUOTIENT` | 1 | `bilqis_mlx/source_adapters/numeric.py` |
 | `NUMERIC_GROUP_CONTEXT_TYPE` | 1 | `bilqis_mlx/source_adapters/numeric.py` |
 | `NUMERIC_GROUP_CONTEXT_UNCLOSED` | 1 | `bilqis_mlx/source_adapters/numeric.py` |
 | `NUMERIC_HISTORICAL_TOKEN_ABI_DRIFT` | 1 | `bilqis_mlx/numeric_curriculum.py` |
-| `NUMERIC_LITERAL_OUTSIDE_SOURCE_ABI` | 1 | `bilqis_mlx/semantics/foundation/numeric.py` |
-| `NUMERIC_MODULO_UNDEFINED` | 1 | `bilqis_mlx/semantics/foundation/numeric.py` |
+| `NUMERIC_LITERAL_OUTSIDE_SOURCE_ABI` | 2 | `bilqis_mlx/semantics/foundation/numeric.py`, `bilqis_mlx/semantics/numeric.py` |
+| `NUMERIC_MODULO_UNDEFINED` | 2 | `bilqis_mlx/semantics/foundation/numeric.py`, `bilqis_mlx/semantics/numeric.py` |
 | `NUMERIC_NEW_OPERATION_MEANING_DRIFT` | 1 | `bilqis_mlx/numeric_curriculum.py` |
-| `NUMERIC_NONCANONICAL_LITERAL` | 1 | `bilqis_mlx/semantics/foundation/numeric.py` |
-| `NUMERIC_NONCANONICAL_SET` | 1 | `bilqis_mlx/semantics/foundation/numeric.py` |
-| `NUMERIC_OPERATOR_CONTRACT_DRIFT` | 2 | `bilqis_mlx/numeric_curriculum.py`, `bilqis_mlx/semantics/foundation/numeric.py` |
-| `NUMERIC_OPERATOR_INCOMPLETE` | 1 | `bilqis_mlx/semantics/foundation/numeric.py` |
-| `NUMERIC_OPERATOR_NOT_IMPLEMENTED` | 1 | `bilqis_mlx/semantics/foundation/numeric.py` |
-| `NUMERIC_OPERATOR_NOT_IN_RELEASE` | 1 | `bilqis_mlx/semantics/foundation/numeric.py` |
+| `NUMERIC_NONCANONICAL_LITERAL` | 2 | `bilqis_mlx/semantics/foundation/numeric.py`, `bilqis_mlx/semantics/numeric.py` |
+| `NUMERIC_NONCANONICAL_SET` | 2 | `bilqis_mlx/semantics/foundation/numeric.py`, `bilqis_mlx/semantics/numeric.py` |
+| `NUMERIC_OPERATOR_CONTRACT_DRIFT` | 3 | `bilqis_mlx/numeric_curriculum.py`, `bilqis_mlx/semantics/foundation/numeric.py`, `bilqis_mlx/semantics/numeric.py` |
+| `NUMERIC_OPERATOR_INCOMPLETE` | 2 | `bilqis_mlx/semantics/foundation/numeric.py`, `bilqis_mlx/semantics/numeric.py` |
+| `NUMERIC_OPERATOR_NOT_IMPLEMENTED` | 2 | `bilqis_mlx/semantics/foundation/numeric.py`, `bilqis_mlx/semantics/numeric.py` |
+| `NUMERIC_OPERATOR_NOT_IN_RELEASE` | 2 | `bilqis_mlx/semantics/foundation/numeric.py`, `bilqis_mlx/semantics/numeric.py` |
 | `NUMERIC_ORACLE_DUPLICATE_SET_MEMBER` | 1 | `bilqis_mlx/verification/numeric.py` |
 | `NUMERIC_ORACLE_EXACT_DIVISION_UNDEFINED` | 2 | `bilqis_mlx/verification/numeric.py` |
 | `NUMERIC_ORACLE_MODULO_UNDEFINED` | 1 | `bilqis_mlx/verification/numeric.py` |
 | `NUMERIC_ORACLE_NEGATIVE_RESULT` | 1 | `bilqis_mlx/verification/numeric.py` |
 | `NUMERIC_ORACLE_UNSUPPORTED_OPERATOR` | 1 | `bilqis_mlx/verification/numeric.py` |
-| `NUMERIC_SET_DUPLICATE_OR_UNTYPED_MEMBERS` | 1 | `bilqis_mlx/semantics/foundation/numeric.py` |
+| `NUMERIC_SET_DUPLICATE_OR_UNTYPED_MEMBERS` | 2 | `bilqis_mlx/semantics/foundation/numeric.py`, `bilqis_mlx/semantics/numeric.py` |
 | `NUMERIC_SOURCE_NODE_CONTENT_DRIFT` | 1 | `bilqis_mlx/numeric_curriculum.py` |
 | `NUMERIC_STAIRCASE_FOUNDATIONS_NOT_MASTERED` | 1 | `bilqis_mlx/numeric_staircase.py` |
 | `NUMERIC_STAIRCASE_REQUIRES_ACTIVE_C` | 1 | `bilqis_mlx/numeric_staircase.py` |
@@ -3071,7 +3083,7 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `NUMERIC_STAIRCASE_SCOPE_INVALID` | 1 | `bilqis_mlx/numeric_staircase.py` |
 | `NUMERIC_TOKEN_BINDING_DRIFT` | 1 | `bilqis_mlx/numeric_curriculum.py` |
 | `NUMERIC_UNREGISTERED_TOKEN` | 1 | `bilqis_mlx/numeric_curriculum.py` |
-| `NUMERIC_UNSUPPORTED_LITERAL_TYPE` | 1 | `bilqis_mlx/semantics/foundation/numeric.py` |
+| `NUMERIC_UNSUPPORTED_LITERAL_TYPE` | 2 | `bilqis_mlx/semantics/foundation/numeric.py`, `bilqis_mlx/semantics/numeric.py` |
 | `NUMERIC_WRONG_SOURCE_DIALECT` | 1 | `bilqis_mlx/source_adapters/numeric.py` |
 | `No Bilqis state or event journal under` | 1 | `bilqis_mlx/presentation/dashboard_watch.py` |
 | `Non-object event` | 1 | `bilqis_mlx/presentation/dashboard_watch.py` |
@@ -3116,9 +3128,9 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `PASIGRAPHY_SPREADSHEET_TOKEN_ROW_DRIFT` | 1 | `bilqis_mlx/token_atlas.py` |
 | `PASIGRAPHY_TOKEN_HAS_NO_IDENTITY` | 1 | `bilqis_mlx/token_atlas.py` |
 | `PASIGRAPHY_UNINTERPRETABLE_TOKEN` | 1 | `bilqis_mlx/token_atlas.py` |
-| `PLASTICITY_MASTERY_DEBT_SCOPE_INVALID` | 1 | `bilqis_mlx/learning/plasticity_escape.py` |
-| `PLASTICITY_MASTERY_DEBT_SCORES_INVALID` | 1 | `bilqis_mlx/learning/plasticity_escape.py` |
-| `PLASTICITY_MASTERY_DEBT_SCORE_INVALID` | 2 | `bilqis_mlx/learning/plasticity_escape.py` |
+| `PLASTICITY_MASTERY_DEBT_SCOPE_INVALID` | 1 | `bilqis_mlx/learning/_retention/plasticity_escape.py` |
+| `PLASTICITY_MASTERY_DEBT_SCORES_INVALID` | 1 | `bilqis_mlx/learning/_retention/plasticity_escape.py` |
+| `PLASTICITY_MASTERY_DEBT_SCORE_INVALID` | 2 | `bilqis_mlx/learning/_retention/plasticity_escape.py` |
 | `Pinned original token identity drift` | 1 | `bilqis_mlx/source_adapters/tests/test_source_adapters_micro.py` |
 | `REFERENTIAL_NOT_SUPPORTED_OR_AMBIGUOUS` | 1 | `bilqis_mlx/ni_construction.py` |
 | `REFERENTIAL_OUTSIDE_NEUTRAL_MONADIC_SUBSET` | 1 | `bilqis_mlx/ni_construction.py` |
@@ -3158,35 +3170,35 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `RESUME_EXPLICIT_BUT_NO_SAVED_NEW_SCHOOL_RUN` | 1 | `bilqis_mlx/cli.py` |
 | `RETENTION_SUPPORT_SCHEDULE_INVALID` | 1 | `bilqis_mlx/runtime/candidate_evidence.py` |
 | `Rosetta owner revision drift requires requalification` | 1 | `bilqis_mlx/runtime/tests/test_rosetta_observation.py` |
-| `SCHOOL_AUTONOMY_EVIDENCE_RECEIPT_INVALID` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_AUTONOMY_SOURCE_COVERAGE_RECEIPT_INVALID` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_AUTONOMY_TEACHING_RECEIPT_INVALID` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_AUTONOMY_VISIT_RECEIPT_INVALID` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_CAPABILITY_BEST_PROVENANCE_REQUIRED` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
+| `SCHOOL_AUTONOMY_EVIDENCE_RECEIPT_INVALID` | 1 | `bilqis_mlx/presentation/school50/evidence.py` |
+| `SCHOOL_AUTONOMY_SOURCE_COVERAGE_RECEIPT_INVALID` | 1 | `bilqis_mlx/presentation/school50/evidence.py` |
+| `SCHOOL_AUTONOMY_TEACHING_RECEIPT_INVALID` | 1 | `bilqis_mlx/presentation/school50/evidence.py` |
+| `SCHOOL_AUTONOMY_VISIT_RECEIPT_INVALID` | 1 | `bilqis_mlx/presentation/school50/evidence.py` |
+| `SCHOOL_CAPABILITY_BEST_PROVENANCE_REQUIRED` | 1 | `bilqis_mlx/presentation/school50/candidates.py` |
 | `SCHOOL_DEBT_COUNTER_MIGRATION_CONFLICT` | 2 | `bilqis_mlx/curriculum/scheduler.py` |
-| `SCHOOL_TELEMETRY_ATTEMPTED_OPTIMIZER_UPDATES_INVALID` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_CANDIDATE_COHORT_REQUIRED` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_CAPABILITY_REQUIRED` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_CURRICULUM_REPLACEMENT_INVALID` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_DISK_BUDGET_INVALID` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_EXAM_CHECKPOINT_MISMATCH` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_EXAM_CHECKPOINT_REQUIRED` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_EXAM_RUBRIC_ITEMS_DRIFT` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_EXAM_RUBRIC_REQUIRED` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_EXAM_SCORES_REQUIRED` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_FAMILY_RUBRIC_COUNT_DRIFT` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_FAMILY_SCORE_INVALID` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_FAMILY_SCORE_REQUIRED` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_FAMILY_UNKNOWN_PARTITION` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
+| `SCHOOL_TELEMETRY_ATTEMPTED_OPTIMIZER_UPDATES_INVALID` | 1 | `bilqis_mlx/presentation/school50/candidates.py` |
+| `SCHOOL_TELEMETRY_CANDIDATE_COHORT_REQUIRED` | 1 | `bilqis_mlx/presentation/school50/candidates.py` |
+| `SCHOOL_TELEMETRY_CAPABILITY_REQUIRED` | 1 | `bilqis_mlx/presentation/school50/candidates.py` |
+| `SCHOOL_TELEMETRY_CURRICULUM_REPLACEMENT_INVALID` | 1 | `bilqis_mlx/presentation/school50/curriculum.py` |
+| `SCHOOL_TELEMETRY_DISK_BUDGET_INVALID` | 1 | `bilqis_mlx/presentation/school50/evidence.py` |
+| `SCHOOL_TELEMETRY_EXAM_CHECKPOINT_MISMATCH` | 1 | `bilqis_mlx/presentation/school50/exams.py` |
+| `SCHOOL_TELEMETRY_EXAM_CHECKPOINT_REQUIRED` | 1 | `bilqis_mlx/presentation/school50/exams.py` |
+| `SCHOOL_TELEMETRY_EXAM_RUBRIC_ITEMS_DRIFT` | 1 | `bilqis_mlx/presentation/school50/exams.py` |
+| `SCHOOL_TELEMETRY_EXAM_RUBRIC_REQUIRED` | 1 | `bilqis_mlx/presentation/school50/exams.py` |
+| `SCHOOL_TELEMETRY_EXAM_SCORES_REQUIRED` | 1 | `bilqis_mlx/presentation/school50/exams.py` |
+| `SCHOOL_TELEMETRY_FAMILY_RUBRIC_COUNT_DRIFT` | 1 | `bilqis_mlx/presentation/school50/evidence.py` |
+| `SCHOOL_TELEMETRY_FAMILY_SCORE_INVALID` | 1 | `bilqis_mlx/presentation/school50/evidence.py` |
+| `SCHOOL_TELEMETRY_FAMILY_SCORE_REQUIRED` | 1 | `bilqis_mlx/presentation/school50/evidence.py` |
+| `SCHOOL_TELEMETRY_FAMILY_UNKNOWN_PARTITION` | 1 | `bilqis_mlx/presentation/school50/evidence.py` |
 | `SCHOOL_TELEMETRY_GRADE_REQUIRED` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_LIVE_COHORT_PROVENANCE_REQUIRED` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_LIVE_VISIT_GENERATION_REQUIRED` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_RETAINED_OPTIMIZER_UPDATES_INVALID` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_SCORE_INVALID` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_SENTINEL_PARTITION_NOT_INDEPENDENT` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_SOUP_SOURCE_PROVENANCE_REQUIRED` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_SOUP_TEACHER_ONLY_REQUIRED` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
-| `SCHOOL_TELEMETRY_SOURCE_PROVENANCE_REQUIRED` | 2 | `bilqis_mlx/presentation/school_telemetry.py` |
+| `SCHOOL_TELEMETRY_LIVE_COHORT_PROVENANCE_REQUIRED` | 1 | `bilqis_mlx/presentation/school50/exams.py` |
+| `SCHOOL_TELEMETRY_LIVE_VISIT_GENERATION_REQUIRED` | 1 | `bilqis_mlx/presentation/school50/candidates.py` |
+| `SCHOOL_TELEMETRY_RETAINED_OPTIMIZER_UPDATES_INVALID` | 1 | `bilqis_mlx/presentation/school50/candidates.py` |
+| `SCHOOL_TELEMETRY_SCORE_INVALID` | 1 | `bilqis_mlx/presentation/school50/exams.py` |
+| `SCHOOL_TELEMETRY_SENTINEL_PARTITION_NOT_INDEPENDENT` | 1 | `bilqis_mlx/presentation/school50/evidence.py` |
+| `SCHOOL_TELEMETRY_SOUP_SOURCE_PROVENANCE_REQUIRED` | 1 | `bilqis_mlx/presentation/school50/evidence.py` |
+| `SCHOOL_TELEMETRY_SOUP_TEACHER_ONLY_REQUIRED` | 1 | `bilqis_mlx/presentation/school50/evidence.py` |
+| `SCHOOL_TELEMETRY_SOURCE_PROVENANCE_REQUIRED` | 2 | `bilqis_mlx/presentation/school50/formatting.py` |
 | `SCHOOL_TELEMETRY_UNSUPPORTED_SCHEMA` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
 | `SELECTION_DISTINCT_CANDIDATES_REQUIRED` | 1 | `bilqis_mlx/selection_outcomes.py` |
 | `SELECTION_INVALID_CAPABILITY_OUTCOME` | 1 | `bilqis_mlx/selection_outcomes.py` |
@@ -3344,9 +3356,9 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `STORED_COHORT_CONTENT_DRIFT` | 1 | `bilqis_mlx/generated_assessment.py` |
 | `STORED_COHORT_IDENTITY_DRIFT` | 1 | `bilqis_mlx/generated_assessment.py` |
 | `STORED_COHORT_SCHEMA_UNSUPPORTED` | 1 | `bilqis_mlx/generated_assessment.py` |
-| `TEACHER_BALLOTS_NOT_COMPLETE_OR_INCLUDE_UNREGISTERED` | 1 | `bilqis_mlx/learning/teacher_votes.py` |
+| `TEACHER_BALLOTS_NOT_COMPLETE_OR_INCLUDE_UNREGISTERED` | 1 | `bilqis_mlx/learning/_teaching/teacher_votes.py` |
 | `TEACHER_DECISION_INPUT_INVALID` | 1 | `bilqis_mlx/learning/teacher_feedback.py` |
-| `TEACHER_EMPTY_BALLOT` | 1 | `bilqis_mlx/learning/teacher_votes.py` |
+| `TEACHER_EMPTY_BALLOT` | 1 | `bilqis_mlx/learning/_teaching/teacher_votes.py` |
 | `TEACHER_MISS_CURRENT_COHORT_INVALID` | 1 | `bilqis_mlx/learning/teacher_feedback.py` |
 | `TEACHER_MISS_PREDICTION_MISSING` | 1 | `bilqis_mlx/learning/teacher_feedback.py` |
 | `TEACHER_SOUP_NOT_DUE` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
@@ -3359,23 +3371,23 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `TNX_VALUE_OUTSIDE_11_TO_99` | 1 | `bilqis_mlx/ni_construction.py` |
 | `TYPED_CONFIDENCE_INVALID_SOFT_TARGET` | 1 | `bilqis_mlx/typed_answer_training.py` |
 | `TYPED_CONFIDENCE_UNKNOWN_HEAD` | 1 | `bilqis_mlx/typed_answer_training.py` |
-| `UNDERSTANDING_AUTONOMY_INPUT_INVALID` | 2 | `bilqis_mlx/factory/understanding.py` |
-| `UNDERSTANDING_CAPABILITY_ID_INVALID` | 1 | `bilqis_mlx/factory/understanding.py` |
-| `UNDERSTANDING_CONTRACT_INVALID` | 1 | `bilqis_mlx/factory/understanding.py` |
-| `UNDERSTANDING_CONTRACT_REQUIRED` | 1 | `bilqis_mlx/factory/understanding.py` |
-| `UNDERSTANDING_EVIDENCE_PLAN_INVALID` | 1 | `bilqis_mlx/factory/understanding.py` |
-| `UNDERSTANDING_EVIDENCE_SCOPE_INVALID` | 1 | `bilqis_mlx/factory/understanding.py` |
-| `UNDERSTANDING_PROJECTION_SPEC_INVALID` | 1 | `bilqis_mlx/factory/understanding.py` |
-| `UNDERSTANDING_SUPPORT_OUTSIDE_CONTRACT` | 1 | `bilqis_mlx/factory/understanding.py` |
-| `UNDERSTANDING_TARGET_REQUIRED` | 1 | `bilqis_mlx/factory/understanding.py` |
-| `UNKNOWN_ACTIVE_GRADE` | 1 | `bilqis_mlx/learning/champions.py` |
+| `UNDERSTANDING_AUTONOMY_INPUT_INVALID` | 2 | `bilqis_mlx/factory/curriculum/understanding.py` |
+| `UNDERSTANDING_CAPABILITY_ID_INVALID` | 1 | `bilqis_mlx/factory/curriculum/understanding.py` |
+| `UNDERSTANDING_CONTRACT_INVALID` | 1 | `bilqis_mlx/factory/curriculum/understanding.py` |
+| `UNDERSTANDING_CONTRACT_REQUIRED` | 1 | `bilqis_mlx/factory/curriculum/understanding.py` |
+| `UNDERSTANDING_EVIDENCE_PLAN_INVALID` | 1 | `bilqis_mlx/factory/curriculum/understanding.py` |
+| `UNDERSTANDING_EVIDENCE_SCOPE_INVALID` | 1 | `bilqis_mlx/factory/curriculum/understanding.py` |
+| `UNDERSTANDING_PROJECTION_SPEC_INVALID` | 1 | `bilqis_mlx/factory/curriculum/understanding.py` |
+| `UNDERSTANDING_SUPPORT_OUTSIDE_CONTRACT` | 1 | `bilqis_mlx/factory/curriculum/understanding.py` |
+| `UNDERSTANDING_TARGET_REQUIRED` | 1 | `bilqis_mlx/factory/curriculum/understanding.py` |
+| `UNKNOWN_ACTIVE_GRADE` | 1 | `bilqis_mlx/learning/_championship/champions.py` |
 | `UNKNOWN_CAPABILITY_ANSWER_FAMILY` | 1 | `bilqis_mlx/curriculum/__init__.py` |
-| `UNKNOWN_DASHBOARD_EVENT` | 1 | `bilqis_mlx/presentation/spiral_dashboard.py` |
+| `UNKNOWN_DASHBOARD_EVENT` | 1 | `bilqis_mlx/presentation/renderer/events.py` |
 | `UNKNOWN_EXAM_GRADE` | 1 | `bilqis_mlx/curriculum/__init__.py` |
 | `UNKNOWN_OR_MISSING_NUMERAL_CASE` | 1 | `bilqis_mlx/ni_construction.py` |
 | `UNRECOGNIZED_SCHOOL_RUN_SCHEMA` | 1 | `bilqis_mlx/cli.py` |
 | `UNSAFE_PATH` | 4 | `bilqis_mlx/verification/review_evidence.py` |
-| `UNSUPPORTED_FIXTURE_OPERATION` | 1 | `bilqis_mlx/factory/tests/test_factory_construction.py` |
+| `UNSUPPORTED_FIXTURE_OPERATION` | 1 | `bilqis_mlx/factory/tests/curriculum/test_factory_construction.py` |
 | `UNSUPPORTED_SEMANTIC_LAW` | 1 | `bilqis_mlx/semantic_transformations.py` |
 | `UNTAUGHT_ROOT_IN_EXAM` | 1 | `bilqis_mlx/curriculum/__init__.py` |
 | `VERIFY_SOURCE_REQUIRES_DRY_RUN` | 1 | `bilqis_mlx/cli.py` |
@@ -3402,9 +3414,9 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `VOCAB_TYPED_SIGNATURE_ARITY_MISMATCH` | 1 | `bilqis_mlx/vocabulary_growth.py` |
 | `WHOLE_STUDENT_CANDIDATES_NOT_COMPARABLE` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `WHOLE_STUDENT_CANDIDATE_POOL_EMPTY` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
-| `WHOLE_STUDENT_PEAK_EMPTY_EXAM` | 1 | `bilqis_mlx/learning/whole_student_retention.py` |
-| `WHOLE_STUDENT_PEAK_INCOMPLETE_SOURCE` | 1 | `bilqis_mlx/learning/whole_student_retention.py` |
-| `WHOLE_STUDENT_PEAK_INVALID_SCORE` | 1 | `bilqis_mlx/learning/whole_student_retention.py` |
+| `WHOLE_STUDENT_PEAK_EMPTY_EXAM` | 1 | `bilqis_mlx/learning/_retention/whole_student_retention.py` |
+| `WHOLE_STUDENT_PEAK_INCOMPLETE_SOURCE` | 1 | `bilqis_mlx/learning/_retention/whole_student_retention.py` |
+| `WHOLE_STUDENT_PEAK_INVALID_SCORE` | 1 | `bilqis_mlx/learning/_retention/whole_student_retention.py` |
 | `WHOLE_STUDENT_PEAK_SCHEMA_DRIFT` | 1 | `bilqis_mlx/runtime/checkpoints.py` |
 | `WHOLE_STUDENT_PEAK_SEED_ADAMW_DRIFT` | 1 | `bilqis_mlx/runtime/reconciliation.py` |
 | `_BINDING_DRIFT` | 1 | `bilqis_mlx/factory/model.py` |
@@ -3412,18 +3424,17 @@ Current production scan: **1957** raw raises across **178** files. The baseline 
 | `_INVALID` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
 | `_STALE` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
 | `boom` | 1 | `bilqis_mlx/runtime/tests/test_mlx_memory.py` |
-| `context held` | 1 | `bilqis_mlx/runtime/tests/test_atlas_training_adapter.py` |
 | `disposable interruption before pointer publication` | 1 | `bilqis_mlx/runtime/tests/test_atlas_lease_renewal.py` |
 | `evaluator-owned cache reached by solver` | 1 | `bilqis_mlx/semantics/tests/operators/test_cognitive_operator_native.py` |
 | `exact cached route must preempt neural` | 1 | `bilqis_mlx/runtime/tests/test_cognitive_solver.py` |
-| `lacks U7C pattern` | 1 | `bilqis_mlx/source_adapters/tests/test_grade_b_u7c_causal_cells.py` |
+| `lacks U7C pattern` | 1 | `bilqis_mlx/source_adapters/tests/boolean/test_grade_b_u7c_causal_cells.py` |
 | `malformed decoder payload` | 1 | `bilqis_mlx/runtime/tests/test_cognitive_solver.py` |
 | `malformed translated score` | 1 | `bilqis_mlx/runtime/tests/test_capability_evidence_history.py` |
 | `missing source manifest` | 1 | `bilqis_mlx/runtime/tests/test_capability_authority.py` |
 | `non-finite JSON literal` | 1 | `bilqis_mlx/semantics/atlas/feature_io_contracts.py` |
 | `snapshot must not mutate MLX telemetry` | 1 | `bilqis_mlx/runtime/tests/test_atlas_resources.py` |
 | `undefined` | 1 | `bilqis_mlx/semantics/tests/foundation/test_source_memo.py` |
-| `unreachable` | 1 | `bilqis_mlx/learning/championship_runtime.py` |
+| `unreachable` | 2 | `bilqis_mlx/factory/curriculum/formal_lesson_types.py`, `bilqis_mlx/learning/championship_runtime.py` |
 | `unsupported fixture operator` | 1 | `bilqis_mlx/verification/tests/test_verification_laws.py` |
 
 Full source expressions and grouped counts are in `docs/operations/error_catalog.json`.
