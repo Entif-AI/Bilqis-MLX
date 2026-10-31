@@ -1603,7 +1603,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **1958** raw raises across **184** files. The baseline gate permits only reduction.
+Current production scan: **1959** raw raises across **185** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -3422,6 +3422,7 @@ Current production scan: **1958** raw raises across **184** files. The baseline 
 | `missing source manifest` | 1 | `bilqis_mlx/runtime/tests/capability/test_capability_authority.py` |
 | `non-finite JSON literal` | 1 | `bilqis_mlx/semantics/atlas/feature_io_contracts.py` |
 | `snapshot must not mutate MLX telemetry` | 1 | `bilqis_mlx/runtime/tests/model/test_atlas_resources_part3.py` |
+| `stale lossy payload influenced output` | 1 | `bilqis_mlx/runtime/tests/model/test_atlas_cache_binding.py` |
 | `undefined` | 1 | `bilqis_mlx/semantics/tests/foundation/test_source_memo.py` |
 | `unreachable` | 2 | `bilqis_mlx/factory/curriculum/formal_lesson_types.py`, `bilqis_mlx/learning/championship_runtime.py` |
 | `unsupported fixture operator` | 1 | `bilqis_mlx/verification/tests/test_verification_laws.py` |

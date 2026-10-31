@@ -1,6 +1,6 @@
 {
-  "legacy_raw_file_count": 184,
-  "legacy_raw_raise_count": 1958,
+  "legacy_raw_file_count": 185,
+  "legacy_raw_raise_count": 1959,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BACKUP_ARCHIVE_ROOT_SYMLINK",
@@ -10480,6 +10480,13 @@
       "exception": "ValueError",
       "expression": "'malformed translated score'",
       "path": "bilqis_mlx/runtime/tests/capability/test_capability_evidence_history.py"
+    },
+    {
+      "code_hint": "stale lossy payload influenced output",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'stale lossy payload influenced output'",
+      "path": "bilqis_mlx/runtime/tests/model/test_atlas_cache_binding.py"
     },
     {
       "code_hint": "snapshot must not mutate MLX telemetry",

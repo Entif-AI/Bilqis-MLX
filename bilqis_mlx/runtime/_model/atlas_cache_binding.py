@@ -29,11 +29,17 @@ class CacheBinding:
     generation_sha256: str
     lineage_sha256: str
     topology_sha256: str
+    source_release_sha256: str
+    semantic_release_sha256: str
     source_rights_sha256: str
+    rights_purpose_sha256: str
+    policy_epoch_sha256: str
+    context_eligibility_sha256: str
     causal_prefix_sha256: str
     masks_sha256: str
     scope_sha256: str
     key_sha256: str
+    inference_state_sha256: str
     offset: int
 
 
@@ -89,11 +95,17 @@ def validate_binding(binding: CacheBinding, codec_manifest=None) -> None:
         binding.generation_sha256,
         binding.lineage_sha256,
         binding.topology_sha256,
+        binding.source_release_sha256,
+        binding.semantic_release_sha256,
         binding.source_rights_sha256,
+        binding.rights_purpose_sha256,
+        binding.policy_epoch_sha256,
+        binding.context_eligibility_sha256,
         binding.causal_prefix_sha256,
         binding.masks_sha256,
         binding.scope_sha256,
         binding.key_sha256,
+        binding.inference_state_sha256,
     )):
         _invalid()
     if type(binding.offset) is not int or not 0 <= binding.offset <= MAX_U32:
@@ -115,12 +127,18 @@ def binding_digest(binding: CacheBinding) -> bytes:
             "rotation_seed": manifest.rotation_seed,
         },
         "generation_sha256": binding.generation_sha256,
+        "inference_state_sha256": binding.inference_state_sha256,
         "key_sha256": binding.key_sha256,
         "lineage_sha256": binding.lineage_sha256,
         "masks_sha256": binding.masks_sha256,
         "offset": binding.offset,
+        "policy_epoch_sha256": binding.policy_epoch_sha256,
+        "rights_purpose_sha256": binding.rights_purpose_sha256,
         "scope_sha256": binding.scope_sha256,
+        "semantic_release_sha256": binding.semantic_release_sha256,
+        "source_release_sha256": binding.source_release_sha256,
         "source_rights_sha256": binding.source_rights_sha256,
+        "context_eligibility_sha256": binding.context_eligibility_sha256,
         "topology_sha256": binding.topology_sha256,
     }
     canonical = json.dumps(
