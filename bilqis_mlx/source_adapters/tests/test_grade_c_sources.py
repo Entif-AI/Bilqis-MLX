@@ -140,7 +140,7 @@ class GradeCSourceTests(unittest.TestCase):
         from unittest.mock import patch
         from bilqis_mlx.source_adapters.numeric import check_numeric, semantic_footprint
         rows = draw(self.graph, seed=19, maximum=3)
-        with patch("bilqis_mlx.source_adapters.school.draw_numeric",
+        with patch("bilqis_mlx.source_adapters.school_owners.numeric.draw_numeric",
                    side_effect=AssertionError("checker invoked generator")):
             for row in rows:
                 self.assertTrue(check_numeric(row, graph=self.graph))
