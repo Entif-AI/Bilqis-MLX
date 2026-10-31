@@ -1,13 +1,10 @@
-"""AST scanning for source-derived operator contracts and legacy debt."""
+"""AST scanning primitives for the operator-contract audit."""
 from __future__ import annotations
 
 import ast
 from dataclasses import dataclass
 from pathlib import Path
 import re
-import subprocess
-
-from operations.operator_contract_paths import logical_source_path
 
 
 SYMBOL = re.compile(r"[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\Z")
@@ -15,6 +12,11 @@ STATUS_FIELDS = frozenset(("result", "status", "stop_reason", "reason", "disposi
 EVENT_FIELDS = frozenset(("event",))
 GATE_COLLECTION_NAMES = frozenset(
     ("debt", "blockers", "required_source_work", "reasons"))
+
+try:
+    from .operator_contract_paths import logical_source_path
+except ImportError:  # direct script execution
+    from operator_contract_paths import logical_source_path
 
 
 @dataclass(frozen=True)
@@ -72,11 +74,29 @@ def _symbol_kind(node: ast.Constant, parents: dict[ast.AST, ast.AST]) -> str:
     return "symbol"
 
 
+def _module_string_constants(tree: ast.Module) -> dict[str, str]:
+    result: dict[str, str] = {}
+    for statement in tree.body:
+        if (isinstance(statement, ast.Assign)
+                and isinstance(statement.value, ast.Constant)
+                and isinstance(statement.value.value, str)):
+            for target in statement.targets:
+                if isinstance(target, ast.Name):
+                    result[target.id] = statement.value.value
+        elif (isinstance(statement, ast.AnnAssign)
+              and isinstance(statement.target, ast.Name)
+              and isinstance(statement.value, ast.Constant)
+              and isinstance(statement.value.value, str)):
+            result[statement.target.id] = statement.value.value
+    return result
+
+
 def analyze_source(path: str, source: str) -> SourceReport:
     """AST-only inventory; it never imports or executes the examined module."""
     tree = ast.parse(source, filename=path)
     parents = {child: parent for parent in ast.walk(tree)
                for child in ast.iter_child_nodes(parent)}
+    module_strings = _module_string_constants(tree)
     codes: list[CodeSite] = []
     debt: list[ContractDebt] = []
     owners: list[str] = []
@@ -101,9 +121,28 @@ def analyze_source(path: str, source: str) -> SourceReport:
             owner = ".".join(owners) if owners else "<module>"
             if kind == "exception":
                 debt.append(ContractDebt(
-                    path, "literal-error-identity", node.value, owner, node.lineno))
+                    path, "literal-error-identity", node.value,
+                    owner, node.lineno,
+                ))
             if SYMBOL.fullmatch(node.value):
                 codes.append(CodeSite(node.value, kind, path, node.lineno, owner))
+
+        def visit_Raise(self, node: ast.Raise) -> None:
+            if (isinstance(node.exc, ast.Call) and node.exc.args
+                    and isinstance(node.exc.args[0], ast.Name)):
+                reference = node.exc.args[0]
+                token = module_strings.get(reference.id)
+                if token is not None:
+                    owner = ".".join(owners) if owners else "<module>"
+                    debt.append(ContractDebt(
+                        path, "literal-error-identity", token,
+                        owner, reference.lineno,
+                    ))
+                    if SYMBOL.fullmatch(token):
+                        codes.append(CodeSite(
+                            token, "exception", path, reference.lineno, owner,
+                        ))
+            self.generic_visit(node)
 
         def _numeric_guard(self, node: ast.AST) -> None:
             owner = ".".join(owners) if owners else "<module>"
@@ -112,7 +151,8 @@ def analyze_source(path: str, source: str) -> SourceReport:
                         and type(part.value) is int and abs(part.value) > 1):
                     debt.append(ContractDebt(
                         path, "opaque-numeric-guard", str(part.value),
-                        owner, part.lineno))
+                        owner, part.lineno,
+                    ))
 
         def visit_If(self, node: ast.If) -> None:
             self._numeric_guard(node)
@@ -131,58 +171,3 @@ def analyze_source(path: str, source: str) -> SourceReport:
         tuple(sorted(codes, key=lambda x: (x.path, x.line, x.code, x.kind))),
         tuple(sorted(debt, key=lambda x: (x.path, x.line, x.kind, x.token))),
     )
-
-
-def _repository_python_files(root: Path) -> tuple[Path, ...]:
-    """Scan repository state, not another worker's untracked scratch files."""
-    try:
-        result = subprocess.run(
-            ["git", "-C", str(root), "ls-files", "--cached"],
-            check=True, capture_output=True, text=True)
-    except (OSError, subprocess.CalledProcessError):
-        return tuple(sorted((root / "bilqis_mlx").rglob("*.py")))
-    files = []
-    for relative in result.stdout.splitlines():
-        path = Path(relative)
-        candidate = root / path
-        if (path.suffix == ".py" and path.parts and path.parts[0] == "bilqis_mlx"
-                and not candidate.is_symlink()):
-            files.append(candidate)
-    return tuple(sorted(files))
-
-
-def scan_tree(root: Path) -> SourceReport:
-    sites: list[CodeSite] = []
-    debt: list[ContractDebt] = []
-    for file in _repository_python_files(root):
-        if "tests" in file.relative_to(root).parts or file.name.startswith("test_"):
-            continue
-        report = analyze_source(logical_source_path(file, root), file.read_text())
-        sites.extend(report.codes)
-        debt.extend(report.debt)
-    return SourceReport(tuple(sites), tuple(debt))
-
-
-def scan_git_tree(root: Path, ref: str) -> SourceReport:
-    """Scan one committed tree using today's canonical owner mapping."""
-    listed = subprocess.run(
-        ["git", "-C", str(root), "ls-tree", "-r", ref],
-        check=True, capture_output=True, text=True)
-    sites: list[CodeSite] = []
-    debt: list[ContractDebt] = []
-    for row in listed.stdout.splitlines():
-        metadata, raw_relative = row.split("\t", 1)
-        mode = metadata.split(" ", 1)[0]
-        relative = Path(raw_relative)
-        if (relative.suffix != ".py" or not relative.parts
-                or relative.parts[0] != "bilqis_mlx" or mode == "120000"
-                or "tests" in relative.parts or relative.name.startswith("test_")):
-            continue
-        shown = subprocess.run(
-            ["git", "-C", str(root), "show", f"{ref}:{relative.as_posix()}"],
-            check=True, capture_output=True, text=True)
-        report = analyze_source(
-            logical_source_path(root / relative, root), shown.stdout)
-        sites.extend(report.codes)
-        debt.extend(report.debt)
-    return SourceReport(tuple(sites), tuple(debt))

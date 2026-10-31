@@ -3,7 +3,7 @@ name: Bilqis MLX portable verification
 on:
   pull_request:
   push:
-    branches: [main, 'codex/**']
+    branches: [main]
   workflow_dispatch:
 
 permissions:
