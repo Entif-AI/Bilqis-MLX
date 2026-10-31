@@ -1,12 +1,30 @@
 name: Semantic ABI integrity
 
 on:
+  # Semantic integrity is a PR-base-relative gate. Branch-name push filters made
+  # unrelated feature branches inherit failures from already-present semantic
+  # debt whenever their branch happened not to contain the word "bamf".
   pull_request:
-    branches: [main]
-  push:
     branches:
-      - 'codex/**'
-      - '!codex/bamf**'
+      - main
+      - codex/bamf-unified-base-20261028
+    paths:
+      - 'lib/ithkuil/**'
+      - 'bilqis_mlx/semantics/**'
+      - 'bilqis_mlx/source_adapters/**'
+      - 'bilqis_mlx/factory/**'
+      - 'bilqis_mlx/verification/**'
+      - 'bilqis_mlx/diagnostics/**'
+      - 'bilqis_mlx/boolean*.py'
+      - 'bilqis_mlx/curriculum.py'
+      - 'bilqis_mlx/generated_assessment.py'
+      - 'bilqis_mlx/grade_*.py'
+      - 'bilqis_mlx/live_grade_*.py'
+      - 'bilqis_mlx/numeric*.py'
+      - 'bilqis_mlx/vocabulary_growth.py'
+      - 'scripts/check_historical_abi.py'
+      - 'scripts/check_semantic_boundaries.py'
+      - 'scripts/tests/test_semantic_module_boundaries.py'
   workflow_dispatch:
 
 permissions:
@@ -15,11 +33,6 @@ permissions:
 jobs:
   semantic-abi-integrity:
     name: semantic-abi-integrity
-    if: >-
-      ${{
-        github.event_name == 'workflow_dispatch' ||
-        (!contains(github.ref_name, 'bamf') && !contains(github.head_ref, 'bamf'))
-      }}
     runs-on: ubuntu-latest
     steps:
       - name: Read proposed source
