@@ -8,181 +8,32 @@ new opaque source constructs fail CI until expressed as domain contracts.
 from __future__ import annotations
 
 import argparse
-import ast
 from collections import Counter
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
 import json
 from pathlib import Path
-import re
 import subprocess
-from types import MappingProxyType
+
+try:
+    from .operator_contract_scan import (
+        CodeSite,
+        ContractDebt,
+        SourceReport,
+        analyze_source,
+        logical_source_path,
+    )
+except ImportError:  # direct script execution
+    from operator_contract_scan import (
+        CodeSite,
+        ContractDebt,
+        SourceReport,
+        analyze_source,
+        logical_source_path,
+    )
 
 
 ROOT = Path(__file__).resolve().parents[2]
 SCHEMA = "bilqis.operator-contract-debt/v1"
-SYMBOL = re.compile(r"[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\Z")
-STATUS_FIELDS = frozenset(("result", "status", "stop_reason", "reason", "disposition"))
-EVENT_FIELDS = frozenset(("event",))
-GATE_COLLECTION_NAMES = frozenset(
-    ("debt", "blockers", "required_source_work", "reasons"))
-
-# These directories are physical source compartments only. Their parent
-# packages deliberately preserve the long-standing public module identities
-# via package search paths / aliases, so quality debt must remain keyed to
-# that canonical identity rather than being reclassified as "new" merely
-# because anti-monolith governance moved the source file on disk.
-LOGICAL_SOURCE_COMPARTMENTS = MappingProxyType({
-    ("bilqis_mlx", "factory", "curriculum"): ("bilqis_mlx", "factory"),
-    ("bilqis_mlx", "factory", "lifecycle"): ("bilqis_mlx", "factory"),
-    ("bilqis_mlx", "factory", "sources"): ("bilqis_mlx", "factory"),
-    ("bilqis_mlx", "learning", "_championship"): ("bilqis_mlx", "learning"),
-    ("bilqis_mlx", "learning", "_engram"): ("bilqis_mlx", "learning"),
-    ("bilqis_mlx", "learning", "_retention"): ("bilqis_mlx", "learning"),
-    ("bilqis_mlx", "learning", "_salience"): ("bilqis_mlx", "learning"),
-    ("bilqis_mlx", "learning", "_teaching"): ("bilqis_mlx", "learning"),
-    ("bilqis_mlx", "semantics", "foundation"): ("bilqis_mlx", "semantics"),
-    ("bilqis_mlx", "runtime", "_projection"): ("bilqis_mlx", "runtime"),
-    ("bilqis_mlx", "runtime", "_admission"): ("bilqis_mlx", "runtime"),
-    ("bilqis_mlx", "runtime", "_capability"): ("bilqis_mlx", "runtime"),
-    ("bilqis_mlx", "runtime", "_source"): ("bilqis_mlx", "runtime"),
-    ("bilqis_mlx", "runtime", "_model"): ("bilqis_mlx", "runtime"),
-    ("bilqis_mlx", "runtime", "_custody"): ("bilqis_mlx", "runtime"),
-    ("bilqis_mlx", "runtime", "_operator"): ("bilqis_mlx", "runtime"),
-    ("bilqis_mlx", "runtime", "_teacher"): ("bilqis_mlx", "runtime"),
-    ("bilqis_mlx", "runtime", "_depth"): ("bilqis_mlx", "runtime"),
-    ("bilqis_mlx", "runtime", "_correction"): ("bilqis_mlx", "runtime"),
-    ("bilqis_mlx", "runtime", "_batch"): ("bilqis_mlx", "runtime"),
-})
-
-
-def logical_source_path(path: Path, root: Path) -> str:
-    relative = path.relative_to(root)
-    parts = relative.parts
-    prefix = LOGICAL_SOURCE_COMPARTMENTS.get(parts[:3])
-    if prefix is None:
-        return relative.as_posix()
-    return Path(*prefix, *parts[3:]).as_posix()
-
-
-@dataclass(frozen=True)
-class CodeSite:
-    code: str
-    kind: str
-    path: str
-    line: int
-    owner: str
-
-
-@dataclass(frozen=True)
-class ContractDebt:
-    path: str
-    kind: str
-    token: str
-    owner: str
-    line: int
-
-
-@dataclass(frozen=True)
-class SourceReport:
-    codes: tuple[CodeSite, ...]
-    debt: tuple[ContractDebt, ...]
-
-
-def _symbol_kind(node: ast.Constant, parents: dict[ast.AST, ast.AST]) -> str:
-    parent = parents.get(node)
-    grandparent = parents.get(parent) if parent is not None else None
-    if (isinstance(parent, ast.Call) and parent.args and
-            parent.args[0] is node and isinstance(grandparent, ast.Raise)):
-        return "exception"
-    if (isinstance(parent, ast.Call) and parent.args and parent.args[0] is node
-            and isinstance(parent.func, ast.Attribute)
-            and parent.func.attr in {"append", "add"}
-            and isinstance(parent.func.value, ast.Name)
-            and parent.func.value.id in GATE_COLLECTION_NAMES):
-        return "gate"
-    child: ast.AST = node
-    ancestor = parent
-    while ancestor is not None:
-        if isinstance(ancestor, ast.Dict):
-            for key, value in zip(ancestor.keys, ancestor.values):
-                if value is child and isinstance(key, ast.Constant):
-                    if key.value in EVENT_FIELDS:
-                        return "event"
-                    if key.value in STATUS_FIELDS:
-                        return "status"
-        if isinstance(ancestor, ast.Assign):
-            if any(isinstance(target, ast.Name) and target.id in STATUS_FIELDS
-                   for target in ancestor.targets):
-                return "status"
-        child = ancestor
-        ancestor = parents.get(ancestor)
-    return "symbol"
-
-
-def analyze_source(path: str, source: str) -> SourceReport:
-    """AST-only inventory; it never imports or executes the examined module."""
-    tree = ast.parse(source, filename=path)
-    parents = {child: parent for parent in ast.walk(tree)
-               for child in ast.iter_child_nodes(parent)}
-    codes: list[CodeSite] = []
-    debt: list[ContractDebt] = []
-    owners: list[str] = []
-
-    class Scanner(ast.NodeVisitor):
-        def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-            owners.append(node.name)
-            self.generic_visit(node)
-            owners.pop()
-
-        visit_AsyncFunctionDef = visit_FunctionDef
-
-        def visit_ClassDef(self, node: ast.ClassDef) -> None:
-            owners.append(node.name)
-            self.generic_visit(node)
-            owners.pop()
-
-        def visit_Constant(self, node: ast.Constant) -> None:
-            if not isinstance(node.value, str):
-                return
-            kind = _symbol_kind(node, parents)
-            owner = ".".join(owners) if owners else "<module>"
-            if kind == "exception":
-                debt.append(ContractDebt(
-                    path, "literal-error-identity", node.value,
-                    owner, node.lineno,
-                ))
-            if SYMBOL.fullmatch(node.value):
-                codes.append(CodeSite(node.value, kind, path, node.lineno, owner))
-
-        def _numeric_guard(self, node: ast.AST) -> None:
-            owner = ".".join(owners) if owners else "<module>"
-            for part in ast.walk(node.test):
-                if (isinstance(part, ast.Constant)
-                        and type(part.value) is int and abs(part.value) > 1):
-                    debt.append(ContractDebt(
-                        path, "opaque-numeric-guard", str(part.value),
-                        owner, part.lineno,
-                    ))
-
-        def visit_If(self, node: ast.If) -> None:
-            self._numeric_guard(node)
-            self.generic_visit(node)
-
-        def visit_While(self, node: ast.While) -> None:
-            self._numeric_guard(node)
-            self.generic_visit(node)
-
-        def visit_IfExp(self, node: ast.IfExp) -> None:
-            self._numeric_guard(node)
-            self.generic_visit(node)
-
-    Scanner().visit(tree)
-    return SourceReport(
-        tuple(sorted(codes, key=lambda x: (x.path, x.line, x.code, x.kind))),
-        tuple(sorted(debt, key=lambda x: (x.path, x.line, x.kind, x.token))),
-    )
-
-
 def _repository_python_files(root: Path) -> tuple[Path, ...]:
     """Scan repository state, not another worker's untracked scratch files."""
     try:
@@ -262,8 +113,27 @@ def debt_counter(debt: tuple[ContractDebt, ...]) -> Counter[tuple[str, ...]]:
 def new_debt(
     current: Counter[tuple[str, ...]], baseline: Counter[tuple[str, ...]],
 ) -> tuple[tuple[str, ...], ...]:
-    return tuple(key for key, count in sorted(current.items())
-                 for _ in range(max(0, count - baseline[key])))
+    """Return net-new debt while allowing one-for-one module relocation.
+
+    Exact path-qualified matches consume first. A current excess occurrence may
+    then consume only a disappeared occurrence of the same ``(kind, token)``.
+    Copies and genuinely new opaque contracts therefore remain debt while a
+    structural move keeps its existing debt identity.
+    """
+    exact_excess = current - baseline
+    disappeared = baseline - current
+    relocation_credit: Counter[tuple[str, str]] = Counter()
+    for (_, kind, token), count in disappeared.items():
+        relocation_credit[(kind, token)] += count
+
+    introduced: list[tuple[str, ...]] = []
+    for key, count in sorted(exact_excess.items()):
+        _, kind, token = key
+        credit_key = (kind, token)
+        relocated = min(count, relocation_credit[credit_key])
+        relocation_credit[credit_key] -= relocated
+        introduced.extend([key] * (count - relocated))
+    return tuple(introduced)
 
 
 def _baseline(counter: Counter[tuple[str, ...]]) -> dict:
