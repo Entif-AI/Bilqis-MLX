@@ -1360,7 +1360,7 @@
       ],
       "kind": "leaf",
       "title": "BAMF-0.2 B10.3 | Enforce causal dependency feedback masking and typed answer legality",
-      "body_sha256": "d7f6bf85022f3bbd506a38967b89f79b56947c2962903f90b39309e1ce2347b0",
+      "body_sha256": "62daf37ec04b7b98d47234c0fa778b24ee9cc28713f5108d6284e198d9885e38",
       "clause_span": [
         8,
         12

@@ -49,8 +49,9 @@ Repairs `e0ba655` and
 address those findings with executable negative tests.
 Focused suite: **46 passed, 0 failed, 0 skipped**.
 The formal pinned EGM checkout was installed and its
-SHA verified. Independent final immutable-head
-readback is **PENDING**; no A07.3 EGM PASS is claimed.
+SHA verified. At this checkpoint independent final
+immutable-head readback was **PENDING**; the final
+disposition is recorded below.
 
 Second independent review at `e0ba655` ran 42/42
 tests with the pinned EGM standards and identified
@@ -61,8 +62,10 @@ and stale receipt. Repair
 adds bounded, non-speculative local joint applicability
 proof and process-local executor-witnessed cache reads.
 Focused owner suite: **48 passed, 0 failed, 0 skipped**.
-Final Goldfish re-review is still pending.
-No A07 parent integration or neural training is claimed.
+At this second repair checkpoint final Goldfish
+re-review was still pending. The final disposition
+and reviewed integration are recorded below.
+No live neural training is claimed.
 
 ## A07.2 independent evaluator/source separation review
 
@@ -88,5 +91,28 @@ and traps native calculate; the formal law still returns
 Independent targeted readback at `819a653` returned
 **A07.2 EGM PASS, zero remaining Blockers/Majors**.
 The reviewer inspected immutable source and tests, not
-an additional executed test run. A07.3 and parent
-integration remain open.
+an additional executed test run. At that checkpoint
+A07.3 and parent integration remained open.
+
+## A07.3 final independent EGM and reviewed unified integration
+
+The final independent Goldfish review at immutable
+`6b7f4daaf89293f5a12a1381e016d01e877128f4` returned
+**A07.3 EGM PASS, zero remaining Blockers/Majors**.
+The reviewer independently executed **48 passed, 0 failed,
+0 skipped** and verified source-visible applicability,
+complete candidate grants, joint-hole uniqueness, consulted
+memo dependencies, poisoned-cache rejection, budget accounting,
+cycle/depth guards, no assessment/gold imports and no network
+access. This is the review on issue #415, comment `6489015092`.
+
+Reviewed receipt/checkpoint
+`fadbe684140220776f906627a1c4ec28b41ba216`
+was integrated through human-approved PR #551 into unified
+commit `6b5460032fc0b19115843cce95fe8be9582af141`.
+The merge's second parent is that exact receipt head.
+Issue #415's integration receipt is comment `6489034037`.
+
+All A07.1/A07.2/A07.3 scoped EGM dispositions are now PASS.
+Original A07 parent acceptance is a separate gate; this
+record does not authorize live optimizer or source promotion.
