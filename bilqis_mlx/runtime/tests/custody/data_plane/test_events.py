@@ -44,4 +44,3 @@ class DataPlaneEventTests(DataPlaneCase):
         observation = event_observations(self.root, (first["event_id"],))
 
         self.assertEqual(observation[first["event_id"]][1:], (2, True))
-

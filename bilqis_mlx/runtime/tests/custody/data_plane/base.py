@@ -19,4 +19,3 @@ class DataPlaneCase(unittest.TestCase):
         else:
             os.environ["BILQIS_DATA_PLANE"] = self.previous
         self.temp.cleanup()
-

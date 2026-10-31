@@ -85,4 +85,3 @@ class DataPlaneEventMixin:
                 if row is not None:
                     result[event_id] = (row[0], row[1], bool(row[2]))
         return result
-

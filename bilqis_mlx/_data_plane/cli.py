@@ -70,4 +70,3 @@ def main(argv=None) -> int:
         }, sort_keys=True))
         return 0
     raise AssertionError(args.action)
-

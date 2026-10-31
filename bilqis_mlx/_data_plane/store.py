@@ -190,4 +190,3 @@ class DataPlaneStoreMixin:
             "nodes": nodes, "verified_files": verified,
             "event_ledgers": event_ledgers, "indexed_events": indexed_events,
         }
-

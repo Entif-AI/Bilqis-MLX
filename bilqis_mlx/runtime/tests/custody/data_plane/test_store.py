@@ -37,4 +37,3 @@ class DataPlaneStoreTests(DataPlaneCase):
         plane.put_object(digest, raw)
         self.assertEqual(plane.get_object(digest), raw)
         self.assertEqual(plane.stats()["objects"], 1)
-

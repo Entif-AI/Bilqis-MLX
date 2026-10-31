@@ -47,4 +47,3 @@ class DataPlaneCustodyTests(DataPlaneCase):
         self.assertEqual(paths[1].read_bytes(), payload)
         self.assertEqual(paths[0].stat().st_ino, paths[1].stat().st_ino)
         self.assertEqual(dedupe_bundle_payloads(self.root)["linked_aliases"], 0)
-

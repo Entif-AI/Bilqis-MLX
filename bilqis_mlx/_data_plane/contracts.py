@@ -81,4 +81,3 @@ def default_path() -> Path:
     else:
         root = Path(os.environ.get("XDG_DATA_HOME", home / ".local" / "share")) / "bilqis-mlx"
     return root / "data-plane.sqlite3"
-
