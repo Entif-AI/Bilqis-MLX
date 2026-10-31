@@ -12,6 +12,7 @@ from bilqis_mlx.factory.formal_lessons import (
     FORMAL_LESSON_STATUS, LEARNING_UNVERIFIED,
     check_formal_lesson, construct_formal_lesson,
 )
+from bilqis_mlx.factory.curriculum.formal_lesson_types import formal_variation_axes
 from bilqis_mlx.semantics.atlas_projection import (
     FormalDomainBinding, compile_atlas_release, persist_atlas_release,
 )
@@ -28,7 +29,7 @@ class FormalLessonAuthorityTests(unittest.TestCase):
         corpus = os.environ.get("BILQIS_ATLAS_REAL_CORPUS")
         if not corpus:
             self.skipTest("real pinned A01 corpus not supplied")
-        root = Path(__file__).resolve().parents[3]
+        root = Path(__file__).resolve().parents[4]
         prior = root / "bilqis_mlx/semantics/copular_registry_v1.json"
         boolean = root / "bilqis_mlx/semantics/legacy_abi_v1.json"
         numeric = root / "bilqis_mlx/semantics/numeric_v1.json"
@@ -55,8 +56,6 @@ class FormalLessonAuthorityTests(unittest.TestCase):
                     (FORMAL[0][0], "BOOL_NOT", (("Boolean", True),), False),
                     (FORMAL[1][0], "BOOL_AND",
                      (("Boolean", True), ("Boolean", False)), False),
-                    (FORMAL[2][0], "COUNT",
-                     (("EntitySet", ("alpha", "beta")),), 2),
                     (FORMAL[3][0], "SUCC", (("Number", 2),), 3)):
                 with self.subTest(operator=operator_id):
                     binding, typed = _case(
@@ -69,13 +68,11 @@ class FormalLessonAuthorityTests(unittest.TestCase):
                     self.assertFalse(check_formal_lesson(
                         lesson, lesson.contrast, selection, binding))
 
-    def test_four_released_laws_have_typed_source_contrasts(self):
+    def test_lawful_released_laws_have_typed_source_contrasts(self):
         cases = (
             (FORMAL[0][0], "BOOL_NOT", (("Boolean", True),), False),
             (FORMAL[1][0], "BOOL_AND",
              (("Boolean", True), ("Boolean", False)), False),
-            (FORMAL[2][0], "COUNT",
-             (("EntitySet", ("alpha", "beta")),), 2),
             (FORMAL[3][0], "SUCC", (("Number", 2),), 3),
         )
         with patch(
@@ -92,7 +89,8 @@ class FormalLessonAuthorityTests(unittest.TestCase):
                     self.assertEqual(
                         lesson.prerequisite_closure, lesson.constituents)
                     self.assertEqual(
-                        lesson.variation_axes, ("typed-answer-contrast",))
+                        lesson.variation_axes,
+                        formal_variation_axes(operator_id))
                     self.assertEqual(lesson.status, FORMAL_LESSON_STATUS)
                     self.assertEqual(
                         lesson.learning_state, LEARNING_UNVERIFIED)
@@ -100,6 +98,23 @@ class FormalLessonAuthorityTests(unittest.TestCase):
                         lesson, lesson.positive, _selection(), binding))
                     self.assertFalse(check_formal_lesson(
                         lesson, lesson.contrast, _selection(), binding))
+
+    def test_a01_numberset_count_cannot_be_relabelled_as_entityset_count(self):
+        binding, typed = _case(
+            "COUNT", ("EntitySet", ("alpha", "beta")))
+        source = _source()
+        self.assertIn(
+            (FORMAL[2][0], "OPERATOR_SOURCE_SIGNATURE_MISMATCH"),
+            source.uncovered)
+        with patch(
+                "bilqis_mlx.factory.formal_lessons.resolve_formal_source_operators",
+                return_value=source):
+            with self.assertRaises(BilqisError) as caught:
+                construct_formal_lesson(
+                    _selection(), FORMAL[2][0], typed, binding)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_FORMAL_LESSON_SOURCE_UNCOVERED")
 
     def test_checker_rejects_forged_gold_without_calling_generator(self):
         binding, inputs = _case("SUCC", ("Number", 2))
