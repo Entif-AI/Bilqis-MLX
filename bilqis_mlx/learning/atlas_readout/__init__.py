@@ -12,10 +12,17 @@ from .plan import AnswerPlan, DecisionKind, DecisionSpec
 from .decisions import (DecodeState, DecodeStatus, DecisionOutput, start_decoding,
                         ready_decisions, parent_outputs, allowed_values, commit_decisions)
 from .frames import FrameAnswer, can_end_frame, frame_bindings, publish_frame
+from .causal_training import (
+    NeuralDecisionResult, NeuralDecisionStatus, commit_neural_decision,
+    decision_hidden, encode_feedback_value, typed_decision_loss,
+)
 from .parameters import bind_readout_parameters, readout_parameter_specs
 
 __all__ += ('ControlAction', 'control_logits', 'AnswerPlan', 'DecisionKind',
             'DecisionSpec', 'DecodeState', 'DecodeStatus', 'DecisionOutput',
             'start_decoding', 'ready_decisions', 'parent_outputs', 'allowed_values',
             'commit_decisions', 'FrameAnswer', 'can_end_frame', 'frame_bindings',
-            'publish_frame', 'bind_readout_parameters', 'readout_parameter_specs')
+            'publish_frame', 'NeuralDecisionResult', 'NeuralDecisionStatus',
+            'commit_neural_decision', 'decision_hidden', 'encode_feedback_value',
+            'typed_decision_loss', 'bind_readout_parameters',
+            'readout_parameter_specs')
