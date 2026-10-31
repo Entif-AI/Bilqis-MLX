@@ -2,22 +2,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import numpy as np
 
-from .atlas_cache_codec import (
-    HEAD_WIDTH,
-    Rot3Manifest,
-    _invalid,
-    decode_directions,
-    pack_3bit,
-    quantize_directions,
-    unpack_3bit,
-)
+if TYPE_CHECKING:
+    from .atlas_cache_codec import Rot3Manifest
 
 
 BLOCK_VECTORS = 32
 MIN_COMPRESSED_VECTORS = 256
+VECTOR_DIMS = 2
 CACHE_MODE_FP32 = "FP32"
 CACHE_MODE_ROT3 = "ROT3"
 
@@ -43,12 +38,21 @@ class CacheArtifact:
     fp32_payload: bytes
 
 
-def _vectors(cache) -> np.ndarray:
+def _codec():
+    from . import atlas_cache_codec
+    return atlas_cache_codec
+
+
+def _invalid() -> None:
+    _codec()._invalid()
+
+
+def _vectors(cache, head_width: int) -> np.ndarray:
     values = np.asarray(cache)
     if (
-        values.ndim != 2
+        values.ndim != VECTOR_DIMS
         or values.shape[0] <= 0
-        or values.shape[1] != HEAD_WIDTH
+        or values.shape[1] != head_width
         or not np.issubdtype(values.dtype, np.floating)
         or not np.isfinite(values).all()
     ):
@@ -57,7 +61,8 @@ def _vectors(cache) -> np.ndarray:
 
 
 def _validate_manifest(manifest: Rot3Manifest) -> None:
-    if not isinstance(manifest, Rot3Manifest):
+    codec = _codec()
+    if not isinstance(manifest, codec.Rot3Manifest):
         _invalid()
     manifest.validate()
 
@@ -65,14 +70,15 @@ def _validate_manifest(manifest: Rot3Manifest) -> None:
 def encode_cold_cache(cache, codec_manifest: Rot3Manifest) -> CacheArtifact:
     """Encode one [vectors,24] cold record under the B14.2 size policy."""
     _validate_manifest(codec_manifest)
-    values = _vectors(cache)
+    codec = _codec()
+    values = _vectors(cache, codec.HEAD_WIDTH)
     true_vectors = int(values.shape[0])
     if true_vectors < MIN_COMPRESSED_VECTORS:
         return CacheArtifact(
             CACHE_MODE_FP32,
             true_vectors,
             true_vectors,
-            HEAD_WIDTH,
+            codec.HEAD_WIDTH,
             b"",
             b"",
             b"",
@@ -82,7 +88,7 @@ def encode_cold_cache(cache, codec_manifest: Rot3Manifest) -> CacheArtifact:
     padded_vectors = (
         (true_vectors + BLOCK_VECTORS - 1) // BLOCK_VECTORS * BLOCK_VECTORS
     )
-    padded = np.zeros((padded_vectors, HEAD_WIDTH), dtype=np.float32)
+    padded = np.zeros((padded_vectors, codec.HEAD_WIDTH), dtype=np.float32)
     padded[:true_vectors] = values
     norms = np.linalg.norm(padded, axis=-1).astype(np.float32, copy=False)
     blocks = norms.reshape(-1, BLOCK_VECTORS)
@@ -97,13 +103,13 @@ def encode_cold_cache(cache, codec_manifest: Rot3Manifest) -> CacheArtifact:
         )
         relative[nonzero] = np.rint(scaled).astype(np.uint8)
 
-    codes = quantize_directions(padded).reshape(-1)
+    codes = codec.quantize_directions(padded).reshape(-1)
     return CacheArtifact(
         CACHE_MODE_ROT3,
         true_vectors,
         padded_vectors,
-        HEAD_WIDTH,
-        pack_3bit(codes),
+        codec.HEAD_WIDTH,
+        codec.pack_3bit(codes),
         relative.reshape(-1).tobytes(order="C"),
         np.asarray(maxima, dtype="<f4", order="C").tobytes(order="C"),
         b"",
@@ -114,11 +120,12 @@ def _validate_artifact(artifact: CacheArtifact, binding: CacheBinding) -> None:
     if not isinstance(artifact, CacheArtifact) or not isinstance(binding, CacheBinding):
         _invalid()
     _validate_manifest(binding.codec_manifest)
+    codec = _codec()
     if (
         type(artifact.true_vectors) is not int
         or type(artifact.padded_vectors) is not int
         or artifact.true_vectors <= 0
-        or artifact.head_width != HEAD_WIDTH
+        or artifact.head_width != codec.HEAD_WIDTH
         or not all(
             type(payload) is bytes
             for payload in (
@@ -135,6 +142,7 @@ def _validate_artifact(artifact: CacheArtifact, binding: CacheBinding) -> None:
 def decode_cache(artifact: CacheArtifact, expected_binding: CacheBinding) -> np.ndarray:
     """Decode B14.2 record bytes and restore the stored vector norm."""
     _validate_artifact(artifact, expected_binding)
+    codec = _codec()
     if artifact.mode == CACHE_MODE_FP32:
         if (
             artifact.padded_vectors != artifact.true_vectors
@@ -143,14 +151,17 @@ def decode_cache(artifact: CacheArtifact, expected_binding: CacheBinding) -> np.
             or artifact.relative_norms
             or artifact.block_max_norms_fp32
             or len(artifact.fp32_payload)
-            != artifact.true_vectors * HEAD_WIDTH * np.dtype("<f4").itemsize
+            != artifact.true_vectors * codec.HEAD_WIDTH * np.dtype("<f4").itemsize
         ):
             _invalid()
-        return (
+        decoded = (
             np.frombuffer(artifact.fp32_payload, dtype="<f4")
-            .reshape(artifact.true_vectors, HEAD_WIDTH)
+            .reshape(artifact.true_vectors, codec.HEAD_WIDTH)
             .astype(np.float32, copy=True)
         )
+        if not np.isfinite(decoded).all():
+            _invalid()
+        return decoded
 
     if artifact.mode != CACHE_MODE_ROT3:
         _invalid()
@@ -163,7 +174,7 @@ def decode_cache(artifact: CacheArtifact, expected_binding: CacheBinding) -> np.
     ):
         _invalid()
     blocks = artifact.padded_vectors // BLOCK_VECTORS
-    code_count = artifact.padded_vectors * HEAD_WIDTH
+    code_count = artifact.padded_vectors * codec.HEAD_WIDTH
     expected_code_bytes = (code_count * 3 + 7) // 8
     if (
         len(artifact.direction_codes) != expected_code_bytes
@@ -186,14 +197,24 @@ def decode_cache(artifact: CacheArtifact, expected_binding: CacheBinding) -> np.
         np.max(relative[~zero_blocks], axis=1) != np.iinfo(np.uint8).max
     ):
         _invalid()
+    flat_relative = relative.reshape(-1)
+    if np.any(flat_relative[artifact.true_vectors:]):
+        _invalid()
     norms = (
         relative.astype(np.float32)
         * maxima[:, None]
         / np.float32(np.iinfo(np.uint8).max)
     ).reshape(-1, 1)
-    codes = unpack_3bit(artifact.direction_codes, code_count).reshape(
-        artifact.padded_vectors, HEAD_WIDTH
+    codes = codec.unpack_3bit(artifact.direction_codes, code_count).reshape(
+        artifact.padded_vectors, codec.HEAD_WIDTH
     )
-    directions = decode_directions(codes)
+    tail_count = artifact.padded_vectors - artifact.true_vectors
+    if tail_count:
+        canonical_tail = codec.quantize_directions(
+            np.zeros((tail_count, codec.HEAD_WIDTH), dtype=np.float32)
+        )
+        if not np.array_equal(codes[artifact.true_vectors:], canonical_tail):
+            _invalid()
+    directions = codec.decode_directions(codes)
     decoded = directions * norms
     return decoded[:artifact.true_vectors].astype(np.float32, copy=False)
