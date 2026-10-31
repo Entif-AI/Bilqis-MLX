@@ -13,6 +13,12 @@ from ..roles import _validate_domain
 from ..values import value_logits
 
 
+_DECODER_HIDDEN_RANK = 2
+_DECODER_HIDDEN_WIDTH = 768
+_ANCHOR_ARITY = 2
+_EPISTEMIC_VALUE_COUNT = 5
+
+
 @dataclass(frozen=True)
 class DecoderMemory:
     hidden: mx.array
@@ -26,8 +32,8 @@ class DecoderMemory:
         if (self.schema_version != 'bilqis.mlx.decoder-memory/v1'
                 or type(self.compiled) is not CompiledFrameBatch
                 or type(self.generation_binding) is not str or not self.generation_binding
-                or not isinstance(self.hidden, mx.array) or self.hidden.ndim != 2
-                or self.hidden.shape[1] != 768 or self.hidden.dtype != mx.float32
+                or not isinstance(self.hidden, mx.array) or self.hidden.ndim != _DECODER_HIDDEN_RANK
+                or self.hidden.shape[1] != _DECODER_HIDDEN_WIDTH or self.hidden.dtype != mx.float32
                 or type(self.row_identities) is not tuple
                 or len(self.row_identities) != self.hidden.shape[0]
                 or type(self.anchors) is not tuple):
@@ -39,7 +45,7 @@ class DecoderMemory:
                 or not bool(mx.all(mx.isfinite(self.hidden[:count])))):
             invalid()
         for pair in self.anchors:
-            if (type(pair) is not tuple or len(pair) != 2
+            if (type(pair) is not tuple or len(pair) != _ANCHOR_ARITY
                     or type(pair[0]) is not str or not pair[0]
                     or type(pair[1]) is not int or not 0 <= pair[1] < count):
                 invalid()
@@ -79,14 +85,15 @@ def _epistemic(semantics, plan):
     if not decisions:
         return
     binding = semantics.epistemic_binding
-    if (binding is None or binding.kind == 'semantic_token' or len(binding.values) != 5
+    if (binding is None or binding.kind == 'semantic_token'
+            or len(binding.values) != _EPISTEMIC_VALUE_COUNT
             or binding.snapshot.bundle_id != plan.snapshot.bundle_id
             or binding.snapshot.source_bundle_id != plan.snapshot.source_bundle_id
             or binding.semantic_release != plan.snapshot.release_sha256
             or binding.active_semantic_digest != plan.snapshot.active_set_sha256
             or any(not set(d.legal_values) <= set(binding.values) for d in decisions)):
         invalid()
-    value_logits(mx.zeros((768,),dtype=mx.float32), binding, semantics.banks)
+    value_logits(mx.zeros((_DECODER_HIDDEN_WIDTH,),dtype=mx.float32), binding, semantics.banks)
 
 
 def validate_decoder_inputs(memory, context, plan, semantics, parameters):
