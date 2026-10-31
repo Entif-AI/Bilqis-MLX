@@ -9,10 +9,19 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: bilqis-portable-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  portable:
+  core:
+    name: portable-core
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      skos_action: ${{ steps.skos.outputs.action }}
+      skos_reason: ${{ steps.skos.outputs.reason }}
+      skos_sha256: ${{ steps.skos.outputs.sha256 }}
     steps:
       - name: Checkout private source without persisted credentials
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -91,6 +100,7 @@ jobs:
           scripts/tests/test_release_version.py
           scripts/tests/test_docs.py
           scripts/tests/test_run_tests.py
+          scripts/tests/test_skos_test_policy.py
           scripts/tests/governance/test_module_size.py
           scripts/tests/governance/test_governance_integrity.py
           bilqis_mlx/factory/tests/lifecycle/test_release.py
@@ -100,19 +110,99 @@ jobs:
       - name: Plan semantic profile verification
         id: skos
         env:
-          SKOS_BASE_REF: ${{ github.event.before || github.event.pull_request.base.sha }}
+          SKOS_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: |
           python3 -B scripts/skos_test_policy.py plan \
             --base-ref "$SKOS_BASE_REF" \
             --github-output "$GITHUB_OUTPUT"
+
+  semantic-diff:
+    name: semantic-profile-diff
+    needs: core
+    if: needs.core.result == 'success' && needs.core.outputs.skos_action == 'DIFF'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout private source without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
       - name: Install semantic profile dependencies
-        if: steps.skos.outputs.action != 'SKIP'
         run: >-
           python3 -m pip install
           -r lib/ithkuil/requirements-extraction.txt
           -r lib/ithkuil/requirements-falkor.txt
-      - name: Verify deterministic source semantic profile
-        if: steps.skos.outputs.action != 'SKIP'
+      - name: Verify impacted deterministic semantic profile
         env:
-          SKOS_BASE_REF: ${{ github.event.before || github.event.pull_request.base.sha }}
+          SKOS_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: python3 -B scripts/skos_test_policy.py run --base-ref "$SKOS_BASE_REF"
+
+  semantic-full:
+    name: semantic-profile-full-${{ matrix.shard }}
+    needs: core
+    if: needs.core.result == 'success' && needs.core.outputs.skos_action == 'FULL'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    steps:
+      - name: Checkout private source without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Install semantic profile dependencies
+        run: >-
+          python3 -m pip install
+          -r lib/ithkuil/requirements-extraction.txt
+          -r lib/ithkuil/requirements-falkor.txt
+      - name: Verify exhaustive deterministic semantic profile shard
+        env:
+          SKOS_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: >-
+          python3 -B scripts/skos_test_policy.py run
+          --base-ref "$SKOS_BASE_REF"
+          --full-shard-index ${{ matrix.shard }}
+          --full-shard-count 8
+
+  portable:
+    name: portable
+    needs: [core, semantic-diff, semantic-full]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Reconcile portable verification result
+        env:
+          CORE_RESULT: ${{ needs.core.result }}
+          SKOS_ACTION: ${{ needs.core.outputs.skos_action }}
+          DIFF_RESULT: ${{ needs.semantic-diff.result }}
+          FULL_RESULT: ${{ needs.semantic-full.result }}
+        run: |
+          set -eu
+          if [ "$CORE_RESULT" != "success" ]; then
+            echo "portable core failed: $CORE_RESULT"
+            exit 1
+          fi
+          case "$SKOS_ACTION" in
+            SKIP)
+              test "$DIFF_RESULT" = "skipped"
+              test "$FULL_RESULT" = "skipped"
+              ;;
+            DIFF)
+              test "$DIFF_RESULT" = "success"
+              test "$FULL_RESULT" = "skipped"
+              ;;
+            FULL)
+              test "$DIFF_RESULT" = "skipped"
+              test "$FULL_RESULT" = "success"
+              ;;
+            *)
+              echo "unexpected semantic plan: $SKOS_ACTION"
+              exit 1
+              ;;
+          esac
+          echo "PORTABLE_VERIFICATION_OK semantic=$SKOS_ACTION"
