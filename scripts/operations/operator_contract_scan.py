@@ -95,24 +95,29 @@ def _symbol_kind(node: ast.Constant, parents: dict[ast.AST, ast.AST]) -> str:
     return "symbol"
 
 
-def analyze_source(path: str, source: str) -> SourceReport:
-    """AST-only inventory; it never imports or executes the examined module."""
-    tree = ast.parse(source, filename=path)
-    parents = {child: parent for parent in ast.walk(tree)
-               for child in ast.iter_child_nodes(parent)}
-    module_strings: dict[str, str] = {}
+def _module_string_constants(tree: ast.Module) -> dict[str, str]:
+    result: dict[str, str] = {}
     for statement in tree.body:
         if (isinstance(statement, ast.Assign)
                 and isinstance(statement.value, ast.Constant)
                 and isinstance(statement.value.value, str)):
             for target in statement.targets:
                 if isinstance(target, ast.Name):
-                    module_strings[target.id] = statement.value.value
+                    result[target.id] = statement.value.value
         elif (isinstance(statement, ast.AnnAssign)
               and isinstance(statement.target, ast.Name)
               and isinstance(statement.value, ast.Constant)
               and isinstance(statement.value.value, str)):
-            module_strings[statement.target.id] = statement.value.value
+            result[statement.target.id] = statement.value.value
+    return result
+
+
+def analyze_source(path: str, source: str) -> SourceReport:
+    """AST-only inventory; it never imports or executes the examined module."""
+    tree = ast.parse(source, filename=path)
+    parents = {child: parent for parent in ast.walk(tree)
+               for child in ast.iter_child_nodes(parent)}
+    module_strings = _module_string_constants(tree)
     codes: list[CodeSite] = []
     debt: list[ContractDebt] = []
     owners: list[str] = []
