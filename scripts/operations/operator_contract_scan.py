@@ -28,6 +28,17 @@ LOGICAL_SOURCE_COMPARTMENTS = (
     (("bilqis_mlx", "learning", "_salience"), ("bilqis_mlx", "learning")),
     (("bilqis_mlx", "learning", "_teaching"), ("bilqis_mlx", "learning")),
     (("bilqis_mlx", "semantics", "foundation"), ("bilqis_mlx", "semantics")),
+    (("bilqis_mlx", "runtime", "_projection"), ("bilqis_mlx", "runtime")),
+    (("bilqis_mlx", "runtime", "_admission"), ("bilqis_mlx", "runtime")),
+    (("bilqis_mlx", "runtime", "_capability"), ("bilqis_mlx", "runtime")),
+    (("bilqis_mlx", "runtime", "_source"), ("bilqis_mlx", "runtime")),
+    (("bilqis_mlx", "runtime", "_model"), ("bilqis_mlx", "runtime")),
+    (("bilqis_mlx", "runtime", "_custody"), ("bilqis_mlx", "runtime")),
+    (("bilqis_mlx", "runtime", "_operator"), ("bilqis_mlx", "runtime")),
+    (("bilqis_mlx", "runtime", "_teacher"), ("bilqis_mlx", "runtime")),
+    (("bilqis_mlx", "runtime", "_depth"), ("bilqis_mlx", "runtime")),
+    (("bilqis_mlx", "runtime", "_correction"), ("bilqis_mlx", "runtime")),
+    (("bilqis_mlx", "runtime", "_batch"), ("bilqis_mlx", "runtime")),
 )
 
 

@@ -35,3 +35,6 @@ class ModelTopologyFixture(unittest.TestCase):
     @staticmethod
     def extents(banks=1, pages=1):
         return GenerationExtents(banks, pages, "a" * 64, "b" * 64, "c" * 64)
+
+
+TopologyFixture = ModelTopologyFixture
