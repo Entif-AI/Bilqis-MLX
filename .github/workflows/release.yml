@@ -23,7 +23,7 @@ jobs:
       - name: Verify core source and selected portable contracts
         run: |
           python3 -B scripts/check_historical_abi.py
-          python3 -B scripts/check_semantic_boundaries.py
+          python3 -B scripts/quality/check_semantic_boundaries.py
           python3 -B scripts/check_factory_architecture.py
           python3 -B scripts/error_control_plane.py --check
           python3 -B -m unittest -q tests.test_state_archive tests.test_whole_student_retention tests.test_release_version

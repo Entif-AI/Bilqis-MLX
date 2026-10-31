@@ -38,7 +38,7 @@ jobs:
           else
             python3 -B scripts/check_historical_abi.py
           fi
-          python3 -B scripts/check_semantic_boundaries.py
+          python3 -B scripts/quality/check_semantic_boundaries.py
       - name: Verify curriculum evidence, construction and shadow boundaries
         run: >-
           python3 -B scripts/run_tests.py
