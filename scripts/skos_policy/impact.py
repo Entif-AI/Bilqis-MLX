@@ -47,15 +47,34 @@ def _fixture_owners(root: Path, changed: str) -> tuple[str, ...]:
     return tuple(owners)
 
 
+def _unique_test_by_name(root: Path, name: str) -> str | None:
+    matches = tuple((root / "lib/ithkuil/tests").rglob(name))
+    if len(matches) != 1:
+        return None
+    return matches[0].relative_to(root).as_posix()
+
+
 def _direct_owner(root: Path, changed: str) -> str | None:
     path = Path(changed)
     if changed.startswith("lib/ithkuil/src/skos/") and path.suffix == ".py":
-        candidate = root / "lib/ithkuil/tests" / f"test_skos_{path.stem}.py"
-        return candidate.relative_to(root).as_posix() if candidate.exists() else None
+        return _unique_test_by_name(root, f"test_skos_{path.stem}.py")
     if changed.startswith("lib/ithkuil/src/") and path.suffix == ".py":
-        candidate = root / "lib/ithkuil/tests" / f"test_{path.stem}.py"
-        return candidate.relative_to(root).as_posix() if candidate.exists() else None
+        return _unique_test_by_name(root, f"test_{path.stem}.py")
     return None
+
+
+def _resolved_canaries(root: Path) -> tuple[str, ...]:
+    tests = semantic_test_files(root)
+    resolved = []
+    for configured in CANARY_TESTS:
+        if (root / configured).exists():
+            resolved.append(configured)
+            continue
+        name = Path(configured).name
+        matches = tuple(test for test in tests if Path(test).name == name)
+        if len(matches) == 1:
+            resolved.append(matches[0])
+    return tuple(resolved)
 
 
 def _module_name(root: Path, path: Path) -> str:
@@ -197,7 +216,8 @@ def classify_changes(root: Path, changed_paths: tuple[str, ...]) -> TestPlan:
             selected.update(owners)
             needs_canaries = True
             continue
-        if changed.startswith("lib/ithkuil/tests/test_skos_") and path.suffix == ".py":
+        if (changed.startswith("lib/ithkuil/tests/")
+                and path.name.startswith("test_skos_") and path.suffix == ".py"):
             selected.add(changed)
             continue
         if changed.startswith("lib/ithkuil/tests/") and path.suffix == ".py":
@@ -209,5 +229,5 @@ def classify_changes(root: Path, changed_paths: tuple[str, ...]) -> TestPlan:
         return TestPlan("FULL", reason=f"UNCLASSIFIED_SEMANTIC_CHANGE:{changed}")
 
     if needs_canaries:
-        selected.update(test for test in CANARY_TESTS if (root / test).exists())
+        selected.update(_resolved_canaries(root))
     return TestPlan("DIFF", tuple(sorted(selected)), "IMPACT_CLOSURE_PLUS_CANARIES")

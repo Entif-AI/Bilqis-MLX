@@ -1,0 +1,1 @@
+"""School source-owner proofs."""

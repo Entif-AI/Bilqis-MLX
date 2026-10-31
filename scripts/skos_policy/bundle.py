@@ -139,5 +139,5 @@ def is_bundle_path(path: str) -> bool:
 def semantic_test_files(root: Path) -> tuple[str, ...]:
     return tuple(
         test.relative_to(root).as_posix()
-        for test in sorted((root / "lib/ithkuil/tests").glob("test_skos_*.py"))
+        for test in sorted((root / "lib/ithkuil/tests").rglob("test_skos_*.py"))
     )

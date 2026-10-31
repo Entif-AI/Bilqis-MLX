@@ -51,8 +51,17 @@ def _compile_source_constructive_lessons_snapshot(
         semantic_id = obligation.semantic_id
         family = obligation.family_id
         if family == "positive_identity" and len(eligible) > 1:
-            contrast_id = eligible[(position[semantic_id] + 1) % len(eligible)]
-            positive = ("identity", semantic_id, by_id[semantic_id].source_refs[0])
+            source_ref = by_id[semantic_id].source_refs[0]
+            same_authority = tuple(
+                identifier for identifier in eligible
+                if identifier != semantic_id
+                and by_id[identifier].source_refs
+                and by_id[identifier].source_refs[0].startswith("abi:")
+                   == source_ref.startswith("abi:"))
+            pool = same_authority or tuple(
+                identifier for identifier in eligible if identifier != semantic_id)
+            contrast_id = pool[position[semantic_id] % len(pool)]
+            positive = ("identity", semantic_id, source_ref)
             contrast = ("identity", contrast_id, by_id[contrast_id].source_refs[0])
             modality = "SEMANTIC_ID"
             checker = "bilqis.source-checker.identity/v1"

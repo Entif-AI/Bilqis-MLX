@@ -121,3 +121,13 @@ must call these source-pinned functions themselves before motif-key/readout
 admission; they must not accept caller-provided witnesses as credentials.
 A13 rights/revocation and cache dependency gates remain independent.
 No neural admission, training or merge occurred.
+
+
+## Current reproduction route — 2026-10-30
+
+The source-owner generator is preserved under `scripts/semantics/` after the
+root-script directory repair. From the repository root, invoke
+`python3 -B -m scripts.semantics.generate_released_frame_schema_pins` with the
+original pinned artifact and output arguments above. Its implementation is
+unchanged except the equivalent repository-root calculation after relocation.
+This path correction does not generate a new release or renew source authority.

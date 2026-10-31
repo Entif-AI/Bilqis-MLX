@@ -1,8 +1,8 @@
 {
-  "byte_count": 44657430,
-  "evidence": "GitHub Actions run 41233135855 exhaustive semantic profile PASS on the identical 326-file semantic bundle; issue #653 refreshes the stale content-addressed receipt without changing semantic bytes",
-  "file_count": 326,
-  "release_commit": "f0ecc3f6031f2e227134dc0745cfcce9fe4230c4",
+  "byte_count": 44670485,
+  "evidence": "Local exhaustive 8-shard semantic profile PASS for all 66 nested test_skos files while merging unified d790dc692a11c052b7ee44a181aac54e8fb2585e into PR #642",
+  "file_count": 344,
+  "release_commit": "HEAD",
   "schema": "bilqis.skos-test-bundle/v1",
-  "sha256": "07964f20d702771ce0977f21286687f386ca943cc86d2b502b5edee6fb251fdd"
+  "sha256": "e2188602e3a73968c113e2c428eb206da85187fb3fd2b390c7fc3ac936c75441"
 }
