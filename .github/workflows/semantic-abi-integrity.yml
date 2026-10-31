@@ -47,6 +47,13 @@ jobs:
               bilqis_mlx/factory/*|\
               bilqis_mlx/verification/*|\
               bilqis_mlx/diagnostics/*|\
+              bilqis_mlx/_semantic_tools/*|\
+              bilqis_mlx/_boolean_sources/*|\
+              bilqis_mlx/_numeric_sources/*|\
+              bilqis_mlx/_source_evidence/*|\
+              bilqis_mlx/_release_views/*|\
+              bilqis_mlx/_curriculum_compiler/*|\
+              bilqis_mlx/_registry_ast/*|\
               bilqis_mlx/boolean*.py|\
               bilqis_mlx/curriculum.py|\
               bilqis_mlx/generated_assessment.py|\
