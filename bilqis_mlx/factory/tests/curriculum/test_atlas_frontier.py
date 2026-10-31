@@ -1,14 +1,19 @@
 """A09.1a immutable source/coverage planning snapshot contracts."""
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import asdict, replace
 import hashlib
+import json
 import os
 from pathlib import Path
 import tempfile
 import unittest
 
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.factory.candidate_frontier import (
+    Candidate, CandidateFrontierRelease, CandidateSense,
+)
+from bilqis_mlx.factory.model import AssessmentClass, LearningEvidence
 from bilqis_mlx.factory.atlas_frontier import (
     PlannerBudget, _build_snapshot, _source_edges,
     assert_initial_snapshot_current, build_curriculum_snapshot,
@@ -30,6 +35,36 @@ from bilqis_mlx.semantics.context_eligibility import (
 
 
 RELEASE = "a" * 64
+
+
+def _candidate_frontier():
+    sense = CandidateSense(
+        "sense.one", "root.one", "ONE", "stem", "spec", "source wording",
+        "1" * 64, "SELECTED", "cap.one")
+    selected = Candidate(
+        "candidate.ready", "CORE_D_O", "cap.one", "D", "ONE", "root.one",
+        sense.sense_id, (), (), "why", "unlock", "answer", "world", "",
+        ("FACTORY_ADMISSION_REQUIRED",), (), "PROPOSED_NOT_ADMITTED")
+    reserve = Candidate(
+        "candidate.reserve", "NEXT_96", "", "", "TWO", "root.two", "",
+        (), (), "later", "later", "answer", "world", "",
+        ("FACTORY_ADMISSION_REQUIRED",), (), "CANDIDATE_RESERVE")
+    manifest = {
+        "schema": "bilqis.mlx.candidate-frontier-release/v1",
+        "builder_sha256": "2" * 64,
+        "input_digest": "3" * 64,
+        "output_digest": "4" * 64,
+        "candidates": [asdict(selected), asdict(reserve)],
+        "senses": [asdict(sense)],
+    }
+    digest = hashlib.sha256(json.dumps(
+        manifest, sort_keys=True, separators=(",", ":"),
+        ensure_ascii=False).encode()).hexdigest()
+    release = CandidateFrontierRelease(
+        manifest["builder_sha256"], manifest["input_digest"],
+        manifest["output_digest"], (selected, reserve), (sense,), digest)
+    release.verify()
+    return release
 
 
 def _candidate():
@@ -108,9 +143,10 @@ class AtlasFrontierTests(unittest.TestCase):
             learned = LearnedFrontier(release.digest)
             candidate = compile_semantic_curriculum(
                 selection, SOURCE_FAMILY_ADAPTERS, learned)
+            candidate_frontier = _candidate_frontier()
             frontier, policy = _rights()
             snapshot = build_curriculum_snapshot(
-                candidate, selection, learned, frontier, policy,
+                candidate, selection, learned, frontier, policy, candidate_frontier,
                 budget=PlannerBudget(32, 10000, 100000),
                 grade_labels=("B", "A"))
             self.assertEqual(len(snapshot.source_eligible_concept_ids), 9307)
@@ -122,12 +158,14 @@ class AtlasFrontierTests(unittest.TestCase):
             snapshot.verify()
             assert_initial_snapshot_current(
                 snapshot, candidate, selection, learned,
-                frontier, policy, budget=PlannerBudget(32, 10000, 100000),
+                frontier, policy, candidate_frontier,
+                budget=PlannerBudget(32, 10000, 100000),
                 grade_labels=("A", "B"))
             with self.assertRaises(BilqisError):
                 assert_initial_snapshot_current(
                     snapshot, candidate, selection, learned,
-                    frontier, policy, budget=PlannerBudget(33, 10000, 100000),
+                    frontier, policy, candidate_frontier,
+                    budget=PlannerBudget(33, 10000, 100000),
                     grade_labels=("A", "B"))
 
     def test_unqualified_or_cyclic_prerequisites_fail_closed(self):
@@ -204,7 +242,49 @@ class AtlasFrontierTests(unittest.TestCase):
             admission_receipt_sha256="c" * 64)
         self.assertEqual(snapshot.staged_factory_release_sha256s, ("a" * 64,))
         self.assertEqual(snapshot.admitted_factory_release_sha256, "b" * 64)
+        self.assertEqual(snapshot.unverified_exposed_capability_ids, ("urn:one",))
+        self.assertEqual(snapshot.unverified_qualified_capability_ids, ("urn:two",))
         self.assertEqual(snapshot.qualification_epoch, 0)
+
+    def test_retained_evidence_order_is_fully_canonical(self):
+        candidate = _candidate()
+        frontier, policy = _rights()
+        common = dict(
+            assessment_class=AssessmentClass.PROMOTION,
+            cohort_sha256="1" * 64,
+            checkpoint_sha256="2" * 64,
+            optimizer_step=3,
+        )
+        passing = LearningEvidence(**common, passed=True)
+        failing = LearningEvidence(**common, passed=False)
+        first = _build_snapshot(
+            candidate, frontier, policy, budget=PlannerBudget(10, 100, 1000),
+            retained_evidence=(passing, failing))
+        second = _build_snapshot(
+            candidate, frontier, policy, budget=PlannerBudget(10, 100, 1000),
+            retained_evidence=(failing, passing))
+        self.assertEqual(first.canonical_bytes(), second.canonical_bytes())
+        self.assertEqual(first.snapshot_sha256, second.snapshot_sha256)
+
+    def test_frontier_and_named_learning_states_are_snapshot_identity(self):
+        candidate = replace(
+            _candidate(), unverified_exposure_claims=("urn:one",),
+            unverified_qualification_claims=("urn:two",))
+        frontier, policy = _rights()
+        base = _build_snapshot(
+            candidate, frontier, policy, budget=PlannerBudget(10, 100, 1000),
+            candidate_frontier_sha256="3" * 64,
+            ready_candidate_ids=("candidate.ready",), qualification_epoch=7)
+        changed = _build_snapshot(
+            candidate, frontier, policy, budget=PlannerBudget(10, 100, 1000),
+            candidate_frontier_sha256="4" * 64,
+            ready_candidate_ids=("candidate.ready",), qualification_epoch=7)
+        self.assertEqual(base.candidate_frontier_sha256, "3" * 64)
+        self.assertEqual(base.ready_candidate_ids, ("candidate.ready",))
+        self.assertEqual(base.unverified_exposed_capability_ids, ("urn:one",))
+        self.assertEqual(base.unverified_qualified_capability_ids, ("urn:two",))
+        self.assertEqual(base.qualification_epoch, 7)
+        self.assertNotEqual(base.snapshot_sha256, changed.snapshot_sha256)
 
     def test_rights_epoch_and_budget_changes_are_visible(self):
         candidate = _candidate()

@@ -98,9 +98,13 @@ class CurriculumSnapshot:
     pending_nonconcept_rows: tuple[
         tuple[CorpusCoverageRow, tuple[str, ...]], ...]
     prerequisite_edges: tuple[PrerequisiteEdge, ...]
+    candidate_frontier_sha256: str
+    ready_candidate_ids: tuple[str, ...]
     staged_factory_release_sha256s: tuple[str, ...]
     admitted_factory_release_sha256: str | None
     admission_receipt_sha256: str | None
+    unverified_exposed_capability_ids: tuple[str, ...]
+    unverified_qualified_capability_ids: tuple[str, ...]
     retained_evidence: tuple[LearningEvidence, ...]
     retained_mastery_debt: tuple[str, ...]
     retained_debt_source_sha256: str | None
@@ -123,7 +127,8 @@ class CurriculumSnapshot:
         digests = (
             self.semantic_release, self.atlas_bundle_id,
             self.source_bundle_id, self.source_coverage_sha256,
-            self.frozen_census_sha256, self.unverified_learning_claims_sha256,
+            self.frozen_census_sha256, self.candidate_frontier_sha256,
+            self.unverified_learning_claims_sha256,
             self.snapshot_sha256)
         if (any(type(item) is not str or not _SHA.fullmatch(item)
                 for item in digests)
@@ -150,51 +155,9 @@ class CurriculumSnapshot:
                 or type(self.budget) is not PlannerBudget
                 or self.status != SNAPSHOT_STATUS or self.schema != SNAPSHOT_SCHEMA):
             _fail("BAMF_PLANNER_SNAPSHOT_INVALID")
-        if (any(type(item) is not str or not item
-                for group in (
-                    self.source_eligible_concept_ids,
-                    self.required_source_family_ids, self.grade_labels)
-                for item in group)
-                or any(type(row) is not FamilyObligation
-                       for row in self.coverage_rows)
-                or any(type(row) is not CorpusCoverageRow
-                       or row.source_disposition != "SOURCE_HELD"
-                       or not row.reason_code or not row.owner
-                       for row in self.source_held_rows)
-                or any(type(row) is not CorpusCoverageRow
-                       or row.source_disposition != "SOURCE_IR_ONLY"
-                       for row in self.source_ir_only_rows)
-                or any(type(pair) is not tuple or len(pair) != 2
-                       or type(pair[0]) is not CorpusCoverageRow
-                       or pair[0].source_disposition != "SOURCE_EMITTED_NON_CONCEPT"
-                       or type(pair[1]) is not tuple
-                       or any(type(item) is not str or not item for item in pair[1])
-                       for pair in self.pending_nonconcept_rows)
-                or any(type(item) is not PrerequisiteEdge
-                       for item in self.prerequisite_edges)
-                or any(type(item) is not LearningEvidence
-                       for item in self.retained_evidence)
-                or any(type(item) is not str or not item
-                       for item in self.retained_mastery_debt)
-                or (bool(self.retained_mastery_debt)
-                    and self.retained_debt_source_sha256 is None)):
+        if not _snapshot_rows_valid(self):
             _fail("BAMF_PLANNER_SNAPSHOT_ROWS_INVALID")
-        if (self.source_eligible_concept_ids
-                != tuple(sorted(set(self.source_eligible_concept_ids)))
-                or self.required_source_family_ids
-                != tuple(sorted(set(self.required_source_family_ids)))
-                or self.coverage_rows != tuple(sorted(
-                    self.coverage_rows,
-                    key=lambda item: (item.semantic_id, item.family_id)))
-                or self.prerequisite_edges
-                != tuple(sorted(set(self.prerequisite_edges)))
-                or self.staged_factory_release_sha256s
-                != tuple(sorted(set(self.staged_factory_release_sha256s)))
-                or self.grade_labels != tuple(sorted(set(self.grade_labels)))
-                or self.retained_mastery_debt
-                != tuple(sorted(set(self.retained_mastery_debt)))
-                or (self.admitted_factory_release_sha256 is None)
-                != (self.admission_receipt_sha256 is None)):
+        if not _snapshot_order_valid(self):
             _fail("BAMF_PLANNER_SNAPSHOT_ORDER_INVALID")
 
     def canonical_bytes(self) -> bytes:
@@ -209,3 +172,66 @@ class CurriculumSnapshot:
     def verify(self) -> None:
         if self.snapshot_sha256 != self.expected_digest():
             _fail("BAMF_PLANNER_SNAPSHOT_DIGEST_MISMATCH")
+
+
+def _evidence_key(item: LearningEvidence) -> tuple:
+    return (
+        item.checkpoint_sha256, item.cohort_sha256,
+        item.optimizer_step, item.assessment_class.value,
+        item.passed, item.contaminated_for_qualification,
+    )
+
+
+def _snapshot_rows_valid(snapshot: CurriculumSnapshot) -> bool:
+    text_groups = (
+        snapshot.source_eligible_concept_ids,
+        snapshot.required_source_family_ids, snapshot.ready_candidate_ids,
+        snapshot.unverified_exposed_capability_ids,
+        snapshot.unverified_qualified_capability_ids, snapshot.grade_labels,
+    )
+    return not (
+        any(type(item) is not str or not item for group in text_groups for item in group)
+        or any(type(row) is not FamilyObligation for row in snapshot.coverage_rows)
+        or any(type(row) is not CorpusCoverageRow
+               or row.source_disposition != "SOURCE_HELD"
+               or not row.reason_code or not row.owner
+               for row in snapshot.source_held_rows)
+        or any(type(row) is not CorpusCoverageRow
+               or row.source_disposition != "SOURCE_IR_ONLY"
+               for row in snapshot.source_ir_only_rows)
+        or any(type(pair) is not tuple or len(pair) != 2
+               or type(pair[0]) is not CorpusCoverageRow
+               or pair[0].source_disposition != "SOURCE_EMITTED_NON_CONCEPT"
+               or type(pair[1]) is not tuple
+               or any(type(item) is not str or not item for item in pair[1])
+               for pair in snapshot.pending_nonconcept_rows)
+        or any(type(item) is not PrerequisiteEdge for item in snapshot.prerequisite_edges)
+        or any(type(item) is not LearningEvidence for item in snapshot.retained_evidence)
+        or any(type(item) is not str or not item for item in snapshot.retained_mastery_debt)
+        or (bool(snapshot.retained_mastery_debt)
+            and snapshot.retained_debt_source_sha256 is None)
+    )
+
+
+def _snapshot_order_valid(snapshot: CurriculumSnapshot) -> bool:
+    return not (
+        snapshot.source_eligible_concept_ids
+        != tuple(sorted(set(snapshot.source_eligible_concept_ids)))
+        or snapshot.required_source_family_ids
+        != tuple(sorted(set(snapshot.required_source_family_ids)))
+        or snapshot.coverage_rows != tuple(sorted(
+            snapshot.coverage_rows, key=lambda item: (item.semantic_id, item.family_id)))
+        or snapshot.prerequisite_edges != tuple(sorted(set(snapshot.prerequisite_edges)))
+        or snapshot.ready_candidate_ids != tuple(sorted(set(snapshot.ready_candidate_ids)))
+        or snapshot.staged_factory_release_sha256s
+        != tuple(sorted(set(snapshot.staged_factory_release_sha256s)))
+        or snapshot.unverified_exposed_capability_ids
+        != tuple(sorted(set(snapshot.unverified_exposed_capability_ids)))
+        or snapshot.unverified_qualified_capability_ids
+        != tuple(sorted(set(snapshot.unverified_qualified_capability_ids)))
+        or snapshot.grade_labels != tuple(sorted(set(snapshot.grade_labels)))
+        or snapshot.retained_mastery_debt != tuple(sorted(set(snapshot.retained_mastery_debt)))
+        or snapshot.retained_evidence != tuple(sorted(snapshot.retained_evidence, key=_evidence_key))
+        or (snapshot.admitted_factory_release_sha256 is None)
+        != (snapshot.admission_receipt_sha256 is None)
+    )

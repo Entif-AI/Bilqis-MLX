@@ -16,10 +16,11 @@ Disposition: **implementation ready for review; not integrated or admitted**.
 initial builder, source-declared prerequisite DAG validation, and a consuming
 boundary replay assertion. The snapshot records the frozen A01/A08 source
 census, exact source-held and implementation-uncovered debt, staged and
-admitted release identities, unverified learner claims, retained mastery debt,
-rights/correction/policy/teacher epochs, finite planner budgets, cursor/event
-generation, and predecessor identity without conferring learner or source
-authority.
+admitted release identities, the verified CandidateFrontierRelease digest,
+explicit READY candidate IDs, separate unverified EXPOSED and QUALIFIED
+capability claims, retained mastery debt, rights/correction/policy/teacher/
+qualification epochs, finite planner budgets, cursor/event generation, and
+predecessor identity without conferring learner or source authority.
 
 The mandatory structure interruption starts at
 `523d4e2c134cca23ee4977a3ef2bfa7036a579c1`; compatibility cleanup is
@@ -28,8 +29,8 @@ The current unified refresh converges on the reviewed canonical compartments
 and removes four superseded pre-compartment shadow modules. The Factory and
 Factory-test roots now contain 11 direct Python files each while preserving the
 reviewed `bilqis_mlx.factory.<module>` import surface. The A09.1a production code is
-split into a 197-line builder and 211-line immutable-contract module; its
-companion test is 236 lines. No structure threshold or governance baseline was
+split into a 290-line builder and 237-line immutable-contract module; its
+companion test is 316 lines. No structure threshold or governance baseline was
 weakened.
 
 The real pinned A01 corpus replay passes with **9,307 source-eligible semantic
@@ -45,14 +46,23 @@ replay identities are:
 The
 snapshot replay preserves deterministic order and digest, keeps SOURCE_HELD
 distinct from IMPLEMENTATION_UNCOVERED, keeps staged/admitted and unverified
-learning state independently evidenced, rejects invalid schema/digest and
-unqualified/cyclic source prerequisites, and leaves qualification at epoch 0.
+learning state independently evidenced, binds the candidate frontier and named
+READY/EXPOSED/QUALIFIED state, canonically orders retained evidence using every
+identity/value field (including pass/contamination booleans), rejects invalid
+schema/digest and unqualified/cyclic source prerequisites, and carries an
+explicit qualification epoch.
 
 Validation:
 
 - `BILQIS_ATLAS_REAL_CORPUS=<pinned-a01-corpus> python3 -B scripts/run_tests.py bilqis_mlx/factory/tests/curriculum/test_atlas_frontier.py`
 - `BILQIS_QUALITY_BASE_REF=9104ce733e04fb9c82420428b18dfdbf5db49535 npm run quality:changed`
 - `python3 -B scripts/verify_bamf_0_2_contracts.py`
+
+The focused A09.1a suite now contains 7 tests: **6 passed, 1 expected real-corpus
+skip** when `BILQIS_ATLAS_REAL_CORPUS` is absent. Added regressions prove that
+reversing otherwise key-equal retained evidence cannot change snapshot bytes and
+that candidate-frontier / named learning-state changes are visible in snapshot
+identity.
 
 The full Factory unit surface retains baseline failure parity. Untouched
 `9104ce7` runs 387 tests with 355 passed, 19 failed, and 13 skipped. The
