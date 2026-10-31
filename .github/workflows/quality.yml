@@ -53,6 +53,7 @@ jobs:
           bilqis_mlx/factory/tests/test_grade_admission.py
           bilqis_mlx/semantics/tests/foundation/test_domain_contracts.py
           bilqis_mlx/verification/tests/test_construction_contracts.py
+          bilqis_mlx/verification/coverage/tests
           bilqis_mlx/factory/tests/lifecycle/test_release_outcome_contracts.py
       - name: Check architecture, documentation and error contracts
         run: |
