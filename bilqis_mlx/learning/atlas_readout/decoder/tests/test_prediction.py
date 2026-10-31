@@ -105,3 +105,28 @@ class PredictionTests(unittest.TestCase):
         self.assertIs(output.status,DecodeStatus.UNRESOLVED)
         self.assertTrue(output.fallback_requested)
         self.assertIsNone(output.frame)
+
+    def test_independent_batches_publish_exact_committed_receipts(self):
+        memory,context,plan,semantics,params=case()
+        theme_control=DecisionSpec('theme.control','theme',0,DecisionKind.CONTROL,
+                                  (ControlAction.EMIT_VALUE,))
+        theme_value=DecisionSpec('theme.value','theme',0,DecisionKind.VALUE,
+                                plan.decisions[1].legal_values,('theme.control',))
+        plan=replace(plan,decisions=(*plan.decisions[:2],theme_control,theme_value,
+            replace(plan.decisions[2],depends_on=('value','theme.value'))))
+        output=predict_typed(memory,context,plan,semantics,params)
+        expected=('control','theme.control','theme.value','value','end')
+        self.assertIs(output.status,DecodeStatus.COMPLETE)
+        self.assertEqual(tuple(o.decision_id for o in output.committed),expected)
+        self.assertEqual(tuple(d.decision_id for d in output.decisions),expected)
+        self.assertEqual(tuple(b.role_id for b in output.frame.bindings),('agent','theme'))
+
+    def test_end_alone_discards_uncommitted_independent_auxiliary_logits(self):
+        memory,context,plan,semantics,params=case(epistemic=True)
+        auxiliary=DecisionSpec('auxiliary',None,0,DecisionKind.EPISTEMIC,
+                              semantics.epistemic_binding.values,('value',))
+        plan=replace(plan,decisions=(*plan.decisions,auxiliary))
+        output=predict_typed(memory,context,plan,semantics,params)
+        self.assertIs(output.status,DecodeStatus.COMPLETE)
+        self.assertEqual(tuple(o.decision_id for o in output.committed),('control','value','end'))
+        self.assertEqual(tuple(d.decision_id for d in output.decisions),('control','value','end'))
