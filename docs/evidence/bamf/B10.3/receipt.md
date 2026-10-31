@@ -3,7 +3,7 @@
 - Issue: #469; parent B10 #367; Lane B
 - Consumed unified: `9104ce733e04fb9c82420428b18dfdbf5db49535`
 - Feature branch: `feature/bamf-b10-3-469-20261030`
-- Implementation head: `c8b2734bb405ed8177bbaa497c857035bbdc5dfa`
+- Prior semantic repair head: `ab54b9d00836fffe4250574f437ef41ff9ae5850`
 - Turn-in head: recorded by remote SHA readback in the PR/issue receipt comment after
   this file is committed; a checked-in file cannot embed the SHA of the commit
   that contains itself without changing that commit.
@@ -69,8 +69,8 @@ failed 5/5 cases with
 
 After implementation:
 
-- B10.3 focused: **11 passed**
-- Complete compartmentalized atlas-readout suite: **52 passed + 39 subtests**
+- B10.3 focused: **12 passed**
+- Complete compartmentalized atlas-readout suite: **53 passed + 39 subtests**
 - Development structure: **0 violations**
 - Governance integrity: **0 violations**
 - Changed-file smell audit: **0 new findings**
@@ -86,7 +86,10 @@ domains are accepted directly and illegal VALUE candidates are masked; missing
 auxiliary labels contribute zero; and an
 illegal neural output returns a fallback request without mutating the decode
 state. Unknown or no-longer-ready decision IDs remain ErrorBus boundary failures
-instead of being mislabeled as invalid neural output.
+instead of being mislabeled as invalid neural output. Raw CONTROL strings emitted
+by the neural head are canonicalized back to the decoder's exact `ControlAction`
+object before commit. Teacher-target legality is replayed against the
+teacher-forced earlier prefix rather than the predicted prefix.
 
 ## Boundary
 

@@ -18,6 +18,7 @@ from .decisions import (
     allowed_values,
     commit_decisions,
     parent_outputs,
+    start_decoding,
 )
 from .records import RoleCandidate, TypedHeadLogits, WIDTH, invalid, validate_hidden
 
@@ -108,6 +109,36 @@ def encode_feedback_value(value, *, snapshot=None, banks=()) -> mx.array:
             if type(value) is ConceptRef else _structural_vector(value))
 
 
+def _canonical_legal_value(value, legal_values: tuple):
+    exact = tuple(
+        legal for legal in legal_values
+        if type(value) is type(legal) and value == legal)
+    if len(exact) == 1:
+        return exact[0]
+    if type(value) is str:
+        enum_match = tuple(
+            legal for legal in legal_values
+            if isinstance(legal, Enum) and legal.value == value)
+        if len(enum_match) == 1:
+            return enum_match[0]
+    return None
+
+
+def _teacher_prefix_state(
+        state: DecodeState, end_index: int,
+        teacher_targets: Mapping[str, object]) -> DecodeState:
+    prefix = start_decoding(state.plan)
+    for output in state.committed[:end_index]:
+        value = teacher_targets.get(output.decision_id, output.value)
+        canonical = _canonical_legal_value(
+            value, allowed_values(prefix, output.decision_id))
+        if canonical is None:
+            invalid()
+        prefix = commit_decisions(
+            prefix, (DecisionOutput(output.decision_id, canonical),))
+    return prefix
+
+
 def _parent_values(
         state: DecodeState, decision_id: str,
         teacher_targets: Mapping[str, object] | None):
@@ -129,11 +160,12 @@ def _parent_values(
     for parent in decision.depends_on:
         target = teacher_targets[parent]
         index = committed_index[parent]
-        parent_state = DecodeState(state.plan, state.committed[:index])
-        legal = allowed_values(parent_state, parent)
-        if not any(type(target) is type(value) and target == value for value in legal):
+        parent_state = _teacher_prefix_state(state, index, teacher_targets)
+        canonical = _canonical_legal_value(
+            target, allowed_values(parent_state, parent))
+        if canonical is None:
             invalid()
-        forced.append(target)
+        forced.append(canonical)
     return tuple(forced)
 
 
@@ -199,9 +231,10 @@ def commit_neural_decision(
         state: DecodeState, decision_id: str, value) -> NeuralDecisionResult:
     """Turn an illegal neural choice into an explicit solver fallback request."""
     legal_values = allowed_values(state, decision_id)
-    if value not in legal_values:
+    canonical = _canonical_legal_value(value, legal_values)
+    if canonical is None:
         return NeuralDecisionResult(
             NeuralDecisionStatus.FALLBACK_REQUIRED, state, FALLBACK_REASON)
     advanced = commit_decisions(
-        state, (DecisionOutput(decision_id, value),))
+        state, (DecisionOutput(decision_id, canonical),))
     return NeuralDecisionResult(NeuralDecisionStatus.COMMITTED, advanced)

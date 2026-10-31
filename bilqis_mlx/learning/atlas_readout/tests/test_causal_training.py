@@ -64,6 +64,22 @@ class CausalTrainingTests(unittest.TestCase):
         self.assertTrue(bool(mx.allclose(first, changed_future)))
         self.assertFalse(bool(mx.allclose(first, changed_parent)))
 
+    def test_teacher_legality_replays_the_teacher_forced_prefix(self):
+        from bilqis_mlx.learning.atlas_readout.causal_training import (
+            _teacher_prefix_state,
+        )
+
+        state = start_decoding(plan((
+            D("control", "agent", 0, K.CONTROL,
+              (C.EMIT_VALUE, C.EMIT_UNKNOWN)),
+            D("later", None, 0, K.EPISTEMIC, ("yes", "no"), ("control",)),
+        )))
+        state = commit_decisions(state, (O("control", C.EMIT_VALUE),))
+        replayed = _teacher_prefix_state(
+            state, 1, {"control": C.EMIT_UNKNOWN})
+        self.assertEqual(
+            replayed.committed, (O("control", C.EMIT_UNKNOWN),))
+
     def test_inference_feedback_uses_committed_parent_not_teacher_target(self):
         from bilqis_mlx.learning.atlas_readout.causal_training import decision_hidden
 
@@ -232,6 +248,11 @@ class CausalTrainingTests(unittest.TestCase):
         accepted = commit_neural_decision(state, "control", C.EMIT_UNKNOWN)
         self.assertIs(accepted.status, NeuralDecisionStatus.COMMITTED)
         self.assertEqual(accepted.state.committed, (O("control", C.EMIT_UNKNOWN),))
+        from_string = commit_neural_decision(
+            state, "control", C.EMIT_UNKNOWN.value)
+        self.assertIs(from_string.status, NeuralDecisionStatus.COMMITTED)
+        self.assertEqual(
+            from_string.state.committed, (O("control", C.EMIT_UNKNOWN),))
 
     def test_neural_decision_boundary_errors_remain_errorbus_failures(self):
         from bilqis_mlx.learning.atlas_readout import commit_neural_decision
