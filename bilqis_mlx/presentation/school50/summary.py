@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 
+_MIN_CUMULATIVE_GRADE_COUNT = 2
+
+
 class SummaryProjection:
     def _cumulative_exam(self, cohort, rubric, scope, step, phase):
         """Show one checkpoint's complete grade-prefix exam, never summed bests."""
-        if len(cohort) < 2 or set(cohort) != set(self.grades):
+        if len(cohort) < _MIN_CUMULATIVE_GRADE_COUNT or set(cohort) != set(self.grades):
             return
         key = (tuple(sorted(cohort)), rubric, scope)
         correct = sum(score for caps in cohort.values() for score, _ in caps.values())

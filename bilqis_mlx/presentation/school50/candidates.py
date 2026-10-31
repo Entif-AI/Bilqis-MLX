@@ -57,20 +57,84 @@ class CandidatesProjection:
                 return correct
         return None
 
-    def _visit(self, grade, event):
+    def _project_visit_generation(self,event):
         generation = event.get("generation")
         live_ephemeral = event.get("_live_ephemeral") is True
         if (not live_ephemeral and type(generation) is int and
                 generation in self.live_projected_generations):
             self.live_projected_generations.remove(generation)
             event["_dashboard_redraw"] = False
+            return False
+        if not live_ephemeral:
+            return True
+        if type(generation) is not int:
+            raise ValueError("SCHOOL_TELEMETRY_LIVE_VISIT_GENERATION_REQUIRED")
+        if generation in self.live_projected_generations:
+            return False
+        self.live_projected_generations.add(generation)
+        return True
+
+    def _candidate_visit_row(self,cap,event,strategy,policy,gain,before,after,
+                             probe_before,probe_after,probe_total,top):
+        result, reason = _candidate_result_reason(event)
+        return {
+            "capability": cap, "attempt": self.visits,
+            "strategy": policy[:10], "lr": _scaled_lr(strategy.get("lr")),
+            "method": _instruction_method_text(event),
+            "train": (_percent(before) + ">" + _percent(after)),
+            "score_line": _score_quad(probe_before, top, probe_after, probe_total),
+            "reward": gain, "loss": _display(event.get("loss")),
+            "gradient": (f"{event['gradient_norm']:.2f}"
+                         if type(event.get("gradient_norm")) in (float, int) else "-"),
+            "old": _delta(event.get("earlier_grade_delta_pp"), pp=True),
+            "decision": _candidate_admission_text(event),
+            "result": result, "reason": reason, "warnings": _warning_text(event),
+        }
+
+    def _teacher_visit_row(self,grade,cap,event,strategy,unavailable,policy,gain):
+        teacher = {
+            "grade": grade, "capability": cap, "attempt": self.visits,
+            "policy": policy[:10], "lr": _scaled_lr(strategy.get("lr")),
+            "depth": _whole(strategy.get("depth")),
+            "contrast": _whole(strategy.get("contrast")),
+            "credit": gain, "soup": "-", "cover": "-", "parent": "-",
+        }
+        for field in ("old", "preview", "distill"):
+            if field == "old":
+                teacher[field] = "OFF" if field in unavailable else _whole(strategy.get(field))
+            else:
+                teacher[field] = "OFF" if field in unavailable else _display(strategy.get(field))
+        teacher.update(_teacher_vnext_fields(event, self.teacher_policy_health))
+        return teacher
+
+    def _update_visit_state(self,grade,event):
+        attempted = event.get("attempted_optimizer_updates", 0)
+        if type(attempted) is not int or attempted < 0:
+            raise ValueError("SCHOOL_TELEMETRY_ATTEMPTED_OPTIMIZER_UPDATES_INVALID")
+        retained = event.get("retained_optimizer_updates", 0)
+        if type(retained) is not int or retained < 0:
+            raise ValueError("SCHOOL_TELEMETRY_RETAINED_OPTIMIZER_UPDATES_INVALID")
+        attempted_total = self.board.state.get("attempted_steps", 0)
+        if type(attempted_total) is not int or attempted_total < 0:
+            attempted_total = 0
+        retained_total = self.board.state.get("retained_steps", 0)
+        if type(retained_total) is not int or retained_total < 0:
+            retained_total = 0
+        retained_visits = self.board.state.get("retained_visits", 0)
+        if type(retained_visits) is not int or retained_visits < 0:
+            retained_visits = 0
+        self.board.state.update(
+            step=event.get("optimizer_step", self.board.state.get("step")),
+            attempted_steps=attempted_total + attempted,
+            retained_steps=retained_total + retained,
+            retained_visits=retained_visits + (1 if retained > 0 else 0),
+            visits=self.visits, prefix=grade,
+            phase=event.get("next_phase", self.board.state.get("phase")),
+            _rate_sample_eligible=event.get("checkpoint_status") != "RECORDED_AT_BOUNDARY")
+
+    def _visit(self, grade, event):
+        if not self._project_visit_generation(event):
             return
-        if live_ephemeral:
-            if type(generation) is not int:
-                raise ValueError("SCHOOL_TELEMETRY_LIVE_VISIT_GENERATION_REQUIRED")
-            if generation in self.live_projected_generations:
-                return
-            self.live_projected_generations.add(generation)
         self.visits += 1
         cap = event.get("capability")
         if not cap:
@@ -92,24 +156,9 @@ class CandidatesProjection:
             probe_before = probe_after = probe_total = None
         top = (self._title_correct(cap, probe_total)
                if type(probe_total) is int and probe_total > 0 else None)
-        result, reason = _candidate_result_reason(event)
-        row = {
-            "capability": cap, "attempt": self.visits,
-            "strategy": policy[:10], "lr": _scaled_lr(strategy.get("lr")),
-            "method": _instruction_method_text(event),
-            "train": (_percent(before) + ">" + _percent(after)),
-            "score_line": _score_quad(probe_before, top, probe_after, probe_total),
-            "reward": gain,
-            "loss": _display(event.get("loss")),
-            "gradient": (f"{event['gradient_norm']:.2f}"
-                         if type(event.get("gradient_norm")) in (float, int) else "-"),
-            "old": _delta(event.get("earlier_grade_delta_pp"), pp=True),
-            "decision": _candidate_admission_text(event),
-            "result": result,
-            "reason": reason,
-            "warnings": _warning_text(event),
-        }
-        self.board.rows["CANDIDATES"].append(row)
+        self.board.rows["CANDIDATES"].append(self._candidate_visit_row(
+            cap,event,strategy,policy,gain,before,after,
+            probe_before,probe_after,probe_total,top))
         retention_row = _candidate_retention_row(event, grade, self.visits)
         if retention_row is not None:
             self.board.rows["SENTINEL & RETENTION"].append(retention_row)
@@ -119,39 +168,6 @@ class CandidatesProjection:
                 "kind": "COMPOSE", "grade": grade,
                 "detail": association + " | " + cap,
             }, redraw=False)
-        teacher = {"grade": grade, "capability": cap,
-                   "attempt": self.visits, "policy": policy[:10],
-                   "lr": _scaled_lr(strategy.get("lr")),
-                   "depth": _whole(strategy.get("depth")),
-                   "contrast": _whole(strategy.get("contrast")),
-                   "credit": gain, "soup": "-", "cover": "-", "parent": "-"}
-        for field in ("old", "preview", "distill"):
-            if field == "old":
-                teacher[field] = "OFF" if field in unavailable else _whole(strategy.get(field))
-            else:
-                teacher[field] = "OFF" if field in unavailable else _display(strategy.get(field))
-        teacher.update(_teacher_vnext_fields(event, self.teacher_policy_health))
-        self.board.rows["SOUP & TEACHER"].append(teacher)
-        attempted = event.get("attempted_optimizer_updates", 0)
-        if type(attempted) is not int or attempted < 0:
-            raise ValueError("SCHOOL_TELEMETRY_ATTEMPTED_OPTIMIZER_UPDATES_INVALID")
-        retained = event.get("retained_optimizer_updates", 0)
-        if type(retained) is not int or retained < 0:
-            raise ValueError("SCHOOL_TELEMETRY_RETAINED_OPTIMIZER_UPDATES_INVALID")
-        attempted_total = self.board.state.get("attempted_steps", 0)
-        if type(attempted_total) is not int or attempted_total < 0:
-            attempted_total = 0
-        retained_total = self.board.state.get("retained_steps", 0)
-        if type(retained_total) is not int or retained_total < 0:
-            retained_total = 0
-        retained_visits = self.board.state.get("retained_visits", 0)
-        if type(retained_visits) is not int or retained_visits < 0:
-            retained_visits = 0
-        self.board.state.update(step=event.get("optimizer_step", self.board.state.get("step")),
-                                attempted_steps=attempted_total + attempted,
-                                retained_steps=retained_total + retained,
-                                retained_visits=retained_visits + (1 if retained > 0 else 0),
-                                visits=self.visits, prefix=grade,
-                                phase=event.get("next_phase", self.board.state.get("phase")),
-                                _rate_sample_eligible=(
-                                    event.get("checkpoint_status") != "RECORDED_AT_BOUNDARY"))
+        self.board.rows["SOUP & TEACHER"].append(
+            self._teacher_visit_row(grade,cap,event,strategy,unavailable,policy,gain))
+        self._update_visit_state(grade,event)

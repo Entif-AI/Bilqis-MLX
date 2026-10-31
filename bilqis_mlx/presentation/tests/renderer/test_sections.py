@@ -14,6 +14,98 @@ from bilqis_mlx.presentation.dashboard import build, ingest
 
 
 class SectionsTests(unittest.TestCase):
+    def _compact_visit_board(self,root,capability):
+        (root / "state.json").write_text(json.dumps({
+            "mentor_epoch": {"active_roles": {
+                capability: {
+                    "capability": capability, "correct": 9, "total": 12,
+                    "breadth": 4,
+                    "checkpoint": {"sha256": "a" * 64, "optimizer_step": 125000},
+                },
+            }},
+        }))
+        board = Dashboard(stream=io.StringIO(), show_all_panels=True,
+                          tables=LETTER_TABLES)
+        board.school_telemetry = SchoolTelemetry(board, active_grades=("B",))
+        board.attach_champion_source(root)
+        ingest(board, {
+            "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+            "grade": "B", "capability": capability,
+            "optimizer_step": 125016,
+            "attempted_optimizer_updates": 16,
+            "retained_optimizer_updates": 0,
+            "strategy": {
+                "lr": 0.00013, "depth": 2, "contrast": 1.4,
+                "old": 16.2, "preview": 2, "distill": 0.35,
+            },
+            "loss": 0.5583400726,
+            "gradient_norm": 14.004,
+            "teacher_decision": {
+                "warning_signals": ["CHANCE_LEVEL_OR_LAGGING", "LACK_OF_DURABLE_GAIN"],
+                "selected": {"exam_mistake_replay": 3},
+            },
+            "candidate_retention": {
+                "active_capability": capability,
+                "active_probe_before": 10, "active_probe_after": 8,
+                "active_probe_total": 12, "local_correct_delta": -2,
+                "protected_net_correct_delta": 0, "worst_protected_loss": 0,
+                "decision": "REJECT", "reason": "NO_MEASURABLE_TARGET_GAIN",
+            },
+        })
+        return board
+
+    def _assert_compact_visit_columns(self,tables):
+        self.assertEqual(
+            [(c.name, c.width) for c in tables["CANDIDATES"]],
+            [
+                ("CAPABILITY", 10), ("VISIT", 5), ("POLICY", 10),
+                ("LR", 2), ("WAS/CHP/NOW/ALL", 15), ("REWARD", 6),
+                ("LOSS", 5), ("GRAD", 5), ("METHOD", 6),
+                ("OLD pp", 6), ("RESULT", 6), ("REASON", 27),
+                ("WARNINGS", 12),
+            ],
+        )
+        self.assertEqual(
+            [(c.name, c.width) for c in tables["SENTINEL & RETENTION"]],
+            [
+                ("CAPABILITY", 10), ("VISIT", 5), ("TARGET", 8),
+                ("DTG", 3), ("PRT", 3), ("WRS", 3),
+                ("RSULT", 5), ("EVIDENCE", 20),
+            ],
+        )
+        self.assertEqual(
+            [(c.name, c.width) for c in tables["SOUP & TEACHER"][:7]],
+            [
+                ("CAPABILITY", 10), ("VISIT", 5), ("POLICY", 10),
+                ("LR", 2), ("D", 1), ("C", 1), ("OLD", 3),
+            ],
+        )
+        self.assertEqual((tables["GRADES & MASTERY"][0].name,
+                          tables["GRADES & MASTERY"][0].width), ("CAPABILITY", 10))
+        self.assertEqual((tables["GRADES & MASTERY"][1].name,
+                          tables["GRADES & MASTERY"][1].width), ("WAS/TOP/NOW/ALL", 15))
+        growth = next(column for column in tables["GRADES & MASTERY"]
+                      if column.key == "right_grew")
+        self.assertLessEqual(growth.width, 12)
+
+    def _assert_compact_visit_rows(self,board,capability):
+        candidate = board.rows["CANDIDATES"][-1]
+        self.assertEqual(candidate["lr"], "13")
+        self.assertEqual(candidate["score_line"], " 10/  9/  8/ 12")
+        self.assertEqual(candidate["gradient"], "14.00")
+        self.assertEqual(candidate["result"], "REJECT")
+        self.assertEqual(candidate["reason"], "NO TARGET GAIN")
+        self.assertEqual(candidate["warnings"], "S2,S3")
+        retention = board.rows["SENTINEL & RETENTION"][-1]
+        self.assertEqual(retention["capability"], capability)
+        self.assertEqual(retention["decision"], "REJECT")
+        soup = board.rows["SOUP & TEACHER"][-1]
+        self.assertEqual(soup["capability"], capability)
+        self.assertEqual(soup["lr"], "13")
+        self.assertEqual(soup["depth"], "2")
+        self.assertEqual(soup["contrast"], "1")
+        self.assertEqual(soup["old"], "16")
+
     def test_grew_averages_active_capabilities_including_stagnation_withheld(self):
         board = Dashboard(
             stream=io.StringIO(), clock=lambda: 3600.0,
@@ -48,114 +140,10 @@ class SectionsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             capability = "B.VERYLONGCAPABILITY"
-            (root / "state.json").write_text(json.dumps({
-                "mentor_epoch": {"active_roles": {
-                    capability: {
-                        "capability": capability,
-                        "correct": 9,
-                        "total": 12,
-                        "breadth": 4,
-                        "checkpoint": {
-                            "sha256": "a" * 64,
-                            "optimizer_step": 125000,
-                        },
-                    },
-                }},
-            }))
-            board = Dashboard(stream=io.StringIO(), show_all_panels=True,
-                              tables=LETTER_TABLES)
-            board.school_telemetry = SchoolTelemetry(board, active_grades=("B",))
-            board.attach_champion_source(root)
-            ingest(board, {
-                "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
-                "grade": "B", "capability": capability,
-                "optimizer_step": 125016,
-                "attempted_optimizer_updates": 16,
-                "retained_optimizer_updates": 0,
-                "strategy": {
-                    "lr": 0.00013, "depth": 2, "contrast": 1.4,
-                    "old": 16.2, "preview": 2, "distill": 0.35,
-                },
-                "loss": 0.5583400726,
-                "gradient_norm": 14.004,
-                "teacher_decision": {
-                    "warning_signals": [
-                        "CHANCE_LEVEL_OR_LAGGING",
-                        "LACK_OF_DURABLE_GAIN",
-                    ],
-                    "selected": {"exam_mistake_replay": 3},
-                },
-                "candidate_retention": {
-                    "active_capability": capability,
-                    "active_probe_before": 10,
-                    "active_probe_after": 8,
-                    "active_probe_total": 12,
-                    "local_correct_delta": -2,
-                    "protected_net_correct_delta": 0,
-                    "worst_protected_loss": 0,
-                    "decision": "REJECT",
-                    "reason": "NO_MEASURABLE_TARGET_GAIN",
-                },
-            })
-
+            board = self._compact_visit_board(root,capability)
             tables = dict(LETTER_TABLES)
-            self.assertEqual(
-                [(c.name, c.width) for c in tables["CANDIDATES"]],
-                [
-                    ("CAPABILITY", 10), ("VISIT", 5), ("POLICY", 10),
-                    ("LR", 2), ("WAS/CHP/NOW/ALL", 15), ("REWARD", 6),
-                    ("LOSS", 5), ("GRAD", 5), ("METHOD", 6),
-                    ("OLD pp", 6), ("RESULT", 6), ("REASON", 27),
-                    ("WARNINGS", 12),
-                ],
-            )
-            self.assertEqual(
-                [(c.name, c.width) for c in tables["SENTINEL & RETENTION"]],
-                [
-                    ("CAPABILITY", 10), ("VISIT", 5), ("TARGET", 8),
-                    ("DTG", 3), ("PRT", 3), ("WRS", 3),
-                    ("RSULT", 5), ("EVIDENCE", 20),
-                ],
-            )
-            self.assertEqual(
-                [(c.name, c.width) for c in tables["SOUP & TEACHER"][:7]],
-                [
-                    ("CAPABILITY", 10), ("VISIT", 5), ("POLICY", 10),
-                    ("LR", 2), ("D", 1), ("C", 1), ("OLD", 3),
-                ],
-            )
-            self.assertEqual(tables["GRADES & MASTERY"][0].name, "CAPABILITY")
-            self.assertEqual(tables["GRADES & MASTERY"][0].width, 10)
-            self.assertEqual(
-                (tables["GRADES & MASTERY"][1].name,
-                 tables["GRADES & MASTERY"][1].width),
-                ("WAS/TOP/NOW/ALL", 15),
-            )
-            growth = next(
-                column for column in tables["GRADES & MASTERY"]
-                if column.key == "right_grew"
-            )
-            self.assertLessEqual(growth.width, 12)
-
-            candidate = board.rows["CANDIDATES"][-1]
-            self.assertEqual(candidate["lr"], "13")
-            self.assertEqual(candidate["score_line"], " 10/  9/  8/ 12")
-            self.assertEqual(candidate["gradient"], "14.00")
-            self.assertEqual(candidate["result"], "REJECT")
-            self.assertEqual(candidate["reason"], "NO TARGET GAIN")
-            self.assertEqual(candidate["warnings"], "S2,S3")
-
-            retention = board.rows["SENTINEL & RETENTION"][-1]
-            self.assertEqual(retention["capability"], capability)
-            self.assertEqual(retention["decision"], "REJECT")
-
-            soup = board.rows["SOUP & TEACHER"][-1]
-            self.assertEqual(soup["capability"], capability)
-            self.assertEqual(soup["lr"], "13")
-            self.assertEqual(soup["depth"], "2")
-            self.assertEqual(soup["contrast"], "1")
-            self.assertEqual(soup["old"], "16")
-
+            self._assert_compact_visit_columns(tables)
+            self._assert_compact_visit_rows(board,capability)
             rendered = board.render(width=180, height=44)
             self.assertNotIn(capability, rendered)
             self.assertIn("B.VERYLON~", rendered)

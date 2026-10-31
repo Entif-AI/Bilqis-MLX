@@ -4,6 +4,10 @@ from typing import Any
 from dataclasses import dataclass
 import string
 
+
+_SHA256_HEX_LENGTH = 64
+
+
 def _display(value: Any, *, decimals: int = 3) -> str:
     if type(value) in (float, int):
         if value and abs(value) < 0.5 * 10 ** (-decimals):
@@ -64,7 +68,7 @@ def _source_provenance(event: dict):
     """Independent metrics must identify their validation set and whole student."""
     for key in ("dataset_sha256", "student_sha256"):
         value = event.get(key)
-        if (not isinstance(value, str) or len(value) != 64 or
+        if (not isinstance(value, str) or len(value) != _SHA256_HEX_LENGTH or
                 any(ch not in string.hexdigits for ch in value)):
             raise ValueError("SCHOOL_TELEMETRY_SOURCE_PROVENANCE_REQUIRED:" + key)
     if type(event.get("optimizer_step")) is not int:

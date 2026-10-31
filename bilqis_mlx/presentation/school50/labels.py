@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from types import MappingProxyType
+
 
 def _signal_label(signal) -> str:
     return _SIGNAL_LABELS.get(str(signal), str(signal))
@@ -121,18 +123,18 @@ def _instruction_method_text(event: dict) -> str:
 
 
 
-_SIGNAL_LABELS = {
+_SIGNAL_LABELS = MappingProxyType({
     "REPETITIVE_ANSWERS": "S1",
     "CHANCE_LEVEL_OR_LAGGING": "S2",
     "LACK_OF_DURABLE_GAIN": "S3",
     "DISCONNECTED_PREREQUISITES": "S4",
     "EXCESSIVE_INTRODUCTORY_COMPLEXITY": "S5",
-}
+})
 
-_REASON_LABELS = {
+_REASON_LABELS = MappingProxyType({
     "NO_MEASURABLE_TARGET_GAIN": "NO TARGET GAIN",
     "FRAGILE_COMPOSITION_REPLAY_REGRESSION": "OR/XOR LOSS",
     "PROTECTED_CAPABILITY_REGRESSION": "PROTECTED LOSS",
     "ACTIVE_SCHOOL_GRADE_REGRESSION": "FRONTIER LOSS",
     "PAIRED_SCREEN_WITHIN_BUDGET": "WITHIN BUDGET",
-}
+})

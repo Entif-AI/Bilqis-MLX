@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from types import MappingProxyType
+
 from dataclasses import dataclass
 
 @dataclass(frozen=True)
@@ -75,14 +77,14 @@ WIDE_PANES = (
     ("BRIDGE FAMILIES", "GRADES & MASTERY"),
 )
 
-WIDE_ROW_FRACTIONS = {
+WIDE_ROW_FRACTIONS = MappingProxyType({
     # At 36 terminal rows these yield the requested 10/9/4 and 4/8 sections.
     "SENTINEL & RETENTION": .28,
     "SOUP & TEACHER": .25,
     "SYSTEM & QUALIFICATION": .11,
     "BRIDGE FAMILIES": .11,
     "GRADES & MASTERY": .22,
-}
+})
 
 
 

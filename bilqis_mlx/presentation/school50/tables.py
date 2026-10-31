@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from types import MappingProxyType
+
 from bilqis_mlx.presentation.spiral_dashboard import Column
 
 # Same six historical panel identities, new-school labels that describe what
@@ -50,7 +52,7 @@ LETTER_TABLES = (
 
 
 
-EVENT_KINDS = {
+EVENT_KINDS = MappingProxyType({
     "SCHOOL_NEW_RUN_INITIALIZED": "init",
     "SCHOOL_NEXT_GRADE_COURSE_ADMITTED": "init",
     "SCHOOL_EXECUTION_PROFILE_ADOPTED": "curriculum",
@@ -78,6 +80,6 @@ EVENT_KINDS = {
     "SCHOOL_AUTONOMY_EVIDENCE_VISIT_COMPLETED": "autonomy",
     "SCHOOL_AUTONOMY_QUALIFIED_VISIT_COMPLETED": "autonomy",
     "SCHOOL_AUTONOMY_TEACHING_RECORDED": "autonomy",
-}
+})
 
 TELEMETRY_VERSION = "bilqis.school50.telemetry/v1"

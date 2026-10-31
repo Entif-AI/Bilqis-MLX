@@ -4,6 +4,61 @@ from fractions import Fraction
 from pathlib import Path
 from bilqis_mlx.state_dag import read_current, read_current_fields
 
+
+def _active_champion_rows(epoch):
+    if not isinstance(epoch,dict) or not isinstance(epoch.get('active_roles'),dict):
+        return None
+    grouped={}
+    for capability,role in epoch['active_roles'].items():
+        if not isinstance(role,dict):
+            continue
+        correct,total=role.get('correct'),role.get('total')
+        checkpoint=role.get('checkpoint') or {}
+        if (not isinstance(capability,str) or '.' not in capability or
+                type(correct) is not int or type(total) is not int or
+                total<=0 or not 0<=correct<=total or
+                not isinstance(checkpoint,dict)):
+            continue
+        grade=capability.split('.',1)[0]
+        grouped.setdefault(grade,[]).append({
+            'row_type':'champion', 'grade':grade, 'capability':capability,
+            'step':'-', 'start':'-', 'latest':'-', 'best':f'{correct}/{total}',
+            'to100':'-', 'right_pct':'-', 'outcome':'CHAMP',
+            'checkpoint':str(checkpoint.get('sha256',''))[:10],
+            'title_step':checkpoint.get('optimizer_step','-'),
+            'breadth':role.get('breadth','-'),
+            '_score':Fraction(correct,total),
+            '_breadth':role.get('breadth',0) if type(role.get('breadth')) is int else 0,
+        })
+    rows=[]
+    for grade in sorted(grouped):
+        ranked=sorted(grouped[grade],key=lambda row:row['capability'])
+        ranked=sorted(
+            ranked,
+            key=lambda row:(row['_score'],row['_breadth'],
+                            row['title_step'] if type(row['title_step']) is int else -1),
+            reverse=True)
+        for row in ranked:
+            row.pop('_score',None)
+            row.pop('_breadth',None)
+            rows.append(row)
+    return rows
+
+
+def _triplet_graduation_line(state):
+    screen=state.get('golden_screen') or {}
+    if state.get('phase')=='GOLDEN_FROZEN' and state.get('golden'):
+        return (f'SAME-STEP CURRENT EXAM @ {state["optimizer_step"]}: '
+                'ALL CURRENT 100%; GOLDEN FROZEN')
+    if screen.get('checkpoint_sha256')==state.get('checkpoint_sha256'):
+        failed=screen.get('first_failed') or {}
+        return (f'SAME-STEP GOLDEN GATE @ {state["optimizer_step"]}: '
+                f'{failed.get("key","-")} {failed.get("correct","-")}/'
+                f'{failed.get("total","-")}; NOT GOLDEN')
+    return (f'SAME-STEP GOLDEN GATE @ {state.get("optimizer_step","-")}: '
+            'NOT ASSESSED; NOT GOLDEN')
+
+
 class ChampionsView:
     def _refresh_champions(self):
         """Read canonical champion inventory if a grade checkpoint changed."""
@@ -14,50 +69,8 @@ class ChampionsView:
             if stamp==self._champion_mtime_ns:return
             state=read_current_fields(source.parent, ('mentor_epoch',))
             epoch=state.get('mentor_epoch')
-            if isinstance(epoch,dict) and isinstance(epoch.get('active_roles'),dict):
-                grouped={}
-                for capability,role in epoch['active_roles'].items():
-                    if not isinstance(role,dict):
-                        continue
-                    correct,total=role.get('correct'),role.get('total')
-                    checkpoint=role.get('checkpoint') or {}
-                    if (not isinstance(capability,str) or '.' not in capability or
-                            type(correct) is not int or type(total) is not int or
-                            total<=0 or not 0<=correct<=total or
-                            not isinstance(checkpoint,dict)):
-                        continue
-                    grade=capability.split('.',1)[0]
-                    grouped.setdefault(grade,[]).append({
-                        'row_type':'champion',
-                        'grade':grade,
-                        'capability':capability,
-                        'step':'-',
-                        'start':'-',
-                        'latest':'-',
-                        'best':f'{correct}/{total}',
-                        'to100':'-',
-                        'right_pct':'-',
-                        'outcome':'CHAMP',
-                        'checkpoint':str(checkpoint.get('sha256',''))[:10],
-                        'title_step':checkpoint.get('optimizer_step','-'),
-                        'breadth':role.get('breadth','-'),
-                        '_score':Fraction(correct,total),
-                        '_breadth':role.get('breadth',0)
-                            if type(role.get('breadth')) is int else 0,
-                    })
-                rows=[]
-                for grade in sorted(grouped):
-                    ranked=sorted(grouped[grade],key=lambda row:row['capability'])
-                    ranked=sorted(
-                        ranked,
-                        key=lambda row:(row['_score'],row['_breadth'],
-                                        row['title_step']
-                                        if type(row['title_step']) is int else -1),
-                        reverse=True)
-                    for row in ranked:
-                        row.pop('_score',None)
-                        row.pop('_breadth',None)
-                        rows.append(row)
+            rows=_active_champion_rows(epoch)
+            if rows is not None:
                 self._champion_rows=rows
                 self.champion_line=None
                 self._champion_mtime_ns=stamp
@@ -71,21 +84,7 @@ class ChampionsView:
                     f'{len(state.get("capability_candidate_archives",[]))} | '
                     f'teacher-only soup reviews {len(state.get("soup_history",[]))}')
                 self.current_course={}
-                screen=state.get('golden_screen') or {}
-                if state.get('phase')=='GOLDEN_FROZEN' and state.get('golden'):
-                    self.current_graduation_line=(
-                        f'SAME-STEP CURRENT EXAM @ {state["optimizer_step"]}: '
-                        'ALL CURRENT 100%; GOLDEN FROZEN')
-                elif screen.get('checkpoint_sha256')==state.get('checkpoint_sha256'):
-                    failed=screen.get('first_failed') or {}
-                    self.current_graduation_line=(
-                        f'SAME-STEP GOLDEN GATE @ {state["optimizer_step"]}: '
-                        f'{failed.get("key","-")} {failed.get("correct","-")}/'
-                        f'{failed.get("total","-")}; NOT GOLDEN')
-                else:
-                    self.current_graduation_line=(
-                        f'SAME-STEP GOLDEN GATE @ {state.get("optimizer_step","-")}: '
-                        'NOT ASSESSED; NOT GOLDEN')
+                self.current_graduation_line=_triplet_graduation_line(state)
                 self._champion_mtime_ns=stamp
                 return
             self.champion_line=school50_champions.summarize(

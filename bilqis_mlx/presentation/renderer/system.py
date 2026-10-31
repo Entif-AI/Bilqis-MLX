@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import re
 import signal
+from types import MappingProxyType
 
-_SYSTEM_KIND_CODES = {
+_SYSTEM_KIND_CODES = MappingProxyType({
     'CHAMPION':'CHAMP',
     'DIAGNOSTIC':'DIAG',
     'TEACH OUTCOME':'TEACH',
@@ -15,7 +16,7 @@ _SYSTEM_KIND_CODES = {
     'DISK':'DISK',
     'LOG':'LOG',
     'STOP':'STOP',
-}
+})
 
 
 
