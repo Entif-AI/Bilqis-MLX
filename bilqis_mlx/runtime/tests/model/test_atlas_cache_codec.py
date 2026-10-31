@@ -5,6 +5,7 @@ import unittest
 import numpy as np
 
 from bilqis_mlx.errors import BilqisError
+import bilqis_mlx.runtime.atlas_cache_codec as codec
 from bilqis_mlx.runtime.atlas_cache_codec import (
     CODEBOOK_DIGEST,
     CODEC_ID,
@@ -61,6 +62,30 @@ class Rot3CodecTests(unittest.TestCase):
         )
         np.testing.assert_array_equal(NORMAL_CODEBOOK, expected)
         np.testing.assert_array_equal(NORMAL_CODEBOOK, -NORMAL_CODEBOOK[::-1])
+        self.assertFalse(NORMAL_CODEBOOK.flags.writeable)
+        self.assertFalse(ROTATION.flags.writeable)
+
+    def test_manifest_revalidates_live_transform_and_codebook(self):
+        original_rotation = codec.ROTATION
+        original_codebook = codec.NORMAL_CODEBOOK
+        try:
+            tampered_rotation = original_rotation.copy()
+            tampered_rotation[0, 0] += np.float32(0.25)
+            tampered_rotation.setflags(write=False)
+            codec.ROTATION = tampered_rotation
+            with self.assertRaises(BilqisError):
+                codec.codec_manifest()
+            codec.ROTATION = original_rotation
+
+            tampered_codebook = original_codebook.copy()
+            tampered_codebook[0] += np.float32(0.25)
+            tampered_codebook.setflags(write=False)
+            codec.NORMAL_CODEBOOK = tampered_codebook
+            with self.assertRaises(BilqisError):
+                codec.codec_manifest()
+        finally:
+            codec.ROTATION = original_rotation
+            codec.NORMAL_CODEBOOK = original_codebook
 
     def test_literal_zero_through_seven_bitstream_is_little_endian(self):
         codes = np.arange(8, dtype=np.uint8)
@@ -74,6 +99,19 @@ class Rot3CodecTests(unittest.TestCase):
             payload = pack_3bit(codes)
             self.assertEqual(len(payload), (count * 3 + 7) // 8)
             np.testing.assert_array_equal(unpack_3bit(payload, count), codes)
+
+    def test_noncanonical_tail_bits_reject_for_every_remainder_class(self):
+        for count in range(1, 8):
+            codes = (np.arange(count, dtype=np.uint8) * 5 + 3) % 8
+            payload = pack_3bit(codes)
+            used_tail_bits = (count * 3) % 8
+            if used_tail_bits:
+                corrupted = payload[:-1] + bytes(
+                    [payload[-1] | (1 << used_tail_bits)])
+                with self.subTest(count=count), self.assertRaises(BilqisError):
+                    unpack_3bit(corrupted, count)
+        with self.assertRaises(BilqisError):
+            unpack_3bit(pack_3bit(np.array([1, 2], dtype=np.uint8)) + b"\x00", 2)
 
     def test_quantizer_rotates_then_scales_by_sqrt_head_width(self):
         vector = np.zeros((1, HEAD_WIDTH), dtype=np.float32)
@@ -101,11 +139,18 @@ class Rot3CodecTests(unittest.TestCase):
             lambda: unpack_3bit(b"\xff", 1),
             lambda: quantize_directions(np.zeros((2, 23), dtype=np.float32)),
             lambda: quantize_directions(np.full((1, 24), np.nan, dtype=np.float32)),
+            lambda: quantize_directions(np.zeros((1, 24), dtype=np.float64)),
             lambda: decode_directions(np.zeros((24,), dtype=np.uint8)),
         )
         for call in calls:
             with self.subTest(call=call), self.assertRaises(BilqisError):
                 call()
+
+    def test_large_finite_fp32_vectors_normalize_without_overflow(self):
+        values = np.full((2, HEAD_WIDTH), np.finfo(np.float32).max, dtype=np.float32)
+        codes = quantize_directions(values)
+        self.assertEqual(codes.shape, values.shape)
+        self.assertTrue(np.all(codes < 8))
 
 
 if __name__ == "__main__":
