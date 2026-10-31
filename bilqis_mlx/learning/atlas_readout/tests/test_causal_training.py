@@ -17,7 +17,7 @@ from bilqis_mlx.learning.atlas_readout.plan import (
 )
 from bilqis_mlx.learning.atlas_readout.records import TypedHeadLogits
 from bilqis_mlx.learning.atlas_readout.tests.helpers import banks, snapshot
-from bilqis_mlx.learning.atlas_readout.tests.plan_helpers import plan
+from bilqis_mlx.learning.atlas_readout.tests.plan_helpers import concept, plan
 from bilqis_mlx.semantics.frame_schema import ConceptRef
 
 
@@ -178,6 +178,39 @@ class CausalTrainingTests(unittest.TestCase):
             typed_decision_loss(
                 head, C.EMIT_ALTERNATIVES,
                 legal_values=(C.EMIT_VALUE, C.EMIT_UNKNOWN))
+
+    def test_value_loss_accepts_typed_concept_domain_and_masks_illegal_value(self):
+        from bilqis_mlx.learning.atlas_readout.causal_training import typed_decision_loss
+
+        allowed = concept()
+        other = replace(allowed, semantic_id="urn:concept:B", abi_index=12)
+        head = TypedHeadLogits(
+            mx.array([0.25, 100.0], dtype=mx.float32),
+            (allowed, other),
+            "answer.structured-frame/v1",
+            allowed.semantic_release,
+        )
+        loss = typed_decision_loss(head, allowed, legal_values=(allowed,))
+        self.assertAlmostEqual(float(loss), 0.0, places=6)
+        gradient = mx.grad(
+            lambda logits: typed_decision_loss(
+                TypedHeadLogits(
+                    logits, (allowed, other), "answer.structured-frame/v1",
+                    allowed.semantic_release),
+                allowed,
+                legal_values=(allowed,)))(head.logits)
+        self.assertEqual(gradient.tolist(), [0.0, 0.0])
+
+    def test_value_loss_accepts_role_occurrence_domain(self):
+        from bilqis_mlx.learning.atlas_readout.causal_training import typed_decision_loss
+        from bilqis_mlx.semantics.frame_schema import BindingState, RoleOccurrence
+
+        value = RoleOccurrence("agent", 0, concept=concept(), state=BindingState.VALUE)
+        head = TypedHeadLogits(
+            mx.array([0.0], dtype=mx.float32), (value,),
+            "answer.structured-frame/v1", value.concept.semantic_release)
+        self.assertEqual(
+            float(typed_decision_loss(head, value, legal_values=(value,))), 0.0)
 
     def test_invalid_neural_decision_returns_explicit_fallback_request(self):
         from bilqis_mlx.learning.atlas_readout.causal_training import (

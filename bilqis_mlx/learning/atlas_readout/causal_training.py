@@ -12,7 +12,7 @@ import mlx.core as mx
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
-from bilqis_mlx.semantics.frame_schema import ConceptRef
+from bilqis_mlx.semantics.frame_schema import ConceptRef, RoleOccurrence
 from .decisions import (
     DecodeState,
     DecisionOutput,
@@ -166,7 +166,7 @@ def decision_hidden(
 def _candidate_key(value):
     if isinstance(value, Enum):
         return value.value
-    if type(value) in (str, RoleCandidate):
+    if type(value) in (str, ConceptRef, RoleOccurrence, RoleCandidate):
         return value
     invalid()
 

@@ -21,6 +21,7 @@ Changed paths at this candidate head:
 
 - `bilqis_mlx/learning/atlas_readout/__init__.py`
 - `bilqis_mlx/learning/atlas_readout/causal_training.py`
+- `bilqis_mlx/learning/atlas_readout/records.py`
 - `bilqis_mlx/learning/atlas_readout/tests/test_causal_training.py`
 - `docs/tasks/bamf-0.2/children/B10.3.md`
 - `docs/evidence/bamf/B10.3/receipt.md`
@@ -44,6 +45,11 @@ illegal target fails closed rather than entering the objective. Invalid neural
 decision output is rejected before state mutation and returned as the explicit
 `BAMF_B10_NEURAL_OUTPUT_ILLEGAL` fallback request.
 
+`TypedHeadLogits` accepts the decoder's typed VALUE-domain candidates
+(`ConceptRef` and `RoleOccurrence`) in addition to native string labels and
+`RoleCandidate`. Loss masking therefore operates on the actual typed legal
+domain rather than coercing semantic VALUE identities into a string surrogate.
+
 Existing B10.2 publication remains the final typed-answer gate. It validates
 source-active semantic values, frame role/cardinality/source rules and
 `END_FRAME` legality before producing a `FrameAnswer`.
@@ -59,8 +65,8 @@ failed 5/5 cases with
 
 After implementation:
 
-- B10.3 focused: **8 passed**
-- Complete compartmentalized atlas-readout suite: **49 passed + 39 subtests**
+- B10.3 focused: **10 passed**
+- Complete compartmentalized atlas-readout suite: **51 passed + 39 subtests**
 - Development structure: **0 violations**
 - Governance integrity: **0 violations**
 - Changed-file smell audit: **0 new findings**
@@ -71,7 +77,9 @@ decision feedback state; training step 2 may use only a legal teacher-forced
 step 1 target; inference step 2 uses committed predicted step 1; a forged parent
 teacher target fails closed; ConceptRef feedback is the exact active tied
 identity row and rejects active-set drift; illegal CONTROL logits are excluded
-from loss with zero gradient; missing auxiliary labels contribute zero; and an
+from loss with zero gradient; typed `ConceptRef` and `RoleOccurrence` VALUE
+domains are accepted directly and illegal VALUE candidates are masked; missing
+auxiliary labels contribute zero; and an
 illegal neural output returns a fallback request without mutating the decode
 state.
 
@@ -80,6 +88,11 @@ state.
 This candidate does not claim full B10 parent integration, learner improvement,
 source promotion, checkpoint publication, or live training. Fresh independent
 EGM remains required before #469 can be called acceptance-complete.
+
+The parent `predict_typed` / `answer_loss` owner boundary is intentionally not
+claimed by this leaf. B10.3 owns and directly tests `decision_hidden`,
+`typed_decision_loss`, and `commit_neural_decision`; B10.4 plus the parent B10
+integrator must compose them into the final owner API.
 
 Next child after accepted #469: B10.4 / issue #470. Its turn-in must consume the
 accepted B10.3 receipt before claiming its own dependency complete.
