@@ -103,7 +103,7 @@ def main(argv=None):
     parser.add_argument('--dry-run', action='store_true')
     parser.add_argument('--human-run', action='store_true')
     args = parser.parse_args(argv)
-    root = Path(__file__).resolve().parents[2]
+    root = Path(__file__).resolve().parents[3]
     try:
         result = execute(args.manifest, args.arm, args.expected_digest, root=root,
                          human_run=args.human_run, dry_run=args.dry_run)
