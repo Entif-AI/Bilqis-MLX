@@ -3,7 +3,7 @@ name: Bilqis MLX portable verification
 on:
   pull_request:
   push:
-    branches: [main, 'codex/**']
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -75,6 +75,8 @@ jobs:
           esac
           python3 -B scripts/code_smell_audit.py --changed-from "$BASE_REF" \
             --check-baseline docs/evidence/development/code_smell_baseline.json
+      - name: Install portable custody dependencies
+        run: python3 -m pip install numpy==2.4.4
       - name: Portable non-neural custody and release tests
         run: >-
           python3 -B scripts/run_tests.py

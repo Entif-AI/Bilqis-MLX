@@ -101,7 +101,13 @@ def _grade_literal_dispatch(path: Path, root: Path) -> tuple[str, ...]:
 
 
 def _is_adapter_factor_suffix_decision(decision: ast.AST) -> bool:
-    """Recognize BAMF adapter matrix factor names without treating them as grades."""
+    """Recognize BAMF adapter matrix factor names without treating them as grades.
+
+    The topology schema has long used ``plastic.group.<id>.A`` and ``.B`` as the
+    two matrix-factor wire suffixes.  They are parameter names, not curriculum
+    identities.  Keep this exception structural and narrow so ordinary grade
+    comparisons such as ``grade == 'B'`` remain forbidden.
+    """
     has_plastic_prefix = any(
         isinstance(node, ast.Call)
         and isinstance(node.func, ast.Attribute)
