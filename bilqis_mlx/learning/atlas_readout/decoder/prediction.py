@@ -103,8 +103,7 @@ def _targets(teacher_targets,plan):
 def _ready_outputs(memory,state,semantics,parameters,prepared,targets):
     records,outputs=[],[]
     for decision in ready_decisions(state):
-        z=decision_state(memory,decision,parent_outputs(state,decision.decision_id),
-                         semantics,state.plan,parameters,prepared)
+        z=decision_state(memory,decision,state,semantics,parameters,prepared)
         if not bool(mx.all(mx.isfinite(z))):
             return tuple(records),()
         try:

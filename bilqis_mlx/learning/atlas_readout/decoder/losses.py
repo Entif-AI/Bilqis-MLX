@@ -3,7 +3,9 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 import mlx.core as mx
 from ..plan import DecisionKind
-from ..records import invalid
+from ..records import invalid, TypedHeadLogits
+from ..control import ControlAction
+from ..causal_training import typed_decision_loss
 from .prediction import ModelOutput, _targets
 
 
@@ -42,7 +44,11 @@ def answer_loss(output,targets,mask):
                       if type(target) is type(value) and target==value)
         if len(matches)!=1:
             invalid()
-        losses[record.kind].append(mx.logsumexp(record.logits)-record.logits[matches[0]])
+        candidates=tuple(value.value if type(value) is ControlAction else value
+                         for value in record.candidates)
+        head=TypedHeadLogits(record.logits,candidates,output.plan.modality_id,
+                             output.plan.snapshot.release_sha256)
+        losses[record.kind].append(typed_decision_loss(head,target,legal_values=record.candidates))
     means={kind:(mx.mean(mx.stack(items)) if items else zero) for kind,items in losses.items()}
     primary=means[DecisionKind.VALUE]+means[DecisionKind.CONTROL]
     role=means[DecisionKind.ROLE]*AUXILIARY_WEIGHT

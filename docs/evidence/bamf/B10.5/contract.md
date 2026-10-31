@@ -1,10 +1,11 @@
-# B10.3 causal bounded decoder and masked typed losses
+# B10.5 causal bounded decoder and masked typed losses
 
-Issue #469, parent #367, Lane B. Recovery branch starts from synchronized
+Issue #635 (B10.5), parent #367, Lane B. Feature branch starts from synchronized
 Lane B/unified `9104ce733e04fb9c82420428b18dfdbf5db49535`; B10.1/#619 and
 B10.2/#623 are already merged in that lineage. The prior worker ended with a
 systemError; its original worktree and uncommitted contract remain untouched.
-This branch recovers the contract, not any claimed completed implementation.
+The recovered candidate is composed with same-lane #633/#634 helpers and tensor
+views. It does not compete to close #469/#470.
 No main, sibling lane, real student or shared integration code is changed.
 
 CONFORMANCE; NOT_AGENT_FACING. Extend the existing atlas_readout package in
@@ -55,12 +56,10 @@ the existing sigmoid role gate. Global CONTROL uses the existing NONE role row.
 Occurrence uses a deterministic768-wide sinusoid, with base10000 and the B02
 sin/cos convention for every occurrence (including0..15; no trainable slot table).
 
-Encode a ConceptRef as its exact active tied identity row. Encode structural
-ControlAction/RoleCandidate/RoleOccurrence and native literal feedback by a
-canonical typed JSON object with explicit type tag. For structural JSON, concatenate
-SHA256(UTF8('bamf.decoder.value/v1|'+canonicalJSON+'|'+decimal(block))) blocks until
-768 bits exist; map each bit0/1 to -1/+1 and divide by sqrt768. Concept feedback
-remains differentiable; structural expansion has no trainable parameters.
+Encode a ConceptRef with #633's exact active tied identity lookup. Structural
+values delegate to the same `encode_feedback_value` owner, preserving its compact
+typed JSON and 768-byte signed SHA256 expansion. The complete API introduces no
+second structural encoder or incompatible identity path.
 
 Feedback is the arithmetic mean of encoded already committed direct parents,
 or zeros for no parents. Compute state RMSNorm(anchor+role+occurrence+
@@ -165,21 +164,18 @@ source_span.end8 satisfies the existing check8<=9. Prediction adds the stronger
 check span.end<=compiled.visible_end and exact P==plan.input_prefix_end; no source
 interval is silently relabeled as a neural index.
 
-Canonical structural feedback objects are exactly:
-- ControlAction: `{"type":"CONTROL","value":action.value}`.
-- RoleCandidate: `{"type":"ROLE","value":asdict(candidate)}`.
-- RoleOccurrence: `{"type":"BINDING","value":asdict(binding)}`; its string enums
-  serialize as their existing wire strings, including nested concept records.
-- str: `{"type":"LITERAL_STRING","value":value}`.
-
-Serialize with existing canonical publication `json_bytes` (sorted, two-space-indented UTF-8
-JSON including its trailing newline). Readiness correction during the first literal golden: the existing serializer
-is indented, not compact; preserve its actual bytes. The SHA message is UTF-8 prefix
-`bamf.decoder.value/v1|`, followed by those exact JSON bytes, UTF-8 `|`, then the
-ASCII decimal block number. Concatenate SHA256 blocks0,1,2; expand each byte in
-MSB-first bit order; map bit0 to -1 and bit1 to +1, divide by sqrt768, cast FP32.
-Unsupported feedback kinds reject. ConceptRef takes the active identity path,
-never this structural hash. A literal golden hash/vector test pins the algorithm.
+Structural feedback serialization and signed-byte expansion are owned by #633's
+`causal_training.encode_feedback_value`. Its canonical Enum representation of
+EMIT_VALUE is compact UTF-8 JSON `{"enum":"ControlAction","value":"EMIT_VALUE"}`.
+SHA256(payload + b"|" + ASCII decimal block) blocks 0..23 supply 768 bytes.
+Each byte maps to `(byte/127.5-1)/sqrt(768)`, cast FP32. A literal full-vector
+fingerprint pins this consumed owner. This replaces the recovered candidate's
+provisional signed-bit/publication-JSON choice; no released format is changed.
+Concept feedback remains its exact active tied identity row. `decision_hidden`
+owns mean committed feedback and the state normalization; composition adds the
+shared role/occurrence input and B01 norm gamma, attention and final norm.
+`typed_decision_loss` owns per-head cross entropy. `bind_readout_parameters`
+from #634 owns the complete readout name/shape/dtype/finite boundary.
 
 RMSNorm is exactly `(x * rsqrt(mean(x*x)+1e-5)) * gamma`, using the corresponding
 readout.state_norm or readout.output_norm vector. Projection uses row vectors

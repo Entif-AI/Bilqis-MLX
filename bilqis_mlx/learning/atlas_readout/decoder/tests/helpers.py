@@ -25,6 +25,7 @@ from bilqis_mlx.semantics.tests.test_frame_compiler import _mixed_case, RELEASE
 
 
 def case(*, epistemic=False):
+    mx.set_default_device(mx.cpu)
     from bilqis_mlx.learning.atlas_readout.decoder.inputs import DecoderMemory, ReadoutSemantics
     source = _snapshot(definitions=(("urn:concept:A", ("urn:type:Entity",)),
                                     ("urn:concept:B", ("urn:type:Entity",))))

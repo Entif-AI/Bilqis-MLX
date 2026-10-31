@@ -1,6 +1,7 @@
 """Structural feedback golden and active tied identity gradients."""
 from dataclasses import replace
 import unittest
+import hashlib
 import numpy as np
 import mlx.core as mx
 from bilqis_mlx.learning.atlas_readout import ControlAction
@@ -10,15 +11,13 @@ from bilqis_mlx.learning.atlas_readout.decoder.tests.helpers import case
 
 
 class DecoderFeedbackTests(unittest.TestCase):
-    def test_structural_hash_has_literal_768_bit_golden(self):
+    def test_structural_hash_has_literal_signed_768_byte_golden(self):
         _, _, plan, semantics, params = case()
         actual = encode_value(ControlAction.EMIT_VALUE, semantics, plan, params)
-        raw = bytes.fromhex(
-            '3247a18fa33a761a4fe4570f88d5675fe5d52008ec283f0a8e4e8f64aabe19dc'
-            'ea7a525765972a239ee65107a08ed6ededf33054c1f658440d58f8781086c4c2'
-            '4dea0d8f1b951326c6e350bfe4da0129e79d54afcfe462815d7e1250e143e087')
-        expected = (np.unpackbits(np.frombuffer(raw,np.uint8)).astype(np.float32)*2-1)/np.sqrt(768)
-        np.testing.assert_allclose(np.asarray(actual), expected, rtol=1e-6)
+        # Independent compact typed-Enum JSON / 24-block SHA expansion golden.
+        fingerprint = hashlib.sha256(np.asarray(actual).astype('<f4').tobytes()).hexdigest()
+        self.assertEqual(fingerprint,
+            '4982770d588b1c00a0eab736e839fb164ad57015550a103bff8f13b5348312bd')
 
     def test_active_concept_feedback_keeps_identity_gradients(self):
         memory, _, plan, semantics, params = case()
