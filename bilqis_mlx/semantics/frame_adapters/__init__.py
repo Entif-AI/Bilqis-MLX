@@ -7,8 +7,8 @@ from typing import Callable
 from ...errors import ErrorBus, SEMANTIC_FRAME
 from ...factory.adapters import RegisteredSourceAdapter
 from ...generated_assessment import digest
-from ...source_adapters.numeric import decode as decode_numeric
-from ...source_adapters.structure import inspect_source_query
+from ..source_numeric_decode import decode as decode_numeric
+from ..source_structure import inspect_source_query
 from ..atlas_projection import FrozenAtlasSnapshot
 from ..context_eligibility import PUBLIC_FORMAL, ApprovedContextProjection, ContextEligibility, ContextHold, ContextMember, ContextPolicy, SourceFrontier, SourceGrant, TaskScope, frame_evidence_digest, member_evidence_digest, project_context
 from ..core import Apply, Literal, Signature
