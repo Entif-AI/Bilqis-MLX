@@ -36,7 +36,7 @@ class ChangedPathSmellTests(unittest.TestCase):
 
     def changed_findings(self):
         base, records = audit._staged_records()
-        current = audit.audit(audit._paths([new for _, new in records]))
+        current = audit.audit(audit._paths([new for _, _, new in records]))
         prior = {"fingerprints": [list(audit.fingerprint(item))
                                   for item in audit._base_findings(base, records)]}
         return audit.compare_to_baseline(current, prior)
@@ -61,7 +61,7 @@ class ChangedPathSmellTests(unittest.TestCase):
     def test_existing_physical_owner_is_not_reported_as_new_debt(self):
         owner = "bilqis_mlx/runtime/_batch/atlas_training_adapter.py"
         self.commit(owner, "EXISTING = []\n")
-        records = [("bilqis_mlx/runtime/atlas_training_adapter.py", owner)]
+        records = [("R100", "bilqis_mlx/runtime/atlas_training_adapter.py", owner)]
         prior = audit._base_findings("HEAD", records)
         expected = ("bilqis_mlx/runtime/atlas_training_adapter.py",
                     "module-mutable-literal", "EXISTING")
@@ -81,9 +81,20 @@ class ChangedPathSmellTests(unittest.TestCase):
                     "EXISTING = []\n")
         self.commit("bilqis_mlx/runtime/_admission/atlas_training_adapter.py",
                     "EXISTING = []\n")
-        records = [("bilqis_mlx/runtime/atlas_training_adapter.py",
+        records = [("R100", "bilqis_mlx/runtime/atlas_training_adapter.py",
                     "bilqis_mlx/runtime/_batch/atlas_training_adapter.py")]
         self.assertEqual(audit._base_findings("HEAD", records), [])
+
+    def test_added_duplicate_physical_owner_cannot_inherit_existing_debt(self):
+        original = "bilqis_mlx/runtime/_batch/owner.py"
+        duplicate = "bilqis_mlx/runtime/_admission/owner.py"
+        self.commit(original, "EXISTING = []\n")
+        target = self.root / duplicate
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text("EXISTING = []\n", encoding="utf-8")
+        subprocess.run(["git", "add", duplicate], cwd=self.root, check=True)
+        self.assertEqual(self.changed_findings(), [
+            ("bilqis_mlx/runtime/owner.py", "module-mutable-literal", "EXISTING")])
 
 
 if __name__ == "__main__":
