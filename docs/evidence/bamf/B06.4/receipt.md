@@ -9,7 +9,7 @@ B06.3 acceptance while #454 remains gated on the pinned Google EGM.
 
 Consumed reviewed unified / Lane B:
 
-`77a05ef00337e8a3773d070adad4c8874c9c1034`
+`0cac1a27abfb909b61646e5303ed40e9f60aa977`
 
 ## Registry contract
 
@@ -84,9 +84,12 @@ leaf does not convert either absence into a pass or manufacture those witnesses.
 Issue #455 directly depends on B06.3/#454. Its own issue contract permits this
 registry implementation against the frozen upstream interface while #454 is
 finishing, but final turn-in must consume the actual accepted upstream receipt.
-At this checkpoint #454/PR #684 is remotely verified and software/hosted/non-EGM
-clean but remains `EGM_PENDING` because the pinned Google EGM runner is not
-exposed on this execution surface.
+At this checkpoint #454/PR #684 remains remotely verified at its exact upstream
+feature head `973f7e811519b99535e6de96ce72917a6c540d37` and
+software/hosted/non-EGM clean, but remains `EGM_PENDING` because the pinned Google
+EGM runner is not exposed on this execution surface. B06.4 consumes newer reviewed
+unified `0cac1a27...`; final turn-in still must re-consume the accepted #454 receipt
+after that prerequisite lands through unified.
 
 B06.4 therefore remains a dependency-pending draft until #454 is accepted and
 re-consumed. The same unavailable pinned Google EGM requirement applies to this
