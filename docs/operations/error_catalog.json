@@ -10356,18 +10356,18 @@
       "path": "bilqis_mlx/runtime/tests/capability/test_cognitive_solver.py"
     },
     {
+      "code_hint": "boom",
+      "count": 1,
+      "exception": "RuntimeError",
+      "expression": "'boom'",
+      "path": "bilqis_mlx/runtime/tests/model/parity/test_mlx_memory.py"
+    },
+    {
       "code_hint": "snapshot must not mutate MLX telemetry",
       "count": 1,
       "exception": "AssertionError",
       "expression": "'snapshot must not mutate MLX telemetry'",
       "path": "bilqis_mlx/runtime/tests/model/resources/test_memory_retry.py"
-    },
-    {
-      "code_hint": "boom",
-      "count": 1,
-      "exception": "RuntimeError",
-      "expression": "'boom'",
-      "path": "bilqis_mlx/runtime/tests/model/training/test_mlx_memory.py"
     },
     {
       "code_hint": "GRAPH_UNAVAILABLE",

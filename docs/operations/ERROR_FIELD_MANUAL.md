@@ -3396,7 +3396,7 @@ Current production scan: **1939** raw raises across **179** files. The baseline 
 | `_DIGEST_INVALID` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
 | `_INVALID` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
 | `_STALE` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
-| `boom` | 1 | `bilqis_mlx/runtime/tests/model/training/test_mlx_memory.py` |
+| `boom` | 1 | `bilqis_mlx/runtime/tests/model/parity/test_mlx_memory.py` |
 | `disposable interruption before pointer publication` | 1 | `bilqis_mlx/runtime/tests/admission/test_atlas_lease_renewal.py` |
 | `evaluator-owned cache reached by solver` | 1 | `bilqis_mlx/semantics/tests/operators/test_cognitive_operator_native.py` |
 | `exact cached route must preempt neural` | 1 | `bilqis_mlx/runtime/tests/capability/test_cognitive_solver.py` |
