@@ -12,13 +12,14 @@ from bilqis_mlx.factory.curriculum.capability_identity import (
     stable_capability_id,
 )
 from bilqis_mlx.factory.curriculum.formal_constructive import _resolve_from_bindings
+from bilqis_mlx.factory.release import compile_factory_release
 from bilqis_mlx.factory.skos_curriculum.inventory import _inventory_source_families
 from bilqis_mlx.factory.skos_curriculum.programs.contracts import (
     BoundFamilyProgram, FactoryReleaseFamilyBindings, FamilyProgramCoverage,
 )
 from bilqis_mlx.factory.tests.sources.test_skos_curriculum import _snapshot
 from bilqis_mlx.factory.skos_curriculum.programs.tests.real_fixtures import (
-    full_boolean_release,
+    full_boolean_release, numeric_factory_release,
 )
 from bilqis_mlx.semantics.cognitive_operators import default_registry
 from bilqis_mlx.semantics.foundation.core import Signature
@@ -77,6 +78,18 @@ def _boolean_witness(registry, capability_id, operator_id):
         operator=registry.resolve(operator_id),
         capability_ids=(capability_id,),
     )
+
+
+def _release_with_capability_root(release, source_registry, capability_id, root):
+    grades = []
+    for grade in release.course.grades:
+        capabilities = tuple(
+            replace(item, taught_roots=(root,), examined_roots=(root,))
+            if item.id == capability_id else item
+            for item in grade.capabilities)
+        grades.append(replace(grade, capabilities=capabilities))
+    return compile_factory_release(
+        replace(release.course, grades=tuple(grades)), source_registry)
 
 
 class CapabilityIdentityTests(unittest.TestCase):
@@ -255,6 +268,57 @@ class CapabilityIdentityTests(unittest.TestCase):
                 release, _family_bindings(release, capability_id="B.AND"),
                 "B.AND", object(), registry)
         self.assertEqual(binding.release_capability_id, "B.AND")
+
+    def test_release_root_cannot_steer_capability_to_another_formal_witness(self):
+        release, source_registry = full_boolean_release()
+        forged = _release_with_capability_root(
+            release, source_registry, "B.AND", "evil.namespace.NOT")
+        bindings = _family_bindings(forged, capability_id="B.AND")
+        registry, _, census = _formal_authority()
+        shared = ("B.NOT", "B.AND")
+        proposal = SimpleNamespace(witnesses=(
+            SimpleNamespace(**{
+                **vars(_boolean_witness(registry, "B.NOT", "BOOL_NOT")),
+                "capability_ids": shared}),
+            SimpleNamespace(**{
+                **vars(_boolean_witness(registry, "B.AND", "BOOL_AND")),
+                "capability_ids": shared}),
+        ))
+        with _authority_patch(proposal, census), self.assertRaises(BilqisError) as caught:
+            bind_factory_release_capability_identity(
+                forged, bindings, "B.AND", object(), registry)
+        self.assertEqual(
+            caught.exception.context.get("reason"),
+            "FACTORY_CAPABILITY_IDENTITY_FORMAL_COORDINATE_DRIFT")
+
+    def test_release_root_suffix_is_not_formal_identity_authority(self):
+        release, source_registry = full_boolean_release()
+        forged = _release_with_capability_root(
+            release, source_registry, "B.AND", "evil.namespace.AND")
+        bindings = _family_bindings(forged, capability_id="B.AND")
+        registry, proposal, census = _formal_authority()
+        with _authority_patch(proposal, census), self.assertRaises(BilqisError) as caught:
+            bind_factory_release_capability_identity(
+                forged, bindings, "B.AND", object(), registry)
+        self.assertEqual(
+            caught.exception.context.get("reason"),
+            "FACTORY_CAPABILITY_IDENTITY_FORMAL_COORDINATE_DRIFT")
+
+    def test_numeric_source_coordinate_uses_lesson_operation_not_capability_suffix(self):
+        release, _ = numeric_factory_release()
+        bindings = _family_bindings(
+            release, family_id="numeric_composition", capability_id="C.SUCCESSOR")
+        registry, _, census = _formal_authority()
+        proposal = SimpleNamespace(witnesses=(SimpleNamespace(
+            semantic_id="bilqis.numeric/v1:school.op.SUCC",
+            family="numeric", operator=registry.resolve("SUCC"),
+            capability_ids=("C.SUCCESSOR",)),))
+        with _authority_patch(proposal, census):
+            binding = bind_factory_release_capability_identity(
+                release, bindings, "C.SUCCESSOR", object(), registry)
+        identity = binding.stable_identity.identity
+        self.assertEqual(identity.operator_id, "SUCC")
+        self.assertEqual(identity.semantic_id, "bilqis.numeric/v1:school.op.SUCC")
 
 
 if __name__ == "__main__":

@@ -24,6 +24,9 @@ from bilqis_mlx.factory.skos_curriculum.programs.catalog import (
 from bilqis_mlx.factory.skos_curriculum.programs.contracts import (
     FactoryReleaseFamilyBindings,
 )
+from bilqis_mlx.source_adapters.formal_identity import (
+    source_formal_coordinate,
+)
 
 
 CAPABILITY_IDENTITY_SCHEMA = "bilqis.capability-identity/v1"
@@ -31,6 +34,7 @@ _CAPABILITY_ID = re.compile(r"cap:[0-9a-f]{64}\Z")
 _FAMILY_BINDING_DRIFT = "FACTORY_CAPABILITY_IDENTITY_FAMILY_BINDING_DRIFT"
 _FAMILY_AUTHORITY_MISSING = "FACTORY_CAPABILITY_IDENTITY_FAMILY_AUTHORITY_MISSING"
 _SIGNATURE_AUTHORITY_MISSING = "FACTORY_CAPABILITY_IDENTITY_SIGNATURE_AUTHORITY_MISSING"
+_FORMAL_COORDINATE_DRIFT = "FACTORY_CAPABILITY_IDENTITY_FORMAL_COORDINATE_DRIFT"
 
 
 def _fail(reason: str) -> None:
@@ -167,13 +171,8 @@ def _verify_bound_family_row(release, capability, family, program) -> str:
     return program.family_id
 
 
-def _operator_suffix(value: str) -> str:
-    suffix = re.split(r"[.:]", value)[-1]
-    return suffix.removeprefix("BOOL_")
-
-
 def _authoritative_operator(
-    capability_id: str, family_id: str, semantic_roots: tuple[str, ...],
+    capability, family_id: str, semantic_roots: tuple[str, ...],
     atlas: AtlasArtifactSelection, operator_registry: OperatorRegistry,
 ):
     adapter = next(
@@ -181,14 +180,19 @@ def _authoritative_operator(
         None)
     if adapter is None or len(adapter.formal_families) != 1:
         _fail(_SIGNATURE_AUTHORITY_MISSING)
+    coordinate = source_formal_coordinate(
+        capability.capability_id, capability.source_adapter_id)
+    if coordinate is None:
+        _fail(_SIGNATURE_AUTHORITY_MISSING)
+    source_root, operator_id = coordinate
+    if semantic_roots != (source_root,):
+        _fail(_FORMAL_COORDINATE_DRIFT)
     formal_sources = resolve_formal_source_operators(atlas, operator_registry)
-    root_suffixes = {_operator_suffix(root) for root in semantic_roots}
     matches = tuple(
         witness for witness in formal_sources.witnesses
-        if capability_id in witness.capability_ids
+        if capability.capability_id in witness.capability_ids
         and witness.family in adapter.formal_families
-        and _operator_suffix(witness.semantic_id) in root_suffixes
-        and _operator_suffix(witness.operator.operator_id) in root_suffixes)
+        and witness.operator.operator_id == operator_id)
     if len(matches) != 1:
         _fail(_SIGNATURE_AUTHORITY_MISSING)
     return matches[0]
@@ -222,7 +226,7 @@ def bind_factory_release_capability_identity(
     family_id = _verify_bound_family_row(
         release, capability, family, family_program)
     witness = _authoritative_operator(
-        capability_id, family_id, family.semantic_roots, atlas, operator_registry)
+        capability, family_id, family.semantic_roots, atlas, operator_registry)
 
     stable = bind_stable_capability_identity(
         witness.semantic_id, family_id, witness.operator.operator_id,
