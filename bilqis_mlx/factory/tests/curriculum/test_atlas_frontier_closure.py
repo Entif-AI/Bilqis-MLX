@@ -9,7 +9,9 @@ from bilqis_mlx.factory.atlas_frontier_closure import (
 )
 from bilqis_mlx.factory.atlas_frontier_contracts import PrerequisiteEdge
 from bilqis_mlx.factory.skos_curriculum import FamilyObligation
-from bilqis_mlx.factory.tests.curriculum.test_atlas_frontier_events import _snapshot
+from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier_events import (
+    _snapshot,
+)
 
 
 def _rehash(snapshot, **changes):
