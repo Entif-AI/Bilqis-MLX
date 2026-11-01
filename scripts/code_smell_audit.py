@@ -147,12 +147,13 @@ def _records_from_name_status(text):
     records=[]
     for line in text.splitlines():
         fields=line.split('\t')
-        if fields[0].startswith(('R','C')):
+        status=fields[0]
+        if status.startswith(('R','C')):
             old,new=fields[1],fields[2]
         else:
             old=new=fields[1]
         if new.endswith('.py'):
-            records.append((old,new))
+            records.append((status,old,new))
     return records
 
 
@@ -193,10 +194,10 @@ def _base_findings(merge_base,records):
         if name.endswith('.py'):
             physical_owners[logical_source_path(name)].append(name)
     found=[]
-    for old,new in records:
+    for status,old,new in records:
         result=subprocess.run(['git','show',f'{merge_base}:{old}'],cwd=ROOT,text=True,
                               capture_output=True)
-        if result.returncode != 0:
+        if result.returncode != 0 and status.startswith('R'):
             logical_old = logical_source_path(new)
             owners=physical_owners[logical_old]
             if len(owners)==1:
@@ -223,10 +224,10 @@ def main(argv=None):
     changed=None
     if args.staged:
         merge_base,changed=_staged_records()
-        scoped=[new for _,new in changed]
+        scoped=[new for _,_,new in changed]
     elif args.changed_from:
         merge_base,changed=_changed_records(args.changed_from)
-        scoped=[new for _,new in changed]
+        scoped=[new for _,_,new in changed]
     else:
         scoped=args.paths
     paths=_paths(scoped if args.staged or args.changed_from else (args.paths or None))
