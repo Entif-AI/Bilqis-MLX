@@ -1,52 +1,20 @@
-"""Partial visible forest: visibility contracts."""
+"""Partial forest binding witnesses."""
 from __future__ import annotations
 from dataclasses import replace
 from unittest import TestCase
 from bilqis_mlx.semantics import frame_compiler
-from bilqis_mlx.semantics.context_eligibility import ApprovedContextProjection, frame_evidence_digest, member_evidence_digest, project_context
-from bilqis_mlx.semantics.frame_compiler import compile_prefix
-from bilqis_mlx.semantics.frame_schema import ChildFrameRef, FrameTree, RoleOccurrence, make_frame_instance
-from bilqis_mlx.semantics.tests.frame_compiler.fixtures import (
-    RELEASE, _mixed_case,
+from bilqis_mlx.semantics.context_eligibility import (
+    ApprovedContextProjection, frame_evidence_digest, member_evidence_digest,
+    project_context,
 )
+from bilqis_mlx.semantics.frame_compiler import compile_prefix
+from bilqis_mlx.semantics.frame_schema import (
+    ChildFrameRef, FrameTree, RoleOccurrence, make_frame_instance,
+)
+from bilqis_mlx.semantics.tests.frame_compiler.fixtures import RELEASE, _mixed_case
 
 
-class VisibilityTests(TestCase):
-    def test_partial_visible_forest_excludes_future_and_preserves_full_identities(self):
-        ast, config = _mixed_case()
-        parent = ast.frames[0].root
-        child = ast.frames[0].children[0].root
-        before = (
-            parent.occurrence_id, parent.content_digest,
-            child.occurrence_id, child.content_digest)
-
-        at_three = frame_compiler.validate_partial_visible_forest(
-            compile_prefix(ast, 3, RELEASE, config), ast, config)
-        self.assertEqual(at_three.visible_forest, ())
-        self.assertEqual(at_three.hidden_parents, ())
-
-        at_four = frame_compiler.validate_partial_visible_forest(
-            compile_prefix(ast, 4, RELEASE, config), ast, config)
-        self.assertEqual(
-            tuple(tree.root.occurrence_id for tree in at_four.visible_forest),
-            (child.occurrence_id,))
-        self.assertFalse(any(
-            tree.root.occurrence_id == parent.occurrence_id
-            for tree in at_four.visible_forest))
-
-        at_eight = frame_compiler.validate_partial_visible_forest(
-            compile_prefix(ast, 8, RELEASE, config), ast, config)
-        full_parent = next(
-            tree for tree in at_eight.visible_forest
-            if tree.root.occurrence_id == parent.occurrence_id)
-        after = (
-            full_parent.root.occurrence_id, full_parent.root.content_digest,
-            full_parent.children[0].root.occurrence_id,
-            full_parent.children[0].root.content_digest)
-        self.assertEqual(after, before)
-        self.assertEqual(at_eight.hidden_parents, ())
-
-
+class BindingTests(TestCase):
     def test_partial_visible_forest_ignores_hidden_parent_member_content(self):
         ast, config = _mixed_case()
         parent_tree, atomic_tree = ast.frames

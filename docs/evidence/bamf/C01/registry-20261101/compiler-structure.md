@@ -80,3 +80,10 @@ The post-merge combined compiler/source-binding/control-plane selection passed
 zero findings), architecture, governance, docs and error-control checks all passed.
 No baseline or threshold changed. PR682 is already human-merged; this structural
 continuation returns through a separate draft PR against unified.
+
+Exact integrated compiler head `d22143d395d44e4d73300f5228d8dc7bc48a8536` also
+passed the native M3 six-case selection. Its hosted portable, portable-core and
+semantic-ABI checks all succeeded; semantic-profile jobs were intentionally skipped.
+Draft PR694 is the structural follow-up. All12tracker tabs were updated/read back
+with QA332,Turned-in267,IssueIndex224. The next coherent partial-forest repair has
+its own proof record; no compiler acceptance claim extends to an untested new head.
