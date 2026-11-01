@@ -2,6 +2,7 @@
 from pathlib import Path
 
 from ...factory.adapters import RegisteredSourceAdapter
+from ...factory.source_identity import canonical_source_adapter
 from ...generated_assessment import digest
 from ..atlas_projection import FrozenAtlasSnapshot
 from ..context_eligibility import PUBLIC_FORMAL, ContextPolicy, SourceFrontier, TaskScope
@@ -10,16 +11,12 @@ from .common import FINITE_NUMERIC_ADAPTER, MAX_PUBLIC_FORMAL_DRAW_EACH, _adapte
 
 def canonical_adapter(source_adapter, span):
     """A copied frozen adapter record does not own its supplied callables."""
-    from ...source_adapters.school import live_source_registry
-
     adapter_id = getattr(getattr(source_adapter, "descriptor", None), "adapter_id", "<unknown>")
     if not isinstance(source_adapter, RegisteredSourceAdapter):
         _adapter_fail("BAMF_CONTEXT_PUBLIC_FORMAL_ADAPTER_UNTRUSTED",
                       adapter_id, span, "<public-formal>")
     try:
-        canonical = live_source_registry().require(
-            source_adapter.descriptor.generator_id,
-            source_adapter.descriptor.accepted_oracle_ids[0])
+        canonical = canonical_source_adapter(source_adapter)
     except (IndexError, TypeError, ValueError):
         _adapter_fail("BAMF_CONTEXT_PUBLIC_FORMAL_ADAPTER_UNTRUSTED",
                       adapter_id, span, "<public-formal>")

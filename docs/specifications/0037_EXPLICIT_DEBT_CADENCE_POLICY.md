@@ -41,7 +41,7 @@ Do not broaden this list during ordinary execution. Exact-symbol reference check
 - `bilqis_mlx/curriculum/scheduler.py`
 - `bilqis_mlx/runtime/state.py`
 - `bilqis_mlx/curriculum/tests/test_staged_school.py`
-- `tests/integration/test_thin_boolean_numeric_debt.py`
+- `tests/integration/teaching/test_thin_boolean_numeric_debt.py`
 
 No other tracked path may be modified by this leaf.
 
@@ -71,10 +71,10 @@ Use repository mechanisms first. Import-layer/independence concepts may be borro
 
 Owned tests:
 - `bilqis_mlx/curriculum/tests/test_staged_school.py`
-- `tests/integration/test_thin_boolean_numeric_debt.py`
+- `tests/integration/teaching/test_thin_boolean_numeric_debt.py`
 
 Commands:
-- `python -m pytest bilqis_mlx/curriculum/tests/test_staged_school.py tests/integration/test_thin_boolean_numeric_debt.py`
+- `python -m pytest bilqis_mlx/curriculum/tests/test_staged_school.py tests/integration/teaching/test_thin_boolean_numeric_debt.py`
 
 **Verification tier:** `T1_INTEGRATION`.
 

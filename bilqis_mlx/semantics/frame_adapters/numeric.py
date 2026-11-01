@@ -1,7 +1,7 @@
 """Source-owned frame numeric behavior."""
 from __future__ import annotations
 from ...generated_assessment import digest
-from ...source_adapters.numeric import decode as decode_numeric
+from ..source_numeric_decode import decode as decode_numeric
 from ..atlas_projection import FrozenAtlasSnapshot
 from ..core import Apply, Literal
 from ..frame_schema import ChildFrameRef, ConceptRef, FrameTree, RoleOccurrence, SourceSpan, ast_construct_id, atomic_fallback, bind_frame_instance, occurrence_id, validate_frame_tree

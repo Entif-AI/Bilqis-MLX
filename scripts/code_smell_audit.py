@@ -14,9 +14,9 @@ from pathlib import Path
 import subprocess
 
 try:
-    from quality.change_scope import scoped_name_status
+    from quality.change_scope import GOVERNANCE_ADOPTION_COMMIT, scoped_name_status
 except ModuleNotFoundError:  # dynamic test import from repository root
-    from scripts.quality.change_scope import scoped_name_status
+    from scripts.quality.change_scope import GOVERNANCE_ADOPTION_COMMIT, scoped_name_status
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,6 +26,19 @@ DEFAULT_DIRS = tuple(sorted(
                           path.name in ('scripts','tests'))))
 GRADE_BOUNDS = {'grade', 'number', 'i', 'index', 'stage'}
 ALLOWED_LITERALS = {0, 1, 2, 3, 4, 8, 16, 32, 64}
+
+PHYSICAL_OWNER_GROUPS = frozenset({
+    "_projection", "_admission", "_capability", "_source", "_model", "_custody",
+    "_operator", "_teacher", "_depth", "_correction", "_batch",
+})
+
+
+def logical_source_path(path: str) -> str:
+    """Preserve established module identity across runtime physical grouping."""
+    parts = Path(path).parts
+    if len(parts) >= 4 and parts[:2] == ("bilqis_mlx", "runtime") and parts[2] in PHYSICAL_OWNER_GROUPS:
+        return Path(*parts[:2], *parts[3:]).as_posix()
+    return Path(path).as_posix()
 
 
 @dataclass(frozen=True)
@@ -107,7 +120,7 @@ def audit(paths):
     for path in paths:
         if not path.is_file() or path.suffix != '.py':
             continue
-        name = str(path.relative_to(ROOT))
+        name = logical_source_path(str(path.relative_to(ROOT)))
         records.extend(inspect_source(name, path.read_text(encoding='utf-8')))
     return sorted(records, key=lambda f:(f.path,f.line,f.rule))
 
@@ -134,12 +147,13 @@ def _records_from_name_status(text):
     records=[]
     for line in text.splitlines():
         fields=line.split('\t')
-        if fields[0].startswith(('R','C')):
+        status=fields[0]
+        if status.startswith(('R','C')):
             old,new=fields[1],fields[2]
         else:
             old=new=fields[1]
         if new.endswith('.py'):
-            records.append((old,new))
+            records.append((status,old,new))
     return records
 
 
@@ -154,13 +168,43 @@ def _changed_records(base_ref):
     return merge_base,_records_from_name_status(scoped)
 
 
+def _debt_baseline_ref(requested_base, scoped_base):
+    """Use the exact PR base once governance already exists there.
+
+    The pre-adoption boundary protects the migration that introduced this gate.
+    Once the requested base already contains that governance, a later PR must be
+    charged only for debt beyond its actual base, including files that merely
+    moved into physical owner compartments.
+    """
+    result=subprocess.run(
+        ['git','merge-base','--is-ancestor',GOVERNANCE_ADOPTION_COMMIT,requested_base],
+        cwd=ROOT,text=True,capture_output=True)
+    return requested_base if result.returncode==0 else scoped_base
+
+
 def _base_findings(merge_base,records):
+    # A historical logical path may already have moved to a physical runtime
+    # owner on the PR base. Resolve that owner from the base tree itself rather
+    # than treating its existing findings as newly introduced debt. An
+    # ambiguous logical owner is never evidence of a pre-existing finding.
+    tree=subprocess.run(['git','ls-tree','-r','--name-only','-z',merge_base],
+                        cwd=ROOT,check=True,text=True,capture_output=True)
+    physical_owners=defaultdict(list)
+    for name in tree.stdout.split('\0'):
+        if name.endswith('.py'):
+            physical_owners[logical_source_path(name)].append(name)
     found=[]
-    for old,new in records:
+    for status,old,new in records:
         result=subprocess.run(['git','show',f'{merge_base}:{old}'],cwd=ROOT,text=True,
                               capture_output=True)
+        if result.returncode != 0 and status.startswith('R'):
+            logical_old = logical_source_path(new)
+            owners=physical_owners[logical_old]
+            if len(owners)==1:
+                result=subprocess.run(['git','show',f'{merge_base}:{owners[0]}'],
+                                      cwd=ROOT,text=True,capture_output=True)
         if result.returncode==0:
-            found.extend(inspect_source(new,result.stdout))
+            found.extend(inspect_source(logical_source_path(new),result.stdout))
     return sorted(found,key=lambda f:(f.path,f.line,f.rule))
 
 
@@ -180,10 +224,10 @@ def main(argv=None):
     changed=None
     if args.staged:
         merge_base,changed=_staged_records()
-        scoped=[new for _,new in changed]
+        scoped=[new for _,_,new in changed]
     elif args.changed_from:
         merge_base,changed=_changed_records(args.changed_from)
-        scoped=[new for _,new in changed]
+        scoped=[new for _,_,new in changed]
     else:
         scoped=args.paths
     paths=_paths(scoped if args.staged or args.changed_from else (args.paths or None))
@@ -198,7 +242,9 @@ def main(argv=None):
         args.write_baseline.write_text(json.dumps(output,indent=2)+'\n',encoding='utf-8')
     new=[]
     if args.staged or args.changed_from:
-        prior={'fingerprints':[list(fingerprint(item)) for item in _base_findings(merge_base,changed)]}
+        baseline_ref=(merge_base if args.staged else
+                      _debt_baseline_ref(args.changed_from,merge_base))
+        prior={'fingerprints':[list(fingerprint(item)) for item in _base_findings(baseline_ref,changed)]}
         new=compare_to_baseline(found,prior)
     elif args.check_baseline:
         baseline=json.loads(args.check_baseline.read_text(encoding='utf-8'))

@@ -457,7 +457,7 @@
       ],
       "kind": "leaf",
       "title": "BAMF-0.2 A09.1a | Implement the versioned immutable Factory planning snapshot and coverage identity",
-      "body_sha256": "c1547268705b19452a28fe3d7f9781d6b274cca82fc0412ddcd11b8bace0d7c3",
+      "body_sha256": "4917e4e6808c76232be242b626cb4243fdefa18b436392f030b41e14a9657448",
       "source_parent_sha256": "12fd14b2b1d41696e359c1c49aca823e588b8b8086d2e886f899a877a8b06800"
     },
     {
@@ -1360,7 +1360,7 @@
       ],
       "kind": "leaf",
       "title": "BAMF-0.2 B10.3 | Enforce causal dependency feedback masking and typed answer legality",
-      "body_sha256": "d7f6bf85022f3bbd506a38967b89f79b56947c2962903f90b39309e1ce2347b0",
+      "body_sha256": "62daf37ec04b7b98d47234c0fa778b24ee9cc28713f5108d6284e198d9885e38",
       "clause_span": [
         8,
         12
@@ -1377,7 +1377,7 @@
       ],
       "kind": "leaf",
       "title": "BAMF-0.2 B10.4 | Match AnswerPlan v2 and complete readout tensor census",
-      "body_sha256": "95ea2f7e9f7f7665a50b838ca94b523d23bc986f2d5bf5205a8896fbf28efa92",
+      "body_sha256": "e317a36c961c4fc022817188242e084ec7b1dff1f89fa51f44b792cacb00a9d6",
       "clause_span": [
         12,
         16

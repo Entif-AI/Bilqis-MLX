@@ -1,0 +1,154 @@
+{
+  "actual_student_updates": 0,
+  "code_sha": "99f30680a498c51bd434626241e5fd27e9f54b26",
+  "feature_branch": "codex/bamf02-c10-521-staging-20261030",
+  "gates": {
+    "changed_hygiene": "PASS_ZERO_NEW_FINDINGS",
+    "documentation": "PASS",
+    "factory_architecture": "FAIL_MATCHING_BASELINE_GENERIC_GRADE_IDENTITY_DISPATCH",
+    "governance_integrity": "PASS",
+    "historical_abi": "ADVISORY_EXTERNAL_EXPECTED_SHA_UNAVAILABLE",
+    "installed_wheel_staging": "PASS_OUTSIDE_CHECKOUT",
+    "operator_contracts": "FAIL_30_MATCHING_BASELINE_FINDINGS",
+    "structure": "PASS",
+    "workflow_paths": "PASS_23_EXISTING_PATHS"
+  },
+  "graph_service_writes": 0,
+  "issue": 521,
+  "lane_sha": "840e6ce0664c98ffb6d190ca9581b99d3e19ab9b",
+  "open_acceptance": [
+    "Full #521/#383 source-rights/service qualification",
+    "#520 atomic-batch and accepted-generation producer coverage",
+    "Historical BILQIS_V1_BUNDLE_WITNESS remains unconfigured",
+    "Disclosed aggregate runtime and baseline architecture/operator findings"
+  ],
+  "parent_issue": 383,
+  "pr": 620,
+  "results": {
+    "attention_m3": {
+      "errors": 0,
+      "failed": 0,
+      "passed": 14,
+      "skipped": 0,
+      "total": 14
+    },
+    "backbone_after_m3": {
+      "errors": 0,
+      "failed": 0,
+      "passed": 6,
+      "skipped": 0,
+      "total": 6
+    },
+    "backbone_before_m3": {
+      "errors": 0,
+      "failed": 0,
+      "passed": 6,
+      "skipped": 0,
+      "total": 6
+    },
+    "depth_and_disposable_optimizer_m3": {
+      "errors": 0,
+      "failed": 0,
+      "passed": 14,
+      "skipped": 0,
+      "total": 14
+    },
+    "pinned_rosetta_projection_and_resume": {
+      "errors": 0,
+      "failed": 0,
+      "passed": 35,
+      "skipped": 0,
+      "total": 35
+    },
+    "refinement_after_cpu": {
+      "errors": 0,
+      "failed": 0,
+      "passed": 8,
+      "skipped": 0,
+      "total": 8
+    },
+    "refinement_before_cpu": {
+      "errors": 0,
+      "failed": 0,
+      "passed": 8,
+      "skipped": 0,
+      "total": 8
+    },
+    "resource_cpu": {
+      "errors": 0,
+      "failed": 0,
+      "passed": 12,
+      "skipped": 0,
+      "total": 12
+    },
+    "runtime_cpu_aggregate": {
+      "errors": 26,
+      "failed": 28,
+      "passed": 411,
+      "skipped": 19,
+      "total": 458
+    },
+    "temporal_cpu": {
+      "errors": 0,
+      "failed": 0,
+      "passed": 18,
+      "skipped": 0,
+      "total": 18
+    },
+    "topology_m3": {
+      "errors": 1,
+      "failed": 1,
+      "passed": 20,
+      "skipped": 0,
+      "total": 21
+    },
+    "workflow_portable_selectors": {
+      "errors": 0,
+      "failed": 0,
+      "passed": 96,
+      "skipped": 18,
+      "total": 114
+    }
+  },
+  "review": {
+    "independent_test_execution_claimed": false,
+    "pinned_egm": "b3a35956759bf7f024af2ff061b2e0b44b438e4c",
+    "policy_extractions": "SCOPED_PASS_AFTER_DOCUMENT_REAUDIT",
+    "readiness": "SCOPED_PASS_AFTER_ONE_REAUDIT",
+    "staging": "SCOPED_PASS_AFTER_ONE_REAUDIT",
+    "structural_owners": "SCOPED_PASS"
+  },
+  "runtime_failure_identities": [
+    "load test module test_mlx_checkpoint.py",
+    "load test module test_mlx_gradients.py",
+    "load test module test_block_attnres.py",
+    "load test module test_depth_contracts.py",
+    "load test module test_depth_numerical.py",
+    "load test module test_atlas_attention.py",
+    "load test module test_atlas_gqa.py",
+    "load test module test_atlas_optimizer.py",
+    "load test module test_atlas_plasticity.py",
+    "load test module test_atlas_refinement.py",
+    "load test module test_backbone_group_inputs.py",
+    "load test module test_backbone_group_numerical.py",
+    "load test module test_backbone_source_bridge.py",
+    "test_causal_forward_matches_torch_for_small_synthetic_model (MlxMappingTests.test_causal_forward_matches_torch_for_small_synthetic_model)",
+    "test_moment_mapping_refuses_missing_parameter_identity (MlxMappingTests.test_moment_mapping_refuses_missing_parameter_identity)",
+    "test_native_moments_exact_map_and_no_update (MlxMappingTests.test_native_moments_exact_map_and_no_update)",
+    "test_real_legacy_bundle_is_rejected_and_remains_readable (ModelTopologyV2Tests.test_real_legacy_bundle_is_rejected_and_remains_readable)",
+    "test_real_v1_factory_uses_legacy_topology (ModelTopologyV2Tests.test_real_v1_factory_uses_legacy_topology)",
+    "test_full_parameter_optimizer_and_serialization_tree (ModelTopologyV2Tests.test_full_parameter_optimizer_and_serialization_tree)",
+    "test_serialization_and_readback_reject_malformed_trees (ModelTopologyV2Tests.test_serialization_and_readback_reject_malformed_trees)",
+    "test_storage_keys_are_stable_across_independent_extent_growth (ModelTopologyV2Tests.test_storage_keys_are_stable_across_independent_extent_growth)",
+    "test_source_bound_identity_factor_projection_is_b02_independent (ModelTopologyV2Tests.test_source_bound_identity_factor_projection_is_b02_independent)",
+    "setUpClass (TypedAnswerTests)",
+    "test_active_v2_source_never_recompiles_legacy_course (V2SourceDispatchTests.test_active_v2_source_never_recompiles_legacy_course)",
+    "test_append_only_materialization_preserves_native_rows_moments_and_frontier (PreparedSuccessorTests.test_append_only_materialization_preserves_native_rows_moments_and_frontier)",
+    "test_same_grade_native_growth_adopts_exact_staged_release_without_append_grade (PreparedSuccessorTests.test_same_grade_native_growth_adopts_exact_staged_release_without_append_grade)",
+    "test_solver_transitive_imports_exclude_gold_evaluator (CognitiveSolverTests.test_solver_transitive_imports_exclude_gold_evaluator)",
+    "test_additive_prior_grade_revision_preserves_frontier_and_adds_debt (EarlierGradeExpansionTests.test_additive_prior_grade_revision_preserves_frontier_and_adds_debt)"
+  ],
+  "self_merge": false,
+  "status": "PARTIAL_LOCAL_STAGING_AND_STRUCTURE_REVIEWED",
+  "unified_sha": "a02b9ed45ead1801be6dff655866b73be0ffc8ff"
+}
