@@ -335,5 +335,6 @@ from bilqis_mlx.learning.atlas_participation import (  # noqa: E402,F401
     PARTICIPATION_SCHEMA, ROLE_READ_SCHEMA,
     ActiveAdmittedRows, ParameterMask, RoleReadParticipation,
     SemanticDenominator, StepParticipation, StepParticipationInputs, UpdateMask,
-    mask_gradients, parameter_update_mask, step_participation,
+    mask_gradients, optimizer_participation_mask, parameter_update_mask,
+    step_participation,
 )

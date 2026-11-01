@@ -10,9 +10,10 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_engram_reads import MotifReadResult
 from bilqis_mlx.learning.atlas_plasticity import (
     ActiveAdmittedRows, GroupEligibility, IdentityRowAge,
-    RoleReadParticipation, SemanticDenominator, StepParticipationInputs,
-    advance_accepted_row_ages, group_eligibility, mask_gradients, parameter_update_mask,
-    step_participation,
+    ParameterMask, RoleReadParticipation, SemanticDenominator,
+    StepParticipationInputs, UpdateMask, advance_accepted_row_ages,
+    group_eligibility, mask_gradients, optimizer_participation_mask,
+    parameter_update_mask, step_participation,
 )
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, bamf_parameter_census,
@@ -48,6 +49,22 @@ def _active():
 
 
 class ParticipationTests(TestCase):
+    def test_update_mask_materializes_exact_b12_boolean_geometry(self):
+        mask = UpdateMask(
+            (ParameterMask("dense", True, ()),
+             ParameterMask("identity.bank.0", False, (0, 2))),
+            ((0, 0), (0, 2)), True,
+        )
+        actual = optimizer_participation_mask(mask, {
+            "dense": mx.array(4, dtype=mx.uint64),
+            "identity.bank.0": mx.array([2, 3, 4], dtype=mx.uint64),
+        })
+        self.assertTrue(bool(actual["dense"]))
+        np.testing.assert_array_equal(
+            np.asarray(actual["identity.bank.0"]),
+            np.array([True, False, True]),
+        )
+
     def test_two_optimizer_steps_derive_distinct_literal_row_masks(self):
         first = step_participation(
             StepParticipationInputs(

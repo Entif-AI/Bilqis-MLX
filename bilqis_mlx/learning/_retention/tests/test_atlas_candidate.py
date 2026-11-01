@@ -10,6 +10,7 @@ from bilqis_mlx.learning._engram.tests.motif_fixtures import RELEASE, source
 from bilqis_mlx.learning.atlas_engram import MotifBudget, MotifManifest
 from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
 from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
+from bilqis_mlx.learning.atlas_participation import ParameterMask, UpdateMask
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree
 from bilqis_mlx.learning._retention.atlas_candidate import (
     CandidateState, CandidateTransaction, begin_candidate, candidate_step, resolve_candidate,
@@ -30,10 +31,19 @@ class CandidateTransactionTests(TestCase):
         self.name = name
 
     def step(self, candidate, mask=(True, False), *, loss_bearing=True):
+        update_mask = self.update_mask(mask, loss_bearing=loss_bearing)
         return candidate_step(
             candidate, {self.name: mx.array([[3., 4.], [3e38, -3e38]], dtype=mx.float32)},
-            {self.name: mx.array(mask)}, self.hp, decay={self.name: True},
+            update_mask, self.hp, decay={self.name: True},
             loss_bearing=loss_bearing, max_norm=1.)
+
+    def update_mask(self, mask, *, loss_bearing=True):
+        rows = tuple(index for index, selected in enumerate(mask) if selected)
+        identities = tuple((0, row) for row in rows)
+        return UpdateMask(
+            (ParameterMask(self.name, False, rows),), identities,
+            loss_bearing,
+        )
 
     def snapshot(self, state):
         return tuple(np.asarray(getattr(state.optimizer, field)[self.name]).tobytes()
@@ -68,7 +78,7 @@ class CandidateTransactionTests(TestCase):
         first = self.step(begin_candidate(self.parent))
         second = candidate_step(
             first, {self.name: mx.zeros((2, 2), dtype=mx.float32)},
-            {self.name: mx.array([False, True])}, self.hp, decay={self.name: True},
+            self.update_mask((False, True)), self.hp, decay={self.name: True},
             loss_bearing=True, max_norm=1.)
         accepted = resolve_candidate(second, accepted=True)
         self.assertEqual(tuple(r.accepted_age for r in accepted.policy.row_ages), (8, 3))

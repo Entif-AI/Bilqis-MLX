@@ -252,6 +252,43 @@ def parameter_update_mask(group_eligible, participation: StepParticipation,
                       participation.loss_bearing_target)
 
 
+def optimizer_participation_mask(
+    mask: UpdateMask,
+    update_counts: Mapping[str, mx.array],
+) -> dict[str, mx.array]:
+    """Materialize B09 authority in the exact Boolean geometry B12 consumes.
+
+    This is a representation bridge, not a second participation decision. A
+    selected row remains selected even when its numerical gradient is zero, so
+    B12 can advance moments/counts/decay from the same B09 decision.
+    """
+    if type(mask) is not UpdateMask or not isinstance(update_counts, Mapping):
+        _invalid()
+    mask.__post_init__()
+    if set(update_counts) != {item.name for item in mask.parameters}:
+        _invalid()
+    result = {}
+    for item in mask.parameters:
+        count = update_counts[item.name]
+        if (not isinstance(count, mx.array) or count.dtype != mx.uint64
+                or count.ndim not in (0, 1)):
+            _invalid()
+        if count.ndim == 0:
+            if item.row_indices:
+                _invalid()
+            result[item.name] = mx.array(
+                item.whole_parameter, dtype=mx.bool_)
+            continue
+        if any(row >= count.shape[0] for row in item.row_indices):
+            _invalid()
+        values = [item.whole_parameter] * count.shape[0]
+        if not item.whole_parameter:
+            for row in item.row_indices:
+                values[row] = True
+        result[item.name] = mx.array(values, dtype=mx.bool_)
+    return result
+
+
 def mask_gradients(
     gradients: Mapping[str, mx.array], mask: UpdateMask,
 ) -> dict[str, mx.array]:
