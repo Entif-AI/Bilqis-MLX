@@ -1,7 +1,7 @@
 """Two-consumer exchange and exact binding guards."""
 from dataclasses import fields, replace
 import unittest
-from .fixtures import PackageAssertions, snapshot, digest
+from bilqis_mlx.runtime.cognitive_package.tests.fixtures import PackageAssertions, snapshot, digest
 from bilqis_mlx.runtime.cognitive_package import (
     CognitivePackage, PackageKind, export_capability, stage_import,
 )
