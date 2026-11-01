@@ -69,3 +69,9 @@ Complete C11.2 turn-in still requires #522's actual parser-tested preflight,
 owner-start and resume commands, accepted source/custody receipts, and a real
 operator-state readback. The operator alone starts or resumes the durable student.
 The existing 100 GiB reserve remains unchanged.
+
+The resource/rubric panel describes current Factory assessment as fresh routine,
+fixed promotion and inactive generalization. Historical rubric descriptions are
+labeled `Historical policy (lineage only)`; they do not select BAMF scheduling or
+assessment. C11.3/#524 full candidate/source/delivery/debt/promotion/retention/transfer
+provenance and launch/resource acceptance remain pending production observations.
