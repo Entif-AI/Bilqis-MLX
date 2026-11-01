@@ -185,3 +185,13 @@ class MODEL_TOPOLOGY:
         next_action="Preserve the checkpoint and inspect topology and tensor provenance.",
         legacy_codes=("MODEL_TOPOLOGY_PARAMETER_SHAPES_INVALID",),
     )
+
+
+class BAMF_PACKAGE:
+    INVALID = _spec(
+        ("SCHOOL", "BAMF_PACKAGE", "INVALID"), owner="runtime.cognitive_package",
+        title="BAMF cognitive package invalid",
+        message_template="Cognitive package is invalid: {reason}",
+        disposition="PRESERVE_AND_INSPECT",
+        next_action="Preserve the receiver generation; inspect exact bindings and source clearance before staging again.",
+    )

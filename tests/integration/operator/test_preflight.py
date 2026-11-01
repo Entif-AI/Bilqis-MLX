@@ -19,7 +19,7 @@ class PreflightTests(unittest.TestCase):
             out = io.StringIO()
             with patch("bilqis_mlx.grade_a_manifest.verify_manifest", return_value={
                     "verified_items": 216, "exam_rubric_sha256": "a" * 64}) as verify, \
-                    patch("bilqis_mlx.cli.assert_headroom", return_value={}), redirect_stdout(out):
+                    patch("bilqis_mlx.presentation.operator_cli.preflight.assert_headroom", return_value={}), redirect_stdout(out):
                 self.assertEqual(main(["train", "--dry-run", "--verify-source", "--run-dir", tmp,
                                        "--legacy-code-root", str(donor)]), 0)
             self.assertEqual(verify.call_args.args[1], donor)
@@ -91,7 +91,7 @@ class PreflightTests(unittest.TestCase):
             with patch("bilqis_mlx.live_grade_c.REGISTRY_PATH", run / "missing.json"), \
                     patch("bilqis_mlx.grade_c_preflight.qualify",
                           side_effect=AssertionError("unverified C must not qualify")), \
-                    patch("bilqis_mlx.cli.assert_headroom", return_value={}), \
+                    patch("bilqis_mlx.presentation.operator_cli.preflight.assert_headroom", return_value={}), \
                     redirect_stdout(out):
                 self.assertEqual(main(["train", "--dry-run", "--resume",
                                        "--run-dir", tmp]), 0)
@@ -127,7 +127,7 @@ class PreflightTests(unittest.TestCase):
             }
             (run / "state.json").write_text(json.dumps(saved))
             out = io.StringIO()
-            with patch("bilqis_mlx.cli.assert_headroom", return_value={}), redirect_stdout(out):
+            with patch("bilqis_mlx.presentation.operator_cli.preflight.assert_headroom", return_value={}), redirect_stdout(out):
                 self.assertEqual(main(["train", "--dry-run", "--resume",
                                        "--run-dir", tmp]), 0)
             report = json.loads(out.getvalue())
@@ -163,7 +163,7 @@ class PreflightTests(unittest.TestCase):
             }
             (run / "state.json").write_text(json.dumps(saved))
             out = io.StringIO()
-            with patch("bilqis_mlx.cli.assert_headroom", return_value={}), redirect_stdout(out):
+            with patch("bilqis_mlx.presentation.operator_cli.preflight.assert_headroom", return_value={}), redirect_stdout(out):
                 self.assertEqual(main(["train", "--dry-run", "--resume",
                                        "--run-dir", tmp]), 0)
             report = json.loads(out.getvalue())

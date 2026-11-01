@@ -70,8 +70,8 @@ def _push_resource_and_contract(
         "kind": "RUBRIC",
         "detail": (
             "Grades " + "+".join(active) +
-            ": fresh routine; fixed promotion; independent fresh generalization; cumulative 100%"
-            if released else historical_rubric_description(state)),
+            ": fresh routine; fixed promotion; generalization inactive"
+            if released else "Historical policy (lineage only): " + historical_rubric_description(state)),
     }, redraw=False)
     if state and (state.get("last_exam") or {}).get("cohort_sha256"):
         exam = state["last_exam"]
