@@ -61,3 +61,10 @@ in the released-schema evidence. Run the PR694 portable selection with the new
 
 Consumes unified/LaneC`bd62f3cb`. No source admission, learner, AdamW, training or
 graph mutation, and no self-merge. Full347 remains open with eight holds/order=[].
+
+Exact source commit `e6a94f11` passed all six native M3 caller cases without skips
+in a detached checkout populated from its commit bundle. The sovereign MLX test
+lease was used. Cumulative structure and hygiene checks pass across 83 Python
+files with zero new findings/debt. The independent implementation review is clear.
+Only the queued frame codec interruption remains before the preserved receipt
+feature can resume; this software result grants no durable learner authority.
