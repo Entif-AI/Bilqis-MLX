@@ -172,7 +172,8 @@ def _verify_bound_family_row(release, capability, family, program) -> str:
 
 
 def _authoritative_operator(
-    capability, family_id: str, semantic_roots: tuple[str, ...],
+    capability, family_id: str, taught_roots: tuple[str, ...],
+    semantic_roots: tuple[str, ...],
     atlas: AtlasArtifactSelection, operator_registry: OperatorRegistry,
 ):
     adapter = next(
@@ -185,7 +186,7 @@ def _authoritative_operator(
     if coordinate is None:
         _fail(_SIGNATURE_AUTHORITY_MISSING)
     source_root, operator_id = coordinate
-    if semantic_roots != (source_root,):
+    if taught_roots != (source_root,) or semantic_roots != (source_root,):
         _fail(_FORMAL_COORDINATE_DRIFT)
     formal_sources = resolve_formal_source_operators(atlas, operator_registry)
     matches = tuple(
@@ -225,8 +226,10 @@ def bind_factory_release_capability_identity(
     family_program = _canonical_family_program(capability)
     family_id = _verify_bound_family_row(
         release, capability, family, family_program)
+    course_capability = release.course.capability_map[capability_id]
     witness = _authoritative_operator(
-        capability, family_id, family.semantic_roots, atlas, operator_registry)
+        capability, family_id, course_capability.taught_roots,
+        family.semantic_roots, atlas, operator_registry)
 
     stable = bind_stable_capability_identity(
         witness.semantic_id, family_id, witness.operator.operator_id,

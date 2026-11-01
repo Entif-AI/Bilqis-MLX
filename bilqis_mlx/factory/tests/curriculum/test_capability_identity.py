@@ -304,6 +304,26 @@ class CapabilityIdentityTests(unittest.TestCase):
             caught.exception.context.get("reason"),
             "FACTORY_CAPABILITY_IDENTITY_FORMAL_COORDINATE_DRIFT")
 
+    def test_release_taught_root_drift_cannot_hide_behind_canonical_exam_root(self):
+        release, source_registry = full_boolean_release()
+        grades = []
+        for grade in release.course.grades:
+            capabilities = tuple(
+                replace(item, taught_roots=("cogal.operator.AND", "evil.namespace.NOT"))
+                if item.id == "B.AND" else item
+                for item in grade.capabilities)
+            grades.append(replace(grade, capabilities=capabilities))
+        forged = compile_factory_release(
+            replace(release.course, grades=tuple(grades)), source_registry)
+        bindings = _family_bindings(forged, capability_id="B.AND")
+        registry, proposal, census = _formal_authority()
+        with _authority_patch(proposal, census), self.assertRaises(BilqisError) as caught:
+            bind_factory_release_capability_identity(
+                forged, bindings, "B.AND", object(), registry)
+        self.assertEqual(
+            caught.exception.context.get("reason"),
+            "FACTORY_CAPABILITY_IDENTITY_FORMAL_COORDINATE_DRIFT")
+
     def test_numeric_source_coordinate_uses_lesson_operation_not_capability_suffix(self):
         release, _ = numeric_factory_release()
         bindings = _family_bindings(
