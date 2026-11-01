@@ -47,13 +47,17 @@ def _digest(value: object) -> str:
 class CapabilityIdentityInput:
     """Only semantic/operator meaning participates in stable identity."""
 
+    semantic_id: str
     family_id: str
+    operator_id: str
     signature: Signature
     answer_kinds: tuple[str, ...]
     schema: str = CAPABILITY_IDENTITY_SCHEMA
 
     def __post_init__(self) -> None:
-        if (not isinstance(self.family_id, str) or not self.family_id
+        if (not isinstance(self.semantic_id, str) or not self.semantic_id
+                or not isinstance(self.family_id, str) or not self.family_id
+                or not isinstance(self.operator_id, str) or not self.operator_id
                 or type(self.signature) is not Signature
                 or not isinstance(self.answer_kinds, tuple)
                 or not self.answer_kinds
@@ -66,7 +70,9 @@ class CapabilityIdentityInput:
     def canonical_payload(self) -> tuple:
         return (
             self.schema,
+            self.semantic_id,
             self.family_id,
+            self.operator_id,
             self.signature.inputs,
             self.signature.output,
             self.answer_kinds,
@@ -109,9 +115,11 @@ def stable_capability_id(identity: CapabilityIdentityInput) -> str:
 
 
 def bind_stable_capability_identity(
-    family_id: str, signature: Signature, answer_kinds: tuple[str, ...],
+    semantic_id: str, family_id: str, operator_id: str,
+    signature: Signature, answer_kinds: tuple[str, ...],
 ) -> StableCapabilityIdentity:
-    identity = CapabilityIdentityInput(family_id, signature, answer_kinds)
+    identity = CapabilityIdentityInput(
+        semantic_id, family_id, operator_id, signature, answer_kinds)
     return StableCapabilityIdentity(stable_capability_id(identity), identity)
 
 
@@ -159,23 +167,31 @@ def _verify_bound_family_row(release, capability, family, program) -> str:
     return program.family_id
 
 
-def _authoritative_signature(
-    capability_id: str, family_id: str, atlas: AtlasArtifactSelection,
-    operator_registry: OperatorRegistry,
-) -> Signature:
+def _operator_suffix(value: str) -> str:
+    suffix = re.split(r"[.:]", value)[-1]
+    return suffix.removeprefix("BOOL_")
+
+
+def _authoritative_operator(
+    capability_id: str, family_id: str, semantic_roots: tuple[str, ...],
+    atlas: AtlasArtifactSelection, operator_registry: OperatorRegistry,
+):
     adapter = next(
         (item for item in SOURCE_FAMILY_ADAPTERS if item.family_id == family_id),
         None)
     if adapter is None or len(adapter.formal_families) != 1:
         _fail(_SIGNATURE_AUTHORITY_MISSING)
     formal_sources = resolve_formal_source_operators(atlas, operator_registry)
+    root_suffixes = {_operator_suffix(root) for root in semantic_roots}
     matches = tuple(
         witness for witness in formal_sources.witnesses
         if capability_id in witness.capability_ids
-        and witness.family in adapter.formal_families)
+        and witness.family in adapter.formal_families
+        and _operator_suffix(witness.semantic_id) in root_suffixes
+        and _operator_suffix(witness.operator.operator_id) in root_suffixes)
     if len(matches) != 1:
         _fail(_SIGNATURE_AUTHORITY_MISSING)
-    return matches[0].operator.signature
+    return matches[0]
 
 
 def bind_factory_release_capability_identity(
@@ -205,10 +221,11 @@ def bind_factory_release_capability_identity(
     family_program = _canonical_family_program(capability)
     family_id = _verify_bound_family_row(
         release, capability, family, family_program)
-    signature = _authoritative_signature(
-        capability_id, family_id, atlas, operator_registry)
+    witness = _authoritative_operator(
+        capability_id, family_id, family.semantic_roots, atlas, operator_registry)
 
     stable = bind_stable_capability_identity(
-        family_id, signature, tuple(sorted(capability.answer_kinds)))
+        witness.semantic_id, family_id, witness.operator.operator_id,
+        witness.operator.signature, tuple(sorted(capability.answer_kinds)))
     return ReleaseCapabilityIdentityBinding(
         release.release_sha256, capability.capability_id, stable)

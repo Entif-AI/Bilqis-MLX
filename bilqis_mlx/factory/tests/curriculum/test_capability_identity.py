@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -68,10 +69,21 @@ def _authority_patch(proposal, census):
     )
 
 
+def _boolean_witness(registry, capability_id, operator_id):
+    suffix = operator_id.removeprefix("BOOL_")
+    return SimpleNamespace(
+        semantic_id="legacy:cogal.operator." + suffix,
+        family="boolean",
+        operator=registry.resolve(operator_id),
+        capability_ids=(capability_id,),
+    )
+
+
 class CapabilityIdentityTests(unittest.TestCase):
     def test_semantic_family_signature_and_answer_modality_define_identity(self):
         identity = bind_stable_capability_identity(
-            "boolean_composition", Signature(("Boolean", "Boolean"), "Boolean"),
+            "legacy:cogal.operator.AND", "boolean_composition", "BOOL_AND",
+            Signature(("Boolean", "Boolean"), "Boolean"),
             ("BOOLEAN",))
         self.assertTrue(identity.capability_id.startswith("cap:"))
         self.assertEqual(len(identity.capability_id), 68)
@@ -79,7 +91,8 @@ class CapabilityIdentityTests(unittest.TestCase):
 
     def test_grade_provider_source_path_and_root_ordinal_are_not_identity_inputs(self):
         identity = CapabilityIdentityInput(
-            "numeric_composition", Signature(("Number", "Number"), "Number"),
+            "bilqis.numeric/v1:school.op.ADD", "numeric_composition", "ADD",
+            Signature(("Number", "Number"), "Number"),
             ("INTEGER",))
         baseline = stable_capability_id(identity)
         # These execution/placement facts are intentionally not accepted arguments.
@@ -91,10 +104,13 @@ class CapabilityIdentityTests(unittest.TestCase):
 
     def test_semantic_change_changes_identity(self):
         base = CapabilityIdentityInput(
-            "numeric_composition", Signature(("Number", "Number"), "Number"),
+            "bilqis.numeric/v1:school.op.ADD", "numeric_composition", "ADD",
+            Signature(("Number", "Number"), "Number"),
             ("INTEGER",))
         variants = (
             replace(base, family_id="boolean_composition"),
+            replace(base, semantic_id="bilqis.numeric/v1:school.op.SUB"),
+            replace(base, operator_id="SUB"),
             replace(base, signature=Signature(("Number",), "Number")),
             replace(base, answer_kinds=("INTEGER", "SEMANTIC_TOKEN")),
         )
@@ -104,14 +120,16 @@ class CapabilityIdentityTests(unittest.TestCase):
 
     def test_forged_digest_and_noncanonical_modalities_fail(self):
         base = CapabilityIdentityInput(
-            "boolean_composition", Signature(("Boolean",), "Boolean"),
+            "legacy:cogal.operator.NOT", "boolean_composition", "BOOL_NOT",
+            Signature(("Boolean",), "Boolean"),
             ("BOOLEAN",))
         with self.assertRaises(ValueError):
             StableCapabilityIdentity("cap:" + "0" * 64, base)
         for answer_kinds in ((), ("B", "A"), ("A", "A")):
             with self.subTest(answer_kinds=answer_kinds), self.assertRaises(ValueError):
                 CapabilityIdentityInput(
-                    "boolean_composition", Signature(("Boolean",), "Boolean"),
+                    "legacy:cogal.operator.NOT", "boolean_composition", "BOOL_NOT",
+                    Signature(("Boolean",), "Boolean"),
                     answer_kinds)
 
     def test_existing_factory_release_supplies_answer_modality_to_stable_identity(self):
@@ -197,6 +215,46 @@ class CapabilityIdentityTests(unittest.TestCase):
         self.assertEqual(
             caught.exception.context.get("reason"),
             "FACTORY_CAPABILITY_IDENTITY_FAMILY_BINDING_DRIFT")
+
+    def test_distinct_boolean_operators_have_distinct_stable_identities(self):
+        release, _ = full_boolean_release()
+        registry, _, census = _formal_authority()
+        pairs = (
+            ("B.AND", "BOOL_AND"), ("B.OR", "BOOL_OR"),
+            ("B.XOR", "BOOL_XOR"), ("B.IMPLIES", "BOOL_IMPLIES"),
+            ("B.IFF", "BOOL_IFF"),
+        )
+        stable_ids = []
+        for capability_id, operator_id in pairs:
+            proposal = SimpleNamespace(witnesses=(
+                _boolean_witness(registry, capability_id, operator_id),))
+            with _authority_patch(proposal, census):
+                stable_ids.append(bind_factory_release_capability_identity(
+                    release,
+                    _family_bindings(release, capability_id=capability_id),
+                    capability_id,
+                    object(),
+                    registry,
+                ).stable_identity.capability_id)
+        self.assertEqual(len(set(stable_ids)), len(pairs))
+
+    def test_family_level_formal_binding_resolves_exact_capability_witness(self):
+        release, _ = full_boolean_release()
+        registry, _, census = _formal_authority()
+        shared = ("B.NOT", "B.AND")
+        proposal = SimpleNamespace(witnesses=(
+            SimpleNamespace(**{
+                **vars(_boolean_witness(registry, "B.NOT", "BOOL_NOT")),
+                "capability_ids": shared}),
+            SimpleNamespace(**{
+                **vars(_boolean_witness(registry, "B.AND", "BOOL_AND")),
+                "capability_ids": shared}),
+        ))
+        with _authority_patch(proposal, census):
+            binding = bind_factory_release_capability_identity(
+                release, _family_bindings(release, capability_id="B.AND"),
+                "B.AND", object(), registry)
+        self.assertEqual(binding.release_capability_id, "B.AND")
 
 
 if __name__ == "__main__":
