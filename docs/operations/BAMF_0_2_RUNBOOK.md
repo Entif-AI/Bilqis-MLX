@@ -1,6 +1,6 @@
 # BAMF-0.2 operator observation commands
 
-Status: **C11.2 staged reader, production launch pending C11.1 #522**.
+Status: **C11.2 integrated read-only reader; production launch pending C11.1 #522**.
 This document does not authorize a durable student start or certify BAMF learning.
 
 ## Read-only cockpit
@@ -65,7 +65,8 @@ can be inspected without a neural update:
 npm run train -- --help
 ```
 
-Complete C11.2 turn-in still requires #522's actual parser-tested preflight,
+C11.2's bounded reader is integrated and closed under ADR-121. Production C11
+acceptance still requires #522's actual parser-tested preflight,
 owner-start and resume commands, accepted source/custody receipts, and a real
 operator-state readback. The operator alone starts or resumes the durable student.
 The existing 100 GiB reserve remains unchanged.
@@ -75,3 +76,44 @@ fixed promotion and inactive generalization. Historical rubric descriptions are
 labeled `Historical policy (lineage only)`; they do not select BAMF scheduling or
 assessment. C11.3/#524 full candidate/source/delivery/debt/promotion/retention/transfer
 provenance and launch/resource acceptance remain pending production observations.
+
+
+## Separate operator evidence
+
+The optional `evidence` mapping on `bilqis.bamf.operator-status/v1` provides a
+read-only observation projection. Old records without it remain readable.
+`--once --atlas-details` appends a complete observation report outside the fixed
+terminal viewport. Redirect or scroll this snapshot to inspect every row and full
+digest, even at 80x24 or with many debt/policy rows. The followed live panel remains
+viewport-limited and points to that complete snapshot command. The report shows
+candidate and parent SHA-256 identities, the delivered-work
+receipt digest and actual delivered row count, grade debt, capability debt,
+promotion-attempt count, whole-school fresh retention and learned-transfer counts
+on separate lines. Each score has its own exact source and rubric digest lines.
+These observations do not replace the existing retained-step or GREW owners.
+
+The wire keys are `candidate_sha256`, `parent_sha256`, `delivered_work_sha256`,
+`delivered_rows`, `grade_debt`, `capability_debt`, `promotion_attempts`,
+`whole_school_fresh_retention`, `learned_transfer` and `historical_policies`.
+Debt values are mappings from display labels to nonnegative counts; the reader
+sorts labels for display and never gives a grade scheduling authority. Score
+records contain exactly `correct`, `total`, `source_sha256` and `rubric_sha256`.
+Missing observations display NOT MEASURED. Measured empty debt displays none.
+Zero-total scores display NOT MEASURED and retain their source/rubric identities;
+zero counts remain zero. A measured debt collection does not imply that an absent
+sibling collection was measured. Historical policies are explicitly lineage only.
+
+Labels accept 1..96 printable Unicode code points without controls or surrogates.
+The existing terminal renderer uses ASCII. This panel preserves Unicode labels as
+JSON Unicode escapes rather than collapsing distinct labels into question marks.
+Frozen records detach the displayed view from mutable incoming mappings.
+Malformed evidence rejects the complete incoming observation before replacing the
+previous valid view. The detached watcher test exercises these lines and verifies
+the journal bytes, modification time and directory membership stay unchanged.
+
+These remain structurally checked supplied observations. This reader neither
+verifies producer/source/evaluator authority nor fabricates measurement from
+activity, retention counts or grade labels. A learned-transfer observation is not
+a newly scheduled GENERALIZATION cohort or promotion authority. Current fresh
+generalization remains inactive. Production observation issuance and complete
+launch/resource custody still require #522/B13/A12 and the relevant C05 owner.
