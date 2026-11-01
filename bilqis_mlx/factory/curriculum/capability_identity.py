@@ -15,6 +15,7 @@ from bilqis_mlx.factory.skos_curriculum.programs.contracts import (
 
 CAPABILITY_IDENTITY_SCHEMA = "bilqis.capability-identity/v1"
 _CAPABILITY_ID = re.compile(r"cap:[0-9a-f]{64}\Z")
+_FAMILY_BINDING_DRIFT = "FACTORY_CAPABILITY_IDENTITY_FAMILY_BINDING_DRIFT"
 
 
 def _digest(value: object) -> str:
@@ -107,7 +108,7 @@ def bind_factory_release_capability_identity(
         raise TypeError("FACTORY_CAPABILITY_IDENTITY_RELEASE_REQUIRED")
     release.verify()
     if family_bindings.factory_release_sha256 != release.release_sha256:
-        raise ValueError("FACTORY_CAPABILITY_IDENTITY_FAMILY_BINDING_DRIFT")
+        raise ValueError(_FAMILY_BINDING_DRIFT)
     matches = tuple(
         item for item in release.capabilities
         if item.capability_id == capability_id)
@@ -116,7 +117,7 @@ def bind_factory_release_capability_identity(
     capability = matches[0]
     family = family_bindings.require(capability_id)
     if capability.source_adapter_id != family.source_adapter_id:
-        raise ValueError("FACTORY_CAPABILITY_IDENTITY_FAMILY_BINDING_DRIFT")
+        raise ValueError(_FAMILY_BINDING_DRIFT)
     stable = bind_stable_capability_identity(
         family.family_id, signature, tuple(sorted(capability.answer_kinds)))
     return ReleaseCapabilityIdentityBinding(
