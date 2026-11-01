@@ -1,5 +1,7 @@
 """Two real local nodes exchange immutable packages without executing payloads."""
 from dataclasses import replace
+from concurrent.futures import ThreadPoolExecutor
+from hashlib import sha256
 from pathlib import Path
 import subprocess
 import sys
@@ -92,6 +94,31 @@ class ExchangeTests(PackageAssertions, unittest.TestCase):
         with self.assertPackageError('wire limit'):
             self.receive(max_wire_bytes=10)
         self.assertFalse(self.receiver.exists())
+
+    def test_correct_hash_does_not_make_noncanonical_wire_valid(self):
+        self.sender.mkdir()
+        raw = self.package.canonical_json.encode() + b'\n'
+        address = sha256(raw).hexdigest()
+        (self.sender / (address + '.json')).write_bytes(raw)
+        with self.assertPackageError('invalid package wire record'):
+            self.receive(package_digest=address)
+        self.assertFalse(self.receiver.exists())
+
+    def test_concurrent_publication_converges_without_temporary_files(self):
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            paths = list(pool.map(lambda _: publish_package(self.package, self.sender), range(8)))
+        self.assertTrue(all(path == paths[0] for path in paths))
+        self.assertEqual(paths[0].read_bytes(), self.package.canonical_json.encode())
+        self.assertEqual([p.name for p in self.sender.iterdir()], [paths[0].name])
+
+    def test_failed_file_flush_does_not_publish_and_can_retry(self):
+        with patch('bilqis_mlx.runtime.cognitive_package.exchange.os.fsync',
+                   side_effect=OSError('injected flush interruption')):
+            with self.assertRaisesRegex(OSError, 'injected flush interruption'):
+                publish_package(self.package, self.sender)
+        self.assertEqual(list(self.sender.iterdir()), [])
+        path = publish_package(self.package, self.sender)
+        self.assertEqual(path.read_bytes(), self.package.canonical_json.encode())
 
     def test_failed_publication_leaves_no_partial_package_or_temporary_file(self):
         with patch('bilqis_mlx.runtime.cognitive_package.exchange.os.link',

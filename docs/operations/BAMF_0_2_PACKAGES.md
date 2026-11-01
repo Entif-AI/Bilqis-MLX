@@ -52,3 +52,24 @@ python3 -B -m unittest discover -s bilqis_mlx/runtime/cognitive_package/tests -t
 
 Synthetic snapshots are test fixtures. They are not accepted B13 generations,
 semantic admissions or retained-learning receipts. Parent #381 remains open.
+
+## Local directory exchange (C12.2 / #526)
+
+`cognitive_package.exchange.publish_package(package, directory)` publishes canonical
+bytes as `<package.digest>.json` using a flushed/fsynced temporary file, create-only
+atomic link and directory fsync. Retries preserve existing identical bytes and
+mtime. Existing conflicts and symlink entries reject; publication never replaces
+an addressed file. Directories are trusted local paths, not a remote transport.
+
+`receive_package(sender, receiver, package_digest, binding, max_wire_bytes=...)`
+requires a positive explicit wire-byte limit. It verifies regular-file ownership,
+bounded raw bytes, exact address digest, canonical package encoding, embedded
+clearance assertions and the existing compatibility plan before receiver writes.
+The returned frozen `StagedExchange` holds the package, plan and receiver path.
+Heterogeneous exact packages receive `TEACHING_ONLY`; incompatible deltas reject
+before receiver creation. Payloads never execute during exchange.
+
+These directories exchange staging artifacts. There is no activation, tensor
+application, optimizer reset or source qualification. Actual retained adoption and
+rollback remain gated by B13/C05 and #527. Current production revocations still
+need the source authority at adoption; embedded clearance is a historical assertion.
