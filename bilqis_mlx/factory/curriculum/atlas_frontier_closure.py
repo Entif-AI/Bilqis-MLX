@@ -53,23 +53,6 @@ class SourceHold:
     status: ClosureStatus = ClosureStatus.SOURCE_HELD
 
 
-@dataclass(frozen=True, order=True)
-class PrerequisiteCapabilityBinding:
-    """Explicit semantic-to-capability identity; evidence is verified separately."""
-
-    semantic_id: str
-    capability_id: str
-
-    def __post_init__(self) -> None:
-        if (
-            type(self.semantic_id) is not str
-            or not self.semantic_id
-            or type(self.capability_id) is not str
-            or not self.capability_id
-        ):
-            _fail("BAMF_PLANNER_PREREQUISITE_BINDING_INVALID")
-
-
 @dataclass(frozen=True)
 class FrontierClosure:
     snapshot_sha256: str
@@ -212,26 +195,35 @@ def _merge_status(current: ClosureStatus, dependency: ClosureStatus) -> ClosureS
     return max((current, dependency), key=precedence.__getitem__)
 
 
+def _semantic_roots_for_release(current_release, mastered: tuple[str, ...]) -> tuple[str, ...]:
+    if hasattr(current_release, "course"):
+        capability_map = current_release.course.capability_map
+    else:
+        capability_map = current_release.curriculum.capability_map
+    roots = set()
+    for capability_id in mastered:
+        definition = capability_map.get(capability_id)
+        if definition is None:
+            _fail("BAMF_PLANNER_PREREQUISITE_EVIDENCE_INCOMPLETE")
+        roots.update(definition.examined_roots)
+    return tuple(sorted(roots))
+
+
 def _verified_evidence_context(
     snapshot: CurriculumSnapshot,
-    prerequisite_bindings: tuple[PrerequisiteCapabilityBinding, ...],
     current_release,
     evidence_ledger: EvidenceLedger | None,
     autonomy_plan: AutonomyPlan | None,
     checkpoint_sha256: str | None,
     optimizer_step: int | None,
-) -> tuple[dict[str, PrerequisiteCapabilityBinding], str]:
-    if (type(prerequisite_bindings) is not tuple
-            or any(type(item) is not PrerequisiteCapabilityBinding
-                   for item in prerequisite_bindings)):
-        _fail("BAMF_PLANNER_PREREQUISITE_BINDING_INVALID")
-    canonical = tuple(sorted(prerequisite_bindings))
-    if (len({item.semantic_id for item in canonical}) != len(canonical)
-            or any(item.semantic_id not in snapshot.source_eligible_concept_ids
-                   for item in canonical)):
-        _fail("BAMF_PLANNER_PREREQUISITE_BINDING_INVALID")
+) -> tuple[frozenset[str], str]:
     mastered: tuple[str, ...] = ()
-    if canonical:
+    semantic_roots: tuple[str, ...] = ()
+    supplied = any(item is not None for item in (
+        current_release, evidence_ledger, autonomy_plan,
+        checkpoint_sha256, optimizer_step,
+    ))
+    if supplied:
         if (not is_factory_release(current_release)
                 or type(evidence_ledger) is not EvidenceLedger
                 or type(autonomy_plan) is not AutonomyPlan
@@ -241,28 +233,26 @@ def _verified_evidence_context(
                 or current_release.release_sha256
                    != snapshot.admitted_factory_release_sha256):
             _fail("BAMF_PLANNER_PREREQUISITE_EVIDENCE_STALE")
-        current_release.verify()
-        mastered = evidence_complete_capabilities(
-            current_release, evidence_ledger, plan=autonomy_plan,
-            current_checkpoint_sha256=checkpoint_sha256,
-            current_optimizer_step=optimizer_step,
-        )
-        if any(item.capability_id not in set(mastered) for item in canonical):
-            _fail("BAMF_PLANNER_PREREQUISITE_EVIDENCE_INCOMPLETE")
-    elif any(item is not None for item in (
-            current_release, evidence_ledger, autonomy_plan,
-            checkpoint_sha256, optimizer_step)):
-        _fail("BAMF_PLANNER_PREREQUISITE_EVIDENCE_CONTEXT_UNUSED")
+        try:
+            current_release.verify()
+            mastered = evidence_complete_capabilities(
+                current_release, evidence_ledger, plan=autonomy_plan,
+                current_checkpoint_sha256=checkpoint_sha256,
+                current_optimizer_step=optimizer_step,
+            )
+            semantic_roots = _semantic_roots_for_release(current_release, mastered)
+        except (TypeError, ValueError):
+            _fail("BAMF_PLANNER_PREREQUISITE_EVIDENCE_INVALID")
     digest = hashlib.sha256(_bytes({
-        "bindings": canonical,
         "factory_release_sha256": (
-            current_release.release_sha256 if canonical else None),
-        "autonomy_plan_sha256": autonomy_plan.digest() if canonical else None,
-        "checkpoint_sha256": checkpoint_sha256 if canonical else None,
-        "optimizer_step": optimizer_step if canonical else None,
+            current_release.release_sha256 if supplied else None),
+        "autonomy_plan_sha256": autonomy_plan.digest() if supplied else None,
+        "checkpoint_sha256": checkpoint_sha256 if supplied else None,
+        "optimizer_step": optimizer_step if supplied else None,
         "mastered": mastered,
+        "semantic_roots": semantic_roots,
     })).hexdigest()
-    return {item.semantic_id: item for item in canonical}, digest
+    return frozenset(semantic_roots), digest
 
 
 def resolve_frontier_closure(
@@ -270,7 +260,6 @@ def resolve_frontier_closure(
     census: SemanticFamilyInventory,
     domain_rule_registry: tuple[SourceFamilyAdapter, ...] = SOURCE_FAMILY_ADAPTERS,
     *,
-    prerequisite_bindings: tuple[PrerequisiteCapabilityBinding, ...] = (),
     current_release=None,
     evidence_ledger: EvidenceLedger | None = None,
     autonomy_plan: AutonomyPlan | None = None,
@@ -282,9 +271,8 @@ def resolve_frontier_closure(
         _fail("BAMF_PLANNER_SNAPSHOT_INPUT_INVALID")
     snapshot.verify()
     rules = _rules(domain_rule_registry)
-    evidence_by_semantic, evidence_sha256 = _verified_evidence_context(
+    evidence_semantic_ids, evidence_sha256 = _verified_evidence_context(
         snapshot,
-        prerequisite_bindings,
         current_release,
         evidence_ledger,
         autonomy_plan,
@@ -310,7 +298,7 @@ def resolve_frontier_closure(
             for prerequisite in graph[semantic_id]:
                 blocked = _dependency_status(
                     resolved[prerequisite],
-                    evidence_complete=prerequisite in evidence_by_semantic,
+                    evidence_complete=prerequisite in evidence_semantic_ids,
                 )
                 if blocked is not None:
                     status = _merge_status(status, blocked)
