@@ -41,9 +41,8 @@ class CandidateTransactionTests(TestCase):
 
     def test_rejection_returns_exact_parent_with_all_custody(self):
         before = self.snapshot(self.parent)
-        candidate = begin_candidate(self.parent, frames=(source(),), budget=MotifBudget(0))
+        candidate = begin_candidate(self.parent, budget=MotifBudget(0))
         candidate = self.step(self.step(candidate))
-        self.assertNotEqual(candidate.allocations.digest, self.parent.allocations.digest)
         self.assertIs(resolve_candidate(candidate, accepted=False), self.parent)
         self.assertEqual(self.snapshot(self.parent), before)
         self.assertEqual(self.parent.policy.accepted_fast_since_full, 7)
@@ -76,7 +75,7 @@ class CandidateTransactionTests(TestCase):
 
     def test_no_loss_or_wholly_frozen_candidate_cannot_advance_clocks_or_allocations(self):
         for kwargs in ({'loss_bearing': False}, {'mask': (False, False)}):
-            candidate = begin_candidate(self.parent, frames=(source(),), budget=MotifBudget(0))
+            candidate = begin_candidate(self.parent, budget=MotifBudget(0))
             result = self.step(candidate, **kwargs)
             self.assertIs(result, candidate)
             self.assertIs(resolve_candidate(result, accepted=True), self.parent)
@@ -106,8 +105,8 @@ class CandidateTransactionTests(TestCase):
             resolve_candidate(begin_candidate(self.parent), accepted=1)
         self.assertEqual(self.snapshot(self.parent), before)
 
-    def test_unmaterialized_slot_allocation_is_rejected(self):
-        with self.assertRaises(BilqisError):
+    def test_raw_caller_motif_frames_are_not_a_candidate_api(self):
+        with self.assertRaises(TypeError):
             begin_candidate(self.parent, frames=(source(),), budget=MotifBudget(2))
 
     def test_caller_cannot_issue_transaction_with_arbitrary_optimizer_or_allocation(self):
@@ -117,11 +116,10 @@ class CandidateTransactionTests(TestCase):
             {self.name: self.parent.optimizer.update_counts[self.name] + 1})
         with self.assertRaises(BilqisError):
             CandidateTransaction(self.parent, changed, self.parent.allocations, False, 1)
-        legitimate = self.step(begin_candidate(self.parent, frames=(source(),), budget=MotifBudget(0)))
+        legitimate = self.step(begin_candidate(self.parent, budget=MotifBudget(0)))
         with self.assertRaises(BilqisError):
             replace(legitimate, optimizer=changed)
-        forged = replace(legitimate.allocations, observed_uses=(
-            (legitimate.allocations.observed_uses[0][0], 999),))
+        forged = replace(legitimate.allocations, observed_uses=(("a" * 64, 999),))
         with self.assertRaises(BilqisError):
             replace(legitimate, allocations=forged)
         self.assertEqual(resolve_candidate(legitimate, accepted=True).optimizer_step, 12)

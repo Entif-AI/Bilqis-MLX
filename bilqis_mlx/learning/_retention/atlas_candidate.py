@@ -12,9 +12,11 @@ import mlx.core as mx
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.learning.atlas_engram import MotifBudget
+from bilqis_mlx.learning.atlas_engram_source import prepare_source_qualified_motifs
 from bilqis_mlx.learning.atlas_engram_transaction import (
-    MotifAllocationSnapshot, prepare_candidate_motif_snapshot,
+    MotifAllocationSnapshot, _prepare_candidate_motif_snapshot,
 )
+from bilqis_mlx.semantics.context_eligibility import ContextHold
 from bilqis_mlx.learning.atlas_plasticity import (
     PlasticityPolicy, advance_candidate_policy, next_update_mode,
 )
@@ -114,15 +116,47 @@ def _issue_transaction(parent, optimizer, allocations, teacher_requests_full, up
     return candidate
 
 
-def begin_candidate(parent: CandidateState, *, frames=(), budget=None,
+def begin_candidate(parent: CandidateState, *, budget=None,
                     teacher_requests_full: bool = False) -> CandidateTransaction:
-    """Stage B07's pending keys/counters, without inventing initialized slots."""
+    """Begin a no-source candidate; raw caller motif frames are not admitted."""
     if type(parent) is not CandidateState or type(teacher_requests_full) is not bool:
         _invalid()
     parent.__post_init__()
-    proposal = prepare_candidate_motif_snapshot(
-        frames, parent.allocations, MotifBudget(0) if budget is None else budget)
+    proposal = _prepare_candidate_motif_snapshot(
+        (), parent.allocations, MotifBudget(0) if budget is None else budget)
     return _issue_transaction(parent, parent.optimizer, proposal.proposed, teacher_requests_full)
+
+
+def begin_source_candidate(
+    parent: CandidateState, source_adapter, row, atlas_selection, *,
+    source_root, graph, task_scope, source_frontier, policy,
+    source_seed: int, source_each: int, budget=None,
+    source_profile_parameters=None, course=None,
+    teacher_requests_full: bool = False,
+):
+    """Begin from A13-replayed rows and A03.4-pinned schemas only."""
+    if type(parent) is not CandidateState or type(teacher_requests_full) is not bool:
+        _invalid()
+    parent.__post_init__()
+    qualified = prepare_source_qualified_motifs(
+        source_adapter, row, atlas_selection,
+        source_root=source_root, graph=graph, task_scope=task_scope,
+        source_frontier=source_frontier, policy=policy,
+        source_seed=source_seed, source_each=source_each,
+        parent=parent.allocations,
+        budget=MotifBudget(0) if budget is None else budget,
+        source_profile_parameters=source_profile_parameters, course=course,
+    )
+    if isinstance(qualified, ContextHold):
+        return qualified
+    approved, issued_frontier = qualified
+    return (
+        _issue_transaction(
+            parent, parent.optimizer, approved.candidate.proposed,
+            teacher_requests_full,
+        ),
+        issued_frontier,
+    )
 
 
 def candidate_step(candidate: CandidateTransaction, gradients, update_mask,

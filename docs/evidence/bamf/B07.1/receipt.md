@@ -10,7 +10,7 @@
   `bilqis.motif-manifest/v1`,
   `bilqis.motif-allocation-plan/v1`,
   `bilqis.motif-candidate-view/v2`.
-- Upstream source authority: current unified `97c9c549` includes
+- Upstream source authority: current unified `bd62f3cb` includes
   A03.4/#578's repo-pinned released-schema authority and A13's
   source-owner replay/grant path.
 - Independent B07.1 EGM: **PENDING**.
@@ -52,8 +52,8 @@ decomposed on unified. The current package-owner suite is:
 PYTHONPATH=/tmp/bamf-b14-testdeps:. python3 -B scripts/run_tests.py
 bilqis_mlx/learning/_engram/tests`
 
-Current result: **35 passed, 0 failed, 0 skipped**. This includes the pure motif
-key/preparation/parameter/transaction coverage plus six real-source authority
+Current result: **36 passed, 0 failed, 0 skipped**. This includes the pure motif
+key/preparation/parameter/transaction coverage plus seven real-source authority
 tests described below.
 
 Literal tests cover distinct fillers sharing structural type
@@ -145,7 +145,7 @@ hashes or synthetic grants.
 
 ## 2026-11-01 production source-authority closure candidate
 
-Current reviewed unified `97c9c549` now supplies both authorities that the
+Current reviewed unified `bd62f3cb` now supplies both authorities that the
 historical Blockers required. A03.4/#578 owns immutable released schema bodies
 through `lookup_source_pinned_frame_schema(...)`, which re-enters the repo-owned
 schema-source-pin registry and pinned A01 artifact. A13 owns source admission
@@ -166,22 +166,40 @@ generic bypass API in this module.
 
 Failing-before proof was the absence of any production source-qualified entrypoint:
 the new test suite failed at import for `prepare_source_qualified_motifs`. After
-the bridge was implemented, six real-artifact tests pass. They prove that:
+the bridge was implemented and review repairs landed, seven real-artifact tests
+pass. They prove that:
 
 1. the public B07 source API has no caller schema/snapshot/grant surface;
 2. real A, B and C source rows replay through their existing source owners and
    use the repo-pinned A03.4 schema families before structural/exact planning;
 3. the returned approved-context digest and source frontier replay to the exact
    same A13 source-owner projection rather than a B07-local surrogate;
-4. tampered rows and self-consistent caller graph changes fail source replay;
-5. a revoked already-issued source grant cannot be silently overwritten/reissued;
-6. wrong Atlas selection or parent-manifest release fails before motif preparation.
+4. the actual retention candidate path has no raw caller-frame parameter and
+   stages source-derived pending keys/counters only through the qualified route;
+5. tampered rows and self-consistent caller graph changes fail source replay;
+6. a revoked already-issued source grant cannot be silently overwritten/reissued;
+7. wrong Atlas selection or parent allocation release fails before motif preparation.
 
 The all-source test also locks the global allocation ordering rather than assuming
 a particular second slot: all missing structural keys precede all missing exact
 keys, including rows that produce more than one source frame.
 
-Package-owner proof is **35/35 PASS** with the real pinned A01 artifact. No student,
+The first exact-head non-EGM review of `7fc6632f...` found two Blockers. First,
+the B07.3 candidate transaction still exposed a raw `MotifFrameInput` path that
+could bypass source qualification. Second, the source helper accepted detached
+`prior_pending` and `prior_observed_uses`, allowing same-release planner state to
+be injected independently of the authoritative parent allocation snapshot.
+Those findings were treated as real authority defects, not paperwork.
+
+The repair makes the raw candidate snapshot planner private to the B07 package,
+removes raw `frames` from the retention candidate API, and adds a dedicated
+`begin_source_candidate(...)` path that replays A13/A03.4 qualification before
+issuing a retention candidate. Historical counts and pending keys are now read
+only from the parent `MotifAllocationSnapshot`; the source helper no longer
+accepts either detached historical-state argument. Focused proof is 7/7 source
+authority, 8/8 low-level transaction, and 9/9 retention candidate tests.
+
+Package-owner proof is **36/36 PASS** with the real pinned A01 artifact. No student,
 optimizer, checkpoint, accepted manifest, or B07.3 generation was mutated. This
 candidate still requires fresh exact-head adversarial review and the prescribed
 Google EGM before issue acceptance or integration.
