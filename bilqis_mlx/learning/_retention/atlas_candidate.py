@@ -11,12 +11,8 @@ from dataclasses import dataclass, field
 import mlx.core as mx
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
-from bilqis_mlx.learning.atlas_engram import MotifBudget
-from bilqis_mlx.learning.atlas_engram_source import prepare_source_qualified_motifs
-from bilqis_mlx.learning.atlas_engram_transaction import (
-    MotifAllocationSnapshot, _prepare_candidate_motif_snapshot,
-)
-from bilqis_mlx.semantics.context_eligibility import ContextHold
+from bilqis_mlx.learning.atlas_engram import INITIAL_MOTIF_CAPACITY, MotifBudget
+from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
 from bilqis_mlx.learning.atlas_plasticity import (
     PlasticityPolicy, advance_candidate_policy, next_update_mode,
 )
@@ -29,6 +25,17 @@ _TRANSACTION_ISSUER = object()
 
 def _invalid():
     ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+
+
+def _require_genesis_allocations(snapshot: MotifAllocationSnapshot) -> None:
+    """Fail closed until retained-generation motif history has an owner proof."""
+    if (type(snapshot) is not MotifAllocationSnapshot
+            or snapshot.manifest.slots
+            or snapshot.manifest.capacity != INITIAL_MOTIF_CAPACITY
+            or snapshot.observed_uses
+            or snapshot.pending_keys
+            or snapshot.aliases):
+        _invalid()
 
 
 @dataclass(frozen=True)
@@ -86,9 +93,9 @@ class CandidateTransaction:
         self.parent.__post_init__()
         self.optimizer.validate()
         self.allocations.__post_init__()
+        _require_genesis_allocations(self.parent.allocations)
         # Slot tensors are not materialized by this transaction slice.
-        if (self.allocations.manifest != self.parent.allocations.manifest
-                or self.allocations.aliases != self.parent.allocations.aliases
+        if (self.allocations is not self.parent.allocations
                 or set(self.optimizer.parameters) != set(self.parent.optimizer.parameters)):
             _invalid()
         for name, count in self.optimizer.update_counts.items():
@@ -104,11 +111,11 @@ class CandidateTransaction:
         return next_update_mode(self.parent.policy, teacher_requests_full=self.teacher_requests_full)
 
 
-def _issue_transaction(parent, optimizer, allocations, teacher_requests_full, update_steps=0):
-    """Only the two owner transition paths issue process-local candidate handles."""
+def _issue_transaction(parent, optimizer, teacher_requests_full, update_steps=0):
+    """Continue optimizer-only candidate state; allocation state is immutable here."""
     candidate = object.__new__(CandidateTransaction)
     for name, value in (
-            ('parent', parent), ('optimizer', optimizer), ('allocations', allocations),
+            ('parent', parent), ('optimizer', optimizer), ('allocations', parent.allocations),
             ('teacher_requests_full', teacher_requests_full), ('update_steps', update_steps),
             ('schema_version', TRANSACTION_SCHEMA), ('_issuance', _TRANSACTION_ISSUER)):
         object.__setattr__(candidate, name, value)
@@ -118,45 +125,14 @@ def _issue_transaction(parent, optimizer, allocations, teacher_requests_full, up
 
 def begin_candidate(parent: CandidateState, *, budget=None,
                     teacher_requests_full: bool = False) -> CandidateTransaction:
-    """Begin a no-source candidate; raw caller motif frames are not admitted."""
+    """Begin optimizer-only work while motif retained-history authority is absent."""
     if type(parent) is not CandidateState or type(teacher_requests_full) is not bool:
         _invalid()
     parent.__post_init__()
-    proposal = _prepare_candidate_motif_snapshot(
-        (), parent.allocations, MotifBudget(0) if budget is None else budget)
-    return _issue_transaction(parent, parent.optimizer, proposal.proposed, teacher_requests_full)
-
-
-def begin_source_candidate(
-    parent: CandidateState, source_adapter, row, atlas_selection, *,
-    source_root, graph, task_scope, source_frontier, policy,
-    source_seed: int, source_each: int, budget=None,
-    source_profile_parameters=None, course=None,
-    teacher_requests_full: bool = False,
-):
-    """Begin from A13-replayed rows and A03.4-pinned schemas only."""
-    if type(parent) is not CandidateState or type(teacher_requests_full) is not bool:
+    if budget is not None and type(budget) is not MotifBudget:
         _invalid()
-    parent.__post_init__()
-    qualified = prepare_source_qualified_motifs(
-        source_adapter, row, atlas_selection,
-        source_root=source_root, graph=graph, task_scope=task_scope,
-        source_frontier=source_frontier, policy=policy,
-        source_seed=source_seed, source_each=source_each,
-        parent=parent.allocations,
-        budget=MotifBudget(0) if budget is None else budget,
-        source_profile_parameters=source_profile_parameters, course=course,
-    )
-    if isinstance(qualified, ContextHold):
-        return qualified
-    approved, issued_frontier = qualified
-    return (
-        _issue_transaction(
-            parent, parent.optimizer, approved.candidate.proposed,
-            teacher_requests_full,
-        ),
-        issued_frontier,
-    )
+    _require_genesis_allocations(parent.allocations)
+    return _issue_transaction(parent, parent.optimizer, teacher_requests_full)
 
 
 def candidate_step(candidate: CandidateTransaction, gradients, update_mask,
@@ -175,7 +151,7 @@ def candidate_step(candidate: CandidateTransaction, gradients, update_mask,
         decay=decay, loss_bearing=loss_bearing, max_norm=max_norm)
     if optimizer is candidate.optimizer:
         return candidate
-    return _issue_transaction(candidate.parent, optimizer, candidate.allocations,
+    return _issue_transaction(candidate.parent, optimizer,
                                 candidate.teacher_requests_full, candidate.update_steps + 1)
 
 

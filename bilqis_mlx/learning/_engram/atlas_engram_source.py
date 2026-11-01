@@ -23,7 +23,7 @@ from bilqis_mlx.semantics.released_frame_schemas import (
     lookup_source_pinned_frame_schema,
 )
 from .atlas_engram import (
-    MotifBudget, MotifFrameInput, _SHA, _invalid,
+    MotifBudget, MotifFrameInput, MotifManifest, _SHA, _invalid,
 )
 from .atlas_engram_transaction import (
     CandidateMotifSnapshot, MotifAllocationSnapshot,
@@ -74,7 +74,6 @@ def prepare_source_qualified_motifs(
     policy: ContextPolicy,
     source_seed: int,
     source_each: int,
-    parent: MotifAllocationSnapshot,
     budget: MotifBudget,
     source_profile_parameters: dict | None = None,
     course=None,
@@ -84,12 +83,10 @@ def prepare_source_qualified_motifs(
             or type(task_scope) is not TaskScope
             or type(source_frontier) is not SourceFrontier
             or type(policy) is not ContextPolicy
-            or type(parent) is not MotifAllocationSnapshot
             or type(budget) is not MotifBudget):
         _invalid("BAMF_MOTIF_SOURCE_AUTHORITY_INVALID")
     snapshot = load_pinned_atlas_snapshot(atlas_selection)
-    if (snapshot.release_sha256 != task_scope.semantic_release
-            or parent.manifest.semantic_release != task_scope.semantic_release):
+    if snapshot.release_sha256 != task_scope.semantic_release:
         _invalid("BAMF_MOTIF_SOURCE_AUTHORITY_INVALID")
     admitted = public_formal_context(
         source_adapter, row, snapshot,
@@ -131,5 +128,9 @@ def prepare_source_qualified_motifs(
                 if not snapshot.abi_for_semantic(concept.semantic_id).active:
                     _invalid("BAMF_MOTIF_SEMANTIC_NOT_ADMITTED")
         qualified.append(MotifFrameInput(frame, schema))
+    # B07.1 can independently qualify source-derived motif identity, but it does
+    # not own retained-generation history. Until that owner supplies/rederives
+    # an authenticated parent allocation artifact, derive only from genesis.
+    parent = MotifAllocationSnapshot(MotifManifest(task_scope.semantic_release))
     candidate = _prepare_candidate_motif_snapshot(tuple(qualified), parent, budget)
     return ApprovedMotifCandidate(projection.digest, candidate), issued_frontier

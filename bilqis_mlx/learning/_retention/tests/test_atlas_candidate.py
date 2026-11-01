@@ -8,7 +8,9 @@ import numpy as np
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning._engram.tests.motif_fixtures import RELEASE, source
 from bilqis_mlx.learning.atlas_engram import MotifBudget, MotifManifest
-from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
+from bilqis_mlx.learning.atlas_engram_transaction import (
+    MotifAllocationSnapshot, _prepare_candidate_motif_snapshot,
+)
 from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree
 from bilqis_mlx.learning._retention.atlas_candidate import (
@@ -108,6 +110,13 @@ class CandidateTransactionTests(TestCase):
     def test_raw_caller_motif_frames_are_not_a_candidate_api(self):
         with self.assertRaises(TypeError):
             begin_candidate(self.parent, frames=(source(),), budget=MotifBudget(2))
+
+        proposal = _prepare_candidate_motif_snapshot(
+            (source(),), self.parent.allocations, MotifBudget(0))
+        forged_parent = replace(self.parent, allocations=proposal.proposed)
+        self.assertTrue(forged_parent.allocations.pending_keys)
+        with self.assertRaises(BilqisError):
+            begin_candidate(forged_parent)
 
     def test_caller_cannot_issue_transaction_with_arbitrary_optimizer_or_allocation(self):
         changed = AdamWStateTree(

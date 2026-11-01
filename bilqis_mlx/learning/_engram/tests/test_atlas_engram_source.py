@@ -9,13 +9,12 @@ from unittest import TestCase
 import mlx.core as mx
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.learning.atlas_engram import MotifBudget, MotifManifest
+from bilqis_mlx.learning.atlas_engram import MotifBudget
 from bilqis_mlx.learning.atlas_engram_source import (
     ApprovedMotifCandidate, prepare_source_qualified_motifs,
 )
-from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
 from bilqis_mlx.learning._retention.atlas_candidate import (
-    CandidateState, begin_candidate, begin_source_candidate,
+    CandidateState, begin_candidate,
 )
 from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
 from bilqis_mlx.runtime.atlas_optimizer import AdamWStateTree
@@ -85,7 +84,7 @@ class SourceQualifiedMotifTests(TestCase):
         return selection, source_root, graph, adapter, row, task, policy, seed, each, profile
 
     def _prepare(self, *, grade="A", frontier=None, graph=None, selection=None,
-                 row=None, parent=None, budget=None):
+                 row=None, budget=None):
         (actual_selection, source_root, actual_graph, adapter, actual_row,
          task, policy, seed, each, profile) = self._case(grade)
         return prepare_source_qualified_motifs(
@@ -96,7 +95,6 @@ class SourceQualifiedMotifTests(TestCase):
             source_frontier=SourceFrontier(1, 1, ()) if frontier is None else frontier,
             policy=policy, source_seed=seed, source_each=each,
             source_profile_parameters=profile,
-            parent=MotifAllocationSnapshot(MotifManifest(REAL_RELEASE)) if parent is None else parent,
             budget=MotifBudget(64) if budget is None else budget,
         )
 
@@ -106,15 +104,13 @@ class SourceQualifiedMotifTests(TestCase):
         parameters = inspect.signature(prepare_source_qualified_motifs).parameters
         for forbidden in (
             "envelopes", "schemas", "snapshot", "source_authorities", "grants",
-            "prior_pending", "prior_observed_uses",
+            "prior_pending", "prior_observed_uses", "parent",
         ):
             self.assertNotIn(forbidden, parameters)
         self.assertFalse(hasattr(source_module, "_probe_approved_motifs"))
         self.assertNotIn("frames", inspect.signature(begin_candidate).parameters)
 
-    def test_retention_candidate_uses_source_qualified_path(self):
-        (selection, source_root, graph, adapter, row, task, policy,
-         seed, each, profile) = self._case()
+    def test_source_candidate_cannot_launder_history_into_retention(self):
         name = "identity.bank.0"
         values = mx.array([[.5, -.25]], dtype=mx.float32)
         optimizer = AdamWStateTree(
@@ -122,23 +118,14 @@ class SourceQualifiedMotifTests(TestCase):
             {name: mx.zeros_like(values)},
             {name: mx.array([0], dtype=mx.uint64)},
         )
-        parent = CandidateState(
+        approved, _frontier = self._prepare()
+        forged_parent = CandidateState(
             optimizer, PlasticityPolicy("ADAPTIVE", 0, (IdentityRowAge(0, 0, 0),)),
-            MotifAllocationSnapshot(MotifManifest(REAL_RELEASE)), 0,
+            approved.candidate.proposed, 0,
         )
-        result = begin_source_candidate(
-            parent, adapter, row, selection,
-            source_root=source_root, graph=graph, task_scope=task,
-            source_frontier=SourceFrontier(1, 1, ()), policy=policy,
-            source_seed=seed, source_each=each, budget=MotifBudget(0),
-            source_profile_parameters=profile,
-        )
-        self.assertIsInstance(result, tuple)
-        candidate, frontier = result
-        self.assertIs(candidate.parent, parent)
-        self.assertTrue(candidate.allocations.observed_uses)
-        self.assertTrue(candidate.allocations.pending_keys)
-        self.assertTrue(frontier.grants)
+        self.assertTrue(forged_parent.allocations.observed_uses)
+        with self.assertRaises(BilqisError):
+            begin_candidate(forged_parent)
 
     def test_real_source_replay_qualifies_pinned_schema_and_owner_grants(self):
         for grade in ("A", "B", "C"):
@@ -192,9 +179,7 @@ class SourceQualifiedMotifTests(TestCase):
         with self.assertRaises(BilqisError):
             self._prepare(frontier=revoked)
 
-    def test_wrong_atlas_or_parent_release_fails_before_preparation(self):
+    def test_wrong_atlas_release_fails_before_preparation(self):
         selection, *_ = self._case()
         with self.assertRaises(BilqisError):
             self._prepare(selection=replace(selection, release_sha256="0" * 64))
-        with self.assertRaises(BilqisError):
-            self._prepare(parent=MotifAllocationSnapshot(MotifManifest("0" * 64)))
