@@ -15,13 +15,14 @@ import mlx.optimizers as optim
 import numpy as np
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
-from bilqis_mlx.runtime.mlx_parity import clip_gradients
+from bilqis_mlx.runtime.mlx_parity import clip_gradients, native_optimizer_to_mlx
 
 
 ROW_COUNT_RANK = 1
 ADAM_MOMENT_COUNT = 2
 UINT64_MAX = int(np.iinfo(np.uint64).max)
 STATE_SCHEMA = "bilqis.mlx.adamw-count-state/provisional-v1"
+HISTORICAL_MIGRATION_SCHEMA = "bilqis.mlx.historical-adamw-migration/v1"
 
 
 def _invalid():
@@ -94,6 +95,86 @@ class AdamWStateTree:
             if (not all(bool(mx.all(mx.isfinite(value))) for value in (parameter, self.m[name], self.v[name])) or
                     not bool(mx.all(self.v[name] >= 0))):
                 _invalid()
+
+
+@dataclass(frozen=True)
+class HistoricalAdamWMigration:
+    """Verified legacy scalar step expanded into BAMF count geometry."""
+
+    state: AdamWStateTree
+    global_optimizer_step: int
+    schema_version: str = HISTORICAL_MIGRATION_SCHEMA
+
+    def __post_init__(self):
+        if (type(self.state) is not AdamWStateTree
+                or type(self.global_optimizer_step) is not int
+                or not 0 <= self.global_optimizer_step <= UINT64_MAX
+                or self.schema_version != HISTORICAL_MIGRATION_SCHEMA):
+            _invalid()
+        self.state.validate()
+
+
+def _native_numpy(value):
+    """Read a historical native tensor without mutating its owner."""
+    candidate = value.detach() if hasattr(value, "detach") else value
+    candidate = candidate.cpu() if hasattr(candidate, "cpu") else candidate
+    if not hasattr(candidate, "numpy"):
+        _invalid()
+    try:
+        return np.asarray(candidate.numpy())
+    except (TypeError, ValueError):
+        _invalid()
+
+
+def migrate_uniform_historical_adamw(
+    parent: AdamWStateTree,
+    optimizer_state,
+    model_weights,
+    *,
+    parameter_order,
+) -> HistoricalAdamWMigration:
+    """Expand a legacy scalar step only when the historical contract proves it.
+
+    native_optimizer_to_mlx independently verifies a bijective historical
+    parameter mapping and rejects any disagreement among per-parameter native
+    AdamW steps. This adapter then requires the BAMF target to be an untouched
+    count tree whose parameters and moments exactly match that verified
+    historical state before expanding the one proven step across each target's
+    existing scalar-or-row count geometry.
+    """
+    if (type(parent) is not AdamWStateTree
+            or not isinstance(model_weights, Mapping)
+            or type(parameter_order) is not tuple
+            or parameter_order != tuple(parent.parameters)
+            or any(bool(mx.any(count != 0)) for count in parent.update_counts.values())):
+        _invalid()
+    parent.validate()
+    try:
+        report, historical = native_optimizer_to_mlx(
+            optimizer_state, model_weights, parameter_order=parameter_order)
+    except (KeyError, TypeError, ValueError):
+        _invalid()
+    step = report.get("native_step")
+    if type(step) is not int or not 0 <= step <= UINT64_MAX:
+        _invalid()
+    for name in parameter_order:
+        if name not in historical.state or name not in model_weights:
+            _invalid()
+        native_parameter = _native_numpy(model_weights[name])
+        if (native_parameter.dtype != np.float32
+                or native_parameter.shape != parent.parameters[name].shape
+                or not np.array_equal(native_parameter, np.asarray(parent.parameters[name]))
+                or not np.array_equal(
+                    np.asarray(historical.state[name]["m"]), np.asarray(parent.m[name]))
+                or not np.array_equal(
+                    np.asarray(historical.state[name]["v"]), np.asarray(parent.v[name]))):
+            _invalid()
+    counts = {
+        name: mx.full(parent.update_counts[name].shape, step, dtype=mx.uint64)
+        for name in parameter_order
+    }
+    migrated = AdamWStateTree(parent.parameters, parent.m, parent.v, counts)
+    return HistoricalAdamWMigration(migrated, step)
 
 
 def _validate_step_inputs(parent, gradients, participation):

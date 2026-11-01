@@ -6,7 +6,28 @@ import mlx.optimizers as optim
 import numpy as np
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree, _adamw_update
+from bilqis_mlx.runtime.atlas_optimizer import (
+    AdamWHyperparameters, AdamWStateTree, _adamw_update,
+    migrate_uniform_historical_adamw,
+)
+
+
+class _NativeTensor:
+    class _DType:
+        def __str__(self):
+            return "torch.float32"
+
+    dtype = _DType()
+
+    def __init__(self, value):
+        self._value = np.asarray(value)
+        self.shape = self._value.shape
+
+    def numpy(self):
+        return self._value.copy()
+
+    def item(self):
+        return self._value.item()
 
 
 class AdamWCountsTests(unittest.TestCase):
@@ -151,6 +172,97 @@ class AdamWCountsTests(unittest.TestCase):
         self.assertIs(self.update(parent, mx.array(True), loss_bearing=False), parent)
         for field, value in zip(("parameters", "m", "v", "update_counts"), mappings):
             self.assertIs(getattr(parent, field), value)
+
+    def test_uniform_historical_step_migrates_to_existing_count_geometry(self):
+        parameters = {
+            "table": mx.array([[1., 2.], [3., 4.]], dtype=mx.float32),
+            "dense": mx.array([5., 6.], dtype=mx.float32),
+        }
+        first = {name: mx.full(value.shape, .1, dtype=mx.float32)
+                 for name, value in parameters.items()}
+        second = {name: mx.full(value.shape, .2, dtype=mx.float32)
+                  for name, value in parameters.items()}
+        parent = AdamWStateTree(
+            parameters, first, second,
+            {"table": mx.zeros((2,), dtype=mx.uint64),
+             "dense": mx.array(0, dtype=mx.uint64)})
+        native = {
+            "param_groups": [{
+                "params": [10, 11], "lr": .001, "betas": (.9, .95),
+                "eps": 1e-8, "weight_decay": .01,
+                "amsgrad": False, "maximize": False,
+            }],
+            "state": {
+                10: {"step": _NativeTensor(np.array(7)),
+                     "exp_avg": _NativeTensor(np.full((2, 2), .1, np.float32)),
+                     "exp_avg_sq": _NativeTensor(np.full((2, 2), .2, np.float32))},
+                11: {"step": _NativeTensor(np.array(7)),
+                     "exp_avg": _NativeTensor(np.full((2,), .1, np.float32)),
+                     "exp_avg_sq": _NativeTensor(np.full((2,), .2, np.float32))},
+            },
+        }
+        weights = {
+            "table": _NativeTensor(np.array([[1., 2.], [3., 4.]], np.float32)),
+            "dense": _NativeTensor(np.array([5., 6.], np.float32)),
+        }
+        actual = migrate_uniform_historical_adamw(
+            parent, native, weights, parameter_order=("table", "dense"))
+        self.assertEqual(actual.global_optimizer_step, 7)
+        np.testing.assert_array_equal(
+            np.asarray(actual.state.update_counts["table"]), [7, 7])
+        self.assertEqual(int(actual.state.update_counts["dense"]), 7)
+        for field in ("parameters", "m", "v"):
+            for name in parameters:
+                np.testing.assert_array_equal(
+                    np.asarray(getattr(actual.state, field)[name]),
+                    np.asarray(getattr(parent, field)[name]))
+        divergent = {
+            **native,
+            "state": {
+                **native["state"],
+                11: {**native["state"][11], "step": _NativeTensor(np.array(8))},
+            },
+        }
+        with self.assertRaises(BilqisError):
+            migrate_uniform_historical_adamw(
+                parent, divergent, weights, parameter_order=("table", "dense"))
+
+    def test_historical_count_migration_rejects_ambiguous_or_used_state(self):
+        parent = self.state()
+        weights = {
+            "fixture.bank": _NativeTensor(
+                np.asarray(parent.parameters["fixture.bank"], dtype=np.float32)),
+        }
+
+        def native(step):
+            return {
+                "param_groups": [{
+                    "params": [10], "lr": .001, "betas": (.9, .95),
+                    "eps": 1e-8, "weight_decay": .01,
+                    "amsgrad": False, "maximize": False,
+                }],
+                "state": {
+                    10: {"step": _NativeTensor(np.array(step)),
+                         "exp_avg": _NativeTensor(np.asarray(parent.m["fixture.bank"])),
+                         "exp_avg_sq": _NativeTensor(np.asarray(parent.v["fixture.bank"]))},
+                },
+            }
+
+        with self.assertRaises(BilqisError):
+            migrate_uniform_historical_adamw(
+                parent, native(3), weights, parameter_order=("fixture.bank",))
+        zero_parent = AdamWStateTree(
+            parent.parameters, parent.m, parent.v,
+            {"fixture.bank": mx.zeros((3,), dtype=mx.uint64)})
+        bad_moments = native(3)
+        bad_moments["state"] = {
+            10: {"step": _NativeTensor(np.array(3)),
+                 "exp_avg": _NativeTensor(np.ones((3, 2), np.float32)),
+                 "exp_avg_sq": _NativeTensor(np.asarray(parent.v["fixture.bank"]))}}
+        with self.assertRaises(BilqisError):
+            migrate_uniform_historical_adamw(
+                zero_parent, bad_moments, weights,
+                parameter_order=("fixture.bank",))
 
     def test_zero_gradient_nonzero_moments_match_native(self):
         parent = self.state()
