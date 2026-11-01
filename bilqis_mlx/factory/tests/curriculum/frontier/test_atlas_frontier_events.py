@@ -9,7 +9,7 @@ from bilqis_mlx.factory.atlas_frontier_events import (
     PlannerPolicyEvent, SourceReleaseEvent, reconcile,
 )
 from bilqis_mlx.factory.model import AssessmentClass, LearningEvidence
-from bilqis_mlx.factory.tests.curriculum.test_atlas_frontier import _candidate, _rights
+from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier import _candidate, _rights
 
 
 def _snapshot(**kwargs):
