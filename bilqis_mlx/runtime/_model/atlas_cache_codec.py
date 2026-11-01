@@ -208,3 +208,16 @@ def decode_directions(codes: np.ndarray) -> np.ndarray:
         out=np.zeros_like(reconstructed, dtype=np.float32),
         where=norms != 0,
     ).astype(np.float32, copy=False)
+
+
+# Norm storage and record policy have one owner; retain the public codec API.
+from .atlas_cache_records import (
+    BLOCK_VECTORS,
+    MIN_COMPRESSED_VECTORS,
+    CACHE_MODE_FP32,
+    CACHE_MODE_ROT3,
+    CacheArtifact,
+    CacheBinding,
+    encode_cold_cache,
+    decode_cache,
+)
