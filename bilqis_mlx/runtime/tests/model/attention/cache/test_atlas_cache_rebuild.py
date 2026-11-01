@@ -110,14 +110,19 @@ class RevokedCacheRebuildTests(unittest.TestCase):
     def test_binding_rejection_precedes_codec_and_payload_decode(self):
         from bilqis_mlx.runtime import atlas_cache_records
 
-        changed = replace(self.old_binding, source_rights_sha256="f" * 64)
-        with patch.object(
-            atlas_cache_records,
-            "_codec",
-            side_effect=AssertionError("codec entered before stale binding rejected"),
-        ):
-            with self.assertRaises(BilqisError):
-                decode_cache(self.stale, changed)
+        changed_bindings = (
+            replace(self.old_binding, source_rights_sha256="f" * 64),
+            replace(self.old_binding, causal_prefix_sha256="f" * 64),
+            replace(self.old_binding, topology_sha256="f" * 64),
+        )
+        for changed in changed_bindings:
+            with self.subTest(binding=changed), patch.object(
+                atlas_cache_records,
+                "_codec",
+                side_effect=AssertionError("codec entered before stale binding rejected"),
+            ):
+                with self.assertRaises(BilqisError):
+                    decode_cache(self.stale, changed)
 
     def test_rebuild_result_is_independent_of_stale_lossy_payload(self):
         alternate_values = np.full((256, HEAD_WIDTH), -7.0, dtype=np.float32)

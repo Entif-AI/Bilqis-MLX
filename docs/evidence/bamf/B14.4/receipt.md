@@ -57,18 +57,20 @@ The focused tests prove:
 
 ## Verification
 
-Focused cache suite: 40/40 pass before the explicit ordering adversary; focused
-rebuild + policy suite after that addition: 13/13 pass. The affected
-attention/backbone/runtime-identity selection passes 67/67 with zero skips.
+Final focused cache suite: 41/41 pass. The affected
+attention/backbone/runtime-identity selection passes 68/68 with zero skips.
 Development-structure and governance checks report zero violations. Factory
 architecture and documentation checks pass. Base-aware error control reports
 `new debt 0`. `git diff --check` is clean.
 
 The issue-required Google EGM review has not been claimed in this session;
 `EGM_PENDING` remains the integrator-facing review status unless an actual pinned
-EGM receipt is supplied. A separate independent read-only review was also launched
-against this implementation for additional defect discovery and is not a substitute
-for that EGM requirement.
+EGM receipt is supplied. A separate independent read-only GPT review found zero
+Blockers and zero Majors plus two proof-coverage Nits. Both Nits were repaired
+before final publication: the poisoned-codec ordering witness now covers rights,
+prefix and topology independently, and the forbidden-dependency scan now covers
+binding, codec, policy, rebuild and record owners. This review is additional defect
+discovery and is not a substitute for the required pinned EGM receipt.
 
 No actual student, native AdamW, teacher, checkpoint, source release, admission,
 human-run state or production cache caller was modified. B13 accepted generation

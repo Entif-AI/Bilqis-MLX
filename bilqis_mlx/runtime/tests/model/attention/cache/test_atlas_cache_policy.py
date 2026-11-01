@@ -100,13 +100,21 @@ class CachePolicyTests(unittest.TestCase):
 
     def test_lossy_cache_owners_have_no_training_gold_or_sidecar_dependencies(self):
         from bilqis_mlx.runtime import (
+            atlas_cache_binding,
+            atlas_cache_codec,
             atlas_cache_policy,
             atlas_cache_rebuild,
             atlas_cache_records,
         )
 
         imports = set()
-        for module in (atlas_cache_policy, atlas_cache_rebuild, atlas_cache_records):
+        for module in (
+            atlas_cache_binding,
+            atlas_cache_codec,
+            atlas_cache_policy,
+            atlas_cache_rebuild,
+            atlas_cache_records,
+        ):
             tree = ast.parse(Path(module.__file__).read_text())
             for node in ast.walk(tree):
                 if isinstance(node, ast.Import):
