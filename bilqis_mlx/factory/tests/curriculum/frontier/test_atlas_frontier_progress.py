@@ -112,7 +112,7 @@ class AtlasFrontierProgressTests(unittest.TestCase):
         expected_cursor = (
             admitted_closure.constituent_order.index(selection.selected_semantic_id) + 1
         ) % len(admitted_closure.constituent_order)
-        self.assertEqual(advanced.status, FrontierStatus.FIXED_POINT)
+        self.assertEqual(advanced.status, FrontierStatus.REPLAN_REQUIRED)
         self.assertEqual(advanced.cursor, expected_cursor)
         self.assertEqual(advanced.planning_snapshot.predecessor_sha256,
                          admitted.snapshot_sha256)

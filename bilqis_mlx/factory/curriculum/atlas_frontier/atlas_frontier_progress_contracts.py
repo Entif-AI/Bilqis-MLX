@@ -12,6 +12,7 @@ from .executable_release import ExecutableFactoryRelease
 
 class FrontierStatus(str, Enum):
     PROPOSAL = "PROPOSAL"
+    REPLAN_REQUIRED = "REPLAN_REQUIRED"
     FIXED_POINT = "FIXED_POINT"
     WAITING_FOR_EVIDENCE = "WAITING_FOR_EVIDENCE"
     SOURCE_HELD = "SOURCE_HELD"

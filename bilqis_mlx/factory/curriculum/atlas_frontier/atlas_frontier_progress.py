@@ -6,7 +6,9 @@ import hashlib
 
 from .atlas_frontier_closure import ClosureStatus, FrontierClosure
 from .atlas_frontier_contracts import CurriculumSnapshot, _bytes, _fail
-from .atlas_frontier_selection import FrontierDeltaSelection
+from .atlas_frontier_selection import (
+    FrontierDeltaSelection, validate_frontier_selection,
+)
 from .atlas_frontier_selection_validation import validate_closure_structure
 from .skos_curriculum import IMPLEMENTATION_UNCOVERED
 from .atlas_frontier_progress_contracts import (
@@ -74,8 +76,6 @@ def _advance_cursor_once(
     if width == 0:
         _fail("BAMF_PLANNER_PROGRESS_EMPTY_FRONTIER")
     next_cursor = (constituent_order.index(semantic_id) + 1) % width
-    if next_cursor == prior.cursor or snapshot.cursor == next_cursor:
-        return snapshot
     if snapshot.cursor != prior.cursor:
         _fail("BAMF_PLANNER_PROGRESS_CURSOR_STALE")
     draft = replace(
@@ -94,10 +94,7 @@ def _selection_current(
 ) -> None:
     if selection is None:
         return
-    selection.verify()
-    if (selection.snapshot_sha256 != snapshot.snapshot_sha256
-            or selection.closure_sha256 != closure.closure_sha256):
-        _fail("BAMF_PLANNER_PROGRESS_SELECTION_MISMATCH")
+    validate_frontier_selection(snapshot, closure, selection)
 
 
 def _staged_current(
@@ -114,15 +111,42 @@ def _staged_current(
         _fail("BAMF_PLANNER_STAGED_SELECTION_MISMATCH")
 
 
+def _requested_keys(
+    receipts: tuple[StagedSelectionReceipt, ...] | list[StagedSelectionReceipt],
+) -> set[tuple[str, str]]:
+    return {(receipt.selected_semantic_id,
+             _obligation_digest(receipt.selection.selected_obligations))
+            for receipt in receipts}
+
+
+def _has_unrequested_ready(
+    closure: FrontierClosure,
+    receipts: tuple[StagedSelectionReceipt, ...] | list[StagedSelectionReceipt],
+    current: dict[str, str],
+) -> bool:
+    requested = _requested_keys(receipts)
+    for semantic_id in closure.constituent_order:
+        rows = tuple(
+            row for row in closure.candidates if row.semantic_id == semantic_id)
+        if (rows and all(row.status is ClosureStatus.READY for row in rows)
+                and (semantic_id, current[semantic_id]) not in requested):
+            return True
+    return False
+
+
+def _direct_uncovered_count(snapshot: CurriculumSnapshot) -> int:
+    return sum(
+        row.implementation_status == IMPLEMENTATION_UNCOVERED
+        for row in snapshot.coverage_rows)
+
+
 def _status_without_new_proposal(
     snapshot: CurriculumSnapshot, counts: dict[ClosureStatus, int],
     receipts: tuple[StagedSelectionReceipt, ...], current: dict[str, str],
     source_held_count: int,
     direct_uncovered: int,
 ) -> FrontierStatus:
-    requested = {(receipt.selected_semantic_id,
-                  _obligation_digest(receipt.selection.selected_obligations))
-                 for receipt in receipts}
+    requested = _requested_keys(receipts)
     if direct_uncovered:
         return FrontierStatus.IMPLEMENTATION_UNCOVERED
     if counts[ClosureStatus.WAITING_FOR_EVIDENCE]:
@@ -134,6 +158,51 @@ def _status_without_new_proposal(
     if complete:
         return FrontierStatus.COMPLETE_ATLAS_COVERAGE
     return FrontierStatus.FIXED_POINT
+
+
+def _progress_result(
+    input_snapshot: CurriculumSnapshot,
+    planning_snapshot: CurriculumSnapshot,
+    closure: FrontierClosure,
+    status: FrontierStatus,
+    proposal: str | None,
+    receipts: tuple[StagedSelectionReceipt, ...] | list[StagedSelectionReceipt],
+    pending_receipt_sha: str | None,
+    direct_uncovered: int,
+) -> FrontierProgress:
+    counts = _counts(closure)
+    provisional = FrontierProgress(
+        input_snapshot.snapshot_sha256, planning_snapshot, status, proposal,
+        tuple(sorted(receipts, key=lambda item: item.receipt_sha256)),
+        pending_receipt_sha, len(closure.source_holds), direct_uncovered,
+        counts[ClosureStatus.WAITING_FOR_EVIDENCE], counts[ClosureStatus.READY],
+        _remediation(closure), "0" * 64,
+    )
+    result = replace(
+        provisional, progress_sha256=provisional.expected_digest())
+    result.verify()
+    return result
+
+
+def _reconcile_admission(
+    snapshot: CurriculumSnapshot,
+    closure: FrontierClosure,
+    prior: FrontierProgress,
+    receipts: list[StagedSelectionReceipt],
+    current: dict[str, str],
+) -> FrontierProgress:
+    planning_snapshot = _advance_cursor_once(
+        snapshot, prior, closure.constituent_order)
+    direct_uncovered = _direct_uncovered_count(snapshot)
+    if _has_unrequested_ready(closure, receipts, current):
+        status = FrontierStatus.REPLAN_REQUIRED
+    else:
+        status = _status_without_new_proposal(
+            snapshot, _counts(closure), tuple(receipts), current,
+            len(closure.source_holds), direct_uncovered)
+    return _progress_result(
+        snapshot, planning_snapshot, closure, status, None, receipts, None,
+        direct_uncovered)
 
 
 def plan_frontier_progress(
@@ -159,20 +228,8 @@ def plan_frontier_progress(
     pending_receipt_sha = prior.pending_staged_receipt_sha256 if prior else None
     pending = prior.pending_staged_successor_sha256 if prior else None
     if pending == snapshot.admitted_factory_release_sha256:
-        planning_snapshot = _advance_cursor_once(snapshot, prior, closure.constituent_order)
-        counts = _counts(closure)
-        provisional = FrontierProgress(
-            snapshot.snapshot_sha256, planning_snapshot,
-            FrontierStatus.FIXED_POINT, None, tuple(sorted(
-                receipts, key=lambda item: item.receipt_sha256)),
-            None, len(closure.source_holds),
-            counts[ClosureStatus.IMPLEMENTATION_UNCOVERED],
-            counts[ClosureStatus.WAITING_FOR_EVIDENCE], counts[ClosureStatus.READY],
-            _remediation(closure), "0" * 64,
-        )
-        result = replace(provisional, progress_sha256=provisional.expected_digest())
-        result.verify()
-        return result
+        return _reconcile_admission(
+            snapshot, closure, prior, receipts, current)
     planning_snapshot = snapshot
     if staged_receipt is not None:
         if (pending_receipt_sha is not None
@@ -185,9 +242,7 @@ def plan_frontier_progress(
         pending = staged_receipt.staged_successor_sha256
 
     counts = _counts(closure)
-    direct_uncovered = sum(
-        row.implementation_status == IMPLEMENTATION_UNCOVERED
-        for row in snapshot.coverage_rows)
+    direct_uncovered = _direct_uncovered_count(snapshot)
     held = len(closure.source_holds)
     proposal = selection.selection_sha256 if selection is not None else None
     if pending is not None and pending != snapshot.admitted_factory_release_sha256:
@@ -198,35 +253,15 @@ def plan_frontier_progress(
             selection.selected_semantic_id,
             _obligation_digest(selection.selected_obligations),
         )
-        requested = {(receipt.selected_semantic_id,
-                      _obligation_digest(receipt.selection.selected_obligations))
-                     for receipt in receipts}
+        requested = _requested_keys(receipts)
         status = (FrontierStatus.FIXED_POINT
                   if selected_key in requested
                   else FrontierStatus.PROPOSAL)
     else:
-        requested = {(receipt.selected_semantic_id,
-                      _obligation_digest(receipt.selection.selected_obligations))
-                     for receipt in receipts}
-        unrequested_ready = {
-            row.semantic_id for row in closure.candidates
-            if row.status is ClosureStatus.READY
-            and (row.semantic_id, current[row.semantic_id]) not in requested
-        }
-        if unrequested_ready:
+        if _has_unrequested_ready(closure, receipts, current):
             _fail("BAMF_PLANNER_PROGRESS_SELECTION_REQUIRED")
         status = _status_without_new_proposal(
             snapshot, counts, tuple(receipts), current, held, direct_uncovered)
-
-    provisional = FrontierProgress(
-        snapshot.snapshot_sha256, planning_snapshot, status, proposal,
-        tuple(sorted(receipts, key=lambda item: item.receipt_sha256)),
-        pending_receipt_sha, held,
-        direct_uncovered,
-        counts[ClosureStatus.WAITING_FOR_EVIDENCE], counts[ClosureStatus.READY],
-        _remediation(closure), "0" * 64,
-    )
-    result = replace(
-        provisional, progress_sha256=provisional.expected_digest())
-    result.verify()
-    return result
+    return _progress_result(
+        snapshot, planning_snapshot, closure, status, proposal, receipts,
+        pending_receipt_sha, direct_uncovered)
