@@ -19,9 +19,35 @@ from .math import prepare_memory, decision_state
 from .heads import decision_logits
 
 
-_ISSUED_OUTPUTS = WeakValueDictionary()
-_ISSUED_RECORDS = {}
+class _IssuanceRegistry:
+    """Own ephemeral numerical receipts; no module-level mutable collection."""
 
+    def __init__(self):
+        self.outputs = WeakValueDictionary()
+        self.records = {}
+
+    def issue(self, output, meaning):
+        key = id(output)
+        self.outputs[key] = output
+        self.records[key] = (
+            tuple((record, record.logits) for record in output.decisions),
+            deepcopy(meaning),
+        )
+        finalize(output, self.records.pop, key, None)
+        return output
+
+    def contains(self, output, meaning):
+        key = id(output)
+        if self.outputs.get(key) is not output:
+            return False
+        records, frozen_meaning = self.records[key]
+        return (meaning == frozen_meaning
+                and len(output.decisions) == len(records)
+                and all(record is issued and record.logits is logits
+                        for record, (issued, logits) in zip(output.decisions, records)))
+
+
+_ISSUANCE = _IssuanceRegistry()
 
 def _meaning(output):
     return (output.plan, tuple((r.decision_id, r.kind, r.candidates)
@@ -31,24 +57,12 @@ def _meaning(output):
 
 
 def issued_output(output):
-    """Require the exact live decoder result, not a copied numerical receipt."""
-    return (_ISSUED_OUTPUTS.get(id(output)) is output
-            and _meaning(output) == _ISSUED_RECORDS[id(output)][1]
-            and len(output.decisions) == len(_ISSUED_RECORDS.get(id(output), ())[0])
-            and all(record is issued and record.logits is logits
-                    for record, (issued, logits) in zip(
-                        output.decisions, _ISSUED_RECORDS.get(id(output), ())[0])))
+    """Require the exact live decoder result and its frozen source meaning."""
+    return _ISSUANCE.contains(output, _meaning(output))
 
 
 def _issue_output(output):
-    key = id(output)
-    _ISSUED_OUTPUTS[key] = output
-    _ISSUED_RECORDS[key] = (
-        tuple((record, record.logits) for record in output.decisions),
-        deepcopy(_meaning(output)),
-    )
-    finalize(output, _ISSUED_RECORDS.pop, key, None)
-    return output
+    return _ISSUANCE.issue(output, _meaning(output))
 
 
 class ExecutionMode(str,Enum):
