@@ -97,7 +97,7 @@ def _closure(snapshot, candidates, order=None):
             if identity in seen:
                 return
             if identity in active:
-                raise AssertionError("test fixture cycle")
+                self.fail("test fixture cycle")
             active.add(identity)
             for prerequisite in sorted(graph[identity]):
                 visit(prerequisite)
