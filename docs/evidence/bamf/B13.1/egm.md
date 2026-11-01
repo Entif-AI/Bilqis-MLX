@@ -61,10 +61,12 @@ python3 -B scripts/error_control_plane.py --check --base-ref bb626d75
 git diff --check
 ```
 
-All listed checks pass. The catalog selection passes 3/3 separately. Broader
-historical checkpoint/outbox testing is recorded in the subsequent checkpoint;
-the first attempt passed16 with one missing-Torch import error, which is an
-isolated environment gap, not an observed checkpoint behavior failure.
+All listed checks pass. The catalog selection passes 3/3 separately. Broader historical checkpoint/outbox/catalog testing passes **18/18**, zero
+skips/errors, after installing its declared Torch dependency in the isolated M3
+environment. Its first attempt passed16 with one missing-Torch import error; that
+environment gap was repaired without changing code or criteria. Combined native
+selections: **38/38 PASS**. The 100 GiB reserve was preserved during dependency
+installation (observed free space 256.95 GiB before Torch installation).
 
 ## Independent EGM
 
