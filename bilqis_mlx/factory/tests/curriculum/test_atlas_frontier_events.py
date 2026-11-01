@@ -28,7 +28,8 @@ def _event(event_type, snapshot, **kwargs):
     event = event_type(
         predecessor_sha256=snapshot.snapshot_sha256,
         generation=snapshot.event_generation + 1,
-        source_provenance_sha256=kwargs.pop("source_provenance_sha256", "a" * 64),
+        source_provenance_sha256=kwargs.pop(
+            "source_provenance_sha256", snapshot.source_coverage_sha256),
         event_sha256="0" * 64,
         **kwargs,
     )
@@ -168,6 +169,15 @@ class AtlasFrontierEventTests(unittest.TestCase):
         wrong = replace(wrong, event_sha256=wrong.expected_digest())
         with self.assertRaises(BilqisError):
             reconcile(base, wrong)
+
+    def test_non_source_event_must_bind_current_source_provenance(self):
+        base = _snapshot()
+        event = _event(
+            PlannerPolicyEvent, base, source_provenance_sha256="f" * 64,
+            policy_epoch=base.policy_epoch + 1, teacher_epoch=base.teacher_epoch,
+            budget=base.budget, accepted=True)
+        with self.assertRaises(BilqisError):
+            reconcile(base, event)
 
 
 if __name__ == "__main__":

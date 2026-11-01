@@ -120,6 +120,9 @@ def _validate_common(snapshot: CurriculumSnapshot, event: QualifiedPlannerEvent)
             or type(event.accepted) is not bool
             or event.schema != expected_schema):
         _fail("BAMF_PLANNER_EVENT_IDENTITY_INVALID")
+    if (not isinstance(event, SourceReleaseEvent)
+            and event.source_provenance_sha256 != snapshot.source_coverage_sha256):
+        _fail("BAMF_PLANNER_EVENT_SOURCE_PROVENANCE_MISMATCH")
 
 
 def _already_applied(snapshot: CurriculumSnapshot, event: QualifiedPlannerEvent) -> bool:
