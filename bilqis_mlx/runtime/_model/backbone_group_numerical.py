@@ -183,6 +183,11 @@ class UnadmittedBackboneSession:
     def results(self):
         return self._results
 
+    @property
+    def parameter_tree_digest(self):
+        """Observed content identity of the exact B01 block tree this session owns."""
+        return self._tree_digest
+
     def advance(self):
         if len(self._results) >= self._spec.depth_groups:
             _invalid()

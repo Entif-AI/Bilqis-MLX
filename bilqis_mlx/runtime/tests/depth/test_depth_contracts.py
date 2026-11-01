@@ -15,7 +15,7 @@ from bilqis_mlx.semantics.frame_schema import ConceptRef
 from bilqis_mlx.runtime.block_attnres import (
     DepthFrameFeatures, DepthParameterView, DepthSummary, PARAMETER_SHAPES,
     _DepthFeatureValues, _depth_components, _group_boundary_numerical,
-    depth_parameter_view, depth_select, depth_select_with_diagnostics,
+    depth_parameter_view, depth_select, numerical_depth_select,
 )
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes,
@@ -58,20 +58,20 @@ class DepthSelectionTests(unittest.TestCase):
         for group in (1, 2, 3):
             view = depth_parameter_view(full, spec=ModelTopologySpecV2(), extents=extents, boundary_group=group)
             sources = _summaries(group)
-            actual = depth_select(self.current, sources, replace(released, boundary_group=group), view)
+            actual = numerical_depth_select(self.current, sources, replace(released, boundary_group=group), view)
             numerical = replace(self.features, frame_seed=sources[0].hidden, type_role=type_role, boundary_group=group)
             expected, _, _ = _numpy_oracle(self.current, sources, numerical, self.params)
             np.testing.assert_allclose(np.asarray(actual), expected, atol=3e-6, rtol=3e-5)
             self.assertGreater(float(mx.sum(mx.abs(actual-self.current)).item()), 0)
         def objective(parameters):
             local = depth_parameter_view(parameters, spec=ModelTopologySpecV2(), extents=extents, boundary_group=1)
-            output = depth_select(self.current, self.sources, released, local)
+            output = numerical_depth_select(self.current, self.sources, released, local)
             return mx.sum(output*output)
         gradients = mx.grad(objective)(full)
         for path in ("features.type", "features.role", "features.project_type", "features.project_role", "features.gates"):
             self.assertGreater(float(mx.sum(mx.abs(gradients[path])).item()), 0, path)
         with self.assertRaises(BilqisError):
-            depth_select(self.current, self.sources, self.features, view)
+            numerical_depth_select(self.current, self.sources, self.features, view)
         with self.assertRaises(BilqisError):
             replace(released, requests=((released.requests[0][0][:1],),))
 
@@ -100,7 +100,7 @@ class DepthSelectionTests(unittest.TestCase):
                           parameters[f"depth.gate.{group - 1}.bias"])
             self.assertNotIn("features.norm", view)
             self.assertNotIn("blocks.0.query", view)
-            output = depth_select(
+            output = numerical_depth_select(
                 self.current, _summaries(group), _released_features(group), view)
             np.testing.assert_array_equal(
                 np.asarray(output), np.asarray(self.current))
@@ -133,7 +133,7 @@ class DepthSelectionTests(unittest.TestCase):
 
     def test_public_selector_rejects_anonymous_or_cross_boundary_weights(self):
         with self.assertRaises(BilqisError):
-            depth_select(
+            numerical_depth_select(
                 self.current, self.sources, self.features, self.params)
         with self.assertRaises(BilqisError):
             DepthParameterView(self.params, 1, object())
@@ -146,8 +146,21 @@ class DepthSelectionTests(unittest.TestCase):
         view = depth_parameter_view(
             parameters, spec=spec, extents=extents, boundary_group=2)
         with self.assertRaises(BilqisError):
-            depth_select(
+            numerical_depth_select(
                 self.current, self.sources, self.features, view)
+        with self.assertRaises(BilqisError):
+            depth_select(self.current, self.sources, _released_features(1),
+                         depth_parameter_view(
+                             {item.name: mx.zeros(item.shape, dtype=mx.float32)
+                              for item in expected_bamf_shapes(
+                                  ModelTopologySpecV2(), GenerationExtents(
+                                      1, 1, "a" * 64, "b" * 64,
+                                      _released_features(1).features.digest))},
+                             spec=ModelTopologySpecV2(),
+                             extents=GenerationExtents(
+                                 1, 1, "a" * 64, "b" * 64,
+                                 _released_features(1).features.digest),
+                             boundary_group=1))
         with self.assertRaises(TypeError):
             view._tensors["query"] = view["key"]
         with self.assertRaises(BilqisError):

@@ -107,24 +107,20 @@ class DepthSelectionDiagnostics:
     schema_version: str = DIAGNOSTICS_SCHEMA
 
 
-def depth_select(
+def numerical_depth_select(
     current: mx.array, available_summaries: tuple[DepthSummary, ...],
     frame_features: DepthFrameFeatures, params: DepthParameterView,
 ) -> mx.array:
-    """Merge h0 and completed group summaries in their fixed source order.
-
-    The tuple is ordered (h0,g1,...,gk), k=1..3. Its actual backbone
-    provenance must be qualified by the group-capture assembly owner.
-    """
-    return depth_select_with_diagnostics(
+    """Unadmitted numerical selector over explicit depth summaries."""
+    return numerical_depth_select_with_diagnostics(
         current, available_summaries, frame_features, params).output
 
 
-def depth_select_with_diagnostics(
+def numerical_depth_select_with_diagnostics(
     current: mx.array, available_summaries: tuple[DepthSummary, ...],
     frame_features: DepthFrameFeatures, params: DepthParameterView,
 ) -> DepthSelectionDiagnostics:
-    """Expose alpha for inspection, without assigning roles to depth groups."""
+    """Expose numerical alpha for inspection without producer authority."""
     if (type(params) is not DepthParameterView
             or type(frame_features) is not DepthFrameFeatures
             or params.boundary_group != frame_features.boundary_group):
@@ -144,6 +140,38 @@ def depth_select_with_diagnostics(
     output, alpha, gate = _depth_components(
         current, available_summaries, numerical, params)
     return DepthSelectionDiagnostics(output, alpha, gate)
+
+
+def _producer_summaries(receipts, boundary_group):
+    from bilqis_mlx.learning.source_atoms.backbone import ProducedBackboneBoundary
+    if (type(receipts) is not tuple or len(receipts) != boundary_group + 1
+            or any(type(item) is not ProducedBackboneBoundary for item in receipts)):
+        _invalid()
+    for index, item in enumerate(receipts):
+        item.__post_init__()
+        if (item.source_id != SOURCE_ORDER[index]
+                or (index and item.predecessor_receipt_digest != receipts[index - 1].receipt_digest)
+                or item.source_handoff_digest != receipts[0].source_handoff_digest
+                or item.topology_digest != receipts[0].topology_digest
+                or item.generation_digest != receipts[0].generation_digest
+                or item.parameter_tree_digest != receipts[0].parameter_tree_digest
+                or item.prefix_digest != receipts[0].prefix_digest):
+            _invalid()
+    return tuple(DepthSummary(item.source_id, item.completed_layer, item.hidden)
+                 for item in receipts)
+
+
+def depth_select(current, producer_receipts, frame_features, params):
+    """Production B05 selector; only execution-owned B11 receipts are accepted."""
+    return depth_select_with_diagnostics(
+        current, producer_receipts, frame_features, params).output
+
+
+def depth_select_with_diagnostics(current, producer_receipts, frame_features, params):
+    if type(frame_features) is not DepthFrameFeatures:
+        _invalid()
+    summaries = _producer_summaries(producer_receipts, frame_features.boundary_group)
+    return numerical_depth_select_with_diagnostics(current, summaries, frame_features, params)
 
 
 @dataclass(frozen=True)

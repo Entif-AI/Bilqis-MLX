@@ -6,8 +6,18 @@ import mlx.core as mx
 import numpy as np
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.learning.source_atoms.backbone import start_source_backbone_numerical
+from bilqis_mlx.learning.source_atoms.backbone import (
+    ProducedBackboneBoundary, start_source_backbone_numerical,
+    start_source_backbone_producer,
+)
 from bilqis_mlx.runtime.backbone_source_bridge import admit_compiled_backbone_producer
+from bilqis_mlx.runtime.block_attnres import (
+    DepthFrameFeatures, depth_parameter_view, depth_select,
+)
+from bilqis_mlx.runtime.model_topology_v2 import (
+    GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes,
+)
+from bilqis_mlx.runtime.tests.depth.depth_helpers import _released_features
 from bilqis_mlx.source_adapters.tests.atoms.helpers import REAL_BUNDLE
 from . import test_encoding as fixtures
 
@@ -21,6 +31,26 @@ class SourceBackboneTests(TestCase):
             self.compiled if compiled is None else compiled,
             self.parameters if parameters is None else parameters,
             (self.source,) if sources is None else sources, self.schema)
+
+    def producer(self, parameters=None):
+        return start_source_backbone_producer(
+            self.compiled, self.parameters if parameters is None else parameters,
+            (self.source,), self.schema)
+
+    def depth_inputs(self):
+        released = _released_features(1)
+        features = DepthFrameFeatures(
+            ((released.requests[0][0], released.requests[0][1]),),
+            released.features, 1)
+        extents = GenerationExtents(
+            1, 1, "a" * 64, "b" * 64, features.features.digest)
+        full = {item.name: mx.zeros(item.shape, dtype=mx.float32)
+                for item in expected_bamf_shapes(ModelTopologySpecV2(), extents)}
+        full["depth.norm"] = mx.ones((768,), dtype=mx.float32)
+        full["depth.value"] = full["depth.value"].at[0, 0].add(1)
+        full["depth.output"] = full["depth.output"].at[0, 0].add(1)
+        return features, depth_parameter_view(
+            full, spec=ModelTopologySpecV2(), extents=extents, boundary_group=1)
 
     def test_real_source_runs_all_three_groups_against_literal_feedforward_equations(self):
         parameters = dict(self.parameters)
@@ -85,3 +115,62 @@ class SourceBackboneTests(TestCase):
             with self.subTest(injected=tuple(injected)), self.assertRaises(TypeError):
                 start_source_backbone_numerical(
                     self.compiled, self.parameters, (self.source,), self.schema, **injected)
+
+    def test_producer_owns_h0_and_ordered_group_receipts(self):
+        producer = self.producer()
+        self.assertEqual(tuple(item.source_id for item in producer.receipts), ("h0",))
+        receipts = [producer.receipts[0]]
+        for expected in ("g1", "g2", "g3"):
+            receipt = producer.advance()
+            self.assertIs(type(receipt), ProducedBackboneBoundary)
+            self.assertEqual(receipt.source_id, expected)
+            self.assertEqual(receipt.predecessor_receipt_digest,
+                             receipts[-1].receipt_digest)
+            receipts.append(receipt)
+        self.assertEqual(tuple(item.completed_layer for item in receipts), (0, 4, 8, 12))
+        self.assertEqual(receipts[1].motif_disposition, "NO_HIT_QUARANTINED")
+        self.assertEqual(receipts[1].motif_read_position,
+                         "AFTER_LAYER_4_BEFORE_CAPTURE")
+        self.assertEqual(tuple(item.motif_disposition for item in receipts[2:]),
+                         ("NOT_APPLICABLE", "NOT_APPLICABLE"))
+
+    def test_g2_cannot_be_relabelled_as_g1_or_mixed_into_public_selector(self):
+        producer = self.producer()
+        first, second = producer.advance(), producer.advance()
+        with self.assertRaises(ValueError):
+            replace(second, source_id="g1", completed_layer=4)
+        features, view = self.depth_inputs()
+        with self.assertRaises(BilqisError):
+            depth_select(first.hidden, (producer.receipts[0], second), features, view)
+
+    def test_same_extents_different_parameter_tree_cannot_reuse_receipts(self):
+        first = self.producer()
+        changed = dict(self.parameters)
+        changed["blocks.0.ffn_in"] = changed["blocks.0.ffn_in"].at[0, 0].add(.25)
+        second = self.producer(changed)
+        first_g1, second_g1 = first.advance(), second.advance()
+        self.assertNotEqual(first_g1.parameter_tree_digest,
+                            second_g1.parameter_tree_digest)
+        self.assertNotEqual(first_g1.receipt_digest, second_g1.receipt_digest)
+        features, view = self.depth_inputs()
+        with self.assertRaises(BilqisError):
+            depth_select(first_g1.hidden, (first.receipts[0], second_g1), features, view)
+
+    def test_public_b05_selection_keeps_gradient_to_executed_backbone(self):
+        features, view = self.depth_inputs()
+        parameters = dict(self.parameters)
+        parameters["blocks.0.ffn_norm"] = mx.ones((768,), dtype=mx.float32)
+        parameters["blocks.0.ffn_in"] = parameters["blocks.0.ffn_in"].at[0, 0].add(.1)
+        parameters["blocks.0.ffn_out"] = parameters["blocks.0.ffn_out"].at[2, 0].add(.2)
+
+        def objective(parameters):
+            producer = self.producer(parameters)
+            group = producer.advance()
+            selected = depth_select(group.hidden, producer.receipts, features, view)
+            return mx.sum(selected[..., 2])
+
+        gradients = mx.grad(objective)(parameters)
+        self.assertGreater(float(mx.abs(gradients["blocks.0.ffn_out"]).sum()), 0)
+        indices = mx.array(self.source.source_row["tokens"][:2])
+        self.assertTrue(bool(mx.all(mx.abs(
+            gradients["identity.bank.0"][indices, 2]) > 0)))
