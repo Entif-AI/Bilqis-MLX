@@ -4,9 +4,10 @@ The numerical precursor remains available for bounded equation tests. The produc
 session below is the execution-owned source for B05 boundary receipts; it never
 authorizes a B08 motif hit or claims retained-generation custody.
 """
-from dataclasses import dataclass
+from dataclasses import InitVar, dataclass
 import mlx.core as mx
 
+from ...errors import ErrorBus, SCHOOL
 from ...runtime.backbone_group_numerical import (
     UnadmittedBackboneSession, _content_digest,
 )
@@ -20,6 +21,12 @@ _PRODUCER_SEAL = object()
 _NO_HIT = "NO_HIT_QUARANTINED"
 _NA = "NOT_APPLICABLE"
 _MOTIF_POSITION = "AFTER_LAYER_4_BEFORE_CAPTURE"
+_HIDDEN_FRAME_RANK = 3
+_SHA256_HEX_LENGTH = 64
+
+
+def _invalid_producer_receipt():
+    ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
 
 
 def _receipt_projection(values):
@@ -56,9 +63,9 @@ class ProducedBackboneBoundary:
     motif_disposition: str
     motif_read_position: str
     receipt_digest: str
-    _seal: object
+    _seal: InitVar[object]
 
-    def __post_init__(self):
+    def _validate_contents(self):
         expected_index = SOURCE_ORDER.index(self.source_id) if self.source_id in SOURCE_ORDER else -1
         digests = (
             self.source_handoff_digest, self.topology_digest, self.generation_digest,
@@ -70,15 +77,21 @@ class ProducedBackboneBoundary:
         values = self.__dict__
         expected_motif = _NO_HIT if self.source_id == "g1" else _NA
         expected_position = _MOTIF_POSITION if self.source_id == "g1" else ""
-        if (self._seal is not _PRODUCER_SEAL or expected_index < 0
+        if (expected_index < 0
                 or self.completed_layer != COMPLETED_LAYERS[expected_index]
                 or type(self.hidden) is not mx.array or self.hidden.dtype != mx.float32
-                or self.hidden.ndim != 3 or any(len(value) != 64 for value in digests)
+                or self.hidden.ndim != _HIDDEN_FRAME_RANK
+                or any(len(value) != _SHA256_HEX_LENGTH for value in digests)
                 or self.output_digest != _content_digest(self.hidden)
                 or self.motif_disposition != expected_motif
                 or self.motif_read_position != expected_position
                 or self.receipt_digest != contract_digest(_receipt_projection(values))):
-            raise ValueError("BAMF_BACKBONE_PRODUCER_RECEIPT_INVALID")
+            _invalid_producer_receipt()
+
+    def __post_init__(self, _seal):
+        if _seal is not _PRODUCER_SEAL:
+            _invalid_producer_receipt()
+        self._validate_contents()
 
 
 def _make_receipt(**values):

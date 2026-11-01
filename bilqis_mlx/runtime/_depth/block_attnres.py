@@ -148,7 +148,7 @@ def _producer_summaries(receipts, boundary_group):
             or any(type(item) is not ProducedBackboneBoundary for item in receipts)):
         _invalid()
     for index, item in enumerate(receipts):
-        item.__post_init__()
+        item._validate_contents()
         if (item.source_id != SOURCE_ORDER[index]
                 or (index and item.predecessor_receipt_digest != receipts[index - 1].receipt_digest)
                 or item.source_handoff_digest != receipts[0].source_handoff_digest

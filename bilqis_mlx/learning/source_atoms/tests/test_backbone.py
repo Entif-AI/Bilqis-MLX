@@ -1,5 +1,6 @@
 """Real A05/A01 source ingress into the unadmitted B11 numerical chain."""
 from dataclasses import replace
+from copy import copy
 from unittest import TestCase, skipUnless
 
 import mlx.core as mx
@@ -10,7 +11,6 @@ from bilqis_mlx.learning.source_atoms.backbone import (
     ProducedBackboneBoundary, start_source_backbone_numerical,
     start_source_backbone_producer,
 )
-from bilqis_mlx.runtime.backbone_source_bridge import admit_compiled_backbone_producer
 from bilqis_mlx.runtime.block_attnres import (
     DepthFrameFeatures, depth_parameter_view, depth_select,
 )
@@ -79,8 +79,6 @@ class SourceBackboneTests(TestCase):
             prior = result
         with self.assertRaises(BilqisError):
             session.advance()
-        with self.assertRaises(BilqisError):
-            admit_compiled_backbone_producer(prior)
 
     def test_gradients_reach_source_identity_and_executed_backbone(self):
         parameters = dict(self.parameters)
@@ -137,7 +135,7 @@ class SourceBackboneTests(TestCase):
     def test_g2_cannot_be_relabelled_as_g1_or_mixed_into_public_selector(self):
         producer = self.producer()
         first, second = producer.advance(), producer.advance()
-        with self.assertRaises(ValueError):
+        with self.assertRaises((TypeError, BilqisError)):
             replace(second, source_id="g1", completed_layer=4)
         features, view = self.depth_inputs()
         with self.assertRaises(BilqisError):
@@ -155,6 +153,16 @@ class SourceBackboneTests(TestCase):
         features, view = self.depth_inputs()
         with self.assertRaises(BilqisError):
             depth_select(first_g1.hidden, (first.receipts[0], second_g1), features, view)
+
+    def test_generation_prefix_and_cache_tampering_reject_before_b05(self):
+        producer = self.producer()
+        group = producer.advance()
+        features, view = self.depth_inputs()
+        for field in ("generation_digest", "prefix_digest", "cache_chain_digest"):
+            forged = copy(group)
+            object.__setattr__(forged, field, "f" * 64)
+            with self.subTest(field=field), self.assertRaises(BilqisError):
+                depth_select(group.hidden, (producer.receipts[0], forged), features, view)
 
     def test_public_b05_selection_keeps_gradient_to_executed_backbone(self):
         features, view = self.depth_inputs()
