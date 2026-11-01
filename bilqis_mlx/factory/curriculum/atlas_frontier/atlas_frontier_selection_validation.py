@@ -5,7 +5,13 @@ from dataclasses import dataclass, fields, replace
 import hashlib
 import json
 
-from .atlas_frontier_closure import ClosureReason, ClosureStatus, FrontierClosure, SourceHold
+from .atlas_frontier_closure import (
+    CandidateClosure,
+    ClosureReason,
+    ClosureStatus,
+    FrontierClosure,
+    SourceHold,
+)
 from .atlas_frontier_contracts import CurriculumSnapshot, _bytes, _fail
 from .executable_release import ExecutableFactoryRelease
 from .skos_curriculum import IMPLEMENTATION_UNCOVERED, PROGRAM_BOUND
@@ -13,7 +19,13 @@ from .skos_curriculum import IMPLEMENTATION_UNCOVERED, PROGRAM_BOUND
 
 @dataclass(frozen=True, order=True)
 class TargetDeltaProjection:
-    """Content-addressed pure forecast of one target's exact constructive shape."""
+    """Content-addressed pure forecast of one target's exact constructive shape.
+
+    ``added_capability_ids`` uses executable Factory capability keys: the same
+    namespace as ``execution_plan.capability_map`` and transition
+    ``added_capabilities``. It is not the A08.2 stable ``cap:<sha256>`` identity
+    namespace.
+    """
 
     semantic_id: str
     obligation_signature: str
@@ -224,6 +236,36 @@ def validate_closure_structure(snapshot: CurriculumSnapshot, closure: FrontierCl
         grouped_statuses[identity] = tuple(identity_rows)
 
 
+def validate_target_projection(
+    current_release: ExecutableFactoryRelease,
+    selected_obligations: tuple[CandidateClosure, ...],
+    projection: TargetDeltaProjection,
+) -> None:
+    """Validate one authoritative A09.3 target projection against its release and rows."""
+    if (not isinstance(current_release, ExecutableFactoryRelease)
+            or type(selected_obligations) is not tuple
+            or not selected_obligations
+            or any(type(row) is not CandidateClosure for row in selected_obligations)
+            or type(projection) is not TargetDeltaProjection
+            or any(row.semantic_id != projection.semantic_id
+                   for row in selected_obligations)):
+        _fail("BAMF_PLANNER_CONSTRUCTIVE_DELTA_INVALID")
+    current_release.verify()
+    projection.verify()
+    expected_catalog = current_release.semantic_catalog + projection.introduced_semantic_ids
+    current_capabilities = set(current_release.execution_plan.capability_map)
+    current_catalog = set(current_release.semantic_catalog)
+    if (projection.obligation_signature != obligation_signature(selected_obligations)
+            or projection.current_release_sha256 != current_release.release_sha256
+            or projection.current_semantic_catalog_sha256
+               != current_release.semantic_catalog_sha256
+            or projection.projected_semantic_catalog_sha256
+               != catalog_digest(expected_catalog)
+            or set(projection.added_capability_ids) & current_capabilities
+            or set(projection.introduced_semantic_ids) & current_catalog):
+        _fail("BAMF_PLANNER_CONSTRUCTIVE_DELTA_INVALID")
+
+
 def target_projections(
     closure: FrontierClosure,
     current_release: ExecutableFactoryRelease,
@@ -242,18 +284,6 @@ def target_projections(
         if rows and all(item.status is ClosureStatus.READY for item in rows)}
     if len(result) != len(projections) or set(result) != ready:
         _fail("BAMF_PLANNER_CONSTRUCTIVE_DELTA_INCOMPLETE")
-    current_capabilities = set(current_release.execution_plan.capability_map)
-    current_catalog = set(current_release.semantic_catalog)
     for identity, item in result.items():
-        item.verify()
-        expected_catalog = current_release.semantic_catalog + item.introduced_semantic_ids
-        if (item.obligation_signature != obligation_signature(groups[identity])
-                or item.current_release_sha256 != current_release.release_sha256
-                or item.current_semantic_catalog_sha256
-                   != current_release.semantic_catalog_sha256
-                or item.projected_semantic_catalog_sha256
-                   != catalog_digest(expected_catalog)
-                or set(item.added_capability_ids) & current_capabilities
-                or set(item.introduced_semantic_ids) & current_catalog):
-            _fail("BAMF_PLANNER_CONSTRUCTIVE_DELTA_INVALID")
+        validate_target_projection(current_release, groups[identity], item)
     return result
