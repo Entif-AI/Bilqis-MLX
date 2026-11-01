@@ -12,7 +12,10 @@ from bilqis_mlx.semantics.frame_adapters.common import (
     BOOLEAN_IDENTIFICATION_ADAPTER, FINITE_NUMERIC_ADAPTER,
     MICRO_PREDICATE_ADAPTER,
 )
-from bilqis_mlx.semantics.frame_schema import FrameInstance
+from bilqis_mlx.semantics.frame_adapters.public_formal_sources import (
+    source_graph_for_adapter,
+)
+from bilqis_mlx.semantics.frame_schema import FrameInstance, _formal_source_types
 from bilqis_mlx.semantics.released_frame_schemas import (
     lookup_source_pinned_frame_schema,
 )
@@ -105,15 +108,23 @@ def _pinned_source_types(
     frame = request.projection.frame(request.frame_handle)
     if type(frame) is not FrameInstance:
         _invalid()
+    from bilqis_mlx.semantics.atlas_snapshot import load_pinned_atlas_snapshot
+    snapshot = load_pinned_atlas_snapshot(atlas_selection)
+    _root, source_graph = source_graph_for_adapter(adapter_id)
+    identity_types = _formal_source_types(
+        snapshot, request.concept, source_graph, adapter_id,
+        frame.source_span, request.role_id,
+    )
     schema, _witness = lookup_source_pinned_frame_schema(
         frame.frame_schema_id, frame.frame_schema_revision,
         source_family=source_family, atlas_selection=atlas_selection,
     )
     role = next((item for item in schema.roles
                  if item.role_id == request.role_id), None)
-    if role is None or request.concept.type_ids != role.allowed_type_ids:
+    if (role is None or request.concept.type_ids != identity_types
+            or not set(identity_types).issubset(set(role.allowed_type_ids))):
         _invalid()
-    return role.allowed_type_ids
+    return identity_types
 
 
 def _source_qualified_feature_row(
