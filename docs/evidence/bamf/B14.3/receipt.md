@@ -1,10 +1,11 @@
 # B14.3 | Derived cache bindings and FP32 reference policy
 
-Issue #484; parent #375. IPR-0220 remains governing. This is staged work,
-not accepted generation or source authority. Lane B sync e73e9478 consumes
-unified bb626d75. Branch codex/bamf02-b14-3-484-finish-20261101 starts from Lane B,
-then cherry-picks the exact same-lane #483 PR #667 implementation 783355bb
-as 4ab8c5da. Final turn-in waits for #483 to integrate through unified.
+Issue #484; parent #375. IPR-0220 remains governing. This is cache-boundary work,
+not accepted generation or source authority. Initial staging started from Lane B
+e73e9478 / unified bb626d75 and cherry-picked the exact same-lane #483 PR #667
+implementation 783355bb as 4ab8c5da. PR #667 has since integrated through unified.
+Final refresh merges reviewed unified 4fa27b42 into this issue branch and consumes
+the accepted B14.2 lineage through unified commit 43e89de9.
 
 Recovered original staged #484 c9c83aca binding/policy owners onto the repaired
 #483 norm owner. Encoding requires explicit CacheBinding. SHA256 binds generation,
@@ -51,3 +52,29 @@ open. No source release, admission or learning claim is made.
 Hosted run41276826199 rejected a new literal head-width24 guard under the exact
 base-aware error-control check. The guard now imports the canonical HEAD_WIDTH
 constant. This preserves behavior and introduces no baseline/guard changes.
+
+## Unified refresh requalification
+
+On 2026-11-01 the issue branch merged reviewed unified `4fa27b42`. The textual
+merge conflicts were confined to the public cache codec exports and the historical
+B14.2 receipt. The merge also exposed a non-textual ownership collision: unified
+reintroduced the pre-refactor `_model/atlas_cache_records.py` and its old mirrored
+test after B14.3 had already moved that owner into `_model/cache/` during the
+mandatory directory-size interruption. Because the runtime package searches
+`_model` before `_model/cache`, the stale B14.2 `CacheBinding` silently shadowed
+the reviewed B14.3 causal-binding owner.
+
+The canonical public import therefore resolved to the wrong physical module and
+22 of 33 cache tests failed with the old constructor. The refreshed branch removes
+only those two lineage-proven superseded physical copies. The public import again
+resolves to `bilqis_mlx.runtime.atlas_cache_binding`; the reviewed cache owner and
+mirrored tests remain under the post-refactor cache directories. This near miss is
+filed as `PM-2026-11-01-003`, with root cause `RC-141` and counter-pattern
+`PAT-101`, before publication of the refreshed head.
+
+Requalification on the refreshed tree passes 33/33 focused cache tests and 60/60
+affected attention/backbone/runtime-identity tests, zero skips. Development
+structure and governance report zero violations; factory architecture and docs
+checks pass; base-aware error control reports zero new debt; `git diff --check`
+is clean. No production cache caller, actual student, own AdamW, teacher,
+checkpoint, source release, admission, or human-run state is modified.
