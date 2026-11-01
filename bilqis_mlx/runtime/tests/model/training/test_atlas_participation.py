@@ -50,11 +50,18 @@ def _active():
 
 class ParticipationTests(TestCase):
     def test_update_mask_materializes_exact_b12_boolean_geometry(self):
-        mask = UpdateMask(
-            (ParameterMask("dense", True, ()),
-             ParameterMask("identity.bank.0", False, (0, 2))),
-            ((0, 0), (0, 2)), True,
-        )
+        eligibility = GroupEligibility(
+            "FULL", ("dense", "identity.bank.0"), (),
+            ((0, 0), (0, 1), (0, 2)), (),
+            ((0, 0), (0, 1), (0, 2)))
+        participation = step_participation(
+            StepParticipationInputs(
+                visible_identity_rows=((0, 0), (0, 2)),
+                executed_parameter_names=("dense",)),
+            SemanticDenominator(), (), RoleReadParticipation())
+        mask = parameter_update_mask(
+            eligibility, participation,
+            ActiveAdmittedRows(identity_rows=((0, 0), (0, 1), (0, 2))))
         actual = optimizer_participation_mask(mask, {
             "dense": mx.array(4, dtype=mx.uint64),
             "identity.bank.0": mx.array([2, 3, 4], dtype=mx.uint64),
@@ -64,6 +71,12 @@ class ParticipationTests(TestCase):
             np.asarray(actual["identity.bank.0"]),
             np.array([True, False, True]),
         )
+
+    def test_update_mask_cannot_be_minted_by_a_caller(self):
+        with self.assertRaises(BilqisError):
+            UpdateMask(
+                (ParameterMask("identity.bank.0", False, (1,)),),
+                ((0, 1),), True)
 
     def test_two_optimizer_steps_derive_distinct_literal_row_masks(self):
         first = step_participation(

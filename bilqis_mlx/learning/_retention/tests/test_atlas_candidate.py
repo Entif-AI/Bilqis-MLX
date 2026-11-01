@@ -9,8 +9,11 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning._engram.tests.motif_fixtures import RELEASE, source
 from bilqis_mlx.learning.atlas_engram import MotifBudget, MotifManifest
 from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
-from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
-from bilqis_mlx.learning.atlas_participation import ParameterMask, UpdateMask
+from bilqis_mlx.learning.atlas_plasticity import (
+    ActiveAdmittedRows, GroupEligibility, IdentityRowAge, PlasticityPolicy,
+    RoleReadParticipation, SemanticDenominator, StepParticipationInputs,
+    parameter_update_mask, step_participation,
+)
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree
 from bilqis_mlx.learning._retention.atlas_candidate import (
     CandidateState, CandidateTransaction, begin_candidate, candidate_step, resolve_candidate,
@@ -38,12 +41,19 @@ class CandidateTransactionTests(TestCase):
             loss_bearing=loss_bearing, max_norm=1.)
 
     def update_mask(self, mask, *, loss_bearing=True):
-        rows = tuple(index for index, selected in enumerate(mask) if selected)
-        identities = tuple((0, row) for row in rows)
-        return UpdateMask(
-            (ParameterMask(self.name, False, rows),), identities,
-            loss_bearing,
-        )
+        visible = tuple((0, index) for index, selected in enumerate(mask)
+                        if selected)
+        participation = step_participation(
+            StepParticipationInputs(
+                visible_identity_rows=visible,
+                loss_bearing_target=loss_bearing),
+            SemanticDenominator(), (), RoleReadParticipation())
+        eligibility = GroupEligibility(
+            "FULL", (self.name,), (), ((0, 0), (0, 1)), (),
+            ((0, 0), (0, 1)))
+        return parameter_update_mask(
+            eligibility, participation,
+            ActiveAdmittedRows(identity_rows=((0, 0), (0, 1))))
 
     def snapshot(self, state):
         return tuple(np.asarray(getattr(state.optimizer, field)[self.name]).tobytes()
