@@ -80,6 +80,20 @@ class AtlasFrontierSelectionValidationTests(unittest.TestCase):
             select_frontier_delta(
                 snapshot, closure, release, _options(snapshot, release, closure))
 
+    def test_forged_intrinsic_family_reason_owner_fails_closed(self):
+        release = _release()
+        snapshot = _snapshot(release)
+        forged = ClosureReason(
+            "FAMILY_IMPLEMENTATION_UNCOVERED", "family:BOGUS")
+        closure = _closure(snapshot, (
+            _candidate(snapshot, "z.op.0", reasons=(forged,)),
+            _candidate(snapshot, "z.op.1"),
+            _candidate(snapshot, "z.op.2"),
+        ))
+        with self.assertRaises(BilqisError):
+            select_frontier_delta(
+                snapshot, closure, release, _options(snapshot, release, closure))
+
     def test_exact_projection_controls_capability_and_zero_identity_budget(self):
         release = _release()
         snapshot = _snapshot(release, budget=PlannerBudget(1, 0, 1000))

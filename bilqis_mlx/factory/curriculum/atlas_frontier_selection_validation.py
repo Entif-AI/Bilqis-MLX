@@ -106,15 +106,89 @@ def _expected_holds(snapshot: CurriculumSnapshot) -> tuple[SourceHold, ...]:
 def _direct_status(row, candidate) -> ClosureStatus:
     family_reason = ClosureReason(
         "FAMILY_IMPLEMENTATION_UNCOVERED", f"family:{row.family_id}")
+    intrinsic_reasons = tuple(
+        reason for reason in candidate.reasons
+        if not reason.code.startswith("PREREQUISITE_"))
     if row.implementation_status == IMPLEMENTATION_UNCOVERED:
-        if family_reason not in candidate.reasons:
+        if intrinsic_reasons != (family_reason,):
             _fail("BAMF_PLANNER_SELECTION_CLOSURE_INVALID")
         return ClosureStatus.IMPLEMENTATION_UNCOVERED
     if row.implementation_status == PROGRAM_BOUND:
-        if family_reason in candidate.reasons:
+        if intrinsic_reasons:
             _fail("BAMF_PLANNER_SELECTION_CLOSURE_INVALID")
         return ClosureStatus.READY
     _fail("BAMF_PLANNER_SELECTION_CLOSURE_INVALID")
+
+
+def _validate_candidate_header(row, candidate, prerequisites: tuple[str, ...]) -> None:
+    if (candidate.source_evidence_sha256 != row.source_evidence_sha256
+            or candidate.prerequisites != prerequisites
+            or candidate.status is ClosureStatus.SOURCE_HELD
+            or candidate.reasons != tuple(sorted(set(candidate.reasons)))):
+        _fail("BAMF_PLANNER_SELECTION_CLOSURE_INVALID")
+
+
+def _prerequisite_reason_map(candidate, prerequisites: tuple[str, ...]) -> dict[str, ClosureReason]:
+    reasons = tuple(
+        reason for reason in candidate.reasons
+        if reason.code.startswith("PREREQUISITE_"))
+    result = {reason.dependency_id: reason for reason in reasons}
+    legal_codes = {
+        "PREREQUISITE_IMPLEMENTATION_UNCOVERED",
+        "PREREQUISITE_WAITING_FOR_EVIDENCE",
+    }
+    if (len(result) != len(reasons)
+            or any(reason.code not in legal_codes
+                   or reason.owner != "factory:prerequisite"
+                   or reason.dependency_id not in prerequisites
+                   for reason in reasons)):
+        _fail("BAMF_PLANNER_SELECTION_CLOSURE_INVALID")
+    return result
+
+
+def _dependency_code(
+    prerequisite: str,
+    statuses: tuple[ClosureStatus, ...],
+    reason: ClosureReason | None,
+    evidence_wait: dict[str, bool],
+) -> str | None:
+    if ClosureStatus.IMPLEMENTATION_UNCOVERED in statuses:
+        return "PREREQUISITE_IMPLEMENTATION_UNCOVERED"
+    if ClosureStatus.WAITING_FOR_EVIDENCE in statuses:
+        return "PREREQUISITE_WAITING_FOR_EVIDENCE"
+    waiting = reason is not None
+    prior = evidence_wait.setdefault(prerequisite, waiting)
+    if prior != waiting:
+        _fail("BAMF_PLANNER_SELECTION_CLOSURE_INVALID")
+    return "PREREQUISITE_WAITING_FOR_EVIDENCE" if waiting else None
+
+
+def _expected_status(
+    direct: ClosureStatus,
+    prerequisites: tuple[str, ...],
+    prerequisite_reasons: dict[str, ClosureReason],
+    grouped_statuses: dict[str, tuple[ClosureStatus, ...]],
+    evidence_wait: dict[str, bool],
+) -> ClosureStatus:
+    expected = direct
+    for prerequisite in prerequisites:
+        reason = prerequisite_reasons.get(prerequisite)
+        code = _dependency_code(
+            prerequisite, grouped_statuses[prerequisite], reason, evidence_wait)
+        if code is None:
+            if reason is not None:
+                _fail("BAMF_PLANNER_SELECTION_CLOSURE_INVALID")
+            continue
+        if reason is None or reason.code != code:
+            _fail("BAMF_PLANNER_SELECTION_CLOSURE_INVALID")
+        dependency = (ClosureStatus.IMPLEMENTATION_UNCOVERED
+                      if code.endswith("IMPLEMENTATION_UNCOVERED")
+                      else ClosureStatus.WAITING_FOR_EVIDENCE)
+        if dependency is ClosureStatus.IMPLEMENTATION_UNCOVERED:
+            expected = dependency
+        elif expected is ClosureStatus.READY:
+            expected = dependency
+    return expected
 
 
 def validate_closure_structure(snapshot: CurriculumSnapshot, closure: FrontierClosure) -> None:
@@ -133,67 +207,17 @@ def validate_closure_structure(snapshot: CurriculumSnapshot, closure: FrontierCl
 
     grouped_statuses: dict[str, tuple[ClosureStatus, ...]] = {}
     evidence_wait: dict[str, bool] = {}
-    legal_prerequisite_codes = {
-        "PREREQUISITE_IMPLEMENTATION_UNCOVERED",
-        "PREREQUISITE_WAITING_FOR_EVIDENCE",
-    }
     for identity in closure.constituent_order:
         identity_rows = []
         for key in sorted(item for item in coverage if item[0] == identity):
             row, candidate = coverage[key], candidates[key]
-            if (candidate.source_evidence_sha256 != row.source_evidence_sha256
-                    or candidate.prerequisites != graph[identity]
-                    or candidate.status is ClosureStatus.SOURCE_HELD
-                    or candidate.reasons != tuple(sorted(set(candidate.reasons)))):
-                _fail("BAMF_PLANNER_SELECTION_CLOSURE_INVALID")
+            _validate_candidate_header(row, candidate, graph[identity])
             direct = _direct_status(row, candidate)
-            prerequisite_reasons = {
-                reason.dependency_id: reason for reason in candidate.reasons
-                if reason.code.startswith("PREREQUISITE_")}
-            if len(prerequisite_reasons) != sum(
-                    reason.code.startswith("PREREQUISITE_") for reason in candidate.reasons):
-                _fail("BAMF_PLANNER_SELECTION_CLOSURE_INVALID")
-            if any(
-                reason.code not in legal_prerequisite_codes
-                or reason.owner != "factory:prerequisite"
-                or reason.dependency_id not in graph[identity]
-                for reason in prerequisite_reasons.values()
-            ):
-                _fail("BAMF_PLANNER_SELECTION_CLOSURE_INVALID")
-            if any(
-                reason.code != "FAMILY_IMPLEMENTATION_UNCOVERED"
-                for reason in candidate.reasons
-                if not reason.code.startswith("PREREQUISITE_")
-            ):
-                _fail("BAMF_PLANNER_SELECTION_CLOSURE_INVALID")
-
-            expected = direct
-            for prerequisite in graph[identity]:
-                statuses = grouped_statuses[prerequisite]
-                reason = prerequisite_reasons.get(prerequisite)
-                if ClosureStatus.IMPLEMENTATION_UNCOVERED in statuses:
-                    code = "PREREQUISITE_IMPLEMENTATION_UNCOVERED"
-                elif ClosureStatus.WAITING_FOR_EVIDENCE in statuses:
-                    code = "PREREQUISITE_WAITING_FOR_EVIDENCE"
-                else:
-                    waiting = reason is not None
-                    prior = evidence_wait.setdefault(prerequisite, waiting)
-                    if prior != waiting:
-                        _fail("BAMF_PLANNER_SELECTION_CLOSURE_INVALID")
-                    code = "PREREQUISITE_WAITING_FOR_EVIDENCE" if waiting else None
-                if code is None:
-                    if reason is not None:
-                        _fail("BAMF_PLANNER_SELECTION_CLOSURE_INVALID")
-                    continue
-                if reason is None or reason.code != code:
-                    _fail("BAMF_PLANNER_SELECTION_CLOSURE_INVALID")
-                dependency = (ClosureStatus.IMPLEMENTATION_UNCOVERED
-                              if code.endswith("IMPLEMENTATION_UNCOVERED")
-                              else ClosureStatus.WAITING_FOR_EVIDENCE)
-                if dependency is ClosureStatus.IMPLEMENTATION_UNCOVERED:
-                    expected = dependency
-                elif expected is ClosureStatus.READY:
-                    expected = dependency
+            prerequisite_reasons = _prerequisite_reason_map(
+                candidate, graph[identity])
+            expected = _expected_status(
+                direct, graph[identity], prerequisite_reasons,
+                grouped_statuses, evidence_wait)
             if candidate.status is not expected:
                 _fail("BAMF_PLANNER_SELECTION_CLOSURE_INVALID")
             identity_rows.append(candidate.status)
