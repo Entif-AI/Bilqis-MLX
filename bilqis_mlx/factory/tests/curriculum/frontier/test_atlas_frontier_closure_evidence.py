@@ -3,10 +3,8 @@ from dataclasses import replace
 import unittest
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.factory.atlas_frontier_closure import (
-    ClosureStatus,
-    PrerequisiteCapabilityBinding,
-)
+from bilqis_mlx.factory.atlas_frontier_closure import ClosureStatus
+from bilqis_mlx.factory.atlas_frontier_contracts import PrerequisiteEdge
 from bilqis_mlx.factory.skos_curriculum import IMPLEMENTATION_UNCOVERED, PROGRAM_BOUND
 from bilqis_mlx.factory.tests.curriculum.frontier.atlas_frontier_closure_fixtures import (
     current_evidence,
@@ -17,6 +15,25 @@ from bilqis_mlx.factory.tests.curriculum.frontier.atlas_frontier_closure_fixture
 
 
 class AtlasFrontierClosureEvidenceTests(unittest.TestCase):
+    def _factory_semantic_snapshot(self):
+        base = three_node_snapshot()
+        rows = tuple(sorted((
+            replace(base.coverage_rows[0], semantic_id="fixture.a.base",
+                    implementation_status=PROGRAM_BOUND),
+            replace(base.coverage_rows[1], semantic_id="fixture.a.other",
+                    implementation_status=PROGRAM_BOUND),
+            replace(base.coverage_rows[2], semantic_id="fixture.a.f3",
+                    implementation_status=PROGRAM_BOUND),
+        ), key=lambda item: (item.semantic_id, item.family_id)))
+        return rehash(
+            base,
+            source_eligible_concept_ids=(
+                "fixture.a.base", "fixture.a.f3", "fixture.a.other"),
+            coverage_rows=rows,
+            prerequisite_edges=(PrerequisiteEdge(
+                "fixture.a.other", "fixture.a.base", "a" * 64),),
+        )
+
     def test_true_dependency_blocks_but_unrelated_ready_work_survives(self):
         closure = resolve(three_node_snapshot())
         by_id = {(item.semantic_id, item.family_id): item for item in closure.candidates}
@@ -52,21 +69,15 @@ class AtlasFrontierClosureEvidenceTests(unittest.TestCase):
         self.assertEqual(by_id["urn:three"].status, ClosureStatus.READY)
 
     def test_current_verified_evidence_unlocks_declared_dependency(self):
-        base = three_node_snapshot()
-        rows = tuple(replace(item, implementation_status=PROGRAM_BOUND)
-                     for item in base.coverage_rows)
+        base = self._factory_semantic_snapshot()
         release, ledger, plan, checkpoint, step = current_evidence("A.BASE")
         snapshot = rehash(
             base,
-            coverage_rows=rows,
             admitted_factory_release_sha256=release.release_sha256,
             admission_receipt_sha256="7" * 64,
         )
         closure = resolve(
             snapshot,
-            prerequisite_bindings=(
-                PrerequisiteCapabilityBinding("urn:one", "A.BASE"),
-            ),
             current_release=release,
             evidence_ledger=ledger,
             autonomy_plan=plan,
@@ -76,14 +87,11 @@ class AtlasFrontierClosureEvidenceTests(unittest.TestCase):
         self.assertTrue(all(
             item.status is ClosureStatus.READY for item in closure.candidates))
 
-    def test_evidence_must_be_current_and_cannot_invent_mastery(self):
-        base = three_node_snapshot()
-        rows = tuple(replace(item, implementation_status=PROGRAM_BOUND)
-                     for item in base.coverage_rows)
+    def test_evidence_must_be_current(self):
+        base = self._factory_semantic_snapshot()
         release, ledger, plan, checkpoint, step = current_evidence("A.BASE")
         snapshot = rehash(
             base,
-            coverage_rows=rows,
             admitted_factory_release_sha256=release.release_sha256,
             admission_receipt_sha256="7" * 64,
         )
@@ -93,39 +101,46 @@ class AtlasFrontierClosureEvidenceTests(unittest.TestCase):
             autonomy_plan=plan,
             optimizer_step=step,
         )
-        with self.assertRaises(BilqisError):
-            resolve(
-                snapshot,
-                prerequisite_bindings=(
-                    PrerequisiteCapabilityBinding("urn:one", "A.BASE"),
-                ),
-                checkpoint_sha256="6" * 64,
-                **common,
-            )
-        with self.assertRaises(BilqisError):
-            resolve(
-                snapshot,
-                prerequisite_bindings=(
-                    PrerequisiteCapabilityBinding("urn:one", "cap:DOES_NOT_EXIST"),
-                ),
-                checkpoint_sha256=checkpoint,
-                **common,
-            )
+        stale = resolve(
+            snapshot,
+            checkpoint_sha256="6" * 64,
+            **common,
+        )
+        by_id = {item.semantic_id: item for item in stale.candidates}
+        self.assertEqual(
+            by_id["fixture.a.other"].status,
+            ClosureStatus.WAITING_FOR_EVIDENCE,
+        )
 
-    def test_binding_order_does_not_change_closure_identity(self):
-        base = three_node_snapshot()
-        rows = tuple(replace(item, implementation_status=PROGRAM_BOUND)
-                     for item in base.coverage_rows)
-        release, ledger, plan, checkpoint, step = current_evidence("A.BASE", "A.OTHER")
+    def test_mastery_for_another_capability_cannot_unlock_semantic_prerequisite(self):
+        base = self._factory_semantic_snapshot()
+        release, ledger, plan, checkpoint, step = current_evidence("A.OTHER")
         snapshot = rehash(
             base,
-            coverage_rows=rows,
             admitted_factory_release_sha256=release.release_sha256,
             admission_receipt_sha256="7" * 64,
         )
-        bindings = (
-            PrerequisiteCapabilityBinding("urn:one", "A.BASE"),
-            PrerequisiteCapabilityBinding("urn:three", "A.OTHER"),
+        closure = resolve(
+            snapshot,
+            current_release=release,
+            evidence_ledger=ledger,
+            autonomy_plan=plan,
+            checkpoint_sha256=checkpoint,
+            optimizer_step=step,
+        )
+        by_id = {item.semantic_id: item for item in closure.candidates}
+        self.assertEqual(
+            by_id["fixture.a.other"].status,
+            ClosureStatus.WAITING_FOR_EVIDENCE,
+        )
+
+    def test_current_evidence_projection_is_deterministic(self):
+        base = self._factory_semantic_snapshot()
+        release, ledger, plan, checkpoint, step = current_evidence("A.BASE", "A.OTHER")
+        snapshot = rehash(
+            base,
+            admitted_factory_release_sha256=release.release_sha256,
+            admission_receipt_sha256="7" * 64,
         )
         kwargs = dict(
             current_release=release,
@@ -134,9 +149,8 @@ class AtlasFrontierClosureEvidenceTests(unittest.TestCase):
             checkpoint_sha256=checkpoint,
             optimizer_step=step,
         )
-        first = resolve(snapshot, prerequisite_bindings=bindings, **kwargs)
-        second = resolve(
-            snapshot, prerequisite_bindings=tuple(reversed(bindings)), **kwargs)
+        first = resolve(snapshot, **kwargs)
+        second = resolve(snapshot, **kwargs)
         self.assertEqual(first, second)
 
     def test_implementation_debt_dominates_evidence_wait(self):
