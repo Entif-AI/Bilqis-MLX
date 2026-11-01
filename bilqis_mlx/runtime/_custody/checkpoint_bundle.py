@@ -7,6 +7,11 @@ from pathlib import Path
 import bilqis_mlx.learning.champions as _learning_champions
 import bilqis_mlx.runtime.mlx_checkpoint as _runtime_mlx_checkpoint
 import bilqis_mlx.source as _bilqis_mlx_source
+from bilqis_mlx.runtime.bamf_bundle import (
+    BAMF_BUNDLE_SCHEMA, BAMF_POINTER_SCHEMA, BamfBundleCandidate, CompleteStudent,
+    load_bamf_bundle, load_bamf_generation, publish_bamf_generation,
+    save_bamf_bundle,
+)
 
 
 def bundle_pointer(run_dir: Path, name: str, parameters, optimizer, graph, *,

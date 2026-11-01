@@ -20,6 +20,7 @@ from bilqis_mlx.data_plane import verify_file_digest
 from bilqis_mlx.runtime.disk import assert_headroom
 
 SCHEMA = "bilqis.mlx.fp32-adamw-bundle/v1"
+BAMF_TENSOR_SCHEMA = "bilqis.mlx.bamf-named-state/v2"
 
 
 def _json_hash(value: object) -> str:
@@ -226,3 +227,81 @@ def load_semantically_bound_bundle(destination: Path):
     if int(params["embedding.weight"].shape[0]) != len(catalog["tokens"]):
         raise ValueError("MLX_BUNDLE_RELOADED_MODEL_VOCAB_DRIFT")
     return params,optimizer,manifest,catalog
+
+
+def _bamf_count_key(parameter_name: str) -> str:
+    from bilqis_mlx.runtime.model_topology_v2 import bamf_storage_key
+    return bamf_storage_key(parameter_name, "weight")[:-len("weight")] + "count"
+
+
+def save_bamf_state_payload(destination: Path, spec, extents, state, *,
+                            optimizer_step: int, reserve_gib: float = 100.0) -> dict:
+    """Persist one complete B12 numerical tree without granting publication."""
+    import mlx.core as mx
+    from bilqis_mlx.runtime.atlas_optimizer import AdamWStateTree
+    from bilqis_mlx.runtime.model_topology_v2 import (
+        ModelTopologySpecV2, GenerationExtents, bamf_storage_key,
+        expected_bamf_shapes,
+    )
+    if (type(spec) is not ModelTopologySpecV2 or type(extents) is not GenerationExtents
+            or type(state) is not AdamWStateTree or type(optimizer_step) is not int
+            or optimizer_step < 0):
+        raise ValueError("BAMF_BUNDLE_NUMERICAL_STATE_INVALID")
+    state.validate()
+    declared = expected_bamf_shapes(spec, extents)
+    if set(state.parameters) != {item.name for item in declared}:
+        raise ValueError("BAMF_BUNDLE_PARAMETER_IDENTITY_DRIFT")
+    arrays = {}
+    expected_bytes = 0
+    for item in declared:
+        for part, value in (("weight", state.parameters[item.name]),
+                            ("m", state.m[item.name]), ("v", state.v[item.name])):
+            arrays[bamf_storage_key(item.name, part)] = value
+            expected_bytes += value.size * value.itemsize
+        count = state.update_counts[item.name]
+        arrays[_bamf_count_key(item.name)] = count
+        expected_bytes += count.size * count.itemsize
+    mx.eval(arrays)
+    destination = Path(destination)
+    assert_headroom(destination, required_bytes=expected_bytes + 65536,
+                    reserve_gib=reserve_gib)
+    mx.save_safetensors(str(destination), arrays)
+    return {
+        "schema": BAMF_TENSOR_SCHEMA,
+        "filename": destination.name,
+        "sha256": digest_file(destination),
+        "optimizer_step": optimizer_step,
+        "tensor_count": len(arrays),
+        "uncompressed_bytes": expected_bytes,
+    }
+
+
+def load_bamf_state_payload(destination: Path, binding: dict, spec, extents):
+    """Verify complete v2 bytes before constructing a detached optimizer tree."""
+    import mlx.core as mx
+    from bilqis_mlx.runtime.atlas_optimizer import AdamWStateTree
+    from bilqis_mlx.runtime.model_topology_v2 import (
+        ModelTopologySpecV2, GenerationExtents, bamf_storage_key,
+        expected_bamf_shapes,
+    )
+    if (not isinstance(binding, dict) or binding.get("schema") != BAMF_TENSOR_SCHEMA
+            or type(spec) is not ModelTopologySpecV2 or type(extents) is not GenerationExtents
+            or binding.get("filename") != Path(destination).name):
+        raise ValueError("BAMF_BUNDLE_TENSOR_BINDING_INVALID")
+    if not verify_file_digest(destination, binding.get("sha256")):
+        raise ValueError("BAMF_BUNDLE_TENSOR_FILE_CORRUPTED")
+    arrays = mx.load(str(destination))
+    declared = expected_bamf_shapes(spec, extents)
+    expected = {bamf_storage_key(item.name, part)
+                for item in declared for part in ("weight", "m", "v")}
+    expected |= {_bamf_count_key(item.name) for item in declared}
+    if set(arrays) != expected or binding.get("tensor_count") != len(arrays):
+        raise ValueError("BAMF_BUNDLE_MISSING_OR_EXTRA_TENSORS")
+    parameters = {item.name: arrays[bamf_storage_key(item.name, "weight")]
+                  for item in declared}
+    first = {item.name: arrays[bamf_storage_key(item.name, "m")] for item in declared}
+    second = {item.name: arrays[bamf_storage_key(item.name, "v")] for item in declared}
+    counts = {item.name: arrays[_bamf_count_key(item.name)] for item in declared}
+    restored = AdamWStateTree(parameters, first, second, counts)
+    mx.eval(restored.parameters, restored.m, restored.v, restored.update_counts)
+    return restored
