@@ -1,0 +1,9 @@
+B11.1a source-ingress checkpoint: draft PR #640 is pushed/read back at `f8117e9d3e57f925a48100ca2b6204887204d31e`, from Lane B/unified `9104ce733e04fb9c82420428b18dfdbf5db49535`.
+
+A05.5 #594 is completed and accepted via PR #618. Its source atom binding is no longer a missing dependency. The new `start_source_backbone_numerical` entry point derives h0 through that accepted source encoder, then executes the existing unadmitted B11 numerical chain. Callers cannot supply hidden states, generation labels, prefix digests or predecessor results.
+
+Actual isolated M3 proof: 4 new tests and 17 combined source/backbone/bridge tests pass, zero skips. Literal nonzero feedforward equations cover all twelve layers, source/backbone gradients and rights/source/parameter/injection rejection. Scoped fresh EGM code review found no implementation Blocker/Major. This is not nonzero-attention, multi-row/padding or producer admission proof.
+
+**Still open:** #586/#577 producer receipts, motif-boundary disposition, actual B05 selection/adversaries and fresh acceptance EGM. Results remain `UNADMITTED_NUMERICAL`; public B05 admission stays fail-closed. The encountered topology owner triggers a mandatory structure hold, already owned by #621/PR #622 and runtime-directory #520/PR #614; newer #637/PR #639 is another reviewed candidate, not accepted unified authority. No competing rewrite, baseline waiver, self-merge or durable student/optimizer/graph mutation.
+
+All twelve tracker tabs were reconciled for this checkpoint. Full reproducible commands and review limitations are in the PR and committed evidence. No issue closure is claimed.

@@ -10,7 +10,7 @@ from pathlib import Path
 import re
 import subprocess
 
-_KEY = re.compile(r'BAMF-0\.2\s+([ABC]\d{2}(?:\.\d+[a-z]?)*)\b')
+_KEY = re.compile(r'BAMF-0\.2\s+([ABC]\d{2}(?:\.\d+[a-z]?)+)(?=$|[\s|:])')
 
 
 def audit(registry: dict, workstack: dict, issues: list[dict]) -> dict:
@@ -37,7 +37,7 @@ def audit(registry: dict, workstack: dict, issues: list[dict]) -> dict:
                     entry['number'] not in {x['number'] for x in by_key[entry['key']]}]
     unknown_registered = sorted(registered_keys - set(by_key))
     return {'schema': 'bilqis.child-registry-live-audit/v1',
-            'status': 'incomplete' if missing or duplicates or wrong_number else 'complete',
+            'status': 'incomplete' if missing or duplicates or wrong_number or unknown_registered else 'complete',
             'registered_count': len(entries), 'owner_count': len(owner_numbers),
             'matched_live_count': len(candidates),
             'missing_issue_count': len(missing),
