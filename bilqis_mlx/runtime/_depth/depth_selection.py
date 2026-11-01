@@ -111,16 +111,14 @@ def _numerical_depth_select_with_diagnostics(
     return DepthSelectionDiagnostics(output, alpha, gate)
 
 
-def _producer_summaries(receipts, boundary_group, params):
-    from bilqis_mlx.learning.source_atoms.backbone_receipts import (
-        ProducedBackboneBoundary, require_produced_backbone_boundary,
-    )
-    if (type(receipts) is not tuple or len(receipts) != boundary_group + 1
-            or type(params) is not DepthParameterView
-            or any(type(item) is not ProducedBackboneBoundary for item in receipts)):
+def _producer_summaries(producer, boundary_group, params):
+    from bilqis_mlx.learning.source_atoms.backbone import _SourceBackboneProducerSession
+    if (type(producer) is not _SourceBackboneProducerSession
+            or type(params) is not DepthParameterView):
         _invalid()
+    receipts = _SourceBackboneProducerSession._validated_receipts(
+        producer, boundary_group)
     for index, item in enumerate(receipts):
-        require_produced_backbone_boundary(item)
         if (item.source_id != SOURCE_ORDER[index]
                 or (index and item.predecessor_receipt_digest != receipts[index - 1].receipt_digest)
                 or item.source_handoff_digest != receipts[0].source_handoff_digest
@@ -131,25 +129,25 @@ def _producer_summaries(receipts, boundary_group, params):
                 or item.parameter_tree_digest != params.parameter_tree_digest
                 or item.generation_digest != params.generation_digest):
             _invalid()
-    return tuple(DepthSummary(
+    summaries = tuple(DepthSummary(
         item.source_id, item.completed_layer,
         item.hidden if index == 0 else _rms_norm(item.hidden, params["norm"]),
     ) for index, item in enumerate(receipts))
+    return summaries, receipts
 
 
-def depth_select(producer_receipts, frame_features, params):
+def depth_select(producer, frame_features, params):
     return depth_select_with_diagnostics(
-        producer_receipts, frame_features, params).output
+        producer, frame_features, params).output
 
 
-def depth_select_with_diagnostics(producer_receipts, frame_features, params):
+def depth_select_with_diagnostics(producer, frame_features, params):
     if (type(frame_features) is not DepthFrameFeatures
-            or type(params) is not DepthParameterView
-            or type(producer_receipts) is not tuple or not producer_receipts):
+            or type(params) is not DepthParameterView):
         _invalid()
-    summaries = _producer_summaries(
-        producer_receipts, frame_features.boundary_group, params)
-    current = producer_receipts[-1].hidden
+    summaries, receipts = _producer_summaries(
+        producer, frame_features.boundary_group, params)
+    current = receipts[frame_features.boundary_group].hidden
     return _numerical_depth_select_with_diagnostics(
         current, summaries, frame_features, params)
 

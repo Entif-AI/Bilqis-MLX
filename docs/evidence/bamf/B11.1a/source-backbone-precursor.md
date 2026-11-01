@@ -7,11 +7,12 @@ promotion, or self-merge.
 
 ## Intake and source authority
 
-Lane B consumed reviewed unified `70e37ae27214061dcc1712503eae6741a2e3781e`.
-The current execution-replay hardening checkpoint is
-`f0dd9ddeb5b374f6038b8de350b26cc56ea7e347`. It includes the selected-state
-producer repair (`ef0e803116f752c1eb706f08dc7ae460b2bcd6a5`) and the first
-receipt-issuer hardening (`4d349159c757195ff12ba20614c86f8c6ea80570`).
+Lane B consumed reviewed unified `77a05ef00337e8a3773d070adad4c8874c9c1034`.
+The current repair wave descends from execution-replay checkpoint
+`f0dd9ddeb5b374f6038b8de350b26cc56ea7e347` and the later receipt-authentication
+checkpoint `ed647441a3346cddae537e8ea1a1e012403c14ff`. The final feature SHA for this
+repair is recorded only after commit and remote verification; this document does
+not promote the uncommitted working tree into a checkpoint identity.
 
 A05.5 #594 is accepted through PR #618. Reproducing its source chain yields
 source bundle `f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec`,
@@ -24,8 +25,9 @@ The conformance reproduction passes all four source gates.
 `start_source_backbone_producer` replays and revalidates the actual source rows,
 derives h0 through the accepted source encoder, and owns the subsequent fixed
 B01/B04 numerical execution. Receipt issuance independently replays the same
-source authority and exact numerical boundary before sealing the boundary; a
-Python producer-shaped object or mutable numerical result is not itself proof.
+source authority and exact numerical boundary before materializing the boundary
+evidence; a Python producer-shaped object or mutable numerical result is not
+itself proof.
 Callers provide the authoritative source selection and B01 parameter state; they
 cannot provide h0/g1/g2/g3 bytes, a generation label, prefix digest, group number,
 predecessor result, cache-chain digest, or hidden digest as producer credentials.
@@ -36,12 +38,12 @@ the complete declared BAMF parameter tree, exact parameter-tree content digest,
 compiled prediction-prefix digest, execution scope/input/output digests,
 cache-chain digest, numerical execution digest, ordered predecessor receipt,
 source id, completed layer, and boundary-transform disposition. Before a receipt
-is authenticated, source encoding and group execution are replayed from the
-authoritative inputs and compared to the claimed boundary. The replay result is
-then authenticated with a closure-held HMAC. There is no importable constructor
-seal and no issued-object registry; B05 validates the receipt contents and HMAC
-before selector math. The HMAC is an issuance witness layered on top of execution
-replay, never a substitute for provenance.
+can participate in production B05 selection, source encoding and group execution
+are replayed from the authoritative producer inputs and exact-compared to the
+presented boundary evidence. No HMAC, secret process token, issued-object registry,
+Python object identity, or caller-computed hidden digest is an authority source.
+Receipts are evidence objects; the execution-owning producer and deterministic
+replay are the authority boundary.
 
 The receipt order is `h0,g1,g2,g3`. Group 1 records the explicit
 `NO_HIT_QUARANTINED` disposition at `AFTER_LAYER_4_BEFORE_CAPTURE` and binds that
@@ -50,9 +52,11 @@ group-1 execution digest. It does not claim an authorized B08 hit while upstream
 B08 source authority remains quarantined. Groups 2 and 3 record
 `NOT_APPLICABLE`.
 
-The public `depth_select` / `depth_select_with_diagnostics` path accepts only the
-execution-owned producer receipt chain and derives `current` from the terminal
-receipt; callers cannot supply detached same-byte current tensors. It verifies
+The public `depth_select` / `depth_select_with_diagnostics` path accepts the
+execution-owning producer, not a caller-supplied receipt tuple. It independently
+rederives the exact receipt prefix for the requested boundary and computes from
+the replayed terminal hidden state; callers cannot make a detached same-byte tensor
+authoritative by embedding it in structurally matching receipt evidence. It verifies
 that its `DepthParameterView` represents the same complete parameter tree and
 execution-generation identity, and that the ordered producer chain is
 source/topology/prefix/tree consistent. Completed group captures are RMS-normalized
@@ -90,10 +94,12 @@ The real-source acceptance tests prove:
 - test-only mutation of generation, prefix or cache-chain identity rejects before
   B05 selector computation;
 - a copied receipt whose public content digest is recomputed still fails the live
-  producer-authentication check after any relabel/tamper;
-- explicit private imports cannot obtain a producer seal or issued-object registry,
-  because neither exists; a self-constructed receipt without the replay-path HMAC
-  is rejected before B05 selector computation;
+  producer replay/exact-comparison check after any relabel/tamper;
+- a receipt tuple is not a production B05 credential at all; the selector requires
+  the execution-owning producer and independently rederives its boundary prefix;
+- same-valued detached hidden bytes embedded in receipt evidence do not seize B05
+  graph custody: B05 computes from replay-derived hidden state and gradients still
+  reach executed backbone parameters;
 - the public B05 API has no caller-supplied `current` credential;
 - group 1 can only report the explicit quarantined no-hit disposition while B08
   source authority remains unavailable; it cannot fabricate an authorized hit;
@@ -104,7 +110,7 @@ The real-source acceptance tests prove:
 ## Verification
 
 With the pinned A01 Atlas bundle mounted, source encoding, numerical backbone,
-producer receipts and source-bridge custody pass 24/24 tests with zero skips. The
+producer receipts and source-bridge custody pass 26/26 tests with zero skips. The
 current backbone/depth selection passes 21/21 tests with zero skips.
 Development-structure and governance checks report zero violations; factory
 architecture and documentation checks pass; base-aware error control reports
@@ -116,11 +122,15 @@ boundaries, and every resulting owner is below 240 LoC before feature work resum
 Independent non-EGM adversarial review repeatedly attacked receipt minting,
 selected-state chaining, generation/extents identity, detached B05 current,
 caller-supplied motif context, copy/re-hash forgery, fabricated Python producer
-state, and finally the importable seal/registry that could bypass the replaying
-issuer. The final repair removes that registry/seal authority entirely and layers
-a closure-held HMAC on top of independent execution replay. This additional review
-is defect-discovery evidence only and never substitutes for the pinned Google EGM
-gate below.
+state, and the authority mechanism itself. The exact `ed647441...` review found
+one Blocker and zero Majors: both issuance and verification shared a closure-held
+HMAC key that ordinary in-process Python introspection could recover, allowing an
+attacker to sign fabricated receipt contents without producer replay. The repair
+therefore removes the HMAC/token authority entirely and makes production B05
+rederive and exact-compare the authoritative producer execution before using the
+boundary. This non-EGM review is defect-discovery evidence only and never
+substitutes for the pinned Google EGM gate below. A fresh non-EGM pass is still
+required on the final committed repair head because the reviewed code changed.
 
 No actual student, native AdamW, teacher, checkpoint, retained source release,
 admission lease, human-run state or live training process was modified.

@@ -68,8 +68,6 @@ class _SourceBackboneProducerSession:
             scope_ids=mx.zeros(valid.shape, dtype=mx.int32), valid=valid,
             generation=generation, prefix_digest=prefix)
         if result is None:
-            if self._receipts or self._session.results:
-                _invalid_producer_receipt()
             hidden = encoded.global_seeds
             output = _content_digest(hidden)
             return dict(
@@ -87,9 +85,9 @@ class _SourceBackboneProducerSession:
                 motif_disposition=NOT_APPLICABLE, motif_read_position="",
                 motif_read_digest=contract_digest(()))
         target = result.group_index
-        if (target < 1 or target != len(self._session.results)
-                or result is not self._session.results[-1]
-                or len(self._depth_inputs) != target - 1):
+        if (target < 1 or target > len(self._session.results)
+                or result is not self._session.results[target - 1]
+                or len(self._depth_inputs) < target - 1):
             _invalid_producer_receipt()
         expected = None
         for group_index in range(1, target + 1):
@@ -97,8 +95,7 @@ class _SourceBackboneProducerSession:
                 expected = replay.advance()
             else:
                 features, view = self._depth_inputs[group_index - 2]
-                selected = depth_select(
-                    self._receipts[:group_index], features, view)
+                selected = depth_select(self, features, view)
                 expected = replay.advance(next_input=selected)
         fields = (
             "group_index", "layer_start", "layer_end", "parameter_content_digest",
@@ -124,9 +121,25 @@ class _SourceBackboneProducerSession:
             output_digest=_content_digest(expected.hidden),
             cache_chain_digest=expected.cache_chain_digest,
             numerical_execution_digest=expected.execution_digest,
-            predecessor_receipt_digest=self._receipts[-1].receipt_digest,
+            predecessor_receipt_digest=self._receipts[target - 1].receipt_digest,
             motif_disposition=motif_disposition, motif_read_position=motif_position,
             motif_read_digest=motif_read_digest)
+
+    def _validated_receipts(self, boundary_group):
+        if (not isinstance(boundary_group, int) or isinstance(boundary_group, bool)
+                or boundary_group < 1 or boundary_group > len(self._receipts) - 1):
+            _invalid_producer_receipt()
+        prefix = self._receipts[:boundary_group + 1]
+        verified = []
+        for index, receipt in enumerate(prefix):
+            result = None if index == 0 else self._session.results[index - 1]
+            expected = _issue_from_producer(self, result)
+            receipt._validate_contents()
+            if (receipt.receipt_digest != expected.receipt_digest
+                    or _content_digest(receipt.hidden) != _content_digest(expected.hidden)):
+                _invalid_producer_receipt()
+            verified.append(expected)
+        return tuple(verified)
 
     @property
     def receipts(self):
@@ -137,7 +150,7 @@ class _SourceBackboneProducerSession:
         if completed:
             if frame_features is None or depth_parameters is None:
                 _invalid_producer_receipt()
-            selected = depth_select(self._receipts, frame_features, depth_parameters)
+            selected = depth_select(self, frame_features, depth_parameters)
             result = self._session.advance(next_input=selected)
             self._depth_inputs += ((frame_features, depth_parameters),)
         else:

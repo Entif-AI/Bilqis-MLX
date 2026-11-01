@@ -32,8 +32,16 @@ class SourceBackboneReceiptTests(SourceBackboneTestBase):
         self.assertFalse(hasattr(receipt_authority, "_issue_receipt"))
         self.assertFalse(hasattr(receipt_authority, "_PRODUCER_SEAL"))
         self.assertFalse(hasattr(receipt_authority, "_ISSUED_RECEIPTS"))
+        self.assertFalse(hasattr(receipt_authority, "require_produced_backbone_boundary"))
         with self.assertRaises(BilqisError):
             receipt_authority._issue_from_producer(object())
+
+    def test_receipts_are_evidence_not_a_standalone_selector_authority(self):
+        producer = self.producer()
+        producer.advance()
+        features, view = self.depth_inputs(self.parameters)
+        with self.assertRaises(BilqisError):
+            depth_select(producer.receipts, features, view)
 
     def test_fabricated_exact_producer_shell_cannot_issue_arbitrary_group_bytes(self):
         producer = self.producer()
@@ -90,8 +98,13 @@ class SourceBackboneReceiptTests(SourceBackboneTestBase):
         second = producer.advance(features, view)
         with self.assertRaises((TypeError, BilqisError)):
             replace(second, source_id="g1", completed_layer=4)
-        with self.assertRaises(BilqisError):
-            depth_select((producer.receipts[0], second), features, view)
+        original = producer._receipts
+        producer._receipts = (original[0], second)
+        try:
+            with self.assertRaises(BilqisError):
+                depth_select(producer, features, view)
+        finally:
+            producer._receipts = original
 
     def test_same_extents_different_parameter_tree_cannot_reuse_receipts(self):
         first = self.producer()
@@ -103,8 +116,13 @@ class SourceBackboneReceiptTests(SourceBackboneTestBase):
                             second_g1.parameter_tree_digest)
         self.assertNotEqual(first_g1.receipt_digest, second_g1.receipt_digest)
         features, view = self.depth_inputs(self.parameters)
-        with self.assertRaises(BilqisError):
-            depth_select((first.receipts[0], second_g1), features, view)
+        original = first._receipts
+        first._receipts = (original[0], second_g1)
+        try:
+            with self.assertRaises(BilqisError):
+                depth_select(first, features, view)
+        finally:
+            first._receipts = original
 
     def test_generation_prefix_and_cache_tampering_reject_before_b05(self):
         producer = self.producer()
@@ -114,7 +132,12 @@ class SourceBackboneReceiptTests(SourceBackboneTestBase):
             forged = copy(group)
             object.__setattr__(forged, field, "f" * 64)
             with self.subTest(field=field), self.assertRaises(BilqisError):
-                depth_select((producer.receipts[0], forged), features, view)
+                original = producer._receipts
+                producer._receipts = (original[0], forged)
+                try:
+                    depth_select(producer, features, view)
+                finally:
+                    producer._receipts = original
 
     def test_recomputed_receipt_forgery_and_foreign_current_reject(self):
         producer = self.producer()
@@ -125,10 +148,33 @@ class SourceBackboneReceiptTests(SourceBackboneTestBase):
         object.__setattr__(forged, "receipt_digest",
                            contract_digest(_receipt_projection(forged.__dict__)))
         with self.assertRaises(BilqisError):
-            depth_select((producer.receipts[0], forged), features, view)
+            original = producer._receipts
+            producer._receipts = (original[0], forged)
+            try:
+                depth_select(producer, features, view)
+            finally:
+                producer._receipts = original
         foreign = group.hidden.at[0, 0, 0].add(.125)
         with self.assertRaises(TypeError):
             depth_select(foreign, producer.receipts, features, view)
+
+    def test_same_value_detached_receipt_hidden_does_not_own_b05_graph(self):
+        parameters = dict(self.parameters)
+        parameters["blocks.0.ffn_norm"] = mx.ones((768,), dtype=mx.float32)
+        parameters["blocks.0.ffn_in"] = parameters["blocks.0.ffn_in"].at[0, 0].add(.1)
+        parameters["blocks.0.ffn_out"] = parameters["blocks.0.ffn_out"].at[2, 0].add(.2)
+
+        def objective(parameters):
+            producer = self.producer(parameters)
+            group = producer.advance()
+            detached = copy(group)
+            object.__setattr__(detached, "hidden", mx.stop_gradient(group.hidden))
+            producer._receipts = (producer.receipts[0], detached)
+            features, view = self.depth_inputs(parameters)
+            return mx.sum(depth_select(producer, features, view)[..., 2])
+
+        gradients = mx.grad(objective)(parameters)
+        self.assertGreater(float(mx.abs(gradients["blocks.0.ffn_out"]).sum()), 0)
 
     def test_identity_tree_and_generation_extents_are_bound(self):
         changed = dict(self.parameters)
@@ -139,7 +185,7 @@ class SourceBackboneReceiptTests(SourceBackboneTestBase):
                             second_group.parameter_tree_digest)
         features, foreign_view = self.depth_inputs(changed)
         with self.assertRaises(BilqisError):
-            depth_select(first.receipts, features, foreign_view)
+            depth_select(first, features, foreign_view)
         extents = replace(self.compiled.extents, active_semantic_digest="9" * 64)
         self.assertNotEqual(
             execution_generation_digest(
@@ -150,7 +196,7 @@ class SourceBackboneReceiptTests(SourceBackboneTestBase):
             self.parameters, spec=ModelTopologySpecV2(), extents=extents,
             boundary_group=1)
         with self.assertRaises(BilqisError):
-            depth_select(first.receipts, features, foreign_extents_view)
+            depth_select(first, features, foreign_extents_view)
 
     def test_public_b05_matches_normalized_group_capture(self):
         parameters = dict(self.parameters)
@@ -163,7 +209,7 @@ class SourceBackboneReceiptTests(SourceBackboneTestBase):
             DepthSummary("g1", 4, _rms_norm(group.hidden, view["norm"])),
         )
         expected = _numerical_depth_select(group.hidden, summaries, features, view)
-        actual = depth_select(producer.receipts, features, view)
+        actual = depth_select(producer, features, view)
         np.testing.assert_allclose(np.asarray(actual), np.asarray(expected), atol=2e-6)
 
     def test_selected_g1_is_the_actual_g2_input(self):
@@ -174,13 +220,13 @@ class SourceBackboneReceiptTests(SourceBackboneTestBase):
         producer = self.producer(parameters)
         group = producer.advance()
         features, view = self.depth_inputs(parameters)
-        selected = depth_select(producer.receipts, features, view)
+        selected = depth_select(producer, features, view)
         self.assertNotEqual(_content_digest(selected), group.output_digest)
         g2 = producer.advance(features, view)
         self.assertEqual(g2.input_digest, _content_digest(selected))
         self.assertNotEqual(g2.input_digest, group.output_digest)
         features2, view2 = self.depth_inputs(parameters, boundary=2)
-        selected2 = depth_select(producer.receipts, features2, view2)
+        selected2 = depth_select(producer, features2, view2)
         self.assertNotEqual(_content_digest(selected2), g2.output_digest)
         g3 = producer.advance(features2, view2)
         self.assertEqual(g3.input_digest, _content_digest(selected2))
@@ -196,7 +242,7 @@ class SourceBackboneReceiptTests(SourceBackboneTestBase):
             producer = self.producer(parameters)
             producer.advance()
             features, view = self.depth_inputs(parameters)
-            selected = depth_select(producer.receipts, features, view)
+            selected = depth_select(producer, features, view)
             return mx.sum(selected[..., 2])
 
         gradients = mx.grad(objective)(parameters)
