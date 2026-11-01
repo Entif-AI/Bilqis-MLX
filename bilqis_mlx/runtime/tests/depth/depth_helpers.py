@@ -15,7 +15,7 @@ from bilqis_mlx.semantics.frame_schema import ConceptRef
 from bilqis_mlx.runtime.block_attnres import (
     DepthFrameFeatures, DepthParameterView, DepthSummary, PARAMETER_SHAPES,
     _DepthFeatureValues, _depth_components, _group_boundary_numerical,
-    depth_parameter_view, numerical_depth_select, numerical_depth_select_with_diagnostics,
+    depth_parameter_view, _numerical_depth_select, _numerical_depth_select_with_diagnostics,
 )
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes,

@@ -17,6 +17,7 @@ import mlx.core as mx
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from .atlas_attention import AttentionCache, AttentionScope, ccgqa
+from .backbone_identity import bamf_parameter_tree_digest, tensor_content_digest
 from .backbone_group_inputs import validated_group_parameters
 from .model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes,
@@ -78,7 +79,7 @@ def _hash_record(record: object) -> str:
 
 def _content_digest(value: mx.array) -> str:
     # Fingerprints never replace the differentiable original tensor.
-    return hashlib.sha256(np.asarray(mx.stop_gradient(value)).tobytes()).hexdigest()
+    return tensor_content_digest(value)
 
 
 def _group_parameter_digest(parameters: Mapping[str, mx.array], names: tuple[str, ...]) -> str:
@@ -111,8 +112,7 @@ def run_backbone_group_numerical(
     start, end, required = validated_group_parameters(
         hidden, parameters, group_index, spec, extents, scope_ids, valid, sequence_starts)
     parameter_digest = _group_parameter_digest(parameters, tuple(sorted(required)))
-    full_names = tuple(sorted(name for name in parameters if name.startswith("blocks.")))
-    full_digest = _group_parameter_digest(parameters, full_names)
+    full_digest = bamf_parameter_tree_digest(parameters, spec=spec, extents=extents)
     scope_digest = _hash_record({"scope": _content_digest(scope_ids),
                                  "valid": _content_digest(valid),
                                  "starts": None if sequence_starts is None else _content_digest(sequence_starts),
@@ -176,8 +176,8 @@ class UnadmittedBackboneSession:
         self._prefix_digest = prefix_digest
         self._sequence_starts = sequence_starts
         self._results = ()
-        names = tuple(sorted(name for name in self._parameters if name.startswith("blocks.")))
-        self._tree_digest = _group_parameter_digest(self._parameters, names)
+        self._tree_digest = bamf_parameter_tree_digest(
+            self._parameters, spec=self._spec, extents=self._extents)
 
     @property
     def results(self):
@@ -191,8 +191,8 @@ class UnadmittedBackboneSession:
     def advance(self):
         if len(self._results) >= self._spec.depth_groups:
             _invalid()
-        names = tuple(sorted(name for name in self._parameters if name.startswith("blocks.")))
-        if _group_parameter_digest(self._parameters, names) != self._tree_digest:
+        if bamf_parameter_tree_digest(
+                self._parameters, spec=self._spec, extents=self._extents) != self._tree_digest:
             _invalid()
         group_index = len(self._results) + 1
         result = run_backbone_group_numerical(

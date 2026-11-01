@@ -16,6 +16,7 @@ from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.learning.frame_embeddings import FeatureRequest, compose_factor_features
 from bilqis_mlx.learning.atlas_plasticity import AdapterParameters, adapter_forward
 from bilqis_mlx.semantics.atlas_features import AtlasFeatures
+from bilqis_mlx.runtime.backbone_identity import tensor_content_digest
 from .model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes,
     validate_bamf_parameters,
@@ -31,147 +32,11 @@ from .depth_contracts import (
 )
 
 
-def _validate(current, available_summaries, frame_features, params) -> None:
-    if (not isinstance(current, mx.array) or current.ndim != FRAME_RANK
-            or current.shape[-1] != WIDTH or current.dtype != mx.float32
-            or min(current.shape[:BATCH_POSITION_AXES]) < 1
-            or not isinstance(available_summaries, tuple)
-            or not MIN_COMPLETED_GROUPS + 1 <= len(available_summaries) <= MAX_COMPLETED_GROUPS + 1
-            or any(type(value) is not DepthSummary
-                   or not isinstance(value.hidden, mx.array)
-                   or value.hidden.shape != current.shape
-                   or value.hidden.dtype != mx.float32
-                   for value in available_summaries)
-            or type(frame_features) is not _DepthFeatureValues
-            or len(available_summaries) != frame_features.boundary_group + 1
-            or tuple(value.source_id for value in available_summaries)
-            != SOURCE_ORDER[:len(available_summaries)]
-            or not isinstance(frame_features.frame_seed, mx.array)
-            or frame_features.frame_seed.shape != current.shape
-            or frame_features.frame_seed.dtype != mx.float32
-            or not isinstance(frame_features.type_role, mx.array)
-            or frame_features.type_role.shape != current.shape
-            or frame_features.type_role.dtype != mx.float32
-            or not isinstance(params, Mapping)
-            or set(params) != set(PARAMETER_SHAPES)):
-        _invalid()
-    for name, shape in PARAMETER_SHAPES.items():
-        value = params[name]
-        if (not isinstance(value, mx.array) or value.shape != shape
-                or value.dtype != mx.float32):
-            _invalid()
-    finite_flags = tuple(mx.all(mx.isfinite(value)) for value in (
-        current, frame_features.frame_seed, frame_features.type_role,
-        *(item.hidden for item in available_summaries), *params.values(),
-    ))
-    mx.eval(*finite_flags)
-    if not all(bool(flag) for flag in finite_flags):
-        _invalid()
-
-
-def _rms_norm(values: mx.array, gamma: mx.array) -> mx.array:
-    epsilon = ModelTopologySpecV2.rms_norm_epsilon
-    return values * mx.rsqrt(
-        mx.mean(values * values, axis=-1, keepdims=True) + epsilon) * gamma
-
-
-def _depth_components(current, available_summaries, frame_features, params):
-    """Return output and proof-only alpha/gate values, without mutable caches."""
-    _validate(current, available_summaries, frame_features, params)
-    q = _rms_norm(current + frame_features.frame_seed, params["norm"]) @ params["query"].T
-    keys = mx.stack([
-        _rms_norm(summary.hidden + frame_features.type_role, params["norm"]) @ params["key"].T
-        for summary in available_summaries
-    ], axis=-2)
-    values = mx.stack([
-        summary.hidden @ params["value"].T for summary in available_summaries
-    ], axis=-2)
-    scores = mx.sum(q[:, :, None, :] * keys, axis=-1) * (INNER ** -0.5)
-    alpha = mx.softmax(scores, axis=-1)
-    mix = mx.sum(alpha[:, :, :, None] * values, axis=-2)
-    gate_logits = (
-        mx.sum(params["gate_vector"] * _rms_norm(current, params["norm"]),
-               axis=-1, keepdims=True) + params["gate_bias"])
-    gate = 0.1 * mx.sigmoid(gate_logits)
-    output = current + gate * (mix @ params["output"].T)
-    return output, alpha, gate
-
-
-@dataclass(frozen=True)
-class DepthSelectionDiagnostics:
-    """Source-qualified selector output and optional source-axis weights."""
-
-    output: mx.array
-    alpha: mx.array
-    gate: mx.array
-    schema_version: str = DIAGNOSTICS_SCHEMA
-
-
-def numerical_depth_select(
-    current: mx.array, available_summaries: tuple[DepthSummary, ...],
-    frame_features: DepthFrameFeatures, params: DepthParameterView,
-) -> mx.array:
-    """Unadmitted numerical selector over explicit depth summaries."""
-    return numerical_depth_select_with_diagnostics(
-        current, available_summaries, frame_features, params).output
-
-
-def numerical_depth_select_with_diagnostics(
-    current: mx.array, available_summaries: tuple[DepthSummary, ...],
-    frame_features: DepthFrameFeatures, params: DepthParameterView,
-) -> DepthSelectionDiagnostics:
-    """Expose numerical alpha for inspection without producer authority."""
-    if (type(params) is not DepthParameterView
-            or type(frame_features) is not DepthFrameFeatures
-            or params.boundary_group != frame_features.boundary_group):
-        _invalid()
-    if (not isinstance(current, mx.array) or current.ndim != FRAME_RANK
-            or current.shape[:BATCH_POSITION_AXES] != (len(frame_features.requests), len(frame_features.requests[0]))
-            or type(available_summaries) is not tuple or not available_summaries
-            or type(available_summaries[0]) is not DepthSummary):
-        _invalid()
-    type_role = mx.stack([mx.stack([
-        mx.mean(compose_factor_features(params._feature_parameters, (members,), frame_features.features,
-                                        extents=params._extents).type_role[0], axis=0)
-        for members in row]) for row in frame_features.requests])
-    numerical = _DepthFeatureValues(available_summaries[0].hidden, type_role,
-                                     frame_features.features.semantic_release,
-                                     frame_features.features.digest, frame_features.boundary_group)
-    output, alpha, gate = _depth_components(
-        current, available_summaries, numerical, params)
-    return DepthSelectionDiagnostics(output, alpha, gate)
-
-
-def _producer_summaries(receipts, boundary_group):
-    from bilqis_mlx.learning.source_atoms.backbone import ProducedBackboneBoundary
-    if (type(receipts) is not tuple or len(receipts) != boundary_group + 1
-            or any(type(item) is not ProducedBackboneBoundary for item in receipts)):
-        _invalid()
-    for index, item in enumerate(receipts):
-        item._validate_contents()
-        if (item.source_id != SOURCE_ORDER[index]
-                or (index and item.predecessor_receipt_digest != receipts[index - 1].receipt_digest)
-                or item.source_handoff_digest != receipts[0].source_handoff_digest
-                or item.topology_digest != receipts[0].topology_digest
-                or item.generation_digest != receipts[0].generation_digest
-                or item.parameter_tree_digest != receipts[0].parameter_tree_digest
-                or item.prefix_digest != receipts[0].prefix_digest):
-            _invalid()
-    return tuple(DepthSummary(item.source_id, item.completed_layer, item.hidden)
-                 for item in receipts)
-
-
-def depth_select(current, producer_receipts, frame_features, params):
-    """Production B05 selector; only execution-owned B11 receipts are accepted."""
-    return depth_select_with_diagnostics(
-        current, producer_receipts, frame_features, params).output
-
-
-def depth_select_with_diagnostics(current, producer_receipts, frame_features, params):
-    if type(frame_features) is not DepthFrameFeatures:
-        _invalid()
-    summaries = _producer_summaries(producer_receipts, frame_features.boundary_group)
-    return numerical_depth_select_with_diagnostics(current, summaries, frame_features, params)
+from .depth_selection import (
+    DepthSelectionDiagnostics, _depth_components, _numerical_depth_select,
+    _numerical_depth_select_with_diagnostics, _rms_norm, depth_select,
+    depth_select_with_diagnostics,
+)
 
 
 @dataclass(frozen=True)
