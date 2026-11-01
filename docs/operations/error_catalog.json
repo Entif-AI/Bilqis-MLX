@@ -1,6 +1,6 @@
 {
-  "legacy_raw_file_count": 186,
-  "legacy_raw_raise_count": 1939,
+  "legacy_raw_file_count": 187,
+  "legacy_raw_raise_count": 1940,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BACKUP_ARCHIVE_ROOT_SYMLINK",
@@ -4474,6 +4474,13 @@
       "exception": "ValueError",
       "expression": "'FACTORY_SOURCE_ADAPTER_VARIATION_AXES_INVALID'",
       "path": "bilqis_mlx/factory/model.py"
+    },
+    {
+      "code_hint": "test fixture cycle",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'test fixture cycle'",
+      "path": "bilqis_mlx/factory/tests/curriculum/frontier/test_atlas_frontier_selection.py"
     },
     {
       "code_hint": "UNSUPPORTED_FIXTURE_OPERATION",

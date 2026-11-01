@@ -21,6 +21,9 @@ from .skos_curriculum import (
 )
 
 
+_SHA256_HEX_LENGTH = 64
+
+
 class ClosureStatus(str, Enum):
     READY = "READY"
     SOURCE_HELD = "SOURCE_HELD"
@@ -88,7 +91,7 @@ def _rules(registry: tuple[SourceFamilyAdapter, ...]) -> dict[str, SourceFamilyA
 def _sha(value: object) -> bool:
     return (
         type(value) is str
-        and len(value) == 64
+        and len(value) == _SHA256_HEX_LENGTH
         and all(char in "0123456789abcdef" for char in value)
     )
 
@@ -146,7 +149,7 @@ def _coverage(
         key = (row.semantic_id, row.family_id)
         if (row.semantic_id not in eligible or row.family_id not in families
                 or key in result
-                or len(row.source_evidence_sha256) != 64
+                or len(row.source_evidence_sha256) != _SHA256_HEX_LENGTH
                 or any(char not in "0123456789abcdef"
                        for char in row.source_evidence_sha256)):
             _fail("BAMF_PLANNER_COVERAGE_SIGNATURE_INVALID")
