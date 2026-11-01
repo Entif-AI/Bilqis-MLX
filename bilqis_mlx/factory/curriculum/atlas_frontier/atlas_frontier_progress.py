@@ -140,6 +140,17 @@ def _direct_uncovered_count(snapshot: CurriculumSnapshot) -> int:
         for row in snapshot.coverage_rows)
 
 
+def _pending_obligation_changed(
+    prior: FrontierProgress | None,
+    current: dict[str, str],
+) -> bool:
+    if prior is None or prior.pending_receipt is None:
+        return False
+    receipt = prior.pending_receipt
+    return current.get(receipt.selected_semantic_id) != _obligation_digest(
+        receipt.selection.selected_obligations)
+
+
 def _status_without_new_proposal(
     snapshot: CurriculumSnapshot, counts: dict[ClosureStatus, int],
     receipts: tuple[StagedSelectionReceipt, ...], current: dict[str, str],
@@ -227,6 +238,10 @@ def plan_frontier_progress(
     receipts = list(prior.staged_receipts if prior else ())
     pending_receipt_sha = prior.pending_staged_receipt_sha256 if prior else None
     pending = prior.pending_staged_successor_sha256 if prior else None
+    pending_invalidated = _pending_obligation_changed(prior, current)
+    if pending_invalidated:
+        pending_receipt_sha = None
+        pending = None
     if pending == snapshot.admitted_factory_release_sha256:
         return _reconcile_admission(
             snapshot, closure, prior, receipts, current)
@@ -259,9 +274,13 @@ def plan_frontier_progress(
                   else FrontierStatus.PROPOSAL)
     else:
         if _has_unrequested_ready(closure, receipts, current):
-            _fail("BAMF_PLANNER_PROGRESS_SELECTION_REQUIRED")
-        status = _status_without_new_proposal(
-            snapshot, counts, tuple(receipts), current, held, direct_uncovered)
+            if pending_invalidated:
+                status = FrontierStatus.REPLAN_REQUIRED
+            else:
+                _fail("BAMF_PLANNER_PROGRESS_SELECTION_REQUIRED")
+        else:
+            status = _status_without_new_proposal(
+                snapshot, counts, tuple(receipts), current, held, direct_uncovered)
     return _progress_result(
         snapshot, planning_snapshot, closure, status, proposal, receipts,
         pending_receipt_sha, direct_uncovered)

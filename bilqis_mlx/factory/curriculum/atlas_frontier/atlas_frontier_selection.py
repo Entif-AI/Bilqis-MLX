@@ -52,7 +52,8 @@ class FrontierDeltaSelection:
         })).hexdigest()
 
     def verify(self) -> None:
-        if (not self.selected_obligations
+        if (self.schema != "bilqis.factory-atlas-frontier-selection/v1"
+                or not self.selected_obligations
                 or any(item.semantic_id != self.selected_semantic_id
                        for item in self.selected_obligations)
                 or self.selection_sha256 != self.expected_digest()):

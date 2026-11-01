@@ -5,10 +5,12 @@ import unittest
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory.atlas_frontier_closure import ClosureReason, ClosureStatus
 from bilqis_mlx.factory.atlas_frontier_contracts import PrerequisiteEdge
+from bilqis_mlx.factory.atlas_frontier_events import SourceReleaseEvent, reconcile
 from bilqis_mlx.factory.atlas_frontier_progress import FrontierStatus, plan_frontier_progress
 from bilqis_mlx.factory.skos_curriculum import IMPLEMENTATION_UNCOVERED
 from bilqis_mlx.factory.tests.curriculum.frontier.atlas_frontier_closure_fixtures import rehash
 from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier_progress import (
+    _ready,
     _stage,
     _staged_ready,
 )
@@ -22,6 +24,15 @@ from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier_selection 
 
 
 class AtlasFrontierProgressRegressionTests(unittest.TestCase):
+    def test_selection_schema_fork_fails_closed(self):
+        _, snapshot, closure, lawful = _ready()
+        forged = replace(
+            lawful, schema="fixture/frontier-selection-fork", selection_sha256="0" * 64)
+        forged = replace(forged, selection_sha256=forged.expected_digest())
+
+        with self.assertRaises(BilqisError):
+            plan_frontier_progress(snapshot, closure, forged)
+
     def test_staged_receipt_rejects_self_rehashed_alternate_ready_semantic(self):
         release, snapshot, closure, lawful, receipt = _staged_ready()
         alternate_id = next(
@@ -131,6 +142,66 @@ class AtlasFrontierProgressRegressionTests(unittest.TestCase):
         self.assertEqual(
             advanced,
             plan_frontier_progress(admitted, admitted_closure, prior=prior),
+        )
+
+    def test_pending_stage_reopens_when_source_evidence_changes(self):
+        _, snapshot, closure, selection, receipt = _staged_ready()
+        prior = plan_frontier_progress(
+            snapshot, closure, selection, staged_receipt=receipt)
+        source_rows = tuple(sorted((
+            replace(
+                row,
+                source_evidence_sha256=(
+                    "c" * 64 if row.semantic_id == selection.selected_semantic_id
+                    else row.source_evidence_sha256),
+                implementation_status=IMPLEMENTATION_UNCOVERED,
+            )
+            for row in snapshot.coverage_rows
+        ), key=lambda row: (row.semantic_id, row.family_id)))
+        source = rehash(
+            snapshot,
+            source_coverage_sha256="f" * 64,
+            coverage_rows=source_rows,
+        )
+        event = SourceReleaseEvent(
+            snapshot.snapshot_sha256,
+            snapshot.event_generation + 1,
+            source.source_coverage_sha256,
+            source,
+            True,
+            "0" * 64,
+        )
+        event = replace(event, event_sha256=event.expected_digest())
+        changed = reconcile(snapshot, event)
+        changed_closure = _closure(changed, tuple(
+            _candidate(changed, identity)
+            for identity in changed.source_eligible_concept_ids))
+
+        reopened = plan_frontier_progress(changed, changed_closure, prior=prior)
+
+        self.assertEqual(reopened.status, FrontierStatus.REPLAN_REQUIRED)
+        self.assertIsNone(reopened.pending_staged_receipt_sha256)
+
+    def test_pending_stage_survives_metadata_only_epoch_change(self):
+        _, snapshot, closure, selection, receipt = _staged_ready()
+        prior = plan_frontier_progress(
+            snapshot, closure, selection, staged_receipt=receipt)
+        metadata = rehash(
+            snapshot,
+            correction_generation=snapshot.correction_generation + 1,
+            predecessor_sha256=snapshot.snapshot_sha256,
+            event_generation=snapshot.event_generation + 1,
+        )
+        metadata_closure = _closure(metadata, tuple(
+            _candidate(metadata, identity)
+            for identity in metadata.source_eligible_concept_ids))
+
+        resumed = plan_frontier_progress(metadata, metadata_closure, prior=prior)
+
+        self.assertEqual(resumed.status, FrontierStatus.LEASE_REQUIRED)
+        self.assertEqual(
+            resumed.pending_staged_receipt_sha256,
+            prior.pending_staged_receipt_sha256,
         )
 
 
