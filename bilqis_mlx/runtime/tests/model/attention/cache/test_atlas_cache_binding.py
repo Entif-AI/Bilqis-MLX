@@ -88,7 +88,7 @@ class CacheBindingAndCostTests(unittest.TestCase):
         }
 
         def forbidden_cache_use(_):
-            raise AssertionError("stale lossy payload influenced output")
+            self.fail("stale lossy payload influenced output")
 
         for field, value in changes.items():
             with self.subTest(field=field):
