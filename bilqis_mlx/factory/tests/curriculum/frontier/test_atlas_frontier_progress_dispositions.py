@@ -12,7 +12,7 @@ from bilqis_mlx.factory.atlas_frontier_selection import select_frontier_delta
 from bilqis_mlx.factory.skos_curriculum import IMPLEMENTATION_UNCOVERED
 from bilqis_mlx.factory.tests.curriculum.frontier.atlas_frontier_closure_fixtures import rehash
 from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier_progress import (
-    _stage, _staged_ready,
+    ProjectionAuthorityFixture, _stage, _staged_ready,
 )
 from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier_selection import (
     _candidate, _closure, _options, _release, _snapshot,
@@ -63,7 +63,7 @@ def _single_ready():
     return snapshot, closure, selection, receipt
 
 
-class AtlasFrontierProgressDispositionTests(unittest.TestCase):
+class AtlasFrontierProgressDispositionTests(ProjectionAuthorityFixture, unittest.TestCase):
     def test_staged_successor_must_match_exact_selection_delta(self):
         fixture = CandidateStagingFixture()
         fixture.setUp()

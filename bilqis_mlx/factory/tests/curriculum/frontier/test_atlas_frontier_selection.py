@@ -148,7 +148,19 @@ def _options(snapshot, release, closure, *, capabilities=None, identities=None):
         )
         result.append(replace(
             provisional, projection_sha256=provisional.expected_digest()))
+        _PROJECTION_AUTHORITY[(release.release_sha256, identity)] = (
+            capabilities[identity], identities[identity])
     return tuple(result)
+
+
+_PROJECTION_AUTHORITY = {}
+
+
+def _fixture_project_realized_target(semantic_id, current):
+    try:
+        return _PROJECTION_AUTHORITY[(current.release_sha256, semantic_id)]
+    except KeyError as exc:
+        raise ValueError from exc
 
 
 class AtlasFrontierSelectionTests(unittest.TestCase):

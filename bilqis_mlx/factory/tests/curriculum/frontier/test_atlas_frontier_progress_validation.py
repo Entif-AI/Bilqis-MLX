@@ -17,6 +17,7 @@ from bilqis_mlx.factory.atlas_frontier_selection_validation import (
     obligation_signature,
 )
 from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier_progress import (
+    ProjectionAuthorityFixture,
     _ready,
     _stage,
     _staged_ready,
@@ -51,7 +52,7 @@ def _forge_selection(selection, *, capabilities=None, identities=None):
 def _rehash(value, field):
     draft = replace(value, **{field: "0" * 64})
     return replace(draft, **{field: draft.expected_digest()})
-class AtlasFrontierProjectionCustodyTests(unittest.TestCase):
+class AtlasFrontierProjectionCustodyTests(ProjectionAuthorityFixture, unittest.TestCase):
     def test_direct_proposal_requires_release_and_projection_evidence(self):
         _, snapshot, closure, selection = _ready()
         with self.assertRaises(BilqisError):
@@ -82,6 +83,31 @@ class AtlasFrontierProjectionCustodyTests(unittest.TestCase):
                 snapshot, closure, forged,
                 current_release=release,
                 selected_projection=projection,
+            )
+
+    def test_mutually_forged_selection_and_projection_fail_closed(self):
+        release, snapshot, closure, selection = _ready()
+        projection = next(
+            item for item in _options(snapshot, release, closure)
+            if item.semantic_id == selection.selected_semantic_id)
+        capabilities = ("Z.FORGED",)
+        identities = ("fixture.forged.semantic",)
+        forged_projection = _rehash(replace(
+            projection,
+            added_capability_ids=capabilities,
+            introduced_semantic_ids=identities,
+            projected_semantic_catalog_sha256=catalog_digest(
+                release.semantic_catalog + identities),
+        ), "projection_sha256")
+        forged_selection = _forge_selection(
+            selection, capabilities=capabilities, identities=identities)
+        forged_projection.verify()
+        forged_selection.verify()
+        with self.assertRaises(BilqisError):
+            plan_frontier_progress(
+                snapshot, closure, forged_selection,
+                current_release=release,
+                selected_projection=forged_projection,
             )
 
     def test_cold_resume_rejects_self_rehashed_forged_projection_custody(self):

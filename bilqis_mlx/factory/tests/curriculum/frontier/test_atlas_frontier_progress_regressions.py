@@ -10,6 +10,7 @@ from bilqis_mlx.factory.atlas_frontier_progress import FrontierStatus, plan_fron
 from bilqis_mlx.factory.skos_curriculum import IMPLEMENTATION_UNCOVERED
 from bilqis_mlx.factory.tests.curriculum.frontier.atlas_frontier_closure_fixtures import rehash
 from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier_progress import (
+    ProjectionAuthorityFixture,
     _ready,
     _selected_projection,
     _stage,
@@ -24,7 +25,7 @@ from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier_selection 
 )
 
 
-class AtlasFrontierProgressRegressionTests(unittest.TestCase):
+class AtlasFrontierProgressRegressionTests(ProjectionAuthorityFixture, unittest.TestCase):
     def test_selection_schema_fork_fails_closed(self):
         release, snapshot, closure, lawful = _ready()
         projection = _selected_projection(release, snapshot, closure, lawful)

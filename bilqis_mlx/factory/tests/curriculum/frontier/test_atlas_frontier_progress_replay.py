@@ -6,7 +6,9 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory.atlas_frontier_progress import FrontierStatus, plan_frontier_progress
 from bilqis_mlx.factory.atlas_frontier_selection import select_frontier_delta
 from bilqis_mlx.factory.tests.curriculum.frontier.atlas_frontier_closure_fixtures import rehash
-from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier_progress import _staged_ready
+from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier_progress import (
+    ProjectionAuthorityFixture, _staged_ready,
+)
 from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier_progress_dispositions import (
     _admit, _single_ready,
 )
@@ -15,7 +17,7 @@ from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier_selection 
 )
 
 
-class AtlasFrontierProgressReplayTests(unittest.TestCase):
+class AtlasFrontierProgressReplayTests(ProjectionAuthorityFixture, unittest.TestCase):
     def test_changed_obligation_reopens_target_but_metadata_only_correction_does_not(self):
         snapshot, closure, selection, receipt = _single_ready()
         staged = plan_frontier_progress(

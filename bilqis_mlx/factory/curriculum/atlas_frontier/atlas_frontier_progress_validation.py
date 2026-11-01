@@ -15,6 +15,8 @@ from .atlas_frontier_selection import (
     validate_frontier_selection,
 )
 from .atlas_frontier_selection_validation import TargetDeltaProjection
+from .atlas_frontier_selection_validation import catalog_digest, obligation_signature
+from .candidate_realizations import project_realized_target
 from .executable_release import ExecutableFactoryRelease
 
 
@@ -65,9 +67,39 @@ def validate_direct_selection(
         selected_projection = staged_receipt.projection
     if current_release is None or selected_projection is None:
         _fail("BAMF_PLANNER_SELECTION_INPUT_INVALID")
+    validate_projection_authority(
+        selection, current_release, selected_projection)
     validate_frontier_selection(
         snapshot, closure, selection, current_release, selected_projection)
     return current_release, selected_projection
+
+
+def validate_projection_authority(
+    selection: FrontierDeltaSelection,
+    current_release: ExecutableFactoryRelease,
+    supplied: TargetDeltaProjection,
+) -> None:
+    """Rederive projection truth from source-owned realization authority."""
+    try:
+        capabilities, identities = project_realized_target(
+            selection.selected_semantic_id, current_release)
+    except (TypeError, ValueError):
+        _fail("BAMF_PLANNER_PROJECTION_AUTHORITY_MISSING")
+    provisional = TargetDeltaProjection(
+        semantic_id=selection.selected_semantic_id,
+        obligation_signature=obligation_signature(selection.selected_obligations),
+        current_release_sha256=current_release.release_sha256,
+        current_semantic_catalog_sha256=current_release.semantic_catalog_sha256,
+        added_capability_ids=capabilities,
+        introduced_semantic_ids=identities,
+        projected_semantic_catalog_sha256=catalog_digest(
+            current_release.semantic_catalog + identities),
+        projection_sha256="0" * 64,
+    )
+    expected = replace(
+        provisional, projection_sha256=provisional.expected_digest())
+    if supplied != expected:
+        _fail("BAMF_PLANNER_PROJECTION_AUTHORITY_MISMATCH")
 
 
 def validate_staged_receipt(
@@ -193,6 +225,8 @@ def _revalidate_receipt_selection(
         selection_sha256="0" * 64,
     )
     rebound = replace(rebound, selection_sha256=rebound.expected_digest())
+    validate_projection_authority(
+        rebound, receipt.predecessor_release, receipt.projection)
     validate_frontier_selection(
         bound_snapshot,
         bound_closure,

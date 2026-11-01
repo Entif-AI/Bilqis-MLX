@@ -1,6 +1,7 @@
 """A09.4 resumable coverage progress and fixed-point behavior."""
 from dataclasses import replace
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.factory.atlas_frontier_progress import (
     FrontierStatus,
@@ -11,7 +12,7 @@ from bilqis_mlx.factory.atlas_frontier_closure import ClosureReason, ClosureStat
 from bilqis_mlx.factory.skos_curriculum import IMPLEMENTATION_UNCOVERED
 from bilqis_mlx.factory.tests.curriculum.frontier.atlas_frontier_closure_fixtures import rehash
 from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier_selection import (
-    _candidate, _closure, _options, _release, _snapshot,
+    _candidate, _closure, _fixture_project_realized_target, _options, _release, _snapshot,
 )
 from bilqis_mlx.factory.tests.curriculum.frontier.test_candidate_staging import (
     CandidateStagingFixture,
@@ -73,7 +74,18 @@ def _staged_ready():
     return release, snapshot, closure, selection, receipt
 
 
-class AtlasFrontierProgressTests(unittest.TestCase):
+class ProjectionAuthorityFixture:
+    def setUp(self):
+        super().setUp()
+        authority = patch(
+            "bilqis_mlx.factory.atlas_frontier_progress_validation.project_realized_target",
+            side_effect=_fixture_project_realized_target,
+        )
+        authority.start()
+        self.addCleanup(authority.stop)
+
+
+class AtlasFrontierProgressTests(ProjectionAuthorityFixture, unittest.TestCase):
     def test_identical_ready_inputs_emit_byte_identical_proposal(self):
         release, snapshot, closure, selection = _ready()
         projection = _selected_projection(release, snapshot, closure, selection)
@@ -192,7 +204,15 @@ class AtlasFrontierProgressTests(unittest.TestCase):
             for identity in corrected.source_eligible_concept_ids))
         corrected_release = _release()
         corrected_projections = _options(
-            corrected, corrected_release, corrected_closure)
+            corrected, corrected_release, corrected_closure,
+            capabilities={
+                "z.op.0": receipt.projection.added_capability_ids,
+                "z.op.1": ("Z.N1",), "z.op.2": ("Z.N2",),
+            },
+            identities={
+                "z.op.0": receipt.projection.introduced_semantic_ids,
+                "z.op.1": (), "z.op.2": (),
+            })
         corrected_selection = select_frontier_delta(
             corrected, corrected_closure, corrected_release, corrected_projections)
         corrected_projection = next(

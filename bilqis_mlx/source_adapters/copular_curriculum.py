@@ -74,6 +74,19 @@ def proposed_graph(parent):
                           allow_disposable_fixtures=True)[0]
 
 
+def projected_catalog(current_catalog: tuple[str, ...]) -> tuple[str, ...]:
+    """Derive the exact prospective catalog without staging a Factory release."""
+    registered = tuple(numeric_registry_graph()["tokens"])
+    if (not isinstance(current_catalog, tuple) or not current_catalog
+            or len(current_catalog) > len(registered)
+            or current_catalog != registered[:len(current_catalog)]):
+        raise ValueError
+    admission = token_admission()
+    if admission.token_id in registered:
+        raise ValueError
+    return (*registered, admission.token_id)
+
+
 def expanded_graph(parent, evidence=None):
     if evidence is None:
         evidence = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))

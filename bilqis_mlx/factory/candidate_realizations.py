@@ -9,6 +9,22 @@ from ..source_adapters import copular_curriculum as ithkuil_identity
 REALIZATIONS = MappingProxyType({ithkuil_identity.SENSE_ID: ithkuil_identity})
 
 
+def project_realized_target(semantic_id, current):
+    """Return the code-owned executable capability and catalog append for a target."""
+    realization = REALIZATIONS.get(semantic_id)
+    if realization is None:
+        raise ValueError
+    current.verify()
+    capability = realization.CAPABILITY
+    if capability in current.execution_plan.capability_map:
+        raise ValueError
+    projected = realization.projected_catalog(current.semantic_catalog)
+    if (projected[:len(current.semantic_catalog)] != current.semantic_catalog
+            or len(projected) <= len(current.semantic_catalog)):
+        raise ValueError
+    return (capability,), projected[len(current.semantic_catalog):]
+
+
 def prepare_realized_candidates(frontier, current, parent_graph, *,
                                 source_root, source_registry, answer_registry):
     result = []
