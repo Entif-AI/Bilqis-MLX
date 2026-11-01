@@ -1,7 +1,6 @@
 """Bounded mutation controls for the opt-in cold-read proof harness."""
 import json
 import unittest
-from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -17,6 +16,7 @@ class FullResumeControlTests(unittest.TestCase):
             "backbone_output_finite": True,
             "status": "UNBOUND_NUMERICAL_CUSTODY_ONLY",
             "optimizer_hyperparameters": {"learning_rate": 0.001},
+            "transition": {"invalidate_derived_caches": False},
         }
 
         def save(candidate, destination):
@@ -31,6 +31,8 @@ class FullResumeControlTests(unittest.TestCase):
                 (root / "manifest.json").write_text("changed")
             elif fault == "read_add":
                 (root / "unexpected.json").write_text("added")
+            elif fault == "transition":
+                state["transition"]["invalidate_derived_caches"] = True
             return state
 
         def child(*args, **kwargs):
@@ -52,3 +54,6 @@ class FullResumeControlTests(unittest.TestCase):
         for fault in ("read_change", "read_add"):
             with self.subTest(fault=fault):
                 self.check_mutation_is_detected(fault)
+
+    def test_loader_cannot_drift_cache_transition_metadata(self):
+        self.check_mutation_is_detected("transition")

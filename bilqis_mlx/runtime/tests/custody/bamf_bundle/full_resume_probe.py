@@ -84,6 +84,7 @@ def observe_student(student):
         "teacher_state": dict(student.teacher_state),
         "provenance": student.provenance.to_record(),
         "evaluation_contract": dict(student.evaluation_contract),
+        "transition": dict(student.transition),
         "outbox_payloads": [{k: v for k, v in event.items() if k != "event_id"}
                             for event in student.outbox],
         "parameters_sha256": _tree_digest(state.parameters),

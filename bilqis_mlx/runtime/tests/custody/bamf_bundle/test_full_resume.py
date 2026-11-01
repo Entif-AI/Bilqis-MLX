@@ -47,4 +47,5 @@ class FullResumeTests(unittest.TestCase):
                 self.assertEqual(expected["teacher_cursor"], "lesson:7")
                 self.assertEqual(expected["optimizer_step"], 12)
                 self.assertTrue(expected["backbone_output_finite"])
+                self.assertEqual(expected["transition"], candidate.transition)
                 self.assertEqual(expected["status"], "UNBOUND_NUMERICAL_CUSTODY_ONLY")

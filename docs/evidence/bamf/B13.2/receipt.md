@@ -88,5 +88,7 @@ python3 -B scripts/check_historical_abi.py
 ```
 
 Before this review repair,21 full bundle tests and all named local gates passed.
-The repaired controls pass2/2. The final full-suite totals and independent
-re-review disposition are recorded below once obtained.
+The repaired controls pass2/2. The repaired full suite passed23/23, zero skips. Targeted re-review confirmed the
+original repairs and independently ran2/2 mutation controls, then required adding
+transition/cache-invalidation metadata. That field and a third bounded control
+are included before the final run/review below.
