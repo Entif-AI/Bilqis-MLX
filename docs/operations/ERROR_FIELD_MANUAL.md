@@ -1713,7 +1713,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **1932** raw raises across **191** files. The baseline gate permits only reduction.
+Current production scan: **1932** raw raises across **192** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -1895,12 +1895,12 @@ Current production scan: **1932** raw raises across **191** files. The baseline 
 | `BOOLEAN_COMPOSITE_REQUIRES_RESUME` | 1 | `bilqis_mlx/runtime/operating_loop.py` |
 | `BOOLEAN_IDBOOLOPS_REQUIRES_RESUME` | 1 | `bilqis_mlx/runtime/operating_loop.py` |
 | `BRIDGE_LEGACY_ALIAS_INVALID` | 1 | `bilqis_mlx/ithkuil_alignment.py` |
-| `CANDIDATE_FRONTIER_ARTIFACT_UNREADABLE` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
-| `CANDIDATE_FRONTIER_BUILDER_STALE` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
+| `CANDIDATE_FRONTIER_ARTIFACT_UNREADABLE` | 1 | `bilqis_mlx/factory/curriculum/candidate_frontier_io.py` |
+| `CANDIDATE_FRONTIER_BUILDER_STALE` | 1 | `bilqis_mlx/factory/curriculum/candidate_frontier_io.py` |
 | `CANDIDATE_FRONTIER_CANDIDATE_INVALID` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
-| `CANDIDATE_FRONTIER_CANDIDATE_SOURCE_MISMATCH` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
-| `CANDIDATE_FRONTIER_EVIDENCE_REFERENCE_INVALID` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
-| `CANDIDATE_FRONTIER_MANIFEST_UNREADABLE` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
+| `CANDIDATE_FRONTIER_CANDIDATE_SOURCE_MISMATCH` | 1 | `bilqis_mlx/factory/curriculum/candidate_frontier_io.py` |
+| `CANDIDATE_FRONTIER_EVIDENCE_REFERENCE_INVALID` | 1 | `bilqis_mlx/factory/curriculum/candidate_frontier_io.py` |
+| `CANDIDATE_FRONTIER_MANIFEST_UNREADABLE` | 1 | `bilqis_mlx/factory/curriculum/candidate_frontier_io.py` |
 | `CANDIDATE_FRONTIER_PREREQUISITE_STATUS_INVALID` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
 | `CANDIDATE_FRONTIER_PRIORITY_INVALID` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
 | `CANDIDATE_FRONTIER_PROVENANCE_POOL_INVALID` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
@@ -1909,8 +1909,8 @@ Current production scan: **1932** raw raises across **191** files. The baseline 
 | `CANDIDATE_FRONTIER_RESERVE_INVALID` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
 | `CANDIDATE_FRONTIER_SELECTED_SENSE_LINK_INVALID` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
 | `CANDIDATE_FRONTIER_SELECTED_TARGET_INVALID` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
-| `CANDIDATE_FRONTIER_SENSE_INVENTORY_MISMATCH` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
-| `CANDIDATE_FRONTIER_SENSE_SOURCE_MISMATCH` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
+| `CANDIDATE_FRONTIER_SENSE_INVENTORY_MISMATCH` | 1 | `bilqis_mlx/factory/curriculum/candidate_frontier_io.py` |
+| `CANDIDATE_FRONTIER_SENSE_SOURCE_MISMATCH` | 1 | `bilqis_mlx/factory/curriculum/candidate_frontier_io.py` |
 | `CANDIDATE_STAGING_AMBIGUOUS_SUCCESSOR` | 1 | `bilqis_mlx/runtime/_capability/candidate_staging.py` |
 | `CANDIDATE_STAGING_DELTA_SCOPE_MISMATCH` | 1 | `bilqis_mlx/factory/curriculum/candidate_staging.py` |
 | `CANDIDATE_STAGING_EXACT_TARGET_REQUIRED` | 1 | `bilqis_mlx/factory/curriculum/candidate_staging.py` |
@@ -3499,9 +3499,9 @@ Current production scan: **1932** raw raises across **191** files. The baseline 
 | `WHOLE_STUDENT_PEAK_SCHEMA_DRIFT` | 1 | `bilqis_mlx/runtime/_custody/checkpoint_retention.py` |
 | `WHOLE_STUDENT_PEAK_SEED_ADAMW_DRIFT` | 1 | `bilqis_mlx/runtime/_custody/reconciliation.py` |
 | `_BINDING_DRIFT` | 1 | `bilqis_mlx/factory/model.py` |
-| `_DIGEST_INVALID` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
-| `_INVALID` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
-| `_STALE` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
+| `_DIGEST_INVALID` | 1 | `bilqis_mlx/factory/curriculum/candidate_frontier_io.py` |
+| `_INVALID` | 1 | `bilqis_mlx/factory/curriculum/candidate_frontier_io.py` |
+| `_STALE` | 1 | `bilqis_mlx/factory/curriculum/candidate_frontier_io.py` |
 | `boom` | 1 | `bilqis_mlx/runtime/tests/model/parity/test_mlx_memory.py` |
 | `disposable interruption before pointer publication` | 1 | `bilqis_mlx/runtime/tests/admission/test_atlas_lease_renewal.py` |
 | `evaluator-owned cache reached by solver` | 1 | `bilqis_mlx/semantics/tests/operators/test_cognitive_operator_native.py` |

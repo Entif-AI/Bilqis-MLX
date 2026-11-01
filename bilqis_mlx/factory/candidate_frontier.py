@@ -6,12 +6,10 @@ proposal, but cannot construct a course, release, grade, or teaching work.
 """
 from __future__ import annotations
 
-import csv
 from dataclasses import asdict, dataclass
 from enum import Enum
 import hashlib
 import json
-from pathlib import Path
 
 
 SCHEMA = "bilqis.mlx.candidate-frontier-release/v1"
@@ -28,23 +26,10 @@ _OUTPUT_FILES = (
 )
 
 
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
 def _digest(value: object) -> str:
     return hashlib.sha256(json.dumps(
         value, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
         allow_nan=False).encode()).hexdigest()
-
-
-def _aggregate(files: dict[str, str]) -> str:
-    return hashlib.sha256("".join(
-        f"{name}:{digest}\n" for name, digest in sorted(files.items())).encode()).hexdigest()
 
 
 def _required(value: object, code: str) -> str:
@@ -58,10 +43,6 @@ def _digest_value(value: object, code: str) -> str:
     if len(value) != 64 or any(char not in "0123456789abcdef" for char in value):
         raise ValueError(code)
     return value
-
-
-def _split(value: str) -> tuple[str, ...]:
-    return tuple(item.strip() for item in value.split(";") if item.strip())
 
 
 class PrerequisiteStatus(str, Enum):
@@ -237,126 +218,9 @@ class CandidateFrontierRelease:
         return release
 
 
-def _read_csv(path: Path) -> tuple[dict[str, str], ...]:
-    try:
-        with path.open(encoding="utf-8", newline="") as handle:
-            return tuple(csv.DictReader(handle))
-    except (OSError, csv.Error) as exc:
-        raise ValueError("CANDIDATE_FRONTIER_ARTIFACT_UNREADABLE:" + path.name) from exc
-
-
-def _validate_builder_manifest(
-    artifact_dir: Path, source_dir: Path, expected_builder_sha256: str,
-) -> dict:
-    _digest_value(expected_builder_sha256, "CANDIDATE_FRONTIER_BUILDER_DIGEST_INVALID")
-    try:
-        manifest = json.loads((artifact_dir / "frontier_manifest.json").read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        raise ValueError("CANDIDATE_FRONTIER_MANIFEST_UNREADABLE") from exc
-    if not isinstance(manifest, dict) or manifest.get("schema") != BUILDER_SCHEMA:
-        raise ValueError(_MANIFEST_INVALID)
-    if manifest.get("builder_file_sha256") != expected_builder_sha256:
-        raise ValueError("CANDIDATE_FRONTIER_BUILDER_STALE")
-    for names, base, label in ((_INPUT_FILES, source_dir, "INPUT"),
-                               (_OUTPUT_FILES, artifact_dir, "OUTPUT")):
-        field = "input_files" if label == "INPUT" else "output_files"
-        expected = manifest.get(field)
-        if not isinstance(expected, dict) or set(expected) != set(names):
-            raise ValueError("CANDIDATE_FRONTIER_MANIFEST_" + label + "_INVALID")
-        actual = {name: _sha256(base / name) for name in names}
-        if actual != expected:
-            raise ValueError("CANDIDATE_FRONTIER_" + label + "_STALE")
-        digest_field = "input_digest" if label == "INPUT" else "output_digest"
-        if manifest.get(digest_field) != _aggregate(actual):
-            raise ValueError("CANDIDATE_FRONTIER_" + label + "_DIGEST_INVALID")
-    return manifest
-
-
-def _candidate(row: dict[str, str]) -> Candidate:
-    tier = _required(row.get("priority_tier"), "CANDIDATE_FRONTIER_CANDIDATE_INVALID")
-    readiness = ["FACTORY_ADMISSION_REQUIRED", _required(
-        row.get("source_readiness"), "CANDIDATE_FRONTIER_CANDIDATE_INVALID")]
-    if not row.get("source_evidence_ids", "").strip():
-        readiness.append("SOURCE_EVIDENCE_REFERENCE_REQUIRED")
-    if row.get("modality_gate", "").strip():
-        readiness.append("ANSWER_WORLD_IMPLEMENTATION_REQUIRED")
-    return Candidate(
-        candidate_id=_required(row.get("candidate_id"), "CANDIDATE_FRONTIER_CANDIDATE_INVALID"),
-        priority_tier=tier,
-        proposed_capability_id=row.get("working_capability", "").strip(),
-        tranche=row.get("proposed_grade", "").strip(),
-        root_form=_required(row.get("root_form"), "CANDIDATE_FRONTIER_CANDIDATE_INVALID"),
-        root_id=_required(row.get("lexicon_root_id"), "CANDIDATE_FRONTIER_CANDIDATE_INVALID"),
-        target_sense_id=row.get("target_sense_id", "").strip(),
-        source_evidence_ids=tuple(item.strip() for item in row.get(
-            "source_evidence_ids", "").split("|") if item.strip()),
-        prerequisites=tuple(CandidatePrerequisite(item) for item in _split(
-            row.get("prerequisites", "")) if item != "TO_BE_RESOLVED_FROM_MASTERED_CLOSURE"),
-        rationale=_required(row.get("why_now"), "CANDIDATE_FRONTIER_CANDIDATE_INVALID"),
-        downstream_unlocks=_required(row.get("downstream_unlocks"), "CANDIDATE_FRONTIER_CANDIDATE_INVALID"),
-        answer_requirement=_required(row.get("answer_family"), "CANDIDATE_FRONTIER_CANDIDATE_INVALID"),
-        world_requirement=_required(row.get("minimal_world_state"), "CANDIDATE_FRONTIER_CANDIDATE_INVALID"),
-        modality_requirement=row.get("modality_gate", "").strip(),
-        readiness_debt=tuple(readiness),
-        advisory_anchors=tuple(item.strip() for item in row.get(
-            "existing_abi_anchors", "").split("|") if item.strip()),
-        disposition=_required(row.get("disposition"), "CANDIDATE_FRONTIER_CANDIDATE_INVALID"),
-    )
-
-
 def load_candidate_frontier(
-    artifact_dir: str | Path, source_dir: str | Path, *, expected_builder_sha256: str,
+    artifact_dir, source_dir, *, expected_builder_sha256: str,
 ) -> CandidateFrontierRelease:
     """Load and verify a non-admitted source frontier generated by the builder."""
-    artifact_dir, source_dir = Path(artifact_dir), Path(source_dir)
-    generated = _validate_builder_manifest(
-        artifact_dir, source_dir, expected_builder_sha256)
-    candidates = tuple(_candidate(row) for row in _read_csv(artifact_dir / "candidate_pool.csv"))
-    senses = tuple(CandidateSense(
-        sense_id=_required(row.get("lexicon_sense_id"), "CANDIDATE_FRONTIER_SENSE_IDENTITY_INVALID"),
-        root_id=_required(row.get("lexicon_root_id"), "CANDIDATE_FRONTIER_SENSE_IDENTITY_INVALID"),
-        root_form=_required(row.get("root_form"), "CANDIDATE_FRONTIER_SENSE_IDENTITY_INVALID"),
-        stem=row.get("stem", ""), specification=row.get("specification", ""),
-        source_wording=_required(row.get("sense_summary"), "CANDIDATE_FRONTIER_SENSE_IDENTITY_INVALID"),
-        source_text_sha256=_digest_value(row.get("source_text_sha256"),
-                                         "CANDIDATE_FRONTIER_SENSE_TEXT_DIGEST_INVALID"),
-        semantic_disposition=_required(row.get("semantic_disposition"),
-                                       "CANDIDATE_FRONTIER_SENSE_IDENTITY_INVALID"),
-        selected_target_capability=row.get("selected_target_capability", ""),
-    ) for row in _read_csv(artifact_dir / "sense_candidate_pool.csv"))
-    source_senses = {row["lexicon_sense_id"]: row for row in _read_csv(
-        source_dir / "lexicon_root_senses.csv")}
-    source_evidence = {row["lexicon_evidence_id"]: row for row in _read_csv(
-        source_dir / "lexicon_root_evidence.csv")}
-    if {item.sense_id for item in senses} != set(source_senses):
-        raise ValueError("CANDIDATE_FRONTIER_SENSE_INVENTORY_MISMATCH")
-    source_roots = {(row["lexicon_root_id"], row["root_form_raw"])
-                    for row in _read_csv(source_dir / "lexicon_roots.csv")}
-    if any((item.root_id, item.root_form) not in source_roots for item in candidates):
-        raise ValueError("CANDIDATE_FRONTIER_CANDIDATE_SOURCE_MISMATCH")
-    for sense in senses:
-        source = source_senses.get(sense.sense_id)
-        if source is None or any((source["lexicon_root_id"] != sense.root_id,
-                                  source["root_form_raw"] != sense.root_form,
-                                  source["stem"] != sense.stem,
-                                  source["specification"] != sense.specification,
-                                  source["sense_summary"] != sense.source_wording,
-                                  source["source_text_sha256"] != sense.source_text_sha256)):
-            raise ValueError("CANDIDATE_FRONTIER_SENSE_SOURCE_MISMATCH")
-    if any(any(source_evidence.get(evidence_id, {}).get("root_form_raw") !=
-                   item.root_form for evidence_id in item.source_evidence_ids)
-           for item in candidates):
-        raise ValueError("CANDIDATE_FRONTIER_EVIDENCE_REFERENCE_INVALID")
-    manifest = {
-        "schema": SCHEMA,
-        "builder_sha256": generated["builder_file_sha256"],
-        "input_digest": generated["input_digest"],
-        "output_digest": generated["output_digest"],
-        "candidates": [asdict(item) for item in candidates],
-        "senses": [asdict(item) for item in senses],
-    }
-    release = CandidateFrontierRelease(
-        manifest["builder_sha256"], manifest["input_digest"], manifest["output_digest"],
-        candidates, senses, _digest(manifest))
-    release.verify()
-    return release
+    from .candidate_frontier_io import load_candidate_frontier as load
+    return load(artifact_dir, source_dir, expected_builder_sha256=expected_builder_sha256)
