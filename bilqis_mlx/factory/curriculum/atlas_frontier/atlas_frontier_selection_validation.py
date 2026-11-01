@@ -19,7 +19,13 @@ from .skos_curriculum import IMPLEMENTATION_UNCOVERED, PROGRAM_BOUND
 
 @dataclass(frozen=True, order=True)
 class TargetDeltaProjection:
-    """Content-addressed pure forecast of one target's exact constructive shape."""
+    """Content-addressed pure forecast of one target's exact constructive shape.
+
+    ``added_capability_ids`` uses executable Factory capability keys: the same
+    namespace as ``execution_plan.capability_map`` and transition
+    ``added_capabilities``. It is not the A08.2 stable ``cap:<sha256>`` identity
+    namespace.
+    """
 
     semantic_id: str
     obligation_signature: str

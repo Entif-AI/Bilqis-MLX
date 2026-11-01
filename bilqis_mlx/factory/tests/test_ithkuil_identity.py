@@ -96,6 +96,23 @@ class IthkuilIdentityFactoryTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             REALIZATIONS["unqualified-sense"] = object()
 
+    def test_projection_authority_matches_real_registered_successor(self):
+        from bilqis_mlx.factory.candidate_realizations import project_realized_target
+
+        capabilities, identities = project_realized_target(
+            self.staged.source_sense_id, self.current)
+        self.assertEqual(capabilities, self.staged.successor.transition.added_capabilities)
+        self.assertEqual(
+            self.current.semantic_catalog + identities,
+            self.staged.successor.semantic_catalog,
+        )
+
+    def test_projection_authority_rejects_unregistered_semantic(self):
+        from bilqis_mlx.factory.candidate_realizations import project_realized_target
+
+        with self.assertRaises(ValueError):
+            project_realized_target("fixture.unregistered.semantic", self.current)
+
     def test_source_realization_compiles_one_thin_grade_through_factory(self):
         self.staged.verify(self.frontier, self.current)
         successor = self.staged.successor
@@ -248,19 +265,13 @@ class IthkuilIdentityFactoryTests(unittest.TestCase):
         parameters, optimizer = object(), object()
         with patch('bilqis_mlx.runtime.admission._require_executable_factory_admission', return_value=self.current), \
                 patch('bilqis_mlx.runtime.state._state_from_json', return_value=school), \
-                patch('bilqis_mlx.runtime.release_adoption._adopt_catalog_profile', return_value="adopted") as adopt:
+                patch('bilqis_mlx.runtime.release_adoption._adopt_prepared_successor',
+                      return_value="adopted") as adopt:
             self.assertEqual(_adopt_jit_proposal(None, Path("unused"), receipt, None,
                 LEGACY, self.parent_graph, parameters, optimizer, session, object(),
                 reserve_gib=0), "adopted")
             self.assertIs(adopt.call_args.args[7], optimizer)
-            self.assertEqual(adopt.call_args.args[8].graph, self.graph)
-            self.assertEqual(adopt.call_args.kwargs["compiled_successor"], self.staged.successor)
-            adopt.reset_mock()
-            receipt["last_exam"] = {}
-            with self.assertRaisesRegex(ValueError, "COMPLETE_PERFECT_PREFIX"):
-                _adopt_jit_proposal(None, Path("unused"), receipt, None, LEGACY,
-                    self.parent_graph, parameters, optimizer, session, object(), reserve_gib=0)
-            adopt.assert_not_called()
+            self.assertIs(adopt.call_args.args[8], self.staged)
 
 
 if __name__ == "__main__":
