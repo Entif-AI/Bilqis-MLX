@@ -2313,3 +2313,57 @@ projection receipt, is not adopted.
 
 **Status:** Accepted as the controlling A09.4 projection-custody amendment.
 
+
+
+## ADR-123 | 2026-11-01 | A09.4 projection truth is deterministic derivation, not caller assertion
+
+**Scope:** BAMF-0.2 A09.4 issue #394. This is the follow-on authority decision
+required after fresh exact-head EGM proved that ADR-122's caller-supplied
+`TargetDeltaProjection` evidence could still be forged self-consistently with a
+matching `FrontierDeltaSelection`.
+
+**Decision:** The authoritative `TargetDeltaProjection` is the deterministic
+result of the trusted A09 planning derivation. A09.4 MUST independently derive
+or invoke the canonical pure derivation of that projection from the authenticated
+A09.3 inputs that determine it, including the current
+`ExecutableFactoryRelease` and validated predecessor snapshot / legal-closure /
+selection context. A projection supplied by a caller, proposal, staged receipt,
+or cold-resume payload is evidence to compare against that derivation; it is not
+itself projection authority.
+
+For direct proposal validation, A09.4 MUST rederive the expected projection from
+trusted inputs and require an exact match before granting `PROPOSAL` or progress
+credit. A self-consistent caller pair of `FrontierDeltaSelection` and
+`TargetDeltaProjection` that does not equal the independently derived projection
+MUST fail closed with a typed planner/custody error.
+
+For staged or cold-resume validation, persisted receipts MUST retain enough
+authenticated predecessor coordinates to rerun the same deterministic derivation.
+Persisting projection bytes or digests is useful for replay and corruption
+detection, but those stored values do not become an independent trust root merely
+because they were persisted. Current credit is granted only after rederivation
+from authenticated predecessor authority and exact comparison.
+
+This decision does **not** change A09.3 winner ranking, comparator semantics,
+budget rules, or accepted selection behavior. It does not move staging ownership
+away from #296, create a new registry or parallel source of truth, or alter C07's
+exclusive admission / persisted-lease authority. The derivation may be factored
+into a reusable pure planner owner, but its semantic authority remains the
+existing A09 planning inputs rather than a new caller-controlled artifact.
+
+**Supersession:** ADR-122 remains valid for carrying exact projection evidence,
+but is superseded wherever it could be read to mean that supplying a
+self-consistent projection is sufficient derivation authority. Exact evidence
+must now be checked against an independently rederived expected projection.
+
+**Human ratification:** The project owner explicitly approved this trust-anchor
+rule on 2026-11-01 after requesting the architecture be stated in plain language:
+the system must recreate the projection from trusted inputs rather than trust the
+projection presented to it.
+
+**Acceptance effect:** This removes the architecture/authority block on #394
+implementation. #394 is not accepted until the implementation receives a fresh
+independent exact-head adversarial EGM and ordinary turn-in gates. #395 remains
+dependency-waiting until #394 is accepted sufficiently for its stated prerequisite.
+
+**Status:** Accepted as the controlling A09.4 projection-authenticity rule.
