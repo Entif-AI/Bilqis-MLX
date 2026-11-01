@@ -2279,3 +2279,37 @@ For the existing BAMF-0.2 hierarchy, this decision authorizes a reconciliation s
 
 **Status:** Accepted as the GitHub issue-lifecycle and backlog-visibility contract for BAMF-0.2 and successor Bilqis-MLX work shaping.
 
+## ADR-122 | 2026-11-01 | A09.4 proves exact A09.3 projection custody from release + projection evidence
+
+**Scope:** BAMF-0.2 A09.4 issue #394 only. This is a narrow amendment to the
+issue's `Precise inputs and existing owners` contract after adversarial review
+proved that the A09.3 bounded proposal alone cannot authenticate its ordered
+capability and semantic-identity introductions.
+
+**Decision:** A09.4 direct-proposal validation MUST consume the current
+`ExecutableFactoryRelease` together with the exact selected
+`TargetDeltaProjection` used by A09.3, and MUST validate the supplied A09.3
+selection against that derivation evidence before granting proposal/progress
+credit. Staged/cold-resume custody MUST carry the exact projection evidence needed
+to reproduce and revalidate the same derivation rather than trusting only a
+self-consistent proposal digest or a successor transition that happens to match
+caller-supplied introduction fields.
+
+This closes the reproduced same-semantic forgery in which
+`introduced_capability_ids` or `introduced_semantic_ids` could be changed and all
+proposal/projection hashes recomputed consistently while A09.4 still accepted the
+payload. Digest integrity remains necessary but is not derivation authority.
+
+The amendment deliberately leaves the accepted A09.3 selection schema and ranking
+semantics unchanged. It does not move staging ownership away from the existing
+#296 Factory/adoption path, create a parallel registry, grant admission rights, or
+alter the C07 persisted-lease boundary. A09.4 remains proposal/staging logic only;
+runtime admission and durable mutation stay with their existing owners.
+
+**Human ratification:** Option A from the #394 architecture checkpoint was
+explicitly selected by the project owner on 2026-11-01. Option B, which would
+change the already-accepted A09.3/#296 output contract to mint a new upstream
+projection receipt, is not adopted.
+
+**Status:** Accepted as the controlling A09.4 projection-custody amendment.
+
