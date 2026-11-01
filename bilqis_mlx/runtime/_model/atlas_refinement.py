@@ -6,14 +6,17 @@ Prediction-local selection, quotas and routing supervision belong to B06.2.
 """
 from __future__ import annotations
 
+from collections.abc import Iterator
 from dataclasses import dataclass
+from types import MappingProxyType
 from typing import Mapping
 
 import mlx.core as mx
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from .model_topology_v2 import (
-    GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes, validate_bamf_parameters,
+    GenerationExtents, ModelTopologySpecV2, ParameterSpec, SHA256_HEX_LENGTH, expected_bamf_shapes,
+    validate_bamf_parameters,
 )
 
 
@@ -23,6 +26,7 @@ MEMBER_RANK = 2
 MAX_LOCAL_PASSES = 2
 ROUTE_LOGIT_DIM = MAX_LOCAL_PASSES + 1
 RESIDUAL_GATE_SCALE = .1
+REFINEMENT_PARAMETER_VIEW_SCHEMA = "bilqis.mlx.refinement-parameter-view/v1"
 
 
 def _invalid():
@@ -37,12 +41,54 @@ class _RefinementResult:
     schema_version: str = "bilqis.mlx.refinement-numerical-result/provisional-v1"
 
 
+@dataclass(frozen=True)
+class RefinementParameterView(Mapping[str, mx.array]):
+    """Immutable B06 projection of B01's normative refinement tensor ledger."""
+
+    topology_digest: str
+    extents_digest: str
+    declarations: tuple[ParameterSpec, ...]
+    _parameters: Mapping[str, mx.array]
+    schema_version: str = REFINEMENT_PARAMETER_VIEW_SCHEMA
+
+    def __post_init__(self) -> None:
+        names = tuple(item.name for item in self.declarations)
+        digests = (self.topology_digest, self.extents_digest)
+        if (self.schema_version != REFINEMENT_PARAMETER_VIEW_SCHEMA
+                or any(not isinstance(value, str) or len(value) != SHA256_HEX_LENGTH
+                       or any(character not in "0123456789abcdef" for character in value)
+                       for value in digests)
+                or not self.declarations
+                or any(type(item) is not ParameterSpec for item in self.declarations)
+                or any(not name.startswith("refine.") for name in names)
+                or len(set(names)) != len(names) or set(self._parameters) != set(names)):
+            _invalid()
+        for item in self.declarations:
+            value = self._parameters[item.name]
+            if (not isinstance(value, mx.array) or value.dtype != mx.float32
+                    or tuple(value.shape) != item.shape):
+                _invalid()
+        object.__setattr__(self, "_parameters", MappingProxyType(dict(self._parameters)))
+
+    def __getitem__(self, name: str) -> mx.array:
+        return self._parameters[name]
+
+    def __iter__(self) -> Iterator[str]:
+        return (item.name for item in self.declarations)
+
+    def __len__(self) -> int:
+        return len(self.declarations)
+
+
 def refinement_parameter_view(parameters: Mapping[str, mx.array], *, spec: ModelTopologySpecV2,
-                              extents: GenerationExtents) -> dict[str, mx.array]:
-    """Borrow exact refinement tensors after validating the full B01 tree."""
+                              extents: GenerationExtents) -> RefinementParameterView:
+    """Borrow an immutable exact refinement view after validating the full B01 tree."""
     validate_bamf_parameters(spec, extents, parameters)
-    return {item.name: parameters[item.name] for item in expected_bamf_shapes(spec, extents)
-            if item.name.startswith("refine.")}
+    declarations = tuple(item for item in expected_bamf_shapes(spec, extents)
+                         if item.name.startswith("refine."))
+    return RefinementParameterView(
+        spec.digest, extents.digest, declarations,
+        {item.name: parameters[item.name] for item in declarations})
 
 
 def _norm(value, gamma):
