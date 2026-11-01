@@ -63,6 +63,34 @@ class TypedLossTests(unittest.TestCase):
         with self.assertRaises(BilqisError):
             answer_loss(output,target,{record.decision_id:True})
 
+    def test_issued_logits_reject_in_place_mlx_and_numpy_writes(self):
+        for via_numpy in (False, True):
+            with self.subTest(via_numpy=via_numpy):
+                output=predict_typed(*case())
+                record=output.decisions[1]
+                target=(DecisionOutput(record.decision_id,record.candidates[0]),)
+                self.assertTrue(bool(mx.isfinite(answer_loss(output,target,{record.decision_id:True}).total)))
+                if via_numpy:
+                    view=np.asarray(record.logits)
+                    view[:]=[-100.,100.]
+                else:
+                    record.logits[:]=mx.array([-100.,100.],dtype=mx.float32)
+                with self.assertRaises(BilqisError):
+                    answer_loss(output,target,{record.decision_id:True})
+
+    def test_reentrant_prediction_issuance_preserves_original_and_gradients(self):
+        memory,context,plan,semantics,params=case()
+        target=(DecisionOutput('value',plan.decisions[1].legal_values[0]),)
+        first=predict_typed(memory,context,plan,semantics,params)
+        second=predict_typed(memory,context,plan,semantics,params)
+        self.assertTrue(bool(mx.isfinite(answer_loss(first,target,{'value':True}).total)))
+        self.assertTrue(bool(mx.isfinite(answer_loss(second,target,{'value':True}).total)))
+        def objective(query):
+            output=predict_typed(memory,context,plan,semantics,{**params,'readout.query':query})
+            return answer_loss(output,target,{'value':True}).total
+        gradient=mx.grad(objective)(params['readout.query'])
+        self.assertTrue(bool(mx.all(mx.isfinite(gradient))))
+
     def test_unknown_label_id_or_nonboolean_mask_rejects(self):
         _, _, plan, _, _=case()
         output=ModelOutput(plan,(),(),DecodeStatus.UNRESOLVED,ExecutionMode.INFERENCE,None,True)

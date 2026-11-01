@@ -1,6 +1,8 @@
 """Causal bounded prediction and explicit source-validation fallback."""
 from dataclasses import dataclass
 from copy import deepcopy
+import hashlib
+import numpy as np
 from enum import Enum
 from weakref import WeakValueDictionary, finalize
 import mlx.core as mx
@@ -19,6 +21,13 @@ from .math import prepare_memory, decision_state
 from .heads import decision_logits
 
 
+def _logit_fingerprint(logits):
+    """Snapshot evaluated FP32 bytes without replacing the differentiable tensor."""
+    mx.eval(logits)
+    values = np.array(logits, dtype=np.float32, copy=True, order='C')
+    return hashlib.sha256(values.tobytes(order='C')).digest()
+
+
 class _IssuanceRegistry:
     """Own ephemeral numerical receipts; no module-level mutable collection."""
 
@@ -30,7 +39,8 @@ class _IssuanceRegistry:
         key = id(output)
         self.outputs[key] = output
         self.records[key] = (
-            tuple((record, record.logits) for record in output.decisions),
+            tuple((record, record.logits, _logit_fingerprint(record.logits))
+                  for record in output.decisions),
             deepcopy(meaning),
         )
         finalize(output, self.records.pop, key, None)
@@ -44,7 +54,8 @@ class _IssuanceRegistry:
         return (meaning == frozen_meaning
                 and len(output.decisions) == len(records)
                 and all(record is issued and record.logits is logits
-                        for record, (issued, logits) in zip(output.decisions, records)))
+                        and _logit_fingerprint(record.logits) == fingerprint
+                        for record, (issued, logits, fingerprint) in zip(output.decisions, records)))
 
 
 _ISSUANCE = _IssuanceRegistry()
