@@ -47,3 +47,7 @@ files were byte-identical;44 affected plus5 runtime-identity proofs passed.
 No production attention/trainer caller, actual learner/own AdamW/teacher/checkpoint
 or human-run was modified. Full B13 custody and parent cache integration remain
 open. No source release, admission or learning claim is made.
+
+Hosted run41276826199 rejected a new literal head-width24 guard under the exact
+base-aware error-control check. The guard now imports the canonical HEAD_WIDTH
+constant. This preserves behavior and introduces no baseline/guard changes.

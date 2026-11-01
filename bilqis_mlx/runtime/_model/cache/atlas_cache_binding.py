@@ -139,6 +139,7 @@ def binding_digest(binding: CacheBinding) -> bytes:
 
 
 def record_header_bytes(artifact: CacheArtifact) -> bytes:
+    from .atlas_cache_codec import HEAD_WIDTH
     if not isinstance(artifact, CacheArtifact):
         _invalid()
     if type(artifact.binding_sha256) is not bytes or (
@@ -147,7 +148,7 @@ def record_header_bytes(artifact: CacheArtifact) -> bytes:
         _invalid()
     if (type(artifact.true_vectors) is not int
         or type(artifact.padded_vectors) is not int
-        or type(artifact.head_width) is not int or artifact.head_width != 24
+        or type(artifact.head_width) is not int or artifact.head_width != HEAD_WIDTH
         or not 0 < artifact.true_vectors <= artifact.padded_vectors <= MAX_U32):
         _invalid()
     if artifact.mode == CACHE_MODE_FP32:
