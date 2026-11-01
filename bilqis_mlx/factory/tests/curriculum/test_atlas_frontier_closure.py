@@ -5,10 +5,12 @@ import unittest
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory.atlas_frontier_closure import (
-    ClosureStatus, resolve_frontier_closure,
+    ClosureStatus, PrerequisiteEvidenceBinding, resolve_frontier_closure,
 )
 from bilqis_mlx.factory.atlas_frontier_contracts import PrerequisiteEdge
-from bilqis_mlx.factory.skos_curriculum import FamilyObligation
+from bilqis_mlx.factory.skos_curriculum import (
+    IMPLEMENTATION_UNCOVERED, PROGRAM_BOUND, FamilyObligation,
+)
 from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier_events import (
     _snapshot,
 )
@@ -22,8 +24,19 @@ def _rehash(snapshot, **changes):
 def _row(semantic_id, family="positive_identity", *, implemented=True):
     return FamilyObligation(
         semantic_id, family, hashlib.sha256(f"{semantic_id}:{family}".encode()).hexdigest(),
-        "ADMITTED" if implemented else "IMPLEMENTATION_UNCOVERED",
-        "SOURCE_ADMITTED" if implemented else "FAMILY_CONSTRUCTOR_CHECKER_NOT_BOUND")
+        PROGRAM_BOUND if implemented else IMPLEMENTATION_UNCOVERED,
+        "FACTORY_PROGRAM_BOUND" if implemented else "FAMILY_CONSTRUCTOR_CHECKER_NOT_BOUND")
+
+
+def _evidence(semantic_id, release="9" * 64):
+    return PrerequisiteEvidenceBinding(
+        semantic_id,
+        f"cap:{semantic_id}",
+        release,
+        "8" * 64,
+        11,
+        hashlib.sha256(f"evidence:{semantic_id}".encode()).hexdigest(),
+    )
 
 
 def _three_node_snapshot():
@@ -52,18 +65,49 @@ class AtlasFrontierClosureTests(unittest.TestCase):
             closure.constituent_order.index("urn:one"),
             closure.constituent_order.index("urn:two"))
 
-    def test_learning_debt_blocks_only_its_dependent_branch(self):
+    def test_missing_typed_evidence_blocks_only_its_dependent_branch(self):
         base = _three_node_snapshot()
-        rows = tuple(replace(row, implementation_status="ADMITTED")
+        rows = tuple(replace(row, implementation_status=PROGRAM_BOUND)
                      for row in base.coverage_rows)
         snapshot = _rehash(
-            base, coverage_rows=rows, retained_mastery_debt=("urn:one",),
+            base, coverage_rows=rows, retained_mastery_debt=("cap.z",),
             retained_debt_source_sha256="d" * 64)
         closure = resolve_frontier_closure(snapshot)
         by_id = {item.semantic_id: item for item in closure.candidates}
-        self.assertEqual(by_id["urn:one"].status, ClosureStatus.WAITING_FOR_EVIDENCE)
+        self.assertEqual(by_id["urn:one"].status, ClosureStatus.READY)
         self.assertEqual(by_id["urn:two"].status, ClosureStatus.WAITING_FOR_EVIDENCE)
         self.assertEqual(by_id["urn:three"].status, ClosureStatus.READY)
+
+    def test_typed_current_evidence_unlocks_only_its_declared_dependency(self):
+        base = _three_node_snapshot()
+        rows = tuple(replace(row, implementation_status=PROGRAM_BOUND)
+                     for row in base.coverage_rows)
+        snapshot = _rehash(
+            base,
+            coverage_rows=rows,
+            admitted_factory_release_sha256="9" * 64,
+            admission_receipt_sha256="7" * 64,
+        )
+        closure = resolve_frontier_closure(
+            snapshot, prerequisite_evidence=(_evidence("urn:one"),))
+        by_id = {item.semantic_id: item for item in closure.candidates}
+        self.assertEqual(by_id["urn:one"].status, ClosureStatus.READY)
+        self.assertEqual(by_id["urn:two"].status, ClosureStatus.READY)
+        self.assertEqual(by_id["urn:three"].status, ClosureStatus.READY)
+
+    def test_evidence_must_bind_current_admitted_release(self):
+        base = _three_node_snapshot()
+        rows = tuple(replace(row, implementation_status=PROGRAM_BOUND)
+                     for row in base.coverage_rows)
+        snapshot = _rehash(
+            base,
+            coverage_rows=rows,
+            admitted_factory_release_sha256="9" * 64,
+            admission_receipt_sha256="7" * 64,
+        )
+        with self.assertRaises(BilqisError):
+            resolve_frontier_closure(
+                snapshot, prerequisite_evidence=(_evidence("urn:one", "6" * 64),))
 
     def test_source_hold_and_implementation_debt_remain_distinct(self):
         closure = resolve_frontier_closure(_snapshot())
@@ -77,17 +121,17 @@ class AtlasFrontierClosureTests(unittest.TestCase):
     def test_direct_implementation_debt_is_not_downgraded_by_evidence_wait(self):
         base = _three_node_snapshot()
         rows = tuple(
-            replace(row, implementation_status="ADMITTED")
+            replace(row, implementation_status=PROGRAM_BOUND)
             if row.semantic_id == "urn:one" else
-            replace(row, implementation_status="IMPLEMENTATION_UNCOVERED")
+            replace(row, implementation_status=IMPLEMENTATION_UNCOVERED)
             if row.semantic_id == "urn:two" else row
             for row in base.coverage_rows)
         snapshot = _rehash(
-            base, coverage_rows=rows, retained_mastery_debt=("urn:one",),
+            base, coverage_rows=rows, retained_mastery_debt=("cap.z",),
             retained_debt_source_sha256="d" * 64)
         closure = resolve_frontier_closure(snapshot)
         by_id = {item.semantic_id: item for item in closure.candidates}
-        self.assertEqual(by_id["urn:one"].status, ClosureStatus.WAITING_FOR_EVIDENCE)
+        self.assertEqual(by_id["urn:one"].status, ClosureStatus.READY)
         self.assertEqual(by_id["urn:two"].status, ClosureStatus.IMPLEMENTATION_UNCOVERED)
 
     def test_grade_labels_do_not_change_rules_or_closure_outcomes(self):
@@ -137,6 +181,41 @@ class AtlasFrontierClosureTests(unittest.TestCase):
         by_id = {item.semantic_id: item for item in closure.candidates}
         self.assertEqual(by_id["urn:two"].status, ClosureStatus.READY)
         self.assertEqual(by_id["urn:two"].prerequisites, ())
+
+    def test_exact_source_eligible_denominator_is_not_silently_dropped(self):
+        base = _three_node_snapshot()
+        snapshot = _rehash(
+            base,
+            coverage_rows=tuple(
+                row for row in base.coverage_rows if row.semantic_id != "urn:three"),
+        )
+        with self.assertRaises(BilqisError):
+            resolve_frontier_closure(snapshot)
+
+    def test_unknown_implementation_status_fails_closed(self):
+        base = _three_node_snapshot()
+        rows = tuple(
+            replace(row, implementation_status="NOT_A_REAL_STATE")
+            if row.semantic_id == "urn:one" else row
+            for row in base.coverage_rows
+        )
+        with self.assertRaises(BilqisError):
+            resolve_frontier_closure(_rehash(base, coverage_rows=rows))
+
+    def test_semantic_id_collision_with_capability_debt_is_not_mastery(self):
+        base = _three_node_snapshot()
+        rows = tuple(replace(row, implementation_status=PROGRAM_BOUND)
+                     for row in base.coverage_rows)
+        snapshot = _rehash(
+            base,
+            coverage_rows=rows,
+            retained_mastery_debt=("urn:one",),
+            retained_debt_source_sha256="d" * 64,
+        )
+        closure = resolve_frontier_closure(snapshot)
+        by_id = {item.semantic_id: item for item in closure.candidates}
+        self.assertEqual(by_id["urn:one"].status, ClosureStatus.READY)
+        self.assertEqual(by_id["urn:two"].status, ClosureStatus.WAITING_FOR_EVIDENCE)
 
 
 if __name__ == "__main__":

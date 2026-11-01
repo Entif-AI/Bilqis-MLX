@@ -6,7 +6,12 @@ from enum import Enum
 import hashlib
 
 from .atlas_frontier_contracts import CurriculumSnapshot, _bytes, _fail
-from .skos_curriculum import SOURCE_FAMILY_ADAPTERS, SourceFamilyAdapter
+from .skos_curriculum import (
+    IMPLEMENTATION_UNCOVERED,
+    PROGRAM_BOUND,
+    SOURCE_FAMILY_ADAPTERS,
+    SourceFamilyAdapter,
+)
 
 
 class ClosureStatus(str, Enum):
@@ -41,9 +46,43 @@ class SourceHold:
     status: ClosureStatus = ClosureStatus.SOURCE_HELD
 
 
+@dataclass(frozen=True, order=True)
+class PrerequisiteEvidenceBinding:
+    """A typed projection of already-verified current capability evidence.
+
+    The planner never infers this bridge from names, debt sets, source lessons,
+    or generic learning records.  A09.5 is expected to construct these bindings
+    from the existing evidence-complete capability path.
+    """
+
+    semantic_id: str
+    capability_id: str
+    factory_release_sha256: str
+    checkpoint_sha256: str
+    optimizer_step: int
+    evidence_digest: str
+
+    def __post_init__(self) -> None:
+        if (
+            type(self.semantic_id) is not str
+            or not self.semantic_id
+            or type(self.capability_id) is not str
+            or not self.capability_id
+            or type(self.optimizer_step) is not int
+            or self.optimizer_step < 0
+            or any(not _sha(value) for value in (
+                self.factory_release_sha256,
+                self.checkpoint_sha256,
+                self.evidence_digest,
+            ))
+        ):
+            _fail("BAMF_PLANNER_PREREQUISITE_EVIDENCE_INVALID")
+
+
 @dataclass(frozen=True)
 class FrontierClosure:
     snapshot_sha256: str
+    prerequisite_evidence_sha256: str
     rule_families: tuple[str, ...]
     constituent_order: tuple[str, ...]
     candidates: tuple[CandidateClosure, ...]
@@ -70,6 +109,14 @@ def _rules(registry: tuple[SourceFamilyAdapter, ...]) -> dict[str, SourceFamilyA
     if len(result) != len(registry):
         _fail("BAMF_PLANNER_DOMAIN_RULE_REGISTRY_DUPLICATE")
     return result
+
+
+def _sha(value: object) -> bool:
+    return (
+        type(value) is str
+        and len(value) == 64
+        and all(char in "0123456789abcdef" for char in value)
+    )
 
 
 def _graph(snapshot: CurriculumSnapshot) -> tuple[dict[str, tuple[str, ...]], tuple[str, ...]]:
@@ -120,29 +167,30 @@ def _coverage(snapshot: CurriculumSnapshot):
         result[key] = row
     if set(snapshot.required_source_family_ids) - {key[1] for key in result}:
         _fail("BAMF_PLANNER_REQUIRED_FAMILY_MISSING")
+    if {key[0] for key in result} != eligible:
+        _fail("BAMF_PLANNER_ELIGIBILITY_DENOMINATOR_INCOMPLETE")
     return result
 
 
 def _direct_status(snapshot: CurriculumSnapshot, rules: dict[str, SourceFamilyAdapter]):
-    waiting = (set(snapshot.retained_mastery_debt)
-               | set(snapshot.unverified_exposed_capability_ids)
-               | set(snapshot.unverified_qualified_capability_ids))
     by_candidate = {}
     for row in snapshot.coverage_rows:
-        if row.implementation_status == "IMPLEMENTATION_UNCOVERED" or row.family_id not in rules:
+        if row.implementation_status == IMPLEMENTATION_UNCOVERED or row.family_id not in rules:
             status = ClosureStatus.IMPLEMENTATION_UNCOVERED
-        elif row.semantic_id in waiting:
-            status = ClosureStatus.WAITING_FOR_EVIDENCE
-        else:
+        elif row.implementation_status == PROGRAM_BOUND:
             status = ClosureStatus.READY
+        else:
+            _fail("BAMF_PLANNER_IMPLEMENTATION_STATUS_INVALID")
         by_candidate[(row.semantic_id, row.family_id)] = status
     return by_candidate
 
 
-def _dependency_status(statuses: tuple[ClosureStatus, ...]) -> ClosureStatus | None:
+def _dependency_status(
+    statuses: tuple[ClosureStatus, ...], *, evidence_complete: bool,
+) -> ClosureStatus | None:
     if ClosureStatus.IMPLEMENTATION_UNCOVERED in statuses:
         return ClosureStatus.IMPLEMENTATION_UNCOVERED
-    if ClosureStatus.WAITING_FOR_EVIDENCE in statuses:
+    if not evidence_complete or ClosureStatus.WAITING_FOR_EVIDENCE in statuses:
         return ClosureStatus.WAITING_FOR_EVIDENCE
     return None
 
@@ -159,12 +207,30 @@ def _merge_status(current: ClosureStatus, dependency: ClosureStatus) -> ClosureS
 def resolve_frontier_closure(
     snapshot: CurriculumSnapshot,
     domain_rule_registry: tuple[SourceFamilyAdapter, ...] = SOURCE_FAMILY_ADAPTERS,
+    prerequisite_evidence: tuple[PrerequisiteEvidenceBinding, ...] = (),
 ) -> FrontierClosure:
     """Return grade-neutral, constituent-first closure without ranking or admission."""
     if type(snapshot) is not CurriculumSnapshot:
         _fail("BAMF_PLANNER_SNAPSHOT_INPUT_INVALID")
     snapshot.verify()
     rules = _rules(domain_rule_registry)
+    if (
+        type(prerequisite_evidence) is not tuple
+        or any(type(item) is not PrerequisiteEvidenceBinding
+               for item in prerequisite_evidence)
+        or len({item.semantic_id for item in prerequisite_evidence})
+        != len(prerequisite_evidence)
+    ):
+        _fail("BAMF_PLANNER_PREREQUISITE_EVIDENCE_INVALID")
+    evidence_by_semantic = {item.semantic_id: item for item in prerequisite_evidence}
+    for item in prerequisite_evidence:
+        if (
+            item.semantic_id not in snapshot.source_eligible_concept_ids
+            or snapshot.admitted_factory_release_sha256 is None
+            or item.factory_release_sha256 != snapshot.admitted_factory_release_sha256
+        ):
+            _fail("BAMF_PLANNER_PREREQUISITE_EVIDENCE_STALE")
+    evidence_sha256 = hashlib.sha256(_bytes(prerequisite_evidence)).hexdigest()
     graph, order = _graph(snapshot)
     direct = _direct_status(snapshot, rules)
     resolved: dict[str, tuple[ClosureStatus, ...]] = {}
@@ -182,7 +248,10 @@ def resolve_frontier_closure(
             elif status is ClosureStatus.WAITING_FOR_EVIDENCE:
                 reasons.append(ClosureReason("LEARNING_EVIDENCE_REQUIRED", "learner:evidence"))
             for prerequisite in graph[semantic_id]:
-                blocked = _dependency_status(resolved[prerequisite])
+                blocked = _dependency_status(
+                    resolved[prerequisite],
+                    evidence_complete=prerequisite in evidence_by_semantic,
+                )
                 if blocked is not None:
                     status = _merge_status(status, blocked)
                     reasons.append(ClosureReason(
@@ -193,10 +262,11 @@ def resolve_frontier_closure(
             current.append(status)
         resolved[semantic_id] = tuple(current)
     provisional = FrontierClosure(
-        snapshot.snapshot_sha256, tuple(sorted(rules)), order,
+        snapshot.snapshot_sha256, evidence_sha256, tuple(sorted(rules)), order,
         tuple(sorted(candidates)), _source_holds(snapshot), "0" * 64)
     result = FrontierClosure(
-        provisional.snapshot_sha256, provisional.rule_families,
+        provisional.snapshot_sha256, provisional.prerequisite_evidence_sha256,
+        provisional.rule_families,
         provisional.constituent_order, provisional.candidates,
         provisional.source_holds, provisional.expected_digest())
     result.verify()
