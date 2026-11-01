@@ -24,5 +24,11 @@ __all__ += ('ControlAction', 'control_logits', 'AnswerPlan', 'DecisionKind',
             'commit_decisions', 'FrameAnswer', 'can_end_frame', 'frame_bindings',
             'publish_frame', 'NeuralDecisionResult', 'NeuralDecisionStatus',
             'commit_neural_decision', 'decision_hidden', 'encode_feedback_value',
-            'typed_decision_loss', 'bind_readout_parameters',
-            'readout_parameter_specs')
+            'typed_decision_loss', 'bind_readout_parameters', 'readout_parameter_specs')
+
+from .decoder.inputs import DecoderMemory, ReadoutSemantics
+from .decoder.prediction import DecisionLogits, ModelOutput, ExecutionMode, predict_typed
+from .decoder.losses import LossParts, answer_loss
+
+__all__ += ('DecoderMemory', 'ReadoutSemantics', 'DecisionLogits', 'ModelOutput',
+            'ExecutionMode', 'predict_typed', 'LossParts', 'answer_loss')

@@ -1,0 +1,1 @@
+"""Disposable CPU decoder contracts."""
