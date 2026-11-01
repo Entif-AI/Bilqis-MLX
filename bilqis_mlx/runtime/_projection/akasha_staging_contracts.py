@@ -60,7 +60,7 @@ class PublicEvent:
     schema_version: str = PUBLIC_EVENT_SCHEMA
 
     def __post_init__(self) -> None:
-        if self.kind in OWNER_FIXTURE_KINDS:
+        if isinstance(self.kind, AkashaEventKind) and self.kind in OWNER_FIXTURE_KINDS:
             _invalid("BAMF_C10_FIXTURE_PUBLIC_SCHEMA_REQUIRED")
         if (not isinstance(self.kind, AkashaEventKind)
                 or not all(_sha(value) for value in (
@@ -109,8 +109,11 @@ class StagingProjection:
     def __post_init__(self) -> None:
         if (not isinstance(self.public_events, tuple)
                 or any(not isinstance(item, PublicEvent)
-                       for item in self.public_events)
-                or self.public_events != tuple(sorted(
+                       for item in self.public_events)):
+            _invalid("BAMF_C10_STAGING_PROJECTION_INVALID")
+        for event in self.public_events:
+            PublicEvent.__post_init__(event)
+        if (self.public_events != tuple(sorted(
                     self.public_events, key=lambda item: item.event_id))
                 or len({item.event_id for item in self.public_events})
                 != len(self.public_events)
