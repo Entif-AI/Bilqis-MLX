@@ -15,8 +15,8 @@ from bilqis_mlx.runtime.atlas_optimizer import (
     AdamWHyperparameters, AdamWStateTree, _create_unbound_bamf_optimizer,
 )
 from bilqis_mlx.runtime.model_topology_v2 import (
-    GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes,
-    initialize_bamf_row,
+    FEATURE_NONE_ROW, GenerationExtents, Initializer, ModelTopologySpecV2,
+    expected_bamf_shapes, initialize_bamf_row,
 )
 from bilqis_mlx.learning._retention.atlas_candidate import (
     CandidateInitialization, CandidateState, CandidateTransaction,
@@ -210,6 +210,37 @@ class CandidateTransactionTests(TestCase):
         with self.assertRaises(BilqisError):
             begin_candidate(
                 forged_parent, frames=(source(),), budget=MotifBudget(1))
+
+    def test_seed_invariant_none_row_cannot_be_last_witness(self):
+        counts = dict(self.parent.optimizer.update_counts)
+        seed_sensitive = {
+            Initializer.MATRIX, Initializer.EMBEDDING, Initializer.FEATURE_TABLE,
+        }
+        for item in expected_bamf_shapes(self.topology, self.extents):
+            if item.initializer not in seed_sensitive:
+                continue
+            current = counts[item.name]
+            if current.ndim == 0:
+                counts[item.name] = mx.array(1, dtype=current.dtype)
+                continue
+            exhausted = mx.ones(current.shape, dtype=current.dtype)
+            if item.initializer is Initializer.FEATURE_TABLE:
+                exhausted[FEATURE_NONE_ROW] = mx.array(0, dtype=current.dtype)
+            counts[item.name] = exhausted
+        exhausted_optimizer = AdamWStateTree(
+            self.parent.optimizer.parameters, self.parent.optimizer.m,
+            self.parent.optimizer.v, counts)
+        forged_binding = candidate_owner._issue_initialization(
+            self.topology, self.extents, 999)
+        forged_parent = candidate_owner._issue_state(
+            exhausted_optimizer, self.parent.policy, self.parent.allocations,
+            self.parent.optimizer_step, forged_binding)
+        with self.assertRaises(BilqisError):
+            begin_candidate(
+                forged_parent, frames=(source(),), budget=MotifBudget(1))
+
+    def test_no_generic_transaction_issuer_can_bypass_row_materialization(self):
+        self.assertFalse(hasattr(candidate_owner, "_issue_transaction"))
 
     def test_public_initial_binding_cannot_smuggle_page_growth_state(self):
         with self.assertRaises(BilqisError):

@@ -230,18 +230,6 @@ class CandidateTransaction:
         return next_update_mode(self.parent.policy, teacher_requests_full=self.teacher_requests_full)
 
 
-def _issue_transaction(parent, optimizer, allocations, teacher_requests_full, update_steps=0):
-    """Only the two owner transition paths issue process-local candidate handles."""
-    candidate = object.__new__(CandidateTransaction)
-    for name, value in (
-            ('parent', parent), ('optimizer', optimizer), ('allocations', allocations),
-            ('teacher_requests_full', teacher_requests_full), ('update_steps', update_steps),
-            ('schema_version', TRANSACTION_SCHEMA), ('_issuance', _TRANSACTION_ISSUER)):
-        object.__setattr__(candidate, name, value)
-    candidate.__post_init__()
-    return candidate
-
-
 def _materialize_planned_motif_rows(parent, proposal):
     """Bind newly allocated in-page motif rows to B01 initialization exactly.
 
@@ -308,8 +296,15 @@ def begin_candidate(parent: CandidateState, *, frames=(), budget=None,
     optimizer = (
         _materialize_planned_motif_rows(parent, proposal)
         if allocated else parent.optimizer)
-    return _issue_transaction(
-        parent, optimizer, proposal.proposed, teacher_requests_full)
+    candidate = object.__new__(CandidateTransaction)
+    for name, value in (
+            ('parent', parent), ('optimizer', optimizer),
+            ('allocations', proposal.proposed),
+            ('teacher_requests_full', teacher_requests_full), ('update_steps', 0),
+            ('schema_version', TRANSACTION_SCHEMA), ('_issuance', _TRANSACTION_ISSUER)):
+        object.__setattr__(candidate, name, value)
+    candidate.__post_init__()
+    return candidate
 
 
 def candidate_step(candidate: CandidateTransaction, gradients, update_mask,
@@ -328,8 +323,16 @@ def candidate_step(candidate: CandidateTransaction, gradients, update_mask,
         decay=decay, loss_bearing=loss_bearing, max_norm=max_norm)
     if optimizer is candidate.optimizer:
         return candidate
-    return _issue_transaction(candidate.parent, optimizer, candidate.allocations,
-                                candidate.teacher_requests_full, candidate.update_steps + 1)
+    updated = object.__new__(CandidateTransaction)
+    for name, value in (
+            ('parent', candidate.parent), ('optimizer', optimizer),
+            ('allocations', candidate.allocations),
+            ('teacher_requests_full', candidate.teacher_requests_full),
+            ('update_steps', candidate.update_steps + 1),
+            ('schema_version', TRANSACTION_SCHEMA), ('_issuance', _TRANSACTION_ISSUER)):
+        object.__setattr__(updated, name, value)
+    updated.__post_init__()
+    return updated
 
 
 def resolve_candidate(candidate: CandidateTransaction, *, accepted: bool) -> CandidateState:

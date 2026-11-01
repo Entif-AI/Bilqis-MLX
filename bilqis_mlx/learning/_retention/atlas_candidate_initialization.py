@@ -6,8 +6,8 @@ import mlx.core as mx
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.runtime.atlas_optimizer import AdamWStateTree
 from bilqis_mlx.runtime.model_topology_v2 import (
-    GenerationExtents, Initializer, ModelTopologySpecV2, expected_bamf_shapes,
-    initialize_bamf_parameter,
+    FEATURE_NONE_ROW, GenerationExtents, Initializer, ModelTopologySpecV2,
+    expected_bamf_shapes, initialize_bamf_parameter,
 )
 
 
@@ -48,6 +48,10 @@ def verify_seed_from_untouched_b01_state(
         if counts.ndim != 1 or actual.ndim < 1 or counts.shape[0] != actual.shape[0]:
             _invalid()
         for row in range(counts.shape[0]):
+            if item.initializer is Initializer.FEATURE_TABLE and row == FEATURE_NONE_ROW:
+                # B01 fixes NONE to zero for every run seed; it cannot
+                # discriminate which seed initialized this retained tree.
+                continue
             if int(counts[row]) == 0:
                 witnessed = True
                 if not bool(mx.array_equal(actual[row], expected[row])):
