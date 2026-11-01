@@ -5,11 +5,18 @@ from dataclasses import dataclass, fields
 from enum import Enum
 import hashlib
 
+from bilqis_mlx.factory.autonomy import (
+    AutonomyPlan,
+    EvidenceLedger,
+    evidence_complete_capabilities,
+    is_factory_release,
+)
 from .atlas_frontier_contracts import CurriculumSnapshot, _bytes, _fail
 from .skos_curriculum import (
     IMPLEMENTATION_UNCOVERED,
     PROGRAM_BOUND,
     SOURCE_FAMILY_ADAPTERS,
+    SemanticFamilyInventory,
     SourceFamilyAdapter,
 )
 
@@ -47,20 +54,11 @@ class SourceHold:
 
 
 @dataclass(frozen=True, order=True)
-class PrerequisiteEvidenceBinding:
-    """A typed projection of already-verified current capability evidence.
-
-    The planner never infers this bridge from names, debt sets, source lessons,
-    or generic learning records.  A09.5 is expected to construct these bindings
-    from the existing evidence-complete capability path.
-    """
+class PrerequisiteCapabilityBinding:
+    """Explicit semantic-to-capability identity; evidence is verified separately."""
 
     semantic_id: str
     capability_id: str
-    factory_release_sha256: str
-    checkpoint_sha256: str
-    optimizer_step: int
-    evidence_digest: str
 
     def __post_init__(self) -> None:
         if (
@@ -68,15 +66,8 @@ class PrerequisiteEvidenceBinding:
             or not self.semantic_id
             or type(self.capability_id) is not str
             or not self.capability_id
-            or type(self.optimizer_step) is not int
-            or self.optimizer_step < 0
-            or any(not _sha(value) for value in (
-                self.factory_release_sha256,
-                self.checkpoint_sha256,
-                self.evidence_digest,
-            ))
         ):
-            _fail("BAMF_PLANNER_PREREQUISITE_EVIDENCE_INVALID")
+            _fail("BAMF_PLANNER_PREREQUISITE_BINDING_INVALID")
 
 
 @dataclass(frozen=True)
@@ -152,9 +143,21 @@ def _source_holds(snapshot: CurriculumSnapshot) -> tuple[SourceHold, ...]:
         for row in snapshot.source_held_rows))
 
 
-def _coverage(snapshot: CurriculumSnapshot):
+def _coverage(
+    snapshot: CurriculumSnapshot, census: SemanticFamilyInventory,
+):
     eligible = set(snapshot.source_eligible_concept_ids)
     families = set(snapshot.required_source_family_ids)
+    if (type(census) is not SemanticFamilyInventory
+            or census.digest != snapshot.frozen_census_sha256
+            or census.semantic_release != snapshot.semantic_release
+            or census.source_bundle_id != snapshot.source_bundle_id
+            or census.source_coverage_sha256 != snapshot.source_coverage_sha256
+            or census.source_eligible_concept_ids
+               != snapshot.source_eligible_concept_ids
+            or census.required_source_family_ids
+               != snapshot.required_source_family_ids):
+        _fail("BAMF_PLANNER_FROZEN_CENSUS_MISMATCH")
     result = {}
     for row in snapshot.coverage_rows:
         key = (row.semantic_id, row.family_id)
@@ -169,6 +172,11 @@ def _coverage(snapshot: CurriculumSnapshot):
         _fail("BAMF_PLANNER_REQUIRED_FAMILY_MISSING")
     if {key[0] for key in result} != eligible:
         _fail("BAMF_PLANNER_ELIGIBILITY_DENOMINATOR_INCOMPLETE")
+    expected = {
+        (item.semantic_id, item.family_id) for item in census.obligations
+    }
+    if set(result) != expected:
+        _fail("BAMF_PLANNER_COVERAGE_DENOMINATOR_MISMATCH")
     return result
 
 
@@ -204,38 +212,90 @@ def _merge_status(current: ClosureStatus, dependency: ClosureStatus) -> ClosureS
     return max((current, dependency), key=precedence.__getitem__)
 
 
+def _verified_evidence_context(
+    snapshot: CurriculumSnapshot,
+    prerequisite_bindings: tuple[PrerequisiteCapabilityBinding, ...],
+    current_release,
+    evidence_ledger: EvidenceLedger | None,
+    autonomy_plan: AutonomyPlan | None,
+    checkpoint_sha256: str | None,
+    optimizer_step: int | None,
+) -> tuple[dict[str, PrerequisiteCapabilityBinding], str]:
+    if (type(prerequisite_bindings) is not tuple
+            or any(type(item) is not PrerequisiteCapabilityBinding
+                   for item in prerequisite_bindings)):
+        _fail("BAMF_PLANNER_PREREQUISITE_BINDING_INVALID")
+    canonical = tuple(sorted(prerequisite_bindings))
+    if (len({item.semantic_id for item in canonical}) != len(canonical)
+            or any(item.semantic_id not in snapshot.source_eligible_concept_ids
+                   for item in canonical)):
+        _fail("BAMF_PLANNER_PREREQUISITE_BINDING_INVALID")
+    mastered: tuple[str, ...] = ()
+    if canonical:
+        if (not is_factory_release(current_release)
+                or type(evidence_ledger) is not EvidenceLedger
+                or type(autonomy_plan) is not AutonomyPlan
+                or not _sha(checkpoint_sha256)
+                or type(optimizer_step) is not int or optimizer_step < 0
+                or snapshot.admitted_factory_release_sha256 is None
+                or current_release.release_sha256
+                   != snapshot.admitted_factory_release_sha256):
+            _fail("BAMF_PLANNER_PREREQUISITE_EVIDENCE_STALE")
+        current_release.verify()
+        mastered = evidence_complete_capabilities(
+            current_release, evidence_ledger, plan=autonomy_plan,
+            current_checkpoint_sha256=checkpoint_sha256,
+            current_optimizer_step=optimizer_step,
+        )
+        if any(item.capability_id not in set(mastered) for item in canonical):
+            _fail("BAMF_PLANNER_PREREQUISITE_EVIDENCE_INCOMPLETE")
+    elif any(item is not None for item in (
+            current_release, evidence_ledger, autonomy_plan,
+            checkpoint_sha256, optimizer_step)):
+        _fail("BAMF_PLANNER_PREREQUISITE_EVIDENCE_CONTEXT_UNUSED")
+    digest = hashlib.sha256(_bytes({
+        "bindings": canonical,
+        "factory_release_sha256": (
+            current_release.release_sha256 if canonical else None),
+        "autonomy_plan_sha256": autonomy_plan.digest() if canonical else None,
+        "checkpoint_sha256": checkpoint_sha256 if canonical else None,
+        "optimizer_step": optimizer_step if canonical else None,
+        "mastered": mastered,
+    })).hexdigest()
+    return {item.semantic_id: item for item in canonical}, digest
+
+
 def resolve_frontier_closure(
     snapshot: CurriculumSnapshot,
+    census: SemanticFamilyInventory,
     domain_rule_registry: tuple[SourceFamilyAdapter, ...] = SOURCE_FAMILY_ADAPTERS,
-    prerequisite_evidence: tuple[PrerequisiteEvidenceBinding, ...] = (),
+    *,
+    prerequisite_bindings: tuple[PrerequisiteCapabilityBinding, ...] = (),
+    current_release=None,
+    evidence_ledger: EvidenceLedger | None = None,
+    autonomy_plan: AutonomyPlan | None = None,
+    checkpoint_sha256: str | None = None,
+    optimizer_step: int | None = None,
 ) -> FrontierClosure:
     """Return grade-neutral, constituent-first closure without ranking or admission."""
     if type(snapshot) is not CurriculumSnapshot:
         _fail("BAMF_PLANNER_SNAPSHOT_INPUT_INVALID")
     snapshot.verify()
     rules = _rules(domain_rule_registry)
-    if (
-        type(prerequisite_evidence) is not tuple
-        or any(type(item) is not PrerequisiteEvidenceBinding
-               for item in prerequisite_evidence)
-        or len({item.semantic_id for item in prerequisite_evidence})
-        != len(prerequisite_evidence)
-    ):
-        _fail("BAMF_PLANNER_PREREQUISITE_EVIDENCE_INVALID")
-    evidence_by_semantic = {item.semantic_id: item for item in prerequisite_evidence}
-    for item in prerequisite_evidence:
-        if (
-            item.semantic_id not in snapshot.source_eligible_concept_ids
-            or snapshot.admitted_factory_release_sha256 is None
-            or item.factory_release_sha256 != snapshot.admitted_factory_release_sha256
-        ):
-            _fail("BAMF_PLANNER_PREREQUISITE_EVIDENCE_STALE")
-    evidence_sha256 = hashlib.sha256(_bytes(prerequisite_evidence)).hexdigest()
+    evidence_by_semantic, evidence_sha256 = _verified_evidence_context(
+        snapshot,
+        prerequisite_bindings,
+        current_release,
+        evidence_ledger,
+        autonomy_plan,
+        checkpoint_sha256,
+        optimizer_step,
+    )
     graph, order = _graph(snapshot)
     direct = _direct_status(snapshot, rules)
     resolved: dict[str, tuple[ClosureStatus, ...]] = {}
     candidates = []
-    rows = _coverage(snapshot)
+    rows = _coverage(snapshot, census)
     for semantic_id in order:
         current = []
         for family_id in sorted(key[1] for key in rows if key[0] == semantic_id):
