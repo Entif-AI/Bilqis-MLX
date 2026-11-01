@@ -73,7 +73,7 @@ B11.1a,C14.4. Preserve their exact named receipt/conditional/source-owner
 obligations and resolve each against owning evidence; do not guess edges or equate
 implementation closure with complete dependency normalization. Parent C01 stays
 open until these and every original owner/integration gate pass. No issue body,
-learner, optimizer, source admission or graph state was changed; no self-merge.
+learner, optimizer, source admission or remote graph service was changed; no self-merge.
 
 Independent issue work continues under its live page and named direct prerequisite
 receipts while complete-workstack dependency projection remains held.
@@ -92,4 +92,7 @@ The pure grammar extraction preserved all64 prior tests. Two new positive format
 cases then failed before implementation; the four new refusal cases already held.
 All70 tests now pass, zero failures/skips. Both owning live bodies were re-fetched
 and matched their pins before promotion. Independent source/readiness review
-cleared the exact format plan; new code turn-in review remains pending.
+cleared the exact format plan. Fresh-context `/root/c01_format_turnin_review`
+reviewed incrementd2ec0645..513bbd9b against the pinned EGM Codex, Codebase
+Details and Comprehension standards: zero Blockers, Majors or Nits. The review
+was read-only and did not rerun tests or hosted checks.
