@@ -1,33 +1,13 @@
-"""B07.1 frozen-A03-protocol motif keys and candidate-only allocation proof."""
+"""Frozen source protocols and full-page fixture for motif owner tests."""
 from dataclasses import dataclass, replace
 from functools import lru_cache
-import hashlib
-from unittest import TestCase
-from unittest.mock import patch
-import numpy as np
-
-from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.learning.atlas_engram import (
-    MAX_CANDIDATE_ALLOCATIONS, INITIAL_MOTIF_CAPACITY,
-    MAX_MOTIF_CAPACITY, MOTIF_PAGE_STATE_BYTES, CandidateMotifView,
-    MotifBudget, MotifFrameInput, MotifManifest, MotifPageGrowth,
-    MotifSlot, candidate_motif_manifest, initialize_planned_motif_slot,
-    motif_keys, prepare_motifs, _plan_page_growth,
-)
-from bilqis_mlx.learning.atlas_engram_transaction import (
-    CandidateMotifSnapshot, MotifAliasArtifact, MotifAllocationSnapshot,
-    prepare_candidate_motif_snapshot, verify_candidate_motif_snapshot,
-)
-from bilqis_mlx.runtime.model_topology_v2 import (
-    GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes,
-    initialize_bamf_row,
-)
-
+from bilqis_mlx.learning.atlas_engram import INITIAL_MOTIF_CAPACITY, MotifFrameInput, MotifManifest, MotifSlot, motif_keys
 
 RELEASE = "a" * 64
-SCOPE = "source:scope:1"
-_COUNT = 0
 
+SCOPE = "source:scope:1"
+
+_COUNT = 0
 
 @dataclass(frozen=True)
 class Role:
@@ -35,7 +15,6 @@ class Role:
     allowed_type_ids: tuple[str, ...]
     min_cardinality: int = 0
     max_cardinality: int = 1
-
 
 @dataclass(frozen=True)
 class Schema:
@@ -48,7 +27,6 @@ class Schema:
     scope: str = SCOPE
     schema_version: str = "bilqis.semantic-frame-schema/v1"
 
-
 @dataclass(frozen=True)
 class Concept:
     semantic_id: str
@@ -57,14 +35,12 @@ class Concept:
     source_reference: str = "source:approved:row"
     schema_version: str = "bilqis.semantic-concept-ref/v1"
 
-
 @dataclass(frozen=True)
 class Child:
     occurrence_id: str = "c" * 64
     content_digest: str = "d" * 64
     type_ids: tuple[str, ...] = ("Frame",)
     schema_version: str = "bilqis.semantic-child-frame-ref/v1"
-
 
 @dataclass(frozen=True)
 class Binding:
@@ -75,7 +51,6 @@ class Binding:
     state: str = "VALUE"
     alternatives: tuple[Concept, ...] = ()
 
-
 @dataclass(frozen=True)
 class Frame:
     bindings: tuple[Binding, ...]
@@ -85,7 +60,6 @@ class Frame:
     frame_schema_id: str = "source:relation"
     frame_schema_revision: int = 1
     schema_version: str = "bilqis.semantic-frame-instance/v2"
-
 
 def source(
     actor="urn:actor:alice", patient="urn:patient:bob", *,
@@ -112,7 +86,6 @@ def source(
                   ("actor", "patient"), occurrence_id=occurrence)
     return MotifFrameInput(frame, schema)
 
-
 @lru_cache(maxsize=1)
 def full_first_page() -> MotifManifest:
     base = motif_keys(source(), RELEASE)[0]
@@ -121,3 +94,7 @@ def full_first_page() -> MotifManifest:
         tuple(MotifSlot(index, replace(base, relation_signature=f"{index:064x}"))
               for index in range(INITIAL_MOTIF_CAPACITY)),
     )
+
+if __name__ == "__main__":
+    import unittest
+    unittest.main()
