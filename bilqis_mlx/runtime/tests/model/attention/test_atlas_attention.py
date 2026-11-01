@@ -161,4 +161,4 @@ class AtlasConvolutionTests(unittest.TestCase):
             self.assertEqual(error.exception.code, "SCHOOL.MODEL_TOPOLOGY.INVALID")
 
 
-from bilqis_mlx.runtime.tests.model.test_atlas_gqa import digest, fixture, oracle
+from bilqis_mlx.runtime.tests.model.attention.test_atlas_gqa import digest, fixture, oracle
