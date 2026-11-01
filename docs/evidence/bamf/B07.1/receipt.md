@@ -1,19 +1,21 @@
 # B07.1 | Source-shaped motif keys and candidate-only allocation plan
 
 - Issue: #456; parent B07 #356; Lane B.
-- Candidate source: `bilqis_mlx/learning/atlas_engram.py`.
+- Candidate sources: `bilqis_mlx/learning/atlas_engram.py` and
+  `bilqis_mlx/learning/_engram/atlas_engram_source.py`.
 - Input schema: A03 `bilqis.semantic-frame-instance/v2`,
   `bilqis.semantic-frame-schema/v1`, `ConceptRef/v1` and
   `ChildFrameRef/v1` consumed through narrow read-only protocols.
 - Output schemas: `bilqis.motif-key/v1`,
   `bilqis.motif-manifest/v1`,
   `bilqis.motif-allocation-plan/v1`,
-  `bilqis.motif-candidate-view/v1`.
-- Upstream A03 source: independent EGM PASS at `4c422aa`,
-  available on Lane A; not yet merged into unified.
+  `bilqis.motif-candidate-view/v2`.
+- Upstream source authority: current unified `97c9c549` includes
+  A03.4/#578's repo-pinned released-schema authority and A13's
+  source-owner replay/grant path.
 - Independent B07.1 EGM: **PENDING**.
-- Integration/issue closeout: **BLOCKED** until the actual A03
-  implementation arrives through the reviewed unified branch.
+- Integration/issue closeout: **PENDING fresh exact-head review and
+  issue-prescribed Google EGM**. No source/neural acceptance is implied.
 
 ## Implemented candidate behavior
 
@@ -43,10 +45,16 @@ No live student, checkpoint or optimizer state was mutated.
 
 ## Focused prime proof
 
-`python3 -B scripts/run_tests.py
-bilqis_mlx/learning/tests/test_atlas_engram_allocation.py`:
-**13 passed, 0 failed, 0 skipped** after the child-frame
-and empty-optional-frame review repairs.
+The original monolithic allocation-suite path cited by the issue has since been
+decomposed on unified. The current package-owner suite is:
+
+`BILQIS_ATLAS_REAL_ARTIFACT=<repo-pinned A01 artifact>
+PYTHONPATH=/tmp/bamf-b14-testdeps:. python3 -B scripts/run_tests.py
+bilqis_mlx/learning/_engram/tests`
+
+Current result: **35 passed, 0 failed, 0 skipped**. This includes the pure motif
+key/preparation/parameter/transaction coverage plus six real-source authority
+tests described below.
 
 Literal tests cover distinct fillers sharing structural type
 keys, exact role-swap/scope/child differences, distinct child
@@ -134,3 +142,46 @@ schema authority and A13 source-issued grant provenance,
 followed by fresh EGM and human-reviewed Lane B integration.
 No acceptance was inferred from matching source IDs, local
 hashes or synthetic grants.
+
+## 2026-11-01 production source-authority closure candidate
+
+Current reviewed unified `97c9c549` now supplies both authorities that the
+historical Blockers required. A03.4/#578 owns immutable released schema bodies
+through `lookup_source_pinned_frame_schema(...)`, which re-enters the repo-owned
+schema-source-pin registry and pinned A01 artifact. A13 owns source admission
+through `public_formal_context(...)`, which canonicalizes the registered source
+adapter, source root, source graph and deterministic draw before binding the row,
+issuing frame/member grants, and projecting the permitted context.
+
+B07.1 now exposes only
+`prepare_source_qualified_motifs(source_adapter, row, atlas_selection, ...)`.
+It accepts no caller-provided schema tuple, snapshot, context envelopes, grants,
+or source-authority map. The function loads the pinned A01 snapshot itself,
+replays A13 source ownership, derives the schema-pin family only from the
+already-authenticated adapter identity, loads the exact A03.4 schema body, then
+revalidates bindings and active ABI membership before calling the existing pure
+`prepare_motifs` planner. The historical `_probe_approved_motifs` entrypoint and
+its synthetic caller-authority fixtures were deleted, so there is no parallel
+generic bypass API in this module.
+
+Failing-before proof was the absence of any production source-qualified entrypoint:
+the new test suite failed at import for `prepare_source_qualified_motifs`. After
+the bridge was implemented, six real-artifact tests pass. They prove that:
+
+1. the public B07 source API has no caller schema/snapshot/grant surface;
+2. real A, B and C source rows replay through their existing source owners and
+   use the repo-pinned A03.4 schema families before structural/exact planning;
+3. the returned approved-context digest and source frontier replay to the exact
+   same A13 source-owner projection rather than a B07-local surrogate;
+4. tampered rows and self-consistent caller graph changes fail source replay;
+5. a revoked already-issued source grant cannot be silently overwritten/reissued;
+6. wrong Atlas selection or parent-manifest release fails before motif preparation.
+
+The all-source test also locks the global allocation ordering rather than assuming
+a particular second slot: all missing structural keys precede all missing exact
+keys, including rows that produce more than one source frame.
+
+Package-owner proof is **35/35 PASS** with the real pinned A01 artifact. No student,
+optimizer, checkpoint, accepted manifest, or B07.3 generation was mutated. This
+candidate still requires fresh exact-head adversarial review and the prescribed
+Google EGM before issue acceptance or integration.
