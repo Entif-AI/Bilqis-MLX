@@ -6,7 +6,8 @@ source hashes and original fuller repo specifications. Do not register duplicate
 #587 or PR#636 as issue nodes. C14#559 is C14.4. Correct only the named parent
 mirror drift/child lists and preserve original parent bytes/hashes in evidence.
 
-Add versioned dependency_evidence metadata only to new entries. It contains
+Add versioned dependency_evidence metadata to the14 new entries and only the
+specifically reviewed B11.1 parent among legacy entries. It contains
 resolution(resolved|held), exact source_body_sha256 and clause_text,
 external PR receipts, non-edge obligations and an unresolved explanation.
 entry.deps is the reviewed set of known issue edges, not a settled empty list
@@ -36,8 +37,8 @@ rewrites, source admission, learner mutation or self-merge.
 
 ## Exact v1 contract and initial matrix
 
-`reviewed-packets.json` pins all14 initial dispositions:5 resolved and9 held.
-All33 referenced source snapshots are retained under sources/. They bind full
+`reviewed-packets.json` pins14 new children and their named B11.1 parent:5 resolved and10 held.
+All35 referenced source snapshots are retained under sources/. They bind full
 exact issue bodies, every differing fuller local specification, decisive owning
 comments and verified PR metadata. duplicate-587.json retains the actual resolution
 comment. A successful body parser must never override a reviewed held disposition.
@@ -80,7 +81,7 @@ existing hard schema/identity/hash/parent/map/known-edge/cycle checks and new ev
 shape/hash checks pass; it does not imply complete dependency meaning. Add
 `dependency_resolution={status:resolved|held,held_keys:[sorted keys]}`. Any held
 contract clears order and makes overall held. CLI exits0 only for valid,1 for held
-or invalid. Hard-invalid inputs remain invalid. Legacy157 entries retain their
+or invalid. Hard-invalid inputs remain invalid. The other156 legacy entries retain their
 existing canonical linked-source enforcement and public compatibility.
 
 Resolved grammar is strict: canonical linked section with exact key/issue/URL
@@ -103,3 +104,8 @@ reviewed-packets.json and sources/<validated-source-id>.txt. The root adapter re
 only these fixed paths, refusing symlink/nonregular snapshot entries. No new CLI
 option or arbitrary source path is introduced. validate_workstack gains an optional
 backward-compatible evidence_sources mapping; legacy callers need no changes.
+
+The independently reviewed B11.1 extension preserves its seven existing edges,
+adds B11.1a from the explicit prerequisite amendment, keeps kind leaf and full
+forward obligations, and remains held. Updating only its mirror/hash would lose a
+required executable edge. This brings evidence packets to15 for14 new nodes.

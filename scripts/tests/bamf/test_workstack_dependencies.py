@@ -2,9 +2,11 @@
 from copy import deepcopy
 import hashlib
 import json
+from pathlib import Path
+import tempfile
 import unittest
 
-from scripts.bamf.workstack_dependencies import check_dependency_evidence, EvidenceStatus
+from scripts.bamf.workstack_dependencies import check_dependency_evidence, EvidenceStatus, load_dependency_sources
 from scripts.check_bamf_workstack import validate_workstack
 
 
@@ -72,6 +74,50 @@ class DependencyEvidenceTests(unittest.TestCase):
     def test_resolved_prose_without_supported_explicit_clause_is_invalid(self):
         args = packet('A01 is mentioned as context, not a direct prerequisite.')
         self.assertIs(check_dependency_evidence(*args).status, EvidenceStatus.INVALID)
+
+    def test_prerequisite_pull_requests_remain_receipts_instead_of_issue_nodes(self):
+        args = packet('Direct prerequisites: merged #619/#623; exact qualified #633/#634 receipts for final composition turn-in; existing B02/B03 source interfaces.',
+                      edges=('B02', 'B03'))
+        args[2].update(B02=359, B03=363)
+        evidence = args[0]['dependency_evidence']
+        for number in (619, 623, 633, 634):
+            source_id = 'C01.1.pr-' + str(number)
+            url = 'https://github.com/Entif-AI/Bilqis-MLX/pull/' + str(number)
+            raw = json.dumps(dict(number=number, url=url, state='MERGED',
+                headRefOid='a'*40, mergeCommit={'oid': 'b'*40})).encode()
+            args[3][source_id] = raw
+            evidence['source_records'].append(dict(source_id=source_id, kind='pull_request',
+                locator=url, sha256=hashlib.sha256(raw).hexdigest(), excerpt='b'*40))
+            evidence['external_receipts'].append(dict(number=number, role='prerequisite',
+                head_sha='a'*40, merge_sha='b'*40, url=url, source_id=source_id))
+        args[3]['reviewed-packets'] = json.dumps(dict(schema='bilqis.bamf.registry-expansion-review/v1',
+            packets=[dict(key='C01.1', dependency_evidence=deepcopy(evidence))])).encode()
+        result = check_dependency_evidence(*args)
+        self.assertIs(result.status, EvidenceStatus.RESOLVED)
+        self.assertEqual(result.known_edges, ('B02', 'B03'))
+        evidence['external_receipts'][0]['merge_sha'] = 'c'*40
+        args[3]['reviewed-packets'] = json.dumps(dict(schema='bilqis.bamf.registry-expansion-review/v1',
+            packets=[dict(key='C01.1', dependency_evidence=deepcopy(evidence))])).encode()
+        self.assertIs(check_dependency_evidence(*args).status, EvidenceStatus.INVALID)
+
+    def test_loader_refuses_symlink_snapshots_and_ignores_arbitrary_locators(self):
+        entry, body, numbers, sources = packet()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / 'dependency-evidence'
+            (root / 'sources').mkdir(parents=True)
+            (root / 'reviewed-packets.json').write_bytes(sources['reviewed-packets'])
+            target = Path(tmp) / 'outside.txt'
+            target.write_bytes(b'not an evidence source')
+            (root / 'sources/C01.1.body.txt').symlink_to(target)
+            loaded = load_dependency_sources(Path(tmp), {'entries': [entry]})
+            self.assertNotIn('C01.1.body', loaded)
+            self.assertNotIn(b'not an evidence source', loaded.values())
+            self.assertIs(check_dependency_evidence(entry, body, numbers, loaded).status,
+                          EvidenceStatus.INVALID)
+            entry['dependency_evidence']['source_records'][0]['source_id'] = '../../outside'
+            loaded = load_dependency_sources(Path(tmp), {'entries': [entry]})
+            self.assertNotIn('../../outside', loaded)
+            self.assertEqual(target.read_bytes(), b'not an evidence source')
 
     def test_held_contract_clears_the_entire_execution_order(self):
         entry, body, numbers, sources = packet('No direct list.', edges=(),
