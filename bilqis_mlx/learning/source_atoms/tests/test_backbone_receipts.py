@@ -1,6 +1,7 @@
 """Execution-owned B11 producer receipt and B05 adversaries."""
 from copy import copy
 from dataclasses import replace
+from types import SimpleNamespace
 from unittest import skipUnless
 
 import mlx.core as mx
@@ -31,6 +32,19 @@ class SourceBackboneReceiptTests(SourceBackboneTestBase):
         self.assertFalse(hasattr(receipt_authority, "_issue_receipt"))
         with self.assertRaises(BilqisError):
             receipt_authority._issue_from_producer(object())
+
+    def test_fabricated_exact_producer_shell_cannot_issue_arbitrary_group_bytes(self):
+        producer = self.producer()
+        producer.advance()
+        result = producer._session.results[-1]
+        foreign = result.hidden.at[0, 0, 0].add(.25)
+        forged = replace(result, hidden=foreign)
+        fake = object.__new__(type(producer))
+        fake.__dict__.update(producer.__dict__)
+        fake._session = SimpleNamespace(results=(forged,))
+        fake._receipts = producer.receipts[:1]
+        with self.assertRaises(BilqisError):
+            receipt_authority._issue_from_producer(fake, forged)
 
     def test_producer_requires_selected_state_before_next_group(self):
         producer = self.producer()

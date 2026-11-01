@@ -102,63 +102,7 @@ def _issue_from_producer(producer, result=None):
     from .backbone import _SourceBackboneProducerSession
     if type(producer) is not _SourceBackboneProducerSession:
         _invalid()
-    session = producer._session
-    if result is None:
-        if producer._receipts or session.results:
-            _invalid()
-        hidden = session._hidden
-        output = _content_digest(hidden)
-        values = dict(
-            source_id="h0", completed_layer=0, hidden=hidden,
-            source_handoff_digest=producer._source_digest,
-            topology_digest=producer._topology.digest,
-            generation_digest=producer._generation,
-            parameter_tree_digest=session.parameter_tree_digest,
-            prefix_digest=producer._prefix,
-            scope_digest=contract_digest((
-                producer._source_digest, producer._prefix, producer._generation)),
-            input_digest=producer._source_digest, output_digest=output,
-            cache_chain_digest=contract_digest(()),
-            numerical_execution_digest=contract_digest((
-                "h0", output, session.parameter_tree_digest)),
-            predecessor_receipt_digest=producer._source_digest,
-            motif_disposition=NOT_APPLICABLE, motif_read_position="",
-            motif_read_digest=contract_digest(()),
-        )
-    else:
-        if (not producer._receipts or not session.results
-                or result is not session.results[-1]
-                or result.group_index != len(session.results)
-                or len(producer._receipts) != len(session.results)):
-            _invalid()
-        source_id = SOURCE_ORDER[result.group_index]
-        prior = producer._receipts[-1]
-        motif_disposition = NO_HIT if source_id == "g1" else NOT_APPLICABLE
-        motif_position = MOTIF_POSITION if source_id == "g1" else ""
-        motif_read_digest = (
-            contract_digest((
-                "B08_QUARANTINED_NO_HIT", producer._source_digest,
-                producer._prefix, producer._generation,
-                result.execution_digest, MOTIF_POSITION,
-            )) if source_id == "g1" else contract_digest(()))
-        values = dict(
-            source_id=source_id, completed_layer=result.layer_end,
-            hidden=result.hidden,
-            source_handoff_digest=producer._source_digest,
-            topology_digest=producer._topology.digest,
-            generation_digest=producer._generation,
-            parameter_tree_digest=result.full_parameter_tree_digest,
-            prefix_digest=producer._prefix,
-            scope_digest=result.scope_content_digest,
-            input_digest=result.input_content_digest,
-            output_digest=_content_digest(result.hidden),
-            cache_chain_digest=result.cache_chain_digest,
-            numerical_execution_digest=result.execution_digest,
-            predecessor_receipt_digest=prior.receipt_digest,
-            motif_disposition=motif_disposition,
-            motif_read_position=motif_position,
-            motif_read_digest=motif_read_digest,
-        )
+    values = _SourceBackboneProducerSession._receipt_values(producer, result)
     digest = contract_digest(receipt_projection(values))
     receipt = ProducedBackboneBoundary(
         **values, receipt_digest=digest, _seal=_PRODUCER_SEAL)
