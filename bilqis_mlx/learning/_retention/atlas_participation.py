@@ -1,7 +1,7 @@
 """B09.2 pure per-step participation and optimizer-mask derivation."""
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Mapping
 
 import mlx.core as mx
@@ -19,7 +19,6 @@ INPUT_SCHEMA = "bilqis.mlx.step-participation-inputs/v1"
 DENOMINATOR_SCHEMA = "bilqis.mlx.semantic-denominator/v1"
 ROLE_READ_SCHEMA = "bilqis.mlx.role-read-participation/v1"
 FEATURE_TABLES = frozenset({"type", "role", "schema"})
-_UPDATE_MASK_ISSUER = object()
 
 
 def _invalid() -> None:
@@ -176,21 +175,16 @@ class ParameterMask:
             _invalid()
 
 
-@dataclass(frozen=True, init=False)
+@dataclass(frozen=True)
 class UpdateMask:
     parameters: tuple[ParameterMask, ...]
     participating_identity_rows: tuple[tuple[int, int], ...]
     has_loss_bearing_target: bool
     schema_version: str = MASK_SCHEMA
-    _issuance: object = field(init=False, repr=False, compare=False)
-
-    def __init__(self, *args, **kwargs):
-        _invalid()
 
     def __post_init__(self) -> None:
         names = tuple(item.name for item in self.parameters)
-        if (getattr(self, "_issuance", None) is not _UPDATE_MASK_ISSUER
-                or any(type(item) is not ParameterMask for item in self.parameters)
+        if (any(type(item) is not ParameterMask for item in self.parameters)
                 or names != tuple(sorted(set(names)))
                 or not _pairs(self.participating_identity_rows)
                 or type(self.has_loss_bearing_target) is not bool
@@ -202,19 +196,6 @@ class UpdateMask:
         if item is None:
             _invalid()
         return item
-
-
-def _issue_update_mask(parameters, identities, loss_bearing) -> UpdateMask:
-    mask = object.__new__(UpdateMask)
-    for name, value in (
-            ("parameters", parameters),
-            ("participating_identity_rows", identities),
-            ("has_loss_bearing_target", loss_bearing),
-            ("schema_version", MASK_SCHEMA),
-            ("_issuance", _UPDATE_MASK_ISSUER)):
-        object.__setattr__(mask, name, value)
-    mask.__post_init__()
-    return mask
 
 
 def _row_mask(name: str, participation: StepParticipation,
@@ -267,7 +248,7 @@ def parameter_update_mask(group_eligible, participation: StepParticipation,
                 name, name in eligible and name in dense and participation.loss_bearing_target, ()))
     effective_identity = tuple(sorted(
         set(participation.identity_rows) & set(active_admitted.identity_rows)))
-    return _issue_update_mask(
+    return UpdateMask(
         tuple(masks), effective_identity, participation.loss_bearing_target)
 
 

@@ -1,8 +1,8 @@
 """B12.2 in-memory candidate custody over existing numerical owners.
 
-B09 owns the supplied UpdateMask and its exact B12 Boolean representation;
-B13/C publish retained generations. New motif slots require materialized tensors
-and are rejected here. Teacher observations stay outside the candidate state.
+Masks remain caller-supplied. B11/B09 attest execution and eligibility; B13/C
+publish retained generations. New motif slots require materialized tensors and
+are rejected here. Teacher observations stay outside the candidate state.
 """
 from __future__ import annotations
 
@@ -17,9 +17,6 @@ from bilqis_mlx.learning.atlas_engram_transaction import (
 )
 from bilqis_mlx.learning.atlas_plasticity import (
     PlasticityPolicy, advance_candidate_policy, next_update_mode,
-)
-from bilqis_mlx.learning.atlas_participation import (
-    UpdateMask, optimizer_participation_mask,
 )
 from bilqis_mlx.runtime.atlas_optimizer import AdamWStateTree, _adamw_update
 
@@ -136,15 +133,11 @@ def candidate_step(candidate: CandidateTransaction, gradients, update_mask,
     Counts identify actual participating rows, including numerical-zero
     gradients. No-loss and wholly frozen steps preserve the transaction object.
     """
-    if (type(candidate) is not CandidateTransaction
-            or type(update_mask) is not UpdateMask
-            or update_mask.has_loss_bearing_target != loss_bearing):
+    if type(candidate) is not CandidateTransaction:
         _invalid()
     candidate.__post_init__()
-    participation = optimizer_participation_mask(
-        update_mask, candidate.optimizer.update_counts)
     optimizer = _adamw_update(
-        candidate.optimizer, gradients, participation, teacher_hparams,
+        candidate.optimizer, gradients, update_mask, teacher_hparams,
         decay=decay, loss_bearing=loss_bearing, max_norm=max_norm)
     if optimizer is candidate.optimizer:
         return candidate

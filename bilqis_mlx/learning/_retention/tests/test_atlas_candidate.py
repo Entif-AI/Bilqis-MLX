@@ -9,11 +9,7 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning._engram.tests.motif_fixtures import RELEASE, source
 from bilqis_mlx.learning.atlas_engram import MotifBudget, MotifManifest
 from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
-from bilqis_mlx.learning.atlas_plasticity import (
-    ActiveAdmittedRows, GroupEligibility, IdentityRowAge, PlasticityPolicy,
-    RoleReadParticipation, SemanticDenominator, StepParticipationInputs,
-    parameter_update_mask, step_participation,
-)
+from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree
 from bilqis_mlx.learning._retention.atlas_candidate import (
     CandidateState, CandidateTransaction, begin_candidate, candidate_step, resolve_candidate,
@@ -34,26 +30,10 @@ class CandidateTransactionTests(TestCase):
         self.name = name
 
     def step(self, candidate, mask=(True, False), *, loss_bearing=True):
-        update_mask = self.update_mask(mask, loss_bearing=loss_bearing)
         return candidate_step(
             candidate, {self.name: mx.array([[3., 4.], [3e38, -3e38]], dtype=mx.float32)},
-            update_mask, self.hp, decay={self.name: True},
+            {self.name: mx.array(mask)}, self.hp, decay={self.name: True},
             loss_bearing=loss_bearing, max_norm=1.)
-
-    def update_mask(self, mask, *, loss_bearing=True):
-        visible = tuple((0, index) for index, selected in enumerate(mask)
-                        if selected)
-        participation = step_participation(
-            StepParticipationInputs(
-                visible_identity_rows=visible,
-                loss_bearing_target=loss_bearing),
-            SemanticDenominator(), (), RoleReadParticipation())
-        eligibility = GroupEligibility(
-            "FULL", (self.name,), (), ((0, 0), (0, 1)), (),
-            ((0, 0), (0, 1)))
-        return parameter_update_mask(
-            eligibility, participation,
-            ActiveAdmittedRows(identity_rows=((0, 0), (0, 1))))
 
     def snapshot(self, state):
         return tuple(np.asarray(getattr(state.optimizer, field)[self.name]).tobytes()
@@ -88,7 +68,7 @@ class CandidateTransactionTests(TestCase):
         first = self.step(begin_candidate(self.parent))
         second = candidate_step(
             first, {self.name: mx.zeros((2, 2), dtype=mx.float32)},
-            self.update_mask((False, True)), self.hp, decay={self.name: True},
+            {self.name: mx.array([False, True])}, self.hp, decay={self.name: True},
             loss_bearing=True, max_norm=1.)
         accepted = resolve_candidate(second, accepted=True)
         self.assertEqual(tuple(r.accepted_age for r in accepted.policy.row_ages), (8, 3))

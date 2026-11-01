@@ -18,6 +18,9 @@ from bilqis_mlx.learning.atlas_plasticity import (
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, bamf_parameter_census,
 )
+from bilqis_mlx.runtime.atlas_optimizer import (
+    AdamWHyperparameters, AdamWStateTree, _adamw_update,
+)
 
 
 def _motif(*slots):
@@ -72,11 +75,48 @@ class ParticipationTests(TestCase):
             np.array([True, False, True]),
         )
 
-    def test_update_mask_cannot_be_minted_by_a_caller(self):
-        with self.assertRaises(BilqisError):
-            UpdateMask(
-                (ParameterMask("identity.bank.0", False, (1,)),),
-                ((0, 1),), True)
+    def test_b09_bridge_drives_b12_zero_gradient_count_and_decay(self):
+        eligibility = GroupEligibility(
+            "FULL", ("identity.bank.0",), (),
+            ((0, 0), (0, 1)), (), ((0, 0), (0, 1)))
+        participation = step_participation(
+            StepParticipationInputs(visible_identity_rows=((0, 0),)),
+            SemanticDenominator(), (), RoleReadParticipation())
+        mask = parameter_update_mask(
+            eligibility, participation,
+            ActiveAdmittedRows(identity_rows=((0, 0), (0, 1))))
+        parameters = {
+            "identity.bank.0": mx.array([[1., 2.], [3., 4.]], dtype=mx.float32),
+        }
+        parent = AdamWStateTree(
+            parameters,
+            {name: mx.zeros_like(value) for name, value in parameters.items()},
+            {name: mx.zeros_like(value) for name, value in parameters.items()},
+            {"identity.bank.0": mx.array([0, 3], dtype=mx.uint64)},
+        )
+        booleans = optimizer_participation_mask(mask, parent.update_counts)
+        actual = _adamw_update(
+            parent,
+            {"identity.bank.0": mx.zeros((2, 2), dtype=mx.float32)},
+            booleans,
+            AdamWHyperparameters(.001, (.9, .95), 1e-8, .01),
+            decay={"identity.bank.0": True}, loss_bearing=True,
+        )
+        np.testing.assert_array_equal(
+            np.asarray(booleans["identity.bank.0"]),
+            np.array([True, False]),
+        )
+        np.testing.assert_array_equal(
+            np.asarray(actual.update_counts["identity.bank.0"]),
+            np.array([1, 3], dtype=np.uint64),
+        )
+        self.assertFalse(bool(mx.all(
+            actual.parameters["identity.bank.0"][0]
+            == parent.parameters["identity.bank.0"][0])))
+        np.testing.assert_array_equal(
+            np.asarray(actual.parameters["identity.bank.0"][1]),
+            np.asarray(parent.parameters["identity.bank.0"][1]),
+        )
 
     def test_two_optimizer_steps_derive_distinct_literal_row_masks(self):
         first = step_participation(
