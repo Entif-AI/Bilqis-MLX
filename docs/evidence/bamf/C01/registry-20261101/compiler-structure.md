@@ -10,7 +10,7 @@ frame_schema and frame_codec. This checkpoint completes only the compiler repair
 The compiler facade is now 104 lines. Imported owners separate source/configuration,
 positions, batch identity, approval, causal visibility, packing, source maps,
 statistics, rows, lawful segments and reconstruction. The largest source owner is
-147 lines. The original test module is a six-line fixture compatibility facade;
+147 lines. The original test module is a short fixture compatibility facade;
 all companion files are below 240 lines, with shared fixtures largest at 189.
 Production and tests follow the same ownership boundaries. The private source and
 compiler-test directories contain 15 and 13 direct Python files respectively.
@@ -87,3 +87,9 @@ semantic-ABI checks all succeeded; semantic-profile jobs were intentionally skip
 Draft PR694 is the structural follow-up. All12tracker tabs were updated/read back
 with QA332,Turned-in267,IssueIndex224. The next coherent partial-forest repair has
 its own proof record; no compiler acceptance claim extends to an untested new head.
+
+A later frame-schema companion audit found an omitted file-runner compatibility
+case: the compiler fixture facade's relative import failed package-free loading.
+The new runpy regression failed before its canonical absolute-import fix and then
+passed. Existing package imports remained available. Current scoped validation
+includes this additional case; prior hosted/source test counts do not claim it.

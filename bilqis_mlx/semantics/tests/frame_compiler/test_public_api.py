@@ -43,3 +43,11 @@ class PublicCompilerTests(TestCase):
             get_type_hints(batch.maps.fget)["return"], frame_compiler.PrefixMaps)
         self.assertIs(
             get_type_hints(batch.stats.fget)["return"], frame_compiler.CompileStats)
+
+    def test_legacy_fixture_file_loads_without_package_context(self):
+        from pathlib import Path
+        import runpy
+
+        fixture_file = Path(__file__).resolve().parents[1] / "test_frame_compiler.py"
+        exported = runpy.run_path(str(fixture_file))
+        self.assertIs(exported["_mixed_case"], _mixed_case)
