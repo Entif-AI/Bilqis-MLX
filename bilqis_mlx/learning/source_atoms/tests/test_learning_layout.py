@@ -11,6 +11,11 @@ from unittest import TestCase
 _APPROVED_ALIASES = frozenset({"source_selection.py", "teacher_observations.py"})
 
 
+def _assert_root_symlink_inventory(test, root):
+    observed = {path.name for path in root.iterdir() if path.is_symlink()}
+    test.assertEqual(observed, _APPROVED_ALIASES)
+
+
 def _assert_owner_alias(test, root, owner):
     alias = root / owner.name
     imported = Path(importlib.util.find_spec("bilqis_mlx.learning." + owner.stem).origin)
@@ -29,6 +34,7 @@ class LearningLayoutTests(TestCase):
         import bilqis_mlx.learning as learning
 
         root = Path(learning.__file__).parent
+        _assert_root_symlink_inventory(self, root)
         observed = set()
         for directory in learning._SOURCE_DIRECTORIES:
             for path in sorted((root / directory).glob("*.py")):
@@ -75,6 +81,21 @@ class LearningLayoutTests(TestCase):
                         alias.write_text("pass\n")
                         with self.assertRaises(AssertionError):
                             _assert_owner_alias(self, root, owner)
+
+    def test_root_inventory_rejects_rogue_compatibility_alias_name(self):
+        from tempfile import TemporaryDirectory
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            teaching = root / "_teaching"
+            teaching.mkdir()
+            for filename in sorted(_APPROVED_ALIASES):
+                owner = teaching / filename
+                owner.write_text("pass\n")
+                (root / filename).symlink_to(owner.relative_to(root))
+            _assert_root_symlink_inventory(self, root)
+            (root / "rogue.py").symlink_to("_teaching/source_selection.py")
+            with self.assertRaises(AssertionError):
+                _assert_root_symlink_inventory(self, root)
 
     def test_importing_learning_does_not_eagerly_load_neural_or_teacher_owners(self):
         command = (
