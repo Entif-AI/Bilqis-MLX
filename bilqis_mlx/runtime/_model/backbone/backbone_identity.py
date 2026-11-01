@@ -52,5 +52,5 @@ def execution_generation_digest(
     """Content identity of the current executable model, not retained custody."""
     tree = bamf_parameter_tree_digest(parameters, spec=spec, extents=extents)
     return hashlib.sha256(json.dumps((
-        "bilqis.mlx.execution-generation/v1", spec.digest, tree,
+        "bilqis.mlx.execution-generation/v2", spec.digest, extents.digest, tree,
     ), separators=(",", ":")).encode()).hexdigest()

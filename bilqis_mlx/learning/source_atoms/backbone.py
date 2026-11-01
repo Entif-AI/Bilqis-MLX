@@ -6,18 +6,17 @@ authorizes a B08 motif hit or claims retained-generation custody.
 """
 import mlx.core as mx
 
-from ..atlas_engram_reads import read_motif
 from ...runtime.backbone_group_numerical import (
     UnadmittedBackboneSession, _content_digest,
 )
 from ...runtime.backbone_identity import execution_generation_digest
-from ...runtime.block_attnres import SOURCE_ORDER
+from ...runtime.block_attnres import SOURCE_ORDER, depth_select
 from ...runtime.model_topology_v2 import ModelTopologySpecV2
 from ...semantics.domains import contract_digest
 from .backbone_receipts import (
-    Group1MotifContext, MOTIF_POSITION, NO_HIT, NOT_APPLICABLE,
+    MOTIF_POSITION, NO_HIT, NOT_APPLICABLE,
     ProducedBackboneBoundary, _invalid as _invalid_producer_receipt,
-    make_receipt, receipt_projection, require_produced_backbone_boundary,
+    _issue_receipt, require_produced_backbone_boundary,
 )
 from .encoding import encode_source_compiled, encode_source_compiled_with_handoffs
 
@@ -25,15 +24,12 @@ from .encoding import encode_source_compiled, encode_source_compiled_with_handof
 class _SourceBackboneProducerSession:
     """Own source h0 and the only legal sequential group-receipt construction."""
 
-    def __init__(self, encoded, handoffs, parameters, compiled, group1_motif):
+    def __init__(self, encoded, handoffs, parameters, compiled):
         self._source_digest = contract_digest(tuple(item.digest for item in handoffs))
         self._topology = ModelTopologySpecV2()
         self._generation = execution_generation_digest(
             parameters, spec=self._topology, extents=compiled.extents)
         self._prefix = contract_digest(compiled.compiled)
-        if type(group1_motif) is not Group1MotifContext:
-            _invalid_producer_receipt()
-        self._group1_motif = group1_motif
         valid = mx.array([[position is not None for position in row]
                           for row in encoded.handles], dtype=mx.bool_)
         self._session = UnadmittedBackboneSession(
@@ -56,38 +52,33 @@ class _SourceBackboneProducerSession:
             motif_disposition=NOT_APPLICABLE, motif_read_position="",
             motif_read_digest=contract_digest(()),
         )
-        self._receipts = (make_receipt(**base),)
+        self._receipts = (_issue_receipt(**base),)
 
     @property
     def receipts(self):
         return self._receipts
 
-    def advance(self):
-        result = self._session.advance()
+    def advance(self, frame_features=None, depth_parameters=None):
+        completed = len(self._session.results)
+        if completed:
+            if frame_features is None or depth_parameters is None:
+                _invalid_producer_receipt()
+            selected = depth_select(self._receipts, frame_features, depth_parameters)
+            result = self._session.advance(next_input=selected)
+        else:
+            if frame_features is not None or depth_parameters is not None:
+                _invalid_producer_receipt()
+            result = self._session.advance()
         source_id = SOURCE_ORDER[result.group_index]
         prior = self._receipts[-1]
         hidden = result.hidden
         motif_disposition, motif_position = NOT_APPLICABLE, ""
         motif_read_digest = contract_digest(())
         if source_id == "g1":
-            context = self._group1_motif
-            motif = read_motif(
-                site_index=1, hidden=hidden, positions=context.positions,
-                tasks=context.tasks, frontiers=context.frontiers,
-                policies=context.policies, manifest=context.manifest,
-                atlas_selection=context.atlas_selection,
-                retained_generation_digest=self._generation,
-                parameter_tree_digest=self._session.parameter_tree_digest,
-            )
-            if (motif.participating_slots
-                    or any(value not in {"MISS", "QUARANTINED_NO_HIT"}
-                           for row in motif.dispositions for value in row)):
-                _invalid_producer_receipt()
-            hidden = motif.hidden
             motif_disposition, motif_position = NO_HIT, MOTIF_POSITION
             motif_read_digest = contract_digest((
-                motif.dispositions, motif.context_digests,
-                motif.participating_slots,
+                "B08_QUARANTINED_NO_HIT", self._source_digest, self._prefix,
+                self._generation, result.execution_digest, MOTIF_POSITION,
             ))
         values = dict(
             source_id=source_id, completed_layer=result.layer_end, hidden=hidden,
@@ -104,7 +95,7 @@ class _SourceBackboneProducerSession:
             motif_read_position=motif_position,
             motif_read_digest=motif_read_digest,
         )
-        receipt = make_receipt(**values)
+        receipt = _issue_receipt(**values)
         self._receipts += (receipt,)
         return receipt
 
@@ -128,10 +119,9 @@ def start_source_backbone_numerical(compiled, parameters, sources, feature_schem
 
 
 def start_source_backbone_producer(
-    compiled, parameters, sources, feature_schema, *, group1_motif,
+    compiled, parameters, sources, feature_schema,
 ):
     """Create the B11 producer only by replaying and revalidating actual source rows."""
     encoded, handoffs = encode_source_compiled_with_handoffs(
         compiled, parameters, sources, feature_schema)
-    return _SourceBackboneProducerSession(
-        encoded, handoffs, parameters, compiled, group1_motif)
+    return _SourceBackboneProducerSession(encoded, handoffs, parameters, compiled)

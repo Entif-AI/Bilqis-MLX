@@ -8,12 +8,8 @@ import weakref
 import mlx.core as mx
 
 from ...errors import ErrorBus, SCHOOL
-from ..atlas_engram import MotifManifest
-from ..atlas_engram_reads import MotifReadPosition
 from ...runtime.backbone_group_numerical import _content_digest
 from ...runtime.block_attnres import SOURCE_ORDER, COMPLETED_LAYERS
-from ...semantics.atlas_snapshot import AtlasArtifactSelection
-from ...semantics.context_eligibility import ContextPolicy, SourceFrontier, TaskScope
 from ...semantics.domains import contract_digest
 
 
@@ -96,7 +92,7 @@ class ProducedBackboneBoundary:
         self._validate_contents()
 
 
-def make_receipt(**values):
+def _issue_receipt(**values):
     digest = contract_digest(receipt_projection(values))
     receipt = ProducedBackboneBoundary(
         **values, receipt_digest=digest, _seal=_PRODUCER_SEAL)
@@ -110,22 +106,3 @@ def require_produced_backbone_boundary(receipt: ProducedBackboneBoundary) -> Non
     receipt._validate_contents()
     if _ISSUED_RECEIPTS.get(receipt.receipt_digest) is not receipt:
         _invalid()
-
-
-@dataclass(frozen=True)
-class Group1MotifContext:
-    positions: tuple[tuple[MotifReadPosition | None, ...], ...]
-    tasks: tuple[TaskScope, ...]
-    frontiers: tuple[SourceFrontier, ...]
-    policies: tuple[ContextPolicy, ...]
-    manifest: MotifManifest
-    atlas_selection: AtlasArtifactSelection
-
-    def __post_init__(self):
-        if (not isinstance(self.positions, tuple)
-                or not isinstance(self.tasks, tuple)
-                or not isinstance(self.frontiers, tuple)
-                or not isinstance(self.policies, tuple)
-                or type(self.manifest) is not MotifManifest
-                or type(self.atlas_selection) is not AtlasArtifactSelection):
-            _invalid()

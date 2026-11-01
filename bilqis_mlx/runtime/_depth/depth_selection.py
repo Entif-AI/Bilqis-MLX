@@ -5,7 +5,6 @@ from typing import Mapping
 import mlx.core as mx
 
 from bilqis_mlx.learning.frame_embeddings import compose_factor_features
-from bilqis_mlx.runtime.backbone_identity import tensor_content_digest
 from .depth_contracts import (
     WIDTH, INNER, MIN_COMPLETED_GROUPS, MAX_COMPLETED_GROUPS, FRAME_RANK,
     BATCH_POSITION_AXES, PARAMETER_SHAPES, DIAGNOSTICS_SCHEMA, SOURCE_ORDER,
@@ -138,20 +137,19 @@ def _producer_summaries(receipts, boundary_group, params):
     ) for index, item in enumerate(receipts))
 
 
-def depth_select(current, producer_receipts, frame_features, params):
+def depth_select(producer_receipts, frame_features, params):
     return depth_select_with_diagnostics(
-        current, producer_receipts, frame_features, params).output
+        producer_receipts, frame_features, params).output
 
 
-def depth_select_with_diagnostics(current, producer_receipts, frame_features, params):
+def depth_select_with_diagnostics(producer_receipts, frame_features, params):
     if (type(frame_features) is not DepthFrameFeatures
             or type(params) is not DepthParameterView
-            or not isinstance(current, mx.array)):
+            or type(producer_receipts) is not tuple or not producer_receipts):
         _invalid()
     summaries = _producer_summaries(
         producer_receipts, frame_features.boundary_group, params)
-    if tensor_content_digest(current) != producer_receipts[-1].output_digest:
-        _invalid()
+    current = producer_receipts[-1].hidden
     return _numerical_depth_select_with_diagnostics(
         current, summaries, frame_features, params)
 

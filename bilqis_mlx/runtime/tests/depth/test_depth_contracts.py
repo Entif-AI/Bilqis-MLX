@@ -149,7 +149,7 @@ class DepthSelectionTests(unittest.TestCase):
             _numerical_depth_select(
                 self.current, self.sources, self.features, view)
         with self.assertRaises(BilqisError):
-            depth_select(self.current, self.sources, _released_features(1),
+            depth_select(self.sources, _released_features(1),
                          depth_parameter_view(
                              {item.name: mx.zeros(item.shape, dtype=mx.float32)
                               for item in expected_bamf_shapes(

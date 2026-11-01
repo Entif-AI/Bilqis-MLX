@@ -196,9 +196,16 @@ class UnadmittedBackboneSession:
         """Observed content identity of the exact B01 block tree this session owns."""
         return self._tree_digest
 
-    def advance(self):
+    def advance(self, *, next_input=None):
         if len(self._results) >= self._spec.depth_groups:
             _invalid()
+        if next_input is not None:
+            if (not self._results or type(next_input) is not mx.array
+                    or next_input.shape != self._hidden.shape
+                    or next_input.dtype != mx.float32
+                    or not bool(mx.all(mx.isfinite(next_input)))):
+                _invalid()
+            self._hidden = next_input
         if _owned_parameter_tree_digest(
                 self._parameters, self._spec, self._extents) != self._tree_digest:
             _invalid()
