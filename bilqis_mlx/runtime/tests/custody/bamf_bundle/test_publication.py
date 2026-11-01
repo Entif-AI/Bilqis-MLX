@@ -142,6 +142,13 @@ class BamfPublicationTests(unittest.TestCase):
         rejected_events = [row for row in events if row["event"] == "BAMF_CANDIDATE_REJECTED"]
         self.assertEqual(len(rejected_events), 1)
         self.assertEqual(rejected_events[0]["optimizer_step"], 12)
+        with shape_patch():
+            resumed = load_bamf_generation(self.run / "bamf-state.json")
+        self.assertEqual(resumed.generation, 1)
+        self.assertEqual(resumed.retained_state.optimizer_step, 12)
+        self.assertEqual(
+            json.loads((self.run / "bamf-state.json").read_text())["manifest_sha256"],
+            second["manifest_sha256"])
 
 
 if __name__ == "__main__":
