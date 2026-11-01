@@ -52,6 +52,17 @@ class TypedLossTests(unittest.TestCase):
         with self.assertRaises(BilqisError):
             answer_loss(output,target,{record.decision_id:True})
 
+    def test_issued_logits_reject_mutated_legal_order_with_same_identities(self):
+        output=predict_typed(*case())
+        record=output.decisions[1]
+        spec=next(d for d in output.plan.decisions if d.decision_id==record.decision_id)
+        target=(DecisionOutput(record.decision_id,record.candidates[0]),)
+        original=float(answer_loss(output,target,{record.decision_id:True}).total)
+        object.__setattr__(spec,'legal_values',tuple(reversed(spec.legal_values)))
+        object.__setattr__(record,'candidates',tuple(reversed(record.candidates)))
+        with self.assertRaises(BilqisError):
+            answer_loss(output,target,{record.decision_id:True})
+
     def test_unknown_label_id_or_nonboolean_mask_rejects(self):
         _, _, plan, _, _=case()
         output=ModelOutput(plan,(),(),DecodeStatus.UNRESOLVED,ExecutionMode.INFERENCE,None,True)

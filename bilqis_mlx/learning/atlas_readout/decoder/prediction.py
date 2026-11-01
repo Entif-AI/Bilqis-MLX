@@ -1,5 +1,6 @@
 """Causal bounded prediction and explicit source-validation fallback."""
 from dataclasses import dataclass
+from copy import deepcopy
 from enum import Enum
 from weakref import WeakValueDictionary, finalize
 import mlx.core as mx
@@ -22,19 +23,30 @@ _ISSUED_OUTPUTS = WeakValueDictionary()
 _ISSUED_RECORDS = {}
 
 
+def _meaning(output):
+    return (output.plan, tuple((r.decision_id, r.kind, r.candidates)
+                               for r in output.decisions), output.committed,
+            output.status, output.execution_mode, output.frame,
+            output.fallback_requested, output.schema_version)
+
+
 def issued_output(output):
     """Require the exact live decoder result, not a copied numerical receipt."""
     return (_ISSUED_OUTPUTS.get(id(output)) is output
-            and len(output.decisions) == len(_ISSUED_RECORDS.get(id(output), ()))
+            and _meaning(output) == _ISSUED_RECORDS[id(output)][1]
+            and len(output.decisions) == len(_ISSUED_RECORDS.get(id(output), ())[0])
             and all(record is issued and record.logits is logits
                     for record, (issued, logits) in zip(
-                        output.decisions, _ISSUED_RECORDS.get(id(output), ()))))
+                        output.decisions, _ISSUED_RECORDS.get(id(output), ())[0])))
 
 
 def _issue_output(output):
     key = id(output)
     _ISSUED_OUTPUTS[key] = output
-    _ISSUED_RECORDS[key] = tuple((record, record.logits) for record in output.decisions)
+    _ISSUED_RECORDS[key] = (
+        tuple((record, record.logits) for record in output.decisions),
+        deepcopy(_meaning(output)),
+    )
     finalize(output, _ISSUED_RECORDS.pop, key, None)
     return output
 
