@@ -221,3 +221,12 @@ from .atlas_cache_records import (
     encode_cold_cache,
     decode_cache,
 )
+
+from .atlas_cache_binding import (
+    CacheByteCost, binding_digest, cache_byte_cost, record_header_bytes,
+    require_cache_binding,
+)
+from .atlas_cache_policy import (
+    CacheInferenceResult, CacheQualityObservation, CacheQualityPolicy,
+    interactive_cache_inference, reference_candidate_evaluation,
+)

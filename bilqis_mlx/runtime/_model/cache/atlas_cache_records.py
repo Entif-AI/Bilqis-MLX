@@ -1,7 +1,6 @@
 """Norm blocks and small-record fallback for the BAMF rot3/v1 cache."""
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -9,33 +8,15 @@ import numpy as np
 if TYPE_CHECKING:
     from .atlas_cache_codec import Rot3Manifest
 
+from .atlas_cache_binding import (
+    CacheArtifact, CacheBinding, binding_digest, require_cache_binding, validate_binding,
+    cache_byte_cost, MAX_EFFECTIVE_BITS, CACHE_MODE_FP32, CACHE_MODE_ROT3,
+)
+
 
 BLOCK_VECTORS = 32
 MIN_COMPRESSED_VECTORS = 256
 VECTOR_DIMS = 2
-CACHE_MODE_FP32 = "FP32"
-CACHE_MODE_ROT3 = "ROT3"
-
-
-@dataclass(frozen=True)
-class CacheBinding:
-    """B14.2 codec identity; B14.3 extends causal binding authority."""
-
-    codec_manifest: Rot3Manifest
-
-
-@dataclass(frozen=True)
-class CacheArtifact:
-    """One cold-cache record encoded either exactly or with rot3/v1."""
-
-    mode: str
-    true_vectors: int
-    padded_vectors: int
-    head_width: int
-    direction_codes: bytes
-    relative_norms: bytes
-    block_max_norms_fp32: bytes
-    fp32_payload: bytes
 
 
 def _codec():
@@ -67,23 +48,24 @@ def _validate_manifest(manifest: Rot3Manifest) -> None:
     manifest.validate()
 
 
-def encode_cold_cache(cache, codec_manifest: Rot3Manifest) -> CacheArtifact:
+def _fp32_artifact(values, bound) -> CacheArtifact:
+    count, width = values.shape
+    return CacheArtifact(CACHE_MODE_FP32, count, count, width, bound, b"", b"", b"",
+                         np.asarray(values, dtype="<f4", order="C").tobytes(order="C"))
+
+
+def encode_cold_cache(
+    cache, codec_manifest: Rot3Manifest, *, binding: CacheBinding,
+) -> CacheArtifact:
     """Encode one [vectors,24] cold record under the B14.2 size policy."""
     _validate_manifest(codec_manifest)
+    validate_binding(binding, codec_manifest)
+    bound = binding_digest(binding)
     codec = _codec()
     values = _vectors(cache, codec.HEAD_WIDTH)
     true_vectors = int(values.shape[0])
     if true_vectors < MIN_COMPRESSED_VECTORS:
-        return CacheArtifact(
-            CACHE_MODE_FP32,
-            true_vectors,
-            true_vectors,
-            codec.HEAD_WIDTH,
-            b"",
-            b"",
-            b"",
-            np.asarray(values, dtype="<f4", order="C").tobytes(order="C"),
-        )
+        return _fp32_artifact(values, bound)
 
     padded_vectors = (
         (true_vectors + BLOCK_VECTORS - 1) // BLOCK_VECTORS * BLOCK_VECTORS
@@ -106,22 +88,26 @@ def encode_cold_cache(cache, codec_manifest: Rot3Manifest) -> CacheArtifact:
         relative[nonzero] = np.rint(scaled).astype(np.uint8)
 
     codes = codec.quantize_directions(padded).reshape(-1)
-    return CacheArtifact(
+    artifact = CacheArtifact(
         CACHE_MODE_ROT3,
         true_vectors,
         padded_vectors,
         codec.HEAD_WIDTH,
+        bound,
         codec.pack_3bit(codes),
         relative.reshape(-1).tobytes(order="C"),
         np.asarray(maxima, dtype="<f4", order="C").tobytes(order="C"),
         b"",
     )
+    if cache_byte_cost(artifact).effective_bits_per_channel > MAX_EFFECTIVE_BITS:
+        return _fp32_artifact(values, bound)
+    return artifact
 
 
 def _validate_artifact(artifact: CacheArtifact, binding: CacheBinding) -> None:
     if not isinstance(artifact, CacheArtifact) or not isinstance(binding, CacheBinding):
         _invalid()
-    _validate_manifest(binding.codec_manifest)
+    require_cache_binding(artifact, binding)
     codec = _codec()
     if (
         type(artifact.true_vectors) is not int
@@ -148,7 +134,6 @@ def decode_cache(artifact: CacheArtifact, expected_binding: CacheBinding) -> np.
     if artifact.mode == CACHE_MODE_FP32:
         if (
             artifact.padded_vectors != artifact.true_vectors
-            or artifact.true_vectors >= MIN_COMPRESSED_VECTORS
             or artifact.direction_codes
             or artifact.relative_norms
             or artifact.block_max_norms_fp32
