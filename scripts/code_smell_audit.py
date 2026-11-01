@@ -182,14 +182,26 @@ def _debt_baseline_ref(requested_base, scoped_base):
 
 
 def _base_findings(merge_base,records):
+    # A historical logical path may already have moved to a physical runtime
+    # owner on the PR base. Resolve that owner from the base tree itself rather
+    # than treating its existing findings as newly introduced debt. An
+    # ambiguous logical owner is never evidence of a pre-existing finding.
+    tree=subprocess.run(['git','ls-tree','-r','--name-only','-z',merge_base],
+                        cwd=ROOT,check=True,text=True,capture_output=True)
+    physical_owners=defaultdict(list)
+    for name in tree.stdout.split('\0'):
+        if name.endswith('.py'):
+            physical_owners[logical_source_path(name)].append(name)
     found=[]
     for old,new in records:
         result=subprocess.run(['git','show',f'{merge_base}:{old}'],cwd=ROOT,text=True,
                               capture_output=True)
         if result.returncode != 0:
             logical_old = logical_source_path(new)
-            result=subprocess.run(['git','show',f'{merge_base}:{logical_old}'],cwd=ROOT,text=True,
-                                  capture_output=True)
+            owners=physical_owners[logical_old]
+            if len(owners)==1:
+                result=subprocess.run(['git','show',f'{merge_base}:{owners[0]}'],
+                                      cwd=ROOT,text=True,capture_output=True)
         if result.returncode==0:
             found.extend(inspect_source(logical_source_path(new),result.stdout))
     return sorted(found,key=lambda f:(f.path,f.line,f.rule))
