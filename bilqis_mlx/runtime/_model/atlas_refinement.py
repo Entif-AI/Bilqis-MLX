@@ -6,9 +6,7 @@ Prediction-local selection, quotas and routing supervision belong to B06.2.
 """
 from __future__ import annotations
 
-from collections.abc import Iterator
 from dataclasses import dataclass
-from types import MappingProxyType
 from typing import Mapping
 
 import mlx.core as mx
@@ -41,43 +39,50 @@ class _RefinementResult:
     schema_version: str = "bilqis.mlx.refinement-numerical-result/provisional-v1"
 
 
-@dataclass(frozen=True)
-class RefinementParameterView(Mapping[str, mx.array]):
-    """Immutable B06 projection of B01's normative refinement tensor ledger."""
+class RefinementParameterView(dict[str, mx.array]):
+    """Read-only B06 projection that remains a native MLX parameter pytree."""
 
-    topology_digest: str
-    extents_digest: str
-    declarations: tuple[ParameterSpec, ...]
-    _parameters: Mapping[str, mx.array]
-    schema_version: str = REFINEMENT_PARAMETER_VIEW_SCHEMA
+    schema_version = REFINEMENT_PARAMETER_VIEW_SCHEMA
 
-    def __post_init__(self) -> None:
-        names = tuple(item.name for item in self.declarations)
-        digests = (self.topology_digest, self.extents_digest)
-        if (self.schema_version != REFINEMENT_PARAMETER_VIEW_SCHEMA
-                or any(not isinstance(value, str) or len(value) != SHA256_HEX_LENGTH
-                       or any(character not in "0123456789abcdef" for character in value)
-                       for value in digests)
-                or not self.declarations
-                or any(type(item) is not ParameterSpec for item in self.declarations)
+    def __init__(self, topology_digest: str, extents_digest: str,
+                 declarations: tuple[ParameterSpec, ...], parameters: Mapping[str, mx.array]):
+        names = tuple(item.name for item in declarations)
+        digests = (topology_digest, extents_digest)
+        if (any(not isinstance(value, str) or len(value) != SHA256_HEX_LENGTH
+                or any(character not in "0123456789abcdef" for character in value)
+                for value in digests)
+                or not declarations
+                or any(type(item) is not ParameterSpec for item in declarations)
                 or any(not name.startswith("refine.") for name in names)
-                or len(set(names)) != len(names) or set(self._parameters) != set(names)):
+                or len(set(names)) != len(names) or set(parameters) != set(names)):
             _invalid()
-        for item in self.declarations:
-            value = self._parameters[item.name]
+        for item in declarations:
+            value = parameters[item.name]
             if (not isinstance(value, mx.array) or value.dtype != mx.float32
                     or tuple(value.shape) != item.shape):
                 _invalid()
-        object.__setattr__(self, "_parameters", MappingProxyType(dict(self._parameters)))
+        dict.__init__(self, ((item.name, parameters[item.name]) for item in declarations))
+        object.__setattr__(self, "topology_digest", topology_digest)
+        object.__setattr__(self, "extents_digest", extents_digest)
+        object.__setattr__(self, "declarations", declarations)
 
-    def __getitem__(self, name: str) -> mx.array:
-        return self._parameters[name]
+    @staticmethod
+    def _immutable(*_args, **_kwargs):
+        _invalid()
 
-    def __iter__(self) -> Iterator[str]:
-        return (item.name for item in self.declarations)
+    __setitem__ = _immutable
+    __delitem__ = _immutable
+    clear = _immutable
+    pop = _immutable
+    popitem = _immutable
+    setdefault = _immutable
+    update = _immutable
 
-    def __len__(self) -> int:
-        return len(self.declarations)
+    def __ior__(self, _other):
+        self._immutable()
+
+    def __setattr__(self, _name, _value):
+        self._immutable()
 
 
 def refinement_parameter_view(parameters: Mapping[str, mx.array], *, spec: ModelTopologySpecV2,

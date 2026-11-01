@@ -1,6 +1,5 @@
 """B06.4: refinement parameters are an exact immutable B01 ledger projection."""
 import unittest
-from dataclasses import replace
 
 import mlx.core as mx
 import numpy as np
@@ -38,21 +37,24 @@ class RefinementRegistryTests(unittest.TestCase):
     def test_projection_mapping_is_immutable(self):
         view = refinement_parameter_view(
             self.full, spec=self.spec, extents=self.extents)
-        with self.assertRaises(TypeError):
-            view._parameters["refine.norm"] = mx.zeros((768,), dtype=mx.float32)
-        with self.assertRaises(TypeError):
+        with self.assertRaises(BilqisError):
             view["refine.norm"] = mx.zeros((768,), dtype=mx.float32)
+        with self.assertRaises(BilqisError):
+            view.update({"refine.norm": mx.zeros((768,), dtype=mx.float32)})
 
     def test_view_identity_metadata_is_canonical(self):
         view = refinement_parameter_view(
             self.full, spec=self.spec, extents=self.extents)
-        for changes in (
-            {"topology_digest": "x" * 64},
-            {"extents_digest": "0" * 63},
-            {"schema_version": "bilqis.mlx.refinement-parameter-view/v0"},
+        with self.assertRaises(BilqisError):
+            view.topology_digest = "0" * 64
+        for topology_digest, extents_digest in (
+            ("x" * 64, self.extents.digest),
+            (self.spec.digest, "0" * 63),
         ):
-            with self.subTest(changes=changes), self.assertRaises(BilqisError):
-                replace(view, **changes)
+            with self.subTest(topology_digest=topology_digest, extents_digest=extents_digest), \
+                    self.assertRaises(BilqisError):
+                RefinementParameterView(
+                    topology_digest, extents_digest, view.declarations, view)
 
     def test_b01_constructor_matches_every_refinement_parameter_spec(self):
         run_seed = 455
@@ -92,6 +94,24 @@ class RefinementRegistryTests(unittest.TestCase):
         np.testing.assert_array_equal(np.asarray(actual.hidden), np.asarray(expected.hidden))
         np.testing.assert_array_equal(
             np.asarray(actual.route_logits), np.asarray(expected.route_logits))
+
+    def test_registry_view_is_directly_differentiable_parameter_tree(self):
+        view = refinement_parameter_view(
+            self.full, spec=self.spec, extents=self.extents)
+        hidden = mx.arange(768, dtype=mx.float32) / 768
+        seed = mx.zeros((768,), dtype=mx.float32)
+        members = mx.stack((hidden, hidden + mx.array(.25, dtype=mx.float32)))
+        role = mx.ones((768,), dtype=mx.float32) * mx.array(.125, dtype=mx.float32)
+
+        def loss(parameters):
+            result = _refine_frame(hidden, seed, members, role, 2, parameters)
+            return mx.sum(result.hidden) + mx.sum(result.route_logits)
+
+        gradients = mx.grad(loss)(view)
+        self.assertIsInstance(gradients, dict)
+        self.assertEqual(tuple(gradients), tuple(view))
+        for name in view:
+            self.assertGreater(float(mx.sum(mx.abs(gradients[name]))), 0.0)
 
     def test_full_tree_drift_rejects_before_projection(self):
         extra = {**self.full, "refine.shadow": mx.zeros((1,), dtype=mx.float32)}

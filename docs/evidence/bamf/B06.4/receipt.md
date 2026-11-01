@@ -25,8 +25,10 @@ complete supplied parameter tree against B01's authoritative
 - immutable mapping ownership over the original MLX array objects.
 
 The view does not rename, copy, reshape or independently initialize tensors. Its
-mapping order is the B01 ledger order, and the numerical B06 kernel consumes the
-view through the ordinary `Mapping` contract with byte-identical results.
+mapping order is the B01 ledger order. The view is implemented as a read-only
+`dict`-shaped MLX parameter pytree, so the numerical B06 kernel consumes the
+reconciled B01 aliases directly in both forward and gradient transforms without
+converting back to a second parameter representation.
 
 The B01 disposable constructor remains the only initializer owner. The B06.4
 tests independently compare every refinement tensor produced by
@@ -64,7 +66,7 @@ git diff --check origin/codex/bamf-unified-base-20261028...HEAD
 
 Current local results:
 
-- new B06.4 registry proof: **7/7 PASS**, zero skips;
+- new B06.4 registry proof: **8/8 PASS**, zero skips;
 - existing B06 numerical + B06.2 policy proof: **15/15 PASS**, zero skips;
 - B01 topology/ledger/initialization/lifecycle proof: **21/23 PASS**, **2 explicit optional skips**;
 - development structure: **0 violations**;
@@ -73,6 +75,16 @@ Current local results:
 - docs: **PASS**;
 - error control: **new debt 0**;
 - diff check: **clean**.
+
+Fresh non-EGM review of the prior exact head `551ddf30...` found one Major: the
+first typed view was a custom `Mapping`, which MLX could use for forward reads but
+could not flatten as a differentiable parameter tree. A failing-before regression
+reproduced `ValueError: [tree_flatten] The argument should contain only arrays`
+for `mx.grad(loss)(view)`. The repair keeps the B01 metadata and read-only mapping
+surface while making the view a native dict-shaped pytree; the same regression now
+passes and verifies nonzero gradients for all nine refinement tensors. Because
+this repair changes the feature head, a fresh exact-head non-EGM review is required
+after commit and remote verification; it still does not substitute for Google EGM.
 
 The two B01 skips are capability/evidence gates already declared by their owner:
 one requires `BILQIS_BAMF_FULL_WITNESS` for a full disposable MLX allocation and
