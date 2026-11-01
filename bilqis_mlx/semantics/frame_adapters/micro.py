@@ -1,6 +1,6 @@
 """Source-owned frame micro behavior."""
 from __future__ import annotations
-from ...source_adapters.structure import inspect_source_query
+from ..source_structure import inspect_source_query
 from ..atlas_projection import FrozenAtlasSnapshot
 from ..frame_schema import ChildFrameRef, FrameTree, RoleOccurrence, SourceSpan, bind_frame_instance, occurrence_id, validate_frame_tree
 from .common import _adapter_fail, _schema_for_symbol, _source_id, _source_terminal

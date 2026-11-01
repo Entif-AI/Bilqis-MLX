@@ -89,6 +89,68 @@ def audit(each, max_rounds, policy):
             debt_counter(added.debt), debt_counter(before.debt))},
             {"NEW_CODE", "4"})
 
+    def test_one_for_one_module_relocation_is_not_new_debt(self):
+        before = analyze_source(
+            "bilqis_mlx/old_owner.py",
+            'def run():\n raise ValueError("OLD_CODE")\n',
+        )
+        moved = analyze_source(
+            "bilqis_mlx/new_owner.py",
+            'def run():\n raise ValueError("OLD_CODE")\n',
+        )
+        self.assertEqual(
+            new_debt(debt_counter(moved.debt), debt_counter(before.debt)),
+            (),
+        )
+
+    def test_copying_a_relocated_contract_still_grows_debt(self):
+        old = analyze_source(
+            "bilqis_mlx/old_owner.py",
+            'def run():\n raise ValueError("OLD_CODE")\n',
+        )
+        copied = analyze_source(
+            "bilqis_mlx/new_owner.py",
+            'def run():\n raise ValueError("OLD_CODE")\n',
+        )
+        current = debt_counter(old.debt + copied.debt)
+        self.assertEqual(
+            new_debt(current, debt_counter(old.debt)),
+            (("bilqis_mlx/new_owner.py", "literal-error-identity", "OLD_CODE"),),
+        )
+
+    def test_move_plus_extra_copy_fails_exactly_one_occurrence(self):
+        before = analyze_source(
+            "bilqis_mlx/old_owner.py",
+            'def run():\n raise ValueError("OLD_CODE")\n',
+        )
+        moved_twice = analyze_source(
+            "bilqis_mlx/new_owner.py",
+            'def run(v):\n'
+            ' if v: raise ValueError("OLD_CODE")\n'
+            ' raise ValueError("OLD_CODE")\n',
+        )
+        self.assertEqual(
+            new_debt(debt_counter(moved_twice.debt), debt_counter(before.debt)),
+            (("bilqis_mlx/new_owner.py", "literal-error-identity", "OLD_CODE"),),
+        )
+
+    def test_module_constant_raw_exception_identity_is_counted(self):
+        source = '''
+_ERROR = "RAW_ERROR_CODE"
+
+def crash():
+    raise ValueError(_ERROR)
+'''
+        findings = analyze_source("bilqis_mlx/another.py", source)
+        self.assertIn(
+            ("literal-error-identity", "RAW_ERROR_CODE"),
+            {(item.kind, item.token) for item in findings.debt},
+        )
+        self.assertIn(
+            ("RAW_ERROR_CODE", "exception"),
+            {(item.code, item.kind) for item in findings.codes},
+        )
+
     def test_plain_english_raw_exception_literal_is_not_an_escape_hatch(self):
         source = '''
 def crash():

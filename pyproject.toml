@@ -5,5 +5,8 @@ description = "Private, source-grounded MLX successor to Bilqis School50"
 requires-python = ">=3.11"
 dependencies = ["cryptography"]
 
-[tool.setuptools]
-packages = ["bilqis_mlx"]
+[tool.setuptools.packages.find]
+include = ["bilqis_mlx*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.json"]

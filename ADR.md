@@ -2264,3 +2264,18 @@ historical controls. Do not modify, substitute or rebase them or their student
 and optimizer state. Disposable-witness retained learning remains unmeasured until
 that witness runs; persistent-student learning remains unmeasured until the
 human-owned successor run produces its own evidence.
+
+## ADR-121 | 2026-10-31 | Close satisfied child issues; keep integration authority at parents
+
+GitHub issue state now answers a narrow operational question: **does actionable work remain inside this issue's own durable contract?** It does not mirror the completion state of every ancestor, sibling, or downstream integration gate.
+
+An implementing child or leaf issue should close once its own bounded outcome and acceptance contract are satisfied and its accepted work is integrated into the reviewed unified trunk. A parent issue may remain open for aggregate integration, cross-lane qualification, retained-learning proof, production authority, or other owner-level acceptance without forcing already-delivered children to remain open. Closing a satisfied child is therefore not a claim that its parent, workstream, BAMF gate, learner, or durable runtime is complete.
+
+If a merged pull request delivered only a proper subset of the issue's own stated contract, either keep that issue open while concrete work still remains at the same durable boundary or, preferably when the residual is independently actionable, create a smaller successor issue for the residual gap and link it to the historical issue/PR. Later regressions, newly discovered integration gaps, and changed requirements should normally become new self-contained issues with a concise current reproduction, relevant authority/spec pointer, dependency context, and acceptance criteria. Reopen a closed issue only when its original acceptance was actually invalidated, reverted, or the delivered outcome itself must be restored.
+
+Open parent/integration issues remain the durable place for unresolved aggregate acceptance. Closed children remain provenance and may be referenced by successors. The desired operational result is that the open-issue set approximates the **current executable frontier plus meaningful parent/integration containers**, rather than every historical work packet whose ancestors are still incomplete. This reduces triage noise and lets lower-reasoning agents act on bounded current tickets without reconstructing the full historical issue tree.
+
+For the existing BAMF-0.2 hierarchy, this decision authorizes a reconciliation sweep of open issues: close merged-and-satisfied leaves, close superseded historical paths, split independently actionable residuals when useful, and leave genuinely unfinished leaves plus integration/acceptance parents open. GitHub remains authoritative for the current #341-#545 issue scopes under ADR-118; this lifecycle decision changes state semantics, not the normative requirements of those issues.
+
+**Status:** Accepted as the GitHub issue-lifecycle and backlog-visibility contract for BAMF-0.2 and successor Bilqis-MLX work shaping.
+
