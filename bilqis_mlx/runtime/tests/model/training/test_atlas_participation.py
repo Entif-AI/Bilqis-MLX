@@ -48,6 +48,7 @@ def _active():
         identity_rows=((0, 0), (0, 1), (0, 2)),
         motif_slots=(0, 1, 2),
         feature_rows=(("role", 2), ("role", 3), ("type", 4)),
+        local_slot_rows=(0, 1, 2),
     )
 
 
@@ -116,6 +117,57 @@ class ParticipationTests(TestCase):
         np.testing.assert_array_equal(
             np.asarray(actual.parameters["identity.bank.0"][1]),
             np.asarray(parent.parameters["identity.bank.0"][1]),
+        )
+
+    def test_local_slot_participation_remains_row_local_through_b12(self):
+        eligibility = GroupEligibility(
+            "FULL", ("features.local_slot",), (), (), (), ())
+        participation = step_participation(
+            StepParticipationInputs(
+                local_slot_rows=(1,),
+                executed_parameter_names=("features.local_slot",)),
+            SemanticDenominator(), (), RoleReadParticipation())
+        mask = parameter_update_mask(
+            eligibility, participation,
+            ActiveAdmittedRows(local_slot_rows=(0, 1, 2)))
+        parameters = {
+            "features.local_slot": mx.array(
+                [[1., 2.], [3., 4.], [5., 6.]], dtype=mx.float32),
+        }
+        parent = AdamWStateTree(
+            parameters,
+            {"features.local_slot": mx.zeros((3, 2), dtype=mx.float32)},
+            {"features.local_slot": mx.zeros((3, 2), dtype=mx.float32)},
+            {"features.local_slot": mx.array([0, 7, 11], dtype=mx.uint64)},
+        )
+        booleans = optimizer_participation_mask(mask, parent.update_counts)
+        actual = _adamw_update(
+            parent,
+            {"features.local_slot": mx.zeros((3, 2), dtype=mx.float32)},
+            booleans,
+            AdamWHyperparameters(.001, (.9, .95), 1e-8, .01),
+            decay={"features.local_slot": True}, loss_bearing=True,
+        )
+        self.assertEqual(mask.parameter("features.local_slot").row_indices, (1,))
+        self.assertFalse(mask.parameter("features.local_slot").whole_parameter)
+        np.testing.assert_array_equal(
+            np.asarray(booleans["features.local_slot"]),
+            np.array([False, True, False]),
+        )
+        np.testing.assert_array_equal(
+            np.asarray(actual.update_counts["features.local_slot"]),
+            np.array([0, 8, 11], dtype=np.uint64),
+        )
+        np.testing.assert_array_equal(
+            np.asarray(actual.parameters["features.local_slot"][0]),
+            np.asarray(parent.parameters["features.local_slot"][0]),
+        )
+        self.assertFalse(bool(mx.all(
+            actual.parameters["features.local_slot"][1]
+            == parent.parameters["features.local_slot"][1])))
+        np.testing.assert_array_equal(
+            np.asarray(actual.parameters["features.local_slot"][2]),
+            np.asarray(parent.parameters["features.local_slot"][2]),
         )
 
     def test_two_optimizer_steps_derive_distinct_literal_row_masks(self):
@@ -213,6 +265,7 @@ class ParticipationTests(TestCase):
         self.assertEqual(participation.identity_rows, ())
         self.assertEqual(participation.motif_slots, ())
         self.assertEqual(participation.feature_rows, ())
+        self.assertEqual(participation.local_slot_rows, ())
         mask = parameter_update_mask(_eligibility(), participation, _active())
         self.assertFalse(mask.has_loss_bearing_target)
         self.assertFalse(any(item.whole_parameter or item.row_indices

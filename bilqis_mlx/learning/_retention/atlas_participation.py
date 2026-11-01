@@ -44,10 +44,17 @@ def _feature_rows(value) -> bool:
                     for item in value))
 
 
+def _rows(value) -> bool:
+    return (type(value) is tuple
+            and value == tuple(sorted(set(value)))
+            and all(type(item) is int and item >= 0 for item in value))
+
+
 @dataclass(frozen=True)
 class StepParticipationInputs:
     visible_identity_rows: tuple[tuple[int, int], ...] = ()
     feedback_identity_rows: tuple[tuple[int, int], ...] = ()
+    local_slot_rows: tuple[int, ...] = ()
     executed_parameter_names: tuple[str, ...] = ()
     loss_bearing_target: bool = True
     schema_version: str = INPUT_SCHEMA
@@ -55,6 +62,7 @@ class StepParticipationInputs:
     def __post_init__(self) -> None:
         if (not _pairs(self.visible_identity_rows)
                 or not _pairs(self.feedback_identity_rows)
+                or not _rows(self.local_slot_rows)
                 or type(self.executed_parameter_names) is not tuple
                 or self.executed_parameter_names != tuple(sorted(set(self.executed_parameter_names)))
                 or any(not isinstance(name, str) or not name
@@ -91,6 +99,7 @@ class ActiveAdmittedRows:
     identity_rows: tuple[tuple[int, int], ...] = ()
     motif_slots: tuple[int, ...] = ()
     feature_rows: tuple[tuple[str, int], ...] = ()
+    local_slot_rows: tuple[int, ...] = ()
     schema_version: str = ACTIVE_SCHEMA
 
     def __post_init__(self) -> None:
@@ -101,6 +110,7 @@ class ActiveAdmittedRows:
                        ModelTopologySpecV2.max_motif_pages * ModelTopologySpecV2.motif_page_rows
                        for slot in self.motif_slots)
                 or not _feature_rows(self.feature_rows)
+                or not _rows(self.local_slot_rows)
                 or self.schema_version != ACTIVE_SCHEMA):
             _invalid()
 
@@ -110,6 +120,7 @@ class StepParticipation:
     identity_rows: tuple[tuple[int, int], ...]
     motif_slots: tuple[int, ...]
     feature_rows: tuple[tuple[str, int], ...]
+    local_slot_rows: tuple[int, ...]
     dense_parameter_names: tuple[str, ...]
     loss_bearing_target: bool
     schema_version: str = PARTICIPATION_SCHEMA
@@ -120,6 +131,7 @@ class StepParticipation:
                 or self.motif_slots != tuple(sorted(set(self.motif_slots)))
                 or any(type(slot) is not int or slot < 0 for slot in self.motif_slots)
                 or not _feature_rows(self.feature_rows)
+                or not _rows(self.local_slot_rows)
                 or type(self.dense_parameter_names) is not tuple
                 or self.dense_parameter_names != tuple(sorted(set(self.dense_parameter_names)))
                 or any(not isinstance(name, str) or not name
@@ -146,7 +158,7 @@ def step_participation(
     semantic_denominator.__post_init__()
     role_reads.__post_init__()
     if not inputs.loss_bearing_target:
-        return StepParticipation((), (), (), (), False)
+        return StepParticipation((), (), (), (), (), False)
     identity = tuple(sorted(set(
         inputs.visible_identity_rows + inputs.feedback_identity_rows
         + semantic_denominator.identity_rows)))
@@ -156,7 +168,8 @@ def step_participation(
     features = tuple(sorted(set(
         semantic_denominator.feature_rows + role_reads.feature_rows)))
     return StepParticipation(
-        identity, motif, features, inputs.executed_parameter_names, True)
+        identity, motif, features, inputs.local_slot_rows,
+        inputs.executed_parameter_names, True)
 
 
 @dataclass(frozen=True)
@@ -214,6 +227,9 @@ def _row_mask(name: str, participation: StepParticipation,
             return tuple(row for candidate_table, row in participation.feature_rows
                          if candidate_table == table
                          and (candidate_table, row) in active.feature_rows)
+    if name == "features.local_slot":
+        return tuple(row for row in participation.local_slot_rows
+                     if row in active.local_slot_rows)
     return None
 
 
