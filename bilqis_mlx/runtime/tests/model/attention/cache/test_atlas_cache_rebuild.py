@@ -1,6 +1,7 @@
 """BAMF B14.4 revoked-source rejection and qualified FP32 rebuild proofs."""
 from dataclasses import replace
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 
@@ -92,6 +93,55 @@ class RevokedCacheRebuildTests(unittest.TestCase):
         ):
             with self.subTest(binding=changed), self.assertRaises(BilqisError):
                 decode_cache(self.stale, changed)
+            persisted = []
+            rebuilt = rebuild_revoked_cache(
+                self.stale,
+                changed,
+                eligibility_receipt=_receipt(changed),
+                canonical_fp32_source=lambda: self.canonical.copy(),
+                persist=persisted.append,
+            )
+            expected = encode_cold_cache(
+                self.canonical, changed.codec_manifest, binding=changed,
+            )
+            self.assertEqual(rebuilt.artifact, expected)
+            self.assertEqual(persisted, [expected])
+
+    def test_binding_rejection_precedes_codec_and_payload_decode(self):
+        from bilqis_mlx.runtime import atlas_cache_records
+
+        changed = replace(self.old_binding, source_rights_sha256="f" * 64)
+        with patch.object(
+            atlas_cache_records,
+            "_codec",
+            side_effect=AssertionError("codec entered before stale binding rejected"),
+        ):
+            with self.assertRaises(BilqisError):
+                decode_cache(self.stale, changed)
+
+    def test_rebuild_result_is_independent_of_stale_lossy_payload(self):
+        alternate_values = np.full((256, HEAD_WIDTH), -7.0, dtype=np.float32)
+        alternate_stale = encode_cold_cache(
+            alternate_values,
+            self.old_binding.codec_manifest,
+            binding=self.old_binding,
+        )
+        self.assertNotEqual(
+            alternate_stale.direction_codes,
+            self.stale.direction_codes,
+        )
+        new_binding = replace(self.old_binding, policy_epoch_sha256="f" * 64)
+        rebuilt = []
+        for stale in (self.stale, alternate_stale):
+            result = rebuild_revoked_cache(
+                stale,
+                new_binding,
+                eligibility_receipt=_receipt(new_binding),
+                canonical_fp32_source=lambda: self.canonical.copy(),
+                persist=lambda artifact: None,
+            )
+            rebuilt.append(result.artifact)
+        self.assertEqual(rebuilt[0], rebuilt[1])
 
     def test_each_new_identity_field_invalidates_old_record(self):
         changes = {

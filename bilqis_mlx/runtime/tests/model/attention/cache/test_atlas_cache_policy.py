@@ -28,11 +28,17 @@ def _binding(manifest=None) -> CacheBinding:
         generation_sha256="1" * 64,
         lineage_sha256="2" * 64,
         topology_sha256="3" * 64,
-        source_rights_sha256="4" * 64,
-        causal_prefix_sha256="5" * 64,
-        masks_sha256="6" * 64,
-        scope_sha256="7" * 64,
-        key_sha256="8" * 64,
+        source_release_sha256="4" * 64,
+        semantic_release_sha256="5" * 64,
+        source_rights_sha256="6" * 64,
+        rights_purpose_sha256="7" * 64,
+        policy_epoch_sha256="8" * 64,
+        context_eligibility_sha256="9" * 64,
+        causal_prefix_sha256="a" * 64,
+        masks_sha256="b" * 64,
+        scope_sha256="c" * 64,
+        key_sha256="d" * 64,
+        inference_state_sha256="e" * 64,
         offset=17,
     )
 
@@ -93,10 +99,14 @@ class CachePolicyTests(unittest.TestCase):
 
 
     def test_lossy_cache_owners_have_no_training_gold_or_sidecar_dependencies(self):
-        from bilqis_mlx.runtime import atlas_cache_policy, atlas_cache_records
+        from bilqis_mlx.runtime import (
+            atlas_cache_policy,
+            atlas_cache_rebuild,
+            atlas_cache_records,
+        )
 
         imports = set()
-        for module in (atlas_cache_policy, atlas_cache_records):
+        for module in (atlas_cache_policy, atlas_cache_rebuild, atlas_cache_records):
             tree = ast.parse(Path(module.__file__).read_text())
             for node in ast.walk(tree):
                 if isinstance(node, ast.Import):
