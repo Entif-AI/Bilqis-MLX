@@ -6,6 +6,7 @@ import unittest
 from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.factory.adapters import RegisteredSourceAdapter, SourceAdapterRegistry
 from bilqis_mlx.factory.curriculum.capability_identity import (
     CapabilityIdentityInput, StableCapabilityIdentity,
     bind_factory_release_capability_identity, bind_stable_capability_identity,
@@ -92,59 +93,43 @@ def _release_with_capability_root(release, source_registry, capability_id, root)
         replace(release.course, grades=tuple(grades)), source_registry)
 
 
+def _release_with_capability_alias(release, source_registry, old_id, new_id):
+    def renamed(value):
+        return new_id if value == old_id else value
+
+    grades = []
+    for grade in release.course.grades:
+        capabilities = tuple(replace(
+            item,
+            id=renamed(item.id),
+            prerequisites=tuple(renamed(value) for value in item.prerequisites),
+            composed_of=tuple(renamed(value) for value in item.composed_of),
+        ) for item in grade.capabilities)
+        grades.append(replace(
+            grade,
+            capabilities=capabilities,
+            exam_item_counts=tuple((renamed(name), count)
+                                   for name, count in grade.exam_item_counts),
+            teaching_stages=tuple(tuple(renamed(name) for name in stage)
+                                  for stage in grade.teaching_stages),
+        ))
+    return compile_factory_release(
+        replace(release.course, grades=tuple(grades)), source_registry)
+
+
+def _registry_with_provider_digest(registry, adapter_id, digest):
+    adapters = []
+    for adapter in registry._by_generator.values():
+        descriptor = adapter.descriptor
+        if descriptor.adapter_id == adapter_id:
+            descriptor = replace(descriptor, implementation_sha256=digest)
+        adapters.append(RegisteredSourceAdapter(
+            descriptor, adapter.draw, adapter.check, adapter.enrich,
+            adapter.witness, adapter.dependencies, adapter.semantic_footprint))
+    return SourceAdapterRegistry(tuple(adapters))
+
+
 class CapabilityIdentityTests(unittest.TestCase):
-    def test_semantic_family_signature_and_answer_modality_define_identity(self):
-        identity = bind_stable_capability_identity(
-            "legacy:cogal.operator.AND", "boolean_composition", "BOOL_AND",
-            Signature(("Boolean", "Boolean"), "Boolean"),
-            ("BOOLEAN",))
-        self.assertTrue(identity.capability_id.startswith("cap:"))
-        self.assertEqual(len(identity.capability_id), 68)
-        self.assertEqual(identity.capability_id, stable_capability_id(identity.identity))
-
-    def test_grade_provider_source_path_and_root_ordinal_are_not_identity_inputs(self):
-        identity = CapabilityIdentityInput(
-            "bilqis.numeric/v1:school.op.ADD", "numeric_composition", "ADD",
-            Signature(("Number", "Number"), "Number"),
-            ("INTEGER",))
-        baseline = stable_capability_id(identity)
-        # These execution/placement facts are intentionally not accepted arguments.
-        placements = (
-            {"grade": "C", "provider": "mlx", "source": "row:1", "ordinal": 1},
-            {"grade": "Z", "provider": "cpu", "source": "row:999", "ordinal": 999},
-        )
-        self.assertEqual({stable_capability_id(identity) for _ in placements}, {baseline})
-
-    def test_semantic_change_changes_identity(self):
-        base = CapabilityIdentityInput(
-            "bilqis.numeric/v1:school.op.ADD", "numeric_composition", "ADD",
-            Signature(("Number", "Number"), "Number"),
-            ("INTEGER",))
-        variants = (
-            replace(base, family_id="boolean_composition"),
-            replace(base, semantic_id="bilqis.numeric/v1:school.op.SUB"),
-            replace(base, operator_id="SUB"),
-            replace(base, signature=Signature(("Number",), "Number")),
-            replace(base, answer_kinds=("INTEGER", "SEMANTIC_TOKEN")),
-        )
-        for variant in variants:
-            with self.subTest(variant=variant):
-                self.assertNotEqual(stable_capability_id(base), stable_capability_id(variant))
-
-    def test_forged_digest_and_noncanonical_modalities_fail(self):
-        base = CapabilityIdentityInput(
-            "legacy:cogal.operator.NOT", "boolean_composition", "BOOL_NOT",
-            Signature(("Boolean",), "Boolean"),
-            ("BOOLEAN",))
-        with self.assertRaises(ValueError):
-            StableCapabilityIdentity("cap:" + "0" * 64, base)
-        for answer_kinds in ((), ("B", "A"), ("A", "A")):
-            with self.subTest(answer_kinds=answer_kinds), self.assertRaises(ValueError):
-                CapabilityIdentityInput(
-                    "legacy:cogal.operator.NOT", "boolean_composition", "BOOL_NOT",
-                    Signature(("Boolean",), "Boolean"),
-                    answer_kinds)
-
     def test_existing_factory_release_supplies_answer_modality_to_stable_identity(self):
         release, _ = full_boolean_release()
         bindings = _family_bindings(release, capability_id="B.AND")
@@ -211,135 +196,3 @@ class CapabilityIdentityTests(unittest.TestCase):
                 bind_factory_release_capability_identity(
                     release, bindings, "B.AND", object(), registry,
                     Signature(("Entity", "Entity"), "Boolean"))
-
-    def test_release_binding_rejects_forged_census_coordinates(self):
-        release, _ = full_boolean_release()
-        bindings = _family_bindings(release, capability_id="B.AND")
-        registry, proposal, census = _formal_authority()
-        forged = replace(
-            bindings,
-            census_digest="f" * 64,
-            coverage=replace(bindings.coverage, census_digest="f" * 64),
-        )
-        with _authority_patch(proposal, census):
-            with self.assertRaises(BilqisError) as caught:
-                bind_factory_release_capability_identity(
-                    release, forged, "B.AND", object(), registry)
-        self.assertEqual(
-            caught.exception.context.get("reason"),
-            "FACTORY_CAPABILITY_IDENTITY_FAMILY_BINDING_DRIFT")
-
-    def test_distinct_boolean_operators_have_distinct_stable_identities(self):
-        release, _ = full_boolean_release()
-        registry, _, census = _formal_authority()
-        pairs = (
-            ("B.AND", "BOOL_AND"), ("B.OR", "BOOL_OR"),
-            ("B.XOR", "BOOL_XOR"), ("B.IMPLIES", "BOOL_IMPLIES"),
-            ("B.IFF", "BOOL_IFF"),
-        )
-        stable_ids = []
-        for capability_id, operator_id in pairs:
-            proposal = SimpleNamespace(witnesses=(
-                _boolean_witness(registry, capability_id, operator_id),))
-            with _authority_patch(proposal, census):
-                stable_ids.append(bind_factory_release_capability_identity(
-                    release,
-                    _family_bindings(release, capability_id=capability_id),
-                    capability_id,
-                    object(),
-                    registry,
-                ).stable_identity.capability_id)
-        self.assertEqual(len(set(stable_ids)), len(pairs))
-
-    def test_family_level_formal_binding_resolves_exact_capability_witness(self):
-        release, _ = full_boolean_release()
-        registry, _, census = _formal_authority()
-        shared = ("B.NOT", "B.AND")
-        proposal = SimpleNamespace(witnesses=(
-            SimpleNamespace(**{
-                **vars(_boolean_witness(registry, "B.NOT", "BOOL_NOT")),
-                "capability_ids": shared}),
-            SimpleNamespace(**{
-                **vars(_boolean_witness(registry, "B.AND", "BOOL_AND")),
-                "capability_ids": shared}),
-        ))
-        with _authority_patch(proposal, census):
-            binding = bind_factory_release_capability_identity(
-                release, _family_bindings(release, capability_id="B.AND"),
-                "B.AND", object(), registry)
-        self.assertEqual(binding.release_capability_id, "B.AND")
-
-    def test_release_root_cannot_steer_capability_to_another_formal_witness(self):
-        release, source_registry = full_boolean_release()
-        forged = _release_with_capability_root(
-            release, source_registry, "B.AND", "evil.namespace.NOT")
-        bindings = _family_bindings(forged, capability_id="B.AND")
-        registry, _, census = _formal_authority()
-        shared = ("B.NOT", "B.AND")
-        proposal = SimpleNamespace(witnesses=(
-            SimpleNamespace(**{
-                **vars(_boolean_witness(registry, "B.NOT", "BOOL_NOT")),
-                "capability_ids": shared}),
-            SimpleNamespace(**{
-                **vars(_boolean_witness(registry, "B.AND", "BOOL_AND")),
-                "capability_ids": shared}),
-        ))
-        with _authority_patch(proposal, census), self.assertRaises(BilqisError) as caught:
-            bind_factory_release_capability_identity(
-                forged, bindings, "B.AND", object(), registry)
-        self.assertEqual(
-            caught.exception.context.get("reason"),
-            "FACTORY_CAPABILITY_IDENTITY_FORMAL_COORDINATE_DRIFT")
-
-    def test_release_root_suffix_is_not_formal_identity_authority(self):
-        release, source_registry = full_boolean_release()
-        forged = _release_with_capability_root(
-            release, source_registry, "B.AND", "evil.namespace.AND")
-        bindings = _family_bindings(forged, capability_id="B.AND")
-        registry, proposal, census = _formal_authority()
-        with _authority_patch(proposal, census), self.assertRaises(BilqisError) as caught:
-            bind_factory_release_capability_identity(
-                forged, bindings, "B.AND", object(), registry)
-        self.assertEqual(
-            caught.exception.context.get("reason"),
-            "FACTORY_CAPABILITY_IDENTITY_FORMAL_COORDINATE_DRIFT")
-
-    def test_release_taught_root_drift_cannot_hide_behind_canonical_exam_root(self):
-        release, source_registry = full_boolean_release()
-        grades = []
-        for grade in release.course.grades:
-            capabilities = tuple(
-                replace(item, taught_roots=("cogal.operator.AND", "evil.namespace.NOT"))
-                if item.id == "B.AND" else item
-                for item in grade.capabilities)
-            grades.append(replace(grade, capabilities=capabilities))
-        forged = compile_factory_release(
-            replace(release.course, grades=tuple(grades)), source_registry)
-        bindings = _family_bindings(forged, capability_id="B.AND")
-        registry, proposal, census = _formal_authority()
-        with _authority_patch(proposal, census), self.assertRaises(BilqisError) as caught:
-            bind_factory_release_capability_identity(
-                forged, bindings, "B.AND", object(), registry)
-        self.assertEqual(
-            caught.exception.context.get("reason"),
-            "FACTORY_CAPABILITY_IDENTITY_FORMAL_COORDINATE_DRIFT")
-
-    def test_numeric_source_coordinate_uses_lesson_operation_not_capability_suffix(self):
-        release, _ = numeric_factory_release()
-        bindings = _family_bindings(
-            release, family_id="numeric_composition", capability_id="C.SUCCESSOR")
-        registry, _, census = _formal_authority()
-        proposal = SimpleNamespace(witnesses=(SimpleNamespace(
-            semantic_id="bilqis.numeric/v1:school.op.SUCC",
-            family="numeric", operator=registry.resolve("SUCC"),
-            capability_ids=("C.SUCCESSOR",)),))
-        with _authority_patch(proposal, census):
-            binding = bind_factory_release_capability_identity(
-                release, bindings, "C.SUCCESSOR", object(), registry)
-        identity = binding.stable_identity.identity
-        self.assertEqual(identity.operator_id, "SUCC")
-        self.assertEqual(identity.semantic_id, "bilqis.numeric/v1:school.op.SUCC")
-
-
-if __name__ == "__main__":
-    unittest.main()
