@@ -1,67 +1,95 @@
-# Source-backed numerical ingress for B11.1a #586
+# B11.1a | Execution-owned backbone producer qualification
 
-Lane B and unified consumed: `9104ce733e04fb9c82420428b18dfdbf5db49535`.
-Implementation checkpoint: `833c02291d449c612e5be9b3b0c4cbe73cd8a88c`.
+Issue #586; parent B11.1 #471; consumer B05.4 #577. IPR-0220 remains
+governing. This receipt records implementation and local verification only. It
+does not authorize live training, retained-generation publication, semantic
+promotion, or self-merge.
 
-A05.5 #594 is accepted through PR #618 and is no longer a missing source-atom
-dependency. The source-backed numerical ingress now calls its accepted
-`encode_source_compiled` path before constructing a B11 numerical session. The
-caller supplies source selections and the B01 parameter tree, never hidden
-states, generation labels, prefix digests, group numbers or predecessor results.
-Validity comes from encoder handles; each compiled row is one source sequence.
-The fixed B01 topology, semantic extent digest and compiled-prefix digest are
-derived internally. These observations do not establish B13 custody.
+## Intake and source authority
 
-The existing fail-closed B05 producer path is unchanged. All results remain
-`UNADMITTED_NUMERICAL`. This is a bounded precursor, not #586 acceptance, a
-producer receipt, motif-hit permission, model admission or a learning claim.
+Lane B consumed reviewed unified `db85d745c2202d6813361ffecf7562f548d41bec`.
+The producer implementation checkpoint is `604d2ee9be9fa61ae4758399ffc74eba9291bb28`;
+the current authority-hardening checkpoint is
+`d2bb818f8852b384aa969db9c46d5165715e2b0f`.
+
+A05.5 #594 is accepted through PR #618. Reproducing its source chain yields
+source bundle `f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec`,
+Atlas bundle `5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7`,
+and semantic release `58e0c281b5da18b9b7e6c803709b29eeeb0a88f16b06f48de692808e2fb88306`.
+The conformance reproduction passes all four source gates.
+
+## Producer contract
+
+`start_source_backbone_producer` replays and revalidates the actual source rows,
+derives h0 through the accepted source encoder, and owns the subsequent fixed
+B01/B04 numerical execution. Callers provide the source selection and B01
+parameter state; they cannot provide h0/g1/g2/g3 bytes, a generation label,
+prefix digest, group number, predecessor result, cache-chain digest, or hidden
+digest as producer credentials.
+
+Every `ProducedBackboneBoundary` binds the verified source-handoff closure,
+B01 topology, staged execution-generation/extents identity, exact parameter-tree
+content digest, compiled prediction-prefix digest, execution scope/input/output
+digests, cache-chain digest, numerical execution digest, ordered predecessor
+receipt, source id, completed layer, and boundary-transform disposition. The
+internal constructor seal is only an issuance guard; B05 independently
+revalidates the receipt contents and canonical receipt digest before selector
+math.
+
+The receipt order is `h0,g1,g2,g3`. Group 1 records the declared post-layer-4,
+pre-capture motif position as `AFTER_LAYER_4_BEFORE_CAPTURE` with disposition
+`NO_HIT_QUARANTINED`. This is an honest fail-closed disposition while upstream
+B08 hit authority remains quarantined; it does not fabricate a motif hit.
+Groups 2 and 3 record `NOT_APPLICABLE`.
+
+The public `depth_select` / `depth_select_with_diagnostics` path accepts only the
+execution-owned producer receipt chain. The former naked-summary math is retained
+only under the explicit `numerical_depth_select*` helpers for bounded numerical
+verification. The older `admit_compiled_backbone_producer` stub has been removed,
+leaving one production producer authority. Historical source-bridge helpers remain
+numerical/fail-closed and cannot mint producer receipts.
+
+This issue deliberately does not claim final B13 retained-generation custody.
+`compiled.extents.digest` is the execution-observed staged generation binding at
+this bounded producer seam. Issue #586 explicitly permits this leaf to proceed
+without waiting for final B13 custody; later retained-generation publication must
+compose with this producer rather than retroactively fabricate custody here.
+
+## Adversarial proof
+
+The real-source acceptance tests prove:
+
+- literal twelve-layer execution and ordered group boundaries;
+- nonzero gradients from public B05 selection through the produced group state
+  into executed backbone parameters and source identity rows;
+- revoked source, changed source tokens and incomplete B01 state reject before
+  producer execution;
+- caller hidden/generation/prefix injection is outside the producer API;
+- g2 cannot be relabelled as g1 or substituted into the g1 selector chain;
+- two B01-compatible trees with identical extents receive distinct parameter and
+  execution identities and cannot share receipts;
+- test-only mutation of generation, prefix or cache-chain identity rejects before
+  B05 selector computation;
+- the producer constructor seal is not retained as a dataclass field and ordinary
+  `dataclasses.replace` cannot silently preserve issuance authority;
+- public B05 rejects anonymous/naked depth summaries and preserves exact source
+  order with no future-group admission.
 
 ## Verification
 
-Red: the new test module failed to import the missing source-backed API before
-implementation. Green: four real-source MLX tests passed with zero skips.
-The combined source encoder, backbone numerical and bridge selection passed
-17 tests with zero skips on the M3 Ultra in an isolated disposable checkout.
+With the pinned A01 Atlas bundle mounted, the source/producer package passes
+14/14 tests with zero skips. The current backbone/depth selection passes 21/21
+tests with zero skips. Development-structure and governance checks report zero
+violations; factory architecture and documentation checks pass; base-aware error
+control reports `new debt 0`; `git diff --check` is clean.
 
-The new tests compare all twelve executed layers against literal NumPy
-feedforward equations with nonzero weights, preserve the ordered group chain,
-differentiate through source identity and executed backbone parameters, and
-reject revoked source, changed tokens, incomplete parameters and caller hidden
-or generation injection. The resulting group still cannot obtain B05 admission.
-The new literal oracle keeps attention weights zero; it is not an independent
-nonzero-attention or multi-row/padding qualification.
+No actual student, native AdamW, teacher, checkpoint, retained source release,
+admission lease, human-run state or live training process was modified.
 
-Reproduce the pinned A01 artifact using `scripts/bamf/rebuild_atlas_artifact.py`
-and the conformance command in PR #618. Set `BILQIS_A01_ATLAS_BUNDLE` to that
-artifact and use an existing MLX environment:
+## Remaining integration gate
 
-```sh
-python3 -B -m unittest \
-  bilqis_mlx.learning.source_atoms.tests.test_backbone \
-  bilqis_mlx.learning.source_atoms.tests.test_encoding \
-  bilqis_mlx.runtime.tests.test_backbone_group_numerical \
-  bilqis_mlx.runtime.tests.test_backbone_source_bridge
-```
-
-Consumed-base structure/governance checks report zero violations. The two added
-code files have zero new smell findings. Release metadata and pre-push checks
-pass. These scoped results are not a repository-wide quality claim.
-
-## Independent review and remaining blockers
-
-A fresh reviewer used pinned EGM `b3a35956759bf7f024af2ff061b2e0b44b438e4c`.
-The two-file source review found no implementation Blocker or Major. The reviewer
-did not independently execute tests or audit the topology implementation.
-
-The review encountered the 714-line topology owner. This triggered the mandatory
-structure interruption. Existing #621 / draft PR #622 owns that exact repair;
-no competing rewrite or baseline waiver is introduced here. Further feature
-work remains paused until that repair is consumed and revalidated. #622 itself
-also awaits the runtime-directory repair in #520 / PR #614.
-
-Before #586 can turn in, it still needs execution-owned producer receipts,
-the declared motif-boundary disposition, the actual B05 selection chain and
-source/parameter/prefix/cache/gradient adversaries, followed by fresh EGM.
-The issue explicitly does not wait for final B13 acceptance; its own execution
-boundary must nevertheless bind the observed input and parameter generation.
-No durable student, optimizer, checkpoint or graph was changed.
+Issue #586 requires a fresh independent Google EGM review with zero
+Blockers/Majors before integration and before B05.4 #577 removes its public
+fail-closed hold. The current ChatGPT execution surface exposes no Google EGM
+runner, so this receipt does not claim that review. Additional non-EGM read-only
+review may improve defect discovery but cannot satisfy the pinned EGM requirement.
