@@ -23,7 +23,7 @@ return exact zeros. Canonical zero padding is checked before return.
 
 The new `atlas_cache_records` owner is imported through the public
 `atlas_cache_codec` API. Tests mirror the record owner under the current
-`runtime/tests/model/attention` directory. No trainer or attention call site uses
+`runtime/tests/model/attention/cache` directory. No trainer or attention call site uses
 these lossy records yet. Cache generation/rights/prefix validation, record header
 and effective-bit accounting, attention fidelity policy and FP32 recomputation
 belong to #484/#485 and parent #375. Complete B13 generation custody remains open.
@@ -49,7 +49,7 @@ output is byte-identical (30 diagnostics). No guard or baseline is changed.
 Run:
 
 ```sh
-python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/model/attention/test_atlas_cache_codec.py bilqis_mlx/runtime/tests/model/attention/test_atlas_cache_records.py
+python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/model/attention/cache/test_atlas_cache_codec.py bilqis_mlx/runtime/tests/model/attention/cache/test_atlas_cache_records.py
 ```
 
 All vectors are disposable CPU NumPy fixtures. No actual learner, native AdamW,

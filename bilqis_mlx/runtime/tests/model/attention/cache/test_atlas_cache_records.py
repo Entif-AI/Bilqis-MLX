@@ -25,7 +25,12 @@ from bilqis_mlx.runtime.atlas_cache_codec import (
 class Rot3NormAndFallbackTests(unittest.TestCase):
     def setUp(self):
         self.manifest = codec_manifest()
-        self.binding = CacheBinding(self.manifest)
+        self.binding = CacheBinding(
+            self.manifest, generation_sha256="1"*64, lineage_sha256="2"*64,
+            topology_sha256="3"*64, source_rights_sha256="4"*64,
+            causal_prefix_sha256="5"*64, masks_sha256="6"*64,
+            scope_sha256="7"*64, key_sha256="8"*64, offset=17,
+        )
 
     def test_direct_records_import_is_order_independent(self):
         result = subprocess.run(
@@ -39,7 +44,7 @@ class Rot3NormAndFallbackTests(unittest.TestCase):
         rng = np.random.default_rng(483)
         values = rng.normal(size=(MIN_COMPRESSED_VECTORS - 1, HEAD_WIDTH)).astype(np.float32)
         values[5] = 0.0
-        artifact = encode_cold_cache(values, self.manifest)
+        artifact = encode_cold_cache(values, self.manifest, binding=self.binding)
         self.assertEqual(artifact.mode, CACHE_MODE_FP32)
         self.assertEqual(artifact.true_vectors, MIN_COMPRESSED_VECTORS - 1)
         self.assertEqual(artifact.padded_vectors, MIN_COMPRESSED_VECTORS - 1)
@@ -56,7 +61,7 @@ class Rot3NormAndFallbackTests(unittest.TestCase):
 
     def test_full_threshold_record_uses_eight_norm_blocks(self):
         values = np.ones((MIN_COMPRESSED_VECTORS, HEAD_WIDTH), dtype=np.float32)
-        artifact = encode_cold_cache(values, self.manifest)
+        artifact = encode_cold_cache(values, self.manifest, binding=self.binding)
         self.assertEqual(artifact.mode, CACHE_MODE_ROT3)
         self.assertEqual(artifact.true_vectors, 256)
         self.assertEqual(artifact.padded_vectors, 256)
@@ -69,7 +74,7 @@ class Rot3NormAndFallbackTests(unittest.TestCase):
         values = np.zeros((MIN_COMPRESSED_VECTORS, HEAD_WIDTH), dtype=np.float32)
         norms = np.linspace(0.0, 31.0, BLOCK_VECTORS, dtype=np.float32)
         values[:BLOCK_VECTORS, 0] = norms
-        artifact = encode_cold_cache(values, self.manifest)
+        artifact = encode_cold_cache(values, self.manifest, binding=self.binding)
         expected = np.rint(norms / np.float32(31.0) * np.float32(255.0)).astype(np.uint8)
         np.testing.assert_array_equal(
             np.frombuffer(artifact.relative_norms[:BLOCK_VECTORS], dtype=np.uint8),
@@ -86,25 +91,25 @@ class Rot3NormAndFallbackTests(unittest.TestCase):
         rng = np.random.default_rng(1483)
         values = rng.normal(size=(MIN_COMPRESSED_VECTORS, HEAD_WIDTH)).astype(np.float32)
         values[[0, 31, 32, 255]] = 0.0
-        decoded = decode_cache(encode_cold_cache(values, self.manifest), self.binding)
+        decoded = decode_cache(encode_cold_cache(values, self.manifest, binding=self.binding), self.binding)
         np.testing.assert_array_equal(decoded[[0, 31, 32, 255]], 0.0)
 
     def test_tail_padding_is_canonical_and_decode_returns_true_length(self):
         rng = np.random.default_rng(2483)
-        values = rng.normal(size=(MIN_COMPRESSED_VECTORS + 1, HEAD_WIDTH)).astype(np.float32)
-        artifact = encode_cold_cache(values, self.manifest)
-        self.assertEqual((artifact.true_vectors, artifact.padded_vectors), (257, 288))
-        self.assertEqual(artifact.relative_norms[257:], bytes(31))
+        values = rng.normal(size=(MIN_COMPRESSED_VECTORS + 27, HEAD_WIDTH)).astype(np.float32)
+        artifact = encode_cold_cache(values, self.manifest, binding=self.binding)
+        self.assertEqual((artifact.true_vectors, artifact.padded_vectors), (283, 288))
+        self.assertEqual(artifact.relative_norms[283:], bytes(5))
         codes = unpack_3bit(artifact.direction_codes, artifact.padded_vectors * HEAD_WIDTH)
         codes = codes.reshape(artifact.padded_vectors, HEAD_WIDTH)
-        canonical = quantize_directions(np.zeros((31, HEAD_WIDTH), dtype=np.float32))
-        np.testing.assert_array_equal(codes[257:], canonical)
+        canonical = quantize_directions(np.zeros((5, HEAD_WIDTH), dtype=np.float32))
+        np.testing.assert_array_equal(codes[283:], canonical)
         self.assertEqual(decode_cache(artifact, self.binding).shape, values.shape)
 
         forged_norms = bytearray(artifact.relative_norms)
-        forged_norms[257] = 1
+        forged_norms[283] = 1
         forged_codes = codes.copy()
-        forged_codes[257, 0] = (int(forged_codes[257, 0]) + 1) % 8
+        forged_codes[283, 0] = (int(forged_codes[283, 0]) + 1) % 8
         for changes in (
             {"relative_norms": bytes(forged_norms)},
             {"direction_codes": pack_3bit(forged_codes.reshape(-1))},
@@ -115,7 +120,7 @@ class Rot3NormAndFallbackTests(unittest.TestCase):
 
     def test_malformed_record_payloads_fail_closed(self):
         values = np.ones((MIN_COMPRESSED_VECTORS, HEAD_WIDTH), dtype=np.float32)
-        artifact = encode_cold_cache(values, self.manifest)
+        artifact = encode_cold_cache(values, self.manifest, binding=self.binding)
         malformed = (
             artifact.__class__(**{**artifact.__dict__, "relative_norms": artifact.relative_norms[:-1]}),
             artifact.__class__(**{**artifact.__dict__, "block_max_norms_fp32": b"\xff" * len(artifact.block_max_norms_fp32)}),
@@ -128,13 +133,13 @@ class Rot3NormAndFallbackTests(unittest.TestCase):
     def test_norm_blocks_reject_noncanonical_zero_and_maximum_relatives(self):
         zero_artifact = encode_cold_cache(
             np.zeros((MIN_COMPRESSED_VECTORS, HEAD_WIDTH), dtype=np.float32),
-            self.manifest,
+            self.manifest, binding=self.binding,
         )
         forged_zero = bytearray(zero_artifact.relative_norms)
         forged_zero[0] = 1
         full_artifact = encode_cold_cache(
             np.ones((MIN_COMPRESSED_VECTORS, HEAD_WIDTH), dtype=np.float32),
-            self.manifest,
+            self.manifest, binding=self.binding,
         )
         forged_full = bytearray(full_artifact.relative_norms)
         forged_full[:BLOCK_VECTORS] = bytes([254]) * BLOCK_VECTORS
@@ -153,7 +158,7 @@ class Rot3NormAndFallbackTests(unittest.TestCase):
             with self.subTest(scale=scale), np.errstate(all="raise"):
                 values = np.zeros((256, HEAD_WIDTH), dtype=np.float32)
                 values[:, 0] = scale
-                artifact = encode_cold_cache(values, self.manifest)
+                artifact = encode_cold_cache(values, self.manifest, binding=self.binding)
                 maxima = np.frombuffer(artifact.block_max_norms_fp32, dtype="<f4")
                 np.testing.assert_array_equal(maxima, values[0, 0])
                 decoded = decode_cache(artifact, self.binding)
@@ -170,13 +175,13 @@ class Rot3NormAndFallbackTests(unittest.TestCase):
         ):
             with self.subTest(shape=values.shape), np.errstate(all="raise"):
                 with self.assertRaises(BilqisError):
-                    encode_cold_cache(values, self.manifest)
+                    encode_cold_cache(values, self.manifest, binding=self.binding)
 
     def test_large_valid_stored_norm_has_no_intermediate_decode_overflow(self):
         values = np.zeros((256, HEAD_WIDTH), dtype=np.float32)
         values[:, 0] = np.float32(1e37)
         with np.errstate(all="raise"):
-            decoded = decode_cache(encode_cold_cache(values, self.manifest), self.binding)
+            decoded = decode_cache(encode_cold_cache(values, self.manifest, binding=self.binding), self.binding)
         self.assertTrue(np.isfinite(decoded).all())
         np.testing.assert_allclose(np.linalg.norm(decoded.astype(np.float64), axis=-1),
                                    1e37, rtol=2e-6)
