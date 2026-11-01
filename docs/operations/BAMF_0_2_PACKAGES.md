@@ -60,9 +60,12 @@ bytes as `<package.digest>.json` using a flushed/fsynced temporary file, create-
 atomic link and directory fsync. Retries preserve existing identical bytes and
 mtime. Existing conflicts and symlink entries reject; publication never replaces
 an addressed file. Directories are trusted local paths, not a remote transport.
+An error after linking, including a directory-fsync failure, can leave a complete
+addressed entry even though the call raises. Retry the same package to converge;
+never interpret an exception as proof that no entry exists.
 
 `receive_package(sender, receiver, package_digest, binding, max_wire_bytes=...)`
-requires a positive explicit wire-byte limit. It verifies regular-file ownership,
+requires a positive explicit wire-byte limit. It verifies regular-file type,
 bounded raw bytes, exact address digest, canonical package encoding, embedded
 clearance assertions and the existing compatibility plan before receiver writes.
 The returned frozen `StagedExchange` holds the package, plan and receiver path.

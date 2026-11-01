@@ -120,6 +120,18 @@ class ExchangeTests(PackageAssertions, unittest.TestCase):
         path = publish_package(self.package, self.sender)
         self.assertEqual(path.read_bytes(), self.package.canonical_json.encode())
 
+    def test_directory_flush_failure_leaves_complete_retryable_publication(self):
+        with patch('bilqis_mlx.runtime.cognitive_package.exchange._sync_directory',
+                   side_effect=OSError('injected directory flush interruption')):
+            with self.assertRaisesRegex(OSError, 'injected directory flush interruption'):
+                publish_package(self.package, self.sender)
+        published = self.sender / (self.package.digest + '.json')
+        before = published.stat()
+        self.assertEqual(published.read_bytes(), self.package.canonical_json.encode())
+        self.assertEqual([p.name for p in self.sender.iterdir()], [published.name])
+        self.assertEqual(publish_package(self.package, self.sender), published)
+        self.assertEqual(published.stat().st_mtime_ns, before.st_mtime_ns)
+
     def test_failed_publication_leaves_no_partial_package_or_temporary_file(self):
         with patch('bilqis_mlx.runtime.cognitive_package.exchange.os.link',
                    side_effect=OSError('injected publish interruption')):
