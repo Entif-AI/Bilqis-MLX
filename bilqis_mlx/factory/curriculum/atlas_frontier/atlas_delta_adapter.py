@@ -8,7 +8,9 @@ proposal.  Persisted staging and admission remain with their existing owners.
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
+import hashlib
 
+from bilqis_mlx.errors import BilqisError
 from .autonomy import AutonomyPlan, EvidenceLedger
 from .candidate_frontier import CandidateFrontierRelease
 from .candidate_staging import StagedCandidate
@@ -20,10 +22,15 @@ from .atlas_frontier_progress import plan_frontier_progress
 from .atlas_frontier_progress_contracts import (
     FrontierProgress, FrontierStatus, StagedSelectionReceipt,
 )
-from .atlas_frontier_selection import FrontierDeltaSelection, select_frontier_delta
+from .atlas_frontier_selection import (
+    FrontierDeltaSelection, ranked_frontier_target,
+    select_frontier_delta_for_projection, validate_frontier_selection,
+)
 from .atlas_frontier_selection_validation import TargetDeltaProjection
-from .atlas_frontier_progress_validation import validate_projection_authority
 from . import candidate_realizations
+
+
+_SHA256_HEX_LENGTH = hashlib.sha256().digest_size * 2
 
 
 @dataclass(frozen=True)
@@ -77,7 +84,7 @@ class AtlasLearnerEvidence:
     def __post_init__(self) -> None:
         if (type(self.ledger) is not EvidenceLedger
                 or type(self.checkpoint_sha256) is not str
-                or len(self.checkpoint_sha256) != 64
+                or len(self.checkpoint_sha256) != _SHA256_HEX_LENGTH
                 or any(char not in "0123456789abcdef" for char in self.checkpoint_sha256)
                 or type(self.optimizer_step) is not int or self.optimizer_step < 0):
             _fail("BAMF_PLANNER_ADAPTER_EVIDENCE_INVALID")
@@ -87,17 +94,6 @@ def _ready_rows(closure: FrontierClosure, semantic_id: str):
     rows = tuple(sorted(
         item for item in closure.candidates if item.semantic_id == semantic_id))
     return rows if rows and all(item.status is ClosureStatus.READY for item in rows) else ()
-
-
-def _authoritative_projections(epoch: AtlasCoverageEpoch) -> tuple[TargetDeltaProjection, ...]:
-    projections = []
-    for semantic_id in epoch.closure.constituent_order:
-        rows = _ready_rows(epoch.closure, semantic_id)
-        if not rows:
-            continue
-        projections.append(candidate_realizations.project_authoritative_target(
-            semantic_id, epoch.current_release, rows))
-    return tuple(projections)
 
 
 def _staged_for_projection(
@@ -131,7 +127,9 @@ def staged_selection_receipt(
     """Build the existing A09.4/C07 handoff receipt for one persisted stage."""
     epoch.verify()
     staged.verify(epoch.candidate_frontier, epoch.current_release)
-    validate_projection_authority(selection, epoch.current_release, projection)
+    validate_frontier_selection(
+        epoch.snapshot, epoch.closure, selection,
+        epoch.current_release, projection)
     provisional = StagedSelectionReceipt(
         selection, epoch.snapshot, projection, epoch.current_release,
         staged.successor, "0" * 64)
@@ -161,17 +159,23 @@ def next_atlas_delta(
             coverage_epoch.snapshot, coverage_epoch.closure,
             prior=coverage_epoch.prior).status
 
-    projections = _authoritative_projections(coverage_epoch)
-    if not projections:
-        return plan_frontier_progress(
-            coverage_epoch.snapshot, coverage_epoch.closure,
-            prior=coverage_epoch.prior).status
-
-    selection = select_frontier_delta(
+    try:
+        semantic_id, rows = ranked_frontier_target(
+            coverage_epoch.snapshot, coverage_epoch.closure)
+    except BilqisError as error:
+        if error.context.get("reason") == "BAMF_PLANNER_NO_BOUNDED_READY_DELTA":
+            return plan_frontier_progress(
+                coverage_epoch.snapshot, coverage_epoch.closure,
+                prior=coverage_epoch.prior).status
+        raise
+    try:
+        projection = candidate_realizations.project_authoritative_target(
+            semantic_id, coverage_epoch.current_release, rows)
+    except ValueError:
+        return FrontierStatus.IMPLEMENTATION_UNCOVERED
+    selection = select_frontier_delta_for_projection(
         coverage_epoch.snapshot, coverage_epoch.closure,
-        coverage_epoch.current_release, projections)
-    projection = next(
-        item for item in projections if item.semantic_id == selection.selected_semantic_id)
+        coverage_epoch.current_release, projection)
     progress = plan_frontier_progress(
         coverage_epoch.snapshot, coverage_epoch.closure, selection,
         current_release=coverage_epoch.current_release,

@@ -5,6 +5,7 @@ from unittest.mock import patch
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory.atlas_frontier import (
     AtlasCoverageEpoch, AtlasLearnerEvidence, next_atlas_delta,
+    staged_selection_receipt,
 )
 from bilqis_mlx.factory.atlas_frontier_progress import FrontierStatus, plan_frontier_progress
 from bilqis_mlx.factory.atlas_frontier_selection import select_frontier_delta
@@ -74,6 +75,61 @@ class AtlasDeltaAdapterTests(unittest.TestCase):
         self.assertEqual(
             proposal.selected_successor_sha256, self.staged.successor.release_sha256)
         self.assertEqual(proposal.current_release_sha256, self.current.release_sha256)
+
+    def test_lower_ranked_unrealized_semantic_does_not_starve_realized_winner(self):
+        calls = []
+
+        def winner_only(semantic_id, current):
+            calls.append(semantic_id)
+            if semantic_id != "z.op.0":
+                raise ValueError
+            return self._authority(semantic_id, current)
+
+        with patch(
+            "bilqis_mlx.factory.candidate_realizations.project_realized_target",
+            side_effect=winner_only,
+        ), patch(
+            "bilqis_mlx.factory.atlas_frontier_progress_validation.project_realized_target",
+            side_effect=self._authority,
+        ), patch(
+            "bilqis_mlx.factory.candidate_realizations.realized_source_sense_id",
+            return_value=self.staged.source_sense_id,
+        ):
+            proposal = next_atlas_delta(self._epoch(), self.learner, self.plan)
+        self.assertIsInstance(proposal, CurriculumDeltaProposal)
+        self.assertEqual(calls, ["z.op.0"])
+
+    def test_missing_winner_realization_returns_typed_implementation_debt(self):
+        with patch(
+            "bilqis_mlx.factory.candidate_realizations.project_realized_target",
+            side_effect=ValueError,
+        ):
+            result = next_atlas_delta(self._epoch(), self.learner, self.plan)
+        self.assertIs(result, FrontierStatus.IMPLEMENTATION_UNCOVERED)
+
+    def test_staged_receipt_rejects_self_consistent_wrong_comparator_metrics(self):
+        with patch(
+            "bilqis_mlx.factory.candidate_realizations.project_realized_target",
+            side_effect=self._authority,
+        ), patch(
+            "bilqis_mlx.factory.atlas_frontier_progress_validation.project_realized_target",
+            side_effect=self._authority,
+        ):
+            rows = tuple(
+                row for row in self.closure.candidates if row.semantic_id == "z.op.0")
+            projection = project_authoritative_target("z.op.0", self.current, rows)
+            selection = select_frontier_delta(
+                self.snapshot, self.closure, self.current, tuple(
+                    project_authoritative_target(
+                        identity, self.current, tuple(
+                            row for row in self.closure.candidates
+                            if row.semantic_id == identity))
+                    for identity in self.closure.constituent_order))
+            forged = replace(selection, prerequisite_slope=999, selection_sha256="0" * 64)
+            forged = replace(forged, selection_sha256=forged.expected_digest())
+            with self.assertRaises(BilqisError) as caught:
+                staged_selection_receipt(self._epoch(), forged, projection, self.staged)
+        self.assertEqual(caught.exception.context["reason"], "BAMF_PLANNER_SELECTION_INVALID")
 
     def test_unpersisted_staged_successor_is_rejected_before_jit(self):
         snapshot = rehash(self.snapshot, staged_factory_release_sha256s=())
