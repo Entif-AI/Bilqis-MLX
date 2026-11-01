@@ -87,6 +87,14 @@ def _group_parameter_digest(parameters: Mapping[str, mx.array], names: tuple[str
                           _content_digest(parameters[name])) for name in names])
 
 
+def _owned_parameter_tree_digest(parameters, spec, extents) -> str:
+    """Use full-model identity when present; preserve B04's local numerical slice."""
+    expected = tuple(item.name for item in expected_bamf_shapes(spec, extents))
+    if set(parameters) == set(expected):
+        return bamf_parameter_tree_digest(parameters, spec=spec, extents=extents)
+    return _group_parameter_digest(parameters, tuple(sorted(parameters)))
+
+
 def _cache_chain_digest(caches: tuple[AttentionCache, ...]) -> str:
     return _hash_record([dict(cache.to_record(), key=_content_digest(cache.key),
                               value=_content_digest(cache.value)) for cache in caches])
@@ -112,7 +120,7 @@ def run_backbone_group_numerical(
     start, end, required = validated_group_parameters(
         hidden, parameters, group_index, spec, extents, scope_ids, valid, sequence_starts)
     parameter_digest = _group_parameter_digest(parameters, tuple(sorted(required)))
-    full_digest = bamf_parameter_tree_digest(parameters, spec=spec, extents=extents)
+    full_digest = _owned_parameter_tree_digest(parameters, spec, extents)
     scope_digest = _hash_record({"scope": _content_digest(scope_ids),
                                  "valid": _content_digest(valid),
                                  "starts": None if sequence_starts is None else _content_digest(sequence_starts),
@@ -176,8 +184,8 @@ class UnadmittedBackboneSession:
         self._prefix_digest = prefix_digest
         self._sequence_starts = sequence_starts
         self._results = ()
-        self._tree_digest = bamf_parameter_tree_digest(
-            self._parameters, spec=self._spec, extents=self._extents)
+        self._tree_digest = _owned_parameter_tree_digest(
+            self._parameters, self._spec, self._extents)
 
     @property
     def results(self):
@@ -191,8 +199,8 @@ class UnadmittedBackboneSession:
     def advance(self):
         if len(self._results) >= self._spec.depth_groups:
             _invalid()
-        if bamf_parameter_tree_digest(
-                self._parameters, spec=self._spec, extents=self._extents) != self._tree_digest:
+        if _owned_parameter_tree_digest(
+                self._parameters, self._spec, self._extents) != self._tree_digest:
             _invalid()
         group_index = len(self._results) + 1
         result = run_backbone_group_numerical(

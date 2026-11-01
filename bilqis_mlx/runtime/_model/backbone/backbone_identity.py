@@ -43,3 +43,14 @@ def bamf_parameter_tree_digest(
     ]
     return hashlib.sha256(json.dumps(
         record, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def execution_generation_digest(
+    parameters: Mapping[str, mx.array], *, spec: ModelTopologySpecV2,
+    extents: GenerationExtents,
+) -> str:
+    """Content identity of the current executable model, not retained custody."""
+    tree = bamf_parameter_tree_digest(parameters, spec=spec, extents=extents)
+    return hashlib.sha256(json.dumps((
+        "bilqis.mlx.execution-generation/v1", spec.digest, tree,
+    ), separators=(",", ":")).encode()).hexdigest()

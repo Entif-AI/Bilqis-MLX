@@ -16,7 +16,9 @@ from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.learning.frame_embeddings import FeatureRequest, compose_factor_features
 from bilqis_mlx.learning.atlas_plasticity import AdapterParameters, adapter_forward
 from bilqis_mlx.semantics.atlas_features import AtlasFeatures
-from bilqis_mlx.runtime.backbone_identity import bamf_parameter_tree_digest
+from bilqis_mlx.runtime.backbone_identity import (
+    bamf_parameter_tree_digest, execution_generation_digest,
+)
 from .model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes,
     validate_bamf_parameters,
@@ -107,7 +109,8 @@ class DepthParameterView(Mapping[str, mx.array]):
 
     @property
     def generation_digest(self) -> str:
-        return self._extents.digest
+        return execution_generation_digest(
+            self._full_parameters, spec=ModelTopologySpecV2(), extents=self._extents)
 
 
 def depth_parameter_view(

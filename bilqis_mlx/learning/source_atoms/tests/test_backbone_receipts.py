@@ -89,8 +89,12 @@ class SourceBackboneReceiptTests(SourceBackboneTestBase):
         changed = dict(self.parameters)
         changed["identity.bank.0"] = changed["identity.bank.0"].at[0, 0].add(.125)
         first, second = self.producer(), self.producer(changed)
-        self.assertNotEqual(first.advance().parameter_tree_digest,
-                            second.advance().parameter_tree_digest)
+        first_group, second_group = first.advance(), second.advance()
+        self.assertNotEqual(first_group.parameter_tree_digest,
+                            second_group.parameter_tree_digest)
+        features, foreign_view = self.depth_inputs(changed)
+        with self.assertRaises(BilqisError):
+            depth_select(first_group.hidden, first.receipts, features, foreign_view)
 
         context = self.motif_context()
         frontier = context.frontiers[0]

@@ -10,6 +10,7 @@ from ..atlas_engram_reads import read_motif
 from ...runtime.backbone_group_numerical import (
     UnadmittedBackboneSession, _content_digest,
 )
+from ...runtime.backbone_identity import execution_generation_digest
 from ...runtime.block_attnres import SOURCE_ORDER
 from ...runtime.model_topology_v2 import ModelTopologySpecV2
 from ...semantics.domains import contract_digest
@@ -27,7 +28,8 @@ class _SourceBackboneProducerSession:
     def __init__(self, encoded, handoffs, parameters, compiled, group1_motif):
         self._source_digest = contract_digest(tuple(item.digest for item in handoffs))
         self._topology = ModelTopologySpecV2()
-        self._generation = compiled.extents.digest
+        self._generation = execution_generation_digest(
+            parameters, spec=self._topology, extents=compiled.extents)
         self._prefix = contract_digest(compiled.compiled)
         if type(group1_motif) is not Group1MotifContext:
             _invalid_producer_receipt()
