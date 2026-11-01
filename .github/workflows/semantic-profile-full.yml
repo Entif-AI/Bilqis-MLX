@@ -11,7 +11,7 @@ on:
     paths:
       - 'lib/ithkuil/**'
       - 'skills/ithkuil-ingestion/**'
-      - 'scripts/package_ithkuil_skill.py'
+      - 'scripts/skills/package_ithkuil_skill.py'
       - 'scripts/skos_test_policy.py'
       - 'scripts/run_tests.py'
       - '.github/workflows/quality.yml'

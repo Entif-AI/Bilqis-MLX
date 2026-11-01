@@ -157,7 +157,7 @@ def classify_changes(root: Path, changed_paths: tuple[str, ...]) -> TestPlan:
         return TestPlan("FULL", reason="CANONICAL_CORPUS_CHANGED")
     if any(
         path.startswith("skills/ithkuil-ingestion/")
-        or path == "scripts/package_ithkuil_skill.py"
+        or path == "scripts/skills/package_ithkuil_skill.py"
         or path in {
             "lib/ithkuil/ingestion_contract.json",
             "lib/ithkuil/requirements-extraction.txt",

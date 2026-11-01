@@ -19,7 +19,7 @@ BUNDLE_PATHS = (
     Path("lib/ithkuil/requirements-extraction.txt"),
     Path("lib/ithkuil/requirements-falkor.txt"),
     Path("lib/ithkuil/requirements-semantic.txt"),
-    Path("scripts/package_ithkuil_skill.py"),
+    Path("scripts/skills/package_ithkuil_skill.py"),
     Path("skills/ithkuil-ingestion"),
 )
 
@@ -132,7 +132,7 @@ def is_bundle_path(path: str) -> bool:
     return (
         path.startswith("lib/ithkuil/")
         or path.startswith("skills/ithkuil-ingestion/")
-        or path == "scripts/package_ithkuil_skill.py"
+        or path == "scripts/skills/package_ithkuil_skill.py"
     )
 
 
