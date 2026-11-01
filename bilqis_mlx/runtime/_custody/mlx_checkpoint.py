@@ -293,6 +293,8 @@ def load_bamf_state_payload(destination: Path, binding: dict, spec, extents):
             or type(spec) is not ModelTopologySpecV2 or type(extents) is not GenerationExtents
             or binding.get("filename") != Path(destination).name):
         ErrorBus.raise_legacy(SCHOOL.CHECKPOINT_CUSTODY.TENSOR_BINDING_INVALID)
+    if Path(destination).is_symlink() or not Path(destination).is_file():
+        ErrorBus.raise_legacy(SCHOOL.CHECKPOINT_CUSTODY.TENSOR_BINDING_INVALID)
     if not verify_file_digest(destination, binding.get("sha256")):
         ErrorBus.raise_legacy(SCHOOL.CHECKPOINT_CUSTODY.TENSOR_FILE_CORRUPTED)
     arrays = mx.load(str(destination))

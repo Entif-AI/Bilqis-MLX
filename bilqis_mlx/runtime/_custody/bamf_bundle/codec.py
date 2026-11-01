@@ -89,6 +89,7 @@ def _read_sidecar(root: Path, binding: dict):
 def load_bamf_bundle(root: Path, *, expected_manifest_sha256: str | None = None) -> CompleteStudent:
     """Validate manifest and all sidecars before constructing B12 optimizer state."""
     from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, STATE_SCHEMA
+    from bilqis_mlx.runtime.checkpoint_outbox import ordinary_outbox_lineage
     from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, GenerationProvenance, ModelTopologySpecV2
     root = Path(root)
     manifest_path = root / "manifest.json"
@@ -114,6 +115,9 @@ def load_bamf_bundle(root: Path, *, expected_manifest_sha256: str | None = None)
     provenance = GenerationProvenance.from_record(manifest["provenance"])
     records = {name: _read_sidecar(root, manifest["sidecars"][name]) for name in SIDECARS}
     motif, policy = validate_sidecars(extents, provenance, records)
+    lineage = {"run_id": manifest["run_id"], "generation": manifest["generation"]}
+    if not records["outbox"] or not ordinary_outbox_lineage(lineage, list(records["outbox"])):
+        invalid("BAMF_OUTBOX_LINEAGE_INVALID")
     hp_record = dict(manifest["optimizer"]["hyperparameters"])
     hp_record["betas"] = tuple(hp_record.get("betas", ()))
     hp = AdamWHyperparameters(**hp_record)

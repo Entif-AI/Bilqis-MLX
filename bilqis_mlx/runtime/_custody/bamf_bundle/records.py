@@ -70,12 +70,9 @@ class BamfGenerationManifest:
     schema: str = BAMF_BUNDLE_SCHEMA
 
     def __post_init__(self) -> None:
-        valid_parent = (self.parent_manifest_sha256 is None if self.generation == 0
-                        else _hex(self.parent_manifest_sha256))
-        if (not isinstance(self.run_id, str) or not self.run_id
-                or type(self.generation) is not int or self.generation < 0
-                or not valid_parent or not _hex(self.implementation_sha256)
-                or self.schema != BAMF_BUNDLE_SCHEMA
+        validate_generation_identity(self.run_id, self.generation,
+                                     self.parent_manifest_sha256, self.implementation_sha256)
+        if (self.schema != BAMF_BUNDLE_SCHEMA
                 or any(not isinstance(value, Mapping) for value in (
                     self.topology, self.extents, self.provenance, self.tensors,
                     self.optimizer, self.transition, self.sidecars))):
@@ -126,6 +123,14 @@ def invalid(code=DataPlaneError.BUNDLE_MANIFEST_INVALID):
     ErrorBus.Raise(SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID, reason=reason)
 
 
+def validate_generation_identity(run_id, generation, parent, implementation):
+    if (not isinstance(run_id, str) or not run_id
+            or type(generation) is not int or generation < 0
+            or not _hex(implementation)
+            or (parent is not None if generation == 0 else not _hex(parent))):
+        invalid()
+
+
 def validate_transition(generation: int, transition: Mapping) -> None:
     if (set(transition) != {"schema", "kind", "invalidate_derived_caches"}
             or transition.get("schema") != TRANSITION_SCHEMA
@@ -171,12 +176,14 @@ def sidecar_records(candidate: BamfBundleCandidate) -> dict:
             or type(candidate.provenance) is not GenerationProvenance
             or not _hex(candidate.implementation_sha256)):
         invalid()
+    validate_generation_identity(candidate.run_id, candidate.generation,
+                                 candidate.parent_manifest_sha256, candidate.implementation_sha256)
     candidate.retained_state.__post_init__()
     validate_transition(candidate.generation, candidate.transition)
     lineage = {"run_id": candidate.run_id, "generation": candidate.generation}
     if type(candidate) is CompleteStudent:
         outbox = list(candidate.outbox)
-        if not ordinary_outbox_lineage(lineage, outbox):
+        if not outbox or not ordinary_outbox_lineage(lineage, outbox):
             invalid("BAMF_OUTBOX_LINEAGE_INVALID")
     else:
         outbox = with_delivery_outbox(lineage, candidate.outbox)["delivery_outbox"]
