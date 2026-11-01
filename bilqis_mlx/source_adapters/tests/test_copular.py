@@ -9,7 +9,7 @@ from bilqis_mlx.semantics.copular import (
     SYMBOL, SEMANTIC_ID, ReferentWorld, bind_operation, identify, evaluate,
 )
 from bilqis_mlx.source_adapters.copular import (
-    draw, encode, decode, check, verify_source, registered_adapter,
+    draw, encode, decode, check, verify_source, registered_adapter, semantic_footprint,
 )
 from bilqis_mlx.verification.copular import independent_answer
 from bilqis_mlx.vocabulary_growth import digest
@@ -119,6 +119,15 @@ class CopularTests(unittest.TestCase):
         self.assertEqual(witness["scope"], "finite-reference-identity")
         self.assertEqual(registered_adapter().descriptor.variation_axes,
             ("reference-identity", "denotation", "universe-size", "fact-order", "fresh-seed"))
+
+    def test_source_owns_instructional_semantic_footprint(self):
+        row = draw(None, self.graph, seed=17, each=1)[0]
+        self.assertEqual(semantic_footprint(row),
+                         ("micro.compare.EQ", "development.op.MAPS"))
+        changed = copy.deepcopy(row)
+        changed["record"]["query"]["operator"] = "unrelated.operator"
+        with self.assertRaises(ValueError):
+            semantic_footprint(changed)
 
     def test_unselected_source_integrity_is_checked_at_its_draw_boundary(self):
         from unittest.mock import patch
