@@ -176,8 +176,14 @@ def _successor(
 def _source_changes(snapshot: CurriculumSnapshot, event: SourceReleaseEvent) -> dict:
     source = event.successor_source
     source.verify()
-    old_coverage = {(row.semantic_id, row.family_id) for row in snapshot.coverage_rows}
-    new_coverage = {(row.semantic_id, row.family_id) for row in source.coverage_rows}
+    old_rows = {
+        (row.semantic_id, row.family_id): row for row in snapshot.coverage_rows
+    }
+    new_rows = {
+        (row.semantic_id, row.family_id): row for row in source.coverage_rows
+    }
+    old_coverage = set(old_rows)
+    new_coverage = set(new_rows)
     if (event.source_provenance_sha256 != source.source_coverage_sha256
             or not set(snapshot.source_eligible_concept_ids)
             <= set(source.source_eligible_concept_ids)
@@ -186,6 +192,21 @@ def _source_changes(snapshot: CurriculumSnapshot, event: SourceReleaseEvent) -> 
             or not old_coverage <= new_coverage
             or source.rights_epoch < snapshot.rights_epoch):
         _fail("BAMF_PLANNER_SOURCE_EVENT_INVALID")
+    for key, prior in old_rows.items():
+        successor = new_rows[key]
+        if (
+            successor.implementation_status != prior.implementation_status
+            or successor.reason != prior.reason
+            or successor.learning_state != prior.learning_state
+        ):
+            _fail("BAMF_PLANNER_SOURCE_EVENT_IMPLEMENTATION_AUTHORITY_VIOLATION")
+    for key in new_coverage - old_coverage:
+        successor = new_rows[key]
+        if (
+            successor.implementation_status != "IMPLEMENTATION_UNCOVERED"
+            or successor.learning_state != "LEARNING_UNVERIFIED"
+        ):
+            _fail("BAMF_PLANNER_SOURCE_EVENT_IMPLEMENTATION_AUTHORITY_VIOLATION")
     names = (
         "semantic_release", "atlas_bundle_id", "source_bundle_id",
         "source_coverage_sha256", "frozen_census_sha256",
