@@ -11511,6 +11511,55 @@
       "path": "bilqis_mlx/semantics/foundation/numeric.py"
     },
     {
+      "code_hint": "LESSON_SOURCE_IDENTIFICATION_OBSERVATIONS_MISSING",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'LESSON_SOURCE_IDENTIFICATION_OBSERVATIONS_MISSING'",
+      "path": "bilqis_mlx/semantics/source_structure.py"
+    },
+    {
+      "code_hint": "LESSON_SOURCE_IDENTIFICATION_OPERANDS_MISSING",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'LESSON_SOURCE_IDENTIFICATION_OPERANDS_MISSING'",
+      "path": "bilqis_mlx/semantics/source_structure.py"
+    },
+    {
+      "code_hint": "LESSON_SOURCE_IDENTIFICATION_STRUCTURE_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'LESSON_SOURCE_IDENTIFICATION_STRUCTURE_INVALID'",
+      "path": "bilqis_mlx/semantics/source_structure.py"
+    },
+    {
+      "code_hint": "LESSON_SOURCE_NO_SEMANTIC_OPERATOR",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'LESSON_SOURCE_NO_SEMANTIC_OPERATOR'",
+      "path": "bilqis_mlx/semantics/source_structure.py"
+    },
+    {
+      "code_hint": "LESSON_SOURCE_OPERATOR_SHAPE_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'LESSON_SOURCE_OPERATOR_SHAPE_INVALID'",
+      "path": "bilqis_mlx/semantics/source_structure.py"
+    },
+    {
+      "code_hint": "LESSON_SOURCE_STRUCTURE_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'LESSON_SOURCE_STRUCTURE_INVALID'",
+      "path": "bilqis_mlx/semantics/source_structure.py"
+    },
+    {
+      "code_hint": "LESSON_SOURCE_STRUCTURE_UNSUPPORTED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'LESSON_SOURCE_STRUCTURE_UNSUPPORTED'",
+      "path": "bilqis_mlx/semantics/source_structure.py"
+    },
+    {
       "code_hint": "Historical source token identity drift",
       "count": 1,
       "exception": "AssertionError",
@@ -12006,55 +12055,6 @@
       "exception": "ValueError",
       "expression": "'FACTORY_UNKNOWN_BOOLEAN_TEACHING_OPTION'",
       "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "LESSON_SOURCE_IDENTIFICATION_OBSERVATIONS_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'LESSON_SOURCE_IDENTIFICATION_OBSERVATIONS_MISSING'",
-      "path": "bilqis_mlx/source_adapters/structure.py"
-    },
-    {
-      "code_hint": "LESSON_SOURCE_IDENTIFICATION_OPERANDS_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'LESSON_SOURCE_IDENTIFICATION_OPERANDS_MISSING'",
-      "path": "bilqis_mlx/source_adapters/structure.py"
-    },
-    {
-      "code_hint": "LESSON_SOURCE_IDENTIFICATION_STRUCTURE_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'LESSON_SOURCE_IDENTIFICATION_STRUCTURE_INVALID'",
-      "path": "bilqis_mlx/source_adapters/structure.py"
-    },
-    {
-      "code_hint": "LESSON_SOURCE_NO_SEMANTIC_OPERATOR",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'LESSON_SOURCE_NO_SEMANTIC_OPERATOR'",
-      "path": "bilqis_mlx/source_adapters/structure.py"
-    },
-    {
-      "code_hint": "LESSON_SOURCE_OPERATOR_SHAPE_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'LESSON_SOURCE_OPERATOR_SHAPE_INVALID'",
-      "path": "bilqis_mlx/source_adapters/structure.py"
-    },
-    {
-      "code_hint": "LESSON_SOURCE_STRUCTURE_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'LESSON_SOURCE_STRUCTURE_INVALID'",
-      "path": "bilqis_mlx/source_adapters/structure.py"
-    },
-    {
-      "code_hint": "LESSON_SOURCE_STRUCTURE_UNSUPPORTED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'LESSON_SOURCE_STRUCTURE_UNSUPPORTED'",
-      "path": "bilqis_mlx/source_adapters/structure.py"
     },
     {
       "code_hint": "lacks U7C pattern",
