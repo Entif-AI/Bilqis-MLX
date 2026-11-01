@@ -69,3 +69,14 @@ advanced unified to `bd62f3cb`. The next step is to consume that reviewed unifie
 state and revalidate before publishing the structural follow-up PR. The integrated
 171-child registry still has eight explicit holds and no executable order. Neither
 this refactor nor its software proof establishes full C01 acceptance.
+
+## Integration readback
+
+Lane C fast-forwarded to `bd62f3cb6c296151aba7b9ed5fa90ee814492494` and
+remote readback reported up to date. The active C01 branch consumed that same
+unified commit without conflicts as merge `11b2b736723d791216c6f54964fae5e5967724b8`.
+The post-merge combined compiler/source-binding/control-plane selection passed
+108/108 with no skips. Changed-from-`bd62f3cb` structure, hygiene (34 Python files,
+zero findings), architecture, governance, docs and error-control checks all passed.
+No baseline or threshold changed. PR682 is already human-merged; this structural
+continuation returns through a separate draft PR against unified.
