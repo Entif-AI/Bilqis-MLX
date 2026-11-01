@@ -1,6 +1,7 @@
 """Causal bounded prediction and explicit source-validation fallback."""
 from dataclasses import dataclass
 from enum import Enum
+from weakref import WeakValueDictionary, finalize
 import mlx.core as mx
 from bilqis_mlx.errors import BilqisError
 from ..control import ControlAction
@@ -15,6 +16,27 @@ from .inputs import validate_decoder_inputs
 from .execution import validate_execution
 from .math import prepare_memory, decision_state
 from .heads import decision_logits
+
+
+_ISSUED_OUTPUTS = WeakValueDictionary()
+_ISSUED_RECORDS = {}
+
+
+def issued_output(output):
+    """Require the exact live decoder result, not a copied numerical receipt."""
+    return (_ISSUED_OUTPUTS.get(id(output)) is output
+            and len(output.decisions) == len(_ISSUED_RECORDS.get(id(output), ()))
+            and all(record is issued and record.logits is logits
+                    for record, (issued, logits) in zip(
+                        output.decisions, _ISSUED_RECORDS.get(id(output), ()))))
+
+
+def _issue_output(output):
+    key = id(output)
+    _ISSUED_OUTPUTS[key] = output
+    _ISSUED_RECORDS[key] = tuple((record, record.logits) for record in output.decisions)
+    finalize(output, _ISSUED_RECORDS.pop, key, None)
+    return output
 
 
 class ExecutionMode(str,Enum):
@@ -129,15 +151,15 @@ def predict_typed(memory,eligible_context,answer_plan,active_semantics,readout_p
     while state.status is DecodeStatus.ACTIVE:
         batch,outputs=_ready_outputs(memory,state,active_semantics,readout_params,prepared,targets)
         if not outputs:
-            return ModelOutput(answer_plan,tuple(records),state.committed,DecodeStatus.UNRESOLVED,
+            return _issue_output(ModelOutput(answer_plan,tuple(records),state.committed,DecodeStatus.UNRESOLVED,
                 ExecutionMode.TEACHER_FORCED if teacher_targets is not None else ExecutionMode.INFERENCE,
-                None,True)
+                None,True))
         try:
             state=commit_decisions(state,outputs)
         except BilqisError:
-            return ModelOutput(answer_plan,tuple(records),state.committed,DecodeStatus.UNRESOLVED,
+            return _issue_output(ModelOutput(answer_plan,tuple(records),state.committed,DecodeStatus.UNRESOLVED,
                 ExecutionMode.TEACHER_FORCED if teacher_targets is not None else ExecutionMode.INFERENCE,
-                None,True)
+                None,True))
         committed_ids={o.decision_id for o in outputs}
         records.extend(record for record in batch if record.decision_id in committed_ids)
     status,frame=state.status,None
@@ -146,6 +168,6 @@ def predict_typed(memory,eligible_context,answer_plan,active_semantics,readout_p
             frame=publish_frame(state)
         except BilqisError:
             status=DecodeStatus.UNRESOLVED
-    return ModelOutput(answer_plan,tuple(records),state.committed,status,
+    return _issue_output(ModelOutput(answer_plan,tuple(records),state.committed,status,
         ExecutionMode.TEACHER_FORCED if teacher_targets is not None else ExecutionMode.INFERENCE,
-        frame,status is not DecodeStatus.COMPLETE)
+        frame,status is not DecodeStatus.COMPLETE))

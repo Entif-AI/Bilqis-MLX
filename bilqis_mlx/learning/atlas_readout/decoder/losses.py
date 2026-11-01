@@ -6,7 +6,7 @@ from ..plan import DecisionKind
 from ..records import invalid, TypedHeadLogits
 from ..control import ControlAction
 from ..causal_training import typed_decision_loss
-from .prediction import ModelOutput, _targets
+from .prediction import ModelOutput, _targets, issued_output
 
 
 AUXILIARY_WEIGHT=.10
@@ -21,7 +21,7 @@ class LossParts:
 
 
 def answer_loss(output,targets,mask):
-    if type(output) is not ModelOutput or not isinstance(mask,Mapping):
+    if type(output) is not ModelOutput or not issued_output(output) or not isinstance(mask,Mapping):
         invalid()
     output.__post_init__()
     labels=_targets(targets,output.plan)

@@ -14,32 +14,43 @@ class TypedLossTests(unittest.TestCase):
     def test_primary_kind_means_and_absent_auxiliary_zero(self):
         fixture=case()
         plan=fixture[2]
-        executed=predict_typed(*fixture)
+        output=predict_typed(*fixture)
         spec=plan.decisions[1]
-        record=DecisionLogits('value',DecisionKind.VALUE,spec.legal_values,
-                              mx.array([1.,2.],dtype=mx.float32))
-        output=replace(executed,decisions=(executed.decisions[0],record,executed.decisions[2]),
-                       execution_mode=ExecutionMode.TEACHER_FORCED)
-        actual=answer_loss(output,(DecisionOutput('value',spec.legal_values[0]),),{'value':True})
-        self.assertAlmostEqual(float(actual.primary),float(np.log1p(np.exp(1))),places=6)
+        target=DecisionOutput('value',spec.legal_values[0])
+        actual=answer_loss(output,(target,),{'value':True})
+        logits=np.asarray(next(d.logits for d in output.decisions if d.decision_id=='value'))
+        expected=float(np.log(np.exp(logits-logits.max()).sum())+logits.max()-logits[0])
+        self.assertAlmostEqual(float(actual.primary),expected,places=6)
         self.assertEqual(float(actual.role),0)
         self.assertEqual(float(actual.epistemic),0)
         self.assertEqual(float(actual.total),float(actual.primary))
         self.assertEqual(float(answer_loss(output,(),{'value':True}).total),0)
-        self.assertEqual(float(answer_loss(output,(DecisionOutput('value',spec.legal_values[0]),),
-                                           {'value':False}).total),0)
+        self.assertEqual(float(answer_loss(output,(target,),{'value':False}).total),0)
 
     def test_masked_label_keeps_exact_zero_gradient(self):
-        fixture=case()
-        plan=fixture[2]
-        executed=predict_typed(*fixture)
+        memory,context,plan,semantics,params=case()
         values=plan.decisions[1].legal_values
-        def objective(logits):
-            output=replace(executed,decisions=(executed.decisions[0],
-                DecisionLogits('value',DecisionKind.VALUE,values,logits),executed.decisions[2]),
-                execution_mode=ExecutionMode.TEACHER_FORCED)
+        def objective(query):
+            changed={**params,'readout.query':query}
+            output=predict_typed(memory,context,plan,semantics,changed)
             return answer_loss(output,(DecisionOutput('value',values[0]),),{'value':False}).total
-        np.testing.assert_array_equal(np.asarray(mx.grad(objective)(mx.array([1.,2.]))),[0,0])
+        np.testing.assert_array_equal(np.asarray(mx.grad(objective)(params['readout.query'])),0)
+
+    def test_replaced_or_caller_minted_logits_cannot_enter_supervision(self):
+        output=predict_typed(*case())
+        record=output.decisions[1]
+        substituted=replace(output,decisions=(output.decisions[0],
+            DecisionLogits(record.decision_id,record.kind,record.candidates,
+                           mx.array([1.,2.],dtype=mx.float32)),*output.decisions[2:]))
+        target=(DecisionOutput(record.decision_id,record.candidates[0]),)
+        with self.assertRaises(BilqisError):
+            answer_loss(substituted,target,{record.decision_id:True})
+        with self.assertRaises(BilqisError):
+            answer_loss(replace(output),target,{record.decision_id:True})
+        self.assertTrue(bool(mx.isfinite(answer_loss(output,target,{record.decision_id:True}).total)))
+        object.__setattr__(output, 'decisions', substituted.decisions)
+        with self.assertRaises(BilqisError):
+            answer_loss(output,target,{record.decision_id:True})
 
     def test_unknown_label_id_or_nonboolean_mask_rejects(self):
         _, _, plan, _, _=case()
