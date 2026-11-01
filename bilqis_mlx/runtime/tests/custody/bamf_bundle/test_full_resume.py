@@ -26,10 +26,11 @@ class FullResumeTests(unittest.TestCase):
             root = Path(root)
             with patch.dict(os.environ, {"BILQIS_DATA_PLANE": str(root / "plane.sqlite3")}):
                 candidate = full_candidate()
+                expected = json.loads(json.dumps(observe_student(candidate), sort_keys=True))
                 manifest = save_bamf_bundle(candidate, root / "bundle")
-                expected = observe_student(candidate, manifest["manifest_sha256"])
-                self.assertEqual(observe_bundle(root / "bundle", manifest["manifest_sha256"]), expected)
                 before = {p.name: digest_file(p) for p in (root / "bundle").iterdir()}
+                self.assertEqual(observe_bundle(root / "bundle", manifest["manifest_sha256"]), expected)
+                self.assertEqual({p.name: digest_file(p) for p in (root / "bundle").iterdir()}, before)
                 result = subprocess.run(
                     [sys.executable, "-B", "-m",
                      "bilqis_mlx.runtime.tests.custody.bamf_bundle.full_resume_probe",

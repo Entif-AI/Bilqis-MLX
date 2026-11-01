@@ -51,3 +51,42 @@ production-model dispatch remain NOT_MEASURED. CPU-to-CPU clean-process parity
 cannot qualify cross-backend continuation. Independent EGM is pending. An earlier review of the separate superseded #478
 recovery failed with workspace-credit exhaustion; a new review is requested for
 this bounded #479 proof.
+
+## Review repair and exact commands
+
+At initial code head add320423a68014cd9a623f2ae80a876b00335bf, EGM and author
+review found late baselines and omitted HP/full teacher/provenance observations.
+PM-2026-11-01-005 was filed and read back before repair. Mutation controls failed
+red for a saver changing nested expected state and a first reader changing or
+adding files. The repaired harness deep-detaches its original-state observation
+before save and snapshots files before either explicit read. It records optimizer
+hyperparameters, full teacher/provenance, evaluation identity and outbox payloads;
+the upstream owner separately authenticates derived outbox event IDs.
+
+The final full-suite command is:
+
+```sh
+BILQIS_BAMF_FULL_WITNESS=1 python3 -B -c 'import mlx.core as mx; mx.set_default_device(mx.cpu); import runpy,sys; sys.argv=["scripts/run_tests.py","bilqis_mlx/runtime/tests/custody/bamf_bundle"]; runpy.run_path("scripts/run_tests.py",run_name="__main__")'
+```
+
+The bounded negative controls run with:
+
+```sh
+python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/custody/bamf_bundle/test_full_resume_controls.py
+```
+
+Exact local gate commands use consumed unified70e37ae2:
+
+```sh
+python3 -B scripts/check_module_size.py --changed-from 70e37ae27214061dcc1712503eae6741a2e3781e
+python3 -B scripts/quality/check_governance_integrity.py --base-ref 70e37ae27214061dcc1712503eae6741a2e3781e
+python3 -B scripts/check_factory_architecture.py
+python3 -B scripts/quality/check_docs.py
+python3 -B scripts/error_control_plane.py --check --base-ref 70e37ae27214061dcc1712503eae6741a2e3781e
+python3 -B scripts/code_smell_audit.py --changed-from 70e37ae27214061dcc1712503eae6741a2e3781e --check-baseline docs/evidence/development/code_smell_baseline.json
+python3 -B scripts/check_historical_abi.py
+```
+
+Before this review repair,21 full bundle tests and all named local gates passed.
+The repaired controls pass2/2. The final full-suite totals and independent
+re-review disposition are recorded below once obtained.

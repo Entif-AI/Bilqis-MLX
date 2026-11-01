@@ -2,7 +2,7 @@
 import hashlib
 import json
 import sys
-from dataclasses import replace
+from dataclasses import asdict, replace
 from pathlib import Path
 
 import mlx.core as mx
@@ -56,10 +56,10 @@ def _tree_digest(tree):
 def observe_bundle(root, manifest_digest):
     """Read every state byte and execute the same unadmitted numerical backbone."""
     student = load_bamf_bundle(root, expected_manifest_sha256=manifest_digest)
-    return observe_student(student, manifest_digest)
+    return observe_student(student)
 
 
-def observe_student(student, generation):
+def observe_student(student):
     """Fingerprint the original candidate as well as detached cold-loaded state."""
     state = student.retained_state.optimizer
     mx.eval(state.parameters, state.m, state.v, state.update_counts)
@@ -70,12 +70,22 @@ def observe_student(student, generation):
             spec=student.topology, extents=student.extents,
             scope_ids=mx.zeros((1, 2), dtype=mx.int32),
             valid=mx.ones((1, 2), dtype=mx.bool_),
-            generation=generation, prefix_digest="f" * 64,
+            generation=student.topology.digest, prefix_digest="f" * 64,
         )
         hidden = result.hidden
     mx.eval(hidden)
-    return {
+    observation = {
         "status": STATUS,
+        "run_id": student.run_id,
+        "generation": student.generation,
+        "parent_manifest_sha256": student.parent_manifest_sha256,
+        "implementation_sha256": student.implementation_sha256,
+        "optimizer_hyperparameters": asdict(student.optimizer_hyperparameters),
+        "teacher_state": dict(student.teacher_state),
+        "provenance": student.provenance.to_record(),
+        "evaluation_contract": dict(student.evaluation_contract),
+        "outbox_payloads": [{k: v for k, v in event.items() if k != "event_id"}
+                            for event in student.outbox],
         "parameters_sha256": _tree_digest(state.parameters),
         "first_moments_sha256": _tree_digest(state.m),
         "second_moments_sha256": _tree_digest(state.v),
@@ -96,6 +106,8 @@ def observe_student(student, generation):
         "compiler_features": dict(student.compiler_features),
         "correction_frontier": dict(student.correction_frontier),
     }
+
+    return json.loads(json.dumps(observation, sort_keys=True))
 
 
 if __name__ == "__main__":
