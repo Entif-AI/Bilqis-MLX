@@ -7,6 +7,7 @@ from bilqis_mlx.factory.atlas_frontier_closure import ClosureReason, ClosureStat
 from bilqis_mlx.factory.atlas_frontier_contracts import PrerequisiteEdge
 from bilqis_mlx.factory.atlas_frontier_events import SourceReleaseEvent, reconcile
 from bilqis_mlx.factory.atlas_frontier_progress import FrontierStatus, plan_frontier_progress
+from bilqis_mlx.factory.atlas_frontier_selection import select_frontier_delta
 from bilqis_mlx.factory.skos_curriculum import IMPLEMENTATION_UNCOVERED
 from bilqis_mlx.factory.tests.curriculum.frontier.atlas_frontier_closure_fixtures import rehash
 from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier_progress import (
@@ -17,11 +18,14 @@ from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier_progress i
     _staged_ready,
 )
 from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier_progress_dispositions import (
-    _single_ready,
+    _admit, _single_ready,
 )
 from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier_selection import (
-    _candidate,
+    _candidate, _options,
     _closure,
+)
+from bilqis_mlx.factory.tests.curriculum.frontier.test_candidate_staging import (
+    CandidateStagingFixture,
 )
 
 
@@ -53,7 +57,7 @@ class AtlasFrontierProgressRegressionTests(ProjectionAuthorityFixture, unittest.
         )
         forged = replace(forged, selection_sha256=forged.expected_digest())
         forged_receipt = _stage(
-            forged, receipt.projection, release, receipt.staged_successor)
+            forged, receipt.projection, release, receipt.staged_successor, snapshot)
 
         with self.assertRaises(BilqisError):
             plan_frontier_progress(
@@ -61,6 +65,57 @@ class AtlasFrontierProgressRegressionTests(ProjectionAuthorityFixture, unittest.
                 current_release=release,
                 selected_projection=receipt.projection,
                 staged_receipt=forged_receipt)
+
+    def test_historical_receipt_cannot_supply_its_own_comparator_snapshot(self):
+        fixture = CandidateStagingFixture()
+        fixture.setUp()
+        staged = fixture.stage()
+        release = fixture.current
+        _, snapshot, closure, selection, receipt = _staged_ready()
+        prior = plan_frontier_progress(
+            snapshot, closure, selection,
+            current_release=release,
+            selected_projection=receipt.projection,
+            staged_receipt=receipt,
+        )
+        advanced = _admit(prior, snapshot, closure, receipt)
+
+        forged_snapshot = rehash(snapshot, cursor=1)
+        forged_closure = _closure(forged_snapshot, tuple(
+            _candidate(forged_snapshot, identity)
+            for identity in forged_snapshot.source_eligible_concept_ids))
+        capabilities = {
+            identity: staged.successor.transition.added_capabilities
+            for identity in forged_snapshot.source_eligible_concept_ids
+        }
+        identities = {identity: () for identity in forged_snapshot.source_eligible_concept_ids}
+        projections = _options(
+            forged_snapshot, release, forged_closure,
+            capabilities=capabilities, identities=identities)
+        forged_selection = select_frontier_delta(
+            forged_snapshot, forged_closure, release, projections)
+        forged_projection = next(
+            item for item in projections
+            if item.semantic_id == forged_selection.selected_semantic_id)
+        forged_receipt = _stage(
+            forged_selection, forged_projection, release, staged.successor,
+            forged_snapshot)
+        forged_prior = replace(
+            advanced,
+            staged_receipts=(forged_receipt,),
+            progress_sha256="0" * 64,
+        )
+        forged_prior = replace(
+            forged_prior, progress_sha256=forged_prior.expected_digest())
+
+        with self.assertRaises(BilqisError):
+            plan_frontier_progress(
+                advanced.planning_snapshot,
+                _closure(advanced.planning_snapshot, tuple(
+                    _candidate(advanced.planning_snapshot, identity)
+                    for identity in advanced.planning_snapshot.source_eligible_concept_ids)),
+                prior=forged_prior,
+            )
 
     def test_admission_reconciliation_reports_only_direct_implementation_debt(self):
         release, staged_snapshot, _, selection, receipt = _staged_ready()

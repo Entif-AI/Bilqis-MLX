@@ -156,15 +156,15 @@ def _validation_context(
     snapshot: CurriculumSnapshot,
     closure: FrontierClosure,
     receipt: StagedSelectionReceipt,
-    planner_predecessor: CurriculumSnapshot | None = None,
+    planner_predecessor: CurriculumSnapshot,
 ) -> tuple[CurriculumSnapshot, FrontierClosure]:
-    comparator = planner_predecessor or receipt.selection
-    if planner_predecessor is not None:
-        if (receipt.selection.snapshot_sha256
-                != planner_predecessor.snapshot_sha256
-                or receipt.predecessor_release.release_sha256
-                != planner_predecessor.admitted_factory_release_sha256):
-            _fail("BAMF_PLANNER_SELECTION_INVALID")
+    comparator = planner_predecessor
+    if (receipt.selection_snapshot != planner_predecessor
+            or receipt.selection.snapshot_sha256
+               != planner_predecessor.snapshot_sha256
+            or receipt.predecessor_release.release_sha256
+               != planner_predecessor.admitted_factory_release_sha256):
+        _fail("BAMF_PLANNER_SELECTION_INVALID")
     bound_snapshot = replace(
         snapshot,
         admitted_factory_release_sha256=receipt.predecessor_release.release_sha256,
@@ -187,7 +187,7 @@ def _revalidate_receipt_selection(
     snapshot: CurriculumSnapshot,
     closure: FrontierClosure,
     receipt: StagedSelectionReceipt,
-    planner_predecessor: CurriculumSnapshot | None = None,
+    planner_predecessor: CurriculumSnapshot,
 ) -> bool:
     bound_snapshot, bound_closure = _validation_context(
         snapshot, closure, receipt, planner_predecessor)
@@ -243,17 +243,18 @@ def credited_receipts(
     receipts: tuple[StagedSelectionReceipt, ...] | list[StagedSelectionReceipt],
     current: dict[str, str],
     *,
-    planner_predecessor: CurriculumSnapshot | None = None,
+    snapshot_history: tuple[CurriculumSnapshot, ...],
     pending_receipt_sha256: str | None = None,
 ) -> list[StagedSelectionReceipt]:
+    del pending_receipt_sha256
+    by_snapshot = {item.snapshot_sha256: item for item in snapshot_history}
     credited = []
     for receipt in receipts:
         if not _receipt_obligation_current(receipt, current):
             continue
-        comparator = (
-            planner_predecessor
-            if receipt.receipt_sha256 == pending_receipt_sha256 else None
-        )
+        comparator = by_snapshot.get(receipt.selection.snapshot_sha256)
+        if comparator is None:
+            continue
         if _revalidate_receipt_selection(
                 snapshot, closure, receipt, comparator):
             credited.append(receipt)

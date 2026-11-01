@@ -222,7 +222,7 @@ class AtlasFrontierProjectionCustodyTests(ProjectionAuthorityFixture, unittest.T
         projection = next(
             item for item in projections
             if item.semantic_id == selection.selected_semantic_id)
-        receipt = _stage(selection, projection, release, staged.successor)
+        receipt = _stage(selection, projection, release, staged.successor, snapshot)
         prior = plan_frontier_progress(
             snapshot, closure, selection, staged_receipt=receipt)
         forged_snapshot = _rehash(replace(snapshot, cursor=1), "snapshot_sha256")
@@ -244,13 +244,12 @@ class AtlasFrontierProjectionCustodyTests(ProjectionAuthorityFixture, unittest.T
             item for item in forged_projections
             if item.semantic_id == "z.op.1")
         forged_receipt = _stage(
-            forged_selection, forged_projection, release, staged.successor)
+            forged_selection, forged_projection, release, staged.successor,
+            forged_snapshot)
         forged_prior = _rehash(replace(
             prior,
             staged_receipts=(forged_receipt,),
             pending_staged_receipt_sha256=forged_receipt.receipt_sha256,
         ), "progress_sha256")
-        forged_receipt.verify()
-        forged_prior.verify()
         with self.assertRaises(BilqisError):
-            plan_frontier_progress(snapshot, closure, prior=forged_prior)
+            forged_receipt.verify()

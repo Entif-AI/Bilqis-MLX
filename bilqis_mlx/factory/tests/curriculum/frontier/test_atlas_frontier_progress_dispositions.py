@@ -59,7 +59,7 @@ def _single_ready():
     projection = next(
         item for item in projections
         if item.semantic_id == selection.selected_semantic_id)
-    receipt = _stage(selection, projection, release, staged.successor)
+    receipt = _stage(selection, projection, release, staged.successor, snapshot)
     return snapshot, closure, selection, receipt
 
 
@@ -80,7 +80,7 @@ class AtlasFrontierProgressDispositionTests(ProjectionAuthorityFixture, unittest
             item for item in projections
             if item.semantic_id == mismatched.selected_semantic_id)
         forged = _stage(
-            mismatched, projection, fixture.current, staged.successor)
+            mismatched, projection, fixture.current, staged.successor, snapshot)
         with self.assertRaises(BilqisError):
             plan_frontier_progress(
                 snapshot, closure, mismatched,

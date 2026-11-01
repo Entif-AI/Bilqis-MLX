@@ -40,6 +40,7 @@ class StagedSelectionReceipt:
     """Proof that one exact A09.3 selection became one verified staged successor."""
 
     selection: FrontierDeltaSelection
+    selection_snapshot: CurriculumSnapshot
     projection: TargetDeltaProjection
     predecessor_release: ExecutableFactoryRelease
     staged_successor: ExecutableFactoryRelease
@@ -62,6 +63,7 @@ class StagedSelectionReceipt:
 
     def verify(self) -> None:
         self.selection.verify()
+        self.selection_snapshot.verify()
         self.predecessor_release.verify()
         validate_target_projection(
             self.predecessor_release,
@@ -73,6 +75,12 @@ class StagedSelectionReceipt:
         previous = self.predecessor_release.semantic_catalog
         current = self.staged_successor.semantic_catalog
         if (self.schema != "bilqis.factory-staged-selection-receipt/v1"
+                or self.selection.snapshot_sha256
+                   != self.selection_snapshot.snapshot_sha256
+                or self.selection.policy_epoch != self.selection_snapshot.policy_epoch
+                or self.selection.cursor != self.selection_snapshot.cursor
+                or self.selection_snapshot.admitted_factory_release_sha256
+                   != self.predecessor_release.release_sha256
                 or self.projection.semantic_id != self.selection.selected_semantic_id
                 or self.projection.added_capability_ids
                    != self.selection.introduced_capability_ids
@@ -96,6 +104,7 @@ class StagedSelectionReceipt:
 class FrontierProgress:
     input_snapshot_sha256: str
     planning_snapshot: CurriculumSnapshot
+    snapshot_history: tuple[CurriculumSnapshot, ...]
     status: FrontierStatus
     proposal_selection_sha256: str | None
     staged_receipts: tuple[StagedSelectionReceipt, ...]
@@ -149,7 +158,23 @@ class FrontierProgress:
 
     def verify(self) -> None:
         self.planning_snapshot.verify()
+        for snapshot in self.snapshot_history:
+            snapshot.verify()
         if (self.schema != "bilqis.factory-atlas-frontier-progress/v1"
+                or not self.snapshot_history
+                or self.snapshot_history[-1] != self.planning_snapshot
+                or len({item.snapshot_sha256 for item in self.snapshot_history})
+                   != len(self.snapshot_history)
+                or any(
+                    current.predecessor_sha256 != previous.snapshot_sha256
+                    for previous, current in zip(
+                        self.snapshot_history, self.snapshot_history[1:]))
+                or self.input_snapshot_sha256 not in {
+                    item.snapshot_sha256 for item in self.snapshot_history}
+                or any(
+                    receipt.selection_snapshot.snapshot_sha256 not in {
+                        item.snapshot_sha256 for item in self.snapshot_history}
+                    for receipt in self.staged_receipts)
                 or not self.input_snapshot_sha256
                 or (self.planning_snapshot.snapshot_sha256
                     != self.input_snapshot_sha256

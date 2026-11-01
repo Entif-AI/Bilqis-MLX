@@ -1,28 +1,36 @@
 """Code-owned source realizations that can supply ordinary factory successors."""
-from types import MappingProxyType
 
 from ..source_adapters import copular_curriculum as ithkuil_identity
 
 
-# Entries carry source meaning, not grade scheduling authority. Frontier and
-# factory checks still govern scope; JIT still governs learner readiness.
-REALIZATIONS = MappingProxyType({ithkuil_identity.SENSE_ID: ithkuil_identity})
+def _realizations(_copular=ithkuil_identity):
+    """Return trusted import-bound realizations, never a caller-rebindable registry."""
+    return ((_copular.SENSE_ID, _copular),)
 
 
-def project_realized_target(semantic_id, current):
+def _realization(semantic_id):
+    matches = tuple(provider for key, provider in _realizations() if key == semantic_id)
+    if len(matches) != 1:
+        raise ValueError
+    return matches[0]
+
+
+def project_realized_target(
+        semantic_id, current, *,
+        _semantic_id=ithkuil_identity.SENSE_ID,
+        _capability=ithkuil_identity.CAPABILITY,
+        _projected_catalog=ithkuil_identity.projected_catalog):
     """Return the code-owned executable capability and catalog append for a target."""
-    realization = REALIZATIONS.get(semantic_id)
-    if realization is None:
+    if semantic_id != _semantic_id:
         raise ValueError
     current.verify()
-    capability = realization.CAPABILITY
-    if capability in current.execution_plan.capability_map:
+    if _capability in current.execution_plan.capability_map:
         raise ValueError
-    projected = realization.projected_catalog(current.semantic_catalog)
+    projected = _projected_catalog(current.semantic_catalog)
     if (projected[:len(current.semantic_catalog)] != current.semantic_catalog
             or len(projected) <= len(current.semantic_catalog)):
         raise ValueError
-    return (capability,), projected[len(current.semantic_catalog):]
+    return (_capability,), projected[len(current.semantic_catalog):]
 
 
 def prepare_realized_candidates(frontier, current, parent_graph, *,
@@ -31,7 +39,7 @@ def prepare_realized_candidates(frontier, current, parent_graph, *,
     available = {c.target_sense_id: c for c in frontier.candidates
                  if c.proposed_capability_id and
                  c.proposed_capability_id not in current.curriculum.capability_map}
-    for sense_id, realization in REALIZATIONS.items():
+    for sense_id, realization in _realizations():
         if sense_id not in available:
             continue
         graph = realization.expanded_graph(parent_graph)
@@ -44,9 +52,10 @@ def prepare_realized_candidates(frontier, current, parent_graph, *,
 
 
 def admitted_candidate_graph(staged, parent_graph):
-    realization = REALIZATIONS.get(staged.source_sense_id)
-    if realization is None:
-        raise ValueError("JIT_CANDIDATE_NATIVE_CATALOG_REQUIRED")
+    try:
+        realization = _realization(staged.source_sense_id)
+    except ValueError as exc:
+        raise ValueError("JIT_CANDIDATE_NATIVE_CATALOG_REQUIRED") from exc
     graph = realization.expanded_graph(parent_graph)
     staged.successor.verify_semantic_catalog(graph)
     return graph

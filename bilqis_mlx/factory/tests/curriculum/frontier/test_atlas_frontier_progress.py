@@ -43,9 +43,9 @@ def _selected_projection(
         if item.semantic_id == selection.selected_semantic_id)
 
 
-def _stage(selection, projection, predecessor, successor):
+def _stage(selection, projection, predecessor, successor, selection_snapshot):
     provisional = StagedSelectionReceipt(
-        selection, projection, predecessor, successor, "0" * 64)
+        selection, selection_snapshot, projection, predecessor, successor, "0" * 64)
     return replace(provisional, receipt_sha256=provisional.expected_digest())
 
 
@@ -70,7 +70,7 @@ def _staged_ready():
     projection = next(
         item for item in projections
         if item.semantic_id == selection.selected_semantic_id)
-    receipt = _stage(selection, projection, release, staged.successor)
+    receipt = _stage(selection, projection, release, staged.successor, snapshot)
     return release, snapshot, closure, selection, receipt
 
 

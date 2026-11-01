@@ -81,7 +81,7 @@ def _prior_credit(snapshot, closure, prior, current):
     pending_sha = prior.pending_staged_receipt_sha256 if prior else None
     credited = credited_receipts(
         snapshot, closure, receipts, current,
-        planner_predecessor=(prior.planning_snapshot if prior else None),
+        snapshot_history=(prior.snapshot_history if prior else (snapshot,)),
         pending_receipt_sha256=pending_sha,
     )
     pending_receipt = prior.pending_receipt if prior else None
@@ -120,10 +120,15 @@ def _progress_result(
     receipts: tuple[StagedSelectionReceipt, ...] | list[StagedSelectionReceipt],
     pending_receipt_sha: str | None,
     direct_uncovered: int,
+    prior: FrontierProgress | None = None,
 ) -> FrontierProgress:
     counts = _counts(closure)
+    history = list(prior.snapshot_history if prior else ())
+    for item in (input_snapshot, planning_snapshot):
+        if not history or history[-1].snapshot_sha256 != item.snapshot_sha256:
+            history.append(item)
     provisional = FrontierProgress(
-        input_snapshot.snapshot_sha256, planning_snapshot, status, proposal,
+        input_snapshot.snapshot_sha256, planning_snapshot, tuple(history), status, proposal,
         tuple(sorted(receipts, key=lambda item: item.receipt_sha256)),
         pending_receipt_sha, len(closure.source_holds), direct_uncovered,
         counts[ClosureStatus.WAITING_FOR_EVIDENCE], counts[ClosureStatus.READY],
@@ -154,7 +159,7 @@ def _reconcile_admission(
             len(closure.source_holds), direct_uncovered)
     return _progress_result(
         snapshot, planning_snapshot, closure, status, None, receipts, None,
-        direct_uncovered)
+        direct_uncovered, prior)
 
 
 def plan_frontier_progress(
@@ -227,4 +232,4 @@ def plan_frontier_progress(
                 snapshot, counts, tuple(credited), current, held, direct_uncovered)
     return _progress_result(
         snapshot, planning_snapshot, closure, status, proposal, receipts,
-        pending_receipt_sha, direct_uncovered)
+        pending_receipt_sha, direct_uncovered, prior)
