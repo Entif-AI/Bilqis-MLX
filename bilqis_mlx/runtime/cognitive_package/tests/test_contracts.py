@@ -1,7 +1,7 @@
 """Public export must hold every uncleared or revoked payload."""
 from dataclasses import replace
 import unittest
-from .fixtures import PackageAssertions, snapshot, digest
+from bilqis_mlx.runtime.cognitive_package.tests.fixtures import PackageAssertions, snapshot, digest
 from bilqis_mlx.runtime.cognitive_package import export_capability, stage_import
 
 
