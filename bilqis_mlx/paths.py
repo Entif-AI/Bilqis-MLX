@@ -25,3 +25,13 @@ def storage_root() -> Path:
 
 def active_run_dir() -> Path:
     return storage_root() / "school-mlx-v1"
+
+
+def source_path(relative: str) -> Path:
+    """Resolve canonical module bytes while retaining receipt source keys."""
+    if relative.endswith(".py"):
+        from importlib.util import find_spec
+        spec = find_spec("bilqis_mlx." + relative[:-3].replace("/", "."))
+        if spec is not None and spec.origin is not None:
+            return Path(spec.origin)
+    return REPO_ROOT / "bilqis_mlx" / relative
