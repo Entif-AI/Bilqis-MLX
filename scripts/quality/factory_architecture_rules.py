@@ -186,5 +186,3 @@ def _compatibility_writer_calls(tree: ast.AST, path: Path, src: Path) -> tuple[s
                 problems.append(f"{path.relative_to(src.parent)}:{node.lineno} "
                                 f"COMPATIBILITY_CALLS_CURRENT_WRITER:{name}")
     return tuple(problems)
-
-
