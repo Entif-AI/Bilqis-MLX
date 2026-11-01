@@ -1,5 +1,5 @@
 {
-  "legacy_raw_file_count": 185,
+  "legacy_raw_file_count": 186,
   "legacy_raw_raise_count": 1939,
   "legacy_raw_raise_groups": [
     {
@@ -2866,66 +2866,10 @@
       "path": "bilqis_mlx/factory/autonomy.py"
     },
     {
-      "code_hint": "_DIGEST_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CANDIDATE_FRONTIER_' + label + '_DIGEST_INVALID'",
-      "path": "bilqis_mlx/factory/candidate_frontier.py"
-    },
-    {
-      "code_hint": "_STALE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CANDIDATE_FRONTIER_' + label + '_STALE'",
-      "path": "bilqis_mlx/factory/candidate_frontier.py"
-    },
-    {
-      "code_hint": "CANDIDATE_FRONTIER_ARTIFACT_UNREADABLE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CANDIDATE_FRONTIER_ARTIFACT_UNREADABLE:' + path.name",
-      "path": "bilqis_mlx/factory/candidate_frontier.py"
-    },
-    {
-      "code_hint": "CANDIDATE_FRONTIER_BUILDER_STALE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CANDIDATE_FRONTIER_BUILDER_STALE'",
-      "path": "bilqis_mlx/factory/candidate_frontier.py"
-    },
-    {
       "code_hint": "CANDIDATE_FRONTIER_CANDIDATE_INVALID",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CANDIDATE_FRONTIER_CANDIDATE_INVALID'",
-      "path": "bilqis_mlx/factory/candidate_frontier.py"
-    },
-    {
-      "code_hint": "CANDIDATE_FRONTIER_CANDIDATE_SOURCE_MISMATCH",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CANDIDATE_FRONTIER_CANDIDATE_SOURCE_MISMATCH'",
-      "path": "bilqis_mlx/factory/candidate_frontier.py"
-    },
-    {
-      "code_hint": "CANDIDATE_FRONTIER_EVIDENCE_REFERENCE_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CANDIDATE_FRONTIER_EVIDENCE_REFERENCE_INVALID'",
-      "path": "bilqis_mlx/factory/candidate_frontier.py"
-    },
-    {
-      "code_hint": "_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CANDIDATE_FRONTIER_MANIFEST_' + label + '_INVALID'",
-      "path": "bilqis_mlx/factory/candidate_frontier.py"
-    },
-    {
-      "code_hint": "CANDIDATE_FRONTIER_MANIFEST_UNREADABLE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CANDIDATE_FRONTIER_MANIFEST_UNREADABLE'",
       "path": "bilqis_mlx/factory/candidate_frontier.py"
     },
     {
@@ -2985,25 +2929,81 @@
       "path": "bilqis_mlx/factory/candidate_frontier.py"
     },
     {
+      "code_hint": "JIT_CANDIDATE_NATIVE_CATALOG_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'JIT_CANDIDATE_NATIVE_CATALOG_REQUIRED'",
+      "path": "bilqis_mlx/factory/candidate_realizations.py"
+    },
+    {
+      "code_hint": "_DIGEST_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'CANDIDATE_FRONTIER_' + label + '_DIGEST_INVALID'",
+      "path": "bilqis_mlx/factory/curriculum/candidate_frontier_io.py"
+    },
+    {
+      "code_hint": "_STALE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'CANDIDATE_FRONTIER_' + label + '_STALE'",
+      "path": "bilqis_mlx/factory/curriculum/candidate_frontier_io.py"
+    },
+    {
+      "code_hint": "CANDIDATE_FRONTIER_ARTIFACT_UNREADABLE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'CANDIDATE_FRONTIER_ARTIFACT_UNREADABLE:' + path.name",
+      "path": "bilqis_mlx/factory/curriculum/candidate_frontier_io.py"
+    },
+    {
+      "code_hint": "CANDIDATE_FRONTIER_BUILDER_STALE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'CANDIDATE_FRONTIER_BUILDER_STALE'",
+      "path": "bilqis_mlx/factory/curriculum/candidate_frontier_io.py"
+    },
+    {
+      "code_hint": "CANDIDATE_FRONTIER_CANDIDATE_SOURCE_MISMATCH",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'CANDIDATE_FRONTIER_CANDIDATE_SOURCE_MISMATCH'",
+      "path": "bilqis_mlx/factory/curriculum/candidate_frontier_io.py"
+    },
+    {
+      "code_hint": "CANDIDATE_FRONTIER_EVIDENCE_REFERENCE_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'CANDIDATE_FRONTIER_EVIDENCE_REFERENCE_INVALID'",
+      "path": "bilqis_mlx/factory/curriculum/candidate_frontier_io.py"
+    },
+    {
+      "code_hint": "_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'CANDIDATE_FRONTIER_MANIFEST_' + label + '_INVALID'",
+      "path": "bilqis_mlx/factory/curriculum/candidate_frontier_io.py"
+    },
+    {
+      "code_hint": "CANDIDATE_FRONTIER_MANIFEST_UNREADABLE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'CANDIDATE_FRONTIER_MANIFEST_UNREADABLE'",
+      "path": "bilqis_mlx/factory/curriculum/candidate_frontier_io.py"
+    },
+    {
       "code_hint": "CANDIDATE_FRONTIER_SENSE_INVENTORY_MISMATCH",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CANDIDATE_FRONTIER_SENSE_INVENTORY_MISMATCH'",
-      "path": "bilqis_mlx/factory/candidate_frontier.py"
+      "path": "bilqis_mlx/factory/curriculum/candidate_frontier_io.py"
     },
     {
       "code_hint": "CANDIDATE_FRONTIER_SENSE_SOURCE_MISMATCH",
       "count": 1,
       "exception": "ValueError",
       "expression": "'CANDIDATE_FRONTIER_SENSE_SOURCE_MISMATCH'",
-      "path": "bilqis_mlx/factory/candidate_frontier.py"
-    },
-    {
-      "code_hint": "JIT_CANDIDATE_NATIVE_CATALOG_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'JIT_CANDIDATE_NATIVE_CATALOG_REQUIRED'",
-      "path": "bilqis_mlx/factory/candidate_realizations.py"
+      "path": "bilqis_mlx/factory/curriculum/candidate_frontier_io.py"
     },
     {
       "code_hint": "CANDIDATE_STAGING_INPUT_INVALID",
