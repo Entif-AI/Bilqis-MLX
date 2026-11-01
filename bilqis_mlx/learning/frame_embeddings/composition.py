@@ -52,13 +52,17 @@ def _validate_composer(parameters, requests, features, extents):
                                   any(type(item) is not FeatureRequest for item in row) for row in requests)):
         _invalid()
 
-def _released_factor_terms(parameters, row):
+def _released_categorical_factors(parameters, row):
     overflow_types = dict(row.type_overflow)
     types = [_factor_vector(parameters["features.type"], index, overflow_types.get(type_id))
              for type_id, index in zip(row.type_ids, row.type_rows)]
     type_mean = mx.mean(mx.stack(types), axis=0) if types else parameters["features.type"][FEATURE_NONE_ROW]
     role = _factor_vector(parameters["features.role"], row.role_row, row.role_overflow)
     schema = _factor_vector(parameters["features.schema"], row.schema_row, row.schema_overflow)
+    return type_mean, role, schema
+
+def _released_factor_terms(parameters, row):
+    type_mean, role, schema = _released_categorical_factors(parameters, row)
     gates = mx.sigmoid(parameters["features.gates"])
     return (gates[FactorGate.TYPE] * (type_mean @ parameters["features.project_type"].T),
             gates[FactorGate.ROLE] * (role @ parameters["features.project_role"].T),
