@@ -32,9 +32,19 @@ def _ready(*, staged_sha=None):
     return release, snapshot, closure, selection
 
 
-def _stage(selection, predecessor, successor):
+def _selected_projection(
+    release, snapshot, closure, selection, *, capabilities=None, identities=None,
+):
+    projections = _options(
+        snapshot, release, closure, capabilities=capabilities, identities=identities)
+    return next(
+        item for item in projections
+        if item.semantic_id == selection.selected_semantic_id)
+
+
+def _stage(selection, projection, predecessor, successor):
     provisional = StagedSelectionReceipt(
-        selection, predecessor, successor, "0" * 64)
+        selection, projection, predecessor, successor, "0" * 64)
     return replace(provisional, receipt_sha256=provisional.expected_digest())
 
 
@@ -53,19 +63,26 @@ def _staged_ready():
         "z.op.1": ("Z.N1",), "z.op.2": ("Z.N2",),
     }
     identities = {"z.op.0": (), "z.op.1": (), "z.op.2": ()}
-    selection = select_frontier_delta(
-        snapshot, closure, release,
-        _options(snapshot, release, closure,
-                 capabilities=capabilities, identities=identities))
-    receipt = _stage(selection, release, staged.successor)
+    projections = _options(
+        snapshot, release, closure, capabilities=capabilities, identities=identities)
+    selection = select_frontier_delta(snapshot, closure, release, projections)
+    projection = next(
+        item for item in projections
+        if item.semantic_id == selection.selected_semantic_id)
+    receipt = _stage(selection, projection, release, staged.successor)
     return release, snapshot, closure, selection, receipt
 
 
 class AtlasFrontierProgressTests(unittest.TestCase):
     def test_identical_ready_inputs_emit_byte_identical_proposal(self):
-        _, snapshot, closure, selection = _ready()
-        first = plan_frontier_progress(snapshot, closure, selection)
-        second = plan_frontier_progress(snapshot, closure, selection)
+        release, snapshot, closure, selection = _ready()
+        projection = _selected_projection(release, snapshot, closure, selection)
+        first = plan_frontier_progress(
+            snapshot, closure, selection,
+            current_release=release, selected_projection=projection)
+        second = plan_frontier_progress(
+            snapshot, closure, selection,
+            current_release=release, selected_projection=projection)
         self.assertEqual(first, second)
         self.assertEqual(first.status, FrontierStatus.PROPOSAL)
         self.assertEqual(first.cursor, snapshot.cursor)
@@ -89,7 +106,7 @@ class AtlasFrontierProgressTests(unittest.TestCase):
         release, staged_snapshot, closure, selection, receipt = _staged_ready()
         prior = plan_frontier_progress(
             staged_snapshot, closure, selection, staged_receipt=receipt)
-        resumed = plan_frontier_progress(staged_snapshot, closure, selection, prior=prior)
+        resumed = plan_frontier_progress(staged_snapshot, closure, prior=prior)
         self.assertEqual(resumed.status, FrontierStatus.LEASE_REQUIRED)
         self.assertEqual(resumed.requested_semantic_ids, prior.requested_semantic_ids)
         self.assertEqual(resumed.cursor, prior.cursor)
@@ -97,7 +114,9 @@ class AtlasFrontierProgressTests(unittest.TestCase):
     def test_reconciled_admission_advances_authoritative_snapshot_cursor_once(self):
         release, staged_snapshot, closure, selection, receipt = _staged_ready()
         prior = plan_frontier_progress(
-            staged_snapshot, closure, selection, staged_receipt=receipt)
+            staged_snapshot, closure, selection,
+            current_release=release, selected_projection=receipt.projection,
+            staged_receipt=receipt)
         admitted = rehash(
             staged_snapshot,
             admitted_factory_release_sha256=receipt.staged_successor_sha256,
@@ -159,7 +178,9 @@ class AtlasFrontierProgressTests(unittest.TestCase):
     def test_epoch_changes_on_correction_but_preserves_prior_cursor_and_requests(self):
         release, staged_snapshot, closure, selection, receipt = _staged_ready()
         prior = plan_frontier_progress(
-            staged_snapshot, closure, selection, staged_receipt=receipt)
+            staged_snapshot, closure, selection,
+            current_release=release, selected_projection=receipt.projection,
+            staged_receipt=receipt)
         corrected = rehash(
             staged_snapshot,
             correction_generation=staged_snapshot.correction_generation + 1,
@@ -169,11 +190,19 @@ class AtlasFrontierProgressTests(unittest.TestCase):
         corrected_closure = _closure(corrected, tuple(
             _candidate(corrected, identity)
             for identity in corrected.source_eligible_concept_ids))
+        corrected_release = _release()
+        corrected_projections = _options(
+            corrected, corrected_release, corrected_closure)
         corrected_selection = select_frontier_delta(
-            corrected, corrected_closure, _release(),
-            _options(corrected, _release(), corrected_closure))
+            corrected, corrected_closure, corrected_release, corrected_projections)
+        corrected_projection = next(
+            item for item in corrected_projections
+            if item.semantic_id == corrected_selection.selected_semantic_id)
         result = plan_frontier_progress(
-            corrected, corrected_closure, corrected_selection, prior=prior)
+            corrected, corrected_closure, corrected_selection,
+            current_release=corrected_release,
+            selected_projection=corrected_projection,
+            prior=prior)
         self.assertNotEqual(result.coverage_epoch_sha256, prior.coverage_epoch_sha256)
         self.assertEqual(result.cursor, prior.cursor)
         self.assertEqual(result.requested_semantic_ids, prior.requested_semantic_ids)

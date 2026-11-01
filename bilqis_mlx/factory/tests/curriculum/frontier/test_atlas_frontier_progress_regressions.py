@@ -11,6 +11,7 @@ from bilqis_mlx.factory.skos_curriculum import IMPLEMENTATION_UNCOVERED
 from bilqis_mlx.factory.tests.curriculum.frontier.atlas_frontier_closure_fixtures import rehash
 from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier_progress import (
     _ready,
+    _selected_projection,
     _stage,
     _staged_ready,
 )
@@ -25,13 +26,16 @@ from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier_selection 
 
 class AtlasFrontierProgressRegressionTests(unittest.TestCase):
     def test_selection_schema_fork_fails_closed(self):
-        _, snapshot, closure, lawful = _ready()
+        release, snapshot, closure, lawful = _ready()
+        projection = _selected_projection(release, snapshot, closure, lawful)
         forged = replace(
             lawful, schema="fixture/frontier-selection-fork", selection_sha256="0" * 64)
         forged = replace(forged, selection_sha256=forged.expected_digest())
 
         with self.assertRaises(BilqisError):
-            plan_frontier_progress(snapshot, closure, forged)
+            plan_frontier_progress(
+                snapshot, closure, forged,
+                current_release=release, selected_projection=projection)
 
     def test_staged_receipt_rejects_self_rehashed_alternate_ready_semantic(self):
         release, snapshot, closure, lawful, receipt = _staged_ready()
@@ -47,20 +51,26 @@ class AtlasFrontierProgressRegressionTests(unittest.TestCase):
             selection_sha256="0" * 64,
         )
         forged = replace(forged, selection_sha256=forged.expected_digest())
-        forged_receipt = _stage(forged, release, receipt.staged_successor)
+        forged_receipt = _stage(
+            forged, receipt.projection, release, receipt.staged_successor)
 
         with self.assertRaises(BilqisError):
             plan_frontier_progress(
-                snapshot, closure, forged, staged_receipt=forged_receipt)
+                snapshot, closure, forged,
+                current_release=release,
+                selected_projection=receipt.projection,
+                staged_receipt=forged_receipt)
 
     def test_admission_reconciliation_reports_only_direct_implementation_debt(self):
-        _, staged_snapshot, _, selection, receipt = _staged_ready()
+        release, staged_snapshot, _, selection, receipt = _staged_ready()
         prior = plan_frontier_progress(
             staged_snapshot,
             _closure(staged_snapshot, tuple(
                 _candidate(staged_snapshot, identity)
                 for identity in staged_snapshot.source_eligible_concept_ids)),
             selection,
+            current_release=release,
+            selected_projection=receipt.projection,
             staged_receipt=receipt,
         )
         admitted = rehash(
@@ -100,9 +110,11 @@ class AtlasFrontierProgressRegressionTests(unittest.TestCase):
         self.assertEqual(reconciled.implementation_uncovered_count, 1)
 
     def test_admission_reconciliation_requires_replan_for_remaining_ready_work(self):
-        _, snapshot, closure, selection, receipt = _staged_ready()
+        release, snapshot, closure, selection, receipt = _staged_ready()
         prior = plan_frontier_progress(
-            snapshot, closure, selection, staged_receipt=receipt)
+            snapshot, closure, selection,
+            current_release=release, selected_projection=receipt.projection,
+            staged_receipt=receipt)
         admitted = rehash(
             snapshot,
             admitted_factory_release_sha256=receipt.staged_successor_sha256,
@@ -121,7 +133,10 @@ class AtlasFrontierProgressRegressionTests(unittest.TestCase):
     def test_single_semantic_admission_mints_zero_to_zero_cursor_successor(self):
         snapshot, closure, selection, receipt = _single_ready()
         prior = plan_frontier_progress(
-            snapshot, closure, selection, staged_receipt=receipt)
+            snapshot, closure, selection,
+            current_release=receipt.predecessor_release,
+            selected_projection=receipt.projection,
+            staged_receipt=receipt)
         admitted = rehash(
             snapshot,
             admitted_factory_release_sha256=receipt.staged_successor_sha256,
@@ -145,9 +160,11 @@ class AtlasFrontierProgressRegressionTests(unittest.TestCase):
         )
 
     def test_pending_stage_reopens_when_source_evidence_changes(self):
-        _, snapshot, closure, selection, receipt = _staged_ready()
+        release, snapshot, closure, selection, receipt = _staged_ready()
         prior = plan_frontier_progress(
-            snapshot, closure, selection, staged_receipt=receipt)
+            snapshot, closure, selection,
+            current_release=release, selected_projection=receipt.projection,
+            staged_receipt=receipt)
         source_rows = tuple(sorted((
             replace(
                 row,
@@ -183,9 +200,11 @@ class AtlasFrontierProgressRegressionTests(unittest.TestCase):
         self.assertIsNone(reopened.pending_staged_receipt_sha256)
 
     def test_pending_stage_survives_metadata_only_epoch_change(self):
-        _, snapshot, closure, selection, receipt = _staged_ready()
+        release, snapshot, closure, selection, receipt = _staged_ready()
         prior = plan_frontier_progress(
-            snapshot, closure, selection, staged_receipt=receipt)
+            snapshot, closure, selection,
+            current_release=release, selected_projection=receipt.projection,
+            staged_receipt=receipt)
         metadata = rehash(
             snapshot,
             correction_generation=snapshot.correction_generation + 1,

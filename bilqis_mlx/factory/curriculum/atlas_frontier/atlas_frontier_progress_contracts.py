@@ -7,6 +7,10 @@ import hashlib
 
 from .atlas_frontier_contracts import CurriculumSnapshot, _bytes, _fail
 from .atlas_frontier_selection import FrontierDeltaSelection
+from .atlas_frontier_selection_validation import (
+    TargetDeltaProjection,
+    validate_target_projection,
+)
 from .executable_release import ExecutableFactoryRelease
 
 
@@ -36,6 +40,7 @@ class StagedSelectionReceipt:
     """Proof that one exact A09.3 selection became one verified staged successor."""
 
     selection: FrontierDeltaSelection
+    projection: TargetDeltaProjection
     predecessor_release: ExecutableFactoryRelease
     staged_successor: ExecutableFactoryRelease
     receipt_sha256: str
@@ -58,11 +63,21 @@ class StagedSelectionReceipt:
     def verify(self) -> None:
         self.selection.verify()
         self.predecessor_release.verify()
+        validate_target_projection(
+            self.predecessor_release,
+            self.selection.selected_obligations,
+            self.projection,
+        )
         self.staged_successor.verify_successor_of(self.predecessor_release)
         transition = self.staged_successor.transition
         previous = self.predecessor_release.semantic_catalog
         current = self.staged_successor.semantic_catalog
         if (self.schema != "bilqis.factory-staged-selection-receipt/v1"
+                or self.projection.semantic_id != self.selection.selected_semantic_id
+                or self.projection.added_capability_ids
+                   != self.selection.introduced_capability_ids
+                or self.projection.introduced_semantic_ids
+                   != self.selection.introduced_semantic_ids
                 or self.selection.admitted_release_sha256
                 != self.predecessor_release.release_sha256
                 or transition is None

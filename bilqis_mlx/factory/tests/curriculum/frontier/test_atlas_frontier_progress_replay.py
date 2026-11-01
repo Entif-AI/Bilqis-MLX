@@ -19,7 +19,10 @@ class AtlasFrontierProgressReplayTests(unittest.TestCase):
     def test_changed_obligation_reopens_target_but_metadata_only_correction_does_not(self):
         snapshot, closure, selection, receipt = _single_ready()
         staged = plan_frontier_progress(
-            snapshot, closure, selection, staged_receipt=receipt)
+            snapshot, closure, selection,
+            current_release=receipt.predecessor_release,
+            selected_projection=receipt.projection,
+            staged_receipt=receipt)
         advanced = _admit(staged, snapshot, closure, receipt)
         base = advanced.planning_snapshot
         current_release = receipt.staged_successor
@@ -29,12 +32,19 @@ class AtlasFrontierProgressReplayTests(unittest.TestCase):
             event_generation=base.event_generation + 1,
             predecessor_sha256=base.snapshot_sha256)
         unchanged_closure = _closure(unchanged, (_candidate(unchanged, "z.op.0"),))
+        unchanged_projections = _options(
+            unchanged, current_release, unchanged_closure,
+            capabilities={"z.op.0": ("Z.NEXT",)}, identities={"z.op.0": ()})
         unchanged_selection = select_frontier_delta(
-            unchanged, unchanged_closure, current_release,
-            _options(unchanged, current_release, unchanged_closure,
-                     capabilities={"z.op.0": ("Z.NEXT",)}, identities={"z.op.0": ()}))
+            unchanged, unchanged_closure, current_release, unchanged_projections)
+        unchanged_projection = next(
+            item for item in unchanged_projections
+            if item.semantic_id == unchanged_selection.selected_semantic_id)
         fixed = plan_frontier_progress(
-            unchanged, unchanged_closure, unchanged_selection, prior=advanced)
+            unchanged, unchanged_closure, unchanged_selection,
+            current_release=current_release,
+            selected_projection=unchanged_projection,
+            prior=advanced)
         self.assertEqual(fixed.status, FrontierStatus.FIXED_POINT)
 
         changed = rehash(
@@ -45,18 +55,28 @@ class AtlasFrontierProgressReplayTests(unittest.TestCase):
             event_generation=unchanged.event_generation + 1,
             predecessor_sha256=unchanged.snapshot_sha256)
         changed_closure = _closure(changed, (_candidate(changed, "z.op.0"),))
+        changed_projections = _options(
+            changed, current_release, changed_closure,
+            capabilities={"z.op.0": ("Z.NEXT",)}, identities={"z.op.0": ()})
         changed_selection = select_frontier_delta(
-            changed, changed_closure, current_release,
-            _options(changed, current_release, changed_closure,
-                     capabilities={"z.op.0": ("Z.NEXT",)}, identities={"z.op.0": ()}))
+            changed, changed_closure, current_release, changed_projections)
+        changed_projection = next(
+            item for item in changed_projections
+            if item.semantic_id == changed_selection.selected_semantic_id)
         reopened = plan_frontier_progress(
-            changed, changed_closure, changed_selection, prior=fixed)
+            changed, changed_closure, changed_selection,
+            current_release=current_release,
+            selected_projection=changed_projection,
+            prior=fixed)
         self.assertEqual(reopened.status, FrontierStatus.PROPOSAL)
 
     def test_prior_progress_must_be_direct_lineage_not_unrelated_self_hash(self):
         _, snapshot, closure, selection, receipt = _staged_ready()
         prior = plan_frontier_progress(
-            snapshot, closure, selection, staged_receipt=receipt)
+            snapshot, closure, selection,
+            current_release=receipt.predecessor_release,
+            selected_projection=receipt.projection,
+            staged_receipt=receipt)
         unrelated = rehash(
             snapshot, event_generation=snapshot.event_generation + 2,
             predecessor_sha256="d" * 64)
@@ -72,7 +92,10 @@ class AtlasFrontierProgressReplayTests(unittest.TestCase):
         forged = replace(forged, receipt_sha256=forged.expected_digest())
         with self.assertRaises(BilqisError):
             plan_frontier_progress(
-                snapshot, closure, selection, staged_receipt=forged)
+                snapshot, closure, selection,
+                current_release=receipt.predecessor_release,
+                selected_projection=receipt.projection,
+                staged_receipt=forged)
 
 
 if __name__ == "__main__":

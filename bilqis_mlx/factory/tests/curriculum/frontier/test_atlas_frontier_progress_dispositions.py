@@ -51,12 +51,15 @@ def _single_ready():
         staged_factory_release_sha256s=(staged.successor.release_sha256,),
     )
     closure = _closure(snapshot, (_candidate(snapshot, "z.op.0"),))
-    selection = select_frontier_delta(
-        snapshot, closure, release,
-        _options(snapshot, release, closure,
-                 capabilities={"z.op.0": staged.successor.transition.added_capabilities},
-                 identities={"z.op.0": ()}))
-    receipt = _stage(selection, release, staged.successor)
+    projections = _options(
+        snapshot, release, closure,
+        capabilities={"z.op.0": staged.successor.transition.added_capabilities},
+        identities={"z.op.0": ()})
+    selection = select_frontier_delta(snapshot, closure, release, projections)
+    projection = next(
+        item for item in projections
+        if item.semantic_id == selection.selected_semantic_id)
+    receipt = _stage(selection, projection, release, staged.successor)
     return snapshot, closure, selection, receipt
 
 
@@ -70,13 +73,20 @@ class AtlasFrontierProgressDispositionTests(unittest.TestCase):
             snapshot, staged_factory_release_sha256s=(staged.successor.release_sha256,))
         closure = _closure(snapshot, tuple(
             _candidate(snapshot, identity) for identity in snapshot.source_eligible_concept_ids))
+        projections = _options(snapshot, fixture.current, closure)
         mismatched = select_frontier_delta(
-            snapshot, closure, fixture.current,
-            _options(snapshot, fixture.current, closure))
-        forged = _stage(mismatched, fixture.current, staged.successor)
+            snapshot, closure, fixture.current, projections)
+        projection = next(
+            item for item in projections
+            if item.semantic_id == mismatched.selected_semantic_id)
+        forged = _stage(
+            mismatched, projection, fixture.current, staged.successor)
         with self.assertRaises(BilqisError):
             plan_frontier_progress(
-                snapshot, closure, mismatched, staged_receipt=forged)
+                snapshot, closure, mismatched,
+                current_release=fixture.current,
+                selected_projection=projection,
+                staged_receipt=forged)
 
     def test_direct_uncovered_count_excludes_propagated_dependents(self):
         release = _release()
@@ -113,7 +123,9 @@ class AtlasFrontierProgressDispositionTests(unittest.TestCase):
     def test_requested_root_allows_evidence_wait_to_surface_without_busy_loop(self):
         release, snapshot, closure, selection, receipt = _staged_ready()
         prior = plan_frontier_progress(
-            snapshot, closure, selection, staged_receipt=receipt)
+            snapshot, closure, selection,
+            current_release=release, selected_projection=receipt.projection,
+            staged_receipt=receipt)
         advanced = _admit(prior, snapshot, closure, receipt)
         planning = advanced.planning_snapshot
         from bilqis_mlx.factory.atlas_frontier_contracts import PrerequisiteEdge
@@ -154,7 +166,10 @@ class AtlasFrontierProgressDispositionTests(unittest.TestCase):
     def test_complete_requires_requested_eligible_coverage_and_zero_debt(self):
         snapshot, closure, selection, receipt = _single_ready()
         prior = plan_frontier_progress(
-            snapshot, closure, selection, staged_receipt=receipt)
+            snapshot, closure, selection,
+            current_release=receipt.predecessor_release,
+            selected_projection=receipt.projection,
+            staged_receipt=receipt)
         advanced = _admit(prior, snapshot, closure, receipt)
         planning = advanced.planning_snapshot
         final_closure = _closure(planning, (_candidate(planning, "z.op.0"),))

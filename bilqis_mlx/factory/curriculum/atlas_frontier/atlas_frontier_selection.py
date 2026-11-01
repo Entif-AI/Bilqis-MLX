@@ -16,6 +16,7 @@ from .atlas_frontier_selection_validation import (
     TargetDeltaProjection,
     target_projections,
     validate_closure_structure,
+    validate_target_projection,
 )
 
 
@@ -157,16 +158,21 @@ def validate_frontier_selection(
     snapshot: CurriculumSnapshot,
     closure: FrontierClosure,
     selection: FrontierDeltaSelection,
+    current_release: ExecutableFactoryRelease,
+    selected_projection: TargetDeltaProjection,
 ) -> None:
-    """Prove a supplied selection is the exact lawful A09.3 choice for this closure."""
+    """Prove a supplied selection is the exact lawful A09.3 choice and projection."""
     snapshot.verify()
     closure.verify()
     selection.verify()
+    current_release.verify()
     validate_closure_structure(snapshot, closure)
     if (closure.snapshot_sha256 != snapshot.snapshot_sha256
             or selection.snapshot_sha256 != snapshot.snapshot_sha256
             or selection.closure_sha256 != closure.closure_sha256
             or selection.admitted_release_sha256
+               != snapshot.admitted_factory_release_sha256
+            or current_release.release_sha256
                != snapshot.admitted_factory_release_sha256
             or selection.policy_epoch != snapshot.policy_epoch
             or selection.cursor != snapshot.cursor):
@@ -188,9 +194,15 @@ def validate_frontier_selection(
         selection.introduced_capability_ids,
         selection.introduced_semantic_ids,
     )
+    validate_target_projection(current_release, rows, selected_projection)
     capability_limit = min(9, snapshot.budget.max_candidates)
     if (selection.selected_semantic_id != identity
             or selection.selected_obligations != rows
+            or selected_projection.semantic_id != identity
+            or selection.introduced_capability_ids
+               != selected_projection.added_capability_ids
+            or selection.introduced_semantic_ids
+               != selected_projection.introduced_semantic_ids
             or selection.prerequisite_slope != slope
             or selection.downstream_unlocks != -neg_unlocks
             or selection.deferred != deferred

@@ -9,7 +9,11 @@ from .atlas_frontier_contracts import CurriculumSnapshot, _bytes, _fail
 from .atlas_frontier_selection import (
     FrontierDeltaSelection, validate_frontier_selection,
 )
-from .atlas_frontier_selection_validation import validate_closure_structure
+from .atlas_frontier_selection_validation import (
+    TargetDeltaProjection,
+    validate_closure_structure,
+)
+from .executable_release import ExecutableFactoryRelease
 from .skos_curriculum import IMPLEMENTATION_UNCOVERED
 from .atlas_frontier_progress_contracts import (
     FrontierProgress, FrontierRemediation, FrontierStatus, StagedSelectionReceipt,
@@ -91,21 +95,38 @@ def _advance_cursor_once(
 def _selection_current(
     snapshot: CurriculumSnapshot, closure: FrontierClosure,
     selection: FrontierDeltaSelection | None,
-) -> None:
+    current_release: ExecutableFactoryRelease | None,
+    selected_projection: TargetDeltaProjection | None,
+    staged_receipt: StagedSelectionReceipt | None,
+) -> tuple[ExecutableFactoryRelease | None, TargetDeltaProjection | None]:
     if selection is None:
-        return
-    validate_frontier_selection(snapshot, closure, selection)
+        if current_release is not None or selected_projection is not None:
+            _fail("BAMF_PLANNER_SELECTION_INPUT_INVALID")
+        return None, None
+    if (current_release is None and selected_projection is None
+            and staged_receipt is not None):
+        current_release = staged_receipt.predecessor_release
+        selected_projection = staged_receipt.projection
+    if current_release is None or selected_projection is None:
+        _fail("BAMF_PLANNER_SELECTION_INPUT_INVALID")
+    validate_frontier_selection(
+        snapshot, closure, selection, current_release, selected_projection)
+    return current_release, selected_projection
 
 
 def _staged_current(
     snapshot: CurriculumSnapshot, selection: FrontierDeltaSelection | None,
     receipt: StagedSelectionReceipt | None,
+    current_release: ExecutableFactoryRelease | None,
+    selected_projection: TargetDeltaProjection | None,
 ) -> None:
     if receipt is None:
         return
     receipt.verify()
     if (selection is None
             or receipt.selection != selection
+            or receipt.predecessor_release != current_release
+            or receipt.projection != selected_projection
             or receipt.staged_successor_sha256
                not in snapshot.staged_factory_release_sha256s):
         _fail("BAMF_PLANNER_STAGED_SELECTION_MISMATCH")
@@ -221,6 +242,8 @@ def plan_frontier_progress(
     closure: FrontierClosure,
     selection: FrontierDeltaSelection | None = None,
     *,
+    current_release: ExecutableFactoryRelease | None = None,
+    selected_projection: TargetDeltaProjection | None = None,
     prior: FrontierProgress | None = None,
     staged_receipt: StagedSelectionReceipt | None = None,
 ) -> FrontierProgress:
@@ -231,8 +254,11 @@ def plan_frontier_progress(
         _fail("BAMF_PLANNER_PROGRESS_CLOSURE_MISMATCH")
     validate_closure_structure(snapshot, closure)
     _validate_prior(snapshot, prior)
-    _selection_current(snapshot, closure, selection)
-    _staged_current(snapshot, selection, staged_receipt)
+    current_release, selected_projection = _selection_current(
+        snapshot, closure, selection, current_release, selected_projection,
+        staged_receipt)
+    _staged_current(
+        snapshot, selection, staged_receipt, current_release, selected_projection)
 
     current = _current_obligations(closure)
     receipts = list(prior.staged_receipts if prior else ())
