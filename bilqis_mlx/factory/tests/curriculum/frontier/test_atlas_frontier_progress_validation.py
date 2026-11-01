@@ -2,7 +2,6 @@
 from dataclasses import replace
 import hashlib
 import unittest
-
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory.atlas_frontier_contracts import _bytes
 from bilqis_mlx.factory.atlas_frontier_progress import plan_frontier_progress
@@ -10,6 +9,7 @@ from bilqis_mlx.factory.atlas_frontier_selection import (
     DeferredClosure,
     _candidate_signature,
     _ranked_ready_targets,
+    select_frontier_delta,
 )
 from bilqis_mlx.factory.atlas_frontier_selection_validation import (
     TargetDeltaProjection,
@@ -18,13 +18,18 @@ from bilqis_mlx.factory.atlas_frontier_selection_validation import (
 )
 from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier_progress import (
     _ready,
+    _stage,
     _staged_ready,
 )
 from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier_selection import (
+    _candidate,
+    _closure,
     _options,
+    _snapshot,
 )
-
-
+from bilqis_mlx.factory.tests.curriculum.frontier.test_candidate_staging import (
+    CandidateStagingFixture,
+)
 def _forge_selection(selection, *, capabilities=None, identities=None):
     capabilities = capabilities or selection.introduced_capability_ids
     identities = identities if identities is not None else selection.introduced_semantic_ids
@@ -37,20 +42,18 @@ def _forge_selection(selection, *, capabilities=None, identities=None):
         "introduced_capability_ids": capabilities,
         "introduced_semantic_ids": identities,
     })).hexdigest()
-    forged = replace(
+    return _rehash(replace(
         selection,
         introduced_capability_ids=capabilities,
         introduced_semantic_ids=identities,
         candidate_signature=signature,
-        selection_sha256="0" * 64,
-    )
-    return replace(forged, selection_sha256=forged.expected_digest())
-
-
+    ), "selection_sha256")
+def _rehash(value, field):
+    draft = replace(value, **{field: "0" * 64})
+    return replace(draft, **{field: draft.expected_digest()})
 class AtlasFrontierProjectionCustodyTests(unittest.TestCase):
     def test_direct_proposal_requires_release_and_projection_evidence(self):
         _, snapshot, closure, selection = _ready()
-
         with self.assertRaises(BilqisError):
             plan_frontier_progress(snapshot, closure, selection)
 
@@ -60,7 +63,6 @@ class AtlasFrontierProjectionCustodyTests(unittest.TestCase):
             item for item in _options(snapshot, release, closure)
             if item.semantic_id == selection.selected_semantic_id)
         forged = _forge_selection(selection, capabilities=("Z.FORGED",))
-
         with self.assertRaises(BilqisError):
             plan_frontier_progress(
                 snapshot, closure, forged,
@@ -75,7 +77,6 @@ class AtlasFrontierProjectionCustodyTests(unittest.TestCase):
             if item.semantic_id == selection.selected_semantic_id)
         forged = _forge_selection(
             selection, identities=("fixture.forged.semantic",))
-
         with self.assertRaises(BilqisError):
             plan_frontier_progress(
                 snapshot, closure, forged,
@@ -91,35 +92,19 @@ class AtlasFrontierProjectionCustodyTests(unittest.TestCase):
             selected_projection=receipt.projection,
             staged_receipt=receipt,
         )
-        forged_projection = replace(
+        forged_projection = _rehash(replace(
             receipt.projection,
             added_capability_ids=("Z.FORGED",),
-            projection_sha256="0" * 64,
-        )
-        forged_projection = replace(
-            forged_projection,
-            projection_sha256=forged_projection.expected_digest(),
-        )
-        forged_receipt = replace(
+        ), "projection_sha256")
+        forged_receipt = _rehash(replace(
             receipt,
             projection=forged_projection,
-            receipt_sha256="0" * 64,
-        )
-        forged_receipt = replace(
-            forged_receipt,
-            receipt_sha256=forged_receipt.expected_digest(),
-        )
-        forged_prior = replace(
+        ), "receipt_sha256")
+        forged_prior = _rehash(replace(
             prior,
             staged_receipts=(forged_receipt,),
             pending_staged_receipt_sha256=forged_receipt.receipt_sha256,
-            progress_sha256="0" * 64,
-        )
-        forged_prior = replace(
-            forged_prior,
-            progress_sha256=forged_prior.expected_digest(),
-        )
-
+        ), "progress_sha256")
         with self.assertRaises(BilqisError):
             plan_frontier_progress(snapshot, closure, prior=forged_prior)
 
@@ -147,8 +132,7 @@ class AtlasFrontierProjectionCustodyTests(unittest.TestCase):
                 release.semantic_catalog + identities),
             projection_sha256="0" * 64,
         )
-        projection = replace(
-            projection, projection_sha256=projection.expected_digest())
+        projection = _rehash(projection, "projection_sha256")
         selected_keys = {
             (item.semantic_id, item.family_id) for item in rows
         }
@@ -159,7 +143,7 @@ class AtlasFrontierProjectionCustodyTests(unittest.TestCase):
             item.reasons,
         ) for item in closure.candidates
             if (item.semantic_id, item.family_id) not in selected_keys))
-        forged_selection = replace(
+        forged_selection = _rehash(replace(
             selection,
             selected_semantic_id=alternate_id,
             selected_obligations=rows,
@@ -170,38 +154,77 @@ class AtlasFrontierProjectionCustodyTests(unittest.TestCase):
             deferred=deferred,
             candidate_signature=_candidate_signature(
                 alternate_id, rows, capabilities, identities),
-            selection_sha256="0" * 64,
-        )
-        forged_selection = replace(
-            forged_selection,
-            selection_sha256=forged_selection.expected_digest(),
-        )
-        forged_receipt = replace(
+        ), "selection_sha256")
+        forged_receipt = _rehash(replace(
             receipt,
             selection=forged_selection,
             projection=projection,
-            receipt_sha256="0" * 64,
-        )
-        forged_receipt = replace(
-            forged_receipt,
-            receipt_sha256=forged_receipt.expected_digest(),
-        )
-        forged_prior = replace(
+        ), "receipt_sha256")
+        forged_prior = _rehash(replace(
             prior,
             staged_receipts=(forged_receipt,),
             pending_staged_receipt_sha256=forged_receipt.receipt_sha256,
-            progress_sha256="0" * 64,
-        )
-        forged_prior = replace(
-            forged_prior,
-            progress_sha256=forged_prior.expected_digest(),
-        )
-
+        ), "progress_sha256")
         forged_receipt.verify()
         forged_prior.verify()
         with self.assertRaises(BilqisError):
             plan_frontier_progress(snapshot, closure, prior=forged_prior)
 
-
-if __name__ == "__main__":
-    unittest.main()
+    def test_cold_resume_rejects_alternate_ready_cursor_laundering(self):
+        fixture = CandidateStagingFixture()
+        fixture.setUp()
+        staged = fixture.stage()
+        release = fixture.current
+        snapshot = _snapshot(release, cursor=0, prerequisite_edges=())
+        snapshot = _rehash(replace(
+            snapshot,
+            staged_factory_release_sha256s=(staged.successor.release_sha256,),
+        ), "snapshot_sha256")
+        closure = _closure(snapshot, tuple(
+            _candidate(snapshot, identity)
+            for identity in snapshot.source_eligible_concept_ids))
+        capabilities = {
+            identity: staged.successor.transition.added_capabilities
+            for identity in snapshot.source_eligible_concept_ids
+        }
+        identities = {identity: () for identity in snapshot.source_eligible_concept_ids}
+        projections = _options(
+            snapshot, release, closure,
+            capabilities=capabilities, identities=identities)
+        selection = select_frontier_delta(
+            snapshot, closure, release, projections)
+        projection = next(
+            item for item in projections
+            if item.semantic_id == selection.selected_semantic_id)
+        receipt = _stage(selection, projection, release, staged.successor)
+        prior = plan_frontier_progress(
+            snapshot, closure, selection, staged_receipt=receipt)
+        forged_snapshot = _rehash(replace(snapshot, cursor=1), "snapshot_sha256")
+        forged_closure = _closure(forged_snapshot, tuple(
+            _candidate(forged_snapshot, identity)
+            for identity in forged_snapshot.source_eligible_concept_ids))
+        forged_projections = _options(
+            forged_snapshot, release, forged_closure,
+            capabilities=capabilities, identities=identities)
+        forged_selection = select_frontier_delta(
+            forged_snapshot, forged_closure, release, forged_projections)
+        self.assertEqual(forged_selection.selected_semantic_id, "z.op.1")
+        forged_selection = _rehash(replace(
+            forged_selection,
+            snapshot_sha256=snapshot.snapshot_sha256,
+            closure_sha256=closure.closure_sha256,
+        ), "selection_sha256")
+        forged_projection = next(
+            item for item in forged_projections
+            if item.semantic_id == "z.op.1")
+        forged_receipt = _stage(
+            forged_selection, forged_projection, release, staged.successor)
+        forged_prior = _rehash(replace(
+            prior,
+            staged_receipts=(forged_receipt,),
+            pending_staged_receipt_sha256=forged_receipt.receipt_sha256,
+        ), "progress_sha256")
+        forged_receipt.verify()
+        forged_prior.verify()
+        with self.assertRaises(BilqisError):
+            plan_frontier_progress(snapshot, closure, prior=forged_prior)

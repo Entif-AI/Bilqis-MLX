@@ -76,6 +76,21 @@ def _direct_uncovered_count(snapshot: CurriculumSnapshot) -> int:
         for row in snapshot.coverage_rows)
 
 
+def _prior_credit(snapshot, closure, prior, current):
+    receipts = list(prior.staged_receipts if prior else ())
+    pending_sha = prior.pending_staged_receipt_sha256 if prior else None
+    credited = credited_receipts(
+        snapshot, closure, receipts, current,
+        planner_predecessor=(prior.planning_snapshot if prior else None),
+        pending_receipt_sha256=pending_sha,
+    )
+    pending_receipt = prior.pending_receipt if prior else None
+    invalidated = pending_receipt is not None and pending_receipt not in credited
+    pending = (prior.pending_staged_successor_sha256
+               if prior is not None and not invalidated else None)
+    return receipts, credited, (None if invalidated else pending_sha), pending, invalidated
+
+
 def _status_without_new_proposal(
     snapshot: CurriculumSnapshot, counts: dict[ClosureStatus, int],
     receipts: tuple[StagedSelectionReceipt, ...], current: dict[str, str],
@@ -166,20 +181,8 @@ def plan_frontier_progress(
         snapshot, selection, staged_receipt, current_release, selected_projection)
 
     current = current_obligations(closure)
-    receipts = list(prior.staged_receipts if prior else ())
-    credited = credited_receipts(snapshot, closure, receipts, current)
-    pending_receipt_sha = prior.pending_staged_receipt_sha256 if prior else None
-    pending_receipt = prior.pending_receipt if prior else None
-    pending_invalidated = (
-        pending_receipt is not None
-        and pending_receipt not in credited
-    )
-    pending = (
-        prior.pending_staged_successor_sha256
-        if prior is not None and not pending_invalidated else None
-    )
-    if pending_invalidated:
-        pending_receipt_sha = None
+    receipts, credited, pending_receipt_sha, pending, pending_invalidated = (
+        _prior_credit(snapshot, closure, prior, current))
     if pending == snapshot.admitted_factory_release_sha256:
         return _reconcile_admission(
             snapshot, closure, prior, receipts, credited, current)
