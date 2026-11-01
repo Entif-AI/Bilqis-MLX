@@ -2,8 +2,8 @@
 
 The original 43 owner contracts stay authoritative and unabridged. Agents take the deepest ready child. See `registry.json` for exact stable identities, parent links, dependency graph, source-clause spans and body hashes.
 
-Current canonical census:171 children. Dependency resolution is HELD for10
-reviewed contracts, including the B11.1 parent amendment. Validation exits nonzero
+Current canonical census:171 children. Dependency resolution is HELD for8
+reviewed contracts. The explicit B05.4 and B11.1 amendment formats are normalized. Validation exits nonzero
 and returns no execution order until the held source contracts are normalized.
 Registration does not assert readiness, source qualification or owner completion.
 
@@ -176,7 +176,7 @@ Registration does not assert readiness, source qualification or owner completion
 - [C14.4 #559](https://github.com/Entif-AI/Bilqis-MLX/issues/559): dependency evidence held; parent C14.
 - [A05.4 #575](https://github.com/Entif-AI/Bilqis-MLX/issues/575): dependency evidence held; parent A05.
 - [B02.4 #576](https://github.com/Entif-AI/Bilqis-MLX/issues/576): dependency evidence held; parent B02.
-- [B05.4 #577](https://github.com/Entif-AI/Bilqis-MLX/issues/577): dependency evidence held; parent B05.
+- [B05.4 #577](https://github.com/Entif-AI/Bilqis-MLX/issues/577): dependency evidence resolved; parent B05.
 - [A03.4 #578](https://github.com/Entif-AI/Bilqis-MLX/issues/578): dependency evidence held; parent A03.
 - [B11.1a #586](https://github.com/Entif-AI/Bilqis-MLX/issues/586): dependency evidence held; parent B11.1.
 - [A05.5 #594](https://github.com/Entif-AI/Bilqis-MLX/issues/594): dependency evidence held; parent A05.

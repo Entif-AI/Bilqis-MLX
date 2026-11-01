@@ -24,7 +24,7 @@ entries retain the original canonical prerequisite enforcement. C14's two change
 references are the actual live C14.4 correction, not a changed work requirement.
 
 15 pinned evidence packets cover14 new children and that named B11.1 parent.
-Five have explicit normalized lists;10 remain HELD for source/specification,
+Seven have explicit normalized lists;8 remain HELD for source/specification,
 conditional, receipt-granularity or parser-format obligations. Known partial edges
 and exact contextual obligations survive. Parsing cannot promote a pinned hold or
 remove required source evidence. PR receipts remain distinct from issue nodes.
@@ -34,7 +34,7 @@ consistency is not independent source authentication or admission.
 
 ## Proof and intentionally nonzero gates
 
-`python3 -B scripts/run_tests.py scripts/tests/bamf` passes64 tests, zero failures
+`python3 -B scripts/run_tests.py scripts/tests/bamf` passes70 tests, zero failures
 or skips. The first new test run failed for the missing evidence API. New proofs
 cover explicit lists/ranges, source and identity tampering, PR-versus-issue roles,
 receipt mismatch, symlink/path refusal, held empty/partial contracts and no returned
@@ -44,7 +44,7 @@ census, validator, grooming and reconciliation tests pass.
 
 `python3 -B scripts/check_bamf_workstack.py docs/tasks/bamf-0.2/workstack.json --live`
 returns **1 intentionally**: registry_integrity=valid,171 children,43 live owner
-mirrors valid, no hard issues, dependency_resolution=held for10 named contracts,
+mirrors valid, no hard issues, dependency_resolution=held for8 named contracts,
 order=[]. This is a guard result, not a green full-C01 acceptance gate.
 
 `python3 -B scripts/bamf/audit_child_registry.py` remains incomplete in its raw
@@ -69,7 +69,7 @@ prerequisite meaning fixed by the reviewed matrix. This review was read-only and
 did not rerun tests or hosted checks. Full C01 remains open.
 
 The unresolved source contracts are A03.4,A05.4,A05.5,A08.1b.2,A08.1b.5,B02.4,
-B05.4,B11.1,B11.1a,C14.4. Preserve their exact named receipt/conditional/source-owner
+B11.1a,C14.4. Preserve their exact named receipt/conditional/source-owner
 obligations and resolve each against owning evidence; do not guess edges or equate
 implementation closure with complete dependency normalization. Parent C01 stays
 open until these and every original owner/integration gate pass. No issue body,
@@ -77,3 +77,19 @@ learner, optimizer, source admission or graph state was changed; no self-merge.
 
 Independent issue work continues under its live page and named direct prerequisite
 receipts while complete-workstack dependency projection remains held.
+
+## Explicit amendment normalization
+
+The next bounded increment normalizes only B05.4 and B11.1 from their unchanged
+positive declarations. The formatter requires the original consumes/prerequisite
+clause, exact child link identity and repeated mandatory producer condition. The
+consumer, PR-disposition and negative cycle-rule mentions contribute no edges.
+All identities, edges, ancestry/source hashes and retained obligations stay equal
+to checkpointd2ec0645. Only those two dispositions change, leaving eight holds.
+The initial ten-hold live result is retained separately.
+
+The pure grammar extraction preserved all64 prior tests. Two new positive format
+cases then failed before implementation; the four new refusal cases already held.
+All70 tests now pass, zero failures/skips. Both owning live bodies were re-fetched
+and matched their pins before promotion. Independent source/readiness review
+cleared the exact format plan; new code turn-in review remains pending.

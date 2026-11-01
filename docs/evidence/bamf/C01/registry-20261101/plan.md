@@ -37,7 +37,9 @@ rewrites, source admission, learner mutation or self-merge.
 
 ## Exact v1 contract and initial matrix
 
-`reviewed-packets.json` pins14 new children and their named B11.1 parent:5 resolved and10 held.
+Initial checkpointd2ec0645 pinned14 new children and their named B11.1 parent:
+5 resolved and10 held. Current explicit-format normalization is specified in
+format-normalization-plan.md and yields7 resolved/8 held after source-backed proof.
 All35 referenced source snapshots are retained under sources/. They bind full
 exact issue bodies, every differing fuller local specification, decisive owning
 comments and verified PR metadata. duplicate-587.json retains the actual resolution

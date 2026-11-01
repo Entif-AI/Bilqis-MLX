@@ -188,7 +188,7 @@ class DependencyEvidenceTests(unittest.TestCase):
         self.assertEqual(report['order'], [])
         self.assertEqual(report['dependency_resolution']['held_keys'], [
             'A03.4', 'A05.4', 'A05.5', 'A08.1b.2', 'A08.1b.5', 'B02.4',
-            'B05.4', 'B11.1', 'B11.1a', 'C14.4'])
+            'B11.1a', 'C14.4'])
         self.assertEqual(numbers['C14.3'], 535)
         self.assertEqual(numbers['C14.4'], 559)
         self.assertEqual(numbers['B10.5'], 635)
