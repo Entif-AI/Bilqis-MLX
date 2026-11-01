@@ -6,6 +6,7 @@ import mlx.core as mx
 
 from bilqis_mlx.runtime.model_topology_v2 import FEATURE_NONE_ROW, GenerationExtents
 from bilqis_mlx.semantics.atlas_features import AtlasFeatures
+from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.context_eligibility import ApprovedContextProjection
 from bilqis_mlx.semantics.frame_schema import FrameInstance
 from .common import _invalid
@@ -32,11 +33,11 @@ class MotifGateFeatures:
     schema_version: str = "bilqis.mlx.motif-gate-features/v1"
 
 
-def _categorical_factors(parameters, features, request):
+def _categorical_factors(parameters, features, request, atlas_selection=None):
     if type(request) is ChildFrameRequest:
         schema, role, types = _child_categorical_factors(parameters, request, features)
         return types, role, schema
-    row = _source_qualified_feature_row(features, request)
+    row = _source_qualified_feature_row(features, request, atlas_selection)
     return _released_categorical_factors(parameters, row)
 
 
@@ -58,6 +59,7 @@ def _requests(projection, frame_handle, envelope):
 def motif_gate_features(
     parameters: Mapping[str, mx.array], projection: ApprovedContextProjection,
     frame_handle: str, features: AtlasFeatures, *, extents: GenerationExtents,
+    atlas_selection: AtlasArtifactSelection | None = None,
 ) -> MotifGateFeatures:
     """Mean member types, mean member roles and schema, before 768 projections.
 
@@ -75,7 +77,8 @@ def motif_gate_features(
         _invalid()
     if envelope.frame.bindings:
         requests = _requests(projection, frame_handle, envelope)
-        values = tuple(_categorical_factors(parameters, features, request)
+        values = tuple(_categorical_factors(
+                       parameters, features, request, atlas_selection)
                        for request in requests)
         types, roles, schema = (
             mx.mean(mx.stack(tuple(value[index] for value in values)), axis=0)

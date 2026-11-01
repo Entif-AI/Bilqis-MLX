@@ -6,6 +6,16 @@ import mlx.core as mx
 import numpy as np
 from bilqis_mlx.runtime.model_topology_v2 import FEATURE_NONE_ROW, GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes
 from bilqis_mlx.semantics.atlas_features import AtlasFeatures, _factor_overflow
+from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.frame_adapters.common import (
+    BOOLEAN_COMPOSITE_ADAPTER, BOOLEAN_CONNECTIVE_ADAPTER,
+    BOOLEAN_IDENTIFICATION_ADAPTER, FINITE_NUMERIC_ADAPTER,
+    MICRO_PREDICATE_ADAPTER,
+)
+from bilqis_mlx.semantics.frame_schema import FrameInstance
+from bilqis_mlx.semantics.released_frame_schemas import (
+    lookup_source_pinned_frame_schema,
+)
 from .common import COMPOSITION_SCHEMA, FactorGate, POSITION_BASE, WIDTH, _SINUSOID_PAIR_WIDTH, _invalid
 from .requests import FeatureRequest
 
@@ -62,7 +72,55 @@ def _released_categorical_factors(parameters, row):
     return type_mean, role, schema
 
 
-def _source_qualified_feature_row(features: AtlasFeatures, request: FeatureRequest):
+_SOURCE_FAMILIES = (
+    (MICRO_PREDICATE_ADAPTER, "micro"),
+    (BOOLEAN_CONNECTIVE_ADAPTER, "boolean"),
+    (BOOLEAN_COMPOSITE_ADAPTER, "boolean"),
+    (BOOLEAN_IDENTIFICATION_ADAPTER, "boolean"),
+    (FINITE_NUMERIC_ADAPTER, "numeric"),
+)
+
+
+def _pinned_source_types(
+    features: AtlasFeatures,
+    request: FeatureRequest,
+    atlas_selection: AtlasArtifactSelection | None,
+) -> tuple[str, ...]:
+    """Independently rederive a formal terminal's types from A01/A03 authority."""
+    if type(atlas_selection) is not AtlasArtifactSelection:
+        _invalid()
+    atlas_selection.__post_init__()
+    if (atlas_selection.bundle_id != features.atlas_bundle_id
+            or atlas_selection.release_sha256 != features.semantic_release
+            or atlas_selection.source_bundle_id != features.source_bundle_id):
+        _invalid()
+    reference = request.concept.source_reference
+    if not isinstance(reference, str) or ":" not in reference:
+        _invalid()
+    adapter_id, _symbol = reference.split(":", 1)
+    source_family = next((family for owner, family in _SOURCE_FAMILIES
+                          if owner == adapter_id), None)
+    if source_family is None:
+        _invalid()
+    frame = request.projection.frame(request.frame_handle)
+    if type(frame) is not FrameInstance:
+        _invalid()
+    schema, _witness = lookup_source_pinned_frame_schema(
+        frame.frame_schema_id, frame.frame_schema_revision,
+        source_family=source_family, atlas_selection=atlas_selection,
+    )
+    role = next((item for item in schema.roles
+                 if item.role_id == request.role_id), None)
+    if role is None or request.concept.type_ids != role.allowed_type_ids:
+        _invalid()
+    return role.allowed_type_ids
+
+
+def _source_qualified_feature_row(
+    features: AtlasFeatures,
+    request: FeatureRequest,
+    atlas_selection: AtlasArtifactSelection | None = None,
+):
     """Compose A06 authority with A13-owned formal source-signature types.
 
     A06 remains authoritative for admitted semantic identity, ABI index, role,
@@ -93,15 +151,16 @@ def _source_qualified_feature_row(features: AtlasFeatures, request: FeatureReque
     if (concept.semantic_release != features.semantic_release
             or concept.abi_index != row.abi_index):
         _invalid()
+    source_types = _pinned_source_types(features, request, atlas_selection)
     types = dict(features.type_map)
-    type_rows = tuple(types.get(identifier, 0) for identifier in concept.type_ids)
+    type_rows = tuple(types.get(identifier, 0) for identifier in source_types)
     return replace(
         row,
-        type_ids=concept.type_ids,
+        type_ids=source_types,
         type_rows=type_rows,
         type_overflow=tuple(
             (identifier, _factor_overflow("type", identifier))
-            for identifier, factor_row in zip(concept.type_ids, type_rows)
+            for identifier, factor_row in zip(source_types, type_rows)
             if factor_row == 0
         ),
     )
@@ -115,8 +174,8 @@ def _released_factor_terms(parameters, row):
             gates[FactorGate.GRAPH] * (mx.array(row.graph64, dtype=mx.float32) @
                                       parameters["features.project_graph"].T))
 
-def _compose_one(parameters, request, features):
-    row = _source_qualified_feature_row(features, request)
+def _compose_one(parameters, request, features, atlas_selection=None):
+    row = _source_qualified_feature_row(features, request, atlas_selection)
     terms = _released_factor_terms(parameters, row)
     type_role = terms[FactorGate.TYPE] + terms[FactorGate.ROLE]
     factors = (type_role + terms[FactorGate.SCHEMA] + terms[FactorGate.GRAPH] +
@@ -124,7 +183,8 @@ def _compose_one(parameters, request, features):
     return type_role, factors
 
 def compose_factor_features(parameters: Mapping[str, mx.array], requests: tuple[tuple[FeatureRequest, ...], ...],
-                            features: AtlasFeatures, *, extents: GenerationExtents) -> FactorComposition:
+                            features: AtlasFeatures, *, extents: GenerationExtents,
+                            atlas_selection: AtlasArtifactSelection | None = None) -> FactorComposition:
     """Use actual A06 rows and shared B01 tables; never accept anonymous feature tensors.
 
     Each projected type/role/schema/graph term has its learned sigmoid gate.
@@ -134,7 +194,8 @@ def compose_factor_features(parameters: Mapping[str, mx.array], requests: tuple[
     Identity-bank activation and model-generation admission remain upstream.
     """
     _validate_composer(parameters, requests, features, extents)
-    composed = [[_compose_one(parameters, request, features) for request in batch] for batch in requests]
+    composed = [[_compose_one(parameters, request, features, atlas_selection)
+                 for request in batch] for batch in requests]
     type_role = mx.stack([mx.stack([item[0] for item in batch]) for batch in composed])
     all_factors = mx.stack([mx.stack([item[1] for item in batch]) for batch in composed])
     return FactorComposition(type_role, all_factors, features.digest, features.semantic_release,

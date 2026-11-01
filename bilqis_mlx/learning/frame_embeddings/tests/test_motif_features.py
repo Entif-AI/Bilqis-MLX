@@ -68,7 +68,7 @@ class MotifFeatureTests(FactorCompositionTests):
                 motif_gate_features(self.params, _context_for(ref), "frame:0",
                                     self.features, extents=self.extents)
 
-    def test_formal_untyped_a06_row_uses_source_qualified_type_overflow(self):
+    def test_formal_untyped_a06_row_rejects_generic_projection_type_injection(self):
         concepts = tuple(
             replace(item, type_ids=(), source_status="ADMITTED_FORMAL_ABI_UNTYPED")
             for item in self.features.concepts)
@@ -83,26 +83,11 @@ class MotifFeatureTests(FactorCompositionTests):
             "features.type": self.params["features.type"].at[0].add(2),
         }
 
-        actual = motif_gate_features(
-            parameters, _context_for(self.ref), "frame:0", features,
-            extents=extents,
-        )
-
-        material = b"".join(
-            hashlib.sha256(
-                f"bamf.factor.v2|type|{self.ref.type_ids[0]}|{block}".encode()
-            ).digest()
-            for block in range(4)
-        )
-        overflow = (
-            (np.frombuffer(material, np.uint8) / 127.5 - 1) / np.sqrt(128)
-        ).astype(np.float32)
-        expected_type = np.asarray(parameters["features.type"][0]) + overflow
-        np.testing.assert_allclose(
-            np.asarray(actual.vector128),
-            (expected_type + 1.5 + .25) / 3,
-            rtol=1e-6, atol=1e-7,
-        )
+        with self.assertRaises(BilqisError):
+            motif_gate_features(
+                parameters, _context_for(self.ref), "frame:0", features,
+                extents=extents,
+            )
 
     def test_nonfinite_selected_source_factor_rejects(self):
         parameters = {**self.params, "features.type":
