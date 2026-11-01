@@ -42,6 +42,11 @@ child contracts, direct prerequisites, exact live-body fingerprints, mirrored
 bodies and ancestry hashes. Short-format prerequisites need a lossless supported
 representation; this patch does not guess them or rewrite upstream contracts.
 
-New code is EGM_PENDING: the independent reviewer facility reports workspace
-credit exhaustion. No same-context review substitutes for that gate. Human review
+The initial EGM_PENDING observation from reviewer-credit exhaustion is superseded
+by fresh independent review of exact source776898fa. Reviewer
+`/root/c679_review_fresh` read all four target files and the pinned EGM Codex,
+Codebase Details and Comprehension standards at
+`b3a35956759bf7f024af2ff061b2e0b44b438e4c`. No Blocker, Major or Nit findings.
+The review was read-only and did not rerun tests or hosted checks. The scoped
+census repair is acceptable; full C01 reconciliation remains open. Human review
 and merge remain required.
