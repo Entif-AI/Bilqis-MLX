@@ -16,7 +16,7 @@ from bilqis_mlx.factory.candidate_frontier import (
 )
 
 
-ROOT = Path(__file__).resolve().parents[4]
+ROOT = Path(__file__).resolve().parents[5]
 BUILDER = ROOT / "lib/ithkuil/src/build_curriculum_frontier.py"
 SOURCE = ROOT / "lib/ithkuil/_data/csv"
 OUTPUT_NAMES = (
@@ -74,7 +74,10 @@ class CandidateFrontierTests(unittest.TestCase):
 
     def test_loads_full_source_pool_with_selected_and_reserve_provenance(self):
         frontier = self.load()
-        self.assertEqual(len(frontier.senses), 1615)
+        with (self.source / "lexicon_root_senses.csv").open(
+                encoding="utf-8", newline="") as handle:
+            source_sense_count = sum(1 for _ in csv.DictReader(handle))
+        self.assertEqual(len(frontier.senses), source_sense_count)
         self.assertEqual(len(frontier.candidates), 240)
         selected = [item for item in frontier.candidates
                     if item.priority_tier == "CORE_D_O"]
@@ -172,7 +175,7 @@ class CandidateFrontierTests(unittest.TestCase):
         refresh_output_hashes(self.artifacts)
 
         frontier = self.load()
-        self.assertEqual(len(frontier.senses), 1616)
+        self.assertEqual(len(frontier.senses), len(source_rows))
 
 
 if __name__ == "__main__":
