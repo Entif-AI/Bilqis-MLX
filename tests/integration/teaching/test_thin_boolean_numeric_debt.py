@@ -31,7 +31,7 @@ class ThinBooleanNumericDebtTests(unittest.TestCase):
         from bilqis_mlx.live_grade_c import registry_graph
         from bilqis_mlx.semantics.abi import HISTORICAL_PREFIX_SIZE
 
-        cls.manifest = json.loads((Path(__file__).resolve().parents[2] /
+        cls.manifest = json.loads((Path(__file__).resolve().parents[3] /
             "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json").read_text())
         cls.grade_a = live_a(accepted_grade_a(cls.manifest))
         cls.previous = live_b(cls.grade_a, SOURCE)

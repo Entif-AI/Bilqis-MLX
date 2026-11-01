@@ -1,5 +1,5 @@
 {
-  "legacy_raw_file_count": 179,
+  "legacy_raw_file_count": 185,
   "legacy_raw_raise_count": 1939,
   "legacy_raw_raise_groups": [
     {
@@ -7934,137 +7934,221 @@
       "path": "bilqis_mlx/presentation/dashboard_watch.py"
     },
     {
-      "code_hint": "SCHOOL_AUTONOMY_EVIDENCE_RECEIPT_INVALID",
+      "code_hint": "DASHBOARD_PARTIAL_CANDIDATE_LEDGER",
       "count": 1,
       "exception": "ValueError",
-      "expression": "'SCHOOL_AUTONOMY_EVIDENCE_RECEIPT_INVALID'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
+      "expression": "'DASHBOARD_PARTIAL_CANDIDATE_LEDGER'",
+      "path": "bilqis_mlx/presentation/renderer/commands.py"
     },
     {
-      "code_hint": "SCHOOL_AUTONOMY_SOURCE_COVERAGE_RECEIPT_INVALID",
+      "code_hint": "DASHBOARD_REQUIRES_INTERACTIVE_TTY_USE_PLAIN_MODE",
       "count": 1,
       "exception": "ValueError",
-      "expression": "'SCHOOL_AUTONOMY_SOURCE_COVERAGE_RECEIPT_INVALID'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
+      "expression": "'DASHBOARD_REQUIRES_INTERACTIVE_TTY_USE_PLAIN_MODE'",
+      "path": "bilqis_mlx/presentation/renderer/commands.py"
     },
     {
-      "code_hint": "SCHOOL_AUTONOMY_TEACHING_RECEIPT_INVALID",
+      "code_hint": "UNKNOWN_DASHBOARD_EVENT",
       "count": 1,
       "exception": "ValueError",
-      "expression": "'SCHOOL_AUTONOMY_TEACHING_RECEIPT_INVALID'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "SCHOOL_AUTONOMY_VISIT_RECEIPT_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_AUTONOMY_VISIT_RECEIPT_INVALID'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
+      "expression": "'UNKNOWN_DASHBOARD_EVENT'",
+      "path": "bilqis_mlx/presentation/renderer/events.py"
     },
     {
       "code_hint": "SCHOOL_CAPABILITY_BEST_PROVENANCE_REQUIRED",
       "count": 1,
       "exception": "ValueError",
       "expression": "'SCHOOL_CAPABILITY_BEST_PROVENANCE_REQUIRED'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
+      "path": "bilqis_mlx/presentation/school50/candidates.py"
     },
     {
       "code_hint": "SCHOOL_TELEMETRY_ATTEMPTED_OPTIMIZER_UPDATES_INVALID",
       "count": 1,
       "exception": "ValueError",
       "expression": "'SCHOOL_TELEMETRY_ATTEMPTED_OPTIMIZER_UPDATES_INVALID'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
+      "path": "bilqis_mlx/presentation/school50/candidates.py"
     },
     {
       "code_hint": "SCHOOL_TELEMETRY_CANDIDATE_COHORT_REQUIRED",
       "count": 1,
       "exception": "ValueError",
       "expression": "'SCHOOL_TELEMETRY_CANDIDATE_COHORT_REQUIRED'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
+      "path": "bilqis_mlx/presentation/school50/candidates.py"
     },
     {
       "code_hint": "SCHOOL_TELEMETRY_CAPABILITY_REQUIRED",
       "count": 1,
       "exception": "ValueError",
       "expression": "'SCHOOL_TELEMETRY_CAPABILITY_REQUIRED'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
+      "path": "bilqis_mlx/presentation/school50/candidates.py"
+    },
+    {
+      "code_hint": "SCHOOL_TELEMETRY_LIVE_VISIT_GENERATION_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_TELEMETRY_LIVE_VISIT_GENERATION_REQUIRED'",
+      "path": "bilqis_mlx/presentation/school50/candidates.py"
+    },
+    {
+      "code_hint": "SCHOOL_TELEMETRY_RETAINED_OPTIMIZER_UPDATES_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_TELEMETRY_RETAINED_OPTIMIZER_UPDATES_INVALID'",
+      "path": "bilqis_mlx/presentation/school50/candidates.py"
     },
     {
       "code_hint": "SCHOOL_TELEMETRY_CURRICULUM_REPLACEMENT_INVALID",
       "count": 1,
       "exception": "ValueError",
       "expression": "'SCHOOL_TELEMETRY_CURRICULUM_REPLACEMENT_INVALID'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
+      "path": "bilqis_mlx/presentation/school50/curriculum.py"
+    },
+    {
+      "code_hint": "SCHOOL_AUTONOMY_EVIDENCE_RECEIPT_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_AUTONOMY_EVIDENCE_RECEIPT_INVALID'",
+      "path": "bilqis_mlx/presentation/school50/evidence.py"
+    },
+    {
+      "code_hint": "SCHOOL_AUTONOMY_SOURCE_COVERAGE_RECEIPT_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_AUTONOMY_SOURCE_COVERAGE_RECEIPT_INVALID'",
+      "path": "bilqis_mlx/presentation/school50/evidence.py"
+    },
+    {
+      "code_hint": "SCHOOL_AUTONOMY_TEACHING_RECEIPT_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_AUTONOMY_TEACHING_RECEIPT_INVALID'",
+      "path": "bilqis_mlx/presentation/school50/evidence.py"
+    },
+    {
+      "code_hint": "SCHOOL_AUTONOMY_VISIT_RECEIPT_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_AUTONOMY_VISIT_RECEIPT_INVALID'",
+      "path": "bilqis_mlx/presentation/school50/evidence.py"
     },
     {
       "code_hint": "SCHOOL_TELEMETRY_DISK_BUDGET_INVALID",
       "count": 1,
       "exception": "ValueError",
       "expression": "'SCHOOL_TELEMETRY_DISK_BUDGET_INVALID:' + field",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "SCHOOL_TELEMETRY_EXAM_CHECKPOINT_MISMATCH",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_TELEMETRY_EXAM_CHECKPOINT_MISMATCH'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "SCHOOL_TELEMETRY_EXAM_CHECKPOINT_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_TELEMETRY_EXAM_CHECKPOINT_REQUIRED'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "SCHOOL_TELEMETRY_EXAM_RUBRIC_ITEMS_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_TELEMETRY_EXAM_RUBRIC_ITEMS_DRIFT'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "SCHOOL_TELEMETRY_EXAM_RUBRIC_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_TELEMETRY_EXAM_RUBRIC_REQUIRED'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "SCHOOL_TELEMETRY_EXAM_SCORES_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_TELEMETRY_EXAM_SCORES_REQUIRED'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
+      "path": "bilqis_mlx/presentation/school50/evidence.py"
     },
     {
       "code_hint": "SCHOOL_TELEMETRY_FAMILY_RUBRIC_COUNT_DRIFT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'SCHOOL_TELEMETRY_FAMILY_RUBRIC_COUNT_DRIFT'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
+      "path": "bilqis_mlx/presentation/school50/evidence.py"
     },
     {
       "code_hint": "SCHOOL_TELEMETRY_FAMILY_SCORE_INVALID",
       "count": 1,
       "exception": "ValueError",
       "expression": "'SCHOOL_TELEMETRY_FAMILY_SCORE_INVALID'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
+      "path": "bilqis_mlx/presentation/school50/evidence.py"
     },
     {
       "code_hint": "SCHOOL_TELEMETRY_FAMILY_SCORE_REQUIRED",
       "count": 1,
       "exception": "ValueError",
       "expression": "'SCHOOL_TELEMETRY_FAMILY_SCORE_REQUIRED'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
+      "path": "bilqis_mlx/presentation/school50/evidence.py"
     },
     {
       "code_hint": "SCHOOL_TELEMETRY_FAMILY_UNKNOWN_PARTITION",
       "count": 1,
       "exception": "ValueError",
       "expression": "'SCHOOL_TELEMETRY_FAMILY_UNKNOWN_PARTITION'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
+      "path": "bilqis_mlx/presentation/school50/evidence.py"
+    },
+    {
+      "code_hint": "SCHOOL_TELEMETRY_SENTINEL_PARTITION_NOT_INDEPENDENT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_TELEMETRY_SENTINEL_PARTITION_NOT_INDEPENDENT'",
+      "path": "bilqis_mlx/presentation/school50/evidence.py"
+    },
+    {
+      "code_hint": "SCHOOL_TELEMETRY_SOUP_SOURCE_PROVENANCE_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_TELEMETRY_SOUP_SOURCE_PROVENANCE_REQUIRED'",
+      "path": "bilqis_mlx/presentation/school50/evidence.py"
+    },
+    {
+      "code_hint": "SCHOOL_TELEMETRY_SOUP_TEACHER_ONLY_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_TELEMETRY_SOUP_TEACHER_ONLY_REQUIRED'",
+      "path": "bilqis_mlx/presentation/school50/evidence.py"
+    },
+    {
+      "code_hint": "SCHOOL_TELEMETRY_EXAM_CHECKPOINT_MISMATCH",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_TELEMETRY_EXAM_CHECKPOINT_MISMATCH'",
+      "path": "bilqis_mlx/presentation/school50/exams.py"
+    },
+    {
+      "code_hint": "SCHOOL_TELEMETRY_EXAM_CHECKPOINT_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_TELEMETRY_EXAM_CHECKPOINT_REQUIRED'",
+      "path": "bilqis_mlx/presentation/school50/exams.py"
+    },
+    {
+      "code_hint": "SCHOOL_TELEMETRY_EXAM_RUBRIC_ITEMS_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_TELEMETRY_EXAM_RUBRIC_ITEMS_DRIFT'",
+      "path": "bilqis_mlx/presentation/school50/exams.py"
+    },
+    {
+      "code_hint": "SCHOOL_TELEMETRY_EXAM_RUBRIC_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_TELEMETRY_EXAM_RUBRIC_REQUIRED'",
+      "path": "bilqis_mlx/presentation/school50/exams.py"
+    },
+    {
+      "code_hint": "SCHOOL_TELEMETRY_EXAM_SCORES_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_TELEMETRY_EXAM_SCORES_REQUIRED'",
+      "path": "bilqis_mlx/presentation/school50/exams.py"
+    },
+    {
+      "code_hint": "SCHOOL_TELEMETRY_LIVE_COHORT_PROVENANCE_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_TELEMETRY_LIVE_COHORT_PROVENANCE_REQUIRED'",
+      "path": "bilqis_mlx/presentation/school50/exams.py"
+    },
+    {
+      "code_hint": "SCHOOL_TELEMETRY_SCORE_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_TELEMETRY_SCORE_INVALID'",
+      "path": "bilqis_mlx/presentation/school50/exams.py"
+    },
+    {
+      "code_hint": "SCHOOL_TELEMETRY_SOURCE_PROVENANCE_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_TELEMETRY_SOURCE_PROVENANCE_REQUIRED:' + key",
+      "path": "bilqis_mlx/presentation/school50/formatting.py"
+    },
+    {
+      "code_hint": "SCHOOL_TELEMETRY_SOURCE_PROVENANCE_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'SCHOOL_TELEMETRY_SOURCE_PROVENANCE_REQUIRED:optimizer_step'",
+      "path": "bilqis_mlx/presentation/school50/formatting.py"
     },
     {
       "code_hint": "SCHOOL_TELEMETRY_GRADE_REQUIRED",
@@ -8074,95 +8158,11 @@
       "path": "bilqis_mlx/presentation/school_telemetry.py"
     },
     {
-      "code_hint": "SCHOOL_TELEMETRY_LIVE_COHORT_PROVENANCE_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_TELEMETRY_LIVE_COHORT_PROVENANCE_REQUIRED'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "SCHOOL_TELEMETRY_LIVE_VISIT_GENERATION_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_TELEMETRY_LIVE_VISIT_GENERATION_REQUIRED'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "SCHOOL_TELEMETRY_RETAINED_OPTIMIZER_UPDATES_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_TELEMETRY_RETAINED_OPTIMIZER_UPDATES_INVALID'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "SCHOOL_TELEMETRY_SCORE_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_TELEMETRY_SCORE_INVALID'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "SCHOOL_TELEMETRY_SENTINEL_PARTITION_NOT_INDEPENDENT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_TELEMETRY_SENTINEL_PARTITION_NOT_INDEPENDENT'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "SCHOOL_TELEMETRY_SOUP_SOURCE_PROVENANCE_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_TELEMETRY_SOUP_SOURCE_PROVENANCE_REQUIRED'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "SCHOOL_TELEMETRY_SOUP_TEACHER_ONLY_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_TELEMETRY_SOUP_TEACHER_ONLY_REQUIRED'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "SCHOOL_TELEMETRY_SOURCE_PROVENANCE_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_TELEMETRY_SOURCE_PROVENANCE_REQUIRED:' + key",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "SCHOOL_TELEMETRY_SOURCE_PROVENANCE_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'SCHOOL_TELEMETRY_SOURCE_PROVENANCE_REQUIRED:optimizer_step'",
-      "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
       "code_hint": "SCHOOL_TELEMETRY_UNSUPPORTED_SCHEMA",
       "count": 1,
       "exception": "ValueError",
       "expression": "'SCHOOL_TELEMETRY_UNSUPPORTED_SCHEMA'",
       "path": "bilqis_mlx/presentation/school_telemetry.py"
-    },
-    {
-      "code_hint": "DASHBOARD_PARTIAL_CANDIDATE_LEDGER",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'DASHBOARD_PARTIAL_CANDIDATE_LEDGER'",
-      "path": "bilqis_mlx/presentation/spiral_dashboard.py"
-    },
-    {
-      "code_hint": "DASHBOARD_REQUIRES_INTERACTIVE_TTY_USE_PLAIN_MODE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'DASHBOARD_REQUIRES_INTERACTIVE_TTY_USE_PLAIN_MODE'",
-      "path": "bilqis_mlx/presentation/spiral_dashboard.py"
-    },
-    {
-      "code_hint": "UNKNOWN_DASHBOARD_EVENT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'UNKNOWN_DASHBOARD_EVENT'",
-      "path": "bilqis_mlx/presentation/spiral_dashboard.py"
     },
     {
       "code_hint": "FACTORY_CATALOG_RELEASE_REQUIRED",
@@ -14698,6 +14698,20 @@
       "recovery_key": "errors.factory.release.manifest_content_drift.recovery",
       "self_heal_owner": "compatibility.factory_release_v1",
       "title": "Sealed factory release content does not match its wire identity"
+    },
+    {
+      "code": "SCHOOL.BAMF_OPERATOR.INVALID",
+      "disposition": "PRESERVE_AND_INSPECT",
+      "legacy_codes": [],
+      "message_key": "errors.school.bamf_operator.invalid.message",
+      "message_template": "The BAMF operator observation is invalid: {reason}",
+      "next_action": "Keep the last valid view and retained run unchanged; reconcile the source census, measurement and identity bindings.",
+      "operator_steps": [],
+      "owner": "presentation.atlas_metrics",
+      "preserve_state": true,
+      "recovery_key": "errors.school.bamf_operator.invalid.recovery",
+      "self_heal_owner": null,
+      "title": "BAMF operator evidence is invalid"
     }
   ]
 }
