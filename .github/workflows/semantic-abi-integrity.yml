@@ -96,8 +96,8 @@ jobs:
         run: >-
           python3 -B scripts/run_tests.py
           bilqis_mlx/verification/tests/test_review_evidence.py
-          bilqis_mlx/factory/tests/test_next_grade_review.py
-          bilqis_mlx/factory/tests/test_factory_construction.py
+          bilqis_mlx/factory/tests/curriculum/test_next_grade_review.py
+          bilqis_mlx/factory/tests/curriculum/test_factory_construction.py
           bilqis_mlx/factory/tests/test_curriculum_compiler.py
           bilqis_mlx/factory/tests/test_grade_admission.py
           bilqis_mlx/diagnostics/tests/test_health_shadow.py
@@ -105,4 +105,4 @@ jobs:
           scripts/tests/test_semantic_module_boundaries.py
           bilqis_mlx/semantics/tests/foundation/test_domain_contracts.py
           bilqis_mlx/verification/tests/test_construction_contracts.py
-          bilqis_mlx/factory/tests/test_release_outcome_contracts.py
+          bilqis_mlx/factory/tests/lifecycle/test_release_outcome_contracts.py
