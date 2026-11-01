@@ -1,0 +1,45 @@
+test_atomic_staging_promotion_preserves_old_generation_and_pointer (_bilqis_test_2b036867f650c468bb642e876853f04d79478899fb233cdd1129164f92e33b7c.BamfProjectionTests.test_atomic_staging_promotion_preserves_old_generation_and_pointer) ... ok
+test_durable_domain_binding_cannot_be_relabelled_after_restart (_bilqis_test_2b036867f650c468bb642e876853f04d79478899fb233cdd1129164f92e33b7c.BamfProjectionTests.test_durable_domain_binding_cannot_be_relabelled_after_restart) ... ok
+test_graph_outage_never_blocks_local_training_or_event_queue (_bilqis_test_2b036867f650c468bb642e876853f04d79478899fb233cdd1129164f92e33b7c.BamfProjectionTests.test_graph_outage_never_blocks_local_training_or_event_queue) ... ok
+test_identity_bound_outbox_is_deduplicated_without_graph_io (_bilqis_test_2b036867f650c468bb642e876853f04d79478899fb233cdd1129164f92e33b7c.BamfProjectionTests.test_identity_bound_outbox_is_deduplicated_without_graph_io) ... ok
+test_late_durable_conflict_rolls_back_entire_batch (_bilqis_test_2b036867f650c468bb642e876853f04d79478899fb233cdd1129164f92e33b7c.BamfProjectionTests.test_late_durable_conflict_rolls_back_entire_batch) ... FAIL
+test_late_source_identity_conflict_rolls_back_entire_batch (_bilqis_test_2b036867f650c468bb642e876853f04d79478899fb233cdd1129164f92e33b7c.BamfProjectionTests.test_late_source_identity_conflict_rolls_back_entire_batch) ... FAIL
+test_rights_release_model_evaluator_or_asof_drift_rejects_before_write (_bilqis_test_2b036867f650c468bb642e876853f04d79478899fb233cdd1129164f92e33b7c.BamfProjectionTests.test_rights_release_model_evaluator_or_asof_drift_rejects_before_write) ... ok
+test_staging_census_bounded_queries_and_private_payload_exclusion (_bilqis_test_2b036867f650c468bb642e876853f04d79478899fb233cdd1129164f92e33b7c.BamfProjectionTests.test_staging_census_bounded_queries_and_private_payload_exclusion) ... ok
+
+======================================================================
+FAIL: test_late_durable_conflict_rolls_back_entire_batch (_bilqis_test_2b036867f650c468bb642e876853f04d79478899fb233cdd1129164f92e33b7c.BamfProjectionTests.test_late_durable_conflict_rolls_back_entire_batch)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf-c10-520/bilqis_mlx/runtime/tests/test_bamf_projection.py", line 75, in test_late_durable_conflict_rolls_back_entire_batch
+    self.assertEqual(read_projection_outbox(original.outbox_path), (existing,))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (Bamf[1101 chars]v1'), BamfProjectionEvent(event=AkashaEvent(ev[1055 chars]v1')) != (Bamf[1101 chars]v1'),)
+
+First tuple contains 1 additional elements.
+First extra element 1:
+BamfProjectionEvent(event=AkashaEvent(event_id='2499602f8dd502e753bb12b6260d7ad2a8327615af15ce7e286f156b3ade42a4', payload_digest='7aa720cf4eef984c8db56062ac810c70c1959c0a636ac9da33a6c5b1e939397b', kind=<AkashaEventKind.REQUALIFICATION: 'REQUALIFICATION'>, subject_id='capability:new', source_receipt_sha256='9999999999999999999999999999999999999999999999999999999999999999', payload_json='{"capability_id":"capability:new","retained_generation_sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","status":"REQUALIFICATION_REQUIRED"}', source_time=570, effective_time=575, observed_at=580, recorded_at=585, schema_version='bilqis.c10.akasha-event/v1'), source_id='source:fixture', release_digest='1111111111111111111111111111111111111111111111111111111111111111', model_digest='2222222222222222222222222222222222222222222222222222222222222222', evaluator_digest='3333333333333333333333333333333333333333333333333333333333333333', rights_digest='5555555555555555555555555555555555555555555555555555555555555555', as_of=600, schema_version='bilqis.c10.bamf-projection-event/v1')
+
+Diff is 3519 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_late_source_identity_conflict_rolls_back_entire_batch (_bilqis_test_2b036867f650c468bb642e876853f04d79478899fb233cdd1129164f92e33b7c.BamfProjectionTests.test_late_source_identity_conflict_rolls_back_entire_batch)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf-c10-520/bilqis_mlx/runtime/tests/test_bamf_projection.py", line 93, in test_late_source_identity_conflict_rolls_back_entire_batch
+    self.assertEqual(read_projection_outbox(domain.outbox_path), (existing,))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (Bamf[1260 chars]v1'), BamfProjectionEvent(event=AkashaEvent(ev[1055 chars]v1')) != (Bamf[1260 chars]v1'),)
+
+First tuple contains 1 additional elements.
+First extra element 1:
+BamfProjectionEvent(event=AkashaEvent(event_id='2499602f8dd502e753bb12b6260d7ad2a8327615af15ce7e286f156b3ade42a4', payload_digest='7aa720cf4eef984c8db56062ac810c70c1959c0a636ac9da33a6c5b1e939397b', kind=<AkashaEventKind.REQUALIFICATION: 'REQUALIFICATION'>, subject_id='capability:new', source_receipt_sha256='9999999999999999999999999999999999999999999999999999999999999999', payload_json='{"capability_id":"capability:new","retained_generation_sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","status":"REQUALIFICATION_REQUIRED"}', source_time=570, effective_time=575, observed_at=580, recorded_at=585, schema_version='bilqis.c10.akasha-event/v1'), source_id='source:fixture', release_digest='1111111111111111111111111111111111111111111111111111111111111111', model_digest='2222222222222222222222222222222222222222222222222222222222222222', evaluator_digest='3333333333333333333333333333333333333333333333333333333333333333', rights_digest='4444444444444444444444444444444444444444444444444444444444444444', as_of=600, schema_version='bilqis.c10.bamf-projection-event/v1')
+
+Diff is 3678 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.462s
+
+FAILED (failures=2)
+TEST_TOTALS total=8 passed=6 failed=2 skipped=0 errors=0
+6 passed, 2 failed, 0 skipped

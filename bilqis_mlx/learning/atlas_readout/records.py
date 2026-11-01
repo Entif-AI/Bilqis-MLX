@@ -6,7 +6,7 @@ from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.factory.answers import RegisteredAnswerModality
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.semantics.atlas_projection import FrozenAtlasSnapshot
-from bilqis_mlx.semantics.frame_schema import FrameSchema
+from bilqis_mlx.semantics.frame_schema import ConceptRef, FrameSchema, RoleOccurrence
 from bilqis_mlx.semantics.released_frame_schemas import VerifiedReleasedFrameSchemas
 
 
@@ -113,7 +113,7 @@ class FrameOutputDomain:
 @dataclass(frozen=True)
 class TypedHeadLogits:
     logits: mx.array
-    candidates: tuple[str | RoleCandidate, ...]
+    candidates: tuple[str | ConceptRef | RoleOccurrence | RoleCandidate, ...]
     modality_id: str
     semantic_release: str
     schema_version: str = HEAD_LOGITS_SCHEMA
@@ -125,10 +125,14 @@ class TypedHeadLogits:
                 or self.logits.dtype != mx.float32
                 or self.logits.ndim < 1 or min(self.logits.shape) < 1
                 or type(self.candidates) is not tuple or not self.candidates
-                or any(type(c) not in (str, RoleCandidate) for c in self.candidates)
+                or any(type(c) not in (str, ConceptRef, RoleOccurrence, RoleCandidate)
+                       for c in self.candidates)
                 or any(type(c) is str and not c for c in self.candidates)
                 or len(set(self.candidates)) != len(self.candidates)
                 or len({type(c) for c in self.candidates}) != 1
                 or self.logits.shape[-1] != len(self.candidates)
                 or not bool(mx.all(mx.isfinite(self.logits)))):
             invalid()
+        for candidate in self.candidates:
+            if type(candidate) in (ConceptRef, RoleOccurrence, RoleCandidate):
+                candidate.__post_init__()

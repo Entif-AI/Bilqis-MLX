@@ -1,0 +1,11 @@
+test_alternate_names_fail_before_and_after_canonical_discovery (bilqis_mlx.runtime.tests.projection.test_grouped_runtime_identity.GroupedRuntimeIdentityTests.test_alternate_names_fail_before_and_after_canonical_discovery) ... ok
+test_public_module_discovery_and_physical_groups (bilqis_mlx.runtime.tests.projection.test_grouped_runtime_identity.GroupedRuntimeIdentityTests.test_public_module_discovery_and_physical_groups) ... ok
+test_qualification_root_uses_canonical_package_location (bilqis_mlx.runtime.tests.projection.test_grouped_runtime_identity.GroupedRuntimeIdentityTests.test_qualification_root_uses_canonical_package_location) ... ok
+test_source_context_has_one_class_identity (bilqis_mlx.runtime.tests.projection.test_grouped_runtime_identity.GroupedRuntimeIdentityTests.test_source_context_has_one_class_identity) ... ok
+test_teacher_epoch_hashes_canonical_owner_bytes (bilqis_mlx.runtime.tests.projection.test_grouped_runtime_identity.GroupedRuntimeIdentityTests.test_teacher_epoch_hashes_canonical_owner_bytes) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.081s
+
+OK
+{}
