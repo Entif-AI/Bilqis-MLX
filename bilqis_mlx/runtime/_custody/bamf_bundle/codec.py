@@ -8,7 +8,6 @@ from pathlib import Path
 
 import bilqis_mlx.runtime.mlx_checkpoint as _mlx_checkpoint
 from bilqis_mlx.data_plane import DataPlaneError, data_plane
-from bilqis_mlx.learning.atlas_candidate import CandidateState
 from .records import (
     SIDECARS, BamfBundleCandidate, BamfGenerationManifest, CompleteStudent,
     canonical, invalid, sha, sidecar_records, validate_sidecars,
@@ -88,6 +87,7 @@ def _read_sidecar(root: Path, binding: dict):
 
 def load_bamf_bundle(root: Path, *, expected_manifest_sha256: str | None = None) -> CompleteStudent:
     """Validate manifest and all sidecars before constructing B12 optimizer state."""
+    from bilqis_mlx.learning.atlas_candidate import CandidateState
     from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, STATE_SCHEMA
     from bilqis_mlx.runtime.checkpoint_outbox import ordinary_outbox_lineage
     from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, GenerationProvenance, ModelTopologySpecV2
