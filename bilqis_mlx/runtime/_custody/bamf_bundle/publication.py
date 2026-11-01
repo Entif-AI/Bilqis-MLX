@@ -85,6 +85,7 @@ def _stage(run_dir: Path) -> Path:
 
 
 def reconcile_bamf_outbox(run_dir: Path, student: CompleteStudent, *, publish_missing=True) -> bool:
+    """Reconcile while the caller holds the generation pointer writer lock."""
     from bilqis_mlx.runtime import checkpoints
     return checkpoints._reconcile_delivery_outbox(
         Path(run_dir), {"run_id": student.run_id, "generation": student.generation,
@@ -121,9 +122,9 @@ def record_bamf_rejection(run_dir: Path, student: CompleteStudent, evidence: dic
         raw = canonical(receipt)
         digest = sha(raw)
         data_plane().put_object(digest, raw)
-    checkpoints._reconcile_delivery_outbox(
-        run_dir, {**record, "delivery_outbox": outbox})
-    return digest
+        checkpoints._reconcile_delivery_outbox(
+            run_dir, {**record, "delivery_outbox": outbox})
+        return digest
 
 
 def _validate_parent_transition(run_dir: Path, pointer: dict | None, candidate: BamfBundleCandidate) -> None:
@@ -147,6 +148,7 @@ def _validate_parent_transition(run_dir: Path, pointer: dict | None, candidate: 
         invalid("BAMF_REJECTED_CANDIDATE_NOT_GENERATION")
     if candidate.transition.get("kind") != kind:
         invalid("BAMF_GENERATION_TRANSITION_INVALID")
+    reconcile_bamf_outbox(run_dir, parent)
 
 
 def publish_bamf_generation(run_dir: Path, candidate: BamfBundleCandidate, *,
@@ -192,9 +194,9 @@ def publish_bamf_generation(run_dir: Path, candidate: BamfBundleCandidate, *,
                 "bundle": str(target.relative_to(run_dir)), "manifest_sha256": digest,
             }
             _atomic_pointer(pointer_path, pointer)
-        student = load_bamf_bundle(target, expected_manifest_sha256=digest)
-        reconcile_bamf_outbox(run_dir, student)
-        return pointer
+            student = load_bamf_bundle(target, expected_manifest_sha256=digest)
+            reconcile_bamf_outbox(run_dir, student)
+            return pointer
     except BaseException:
         if stage.exists() and stage.is_dir() and not stage.is_symlink():
             shutil.rmtree(stage)
@@ -203,15 +205,16 @@ def publish_bamf_generation(run_dir: Path, candidate: BamfBundleCandidate, *,
 
 def load_bamf_generation(pointer_path: Path, *, publish_missing_outbox: bool = True) -> CompleteStudent:
     pointer_path = Path(pointer_path)
-    pointer = _read_pointer(pointer_path)
-    if pointer is None:
-        invalid(DataPlaneError.BUNDLE_ROOT_UNSAFE)
-    student = load_bamf_bundle(
-        pointer_path.parent / pointer["bundle"],
-        expected_manifest_sha256=pointer["manifest_sha256"])
-    if (student.run_id != pointer["run_id"] or student.generation != pointer["generation"]
-            or student.parent_manifest_sha256 != pointer["parent_manifest_sha256"]):
-        invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
-    reconcile_bamf_outbox(
-        pointer_path.parent, student, publish_missing=publish_missing_outbox)
-    return student
+    with _pointer_lock(pointer_path.parent):
+        pointer = _read_pointer(pointer_path)
+        if pointer is None:
+            invalid(DataPlaneError.BUNDLE_ROOT_UNSAFE)
+        student = load_bamf_bundle(
+            pointer_path.parent / pointer["bundle"],
+            expected_manifest_sha256=pointer["manifest_sha256"])
+        if (student.run_id != pointer["run_id"] or student.generation != pointer["generation"]
+                or student.parent_manifest_sha256 != pointer["parent_manifest_sha256"]):
+            invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
+        reconcile_bamf_outbox(
+            pointer_path.parent, student, publish_missing=publish_missing_outbox)
+        return student

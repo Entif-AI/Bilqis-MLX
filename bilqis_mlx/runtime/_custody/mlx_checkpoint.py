@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from pathlib import Path
 from typing import Mapping
 
@@ -268,6 +269,8 @@ def save_bamf_state_payload(destination: Path, spec, extents, state, *,
     assert_headroom(destination, required_bytes=expected_bytes + 65536,
                     reserve_gib=reserve_gib)
     mx.save_safetensors(str(destination), arrays)
+    with destination.open("rb") as stream:
+        os.fsync(stream.fileno())
     return {
         "schema": BAMF_TENSOR_SCHEMA,
         "filename": destination.name,
