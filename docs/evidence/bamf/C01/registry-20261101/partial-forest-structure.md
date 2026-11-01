@@ -42,3 +42,10 @@ Consumes reviewed unified/Lane C `bd62f3cb`. This is another coherent mandatory
 interruption on the already-active issue347 branch and draftPR694. The integrated
 171-child registry still has eight explicit holds/order=[]; fullC01 acceptance is
 open. No learner, AdamW, training, remote graph or source-admission mutation occurs.
+
+Exact candidate `f683f9f9` passed all6 native M3 caller cases, with no skips,
+in a detached checkout populated from a commit bundle before GitHub publication.
+The sovereign MLX test lease was used. Cumulative changed-from-unified structure
+and hygiene checks pass:45Python files, zero findings/new debt. Public facade is
+57lines; largest owner is117 and largest companion112. This satisfies the local
+structural interruption predicate; hosted verification remains exact-head scoped.
