@@ -92,3 +92,12 @@ The repaired controls pass2/2. The repaired full suite passed23/23, zero skips. 
 original repairs and independently ran2/2 mutation controls, then required adding
 transition/cache-invalidation metadata. That field and a third bounded control
 are included before the final run/review below.
+
+## Final disposition
+
+Code head ff111d2c5201a84f0aa6457fb5cadccec97a603c: full CPU bundle suite24/24,
+zero skips/errors, including the unpatched complete214-tensor/856-array proof.
+Fresh pinned EGM targeted re-review reports0 Blockers/Majors/Nits and independently
+passes3/3 bounded mutation controls. It did not rerun the large allocation.
+PM-2026-11-01-005's proof-baseline gaps are repaired. This remains a staged #479
+numerical custody slice with every unmeasured acceptance item above still open.
