@@ -2,13 +2,10 @@
 from __future__ import annotations
 
 from dataclasses import replace
-import hashlib
 
 from .atlas_frontier_closure import ClosureStatus, FrontierClosure
-from .atlas_frontier_contracts import CurriculumSnapshot, _bytes, _fail
-from .atlas_frontier_selection import (
-    FrontierDeltaSelection, validate_frontier_selection,
-)
+from .atlas_frontier_contracts import CurriculumSnapshot, _fail
+from .atlas_frontier_selection import FrontierDeltaSelection
 from .atlas_frontier_selection_validation import (
     TargetDeltaProjection,
     validate_closure_structure,
@@ -18,20 +15,16 @@ from .skos_curriculum import IMPLEMENTATION_UNCOVERED
 from .atlas_frontier_progress_contracts import (
     FrontierProgress, FrontierRemediation, FrontierStatus, StagedSelectionReceipt,
 )
-
-
-def _obligation_digest(rows) -> str:
-    return hashlib.sha256(_bytes(tuple(
-        (row.family_id, row.source_evidence_sha256, row.prerequisites)
-        for row in sorted(rows)))).hexdigest()
-
-
-def _current_obligations(closure: FrontierClosure) -> dict[str, str]:
-    return {
-        identity: _obligation_digest(tuple(
-            row for row in closure.candidates if row.semantic_id == identity))
-        for identity in closure.constituent_order
-    }
+from .atlas_frontier_progress_validation import (
+    credited_receipts,
+    current_obligations,
+    has_unrequested_ready,
+    obligation_digest,
+    requested_keys,
+    validate_direct_selection,
+    validate_prior,
+    validate_staged_receipt,
+)
 
 
 def _counts(closure: FrontierClosure) -> dict[ClosureStatus, int]:
@@ -51,21 +44,6 @@ def _remediation(closure: FrontierClosure) -> tuple[FrontierRemediation, ...]:
         hold.reason_code, hold.owner, hold.source_id,
     ) for hold in closure.source_holds)
     return tuple(sorted(rows))
-
-
-def _validate_prior(snapshot: CurriculumSnapshot, prior: FrontierProgress | None) -> None:
-    if prior is None:
-        return
-    if type(prior) is not FrontierProgress:
-        _fail("BAMF_PLANNER_PROGRESS_PREDECESSOR_INVALID")
-    prior.verify()
-    if (snapshot.snapshot_sha256 != prior.planning_snapshot.snapshot_sha256
-            and snapshot.predecessor_sha256
-            != prior.planning_snapshot.snapshot_sha256):
-        _fail("BAMF_PLANNER_PROGRESS_PREDECESSOR_MISMATCH")
-    eligible = set(snapshot.source_eligible_concept_ids)
-    if not set(prior.requested_semantic_ids) <= eligible:
-        _fail("BAMF_PLANNER_PROGRESS_PREDECESSOR_SCOPE_DRIFT")
 
 
 def _advance_cursor_once(
@@ -92,84 +70,10 @@ def _advance_cursor_once(
     return result
 
 
-def _selection_current(
-    snapshot: CurriculumSnapshot, closure: FrontierClosure,
-    selection: FrontierDeltaSelection | None,
-    current_release: ExecutableFactoryRelease | None,
-    selected_projection: TargetDeltaProjection | None,
-    staged_receipt: StagedSelectionReceipt | None,
-) -> tuple[ExecutableFactoryRelease | None, TargetDeltaProjection | None]:
-    if selection is None:
-        if current_release is not None or selected_projection is not None:
-            _fail("BAMF_PLANNER_SELECTION_INPUT_INVALID")
-        return None, None
-    if (current_release is None and selected_projection is None
-            and staged_receipt is not None):
-        current_release = staged_receipt.predecessor_release
-        selected_projection = staged_receipt.projection
-    if current_release is None or selected_projection is None:
-        _fail("BAMF_PLANNER_SELECTION_INPUT_INVALID")
-    validate_frontier_selection(
-        snapshot, closure, selection, current_release, selected_projection)
-    return current_release, selected_projection
-
-
-def _staged_current(
-    snapshot: CurriculumSnapshot, selection: FrontierDeltaSelection | None,
-    receipt: StagedSelectionReceipt | None,
-    current_release: ExecutableFactoryRelease | None,
-    selected_projection: TargetDeltaProjection | None,
-) -> None:
-    if receipt is None:
-        return
-    receipt.verify()
-    if (selection is None
-            or receipt.selection != selection
-            or receipt.predecessor_release != current_release
-            or receipt.projection != selected_projection
-            or receipt.staged_successor_sha256
-               not in snapshot.staged_factory_release_sha256s):
-        _fail("BAMF_PLANNER_STAGED_SELECTION_MISMATCH")
-
-
-def _requested_keys(
-    receipts: tuple[StagedSelectionReceipt, ...] | list[StagedSelectionReceipt],
-) -> set[tuple[str, str]]:
-    return {(receipt.selected_semantic_id,
-             _obligation_digest(receipt.selection.selected_obligations))
-            for receipt in receipts}
-
-
-def _has_unrequested_ready(
-    closure: FrontierClosure,
-    receipts: tuple[StagedSelectionReceipt, ...] | list[StagedSelectionReceipt],
-    current: dict[str, str],
-) -> bool:
-    requested = _requested_keys(receipts)
-    for semantic_id in closure.constituent_order:
-        rows = tuple(
-            row for row in closure.candidates if row.semantic_id == semantic_id)
-        if (rows and all(row.status is ClosureStatus.READY for row in rows)
-                and (semantic_id, current[semantic_id]) not in requested):
-            return True
-    return False
-
-
 def _direct_uncovered_count(snapshot: CurriculumSnapshot) -> int:
     return sum(
         row.implementation_status == IMPLEMENTATION_UNCOVERED
         for row in snapshot.coverage_rows)
-
-
-def _pending_obligation_changed(
-    prior: FrontierProgress | None,
-    current: dict[str, str],
-) -> bool:
-    if prior is None or prior.pending_receipt is None:
-        return False
-    receipt = prior.pending_receipt
-    return current.get(receipt.selected_semantic_id) != _obligation_digest(
-        receipt.selection.selected_obligations)
 
 
 def _status_without_new_proposal(
@@ -178,7 +82,7 @@ def _status_without_new_proposal(
     source_held_count: int,
     direct_uncovered: int,
 ) -> FrontierStatus:
-    requested = _requested_keys(receipts)
+    requested = requested_keys(receipts)
     if direct_uncovered:
         return FrontierStatus.IMPLEMENTATION_UNCOVERED
     if counts[ClosureStatus.WAITING_FOR_EVIDENCE]:
@@ -221,16 +125,17 @@ def _reconcile_admission(
     closure: FrontierClosure,
     prior: FrontierProgress,
     receipts: list[StagedSelectionReceipt],
+    credited: list[StagedSelectionReceipt],
     current: dict[str, str],
 ) -> FrontierProgress:
     planning_snapshot = _advance_cursor_once(
         snapshot, prior, closure.constituent_order)
     direct_uncovered = _direct_uncovered_count(snapshot)
-    if _has_unrequested_ready(closure, receipts, current):
+    if has_unrequested_ready(closure, credited, current):
         status = FrontierStatus.REPLAN_REQUIRED
     else:
         status = _status_without_new_proposal(
-            snapshot, _counts(closure), tuple(receipts), current,
+            snapshot, _counts(closure), tuple(credited), current,
             len(closure.source_holds), direct_uncovered)
     return _progress_result(
         snapshot, planning_snapshot, closure, status, None, receipts, None,
@@ -253,24 +158,31 @@ def plan_frontier_progress(
     if closure.snapshot_sha256 != snapshot.snapshot_sha256:
         _fail("BAMF_PLANNER_PROGRESS_CLOSURE_MISMATCH")
     validate_closure_structure(snapshot, closure)
-    _validate_prior(snapshot, prior)
-    current_release, selected_projection = _selection_current(
+    validate_prior(snapshot, prior)
+    current_release, selected_projection = validate_direct_selection(
         snapshot, closure, selection, current_release, selected_projection,
         staged_receipt)
-    _staged_current(
+    validate_staged_receipt(
         snapshot, selection, staged_receipt, current_release, selected_projection)
 
-    current = _current_obligations(closure)
+    current = current_obligations(closure)
     receipts = list(prior.staged_receipts if prior else ())
+    credited = credited_receipts(snapshot, closure, receipts, current)
     pending_receipt_sha = prior.pending_staged_receipt_sha256 if prior else None
-    pending = prior.pending_staged_successor_sha256 if prior else None
-    pending_invalidated = _pending_obligation_changed(prior, current)
+    pending_receipt = prior.pending_receipt if prior else None
+    pending_invalidated = (
+        pending_receipt is not None
+        and pending_receipt not in credited
+    )
+    pending = (
+        prior.pending_staged_successor_sha256
+        if prior is not None and not pending_invalidated else None
+    )
     if pending_invalidated:
         pending_receipt_sha = None
-        pending = None
     if pending == snapshot.admitted_factory_release_sha256:
         return _reconcile_admission(
-            snapshot, closure, prior, receipts, current)
+            snapshot, closure, prior, receipts, credited, current)
     planning_snapshot = snapshot
     if staged_receipt is not None:
         if (pending_receipt_sha is not None
@@ -279,6 +191,9 @@ def plan_frontier_progress(
         if staged_receipt.receipt_sha256 not in {
                 item.receipt_sha256 for item in receipts}:
             receipts.append(staged_receipt)
+        if staged_receipt.receipt_sha256 not in {
+                item.receipt_sha256 for item in credited}:
+            credited.append(staged_receipt)
         pending_receipt_sha = staged_receipt.receipt_sha256
         pending = staged_receipt.staged_successor_sha256
 
@@ -292,21 +207,21 @@ def plan_frontier_progress(
     elif selection is not None:
         selected_key = (
             selection.selected_semantic_id,
-            _obligation_digest(selection.selected_obligations),
+            obligation_digest(selection.selected_obligations),
         )
-        requested = _requested_keys(receipts)
+        requested = requested_keys(credited)
         status = (FrontierStatus.FIXED_POINT
                   if selected_key in requested
                   else FrontierStatus.PROPOSAL)
     else:
-        if _has_unrequested_ready(closure, receipts, current):
+        if has_unrequested_ready(closure, credited, current):
             if pending_invalidated:
                 status = FrontierStatus.REPLAN_REQUIRED
             else:
                 _fail("BAMF_PLANNER_PROGRESS_SELECTION_REQUIRED")
         else:
             status = _status_without_new_proposal(
-                snapshot, counts, tuple(receipts), current, held, direct_uncovered)
+                snapshot, counts, tuple(credited), current, held, direct_uncovered)
     return _progress_result(
         snapshot, planning_snapshot, closure, status, proposal, receipts,
         pending_receipt_sha, direct_uncovered)

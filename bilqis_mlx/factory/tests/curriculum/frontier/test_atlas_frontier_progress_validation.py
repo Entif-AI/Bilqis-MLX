@@ -6,6 +6,16 @@ import unittest
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory.atlas_frontier_contracts import _bytes
 from bilqis_mlx.factory.atlas_frontier_progress import plan_frontier_progress
+from bilqis_mlx.factory.atlas_frontier_selection import (
+    DeferredClosure,
+    _candidate_signature,
+    _ranked_ready_targets,
+)
+from bilqis_mlx.factory.atlas_frontier_selection_validation import (
+    TargetDeltaProjection,
+    catalog_digest,
+    obligation_signature,
+)
 from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier_progress import (
     _ready,
     _staged_ready,
@@ -110,6 +120,85 @@ class AtlasFrontierProjectionCustodyTests(unittest.TestCase):
             progress_sha256=forged_prior.expected_digest(),
         )
 
+        with self.assertRaises(BilqisError):
+            plan_frontier_progress(snapshot, closure, prior=forged_prior)
+
+    def test_cold_resume_rejects_self_consistent_alternate_ready_selection(self):
+        release, snapshot, closure, selection, receipt = _staged_ready()
+        prior = plan_frontier_progress(
+            snapshot, closure, selection, staged_receipt=receipt)
+        _, ranked = _ranked_ready_targets(snapshot, closure)
+        slope, neg_unlocks, _, alternate_id, rows = next(
+            item for item in ranked if item[3] == "z.op.1")
+        capabilities = receipt.staged_successor.transition.added_capabilities
+        identities = tuple(
+            receipt.staged_successor.semantic_catalog[
+                len(release.semantic_catalog):
+            ]
+        )
+        projection = TargetDeltaProjection(
+            semantic_id=alternate_id,
+            obligation_signature=obligation_signature(rows),
+            current_release_sha256=release.release_sha256,
+            current_semantic_catalog_sha256=release.semantic_catalog_sha256,
+            added_capability_ids=capabilities,
+            introduced_semantic_ids=identities,
+            projected_semantic_catalog_sha256=catalog_digest(
+                release.semantic_catalog + identities),
+            projection_sha256="0" * 64,
+        )
+        projection = replace(
+            projection, projection_sha256=projection.expected_digest())
+        selected_keys = {
+            (item.semantic_id, item.family_id) for item in rows
+        }
+        deferred = tuple(sorted(DeferredClosure(
+            item.semantic_id,
+            item.family_id,
+            item.status,
+            item.reasons,
+        ) for item in closure.candidates
+            if (item.semantic_id, item.family_id) not in selected_keys))
+        forged_selection = replace(
+            selection,
+            selected_semantic_id=alternate_id,
+            selected_obligations=rows,
+            introduced_capability_ids=capabilities,
+            introduced_semantic_ids=identities,
+            prerequisite_slope=slope,
+            downstream_unlocks=-neg_unlocks,
+            deferred=deferred,
+            candidate_signature=_candidate_signature(
+                alternate_id, rows, capabilities, identities),
+            selection_sha256="0" * 64,
+        )
+        forged_selection = replace(
+            forged_selection,
+            selection_sha256=forged_selection.expected_digest(),
+        )
+        forged_receipt = replace(
+            receipt,
+            selection=forged_selection,
+            projection=projection,
+            receipt_sha256="0" * 64,
+        )
+        forged_receipt = replace(
+            forged_receipt,
+            receipt_sha256=forged_receipt.expected_digest(),
+        )
+        forged_prior = replace(
+            prior,
+            staged_receipts=(forged_receipt,),
+            pending_staged_receipt_sha256=forged_receipt.receipt_sha256,
+            progress_sha256="0" * 64,
+        )
+        forged_prior = replace(
+            forged_prior,
+            progress_sha256=forged_prior.expected_digest(),
+        )
+
+        forged_receipt.verify()
+        forged_prior.verify()
         with self.assertRaises(BilqisError):
             plan_frontier_progress(snapshot, closure, prior=forged_prior)
 
