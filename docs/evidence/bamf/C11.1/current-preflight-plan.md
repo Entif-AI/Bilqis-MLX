@@ -48,6 +48,7 @@ governance, architecture/docs/error/hygiene/diff checks against70e37ae2.
 This does NOT complete #522. Production create/resume, saved admission-policy
 persistence/conflicting override proof and actual A12/B13 issuer/loader integration
 remain required. No new policy store or duplicate release authority is invented.
-The fresh reviewer facility currently fails with workspace-credit exhaustion;
-new implementation turn-in must say EGM_PENDING until independent review succeeds.
-A same-context review cannot substitute for it. Continue safe Lane C work.
+The initial reviewer facility failed with workspace-credit exhaustion. That
+EGM_PENDING observation is superseded for the bounded increment by the fresh
+independent review recorded in current-preflight-review.md. Production acceptance
+remains open; same-context review never substitutes for independent review.

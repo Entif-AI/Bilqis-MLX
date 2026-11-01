@@ -120,6 +120,44 @@ class BamfPreflightTests(unittest.TestCase):
         self.assertEqual(args.source_prefetch_workers, 1)
         self.assertEqual(args.atlas_release_manifest, Path('/manifest.json'))
 
+    def test_lease_scope_or_missing_resume_pointer_stays_blocked(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            scope = Path(tmp) / 'scope.json'
+            scope.write_bytes(b'not-authority-for-configuration-inspection')
+            for extra in (['--atlas-admission-scope', str(scope)], ['--resume']):
+                with self.subTest(extra=extra):
+                    code, output, errors = self.invoke(['--run-dir', str(Path(tmp) / 'new'), *extra])
+                    self.assertEqual((code, output), (2, ''))
+                    self.assertIn('BLOCKED', errors)
+                    self.assertFalse((Path(tmp) / 'new').exists())
+            self.assertEqual(scope.read_bytes(), b'not-authority-for-configuration-inspection')
+
+    def test_atlas_release_requires_an_existing_regular_manifest(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            for manifest in (Path(tmp), Path(tmp) / 'absent.json'):
+                with self.subTest(manifest=manifest):
+                    code, output, errors = self.invoke(['--run-dir', str(Path(tmp) / 'new'),
+                        '--admission-policy', 'atlas-release', '--atlas-release-manifest', str(manifest)])
+                    self.assertEqual((code, output), (2, ''))
+                    self.assertIn('BLOCKED', errors)
+                    self.assertFalse((Path(tmp) / 'new').exists())
+
+    def test_manifest_is_not_accepted_by_legacy_or_live_dispatch(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest = Path(tmp) / 'manifest.json'
+            manifest.write_bytes(b'opaque reference')
+            for selection in (['--dry-run'], [], ['--model-topology', str(TOPOLOGY), '--human-run']):
+                with self.subTest(selection=selection), \
+                        patch('bilqis_mlx.presentation.operator_cli.command._invoke_learner',
+                              side_effect=AssertionError('no learner for held manifest')):
+                    output, errors = io.StringIO(), io.StringIO()
+                    with redirect_stdout(output), redirect_stderr(errors):
+                        code = main(['train', '--run-dir', str(Path(tmp) / 'new'),
+                            '--atlas-release-manifest', str(manifest), *selection])
+                    self.assertEqual((code, output.getvalue()), (2, ''))
+                    self.assertIn('BLOCKED', errors.getvalue())
+                    self.assertFalse((Path(tmp) / 'new').exists())
+
     def test_fresh_process_can_inspect_without_mlx_or_run_writes(self):
         script = '''
 import importlib.abc,sys
@@ -134,9 +172,20 @@ from bilqis_mlx.cli import main
 raise SystemExit(main(['train','--dry-run','--model-topology',sys.argv[2],'--run-dir',sys.argv[3]]))
 '''
         with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            receipts = root / 'existing-receipts'
+            receipts.mkdir()
+            (receipts / 'receipt.json').write_bytes(b'preserved receipt\x00\xff')
+            (root / 'lineage.bin').write_bytes(b'protected unrelated lineage')
+            def snapshot():
+                return tuple((str(p.relative_to(root)), p.is_dir(), p.stat().st_mtime_ns,
+                              None if p.is_dir() else p.read_bytes())
+                             for p in (root, *sorted(root.rglob('*'))))
+            before = snapshot()
             result = subprocess.run([sys.executable, '-I', '-B', '-c', script,
                 str(ROOT), str(TOPOLOGY), str(Path(tmp) / 'new')],
                 text=True, capture_output=True, timeout=20)
             self.assertEqual(result.returncode, 2, result.stderr)
             self.assertEqual(json.loads(result.stdout)['neural_updates'], 0)
-            self.assertEqual(list(Path(tmp).iterdir()), [])
+            self.assertEqual(snapshot(), before)
+            self.assertFalse((root / 'new').exists())
