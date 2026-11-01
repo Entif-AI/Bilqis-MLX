@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from bilqis_mlx.errors import ErrorBus, SCHOOL
 from typing import Mapping
 
 from bilqis_mlx.learning.atlas_engram import MotifKey, MotifManifest, MotifMember, MotifSlot
@@ -9,12 +10,11 @@ from bilqis_mlx.learning.atlas_engram_transaction import (
     MotifAliasArtifact, MotifAllocationSnapshot,
 )
 
-_INVALID_MOTIF_SIDECAR = "BAMF_MOTIF_SIDECAR_INVALID"
 
 
 def _exact(record: object, fields: set[str]) -> Mapping:
     if not isinstance(record, Mapping) or set(record) != fields:
-        raise ValueError(_INVALID_MOTIF_SIDECAR)
+        ErrorBus.raise_legacy(SCHOOL.CHECKPOINT_CUSTODY.MOTIF_SIDECAR_INVALID)
     return record
 
 
@@ -59,7 +59,7 @@ def _alias(record: object) -> MotifAliasArtifact:
 
 def snapshot_to_record(snapshot: MotifAllocationSnapshot) -> dict:
     if type(snapshot) is not MotifAllocationSnapshot:
-        raise ValueError(_INVALID_MOTIF_SIDECAR)
+        ErrorBus.raise_legacy(SCHOOL.CHECKPOINT_CUSTODY.MOTIF_SIDECAR_INVALID)
     snapshot.__post_init__()
     return {
         "schema": "bilqis.mlx.bamf-motif-allocation/v1",
@@ -72,7 +72,7 @@ def snapshot_to_record(snapshot: MotifAllocationSnapshot) -> dict:
 def snapshot_from_record(record: object) -> MotifAllocationSnapshot:
     outer = _exact(record, {"schema", "snapshot", "snapshot_digest", "manifest_digest"})
     if outer["schema"] != "bilqis.mlx.bamf-motif-allocation/v1":
-        raise ValueError(_INVALID_MOTIF_SIDECAR)
+        ErrorBus.raise_legacy(SCHOOL.CHECKPOINT_CUSTODY.MOTIF_SIDECAR_INVALID)
     row = _exact(outer["snapshot"], {
         "manifest", "observed_uses", "pending_keys", "aliases", "schema_version",
     })
@@ -85,5 +85,5 @@ def snapshot_from_record(record: object) -> MotifAllocationSnapshot:
     )
     if (snapshot.digest != outer["snapshot_digest"]
             or snapshot.manifest.digest != outer["manifest_digest"]):
-        raise ValueError(_INVALID_MOTIF_SIDECAR)
+        ErrorBus.raise_legacy(SCHOOL.CHECKPOINT_CUSTODY.MOTIF_SIDECAR_INVALID)
     return snapshot

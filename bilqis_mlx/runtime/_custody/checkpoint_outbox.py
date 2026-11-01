@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from bilqis_mlx.errors import ErrorBus, SCHOOL
 
 import bilqis_mlx.data_plane as _data_plane
 import bilqis_mlx.learning.grade_soup as _learning_grade_soup
@@ -106,7 +107,7 @@ def ordinary_outbox_lineage(record: dict, outbox) -> bool:
 
 def _require_outbox_lineage(condition: bool) -> None:
     if not condition:
-        raise ValueError("HUMAN_TRAINER_OUTBOX_LINEAGE_DRIFT")
+        ErrorBus.raise_legacy(SCHOOL.CHECKPOINT_CUSTODY.OUTBOX_LINEAGE_DRIFT)
 
 
 def _source_generation(run_dir: Path, record: dict, outbox: list):

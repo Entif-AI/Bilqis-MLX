@@ -16,13 +16,13 @@ import os
 from pathlib import Path
 from typing import Mapping
 
+from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.backup import digest_file
 from bilqis_mlx.data_plane import verify_file_digest
 from bilqis_mlx.runtime.disk import assert_headroom
 
 SCHEMA = "bilqis.mlx.fp32-adamw-bundle/v1"
 BAMF_TENSOR_SCHEMA = "bilqis.mlx.bamf-named-state/v2"
-_BAMF_PARAMETER_IDENTITY_DRIFT = "BAMF_BUNDLE_PARAMETER_IDENTITY_DRIFT"
 
 
 def _json_hash(value: object) -> str:
@@ -248,12 +248,12 @@ def save_bamf_state_payload(destination: Path, spec, extents, state, *,
     if (type(spec) is not ModelTopologySpecV2 or type(extents) is not GenerationExtents
             or type(state) is not AdamWStateTree or type(optimizer_step) is not int
             or optimizer_step < 0):
-        raise ValueError("BAMF_BUNDLE_NUMERICAL_STATE_INVALID")
+        ErrorBus.raise_legacy(SCHOOL.CHECKPOINT_CUSTODY.NUMERICAL_STATE_INVALID)
     state.validate()
     declared = expected_bamf_shapes(spec, extents)
     if (set(state.parameters) != {item.name for item in declared}
             or any(tuple(state.parameters[item.name].shape) != item.shape for item in declared)):
-        raise ValueError(_BAMF_PARAMETER_IDENTITY_DRIFT)
+        ErrorBus.raise_legacy(SCHOOL.CHECKPOINT_CUSTODY.PARAMETER_IDENTITY_DRIFT)
     arrays = {}
     expected_bytes = 0
     for item in declared:
@@ -292,19 +292,19 @@ def load_bamf_state_payload(destination: Path, binding: dict, spec, extents):
     if (not isinstance(binding, dict) or binding.get("schema") != BAMF_TENSOR_SCHEMA
             or type(spec) is not ModelTopologySpecV2 or type(extents) is not GenerationExtents
             or binding.get("filename") != Path(destination).name):
-        raise ValueError("BAMF_BUNDLE_TENSOR_BINDING_INVALID")
+        ErrorBus.raise_legacy(SCHOOL.CHECKPOINT_CUSTODY.TENSOR_BINDING_INVALID)
     if not verify_file_digest(destination, binding.get("sha256")):
-        raise ValueError("BAMF_BUNDLE_TENSOR_FILE_CORRUPTED")
+        ErrorBus.raise_legacy(SCHOOL.CHECKPOINT_CUSTODY.TENSOR_FILE_CORRUPTED)
     arrays = mx.load(str(destination))
     declared = expected_bamf_shapes(spec, extents)
     expected = {bamf_storage_key(item.name, part)
                 for item in declared for part in ("weight", "m", "v")}
     expected |= {_bamf_count_key(item.name) for item in declared}
     if set(arrays) != expected or binding.get("tensor_count") != len(arrays):
-        raise ValueError("BAMF_BUNDLE_MISSING_OR_EXTRA_TENSORS")
+        ErrorBus.raise_legacy(SCHOOL.CHECKPOINT_CUSTODY.MISSING_OR_EXTRA_TENSORS)
     if any(tuple(arrays[bamf_storage_key(item.name, "weight")].shape) != item.shape
            for item in declared):
-        raise ValueError(_BAMF_PARAMETER_IDENTITY_DRIFT)
+        ErrorBus.raise_legacy(SCHOOL.CHECKPOINT_CUSTODY.PARAMETER_IDENTITY_DRIFT)
     parameters = {item.name: arrays[bamf_storage_key(item.name, "weight")]
                   for item in declared}
     first = {item.name: arrays[bamf_storage_key(item.name, "m")] for item in declared}
