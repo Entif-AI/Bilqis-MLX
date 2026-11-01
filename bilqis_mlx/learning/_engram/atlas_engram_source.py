@@ -28,13 +28,21 @@ from .atlas_engram import (
 )
 
 APPROVED_MOTIF_SCHEMA = "bilqis.motif-approved-candidate/v1"
-_SOURCE_FAMILY_BY_ADAPTER = {
-    MICRO_PREDICATE_ADAPTER: "micro",
-    BOOLEAN_CONNECTIVE_ADAPTER: "boolean",
-    BOOLEAN_COMPOSITE_ADAPTER: "boolean",
-    BOOLEAN_IDENTIFICATION_ADAPTER: "boolean",
-    FINITE_NUMERIC_ADAPTER: "numeric",
-}
+_BOOLEAN_SOURCE_ADAPTERS = (
+    BOOLEAN_CONNECTIVE_ADAPTER,
+    BOOLEAN_COMPOSITE_ADAPTER,
+    BOOLEAN_IDENTIFICATION_ADAPTER,
+)
+
+
+def _source_family(adapter_id: str) -> str:
+    if adapter_id == MICRO_PREDICATE_ADAPTER:
+        return "micro"
+    if adapter_id in _BOOLEAN_SOURCE_ADAPTERS:
+        return "boolean"
+    if adapter_id == FINITE_NUMERIC_ADAPTER:
+        return "numeric"
+    _invalid("BAMF_MOTIF_SOURCE_FAMILY_UNRELEASED")
 
 
 @dataclass(frozen=True)
@@ -93,9 +101,7 @@ def prepare_source_qualified_motifs(
         return admitted
     projection, issued_frontier = admitted
     adapter_id = source_adapter.descriptor.adapter_id
-    source_family = _SOURCE_FAMILY_BY_ADAPTER.get(adapter_id)
-    if source_family is None:
-        _invalid("BAMF_MOTIF_SOURCE_FAMILY_UNRELEASED")
+    source_family = _source_family(adapter_id)
     qualified = []
     for envelope in projection.envelopes:
         frame = envelope.frame
