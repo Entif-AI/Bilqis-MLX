@@ -1,0 +1,5 @@
+# A12.1 provisional cross-consumer audit checkpoint
+
+Consumed reviewed unified `dea8b2338cd42de7028e80cab3618da447836544` from initial `e63a994b` with a fast-forward. New `atlas_authority_audit.py` introduces a strict typed source-attested receipt, replays the repository-owned A01 pin, and rejects divergent staged ABI/AST/lesson/registry identities. It does not independently grant source or neural admission, modify old catalogs, or touch the student.
+
+**Not a complete A12.1 leaf.** The available Atlas pin status is `A01_SOURCE_ATTESTED_NOT_NEURAL_ADMITTED`, and staged vocabulary registry mirrors are explicitly `STAGED_NOT_ADMITTED`. This does not establish the requested admitted-source cutover or all current consumers' graph and historical-shadow mapping. The tests currently demonstrate fail-closed untyped/untrusted inputs only; they do not constitute valid real A01+ABI+AST+lesson+registry end-to-end replay. Do not open an acceptance PR or close #427 until real source-qualified producer receipts, current AST and Registry mirror, first-consumer mismatch proof, historical-reader witness, and regeneration-twice hashes are present.
