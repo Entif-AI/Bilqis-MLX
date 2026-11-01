@@ -5,6 +5,7 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from types import MappingProxyType
 from unittest.mock import patch
 
 import bilqis_mlx.runtime.bamf_bundle.codec as codec
@@ -15,13 +16,13 @@ from bilqis_mlx.runtime.bamf_bundle.records import canonical, sha
 from bilqis_mlx.data_plane import data_plane
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import candidate, parent_state, shape_patch
 
-SCHEMAS = {
+SCHEMAS = MappingProxyType({
     'semantic_abi': 'bilqis.mlx.bamf-semantic-abi/v1',
     'compiler_features': 'bilqis.mlx.bamf-compiler-features/v1',
     'correction_frontier': 'bilqis.mlx.bamf-correction-frontier/v1',
     'teacher_state': 'bilqis.mlx.bamf-teacher-state/v1',
     'evaluation_contract': 'bilqis.mlx.bamf-evaluation-contract/v1',
-}
+})
 
 
 def source():
