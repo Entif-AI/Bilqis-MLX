@@ -30,6 +30,8 @@ class SourceBackboneReceiptTests(SourceBackboneTestBase):
     def test_receipt_minter_is_not_a_public_surface(self):
         self.assertFalse(hasattr(receipt_authority, "make_receipt"))
         self.assertFalse(hasattr(receipt_authority, "_issue_receipt"))
+        self.assertFalse(hasattr(receipt_authority, "_PRODUCER_SEAL"))
+        self.assertFalse(hasattr(receipt_authority, "_ISSUED_RECEIPTS"))
         with self.assertRaises(BilqisError):
             receipt_authority._issue_from_producer(object())
 
