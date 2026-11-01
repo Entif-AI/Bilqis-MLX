@@ -7,14 +7,15 @@ No gold calculation or neural inference occurs here.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from types import MappingProxyType
 
 
-_SOURCE_NODES = {
+_SOURCE_NODES = MappingProxyType({
     "compare": ("micro.compare.", "operator"),
     "relation": ("micro.relation.", "name"),
     "apply": ("cogal.operator.", "operator"),
     "op": ("development.op.", "op"),
-}
+})
 _TERMINALS = frozenset(("entity", "const", "literal", "variable"))
 MAX_INSPECTION_DEPTH = 64  # bounded parsing, not a curriculum complexity rule
 
