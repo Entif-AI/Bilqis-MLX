@@ -121,6 +121,7 @@ def _closure(snapshot, candidates, order=None):
 
 
 def _options(snapshot, release, closure, *, capabilities=None, identities=None):
+    global _PROJECTION_AUTHORITY
     capabilities = capabilities or {
         "z.op.0": ("Z.N0",), "z.op.1": ("Z.N1",), "z.op.2": ("Z.N2",),
     }
@@ -148,19 +149,23 @@ def _options(snapshot, release, closure, *, capabilities=None, identities=None):
         )
         result.append(replace(
             provisional, projection_sha256=provisional.expected_digest()))
-        _PROJECTION_AUTHORITY[(release.release_sha256, identity)] = (
-            capabilities[identity], identities[identity])
+        _PROJECTION_AUTHORITY = (*_PROJECTION_AUTHORITY, (
+            (release.release_sha256, identity),
+            (capabilities[identity], identities[identity]),
+        ))
     return tuple(result)
 
 
-_PROJECTION_AUTHORITY = {}
+_PROJECTION_AUTHORITY = ()
 
 
 def _fixture_project_realized_target(semantic_id, current):
-    try:
-        return _PROJECTION_AUTHORITY[(current.release_sha256, semantic_id)]
-    except KeyError as exc:
-        raise ValueError from exc
+    key = (current.release_sha256, semantic_id)
+    match = next((value for candidate, value in reversed(_PROJECTION_AUTHORITY)
+                  if candidate == key), None)
+    if match is None:
+        raise ValueError
+    return match
 
 
 class AtlasFrontierSelectionTests(unittest.TestCase):
