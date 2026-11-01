@@ -58,6 +58,33 @@ class ChangedPathSmellTests(unittest.TestCase):
         self.assertEqual(len(findings), 1)
         self.assertEqual(findings[0][1:], ("module-mutable-literal", "MORE"))
 
+    def test_existing_physical_owner_is_not_reported_as_new_debt(self):
+        owner = "bilqis_mlx/runtime/_batch/atlas_training_adapter.py"
+        self.commit(owner, "EXISTING = []\n")
+        records = [("bilqis_mlx/runtime/atlas_training_adapter.py", owner)]
+        prior = audit._base_findings("HEAD", records)
+        expected = ("bilqis_mlx/runtime/atlas_training_adapter.py",
+                    "module-mutable-literal", "EXISTING")
+        self.assertEqual([audit.fingerprint(item) for item in prior], [expected])
+        unchanged = audit.inspect_source(audit.logical_source_path(owner),
+                                         "EXISTING = []\n")
+        baseline = {"fingerprints": [list(audit.fingerprint(item)) for item in prior]}
+        self.assertEqual(audit.compare_to_baseline(unchanged, baseline), [])
+        introduced = audit.inspect_source(audit.logical_source_path(owner),
+                                          "EXISTING = []\nNEW = {}\n")
+        self.assertEqual(audit.compare_to_baseline(introduced, baseline), [
+            ("bilqis_mlx/runtime/atlas_training_adapter.py",
+             "module-mutable-literal", "NEW")])
+
+    def test_ambiguous_physical_owners_do_not_hide_new_debt(self):
+        self.commit("bilqis_mlx/runtime/_batch/atlas_training_adapter.py",
+                    "EXISTING = []\n")
+        self.commit("bilqis_mlx/runtime/_admission/atlas_training_adapter.py",
+                    "EXISTING = []\n")
+        records = [("bilqis_mlx/runtime/atlas_training_adapter.py",
+                    "bilqis_mlx/runtime/_batch/atlas_training_adapter.py")]
+        self.assertEqual(audit._base_findings("HEAD", records), [])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -76,3 +76,4 @@ from .gather import (
     gather_constituents,
     masked_semantic_loss,
 )
+from .motif_features import MotifGateFeatures, motif_gate_features
