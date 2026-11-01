@@ -21,6 +21,7 @@ from bilqis_mlx.runtime.disk import assert_headroom
 
 SCHEMA = "bilqis.mlx.fp32-adamw-bundle/v1"
 BAMF_TENSOR_SCHEMA = "bilqis.mlx.bamf-named-state/v2"
+_BAMF_PARAMETER_IDENTITY_DRIFT = "BAMF_BUNDLE_PARAMETER_IDENTITY_DRIFT"
 
 
 def _json_hash(value: object) -> str:
@@ -249,8 +250,9 @@ def save_bamf_state_payload(destination: Path, spec, extents, state, *,
         raise ValueError("BAMF_BUNDLE_NUMERICAL_STATE_INVALID")
     state.validate()
     declared = expected_bamf_shapes(spec, extents)
-    if set(state.parameters) != {item.name for item in declared}:
-        raise ValueError("BAMF_BUNDLE_PARAMETER_IDENTITY_DRIFT")
+    if (set(state.parameters) != {item.name for item in declared}
+            or any(tuple(state.parameters[item.name].shape) != item.shape for item in declared)):
+        raise ValueError(_BAMF_PARAMETER_IDENTITY_DRIFT)
     arrays = {}
     expected_bytes = 0
     for item in declared:
@@ -297,6 +299,9 @@ def load_bamf_state_payload(destination: Path, binding: dict, spec, extents):
     expected |= {_bamf_count_key(item.name) for item in declared}
     if set(arrays) != expected or binding.get("tensor_count") != len(arrays):
         raise ValueError("BAMF_BUNDLE_MISSING_OR_EXTRA_TENSORS")
+    if any(tuple(arrays[bamf_storage_key(item.name, "weight")].shape) != item.shape
+           for item in declared):
+        raise ValueError(_BAMF_PARAMETER_IDENTITY_DRIFT)
     parameters = {item.name: arrays[bamf_storage_key(item.name, "weight")]
                   for item in declared}
     first = {item.name: arrays[bamf_storage_key(item.name, "m")] for item in declared}

@@ -4,13 +4,14 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
+from types import MappingProxyType
 from typing import Mapping
 
 from bilqis_mlx.data_plane import DataPlaneError
 
 BAMF_BUNDLE_SCHEMA = "bilqis.mlx.bamf-generation-bundle/v2"
 BAMF_POINTER_SCHEMA = "bilqis.mlx.bamf-generation-pointer/v1"
-SIDECARS = {
+SIDECARS = MappingProxyType({
     "semantic_abi": "semantic-abi.json",
     "motif_allocation": "motif-allocation.json",
     "plasticity_policy": "plasticity-policy.json",
@@ -19,12 +20,13 @@ SIDECARS = {
     "teacher_state": "teacher-state.json",
     "evaluation_contract": "evaluation-contract.json",
     "outbox": "outbox.json",
-}
+})
 
 
 @dataclass(frozen=True)
 class BamfBundleCandidate:
     generation: int
+    parent_manifest_sha256: str | None
     topology: object
     extents: object
     optimizer: object
@@ -44,6 +46,51 @@ class BamfBundleCandidate:
 @dataclass(frozen=True)
 class CompleteStudent(BamfBundleCandidate):
     """Cold-loaded immutable v2 generation; publication authority lives elsewhere."""
+
+
+@dataclass(frozen=True)
+class BamfGenerationManifest:
+    generation: int
+    parent_manifest_sha256: str | None
+    topology: Mapping
+    extents: Mapping
+    provenance: Mapping
+    tensors: Mapping
+    optimizer: Mapping
+    sidecars: Mapping
+    schema: str = BAMF_BUNDLE_SCHEMA
+
+    def __post_init__(self) -> None:
+        parent = self.parent_manifest_sha256
+        valid_parent = (parent is None if self.generation == 0 else
+                        isinstance(parent, str) and len(parent) == 64 and
+                        all(char in "0123456789abcdef" for char in parent))
+        if (type(self.generation) is not int or self.generation < 0 or not valid_parent
+                or self.schema != BAMF_BUNDLE_SCHEMA
+                or any(not isinstance(value, Mapping) for value in (
+                    self.topology, self.extents, self.provenance, self.tensors,
+                    self.optimizer, self.sidecars))):
+            invalid()
+
+    def to_record(self) -> dict:
+        return {
+            "schema": self.schema, "generation": self.generation,
+            "parent_manifest_sha256": self.parent_manifest_sha256,
+            "topology": dict(self.topology), "extents": dict(self.extents),
+            "provenance": dict(self.provenance), "tensors": dict(self.tensors),
+            "optimizer": dict(self.optimizer), "sidecars": dict(self.sidecars),
+        }
+
+    @classmethod
+    def from_record(cls, record: Mapping) -> "BamfGenerationManifest":
+        expected = {"schema", "generation", "parent_manifest_sha256", "topology",
+                    "extents", "provenance", "tensors", "optimizer", "sidecars"}
+        if not isinstance(record, Mapping) or set(record) != expected:
+            invalid()
+        return cls(
+            record["generation"], record["parent_manifest_sha256"], record["topology"],
+            record["extents"], record["provenance"], record["tensors"],
+            record["optimizer"], record["sidecars"], record["schema"])
 
 
 def canonical(value) -> bytes:
@@ -97,6 +144,11 @@ def sidecar_records(candidate: BamfBundleCandidate) -> dict:
     )
     if (type(candidate) not in (BamfBundleCandidate, CompleteStudent)
             or type(candidate.generation) is not int or candidate.generation < 0
+            or (candidate.parent_manifest_sha256 is None) != (candidate.generation == 0)
+            or (candidate.parent_manifest_sha256 is not None
+                and (len(candidate.parent_manifest_sha256) != 64
+                     or any(char not in "0123456789abcdef"
+                            for char in candidate.parent_manifest_sha256)))
             or type(candidate.topology) is not ModelTopologySpecV2
             or type(candidate.extents) is not GenerationExtents
             or type(candidate.optimizer) is not AdamWStateTree

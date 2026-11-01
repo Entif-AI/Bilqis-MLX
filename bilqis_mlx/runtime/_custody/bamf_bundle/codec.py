@@ -11,7 +11,8 @@ import bilqis_mlx.runtime.mlx_checkpoint as _mlx_checkpoint
 from bilqis_mlx.data_plane import DataPlaneError, data_plane
 from .records import (
     BAMF_BUNDLE_SCHEMA, BAMF_POINTER_SCHEMA, SIDECARS, BamfBundleCandidate,
-    CompleteStudent, canonical, invalid, sha, sidecar_records, validate_sidecars,
+    BamfGenerationManifest, CompleteStudent, canonical, invalid, sha,
+    sidecar_records, validate_sidecars,
 )
 
 
@@ -46,14 +47,12 @@ def save_bamf_bundle(candidate: BamfBundleCandidate, destination: Path, *,
                           "sha256": _write_file(destination / filename, raw),
                           "object_sha256": digest}
     hp = candidate.optimizer_hyperparameters
-    manifest = {
-        "schema": BAMF_BUNDLE_SCHEMA, "generation": candidate.generation,
-        "topology": candidate.topology.to_record(), "extents": candidate.extents.to_record(),
-        "provenance": candidate.provenance.to_record(), "tensors": tensor,
-        "optimizer": {"schema": candidate.optimizer.schema_version,
-                      "step": candidate.optimizer_step, "hyperparameters": asdict(hp)},
-        "sidecars": bindings,
-    }
+    manifest = BamfGenerationManifest(
+        candidate.generation, candidate.parent_manifest_sha256,
+        candidate.topology.to_record(), candidate.extents.to_record(),
+        candidate.provenance.to_record(), tensor,
+        {"schema": candidate.optimizer.schema_version, "step": candidate.optimizer_step,
+         "hyperparameters": asdict(hp)}, bindings).to_record()
     raw = canonical(manifest)
     digest = _write_file(destination / "manifest.json", raw)
     directory = os.open(destination, os.O_RDONLY)
@@ -95,11 +94,8 @@ def load_bamf_bundle(root: Path, *, expected_manifest_sha256: str | None = None)
     raw = manifest_path.read_bytes()
     if expected_manifest_sha256 is not None and sha(raw) != expected_manifest_sha256:
         invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
-    manifest = json.loads(raw)
-    if (not isinstance(manifest, dict) or manifest.get("schema") != BAMF_BUNDLE_SCHEMA
-            or set(manifest) != {"schema", "generation", "topology", "extents", "provenance",
-                                 "tensors", "optimizer", "sidecars"}
-            or set(manifest.get("sidecars", {})) != set(SIDECARS)
+    manifest = BamfGenerationManifest.from_record(json.loads(raw)).to_record()
+    if (set(manifest.get("sidecars", {})) != set(SIDECARS)
             or not isinstance(manifest.get("optimizer"), dict)
             or set(manifest["optimizer"]) != {"schema", "step", "hyperparameters"}
             or manifest["optimizer"]["schema"] != STATE_SCHEMA
@@ -116,7 +112,8 @@ def load_bamf_bundle(root: Path, *, expected_manifest_sha256: str | None = None)
     numerical = _mlx_checkpoint.load_bamf_state_payload(
         root / manifest["tensors"]["filename"], manifest["tensors"], spec, extents)
     return CompleteStudent(
-        manifest["generation"], spec, extents, numerical, hp, manifest["optimizer"]["step"],
+        manifest["generation"], manifest["parent_manifest_sha256"], spec, extents,
+        numerical, hp, manifest["optimizer"]["step"],
         provenance, records["semantic_abi"], records["motif_allocation"], policy,
         records["compiler_features"], records["correction_frontier"],
         records["teacher_state"], records["evaluation_contract"], tuple(records["outbox"]))
@@ -148,8 +145,11 @@ def publish_bamf_generation(run_dir: Path, candidate: BamfBundleCandidate, *,
     if pointer_path.exists():
         current = json.loads(pointer_path.read_bytes())
         if (current.get("schema") != BAMF_POINTER_SCHEMA
-                or current.get("generation") != candidate.generation - 1):
+                or current.get("generation") != candidate.generation - 1
+                or current.get("manifest_sha256") != candidate.parent_manifest_sha256):
             invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
+    elif candidate.generation != 0 or candidate.parent_manifest_sha256 is not None:
+        invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
     stage = run_dir / ".bamf-staging" / f"{candidate.generation:07d}"
     manifest = save_bamf_bundle(candidate, stage, reserve_gib=reserve_gib)
     digest = manifest["manifest_sha256"]
@@ -164,6 +164,7 @@ def publish_bamf_generation(run_dir: Path, candidate: BamfBundleCandidate, *,
     finally:
         os.close(directory)
     pointer = {"schema": BAMF_POINTER_SCHEMA, "generation": candidate.generation,
+               "parent_manifest_sha256": candidate.parent_manifest_sha256,
                "bundle": str(target.relative_to(run_dir)), "manifest_sha256": digest}
     _atomic_pointer(pointer_path, pointer)
     return pointer
@@ -175,12 +176,15 @@ def load_bamf_generation(pointer_path: Path) -> CompleteStudent:
     bundle = Path(pointer.get("bundle", "")) if isinstance(pointer, dict) else Path()
     if (not isinstance(pointer, dict) or pointer.get("schema") != BAMF_POINTER_SCHEMA
             or type(pointer.get("generation")) is not int or bundle.is_absolute()
+            or set(pointer) != {"schema", "generation", "parent_manifest_sha256",
+                                "bundle", "manifest_sha256"}
             or not bundle.parts or bundle.parts[0] != "bamf-bundles"
             or any(part in ("", ".", "..") for part in bundle.parts)):
         invalid()
     student = load_bamf_bundle(
         pointer_path.parent / bundle,
         expected_manifest_sha256=pointer.get("manifest_sha256"))
-    if student.generation != pointer["generation"]:
+    if (student.generation != pointer["generation"]
+            or student.parent_manifest_sha256 != pointer["parent_manifest_sha256"]):
         invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
     return student

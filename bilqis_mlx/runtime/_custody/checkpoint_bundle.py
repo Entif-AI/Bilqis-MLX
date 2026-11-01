@@ -8,17 +8,22 @@ import bilqis_mlx.learning.champions as _learning_champions
 import bilqis_mlx.runtime.mlx_checkpoint as _runtime_mlx_checkpoint
 import bilqis_mlx.source as _bilqis_mlx_source
 from bilqis_mlx.runtime.bamf_bundle import (
-    BAMF_BUNDLE_SCHEMA, BAMF_POINTER_SCHEMA, BamfBundleCandidate, CompleteStudent,
-    load_bamf_bundle, load_bamf_generation, publish_bamf_generation,
-    save_bamf_bundle,
+    BAMF_BUNDLE_SCHEMA, BAMF_POINTER_SCHEMA, BamfBundleCandidate,
+    BamfGenerationManifest, CompleteStudent, load_bamf_bundle,
+    load_bamf_generation, publish_bamf_generation, save_bamf_bundle,
 )
+
+_UNSAFE_STAGING_ROOT = "HUMAN_TRAINER_UNSAFE_STAGING_ROOT"
+_UNSAFE_QUARANTINE = "HUMAN_TRAINER_UNSAFE_BUNDLE_QUARANTINE"
+_QUARANTINE_COLLISION = "HUMAN_TRAINER_QUARANTINE_IDENTITY_COLLISION"
+_UNSAFE_UNCOMMITTED_PATH = "HUMAN_TRAINER_UNCOMMITTED_BUNDLE_UNSAFE_PATH"
 
 
 def bundle_pointer(run_dir: Path, name: str, parameters, optimizer, graph, *,
                    reserve_gib: float, model_topology=None):
     stage_root = run_dir / ".bundle-staging"
     if stage_root.is_symlink() or (stage_root.exists() and not stage_root.is_dir()):
-        raise ValueError("HUMAN_TRAINER_UNSAFE_STAGING_ROOT")
+        raise ValueError(_UNSAFE_STAGING_ROOT)
     stage_root.mkdir(exist_ok=True)
     stage_directory = stage_root / name
     directory = run_dir / "bundles" / name
@@ -67,7 +72,7 @@ def clean_staged_bundles(run_dir: Path) -> dict[str, tuple[str, ...]]:
     if not stage.exists() and not stage.is_symlink():
         return {"discarded": (), "quarantined": ()}
     if stage.is_symlink() or not stage.is_dir():
-        raise ValueError("HUMAN_TRAINER_UNSAFE_STAGING_ROOT")
+        raise ValueError(_UNSAFE_STAGING_ROOT)
     expected = {"model-and-own-adamw.safetensors", "semantic-catalog.json",
                 "manifest.json"}
     discarded, quarantined = [], []
@@ -81,11 +86,11 @@ def clean_staged_bundles(run_dir: Path) -> dict[str, tuple[str, ...]]:
         if (folder / "model-and-own-adamw.safetensors").exists():
             custody = run_dir / ".bundle-quarantine"
             if custody.is_symlink() or (custody.exists() and not custody.is_dir()):
-                raise ValueError("HUMAN_TRAINER_UNSAFE_BUNDLE_QUARANTINE")
+                raise ValueError(_UNSAFE_QUARANTINE)
             custody.mkdir(exist_ok=True)
             target = custody / folder.name
             if target.exists() or target.is_symlink():
-                raise ValueError("HUMAN_TRAINER_QUARANTINE_IDENTITY_COLLISION")
+                raise ValueError(_QUARANTINE_COLLISION)
             folder.rename(target)
             quarantined.append(folder.name)
         else:
@@ -105,7 +110,7 @@ def quarantine_newer_uncommitted_bundles(
     if not root.exists():
         return ()
     if root.is_symlink() or not root.is_dir():
-        raise ValueError("HUMAN_TRAINER_UNCOMMITTED_BUNDLE_UNSAFE_PATH")
+        raise ValueError(_UNSAFE_UNCOMMITTED_PATH)
     quarantined = []
     for candidate in sorted(root.iterdir()):
         if candidate.name == ".DS_Store" and not candidate.is_symlink() and candidate.is_file():
@@ -115,7 +120,7 @@ def quarantine_newer_uncommitted_bundles(
         if relative in retained:
             continue
         if candidate.is_symlink() or not candidate.is_dir():
-            raise ValueError("HUMAN_TRAINER_UNCOMMITTED_BUNDLE_UNSAFE_PATH")
+            raise ValueError(_UNSAFE_UNCOMMITTED_PATH)
         weights, own_adamw, metadata, graph = (
             _runtime_mlx_checkpoint.load_semantically_bound_bundle(candidate))
         if (metadata["source_digest"] != _bilqis_mlx_source.AUDITED_PARENT.sha256 or
@@ -127,11 +132,11 @@ def quarantine_newer_uncommitted_bundles(
         target_parent = run_dir / ".bundle-quarantine"
         if target_parent.is_symlink() or (target_parent.exists() and
                                           not target_parent.is_dir()):
-            raise ValueError("HUMAN_TRAINER_UNSAFE_BUNDLE_QUARANTINE")
+            raise ValueError(_UNSAFE_QUARANTINE)
         target_parent.mkdir(exist_ok=True)
         target = target_parent / candidate.name
         if target.exists() or target.is_symlink():
-            raise ValueError("HUMAN_TRAINER_QUARANTINE_IDENTITY_COLLISION")
+            raise ValueError(_QUARANTINE_COLLISION)
         candidate.rename(target)
         quarantined.append(candidate.name)
         fd = os.open(target_parent, os.O_RDONLY)
