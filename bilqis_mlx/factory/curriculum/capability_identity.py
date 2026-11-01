@@ -8,6 +8,9 @@ import re
 
 from bilqis_mlx.semantics.foundation.core import Signature
 from bilqis_mlx.factory.model import FactoryRelease
+from bilqis_mlx.factory.skos_curriculum.programs.contracts import (
+    FactoryReleaseFamilyBindings,
+)
 
 
 CAPABILITY_IDENTITY_SCHEMA = "bilqis.capability-identity/v1"
@@ -94,21 +97,27 @@ def bind_stable_capability_identity(
 
 def bind_factory_release_capability_identity(
     release: FactoryRelease,
+    family_bindings: FactoryReleaseFamilyBindings,
     capability_id: str,
-    family_id: str,
     signature: Signature,
 ) -> ReleaseCapabilityIdentityBinding:
     """Bind semantic identity to one verified legacy/current Factory capability."""
-    if type(release) is not FactoryRelease:
+    if (type(release) is not FactoryRelease
+            or type(family_bindings) is not FactoryReleaseFamilyBindings):
         raise TypeError("FACTORY_CAPABILITY_IDENTITY_RELEASE_REQUIRED")
     release.verify()
+    if family_bindings.factory_release_sha256 != release.release_sha256:
+        raise ValueError("FACTORY_CAPABILITY_IDENTITY_FAMILY_BINDING_DRIFT")
     matches = tuple(
         item for item in release.capabilities
         if item.capability_id == capability_id)
     if len(matches) != 1:
         raise ValueError("FACTORY_CAPABILITY_IDENTITY_RELEASE_CAPABILITY_MISSING")
     capability = matches[0]
+    family = family_bindings.require(capability_id)
+    if capability.source_adapter_id != family.source_adapter_id:
+        raise ValueError("FACTORY_CAPABILITY_IDENTITY_FAMILY_BINDING_DRIFT")
     stable = bind_stable_capability_identity(
-        family_id, signature, tuple(sorted(capability.answer_kinds)))
+        family.family_id, signature, tuple(sorted(capability.answer_kinds)))
     return ReleaseCapabilityIdentityBinding(
         release.release_sha256, capability.capability_id, stable)
