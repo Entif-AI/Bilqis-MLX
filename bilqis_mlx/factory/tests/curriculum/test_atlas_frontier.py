@@ -5,13 +5,15 @@ from dataclasses import asdict, replace
 import hashlib
 import json
 import os
+import subprocess
+import sys
 from pathlib import Path
 import tempfile
 import unittest
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory.candidate_frontier import (
-    Candidate, CandidateFrontierRelease, CandidateSense,
+    Candidate, CandidateFrontierRelease, CandidateSense, load_candidate_frontier,
 )
 from bilqis_mlx.factory.model import AssessmentClass, LearningEvidence
 from bilqis_mlx.factory.atlas_frontier import (
@@ -143,7 +145,21 @@ class AtlasFrontierTests(unittest.TestCase):
             learned = LearnedFrontier(release.digest)
             candidate = compile_semantic_curriculum(
                 selection, SOURCE_FAMILY_ADAPTERS, learned)
-            candidate_frontier = _candidate_frontier()
+            # Generate A08 from the pinned source rows and verify its builder and
+            # CSV provenance before binding real A01 data to the A09 snapshot.
+            builder = root / "lib/ithkuil/src/build_curriculum_frontier.py"
+            source = root / "lib/ithkuil/_data/csv"
+            output = Path(directory) / "candidate-frontier"
+            subprocess.run(
+                [sys.executable, str(builder)], check=True, capture_output=True,
+                text=True, env={**os.environ, "BILQIS_CURRICULUM_FRONTIER_OUT": str(output)},
+            )
+            candidate_frontier = load_candidate_frontier(
+                output, source,
+                expected_builder_sha256=hashlib.sha256(builder.read_bytes()).hexdigest(),
+            )
+            self.assertEqual(len(candidate_frontier.candidates), 240)
+            self.assertGreater(len(candidate_frontier.senses), 0)
             frontier, policy = _rights()
             snapshot = build_curriculum_snapshot(
                 candidate, selection, learned, frontier, policy, candidate_frontier,
@@ -155,6 +171,11 @@ class AtlasFrontierTests(unittest.TestCase):
             self.assertEqual(snapshot.grade_labels, ("A", "B"))
             self.assertEqual(snapshot.frozen_census_sha256, candidate.census.digest)
             self.assertEqual(snapshot.qualification_epoch, 0)
+            self.assertEqual(
+                snapshot.candidate_frontier_sha256, candidate_frontier.release_sha256)
+            self.assertEqual(snapshot.ready_candidate_ids, ())
+            self.assertTrue(all(item.disposition != "ADMITTED"
+                                for item in candidate_frontier.candidates))
             snapshot.verify()
             assert_initial_snapshot_current(
                 snapshot, candidate, selection, learned,

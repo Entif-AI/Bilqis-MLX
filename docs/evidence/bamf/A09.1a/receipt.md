@@ -42,8 +42,8 @@ The replay identities are:
 - Atlas bundle `5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7`
 - source bundle `f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec`
 - frozen census `09445728d79c6d1fa0dd4a1a0b061f2fd3c17ca4a1e8d91f17b456f1fbab7853`
-- synthetic candidate-frontier fixture `1fac163890bd9de235bcba1201ff0967642839f6b6fd5d25690f3022d9eecc12`
-- repaired-schema initial snapshot `dda187f279d0bfe095ef2bbbc2728c1c2ed7d9183ef62629f402b3b3c9d1cd6e`
+- A08 frontier digest: derived and verified from the current pinned CSV and builder at test execution; the earlier synthetic fixture `1fac163890bd9de235bcba1201ff0967642839f6b6fd5d25690f3022d9eecc12` applies only to the historical test, not this proof
+- repaired-schema initial snapshot: recomputed from the real A08 frontier, with canonical digest and consuming replay checked during the test (the preceding snapshot digest belongs to the superseded synthetic bridge)
 
 The
 snapshot replay preserves deterministic order and digest, keeps SOURCE_HELD
@@ -66,8 +66,7 @@ reversing otherwise key-equal retained evidence cannot change snapshot bytes and
 that candidate-frontier / named learning-state changes are visible in snapshot
 identity.
 
-With the pinned corpus path supplied, the same repaired suite is **7 passed,
-0 failed, 0 skipped** and produces the repaired-schema snapshot identity above.
+With the pinned A01 corpus mounted at `bilqis-a05-recut/.local/a05-5-conformance/f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec`, the updated real A01/A08 bridge suite passed **7 tests, 0 failed, 0 skipped** on 2026-10-31. The real A08 builder currently emits 240 candidate records and 3,008 source senses. If the corpus is absent, the real test explicitly skips; if mounted but invalid, it fails. This does not imply a CI runner has the pinned corpus.
 
 The full Factory unit surface retains baseline failure parity. Untouched
 `9104ce7` runs 387 tests with 355 passed, 19 failed, and 13 skipped. The
