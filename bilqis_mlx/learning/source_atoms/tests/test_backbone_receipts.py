@@ -28,6 +28,9 @@ from .backbone_test_support import SourceBackboneTestBase
 class SourceBackboneReceiptTests(SourceBackboneTestBase):
     def test_receipt_minter_is_not_a_public_surface(self):
         self.assertFalse(hasattr(receipt_authority, "make_receipt"))
+        self.assertFalse(hasattr(receipt_authority, "_issue_receipt"))
+        with self.assertRaises(BilqisError):
+            receipt_authority._issue_from_producer(object())
 
     def test_producer_requires_selected_state_before_next_group(self):
         producer = self.producer()
