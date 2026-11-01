@@ -67,7 +67,12 @@ class SidecarContractTests(unittest.TestCase):
                     self.assertHeldBeforeTensorSave(replace(value, **{name: raw}))
 
     def test_boolean_or_negative_epochs_are_not_integer_identity(self):
-        value = source()
+        original = source()
+        value = replace(original,
+            compiler_features={**original.compiler_features, 'rights_epoch': 0, 'correction_generation': 0},
+            correction_frontier={**original.correction_frontier, 'rights_epoch': 0, 'correction_generation': 0},
+            teacher_state={**original.teacher_state, 'teacher_epoch': 0},
+            provenance=replace(original.provenance, teacher_epoch=0))
         for name, field in (('compiler_features', 'rights_epoch'),
                             ('compiler_features', 'correction_generation'),
                             ('correction_frontier', 'rights_epoch'),
@@ -94,7 +99,8 @@ class SidecarContractTests(unittest.TestCase):
             manifest = json.loads(manifest_path.read_bytes())
             manifest['sidecars']['compiler_features'].update(sha256=digest, object_sha256=digest)
             manifest_raw = canonical(manifest)
-            data_plane().put_node(sha(manifest_raw), manifest_raw)
+            data_plane().put_node(sha(manifest_raw), manifest_raw,
+                                  manifest["generation"], manifest["parent_manifest_sha256"])
             manifest_path.write_bytes(manifest_raw)
             with patch.object(codec._mlx_checkpoint, 'load_bamf_state_payload',
                               side_effect=AssertionError('unsafe tensor construction reached')):
