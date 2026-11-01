@@ -1,0 +1,671 @@
+{
+  "schema": "bilqis.bamf.registry-expansion-review/v1",
+  "status": "implementation-readiness-reviewed-not-executable",
+  "unified_sha": "70e37ae27214061dcc1712503eae6741a2e3781e",
+  "packets": [
+    {
+      "key": "A08.1b.1",
+      "number": 553,
+      "parent_key": "A08.1b",
+      "parent_number": 418,
+      "dependency_evidence": {
+        "schema": "bilqis.bamf.dependency-evidence/v1",
+        "resolution": "resolved",
+        "body_sha256": "2a2a41cad45a65c1a23bffa97eda279b8edf991f2ccb64b9abd66dce8612522e",
+        "clause": "**Direct prerequisites:** A08.1a, A03, A13. OPEN parent status alone is not a blocker when an exact reviewed branch receipt exists.",
+        "known_edges": [
+          "A08.1a",
+          "A03",
+          "A13"
+        ],
+        "external_receipts": [],
+        "source_records": [
+          {
+            "source_id": "A08.1b.1.body",
+            "kind": "body",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/553",
+            "sha256": "2a2a41cad45a65c1a23bffa97eda279b8edf991f2ccb64b9abd66dce8612522e",
+            "excerpt": "**Direct prerequisites:** A08.1a, A03, A13. OPEN parent status alone is not a blocker when an exact reviewed branch receipt exists."
+          },
+          {
+            "source_id": "A08.1b.1.spec",
+            "kind": "spec",
+            "locator": "docs/tasks/bamf-0.2/children/A08.1b.1.md",
+            "sha256": "61090f078b457be304cc5fcd3ee11fe8b52e8d630b759037db89c4fbed521954",
+            "excerpt": "# BAMF-0.2 A08.1b.1 | Source identity and attested-relation constructive lessons\n\nParent: A08.1b #418. Lane: `codex/bamf02-a-semantics`.\nIssue number: #553. Source baseline: reviewed unified\n`codex/bamf-unified-base-20261028`, synchronized into Lane A\nbefore each implementation unit. Source spec: A08.1b and\n`BAMF-0.2-SPEC-001`; neither is superseded.\n\n## Exact owned result\n\nProduce immutable, source-backed constructive teaching for admitted\nidentity and attested-relation facts, with a positive fact, distinct\nsource-valid contrast, canonical answer modality, independently\nexecutable typed checker, source constituents, prerequisite closure,\nvariation axes and release/evidence binding. The checker must\nreconstruct source authority rather than trusting generator gold.\nFor relations, a contrast must itself be an attested relation, not\nan invented false law. No English gloss may establish semantics.\n\nThe existing `compile_source_constructive_lessons`,\n`check_source_constructive_lesson`, `SourceConstructiveLesson`\nand `SourceConstructiveLessonSet` are the staged implementation\nstarting point, not proof of completion. Test exact source identity,\nreal or source-attested relation witnesses, forged fact/release\nrejection, prerequisite closure and actual supported variation\naxes. The 9,307 real source-identity lessons are source-fact\nwitnesses, **not** 9,307 learned/qualified capabilities.\n\n## Finish gate\n\nConsume A08.1a's independently reviewed census and A03/A13\nsource-authority receipts. Focused owner tests plus fresh Goldfish\nEGM must return zero Blockers/Majors. Record immutable head and\nissue/PR receipt. No grade dispatch, learner credit, optimizer\nstep, parent integration or self-merge.\n"
+          }
+        ],
+        "obligations": [
+          "Preserve parent418 requirements/acceptance; source-fact lessons do not establish learned capability."
+        ],
+        "unresolved": null
+      }
+    },
+    {
+      "key": "A08.1b.2",
+      "number": 554,
+      "parent_key": "A08.1b",
+      "parent_number": 418,
+      "dependency_evidence": {
+        "schema": "bilqis.bamf.dependency-evidence/v1",
+        "resolution": "held",
+        "body_sha256": "7d0ed874ea1b5b403715f81ad0693ab8587ea9685d38b1045dec1684432293a0",
+        "clause": "**Direct prerequisites:** A08.1a, A07.1, A07.2, A13. OPEN parent status alone is not a blocker when an exact reviewed branch receipt exists.",
+        "known_edges": [
+          "A08.1a",
+          "A07.1",
+          "A07.2",
+          "A13"
+        ],
+        "external_receipts": [],
+        "source_records": [
+          {
+            "source_id": "A08.1b.2.body",
+            "kind": "body",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/554",
+            "sha256": "7d0ed874ea1b5b403715f81ad0693ab8587ea9685d38b1045dec1684432293a0",
+            "excerpt": "**Direct prerequisites:** A08.1a, A07.1, A07.2, A13. OPEN parent status alone is not a blocker when an exact reviewed branch receipt exists."
+          },
+          {
+            "source_id": "A08.1b.2.spec",
+            "kind": "spec",
+            "locator": "docs/tasks/bamf-0.2/children/A08.1b.2.md",
+            "sha256": "bb2c0aee1ab7ffecd9d81358b4675fb65d47cadd05de9e25620ce16e455759b6",
+            "excerpt": "# BAMF-0.2 A08.1b.2 | Formal Boolean and numeric constructive operators\n\nParent: A08.1b #418. Lane: `codex/bamf02-a-semantics`.\nIssue number: #554. Source spec: A08.1b and\n`BAMF-0.2-SPEC-001`, both preserved in full.\n\n## Exact owned result\n\nBind the A01-released formal Boolean/numeric identities to the\nexisting A07 source-qualified pure-operator registry, A13 source\nrights and the original Factory construction/checker contract.\nFor each source-attested formal family, generate positive\nconstituent-first teaching, legal source-valid contrasts,\ncanonical typed answer, independent executable checker,\nprerequisite closure and real variation axes. Reuse A07\noperator semantics, domain/arity/error contracts and exact\nsource authority; never infer laws from labels or let a caller\nsubstitute a different formal family under the same ABI index.\n\nDo not grant `ADAPTER_READY` for a named registry entry without\nan actual registered generator/checker pair. No synthetic\nchecker success becomes `LEARNING_VERIFIED`. Preserve all\nunsupported/held obligations in the A08.1a denominator.\n\n## Finish gate\n\nLiteral Boolean and numeric examples, cross-family spoof,\nwrong-arity/type, rights/release revocation, contrast and\nchecker-independence negatives. Consume A08.1a, A07.1/A07.2\nand A13.1 receipts. Focused tests and independent EGM PASS,\nimmutable branch/issue/PR receipts. No grade-specific dispatch,\nlive training, source promotion or self-merge.\n"
+          }
+        ],
+        "obligations": [
+          "Preserve named A13.1 receipt alongside live A13 prerequisite and full parent requirements."
+        ],
+        "unresolved": "The named local specification additionally requires an A13.1 receipt; retain that granularity."
+      }
+    },
+    {
+      "key": "A08.1b.3",
+      "number": 555,
+      "parent_key": "A08.1b",
+      "parent_number": 418,
+      "dependency_evidence": {
+        "schema": "bilqis.bamf.dependency-evidence/v1",
+        "resolution": "resolved",
+        "body_sha256": "bcbfe9eb35db8e38d29c3866240918fd5cdf934fe7ad397579acadd31c207c5d",
+        "clause": "**Direct prerequisites:** A08.1a, A03, A06, A13. OPEN parent status alone is not a blocker when an exact reviewed branch receipt exists.",
+        "known_edges": [
+          "A08.1a",
+          "A03",
+          "A06",
+          "A13"
+        ],
+        "external_receipts": [],
+        "source_records": [
+          {
+            "source_id": "A08.1b.3.body",
+            "kind": "body",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/555",
+            "sha256": "bcbfe9eb35db8e38d29c3866240918fd5cdf934fe7ad397579acadd31c207c5d",
+            "excerpt": "**Direct prerequisites:** A08.1a, A03, A06, A13. OPEN parent status alone is not a blocker when an exact reviewed branch receipt exists."
+          },
+          {
+            "source_id": "A08.1b.3.spec",
+            "kind": "spec",
+            "locator": "docs/tasks/bamf-0.2/children/A08.1b.3.md",
+            "sha256": "fd692661ab759c9d9a3363e79675bcccf0ff84656ad11054c4a3aa4161c18f14",
+            "excerpt": "# BAMF-0.2 A08.1b.3 | Morphology composition and decomposition source adapters\n\nParent: A08.1b #418. Lane: `codex/bamf02-a-semantics`.\nIssue number: #555. Source spec: A08.1b and\n`BAMF-0.2-SPEC-001`, unchanged.\n\n## Exact owned result\n\nResolve source-owned morphology composition/decomposition records\nfrom the pinned A01 source corpus into verifiable input/output\nfacts, preserving exact row identity, owner, source reference,\nsemantic release, rights and correction generation. A01's\n`source-rows.json` contains table/key inventory only; it does\n**not** by itself authorize a morphological transformation law.\nObtain the actual source-row law from its authoritative adapter\nand validate its digest before emitting any lesson.\n\nFor each admitted morphology family with source facts, provide\npositive constructive constituents, source-valid contrasts,\ncanonical typed answer, independent decomposition/composition\nchecker, prerequisite closure and exercised variation axes.\nUnverifiable, held or IR-only records remain explicit uncovered\ndebt; do not synthesize rules from English glosses or table names.\n\n## Finish gate\n\nAt least one real source-attested morphology law and its independent\nchecker, plus wrong-row, foreign-release, revoked-rights,\nfuture-prefix, unsupported-law and counterexample negatives.\nConsume A08.1a, A03/A06/A13 receipts. Independent EGM PASS\nand immutable issue/PR receipt. No neural learning claim or merge.\n"
+          }
+        ],
+        "obligations": [
+          "A01 table/key inventory alone does not authorize morphology laws; preserve held/unverifiable coverage debt."
+        ],
+        "unresolved": null
+      }
+    },
+    {
+      "key": "A08.1b.4",
+      "number": 556,
+      "parent_key": "A08.1b",
+      "parent_number": 418,
+      "dependency_evidence": {
+        "schema": "bilqis.bamf.dependency-evidence/v1",
+        "resolution": "resolved",
+        "body_sha256": "0b7c5396267d0fb17a2a7c4a2a29c9babebdf086587681611ac6931809e94418",
+        "clause": "**Direct prerequisites:** A08.1a, A03, A07, A13. OPEN parent status alone is not a blocker when an exact reviewed branch receipt exists.",
+        "known_edges": [
+          "A08.1a",
+          "A03",
+          "A07",
+          "A13"
+        ],
+        "external_receipts": [],
+        "source_records": [
+          {
+            "source_id": "A08.1b.4.body",
+            "kind": "body",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/556",
+            "sha256": "0b7c5396267d0fb17a2a7c4a2a29c9babebdf086587681611ac6931809e94418",
+            "excerpt": "**Direct prerequisites:** A08.1a, A03, A07, A13. OPEN parent status alone is not a blocker when an exact reviewed branch receipt exists."
+          },
+          {
+            "source_id": "A08.1b.4.spec",
+            "kind": "spec",
+            "locator": "docs/tasks/bamf-0.2/children/A08.1b.4.md",
+            "sha256": "3850118b45baaef384a46be45da3f37dce66af5b88a725056fcce237220e4a96",
+            "excerpt": "# BAMF-0.2 A08.1b.4 | Scope, modality, time and released transformation lessons\n\nParent: A08.1b #418. Lane: `codex/bamf02-a-semantics`.\nIssue number: #556. Source spec: A08.1b and\n`BAMF-0.2-SPEC-001`, preserved.\n\n## Exact owned result\n\nCompile source-qualified scope/modality/time and released\ntransformation families into constructive, independently\nchecked lesson programs. Consume A03 typed frame/scope/role\nsemantics, A07 lawful operators and the source's exact\ntransformation records. Preserve causal-prefix visibility,\nsource/rights/correction authority, relation structure and\nunknown/none/alternative states. A table name or grammar\ncategory alone is not evidence of a transformation law.\n\nFor each source-attested program emit positive teaching,\nsource-valid contrast, canonical answer modality, independent\ntyped checker, prerequisite closure and exercised variation\naxes. Unsupported or held source families remain visible\n`IMPLEMENTATION_UNCOVERED`, never silently filtered or\ndeclared learned.\n\n## Finish gate\n\nSource-attested scope/modality/time and transformation examples\nwith wrong-scope, future-suffix, relation/role swap,\nforeign-release, revoked-rights and checker-spoof negatives.\nConsume A08.1a, A03/A07/A13 receipts. Focused tests, fresh\nEGM PASS and immutable issue/PR receipt. No grade dispatch,\nneural training, source promotion or self-merge.\n"
+          }
+        ],
+        "obligations": [
+          "Preserve source/rights/correction, causal visibility, exact laws and uncovered family denominator."
+        ],
+        "unresolved": null
+      }
+    },
+    {
+      "key": "A08.1b.5",
+      "number": 557,
+      "parent_key": "A08.1b",
+      "parent_number": 418,
+      "dependency_evidence": {
+        "schema": "bilqis.bamf.dependency-evidence/v1",
+        "resolution": "held",
+        "body_sha256": "8963cf232425ad37df199ddc4f537fbf05384803b2d1cd65824bc8939944526a",
+        "clause": "**Direct prerequisites:** A08.1b.1 through A08.1b.4. OPEN parent status alone is not a blocker when an exact reviewed branch receipt exists.",
+        "known_edges": [
+          "A08.1b.1",
+          "A08.1b.2",
+          "A08.1b.3",
+          "A08.1b.4"
+        ],
+        "external_receipts": [],
+        "source_records": [
+          {
+            "source_id": "A08.1b.5.body",
+            "kind": "body",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/557",
+            "sha256": "8963cf232425ad37df199ddc4f537fbf05384803b2d1cd65824bc8939944526a",
+            "excerpt": "**Direct prerequisites:** A08.1b.1 through A08.1b.4. OPEN parent status alone is not a blocker when an exact reviewed branch receipt exists."
+          },
+          {
+            "source_id": "A08.1b.5.spec",
+            "kind": "spec",
+            "locator": "docs/tasks/bamf-0.2/children/A08.1b.5.md",
+            "sha256": "2130ffbfc39858e55ffb19e2965d234fdfc28c3cb1876c9488ba141129ca79fa",
+            "excerpt": "# BAMF-0.2 A08.1b.5 | Integrate constructive families into the Factory registry\n\nParent: A08.1b #418. Lane: `codex/bamf02-a-semantics`.\nIssue number: #557. Source spec: A08.1b and\n`BAMF-0.2-SPEC-001`, preserved without reducing acceptance.\n\n## Exact owned result\n\nBind the independently verified A08.1b.1-.4 family programs\nto existing `ConstructionProgram`, `CapabilityDefinition`,\nsource-adapter/checker registry and curriculum definition\nsurfaces. A rule registry must switch Boolean, integer and a\nsource-qualified world-model fixture without grade-ID\nbranches; the same family in another grade must retain\nequivalent construction/checker behavior. Every eligible\nsource/family obligation is either backed by a registered\nconstructive generator and independent checker or remains\nvisible `IMPLEMENTATION_UNCOVERED`; never shrink the frozen\nA08.1a denominator to fit installed adapters.\n\nKeep source-held and IR-only separate from implementation debt.\nAll source-lesson and synthetic checker evidence remains\n`LEARNING_UNVERIFIED` until independent C05/C13/C14\nretained-transfer evidence exists. No zero-debt or\n`COMPLETE_ATLAS_COVERAGE` claim without a complete\nsource-to-constructor ledger and fresh checker proof.\n\n**A08.1a source-authority consumption clarification (2026-10-29):**\nAn A08 inventory, candidate or lesson set is a non-authoritative\nproposal even when produced from a pinned source. Before installing\nany program or accepting a source-fact check, the Factory registry\nmust take the separately governed A01 `AtlasArtifactSelection`\nand rederive/compare the exact proposal with\n`assert_family_inventory_current`,\n`assert_curriculum_candidate_current` or\n`assert_source_lesson_set_current` at the consuming boundary.\nNo caller-mintable schema, status or digest substitutes for this\nsource replay. Current A13 tenant/purpose/epoch/visibility/revocation\nrights must then be checked independently. A source-valid proposal\nwithout those rights remains non-executable and\n`LEARNING_UNVERIFIED`.\n\n**Source-owner prerequisites surfaced by independent review:**\nThe current A01 artifact has source-row keys/loci and a global\n`source_rows_sha256`, but not raw source-row payload or per-edge\nrelation source-row provenance. A03's released adapters cover\nformal A/B/C, not SKOS/Ithkuil source rows. Do not invent\n`SourceSpan`, `FrameInstance`, `ContextEligibility` or\n`SourceGrant` inside A08. Decompose the missing work into:\n(1) source-owner resolution of exact pinned row bytes;\n(2) a released SKOS/Ithkuil row-to-A03 frame adapter with truthful\noccurrence/span/source reference;\n(3) per-edge relation evidence binding where applicable;\n(4) source-owner A13 grant issuance for frame/member evidence;\n(5) a lesson-to-fresh-`ApprovedContextProjection` crosswalk\ncovering **both positive and contrast** source facts.\n\nThe final gate must call A13 `project_context` under the current\nTaskScope, SourceFrontier and ContextPolicy, distinguishing\nimplementation-uncovered from source-held/revoked. A cheap\nmandatory regression: authorize both positive and contrast\nevidence, then revoke **only** the contrast grant. The same\nlesson must become ineligible without losing the frozen A08\ndenominator or granting learner credit.\n\n## Finish gate\n\nExecutable cross-family, cross-grade, missing-constructor,\nwrong-checker, held-source and no-false-learning-credit tests.\nConsume A08.1b.1-.4 EGM PASS receipts and A08.1a frozen census.\nIndependent EGM PASS, immutable issue/PR receipt and parent\n#418 integration crosswalk. No live training or self-merge.\n"
+          }
+        ],
+        "obligations": [
+          "Consume A08.1a frozen census and four family EGM receipts; source owners issue SourceSpan/FrameInstance/ContextEligibility/SourceGrant; final projection uses A13 project_context."
+        ],
+        "unresolved": "Preserve A08.1a census and additional unnamed source-owner obligations; range alone does not settle them."
+      }
+    },
+    {
+      "key": "C08.4",
+      "number": 558,
+      "parent_key": "C08",
+      "parent_number": 374,
+      "dependency_evidence": {
+        "schema": "bilqis.bamf.dependency-evidence/v1",
+        "resolution": "resolved",
+        "body_sha256": "b33f20e07dd1947c377e2c1af235d83bf0df5276672ced1661ba8cca7808cb19",
+        "clause": "## Direct prerequisites\n\n- [B11 #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369) architecture/backend dispatch.\n- [C08.1 #513](https://github.com/Entif-AI/Bilqis-MLX/issues/513) deterministic batching and activation estimates.\n- [C08.3 #515](https://github.com/Entif-AI/Bilqis-MLX/issues/515) isolated worker/resource-floor contract.\n- B12/B13 state custody remains authoritative for accepted optimizer/checkpoint state.",
+        "known_edges": [
+          "B11",
+          "C08.1",
+          "C08.3"
+        ],
+        "external_receipts": [],
+        "source_records": [
+          {
+            "source_id": "C08.4.body",
+            "kind": "body",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/558",
+            "sha256": "b33f20e07dd1947c377e2c1af235d83bf0df5276672ced1661ba8cca7808cb19",
+            "excerpt": "## Direct prerequisites\n\n- [B11 #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369) architecture/backend dispatch.\n- [C08.1 #513](https://github.com/Entif-AI/Bilqis-MLX/issues/513) deterministic batching and activation estimates.\n- [C08.3 #515](https://github.com/Entif-AI/Bilqis-MLX/issues/515) isolated worker/resource-floor contract.\n- B12/B13 state custody remains authoritative for accepted optimizer/checkpoint state."
+          }
+        ],
+        "obligations": [
+          "B12/B13 remain authoritative custody owners, not expressly additional blocking edges; single-host equivalence and fastest/synchronous/auxiliary comparison remain required."
+        ],
+        "unresolved": null
+      }
+    },
+    {
+      "key": "C14.4",
+      "number": 559,
+      "parent_key": "C14",
+      "parent_number": 386,
+      "dependency_evidence": {
+        "schema": "bilqis.bamf.dependency-evidence/v1",
+        "resolution": "held",
+        "body_sha256": "495bce9b46cbd862a635699923cdcd92a0a012513a594c3283ebdd11ce8a4a00",
+        "clause": "## Direct prerequisites\n\n- [B13 #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372) complete generation persistence/cold resume.\n- [C05 #378](https://github.com/Entif-AI/Bilqis-MLX/issues/378) retention/admission safeguards.\n- [C12 #381](https://github.com/Entif-AI/Bilqis-MLX/issues/381) bounded capability/plastic delta packaging where applicable.\n- Local tightly coupled multi-device execution is owned by C08.4, not this issue.",
+        "known_edges": [
+          "B13",
+          "C05"
+        ],
+        "external_receipts": [],
+        "source_records": [
+          {
+            "source_id": "C14.4.body",
+            "kind": "body",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/559",
+            "sha256": "495bce9b46cbd862a635699923cdcd92a0a012513a594c3283ebdd11ce8a4a00",
+            "excerpt": "## Direct prerequisites\n\n- [B13 #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372) complete generation persistence/cold resume.\n- [C05 #378](https://github.com/Entif-AI/Bilqis-MLX/issues/378) retention/admission safeguards.\n- [C12 #381](https://github.com/Entif-AI/Bilqis-MLX/issues/381) bounded capability/plastic delta packaging where applicable.\n- Local tightly coupled multi-device execution is owned by C08.4, not this issue."
+          }
+        ],
+        "obligations": [
+          "C12 dependency is conditional: bounded capability/plastic delta packaging where applicable. C14 is explicitly nonblocking parent context; C08.4 owns tightly coupled execution."
+        ],
+        "unresolved": "C12 is conditional where packaging applies; a global unconditional edge must not replace that condition."
+      }
+    },
+    {
+      "key": "A05.4",
+      "number": 575,
+      "parent_key": "A05",
+      "parent_number": 357,
+      "dependency_evidence": {
+        "schema": "bilqis.bamf.dependency-evidence/v1",
+        "resolution": "held",
+        "body_sha256": "6cc2e7be26433afda920047b409538ab5c75d56576f8ad208838e93bf674bed6",
+        "clause": "## Dependency / handoff\nConsumes accepted A03/A04/A13 and current A05 compiler receipts. On completion, B03.3 #444 must rerun its child-only future-isolation and nested-gradient proof against this exact source contract.\n\nNo live learner or durable optimizer start is authorized by this issue.",
+        "known_edges": [
+          "A03",
+          "A04",
+          "A13"
+        ],
+        "external_receipts": [],
+        "source_records": [
+          {
+            "source_id": "A05.4.body",
+            "kind": "body",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/575",
+            "sha256": "6cc2e7be26433afda920047b409538ab5c75d56576f8ad208838e93bf674bed6",
+            "excerpt": "## Dependency / handoff\nConsumes accepted A03/A04/A13 and current A05 compiler receipts. On completion, B03.3 #444 must rerun its child-only future-isolation and nested-gradient proof against this exact source contract.\n\nNo live learner or durable optimizer start is authorized by this issue."
+          }
+        ],
+        "obligations": [
+          "Consume current A05 compiler receipt; B03.3 reruns future-isolation/nested-gradient proof as consumer."
+        ],
+        "unresolved": "Current A05 compiler receipt granularity is not identified; B03.3 is a consumer."
+      }
+    },
+    {
+      "key": "B02.4",
+      "number": 576,
+      "parent_key": "B02",
+      "parent_number": 359,
+      "dependency_evidence": {
+        "schema": "bilqis.bamf.dependency-evidence/v1",
+        "resolution": "held",
+        "body_sha256": "0c57a08d7d67b0f5d9dfc411a3aac355e4f0d309bb7abdce886714987ed347e8",
+        "clause": "## Dependency / handoff\nConsumes B01 parameter/feature authority, actual A05 compiled child handles, and the A05.4 partial-visible-forest contract. Completion unblocks the neural half of B03.3 #444.\n\nNo source admission, ABI allocation, or durable training is authorized by this issue.",
+        "known_edges": [
+          "B01",
+          "A05.4"
+        ],
+        "external_receipts": [],
+        "source_records": [
+          {
+            "source_id": "B02.4.body",
+            "kind": "body",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/576",
+            "sha256": "0c57a08d7d67b0f5d9dfc411a3aac355e4f0d309bb7abdce886714987ed347e8",
+            "excerpt": "## Dependency / handoff\nConsumes B01 parameter/feature authority, actual A05 compiled child handles, and the A05.4 partial-visible-forest contract. Completion unblocks the neural half of B03.3 #444.\n\nNo source admission, ABI allocation, or durable training is authorized by this issue."
+          }
+        ],
+        "obligations": [
+          "Consume actual A05 compiled handles; preserve child occurrence/content identity without fabricated ABI identity."
+        ],
+        "unresolved": "Actual A05 compiled child-handle receipt granularity is not identified; B03.3 is a consumer."
+      }
+    },
+    {
+      "key": "B05.4",
+      "number": 577,
+      "parent_key": "B05",
+      "parent_number": 355,
+      "dependency_evidence": {
+        "schema": "bilqis.bamf.dependency-evidence/v1",
+        "resolution": "held",
+        "body_sha256": "7fd845c95dd86cce871b62a6d3a3d649ee367241fba1bb1777b541ac6c1a5d8c",
+        "clause": "## Dependency / handoff\nConsumes B01 topology/tensor identities and B04 execution/cache identity. B05.1 #449 must re-run its synthetic-summary negative witness against this contract and close only after the forged relabelling is rejected.\n\nNo live learner or optimizer start is authorized.\n\n\n\n<!-- BAMF02:B05.4:PRODUCER-AUTHORITY-CORRECTION:20261029 -->",
+        "known_edges": [
+          "B01",
+          "B04",
+          "B11.1a"
+        ],
+        "external_receipts": [],
+        "source_records": [
+          {
+            "source_id": "B05.4.body",
+            "kind": "body",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/577",
+            "sha256": "7fd845c95dd86cce871b62a6d3a3d649ee367241fba1bb1777b541ac6c1a5d8c",
+            "excerpt": "## Dependency / handoff\nConsumes B01 topology/tensor identities and B04 execution/cache identity. B05.1 #449 must re-run its synthetic-summary negative witness against this contract and close only after the forged relabelling is rejected.\n\nNo live learner or optimizer start is authorized.\n\n\n\n<!-- BAMF02:B05.4:PRODUCER-AUTHORITY-CORRECTION:20261029 -->"
+          }
+        ],
+        "obligations": [
+          "B11.1a586 owns producer authority; PR584 is canonical interim draft and582 superseded; B05.1 is downstream negative-witness consumer."
+        ],
+        "unresolved": "Meaning is explicit across the consumes clause and producer amendment; their machine normalization is not yet supported."
+      }
+    },
+    {
+      "key": "A03.4",
+      "number": 578,
+      "parent_key": "A03",
+      "parent_number": 349,
+      "dependency_evidence": {
+        "schema": "bilqis.bamf.dependency-evidence/v1",
+        "resolution": "held",
+        "body_sha256": "331ee8b91744384367b590efeca3d51f79f9a846509d5813985db54c32a8d994",
+        "clause": "## Dependency / handoff\nConsumes A01 release identity and accepted A03/A04 schema serialization. B07.1 #456 must consume this witness together with the existing source-owned A13 grant machinery; B08.1 #460 must additionally bind complete rights/revocation/generation dependencies into its cache/read identity.\n\nNo neural/source admission or training is authorized by this issue.",
+        "known_edges": [
+          "A01"
+        ],
+        "external_receipts": [],
+        "source_records": [
+          {
+            "source_id": "A03.4.body",
+            "kind": "body",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/578",
+            "sha256": "331ee8b91744384367b590efeca3d51f79f9a846509d5813985db54c32a8d994",
+            "excerpt": "## Dependency / handoff\nConsumes A01 release identity and accepted A03/A04 schema serialization. B07.1 #456 must consume this witness together with the existing source-owned A13 grant machinery; B08.1 #460 must additionally bind complete rights/revocation/generation dependencies into its cache/read identity.\n\nNo neural/source admission or training is authorized by this issue."
+          }
+        ],
+        "obligations": [
+          "Accepted A03/A04 serialization is required; B07.1/B08.1 are consumers; A13 independently owns source grants."
+        ],
+        "unresolved": "Accepted A03/A04 serialization receipts are unnamed; do not infer parent-acceptance or child edges."
+      }
+    },
+    {
+      "key": "B11.1a",
+      "number": 586,
+      "parent_key": "B11.1",
+      "parent_number": 471,
+      "dependency_evidence": {
+        "schema": "bilqis.bamf.dependency-evidence/v1",
+        "resolution": "held",
+        "body_sha256": "d4b4f9f92629d4074a6d9e89a288f0c88c0b73da37786ab2beaed843c19bb081",
+        "clause": "## Dependency-cycle rule\nThis child is deliberately carved out of B11.1 so it can precede B05 parent acceptance. It consumes the accepted B01 topology/parameter registry, reviewed B04 attention/block primitives, and the already-implemented B05 numerical selector contract as a downstream numerical operation. It **must not depend on B05.4 provenance acceptance** or B13 final generation custody. Full B11.1 remains responsible for complete model assembly after the surrounding owners are accepted.",
+        "known_edges": [
+          "B01",
+          "B04",
+          "A05.5"
+        ],
+        "external_receipts": [
+          {
+            "number": 618,
+            "role": "prerequisite",
+            "head_sha": "eac29b8be9e4e92470422570ce4fc0a96837f05e",
+            "merge_sha": "a02b9ed45ead1801be6dff655866b73be0ffc8ff",
+            "url": "https://github.com/Entif-AI/Bilqis-MLX/pull/618",
+            "source_id": "B11.1a.pr-618"
+          }
+        ],
+        "source_records": [
+          {
+            "source_id": "B11.1a.body",
+            "kind": "body",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/586",
+            "sha256": "d4b4f9f92629d4074a6d9e89a288f0c88c0b73da37786ab2beaed843c19bb081",
+            "excerpt": "## Dependency-cycle rule\nThis child is deliberately carved out of B11.1 so it can precede B05 parent acceptance. It consumes the accepted B01 topology/parameter registry, reviewed B04 attention/block primitives, and the already-implemented B05 numerical selector contract as a downstream numerical operation. It **must not depend on B05.4 provenance acceptance** or B13 final generation custody. Full B11.1 remains responsible for complete model assembly after the surrounding owners are accepted."
+          },
+          {
+            "source_id": "B11.1a.spec",
+            "kind": "spec",
+            "locator": "docs/tasks/bamf-0.2/children/B11.1a.md",
+            "sha256": "f4671ca5e45f9fc0c9d44115cd3353efb1b1764639865f5d2f6aebf0c1f3f8f2",
+            "excerpt": "# B11.1a: executed backbone-group producer authority\n\nOwner: Lane B. GitHub: #587. Parent: B11.1 #471.\nConsumer: B05.4 #577. Source prerequisites: B01, B03/B02.4 #576,\nA05.4 #575, B04 and B13 generation custody.\n\n## Required outcome\n\nRun each four-layer group through the fixed B01/B04 backbone. Issue a\ncompleted-group receipt only from that executed path. The receipt must\nbind the actual input and output tensors to the model generation,\nprediction prefix, implementation, parameter tree, source rights,\ngroup/layer interval and predecessor chain.\n\nThe public B05 selector must not accept arbitrary arrays plus matching\nmetadata. A caller cannot relabel g2 bytes as g1, reuse another model\ngeneration, change the input boundary or reorder group outputs.\n\nGroup 1 must apply the second motif read after layer 4 and before\ncapture. Group 2 and group 3 must preserve the exact source order\nh0, g1, g2, g3. The eventual B11 full forward consumes the producer;\nit does not become a prerequisite for the producer itself.\n\n## Execution boundary\n\nThe first bounded implementation unit is the fixed four-layer numerical\nforward. It uses B01 parameter names and shapes, B04 CCGQA, pre-RMSNorm,\nsquared-ReLU FFN and residuals. Its result is explicitly **unadmitted**.\nIt does not mint a producer credential, and B05 must reject it.\n\nThe second unit binds B03 source-approved h0, B08 motif read ordering,\nB13 parameter-generation and prediction authority, and the actual\nexecuted tensor chain. Only then may it issue a producer-sealed receipt.\nDo not substitute a private constructor token or a caller-supplied\ndigest for executed source provenance.\n\n## Verification\n\nProve the four-layer numerical result and nonzero MLX gradients first.\nThen test the actual producer boundary with g2-as-g1, cross-parameter\ngeneration, future prefix, reordered group and forged tensor attacks.\nRetain the full B11.1/B11 acceptance on the parent. No live training,\noptimizer mutation, source promotion or self-merge is authorized.\n"
+          },
+          {
+            "source_id": "B11.1a.comment-6504906163",
+            "kind": "comment",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/586#issuecomment-6504906163",
+            "sha256": "7295ada219398a64e5c98fb05d5c771564b281f4a71b99d29988f81635537e45",
+            "excerpt": "Priority execution checkpoint (2026-10-29): #586 is the requested producer-authenticity acceptance target. Related B11.1a #587 / draft PR #588 currently provide only an unadmitted four-layer numerical foundation, not an execution-owned h0/g1/g2/g3 receipt. Independent review found a B04 `sequence_starts` boundary-propagation Major in that precursor; repair and regression are required. Isolated producer implementation is underway; no public B05.4 #577 admission or issue closure is claimed. #586's explicit dependency-cycle rule controls: it must not wait on B05.4 or final B13 custody. No training or shared Lane B merge."
+          },
+          {
+            "source_id": "B11.1a.comment-6505193864",
+            "kind": "comment",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/586#issuecomment-6505193864",
+            "sha256": "7e495f4438216b078f8551a31b046982f35e6b027fc68df8def65080b028aeb0",
+            "excerpt": "Source-owner blocker formalized: new Lane A child #594 (A05.5) owns source-visible SourceAtom -> admitted A01 semantic ABI binding. Current A05 atoms carry token/index/reference but no source-attested semantic identity; B03 accepts supplied atom vectors, so #586 cannot truthfully issue an h0 producer receipt. Spec committed/pushed in Lane A at `ff2857c207d279526dc0f00c73682e296951fab9`. #590 has an explicit fail-closed bridge; #594 must provide real source-positive/rights/prefix proof and reach unified before #586 producer acceptance. B08 no-hit remains separately held. No B05 admission."
+          },
+          {
+            "source_id": "B11.1a.comment-6537258241",
+            "kind": "comment",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/586#issuecomment-6537258241",
+            "sha256": "afb666f74ec39793ca5331140dbf94c48f1e93bd4887e7bf9dbcce44667a68a1",
+            "excerpt": "B11.1a source-ingress checkpoint: draft PR #640 is pushed/read back at `f8117e9d3e57f925a48100ca2b6204887204d31e`, from Lane B/unified `9104ce733e04fb9c82420428b18dfdbf5db49535`.\n\nA05.5 #594 is completed and accepted via PR #618. Its source atom binding is no longer a missing dependency. The new `start_source_backbone_numerical` entry point derives h0 through that accepted source encoder, then executes the existing unadmitted B11 numerical chain. Callers cannot supply hidden states, generation labels, prefix digests or predecessor results.\n\nActual isolated M3 proof: 4 new tests and 17 combined source/backbone/bridge tests pass, zero skips. Literal nonzero feedforward equations cover all twelve layers, source/backbone gradients and rights/source/parameter/injection rejection. Scoped fresh EGM code review found no implementation Blocker/Major. This is not nonzero-attention, multi-row/padding or producer admission proof.\n\n**Still open:** #586/#577 producer receipts, motif-boundary disposition, actual B05 selection/adversaries and fresh acceptance EGM. Results remain `UNADMITTED_NUMERICAL`; public B05 admission stays fail-closed. The encountered topology owner triggers a mandatory structure hold, already owned by #621/PR #622 and runtime-directory #520/PR #614; newer #637/PR #639 is another reviewed candidate, not accepted unified authority. No competing rewrite, baseline waiver, self-merge or durable student/optimizer/graph mutation.\n\nAll twelve tracker tabs were reconciled for this checkpoint. Full reproducible commands and review limitations are in the PR and committed evidence. No issue closure is claimed.\n"
+          },
+          {
+            "source_id": "B11.1a.pr-618",
+            "kind": "pull_request",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/pull/618",
+            "sha256": "6cf936f2c092e318c41ce71748da3c2bfcbddf4be0863afa78e0a49341aa2991",
+            "excerpt": "a02b9ed45ead1801be6dff655866b73be0ffc8ff"
+          }
+        ],
+        "obligations": [
+          "Accepted A05.5 PR618 source binding; preserve source-approved h0 and B03/B02/A05/B08 provenance obligations. No B05.4/final B13 blocking edge. Preserve587-era specification as historical/acceptance context and its canonical cycle-rule correction."
+        ],
+        "unresolved": "Preserve exact B05 numerical-operation obligation and source/cycle-rule context; never require B05.4 or final B13 acceptance."
+      }
+    },
+    {
+      "key": "A05.5",
+      "number": 594,
+      "parent_key": "A05",
+      "parent_number": 357,
+      "dependency_evidence": {
+        "schema": "bilqis.bamf.dependency-evidence/v1",
+        "resolution": "held",
+        "body_sha256": "f87ab6da0149eb545df31a32f4ea4b9520b9e3b6091ed5e87e6a131a3dd96588",
+        "clause": "Child of A05 #357; prerequisite for canonical B11.1a producer #586 and downstream B05.4 #577. A05 `SourceAtom` currently carries only index/token/source reference; B03 `CompiledEmbeddingVectors` accepts caller-supplied raw atom vectors, so a real B11 h0 producer cannot prove that those vectors came from admitted A01/B02 semantic identities.",
+        "known_edges": [],
+        "external_receipts": [
+          {
+            "number": 618,
+            "role": "implementation",
+            "head_sha": "eac29b8be9e4e92470422570ce4fc0a96837f05e",
+            "merge_sha": "a02b9ed45ead1801be6dff655866b73be0ffc8ff",
+            "url": "https://github.com/Entif-AI/Bilqis-MLX/pull/618",
+            "source_id": "A05.5.pr-618"
+          }
+        ],
+        "source_records": [
+          {
+            "source_id": "A05.5.body",
+            "kind": "body",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/594",
+            "sha256": "f87ab6da0149eb545df31a32f4ea4b9520b9e3b6091ed5e87e6a131a3dd96588",
+            "excerpt": "Child of A05 #357; prerequisite for canonical B11.1a producer #586 and downstream B05.4 #577. A05 `SourceAtom` currently carries only index/token/source reference; B03 `CompiledEmbeddingVectors` accepts caller-supplied raw atom vectors, so a real B11 h0 producer cannot prove that those vectors came from admitted A01/B02 semantic identities."
+          },
+          {
+            "source_id": "A05.5.spec",
+            "kind": "spec",
+            "locator": "docs/tasks/bamf-0.2/children/A05.5.md",
+            "sha256": "f255251b6062a3871db0ca29b69f940bcb36864904971e10628579797d8d8e1d",
+            "excerpt": "# A05.5 | Source-visible atom to semantic ABI binding\n\nIssue #594; parent A05 #357; Lane A. Consumer: B11.1a #586.\nReviewed unified `7ad8f8a` is already an ancestor of Lane A.\n\n## Authority\n\nPreserve the full A05, A01, A03/A04, A13, B02, B03 and B11\nrequirements. This is a source-to-neural ownership seam, not a\nnew registry or a waiver of existing acceptance.\n\n## Outcome\n\nFor each visible `SourceAtom(index, token, source_reference)`, derive\nan immutable source-attested binding to an *existing admitted* A01\nsemantic identity and ABI index, or return explicit SOURCE_HELD /\nUNMAPPED without issuing an embedding. The mapping must come from the\nauthoritative source adapter, not from token spelling, glosses, a\ncaller-supplied ConceptRef, self-pinned digest or guessed ABI index.\n\nBind exact source instance, atom index/token/reference, A01 release\nand bundle, mapping record/digest, semantic ID/index/type, A13 current\nrights/correction frontier and causal prefix. The canonical digest\nmust be prefix-stable and invalidate on source/rights changes.\n\nB02/B03 must compute differentiable atom vectors from verified bindings\nand the actual B01 parameter tree. Caller-provided raw atom vectors\nand arbitrary h0 remain numerical fixtures, never producer authority.\n\n## Proof\n\nReal pinned A01 positive; wrong token/index/reference, forged ABI/type,\nforeign release/bundle, revoked rights, stale correction, future\nprefix, duplicate/conflicting mapping and unsupported-source negatives.\nPreserve explicit held debt and UNKNOWN/NONE semantics without\ninventing meaning. Show earlier-prefix invariance and B02/B03\nsource-bound gradients. Independent EGM, exact pushed receipt, no\ntraining or self-merge. #586/#577 remain fail-closed until accepted.\n"
+          },
+          {
+            "source_id": "A05.5.comment-6516958618",
+            "kind": "comment",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/594#issuecomment-6516958618",
+            "sha256": "7bcb982650b5bf3c429648f5be8628e9f57c0ba2d7886dd437e84854241ee797",
+            "excerpt": "Merged and verified: PR #618 landed A05.5 on BAMF unified at `a02b9ed45ead1801be6dff655866b73be0ffc8ff`. Acceptance receipt: pinned source/Atlas reproduction, 231 tests + 111 subtests zero skips, structure/governance clean, independent EGM PASS 0 Blockers/Majors/Minors. Closing A05.5 as completed. This does not close #586 or #577; they remain governed by their own producer/admission acceptance."
+          },
+          {
+            "source_id": "A05.5.pr-618",
+            "kind": "pull_request",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/pull/618",
+            "sha256": "6cf936f2c092e318c41ce71748da3c2bfcbddf4be0863afa78e0a49341aa2991",
+            "excerpt": "a02b9ed45ead1801be6dff655866b73be0ffc8ff"
+          }
+        ],
+        "obligations": [
+          "Accepted implementation PR618 does not supply a direct prerequisite list. Preserve A01 identity,A13 rights/prefix/corrections,B01-derived B02/B03 embedding requirements; B11.1a and B05.4 are consumers."
+        ],
+        "unresolved": "No direct prerequisite list is established. Empty known edges is not a settled claim of no prerequisites."
+      }
+    },
+    {
+      "key": "B10.5",
+      "number": 635,
+      "parent_key": "B10",
+      "parent_number": 367,
+      "dependency_evidence": {
+        "schema": "bilqis.bamf.dependency-evidence/v1",
+        "resolution": "resolved",
+        "body_sha256": "2b890933d4552e783ac168d5652d740620a27446f977230efdd40185b7b031cb",
+        "clause": "Direct prerequisites: merged #619/#623; exact qualified #633/#634 receipts for final composition turn-in; existing B02/B03 source interfaces. Parent/source/model/retained-learning acceptance remains separate. A source-typed disposable fixture can establish numerical behavior while producer admission remains open.",
+        "known_edges": [
+          "B02",
+          "B03"
+        ],
+        "external_receipts": [
+          {
+            "number": 619,
+            "role": "prerequisite",
+            "head_sha": "569bc43531921c6c1ac6178d5ed953b006039800",
+            "merge_sha": "8a7b00be062b5706196d8506f02129de5f24598e",
+            "url": "https://github.com/Entif-AI/Bilqis-MLX/pull/619",
+            "source_id": "B10.5.pr-619"
+          },
+          {
+            "number": 623,
+            "role": "prerequisite",
+            "head_sha": "c710902726a2540e3389c51c3c3506a13cef6b34",
+            "merge_sha": "dde9398249cb1dc23c9c979f0e7162436aaae894",
+            "url": "https://github.com/Entif-AI/Bilqis-MLX/pull/623",
+            "source_id": "B10.5.pr-623"
+          },
+          {
+            "number": 633,
+            "role": "prerequisite",
+            "head_sha": "b63a65e91412f5cfc945eccc3d060b8ed60707fe",
+            "merge_sha": "a02458cea06063a0e0a751306dd9d54f2c8ca389",
+            "url": "https://github.com/Entif-AI/Bilqis-MLX/pull/633",
+            "source_id": "B10.5.pr-633"
+          },
+          {
+            "number": 634,
+            "role": "prerequisite",
+            "head_sha": "61b4de07fac3e053f6c898a253415f51e4db4673",
+            "merge_sha": "d790dc692a11c052b7ee44a181aac54e8fb2585e",
+            "url": "https://github.com/Entif-AI/Bilqis-MLX/pull/634",
+            "source_id": "B10.5.pr-634"
+          },
+          {
+            "number": 636,
+            "role": "implementation",
+            "head_sha": "39211d54fa9626dd5fd4201d5eb0641f20109b3c",
+            "merge_sha": "7296eef9da0dfe58eeb46b26c3410a6ba519d797",
+            "url": "https://github.com/Entif-AI/Bilqis-MLX/pull/636",
+            "source_id": "B10.5.pr-636"
+          }
+        ],
+        "source_records": [
+          {
+            "source_id": "B10.5.body",
+            "kind": "body",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/635",
+            "sha256": "2b890933d4552e783ac168d5652d740620a27446f977230efdd40185b7b031cb",
+            "excerpt": "Direct prerequisites: merged #619/#623; exact qualified #633/#634 receipts for final composition turn-in; existing B02/B03 source interfaces. Parent/source/model/retained-learning acceptance remains separate. A source-typed disposable fixture can establish numerical behavior while producer admission remains open."
+          },
+          {
+            "source_id": "B10.5.comment-6552908627",
+            "kind": "comment",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/635#issuecomment-6552908627",
+            "sha256": "05c3fb341a498e219e4ce56ad5ad1f8e390be20ae42dac16cee2d683290fa41b",
+            "excerpt": "Closing under ADR-121. B10.5's owned `predict_typed` / `answer_loss` composition contract was independently reviewed and integrated through PR #636, merge commit `7296eef9da0dfe58eeb46b26c3410a6ba519d797`. Final exact-head evidence records decoder 28/28, adversarial provenance defenses, hosted Portable/Semantic ABI success, and independent APPROVE. Closing this bounded leaf does **not** close B10 parent #367 or producer/source/B11/C02/full retained-learning acceptance. Later regressions should be new bounded issues referencing #635/#636 unless this acceptance is invalidated."
+          },
+          {
+            "source_id": "B10.5.pr-619",
+            "kind": "pull_request",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/pull/619",
+            "sha256": "80dff020333f045d26e178ec6db8f189bb25087657b70a1135c3cfb01411998d",
+            "excerpt": "8a7b00be062b5706196d8506f02129de5f24598e"
+          },
+          {
+            "source_id": "B10.5.pr-623",
+            "kind": "pull_request",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/pull/623",
+            "sha256": "4b0b75020845785bb67c724a26192ef31ab102457b2a1bdc4d1ca1aeecc6b837",
+            "excerpt": "dde9398249cb1dc23c9c979f0e7162436aaae894"
+          },
+          {
+            "source_id": "B10.5.pr-633",
+            "kind": "pull_request",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/pull/633",
+            "sha256": "2f665d9380ab42a81771608871e1386b16b01c5e54b3757afe1f306e46e21ef5",
+            "excerpt": "a02458cea06063a0e0a751306dd9d54f2c8ca389"
+          },
+          {
+            "source_id": "B10.5.pr-634",
+            "kind": "pull_request",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/pull/634",
+            "sha256": "d3fddaf8d64a09b43fb18e62f318a3abeec436c614987a3b55020a28ad1154e2",
+            "excerpt": "d790dc692a11c052b7ee44a181aac54e8fb2585e"
+          },
+          {
+            "source_id": "B10.5.pr-636",
+            "kind": "pull_request",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/pull/636",
+            "sha256": "8d33a7251ac570a9cc46592bfbb5186eb73c82af26353cf72ee4f36503482067",
+            "excerpt": "7296eef9da0dfe58eeb46b26c3410a6ba519d797"
+          }
+        ],
+        "obligations": [
+          "Preserve prerequisite PR619,623,633,634 as PR receipts, not issue nodes. PR636 is accepted implementation, not prerequisite. Parent/source/model/retained-learning gates remain separate."
+        ],
+        "unresolved": null
+      }
+    },
+    {
+      "key": "B11.1",
+      "number": 471,
+      "parent_key": "B11",
+      "parent_number": 369,
+      "dependency_evidence": {
+        "schema": "bilqis.bamf.dependency-evidence/v1",
+        "resolution": "held",
+        "body_sha256": "b427422fca2f01386d4307d97d17e29b098358deed576e6905df6f2934a46a67",
+        "clause": "<!-- BAMF02:WORK-PACKET:B11.1 -->\n# B11.1 | Assemble complete atlas-native forward and registry geometry\n\n**BAMF-0.2 implementation packet. Lane B.** Full original owner: [B11 #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369); direct native parent: [B11 #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369). **This issue is an implementable leaf**, not an amendment to the approved design.\n\n\n<!-- BAMF02:LANE-BRANCH-LIFECYCLE:B -->\n## Lane branch and integration lifecycle\n\n**Working branch:** `codex/bamf02-b-neural`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.\n\nBefore beginning implementation on this issue, fetch `origin` and, while on\n`codex/bamf02-b-neural`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the\nlane already equals the current unified head, record that exact unified SHA and\nproceed without manufacturing a no-op merge. Resolve any real conflicts and run\nthe smallest affected verification before issue-owned edits. Record the consumed\nunified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch\ndirectly; reviewed cross-lane work arrives through the unified trunk.\n\nAfter this issue's owned acceptance is satisfied, commit and push `codex/bamf02-b-neural` and\nopen a pull request from `codex/bamf02-b-neural` into `codex/bamf-unified-base-20261028` for human review and\nsign-off. This issue does not authorize self-merging that PR. After accepted work\nlands on unified, the next issue in the lane repeats the sync-in step. A\nnon-implementing group/integration parent does not create a bookkeeping code PR;\nits implementing descendants follow this lifecycle and the parent closes only at\nits existing integration gate.\n## Authority and lossless scope\nThe two approved BAMF-0.2 native Docs, the original complete [B11 issue #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369), root #341, ADR-BAMF02-004 and existing source/Factory rights remain controlling. No original algorithm, schema, acceptance, correctness constraint or workload is waived, simplified or removed. The parent's full acceptance remains with its eventual integration. Prior BAV/Grade-B exceptions and the rejected alternate design do not become current policy. All grades use the same functional recursive Factory/teacher/retention machinery with typed source-family-specific rule subsets, not grade-based branches. Live optimizer starts remain human-owned.\n\n## Direct prerequisites\n[B03 #363](https://github.com/Entif-AI/Bilqis-MLX/issues/363), [B04 #350](https://github.com/Entif-AI/Bilqis-MLX/issues/350), [B05 #355](https://github.com/Entif-AI/Bilqis-MLX/issues/355), [B06 #365](https://github.com/Entif-AI/Bilqis-MLX/issues/365), [B08 #366](https://github.com/Entif-AI/Bilqis-MLX/issues/366), [B09 #368](https://github.com/Entif-AI/Bilqis-MLX/issues/368), [B10 #367](https://github.com/Entif-AI/Bilqis-MLX/issues/367). Original B11 external dependency contract is preserved exactly: **BAMF dependencies:** [B03: #363](https://github.com/Entif-AI/Bilqis-MLX/issues/363), [B04: #350](https://github.com/Entif-AI/Bilqis-MLX/issues/350), [B05: #355](https://github.com/Entif-AI/Bilqis-MLX/issues/355), [B06: #365](https://github.com/Entif-AI/Bilqis-MLX/issues/365), [B08: #366](https://github.com/Entif-AI/Bilqis-MLX/issues/366), [B09: #368](https://github.com/Entif-AI/Bilqis-MLX/issues/368), [B10: #367](https://github.com/Entif-AI/Bilqis-MLX/issues/367)\n\n**Existing owner hooks:** Root #341; no separate implementation owner is duplicated.\n\nExisting-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.\n\n## Original owner API and allowed edit surface\n`forward_bamf(params,compiled_batch,answer_plan,mode,cache) -> ModelOutput; model_backend(topology) -> Backend`\n\nUse immutable typed records and the existing ErrorBus/catalog for boundary failures. The implementation receipt records exact input/output schema versions.\n\nHistorical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-b-neural` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.\n\n- `bilqis_mlx/runtime/atlas_model.py (new)`\n- `bilqis_mlx/runtime/model_topology.py`\n- `bilqis_mlx/learning/student_ops.py:_predictions/_train_score`\n- `bilqis_mlx/runtime/tests/test_atlas_model.py (new)`\n\nPackage tests live beside their owner. Keep root/shared trainer files under Lane C coordination. Update direct callers in the same patch when an interface changes.\n\n## Exact implementation obligation owned by this child\n**Required deliverable:** Assemble complete atlas-native forward and registry geometry. Implement the following **verbatim, in-order clauses from the original B11 prescription**. These are not paraphrases and none may be skipped; out-of-scope original clauses belong to sibling issues and finally to the parent integrator.\n\n1. Compose factorized inputs, frame encoder, input motif read,12 CCGQA/FFN blocks, three AttnRes selectors, mid-depth motif read, three adapters, local refinement and typed readout.\n2. Derive geometry from B01 and assert exact parameter-name/shape agreement.\n3. Add one backend dispatch used by inference, gradient construction, retention and championship callers.\n\n## Authoritative shared contract excerpt for this outcome\nThe following is directly inherited from original B11, not a replacement for the complete parent specification.\n\n### Depth\nPartition12 blocks into groups[4,4,4]. Preserve h0 and one normalized per-position summary after each completed group. At boundary k, source order is h0,g1,...,gk. Shared bias-free matrices Wq/Wk/Wv[128,768] and Wout[768,128] implement q=Wq\\*RMSNorm(current+frame_seed), key_i=Wk\\*RMSNorm(summary_i+type_role768), score_i=dot(q,key_i)/sqrt128, alpha=softmax over available source axis, mix=sum(alpha_i\\*(Wv\\*summary_i)). Merge current+g_k\\*Wout\\*mix. Each boundary has gate_vector[768] initialized0 and gate_bias=log(1/9), giving g_k=0.1\\*sigmoid(dot(gate_vector,RMSNorm(current))+gate_bias), initially0.01. The shared factor composer supplies type_role768; source summaries retain the768-wide interface. At group1 apply the second motif read after layer4 and before capturing/selecting g1. Future groups are absent. Apply the group's adapter after selection. The local refinement module keeps a768-wide recurrent state and one compressed single-head192-channel attention block, up to2 extra passes, with immutable input/member recall every pass. Refinement never reruns the12-layer backbone. Budgeted selection is external/deterministic and selected neural paths retain soft-gate gradients. Refinement is a prediction-local computation. Let p be the query prediction boundary and V(p) the ordered frames with causal_prefix_end<=p that passed context eligibility. Compute Fp=len(V(p)) and quota=min(32,ceil(Fp/8)) using only V(p). Rank requested-role matches, then source-visible salience, then stable source position within V(p). Refinement results are keyed by (input-generation,p,query-ID,frame-occurrence) and never overwrite a shared backbone hidden state used by an earlier prediction. Future frames, labels, row padding and future query requests do not enter selection. Parallel teacher-forced predictions each use their own p-local view. Derive recurrence choice from SHA256(run-seed,visit-ID,p,query-ID,frame-occurrence), never total batch length. Pass budget is 0/1/2 for the selected frame. Increasing a row from8 to9 complete frames can change the later query's quota but cannot change the earlier query at fixed p. The single backbone produces immutable causal hidden states; the small local refiner operates on prediction-specific copies.\n\n### Plastic\nInclude three rank8 residual adapters from initialization, one after each group selector: h'=h+(1/8)B\\*SiLU(A\\*RMSNorm(h)); A[8,768] seeded, B[768,8] zero. FAST group contains adapters, motif vectors/projections/gates and newly activated identity rows; SLOW contains established embeddings and dense/core parameters. Foundation mode updates all groups. Adaptive mode updates FAST each candidate and offers a FULL candidate after8 accepted FAST candidates, or when the existing teacher requests foundational remediation. Rejection leaves both clocks and all state at the retained parent. Keep native AdamW arithmetic and selected hyperparameters; the optimizer owner maintains per-parameter update counts so inactive/new parameters receive correct bias correction. Inactive parameters and their moments are byte-identical across a FAST candidate. No background neural writes: all adaptation occurs inside the existing human-started serialized visit transaction. The cadence policy is explicit versioned data; no learned meta-optimizer is required for delivery. Define group_eligible at candidate start and row_participates for each optimizer step. Identity rows participate when gathered as visible input/feedback OR included among the step's legal tied output candidates; active softmax denominator rows therefore participate even when not input tokens. Motif rows participate only if actually gathered by either read site. Type/role/schema rows participate if gathered or in a legal role-output denominator. Dense modules participate when executed on a nonzero loss-bearing path. Update mask=group_eligible AND row_participates AND active-admitted. Mask gradients BEFORE computing the global clipping norm. Ineligible/unparticipating rows get no weight decay, moment update, count increment or age increment, even when another row in the same tensor is updated. A participating eligible row with zero numerical gradient still advances AdamW moments/count and applicable decay, because it participated in the objective; numerical cancellation is not a different training history. Skip the complete optimizer step only when there is no loss-bearing target. Parameter moments/counts advance on each candidate optimizer step; publish them only if that candidate is retained. Row establishment age is distinct: increment once per accepted candidate if that row had any actual masked optimizer step in the candidate, independent of its2/4/8/16 internal steps. At age8 an identity row is established for the NEXT candidate. Candidate rejection preserves parent weights,m/v/counts,establishment ages and consolidation counters exactly. This participation policy is serialized in the optimizer identity. Start every fresh run in FOUNDATION. The immutable initial admitted FactoryRelease defines foundation_capability_ids. Transition to ADAPTIVE only at an accepted current-generation promotion sweep that enters the92% gate, sustains87% through one sweep of every introduced foundation semantic, and emits the existing promoted/promoted-with-debt receipt. C05 passes that exact receipt to B09 after candidate retention; B09 persists ModeTransition and resets accepted_fast_since_full=0. This mode transition does not clear carried debt or fabricate a perfect championship. A new foundation admission after the transition remains ADAPTIVE, with its new rows FAST for their first8 accepted participating candidates; teacher remediation can request FULL. In ADAPTIVE choose FULL whenever teacher requests it or accepted_fast_since_full>=8, otherwise FAST. An accepted FAST candidate increments that counter once; an accepted FULL resets it to0. Rejected scheduled/teacher FULL retains the counter and mode; a failed scheduled FULL is still due, while independent legal teacher strategies continue. FOUNDATION accepted/rejected candidates never increment the FAST counter. Cold resume reads these exact fields, not inferred grade labels or elapsed time. An operator may explicitly restore FOUNDATION via a versioned run-policy event; no silent mode switch occurs.\n\n## Acceptance and finish boundary\nChild completion requires implementation of every owned clause, a direct API/shape/status witness using the original parent's stated package-local test surface where applicable, and one verifiable commit + issue/PR receipt. No unrelated parent-wide feature is declared complete merely because this packet closes. **The original owner's entire existing acceptance is preserved below** for integration traceability; assign its checks to the actual implementing descendants and require the final parent integrator to reconcile every clause. Avoid running any new speculative research experiments.\n\n### Unmodified original parent acceptance\nThe actual12-layer forward runs and matches the parameter census. Demonstrate nonzero finite gradients in embeddings, attention, FFN, depth selector, memory, adapters and readout. The adapter A matrix is seeded nonzero and its B matrix starts exactly zero. At the first nondegenerate backward pass B has a finite nonzero gradient while A is initially zero-gradient; update B once, then prove the second backward reaches A. Initial adapter output remains the identity residual. Prefix invariance holds. A complete update changes loss and saves. Old run files remain unchanged. All consumers use the architecture dispatch.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_atlas_model.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n\n<!-- BAMF02:PROOF-REPAIR-369-20261027 -->\n**Adapter wake-up regression (BAMF-REQ-007/008):** Using literal fixed-seed A and zero B, compute the first and second step gradients independently of constructor-shape assertions. Both-zero A/B initialization must fail because it prevents the required first-step B update. Confirm first-pass zero adapter contribution does not imply zero backbone gradient or frozen optimizer state.\n\n\n\n<!-- BAMF02:PROOF-CAUSAL-369-20261027 -->\n**Downstream causal F05 owner (BAMF-REQ-005/008; F05):** Consume A05's compiler-only prefix witness; run the actual instantiated 12-layer model with the same earlier causal prefix and two different future suffixes. Compare fresh/valid single-token, chunked and full-prefix logits within declared deterministic tolerance. Then inject a later-prefix cache into an earlier prediction request: it MUST be rejected/recomputed and never influence earlier logits, even when masked tensors happen to have compatible shapes. Record actual heads/groups, source-handle identity and output deltas. Only this downstream executed neural fixture can close F05, not A05's compiler-only green test.\n\n## Agent execution and handoff\n**Original EGM review:** Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. A fresh Goldfish reviews this Elephant implementation (or a cohesive batch of at most three leaves); blockers and majors are resolved or contested with evidence. Without independent review, record `EGM_PENDING` for the integrator. A same-context self-review is not independent.\n\n**Original PR turn-in:** Push and read back the branch SHA, comment on the issue and lane PR, and add the actual GitHub child issue number to the PR Development closing links. The parent remains open until descendants and original acceptance are integrated.\n\nAgent fit: bounded low/medium-reasoning candidate when its interfaces are frozen. Read root README.md and AGENTS.md once, this exact child and its direct dependency receipts, then only the assigned source paths. The original technical specifications stay complete. If this work still exceeds one coherent bounded patch, subdivide **this child again** before cutting requirements. Coordinate shared paths through the lane's one writer, maintain source-gold and neural/optimizer custody, use small software checks of already-specified behavior, and record the exact child issue, changed paths, tests, branch/head SHA, and next unblocked child. Do not run the actual student or merge main from this issue.\n\n\n\n<!-- BAMF02:B11.1:PRODUCER-DECOMPOSITION:20261029 -->\n## Recursive blocker decomposition | 29 October 2026\n\nB11.1 now has a prerequisite implementation child: [B11.1a #586](https://github.com/Entif-AI/Bilqis-MLX/issues/586), **Produce execution-owned backbone group-boundary receipts**.\n\n#586 exists to break the B05.4 producer-authenticity cycle. It may proceed against accepted B01/B04 and the existing B05 numerical selector contract without waiting for B05.4 provenance acceptance. B11.1 must consume the accepted #586 producer rather than introducing a second depth-summary authority. The remainder of B11.1's original full-forward obligations and acceptance remain unchanged.\n",
+        "known_edges": [
+          "B03",
+          "B04",
+          "B05",
+          "B06",
+          "B08",
+          "B09",
+          "B10",
+          "B11.1a"
+        ],
+        "external_receipts": [],
+        "source_records": [
+          {
+            "source_id": "B11.1.body",
+            "kind": "body",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/471",
+            "sha256": "b427422fca2f01386d4307d97d17e29b098358deed576e6905df6f2934a46a67",
+            "excerpt": "<!-- BAMF02:WORK-PACKET:B11.1 -->\n# B11.1 | Assemble complete atlas-native forward and registry geometry\n\n**BAMF-0.2 implementation packet. Lane B.** Full original owner: [B11 #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369); direct native parent: [B11 #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369). **This issue is an implementable leaf**, not an amendment to the approved design.\n\n\n<!-- BAMF02:LANE-BRANCH-LIFECYCLE:B -->\n## Lane branch and integration lifecycle\n\n**Working branch:** `codex/bamf02-b-neural`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.\n\nBefore beginning implementation on this issue, fetch `origin` and, while on\n`codex/bamf02-b-neural`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the\nlane already equals the current unified head, record that exact unified SHA and\nproceed without manufacturing a no-op merge. Resolve any real conflicts and run\nthe smallest affected verification before issue-owned edits. Record the consumed\nunified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch\ndirectly; reviewed cross-lane work arrives through the unified trunk.\n\nAfter this issue's owned acceptance is satisfied, commit and push `codex/bamf02-b-neural` and\nopen a pull request from `codex/bamf02-b-neural` into `codex/bamf-unified-base-20261028` for human review and\nsign-off. This issue does not authorize self-merging that PR. After accepted work\nlands on unified, the next issue in the lane repeats the sync-in step. A\nnon-implementing group/integration parent does not create a bookkeeping code PR;\nits implementing descendants follow this lifecycle and the parent closes only at\nits existing integration gate.\n## Authority and lossless scope\nThe two approved BAMF-0.2 native Docs, the original complete [B11 issue #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369), root #341, ADR-BAMF02-004 and existing source/Factory rights remain controlling. No original algorithm, schema, acceptance, correctness constraint or workload is waived, simplified or removed. The parent's full acceptance remains with its eventual integration. Prior BAV/Grade-B exceptions and the rejected alternate design do not become current policy. All grades use the same functional recursive Factory/teacher/retention machinery with typed source-family-specific rule subsets, not grade-based branches. Live optimizer starts remain human-owned.\n\n## Direct prerequisites\n[B03 #363](https://github.com/Entif-AI/Bilqis-MLX/issues/363), [B04 #350](https://github.com/Entif-AI/Bilqis-MLX/issues/350), [B05 #355](https://github.com/Entif-AI/Bilqis-MLX/issues/355), [B06 #365](https://github.com/Entif-AI/Bilqis-MLX/issues/365), [B08 #366](https://github.com/Entif-AI/Bilqis-MLX/issues/366), [B09 #368](https://github.com/Entif-AI/Bilqis-MLX/issues/368), [B10 #367](https://github.com/Entif-AI/Bilqis-MLX/issues/367). Original B11 external dependency contract is preserved exactly: **BAMF dependencies:** [B03: #363](https://github.com/Entif-AI/Bilqis-MLX/issues/363), [B04: #350](https://github.com/Entif-AI/Bilqis-MLX/issues/350), [B05: #355](https://github.com/Entif-AI/Bilqis-MLX/issues/355), [B06: #365](https://github.com/Entif-AI/Bilqis-MLX/issues/365), [B08: #366](https://github.com/Entif-AI/Bilqis-MLX/issues/366), [B09: #368](https://github.com/Entif-AI/Bilqis-MLX/issues/368), [B10: #367](https://github.com/Entif-AI/Bilqis-MLX/issues/367)\n\n**Existing owner hooks:** Root #341; no separate implementation owner is duplicated.\n\nExisting-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.\n\n## Original owner API and allowed edit surface\n`forward_bamf(params,compiled_batch,answer_plan,mode,cache) -> ModelOutput; model_backend(topology) -> Backend`\n\nUse immutable typed records and the existing ErrorBus/catalog for boundary failures. The implementation receipt records exact input/output schema versions.\n\nHistorical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-b-neural` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.\n\n- `bilqis_mlx/runtime/atlas_model.py (new)`\n- `bilqis_mlx/runtime/model_topology.py`\n- `bilqis_mlx/learning/student_ops.py:_predictions/_train_score`\n- `bilqis_mlx/runtime/tests/test_atlas_model.py (new)`\n\nPackage tests live beside their owner. Keep root/shared trainer files under Lane C coordination. Update direct callers in the same patch when an interface changes.\n\n## Exact implementation obligation owned by this child\n**Required deliverable:** Assemble complete atlas-native forward and registry geometry. Implement the following **verbatim, in-order clauses from the original B11 prescription**. These are not paraphrases and none may be skipped; out-of-scope original clauses belong to sibling issues and finally to the parent integrator.\n\n1. Compose factorized inputs, frame encoder, input motif read,12 CCGQA/FFN blocks, three AttnRes selectors, mid-depth motif read, three adapters, local refinement and typed readout.\n2. Derive geometry from B01 and assert exact parameter-name/shape agreement.\n3. Add one backend dispatch used by inference, gradient construction, retention and championship callers.\n\n## Authoritative shared contract excerpt for this outcome\nThe following is directly inherited from original B11, not a replacement for the complete parent specification.\n\n### Depth\nPartition12 blocks into groups[4,4,4]. Preserve h0 and one normalized per-position summary after each completed group. At boundary k, source order is h0,g1,...,gk. Shared bias-free matrices Wq/Wk/Wv[128,768] and Wout[768,128] implement q=Wq\\*RMSNorm(current+frame_seed), key_i=Wk\\*RMSNorm(summary_i+type_role768), score_i=dot(q,key_i)/sqrt128, alpha=softmax over available source axis, mix=sum(alpha_i\\*(Wv\\*summary_i)). Merge current+g_k\\*Wout\\*mix. Each boundary has gate_vector[768] initialized0 and gate_bias=log(1/9), giving g_k=0.1\\*sigmoid(dot(gate_vector,RMSNorm(current))+gate_bias), initially0.01. The shared factor composer supplies type_role768; source summaries retain the768-wide interface. At group1 apply the second motif read after layer4 and before capturing/selecting g1. Future groups are absent. Apply the group's adapter after selection. The local refinement module keeps a768-wide recurrent state and one compressed single-head192-channel attention block, up to2 extra passes, with immutable input/member recall every pass. Refinement never reruns the12-layer backbone. Budgeted selection is external/deterministic and selected neural paths retain soft-gate gradients. Refinement is a prediction-local computation. Let p be the query prediction boundary and V(p) the ordered frames with causal_prefix_end<=p that passed context eligibility. Compute Fp=len(V(p)) and quota=min(32,ceil(Fp/8)) using only V(p). Rank requested-role matches, then source-visible salience, then stable source position within V(p). Refinement results are keyed by (input-generation,p,query-ID,frame-occurrence) and never overwrite a shared backbone hidden state used by an earlier prediction. Future frames, labels, row padding and future query requests do not enter selection. Parallel teacher-forced predictions each use their own p-local view. Derive recurrence choice from SHA256(run-seed,visit-ID,p,query-ID,frame-occurrence), never total batch length. Pass budget is 0/1/2 for the selected frame. Increasing a row from8 to9 complete frames can change the later query's quota but cannot change the earlier query at fixed p. The single backbone produces immutable causal hidden states; the small local refiner operates on prediction-specific copies.\n\n### Plastic\nInclude three rank8 residual adapters from initialization, one after each group selector: h'=h+(1/8)B\\*SiLU(A\\*RMSNorm(h)); A[8,768] seeded, B[768,8] zero. FAST group contains adapters, motif vectors/projections/gates and newly activated identity rows; SLOW contains established embeddings and dense/core parameters. Foundation mode updates all groups. Adaptive mode updates FAST each candidate and offers a FULL candidate after8 accepted FAST candidates, or when the existing teacher requests foundational remediation. Rejection leaves both clocks and all state at the retained parent. Keep native AdamW arithmetic and selected hyperparameters; the optimizer owner maintains per-parameter update counts so inactive/new parameters receive correct bias correction. Inactive parameters and their moments are byte-identical across a FAST candidate. No background neural writes: all adaptation occurs inside the existing human-started serialized visit transaction. The cadence policy is explicit versioned data; no learned meta-optimizer is required for delivery. Define group_eligible at candidate start and row_participates for each optimizer step. Identity rows participate when gathered as visible input/feedback OR included among the step's legal tied output candidates; active softmax denominator rows therefore participate even when not input tokens. Motif rows participate only if actually gathered by either read site. Type/role/schema rows participate if gathered or in a legal role-output denominator. Dense modules participate when executed on a nonzero loss-bearing path. Update mask=group_eligible AND row_participates AND active-admitted. Mask gradients BEFORE computing the global clipping norm. Ineligible/unparticipating rows get no weight decay, moment update, count increment or age increment, even when another row in the same tensor is updated. A participating eligible row with zero numerical gradient still advances AdamW moments/count and applicable decay, because it participated in the objective; numerical cancellation is not a different training history. Skip the complete optimizer step only when there is no loss-bearing target. Parameter moments/counts advance on each candidate optimizer step; publish them only if that candidate is retained. Row establishment age is distinct: increment once per accepted candidate if that row had any actual masked optimizer step in the candidate, independent of its2/4/8/16 internal steps. At age8 an identity row is established for the NEXT candidate. Candidate rejection preserves parent weights,m/v/counts,establishment ages and consolidation counters exactly. This participation policy is serialized in the optimizer identity. Start every fresh run in FOUNDATION. The immutable initial admitted FactoryRelease defines foundation_capability_ids. Transition to ADAPTIVE only at an accepted current-generation promotion sweep that enters the92% gate, sustains87% through one sweep of every introduced foundation semantic, and emits the existing promoted/promoted-with-debt receipt. C05 passes that exact receipt to B09 after candidate retention; B09 persists ModeTransition and resets accepted_fast_since_full=0. This mode transition does not clear carried debt or fabricate a perfect championship. A new foundation admission after the transition remains ADAPTIVE, with its new rows FAST for their first8 accepted participating candidates; teacher remediation can request FULL. In ADAPTIVE choose FULL whenever teacher requests it or accepted_fast_since_full>=8, otherwise FAST. An accepted FAST candidate increments that counter once; an accepted FULL resets it to0. Rejected scheduled/teacher FULL retains the counter and mode; a failed scheduled FULL is still due, while independent legal teacher strategies continue. FOUNDATION accepted/rejected candidates never increment the FAST counter. Cold resume reads these exact fields, not inferred grade labels or elapsed time. An operator may explicitly restore FOUNDATION via a versioned run-policy event; no silent mode switch occurs.\n\n## Acceptance and finish boundary\nChild completion requires implementation of every owned clause, a direct API/shape/status witness using the original parent's stated package-local test surface where applicable, and one verifiable commit + issue/PR receipt. No unrelated parent-wide feature is declared complete merely because this packet closes. **The original owner's entire existing acceptance is preserved below** for integration traceability; assign its checks to the actual implementing descendants and require the final parent integrator to reconcile every clause. Avoid running any new speculative research experiments.\n\n### Unmodified original parent acceptance\nThe actual12-layer forward runs and matches the parameter census. Demonstrate nonzero finite gradients in embeddings, attention, FFN, depth selector, memory, adapters and readout. The adapter A matrix is seeded nonzero and its B matrix starts exactly zero. At the first nondegenerate backward pass B has a finite nonzero gradient while A is initially zero-gradient; update B once, then prove the second backward reaches A. Initial adapter output remains the identity residual. Prefix invariance holds. A complete update changes loss and saves. Old run files remain unchanged. All consumers use the architecture dispatch.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_atlas_model.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n\n<!-- BAMF02:PROOF-REPAIR-369-20261027 -->\n**Adapter wake-up regression (BAMF-REQ-007/008):** Using literal fixed-seed A and zero B, compute the first and second step gradients independently of constructor-shape assertions. Both-zero A/B initialization must fail because it prevents the required first-step B update. Confirm first-pass zero adapter contribution does not imply zero backbone gradient or frozen optimizer state.\n\n\n\n<!-- BAMF02:PROOF-CAUSAL-369-20261027 -->\n**Downstream causal F05 owner (BAMF-REQ-005/008; F05):** Consume A05's compiler-only prefix witness; run the actual instantiated 12-layer model with the same earlier causal prefix and two different future suffixes. Compare fresh/valid single-token, chunked and full-prefix logits within declared deterministic tolerance. Then inject a later-prefix cache into an earlier prediction request: it MUST be rejected/recomputed and never influence earlier logits, even when masked tensors happen to have compatible shapes. Record actual heads/groups, source-handle identity and output deltas. Only this downstream executed neural fixture can close F05, not A05's compiler-only green test.\n\n## Agent execution and handoff\n**Original EGM review:** Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. A fresh Goldfish reviews this Elephant implementation (or a cohesive batch of at most three leaves); blockers and majors are resolved or contested with evidence. Without independent review, record `EGM_PENDING` for the integrator. A same-context self-review is not independent.\n\n**Original PR turn-in:** Push and read back the branch SHA, comment on the issue and lane PR, and add the actual GitHub child issue number to the PR Development closing links. The parent remains open until descendants and original acceptance are integrated.\n\nAgent fit: bounded low/medium-reasoning candidate when its interfaces are frozen. Read root README.md and AGENTS.md once, this exact child and its direct dependency receipts, then only the assigned source paths. The original technical specifications stay complete. If this work still exceeds one coherent bounded patch, subdivide **this child again** before cutting requirements. Coordinate shared paths through the lane's one writer, maintain source-gold and neural/optimizer custody, use small software checks of already-specified behavior, and record the exact child issue, changed paths, tests, branch/head SHA, and next unblocked child. Do not run the actual student or merge main from this issue.\n\n\n\n<!-- BAMF02:B11.1:PRODUCER-DECOMPOSITION:20261029 -->\n## Recursive blocker decomposition | 29 October 2026\n\nB11.1 now has a prerequisite implementation child: [B11.1a #586](https://github.com/Entif-AI/Bilqis-MLX/issues/586), **Produce execution-owned backbone group-boundary receipts**.\n\n#586 exists to break the B05.4 producer-authenticity cycle. It may proceed against accepted B01/B04 and the existing B05 numerical selector contract without waiting for B05.4 provenance acceptance. B11.1 must consume the accepted #586 producer rather than introducing a second depth-summary authority. The remainder of B11.1's original full-forward obligations and acceptance remain unchanged.\n"
+          },
+          {
+            "source_id": "B11.1.spec",
+            "kind": "spec",
+            "locator": "docs/tasks/bamf-0.2/children/B11.1.md",
+            "sha256": "2f72713ced32979b89eaa2fad4c7288f43345a96992ae5f331bd64a962a5458d",
+            "excerpt": "<!-- BAMF02:WORK-PACKET:B11.1 -->\n# B11.1 | Assemble complete atlas-native forward and registry geometry\n\n**BAMF-0.2 implementation packet. Lane B.** Full original owner: [B11 #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369); direct native parent: [B11 #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369). **This issue is an implementable leaf**, not an amendment to the approved design.\n\n\n<!-- BAMF02:LANE-BRANCH-LIFECYCLE:B -->\n## Lane branch and integration lifecycle\n\n**Working branch:** `codex/bamf02-b-neural`. **Reviewed integration trunk:** `codex/bamf-unified-base-20261028`.\n\nBefore beginning implementation on this issue, fetch `origin` and, while on\n`codex/bamf02-b-neural`, merge the current `origin/codex/bamf-unified-base-20261028` into the lane branch. If the\nlane already equals the current unified head, record that exact unified SHA and\nproceed without manufacturing a no-op merge. Resolve any real conflicts and run\nthe smallest affected verification before issue-owned edits. Record the consumed\nunified SHA in the issue receipt. Do **not** merge `main` or a sibling lane branch\ndirectly; reviewed cross-lane work arrives through the unified trunk.\n\nAfter this issue's owned acceptance is satisfied, commit and push `codex/bamf02-b-neural` and\nopen a pull request from `codex/bamf02-b-neural` into `codex/bamf-unified-base-20261028` for human review and\nsign-off. This issue does not authorize self-merging that PR. After accepted work\nlands on unified, the next issue in the lane repeats the sync-in step. A\nnon-implementing group/integration parent does not create a bookkeeping code PR;\nits implementing descendants follow this lifecycle and the parent closes only at\nits existing integration gate.\n## Authority and lossless scope\nThe two approved BAMF-0.2 native Docs, the original complete [B11 issue #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369), root #341, ADR-BAMF02-004 and existing source/Factory rights remain controlling. No original algorithm, schema, acceptance, correctness constraint or workload is waived, simplified or removed. The parent's full acceptance remains with its eventual integration. Prior BAV/Grade-B exceptions and the rejected alternate design do not become current policy. All grades use the same functional recursive Factory/teacher/retention machinery with typed source-family-specific rule subsets, not grade-based branches. Live optimizer starts remain human-owned.\n\n## Direct prerequisites\n[B03 #363](https://github.com/Entif-AI/Bilqis-MLX/issues/363), [B04 #350](https://github.com/Entif-AI/Bilqis-MLX/issues/350), [B05 #355](https://github.com/Entif-AI/Bilqis-MLX/issues/355), [B06 #365](https://github.com/Entif-AI/Bilqis-MLX/issues/365), [B08 #366](https://github.com/Entif-AI/Bilqis-MLX/issues/366), [B09 #368](https://github.com/Entif-AI/Bilqis-MLX/issues/368), [B10 #367](https://github.com/Entif-AI/Bilqis-MLX/issues/367). Original B11 external dependency contract is preserved exactly: **BAMF dependencies:** [B03: #363](https://github.com/Entif-AI/Bilqis-MLX/issues/363), [B04: #350](https://github.com/Entif-AI/Bilqis-MLX/issues/350), [B05: #355](https://github.com/Entif-AI/Bilqis-MLX/issues/355), [B06: #365](https://github.com/Entif-AI/Bilqis-MLX/issues/365), [B08: #366](https://github.com/Entif-AI/Bilqis-MLX/issues/366), [B09: #368](https://github.com/Entif-AI/Bilqis-MLX/issues/368), [B10: #367](https://github.com/Entif-AI/Bilqis-MLX/issues/367)\n\n**Existing owner hooks:** Root #341; no separate implementation owner is duplicated.\n\nExisting-owner links identify contracts/outcomes to consume or complete. Their OPEN state alone is not a blocker when an exact usable branch receipt exists. A new module can be implemented against this frozen interface with a small fixture while its upstream branch is finishing; final turn-in must consume the actual upstream receipt. Broader private intake, graph services and historical #324 trials do not block unrelated code.\n\n## Original owner API and allowed edit surface\n`forward_bamf(params,compiled_batch,answer_plan,mode,cache) -> ModelOutput; model_backend(topology) -> Backend`\n\nUse immutable typed records and the existing ErrorBus/catalog for boundary failures. The implementation receipt records exact input/output schema versions.\n\nHistorical baseline provenance: replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. The operational baseline is the current `codex/bamf-unified-base-20261028` synchronized into `codex/bamf02-b-neural` under the lane lifecycle above; do not reconstruct the working baseline from `main` or those historical refs. Listed new files are prescribed additions, not claims of existing implementation.\n\n- `bilqis_mlx/runtime/atlas_model.py (new)`\n- `bilqis_mlx/runtime/model_topology.py`\n- `bilqis_mlx/learning/student_ops.py:_predictions/_train_score`\n- `bilqis_mlx/runtime/tests/test_atlas_model.py (new)`\n\nPackage tests live beside their owner. Keep root/shared trainer files under Lane C coordination. Update direct callers in the same patch when an interface changes.\n\n## Exact implementation obligation owned by this child\n**Required deliverable:** Assemble complete atlas-native forward and registry geometry. Implement the following **verbatim, in-order clauses from the original B11 prescription**. These are not paraphrases and none may be skipped; out-of-scope original clauses belong to sibling issues and finally to the parent integrator.\n\n1. Compose factorized inputs, frame encoder, input motif read,12 CCGQA/FFN blocks, three AttnRes selectors, mid-depth motif read, three adapters, local refinement and typed readout.\n2. Derive geometry from B01 and assert exact parameter-name/shape agreement.\n3. Add one backend dispatch used by inference, gradient construction, retention and championship callers.\n\n## Authoritative shared contract excerpt for this outcome\nThe following is directly inherited from original B11, not a replacement for the complete parent specification.\n\n### Depth\nPartition12 blocks into groups[4,4,4]. Preserve h0 and one normalized per-position summary after each completed group. At boundary k, source order is h0,g1,...,gk. Shared bias-free matrices Wq/Wk/Wv[128,768] and Wout[768,128] implement q=Wq\\*RMSNorm(current+frame_seed), key_i=Wk\\*RMSNorm(summary_i+type_role768), score_i=dot(q,key_i)/sqrt128, alpha=softmax over available source axis, mix=sum(alpha_i\\*(Wv\\*summary_i)). Merge current+g_k\\*Wout\\*mix. Each boundary has gate_vector[768] initialized0 and gate_bias=log(1/9), giving g_k=0.1\\*sigmoid(dot(gate_vector,RMSNorm(current))+gate_bias), initially0.01. The shared factor composer supplies type_role768; source summaries retain the768-wide interface. At group1 apply the second motif read after layer4 and before capturing/selecting g1. Future groups are absent. Apply the group's adapter after selection. The local refinement module keeps a768-wide recurrent state and one compressed single-head192-channel attention block, up to2 extra passes, with immutable input/member recall every pass. Refinement never reruns the12-layer backbone. Budgeted selection is external/deterministic and selected neural paths retain soft-gate gradients. Refinement is a prediction-local computation. Let p be the query prediction boundary and V(p) the ordered frames with causal_prefix_end<=p that passed context eligibility. Compute Fp=len(V(p)) and quota=min(32,ceil(Fp/8)) using only V(p). Rank requested-role matches, then source-visible salience, then stable source position within V(p). Refinement results are keyed by (input-generation,p,query-ID,frame-occurrence) and never overwrite a shared backbone hidden state used by an earlier prediction. Future frames, labels, row padding and future query requests do not enter selection. Parallel teacher-forced predictions each use their own p-local view. Derive recurrence choice from SHA256(run-seed,visit-ID,p,query-ID,frame-occurrence), never total batch length. Pass budget is 0/1/2 for the selected frame. Increasing a row from8 to9 complete frames can change the later query's quota but cannot change the earlier query at fixed p. The single backbone produces immutable causal hidden states; the small local refiner operates on prediction-specific copies.\n\n### Plastic\nInclude three rank8 residual adapters from initialization, one after each group selector: h'=h+(1/8)B\\*SiLU(A\\*RMSNorm(h)); A[8,768] seeded, B[768,8] zero. FAST group contains adapters, motif vectors/projections/gates and newly activated identity rows; SLOW contains established embeddings and dense/core parameters. Foundation mode updates all groups. Adaptive mode updates FAST each candidate and offers a FULL candidate after8 accepted FAST candidates, or when the existing teacher requests foundational remediation. Rejection leaves both clocks and all state at the retained parent. Keep native AdamW arithmetic and selected hyperparameters; the optimizer owner maintains per-parameter update counts so inactive/new parameters receive correct bias correction. Inactive parameters and their moments are byte-identical across a FAST candidate. No background neural writes: all adaptation occurs inside the existing human-started serialized visit transaction. The cadence policy is explicit versioned data; no learned meta-optimizer is required for delivery. Define group_eligible at candidate start and row_participates for each optimizer step. Identity rows participate when gathered as visible input/feedback OR included among the step's legal tied output candidates; active softmax denominator rows therefore participate even when not input tokens. Motif rows participate only if actually gathered by either read site. Type/role/schema rows participate if gathered or in a legal role-output denominator. Dense modules participate when executed on a nonzero loss-bearing path. Update mask=group_eligible AND row_participates AND active-admitted. Mask gradients BEFORE computing the global clipping norm. Ineligible/unparticipating rows get no weight decay, moment update, count increment or age increment, even when another row in the same tensor is updated. A participating eligible row with zero numerical gradient still advances AdamW moments/count and applicable decay, because it participated in the objective; numerical cancellation is not a different training history. Skip the complete optimizer step only when there is no loss-bearing target. Parameter moments/counts advance on each candidate optimizer step; publish them only if that candidate is retained. Row establishment age is distinct: increment once per accepted candidate if that row had any actual masked optimizer step in the candidate, independent of its2/4/8/16 internal steps. At age8 an identity row is established for the NEXT candidate. Candidate rejection preserves parent weights,m/v/counts,establishment ages and consolidation counters exactly. This participation policy is serialized in the optimizer identity. Start every fresh run in FOUNDATION. The immutable initial admitted FactoryRelease defines foundation_capability_ids. Transition to ADAPTIVE only at an accepted current-generation promotion sweep that enters the92% gate, sustains87% through one sweep of every introduced foundation semantic, and emits the existing promoted/promoted-with-debt receipt. C05 passes that exact receipt to B09 after candidate retention; B09 persists ModeTransition and resets accepted_fast_since_full=0. This mode transition does not clear carried debt or fabricate a perfect championship. A new foundation admission after the transition remains ADAPTIVE, with its new rows FAST for their first8 accepted participating candidates; teacher remediation can request FULL. In ADAPTIVE choose FULL whenever teacher requests it or accepted_fast_since_full>=8, otherwise FAST. An accepted FAST candidate increments that counter once; an accepted FULL resets it to0. Rejected scheduled/teacher FULL retains the counter and mode; a failed scheduled FULL is still due, while independent legal teacher strategies continue. FOUNDATION accepted/rejected candidates never increment the FAST counter. Cold resume reads these exact fields, not inferred grade labels or elapsed time. An operator may explicitly restore FOUNDATION via a versioned run-policy event; no silent mode switch occurs.\n\n## Acceptance and finish boundary\nChild completion requires implementation of every owned clause, a direct API/shape/status witness using the original parent's stated package-local test surface where applicable, and one verifiable commit + issue/PR receipt. No unrelated parent-wide feature is declared complete merely because this packet closes. **The original owner's entire existing acceptance is preserved below** for integration traceability; assign its checks to the actual implementing descendants and require the final parent integrator to reconcile every clause. Avoid running any new speculative research experiments.\n\n### Unmodified original parent acceptance\nThe actual12-layer forward runs and matches the parameter census. Demonstrate nonzero finite gradients in embeddings, attention, FFN, depth selector, memory, adapters and readout. The adapter A matrix is seeded nonzero and its B matrix starts exactly zero. At the first nondegenerate backward pass B has a finite nonzero gradient while A is initially zero-gradient; update B once, then prove the second backward reaches A. Initial adapter output remains the identity residual. Prefix invariance holds. A complete update changes loss and saves. Old run files remain unchanged. All consumers use the architecture dispatch.\n\nStart with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_atlas_model.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.\n\n\n\n<!-- BAMF02:PROOF-REPAIR-369-20261027 -->\n**Adapter wake-up regression (BAMF-REQ-007/008):** Using literal fixed-seed A and zero B, compute the first and second step gradients independently of constructor-shape assertions. Both-zero A/B initialization must fail because it prevents the required first-step B update. Confirm first-pass zero adapter contribution does not imply zero backbone gradient or frozen optimizer state.\n\n\n\n<!-- BAMF02:PROOF-CAUSAL-369-20261027 -->\n**Downstream causal F05 owner (BAMF-REQ-005/008; F05):** Consume A05's compiler-only prefix witness; run the actual instantiated 12-layer model with the same earlier causal prefix and two different future suffixes. Compare fresh/valid single-token, chunked and full-prefix logits within declared deterministic tolerance. Then inject a later-prefix cache into an earlier prediction request: it MUST be rejected/recomputed and never influence earlier logits, even when masked tensors happen to have compatible shapes. Record actual heads/groups, source-handle identity and output deltas. Only this downstream executed neural fixture can close F05, not A05's compiler-only green test.\n\n## Agent execution and handoff\n**Original EGM review:** Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. A fresh Goldfish reviews this Elephant implementation (or a cohesive batch of at most three leaves); blockers and majors are resolved or contested with evidence. Without independent review, record `EGM_PENDING` for the integrator. A same-context self-review is not independent.\n\n**Original PR turn-in:** Push and read back the branch SHA, comment on the issue and lane PR, and add the actual GitHub child issue number to the PR Development closing links. The parent remains open until descendants and original acceptance are integrated.\n\nAgent fit: bounded low/medium-reasoning candidate when its interfaces are frozen. Read root README.md and AGENTS.md once, this exact child and its direct dependency receipts, then only the assigned source paths. The original technical specifications stay complete. If this work still exceeds one coherent bounded patch, subdivide **this child again** before cutting requirements. Coordinate shared paths through the lane's one writer, maintain source-gold and neural/optimizer custody, use small software checks of already-specified behavior, and record the exact child issue, changed paths, tests, branch/head SHA, and next unblocked child. Do not run the actual student or merge main from this issue.\n"
+          }
+        ],
+        "obligations": [
+          "The parent must consume accepted586 in addition to all seven existing dependencies. Preserve kind leaf and original full-forward obligations; the producer child does not replace full assembly."
+        ],
+        "unresolved": "The additive prerequisite amendment is not represented by the old canonical prerequisite section alone; preserve and normalize both without discarding full-forward scope."
+      }
+    }
+  ]
+}

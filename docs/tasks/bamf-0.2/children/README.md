@@ -2,6 +2,11 @@
 
 The original 43 owner contracts stay authoritative and unabridged. Agents take the deepest ready child. See `registry.json` for exact stable identities, parent links, dependency graph, source-clause spans and body hashes.
 
+Current canonical census:171 children. Dependency resolution is HELD for10
+reviewed contracts, including the B11.1 parent amendment. Validation exits nonzero
+and returns no execution order until the held source contracts are normalized.
+Registration does not assert readiness, source qualification or owner completion.
+
 - [A01.1 #396](https://github.com/Entif-AI/Bilqis-MLX/issues/396): Bind the pinned corpus and source-qualified semantic identities (leaf; parent A01)
 - [A01.2 #397](https://github.com/Entif-AI/Bilqis-MLX/issues/397): Build deterministic ABI and immutable semantic-release files (leaf; parent A01)
 - [A01.3 #398](https://github.com/Entif-AI/Bilqis-MLX/issues/398): Expose source-hold census and the database-free atlas reader (leaf; parent A01)
@@ -159,3 +164,24 @@ The original 43 owner contracts stay authoritative and unabridged. Agents take t
 - [C16.1b #543](https://github.com/Entif-AI/Bilqis-MLX/issues/543): Bind fresh student topology teacher optimizer and admitted foundations (leaf; parent C16.1)
 - [C16.2 #544](https://github.com/Entif-AI/Bilqis-MLX/issues/544): Expose earliest lawful learning readiness without optional blockers (leaf; parent C16)
 - [C16.3 #545](https://github.com/Entif-AI/Bilqis-MLX/issues/545): Handoff the exact durable human-started student lineage (leaf; parent C16)
+
+## Late canonical packets registered 1 November2026
+
+- [A08.1b.1 #553](https://github.com/Entif-AI/Bilqis-MLX/issues/553): dependency evidence resolved; parent A08.1b.
+- [A08.1b.2 #554](https://github.com/Entif-AI/Bilqis-MLX/issues/554): dependency evidence held; parent A08.1b.
+- [A08.1b.3 #555](https://github.com/Entif-AI/Bilqis-MLX/issues/555): dependency evidence resolved; parent A08.1b.
+- [A08.1b.4 #556](https://github.com/Entif-AI/Bilqis-MLX/issues/556): dependency evidence resolved; parent A08.1b.
+- [A08.1b.5 #557](https://github.com/Entif-AI/Bilqis-MLX/issues/557): dependency evidence held; parent A08.1b.
+- [C08.4 #558](https://github.com/Entif-AI/Bilqis-MLX/issues/558): dependency evidence resolved; parent C08.
+- [C14.4 #559](https://github.com/Entif-AI/Bilqis-MLX/issues/559): dependency evidence held; parent C14.
+- [A05.4 #575](https://github.com/Entif-AI/Bilqis-MLX/issues/575): dependency evidence held; parent A05.
+- [B02.4 #576](https://github.com/Entif-AI/Bilqis-MLX/issues/576): dependency evidence held; parent B02.
+- [B05.4 #577](https://github.com/Entif-AI/Bilqis-MLX/issues/577): dependency evidence held; parent B05.
+- [A03.4 #578](https://github.com/Entif-AI/Bilqis-MLX/issues/578): dependency evidence held; parent A03.
+- [B11.1a #586](https://github.com/Entif-AI/Bilqis-MLX/issues/586): dependency evidence held; parent B11.1.
+- [A05.5 #594](https://github.com/Entif-AI/Bilqis-MLX/issues/594): dependency evidence held; parent A05.
+- [B10.5 #635](https://github.com/Entif-AI/Bilqis-MLX/issues/635): dependency evidence resolved; parent B10.
+
+Closed duplicate#587 remains visible in the raw census; canonical producer issue
+is586. PR636 is the implementation of issue635, not another child. All original
+parent implementation obligations remain; B11.1 retains its leaf/full-forward scope.

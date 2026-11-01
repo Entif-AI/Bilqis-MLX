@@ -131,7 +131,9 @@ def check_dependency_evidence(entry, body, issue_map, sources):
         matrix = json.loads(sources['reviewed-packets'])
         matches = [p for p in matrix['packets'] if p['key'] == entry['key']]
         if (matrix['schema'] != 'bilqis.bamf.registry-expansion-review/v1'
-                or len(matches) != 1 or matches[0]['dependency_evidence'] != evidence):
+                or len(matches) != 1 or matches[0]['dependency_evidence'] != evidence
+                or any(matches[0][key] != entry[key]
+                       for key in ('number', 'parent_key', 'parent_number'))):
             return _invalid('source-drift')
         edges = evidence['known_edges']
         if (evidence['schema'] != 'bilqis.bamf.dependency-evidence/v1'

@@ -270,7 +270,7 @@ def main() -> int:
         evidence_sources = load_dependency_sources(args.manifest.parent, registry)
         result = validate_workstack(manifest, registry, issue_map, mirrors,
                                     evidence_sources=evidence_sources)
-        if args.live and result['status'] == 'valid':
+        if args.live and result.get('registry_integrity', result['status']) == 'valid':
             live_findings = check_live_owner_mirrors(manifest, args.manifest.parent)
             result['live_owner_mirrors'] = {'checked': len(manifest['items']), 'status': 'invalid' if live_findings else 'valid'}
             if live_findings:

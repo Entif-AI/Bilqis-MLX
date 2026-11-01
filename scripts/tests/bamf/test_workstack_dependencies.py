@@ -5,9 +5,18 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+import subprocess
+import sys
 
 from scripts.bamf.workstack_dependencies import check_dependency_evidence, EvidenceStatus, load_dependency_sources
 from scripts.check_bamf_workstack import validate_workstack
+
+
+def pinned_matrix(entry):
+    reviewed = {key: deepcopy(entry[key]) for key in (
+        'key', 'number', 'parent_key', 'parent_number', 'dependency_evidence')}
+    return json.dumps(dict(schema='bilqis.bamf.registry-expansion-review/v1',
+                           packets=[reviewed])).encode()
 
 
 def packet(body='**Direct prerequisites:** A01. OPEN parent status alone is not a blocker.',
@@ -20,9 +29,7 @@ def packet(body='**Direct prerequisites:** A01. OPEN parent status alone is not 
                              sha256=digest, excerpt=body)], obligations=[], unresolved=unresolved)
     entry = dict(key='C01.1', number=486, parent_key='C01', parent_number=347,
                  deps=list(edges), body_sha256=digest, dependency_evidence=evidence)
-    sources = {'C01.1.body': raw, 'reviewed-packets': json.dumps(dict(
-        schema='bilqis.bamf.registry-expansion-review/v1',
-        packets=[dict(key='C01.1', dependency_evidence=deepcopy(evidence))])).encode()}
+    sources = {'C01.1.body': raw, 'reviewed-packets': pinned_matrix(entry)}
     return entry, raw, {'C01': 347, 'C01.1': 486, 'A01': 345}, sources
 
 
@@ -71,6 +78,15 @@ class DependencyEvidenceTests(unittest.TestCase):
         self.assertIs(check_dependency_evidence(args[0], b'changed body', args[2], args[3]).status,
                       EvidenceStatus.INVALID)
 
+    def test_entry_issue_and_parent_identity_must_match_reviewed_packet(self):
+        args = packet()
+        args[0]['number'] = 636
+        args[2]['C01.1'] = 636
+        self.assertIs(check_dependency_evidence(*args).status, EvidenceStatus.INVALID)
+        args = packet()
+        args[0]['parent_number'] = 999
+        self.assertIs(check_dependency_evidence(*args).status, EvidenceStatus.INVALID)
+
     def test_resolved_prose_without_supported_explicit_clause_is_invalid(self):
         args = packet('A01 is mentioned as context, not a direct prerequisite.')
         self.assertIs(check_dependency_evidence(*args).status, EvidenceStatus.INVALID)
@@ -90,14 +106,12 @@ class DependencyEvidenceTests(unittest.TestCase):
                 locator=url, sha256=hashlib.sha256(raw).hexdigest(), excerpt='b'*40))
             evidence['external_receipts'].append(dict(number=number, role='prerequisite',
                 head_sha='a'*40, merge_sha='b'*40, url=url, source_id=source_id))
-        args[3]['reviewed-packets'] = json.dumps(dict(schema='bilqis.bamf.registry-expansion-review/v1',
-            packets=[dict(key='C01.1', dependency_evidence=deepcopy(evidence))])).encode()
+        args[3]['reviewed-packets'] = pinned_matrix(args[0])
         result = check_dependency_evidence(*args)
         self.assertIs(result.status, EvidenceStatus.RESOLVED)
         self.assertEqual(result.known_edges, ('B02', 'B03'))
         evidence['external_receipts'][0]['merge_sha'] = 'c'*40
-        args[3]['reviewed-packets'] = json.dumps(dict(schema='bilqis.bamf.registry-expansion-review/v1',
-            packets=[dict(key='C01.1', dependency_evidence=deepcopy(evidence))])).encode()
+        args[3]['reviewed-packets'] = pinned_matrix(args[0])
         self.assertIs(check_dependency_evidence(*args).status, EvidenceStatus.INVALID)
 
     def test_loader_refuses_symlink_snapshots_and_ignores_arbitrary_locators(self):
@@ -132,3 +146,37 @@ class DependencyEvidenceTests(unittest.TestCase):
         self.assertEqual(report['registry_integrity'], 'valid')
         self.assertEqual(report['dependency_resolution'],
                          {'status': 'held', 'held_keys': ['C01.1']})
+
+    def test_actual_expanded_registry_has_integrity_but_no_runnable_order(self):
+        root = Path(__file__).resolve().parents[3] / 'docs/tasks/bamf-0.2'
+        manifest = json.loads((root / 'workstack.json').read_text())
+        registry = json.loads((root / 'children/registry.json').read_text())
+        numbers = json.loads((root / 'issue-map.json').read_text())
+        mirrors = {e['key']: (root / 'children' / (e['key'] + '.md')).read_bytes()
+                   for e in registry['entries']}
+        report = validate_workstack(manifest, registry, numbers, mirrors,
+            evidence_sources=load_dependency_sources(root, registry))
+        self.assertEqual(report['child_count'], 171)
+        self.assertEqual(report['registry_integrity'], 'valid')
+        self.assertEqual(report['status'], 'held')
+        self.assertEqual(report['order'], [])
+        self.assertEqual(report['dependency_resolution']['held_keys'], [
+            'A03.4', 'A05.4', 'A05.5', 'A08.1b.2', 'A08.1b.5', 'B02.4',
+            'B05.4', 'B11.1', 'B11.1a', 'C14.4'])
+        self.assertEqual(numbers['C14.3'], 535)
+        self.assertEqual(numbers['C14.4'], 559)
+        self.assertEqual(numbers['B10.5'], 635)
+        self.assertNotIn(587, numbers.values())
+        self.assertNotIn(636, numbers.values())
+        parent = next(e for e in registry['entries'] if e['key'] == 'B11.1')
+        self.assertEqual(parent['kind'], 'leaf')
+        self.assertIn('B11.1a', parent['deps'])
+
+    def test_real_cli_exits_nonzero_for_held_registry(self):
+        root = Path(__file__).resolve().parents[3]
+        result = subprocess.run([sys.executable, '-B', str(root / 'scripts/check_bamf_workstack.py'),
+            str(root / 'docs/tasks/bamf-0.2/workstack.json')],
+            capture_output=True, text=True, timeout=20)
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertEqual(json.loads(result.stdout)['status'], 'held')
+        self.assertEqual(json.loads(result.stdout)['order'], [])
