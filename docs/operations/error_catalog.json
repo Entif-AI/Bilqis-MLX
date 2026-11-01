@@ -10367,7 +10367,7 @@
       "count": 1,
       "exception": "RuntimeError",
       "expression": "'boom'",
-      "path": "bilqis_mlx/runtime/tests/model/test_mlx_memory.py"
+      "path": "bilqis_mlx/runtime/tests/model/training/test_mlx_memory.py"
     },
     {
       "code_hint": "GRAPH_UNAVAILABLE",
