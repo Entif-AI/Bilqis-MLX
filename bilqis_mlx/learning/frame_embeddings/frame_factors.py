@@ -9,7 +9,10 @@ from bilqis_mlx.semantics.context_eligibility import ApprovedContextProjection
 from bilqis_mlx.semantics.frame_schema import FrameInstance
 from .common import FactorGate, _invalid
 from .requests import ChildFrameRequest, FeatureRequest, FrameConstituentRequest
-from .composition import _factor_vector, _released_factor_terms, _validate_feature_parameters
+from .composition import (
+    _factor_vector, _released_factor_terms, _source_qualified_feature_row,
+    _validate_feature_parameters,
+)
 
 
 def validate_frame_members(
@@ -123,9 +126,7 @@ def frame_factor_terms(
         if type(request) is ChildFrameRequest:
             values.append(_child_factor_terms(parameters, request, features))
             continue
-        row = features.features_for(
-            request.concept, request.role_id, request.schema_id,
-            request.scope)
+        row = _source_qualified_feature_row(features, request)
         terms = _released_factor_terms(parameters, row)
         values.append((
             _factor_vector(

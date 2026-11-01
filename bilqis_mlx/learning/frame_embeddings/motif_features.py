@@ -9,7 +9,10 @@ from bilqis_mlx.semantics.atlas_features import AtlasFeatures
 from bilqis_mlx.semantics.context_eligibility import ApprovedContextProjection
 from bilqis_mlx.semantics.frame_schema import FrameInstance
 from .common import _invalid
-from .composition import _released_categorical_factors, _validate_feature_parameters
+from .composition import (
+    _released_categorical_factors, _source_qualified_feature_row,
+    _validate_feature_parameters,
+)
 from .frame_factors import (
     _child_categorical_factors, empty_frame_factor_terms, validate_frame_members,
 )
@@ -33,8 +36,7 @@ def _categorical_factors(parameters, features, request):
     if type(request) is ChildFrameRequest:
         schema, role, types = _child_categorical_factors(parameters, request, features)
         return types, role, schema
-    row = features.features_for(
-        request.concept, request.role_id, request.schema_id, request.scope)
+    row = _source_qualified_feature_row(features, request)
     return _released_categorical_factors(parameters, row)
 
 

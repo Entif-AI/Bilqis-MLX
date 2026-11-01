@@ -1,11 +1,11 @@
 """BAMF embedding composition owner."""
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Mapping
 import mlx.core as mx
 import numpy as np
 from bilqis_mlx.runtime.model_topology_v2 import FEATURE_NONE_ROW, GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes
-from bilqis_mlx.semantics.atlas_features import AtlasFeatures
+from bilqis_mlx.semantics.atlas_features import AtlasFeatures, _factor_overflow
 from .common import COMPOSITION_SCHEMA, FactorGate, POSITION_BASE, WIDTH, _SINUSOID_PAIR_WIDTH, _invalid
 from .requests import FeatureRequest
 
@@ -61,6 +61,51 @@ def _released_categorical_factors(parameters, row):
     schema = _factor_vector(parameters["features.schema"], row.schema_row, row.schema_overflow)
     return type_mean, role, schema
 
+
+def _source_qualified_feature_row(features: AtlasFeatures, request: FeatureRequest):
+    """Compose A06 authority with A13-owned formal source-signature types.
+
+    A06 remains authoritative for admitted semantic identity, ABI index, role,
+    schema and graph factors.  Formal ABI identities that A06 deliberately marks
+    ``ADMITTED_FORMAL_ABI_UNTYPED`` have no A06-owned categorical type row.  For
+    those identities only, consume the exact A13-approved ``ConceptRef.type_ids``
+    already bound into ``FeatureRequest`` and encode missing categorical IDs via
+    the same deterministic UNKNOWN+overflow rule used by typed child frames.
+
+    The derived row is composition-local: it does not mutate the A06 manifest or
+    promote source-signature metadata into A06 provenance authority.
+    """
+    if type(request) is not FeatureRequest:
+        _invalid()
+    request.__post_init__()
+    concept = request.concept
+    admitted = next(
+        (item for item in features.concepts
+         if item.semantic_id == concept.semantic_id),
+        None,
+    )
+    if admitted is None or admitted.source_status != "ADMITTED_FORMAL_ABI_UNTYPED":
+        return features.features_for(
+            concept, request.role_id, request.schema_id, request.scope)
+
+    row = features.features_for(
+        concept.semantic_id, request.role_id, request.schema_id, request.scope)
+    if (concept.semantic_release != features.semantic_release
+            or concept.abi_index != row.abi_index):
+        _invalid()
+    types = dict(features.type_map)
+    type_rows = tuple(types.get(identifier, 0) for identifier in concept.type_ids)
+    return replace(
+        row,
+        type_ids=concept.type_ids,
+        type_rows=type_rows,
+        type_overflow=tuple(
+            (identifier, _factor_overflow("type", identifier))
+            for identifier, factor_row in zip(concept.type_ids, type_rows)
+            if factor_row == 0
+        ),
+    )
+
 def _released_factor_terms(parameters, row):
     type_mean, role, schema = _released_categorical_factors(parameters, row)
     gates = mx.sigmoid(parameters["features.gates"])
@@ -71,7 +116,7 @@ def _released_factor_terms(parameters, row):
                                       parameters["features.project_graph"].T))
 
 def _compose_one(parameters, request, features):
-    row = features.features_for(request.concept, request.role_id, request.schema_id, request.scope)
+    row = _source_qualified_feature_row(features, request)
     terms = _released_factor_terms(parameters, row)
     type_role = terms[FactorGate.TYPE] + terms[FactorGate.ROLE]
     factors = (type_role + terms[FactorGate.SCHEMA] + terms[FactorGate.GRAPH] +
