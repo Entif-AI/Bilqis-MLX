@@ -8,8 +8,10 @@ from .atlas_frontier_contracts import (
     CurriculumSnapshot, PlannerBudget, _bytes, _evidence_key, _fail,
 )
 from .model import LearningEvidence
+from .skos_curriculum import IMPLEMENTATION_UNCOVERED
 
 _SHA_ZERO = "0" * 64
+_LEARNING_UNVERIFIED = "LEARNING_UNVERIFIED"
 
 
 class _Event:
@@ -135,10 +137,27 @@ def _already_applied(snapshot: CurriculumSnapshot, event: QualifiedPlannerEvent)
             "semantic_release", "atlas_bundle_id", "source_bundle_id",
             "source_coverage_sha256", "frozen_census_sha256",
             "source_eligible_concept_ids", "required_source_family_ids",
-            "coverage_rows", "source_held_rows", "source_ir_only_rows",
+            "source_held_rows", "source_ir_only_rows",
             "pending_nonconcept_rows", "prerequisite_edges", "rights_epoch",
         )
-        return all(getattr(snapshot, name) == getattr(source, name) for name in names)
+        if not all(getattr(snapshot, name) == getattr(source, name) for name in names):
+            return False
+        current_rows = {
+            (row.semantic_id, row.family_id): row for row in snapshot.coverage_rows
+        }
+        source_rows = {
+            (row.semantic_id, row.family_id): row for row in source.coverage_rows
+        }
+        return (
+            len(current_rows) == len(snapshot.coverage_rows)
+            and len(source_rows) == len(source.coverage_rows)
+            and current_rows.keys() == source_rows.keys()
+            and all(
+                current_rows[key].source_evidence_sha256
+                == source_rows[key].source_evidence_sha256
+                for key in current_rows
+            )
+        )
     if isinstance(event, LearningEvidenceEvent):
         return (set(event.evidence) <= set(snapshot.retained_evidence)
                 and set(event.mastery_debt) <= set(snapshot.retained_mastery_debt)
@@ -182,6 +201,15 @@ def _source_changes(snapshot: CurriculumSnapshot, event: SourceReleaseEvent) -> 
     new_rows = {
         (row.semantic_id, row.family_id): row for row in source.coverage_rows
     }
+    if (len(old_rows) != len(snapshot.coverage_rows)
+            or len(new_rows) != len(source.coverage_rows)):
+        _fail("BAMF_PLANNER_SOURCE_EVENT_DUPLICATE_COVERAGE_IDENTITY")
+    if any(
+        row.implementation_status != IMPLEMENTATION_UNCOVERED
+        or row.learning_state != _LEARNING_UNVERIFIED
+        for row in source.coverage_rows
+    ):
+        _fail("BAMF_PLANNER_SOURCE_EVENT_IMPLEMENTATION_AUTHORITY_VIOLATION")
     old_coverage = set(old_rows)
     new_coverage = set(new_rows)
     if (event.source_provenance_sha256 != source.source_coverage_sha256
@@ -192,21 +220,16 @@ def _source_changes(snapshot: CurriculumSnapshot, event: SourceReleaseEvent) -> 
             or not old_coverage <= new_coverage
             or source.rights_epoch < snapshot.rights_epoch):
         _fail("BAMF_PLANNER_SOURCE_EVENT_INVALID")
-    for key, prior in old_rows.items():
-        successor = new_rows[key]
-        if (
-            successor.implementation_status != prior.implementation_status
-            or successor.reason != prior.reason
-            or successor.learning_state != prior.learning_state
-        ):
-            _fail("BAMF_PLANNER_SOURCE_EVENT_IMPLEMENTATION_AUTHORITY_VIOLATION")
-    for key in new_coverage - old_coverage:
-        successor = new_rows[key]
-        if (
-            successor.implementation_status != "IMPLEMENTATION_UNCOVERED"
-            or successor.learning_state != "LEARNING_UNVERIFIED"
-        ):
-            _fail("BAMF_PLANNER_SOURCE_EVENT_IMPLEMENTATION_AUTHORITY_VIOLATION")
+    merged_rows = []
+    for key in sorted(new_rows):
+        source_row = new_rows[key]
+        prior = old_rows.get(key)
+        merged_rows.append(source_row if prior is None else replace(
+            source_row,
+            implementation_status=prior.implementation_status,
+            reason=prior.reason,
+            learning_state=prior.learning_state,
+        ))
     names = (
         "semantic_release", "atlas_bundle_id", "source_bundle_id",
         "source_coverage_sha256", "frozen_census_sha256",
@@ -214,7 +237,9 @@ def _source_changes(snapshot: CurriculumSnapshot, event: SourceReleaseEvent) -> 
         "coverage_rows", "source_held_rows", "source_ir_only_rows",
         "pending_nonconcept_rows", "prerequisite_edges", "rights_epoch",
     )
-    return {name: getattr(source, name) for name in names}
+    changes = {name: getattr(source, name) for name in names}
+    changes["coverage_rows"] = tuple(merged_rows)
+    return changes
 
 
 def _learning_changes(snapshot: CurriculumSnapshot, event: LearningEvidenceEvent) -> dict:
@@ -285,6 +310,18 @@ def reconcile(
     _validate_common(snapshot, qualified_event)
     if not qualified_event.accepted:
         _fail("BAMF_PLANNER_EVENT_NOT_QUALIFIED")
+    if isinstance(qualified_event, SourceReleaseEvent):
+        source = qualified_event.successor_source
+        source.verify()
+        source_keys = {(row.semantic_id, row.family_id) for row in source.coverage_rows}
+        if len(source_keys) != len(source.coverage_rows):
+            _fail("BAMF_PLANNER_SOURCE_EVENT_DUPLICATE_COVERAGE_IDENTITY")
+        if any(
+            row.implementation_status != IMPLEMENTATION_UNCOVERED
+            or row.learning_state != _LEARNING_UNVERIFIED
+            for row in source.coverage_rows
+        ):
+            _fail("BAMF_PLANNER_SOURCE_EVENT_IMPLEMENTATION_AUTHORITY_VIOLATION")
     if _already_applied(snapshot, qualified_event):
         return snapshot
     if (qualified_event.predecessor_sha256 != snapshot.snapshot_sha256

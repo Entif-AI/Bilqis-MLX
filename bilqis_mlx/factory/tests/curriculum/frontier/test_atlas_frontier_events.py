@@ -129,6 +129,41 @@ class AtlasFrontierEventTests(unittest.TestCase):
             "BAMF_PLANNER_SOURCE_EVENT_IMPLEMENTATION_AUTHORITY_VIOLATION",
         )
 
+    def test_source_release_rejects_duplicate_coverage_identity_before_collapse(self):
+        base = _snapshot()
+        old = base.coverage_rows[0]
+        escalated = replace(
+            old,
+            implementation_status="ADMITTED",
+            reason="SOURCE_RELEASE_CANNOT_BIND_IMPLEMENTATION",
+        )
+        proposed = _rehash(
+            base,
+            source_coverage_sha256="6" * 64,
+            coverage_rows=tuple(sorted(
+                (escalated, *base.coverage_rows),
+                key=lambda row: (
+                    row.semantic_id,
+                    row.family_id,
+                    row.implementation_status,
+                    row.reason,
+                ),
+            )),
+        )
+        event = _event(
+            SourceReleaseEvent,
+            base,
+            source_provenance_sha256="6" * 64,
+            successor_source=proposed,
+            accepted=True,
+        )
+        with self.assertRaises(BilqisError) as caught:
+            reconcile(base, event)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_PLANNER_SOURCE_EVENT_DUPLICATE_COVERAGE_IDENTITY",
+        )
+
         introduced = replace(
             old,
             semantic_id="urn:new",
