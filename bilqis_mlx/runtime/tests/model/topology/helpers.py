@@ -16,7 +16,8 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.model_topology import ModelTopologySpec
 from bilqis_mlx.runtime.model_topology_v2 import (
     BAMF_ARCHITECTURE_ID, LEGACY_ARCHITECTURE_ID, ModelTopologySpecV2,
-    GenerationExtents, GenerationProvenance, ParameterCategory, ParameterCensus, ParameterGroup, ParameterSpec, Initializer,
+    GenerationExtents, GenerationProvenance, ParameterCategory, AdapterMatrixComponent, ADAPTER_MATRIX_SUFFIXES,
+    ParameterCensus, ParameterGroup, ParameterSpec, Initializer,
     bamf_parameter_census, print_bamf_parameter_census,
     bamf_deserialize_arrays, bamf_serialization_arrays, bamf_storage_key,
     deserialize_topology,
@@ -35,3 +36,6 @@ class ModelTopologyFixture(unittest.TestCase):
     @staticmethod
     def extents(banks=1, pages=1):
         return GenerationExtents(banks, pages, "a" * 64, "b" * 64, "c" * 64)
+
+
+TopologyFixture = ModelTopologyFixture
