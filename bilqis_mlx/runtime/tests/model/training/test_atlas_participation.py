@@ -175,4 +175,3 @@ class ParticipationTests(TestCase):
             SemanticDenominator(feature_rows=(("bogus", 1),))
         with self.assertRaises(BilqisError):
             ActiveAdmittedRows(motif_slots=(2, 1))
-
