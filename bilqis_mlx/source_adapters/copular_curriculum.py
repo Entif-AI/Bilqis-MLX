@@ -6,6 +6,7 @@ adoption. A token proposal never grants current prerequisite evidence.
 from __future__ import annotations
 
 from dataclasses import asdict, replace
+import csv
 import json
 from pathlib import Path
 
@@ -14,17 +15,30 @@ from ..live_grade_c import registry_graph as numeric_registry_graph
 from ..semantics.copular import SYMBOL, SEMANTIC_ID
 from ..source_adapters.copular import (
     CAPABILITY, GENERATOR, ORACLE, SENSE_ID, TEXT_SHA256, MEANING, registered_adapter,
+    verify_source,
 )
 from ..vocabulary_growth import AdmittedToken, append_catalog, digest
 from ..factory.candidate_staging import candidate_source_anchor, compile_candidate_successor
 from ..factory.curriculum_definition import CapabilitySpec, CapabilitySourceBinding, GradeSpec
 from ..factory.execution import CurriculumProfile
+from lib.ithkuil.src.skos.identity import sense_from_source
 
 
 VERSION = "bilqis.ithkuil-reference-identity/20261020-v1"
 AUTHORITY = "https://github.com/socr8s/private-ip/issues/349"
 REGISTRY_ID = "1xtOjO0jGCxjU2bgcg0TKpVruJ4Z5O3vW9ixu6oMQ-so"
 REGISTRY_PATH = Path(__file__).resolve().parents[1] / "semantics/copular_registry_v1.json"
+
+
+def atlas_semantic_id() -> str:
+    """Resolve the A01 semantic identity from the same pinned source row."""
+    repo_root = Path(__file__).resolve().parents[2]
+    verify_source(repo_root)
+    path = repo_root / "lib/ithkuil/_data/csv/lexicon_root_senses.csv"
+    with path.open(newline="", encoding="utf-8") as stream:
+        row = next(row for row in csv.DictReader(stream)
+                   if row["lexicon_sense_id"] == SENSE_ID)
+    return sense_from_source("lexicon_root_senses", row).iri
 
 
 def capability_definition() -> CapabilitySpec:
@@ -53,6 +67,10 @@ def token_admission() -> AdmittedToken:
         prerequisite_tokens=("micro.compare.EQ", "development.op.MAPS"),
         capability_id=CAPABILITY, admission_receipt=proof,
         signature="Entity*Entity->Boolean", arity=2)
+
+
+PROJECTION_REGISTERED_TOKENS = tuple(numeric_registry_graph()["tokens"])
+PROJECTION_ADMISSION_TOKEN = token_admission().token_id
 
 
 def _registered_parent(parent):

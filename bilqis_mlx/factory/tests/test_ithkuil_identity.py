@@ -1,4 +1,5 @@
 from dataclasses import replace
+import csv
 import hashlib
 import json
 import os
@@ -16,7 +17,8 @@ from bilqis_mlx.factory.autonomy import (
 )
 from bilqis_mlx.factory.evidence import draw_evidence_rows
 from bilqis_mlx.source_adapters.copular_curriculum import (
-    proposed_graph, expanded_graph, stage_identity, token_admission, VERSION, REGISTRY_ID,
+    atlas_semantic_id, proposed_graph, expanded_graph, stage_identity, token_admission,
+    VERSION, REGISTRY_ID,
 )
 from bilqis_mlx.factory.jit_curriculum import propose_curriculum_delta, ProposalDisposition
 from bilqis_mlx.factory.live_answers import live_answer_registry
@@ -32,6 +34,7 @@ from bilqis_mlx.vocabulary_growth import digest
 
 ROOT = Path(__file__).resolve().parents[3]
 LEGACY = ROOT / "vendor/legacy-v16"
+ATLAS_SEMANTIC_ID = atlas_semantic_id()
 
 
 class IthkuilIdentityFactoryTests(unittest.TestCase):
@@ -102,7 +105,7 @@ class IthkuilIdentityFactoryTests(unittest.TestCase):
         with patch.object(candidate_realizations, "REALIZATIONS", {
                 self.staged.source_sense_id: forged}, create=True):
             capabilities, identities = candidate_realizations.project_realized_target(
-                self.staged.source_sense_id, self.current)
+                ATLAS_SEMANTIC_ID, self.current)
         self.assertEqual(capabilities, self.staged.successor.transition.added_capabilities)
         self.assertEqual(
             self.current.semantic_catalog + identities,
@@ -118,19 +121,55 @@ class IthkuilIdentityFactoryTests(unittest.TestCase):
                 patch.object(candidate_realizations.ithkuil_identity,
                              "projected_catalog",
                              lambda catalog: (*catalog, "forged.runtime.token.1")):
-            with self.assertRaises(ValueError):
-                candidate_realizations.project_realized_target(
-                    self.staged.source_sense_id, self.current)
+            capabilities, identities = candidate_realizations.project_realized_target(
+                ATLAS_SEMANTIC_ID, self.current)
+        self.assertEqual(capabilities, self.staged.successor.transition.added_capabilities)
+        self.assertEqual(
+            self.current.semantic_catalog + identities,
+            self.staged.successor.semantic_catalog,
+        )
+
+    def test_projection_authority_ignores_dynamic_provider_rebinding(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from bilqis_mlx.factory import candidate_realizations
+
+        forged = SimpleNamespace(token_id="forged.runtime.catalog.token")
+        with patch.object(candidate_realizations.ithkuil_identity, "token_admission",
+                          return_value=forged), patch.object(
+                              candidate_realizations.ithkuil_identity,
+                              "numeric_registry_graph",
+                              return_value={"tokens": ("forged.runtime.prefix",)}):
+            capabilities, identities = candidate_realizations.project_realized_target(
+                ATLAS_SEMANTIC_ID, self.current)
+        self.assertEqual(capabilities, self.staged.successor.transition.added_capabilities)
+        self.assertEqual(
+            self.current.semantic_catalog + identities,
+            self.staged.successor.semantic_catalog,
+        )
 
     def test_projection_authority_matches_real_registered_successor(self):
         from bilqis_mlx.factory.candidate_realizations import project_realized_target
 
         capabilities, identities = project_realized_target(
-            self.staged.source_sense_id, self.current)
+            ATLAS_SEMANTIC_ID, self.current)
         self.assertEqual(capabilities, self.staged.successor.transition.added_capabilities)
         self.assertEqual(
             self.current.semantic_catalog + identities,
             self.staged.successor.semantic_catalog,
+        )
+
+    def test_projection_authority_uses_canonical_a01_atlas_identity(self):
+        from lib.ithkuil.src.skos.identity import sense_from_source
+
+        path = ROOT / "lib/ithkuil/_data/csv/lexicon_root_senses.csv"
+        with path.open(newline="", encoding="utf-8") as stream:
+            row = next(
+                item for item in csv.DictReader(stream)
+                if item["lexicon_sense_id"] == self.staged.source_sense_id)
+        self.assertEqual(
+            sense_from_source("lexicon_root_senses", row).iri,
+            ATLAS_SEMANTIC_ID,
         )
 
     def test_projection_authority_rejects_unregistered_semantic(self):

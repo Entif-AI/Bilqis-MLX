@@ -81,6 +81,8 @@ class StagedSelectionReceipt:
                 or self.selection.cursor != self.selection_snapshot.cursor
                 or self.selection_snapshot.admitted_factory_release_sha256
                    != self.predecessor_release.release_sha256
+                or self.staged_successor_sha256
+                   not in self.selection_snapshot.staged_factory_release_sha256s
                 or self.projection.semantic_id != self.selection.selected_semantic_id
                 or self.projection.added_capability_ids
                    != self.selection.introduced_capability_ids

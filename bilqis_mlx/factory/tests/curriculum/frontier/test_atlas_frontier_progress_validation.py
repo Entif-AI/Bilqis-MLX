@@ -134,6 +134,22 @@ class AtlasFrontierProjectionCustodyTests(ProjectionAuthorityFixture, unittest.T
         with self.assertRaises(BilqisError):
             plan_frontier_progress(snapshot, closure, prior=forged_prior)
 
+    def test_historical_receipt_requires_authenticated_staging_membership(self):
+        _, snapshot, _, _, receipt = _staged_ready()
+        unstaged_snapshot = _rehash(replace(
+            snapshot, staged_factory_release_sha256s=()), "snapshot_sha256")
+        unstaged_selection = _rehash(replace(
+            receipt.selection,
+            snapshot_sha256=unstaged_snapshot.snapshot_sha256,
+        ), "selection_sha256")
+        forged_receipt = _rehash(replace(
+            receipt,
+            selection=unstaged_selection,
+            selection_snapshot=unstaged_snapshot,
+        ), "receipt_sha256")
+        with self.assertRaises(BilqisError):
+            forged_receipt.verify()
+
     def test_cold_resume_rejects_self_consistent_alternate_ready_selection(self):
         release, snapshot, closure, selection, receipt = _staged_ready()
         prior = plan_frontier_progress(

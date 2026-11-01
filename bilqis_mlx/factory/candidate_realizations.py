@@ -3,9 +3,16 @@
 from ..source_adapters import copular_curriculum as ithkuil_identity
 
 
+_COPULAR_ATLAS_SEMANTIC_ID = ithkuil_identity.atlas_semantic_id()
+_COPULAR_SOURCE_SENSE_ID = ithkuil_identity.SENSE_ID
+_COPULAR_CAPABILITY = ithkuil_identity.CAPABILITY
+_COPULAR_REGISTERED_TOKENS = ithkuil_identity.PROJECTION_REGISTERED_TOKENS
+_COPULAR_ADMISSION_TOKEN = ithkuil_identity.PROJECTION_ADMISSION_TOKEN
+
+
 def _realizations(_copular=ithkuil_identity):
     """Return trusted import-bound realizations, never a caller-rebindable registry."""
-    return ((_copular.SENSE_ID, _copular),)
+    return ((_COPULAR_SOURCE_SENSE_ID, _copular),)
 
 
 def _realization(semantic_id):
@@ -17,19 +24,22 @@ def _realization(semantic_id):
 
 def project_realized_target(
         semantic_id, current, *,
-        _semantic_id=ithkuil_identity.SENSE_ID,
-        _capability=ithkuil_identity.CAPABILITY,
-        _projected_catalog=ithkuil_identity.projected_catalog):
+        _semantic_id=_COPULAR_ATLAS_SEMANTIC_ID,
+        _capability=_COPULAR_CAPABILITY,
+        _registered_tokens=_COPULAR_REGISTERED_TOKENS,
+        _admission_token=_COPULAR_ADMISSION_TOKEN):
     """Return the code-owned executable capability and catalog append for a target."""
     if semantic_id != _semantic_id:
         raise ValueError
     current.verify()
     if _capability in current.execution_plan.capability_map:
         raise ValueError
-    projected = _projected_catalog(current.semantic_catalog)
-    if (projected[:len(current.semantic_catalog)] != current.semantic_catalog
-            or len(projected) <= len(current.semantic_catalog)):
+    if (len(current.semantic_catalog) > len(_registered_tokens)
+            or current.semantic_catalog
+               != _registered_tokens[:len(current.semantic_catalog)]
+            or _admission_token in _registered_tokens):
         raise ValueError
+    projected = (*_registered_tokens, _admission_token)
     return (_capability,), projected[len(current.semantic_catalog):]
 
 
