@@ -5,8 +5,11 @@ import unittest
 
 from bilqis_mlx.factory.curriculum.capability_identity import (
     CapabilityIdentityInput, StableCapabilityIdentity,
-    bind_stable_capability_identity, stable_capability_id,
+    bind_factory_release_capability_identity, bind_stable_capability_identity,
+    stable_capability_id,
 )
+from bilqis_mlx.factory.release import compile_factory_release
+from bilqis_mlx.factory.tests.support import synthetic_release_inputs
 from bilqis_mlx.semantics.foundation.core import Signature
 
 
@@ -55,6 +58,32 @@ class CapabilityIdentityTests(unittest.TestCase):
                 CapabilityIdentityInput(
                     "boolean_composition", Signature(("Boolean",), "Boolean"),
                     answer_kinds)
+
+    def test_existing_factory_release_supplies_answer_modality_to_stable_identity(self):
+        course, registry = synthetic_release_inputs()
+        release = compile_factory_release(course, registry)
+        binding = bind_factory_release_capability_identity(
+            release, "A.C0", "boolean_composition",
+            Signature(("Boolean", "Boolean"), "Boolean"))
+        self.assertEqual(binding.factory_release_sha256, release.release_sha256)
+        self.assertEqual(binding.release_capability_id, "A.C0")
+        self.assertEqual(binding.stable_identity.identity.answer_kinds, ("binary",))
+        self.assertEqual(binding.stable_identity.identity.family_id,
+                         "boolean_composition")
+
+    def test_release_binding_rejects_unknown_capability_and_forged_release(self):
+        course, registry = synthetic_release_inputs()
+        release = compile_factory_release(course, registry)
+        signature = Signature(("Boolean",), "Boolean")
+        with self.assertRaisesRegex(
+                ValueError,
+                "FACTORY_CAPABILITY_IDENTITY_RELEASE_CAPABILITY_MISSING"):
+            bind_factory_release_capability_identity(
+                release, "A.MISSING", "boolean_composition", signature)
+        forged = replace(release, release_sha256="0" * 64)
+        with self.assertRaises(ValueError):
+            bind_factory_release_capability_identity(
+                forged, "A.C0", "boolean_composition", signature)
 
 
 if __name__ == "__main__":

@@ -7,6 +7,7 @@ import json
 import re
 
 from bilqis_mlx.semantics.foundation.core import Signature
+from bilqis_mlx.factory.model import FactoryRelease
 
 
 CAPABILITY_IDENTITY_SCHEMA = "bilqis.capability-identity/v1"
@@ -61,6 +62,21 @@ class StableCapabilityIdentity:
             raise ValueError("FACTORY_CAPABILITY_IDENTITY_DIGEST_MISMATCH")
 
 
+@dataclass(frozen=True)
+class ReleaseCapabilityIdentityBinding:
+    factory_release_sha256: str
+    release_capability_id: str
+    stable_identity: StableCapabilityIdentity
+
+    def __post_init__(self) -> None:
+        if (not isinstance(self.factory_release_sha256, str)
+                or not re.fullmatch(r"[0-9a-f]{64}", self.factory_release_sha256)
+                or not isinstance(self.release_capability_id, str)
+                or not self.release_capability_id
+                or type(self.stable_identity) is not StableCapabilityIdentity):
+            raise ValueError("FACTORY_CAPABILITY_IDENTITY_RELEASE_BINDING_INVALID")
+
+
 def stable_capability_id(identity: CapabilityIdentityInput) -> str:
     """Derive identity without grade, provider, source path, or root ordinal."""
     if type(identity) is not CapabilityIdentityInput:
@@ -74,3 +90,25 @@ def bind_stable_capability_identity(
 ) -> StableCapabilityIdentity:
     identity = CapabilityIdentityInput(family_id, signature, answer_kinds)
     return StableCapabilityIdentity(stable_capability_id(identity), identity)
+
+
+def bind_factory_release_capability_identity(
+    release: FactoryRelease,
+    capability_id: str,
+    family_id: str,
+    signature: Signature,
+) -> ReleaseCapabilityIdentityBinding:
+    """Bind semantic identity to one verified legacy/current Factory capability."""
+    if type(release) is not FactoryRelease:
+        raise TypeError("FACTORY_CAPABILITY_IDENTITY_RELEASE_REQUIRED")
+    release.verify()
+    matches = tuple(
+        item for item in release.capabilities
+        if item.capability_id == capability_id)
+    if len(matches) != 1:
+        raise ValueError("FACTORY_CAPABILITY_IDENTITY_RELEASE_CAPABILITY_MISSING")
+    capability = matches[0]
+    stable = bind_stable_capability_identity(
+        family_id, signature, tuple(sorted(capability.answer_kinds)))
+    return ReleaseCapabilityIdentityBinding(
+        release.release_sha256, capability.capability_id, stable)
