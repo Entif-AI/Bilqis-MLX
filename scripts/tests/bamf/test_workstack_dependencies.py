@@ -147,6 +147,32 @@ class DependencyEvidenceTests(unittest.TestCase):
         self.assertEqual(report['dependency_resolution'],
                          {'status': 'held', 'held_keys': ['C01.1']})
 
+    def test_loader_rejects_dangling_matrix_link_without_entry_metadata(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / 'dependency-evidence'
+            root.mkdir()
+            (root / 'reviewed-packets.json').symlink_to(Path(tmp) / 'absent')
+            with self.assertRaisesRegex(ValueError, 'regular local tree'):
+                load_dependency_sources(Path(tmp), {'entries': []})
+
+    def test_registry_cannot_remove_entry_evidence_or_a_pinned_child(self):
+        entry, body, numbers, sources = packet(
+            '## Direct prerequisites\n[A01 #345](https://github.com/Entif-AI/Bilqis-MLX/issues/345)',
+            resolution='held', unresolved='An additional source obligation remains.')
+        owners = [dict(key=key, number=number, lane=key[0], deps=[], paths=[], body_sha256='a'*64)
+                  for key, number in [('C01', 347), ('A01', 345)]]
+        del entry['dependency_evidence']
+        for entries in ([entry], []):
+            with self.subTest(entries=len(entries)):
+                present = {'C01': 347, 'A01': 345}
+                if entries:
+                    present['C01.1'] = 486
+                report = validate_workstack(dict(schema='bilqis.bamf.workstack/v1', version='0.2.0',
+                    items=owners, shared_file_queues=[]),
+                    dict(schema='bilqis.bamf.all-child-registry/v1', entries=entries),
+                    present, {'C01.1': body}, evidence_sources=sources)
+                self.assertEqual(report['status'], 'invalid')
+
     def test_actual_expanded_registry_has_integrity_but_no_runnable_order(self):
         root = Path(__file__).resolve().parents[3] / 'docs/tasks/bamf-0.2'
         manifest = json.loads((root / 'workstack.json').read_text())

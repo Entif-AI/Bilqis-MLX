@@ -16,7 +16,7 @@ import unicodedata
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from bilqis_mlx.errors import BilqisError, ErrorBus, SCHOOL
 from scripts.bamf.workstack_dependencies import (
-    EvidenceStatus, check_dependency_evidence, load_dependency_sources,
+    EvidenceStatus, check_dependency_evidence, load_dependency_sources, pinned_dependency_keys,
 )
 
 
@@ -43,6 +43,11 @@ def _issues_report(issues):
 def validate_workstack(manifest: dict, registry: dict | None = None, issue_map: dict | None = None, mirrors: dict | None = None, *, evidence_sources: dict | None = None) -> dict:
     issues = []
     held_keys = []
+    try:
+        pinned_keys = pinned_dependency_keys(evidence_sources)
+    except (KeyError, TypeError, ValueError, RecursionError):
+        pinned_keys = frozenset()
+        issues.append({'code': 'REGISTRY_INVALID'})
     if not isinstance(manifest, dict) or manifest.get('schema') != 'bilqis.bamf.workstack/v1' or manifest.get('version') != '0.2.0':
         return {'schema': 'bilqis.bamf.workstack.validation/v1', 'status': 'invalid',
                 'order': [], 'issues': _issues_report([{'code': 'SCHEMA_INVALID'}])}
@@ -164,7 +169,7 @@ def validate_workstack(manifest: dict, registry: dict | None = None, issue_map: 
                     body = raw.decode('utf-8')
                 except UnicodeDecodeError:
                     issues.append({'code': 'MIRROR_INVALID', 'key': key}); continue
-                if 'dependency_evidence' in entry:
+                if key in pinned_keys or 'dependency_evidence' in entry:
                     evidence = check_dependency_evidence(entry, raw, numbers, evidence_sources)
                     if evidence.status is EvidenceStatus.INVALID:
                         issues.append({'code': 'MIRROR_DEPENDENCIES_MISMATCH', 'key': key,
@@ -202,6 +207,9 @@ def validate_workstack(manifest: dict, registry: dict | None = None, issue_map: 
                 for dep in deps:
                     if dep not in graph and key not in by_key:
                         issues.append({'code': 'MISSING_DEPENDENCY', 'item': key, 'dependency': dep})
+    if not pinned_keys <= numbers.keys():
+        issues.append({'code': 'REGISTRY_INVALID',
+                       'missing_pinned_keys': sorted(pinned_keys - numbers.keys())})
     if issue_map is None:
         issues.append({'code': 'ISSUE_MAP_REQUIRED'})
     if issue_map is not None and not isinstance(issue_map, dict):

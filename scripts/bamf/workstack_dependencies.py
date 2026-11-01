@@ -34,6 +34,18 @@ def _name(value):
     return type(value) is str and bool(value.strip())
 
 
+def pinned_dependency_keys(sources):
+    if not sources or 'reviewed-packets' not in sources:
+        return frozenset()
+    matrix = json.loads(sources['reviewed-packets'])
+    keys = [p['key'] for p in matrix['packets']]
+    if (matrix['schema'] != 'bilqis.bamf.registry-expansion-review/v1'
+            or any(type(k) is not str or not re.fullmatch(KEY, k) for k in keys)
+            or len(keys) != len(set(keys))):
+        raise ValueError('Invalid pinned dependency matrix')
+    return frozenset(keys)
+
+
 def _source_records(records, body, sources):
     if type(records) is not list or not records:
         return False
@@ -172,10 +184,12 @@ def check_dependency_evidence(entry, body, issue_map, sources):
 def load_dependency_sources(manifest_directory, registry):
     """Read fixed local evidence paths without interpreting arbitrary source locators."""
     entries = registry.get('entries', []) if isinstance(registry, dict) else []
-    if not isinstance(entries, list) or not any(isinstance(e, dict) and 'dependency_evidence' in e for e in entries):
-        return {}
     root = Path(manifest_directory) / 'dependency-evidence'
     matrix, source_root = root / 'reviewed-packets.json', root / 'sources'
+    if not isinstance(entries, list):
+        return {}
+    if not matrix.exists() and not matrix.is_symlink() and not any(isinstance(e, dict) and 'dependency_evidence' in e for e in entries):
+        return {}
     if (root.is_symlink() or source_root.is_symlink() or matrix.is_symlink()
             or not matrix.is_file()):
         raise ValueError('Dependency evidence storage is not a regular local tree')

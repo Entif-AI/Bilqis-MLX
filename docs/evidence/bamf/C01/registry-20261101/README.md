@@ -27,15 +27,19 @@ Five have explicit normalized lists;10 remain HELD for source/specification,
 conditional, receipt-granularity or parser-format obligations. Known partial edges
 and exact contextual obligations survive. Parsing cannot promote a pinned hold or
 remove required source evidence. PR receipts remain distinct from issue nodes.
-Local pin consistency is not independent source authentication or admission.
+Removing a pinned entry or its entire evidence block also rejects; the root
+loads an existing matrix even when entry metadata has been stripped. Local pin
+consistency is not independent source authentication or admission.
 
 ## Proof and intentionally nonzero gates
 
-`python3 -B scripts/run_tests.py scripts/tests/bamf` passes62 tests, zero failures
+`python3 -B scripts/run_tests.py scripts/tests/bamf` passes64 tests, zero failures
 or skips. The first new test run failed for the missing evidence API. New proofs
 cover explicit lists/ranges, source and identity tampering, PR-versus-issue roles,
 receipt mismatch, symlink/path refusal, held empty/partial contracts and no returned
-execution order. Existing census, validator, grooming and reconciliation tests pass.
+execution order. A regression comparison against pre-guard commitc70040d6 fails both metadata-
+removal and pinned-child-removal cases (false valid); both now reject. Existing
+census, validator, grooming and reconciliation tests pass.
 
 `python3 -B scripts/check_bamf_workstack.py docs/tasks/bamf-0.2/workstack.json --live`
 returns **1 intentionally**: registry_integrity=valid,171 children,43 live owner
