@@ -7,7 +7,8 @@ outcome remains open; this checkpoint does not claim a complete runnable graph.
 ## Observed outcome
 
 The canonical registry now includes all14 late children:171 unique child issue
-identities, exact live mirrors, issue-map entries and updated parent child lists.
+identities, exact live mirrors for the new packets, issue-map entries and updated
+parent child lists.
 The existing C14.3#535 remains;559 is C14.4.635 is B10.5;636 is its implementation
 PR.587 is retained as an acknowledged duplicate of586, not a second canonical key.
 The raw live census now has only587 as an unregistered record and keeps that
@@ -60,7 +61,12 @@ implementation-readiness standard and source contracts. Two readiness Majors wer
 repaired with the exact schema/API/exit behavior and full per-packet evidence.
 Targeted review found zero remaining Blockers/Majors. A later explicit B11.1
 parent-edge review likewise cleared that necessary extension. These are readiness
-reviews; independent code turn-in review is still required.
+reviews. Fresh-context `/root/c01_registry_turnin_review` independently inspected
+exact source9b3dbe212b009a5b020423cc599f6275da36b0c1 against the pinned EGM
+Codex, Codebase Details and Comprehension standards: no Blocker/Major, one wording
+Nit. The plan now states the actual parser guarantee (syntax/link identity), with
+prerequisite meaning fixed by the reviewed matrix. This review was read-only and
+did not rerun tests or hosted checks. Full C01 remains open.
 
 The unresolved source contracts are A03.4,A05.4,A05.5,A08.1b.2,A08.1b.5,B02.4,
 B05.4,B11.1,B11.1a,C14.4. Preserve their exact named receipt/conditional/source-owner
@@ -68,3 +74,6 @@ obligations and resolve each against owning evidence; do not guess edges or equa
 implementation closure with complete dependency normalization. Parent C01 stays
 open until these and every original owner/integration gate pass. No issue body,
 learner, optimizer, source admission or graph state was changed; no self-merge.
+
+Independent issue work continues under its live page and named direct prerequisite
+receipts while complete-workstack dependency projection remains held.

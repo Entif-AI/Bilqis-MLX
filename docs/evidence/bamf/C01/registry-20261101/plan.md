@@ -87,7 +87,9 @@ existing canonical linked-source enforcement and public compatibility.
 Resolved grammar is strict: canonical linked section with exact key/issue/URL
 mapping; short comma-separated key list; finite same-parent numeric through range;
 or #635's literal merged-PR/qualified-receipt/source-interface prerequisite sentence.
-Unknown or negated prose cannot assert resolved. Conditional C12, unnamed receipts,
+The parser checks supported syntax and link identity; the independently reviewed
+matrix fixes prerequisite meaning and resolution. It does not prove arbitrary
+prose entailment. Conditional C12, unnamed receipts,
 additional local-spec obligations and historical producer context remain held in
 the pinned matrix. This is census progress, not a smaller definition of C01 done.
 
