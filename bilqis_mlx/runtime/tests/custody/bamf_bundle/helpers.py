@@ -77,17 +77,17 @@ def candidate(state: CandidateState, generation=0, parent=None) -> BamfBundleCan
     return BamfBundleCandidate(
         "fixture-run", generation, parent, IMPLEMENTATION, ModelTopologySpecV2(),
         extents, state, HP, provenance,
-        {"schema": "fixture/abi", "active_set_sha256": "a" * 64,
+        {"schema": "bilqis.mlx.bamf-semantic-abi/v1", "active_set_sha256": "a" * 64,
          "semantic_bank_count": 1, "bank_identities": ["bank:0"]},
-        {"schema": "fixture/compiler", "factor_map_sha256": "c" * 64,
+        {"schema": "bilqis.mlx.bamf-compiler-features/v1", "factor_map_sha256": "c" * 64,
          "compiler_sha256": "f" * 64, "rights_epoch": 2,
          "correction_generation": 4},
-        {"schema": "fixture/correction", "source_identity": "fixture-source",
+        {"schema": "bilqis.mlx.bamf-correction-frontier/v1", "source_identity": "fixture-source",
          "release_digest": "d" * 64, "rights_epoch": 2,
          "correction_generation": 4, "frontier": []},
-        {"schema": "fixture/teacher", "teacher_identity": "fixture-teacher",
+        {"schema": "bilqis.mlx.bamf-teacher-state/v1", "teacher_identity": "fixture-teacher",
          "teacher_epoch": 3, "next_seed": 42, "cursor": "lesson:7"},
-        {"schema": "fixture/evaluation", "contract_sha256": "9" * 64},
+        {"schema": "bilqis.mlx.bamf-evaluation-contract/v1", "contract_sha256": "9" * 64},
         transition, ({"event": "FIXTURE_ACCEPTED", "optimizer_step": state.optimizer_step},))
 
 

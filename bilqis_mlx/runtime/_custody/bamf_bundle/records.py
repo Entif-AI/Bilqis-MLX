@@ -11,6 +11,7 @@ from bilqis_mlx.data_plane import DataPlaneError
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 
 from .motif_codec import snapshot_from_record, snapshot_to_record
+from .sidecar_contracts import validate_identity_sidecars
 
 BAMF_BUNDLE_SCHEMA = "bilqis.mlx.bamf-generation-bundle/v2"
 BAMF_POINTER_SCHEMA = "bilqis.mlx.bamf-generation-pointer/v1"
@@ -141,32 +142,17 @@ def validate_sidecars(extents, provenance, records: Mapping):
     from bilqis_mlx.learning.atlas_plasticity import PlasticityPolicy
     if not isinstance(records, Mapping) or set(records) != set(SIDECARS):
         invalid()
-    semantic, compiler, correction, teacher = (
-        records["semantic_abi"], records["compiler_features"],
-        records["correction_frontier"], records["teacher_state"])
     if (any(not isinstance(records[name], Mapping) for name in SIDECARS
             if name not in ("outbox",)) or type(records["outbox"]) not in (list, tuple)):
         invalid()
+    validate_identity_sidecars(extents, provenance, records, invalid)
     try:
         motif = snapshot_from_record(records["motif_allocation"])
         policy = PlasticityPolicy.from_record(records["plasticity_policy"])
     except (TypeError, ValueError, KeyError) as exc:
         invalid("BAMF_SIDECAR_RECORD_INVALID")
-    if (semantic.get("active_set_sha256") != extents.active_semantic_digest
-            or semantic.get("semantic_bank_count") != extents.semantic_bank_count
-            or motif.manifest.digest != extents.motif_key_map_digest
+    if (motif.manifest.digest != extents.motif_key_map_digest
             or motif.manifest.capacity // INITIAL_MOTIF_CAPACITY != extents.motif_page_count
-            or compiler.get("factor_map_sha256") != extents.factor_map_digest
-            or type(compiler.get("rights_epoch")) is not int
-            or type(compiler.get("correction_generation")) is not int
-            or correction.get("rights_epoch") != compiler["rights_epoch"]
-            or correction.get("correction_generation") != compiler["correction_generation"]
-            or correction.get("source_identity") != provenance.source_identity
-            or correction.get("release_digest") != provenance.release_digest
-            or teacher.get("teacher_identity") != provenance.teacher_identity
-            or teacher.get("teacher_epoch") != provenance.teacher_epoch
-            or type(teacher.get("next_seed")) is not int or teacher["next_seed"] < 0
-            or not _hex(records["evaluation_contract"].get("contract_sha256"))
             or any(row.bank_index >= extents.semantic_bank_count for row in policy.row_ages)):
         invalid()
     return motif, policy
