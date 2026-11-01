@@ -54,3 +54,10 @@ Consumes reviewed unified/LaneC`bd62f3cb`, on the existing C01 branch/draftPR694
 No threshold/baseline, learner, AdamW, training, graph or source-admission change.
 Full347 stays open with eight holds/order=[]; this structural proof does not settle
 those remaining interface gates.
+
+Exact source commit`ff2fc3d6` passed the native M3 six-case encoder/member/execution
+selection with no skips in a detached checkout populated from its commit bundle.
+The sovereign MLX test lease was used. Cumulative changed-from-unified structure
+and hygiene pass across58Pythonfiles with zero findings/new debt. Independent
+review rechecked the duplicate-import repair and reports no remaining findings.
+Unified was fetched again and remains`bd62f3cb`; PR694 remains an open draft.
