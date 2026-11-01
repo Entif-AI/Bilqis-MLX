@@ -1,0 +1,43 @@
+# B11.1a: executed backbone-group producer authority
+
+Owner: Lane B. GitHub: #587. Parent: B11.1 #471.
+Consumer: B05.4 #577. Source prerequisites: B01, B03/B02.4 #576,
+A05.4 #575, B04 and B13 generation custody.
+
+## Required outcome
+
+Run each four-layer group through the fixed B01/B04 backbone. Issue a
+completed-group receipt only from that executed path. The receipt must
+bind the actual input and output tensors to the model generation,
+prediction prefix, implementation, parameter tree, source rights,
+group/layer interval and predecessor chain.
+
+The public B05 selector must not accept arbitrary arrays plus matching
+metadata. A caller cannot relabel g2 bytes as g1, reuse another model
+generation, change the input boundary or reorder group outputs.
+
+Group 1 must apply the second motif read after layer 4 and before
+capture. Group 2 and group 3 must preserve the exact source order
+h0, g1, g2, g3. The eventual B11 full forward consumes the producer;
+it does not become a prerequisite for the producer itself.
+
+## Execution boundary
+
+The first bounded implementation unit is the fixed four-layer numerical
+forward. It uses B01 parameter names and shapes, B04 CCGQA, pre-RMSNorm,
+squared-ReLU FFN and residuals. Its result is explicitly **unadmitted**.
+It does not mint a producer credential, and B05 must reject it.
+
+The second unit binds B03 source-approved h0, B08 motif read ordering,
+B13 parameter-generation and prediction authority, and the actual
+executed tensor chain. Only then may it issue a producer-sealed receipt.
+Do not substitute a private constructor token or a caller-supplied
+digest for executed source provenance.
+
+## Verification
+
+Prove the four-layer numerical result and nonzero MLX gradients first.
+Then test the actual producer boundary with g2-as-g1, cross-parameter
+generation, future prefix, reordered group and forged tensor attacks.
+Retain the full B11.1/B11 acceptance on the parent. No live training,
+optimizer mutation, source promotion or self-merge is authorized.
