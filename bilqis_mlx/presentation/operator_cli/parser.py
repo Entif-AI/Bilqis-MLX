@@ -26,6 +26,8 @@ def parse_args(argv=None):
         if name=="train":
             from bilqis_mlx.runtime.atlas_admission import add_atlas_admission_arguments
             add_atlas_admission_arguments(p)
+            p.add_argument('--atlas-release-manifest', type=Path,
+                           help='Atlas release reference; dry-run inspection does not qualify its source authority.')
             p.add_argument("--legacy-code-root", type=Path,
                            help="Explicit pinned predecessor source for an independent worktree")
             p.add_argument("--champion-checkpoint", type=Path,

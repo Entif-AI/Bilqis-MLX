@@ -84,6 +84,35 @@ class BamfPreflightTests(unittest.TestCase):
             self.assertEqual(state.stat().st_mtime_ns, before.st_mtime_ns)
             self.assertEqual(sorted(p.name for p in root.iterdir()), ['state.json'])
 
+    def test_symlink_manifest_is_rejected_without_reading_target(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = root / 'target.json'
+            target.write_bytes(b'private-reference')
+            manifest = root / 'manifest.json'
+            manifest.symlink_to(target)
+            before = target.stat()
+            code, output, errors = self.invoke(['--run-dir', str(root / 'new'),
+                '--admission-policy', 'atlas-release', '--atlas-release-manifest', str(manifest)])
+            self.assertEqual((code, output), (2, ''))
+            self.assertIn('BLOCKED', errors)
+            self.assertEqual(target.stat().st_mtime_ns, before.st_mtime_ns)
+            self.assertFalse((root / 'new').exists())
+
+    def test_resume_pointer_is_not_read_or_changed_by_held_inspection(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            pointer = Path(tmp) / 'bamf-state.json'
+            pointer.write_bytes(b'not-yet-qualified-by-B13')
+            before = pointer.stat()
+            code, output, _ = self.invoke(['--run-dir', tmp, '--resume'])
+            self.assertEqual(code, 2)
+            self.assertFalse(json.loads(output)['ready_for_training'])
+            self.assertEqual(pointer.read_bytes(), b'not-yet-qualified-by-B13')
+            self.assertEqual(pointer.stat().st_mtime_ns, before.st_mtime_ns)
+            code, output, errors = self.invoke(['--run-dir', tmp])
+            self.assertEqual((code, output), (2, ''))
+            self.assertIn('BLOCKED', errors)
+
     def test_parser_keeps_human_and_prefetch_controls(self):
         args = parse_args(['train', '--dry-run', '--human-run', '--source-prefetch-workers', '1',
                           '--atlas-release-manifest', '/manifest.json'])

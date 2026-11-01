@@ -32,10 +32,19 @@ def _main(args):
         if args.action in ("explain", "explain-error"):
             return _explain_code(args.code)
         from bilqis_mlx.runtime.atlas_admission import validate_atlas_command_request
-        validate_atlas_command_request(args)
         _guard_independent_no_retention(args)
         from bilqis_mlx.runtime.topology_lifecycle import topology_from_file, operator_topology
-        topology = topology_from_file(args.model_topology)
+        topology = topology_from_file(args.model_topology) if args.dry_run else None
+        from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
+        from .bamf_preflight import bamf_preflight, reject_manifest_request
+        if args.dry_run and isinstance(topology, ModelTopologySpecV2):
+            _print_status(bamf_preflight(args, topology).to_record())
+            return 2
+        if args.atlas_release_manifest is not None:
+            reject_manifest_request('release-manifest-requires-held-bamf-v2-inspection')
+        validate_atlas_command_request(args)
+        if not args.dry_run:
+            topology = topology_from_file(args.model_topology)
         if topology is not None:
             operator_topology(args.run_dir, resume=args.resume, requested=topology)
         if args.dry_run:
