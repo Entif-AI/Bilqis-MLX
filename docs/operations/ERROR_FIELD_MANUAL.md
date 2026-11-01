@@ -1561,6 +1561,18 @@ Message: The BAMF operator observation is invalid: {reason}
 
 Recovery: Keep the last valid view and retained run unchanged; reconcile the source census, measurement and identity bindings.
 
+### `SCHOOL.BAMF_PACKAGE.INVALID`
+
+BAMF cognitive package invalid.
+
+Owner: `runtime.cognitive_package`
+Disposition: `PRESERVE_AND_INSPECT`
+Self-heal owner: `none`
+
+Message: Cognitive package is invalid: {reason}
+
+Recovery: Preserve the receiver generation; inspect exact bindings and source clearance before staging again.
+
 ## Operational signals and blockers
 
 These terms are not exceptions. They describe a controlled stop, handoff, or gate.

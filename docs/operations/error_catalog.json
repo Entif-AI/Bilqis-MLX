@@ -14712,6 +14712,20 @@
       "recovery_key": "errors.school.bamf_operator.invalid.recovery",
       "self_heal_owner": null,
       "title": "BAMF operator evidence is invalid"
+    },
+    {
+      "code": "SCHOOL.BAMF_PACKAGE.INVALID",
+      "disposition": "PRESERVE_AND_INSPECT",
+      "legacy_codes": [],
+      "message_key": "errors.school.bamf_package.invalid.message",
+      "message_template": "Cognitive package is invalid: {reason}",
+      "next_action": "Preserve the receiver generation; inspect exact bindings and source clearance before staging again.",
+      "operator_steps": [],
+      "owner": "runtime.cognitive_package",
+      "preserve_state": true,
+      "recovery_key": "errors.school.bamf_package.invalid.recovery",
+      "self_heal_owner": null,
+      "title": "BAMF cognitive package invalid"
     }
   ]
 }
