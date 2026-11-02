@@ -1,6 +1,7 @@
 """Provisional Factory-to-BAMF contract witnesses; no neural state is used."""
 from dataclasses import replace
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory.adapters import SourceAdapterRegistry
@@ -158,6 +159,10 @@ def _atlas_features(asts: tuple[StreamingAST, ...], semantic_release: str) -> At
 
 class AtlasTrainingAdapterTest(unittest.TestCase):
     def setUp(self):
+        # Synthetic factory fixtures have no source-pinned A01 artifact.
+        authority = patch('bilqis_mlx.runtime.atlas_training_adapter.rederive_training_authority')
+        authority.start()
+        self.addCleanup(authority.stop)
         course, graph, sources, answers, _ = closed_source_fixture()
         registered = sources.require('fixture.z-generator/v1', 'fixture.z-oracle/v1')
         def draw(**kwargs):

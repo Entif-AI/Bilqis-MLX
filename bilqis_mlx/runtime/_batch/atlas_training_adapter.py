@@ -10,6 +10,7 @@ from bilqis_mlx.factory.adapters import validate_instructional_constituents
 from bilqis_mlx.factory.generation import runtime_adapter_for_release
 from bilqis_mlx.factory.teaching import DeliveredTeaching, describe_delivered_teaching, content_digest
 from bilqis_mlx.semantics.atlas_features import AtlasFeatures
+from bilqis_mlx.semantics.atlas_features.formal import source_qualified_feature_row
 from bilqis_mlx.semantics.frame_compiler import (
     FrameCompilerConfig, StreamingAST, compile_prefix,
 )
@@ -18,6 +19,7 @@ from bilqis_mlx.semantics.context_eligibility import (
     SourceFrontier, TaskScope, project_context,
 )
 from bilqis_mlx.semantics.frame_schema import FrameInstance
+from .atlas_training_authority import rederive_training_authority
 from .atlas_training_contracts import (
     BamfModelInput, BamfTarget, BamfTargetEvidence, BamfDeliveryProvenance,
     BamfTrainingRow, BamfTrainingBatch, PaddedMicrobatch,
@@ -99,7 +101,7 @@ def _require_semantic_authority(
         compiler_config: FrameCompilerConfig, atlas_features: AtlasFeatures,
         projection: ApprovedContextProjection, task_scope: TaskScope,
         source_frontier: SourceFrontier,
-        eligibility_policy: ContextPolicy) -> None:
+        eligibility_policy: ContextPolicy, atlas_selection, feature_schema) -> None:
     if (type(compiler_config) is not FrameCompilerConfig
             or type(atlas_features) is not AtlasFeatures
             or compiler_config.approved is not None
@@ -108,11 +110,12 @@ def _require_semantic_authority(
             or compiler_config.policy != eligibility_policy
             or atlas_features.semantic_release != task_scope.semantic_release):
         _invalid('UPSTREAM_SEMANTIC_AUTHORITY_MISMATCH')
+    rederive_training_authority(compiler_config, atlas_features, atlas_selection, feature_schema)
 
 
 def _source_features(
         projection: ApprovedContextProjection,
-        atlas_features: AtlasFeatures) -> tuple:
+        atlas_features: AtlasFeatures, atlas_selection) -> tuple:
     result = []
     for envelope in projection.envelopes:
         frame = envelope.frame
@@ -122,9 +125,9 @@ def _source_features(
             concepts = ((binding.concept,) if binding.concept is not None
                         else binding.alternatives)
             for concept in concepts:
-                result.append(atlas_features.features_for(
-                    concept, binding.role_id, frame.frame_schema_id,
-                    envelope.scope))
+                result.append(source_qualified_feature_row(
+                    atlas_features, concept, binding.role_id, frame, envelope.scope,
+                    atlas_selection, invalid=lambda: _invalid('UPSTREAM_SEMANTIC_AUTHORITY_MISMATCH')))
     return tuple(result)
 
 
@@ -140,7 +143,8 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
                            frames_for_ast: Callable, task_scope: TaskScope,
                            source_frontier: SourceFrontier,
                            eligibility_policy: ContextPolicy, generation_binding: str,
-                           target_encoders: dict | None = None, sealed_holdout_ids=()) -> BamfTrainingBatch:
+                           target_encoders: dict | None = None, sealed_holdout_ids=(),
+                           atlas_selection=None, feature_schema=None) -> BamfTrainingBatch:
     """Compile source-oracled delivery through accepted A05/A06 owners."""
     if not isinstance(source_context, SourceExecutionContext):
         _invalid('SOURCE_CONTEXT_REQUIRED')
@@ -237,12 +241,12 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
             _invalid('CONTEXT_NOT_ELIGIBLE')
         _require_semantic_authority(
             compiler_config, atlas_features, projection, task_scope,
-            source_frontier, eligibility_policy)
+            source_frontier, eligibility_policy, atlas_selection, feature_schema)
         eligibility_digest = projection.digest
         prefix = compile_prefix(
             ast, len(visible), task_scope.semantic_release,
             replace(compiler_config, approved=projection))
-        features = _source_features(projection, atlas_features)
+        features = _source_features(projection, atlas_features, atlas_selection)
         plan = _answer_plan(answer_plan_for(prefix, release, capabilities[capability], kind), head, len(visible), generation_binding)
         encoder = (target_encoders or {}).get(kind)
         if isinstance(gold, str) and (gold not in families[kind] or gold not in head.values):
