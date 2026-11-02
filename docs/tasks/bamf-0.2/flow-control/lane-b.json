@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "67c964a1548cb0075a28a90aa2565d8bdab0fd71",
-  "updated_at": "2026-11-02T22:17:00Z",
+  "updated_at": "2026-11-02T22:20:00Z",
   "exception": null,
   "items": [
     {
@@ -115,16 +115,15 @@
     },
     {
       "issue": 480,
-      "pr": 734,
+      "pr": null,
       "state": "WAITING",
       "head_sha": "39bf54e820c6e9f6aef75345557a50f0d51cd7ef",
       "summary": "B13.3 historical-reader/disposable-cache candidate is transitional drain inventory.",
       "resume_trigger": "Lane B selects B13.3 as its single current integration candidate after nearer-to-merge inventory drains.",
-      "open_pr_exception": {
-        "reason": "PR #734 is intentionally open as the active review vehicle while issue #480 is EGM-Pending.",
-        "authority": "Project-owner EGM issue-label queue instruction on 2026-11-02",
-        "expires_when": "Issue #480 leaves EGM-Pending or PR #734 becomes an active merge candidate."
-      }
+      "closed_pr": 734,
+      "preserved_branch": "codex/bamf02-b13-3-480-cache-custody-20261102",
+      "closed_under": "EGM issue-label queue; EGM-Pending is durable on issue #480",
+      "close_reason": "Await fresh whole-candidate EGM on the durable branch before opening a merge-ready PR."
     },
     {
       "issue": 711,

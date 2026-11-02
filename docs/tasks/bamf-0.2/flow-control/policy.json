@@ -41,6 +41,12 @@
         "reason": "Cross-cutting governance repair that records and mechanically enforces ADR-126; it is not a BAMF feature integration candidate.",
         "authority": "Direct project-owner instruction on 2026-11-02",
         "expires_when": "PR #741 merges or closes."
+      },
+      {
+        "pr": 743,
+        "reason": "Focused governance/docs PR implementing the project-owner EGM issue-label lifecycle; it is not BAMF implementation inventory.",
+        "authority": "Direct project-owner instruction on 2026-11-02",
+        "expires_when": "PR #743 merges or closes."
       }
     ],
     "admission_exceptions": [],
@@ -62,15 +68,15 @@
       725,
       726,
       727,
-      728
+      728,
+      734,
+      739
     ],
     "initial_drain_reopened_at": "2026-11-02",
-    "initial_drain_note": "Owner-authorized label strategy: EGM status lives on issues. Non-active failed/blocked parent candidates and inactive mitigation delivery envelopes may close after issue labels and exact branch/head custody are durable.",
+    "initial_drain_note": "Owner-authorized EGM issue-label queue: review state lives on issues/branches. Pending/failed candidates may close without losing queue state; new candidate PRs wait until the EGM/branch gates defined in AGENTS.md are satisfied.",
     "drain_mode": "NORMAL",
-    "drain_method": "Issue labels carry EGM queue state; open PRs are limited to active EGM review, active mitigation delivery, or active merge attempts.",
+    "drain_method": "Issue labels carry EGM state; open implementation PRs are reserved for merge-ready candidates or active remediation delivery.",
     "initial_drain_remaining_implementation_prs": [
-      734,
-      739,
       742
     ]
   },

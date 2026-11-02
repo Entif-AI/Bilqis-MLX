@@ -137,50 +137,15 @@ operation or the flow-control policy carries an explicit owner-authorized except
 New implementation work may proceed on authorized branches/issues without
 increasing PR inventory.
 
-### EGM issue-state labels are the review queue
+EGM review state and PR timing are governed by the canonical EGM label lifecycle in
+this file. PRs are integration vehicles, not durable EGM queue markers. Do not keep
+an implementation PR open solely to represent `EGM-Pending`, `EGM-Failed`, or
+`EGM-Mitigation`; the issue labels and durable branch/head custody carry that
+state. An active merge or remediation-delivery attempt may still use a PR.
 
-Do **not** use PR open/draft state as the durable representation of EGM status.
-The reviewed issue owns EGM state. Use exactly one of these mutually exclusive
-labels on a reviewed parent/leaf issue:
-
-- `EGM-Pending`: a fresh pinned EGM review is required for the current durable
-  candidate head and no final verdict applies yet.
-- `EGM-Passed`: the latest pinned EGM on the current recorded candidate head
-  satisfies that issue's EGM pass criterion. This label does not by itself claim
-  all non-EGM merge prerequisites are satisfied.
-- `EGM-Failed`: the latest pinned EGM on the current recorded candidate head
-  found a Blocker/Major or otherwise failed the issue's EGM acceptance criterion.
-
-Whenever a new EGM review becomes necessary, remove `EGM-Passed` /
-`EGM-Failed` and apply `EGM-Pending`. A material candidate-head change after a
-PASS or FAIL invalidates that verdict for the new head and returns the reviewed
-issue to `EGM-Pending` until fresh exact-head EGM completes.
-
-On EGM PASS, replace `EGM-Pending` / `EGM-Failed` with `EGM-Passed`. On EGM
-FAIL, replace `EGM-Pending` / `EGM-Passed` with `EGM-Failed`.
-
-Every remediation issue authored because an EGM review discovered a defect,
-evidence gap, merge-readiness fault, or other bounded repair MUST receive the
-separate `EGM-Mitigation` label. `EGM-Mitigation` belongs to the remediation
-issue and does not replace the parent issue's Pending/Passed/Failed state. Parent
-issues own aggregate final EGM after known mitigations are consumed.
-
-Issue labels are the durable EGM queue. A PR may therefore close when it is not an
-active review, mitigation-delivery, or merge attempt and its issue label, exact
-candidate head, branch and remediation links preserve the continuation state.
-Closing a PR solely to make the inventory count look smaller is still forbidden.
-Keep PRs open when they are actively carrying a fresh EGM review, a mitigation
-implementation that is being consumed, or an actual merge attempt. Reopen/create
-the delivery envelope when integration work again requires it.
-
-This label-based queue supersedes the earlier 2026-11-02 instruction that an
-EGM-pending PR must remain open merely because EGM is pending. PRs are delivery
-vehicles; issues and their EGM labels carry durable review state.
-
-A non-grandfathered open `WAITING` or `BLOCKED` PR requires an
-`open_pr_exception` with reason, authority and expiry. The flow-control checker
-reconciles the ledger against live GitHub state. Missing open PRs and stale
-closed/merged entries are failures.
+The flow-control checker reconciles the ledger against live GitHub state. An open
+implementation PR that is explicitly represented in the ledger counts even when
+its stacked parent PR has already closed.
 
 PR #741 is the temporary control-plane exception for implementing ADR-126 itself.
 It is not BAMF feature inventory, and its exception expires when PR #741 merges or
