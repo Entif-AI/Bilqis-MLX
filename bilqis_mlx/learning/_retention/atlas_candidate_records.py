@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from threading import RLock
+import weakref
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.learning.atlas_engram import INITIAL_MOTIF_CAPACITY, MotifBudget
@@ -26,6 +28,15 @@ RESOLUTION_SCHEMA = 'bilqis.mlx.candidate-resolution/provisional-v1'
 
 def _invalid() -> None:
     ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+
+
+class _CandidateAttempt:
+    """Opaque process-local identity for one replay-valid speculative attempt."""
+
+    __slots__ = ('__weakref__',)
+
+    def __new__(cls, *args, **kwargs):
+        _invalid()
 
 
 @dataclass(frozen=True)
@@ -85,7 +96,8 @@ class CandidateState:
 
     def _validate_descendant(self) -> None:
         if (type(self.parent) is not CandidateState
-                or type(self.resolution) is not CandidateResolution):
+                or type(self.resolution) is not CandidateResolution
+                or not _resolution_is_issued(self.resolution)):
             _invalid()
         transaction = self.resolution.candidate
         if (not self.resolution.accepted or transaction.update_steps == 0
@@ -128,6 +140,7 @@ class CandidateTransaction:
     optimizer: AdamWStateTree
     allocations: MotifAllocationSnapshot
     teacher_requests_full: bool
+    attempt: _CandidateAttempt = field(repr=False, compare=False)
     update_steps: int = 0
     frames: tuple = ()
     budget: MotifBudget = field(default_factory=lambda: MotifBudget(0))
@@ -139,6 +152,7 @@ class CandidateTransaction:
                 or type(self.optimizer) is not AdamWStateTree
                 or type(self.allocations) is not MotifAllocationSnapshot
                 or type(self.teacher_requests_full) is not bool
+                or not _candidate_attempt_is_issued(self.attempt)
                 or type(self.update_steps) is not int or self.update_steps < 0
                 or type(self.frames) is not tuple or type(self.budget) is not MotifBudget
                 or type(self.steps) is not tuple or self.update_steps != len(self.steps)
@@ -186,3 +200,98 @@ class CandidateResolution:
                 or self.schema_version != RESOLUTION_SCHEMA):
             _invalid()
         self.candidate.__post_init__()
+
+
+def _candidate_owner():
+    """Own attempt identity and one-shot resolution without blessing caller state."""
+    lock = RLock()
+    attempts = weakref.WeakSet()
+    resolutions = {}
+
+    def attempt_is_issued(attempt) -> bool:
+        with lock:
+            return type(attempt) is _CandidateAttempt and attempt in attempts
+
+    def new_attempt():
+        attempt = object.__new__(_CandidateAttempt)
+        with lock:
+            attempts.add(attempt)
+        return attempt
+
+    def forget_resolution(key: int, attempt_ref) -> None:
+        with lock:
+            current = resolutions.get(key)
+            if current is not None and current[0] is attempt_ref:
+                resolutions.pop(key, None)
+
+    def begin(parent, frames, budget, teacher_requests_full):
+        if (type(parent) is not CandidateState or type(frames) is not tuple
+                or type(budget) is not MotifBudget
+                or type(teacher_requests_full) is not bool):
+            _invalid()
+        parent.__post_init__()
+        proposal = prepare_candidate_motif_snapshot(frames, parent.allocations, budget)
+        optimizer = (materialize_planned_motif_rows(parent, proposal)
+                     if proposal.view.plan.allocated else parent.optimizer)
+        return CandidateTransaction(
+            parent, optimizer, proposal.proposed, teacher_requests_full,
+            new_attempt(), 0, frames, budget, ())
+
+    def advance(candidate, gradients, update_mask, teacher_hparams, *,
+                decay, loss_bearing, max_norm):
+        if type(candidate) is not CandidateTransaction:
+            _invalid()
+        candidate.__post_init__()
+        optimizer = _adamw_update(
+            candidate.optimizer, gradients, update_mask, teacher_hparams,
+            decay=decay, loss_bearing=loss_bearing, max_norm=max_norm)
+        if optimizer is candidate.optimizer:
+            return candidate
+        proof = CandidateStepProof(
+            dict(gradients), dict(update_mask), teacher_hparams, decay,
+            loss_bearing, max_norm)
+        return CandidateTransaction(
+            candidate.parent, optimizer, candidate.allocations,
+            candidate.teacher_requests_full, candidate.attempt,
+            candidate.update_steps + 1, candidate.frames, candidate.budget,
+            candidate.steps + (proof,))
+
+    def issue_resolution(candidate, accepted: bool):
+        if type(candidate) is not CandidateTransaction or type(accepted) is not bool:
+            _invalid()
+        candidate.__post_init__()
+        key = id(candidate.attempt)
+        with lock:
+            current = resolutions.get(key)
+            if current is not None and current[0]() is candidate.attempt:
+                _invalid()
+            resolution = CandidateResolution(candidate, accepted)
+            attempt_ref = weakref.ref(
+                candidate.attempt,
+                lambda ref, attempt_key=key: forget_resolution(attempt_key, ref))
+            resolutions[key] = (attempt_ref, accepted, weakref.ref(resolution))
+        return resolution
+
+    def resolution_is_issued(resolution) -> bool:
+        if type(resolution) is not CandidateResolution:
+            return False
+        key = id(resolution.candidate.attempt)
+        with lock:
+            current = resolutions.get(key)
+            return bool(
+                current is not None
+                and current[0]() is resolution.candidate.attempt
+                and current[1] is resolution.accepted
+                and current[2]() is resolution)
+
+    return begin, advance, issue_resolution, resolution_is_issued, attempt_is_issued
+
+
+(
+    _begin_candidate_transaction,
+    _advance_candidate_transaction,
+    _issue_candidate_resolution,
+    _resolution_is_issued,
+    _candidate_attempt_is_issued,
+) = _candidate_owner()
+del _candidate_owner

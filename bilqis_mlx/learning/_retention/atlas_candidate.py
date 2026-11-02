@@ -7,18 +7,18 @@ from __future__ import annotations
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.learning.atlas_engram import MotifBudget
-from bilqis_mlx.learning.atlas_engram_transaction import (
-    MotifAllocationSnapshot, prepare_candidate_motif_snapshot,
-)
+from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
 from bilqis_mlx.learning.atlas_plasticity import PlasticityPolicy, advance_candidate_policy
 from bilqis_mlx.learning._retention.atlas_candidate_initialization import (
-    CandidateInitialization, materialize_planned_motif_rows, same_optimizer,
+    CandidateInitialization, same_optimizer,
 )
 from bilqis_mlx.learning._retention.atlas_candidate_records import (
-    CandidateResolution, CandidateState, CandidateStepProof, CandidateTransaction,
+    CandidateResolution, CandidateState, CandidateTransaction,
+    _advance_candidate_transaction, _begin_candidate_transaction,
+    _issue_candidate_resolution,
 )
 from bilqis_mlx.runtime.atlas_optimizer import (
-    AdamWStateTree, _adamw_update, _create_unbound_bamf_optimizer,
+    AdamWStateTree, _create_unbound_bamf_optimizer,
 )
 from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, ModelTopologySpecV2
 
@@ -65,15 +65,9 @@ def begin_candidate(
     """Stage B07 state and materialize new rows only through B01 initialization."""
     if type(parent) is not CandidateState or type(teacher_requests_full) is not bool:
         _invalid()
-    parent.__post_init__()
     resolved_budget = MotifBudget(0) if budget is None else budget
-    proposal = prepare_candidate_motif_snapshot(
-        frames, parent.allocations, resolved_budget)
-    optimizer = (materialize_planned_motif_rows(parent, proposal)
-                 if proposal.view.plan.allocated else parent.optimizer)
-    return CandidateTransaction(
-        parent, optimizer, proposal.proposed, teacher_requests_full,
-        frames=tuple(frames), budget=resolved_budget)
+    return _begin_candidate_transaction(
+        parent, tuple(frames), resolved_budget, teacher_requests_full)
 
 
 def candidate_step(
@@ -83,26 +77,16 @@ def candidate_step(
     """Mask before clipping and delegate exact native AdamW to B12.1/B12.3."""
     if type(candidate) is not CandidateTransaction:
         _invalid()
-    candidate.__post_init__()
-    optimizer = _adamw_update(
-        candidate.optimizer, gradients, update_mask, teacher_hparams,
+    return _advance_candidate_transaction(
+        candidate, gradients, update_mask, teacher_hparams,
         decay=decay, loss_bearing=loss_bearing, max_norm=max_norm)
-    if optimizer is candidate.optimizer:
-        return candidate
-    proof = CandidateStepProof(
-        dict(gradients), dict(update_mask), teacher_hparams, decay,
-        loss_bearing, max_norm)
-    return CandidateTransaction(
-        candidate.parent, optimizer, candidate.allocations,
-        candidate.teacher_requests_full, candidate.update_steps + 1,
-        candidate.frames, candidate.budget, candidate.steps + (proof,))
 
 
 def resolve_candidate(candidate: CandidateTransaction, *, accepted: bool) -> CandidateState:
     """Apply the retention owner's decision or return the exact parent."""
     if type(candidate) is not CandidateTransaction or type(accepted) is not bool:
         _invalid()
-    resolution = CandidateResolution(candidate, accepted)
+    resolution = _issue_candidate_resolution(candidate, accepted)
     if not resolution.accepted or candidate.update_steps == 0:
         return candidate.parent
     rows = tuple(row.identity for row in candidate.parent.policy.row_ages

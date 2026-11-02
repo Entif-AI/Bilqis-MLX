@@ -84,6 +84,18 @@ class CandidateTransactionTests(TestCase):
         self.assertEqual(self.parent.optimizer_step, 0)
         self.assertEqual(self.parent.allocations.observed_uses, ())
 
+    def test_rejected_stepped_candidate_cannot_later_be_retained(self):
+        candidate = self.step(begin_candidate(
+            self.parent, frames=(source(),), budget=MotifBudget(0)))
+        self.assertIs(resolve_candidate(candidate, accepted=False), self.parent)
+        with self.assertRaises(BilqisError):
+            resolve_candidate(candidate, accepted=True)
+        with self.assertRaises(BilqisError):
+            resolve_candidate(replace(candidate), accepted=True)
+        retry = self.step(begin_candidate(
+            self.parent, frames=(source(),), budget=MotifBudget(0)))
+        self.assertEqual(resolve_candidate(retry, accepted=True).optimizer_step, 1)
+
     def test_acceptance_moves_entire_state_once_for_two_steps(self):
         candidate = self.step(self.step(begin_candidate(self.parent)))
         accepted = resolve_candidate(candidate, accepted=True)
@@ -256,6 +268,15 @@ class CandidateTransactionTests(TestCase):
                 candidate.optimizer, self.parent.policy, candidate.allocations,
                 self.parent.optimizer_step, self.parent.initialization,
                 self.parent, CandidateResolution(candidate, False))
+
+    def test_forged_resolution_cannot_mint_retained_descendant(self):
+        candidate = self.step(begin_candidate(self.parent))
+        forged = CandidateResolution(candidate, True)
+        with self.assertRaises(BilqisError):
+            CandidateState(
+                candidate.optimizer, self.parent.policy, candidate.allocations,
+                self.parent.optimizer_step + candidate.update_steps,
+                self.parent.initialization, self.parent, forged)
 
     def test_public_initial_binding_cannot_smuggle_page_growth_state(self):
         with self.assertRaises(BilqisError):
