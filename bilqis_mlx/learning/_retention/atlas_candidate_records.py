@@ -202,29 +202,31 @@ class CandidateResolution:
         self.candidate.__post_init__()
 
 
-def _candidate_owner():
+class _CandidateOwner:
     """Own attempt identity and one-shot resolution without blessing caller state."""
-    lock = RLock()
-    attempts = weakref.WeakSet()
-    resolutions = {}
 
-    def attempt_is_issued(attempt) -> bool:
-        with lock:
-            return type(attempt) is _CandidateAttempt and attempt in attempts
+    def __init__(self):
+        self.lock = RLock()
+        self.attempts = weakref.WeakSet()
+        self.resolutions = {}
 
-    def new_attempt():
+    def attempt_is_issued(self, attempt) -> bool:
+        with self.lock:
+            return type(attempt) is _CandidateAttempt and attempt in self.attempts
+
+    def new_attempt(self):
         attempt = object.__new__(_CandidateAttempt)
-        with lock:
-            attempts.add(attempt)
+        with self.lock:
+            self.attempts.add(attempt)
         return attempt
 
-    def forget_resolution(key: int, attempt_ref) -> None:
-        with lock:
-            current = resolutions.get(key)
+    def forget_resolution(self, key: int, attempt_ref) -> None:
+        with self.lock:
+            current = self.resolutions.get(key)
             if current is not None and current[0] is attempt_ref:
-                resolutions.pop(key, None)
+                self.resolutions.pop(key, None)
 
-    def begin(parent, frames, budget, teacher_requests_full):
+    def begin(self, parent, frames, budget, teacher_requests_full):
         if (type(parent) is not CandidateState or type(frames) is not tuple
                 or type(budget) is not MotifBudget
                 or type(teacher_requests_full) is not bool):
@@ -235,16 +237,16 @@ def _candidate_owner():
                      if proposal.view.plan.allocated else parent.optimizer)
         return CandidateTransaction(
             parent, optimizer, proposal.proposed, teacher_requests_full,
-            new_attempt(), 0, frames, budget, ())
+            self.new_attempt(), 0, frames, budget, ())
 
-    def advance(candidate, gradients, update_mask, teacher_hparams, *,
+    def advance(self, candidate, gradients, update_mask, teacher_hparams, *,
                 decay, loss_bearing, max_norm):
         if type(candidate) is not CandidateTransaction:
             _invalid()
         candidate.__post_init__()
         key = id(candidate.attempt)
-        with lock:
-            current = resolutions.get(key)
+        with self.lock:
+            current = self.resolutions.get(key)
             if current is not None and current[0]() is candidate.attempt:
                 _invalid()
         optimizer = _adamw_update(
@@ -261,29 +263,29 @@ def _candidate_owner():
             candidate.update_steps + 1, candidate.frames, candidate.budget,
             candidate.steps + (proof,))
 
-    def issue_resolution(candidate, accepted: bool):
+    def issue_resolution(self, candidate, accepted: bool):
         if type(candidate) is not CandidateTransaction or type(accepted) is not bool:
             _invalid()
         candidate.__post_init__()
         key = id(candidate.attempt)
-        with lock:
-            current = resolutions.get(key)
+        with self.lock:
+            current = self.resolutions.get(key)
             if current is not None and current[0]() is candidate.attempt:
                 _invalid()
             resolution = CandidateResolution(candidate, accepted)
             attempt_ref = weakref.ref(
                 candidate.attempt,
-                lambda ref, attempt_key=key: forget_resolution(attempt_key, ref))
-            resolutions[key] = (
+                lambda ref, attempt_key=key: self.forget_resolution(attempt_key, ref))
+            self.resolutions[key] = (
                 attempt_ref, weakref.ref(candidate), accepted, weakref.ref(resolution))
         return resolution
 
-    def resolution_is_issued(resolution) -> bool:
+    def resolution_is_issued(self, resolution) -> bool:
         if type(resolution) is not CandidateResolution:
             return False
         key = id(resolution.candidate.attempt)
-        with lock:
-            current = resolutions.get(key)
+        with self.lock:
+            current = self.resolutions.get(key)
             return bool(
                 current is not None
                 and current[0]() is resolution.candidate.attempt
@@ -291,14 +293,10 @@ def _candidate_owner():
                 and current[2] is resolution.accepted
                 and current[3]() is resolution)
 
-    return begin, advance, issue_resolution, resolution_is_issued, attempt_is_issued
 
-
-(
-    _begin_candidate_transaction,
-    _advance_candidate_transaction,
-    _issue_candidate_resolution,
-    _resolution_is_issued,
-    _candidate_attempt_is_issued,
-) = _candidate_owner()
-del _candidate_owner
+_candidate_owner = _CandidateOwner()
+_begin_candidate_transaction = _candidate_owner.begin
+_advance_candidate_transaction = _candidate_owner.advance
+_issue_candidate_resolution = _candidate_owner.issue_resolution
+_resolution_is_issued = _candidate_owner.resolution_is_issued
+_candidate_attempt_is_issued = _candidate_owner.attempt_is_issued
