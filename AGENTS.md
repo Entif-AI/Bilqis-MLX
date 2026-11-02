@@ -58,11 +58,47 @@ external gates are slow. Human review, EGM, dependency acceptance and other park
 gates remain real obligations; classifying them as non-WIP means **freeze until the
 gate changes**, not ignore them.
 
+<!-- BAMF02:EGM-MERGE-READINESS-GATE:20261102 -->
+### EGM is a merge-readiness gate, not a per-fix loop
+
+Spend a fresh pinned Google EGM review only when a PR is otherwise being prepared
+for human merge: all known Blocker/Major findings have been repaired or
+evidence-backed contested, independently remediable failures have durable issues,
+required dependency authority is consumable, required current-unified sync has
+been completed, affected verification is green, and the exact candidate head is
+stable enough to turn in. Do **not** spend fresh EGM review after each individual
+remediation issue, local defect fix, merge-forward, or intermediate checkpoint.
+Use focused regressions, ordinary independent review, CI and owner verification to
+clear that engineering queue first.
+
+If the final merge-readiness EGM finds new Blocker/Major defects, record the exact
+review receipt and create or link durable remediation issues at coherent ownership
+boundaries. Repair the complete known set before requesting another fresh EGM pass.
+The next EGM reviews the next whole merge candidate, not each remediation in
+isolation. Any older copied BAMF issue text prescribing "one repair pass and one
+targeted re-audit" is superseded by this rule and
+`docs/tasks/bamf-0.2/EGM_EXECUTION.md`.
+
 The repository checker can validate declared state, WIP counts, required resume
 triggers and explicit exceptions. It cannot observe an unrecorded remote mutation or
 an agent merely reading a branch. Updating lane state before mutation therefore
 remains an operator duty. See `ADR-124` and
 `docs/tasks/bamf-0.2/README.md`.
+
+## Context-window protection for repository census commands — 2026-11-02
+
+Treat full-repository inventory commands as high-cost diagnostics, not routine
+preflight. Do not dump unbounded `git worktree list --porcelain`, `git branch -a`,
+broad `gh pr list`, or repository-wide search output into model context when the task
+concerns a specific issue, PR, branch, SHA or worktree. Query that exact surface
+first.
+
+For ownership or collision checks, filter the inventory to the relevant branch or
+path, or compute compact counts and candidate summaries. Run a full census only for
+cleanup, ownership audits, collision investigation or systemwide reconciliation. If
+raw census output is required, redirect it to a temporary file and inspect targeted
+excerpts. Do not replay the full inventory into later turns, and do not repeat an
+unchanged full census during normal issue or PR preflight.
 
 ## BAMF-0.2 successor outcome and admission lease — 2026-10-28
 

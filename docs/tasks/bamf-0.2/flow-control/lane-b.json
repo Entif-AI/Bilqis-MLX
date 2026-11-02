@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "92bdff370e9be3d0c64eb4ffe300d2448f53d6a1",
-  "updated_at": "2026-11-02T05:10:00Z",
+  "observed_unified": "b4f2f0aca31623e7246ef819338a1450d71183cd",
+  "updated_at": "2026-11-02T08:29:21Z",
   "exception": null,
   "items": [
     {
@@ -71,11 +71,11 @@
     },
     {
       "issue": 478,
-      "pr": 672,
-      "state": "WAITING",
-      "head_sha": "6ced8eff290f3e0ba44674acd4c780427e8ddf94",
-      "summary": "B13.1 bounded durable bundle/publication repair.",
-      "resume_trigger": "Human/integration acceptance is ready to act on the bounded B13.1 repair, or a concrete review finding requires a targeted repair."
+      "pr": 704,
+      "state": "ACTIVE",
+      "head_sha": "630f39e186d6aac042edf70c63810c9300489732",
+      "summary": "B13.1 post-merge custody remediation is active for review findings #706 and #707 on draft PR #704.",
+      "resume_trigger": null
     },
     {
       "issue": 586,
