@@ -59,6 +59,9 @@ When the authorized parent candidate branch can take the repair without violatin
 writer ownership, apply the fix there and use the remediation issue as the durable
 finding record. Create a stacked remediation PR only when isolation is materially
 useful; do not create one solely for archival provenance.
+BAMF integration commonly targets non-default branches, where closing keywords do
+not reliably retire the linked issue. Explicitly verify and close each satisfied
+remediation issue after its repair is accepted or consumed.
 
 ## Lane ownership and dependency checks
 
