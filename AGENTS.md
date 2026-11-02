@@ -63,6 +63,20 @@ triggers and explicit exceptions. It cannot observe an unrecorded remote mutatio
 an agent merely reading a branch. Updating lane state before mutation therefore
 remains an operator duty. See `ADR-124` and
 `docs/tasks/bamf-0.2/README.md`.
+## Context-window protection for repository census commands — 2026-11-02
+
+Treat full-repository inventory commands as high-cost diagnostics, not routine
+preflight. Do not dump unbounded `git worktree list --porcelain`, `git branch -a`,
+broad `gh pr list`, or repository-wide search output into model context when the task
+concerns a specific issue, PR, branch, SHA or worktree. Query that exact surface
+first.
+
+For ownership or collision checks, filter the inventory to the relevant branch or
+path, or compute compact counts and candidate summaries. Run a full census only for
+cleanup, ownership audits, collision investigation or systemwide reconciliation. If
+raw census output is required, redirect it to a temporary file and inspect targeted
+excerpts. Do not replay the full inventory into later turns, and do not repeat an
+unchanged full census during normal issue or PR preflight.
 
 ## BAMF-0.2 successor outcome and admission lease — 2026-10-28
 
