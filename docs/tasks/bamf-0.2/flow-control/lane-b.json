@@ -2,24 +2,32 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "67c964a1548cb0075a28a90aa2565d8bdab0fd71",
-  "updated_at": "2026-11-02T21:50:00Z",
+  "updated_at": "2026-11-02T22:12:00Z",
   "exception": null,
   "items": [
     {
       "issue": 475,
-      "pr": 695,
-      "state": "ACTIVE",
+      "pr": null,
+      "state": "WAITING",
       "head_sha": "b5c3df440d397c0c2cd2165d5f2c015c1d1e7a0c",
       "summary": "B12.2 remains the current primary Lane B integration surface; remediation #710 owns the unresolved execution-provenance defect.",
-      "resume_trigger": null
+      "resume_trigger": "Remediation #710 is consumed; issue #475 transitions to EGM-Pending; fresh exact-head EGM passes; an integration PR slot is available.",
+      "closed_pr": 695,
+      "preserved_branch": "codex/b12-475-initialized-rows-20261101",
+      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
+      "close_reason": "EGM-Failed; remediation #710"
     },
     {
       "issue": 465,
-      "pr": 692,
+      "pr": null,
       "state": "WAITING",
       "head_sha": "a1025e442277ee71b2120f87b9254179cee88dfb",
       "summary": "B09.2 parent candidate awaits production-authority remediation.",
-      "resume_trigger": "Remediation #711 is consumed into the candidate, required B05/B08/B11 production provenance is consumable, and the candidate is selected for merge-readiness review."
+      "resume_trigger": "Remediation #711 is consumed into the candidate, required B05/B08/B11 production provenance is consumable, and the candidate is selected for merge-readiness review.",
+      "closed_pr": 692,
+      "preserved_branch": "codex/b09-465-participation-20261101",
+      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
+      "close_reason": "EGM-Failed; remediation #711"
     },
     {
       "issue": 456,
@@ -31,51 +39,75 @@
     },
     {
       "issue": 455,
-      "pr": 686,
+      "pr": null,
       "state": "WAITING",
       "head_sha": "39732bdb053e33cd917ed03de43ac02ed638474b",
       "summary": "B06.4 parent candidate awaits B06.3 acceptance and stacked repair consumption.",
-      "resume_trigger": "B06.3/#454 is accepted sufficiently for this dependency and remediation PR #725 is consumed or otherwise resolved."
+      "resume_trigger": "B06.3/#454 is accepted sufficiently for this dependency and remediation PR #725 is consumed or otherwise resolved.",
+      "closed_pr": 686,
+      "preserved_branch": "codex/b06-455-registry-20261101",
+      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
+      "close_reason": "EGM-Failed; remediation #715 / dependency #454"
     },
     {
       "issue": 454,
-      "pr": 684,
+      "pr": null,
       "state": "WAITING",
       "head_sha": "89819d6d1cf58cabadf324775d7bbd0c23130bd0",
       "summary": "B06.3 has current-unified conflict and source-positive witness remediation outstanding.",
-      "resume_trigger": "Remediations #735 and #736 are resolved, the candidate is synchronized once to current reviewed unified, and it is selected for final merge-readiness review."
+      "resume_trigger": "Remediations #735 and #736 are resolved, the candidate is synchronized once to current reviewed unified, and it is selected for final merge-readiness review.",
+      "closed_pr": 684,
+      "preserved_branch": "codex/b06-454-refinement-20261101",
+      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
+      "close_reason": "EGM-Failed; remediations #735/#736"
     },
     {
       "issue": 697,
-      "pr": 698,
+      "pr": null,
       "state": "WAITING",
       "head_sha": "bd000f39a59142fb77f40d4426bd127c936ca119",
       "summary": "B13.5 accepted-generation predecessor-authority bridge remains parked.",
-      "resume_trigger": "Remediation #708 is resolved against accepted B12/B13 custody and the candidate is selected for integration."
+      "resume_trigger": "Remediation #708 is resolved against accepted B12/B13 custody and the candidate is selected for integration.",
+      "closed_pr": 698,
+      "preserved_branch": "feat/bamf-b13-5-697-generation-feature-binding-20261101",
+      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
+      "close_reason": "EGM-Failed; remediation #708"
     },
     {
       "issue": 479,
-      "pr": 677,
+      "pr": null,
       "state": "WAITING",
       "head_sha": "d18997f2b5c9314a6f4fd15dd590fabfd2dd3546",
       "summary": "B13.2 cold-resume proof remains incomplete.",
-      "resume_trigger": "Remediation #709 proves the required real cold resume through the next controlled optimizer step and the accepted B13.1 custody surface is consumable."
+      "resume_trigger": "Remediation #709 proves the required real cold resume through the next controlled optimizer step and the accepted B13.1 custody surface is consumable.",
+      "closed_pr": 677,
+      "preserved_branch": "codex/bamf02-b13-2-479-cold-resume-20261101",
+      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
+      "close_reason": "EGM-Failed; remediation #709"
     },
     {
       "issue": 485,
-      "pr": 674,
+      "pr": null,
       "state": "WAITING",
       "head_sha": "fe5f4a1380ff14dabb98d3b07fb00ffcc4bc442a",
       "summary": "B14.4 cache-authority candidate awaits accepted-generation/source-rights repair.",
-      "resume_trigger": "Remediation #719 is resolved against accepted B13/A12 authority and the candidate is selected for merge-readiness review."
+      "resume_trigger": "Remediation #719 is resolved against accepted B13/A12 authority and the candidate is selected for merge-readiness review.",
+      "closed_pr": 674,
+      "preserved_branch": "codex/bamf02-b14-4-485-refresh-20261101",
+      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
+      "close_reason": "EGM-Failed; remediation #719"
     },
     {
       "issue": 586,
-      "pr": 640,
+      "pr": null,
       "state": "WAITING",
       "head_sha": "626b7553de0231592b486cafd1e012012f580144",
       "summary": "B11.1a execution-owned backbone producer awaits stale-boundary remediation.",
-      "resume_trigger": "Remediation #738 is resolved and the complete candidate is selected for the next merge-readiness EGM."
+      "resume_trigger": "Remediation #738 is resolved and the complete candidate is selected for the next merge-readiness EGM.",
+      "closed_pr": 640,
+      "preserved_branch": "codex/b11-586-source-h0-20261030",
+      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
+      "close_reason": "EGM-Failed; remediation #738"
     },
     {
       "issue": 480,
@@ -87,19 +119,27 @@
     },
     {
       "issue": 711,
-      "pr": 727,
+      "pr": null,
       "state": "WAITING",
       "head_sha": "c4eb468e579fa5f3fee187e663ee5787f92aef05",
       "summary": "Stacked B09.2 production-authority remediation.",
-      "resume_trigger": "The bounded repair is consumed into PR #692 or explicitly selected for focused integration under ADR-125."
+      "resume_trigger": "The bounded repair is consumed into PR #692 or explicitly selected for focused integration under ADR-125.",
+      "closed_pr": 727,
+      "preserved_branch": "codex/participation-711-20261102",
+      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
+      "close_reason": "EGM-Mitigation issue #711"
     },
     {
       "issue": 715,
-      "pr": 725,
+      "pr": null,
       "state": "WAITING",
       "head_sha": "9a19b9b638412f86a3a877be9389d9d3c51edd94",
       "summary": "Stacked B06.4 differentiability/immutability remediation; issue #715 is already closed.",
-      "resume_trigger": "The bounded repair is consumed into PR #686 or explicitly selected for focused integration under ADR-125."
+      "resume_trigger": "The bounded repair is consumed into PR #686 or explicitly selected for focused integration under ADR-125.",
+      "closed_pr": 725,
+      "preserved_branch": "codex/refinement-715-20261102",
+      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
+      "close_reason": "EGM-Mitigation issue #715"
     }
   ]
 }
