@@ -242,6 +242,11 @@ def _candidate_owner():
         if type(candidate) is not CandidateTransaction:
             _invalid()
         candidate.__post_init__()
+        key = id(candidate.attempt)
+        with lock:
+            current = resolutions.get(key)
+            if current is not None and current[0]() is candidate.attempt:
+                _invalid()
         optimizer = _adamw_update(
             candidate.optimizer, gradients, update_mask, teacher_hparams,
             decay=decay, loss_bearing=loss_bearing, max_norm=max_norm)
@@ -269,7 +274,8 @@ def _candidate_owner():
             attempt_ref = weakref.ref(
                 candidate.attempt,
                 lambda ref, attempt_key=key: forget_resolution(attempt_key, ref))
-            resolutions[key] = (attempt_ref, accepted, weakref.ref(resolution))
+            resolutions[key] = (
+                attempt_ref, weakref.ref(candidate), accepted, weakref.ref(resolution))
         return resolution
 
     def resolution_is_issued(resolution) -> bool:
@@ -281,8 +287,9 @@ def _candidate_owner():
             return bool(
                 current is not None
                 and current[0]() is resolution.candidate.attempt
-                and current[1] is resolution.accepted
-                and current[2]() is resolution)
+                and current[1]() is resolution.candidate
+                and current[2] is resolution.accepted
+                and current[3]() is resolution)
 
     return begin, advance, issue_resolution, resolution_is_issued, attempt_is_issued
 

@@ -278,6 +278,28 @@ class CandidateTransactionTests(TestCase):
                 self.parent.optimizer_step + candidate.update_steps,
                 self.parent.initialization, self.parent, forged)
 
+    def test_issued_resolution_cannot_be_retargeted_to_later_transaction(self):
+        candidate = self.step(begin_candidate(self.parent))
+        later = self.step(candidate)
+        accepted = resolve_candidate(candidate, accepted=True)
+        resolution = accepted.resolution
+        self.assertIsNotNone(resolution)
+
+        object.__setattr__(resolution, "candidate", later)
+
+        with self.assertRaises(BilqisError):
+            CandidateState(
+                later.optimizer, accepted.policy, later.allocations,
+                self.parent.optimizer_step + later.update_steps,
+                self.parent.initialization, self.parent, resolution)
+
+    def test_resolved_attempt_cannot_continue_numerical_evolution(self):
+        candidate = self.step(begin_candidate(self.parent))
+        resolve_candidate(candidate, accepted=True)
+
+        with self.assertRaises(BilqisError):
+            self.step(candidate)
+
     def test_public_initial_binding_cannot_smuggle_page_growth_state(self):
         with self.assertRaises(BilqisError):
             self.bound(allocations=MotifAllocationSnapshot(full_first_page()))
