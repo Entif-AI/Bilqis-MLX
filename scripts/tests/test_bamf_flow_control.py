@@ -85,11 +85,16 @@ def lane(name: str, items: list[dict], exception=None) -> dict:
     }
 
 
+def sha_for(pr_number: int) -> str:
+    return f"{pr_number:040x}"[-40:]
+
+
 def active(issue: int, pr: int) -> dict:
     return {
         "issue": issue,
         "pr": pr,
         "state": "ACTIVE",
+        "head_sha": sha_for(pr),
         "resume_trigger": None,
     }
 
@@ -104,6 +109,7 @@ def waiting(
         "issue": issue,
         "pr": pr,
         "state": "WAITING",
+        "head_sha": sha_for(pr),
         "resume_trigger": "dependency accepted",
     }
     if open_pr_exception is not None:
@@ -119,7 +125,7 @@ def pr(
 ) -> dict:
     return {
         "number": number,
-        "head": {"ref": head},
+        "head": {"ref": head, "sha": sha_for(number)},
         "base": {"ref": base},
     }
 
@@ -219,6 +225,19 @@ class BamfFlowControlTests(unittest.TestCase):
                 [pr(10, head="a", base="unified")],
                 root,
             )
+
+    def test_live_reconciliation_rejects_head_drift(self) -> None:
+        root = self.write_fixture(
+            {
+                "A": lane("A", [active(1, 10)]),
+                "B": lane("B", []),
+                "C": lane("C", []),
+            }
+        )
+        live = pr(10, head="a", base="unified")
+        live["head"]["sha"] = "f" * 40
+        with self.assertRaisesRegex(FlowControlError, "head_sha does not match"):
+            validate_live_pr_inventory([live], root)
 
     def test_live_reconciliation_rejects_stale_tracked_pr(self) -> None:
         root = self.write_fixture(
