@@ -8,46 +8,63 @@ from pathlib import Path
 from scripts.check_bamf_flow_control import FlowControlError, validate_flow_control
 
 
-def policy() -> dict:\n    return {
-    "schema": "bilqis.bamf.flow-control-policy/v1",
-    "normal_active_limit_per_lane": 2,
-    "states": {
-        "ACTIVE": {
-            "counts_as_wip": True,
-            "branch_mutation_allowed": True,
-            "requires_resume_trigger": False,
+def policy() -> dict:
+    return {
+        "schema": "bilqis.bamf.flow-control-policy/v1",
+        "normal_active_limit_per_lane": 2,
+        "states": {
+            "ACTIVE": {
+                "counts_as_wip": True,
+                "branch_mutation_allowed": True,
+                "requires_resume_trigger": False,
+            },
+            "READY": {
+                "counts_as_wip": False,
+                "branch_mutation_allowed": False,
+                "requires_resume_trigger": False,
+            },
+            "WAITING": {
+                "counts_as_wip": False,
+                "branch_mutation_allowed": False,
+                "requires_resume_trigger": True,
+            },
+            "BLOCKED": {
+                "counts_as_wip": False,
+                "branch_mutation_allowed": False,
+                "requires_resume_trigger": True,
+            },
+            "TURNED_IN": {
+                "counts_as_wip": False,
+                "branch_mutation_allowed": False,
+                "requires_resume_trigger": False,
+            },
         },
-        "READY": {
-            "counts_as_wip": False,
-            "branch_mutation_allowed": False,
-            "requires_resume_trigger": False,
+        "rules": {
+            "over_limit_exception_required_fields": [
+                "reason",
+                "authority",
+                "expires_when",
+            ]
         },
-        "WAITING": {
-            "counts_as_wip": False,
-            "branch_mutation_allowed": False,
-            "requires_resume_trigger": True,
-        },
-        "BLOCKED": {
-            "counts_as_wip": False,
-            "branch_mutation_allowed": False,
-            "requires_resume_trigger": True,
-        },
-        "TURNED_IN": {
-            "counts_as_wip": False,
-            "branch_mutation_allowed": False,
-            "requires_resume_trigger": False,
-        },
-    },
-    "rules": {
-        "over_limit_exception_required_fields": ["reason", "authority", "expires_when"]
-    },
-    }\n\n\ndef lane(name: str, items: list[dict], exception=None) -> dict:
+    }
+
+
+def lane(name: str, items: list[dict], exception=None) -> dict:
     return {
         "schema": "bilqis.bamf.flow-control-lane/v1",
         "lane": name,
         "updated_at": "2026-11-02T05:10:00Z",
         "exception": exception,
         "items": items,
+    }
+
+
+def active(issue: int, pr: int) -> dict:
+    return {
+        "issue": issue,
+        "pr": pr,
+        "state": "ACTIVE",
+        "resume_trigger": None,
     }
 
 
@@ -64,27 +81,24 @@ class BamfFlowControlTests(unittest.TestCase):
         return root
 
     def test_waiting_requires_resume_trigger(self) -> None:
+        waiting = {
+            "issue": 1,
+            "pr": 10,
+            "state": "WAITING",
+            "resume_trigger": "",
+        }
         root = self.write_fixture(
-            {
-                "A": lane("A", [{"issue": 1, "pr": 10, "state": "WAITING", "resume_trigger": ""}]),
-                "B": lane("B", []),
-                "C": lane("C", []),
-            }
+            {"A": lane("A", [waiting]), "B": lane("B", []), "C": lane("C", [])}
         )
-        with self.assertRaisesRegex(FlowControlError, "requires a non-empty resume_trigger"):
+        with self.assertRaisesRegex(
+            FlowControlError, "requires a non-empty resume_trigger"
+        ):
             validate_flow_control(root)
 
     def test_normal_limit_rejects_third_active_item(self) -> None:
         root = self.write_fixture(
             {
-                "A": lane(
-                    "A",
-                    [
-                        {"issue": 1, "pr": 11, "state": "ACTIVE", "resume_trigger": None},
-                        {"issue": 2, "pr": 12, "state": "ACTIVE", "resume_trigger": None},
-                        {"issue": 3, "pr": 13, "state": "ACTIVE", "resume_trigger": None},
-                    ],
-                ),
+                "A": lane("A", [active(1, 11), active(2, 12), active(3, 13)]),
                 "B": lane("B", []),
                 "C": lane("C", []),
             }
@@ -93,20 +107,17 @@ class BamfFlowControlTests(unittest.TestCase):
             validate_flow_control(root)
 
     def test_explicit_exception_allows_over_limit(self) -> None:
+        exception = {
+            "reason": "bounded emergency repair",
+            "authority": "owner instruction",
+            "expires_when": "repair merges",
+        }
         root = self.write_fixture(
             {
                 "A": lane(
                     "A",
-                    [
-                        {"issue": 1, "pr": 11, "state": "ACTIVE", "resume_trigger": None},
-                        {"issue": 2, "pr": 12, "state": "ACTIVE", "resume_trigger": None},
-                        {"issue": 3, "pr": 13, "state": "ACTIVE", "resume_trigger": None},
-                    ],
-                    {
-                        "reason": "bounded emergency repair",
-                        "authority": "owner instruction",
-                        "expires_when": "repair merges",
-                    },
+                    [active(1, 11), active(2, 12), active(3, 13)],
+                    exception,
                 ),
                 "B": lane("B", []),
                 "C": lane("C", []),
