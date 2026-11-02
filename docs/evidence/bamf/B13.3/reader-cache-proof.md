@@ -65,3 +65,14 @@ receipts or full #480/#372 acceptance. Final pinned EGM remains pending until th
 complete dependency-qualified candidate is merge-ready. No real student, matching
 AdamW, teacher, source release or human training was changed. Existing related
 incidents PM-2026-11-01-004/005 remain provenance; no new runtime defect was found.
+
+## Publication receipt
+
+Draft PR #734 stages this bounded proof. Hosted portable, portable-core and semantic
+ABI checks pass at implementation head `fabcda03eaf888924568ee160f099b539d006ffd`;
+semantic-profile jobs are skipped. The final flow-control checkpoint changes only
+this evidence and lane state. #480 remains open and WAITING on the named prerequisite.
+
+Live GitHub metadata reports this repository public. PM-2026-11-02-007 records
+the delayed visibility preflight; public receipts use opaque IPR-0220. No private
+authority URL is added by this change. Existing public history was not audited.

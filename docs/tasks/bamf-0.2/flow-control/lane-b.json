@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "67c964a1548cb0075a28a90aa2565d8bdab0fd71",
-  "updated_at": "2026-11-02T19:49:28.661134+00:00",
+  "updated_at": "2026-11-02T19:52:37.723595+00:00",
   "exception": null,
   "items": [
     {
@@ -87,11 +87,11 @@
     },
     {
       "issue": 480,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "67c964a1548cb0075a28a90aa2565d8bdab0fd71",
-      "summary": "Trace historical-v1 reader and disposable-cache separation; final #479 source-qualified continuation prerequisite remains open.",
-      "resume_trigger": null
+      "pr": 734,
+      "state": "WAITING",
+      "head_sha": "fabcda03eaf888924568ee160f099b539d006ffd",
+      "summary": "Draft #734 stages cache separation and genuine archived six-layer v1 read/reject evidence; 33/33 custody tests pass with pinned archive, zero skips; hosted portable/core/ABI pass.",
+      "resume_trigger": "Accepted #479/#709 source-qualified generation and Factory next-step continuation receipts are consumable; then refresh once and seek final merge-readiness EGM."
     }
   ]
 }
