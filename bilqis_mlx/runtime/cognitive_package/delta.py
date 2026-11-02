@@ -283,13 +283,11 @@ def _issue_screened(candidate, decision):
     return screened
 
 
-def apply_plastic_delta(package, receiver_binding, parent_generation, tensors):
-    """Build an immutable disposable candidate; never publish receiver state."""
+def apply_plastic_delta(package, receiver_run_dir):
+    """Build a disposable candidate from the current B13 receiver generation."""
+    from .receiver import apply_from_current_generation
     require(type(package) is CognitivePackage, "invalid cognitive package")
-    require(digest_string(parent_generation), "invalid parent generation")
-    tensors = _canonical_tensors(tensors)
-    candidate = _apply_delta_tensors(package, receiver_binding, tensors)
-    return _issue_candidate(parent_generation, package, receiver_binding, tensors, candidate)
+    return apply_from_current_generation(package, receiver_run_dir)
 
 
 def screen_delta_candidate(candidate, paired_retention_evidence):

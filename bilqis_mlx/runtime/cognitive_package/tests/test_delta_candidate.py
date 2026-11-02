@@ -8,9 +8,10 @@ import numpy as np
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.cognitive_package import (
     DeltaSlice, PackageArtifact, PackageKind, ReceiverTensor,
-    apply_plastic_delta, encode_plastic_delta, export_capability,
+    encode_plastic_delta, export_capability,
     receiver_parameter_schema_digest, receiver_weight_digest, screen_delta_candidate,
 )
+from bilqis_mlx.runtime.cognitive_package.delta import _apply_delta_tensors, _issue_candidate
 from bilqis_mlx.runtime.cognitive_package.tests.fixtures import digest, snapshot
 from bilqis_mlx.runtime.tests.capability.capability_retention_helpers import _evidence
 
@@ -41,6 +42,13 @@ def _package(tensors):
     rights = replace(rights, public_artifact_digests=tuple(sorted(
         value.digest for value in source.artifacts)))
     return export_capability(source, source.signature, rights), source
+
+
+def apply_plastic_delta(package, binding, parent, tensors):
+    """Exercise pure delta mechanics separately from receiver authority."""
+    tensors = tuple(sorted(tensors, key=lambda value: value.parameter_name))
+    return _issue_candidate(parent, package, binding, tensors,
+                            _apply_delta_tensors(package, binding, tensors))
 
 
 def _retarget_evidence(evidence, parent, candidate):

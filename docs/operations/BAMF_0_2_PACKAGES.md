@@ -30,7 +30,8 @@ duplicate JSON keys, noncanonical encodings, malformed records and uncleared or
 revoked payloads. No payload executes during export, read or staging.
 
 `stage_import(package, receiver_binding)` produces an immutable `ImportPlan`.
-Identical bindings return `EXACT_BINDING`. A mismatched procedure/exact-transform
+Identical supplied labels return `EXACT_BINDING`; this preliminary comparison is not
+receiver custody or publication authority. A mismatched procedure/exact-transform
 package returns `TEACHING_ONLY`. Any mismatched adapter/weight delta rejects the
 whole package, including mixed exact/delta packages, before a plan is returned.
 Base weights, parameter schema, topology, semantic release, active set, factor map
@@ -91,13 +92,12 @@ path, not authority to reinterpret a differently encoded package.
 `ReceiverTensor` is an immutable float32 byte snapshot. The receiver's base-weight
 digest and parameter-schema digest are independently rederived from the actual
 canonical tensor set and must equal the package binding before any delta is
-applied. Matching caller labels therefore cannot substitute unrelated receiver
-bytes or shapes. The remaining topology, semantic-release, active-set, factor-map
-and motif-map identities still come from the receiver-owned `PackageBinding` and
-must match exactly through `stage_import(...)`.
+applied. The current B13 pointer and complete bundle supply the topology, semantic release,
+active-set, factor-map and motif-map identities. The pointer lock remains held while
+the complete receiver is checked and the candidate is constructed.
 
-`apply_plastic_delta(...)` creates a `DisposableDeltaCandidate` from a full local
-receiver snapshot. It copies only declared slices into a candidate and derives a
+`apply_plastic_delta(package, receiver_run_dir)` creates a `DisposableDeltaCandidate`
+from the current B13-published receiver generation. It copies only declared slices into a candidate and derives a
 new candidate generation digest from the exact parent generation, package digest
 and resulting tensor digests. The parent snapshot is never mutated. The function
 does not allocate a parameter, bank or motif and does not reset or publish any
@@ -110,7 +110,7 @@ decision remains advisory evidence only: B12/B13 still own publication. A reject
 candidate is rolled back by discarding the immutable disposable candidate; the
 parent bytes are unchanged.
 
-This closes the C12.2 pre-activation seam without stealing C12.3/#527. #527 owns
+C12.2 source-rights and authoritative screening remain open under #718. #527 owns
 the durable receiver transition: changed-slice optimizer resets, establishment-age
 and cadence resets, `PACKAGE_IMPORT` origin, atomic commit/crash rollback,
 subsequent native optimizer receipt and cold-resume equivalence. Production #526
