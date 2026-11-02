@@ -57,10 +57,10 @@
     ],
     "non_implementation_exceptions": [
       {
-        "head_branch": "codex/adr126-pr-inventory-20261102",
+        "pr": 741,
         "reason": "Cross-cutting governance repair that records and mechanically enforces ADR-126; it is not a BAMF feature integration candidate.",
         "authority": "Direct project-owner instruction on 2026-11-02",
-        "expires_when": "This governance repair PR merges or closes."
+        "expires_when": "PR #741 merges or closes."
       }
     ],
     "admission_exceptions": []
