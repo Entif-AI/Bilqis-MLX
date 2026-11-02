@@ -6,6 +6,7 @@ import os
 import subprocess
 import sys
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -96,6 +97,18 @@ class BamfPublicationTests(unittest.TestCase):
                 if kind == "symlink":
                     self.assertEqual(tuple(outside.iterdir()), ())
 
+    def test_symlinked_bundle_root_rejects_before_external_bundle_write(self):
+        self.run.mkdir()
+        outside = self.root / "outside-bundles"
+        outside.mkdir()
+        (self.run / "bamf-bundles").symlink_to(outside, target_is_directory=True)
+
+        with self.assertRaises(BilqisError):
+            self.publish(candidate(parent_state()))
+
+        self.assertEqual(tuple(outside.iterdir()), ())
+        self.assertFalse((self.run / "bamf-state.json").exists())
+
     def test_pointer_written_before_outbox_crash_replays_exactly_once(self):
         source = candidate(parent_state())
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
@@ -170,6 +183,28 @@ class BamfPublicationTests(unittest.TestCase):
             resumed = load_bamf_generation(self.run / "bamf-state.json")
         self.assertEqual(resumed.generation, 1)
         self.assertEqual(resumed.retained_state.optimizer_step, 12)
+        self.assertEqual(
+            json.loads((self.run / "bamf-state.json").read_text())["manifest_sha256"],
+            second["manifest_sha256"])
+
+    def test_rejection_uses_live_bundle_state_not_caller_student_fields(self):
+        first = self.publish(candidate(parent_state()))
+        second = self.publish(candidate(
+            accepted_state(parent_state()), 1, first["manifest_sha256"]))
+        with shape_patch():
+            student = load_bamf_generation(self.run / "bamf-state.json")
+        forged = replace(
+            student,
+            retained_state=replace(
+                student.retained_state,
+                optimizer_step=student.retained_state.optimizer_step + 1))
+
+        record_bamf_rejection(self.run, forged, {"reason": "retention_gate"})
+
+        events = [json.loads(line) for line in (self.run / "events.jsonl").read_text().splitlines()]
+        rejected = [row for row in events if row["event"] == "BAMF_CANDIDATE_REJECTED"]
+        self.assertEqual(len(rejected), 1)
+        self.assertEqual(rejected[0]["optimizer_step"], 12)
         self.assertEqual(
             json.loads((self.run / "bamf-state.json").read_text())["manifest_sha256"],
             second["manifest_sha256"])
