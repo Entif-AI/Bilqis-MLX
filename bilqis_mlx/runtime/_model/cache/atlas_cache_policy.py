@@ -8,6 +8,7 @@ from typing import Callable
 import numpy as np
 
 from bilqis_mlx.errors import BilqisError
+from .atlas_revalidation import SourceAuthorityRegistry
 
 from .atlas_cache_binding import (
     CacheArtifact,
@@ -95,18 +96,21 @@ def interactive_cache_inference(
     fp32_recompute: Callable[[], object],
     quality_check: Callable[[object], CacheQualityObservation],
     policy: CacheQualityPolicy,
+    authority_registry: SourceAuthorityRegistry,
 ) -> CacheInferenceResult:
     """Use a derived cache only after binding, decode, and declared quality checks."""
     if not isinstance(policy, CacheQualityPolicy):
         _invalid()
     policy.validate()
     try:
-        require_cache_binding(artifact, expected_binding)
+        require_cache_binding(artifact, expected_binding, authority_registry)
     except BilqisError:
         return _fallback(fp32_recompute, FALLBACK_BINDING)
     from .atlas_cache_records import decode_cache
     try:
-        approximate = decode_cache(artifact, expected_binding)
+        approximate = decode_cache(
+            artifact, expected_binding, authority_registry=authority_registry
+        )
     except BilqisError:
         return _fallback(fp32_recompute, FALLBACK_DECODE)
     if not callable(cached_infer) or not callable(quality_check):

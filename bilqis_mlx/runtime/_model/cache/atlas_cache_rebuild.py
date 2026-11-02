@@ -6,6 +6,8 @@ from typing import Callable
 
 import numpy as np
 
+from .atlas_revalidation import SourceAuthorityRegistry
+
 from .atlas_cache_binding import (
     CacheArtifact,
     CacheBinding,
@@ -72,6 +74,7 @@ def rebuild_revoked_cache(
     canonical_fp32_source: Callable[[], np.ndarray],
     persist: Callable[[CacheArtifact], None],
     authority_signer: Callable[[bytes], bytes],
+    authority_registry: SourceAuthorityRegistry,
 ) -> CacheRebuildResult:
     """Build a new derived artifact without decoding or relabeling stale bytes."""
     if not isinstance(stale_artifact, CacheArtifact):
@@ -93,6 +96,7 @@ def rebuild_revoked_cache(
         new_binding.codec_manifest,
         binding=new_binding,
         authority_signer=authority_signer,
+        authority_registry=authority_registry,
     )
     if rebuilt.binding_sha256 != binding_digest(new_binding):
         _invalid()

@@ -77,11 +77,15 @@ class SourceAuthorityRegistry:
     def _verify(
         self, owner_id: str, dependency_kind: DependencyKind,
         dependency_key: str, signature_hex: str, payload: bytes,
+        claimed_public_key_hex: str | None = None,
     ) -> None:
         authority = next(
             (key for key in self.keys if key.owner_id == owner_id), None)
         if authority is None:
             _invalid("BAMF_C09_SOURCE_AUTHORITY_UNREGISTERED")
+        if (claimed_public_key_hex is not None
+                and claimed_public_key_hex != authority.public_key_hex):
+            _invalid("BAMF_C09_SOURCE_AUTHORITY_KEY_MISMATCH")
         if not any(
             scope.kind is dependency_kind
             and dependency_key.startswith(scope.key_prefix)
@@ -96,14 +100,20 @@ class SourceAuthorityRegistry:
             _invalid("BAMF_C09_SOURCE_SIGNATURE_INVALID")
 
     def verify_detached(self, owner_id: str, dependency: DependencyRef,
-                        signature_hex: str, payload: bytes) -> None:
+                        signature_hex: str, payload: bytes,
+                        claimed_public_key_hex: str | None = None) -> None:
         """Verify another domain's signed payload under the same scoped key registry."""
         if (not _name(owner_id) or not isinstance(dependency, DependencyRef)
                 or not isinstance(signature_hex, str)
                 or not _ED25519_SIGNATURE.fullmatch(signature_hex)
-                or not isinstance(payload, bytes)):
+                or not isinstance(payload, bytes)
+                or (claimed_public_key_hex is not None
+                    and not _SHA256.fullmatch(claimed_public_key_hex))):
             _invalid("BAMF_SOURCE_DETACHED_SIGNATURE_INPUT_INVALID")
-        self._verify(owner_id, dependency.kind, dependency.key, signature_hex, payload)
+        self._verify(
+            owner_id, dependency.kind, dependency.key, signature_hex, payload,
+            claimed_public_key_hex,
+        )
 
     def verify_correction(self, event: CorrectionEvent) -> None:
         if not isinstance(event, CorrectionEvent):

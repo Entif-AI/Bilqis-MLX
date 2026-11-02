@@ -8,8 +8,10 @@ import math
 import struct
 from typing import TYPE_CHECKING
 
-from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
+from .atlas_revalidation import SourceAuthorityRegistry
+from ..semantics.cognitive_dependencies import DependencyKind, DependencyRef
 
 if TYPE_CHECKING:
     from .atlas_cache_codec import Rot3Manifest
@@ -326,9 +328,15 @@ def cache_byte_cost(artifact: CacheArtifact) -> CacheByteCost:
     return CacheByteCost(header_bytes, payload_bytes, total, bits)
 
 
-def require_cache_binding(artifact: CacheArtifact, binding: CacheBinding) -> None:
+def require_cache_binding(
+    artifact: CacheArtifact,
+    binding: CacheBinding,
+    authority_registry: SourceAuthorityRegistry,
+) -> None:
     """Reject stale rights/generation/prefix/mask/scope state before decode."""
     if not isinstance(artifact, CacheArtifact):
+        _invalid()
+    if not isinstance(authority_registry, SourceAuthorityRegistry):
         _invalid()
     validate_binding(binding)
     if (type(artifact.header_bytes) is not bytes
@@ -341,12 +349,10 @@ def require_cache_binding(artifact: CacheArtifact, binding: CacheBinding) -> Non
     if (type(artifact.authority_signature) is not bytes
             or len(artifact.authority_signature) != ED25519_SIGNATURE_BYTES):
         _invalid()
-    try:
-        Ed25519PublicKey.from_public_bytes(
-            bytes.fromhex(binding.artifact_authority_public_key_hex)
-        ).verify(
-            artifact.authority_signature,
-            cache_artifact_signing_bytes(artifact),
-        )
-    except (InvalidSignature, ValueError):
-        _invalid()
+    authority_registry.verify_detached(
+        binding.artifact_authority_id,
+        DependencyRef(DependencyKind.ARTIFACT, f"cache:{binding.key_sha256}"),
+        artifact.authority_signature.hex(),
+        cache_artifact_signing_bytes(artifact),
+        binding.artifact_authority_public_key_hex,
+    )

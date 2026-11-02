@@ -5,11 +5,15 @@ from pathlib import Path
 import unittest
 
 import numpy as np
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import (
+    AUTHORITY_REGISTRY,
     OWNER_ID,
     PUBLIC_KEY_HEX,
+    authority_registry,
     sign_cache_artifact,
 )
 from bilqis_mlx.runtime.atlas_cache_codec import (
@@ -28,11 +32,28 @@ from bilqis_mlx.runtime.atlas_cache_codec import (
 
 
 _RAW_ENCODE = encode_cold_cache
+_RAW_DECODE = decode_cache
+_RAW_INFERENCE = interactive_cache_inference
 
 
 def encode_cold_cache(*args, **kwargs):
     return _RAW_ENCODE(
-        *args, authority_signer=sign_cache_artifact, **kwargs
+        *args,
+        authority_signer=sign_cache_artifact,
+        authority_registry=AUTHORITY_REGISTRY,
+        **kwargs,
+    )
+
+
+def decode_cache(*args, **kwargs):
+    return _RAW_DECODE(
+        *args, authority_registry=AUTHORITY_REGISTRY, **kwargs
+    )
+
+
+def interactive_cache_inference(*args, **kwargs):
+    return _RAW_INFERENCE(
+        *args, authority_registry=AUTHORITY_REGISTRY, **kwargs
     )
 
 
@@ -147,6 +168,37 @@ class CacheBindingAndCostTests(unittest.TestCase):
                 self.manifest,
                 binding=self.binding,
                 authority_signer=forged_signer,
+                authority_registry=AUTHORITY_REGISTRY,
+            )
+
+    def test_caller_selected_authority_key_cannot_replace_host_trust_root(self):
+        attacker = Ed25519PrivateKey.from_private_bytes(bytes([255]) * 32)
+        attacker_public = attacker.public_key().public_bytes(
+            serialization.Encoding.Raw,
+            serialization.PublicFormat.Raw,
+        ).hex()
+        attacker_binding = replace(
+            self.binding,
+            artifact_authority_public_key_hex=attacker_public,
+        )
+        attacker_registry = authority_registry(attacker_public)
+        forged = _RAW_ENCODE(
+            self.values,
+            self.manifest,
+            binding=attacker_binding,
+            authority_signer=attacker.sign,
+            authority_registry=attacker_registry,
+        )
+        _RAW_DECODE(
+            forged,
+            attacker_binding,
+            authority_registry=attacker_registry,
+        )
+        with self.assertRaises(BilqisError):
+            _RAW_DECODE(
+                forged,
+                attacker_binding,
+                authority_registry=AUTHORITY_REGISTRY,
             )
 
     def test_wrong_codec_manifest_recomputes_before_decode(self):
