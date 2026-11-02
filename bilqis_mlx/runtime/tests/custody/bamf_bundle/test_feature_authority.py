@@ -10,11 +10,14 @@ import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.bamf_bundle import (
     AcceptedGenerationFeatureReceipt,
+    load_bamf_generation,
     publish_bamf_generation,
     read_accepted_generation_feature_receipt,
     verify_accepted_generation_feature_receipt,
 )
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import candidate, parent_state, shape_patch
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
+    accepted_state, candidate, parent_state, shape_patch,
+)
 from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, GenerationProvenance, ModelTopologySpecV2
 from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest
 from bilqis_mlx.semantics.atlas.vocabulary import plan_vocabulary_extension
@@ -67,6 +70,25 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
         self.run.mkdir()
         with self.assertRaises(BilqisError):
             read_accepted_generation_feature_receipt(self.run / "bamf-state.json")
+
+    def test_cold_resume_reproduces_receipt_and_successor_stales_parent_receipt(self):
+        initial = parent_state()
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            first_pointer = publish_bamf_generation(self.run, candidate(initial))
+            first = read_accepted_generation_feature_receipt(self.run / "bamf-state.json")
+            load_bamf_generation(self.run / "bamf-state.json")
+            self.assertEqual(
+                read_accepted_generation_feature_receipt(self.run / "bamf-state.json"), first)
+            retained = accepted_state(initial)
+            publish_bamf_generation(
+                self.run, candidate(retained, 1, first_pointer["manifest_sha256"]))
+            with self.assertRaises(BilqisError):
+                verify_accepted_generation_feature_receipt(
+                    self.run / "bamf-state.json", first)
+            second = read_accepted_generation_feature_receipt(self.run / "bamf-state.json")
+        self.assertEqual(second.parent_generation_manifest_sha256,
+                         first.generation_manifest_sha256)
+        self.assertEqual(second.generation, 1)
 
     def test_verified_b13_receipt_unlocks_a02_but_plain_receipt_does_not(self):
         first_snapshot, prior = _allocation_fixture()
