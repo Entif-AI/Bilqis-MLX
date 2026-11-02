@@ -3,6 +3,8 @@
 2026-11-02; Lane C #344; issue #641; structural parent #520. IPR-0220 governs.
 Base: synchronized Lane C `46bfa98d564e1262be43463ec96d3ce1a95aa8c4`, containing
 reviewed unified `67c964a1548cb0075a28a90aa2565d8bdab0fd71`.
+The historical #639 dependency was superseded by accepted #655, merged as
+`aedeff542d61f0bfd46dc517d44b85ef187aaec9`; #637 is closed completed.
 
 ## Existing implementation
 

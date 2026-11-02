@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "67c964a1548cb0075a28a90aa2565d8bdab0fd71",
-  "updated_at": "2026-11-02T19:56:08.292801+00:00",
+  "updated_at": "2026-11-02T21:06:09.129986+00:00",
   "exception": null,
   "items": [
     {
@@ -31,10 +31,10 @@
     },
     {
       "issue": 641,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "67c964a1548cb0075a28a90aa2565d8bdab0fd71",
-      "summary": "Reconcile already-integrated B05 structural split from #652 against #641; preserve runtime behavior and complete bounded proof/review.",
+      "pr": 739,
+      "state": "TURNED_IN",
+      "head_sha": "6b782ad446dd2307d3f297ebb97448a8c293d40a",
+      "summary": "Accepted #652 B05 extraction reconciled in PR #739; 15 production and 27 test/helper definitions preserved, depth13/13 CPU and verifier4/4. Hosted checks and final pinned EGM pending.",
       "resume_trigger": null
     }
   ]
