@@ -233,7 +233,7 @@ def _row_mask(name: str, participation: StepParticipation,
     return None
 
 
-def parameter_update_mask(group_eligible, participation: StepParticipation,
+def _parameter_update_mask(group_eligible, participation: StepParticipation,
                           active_admitted: ActiveAdmittedRows) -> UpdateMask:
     """Final legal mask = candidate group × step participation × active/admitted."""
     from bilqis_mlx.learning.atlas_plasticity import GroupEligibility
@@ -271,6 +271,13 @@ def parameter_update_mask(group_eligible, participation: StepParticipation,
         for row in item.row_indices))
     return UpdateMask(
         tuple(masks), effective_identity, participation.loss_bearing_target)
+
+
+def parameter_update_mask(group_eligible, participation, active_admitted, *, spec, extents):
+    """Validate B01 groups; upstream execution provenance remains required."""
+    from bilqis_mlx.learning.atlas_participation_census import validate_group_census
+    validate_group_census(group_eligible, spec, extents)
+    return _parameter_update_mask(group_eligible, participation, active_admitted)
 
 
 def optimizer_participation_mask(

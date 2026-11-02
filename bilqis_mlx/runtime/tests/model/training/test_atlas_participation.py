@@ -13,8 +13,9 @@ from bilqis_mlx.learning.atlas_plasticity import (
     ParameterMask, RoleReadParticipation, SemanticDenominator,
     StepParticipationInputs, UpdateMask, advance_accepted_row_ages,
     group_eligibility, mask_gradients, optimizer_participation_mask,
-    parameter_update_mask, step_participation,
+    step_participation,
 )
+from bilqis_mlx.learning.atlas_participation import _parameter_update_mask as parameter_update_mask
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, bamf_parameter_census,
 )
