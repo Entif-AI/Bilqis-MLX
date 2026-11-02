@@ -42,6 +42,19 @@ call the leaf fully reviewed. Older copied issue/mirror language saying "one rep
 pass and one targeted re-audit" is superseded by this section. Never include
 credentials, private source text or student state in the review packet. IPR-0220
 remains an opaque authority reference.
+### Finding and remediation lifecycle
+
+The parent merge candidate owns the EGM result. A remediation child does not remain
+open until the parent eventually passes EGM. Once the child's exact defect is
+reproduced, fixed, regression-covered and verified on a durable PR/head, close the
+child issue and mark its PR ready if that PR's own scope is complete. The parent
+must consume the fix before its next merge-readiness EGM.
+
+A later EGM finding reopens that child only when it demonstrates that the same
+recorded defect still exists or the fix was reverted. A distinct failure mechanism
+or newly exposed gap gets a new remediation issue with its own reproduction and
+acceptance. This keeps the open issue/PR set aligned with actionable work rather
+than accumulating historical review findings.
 
 ## Lane ownership and dependency checks
 
