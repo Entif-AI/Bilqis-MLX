@@ -134,17 +134,29 @@ same integration delta.
 If live implementation inventory exceeds the ceiling, BAMF is in **DRAIN** mode.
 Do not open another implementation PR unless it replaces a PR closed in the same
 operation or the flow-control policy carries an explicit owner-authorized exception.
-Work during DRAIN should merge, consume, repair in place, close, supersede or
-directly unlock existing candidates. Branch/commit/issue custody is sufficient for
-blocked work.
+New implementation work may proceed on authorized branches/issues without
+increasing PR inventory.
 
-An open `WAITING` or `BLOCKED` PR requires an `open_pr_exception` with
-reason, authority and expiry. The initial ADR-126 adoption drain is complete: 17
-parked PRs were closed with branch/head/resume custody preserved, leaving #695 and
-#739 as the two implementation candidates. The one-time grandfather list is empty.
-Reopening a drained PR is a new admission event, not restoration of grandfather
-status. The flow-control checker reconciles the ledger against live GitHub state.
-Missing open PRs and stale closed/merged entries are failures.
+**DRAIN means EGM/repair/merge, not bulk closure.** Existing implementation PRs
+open at ADR-126 adoption are grandfathered only for this drain epoch. Keep them open
+while their pinned EGM, remediation, and merge-readiness work is actively pursued.
+A PR awaiting required EGM is still an actionable integration candidate; EGM
+pending is not a reason to close it. Reduce inventory by satisfying merge
+requirements and merging eligible candidates. Do not close PRs solely to lower the
+count or to make the checker report NORMAL.
+
+The initial attempt to close all 17 ledger-declared WAITING PRs was erroneous and
+was reversed. All 17 were reopened at their original exact heads. The 19
+implementation PRs present at adoption remain the grandfathered drain inventory;
+the normal ceiling of three still forbids new admissions. Close a candidate only
+when it is genuinely superseded, duplicate, no longer selected for integration,
+materially blocked with no active EGM/merge path, or explicitly directed by the
+project owner. Preserve branch, exact head, owning issue and resume trigger.
+
+A non-grandfathered open `WAITING` or `BLOCKED` PR requires an
+`open_pr_exception` with reason, authority and expiry. The flow-control checker
+reconciles the ledger against live GitHub state. Missing open PRs and stale
+closed/merged entries are failures.
 
 PR #741 is the temporary control-plane exception for implementing ADR-126 itself.
 It is not BAMF feature inventory, and its exception expires when PR #741 merges or
