@@ -68,6 +68,7 @@ class BoundFamilyProgram:
     schema: str = BOUND_FAMILY_PROGRAM_SCHEMA
     semantic_roots: tuple[str, ...] = ()
     source_implementation_sha256: str | None = None
+    semantic_operator_id: str | None = None
 
     def __post_init__(self) -> None:
         if (not all(isinstance(item, str) and item for item in (
@@ -78,6 +79,9 @@ class BoundFamilyProgram:
                 or self.learning_state != LEARNING_UNVERIFIED
                 or type(self.semantic_roots) is not tuple
                 or any(type(root) is not str or not root for root in self.semantic_roots)
+                or (self.semantic_operator_id is not None
+                    and (type(self.semantic_operator_id) is not str
+                         or not self.semantic_operator_id))
                 or self.schema != BOUND_FAMILY_PROGRAM_SCHEMA):
             _fail("BAMF_BOUND_FAMILY_PROGRAM_INVALID")
 

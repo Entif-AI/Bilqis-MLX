@@ -72,6 +72,10 @@ def verify_source() -> dict:
         "source_digests": (
             cause["source_text_sha256"], occurrence["source_text_sha256"],
         ),
+        "source_rows_sha256": digest({
+            "cause": cause, "occurrence": occurrence,
+            "actor": actor, "time": time,
+        }),
     }
 def projected_graph(parent: dict) -> dict:
     """Append fixture-only symbols without changing any inherited row."""

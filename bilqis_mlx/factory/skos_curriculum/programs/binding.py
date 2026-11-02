@@ -39,6 +39,7 @@ def bind_existing_family_program(
         except (TypeError, ValueError):
             _fail("BAMF_FAMILY_PROGRAM_SOURCE_IMPLEMENTATION_MISMATCH")
     profile = registration.rule_profile
+    semantic_operator_id = None
     if profile is not None:
         identity = getattr(profile, "identity", None)
         source_capabilities = getattr(profile, "source_capability_ids", ())
@@ -51,12 +52,20 @@ def bind_existing_family_program(
                 or (source_adapter_id is not None
                     and source_adapter_id != capability.source_adapter_id)):
             _fail("BAMF_FAMILY_PROGRAM_SEMANTIC_RULE_MISMATCH")
+        coordinates = getattr(profile, "source_coordinates", ())
+        if coordinates:
+            matches = tuple(
+                item for item in coordinates if item[0] == capability.capability_id)
+            if len(matches) != 1 or semantic_roots != (matches[0][1],):
+                _fail("BAMF_FAMILY_PROGRAM_SEMANTIC_COORDINATE_MISMATCH")
+            semantic_operator_id = matches[0][2]
     return BoundFamilyProgram(
         registration.family_id, capability.capability_id,
         source.descriptor.adapter_id, program.generator_id, program.oracle_id,
         registration.constructor_ref, registration.checker_ref,
         semantic_roots=semantic_roots,
-        source_implementation_sha256=source.descriptor.implementation_sha256)
+        source_implementation_sha256=source.descriptor.implementation_sha256,
+        semantic_operator_id=semantic_operator_id)
 
 
 def bind_factory_release_families(
@@ -97,6 +106,13 @@ def bind_factory_release_families(
         if len(matches) > 1:
             _fail("BAMF_FAMILY_PROGRAM_SOURCE_FAMILY_AMBIGUOUS")
         if matches:
+            from .catalog import default_family_program_registry
+            canonical_matches = tuple(
+                item for item in default_family_program_registry().programs
+                if capability.source_adapter_id in item.accepted_source_adapter_ids)
+            if (len(canonical_matches) == 1
+                    and matches[0] != canonical_matches[0]):
+                _fail("BAMF_FAMILY_PROGRAM_CANONICAL_REGISTRATION_MISMATCH")
             source = source_registry.require(program.generator_id, program.oracle_id)
             if source.descriptor != release.source_adapter_map[capability.source_adapter_id]:
                 _fail("BAMF_FAMILY_PROGRAM_RELEASE_PROVIDER_DRIFT")

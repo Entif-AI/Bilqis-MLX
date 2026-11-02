@@ -3,6 +3,7 @@ import copy
 import hashlib
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.live_grade_c import registry_graph
 from bilqis_mlx.source_adapters.world_rules import (
@@ -47,6 +48,20 @@ class QualifiedWorldSourceTests(unittest.TestCase):
         actual = registered_adapter().descriptor.implementation_sha256
         self.assertEqual(actual, expected)
         self.assertNotEqual(actual, oracle_only)
+
+    def test_provider_fingerprint_binds_full_semantic_source_rows(self):
+        from bilqis_mlx.source_adapters import world_rules
+        baseline = registered_adapter().descriptor.implementation_sha256
+        original = world_rules._row
+
+        def drifted(path, key, value):
+            row = dict(original(path, key, value))
+            row["unvalidated_semantic_field"] = "DRIFT"
+            return row
+
+        with patch.object(world_rules, "_row", drifted):
+            changed = registered_adapter().descriptor.implementation_sha256
+        self.assertNotEqual(changed, baseline)
 
     def test_all_four_rules_have_fresh_independently_checked_source_rows(self):
         for capability in CAPABILITIES:

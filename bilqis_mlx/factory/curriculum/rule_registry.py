@@ -32,6 +32,7 @@ class SemanticRuleProfile:
     source_adapter_id: str | None = None
     source_contract_sha256: str | None = None
     source_capability_ids: tuple[str, ...] = ()
+    source_coordinates: tuple[tuple[str, str, str], ...] = ()
 
     def __post_init__(self) -> None:
         if (type(self.identity) is not CapabilityIdentityInput
@@ -42,7 +43,14 @@ class SemanticRuleProfile:
                 or (self.source_capability_ids
                     and self.source_adapter_id is None)
                 or self.source_capability_ids
-                != tuple(sorted(set(self.source_capability_ids)))):
+                != tuple(sorted(set(self.source_capability_ids)))
+                or any(len(item) != 3 or any(type(value) is not str or not value
+                    for value in item) for item in self.source_coordinates)
+                or len({item[0] for item in self.source_coordinates})
+                != len(self.source_coordinates)
+                or (self.source_coordinates and tuple(sorted(
+                    item[0] for item in self.source_coordinates))
+                    != self.source_capability_ids)):
             raise ValueError("FACTORY_SEMANTIC_RULE_PROFILE_INVALID")
 
 
@@ -120,4 +128,10 @@ def world_rule_profile(
         "source.bamf.qualified-world/v1",
         None if source is None else source.descriptor.implementation_sha256,
         tuple(sorted(_WORLD_SOURCE_CAPABILITIES)),
+        tuple(sorted((
+            ("WORLD.ACTOR_OF", "ithkuil:ATOM-5d7116db8e1508", "ROLE_LOOKUP"),
+            ("WORLD.BEFORE", "ithkuil:ATOM-ef7cf17b427af9", "BEFORE"),
+            ("WORLD.IS_OCCURRED", "ithkuil:LEXSENSE-294d00be074a56", "IS_OCCURRED"),
+            ("WORLD.DIRECT_CAUSE", "ithkuil:LEXSENSE-59819df75e3137", "SOURCE_DIRECT_CAUSE"),
+        ))),
     )
