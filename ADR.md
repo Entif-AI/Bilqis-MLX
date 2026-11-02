@@ -2367,6 +2367,7 @@ independent exact-head adversarial EGM and ordinary turn-in gates. #395 remains
 dependency-waiting until #394 is accepted sufficiently for its stated prerequisite.
 
 **Status:** Accepted as the controlling A09.4 projection-authenticity rule.
+
 ## ADR-124 | 2026-11-02 | BAMF lane flow control freezes parked PRs and bounds active implementation WIP
 
 **Scope:** BAMF-0.2 execution across Lanes A, B and C. This decision governs
@@ -2398,8 +2399,8 @@ changes, the operator verifies that trigger, updates the lane state to `ACTIVE`,
 then performs the one synchronization/revalidation pass required by the leaf
 contract.
 
-Every active BAMF implementation leaf and every open BAMF PR MUST be represented in
-the lane's machine-readable state under `docs/tasks/bamf-0.2/flow-control/`.
+Every active lane-owned BAMF implementation leaf and every open BAMF lane PR MUST be
+represented in the lane's machine-readable state under `docs/tasks/bamf-0.2/flow-control/`.
 `scripts/check_bamf_flow_control.py` validates the declared state, required resume
 triggers and normal per-lane WIP ceiling, and is part of the repository quality
 path. A lane may exceed the normal ceiling only with an explicit machine-readable
