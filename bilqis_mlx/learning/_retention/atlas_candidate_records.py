@@ -9,7 +9,7 @@ from bilqis_mlx.learning.atlas_engram_transaction import (
     MotifAllocationSnapshot, prepare_candidate_motif_snapshot,
 )
 from bilqis_mlx.learning.atlas_plasticity import (
-    FOUNDATION_MODE, PlasticityPolicy, advance_candidate_policy, next_update_mode,
+    PlasticityPolicy, advance_candidate_policy, next_update_mode,
 )
 from bilqis_mlx.learning._retention.atlas_candidate_initialization import (
     CandidateInitialization, materialize_planned_motif_rows, same_optimizer,
@@ -56,10 +56,11 @@ class CandidateState:
                 or type(self.allocations) is not MotifAllocationSnapshot
                 or type(self.optimizer_step) is not int or self.optimizer_step < 0
                 or type(self.initialization) is not CandidateInitialization
-                or self.policy.mode != FOUNDATION_MODE
                 or self.schema_version != STATE_SCHEMA):
             _invalid()
         self.optimizer.validate()
+        # Fresh genesis stays FOUNDATION-only in _validate_genesis. Retained
+        # ADAPTIVE state is authorized by B09.3 and must remain consumable here.
         self.policy.validate()
         self.allocations.__post_init__()
         self.initialization.__post_init__()
