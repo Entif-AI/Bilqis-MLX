@@ -32,6 +32,38 @@ self-merge that PR. After accepted work lands on unified, the next issue in ever
 lane repeats the sync-in step so reviewed cross-lane interfaces and instrumentation
 arrive early rather than accumulating as end-of-program conflicts.
 
+## BAMF-0.2 flow control and parked-PR discipline — 2026-11-02
+
+BAMF execution distinguishes **implementation WIP** from review, dependency and
+authority inventory. The normal ceiling is **two `ACTIVE` implementation leaves per
+lane**. `READY`, `WAITING`, `BLOCKED` and `TURNED_IN` do not count as active WIP.
+The ceiling is a flow-control limit, not permission to fill both slots when one
+nearer-to-merge leaf can be driven home first.
+
+Every lane-owned BAMF implementation leaf or open lane PR must be represented in that lane's
+machine-readable state under `docs/tasks/bamf-0.2/flow-control/`. Before substantive
+branch mutation, the operator must run `python3 -B scripts/check_bamf_flow_control.py`
+and make the intended leaf `ACTIVE`. A `WAITING` or `BLOCKED` item must record its
+specific resume trigger. Parked work must **not** be merge-forwarded, rebased, fully
+revalidated, sent for fresh exact-head review, or otherwise refreshed merely because
+unified advanced. First confirm that its recorded resume trigger actually occurred,
+then update the lane state to `ACTIVE`, then sync/revalidate once as required by the
+leaf contract.
+
+Prefer the item with the fewest remaining gates to accepted integration before
+opening or advancing another dependency-ready leaf. A third simultaneous `ACTIVE`
+item is exceptional and must carry a machine-readable lane exception naming the
+reason, authority and expiry condition. Do not silently expand WIP because review or
+external gates are slow. Human review, EGM, dependency acceptance and other parked
+gates remain real obligations; classifying them as non-WIP means **freeze until the
+gate changes**, not ignore them.
+
+The repository checker can validate declared state, WIP counts, required resume
+triggers and explicit exceptions. It cannot observe an unrecorded remote mutation or
+an agent merely reading a branch. Updating lane state before mutation therefore
+remains an operator duty. See `ADR-124` and
+`docs/tasks/bamf-0.2/README.md`.
+
 ## BAMF-0.2 successor outcome and admission lease — 2026-10-28
 
 For the BAMF-0.2 successor, evaluate complete-system capability outcomes across
