@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "92bdff370e9be3d0c64eb4ffe300d2448f53d6a1",
-  "updated_at": "2026-11-02T05:10:00Z",
+  "observed_unified": "67c964a1548cb0075a28a90aa2565d8bdab0fd71",
+  "updated_at": "2026-11-02T17:28:02-05:00",
   "exception": null,
   "items": [
     {
@@ -25,8 +25,8 @@
       "issue": 526,
       "pr": 680,
       "state": "ACTIVE",
-      "head_sha": "41e37cf60a934181548e9b343ddab1ce2b3849a7",
-      "summary": "User-selected #717 receiver identity remediation; #718 source/acceptance remains independently blocked.",
+      "head_sha": "b7c792a1dc08865558ea986e82d2dd9e40deee9d",
+      "summary": "C12.2 consumed #717 receiver custody and #744 C05 owner-run screening; #718 remains blocked on A12 export clearance #745 and the accepted-import publication bridge.",
       "resume_trigger": null
     },
     {
