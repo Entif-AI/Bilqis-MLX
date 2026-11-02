@@ -61,24 +61,34 @@ ADR-124, but open BAMF implementation PRs are capped at **three total**, normall
 current integration candidate per lane. The unified integration PR into `main`
 does not consume an implementation slot.
 
-A completed leaf can remain on a durable branch without an open PR. Before PR
-creation, run `python3 -B scripts/check_bamf_flow_control.py --live`. The live
-gate reconciles GitHub against the lane ledgers and checks PR admission.
+A completed leaf can remain on a durable branch. Before PR creation, run
+`python3 -B scripts/check_bamf_flow_control.py --live`. The live gate reconciles
+GitHub against the lane ledgers and checks PR admission.
 
 When open implementation inventory is above the ceiling, the program is in
-**DRAIN** mode. Existing explicitly grandfathered PRs may move toward merge or
-closure, but new implementation PRs are forbidden unless one replaces a PR closed
-in the same operation or an explicit owner-authorized exception exists. New
-implementation work must not increase PR inventory.
+**DRAIN** mode. No new implementation PRs are admitted. The existing implementation
+PRs present at ADR-126 adoption are grandfathered only for this drain epoch.
 
-The initial adoption drain is complete: 17 parked PRs were closed while their
-branches, exact heads, issues and resume triggers remained durable. The live
-implementation inventory is now #695 and #739, so the one-time grandfather list is
-empty. Reopening a drained PR is a new admission event.
+**Drain through EGM, repair and merge, not summary closure.** A PR awaiting required
+pinned EGM or other merge-readiness evidence remains an actionable integration
+candidate. EGM pending is not a reason to close it. Keep existing candidates open
+while their authorized review/repair/merge path is active. Do not close PRs solely
+to lower the inventory count or make the checker report NORMAL.
 
-Blocked or waiting work normally returns to branch/issue custody. An open
-`WAITING` or `BLOCKED` PR requires an explicit retention exception with reason,
-authority and expiry.
+The first attempt to close all 17 ledger-declared WAITING PRs was erroneous and was
+reversed. All 17 were reopened at their original exact heads. The live
+implementation inventory is again the 19 candidates present at adoption. The
+one-time grandfather list is limited to those existing PRs; reopening or creating
+other PRs does not inherit grandfather status.
+
+Close a candidate only when it is genuinely superseded, duplicate, no longer
+selected for integration, materially blocked with no active EGM/merge path, or
+explicitly directed by the project owner. Preserve branch, exact head, owning
+issue and resume trigger before closure.
+
+A non-grandfathered open `WAITING` or `BLOCKED` PR requires an explicit
+`open_pr_exception` with reason, authority and expiry.
+
 
 ## Artifacts
 
