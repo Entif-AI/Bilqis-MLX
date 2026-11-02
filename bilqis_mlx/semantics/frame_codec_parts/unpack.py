@@ -166,8 +166,9 @@ def role_index(
          if item.concept.semantic_id == concept.semantic_id),
         None,
     )
-    if (authoritative_types is not None
-            and tuple(concept.type_ids) != tuple(authoritative_types)):
+    if authoritative_types is None:
+        _fail("FRAME_CONCEPT_TYPE_AUTHORITY_MISSING")
+    if tuple(concept.type_ids) != tuple(authoritative_types):
         _fail("FRAME_CONCEPT_TYPE_AUTHORITY_MISMATCH")
     entry = snapshot.abi(index)
     if not entry.active:

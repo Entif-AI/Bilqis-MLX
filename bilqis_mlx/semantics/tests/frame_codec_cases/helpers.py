@@ -187,4 +187,43 @@ def _snapshot_with_concept_type(type_ids: tuple[str, ...]) -> FrozenAtlasSnapsho
         concept_lookup=((concept.semantic_id, 0),),
     )
 
+
+def _snapshot_with_authoritative_types(
+    *, inactive: tuple[int, ...] = (),
+) -> FrozenAtlasSnapshot:
+    snapshot = _snapshot(inactive=inactive)
+    concepts = tuple(
+        FrozenAtlasConcept(
+            concept=AtlasConcept(
+                semantic_id=entry.semantic_id,
+                kind="FORMAL",
+                types=("Entity",),
+                labels=(),
+                realizations=(),
+                source_loci=(),
+                relations=(),
+                source_rows=(),
+            ),
+            abi_index=entry.index,
+            abi_bank=entry.bank,
+            abi_row=entry.row,
+            active=entry.active,
+            implementation_status=(
+                "ADMITTED" if entry.active else "IMPLEMENTATION_UNCOVERED"
+            ),
+            teaching_candidate=entry.teaching_candidate,
+            teaching_reason="fixture",
+        )
+        for entry in snapshot.abi_entries
+    )
+    return replace(
+        snapshot,
+        counts=replace(snapshot.counts, semantic_concepts=len(concepts)),
+        concepts=concepts,
+        concept_lookup=tuple(
+            (item.concept.semantic_id, index)
+            for index, item in enumerate(concepts)
+        ),
+    )
+
 __all__ = tuple(name for name in globals() if not name.startswith('__'))

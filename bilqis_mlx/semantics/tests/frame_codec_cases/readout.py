@@ -4,6 +4,28 @@ from bilqis_mlx.semantics.tests.frame_codec_cases.helpers import *  # noqa: F403
 
 
 class ReadoutMixin:
+    def test_role_index_rejects_formal_abi_without_type_authority(self):
+        schema = _schema("A")
+        schema_map = SchemaTagMap.from_schemas(RELEASE, (schema,))
+        packed = pack_frame(
+            _frame(schema, tuple(_concept(index) for index in range(4))),
+            schema=schema,
+            schema_map=schema_map,
+        )
+
+        with self.assertRaises(BilqisError) as caught:
+            role_index(
+                packed,
+                "slot0",
+                0,
+                schema_map=schema_map,
+                snapshot=_snapshot(),
+            )
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "FRAME_CONCEPT_TYPE_AUTHORITY_MISSING",
+        )
+
     def test_role_index_rejects_forged_type_against_snapshot_authority(self):
         schema = FrameSchema(
             "frame:BOOL",
@@ -45,7 +67,7 @@ class ReadoutMixin:
     def test_role_index_is_codec_neutral_for_compact_and_extended(self):
         schema = _schema("A")
         schema_map = SchemaTagMap.from_schemas(RELEASE, (schema,))
-        active_snapshot = _snapshot()
+        active_snapshot = _snapshot_with_authoritative_types()
         compact = _frame(
             schema, tuple(_concept(index) for index in range(4)),
             source_instance_id="compact-active",
@@ -107,7 +129,7 @@ class ReadoutMixin:
                 "slot3",
                 0,
                 schema_map=schema_map,
-                snapshot=_snapshot(inactive=(4,)),
+                snapshot=_snapshot_with_authoritative_types(inactive=(4,)),
             )
         self.assertEqual(caught.exception.context["reason"],
                          "FRAME_READOUT_INDEX_INACTIVE")
