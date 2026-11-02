@@ -8,10 +8,10 @@
     {
       "issue": 475,
       "pr": 695,
-      "state": "ACTIVE",
+      "state": "BLOCKED",
       "head_sha": "577d0d337f7e401859d0a2cfd57bc3e051a82596",
-      "summary": "B12.2 candidate-custody follow-up is the current primary Lane B implementation surface.",
-      "resume_trigger": null
+      "summary": "Remediation #710 requires accepted B09/B11 execution provenance.",
+      "resume_trigger": "Authoritative B09/B11 execution producer is consumable; then repair #710 without raw caller mask authority."
     },
     {
       "issue": 465,
@@ -72,9 +72,9 @@
     {
       "issue": 478,
       "pr": 704,
-      "state": "ACTIVE",
-      "head_sha": "630f39e186d6aac042edf70c63810c9300489732",
-      "summary": "B13.1 post-merge custody remediation is active for review findings #706 and #707 on draft PR #704.",
+      "state": "TURNED_IN",
+      "head_sha": "4aa40c427cda2ac2f0bac85c6e46e4b0724b2c22",
+      "summary": "PR #704 merged into unified 5ac0e9ca; #706/#707 repairs available.",
       "resume_trigger": null
     },
     {
