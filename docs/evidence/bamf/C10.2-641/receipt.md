@@ -25,14 +25,17 @@ file is below 240 lines and each directory has at most 12 direct code files.
 From repository root with the normal MLX dependencies installed:
 
 ```sh
+python3 -B -m unittest discover -s docs/evidence/bamf/C10.2-641 -p 'test_*.py' -v
 PYTHONPATH=. python3 -B docs/evidence/bamf/C10.2-641/verify_preservation.py
 python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/depth
 ```
 
 The first command reads the accepted pre-split owner directly from Git, hashes
 location-independent ASTs and requires all 15 original top-level production
-functions/classes and all 24 original test/helper functions to remain exact.
-Decorators are included. It rejects duplicate/missing/changed definitions and
+functions/classes and all 27 original test/helper functions, including nested functions to remain exact.
+Decorators are included. Lexical names and hash occurrence counts preserve duplicates; two identical extra
+`setUp` copies support the three split test classes. It rejects missing/changed
+definitions and
 checks file/directory targets and the four relocated public class module names.
 `preservation.json` records the observed output. The helper is read-only; it neither
 initializes a student nor updates an optimizer.
@@ -46,12 +49,21 @@ The existing B05.4 fail-closed admission disposition remains intact.
 
 ## Scope and remaining owners
 
-This is structural #641 acceptance, not #355/#520/#586 completion. It grants no
+This submits the existing extraction for structural #641 acceptance; #355/#520/#586 remain open. It grants no
 trusted B11 summary-producer authority, source admission, B08 hit, checkpoint or
 retained learning. No actual student, own AdamW, teacher, champion or human-run
 was changed. No fresh semantic rule or neural experiment was introduced.
 
-Final pinned EGM and exact-head hosted checks are recorded in the PR/issue
-receipt before turn-in. A review launch is not a pass. Existing related incidents
+Final pinned EGM and hosted checks remain pending at this local checkpoint;
+the PR/issue receipt records their actual results before turn-in. Existing related incidents
 PM-2026-11-02-003 (committed-scope proof) and PM-2026-11-02-007 (live public visibility)
 remain applicable; public receipts use opaque IPR-0220.
+
+## Corrected evidence failure
+
+PM-2026-11-02-008 records the failed bare-name verifier at `068eb6bf`, its empty
+JSON and premature 24-definition claim. Those artifacts are superseded by this
+lexically scoped, multiplicity-preserving receipt. Four adversarial tests cover
+nested-name collisions, removed duplicates, decorator loss and repeated setup.
+Dependent commands now use successful exit status before generating or publishing
+evidence. No runtime source changed during the correction.

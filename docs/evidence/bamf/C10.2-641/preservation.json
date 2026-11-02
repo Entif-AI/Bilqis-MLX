@@ -1,0 +1,157 @@
+{
+  "baseline": "cec6a8ee1659854c292dc59566d4d14a53b75ae5^",
+  "reports": {
+    "production": {
+      "additional_definitions": {},
+      "file_lines": {
+        "bilqis_mlx/runtime/_depth/__init__.py": 3,
+        "bilqis_mlx/runtime/_depth/block_attnres.py": 205,
+        "bilqis_mlx/runtime/_depth/depth_contracts.py": 196
+      },
+      "preserved_definitions": {
+        "DepthFrameFeatures": {
+          "44c5c03eeeca0e89b8572630be45b9bad8bd1148b5887f0a731e919885b28d60": 1
+        },
+        "DepthParameterView": {
+          "f701a4f656da585dd822eaab9486e56e2652533fa8d14c9fa15feeb9d356608d": 1
+        },
+        "DepthSelectionDiagnostics": {
+          "b287046f18ffc4fefce30332e931b4c1cff626945d52fa8e642d9c22bbc5b526": 1
+        },
+        "DepthSummary": {
+          "39b62d463d43acc4293d5198bd9ffd5c38d4b8912a4a5fda1343f089034b3eb9": 1
+        },
+        "_DepthFeatureValues": {
+          "a22e62505975692cb4c55da902111eabc5cc3c3d551a6286f521f54031e04d1d": 1
+        },
+        "_NumericalGroupBoundary": {
+          "abadae45ae0f0e0a42069aba2026b94d598822437e8378cbe18543ce8f4cafa8": 1
+        },
+        "_depth_components": {
+          "e09cb10a38936c0bf97fc02c40a7244db59c0848bfbdb9f1fb3ff20e7af81476": 1
+        },
+        "_depth_names": {
+          "0ab46c8f8b148478976f98adf44f3335f096683ba0727c2b8b3d918123abb432": 1
+        },
+        "_group_boundary_numerical": {
+          "8eff62a5c5ab10fe9d311d74e45217e958e97e5e3646527f6ec27a909e310edd": 1
+        },
+        "_invalid": {
+          "95cc814d118e7658d5a03a4997d6ab5e35f593c3feb542dfdf392e67b8fca859": 1
+        },
+        "_rms_norm": {
+          "4e2b7e45d9482ad6f4726c53986d07d64971e6dca126f35bb978975336198274": 1
+        },
+        "_validate": {
+          "bff65262c318104a9ce30d957028de8c9fd15aa3ad101a0ffc3cef979b683552": 1
+        },
+        "depth_parameter_view": {
+          "7a8ca3f456cb6a9801fa0885d72c8c5458cde20bad9d44ef965cadba4ebf7631": 1
+        },
+        "depth_select": {
+          "e6cfb157ef6715ce21a4cfadd81b0d87a73241762a177e4f8fb244f84e4d6366": 1
+        },
+        "depth_select_with_diagnostics": {
+          "165ded314513785b20331b03b9c0ee744c48c2b1a1a634f86cda54ae309a21e1": 1
+        }
+      }
+    },
+    "tests": {
+      "additional_definitions": {
+        "DepthSelectionTests.setUp": {
+          "8ed2588e3d02d24e05e7cd8a752c20388d8d07b06298730c98956d6d7a1eb18a": 2
+        }
+      },
+      "file_lines": {
+        "bilqis_mlx/runtime/tests/depth/__init__.py": 1,
+        "bilqis_mlx/runtime/tests/depth/depth_helpers.py": 125,
+        "bilqis_mlx/runtime/tests/depth/test_block_attnres.py": 119,
+        "bilqis_mlx/runtime/tests/depth/test_depth_contracts.py": 154,
+        "bilqis_mlx/runtime/tests/depth/test_depth_numerical.py": 194
+      },
+      "preserved_definitions": {
+        "DepthSelectionTests.setUp": {
+          "8ed2588e3d02d24e05e7cd8a752c20388d8d07b06298730c98956d6d7a1eb18a": 1
+        },
+        "DepthSelectionTests.test_completed_group_order_and_no_future_source_admission": {
+          "1c5a82c133dca4bfa1d947c241dbf6a60fa9358a0d7ac5f3fee81dd68c83de41": 1
+        },
+        "DepthSelectionTests.test_depth_view_borrows_exact_shared_and_per_boundary_b01_tensors": {
+          "78eb4eae4f29b8a6b22a715bc3b8e09a1f04135cf8fc18b6eca7045fd6a27319": 1
+        },
+        "DepthSelectionTests.test_depth_view_rejects_wrong_full_ledger_or_boundary": {
+          "67609d41bd31290922b1d230eab7f07aa12004b11a84e96944a578d55e4ea7f2": 1
+        },
+        "DepthSelectionTests.test_group_boundary_gradient_and_invalid_order_fail_closed": {
+          "aa6d58b3de59ff4bc61444d33570634aa7521eee09f81ca9bbd129ffde025892": 1
+        },
+        "DepthSelectionTests.test_group_boundary_gradient_and_invalid_order_fail_closed.objective": {
+          "e16e24587e6662b1688e9685decb50f68c0ef53d71e0ea3134a234a24b5b4cbd": 1
+        },
+        "DepthSelectionTests.test_invalid_tensor_shapes_dtype_source_order_and_release_fail_closed": {
+          "9242e3d9a7efc236577ccc851c69d1b9ba935fb6bf6e47418611cdae9aec72e6": 1
+        },
+        "DepthSelectionTests.test_literal_fp32_oracle_and_normalized_source_weights": {
+          "ec86defa827c68b685dd63201c5ed6a052f4beda09244addc9008ff03b4f99af": 1
+        },
+        "DepthSelectionTests.test_nonfinite_source_or_parameter_fails_before_residual_output": {
+          "413c2cc21bb4ab7169ab23d7cce4d453f61171938cac690a625d55292ac3f2e2": 1
+        },
+        "DepthSelectionTests.test_nonzero_gradients_reach_all_completed_source_states": {
+          "63e07f37b0e0db607008a23161eb643d6a3be30a86faa57d9bb064fc4a81978b": 1
+        },
+        "DepthSelectionTests.test_nonzero_gradients_reach_all_completed_source_states.objective": {
+          "003407eb86ab14793ec2d3f6126c7b612fc086718a950250ed1311dee5eff057": 1
+        },
+        "DepthSelectionTests.test_public_depth_features_are_recomputed_from_actual_released_source_members": {
+          "20aeb97e144a75f32077789012a4b84bc05d2dc33fb51d00ecab4d3ac1dad118": 1
+        },
+        "DepthSelectionTests.test_public_depth_features_are_recomputed_from_actual_released_source_members.objective": {
+          "00457b178ed6b8c8d32f586f8bca6b7821ca65734dbb3c12f7a6fa904819778e": 1
+        },
+        "DepthSelectionTests.test_public_diagnostics_are_source_qualified_and_normalized": {
+          "4448fc44c6efb83de80164cda2dfb5bc2a11ab9556ff9abcf737084392b41999": 1
+        },
+        "DepthSelectionTests.test_public_selector_rejects_anonymous_or_cross_boundary_weights": {
+          "6dc98831000d5a78422f188635d7b54de6943ec1ae0fd09bce13dc36bb0b5f13": 1
+        },
+        "DepthSelectionTests.test_real_gradients_reach_shared_selector_and_boundary_gate": {
+          "cea50107423142cdc1600692bf7f1cac382b5fba08d8444f208280770b6415d1": 1
+        },
+        "DepthSelectionTests.test_real_gradients_reach_shared_selector_and_boundary_gate.objective": {
+          "51a2f196e03e59574d3b5d2e7a02b6b11bd42d458819fd2615e3a8d645e14eab": 1
+        },
+        "DepthSelectionTests.test_three_group_boundaries_capture_after_motif_and_adapt_after_selection": {
+          "1ea2289386410cfd18a9220897ec1e75353345338331721e32a37beff0f6e736": 1
+        },
+        "DepthSelectionTests.test_three_group_boundaries_capture_after_motif_and_adapt_after_selection.second_read": {
+          "c6a4f913bf6f26f181f1c7c15768ea6de9f24159381a1f1b67f8ff270bed9586": 1
+        },
+        "_array": {
+          "e858ba3ea2376ad666e1894e9f050f99e26e9f29f685f052f01b4377eaa4e642": 1
+        },
+        "_features": {
+          "42e21027886dd08a063853db5ab093198973d2451251c918b5e0d36a9165dc00": 1
+        },
+        "_hidden": {
+          "f8f908605ef6e85ec9edbec86527c1569a83feb0b71968dba15118a2a2c397be": 1
+        },
+        "_numpy_oracle": {
+          "17295ec54e060c046f7fb65666978ced2bf04eafb8e39a4e4424904adb4cc6d6": 1
+        },
+        "_numpy_oracle.rms": {
+          "74abf8ea4492d99669e6c6e2e6e30b58d7e722e4dbc646849f98506d79c3f16f": 1
+        },
+        "_params": {
+          "aa3e6ee19a891483e9a773b935b88284ea98214518b6596f6e60d53ecda66775": 1
+        },
+        "_released_features": {
+          "737a75edfa1bd96e5f5e1631d8d4f891d23e6ac619cc91a296b67f080d51a963": 1
+        },
+        "_summaries": {
+          "d44d127938347a226763583caf9a32d1822440b059f59821558f3e7291b37d9e": 1
+        }
+      }
+    }
+  }
+}

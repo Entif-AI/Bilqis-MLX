@@ -1,5 +1,6 @@
 """Reproduce #641 source/test preservation against the accepted pre-split owner."""
 import ast
+from collections import Counter, defaultdict
 import hashlib
 import json
 from pathlib import Path
@@ -16,17 +17,29 @@ def original(path):
 
 
 def definitions(trees, *, recursive):
-    result = {}
+    result = defaultdict(Counter)
+
+    def visit(node, scope=()):
+        named = isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+        identity = scope + (node.name,) if named else scope
+        if named and (not recursive or not isinstance(node, ast.ClassDef)):
+            digest = hashlib.sha256(
+                ast.dump(node, include_attributes=False).encode()).hexdigest()
+            result['.'.join(identity)][digest] += 1
+        if recursive:
+            for child in ast.iter_child_nodes(node):
+                visit(child, identity)
+
     for tree in trees:
-        nodes = ast.walk(tree) if recursive else tree.body
-        for node in nodes:
-            kinds = (ast.FunctionDef,) if recursive else (ast.FunctionDef, ast.ClassDef)
-            if isinstance(node, kinds):
-                if node.name in result:
-                    raise ValueError('duplicate preserved definition: ' + node.name)
-                result[node.name] = hashlib.sha256(
-                    ast.dump(node, include_attributes=False).encode()).hexdigest()
-    return result
+        for node in tree.body:
+            visit(node)
+    return dict(result)
+
+
+def require_preserved(before, after):
+    for name, digests in before.items():
+        if digests - after.get(name, Counter()):
+            raise ValueError('definition/decorator drift: ' + name)
 
 
 def verify():
@@ -39,12 +52,15 @@ def verify():
         before = definitions([original(old_path)], recursive=recursive)
         paths = sorted(directory.glob('*.py'))
         after = definitions([ast.parse(path.read_text()) for path in paths], recursive=recursive)
-        if any(after.get(name) != digest for name, digest in before.items()):
-            raise ValueError(label + ': definition/decorator drift')
+        require_preserved(before, after)
         sizes = {str(path): len(path.read_text().splitlines()) for path in paths}
         if any(size >= 240 for size in sizes.values()) or len(paths) > 12:
             raise ValueError(label + ': structural target violated')
-        reports[label] = {'preserved_definitions': before, 'file_lines': sizes}
+        additions = {name: dict(counts - before.get(name, Counter()))
+                     for name, counts in after.items()
+                     if counts - before.get(name, Counter())}
+        reports[label] = {'preserved_definitions': before, 'file_lines': sizes,
+                          'additional_definitions': additions}
     from bilqis_mlx.runtime import block_attnres
     for name in ('DepthParameterView', '_DepthFeatureValues', 'DepthFrameFeatures', 'DepthSummary'):
         if getattr(block_attnres, name).__module__ != 'bilqis_mlx.runtime.block_attnres':
