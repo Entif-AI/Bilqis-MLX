@@ -10,7 +10,7 @@ the durable student.
 
 Consumed reviewed unified and Lane B baseline:
 
-`77a05ef00337e8a3773d070adad4c8874c9c1034`
+`3088ee02d085f2a88e53b7c78c8d9637916663fe`
 
 The final feature SHA is recorded after commit and remote verification; this
 document does not use a working-tree state as a checkpoint identity.
@@ -62,7 +62,7 @@ The first focused B06.3 test run failed to import `refine_selected` from
 `bilqis_mlx.runtime.atlas_refinement`, proving the production assembly boundary
 did not exist before this change.
 
-Current exact-tree tests:
+Current exact-tree tests after refreshing onto the reviewed unified trunk:
 
 ```sh
 PYTHONPATH=/tmp/bamf-b14-testdeps:. python3 -B scripts/run_tests.py \
