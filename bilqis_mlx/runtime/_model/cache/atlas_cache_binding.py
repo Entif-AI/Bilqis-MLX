@@ -8,6 +8,9 @@ import math
 import struct
 from typing import TYPE_CHECKING
 
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
 if TYPE_CHECKING:
     from .atlas_cache_codec import Rot3Manifest
 
@@ -15,6 +18,7 @@ if TYPE_CHECKING:
 DIGEST_HEX_CHARS = 64
 BINDING_DIGEST_BYTES = 32
 PAYLOAD_BINDING_TAG_BYTES = 16
+ED25519_SIGNATURE_BYTES = 64
 RECORD_HEADER_LIMIT = 64
 RECORD_HEADER_MAGIC = b"B3C1"
 MODE_FP32_BYTE = b"F"
@@ -45,6 +49,8 @@ class CacheBinding:
     key_sha256: str
     inference_state_sha256: str
     offset: int
+    artifact_authority_id: str
+    artifact_authority_public_key_hex: str
 
 
 @dataclass(frozen=True)
@@ -62,6 +68,7 @@ class CacheArtifact:
     fp32_payload: bytes
     payload_binding_tag: bytes | None = None
     header_bytes: bytes | None = None
+    authority_signature: bytes | None = None
 
     def __post_init__(self) -> None:
         if type(self.payload_binding_tag) is not bytes or (
@@ -70,6 +77,11 @@ class CacheArtifact:
             _invalid()
         if self.header_bytes is None:
             object.__setattr__(self, "header_bytes", record_header_bytes(self))
+        if self.authority_signature is not None and (
+            type(self.authority_signature) is not bytes
+            or len(self.authority_signature) != ED25519_SIGNATURE_BYTES
+        ):
+            _invalid()
 
 
 @dataclass(frozen=True)
@@ -125,6 +137,17 @@ def validate_binding(binding: CacheBinding, codec_manifest=None) -> None:
         _invalid()
     if type(binding.offset) is not int or not 0 <= binding.offset <= MAX_U32:
         _invalid()
+    if (not isinstance(binding.artifact_authority_id, str)
+            or not binding.artifact_authority_id):
+        _invalid()
+    if not _sha256_hex(binding.artifact_authority_public_key_hex):
+        _invalid()
+    try:
+        Ed25519PublicKey.from_public_bytes(
+            bytes.fromhex(binding.artifact_authority_public_key_hex)
+        )
+    except ValueError:
+        _invalid()
 
 
 def binding_digest(binding: CacheBinding) -> bytes:
@@ -142,6 +165,8 @@ def binding_digest(binding: CacheBinding) -> bytes:
             "rotation_seed": manifest.rotation_seed,
         },
         "generation_sha256": binding.generation_sha256,
+        "artifact_authority_id": binding.artifact_authority_id,
+        "artifact_authority_public_key_hex": binding.artifact_authority_public_key_hex,
         "inference_state_sha256": binding.inference_state_sha256,
         "key_sha256": binding.key_sha256,
         "lineage_sha256": binding.lineage_sha256,
@@ -219,6 +244,28 @@ def payload_binding_tag(artifact: CacheArtifact) -> bytes:
         artifact.fp32_payload,
     )
 
+def cache_artifact_signing_bytes(artifact: CacheArtifact) -> bytes:
+    """Canonical detached-signature subject for one exact derived record."""
+    if not isinstance(artifact, CacheArtifact):
+        _invalid()
+    if (type(artifact.header_bytes) is not bytes
+            or artifact.header_bytes != record_header_bytes(artifact)
+            or artifact.payload_binding_tag != payload_binding_tag(artifact)):
+        _invalid()
+    digest = hashlib.sha256()
+    digest.update(b"bamf-cache-artifact-authority-v1\0")
+    digest.update(artifact.header_bytes)
+    for payload in (
+        artifact.direction_codes,
+        artifact.relative_norms,
+        artifact.block_max_norms_fp32,
+        artifact.fp32_payload,
+    ):
+        digest.update(struct.pack("<Q", len(payload)))
+        digest.update(payload)
+    return digest.digest()
+
+
 def record_header_bytes(artifact: CacheArtifact) -> bytes:
     from .atlas_cache_codec import HEAD_WIDTH
     if not isinstance(artifact, CacheArtifact):
@@ -290,4 +337,16 @@ def require_cache_binding(artifact: CacheArtifact, binding: CacheBinding) -> Non
     if artifact.binding_sha256 != binding_digest(binding):
         _invalid()
     if artifact.payload_binding_tag != payload_binding_tag(artifact):
+        _invalid()
+    if (type(artifact.authority_signature) is not bytes
+            or len(artifact.authority_signature) != ED25519_SIGNATURE_BYTES):
+        _invalid()
+    try:
+        Ed25519PublicKey.from_public_bytes(
+            bytes.fromhex(binding.artifact_authority_public_key_hex)
+        ).verify(
+            artifact.authority_signature,
+            cache_artifact_signing_bytes(artifact),
+        )
+    except (InvalidSignature, ValueError):
         _invalid()

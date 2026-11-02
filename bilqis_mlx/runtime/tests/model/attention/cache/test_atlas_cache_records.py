@@ -6,6 +6,11 @@ import unittest
 import numpy as np
 
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import (
+    OWNER_ID,
+    PUBLIC_KEY_HEX,
+    sign_cache_artifact,
+)
 from bilqis_mlx.runtime.atlas_cache_codec import (
     BLOCK_VECTORS,
     CACHE_MODE_FP32,
@@ -20,6 +25,15 @@ from bilqis_mlx.runtime.atlas_cache_codec import (
     quantize_directions,
     unpack_3bit,
 )
+
+
+_RAW_ENCODE = encode_cold_cache
+
+
+def encode_cold_cache(*args, **kwargs):
+    return _RAW_ENCODE(
+        *args, authority_signer=sign_cache_artifact, **kwargs
+    )
 
 
 class Rot3NormAndFallbackTests(unittest.TestCase):
@@ -42,6 +56,8 @@ class Rot3NormAndFallbackTests(unittest.TestCase):
             key_sha256="d" * 64,
             inference_state_sha256="e" * 64,
             offset=17,
+            artifact_authority_id=OWNER_ID,
+            artifact_authority_public_key_hex=PUBLIC_KEY_HEX,
         )
 
     def test_direct_records_import_is_order_independent(self):

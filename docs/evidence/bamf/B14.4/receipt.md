@@ -17,21 +17,27 @@ current unified frame-codec and BAMF architecture updates.
 rights-purpose, policy epoch, context-eligibility and optimizer-independent
 inference-state identity in addition to generation, lineage, topology, causal
 prefix, masks, scope, key, offset and codec identity. Every field participates in
-the canonical binding digest. Each stored artifact also carries a 128-bit
-payload/authority integrity tag over that binding digest, record geometry and
-the exact stored payload bytes. The tag is part of the literal record header,
-which remains within the parent's 64-byte metadata ceiling at 61 bytes. A
-256-vector ROT3 record measures 3.454427 bits/channel, below the 3.5 acceptance
-limit.
+the canonical binding digest. Each stored artifact carries two distinct integrity surfaces. A 128-bit
+payload-integrity tag binds the binding digest, record geometry and exact stored
+payload bytes inside the literal codec header; that header remains within the
+parent's 64-byte metadata ceiling at 61 bytes. Separately, a detached Ed25519
+authority signature binds the complete header and payload bytes to the
+authority public key and authority identity already pinned into CacheBinding.
+The detached signature is governance/issuance evidence, not codec payload
+metadata, so it is deliberately excluded from the <=64-byte codec-header and
+bits/channel measurements. A 256-vector ROT3 record measures 3.454427
+bits/channel, below the 3.5 acceptance limit.
 
 `decode_cache()` calls `_validate_artifact()`, which calls
 `require_cache_binding()` before the codec or any payload decode is entered. A
 revoked/superseded rights epoch, source/semantic release, prefix, topology,
 generation or inference-state mismatch therefore rejects before stale lossy bytes
 can affect attention. Relabelling only the binding/header while preserving stale
-compressed payload is rejected because the payload/authority tag no longer
-matches; callers cannot request automatic re-minting of that tag through the
-artifact constructor.
+compressed payload is rejected because the payload-integrity tag no longer
+matches. More importantly, even a caller that recomputes that public integrity
+tag for the new binding cannot mint the detached authority signature for the
+new rights identity. Unsigned or falsely signed artifacts fail before payload
+decode.
 
 `rebuild_revoked_cache()` accepts an immutable eligibility receipt for the new
 binding and a callable canonical FP32 source. It never decodes or relabels the
@@ -51,7 +57,10 @@ The focused tests prove:
 - non-FP32 or non-finite canonical source input rejects;
 - stale-record relabeling under the same binding rejects;
 - a stale compressed payload cannot be relabelled under a new rights binding by
-  replacing its binding/header metadata, and an absent tag fails construction;
+  replacing its binding/header metadata;
+- recomputing the public payload-integrity tag over those same stale bytes still
+  fails because the old detached Ed25519 signature does not verify for the new
+  binding, and a fabricated zero signature also rejects;
 - two different stale lossy payloads produce the same rebuilt artifact when the
   qualified canonical FP32 source and new binding are the same;
 - a poisoned codec entrypoint is never reached when stale source-rights identity
@@ -61,9 +70,10 @@ The focused tests prove:
 
 ## Verification
 
-Final focused cache suite: 42/42 pass after the payload/authority relabel
-adversary was added. The widened affected attention/backbone/runtime-identity
-selection passes on the same source state with the cache regression included.
+Final focused cache suite: 42/42 pass after the public-tag recomputation and
+detached-signature relabel adversaries were added. The widened affected
+attention/backbone/runtime-identity selection passes 69/69 on the same source
+state with the cache regression included.
 Development-structure and governance checks report zero violations. Factory
 architecture and documentation checks pass. Base-aware error control reports
 `new debt 0`. `git diff --check` is clean.

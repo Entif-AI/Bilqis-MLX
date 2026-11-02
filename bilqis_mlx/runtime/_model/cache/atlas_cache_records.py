@@ -1,7 +1,8 @@
 """Norm blocks and small-record fallback for the BAMF rot3/v1 cache."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from dataclasses import replace
+from typing import TYPE_CHECKING, Callable
 
 import numpy as np
 
@@ -9,7 +10,7 @@ if TYPE_CHECKING:
     from .atlas_cache_codec import Rot3Manifest
 
 from .atlas_cache_binding import (
-    CacheArtifact, CacheBinding, binding_digest, payload_binding_tag_fields, require_cache_binding, validate_binding,
+    CacheArtifact, CacheBinding, binding_digest, cache_artifact_signing_bytes, payload_binding_tag_fields, require_cache_binding, validate_binding,
     cache_byte_cost, MAX_EFFECTIVE_BITS, CACHE_MODE_FP32, CACHE_MODE_ROT3,
 )
 
@@ -48,19 +49,38 @@ def _validate_manifest(manifest: Rot3Manifest) -> None:
     manifest.validate()
 
 
-def _fp32_artifact(values, bound) -> CacheArtifact:
+def _sign_artifact(
+    artifact: CacheArtifact,
+    signer: Callable[[bytes], bytes],
+    binding: CacheBinding,
+) -> CacheArtifact:
+    if not callable(signer):
+        _invalid()
+    signature = signer(cache_artifact_signing_bytes(artifact))
+    if type(signature) is not bytes or len(signature) != 64:
+        _invalid()
+    signed = replace(artifact, authority_signature=signature)
+    require_cache_binding(signed, binding)
+    return signed
+
+
+def _fp32_artifact(values, bound, signer, binding) -> CacheArtifact:
     count, width = values.shape
     payload = np.asarray(values, dtype="<f4", order="C").tobytes(order="C")
     tag = payload_binding_tag_fields(
         CACHE_MODE_FP32, count, count, width, bound, b"", b"", b"", payload,
     )
-    return CacheArtifact(
+    return _sign_artifact(CacheArtifact(
         CACHE_MODE_FP32, count, count, width, bound, b"", b"", b"", payload, tag,
-    )
+    ), signer, binding)
 
 
 def encode_cold_cache(
-    cache, codec_manifest: Rot3Manifest, *, binding: CacheBinding,
+    cache,
+    codec_manifest: Rot3Manifest,
+    *,
+    binding: CacheBinding,
+    authority_signer: Callable[[bytes], bytes],
 ) -> CacheArtifact:
     """Encode one [vectors,24] cold record under the B14.2 size policy."""
     _validate_manifest(codec_manifest)
@@ -70,7 +90,7 @@ def encode_cold_cache(
     values = _vectors(cache, codec.HEAD_WIDTH)
     true_vectors = int(values.shape[0])
     if true_vectors < MIN_COMPRESSED_VECTORS:
-        return _fp32_artifact(values, bound)
+        return _fp32_artifact(values, bound, authority_signer, binding)
 
     padded_vectors = (
         (true_vectors + BLOCK_VECTORS - 1) // BLOCK_VECTORS * BLOCK_VECTORS
@@ -122,8 +142,8 @@ def encode_cold_cache(
         tag,
     )
     if cache_byte_cost(artifact).effective_bits_per_channel > MAX_EFFECTIVE_BITS:
-        return _fp32_artifact(values, bound)
-    return artifact
+        return _fp32_artifact(values, bound, authority_signer, binding)
+    return _sign_artifact(artifact, authority_signer, binding)
 
 
 def _validate_artifact(artifact: CacheArtifact, binding: CacheBinding) -> None:

@@ -71,6 +71,7 @@ def rebuild_revoked_cache(
     eligibility_receipt: CacheEligibilityReceipt,
     canonical_fp32_source: Callable[[], np.ndarray],
     persist: Callable[[CacheArtifact], None],
+    authority_signer: Callable[[bytes], bytes],
 ) -> CacheRebuildResult:
     """Build a new derived artifact without decoding or relabeling stale bytes."""
     if not isinstance(stale_artifact, CacheArtifact):
@@ -88,7 +89,10 @@ def rebuild_revoked_cache(
 
     from .atlas_cache_records import encode_cold_cache
     rebuilt = encode_cold_cache(
-        values, new_binding.codec_manifest, binding=new_binding,
+        values,
+        new_binding.codec_manifest,
+        binding=new_binding,
+        authority_signer=authority_signer,
     )
     if rebuilt.binding_sha256 != binding_digest(new_binding):
         _invalid()

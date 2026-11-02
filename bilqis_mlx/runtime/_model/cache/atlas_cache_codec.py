@@ -223,7 +223,8 @@ from .atlas_cache_records import (
 )
 
 from .atlas_cache_binding import (
-    CacheByteCost, binding_digest, cache_byte_cost, record_header_bytes,
+    CacheByteCost, binding_digest, cache_artifact_signing_bytes, cache_byte_cost,
+    payload_binding_tag_fields, record_header_bytes,
     require_cache_binding,
 )
 from .atlas_cache_policy import (

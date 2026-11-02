@@ -6,6 +6,11 @@ from unittest.mock import patch
 import numpy as np
 
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import (
+    OWNER_ID,
+    PUBLIC_KEY_HEX,
+    sign_cache_artifact,
+)
 from bilqis_mlx.runtime.atlas_cache_codec import (
     HEAD_WIDTH,
     CacheBinding,
@@ -14,7 +19,26 @@ from bilqis_mlx.runtime.atlas_cache_codec import (
     decode_cache,
     encode_cold_cache,
     rebuild_revoked_cache,
+    payload_binding_tag_fields,
 )
+
+
+_RAW_ENCODE = encode_cold_cache
+
+
+def encode_cold_cache(*args, **kwargs):
+    return _RAW_ENCODE(
+        *args, authority_signer=sign_cache_artifact, **kwargs
+    )
+
+
+_RAW_REBUILD = rebuild_revoked_cache
+
+
+def rebuild_revoked_cache(*args, **kwargs):
+    return _RAW_REBUILD(
+        *args, authority_signer=sign_cache_artifact, **kwargs
+    )
 
 
 def _binding() -> CacheBinding:
@@ -35,6 +59,8 @@ def _binding() -> CacheBinding:
         key_sha256="d" * 64,
         inference_state_sha256="e" * 64,
         offset=17,
+        artifact_authority_id=OWNER_ID,
+        artifact_authority_public_key_hex=PUBLIC_KEY_HEX,
     )
 
 
@@ -203,9 +229,10 @@ class RevokedCacheRebuildTests(unittest.TestCase):
         )
         from bilqis_mlx.runtime.atlas_cache_codec import binding_digest
 
+        new_digest = binding_digest(new_binding)
         relabelled = replace(
             self.stale,
-            binding_sha256=binding_digest(new_binding),
+            binding_sha256=new_digest,
             header_bytes=None,
         )
         self.assertEqual(relabelled.direction_codes, self.stale.direction_codes)
@@ -216,12 +243,36 @@ class RevokedCacheRebuildTests(unittest.TestCase):
         )
         with self.assertRaises(BilqisError):
             decode_cache(relabelled, new_binding)
+
+        # The integrity tag is intentionally public/recomputable. Even an
+        # attacker who updates it over unchanged stale bytes cannot mint the
+        # detached authority signature bound to the new rights identity.
+        forged_tag = payload_binding_tag_fields(
+            self.stale.mode,
+            self.stale.true_vectors,
+            self.stale.padded_vectors,
+            self.stale.head_width,
+            new_digest,
+            self.stale.direction_codes,
+            self.stale.relative_norms,
+            self.stale.block_max_norms_fp32,
+            self.stale.fp32_payload,
+        )
+        relabelled_with_fresh_tag = replace(
+            self.stale,
+            binding_sha256=new_digest,
+            payload_binding_tag=forged_tag,
+            header_bytes=None,
+        )
         with self.assertRaises(BilqisError):
-            replace(
-                self.stale,
-                binding_sha256=binding_digest(new_binding),
-                payload_binding_tag=None,
-                header_bytes=None,
+            decode_cache(relabelled_with_fresh_tag, new_binding)
+        with self.assertRaises(BilqisError):
+            decode_cache(
+                replace(
+                    relabelled_with_fresh_tag,
+                    authority_signature=bytes(64),
+                ),
+                new_binding,
             )
 
     def test_stale_record_cannot_be_relabelled_as_same_binding(self):
