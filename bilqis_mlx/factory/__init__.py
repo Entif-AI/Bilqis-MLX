@@ -9,7 +9,12 @@ from pathlib import Path as _Path
 _PACKAGE_ROOT = _Path(__file__).resolve().parent
 __path__.extend(
     str(_PACKAGE_ROOT / compartment)
-    for compartment in ("curriculum", "lifecycle", "sources")
+    for compartment in (
+        "curriculum",
+        "curriculum/atlas_frontier",
+        "lifecycle",
+        "sources",
+    )
 )
 del _PACKAGE_ROOT, _Path
 

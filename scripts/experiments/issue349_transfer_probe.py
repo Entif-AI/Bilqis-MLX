@@ -6,6 +6,7 @@ import hashlib
 import inspect
 import json
 from pathlib import Path
+from bilqis_mlx.paths import source_path
 from bilqis_mlx.state_dag import read_current
 
 from bilqis_mlx.factory.generation import draw_executable_release_rows
@@ -80,7 +81,7 @@ def probe(run_dir, output):
             checkpoint=asdict(checkpoint), generation=saved["generation"], seeds=SEEDS,
             factory_release_sha256=release.release_sha256, measurements=measurements,
             predictor_sha256=hashlib.sha256(inspect.getsource(_predictions).encode()).hexdigest(),
-            source_files_sha256={name: digest(ROOT / "bilqis_mlx" / name) for name in (
+            source_files_sha256={name: digest(source_path(name)) for name in (
                 "trainer.py", "runtime/mlx_parity.py", "runtime/mlx_checkpoint.py",
                 "source_adapters/school.py", "live_grade_a.py", "grade_a_probe.py",
                 "grade_a_oracle.py", "factory/generation.py", "factory/verification.py")},

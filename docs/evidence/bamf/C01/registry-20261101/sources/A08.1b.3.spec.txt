@@ -1,0 +1,31 @@
+# BAMF-0.2 A08.1b.3 | Morphology composition and decomposition source adapters
+
+Parent: A08.1b #418. Lane: `codex/bamf02-a-semantics`.
+Issue number: #555. Source spec: A08.1b and
+`BAMF-0.2-SPEC-001`, unchanged.
+
+## Exact owned result
+
+Resolve source-owned morphology composition/decomposition records
+from the pinned A01 source corpus into verifiable input/output
+facts, preserving exact row identity, owner, source reference,
+semantic release, rights and correction generation. A01's
+`source-rows.json` contains table/key inventory only; it does
+**not** by itself authorize a morphological transformation law.
+Obtain the actual source-row law from its authoritative adapter
+and validate its digest before emitting any lesson.
+
+For each admitted morphology family with source facts, provide
+positive constructive constituents, source-valid contrasts,
+canonical typed answer, independent decomposition/composition
+checker, prerequisite closure and exercised variation axes.
+Unverifiable, held or IR-only records remain explicit uncovered
+debt; do not synthesize rules from English glosses or table names.
+
+## Finish gate
+
+At least one real source-attested morphology law and its independent
+checker, plus wrong-row, foreign-release, revoked-rights,
+future-prefix, unsupported-law and counterexample negatives.
+Consume A08.1a, A03/A06/A13 receipts. Independent EGM PASS
+and immutable issue/PR receipt. No neural learning claim or merge.
