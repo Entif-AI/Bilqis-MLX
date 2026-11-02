@@ -41,6 +41,8 @@ def decode_cache(*args, **kwargs):
 
 class Rot3NormAndFallbackTests(unittest.TestCase):
     def setUp(self):
+        from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import install_test_owner
+        install_test_owner(self)
         self.manifest = codec_manifest()
         self.binding = CacheBinding(
             self.manifest,

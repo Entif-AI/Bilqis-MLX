@@ -15,6 +15,29 @@ def _invalid() -> None:
     codec_invalid()
 
 
+def _new_authority_owner():
+    """Create an isolated owner; only its lookup accepts its issued identities."""
+    issued = {}
+
+    def require(authority):
+        entry = issued.get(id(authority))
+        if entry is None or entry[0] is not authority:
+            _invalid()
+        return entry[1], entry[2]
+
+    def issue(registry, mac_key):
+        authority = object.__new__(CacheAuthorityRuntime)
+        issued[id(authority)] = (authority, registry, mac_key)
+        return authority
+
+    return require, issue
+
+
+# No production issuer is exposed until the upstream run owner supplies one.
+_authority_state, _discarded_issuer = _new_authority_owner()
+del _discarded_issuer
+
+
 class CacheAuthorityRuntime:
     """Opaque capability supplied by the accepted upstream run authority."""
 
@@ -27,7 +50,8 @@ class CacheAuthorityRuntime:
         _invalid()
 
     def _require_binding_authority(self, binding) -> None:
-        self.__registry.require_claimed_authority(
+        registry, _ = _authority_state(self)
+        registry.require_claimed_authority(
             binding.artifact_authority_id,
             DependencyRef(DependencyKind.ARTIFACT, f"cache:{binding.key_sha256}"),
             binding.artifact_authority_public_key_hex,
@@ -37,8 +61,9 @@ class CacheAuthorityRuntime:
         if type(subject) is not bytes:
             _invalid()
         self._require_binding_authority(binding)
+        _, mac_key = _authority_state(self)
         return hmac.new(
-            self.__mac_key, subject, hashlib.sha256,
+            mac_key, subject, hashlib.sha256,
         ).digest()[:CACHE_AUTHENTICATOR_BYTES]
 
     def _verify(self, binding, subject: bytes, authenticator: bytes) -> None:
@@ -50,6 +75,7 @@ class CacheAuthorityRuntime:
 def _require_authority(authority: CacheAuthorityRuntime) -> CacheAuthorityRuntime:
     if type(authority) is not CacheAuthorityRuntime:
         _invalid()
+    _authority_state(authority)
     return authority
 
 

@@ -324,11 +324,10 @@ def _require_cache_binding(
     authority: CacheAuthorityRuntime,
 ) -> None:
     """Reject stale rights/generation/prefix/mask/scope state before decode."""
-    from .atlas_cache_runtime import CacheAuthorityRuntime
+    from .atlas_cache_runtime import _require_authority
     if not isinstance(artifact, CacheArtifact):
         _invalid()
-    if type(authority) is not CacheAuthorityRuntime:
-        _invalid()
+    _require_authority(authority)
     validate_binding(binding)
     if (type(artifact.header_bytes) is not bytes
         or artifact.header_bytes != record_header_bytes(artifact)):

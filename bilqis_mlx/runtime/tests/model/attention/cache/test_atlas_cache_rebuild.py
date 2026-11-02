@@ -83,6 +83,8 @@ def _receipt(binding: CacheBinding, *, eligible=True) -> CacheEligibilityReceipt
 
 class RevokedCacheRebuildTests(unittest.TestCase):
     def setUp(self):
+        from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import install_test_owner
+        install_test_owner(self)
         self.old_binding = _binding()
         old_values = np.full((256, HEAD_WIDTH), 3.0, dtype=np.float32)
         self.stale = encode_cold_cache(
