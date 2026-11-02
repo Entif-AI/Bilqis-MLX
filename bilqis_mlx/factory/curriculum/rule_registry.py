@@ -129,9 +129,13 @@ def world_rule_profile(
         None if source is None else source.descriptor.implementation_sha256,
         tuple(sorted(_WORLD_SOURCE_CAPABILITIES)),
         tuple(sorted((
-            ("WORLD.ACTOR_OF", "ithkuil:ATOM-5d7116db8e1508", "ROLE_LOOKUP"),
-            ("WORLD.BEFORE", "ithkuil:ATOM-ef7cf17b427af9", "BEFORE"),
-            ("WORLD.IS_OCCURRED", "ithkuil:LEXSENSE-294d00be074a56", "IS_OCCURRED"),
-            ("WORLD.DIRECT_CAUSE", "ithkuil:LEXSENSE-59819df75e3137", "SOURCE_DIRECT_CAUSE"),
+            ("WORLD.ACTOR_OF", "ithkuil:ATOM-5d7116db8e1508",
+             "SOURCE_WORLD_ACTOR_OF"),
+            ("WORLD.BEFORE", "ithkuil:ATOM-ef7cf17b427af9",
+             "SOURCE_WORLD_BEFORE"),
+            ("WORLD.IS_OCCURRED", "ithkuil:LEXSENSE-294d00be074a56",
+             "SOURCE_WORLD_IS_OCCURRED"),
+            ("WORLD.DIRECT_CAUSE", "ithkuil:LEXSENSE-59819df75e3137",
+             "SOURCE_WORLD_DIRECT_CAUSE"),
         ))),
     )
