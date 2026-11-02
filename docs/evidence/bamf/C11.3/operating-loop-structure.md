@@ -40,7 +40,7 @@ original AST statements after reversing only the explicit control returns and
 import aliases. Tokenized original comments remain present. This supplements
 behavioral tests; it does not execute the human entrypoint.
 
-The affected selection passes **34/34**, with zero skips. Literal boundary
+The affected selection passes **38/38**, with zero skips. Literal boundary
 checks cover preflight refusals, disk stop/recheck, time-limit stop, autonomy
 stop/continue/proceed, missing durable delivery after flush, invalid initial
 staircase, final budget refusal and final-stop output. The new tests are also
@@ -51,7 +51,7 @@ and cold read pass; no existing student or its optimizer is used.
 
 An isolated built wheel resolves all ten facade/session modules from its
 installed directory. Its actual CLI returns HELD exit 2 and creates no run
-directory. Structure, governance, architecture, documentation, changed-file
+directory. Structure, governance, architecture, documentation, staged-file
 hygiene and zero-new-error-debt checks pass. Ordinary fresh-context review found
 no actionable behavioral defect; reported whitespace was corrected. Final
 merge-readiness EGM and exact-head hosted results are separate receipts.
@@ -60,3 +60,19 @@ The original runbook task resumes after this structural commit. Full #524/#384
 production create/resume, source/evaluator/custody and learned-outcome acceptance
 remain open. No durable student, own AdamW, teacher, admission, source-release
 or graph state changed. Source authority remains the opaque IPR-0220 identifier.
+
+## Hosted hygiene reconciliation
+
+Hosted run `41465075365` rejected head `953d3da8` for four new long functions
+and the witness's module-level mutable list. The earlier local changed-from
+scan ran before commit and omitted added index-only files; its zero-finding
+result did not cover the complete proposal. PM-2026-11-02-003 / RC-144 records
+this verification-scope failure. That result is not a runtime failure claim.
+
+The follow-up splits autonomous hold/evidence/routing, assessment, durable
+teaching publication, stop recording and archive maintenance into cohesive
+functions. Every new function is below the existing 80-line threshold; the
+witness uses an immutable tuple. Its static inliner checks those extracted
+statements against the same preserved source. Staged verification includes all
+added files, and committed verification is required before push. No baseline,
+threshold, exclusion or suppression is changed.

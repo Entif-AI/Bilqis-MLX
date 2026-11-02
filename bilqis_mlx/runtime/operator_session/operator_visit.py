@@ -48,68 +48,9 @@ def execute_operator_visit(*, mx, run_dir, receipt, manifest, course, engine, pa
             receipt["school"],
             _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course))
         if autonomy_teaching_work is not None:
-            failed = autonomy_teaching_work.failed_evidence
-            current = school_after_flush.current_student
-            durable_autonomy_visit = None
-            if delivery is not None:
-                digest = delivery.get("specimen_content_sha256")
-                durable_autonomy_visit = next((
-                    event for event in reversed(
-                        receipt.get("delivery_outbox", ()))
-                    if (isinstance(
-                            event.get("autonomy_teaching"), dict) and
-                        event["autonomy_teaching"].get(
-                            "specimen_content_sha256") == digest)
-                ), None)
-                if durable_autonomy_visit is None:
-                    raise ValueError(
-                        "AUTONOMY_TEACHING_DURABLE_EVENT_MISSING")
-            if (delivery is not None and
-                    current.sha256 != failed.checkpoint_sha256 and
-                    current.optimizer_step > failed.optimizer_step):
-                intervention = autonomy_session.recover_teaching(
-                    receipt, current)
-                if intervention is None:
-                    raise ValueError(
-                        "AUTONOMY_TEACHING_DURABLE_RECEIPT_MISSING")
-                _runtime_checkpoints._record(run_dir, {
-                    "event":
-                        "SCHOOL_AUTONOMY_TEACHING_RECORDED",
-                    "generation": receipt["generation"],
-                    "grade": school_after_flush.grade,
-                    "capability":
-                        autonomy_teaching_work.capability_id,
-                    "obligation": failed.obligation_id,
-                    "parent_student_sha256":
-                        failed.checkpoint_sha256,
-                    "student_sha256": current.sha256,
-                    "optimizer_step": current.optimizer_step,
-                })
-            elif (delivery is not None and
-                    current.sha256 == failed.checkpoint_sha256 and
-                    current.optimizer_step == failed.optimizer_step and
-                    durable_autonomy_visit.get(
-                        "retained_optimizer_updates") == 0):
-                rejected = (
-                    autonomy_session.rejected_attempt_from_event(
-                        durable_autonomy_visit, failed))
-                _runtime_checkpoints._record(run_dir, {
-                    "event":
-                        "SCHOOL_AUTONOMY_TEACHING_REJECTED_RECORDED",
-                    "generation": receipt["generation"],
-                    "grade": school_after_flush.grade,
-                    "capability":
-                        autonomy_teaching_work.capability_id,
-                    "obligation": failed.obligation_id,
-                    "attempt_id": rejected.attempt_id,
-                    "retention_reason":
-                        rejected.retention_reason,
-                    "student_sha256": current.sha256,
-                    "optimizer_step": current.optimizer_step,
-                    "candidate_optimizer_step":
-                        rejected.candidate_optimizer_step,
-                    "retained_optimizer_updates": 0,
-                })
+            _record_autonomy_teaching(
+                run_dir, receipt, school_after_flush, autonomy_teaching_work,
+                delivery, autonomy_session)
     pending_visits = receipt.get("_pending_visit_events", ())
     if len(pending_visits) > pending_before:
         latest_visit = pending_visits[-1]
@@ -125,3 +66,69 @@ def execute_operator_visit(*, mx, run_dir, receipt, manifest, course, engine, pa
             })
     after_visit = _runtime_state._state_from_json(receipt["school"], _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course))
     return receipt, visits
+
+
+def _record_autonomy_teaching(run_dir, receipt, school_after_flush,
+                              autonomy_teaching_work, delivery, autonomy_session):
+    failed = autonomy_teaching_work.failed_evidence
+    current = school_after_flush.current_student
+    durable_autonomy_visit = None
+    if delivery is not None:
+        digest = delivery.get("specimen_content_sha256")
+        durable_autonomy_visit = next((
+            event for event in reversed(
+                receipt.get("delivery_outbox", ()))
+            if (isinstance(
+                    event.get("autonomy_teaching"), dict) and
+                event["autonomy_teaching"].get(
+                    "specimen_content_sha256") == digest)
+        ), None)
+        if durable_autonomy_visit is None:
+            raise ValueError(
+                "AUTONOMY_TEACHING_DURABLE_EVENT_MISSING")
+    if (delivery is not None and
+            current.sha256 != failed.checkpoint_sha256 and
+            current.optimizer_step > failed.optimizer_step):
+        intervention = autonomy_session.recover_teaching(
+            receipt, current)
+        if intervention is None:
+            raise ValueError(
+                "AUTONOMY_TEACHING_DURABLE_RECEIPT_MISSING")
+        _runtime_checkpoints._record(run_dir, {
+            "event":
+                "SCHOOL_AUTONOMY_TEACHING_RECORDED",
+            "generation": receipt["generation"],
+            "grade": school_after_flush.grade,
+            "capability":
+                autonomy_teaching_work.capability_id,
+            "obligation": failed.obligation_id,
+            "parent_student_sha256":
+                failed.checkpoint_sha256,
+            "student_sha256": current.sha256,
+            "optimizer_step": current.optimizer_step,
+        })
+    elif (delivery is not None and
+            current.sha256 == failed.checkpoint_sha256 and
+            current.optimizer_step == failed.optimizer_step and
+            durable_autonomy_visit.get(
+                "retained_optimizer_updates") == 0):
+        rejected = (
+            autonomy_session.rejected_attempt_from_event(
+                durable_autonomy_visit, failed))
+        _runtime_checkpoints._record(run_dir, {
+            "event":
+                "SCHOOL_AUTONOMY_TEACHING_REJECTED_RECORDED",
+            "generation": receipt["generation"],
+            "grade": school_after_flush.grade,
+            "capability":
+                autonomy_teaching_work.capability_id,
+            "obligation": failed.obligation_id,
+            "attempt_id": rejected.attempt_id,
+            "retention_reason":
+                rejected.retention_reason,
+            "student_sha256": current.sha256,
+            "optimizer_step": current.optimizer_step,
+            "candidate_optimizer_step":
+                rejected.candidate_optimizer_step,
+            "retained_optimizer_updates": 0,
+        })

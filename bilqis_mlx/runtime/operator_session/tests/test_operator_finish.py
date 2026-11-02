@@ -69,3 +69,32 @@ class FinishTest(TestCase):
                 _learning_stagnation_control=None, _runtime_checkpoints=None, _runtime_session=None,
                 _time=None)
         self.assertEqual(events, ["FLUSH_WORKING_STUDENT"])
+
+    def test_archive_failure_records_block_after_stop(self):
+        events = []
+        @contextmanager
+        def span(name, **kwargs):
+            events.append(name)
+            yield
+        with patch.multiple(subject,
+                            _runtime_timing_trace=SimpleNamespace(trace_span=span),
+                            _runtime_checkpoints=SimpleNamespace(_record=lambda _, event: events.append(event))):
+            with patch("bilqis_mlx.state_archive.compact_states", side_effect=OSError("full")):
+                result = subject._compact_stop_states("run", {"generation": 9})
+        self.assertEqual(result, {"error": "full", "compressed_generations": 0})
+        self.assertEqual(events[0], "STATE_ARCHIVE_COMPACT")
+        self.assertEqual(events[1], {"event": "SCHOOL_STATE_ARCHIVE_BLOCKED", "generation": 9, "reason": "full"})
+
+    def test_stop_event_retains_disk_and_resume_details(self):
+        events = []
+        receipt = {"generation": 2, "run_id": "run", "stagnation_session": {"session_id": "s"}}
+        school = SimpleNamespace(current_student=SimpleNamespace(optimizer_step=4, sha256="sha"),
+                                 visits=3, stage="AWAITING_NEXT_GRADE", grade="A")
+        disk = {"free_bytes": 4, "reserve_bytes": 2, "estimated_write_bytes": 1}
+        with patch.object(subject, "_runtime_checkpoints", SimpleNamespace(_record=lambda _, event: events.append(event))):
+            subject._record_session_stopped("run", receipt, school, disk, "LIMIT", 1, 90, 2,
+                1.5, 2, None, False, False, False, (), ())
+        self.assertEqual(events[0]["event"], "SCHOOL_SESSION_STOPPED")
+        self.assertFalse(events[0]["resume_required"])
+        self.assertEqual(events[0]["source_prefetch_workers"], 0)
+        self.assertEqual(events[0]["estimated_write_bytes"], 1)

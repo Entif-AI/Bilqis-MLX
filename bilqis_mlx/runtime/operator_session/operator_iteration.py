@@ -64,38 +64,61 @@ def prepare_operator_iteration(*, experiment_budget, run_dir, receipt, course_a,
     if reason is not None:
         return DispatchControl.STOP, reason, receipt, course, executable_release, schedule_program, params, optimizer, graph, school, autonomy_teaching_work
     if school.stage.startswith("ASSESS_"):
-        _runtime_checkpoints._notify_viewer({"_runtime_phase": "ASSESSING", "_dashboard_redraw": True})
-        if flash_mode:
-            # Flash may skip expensive championship/promotion work, but
-            # it may not skip the fresh cumulative evidence needed to
-            # choose recovery work or advance the cross-grade spiral.
-            receipt = _runtime_boundary_commit._flush_flash_student(
-                run_dir, receipt, course, params, optimizer, graph,
-                reserve_gib=reserve_gib)
-            receipt = _runtime_exam_execution._take_exam(
-                mx, run_dir, receipt, manifest, course, source_root,
-                source_checkpoint, params, optimizer, graph,
-                reserve_gib=reserve_gib, scheduler_only=True,
-                session_elapsed_seconds=_time.monotonic() - start)
-            if experiment_budget is not None:
-                experiment_budget.assert_can_allocate(0)
-            school = _runtime_state._state_from_json(receipt["school"], _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course))
-            if school.stage.startswith("ASSESS_"):
-                # Scheduler-only evidence found no remaining imperfect
-                # grade. Preserve the qualification debt for a full
-                # authoritative exam rather than minting mastery in flash.
-                reason = "FLASH_QUALIFICATION_REQUIRED"
-                return DispatchControl.STOP, reason, receipt, course, executable_release, schedule_program, params, optimizer, graph, school, autonomy_teaching_work
-            return DispatchControl.CONTINUE, reason, receipt, course, executable_release, schedule_program, params, optimizer, graph, school, autonomy_teaching_work
-        with _runtime_timing_trace.trace_span(
-                "ASSESSMENT", generation=receipt["generation"],
-                phase=school.stage, grade=school.grade):
-            receipt = _runtime_exam_execution._take_exam(
-                mx, run_dir, receipt, manifest, course, source_root,
-                source_checkpoint, params, optimizer, graph,
-                reserve_gib=reserve_gib,
-                session_elapsed_seconds=_time.monotonic() - start)
+        return _assess_iteration(
+            school=school,
+            flash_mode=flash_mode,
+            run_dir=run_dir,
+            receipt=receipt,
+            course=course,
+            params=params,
+            optimizer=optimizer,
+            graph=graph,
+            reserve_gib=reserve_gib,
+            mx=mx,
+            manifest=manifest,
+            source_root=source_root,
+            source_checkpoint=source_checkpoint,
+            start=start,
+            experiment_budget=experiment_budget,
+            reason=reason,
+            executable_release=executable_release,
+            schedule_program=schedule_program,
+            autonomy_teaching_work=autonomy_teaching_work)
+    return DispatchControl.PROCEED, reason, receipt, course, executable_release, schedule_program, params, optimizer, graph, school, autonomy_teaching_work
+
+
+def _assess_iteration(*, school, flash_mode, run_dir, receipt, course, params, optimizer, graph, reserve_gib, mx, manifest, source_root, source_checkpoint, start, experiment_budget, reason, executable_release, schedule_program, autonomy_teaching_work):
+    _runtime_checkpoints._notify_viewer({"_runtime_phase": "ASSESSING", "_dashboard_redraw": True})
+    if flash_mode:
+        # Flash may skip expensive championship/promotion work, but
+        # it may not skip the fresh cumulative evidence needed to
+        # choose recovery work or advance the cross-grade spiral.
+        receipt = _runtime_boundary_commit._flush_flash_student(
+            run_dir, receipt, course, params, optimizer, graph,
+            reserve_gib=reserve_gib)
+        receipt = _runtime_exam_execution._take_exam(
+            mx, run_dir, receipt, manifest, course, source_root,
+            source_checkpoint, params, optimizer, graph,
+            reserve_gib=reserve_gib, scheduler_only=True,
+            session_elapsed_seconds=_time.monotonic() - start)
         if experiment_budget is not None:
             experiment_budget.assert_can_allocate(0)
+        school = _runtime_state._state_from_json(receipt["school"], _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course))
+        if school.stage.startswith("ASSESS_"):
+            # Scheduler-only evidence found no remaining imperfect
+            # grade. Preserve the qualification debt for a full
+            # authoritative exam rather than minting mastery in flash.
+            reason = "FLASH_QUALIFICATION_REQUIRED"
+            return DispatchControl.STOP, reason, receipt, course, executable_release, schedule_program, params, optimizer, graph, school, autonomy_teaching_work
         return DispatchControl.CONTINUE, reason, receipt, course, executable_release, schedule_program, params, optimizer, graph, school, autonomy_teaching_work
-    return DispatchControl.PROCEED, reason, receipt, course, executable_release, schedule_program, params, optimizer, graph, school, autonomy_teaching_work
+    with _runtime_timing_trace.trace_span(
+            "ASSESSMENT", generation=receipt["generation"],
+            phase=school.stage, grade=school.grade):
+        receipt = _runtime_exam_execution._take_exam(
+            mx, run_dir, receipt, manifest, course, source_root,
+            source_checkpoint, params, optimizer, graph,
+            reserve_gib=reserve_gib,
+            session_elapsed_seconds=_time.monotonic() - start)
+    if experiment_budget is not None:
+        experiment_budget.assert_can_allocate(0)
+    return DispatchControl.CONTINUE, reason, receipt, course, executable_release, schedule_program, params, optimizer, graph, school, autonomy_teaching_work

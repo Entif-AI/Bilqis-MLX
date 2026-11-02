@@ -1,5 +1,6 @@
 """One-off source-order witness against the preserved pre-extraction commit."""
 import ast
+import copy
 import subprocess
 from pathlib import Path
 
@@ -8,8 +9,47 @@ operate = next(x for x in ast.parse(source).body if isinstance(x, ast.FunctionDe
 lock = next(x for x in operate.body if isinstance(x, ast.With) and x.lineno == 193)
 loop = next(x for x in lock.body if isinstance(x, ast.While))
 root = Path('bilqis_mlx/runtime/operator_session')
+class InlinePhases(ast.NodeTransformer):
+    def __init__(self):
+        self.helpers = {}
+        for path in root.glob('*.py'):
+            for node in ast.parse(path.read_text()).body:
+                if isinstance(node, ast.FunctionDef) and node.name.startswith('_'):
+                    self.helpers[node.name] = node.body
+
+    def expanded(self, call, trim=False):
+        body = copy.deepcopy(self.helpers[call.func.id])
+        if trim:
+            body = body[:-1]
+        if call.func.id == '_hold_autonomy':
+            class RecordAlias(ast.NodeTransformer):
+                def visit_Name(self, node):
+                    if node.id == 'record':
+                        return ast.parse('_runtime_checkpoints._record', mode='eval').body
+                    return node
+            body = [RecordAlias().visit(node) for node in body]
+        return body
+
+    def visit_Return(self, node):
+        if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name) and node.value.func.id in self.helpers:
+            return self.expanded(node.value)
+        return self.generic_visit(node)
+
+    def visit_Assign(self, node):
+        if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name) and node.value.func.id in self.helpers:
+            return self.expanded(node.value, trim=True)
+        return self.generic_visit(node)
+
+    def visit_Expr(self, node):
+        if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name) and node.value.func.id in self.helpers:
+            return self.expanded(node.value)
+        return self.generic_visit(node)
+
+
 def function(name):
-    return next(x for x in ast.parse((root / f'operator_{name}.py').read_text()).body if isinstance(x, ast.FunctionDef))
+    node = next(x for x in ast.parse((root / f'operator_{name}.py').read_text()).body if isinstance(x, ast.FunctionDef))
+    return InlinePhases().visit(node)
+
 def dump(nodes):
     return ast.dump(ast.Module(body=nodes, type_ignores=[]), include_attributes=False)
 class RestoreControl(ast.NodeTransformer):
@@ -19,13 +59,13 @@ class RestoreControl(ast.NodeTransformer):
             if mode == 'STOP': return ast.Break()
             if mode == 'CONTINUE': return ast.Continue()
         return node
-checks = [
+checks = (
     ('stagnation', [x for x in lock.body if 285 <= x.lineno <= 363], 1),
     ('finish', [x for x in lock.body if x.lineno >= 753], 0),
     ('visit', [x for x in loop.body if x.lineno >= 642], 1),
     ('iteration', [x for x in loop.body if 366 <= x.lineno <= 443], 1),
     ('autonomy', next(x for x in loop.body if x.lineno == 444).body, 1),
-]
+)
 for name, original, drop in checks:
     body = function(name).body
     if drop: body = body[:-drop]

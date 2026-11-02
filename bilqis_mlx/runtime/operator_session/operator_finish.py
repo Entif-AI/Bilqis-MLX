@@ -37,39 +37,12 @@ def finish_operator_session(*, mx, run_dir, receipt, manifest, course, params,
     stagnation_alerts = _learning_stagnation_control.end_of_run_alerts(receipt.get("stagnation_session"))
     stagnation_quarantined = _learning_stagnation_control.quarantined_capabilities(
         receipt.get("stagnation_session"))
-    _runtime_checkpoints._record(run_dir, {
-        "event": "SCHOOL_SESSION_STOPPED", "stop_reason": reason,
-        "generation": receipt["generation"], "run_id": receipt["run_id"],
-        "optimizer_step": school.current_student.optimizer_step,
-        "checkpoint_sha256": school.current_student.sha256,
-        "visits_this_command": visits, "committed_total_visits": school.visits,
-        "minutes": minutes, "max_visits": max_visits,
-        "elapsed_seconds": elapsed_seconds,
-        "grade_phase": school.stage, "grade": school.grade,
-        "source_prefetch_workers": (source_prefetch_workers
-                                     if source_prefetch_executor is not None else 0),
-        "flash_mode": flash_mode,
-        "boolean_association_bridge": boolean_association_bridge,
-        "autonomous_curriculum": autonomous_curriculum,
-        "resume_required": school.stage not in ("AWAITING_NEXT_GRADE", "AWAITING_NEXT_GRADE_WITH_DEBT"),
-        "stagnation_session_id": receipt.get("stagnation_session", {}).get(
-            "session_id"),
-        "stagnation_quarantined": list(stagnation_quarantined),
-        "stagnation_alerts": list(stagnation_alerts),
-        **{k: budget[k] for k in ("free_bytes", "reserve_bytes", "estimated_write_bytes")},
-    })
-    # Reclaim superseded JSON snapshot storage after the committed stop
-    # receipt. Lossless compression retains exact source bytes and SHA
-    # readback; all complete model/AdamW checkpoints remain untouched.
-    from bilqis_mlx.state_archive import compact_states
-    try:
-        with _runtime_timing_trace.trace_span("STATE_ARCHIVE_COMPACT"):
-            maintenance = compact_states(run_dir, max_files=64)
-    except (OSError, ValueError) as exc:
-        maintenance = {"error": str(exc), "compressed_generations": 0}
-        _runtime_checkpoints._record(run_dir, {"event": "SCHOOL_STATE_ARCHIVE_BLOCKED",
-                          "generation": receipt["generation"],
-                          "reason": str(exc)})
+    _record_session_stopped(
+        run_dir, receipt, school, budget, reason, visits, minutes, max_visits,
+        elapsed_seconds, source_prefetch_workers, source_prefetch_executor,
+        flash_mode, boolean_association_bridge, autonomous_curriculum,
+        stagnation_quarantined, stagnation_alerts)
+    maintenance = _compact_stop_states(run_dir, receipt)
     _runtime_timing_trace.trace_mark(
         "OPERATE_END", stop_reason=reason, visits=visits,
         optimizer_step=school.current_student.optimizer_step)
@@ -106,3 +79,48 @@ def finish_operator_session(*, mx, run_dir, receipt, manifest, course, params,
             source_prefetch_workers=source_prefetch_workers),
         "original_source_checkpoint_modified": False,
     }
+
+
+def _compact_stop_states(run_dir, receipt):
+    # Reclaim superseded JSON snapshot storage after the committed stop
+    # receipt. Lossless compression retains exact source bytes and SHA
+    # readback; all complete model/AdamW checkpoints remain untouched.
+    from bilqis_mlx.state_archive import compact_states
+    try:
+        with _runtime_timing_trace.trace_span("STATE_ARCHIVE_COMPACT"):
+            maintenance = compact_states(run_dir, max_files=64)
+    except (OSError, ValueError) as exc:
+        maintenance = {"error": str(exc), "compressed_generations": 0}
+        _runtime_checkpoints._record(run_dir, {"event": "SCHOOL_STATE_ARCHIVE_BLOCKED",
+                          "generation": receipt["generation"],
+                          "reason": str(exc)})
+    return maintenance
+
+
+def _record_session_stopped(run_dir, receipt, school, budget, reason, visits,
+                            minutes, max_visits, elapsed_seconds,
+                            source_prefetch_workers, source_prefetch_executor,
+                            flash_mode, boolean_association_bridge,
+                            autonomous_curriculum, stagnation_quarantined,
+                            stagnation_alerts):
+    _runtime_checkpoints._record(run_dir, {
+        "event": "SCHOOL_SESSION_STOPPED", "stop_reason": reason,
+        "generation": receipt["generation"], "run_id": receipt["run_id"],
+        "optimizer_step": school.current_student.optimizer_step,
+        "checkpoint_sha256": school.current_student.sha256,
+        "visits_this_command": visits, "committed_total_visits": school.visits,
+        "minutes": minutes, "max_visits": max_visits,
+        "elapsed_seconds": elapsed_seconds,
+        "grade_phase": school.stage, "grade": school.grade,
+        "source_prefetch_workers": (source_prefetch_workers
+                                     if source_prefetch_executor is not None else 0),
+        "flash_mode": flash_mode,
+        "boolean_association_bridge": boolean_association_bridge,
+        "autonomous_curriculum": autonomous_curriculum,
+        "resume_required": school.stage not in ("AWAITING_NEXT_GRADE", "AWAITING_NEXT_GRADE_WITH_DEBT"),
+        "stagnation_session_id": receipt.get("stagnation_session", {}).get(
+            "session_id"),
+        "stagnation_quarantined": list(stagnation_quarantined),
+        "stagnation_alerts": list(stagnation_alerts),
+        **{k: budget[k] for k in ("free_bytes", "reserve_bytes", "estimated_write_bytes")},
+    })

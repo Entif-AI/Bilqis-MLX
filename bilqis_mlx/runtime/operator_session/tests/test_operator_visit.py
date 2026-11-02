@@ -30,3 +30,20 @@ class VisitTest(TestCase):
                     source_prefetch_executor=None, source_prefetch_workers=0, visits=0, school=school,
                     autonomous_curriculum=True, experiment_budget=None, autonomy_session=None)
         self.assertEqual(events, ["notify", "flush"])
+
+    def test_rejected_durable_delivery_is_recorded_once(self):
+        events = []
+        failed = SimpleNamespace(checkpoint_sha256="old", optimizer_step=1, obligation_id="ob")
+        work = SimpleNamespace(capability_id="A.X", failed_evidence=failed)
+        school = SimpleNamespace(grade="A", current_student=SimpleNamespace(sha256="old", optimizer_step=1))
+        delivery = {"specimen_content_sha256": "digest"}
+        durable = {"autonomy_teaching": delivery, "retained_optimizer_updates": 0}
+        receipt = {"generation": 7, "delivery_outbox": [durable]}
+        rejected = SimpleNamespace(attempt_id="attempt", retention_reason="no gain", candidate_optimizer_step=2)
+        session = SimpleNamespace(rejected_attempt_from_event=lambda event, evidence: rejected)
+        with patch.object(subject, "_runtime_checkpoints", SimpleNamespace(_record=lambda _, event: events.append(event))):
+            subject._record_autonomy_teaching("run", receipt, school, work, delivery, session)
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0]["event"], "SCHOOL_AUTONOMY_TEACHING_REJECTED_RECORDED")
+        self.assertEqual(events[0]["attempt_id"], "attempt")
+        self.assertEqual(events[0]["retained_optimizer_updates"], 0)
