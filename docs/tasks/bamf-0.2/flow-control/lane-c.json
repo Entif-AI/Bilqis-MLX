@@ -8,10 +8,10 @@
     {
       "issue": 524,
       "pr": 699,
-      "state": "ACTIVE",
+      "state": "BLOCKED",
       "head_sha": "f3e99245c49f7df897d71cdcc7dfc69710014c65",
-      "summary": "C11.3 structural-interruption checkpoint is the current primary Lane C implementation surface.",
-      "resume_trigger": null
+      "summary": "Scoped facade remediation delivered as draft #723; broader structural interruption preserved.",
+      "resume_trigger": "Complete preserved operating_loop structural interruption and companion tests before resuming parent #524 implementation."
     },
     {
       "issue": 347,
@@ -24,10 +24,18 @@
     {
       "issue": 526,
       "pr": 680,
-      "state": "WAITING",
+      "state": "ACTIVE",
       "head_sha": "41e37cf60a934181548e9b343ddab1ce2b3849a7",
-      "summary": "C12.2 local cognitive-package exchange slice is proven; broader adoption/custody remains.",
-      "resume_trigger": "The current Lane C primary work drains and C12 adoption/custody becomes the selected dependency-ready next surface; sync reviewed unified once at activation."
+      "summary": "User-selected #717 receiver identity remediation; #718 source/acceptance remains independently blocked.",
+      "resume_trigger": null
+    },
+    {
+      "issue": 490,
+      "pr": 700,
+      "state": "ACTIVE",
+      "head_sha": "d1b4860389e35950e643bffbdec0e2febb1b7506",
+      "summary": "User-selected #713 canonical A05/A06 authority remediation.",
+      "resume_trigger": null
     }
   ]
 }
