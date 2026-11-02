@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from bilqis_mlx.semantics.cognitive_operators.registry import (
     OperatorRegistry, operator_grant_digest,
 )
+from bilqis_mlx.errors import ErrorBus, FACTORY
 from bilqis_mlx.factory.adapters import RegisteredSourceAdapter
 from bilqis_mlx.semantics.foundation.core import Signature
 
@@ -22,6 +23,11 @@ _WORLD_SOURCE_CAPABILITIES = (
     "WORLD.ACTOR_OF", "WORLD.BEFORE", "WORLD.IS_OCCURRED",
     "WORLD.DIRECT_CAUSE",
 )
+SOURCE_COORDINATE_WIDTH = 3
+
+
+def _fail(reason: str) -> None:
+    ErrorBus.raise_(FACTORY.SEMANTIC_RULE.INVALID, reason=reason)
 
 
 @dataclass(frozen=True)
@@ -44,34 +50,35 @@ class SemanticRuleProfile:
                     and self.source_adapter_id is None)
                 or self.source_capability_ids
                 != tuple(sorted(set(self.source_capability_ids)))
-                or any(len(item) != 3 or any(type(value) is not str or not value
+                or any(len(item) != SOURCE_COORDINATE_WIDTH
+                    or any(type(value) is not str or not value
                     for value in item) for item in self.source_coordinates)
                 or len({item[0] for item in self.source_coordinates})
                 != len(self.source_coordinates)
                 or (self.source_coordinates and tuple(sorted(
                     item[0] for item in self.source_coordinates))
                     != self.source_capability_ids)):
-            raise ValueError("FACTORY_SEMANTIC_RULE_PROFILE_INVALID")
+            _fail("FACTORY_SEMANTIC_RULE_PROFILE_INVALID")
 
 
 class SemanticRuleRegistry:
     def __init__(self, version: str, profiles: tuple[SemanticRuleProfile, ...]):
         if not isinstance(version, str) or not version:
-            raise ValueError("FACTORY_SEMANTIC_RULE_REGISTRY_INVALID")
+            _fail("FACTORY_SEMANTIC_RULE_REGISTRY_INVALID")
         self.version = version
         self.profiles = profiles
         keys = tuple(item.identity.canonical_payload() for item in profiles)
         if (not profiles or any(type(item) is not SemanticRuleProfile for item in profiles)
                 or len(keys) != len(set(keys))):
-            raise ValueError("FACTORY_SEMANTIC_RULE_DUPLICATE")
+            _fail("FACTORY_SEMANTIC_RULE_DUPLICATE")
 
     def require(self, identity: CapabilityIdentityInput) -> SemanticRuleProfile:
         if type(identity) is not CapabilityIdentityInput:
-            raise TypeError("FACTORY_SEMANTIC_RULE_IDENTITY_REQUIRED")
+            raise TypeError
         matches = tuple(item for item in self.profiles
                         if item.identity.canonical_payload() == identity.canonical_payload())
         if len(matches) != 1:
-            raise ValueError("FACTORY_SEMANTIC_RULE_MISSING")
+            _fail("FACTORY_SEMANTIC_RULE_MISSING")
         return matches[0]
 
 
@@ -79,7 +86,7 @@ def _profile(registry: OperatorRegistry, semantic_id: str, family: str, operator
              answers: tuple[str, ...], coverage: tuple[str, ...],
              operator_ids: tuple[str, ...]) -> SemanticRuleProfile:
     if type(registry) is not OperatorRegistry:
-        raise TypeError("FACTORY_SEMANTIC_RULE_OPERATOR_REGISTRY_REQUIRED")
+        raise TypeError
     for covered_operator_id in operator_ids:
         registry.resolve(covered_operator_id)
     return SemanticRuleProfile(CapabilityIdentityInput(
@@ -108,14 +115,13 @@ def world_rule_profile(
         source: RegisteredSourceAdapter | None = None) -> SemanticRuleProfile:
     """Require source-owned world evidence in addition to operator declarations."""
     if type(operators) is not OperatorRegistry:
-        raise TypeError("FACTORY_SEMANTIC_RULE_OPERATOR_REGISTRY_REQUIRED")
+        raise TypeError
     if source is not None:
         from bilqis_mlx.source_adapters.world_rules import require_registered_source
         try:
             require_registered_source(source)
         except (TypeError, ValueError):
-            raise ValueError(
-                "FACTORY_WORLD_RULE_SOURCE_AUTHORITY_UNAVAILABLE") from None
+            _fail("FACTORY_WORLD_RULE_SOURCE_AUTHORITY_UNAVAILABLE")
     for operator_id in _WORLD:
         operators.resolve(operator_id)
     return SemanticRuleProfile(

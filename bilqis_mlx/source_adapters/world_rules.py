@@ -1,12 +1,11 @@
 """Source-qualified actor, time, state and direct-causation world rules."""
 from __future__ import annotations
-
 import copy
 import csv
 import hashlib
 from pathlib import Path
 import random
-
+from ..errors import ErrorBus, SOURCE
 from ..factory.adapters import RegisteredSourceAdapter
 from ..factory.model import SourceAdapter
 from ._world.oracle import answer
@@ -19,7 +18,7 @@ GENERATOR = "bilqis.bamf.a08.qualified-world/v1"
 ORACLE = "bilqis.bamf.a08.qualified-world-oracle/v1"
 DIALECT = "bilqis.bamf.qualified-world/v1"
 ROOT = Path(__file__).resolve().parents[2]
-
+MAX_DRAW_ROWS = 10_000
 _CAUSE = "LEXSENSE-59819df75e3137"
 _OCCURRENCE = "LEXSENSE-294d00be074a56"
 _ACTOR = "ATOM-5d7116db8e1508"
@@ -30,11 +29,12 @@ _TOKENS = (
     "bamf.world.query.ACTOR_OF", "bamf.world.query.BEFORE",
     "bamf.world.query.IS_OCCURRED", "bamf.world.query.DIRECT_CAUSE",
 )
+def _fail(reason: str) -> None: ErrorBus.raise_(SOURCE.BAMF_WORLD.INVALID, reason=reason)
 def _row(path: Path, key: str, value: str) -> dict:
     with path.open(newline="", encoding="utf-8") as stream:
         rows = [row for row in csv.DictReader(stream) if row.get(key) == value]
     if len(rows) != 1:
-        raise ValueError("WORLD_RULE_SOURCE_ROW_MISSING_OR_AMBIGUOUS")
+        _fail("WORLD_RULE_SOURCE_ROW_MISSING_OR_AMBIGUOUS")
     return rows[0]
 def verify_source() -> dict:
     """Replay exact pinned source anchors; do not infer laws from gloss text."""
@@ -56,11 +56,11 @@ def verify_source() -> dict:
         (time, "semantic_summary", "Temporal Position Relative to Present"),
     )
     if any(row.get(key) != value for row, key, value in expected):
-        raise ValueError("WORLD_RULE_SOURCE_DRIFT")
+        _fail("WORLD_RULE_SOURCE_DRIFT")
     for row in (cause, occurrence):
         pdf = data / "pdf" / row["tracked_pdf_name"]
         if hashlib.sha256(pdf.read_bytes()).hexdigest() != row["tracked_pdf_sha256"]:
-            raise ValueError("WORLD_RULE_SOURCE_PDF_DRIFT")
+            _fail("WORLD_RULE_SOURCE_PDF_DRIFT")
     return {
         "sense_id": _CAUSE,
         "occurrence_sense_id": _OCCURRENCE,
@@ -84,7 +84,7 @@ def projected_graph(parent: dict) -> dict:
             or not isinstance(parent.get("tokens"), list)
             or not isinstance(parent.get("nodes"), list)
             or len(parent["tokens"]) != len(parent["nodes"])):
-        raise ValueError("WORLD_RULE_GRAPH_INVALID")
+        _fail("WORLD_RULE_GRAPH_INVALID")
     graph = copy.deepcopy(parent)
     contracts = graph.setdefault("row_contract_sha256", {})
     for token in _TOKENS:
@@ -140,7 +140,7 @@ def _query(record: dict, capability: str, truth: bool, rng: random.Random) -> di
                 (a["id"], b["id"]) for a in events for b in events
                 if a != b and (a["id"], b["id"]) not in pairs)
         return {"kind": "DIRECT_CAUSE", "left": left, "right": right}
-    raise ValueError("WORLD_RULE_CAPABILITY_INVALID")
+    _fail("WORLD_RULE_CAPABILITY_INVALID")
 def _encode(record: dict, graph: dict) -> list[int]:
     symbols = ["micro.syntax.world", "bamf.world.syntax.actors"]
     symbols.extend("bamf.world.actor." + actor for actor in record["actors"])
@@ -169,15 +169,15 @@ def _encode(record: dict, graph: dict) -> list[int]:
     try:
         return [ids[symbol] for symbol in symbols]
     except KeyError as exc:
-        raise ValueError("WORLD_RULE_GRAPH_SYMBOL_MISSING") from exc
+        _fail("WORLD_RULE_GRAPH_SYMBOL_MISSING")
 def draw(source_root=None, graph=None, *, capability: str, seed: int,
          each: int = 12, **_) -> tuple[dict, ...]:
     del source_root
     _VERIFY_SOURCE()
     if (capability not in CAPABILITIES or type(seed) is not int
-            or type(each) is not int or not 1 <= each <= 10000
+            or type(each) is not int or not 1 <= each <= MAX_DRAW_ROWS
             or not isinstance(graph, dict)):
-        raise ValueError("WORLD_RULE_DRAW_INVALID")
+        _fail("WORLD_RULE_DRAW_INVALID")
     rng = random.Random(digest((GENERATOR, capability, seed)))
     contract = registered_adapter().descriptor.implementation_sha256
     rows = []
@@ -236,4 +236,4 @@ def require_registered_source(source: RegisteredSourceAdapter) -> None:
             or source.descriptor != expected.descriptor
             or source.draw is not _CANONICAL_DRAW
             or source.check is not _CANONICAL_CHECK):
-        raise ValueError("WORLD_RULE_SOURCE_IMPLEMENTATION_SUBSTITUTED")
+        _fail("WORLD_RULE_SOURCE_IMPLEMENTATION_SUBSTITUTED")

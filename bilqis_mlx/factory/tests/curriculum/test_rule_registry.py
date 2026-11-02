@@ -45,13 +45,14 @@ class SemanticRuleRegistryTests(unittest.TestCase):
 
     def test_signature_and_answer_modality_are_part_of_lookup_key(self):
         registry = default_semantic_rule_registry(self.RELEASE)
-        with self.assertRaisesRegex(
-                ValueError, "FACTORY_SEMANTIC_RULE_MISSING"):
+        with self.assertRaises(ValueError) as caught:
             registry.require(CapabilityIdentityInput(
                 "legacy:cogal.operator.AND", "boolean_composition", "BOOL_AND",
                 Signature(("Boolean", "Boolean"), "Boolean"),
                 ("integer",),
             ))
+        self.assertEqual(
+            caught.exception.context["reason"], "FACTORY_SEMANTIC_RULE_MISSING")
 
     def test_world_profile_requires_and_binds_source_owned_world_authority(self):
         operators = default_registry(self.RELEASE)
@@ -84,12 +85,13 @@ class SemanticRuleRegistryTests(unittest.TestCase):
 
     def test_registry_rejects_duplicate_semantic_keys(self):
         registry = default_semantic_rule_registry(self.RELEASE)
-        with self.assertRaisesRegex(
-                ValueError, "FACTORY_SEMANTIC_RULE_DUPLICATE"):
+        with self.assertRaises(ValueError) as caught:
             SemanticRuleRegistry(
                 registry.version,
                 (registry.profiles[0], registry.profiles[0]),
             )
+        self.assertEqual(
+            caught.exception.context["reason"], "FACTORY_SEMANTIC_RULE_DUPLICATE")
 
 
 if __name__ == "__main__":
