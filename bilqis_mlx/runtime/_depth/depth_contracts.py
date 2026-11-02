@@ -16,6 +16,7 @@ from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.learning.frame_embeddings import FeatureRequest, compose_factor_features
 from bilqis_mlx.learning.atlas_plasticity import AdapterParameters, adapter_forward
 from bilqis_mlx.semantics.atlas_features import AtlasFeatures
+from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
 from bilqis_mlx.runtime.backbone_identity import (
     bamf_parameter_tree_digest, execution_generation_digest,
 )
@@ -166,9 +167,11 @@ class DepthFrameFeatures:
     features: AtlasFeatures
     boundary_group: int
     schema_version: str = RELEASED_FEATURES_SCHEMA
+    atlas_selection: AtlasArtifactSelection | None = None
 
     def __post_init__(self):
         if (self.schema_version != RELEASED_FEATURES_SCHEMA or type(self.features) is not AtlasFeatures
+                or (self.atlas_selection is not None and type(self.atlas_selection) is not AtlasArtifactSelection)
                 or type(self.boundary_group) is not int
                 or not MIN_COMPLETED_GROUPS <= self.boundary_group <= MAX_COMPLETED_GROUPS
                 or type(self.requests) is not tuple or not self.requests

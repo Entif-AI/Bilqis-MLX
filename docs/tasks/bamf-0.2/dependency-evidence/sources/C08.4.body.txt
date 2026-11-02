@@ -1,0 +1,60 @@
+<!-- BAMF02:WORK-PACKET:C08.4 -->
+# C08.4 | Execute one logical school step across heterogeneous MLX workers
+
+**BAMF-0.2 implementation packet. Lane C.** Full original owner: [C08 #374](https://github.com/Entif-AI/Bilqis-MLX/issues/374); direct native parent: [C08 #374](https://github.com/Entif-AI/Bilqis-MLX/issues/374). **This issue is an implementable leaf.**
+
+## Outcome
+
+Make local multi-device execution a first-class resource mode without changing BAMF model semantics, source authority, optimizer custody, or the one-logical-school-step contract.
+
+The first required target is a tightly connected heterogeneous Apple-Silicon cluster (for example an existing M3 Ultra plus a later Mac Studio) using MLX distributed primitives. CUDA/NCCL remains a permitted backend of the same MLX execution contract, not a separate model implementation.
+
+## Direct prerequisites
+
+- [B11 #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369) architecture/backend dispatch.
+- [C08.1 #513](https://github.com/Entif-AI/Bilqis-MLX/issues/513) deterministic batching and activation estimates.
+- [C08.3 #515](https://github.com/Entif-AI/Bilqis-MLX/issues/515) isolated worker/resource-floor contract.
+- B12/B13 state custody remains authoritative for accepted optimizer/checkpoint state.
+
+## Required behavior
+
+1. Define a typed `DistributedStepManifest` that binds the exact retained generation, curriculum/source release, logical teacher batch, deterministic partition seed, world size, worker/rank identities, MLX version, backend, device family, numeric precision and reduction policy.
+2. Partition one logical teacher batch deterministically into disjoint rank work. A rank is an executor, not an autonomous teacher and may not independently change curriculum, source admission, optimizer policy, or retained generation.
+3. Compute per-rank gradients and reduce them under one declared rule before advancing **one logical optimizer state**.
+4. Preserve existing candidate atomicity: an accepted distributed candidate advances the same generation contract as a single-device candidate; rejection or worker failure leaves the retained parent unchanged.
+5. Make retry/restart semantics explicit. A lost or duplicated rank result must not double-apply an optimizer step.
+6. Support MLX distributed backends through capability/configuration rather than semantic branches. JACCL/RING/MPI/NCCL availability may differ by host, but the model/operator contract and checkpoint identities do not.
+7. Record communication time, compute time, evaluation time, effective examples/tokens per second, attempted steps/hour, accepted steps/hour, peak memory per worker and retained capability gain so scaling efficiency is measurable rather than assumed.
+8. Keep the single-host path valid and behaviorally equivalent. Multi-device execution is an acceleration mode, not a prerequisite for learning correctness.
+
+## Acceptance
+
+- [ ] A deterministic two-worker disposable fixture produces the same logical batch membership as the single-worker reference.
+- [ ] Reduced FP32 gradients match the declared single-worker reference tolerance on a bounded fixture.
+- [ ] One accepted distributed candidate advances exactly one logical optimizer generation.
+- [ ] Injected worker loss, duplicate result and stale-manifest result cannot double-advance or partially publish retained state.
+- [ ] Cold resume records and validates world size/backend/device metadata without making those fields semantic identity.
+- [ ] A heterogeneous local Apple-Silicon run records actual scaling efficiency and preserves source/retention/custody invariants.
+- [ ] The execution contract can select an available MLX CUDA/NCCL backend without a second BAMF model definition.
+- [ ] No WAN/public-swarm synchronous all-reduce is introduced here. Public contributed work is owned separately by C14.
+
+## Non-goals
+
+No federated averaging, arbitrary dense-delta merging, public-node trust model, incentive system, or Internet-wide synchronous optimizer.
+
+## Turn-in
+
+Follow the Lane C lifecycle in parent #374. Use disposable fixtures only; the live learner remains human-started. Preserve exact source/optimizer/checkpoint receipts and run fresh EGM review at integration.
+
+<!-- BAMF02:HOMOGENEOUS-CLUSTER-POLICY-20261029 -->
+## Homogeneous synchronous clusters and role-specialized nodes | 29 October 2026
+
+Heterogeneous MLX workers remain a required compatibility case, but they are **not presumed to be the optimal synchronous training group**.
+
+1. Prefer same-generation / materially similar workers for synchronous data- or tensor-parallel collectives when that avoids straggler effects and partition imbalance. The slowest participating rank and the communication fabric can bound a synchronized step.
+2. Treat cross-machine inference as **sharded aggregate capacity**, not a literal extension of one machine's unified-memory address space. Each node retains its own unified memory; tensor-parallel layers exchange collective results across the interconnect.
+3. Do not assume multi-Mac inference improves tokens/sec for a model that comfortably fits on one node. For BAMF-scale models, single-node inference remains the default unless an executed benchmark proves a gain. Multi-node inference is most justified when model/KV/cache capacity or a substantially larger future model requires sharding.
+4. The resource planner may choose **role specialization instead of synchronous training**: e.g. one faster node owns forward/backward/optimizer execution while another performs source preparation, retention/evaluation, exact-solver work, checkpoint verification, telemetry, or serving. Compare this topology against synchronous gradient reduction using retained-learning throughput, not synthetic FLOPS alone.
+5. Record worker generation, memory bandwidth, measured compute throughput and interconnect metrics so the planner can avoid placing a materially slower rank on the critical synchronized path unless capacity requires it.
+
+**Acceptance addition:** benchmark at least (a) single fastest trainer, (b) synchronous paired workers where available, and (c) fastest trainer plus auxiliary evaluation/preparation worker. Report which topology maximizes retained capability gain per wall-clock hour under the same source/evaluation contract.

@@ -4,7 +4,7 @@ import json
 import tempfile
 import unittest
 
-from bilqis_mlx.factory.tests.test_candidate_staging import CandidateStagingFixture
+from bilqis_mlx.factory.tests.curriculum.frontier.test_candidate_staging import CandidateStagingFixture
 from bilqis_mlx.factory.jit_curriculum import ProposalDisposition
 from bilqis_mlx.factory.autonomy import compile_autonomy_plan, initial_evidence_ledger
 from bilqis_mlx.runtime.candidate_staging import load_staged_candidates, persist_staged_candidate

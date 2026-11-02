@@ -1,0 +1,9 @@
+Recursive child of #418 (A08.1b). Full original requirements and acceptance remain authoritative; this child owns the bounded implementation slice documented in the committed repo specification.
+
+**Specification:** https://github.com/Entif-AI/Bilqis-MLX/blob/915e22a884e09b2d981b55378d749db177c1ee8b/docs/tasks/bamf-0.2/children/A08.1b.4.md
+
+**Lane:** `codex/bamf02-a-semantics`; consume the latest reviewed unified branch before each issue, preserve single-writer custody, and record exact pushed SHA.
+
+**Direct prerequisites:** A08.1a, A03, A07, A13. OPEN parent status alone is not a blocker when an exact reviewed branch receipt exists.
+
+**Finish:** implement every owned clause, literal source/rights/checker negatives, focused tests, fresh independent EGM with zero Blockers/Majors, and GitHub issue/PR receipt. No grade-specific shortcuts, false learning credit, live training, self-merge or main merge. Parent #418 remains open until all children and its original acceptance crosswalk are integrated.

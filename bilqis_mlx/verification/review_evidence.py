@@ -10,6 +10,7 @@ from dataclasses import dataclass
 import hashlib
 import json
 from pathlib import Path, PurePosixPath
+from ..paths import source_path
 import re
 
 SCHEMA = "bilqis.review-evidence/v1"
@@ -31,8 +32,7 @@ def verifier_digest() -> str:
     Source-specific adapter implementations belong in the receipt's artifacts.
     The independently supplied manifest fingerprint governs both bindings.
     """
-    root = Path(__file__).resolve().parents[1]
-    payload = {name: hashlib.sha256((root / name).read_bytes()).hexdigest()
+    payload = {name: hashlib.sha256(source_path(name).read_bytes()).hexdigest()
                for name in VERIFIER_FILES}
     return hashlib.sha256(json.dumps(payload, sort_keys=True,
                                      separators=(",", ":")).encode()).hexdigest()

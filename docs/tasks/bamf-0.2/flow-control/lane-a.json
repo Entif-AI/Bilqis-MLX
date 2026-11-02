@@ -1,0 +1,9 @@
+{
+  "schema": "bilqis.bamf.flow-control-lane/v1",
+  "lane": "A",
+  "observed_unified": "92bdff370e9be3d0c64eb4ffe300d2448f53d6a1",
+  "updated_at": "2026-11-02T05:10:00Z",
+  "exception": null,
+  "items": [],
+  "note": "No Lane A implementation leaf is marked ACTIVE in the current flow-control snapshot. Readiness remains governed by live issue dependencies and the lane execution contract."
+}

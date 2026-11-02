@@ -6,7 +6,7 @@ requires-python = ">=3.11"
 dependencies = ["cryptography"]
 
 [tool.setuptools.packages.find]
-include = ["bilqis_mlx*"]
+include = ["bilqis_mlx*", "lib.ithkuil*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.json"]
