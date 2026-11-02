@@ -12,7 +12,7 @@ from bilqis_mlx.runtime.tests.test_atlas_training_adapter import (
 class TrainingCompilationTests(AtlasTrainingAdapterTest):
     def test_real_factory_rows_and_delivery_bind_typed_source_and_target(self):
         item = self.compile(self.rows).rows[0]
-        self.assertEqual(item.model_input.prefix.ast, Literal('1,2', 'TokenSequence'))
+        self.assertEqual(item.model_input.prefix.ast.source_instance_id, 'synthetic:ast:1,2')
         self.assertEqual(item.model_input.features, (('1,2', 'subject', 'fixture.schema', 'public'),))
         self.assertEqual(item.target.value, 'FALSE')
         self.assertEqual(item.target.token_id, 1)
@@ -105,7 +105,7 @@ class TrainingCompilationTests(AtlasTrainingAdapterTest):
                 item = self.compile(rows).rows[0]
                 self.assertEqual(item.target.kind, kind)
                 self.assertEqual(item.target.value, values[0])
-                self.assertEqual(item.model_input.prefix.ast, Literal('1,2', 'TokenSequence'))
+                self.assertEqual(item.model_input.prefix.ast.source_instance_id, 'synthetic:ast:1,2')
                 if kind == 'numeric_active':
                     self.assertEqual(item.native_target.value, 'school.number.0')
 

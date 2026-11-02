@@ -94,17 +94,24 @@ def _source_context(rows, release, visible_ends, policy_mode):
 
 
 @dataclass(frozen=True)
+class SourceAstFixture:
+    source_instance_id: str
+    value: str
+
+
+@dataclass(frozen=True)
 class CompiledPrefixFixture:
-    ast: Literal
+    ast: SourceAstFixture
     visible_end: int
 
 
 def source_ast_for(tokens):
-    return Literal(','.join(str(token) for token in tokens), 'TokenSequence')
+    value = ','.join(str(token) for token in tokens)
+    return SourceAstFixture('synthetic:ast:' + value, value)
 
 
 def compile_prefix(ast, visible_end, release, compiler_config):
-    if not isinstance(ast, Literal):
+    if not isinstance(ast, SourceAstFixture):
         raise AssertionError('A05 requires a typed source AST')
     return CompiledPrefixFixture(ast, visible_end)
 
@@ -150,7 +157,7 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
 
     def compile(self, rows, *, release_sha=None, encoders=None, policy='allow',
                 generation=None, sealed=(), context_mutator=None,
-                frames_override=None, extra_kwargs=None):
+                frames_override=None, source_ast_override=None, extra_kwargs=None):
         delivery = describe_delivered_teaching(self.context.release, 'Z.C0', 'source.direct/Z.C0', rows)
         visible_ends = {rows[0]['id']: 2}
         frames_for_ast, task, frontier, context_policy = _source_context(
@@ -164,9 +171,18 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
             delivery=delivery, delivery_capability='Z.C0', delivery_release_sha256=release_sha or self.context.release.release_sha256,
             teacher_strategy={'policy': 'focused'}, requested_count=3, optimizer_step_seed=42,
             rehearsal_by_id={rows[0]['id']: 'prior'}, visible_ends=visible_ends,
-            source_ast_for=source_ast_for, compile_prefix=compile_prefix,
+            source_ast_for=source_ast_override or source_ast_for,
+            compile_prefix=compile_prefix,
             feature_requests_for=feature_requests_for, features_for=features_for, answer_plan_for=lambda *args: {**answer_plan_for(*args), 'generation_binding': self.model_generation},
             frames_for_ast=frames_for_ast, task_scope=task,
             source_frontier=frontier, eligibility_policy=context_policy,
             target_encoders=encoders, generation_binding=generation or self.model_generation,
             sealed_holdout_ids=sealed, **(extra_kwargs or {}))
+
+    def test_cross_source_ast_and_frame_substitution_is_rejected(self):
+        def forged_ast(tokens):
+            return replace(
+                source_ast_for(tokens),
+                source_instance_id='synthetic:other-source')
+        with self.assertRaises(BilqisError):
+            self.compile(self.rows, source_ast_override=forged_ast)

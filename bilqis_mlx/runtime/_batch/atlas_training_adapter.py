@@ -60,6 +60,14 @@ def _answer_plan(plan, head, visible_end, generation_binding):
     return _freeze(plan)
 
 
+def _require_source_lineage(ast, frames) -> None:
+    source_instance_id = getattr(ast, 'source_instance_id', None)
+    if (not isinstance(source_instance_id, str) or not source_instance_id
+            or any(frame.frame.source_instance_id != source_instance_id
+                   for frame in frames)):
+        _invalid('CONTEXT_SOURCE_LINEAGE_MISMATCH')
+
+
 def compile_training_batch(delivered_rows, source_context: SourceExecutionContext,
                            topology, *, delivery: DeliveredTeaching, delivery_capability: str,
                            delivery_release_sha256: str, teacher_strategy: dict,
@@ -160,6 +168,7 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
         if (type(frames) is not tuple or not frames
                 or any(type(frame) is not ContextEligibility for frame in frames)):
             _invalid('CONTEXT_SOURCE_FRAMES_REQUIRED')
+        _require_source_lineage(ast, frames)
         eligible = _check_context_eligibility(
             frames, task_scope, source_frontier, eligibility_policy)
         if type(eligible) is not EligibleContext:
