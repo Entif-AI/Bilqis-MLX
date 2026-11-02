@@ -10,7 +10,7 @@
   `bilqis.motif-manifest/v1`,
   `bilqis.motif-allocation-plan/v1`,
   `bilqis.motif-candidate-view/v2`.
-- Upstream source authority: current unified `bd62f3cb` includes
+- Upstream source authority: current unified `28009467` includes
   A03.4/#578's repo-pinned released-schema authority and A13's
   source-owner replay/grant path.
 - Independent B07.1 EGM: **PENDING**.
@@ -218,3 +218,33 @@ Package-owner proof is **36/36 PASS** with the real pinned A01 artifact. No stud
 optimizer, checkpoint, accepted manifest, or B07.3 generation was mutated. This
 candidate still requires fresh exact-head adversarial re-review of the new repair
 and the prescribed Google EGM before issue acceptance or integration.
+
+## 2026-11-02 current-unified merge-readiness refresh
+
+The project owner selected #456 as Lane B's current integration candidate. The
+preserved branch was merge-forwarded without conflict from previously reviewed
+head `547471d2b95fadbbd7fa3631db0d0a56a20436c9` onto reviewed unified
+`2800946729e484875f7d1f57f0e6d85078936394`, producing synchronization commit
+`d68e4fdc461618119c40ad29702612c8b67bb3ce`. No B07-owned conflict resolution
+or feature rewrite was required.
+
+The real pinned A01 artifact was mounted and the exact B07 motif + retention
+selection rerun after synchronization:
+
+`BILQIS_ATLAS_REAL_ARTIFACT=<pinned A01 artifact> PYTHONPATH=. python3 -B scripts/run_tests.py bilqis_mlx/learning/_engram/tests bilqis_mlx/learning/_retention/tests/test_atlas_candidate.py`
+
+Result: **45/45 PASS, zero skips**. Changed-scope structure, governance, code-smell,
+flow-control and flow-control regression checks also pass with zero new findings;
+`git diff --check` is clean.
+
+Two broader repository checks remain red on current unified and on this branch
+with the same pre-existing findings: `scripts/verify_bamf_0_2_contracts.py`
+reports historical work-packet/dispatch drift outside B07.1, and the full
+`error_control_plane.py --check` reports existing opaque operator-contract debt
+outside the B07-owned delta. Neither failure is introduced by #456; the
+changed-scope quality gate is green.
+
+Because synchronization changes the exact candidate head after the prior
+`EGM-Passed` receipt, merge readiness returns to **EGM-Pending** until a fresh
+pinned Google EGM reviews the final pushed head. No self-merge or learner-state
+mutation is authorized.
