@@ -77,6 +77,7 @@ def verify_source() -> dict:
             "actor": actor, "time": time,
         }),
     }
+_VERIFY_SOURCE = verify_source
 def projected_graph(parent: dict) -> dict:
     """Append fixture-only symbols without changing any inherited row."""
     if (not isinstance(parent, dict)
@@ -172,7 +173,7 @@ def _encode(record: dict, graph: dict) -> list[int]:
 def draw(source_root=None, graph=None, *, capability: str, seed: int,
          each: int = 12, **_) -> tuple[dict, ...]:
     del source_root
-    verify_source()
+    _VERIFY_SOURCE()
     if (capability not in CAPABILITIES or type(seed) is not int
             or type(each) is not int or not 1 <= each <= 10000
             or not isinstance(graph, dict)):
@@ -208,31 +209,31 @@ def check(row: dict, *, graph: dict, **_) -> bool:
         )
     except (KeyError, TypeError, ValueError, IndexError):
         return False
-def registered_adapter() -> RegisteredSourceAdapter:
-    witness = verify_source()
+_CANONICAL_DRAW = draw
+_CANONICAL_CHECK = check
+def _implementation_sha256() -> str:
+    witness = _VERIFY_SOURCE()
     files = (
         ("bilqis_mlx/source_adapters/world_rules.py", Path(__file__)),
         ("bilqis_mlx/source_adapters/_world/oracle.py",
          ROOT / "bilqis_mlx/source_adapters/_world/oracle.py"),
     )
-    implementation = digest({
-        "source": witness,
-        "files": tuple(
-            (relative, hashlib.sha256(path.read_bytes()).hexdigest())
-            for relative, path in files),
-    })
+    return digest({"source": witness, "files": tuple(
+        (relative, hashlib.sha256(path.read_bytes()).hexdigest())
+        for relative, path in files)})
+def registered_adapter() -> RegisteredSourceAdapter:
     return RegisteredSourceAdapter(
         SourceAdapter(
             "source.bamf.qualified-world/v1", GENERATOR, (ORACLE,),
-            implementation,
+            _implementation_sha256(),
             variation_axes=("actor", "time", "state", "direct-cause", "fresh-seed")),
-        draw, check,
+        _CANONICAL_DRAW, _CANONICAL_CHECK,
     )
 def require_registered_source(source: RegisteredSourceAdapter) -> None:
     """Reject descriptor cloning with substituted executable behavior."""
     expected = registered_adapter()
     if (type(source) is not RegisteredSourceAdapter
             or source.descriptor != expected.descriptor
-            or source.draw is not draw
-            or source.check is not check):
+            or source.draw is not _CANONICAL_DRAW
+            or source.check is not _CANONICAL_CHECK):
         raise ValueError("WORLD_RULE_SOURCE_IMPLEMENTATION_SUBSTITUTED")

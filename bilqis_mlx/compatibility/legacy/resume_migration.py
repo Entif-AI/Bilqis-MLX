@@ -4,9 +4,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from ...data_plane import verify_file_digest
-from ...errors import ErrorBus, SCHOOL
-from ...runtime.mlx_checkpoint import SCHEMA as BUNDLE_SCHEMA, _read_catalog
+from bilqis_mlx.data_plane import verify_file_digest
+from bilqis_mlx.errors import ErrorBus, SCHOOL
+from bilqis_mlx.runtime.mlx_checkpoint import SCHEMA as BUNDLE_SCHEMA, _read_catalog
 
 
 def inspect_historical_run(run_dir, receipt):

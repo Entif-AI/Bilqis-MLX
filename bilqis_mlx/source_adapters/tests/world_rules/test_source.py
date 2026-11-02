@@ -63,6 +63,16 @@ class QualifiedWorldSourceTests(unittest.TestCase):
             changed = registered_adapter().descriptor.implementation_sha256
         self.assertNotEqual(changed, baseline)
 
+    def test_registered_adapter_ignores_runtime_draw_check_rebinding(self):
+        from bilqis_mlx.source_adapters import world_rules
+        baseline = registered_adapter()
+        with patch.object(world_rules, "draw", lambda **_: ({"forged": True},)), \
+                patch.object(world_rules, "check", lambda *_args, **_kwargs: True):
+            rebound = registered_adapter()
+        self.assertEqual(rebound.descriptor, baseline.descriptor)
+        self.assertIs(rebound.draw, baseline.draw)
+        self.assertIs(rebound.check, baseline.check)
+
     def test_all_four_rules_have_fresh_independently_checked_source_rows(self):
         for capability in CAPABILITIES:
             with self.subTest(capability=capability):

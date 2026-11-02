@@ -12,7 +12,7 @@ from bilqis_mlx.factory.skos_curriculum.registry import (
     IMPLEMENTATION_UNCOVERED, PROGRAM_BOUND, BoundFamilyProgram,
     FamilyProgramRegistry, RegisteredFamilyProgram, bind_existing_family_program,
     bind_factory_release_families, default_family_program_registry,
-    uncovered_family_obligations,
+    execute_bound_family_program, uncovered_family_obligations,
 )
 from bilqis_mlx.factory.skos_curriculum.inventory import _inventory_source_families
 from bilqis_mlx.factory.skos_curriculum.curriculum import (
@@ -180,59 +180,54 @@ class FamilyExecutionTests(unittest.TestCase):
                     object(), frontier, capability.id,
                     construct_kwargs={"graph": graph, "seed": 420, "each": 1},
                     check_kwargs={"graph": graph})
+            shadowed = default_family_program_registry()
+            shadowed.require = lambda _family_id: forged
+            artifact = execute_release_family_program(
+                release, source_registry, shadowed, object(), frontier,
+                capability.id,
+                construct_kwargs={"graph": graph, "seed": 420, "each": 1},
+                check_kwargs={"graph": graph})
+            self.assertEqual(artifact.capability_id, capability.id)
 
-    def test_release_family_execution_runs_registered_constructor_and_checker(self):
+    def test_production_execution_rejects_noncanonical_family_registry(self):
         course, source_registry = synthetic_release_inputs()
         release = compile_factory_release(course, source_registry)
         census = _inventory_source_families(_snapshot())
         frontier = LearnedFrontier(census.semantic_release)
-        candidate = _compile_semantic_curriculum_snapshot(
-            _snapshot(), (), frontier)
-        lessons = _compile_source_constructive_lessons_snapshot(_snapshot())
+        family = RegisteredFamilyProgram(
+            "caller_invented_family", ("fixture.adapter/v1",),
+            "fixture.constructor/v1", "fixture.checker/v1",
+            lambda: {"forged": True}, lambda *_args, **_kwargs: True)
+        with self.assertRaises(ValueError):
+            execute_release_family_program(
+                release, source_registry, FamilyProgramRegistry((family,)),
+                object(), frontier, release.capabilities[0].capability_id)
+
+    def test_release_family_execution_runs_registered_constructor_and_checker(self):
         family = RegisteredFamilyProgram(
             "fixture_family", ("fixture.adapter/v1",),
             "fixture.constructor/v1", "fixture.checker/v1",
             lambda value: {"answer": value},
             lambda artifact, expected: artifact == {"answer": expected})
-        capability_id = release.capabilities[0].capability_id
-        with patch.multiple(
-            "bilqis_mlx.factory.skos_curriculum.programs.binding",
-            inventory_source_families=lambda _selection: census,
-            compile_semantic_curriculum=lambda *_args: candidate,
-            compile_source_constructive_lessons=lambda _selection: lessons,
-            assert_family_inventory_current=lambda *_args: None,
-            assert_curriculum_candidate_current=lambda *_args: None,
-            assert_source_lesson_set_current=lambda *_args: None,
-        ):
-            artifact = execute_release_family_program(
-                release, source_registry, FamilyProgramRegistry((family,)),
-                object(), frontier, capability_id,
-                construct_args=(7,), check_args=(7,))
+        binding = BoundFamilyProgram(
+            family.family_id, "fixture.capability", "fixture.adapter/v1",
+            "fixture.generator/v1", "fixture.oracle/v1",
+            family.constructor_ref, family.checker_ref)
+        artifact = execute_bound_family_program(
+            FamilyProgramRegistry((family,)), binding,
+            construct_args=(7,), check_args=(7,))
         self.assertEqual(artifact, {"answer": 7})
 
     def test_release_family_execution_rejects_checker_disagreement(self):
-        course, source_registry = synthetic_release_inputs()
-        release = compile_factory_release(course, source_registry)
-        census = _inventory_source_families(_snapshot())
-        frontier = LearnedFrontier(census.semantic_release)
-        candidate = _compile_semantic_curriculum_snapshot(
-            _snapshot(), (), frontier)
-        lessons = _compile_source_constructive_lessons_snapshot(_snapshot())
         family = RegisteredFamilyProgram(
             "fixture_family", ("fixture.adapter/v1",),
             "fixture.constructor/v1", "fixture.checker/v1",
             lambda value: value, lambda _artifact, _expected: False)
-        with patch.multiple(
-            "bilqis_mlx.factory.skos_curriculum.programs.binding",
-            inventory_source_families=lambda _selection: census,
-            compile_semantic_curriculum=lambda *_args: candidate,
-            compile_source_constructive_lessons=lambda _selection: lessons,
-            assert_family_inventory_current=lambda *_args: None,
-            assert_curriculum_candidate_current=lambda *_args: None,
-            assert_source_lesson_set_current=lambda *_args: None,
-        ):
-            with self.assertRaises(ValueError):
-                execute_release_family_program(
-                    release, source_registry, FamilyProgramRegistry((family,)),
-                    object(), frontier, release.capabilities[0].capability_id,
-                    construct_args=(7,), check_args=(7,))
+        binding = BoundFamilyProgram(
+            family.family_id, "fixture.capability", "fixture.adapter/v1",
+            "fixture.generator/v1", "fixture.oracle/v1",
+            family.constructor_ref, family.checker_ref)
+        with self.assertRaises(ValueError):
+            execute_bound_family_program(
+                FamilyProgramRegistry((family,)), binding,
+                construct_args=(7,), check_args=(7,))

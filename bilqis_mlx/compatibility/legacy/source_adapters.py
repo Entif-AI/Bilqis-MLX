@@ -1,22 +1,22 @@
 """Historical source adapters excluded from the canonical live registry."""
 from __future__ import annotations
 
-from ...boolean_composite import ORACLE as B_COMPOSITE_ORACLE
-from ...boolean_identification import encode_record
-from ...factory.adapters import RegisteredSourceAdapter
-from ...factory.model import SourceAdapter
-from ...grade_b_oracle import VERSION as B_ORACLE
-from ...minimal_boolean_identification_oracle import (
+from bilqis_mlx.boolean_composite import ORACLE as B_COMPOSITE_ORACLE
+from bilqis_mlx.boolean_identification import encode_record
+from bilqis_mlx.factory.adapters import RegisteredSourceAdapter
+from bilqis_mlx.factory.model import SourceAdapter
+from bilqis_mlx.grade_b_oracle import VERSION as B_ORACLE
+from bilqis_mlx.minimal_boolean_identification_oracle import (
     VERSION as B_MINIMAL_IDBOOLOPS_ORACLE,
     evaluate as evaluate_minimal_identification,
 )
-from ...minimal_grade_b import (
+from bilqis_mlx.minimal_grade_b import (
     GENERATOR as B_MINIMAL_GENERATOR,
     RELEASE as B_MINIMAL_RELEASE,
     constructor_digest as b_minimal_digest,
     draw_minimal,
 )
-from ...source_adapters.school import (
+from bilqis_mlx.source_adapters.school import (
     B_COMPOSITE_CAPABILITY,
     B_IDBOOLOPS_CAPABILITY,
     check_boolean_composite,
