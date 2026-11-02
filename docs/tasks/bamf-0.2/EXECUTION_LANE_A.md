@@ -29,6 +29,18 @@ Use `docs/tasks/bamf-0.2/workstack.json` and the latest direct dependency receip
 
 Lane keys: A01, A02, A03, A04, A05, A06, A07, A08, A09, A10, A11, A12, A13.
 
+## Flow-control preflight
+
+Before taking or refreshing a leaf, run
+`python3 -B scripts/check_bamf_flow_control.py` and read
+`flow-control/lane-a.json`. Only `ACTIVE` counts as implementation
+WIP and permits substantive branch mutation. The normal lane ceiling is two active
+leaves, but prefer draining the nearest-to-merge active leaf before opening another.
+A `WAITING` or `BLOCKED` PR remains frozen until its recorded resume trigger occurs;
+a newer unified head by itself is not a resume trigger. Update the lane state to
+`ACTIVE` before the one sync/revalidation pass required on resumption. Any
+over-limit exception must name its reason, authority and expiry in the lane file.
+
 ## Implementation posture
 
 Read root README.md and AGENTS.md once per fresh execution session, this issue plus its live amendments, direct dependency receipts and the listed source files. Work on the assigned lane branch with one writer; shared-file edits go through the integration owner. Preserve unrelated work. Use package-local unit tests and one smallest real integration witness; run the repository aggregate checks at an integration boundary, not after every tiny edit. Change only what the prescribed outcome needs. Any stale dependency label is rechecked against its exact branch/commit receipt. On completion commit and push the feature branch, read back its SHA, comment on this issue and the lane PR, and add `Closes #<this issue>` to that PR's Development section. Include changed paths, commands/results, EGM disposition, exact dependencies and next ready leaf. Keep branch work alive across page boundaries; checkpoint instead of stopping solely because quota is low. Live training is operator-started; disposable finite test students are permitted. No main merge is delegated by this issue.
@@ -37,7 +49,7 @@ Treat the selected shape, source authority, whole-system capability policy, plas
 
 ## EGM
 
-Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Read `docs/codex.md`, the chosen persona and its standard from the actual EGM checkout. Keep the implementer as the Elephant and launch a genuinely fresh-context Goldfish with only this issue, its named source files, the diff and test receipts. Use the delivered cold-reviewed interface contract before coding. Run a fresh codebase-details/comprehension turn-in review for this leaf, or one cohesive batch of at most three leaves with findings attributed to each issue. Resolve every blocker or major with a concrete patch or an evidence-backed contest in `docs/evidence/bamf/ISSUE_KEY/egm.md`. One repair pass and one targeted re-audit are the default budget. Cosmetic nits never delay delivery. Continue safe independent work while a review runs. No questions back to the owner about settled choices. If a worker has no fresh-subagent facility, turn in the patch with EGM_PENDING to the designated integration reviewer rather than pretending a same-context self-review was independent. Integration requires the real fresh review.
+Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c` under the canonical merge-readiness policy in `docs/tasks/bamf-0.2/EGM_EXECUTION.md`. Keep the implementer as the Elephant and spend a genuinely fresh-context Goldfish review only when the exact PR head is otherwise ready for human merge: all known Blocker/Major remediation is complete, required dependency/current-unified authority is consumed, and affected local/hosted proof is green. Do not spend fresh EGM after each individual fix or remediation issue. If a final EGM finds new Blocker/Major work, record it, repair the complete known set with ordinary engineering review/proof, then request one new fresh EGM pass on the next whole merge candidate. One cohesive batch may contain at most three merge-ready leaves with findings attributed to each issue. Cosmetic nits never delay delivery. If fresh independent review is unavailable at merge readiness, record `EGM_PENDING`; never substitute same-context self-review.
 
 Fetch EGM once into a tool cache outside the public source and pin `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Use the actual `agents/implementation_readiness.md`, `agents/codebase_details.md`, `agents/comprehension.md` and their referenced standards. The fresh reviewer receives the leaf, necessary source, diff and receipts, not the implementer's full session. Reuse an approved specification review; spend fresh review on the actual implementation or at most three cohesive leaves.
 

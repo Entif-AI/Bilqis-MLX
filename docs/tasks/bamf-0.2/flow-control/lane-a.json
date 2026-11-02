@@ -1,0 +1,21 @@
+{
+  "schema": "bilqis.bamf.flow-control-lane/v1",
+  "lane": "A",
+  "observed_unified": "67c964a1548cb0075a28a90aa2565d8bdab0fd71",
+  "updated_at": "2026-11-02T22:12:00Z",
+  "exception": null,
+  "items": [
+    {
+      "issue": 420,
+      "pr": null,
+      "state": "WAITING",
+      "head_sha": "2c80599dfac07f3e5eaf5d82adf74411dc21b826",
+      "summary": "A08.3 content review is clean, but the candidate is conflicting with current reviewed unified.",
+      "resume_trigger": "Remediation #737 refreshes the candidate onto current reviewed unified, conflict resolution is verified, and the candidate is again selected for final merge-readiness turn-in.",
+      "closed_pr": 703,
+      "preserved_branch": "feat/bamf-a08-3-420-20261101",
+      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
+      "close_reason": "EGM-Passed on current head; merge conflict/lifecycle repair is #737 EGM-Mitigation"
+    }
+  ]
+}
