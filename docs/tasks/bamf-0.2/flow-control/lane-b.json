@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "92bdff370e9be3d0c64eb4ffe300d2448f53d6a1",
-  "updated_at": "2026-11-02T05:10:00Z",
+  "observed_unified": "ed5df098fddf0e88ccd028652b44ba81e0b235a5",
+  "updated_at": "2026-11-02T07:09:36Z",
   "exception": null,
   "items": [
     {
@@ -64,10 +64,10 @@
     {
       "issue": 485,
       "pr": 674,
-      "state": "WAITING",
-      "head_sha": "bfada2678ad6bd44ae7a297d101b96ac8292fbea",
-      "summary": "B14.4 cache-authority repair is locally green.",
-      "resume_trigger": "Fresh exact-head independent re-review completes and pinned Google EGM becomes available/completes."
+      "state": "ACTIVE",
+      "head_sha": "d083671db5042199d5dc6839212f9546a9b72c4d",
+      "summary": "B14.4 trust-root repair is locally green: cache signatures resolve through the host authority registry and reject caller-selected key substitution.",
+      "resume_trigger": null
     },
     {
       "issue": 478,
