@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 from threading import RLock
+from types import MappingProxyType
 import weakref
 
 import numpy as np
@@ -36,29 +37,62 @@ def _optimizer_fingerprint(state) -> str:
     return digest.hexdigest()
 
 
-def _transaction_fingerprint(candidate: CandidateTransaction) -> tuple:
-    parent = candidate.parent
-    initialization = parent.initialization
+def _array_mapping_fingerprint(values) -> tuple:
+    rows = []
+    for name in sorted(values):
+        value = np.asarray(values[name])
+        rows.append((name, str(value.dtype), value.shape,
+                     hashlib.sha256(value.tobytes()).hexdigest()))
+    return tuple(rows)
+
+
+def _proof_fingerprint(proof: CandidateStepProof) -> tuple:
     return (
-        id(parent), _optimizer_fingerprint(parent.optimizer),
-        parent.allocations.digest, parent.optimizer_step,
-        repr(parent.policy.to_record()), initialization.topology.digest,
-        initialization.extents.digest, initialization.run_seed,
-        _optimizer_fingerprint(candidate.optimizer), candidate.allocations.digest,
+        _array_mapping_fingerprint(proof.gradients),
+        _array_mapping_fingerprint(proof.update_mask),
+        repr(proof.teacher_hparams),
+        tuple(sorted(proof.decay.items())),
+        proof.loss_bearing,
+        proof.max_norm,
+    )
+
+
+def _transaction_fingerprint(candidate: CandidateTransaction) -> tuple:
+    return (
+        _transaction_issuance_fingerprint(candidate),
+        _optimizer_fingerprint(candidate.optimizer),
+    )
+
+
+def _transaction_issuance_fingerprint(candidate: CandidateTransaction) -> tuple:
+    """Bind caller-visible transaction inputs; optimizer bytes are replay-checked."""
+    return (
+        id(candidate.parent), id(candidate.optimizer), candidate.allocations.digest,
         candidate.teacher_requests_full, id(candidate.attempt),
         candidate.update_steps, repr(candidate.frames), repr(candidate.budget),
+        tuple(_proof_fingerprint(step) for step in candidate.steps),
         candidate.schema_version,
     )
 
 
-def _transaction_identity(candidate: CandidateTransaction) -> tuple:
-    """Cheap owner-issued shape; content is frozen only at resolution."""
-    return (
-        id(candidate.parent), id(candidate.optimizer), id(candidate.allocations),
-        candidate.teacher_requests_full, id(candidate.attempt),
-        candidate.update_steps, id(candidate.frames), id(candidate.budget),
-        id(candidate.steps), candidate.schema_version,
-    )
+def _clone_optimizer(state):
+    copied = []
+    for tree_name in ('parameters', 'm', 'v', 'update_counts'):
+        copied.append({name: mx_array_copy(value)
+                       for name, value in getattr(state, tree_name).items()})
+    return type(state)(*copied)
+
+
+def mx_array_copy(value):
+    # MLX array construction gives candidate-owned copy-on-write storage without
+    # synchronizing the complete tree through host NumPy.
+    import mlx.core as mx
+    return mx.array(value)
+
+
+def _copy_array_mapping(values):
+    return MappingProxyType({name: mx_array_copy(value)
+                             for name, value in values.items()})
 
 
 class _CandidateOwner:
@@ -88,7 +122,7 @@ class _CandidateOwner:
         with self.lock:
             current = self.transactions.get(id(candidate))
             return bool(current is not None and current[0]() is candidate
-                        and current[1] == _transaction_identity(candidate))
+                        and current[1] == _transaction_issuance_fingerprint(candidate))
 
     def make_transaction(self, parent, optimizer, allocations,
                          teacher_requests_full, attempt, update_steps,
@@ -105,7 +139,8 @@ class _CandidateOwner:
         item_ref = weakref.ref(
             candidate, lambda ref, k=key: self._forget(self.transactions, k, ref))
         with self.lock:
-            self.transactions[key] = (item_ref, _transaction_identity(candidate))
+            self.transactions[key] = (
+                item_ref, _transaction_issuance_fingerprint(candidate))
         try:
             candidate.__post_init__()
         except Exception:
@@ -120,8 +155,9 @@ class _CandidateOwner:
             _invalid()
         parent.__post_init__()
         proposal = prepare_candidate_motif_snapshot(frames, parent.allocations, budget)
-        optimizer = (materialize_planned_motif_rows(parent, proposal)
-                     if proposal.view.plan.allocated else parent.optimizer)
+        staged = (materialize_planned_motif_rows(parent, proposal)
+                  if proposal.view.plan.allocated else parent.optimizer)
+        optimizer = _clone_optimizer(staged)
         return self.make_transaction(
             parent, optimizer, proposal.proposed, teacher_requests_full,
             self.new_attempt(), 0, frames, budget, ())
@@ -142,7 +178,8 @@ class _CandidateOwner:
         if optimizer is candidate.optimizer:
             return candidate
         proof = CandidateStepProof(
-            dict(gradients), dict(update_mask), teacher_hparams, decay,
+            _copy_array_mapping(gradients), _copy_array_mapping(update_mask),
+            teacher_hparams, MappingProxyType(dict(decay)),
             loss_bearing, max_norm)
         return self.make_transaction(
             candidate.parent, optimizer, candidate.allocations,

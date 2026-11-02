@@ -3,6 +3,7 @@ from dataclasses import replace
 from unittest import TestCase
 
 import mlx.core as mx
+import numpy as np
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning._retention import atlas_candidate as candidate_owner
@@ -150,6 +151,58 @@ class CandidateAuthorityTests(TestCase):
         resolve_candidate(candidate, accepted=True)
         with self.assertRaises(BilqisError):
             self.step(candidate)
+
+    def test_candidate_optimizer_cannot_mutate_retained_parent_by_alias(self):
+        candidate = begin_candidate(self.parent)
+        before = np.asarray(self.parent.optimizer.parameters[self.name]).copy()
+
+        candidate.optimizer.parameters[self.name][0, 0] = (
+            candidate.optimizer.parameters[self.name][0, 0] + 1)
+
+        np.testing.assert_array_equal(
+            np.asarray(self.parent.optimizer.parameters[self.name]), before)
+
+    def test_materialized_candidate_does_not_alias_untouched_parent_leaf(self):
+        name = 'blocks.0.query'
+        before = np.asarray(self.parent.optimizer.parameters[name]).copy()
+        candidate = begin_candidate(
+            self.parent, frames=(source(),), budget=MotifBudget(1))
+
+        candidate.optimizer.parameters[name][0, 0] = (
+            candidate.optimizer.parameters[name][0, 0] + 1)
+
+        np.testing.assert_array_equal(
+            np.asarray(self.parent.optimizer.parameters[name]), before)
+
+    def test_nested_proof_retarget_rejects_before_resolution(self):
+        candidate = self.step(begin_candidate(self.parent))
+        proof = candidate.steps[0]
+        proof.gradients[self.name][0] = mx.array(
+            [6.] * proof.gradients[self.name].shape[1], dtype=mx.float32)
+
+        from bilqis_mlx.runtime.atlas_optimizer import _adamw_update
+        rewritten = _adamw_update(
+            candidate.parent.optimizer, proof.gradients, proof.update_mask,
+            proof.teacher_hparams, decay=proof.decay,
+            loss_bearing=proof.loss_bearing, max_norm=proof.max_norm)
+        for field in ('parameters', 'm', 'v', 'update_counts'):
+            getattr(candidate.optimizer, field)[self.name][:] = getattr(
+                rewritten, field)[self.name]
+
+        with self.assertRaises(BilqisError):
+            resolve_candidate(candidate, accepted=True)
+
+    def test_masked_off_proof_mutation_invalidates_issued_resolution(self):
+        candidate = self.step(begin_candidate(self.parent))
+        accepted = resolve_candidate(candidate, accepted=True)
+        proof = candidate.steps[0]
+        self.assertFalse(bool(proof.update_mask[self.name][1]))
+
+        proof.gradients[self.name][1] = mx.ones_like(
+            proof.gradients[self.name][1]) * 37
+
+        with self.assertRaises(BilqisError):
+            accepted.__post_init__()
 
     def test_no_generic_transaction_issuer_or_public_constructor(self):
         self.assertFalse(hasattr(candidate_owner, "_issue_transaction"))

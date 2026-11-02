@@ -181,7 +181,10 @@ class CandidateTransactionTests(TestCase):
         np.testing.assert_array_equal(
             np.asarray(parent.optimizer.parameters["motif.page.0"]),
             np.asarray(parent_page))
-        self.assertIs(candidate.optimizer.parameters["blocks.0.query"], untouched)
+        self.assertIsNot(candidate.optimizer.parameters["blocks.0.query"], untouched)
+        np.testing.assert_array_equal(
+            np.asarray(candidate.optimizer.parameters["blocks.0.query"]),
+            np.asarray(untouched))
         self.assertIs(resolve_candidate(candidate, accepted=False), parent)
 
     def test_materialization_binding_must_match_parent_release_and_capacity(self):
