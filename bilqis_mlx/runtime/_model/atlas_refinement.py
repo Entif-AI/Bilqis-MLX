@@ -51,42 +51,9 @@ class RefinementParameterView(tuple, metaclass=_ViewType):
     schema_version = REFINEMENT_PARAMETER_VIEW_SCHEMA
 
     def __new__(cls, *args):
-        if cls is not RefinementParameterView:
-            return tuple.__new__(cls, args)
-        topology_digest, extents_digest, declarations, parameters = args
-        names = tuple(item.name for item in declarations)
-        digests = (topology_digest, extents_digest)
-        if (any(not isinstance(value, str) or len(value) != SHA256_HEX_LENGTH
-                or any(character not in "0123456789abcdef" for character in value)
-                for value in digests)
-                or not declarations
-                or any(type(item) is not ParameterSpec for item in declarations)
-                or any(not name.startswith("refine.") for name in names)
-                or len(set(names)) != len(names) or set(parameters.keys()) != set(names)):
+        if cls is RefinementParameterView:
             _invalid()
-        for item in declarations:
-            value = parameters[item.name]
-            if (not isinstance(value, mx.array) or value.dtype != mx.float32
-                    or tuple(value.shape) != item.shape):
-                _invalid()
-        def get_item(view, key):
-            if isinstance(key, str):
-                try:
-                    key = names.index(key)
-                except ValueError:
-                    raise KeyError(key) from None
-            return tuple.__getitem__(view, key)
-
-        bound_type = _ViewType("BoundRefinementParameterView", (cls,), {
-            "__slots__": (),
-            "_fields": tuple(f"p{index}" for index in range(len(names))),
-            "__getitem__": get_item,
-            "keys": lambda _view: names,
-            "topology_digest": property(lambda _view: topology_digest),
-            "extents_digest": property(lambda _view: extents_digest),
-            "declarations": property(lambda _view: declarations),
-        })
-        return bound_type(*(parameters[name] for name in names))
+        return tuple.__new__(cls, args)
 
     def values(self):
         return tuple(self)
@@ -110,15 +77,55 @@ class RefinementParameterView(tuple, metaclass=_ViewType):
         self._immutable()
 
 
+def _require_b01_projection(view):
+    """Reject reconstructed trees before claiming B01 alias provenance."""
+    if not isinstance(view, RefinementParameterView):
+        _invalid()
+    proof = type(view).__dict__.get("_owner_proof")
+    if proof is None or not proof(view):
+        _invalid()
+
+
 def refinement_parameter_view(parameters: Mapping[str, mx.array], *, spec: ModelTopologySpecV2,
                               extents: GenerationExtents) -> RefinementParameterView:
-    """Borrow an immutable exact refinement view after validating the full B01 tree."""
+    """Borrow exact B01 aliases; reconstructed pytrees carry no alias authority."""
     validate_bamf_parameters(spec, extents, parameters)
     declarations = tuple(item for item in expected_bamf_shapes(spec, extents)
                          if item.name.startswith("refine."))
-    return RefinementParameterView(
-        spec.digest, extents.digest, declarations,
-        {item.name: parameters[item.name] for item in declarations})
+    names = tuple(item.name for item in declarations)
+    values = tuple(parameters[name] for name in names)
+    owner = [None]
+
+    def proof(view):
+        return (view is owner[0] and tuple.__len__(view) == len(values)
+                and all(tuple.__getitem__(view, i) is value
+                        for i, value in enumerate(values)))
+
+    def get_item(view, key):
+        if isinstance(key, str):
+            try:
+                key = names.index(key)
+            except ValueError:
+                raise KeyError(key) from None
+        return tuple.__getitem__(view, key)
+
+    def owner_metadata(view, value):
+        if not proof(view):
+            _invalid()
+        return value
+
+    bound_type = _ViewType("BoundRefinementParameterView", (RefinementParameterView,), {
+        "__slots__": (),
+        "_fields": tuple(f"p{index}" for index in range(len(names))),
+        "__getitem__": get_item,
+        "keys": lambda _view: names,
+        "_owner_proof": staticmethod(proof),
+        "topology_digest": property(lambda view: owner_metadata(view, spec.digest)),
+        "extents_digest": property(lambda view: owner_metadata(view, extents.digest)),
+        "declarations": property(lambda view: owner_metadata(view, declarations)),
+    })
+    owner[0] = bound_type(*values)
+    return owner[0]
 
 
 def _norm(value, gamma):
@@ -132,6 +139,11 @@ def _validate_refinement_parameters(parameters):
     extents = GenerationExtents(1, 1, "0"*64, "0"*64, "0"*64)
     declarations = tuple(item for item in expected_bamf_shapes(ModelTopologySpecV2(), extents)
                          if item.name.startswith("refine."))
+    if isinstance(parameters, RefinementParameterView):
+        if tuple.__len__(parameters) != len(declarations):
+            _invalid()
+        parameters = {item.name: tuple.__getitem__(parameters, i)
+                      for i, item in enumerate(declarations)}
     if set(parameters.keys()) != {item.name for item in declarations}:
         _invalid()
     for item in declarations:
@@ -140,6 +152,7 @@ def _validate_refinement_parameters(parameters):
             _invalid()
     if not all(bool(mx.all(mx.isfinite(value))) for value in parameters.values()):
         _invalid()
+    return parameters
 
 
 def _validate(hidden, seed, members, role, passes, parameters):
@@ -151,10 +164,11 @@ def _validate(hidden, seed, members, role, passes, parameters):
     if (not isinstance(members, mx.array) or members.ndim != MEMBER_RANK or
             members.shape[0] < 1 or members.shape[1] != WIDTH or members.dtype != mx.float32):
         _invalid()
-    _validate_refinement_parameters(parameters)
+    parameters = _validate_refinement_parameters(parameters)
     if not all(bool(mx.all(mx.isfinite(value))) for value in
                (hidden, seed, members, role)):
         _invalid()
+    return parameters
 
 
 def _refine_frame(hidden: mx.array, seed: mx.array, members: mx.array, role: mx.array,
@@ -165,7 +179,7 @@ def _refine_frame(hidden: mx.array, seed: mx.array, members: mx.array, role: mx.
     Inputs remain unchanged; every pass recalls the same original seed and
     members. No backbone, source lookup, routing decision or state write occurs.
     """
-    _validate(hidden, seed, members, role, passes, parameters)
+    parameters = _validate(hidden, seed, members, role, passes, parameters)
     if passes == 0:
         return _RefinementResult(hidden, None, 0)
     keys = members @ parameters["refine.key"].T
@@ -196,7 +210,7 @@ def routing_logits_from_state(hidden: mx.array, parameters: Mapping[str, mx.arra
             or hidden.dtype != mx.float32
             or not bool(mx.all(mx.isfinite(hidden)))):
         _invalid()
-    _validate_refinement_parameters(parameters)
+    parameters = _validate_refinement_parameters(parameters)
     logits = hidden @ parameters["refine.route"].T + parameters["refine.route_bias"]
     if not bool(mx.all(mx.isfinite(logits))):
         _invalid()

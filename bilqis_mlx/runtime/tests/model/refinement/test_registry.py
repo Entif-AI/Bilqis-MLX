@@ -6,7 +6,7 @@ import numpy as np
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.atlas_refinement import (
-    RefinementParameterView, _refine_frame, refinement_parameter_view,
+    RefinementParameterView, _refine_frame, _require_b01_projection, refinement_parameter_view,
 )
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, create_unbound_bamf_state,
@@ -53,6 +53,32 @@ class RefinementRegistryTests(unittest.TestCase):
         type.__setattr__(type(view), "_indices", {"refine.query": 0})
         self.assertIs(view["refine.query"], original)
         self.assertIs(original, self.full["refine.query"])
+
+    def test_reconstructed_tuple_cannot_claim_b01_projection(self):
+        view = refinement_parameter_view(self.full, spec=self.spec, extents=self.extents)
+        _require_b01_projection(view)
+        values = [tuple.__getitem__(view, i) for i in range(tuple.__len__(view))]
+        same_aliases = type(view)(*values)
+        with self.assertRaises(BilqisError):
+            _require_b01_projection(same_aliases)
+        values[1] = mx.zeros_like(values[1])
+        forged = type(view)(*values)
+        with self.assertRaises(BilqisError):
+            _require_b01_projection(forged)
+        with self.assertRaises(BilqisError):
+            _ = forged.topology_digest
+
+    def test_replaced_accessor_does_not_change_numerical_consumer(self):
+        view = refinement_parameter_view(self.full, spec=self.spec, extents=self.extents)
+        hidden = mx.arange(768, dtype=mx.float32) / 768
+        seed = mx.zeros((768,), dtype=mx.float32)
+        members = mx.stack((hidden, hidden + .25))
+        role = mx.ones((768,), dtype=mx.float32) * .125
+        expected = _refine_frame(hidden, seed, members, role, 1, view)
+        type.__setattr__(type(view), "__getitem__", lambda self, key: mx.zeros((1,)))
+        actual = _refine_frame(hidden, seed, members, role, 1, view)
+        _require_b01_projection(view)
+        np.testing.assert_array_equal(np.asarray(actual.hidden), np.asarray(expected.hidden))
 
     def test_view_identity_metadata_is_canonical(self):
         view = refinement_parameter_view(
@@ -124,9 +150,8 @@ class RefinementRegistryTests(unittest.TestCase):
         gradients = mx.grad(loss)(view)
         self.assertIsInstance(gradients, RefinementParameterView)
         self.assertEqual(tuple(gradients.keys()), tuple(view.keys()))
-        self.assertEqual(gradients.declarations, view.declarations)
-        self.assertEqual(gradients.topology_digest, view.topology_digest)
-        self.assertEqual(gradients.extents_digest, view.extents_digest)
+        with self.assertRaises(BilqisError):
+            _require_b01_projection(gradients)
         for name in view.keys():
             self.assertGreater(float(mx.sum(mx.abs(gradients[name]))), 0.0)
 
