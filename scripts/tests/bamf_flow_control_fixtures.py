@@ -6,11 +6,12 @@ import unittest
 from pathlib import Path
 
 
-EXCEPTION = {
-    "reason": "bounded transition",
-    "authority": "owner instruction",
-    "expires_when": "transition closes",
-}
+def exception() -> dict[str, str]:
+    return {
+        "reason": "bounded transition",
+        "authority": "owner instruction",
+        "expires_when": "transition closes",
+    }
 
 
 def policy(
