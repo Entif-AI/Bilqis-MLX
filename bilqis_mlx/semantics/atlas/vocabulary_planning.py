@@ -1,9 +1,13 @@
 """Source-replayed stable ABI planning for A02 vocabulary growth."""
 from __future__ import annotations
+from pathlib import Path
 
 from ...vocabulary_growth import digest as semantic_digest
 from ...runtime.model_topology_v2 import GenerationExtents, ModelTopologySpecV2
-from ...runtime.bamf_bundle import VerifiedAcceptedGenerationFeatureAuthority
+from ...runtime.bamf_bundle import (
+    AcceptedGenerationFeatureReceipt,
+    verify_accepted_generation_feature_receipt,
+)
 from ..atlas_features import (
     AtlasFeatures, FeatureSchema,
     build_feature_manifest, plan_prospective_identity_features,
@@ -20,7 +24,8 @@ from .vocabulary_contracts import (
 
 def _verified_prior(
     prior: VocabularyPrior,
-    predecessor_authority: VerifiedAcceptedGenerationFeatureAuthority | None = None,
+    predecessor_receipt: AcceptedGenerationFeatureReceipt | None = None,
+    accepted_generation_pointer: str | Path | None = None,
 ) -> FrozenAtlasSnapshot:
     """Reload A01's repository-pinned artifact instead of trusting a dataclass."""
     if (type(prior) is not VocabularyPrior
@@ -39,9 +44,11 @@ def _verified_prior(
     # Until that owner supplies a sealed predecessor receipt, only A01's
     # source-replayable first-generation map is eligible for this API.
     if prior.feature_schema.predecessor is not None:
-        if type(predecessor_authority) is not VerifiedAcceptedGenerationFeatureAuthority:
+        if (type(predecessor_receipt) is not AcceptedGenerationFeatureReceipt
+                or accepted_generation_pointer is None):
             _invalid("BAMF_VOCABULARY_PREDECESSOR_FEATURE_AUTHORITY_REQUIRED")
-        receipt = predecessor_authority.receipt
+        receipt = verify_accepted_generation_feature_receipt(
+            Path(accepted_generation_pointer), predecessor_receipt)
         if (prior.generation_id != receipt.generation_manifest_sha256
                 or prior.extents.digest != receipt.generation_extents_sha256
                 or prior.extents.factor_map_digest != receipt.predecessor_feature_sha256
@@ -143,8 +150,10 @@ def plan_vocabulary_extension(
     admissions: tuple[str, ...],
     shape_policy: ModelTopologySpecV2,
     *,
-    predecessor_authority: VerifiedAcceptedGenerationFeatureAuthority | None = None,
+    predecessor_receipt: AcceptedGenerationFeatureReceipt | None = None,
+    accepted_generation_pointer: str | Path | None = None,
 ) -> VocabularyExtension:
     """Plan stable A01 ABI slots; no row or neural state is activated here."""
-    snapshot = _verified_prior(prior, predecessor_authority)
+    snapshot = _verified_prior(
+        prior, predecessor_receipt, accepted_generation_pointer)
     return _plan_from_snapshot(prior, admissions, shape_policy, snapshot)

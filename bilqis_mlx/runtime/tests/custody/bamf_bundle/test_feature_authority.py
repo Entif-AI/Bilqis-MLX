@@ -47,7 +47,7 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
         self.assertEqual(receipt.generation_manifest_sha256, pointer["manifest_sha256"])
         self.assertEqual(receipt.predecessor_feature_sha256, "c" * 64)
         self.assertEqual(receipt.semantic_release, "d" * 64)
-        self.assertEqual(verified.receipt, receipt)
+        self.assertEqual(verified, receipt)
         self.assertEqual(
             AcceptedGenerationFeatureReceipt.from_record(receipt.to_record()), receipt)
 
@@ -107,23 +107,24 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             publish_bamf_generation(self.run, source)
             receipt = read_accepted_generation_feature_receipt(self.run / "bamf-state.json")
-            verified = verify_accepted_generation_feature_receipt(
+            verify_accepted_generation_feature_receipt(
                 self.run / "bamf-state.json", receipt)
-        successor = replace(
-            prior, extents=extents, features=features, feature_schema=schema,
-            generation_id=receipt.generation_manifest_sha256)
-        with patch(
-            "bilqis_mlx.semantics.atlas.vocabulary_planning.load_pinned_atlas_snapshot",
-            return_value=snapshot,
-        ):
-            plan = plan_vocabulary_extension(
-                successor, ("urn:concept:8191",), ModelTopologySpecV2(),
-                predecessor_authority=verified)
-            self.assertEqual(plan.parent_generation_id, receipt.generation_manifest_sha256)
-            with self.assertRaises(BilqisError):
-                plan_vocabulary_extension(
+            successor = replace(
+                prior, extents=extents, features=features, feature_schema=schema,
+                generation_id=receipt.generation_manifest_sha256)
+            with patch(
+                "bilqis_mlx.semantics.atlas.vocabulary_planning.load_pinned_atlas_snapshot",
+                return_value=snapshot,
+            ):
+                plan = plan_vocabulary_extension(
                     successor, ("urn:concept:8191",), ModelTopologySpecV2(),
-                    predecessor_authority=receipt)
+                    predecessor_receipt=receipt,
+                    accepted_generation_pointer=self.run / "bamf-state.json")
+                self.assertEqual(plan.parent_generation_id, receipt.generation_manifest_sha256)
+                with self.assertRaises(BilqisError):
+                    plan_vocabulary_extension(
+                        successor, ("urn:concept:8191",), ModelTopologySpecV2(),
+                        predecessor_receipt=receipt)
 
 
 if __name__ == "__main__":

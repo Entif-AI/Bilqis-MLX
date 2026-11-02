@@ -9,7 +9,6 @@ from .publication import _pointer_lock, _read_pointer
 from .records import canonical, invalid, sha
 
 RECEIPT_SCHEMA = "bilqis.mlx.accepted-generation-feature-authority/v1"
-_VERIFIED = object()
 
 
 @dataclass(frozen=True)
@@ -67,17 +66,6 @@ def _hex(value: object) -> bool:
             and all(char in "0123456789abcdef" for char in value))
 
 
-class VerifiedAcceptedGenerationFeatureAuthority:
-    """Opaque in-process proof that a receipt was checked against the live B13 pointer."""
-
-    __slots__ = ("receipt",)
-
-    def __init__(self, receipt: AcceptedGenerationFeatureReceipt, token) -> None:
-        if token is not _VERIFIED:
-            raise TypeError("verified accepted-generation authority is B13-owned")
-        self.receipt = receipt
-
-
 def _receipt(pointer: dict, student) -> AcceptedGenerationFeatureReceipt:
     compiler = student.compiler_features
     if compiler.get("factor_map_sha256") != student.extents.factor_map_digest:
@@ -118,11 +106,11 @@ def read_accepted_generation_feature_receipt(
 
 def verify_accepted_generation_feature_receipt(
     pointer_path: Path, receipt: AcceptedGenerationFeatureReceipt,
-) -> VerifiedAcceptedGenerationFeatureAuthority:
-    """Return an opaque authority only when B13's accepted pointer reproduces the receipt."""
+) -> AcceptedGenerationFeatureReceipt:
+    """Re-derive B13's live accepted receipt; a matching caller record alone is not authority."""
     if type(receipt) is not AcceptedGenerationFeatureReceipt:
         invalid("BAMF_ACCEPTED_FEATURE_RECEIPT_INVALID")
     expected = read_accepted_generation_feature_receipt(pointer_path)
     if receipt != expected:
         invalid("BAMF_ACCEPTED_FEATURE_RECEIPT_MISMATCH")
-    return VerifiedAcceptedGenerationFeatureAuthority(receipt, _VERIFIED)
+    return expected

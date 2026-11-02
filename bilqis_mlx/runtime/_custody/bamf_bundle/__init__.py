@@ -4,7 +4,7 @@ from .publication import (
     load_bamf_generation, publish_bamf_generation, record_bamf_rejection,
 )
 from .feature_authority import (
-    AcceptedGenerationFeatureReceipt, VerifiedAcceptedGenerationFeatureAuthority,
+    AcceptedGenerationFeatureReceipt,
     read_accepted_generation_feature_receipt,
     verify_accepted_generation_feature_receipt,
 )
@@ -17,7 +17,7 @@ __all__ = (
     "BAMF_BUNDLE_SCHEMA", "BAMF_POINTER_SCHEMA", "BamfBundleCandidate",
     "BamfGenerationManifest", "CompleteStudent", "save_bamf_bundle", "load_bamf_bundle",
     "publish_bamf_generation", "load_bamf_generation", "record_bamf_rejection",
-    "AcceptedGenerationFeatureReceipt", "VerifiedAcceptedGenerationFeatureAuthority",
+    "AcceptedGenerationFeatureReceipt",
     "read_accepted_generation_feature_receipt",
     "verify_accepted_generation_feature_receipt",
 )
