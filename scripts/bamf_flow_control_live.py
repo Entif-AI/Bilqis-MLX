@@ -63,9 +63,18 @@ def validate_live_pr_inventory(
     admission_exceptions = inventory.get("admission_exceptions", [])
 
     managed = managed_prs(open_prs, inventory["unified_branch"])
+    managed_by_number = {
+        pr["number"]: pr
+        for pr in managed
+        if isinstance(pr.get("number"), int)
+    }
+    for pr in open_prs:
+        number = pr.get("number")
+        if isinstance(number, int) and number in tracked_prs:
+            managed_by_number[number] = pr
     implementation = [
         pr
-        for pr in managed
+        for pr in managed_by_number.values()
         if not any(exception_matches(pr, exception) for exception in non_impl)
     ]
     open_numbers = {
