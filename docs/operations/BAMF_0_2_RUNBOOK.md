@@ -1,6 +1,7 @@
 # BAMF-0.2 operator observation commands
 
-Status: **C11.2 integrated read-only reader; production launch pending C11.1 #522**.
+Status: **C11.1 read-only configuration inspection and C11.2 reader integrated;
+production launch pending C11.1 #522**.
 This document does not authorize a durable student start or certify BAMF learning.
 
 ## Read-only cockpit
@@ -55,21 +56,58 @@ explicit synthetic receipts and do not establish producer acceptance or learning
 
 ## Preflight, launch and resume boundary
 
-C11.1 #522 / draft PR #632 owns production BAMF create, preflight, saved admission
-policy/manifest and conflicting-override rejection. Those interfaces are not yet
-accepted on the consumed unified baseline. Therefore this runbook deliberately
-publishes no executable BAMF start/resume recommendation. Existing trainer help
-can be inspected without a neural update:
+C11.1's read-only v2 configuration inspection is integrated through PR #678.
+Run these commands from the repository root in an environment with the project's
+Python dependencies installed. Inspect the checked-in topology and a new,
+explicit run path without creating that directory:
+
+```sh
+npm run train -- --dry-run --model-topology configs/models/bamf-0.2.json --run-dir /absolute/path/to/new-bamf-run --source-prefetch-workers 0
+```
+
+Expected: exit **2**, with JSON schema `bilqis.bamf.operator-preflight/v1`, result
+`HELD_PENDING_SOURCE_AND_GENERATION_AUTHORITY`, `ready_for_training: false` and
+`neural_updates: 0`. Exit 2 with that report means configuration inspection
+completed and training remains held. Exit 2 with `BLOCKED` on stderr and no report
+means a request was refused. Neither result grants training or admission authority.
+The npm wrapper prints its command banner before the JSON report.
+
+The default admission policy is `staged`. To inspect an existing Atlas manifest
+reference, select its distinct policy explicitly:
+
+```sh
+npm run train -- --dry-run --model-topology configs/models/bamf-0.2.json --run-dir /absolute/path/to/new-bamf-run --source-prefetch-workers 0 --admission-policy atlas-release --atlas-release-manifest /absolute/path/to/manifest.json
+```
+
+The manifest must be an existing regular file, not a symlink. Inspection hashes
+its raw bytes without interpreting its contents. The report records its absolute
+path and SHA-256 with `qualification: NOT_VERIFIED`; a matching digest does not
+qualify source rights, release semantics or generation custody. Supplying this
+reference with `staged`, or selecting `atlas-release` without it, fails closed.
+`--atlas-admission-scope` is a separate C07 lease request and is refused by this
+configuration inspector.
+
+For an existing BAMF run directory, add `--resume` to the same inspection command.
+It checks only for a `bamf-state.json` path or symlink, including a dangling
+symlink; it does not establish that the path is a valid pointer file. It does not
+load or validate the pointer, checkpoint arrays, saved policy or optimizer. The
+report stays held. An
+existing BAMF pointer without `--resume`, a missing pointer with `--resume`, or
+any legacy `state.json` is refused; inspection never coerces a legacy lineage.
+
+Existing trainer help can also be inspected without a neural update:
 
 ```sh
 npm run train -- --help
 ```
 
 C11.2's bounded reader is integrated and closed under ADR-121. Production C11
-acceptance still requires #522's actual parser-tested preflight,
-owner-start and resume commands, accepted source/custody receipts, and a real
-operator-state readback. The operator alone starts or resumes the durable student.
-The existing 100 GiB reserve remains unchanged.
+acceptance still requires #522's actual create/resume path, persisted admission
+policy and conflicting-override proof, accepted A12/B13/C05/C07 source/custody
+receipts, and a real operator-state readback. These inspection commands do not
+start or resume a learner, verify saved topology compatibility or measure runtime
+memory and disk headroom. The operator alone starts or resumes the durable
+student. The existing 100 GiB reserve remains unchanged.
 
 The resource/rubric panel describes current Factory assessment as fresh routine,
 fixed promotion and inactive generalization. Historical rubric descriptions are
