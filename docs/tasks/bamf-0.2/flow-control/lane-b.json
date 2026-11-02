@@ -2,16 +2,16 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "5ac0e9ca2a94e11a6bbb25bcca8282af3eb8fc4e",
-  "updated_at": "2026-11-02T08:29:21Z",
+  "updated_at": "2026-11-02T14:25:00Z",
   "exception": null,
   "items": [
     {
       "issue": 475,
       "pr": 695,
-      "state": "WAITING",
-      "head_sha": "b5c3df440d397c0c2cd2165d5f2c015c1d1e7a0c",
-      "summary": "B12.2 exact head is hosted green with fresh exact-head NON-EGM PASS 0B/0M; prerequisite evidence remains gated.",
-      "resume_trigger": "A real retained C05 promotion receipt / B09.3 transition becomes consumable together with required accepted B09/B11 provenance, B13 publication, and pinned Google EGM/human acceptance."
+      "state": "BLOCKED",
+      "head_sha": "577d0d337f7e401859d0a2cfd57bc3e051a82596",
+      "summary": "Remediation #710 requires accepted B09/B11 execution provenance.",
+      "resume_trigger": "Authoritative B09/B11 execution producer is consumable; then repair #710 without raw caller mask authority."
     },
     {
       "issue": 465,
@@ -64,26 +64,26 @@
     {
       "issue": 485,
       "pr": 674,
-      "state": "WAITING",
-      "head_sha": "9800132e0492b000369da368607ccb35b8c5b611",
-      "summary": "B14.4 production cache authorization is FAIL-CLOSED / UPSTREAM_AUTHORITY_PENDING: #485 exposes no production authority mint, and public cache operations require a pre-bound capability while preserving the keyed 61-byte header authenticator and historical C09 signing bytes.",
-      "resume_trigger": "Accepted B13/A09/A12 run authority supplies a production pre-bound CacheAuthorityRuntime capability without reintroducing a caller-selected registry/key mint seam."
+      "state": "ACTIVE",
+      "head_sha": "bfada2678ad6bd44ae7a297d101b96ac8292fbea",
+      "summary": "B14.4 cache-authority repair is locally green. Explicit user-selected remediation #712 or #719/#720 on 2026-11-02.",
+      "resume_trigger": null
     },
     {
       "issue": 478,
       "pr": 704,
-      "state": "ACTIVE",
-      "head_sha": "630f39e186d6aac042edf70c63810c9300489732",
-      "summary": "B13.1 post-merge custody remediation is active for review findings #706 and #707 on draft PR #704.",
+      "state": "TURNED_IN",
+      "head_sha": "4aa40c427cda2ac2f0bac85c6e46e4b0724b2c22",
+      "summary": "PR #704 merged into unified 5ac0e9ca; #706/#707 repairs available.",
       "resume_trigger": null
     },
     {
       "issue": 586,
       "pr": 640,
-      "state": "WAITING",
+      "state": "ACTIVE",
       "head_sha": "76383e474245bf9a61acc278ff84decc177a6c97",
-      "summary": "B11.1a execution-owned backbone producer is NON-EGM clean.",
-      "resume_trigger": "Pinned Google EGM becomes available and is run on the exact candidate head, or an explicitly accepted successor gate replaces it."
+      "summary": "B11.1a execution-owned backbone producer is NON-EGM clean. Explicit user-selected remediation #712 or #719/#720 on 2026-11-02.",
+      "resume_trigger": null
     }
   ]
 }

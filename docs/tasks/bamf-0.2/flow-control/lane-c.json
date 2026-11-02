@@ -28,6 +28,14 @@
       "head_sha": "41e37cf60a934181548e9b343ddab1ce2b3849a7",
       "summary": "C12.2 local cognitive-package exchange slice is proven; broader adoption/custody remains.",
       "resume_trigger": "The current Lane C primary work drains and C12 adoption/custody becomes the selected dependency-ready next surface; sync reviewed unified once at activation."
+    },
+    {
+      "issue": 490,
+      "pr": 700,
+      "state": "ACTIVE",
+      "head_sha": "d1b4860389e35950e643bffbdec0e2febb1b7506",
+      "summary": "User-selected #713 canonical A05/A06 authority remediation.",
+      "resume_trigger": null
     }
   ]
 }
