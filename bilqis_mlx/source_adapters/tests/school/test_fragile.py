@@ -21,4 +21,3 @@ class FragileSourcePolicyTests(unittest.TestCase):
                          {(False, False): 2, (False, True): 1, (True, False): 1})
         with self.assertRaisesRegex(ValueError, "FRAGILE_PRESERVATION_SOURCE_POLICY_UNKNOWN"):
             fragile_source_policy("unadmitted.source")
-

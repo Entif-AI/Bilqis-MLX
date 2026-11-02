@@ -39,4 +39,3 @@ def witness_numeric_obligation(row, obligation, *, source_root, graph, course):
         return getattr(obligation, "key", None) in course.capability_map[
             capability].composed_of
     raise ValueError("FACTORY_NUMERIC_EVIDENCE_KIND_UNSUPPORTED")
-

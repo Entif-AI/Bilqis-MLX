@@ -138,4 +138,3 @@ def enrich_boolean(*, source_root, graph, course, capability, seed, option_id):
     return draw_b_grade_bridges(
         source_root, graph, seed=seed, maximum=maximum,
         per_source=4, capability=capability)
-

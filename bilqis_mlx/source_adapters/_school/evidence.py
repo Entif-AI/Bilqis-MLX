@@ -81,4 +81,3 @@ def boolean_evidence_dependencies(*, course, capability):
             capability_id=capability, kind=kind, key=identity,
             requires_capabilities=(identity,)))
     return tuple(result)
-
