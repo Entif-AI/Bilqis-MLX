@@ -51,7 +51,8 @@ The existing B05.4 fail-closed admission disposition remains intact.
 
 ## Scope and remaining owners
 
-This submits the existing extraction for structural #641 acceptance; #355/#520/#586 remain open. It grants no
+This submits the existing extraction for structural #641 acceptance. #355 and
+#586 remain open; #520 is already closed completed under its own acceptance. It grants no
 trusted B11 summary-producer authority, source admission, B08 hit, checkpoint or
 retained learning. No actual student, own AdamW, teacher, champion or human-run
 was changed. No fresh semantic rule or neural experiment was introduced.
