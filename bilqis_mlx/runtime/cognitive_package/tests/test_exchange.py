@@ -11,7 +11,9 @@ from unittest.mock import patch
 
 from bilqis_mlx.runtime.cognitive_package import export_capability, PackageKind
 from bilqis_mlx.runtime.cognitive_package.exchange import publish_package, receive_package
-from .fixtures import PackageAssertions, digest, snapshot
+from bilqis_mlx.runtime.cognitive_package.tests.fixtures import (
+    PackageAssertions, digest, snapshot,
+)
 
 
 class ExchangeTests(PackageAssertions, unittest.TestCase):
