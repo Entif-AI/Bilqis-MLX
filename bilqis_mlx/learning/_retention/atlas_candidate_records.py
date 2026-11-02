@@ -2,8 +2,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from threading import RLock
-import weakref
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.learning.atlas_engram import INITIAL_MOTIF_CAPACITY, MotifBudget
@@ -95,9 +93,12 @@ class CandidateState:
             _invalid()
 
     def _validate_descendant(self) -> None:
+        from bilqis_mlx.learning._retention.atlas_candidate_authority import (
+            resolution_is_issued,
+        )
         if (type(self.parent) is not CandidateState
                 or type(self.resolution) is not CandidateResolution
-                or not _resolution_is_issued(self.resolution)):
+                or not resolution_is_issued(self.resolution)):
             _invalid()
         transaction = self.resolution.candidate
         if (not self.resolution.accepted or transaction.update_steps == 0
@@ -132,7 +133,7 @@ class CandidateStepProof:
     max_norm: float
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, init=False)
 class CandidateTransaction:
     """One speculative branch; replay proves mechanics, not acceptance."""
 
@@ -147,12 +148,20 @@ class CandidateTransaction:
     steps: tuple[CandidateStepProof, ...] = ()
     schema_version: str = TRANSACTION_SCHEMA
 
+    def __init__(self, *args, **kwargs):
+        # Candidate transactions are owner-issued records, not bearer-token
+        # containers that callers may reconstruct with dataclasses.replace().
+        _invalid()
+
     def __post_init__(self):
+        from bilqis_mlx.learning._retention.atlas_candidate_authority import (
+            candidate_transaction_is_issued,
+        )
         if (type(self.parent) is not CandidateState
                 or type(self.optimizer) is not AdamWStateTree
                 or type(self.allocations) is not MotifAllocationSnapshot
                 or type(self.teacher_requests_full) is not bool
-                or not _candidate_attempt_is_issued(self.attempt)
+                or not candidate_transaction_is_issued(self)
                 or type(self.update_steps) is not int or self.update_steps < 0
                 or type(self.frames) is not tuple or type(self.budget) is not MotifBudget
                 or type(self.steps) is not tuple or self.update_steps != len(self.steps)
@@ -200,103 +209,3 @@ class CandidateResolution:
                 or self.schema_version != RESOLUTION_SCHEMA):
             _invalid()
         self.candidate.__post_init__()
-
-
-class _CandidateOwner:
-    """Own attempt identity and one-shot resolution without blessing caller state."""
-
-    def __init__(self):
-        self.lock = RLock()
-        self.attempts = weakref.WeakSet()
-        self.resolutions = {}
-
-    def attempt_is_issued(self, attempt) -> bool:
-        with self.lock:
-            return type(attempt) is _CandidateAttempt and attempt in self.attempts
-
-    def new_attempt(self):
-        attempt = object.__new__(_CandidateAttempt)
-        with self.lock:
-            self.attempts.add(attempt)
-        return attempt
-
-    def forget_resolution(self, key: int, attempt_ref) -> None:
-        with self.lock:
-            current = self.resolutions.get(key)
-            if current is not None and current[0] is attempt_ref:
-                self.resolutions.pop(key, None)
-
-    def begin(self, parent, frames, budget, teacher_requests_full):
-        if (type(parent) is not CandidateState or type(frames) is not tuple
-                or type(budget) is not MotifBudget
-                or type(teacher_requests_full) is not bool):
-            _invalid()
-        parent.__post_init__()
-        proposal = prepare_candidate_motif_snapshot(frames, parent.allocations, budget)
-        optimizer = (materialize_planned_motif_rows(parent, proposal)
-                     if proposal.view.plan.allocated else parent.optimizer)
-        return CandidateTransaction(
-            parent, optimizer, proposal.proposed, teacher_requests_full,
-            self.new_attempt(), 0, frames, budget, ())
-
-    def advance(self, candidate, gradients, update_mask, teacher_hparams, *,
-                decay, loss_bearing, max_norm):
-        if type(candidate) is not CandidateTransaction:
-            _invalid()
-        candidate.__post_init__()
-        key = id(candidate.attempt)
-        with self.lock:
-            current = self.resolutions.get(key)
-            if current is not None and current[0]() is candidate.attempt:
-                _invalid()
-        optimizer = _adamw_update(
-            candidate.optimizer, gradients, update_mask, teacher_hparams,
-            decay=decay, loss_bearing=loss_bearing, max_norm=max_norm)
-        if optimizer is candidate.optimizer:
-            return candidate
-        proof = CandidateStepProof(
-            dict(gradients), dict(update_mask), teacher_hparams, decay,
-            loss_bearing, max_norm)
-        return CandidateTransaction(
-            candidate.parent, optimizer, candidate.allocations,
-            candidate.teacher_requests_full, candidate.attempt,
-            candidate.update_steps + 1, candidate.frames, candidate.budget,
-            candidate.steps + (proof,))
-
-    def issue_resolution(self, candidate, accepted: bool):
-        if type(candidate) is not CandidateTransaction or type(accepted) is not bool:
-            _invalid()
-        candidate.__post_init__()
-        key = id(candidate.attempt)
-        with self.lock:
-            current = self.resolutions.get(key)
-            if current is not None and current[0]() is candidate.attempt:
-                _invalid()
-            resolution = CandidateResolution(candidate, accepted)
-            attempt_ref = weakref.ref(
-                candidate.attempt,
-                lambda ref, attempt_key=key: self.forget_resolution(attempt_key, ref))
-            self.resolutions[key] = (
-                attempt_ref, weakref.ref(candidate), accepted, weakref.ref(resolution))
-        return resolution
-
-    def resolution_is_issued(self, resolution) -> bool:
-        if type(resolution) is not CandidateResolution:
-            return False
-        key = id(resolution.candidate.attempt)
-        with self.lock:
-            current = self.resolutions.get(key)
-            return bool(
-                current is not None
-                and current[0]() is resolution.candidate.attempt
-                and current[1]() is resolution.candidate
-                and current[2] is resolution.accepted
-                and current[3]() is resolution)
-
-
-_candidate_owner = _CandidateOwner()
-_begin_candidate_transaction = _candidate_owner.begin
-_advance_candidate_transaction = _candidate_owner.advance
-_issue_candidate_resolution = _candidate_owner.issue_resolution
-_resolution_is_issued = _candidate_owner.resolution_is_issued
-_candidate_attempt_is_issued = _candidate_owner.attempt_is_issued

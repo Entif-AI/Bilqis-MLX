@@ -14,8 +14,10 @@ from bilqis_mlx.learning._retention.atlas_candidate_initialization import (
 )
 from bilqis_mlx.learning._retention.atlas_candidate_records import (
     CandidateResolution, CandidateState, CandidateTransaction,
-    _advance_candidate_transaction, _begin_candidate_transaction,
-    _issue_candidate_resolution,
+)
+from bilqis_mlx.learning._retention.atlas_candidate_authority import (
+    advance_candidate_transaction, begin_candidate_transaction,
+    issue_candidate_resolution,
 )
 from bilqis_mlx.runtime.atlas_optimizer import (
     AdamWStateTree, _create_unbound_bamf_optimizer,
@@ -66,7 +68,7 @@ def begin_candidate(
     if type(parent) is not CandidateState or type(teacher_requests_full) is not bool:
         _invalid()
     resolved_budget = MotifBudget(0) if budget is None else budget
-    return _begin_candidate_transaction(
+    return begin_candidate_transaction(
         parent, tuple(frames), resolved_budget, teacher_requests_full)
 
 
@@ -77,7 +79,7 @@ def candidate_step(
     """Mask before clipping and delegate exact native AdamW to B12.1/B12.3."""
     if type(candidate) is not CandidateTransaction:
         _invalid()
-    return _advance_candidate_transaction(
+    return advance_candidate_transaction(
         candidate, gradients, update_mask, teacher_hparams,
         decay=decay, loss_bearing=loss_bearing, max_norm=max_norm)
 
@@ -86,7 +88,7 @@ def resolve_candidate(candidate: CandidateTransaction, *, accepted: bool) -> Can
     """Apply the retention owner's decision or return the exact parent."""
     if type(candidate) is not CandidateTransaction or type(accepted) is not bool:
         _invalid()
-    resolution = _issue_candidate_resolution(candidate, accepted)
+    resolution = issue_candidate_resolution(candidate, accepted)
     if not resolution.accepted or candidate.update_steps == 0:
         return candidate.parent
     rows = tuple(row.identity for row in candidate.parent.policy.row_ages
