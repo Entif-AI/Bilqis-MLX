@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from ...vocabulary_growth import digest as semantic_digest
 from ...runtime.model_topology_v2 import GenerationExtents, ModelTopologySpecV2
+from ...runtime.bamf_bundle import VerifiedAcceptedGenerationFeatureAuthority
 from ..atlas_features import (
     AtlasFeatures, FeatureSchema,
     build_feature_manifest, plan_prospective_identity_features,
@@ -17,7 +18,10 @@ from .vocabulary_contracts import (
     VocabularyAllocation, VocabularyExtension, VocabularyPrior, _invalid,
 )
 
-def _verified_prior(prior: VocabularyPrior) -> FrozenAtlasSnapshot:
+def _verified_prior(
+    prior: VocabularyPrior,
+    predecessor_authority: VerifiedAcceptedGenerationFeatureAuthority | None = None,
+) -> FrozenAtlasSnapshot:
     """Reload A01's repository-pinned artifact instead of trusting a dataclass."""
     if (type(prior) is not VocabularyPrior
             or prior.schema_version != VOCABULARY_PRIOR_SCHEMA
@@ -35,7 +39,16 @@ def _verified_prior(prior: VocabularyPrior) -> FrozenAtlasSnapshot:
     # Until that owner supplies a sealed predecessor receipt, only A01's
     # source-replayable first-generation map is eligible for this API.
     if prior.feature_schema.predecessor is not None:
-        _invalid("BAMF_VOCABULARY_PREDECESSOR_FEATURE_AUTHORITY_REQUIRED")
+        if type(predecessor_authority) is not VerifiedAcceptedGenerationFeatureAuthority:
+            _invalid("BAMF_VOCABULARY_PREDECESSOR_FEATURE_AUTHORITY_REQUIRED")
+        receipt = predecessor_authority.receipt
+        if (prior.generation_id != receipt.generation_manifest_sha256
+                or prior.extents.digest != receipt.generation_extents_sha256
+                or prior.extents.factor_map_digest != receipt.predecessor_feature_sha256
+                or prior.extents.active_semantic_digest != receipt.active_set_sha256
+                or prior.features.digest != receipt.predecessor_feature_sha256
+                or prior.features.semantic_release != receipt.semantic_release):
+            _invalid("BAMF_VOCABULARY_PREDECESSOR_FEATURE_AUTHORITY_MISMATCH")
     snapshot = load_pinned_atlas_snapshot(prior.source_selection)
     if build_feature_manifest(snapshot, prior.feature_schema) != prior.features:
         _invalid("BAMF_VOCABULARY_FEATURE_SOURCE_REPLAY_MISMATCH")
@@ -129,7 +142,9 @@ def plan_vocabulary_extension(
     prior: VocabularyPrior,
     admissions: tuple[str, ...],
     shape_policy: ModelTopologySpecV2,
+    *,
+    predecessor_authority: VerifiedAcceptedGenerationFeatureAuthority | None = None,
 ) -> VocabularyExtension:
     """Plan stable A01 ABI slots; no row or neural state is activated here."""
-    snapshot = _verified_prior(prior)
+    snapshot = _verified_prior(prior, predecessor_authority)
     return _plan_from_snapshot(prior, admissions, shape_policy, snapshot)
