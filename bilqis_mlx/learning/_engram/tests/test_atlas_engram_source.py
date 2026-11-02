@@ -119,13 +119,11 @@ class SourceQualifiedMotifTests(TestCase):
             {name: mx.array([0], dtype=mx.uint64)},
         )
         approved, _frontier = self._prepare()
-        forged_parent = CandidateState(
-            optimizer, PlasticityPolicy("ADAPTIVE", 0, (IdentityRowAge(0, 0, 0),)),
-            approved.candidate.proposed, 0,
-        )
-        self.assertTrue(forged_parent.allocations.observed_uses)
         with self.assertRaises(BilqisError):
-            begin_candidate(forged_parent)
+            CandidateState(
+                optimizer, PlasticityPolicy("ADAPTIVE", 0, (IdentityRowAge(0, 0, 0),)),
+                approved.candidate.proposed, 0,
+            )
 
     def test_real_source_replay_qualifies_pinned_schema_and_owner_grants(self):
         for grade in ("A", "B", "C"):
@@ -170,6 +168,28 @@ class SourceQualifiedMotifTests(TestCase):
         for changed in ({"row": forged_row}, {"graph": forged_graph}):
             with self.subTest(changed=tuple(changed)), self.assertRaises(BilqisError):
                 self._prepare(selection=selection, **changed)
+
+    def test_source_replay_rejects_row_proxy_that_reads_as_another_draw(self):
+        (selection, source_root, graph, adapter, row, _task, _policy,
+         seed, each, _profile) = self._case()
+        shadow = adapter.draw(
+            source_root=source_root, graph=graph, course=None,
+            capability=row["capability"], seed=seed + 1, each=each)[0]
+
+        class ShadowRow(dict):
+            def __init__(self, baseline, visible):
+                super().__init__(baseline)
+                self.visible = visible
+
+            def get(self, key, default=None):
+                return self.visible.get(key, default)
+
+            def __getitem__(self, key):
+                return self.visible[key]
+
+        self.assertNotEqual(row, shadow)
+        with self.assertRaises(BilqisError):
+            self._prepare(selection=selection, row=ShadowRow(row, shadow))
 
     def test_revoked_issued_grant_is_not_silently_reissued(self):
         _, frontier = self._prepare()

@@ -113,10 +113,17 @@ class CandidateTransactionTests(TestCase):
 
         proposal = _prepare_candidate_motif_snapshot(
             (source(),), self.parent.allocations, MotifBudget(0))
-        forged_parent = replace(self.parent, allocations=proposal.proposed)
-        self.assertTrue(forged_parent.allocations.pending_keys)
         with self.assertRaises(BilqisError):
-            begin_candidate(forged_parent)
+            replace(self.parent, allocations=proposal.proposed)
+
+    def test_non_genesis_allocations_cannot_become_candidate_state(self):
+        proposal = _prepare_candidate_motif_snapshot(
+            (source(),), self.parent.allocations, MotifBudget(2))
+        self.assertTrue(proposal.proposed.manifest.slots)
+        with self.assertRaises(BilqisError):
+            CandidateState(
+                self.parent.optimizer, self.parent.policy,
+                proposal.proposed, self.parent.optimizer_step)
 
     def test_caller_cannot_issue_transaction_with_arbitrary_optimizer_or_allocation(self):
         changed = AdamWStateTree(

@@ -58,6 +58,7 @@ class CandidateState:
         self.optimizer.validate()
         self.policy.validate()
         self.allocations.__post_init__()
+        _require_genesis_allocations(self.allocations)
         for row in self.policy.row_ages:
             count = self.optimizer.update_counts.get(f'identity.bank.{row.bank_index}')
             if count is None or count.ndim != 1 or row.row_index >= count.shape[0]:
