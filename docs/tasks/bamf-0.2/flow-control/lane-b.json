@@ -1,16 +1,24 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "92bdff370e9be3d0c64eb4ffe300d2448f53d6a1",
-  "updated_at": "2026-11-02T05:10:00Z",
+  "observed_unified": "fe912417d484d46bbd9b283593c3bbe76e4b0351",
+  "updated_at": "2026-11-02T06:06:01Z",
   "exception": null,
   "items": [
     {
       "issue": 475,
       "pr": 695,
       "state": "ACTIVE",
-      "head_sha": "577d0d337f7e401859d0a2cfd57bc3e051a82596",
+      "head_sha": "b65b9bdc41b3fa8d7e68adf5ec240fb674f07b5b",
       "summary": "B12.2 candidate-custody follow-up is the current primary Lane B implementation surface.",
+      "resume_trigger": null
+    },
+    {
+      "issue": 466,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "fe912417d484d46bbd9b283593c3bbe76e4b0351",
+      "summary": "B09.3 mode-transition authority is the direct dependency needed to make B12.2 ADAPTIVE custody consumable.",
       "resume_trigger": null
     },
     {
