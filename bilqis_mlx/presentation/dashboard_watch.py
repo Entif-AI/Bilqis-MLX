@@ -100,7 +100,17 @@ def watch(
         board.push("system", {
             "kind": "VIEWER", "detail": "FOLLOW journal (read-only); never owns neural state",
         }, redraw=False)
-        board.draw()
+        view = getattr(board, "bamf_operator_view", None)
+        if atlas_details and not follow and view is not None:
+            from .atlas_metrics import render_panel
+            board.atlas_expanded = False
+            board.draw()
+            board.atlas_expanded = True
+            board.stream.write("\nBAMF COMPLETE OBSERVATION SNAPSHOT\n" + "\n".join(
+                render_panel(view, board.state, expanded=True, width=None)) + "\n")
+            board.stream.flush()
+        else:
+            board.draw()
         return board
 
     board = snapshot()

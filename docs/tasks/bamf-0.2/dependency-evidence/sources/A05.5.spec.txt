@@ -1,0 +1,38 @@
+# A05.5 | Source-visible atom to semantic ABI binding
+
+Issue #594; parent A05 #357; Lane A. Consumer: B11.1a #586.
+Reviewed unified `7ad8f8a` is already an ancestor of Lane A.
+
+## Authority
+
+Preserve the full A05, A01, A03/A04, A13, B02, B03 and B11
+requirements. This is a source-to-neural ownership seam, not a
+new registry or a waiver of existing acceptance.
+
+## Outcome
+
+For each visible `SourceAtom(index, token, source_reference)`, derive
+an immutable source-attested binding to an *existing admitted* A01
+semantic identity and ABI index, or return explicit SOURCE_HELD /
+UNMAPPED without issuing an embedding. The mapping must come from the
+authoritative source adapter, not from token spelling, glosses, a
+caller-supplied ConceptRef, self-pinned digest or guessed ABI index.
+
+Bind exact source instance, atom index/token/reference, A01 release
+and bundle, mapping record/digest, semantic ID/index/type, A13 current
+rights/correction frontier and causal prefix. The canonical digest
+must be prefix-stable and invalidate on source/rights changes.
+
+B02/B03 must compute differentiable atom vectors from verified bindings
+and the actual B01 parameter tree. Caller-provided raw atom vectors
+and arbitrary h0 remain numerical fixtures, never producer authority.
+
+## Proof
+
+Real pinned A01 positive; wrong token/index/reference, forged ABI/type,
+foreign release/bundle, revoked rights, stale correction, future
+prefix, duplicate/conflicting mapping and unsupported-source negatives.
+Preserve explicit held debt and UNKNOWN/NONE semantics without
+inventing meaning. Show earlier-prefix invariance and B02/B03
+source-bound gradients. Independent EGM, exact pushed receipt, no
+training or self-merge. #586/#577 remain fail-closed until accepted.

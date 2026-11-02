@@ -1,0 +1,9 @@
+{
+  "headRefOid": "c710902726a2540e3389c51c3c3506a13cef6b34",
+  "mergeCommit": {
+    "oid": "dde9398249cb1dc23c9c979f0e7162436aaae894"
+  },
+  "number": 623,
+  "state": "MERGED",
+  "url": "https://github.com/Entif-AI/Bilqis-MLX/pull/623"
+}
