@@ -15,12 +15,13 @@ from typing import Mapping
 import mlx.core as mx
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
-from bilqis_mlx.learning.frame_encoder import CompiledEmbeddingVectors, CompiledEncoderInput
+from bilqis_mlx.learning.frame_encoder import CompiledEncoderInput, FrameEncoding
+from bilqis_mlx.learning.source_atoms import encode_source_compiled
 from .model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes, validate_bamf_parameters,
 )
 from .refinement_policy import RefinementChoice
-from .refinement_inputs import selected_frame_inputs
+from .refinement_inputs import _selected_frame_inputs
 
 
 WIDTH = ModelTopologySpecV2.width
@@ -128,24 +129,18 @@ def _refine_frame(hidden: mx.array, seed: mx.array, members: mx.array, role: mx.
     return _RefinementResult(state, route_logits, passes)
 
 
-def refine_selected(backbone_hidden: mx.array, compiled: CompiledEncoderInput,
-                    vectors: CompiledEmbeddingVectors, frame_parameters,
-                    row_index: int, choice: RefinementChoice,
-                    query_role: mx.array,
-                    parameters: Mapping[str, mx.array]) -> RefinementResult:
-    """Refine one exact B03 frame without mutating or rerunning the backbone.
-
-    ``backbone_hidden`` is the complete immutable backbone result aligned to the
-    supplied encoding. The selected position is derived from the B03 frame handle
-    and B06.2 occurrence identity; all other positions remain outside the local
-    recurrence graph.
-    """
+def _refine_selected_with(backbone_hidden: mx.array, compiled: CompiledEncoderInput,
+                          encoding: FrameEncoding,
+                          row_index: int, choice: RefinementChoice,
+                          query_role: mx.array,
+                          parameters: Mapping[str, mx.array],
+                          input_resolver) -> RefinementResult:
     if (not isinstance(backbone_hidden, mx.array)
             or backbone_hidden.dtype != mx.float32
             or not bool(mx.all(mx.isfinite(backbone_hidden)))):
         _invalid()
-    encoding, index, seed, members, member_handles, row_cache_key = selected_frame_inputs(
-        compiled, vectors, frame_parameters, row_index, choice)
+    encoding, index, seed, members, member_handles, row_cache_key = input_resolver(
+        compiled, encoding, row_index, choice)
     if backbone_hidden.shape != encoding.global_seeds.shape:
         _invalid()
     numerical = _refine_frame(
@@ -156,6 +151,37 @@ def refine_selected(backbone_hidden: mx.array, compiled: CompiledEncoderInput,
         choice.frame_handle, choice.occurrence_id,
         member_handles, numerical.hidden,
         numerical.route_logits, numerical.passes)
+
+
+def _refine_selected(backbone_hidden: mx.array, compiled: CompiledEncoderInput,
+                     encoding: FrameEncoding,
+                     row_index: int, choice: RefinementChoice,
+                     query_role: mx.array,
+                     parameters: Mapping[str, mx.array]) -> RefinementResult:
+    """Numerical fixture path; it does not issue production source authority."""
+    return _refine_selected_with(
+        backbone_hidden, compiled, encoding, row_index, choice,
+        query_role, parameters, _selected_frame_inputs)
+
+
+def refine_selected(backbone_hidden: mx.array, compiled: CompiledEncoderInput,
+                    frame_parameters: Mapping[str, mx.array],
+                    sources: tuple, feature_schema,
+                    row_index: int, choice: RefinementChoice,
+                    query_role: mx.array,
+                    parameters: Mapping[str, mx.array]) -> RefinementResult:
+    """Re-derive source-authoritative B02/B03 inputs, then refine one frame.
+
+    The public boundary does not accept caller-created embedding vectors or a
+    caller-supplied FrameEncoding. It invokes the accepted source-owned producer
+    directly, so the exact B03 tensors are downstream of current source/rights
+    validation and the actual B01/B02 parameter tree.
+    """
+    encoding = encode_source_compiled(
+        compiled, frame_parameters, sources, feature_schema)
+    return _refine_selected_with(
+        backbone_hidden, compiled, encoding, row_index, choice,
+        query_role, parameters, _selected_frame_inputs)
 
 
 def routing_logits_from_state(hidden: mx.array, parameters: Mapping[str, mx.array]) -> mx.array:

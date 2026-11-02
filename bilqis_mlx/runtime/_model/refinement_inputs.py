@@ -6,7 +6,7 @@ import mlx.core as mx
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.learning.frame_embeddings import EmptyFrameFactorTerms, FrameFactorTerms
 from bilqis_mlx.learning.frame_encoder import (
-    CompiledEmbeddingVectors, CompiledEncoderInput, FrameEncoding, encode_frames,
+    CompiledEncoderInput, FrameEncoding,
 )
 from bilqis_mlx.semantics.frame_compiler import PositionKind
 from .model_topology_v2 import ModelTopologySpecV2
@@ -44,18 +44,14 @@ def _cache_coordinates(choice):
     return boundary
 
 
-def selected_frame_inputs(compiled: CompiledEncoderInput,
-                          vectors: CompiledEmbeddingVectors,
-                          frame_parameters, row_index: int,
-                          choice: RefinementChoice):
+def _selected_frame_inputs(compiled: CompiledEncoderInput,
+                           encoding: FrameEncoding, row_index: int,
+                           choice: RefinementChoice):
     if (type(compiled) is not CompiledEncoderInput
-            or type(vectors) is not CompiledEmbeddingVectors
+            or type(encoding) is not FrameEncoding
             or type(row_index) is not int or isinstance(row_index, bool)
             or not 0 <= row_index < len(compiled.compiled.rows)
             or type(choice) is not RefinementChoice):
-        _invalid()
-    encoding = encode_frames(compiled, vectors, frame_parameters)
-    if type(encoding) is not FrameEncoding or encoding.compiled is not compiled.compiled:
         _invalid()
     boundary = _cache_coordinates(choice)
     positions = encoding.handles[row_index]
