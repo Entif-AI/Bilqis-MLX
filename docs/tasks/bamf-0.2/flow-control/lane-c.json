@@ -80,9 +80,9 @@
     {
       "issue": 733,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "7ed4db2b301e79b646ce24158e38642b0da8c91d",
-      "summary": "Selected documentation-only C01 reproducibility remediation; isolated writer on codex/733-reproducible-c01-proof. Parent #347 stays parked.",
+      "state": "TURNED_IN",
+      "head_sha": "53949094464952b99c2817956aa421014676dcc8",
+      "summary": "Documentation-only recipe repair verified: source 187/187 and installed 116/116, zero skips. Durable branch codex/733-reproducible-c01-proof; parent must consume documentation commit before aggregate EGM.",
       "resume_trigger": null
     }
   ]
