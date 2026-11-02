@@ -8,7 +8,7 @@ from pathlib import Path
 from scripts.check_bamf_flow_control import FlowControlError, validate_flow_control
 
 
-POLICY = {
+def policy() -> dict:\n    return {
     "schema": "bilqis.bamf.flow-control-policy/v1",
     "normal_active_limit_per_lane": 2,
     "states": {
@@ -41,10 +41,7 @@ POLICY = {
     "rules": {
         "over_limit_exception_required_fields": ["reason", "authority", "expires_when"]
     },
-}
-
-
-def lane(name: str, items: list[dict], exception=None) -> dict:
+    }\n\n\ndef lane(name: str, items: list[dict], exception=None) -> dict:
     return {
         "schema": "bilqis.bamf.flow-control-lane/v1",
         "lane": name,
@@ -59,7 +56,7 @@ class BamfFlowControlTests(unittest.TestCase):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         root = Path(temp.name)
-        (root / "policy.json").write_text(json.dumps(POLICY), encoding="utf-8")
+        (root / "policy.json").write_text(json.dumps(policy()), encoding="utf-8")
         for name in ("A", "B", "C"):
             (root / f"lane-{name.lower()}.json").write_text(
                 json.dumps(lanes[name]), encoding="utf-8"
