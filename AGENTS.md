@@ -26,11 +26,25 @@ BAMF execution. Lane A works on `codex/bamf02-a-semantics`, Lane B on
 each implementing issue, the lane writer must fetch and merge the current
 `origin/codex/bamf-unified-base-20261028` into the lane branch, record the unified
 SHA consumed, resolve conflicts, and run the smallest affected verification. Do
-not merge `main` or a sibling lane directly. Completed issue work returns through
-a lane-to-unified PR for explicit human sign-off; no issue authorizes the agent to
-self-merge that PR. After accepted work lands on unified, the next issue in every
-lane repeats the sync-in step so reviewed cross-lane interfaces and instrumentation
-arrive early rather than accumulating as end-of-program conflicts.
+not merge `main` or a sibling lane directly. Keep implementation and review state
+on the owning issue and branch until the work is truly ready to merge. Do not use a
+draft pull request as a queue marker or review-state surrogate. A new exact-head EGM
+request adds `EGM-Pending` to the owning issue. Replace it with `EGM-Passed` only
+after a complete PASS, or with `EGM-Failed` after any Blocker/Major failure. Label
+each independently executable remediation issue created from that failure
+`EGM-Mitigation`. Keep `EGM-Failed` on the owner while repairs are in progress. Move
+the owner back to `EGM-Pending` only when the full known failure set is repaired and
+the next whole candidate is again ready for review. A behavior-changing commit after
+`EGM-Passed` invalidates that state for merge readiness.
+
+Open the lane-to-unified PR only after the candidate is otherwise ready to merge,
+including required EGM PASS and every pre-PR gate available on the branch. Open it
+ready for human review, not as a draft work queue. PR-hosted checks are the final
+integration gate; a behavior-changing repair for a hosted failure invalidates the
+prior EGM PASS. Existing historical/draft PRs remain provenance and need not be
+closed or recreated solely to adopt this policy. No issue authorizes self-merge.
+After accepted work lands on unified, the next issue in every lane repeats the
+sync-in step so reviewed cross-lane interfaces arrive early.
 
 ## BAMF-0.2 flow control and parked-PR discipline — 2026-11-02
 
