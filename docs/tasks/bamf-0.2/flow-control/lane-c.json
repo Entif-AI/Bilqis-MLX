@@ -2,24 +2,24 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "92bdff370e9be3d0c64eb4ffe300d2448f53d6a1",
-  "updated_at": "2026-11-02T05:10:00Z",
+  "updated_at": "2026-11-02T17:00:00Z",
   "exception": null,
   "items": [
     {
       "issue": 524,
       "pr": 699,
-      "state": "ACTIVE",
-      "head_sha": "f3e99245c49f7df897d71cdcc7dfc69710014c65",
-      "summary": "C11.3 structural-interruption checkpoint is the current primary Lane C implementation surface.",
-      "resume_trigger": null
+      "state": "WAITING",
+      "head_sha": "5d444befb3e73525b0734ea197e00928962d2ce7",
+      "summary": "Scoped structural/runbook PR #699 merged as 59ce2940; full production acceptance remains parked.",
+      "resume_trigger": "Accepted A12/B13/C05/C07 source/evaluator/custody authority enables production create/resume and saved-policy/conflict acceptance."
     },
     {
       "issue": 347,
       "pr": 694,
-      "state": "WAITING",
+      "state": "ACTIVE",
       "head_sha": "cb5da461d6c35672001bd061040260ac7f9a5f21",
-      "summary": "C01 structural interface-receipt interruption remains parked.",
-      "resume_trigger": "The current Lane C primary work drains or an explicit C01 resume decision selects this surface as the next active leaf."
+      "summary": "Primary #699 merged; its drain trigger selects the preserved C01 interface-receipt continuation.",
+      "resume_trigger": null
     },
     {
       "issue": 526,
