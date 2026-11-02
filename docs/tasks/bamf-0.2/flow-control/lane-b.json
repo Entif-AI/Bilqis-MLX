@@ -152,9 +152,9 @@
     {
       "issue": 738,
       "pr": 742,
-      "state": "ACTIVE",
+      "state": "TURNED_IN",
       "head_sha": "44305b1c685fcdd43ded307c8eeae8e4e2808fbf",
-      "summary": "Active EGM-Mitigation delivery for #586 stale selected-state chaining.",
+      "summary": "Scoped stale-boundary repair #738 closed COMPLETED; PR #742 merged. Later receipt-layout and proof-fixture findings belong to #747/#748.",
       "resume_trigger": null
     },
     {
@@ -163,6 +163,14 @@
       "state": "ACTIVE",
       "head_sha": "ac89d382137e6581725d6f06220329e957fe0e7c",
       "summary": "Selected bounded B11 receipt shape/dtype remediation on isolated branch codex/747-backbone-receipt-shape; parent remains parked.",
+      "resume_trigger": null
+    },
+    {
+      "issue": 748,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "ac89d382137e6581725d6f06220329e957fe0e7c",
+      "summary": "Selected shared B11 proof-fixture Atlas selection repair alongside #747 on the same isolated writer branch. No production source authority change.",
       "resume_trigger": null
     }
   ]
