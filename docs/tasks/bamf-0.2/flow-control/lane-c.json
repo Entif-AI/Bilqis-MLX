@@ -1,40 +1,88 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "67c964a1548cb0075a28a90aa2565d8bdab0fd71",
-  "updated_at": "2026-11-02T17:28:02-05:00",
+  "observed_unified": "2800946729e484875f7d1f57f0e6d85078936394",
+  "updated_at": "2026-11-02T17:36:44-05:00",
   "exception": null,
   "items": [
     {
-      "issue": 524,
-      "pr": 699,
-      "state": "BLOCKED",
-      "head_sha": "f3e99245c49f7df897d71cdcc7dfc69710014c65",
-      "summary": "Scoped facade remediation delivered as draft #723; broader structural interruption preserved.",
-      "resume_trigger": "Complete preserved operating_loop structural interruption and companion tests before resuming parent #524 implementation."
-    },
-    {
       "issue": 347,
-      "pr": 694,
+      "pr": null,
       "state": "WAITING",
-      "head_sha": "cb5da461d6c35672001bd061040260ac7f9a5f21",
-      "summary": "C01 structural interface-receipt interruption remains parked.",
-      "resume_trigger": "The current Lane C primary work drains or an explicit C01 resume decision selects this surface as the next active leaf."
+      "head_sha": "cb536f744008c7e7575c3d3973c135aa38292fd6",
+      "summary": "C01 structural proof candidate awaits reproducibility remediation.",
+      "resume_trigger": "Remediation #733 is resolved and C01 is selected as Lane C's current integration candidate.",
+      "closed_pr": 694,
+      "preserved_branch": "codex/bamf02-c01-347-registry-20261101",
+      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
+      "close_reason": "EGM-Failed; remediation #733"
     },
     {
       "issue": 526,
-      "pr": 680,
-      "state": "ACTIVE",
-      "head_sha": "b7c792a1dc08865558ea986e82d2dd9e40deee9d",
-      "summary": "C12.2 consumed #717 receiver custody and #744 C05 owner-run screening; #718 remains blocked on A12 export clearance #745 and the accepted-import publication bridge.",
-      "resume_trigger": null
+      "pr": null,
+      "state": "WAITING",
+      "head_sha": "41e37cf60a934181548e9b343ddab1ce2b3849a7",
+      "summary": "C12.2 parent exchange candidate awaits authority remediation.",
+      "resume_trigger": "Remediations #717 and #718 are consumed or otherwise resolved and C12.2 is selected for integration.",
+      "closed_pr": 680,
+      "preserved_branch": "codex/bamf02-c12-526-exchange-20261101",
+      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
+      "close_reason": "EGM-Failed; remediations #717/#718"
     },
     {
       "issue": 490,
-      "pr": 700,
-      "state": "ACTIVE",
+      "pr": null,
+      "state": "WAITING",
       "head_sha": "d1b4860389e35950e643bffbdec0e2febb1b7506",
-      "summary": "User-selected #713 canonical A05/A06 authority remediation.",
+      "summary": "C02.1 parent candidate awaits canonical model-input authority repair.",
+      "resume_trigger": "Remediation #713 is consumed into the candidate and C02.1 is selected for final merge-readiness review.",
+      "closed_pr": 700,
+      "preserved_branch": "fix/bamf-c02-1-source-lineage-20261101",
+      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
+      "close_reason": "EGM-Failed; remediation #713"
+    },
+    {
+      "issue": 713,
+      "pr": null,
+      "state": "WAITING",
+      "head_sha": "e428dbd4c05bc6503bc40ac6ddcb4e3530b9d131",
+      "summary": "Stacked C02.1 canonical model-input authority remediation.",
+      "resume_trigger": "The bounded repair is consumed into PR #700 or explicitly selected for focused integration under ADR-125.",
+      "closed_pr": 728,
+      "preserved_branch": "codex/713-canonical-model-input-20261102",
+      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
+      "close_reason": "EGM-Mitigation issue #713"
+    },
+    {
+      "issue": 717,
+      "pr": null,
+      "state": "WAITING",
+      "head_sha": "e1b2f41462f5b3416b22e20509fc904ae026a3e4",
+      "summary": "Stacked C12.2 receiver/parent-generation authority remediation.",
+      "resume_trigger": "The bounded repair is consumed into PR #680 or explicitly selected for focused integration under ADR-125.",
+      "closed_pr": 726,
+      "preserved_branch": "codex/717-receiver-authority-20261102",
+      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
+      "close_reason": "EGM-Mitigation issue #717"
+    },
+    {
+      "issue": 641,
+      "pr": null,
+      "state": "WAITING",
+      "head_sha": "aa2aec1809256a6270bb8afedc87c2a655175054",
+      "summary": "C10 structural preservation follow-up is the current active Lane C surface.",
+      "resume_trigger": "Issue #641 reaches EGM-Passed on the current durable head and all pre-PR merge-readiness gates are green.",
+      "closed_pr": 739,
+      "preserved_branch": "codex/bamf02-c10-641-proof-20261102",
+      "closed_under": "EGM issue-label queue; EGM-Pending is durable on issue #641",
+      "close_reason": "Await fresh whole-candidate EGM on the durable branch before opening a merge-ready PR."
+    },
+    {
+      "issue": 746,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "6cf19868641aa6d3009e9fc63ad7baf66a3f337f",
+      "summary": "C12.2 accepted-import custody/publication remediation is active on a child branch; parent #526 remains parked.",
       "resume_trigger": null
     }
   ]
