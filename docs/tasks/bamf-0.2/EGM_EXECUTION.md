@@ -55,6 +55,10 @@ recorded defect still exists or the fix was reverted. A distinct failure mechani
 or newly exposed gap gets a new remediation issue with its own reproduction and
 acceptance. This keeps the open issue/PR set aligned with actionable work rather
 than accumulating historical review findings.
+When the authorized parent candidate branch can take the repair without violating
+writer ownership, apply the fix there and use the remediation issue as the durable
+finding record. Create a stacked remediation PR only when isolation is materially
+useful; do not create one solely for archival provenance.
 
 ## Lane ownership and dependency checks
 
