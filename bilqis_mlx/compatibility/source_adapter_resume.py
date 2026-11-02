@@ -10,6 +10,8 @@ from __future__ import annotations
 _NUMERIC_ADAPTER_ID = "source.finite-numeric/v2"
 _NUMERIC_IMPLEMENTATION = (
     "2758cf678e9d2a45f3f5a1b5edd85d5ae513e54506c0d98853b9402b91572754")
+_NUMERIC_MODULAR_IMPLEMENTATION = (
+    "64f446f186181afe1e482191d564f2fae8de6d9bfdf3525cf14376b05372a2f0")
 _NUMERIC_STAIRCASE_RELEASE = "bilqis.mlx.numeric-staircase/20261017-v1"
 _PRE_ADR106_NUMERIC_STAIRCASE_DIGEST = (
     "ec3b5338fc1604a6250a847ee99eae09956b5a5bb269a63f3ac8372205133e74")
@@ -23,7 +25,8 @@ def _numeric_adr106_pair(admitted, current) -> bool:
             admitted.adapter_id != current.adapter_id or
             admitted.adapter_id != _NUMERIC_ADAPTER_ID or
             admitted.implementation_sha256 != current.implementation_sha256 or
-            admitted.implementation_sha256 != _NUMERIC_IMPLEMENTATION):
+            admitted.implementation_sha256 not in (
+                _NUMERIC_IMPLEMENTATION, _NUMERIC_MODULAR_IMPLEMENTATION)):
         return False
     admitted_releases = dict(admitted.cohort_releases)
     current_releases = dict(current.cohort_releases)
@@ -47,6 +50,18 @@ def _numeric_adr106_pair(admitted, current) -> bool:
         admitted.profile_dimensions == current.profile_dimensions)
 
 
+def _numeric_modular_pair(admitted, current) -> bool:
+    """Exact behavior-preserving school-owner extraction; no arbitrary drift."""
+    from dataclasses import replace
+    if (admitted is None or admitted.adapter_id != _NUMERIC_ADAPTER_ID
+            or admitted.implementation_sha256 != _NUMERIC_IMPLEMENTATION
+            or current.implementation_sha256 != _NUMERIC_MODULAR_IMPLEMENTATION):
+        return False
+    migrated = replace(admitted, implementation_sha256=current.implementation_sha256)
+    return migrated == current or _numeric_adr106_pair(migrated, current)
+
+
 def resume_adapter_compatible(admitted, current) -> bool:
     """Return true only for explicitly proven historical descriptor migrations."""
-    return _numeric_adr106_pair(admitted, current)
+    return (_numeric_adr106_pair(admitted, current)
+            or _numeric_modular_pair(admitted, current))
