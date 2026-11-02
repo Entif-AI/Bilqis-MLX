@@ -35,7 +35,7 @@ def sealed_v1_cohort_contract(release, grade):
               adapter.cohort_releases[0][0]
               if adapter.cohort_releases else release.course.version)
     code_sha = adapter.cohort_code_sha256(schema)
-    from .historical_live_release import (
+    from .legacy.historical_live_release import (
         HISTORICAL_A_GENERATOR_SHA256, HISTORICAL_A_RUBRIC_SHA256,
     )
     if grade.assessment_sha256 == HISTORICAL_A_RUBRIC_SHA256:

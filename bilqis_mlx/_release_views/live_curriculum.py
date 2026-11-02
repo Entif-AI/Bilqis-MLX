@@ -25,7 +25,7 @@ def _grade_cohort_contract(course, grade):
     # cohort identity after the semantic-ABI refactor. It does not participate
     # in current/future grade dispatch.
     if grade.assessment_sha256:
-        from .compatibility.historical_live_release import (
+        from .compatibility.legacy.historical_live_release import (
             ABI_REFACTORED_A_GENERATOR_SHA256,
             HISTORICAL_A_GENERATOR_SHA256,
             HISTORICAL_A_RUBRIC_SHA256,

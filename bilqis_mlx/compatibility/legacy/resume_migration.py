@@ -4,9 +4,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from ..data_plane import verify_file_digest
-from ..errors import ErrorBus, SCHOOL
-from ..runtime.mlx_checkpoint import SCHEMA as BUNDLE_SCHEMA, _read_catalog
+from ...data_plane import verify_file_digest
+from ...errors import ErrorBus, SCHOOL
+from ...runtime.mlx_checkpoint import SCHEMA as BUNDLE_SCHEMA, _read_catalog
 
 
 def inspect_historical_run(run_dir, receipt):
@@ -45,7 +45,7 @@ def inspect_historical_run(run_dir, receipt):
     if manifest.get("semantic_catalog") is not None:
         _read_catalog(directory, manifest["semantic_catalog"])
     if receipt.get("factory_admission") is not None:
-        from ..runtime.admission import _verified_legacy_upgrade_release
+        from ...runtime.admission import _verified_legacy_upgrade_release
         _verified_legacy_upgrade_release(root, receipt)
     return {
         "runtime_schema": receipt["schema"], "bundle_schema": manifest["schema"],

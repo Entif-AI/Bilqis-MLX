@@ -6,7 +6,7 @@ from .topology_lifecycle import operator_topology
 from bilqis_mlx import paths as _paths
 
 import bilqis_mlx.compatibility.executable_projection as _compatibility_executable_projection
-import bilqis_mlx.compatibility.live_releases as _compatibility_live_releases
+import bilqis_mlx.compatibility.legacy.live_releases as _compatibility_live_releases
 import bilqis_mlx.curriculum.scheduler as _curriculum_scheduler
 import bilqis_mlx.factory.schedule as _factory_schedule
 import bilqis_mlx.learning.learning_experiment as _learning_learning_experiment

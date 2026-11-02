@@ -29,6 +29,11 @@ def execute_bound_family_program(
         if (source.descriptor.adapter_id != binding.source_adapter_id
                 or source.descriptor.implementation_sha256 != binding.source_implementation_sha256):
             _fail("BAMF_FAMILY_PROGRAM_EXECUTION_PROVIDER_DRIFT")
+        if registration.source_validator is not None:
+            try:
+                registration.source_validator(source)
+            except (TypeError, ValueError):
+                _fail("BAMF_FAMILY_PROGRAM_EXECUTION_PROVIDER_DRIFT")
         return registration.invoke_bound(
             registration, binding, source, atlas, construct_args,
             {} if construct_kwargs is None else dict(construct_kwargs),

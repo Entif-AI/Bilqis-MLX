@@ -24,12 +24,6 @@ _CAUSE = "LEXSENSE-59819df75e3137"
 _OCCURRENCE = "LEXSENSE-294d00be074a56"
 _ACTOR = "ATOM-5d7116db8e1508"
 _TIME = "ATOM-ef7cf17b427af9"
-_QUERY = {
-    "WORLD.ACTOR_OF": "ACTOR_OF",
-    "WORLD.BEFORE": "BEFORE",
-    "WORLD.IS_OCCURRED": "IS_OCCURRED",
-    "WORLD.DIRECT_CAUSE": "DIRECT_CAUSE",
-}
 _TOKENS = (
     "bamf.world.syntax.actors", "bamf.world.syntax.causes",
     "bamf.world.actor.A0", "bamf.world.actor.A1", "bamf.world.actor.A2",
@@ -171,8 +165,6 @@ def _encode(record: dict, graph: dict) -> list[int]:
         return [ids[symbol] for symbol in symbols]
     except KeyError as exc:
         raise ValueError("WORLD_RULE_GRAPH_SYMBOL_MISSING") from exc
-
-
 def draw(source_root=None, graph=None, *, capability: str, seed: int,
          each: int = 12, **_) -> tuple[dict, ...]:
     del source_root
@@ -196,8 +188,6 @@ def draw(source_root=None, graph=None, *, capability: str, seed: int,
             "oracle": ORACLE, "source_contract_sha256": contract,
         })
     return tuple(rows)
-
-
 def check(row: dict, *, graph: dict, **_) -> bool:
     try:
         record = row["record"]
@@ -214,15 +204,18 @@ def check(row: dict, *, graph: dict, **_) -> bool:
         )
     except (KeyError, TypeError, ValueError, IndexError):
         return False
-
-
 def registered_adapter() -> RegisteredSourceAdapter:
     witness = verify_source()
-    files = (Path(__file__), ROOT / "bilqis_mlx/verification/world_rules.py")
+    files = (
+        ("bilqis_mlx/source_adapters/world_rules.py", Path(__file__)),
+        ("bilqis_mlx/verification/world_rules.py",
+         ROOT / "bilqis_mlx/verification/world_rules.py"),
+    )
     implementation = digest({
         "source": witness,
-        "files": {path.name: hashlib.sha256(path.read_bytes()).hexdigest()
-                  for path in files},
+        "files": tuple(
+            (relative, hashlib.sha256(path.read_bytes()).hexdigest())
+            for relative, path in files),
     })
     return RegisteredSourceAdapter(
         SourceAdapter(
@@ -231,3 +224,11 @@ def registered_adapter() -> RegisteredSourceAdapter:
             variation_axes=("actor", "time", "state", "direct-cause", "fresh-seed")),
         draw, check,
     )
+def require_registered_source(source: RegisteredSourceAdapter) -> None:
+    """Reject descriptor cloning with substituted executable behavior."""
+    expected = registered_adapter()
+    if (type(source) is not RegisteredSourceAdapter
+            or source.descriptor != expected.descriptor
+            or source.draw is not draw
+            or source.check is not check):
+        raise ValueError("WORLD_RULE_SOURCE_IMPLEMENTATION_SUBSTITUTED")

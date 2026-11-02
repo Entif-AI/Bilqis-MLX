@@ -86,6 +86,61 @@ class FamilyExecutionTests(unittest.TestCase):
             {row["gold"] for row in artifact.rows} == {"TRUE", "FALSE"}
             for artifact in artifacts))
 
+    def test_qualified_world_rejects_provider_and_answer_modality_substitution(self):
+        graph = projected_graph(registry_graph())
+        adapter = world_adapter()
+        capabilities = (
+            Capability(
+                "WORLD.BEFORE", "qualified-world",
+                "repo:lib/ithkuil/_data/csv/lexicon_root_senses.csv",
+                ("ithkuil:LEXSENSE-59819df75e3137",),
+                ("ithkuil:LEXSENSE-59819df75e3137",), (), (),
+                (AnswerFamily("binary", BINARY),), WORLD_GENERATOR, WORLD_ORACLE),
+        )
+        course = Course(
+            (Grade("D", capabilities, "1" * 64,
+                   (("WORLD.BEFORE", 12),), (("WORLD.BEFORE",),)),),
+            "bamf-a08-world-fixture/v1", "2" * 64, "3" * 64)
+        release = compile_factory_release(
+            course, SourceAdapterRegistry((adapter,)))
+        census = _inventory_source_families(_snapshot())
+        frontier = LearnedFrontier(census.semantic_release)
+        candidate = _compile_semantic_curriculum_snapshot(
+            _snapshot(), (), frontier)
+        lessons = _compile_source_constructive_lessons_snapshot(_snapshot())
+        forged = replace(
+            adapter,
+            draw=lambda **_: ({"capability": "WORLD.BEFORE", "forged": True},),
+            check=lambda *_args, **_kwargs: True)
+        with patch.multiple(
+            "bilqis_mlx.factory.skos_curriculum.programs.binding",
+            inventory_source_families=lambda _selection: census,
+            compile_semantic_curriculum=lambda *_args: candidate,
+            compile_source_constructive_lessons=lambda _selection: lessons,
+            assert_family_inventory_current=lambda *_args: None,
+            assert_curriculum_candidate_current=lambda *_args: None,
+            assert_source_lesson_set_current=lambda *_args: None,
+        ):
+            with self.assertRaises(ValueError):
+                execute_release_family_program(
+                    release, SourceAdapterRegistry((forged,)),
+                    default_family_program_registry(), object(), frontier,
+                    "WORLD.BEFORE",
+                    construct_kwargs={"graph": graph, "seed": 420, "each": 12},
+                    check_kwargs={"graph": graph})
+            with self.assertRaises(ValueError):
+                bind_existing_family_program(
+                    default_family_program_registry().require(
+                        "qualified_world_model"),
+                    CapabilityDefinition(
+                        "WORLD.BEFORE", "D", (),
+                        adapter.descriptor.adapter_id, WORLD_ORACLE,
+                        ("integer",)),
+                    ConstructionProgram(
+                        "WORLD.BEFORE", adapter.descriptor.adapter_id,
+                        WORLD_GENERATOR, WORLD_ORACLE, ()),
+                    SourceAdapterRegistry((adapter,)))
+
     def test_release_family_execution_runs_registered_constructor_and_checker(self):
         course, source_registry = synthetic_release_inputs()
         release = compile_factory_release(course, source_registry)

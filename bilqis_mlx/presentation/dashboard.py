@@ -16,7 +16,7 @@ from bilqis_mlx.profiles.catalog import displayed_numeric_maximum
 from bilqis_mlx.runtime.disk import headroom_snapshot
 from bilqis_mlx.state_dag import read_current
 from bilqis_mlx.source import AUDITED_PARENT
-from ..compatibility.historical_live_release import historical_rubric_description
+from ..compatibility.legacy.historical_live_release import historical_rubric_description
 from bilqis_mlx.presentation.spiral_dashboard import Dashboard
 
 

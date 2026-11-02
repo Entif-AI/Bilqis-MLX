@@ -33,6 +33,8 @@ class RegisteredFamilyProgram:
     schema: str = FAMILY_PROGRAM_SCHEMA
     invoke_bound: Callable[..., object] | None = None
     native_capability_id: str | None = None
+    rule_profile: object | None = None
+    source_validator: Callable[..., object] | None = None
 
     def __post_init__(self) -> None:
         if (not self.family_id
@@ -42,6 +44,8 @@ class RegisteredFamilyProgram:
                 or not self.constructor_ref or not self.checker_ref
                 or not callable(self.construct) or not callable(self.check)
                 or (self.invoke_bound is not None and not callable(self.invoke_bound))
+                or (self.source_validator is not None
+                    and not callable(self.source_validator))
                 or (self.native_capability_id is not None
                     and (type(self.native_capability_id) is not str or not self.native_capability_id))
                 or self.schema != FAMILY_PROGRAM_SCHEMA):

@@ -55,9 +55,13 @@ class SemanticRuleRegistryTests(unittest.TestCase):
 
     def test_world_profile_requires_and_binds_source_owned_world_authority(self):
         operators = default_registry(self.RELEASE)
-        with self.assertRaisesRegex(ValueError,
-                                    "FACTORY_WORLD_RULE_SOURCE_AUTHORITY_UNAVAILABLE"):
-            world_rule_profile(operators)
+        declaration = world_rule_profile(operators)
+        self.assertIsNone(declaration.source_contract_sha256)
+        self.assertEqual(
+            declaration.identity.operator_id, "SOURCE_WORLD_QUERY")
+        self.assertEqual(
+            declaration.identity.signature,
+            Signature(("WorldRecord", "WorldQuery"), "Boolean"))
         profile = world_rule_profile(operators, registered_adapter())
         self.assertEqual(profile.coverage, WORLD_COVERAGE)
         self.assertEqual(profile.source_adapter_id, "source.bamf.qualified-world/v1")
@@ -68,6 +72,9 @@ class SemanticRuleRegistryTests(unittest.TestCase):
             profile.source_capability_ids,
             ("WORLD.ACTOR_OF", "WORLD.BEFORE", "WORLD.DIRECT_CAUSE",
              "WORLD.IS_OCCURRED"))
+        self.assertEqual(
+            profile.source_contract_sha256,
+            registered_adapter().descriptor.implementation_sha256)
         registry = default_semantic_rule_registry(
             self.RELEASE, registered_adapter())
         self.assertEqual(

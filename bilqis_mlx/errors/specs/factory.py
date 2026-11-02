@@ -25,7 +25,7 @@ class FACTORY:
             next_action=(
                 "Preserve the artifact. Decode it with the schema version that "
                 "minted it; restore the original bytes if that verification fails."),
-            self_heal_owner="compatibility.factory_release_v1",
+            self_heal_owner="compatibility.legacy.factory_release_v1",
             legacy_codes=("FACTORY_RELEASE_MANIFEST_CONTENT_DRIFT",),
         )
 

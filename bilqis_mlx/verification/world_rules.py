@@ -4,11 +4,10 @@ from __future__ import annotations
 
 def answer(record: dict) -> str:
     """Evaluate only explicit world facts; never infer transitive causation."""
-    if not isinstance(record, dict):
-        raise ValueError("WORLD_RULE_RECORD_INVALID")
-    events = record.get("events")
-    query = record.get("query")
-    if (not isinstance(events, list) or not events
+    events = record.get("events") if isinstance(record, dict) else None
+    query = record.get("query") if isinstance(record, dict) else None
+    if (not isinstance(record, dict)
+            or not isinstance(events, list) or not events
             or not isinstance(query, dict)):
         raise ValueError("WORLD_RULE_RECORD_INVALID")
     by_id = {

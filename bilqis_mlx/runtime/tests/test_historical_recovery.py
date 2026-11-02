@@ -68,7 +68,7 @@ class HistoricalRecoveryTests(unittest.TestCase):
             self.assertEqual(read_current(self.root), self.receipt)
 
     def test_historical_inspection_exposes_only_recorded_metadata(self):
-        from bilqis_mlx.compatibility.resume_migration import inspect_historical_run
+        from bilqis_mlx.compatibility.legacy.resume_migration import inspect_historical_run
         before = self.snapshot()
         report = inspect_historical_run(self.root, read_current(self.root))
         self.assertEqual(report['runtime_schema'], session.VERSION)
@@ -107,7 +107,7 @@ class HistoricalRecoveryTests(unittest.TestCase):
 
     def test_current_admission_is_not_classified_as_historical(self):
         current = {**self.receipt, 'factory_admission_v2': {'schema': 'current-fixture'}}
-        with patch('bilqis_mlx.compatibility.resume_migration.inspect_historical_run',
+        with patch('bilqis_mlx.compatibility.legacy.resume_migration.inspect_historical_run',
                    side_effect=AssertionError('current state entered historical reader')):
             session._require_current_resume(self.root, current)
 

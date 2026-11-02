@@ -3,7 +3,7 @@ from contextlib import redirect_stdout
 import io
 from pathlib import Path
 from bilqis_mlx import trainer as storage
-from bilqis_mlx.compatibility.live_releases import initial_course
+from bilqis_mlx.compatibility.legacy.live_releases import initial_course
 from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.learning.learning_experiment import Settings
 from tests.system import test_grade_c_trainer as fixtures

@@ -231,7 +231,7 @@ class RuntimeAdmissionTests(unittest.TestCase):
                     patch("bilqis_mlx.grade_a_probe.read_sources", return_value=(None, None, graph, None, None)), \
                     patch("bilqis_mlx.compatibility.executable_projection.verify_legacy_resume_binding"), \
                     patch("bilqis_mlx.grade_a_release.accepted_grade_a", return_value=course), \
-                    patch("bilqis_mlx.compatibility.live_releases.initial_course", return_value=course), \
+                    patch("bilqis_mlx.compatibility.legacy.live_releases.initial_course", return_value=course), \
                     patch("bilqis_mlx.compatibility.executable_projection.compile_projected_executable_release",
                           return_value=(release, program, None)):
                 result = preflight_sealed_v1_migration(root, receipt, {}, None)

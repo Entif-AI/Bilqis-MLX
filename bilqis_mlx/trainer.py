@@ -74,7 +74,7 @@ from .profiles.retention import fragile_preservation_capabilities
 from .operator_vocabulary import (
     AUTONOMY_SAFE_HOLD, AUTONOMY_SOURCE_DEVELOPMENT_REQUIRED,
 )
-from .compatibility.live_releases import (
+from .compatibility.legacy.live_releases import (
     boolean_identification_answer_heads,
     initial_course,
     numeric_answer_heads,
@@ -98,7 +98,7 @@ from .generated_assessment import (
     verify_stored_cohort,
 )
 from .grade_a_manifest import verify_manifest
-from .compatibility.source_bootstrap import AUTHORITY, accepted_grade_a
+from .compatibility.legacy.source_bootstrap import AUTHORITY, accepted_grade_a
 from .live_curriculum import (
     assessment_rubric_for_scope, cohort_contract as _cohort_contract,
     lesson_contract, numeric_maximum,

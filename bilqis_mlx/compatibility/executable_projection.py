@@ -42,7 +42,7 @@ def legacy_execution_metadata(course: Course) -> dict:
 def resolve_legacy_resume_course(
         accepted, source_root, saved, initial, *, pending=None):
     """Resolve a pre-v2 saved receipt through the historical release decoder."""
-    from .live_releases import course_for_mode, resolve_admitted_courses
+    from .legacy.live_releases import course_for_mode, resolve_admitted_courses
     admitted = resolve_admitted_courses(
         accepted, source_root, saved, pending=pending)
     return (
@@ -62,7 +62,7 @@ def verify_legacy_resume_binding(
     release before making any neural update. All other legacy paths retain the
     exact live-provider digest check.
     """
-    from .live_releases import graph_matches_release, verify_release_receipt
+    from .legacy.live_releases import graph_matches_release, verify_release_receipt
     if sealed_v1_release is not None:
         if sealed_v1_release.course != course:
             raise ValueError("FACTORY_ADMISSION_SEALED_COURSE_MISMATCH")
@@ -84,7 +84,7 @@ def preflight_sealed_v1_migration(run_dir, receipt, manifest, source_root):
     from ..runtime.assessment import _verify_saved_cohort
     from ..runtime.state import _fingerprint, _state_from_json
     from .schedule_program import schedule_program_from_legacy_course
-    from .live_releases import initial_course, NUMERIC_RELEASE, NUMERIC_STAIRCASE_RELEASE
+    from .legacy.live_releases import initial_course, NUMERIC_RELEASE, NUMERIC_STAIRCASE_RELEASE
 
     release = _verified_legacy_upgrade_release(run_dir, receipt)
     if release is None:

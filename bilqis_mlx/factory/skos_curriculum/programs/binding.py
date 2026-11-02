@@ -33,6 +33,24 @@ def bind_existing_family_program(
         _fail("BAMF_FAMILY_PROGRAM_SOURCE_ADAPTER_MISMATCH")
     if source.descriptor.adapter_id not in registration.accepted_source_adapter_ids:
         _fail("BAMF_FAMILY_PROGRAM_SOURCE_FAMILY_MISMATCH")
+    if registration.source_validator is not None:
+        try:
+            registration.source_validator(source)
+        except (TypeError, ValueError):
+            _fail("BAMF_FAMILY_PROGRAM_SOURCE_IMPLEMENTATION_MISMATCH")
+    profile = registration.rule_profile
+    if profile is not None:
+        identity = getattr(profile, "identity", None)
+        source_capabilities = getattr(profile, "source_capability_ids", ())
+        source_adapter_id = getattr(profile, "source_adapter_id", None)
+        if (getattr(identity, "family_id", None) != registration.family_id
+                or tuple(sorted(capability.answer_kinds))
+                != getattr(identity, "answer_kinds", None)
+                or (source_capabilities
+                    and capability.capability_id not in source_capabilities)
+                or (source_adapter_id is not None
+                    and source_adapter_id != capability.source_adapter_id)):
+            _fail("BAMF_FAMILY_PROGRAM_SEMANTIC_RULE_MISMATCH")
     return BoundFamilyProgram(
         registration.family_id, capability.capability_id,
         source.descriptor.adapter_id, program.generator_id, program.oracle_id,

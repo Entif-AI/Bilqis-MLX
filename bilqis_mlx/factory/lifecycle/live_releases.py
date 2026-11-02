@@ -4,4 +4,4 @@ Current executable authority is CurriculumProfile -> ExecutionPlan ->
 ExecutableFactoryRelease. Historical callers may continue importing this path
 while they migrate; implementation lives under bilqis_mlx.compatibility.
 """
-from ..compatibility.live_releases import *  # noqa: F401,F403
+from ..compatibility.legacy.live_releases import *  # noqa: F401,F403

@@ -61,7 +61,7 @@ class GradeTransitionCompatibilityDisposableTests(unittest.TestCase):
 
     def test_historical_compatibility_has_no_migration_or_activation(self):
         import bilqis_mlx.compatibility.grade_transition as historical
-        import bilqis_mlx.compatibility.resume_migration as inspection
+        import bilqis_mlx.compatibility.legacy.resume_migration as inspection
         self.assertFalse(hasattr(historical, "activate_numeric_grade"))
         self.assertFalse(hasattr(inspection, "migrate_historical_grade_a"))
         self.assertTrue(callable(inspection.inspect_historical_run))
@@ -186,7 +186,7 @@ class GradeCTrainerTests(unittest.TestCase):
         }
 
     def test_c_resume_selects_the_exact_historical_parent_release(self):
-        from bilqis_mlx.compatibility.historical_live_release import (
+        from bilqis_mlx.compatibility.legacy.historical_live_release import (
             HISTORICAL_B_COURSE_SHA256, resume_grade_courses)
         a, b = resume_grade_courses(accepted_grade_a(self.manifest), SOURCE,
             {'curriculum_mode': C_RELEASE, 'school': {'course_digest': 'successor'},

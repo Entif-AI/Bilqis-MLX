@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from ..live_grade_a import (ASSESSMENT_ITEMS_PER_CAPABILITY, GENERATOR,
+from ...live_grade_a import (ASSESSMENT_ITEMS_PER_CAPABILITY, GENERATOR,
                            RELEASE, _sha, generator_source_digest, live_course)
 
 
@@ -60,7 +60,7 @@ def historical_grade_a_course(accepted):
 
 
 def historical_grade_b_course(accepted, source_root):
-    from ..live_grade_b import live_course as build_grade_b
+    from ...live_grade_b import live_course as build_grade_b
 
     old_a = historical_grade_a_course(accepted)
     old_b = build_grade_b(old_a, source_root)

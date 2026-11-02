@@ -37,8 +37,8 @@ class SemanticRuleProfile:
         if (type(self.identity) is not CapabilityIdentityInput
                 or not self.coverage or not self.operator_ids
                 or self.operator_ids != tuple(sorted(set(self.operator_ids)))
-                or ((self.source_adapter_id is None)
-                    != (self.source_contract_sha256 is None))
+                or (self.source_contract_sha256 is not None
+                    and self.source_adapter_id is None)
                 or (self.source_capability_ids
                     and self.source_adapter_id is None)
                 or self.source_capability_ids
@@ -101,20 +101,23 @@ def world_rule_profile(
     """Require source-owned world evidence in addition to operator declarations."""
     if type(operators) is not OperatorRegistry:
         raise TypeError("FACTORY_SEMANTIC_RULE_OPERATOR_REGISTRY_REQUIRED")
-    if (type(source) is not RegisteredSourceAdapter
-            or source.descriptor.adapter_id != "source.bamf.qualified-world/v1"
-            or source.descriptor.generator_id != "bilqis.bamf.a08.qualified-world/v1"
-            or source.descriptor.accepted_oracle_ids
-            != ("bilqis.bamf.a08.qualified-world-oracle/v1",)):
-        raise ValueError("FACTORY_WORLD_RULE_SOURCE_AUTHORITY_UNAVAILABLE")
+    if source is not None:
+        from bilqis_mlx.source_adapters.world_rules import require_registered_source
+        try:
+            require_registered_source(source)
+        except (TypeError, ValueError):
+            raise ValueError(
+                "FACTORY_WORLD_RULE_SOURCE_AUTHORITY_UNAVAILABLE") from None
     for operator_id in _WORLD:
         operators.resolve(operator_id)
     return SemanticRuleProfile(
         CapabilityIdentityInput(
-            "ithkuil:LEXSENSE-59819df75e3137", "qualified_world_model",
-            "BEFORE", Signature(("FrameHandle", "FrameHandle"), "Boolean"),
+            "source.bamf.qualified-world/v1", "qualified_world_model",
+            "SOURCE_WORLD_QUERY",
+            Signature(("WorldRecord", "WorldQuery"), "Boolean"),
             ("binary",)),
         WORLD_COVERAGE, tuple(sorted(_WORLD)),
-        source.descriptor.adapter_id, source.descriptor.implementation_sha256,
+        "source.bamf.qualified-world/v1",
+        None if source is None else source.descriptor.implementation_sha256,
         tuple(sorted(_WORLD_SOURCE_CAPABILITIES)),
     )

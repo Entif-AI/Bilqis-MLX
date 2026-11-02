@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import patch
 
 from bilqis_mlx.source_adapters.school import live_source_registry
-from bilqis_mlx.compatibility.source_adapters import historical_source_registry
+from bilqis_mlx.compatibility.legacy.source_adapters import historical_source_registry
 from bilqis_mlx.factory.generation import draw_release_rows
 from bilqis_mlx.factory.live_releases import (
     BOOLEAN_COMPOSITE_RELEASE, BOOLEAN_IDENTIFICATION_RELEASE, BOOLEAN_RELEASE,

@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 import bilqis_mlx.backup as _bilqis_mlx_backup
 import bilqis_mlx.compatibility.executable_projection as _compatibility_executable_projection
 import bilqis_mlx.compatibility.historical_teacher_policy as _historical_teacher_policy
-import bilqis_mlx.compatibility.source_bootstrap as _compatibility_source_bootstrap
+import bilqis_mlx.compatibility.legacy.source_bootstrap as _compatibility_source_bootstrap
 import bilqis_mlx.curriculum.scheduler as _curriculum_scheduler
 import bilqis_mlx.factory.schedule as _factory_schedule
 import bilqis_mlx.grade_a_manifest as _bilqis_mlx_grade_a_manifest
@@ -185,7 +185,7 @@ def _init(run_dir, manifest, course, policy_sha, historical_teacher,
 
 def _require_current_resume(run_dir, receipt):
     if receipt.get("factory_admission_v2") is None:
-        from ..compatibility.resume_migration import inspect_historical_run
+        from ..compatibility.legacy.resume_migration import inspect_historical_run
         inspect_historical_run(run_dir, receipt)
         ErrorBus.Raise(SCHOOL.STATE.HISTORICAL_NOT_RESUMABLE)
 

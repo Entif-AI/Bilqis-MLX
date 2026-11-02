@@ -50,7 +50,7 @@ class GradeBTrainerTests(unittest.TestCase):
 
     def test_pre_abi_refactor_human_release_retains_exact_seals(self):
         """A source-neutral ABI import must not strand sealed training states."""
-        from bilqis_mlx.compatibility.historical_live_release import (
+        from bilqis_mlx.compatibility.legacy.historical_live_release import (
             HISTORICAL_A_RUBRIC_SHA256, HISTORICAL_B_COURSE_SHA256,
             HISTORICAL_B_RUBRIC_SHA256, historical_grade_b_course,
         )

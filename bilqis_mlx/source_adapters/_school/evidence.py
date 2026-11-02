@@ -5,6 +5,9 @@ from ...boolean_identification import CAPABILITY as B_IDBOOLOPS_CAPABILITY
 from ...factory.autonomy import SupplementalEvidenceSpec
 from ..structure import inspect_boolean_identification, inspect_source_query
 
+def _producer_key_drift():
+    raise ValueError("FACTORY_MICRO_EVIDENCE_PRODUCER_KEY_DRIFT")
+
 def witness_micro_obligation(row, obligation, *, source_root, graph, course):
     """Certify structural learner evidence in the finite-micro source dialect."""
     del source_root, graph
@@ -36,7 +39,7 @@ def witness_micro_obligation(row, obligation, *, source_root, graph, course):
         key = getattr(obligation, "key", "")
         if "@" not in key:
             if key != declared_producer_id:
-                raise ValueError("FACTORY_MICRO_EVIDENCE_PRODUCER_KEY_DRIFT")
+                _producer_key_drift()
             if record.get("task") == "identify_boolean_operator":
                 shape = inspect_boolean_identification(record, row.get("root"))
             else:
@@ -49,7 +52,7 @@ def witness_micro_obligation(row, obligation, *, source_root, graph, course):
         except (AttributeError, ValueError) as exc:
             raise ValueError("FACTORY_MICRO_EVIDENCE_COMPOSITION_KEY_INVALID") from exc
         if producer_id != declared_producer_id:
-            raise ValueError("FACTORY_MICRO_EVIDENCE_PRODUCER_KEY_DRIFT")
+            _producer_key_drift()
         query = record.get("query")
         args = query.get("args") if isinstance(query, dict) else None
         if (query.get("kind") != "apply" if isinstance(query, dict) else True) or not isinstance(args, list):

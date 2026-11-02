@@ -2,8 +2,10 @@
 from bilqis_mlx.factory.curriculum.formal_lessons import check_formal_lesson, construct_formal_lesson
 from bilqis_mlx.source_adapters.copular import CAPABILITY as COPULAR_SOURCE_CAPABILITY
 from bilqis_mlx.source_adapters.world_rules import (
-    CAPABILITIES as WORLD_CAPABILITIES,
+    CAPABILITIES as WORLD_CAPABILITIES, require_registered_source,
 )
+from bilqis_mlx.factory.curriculum.rule_registry import world_rule_profile
+from bilqis_mlx.semantics.cognitive_operators.registry import default_registry
 from .contracts import SourceFamilyBatch
 from .invocation import (
     invoke_formal, invoke_same_capability_source_batch, invoke_source_batch,
@@ -56,5 +58,8 @@ def default_family_program_registry() -> FamilyProgramRegistry:
             "bilqis.factory.source-registry-draw/v1",
             "bilqis.factory.source-registry-check/v1",
             _source_draw, _source_check,
-            invoke_bound=invoke_same_capability_source_batch),
+            invoke_bound=invoke_same_capability_source_batch,
+            rule_profile=world_rule_profile(
+                default_registry("0" * 64), None),
+            source_validator=require_registered_source),
     ))

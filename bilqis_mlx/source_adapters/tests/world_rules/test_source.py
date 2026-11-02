@@ -1,11 +1,14 @@
 """Source-bound world rule fixtures use explicit facts, never inferred causes."""
 import copy
+import hashlib
+from pathlib import Path
 import unittest
 
 from bilqis_mlx.live_grade_c import registry_graph
 from bilqis_mlx.source_adapters.world_rules import (
     CAPABILITIES, draw, check, projected_graph, registered_adapter, verify_source,
 )
+from bilqis_mlx.vocabulary_growth import digest
 
 
 class QualifiedWorldSourceTests(unittest.TestCase):
@@ -21,6 +24,29 @@ class QualifiedWorldSourceTests(unittest.TestCase):
         self.assertEqual(witness['morphology'], 'NOT_REALIZED')
         self.assertEqual(self.graph['tokens'][:len(self.parent['tokens'])], self.parent['tokens'])
         self.assertEqual(self.graph['nodes'][:len(self.parent['nodes'])], self.parent['nodes'])
+
+    def test_provider_fingerprint_binds_both_executable_implementation_files(self):
+        root = Path(__file__).resolve().parents[4]
+        files = (
+            ("bilqis_mlx/source_adapters/world_rules.py",
+             root / "bilqis_mlx/source_adapters/world_rules.py"),
+            ("bilqis_mlx/verification/world_rules.py",
+             root / "bilqis_mlx/verification/world_rules.py"),
+        )
+        expected = digest({
+            "source": verify_source(),
+            "files": tuple(
+                (relative, hashlib.sha256(path.read_bytes()).hexdigest())
+                for relative, path in files),
+        })
+        oracle_only = digest({
+            "source": verify_source(),
+            "files": ((files[1][0],
+                       hashlib.sha256(files[1][1].read_bytes()).hexdigest()),),
+        })
+        actual = registered_adapter().descriptor.implementation_sha256
+        self.assertEqual(actual, expected)
+        self.assertNotEqual(actual, oracle_only)
 
     def test_all_four_rules_have_fresh_independently_checked_source_rows(self):
         for capability in CAPABILITIES:
