@@ -72,6 +72,30 @@ class BamfPublicationTests(unittest.TestCase):
         self.assertTrue((self.run / published["bundle"]).is_dir())
         self.assertEqual((stale / "partial").read_text(), "interrupted")
 
+    def test_unsafe_run_root_rejects_before_publication_or_lock_writes(self):
+        for kind in ("symlink", "file"):
+            with self.subTest(kind=kind):
+                run = self.root / kind
+                outside = self.root / (kind + "-outside")
+                if kind == "symlink":
+                    outside.mkdir()
+                    run.symlink_to(outside, target_is_directory=True)
+                else:
+                    run.write_text("not-a-directory")
+                self.run = run
+
+                with self.assertRaises(BilqisError):
+                    self.publish(candidate(parent_state()))
+                if kind == "symlink":
+                    self.assertEqual(tuple(outside.iterdir()), ())
+                else:
+                    self.assertEqual(run.read_text(), "not-a-directory")
+
+                with self.assertRaises(BilqisError):
+                    load_bamf_generation(run / "bamf-state.json")
+                if kind == "symlink":
+                    self.assertEqual(tuple(outside.iterdir()), ())
+
     def test_pointer_written_before_outbox_crash_replays_exactly_once(self):
         source = candidate(parent_state())
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \

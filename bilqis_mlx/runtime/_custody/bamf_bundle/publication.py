@@ -15,9 +15,17 @@ from .codec import load_bamf_bundle, save_bamf_bundle
 from .records import BAMF_POINTER_SCHEMA, BamfBundleCandidate, CompleteStudent, canonical, invalid, sha
 
 
+def _require_run_root(run_dir: Path) -> None:
+    if run_dir.is_symlink() or (run_dir.exists() and not run_dir.is_dir()):
+        invalid(DataPlaneError.BUNDLE_ROOT_UNSAFE)
+    run_dir.mkdir(parents=True, exist_ok=True)
+    if run_dir.is_symlink() or not run_dir.is_dir():
+        invalid(DataPlaneError.BUNDLE_ROOT_UNSAFE)
+
+
 @contextlib.contextmanager
 def _pointer_lock(run_dir: Path):
-    run_dir.mkdir(parents=True, exist_ok=True)
+    _require_run_root(run_dir)
     lock = run_dir / ".bamf-pointer.lock"
     if lock.is_symlink():
         invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
@@ -76,7 +84,7 @@ def _atomic_pointer(path: Path, pointer: dict) -> None:
 
 
 def _stage(run_dir: Path) -> Path:
-    run_dir.mkdir(parents=True, exist_ok=True)
+    _require_run_root(run_dir)
     root = run_dir / ".bamf-staging"
     if root.is_symlink() or (root.exists() and not root.is_dir()):
         invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
