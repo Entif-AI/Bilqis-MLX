@@ -6,7 +6,11 @@ from ...factory.source_identity import canonical_source_adapter
 from ...generated_assessment import digest
 from ..atlas_projection import FrozenAtlasSnapshot
 from ..context_eligibility import PUBLIC_FORMAL, ContextPolicy, SourceFrontier, TaskScope
-from .common import FINITE_NUMERIC_ADAPTER, MAX_PUBLIC_FORMAL_DRAW_EACH, _adapter_fail
+from .common import (
+    BOOLEAN_COMPOSITE_ADAPTER, BOOLEAN_CONNECTIVE_ADAPTER,
+    BOOLEAN_IDENTIFICATION_ADAPTER, FINITE_NUMERIC_ADAPTER,
+    MAX_PUBLIC_FORMAL_DRAW_EACH, MICRO_PREDICATE_ADAPTER, _adapter_fail,
+)
 
 
 def canonical_adapter(source_adapter, span):
@@ -29,20 +33,29 @@ def canonical_adapter(source_adapter, span):
 
 
 def canonical_graph(source_root, graph, adapter_id, span):
-    root = Path(__file__).resolve().parents[3] / "vendor/legacy-v16"
+    root, canonical = source_graph_for_adapter(adapter_id)
     if Path(source_root).resolve() != root.resolve():
         _adapter_fail("BAMF_CONTEXT_PUBLIC_FORMAL_SOURCE_ROOT_DRIFT",
                       adapter_id, span, "<public-formal>")
-    if adapter_id == FINITE_NUMERIC_ADAPTER:
-        from ...live_grade_c import registry_graph
-        canonical = registry_graph()
-    else:
-        from ...grade_a_probe import read_sources
-        canonical = read_sources(root)[2]
     if digest(graph) != digest(canonical):
         _adapter_fail("BAMF_CONTEXT_PUBLIC_FORMAL_GRAPH_DRIFT",
                       adapter_id, span, "<public-formal>")
     return root, canonical
+
+
+def source_graph_for_adapter(adapter_id: str):
+    """Return the repository-owned source graph for a registered formal adapter."""
+    root = Path(__file__).resolve().parents[3] / "vendor/legacy-v16"
+    if adapter_id == FINITE_NUMERIC_ADAPTER:
+        from ...live_grade_c import registry_graph
+        return root, registry_graph()
+    if adapter_id not in {
+            MICRO_PREDICATE_ADAPTER, BOOLEAN_CONNECTIVE_ADAPTER,
+            BOOLEAN_COMPOSITE_ADAPTER, BOOLEAN_IDENTIFICATION_ADAPTER}:
+        _adapter_fail("BAMF_CONTEXT_PUBLIC_FORMAL_ADAPTER_UNTRUSTED",
+                      str(adapter_id), SourceSpan(0, 0), "<public-formal>")
+    from ...grade_a_probe import read_sources
+    return root, read_sources(root)[2]
 
 
 def verify_draw(adapter, row, source_root, graph, span, seed, each, profile, course):
