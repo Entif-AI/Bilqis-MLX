@@ -1,17 +1,17 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "b4f2f0aca31623e7246ef819338a1450d71183cd",
-  "updated_at": "2026-11-02T08:29:21Z",
+  "observed_unified": "67c964a1548cb0075a28a90aa2565d8bdab0fd71",
+  "updated_at": "2026-11-02T19:49:28.661134+00:00",
   "exception": null,
   "items": [
     {
       "issue": 475,
       "pr": 695,
-      "state": "ACTIVE",
+      "state": "BLOCKED",
       "head_sha": "577d0d337f7e401859d0a2cfd57bc3e051a82596",
-      "summary": "B12.2 candidate-custody follow-up is the current primary Lane B implementation surface.",
-      "resume_trigger": null
+      "summary": "B12.2 transaction custody is staged; #710 execution-owned mask authority remains absent.",
+      "resume_trigger": "Accepted B09/B11 production execution-mask issuer is consumable; bind CandidateStepProof and verify #710."
     },
     {
       "issue": 465,
@@ -72,9 +72,9 @@
     {
       "issue": 478,
       "pr": 704,
-      "state": "ACTIVE",
-      "head_sha": "630f39e186d6aac042edf70c63810c9300489732",
-      "summary": "B13.1 post-merge custody remediation is active for review findings #706 and #707 on draft PR #704.",
+      "state": "TURNED_IN",
+      "head_sha": "4aa40c427cda2ac2f0bac85c6e46e4b0724b2c22",
+      "summary": "B13.1 #704 custody repairs are integrated on unified; broader source-qualified generation acceptance remains with B13.",
       "resume_trigger": null
     },
     {
@@ -84,6 +84,14 @@
       "head_sha": "76383e474245bf9a61acc278ff84decc177a6c97",
       "summary": "B11.1a execution-owned backbone producer is NON-EGM clean.",
       "resume_trigger": "Pinned Google EGM becomes available and is run on the exact candidate head, or an explicitly accepted successor gate replaces it."
+    },
+    {
+      "issue": 480,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "67c964a1548cb0075a28a90aa2565d8bdab0fd71",
+      "summary": "Trace historical-v1 reader and disposable-cache separation; final #479 source-qualified continuation prerequisite remains open.",
+      "resume_trigger": null
     }
   ]
 }
