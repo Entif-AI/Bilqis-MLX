@@ -7,7 +7,7 @@ from scripts.check_bamf_flow_control import (
     validate_live_pr_inventory,
 )
 from scripts.tests.bamf_flow_control_fixtures import (
-    EXCEPTION,
+    exception,
     FixtureMixin,
     active,
     lane,
@@ -88,7 +88,7 @@ class BamfFlowControlLiveTests(FixtureMixin):
         self.assertIn("Integration inventory: OPEN 2/3; mode NORMAL", summaries)
 
     def test_non_implementation_exception_is_excluded_from_inventory(self) -> None:
-        exception = {**EXCEPTION, "head_branch": "governance/adr126"}
+        exception = {**exception(), "head_branch": "governance/adr126"}
         prs = [
             pr(10, head="feature", base="unified"),
             pr(99, head="governance/adr126", base="unified"),
