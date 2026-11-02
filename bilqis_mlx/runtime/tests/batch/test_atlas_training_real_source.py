@@ -18,6 +18,7 @@ from bilqis_mlx.runtime.atlas_training_adapter import compile_training_batch
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.runtime.tests.test_atlas_training_adapter import answer_plan_for
 from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest
+from bilqis_mlx.semantics.atlas_features.formal import source_qualified_feature_row
 from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection, load_pinned_atlas_snapshot
 from bilqis_mlx.semantics.context_eligibility import PUBLIC_FORMAL, ContextPolicy, SourceFrontier, SourceGrant, TaskScope
 from bilqis_mlx.semantics.frame_adapters import bind_registered_source_row, public_formal_context
@@ -72,6 +73,8 @@ class RealTrainingAuthorityTests(unittest.TestCase):
         cls.feature_schema = FeatureSchema(roles, schema_ids, source_bindings=tuple(
             (schema_id, adapter.descriptor.adapter_id) for schema_id in schema_ids))
         cls.features = build_feature_manifest(snapshot, cls.feature_schema)
+        cls.real_frame = frames[0].frame
+        cls.real_scope = frames[0].scope
         manifest = _load_pinned_released_frame_schemas('micro', cls.selection).manifest
         cls.config = FrameCompilerConfig(tuple(body.parse() for body in manifest.bodies),
             manifest.schema_map, None, task, frontier, policy)
@@ -102,3 +105,9 @@ class RealTrainingAuthorityTests(unittest.TestCase):
                                 replace(entries[1], tag=entries[0].tag), *entries[2:])))
         with self.assertRaises(BilqisError):
             self.compile(replace(self.config, schema_map=replace(self.config.schema_map, entries=swapped)), self.features)
+
+    def test_formal_owner_rejects_even_when_failure_callback_returns(self):
+        binding = next(item for item in self.real_frame.bindings if item.concept is not None)
+        with self.assertRaises(BilqisError):
+            source_qualified_feature_row(self.features, binding.concept, binding.role_id,
+                self.real_frame, self.real_scope, None, invalid=lambda: None)

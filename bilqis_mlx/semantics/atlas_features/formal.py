@@ -1,6 +1,8 @@
 """Re-derive admitted formal types from independent A01 and A03 source pins."""
 from dataclasses import replace
 
+from bilqis_mlx.errors import ErrorBus, SCHOOL
+
 from ..atlas_snapshot import AtlasArtifactSelection, load_pinned_atlas_snapshot
 from ..frame_adapters.common import (
     BOOLEAN_COMPOSITE_ADAPTER, BOOLEAN_CONNECTIVE_ADAPTER,
@@ -20,6 +22,11 @@ _SOURCE_FAMILIES = (
 )
 
 
+def _reject(invalid):
+    invalid()
+    ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+
+
 def source_qualified_feature_row(features, concept, role_id, frame, scope, selection, *, invalid):
     """Preserve A06 factors while deriving formal types from the pinned source."""
     admitted = next((item for item in features.concepts if item.semantic_id == concept.semantic_id), None)
@@ -28,18 +35,18 @@ def source_qualified_feature_row(features, concept, role_id, frame, scope, selec
     row = features.features_for(concept.semantic_id, role_id, frame.frame_schema_id, scope)
     if (type(selection) is not AtlasArtifactSelection or type(frame) is not FrameInstance
             or concept.semantic_release != features.semantic_release or concept.abi_index != row.abi_index):
-        invalid()
+        _reject(invalid)
     selection.__post_init__()
     if (selection.bundle_id != features.atlas_bundle_id or selection.release_sha256 != features.semantic_release
             or selection.source_bundle_id != features.source_bundle_id):
-        invalid()
+        _reject(invalid)
     reference = concept.source_reference
     if not isinstance(reference, str) or ':' not in reference:
-        invalid()
+        _reject(invalid)
     adapter_id, _ = reference.split(':', 1)
     family = next((value for owner, value in _SOURCE_FAMILIES if owner == adapter_id), None)
     if family is None:
-        invalid()
+        _reject(invalid)
     snapshot = load_pinned_atlas_snapshot(selection)
     _, graph = source_graph_for_adapter(adapter_id)
     types = _formal_source_types(snapshot, concept, graph, adapter_id, frame.source_span, role_id)
@@ -47,7 +54,7 @@ def source_qualified_feature_row(features, concept, role_id, frame, scope, selec
                                                     source_family=family, atlas_selection=selection)
     role = next((item for item in schema.roles if item.role_id == role_id), None)
     if role is None or concept.type_ids != types or not set(types).issubset(set(role.allowed_type_ids)):
-        invalid()
+        _reject(invalid)
     type_map = dict(features.type_map)
     type_rows = tuple(type_map.get(identifier, 0) for identifier in types)
     return replace(row, type_ids=types, type_rows=type_rows,
