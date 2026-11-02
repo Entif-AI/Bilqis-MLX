@@ -1,2 +1,7 @@
 """Private, neural-inert Bilqis MLX school controls."""
 __version__ = "0.1.0"
+
+from pathlib import Path
+
+_OWNER_GROUPS = ('_boolean_sources', '_numeric_sources', '_source_evidence', '_release_views', '_semantic_tools', '_operations')
+__path__.extend(str(Path(__file__).parent / name) for name in _OWNER_GROUPS)

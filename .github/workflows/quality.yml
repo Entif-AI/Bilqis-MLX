@@ -40,6 +40,10 @@ jobs:
           esac
           python3 -B scripts/check_module_size.py --changed-from "$BASE_REF"
           python3 -B scripts/quality/check_governance_integrity.py --base-ref "$BASE_REF"
+      - name: Enforce BAMF lane flow control
+        run: |
+          python3 -B scripts/check_bamf_flow_control.py
+          python3 -B -m unittest scripts.tests.test_bamf_flow_control
       - name: Install historical semantic integrity dependencies
         run: python3 -m pip install -r lib/ithkuil/requirements-semantic.txt
       - name: Check historical semantic integrity
@@ -62,6 +66,8 @@ jobs:
           bilqis_mlx/factory/tests/test_grade_admission.py
           bilqis_mlx/semantics/tests/foundation/test_domain_contracts.py
           bilqis_mlx/verification/tests/test_construction_contracts.py
+          bilqis_mlx/verification/coverage/tests
+          bilqis_mlx/source_adapters/predecessor_parity/tests/test_contracts.py
           bilqis_mlx/factory/tests/lifecycle/test_release_outcome_contracts.py
       - name: Check architecture, documentation and error contracts
         env:
