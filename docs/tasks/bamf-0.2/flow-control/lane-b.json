@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "2800946729e484875f7d1f57f0e6d85078936394",
-  "updated_at": "2026-11-02T18:05:00-05:00",
+  "updated_at": "2026-11-02T22:20:00Z",
   "exception": null,
   "items": [
     {
@@ -104,14 +104,14 @@
     {
       "issue": 586,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "6caf1f7ac6c22f636ec217968c1e5517a60992b2",
-      "summary": "B11.1a consumed merged remediation #738 and is synchronizing once to current reviewed unified for final engineering verification and whole-candidate EGM readiness.",
-      "resume_trigger": null,
+      "state": "WAITING",
+      "head_sha": "626b7553de0231592b486cafd1e012012f580144",
+      "summary": "B11.1a execution-owned backbone producer awaits stale-boundary remediation.",
+      "resume_trigger": "Remediation #738 is resolved and the complete candidate is selected for the next merge-readiness EGM.",
       "closed_pr": 640,
       "preserved_branch": "codex/b11-586-source-h0-20261030",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
-      "close_reason": "Prior PR closed after EGM failure; durable branch reactivated after #738 acceptance"
+      "close_reason": "EGM-Failed; remediation #738"
     },
     {
       "issue": 480,
@@ -152,9 +152,17 @@
     {
       "issue": 738,
       "pr": 742,
-      "state": "TURNED_IN",
+      "state": "ACTIVE",
       "head_sha": "44305b1c685fcdd43ded307c8eeae8e4e2808fbf",
-      "summary": "B11 selected-state chaining remediation is closed and human-merged into the #586 parent branch.",
+      "summary": "Active EGM-Mitigation delivery for #586 stale selected-state chaining.",
+      "resume_trigger": null
+    },
+    {
+      "issue": 747,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "ac89d382137e6581725d6f06220329e957fe0e7c",
+      "summary": "Selected bounded B11 receipt shape/dtype remediation on isolated branch codex/747-backbone-receipt-shape; parent remains parked.",
       "resume_trigger": null
     }
   ]
