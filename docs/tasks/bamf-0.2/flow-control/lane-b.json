@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "b4f2f0aca31623e7246ef819338a1450d71183cd",
-  "updated_at": "2026-11-02T08:29:21Z",
+  "observed_unified": "67c964a1548cb0075a28a90aa2565d8bdab0fd71",
+  "updated_at": "2026-11-02T17:08:00-05:00",
   "exception": null,
   "items": [
     {
@@ -72,18 +72,18 @@
     {
       "issue": 478,
       "pr": 704,
-      "state": "ACTIVE",
-      "head_sha": "630f39e186d6aac042edf70c63810c9300489732",
-      "summary": "B13.1 post-merge custody remediation is active for review findings #706 and #707 on draft PR #704.",
+      "state": "TURNED_IN",
+      "head_sha": "5ac0e9ca2a94e11a6bbb25bcca8282af3eb8fc4e",
+      "summary": "B13.1 custody remediation is human-merged after final pinned EGM PASS; #706/#707 are closed.",
       "resume_trigger": null
     },
     {
       "issue": 586,
       "pr": 640,
-      "state": "WAITING",
-      "head_sha": "76383e474245bf9a61acc278ff84decc177a6c97",
-      "summary": "B11.1a execution-owned backbone producer is NON-EGM clean.",
-      "resume_trigger": "Pinned Google EGM becomes available and is run on the exact candidate head, or an explicitly accepted successor gate replaces it."
+      "state": "ACTIVE",
+      "head_sha": "626b7553de0231592b486cafd1e012012f580144",
+      "summary": "B11.1a remediation #738 is active after pinned EGM found stale selected-state boundary replay on PR #640.",
+      "resume_trigger": null
     }
   ]
 }
