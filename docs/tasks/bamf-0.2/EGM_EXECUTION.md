@@ -17,15 +17,31 @@ personas `../bamf02-egm-b3a359/agents/codebase_details.md` and
 `implementation-readiness-standard.md` for implementation readiness. The full
 checkout is required: persona and standard files are not bundled into this repo.
 
+<!-- BAMF02:EGM-MERGE-READINESS-GATE:20261102 -->
 The implementing agent is the Elephant. A Goldfish starts with fresh context and
 receives only the leaf contract, its named source, diff, verification results and
 necessary authority boundaries. It does not read the implementation conversation,
-prior agent findings or memory. Assign blocker/major findings to the leaf; correct
-or contest them with evidence, then request a bounded targeted independent
-re-review. A same-context review is not a Goldfish review. If the pinned checkout
-or an independent review is unavailable, record `EGM_PENDING`; do not call the
-leaf fully reviewed. Never include credentials, private source text or student
-state in the review packet. IPR-0220 remains an opaque authority reference.
+prior agent findings or memory.
+
+Fresh pinned EGM is a **merge-readiness gate**, not a per-fix regression loop.
+Before requesting it, clear the complete known engineering queue: every known
+Blocker/Major is repaired or evidence-backed contested; independently remediable
+failures have durable issues and their accepted fixes are consumed; required
+dependencies/current unified are consumable; affected tests and hosted checks are
+green; and the exact PR head is otherwise ready for human merge review. Intermediate
+fixes use focused adversarial regressions, ordinary independent review and CI. Do
+not spend a fresh Goldfish after each remediation issue, individual defect fix,
+merge-forward or checkpoint.
+
+If a merge-readiness EGM finds new Blocker/Major defects, record that exact-head
+review and route independently remediable work to durable issues. Repair the whole
+known set before requesting another fresh EGM on the next stable merge candidate.
+A same-context review is not a Goldfish review. If the pinned checkout or an
+independent review is unavailable at merge readiness, record `EGM_PENDING`; do not
+call the leaf fully reviewed. Older copied issue/mirror language saying "one repair
+pass and one targeted re-audit" is superseded by this section. Never include
+credentials, private source text or student state in the review packet. IPR-0220
+remains an opaque authority reference.
 
 ## Lane ownership and dependency checks
 
