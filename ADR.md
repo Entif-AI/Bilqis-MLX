@@ -2624,11 +2624,14 @@ prevent remediation artifacts from recreating the same queue growth elsewhere.
 2026-11-02 after reviewing ADR-124/125 and requiring both a new ADR and stronger
 mechanical enforcement.
 
-**Initial drain result:** The adoption pass closed 17 parked `WAITING` PRs after
-preserving each branch, exact head, owning issue and resume trigger in its PR
-history. The live implementation inventory fell from 19 to two: #695 in Lane B and
-#739 in Lane C. The one-time grandfather list is now empty. Reopening any closed
-candidate is a new admission event and must satisfy the normal inventory gate.
+**Initial drain attempt (reversed):** The first implementation temporarily
+closed 17 parked `WAITING` PRs after preserving their branch/head/issue/resume
+custody. This was an incorrect interpretation of DRAIN. The project owner clarified
+that existing candidates must remain open while pinned EGM, remediation and
+merge-readiness work proceeds. All 17 PRs were reopened at their original exact
+heads; the implementation inventory returned to the 19 adoption-time candidates,
+all of which remain grandfathered for this drain epoch. See the owner clarification
+below.
 
 **Status:** Accepted as the controlling BAMF-0.2 integration-inventory and PR
 admission policy.
