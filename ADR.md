@@ -2454,6 +2454,10 @@ the authorized parent candidate branch can safely accept the fix under current
 writer coordination. The remediation issue is the durable finding record. A stacked
 PR is justified when it provides necessary writer isolation, branch ownership, or
 focused review; otherwise repair the parent candidate directly.
+Because the reviewed BAMF integration trunk is not the repository default branch,
+GitHub closing keywords are not sufficient closeout machinery. Operators must
+explicitly verify the linked remediation issue state and close satisfied children
+after their repair is accepted or consumed.
 
 The owning parent issue/PR carries aggregate merge-readiness state, including the
 fresh pinned EGM result. A later EGM or integration finding reopens a closed
