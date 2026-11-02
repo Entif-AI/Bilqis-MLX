@@ -124,6 +124,38 @@ class DisposableDeltaCandidateTests(unittest.TestCase):
             apply_plastic_delta(package, source.binding, "a" * 64,
                                 (weights, forged_other))
 
+    def test_candidate_and_screened_result_cannot_be_caller_minted_or_replaced(self):
+        from bilqis_mlx.runtime.cognitive_package import (
+            DisposableDeltaCandidate, ScreenedDeltaCandidate,
+        )
+        weights = _tensor("weights", (1.0, 2.0, 3.0, 4.0))
+        package, source = _package((weights,))
+        candidate = apply_plastic_delta(package, source.binding, "a" * 64, (weights,))
+
+        with self.assertRaises(BilqisError):
+            DisposableDeltaCandidate()
+        with self.assertRaises(BilqisError):
+            replace(candidate, generation_digest="f" * 64)
+        evidence = _retarget_evidence(_evidence(), candidate.parent_generation,
+                                      candidate.generation_digest)
+        screened = screen_delta_candidate(candidate, evidence)
+        with self.assertRaises(BilqisError):
+            ScreenedDeltaCandidate(candidate, screened.decision)
+
+    def test_noncanonical_delta_wire_uses_structured_package_error(self):
+        payload = encode_plastic_delta((DeltaSlice(
+            "weights", 0, 1, "a" * 64,
+            np.asarray((1.0,), dtype="<f4").tobytes()),)) + b" "
+        source, rights = snapshot(PackageKind.WEIGHT_DELTA)
+        artifact = PackageArtifact("weights", PackageKind.WEIGHT_DELTA, payload)
+        source = replace(source, artifacts=(artifact,) + source.artifacts[1:])
+        rights = replace(rights, public_artifact_digests=tuple(sorted(
+            value.digest for value in source.artifacts)))
+        package = export_capability(source, source.signature, rights)
+        with self.assertRaises(BilqisError):
+            apply_plastic_delta(package, source.binding, "a" * 64,
+                                (_tensor("weights", (1.0,)),))
+
 
 if __name__ == "__main__":
     unittest.main()

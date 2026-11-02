@@ -1,5 +1,5 @@
 """Pure compatible plastic-delta application before C05 retention/adoption."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from hashlib import sha256
 import json
 
@@ -7,12 +7,14 @@ import numpy as np
 
 from bilqis_mlx.runtime.capability_retention import Decision, retain_candidate
 
-from .contracts import PackageBinding, PackageKind, digest_string, name, require
+from .contracts import PackageBinding, PackageKind, digest_string, invalid, name, require
 from .records import CognitivePackage
 from .staging import stage_import
 
 
 DELTA_SCHEMA = "bilqis.c12.plastic-delta/v1"
+_CANDIDATE_ISSUER = object()
+_SCREEN_ISSUER = object()
 
 
 @dataclass(frozen=True)
@@ -55,34 +57,64 @@ class ReceiverTensor:
         require(bool(np.all(np.isfinite(values))), "nonfinite receiver tensor")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, init=False)
 class DisposableDeltaCandidate:
     parent_generation: str
     generation_digest: str
-    package_digest: str
+    package: CognitivePackage
     binding: PackageBinding
+    parent_tensors: tuple[ReceiverTensor, ...]
     tensors: tuple[ReceiverTensor, ...]
     schema_version: str = "bilqis.c12.disposable-delta-candidate/v1"
+    _issuance: object = field(init=False, repr=False, compare=False)
+
+    def __init__(self, *args, **kwargs):
+        invalid("delta candidate must be issued by apply_plastic_delta")
 
     def __post_init__(self):
+        require(getattr(self, "_issuance", None) is _CANDIDATE_ISSUER,
+                "unissued delta candidate")
         require(all(digest_string(v) for v in (
-            self.parent_generation, self.generation_digest, self.package_digest)),
+            self.parent_generation, self.generation_digest)),
             "invalid candidate identity")
+        require(type(self.package) is CognitivePackage, "invalid candidate package")
         require(type(self.binding) is PackageBinding, "invalid candidate binding")
-        require(type(self.tensors) is tuple and bool(self.tensors)
-                and all(type(v) is ReceiverTensor for v in self.tensors),
-                "invalid candidate tensors")
-        require(tuple(v.parameter_name for v in self.tensors)
-                == tuple(sorted({v.parameter_name for v in self.tensors})),
-                "receiver tensors must be unique and canonical")
+        parent = _canonical_tensors(self.parent_tensors)
+        current = _canonical_tensors(self.tensors)
+        require(parent == self.parent_tensors and current == self.tensors,
+                "candidate tensors must be canonical")
+        expected = _apply_delta_tensors(self.package, self.binding, parent)
+        require(current == expected, "candidate tensors do not replay package delta")
+        require(self.generation_digest
+                == _candidate_digest(self.parent_generation, self.package.digest, current),
+                "candidate generation digest mismatch")
         require(self.schema_version == "bilqis.c12.disposable-delta-candidate/v1",
                 "invalid candidate schema")
 
+    @property
+    def package_digest(self):
+        return self.package.digest
 
-@dataclass(frozen=True)
+
+@dataclass(frozen=True, init=False)
 class ScreenedDeltaCandidate:
     candidate: DisposableDeltaCandidate
     decision: Decision
+    _issuance: object = field(init=False, repr=False, compare=False)
+
+    def __init__(self, *args, **kwargs):
+        invalid("screened delta candidate must be issued by C05 screening")
+
+    def __post_init__(self):
+        require(getattr(self, "_issuance", None) is _SCREEN_ISSUER,
+                "unissued screened delta candidate")
+        require(type(self.candidate) is DisposableDeltaCandidate,
+                "invalid screened candidate")
+        self.candidate.__post_init__()
+        require(type(self.decision) is Decision
+                and self.decision.parent_generation == self.candidate.parent_generation
+                and self.decision.candidate_generation == self.candidate.generation_digest,
+                "screened decision identity mismatch")
 
 
 def encode_plastic_delta(slices):
@@ -202,13 +234,9 @@ def _canonical_tensors(tensors):
     return tuple(by_name[name] for name in sorted(by_name))
 
 
-def apply_plastic_delta(package, receiver_binding, parent_generation, tensors):
-    """Build an immutable disposable candidate; never publish receiver state."""
-    require(type(package) is CognitivePackage, "invalid cognitive package")
-    require(digest_string(parent_generation), "invalid parent generation")
+def _apply_delta_tensors(package, receiver_binding, tensors):
     plan = stage_import(package, receiver_binding)
     require(plan.disposition == "EXACT_BINDING", "delta requires exact receiver binding")
-    tensors = _canonical_tensors(tensors)
     require(receiver_weight_digest(tensors) == receiver_binding.base_weight_digest,
             "receiver base-weight digest mismatch")
     require(receiver_parameter_schema_digest(tensors)
@@ -229,18 +257,46 @@ def apply_plastic_delta(package, receiver_binding, parent_generation, tensors):
         require(bool(np.all(np.isfinite(updated))), "nonfinite candidate tensor")
         candidate[delta.parameter_name] = ReceiverTensor(
             parent.parameter_name, parent.shape, updated.astype("<f4", copy=False).tobytes())
-    ordered = tuple(candidate[name] for name in sorted(candidate))
-    return DisposableDeltaCandidate(
-        parent_generation,
-        _candidate_digest(parent_generation, package.digest, ordered),
-        package.digest, receiver_binding, ordered,
-    )
+    return tuple(candidate[name] for name in sorted(candidate))
+
+
+def _issue_candidate(parent_generation, package, binding, parent_tensors, tensors):
+    candidate = object.__new__(DisposableDeltaCandidate)
+    generation_digest = _candidate_digest(parent_generation, package.digest, tensors)
+    for key, value in (
+        ("parent_generation", parent_generation), ("generation_digest", generation_digest),
+        ("package", package), ("binding", binding), ("parent_tensors", parent_tensors),
+        ("tensors", tensors), ("schema_version", "bilqis.c12.disposable-delta-candidate/v1"),
+        ("_issuance", _CANDIDATE_ISSUER),
+    ):
+        object.__setattr__(candidate, key, value)
+    candidate.__post_init__()
+    return candidate
+
+
+def _issue_screened(candidate, decision):
+    screened = object.__new__(ScreenedDeltaCandidate)
+    for key, value in (("candidate", candidate), ("decision", decision),
+                       ("_issuance", _SCREEN_ISSUER)):
+        object.__setattr__(screened, key, value)
+    screened.__post_init__()
+    return screened
+
+
+def apply_plastic_delta(package, receiver_binding, parent_generation, tensors):
+    """Build an immutable disposable candidate; never publish receiver state."""
+    require(type(package) is CognitivePackage, "invalid cognitive package")
+    require(digest_string(parent_generation), "invalid parent generation")
+    tensors = _canonical_tensors(tensors)
+    candidate = _apply_delta_tensors(package, receiver_binding, tensors)
+    return _issue_candidate(parent_generation, package, receiver_binding, tensors, candidate)
 
 
 def screen_delta_candidate(candidate, paired_retention_evidence):
     """Apply C05's existing whole-capability retention owner before activation."""
     require(type(candidate) is DisposableDeltaCandidate, "invalid delta candidate")
+    candidate.__post_init__()
     decision = retain_candidate(candidate.parent_generation,
                                 candidate.generation_digest,
                                 paired_retention_evidence)
-    return ScreenedDeltaCandidate(candidate, decision)
+    return _issue_screened(candidate, decision)
