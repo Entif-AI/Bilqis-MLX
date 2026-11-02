@@ -8,10 +8,9 @@ import numpy as np
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import (
-    AUTHORITY_REGISTRY,
+    CACHE_AUTHORITY,
     OWNER_ID,
     PUBLIC_KEY_HEX,
-    sign_cache_artifact,
 )
 from bilqis_mlx.runtime.atlas_cache_codec import (
     HEAD_WIDTH,
@@ -34,24 +33,15 @@ _RAW_INFERENCE = interactive_cache_inference
 
 
 def encode_cold_cache(*args, **kwargs):
-    return _RAW_ENCODE(
-        *args,
-        authority_signer=sign_cache_artifact,
-        authority_registry=AUTHORITY_REGISTRY,
-        **kwargs,
-    )
+    return _RAW_ENCODE(CACHE_AUTHORITY, *args, **kwargs)
 
 
 def decode_cache(*args, **kwargs):
-    return _RAW_DECODE(
-        *args, authority_registry=AUTHORITY_REGISTRY, **kwargs
-    )
+    return _RAW_DECODE(CACHE_AUTHORITY, *args, **kwargs)
 
 
 def interactive_cache_inference(*args, **kwargs):
-    return _RAW_INFERENCE(
-        *args, authority_registry=AUTHORITY_REGISTRY, **kwargs
-    )
+    return _RAW_INFERENCE(CACHE_AUTHORITY, *args, **kwargs)
 
 
 def _binding(manifest=None) -> CacheBinding:

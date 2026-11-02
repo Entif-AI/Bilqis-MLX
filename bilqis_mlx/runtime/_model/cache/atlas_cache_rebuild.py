@@ -6,8 +6,6 @@ from typing import Callable
 
 import numpy as np
 
-from .atlas_revalidation import SourceAuthorityRegistry
-
 from .atlas_cache_binding import (
     CacheArtifact,
     CacheBinding,
@@ -66,15 +64,14 @@ def validate_eligibility(
         _invalid()
 
 
-def rebuild_revoked_cache(
+def _rebuild_revoked_cache(
     stale_artifact: CacheArtifact,
     new_binding: CacheBinding,
     *,
     eligibility_receipt: CacheEligibilityReceipt,
     canonical_fp32_source: Callable[[], np.ndarray],
     persist: Callable[[CacheArtifact], None],
-    authority_signer: Callable[[bytes], bytes],
-    authority_registry: SourceAuthorityRegistry,
+    authority,
 ) -> CacheRebuildResult:
     """Build a new derived artifact without decoding or relabeling stale bytes."""
     if not isinstance(stale_artifact, CacheArtifact):
@@ -90,13 +87,12 @@ def rebuild_revoked_cache(
     if values.dtype != np.dtype(np.float32) or not np.isfinite(values).all():
         _invalid()
 
-    from .atlas_cache_records import encode_cold_cache
-    rebuilt = encode_cold_cache(
+    from .atlas_cache_records import _encode_cold_cache
+    rebuilt = _encode_cold_cache(
         values,
         new_binding.codec_manifest,
         binding=new_binding,
-        authority_signer=authority_signer,
-        authority_registry=authority_registry,
+        authority=authority,
     )
     if rebuilt.binding_sha256 != binding_digest(new_binding):
         _invalid()

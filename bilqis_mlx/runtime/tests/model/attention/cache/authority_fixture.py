@@ -8,6 +8,7 @@ from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityRegistry,
     SourceAuthorityScope,
 )
+from bilqis_mlx.runtime.atlas_cache_runtime import _host_cache_authority
 
 _KEY = Ed25519PrivateKey.from_private_bytes(bytes(range(32)))
 PUBLIC_KEY_HEX = _KEY.public_key().public_bytes(
@@ -28,7 +29,5 @@ def authority_registry(
 
 
 AUTHORITY_REGISTRY = authority_registry()
-
-
-def sign_cache_artifact(payload: bytes) -> bytes:
-    return _KEY.sign(payload)
+_CACHE_MAC_KEY = bytes(range(32, 64))
+CACHE_AUTHORITY = _host_cache_authority(AUTHORITY_REGISTRY, _CACHE_MAC_KEY)

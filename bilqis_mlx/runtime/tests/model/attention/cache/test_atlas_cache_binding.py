@@ -11,14 +11,15 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import (
     AUTHORITY_REGISTRY,
+    CACHE_AUTHORITY,
     OWNER_ID,
     PUBLIC_KEY_HEX,
     authority_registry,
-    sign_cache_artifact,
 )
 from bilqis_mlx.runtime.atlas_cache_codec import (
     HEAD_WIDTH,
     CacheBinding,
+    CacheAuthorityRuntime,
     CacheQualityObservation,
     CacheQualityPolicy,
     cache_byte_cost,
@@ -37,24 +38,15 @@ _RAW_INFERENCE = interactive_cache_inference
 
 
 def encode_cold_cache(*args, **kwargs):
-    return _RAW_ENCODE(
-        *args,
-        authority_signer=sign_cache_artifact,
-        authority_registry=AUTHORITY_REGISTRY,
-        **kwargs,
-    )
+    return _RAW_ENCODE(CACHE_AUTHORITY, *args, **kwargs)
 
 
 def decode_cache(*args, **kwargs):
-    return _RAW_DECODE(
-        *args, authority_registry=AUTHORITY_REGISTRY, **kwargs
-    )
+    return _RAW_DECODE(CACHE_AUTHORITY, *args, **kwargs)
 
 
 def interactive_cache_inference(*args, **kwargs):
-    return _RAW_INFERENCE(
-        *args, authority_registry=AUTHORITY_REGISTRY, **kwargs
-    )
+    return _RAW_INFERENCE(CACHE_AUTHORITY, *args, **kwargs)
 
 
 def _binding(manifest=None) -> CacheBinding:
@@ -94,6 +86,7 @@ class CacheBindingAndCostTests(unittest.TestCase):
         self.assertEqual(cost.header_bytes, 61)
         self.assertEqual(cost.payload_bytes, 2304 + 256 + 32)
         self.assertEqual(cost.total_bytes, 2653)
+        self.assertFalse(hasattr(self.artifact, "authority_signature"))
         self.assertAlmostEqual(
             cost.effective_bits_per_channel,
             2653 * 8 / (256 * HEAD_WIDTH),
@@ -158,20 +151,7 @@ class CacheBindingAndCostTests(unittest.TestCase):
                 self.assertIsNone(result.byte_cost)
 
 
-    def test_encoder_rejects_signer_not_owned_by_pinned_authority(self):
-        def forged_signer(_payload):
-            return bytes(64)
-
-        with self.assertRaises(BilqisError):
-            _RAW_ENCODE(
-                self.values,
-                self.manifest,
-                binding=self.binding,
-                authority_signer=forged_signer,
-                authority_registry=AUTHORITY_REGISTRY,
-            )
-
-    def test_caller_selected_authority_key_cannot_replace_host_trust_root(self):
+    def test_public_cache_boundary_rejects_caller_selected_registry(self):
         attacker = Ed25519PrivateKey.from_private_bytes(bytes([255]) * 32)
         attacker_public = attacker.public_key().public_bytes(
             serialization.Encoding.Raw,
@@ -182,24 +162,39 @@ class CacheBindingAndCostTests(unittest.TestCase):
             artifact_authority_public_key_hex=attacker_public,
         )
         attacker_registry = authority_registry(attacker_public)
-        forged = _RAW_ENCODE(
-            self.values,
-            self.manifest,
-            binding=attacker_binding,
-            authority_signer=attacker.sign,
-            authority_registry=attacker_registry,
-        )
-        _RAW_DECODE(
-            forged,
-            attacker_binding,
-            authority_registry=attacker_registry,
-        )
+
         with self.assertRaises(BilqisError):
-            _RAW_DECODE(
-                forged,
-                attacker_binding,
-                authority_registry=AUTHORITY_REGISTRY,
+            CacheAuthorityRuntime(attacker_registry, bytes([255]) * 32)
+        with self.assertRaises(BilqisError):
+            CacheAuthorityRuntime._issue(
+                attacker_registry, bytes([255]) * 32)
+        with self.assertRaises(BilqisError):
+            _RAW_ENCODE(
+                attacker_registry, self.values, self.manifest,
+                binding=attacker_binding,
             )
+        with self.assertRaises(BilqisError):
+            _RAW_ENCODE(
+                CACHE_AUTHORITY, self.values, self.manifest,
+                binding=attacker_binding,
+            )
+        for call in (
+            lambda: _RAW_ENCODE(
+                CACHE_AUTHORITY, self.values, self.manifest,
+                binding=self.binding, authority_registry=attacker_registry),
+            lambda: _RAW_DECODE(
+                CACHE_AUTHORITY, self.artifact, self.binding,
+                authority_registry=attacker_registry),
+            lambda: _RAW_INFERENCE(
+                CACHE_AUTHORITY, self.artifact, self.binding,
+                cached_infer=lambda _: "cache",
+                fp32_recompute=lambda: "fp32",
+                quality_check=lambda _: CacheQualityObservation(True, 0.0),
+                policy=CacheQualityPolicy(0.01),
+                authority_registry=attacker_registry),
+        ):
+            with self.assertRaises(TypeError):
+                call()
 
     def test_wrong_codec_manifest_recomputes_before_decode(self):
         from bilqis_mlx.runtime.atlas_cache_codec import Rot3Manifest

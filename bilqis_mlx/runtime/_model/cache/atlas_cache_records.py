@@ -1,18 +1,17 @@
 """Norm blocks and small-record fallback for the BAMF rot3/v1 cache."""
 from __future__ import annotations
 
-from dataclasses import replace
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 import numpy as np
 
-from .atlas_revalidation import SourceAuthorityRegistry
-
 if TYPE_CHECKING:
     from .atlas_cache_codec import Rot3Manifest
+    from .atlas_cache_runtime import CacheAuthorityRuntime
 
 from .atlas_cache_binding import (
-    CacheArtifact, CacheBinding, ED25519_SIGNATURE_BYTES, binding_digest, cache_artifact_signing_bytes, payload_binding_tag_fields, require_cache_binding, validate_binding,
+    CacheArtifact, CacheBinding, binding_digest, _payload_authenticator_fields,
+    _require_cache_binding, validate_binding,
     cache_byte_cost, MAX_EFFECTIVE_BITS, CACHE_MODE_FP32, CACHE_MODE_ROT3,
 )
 
@@ -51,40 +50,24 @@ def _validate_manifest(manifest: Rot3Manifest) -> None:
     manifest.validate()
 
 
-def _sign_artifact(
-    artifact: CacheArtifact,
-    signer: Callable[[bytes], bytes],
-    binding: CacheBinding,
-    authority_registry: SourceAuthorityRegistry,
-) -> CacheArtifact:
-    if not callable(signer):
-        _invalid()
-    signature = signer(cache_artifact_signing_bytes(artifact))
-    if type(signature) is not bytes or len(signature) != ED25519_SIGNATURE_BYTES:
-        _invalid()
-    signed = replace(artifact, authority_signature=signature)
-    require_cache_binding(signed, binding, authority_registry)
-    return signed
-
-
-def _fp32_artifact(values, bound, signer, binding, authority_registry) -> CacheArtifact:
+def _fp32_artifact(values, bound, binding, authority) -> CacheArtifact:
     count, width = values.shape
     payload = np.asarray(values, dtype="<f4", order="C").tobytes(order="C")
-    tag = payload_binding_tag_fields(
-        CACHE_MODE_FP32, count, count, width, bound, b"", b"", b"", payload,
+    tag = _payload_authenticator_fields(
+        authority, binding, CACHE_MODE_FP32, count, count, width, bound,
+        b"", b"", b"", payload,
     )
-    return _sign_artifact(CacheArtifact(
+    return CacheArtifact(
         CACHE_MODE_FP32, count, count, width, bound, b"", b"", b"", payload, tag,
-    ), signer, binding, authority_registry)
+    )
 
 
-def encode_cold_cache(
+def _encode_cold_cache(
     cache,
     codec_manifest: Rot3Manifest,
     *,
     binding: CacheBinding,
-    authority_signer: Callable[[bytes], bytes],
-    authority_registry: SourceAuthorityRegistry,
+    authority: CacheAuthorityRuntime,
 ) -> CacheArtifact:
     """Encode one [vectors,24] cold record under the B14.2 size policy."""
     _validate_manifest(codec_manifest)
@@ -94,9 +77,7 @@ def encode_cold_cache(
     values = _vectors(cache, codec.HEAD_WIDTH)
     true_vectors = int(values.shape[0])
     if true_vectors < MIN_COMPRESSED_VECTORS:
-        return _fp32_artifact(
-            values, bound, authority_signer, binding, authority_registry
-        )
+        return _fp32_artifact(values, bound, binding, authority)
 
     padded_vectors = (
         (true_vectors + BLOCK_VECTORS - 1) // BLOCK_VECTORS * BLOCK_VECTORS
@@ -124,7 +105,9 @@ def encode_cold_cache(
     block_max_norms = np.asarray(
         maxima, dtype="<f4", order="C"
     ).tobytes(order="C")
-    tag = payload_binding_tag_fields(
+    tag = _payload_authenticator_fields(
+        authority,
+        binding,
         CACHE_MODE_ROT3,
         true_vectors,
         padded_vectors,
@@ -148,22 +131,19 @@ def encode_cold_cache(
         tag,
     )
     if cache_byte_cost(artifact).effective_bits_per_channel > MAX_EFFECTIVE_BITS:
-        return _fp32_artifact(
-            values, bound, authority_signer, binding, authority_registry
-        )
-    return _sign_artifact(
-        artifact, authority_signer, binding, authority_registry
-    )
+        return _fp32_artifact(values, bound, binding, authority)
+    _require_cache_binding(artifact, binding, authority)
+    return artifact
 
 
 def _validate_artifact(
     artifact: CacheArtifact,
     binding: CacheBinding,
-    authority_registry: SourceAuthorityRegistry,
+    authority: CacheAuthorityRuntime,
 ) -> None:
     if not isinstance(artifact, CacheArtifact) or not isinstance(binding, CacheBinding):
         _invalid()
-    require_cache_binding(artifact, binding, authority_registry)
+    _require_cache_binding(artifact, binding, authority)
     codec = _codec()
     if (
         type(artifact.true_vectors) is not int
@@ -183,14 +163,14 @@ def _validate_artifact(
         _invalid()
 
 
-def decode_cache(
+def _decode_cache(
     artifact: CacheArtifact,
     expected_binding: CacheBinding,
     *,
-    authority_registry: SourceAuthorityRegistry,
+    authority: CacheAuthorityRuntime,
 ) -> np.ndarray:
     """Decode B14.2 record bytes and restore the stored vector norm."""
-    _validate_artifact(artifact, expected_binding, authority_registry)
+    _validate_artifact(artifact, expected_binding, authority)
     codec = _codec()
     if artifact.mode == CACHE_MODE_FP32:
         if (

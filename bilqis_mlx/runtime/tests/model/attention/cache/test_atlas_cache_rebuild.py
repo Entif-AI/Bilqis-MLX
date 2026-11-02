@@ -1,5 +1,7 @@
 """BAMF B14.4 revoked-source rejection and qualified FP32 rebuild proofs."""
 from dataclasses import replace
+import hashlib
+import hmac
 import unittest
 from unittest.mock import patch
 
@@ -7,10 +9,9 @@ import numpy as np
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import (
-    AUTHORITY_REGISTRY,
+    CACHE_AUTHORITY,
     OWNER_ID,
     PUBLIC_KEY_HEX,
-    sign_cache_artifact,
 )
 from bilqis_mlx.runtime.atlas_cache_codec import (
     HEAD_WIDTH,
@@ -20,7 +21,9 @@ from bilqis_mlx.runtime.atlas_cache_codec import (
     decode_cache,
     encode_cold_cache,
     rebuild_revoked_cache,
-    payload_binding_tag_fields,
+)
+from bilqis_mlx.runtime.atlas_cache_binding import (
+    _payload_authenticator_subject_fields,
 )
 
 
@@ -29,30 +32,18 @@ _RAW_DECODE = decode_cache
 
 
 def encode_cold_cache(*args, **kwargs):
-    return _RAW_ENCODE(
-        *args,
-        authority_signer=sign_cache_artifact,
-        authority_registry=AUTHORITY_REGISTRY,
-        **kwargs,
-    )
+    return _RAW_ENCODE(CACHE_AUTHORITY, *args, **kwargs)
 
 
 def decode_cache(*args, **kwargs):
-    return _RAW_DECODE(
-        *args, authority_registry=AUTHORITY_REGISTRY, **kwargs
-    )
+    return _RAW_DECODE(CACHE_AUTHORITY, *args, **kwargs)
 
 
 _RAW_REBUILD = rebuild_revoked_cache
 
 
 def rebuild_revoked_cache(*args, **kwargs):
-    return _RAW_REBUILD(
-        *args,
-        authority_signer=sign_cache_artifact,
-        authority_registry=AUTHORITY_REGISTRY,
-        **kwargs,
-    )
+    return _RAW_REBUILD(CACHE_AUTHORITY, *args, **kwargs)
 
 
 def _binding() -> CacheBinding:
@@ -258,10 +249,9 @@ class RevokedCacheRebuildTests(unittest.TestCase):
         with self.assertRaises(BilqisError):
             decode_cache(relabelled, new_binding)
 
-        # The integrity tag is intentionally public/recomputable. Even an
-        # attacker who updates it over unchanged stale bytes cannot mint the
-        # detached authority signature bound to the new rights identity.
-        forged_tag = payload_binding_tag_fields(
+        # The algorithm is public, but the host-owned MAC key is not. An
+        # attacker-chosen key cannot reauthenticate stale bytes under new rights.
+        subject = _payload_authenticator_subject_fields(
             self.stale.mode,
             self.stale.true_vectors,
             self.stale.padded_vectors,
@@ -272,6 +262,9 @@ class RevokedCacheRebuildTests(unittest.TestCase):
             self.stale.block_max_norms_fp32,
             self.stale.fp32_payload,
         )
+        forged_tag = hmac.new(
+            bytes([255]) * 32, subject, hashlib.sha256,
+        ).digest()[:16]
         relabelled_with_fresh_tag = replace(
             self.stale,
             binding_sha256=new_digest,
@@ -280,13 +273,22 @@ class RevokedCacheRebuildTests(unittest.TestCase):
         )
         with self.assertRaises(BilqisError):
             decode_cache(relabelled_with_fresh_tag, new_binding)
-        with self.assertRaises(BilqisError):
-            decode_cache(
-                replace(
-                    relabelled_with_fresh_tag,
-                    authority_signature=bytes(64),
-                ),
+
+    def test_public_rebuild_rejects_raw_authority_registry(self):
+        from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import (
+            AUTHORITY_REGISTRY,
+        )
+
+        new_binding = replace(self.old_binding, policy_epoch_sha256="f" * 64)
+        with self.assertRaises(TypeError):
+            _RAW_REBUILD(
+                CACHE_AUTHORITY,
+                self.stale,
                 new_binding,
+                eligibility_receipt=_receipt(new_binding),
+                canonical_fp32_source=lambda: self.canonical.copy(),
+                persist=lambda _: None,
+                authority_registry=AUTHORITY_REGISTRY,
             )
 
     def test_stale_record_cannot_be_relabelled_as_same_binding(self):

@@ -42,7 +42,7 @@ def _time(value: object) -> bool:
 def _canonical_bytes(value: object) -> bytes:
     return (json.dumps(
         value, sort_keys=True, separators=(",", ":"),
-        ensure_ascii=False, allow_nan=False) + "\\n").encode("utf-8")
+        ensure_ascii=False, allow_nan=False) + "\n").encode("utf-8")
 
 
 def _refs_payload(refs: tuple[DependencyRef, ...]) -> list[dict[str, str]]:
