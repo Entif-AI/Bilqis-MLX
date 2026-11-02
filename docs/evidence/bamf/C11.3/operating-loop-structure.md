@@ -1,6 +1,7 @@
 # C11.3 / #524 operator-session structural interruption
 
-Consumed reviewed unified: `5ac0e9ca2a94e11a6bbb25bcca8282af3eb8fc4e`.
+Current consumed reviewed unified: `7a3db5cfb8b9075b117eadf09c9016540ae30918`.
+The earlier extraction phase consumed `5ac0e9ca2a94e11a6bbb25bcca8282af3eb8fc4e`.
 The preserved pre-extraction source is commit `a5232e12`.
 
 The encountered `runtime/operating_loop.py` is reduced from 842 to 193 lines.
@@ -21,12 +22,20 @@ remain with their existing owners.
 
 ## Verification
 
+The commands below require Python 3.11+, the project dependencies (installed
+with `pip install -e .`), NumPy, rdflib and PyYAML. The system custody selection
+also requires native MLX on a supported Apple Silicon host. The source-order
+witness requires Git history containing commit `a5232e1240e47cb8d5910e67821b9742e9e5ea3e` (the preserved
+pre-extraction source); use a full checkout or fetch the feature branch history
+before running it. No test invokes the human `operate` entrypoint.
+
 The source-order witness is reproducible from the repository root:
 
 ```sh
 python3 -B docs/evidence/bamf/C11.3/verify_operating_loop_extraction.py
 python3 -B scripts/run_tests.py \
   bilqis_mlx/runtime/operator_session/tests \
+  bilqis_mlx/compatibility/live_release_parts/tests/test_providers.py \
   bilqis_mlx/runtime/tests/admission/test_atlas_admission_command.py \
   tests/system/test_disposable_cutover_contracts.py \
   bilqis_mlx/runtime/tests/custody/test_inherited_outbox.py \
@@ -40,7 +49,7 @@ original AST statements after reversing only the explicit control returns and
 import aliases. Tokenized original comments remain present. This supplements
 behavioral tests; it does not execute the human entrypoint.
 
-The affected selection passes **38/38**, with zero skips. Literal boundary
+The affected selection passes **41/41**, with zero skips. Literal boundary
 checks cover preflight refusals, disk stop/recheck, time-limit stop, autonomy
 stop/continue/proceed, missing durable delivery after flush, invalid initial
 staircase, final budget refusal and final-stop output. The new tests are also
@@ -49,7 +58,7 @@ Factory, teacher, topology and recovery selection passes **35/38**, with three
 unchanged explicit source-fixture skips. Native disposable topology creation
 and cold read pass; no existing student or its optimizer is used.
 
-An isolated built wheel resolves all ten facade/session modules from its
+An isolated built wheel resolves all eleven facade/session modules from its
 installed directory. Its actual CLI returns HELD exit 2 and creates no run
 directory. Structure, governance, architecture, documentation, staged-file
 hygiene and zero-new-error-debt checks pass. Ordinary fresh-context review found

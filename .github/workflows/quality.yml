@@ -99,6 +99,7 @@ jobs:
           bilqis_mlx/runtime/tests/teacher/test_teacher_observation_capture.py
           bilqis_mlx/runtime/tests/teacher/test_capture_identity.py
           bilqis_mlx/runtime/operator_session/tests
+          bilqis_mlx/compatibility/live_release_parts/tests/test_providers.py
           bilqis_mlx/runtime/tests/teacher/test_teacher_observation_replay.py
           bilqis_mlx/runtime/tests/operator/test_qualification.py
           bilqis_mlx/runtime/tests/model/parity/test_model_topology.py

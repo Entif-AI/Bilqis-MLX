@@ -4,7 +4,7 @@ import copy
 import subprocess
 from pathlib import Path
 
-source = subprocess.check_output(['git', 'show', 'a5232e12:bilqis_mlx/runtime/operating_loop.py'], text=True)
+source = subprocess.check_output(['git', 'show', 'a5232e1240e47cb8d5910e67821b9742e9e5ea3e:bilqis_mlx/runtime/operating_loop.py'], text=True)
 operate = next(x for x in ast.parse(source).body if isinstance(x, ast.FunctionDef) and x.name == 'operate')
 lock = next(x for x in operate.body if isinstance(x, ast.With) and x.lineno == 193)
 loop = next(x for x in lock.body if isinstance(x, ast.While))
