@@ -2367,3 +2367,62 @@ independent exact-head adversarial EGM and ordinary turn-in gates. #395 remains
 dependency-waiting until #394 is accepted sufficiently for its stated prerequisite.
 
 **Status:** Accepted as the controlling A09.4 projection-authenticity rule.
+
+## ADR-124 | 2026-11-02 | BAMF lane flow control freezes parked PRs and bounds active implementation WIP
+
+**Scope:** BAMF-0.2 execution across Lanes A, B and C. This decision governs
+work-in-progress classification, parked pull-request handling and lane take-up. It
+does not weaken issue acceptance, EGM, human merge, dependency, custody or source
+authority requirements.
+
+**Problem:** Open PR count and owner-level `implementation incomplete` status had
+begun to masquerade as active engineering concurrency. Review-waiting,
+dependency-waiting and authority-waiting PRs were repeatedly merge-forwarded,
+revalidated and re-reviewed whenever reviewed unified advanced. Those refreshes
+consumed substantial execution capacity without moving the blocked gate, while the
+existing WIP measure excluded the same PRs because their feature coding was not
+actually active. The result was a feedback loop in which parked inventory generated
+work merely by existing.
+
+**Decision:** BAMF uses an explicit lane-local flow state. `ACTIVE` is the only
+state that counts as implementation WIP and the only state that permits substantive
+branch mutation. `READY`, `WAITING`, `BLOCKED` and `TURNED_IN` are non-WIP states.
+The normal ceiling is **two ACTIVE implementation leaves per lane**. This is a
+maximum, not a target: workers should preferentially drive the active item with the
+fewest remaining gates to accepted integration before taking another leaf.
+
+A `WAITING` or `BLOCKED` item MUST carry a concrete resume trigger. Parked work
+MUST NOT be merge-forwarded, rebased, fully revalidated, sent for fresh exact-head
+review or otherwise refreshed merely because the unified branch advanced. A newer
+unified SHA is not, by itself, a resume trigger. When the recorded gate actually
+changes, the operator verifies that trigger, updates the lane state to `ACTIVE`,
+then performs the one synchronization/revalidation pass required by the leaf
+contract.
+
+Every active lane-owned BAMF implementation leaf and every open BAMF lane PR MUST be
+represented in the lane's machine-readable state under `docs/tasks/bamf-0.2/flow-control/`.
+`scripts/check_bamf_flow_control.py` validates the declared state, required resume
+triggers and normal per-lane WIP ceiling, and is part of the repository quality
+path. A lane may exceed the normal ceiling only with an explicit machine-readable
+exception naming the reason, authority and expiry condition. Exceptions are
+temporary evidence, not a new default.
+
+**Limits of mechanical enforcement:** Repository checks can validate declared
+state. They cannot observe an agent silently reading or mutating a remote branch
+without updating the lane record. Therefore changing the lane state before
+substantive mutation remains an agent/operator duty enforced by `AGENTS.md` and the
+BAMF lane execution contracts. Future GitHub-event integration may strengthen
+remote-drift detection without changing this decision.
+
+**Operational effect:** Review and external-gate inventory remains visible but
+stops consuming continuous refresh work. A lane with one ACTIVE leaf and several
+WAITING PRs has WIP=1, not WIP equal to its open PR count. When an external gate
+fires, the parked PR competes for the next active slot according to merge proximity,
+dependency unlock and lane priority rather than waking automatically.
+
+**Human ratification:** The project owner approved the proposed enforcement and
+socialization controls on 2026-11-02 and explicitly required this decision to be
+recorded in `ADR.md`.
+
+**Status:** Accepted as the controlling BAMF-0.2 lane flow-control and parked-PR
+discipline.
