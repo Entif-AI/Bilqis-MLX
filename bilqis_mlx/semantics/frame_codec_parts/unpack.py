@@ -161,6 +161,14 @@ def role_index(
     index = lookup[concept.semantic_id]
     if index != concept.abi_index:
         _fail("FRAME_READOUT_ABI_INDEX_MISMATCH")
+    authoritative_types = next(
+        (item.concept.types for item in snapshot.concepts
+         if item.concept.semantic_id == concept.semantic_id),
+        None,
+    )
+    if (authoritative_types is not None
+            and tuple(concept.type_ids) != tuple(authoritative_types)):
+        _fail("FRAME_CONCEPT_TYPE_AUTHORITY_MISMATCH")
     entry = snapshot.abi(index)
     if not entry.active:
         _fail("FRAME_READOUT_INDEX_INACTIVE")

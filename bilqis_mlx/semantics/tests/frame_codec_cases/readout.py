@@ -4,7 +4,45 @@ from bilqis_mlx.semantics.tests.frame_codec_cases.helpers import *  # noqa: F403
 
 
 class ReadoutMixin:
-    def test_role_index_is_codec_neutral_and_rejects_inactive_or_held_readout(self):
+    def test_role_index_rejects_forged_type_against_snapshot_authority(self):
+        schema = FrameSchema(
+            "frame:BOOL",
+            1,
+            "source:BOOL",
+            tuple(RoleSpec("slot" + str(i), ("Boolean",), 1, 1)
+                  for i in range(4)),
+            "ORDERED",
+            "fixture",
+        )
+        schema_map = SchemaTagMap.from_schemas(RELEASE, (schema,))
+        concepts = tuple(
+            replace(
+                _concept(index),
+                type_ids=("Boolean",),
+                source_reference="attacker:type-locus",
+            )
+            for index in range(4)
+        )
+        packed = pack_frame(
+            _frame(schema, concepts, source_instance_id="forged-type"),
+            schema=schema,
+            schema_map=schema_map,
+        )
+
+        with self.assertRaises(BilqisError) as caught:
+            role_index(
+                packed,
+                "slot0",
+                0,
+                schema_map=schema_map,
+                snapshot=_snapshot_with_concept_type(("Entity",)),
+            )
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "FRAME_CONCEPT_TYPE_AUTHORITY_MISMATCH",
+        )
+
+    def test_role_index_is_codec_neutral_for_compact_and_extended(self):
         schema = _schema("A")
         schema_map = SchemaTagMap.from_schemas(RELEASE, (schema,))
         active_snapshot = _snapshot()
@@ -52,6 +90,9 @@ class ReadoutMixin:
             4,
         )
 
+    def test_role_index_rejects_inactive_readout(self):
+        schema = _schema("A")
+        schema_map = SchemaTagMap.from_schemas(RELEASE, (schema,))
         inactive = _frame(
             schema,
             (_concept(0), _concept(1), _concept(2), _concept(4)),
@@ -71,6 +112,9 @@ class ReadoutMixin:
         self.assertEqual(caught.exception.context["reason"],
                          "FRAME_READOUT_INDEX_INACTIVE")
 
+    def test_role_index_rejects_held_readout(self):
+        schema = _schema("A")
+        schema_map = SchemaTagMap.from_schemas(RELEASE, (schema,))
         held_id = "held:semantic"
         held = _frame(
             schema,

@@ -29,8 +29,10 @@ from bilqis_mlx.semantics.frame_codec import (
 )
 from bilqis_mlx.semantics.atlas_projection import (
     AbiEntry,
+    AtlasConcept,
     AtlasCounts,
     CorpusCoverageRow,
+    FrozenAtlasConcept,
     FrozenAtlasSnapshot,
 )
 from bilqis_mlx.semantics.frame_schema import (
@@ -153,6 +155,36 @@ def _snapshot(*, inactive: tuple[int, ...] = (), held_id: str | None = None):
         semantic_lookup=tuple(sorted(
             (entry.semantic_id, entry.index) for entry in entries)),
         concept_lookup=(),
+    )
+
+
+def _snapshot_with_concept_type(type_ids: tuple[str, ...]) -> FrozenAtlasSnapshot:
+    snapshot = _snapshot()
+    concept = AtlasConcept(
+        semantic_id="formal:entity.0",
+        kind="FORMAL",
+        types=type_ids,
+        labels=(),
+        realizations=(),
+        source_loci=(),
+        relations=(),
+        source_rows=(),
+    )
+    frozen = FrozenAtlasConcept(
+        concept=concept,
+        abi_index=0,
+        abi_bank=0,
+        abi_row=0,
+        active=True,
+        implementation_status="ADMITTED",
+        teaching_candidate=True,
+        teaching_reason="fixture",
+    )
+    return replace(
+        snapshot,
+        counts=replace(snapshot.counts, semantic_concepts=1),
+        concepts=(frozen,),
+        concept_lookup=((concept.semantic_id, 0),),
     )
 
 __all__ = tuple(name for name in globals() if not name.startswith('__'))
