@@ -32,6 +32,23 @@ self-merge that PR. After accepted work lands on unified, the next issue in ever
 lane repeats the sync-in step so reviewed cross-lane interfaces and instrumentation
 arrive early rather than accumulating as end-of-program conflicts.
 
+### Accepted-generation predecessor-feature authority — 2026-11-01
+
+B13 checkpoint/generation custody is the sole BAMF authority that may attest that
+an accepted generation consumed a particular predecessor semantic-feature/factor-map
+identity. A02 may consume that accepted-generation binding when planning or applying
+a successor vocabulary generation, but MUST NOT mint or self-ratify it from caller
+digests. C10 may project or reference the accepted receipt, but projection is not
+checkpoint acceptance authority and MUST NOT become an alternate minting path.
+
+The B13 receipt must be derived from validated accepted checkpoint/bundle state and
+bind generation identity, retained predecessor generation identity, the relevant
+semantic release/active-set identity, the exact predecessor `AtlasFeatures/v2` or
+factor-map digest, and the B13 manifest/checkpoint identity. Missing, mismatched,
+candidate-only, or caller-constructed evidence fails closed. Downstream A02 work
+must retain `BAMF_VOCABULARY_PREDECESSOR_FEATURE_AUTHORITY_REQUIRED` until this
+receipt verifies. See B13.5/#697 for the bounded implementation owner.
+
 ## BAMF-0.2 successor outcome and admission lease — 2026-10-28
 
 For the BAMF-0.2 successor, evaluate complete-system capability outcomes across
