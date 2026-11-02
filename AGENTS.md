@@ -138,12 +138,13 @@ Work during DRAIN should merge, consume, repair in place, close, supersede or
 directly unlock existing candidates. Branch/commit/issue custody is sufficient for
 blocked work.
 
-A non-grandfathered open `WAITING` or `BLOCKED` PR requires an
-`open_pr_exception` with reason, authority and expiry. The PRs open when ADR-126
-was adopted are grandfathered only for the initial drain epoch; they receive no
-permission to create successor inventory. The flow-control checker reconciles the
-ledger against live GitHub state. Missing open PRs and stale closed/merged entries
-are failures.
+An open `WAITING` or `BLOCKED` PR requires an `open_pr_exception` with
+reason, authority and expiry. The initial ADR-126 adoption drain is complete: 17
+parked PRs were closed with branch/head/resume custody preserved, leaving #695 and
+#739 as the two implementation candidates. The one-time grandfather list is empty.
+Reopening a drained PR is a new admission event, not restoration of grandfather
+status. The flow-control checker reconciles the ledger against live GitHub state.
+Missing open PRs and stale closed/merged entries are failures.
 
 PR #741 is the temporary control-plane exception for implementing ADR-126 itself.
 It is not BAMF feature inventory, and its exception expires when PR #741 merges or
