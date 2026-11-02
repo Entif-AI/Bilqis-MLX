@@ -17,12 +17,11 @@ document does not use a working-tree state as a checkpoint identity.
 
 ## Assembly contract
 
-`refine_selected` consumes:
+`refine_selected` now consumes:
 
 - one complete immutable `[B,P,768]` backbone result;
-- the original `CompiledEncoderInput`, `CompiledEmbeddingVectors`, and B03
-  frame-encoder parameter view used to deterministically rederive the exact
-  `FrameEncoding`;
+- the original `CompiledEncoderInput`, B01/B03 parameter tree, exact source rows,
+  and feature schema needed by the accepted source-revalidated B02/B03 producer;
 - one B06.2 `RefinementChoice`;
 - one upstream-produced finite FP32 requested-role 768-vector; and
 - the existing B01-declared `refine.*` numerical parameters.
@@ -32,11 +31,29 @@ occurrence identity, never by treating B06.2 `source_position` as a tensor index
 The prediction boundary in the choice cache identity must equal the compiled B03
 row boundary.
 
-B06.3 does not accept a caller-supplied `FrameEncoding` as authority. It invokes
-B03's own `encode_frames` path from the B03 inputs, so replacing a valid encoding
-with altered seed/member tensors cannot affect refinement. B02/source ownership of
-the supplied B03 input vectors remains an upstream boundary rather than being
-reinvented here.
+B06.3 no longer accepts `CompiledEmbeddingVectors` or a caller-supplied
+`FrameEncoding` at all. The public `refine_selected` path calls the existing
+source-owned `encode_source_compiled` producer itself. That producer revalidates
+A05/A13 source identity and rights, derives B01/B02 vectors internally from the
+actual parameter tree, then runs B03. The resulting live `FrameEncoding` remains
+inside the production call rather than becoming a caller-mintable authority
+credential.
+
+This removes the two self-ratification forms reproduced during remediation rather
+than attempting to sign them: a caller cannot alter B02 vectors and launder them
+through generic B03 execution because no vector/encoding argument exists at the
+public B06 boundary, and cannot mutate handle/factor metadata on a supposedly
+trusted encoding because B06 does not accept one. The same live MLX tensors flow
+directly from source-owned B02/B03 into B06, preserving gradients without a
+detached receipt or copied numerical payload.
+
+The source-owned producer intentionally holds native atomic-frame closures because
+B03.2 explicitly left their numerical embedding origin to an upstream owner.
+Production refinement therefore fails closed for that unresolved authority rather
+than treating a caller-supplied atomic vector as source truth. The private
+`_refine_selected` numerical fixture keeps the already-specified atomic/empty/
+nested arithmetic regression coverage without granting those fixtures production
+authority.
 
 For a normal nonempty structural closure, exact member handles come from B03's
 source-bound `FrameFactorTerms.requests`. For an atomic closure, they come from
@@ -86,8 +103,9 @@ git diff --check
 
 Results:
 
-- refinement execution, numerical kernel and B06.2 policy: **32/32 PASS**, zero skips;
-- B03 nested/compiled frame proof: **7/7 PASS**, zero skips;
+- refinement execution, numerical kernel and B06.2 policy: **34/34 PASS**, zero skips;
+- B02/B03/source and frame proof: **30 PASS**, **5 explicit skips** because the
+  real pinned A01 artifact is not mounted locally;
 - development structure: **0 violations**;
 - governance integrity: **0 violations**;
 - factory architecture: **PASS**;
@@ -95,12 +113,14 @@ Results:
 - error control: **new debt 0**;
 - diff check: **clean**.
 
-The B06.3-focused adversaries prove exact B03 structural and atomic handle
-binding, prediction-boundary mismatch rejection, non-aliasing batch-row result
-keys, rejection of caller-replaced `FrameEncoding` evidence, zero-pass empty-frame
-identity, positive-pass empty-frame rejection, immutable backbone/seed/member
-inputs, prediction-local backbone gradients, and independence from unrelated
-backbone positions.
+The B06.3-focused adversaries prove exact B03 structural and atomic numerical
+fixture behavior, prediction-boundary mismatch rejection, non-aliasing batch-row
+result keys, absence of caller vector/encoding authority at the public API and
+fail-closed invalid source inputs, zero-pass empty-frame identity, positive-pass empty-frame
+rejection, immutable backbone/seed/member inputs, prediction-local backbone
+gradients, B03 encoder-gradient continuity, and independence from unrelated
+backbone positions. Real source-positive B02/B03 tests remain pinned-artifact
+gated and are not replaced with mocked authority when that artifact is absent.
 
 ## Remaining authority boundaries
 
@@ -112,9 +132,11 @@ B06.3 deliberately does not claim three authorities owned elsewhere:
 - final B06/B11/B13 integration and retained-generation custody remain parent or
   downstream obligations.
 
-The issue-prescribed pinned Google EGM remains required for turn-in acceptance.
-The current execution surface exposes no pinned Google EGM runner. Any additional
-CoS review is defect-discovery evidence only and must remain labeled non-EGM.
+The issue-prescribed pinned Google EGM remains required for turn-in acceptance,
+but under the merged BAMF EGM policy it is a final merge-readiness gate, not a
+per-fix regression loop. Ordinary engineering review, targeted regressions and CI
+must clear the complete known defect set first; only the otherwise-ready exact PR
+head receives the fresh final EGM pass.
 
 No actual student, native AdamW, teacher, checkpoint, retained generation or
 human-run state is modified. No self-merge.

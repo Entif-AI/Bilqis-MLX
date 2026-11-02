@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "92bdff370e9be3d0c64eb4ffe300d2448f53d6a1",
-  "updated_at": "2026-11-02T05:10:00Z",
+  "observed_unified": "b4f2f0aca31623e7246ef819338a1450d71183cd",
+  "updated_at": "2026-11-02T08:41:49Z",
   "exception": null,
   "items": [
     {
@@ -40,10 +40,10 @@
     {
       "issue": 454,
       "pr": 684,
-      "state": "WAITING",
+      "state": "ACTIVE",
       "head_sha": "5aed4641d6cf1ba63d5746e04c964a8ef2f88ff2",
-      "summary": "B06.3 exact frame-output refinement is NON-EGM clean.",
-      "resume_trigger": "Pinned Google EGM becomes available and is run on the exact candidate head, or an explicitly accepted successor gate replaces it."
+      "summary": "B06.3 remediation #714 is active after pinned EGM reproduced caller-substitutable CompiledEmbeddingVectors.",
+      "resume_trigger": null
     },
     {
       "issue": 697,
@@ -71,11 +71,11 @@
     },
     {
       "issue": 478,
-      "pr": 672,
-      "state": "WAITING",
-      "head_sha": "6ced8eff290f3e0ba44674acd4c780427e8ddf94",
-      "summary": "B13.1 bounded durable bundle/publication repair.",
-      "resume_trigger": "Human/integration acceptance is ready to act on the bounded B13.1 repair, or a concrete review finding requires a targeted repair."
+      "pr": 704,
+      "state": "TURNED_IN",
+      "head_sha": "4aa40c427cda2ac2f0bac85c6e46e4b0724b2c22",
+      "summary": "B13.1 post-merge custody remediation #706/#707 passed final pinned EGM and is ready for human merge review.",
+      "resume_trigger": null
     },
     {
       "issue": 586,
