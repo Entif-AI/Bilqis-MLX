@@ -40,7 +40,7 @@ lane**. `READY`, `WAITING`, `BLOCKED` and `TURNED_IN` do not count as active WIP
 The ceiling is a flow-control limit, not permission to fill both slots when one
 nearer-to-merge leaf can be driven home first.
 
-Every BAMF implementation leaf or open BAMF PR must be represented in that lane's
+Every lane-owned BAMF implementation leaf or open lane PR must be represented in that lane's
 machine-readable state under `docs/tasks/bamf-0.2/flow-control/`. Before substantive
 branch mutation, the operator must run `python3 -B scripts/check_bamf_flow_control.py`
 and make the intended leaf `ACTIVE`. A `WAITING` or `BLOCKED` item must record its
