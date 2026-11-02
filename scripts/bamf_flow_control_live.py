@@ -55,7 +55,7 @@ def validate_live_pr_inventory(
     open_prs: list[dict[str, Any]],
     base_dir: Path = DEFAULT_DIR,
 ) -> list[str]:
-    summaries, policy, tracked_heads = validated_state(base_dir)
+    summaries, policy, tracked_prs = validated_state(base_dir)
     inventory = policy["open_pr_inventory"]
     limit = inventory["normal_limit_total"]
     grandfathered = set(inventory.get("grandfathered_prs", []))
@@ -71,10 +71,8 @@ def validate_live_pr_inventory(
     open_numbers = {
         pr["number"] for pr in implementation if isinstance(pr.get("number"), int)
     }
-    tracked_numbers = set(tracked_heads)
-
-    missing = sorted(open_numbers - tracked_numbers)
-    stale = sorted(tracked_numbers - open_numbers)
+    missing = sorted(open_numbers - tracked_prs)
+    stale = sorted(tracked_prs - open_numbers)
     if missing:
         raise FlowControlError(
             "live open BAMF implementation PRs missing from flow-control ledger: "
@@ -84,25 +82,6 @@ def validate_live_pr_inventory(
         raise FlowControlError(
             "flow-control ledger retains PRs that are not live BAMF implementation "
             "inventory: " + ", ".join(f"#{number}" for number in stale)
-        )
-
-    live_heads = {
-        pr["number"]: pr.get("head", {}).get("sha")
-        for pr in implementation
-        if isinstance(pr.get("number"), int)
-    }
-    mismatches = [
-        number
-        for number in sorted(open_numbers)
-        if live_heads.get(number) != tracked_heads.get(number)
-    ]
-    if mismatches:
-        details = ", ".join(
-            f"#{number} ledger={tracked_heads.get(number)} live={live_heads.get(number)}"
-            for number in mismatches
-        )
-        raise FlowControlError(
-            "flow-control ledger head_sha does not match live GitHub: " + details
         )
 
     drain = len(open_numbers) > limit
