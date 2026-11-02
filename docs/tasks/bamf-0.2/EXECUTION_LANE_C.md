@@ -18,6 +18,18 @@ Use `docs/tasks/bamf-0.2/workstack.json` and the latest direct dependency receip
 
 Lane keys: C01, C02, C03, C04, C05, C06, C07, C08, C09, C10, C11, C12, C13, C14, C15, C16.
 
+## Flow-control preflight
+
+Before taking or refreshing a leaf, run
+`python3 -B scripts/check_bamf_flow_control.py` and read
+`flow-control/lane-c.json`. Only `ACTIVE` counts as implementation
+WIP and permits substantive branch mutation. The normal lane ceiling is two active
+leaves, but prefer draining the nearest-to-merge active leaf before opening another.
+A `WAITING` or `BLOCKED` PR remains frozen until its recorded resume trigger occurs;
+a newer unified head by itself is not a resume trigger. Update the lane state to
+`ACTIVE` before the one sync/revalidation pass required on resumption. Any
+over-limit exception must name its reason, authority and expiry in the lane file.
+
 ## Implementation posture
 
 Read root README.md and AGENTS.md once per fresh execution session, this issue plus its live amendments, direct dependency receipts and the listed source files. Work on the assigned lane branch with one writer; shared-file edits go through the integration owner. Preserve unrelated work. Use package-local unit tests and one smallest real integration witness; run the repository aggregate checks at an integration boundary, not after every tiny edit. Change only what the prescribed outcome needs. Any stale dependency label is rechecked against its exact branch/commit receipt. On completion commit and push the feature branch, read back its SHA, comment on this issue and the lane PR, and add `Closes #<this issue>` to that PR's Development section. Include changed paths, commands/results, EGM disposition, exact dependencies and next ready leaf. Keep branch work alive across page boundaries; checkpoint instead of stopping solely because quota is low. Live training is operator-started; disposable finite test students are permitted. No main merge is delegated by this issue.
