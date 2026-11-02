@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "2800946729e484875f7d1f57f0e6d85078936394",
-  "updated_at": "2026-11-02T22:20:00Z",
+  "updated_at": "2026-11-02T23:58:26.105463+00:00",
   "exception": null,
   "items": [
     {
@@ -160,17 +160,17 @@
     {
       "issue": 747,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "ac89d382137e6581725d6f06220329e957fe0e7c",
-      "summary": "Selected bounded B11 receipt shape/dtype remediation on isolated branch codex/747-backbone-receipt-shape; parent remains parked.",
+      "state": "TURNED_IN",
+      "head_sha": "89682d8beca1bfec0e38b0c2a4d3a4d70e06bca1",
+      "summary": "Verified scoped #747 repair on codex/747-backbone-receipt-shape: native source/receipt suite 35/35, zero skips/errors. Parent #586 must consume repair before whole-candidate EGM.",
       "resume_trigger": null
     },
     {
       "issue": 748,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "ac89d382137e6581725d6f06220329e957fe0e7c",
-      "summary": "Selected shared B11 proof-fixture Atlas selection repair alongside #747 on the same isolated writer branch. No production source authority change.",
+      "state": "TURNED_IN",
+      "head_sha": "89682d8beca1bfec0e38b0c2a4d3a4d70e06bca1",
+      "summary": "Verified scoped #748 repair on codex/747-backbone-receipt-shape: native source/receipt suite 35/35, zero skips/errors. Parent #586 must consume repair before whole-candidate EGM.",
       "resume_trigger": null
     }
   ]
