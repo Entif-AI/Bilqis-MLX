@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "ed5df098fddf0e88ccd028652b44ba81e0b235a5",
-  "updated_at": "2026-11-02T07:10:51Z",
+  "updated_at": "2026-11-02T07:24:51Z",
   "exception": null,
   "items": [
     {
@@ -65,8 +65,8 @@
       "issue": 485,
       "pr": 674,
       "state": "ACTIVE",
-      "head_sha": "d083671db5042199d5dc6839212f9546a9b72c4d",
-      "summary": "B14.4 trust-root repair is locally green: cache signatures resolve through the host authority registry and reject caller-selected key substitution.",
+      "head_sha": "8c93853d4549dd65343a81d211b339e7f50c052f",
+      "summary": "B14.4 ownership/budget repair is locally green: a host-issued cache authority fixes registry provenance, authenticates the measured 61-byte header with a keyed MAC, and preserves historical C09 signing bytes.",
       "resume_trigger": null
     },
     {
