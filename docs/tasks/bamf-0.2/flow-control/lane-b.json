@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "67c964a1548cb0075a28a90aa2565d8bdab0fd71",
-  "updated_at": "2026-11-02T22:12:00Z",
+  "updated_at": "2026-11-02T22:16:00Z",
   "exception": null,
   "items": [
     {
@@ -31,11 +31,15 @@
     },
     {
       "issue": 456,
-      "pr": 690,
+      "pr": null,
       "state": "WAITING",
       "head_sha": "547471d2b95fadbbd7fa3631db0d0a56a20436c9",
       "summary": "B07.1 source-qualified motif identity remains parked.",
-      "resume_trigger": "The lane selects B07.1 as its current integration candidate and all known prerequisites are consumable for one final synchronization and merge-readiness pass."
+      "resume_trigger": "The lane selects B07.1 as its current integration candidate and all known prerequisites are consumable for one final synchronization and merge-readiness pass.",
+      "closed_pr": 690,
+      "preserved_branch": "codex/b07-456-source-bridge-20261101",
+      "closed_under": "Issue-label EGM queue; EGM-Passed is durable on issue #456",
+      "close_reason": "Not an active merge attempt; reopen/create delivery envelope when Lane B selects it for integration."
     },
     {
       "issue": 455,
@@ -140,6 +144,14 @@
       "preserved_branch": "codex/refinement-715-20261102",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
       "close_reason": "EGM-Mitigation issue #715"
+    },
+    {
+      "issue": 738,
+      "pr": 742,
+      "state": "ACTIVE",
+      "head_sha": "44305b1c685fcdd43ded307c8eeae8e4e2808fbf",
+      "summary": "Active EGM-Mitigation delivery for #586 stale selected-state chaining.",
+      "resume_trigger": null
     }
   ]
 }

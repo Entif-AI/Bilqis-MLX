@@ -52,6 +52,7 @@
       680,
       684,
       686,
+      690,
       692,
       694,
       695,
@@ -66,11 +67,11 @@
     "initial_drain_reopened_at": "2026-11-02",
     "initial_drain_note": "Owner-authorized label strategy: EGM status lives on issues. Non-active failed/blocked parent candidates and inactive mitigation delivery envelopes may close after issue labels and exact branch/head custody are durable.",
     "drain_mode": "NORMAL",
-    "drain_method": "Issue labels carry EGM queue state; keep PRs open only for active EGM review, mitigation delivery, or merge attempts.",
+    "drain_method": "Issue labels carry EGM queue state; open PRs are limited to active EGM review, active mitigation delivery, or active merge attempts.",
     "initial_drain_remaining_implementation_prs": [
-      690,
       734,
-      739
+      739,
+      742
     ]
   },
   "rules": {
