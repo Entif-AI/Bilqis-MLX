@@ -147,6 +147,15 @@ def _validate_item(
         if pr in seen_prs:
             raise FlowControlError(f"{prefix}: duplicate PR #{pr}")
         seen_prs.add(pr)
+        head_sha = item.get("head_sha")
+        if (
+            not isinstance(head_sha, str)
+            or len(head_sha) != 40
+            or any(char not in "0123456789abcdef" for char in head_sha.lower())
+        ):
+            raise FlowControlError(
+                f"{prefix}: open PR #{pr} requires an exact 40-character head_sha"
+            )
 
     state = item.get("state")
     if state not in states:
@@ -231,7 +240,7 @@ def _validate_over_limit(
 
 def _validated_state(
     base_dir: Path = DEFAULT_DIR,
-) -> tuple[list[str], dict[str, Any], set[int]]:
+) -> tuple[list[str], dict[str, Any], dict[int, str]]:
     policy = _load(base_dir / "policy.json")
     states, limit, required_fields, inventory = _policy_contract(policy)
     rules = policy["rules"]
@@ -242,6 +251,7 @@ def _validated_state(
 
     summaries: list[str] = []
     seen_prs: set[int] = set()
+    tracked_heads: dict[int, str] = {}
 
     for lane in ("A", "B", "C"):
         data = _load(base_dir / f"lane-{lane.lower()}.json")
@@ -257,8 +267,12 @@ def _validated_state(
             lane, active, limit, data.get("exception"), required_fields
         )
         summaries.append(f"Lane {lane}: ACTIVE {active}/{limit}; tracked {tracked}")
+        for item in data["items"]:
+            pr = item.get("pr")
+            if pr is not None:
+                tracked_heads[pr] = item["head_sha"]
 
-    return summaries, policy, seen_prs
+    return summaries, policy, tracked_heads
 
 
 def validate_flow_control(base_dir: Path = DEFAULT_DIR) -> list[str]:
@@ -310,7 +324,7 @@ def validate_live_pr_inventory(
     open_prs: list[dict[str, Any]],
     base_dir: Path = DEFAULT_DIR,
 ) -> list[str]:
-    summaries, policy, tracked_prs = _validated_state(base_dir)
+    summaries, policy, tracked_heads = _validated_state(base_dir)
     inventory = policy["open_pr_inventory"]
     limit = inventory["normal_limit_total"]
     grandfathered = set(inventory.get("grandfathered_prs", []))
@@ -327,8 +341,9 @@ def validate_live_pr_inventory(
     open_numbers = {
         pr["number"] for pr in implementation if isinstance(pr.get("number"), int)
     }
-    missing = sorted(open_numbers - tracked_prs)
-    stale = sorted(tracked_prs - open_numbers)
+    tracked_numbers = set(tracked_heads)
+    missing = sorted(open_numbers - tracked_numbers)
+    stale = sorted(tracked_numbers - open_numbers)
     if missing:
         raise FlowControlError(
             "live open BAMF implementation PRs missing from flow-control ledger: "
@@ -338,6 +353,25 @@ def validate_live_pr_inventory(
         raise FlowControlError(
             "flow-control ledger retains PRs that are not live BAMF implementation "
             "inventory: " + ", ".join(f"#{number}" for number in stale)
+        )
+
+    live_heads = {
+        pr["number"]: pr.get("head", {}).get("sha")
+        for pr in implementation
+        if isinstance(pr.get("number"), int)
+    }
+    mismatched_heads = [
+        number
+        for number in sorted(open_numbers)
+        if live_heads.get(number) != tracked_heads.get(number)
+    ]
+    if mismatched_heads:
+        details = ", ".join(
+            f"#{number} ledger={tracked_heads.get(number)} live={live_heads.get(number)}"
+            for number in mismatched_heads
+        )
+        raise FlowControlError(
+            "flow-control ledger head_sha does not match live GitHub: " + details
         )
 
     drain = len(open_numbers) > limit
