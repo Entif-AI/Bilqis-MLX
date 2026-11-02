@@ -2449,6 +2449,11 @@ incomplete or a known Blocker/Major against that scope remains unresolved. Paren
 EGM debt is not a draft condition. Once the PR's scoped acceptance is satisfied,
 mark it ready for review. Merge or close it promptly when its change is consumed by
 the intended parent/candidate branch. Do not retain an open PR merely as evidence.
+Do not create a separate remediation PR merely to preserve a review finding when
+the authorized parent candidate branch can safely accept the fix under current
+writer coordination. The remediation issue is the durable finding record. A stacked
+PR is justified when it provides necessary writer isolation, branch ownership, or
+focused review; otherwise repair the parent candidate directly.
 
 The owning parent issue/PR carries aggregate merge-readiness state, including the
 fresh pinned EGM result. A later EGM or integration finding reopens a closed
