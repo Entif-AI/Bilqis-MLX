@@ -34,7 +34,27 @@
     "normal_limit_total": 3,
     "unified_branch": "codex/bamf-unified-base-20261028",
     "drain_epoch_started_at": "2026-11-02T21:15:00Z",
-    "grandfathered_prs": [],
+    "grandfathered_prs": [
+      640,
+      674,
+      677,
+      680,
+      684,
+      686,
+      690,
+      692,
+      694,
+      695,
+      698,
+      700,
+      703,
+      725,
+      726,
+      727,
+      728,
+      734,
+      739
+    ],
     "non_implementation_exceptions": [
       {
         "pr": 741,
@@ -44,7 +64,7 @@
       }
     ],
     "admission_exceptions": [],
-    "initial_drain_status": "completed",
+    "initial_drain_status": "REVERSED_BY_PROJECT_OWNER_CLARIFICATION",
     "initial_drain_closed_prs": [
       640,
       674,
@@ -64,10 +84,10 @@
       728,
       734
     ],
-    "initial_drain_remaining_implementation_prs": [
-      695,
-      739
-    ]
+    "initial_drain_reopened_at": "2026-11-02",
+    "initial_drain_note": "A bulk closure of WAITING PRs was an incorrect interpretation of DRAIN and was reversed. Existing candidates remain open for pinned EGM and merge-readiness work; reduce inventory through repair, EGM, and merge, not closure solely to lower the count.",
+    "drain_mode": "ACTIVE",
+    "drain_method": "EGM review, satisfy merge requirements, and merge eligible existing candidates; do not close solely to reduce inventory."
   },
   "rules": {
     "nearest_to_merge_first": true,
