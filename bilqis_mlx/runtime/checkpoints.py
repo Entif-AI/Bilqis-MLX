@@ -1,17 +1,14 @@
 """Checkpoint custody, immutable generations and idempotent event delivery."""
 from __future__ import annotations
 
-import bilqis_mlx.backup as _bilqis_mlx_backup
 import bilqis_mlx.curriculum.scheduler as _curriculum_scheduler
-import bilqis_mlx.data_plane as _data_plane
-import bilqis_mlx.learning.capability_frontier as _learning_capability_frontier
-import bilqis_mlx.learning.champions as _learning_champions
-import bilqis_mlx.learning.epoch_championships as _learning_epoch_championships
-import bilqis_mlx.learning.grade_soup as _learning_grade_soup
-import bilqis_mlx.runtime.mlx_checkpoint as _runtime_mlx_checkpoint
+import bilqis_mlx.runtime.checkpoint_bundle as _checkpoint_bundle
+import bilqis_mlx.runtime.checkpoint_outbox as _checkpoint_outbox
+import bilqis_mlx.runtime.checkpoint_publication as _checkpoint_publication
+import bilqis_mlx.runtime.checkpoint_recovery as _checkpoint_recovery
+import bilqis_mlx.runtime.checkpoint_retention as _checkpoint_retention
 import bilqis_mlx.runtime.state as _runtime_state
 import bilqis_mlx.state_dag as _state_dag
-import bilqis_mlx.source as _bilqis_mlx_source
 import contextlib as _contextlib
 import dataclasses as _dataclasses
 import json as _json
@@ -19,27 +16,22 @@ import os as _os
 import pathlib as _pathlib
 import sys as _sys
 
+from contextvars import ContextVar
 
-from .checkpoint_parts.journal import operator_view, _event_view, _record, _notify_viewer
-from .checkpoint_parts.bundles import (
-    _bundle_pointer, _clean_staged_bundles, _quarantine_newer_uncommitted_bundles,
-)
-from .checkpoint_parts.references import (
-    _mentor_epoch_references, _regression_recovery_checkpoint,
-    _verify_frozen_soup_custody, _verify_best_custody,
-)
-from .checkpoint_parts.boundary_events import _boundary_delivery_events
-from .checkpoint_parts.outbox import (
-    _with_delivery_outbox, _require_outbox_lineage, _ordinary_outbox_lineage,
-    _outbox_source_generation, _expected_outbox_events, _observed_outbox_events,
-    _reconcile_delivery_outbox,
-)
-from .checkpoint_parts.publication import _publish_boundary
-
+_event_view = ContextVar("grade_a_event_view", default=None)
 _ADVANCE_SOURCE_FIELDS = (
     "delivery_outbox", "generation", "model_bundle", "run_id", "school",
     "source_manifest_sha256", "teacher_source_sha256",
 )
+
+
+@_contextlib.contextmanager
+def operator_view(callback):
+    token = _event_view.set(callback)
+    try:
+        yield
+    finally:
+        _event_view.reset(token)
 
 
 def _persist(run_dir: _pathlib.Path, receipt: dict):
@@ -48,43 +40,60 @@ def _persist(run_dir: _pathlib.Path, receipt: dict):
 
 
 def _recover_orphaned_commit(run_dir: _pathlib.Path, latest: dict) -> dict:
-    """Complete a fully written generation whose state.json pointer lost a race to a crash.
+    return _checkpoint_recovery.recover_orphaned_commit(
+        run_dir, latest, verify_best_custody=_verify_best_custody,
+        persist=_persist, reconcile_delivery_outbox=_reconcile_delivery_outbox,
+        record_event=_record)
 
-    Call only under the exclusive operator lock and only with an already checked
-    live source manifest; no model or optimizer is mutated here.
-    """
-    target = run_dir / "states" / f"{latest['generation']+1:07d}.json"
-    if not target.exists():
-        return latest
-    if target.is_symlink() or not target.is_file():
-        raise ValueError("HUMAN_TRAINER_RECOVERY_UNSAFE_GENERATION")
-    proposed = _state_dag.read_generation(run_dir, latest["generation"] + 1)
-    if (proposed.get("generation") != latest["generation"] + 1 or
-            proposed.get("run_id") != latest.get("run_id") or
-            proposed.get("schema") != latest.get("schema") or
-            proposed.get("source_manifest_sha256") != latest.get("source_manifest_sha256") or
-            proposed.get("teacher_source_sha256") != latest.get("teacher_source_sha256") or
-            proposed.get("accepted_authority") != latest.get("accepted_authority")):
-        raise ValueError("HUMAN_TRAINER_RECOVERY_INCONSISTENT_LINEAGE")
-    if proposed.get("model_topology") != latest.get("model_topology"):
-        from ..errors import ErrorBus, SCHOOL
-        ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.MISMATCH)
-    if latest.get("model_topology") is not None:
-        from .topology_lifecycle import inspect_resume_topology
-        from .model_topology import ModelTopologySpec
-        inspect_resume_topology(run_dir, proposed,
-            ModelTopologySpec.from_record(latest["model_topology"]))
-    # Verify every retained old/new whole-student pointer before publication.
-    _verify_best_custody(run_dir, proposed)
-    proposed = _state_dag.persist(run_dir, proposed)
-    # Publish the recovered generation's original causal events before its
-    # recovery annotation, retaining a legible ordered School50 history.
-    _reconcile_delivery_outbox(run_dir, proposed)
-    _record(run_dir, {"event": "SCHOOL_INTERRUPT_POINTER_RECOVERED", "grade": "A",
-                      "generation": proposed["generation"],
-                      "student_sha256": proposed["school"]["current_student"]["sha256"],
-                      "optimizer_step": proposed["school"]["current_student"]["optimizer_step"]})
-    return proposed
+
+def _record(run_dir: _pathlib.Path, event: dict):
+    path = run_dir / "events.jsonl"
+    with path.open("a", encoding="utf-8") as stream:
+        stream.write(_runtime_state._canonical(event) + "\n")
+        stream.flush()
+        _os.fsync(stream.fileno())
+    if _event_view.get() is None:
+        print(_json.dumps(event, sort_keys=True), flush=True)
+    else:
+        _notify_viewer(event)
+
+
+def _notify_viewer(event: dict):
+    """Send ephemeral operator telemetry without making it training evidence."""
+    viewer = _event_view.get()
+    if viewer is None:
+        return
+    try:
+        viewer(event)
+    except Exception as exc:
+        print("DASHBOARD UNAVAILABLE: " + str(exc), file=_sys.stderr, flush=True)
+
+
+def _bundle_pointer(run_dir: _pathlib.Path, name: str, parameters, optimizer, graph,
+                    *, reserve_gib: float, model_topology=None):
+    return _checkpoint_bundle.bundle_pointer(
+        run_dir, name, parameters, optimizer, graph, reserve_gib=reserve_gib,
+        model_topology=model_topology)
+
+
+def _clean_staged_bundles(run_dir: _pathlib.Path) -> dict[str, tuple[str, ...]]:
+    return _checkpoint_bundle.clean_staged_bundles(run_dir)
+
+
+def _mentor_epoch_references(receipt):
+    return _checkpoint_retention.mentor_epoch_references(receipt)
+
+
+def _regression_recovery_checkpoint(receipt):
+    return _checkpoint_retention.regression_recovery_checkpoint(receipt)
+
+
+def _verify_frozen_soup_custody(run_dir, receipt):
+    return _checkpoint_retention.verify_frozen_soup_custody(run_dir, receipt)
+
+
+def _verify_best_custody(run_dir, receipt):
+    return _checkpoint_retention.verify_best_custody(run_dir, receipt)
 
 
 def _advance(run_dir, old: dict, school: _curriculum_scheduler.SchoolState, *,
@@ -165,3 +174,55 @@ def _advance(run_dir, old: dict, school: _curriculum_scheduler.SchoolState, *,
             return record
         return _persist(run_dir, record)
     return record
+
+
+def _boundary_delivery_events(record, pending, roles, exam_event):
+    return _checkpoint_outbox.boundary_delivery_events(
+        record, pending, roles, exam_event)
+
+
+def _with_delivery_outbox(record: dict, events) -> dict:
+    return _checkpoint_outbox.with_delivery_outbox(record, events)
+
+
+def _require_outbox_lineage(condition: bool) -> None:
+    if not condition:
+        raise ValueError("HUMAN_TRAINER_OUTBOX_LINEAGE_DRIFT")
+
+
+def _ordinary_outbox_lineage(record: dict, outbox) -> bool:
+    return _checkpoint_outbox.ordinary_outbox_lineage(record, outbox)
+
+
+def _outbox_source_generation(run_dir: _pathlib.Path, record: dict, outbox: list):
+    return _checkpoint_outbox._source_generation(run_dir, record, outbox)
+
+
+def _expected_outbox_events(record: dict, outbox: list, source_generation: int):
+    return _checkpoint_outbox._expected_events(record, outbox, source_generation)
+
+
+def _observed_outbox_events(run_dir: _pathlib.Path, expected: dict):
+    return _checkpoint_outbox._observed_events(run_dir, expected)
+
+
+def _reconcile_delivery_outbox(
+        run_dir: _pathlib.Path, record: dict, *, publish_missing: bool = True):
+    return _checkpoint_outbox.reconcile_delivery_outbox(
+        run_dir, record, publish_missing=publish_missing, record_event=_record)
+
+
+def _publish_boundary(run_dir, record, pending, roles, *, exam_event=None):
+    return _checkpoint_publication.publish_boundary(
+        run_dir, record, pending, roles, exam_event=exam_event,
+        boundary_events=_boundary_delivery_events, with_outbox=_with_delivery_outbox,
+        reconcile_outbox=_reconcile_delivery_outbox,
+        mentor_refs=_mentor_epoch_references,
+        regression_ref=_regression_recovery_checkpoint,
+        quarantine=_quarantine_newer_uncommitted_bundles, record_event=_record)
+
+
+def _quarantine_newer_uncommitted_bundles(run_dir: _pathlib.Path, retained: set[str],
+                                          current_optimizer_step: int) -> tuple[str, ...]:
+    return _checkpoint_bundle.quarantine_newer_uncommitted_bundles(
+        run_dir, retained, current_optimizer_step, record_event=_record)

@@ -68,6 +68,27 @@ class MotifFeatureTests(FactorCompositionTests):
                 motif_gate_features(self.params, _context_for(ref), "frame:0",
                                     self.features, extents=self.extents)
 
+    def test_formal_untyped_a06_row_rejects_generic_projection_type_injection(self):
+        concepts = tuple(
+            replace(item, type_ids=(), source_status="ADMITTED_FORMAL_ABI_UNTYPED")
+            for item in self.features.concepts)
+        features = replace(
+            self.features,
+            type_map=(("UNKNOWN", 0), ("NONE", 1)),
+            concepts=concepts,
+        )
+        extents = replace(self.extents, factor_map_digest=features.digest)
+        parameters = {
+            **self.params,
+            "features.type": self.params["features.type"].at[0].add(2),
+        }
+
+        with self.assertRaises(BilqisError):
+            motif_gate_features(
+                parameters, _context_for(self.ref), "frame:0", features,
+                extents=extents,
+            )
+
     def test_nonfinite_selected_source_factor_rejects(self):
         parameters = {**self.params, "features.type":
                       self.params["features.type"].at[2, 0].add(float("nan"))}

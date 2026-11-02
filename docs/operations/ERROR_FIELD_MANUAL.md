@@ -1561,6 +1561,104 @@ Message: The BAMF operator observation is invalid: {reason}
 
 Recovery: Keep the last valid view and retained run unchanged; reconcile the source census, measurement and identity bindings.
 
+### `SCHOOL.CHECKPOINT_CUSTODY.MOTIF_SIDECAR_INVALID`
+
+BAMF motif allocation sidecar invalid.
+
+Owner: `runtime.bamf_bundle.motif_codec`
+Disposition: `PRESERVE_AND_INSPECT`
+Self-heal owner: `none`
+
+Message: BAMF motif allocation sidecar invalid.
+
+Recovery: Keep the retained generation; verify motif snapshot schema, keys, aliases and allocation digests before loading.
+
+Legacy aliases: `BAMF_MOTIF_SIDECAR_INVALID`
+
+### `SCHOOL.CHECKPOINT_CUSTODY.OUTBOX_LINEAGE_DRIFT`
+
+Checkpoint event outbox lineage drift.
+
+Owner: `runtime.checkpoint_outbox`
+Disposition: `PRESERVE_AND_INSPECT`
+Self-heal owner: `none`
+
+Message: Checkpoint event outbox lineage drift.
+
+Recovery: Keep the current generation and journal; reconcile run, generation and exact event identities without rewriting history.
+
+Legacy aliases: `HUMAN_TRAINER_OUTBOX_LINEAGE_DRIFT`
+
+### `SCHOOL.CHECKPOINT_CUSTODY.NUMERICAL_STATE_INVALID`
+
+BAMF numerical checkpoint state invalid.
+
+Owner: `runtime.mlx_checkpoint`
+Disposition: `PRESERVE_AND_INSPECT`
+Self-heal owner: `none`
+
+Message: BAMF numerical checkpoint state invalid.
+
+Recovery: Keep the parent generation; inspect topology, extents, optimizer tree and exact optimizer step before saving.
+
+Legacy aliases: `BAMF_BUNDLE_NUMERICAL_STATE_INVALID`
+
+### `SCHOOL.CHECKPOINT_CUSTODY.PARAMETER_IDENTITY_DRIFT`
+
+BAMF checkpoint parameter identity drift.
+
+Owner: `runtime.mlx_checkpoint`
+Disposition: `PRESERVE_AND_INSPECT`
+Self-heal owner: `none`
+
+Message: BAMF checkpoint parameter identity drift.
+
+Recovery: Preserve the bundle; compare parameter names and shapes with the bound topology and generation extents.
+
+Legacy aliases: `BAMF_BUNDLE_PARAMETER_IDENTITY_DRIFT`
+
+### `SCHOOL.CHECKPOINT_CUSTODY.TENSOR_BINDING_INVALID`
+
+BAMF tensor payload binding invalid.
+
+Owner: `runtime.mlx_checkpoint`
+Disposition: `PRESERVE_AND_INSPECT`
+Self-heal owner: `none`
+
+Message: BAMF tensor payload binding invalid.
+
+Recovery: Preserve the bundle; inspect tensor schema, filename, topology and extent bindings before restoring arrays.
+
+Legacy aliases: `BAMF_BUNDLE_TENSOR_BINDING_INVALID`
+
+### `SCHOOL.CHECKPOINT_CUSTODY.TENSOR_FILE_CORRUPTED`
+
+BAMF tensor payload digest mismatch.
+
+Owner: `runtime.mlx_checkpoint`
+Disposition: `PRESERVE_AND_INSPECT`
+Self-heal owner: `none`
+
+Message: BAMF tensor payload digest mismatch.
+
+Recovery: Do not load the payload; verify its bytes against the retained manifest and recover an intact immutable bundle.
+
+Legacy aliases: `BAMF_BUNDLE_TENSOR_FILE_CORRUPTED`
+
+### `SCHOOL.CHECKPOINT_CUSTODY.MISSING_OR_EXTRA_TENSORS`
+
+BAMF tensor census mismatch.
+
+Owner: `runtime.mlx_checkpoint`
+Disposition: `PRESERVE_AND_INSPECT`
+Self-heal owner: `none`
+
+Message: BAMF tensor census mismatch.
+
+Recovery: Keep the retained generation; reconcile every weight, moment and update-count tensor with the declared parameter manifest.
+
+Legacy aliases: `BAMF_BUNDLE_MISSING_OR_EXTRA_TENSORS`
+
 ### `SCHOOL.BAMF_PACKAGE.INVALID`
 
 BAMF cognitive package invalid.
@@ -1627,7 +1725,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **2029** raw raises across **221** files. The baseline gate permits only reduction.
+Current production scan: **2030** raw raises across **222** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -2713,7 +2811,7 @@ Current production scan: **2029** raw raises across **221** files. The baseline 
 | `GRADE_REVISION_REQUIRES_SAME_PARTIAL_GRADE_PROGRAM` | 1 | `bilqis_mlx/compatibility/_recovery/scheduler_transitions.py` |
 | `GRADE_SOUP_CHAMPION_CUSTODY_DRIFT` | 1 | `bilqis_mlx/learning/lesson_guidance.py` |
 | `GRADE_SOUP_COVERAGE_PEAK_REGRESSED` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
-| `GRADE_SOUP_CUSTODY_GRADE_DRIFT` | 1 | `bilqis_mlx/runtime/checkpoint_parts/references.py` |
+| `GRADE_SOUP_CUSTODY_GRADE_DRIFT` | 1 | `bilqis_mlx/runtime/_custody/checkpoint_retention.py` |
 | `GRADE_SOUP_EXISTING_RECIPE_DRIFT` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
 | `GRADE_SOUP_EXISTING_SCHEMA_DRIFT` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
 | `GRADE_SOUP_FROZEN_MODEL_SHAPE_DRIFT` | 1 | `bilqis_mlx/learning/lesson_guidance.py` |
@@ -2730,7 +2828,7 @@ Current production scan: **2029** raw raises across **221** files. The baseline 
 | `GRADE_SOUP_PARTITION_LOST_VOTES` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
 | `GRADE_SOUP_PARTITION_UNRECOGNIZED_RECIPE` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
 | `GRADE_SOUP_PARTITION_VOTE_DRIFT` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
-| `GRADE_SOUP_PREVIOUS_BACKUP_DRIFT` | 2 | `bilqis_mlx/learning/_championship/grade_soup.py`, `bilqis_mlx/runtime/checkpoint_parts/references.py` |
+| `GRADE_SOUP_PREVIOUS_BACKUP_DRIFT` | 2 | `bilqis_mlx/learning/_championship/grade_soup.py`, `bilqis_mlx/runtime/_custody/checkpoint_retention.py` |
 | `GRADE_SOUP_REQUIRES_FP32_WEIGHTS` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
 | `GRADE_SOUP_RETIRE_UNSAFE_ARTIFACT` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
 | `GRADE_SOUP_RETIRE_UNSAFE_DIRECTORY` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
@@ -2775,18 +2873,18 @@ Current production scan: **2029** raw raises across **221** files. The baseline 
 | `HUMAN_TRAINER_ANOTHER_OPERATOR_ACTIVE` | 1 | `bilqis_mlx/runtime/_custody/session.py` |
 | `HUMAN_TRAINER_ATTEMPTED_OPTIMIZER_STEP_REGRESSION` | 1 | `bilqis_mlx/runtime/visits.py` |
 | `HUMAN_TRAINER_BOOTSTRAP_CURRICULUM_INVALID` | 1 | `bilqis_mlx/runtime/_custody/session.py` |
-| `HUMAN_TRAINER_BUNDLE_ALREADY_PUBLISHED` | 1 | `bilqis_mlx/runtime/checkpoint_parts/bundles.py` |
+| `HUMAN_TRAINER_BUNDLE_ALREADY_PUBLISHED` | 1 | `bilqis_mlx/runtime/_custody/checkpoint_bundle.py` |
 | `HUMAN_TRAINER_BUNDLE_PATH_ESCAPES_RUN` | 1 | `bilqis_mlx/runtime/_custody/session.py` |
-| `HUMAN_TRAINER_CAPABILITY_BEST_RECEIPT_DRIFT` | 1 | `bilqis_mlx/runtime/checkpoint_parts/boundary_events.py` |
-| `HUMAN_TRAINER_CAPABILITY_CUSTODY_PATH_DRIFT` | 1 | `bilqis_mlx/runtime/checkpoint_parts/references.py` |
-| `HUMAN_TRAINER_CAPABILITY_CUSTODY_REFERENCE_DRIFT` | 1 | `bilqis_mlx/runtime/checkpoint_parts/references.py` |
-| `HUMAN_TRAINER_CAPABILITY_CUSTODY_SHA_DRIFT` | 1 | `bilqis_mlx/runtime/checkpoint_parts/references.py` |
+| `HUMAN_TRAINER_CAPABILITY_BEST_RECEIPT_DRIFT` | 1 | `bilqis_mlx/runtime/_custody/checkpoint_outbox.py` |
+| `HUMAN_TRAINER_CAPABILITY_CUSTODY_PATH_DRIFT` | 1 | `bilqis_mlx/runtime/_custody/checkpoint_retention.py` |
+| `HUMAN_TRAINER_CAPABILITY_CUSTODY_REFERENCE_DRIFT` | 1 | `bilqis_mlx/runtime/_custody/checkpoint_retention.py` |
+| `HUMAN_TRAINER_CAPABILITY_CUSTODY_SHA_DRIFT` | 1 | `bilqis_mlx/runtime/_custody/checkpoint_retention.py` |
 | `HUMAN_TRAINER_COHORT_POINTER_CONTENT_DRIFT` | 1 | `bilqis_mlx/runtime/assessment.py` |
 | `HUMAN_TRAINER_COHORT_POINTER_DRIFT` | 1 | `bilqis_mlx/runtime/assessment.py` |
 | `HUMAN_TRAINER_COHORT_POINTER_INVALID` | 1 | `bilqis_mlx/runtime/assessment.py` |
 | `HUMAN_TRAINER_COHORT_POINTER_MISSING` | 1 | `bilqis_mlx/runtime/assessment.py` |
 | `HUMAN_TRAINER_COHORT_VERSION_MISMATCH` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `HUMAN_TRAINER_COMPLETE_CHECKPOINT_READBACK_DRIFT` | 1 | `bilqis_mlx/runtime/checkpoint_parts/bundles.py` |
+| `HUMAN_TRAINER_COMPLETE_CHECKPOINT_READBACK_DRIFT` | 1 | `bilqis_mlx/runtime/_custody/checkpoint_bundle.py` |
 | `HUMAN_TRAINER_CURRENT_VOCAB_ANSWER_HEAD_DRIFT` | 1 | `bilqis_mlx/runtime/_custody/resume_metadata.py` |
 | `HUMAN_TRAINER_CURRENT_VOCAB_GRAPH_EMBEDDING_DRIFT` | 1 | `bilqis_mlx/runtime/_custody/resume_metadata.py` |
 | `HUMAN_TRAINER_EMPTY_BATCH` | 1 | `bilqis_mlx/learning/_teaching/student_ops.py` |
@@ -2823,21 +2921,21 @@ Current production scan: **2029** raw raises across **221** files. The baseline 
 | `HUMAN_TRAINER_OPTIMIZER_STEP_DRIFT` | 1 | `bilqis_mlx/runtime/visits.py` |
 | `HUMAN_TRAINER_OUTBOX_ADVANCE_SOURCE_DRIFT` | 1 | `bilqis_mlx/runtime/checkpoints.py` |
 | `HUMAN_TRAINER_OUTBOX_ADVANCE_UNCOMMITTED_SOURCE` | 1 | `bilqis_mlx/runtime/checkpoints.py` |
-| `HUMAN_TRAINER_OUTBOX_BOUNDARY_ARGUMENT_DRIFT` | 1 | `bilqis_mlx/runtime/checkpoint_parts/publication.py` |
-| `HUMAN_TRAINER_OUTBOX_EVENT_ID_MISSING` | 1 | `bilqis_mlx/runtime/checkpoint_parts/outbox.py` |
-| `HUMAN_TRAINER_OUTBOX_INVALID` | 1 | `bilqis_mlx/runtime/checkpoint_parts/outbox.py` |
-| `HUMAN_TRAINER_OUTBOX_LEDGER_CONTENT_DRIFT` | 1 | `bilqis_mlx/runtime/checkpoint_parts/outbox.py` |
-| `HUMAN_TRAINER_OUTBOX_LINEAGE_DRIFT` | 1 | `bilqis_mlx/runtime/checkpoint_parts/outbox.py` |
-| `HUMAN_TRAINER_OUTBOX_MISSING_LINEAGE` | 1 | `bilqis_mlx/runtime/checkpoint_parts/outbox.py` |
-| `HUMAN_TRAINER_OUTBOX_REQUIRES_EVENT` | 1 | `bilqis_mlx/runtime/checkpoint_parts/outbox.py` |
-| `HUMAN_TRAINER_OUTBOX_UNSAFE_LEDGER` | 1 | `bilqis_mlx/runtime/checkpoint_parts/outbox.py` |
-| `HUMAN_TRAINER_OUTBOX_UNTRUSTED_EVENT` | 1 | `bilqis_mlx/runtime/checkpoint_parts/outbox.py` |
+| `HUMAN_TRAINER_OUTBOX_BOUNDARY_ARGUMENT_DRIFT` | 1 | `bilqis_mlx/runtime/_custody/checkpoint_publication.py` |
+| `HUMAN_TRAINER_OUTBOX_EVENT_ID_MISSING` | 1 | `bilqis_mlx/runtime/_custody/checkpoint_outbox.py` |
+| `HUMAN_TRAINER_OUTBOX_INVALID` | 1 | `bilqis_mlx/runtime/_custody/checkpoint_outbox.py` |
+| `HUMAN_TRAINER_OUTBOX_LEDGER_CONTENT_DRIFT` | 1 | `bilqis_mlx/runtime/_custody/checkpoint_outbox.py` |
+| `HUMAN_TRAINER_OUTBOX_LINEAGE_DRIFT` | 1 | `bilqis_mlx/runtime/checkpoints.py` |
+| `HUMAN_TRAINER_OUTBOX_MISSING_LINEAGE` | 1 | `bilqis_mlx/runtime/_custody/checkpoint_outbox.py` |
+| `HUMAN_TRAINER_OUTBOX_REQUIRES_EVENT` | 1 | `bilqis_mlx/runtime/_custody/checkpoint_outbox.py` |
+| `HUMAN_TRAINER_OUTBOX_UNSAFE_LEDGER` | 1 | `bilqis_mlx/runtime/_custody/checkpoint_outbox.py` |
+| `HUMAN_TRAINER_OUTBOX_UNTRUSTED_EVENT` | 1 | `bilqis_mlx/runtime/_custody/checkpoint_outbox.py` |
 | `HUMAN_TRAINER_PARTIAL_EVALUATION_SCOPE_DRIFT` | 1 | `bilqis_mlx/runtime/_custody/boundary_commit.py` |
 | `HUMAN_TRAINER_PENDING_GENERATION_UNSAFE_PATH` | 1 | `bilqis_mlx/runtime/_custody/session.py` |
 | `HUMAN_TRAINER_PINNED_SOURCE_NOT_VERIFIED` | 1 | `bilqis_mlx/runtime/_custody/session.py` |
-| `HUMAN_TRAINER_QUARANTINE_IDENTITY_COLLISION` | 2 | `bilqis_mlx/runtime/checkpoint_parts/bundles.py` |
-| `HUMAN_TRAINER_RECOVERY_INCONSISTENT_LINEAGE` | 1 | `bilqis_mlx/runtime/checkpoints.py` |
-| `HUMAN_TRAINER_RECOVERY_UNSAFE_GENERATION` | 1 | `bilqis_mlx/runtime/checkpoints.py` |
+| `HUMAN_TRAINER_QUARANTINE_IDENTITY_COLLISION` | 2 | `bilqis_mlx/runtime/_custody/checkpoint_bundle.py` |
+| `HUMAN_TRAINER_RECOVERY_INCONSISTENT_LINEAGE` | 1 | `bilqis_mlx/runtime/_custody/checkpoint_recovery.py` |
+| `HUMAN_TRAINER_RECOVERY_UNSAFE_GENERATION` | 1 | `bilqis_mlx/runtime/_custody/checkpoint_recovery.py` |
 | `HUMAN_TRAINER_RESUME_IMMUTABLE_STATE_DIVERGED` | 1 | `bilqis_mlx/runtime/_custody/session.py` |
 | `HUMAN_TRAINER_RESUME_MODEL_ADAMW_OR_SEMANTIC_DRIFT` | 2 | `bilqis_mlx/compatibility/executable_projection.py`, `bilqis_mlx/runtime/_custody/session.py` |
 | `HUMAN_TRAINER_RESUME_REQUIRES_PRIOR_RUN` | 1 | `bilqis_mlx/runtime/_custody/session.py` |
@@ -2850,14 +2948,14 @@ Current production scan: **2029** raw raises across **221** files. The baseline 
 | `HUMAN_TRAINER_SAVED_COHORT_RELEASE_NOT_ADMITTED` | 1 | `bilqis_mlx/compatibility/_history/assessment.py` |
 | `HUMAN_TRAINER_SEQUENCE_OUTSIDE_LEGACY_CONTEXT` | 1 | `bilqis_mlx/learning/_teaching/student_ops.py` |
 | `HUMAN_TRAINER_SOURCE_PREFETCH_IDENTITY_DRIFT` | 1 | `bilqis_mlx/runtime/visits.py` |
-| `HUMAN_TRAINER_UNCOMMITTED_BUNDLE_SOURCE_DRIFT` | 1 | `bilqis_mlx/runtime/checkpoint_parts/bundles.py` |
-| `HUMAN_TRAINER_UNCOMMITTED_BUNDLE_UNSAFE_PATH` | 2 | `bilqis_mlx/runtime/checkpoint_parts/bundles.py` |
+| `HUMAN_TRAINER_UNCOMMITTED_BUNDLE_SOURCE_DRIFT` | 1 | `bilqis_mlx/runtime/_custody/checkpoint_bundle.py` |
+| `HUMAN_TRAINER_UNCOMMITTED_BUNDLE_UNSAFE_PATH` | 2 | `bilqis_mlx/runtime/_custody/checkpoint_bundle.py` |
 | `HUMAN_TRAINER_UNKNOWN_LESSON_GRADE` | 1 | `bilqis_mlx/runtime/visits.py` |
-| `HUMAN_TRAINER_UNKNOWN_STAGED_BUNDLE` | 1 | `bilqis_mlx/runtime/checkpoint_parts/bundles.py` |
-| `HUMAN_TRAINER_UNKNOWN_STAGED_BUNDLE_CONTENT` | 1 | `bilqis_mlx/runtime/checkpoint_parts/bundles.py` |
+| `HUMAN_TRAINER_UNKNOWN_STAGED_BUNDLE` | 1 | `bilqis_mlx/runtime/_custody/checkpoint_bundle.py` |
+| `HUMAN_TRAINER_UNKNOWN_STAGED_BUNDLE_CONTENT` | 1 | `bilqis_mlx/runtime/_custody/checkpoint_bundle.py` |
 | `HUMAN_TRAINER_UNKNOWN_TYPED_ANSWER_CONFIG` | 1 | `bilqis_mlx/learning/_teaching/student_ops.py` |
-| `HUMAN_TRAINER_UNSAFE_BUNDLE_QUARANTINE` | 2 | `bilqis_mlx/runtime/checkpoint_parts/bundles.py` |
-| `HUMAN_TRAINER_UNSAFE_STAGING_ROOT` | 2 | `bilqis_mlx/runtime/checkpoint_parts/bundles.py` |
+| `HUMAN_TRAINER_UNSAFE_BUNDLE_QUARANTINE` | 2 | `bilqis_mlx/runtime/_custody/checkpoint_bundle.py` |
+| `HUMAN_TRAINER_UNSAFE_STAGING_ROOT` | 2 | `bilqis_mlx/runtime/_custody/checkpoint_bundle.py` |
 | `HUMAN_TRAINER_UNVERIFIED_VOCAB_METADATA_MIGRATION` | 1 | `bilqis_mlx/runtime/_custody/resume_metadata.py` |
 | `HUMAN_TRAINER_VOCAB_RECONCILE_OWN_ADAMW_DRIFT` | 1 | `bilqis_mlx/runtime/_custody/resume_metadata.py` |
 | `Historical source token identity drift` | 1 | `bilqis_mlx/semantics/tests/foundation/test_semantics_algebra.py` |
@@ -3464,7 +3562,7 @@ Current production scan: **2029** raw raises across **221** files. The baseline 
 | `WHOLE_STUDENT_PEAK_EMPTY_EXAM` | 1 | `bilqis_mlx/learning/_retention/whole_student_retention.py` |
 | `WHOLE_STUDENT_PEAK_INCOMPLETE_SOURCE` | 1 | `bilqis_mlx/learning/_retention/whole_student_retention.py` |
 | `WHOLE_STUDENT_PEAK_INVALID_SCORE` | 1 | `bilqis_mlx/learning/_retention/whole_student_retention.py` |
-| `WHOLE_STUDENT_PEAK_SCHEMA_DRIFT` | 1 | `bilqis_mlx/runtime/checkpoint_parts/references.py` |
+| `WHOLE_STUDENT_PEAK_SCHEMA_DRIFT` | 1 | `bilqis_mlx/runtime/_custody/checkpoint_retention.py` |
 | `WHOLE_STUDENT_PEAK_SEED_ADAMW_DRIFT` | 1 | `bilqis_mlx/runtime/_custody/reconciliation.py` |
 | `_BINDING_DRIFT` | 1 | `bilqis_mlx/factory/model.py` |
 | `_DIGEST_INVALID` | 1 | `bilqis_mlx/factory/curriculum/candidate_frontier_io.py` |
@@ -3481,6 +3579,7 @@ Current production scan: **2029** raw raises across **221** files. The baseline 
 | `non-finite JSON literal` | 1 | `bilqis_mlx/semantics/atlas/feature_io_contracts.py` |
 | `pointer interrupted` | 1 | `bilqis_mlx/runtime/tests/custody/state_dag/test_persistence.py` |
 | `snapshot must not mutate MLX telemetry` | 1 | `bilqis_mlx/runtime/tests/model/resources/test_memory_retry.py` |
+| `test synchronization timed out` | 1 | `bilqis_mlx/runtime/tests/custody/bamf_bundle/test_publication_durability.py` |
 | `undefined` | 1 | `bilqis_mlx/semantics/tests/foundation/test_source_memo.py` |
 | `unreachable` | 2 | `bilqis_mlx/factory/curriculum/formal_lesson_types.py`, `bilqis_mlx/learning/championship_runtime.py` |
 | `unsupported fixture operator` | 1 | `bilqis_mlx/verification/tests/test_verification_laws.py` |

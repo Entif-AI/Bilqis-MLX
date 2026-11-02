@@ -40,6 +40,10 @@ jobs:
           esac
           python3 -B scripts/check_module_size.py --changed-from "$BASE_REF"
           python3 -B scripts/quality/check_governance_integrity.py --base-ref "$BASE_REF"
+      - name: Enforce BAMF lane flow control
+        run: |
+          python3 -B scripts/check_bamf_flow_control.py
+          python3 -B -m unittest scripts.tests.test_bamf_flow_control
       - name: Install historical semantic integrity dependencies
         run: python3 -m pip install -r lib/ithkuil/requirements-semantic.txt
       - name: Check historical semantic integrity
