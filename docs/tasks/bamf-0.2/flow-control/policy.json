@@ -34,7 +34,18 @@
     "normal_limit_total": 3,
     "unified_branch": "codex/bamf-unified-base-20261028",
     "drain_epoch_started_at": "2026-11-02T21:15:00Z",
-    "grandfathered_prs": [
+    "grandfathered_prs": [],
+    "non_implementation_exceptions": [
+      {
+        "pr": 741,
+        "reason": "Cross-cutting governance repair that records and mechanically enforces ADR-126; it is not a BAMF feature integration candidate.",
+        "authority": "Direct project-owner instruction on 2026-11-02",
+        "expires_when": "PR #741 merges or closes."
+      }
+    ],
+    "admission_exceptions": [],
+    "initial_drain_status": "completed",
+    "initial_drain_closed_prs": [
       640,
       674,
       677,
@@ -44,7 +55,6 @@
       690,
       692,
       694,
-      695,
       698,
       700,
       703,
@@ -52,18 +62,12 @@
       726,
       727,
       728,
-      734,
+      734
+    ],
+    "initial_drain_remaining_implementation_prs": [
+      695,
       739
-    ],
-    "non_implementation_exceptions": [
-      {
-        "pr": 741,
-        "reason": "Cross-cutting governance repair that records and mechanically enforces ADR-126; it is not a BAMF feature integration candidate.",
-        "authority": "Direct project-owner instruction on 2026-11-02",
-        "expires_when": "PR #741 merges or closes."
-      }
-    ],
-    "admission_exceptions": []
+    ]
   },
   "rules": {
     "nearest_to_merge_first": true,
