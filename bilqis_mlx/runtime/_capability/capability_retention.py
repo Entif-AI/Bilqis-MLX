@@ -213,3 +213,26 @@ def retain_candidate(parent, candidate, paired_assessment) -> Decision:
     return Decision(DecisionStatus.ELIGIBLE if reason == "PAIRED_SCREEN_WITHIN_BUDGET"
                     else DecisionStatus.REJECT,
                     reason, parent, candidate, evidence.digest(), evidence.policy.digest())
+
+
+def evaluate_retention_candidate(
+        parent_solver, candidate_solver, target_capability, policy, cohorts,
+        parent_generation, candidate_generation) -> Decision:
+    """Run C05's required cohorts before issuing a retention decision."""
+    if (not isinstance(parent_solver, CompleteSolver)
+            or not isinstance(candidate_solver, CompleteSolver)
+            or not isinstance(policy, RetentionPolicy)
+            or not isinstance(target_capability, str) or not target_capability
+            or not isinstance(cohorts, tuple) or len(cohorts) != 3
+            or not all(isinstance(cohort, EvaluationCohort) for cohort in cohorts)
+            or tuple(cohort.kind for cohort in cohorts) != (
+                EvidenceKind.FRESH_TARGET, EvidenceKind.FRESH_LESSON,
+                EvidenceKind.FIXED_SCHOOL)):
+        _invalid("BAMF_RETENTION_SCREEN_INPUT_INVALID")
+    pairs = tuple(AssessmentPair(
+        evaluate_capabilities(parent_solver, cohort, parent_generation),
+        evaluate_capabilities(candidate_solver, cohort, candidate_generation),
+    ) for cohort in cohorts)
+    evidence = PairedRetentionEvidence(
+        target_capability, policy, pairs[0], pairs[1], pairs[2])
+    return retain_candidate(parent_generation, candidate_generation, evidence)

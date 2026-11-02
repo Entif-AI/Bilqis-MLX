@@ -13,7 +13,7 @@ from bilqis_mlx.runtime.cognitive_package import (
 )
 from bilqis_mlx.runtime.cognitive_package.delta import _apply_delta_tensors, _issue_candidate
 from bilqis_mlx.runtime.cognitive_package.tests.fixtures import digest, snapshot
-from bilqis_mlx.runtime.tests.capability.capability_retention_helpers import _evidence
+from bilqis_mlx.runtime.tests.capability.capability_retention_helpers import _evidence, _screen_inputs
 
 
 def _sha(data):
@@ -102,16 +102,17 @@ class DisposableDeltaCandidateTests(unittest.TestCase):
         candidate = apply_plastic_delta(
             package, source.binding, "a" * 64,
             (parent,))
-        evidence = _retarget_evidence(_evidence(), candidate.parent_generation,
-                                      candidate.generation_digest)
-        screened = screen_delta_candidate(candidate, evidence)
+        parent_solver, candidate_solver, target, policy, cohorts = _screen_inputs()
+        screened = screen_delta_candidate(
+            candidate, parent_solver=parent_solver, candidate_solver=candidate_solver,
+            target_capability=target, policy=policy, cohorts=cohorts)
         self.assertEqual(screened.decision.status, "ELIGIBLE")
         self.assertEqual(screened.candidate, candidate)
 
-        rejected = _retarget_evidence(_evidence(protected_loss=3),
-                                      candidate.parent_generation,
-                                      candidate.generation_digest)
-        screened = screen_delta_candidate(candidate, rejected)
+        parent_solver, candidate_solver, target, policy, cohorts = _screen_inputs(3)
+        screened = screen_delta_candidate(
+            candidate, parent_solver=parent_solver, candidate_solver=candidate_solver,
+            target_capability=target, policy=policy, cohorts=cohorts)
         self.assertEqual(screened.decision.status, "REJECT")
         self.assertEqual(screened.candidate, candidate)
 
@@ -144,11 +145,22 @@ class DisposableDeltaCandidateTests(unittest.TestCase):
             DisposableDeltaCandidate()
         with self.assertRaises(BilqisError):
             replace(candidate, generation_digest="f" * 64)
-        evidence = _retarget_evidence(_evidence(), candidate.parent_generation,
-                                      candidate.generation_digest)
-        screened = screen_delta_candidate(candidate, evidence)
+        parent_solver, candidate_solver, target, policy, cohorts = _screen_inputs()
+        screened = screen_delta_candidate(
+            candidate, parent_solver=parent_solver, candidate_solver=candidate_solver,
+            target_capability=target, policy=policy, cohorts=cohorts)
         with self.assertRaises(BilqisError):
             ScreenedDeltaCandidate(candidate, screened.decision)
+
+    def test_caller_retargeted_retention_evidence_is_not_a_screening_input(self):
+        parent = _tensor("weights", (1.0, 2.0, 3.0, 4.0))
+        package, source = _package((parent,))
+        candidate = apply_plastic_delta(package, source.binding, "a" * 64, (parent,))
+        forged = _retarget_evidence(
+            _evidence(), candidate.parent_generation, candidate.generation_digest)
+
+        with self.assertRaises(TypeError):
+            screen_delta_candidate(candidate, paired_retention_evidence=forged)
 
     def test_noncanonical_delta_wire_uses_structured_package_error(self):
         payload = encode_plastic_delta((DeltaSlice(

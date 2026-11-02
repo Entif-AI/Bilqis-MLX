@@ -6,7 +6,8 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.capability_retention import (
     AssessmentPair, CompleteSolver, EvaluationCase, EvaluationCohort,
     EvidenceKind, PairedRetentionEvidence, RetentionPolicy,
-    candidate_work_disposition, case_census_digest, configuration_outcome, evaluate_capabilities, retain_candidate,
+    candidate_work_disposition, case_census_digest, configuration_outcome,
+    evaluate_capabilities, evaluate_retention_candidate, retain_candidate,
 )
 from bilqis_mlx.runtime.cognitive_solver import NeuralProposal, SolveBudget, SolveContext
 from bilqis_mlx.semantics.cognitive_dag import DAGBudget, DAGNode
@@ -21,7 +22,7 @@ CANDIDATE = "b" * 64
 
 
 from bilqis_mlx.runtime.tests.capability.capability_retention_helpers import (
-    _cases, _solver, _evidence, _rescore, _repolicy,
+    _cases, _solver, _evidence, _screen_inputs, _rescore, _repolicy,
 )
 
 
@@ -35,6 +36,14 @@ from bilqis_mlx.runtime.tests.capability.capability_retention_helpers import (
 
 
 class CapabilityRetentionTests(unittest.TestCase):
+    def test_owner_screen_recomputes_all_required_cohorts(self):
+        parent_solver, candidate_solver, target, policy, cohorts = _screen_inputs()
+        decision = evaluate_retention_candidate(
+            parent_solver, candidate_solver, target, policy, cohorts, PARENT, CANDIDATE)
+        self.assertEqual(decision.status, "ELIGIBLE")
+        self.assertEqual(decision.parent_generation, PARENT)
+        self.assertEqual(decision.candidate_generation, CANDIDATE)
+
     def test_fresh_protected_loss_cannot_hide_behind_target_gain(self):
         evidence = _evidence()
         fresh = _rescore(evidence.fresh_lesson,

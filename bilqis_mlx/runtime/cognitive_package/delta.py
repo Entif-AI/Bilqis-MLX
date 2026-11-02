@@ -5,7 +5,7 @@ import json
 
 import numpy as np
 
-from bilqis_mlx.runtime.capability_retention import Decision, retain_candidate
+from bilqis_mlx.runtime.capability_retention import Decision, evaluate_retention_candidate
 
 from .contracts import PackageBinding, PackageKind, digest_string, invalid, name, require
 from .records import CognitivePackage
@@ -290,11 +290,12 @@ def apply_plastic_delta(package, receiver_run_dir):
     return apply_from_current_generation(package, receiver_run_dir)
 
 
-def screen_delta_candidate(candidate, paired_retention_evidence):
-    """Apply C05's existing whole-capability retention owner before activation."""
+def screen_delta_candidate(candidate, *, parent_solver, candidate_solver,
+                           target_capability, policy, cohorts):
+    """Run C05 owner evaluation before activation; caller evidence is not accepted."""
     require(type(candidate) is DisposableDeltaCandidate, "invalid delta candidate")
     candidate.__post_init__()
-    decision = retain_candidate(candidate.parent_generation,
-                                candidate.generation_digest,
-                                paired_retention_evidence)
+    decision = evaluate_retention_candidate(
+        parent_solver, candidate_solver, target_capability, policy, cohorts,
+        candidate.parent_generation, candidate.generation_digest)
     return _issue_screened(candidate, decision)
