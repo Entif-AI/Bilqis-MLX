@@ -57,13 +57,15 @@ def _read_pointer(path: Path) -> dict | None:
         pointer = json.loads(path.read_bytes())
     except (UnicodeDecodeError, json.JSONDecodeError):
         invalid()
-    bundle = Path(pointer.get("bundle", "")) if isinstance(pointer, dict) else Path()
+    bundle_value = pointer.get("bundle") if isinstance(pointer, dict) else None
+    bundle = Path(bundle_value) if isinstance(bundle_value, str) else Path()
     expected = {"schema", "run_id", "generation", "parent_manifest_sha256",
                 "bundle", "manifest_sha256"}
     if (not isinstance(pointer, dict) or set(pointer) != expected
             or pointer.get("schema") != BAMF_POINTER_SCHEMA
             or not isinstance(pointer.get("run_id"), str) or not pointer["run_id"]
             or type(pointer.get("generation")) is not int or bundle.is_absolute()
+            or bundle_value != f"bamf-bundles/{pointer.get('manifest_sha256')}"
             or tuple(bundle.parts) != ("bamf-bundles", pointer.get("manifest_sha256"))
             or any(part in ("", ".", "..") for part in bundle.parts)):
         invalid()

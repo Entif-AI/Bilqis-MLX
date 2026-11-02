@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "6a8a7d75c078398c6d71d7715a5806aaf3e9a530",
-  "updated_at": "2026-11-02T08:06:00Z",
+  "observed_unified": "b4f2f0aca31623e7246ef819338a1450d71183cd",
+  "updated_at": "2026-11-02T08:29:21Z",
   "exception": null,
   "items": [
     {

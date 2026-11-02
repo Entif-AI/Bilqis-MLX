@@ -127,6 +127,21 @@ class BamfPublicationTests(unittest.TestCase):
         with self.assertRaises(BilqisError):
             load_bamf_generation(pointer_path)
 
+    def test_pointer_requires_exact_canonical_bundle_spelling(self):
+        published = self.publish(candidate(parent_state()))
+        pointer_path = self.run / "bamf-state.json"
+        pointer = json.loads(pointer_path.read_text())
+        digest = published["manifest_sha256"]
+        for spelling in (
+                f"bamf-bundles//{digest}",
+                f"bamf-bundles/./{digest}",
+                f"bamf-bundles/{digest}/"):
+            with self.subTest(spelling=spelling):
+                pointer["bundle"] = spelling
+                pointer_path.write_text(json.dumps(pointer))
+                with self.assertRaises(BilqisError):
+                    load_bamf_generation(pointer_path)
+
     def test_pointer_written_before_outbox_crash_replays_exactly_once(self):
         source = candidate(parent_state())
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
@@ -264,6 +279,30 @@ class BamfPublicationTests(unittest.TestCase):
                         self.run, student, {"reason": "retention_gate"})
                 shutil.rmtree(bundle)
                 backup.rename(bundle)
+
+    def test_rejection_requires_valid_local_tensor_payload(self):
+        published = self.publish(candidate(parent_state()))
+        with shape_patch():
+            student = load_bamf_generation(self.run / "bamf-state.json")
+        bundle = self.run / published["bundle"]
+        tensor = bundle / "bamf-state.safetensors"
+        original = tensor.read_bytes()
+        outside = self.root / "outside-tensor.safetensors"
+        outside.write_bytes(original)
+        for mode in ("missing", "symlink", "corrupt"):
+            with self.subTest(mode=mode):
+                if tensor.exists() or tensor.is_symlink():
+                    tensor.unlink()
+                if mode == "symlink":
+                    tensor.symlink_to(outside)
+                elif mode == "corrupt":
+                    tensor.write_bytes(original + b"x")
+                with self.assertRaises(BilqisError):
+                    record_bamf_rejection(
+                        self.run, student, {"reason": "retention_gate"})
+                if tensor.exists() or tensor.is_symlink():
+                    tensor.unlink()
+                tensor.write_bytes(original)
 
     def test_rejection_rejects_symlinked_bundle_custody(self):
         self.publish(candidate(parent_state()))
