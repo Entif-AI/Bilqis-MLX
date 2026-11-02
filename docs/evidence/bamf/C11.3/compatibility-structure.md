@@ -62,3 +62,25 @@ interruptions: `runtime/checkpoints.py`, `runtime/operating_loop.py` and
 before the original task resumes. No recursive debt census is authorized.
 Source authority remains IPR-0220; no learner, optimizer, teacher, source release
 or admission state changes.
+
+## Subsequent live-profile test interruption
+
+The 500-line `factory/tests/test_live_profile_execution.py` is now 21 lines.
+Its source setup, Boolean profile, projection and numeric-profile subprocess
+fixtures each have a focused module below 240 lines. The provider test moves to
+`factory/tests/live_profile_cases/test_providers.py` (164 lines). Concatenating
+the four fixture phases reproduces the original subprocess program byte-for-byte;
+every original test and helper method keeps its exact AST. This preserves one
+subprocess and its shared execution namespace, source fingerprints and assertions.
+
+```sh
+python3 -B scripts/run_tests.py \
+  bilqis_mlx/factory/tests/test_live_profile_execution.py \
+  bilqis_mlx/factory/tests/live_profile_cases/test_providers.py
+```
+
+Both baseline and refactored selections pass the provider test and explicitly
+skip the real full-B subprocess because its separately pinned sibling source
+mount is absent. That skip condition is unchanged. The complete subprocess
+program's byte equality is additional structural proof, not an executed full-B
+witness. The two runtime-owner interruptions remain queued in Work Stack.
