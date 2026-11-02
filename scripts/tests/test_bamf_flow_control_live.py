@@ -87,6 +87,18 @@ class BamfFlowControlLiveTests(FixtureMixin):
         summaries = validate_live_pr_inventory(prs, root)
         self.assertIn("Integration inventory: OPEN 2/3; mode NORMAL", summaries)
 
+    def test_tracked_stacked_pr_counts_when_parent_pr_is_closed(self) -> None:
+        prs = [pr(11, head="repair", base="closed-parent")]
+        root = self.write_fixture(
+            {
+                "A": lane("A", []),
+                "B": lane("B", [active(2, 11)]),
+                "C": lane("C", []),
+            }
+        )
+        summaries = validate_live_pr_inventory(prs, root)
+        self.assertIn("Integration inventory: OPEN 1/3; mode NORMAL", summaries)
+
     def test_non_implementation_exception_is_excluded_from_inventory(self) -> None:
         control_plane_exception = {**exception(), "head_branch": "governance/adr126"}
         prs = [
