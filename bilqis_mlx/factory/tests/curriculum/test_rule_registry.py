@@ -12,6 +12,7 @@ from bilqis_mlx.factory.curriculum.rule_registry import (
 )
 from bilqis_mlx.semantics.cognitive_operators.registry import default_registry
 from bilqis_mlx.semantics.foundation.core import Signature
+from bilqis_mlx.source_adapters.world_rules import registered_adapter
 
 
 class SemanticRuleRegistryTests(unittest.TestCase):
@@ -52,11 +53,27 @@ class SemanticRuleRegistryTests(unittest.TestCase):
                 ("integer",),
             ))
 
-    def test_world_profile_fails_closed_without_a_source_owned_world_authority(self):
+    def test_world_profile_requires_and_binds_source_owned_world_authority(self):
         operators = default_registry(self.RELEASE)
         with self.assertRaisesRegex(ValueError,
                                     "FACTORY_WORLD_RULE_SOURCE_AUTHORITY_UNAVAILABLE"):
             world_rule_profile(operators)
+        profile = world_rule_profile(operators, registered_adapter())
+        self.assertEqual(profile.coverage, WORLD_COVERAGE)
+        self.assertEqual(profile.source_adapter_id, "source.bamf.qualified-world/v1")
+        self.assertEqual(
+            profile.operator_ids,
+            ("BEFORE", "IS_OCCURRED", "ROLE_LOOKUP"))
+        self.assertEqual(
+            profile.source_capability_ids,
+            ("WORLD.ACTOR_OF", "WORLD.BEFORE", "WORLD.DIRECT_CAUSE",
+             "WORLD.IS_OCCURRED"))
+        registry = default_semantic_rule_registry(
+            self.RELEASE, registered_adapter())
+        self.assertEqual(
+            {item.identity.family_id for item in registry.profiles},
+            {"boolean_composition", "numeric_composition",
+             "qualified_world_model"})
 
     def test_registry_rejects_duplicate_semantic_keys(self):
         registry = default_semantic_rule_registry(self.RELEASE)

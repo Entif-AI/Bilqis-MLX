@@ -1,8 +1,13 @@
 """Default source-family constructors and independent checkers."""
 from bilqis_mlx.factory.curriculum.formal_lessons import check_formal_lesson, construct_formal_lesson
 from bilqis_mlx.source_adapters.copular import CAPABILITY as COPULAR_SOURCE_CAPABILITY
+from bilqis_mlx.source_adapters.world_rules import (
+    CAPABILITIES as WORLD_CAPABILITIES,
+)
 from .contracts import SourceFamilyBatch
-from .invocation import invoke_formal, invoke_source_batch
+from .invocation import (
+    invoke_formal, invoke_same_capability_source_batch, invoke_source_batch,
+)
 from .contracts import FamilyProgramRegistry, RegisteredFamilyProgram
 
 def _source_draw(source, *args, **kwargs):
@@ -46,4 +51,10 @@ def default_family_program_registry() -> FamilyProgramRegistry:
             "bilqis.factory.source-registry-check/v1",
             _source_draw, _source_check, invoke_bound=invoke_source_batch,
             native_capability_id=COPULAR_SOURCE_CAPABILITY),
+        RegisteredFamilyProgram(
+            "qualified_world_model", ("source.bamf.qualified-world/v1",),
+            "bilqis.factory.source-registry-draw/v1",
+            "bilqis.factory.source-registry-check/v1",
+            _source_draw, _source_check,
+            invoke_bound=invoke_same_capability_source_batch),
     ))

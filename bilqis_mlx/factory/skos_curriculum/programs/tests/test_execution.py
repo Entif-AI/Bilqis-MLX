@@ -23,6 +23,12 @@ from bilqis_mlx.factory.skos_curriculum.lesson_compiler import (
 )
 from bilqis_mlx.factory.tests.sources.test_skos_curriculum import _snapshot
 from bilqis_mlx.factory.tests.support import synthetic_release_inputs
+from bilqis_mlx.curriculum import AnswerFamily, BINARY, Capability, Course, Grade
+from bilqis_mlx.live_grade_c import registry_graph
+from bilqis_mlx.source_adapters.world_rules import (
+    GENERATOR as WORLD_GENERATOR, ORACLE as WORLD_ORACLE,
+    projected_graph, registered_adapter as world_adapter,
+)
 
 
 from bilqis_mlx.factory.skos_curriculum.programs.tests.fixtures import (
@@ -31,6 +37,55 @@ from bilqis_mlx.factory.skos_curriculum.programs.tests.fixtures import (
 
 
 class FamilyExecutionTests(unittest.TestCase):
+    def test_qualified_world_fixture_uses_common_factory_release_boundary(self):
+        graph = projected_graph(registry_graph())
+        adapter = world_adapter()
+        source_registry = SourceAdapterRegistry((adapter,))
+        capabilities = tuple(
+            Capability(
+                capability_id, "qualified-world",
+                "repo:lib/ithkuil/_data/csv/lexicon_root_senses.csv",
+                ("ithkuil:LEXSENSE-59819df75e3137",),
+                ("ithkuil:LEXSENSE-59819df75e3137",), (), (),
+                (AnswerFamily("binary", BINARY),), WORLD_GENERATOR, WORLD_ORACLE)
+            for capability_id in (
+                "WORLD.ACTOR_OF", "WORLD.BEFORE", "WORLD.IS_OCCURRED",
+                "WORLD.DIRECT_CAUSE"))
+        course = Course(
+            (Grade("D", capabilities, "1" * 64,
+                   tuple((capability.id, 12) for capability in capabilities),
+                   (tuple(capability.id for capability in capabilities),)),),
+            "bamf-a08-world-fixture/v1", "2" * 64, "3" * 64)
+        release = compile_factory_release(course, source_registry)
+        census = _inventory_source_families(_snapshot())
+        frontier = LearnedFrontier(census.semantic_release)
+        candidate = _compile_semantic_curriculum_snapshot(
+            _snapshot(), (), frontier)
+        lessons = _compile_source_constructive_lessons_snapshot(_snapshot())
+        with patch.multiple(
+            "bilqis_mlx.factory.skos_curriculum.programs.binding",
+            inventory_source_families=lambda _selection: census,
+            compile_semantic_curriculum=lambda *_args: candidate,
+            compile_source_constructive_lessons=lambda _selection: lessons,
+            assert_family_inventory_current=lambda *_args: None,
+            assert_curriculum_candidate_current=lambda *_args: None,
+            assert_source_lesson_set_current=lambda *_args: None,
+        ):
+            artifacts = tuple(
+                execute_release_family_program(
+                    release, source_registry, default_family_program_registry(),
+                    object(), frontier, capability.id,
+                    construct_kwargs={"graph": graph, "seed": 420, "each": 12},
+                    check_kwargs={"graph": graph})
+                for capability in capabilities)
+        self.assertEqual(
+            {artifact.capability_id for artifact in artifacts},
+            {capability.id for capability in capabilities})
+        self.assertTrue(all(len(artifact.rows) == 12 for artifact in artifacts))
+        self.assertTrue(all(
+            {row["gold"] for row in artifact.rows} == {"TRUE", "FALSE"}
+            for artifact in artifacts))
+
     def test_release_family_execution_runs_registered_constructor_and_checker(self):
         course, source_registry = synthetic_release_inputs()
         release = compile_factory_release(course, source_registry)

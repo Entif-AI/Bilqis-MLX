@@ -70,6 +70,9 @@ class FamilyContractsTests(unittest.TestCase):
         self.assertEqual(
             registry.require("source_world_fixture").checker_ref,
             "bilqis.factory.source-registry-check/v1")
+        self.assertEqual(
+            registry.require("qualified_world_model").checker_ref,
+            "bilqis.factory.source-registry-check/v1")
 
 
     def test_missing_constructor_and_wrong_checker_fail_before_ready(self):
