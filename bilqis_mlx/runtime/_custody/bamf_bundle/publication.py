@@ -11,10 +11,9 @@ import uuid
 from pathlib import Path
 
 from bilqis_mlx.data_plane import DataPlaneError, data_plane
-from .codec import load_bamf_bundle, save_bamf_bundle
+from .codec import load_bamf_bundle, save_bamf_bundle, validate_bamf_bundle_custody
 from .records import (
-    BAMF_POINTER_SCHEMA, BamfBundleCandidate, BamfGenerationManifest,
-    CompleteStudent, canonical, invalid, sha,
+    BAMF_POINTER_SCHEMA, BamfBundleCandidate, CompleteStudent, canonical, invalid, sha,
 )
 
 
@@ -74,20 +73,8 @@ def _read_pointer(path: Path) -> dict | None:
 def _live_bundle_manifest(run_dir: Path, pointer: dict) -> dict:
     root = _require_bundle_root(run_dir, create=False)
     bundle = root / pointer["manifest_sha256"]
-    manifest_path = bundle / "manifest.json"
-    if (bundle.is_symlink() or not bundle.is_dir()
-            or manifest_path.is_symlink() or not manifest_path.is_file()):
-        invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
-    raw = manifest_path.read_bytes()
-    digest = sha(raw)
-    if digest != pointer["manifest_sha256"]:
-        invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
-    try:
-        if data_plane().get_node(digest) != raw:
-            invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
-        manifest = BamfGenerationManifest.from_record(json.loads(raw)).to_record()
-    except (ValueError, json.JSONDecodeError, KeyError, TypeError):
-        invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
+    manifest = validate_bamf_bundle_custody(
+        bundle, expected_manifest_sha256=pointer["manifest_sha256"])
     if (manifest["run_id"] != pointer["run_id"]
             or manifest["generation"] != pointer["generation"]
             or manifest["parent_manifest_sha256"] != pointer["parent_manifest_sha256"]):
@@ -181,6 +168,10 @@ def _validate_parent_transition(run_dir: Path, pointer: dict | None, candidate: 
         invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
     parent = load_bamf_bundle(
         run_dir / pointer["bundle"], expected_manifest_sha256=pointer["manifest_sha256"])
+    if (parent.run_id != pointer["run_id"]
+            or parent.generation != pointer["generation"]
+            or parent.parent_manifest_sha256 != pointer["parent_manifest_sha256"]):
+        invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
     kind = ("MODEL_SWAP" if parent.topology.digest != candidate.topology.digest else
             "PARAMETER_EXTENSION" if parent.extents.digest != candidate.extents.digest else
             "RETAINED_CANDIDATE")

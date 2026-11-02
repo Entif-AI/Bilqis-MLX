@@ -240,6 +240,31 @@ class BamfPublicationTests(unittest.TestCase):
             json.loads((self.run / "bamf-state.json").read_text())["manifest_sha256"],
             published["manifest_sha256"])
 
+    def test_rejection_requires_complete_local_bundle_payload(self):
+        published = self.publish(candidate(parent_state()))
+        with shape_patch():
+            student = load_bamf_generation(self.run / "bamf-state.json")
+        bundle = self.run / published["bundle"]
+        for mode in ("manifest-only", "sidecar-symlink"):
+            with self.subTest(mode=mode):
+                backup = self.root / ("backup-" + mode)
+                shutil.copytree(bundle, backup)
+                if mode == "manifest-only":
+                    for path in bundle.iterdir():
+                        if path.name != "manifest.json":
+                            path.unlink()
+                else:
+                    sidecar = bundle / "semantic-abi.json"
+                    outside = self.root / "outside-semantic-abi.json"
+                    outside.write_bytes(sidecar.read_bytes())
+                    sidecar.unlink()
+                    sidecar.symlink_to(outside)
+                with self.assertRaises(BilqisError):
+                    record_bamf_rejection(
+                        self.run, student, {"reason": "retention_gate"})
+                shutil.rmtree(bundle)
+                backup.rename(bundle)
+
     def test_rejection_rejects_symlinked_bundle_custody(self):
         self.publish(candidate(parent_state()))
         with shape_patch():
@@ -263,6 +288,20 @@ class BamfPublicationTests(unittest.TestCase):
 
         with self.assertRaises(BilqisError):
             record_bamf_rejection(self.run, forged, {"reason": "retention_gate"})
+
+    def test_successor_rejects_pointer_manifest_lineage_mismatch(self):
+        first = self.publish(candidate(parent_state()))
+        pointer_path = self.run / "bamf-state.json"
+        pointer = json.loads(pointer_path.read_text())
+        pointer["run_id"] = "fixture-run-forged"
+        pointer_path.write_text(json.dumps(pointer))
+        successor = replace(
+            candidate(
+                accepted_state(parent_state()), 1, first["manifest_sha256"]),
+            run_id="fixture-run-forged")
+
+        with self.assertRaises(BilqisError):
+            self.publish(successor)
 
 
 if __name__ == "__main__":
