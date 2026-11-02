@@ -33,7 +33,7 @@
       "issue": 456,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "d68e4fdc461618119c40ad29702612c8b67bb3ce",
+      "head_sha": "f7fd94b06f56909fca04016731dbe4c85a38f7e2",
       "summary": "B07.1 selected by project owner for current integration; synchronized to current unified for final merge-readiness proof.",
       "resume_trigger": null,
       "closed_pr": 690,
@@ -151,11 +151,15 @@
     },
     {
       "issue": 738,
-      "pr": 742,
-      "state": "ACTIVE",
+      "pr": null,
+      "state": "TURNED_IN",
       "head_sha": "44305b1c685fcdd43ded307c8eeae8e4e2808fbf",
-      "summary": "Active EGM-Mitigation delivery for #586 stale selected-state chaining.",
-      "resume_trigger": null
+      "summary": "EGM-Mitigation #738 accepted into the #586 parent branch through merged PR #742; issue #738 is closed.",
+      "resume_trigger": null,
+      "closed_pr": 742,
+      "preserved_branch": "codex/remediation-738-20261102",
+      "closed_under": "Merged remediation delivery into #586 parent branch",
+      "close_reason": "PR #742 merged at 44305b1c685fcdd43ded307c8eeae8e4e2808fbf; bounded remediation issue #738 closed"
     }
   ]
 }
