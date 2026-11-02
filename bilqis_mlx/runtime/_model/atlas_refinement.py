@@ -39,13 +39,21 @@ class _RefinementResult:
     schema_version: str = "bilqis.mlx.refinement-numerical-result/provisional-v1"
 
 
-class RefinementParameterView(dict[str, mx.array]):
-    """Read-only B06 projection that remains a native MLX parameter pytree."""
+class _ViewType(type):
+    def __setattr__(cls, _name, _value):
+        _invalid()
 
+
+class RefinementParameterView(tuple, metaclass=_ViewType):
+    """Immutable B01 aliases and a native MLX named-tuple parameter pytree."""
+
+    __slots__ = ()
     schema_version = REFINEMENT_PARAMETER_VIEW_SCHEMA
 
-    def __init__(self, topology_digest: str, extents_digest: str,
-                 declarations: tuple[ParameterSpec, ...], parameters: Mapping[str, mx.array]):
+    def __new__(cls, *args):
+        if cls is not RefinementParameterView:
+            return tuple.__new__(cls, args)
+        topology_digest, extents_digest, declarations, parameters = args
         names = tuple(item.name for item in declarations)
         digests = (topology_digest, extents_digest)
         if (any(not isinstance(value, str) or len(value) != SHA256_HEX_LENGTH
@@ -54,17 +62,34 @@ class RefinementParameterView(dict[str, mx.array]):
                 or not declarations
                 or any(type(item) is not ParameterSpec for item in declarations)
                 or any(not name.startswith("refine.") for name in names)
-                or len(set(names)) != len(names) or set(parameters) != set(names)):
+                or len(set(names)) != len(names) or set(parameters.keys()) != set(names)):
             _invalid()
         for item in declarations:
             value = parameters[item.name]
             if (not isinstance(value, mx.array) or value.dtype != mx.float32
                     or tuple(value.shape) != item.shape):
                 _invalid()
-        dict.__init__(self, ((item.name, parameters[item.name]) for item in declarations))
-        object.__setattr__(self, "topology_digest", topology_digest)
-        object.__setattr__(self, "extents_digest", extents_digest)
-        object.__setattr__(self, "declarations", declarations)
+        def get_item(view, key):
+            if isinstance(key, str):
+                try:
+                    key = names.index(key)
+                except ValueError:
+                    raise KeyError(key) from None
+            return tuple.__getitem__(view, key)
+
+        bound_type = _ViewType("BoundRefinementParameterView", (cls,), {
+            "__slots__": (),
+            "_fields": tuple(f"p{index}" for index in range(len(names))),
+            "__getitem__": get_item,
+            "keys": lambda _view: names,
+            "topology_digest": property(lambda _view: topology_digest),
+            "extents_digest": property(lambda _view: extents_digest),
+            "declarations": property(lambda _view: declarations),
+        })
+        return bound_type(*(parameters[name] for name in names))
+
+    def values(self):
+        return tuple(self)
 
     @staticmethod
     def _immutable(*_args, **_kwargs):
@@ -101,13 +126,13 @@ def _norm(value, gamma):
 
 
 def _validate_refinement_parameters(parameters):
-    if not isinstance(parameters, Mapping):
+    if not isinstance(parameters, (Mapping, RefinementParameterView)):
         _invalid()
     # Shapes are independent of generation extents; the canonical ledger owns them.
     extents = GenerationExtents(1, 1, "0"*64, "0"*64, "0"*64)
     declarations = tuple(item for item in expected_bamf_shapes(ModelTopologySpecV2(), extents)
                          if item.name.startswith("refine."))
-    if set(parameters) != {item.name for item in declarations}:
+    if set(parameters.keys()) != {item.name for item in declarations}:
         _invalid()
     for item in declarations:
         value = parameters[item.name]

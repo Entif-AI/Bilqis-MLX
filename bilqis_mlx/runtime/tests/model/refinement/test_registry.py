@@ -28,7 +28,7 @@ class RefinementRegistryTests(unittest.TestCase):
                          if item.name.startswith("refine."))
         self.assertIsInstance(view, RefinementParameterView)
         self.assertEqual(view.declarations, declared)
-        self.assertEqual(tuple(view), tuple(item.name for item in declared))
+        self.assertEqual(tuple(view.keys()), tuple(item.name for item in declared))
         self.assertEqual(view.topology_digest, self.spec.digest)
         self.assertEqual(view.extents_digest, self.extents.digest)
         for item in declared:
@@ -42,11 +42,25 @@ class RefinementRegistryTests(unittest.TestCase):
         with self.assertRaises(BilqisError):
             view.update({"refine.norm": mx.zeros((768,), dtype=mx.float32)})
 
+    def test_base_dict_mutation_cannot_replace_aliased_tensor(self):
+        view = refinement_parameter_view(
+            self.full, spec=self.spec, extents=self.extents)
+        original = view["refine.query"]
+        with self.assertRaises(TypeError):
+            dict.__setitem__(view, "refine.query", mx.zeros_like(original))
+        with self.assertRaises(AttributeError):
+            tuple.__setitem__(view, 1, mx.zeros_like(original))
+        type.__setattr__(type(view), "_indices", {"refine.query": 0})
+        self.assertIs(view["refine.query"], original)
+        self.assertIs(original, self.full["refine.query"])
+
     def test_view_identity_metadata_is_canonical(self):
         view = refinement_parameter_view(
             self.full, spec=self.spec, extents=self.extents)
         with self.assertRaises(BilqisError):
             view.topology_digest = "0" * 64
+        with self.assertRaises(BilqisError):
+            type(view).topology_digest = "0" * 64
         for topology_digest, extents_digest in (
             ("x" * 64, self.extents.digest),
             (self.spec.digest, "0" * 63),
@@ -88,7 +102,7 @@ class RefinementRegistryTests(unittest.TestCase):
         seed = mx.zeros((768,), dtype=mx.float32)
         members = mx.stack((hidden, hidden + mx.array(.25, dtype=mx.float32)))
         role = mx.ones((768,), dtype=mx.float32) * mx.array(.125, dtype=mx.float32)
-        direct = {name: self.full[name] for name in view}
+        direct = {name: self.full[name] for name in view.keys()}
         expected = _refine_frame(hidden, seed, members, role, 2, direct)
         actual = _refine_frame(hidden, seed, members, role, 2, view)
         np.testing.assert_array_equal(np.asarray(actual.hidden), np.asarray(expected.hidden))
@@ -108,9 +122,12 @@ class RefinementRegistryTests(unittest.TestCase):
             return mx.sum(result.hidden) + mx.sum(result.route_logits)
 
         gradients = mx.grad(loss)(view)
-        self.assertIsInstance(gradients, dict)
-        self.assertEqual(tuple(gradients), tuple(view))
-        for name in view:
+        self.assertIsInstance(gradients, RefinementParameterView)
+        self.assertEqual(tuple(gradients.keys()), tuple(view.keys()))
+        self.assertEqual(gradients.declarations, view.declarations)
+        self.assertEqual(gradients.topology_digest, view.topology_digest)
+        self.assertEqual(gradients.extents_digest, view.extents_digest)
+        for name in view.keys():
             self.assertGreater(float(mx.sum(mx.abs(gradients[name]))), 0.0)
 
     def test_full_tree_drift_rejects_before_projection(self):
