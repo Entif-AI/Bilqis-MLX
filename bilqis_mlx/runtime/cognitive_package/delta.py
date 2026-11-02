@@ -1,0 +1,246 @@
+"""Pure compatible plastic-delta application before C05 retention/adoption."""
+from dataclasses import dataclass
+from hashlib import sha256
+import json
+
+import numpy as np
+
+from bilqis_mlx.runtime.capability_retention import Decision, retain_candidate
+
+from .contracts import PackageBinding, PackageKind, digest_string, name, require
+from .records import CognitivePackage
+from .staging import stage_import
+
+
+DELTA_SCHEMA = "bilqis.c12.plastic-delta/v1"
+
+
+@dataclass(frozen=True)
+class DeltaSlice:
+    parameter_name: str
+    start: int
+    stop: int
+    parent_slice_sha256: str
+    delta_fp32: bytes
+
+    def __post_init__(self):
+        require(name(self.parameter_name), "invalid delta parameter name")
+        require(type(self.start) is int and type(self.stop) is int
+                and 0 <= self.start < self.stop, "invalid delta slice range")
+        require(digest_string(self.parent_slice_sha256), "invalid parent slice digest")
+        require(type(self.delta_fp32) is bytes
+                and len(self.delta_fp32) == 4 * (self.stop - self.start),
+                "invalid delta slice bytes")
+        values = np.frombuffer(self.delta_fp32, dtype="<f4")
+        require(bool(np.all(np.isfinite(values))), "nonfinite delta slice")
+
+
+@dataclass(frozen=True)
+class ReceiverTensor:
+    parameter_name: str
+    shape: tuple[int, ...]
+    values_fp32: bytes
+
+    def __post_init__(self):
+        require(name(self.parameter_name), "invalid receiver parameter name")
+        require(type(self.shape) is tuple and bool(self.shape)
+                and all(type(v) is int and v > 0 for v in self.shape),
+                "invalid receiver tensor shape")
+        count = 1
+        for extent in self.shape:
+            count *= extent
+        require(type(self.values_fp32) is bytes and len(self.values_fp32) == count * 4,
+                "invalid receiver tensor bytes")
+        values = np.frombuffer(self.values_fp32, dtype="<f4")
+        require(bool(np.all(np.isfinite(values))), "nonfinite receiver tensor")
+
+
+@dataclass(frozen=True)
+class DisposableDeltaCandidate:
+    parent_generation: str
+    generation_digest: str
+    package_digest: str
+    binding: PackageBinding
+    tensors: tuple[ReceiverTensor, ...]
+    schema_version: str = "bilqis.c12.disposable-delta-candidate/v1"
+
+    def __post_init__(self):
+        require(all(digest_string(v) for v in (
+            self.parent_generation, self.generation_digest, self.package_digest)),
+            "invalid candidate identity")
+        require(type(self.binding) is PackageBinding, "invalid candidate binding")
+        require(type(self.tensors) is tuple and bool(self.tensors)
+                and all(type(v) is ReceiverTensor for v in self.tensors),
+                "invalid candidate tensors")
+        require(tuple(v.parameter_name for v in self.tensors)
+                == tuple(sorted({v.parameter_name for v in self.tensors})),
+                "receiver tensors must be unique and canonical")
+        require(self.schema_version == "bilqis.c12.disposable-delta-candidate/v1",
+                "invalid candidate schema")
+
+
+@dataclass(frozen=True)
+class ScreenedDeltaCandidate:
+    candidate: DisposableDeltaCandidate
+    decision: Decision
+
+
+def encode_plastic_delta(slices):
+    require(type(slices) is tuple and bool(slices)
+            and all(type(value) is DeltaSlice for value in slices),
+            "invalid plastic delta slices")
+    _require_nonoverlap(slices)
+    raw = {
+        "schema": DELTA_SCHEMA,
+        "slices": [{
+            "parameter_name": value.parameter_name,
+            "start": value.start,
+            "stop": value.stop,
+            "parent_slice_sha256": value.parent_slice_sha256,
+            "delta_fp32": value.delta_fp32.hex(),
+        } for value in slices],
+    }
+    return json.dumps(raw, sort_keys=True, separators=(",", ":"),
+                      ensure_ascii=False, allow_nan=False).encode("utf-8")
+
+
+def _decode_plastic_delta(payload):
+    try:
+        raw = json.loads(payload.decode("utf-8"), object_pairs_hook=_unique_object)
+        require(raw.get("schema") == DELTA_SCHEMA and set(raw) == {"schema", "slices"},
+                "invalid plastic delta schema")
+        require(type(raw["slices"]) is list and bool(raw["slices"]),
+                "invalid plastic delta slices")
+        slices = tuple(DeltaSlice(
+            value["parameter_name"], value["start"], value["stop"],
+            value["parent_slice_sha256"], bytes.fromhex(value["delta_fp32"]),
+        ) for value in raw["slices"])
+        require(encode_plastic_delta(slices) == payload, "noncanonical plastic delta")
+        return slices
+    except (KeyError, TypeError, ValueError, UnicodeError, RecursionError):
+        invalid("invalid plastic delta record")
+
+
+def _unique_object(pairs):
+    result = {}
+    for key, value in pairs:
+        require(key not in result, "duplicate plastic delta key")
+        result[key] = value
+    return result
+
+
+def _require_nonoverlap(slices):
+    spans = {}
+    for value in slices:
+        value.__post_init__()
+        current = spans.setdefault(value.parameter_name, [])
+        require(all(value.stop <= start or stop <= value.start for start, stop in current),
+                "overlapping plastic delta slices")
+        current.append((value.start, value.stop))
+
+
+def _all_delta_slices(package):
+    slices = []
+    for artifact in package.artifacts:
+        if artifact.kind in (PackageKind.ADAPTER_DELTA, PackageKind.WEIGHT_DELTA):
+            slices.extend(_decode_plastic_delta(artifact.payload))
+    require(bool(slices), "plastic delta artifact required")
+    result = tuple(slices)
+    _require_nonoverlap(result)
+    return result
+
+
+def _candidate_digest(parent_generation, package_digest, tensors):
+    raw = {
+        "parent_generation": parent_generation,
+        "package_digest": package_digest,
+        "tensors": [{
+            "parameter_name": value.parameter_name,
+            "shape": list(value.shape),
+            "sha256": sha256(value.values_fp32).hexdigest(),
+        } for value in tensors],
+    }
+    encoded = json.dumps(raw, sort_keys=True, separators=(",", ":"),
+                         ensure_ascii=False, allow_nan=False).encode("utf-8")
+    return sha256(encoded).hexdigest()
+
+
+def receiver_weight_digest(tensors):
+    """Derive exact base-weight identity from canonical receiver tensor bytes."""
+    ordered = _canonical_tensors(tensors)
+    raw = [{
+        "parameter_name": value.parameter_name,
+        "shape": list(value.shape),
+        "sha256": sha256(value.values_fp32).hexdigest(),
+    } for value in ordered]
+    return _json_digest(raw)
+
+
+def receiver_parameter_schema_digest(tensors):
+    """Derive the portable float32 parameter-schema identity from the receiver."""
+    ordered = _canonical_tensors(tensors)
+    raw = [{
+        "parameter_name": value.parameter_name,
+        "shape": list(value.shape),
+        "dtype": "<f4",
+    } for value in ordered]
+    return _json_digest(raw)
+
+
+def _json_digest(value):
+    encoded = json.dumps(value, sort_keys=True, separators=(",", ":"),
+                         ensure_ascii=False, allow_nan=False).encode("utf-8")
+    return sha256(encoded).hexdigest()
+
+
+def _canonical_tensors(tensors):
+    require(type(tensors) is tuple and bool(tensors)
+            and all(type(value) is ReceiverTensor for value in tensors),
+            "invalid receiver tensors")
+    by_name = {value.parameter_name: value for value in tensors}
+    require(len(by_name) == len(tensors), "duplicate receiver parameter")
+    return tuple(by_name[name] for name in sorted(by_name))
+
+
+def apply_plastic_delta(package, receiver_binding, parent_generation, tensors):
+    """Build an immutable disposable candidate; never publish receiver state."""
+    require(type(package) is CognitivePackage, "invalid cognitive package")
+    require(digest_string(parent_generation), "invalid parent generation")
+    plan = stage_import(package, receiver_binding)
+    require(plan.disposition == "EXACT_BINDING", "delta requires exact receiver binding")
+    tensors = _canonical_tensors(tensors)
+    require(receiver_weight_digest(tensors) == receiver_binding.base_weight_digest,
+            "receiver base-weight digest mismatch")
+    require(receiver_parameter_schema_digest(tensors)
+            == receiver_binding.parameter_schema_digest,
+            "receiver parameter-schema digest mismatch")
+    by_name = {value.parameter_name: value for value in tensors}
+    candidate = {name: value for name, value in by_name.items()}
+    for delta in _all_delta_slices(package):
+        require(delta.parameter_name in by_name, "delta parameter is not allocated")
+        parent = by_name[delta.parameter_name]
+        values = np.frombuffer(parent.values_fp32, dtype="<f4")
+        require(delta.stop <= values.size, "delta slice exceeds receiver tensor")
+        parent_bytes = values[delta.start:delta.stop].astype("<f4", copy=False).tobytes()
+        require(sha256(parent_bytes).hexdigest() == delta.parent_slice_sha256,
+                "parent slice digest mismatch")
+        updated = values.copy()
+        updated[delta.start:delta.stop] += np.frombuffer(delta.delta_fp32, dtype="<f4")
+        require(bool(np.all(np.isfinite(updated))), "nonfinite candidate tensor")
+        candidate[delta.parameter_name] = ReceiverTensor(
+            parent.parameter_name, parent.shape, updated.astype("<f4", copy=False).tobytes())
+    ordered = tuple(candidate[name] for name in sorted(candidate))
+    return DisposableDeltaCandidate(
+        parent_generation,
+        _candidate_digest(parent_generation, package.digest, ordered),
+        package.digest, receiver_binding, ordered,
+    )
+
+
+def screen_delta_candidate(candidate, paired_retention_evidence):
+    """Apply C05's existing whole-capability retention owner before activation."""
+    require(type(candidate) is DisposableDeltaCandidate, "invalid delta candidate")
+    decision = retain_candidate(candidate.parent_generation,
+                                candidate.generation_digest,
+                                paired_retention_evidence)
+    return ScreenedDeltaCandidate(candidate, decision)

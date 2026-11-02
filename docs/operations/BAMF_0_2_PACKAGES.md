@@ -37,10 +37,11 @@ Base weights, parameter schema, topology, semantic release, active set, factor m
 and motif map must all match for any delta. No approximate matching exists.
 
 A plan records only package digest, receiver binding and compatibility disposition.
-It does not apply tensor slices, allocate banks/motifs, reset optimizer state,
-change teacher state, run retention or publish a generation. Those steps and their
-rollback/next-step/cold-resume proofs remain with C12.2/#526 and C12.3/#527 and the
-native B13/C05 custody owners. No production importer consumes these plans yet.
+It does not itself apply tensor slices, allocate banks/motifs, reset optimizer
+state, change teacher state, run retention or publish a generation. C12.2/#526 now
+adds a separate pure disposable-candidate path for an exact-compatible delta; the
+durable receiver-owned adoption/reset transition remains C12.3/#527. No production
+importer consumes these plans yet.
 Changing a sender's rights after export does not mutate an immutable package;
 a future adoption owner must consult current source revocations before use.
 
@@ -73,6 +74,45 @@ Heterogeneous exact packages receive `TEACHING_ONLY`; incompatible deltas reject
 before receiver creation. Payloads never execute during exchange.
 
 These directories exchange staging artifacts. There is no activation, tensor
-application, optimizer reset or source qualification. Actual retained adoption and
-rollback remain gated by B13/C05 and #527. Current production revocations still
-need the source authority at adoption; embedded clearance is a historical assertion.
+application, optimizer reset or source qualification in the directory exchange
+itself. Current production revocations still need the source authority at adoption;
+embedded clearance is a historical assertion.
+
+## Disposable plastic-delta candidate (C12.2 / #526)
+
+`encode_plastic_delta(...)` defines the bounded v1 fixture codec used by the
+current proving slice. Each changed slice names an already allocated parameter,
+an exact flat `[start, stop)` range, the SHA-256 of the receiver's current slice,
+and finite little-endian float32 additive delta bytes. Overlapping slices,
+noncanonical records, unknown parameters and out-of-range slices fail closed.
+This is a selected implementation encoding for the current atlas-native proving
+path, not authority to reinterpret a differently encoded package.
+
+`ReceiverTensor` is an immutable float32 byte snapshot. The receiver's base-weight
+digest and parameter-schema digest are independently rederived from the actual
+canonical tensor set and must equal the package binding before any delta is
+applied. Matching caller labels therefore cannot substitute unrelated receiver
+bytes or shapes. The remaining topology, semantic-release, active-set, factor-map
+and motif-map identities still come from the receiver-owned `PackageBinding` and
+must match exactly through `stage_import(...)`.
+
+`apply_plastic_delta(...)` creates a `DisposableDeltaCandidate` from a full local
+receiver snapshot. It copies only declared slices into a candidate and derives a
+new candidate generation digest from the exact parent generation, package digest
+and resulting tensor digests. The parent snapshot is never mutated. The function
+does not allocate a parameter, bank or motif and does not reset or publish any
+optimizer, age, clock, teacher or checkpoint state.
+
+After the disposable candidate has been evaluated with the complete solver,
+`screen_delta_candidate(...)` passes its exact parent and derived candidate
+generation identities to C05's existing `retain_candidate(...)` owner. An eligible
+decision remains advisory evidence only: B12/B13 still own publication. A rejected
+candidate is rolled back by discarding the immutable disposable candidate; the
+parent bytes are unchanged.
+
+This closes the C12.2 pre-activation seam without stealing C12.3/#527. #527 owns
+the durable receiver transition: changed-slice optimizer resets, establishment-age
+and cadence resets, `PACKAGE_IMPORT` origin, atomic commit/crash rollback,
+subsequent native optimizer receipt and cold-resume equivalence. Production #526
+turn-in also remains gated on accepted A12 source/rights and B13 generation custody;
+the current synthetic PUBLIC fixtures do not promote those pending authorities.
