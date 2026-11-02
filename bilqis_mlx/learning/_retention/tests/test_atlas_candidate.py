@@ -19,7 +19,7 @@ from bilqis_mlx.runtime.model_topology_v2 import (
     expected_bamf_shapes, initialize_bamf_row,
 )
 from bilqis_mlx.learning._retention.atlas_candidate import (
-    CandidateInitialization, CandidateState, CandidateTransaction,
+    CandidateInitialization, CandidateResolution, CandidateState, CandidateTransaction,
     bind_initial_candidate_state, begin_candidate, candidate_step, resolve_candidate,
 )
 
@@ -239,6 +239,23 @@ class CandidateTransactionTests(TestCase):
     def test_no_generic_transaction_issuer_can_bypass_row_materialization(self):
         self.assertFalse(hasattr(candidate_owner, "_issue_transaction"))
         self.assertFalse(hasattr(candidate_owner, "_TRANSACTION_ISSUER"))
+
+    def test_replay_valid_rejected_transaction_cannot_mint_retained_descendant(self):
+        candidate = begin_candidate(
+            self.parent, frames=(source(),), budget=MotifBudget(1))
+        self.assertEqual(candidate.update_steps, 0)
+        self.assertNotEqual(candidate.allocations, self.parent.allocations)
+        self.assertIs(resolve_candidate(candidate, accepted=True), self.parent)
+        with self.assertRaises(BilqisError):
+            CandidateState(
+                candidate.optimizer, self.parent.policy, candidate.allocations,
+                self.parent.optimizer_step, self.parent.initialization,
+                self.parent, candidate)
+        with self.assertRaises(BilqisError):
+            CandidateState(
+                candidate.optimizer, self.parent.policy, candidate.allocations,
+                self.parent.optimizer_step, self.parent.initialization,
+                self.parent, CandidateResolution(candidate, False))
 
     def test_public_initial_binding_cannot_smuggle_page_growth_state(self):
         with self.assertRaises(BilqisError):
