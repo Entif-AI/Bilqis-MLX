@@ -78,6 +78,7 @@ class _SourceBackboneProducerSession:
                 prefix_digest=prefix,
                 scope_digest=contract_digest((source_digest, prefix, generation)),
                 input_digest=source_digest, output_digest=output,
+                output_shape=tuple(hidden.shape), output_dtype=str(hidden.dtype),
                 cache_chain_digest=contract_digest(()),
                 numerical_execution_digest=contract_digest((
                     "h0", output, replay.parameter_tree_digest)),
@@ -102,6 +103,8 @@ class _SourceBackboneProducerSession:
             "full_parameter_tree_digest", "scope_content_digest", "input_content_digest",
             "cache_chain_digest", "predecessor_digest", "execution_digest")
         if (any(getattr(result, name) != getattr(expected, name) for name in fields)
+                or result.hidden.shape != expected.hidden.shape
+                or result.hidden.dtype != expected.hidden.dtype
                 or _content_digest(result.hidden) != _content_digest(expected.hidden)):
             _invalid_producer_receipt()
         source_id = SOURCE_ORDER[target]
@@ -119,6 +122,8 @@ class _SourceBackboneProducerSession:
             prefix_digest=prefix, scope_digest=expected.scope_content_digest,
             input_digest=expected.input_content_digest,
             output_digest=_content_digest(expected.hidden),
+            output_shape=tuple(expected.hidden.shape),
+            output_dtype=str(expected.hidden.dtype),
             cache_chain_digest=expected.cache_chain_digest,
             numerical_execution_digest=expected.execution_digest,
             predecessor_receipt_digest=self._receipts[target - 1].receipt_digest,

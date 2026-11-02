@@ -25,11 +25,12 @@ def _invalid() -> None:
 
 def receipt_projection(values):
     return (
-        "bilqis.mlx.backbone-boundary-receipt/v1", values["source_id"],
+        "bilqis.mlx.backbone-boundary-receipt/v2", values["source_id"],
         values["completed_layer"], values["source_handoff_digest"],
         values["topology_digest"], values["generation_digest"],
         values["parameter_tree_digest"], values["prefix_digest"],
         values["scope_digest"], values["input_digest"], values["output_digest"],
+        values["output_shape"], values["output_dtype"],
         values["cache_chain_digest"], values["numerical_execution_digest"],
         values["predecessor_receipt_digest"], values["motif_disposition"],
         values["motif_read_position"], values["motif_read_digest"],
@@ -51,6 +52,8 @@ class ProducedBackboneBoundary:
     scope_digest: str
     input_digest: str
     output_digest: str
+    output_shape: tuple[int, ...]
+    output_dtype: str
     cache_chain_digest: str
     numerical_execution_digest: str
     predecessor_receipt_digest: str
@@ -74,6 +77,8 @@ class ProducedBackboneBoundary:
                 or self.completed_layer != COMPLETED_LAYERS[expected_index]
                 or type(self.hidden) is not mx.array or self.hidden.dtype != mx.float32
                 or self.hidden.ndim != _HIDDEN_FRAME_RANK
+                or self.output_shape != tuple(self.hidden.shape)
+                or self.output_dtype != str(self.hidden.dtype)
                 or any(not isinstance(value, str) or not _SHA256.fullmatch(value)
                        for value in digests)
                 or self.output_digest != _content_digest(self.hidden)
