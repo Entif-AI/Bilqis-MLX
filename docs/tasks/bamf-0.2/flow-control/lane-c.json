@@ -1,7 +1,7 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "67c964a1548cb0075a28a90aa2565d8bdab0fd71",
+  "observed_unified": "2800946729e484875f7d1f57f0e6d85078936394",
   "updated_at": "2026-11-02T22:20:00Z",
   "exception": null,
   "items": [
@@ -81,7 +81,7 @@
       "issue": 733,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "cb536f744008c7e7575c3d3973c135aa38292fd6",
+      "head_sha": "7ed4db2b301e79b646ce24158e38642b0da8c91d",
       "summary": "Selected documentation-only C01 reproducibility remediation; isolated writer on codex/733-reproducible-c01-proof. Parent #347 stays parked.",
       "resume_trigger": null
     }
