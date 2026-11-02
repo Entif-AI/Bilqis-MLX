@@ -103,6 +103,10 @@ PR merely to preserve the finding; the issue already provides the durable defect
 record. Use a stacked remediation PR only when branch ownership, concurrent-writer
 isolation, or focused review requires it, and merge/close that PR promptly once its
 bounded repair is consumed.
+Because BAMF PRs normally merge into reviewed integration branches rather than the
+repository default branch, GitHub closing keywords may not retire linked issues.
+After a remediation is accepted or its PR is consumed, explicitly read back and
+close the remediation issue; do not assume `Closes #N` changed issue state.
 
 The repository checker can validate declared state, WIP counts, required resume
 triggers and explicit exceptions. It cannot observe an unrecorded remote mutation or
