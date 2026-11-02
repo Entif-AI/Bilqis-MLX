@@ -32,10 +32,10 @@
     {
       "issue": 455,
       "pr": 686,
-      "state": "WAITING",
+      "state": "ACTIVE",
       "head_sha": "39732bdb053e33cd917ed03de43ac02ed638474b",
-      "summary": "B06.4 registry reconciliation depends on B06.3 acceptance.",
-      "resume_trigger": "B06.3/#454 is accepted on unified sufficiently to satisfy the direct prerequisite, then B06.4 may be refreshed once for turn-in."
+      "summary": "Explicit user-selected #715 gradient/immutability remediation; final #454 acceptance remains separate.",
+      "resume_trigger": null
     },
     {
       "issue": 454,
@@ -66,8 +66,8 @@
       "pr": 674,
       "state": "WAITING",
       "head_sha": "bfada2678ad6bd44ae7a297d101b96ac8292fbea",
-      "summary": "B14.4 cache-authority repair is locally green.",
-      "resume_trigger": "Fresh exact-head independent re-review completes and pinned Google EGM becomes available/completes."
+      "summary": "B14.4 cache-authority repair is locally green. Explicit user-selected remediation #712 or #719/#720 on 2026-11-02. Scoped remediation delivered for review.",
+      "resume_trigger": "Owner review of remediation PR #721 or #722, remaining source/acceptance dependencies, and final merge-ready EGM."
     },
     {
       "issue": 478,
@@ -82,8 +82,8 @@
       "pr": 640,
       "state": "WAITING",
       "head_sha": "76383e474245bf9a61acc278ff84decc177a6c97",
-      "summary": "B11.1a execution-owned backbone producer is NON-EGM clean.",
-      "resume_trigger": "Pinned Google EGM becomes available and is run on the exact candidate head, or an explicitly accepted successor gate replaces it."
+      "summary": "B11.1a execution-owned backbone producer is NON-EGM clean. Explicit user-selected remediation #712 or #719/#720 on 2026-11-02. Scoped remediation delivered for review.",
+      "resume_trigger": "Owner review of remediation PR #721 or #722, remaining source/acceptance dependencies, and final merge-ready EGM."
     }
   ]
 }
