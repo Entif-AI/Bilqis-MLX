@@ -33,16 +33,13 @@ from bilqis_mlx.runtime.model_topology_v2 import (
 STATE_SCHEMA = 'bilqis.mlx.candidate-state/provisional-v1'
 TRANSACTION_SCHEMA = 'bilqis.mlx.candidate-transaction/provisional-v1'
 INITIALIZATION_SCHEMA = 'bilqis.mlx.candidate-initialization-binding/v1'
-_STATE_ISSUER = object()
-_INITIALIZATION_ISSUER = object()
-_TRANSACTION_ISSUER = object()
 
 
 def _invalid():
     ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
 
 
-@dataclass(frozen=True, init=False)
+@dataclass(frozen=True)
 class CandidateInitialization:
     """B01 initialization authority carried by candidate-owned descendants."""
 
@@ -50,22 +47,16 @@ class CandidateInitialization:
     extents: GenerationExtents
     run_seed: int
     schema_version: str = INITIALIZATION_SCHEMA
-    _issuance: object = field(init=False, repr=False, compare=False)
-
-    def __init__(self, *args, **kwargs):
-        # A caller cannot merely assert which B01 initialization produced a tree.
-        _invalid()
 
     def __post_init__(self):
-        if (getattr(self, '_issuance', None) is not _INITIALIZATION_ISSUER
-                or type(self.topology) is not ModelTopologySpecV2
+        if (type(self.topology) is not ModelTopologySpecV2
                 or type(self.extents) is not GenerationExtents
                 or type(self.run_seed) is not int
                 or self.schema_version != INITIALIZATION_SCHEMA):
             _invalid()
 
 
-@dataclass(frozen=True, init=False)
+@dataclass(frozen=True)
 class CandidateState:
     """The inseparable proposed optimizer, allocation and policy state."""
 
@@ -74,16 +65,12 @@ class CandidateState:
     allocations: MotifAllocationSnapshot
     optimizer_step: int
     initialization: CandidateInitialization
+    parent: 'CandidateState | None' = field(default=None, repr=False, compare=False)
+    transaction: 'CandidateTransaction | None' = field(default=None, repr=False, compare=False)
     schema_version: str = STATE_SCHEMA
-    _issuance: object = field(init=False, repr=False, compare=False)
-
-    def __init__(self, *args, **kwargs):
-        # Candidate custody begins only through bind_initial_candidate_state().
-        _invalid()
 
     def __post_init__(self):
-        if (getattr(self, '_issuance', None) is not _STATE_ISSUER
-                or type(self.optimizer) is not AdamWStateTree
+        if (type(self.optimizer) is not AdamWStateTree
                 or type(self.policy) is not PlasticityPolicy
                 or type(self.allocations) is not MotifAllocationSnapshot
                 or type(self.optimizer_step) is not int or self.optimizer_step < 0
@@ -103,32 +90,43 @@ class CandidateState:
         validate_bamf_parameters(
             self.initialization.topology, self.initialization.extents,
             self.optimizer.parameters)
+        if self.parent is None or self.transaction is None:
+            if self.parent is not None or self.transaction is not None:
+                _invalid()
+            expected, _decay, _manifest = _create_unbound_bamf_optimizer(
+                self.initialization.topology, self.initialization.extents,
+                run_seed=self.initialization.run_seed)
+            if (self.optimizer_step != 0 or self.policy != PlasticityPolicy()
+                    or self.allocations.manifest.slots or self.allocations.aliases
+                    or self.allocations.observed_uses or self.allocations.pending_keys
+                    or not _same_optimizer(self.optimizer, expected)):
+                _invalid()
+        else:
+            if (type(self.parent) is not CandidateState
+                    or type(self.transaction) is not CandidateTransaction
+                    or self.transaction.parent is not self.parent
+                    or self.initialization is not self.parent.initialization):
+                _invalid()
+            self.parent.__post_init__()
+            self.transaction.__post_init__()
+            rows = tuple(row.identity for row in self.parent.policy.row_ages
+                         if bool(self.transaction.optimizer.update_counts[
+                             f'identity.bank.{row.bank_index}'][row.row_index]
+                             > self.parent.optimizer.update_counts[
+                                 f'identity.bank.{row.bank_index}'][row.row_index]))
+            expected_policy = advance_candidate_policy(
+                self.parent.policy,
+                teacher_requests_full=self.transaction.teacher_requests_full,
+                accepted=True, participating_rows=rows)
+            if (not _same_optimizer(self.optimizer, self.transaction.optimizer)
+                    or self.allocations != self.transaction.allocations
+                    or self.optimizer_step != self.parent.optimizer_step + self.transaction.update_steps
+                    or self.policy != expected_policy):
+                _invalid()
         for row in self.policy.row_ages:
             count = self.optimizer.update_counts.get(f'identity.bank.{row.bank_index}')
             if count is None or count.ndim != 1 or row.row_index >= count.shape[0]:
                 _invalid()
-
-
-def _issue_initialization(topology, extents, run_seed):
-    binding = object.__new__(CandidateInitialization)
-    for name, value in (
-            ('topology', topology), ('extents', extents), ('run_seed', run_seed),
-            ('schema_version', INITIALIZATION_SCHEMA),
-            ('_issuance', _INITIALIZATION_ISSUER)):
-        object.__setattr__(binding, name, value)
-    binding.__post_init__()
-    return binding
-
-
-def _issue_state(optimizer, policy, allocations, optimizer_step, initialization):
-    state = object.__new__(CandidateState)
-    for name, value in (
-            ('optimizer', optimizer), ('policy', policy), ('allocations', allocations),
-            ('optimizer_step', optimizer_step), ('initialization', initialization),
-            ('schema_version', STATE_SCHEMA), ('_issuance', _STATE_ISSUER)):
-        object.__setattr__(state, name, value)
-    state.__post_init__()
-    return state
 
 
 def _same_optimizer(left: AdamWStateTree, right: AdamWStateTree) -> bool:
@@ -175,12 +173,22 @@ def bind_initial_candidate_state(
             or manifest.get('generation_extents_digest') != extents.digest
             or not _same_optimizer(optimizer, expected)):
         _invalid()
-    binding = _issue_initialization(topology, extents, run_seed)
-    return _issue_state(
+    binding = CandidateInitialization(topology, extents, run_seed)
+    return CandidateState(
         optimizer, PlasticityPolicy(), allocations, 0, binding)
 
 
-@dataclass(frozen=True, init=False)
+@dataclass(frozen=True)
+class CandidateStepProof:
+    gradients: dict
+    update_mask: dict
+    teacher_hparams: object
+    decay: object
+    loss_bearing: bool
+    max_norm: float
+
+
+@dataclass(frozen=True)
 class CandidateTransaction:
     """One speculative branch; no method mutates or publishes its parent."""
 
@@ -189,41 +197,44 @@ class CandidateTransaction:
     allocations: MotifAllocationSnapshot
     teacher_requests_full: bool
     update_steps: int = 0
+    frames: tuple = ()
+    budget: MotifBudget = field(default_factory=lambda: MotifBudget(0))
+    steps: tuple[CandidateStepProof, ...] = ()
     schema_version: str = TRANSACTION_SCHEMA
-    _issuance: object = field(init=False, repr=False, compare=False)
-
-    def __init__(self, *args, **kwargs):
-        # Public construction/replacement cannot assert a completed transition.
-        _invalid()
 
     def __post_init__(self):
-        if getattr(self, '_issuance', None) is not _TRANSACTION_ISSUER:
-            _invalid()
         if (type(self.parent) is not CandidateState
                 or type(self.optimizer) is not AdamWStateTree
                 or type(self.allocations) is not MotifAllocationSnapshot
                 or type(self.teacher_requests_full) is not bool
                 or type(self.update_steps) is not int or self.update_steps < 0
+                or type(self.frames) is not tuple
+                or type(self.budget) is not MotifBudget
+                or type(self.steps) is not tuple
+                or self.update_steps != len(self.steps)
                 or self.schema_version != TRANSACTION_SCHEMA):
             _invalid()
         self.parent.__post_init__()
         self.optimizer.validate()
         self.allocations.__post_init__()
-        parent_manifest = self.parent.allocations.manifest
-        candidate_manifest = self.allocations.manifest
-        if (candidate_manifest.semantic_release != parent_manifest.semantic_release
-                or candidate_manifest.capacity != parent_manifest.capacity
-                or candidate_manifest.slots[:len(parent_manifest.slots)] != parent_manifest.slots
-                or self.allocations.aliases != self.parent.allocations.aliases
-                or set(self.optimizer.parameters) != set(self.parent.optimizer.parameters)):
+        proposal = prepare_candidate_motif_snapshot(
+            self.frames, self.parent.allocations, self.budget)
+        expected = (_materialize_planned_motif_rows(self.parent, proposal)
+                    if proposal.view.plan.allocated else self.parent.optimizer)
+        if self.allocations != proposal.proposed:
             _invalid()
-        for name, count in self.optimizer.update_counts.items():
-            previous = self.parent.optimizer.update_counts[name]
-            if (self.optimizer.parameters[name].shape != self.parent.optimizer.parameters[name].shape
-                    or count.shape != previous.shape
-                    or not bool(mx.all(count >= previous))
-                    or not bool(mx.all(count - previous <= self.update_steps))):
+        for step in self.steps:
+            if type(step) is not CandidateStepProof:
                 _invalid()
+            updated = _adamw_update(
+                expected, step.gradients, step.update_mask, step.teacher_hparams,
+                decay=step.decay, loss_bearing=step.loss_bearing,
+                max_norm=step.max_norm)
+            if updated is expected:
+                _invalid()
+            expected = updated
+        if not _same_optimizer(self.optimizer, expected):
+            _invalid()
 
     @property
     def update_mode(self) -> str:
@@ -296,15 +307,9 @@ def begin_candidate(parent: CandidateState, *, frames=(), budget=None,
     optimizer = (
         _materialize_planned_motif_rows(parent, proposal)
         if allocated else parent.optimizer)
-    candidate = object.__new__(CandidateTransaction)
-    for name, value in (
-            ('parent', parent), ('optimizer', optimizer),
-            ('allocations', proposal.proposed),
-            ('teacher_requests_full', teacher_requests_full), ('update_steps', 0),
-            ('schema_version', TRANSACTION_SCHEMA), ('_issuance', _TRANSACTION_ISSUER)):
-        object.__setattr__(candidate, name, value)
-    candidate.__post_init__()
-    return candidate
+    return CandidateTransaction(
+        parent, optimizer, proposal.proposed, teacher_requests_full,
+        frames=tuple(frames), budget=MotifBudget(0) if budget is None else budget)
 
 
 def candidate_step(candidate: CandidateTransaction, gradients, update_mask,
@@ -323,16 +328,13 @@ def candidate_step(candidate: CandidateTransaction, gradients, update_mask,
         decay=decay, loss_bearing=loss_bearing, max_norm=max_norm)
     if optimizer is candidate.optimizer:
         return candidate
-    updated = object.__new__(CandidateTransaction)
-    for name, value in (
-            ('parent', candidate.parent), ('optimizer', optimizer),
-            ('allocations', candidate.allocations),
-            ('teacher_requests_full', candidate.teacher_requests_full),
-            ('update_steps', candidate.update_steps + 1),
-            ('schema_version', TRANSACTION_SCHEMA), ('_issuance', _TRANSACTION_ISSUER)):
-        object.__setattr__(updated, name, value)
-    updated.__post_init__()
-    return updated
+    proof = CandidateStepProof(
+        dict(gradients), dict(update_mask), teacher_hparams, decay,
+        loss_bearing, max_norm)
+    return CandidateTransaction(
+        candidate.parent, optimizer, candidate.allocations,
+        candidate.teacher_requests_full, candidate.update_steps + 1,
+        candidate.frames, candidate.budget, candidate.steps + (proof,))
 
 
 def resolve_candidate(candidate: CandidateTransaction, *, accepted: bool) -> CandidateState:
@@ -352,7 +354,7 @@ def resolve_candidate(candidate: CandidateTransaction, *, accepted: bool) -> Can
     policy = advance_candidate_policy(
         candidate.parent.policy, teacher_requests_full=candidate.teacher_requests_full,
         accepted=True, participating_rows=rows)
-    return _issue_state(
+    return CandidateState(
         candidate.optimizer, policy, candidate.allocations,
         candidate.parent.optimizer_step + candidate.update_steps,
-        candidate.parent.initialization)
+        candidate.parent.initialization, candidate.parent, candidate)

@@ -121,17 +121,19 @@ class CandidateTransactionTests(TestCase):
             self.assertEqual(candidate.update_mode, 'FULL')
             self.assertEqual(resolve_candidate(candidate, accepted=True).policy.accepted_fast_since_full, 0)
 
-    def test_internal_state_issuer_cannot_smuggle_adaptive_policy(self):
-        with self.assertRaises(BilqisError):
-            candidate_owner._issue_state(
-                self.parent.optimizer, PlasticityPolicy('ADAPTIVE', 7),
-                self.parent.allocations, 0, self.parent.initialization)
+    def test_no_generic_state_issuer_can_bypass_candidate_custody(self):
+        self.assertFalse(hasattr(candidate_owner, "_issue_state"))
+        self.assertFalse(hasattr(candidate_owner, "_STATE_ISSUER"))
 
     def test_invalid_state_and_decision_fail_before_parent_mutation(self):
         before = self.snapshot(self.parent)
+        parameters = dict(self.state.parameters)
+        parameters[self.name] = parameters[self.name] + 100
+        forged = AdamWStateTree(
+            parameters, self.state.m, self.state.v, self.state.update_counts)
         with self.assertRaises(BilqisError):
             CandidateState(
-                self.state, PlasticityPolicy(),
+                forged, PlasticityPolicy(),
                 MotifAllocationSnapshot(MotifManifest(RELEASE)), 0,
                 CandidateInitialization(self.topology, self.extents, 475))
         with self.assertRaises(BilqisError):
@@ -202,14 +204,12 @@ class CandidateTransactionTests(TestCase):
                 topology=topology, extents=extents, run_seed=475)
 
     def test_internal_seed_relabel_cannot_authorize_new_motif_rows(self):
-        forged_binding = candidate_owner._issue_initialization(
-            self.topology, self.extents, 999)
-        forged_parent = candidate_owner._issue_state(
-            self.parent.optimizer, self.parent.policy, self.parent.allocations,
-            self.parent.optimizer_step, forged_binding)
+        self.assertFalse(hasattr(candidate_owner, "_issue_initialization"))
         with self.assertRaises(BilqisError):
-            begin_candidate(
-                forged_parent, frames=(source(),), budget=MotifBudget(1))
+            CandidateState(
+                self.parent.optimizer, self.parent.policy, self.parent.allocations,
+                self.parent.optimizer_step,
+                CandidateInitialization(self.topology, self.extents, 999))
 
     def test_seed_invariant_none_row_cannot_be_last_witness(self):
         counts = dict(self.parent.optimizer.update_counts)
@@ -230,17 +230,15 @@ class CandidateTransactionTests(TestCase):
         exhausted_optimizer = AdamWStateTree(
             self.parent.optimizer.parameters, self.parent.optimizer.m,
             self.parent.optimizer.v, counts)
-        forged_binding = candidate_owner._issue_initialization(
-            self.topology, self.extents, 999)
-        forged_parent = candidate_owner._issue_state(
-            exhausted_optimizer, self.parent.policy, self.parent.allocations,
-            self.parent.optimizer_step, forged_binding)
         with self.assertRaises(BilqisError):
-            begin_candidate(
-                forged_parent, frames=(source(),), budget=MotifBudget(1))
+            CandidateState(
+                exhausted_optimizer, self.parent.policy, self.parent.allocations,
+                self.parent.optimizer_step,
+                CandidateInitialization(self.topology, self.extents, 999))
 
     def test_no_generic_transaction_issuer_can_bypass_row_materialization(self):
         self.assertFalse(hasattr(candidate_owner, "_issue_transaction"))
+        self.assertFalse(hasattr(candidate_owner, "_TRANSACTION_ISSUER"))
 
     def test_public_initial_binding_cannot_smuggle_page_growth_state(self):
         with self.assertRaises(BilqisError):
