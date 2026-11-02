@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "67c964a1548cb0075a28a90aa2565d8bdab0fd71",
-  "updated_at": "2026-11-02T21:20:00Z",
+  "updated_at": "2026-11-02T21:21:00Z",
   "exception": null,
   "items": [
     {
@@ -49,7 +49,7 @@
       "issue": 641,
       "pr": 739,
       "state": "ACTIVE",
-      "head_sha": "46ab58913a1df8d3ec95a4d5112512e10955b28d",
+      "head_sha": "aa2aec1809256a6270bb8afedc87c2a655175054",
       "summary": "C10 structural preservation follow-up is the current active Lane C surface.",
       "resume_trigger": null
     }
