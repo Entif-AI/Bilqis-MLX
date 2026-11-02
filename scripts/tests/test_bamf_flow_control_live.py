@@ -88,7 +88,7 @@ class BamfFlowControlLiveTests(FixtureMixin):
         self.assertIn("Integration inventory: OPEN 2/3; mode NORMAL", summaries)
 
     def test_non_implementation_exception_is_excluded_from_inventory(self) -> None:
-        exception = {**exception(), "head_branch": "governance/adr126"}
+        control_plane_exception = {**exception(), "head_branch": "governance/adr126"}
         prs = [
             pr(10, head="feature", base="unified"),
             pr(99, head="governance/adr126", base="unified"),
@@ -99,7 +99,7 @@ class BamfFlowControlLiveTests(FixtureMixin):
                 "B": lane("B", []),
                 "C": lane("C", []),
             },
-            policy_value=policy(non_implementation_exceptions=[exception]),
+            policy_value=policy(non_implementation_exceptions=[control_plane_exception]),
         )
         summaries = validate_live_pr_inventory(prs, root)
         self.assertIn("Integration inventory: OPEN 1/3; mode NORMAL", summaries)
