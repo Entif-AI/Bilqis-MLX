@@ -69,6 +69,8 @@ def _binding(manifest=None) -> CacheBinding:
 
 class CachePolicyTests(unittest.TestCase):
     def setUp(self):
+        from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import install_test_owner
+        install_test_owner(self)
         self.manifest = codec_manifest()
         self.binding = _binding(self.manifest)
         self.values = np.ones((256, HEAD_WIDTH), dtype=np.float32)

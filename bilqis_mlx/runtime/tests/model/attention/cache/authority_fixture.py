@@ -1,4 +1,6 @@
 """Deterministic test-only cache authority; never production provenance."""
+from unittest.mock import patch
+
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
@@ -32,16 +34,14 @@ AUTHORITY_REGISTRY = authority_registry()
 _CACHE_MAC_KEY = bytes(range(32, 64))
 
 
-def _test_cache_authority(
-    registry: SourceAuthorityRegistry, mac_key: bytes,
-) -> CacheAuthorityRuntime:
-    """Explicit same-process fixture construction; not an authority boundary."""
-    authority = object.__new__(CacheAuthorityRuntime)
-    object.__setattr__(
-        authority, "_CacheAuthorityRuntime__registry", registry)
-    object.__setattr__(
-        authority, "_CacheAuthorityRuntime__mac_key", mac_key)
-    return authority
+# An isolated test owner issues fixtures; its lookup is installed only in tests.
+from bilqis_mlx.runtime import atlas_cache_runtime as _runtime
+
+_test_lookup, _test_issue = _runtime._new_authority_owner()
+def install_test_owner(test_case):
+    patcher = patch.object(_runtime, "_authority_state", _test_lookup)
+    patcher.start()
+    test_case.addCleanup(patcher.stop)
 
 
-CACHE_AUTHORITY = _test_cache_authority(AUTHORITY_REGISTRY, _CACHE_MAC_KEY)
+CACHE_AUTHORITY = _test_issue(AUTHORITY_REGISTRY, _CACHE_MAC_KEY)

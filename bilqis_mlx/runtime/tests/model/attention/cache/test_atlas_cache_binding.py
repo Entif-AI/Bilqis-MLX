@@ -75,6 +75,8 @@ def _binding(manifest=None) -> CacheBinding:
 
 class CacheBindingAndCostTests(unittest.TestCase):
     def setUp(self):
+        from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import install_test_owner
+        install_test_owner(self)
         self.manifest = codec_manifest()
         self.binding = _binding(self.manifest)
         self.values = np.ones((256, HEAD_WIDTH), dtype=np.float32)
@@ -194,6 +196,26 @@ class CacheBindingAndCostTests(unittest.TestCase):
         ):
             with self.assertRaises(TypeError):
                 call()
+
+    def test_exact_type_forgery_is_not_issued_by_cache_owner(self):
+        class NoOpRegistry:
+            def require_claimed_authority(self, *args):
+                pass
+
+        forged = object.__new__(CacheAuthorityRuntime)
+        object.__setattr__(forged, "_CacheAuthorityRuntime__registry", NoOpRegistry())
+        object.__setattr__(forged, "_CacheAuthorityRuntime__mac_key", bytes([255]) * 32)
+        with self.assertRaises(BilqisError):
+            _RAW_ENCODE(forged, self.values, self.manifest, binding=self.binding)
+        with self.assertRaises(BilqisError):
+            _RAW_DECODE(forged, self.artifact, self.binding)
+
+    def test_replacing_issued_object_slots_does_not_replace_owner_state(self):
+        object.__setattr__(CACHE_AUTHORITY, "_CacheAuthorityRuntime__registry", None)
+        object.__setattr__(CACHE_AUTHORITY, "_CacheAuthorityRuntime__mac_key", b"attacker")
+        artifact = _RAW_ENCODE(CACHE_AUTHORITY, self.values, self.manifest, binding=self.binding)
+        decoded = _RAW_DECODE(CACHE_AUTHORITY, artifact, self.binding)
+        self.assertEqual(decoded.shape, self.values.shape)
 
     def test_production_cache_runtime_exposes_no_authority_mint(self):
         from bilqis_mlx.runtime import atlas_cache_runtime
