@@ -78,6 +78,25 @@ The next EGM reviews the next whole merge candidate, not each remediation in
 isolation. Any older copied BAMF issue text prescribing "one repair pass and one
 targeted re-audit" is superseded by this rule and
 `docs/tasks/bamf-0.2/EGM_EXECUTION.md`.
+### Remediation artifacts are a working set, not an archive
+
+Close a remediation issue when its exact recorded defect has been reproduced,
+repaired, covered by a regression, and verified on a durable PR/head. Do not keep
+that child issue open merely because its parent still awaits EGM, sibling work,
+dependency integration, or final human merge. The linked PR is the pending
+integration receipt.
+
+Keep a remediation PR in draft only while its own scoped implementation or known
+Blocker/Major repair is incomplete. Parent-level EGM debt is not a reason for draft
+status. Mark the PR ready when its own acceptance is satisfied; merge or close it
+promptly once its change is consumed by the intended parent/candidate branch.
+Closed issues and merged PRs remain provenance and should not remain in the active
+queue just to preserve history.
+
+If later EGM or integration proves the **same original defect** still exists, reopen
+the remediation issue. If it exposes a different mechanism, newly unlocked gap, or
+new acceptance failure, create a new issue. The owning parent issue/PR carries the
+aggregate EGM pass/fail state and whole-candidate merge readiness.
 
 The repository checker can validate declared state, WIP counts, required resume
 triggers and explicit exceptions. It cannot observe an unrecorded remote mutation or
