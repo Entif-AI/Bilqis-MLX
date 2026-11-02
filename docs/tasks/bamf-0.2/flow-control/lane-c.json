@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "67c964a1548cb0075a28a90aa2565d8bdab0fd71",
-  "updated_at": "2026-11-02T21:16:12.093267+00:00",
+  "updated_at": "2026-11-02T21:20:48.785774+00:00",
   "exception": null,
   "items": [
     {
@@ -32,17 +32,9 @@
     {
       "issue": 641,
       "pr": 739,
-      "state": "WAITING",
-      "head_sha": "6b782ad446dd2307d3f297ebb97448a8c293d40a",
-      "summary": "PR739 implementation pin6b782ad4; later46ab5891 is docs/flow-only. Pinned EGM found proof gaps; remediation740 repairs directly on parent candidate.",
-      "resume_trigger": "Scoped #740 proof/identity repair is verified and consumed; then final whole-candidate hosted checks and pinned EGM complete."
-    },
-    {
-      "issue": 740,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "46ab58913a1df8d3ec95a4d5112512e10955b28d",
-      "summary": "Repair #641 import/pickle and committed-receipt evidence directly in parent PR739.",
+      "state": "TURNED_IN",
+      "head_sha": "16ba157dcc448640d63386ff011720dca8b9302b",
+      "summary": "Tested implementation checkpoint16ba157d in PR739; native PR metadata binds later candidate/CI/EGM heads. #740 repaired/closed: canonical factory pickle identity, ten-file source hashes and committed JSON comparison; CPU14/14, verifier5/5. Final aggregate EGM pending.",
       "resume_trigger": null
     }
   ]
