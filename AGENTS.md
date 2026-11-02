@@ -63,6 +63,7 @@ triggers and explicit exceptions. It cannot observe an unrecorded remote mutatio
 an agent merely reading a branch. Updating lane state before mutation therefore
 remains an operator duty. See `ADR-124` and
 `docs/tasks/bamf-0.2/README.md`.
+
 ## Context-window protection for repository census commands — 2026-11-02
 
 Treat full-repository inventory commands as high-cost diagnostics, not routine
