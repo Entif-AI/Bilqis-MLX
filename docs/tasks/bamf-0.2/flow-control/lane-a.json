@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "2800946729e484875f7d1f57f0e6d85078936394",
-  "updated_at": "2026-11-02T17:34:23-05:00",
+  "updated_at": "2026-11-02T17:35:40-05:00",
   "exception": null,
   "items": [
     {
@@ -21,8 +21,8 @@
       "issue": 745,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "f94615dd48886f269586c6fd4c05b03601b493de",
-      "summary": "A12 source-owner export-clearance remediation for C12.2/#718 is active without a placeholder PR.",
+      "head_sha": "21bd729f1de8e91d0143c6d6477745c842153439",
+      "summary": "A12 source-owner export-clearance remediation for C12.2/#718 is branch-green and durable; PR admission is waiting on repository live-inventory reconciliation, not a feature defect.",
       "resume_trigger": null
     }
   ]
