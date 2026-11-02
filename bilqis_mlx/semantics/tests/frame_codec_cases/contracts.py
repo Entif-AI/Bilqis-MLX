@@ -1,9 +1,49 @@
 from __future__ import annotations
 
+import pickle
+
+import bilqis_mlx.semantics.frame_codec as frame_codec
 from bilqis_mlx.semantics.tests.frame_codec_cases.helpers import *  # noqa: F403
 
 
 class ContractMixin:
+    def test_public_facade_preserves_module_identity_and_pickle_path(self):
+        public_objects = (
+            frame_codec.FallbackReason,
+            frame_codec.PackDisposition,
+            frame_codec.CompactFrameBytes,
+            frame_codec.SchemaTagEntry,
+            frame_codec.SchemaTagMap,
+            frame_codec.SlotTuple,
+            frame_codec.ConstituentMetadata,
+            frame_codec.ExtendedSlot,
+            frame_codec.FrameSidecar,
+            frame_codec.PackDecision,
+            frame_codec.PackedFrame,
+            frame_codec.pack4,
+            frame_codec.unpack4,
+            frame_codec.serialize_u64,
+            frame_codec.deserialize_u64,
+            frame_codec.classify_frame,
+            frame_codec.pack_frame,
+            frame_codec.role_index,
+            frame_codec.unpack_frame,
+        )
+        self.assertEqual(
+            frame_codec.__doc__,
+            "Reversible compact and extended encodings for released semantic frames.",
+        )
+        self.assertTrue(all(
+            item.__module__ == "bilqis_mlx.semantics.frame_codec"
+            for item in public_objects
+        ))
+
+        schema_map = SchemaTagMap.from_schemas(RELEASE, (_schema("A"),))
+        payload = pickle.dumps(schema_map)
+        self.assertIn(b"bilqis_mlx.semantics.frame_codec", payload)
+        self.assertNotIn(b"frame_codec_parts", payload)
+        self.assertEqual(pickle.loads(payload), schema_map)
+
     def test_singular_schema_role_cannot_fall_back_to_extended_when_duplicated(self):
         schema = _schema("A")
         schema_map = SchemaTagMap.from_schemas(RELEASE, (schema,))
