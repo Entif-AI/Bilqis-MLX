@@ -65,8 +65,7 @@ def _read_pointer(path: Path) -> dict | None:
             or pointer.get("schema") != BAMF_POINTER_SCHEMA
             or not isinstance(pointer.get("run_id"), str) or not pointer["run_id"]
             or type(pointer.get("generation")) is not int or bundle.is_absolute()
-            or len(bundle.parts) != 2 or bundle.parts[0] != "bamf-bundles"
-            or bundle.parts[1] != pointer.get("manifest_sha256")
+            or tuple(bundle.parts) != ("bamf-bundles", pointer.get("manifest_sha256"))
             or any(part in ("", ".", "..") for part in bundle.parts)):
         invalid()
     return pointer
