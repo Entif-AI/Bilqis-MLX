@@ -1,6 +1,6 @@
 {
-  "legacy_raw_file_count": 205,
-  "legacy_raw_raise_count": 1934,
+  "legacy_raw_file_count": 211,
+  "legacy_raw_raise_count": 1927,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BOOLEAN_ASSOCIATION_B_GRADE_OWNERSHIP_DRIFT",
@@ -9236,6 +9236,160 @@
       "path": "bilqis_mlx/runtime/_custody/boundary_commit.py"
     },
     {
+      "code_hint": "HUMAN_TRAINER_BUNDLE_ALREADY_PUBLISHED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_BUNDLE_ALREADY_PUBLISHED'",
+      "path": "bilqis_mlx/runtime/_custody/checkpoint_bundle.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_COMPLETE_CHECKPOINT_READBACK_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_COMPLETE_CHECKPOINT_READBACK_DRIFT'",
+      "path": "bilqis_mlx/runtime/_custody/checkpoint_bundle.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_UNCOMMITTED_BUNDLE_SOURCE_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_UNCOMMITTED_BUNDLE_SOURCE_DRIFT'",
+      "path": "bilqis_mlx/runtime/_custody/checkpoint_bundle.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_UNKNOWN_STAGED_BUNDLE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_UNKNOWN_STAGED_BUNDLE'",
+      "path": "bilqis_mlx/runtime/_custody/checkpoint_bundle.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_UNKNOWN_STAGED_BUNDLE_CONTENT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_UNKNOWN_STAGED_BUNDLE_CONTENT'",
+      "path": "bilqis_mlx/runtime/_custody/checkpoint_bundle.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_CAPABILITY_BEST_RECEIPT_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_CAPABILITY_BEST_RECEIPT_DRIFT'",
+      "path": "bilqis_mlx/runtime/_custody/checkpoint_outbox.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_OUTBOX_EVENT_ID_MISSING",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_OUTBOX_EVENT_ID_MISSING'",
+      "path": "bilqis_mlx/runtime/_custody/checkpoint_outbox.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_OUTBOX_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_OUTBOX_INVALID'",
+      "path": "bilqis_mlx/runtime/_custody/checkpoint_outbox.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_OUTBOX_LEDGER_CONTENT_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_OUTBOX_LEDGER_CONTENT_DRIFT'",
+      "path": "bilqis_mlx/runtime/_custody/checkpoint_outbox.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_OUTBOX_MISSING_LINEAGE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_OUTBOX_MISSING_LINEAGE'",
+      "path": "bilqis_mlx/runtime/_custody/checkpoint_outbox.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_OUTBOX_REQUIRES_EVENT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_OUTBOX_REQUIRES_EVENT'",
+      "path": "bilqis_mlx/runtime/_custody/checkpoint_outbox.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_OUTBOX_UNSAFE_LEDGER",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_OUTBOX_UNSAFE_LEDGER'",
+      "path": "bilqis_mlx/runtime/_custody/checkpoint_outbox.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_OUTBOX_UNTRUSTED_EVENT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_OUTBOX_UNTRUSTED_EVENT'",
+      "path": "bilqis_mlx/runtime/_custody/checkpoint_outbox.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_OUTBOX_BOUNDARY_ARGUMENT_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_OUTBOX_BOUNDARY_ARGUMENT_DRIFT'",
+      "path": "bilqis_mlx/runtime/_custody/checkpoint_publication.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_RECOVERY_INCONSISTENT_LINEAGE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_RECOVERY_INCONSISTENT_LINEAGE'",
+      "path": "bilqis_mlx/runtime/_custody/checkpoint_recovery.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_RECOVERY_UNSAFE_GENERATION",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_RECOVERY_UNSAFE_GENERATION'",
+      "path": "bilqis_mlx/runtime/_custody/checkpoint_recovery.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_CUSTODY_GRADE_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_CUSTODY_GRADE_DRIFT'",
+      "path": "bilqis_mlx/runtime/_custody/checkpoint_retention.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_PREVIOUS_BACKUP_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_PREVIOUS_BACKUP_DRIFT'",
+      "path": "bilqis_mlx/runtime/_custody/checkpoint_retention.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_CAPABILITY_CUSTODY_PATH_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_CAPABILITY_CUSTODY_PATH_DRIFT'",
+      "path": "bilqis_mlx/runtime/_custody/checkpoint_retention.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_CAPABILITY_CUSTODY_REFERENCE_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_CAPABILITY_CUSTODY_REFERENCE_DRIFT'",
+      "path": "bilqis_mlx/runtime/_custody/checkpoint_retention.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_CAPABILITY_CUSTODY_SHA_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_CAPABILITY_CUSTODY_SHA_DRIFT'",
+      "path": "bilqis_mlx/runtime/_custody/checkpoint_retention.py"
+    },
+    {
+      "code_hint": "WHOLE_STUDENT_PEAK_SCHEMA_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'WHOLE_STUDENT_PEAK_SCHEMA_DRIFT'",
+      "path": "bilqis_mlx/runtime/_custody/checkpoint_retention.py"
+    },
+    {
       "code_hint": "DISK_BUDGET_EXHAUSTED",
       "count": 1,
       "exception": "RuntimeError",
@@ -10349,62 +10503,6 @@
       "path": "bilqis_mlx/runtime/autonomy_live.py"
     },
     {
-      "code_hint": "GRADE_SOUP_CUSTODY_GRADE_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_CUSTODY_GRADE_DRIFT'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
-      "code_hint": "GRADE_SOUP_PREVIOUS_BACKUP_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_PREVIOUS_BACKUP_DRIFT'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_BUNDLE_ALREADY_PUBLISHED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_BUNDLE_ALREADY_PUBLISHED'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_CAPABILITY_BEST_RECEIPT_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_CAPABILITY_BEST_RECEIPT_DRIFT'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_CAPABILITY_CUSTODY_PATH_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_CAPABILITY_CUSTODY_PATH_DRIFT'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_CAPABILITY_CUSTODY_REFERENCE_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_CAPABILITY_CUSTODY_REFERENCE_DRIFT'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_CAPABILITY_CUSTODY_SHA_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_CAPABILITY_CUSTODY_SHA_DRIFT'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_COMPLETE_CHECKPOINT_READBACK_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_COMPLETE_CHECKPOINT_READBACK_DRIFT'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
       "code_hint": "HUMAN_TRAINER_OUTBOX_ADVANCE_SOURCE_DRIFT",
       "count": 1,
       "exception": "ValueError",
@@ -10419,136 +10517,10 @@
       "path": "bilqis_mlx/runtime/checkpoints.py"
     },
     {
-      "code_hint": "HUMAN_TRAINER_OUTBOX_BOUNDARY_ARGUMENT_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_OUTBOX_BOUNDARY_ARGUMENT_DRIFT'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_OUTBOX_EVENT_ID_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_OUTBOX_EVENT_ID_MISSING'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_OUTBOX_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_OUTBOX_INVALID'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_OUTBOX_LEDGER_CONTENT_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_OUTBOX_LEDGER_CONTENT_DRIFT'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
       "code_hint": "HUMAN_TRAINER_OUTBOX_LINEAGE_DRIFT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'HUMAN_TRAINER_OUTBOX_LINEAGE_DRIFT'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_OUTBOX_MISSING_LINEAGE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_OUTBOX_MISSING_LINEAGE'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_OUTBOX_REQUIRES_EVENT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_OUTBOX_REQUIRES_EVENT'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_OUTBOX_UNSAFE_LEDGER",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_OUTBOX_UNSAFE_LEDGER'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_OUTBOX_UNTRUSTED_EVENT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_OUTBOX_UNTRUSTED_EVENT'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_QUARANTINE_IDENTITY_COLLISION",
-      "count": 2,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_QUARANTINE_IDENTITY_COLLISION'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_RECOVERY_INCONSISTENT_LINEAGE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_RECOVERY_INCONSISTENT_LINEAGE'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_RECOVERY_UNSAFE_GENERATION",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_RECOVERY_UNSAFE_GENERATION'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_UNCOMMITTED_BUNDLE_SOURCE_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_UNCOMMITTED_BUNDLE_SOURCE_DRIFT'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_UNCOMMITTED_BUNDLE_UNSAFE_PATH",
-      "count": 2,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_UNCOMMITTED_BUNDLE_UNSAFE_PATH'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_UNKNOWN_STAGED_BUNDLE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_UNKNOWN_STAGED_BUNDLE'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_UNKNOWN_STAGED_BUNDLE_CONTENT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_UNKNOWN_STAGED_BUNDLE_CONTENT'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_UNSAFE_BUNDLE_QUARANTINE",
-      "count": 2,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_UNSAFE_BUNDLE_QUARANTINE'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_UNSAFE_STAGING_ROOT",
-      "count": 2,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_UNSAFE_STAGING_ROOT'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
-      "code_hint": "WHOLE_STUDENT_PEAK_SCHEMA_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'WHOLE_STUDENT_PEAK_SCHEMA_DRIFT'",
       "path": "bilqis_mlx/runtime/checkpoints.py"
     },
     {
@@ -10816,6 +10788,13 @@
       "exception": "ValueError",
       "expression": "'malformed decoder payload'",
       "path": "bilqis_mlx/runtime/tests/capability/test_cognitive_solver.py"
+    },
+    {
+      "code_hint": "test synchronization timed out",
+      "count": 1,
+      "exception": "RuntimeError",
+      "expression": "'test synchronization timed out'",
+      "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/test_publication_durability.py"
     },
     {
       "code_hint": "pointer interrupted",
