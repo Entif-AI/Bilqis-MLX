@@ -6,6 +6,9 @@ from bilqis_mlx.semantics.frame_codec import (
     PackDisposition, SchemaTagMap, pack_frame, role_index,
 )
 from bilqis_mlx.semantics.frame_schema import FrameSchema, RoleSpec
+from bilqis_mlx.semantics.tests.frame_codec_cases.helpers import (
+    _snapshot_with_authoritative_types,
+)
 from bilqis_mlx.semantics.tests.frame_codec.fixtures import (
     RELEASE, _schema, _concept, _frame, _snapshot, CodecCase,
 )
@@ -15,7 +18,7 @@ class CodecReadoutTests(CodecCase):
     def test_role_index_is_codec_neutral_for_compact_and_extended(self):
         schema = _schema("A")
         schema_map = SchemaTagMap.from_schemas(RELEASE, (schema,))
-        active_snapshot = _snapshot()
+        active_snapshot = _snapshot_with_authoritative_types()
         compact = _frame(
             schema, tuple(_concept(index) for index in range(4)),
             source_instance_id="compact-active",
@@ -77,7 +80,7 @@ class CodecReadoutTests(CodecCase):
                 "slot3",
                 0,
                 schema_map=schema_map,
-                snapshot=_snapshot(inactive=(4,)),
+                snapshot=_snapshot_with_authoritative_types(inactive=(4,)),
             )
         self.assertEqual(caught.exception.context["reason"],
                          "FRAME_READOUT_INDEX_INACTIVE")

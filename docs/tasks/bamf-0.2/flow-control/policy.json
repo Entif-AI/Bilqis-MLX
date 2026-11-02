@@ -1,0 +1,50 @@
+{
+  "schema": "bilqis.bamf.flow-control-policy/v1",
+  "version": "1.0.0",
+  "effective_date": "2026-11-02",
+  "normal_active_limit_per_lane": 2,
+  "states": {
+    "ACTIVE": {
+      "counts_as_wip": true,
+      "branch_mutation_allowed": true,
+      "requires_resume_trigger": false
+    },
+    "READY": {
+      "counts_as_wip": false,
+      "branch_mutation_allowed": false,
+      "requires_resume_trigger": false
+    },
+    "WAITING": {
+      "counts_as_wip": false,
+      "branch_mutation_allowed": false,
+      "requires_resume_trigger": true
+    },
+    "BLOCKED": {
+      "counts_as_wip": false,
+      "branch_mutation_allowed": false,
+      "requires_resume_trigger": true
+    },
+    "TURNED_IN": {
+      "counts_as_wip": false,
+      "branch_mutation_allowed": false,
+      "requires_resume_trigger": false
+    }
+  },
+  "rules": {
+    "nearest_to_merge_first": true,
+    "waiting_refresh_forbidden": true,
+    "state_transition_before_mutation": true,
+    "waiting_refresh_forbidden_operations": [
+      "merge-forward solely because unified advanced",
+      "rebase solely because unified advanced",
+      "rerun full exact-head validation solely because unified advanced",
+      "request fresh review solely because unified advanced",
+      "otherwise mutate a parked PR before its recorded resume trigger is satisfied"
+    ],
+    "over_limit_exception_required_fields": [
+      "reason",
+      "authority",
+      "expires_when"
+    ]
+  }
+}

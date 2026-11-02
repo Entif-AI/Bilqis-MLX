@@ -66,3 +66,22 @@ for its wheel hash, selectors and explicit repository-only exclusions.
 All five mandatory structural predicates are now locally satisfied. Completing
 this Work Stack interruption permits the original interface-receipt work to resume;
 it does not establish full C01 acceptance or permission to self-merge.
+
+## Current-unified reconciliation — 2 November 2026
+
+The resumed candidate consumes reviewed unified
+`67c964a1` through Lane C `46bfa98d`. Unified has independently accepted
+`frame_codec_parts`, its 56-line public facade and codec-neutral source-type
+authority checks. Keep those owners and remove this branch's superseded
+`_frame_codec` extraction. All 32 top-level class/function ASTs and named constant
+expressions agree except the accepted `role_index` type-authority guards; those
+guards remain intact.
+
+Retain both test sets. The older focused readout tests now use the accepted
+authoritative-concept fixture for active/inactive readout; held-semantic rejection
+and every original assertion remain. The first combined run reports 183 passes,
+one fixture-expectation failure and two errors among 186 cases. One fixture error
+and the expectation failure are the missing authoritative concepts. The other
+error is the public schema-map annotation NameError tracked by #731. No production
+validation or source authority is weakened. The historical 164/93/6 receipts above
+remain tied to their original heads until current candidate verification completes.

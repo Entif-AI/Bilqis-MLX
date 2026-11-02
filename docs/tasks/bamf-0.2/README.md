@@ -31,9 +31,33 @@ proceeds concurrently. MLX evaluation and neural updates use one serialized M3
 Ultra lane. The first durable student gate is [C16](issues/C16.md); full delivery
 is [C15](issues/C15.md).
 
+## Flow control and parked PR discipline
+
+The lane is not a conveyor belt that must keep every open PR warm. The normal limit
+is **two `ACTIVE` implementation leaves per lane**, and the default preference is to
+finish the nearest-to-merge active leaf before taking another. `READY`, `WAITING`,
+`BLOCKED` and `TURNED_IN` are not implementation WIP.
+
+Machine-readable policy and lane state live in [`flow-control/`](flow-control/).
+Before branch mutation:
+
+1. run `python3 -B scripts/check_bamf_flow_control.py`;
+2. confirm the target leaf is represented in the correct lane file;
+3. if it is parked, verify its recorded resume trigger has actually occurred;
+4. change it to `ACTIVE` before refreshing/syncing/reviewing its branch;
+5. keep the lane at or below the normal active limit unless the lane file contains
+   an explicit exception with reason, authority and expiry.
+
+A `WAITING` or `BLOCKED` PR is frozen. Do not merge-forward it, rebase it, rerun
+full exact-head validation, request fresh review or otherwise churn it merely
+because unified moved. When its real trigger fires, activate it and perform the one
+refresh/revalidation required by its contract. This keeps external review and
+dependency queues from masquerading as implementation throughput.
+
 ## Artifacts
 
 - `workstack.json`: exact issue IDs, dependencies, paths and acceptance prescriptions.
+- `flow-control/`: current per-lane ACTIVE/READY/WAITING/BLOCKED/TURNED_IN state plus resume triggers and WIP policy.
 - `waves.json`: dependency-ready sets, not a requirement to serialize independent work.
 - `issues/`: complete standalone implementation specifications.
 - `ISSUE_BOOK.md`: searchable concatenation of those specifications.
