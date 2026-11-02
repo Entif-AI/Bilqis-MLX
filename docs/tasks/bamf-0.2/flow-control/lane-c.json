@@ -1,33 +1,57 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "92bdff370e9be3d0c64eb4ffe300d2448f53d6a1",
-  "updated_at": "2026-11-02T05:10:00Z",
+  "observed_unified": "67c964a1548cb0075a28a90aa2565d8bdab0fd71",
+  "updated_at": "2026-11-02T21:20:00Z",
   "exception": null,
   "items": [
-    {
-      "issue": 524,
-      "pr": 699,
-      "state": "ACTIVE",
-      "head_sha": "f3e99245c49f7df897d71cdcc7dfc69710014c65",
-      "summary": "C11.3 structural-interruption checkpoint is the current primary Lane C implementation surface.",
-      "resume_trigger": null
-    },
     {
       "issue": 347,
       "pr": 694,
       "state": "WAITING",
-      "head_sha": "cb5da461d6c35672001bd061040260ac7f9a5f21",
-      "summary": "C01 structural interface-receipt interruption remains parked.",
-      "resume_trigger": "The current Lane C primary work drains or an explicit C01 resume decision selects this surface as the next active leaf."
+      "head_sha": "cb536f744008c7e7575c3d3973c135aa38292fd6",
+      "summary": "C01 structural proof candidate awaits reproducibility remediation.",
+      "resume_trigger": "Remediation #733 is resolved and C01 is selected as Lane C's current integration candidate."
     },
     {
       "issue": 526,
       "pr": 680,
       "state": "WAITING",
       "head_sha": "41e37cf60a934181548e9b343ddab1ce2b3849a7",
-      "summary": "C12.2 local cognitive-package exchange slice is proven; broader adoption/custody remains.",
-      "resume_trigger": "The current Lane C primary work drains and C12 adoption/custody becomes the selected dependency-ready next surface; sync reviewed unified once at activation."
+      "summary": "C12.2 parent exchange candidate awaits authority remediation.",
+      "resume_trigger": "Remediations #717 and #718 are consumed or otherwise resolved and C12.2 is selected for integration."
+    },
+    {
+      "issue": 490,
+      "pr": 700,
+      "state": "WAITING",
+      "head_sha": "d1b4860389e35950e643bffbdec0e2febb1b7506",
+      "summary": "C02.1 parent candidate awaits canonical model-input authority repair.",
+      "resume_trigger": "Remediation #713 is consumed into the candidate and C02.1 is selected for final merge-readiness review."
+    },
+    {
+      "issue": 713,
+      "pr": 728,
+      "state": "WAITING",
+      "head_sha": "e428dbd4c05bc6503bc40ac6ddcb4e3530b9d131",
+      "summary": "Stacked C02.1 canonical model-input authority remediation.",
+      "resume_trigger": "The bounded repair is consumed into PR #700 or explicitly selected for focused integration under ADR-125."
+    },
+    {
+      "issue": 717,
+      "pr": 726,
+      "state": "WAITING",
+      "head_sha": "e1b2f41462f5b3416b22e20509fc904ae026a3e4",
+      "summary": "Stacked C12.2 receiver/parent-generation authority remediation.",
+      "resume_trigger": "The bounded repair is consumed into PR #680 or explicitly selected for focused integration under ADR-125."
+    },
+    {
+      "issue": 641,
+      "pr": 739,
+      "state": "ACTIVE",
+      "head_sha": "46ab58913a1df8d3ec95a4d5112512e10955b28d",
+      "summary": "C10 structural preservation follow-up is the current active Lane C surface.",
+      "resume_trigger": null
     }
   ]
 }

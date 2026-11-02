@@ -114,6 +114,41 @@ an agent merely reading a branch. Updating lane state before mutation therefore
 remains an operator duty. See `ADR-124` and
 `docs/tasks/bamf-0.2/README.md`.
 
+## BAMF-0.2 integration inventory and PR admission — 2026-11-02
+
+ADR-126 separates active implementation WIP from **open implementation-PR
+inventory**. The normal BAMF implementation-PR ceiling is **three total**, with at
+most one current integration candidate per Lane A, B and C. The unified integration
+PR into `main` is a separate program container.
+
+Completing a leaf does not entitle it to an open PR. Before opening a BAMF
+implementation PR, run the live gate:
+
+`python3 -B scripts/check_bamf_flow_control.py --live`
+
+PR admission requires an available slot, a durable issue/head, consumable hard
+prerequisites, required current-unified synchronization, green scoped verification,
+no known candidate-owned Blocker/Major, and no existing PR that already owns the
+same integration delta.
+
+If live implementation inventory exceeds the ceiling, BAMF is in **DRAIN** mode.
+Do not open another implementation PR unless it replaces a PR closed in the same
+operation or the flow-control policy carries an explicit owner-authorized exception.
+Work during DRAIN should merge, consume, repair in place, close, supersede or
+directly unlock existing candidates. Branch/commit/issue custody is sufficient for
+blocked work.
+
+A non-grandfathered open `WAITING` or `BLOCKED` PR requires an
+`open_pr_exception` with reason, authority and expiry. The PRs open when ADR-126
+was adopted are grandfathered only for the initial drain epoch; they receive no
+permission to create successor inventory. The flow-control checker reconciles the
+ledger against live GitHub state. Missing open PRs and stale closed/merged entries
+are failures.
+
+The governance branch recorded in the policy is a temporary control-plane
+exception for implementing ADR-126 itself. It is not BAMF feature inventory and its
+exception expires when that governance PR merges or closes.
+
 ## Context-window protection for repository census commands — 2026-11-02
 
 Treat full-repository inventory commands as high-cost diagnostics, not routine

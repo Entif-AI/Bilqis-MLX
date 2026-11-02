@@ -1,6 +1,6 @@
 {
-  "schema": "bilqis.bamf.flow-control-policy/v1",
-  "version": "1.0.0",
+  "schema": "bilqis.bamf.flow-control-policy/v2",
+  "version": "2.0.0",
   "effective_date": "2026-11-02",
   "normal_active_limit_per_lane": 2,
   "states": {
@@ -30,6 +30,41 @@
       "requires_resume_trigger": false
     }
   },
+  "open_pr_inventory": {
+    "normal_limit_total": 3,
+    "unified_branch": "codex/bamf-unified-base-20261028",
+    "drain_epoch_started_at": "2026-11-02T21:15:00Z",
+    "grandfathered_prs": [
+      640,
+      674,
+      677,
+      680,
+      684,
+      686,
+      690,
+      692,
+      694,
+      695,
+      698,
+      700,
+      703,
+      725,
+      726,
+      727,
+      728,
+      734,
+      739
+    ],
+    "non_implementation_exceptions": [
+      {
+        "head_branch": "codex/adr126-pr-inventory-20261102",
+        "reason": "Cross-cutting governance repair that records and mechanically enforces ADR-126; it is not a BAMF feature integration candidate.",
+        "authority": "Direct project-owner instruction on 2026-11-02",
+        "expires_when": "This governance repair PR merges or closes."
+      }
+    ],
+    "admission_exceptions": []
+  },
   "rules": {
     "nearest_to_merge_first": true,
     "waiting_refresh_forbidden": true,
@@ -42,6 +77,16 @@
       "otherwise mutate a parked PR before its recorded resume trigger is satisfied"
     ],
     "over_limit_exception_required_fields": [
+      "reason",
+      "authority",
+      "expires_when"
+    ],
+    "open_pr_exception_required_fields": [
+      "reason",
+      "authority",
+      "expires_when"
+    ],
+    "inventory_exception_required_fields": [
       "reason",
       "authority",
       "expires_when"

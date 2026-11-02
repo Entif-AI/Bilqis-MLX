@@ -2484,3 +2484,146 @@ completion was neither sensible nor scalable.
 
 **Status:** Accepted as the remediation issue/PR lifecycle for BAMF-0.2 and
 successor Bilqis-MLX work.
+
+## ADR-126 | 2026-11-02 | Bound integration inventory and gate PR admission
+
+**Scope:** BAMF-0.2 implementation across Lanes A, B and C. This decision governs
+open implementation-PR inventory, PR admission, blocked-candidate retirement and
+queue-drain behavior. ADR-124 continues to govern active implementation WIP and
+parked-branch mutation. ADR-125 continues to govern remediation lifecycle.
+
+**Problem:** ADR-124 limits `ACTIVE` implementation work but deliberately excludes
+`READY`, `WAITING`, `BLOCKED` and `TURNED_IN` items from WIP. This prevents
+parked work from consuming continuous engineering capacity, but it does not bound
+integration inventory. A lane can therefore satisfy its ACTIVE WIP limit while
+accumulating arbitrarily many open pull requests.
+
+Open PRs impose integration cost even when nobody is modifying them. They enlarge
+the review frontier, age against the reviewed integration trunk, accumulate
+conflicts, obscure merge priority, increase discovery and reconciliation work, and
+encourage remediation around candidates that are not presently capable of
+integration.
+
+An implementable issue is not automatically entitled to an open pull request.
+Issues define durable work and ownership. Commits preserve implementation
+provenance. Pull requests are temporary integration vehicles.
+
+**Decision:** BAMF tracks **active implementation WIP** and **open
+implementation-PR inventory** as separate quantities. ADR-124's lane-local ACTIVE
+ceiling remains unchanged.
+
+The normal open implementation-PR ceiling is **three total across BAMF**, with at
+most one current integration candidate for each of Lanes A, B and C. The unified
+integration PR into `main` is a separate program-level container and does not
+consume one of these three implementation slots. The ceiling is a maximum, not a
+target. A lane does not open a PR merely because a leaf implementation is complete.
+
+### PR admission
+
+A new implementation PR may be opened only when all of the following are true:
+
+- an implementation-PR slot is available;
+- the candidate has a durable owning issue and implementation head;
+- every hard prerequisite required for its current integration boundary is
+  consumable;
+- the candidate has synchronized with the reviewed integration trunk when its
+  contract requires synchronization;
+- its scoped acceptance and affected verification are green;
+- no known Blocker or Major owned by the candidate remains unresolved;
+- no existing open PR already owns the same integration delta;
+- opening the PR creates a credible path to integration rather than durable
+  parking.
+
+Implementation may continue on an authorized branch without an open PR. Completion
+of a leaf does not override PR admission.
+
+### Blocked and waiting work
+
+A branch, commit, issue and verification receipt are sufficient to preserve blocked
+or waiting implementation.
+
+An implementation PR that becomes materially blocked by another owner or by an
+external prerequisite SHOULD be closed after its exact head and continuation
+trigger are preserved. Reopen the PR or create a new integration vehicle when the
+trigger is satisfied.
+
+A long-lived open `WAITING` or `BLOCKED` PR requires an explicit exception that
+identifies why an open PR is required instead of durable branch/issue custody, the
+blocking condition, the exact resume trigger, the authority for retaining the PR,
+and the expiry condition. Review convenience and historical provenance are not
+sufficient exceptions.
+
+### Remediation and EGM
+
+ADR-125 remains controlling. A review finding may receive a durable remediation
+issue without receiving another PR. Repair the authorized parent candidate directly
+when writer coordination permits. A stacked remediation PR is justified only when
+independent writer custody, branch ownership, necessary review isolation or another
+concrete integration constraint requires it. Once consumed, merge or close it
+promptly.
+
+Fresh pinned EGM remains a merge-readiness gate. Do not create or retain additional
+PR inventory merely to obtain separate EGM receipts for individual repairs.
+Complete the known engineering and remediation queue first, stabilize the
+candidate, then obtain fresh exact-head EGM for the whole merge candidate.
+
+### Drain mode
+
+If open BAMF implementation-PR inventory exceeds the normal ceiling, BAMF enters
+**DRAIN** mode automatically.
+
+While DRAIN is active:
+
+- no new implementation PR may be opened unless it replaces another PR that is
+  closed in the same operation or carries an explicit owner-authorized exception;
+- new implementation work may proceed only when it does not increase open PR
+  inventory;
+- priority goes to merging, consuming, repairing in place, closing, superseding or
+  directly unlocking existing integration candidates;
+- decomposition and issue creation may continue when they clarify durable
+  ownership.
+
+DRAIN ends when live open implementation-PR inventory is at or below the normal
+ceiling. The PRs open at adoption are transitional grandfathered inventory only;
+grandfathering permits them to drain, not to reproduce.
+
+### Mechanical enforcement
+
+Repository-declared flow state is not sufficient evidence of compliance. The BAMF
+flow-control checker MUST reconcile its machine-readable ledger against live GitHub
+state.
+
+The live gate fails when an open BAMF implementation PR is absent from the ledger,
+the ledger retains a closed or merged PR as open inventory, a newly admitted PR
+violates DRAIN, a non-grandfathered `WAITING` or `BLOCKED` open PR lacks its
+required retention exception, or multiple PRs claim an unapproved integration
+surface.
+
+CI MUST run the live reconciliation. During the initial drain epoch, the current
+open implementation PR set is explicitly grandfathered so existing candidates can
+merge or close; the global overage itself does not block the very merges needed to
+reduce it. No new implementation PR is grandfathered automatically.
+
+### Operational effect
+
+Issue decomposition may remain fine-grained without producing matching PR
+cardinality.
+
+**Issues optimize ownership and specification. Commits optimize provenance and
+reversibility. PRs optimize integration.**
+
+**Relationship to ADR-124:** ADR-124 continues to limit simultaneous branch
+mutation. Its definition of ACTIVE WIP is unchanged. This ADR adds a separate bound
+on integration inventory.
+
+**Relationship to ADR-125:** ADR-125 continues to govern remediation closeout and
+parent-owned aggregate EGM. This ADR adds admission and inventory controls that
+prevent remediation artifacts from recreating the same queue growth elsewhere.
+
+**Human ratification:** The project owner explicitly directed this decision on
+2026-11-02 after reviewing ADR-124/125 and requiring both a new ADR and stronger
+mechanical enforcement.
+
+**Status:** Accepted as the controlling BAMF-0.2 integration-inventory and PR
+admission policy.
+

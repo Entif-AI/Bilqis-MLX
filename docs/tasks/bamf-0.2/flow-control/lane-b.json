@@ -1,16 +1,16 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "b4f2f0aca31623e7246ef819338a1450d71183cd",
-  "updated_at": "2026-11-02T08:29:21Z",
+  "observed_unified": "67c964a1548cb0075a28a90aa2565d8bdab0fd71",
+  "updated_at": "2026-11-02T21:20:00Z",
   "exception": null,
   "items": [
     {
       "issue": 475,
       "pr": 695,
       "state": "ACTIVE",
-      "head_sha": "577d0d337f7e401859d0a2cfd57bc3e051a82596",
-      "summary": "B12.2 candidate-custody follow-up is the current primary Lane B implementation surface.",
+      "head_sha": "b5c3df440d397c0c2cd2165d5f2c015c1d1e7a0c",
+      "summary": "B12.2 remains the current primary Lane B integration surface; remediation #710 owns the unresolved execution-provenance defect.",
       "resume_trigger": null
     },
     {
@@ -18,72 +18,88 @@
       "pr": 692,
       "state": "WAITING",
       "head_sha": "a1025e442277ee71b2120f87b9254179cee88dfb",
-      "summary": "B09.2 repaired participation-mask candidate.",
-      "resume_trigger": "Fresh exact-head adversarial re-review completes, pinned Google EGM is available/completed, and accepted B05/B08/B11 production provenance is consumable."
+      "summary": "B09.2 parent candidate awaits production-authority remediation.",
+      "resume_trigger": "Remediation #711 is consumed into the candidate, required B05/B08/B11 production provenance is consumable, and the candidate is selected for merge-readiness review."
     },
     {
       "issue": 456,
       "pr": 690,
       "state": "WAITING",
       "head_sha": "547471d2b95fadbbd7fa3631db0d0a56a20436c9",
-      "summary": "B07.1 source-qualified motif identity is NON-EGM clean.",
-      "resume_trigger": "Pinned Google EGM becomes available and is run on the exact candidate head, or an explicitly accepted successor gate replaces it."
+      "summary": "B07.1 source-qualified motif identity remains parked.",
+      "resume_trigger": "The lane selects B07.1 as its current integration candidate and all known prerequisites are consumable for one final synchronization and merge-readiness pass."
     },
     {
       "issue": 455,
       "pr": 686,
       "state": "WAITING",
       "head_sha": "39732bdb053e33cd917ed03de43ac02ed638474b",
-      "summary": "B06.4 registry reconciliation depends on B06.3 acceptance.",
-      "resume_trigger": "B06.3/#454 is accepted on unified sufficiently to satisfy the direct prerequisite, then B06.4 may be refreshed once for turn-in."
+      "summary": "B06.4 parent candidate awaits B06.3 acceptance and stacked repair consumption.",
+      "resume_trigger": "B06.3/#454 is accepted sufficiently for this dependency and remediation PR #725 is consumed or otherwise resolved."
     },
     {
       "issue": 454,
       "pr": 684,
       "state": "WAITING",
-      "head_sha": "5aed4641d6cf1ba63d5746e04c964a8ef2f88ff2",
-      "summary": "B06.3 exact frame-output refinement is NON-EGM clean.",
-      "resume_trigger": "Pinned Google EGM becomes available and is run on the exact candidate head, or an explicitly accepted successor gate replaces it."
+      "head_sha": "89819d6d1cf58cabadf324775d7bbd0c23130bd0",
+      "summary": "B06.3 has current-unified conflict and source-positive witness remediation outstanding.",
+      "resume_trigger": "Remediations #735 and #736 are resolved, the candidate is synchronized once to current reviewed unified, and it is selected for final merge-readiness review."
     },
     {
       "issue": 697,
       "pr": 698,
       "state": "WAITING",
       "head_sha": "bd000f39a59142fb77f40d4426bd127c936ca119",
-      "summary": "B13.5 accepted-generation predecessor-authority bridge.",
-      "resume_trigger": "B13.1/#478 PR #672 is accepted on unified or replaced by an accepted successor authority."
+      "summary": "B13.5 accepted-generation predecessor-authority bridge remains parked.",
+      "resume_trigger": "Remediation #708 is resolved against accepted B12/B13 custody and the candidate is selected for integration."
     },
     {
       "issue": 479,
       "pr": 677,
       "state": "WAITING",
       "head_sha": "d18997f2b5c9314a6f4fd15dd590fabfd2dd3546",
-      "summary": "B13 complete-size numerical cold-read proof.",
-      "resume_trigger": "The accepted B13.1 custody/publication surface and its named prerequisites are consumable for the complete-generation witness."
+      "summary": "B13.2 cold-resume proof remains incomplete.",
+      "resume_trigger": "Remediation #709 proves the required real cold resume through the next controlled optimizer step and the accepted B13.1 custody surface is consumable."
     },
     {
       "issue": 485,
       "pr": 674,
       "state": "WAITING",
-      "head_sha": "bfada2678ad6bd44ae7a297d101b96ac8292fbea",
-      "summary": "B14.4 cache-authority repair is locally green.",
-      "resume_trigger": "Fresh exact-head independent re-review completes and pinned Google EGM becomes available/completes."
-    },
-    {
-      "issue": 478,
-      "pr": 704,
-      "state": "ACTIVE",
-      "head_sha": "630f39e186d6aac042edf70c63810c9300489732",
-      "summary": "B13.1 post-merge custody remediation is active for review findings #706 and #707 on draft PR #704.",
-      "resume_trigger": null
+      "head_sha": "fe5f4a1380ff14dabb98d3b07fb00ffcc4bc442a",
+      "summary": "B14.4 cache-authority candidate awaits accepted-generation/source-rights repair.",
+      "resume_trigger": "Remediation #719 is resolved against accepted B13/A12 authority and the candidate is selected for merge-readiness review."
     },
     {
       "issue": 586,
       "pr": 640,
       "state": "WAITING",
-      "head_sha": "76383e474245bf9a61acc278ff84decc177a6c97",
-      "summary": "B11.1a execution-owned backbone producer is NON-EGM clean.",
-      "resume_trigger": "Pinned Google EGM becomes available and is run on the exact candidate head, or an explicitly accepted successor gate replaces it."
+      "head_sha": "626b7553de0231592b486cafd1e012012f580144",
+      "summary": "B11.1a execution-owned backbone producer awaits stale-boundary remediation.",
+      "resume_trigger": "Remediation #738 is resolved and the complete candidate is selected for the next merge-readiness EGM."
+    },
+    {
+      "issue": 480,
+      "pr": 734,
+      "state": "WAITING",
+      "head_sha": "39bf54e820c6e9f6aef75345557a50f0d51cd7ef",
+      "summary": "B13.3 historical-reader/disposable-cache candidate is transitional drain inventory.",
+      "resume_trigger": "Lane B selects B13.3 as its single current integration candidate after nearer-to-merge inventory drains."
+    },
+    {
+      "issue": 711,
+      "pr": 727,
+      "state": "WAITING",
+      "head_sha": "c4eb468e579fa5f3fee187e663ee5787f92aef05",
+      "summary": "Stacked B09.2 production-authority remediation.",
+      "resume_trigger": "The bounded repair is consumed into PR #692 or explicitly selected for focused integration under ADR-125."
+    },
+    {
+      "issue": 715,
+      "pr": 725,
+      "state": "WAITING",
+      "head_sha": "9a19b9b638412f86a3a877be9389d9d3c51edd94",
+      "summary": "Stacked B06.4 differentiability/immutability remediation; issue #715 is already closed.",
+      "resume_trigger": "The bounded repair is consumed into PR #686 or explicitly selected for focused integration under ADR-125."
     }
   ]
 }

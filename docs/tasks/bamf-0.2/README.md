@@ -54,6 +54,27 @@ because unified moved. When its real trigger fires, activate it and perform the 
 refresh/revalidation required by its contract. This keeps external review and
 dependency queues from masquerading as implementation throughput.
 
+### Integration inventory and DRAIN mode
+
+ADR-126 adds a separate integration-inventory gate. ACTIVE WIP remains governed by
+ADR-124, but open BAMF implementation PRs are capped at **three total**, normally one
+current integration candidate per lane. The unified integration PR into `main`
+does not consume an implementation slot.
+
+A completed leaf can remain on a durable branch without an open PR. Before PR
+creation, run `python3 -B scripts/check_bamf_flow_control.py --live`. The live
+gate reconciles GitHub against the lane ledgers and checks PR admission.
+
+When open implementation inventory is above the ceiling, the program is in
+**DRAIN** mode. Existing grandfathered PRs may move toward merge or closure, but new
+implementation PRs are forbidden unless one replaces a PR closed in the same
+operation or an explicit owner-authorized exception exists. New implementation work
+must not increase PR inventory.
+
+Blocked or waiting work normally returns to branch/issue custody. A
+non-grandfathered open `WAITING` or `BLOCKED` PR requires an explicit retention
+exception with reason, authority and expiry.
+
 ## Artifacts
 
 - `workstack.json`: exact issue IDs, dependencies, paths and acceptance prescriptions.
