@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from .atlas_cache_codec import Rot3Manifest
 
 from .atlas_cache_binding import (
-    CacheArtifact, CacheBinding, binding_digest, cache_artifact_signing_bytes, payload_binding_tag_fields, require_cache_binding, validate_binding,
+    CacheArtifact, CacheBinding, ED25519_SIGNATURE_BYTES, binding_digest, cache_artifact_signing_bytes, payload_binding_tag_fields, require_cache_binding, validate_binding,
     cache_byte_cost, MAX_EFFECTIVE_BITS, CACHE_MODE_FP32, CACHE_MODE_ROT3,
 )
 
@@ -57,7 +57,7 @@ def _sign_artifact(
     if not callable(signer):
         _invalid()
     signature = signer(cache_artifact_signing_bytes(artifact))
-    if type(signature) is not bytes or len(signature) != 64:
+    if type(signature) is not bytes or len(signature) != ED25519_SIGNATURE_BYTES:
         _invalid()
     signed = replace(artifact, authority_signature=signature)
     require_cache_binding(signed, binding)
