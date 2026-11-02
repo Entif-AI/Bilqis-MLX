@@ -1,9 +1,17 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "92bdff370e9be3d0c64eb4ffe300d2448f53d6a1",
-  "updated_at": "2026-11-02T05:10:00Z",
+  "observed_unified": "67c964a1548cb0075a28a90aa2565d8bdab0fd71",
+  "updated_at": "2026-11-02T17:29:38-05:00",
   "exception": null,
-  "items": [],
-  "note": "No Lane A implementation leaf is marked ACTIVE in the current flow-control snapshot. Readiness remains governed by live issue dependencies and the lane execution contract."
+  "items": [
+    {
+      "issue": 745,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "67c964a1548cb0075a28a90aa2565d8bdab0fd71",
+      "summary": "A12 source-owner export-clearance remediation for C12.2/#718 is active without a placeholder PR.",
+      "resume_trigger": null
+    }
+  ]
 }
