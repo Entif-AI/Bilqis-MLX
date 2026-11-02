@@ -2,16 +2,16 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "ed5df098fddf0e88ccd028652b44ba81e0b235a5",
-  "updated_at": "2026-11-02T07:09:36Z",
+  "updated_at": "2026-11-02T07:10:51Z",
   "exception": null,
   "items": [
     {
       "issue": 475,
       "pr": 695,
-      "state": "ACTIVE",
-      "head_sha": "577d0d337f7e401859d0a2cfd57bc3e051a82596",
-      "summary": "B12.2 candidate-custody follow-up is the current primary Lane B implementation surface.",
-      "resume_trigger": null
+      "state": "WAITING",
+      "head_sha": "b5c3df440d397c0c2cd2165d5f2c015c1d1e7a0c",
+      "summary": "B12.2 exact head is hosted green with fresh exact-head NON-EGM PASS 0B/0M; prerequisite evidence remains gated.",
+      "resume_trigger": "A real retained C05 promotion receipt / B09.3 transition becomes consumable together with required accepted B09/B11 provenance, B13 publication, and pinned Google EGM/human acceptance."
     },
     {
       "issue": 465,
