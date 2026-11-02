@@ -28,7 +28,7 @@ class PolicyTests(unittest.TestCase):
             self.assertEqual(old_view.state["stop"], "TIME_LIMIT_REACHED")
 
             terminal = Terminal()
-            with patch("bilqis_mlx.cli.sys.stdout", terminal), patch(
+            with patch("sys.stdout", terminal), patch(
                     'bilqis_mlx.runtime.operating_loop.operate',
                     side_effect=ValueError("DISPOSABLE_TEST_NO_NEURAL_TRAINING")), \
                     redirect_stderr(io.StringIO()):

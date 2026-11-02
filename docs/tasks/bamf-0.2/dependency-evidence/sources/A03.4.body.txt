@@ -1,0 +1,35 @@
+<!-- BAMF02:WORK-PACKET:A03.4 -->
+# A03.4 | Publish immutable released frame-schema body witnesses
+
+**Program:** BAMF-0.2 root #341. **Lane:** A. **Parent:** A03 #349. **Originating blockers:** B07.1 #456 and B08.1 #460.
+
+## Outcome
+Publish a source-authoritative immutable witness binding each released `(schema_id, revision)` to its exact canonical `FrameSchema` body, semantic release, and release-local schema map so downstream motif-key/read code cannot accept a caller-substituted same-ID/revision schema.
+
+B07.1/B08.1 review reproduced the attack: a forged schema body retaining the same public ID/revision changed the motif key and, when paired with caller-created authority, could drive an unauthorized exact read. Existing canonical schema serialization is necessary but does not by itself prove that the supplied body is the released body.
+
+## Authority and constraints
+- A03 is the source authority for released frame schema meaning.
+- Reuse the existing canonical `FrameSchema.canonical_bytes()` / parser and release-local schema-map machinery; do not create a parallel schema registry.
+- The witness must be immutable/content-addressed and bind semantic release + schema ID + revision + canonical body digest (+ release-local map identity where applicable).
+- Same ID/revision with any changed AST construct, roles, cardinality, ordering, scope, allowed types, or other semantic field must fail closed.
+- A consumer must verify the witness without network access or caller-controlled registry substitution.
+- This issue does not grant context/source rights. A13 remains authority for eligibility/grants/revocation.
+
+## Required deliverable
+Expose a released-schema witness/lookup API from the accepted A03 release artifacts and make it suitable for B07 motif-key construction and B08 exact/structural read validation.
+
+## Acceptance
+- Real released schema verifies against its witness.
+- Same ID/revision with one body field mutated is rejected.
+- Foreign semantic release or schema-map identity is rejected.
+- Reordered serialization that canonicalizes to the same semantic body verifies identically; semantically changed body does not.
+- B07.1 can derive motif keys only after successful witness verification.
+- B08.1 can reject forged schema bodies before any motif gather.
+- Existing A03/A04 schema/codec round-trip tests remain green.
+- Fresh independent EGM required before integration.
+
+## Dependency / handoff
+Consumes A01 release identity and accepted A03/A04 schema serialization. B07.1 #456 must consume this witness together with the existing source-owned A13 grant machinery; B08.1 #460 must additionally bind complete rights/revocation/generation dependencies into its cache/read identity.
+
+No neural/source admission or training is authorized by this issue.

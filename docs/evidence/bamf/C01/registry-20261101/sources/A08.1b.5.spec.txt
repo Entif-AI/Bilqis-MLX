@@ -1,0 +1,72 @@
+# BAMF-0.2 A08.1b.5 | Integrate constructive families into the Factory registry
+
+Parent: A08.1b #418. Lane: `codex/bamf02-a-semantics`.
+Issue number: #557. Source spec: A08.1b and
+`BAMF-0.2-SPEC-001`, preserved without reducing acceptance.
+
+## Exact owned result
+
+Bind the independently verified A08.1b.1-.4 family programs
+to existing `ConstructionProgram`, `CapabilityDefinition`,
+source-adapter/checker registry and curriculum definition
+surfaces. A rule registry must switch Boolean, integer and a
+source-qualified world-model fixture without grade-ID
+branches; the same family in another grade must retain
+equivalent construction/checker behavior. Every eligible
+source/family obligation is either backed by a registered
+constructive generator and independent checker or remains
+visible `IMPLEMENTATION_UNCOVERED`; never shrink the frozen
+A08.1a denominator to fit installed adapters.
+
+Keep source-held and IR-only separate from implementation debt.
+All source-lesson and synthetic checker evidence remains
+`LEARNING_UNVERIFIED` until independent C05/C13/C14
+retained-transfer evidence exists. No zero-debt or
+`COMPLETE_ATLAS_COVERAGE` claim without a complete
+source-to-constructor ledger and fresh checker proof.
+
+**A08.1a source-authority consumption clarification (2026-10-29):**
+An A08 inventory, candidate or lesson set is a non-authoritative
+proposal even when produced from a pinned source. Before installing
+any program or accepting a source-fact check, the Factory registry
+must take the separately governed A01 `AtlasArtifactSelection`
+and rederive/compare the exact proposal with
+`assert_family_inventory_current`,
+`assert_curriculum_candidate_current` or
+`assert_source_lesson_set_current` at the consuming boundary.
+No caller-mintable schema, status or digest substitutes for this
+source replay. Current A13 tenant/purpose/epoch/visibility/revocation
+rights must then be checked independently. A source-valid proposal
+without those rights remains non-executable and
+`LEARNING_UNVERIFIED`.
+
+**Source-owner prerequisites surfaced by independent review:**
+The current A01 artifact has source-row keys/loci and a global
+`source_rows_sha256`, but not raw source-row payload or per-edge
+relation source-row provenance. A03's released adapters cover
+formal A/B/C, not SKOS/Ithkuil source rows. Do not invent
+`SourceSpan`, `FrameInstance`, `ContextEligibility` or
+`SourceGrant` inside A08. Decompose the missing work into:
+(1) source-owner resolution of exact pinned row bytes;
+(2) a released SKOS/Ithkuil row-to-A03 frame adapter with truthful
+occurrence/span/source reference;
+(3) per-edge relation evidence binding where applicable;
+(4) source-owner A13 grant issuance for frame/member evidence;
+(5) a lesson-to-fresh-`ApprovedContextProjection` crosswalk
+covering **both positive and contrast** source facts.
+
+The final gate must call A13 `project_context` under the current
+TaskScope, SourceFrontier and ContextPolicy, distinguishing
+implementation-uncovered from source-held/revoked. A cheap
+mandatory regression: authorize both positive and contrast
+evidence, then revoke **only** the contrast grant. The same
+lesson must become ineligible without losing the frozen A08
+denominator or granting learner credit.
+
+## Finish gate
+
+Executable cross-family, cross-grade, missing-constructor,
+wrong-checker, held-source and no-false-learning-credit tests.
+Consume A08.1b.1-.4 EGM PASS receipts and A08.1a frozen census.
+Independent EGM PASS, immutable issue/PR receipt and parent
+#418 integration crosswalk. No live training or self-merge.

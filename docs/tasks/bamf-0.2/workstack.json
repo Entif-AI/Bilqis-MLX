@@ -105,7 +105,8 @@
       "children": [
         "A03.1",
         "A03.2",
-        "A03.3"
+        "A03.3",
+        "A03.4"
       ],
       "execution_role": "integration_parent_after_recursive_decomposition"
     },
@@ -166,7 +167,9 @@
       "children": [
         "A05.1",
         "A05.2",
-        "A05.3"
+        "A05.3",
+        "A05.4",
+        "A05.5"
       ],
       "execution_role": "integration_parent_after_recursive_decomposition"
     },
@@ -516,7 +519,8 @@
       "children": [
         "B02.1",
         "B02.2",
-        "B02.3"
+        "B02.3",
+        "B02.4"
       ],
       "execution_role": "integration_parent_after_recursive_decomposition"
     },
@@ -607,7 +611,8 @@
       "children": [
         "B05.1",
         "B05.2",
-        "B05.3"
+        "B05.3",
+        "B05.4"
       ],
       "execution_role": "integration_parent_after_recursive_decomposition"
     },
@@ -772,7 +777,8 @@
         "B10.1",
         "B10.2",
         "B10.3",
-        "B10.4"
+        "B10.4",
+        "B10.5"
       ],
       "execution_role": "integration_parent_after_recursive_decomposition"
     },
@@ -1213,7 +1219,8 @@
       "children": [
         "C08.1",
         "C08.2",
-        "C08.3"
+        "C08.3",
+        "C08.4"
       ],
       "execution_role": "integration_parent_after_recursive_decomposition"
     },
@@ -1444,11 +1451,12 @@
         "bravo_fixture"
       ],
       "number": 386,
-      "body_sha256": "d093b1b16cb30920b992eca45b7b7606e343814af58c7789ac57456825ea1ce7",
+      "body_sha256": "7ef262560752bdfb1ce6ebe2e0da3d5aa69c2e7a5e767dc7a839ac0f6e66c4c2",
       "children": [
         "C14.1",
         "C14.2",
-        "C14.3"
+        "C14.3",
+        "C14.4"
       ],
       "execution_role": "integration_parent_after_recursive_decomposition"
     },
@@ -1537,26 +1545,44 @@
     {
       "path": "bilqis_mlx/learning/student_ops.py",
       "writer_lane": "C",
-      "participants": ["B11", "B12", "C02"],
-      "proposal_lanes": ["B"]
+      "participants": [
+        "B11",
+        "B12",
+        "C02"
+      ],
+      "proposal_lanes": [
+        "B"
+      ]
     },
     {
       "path": "bilqis_mlx/runtime/mlx_checkpoint.py",
       "writer_lane": "C",
-      "participants": ["B13"],
-      "proposal_lanes": ["B"]
+      "participants": [
+        "B13"
+      ],
+      "proposal_lanes": [
+        "B"
+      ]
     },
     {
       "path": "bilqis_mlx/runtime/checkpoints.py",
       "writer_lane": "C",
-      "participants": ["B13"],
-      "proposal_lanes": ["B"]
+      "participants": [
+        "B13"
+      ],
+      "proposal_lanes": [
+        "B"
+      ]
     },
     {
       "path": "bilqis_mlx/runtime/boundary_commit.py",
       "writer_lane": "C",
-      "participants": ["B13"],
-      "proposal_lanes": ["B"]
+      "participants": [
+        "B13"
+      ],
+      "proposal_lanes": [
+        "B"
+      ]
     }
   ]
 }
