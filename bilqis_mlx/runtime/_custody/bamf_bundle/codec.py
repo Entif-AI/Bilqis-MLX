@@ -85,12 +85,9 @@ def _read_sidecar(root: Path, binding: dict):
     return json.loads(raw)
 
 
-def load_bamf_bundle(root: Path, *, expected_manifest_sha256: str | None = None) -> CompleteStudent:
-    """Validate manifest and all sidecars before constructing B12 optimizer state."""
-    from bilqis_mlx.learning.atlas_candidate import CandidateState
-    from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, STATE_SCHEMA
-    from bilqis_mlx.runtime.checkpoint_outbox import ordinary_outbox_lineage
-    from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, GenerationProvenance, ModelTopologySpecV2
+def validate_bamf_bundle_custody(
+        root: Path, *, expected_manifest_sha256: str | None = None) -> dict:
+    """Verify local immutable bundle bytes without constructing MLX tensor state."""
     root = Path(root)
     manifest_path = root / "manifest.json"
     if root.is_symlink() or not root.is_dir() or manifest_path.is_symlink() or not manifest_path.is_file():
@@ -102,13 +99,37 @@ def load_bamf_bundle(root: Path, *, expected_manifest_sha256: str | None = None)
     try:
         if data_plane().get_node(digest) != raw:
             invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
-    except ValueError:
+        manifest = BamfGenerationManifest.from_record(json.loads(raw)).to_record()
+    except (ValueError, json.JSONDecodeError, KeyError, TypeError):
         invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
-    manifest = BamfGenerationManifest.from_record(json.loads(raw)).to_record()
     if (set(manifest.get("sidecars", {})) != set(SIDECARS)
             or set(manifest["optimizer"]) != {"schema", "step", "hyperparameters"}
-            or manifest["optimizer"]["schema"] != STATE_SCHEMA
             or manifest["optimizer"]["step"] != manifest.get("tensors", {}).get("optimizer_step")):
+        invalid()
+    for name in SIDECARS:
+        _read_sidecar(root, manifest["sidecars"][name])
+    tensor = manifest.get("tensors", {})
+    tensor_path = root / tensor.get("filename", "")
+    if (not isinstance(tensor, dict)
+            or set(tensor) != {"schema", "filename", "sha256", "optimizer_step",
+                               "tensor_count", "uncompressed_bytes"}
+            or Path(tensor.get("filename", "")).name != tensor.get("filename")
+            or tensor_path.is_symlink() or not tensor_path.is_file()
+            or not _mlx_checkpoint.verify_file_digest(tensor_path, tensor.get("sha256"))):
+        invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
+    return manifest
+
+
+def load_bamf_bundle(root: Path, *, expected_manifest_sha256: str | None = None) -> CompleteStudent:
+    """Validate manifest and all sidecars before constructing B12 optimizer state."""
+    from bilqis_mlx.learning.atlas_candidate import CandidateState
+    from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, STATE_SCHEMA
+    from bilqis_mlx.runtime.checkpoint_outbox import ordinary_outbox_lineage
+    from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, GenerationProvenance, ModelTopologySpecV2
+    root = Path(root)
+    manifest = validate_bamf_bundle_custody(
+        root, expected_manifest_sha256=expected_manifest_sha256)
+    if manifest["optimizer"]["schema"] != STATE_SCHEMA:
         invalid()
     spec = ModelTopologySpecV2.from_record(manifest["topology"])
     extents = GenerationExtents.from_record(manifest["extents"])
