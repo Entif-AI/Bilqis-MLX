@@ -102,7 +102,7 @@ def _numerical_depth_select_with_diagnostics(
     type_role = mx.stack([mx.stack([
         mx.mean(compose_factor_features(
             params._feature_parameters, (members,), frame_features.features,
-            extents=params._extents).type_role[0], axis=0)
+            extents=params._extents, atlas_selection=frame_features.atlas_selection).type_role[0], axis=0)
         for members in row]) for row in frame_features.requests])
     numerical = _DepthFeatureValues(
         summaries[0].hidden, type_role, frame_features.features.semantic_release,
