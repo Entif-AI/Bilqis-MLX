@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "ed5df098fddf0e88ccd028652b44ba81e0b235a5",
-  "updated_at": "2026-11-02T07:24:51Z",
+  "updated_at": "2026-11-02T07:34:28Z",
   "exception": null,
   "items": [
     {
@@ -64,10 +64,10 @@
     {
       "issue": 485,
       "pr": 674,
-      "state": "ACTIVE",
-      "head_sha": "8c93853d4549dd65343a81d211b339e7f50c052f",
-      "summary": "B14.4 ownership/budget repair is locally green: a host-issued cache authority fixes registry provenance, authenticates the measured 61-byte header with a keyed MAC, and preserves historical C09 signing bytes.",
-      "resume_trigger": null
+      "state": "WAITING",
+      "head_sha": "9800132e0492b000369da368607ccb35b8c5b611",
+      "summary": "B14.4 production cache authorization is FAIL-CLOSED / UPSTREAM_AUTHORITY_PENDING: #485 exposes no production authority mint, and public cache operations require a pre-bound capability while preserving the keyed 61-byte header authenticator and historical C09 signing bytes.",
+      "resume_trigger": "Accepted B13/A09/A12 run authority supplies a production pre-bound CacheAuthorityRuntime capability without reintroducing a caller-selected registry/key mint seam."
     },
     {
       "issue": 478,

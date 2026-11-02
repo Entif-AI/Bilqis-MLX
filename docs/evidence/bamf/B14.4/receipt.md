@@ -18,12 +18,13 @@ rights-purpose, policy epoch, context-eligibility and optimizer-independent
 inference-state identity in addition to generation, lineage, topology, causal
 prefix, masks, scope, key, offset and codec identity. Every field participates in
 the canonical binding digest. The public cache boundary no longer accepts a raw
-`SourceAuthorityRegistry`. A host-issued `CacheAuthorityRuntime` fixes registry
-provenance outside artifact/data calls and owns a 32-byte cache-MAC key. Direct
-construction and ungated issuance are rejected; the internal host-bootstrap seam
-is not exported from the public codec facade. Before minting or accepting a cache
-record, the capability requires the binding's authority id, public key and
-`ARTIFACT/cache:` scope to match its trusted C09 registry.
+`SourceAuthorityRegistry`. It requires an already-bound `CacheAuthorityRuntime`
+capability, and #485 exposes no production constructor, issuer, mint, factory or
+other callable that accepts a registry or MAC key to create one. Production cache
+authorization is therefore **FAIL-CLOSED / UPSTREAM_AUTHORITY_PENDING** until the
+accepted B13/A09/A12 run authority supplies a pre-bound capability. Before using
+that capability, cache code still requires the binding's authority id, public key
+and `ARTIFACT/cache:` scope to match the capability's bound C09 registry.
 
 Each stored artifact carries one required 128-bit HMAC-SHA256 authenticator in
 the existing literal header tag slot. The authenticator covers the complete
@@ -32,15 +33,22 @@ detached per-artifact signature outside the measured record. The header remains
 61 bytes; a full 256-vector ROT3 record is exactly 61 header + 2592 payload =
 2653 required bytes, or 3.4544270833 bits/channel, below the 3.5 bound.
 
-`decode_cache()` enters the host-bound capability before `_validate_artifact()`,
+`decode_cache()` requires the pre-bound capability before `_validate_artifact()`,
 which calls the internal binding/authenticator check before the codec or any
 payload decode is entered. A
 revoked/superseded rights epoch, source/semantic release, prefix, topology,
 generation or inference-state mismatch therefore rejects before stale lossy bytes
 can affect attention. Relabelling only the binding/header while preserving stale
-compressed payload is rejected because the host MAC no longer matches. Knowing
-the public MAC algorithm or supplying an attacker registry/key does not permit a
-caller to mint a valid authenticator without the host-owned MAC capability.
+compressed payload is rejected because the capability MAC no longer matches.
+Knowing the public MAC algorithm or supplying an attacker registry/key does not
+permit a cache-operation caller to mint a valid authenticator without the
+pre-bound authority capability.
+
+The focused tests create that capability only in a test fixture by explicitly
+bypassing the production constructor with `object.__new__` and assigning its
+private slots. That is a synthetic same-process test mechanism, not production
+provenance and not a security boundary. The production runtime contains no such
+mint path.
 
 `rebuild_revoked_cache()` accepts an immutable eligibility receipt for the new
 binding and a callable canonical FP32 source. It never decodes or relabels the
@@ -63,8 +71,8 @@ The focused tests prove:
   replacing its binding/header metadata;
 - an attacker-selected registry and public key cannot replace the host trust
   root at public encode/decode/inference/rebuild boundaries;
-- direct construction and direct ungated issuance of the cache authority
-  capability reject;
+- direct production construction rejects, `_issue` is absent, and the production
+  cache-runtime module exposes no registry/key-taking authority mint/factory;
 - recomputing HMAC-SHA256 over stale bytes with an attacker-owned key still
   fails because only the host capability owns the accepted MAC key;
 - the 256-vector literal byte-cost witness includes every required per-record
@@ -78,13 +86,28 @@ The focused tests prove:
 
 ## Verification
 
-Final focused cache suite: 44/44 pass. Correction/revalidation coverage including
+Final focused cache suite: 45/45 pass. Correction/revalidation coverage including
 the frozen pre-split canonical signing-byte compatibility witness passes 19/19;
 the split helper again emits the historical literal LF byte rather than the two
 bytes `\\n`. Development-structure and governance checks report zero violations;
-flow-control tests pass 4/4 and the Lane B validator reports ACTIVE 1/2.
-`git diff --check` is clean. The implementation checkpoint is
-`8c93853d4549dd65343a81d211b339e7f50c052f`.
+flow-control tests pass 4/4 and the Lane B validator reports ACTIVE 0/2 because
+#485 is truthfully parked on its upstream production-authority dependency.
+`git diff --check` is clean. The authority-boundary implementation checkpoint is
+`9800132e0492b000369da368607ccb35b8c5b611`.
+
+## Authority status and threat boundary
+
+No accepted production B13/A09/A12 run-authority owner exists on this branch, so
+#485 does not manufacture one. Production authenticated-cache use is intentionally
+unavailable until that upstream owner supplies the pre-bound capability.
+
+This contract protects against attacker-controlled cache artifacts and callers of
+the cache data/API boundary that cannot execute arbitrary code inside the trusted
+Python process. It does **not** claim cryptographic secrecy or unforgeability
+against arbitrary same-process Python execution/reflection. If that attacker is
+in scope, the MAC key must live behind an OS/process/HSM boundary outside #485,
+such as OS-protected key material in a privileged helper or authenticated IPC to
+a separate authority service.
 
 The issue-required Google EGM review has not been claimed in this session;
 `EGM_PENDING` remains the integrator-facing review status unless an actual pinned
