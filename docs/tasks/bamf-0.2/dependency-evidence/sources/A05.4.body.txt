@@ -1,0 +1,40 @@
+<!-- BAMF02:WORK-PACKET:A05.4 -->
+# A05.4 | Revalidate source-visible nested prefixes as partial forests
+
+**Program:** BAMF-0.2 root #341. **Lane:** A. **Parent:** A05 #357. **Originating blocker:** B03.3 #444.
+
+## Outcome
+Provide the source-owned compiler contract that lets a causally visible nested child frame remain valid when its parent frame is not yet visible at the same prediction boundary.
+
+This issue exists because B03.3 must consume actual A05 source validation rather than bypass it. Today a child can legitimately close before its parent, but reconstructing that visible prefix leaves the child with a non-null parent occurrence whose parent is absent from the temporary visible set; `compile_prefix` then rejects the temporary root as `BAMF_PREFIX_ROOT_PARENT_INVALID`.
+
+## Authority and constraints
+- A05 remains the authority for causal compiler visibility and prefix validity.
+- Do not erase or rewrite the child's original `parent_occurrence_id`, scope, source span, semantic release, or structural path merely to make a prefix compile.
+- Do not invent a synthetic parent/root frame.
+- The accepted full frame tree must remain byte-for-byte semantically equivalent after the partial-prefix revalidation path is added.
+- Future/non-visible parent members must not leak into the child-only prefix.
+- This contract grants no neural admission, learning credit, or source-rights expansion.
+
+## Required deliverable
+Expose one explicit source-owned API/record for validating a **partial visible forest** derived from an accepted A05 compilation. The result must distinguish:
+1. a valid child whose parent exists in the full source tree but is causally not yet visible;
+2. an actually orphaned/forged child parent reference;
+3. a child whose source/scope/release no longer matches the accepted parent tree;
+4. a future child/member that is not causally visible.
+
+B03 must be able to consume the result without reconstructing or weakening A05 validation.
+
+## Acceptance
+- Reproduce the B03.3 witness where child closes at prefix 4 and parent at prefix 8.
+- At prefix 4, the child is accepted as a visible partial-forest root **while retaining its real parent occurrence reference as provenance**.
+- A fabricated/nonexistent parent occurrence still fails closed.
+- Mutating the hidden parent/source/scope/release after the accepted compilation invalidates the derived visible-forest receipt.
+- Changing future parent members cannot change the child's prefix-4 compiler output.
+- At prefix 8, normal full-tree validation yields the same child/parent identities as before this repair.
+- Fresh independent EGM required before integration.
+
+## Dependency / handoff
+Consumes accepted A03/A04/A13 and current A05 compiler receipts. On completion, B03.3 #444 must rerun its child-only future-isolation and nested-gradient proof against this exact source contract.
+
+No live learner or durable optimizer start is authorized by this issue.

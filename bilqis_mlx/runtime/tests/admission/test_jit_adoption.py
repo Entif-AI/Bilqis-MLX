@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 
 from bilqis_mlx.factory.autonomy import compile_autonomy_plan, initial_evidence_ledger
 from bilqis_mlx.factory.jit_curriculum import propose_curriculum_delta
-from bilqis_mlx.factory.tests.test_candidate_staging import CandidateStagingFixture
+from bilqis_mlx.factory.tests.curriculum.frontier.test_candidate_staging import CandidateStagingFixture
 from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.runtime.jit_adoption import (
     resolve_ready_candidate, verify_current_implementations,
