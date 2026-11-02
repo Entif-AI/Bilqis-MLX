@@ -20,6 +20,73 @@ The probe adds unified's 22 codec cases and the #731 annotation regression to
 the historical 93-case installed selection. It includes real source-pinned schema families and the
 real Atlas concept/type-authority witness.
 
+## Rebuild inputs and the installed target
+
+Run from a Bilqis checkout containing the pinned source commit. If the commit is
+missing, fetch the published parent candidate with
+`git fetch origin pull/694/head`, then retry the explicit `git cat-file` check below.
+The source inputs are the tracked `lib/ithkuil/_data/csv` records. No separately
+copied machine-local fixture is required. The conformance owner rebuilds the source
+bundle; the Atlas rebuilder independently requires its existing release/bundle pins.
+These are disposable test inputs, not new semantic admission. See the originating
+[source-custody record](../../A05.5/source-owned-candidate-v2.md#source-custody).
+
+Executed environment: macOS, Python 3.14.4. The project declares Python >=3.11;
+other interpreters/platforms have not been exercised by this receipt. Package
+versions below describe the tested environment, not a claim of minimal dependencies.
+A fresh setup requires Python with venv, Git/tar and package-index access. It installs
+`lib/ithkuil/requirements-semantic.txt` (rdflib/pyshacl pins), NumPy and cryptography
+in one runtime environment, and setuptools/wheel in a separate builder. It does not
+use system site packages or the author's earlier temporary environments.
+
+Save the Python block below as `/tmp/c01-frame-probe.py` before running this shell
+block. That is the entire probe: no unpublished helper is needed.
+
+```sh
+set -eu
+C01_PROBE=/tmp/c01-frame-probe.py
+C01_SOURCE_SHA=7c8b75a418e726060945f2b9cbe296063b7d9ee4
+git cat-file -e "$C01_SOURCE_SHA^{commit}"
+C01_WORK=$(mktemp -d "${TMPDIR:-/tmp}/c01-reproduce.XXXXXX")
+mkdir "$C01_WORK/source"
+git archive "$C01_SOURCE_SHA" | tar -x -C "$C01_WORK/source"
+python3 -m venv "$C01_WORK/runtime"
+C01_PY="$C01_WORK/runtime/bin/python"
+"$C01_PY" -m pip install \
+  -r "$C01_WORK/source/lib/ithkuil/requirements-semantic.txt" \
+  numpy==2.5.4 cryptography==50.0.2
+cd "$C01_WORK/source"
+"$C01_PY" -B -m lib.ithkuil.src.skos.conformance \
+  --input-root lib/ithkuil/_data/csv --output-root "$C01_WORK/corpus"
+export BILQIS_ATLAS_REAL_CORPUS="$C01_WORK/corpus/f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec"
+test -d "$BILQIS_ATLAS_REAL_CORPUS"
+"$C01_PY" -B -m scripts.bamf.rebuild_atlas_artifact \
+  --source-bundle "$BILQIS_ATLAS_REAL_CORPUS" --output-root "$C01_WORK/atlas"
+export BILQIS_ATLAS_REAL_ARTIFACT="$C01_WORK/atlas/5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7"
+test -d "$BILQIS_ATLAS_REAL_ARTIFACT"
+python3 -m venv "$C01_WORK/builder"
+"$C01_WORK/builder/bin/python" -m pip install setuptools==84.2.1 wheel==0.48.0
+"$C01_WORK/builder/bin/python" -m pip wheel --no-deps --no-build-isolation \
+  --wheel-dir "$C01_WORK/wheels" "$C01_WORK/source"
+"$C01_PY" -m pip install --no-deps --target "$C01_WORK/installed" \
+  "$C01_WORK/wheels/bilqis_mlx_private-0.5.0-py3-none-any.whl"
+cp "$C01_PROBE" "$C01_WORK/probe.py"
+cd /tmp
+"$C01_PY" -I "$C01_WORK/probe.py" "$C01_WORK/installed"
+```
+
+The two output directories must have exactly the names above. A different digest
+or an unsuccessful source gate is a failed reproduction, not permission to replace
+the expected pins. The wheel SHA above identifies one observed build; wheel archive
+timestamps may differ on regeneration. Acceptance checks its pinned source, executed
+suite and installed origins, not byte-for-byte reproducibility of the wheel archive.
+
+To reproduce the 187-case source proof, keep these exported variables and run the
+[full source selection](current-unified-refresh.md#defect-and-exact-source-proof)
+from `$C01_WORK/source` using `$C01_PY` instead of `python`. This source checkout
+also retains the vendor-only fixture intentionally excluded from the installed
+selection. Do not run that selection in the installed target.
+
 Save the following as a probe file and run it with the clean installed target:
 
 ```sh
@@ -89,3 +156,20 @@ raise SystemExit(0 if result.wasSuccessful() else 1)
 
 Historical receipt: `4ab0752d` passed 93/93 in the earlier installed selection.
 The current 116-case result does not retroactively change that historical proof.
+
+## Independent fixture rebuild receipt — #733
+
+The documented acquisition/build commands were executed in newly created runtime
+and builder environments against git-archive source `7c8b75a4`. The public tracked
+CSV records rebuilt the exact corpus and Atlas bundle IDs above. All four source
+conformance gates passed; source coverage remains explicitly partial. No older
+local fixture directory was supplied. The full source selection then passed
+187/187, zero skips, and the fresh installed target passed 116/116, zero skips,
+with every Bilqis origin inside that target. The probe copied from this document
+has the same complete AST as the executed probe.
+
+This fresh recipe build produced wheel SHA256 `2f84f7e8fb1b1e7ddca04ab14896facffecb1f105aa404a55e07857c5d477ae1`.
+It is a separate observed archive from the earlier build at the top of this file.
+The reproduction does not require equal wheel timestamps or archive bytes.
+An ordinary independent read of both recipe documents found no actionable issue;
+that reader did not execute the commands. Whole-candidate EGM remains separate.

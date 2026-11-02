@@ -33,6 +33,8 @@ At that source commit:
 - Registry: 171 children, valid integrity, eight held keys and empty execution order.
   CLI exits 1 because the semantic dependency normalization remains held.
 
+First follow the [complete setup and fixture rebuild recipe](installed-wheel-probe.md#rebuild-inputs-and-the-installed-target). It creates both inputs from tracked public CSV records, installs the tested dependencies in fresh environments, and builds the isolated wheel. Run the source command below from `$C01_WORK/source` with `$C01_PY` after that setup.
+
 Supply `BILQIS_ATLAS_REAL_ARTIFACT` pointing to digest-named bundle
 `5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7`
 and `BILQIS_ATLAS_REAL_CORPUS` pointing to conformance bundle
@@ -70,3 +72,9 @@ regression beyond that source/installed selection. No threshold/baseline change,
 source admission, persistent learner/own AdamW/teacher/graph mutation or self-merge.
 Full #347 remains open; typed interface-receipt normalization is the preserved next
 implementation task, not an outcome of this structural PR.
+
+#733 repeats the full source and installed selection after rebuilding both exact
+inputs from tracked public CSVs in fresh environments: 187/187 source and 116/116
+installed, zero skips. All four conformance gates pass with partial source coverage
+preserved. This independently reproduces fixture acquisition as well as test
+execution; it does not promote source or claim full C01 acceptance.
