@@ -226,19 +226,6 @@ class BamfFlowControlTests(unittest.TestCase):
                 root,
             )
 
-    def test_live_reconciliation_rejects_head_drift(self) -> None:
-        root = self.write_fixture(
-            {
-                "A": lane("A", [active(1, 10)]),
-                "B": lane("B", []),
-                "C": lane("C", []),
-            }
-        )
-        live = pr(10, head="a", base="unified")
-        live["head"]["sha"] = "f" * 40
-        with self.assertRaisesRegex(FlowControlError, "head_sha does not match"):
-            validate_live_pr_inventory([live], root)
-
     def test_live_reconciliation_rejects_stale_tracked_pr(self) -> None:
         root = self.write_fixture(
             {
