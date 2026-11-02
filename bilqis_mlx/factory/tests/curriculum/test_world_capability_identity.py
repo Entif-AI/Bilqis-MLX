@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from types import MappingProxyType
 from unittest.mock import patch
 import unittest
 
@@ -24,18 +25,18 @@ from bilqis_mlx.source_adapters.world_rules import (
 )
 
 
-ROOTS = {
+ROOTS = MappingProxyType({
     "WORLD.ACTOR_OF": "ithkuil:ATOM-5d7116db8e1508",
     "WORLD.BEFORE": "ithkuil:ATOM-ef7cf17b427af9",
     "WORLD.IS_OCCURRED": "ithkuil:LEXSENSE-294d00be074a56",
     "WORLD.DIRECT_CAUSE": "ithkuil:LEXSENSE-59819df75e3137",
-}
-OPERATORS = {
+})
+OPERATORS = MappingProxyType({
     "WORLD.ACTOR_OF": "ROLE_LOOKUP",
     "WORLD.BEFORE": "BEFORE",
     "WORLD.IS_OCCURRED": "IS_OCCURRED",
     "WORLD.DIRECT_CAUSE": "SOURCE_DIRECT_CAUSE",
-}
+})
 
 
 def _release(grade_id: str):
