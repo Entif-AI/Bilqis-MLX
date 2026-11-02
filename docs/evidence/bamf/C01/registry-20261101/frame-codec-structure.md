@@ -55,3 +55,14 @@ outside the installed target fail the probe.
 Consumes reviewed unified/Lane C `bd62f3cb`. No threshold/baseline, learner, AdamW,
 training, graph or source-admission change, and no self-merge. Full #347 remains
 open with eight holds and no executable order.
+
+Exact source commit `4ab0752d` passed all six native M3 caller cases without skips
+in a detached checkout under the sovereign MLX test lease. Cumulative structure
+and hygiene checks pass across 112 Python files, with zero findings/new debt.
+The isolated installed wheel passed 93/93 with both real fixtures, no skips and
+verified installed module origins. See [the exact probe recipe](installed-wheel-probe.md)
+for its wheel hash, selectors and explicit repository-only exclusions.
+
+All five mandatory structural predicates are now locally satisfied. Completing
+this Work Stack interruption permits the original interface-receipt work to resume;
+it does not establish full C01 acceptance or permission to self-merge.
