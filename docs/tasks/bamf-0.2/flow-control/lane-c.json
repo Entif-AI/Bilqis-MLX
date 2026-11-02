@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "67c964a1548cb0075a28a90aa2565d8bdab0fd71",
-  "updated_at": "2026-11-02T19:31:07.396756Z",
+  "updated_at": "2026-11-02T19:47:47.880808Z",
   "exception": null,
   "items": [
     {
@@ -28,6 +28,14 @@
       "head_sha": "41e37cf60a934181548e9b343ddab1ce2b3849a7",
       "summary": "C12.2 local cognitive-package exchange slice is proven; broader adoption/custody remains.",
       "resume_trigger": "The current Lane C primary work drains and C12 adoption/custody becomes the selected dependency-ready next surface; sync reviewed unified once at activation."
+    },
+    {
+      "issue": 733,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": null,
+      "summary": "Repair EGM reproduction prerequisites; isolated issue branch from synchronized Lane C, consuming parent #694.",
+      "resume_trigger": null
     }
   ]
 }
