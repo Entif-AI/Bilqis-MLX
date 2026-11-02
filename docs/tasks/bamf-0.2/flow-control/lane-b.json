@@ -1,25 +1,25 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "b4f2f0aca31623e7246ef819338a1450d71183cd",
-  "updated_at": "2026-11-02T08:29:21Z",
+  "observed_unified": "5ac0e9ca2a94e11a6bbb25bcca8282af3eb8fc4e",
+  "updated_at": "2026-11-02T14:25:00Z",
   "exception": null,
   "items": [
     {
       "issue": 475,
       "pr": 695,
-      "state": "ACTIVE",
+      "state": "BLOCKED",
       "head_sha": "577d0d337f7e401859d0a2cfd57bc3e051a82596",
-      "summary": "B12.2 candidate-custody follow-up is the current primary Lane B implementation surface.",
-      "resume_trigger": null
+      "summary": "Remediation #710 requires accepted B09/B11 execution provenance.",
+      "resume_trigger": "Authoritative B09/B11 execution producer is consumable; then repair #710 without raw caller mask authority."
     },
     {
       "issue": 465,
       "pr": 692,
-      "state": "WAITING",
+      "state": "ACTIVE",
       "head_sha": "a1025e442277ee71b2120f87b9254179cee88dfb",
-      "summary": "B09.2 repaired participation-mask candidate.",
-      "resume_trigger": "Fresh exact-head adversarial re-review completes, pinned Google EGM is available/completed, and accepted B05/B08/B11 production provenance is consumable."
+      "summary": "User-selected #711 canonical B01 census validation; remaining B05/B08/B11 execution provenance stays explicit.",
+      "resume_trigger": null
     },
     {
       "issue": 456,
@@ -34,8 +34,8 @@
       "pr": 686,
       "state": "WAITING",
       "head_sha": "39732bdb053e33cd917ed03de43ac02ed638474b",
-      "summary": "B06.4 registry reconciliation depends on B06.3 acceptance.",
-      "resume_trigger": "B06.3/#454 is accepted on unified sufficiently to satisfy the direct prerequisite, then B06.4 may be refreshed once for turn-in."
+      "summary": "Scoped #715 gradient/immutability repair delivered as draft #725.",
+      "resume_trigger": "Owner review of draft #725 and accepted #454 prerequisite, then final whole-PR EGM."
     },
     {
       "issue": 454,
@@ -66,15 +66,15 @@
       "pr": 674,
       "state": "WAITING",
       "head_sha": "bfada2678ad6bd44ae7a297d101b96ac8292fbea",
-      "summary": "B14.4 cache-authority repair is locally green.",
-      "resume_trigger": "Fresh exact-head independent re-review completes and pinned Google EGM becomes available/completes."
+      "summary": "B14.4 cache-authority repair is locally green. Explicit user-selected remediation #712 or #719/#720 on 2026-11-02. Scoped remediation delivered for review.",
+      "resume_trigger": "Owner review of remediation PR #721 or #722, remaining source/acceptance dependencies, and final merge-ready EGM."
     },
     {
       "issue": 478,
       "pr": 704,
-      "state": "ACTIVE",
-      "head_sha": "630f39e186d6aac042edf70c63810c9300489732",
-      "summary": "B13.1 post-merge custody remediation is active for review findings #706 and #707 on draft PR #704.",
+      "state": "TURNED_IN",
+      "head_sha": "4aa40c427cda2ac2f0bac85c6e46e4b0724b2c22",
+      "summary": "PR #704 merged into unified 5ac0e9ca; #706/#707 repairs available.",
       "resume_trigger": null
     },
     {
@@ -82,8 +82,8 @@
       "pr": 640,
       "state": "WAITING",
       "head_sha": "76383e474245bf9a61acc278ff84decc177a6c97",
-      "summary": "B11.1a execution-owned backbone producer is NON-EGM clean.",
-      "resume_trigger": "Pinned Google EGM becomes available and is run on the exact candidate head, or an explicitly accepted successor gate replaces it."
+      "summary": "B11.1a execution-owned backbone producer is NON-EGM clean. Explicit user-selected remediation #712 or #719/#720 on 2026-11-02. Scoped remediation delivered for review.",
+      "resume_trigger": "Owner review of remediation PR #721 or #722, remaining source/acceptance dependencies, and final merge-ready EGM."
     }
   ]
 }
