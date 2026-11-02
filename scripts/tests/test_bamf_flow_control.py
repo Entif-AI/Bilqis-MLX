@@ -4,7 +4,7 @@ import unittest
 
 from scripts.check_bamf_flow_control import FlowControlError, validate_flow_control
 from scripts.tests.bamf_flow_control_fixtures import (
-    EXCEPTION,
+    exception,
     FixtureMixin,
     active,
     lane,
@@ -15,7 +15,7 @@ from scripts.tests.bamf_flow_control_fixtures import (
 
 class BamfFlowControlTests(FixtureMixin):
     def test_waiting_requires_resume_trigger(self) -> None:
-        item = waiting(1, 10, open_pr_exception=EXCEPTION)
+        item = waiting(1, 10, open_pr_exception=exception())
         item["resume_trigger"] = ""
         root = self.write_fixture(
             {"A": lane("A", [item]), "B": lane("B", []), "C": lane("C", [])}
@@ -65,7 +65,7 @@ class BamfFlowControlTests(FixtureMixin):
                 "A": lane(
                     "A",
                     [active(1, 11), active(2, 12), active(3, 13)],
-                    EXCEPTION,
+                    exception(),
                 ),
                 "B": lane("B", []),
                 "C": lane("C", []),
