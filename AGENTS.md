@@ -145,9 +145,9 @@ permission to create successor inventory. The flow-control checker reconciles th
 ledger against live GitHub state. Missing open PRs and stale closed/merged entries
 are failures.
 
-The governance branch recorded in the policy is a temporary control-plane
-exception for implementing ADR-126 itself. It is not BAMF feature inventory and its
-exception expires when that governance PR merges or closes.
+PR #741 is the temporary control-plane exception for implementing ADR-126 itself.
+It is not BAMF feature inventory, and its exception expires when PR #741 merges or
+closes. Do not generalize that exception by branch name or reuse it for later work.
 
 ## Context-window protection for repository census commands — 2026-11-02
 
