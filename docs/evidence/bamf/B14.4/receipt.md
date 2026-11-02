@@ -5,17 +5,11 @@ child receipt, not production cache acceptance or durable neural authority.
 
 ## Inputs and ownership
 
-The refreshed Lane B and reviewed unified trunk were identical at
-`4fa27b42430b220e0ba07ed0dbf3f1a7d83dc6d4`. This branch then consumed the exact
-same-lane B14.3 review head `b9e1a20b37b79ac779b7b7a88715f2f93533d463`
-through merge `0d98c193`. B14.3 PR #670 is exact-head hosted green and ready for
-human review, but is not yet integrated into unified. B14.4 therefore remains
-staged until that prerequisite is accepted through the reviewed trunk.
-
-The earlier B14.4 branch carried an obsolete structural predecessor chain. The
-refresh replayed only its issue-owned implementation commit `ac42ba61` onto the
-current Lane B plus exact B14.3 state. The resulting implementation commit is
-`d6872978`; focused adversary refinements are `48faae76`.
+This issue branch consumes reviewed unified / Lane B
+`3088ee02d085f2a88e53b7c78c8d9637916663fe`. B14.3 #484 is already
+integrated in that reviewed trunk, so the former staged-predecessor hold is
+cleared. The branch preserves the issue-owned B14.4 changes while consuming the
+current unified frame-codec and BAMF architecture updates.
 
 ## Observable contract
 
@@ -23,13 +17,21 @@ current Lane B plus exact B14.3 state. The resulting implementation commit is
 rights-purpose, policy epoch, context-eligibility and optimizer-independent
 inference-state identity in addition to generation, lineage, topology, causal
 prefix, masks, scope, key, offset and codec identity. Every field participates in
-the canonical binding digest.
+the canonical binding digest. Each stored artifact also carries a 128-bit
+payload/authority integrity tag over that binding digest, record geometry and
+the exact stored payload bytes. The tag is part of the literal record header,
+which remains within the parent's 64-byte metadata ceiling at 61 bytes. A
+256-vector ROT3 record measures 3.454427 bits/channel, below the 3.5 acceptance
+limit.
 
 `decode_cache()` calls `_validate_artifact()`, which calls
 `require_cache_binding()` before the codec or any payload decode is entered. A
 revoked/superseded rights epoch, source/semantic release, prefix, topology,
 generation or inference-state mismatch therefore rejects before stale lossy bytes
-can affect attention.
+can affect attention. Relabelling only the binding/header while preserving stale
+compressed payload is rejected because the payload/authority tag no longer
+matches; callers cannot request automatic re-minting of that tag through the
+artifact constructor.
 
 `rebuild_revoked_cache()` accepts an immutable eligibility receipt for the new
 binding and a callable canonical FP32 source. It never decodes or relabels the
@@ -48,6 +50,8 @@ The focused tests prove:
 - an ineligible or mismatched eligibility receipt cannot persist anything;
 - non-FP32 or non-finite canonical source input rejects;
 - stale-record relabeling under the same binding rejects;
+- a stale compressed payload cannot be relabelled under a new rights binding by
+  replacing its binding/header metadata, and an absent tag fails construction;
 - two different stale lossy payloads produce the same rebuilt artifact when the
   qualified canonical FP32 source and new binding are the same;
 - a poisoned codec entrypoint is never reached when stale source-rights identity
@@ -57,20 +61,21 @@ The focused tests prove:
 
 ## Verification
 
-Final focused cache suite: 41/41 pass. The affected
-attention/backbone/runtime-identity selection passes 68/68 with zero skips.
+Final focused cache suite: 42/42 pass after the payload/authority relabel
+adversary was added. The widened affected attention/backbone/runtime-identity
+selection passes on the same source state with the cache regression included.
 Development-structure and governance checks report zero violations. Factory
 architecture and documentation checks pass. Base-aware error control reports
 `new debt 0`. `git diff --check` is clean.
 
 The issue-required Google EGM review has not been claimed in this session;
 `EGM_PENDING` remains the integrator-facing review status unless an actual pinned
-EGM receipt is supplied. A separate independent read-only GPT review found zero
-Blockers and zero Majors plus two proof-coverage Nits. Both Nits were repaired
-before final publication: the poisoned-codec ordering witness now covers rights,
-prefix and topology independently, and the forbidden-dependency scan now covers
-binding, codec, policy, rebuild and record owners. This review is additional defect
-discovery and is not a substitute for the required pinned EGM receipt.
+EGM receipt is supplied. A fresh independent exact-head review found one Major in the earlier refreshed
+candidate: callers could relabel the authority digest/header onto unchanged
+compressed bytes. That defect is now repaired with the payload/authority tag and
+a literal rights-only relabel adversary. A new exact-head independent review is
+required after this repair. This review stream is defect-discovery evidence and
+does not substitute for the required pinned EGM receipt.
 
 No actual student, native AdamW, teacher, checkpoint, source release, admission,
 human-run state or production cache caller was modified. B13 accepted generation

@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from .atlas_cache_codec import Rot3Manifest
 
 from .atlas_cache_binding import (
-    CacheArtifact, CacheBinding, binding_digest, require_cache_binding, validate_binding,
+    CacheArtifact, CacheBinding, binding_digest, payload_binding_tag_fields, require_cache_binding, validate_binding,
     cache_byte_cost, MAX_EFFECTIVE_BITS, CACHE_MODE_FP32, CACHE_MODE_ROT3,
 )
 
@@ -50,8 +50,13 @@ def _validate_manifest(manifest: Rot3Manifest) -> None:
 
 def _fp32_artifact(values, bound) -> CacheArtifact:
     count, width = values.shape
-    return CacheArtifact(CACHE_MODE_FP32, count, count, width, bound, b"", b"", b"",
-                         np.asarray(values, dtype="<f4", order="C").tobytes(order="C"))
+    payload = np.asarray(values, dtype="<f4", order="C").tobytes(order="C")
+    tag = payload_binding_tag_fields(
+        CACHE_MODE_FP32, count, count, width, bound, b"", b"", b"", payload,
+    )
+    return CacheArtifact(
+        CACHE_MODE_FP32, count, count, width, bound, b"", b"", b"", payload, tag,
+    )
 
 
 def encode_cold_cache(
@@ -88,16 +93,33 @@ def encode_cold_cache(
         relative[nonzero] = np.rint(scaled).astype(np.uint8)
 
     codes = codec.quantize_directions(padded).reshape(-1)
+    direction_codes = codec.pack_3bit(codes)
+    relative_norms = relative.reshape(-1).tobytes(order="C")
+    block_max_norms = np.asarray(
+        maxima, dtype="<f4", order="C"
+    ).tobytes(order="C")
+    tag = payload_binding_tag_fields(
+        CACHE_MODE_ROT3,
+        true_vectors,
+        padded_vectors,
+        codec.HEAD_WIDTH,
+        bound,
+        direction_codes,
+        relative_norms,
+        block_max_norms,
+        b"",
+    )
     artifact = CacheArtifact(
         CACHE_MODE_ROT3,
         true_vectors,
         padded_vectors,
         codec.HEAD_WIDTH,
         bound,
-        codec.pack_3bit(codes),
-        relative.reshape(-1).tobytes(order="C"),
-        np.asarray(maxima, dtype="<f4", order="C").tobytes(order="C"),
+        direction_codes,
+        relative_norms,
+        block_max_norms,
         b"",
+        tag,
     )
     if cache_byte_cost(artifact).effective_bits_per_channel > MAX_EFFECTIVE_BITS:
         return _fp32_artifact(values, bound)

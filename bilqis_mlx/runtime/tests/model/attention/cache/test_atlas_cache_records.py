@@ -108,20 +108,20 @@ class Rot3NormAndFallbackTests(unittest.TestCase):
 
     def test_tail_padding_is_canonical_and_decode_returns_true_length(self):
         rng = np.random.default_rng(2483)
-        values = rng.normal(size=(MIN_COMPRESSED_VECTORS + 27, HEAD_WIDTH)).astype(np.float32)
+        values = rng.normal(size=(MIN_COMPRESSED_VECTORS + 31, HEAD_WIDTH)).astype(np.float32)
         artifact = encode_cold_cache(values, self.manifest, binding=self.binding)
-        self.assertEqual((artifact.true_vectors, artifact.padded_vectors), (283, 288))
-        self.assertEqual(artifact.relative_norms[283:], bytes(5))
+        self.assertEqual((artifact.true_vectors, artifact.padded_vectors), (287, 288))
+        self.assertEqual(artifact.relative_norms[287:], bytes(1))
         codes = unpack_3bit(artifact.direction_codes, artifact.padded_vectors * HEAD_WIDTH)
         codes = codes.reshape(artifact.padded_vectors, HEAD_WIDTH)
-        canonical = quantize_directions(np.zeros((5, HEAD_WIDTH), dtype=np.float32))
-        np.testing.assert_array_equal(codes[283:], canonical)
+        canonical = quantize_directions(np.zeros((1, HEAD_WIDTH), dtype=np.float32))
+        np.testing.assert_array_equal(codes[287:], canonical)
         self.assertEqual(decode_cache(artifact, self.binding).shape, values.shape)
 
         forged_norms = bytearray(artifact.relative_norms)
-        forged_norms[283] = 1
+        forged_norms[287] = 1
         forged_codes = codes.copy()
-        forged_codes[283, 0] = (int(forged_codes[283, 0]) + 1) % 8
+        forged_codes[287, 0] = (int(forged_codes[287, 0]) + 1) % 8
         for changes in (
             {"relative_norms": bytes(forged_norms)},
             {"direction_codes": pack_3bit(forged_codes.reshape(-1))},

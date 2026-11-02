@@ -53,13 +53,13 @@ class CacheBindingAndCostTests(unittest.TestCase):
     def test_full_record_reports_literal_actual_cost_below_parent_bound(self):
         header = record_header_bytes(self.artifact)
         cost = cache_byte_cost(self.artifact)
-        self.assertEqual(len(header), 45)
-        self.assertEqual(cost.header_bytes, 45)
+        self.assertEqual(len(header), 61)
+        self.assertEqual(cost.header_bytes, 61)
         self.assertEqual(cost.payload_bytes, 2304 + 256 + 32)
-        self.assertEqual(cost.total_bytes, 2637)
+        self.assertEqual(cost.total_bytes, 2653)
         self.assertAlmostEqual(
             cost.effective_bits_per_channel,
-            2637 * 8 / (256 * HEAD_WIDTH),
+            2653 * 8 / (256 * HEAD_WIDTH),
         )
         self.assertLessEqual(cost.effective_bits_per_channel, 3.5)
 
@@ -70,9 +70,9 @@ class CacheBindingAndCostTests(unittest.TestCase):
             values, self.manifest, binding=self.binding
         )
         cost = cache_byte_cost(artifact)
-        self.assertEqual(cost.header_bytes, 45)
+        self.assertEqual(cost.header_bytes, 61)
         self.assertEqual(cost.payload_bytes, values.size * 4)
-        self.assertEqual(cost.total_bytes, 45 + values.size * 4)
+        self.assertEqual(cost.total_bytes, 61 + values.size * 4)
         self.assertAlmostEqual(
             cost.effective_bits_per_channel,
             cost.total_bytes * 8 / values.size,
@@ -140,14 +140,14 @@ class CacheBindingAndCostTests(unittest.TestCase):
     def test_artifact_stores_header_and_rejects_each_header_byte_mutation(self):
         header = self.artifact.header_bytes
         self.assertEqual(header, record_header_bytes(self.artifact))
-        for index in (0, 4, 5, 36, 37, 41, 44):
+        for index in (0, 4, 5, 36, 37, 45, 52, 53, 57, 60):
             forged = header[:index] + bytes([header[index] ^ 1]) + header[index+1:]
             with self.subTest(index=index), self.assertRaises(BilqisError):
                 decode_cache(replace(self.artifact, header_bytes=forged), self.binding)
 
     def test_padded_record_cost_decides_rot3_or_exact_fp32(self):
         for count, compressed in ((256, True), (257, False), (280, False),
-                                  (282, True), (283, True), (288, True),
+                                  (282, False), (283, False), (288, True),
                                   (289, False), (320, True)):
             values = np.ones((count, HEAD_WIDTH), dtype=np.float32)
             artifact = encode_cold_cache(values, self.manifest, binding=self.binding)

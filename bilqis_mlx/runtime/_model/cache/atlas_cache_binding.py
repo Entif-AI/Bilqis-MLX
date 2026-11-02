@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 
 DIGEST_HEX_CHARS = 64
 BINDING_DIGEST_BYTES = 32
+PAYLOAD_BINDING_TAG_BYTES = 16
 RECORD_HEADER_LIMIT = 64
 RECORD_HEADER_MAGIC = b"B3C1"
 MODE_FP32_BYTE = b"F"
@@ -59,9 +60,14 @@ class CacheArtifact:
     relative_norms: bytes
     block_max_norms_fp32: bytes
     fp32_payload: bytes
+    payload_binding_tag: bytes | None = None
     header_bytes: bytes | None = None
 
     def __post_init__(self) -> None:
+        if type(self.payload_binding_tag) is not bytes or (
+            len(self.payload_binding_tag) != PAYLOAD_BINDING_TAG_BYTES
+        ):
+            _invalid()
         if self.header_bytes is None:
             object.__setattr__(self, "header_bytes", record_header_bytes(self))
 
@@ -156,12 +162,73 @@ def binding_digest(binding: CacheBinding) -> bytes:
     return hashlib.sha256(canonical).digest()
 
 
+
+def payload_binding_tag_fields(
+    mode: str,
+    true_vectors: int,
+    padded_vectors: int,
+    head_width: int,
+    binding_sha256: bytes,
+    direction_codes: bytes,
+    relative_norms: bytes,
+    block_max_norms_fp32: bytes,
+    fp32_payload: bytes,
+) -> bytes:
+    """Mint the compact payload/authority integrity tag used in the record header."""
+    if type(binding_sha256) is not bytes or len(binding_sha256) != BINDING_DIGEST_BYTES:
+        _invalid()
+    payloads = (
+        direction_codes, relative_norms, block_max_norms_fp32, fp32_payload,
+    )
+    if not all(type(payload) is bytes for payload in payloads):
+        _invalid()
+    if mode == CACHE_MODE_FP32:
+        mode_byte = MODE_FP32_BYTE
+    elif mode == CACHE_MODE_ROT3:
+        mode_byte = MODE_ROT3_BYTE
+    else:
+        _invalid()
+    if (type(true_vectors) is not int
+            or type(padded_vectors) is not int
+            or type(head_width) is not int):
+        _invalid()
+    digest = hashlib.sha256()
+    digest.update(b"bamf-cache-payload-binding-v1\0")
+    digest.update(binding_sha256)
+    digest.update(mode_byte)
+    digest.update(struct.pack("<III", true_vectors, padded_vectors, head_width))
+    for payload in payloads:
+        digest.update(struct.pack("<Q", len(payload)))
+        digest.update(payload)
+    return digest.digest()[:PAYLOAD_BINDING_TAG_BYTES]
+
+
+def payload_binding_tag(artifact: CacheArtifact) -> bytes:
+    """Recompute the stored payload/authority tag without trusting its header."""
+    if not isinstance(artifact, CacheArtifact):
+        _invalid()
+    return payload_binding_tag_fields(
+        artifact.mode,
+        artifact.true_vectors,
+        artifact.padded_vectors,
+        artifact.head_width,
+        artifact.binding_sha256,
+        artifact.direction_codes,
+        artifact.relative_norms,
+        artifact.block_max_norms_fp32,
+        artifact.fp32_payload,
+    )
+
 def record_header_bytes(artifact: CacheArtifact) -> bytes:
     from .atlas_cache_codec import HEAD_WIDTH
     if not isinstance(artifact, CacheArtifact):
         _invalid()
     if type(artifact.binding_sha256) is not bytes or (
         len(artifact.binding_sha256) != BINDING_DIGEST_BYTES
+    ):
+        _invalid()
+    if type(artifact.payload_binding_tag) is not bytes or (
+        len(artifact.payload_binding_tag) != PAYLOAD_BINDING_TAG_BYTES
     ):
         _invalid()
     if (type(artifact.true_vectors) is not int
@@ -179,6 +246,7 @@ def record_header_bytes(artifact: CacheArtifact) -> bytes:
         RECORD_HEADER_MAGIC
         + mode
         + artifact.binding_sha256
+        + artifact.payload_binding_tag
         + struct.pack("<II", artifact.true_vectors, artifact.padded_vectors)
     )
     if len(header) > RECORD_HEADER_LIMIT:
@@ -220,4 +288,6 @@ def require_cache_binding(artifact: CacheArtifact, binding: CacheBinding) -> Non
         or artifact.header_bytes != record_header_bytes(artifact)):
         _invalid()
     if artifact.binding_sha256 != binding_digest(binding):
+        _invalid()
+    if artifact.payload_binding_tag != payload_binding_tag(artifact):
         _invalid()

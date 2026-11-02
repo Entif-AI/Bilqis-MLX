@@ -197,6 +197,33 @@ class RevokedCacheRebuildTests(unittest.TestCase):
                     persist=lambda _: self.fail("persisted invalid rebuild"),
                 )
 
+    def test_stale_payload_cannot_be_relabelled_under_new_rights_binding(self):
+        new_binding = replace(
+            self.old_binding, source_rights_sha256="f" * 64
+        )
+        from bilqis_mlx.runtime.atlas_cache_codec import binding_digest
+
+        relabelled = replace(
+            self.stale,
+            binding_sha256=binding_digest(new_binding),
+            header_bytes=None,
+        )
+        self.assertEqual(relabelled.direction_codes, self.stale.direction_codes)
+        self.assertEqual(relabelled.relative_norms, self.stale.relative_norms)
+        self.assertEqual(
+            relabelled.block_max_norms_fp32,
+            self.stale.block_max_norms_fp32,
+        )
+        with self.assertRaises(BilqisError):
+            decode_cache(relabelled, new_binding)
+        with self.assertRaises(BilqisError):
+            replace(
+                self.stale,
+                binding_sha256=binding_digest(new_binding),
+                payload_binding_tag=None,
+                header_bytes=None,
+            )
+
     def test_stale_record_cannot_be_relabelled_as_same_binding(self):
         with self.assertRaises(BilqisError):
             rebuild_revoked_cache(
