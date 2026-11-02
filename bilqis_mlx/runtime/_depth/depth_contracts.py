@@ -191,6 +191,7 @@ class DepthSummary:
             _invalid()
 
 DepthParameterView.__module__ = "bilqis_mlx.runtime.block_attnres"
+depth_parameter_view.__module__ = "bilqis_mlx.runtime.block_attnres"
 _DepthFeatureValues.__module__ = "bilqis_mlx.runtime.block_attnres"
 DepthFrameFeatures.__module__ = "bilqis_mlx.runtime.block_attnres"
 DepthSummary.__module__ = "bilqis_mlx.runtime.block_attnres"

@@ -1,8 +1,11 @@
 """Adversaries for the preservation receipt's definition inventory."""
 import ast
+import json
+from pathlib import Path
+import tempfile
 import unittest
 
-from verify_preservation import definitions, require_preserved
+from verify_preservation import definitions, require_preserved, require_receipt
 
 
 def inventory(*sources):
@@ -10,6 +13,14 @@ def inventory(*sources):
 
 
 class PreservationTests(unittest.TestCase):
+    def test_stale_committed_receipt_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'receipt.json'
+            path.write_text(json.dumps({'source': 'old'}))
+            with self.assertRaises(ValueError):
+                require_receipt({'source': 'current'}, path)
+            require_receipt({'source': 'old'}, path)
+
     def test_nested_names_keep_lexical_identity(self):
         source = 'def first():\n def objective(): return 1\ndef second():\n def objective(): return 2\n'
         before = inventory(source)

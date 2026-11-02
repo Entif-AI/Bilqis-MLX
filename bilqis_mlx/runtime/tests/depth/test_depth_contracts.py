@@ -31,6 +31,13 @@ from bilqis_mlx.runtime.tests.depth.depth_helpers import (
 )
 
 class DepthSelectionTests(unittest.TestCase):
+    def test_parameter_view_factory_keeps_public_pickle_identity(self):
+        import pickle
+        from bilqis_mlx.runtime import block_attnres
+        expected = b'cbilqis_mlx.runtime.block_attnres\ndepth_parameter_view\np0\n.'
+        self.assertIs(pickle.loads(expected), block_attnres.depth_parameter_view)
+        self.assertEqual(pickle.dumps(block_attnres.depth_parameter_view, protocol=0), expected)
+
     def setUp(self):
         self.current = _hidden([[1, 3, 2], [2, 4, 1]])
         self.params = _params()
