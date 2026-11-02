@@ -232,6 +232,20 @@ class SourceBackboneReceiptTests(SourceBackboneTestBase):
         self.assertEqual(g3.input_digest, _content_digest(selected2))
         self.assertNotEqual(g3.input_digest, g2.output_digest)
 
+    def test_advance_rejects_stale_selected_boundary_before_next_group(self):
+        parameters = dict(self.parameters)
+        parameters["depth.norm"] = mx.ones((768,), dtype=mx.float32)
+        producer = self.producer(parameters)
+        producer.advance()
+        features1, view1 = self.depth_inputs(parameters, boundary=1)
+        producer.advance(features1, view1)
+        with self.assertRaises(BilqisError):
+            producer.advance(features1, view1)
+        self.assertEqual(len(producer.receipts), 3)
+        features2, view2 = self.depth_inputs(parameters, boundary=2)
+        g3 = producer.advance(features2, view2)
+        self.assertEqual(g3.source_id, "g3")
+
     def test_public_b05_selection_keeps_gradient_to_executed_backbone(self):
         parameters = dict(self.parameters)
         parameters["blocks.0.ffn_norm"] = mx.ones((768,), dtype=mx.float32)

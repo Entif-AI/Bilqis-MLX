@@ -150,6 +150,9 @@ class _SourceBackboneProducerSession:
         if completed:
             if frame_features is None or depth_parameters is None:
                 _invalid_producer_receipt()
+            if (frame_features.boundary_group != completed
+                    or depth_parameters.boundary_group != completed):
+                _invalid_producer_receipt()
             selected = depth_select(self, frame_features, depth_parameters)
             result = self._session.advance(next_input=selected)
             self._depth_inputs += ((frame_features, depth_parameters),)
