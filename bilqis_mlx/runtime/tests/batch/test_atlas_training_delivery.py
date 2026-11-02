@@ -41,7 +41,7 @@ class TrainingDeliveryTests(AtlasTrainingAdapterTest):
             indices_for_plan=lambda plan: plan,
             positions_for=lambda prefix: tuple(
                 int(x) for x in
-                prefix.ast.source_instance_id.removeprefix('synthetic:ast:').split(',')))
+            prefix.source_instance_id.removeprefix('synthetic:ast:').split(',')))
         self.assertEqual(groups[0].positions, ((1, 2, None), (1, 2, 1)))
         self.assertEqual(groups[0].padding_mask, ((True, True, False), (True, True, True)))
         with self.assertRaises(BilqisError):

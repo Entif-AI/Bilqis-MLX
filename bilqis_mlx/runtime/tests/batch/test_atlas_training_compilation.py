@@ -2,18 +2,21 @@
 
 from bilqis_mlx.runtime.tests.test_atlas_training_adapter import (
     AtlasTrainingAdapterTest, BamfTarget, BilqisError, CurriculumProfile,
-    Literal, SourceAdapterRegistry, SourceExecutionContext, _source_context,
-    answer_plan_for, closed_source_fixture, compile_executable_factory_release, compile_prefix,
-    compile_training_batch, describe_delivered_teaching, feature_requests_for, features_for,
-    from_legacy_course, replace, source_ast_for,
+    Literal, SourceAdapterRegistry, SourceExecutionContext,
+    closed_source_fixture, compile_executable_factory_release,
+    describe_delivered_teaching, from_legacy_course, replace,
 )
 
 
 class TrainingCompilationTests(AtlasTrainingAdapterTest):
     def test_real_factory_rows_and_delivery_bind_typed_source_and_target(self):
         item = self.compile(self.rows).rows[0]
-        self.assertEqual(item.model_input.prefix.ast.source_instance_id, 'synthetic:ast:1,2')
-        self.assertEqual(item.model_input.features, (('1,2', 'subject', 'fixture.schema', 'public'),))
+        self.assertEqual(item.model_input.prefix.source_instance_id, 'synthetic:ast:1,2')
+        self.assertEqual(len(item.model_input.features), 1)
+        self.assertEqual(item.model_input.features[0].semantic_id, 'fixture:entity:1,2')
+        self.assertEqual(item.model_input.features[0].role_id, 'subject')
+        self.assertEqual(item.model_input.features[0].schema_id, 'fixture:training-frame')
+        self.assertEqual(item.model_input.features[0].scope, 'synthetic:task')
         self.assertEqual(item.target.value, 'FALSE')
         self.assertEqual(item.target.token_id, 1)
         self.assertEqual(len(item.model_input.eligibility_digest), 64)
@@ -105,7 +108,7 @@ class TrainingCompilationTests(AtlasTrainingAdapterTest):
                 item = self.compile(rows).rows[0]
                 self.assertEqual(item.target.kind, kind)
                 self.assertEqual(item.target.value, values[0])
-                self.assertEqual(item.model_input.prefix.ast.source_instance_id, 'synthetic:ast:1,2')
+                self.assertEqual(item.model_input.prefix.source_instance_id, 'synthetic:ast:1,2')
                 if kind == 'numeric_active':
                     self.assertEqual(item.native_target.value, 'school.number.0')
 
@@ -120,27 +123,12 @@ class TrainingCompilationTests(AtlasTrainingAdapterTest):
             self.context.source_registry, self.context.answer_registry)
         second = self.compile(self.rows)
         self.assertNotEqual(first.release_sha256, second.release_sha256)
-        self.assertNotEqual(
-            first.rows[0].model_input.eligibility_digest,
-            second.rows[0].model_input.eligibility_digest)
-        self.assertEqual(
-            replace(first.rows[0].model_input,
-                    eligibility_digest=second.rows[0].model_input.eligibility_digest),
-            second.rows[0].model_input)
+        self.assertEqual(first.rows[0].model_input, second.rows[0].model_input)
         self.assertEqual(first.rows[0].target, second.rows[0].target)
         self.assertEqual(first.rows[0].provenance, second.rows[0].provenance)
 
     def test_delivery_content_tampering_is_rejected(self):
         delivery = describe_delivered_teaching(self.context.release, 'Z.C0', 'source.direct/Z.C0', self.rows)
         changed = [{**self.rows[0], 'gold': 'TRUE'}]
-        frames_for_ast, task, frontier, policy = _source_context(
-            changed, self.context.release.release_sha256, {}, "allow")
         with self.assertRaises(BilqisError):
-            compile_training_batch(changed, self.context, {}, delivery=delivery, delivery_capability='Z.C0',
-                delivery_release_sha256=self.context.release.release_sha256,
-                teacher_strategy={'policy': 'focused'}, requested_count=3, optimizer_step_seed=42,
-                rehearsal_by_id={}, visible_ends={}, source_ast_for=source_ast_for,
-                compile_prefix=compile_prefix, feature_requests_for=feature_requests_for, features_for=features_for, answer_plan_for=lambda *args: {**answer_plan_for(*args), 'generation_binding': self.model_generation},
-            frames_for_ast=frames_for_ast, task_scope=task,
-            source_frontier=frontier, eligibility_policy=policy,
-            generation_binding=self.model_generation)
+            self.compile(changed, delivery_override=delivery)

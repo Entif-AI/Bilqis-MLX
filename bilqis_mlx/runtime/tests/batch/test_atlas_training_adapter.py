@@ -1,5 +1,5 @@
 """Provisional Factory-to-BAMF contract witnesses; no neural state is used."""
-from dataclasses import dataclass, replace
+from dataclasses import replace
 import unittest
 
 from bilqis_mlx.errors import BilqisError
@@ -11,13 +11,17 @@ from bilqis_mlx.factory.teaching import describe_delivered_teaching
 from bilqis_mlx.factory.tests.test_teaching import closed_source_fixture
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.runtime.atlas_training_adapter import BamfTarget, compile_training_batch, require_current_release
+from bilqis_mlx.semantics.atlas_features import AtlasFeatures, ConceptFeature
 from bilqis_mlx.semantics.core import Literal
 from bilqis_mlx.semantics.context_eligibility import (
     PUBLIC_FORMAL, ContextEligibility, ContextMember, ContextPolicy,
     SourceFrontier, SourceGrant, TaskScope, frame_evidence_digest,
     member_evidence_digest,
 )
-from bilqis_mlx.semantics.frame_compiler import SourceAtom, StreamingAST
+from bilqis_mlx.semantics.frame_codec import SchemaTagMap
+from bilqis_mlx.semantics.frame_compiler import (
+    FrameCompilerConfig, SourceAtom, StreamingAST, atom_evidence_digest,
+)
 from bilqis_mlx.semantics.frame_schema import (
     ConceptRef, FrameSchema, FrameTree, RoleOccurrence, RoleSpec, SourceSpan,
     make_frame_instance,
@@ -29,7 +33,7 @@ def _source_context(rows, release, visible_ends, policy_mode, graph=None):
     principal, tenant = "synthetic:person", "synthetic:tenant"
     region, scope = "synthetic:region", "synthetic:task"
     semantic_release = '0' * 64
-    policy_epoch = int(release[:8], 16) or 1
+    policy_epoch = 1
     envelopes = {}
     grants = {}
     for row in rows:
@@ -49,6 +53,9 @@ def _source_context(rows, release, visible_ends, policy_mode, graph=None):
         evidence = (
             (frame_source, frame_evidence_digest(frame)),
             (member.source_handle, member_evidence_digest(frame, member)),
+            *((atom.source_reference,
+               atom_evidence_digest(ast.source_instance_id, atom, semantic_release))
+              for atom in ast.atoms[:end]),
         )
         for handle, digest in evidence:
             grants[handle] = SourceGrant(
@@ -85,10 +92,11 @@ def _source_context(rows, release, visible_ends, policy_mode, graph=None):
     return frames_for_ast, task, frontier, policy
 
 
-@dataclass(frozen=True)
-class CompiledPrefixFixture:
-    ast: StreamingAST
-    visible_end: int
+def _training_schema():
+    return FrameSchema(
+        'fixture:training-frame', 1, 'source:factory-fixture',
+        (RoleSpec('subject', ('Entity',), 1, 1),),
+        'ORDERED', 'synthetic')
 
 
 def source_ast_for(tokens, release='fixture-release', graph=None):
@@ -101,10 +109,7 @@ def source_ast_for(tokens, release='fixture-release', graph=None):
     atoms = tuple(
         SourceAtom(index, token_names[token], f'{source_instance_id}#atom:{index}')
         for index, token in enumerate(tokens))
-    schema = FrameSchema(
-        'fixture:training-frame', 1, 'source:factory-fixture',
-        (RoleSpec('subject', ('Entity',), 1, 1),),
-        'ORDERED', 'synthetic')
+    schema = _training_schema()
     frame = make_frame_instance(
         schema,
         source_instance_id=source_instance_id,
@@ -119,18 +124,6 @@ def source_ast_for(tokens, release='fixture-release', graph=None):
     return StreamingAST(source_instance_id, atoms, (FrameTree(frame),))
 
 
-def compile_prefix(ast, visible_end, release, compiler_config):
-    if not isinstance(ast, StreamingAST):
-        raise AssertionError('A05 requires a typed source AST')
-    return CompiledPrefixFixture(ast, visible_end)
-
-
-def feature_requests_for(prefix):
-    return ((
-        prefix.ast.source_instance_id.removeprefix('synthetic:ast:'),
-        'subject', 'fixture.schema', 'public'),)
-
-
 def answer_plan_for(prefix, release, capability, kind):
     head = next(head for head in release.answer_heads if head.kind == kind)
     return {'modalityID': head.modality_id, 'input_prefix_end': prefix.visible_end,
@@ -142,8 +135,25 @@ def answer_plan_for(prefix, release, capability, kind):
             'generation_binding': release.release_sha256}
 
 
-def features_for(concept, role, schema, scope):
-    return (concept, role, schema, scope)
+def _atlas_features(asts: tuple[StreamingAST, ...], semantic_release: str) -> AtlasFeatures:
+    concepts = {}
+    for ast in asts:
+        for tree in ast.frames:
+            frame = tree.root
+            if not hasattr(frame, 'bindings'):
+                continue
+            for binding in frame.bindings:
+                candidates = ((binding.concept,) if binding.concept is not None
+                              else binding.alternatives)
+                for concept in candidates:
+                    concepts[concept.semantic_id] = ConceptFeature(
+                        concept.semantic_id, concept.abi_index, concept.type_ids,
+                        (0.0,) * 64, 'ADMITTED_SOURCE')
+    return AtlasFeatures(
+        semantic_release, 'fixture:atlas', 'fixture:source', None,
+        (('Entity', 2),), (('subject', 2),),
+        (('fixture:training-frame', 2),),
+        tuple(concepts[key] for key in sorted(concepts)), ())
 
 
 class AtlasTrainingAdapterTest(unittest.TestCase):
@@ -168,17 +178,30 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
 
     def compile(self, rows, *, release_sha=None, encoders=None, policy='allow',
                 generation=None, sealed=(), context_mutator=None,
-                frames_override=None, source_ast_override=None, extra_kwargs=None):
-        delivery = describe_delivered_teaching(self.context.release, 'Z.C0', 'source.direct/Z.C0', rows)
+                frames_override=None, source_ast_override=None,
+                delivery_override=None, extra_kwargs=None):
+        delivery = delivery_override or describe_delivered_teaching(
+            self.context.release, 'Z.C0', 'source.direct/Z.C0', rows)
         visible_ends = {rows[0]['id']: 2}
-        frames_for_ast, task, frontier, context_policy = _source_context(
+        frames_for_ast, base_task, base_frontier, base_policy = _source_context(
             rows, self.context.release.release_sha256, visible_ends, policy,
             self.context.graph)
+        task, frontier, context_policy = base_task, base_frontier, base_policy
         if context_mutator is not None:
             task, frontier, context_policy = context_mutator(
                 task, frontier, context_policy)
         if frames_override is not None:
             frames_for_ast = frames_override
+        legitimate_asts = tuple(source_ast_for(
+            tuple(row['tokens'][:visible_ends.get(row['id'], len(row['tokens']))]),
+            self.context.release.release_sha256, self.context.graph)
+            for row in rows)
+        schema = _training_schema()
+        semantic_release = base_task.semantic_release
+        compiler_config = FrameCompilerConfig(
+            (schema,), SchemaTagMap.from_schemas(semantic_release, (schema,)),
+            None,
+            base_task, base_frontier, base_policy)
         return compile_training_batch(rows, self.context, {'context': 1024},
             delivery=delivery, delivery_capability='Z.C0', delivery_release_sha256=release_sha or self.context.release.release_sha256,
             teacher_strategy={'policy': 'focused'}, requested_count=3, optimizer_step_seed=42,
@@ -187,8 +210,9 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
                 lambda tokens: source_ast_for(
                     tokens, self.context.release.release_sha256,
                     self.context.graph)),
-            compile_prefix=compile_prefix,
-            feature_requests_for=feature_requests_for, features_for=features_for, answer_plan_for=lambda *args: {**answer_plan_for(*args), 'generation_binding': self.model_generation},
+            compiler_config=compiler_config,
+            atlas_features=_atlas_features(legitimate_asts, semantic_release),
+            answer_plan_for=lambda *args: {**answer_plan_for(*args), 'generation_binding': self.model_generation},
             frames_for_ast=frames_for_ast, task_scope=task,
             source_frontier=frontier, eligibility_policy=context_policy,
             target_encoders=encoders, generation_binding=generation or self.model_generation,
@@ -222,3 +246,32 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
                     self.context.release.release_sha256,
                     {self.rows[0]['id']: 2},
                     'allow', self.context.graph)[0](legitimate))
+
+    def test_same_source_ast_with_forged_source_reference_is_rejected(self):
+        legitimate = source_ast_for(
+            (1, 2), self.context.release.release_sha256, self.context.graph)
+        forged = replace(
+            legitimate,
+            atoms=(
+                replace(legitimate.atoms[0], source_reference='forged:atom:0'),
+                legitimate.atoms[1],
+            ))
+        with self.assertRaises(BilqisError):
+            self.compile(
+                self.rows,
+                source_ast_override=lambda _tokens: forged,
+                frames_override=lambda _ast: _source_context(
+                    self.rows,
+                    self.context.release.release_sha256,
+                    {self.rows[0]['id']: 2},
+                    'allow', self.context.graph)[0](legitimate))
+
+    def test_caller_cannot_supply_prefix_or_feature_authority(self):
+        with self.assertRaises(TypeError):
+            self.compile(
+                self.rows,
+                extra_kwargs={'compile_prefix': lambda *_args: object()})
+        with self.assertRaises(TypeError):
+            self.compile(
+                self.rows,
+                extra_kwargs={'features_for': lambda *_args: ('forged',)})

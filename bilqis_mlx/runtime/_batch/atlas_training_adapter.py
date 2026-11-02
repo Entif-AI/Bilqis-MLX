@@ -1,10 +1,7 @@
-"""Release-bound, source-visible BAMF input preparation.
-
-The compiler and feature callables are explicit seams until A05 and A06 land.
-They are the interfaces in their owner contracts, not replacement implementations.
-"""
+"""Release-bound, source-visible BAMF input preparation."""
 from __future__ import annotations
 
+from dataclasses import replace
 from graphlib import CycleError, TopologicalSorter
 from typing import Callable
 
@@ -12,11 +9,15 @@ from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.factory.adapters import validate_instructional_constituents
 from bilqis_mlx.factory.generation import runtime_adapter_for_release
 from bilqis_mlx.factory.teaching import DeliveredTeaching, describe_delivered_teaching, content_digest
-from bilqis_mlx.semantics.frame_compiler import StreamingAST
-from bilqis_mlx.semantics.context_eligibility import (
-    ContextEligibility, ContextPolicy, EligibleContext, SourceFrontier,
-    TaskScope, check_context_eligibility as _check_context_eligibility,
+from bilqis_mlx.semantics.atlas_features import AtlasFeatures
+from bilqis_mlx.semantics.frame_compiler import (
+    FrameCompilerConfig, StreamingAST, compile_prefix,
 )
+from bilqis_mlx.semantics.context_eligibility import (
+    ApprovedContextProjection, ContextEligibility, ContextPolicy,
+    SourceFrontier, TaskScope, project_context,
+)
+from bilqis_mlx.semantics.frame_schema import FrameInstance
 from .atlas_training_contracts import (
     BamfModelInput, BamfTarget, BamfTargetEvidence, BamfDeliveryProvenance,
     BamfTrainingRow, BamfTrainingBatch, PaddedMicrobatch,
@@ -94,24 +95,59 @@ def _require_source_lineage(ast, frames, visible, graph) -> None:
         _invalid('CONTEXT_SOURCE_LINEAGE_MISMATCH')
 
 
+def _require_semantic_authority(
+        compiler_config: FrameCompilerConfig, atlas_features: AtlasFeatures,
+        projection: ApprovedContextProjection, task_scope: TaskScope,
+        source_frontier: SourceFrontier,
+        eligibility_policy: ContextPolicy) -> None:
+    if (type(compiler_config) is not FrameCompilerConfig
+            or type(atlas_features) is not AtlasFeatures
+            or compiler_config.approved is not None
+            or compiler_config.task != task_scope
+            or compiler_config.frontier != source_frontier
+            or compiler_config.policy != eligibility_policy
+            or atlas_features.semantic_release != task_scope.semantic_release):
+        _invalid('UPSTREAM_SEMANTIC_AUTHORITY_MISMATCH')
+
+
+def _source_features(
+        projection: ApprovedContextProjection,
+        atlas_features: AtlasFeatures) -> tuple:
+    result = []
+    for envelope in projection.envelopes:
+        frame = envelope.frame
+        if type(frame) is not FrameInstance:
+            continue
+        for binding in frame.bindings:
+            concepts = ((binding.concept,) if binding.concept is not None
+                        else binding.alternatives)
+            for concept in concepts:
+                result.append(atlas_features.features_for(
+                    concept, binding.role_id, frame.frame_schema_id,
+                    envelope.scope))
+    return tuple(result)
+
+
 def compile_training_batch(delivered_rows, source_context: SourceExecutionContext,
                            topology, *, delivery: DeliveredTeaching, delivery_capability: str,
                            delivery_release_sha256: str, teacher_strategy: dict,
                            requested_count: int, optimizer_step_seed: int,
                            rehearsal_by_id: dict, visible_ends: dict,
-                           source_ast_for: Callable, compile_prefix: Callable,
-                           feature_requests_for: Callable, features_for: Callable, answer_plan_for: Callable,
+                           source_ast_for: Callable,
+                           compiler_config: FrameCompilerConfig,
+                           atlas_features: AtlasFeatures,
+                           answer_plan_for: Callable,
                            frames_for_ast: Callable, task_scope: TaskScope,
                            source_frontier: SourceFrontier,
                            eligibility_policy: ContextPolicy, generation_binding: str,
                            target_encoders: dict | None = None, sealed_holdout_ids=()) -> BamfTrainingBatch:
-    """Compile source-oracled delivery using explicit frozen A05/A06 seams."""
+    """Compile source-oracled delivery through accepted A05/A06 owners."""
     if not isinstance(source_context, SourceExecutionContext):
         _invalid('SOURCE_CONTEXT_REQUIRED')
     if not isinstance(delivered_rows, (tuple, list)) or not delivered_rows:
         _invalid('DELIVERED_ROWS_REQUIRED')
-    if any(not callable(fn) for fn in (source_ast_for, compile_prefix, feature_requests_for, features_for,
-                                           frames_for_ast, answer_plan_for)):
+    if any(not callable(fn) for fn in (
+            source_ast_for, frames_for_ast, answer_plan_for)):
         _invalid('UPSTREAM_INTERFACES_REQUIRED')
     if (type(task_scope) is not TaskScope
             or type(source_frontier) is not SourceFrontier
@@ -195,16 +231,18 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
                 or any(type(frame) is not ContextEligibility for frame in frames)):
             _invalid('CONTEXT_SOURCE_FRAMES_REQUIRED')
         _require_source_lineage(ast, frames, visible, source_context.graph)
-        eligible = _check_context_eligibility(
+        projection = project_context(
             frames, task_scope, source_frontier, eligibility_policy)
-        if type(eligible) is not EligibleContext:
+        if type(projection) is not ApprovedContextProjection:
             _invalid('CONTEXT_NOT_ELIGIBLE')
-        eligibility_digest = eligible.digest
-        prefix = compile_prefix(ast, len(visible), release, topology)
-        queries = feature_requests_for(prefix)
-        if not isinstance(queries, (list, tuple)) or any(not isinstance(q, (list, tuple)) or len(q) != 4 for q in queries):
-            _invalid('FEATURE_REQUESTS_INVALID')
-        features = tuple(_freeze(features_for(*query)) for query in queries)
+        _require_semantic_authority(
+            compiler_config, atlas_features, projection, task_scope,
+            source_frontier, eligibility_policy)
+        eligibility_digest = projection.digest
+        prefix = compile_prefix(
+            ast, len(visible), task_scope.semantic_release,
+            replace(compiler_config, approved=projection))
+        features = _source_features(projection, atlas_features)
         plan = _answer_plan(answer_plan_for(prefix, release, capabilities[capability], kind), head, len(visible), generation_binding)
         encoder = (target_encoders or {}).get(kind)
         if isinstance(gold, str) and (gold not in families[kind] or gold not in head.values):
