@@ -1,0 +1,89 @@
+{
+  "schema": "bilqis.bamf.flow-control-lane/v1",
+  "lane": "B",
+  "observed_unified": "b4f2f0aca31623e7246ef819338a1450d71183cd",
+  "updated_at": "2026-11-02T08:29:21Z",
+  "exception": null,
+  "items": [
+    {
+      "issue": 475,
+      "pr": 695,
+      "state": "ACTIVE",
+      "head_sha": "577d0d337f7e401859d0a2cfd57bc3e051a82596",
+      "summary": "B12.2 candidate-custody follow-up is the current primary Lane B implementation surface.",
+      "resume_trigger": null
+    },
+    {
+      "issue": 465,
+      "pr": 692,
+      "state": "WAITING",
+      "head_sha": "a1025e442277ee71b2120f87b9254179cee88dfb",
+      "summary": "B09.2 repaired participation-mask candidate.",
+      "resume_trigger": "Fresh exact-head adversarial re-review completes, pinned Google EGM is available/completed, and accepted B05/B08/B11 production provenance is consumable."
+    },
+    {
+      "issue": 456,
+      "pr": 690,
+      "state": "WAITING",
+      "head_sha": "547471d2b95fadbbd7fa3631db0d0a56a20436c9",
+      "summary": "B07.1 source-qualified motif identity is NON-EGM clean.",
+      "resume_trigger": "Pinned Google EGM becomes available and is run on the exact candidate head, or an explicitly accepted successor gate replaces it."
+    },
+    {
+      "issue": 455,
+      "pr": 686,
+      "state": "WAITING",
+      "head_sha": "39732bdb053e33cd917ed03de43ac02ed638474b",
+      "summary": "B06.4 registry reconciliation depends on B06.3 acceptance.",
+      "resume_trigger": "B06.3/#454 is accepted on unified sufficiently to satisfy the direct prerequisite, then B06.4 may be refreshed once for turn-in."
+    },
+    {
+      "issue": 454,
+      "pr": 684,
+      "state": "WAITING",
+      "head_sha": "5aed4641d6cf1ba63d5746e04c964a8ef2f88ff2",
+      "summary": "B06.3 exact frame-output refinement is NON-EGM clean.",
+      "resume_trigger": "Pinned Google EGM becomes available and is run on the exact candidate head, or an explicitly accepted successor gate replaces it."
+    },
+    {
+      "issue": 697,
+      "pr": 698,
+      "state": "WAITING",
+      "head_sha": "bd000f39a59142fb77f40d4426bd127c936ca119",
+      "summary": "B13.5 accepted-generation predecessor-authority bridge.",
+      "resume_trigger": "B13.1/#478 PR #672 is accepted on unified or replaced by an accepted successor authority."
+    },
+    {
+      "issue": 479,
+      "pr": 677,
+      "state": "WAITING",
+      "head_sha": "d18997f2b5c9314a6f4fd15dd590fabfd2dd3546",
+      "summary": "B13 complete-size numerical cold-read proof.",
+      "resume_trigger": "The accepted B13.1 custody/publication surface and its named prerequisites are consumable for the complete-generation witness."
+    },
+    {
+      "issue": 485,
+      "pr": 674,
+      "state": "WAITING",
+      "head_sha": "bfada2678ad6bd44ae7a297d101b96ac8292fbea",
+      "summary": "B14.4 cache-authority repair is locally green.",
+      "resume_trigger": "Fresh exact-head independent re-review completes and pinned Google EGM becomes available/completes."
+    },
+    {
+      "issue": 478,
+      "pr": 704,
+      "state": "ACTIVE",
+      "head_sha": "630f39e186d6aac042edf70c63810c9300489732",
+      "summary": "B13.1 post-merge custody remediation is active for review findings #706 and #707 on draft PR #704.",
+      "resume_trigger": null
+    },
+    {
+      "issue": 586,
+      "pr": 640,
+      "state": "WAITING",
+      "head_sha": "76383e474245bf9a61acc278ff84decc177a6c97",
+      "summary": "B11.1a execution-owned backbone producer is NON-EGM clean.",
+      "resume_trigger": "Pinned Google EGM becomes available and is run on the exact candidate head, or an explicitly accepted successor gate replaces it."
+    }
+  ]
+}

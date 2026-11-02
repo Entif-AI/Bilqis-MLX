@@ -26,6 +26,14 @@ OBSOLETE_LIVE_POLICY = (
     "Keep B debt and numeric scope from the real run manifest",
 )
 INTEGRATION_BRANCH = "codex/bamf-unified-base-20261028"
+EGM_POLICY_MARKER = "<!-- BAMF02:EGM-MERGE-READINESS-GATE:20261102 -->"
+OBSOLETE_EGM_POLICY = "One repair pass and one targeted re-audit are the default budget."
+EGM_OPERATIONAL_DOCS = (
+    "docs/tasks/bamf-0.2/EGM_EXECUTION.md",
+    "docs/tasks/bamf-0.2/EXECUTION_LANE_A.md",
+    "docs/tasks/bamf-0.2/EXECUTION_LANE_B.md",
+    "docs/tasks/bamf-0.2/EXECUTION_LANE_C.md",
+)
 LANE_BRANCHES = {
     "A": "codex/bamf02-a-semantics",
     "B": "codex/bamf02-b-neural",
@@ -196,6 +204,16 @@ def main() -> None:
                 errors.append(f"{key}: source-prescription partition invalid: {exc}")
     if "decompose" not in (TASKS / "README.md").read_text(encoding="utf-8").lower():
         errors.append("BAMF README missing recursive dispatch rule")
+    agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    egm_policy = (TASKS / "EGM_EXECUTION.md").read_text(encoding="utf-8")
+    if EGM_POLICY_MARKER not in agents or EGM_POLICY_MARKER not in egm_policy:
+        errors.append("BAMF EGM merge-readiness policy marker missing from AGENTS.md or EGM_EXECUTION.md")
+    for filename in EGM_OPERATIONAL_DOCS:
+        text = (ROOT / filename).read_text(encoding="utf-8")
+        if OBSOLETE_EGM_POLICY in text:
+            errors.append(f"{filename}: obsolete per-fix EGM re-audit policy")
+        if "merge-readiness" not in text.lower():
+            errors.append(f"{filename}: missing EGM merge-readiness gate")
     for filename in ("README.md", "AGENTS.md", "docs/architecture/BAMF_0_2.md"):
         text = (ROOT / filename).read_text(encoding="utf-8")
         if "ADR-BAMF02-004" not in text:
@@ -209,6 +227,7 @@ def main() -> None:
     print("PASS: no missing/cyclic dependencies, no obsolete named-grade debt exception")
     print("PASS: all 200 BAMF owner/child specs bind exact lane branches and reviewed unified lifecycle")
     print("PASS: 12 owner issues and 3 repository entrypoints carry ADR-BAMF02-004")
+    print("PASS: BAMF EGM operational policy reserves fresh Goldfish review for merge readiness")
     print(f"PASS: {len(CHILDREN)} recursive A09 sub-issues retain exact indexed mirrors, linked ownership and acyclic dependencies")
     if registry_path.exists():
         print(f"PASS: {len(entries)} total indexed recursive child mirrors have correct SHA, parent identity and lossless source partitions")

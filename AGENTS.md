@@ -32,6 +32,103 @@ self-merge that PR. After accepted work lands on unified, the next issue in ever
 lane repeats the sync-in step so reviewed cross-lane interfaces and instrumentation
 arrive early rather than accumulating as end-of-program conflicts.
 
+## BAMF-0.2 flow control and parked-PR discipline — 2026-11-02
+
+BAMF execution distinguishes **implementation WIP** from review, dependency and
+authority inventory. The normal ceiling is **two `ACTIVE` implementation leaves per
+lane**. `READY`, `WAITING`, `BLOCKED` and `TURNED_IN` do not count as active WIP.
+The ceiling is a flow-control limit, not permission to fill both slots when one
+nearer-to-merge leaf can be driven home first.
+
+Every lane-owned BAMF implementation leaf or open lane PR must be represented in that lane's
+machine-readable state under `docs/tasks/bamf-0.2/flow-control/`. Before substantive
+branch mutation, the operator must run `python3 -B scripts/check_bamf_flow_control.py`
+and make the intended leaf `ACTIVE`. A `WAITING` or `BLOCKED` item must record its
+specific resume trigger. Parked work must **not** be merge-forwarded, rebased, fully
+revalidated, sent for fresh exact-head review, or otherwise refreshed merely because
+unified advanced. First confirm that its recorded resume trigger actually occurred,
+then update the lane state to `ACTIVE`, then sync/revalidate once as required by the
+leaf contract.
+
+Prefer the item with the fewest remaining gates to accepted integration before
+opening or advancing another dependency-ready leaf. A third simultaneous `ACTIVE`
+item is exceptional and must carry a machine-readable lane exception naming the
+reason, authority and expiry condition. Do not silently expand WIP because review or
+external gates are slow. Human review, EGM, dependency acceptance and other parked
+gates remain real obligations; classifying them as non-WIP means **freeze until the
+gate changes**, not ignore them.
+
+<!-- BAMF02:EGM-MERGE-READINESS-GATE:20261102 -->
+### EGM is a merge-readiness gate, not a per-fix loop
+
+Spend a fresh pinned Google EGM review only when a PR is otherwise being prepared
+for human merge: all known Blocker/Major findings have been repaired or
+evidence-backed contested, independently remediable failures have durable issues,
+required dependency authority is consumable, required current-unified sync has
+been completed, affected verification is green, and the exact candidate head is
+stable enough to turn in. Do **not** spend fresh EGM review after each individual
+remediation issue, local defect fix, merge-forward, or intermediate checkpoint.
+Use focused regressions, ordinary independent review, CI and owner verification to
+clear that engineering queue first.
+
+If the final merge-readiness EGM finds new Blocker/Major defects, record the exact
+review receipt and create or link durable remediation issues at coherent ownership
+boundaries. Repair the complete known set before requesting another fresh EGM pass.
+The next EGM reviews the next whole merge candidate, not each remediation in
+isolation. Any older copied BAMF issue text prescribing "one repair pass and one
+targeted re-audit" is superseded by this rule and
+`docs/tasks/bamf-0.2/EGM_EXECUTION.md`.
+### Remediation artifacts are a working set, not an archive
+
+Close a remediation issue when its exact recorded defect has been reproduced,
+repaired, covered by a regression, and verified on a durable PR/head. Do not keep
+that child issue open merely because its parent still awaits EGM, sibling work,
+dependency integration, or final human merge. The linked PR is the pending
+integration receipt.
+
+Keep a remediation PR in draft only while its own scoped implementation or known
+Blocker/Major repair is incomplete. Parent-level EGM debt is not a reason for draft
+status. Mark the PR ready when its own acceptance is satisfied; merge or close it
+promptly once its change is consumed by the intended parent/candidate branch.
+Closed issues and merged PRs remain provenance and should not remain in the active
+queue just to preserve history.
+
+If later EGM or integration proves the **same original defect** still exists, reopen
+the remediation issue. If it exposes a different mechanism, newly unlocked gap, or
+new acceptance failure, create a new issue. The owning parent issue/PR carries the
+aggregate EGM pass/fail state and whole-candidate merge readiness.
+Prefer repairing a remediation issue directly on the authorized parent candidate
+branch when writer ownership and review isolation allow it. Do not create a separate
+PR merely to preserve the finding; the issue already provides the durable defect
+record. Use a stacked remediation PR only when branch ownership, concurrent-writer
+isolation, or focused review requires it, and merge/close that PR promptly once its
+bounded repair is consumed.
+Because BAMF PRs normally merge into reviewed integration branches rather than the
+repository default branch, GitHub closing keywords may not retire linked issues.
+After a remediation is accepted or its PR is consumed, explicitly read back and
+close the remediation issue; do not assume `Closes #N` changed issue state.
+
+The repository checker can validate declared state, WIP counts, required resume
+triggers and explicit exceptions. It cannot observe an unrecorded remote mutation or
+an agent merely reading a branch. Updating lane state before mutation therefore
+remains an operator duty. See `ADR-124` and
+`docs/tasks/bamf-0.2/README.md`.
+
+## Context-window protection for repository census commands — 2026-11-02
+
+Treat full-repository inventory commands as high-cost diagnostics, not routine
+preflight. Do not dump unbounded `git worktree list --porcelain`, `git branch -a`,
+broad `gh pr list`, or repository-wide search output into model context when the task
+concerns a specific issue, PR, branch, SHA or worktree. Query that exact surface
+first.
+
+For ownership or collision checks, filter the inventory to the relevant branch or
+path, or compute compact counts and candidate summaries. Run a full census only for
+cleanup, ownership audits, collision investigation or systemwide reconciliation. If
+raw census output is required, redirect it to a temporary file and inspect targeted
+excerpts. Do not replay the full inventory into later turns, and do not repeat an
+unchanged full census during normal issue or PR preflight.
+
 ## BAMF-0.2 successor outcome and admission lease — 2026-10-28
 
 For the BAMF-0.2 successor, evaluate complete-system capability outcomes across
