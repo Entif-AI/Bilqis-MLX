@@ -16,10 +16,10 @@
     {
       "issue": 466,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "fe912417d484d46bbd9b283593c3bbe76e4b0351",
-      "summary": "B09.3 mode-transition authority is the direct dependency needed to make B12.2 ADAPTIVE custody consumable.",
-      "resume_trigger": null
+      "state": "WAITING",
+      "head_sha": "f4d17e3de87f9bb9855312ab9d8d8a263100561c",
+      "summary": "B09.3 transition semantics are specified, but no source-owned accepted current-generation promotion-event receipt exists to authorize ADAPTIVE transition without fabrication.",
+      "resume_trigger": "A retained current-generation C05 promotion/promotion-with-debt receipt becomes consumable by B09.3, with #465/B09.2 authority sufficiently available for final integration."
     },
     {
       "issue": 465,
