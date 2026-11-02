@@ -12,6 +12,7 @@ from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.factory.adapters import validate_instructional_constituents
 from bilqis_mlx.factory.generation import runtime_adapter_for_release
 from bilqis_mlx.factory.teaching import DeliveredTeaching, describe_delivered_teaching, content_digest
+from bilqis_mlx.semantics.frame_compiler import StreamingAST
 from bilqis_mlx.semantics.context_eligibility import (
     ContextEligibility, ContextPolicy, EligibleContext, SourceFrontier,
     TaskScope, check_context_eligibility as _check_context_eligibility,
@@ -60,11 +61,36 @@ def _answer_plan(plan, head, visible_end, generation_binding):
     return _freeze(plan)
 
 
-def _require_source_lineage(ast, frames) -> None:
+def _source_frame_roots(ast: StreamingAST) -> tuple:
+    roots = []
+
+    def walk(tree) -> None:
+        for child in tree.children:
+            walk(child)
+        roots.append(tree.root)
+
+    for tree in ast.frames:
+        walk(tree)
+    return tuple(sorted(roots, key=lambda frame: frame.occurrence_id))
+
+
+def _require_source_lineage(ast, frames, visible, graph) -> None:
     source_instance_id = getattr(ast, 'source_instance_id', None)
-    if (not isinstance(source_instance_id, str) or not source_instance_id
-            or any(frame.frame.source_instance_id != source_instance_id
-                   for frame in frames)):
+    try:
+        expected_tokens = tuple(graph['tokens'][token_id] for token_id in visible)
+    except (KeyError, IndexError, TypeError):
+        _invalid('CONTEXT_SOURCE_LINEAGE_MISMATCH')
+    admitted_frames = tuple(sorted(
+        (envelope.frame for envelope in frames),
+        key=lambda frame: frame.occurrence_id))
+    if (type(ast) is not StreamingAST
+            or not isinstance(source_instance_id, str) or not source_instance_id
+            or len(ast.atoms) != len(visible)
+            or tuple(atom.token for atom in ast.atoms) != expected_tokens
+            or tuple(atom.index for atom in ast.atoms) != tuple(range(len(visible)))
+            or any(frame.source_instance_id != source_instance_id
+                   for frame in admitted_frames)
+            or _source_frame_roots(ast) != admitted_frames):
         _invalid('CONTEXT_SOURCE_LINEAGE_MISMATCH')
 
 
@@ -168,7 +194,7 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
         if (type(frames) is not tuple or not frames
                 or any(type(frame) is not ContextEligibility for frame in frames)):
             _invalid('CONTEXT_SOURCE_FRAMES_REQUIRED')
-        _require_source_lineage(ast, frames)
+        _require_source_lineage(ast, frames, visible, source_context.graph)
         eligible = _check_context_eligibility(
             frames, task_scope, source_frontier, eligibility_policy)
         if type(eligible) is not EligibleContext:
