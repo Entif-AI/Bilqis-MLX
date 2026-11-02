@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import unittest
@@ -109,6 +110,23 @@ class BamfPublicationTests(unittest.TestCase):
         self.assertEqual(tuple(outside.iterdir()), ())
         self.assertFalse((self.run / "bamf-state.json").exists())
 
+    def test_nested_bundle_alias_cannot_redirect_cold_load(self):
+        published = self.publish(candidate(parent_state()))
+        source = self.run / published["bundle"]
+        outside = self.root / "outside"
+        outside.mkdir()
+        shutil.copytree(source, outside / published["manifest_sha256"])
+        shutil.rmtree(source)
+        (self.run / "bamf-bundles" / "alias").symlink_to(
+            outside, target_is_directory=True)
+        pointer_path = self.run / "bamf-state.json"
+        pointer = json.loads(pointer_path.read_text())
+        pointer["bundle"] = "bamf-bundles/alias/" + published["manifest_sha256"]
+        pointer_path.write_text(json.dumps(pointer))
+
+        with self.assertRaises(BilqisError):
+            load_bamf_generation(pointer_path)
+
     def test_pointer_written_before_outbox_crash_replays_exactly_once(self):
         source = candidate(parent_state())
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
@@ -208,6 +226,43 @@ class BamfPublicationTests(unittest.TestCase):
         self.assertEqual(
             json.loads((self.run / "bamf-state.json").read_text())["manifest_sha256"],
             second["manifest_sha256"])
+
+    def test_rejection_requires_live_local_bundle(self):
+        published = self.publish(candidate(parent_state()))
+        with shape_patch():
+            student = load_bamf_generation(self.run / "bamf-state.json")
+        shutil.rmtree(self.run / "bamf-bundles")
+
+        with self.assertRaises(BilqisError):
+            record_bamf_rejection(self.run, student, {"reason": "retention_gate"})
+
+        self.assertEqual(
+            json.loads((self.run / "bamf-state.json").read_text())["manifest_sha256"],
+            published["manifest_sha256"])
+
+    def test_rejection_rejects_symlinked_bundle_custody(self):
+        self.publish(candidate(parent_state()))
+        with shape_patch():
+            student = load_bamf_generation(self.run / "bamf-state.json")
+        outside = self.root / "outside-bundles"
+        (self.run / "bamf-bundles").rename(outside)
+        (self.run / "bamf-bundles").symlink_to(outside, target_is_directory=True)
+
+        with self.assertRaises(BilqisError):
+            record_bamf_rejection(self.run, student, {"reason": "retention_gate"})
+
+    def test_rejection_rejects_pointer_manifest_run_mismatch(self):
+        self.publish(candidate(parent_state()))
+        with shape_patch():
+            student = load_bamf_generation(self.run / "bamf-state.json")
+        pointer_path = self.run / "bamf-state.json"
+        pointer = json.loads(pointer_path.read_text())
+        pointer["run_id"] = "fixture-run-forged"
+        pointer_path.write_text(json.dumps(pointer))
+        forged = replace(student, run_id="fixture-run-forged")
+
+        with self.assertRaises(BilqisError):
+            record_bamf_rejection(self.run, forged, {"reason": "retention_gate"})
 
 
 if __name__ == "__main__":
