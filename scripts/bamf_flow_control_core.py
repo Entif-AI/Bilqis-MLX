@@ -112,14 +112,6 @@ def policy_contract(
     return states, active_limit, required, inventory
 
 
-def _valid_sha(value: Any) -> bool:
-    return (
-        isinstance(value, str)
-        and len(value) == 40
-        and all(char in "0123456789abcdef" for char in value.lower())
-    )
-
-
 def validate_item(
     lane: str,
     index: int,
@@ -143,10 +135,6 @@ def validate_item(
         if pr in seen_prs:
             raise FlowControlError(f"{prefix}: duplicate PR #{pr}")
         seen_prs.add(pr)
-        if not _valid_sha(item.get("head_sha")):
-            raise FlowControlError(
-                f"{prefix}: open PR #{pr} requires an exact 40-character head_sha"
-            )
 
     state = item.get("state")
     if state not in states:
@@ -172,7 +160,7 @@ def validate_item(
 
 def validated_state(
     base_dir: Path = DEFAULT_DIR,
-) -> tuple[list[str], dict[str, Any], dict[int, str]]:
+) -> tuple[list[str], dict[str, Any], set[int]]:
     policy = load_json(base_dir / "policy.json")
     states, limit, required_fields, inventory = policy_contract(policy)
     rules = policy["rules"]
@@ -183,7 +171,6 @@ def validated_state(
 
     summaries: list[str] = []
     seen_prs: set[int] = set()
-    tracked_heads: dict[int, str] = {}
     for lane in ("A", "B", "C"):
         data = load_json(base_dir / f"lane-{lane.lower()}.json")
         if data.get("schema") != "bilqis.bamf.flow-control-lane/v1":
@@ -215,10 +202,7 @@ def validated_state(
                 f"Lane {lane}: {active} ACTIVE items exceed normal limit {limit}",
             )
         summaries.append(f"Lane {lane}: ACTIVE {active}/{limit}; tracked {len(items)}")
-        for item in items:
-            if item.get("pr") is not None:
-                tracked_heads[item["pr"]] = item["head_sha"]
-    return summaries, policy, tracked_heads
+    return summaries, policy, seen_prs
 
 
 def validate_flow_control(base_dir: Path = DEFAULT_DIR) -> list[str]:
