@@ -13,7 +13,7 @@ from ..factory.executable_release import (
 )
 from ..factory.model import AdmissionReceipt, FactoryRelease
 from ..factory.release import admit_factory_release, compile_factory_release
-from ..compatibility.legacy.factory_release_v1 import decode_sealed_factory_release_v1
+from ..compatibility.factory_release_v1 import decode_sealed_factory_release_v1
 from .state import _canonical, _durable_json
 
 SCHEMA = "bilqis.mlx.factory-release/v1"

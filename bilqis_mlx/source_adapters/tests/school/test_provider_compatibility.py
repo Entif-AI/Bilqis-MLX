@@ -2,7 +2,7 @@
 from dataclasses import replace
 import unittest
 
-from bilqis_mlx.compatibility.legacy.source_adapter_resume import resume_adapter_compatible
+from bilqis_mlx.compatibility.source_adapter_resume import resume_adapter_compatible
 from bilqis_mlx.source_adapters.school import C_ORACLE, live_source_registry
 
 

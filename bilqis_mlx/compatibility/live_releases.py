@@ -8,35 +8,35 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ...factory.model import FactoryRelease
-from ...factory.release import compile_factory_release
+from ..factory.model import FactoryRelease
+from ..factory.release import compile_factory_release
 from .source_adapters import historical_source_registry
-from ...live_grade_a import (
+from ..live_grade_a import (
     GENERATOR as _INITIAL_GENERATOR,
     RELEASE as INITIAL_RELEASE,
     generator_source_digest as _initial_digest,
     live_course as _initial_course,
 )
-from ...live_grade_b import (
+from ..live_grade_b import (
     GENERATOR as _BOOLEAN_GENERATOR,
     RELEASE as BOOLEAN_RELEASE,
     constructor_digest as _boolean_digest,
     live_course as _boolean_course,
 )
-from ...boolean_composite import (
+from ..boolean_composite import (
     GENERATOR as _BOOLEAN_COMPOSITE_GENERATOR,
     RELEASE as BOOLEAN_COMPOSITE_RELEASE,
     build_course as _boolean_composite_course,
     constructor_digest as _boolean_composite_digest,
 )
-from ...boolean_identification import (
+from ..boolean_identification import (
     GENERATOR as _BOOLEAN_IDENTIFICATION_GENERATOR,
     RELEASE as BOOLEAN_IDENTIFICATION_RELEASE,
     answer_heads as _boolean_identification_answer_heads,
     build_course as _boolean_identification_course,
     constructor_digest as _boolean_identification_digest,
 )
-from ...live_grade_c import (
+from ..live_grade_c import (
     REGISTRY_COUNTING_TARGET,
     RELEASE as NUMERIC_RELEASE,
     answer_heads as _numeric_answer_heads,
@@ -44,12 +44,12 @@ from ...live_grade_c import (
     prepare_course as _prepare_numeric_course,
     registry_graph as numeric_registry_graph,
 )
-from ...numeric_staircase import (
+from ..numeric_staircase import (
     RELEASE as NUMERIC_STAIRCASE_RELEASE,
     build_course as _build_staircase_course,
     constructor_digest as _staircase_digest,
 )
-from ...minimal_grade_b import (
+from ..minimal_grade_b import (
     GENERATOR as _MINIMAL_BOOLEAN_GENERATOR,
     RELEASE as MINIMAL_BOOLEAN_RELEASE,
     answer_heads as _minimal_boolean_answer_heads,
@@ -166,7 +166,7 @@ def graph_matches_release(version: str | None, graph: dict, manifest: dict,
         return graph == numeric_registry_graph()
     if version in (None, INITIAL_RELEASE, BOOLEAN_RELEASE, BOOLEAN_COMPOSITE_RELEASE,
                    BOOLEAN_IDENTIFICATION_RELEASE, MINIMAL_BOOLEAN_RELEASE):
-        from ...semantics.abi import HISTORICAL_PREFIX_SIZE
+        from ..semantics.abi import HISTORICAL_PREFIX_SIZE
         return (len(graph["tokens"]) == HISTORICAL_PREFIX_SIZE and
                 fingerprint(graph) == manifest["parent_student"]["full_student_graph_sha256"])
     raise ValueError("FACTORY_UNKNOWN_RELEASE:" + str(version))
@@ -176,7 +176,7 @@ def resolve_admitted_courses(historical_course, source_root, saved: dict,
                              *, pending: dict | None = None,
                              include_prospective: bool = True) -> dict[str, object]:
     """Reconstruct every release that may be referenced by saved/pending state."""
-    from .historical_live_release import resume_grade_courses
+    from ..compatibility.historical_live_release import resume_grade_courses
 
     course_a, course_b = resume_grade_courses(historical_course, source_root, saved)
     courses = {course_a.version: course_a}
@@ -314,8 +314,8 @@ def _successor_preflight_details(successor, *, behavior: str,
 
 
 def _numeric_successor_preflight(current_course, source_root, manifest: dict) -> dict:
-    from ...grade_c_preflight import qualify
-    from ...live_grade_c import (
+    from ..grade_c_preflight import qualify
+    from ..live_grade_c import (
         REGISTRY_COUNTING_TARGET,
         REGISTRY_PATH,
         integer_scope,

@@ -9,7 +9,7 @@ import random
 
 from ..factory.adapters import RegisteredSourceAdapter
 from ..factory.model import SourceAdapter
-from ..verification.world_rules import answer
+from ._world.oracle import answer
 from ..vocabulary_growth import digest
 CAPABILITIES = (
     "WORLD.ACTOR_OF", "WORLD.BEFORE", "WORLD.IS_OCCURRED",
@@ -208,8 +208,8 @@ def registered_adapter() -> RegisteredSourceAdapter:
     witness = verify_source()
     files = (
         ("bilqis_mlx/source_adapters/world_rules.py", Path(__file__)),
-        ("bilqis_mlx/verification/world_rules.py",
-         ROOT / "bilqis_mlx/verification/world_rules.py"),
+        ("bilqis_mlx/source_adapters/_world/oracle.py",
+         ROOT / "bilqis_mlx/source_adapters/_world/oracle.py"),
     )
     implementation = digest({
         "source": witness,

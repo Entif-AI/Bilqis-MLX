@@ -30,8 +30,8 @@ class QualifiedWorldSourceTests(unittest.TestCase):
         files = (
             ("bilqis_mlx/source_adapters/world_rules.py",
              root / "bilqis_mlx/source_adapters/world_rules.py"),
-            ("bilqis_mlx/verification/world_rules.py",
-             root / "bilqis_mlx/verification/world_rules.py"),
+            ("bilqis_mlx/source_adapters/_world/oracle.py",
+             root / "bilqis_mlx/source_adapters/_world/oracle.py"),
         )
         expected = digest({
             "source": verify_source(),
@@ -69,7 +69,7 @@ class QualifiedWorldSourceTests(unittest.TestCase):
                 self.assertFalse(check(changed, graph=self.graph))
 
     def test_time_order_and_indirect_chain_do_not_establish_direct_cause(self):
-        from bilqis_mlx.verification.world_rules import answer
+        from bilqis_mlx.source_adapters._world.oracle import answer
         row = draw(graph=self.graph, capability='WORLD.DIRECT_CAUSE', seed=3, each=1)[0]
         record = copy.deepcopy(row['record'])
         events = sorted(record['events'], key=lambda item: item['time'])

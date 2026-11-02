@@ -8,7 +8,7 @@ from .curriculum_definition import (
     CurriculumDefinition, SourceBindingSet, from_legacy_course,
     validate_source_bindings,
 )
-from ..compatibility.legacy.source_adapter_resume import resume_adapter_compatible
+from ..compatibility.source_adapter_resume import resume_adapter_compatible
 
 
 _GRADE_A_DEVELOPMENT_PRESENTATION_IMPLEMENTATION = (

@@ -35,7 +35,7 @@ def _probe_event_capabilities(mx, source, graph, current, params, saved, *, seed
 
 
 def _adopt_source_revision(run, saved, current, graph, source, adapter):
-    from bilqis_mlx.compatibility.legacy.live_releases import initial_course
+    from bilqis_mlx.compatibility.live_releases import initial_course
     from bilqis_mlx.runtime.session import prepare_source
     from bilqis_mlx.runtime.release_adoption import _adopt_executable_profile
 

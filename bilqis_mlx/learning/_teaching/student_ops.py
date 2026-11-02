@@ -1,7 +1,7 @@
 """MLX inference, batches and single-student optimizer primitives."""
 from __future__ import annotations
 
-import bilqis_mlx.compatibility.legacy.live_releases as _compatibility_live_releases
+import bilqis_mlx.compatibility.live_releases as _compatibility_live_releases
 import bilqis_mlx.learning.champion_confidence as _learning_champion_confidence
 import bilqis_mlx.runtime.mlx_parity as _runtime_mlx_parity
 import bilqis_mlx.semantics.abi as _semantics_abi

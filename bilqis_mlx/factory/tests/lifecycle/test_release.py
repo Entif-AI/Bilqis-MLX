@@ -8,7 +8,7 @@ from bilqis_mlx.factory.adapters import RegisteredSourceAdapter, SourceAdapterRe
 from bilqis_mlx.factory.model import AssessmentClass, FactoryRelease, SourceAdapter
 from bilqis_mlx.factory.release import compile_factory_release
 from bilqis_mlx.factory.tests.support import synthetic_release_inputs
-from bilqis_mlx.compatibility.legacy.factory_release_v1 import decode_sealed_factory_release_v1
+from bilqis_mlx.compatibility.factory_release_v1 import decode_sealed_factory_release_v1
 
 
 class FactoryReleaseTests(unittest.TestCase):

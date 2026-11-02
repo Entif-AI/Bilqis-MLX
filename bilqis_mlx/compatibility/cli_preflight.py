@@ -9,7 +9,7 @@ from bilqis_mlx.errors import ErrorBus, SCHOOL
 
 import json
 
-from .legacy.live_releases import (
+from .live_releases import (
     BOOLEAN_COMPOSITE_RELEASE,
     BOOLEAN_IDENTIFICATION_RELEASE,
     BOOLEAN_RELEASE,
