@@ -1,6 +1,7 @@
 """BAMF B14.3 causal binding, byte-cost, and inference-policy witnesses."""
 from dataclasses import replace
 import ast
+import inspect
 from pathlib import Path
 import unittest
 
@@ -165,9 +166,7 @@ class CacheBindingAndCostTests(unittest.TestCase):
 
         with self.assertRaises(BilqisError):
             CacheAuthorityRuntime(attacker_registry, bytes([255]) * 32)
-        with self.assertRaises(BilqisError):
-            CacheAuthorityRuntime._issue(
-                attacker_registry, bytes([255]) * 32)
+        self.assertFalse(hasattr(CacheAuthorityRuntime, "_issue"))
         with self.assertRaises(BilqisError):
             _RAW_ENCODE(
                 attacker_registry, self.values, self.manifest,
@@ -195,6 +194,18 @@ class CacheBindingAndCostTests(unittest.TestCase):
         ):
             with self.assertRaises(TypeError):
                 call()
+
+    def test_production_cache_runtime_exposes_no_authority_mint(self):
+        from bilqis_mlx.runtime import atlas_cache_runtime
+
+        self.assertFalse(hasattr(atlas_cache_runtime, "_host_cache_authority"))
+        self.assertFalse(hasattr(CacheAuthorityRuntime, "_issue"))
+        for name, value in vars(atlas_cache_runtime).items():
+            if not callable(value) or getattr(value, "__module__", None) != atlas_cache_runtime.__name__:
+                continue
+            parameters = set(inspect.signature(value).parameters)
+            with self.subTest(callable=name):
+                self.assertTrue(parameters.isdisjoint({"registry", "mac_key"}))
 
     def test_wrong_codec_manifest_recomputes_before_decode(self):
         from bilqis_mlx.runtime.atlas_cache_codec import Rot3Manifest

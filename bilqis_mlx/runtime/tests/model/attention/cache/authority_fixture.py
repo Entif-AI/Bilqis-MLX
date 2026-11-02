@@ -1,4 +1,4 @@
-"""Deterministic test-only cache artifact signing authority."""
+"""Deterministic test-only cache authority; never production provenance."""
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
@@ -8,7 +8,7 @@ from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityRegistry,
     SourceAuthorityScope,
 )
-from bilqis_mlx.runtime.atlas_cache_runtime import _host_cache_authority
+from bilqis_mlx.runtime.atlas_cache_codec import CacheAuthorityRuntime
 
 _KEY = Ed25519PrivateKey.from_private_bytes(bytes(range(32)))
 PUBLIC_KEY_HEX = _KEY.public_key().public_bytes(
@@ -30,4 +30,18 @@ def authority_registry(
 
 AUTHORITY_REGISTRY = authority_registry()
 _CACHE_MAC_KEY = bytes(range(32, 64))
-CACHE_AUTHORITY = _host_cache_authority(AUTHORITY_REGISTRY, _CACHE_MAC_KEY)
+
+
+def _test_cache_authority(
+    registry: SourceAuthorityRegistry, mac_key: bytes,
+) -> CacheAuthorityRuntime:
+    """Explicit same-process fixture construction; not an authority boundary."""
+    authority = object.__new__(CacheAuthorityRuntime)
+    object.__setattr__(
+        authority, "_CacheAuthorityRuntime__registry", registry)
+    object.__setattr__(
+        authority, "_CacheAuthorityRuntime__mac_key", mac_key)
+    return authority
+
+
+CACHE_AUTHORITY = _test_cache_authority(AUTHORITY_REGISTRY, _CACHE_MAC_KEY)

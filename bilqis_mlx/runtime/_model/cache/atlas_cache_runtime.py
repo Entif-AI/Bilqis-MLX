@@ -1,16 +1,13 @@
-"""Host-owned authority capability for BAMF derived-cache boundaries."""
+"""Opaque pre-bound authority capability for BAMF derived-cache boundaries."""
 from __future__ import annotations
 
 import hashlib
 import hmac
 
-from .atlas_revalidation import SourceAuthorityRegistry
 from ..semantics.cognitive_dependencies import DependencyKind, DependencyRef
 
 
-CACHE_MAC_KEY_BYTES = 32
 CACHE_AUTHENTICATOR_BYTES = 16
-_HOST_CACHE_AUTHORITY_ISSUER = object()
 
 
 def _invalid() -> None:
@@ -19,26 +16,12 @@ def _invalid() -> None:
 
 
 class CacheAuthorityRuntime:
-    """Opaque host-issued capability fixing cache trust-root provenance."""
+    """Opaque capability supplied by the accepted upstream run authority."""
 
     __slots__ = ("__registry", "__mac_key")
 
     def __new__(cls, *args, **kwargs):
         _invalid()
-
-    @classmethod
-    def _issue(
-        cls, registry: SourceAuthorityRegistry, mac_key: bytes, *, _issuer=None,
-    ) -> CacheAuthorityRuntime:
-        if (_issuer is not _HOST_CACHE_AUTHORITY_ISSUER
-                or not isinstance(registry, SourceAuthorityRegistry)
-                or type(mac_key) is not bytes
-                or len(mac_key) != CACHE_MAC_KEY_BYTES):
-            _invalid()
-        instance = object.__new__(cls)
-        object.__setattr__(instance, "_CacheAuthorityRuntime__registry", registry)
-        object.__setattr__(instance, "_CacheAuthorityRuntime__mac_key", mac_key)
-        return instance
 
     def __setattr__(self, name, value):
         _invalid()
@@ -63,15 +46,6 @@ class CacheAuthorityRuntime:
         if (type(authenticator) is not bytes
                 or not hmac.compare_digest(authenticator, expected)):
             _invalid()
-
-
-def _host_cache_authority(
-    registry: SourceAuthorityRegistry, mac_key: bytes,
-) -> CacheAuthorityRuntime:
-    """Internal host-bootstrap seam; never expose registry selection to cache calls."""
-    return CacheAuthorityRuntime._issue(
-        registry, mac_key, _issuer=_HOST_CACHE_AUTHORITY_ISSUER)
-
 
 def _require_authority(authority: CacheAuthorityRuntime) -> CacheAuthorityRuntime:
     if type(authority) is not CacheAuthorityRuntime:
