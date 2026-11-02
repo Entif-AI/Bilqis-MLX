@@ -1725,12 +1725,11 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **1927** raw raises across **211** files. The baseline gate permits only reduction.
+Current production scan: **1926** raw raises across **210** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
 | `<dynamic/raw prose>` | 8 | `bilqis_mlx/_semantic_tools/next_grade_review.py`, `bilqis_mlx/_semantic_tools/semantic_transformations.py`, `bilqis_mlx/_source_evidence/grade_a_probe.py`, `bilqis_mlx/factory/curriculum/development.py`, plus 3 more |
-| `A05 requires a typed source AST` | 1 | `bilqis_mlx/runtime/tests/batch/test_atlas_training_adapter.py` |
 | `ANSWER_CASTE_EMPTY_LESSON` | 1 | `bilqis_mlx/_semantic_tools/typed_answer_training.py` |
 | `ANSWER_CASTE_FULL_101_ABI_DRIFT` | 1 | `bilqis_mlx/_semantic_tools/typed_answer_training.py` |
 | `ANSWER_CASTE_FULL_VOCABULARY_ABI_INVALID` | 1 | `bilqis_mlx/_semantic_tools/typed_answer_training.py` |

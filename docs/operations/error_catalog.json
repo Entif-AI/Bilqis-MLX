@@ -1,6 +1,6 @@
 {
-  "legacy_raw_file_count": 211,
-  "legacy_raw_raise_count": 1927,
+  "legacy_raw_file_count": 210,
+  "legacy_raw_raise_count": 1926,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BOOLEAN_ASSOCIATION_B_GRADE_OWNERSHIP_DRIFT",
@@ -10753,13 +10753,6 @@
       "exception": "OSError",
       "expression": "'disposable interruption before pointer publication'",
       "path": "bilqis_mlx/runtime/tests/admission/test_atlas_lease_renewal.py"
-    },
-    {
-      "code_hint": "A05 requires a typed source AST",
-      "count": 1,
-      "exception": "AssertionError",
-      "expression": "'A05 requires a typed source AST'",
-      "path": "bilqis_mlx/runtime/tests/batch/test_atlas_training_adapter.py"
     },
     {
       "code_hint": "missing source manifest",
