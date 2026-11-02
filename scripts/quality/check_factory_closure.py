@@ -21,6 +21,7 @@ GENERIC_ROOTS = (
     "bilqis_mlx/presentation",
     "bilqis_mlx/learning",
     "bilqis_mlx/live_curriculum.py",
+    "bilqis_mlx/_release_views/live_curriculum.py",
     "bilqis_mlx/trainer.py",
     "bilqis_mlx/cli.py",
 )

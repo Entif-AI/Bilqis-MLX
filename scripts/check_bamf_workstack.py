@@ -15,6 +15,9 @@ import unicodedata
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from bilqis_mlx.errors import BilqisError, ErrorBus, SCHOOL
+from scripts.bamf.workstack_dependencies import (
+    EvidenceStatus, check_dependency_evidence, load_dependency_sources, pinned_dependency_keys,
+)
 
 
 @dataclass(frozen=True)
@@ -37,8 +40,14 @@ def _issues_report(issues):
     return sorted(result, key=lambda issue: json.dumps(issue, sort_keys=True))
 
 
-def validate_workstack(manifest: dict, registry: dict | None = None, issue_map: dict | None = None, mirrors: dict | None = None) -> dict:
+def validate_workstack(manifest: dict, registry: dict | None = None, issue_map: dict | None = None, mirrors: dict | None = None, *, evidence_sources: dict | None = None) -> dict:
     issues = []
+    held_keys = []
+    try:
+        pinned_keys = pinned_dependency_keys(evidence_sources)
+    except (KeyError, TypeError, ValueError, RecursionError):
+        pinned_keys = frozenset()
+        issues.append({'code': 'REGISTRY_INVALID'})
     if not isinstance(manifest, dict) or manifest.get('schema') != 'bilqis.bamf.workstack/v1' or manifest.get('version') != '0.2.0':
         return {'schema': 'bilqis.bamf.workstack.validation/v1', 'status': 'invalid',
                 'order': [], 'issues': _issues_report([{'code': 'SCHEMA_INVALID'}])}
@@ -160,6 +169,14 @@ def validate_workstack(manifest: dict, registry: dict | None = None, issue_map: 
                     body = raw.decode('utf-8')
                 except UnicodeDecodeError:
                     issues.append({'code': 'MIRROR_INVALID', 'key': key}); continue
+                if key in pinned_keys or 'dependency_evidence' in entry:
+                    evidence = check_dependency_evidence(entry, raw, numbers, evidence_sources)
+                    if evidence.status is EvidenceStatus.INVALID:
+                        issues.append({'code': 'MIRROR_DEPENDENCIES_MISMATCH', 'key': key,
+                                       'evidence_reason': evidence.reason})
+                    elif evidence.status is EvidenceStatus.HELD:
+                        held_keys.append(key)
+                    continue
                 match = re.search(r'(?ms)^## Direct prerequisites\n(.*?)(?=^## |^\*\*Existing owner hooks:|\Z)|^\*\*Direct work prerequisites:\*\*([^\n]*)', body)
                 if not match:
                     issues.append({'code': 'MIRROR_DEPENDENCIES_MISSING', 'key': key}); continue
@@ -190,6 +207,9 @@ def validate_workstack(manifest: dict, registry: dict | None = None, issue_map: 
                 for dep in deps:
                     if dep not in graph and key not in by_key:
                         issues.append({'code': 'MISSING_DEPENDENCY', 'item': key, 'dependency': dep})
+    if not pinned_keys <= numbers.keys():
+        issues.append({'code': 'REGISTRY_INVALID',
+                       'missing_pinned_keys': sorted(pinned_keys - numbers.keys())})
     if issue_map is None:
         issues.append({'code': 'ISSUE_MAP_REQUIRED'})
     if issue_map is not None and not isinstance(issue_map, dict):
@@ -204,9 +224,14 @@ def validate_workstack(manifest: dict, registry: dict | None = None, issue_map: 
             order = list(TopologicalSorter(graph).static_order())
         except CycleError:
             issues.append({'code': 'DEPENDENCY_CYCLE'})
+    if held_keys:
+        order = []
     return {'schema': 'bilqis.bamf.workstack.validation/v1',
             'input_schema': 'bilqis.bamf.workstack/v1', 'input_version': '0.2.0',
-            'status': 'invalid' if issues else 'valid', 'order': order,
+            'status': 'invalid' if issues else 'held' if held_keys else 'valid', 'order': order,
+            'registry_integrity': 'invalid' if issues else 'valid',
+            'dependency_resolution': {'status': 'held' if held_keys else 'resolved',
+                                      'held_keys': sorted(held_keys)},
             'recursive_registry': 'included' if registry is not None else 'not_provided', 'child_count': child_count,
             'issues': _issues_report(issues)}
 
@@ -250,8 +275,10 @@ def main() -> int:
                 if isinstance(key, str) and re.fullmatch(r'[ABC][0-9]{2}(?:\.[0-9]+[a-z]?)+', key):
                     mirror = registry_path.parent / (key + '.md')
                     if mirror.is_file(): mirrors[key] = mirror.read_bytes()
-        result = validate_workstack(manifest, registry, issue_map, mirrors)
-        if args.live and result['status'] == 'valid':
+        evidence_sources = load_dependency_sources(args.manifest.parent, registry)
+        result = validate_workstack(manifest, registry, issue_map, mirrors,
+                                    evidence_sources=evidence_sources)
+        if args.live and result.get('registry_integrity', result['status']) == 'valid':
             live_findings = check_live_owner_mirrors(manifest, args.manifest.parent)
             result['live_owner_mirrors'] = {'checked': len(manifest['items']), 'status': 'invalid' if live_findings else 'valid'}
             if live_findings:

@@ -53,6 +53,27 @@ class ChildRegistryAuditTests(unittest.TestCase):
         self.assertEqual(result['status'],'complete')
         self.assertEqual(result['matched_live_count'],0)
 
+    def test_owner_followups_do_not_manufacture_duplicate_child_keys(self):
+        result = audit({'entries': []}, {'items': []}, [
+            {'number': 637, 'title': 'BAMF-0.2 C10 structural follow-up | Split owner', 'state': 'CLOSED'},
+            {'number': 641, 'title': 'BAMF-0.2 C10 structural follow-up | Mirror owner', 'state': 'OPEN'},
+        ])
+        self.assertEqual(result['matched_live_count'], 0)
+        self.assertEqual(result['missing'], [])
+        self.assertEqual(result['duplicates'], [])
+
+    def test_incomplete_nested_key_is_not_silently_truncated(self):
+        result = audit({'entries': []}, {'items': []}, [
+            {'number': 900, 'title': 'BAMF-0.2 A08.1b.4draft | malformed key', 'state': 'OPEN'},
+        ])
+        self.assertEqual(result['matched_live_count'], 0)
+
+    def test_missing_registered_issue_keeps_census_incomplete(self):
+        result = audit({'entries': [{'key': 'B11.1a', 'number': 586}]},
+                       {'items': []}, [])
+        self.assertEqual(result['status'], 'incomplete')
+        self.assertEqual(result['registered_not_in_search'], ['B11.1a'])
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,7 +1,7 @@
 """Cold package reads reject malformed and noncanonical wire records."""
 import json
 import unittest
-from .fixtures import PackageAssertions, snapshot
+from bilqis_mlx.runtime.cognitive_package.tests.fixtures import PackageAssertions, snapshot
 from bilqis_mlx.runtime.cognitive_package import CognitivePackage, export_capability
 
 

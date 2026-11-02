@@ -10,6 +10,7 @@ import math
 from collections.abc import Mapping
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
+from .atlas_evidence import OperatorEvidence, compact_debt, parse_evidence, render_evidence
 
 SCHEMA = "bilqis.bamf.operator-status/v1"
 _BINDINGS = ("source_release_sha256", "model_sha256", "evaluator_sha256",
@@ -36,6 +37,7 @@ class OperatorView:
     bindings: tuple[tuple[str, str], ...]
     coverage: tuple[tuple[str, int], ...]
     observations: tuple[tuple[str, object], ...]
+    evidence: OperatorEvidence = OperatorEvidence()
 
 
 def bamf_status(receipt: Mapping) -> OperatorView:
@@ -74,7 +76,8 @@ def bamf_status(receipt: Mapping) -> OperatorView:
     if active is not None and active > coverage["source_eligible"]:
         _invalid("active concepts outside source census")
     return OperatorView(tuple(bindings), tuple((key, coverage[key]) for key in _COVERAGE),
-                        tuple((key, observations.get(key)) for key in _OBSERVATIONS))
+                        tuple((key, observations.get(key)) for key in _OBSERVATIONS),
+                        parse_evidence(receipt.get("evidence")))
 
 
 def render_panel(view: OperatorView, state: Mapping, *, expanded=False, width=100):
@@ -87,15 +90,19 @@ def render_panel(view: OperatorView, state: Mapping, *, expanded=False, width=10
     growth = f"{grew:+d}" if type(grew) is int else "NOT MEASURED"
     retained = state.get("retained_steps")
     retained = str(retained) if _count(retained) else "NOT MEASURED"
+    debt = compact_debt(view.evidence)
+    transfer = ("observed (details)" if view.evidence.learned_transfer is not None
+                and view.evidence.learned_transfer.total else "NOT MEASURED")
     lines = [
         (f"ATLAS grade-neutral | eligible {coverage['source_eligible']} | "
          f"source-held {coverage['source_held']} | uncovered {coverage['implementation_uncovered']} | "
          f"ready {coverage['ready']} | staged {coverage['staged']} | "
          f"active {measured('active_concepts')} | banks {measured('active_banks')}"),
-        (f"LEARNING | GREW {growth} | retained steps {retained} | debt NOT MEASURED | "
-         "perfect mastery NOT MEASURED | transfer NOT MEASURED"),
+        (f"LEARNING | GREW {growth} | retained steps {retained} | {debt} | "
+         f"perfect mastery NOT MEASURED | transfer {transfer}"),
     ]
     if expanded:
+        lines.append("ATLAS complete snapshot: --once --atlas-details")
         def fraction(key):
             value = observed.get(key)
             return "NOT MEASURED" if value is None else f"{value:.1%}"
@@ -110,4 +117,5 @@ def render_panel(view: OperatorView, state: Mapping, *, expanded=False, width=10
         ])
         labels = ("source", "model", "rubric", "rights", "census")
         lines.extend(f"ATLAS {label} {digest}" for label, (_, digest) in zip(labels, view.bindings))
+        lines.extend(render_evidence(view.evidence))
     return tuple(line[:width] for line in lines)
