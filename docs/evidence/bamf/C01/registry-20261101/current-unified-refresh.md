@@ -21,6 +21,7 @@ binding in the accepted schema-map owner. Issue #731 / PR #732 records its isola
 branch from synchronized Lane C and explicit consumption of the already-completed
 parent structure repair. The new annotation test failed before the canonical import
 and passed afterward. Parent #694 consumed repair `7c8b75a418e726060945f2b9cbe296063b7d9ee4`.
+PR #732 is a consumed repair receipt, not a pending dependency for this candidate.
 
 At that source commit:
 
@@ -37,8 +38,14 @@ Supply `BILQIS_ATLAS_REAL_ARTIFACT` pointing to digest-named bundle
 `5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7`
 and `BILQIS_ATLAS_REAL_CORPUS` pointing to conformance bundle
 `f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec`.
-Use Python with the project's portable runtime dependencies. Omitting fixtures
-does not reproduce this no-skip source proof.
+These are separately supplied, verified fixtures, not assets that this recipe
+independently rebuilds. Their old machine-local paths are not acquisition URLs.
+No public download or established exact-bundle regeneration procedure is asserted.
+Without fixture access the source-positive proof is unavailable; do not count
+skips as passes. The [complete archive/build/install/probe recipe](installed-wheel-probe.md)
+specifies access prerequisites, portable dependencies, clean target construction,
+strict no-skip totals and installed-module origin checks. Follow that recipe to
+reproduce the historical pinned source commit below.
 
 ```sh
 python -B scripts/run_tests.py \
@@ -70,3 +77,17 @@ regression beyond that source/installed selection. No threshold/baseline change,
 source admission, persistent learner/own AdamW/teacher/graph mutation or self-merge.
 Full #347 remains open; typed interface-receipt normalization is the preserved next
 implementation task, not an outcome of this structural PR.
+
+## Review and hosted-check state
+
+As of 2 November 2026, the reviewed parent head
+`cb536f744008c7e7575c3d3973c135aa38292fd6` has passing portable/core and all
+eight full semantic shards in run `41512230130`; differential intentionally
+skipped. Semantic ABI run `41512230094` passes. These are historical exact-head
+receipts, not a CI-pending claim or proof for a later head.
+
+The pinned EGM comprehension review on that head found the reproducibility Major
+tracked in #733. Codebase-details review had not issued a complete clean verdict.
+Parent #694 is currently closed and its branch preserves the candidate; the parent
+owns aggregate EGM and integration readiness. This documentation repair does not
+claim that a fresh whole-candidate EGM or human merge has occurred.
