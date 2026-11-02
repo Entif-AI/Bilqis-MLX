@@ -1,166 +1,74 @@
 #!/usr/bin/env python3
-"""Validate BAMF-0.2 lane flow-control state.
-
-This checker enforces repository-visible flow-control invariants. It cannot observe
-an agent merely reading a branch or a remote PR changing outside the checked files,
-so AGENTS.md still requires operators to update lane state before mutation.
-"""
+"""Validate BAMF-0.2 lane flow control and optional live PR inventory."""
 
 from __future__ import annotations
 
+import argparse
 import json
+import os
 import sys
 from pathlib import Path
-from typing import Any
 
-ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_DIR = ROOT / "docs" / "tasks" / "bamf-0.2" / "flow-control"
-
-
-class FlowControlError(ValueError):
-    pass
-
-
-def _load(path: Path) -> dict[str, Any]:
-    try:
-        value = json.loads(path.read_text(encoding="utf-8"))
-    except FileNotFoundError as exc:
-        raise FlowControlError(f"missing flow-control file: {path}") from exc
-    except json.JSONDecodeError as exc:
-        raise FlowControlError(f"invalid JSON in {path}: {exc}") from exc
-    if not isinstance(value, dict):
-        raise FlowControlError(f"{path} must contain a JSON object")
-    return value
-
-
-def _policy_contract(policy: dict[str, Any]) -> tuple[dict[str, Any], int, list[str]]:
-    if policy.get("schema") != "bilqis.bamf.flow-control-policy/v1":
-        raise FlowControlError("policy schema must be bilqis.bamf.flow-control-policy/v1")
-    states = policy.get("states")
-    if not isinstance(states, dict) or not states:
-        raise FlowControlError("policy.states must be a non-empty object")
-    limit = policy.get("normal_active_limit_per_lane")
-    if not isinstance(limit, int) or limit < 1:
-        raise FlowControlError("normal_active_limit_per_lane must be a positive integer")
-    required = policy.get("rules", {}).get(
-        "over_limit_exception_required_fields", []
+if __package__:
+    from scripts.bamf_flow_control_core import (
+        DEFAULT_DIR,
+        FlowControlError,
+        validate_flow_control,
     )
-    if not isinstance(required, list):
-        raise FlowControlError("over-limit exception field list must be a list")
-    return states, limit, required
-
-
-def _validate_item(
-    lane: str,
-    index: int,
-    item: Any,
-    states: dict[str, Any],
-    seen_prs: set[int],
-) -> bool:
-    prefix = f"Lane {lane} item {index}"
-    if not isinstance(item, dict):
-        raise FlowControlError(f"{prefix}: item must be an object")
-
-    issue = item.get("issue")
-    if not isinstance(issue, int) or issue <= 0:
-        raise FlowControlError(f"{prefix}: issue must be a positive integer")
-
-    pr = item.get("pr")
-    if pr is not None:
-        if not isinstance(pr, int) or pr <= 0:
-            raise FlowControlError(f"{prefix}: pr must be null or a positive integer")
-        if pr in seen_prs:
-            raise FlowControlError(f"{prefix}: duplicate PR #{pr}")
-        seen_prs.add(pr)
-
-    state = item.get("state")
-    if state not in states:
-        raise FlowControlError(f"{prefix}: unknown state {state!r}")
-    state_policy = states[state]
-    if not isinstance(state_policy, dict):
-        raise FlowControlError(f"{prefix}: state policy must be an object")
-
-    if state_policy.get("requires_resume_trigger") is True:
-        trigger = item.get("resume_trigger")
-        if not isinstance(trigger, str) or not trigger.strip():
-            raise FlowControlError(
-                f"{prefix}: {state} requires a non-empty resume_trigger"
-            )
-    if state != "ACTIVE" and state_policy.get("branch_mutation_allowed") is True:
-        raise FlowControlError(f"{prefix}: only ACTIVE may permit branch mutation")
-    return state_policy.get("counts_as_wip") is True
-
-
-def _validate_lane(
-    lane: str,
-    data: dict[str, Any],
-    states: dict[str, Any],
-    seen_prs: set[int],
-) -> tuple[int, int]:
-    if data.get("schema") != "bilqis.bamf.flow-control-lane/v1":
-        raise FlowControlError(f"Lane {lane}: wrong lane schema")
-    if data.get("lane") != lane:
-        raise FlowControlError(f"Lane {lane}: lane field must equal {lane}")
-    updated_at = data.get("updated_at")
-    if not isinstance(updated_at, str) or not updated_at.strip():
-        raise FlowControlError(f"Lane {lane}: updated_at is required")
-    items = data.get("items")
-    if not isinstance(items, list):
-        raise FlowControlError(f"Lane {lane}: items must be a list")
-    active = sum(
-        _validate_item(lane, index, item, states, seen_prs)
-        for index, item in enumerate(items)
+    from scripts.bamf_flow_control_live import (
+        validate_live_from_environment,
+        validate_live_pr_inventory,
     )
-    return active, len(items)
+else:
+    from bamf_flow_control_core import (
+        DEFAULT_DIR,
+        FlowControlError,
+        validate_flow_control,
+    )
+    from bamf_flow_control_live import (
+        validate_live_from_environment,
+        validate_live_pr_inventory,
+    )
 
-
-def _validate_over_limit(
-    lane: str,
-    active: int,
-    limit: int,
-    exception: Any,
-    required_fields: list[str],
-) -> None:
-    if active <= limit:
-        return
-    if not isinstance(exception, dict):
-        raise FlowControlError(
-            f"Lane {lane}: {active} ACTIVE items exceed normal limit {limit} "
-            "without an explicit exception"
-        )
-    missing = [
-        field
-        for field in required_fields
-        if not isinstance(exception.get(field), str) or not exception[field].strip()
-    ]
-    if missing:
-        raise FlowControlError(
-            f"Lane {lane}: over-limit exception missing {', '.join(missing)}"
-        )
-
-
-def validate_flow_control(base_dir: Path = DEFAULT_DIR) -> list[str]:
-    states, limit, required_fields = _policy_contract(_load(base_dir / "policy.json"))
-    summaries: list[str] = []
-    seen_prs: set[int] = set()
-
-    for lane in ("A", "B", "C"):
-        data = _load(base_dir / f"lane-{lane.lower()}.json")
-        active, tracked = _validate_lane(lane, data, states, seen_prs)
-        _validate_over_limit(
-            lane, active, limit, data.get("exception"), required_fields
-        )
-        summaries.append(f"Lane {lane}: ACTIVE {active}/{limit}; tracked {tracked}")
-
-    return summaries
+__all__ = [
+    "FlowControlError",
+    "validate_flow_control",
+    "validate_live_pr_inventory",
+]
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--live",
+        action="store_true",
+        help="reconcile the repository ledger against live GitHub open PR state",
+    )
+    parser.add_argument(
+        "--repository",
+        default=os.environ.get("GITHUB_REPOSITORY", "Entif-AI/Bilqis-MLX"),
+    )
+    parser.add_argument(
+        "--live-json",
+        type=Path,
+        help="test-only path containing a GitHub open-PR JSON array",
+    )
+    args = parser.parse_args()
+
     try:
-        summaries = validate_flow_control()
-    except FlowControlError as exc:
+        if args.live_json is not None:
+            open_prs = json.loads(args.live_json.read_text(encoding="utf-8"))
+            if not isinstance(open_prs, list):
+                raise FlowControlError("--live-json must contain a JSON array")
+            summaries = validate_live_pr_inventory(open_prs, DEFAULT_DIR)
+        elif args.live:
+            summaries = validate_live_from_environment(args.repository, DEFAULT_DIR)
+        else:
+            summaries = validate_flow_control(DEFAULT_DIR)
+    except (FlowControlError, OSError, json.JSONDecodeError) as exc:
         print(f"BAMF_FLOW_CONTROL_FAIL: {exc}", file=sys.stderr)
         return 1
+
     print("BAMF_FLOW_CONTROL_OK")
     for summary in summaries:
         print(summary)
