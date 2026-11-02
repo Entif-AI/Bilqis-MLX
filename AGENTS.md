@@ -97,6 +97,12 @@ If later EGM or integration proves the **same original defect** still exists, re
 the remediation issue. If it exposes a different mechanism, newly unlocked gap, or
 new acceptance failure, create a new issue. The owning parent issue/PR carries the
 aggregate EGM pass/fail state and whole-candidate merge readiness.
+Prefer repairing a remediation issue directly on the authorized parent candidate
+branch when writer ownership and review isolation allow it. Do not create a separate
+PR merely to preserve the finding; the issue already provides the durable defect
+record. Use a stacked remediation PR only when branch ownership, concurrent-writer
+isolation, or focused review requires it, and merge/close that PR promptly once its
+bounded repair is consumed.
 
 The repository checker can validate declared state, WIP counts, required resume
 triggers and explicit exceptions. It cannot observe an unrecorded remote mutation or
