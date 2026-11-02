@@ -1,5 +1,5 @@
 {
-  "legacy_raw_file_count": 222,
+  "legacy_raw_file_count": 226,
   "legacy_raw_raise_count": 2030,
   "legacy_raw_raise_groups": [
     {
@@ -10958,137 +10958,137 @@
       "path": "bilqis_mlx/runtime/exam_execution.py"
     },
     {
-      "code_hint": "AUTONOMOUS_CURRICULUM_INCOMPATIBLE_WITH_FLASH_MODE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'AUTONOMOUS_CURRICULUM_INCOMPATIBLE_WITH_FLASH_MODE'",
-      "path": "bilqis_mlx/runtime/operating_loop.py"
-    },
-    {
-      "code_hint": "AUTONOMOUS_CURRICULUM_REQUIRES_RETENTION",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'AUTONOMOUS_CURRICULUM_REQUIRES_RETENTION'",
-      "path": "bilqis_mlx/runtime/operating_loop.py"
-    },
-    {
       "code_hint": "AUTONOMY_EVIDENCE_REQUIRES_DURABLE_CHECKPOINT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'AUTONOMY_EVIDENCE_REQUIRES_DURABLE_CHECKPOINT'",
-      "path": "bilqis_mlx/runtime/operating_loop.py"
-    },
-    {
-      "code_hint": "AUTONOMY_TEACHING_DURABLE_EVENT_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'AUTONOMY_TEACHING_DURABLE_EVENT_MISSING'",
-      "path": "bilqis_mlx/runtime/operating_loop.py"
-    },
-    {
-      "code_hint": "AUTONOMY_TEACHING_DURABLE_RECEIPT_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'AUTONOMY_TEACHING_DURABLE_RECEIPT_MISSING'",
-      "path": "bilqis_mlx/runtime/operating_loop.py"
+      "path": "bilqis_mlx/runtime/operator_session/operator_autonomy.py"
     },
     {
       "code_hint": "AUTONOMY_TEACHING_REROUTE_FAILED",
       "count": 1,
       "exception": "ValueError",
       "expression": "'AUTONOMY_TEACHING_REROUTE_FAILED'",
-      "path": "bilqis_mlx/runtime/operating_loop.py"
+      "path": "bilqis_mlx/runtime/operator_session/operator_autonomy.py"
+    },
+    {
+      "code_hint": "AUTONOMOUS_CURRICULUM_INCOMPATIBLE_WITH_FLASH_MODE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'AUTONOMOUS_CURRICULUM_INCOMPATIBLE_WITH_FLASH_MODE'",
+      "path": "bilqis_mlx/runtime/operator_session/operator_preflight.py"
+    },
+    {
+      "code_hint": "AUTONOMOUS_CURRICULUM_REQUIRES_RETENTION",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'AUTONOMOUS_CURRICULUM_REQUIRES_RETENTION'",
+      "path": "bilqis_mlx/runtime/operator_session/operator_preflight.py"
     },
     {
       "code_hint": "BOOLEAN_ASSOCIATION_BRIDGE_REQUIRES_RESUME",
       "count": 1,
       "exception": "ValueError",
       "expression": "'BOOLEAN_ASSOCIATION_BRIDGE_REQUIRES_RESUME'",
-      "path": "bilqis_mlx/runtime/operating_loop.py"
+      "path": "bilqis_mlx/runtime/operator_session/operator_preflight.py"
     },
     {
       "code_hint": "BOOLEAN_COMPOSITE_REQUIRES_RESUME",
       "count": 1,
       "exception": "ValueError",
       "expression": "'BOOLEAN_COMPOSITE_REQUIRES_RESUME'",
-      "path": "bilqis_mlx/runtime/operating_loop.py"
+      "path": "bilqis_mlx/runtime/operator_session/operator_preflight.py"
     },
     {
       "code_hint": "BOOLEAN_IDBOOLOPS_REQUIRES_RESUME",
       "count": 1,
       "exception": "ValueError",
       "expression": "'BOOLEAN_IDBOOLOPS_REQUIRES_RESUME'",
-      "path": "bilqis_mlx/runtime/operating_loop.py"
+      "path": "bilqis_mlx/runtime/operator_session/operator_preflight.py"
     },
     {
       "code_hint": "DEBT_GRADE_ADMISSION_INCOMPATIBLE_WITH_NUMERIC_STAIRCASE",
       "count": 1,
       "exception": "ValueError",
       "expression": "'DEBT_GRADE_ADMISSION_INCOMPATIBLE_WITH_NUMERIC_STAIRCASE'",
-      "path": "bilqis_mlx/runtime/operating_loop.py"
+      "path": "bilqis_mlx/runtime/operator_session/operator_preflight.py"
     },
     {
       "code_hint": "DEBT_GRADE_ADMISSION_REQUIRES_RESUME",
       "count": 1,
       "exception": "ValueError",
       "expression": "'DEBT_GRADE_ADMISSION_REQUIRES_RESUME'",
-      "path": "bilqis_mlx/runtime/operating_loop.py"
+      "path": "bilqis_mlx/runtime/operator_session/operator_preflight.py"
     },
     {
       "code_hint": "FLASH_MODE_REQUIRES_RESUME",
       "count": 1,
       "exception": "ValueError",
       "expression": "'FLASH_MODE_REQUIRES_RESUME'",
-      "path": "bilqis_mlx/runtime/operating_loop.py"
+      "path": "bilqis_mlx/runtime/operator_session/operator_preflight.py"
     },
     {
       "code_hint": "HUMAN_TRAINER_INVALID_OPERATOR_LIMITS",
       "count": 1,
       "exception": "ValueError",
       "expression": "'HUMAN_TRAINER_INVALID_OPERATOR_LIMITS'",
-      "path": "bilqis_mlx/runtime/operating_loop.py"
+      "path": "bilqis_mlx/runtime/operator_session/operator_preflight.py"
     },
     {
       "code_hint": "LEARNING_EXPERIMENT_PROTECTED_RESUME_REQUIRES_RETENTION",
       "count": 1,
       "exception": "ValueError",
       "expression": "'LEARNING_EXPERIMENT_PROTECTED_RESUME_REQUIRES_RETENTION'",
-      "path": "bilqis_mlx/runtime/operating_loop.py"
-    },
-    {
-      "code_hint": "NUMERIC_STAIRCASE_REQUIRES_RESUME",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'NUMERIC_STAIRCASE_REQUIRES_RESUME'",
-      "path": "bilqis_mlx/runtime/operating_loop.py"
-    },
-    {
-      "code_hint": "STAGNATION_GRACE_GRADE_NOT_ACTIVE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'STAGNATION_GRACE_GRADE_NOT_ACTIVE'",
-      "path": "bilqis_mlx/runtime/operating_loop.py"
+      "path": "bilqis_mlx/runtime/operator_session/operator_preflight.py"
     },
     {
       "code_hint": "STAGNATION_GRACE_REQUIRES_EXPLICIT_RESUME_REQUEST",
       "count": 1,
       "exception": "ValueError",
       "expression": "'STAGNATION_GRACE_REQUIRES_EXPLICIT_RESUME_REQUEST'",
-      "path": "bilqis_mlx/runtime/operating_loop.py"
+      "path": "bilqis_mlx/runtime/operator_session/operator_preflight.py"
     },
     {
       "code_hint": "TEACHING_ENRICHMENT_NOT_ADMITTED_BY_FACTORY_RELEASE",
       "count": 1,
       "exception": "ValueError",
       "expression": "'TEACHING_ENRICHMENT_NOT_ADMITTED_BY_FACTORY_RELEASE'",
-      "path": "bilqis_mlx/runtime/operating_loop.py"
+      "path": "bilqis_mlx/runtime/operator_session/operator_preflight.py"
     },
     {
       "code_hint": "TEACHING_ENRICHMENT_REQUIRES_ADMITTED_FACTORY_RELEASE",
       "count": 1,
       "exception": "ValueError",
       "expression": "'TEACHING_ENRICHMENT_REQUIRES_ADMITTED_FACTORY_RELEASE'",
-      "path": "bilqis_mlx/runtime/operating_loop.py"
+      "path": "bilqis_mlx/runtime/operator_session/operator_preflight.py"
+    },
+    {
+      "code_hint": "NUMERIC_STAIRCASE_REQUIRES_RESUME",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'NUMERIC_STAIRCASE_REQUIRES_RESUME'",
+      "path": "bilqis_mlx/runtime/operator_session/operator_setup.py"
+    },
+    {
+      "code_hint": "STAGNATION_GRACE_GRADE_NOT_ACTIVE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'STAGNATION_GRACE_GRADE_NOT_ACTIVE'",
+      "path": "bilqis_mlx/runtime/operator_session/operator_stagnation.py"
+    },
+    {
+      "code_hint": "AUTONOMY_TEACHING_DURABLE_EVENT_MISSING",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'AUTONOMY_TEACHING_DURABLE_EVENT_MISSING'",
+      "path": "bilqis_mlx/runtime/operator_session/operator_visit.py"
+    },
+    {
+      "code_hint": "AUTONOMY_TEACHING_DURABLE_RECEIPT_MISSING",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'AUTONOMY_TEACHING_DURABLE_RECEIPT_MISSING'",
+      "path": "bilqis_mlx/runtime/operator_session/operator_visit.py"
     },
     {
       "code_hint": "DEBT_ADMISSION_REQUIRES_EXACT_COMPLETE_BOUNDARY",

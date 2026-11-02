@@ -1,5 +1,31 @@
 # C11.3 / #524 checkpoint custody interruption
 
+## Current continuation — 2 November 2026
+
+The previous scoped review missed a facade patch regression. At exact head
+`f3e99245`, the lost-event-acknowledgment system proof passes only 3/4:
+patching `runtime.checkpoints._record` no longer injects the expected crash into
+the extracted outbox owner. The independent finding is recorded on issue #524,
+comment `6571755583`, and as PM-2026-11-02-001 / RC-143 / proposed PAT-102 in the
+native incident ledger. The earlier PM-2026-11-01-009 concerns diagnostic
+inventory and remains a separate episode.
+
+Merge `a5232e12` consumes reviewed unified
+`5ac0e9ca2a94e11a6bbb25bcca8282af3eb8fc4e`. The canonical 228-line checkpoint
+facade and its `_custody` owners replace this branch's superseded
+`checkpoint_parts` extraction. Explicit callback injection preserves the late
+facade lookup used by crash/replay consumers. The inherited-outbox tests return
+to `runtime/tests/custody/test_inherited_outbox.py` without changed test bodies.
+The generated error inventory is rebuilt from the resulting sources.
+
+The exact prior head reproduces the failure; the merged head passes 4/4 system
+proofs and 19/19 across system, inherited-outbox, cold-import and scanner tests,
+with zero skips. Tests use an isolated dependency environment and disposable
+run directories. No human entrypoint or existing student was invoked.
+The historical proof below describes the earlier checkpoint, not the current
+implementation or its review disposition. Final merge-readiness EGM remains
+pending until the complete known engineering queue is clear.
+
 This continues draft PR #699 from `e3e010c2`, on consumed unified
 `3088ee02d085f2a88e53b7c78c8d9637916663fe`. Work Stack retains the paused
 operator-runbook task and the remaining `operating_loop.py` interruption.

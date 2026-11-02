@@ -84,3 +84,19 @@ skip the real full-B subprocess because its separately pinned sibling source
 mount is absent. That skip condition is unchanged. The complete subprocess
 program's byte equality is additional structural proof, not an executed full-B
 witness. The two runtime-owner interruptions remain queued in Work Stack.
+
+## Historical-provider correction — #729
+
+Fresh pinned EGM at `3274e7ba` found one lazy relative import that the earlier
+parity checks missed: `graph_matches_release` still resolved `..semantics.abi`
+from its new package depth. That names the nonexistent compatibility-level
+semantics package. The correct source owner is `...semantics.abi`.
+
+The focused provider suite reproduces this `ModuleNotFoundError` across all
+six historical selectors and both provider/facade entrypoints. After the source
+binding is restored, three tests pass with 36 subcases covering matching
+prefix/digest, wrong prefix and wrong digest. The repository runner's derived
+red total is invalid for multiple subtest errors; the native unittest receipt
+is three tests with 36 subtest errors. No historical policy or ABI value changes.
+The new regression is included in hosted portable verification. Incident
+PM-2026-11-02-005 preserves the exact review and repair provenance.

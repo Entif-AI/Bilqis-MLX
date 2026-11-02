@@ -2426,3 +2426,61 @@ recorded in `ADR.md`.
 
 **Status:** Accepted as the controlling BAMF-0.2 lane flow-control and parked-PR
 discipline.
+## ADR-125 | 2026-11-02 | Remediation artifacts close at local acceptance; parent owns aggregate EGM
+
+**Problem:** BAMF review findings had begun to accumulate as open issues and draft
+PRs even after their exact defects were repaired. Those artifacts were being kept
+open until the entire parent feature, sibling set, dependency graph and final EGM
+cycle completed. That turns GitHub's open set into historical storage. Every agent
+that searches for related open issues or current PRs then pays a growing discovery,
+classification and context cost for work that is already finished.
+
+**Decision:** Open issues and PRs represent the current actionable working set.
+Historical provenance belongs in closed issues and merged/closed PRs.
+
+A remediation issue closes when its exact recorded defect has been reproduced,
+repaired, regression-covered and verified on a durable PR/head. The issue does not
+remain open merely because a parent issue or integration PR still awaits EGM,
+sibling remediation, dependency acceptance or final human merge. The linked PR and
+closed issue retain the implementation and provenance receipt.
+
+A remediation PR remains draft only while its own scoped implementation is
+incomplete or a known Blocker/Major against that scope remains unresolved. Parent
+EGM debt is not a draft condition. Once the PR's scoped acceptance is satisfied,
+mark it ready for review. Merge or close it promptly when its change is consumed by
+the intended parent/candidate branch. Do not retain an open PR merely as evidence.
+Do not create a separate remediation PR merely to preserve a review finding when
+the authorized parent candidate branch can safely accept the fix under current
+writer coordination. The remediation issue is the durable finding record. A stacked
+PR is justified when it provides necessary writer isolation, branch ownership, or
+focused review; otherwise repair the parent candidate directly.
+Because the reviewed BAMF integration trunk is not the repository default branch,
+GitHub closing keywords are not sufficient closeout machinery. Operators must
+explicitly verify the linked remediation issue state and close satisfied children
+after their repair is accepted or consumed.
+
+The owning parent issue/PR carries aggregate merge-readiness state, including the
+fresh pinned EGM result. A later EGM or integration finding reopens a closed
+remediation issue only when it proves the same original defect still exists, was
+reverted, or its stated acceptance was false. A different failure mechanism,
+newly exposed gap or new acceptance failure gets a new remediation issue with its
+own reproduction and bounded acceptance.
+
+**Relationship to ADR-121:** ADR-121 remains the general issue-lifecycle contract.
+For remediation children, this ADR narrows ADR-121's earlier requirement that
+accepted work first be integrated into reviewed unified before issue closure. A
+durable verified remediation PR is sufficient to close the child issue; the parent
+still cannot claim acceptance until it consumes that fix and satisfies its own
+integration and EGM gates.
+
+**Operational effect:** The open issue/PR set should approximate executable work
+plus meaningful parent/integration containers. Review sweeps search a bounded current
+frontier instead of repeatedly rediscovering completed defects. EGM can continue to
+unlock new defects without causing the backlog to grow monotonically.
+
+**Human ratification:** The project owner explicitly directed this lifecycle on
+2026-11-02 after observing that retaining repaired children until whole-program
+completion was neither sensible nor scalable.
+
+**Status:** Accepted as the remediation issue/PR lifecycle for BAMF-0.2 and
+successor Bilqis-MLX work.
