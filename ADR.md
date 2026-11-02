@@ -2633,3 +2633,29 @@ candidate is a new admission event and must satisfy the normal inventory gate.
 **Status:** Accepted as the controlling BAMF-0.2 integration-inventory and PR
 admission policy.
 
+### ADR-126 Clarification | 2026-11-02 | Drain through EGM and merge, not bulk closure
+
+**Owner clarification:** DRAIN means stop admitting new implementation PRs and reduce
+existing inventory by satisfying its merge requirements, including fresh pinned EGM,
+repairing candidates in place, and merging eligible candidates. It does **not** mean
+closing every PR whose flow state is `WAITING`.
+
+A PR awaiting required EGM review or other merge-readiness evidence is still an
+actionable integration candidate. EGM review is a merge prerequisite, not a reason
+to close the PR. Keep such candidates open while the authorized EGM/repair/merge
+process is active. Do not close a PR solely to make the inventory number smaller or
+to make the checker report NORMAL.
+
+Close a parked PR only when it is genuinely superseded, duplicate, no longer
+selected for integration, materially blocked with no active EGM/merge path, or
+otherwise explicitly directed by the project owner. Preserve its exact head,
+branch, issue and resume trigger before closure.
+
+The bulk closure of 17 `WAITING` PRs performed during the first ADR-126
+implementation on 2026-11-02 was an incorrect interpretation and was reversed.
+All 17 PRs were reopened at their original heads. The existing 19 implementation
+PRs are the one-time grandfathered drain inventory; the normal ceiling of three
+still blocks new admission. The drain proceeds through EGM, repair and merge, not
+through summary closure. This correction supersedes any contrary initial-drain
+description in the first implementation of ADR-126.
+
