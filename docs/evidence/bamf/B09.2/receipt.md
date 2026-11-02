@@ -2,7 +2,7 @@
 
 Issue: [#465](https://github.com/Entif-AI/Bilqis-MLX/issues/465)
 Lane: B, isolated candidate `codex/b09-465-participation-20261101`
-Consumed reviewed unified / Lane B: `bd62f3cb6c296151aba7b9ed5fa90ee814492494`
+Consumed reviewed unified / Lane B: `3088ee02d085f2a88e53b7c78c8d9637916663fe`
 
 ## Owned software
 
@@ -24,9 +24,11 @@ optimizer step is skipped downstream.
 
 `parameter_update_mask(...)` derives the final legal mask as candidate-start
 group eligibility AND actual per-step participation AND active/admitted rows.
-FAST identity banks remain whole-tensor SLOW in the B01 census, but only their
-age0-7 rows are exposed through the existing `fast_identity_rows` exception;
-established age8 rows remain frozen until FULL. Motif global slots are mapped to
+Identity rows are always intersected with the candidate-start frozen
+`admitted_identity_rows` set before any optimizer geometry is emitted. FAST
+identity banks remain whole-tensor SLOW in the B01 census, and further narrow
+that frozen set to age0-7 `fast_identity_rows`; established age8 rows remain
+frozen until FULL. Motif global slots are mapped to
 their declared B01 page rows, and type/role/schema tables are row-masked.
 Eligible dense modules update only when named as actually executed on the
 loss-bearing path.
@@ -60,6 +62,8 @@ Focused B09.2 tests prove:
 - actual B01 FAST eligibility exposes young identity rows but not established
   rows;
 - active/admitted state is independently required;
+- FULL/FOUNDATION cannot update an identity row absent from the candidate-start
+  frozen admission set, even if later step evidence marks it active/admitted;
 - motif and feature rows update only when actually gathered/legal;
 - a huge masked gradient is exact zero before clipping;
 - a participating numerical-zero row remains legally participating;

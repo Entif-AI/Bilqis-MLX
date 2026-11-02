@@ -252,18 +252,23 @@ def parameter_update_mask(group_eligible, participation: StepParticipation,
     for name in names:
         rows = _row_mask(name, participation, active_admitted)
         if rows is not None:
-            if name.startswith("identity.bank.") and group_eligible.mode == "FAST":
+            if name.startswith("identity.bank."):
                 bank = int(name.rsplit(".", 1)[-1])
-                fast = set(group_eligible.fast_identity_rows)
-                rows = tuple(row for row in rows if (bank, row) in fast)
-                masks.append(ParameterMask(name, False, rows))
+                admitted = set(group_eligible.admitted_identity_rows)
+                if group_eligible.mode == "FAST":
+                    admitted &= set(group_eligible.fast_identity_rows)
+                rows = tuple(row for row in rows if (bank, row) in admitted)
+                allowed = group_eligible.mode == "FAST" or name in eligible
+                masks.append(ParameterMask(name, False, rows if allowed else ()))
             else:
                 masks.append(ParameterMask(name, False, rows if name in eligible else ()))
         else:
             masks.append(ParameterMask(
                 name, name in eligible and name in dense and participation.loss_bearing_target, ()))
     effective_identity = tuple(sorted(
-        set(participation.identity_rows) & set(active_admitted.identity_rows)))
+        (int(item.name.rsplit(".", 1)[-1]), row)
+        for item in masks if item.name.startswith("identity.bank.")
+        for row in item.row_indices))
     return UpdateMask(
         tuple(masks), effective_identity, participation.loss_bearing_target)
 

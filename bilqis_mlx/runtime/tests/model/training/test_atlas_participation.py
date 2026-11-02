@@ -76,6 +76,29 @@ class ParticipationTests(TestCase):
             np.array([True, False, True]),
         )
 
+    def test_full_identity_rows_remain_frozen_to_candidate_start_admission(self):
+        eligibility = GroupEligibility(
+            "FULL", ("identity.bank.0",), (),
+            ((0, 0),), (), ((0, 0),))
+        participation = step_participation(
+            StepParticipationInputs(
+                visible_identity_rows=((0, 0), (0, 1))),
+            SemanticDenominator(), (), RoleReadParticipation())
+        mask = parameter_update_mask(
+            eligibility, participation,
+            ActiveAdmittedRows(identity_rows=((0, 0), (0, 1))))
+
+        self.assertEqual(mask.parameter("identity.bank.0").row_indices, (0,))
+        self.assertEqual(mask.participating_identity_rows, ((0, 0),))
+        booleans = optimizer_participation_mask(
+            mask,
+            {"identity.bank.0": mx.array([4, 9], dtype=mx.uint64)},
+        )
+        np.testing.assert_array_equal(
+            np.asarray(booleans["identity.bank.0"]),
+            np.array([True, False]),
+        )
+
     def test_b09_bridge_drives_b12_zero_gradient_count_and_decay(self):
         eligibility = GroupEligibility(
             "FULL", ("identity.bank.0",), (),
