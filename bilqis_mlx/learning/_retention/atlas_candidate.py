@@ -21,21 +21,20 @@ from bilqis_mlx.runtime.atlas_optimizer import AdamWStateTree, _adamw_update
 STATE_SCHEMA = 'bilqis.mlx.candidate-state/provisional-v1'
 TRANSACTION_SCHEMA = 'bilqis.mlx.candidate-transaction/provisional-v1'
 _TRANSACTION_ISSUER = object()
+_RETAINED_STATE_ISSUER = object()
 
 
 def _invalid():
     ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
 
 
-def _require_genesis_allocations(snapshot: MotifAllocationSnapshot) -> None:
-    """Fail closed until retained-generation motif history has an owner proof."""
-    if (type(snapshot) is not MotifAllocationSnapshot
-            or snapshot.manifest.slots
-            or snapshot.manifest.capacity != INITIAL_MOTIF_CAPACITY
-            or snapshot.observed_uses
-            or snapshot.pending_keys
-            or snapshot.aliases):
-        _invalid()
+def _is_genesis_allocations(snapshot: MotifAllocationSnapshot) -> bool:
+    return (type(snapshot) is MotifAllocationSnapshot
+            and not snapshot.manifest.slots
+            and snapshot.manifest.capacity == INITIAL_MOTIF_CAPACITY
+            and not snapshot.observed_uses
+            and not snapshot.pending_keys
+            and not snapshot.aliases)
 
 
 @dataclass(frozen=True)
@@ -47,6 +46,7 @@ class CandidateState:
     allocations: MotifAllocationSnapshot
     optimizer_step: int
     schema_version: str = STATE_SCHEMA
+    _issuance: object = field(init=False, default=None, repr=False, compare=False)
 
     def __post_init__(self):
         if (type(self.optimizer) is not AdamWStateTree
@@ -58,11 +58,25 @@ class CandidateState:
         self.optimizer.validate()
         self.policy.validate()
         self.allocations.__post_init__()
-        _require_genesis_allocations(self.allocations)
+        if (not _is_genesis_allocations(self.allocations)
+                and getattr(self, '_issuance', None) is not _RETAINED_STATE_ISSUER):
+            _invalid()
         for row in self.policy.row_ages:
             count = self.optimizer.update_counts.get(f'identity.bank.{row.bank_index}')
             if count is None or count.ndim != 1 or row.row_index >= count.shape[0]:
                 _invalid()
+
+
+def _issue_retained_state(optimizer, policy, allocations, optimizer_step):
+    """Internal custody bridge for already authenticated retained motif state."""
+    state = object.__new__(CandidateState)
+    for name, value in (
+            ('optimizer', optimizer), ('policy', policy), ('allocations', allocations),
+            ('optimizer_step', optimizer_step), ('schema_version', STATE_SCHEMA),
+            ('_issuance', _RETAINED_STATE_ISSUER)):
+        object.__setattr__(state, name, value)
+    state.__post_init__()
+    return state
 
 
 @dataclass(frozen=True, init=False)
@@ -94,7 +108,6 @@ class CandidateTransaction:
         self.parent.__post_init__()
         self.optimizer.validate()
         self.allocations.__post_init__()
-        _require_genesis_allocations(self.parent.allocations)
         # Slot tensors are not materialized by this transaction slice.
         if (self.allocations is not self.parent.allocations
                 or set(self.optimizer.parameters) != set(self.parent.optimizer.parameters)):
@@ -126,13 +139,12 @@ def _issue_transaction(parent, optimizer, teacher_requests_full, update_steps=0)
 
 def begin_candidate(parent: CandidateState, *, budget=None,
                     teacher_requests_full: bool = False) -> CandidateTransaction:
-    """Begin optimizer-only work while motif retained-history authority is absent."""
+    """Begin optimizer-only work from one validated retained parent."""
     if type(parent) is not CandidateState or type(teacher_requests_full) is not bool:
         _invalid()
     parent.__post_init__()
     if budget is not None and type(budget) is not MotifBudget:
         _invalid()
-    _require_genesis_allocations(parent.allocations)
     return _issue_transaction(parent, parent.optimizer, teacher_requests_full)
 
 
@@ -173,5 +185,7 @@ def resolve_candidate(candidate: CandidateTransaction, *, accepted: bool) -> Can
     policy = advance_candidate_policy(
         candidate.parent.policy, teacher_requests_full=candidate.teacher_requests_full,
         accepted=True, participating_rows=rows)
-    return CandidateState(candidate.optimizer, policy, candidate.allocations,
-                          candidate.parent.optimizer_step + candidate.update_steps)
+    step = candidate.parent.optimizer_step + candidate.update_steps
+    if _is_genesis_allocations(candidate.allocations):
+        return CandidateState(candidate.optimizer, policy, candidate.allocations, step)
+    return _issue_retained_state(candidate.optimizer, policy, candidate.allocations, step)

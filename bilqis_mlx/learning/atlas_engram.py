@@ -80,6 +80,8 @@ class FrameSchemaV1(Protocol):
 class MotifFrameInput:
     frame: FrameInstanceV2
     schema: FrameSchemaV1
+    children: tuple["MotifFrameInput", ...] = ()
+    atomic_child_occurrences: tuple[str, ...] = ()
     schema_version: str = FRAME_INPUT_SCHEMA
 
 
@@ -362,6 +364,13 @@ def motif_keys(source: MotifFrameInput, release: str) -> tuple[MotifKey, MotifKe
     """Derive exact and typed structural identities from the A03-owned wire shape."""
     if (not isinstance(source, MotifFrameInput)
             or source.schema_version != FRAME_INPUT_SCHEMA
+            or not isinstance(source.children, tuple)
+            or any(type(child) is not MotifFrameInput for child in source.children)
+            or not isinstance(source.atomic_child_occurrences, tuple)
+            or any(not isinstance(item, str) or not _SHA.fullmatch(item)
+                   for item in source.atomic_child_occurrences)
+            or source.atomic_child_occurrences
+            != tuple(sorted(set(source.atomic_child_occurrences)))
             or not _SHA.fullmatch(release)):
         _invalid("BAMF_MOTIF_FRAME_INPUT_INVALID")
     frame, schema = source.frame, source.schema
@@ -380,6 +389,19 @@ def motif_keys(source: MotifFrameInput, release: str) -> tuple[MotifKey, MotifKe
         role_map = {role.role_id: role for role in schema.roles}
         if len(role_map) != len(role_order):
             _invalid("BAMF_MOTIF_ROLE_ORDER_INVALID")
+        child_map = {child.frame.occurrence_id: child for child in source.children}
+        expected_children = {
+            binding.child_frame.occurrence_id: binding.child_frame
+            for binding in bindings if binding.child_frame is not None
+        }
+        supplied_children = set(child_map) | set(source.atomic_child_occurrences)
+        if (len(child_map) != len(source.children)
+                or supplied_children != set(expected_children)
+                or set(child_map).intersection(source.atomic_child_occurrences)
+                or any(child_map[occurrence].frame.content_digest != reference.content_digest
+                       for occurrence, reference in expected_children.items()
+                       if occurrence in child_map)):
+            _invalid("BAMF_MOTIF_CHILD_STRUCTURE_INVALID")
         rank = {role: index for index, role in enumerate(role_order)}
         keys = tuple((binding.role_id, binding.occurrence_index)
                      for binding in bindings)
@@ -398,7 +420,9 @@ def motif_keys(source: MotifFrameInput, release: str) -> tuple[MotifKey, MotifKe
             for binding in bindings if binding.child_frame is not None)
         structural_relations = tuple(
             (binding.role_id, binding.occurrence_index,
-             tuple(binding.child_frame.type_ids))
+             tuple(binding.child_frame.type_ids),
+             (motif_keys(child_map[binding.child_frame.occurrence_id], release)[1].digest
+              if binding.child_frame.occurrence_id in child_map else "ATOMIC"))
             for binding in bindings if binding.child_frame is not None)
         signature_base = (
             schema.ast_construct, schema.ast_contract_sha256,

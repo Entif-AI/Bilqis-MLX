@@ -50,12 +50,18 @@ class MotifKeyTests(TestCase):
 
     def test_distinct_child_occurrences_preserve_exact_identity(self):
         first = source(child=True)
+        first_child = first.children[0]
+        changed_child = replace(
+            first_child,
+            frame=replace(first_child.frame, occurrence_id="e" * 64),
+        )
         changed_binding = replace(
             first.frame.bindings[0],
             child_frame=replace(first.frame.bindings[0].child_frame,
                                 occurrence_id="e" * 64))
         second = replace(first, frame=replace(
-            first.frame, bindings=(changed_binding, first.frame.bindings[1])))
+            first.frame, bindings=(changed_binding, first.frame.bindings[1])),
+            children=(changed_child,))
         a_exact, a_structural = motif_keys(first, RELEASE)
         b_exact, b_structural = motif_keys(second, RELEASE)
         self.assertNotEqual(a_exact, b_exact)
@@ -63,13 +69,23 @@ class MotifKeyTests(TestCase):
 
     def test_structural_child_filler_abstracts_exact_content_but_keeps_relation(self):
         first = source(child=True)
+        first_child = first.children[0]
         original = first.frame.bindings[0]
+        changed_child = replace(
+            first_child,
+            frame=replace(
+                first_child.frame,
+                occurrence_id="e" * 64,
+                content_digest="f" * 64,
+            ),
+        )
         second = replace(first, frame=replace(
             first.frame, bindings=(
                 replace(original, child_frame=replace(
                     original.child_frame, occurrence_id="e" * 64,
                     content_digest="f" * 64)),
-                first.frame.bindings[1])))
+                first.frame.bindings[1])),
+            children=(changed_child,))
         exact_a, structural_a = motif_keys(first, RELEASE)
         exact_b, structural_b = motif_keys(second, RELEASE)
         self.assertNotEqual(exact_a.relation_signature,
@@ -78,6 +94,35 @@ class MotifKeyTests(TestCase):
                          structural_b.relation_signature)
         self.assertNotEqual(exact_a, exact_b)
         self.assertEqual(structural_a, structural_b)
+
+    def test_structural_child_preserves_nested_relation_structure(self):
+        child_a = source(actor="urn:actor:alice", patient="urn:patient:bob")
+        child_b = source(actor="urn:actor:alice", patient="urn:patient:bob", scope="source:scope:child")
+        parent = source(child=True)
+        binding = parent.frame.bindings[0]
+        child_ref = replace(
+            binding.child_frame,
+            occurrence_id=child_a.frame.occurrence_id,
+            content_digest=child_a.frame.content_digest,
+        )
+        parent_a = replace(
+            parent,
+            frame=replace(parent.frame, bindings=(replace(binding, child_frame=child_ref), parent.frame.bindings[1])),
+            children=(child_a,),
+        )
+        child_b = replace(
+            child_b,
+            frame=replace(
+                child_b.frame,
+                occurrence_id=child_a.frame.occurrence_id,
+                content_digest=child_a.frame.content_digest,
+            ),
+        )
+        parent_b = replace(parent_a, children=(child_b,))
+        self.assertNotEqual(
+            motif_keys(parent_a, RELEASE)[1],
+            motif_keys(parent_b, RELEASE)[1],
+        )
 
     def test_valid_empty_optional_frame_has_canonical_motif_key(self):
         schema = Schema((Role("optional", ("Person",), 0, 1),))

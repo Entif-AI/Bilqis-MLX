@@ -29,6 +29,7 @@ from .atlas_engram_transaction import (
     CandidateMotifSnapshot, MotifAllocationSnapshot,
     _prepare_candidate_motif_snapshot,
 )
+from bilqis_mlx.learning._retention.atlas_candidate import CandidateState
 
 APPROVED_MOTIF_SCHEMA = "bilqis.motif-approved-candidate/v1"
 _BOOLEAN_SOURCE_ADAPTERS = (
@@ -62,6 +63,83 @@ class ApprovedMotifCandidate:
             _invalid("BAMF_MOTIF_APPROVED_CANDIDATE_INVALID")
 
 
+def _qualify_frame(envelope, snapshot, source_family, atlas_selection,
+                   source_root, graph, adapter_id):
+    frame = envelope.frame
+    schema, _witness = lookup_source_pinned_frame_schema(
+        frame.frame_schema_id, frame.frame_schema_revision,
+        source_family=source_family, atlas_selection=atlas_selection,
+    )
+    _, authoritative_graph = canonical_graph(
+        source_root, graph, adapter_id, frame.source_span)
+    validated = validate_frame_bindings(
+        schema, snapshot, bindings=frame.bindings,
+        source_span=frame.source_span,
+        causal_prefix_end=frame.causal_prefix_end,
+        declared_scope=schema.scope,
+        source_graph=authoritative_graph, source_adapter_id=adapter_id,
+    )
+    if validated != frame.bindings:
+        _invalid("BAMF_MOTIF_SOURCE_BINDING_DRIFT")
+    for binding in validated:
+        concepts = ((binding.concept,) if binding.concept is not None
+                    else binding.alternatives)
+        if any(not snapshot.abi_for_semantic(concept.semantic_id).active
+               for concept in concepts):
+            _invalid("BAMF_MOTIF_SEMANTIC_NOT_ADMITTED")
+    return frame, schema
+
+
+def _build_motif_input(occurrence_id, qualified, atomic, stack=frozenset()):
+    if occurrence_id in stack or occurrence_id not in qualified:
+        _invalid("BAMF_MOTIF_CHILD_STRUCTURE_INVALID")
+    frame, schema = qualified[occurrence_id]
+    children, atomic_children = [], []
+    for binding in frame.bindings:
+        child = binding.child_frame
+        if child is None:
+            continue
+        if child.occurrence_id in qualified:
+            nested = _build_motif_input(
+                child.occurrence_id, qualified, atomic, stack | {occurrence_id})
+            if nested.frame.content_digest != child.content_digest:
+                _invalid("BAMF_MOTIF_CHILD_STRUCTURE_INVALID")
+            children.append(nested)
+            continue
+        if (child.occurrence_id not in atomic
+                or atomic[child.occurrence_id].content_digest != child.content_digest):
+            _invalid("BAMF_MOTIF_CHILD_STRUCTURE_INVALID")
+        atomic_children.append(child.occurrence_id)
+    return MotifFrameInput(
+        frame, schema, tuple(children), tuple(sorted(atomic_children)))
+
+
+def _qualified_motif_inputs(projection, snapshot, source_adapter,
+                            atlas_selection, source_root, graph):
+    adapter_id = source_adapter.descriptor.adapter_id
+    source_family = _source_family(adapter_id)
+    atomic = {
+        envelope.frame.occurrence_id: envelope.frame
+        for envelope in projection.envelopes
+        if not isinstance(envelope.frame, FrameInstance)
+    }
+    qualified = {}
+    for envelope in projection.envelopes:
+        if not isinstance(envelope.frame, FrameInstance):
+            continue
+        frame, schema = _qualify_frame(
+            envelope, snapshot, source_family, atlas_selection,
+            source_root, graph, adapter_id)
+        if frame.occurrence_id in qualified:
+            _invalid("BAMF_MOTIF_CHILD_STRUCTURE_INVALID")
+        qualified[frame.occurrence_id] = (frame, schema)
+    return tuple(
+        _build_motif_input(envelope.frame.occurrence_id, qualified, atomic)
+        for envelope in projection.envelopes
+        if isinstance(envelope.frame, FrameInstance)
+    )
+
+
 def prepare_source_qualified_motifs(
     source_adapter: RegisteredSourceAdapter,
     row: dict,
@@ -75,6 +153,7 @@ def prepare_source_qualified_motifs(
     source_seed: int,
     source_each: int,
     budget: MotifBudget,
+    retained_state: CandidateState | None = None,
     source_profile_parameters: dict | None = None,
     course=None,
 ) -> tuple[ApprovedMotifCandidate, SourceFrontier] | ContextHold:
@@ -83,8 +162,11 @@ def prepare_source_qualified_motifs(
             or type(task_scope) is not TaskScope
             or type(source_frontier) is not SourceFrontier
             or type(policy) is not ContextPolicy
-            or type(budget) is not MotifBudget):
+            or type(budget) is not MotifBudget
+            or (retained_state is not None and type(retained_state) is not CandidateState)):
         _invalid("BAMF_MOTIF_SOURCE_AUTHORITY_INVALID")
+    if retained_state is not None:
+        retained_state.__post_init__()
     snapshot = load_pinned_atlas_snapshot(atlas_selection)
     if snapshot.release_sha256 != task_scope.semantic_release:
         _invalid("BAMF_MOTIF_SOURCE_AUTHORITY_INVALID")
@@ -98,39 +180,13 @@ def prepare_source_qualified_motifs(
     if isinstance(admitted, ContextHold):
         return admitted
     projection, issued_frontier = admitted
-    adapter_id = source_adapter.descriptor.adapter_id
-    source_family = _source_family(adapter_id)
-    qualified = []
-    for envelope in projection.envelopes:
-        frame = envelope.frame
-        if not isinstance(frame, FrameInstance):
-            # Atomic fallback is an admitted context position, not a motif slot.
-            continue
-        schema, _witness = lookup_source_pinned_frame_schema(
-            frame.frame_schema_id, frame.frame_schema_revision,
-            source_family=source_family, atlas_selection=atlas_selection,
-        )
-        _, authoritative_graph = canonical_graph(
-            source_root, graph, adapter_id, frame.source_span)
-        validated = validate_frame_bindings(
-            schema, snapshot, bindings=frame.bindings,
-            source_span=frame.source_span,
-            causal_prefix_end=frame.causal_prefix_end,
-            declared_scope=schema.scope,
-            source_graph=authoritative_graph, source_adapter_id=adapter_id,
-        )
-        if validated != frame.bindings:
-            _invalid("BAMF_MOTIF_SOURCE_BINDING_DRIFT")
-        for binding in validated:
-            concepts = ((binding.concept,) if binding.concept is not None
-                        else binding.alternatives)
-            for concept in concepts:
-                if not snapshot.abi_for_semantic(concept.semantic_id).active:
-                    _invalid("BAMF_MOTIF_SEMANTIC_NOT_ADMITTED")
-        qualified.append(MotifFrameInput(frame, schema))
-    # B07.1 can independently qualify source-derived motif identity, but it does
-    # not own retained-generation history. Until that owner supplies/rederives
-    # an authenticated parent allocation artifact, derive only from genesis.
-    parent = MotifAllocationSnapshot(MotifManifest(task_scope.semantic_release))
-    candidate = _prepare_candidate_motif_snapshot(tuple(qualified), parent, budget)
+    qualified = _qualified_motif_inputs(
+        projection, snapshot, source_adapter, atlas_selection, source_root, graph)
+    parent = (
+        MotifAllocationSnapshot(MotifManifest(task_scope.semantic_release))
+        if retained_state is None else retained_state.allocations
+    )
+    if parent.manifest.semantic_release != task_scope.semantic_release:
+        _invalid("BAMF_MOTIF_SOURCE_AUTHORITY_INVALID")
+    candidate = _prepare_candidate_motif_snapshot(qualified, parent, budget)
     return ApprovedMotifCandidate(projection.digest, candidate), issued_frontier
