@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 
-def evaluate(d, s):
+def _score_candidate(d, s):
     with d._runtime_timing_trace.trace_span(
             "TRAIN_SCORE_AFTER", capability=s.cap, row_count=len(s.rows)):
         s.after = d._learning_student_ops._train_score(
@@ -22,6 +22,9 @@ def evaluate(d, s):
             guidance_applied_steps=s.confidence_applied_steps,
             enrichment_examples=s.enrichment_examples)
         if s.learning_settings is not None else None)
+
+
+def _decide_candidate(d, s):
     s.outcome = s.context_credit = None
     if s.learning_settings is not None:
         with d._runtime_timing_trace.trace_span("RETENTION_CANDIDATE_EVIDENCE", capability=s.cap):
@@ -70,6 +73,9 @@ def evaluate(d, s):
                     s.receipt, s.miss_exposures, decision=s.outcome["decision"])
                 s.after = s.before
         s.params, s.optimizer = s.parent_parameters, s.parent_optimizer
+
+
+def _reconcile_teacher(d, s):
     s.remaining_priority = s.priority
     if s.priority and (s.outcome is None or s.outcome["decision"] == "PROVISIONAL"):
         with d._runtime_timing_trace.trace_span(
@@ -103,3 +109,9 @@ def evaluate(d, s):
         raise ValueError("HUMAN_TRAINER_RETAINED_OPTIMIZER_STEP_REGRESSION")
     if int(s.optimizer.state["step"].item()) != expected:
         raise ValueError("LEARNING_EXPERIMENT_RETAINED_ADAMW_STEP_DRIFT")
+
+
+def evaluate(d, s):
+    _score_candidate(d, s)
+    _decide_candidate(d, s)
+    _reconcile_teacher(d, s)

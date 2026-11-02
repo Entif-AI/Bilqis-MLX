@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 
-def select(d, s, step, prepared, fresh, option_rows, preservation, retention_support):
+def _pick_lesson(d, s, step, prepared, fresh, preservation, retention_support):
     lesson_seed = d._runtime_state._seed(s.receipt, capability=s.cap, step=step + 1)
     with d._runtime_timing_trace.trace_span("STEP_LESSON_SELECT", capability=s.cap,
                                             visit_step=step + 1):
@@ -39,6 +39,11 @@ def select(d, s, step, prepared, fresh, option_rows, preservation, retention_sup
                 picked, window)
             window = list(delivered_targets)
             target_ids = {row["id"] for row in window}
+    return lesson_seed, lesson_control, prior, picked, window, target_ids
+
+
+def _inject_support(d, s, step, lesson_control, picked, target_ids,
+                    preservation, retention_support):
     delivered_preservation = delivered_retention_support = ()
     if s.learning_settings is not None:
         fresh_support_ids = set(
@@ -53,6 +58,10 @@ def select(d, s, step, prepared, fresh, option_rows, preservation, retention_sup
         delivered_preservation = tuple(row for row in delivered_support if row["id"] in fragile_ids)
         delivered_retention_support = tuple(
             row for row in delivered_support if row["id"] in retention_ids)
+    return picked, delivered_preservation, delivered_retention_support
+
+
+def _enrichment(d, s, step, prepared):
     if prepared is not None:
         enrichment_rows = tuple(prepared["teaching_enrichment_rows"])
     else:
@@ -64,6 +73,11 @@ def select(d, s, step, prepared, fresh, option_rows, preservation, retention_sup
                     s.receipt, capability="TEACHING_ENRICHMENT:" + s.cap, step=step + 1),
                 enabled=s.boolean_association_bridge, release=s.executable_release)
     s.enrichment_examples += len(enrichment_rows)
+    return enrichment_rows
+
+
+def _record_controls(s, lesson_control, picked, preservation, retention_support,
+                     delivered_preservation, delivered_retention_support):
     if lesson_control is not None:
         lesson_control["planned_old_grade_examples"] = lesson_control["effective_old_grade_examples"]
         earlier_grades = {item.partition(".")[0] for item in s.old_capabilities}
@@ -85,6 +99,9 @@ def select(d, s, step, prepared, fresh, option_rows, preservation, retention_sup
             row["capability"] for row in delivered_retention_support})
         lesson_control["retention_support_source"] = "FRESH_SOURCE_FAMILY"
         s.policy_control_receipts.append(lesson_control)
+
+
+def _guidance(d, s, step, fresh, picked, window):
     for row in window:
         identity = row["id"]
         s.miss_exposures[identity] = s.miss_exposures.get(identity, 0) + 1
@@ -116,6 +133,19 @@ def select(d, s, step, prepared, fresh, option_rows, preservation, retention_sup
         s.confidence_examples += sum(int(np.count_nonzero(item)) for item in influences)
         s.confidence_total_weight += sum(float(np.sum(item)) for item in influences)
         s.confidence_applied_steps += 1
+    return guidance
+
+
+def select(d, s, step, prepared, fresh, option_rows, preservation, retention_support):
+    lesson_seed, lesson_control, prior, picked, window, target_ids = _pick_lesson(
+        d, s, step, prepared, fresh, preservation, retention_support)
+    picked, delivered_preservation, delivered_retention_support = _inject_support(
+        d, s, step, lesson_control, picked, target_ids, preservation, retention_support)
+    enrichment_rows = _enrichment(d, s, step, prepared)
+    _record_controls(
+        s, lesson_control, picked, preservation, retention_support,
+        delivered_preservation, delivered_retention_support)
+    guidance = _guidance(d, s, step, fresh, picked, window)
     training_rows = [*picked, *enrichment_rows]
     if s.autonomy_teaching_option is not None:
         s.delivered_autonomy_rows.extend(

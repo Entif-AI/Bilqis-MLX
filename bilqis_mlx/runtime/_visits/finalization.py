@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 
-def finalize(d, s):
+def _advance_school_and_describe(d, s):
     s.school = d._curriculum_scheduler.visit(
         d._runtime_release_adoption._schedule_for_receipt(s.run_dir, s.receipt, s.course),
         s.school, s.cap, s.school.current_student,
@@ -26,6 +26,10 @@ def finalize(d, s):
             diagnostic_context_key=s.policy_selection["diagnostic_context_key"]))
     lesson_generator, lesson_source_digest = d._runtime_assessment.released_lesson_source_identity(
         s.executable_release, s.cap)
+    return methodology, teacher_decision, lesson_generator, lesson_source_digest
+
+
+def _base_event(d, s, methodology, teacher_decision, lesson_generator, lesson_source_digest):
     event = {
         "event": "SCHOOL_TEACHER_VISIT_COMMITTED", "grade": s.lesson_grade,
         "active_grade": s.school.grade, "generation": s.receipt["generation"] + 1,
@@ -34,7 +38,6 @@ def finalize(d, s):
         "source_training_accuracy_before": s.before, "source_training_accuracy_after": s.after,
         "teacher_reward": s.reward, "teacher_selection_reward": s.bandit_credit,
         **d._teacher_event_fields(s.policy_selection, s.policy_health),
-        **({"realized_teacher_action": s.realized_action} if s.realized_action is not None else {}),
         "attempted_optimizer_updates": s.attempted_optimizer_updates,
         "candidate_step_control": {
             "configured_steps": s.steps_per_visit, "effective_steps": s.candidate_steps,
@@ -46,29 +49,6 @@ def finalize(d, s):
             "prepared_steps": s.candidate_steps if s.prefetch_enabled else 0,
             "serial_steps": 0 if s.prefetch_enabled else s.candidate_steps,
             "packet_identity_verified": s.prefetch_enabled, "neural_owner": "MAIN_LANE_ONLY"},
-        **({"teaching_enrichment": {
-            "enabled": True,
-            "active_for_visit": len(s.executable_release.execution_plan.capability_map[s.cap].teaching_option_ids) > 1,
-            "option_ids": list(s.executable_release.execution_plan.capability_map[s.cap].teaching_option_ids[1:]),
-            "delivered_examples": s.enrichment_examples, "exam_rubric_changed": False,
-        }} if s.boolean_association_bridge else {}),
-        **({"lesson_policy_controls": {
-            "optimizer_batches_observed": len(s.policy_control_receipts),
-            "old_grade_examples_delivered": sum(r["effective_old_grade_examples"] for r in s.policy_control_receipts),
-            "last_batch_controls": s.policy_control_receipts[-1]}}
-           if s.policy_control_receipts else {}),
-        **({"typed_policy_controls": {
-            "optimizer_batches_observed": len(s.policy_control_receipts),
-            "old_grade_examples_delivered": sum(r["effective_old_grade_examples"] for r in s.policy_control_receipts),
-            "last_batch_controls": s.policy_control_receipts[-1]}}
-           if s.policy_control_receipts and any(
-               kind != "binary" for r in s.policy_control_receipts
-               for kind in r["selected_answer_kinds"]) else {}),
-        **({"candidate_retention": s.outcome, "context_teacher_credit": s.context_credit,
-            "candidate_source_training_gain": s.candidate_gain,
-            "candidate_attempt_optimizer_step": s.attempted_step,
-            "retained_optimizer_updates": s.retained_optimizer_updates}
-           if s.outcome is not None else {}),
         "generator_version": lesson_generator, "generator_code_sha256": lesson_source_digest,
         "lesson_source_sha256": s.manifest["manifest_sha256"],
         "lesson_seed": d._runtime_state._seed(s.receipt, capability=s.cap),
@@ -95,6 +75,37 @@ def finalize(d, s):
             (["old"] if not any(r["eligible_prior_capabilities"] for r in s.policy_control_receipts) else []) +
             ["preview"] + ([] if s.confidence_applied_steps else ["distill"])),
     }
+    return event
+
+
+def _add_optional_event_sections(s, event):
+    if s.realized_action is not None:
+        event["realized_teacher_action"] = s.realized_action
+    if s.boolean_association_bridge:
+        options = s.executable_release.execution_plan.capability_map[s.cap].teaching_option_ids
+        event["teaching_enrichment"] = {
+            "enabled": True, "active_for_visit": len(options) > 1,
+            "option_ids": list(options[1:]), "delivered_examples": s.enrichment_examples,
+            "exam_rubric_changed": False}
+    if s.policy_control_receipts:
+        controls = {
+            "optimizer_batches_observed": len(s.policy_control_receipts),
+            "old_grade_examples_delivered": sum(
+                r["effective_old_grade_examples"] for r in s.policy_control_receipts),
+            "last_batch_controls": s.policy_control_receipts[-1]}
+        event["lesson_policy_controls"] = controls
+        if any(kind != "binary" for r in s.policy_control_receipts
+               for kind in r["selected_answer_kinds"]):
+            event["typed_policy_controls"] = dict(controls)
+    if s.outcome is not None:
+        event.update({
+            "candidate_retention": s.outcome, "context_teacher_credit": s.context_credit,
+            "candidate_source_training_gain": s.candidate_gain,
+            "candidate_attempt_optimizer_step": s.attempted_step,
+            "retained_optimizer_updates": s.retained_optimizer_updates})
+
+
+def _add_autonomy(d, s, event):
     if s.autonomy_teaching_option is not None and s.delivered_autonomy_rows:
         from bilqis_mlx.factory.teaching import describe_delivered_teaching
         delivery = describe_delivered_teaching(
@@ -102,6 +113,9 @@ def finalize(d, s):
         teaching_file = "autonomy/teaching/" + delivery.specimen_content_sha256 + ".json"
         d._runtime_state._durable_json(s.run_dir / teaching_file, {"rows": s.delivered_autonomy_rows})
         event["autonomy_teaching"] = {**d._dataclasses.asdict(delivery), "specimen_file": teaching_file}
+
+
+def _finish_capture(d, s, event):
     shadow_review = shadow_activation = None
     if s.learning_settings is not None and s.outcome is not None:
         shadow_review = d._learning_teacher_multifidelity.evaluate_shadow(
@@ -123,6 +137,10 @@ def finalize(d, s):
             stagnation, capability=s.cap, phase=s.stage_before,
             decision=s.outcome.get("decision") if isinstance(s.outcome, dict) else None,
             retained_optimizer_updates=s.retained_optimizer_updates, generation=event["generation"])
+    return stagnation
+
+
+def _advance_result(d, s, event, stagnation):
     pending = list(s.receipt.get("_pending_visit_events", ()))
     pending.append(event)
     with d._runtime_timing_trace.trace_span("VISIT_ADVANCE_STATE", capability=s.cap):
@@ -145,3 +163,12 @@ def finalize(d, s):
         optimizer_step=int(s.optimizer.state["step"].item()),
         decision=s.outcome.get("decision") if isinstance(s.outcome, dict) else None)
     return result
+
+
+def finalize(d, s):
+    methodology, decision, generator, digest = _advance_school_and_describe(d, s)
+    event = _base_event(d, s, methodology, decision, generator, digest)
+    _add_optional_event_sections(s, event)
+    _add_autonomy(d, s, event)
+    stagnation = _finish_capture(d, s, event)
+    return _advance_result(d, s, event, stagnation)

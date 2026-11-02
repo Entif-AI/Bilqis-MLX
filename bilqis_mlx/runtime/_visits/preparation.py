@@ -5,7 +5,7 @@ import json
 import random
 
 
-def prepare(d, s):
+def _prepare_authority(d, s):
     s.capture = d.ObservationCapture(s.run_dir, s.receipt, enabled=s.capture_teacher_observations)
     s.school = d._runtime_state._state_from_json(
         s.receipt["school"],
@@ -46,6 +46,10 @@ def prepare(d, s):
         s.steps_per_visit, s.teacher, s.cap, curriculum_scope=s.teacher_curriculum_scope)
     if s.source_root is None:
         raise ValueError("HUMAN_TRAINER_LIVE_SOURCE_REQUIRED")
+    return None
+
+
+def _prepare_policy_and_trial(d, s):
     with d._runtime_timing_trace.trace_span("VISIT_SOURCE_DRAW", capability=s.cap):
         s.rows = d._runtime_assessment._draw_live_rows(
             s.source_root, s.graph,
@@ -99,3 +103,10 @@ def prepare(d, s):
             protected=None, stage="PERFECT_TARGET_SKIP", attempted=0, retained=0)
         return skipped
     return None
+
+
+def prepare(d, s):
+    early = _prepare_authority(d, s)
+    if early is not None:
+        return early
+    return _prepare_policy_and_trial(d, s)
