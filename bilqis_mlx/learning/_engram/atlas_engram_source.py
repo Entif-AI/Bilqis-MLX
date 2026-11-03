@@ -23,8 +23,9 @@ from bilqis_mlx.semantics.released_frame_schemas import (
     lookup_source_pinned_frame_schema,
 )
 from .atlas_engram import (
-    MotifBudget, MotifFrameInput, MotifManifest, _SHA, _invalid,
+    MotifBudget, MotifFrameInput, MotifManifest,
 )
+from .atlas_engram_identity import _SHA, _invalid
 from .atlas_engram_transaction import (
     CandidateMotifSnapshot, MotifAllocationSnapshot,
     _prepare_candidate_motif_snapshot,
