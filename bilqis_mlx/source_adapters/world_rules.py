@@ -5,6 +5,7 @@ import csv
 import hashlib
 from pathlib import Path
 import random
+from types import MappingProxyType
 from ..errors import ErrorBus, SOURCE
 from ..factory.adapters import RegisteredSourceAdapter
 from ..factory.model import SourceAdapter
@@ -23,12 +24,12 @@ _CAUSE = "LEXSENSE-59819df75e3137"
 _OCCURRENCE = "LEXSENSE-294d00be074a56"
 _ACTOR = "ATOM-5d7116db8e1508"
 _TIME = "ATOM-ef7cf17b427af9"
-_CAPABILITY_ROOTS = {
+_CAPABILITY_ROOTS = MappingProxyType({
     "WORLD.ACTOR_OF": "ithkuil:ATOM-5d7116db8e1508",
     "WORLD.BEFORE": "ithkuil:ATOM-ef7cf17b427af9",
     "WORLD.IS_OCCURRED": "ithkuil:LEXSENSE-294d00be074a56",
     "WORLD.DIRECT_CAUSE": "ithkuil:LEXSENSE-59819df75e3137",
-}
+})
 _TOKENS = (
     "bamf.world.syntax.actors", "bamf.world.syntax.causes",
     "bamf.world.actor.A0", "bamf.world.actor.A1", "bamf.world.actor.A2",
