@@ -76,6 +76,27 @@
         "reason": "BAMF EGM-Mitigation #711 B09.2 production-authoritative participation masks.",
         "authority": "Direct project-owner instruction on 2026-11-03 to keep the EGM-Mitigation queue moving",
         "expires_when": "The #711 remediation PR merges or closes."
+      },
+      {
+        "pr": 806,
+        "head_branch": "codex/remediation-711-participation-20261103",
+        "reason": "BAMF EGM-Mitigation #711 B09.2 participation owner and production binder.",
+        "authority": "Direct project-owner instruction on 2026-11-03 to keep the EGM-Mitigation queue moving",
+        "expires_when": "PR #806 merges or closes."
+      },
+      {
+        "pr": 807,
+        "head_branch": "codex/remediation-710-execution-provenance-20261103",
+        "reason": "BAMF EGM-Mitigation #710 B12.2 execution-provenance binding.",
+        "authority": "Direct project-owner instruction on 2026-11-03 to keep the EGM-Mitigation queue moving",
+        "expires_when": "PR #807 merges or closes."
+      },
+      {
+        "pr": 808,
+        "head_branch": "codex/remediation-713-c02-authority-20261103",
+        "reason": "BAMF EGM-Mitigation #713 canonical A06 authority at the C02.1 boundary.",
+        "authority": "Direct project-owner instruction on 2026-11-03 to keep the EGM-Mitigation queue moving",
+        "expires_when": "PR #808 merges or closes."
       }
     ],
     "initial_drain_status": "COMPLETED_WITH_ISSUE_LABEL_QUEUE",
