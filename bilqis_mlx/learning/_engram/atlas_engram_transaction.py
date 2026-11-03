@@ -13,8 +13,9 @@ from bilqis_mlx.errors import ErrorBus, SCHOOL
 from .atlas_engram import (
     CandidateMotifView, MotifBudget, MotifFrameInput, MotifKey, MotifManifest,
     OBSERVED_USE_ARITY,
-    _digest, candidate_motif_manifest, prepare_motifs,
+    candidate_motif_manifest, prepare_motifs,
 )
+from .atlas_engram_identity import _digest
 
 
 SNAPSHOT_SCHEMA = "bilqis.motif-allocation-snapshot/v1"

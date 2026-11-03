@@ -90,8 +90,8 @@ def prepare_motifs(
     cumulative_uses.update({key.digest: count for key, count in observed.items()})
     existing = {slot.key: slot.slot_id for slot in parent_manifest.slots}
     missing_structural = {
-        structural for exact, structural in pairs
-        if exact not in existing and structural not in existing}
+        structural for _, structural in pairs
+        if structural not in existing}
     missing_exact = {exact for exact, _ in pairs if exact not in existing}
     missing_structural.update(
         key for key in prior_pending

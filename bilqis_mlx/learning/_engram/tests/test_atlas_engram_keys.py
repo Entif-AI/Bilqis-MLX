@@ -2,7 +2,7 @@
 from dataclasses import replace
 from unittest import TestCase
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.learning.atlas_engram import MotifBudget, MotifFrameInput, MotifManifest, motif_keys, prepare_motifs
+from bilqis_mlx.learning.atlas_engram import MotifBudget, MotifFrameInput, MotifManifest, MotifSlot, motif_keys, prepare_motifs
 from bilqis_mlx.learning._engram.tests.motif_fixtures import (
     Concept, Frame, RELEASE, Role, SCOPE, Schema, source,
 )
@@ -136,6 +136,15 @@ class MotifKeyTests(TestCase):
             (source_frame,), MotifManifest(RELEASE), MotifBudget(2))
         self.assertEqual([slot.key.kind for slot in view.plan.allocated],
                          ["STRUCTURAL", "EXACT"])
+
+    def test_exact_only_parent_repairs_missing_structural_key(self):
+        sample = source()
+        exact, structural = motif_keys(sample, RELEASE)
+        parent = MotifManifest(RELEASE, (MotifSlot(0, exact),))
+        view = prepare_motifs((sample,), parent, MotifBudget(1))
+        self.assertEqual([slot.key for slot in view.plan.allocated], [structural])
+        self.assertEqual(view.matches[0].disposition, "EXACT")
+        self.assertEqual(view.matches[0].slot_id, 0)
 
     def test_foreign_release_schema_and_type_reject_before_key_admission(self):
         valid = source()
