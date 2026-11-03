@@ -1,0 +1,305 @@
+{
+  "original_source": "bd62f3cb6c296151aba7b9ed5fa90ee814492494",
+  "callables": [
+    {
+      "module": "bilqis_mlx.semantics.frame_compiler",
+      "class": "SourceAtom",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_compiler",
+      "class": "StreamingAST",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_compiler",
+      "class": "FrameCompilerConfig",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_compiler",
+      "class": "CompiledPosition",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_compiler",
+      "class": "CompiledPosition",
+      "member": "cache_identity",
+      "accessor": "fget"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_compiler",
+      "class": "CompiledFrameBatch",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_compiler",
+      "class": "CompiledFrameBatch",
+      "member": "maps",
+      "accessor": "fget"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_compiler",
+      "class": "CompiledFrameBatch",
+      "member": "stats",
+      "accessor": "fget"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_compiler",
+      "class": "CompileStats",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_compiler",
+      "class": "SourcePosition",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_compiler",
+      "class": "ScopeBoundary",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_compiler",
+      "class": "RoleAccess",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_compiler",
+      "class": "ExpansionHandle",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_compiler",
+      "class": "PrefixMaps",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_compiler",
+      "class": "VisibleAST",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_compiler",
+      "class": "CompiledFrameRows",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_compiler",
+      "class": "HiddenAnswerTargets",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_compiler",
+      "class": "CompiledTrainingExample",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_compiler",
+      "class": "LawfulSourceSegment",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_compiler",
+      "class": "CompiledFrameSegments",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_schema",
+      "class": "SourceSpan",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_schema",
+      "class": "RoleSpec",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_schema",
+      "class": "FrameSchema",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_schema",
+      "class": "FrameSchema",
+      "member": "identity",
+      "accessor": "fget"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_schema",
+      "class": "FrameSchema",
+      "member": "canonical_bytes",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_schema",
+      "class": "ConceptRef",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_schema",
+      "class": "ConceptRef",
+      "member": "content_identity",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_schema",
+      "class": "ChildFrameRef",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_schema",
+      "class": "RoleOccurrence",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_schema",
+      "class": "RoleOccurrence",
+      "member": "key",
+      "accessor": "fget"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_schema",
+      "class": "RoleOccurrence",
+      "member": "content_identity",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_schema",
+      "class": "FrameInstance",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_schema",
+      "class": "FrameInstance",
+      "member": "child_edges",
+      "accessor": "fget"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_schema",
+      "class": "FrameInstance",
+      "member": "canonical_bytes",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_schema",
+      "class": "AtomicFrame",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_schema",
+      "class": "AtomicFrame",
+      "member": "source_data",
+      "accessor": "fget"
+    },
+    {
+      "module": "bilqis_mlx.semantics.frame_schema",
+      "class": "FrameTree",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.partial_visible_forest",
+      "class": "HiddenParentProvenance",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.partial_visible_forest",
+      "class": "PartialVisibleForestReceipt",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.released_frame_schemas",
+      "class": "ReleasedSchemaBody",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.released_frame_schemas",
+      "class": "ReleasedSchemaBody",
+      "member": "from_schema",
+      "accessor": "__func__"
+    },
+    {
+      "module": "bilqis_mlx.semantics.released_frame_schemas",
+      "class": "ReleasedSchemaBody",
+      "member": "parse",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.released_frame_schemas",
+      "class": "ReleasedFrameSchemaManifest",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.released_frame_schemas",
+      "class": "ReleasedFrameSchemaManifest",
+      "member": "canonical_bytes",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.released_frame_schemas",
+      "class": "ReleasedFrameSchemaManifest",
+      "member": "digest",
+      "accessor": "fget"
+    },
+    {
+      "module": "bilqis_mlx.semantics.released_frame_schemas",
+      "class": "VerifiedReleasedFrameSchemas",
+      "member": "__post_init__",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.released_frame_schemas",
+      "class": "VerifiedReleasedFrameSchemas",
+      "member": "canonical_bytes",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.released_frame_schemas",
+      "class": "VerifiedReleasedFrameSchemas",
+      "member": "lookup",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.released_frame_schemas",
+      "class": "VerifiedReleasedFrameSchemas",
+      "member": "require_schema",
+      "accessor": "function"
+    },
+    {
+      "module": "bilqis_mlx.semantics.released_frame_schemas",
+      "class": "VerifiedReleasedFrameSchemas",
+      "member": "require_schema_bytes",
+      "accessor": "function"
+    }
+  ]
+}

@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "7984d7872d49b3987284692f5398da71f2a72605",
-  "updated_at": "2026-11-03T15:45:37Z",
+  "observed_unified": "05e31a576e3432e4238c9b4477a70d70ec4fc487",
+  "updated_at": "2026-11-03T19:25:00Z",
   "exception": null,
   "items": [
     {
@@ -33,10 +33,10 @@
       "issue": 456,
       "pr": null,
       "state": "TURNED_IN",
-      "head_sha": "58209522c8855245c3b9ae22e1a57255974ffc05",
-      "summary": "B07 current-unified CAS continuation accepted through human-merged PR #690; #460 now consumes the real source/allocation owner.",
+      "head_sha": "c078386bd57a209bb10f55142c7b1c5af94a50b1",
+      "summary": "B07.1 is EGM-Passed and was externally merged through PR #690 as reviewed unified 7984d787; hosted checks were green and the exact candidate is consumed by unified.",
       "resume_trigger": null,
-      "preserved_branch": "codex/783-456-current-unified-20261103",
+      "preserved_branch": "codex/b07-456-source-bridge-20261101",
       "merged_pr": 690
     },
     {
@@ -123,13 +123,13 @@
     },
     {
       "issue": 711,
-      "pr": null,
-      "state": "WAITING",
-      "head_sha": "c4eb468e579fa5f3fee187e663ee5787f92aef05",
-      "summary": "Stacked B09.2 production-authority remediation.",
+      "pr": 806,
+      "state": "TURNED_IN",
+      "head_sha": "12c1c03b",
+      "summary": "B09.2 remediation delivered as ready PR #806: the participation owner derives per-step participation and optimizer masks from executed production authority instead of a caller assertion, on current unified.",
       "resume_trigger": "The bounded repair is consumed into PR #692 or explicitly selected for focused integration under ADR-125.",
       "closed_pr": 727,
-      "preserved_branch": "codex/participation-711-20261102",
+      "preserved_branch": "codex/remediation-711-participation-20261103",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
       "close_reason": "EGM-Mitigation issue #711"
     },
@@ -239,11 +239,11 @@
     {
       "issue": 783,
       "pr": null,
-      "state": "WAITING",
-      "head_sha": "17be8a3d5aebfaba0a88b4190a41027eb6daedfb",
-      "summary": "Canonical CandidateState identity repair is consumed by the active #456 integration branch after joined source-to-CAS-to-next-update-to-source proof; final acceptance remains on the parent candidate.",
-      "resume_trigger": "Parent #456 completes current-unified integration, affected proof and fresh exact-head review.",
-      "preserved_branch": "codex/bamf02-b-783-candidate-identity-20261103"
+      "state": "TURNED_IN",
+      "head_sha": "c078386bd57a209bb10f55142c7b1c5af94a50b1",
+      "summary": "B07/B13 cold-continuation authority remediation is EGM-Passed and consumed into the human-merged #456/PR #690 candidate now present in reviewed unified 7984d787.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/783-456-current-unified-20261103"
     },
     {
       "issue": 460,
@@ -256,11 +256,39 @@
     },
     {
       "issue": 481,
-      "pr": 802,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "4dcfc7169738e721df0f1df259f2d9659d54cab4",
       "preserved_branch": "codex/bamf02-b-481-schema-proof-20261103",
       "summary": "Ready PR #802: expanded B13.4 schema witness, 215 parameter tensors and 860 exact arrays; 1 native CPU +13 adjacent tests pass, zero skips; same-round EGM0B/0M/0N; parent480/754/372 acceptance remains open.",
+      "resume_trigger": null,
+      "merged_pr": 802
+    },
+    {
+      "issue": 708,
+      "pr": 804,
+      "state": "TURNED_IN",
+      "head_sha": "7d8e3b98",
+      "preserved_branch": "codex/remediation-708-feature-authority-20261103",
+      "summary": "B13.5 remediation delivered as ready PR #804: the accepted-generation feature receipt is rederived from the admitted source release and retained custody, so a caller-created candidate cannot ratify its own factor-map digest.",
+      "resume_trigger": "PR #804 is merged or closed; the accepted-generation feature authority continues on owner issue #697."
+    },
+    {
+      "issue": 709,
+      "pr": 805,
+      "state": "TURNED_IN",
+      "head_sha": "dc7a2c62",
+      "preserved_branch": "codex/remediation-709-cold-resume-20261103",
+      "summary": "B13.2 remediation delivered as ready PR #805: the cold-resume witness starts from published accepted-generation custody, cold resumes in a clean process, executes the next controlled optimizer step and publishes the successor generation, with negative controls for synthetic direct save-load.",
+      "resume_trigger": "PR #805 is merged or closed; the B13.2 cold-resume witness continues on owner issue #479."
+    },
+    {
+      "issue": 710,
+      "pr": 807,
+      "state": "TURNED_IN",
+      "head_sha": "05e31a576e3432e4238c9b4477a70d70ec4fc487",
+      "preserved_branch": "codex/remediation-710-execution-provenance-20261103",
+      "summary": "B12.2 remediation delivered as ready PR #807, stacked on the #711 B09.2 owner: every candidate optimizer step binds to owner-issued execution provenance, so a raw caller mask cannot become final candidate truth.",
       "resume_trigger": null
     }
   ]
