@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "e9226be2f6a41f47109ca02a1103a363e64909a7",
-  "updated_at": "2026-11-03T19:25:00Z",
+  "updated_at": "2026-11-03T19:11:53.344643+00:00",
   "exception": null,
   "items": [
     {
@@ -249,9 +249,9 @@
       "issue": 460,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "7984d7872d49b3987284692f5398da71f2a72605",
-      "preserved_branch": "codex/bamf02-b-460-qualified-reads-20261103",
-      "summary": "Resumed after C01 structural repair landed through reviewed unified e9226be2; implementing source-qualified two-site motif reads.",
+      "head_sha": "b37eaf93234b40ba7c066d4203ed87b811ee91db",
+      "preserved_branch": "codex/bamf02-b-460-qualified-reads-20261103-resume",
+      "summary": "ACTIVE source-context stage after accepted C01 PR803: shared source replay and exact A/B/C member/key regression; 23/23 native CPU tests, zero skips. Public hit/B02/B13 binding remains implementation work; no new whole-candidate EGM or PR.",
       "resume_trigger": null
     },
     {
@@ -260,7 +260,7 @@
       "state": "TURNED_IN",
       "head_sha": "4dcfc7169738e721df0f1df259f2d9659d54cab4",
       "preserved_branch": "codex/bamf02-b-481-schema-proof-20261103",
-      "summary": "Ready PR #802: expanded B13.4 schema witness, 215 parameter tensors and 860 exact arrays; 1 native CPU +13 adjacent tests pass, zero skips; same-round EGM0B/0M/0N; parent480/754/372 acceptance remains open.",
+      "summary": "PR #802 human-merged as 05e31a57; #481 explicitly closed completed and read back after accepted integration. Scoped B13.4 schema proof only; full B13 learning-generation acceptance remains open.",
       "resume_trigger": null,
       "merged_pr": 802
     },

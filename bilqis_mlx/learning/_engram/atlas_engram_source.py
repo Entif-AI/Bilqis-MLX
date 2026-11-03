@@ -9,7 +9,7 @@ from bilqis_mlx.semantics.atlas_snapshot import (
     AtlasArtifactSelection, load_pinned_atlas_snapshot,
 )
 from bilqis_mlx.semantics.context_eligibility import (
-    ContextHold, ContextPolicy, SourceFrontier, TaskScope,
+    ApprovedContextProjection, ContextHold, ContextPolicy, SourceFrontier, TaskScope,
 )
 from bilqis_mlx.semantics.frame_adapters.common import (
     BOOLEAN_COMPOSITE_ADAPTER, BOOLEAN_CONNECTIVE_ADAPTER,
@@ -122,7 +122,7 @@ def source_qualified_motif_context(
     graph: dict, task_scope: TaskScope, source_frontier: SourceFrontier,
     policy: ContextPolicy, source_seed: int, source_each: int,
     source_profile_parameters: dict | None = None, course=None,
-):
+) -> tuple[ApprovedContextProjection, tuple[MotifFrameInput, ...], SourceFrontier] | ContextHold:
     """Replay source authority for allocation and read-side qualification.
 
     Returned projection and motif inputs are derived data, not transferable
