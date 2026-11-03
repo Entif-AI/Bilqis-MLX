@@ -19,12 +19,13 @@
     },
     {
       "issue": 758,
-      "pr": 777,
+      "pr": null,
       "state": "TURNED_IN",
-      "head_sha": "fe4dcd0b21a3de8e47c0bcf43f9681a92b6a556f",
-      "summary": "A08.3 rule qualification and typed Factory-family remediation is turned in through PR #777 after focused proof and scoped independent EGM; final exact-head review follows PR inventory bookkeeping.",
+      "head_sha": "eb4ff18fa30c5cefe924fd69ad8628409710293c",
+      "summary": "PR #777 is externally merged as 48315ee7bae3caa7d5ac279128c79217b9178d16; its scoped contribution is consumed by reviewed unified.",
       "resume_trigger": null,
-      "preserved_branch": "codex/758-oracle-proof-20261102"
+      "preserved_branch": "codex/758-oracle-proof-20261102",
+      "merged_pr": 777
     },
     {
       "issue": 745,
