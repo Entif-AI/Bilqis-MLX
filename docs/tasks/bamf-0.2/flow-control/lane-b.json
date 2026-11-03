@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "2800946729e484875f7d1f57f0e6d85078936394",
-  "updated_at": "2026-11-02T23:58:26.105463+00:00",
+  "updated_at": "2026-11-03T00:04:41.844795+00:00",
   "exception": null,
   "items": [
     {
@@ -176,9 +176,9 @@
     {
       "issue": 756,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "2800946729e484875f7d1f57f0e6d85078936394",
-      "summary": "Selected bounded future-group independence proof repair on isolated branch codex/756-future-group-witness. Parent #449 producer/EGM obligations remain parked.",
+      "state": "TURNED_IN",
+      "head_sha": "25c626c39ef865d82a14498d23b38a82bb1af03b",
+      "summary": "Verified future-group paired-execution and mutation-sensitive witness, 15/15 depth tests with zero skips. Durable branch codex/756-future-group-witness; parent #449 must consume repair before aggregate EGM.",
       "resume_trigger": null
     }
   ]
