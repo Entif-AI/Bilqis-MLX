@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "9bf47289e9ed0a64d275b31c3a7de42c55a8b83e",
-  "updated_at": "2026-11-03T14:38:01Z",
+  "updated_at": "2026-11-03T14:57:36Z",
   "exception": null,
   "items": [
     {
@@ -32,9 +32,9 @@
     {
       "issue": 456,
       "pr": 690,
-      "state": "ACTIVE",
-      "head_sha": "203c53eb1252ada8fba8ed6f1e9c7c5c57ca6cde",
-      "summary": "Parent #456 is consuming the verified #783 CandidateState identity repair on current reviewed unified; exact joined source/custody proof and final exact-head review are pending.",
+      "state": "TURNED_IN",
+      "head_sha": "2f8754d1609dc0f1a721adb5521db67799b7139c",
+      "summary": "B07.1 current-unified CAS continuation is locally green: #783 canonical CandidateState repair consumed; parent selection 103/103 zero skips; canonical motif-read package 11/11; final exact-head EGM follows this bookkeeping commit.",
       "resume_trigger": null,
       "preserved_branch": "codex/783-456-current-unified-20261103"
     },
