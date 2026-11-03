@@ -200,9 +200,17 @@
     {
       "issue": 735,
       "pr": null,
+      "state": "WAITING",
+      "head_sha": "8c516921e970736b4248793530121e4d4766944f",
+      "summary": "Current-unified merge conflict repaired; 31/31 affected tests pass. Await final source-positive candidate and hosted exact-head checks.",
+      "resume_trigger": "The #736 source-positive witness is complete on the synchronized branch and exact-head hosted checks pass; then record final #735 acceptance."
+    },
+    {
+      "issue": 736,
+      "pr": null,
       "state": "ACTIVE",
-      "head_sha": "89819d6d1cf58cabadf324775d7bbd0c23130bd0",
-      "summary": "Selected B06 candidate current-unified synchronization on isolated branch codex/735-736-refinement-source-proof. Activate #736 only after sync engineering proof completes.",
+      "head_sha": "8c516921e970736b4248793530121e4d4766944f",
+      "summary": "Selected source-positive public B06 refinement and gradient witness on the synchronized isolated candidate. Native execution waits for existing proof PID 74366 to exit.",
       "resume_trigger": null
     }
   ]
