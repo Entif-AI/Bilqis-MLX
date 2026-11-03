@@ -180,6 +180,14 @@
       "head_sha": "25c626c39ef865d82a14498d23b38a82bb1af03b",
       "summary": "Verified future-group paired-execution and mutation-sensitive witness, 15/15 depth tests with zero skips. Durable branch codex/756-future-group-witness; parent #449 must consume repair before aggregate EGM.",
       "resume_trigger": null
+    },
+    {
+      "issue": 757,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "692ad4c88ae4c43dc5f1ec0ad6ba4aa14a3f0e50",
+      "summary": "Selected public B05 admission hold until qualified #586 producer authority is consumed. Preserve private equations and source-feature numerical proofs.",
+      "resume_trigger": null
     }
   ]
 }
