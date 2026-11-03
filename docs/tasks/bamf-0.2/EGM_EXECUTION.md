@@ -59,6 +59,8 @@ credentials, private source text or student state in the review packet. IPR-0220
 remains an opaque authority reference.
 ## Bounded convergence override
 
+ADR-127 is the controlling architecture decision for this section.
+
 The pinned `b3a359...` checkout is retained for reproducible reviewer personas and
 standards. Its historical review-loop driver repeats until zero findings or manual
 halt. BAMF does **not** inherit that unbounded termination behavior.
