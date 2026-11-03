@@ -267,7 +267,7 @@
       "issue": 709,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "05e31a576e3432e4238c9b4477a70d70ec4fc487",
+      "head_sha": "b30e5d27",
       "preserved_branch": "codex/remediation-709-cold-resume-20261103",
       "summary": "B13.2 remediation: the cold-resume witness now starts from published accepted-generation custody, cold resumes in a clean process, executes the next controlled optimizer step and publishes the successor generation, with negative controls for synthetic direct save-load.",
       "resume_trigger": null
