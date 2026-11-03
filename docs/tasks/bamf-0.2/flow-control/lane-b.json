@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "7984d7872d49b3987284692f5398da71f2a72605",
-  "updated_at": "2026-11-03T15:45:37Z",
+  "observed_unified": "05e31a576e3432e4238c9b4477a70d70ec4fc487",
+  "updated_at": "2026-11-03T17:40:00Z",
   "exception": null,
   "items": [
     {
@@ -261,6 +261,15 @@
       "head_sha": "4dcfc7169738e721df0f1df259f2d9659d54cab4",
       "preserved_branch": "codex/bamf02-b-481-schema-proof-20261103",
       "summary": "Ready PR #802: expanded B13.4 schema witness, 215 parameter tensors and 860 exact arrays; 1 native CPU +13 adjacent tests pass, zero skips; same-round EGM0B/0M/0N; parent480/754/372 acceptance remains open.",
+      "resume_trigger": null
+    },
+    {
+      "issue": 708,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "1caa9ee8",
+      "preserved_branch": "codex/remediation-708-feature-authority-20261103",
+      "summary": "B13.5 remediation: the accepted-generation feature receipt is rederived from the admitted source release and retained custody, so a caller-created candidate cannot ratify its own factor-map digest.",
       "resume_trigger": null
     }
   ]
