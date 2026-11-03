@@ -153,3 +153,5 @@ def depth_select_with_diagnostics(producer, frame_features, params):
 
 
 DepthSelectionDiagnostics.__module__ = "bilqis_mlx.runtime.block_attnres"
+depth_select.__module__ = "bilqis_mlx.runtime.block_attnres"
+depth_select_with_diagnostics.__module__ = "bilqis_mlx.runtime.block_attnres"

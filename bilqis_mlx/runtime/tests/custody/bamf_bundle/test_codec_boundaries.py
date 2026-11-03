@@ -62,14 +62,21 @@ class CodecBoundaryTests(unittest.TestCase):
                     with self.assertRaises(BilqisError):
                         load_bamf_bundle(root)
 
-    def test_matching_external_tensor_symlink_rejects_before_mlx_load(self):
+    def test_matching_external_legacy_tensor_symlink_rejects_before_mlx_load(self):
         root = self.root / 'linked'
-        self.save(root)
+        saved = self.save(root)
+        manifest_path = root / 'manifest.json'
+        manifest = json.loads(manifest_path.read_bytes())
+        canonical_tensor = data_plane().require_file_object(saved['tensors']['sha256'])
         tensor = root / 'bamf-state.safetensors'
         external = self.root / 'outside.safetensors'
-        external.write_bytes(tensor.read_bytes())
-        tensor.unlink()
+        external.write_bytes(canonical_tensor.read_bytes())
         tensor.symlink_to(external)
+        manifest['tensors'].pop('object_sha256')
+        raw = canonical(manifest)
+        data_plane().put_node(
+            sha(raw), raw, manifest['generation'], manifest['parent_manifest_sha256'])
+        manifest_path.write_bytes(raw)
         with patch.object(mx, 'load', side_effect=AssertionError('unsafe MLX load reached')):
             with self.assertRaises(BilqisError):
                 load_bamf_bundle(root)
