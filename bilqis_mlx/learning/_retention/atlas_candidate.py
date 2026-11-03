@@ -7,7 +7,9 @@ here. Teacher observations stay outside the candidate state.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
+import hashlib
+import json
 
 import mlx.core as mx
 
@@ -27,12 +29,19 @@ from .atlas_participation import optimizer_participation_mask
 STATE_SCHEMA = 'bilqis.mlx.candidate-state/provisional-v1'
 TRANSACTION_SCHEMA = 'bilqis.mlx.candidate-transaction/provisional-v1'
 STEP_PROOF_SCHEMA = 'bilqis.mlx.candidate-step-proof/v1'
+DIGEST_HEX_LENGTH = 64
 _TRANSACTION_ISSUER = object()
 _RETAINED_STATE_ISSUER = object()
 
 
 def _invalid():
     ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+
+
+def _is_digest(value) -> bool:
+    """One lowercase hex digest identity, expressed as a domain contract."""
+    return (isinstance(value, str) and len(value) == DIGEST_HEX_LENGTH
+            and all(char in "0123456789abcdef" for char in value))
 
 
 def _is_genesis_allocations(snapshot: MotifAllocationSnapshot) -> bool:
@@ -52,6 +61,7 @@ class CandidateState:
     policy: PlasticityPolicy
     allocations: MotifAllocationSnapshot
     optimizer_step: int
+    step_proofs: tuple = ()
     schema_version: str = STATE_SCHEMA
     _issuance: object = field(init=False, default=None, repr=False, compare=False)
 
@@ -60,6 +70,10 @@ class CandidateState:
                 or type(self.policy) is not PlasticityPolicy
                 or type(self.allocations) is not MotifAllocationSnapshot
                 or type(self.optimizer_step) is not int or self.optimizer_step < 0
+                or type(self.step_proofs) is not tuple
+                or any(type(proof) is not CandidateStepProof for proof in self.step_proofs)
+                or any(proof.step_index != index + 1
+                       for index, proof in enumerate(self.step_proofs))
                 or self.schema_version != STATE_SCHEMA):
             _invalid()
         self.optimizer.validate()
@@ -110,12 +124,9 @@ class CandidateStepProof:
 
     def __post_init__(self) -> None:
         if (type(self.step_index) is not int or self.step_index < 1
-                or not isinstance(self.provenance_sha256, str)
-                or len(self.provenance_sha256) != 64
-                or not isinstance(self.participation_sha256, str)
-                or len(self.participation_sha256) != 64
-                or not isinstance(self.mask_sha256, str)
-                or len(self.mask_sha256) != 64
+                or not _is_digest(self.provenance_sha256)
+                or not _is_digest(self.participation_sha256)
+                or not _is_digest(self.mask_sha256)
                 or type(self.parameter_names) is not tuple
                 or self.parameter_names != tuple(sorted(set(self.parameter_names)))
                 or any(not isinstance(name, str) or not name
@@ -123,6 +134,13 @@ class CandidateStepProof:
                 or type(self.loss_bearing) is not bool
                 or self.schema_version != STEP_PROOF_SCHEMA):
             _invalid()
+
+    @property
+    def digest(self) -> str:
+        """Content identity of one owner-bound step proof."""
+        payload = json.dumps(asdict(self), sort_keys=True, separators=(",", ":"),
+                             ensure_ascii=False, allow_nan=False)
+        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 @dataclass(frozen=True, init=False)
@@ -252,11 +270,13 @@ def resolve_candidate(candidate: CandidateTransaction, *, accepted: bool) -> Can
         accepted=True, participating_rows=rows)
     step = candidate.parent.optimizer_step + candidate.update_steps
     if _is_genesis_allocations(candidate.allocations):
-        return CandidateState(candidate.optimizer, policy, candidate.allocations, step)
+        return CandidateState(candidate.optimizer, policy, candidate.allocations, step,
+                              tuple(candidate.step_proofs))
     state = object.__new__(CandidateState)
     for name, value in (
             ('optimizer', candidate.optimizer), ('policy', policy),
             ('allocations', candidate.allocations), ('optimizer_step', step),
+            ('step_proofs', tuple(candidate.step_proofs)),
             ('schema_version', STATE_SCHEMA), ('_issuance', _RETAINED_STATE_ISSUER)):
         object.__setattr__(state, name, value)
     state.__post_init__()

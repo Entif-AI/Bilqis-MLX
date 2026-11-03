@@ -6,6 +6,8 @@ or source admission authority. Motif, plasticity and outbox retain their own cod
 from collections.abc import Mapping
 from types import MappingProxyType
 
+SOURCE_BINDING_WIDTH = 2
+
 SCHEMAS = MappingProxyType({
     'semantic_abi': 'bilqis.mlx.bamf-semantic-abi/v1',
     'compiler_features': 'bilqis.mlx.bamf-compiler-features/v1',
@@ -44,7 +46,7 @@ def _validate_feature_binding(compiler):
             or not isinstance(schema['role_ids'], list)
             or not isinstance(schema['schema_ids'], list)
             or not isinstance(schema['source_bindings'], list)
-            or any(not isinstance(row, list) or len(row) != 2
+            or any(not isinstance(row, list) or len(row) != SOURCE_BINDING_WIDTH
                    or not all(isinstance(value, str) and value for value in row)
                    for row in schema['source_bindings'])):
         invalid()

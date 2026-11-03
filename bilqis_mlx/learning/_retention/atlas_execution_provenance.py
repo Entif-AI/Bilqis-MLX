@@ -20,11 +20,18 @@ from .atlas_participation import (
 )
 
 EXECUTION_PROVENANCE_SCHEMA = "bilqis.mlx.b09-execution-provenance/v1"
+DIGEST_HEX_LENGTH = 64
 _PROVENANCE_ISSUER = object()
 
 
 def _invalid() -> None:
     ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+
+
+def _is_digest(value) -> bool:
+    """One lowercase hex digest identity, expressed as a domain contract."""
+    return (isinstance(value, str) and len(value) == DIGEST_HEX_LENGTH
+            and all(char in "0123456789abcdef" for char in value))
 
 
 def _canonical(value) -> bytes:
@@ -75,8 +82,7 @@ class StepExecutionProvenance:
                 or type(self.eligible_parameter_names) is not tuple
                 or self.eligible_parameter_names != tuple(sorted(set(
                     self.eligible_parameter_names)))
-                or not isinstance(self.extents_sha256, str)
-                or len(self.extents_sha256) != 64
+                or not _is_digest(self.extents_sha256)
                 or self.schema_version != EXECUTION_PROVENANCE_SCHEMA):
             _invalid()
         self.participation.__post_init__()

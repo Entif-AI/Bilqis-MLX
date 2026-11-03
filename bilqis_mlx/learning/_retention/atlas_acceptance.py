@@ -14,15 +14,22 @@ from dataclasses import dataclass, field
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 
 ACCEPTANCE_SCHEMA = "bilqis.mlx.accepted-candidate-binding/v1"
+DIGEST_HEX_LENGTH = 64
 _BINDING_ISSUER = object()
 _BINDING_FIELDS = (
     "run_id", "generation", "candidate_identity_sha256", "feature_sha256",
-    "optimizer_step", "retention_reason", "schema_version",
+    "optimizer_step", "retention_reason", "step_proof_sha256", "schema_version",
 )
 
 
 def _invalid() -> None:
     ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+
+
+def _is_digest(value) -> bool:
+    """One lowercase hex digest identity, expressed as a domain contract."""
+    return (isinstance(value, str) and len(value) == DIGEST_HEX_LENGTH
+            and all(char in "0123456789abcdef" for char in value))
 
 
 def _canonical(value) -> bytes:
@@ -53,6 +60,7 @@ class AcceptedCandidateBinding:
     feature_sha256: str
     optimizer_step: int
     retention_reason: str
+    step_proof_sha256: tuple = ()
     schema_version: str = ACCEPTANCE_SCHEMA
     _issuance: object = field(init=False, default=None, repr=False, compare=False)
 
@@ -61,13 +69,13 @@ class AcceptedCandidateBinding:
             _invalid()
         if (not isinstance(self.run_id, str) or not self.run_id
                 or type(self.generation) is not int or self.generation < 0
-                or not isinstance(self.candidate_identity_sha256, str)
-                or len(self.candidate_identity_sha256) != 64
-                or not isinstance(self.feature_sha256, str)
-                or len(self.feature_sha256) != 64
+                or not _is_digest(self.candidate_identity_sha256)
+                or not _is_digest(self.feature_sha256)
                 or type(self.optimizer_step) is not int or self.optimizer_step < 0
                 or not isinstance(self.retention_reason, str)
                 or not self.retention_reason
+                or type(self.step_proof_sha256) is not tuple
+                or any(not _is_digest(item) for item in self.step_proof_sha256)
                 or self.schema_version != ACCEPTANCE_SCHEMA):
             _invalid()
 
@@ -87,7 +95,9 @@ class AcceptedCandidateBinding:
             _invalid()
         binding = object.__new__(cls)
         for name in _BINDING_FIELDS:
-            object.__setattr__(binding, name, record[name])
+            value = record[name]
+            object.__setattr__(binding, name,
+                               tuple(value) if name == "step_proof_sha256" else value)
         object.__setattr__(binding, "_issuance", _BINDING_ISSUER)
         binding.__post_init__()
         if record["binding_sha256"] != binding.digest:
@@ -96,9 +106,14 @@ class AcceptedCandidateBinding:
 
 
 def mint_acceptance_binding(state, *, run_id: str, generation: int,
-                            feature_sha256: str,
-                            retention_reason: str) -> AcceptedCandidateBinding:
-    """Mint the retention owner's acceptance binding for one candidate state."""
+                            feature_sha256: str, retention_reason: str,
+                            step_proofs: tuple = ()) -> AcceptedCandidateBinding:
+    """Mint the retention owner's acceptance binding for one candidate state.
+
+    The binding covers the accepted optimizer identity and the digests of the
+    owner-bound step proofs, so the published generation's custody records
+    which owner-issued provenance backed its steps.
+    """
     binding = object.__new__(AcceptedCandidateBinding)
     for name, value in (
             ("run_id", run_id), ("generation", generation),
@@ -106,6 +121,7 @@ def mint_acceptance_binding(state, *, run_id: str, generation: int,
             ("feature_sha256", feature_sha256),
             ("optimizer_step", state.optimizer_step),
             ("retention_reason", retention_reason),
+            ("step_proof_sha256", tuple(proof.digest for proof in step_proofs)),
             ("schema_version", ACCEPTANCE_SCHEMA), ("_issuance", _BINDING_ISSUER)):
         object.__setattr__(binding, name, value)
     binding.__post_init__()
