@@ -33,6 +33,7 @@ _FAMILY_AUTHORITY_MISSING = "FACTORY_CAPABILITY_IDENTITY_FAMILY_AUTHORITY_MISSIN
 _SIGNATURE_AUTHORITY_MISSING = "FACTORY_CAPABILITY_IDENTITY_SIGNATURE_AUTHORITY_MISSING"
 _FORMAL_COORDINATE_DRIFT = "FACTORY_CAPABILITY_IDENTITY_FORMAL_COORDINATE_DRIFT"
 _SOURCE_AUTHORITY_DRIFT = "FACTORY_CAPABILITY_IDENTITY_SOURCE_AUTHORITY_DRIFT"
+_SOURCE_RULE_FAMILY = "qualified_world_model"
 
 
 def _fail(reason: str) -> None:
@@ -88,6 +89,27 @@ def _authoritative_operator(
     semantic_roots: tuple[str, ...],
     atlas: AtlasArtifactSelection, operator_registry: OperatorRegistry,
 ):
+    if family_id == _SOURCE_RULE_FAMILY:
+        family_program = _canonical_family_program(capability)
+        profile = family_program.rule_profile
+        coordinates = () if profile is None else profile.source_coordinates
+        matches = tuple(
+            item for item in coordinates if item[0] == capability.capability_id)
+        if len(matches) != 1:
+            _fail(_SIGNATURE_AUTHORITY_MISSING)
+        _, source_root, operator_id = matches[0]
+        if (source is None
+                or profile.source_adapter_id != capability.source_adapter_id
+                or profile.source_contract_sha256 != source.implementation_sha256
+                or construction.generator_id != source.generator_id
+                or construction.oracle_id not in source.accepted_oracle_ids):
+            _fail(_SOURCE_AUTHORITY_DRIFT)
+        if taught_roots != (source_root,) or semantic_roots != (source_root,):
+            _fail(_FORMAL_COORDINATE_DRIFT)
+        operator = operator_registry.resolve(operator_id)
+        if operator.signature != profile.identity.signature:
+            _fail(_SIGNATURE_AUTHORITY_MISSING)
+        return source_root, operator.operator_id, operator.signature
     adapter = next(
         (item for item in SOURCE_FAMILY_ADAPTERS if item.family_id == family_id),
         None)
@@ -114,7 +136,8 @@ def _authoritative_operator(
         and witness.operator.operator_id == operator_id)
     if len(matches) != 1:
         _fail(_SIGNATURE_AUTHORITY_MISSING)
-    return matches[0]
+    witness = matches[0]
+    return witness.semantic_id, witness.operator.operator_id, witness.operator.signature
 
 
 def bind_factory_release_capability_identity(
@@ -145,12 +168,12 @@ def bind_factory_release_capability_identity(
     family_id, construction, source = _verify_bound_family_row(
         release, capability, family, family_program)
     course_capability = release.course.capability_map[capability_id]
-    witness = _authoritative_operator(
+    semantic_id, operator_id, signature = _authoritative_operator(
         capability, construction, source, family_id, course_capability.taught_roots,
         family.semantic_roots, atlas, operator_registry)
 
     stable = bind_stable_capability_identity(
-        witness.semantic_id, family_id, witness.operator.operator_id,
-        witness.operator.signature, tuple(sorted(capability.answer_kinds)))
+        semantic_id, family_id, operator_id,
+        signature, tuple(sorted(capability.answer_kinds)))
     return ReleaseCapabilityIdentityBinding(
         release.release_sha256, capability.capability_id, stable)

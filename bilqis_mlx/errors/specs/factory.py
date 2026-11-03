@@ -4,6 +4,18 @@ from __future__ import annotations
 from .base import _spec
 
 class FACTORY:
+    class SEMANTIC_RULE:
+        INVALID = _spec(
+            ("FACTORY", "SEMANTIC_RULE", "INVALID"),
+            owner="factory.curriculum.rule_registry",
+            title="Factory semantic rule contract invalid",
+            message_template="Factory semantic rule contract invalid: {reason}",
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action=(
+                "Restore the canonical semantic rule identity, source authority, "
+                "and registry binding before retrying."),
+        )
+
     class ADMISSION:
         COMPLETE_PRIOR_EXAM_REQUIRED = _spec(
             ('FACTORY', 'ADMISSION', 'COMPLETE_PRIOR_EXAM_REQUIRED'), owner='compatibility.grade_transition',
@@ -25,7 +37,7 @@ class FACTORY:
             next_action=(
                 "Preserve the artifact. Decode it with the schema version that "
                 "minted it; restore the original bytes if that verification fails."),
-            self_heal_owner="compatibility.factory_release_v1",
+            self_heal_owner="compatibility.legacy.factory_release_v1",
             legacy_codes=("FACTORY_RELEASE_MANIFEST_CONTENT_DRIFT",),
         )
 

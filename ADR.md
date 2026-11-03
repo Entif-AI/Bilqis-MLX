@@ -2661,7 +2661,6 @@ PRs are the one-time grandfathered drain inventory; the normal ceiling of three
 still blocks new admission. The drain proceeds through EGM, repair and merge, not
 through summary closure. This correction supersedes any contrary initial-drain
 description in the first implementation of ADR-126.
-
 ## ADR-127 | 2026-11-03 | EGM review episodes are bounded, persistent, and root-cause routed
 
 **Scope:** BAMF-0.2 implementation and merge-readiness review. This decision
@@ -2798,4 +2797,3 @@ execution guide.
 
 **Status:** Accepted as the controlling BAMF-0.2 EGM convergence and review-episode
 policy.
-

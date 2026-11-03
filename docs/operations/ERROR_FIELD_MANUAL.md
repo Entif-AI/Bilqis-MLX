@@ -14,6 +14,30 @@ The runtime error catalog is the authority for new failures. Raw string exceptio
 
 ## Typed catalog
 
+### `FACTORY.SEMANTIC_RULE.INVALID`
+
+Factory semantic rule contract invalid.
+
+Owner: `factory.curriculum.rule_registry`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Factory semantic rule contract invalid: {reason}
+
+Recovery: Restore the canonical semantic rule identity, source authority, and registry binding before retrying.
+
+### `SOURCE.BAMF_WORLD.INVALID`
+
+Qualified world source contract invalid.
+
+Owner: `source_adapters.world_rules`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Qualified world source contract invalid: {reason}
+
+Recovery: Restore the pinned source rows, canonical provider, and exact world query contract before retrying.
+
 ### `SCHOOL.BAMF_ATLAS_ADMISSION.INVALID`
 
 BAMF Atlas lease or admission boundary invalid.
@@ -1370,7 +1394,7 @@ Recovery: Inspect historical provenance; use a supported Factory v2 run for curr
 
 Historical artifact validation failed.
 
-Owner: `compatibility.resume_migration`
+Owner: `compatibility.legacy.resume_migration`
 Disposition: `PRESERVE_AND_INSPECT`
 Self-heal owner: `none`
 
@@ -1541,7 +1565,7 @@ Sealed factory release content does not match its wire identity.
 
 Owner: `runtime.admission`
 Disposition: `PRESERVE_AND_REPAIR`
-Self-heal owner: `compatibility.factory_release_v1`
+Self-heal owner: `compatibility.legacy.factory_release_v1`
 
 Message: Factory release {release_sha256} does not match the canonical payload or embedded course identity that minted it.
 
@@ -1725,7 +1749,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **2030** raw raises across **229** files. The baseline gate permits only reduction.
+Current production scan: **2029** raw raises across **231** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -1904,7 +1928,7 @@ Current production scan: **2030** raw raises across **229** files. The baseline 
 | `BOOLEAN_ASSOCIATION_NEEDS_MIXED_OPAQUE_ASSERTIONS` | 1 | `bilqis_mlx/_boolean_sources/boolean_association.py` |
 | `BOOLEAN_ASSOCIATION_PER_SOURCE_MUST_BE_POSITIVE_EVEN` | 1 | `bilqis_mlx/_boolean_sources/boolean_association.py` |
 | `BOOLEAN_ASSOCIATION_REQUIRED_TOKENS_MISSING` | 1 | `bilqis_mlx/_boolean_sources/boolean_association.py` |
-| `BOOLEAN_ASSOCIATION_REQUIRES_NUMERIC_SOURCE_ADAPTER` | 1 | `bilqis_mlx/source_adapters/school.py` |
+| `BOOLEAN_ASSOCIATION_REQUIRES_NUMERIC_SOURCE_ADAPTER` | 1 | `bilqis_mlx/source_adapters/_school/boolean.py` |
 | `BOOLEAN_ASSOCIATION_UNKNOWN_CAPABILITY` | 1 | `bilqis_mlx/_boolean_sources/boolean_association.py` |
 | `BOOLEAN_ASSOCIATION_UNKNOWN_OPERATOR` | 1 | `bilqis_mlx/_boolean_sources/boolean_association.py` |
 | `BOOLEAN_ASSOCIATION_VARIATION_EXHAUSTED` | 1 | `bilqis_mlx/_boolean_sources/boolean_association.py` |
@@ -2354,9 +2378,9 @@ Current production scan: **2030** raw raises across **229** files. The baseline 
 | `FACTORY_ASSESSMENT_SCOPE_DUPLICATE_CAPABILITY` | 1 | `bilqis_mlx/factory/lifecycle/assessment.py` |
 | `FACTORY_ASSESSMENT_SCOPE_EMPTY` | 2 | `bilqis_mlx/_release_views/live_curriculum.py`, `bilqis_mlx/factory/lifecycle/assessment.py` |
 | `FACTORY_ASSESSMENT_SCOPE_UNKNOWN_CAPABILITY` | 1 | `bilqis_mlx/factory/lifecycle/assessment.py` |
-| `FACTORY_BOOLEAN_EVIDENCE_PRODUCER_UNRESOLVED` | 1 | `bilqis_mlx/source_adapters/school.py` |
-| `FACTORY_BOOLEAN_PROFILE_PARAMETER_SCOPE_DRIFT` | 1 | `bilqis_mlx/source_adapters/school.py` |
-| `FACTORY_BOOLEAN_PROFILE_PARAMETER_UNKNOWN` | 1 | `bilqis_mlx/source_adapters/school.py` |
+| `FACTORY_BOOLEAN_EVIDENCE_PRODUCER_UNRESOLVED` | 1 | `bilqis_mlx/source_adapters/_school/evidence.py` |
+| `FACTORY_BOOLEAN_PROFILE_PARAMETER_SCOPE_DRIFT` | 1 | `bilqis_mlx/source_adapters/_school/boolean.py` |
+| `FACTORY_BOOLEAN_PROFILE_PARAMETER_UNKNOWN` | 1 | `bilqis_mlx/source_adapters/_school/boolean.py` |
 | `FACTORY_BOOLEAN_PROFILE_SELECTION_INVALID` | 1 | `bilqis_mlx/profiles/school.py` |
 | `FACTORY_CATALOG_BOUNDARY_COHORT_REQUIRED` | 1 | `bilqis_mlx/runtime/release_adoption.py` |
 | `FACTORY_CATALOG_NO_DISABLED_GRADE` | 1 | `bilqis_mlx/profiles/catalog.py` |
@@ -2489,21 +2513,21 @@ Current production scan: **2030** raw raises across **229** files. The baseline 
 | `FACTORY_LESSON_CAPABILITY_NOT_ADMITTED` | 1 | `bilqis_mlx/runtime/assessment.py` |
 | `FACTORY_LESSON_GRADE_NOT_RELEASED` | 1 | `bilqis_mlx/_release_views/live_curriculum.py` |
 | `FACTORY_LESSON_PROVIDER_BINDING_DRIFT` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `FACTORY_MICRO_EVIDENCE_COMPOSITION_AST_INVALID` | 1 | `bilqis_mlx/source_adapters/school.py` |
-| `FACTORY_MICRO_EVIDENCE_COMPOSITION_KEY_INVALID` | 1 | `bilqis_mlx/source_adapters/school.py` |
-| `FACTORY_MICRO_EVIDENCE_KIND_UNSUPPORTED` | 1 | `bilqis_mlx/source_adapters/school.py` |
-| `FACTORY_MICRO_EVIDENCE_PRODUCER_ID_UNRESOLVED` | 1 | `bilqis_mlx/source_adapters/school.py` |
-| `FACTORY_MICRO_EVIDENCE_PRODUCER_KEY_DRIFT` | 2 | `bilqis_mlx/source_adapters/school.py` |
-| `FACTORY_MICRO_EVIDENCE_PRODUCER_ROOT_UNRESOLVED` | 1 | `bilqis_mlx/source_adapters/school.py` |
-| `FACTORY_MICRO_EVIDENCE_RECORD_MISSING` | 1 | `bilqis_mlx/source_adapters/school.py` |
-| `FACTORY_MICRO_EVIDENCE_REQUIRES_ONE_PRODUCER` | 1 | `bilqis_mlx/source_adapters/school.py` |
-| `FACTORY_NUMERIC_CAPABILITY_HAS_NO_ACTIVE_DOMAIN` | 1 | `bilqis_mlx/source_adapters/school.py` |
-| `FACTORY_NUMERIC_EVIDENCE_KIND_UNSUPPORTED` | 1 | `bilqis_mlx/source_adapters/school.py` |
-| `FACTORY_NUMERIC_EVIDENCE_PLAN_DRIFT` | 1 | `bilqis_mlx/source_adapters/school.py` |
+| `FACTORY_MICRO_EVIDENCE_COMPOSITION_AST_INVALID` | 1 | `bilqis_mlx/source_adapters/_school/evidence.py` |
+| `FACTORY_MICRO_EVIDENCE_COMPOSITION_KEY_INVALID` | 1 | `bilqis_mlx/source_adapters/_school/evidence.py` |
+| `FACTORY_MICRO_EVIDENCE_KIND_UNSUPPORTED` | 1 | `bilqis_mlx/source_adapters/_school/evidence.py` |
+| `FACTORY_MICRO_EVIDENCE_PRODUCER_ID_UNRESOLVED` | 1 | `bilqis_mlx/source_adapters/_school/evidence.py` |
+| `FACTORY_MICRO_EVIDENCE_PRODUCER_KEY_DRIFT` | 1 | `bilqis_mlx/source_adapters/_school/evidence.py` |
+| `FACTORY_MICRO_EVIDENCE_PRODUCER_ROOT_UNRESOLVED` | 1 | `bilqis_mlx/source_adapters/_school/evidence.py` |
+| `FACTORY_MICRO_EVIDENCE_RECORD_MISSING` | 1 | `bilqis_mlx/source_adapters/_school/evidence.py` |
+| `FACTORY_MICRO_EVIDENCE_REQUIRES_ONE_PRODUCER` | 1 | `bilqis_mlx/source_adapters/_school/evidence.py` |
+| `FACTORY_NUMERIC_CAPABILITY_HAS_NO_ACTIVE_DOMAIN` | 1 | `bilqis_mlx/source_adapters/_school/numeric.py` |
+| `FACTORY_NUMERIC_EVIDENCE_KIND_UNSUPPORTED` | 1 | `bilqis_mlx/source_adapters/_school/numeric.py` |
+| `FACTORY_NUMERIC_EVIDENCE_PLAN_DRIFT` | 1 | `bilqis_mlx/source_adapters/_school/numeric.py` |
 | `FACTORY_NUMERIC_PROFILE_CAPABILITIES_REQUIRED` | 1 | `bilqis_mlx/profiles/school.py` |
-| `FACTORY_NUMERIC_PROFILE_DOMAIN_INVALID` | 1 | `bilqis_mlx/source_adapters/school.py` |
+| `FACTORY_NUMERIC_PROFILE_DOMAIN_INVALID` | 1 | `bilqis_mlx/source_adapters/_school/numeric.py` |
 | `FACTORY_NUMERIC_PROFILE_INVALID` | 1 | `bilqis_mlx/profiles/school.py` |
-| `FACTORY_NUMERIC_PROFILE_PARAMETER_UNKNOWN` | 1 | `bilqis_mlx/source_adapters/school.py` |
+| `FACTORY_NUMERIC_PROFILE_PARAMETER_UNKNOWN` | 1 | `bilqis_mlx/source_adapters/_school/numeric.py` |
 | `FACTORY_NUMERIC_SCOPE_ADVANCE_INVALID` | 1 | `bilqis_mlx/profiles/catalog.py` |
 | `FACTORY_NUMERIC_SCOPE_DOMAIN_INCONSISTENT` | 1 | `bilqis_mlx/profiles/catalog.py` |
 | `FACTORY_NUMERIC_SCOPE_DOMAIN_INVALID` | 1 | `bilqis_mlx/profiles/catalog.py` |
@@ -2613,7 +2637,7 @@ Current production scan: **2030** raw raises across **229** files. The baseline 
 | `FACTORY_TEACHING_SOURCE_ORACLE_DISAGREEMENT` | 1 | `bilqis_mlx/factory/lifecycle/teaching.py` |
 | `FACTORY_TEACHING_UNKNOWN_CAPABILITY` | 3 | `bilqis_mlx/factory/adapters.py` |
 | `FACTORY_TYPED_SAME_GRADE_REVISION_REQUIRES_GRAPH` | 1 | `bilqis_mlx/compatibility/live_release_parts/providers.py` |
-| `FACTORY_UNKNOWN_BOOLEAN_TEACHING_OPTION` | 1 | `bilqis_mlx/source_adapters/school.py` |
+| `FACTORY_UNKNOWN_BOOLEAN_TEACHING_OPTION` | 1 | `bilqis_mlx/source_adapters/_school/boolean.py` |
 | `FACTORY_UNKNOWN_RELEASE` | 4 | `bilqis_mlx/compatibility/live_release_parts/providers.py`, `bilqis_mlx/compatibility/live_release_parts/receipts.py` |
 | `FINAL_WHOLE_SCHOOL_SNAPSHOT_INCOMPLETE` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `FIXED_FRONTIER_COHORT_CONTENT_DRIFT` | 1 | `bilqis_mlx/_release_views/fixed_frontier.py` |
@@ -2961,8 +2985,8 @@ Current production scan: **2030** raw raises across **229** files. The baseline 
 | `Historical source token identity drift` | 1 | `bilqis_mlx/semantics/tests/foundation/test_semantics_algebra.py` |
 | `INCOMPLETE_OR_PREMATURE_ITHKUIL_BRIDGE` | 1 | `bilqis_mlx/_source_evidence/ithkuil_alignment.py` |
 | `INCOMPLETE_STUDENT_CHECKPOINT` | 1 | `bilqis_mlx/learning/_championship/champions.py` |
-| `INDEPENDENT_FINITE_UNKNOWN_ROOT` | 1 | `bilqis_mlx/source_adapters/tests/test_source_adapters_micro.py` |
-| `INDEPENDENT_FINITE_WORLD_MISMATCH` | 1 | `bilqis_mlx/source_adapters/tests/test_source_adapters_micro.py` |
+| `INDEPENDENT_FINITE_UNKNOWN_ROOT` | 1 | `bilqis_mlx/source_adapters/tests/school/test_boolean.py` |
+| `INDEPENDENT_FINITE_WORLD_MISMATCH` | 1 | `bilqis_mlx/source_adapters/tests/school/test_boolean.py` |
 | `INTEGER_SCOPE_ANSWER_EXCEEDS_CAP` | 1 | `bilqis_mlx/_numeric_sources/integer_curriculum.py` |
 | `INTEGER_SCOPE_DISTINCT_VARIATION_EXHAUSTED` | 1 | `bilqis_mlx/_numeric_sources/integer_curriculum.py` |
 | `INTEGER_SCOPE_DUPLICATED_ENV_FILE_VALUE` | 1 | `bilqis_mlx/_numeric_sources/integer_curriculum.py` |
@@ -3266,7 +3290,7 @@ Current production scan: **2030** raw raises across **229** files. The baseline 
 | `PLASTICITY_MASTERY_DEBT_SCOPE_INVALID` | 1 | `bilqis_mlx/learning/_retention/plasticity_escape.py` |
 | `PLASTICITY_MASTERY_DEBT_SCORES_INVALID` | 1 | `bilqis_mlx/learning/_retention/plasticity_escape.py` |
 | `PLASTICITY_MASTERY_DEBT_SCORE_INVALID` | 2 | `bilqis_mlx/learning/_retention/plasticity_escape.py` |
-| `Pinned original token identity drift` | 1 | `bilqis_mlx/source_adapters/tests/test_source_adapters_micro.py` |
+| `Pinned original token identity drift` | 1 | `bilqis_mlx/source_adapters/tests/school/test_boolean.py` |
 | `REFERENTIAL_NOT_SUPPORTED_OR_AMBIGUOUS` | 1 | `bilqis_mlx/_source_evidence/ni_construction.py` |
 | `REFERENTIAL_OUTSIDE_NEUTRAL_MONADIC_SUBSET` | 1 | `bilqis_mlx/_source_evidence/ni_construction.py` |
 | `REFERENTIAL_SURFACE_REQUIRED` | 1 | `bilqis_mlx/_source_evidence/ni_construction.py` |
@@ -3442,9 +3466,9 @@ Current production scan: **2030** raw raises across **229** files. The baseline 
 | `SOUP_UNVERIFIED_OR_MISSING_CHAMPION_CONTRIBUTORS` | 1 | `bilqis_mlx/_operations/soup.py` |
 | `SOURCE_FOOTPRINT_INVALID` | 1 | `bilqis_mlx/factory/adapters.py` |
 | `SOURCE_FOOTPRINT_UNAVAILABLE` | 1 | `bilqis_mlx/factory/adapters.py` |
-| `SOURCE_MICRO_ORACLE_CONFLICT` | 1 | `bilqis_mlx/source_adapters/tests/test_source_adapters_micro.py` |
-| `SOURCE_MICRO_UNKNOWN_ROOT` | 1 | `bilqis_mlx/source_adapters/tests/test_source_adapters_micro.py` |
-| `SOURCE_MICRO_WORLD_MISMATCH` | 1 | `bilqis_mlx/source_adapters/tests/test_source_adapters_micro.py` |
+| `SOURCE_MICRO_ORACLE_CONFLICT` | 1 | `bilqis_mlx/source_adapters/tests/school/test_boolean.py` |
+| `SOURCE_MICRO_UNKNOWN_ROOT` | 1 | `bilqis_mlx/source_adapters/tests/school/test_boolean.py` |
+| `SOURCE_MICRO_WORLD_MISMATCH` | 1 | `bilqis_mlx/source_adapters/tests/school/test_boolean.py` |
 | `SOURCE_MUST_BE_EXISTING_NONLINK_DIRECTORY` | 1 | `bilqis_mlx/_operations/backup.py` |
 | `SOURCE_PREFETCH_FORBIDDEN_AUTHORITY` | 1 | `bilqis_mlx/runtime/_source/source_prefetch.py` |
 | `SOURCE_PREFETCH_FRAGILE_SEEDS_INVALID` | 1 | `bilqis_mlx/runtime/_source/source_prefetch.py` |
