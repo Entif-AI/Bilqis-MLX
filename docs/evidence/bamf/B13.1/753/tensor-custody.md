@@ -20,7 +20,13 @@ owner, checks the CAS filesystem's configured disk reserve before an additional
 copy, adopts the payload and removes its staging copy. New tensor bindings carry
 `object_sha256`; cold read resolves and deep-verifies that object before MLX
 construction. Existing six-field local-file v2 bindings remain readable. No old
-bundle or schema is rewritten. Existing sidecar validation, generation pointer
+bundle or schema is rewritten. A positive compatibility fixture executes the exact
+pre-CAS writer from the pinned unified Git object above (source SHA-256
+`01e66fcbe15802615c3557a2a4b99c0fb75a37d64fe3d61ee30bf56d1301fcdc`).
+It publishes a genuine old local-file v2 bundle, compares every weight/moment/count
+against the pre-save candidate, reads it in a fresh process through the current
+pointer owner and proves every old bundle byte unchanged. This fixture needs Git
+and that commit object; no stored student binary is added to the repository. Existing sidecar validation, generation pointer
 lock, staging, atomic publication and outbox reconciliation retain ownership.
 
 ## Reproduction
@@ -30,7 +36,8 @@ Run on the supported host with Python and MLX installed:
 ```sh
 python3 -B scripts/run_tests.py \
   bilqis_mlx/runtime/tests/custody/data_plane/test_file_objects.py \
-  bilqis_mlx/runtime/tests/custody/bamf_bundle/test_tensor_cas.py
+  bilqis_mlx/runtime/tests/custody/bamf_bundle/test_tensor_cas.py \
+  bilqis_mlx/runtime/tests/custody/bamf_bundle/test_pre_cas_compatibility.py
 python3 -B -m unittest \
   bilqis_mlx.runtime.tests.custody.bamf_bundle.test_codec \
   bilqis_mlx.runtime.tests.custody.bamf_bundle.test_codec_boundaries \
@@ -41,7 +48,7 @@ python3 -B -m unittest \
   bilqis_mlx.runtime.tests.custody.data_plane.test_events
 ```
 
-Expected: 9 targeted tests and 37 existing tests pass without skips. Controls
+Expected: 10 targeted tests and 37 existing tests pass without skips. Controls
 cover unchanged-object reuse, changed-object separation, corruption rejection,
 pointer-crash/retry reuse, caller-alias mutation, competing installation,
 independent-process convergence and directory fsync calls. A three-generation
