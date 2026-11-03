@@ -20,8 +20,10 @@ ownership receipt, including an older writer racing outside the SQLite transacti
 parent before returning, including reuse. The existing data-plane SQLite
 transaction serializes adoption across processes. Its existing `meta` table
 records a versioned ownership key with device/inode/ctime/size after byte and
-directory durability; no new table or schema version is needed. A verified object
-with no matching ownership receipt is atomically replaced once by an owned copy.
+directory durability; ownership also requires the persisted object to have exactly
+one hard link. No new table or schema version is needed. A verified object with no
+matching ownership receipt, or with an additional hard-link alias, is atomically
+replaced once by an owned single-link copy.
 This isolates old caller links and open descriptors without changing logical
 content or historical bundle bytes. Receipt loss or interrupted publication causes
 a safe re-copy on retry. Verified owned objects reuse the exact inode. Copying

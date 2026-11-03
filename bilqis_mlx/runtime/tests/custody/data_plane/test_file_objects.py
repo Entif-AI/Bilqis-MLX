@@ -107,6 +107,27 @@ class FileObjectTests(DataPlaneCase):
         data_plane().adopt_file_object(replacement_source, digest)
         self.assertEqual(target.stat().st_ino, owned_inode)
 
+    def test_owned_receipt_with_extra_hard_link_is_reisolated_before_reuse(self):
+        source, digest = self.source()
+        plane = data_plane()
+        target = plane.adopt_file_object(source, digest)
+        owned_inode = target.stat().st_ino
+        alias = self.root / "owned-object-alias"
+        os.link(target, alias)
+
+        self.assertFalse(plane.owns_file_object(digest))
+        self.assertEqual(target.stat().st_nlink, 2)
+
+        replacement = plane.adopt_file_object(source, digest)
+        self.assertEqual(replacement, target)
+        self.assertNotEqual(target.stat().st_ino, owned_inode)
+        self.assertEqual(target.stat().st_nlink, 1)
+        self.assertTrue(plane.owns_file_object(digest))
+
+        alias.write_bytes(b"caller retained old owned inode")
+        self.assertEqual(plane.require_file_object(digest), target)
+        self.assertEqual(target.read_bytes(), b"immutable tensor bytes")
+
     def test_reuse_fsyncs_current_object_inode_independently(self):
         source, digest = self.source()
         plane = data_plane()
