@@ -28,6 +28,7 @@ RECEIPT_SCHEMA = "bilqis.mlx.bamf-accepted-generation-feature-receipt/v1"
 FEATURE_SOURCE_KEYS = frozenset({
     "atlas_bundle_id", "release_sha256", "source_bundle_id"})
 FEATURE_SCHEMA_KEYS = frozenset({"role_ids", "schema_ids", "source_bindings"})
+SOURCE_BINDING_WIDTH = 2
 
 
 @dataclass(frozen=True)
@@ -111,7 +112,7 @@ def _feature_schema(compiler_features: dict) -> FeatureSchema:
     if (not isinstance(recorded["role_ids"], list)
             or not isinstance(recorded["schema_ids"], list)
             or not isinstance(bindings, list)
-            or any(not isinstance(row, list) or len(row) != 2
+            or any(not isinstance(row, list) or len(row) != SOURCE_BINDING_WIDTH
                    or not all(isinstance(value, str) and value for value in row)
                    for row in bindings)):
         invalid("BAMF_FEATURE_SCHEMA_BINDING_INVALID")
