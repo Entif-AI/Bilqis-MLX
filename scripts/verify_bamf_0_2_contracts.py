@@ -11,7 +11,13 @@ from pathlib import Path
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts" / "bamf"))
+from scripts.check_bamf_workstack import validate_workstack
+from scripts.bamf.workstack_dependencies import (
+    EvidenceStatus, check_dependency_evidence, load_dependency_sources,
+    pinned_dependency_keys,
+)
 TASKS = ROOT / "docs/tasks/bamf-0.2"
 ITEMS = json.loads((TASKS / "workstack.json").read_text(encoding="utf-8"))["items"]
 CHILDREN = json.loads((TASKS / "children/index.json").read_text(encoding="utf-8"))["entries"]
@@ -45,6 +51,25 @@ def section(body: str, start: str, end: str) -> str:
     before = "\n## " + start + "\n"
     after = "\n## " + end + "\n"
     return body.split(before, 1)[1].split(after, 1)[0].strip()
+
+
+def child_has_provenance(entry, body, issue_map, sources):
+    """Accept generated markers or the existing independently pinned packet form."""
+    if f"<!-- BAMF02:WORK-PACKET:{entry['key']} -->" in body:
+        return True
+    if entry['key'] not in pinned_dependency_keys(sources):
+        return False
+    return check_dependency_evidence(
+        entry, body.encode('utf-8'), issue_map, sources).status is not EvidenceStatus.INVALID
+
+
+def direct_dispatch_matches(item, original, entries, pinned_keys):
+    """Keep the source partition in order and permit only reviewed later children."""
+    actual = [entry['key'] for entry in entries if entry['parent_key'] == item['key']]
+    declared = item['children']
+    return (declared == actual and len(set(declared)) == len(declared)
+            and [key for key in declared if key in original] == original
+            and all(key in original or key in pinned_keys for key in declared))
 
 
 def main() -> None:
@@ -165,7 +190,20 @@ def main() -> None:
     if registry_path.exists():
         from bamf02_groom_backlog import plan_for, SLICES
 
-        entries = json.loads(registry_path.read_text(encoding="utf-8"))["entries"]
+        registry = json.loads(registry_path.read_text(encoding="utf-8"))
+        entries = registry["entries"]
+        sources = load_dependency_sources(TASKS, registry)
+        pinned_keys = pinned_dependency_keys(sources)
+        manifest = json.loads((TASKS / 'workstack.json').read_text(encoding='utf-8'))
+        manifest['items'] = ITEMS
+        mirrors = {entry['key']: (TASKS / 'children' / (entry['key'] + '.md')).read_bytes()
+                   for entry in entries
+                   if (TASKS / 'children' / (entry['key'] + '.md')).is_file()}
+        registry_report = validate_workstack(
+            manifest, registry, issue_map, mirrors, evidence_sources=sources)
+        if registry_report['registry_integrity'] != 'valid':
+            errors.extend(f"canonical registry: {issue['reason']}"
+                          for issue in registry_report['issues'])
         all_children = {entry["key"]: entry for entry in entries}
         if len(all_children) != len(entries):
             errors.append("recursive issue registry has duplicate child keys")
@@ -183,7 +221,8 @@ def main() -> None:
             parent = entry["parent_key"]
             if issue_map.get(parent) != entry["parent_number"]:
                 errors.append(f"{key}: child has incorrect native parent")
-            if parent != "A09" and not parent.startswith("A09.") and f"<!-- BAMF02:WORK-PACKET:{key} -->" not in body:
+            if (parent != "A09" and not parent.startswith("A09.")
+                    and not child_has_provenance(entry, body, issue_map, sources)):
                 errors.append(f"{key}: missing provenance and work-packet marker")
             for dep in entry["deps"]:
                 if dep not in by_key and dep not in all_children:
@@ -198,7 +237,8 @@ def main() -> None:
                 expected = {step["key"] for step in planned}
                 if not expected.issubset(all_children):
                     errors.append(f"{key}: lost or unindexed source clauses")
-                if [p["key"] for p in planned if p["parent"] == key] != item["children"]:
+                original = [p["key"] for p in planned if p["parent"] == key]
+                if not direct_dispatch_matches(item, original, entries, pinned_keys):
                     errors.append(f"{key}: direct child dispatch drift")
             except (KeyError, ValueError, IndexError) as exc:
                 errors.append(f"{key}: source-prescription partition invalid: {exc}")
@@ -225,12 +265,16 @@ def main() -> None:
     print("PASS: 43/43 exact checked-in issue mirrors equal workstack SHA-256 receipts")
     print("PASS: 43/43 issue API, implementation and acceptance fields match workstack")
     print("PASS: no missing/cyclic dependencies, no obsolete named-grade debt exception")
-    print("PASS: all 200 BAMF owner/child specs bind exact lane branches and reviewed unified lifecycle")
+    spec_count = len(ITEMS) + (len(entries) if registry_path.exists() else len(CHILDREN))
+    print(f"PASS: all {spec_count} BAMF owner/child specs bind exact lane branches and reviewed unified lifecycle")
     print("PASS: 12 owner issues and 3 repository entrypoints carry ADR-BAMF02-004")
     print("PASS: BAMF EGM operational policy reserves fresh Goldfish review for merge readiness")
     print(f"PASS: {len(CHILDREN)} recursive A09 sub-issues retain exact indexed mirrors, linked ownership and acyclic dependencies")
     if registry_path.exists():
         print(f"PASS: {len(entries)} total indexed recursive child mirrors have correct SHA, parent identity and lossless source partitions")
+        held = registry_report['dependency_resolution']['held_keys']
+        if held:
+            print(f"NOTE: {len(held)} dependency normalization holds retained; no executable order: {', '.join(held)}")
     print("NOTE: live GitHub SHA readback and executable Factory behavior require separate checks")
 
 

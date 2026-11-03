@@ -82,6 +82,15 @@
       "head_sha": "306d8e0f2e4efd9960ea7ec88240fb90547c8cc0",
       "summary": "Selector pickle regression reproduced twice; two metadata assignments verified on isolated issue branch and consumed into #641. Parent owns aggregate EGM.",
       "resume_trigger": null
+    },
+    {
+      "issue": 770,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "c08aabb9",
+      "summary": "Repair14inherited contract-verifier failures against exact canonical late-child and dispatch evidence.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-c-770-contract-verifier-20261103"
     }
   ]
 }
