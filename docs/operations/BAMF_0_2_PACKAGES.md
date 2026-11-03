@@ -1,8 +1,9 @@
 # BAMF cognitive package staging
 
-C12.1 / #525 provides a portable manifest boundary under
-`bilqis_mlx.runtime.cognitive_package`. This is provisional software staging.
-Accepted source/generation producers and full package adoption remain pending.
+C12.1 / #525 provides the portable manifest boundary under
+`bilqis_mlx.runtime.cognitive_package`. C12.2 adds local exchange, disposable delta
+screening and the accepted-import candidate. Parent #526/#718 still owns final EGM
+and human integration.
 
 `export_capability(snapshot, signature, rights)` exports a single semantic
 signature from an immutable `ExportSnapshot`. The snapshot identifies its source
@@ -15,12 +16,14 @@ The storage limit bounds decoded payload bytes; it does not bound peak parser RA
 `SourceRights` carries an authority ID, clearance receipt digest, public payload
 allowlist, revoked payload digests and sorted unique revocation-lineage digests.
 Every artifact, including fixtures and behavioral evidence, must appear in the
-public allowlist. Revocation overrides that allowlist. These are explicit
-caller-supplied clearance assertions, not independently verified signatures or
-source authorization. Only a trusted source adapter may supply cleared metadata
-and these records in a production integration. Payload scanning cannot prove that
-arbitrary metadata is public. Do not pass private metadata to this public export API.
-The current slice has no production source adapter and grants no production rights.
+public allowlist. Revocation overrides that allowlist. These are embedded clearance
+assertions, not independent source authority. Export and staging therefore grant no
+adoption right. `adopt_screened_delta(...)` requires an A12
+`ExportClearanceReceipt`, verifies its detached signature through C09's
+host-provisioned source-authority registry, binds it to the live A12 selection and
+source frontier, and requires the package `SourceRights` to be its exact portable
+projection. Embedded rights or matching caller fields cannot authorize adoption.
+Do not pass private metadata to the public export API.
 
 `CognitivePackage.canonical_json` is the portable representation. JSON uses sorted
 keys, compact separators, UTF-8 without normalization, arrays for tuples and
@@ -38,11 +41,10 @@ Base weights, parameter schema, topology, semantic release, active set, factor m
 and motif map must all match for any delta. No approximate matching exists.
 
 A plan records only package digest, receiver binding and compatibility disposition.
-It does not itself apply tensor slices, allocate banks/motifs, reset optimizer
-state, change teacher state, run retention or publish a generation. C12.2/#526 now
-adds a separate pure disposable-candidate path for an exact-compatible delta; the
-durable receiver-owned adoption/reset transition remains C12.3/#527. No production
-importer consumes these plans yet.
+It does not apply tensor slices, allocate banks or motifs, run retention, or publish
+a generation. Exact-compatible deltas first become sealed disposable candidates.
+The accepted-import path is separate and requires signed A12 clearance plus a sealed
+C05 screen before B12 can construct receiver-owned reset state and B13 can publish it.
 Changing a sender's rights after export does not mutate an immutable package;
 a future adoption owner must consult current source revocations before use.
 
@@ -104,15 +106,25 @@ does not allocate a parameter, bank or motif and does not reset or publish any
 optimizer, age, clock, teacher or checkpoint state.
 
 After the disposable candidate has been evaluated with the complete solver,
-`screen_delta_candidate(...)` passes its exact parent and derived candidate
-generation identities to C05's existing `retain_candidate(...)` owner. An eligible
-decision remains advisory evidence only: B12/B13 still own publication. A rejected
-candidate is rolled back by discarding the immutable disposable candidate; the
-parent bytes are unchanged.
+`screen_delta_candidate(...)` asks C05 to run the required cohorts itself through
+`evaluate_retention_candidate(...)`. Callers cannot supply a matching retention
+decision or evidence object. A rejected candidate is discarded and the current B13
+pointer remains unchanged.
 
-C12.2 source-rights and authoritative screening remain open under #718. #527 owns
-the durable receiver transition: changed-slice optimizer resets, establishment-age
-and cadence resets, `PACKAGE_IMPORT` origin, atomic commit/crash rollback,
-subsequent native optimizer receipt and cold-resume equivalence. Production #526
-turn-in also remains gated on accepted A12 source/rights and B13 generation custody;
-the current synthetic PUBLIC fixtures do not promote those pending authorities.
+`adopt_screened_delta(...)` is the durable acceptance boundary. It re-reads the
+current B13 receiver, rejects stale parent drift, verifies current A12 authority,
+and asks B12 to create a sealed package-import transaction. B12 accepts tensor
+changes only inside the package's declared slices. It resets `m` and `v` on those
+slices, resets the owner-supported update count for the affected rows or tensor,
+resets touched identity-row age, preserves untouched state and policy mode, and
+resets the accepted-fast cadence counter. Package import does not fabricate an
+optimizer step.
+
+B13 publishes the result as a distinct `PACKAGE_IMPORT` generation at the same
+optimizer-step clock. The generation records parent manifest, package digest, reset
+policy, C05 decision/evidence/policy digests and A12 clearance digest. A public
+`BamfBundleCandidate` cannot self-authorize this transition. Pointer failure leaves
+the prior generation current and retry converges on the immutable staged bundle.
+Cold load preserves the import lineage and reset state, and the next disposable B12
+optimizer step starts from those reset counts and moments. This candidate does not
+close #526/#718 until final exact-head EGM and human integration.

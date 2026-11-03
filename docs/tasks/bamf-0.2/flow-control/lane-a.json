@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "53655a7a5d513403bcd14e9ffd2e5577411c5832",
-  "updated_at": "2026-11-03T09:19:15Z",
+  "observed_unified": "48315ee7bae3caa7d5ac279128c79217b9178d16",
+  "updated_at": "2026-11-03T09:57:31Z",
   "exception": null,
   "items": [
     {
@@ -19,11 +19,12 @@
     },
     {
       "issue": 758,
-      "pr": 777,
+      "pr": null,
       "state": "TURNED_IN",
-      "head_sha": "fe4dcd0b21a3de8e47c0bcf43f9681a92b6a556f",
-      "summary": "A08.3 rule qualification and typed Factory-family remediation is turned in through PR #777 after focused proof and scoped independent EGM; final exact-head review follows PR inventory bookkeeping.",
+      "head_sha": "e89ea51b0566e628b6cc121bbc4c291852c378d6",
+      "summary": "A08.3 rule qualification and typed Factory-family remediation passed final exact-head EGM and was human-merged through PR #777 into reviewed unified.",
       "resume_trigger": null,
+      "merged_pr": 777,
       "preserved_branch": "codex/758-oracle-proof-20261102"
     },
     {

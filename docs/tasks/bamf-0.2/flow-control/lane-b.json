@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "deaa8b9dbd277993f884abeea7413f9cb799d945",
-  "updated_at": "2026-11-03T08:50:15.707219+00:00",
+  "observed_unified": "48315ee7bae3caa7d5ac279128c79217b9178d16",
+  "updated_at": "2026-11-03T09:57:31Z",
   "exception": null,
   "items": [
     {
@@ -189,12 +189,13 @@
     },
     {
       "issue": 769,
-      "pr": 776,
+      "pr": null,
       "state": "TURNED_IN",
-      "head_sha": "ef5a89ebfc520068a01507aa05f41e43f32b4922",
-      "summary": "Post-merge hard-link ownership proof follow-up is turned in through PR #776; production custody from merged PR #773 is unchanged, and this branch adds the missing single-link acceptance witness plus evidence wording.",
+      "head_sha": "1cbb66d12da1375c40ba10138f4326f234640c9d",
+      "summary": "Post-merge hard-link ownership proof follow-up passed final exact-head EGM and was human-merged through PR #776; production custody remains rooted in prior PR #773.",
       "resume_trigger": null,
-      "merged_pr": 773,
+      "merged_pr": 776,
+      "prior_merged_pr": 773,
       "preserved_branch": "codex/769-hardlink-proof-20261103"
     }
   ]
