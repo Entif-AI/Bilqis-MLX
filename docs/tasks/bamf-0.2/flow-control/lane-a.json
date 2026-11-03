@@ -1,9 +1,29 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "92bdff370e9be3d0c64eb4ffe300d2448f53d6a1",
-  "updated_at": "2026-11-02T05:10:00Z",
+  "observed_unified": "2d4b99f3b7f8f82857028a7c1f31c1e5da61b23b",
+  "updated_at": "2026-11-02T20:45:39-05:00",
   "exception": null,
-  "items": [],
-  "note": "No Lane A implementation leaf is marked ACTIVE in the current flow-control snapshot. Readiness remains governed by live issue dependencies and the lane execution contract."
+  "items": [
+    {
+      "issue": 420,
+      "pr": null,
+      "state": "WAITING",
+      "head_sha": "2c80599dfac07f3e5eaf5d82adf74411dc21b826",
+      "summary": "A08.3 later failed full pinned EGM acceptance on the preserved candidate; #758 owns the substantive rule qualification/Factory integration repair and #737 remains the later lifecycle refresh.",
+      "resume_trigger": "Remediation #758 is resolved first; then #737 refreshes the repaired candidate onto current reviewed unified and the complete candidate receives fresh merge-readiness EGM.",
+      "closed_pr": 703,
+      "preserved_branch": "feat/bamf-a08-3-420-20261101",
+      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
+      "close_reason": "EGM-Failed; substantive remediation #758 precedes lifecycle remediation #737"
+    },
+    {
+      "issue": 745,
+      "pr": 765,
+      "state": "TURNED_IN",
+      "head_sha": "335361d60a3f4d7050acf01c471f1f94d93a0294",
+      "summary": "A12 source-owner export-clearance remediation is refreshed onto current unified and turned in through PR #765; final #718/#526 EGM remains downstream after integration and #746.",
+      "resume_trigger": null
+    }
+  ]
 }

@@ -46,8 +46,7 @@ def verify_source_row(
             or not 1 <= source_each <= 128):
         return None, "SOURCE_ATOM_SOURCE_ROW_INVALID"
     try:
-        canonical = live_source_registry().require(
-            row["generator"], row["oracle"])
+        canonical = live_source_registry().resolve_owner(row["generator"])
     except (KeyError, TypeError, ValueError, BilqisError):
         return None, "SOURCE_ATOM_SOURCE_ADAPTER_UNSUPPORTED"
     try:
@@ -77,10 +76,17 @@ def verify_source_row(
     sense = row.get("source_sense_id")
     if not _text(sense):
         sense = "UNDECLARED_SOURCE_SENSE"
+    accepted_oracles = canonical.descriptor.accepted_oracle_ids
+    if row["oracle"] in accepted_oracles:
+        oracle_id = row["oracle"]
+    elif len(accepted_oracles) == 1:
+        oracle_id = accepted_oracles[0]
+    else:
+        return None, "SOURCE_ATOM_SOURCE_ROW_UNVERIFIED"
     return SourceRowWitness(
         canonical.descriptor.adapter_id,
         canonical.descriptor.generator_id,
-        row["oracle"],
+        oracle_id,
         row["capability"],
         sense,
         tuple(row["tokens"]),
