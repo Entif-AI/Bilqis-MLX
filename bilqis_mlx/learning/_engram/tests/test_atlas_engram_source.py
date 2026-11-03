@@ -13,9 +13,7 @@ from bilqis_mlx.learning.atlas_engram import MotifBudget
 from bilqis_mlx.learning.atlas_engram_source import (
     ApprovedMotifCandidate, prepare_source_qualified_motifs,
 )
-from bilqis_mlx.learning.atlas_candidate import (
-    CandidateState, _issue_retained_state, begin_candidate,
-)
+from bilqis_mlx.learning.atlas_candidate import CandidateState, begin_candidate
 from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
 from bilqis_mlx.runtime.atlas_optimizer import AdamWStateTree
 from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
@@ -84,7 +82,7 @@ class SourceQualifiedMotifTests(TestCase):
         return selection, source_root, graph, adapter, row, task, policy, seed, each, profile
 
     def _prepare(self, *, grade="A", frontier=None, graph=None, selection=None,
-                 row=None, budget=None, retained_state=None):
+                 row=None, budget=None):
         (actual_selection, source_root, actual_graph, adapter, actual_row,
          task, policy, seed, each, profile) = self._case(grade)
         return prepare_source_qualified_motifs(
@@ -96,19 +94,7 @@ class SourceQualifiedMotifTests(TestCase):
             policy=policy, source_seed=seed, source_each=each,
             source_profile_parameters=profile,
             budget=MotifBudget(64) if budget is None else budget,
-            retained_state=retained_state,
         )
-
-    def _retained_state(self, allocations):
-        name = "identity.bank.0"
-        values = mx.array([[.5, -.25]], dtype=mx.float32)
-        optimizer = AdamWStateTree(
-            {name: values}, {name: mx.zeros_like(values)},
-            {name: mx.zeros_like(values)},
-            {name: mx.array([0], dtype=mx.uint64)},
-        )
-        policy = PlasticityPolicy("ADAPTIVE", 0, (IdentityRowAge(0, 0, 0),))
-        return _issue_retained_state(optimizer, policy, allocations, 0)
 
     def test_production_api_has_no_caller_schema_snapshot_or_grant_surface(self):
         import bilqis_mlx.learning.atlas_engram_source as source_module
@@ -116,7 +102,7 @@ class SourceQualifiedMotifTests(TestCase):
         parameters = inspect.signature(prepare_source_qualified_motifs).parameters
         for forbidden in (
             "envelopes", "schemas", "snapshot", "source_authorities", "grants",
-            "prior_pending", "prior_observed_uses", "parent",
+            "prior_pending", "prior_observed_uses", "parent", "retained_state",
         ):
             self.assertNotIn(forbidden, parameters)
         self.assertFalse(hasattr(source_module, "_probe_approved_motifs"))
@@ -136,21 +122,6 @@ class SourceQualifiedMotifTests(TestCase):
                 optimizer, PlasticityPolicy("ADAPTIVE", 0, (IdentityRowAge(0, 0, 0),)),
                 approved.candidate.proposed, 0,
             )
-
-    def test_source_qualified_continuation_preserves_retained_slots_and_priority(self):
-        first, _ = self._prepare()
-        retained = self._retained_state(first.candidate.proposed)
-        second, _ = self._prepare(retained_state=retained)
-        self.assertEqual(second.candidate.view.plan.allocated, ())
-        self.assertEqual(
-            second.candidate.proposed.manifest.slots,
-            first.candidate.proposed.manifest.slots,
-        )
-        first_counts = dict(first.candidate.proposed.observed_uses)
-        second_counts = dict(second.candidate.proposed.observed_uses)
-        self.assertEqual(set(second_counts), set(first_counts))
-        self.assertTrue(all(second_counts[key] > count
-                            for key, count in first_counts.items()))
 
     def test_real_source_replay_qualifies_pinned_schema_and_owner_grants(self):
         for grade in ("A", "B", "C"):

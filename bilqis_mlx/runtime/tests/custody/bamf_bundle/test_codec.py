@@ -19,13 +19,13 @@ import numpy as np
 import bilqis_mlx.runtime.bamf_bundle.codec as codec
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError, ErrorBus
-from bilqis_mlx.learning.atlas_candidate import _issue_retained_state
 from bilqis_mlx.learning.atlas_engram import MotifKey, MotifManifest, MotifSlot
 from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
 from bilqis_mlx.runtime.bamf_bundle import load_bamf_bundle, save_bamf_bundle
 
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    NAME, accepted_state, candidate, next_accepted_step, parent_state, shape_patch,
+    NAME, accepted_state, candidate, next_accepted_step, parent_state,
+    rewrite_motif_bundle_fixture, shape_patch,
 )
 
 
@@ -103,11 +103,10 @@ class BamfBundleCodecTests(unittest.TestCase):
             MotifManifest("b" * 64, (MotifSlot(0, key),)),
             ((key.digest, 3),),
         )
-        retained = _issue_retained_state(
-            parent.optimizer, parent.policy, allocations, parent.optimizer_step)
-        source = candidate(retained)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            manifest = save_bamf_bundle(source, self.root / "motif-bundle")
+            manifest = save_bamf_bundle(candidate(parent), self.root / "motif-bundle")
+            manifest = rewrite_motif_bundle_fixture(
+                self.root / "motif-bundle", manifest, allocations)
             loaded = load_bamf_bundle(
                 self.root / "motif-bundle",
                 expected_manifest_sha256=manifest["manifest_sha256"])

@@ -82,3 +82,45 @@ No source artifact was regenerated, no repository dependency changed, and no
 real learner, optimizer, teacher, champion, checkpoint or human-run state was
 mutated. Final acceptance remains the parent #456 exact-head quality/hosted gates
 and fresh pinned merge-readiness review after push/readback.
+
+## Fresh EGM authority repair
+
+Fresh exact-head EGM on `f8d4471607b14052e57385de6cd997f3856f3082`
+found that the retained-state issuer helper was still a raw-component mint: a
+caller that already possessed optimizer, policy, motif-allocation and step values
+could ask that helper to stamp them as retained authority. The joined continuation
+witness also used that helper directly, so CAS preservation was stronger than the
+authority chain the test claimed.
+
+The repair removes that mint rather than hiding it. B07 source preparation is now
+genesis-only at its public surface. Non-genesis source continuation is owned by the
+B13 custody boundary and requires an immutable bundle root plus the exact expected
+manifest SHA-256. B13 validates the manifest, sidecars, motif allocation, policy,
+CAS-or-legacy tensor binding and optimizer step through the existing bundle loader
+before the B07 planner receives the loaded allocation snapshot. Accepted candidate
+transitions may continue such already-authoritative state while preserving the exact
+allocation object. No production API accepts raw non-genesis `CandidateState`, raw
+`MotifAllocationSnapshot`, or raw `(optimizer, policy, allocations, step)` values as
+retained authority.
+
+The joined witness now starts with a serialized immutable custody fixture carrying
+the real source-proposed motif allocation. Production B13 validation rehydrates that
+state, one disposable accepted update preserves the allocation, the updated state is
+serialized again, and the B13 continuation adapter re-enters real pinned source
+qualification from that exact second bundle. This proves custody-bound continuity;
+it does **not** promote B07.1 into B07.2/B07.3 accepted-generation publication
+authority.
+
+Focused repaired proof is **14/14 PASS, zero skips** for custody, retained-state and
+split-entry regressions; the real-source custody/source selection is **13/13 PASS,
+zero skips**. The broadened affected selection is **119/119 PASS, zero skips** across
+B07 key/preparation/transaction owners, retained candidate state, motif reads, B13
+codec/publication/CAS custody, real public-formal source authority and released-frame
+schema authority. Structure, governance, Factory architecture, docs, changed-scope
+smell, error-control, live flow, 13/13 flow regressions and `git diff --check` are
+green on the repaired working tree before the final push.
+
+The same repair also removes the split-module recurrence exposed by #783: the
+retention tests import `CandidateState` only through its canonical public module,
+and the surviving legacy motif-preparation test delegates to the canonical
+decomposed owner rather than patching a private symbol on the old facade.

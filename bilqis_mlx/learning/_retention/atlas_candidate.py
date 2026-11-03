@@ -67,16 +67,22 @@ class CandidateState:
                 _invalid()
 
 
-def _issue_retained_state(optimizer, policy, allocations, optimizer_step):
-    """Internal custody bridge for already authenticated retained motif state."""
+def _load_retained_candidate_state_with_parts(
+        bundle_root, *, expected_manifest_sha256: str):
+    """Rehydrate retained state only from B13-validated immutable custody."""
+    from bilqis_mlx.runtime.bamf_bundle.codec import _load_validated_bundle_parts
+
+    parts = _load_validated_bundle_parts(
+        bundle_root, expected_manifest_sha256=expected_manifest_sha256)
     state = object.__new__(CandidateState)
     for name, value in (
-            ('optimizer', optimizer), ('policy', policy), ('allocations', allocations),
-            ('optimizer_step', optimizer_step), ('schema_version', STATE_SCHEMA),
+            ('optimizer', parts.numerical), ('policy', parts.policy),
+            ('allocations', parts.motif), ('optimizer_step', parts.optimizer_step),
+            ('schema_version', STATE_SCHEMA),
             ('_issuance', _RETAINED_STATE_ISSUER)):
         object.__setattr__(state, name, value)
     state.__post_init__()
-    return state
+    return state, parts
 
 
 @dataclass(frozen=True, init=False)
@@ -188,4 +194,11 @@ def resolve_candidate(candidate: CandidateTransaction, *, accepted: bool) -> Can
     step = candidate.parent.optimizer_step + candidate.update_steps
     if _is_genesis_allocations(candidate.allocations):
         return CandidateState(candidate.optimizer, policy, candidate.allocations, step)
-    return _issue_retained_state(candidate.optimizer, policy, candidate.allocations, step)
+    state = object.__new__(CandidateState)
+    for name, value in (
+            ('optimizer', candidate.optimizer), ('policy', policy),
+            ('allocations', candidate.allocations), ('optimizer_step', step),
+            ('schema_version', STATE_SCHEMA), ('_issuance', _RETAINED_STATE_ISSUER)):
+        object.__setattr__(state, name, value)
+    state.__post_init__()
+    return state

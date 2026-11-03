@@ -30,7 +30,6 @@ from .atlas_engram_transaction import (
     CandidateMotifSnapshot, MotifAllocationSnapshot,
     _prepare_candidate_motif_snapshot,
 )
-from bilqis_mlx.learning.atlas_candidate import CandidateState
 
 APPROVED_MOTIF_SCHEMA = "bilqis.motif-approved-candidate/v1"
 _BOOLEAN_SOURCE_ADAPTERS = (
@@ -117,7 +116,7 @@ def _qualified_motif_inputs(projection, snapshot, source_adapter,
     )
 
 
-def prepare_source_qualified_motifs(
+def _prepare_source_qualified_motifs_with_parent(
     source_adapter: RegisteredSourceAdapter,
     row: dict,
     atlas_selection: AtlasArtifactSelection,
@@ -130,20 +129,19 @@ def prepare_source_qualified_motifs(
     source_seed: int,
     source_each: int,
     budget: MotifBudget,
-    retained_state: CandidateState | None = None,
+    parent: MotifAllocationSnapshot,
     source_profile_parameters: dict | None = None,
     course=None,
 ) -> tuple[ApprovedMotifCandidate, SourceFrontier] | ContextHold:
-    """Replay source owners, pin A03 schemas, then plan B07 candidate slots."""
+    """Pure B07 planning from source owners plus an already qualified parent."""
     if (type(atlas_selection) is not AtlasArtifactSelection
             or type(task_scope) is not TaskScope
             or type(source_frontier) is not SourceFrontier
             or type(policy) is not ContextPolicy
             or type(budget) is not MotifBudget
-            or (retained_state is not None and type(retained_state) is not CandidateState)):
+            or type(parent) is not MotifAllocationSnapshot):
         _invalid("BAMF_MOTIF_SOURCE_AUTHORITY_INVALID")
-    if retained_state is not None:
-        retained_state.__post_init__()
+    parent.__post_init__()
     snapshot = load_pinned_atlas_snapshot(atlas_selection)
     if snapshot.release_sha256 != task_scope.semantic_release:
         _invalid("BAMF_MOTIF_SOURCE_AUTHORITY_INVALID")
@@ -159,11 +157,35 @@ def prepare_source_qualified_motifs(
     projection, issued_frontier = admitted
     qualified = _qualified_motif_inputs(
         projection, snapshot, source_adapter, atlas_selection, source_root, graph)
-    parent = (
-        MotifAllocationSnapshot(MotifManifest(task_scope.semantic_release))
-        if retained_state is None else retained_state.allocations
-    )
     if parent.manifest.semantic_release != task_scope.semantic_release:
         _invalid("BAMF_MOTIF_SOURCE_AUTHORITY_INVALID")
     candidate = _prepare_candidate_motif_snapshot(qualified, parent, budget)
     return ApprovedMotifCandidate(projection.digest, candidate), issued_frontier
+
+
+def prepare_source_qualified_motifs(
+    source_adapter: RegisteredSourceAdapter,
+    row: dict,
+    atlas_selection: AtlasArtifactSelection,
+    *,
+    source_root: str | Path,
+    graph: dict,
+    task_scope: TaskScope,
+    source_frontier: SourceFrontier,
+    policy: ContextPolicy,
+    source_seed: int,
+    source_each: int,
+    budget: MotifBudget,
+    source_profile_parameters: dict | None = None,
+    course=None,
+) -> tuple[ApprovedMotifCandidate, SourceFrontier] | ContextHold:
+    """Replay source owners and plan only from an empty/genesis parent."""
+    parent = MotifAllocationSnapshot(MotifManifest(task_scope.semantic_release))
+    return _prepare_source_qualified_motifs_with_parent(
+        source_adapter, row, atlas_selection,
+        source_root=source_root, graph=graph, task_scope=task_scope,
+        source_frontier=source_frontier, policy=policy,
+        source_seed=source_seed, source_each=source_each, budget=budget,
+        parent=parent, source_profile_parameters=source_profile_parameters,
+        course=course,
+    )

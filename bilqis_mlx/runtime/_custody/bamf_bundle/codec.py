@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import json
 import os
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import bilqis_mlx.runtime.mlx_checkpoint as _mlx_checkpoint
@@ -13,6 +13,22 @@ from .records import (
     SIDECARS, BamfBundleCandidate, BamfGenerationManifest, CompleteStudent,
     canonical, invalid, sha, sidecar_records, validate_sidecars,
 )
+
+
+@dataclass(frozen=True)
+class _ValidatedBundleParts:
+    """One custody-validated bundle read, before CandidateState rehydration."""
+
+    manifest: dict
+    spec: object
+    extents: object
+    provenance: object
+    records: dict
+    hp: object
+    numerical: object
+    motif: object
+    policy: object
+    optimizer_step: int
 
 
 def _write_file(path: Path, raw: bytes) -> str:
@@ -161,9 +177,9 @@ def _tensor_read_path(root: Path, binding: dict) -> tuple[Path, dict]:
                   if key != "object_sha256"} | {"filename": path.name}
 
 
-def load_bamf_bundle(root: Path, *, expected_manifest_sha256: str | None = None) -> CompleteStudent:
-    """Validate manifest and all sidecars before constructing B12 optimizer state."""
-    from bilqis_mlx.learning.atlas_candidate import _issue_retained_state
+def _load_validated_bundle_parts(
+        root: Path, *, expected_manifest_sha256: str | None = None) -> _ValidatedBundleParts:
+    """Read one complete immutable bundle without issuing learning authority."""
     from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, STATE_SCHEMA
     from bilqis_mlx.runtime.checkpoint_outbox import ordinary_outbox_lineage
     from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, GenerationProvenance, ModelTopologySpecV2
@@ -186,11 +202,28 @@ def load_bamf_bundle(root: Path, *, expected_manifest_sha256: str | None = None)
     tensor_path, tensor_binding = _tensor_read_path(root, manifest["tensors"])
     numerical = _mlx_checkpoint.load_bamf_state_payload(
         tensor_path, tensor_binding, spec, extents)
-    retained = _issue_retained_state(
-        numerical, policy, motif, manifest["optimizer"]["step"])
+    return _ValidatedBundleParts(
+        manifest, spec, extents, provenance, records, hp, numerical, motif, policy,
+        manifest["optimizer"]["step"])
+
+
+def load_bamf_bundle(root: Path, *, expected_manifest_sha256: str | None = None) -> CompleteStudent:
+    """Validate manifest and all sidecars before constructing B12 optimizer state."""
+    from bilqis_mlx.learning.atlas_candidate import _load_retained_candidate_state_with_parts
+
+    root = Path(root)
+    if expected_manifest_sha256 is None:
+        manifest_path = root / "manifest.json"
+        if manifest_path.is_symlink() or not manifest_path.is_file():
+            invalid(DataPlaneError.BUNDLE_ROOT_UNSAFE)
+        expected_manifest_sha256 = sha(manifest_path.read_bytes())
+    retained, parts = _load_retained_candidate_state_with_parts(
+        root, expected_manifest_sha256=expected_manifest_sha256)
+    manifest = parts.manifest
     return CompleteStudent(
         manifest["run_id"], manifest["generation"], manifest["parent_manifest_sha256"],
-        manifest["implementation_sha256"], spec, extents, retained, hp, provenance,
-        records["semantic_abi"], records["compiler_features"],
-        records["correction_frontier"], records["teacher_state"],
-        records["evaluation_contract"], manifest["transition"], tuple(records["outbox"]))
+        manifest["implementation_sha256"], parts.spec, parts.extents, retained, parts.hp,
+        parts.provenance, parts.records["semantic_abi"], parts.records["compiler_features"],
+        parts.records["correction_frontier"], parts.records["teacher_state"],
+        parts.records["evaluation_contract"], manifest["transition"],
+        tuple(parts.records["outbox"]))

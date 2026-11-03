@@ -13,7 +13,7 @@ from bilqis_mlx.learning.atlas_engram_transaction import (
 )
 from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree
-from bilqis_mlx.learning._retention.atlas_candidate import (
+from bilqis_mlx.learning.atlas_candidate import (
     CandidateState, CandidateTransaction, begin_candidate, candidate_step, resolve_candidate,
 )
 
