@@ -23,6 +23,12 @@ _CAUSE = "LEXSENSE-59819df75e3137"
 _OCCURRENCE = "LEXSENSE-294d00be074a56"
 _ACTOR = "ATOM-5d7116db8e1508"
 _TIME = "ATOM-ef7cf17b427af9"
+_CAPABILITY_ROOTS = {
+    "WORLD.ACTOR_OF": "ithkuil:ATOM-5d7116db8e1508",
+    "WORLD.BEFORE": "ithkuil:ATOM-ef7cf17b427af9",
+    "WORLD.IS_OCCURRED": "ithkuil:LEXSENSE-294d00be074a56",
+    "WORLD.DIRECT_CAUSE": "ithkuil:LEXSENSE-59819df75e3137",
+}
 _TOKENS = (
     "bamf.world.syntax.actors", "bamf.world.syntax.causes",
     "bamf.world.actor.A0", "bamf.world.actor.A1", "bamf.world.actor.A2",
@@ -230,12 +236,30 @@ def registered_adapter() -> RegisteredSourceAdapter:
             _implementation_sha256(),
             variation_axes=("actor", "time", "state", "direct-cause", "fresh-seed")),
         _CANONICAL_DRAW, _CANONICAL_CHECK,
+        semantic_footprint=semantic_footprint,
     )
+
+
+def semantic_footprint(row: dict) -> tuple[str, ...]:
+    """Return the exact source-qualified root owned by one world capability."""
+    if not isinstance(row, dict):
+        _fail("WORLD_RULE_SEMANTIC_FOOTPRINT_INVALID")
+    capability = row.get("capability")
+    record = row.get("record")
+    query = record.get("query") if isinstance(record, dict) else None
+    expected_query = capability.removeprefix("WORLD.") if capability in _CAPABILITY_ROOTS else None
+    if (expected_query is None or record.get("task") != DIALECT
+            or not isinstance(query, dict) or query.get("kind") != expected_query):
+        _fail("WORLD_RULE_SEMANTIC_FOOTPRINT_INVALID")
+    return (_CAPABILITY_ROOTS[capability],)
+
+
 def require_registered_source(source: RegisteredSourceAdapter) -> None:
     """Reject descriptor cloning with substituted executable behavior."""
     expected = registered_adapter()
     if (type(source) is not RegisteredSourceAdapter
             or source.descriptor != expected.descriptor
             or source.draw is not _CANONICAL_DRAW
-            or source.check is not _CANONICAL_CHECK):
+            or source.check is not _CANONICAL_CHECK
+            or source.semantic_footprint is not semantic_footprint):
         _fail("WORLD_RULE_SOURCE_IMPLEMENTATION_SUBSTITUTED")

@@ -1,13 +1,16 @@
 from __future__ import annotations
-
 from dataclasses import replace
 import unittest
 from unittest.mock import patch
-
 from bilqis_mlx.factory.adapters import RegisteredSourceAdapter, SourceAdapterRegistry
 from bilqis_mlx.factory.model import CapabilityDefinition, ConstructionProgram, SourceAdapter
 from bilqis_mlx.factory.release import compile_factory_release
+from bilqis_mlx.factory.curriculum_definition import from_legacy_course
+from bilqis_mlx.factory.executable_release import compile_executable_factory_release
+from bilqis_mlx.factory.execution import CurriculumProfile
 from bilqis_mlx.factory.generation import execute_release_family_program
+from bilqis_mlx.factory.live_answers import live_answer_registry
+from bilqis_mlx.factory.teaching import describe_delivered_teaching
 from bilqis_mlx.factory.skos_curriculum.registry import (
     IMPLEMENTATION_UNCOVERED, PROGRAM_BOUND, BoundFamilyProgram,
     FamilyProgramRegistry, RegisteredFamilyProgram, bind_existing_family_program,
@@ -15,9 +18,7 @@ from bilqis_mlx.factory.skos_curriculum.registry import (
     execute_bound_family_program, uncovered_family_obligations,
 )
 from bilqis_mlx.factory.skos_curriculum.inventory import _inventory_source_families
-from bilqis_mlx.factory.skos_curriculum.curriculum import (
-    LearnedFrontier, _compile_semantic_curriculum_snapshot,
-)
+from bilqis_mlx.factory.skos_curriculum.curriculum import LearnedFrontier, _compile_semantic_curriculum_snapshot
 from bilqis_mlx.factory.skos_curriculum.lesson_compiler import (
     _compile_source_constructive_lessons_snapshot,
 )
@@ -29,9 +30,7 @@ from bilqis_mlx.source_adapters.world_rules import (
     GENERATOR as WORLD_GENERATOR, ORACLE as WORLD_ORACLE,
     projected_graph, registered_adapter as world_adapter,
 )
-from bilqis_mlx.factory.skos_curriculum.programs.tests.fixtures import (
-    ADAPTER, GENERATOR, ORACLE, _source_registry, _family, _capability, _program,
-)
+from bilqis_mlx.factory.skos_curriculum.programs.tests.fixtures import (ADAPTER, GENERATOR, ORACLE, _source_registry, _family, _capability, _program, _stable_binding_stub)
 class FamilyExecutionTests(unittest.TestCase):
     def test_qualified_world_fixture_uses_common_factory_release_boundary(self):
         graph = projected_graph(registry_graph())
@@ -58,12 +57,19 @@ class FamilyExecutionTests(unittest.TestCase):
                    (tuple(capability.id for capability in capabilities),)),),
             "bamf-a08-world-fixture/v1", "2" * 64, "3" * 64)
         release = compile_factory_release(course, source_registry)
+        curriculum, source_bindings = from_legacy_course(course)
+        executable = compile_executable_factory_release(curriculum, source_bindings,
+            CurriculumProfile.full(), source_registry, live_answer_registry(),
+            source_root=None, graph=graph, verification_seed=420)
         census = _inventory_source_families(_snapshot())
         frontier = LearnedFrontier(census.semantic_release)
         candidate = _compile_semantic_curriculum_snapshot(
             _snapshot(), (), frontier)
         lessons = _compile_source_constructive_lessons_snapshot(_snapshot())
-        with patch.multiple(
+        with patch(
+            "bilqis_mlx.factory.curriculum.capability_identity."
+            "bind_factory_release_capability_identity",
+            side_effect=_stable_binding_stub), patch.multiple(
             "bilqis_mlx.factory.skos_curriculum.programs.binding",
             inventory_source_families=lambda _selection: census,
             compile_semantic_curriculum=lambda *_args: candidate,
@@ -86,7 +92,11 @@ class FamilyExecutionTests(unittest.TestCase):
         self.assertTrue(all(
             {row["gold"] for row in artifact.rows} == {"TRUE", "FALSE"}
             for artifact in artifacts))
-
+        deliveries = tuple(describe_delivered_teaching(executable,
+            artifact.capability_id, "source.direct/" + artifact.capability_id,
+            artifact.rows) for artifact in artifacts)
+        self.assertTrue(all(delivery.specimen_ids for delivery in deliveries))
+        self.assertTrue(all(artifact.learning_state == "LEARNING_UNVERIFIED" for artifact in artifacts))
     def test_qualified_world_rejects_provider_and_answer_modality_substitution(self):
         graph = projected_graph(registry_graph())
         adapter = world_adapter()
@@ -141,7 +151,6 @@ class FamilyExecutionTests(unittest.TestCase):
                         "WORLD.BEFORE", adapter.descriptor.adapter_id,
                         WORLD_GENERATOR, WORLD_ORACLE, ()),
                     SourceAdapterRegistry((adapter,)))
-
     def test_qualified_world_rejects_substituted_family_program_registry(self):
         graph = projected_graph(registry_graph())
         adapter = world_adapter()
@@ -181,14 +190,13 @@ class FamilyExecutionTests(unittest.TestCase):
                     construct_kwargs={"graph": graph, "seed": 420, "each": 1},
                     check_kwargs={"graph": graph})
             shadowed = default_family_program_registry()
-            shadowed.require = lambda _family_id: forged
-            artifact = execute_release_family_program(
-                release, source_registry, shadowed, object(), frontier,
-                capability.id,
-                construct_kwargs={"graph": graph, "seed": 420, "each": 1},
-                check_kwargs={"graph": graph})
+            with patch("bilqis_mlx.factory.curriculum.capability_identity.bind_factory_release_capability_identity", side_effect=_stable_binding_stub):
+                artifact = execute_release_family_program(
+                    release, source_registry, shadowed, object(), frontier,
+                    capability.id,
+                    construct_kwargs={"graph": graph, "seed": 420, "each": 1},
+                    check_kwargs={"graph": graph})
             self.assertEqual(artifact.capability_id, capability.id)
-
     def test_production_execution_rejects_noncanonical_family_registry(self):
         course, source_registry = synthetic_release_inputs()
         release = compile_factory_release(course, source_registry)
@@ -202,7 +210,6 @@ class FamilyExecutionTests(unittest.TestCase):
             execute_release_family_program(
                 release, source_registry, FamilyProgramRegistry((family,)),
                 object(), frontier, release.capabilities[0].capability_id)
-
     def test_release_family_execution_runs_registered_constructor_and_checker(self):
         family = RegisteredFamilyProgram(
             "fixture_family", ("fixture.adapter/v1",),
@@ -217,7 +224,6 @@ class FamilyExecutionTests(unittest.TestCase):
             FamilyProgramRegistry((family,)), binding,
             construct_args=(7,), check_args=(7,))
         self.assertEqual(artifact, {"answer": 7})
-
     def test_release_family_execution_rejects_checker_disagreement(self):
         family = RegisteredFamilyProgram(
             "fixture_family", ("fixture.adapter/v1",),

@@ -9,11 +9,13 @@ from bilqis_mlx.factory.model import CapabilityDefinition, ConstructionProgram, 
 from bilqis_mlx.factory.release import compile_factory_release
 from bilqis_mlx.factory.generation import execute_release_family_program
 from bilqis_mlx.factory.skos_curriculum.registry import (
-    IMPLEMENTATION_UNCOVERED, PROGRAM_BOUND, BoundFamilyProgram,
+    IMPLEMENTATION_UNCOVERED, PROGRAM_BOUND, BoundFamilyProgram, FamilyProgramKey,
     FamilyProgramRegistry, RegisteredFamilyProgram, bind_existing_family_program,
     bind_factory_release_families, default_family_program_registry,
-    uncovered_family_obligations,
+    family_program_coverage, uncovered_family_obligations,
 )
+from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.semantics.foundation.core import Signature
 from bilqis_mlx.factory.skos_curriculum.inventory import _inventory_source_families
 from bilqis_mlx.factory.skos_curriculum.curriculum import (
     LearnedFrontier, _compile_semantic_curriculum_snapshot,
@@ -74,6 +76,23 @@ class FamilyContractsTests(unittest.TestCase):
             registry.require("qualified_world_model").checker_ref,
             "bilqis.factory.source-registry-check/v1")
 
+    def test_behavior_registry_requires_exact_typed_key(self):
+        registry = default_family_program_registry()
+        unary = FamilyProgramKey(
+            "boolean_composition", Signature(("Boolean",), "Boolean"),
+            ("binary",))
+        binary = FamilyProgramKey(
+            "boolean_composition",
+            Signature(("Boolean", "Boolean"), "Boolean"), ("binary",))
+        self.assertNotEqual(unary.canonical, binary.canonical)
+        self.assertEqual(registry.require_key(unary).family_id,
+                         "boolean_composition")
+        self.assertEqual(registry.require_key(binary).family_id,
+                         "boolean_composition")
+        with self.assertRaises(BilqisError):
+            registry.require_key(FamilyProgramKey(
+                "boolean_composition", unary.signature, ("integer",)))
+
 
     def test_missing_constructor_and_wrong_checker_fail_before_ready(self):
         registry = FamilyProgramRegistry((_family(),))
@@ -113,6 +132,27 @@ class FamilyContractsTests(unittest.TestCase):
             {(item.obligation.semantic_id, item.obligation.family_id)
              for item in coverage.dispositions},
             {(item.semantic_id, item.family_id) for item in census.obligations})
+
+    def test_supported_family_rows_are_not_reported_as_uncovered_debt(self):
+        census = _inventory_source_families(_snapshot())
+        target = next(item for item in census.obligations
+                      if item.family_id == "boolean_composition")
+        coverage = family_program_coverage(
+            census, ((target.semantic_id, target.family_id),))
+        supported = tuple(
+            item for item in coverage.dispositions
+            if item.obligation == target)
+        unsupported = tuple(
+            item for item in coverage.dispositions
+            if item.obligation != target)
+        self.assertTrue(supported)
+        self.assertTrue(all(
+            item.implementation_status == PROGRAM_BOUND and item.reason is None
+            for item in supported))
+        self.assertTrue(all(
+            item.implementation_status == IMPLEMENTATION_UNCOVERED
+            and item.reason == item.obligation.reason
+            for item in unsupported))
 
 
     def test_learning_state_cannot_be_forged(self):
