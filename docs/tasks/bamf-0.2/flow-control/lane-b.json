@@ -1,7 +1,7 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "48315ee7bae3caa7d5ac279128c79217b9178d16",
+  "observed_unified": "deaa8b9dbd277993f884abeea7413f9cb799d945",
   "updated_at": "2026-11-03T08:50:15.707219+00:00",
   "exception": null,
   "items": [
@@ -189,12 +189,12 @@
     },
     {
       "issue": 769,
-      "pr": 776,
+      "pr": null,
       "state": "TURNED_IN",
-      "head_sha": "ef5a89ebfc520068a01507aa05f41e43f32b4922",
-      "summary": "Post-merge hard-link ownership proof follow-up is turned in through PR #776; production custody from merged PR #773 is unchanged, and this branch adds the missing single-link acceptance witness plus evidence wording.",
+      "head_sha": "1cbb66d12da1375c40ba10138f4326f234640c9d",
+      "summary": "PR #776 is externally merged as 41373ef911bb37c971a21fa3c7b540b923abf853; its scoped contribution is consumed by reviewed unified.",
       "resume_trigger": null,
-      "merged_pr": 773,
+      "merged_pr": 776,
       "preserved_branch": "codex/769-hardlink-proof-20261103"
     },
     {
@@ -202,9 +202,18 @@
       "pr": null,
       "state": "ACTIVE",
       "head_sha": "48315ee7bae3caa7d5ac279128c79217b9178d16",
-      "summary": "Consume verified #756 paired future-group proof after accepted #586 producer integration; verify #449 against current B05/B11.",
+      "summary": "Consume #756 future-group proof with accepted B11 producer authority.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-b-449-depth-proof-20261103"
+    },
+    {
+      "issue": 778,
+      "pr": 779,
+      "state": "TURNED_IN",
+      "head_sha": "551f9d7f6172113b2c2698178c870cf61c7c35a0",
+      "summary": "Canonical test-import repair #778 is EGM-Passed and turned in through PR #779; file source-positive1/1, unchanged producer16/16, no real student mutation.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b-778-test-imports-20261103"
     }
   ]
 }
