@@ -100,12 +100,12 @@
     },
     {
       "issue": 586,
-      "pr": 762,
+      "pr": null,
       "state": "TURNED_IN",
-      "head_sha": "c99e7f669dc650073e34a924725ecc2c44dae0d0",
-      "summary": "B11.1a passed fresh whole-candidate EGM on exact implementation head c99e7f66 after consuming #738/#747/#748 and is turned in through non-draft PR #762; hosted CI is the remaining integration gate.",
+      "head_sha": "d87859c75177cd807aaaa649efb8b64fa05105b6",
+      "summary": "B11.1a passed fresh whole-candidate EGM, hosted CI and human merge through PR #762; unified consumed it at 2d4b99f3.",
       "resume_trigger": null,
-      "closed_pr": 640,
+      "closed_pr": 762,
       "preserved_branch": "codex/b11-586-source-h0-20261030"
     },
     {
