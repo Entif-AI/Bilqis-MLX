@@ -12,24 +12,16 @@ from bilqis_mlx.semantics import frame_schema as public_schema
 from bilqis_mlx.semantics.frame_schema import FrameSchema
 
 
-FAMILIES = {
-    "compiler": (
-        "bilqis_mlx.semantics.frame_compiler",
-        "bilqis_mlx.semantics._frame_compiler",
-    ),
-    "forest": (
-        "bilqis_mlx.semantics.partial_visible_forest",
-        "bilqis_mlx.semantics._partial_forest",
-    ),
-    "schema": (
-        "bilqis_mlx.semantics.frame_schema",
-        "bilqis_mlx.semantics._frame_schema",
-    ),
-    "released": (
-        "bilqis_mlx.semantics.released_frame_schemas",
-        "bilqis_mlx.semantics._released_schemas",
-    ),
-}
+FAMILIES = (
+    ("compiler", "bilqis_mlx.semantics.frame_compiler",
+     "bilqis_mlx.semantics._frame_compiler"),
+    ("forest", "bilqis_mlx.semantics.partial_visible_forest",
+     "bilqis_mlx.semantics._partial_forest"),
+    ("schema", "bilqis_mlx.semantics.frame_schema",
+     "bilqis_mlx.semantics._frame_schema"),
+    ("released", "bilqis_mlx.semantics.released_frame_schemas",
+     "bilqis_mlx.semantics._released_schemas"),
+)
 
 
 def _code_objects(code):
@@ -151,7 +143,7 @@ class PublicFacadeDependencyTests(unittest.TestCase):
     def test_extracted_owner_dependencies_are_late_bound(self):
         unresolved = {
             label: _family_routes(facade, package)
-            for label, (facade, package) in FAMILIES.items()
+            for label, facade, package in FAMILIES
         }
         unresolved = {
             label: routes for label, routes in unresolved.items() if routes
