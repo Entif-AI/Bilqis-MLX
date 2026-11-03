@@ -7,7 +7,7 @@ invented alongside an untrusted candidate schema.
 """
 from __future__ import annotations
 
-from ._public_identity.module_identity import restore_public_module
+from ._public_identity.module_identity import restore_public_module as _restore_public_module
 
 from dataclasses import asdict, dataclass
 import hashlib
@@ -54,4 +54,4 @@ for _public in (
     _load_pinned_released_frame_schemas, lookup_source_pinned_frame_schema, verify_source_pinned_frame_schema,
     verify_source_pinned_frame_schema_bytes,
 ):
-    restore_public_module(_public, __name__)
+    _restore_public_module(_public, __name__)

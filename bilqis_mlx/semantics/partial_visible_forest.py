@@ -1,7 +1,7 @@
 """A05.4 source-owned validation for causally partial visible frame forests."""
 from __future__ import annotations
 
-from ._public_identity.module_identity import restore_public_module
+from ._public_identity.module_identity import restore_public_module as _restore_public_module
 
 from dataclasses import dataclass
 import re
@@ -56,4 +56,4 @@ for _public in (
     PartialVisibleForestReceipt, _source_tree_index, _visible_forest_frames,
     _hidden_parent_provenance, _validate_hidden_parent_current_authority,
 ):
-    restore_public_module(_public, __name__)
+    _restore_public_module(_public, __name__)

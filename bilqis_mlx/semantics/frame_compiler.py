@@ -6,7 +6,7 @@ No assessment labels, future source suffix or mutable cache state is consumed.
 """
 from __future__ import annotations
 
-from ._public_identity.module_identity import restore_public_module
+from ._public_identity.module_identity import restore_public_module as _restore_public_module
 
 from dataclasses import asdict, dataclass, replace
 from enum import Enum
@@ -103,4 +103,4 @@ for _public in (
     CompiledFrameSegments, compile_lawful_segments, compile_prefix_rows,
     reconstruct,
 ):
-    restore_public_module(_public, __name__)
+    _restore_public_module(_public, __name__)
