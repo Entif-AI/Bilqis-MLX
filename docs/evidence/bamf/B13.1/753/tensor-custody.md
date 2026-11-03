@@ -1,7 +1,8 @@
 # Tensor content-addressed custody: issue #753
 
 The candidate consumes unified `dfc0c7586c23b6477c08d4db486ade3deeb79fae`
-through synchronized Lane B and preserves the existing issue implementation
+through synchronized Lane B; the final sync also consumes unified
+`338a3c5263772566502af70d731b95af1d91a81e`. It preserves the existing issue implementation
 `349ac665880dbdd545cddd0ec8e50817095d73b1`. IPR-0220 governs. Only disposable
 fixtures execute; real student, own AdamW, teacher and original checkpoints remain
 human-owned. This repair does not establish full B13 learning acceptance.
