@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "2d4b99f3b7f8f82857028a7c1f31c1e5da61b23b",
-  "updated_at": "2026-11-03T07:39:32.080169Z",
+  "observed_unified": "53655a7a5d513403bcd14e9ffd2e5577411c5832",
+  "updated_at": "2026-11-03T09:19:15Z",
   "exception": null,
   "items": [
     {
@@ -16,6 +16,15 @@
       "preserved_branch": "feat/bamf-a08-3-420-20261101",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
       "close_reason": "EGM-Failed; substantive remediation #758 precedes lifecycle remediation #737"
+    },
+    {
+      "issue": 758,
+      "pr": 777,
+      "state": "TURNED_IN",
+      "head_sha": "fe4dcd0b21a3de8e47c0bcf43f9681a92b6a556f",
+      "summary": "A08.3 rule qualification and typed Factory-family remediation is turned in through PR #777 after focused proof and scoped independent EGM; final exact-head review follows PR inventory bookkeeping.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/758-oracle-proof-20261102"
     },
     {
       "issue": 745,
