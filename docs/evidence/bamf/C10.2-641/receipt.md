@@ -8,10 +8,10 @@ has been consumed without reverting subsequent reviewed B05 changes.
 ## Current acceptance
 
 The original extraction already landed via #652. This candidate adds only the
-public `depth_parameter_view.__module__` identity repair and its pickle regression
+public factory/selector module-identity repairs and their pickle regressions
 to current production/test sources. `verify_current_integration.py` compares every
 current direct depth production/test file against the immutable consumed unified
-commit. It permits exactly that metadata line and literal regression; any other
+commit. It permits exactly three metadata lines and two literal regressions; any other
 source change, missing/additional file or structural-target failure rejects.
 `current-integration.json` additionally binds all inspected bytes and both new
 verification helpers. These checks preserve the accepted source-selection,
@@ -24,10 +24,23 @@ identity must not be claimed for the changed current B05 implementation. No qual
 baseline, original definition digest, assertion or threshold was weakened.
 
 Executed proof: historical `PRESERVATION_RECEIPT_OK`; current depth CPU suite
-**15 passed, zero skips**; historical/current verifier adversaries **9 passed**;
+**16 passed, zero skips**; historical/current verifier adversaries **9 passed**;
 current exact-overlay receipt passes. Historical production/test inventories retain
 15/27 original definitions. Current owners remain below 240 lines with at most
 12 direct Python files. Historical counts below describe their pinned snapshot.
+
+## Selector identity remediation #766
+
+Fresh pinned codebase-details EGM at `cc8d36f0` found one Major: the reviewed
+successor had relocated both public selectors without retaining their module
+metadata. Comprehension found no defects. Regression reproduced two protocol-0
+pickle mismatches before repair; two module assignments restore exact historical
+public globals. The separate #766 issue branch comes from synchronized Lane C;
+repair `306d8e0f` is consumed here as `5002b7dc`. Source-aware execution bodies,
+function signatures and authority checks remain unchanged. The current verifier
+now also checks all nine historical public class/function identities at runtime,
+not merely source overlay bytes. Parent #641 owns the next whole-candidate EGM;
+the failed earlier review remains evidence, not a current PASS.
 
 ## Fresh-environment reproduction
 
@@ -45,7 +58,7 @@ C641_PY="$C641_WORK/runtime/bin/python"
 "$C641_PY" -m pip install mlx==0.32.4 numpy==2.5.4 cryptography==50.0.2 \
   -r "$C641_REPO/lib/ithkuil/requirements-semantic.txt"
 "$C641_PY" -B -m unittest discover -s docs/evidence/bamf/C10.2-641 -p 'test_*.py' -v
-"$C641_PY" -B docs/evidence/bamf/C10.2-641/verify_current_integration.py --check
+PYTHONPATH=. "$C641_PY" -B docs/evidence/bamf/C10.2-641/verify_current_integration.py --check
 "$C641_PY" -B - <<'PYCPU'
 import mlx.core as mx, runpy, sys
 mx.set_default_device(mx.cpu)

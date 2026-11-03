@@ -5,13 +5,15 @@ import json
 from pathlib import Path
 import subprocess
 
-from verify_preservation import require_receipt
+from verify_preservation import require_receipt, verify_imports_and_pickle
 
 
 BASE = 'dfc0c7586c23b6477c08d4db486ade3deeb79fae'
 ROOTS = ('bilqis_mlx/runtime/_depth', 'bilqis_mlx/runtime/tests/depth')
 OWNER = ROOTS[0] + '/depth_contracts.py'
 TEST = ROOTS[1] + '/test_depth_contracts.py'
+SELECTION = ROOTS[0] + '/depth_selection.py'
+SELECTION_TEST = ROOTS[1] + '/test_depth_source_selection.py'
 ANCHOR = 'DepthParameterView.__module__ = "bilqis_mlx.runtime.block_attnres"\n'
 IDENTITY = 'depth_parameter_view.__module__ = "bilqis_mlx.runtime.block_attnres"\n'
 REGRESSION = '''    def test_parameter_view_factory_keeps_public_pickle_identity(self):
@@ -20,6 +22,18 @@ REGRESSION = '''    def test_parameter_view_factory_keeps_public_pickle_identity
         expected = b'cbilqis_mlx.runtime.block_attnres\\ndepth_parameter_view\\np0\\n.'
         self.assertIs(pickle.loads(expected), block_attnres.depth_parameter_view)
         self.assertEqual(pickle.dumps(block_attnres.depth_parameter_view, protocol=0), expected)
+
+'''
+
+SELECTOR_REGRESSION = '''    def test_public_selectors_keep_pickle_identities(self):
+        import pickle
+        from bilqis_mlx.runtime import block_attnres
+        for name in ('depth_select', 'depth_select_with_diagnostics'):
+            with self.subTest(name=name):
+                value = getattr(block_attnres, name)
+                expected = ('cbilqis_mlx.runtime.block_attnres\\n' + name + '\\np0\\n.').encode()
+                self.assertIs(pickle.loads(expected), value)
+                self.assertEqual(pickle.dumps(value, protocol=0), expected)
 
 '''
 
@@ -34,6 +48,15 @@ def expected_overlay(path, source):
         if source.count(anchor) != 1 or REGRESSION in source:
             raise ValueError('unexpected regression baseline')
         return source.replace(anchor, anchor + REGRESSION)
+    if path == SELECTION:
+        return source + (
+            'depth_select.__module__ = "bilqis_mlx.runtime.block_attnres"\n'
+            'depth_select_with_diagnostics.__module__ = "bilqis_mlx.runtime.block_attnres"\n')
+    if path == SELECTION_TEST:
+        anchor = 'class DepthSourceSelectionTests(TestCase):\n'
+        if source.count(anchor) != 1 or SELECTOR_REGRESSION in source:
+            raise ValueError('unexpected selector regression baseline')
+        return source.replace(anchor, anchor + SELECTOR_REGRESSION)
     return source
 
 
@@ -64,7 +87,8 @@ def verify():
         path = Path(__file__).with_name(name)
         hashes[str(path.relative_to(Path.cwd()) if path.is_absolute() else path)] = (
             hashlib.sha256(path.read_bytes()).hexdigest())
-    return {'accepted_unified': BASE, 'allowed_delta': [OWNER, TEST],
+    return {'accepted_unified': BASE, 'allowed_delta': [OWNER, TEST, SELECTION, SELECTION_TEST],
+            'import_pickle_identities': verify_imports_and_pickle(),
             'file_lines': sizes, 'inspected_file_sha256': hashes}
 
 
