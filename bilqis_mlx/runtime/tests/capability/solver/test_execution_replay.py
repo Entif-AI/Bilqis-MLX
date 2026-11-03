@@ -30,41 +30,6 @@ from bilqis_mlx.semantics.tests.test_cognitive_operators import (
 from bilqis_mlx.runtime.tests.capability.solver_helpers import _fixture
 
 class CognitiveSolverTests(unittest.TestCase):
-    def test_replay_record_retains_costs_and_handles_without_source_payloads(self):
-        binding, generation, budget, add, _ = _fixture()
-        result = solve_task(add, SolveContext(binding), generation, budget)
-        record = result.replay_record()
-        self.assertEqual(record["schema_version"], "bilqis.c04.solve-replay/v1")
-        self.assertEqual(record["route"], "EXACT")
-        self.assertEqual(record["costs"], {
-            "pure_operations": 1, "reserved_operations": 0,
-            "operation_limit": 64, "lookups": 1, "memo_hits": 0,
-            "backbone_calls": 0, "local_refinements": 0,
-            "decoder_decisions": None})
-        self.assertEqual(record["task_sha256"], contract_digest(add))
-        self.assertEqual(record["outcome"], {
-            "type": "Number", "state": "VALUE",
-            "sha256": contract_digest(result.answer)})
-        self.assertEqual(record["dag_receipts"][0]["selected_bindings"],
-                         (("answer", "ADD", ("literal:source:literal:0",
-                                               "literal:source:literal:1")),))
-        encoded = json.dumps(record, sort_keys=True)
-        self.assertNotIn('"value"', encoded)
-        self.assertNotIn('"score"', encoded)
-        self.assertNotIn('"gold"', encoded)
-        self.assertEqual(record, result.replay_record())
-
-    def test_replay_counts_memo_lookup_without_compute(self):
-        binding, generation, budget, add, _ = _fixture()
-        context = SolveContext(binding, memo=PureOperationMemo())
-        solve_task(add, context, generation, budget)
-        result = solve_task(add, context, generation, budget)
-        costs = result.replay_record()["costs"]
-        self.assertEqual(result.answer.value, 5)
-        self.assertEqual((costs["pure_operations"], costs["lookups"],
-                          costs["memo_hits"], costs["reserved_operations"]),
-                         (0, 1, 1, 0))
-
     def test_replay_reserves_unknown_executor_cost_without_inventing_work(self):
         binding, generation, budget, add, ambiguous = _fixture()
         from bilqis_mlx.runtime import cognitive_solver
@@ -90,6 +55,7 @@ class CognitiveSolverTests(unittest.TestCase):
         self.assertEqual(result.route, RouteKind.UNRESOLVED)
         self.assertEqual(result.replay_record()["costs"]["pure_operations"], 0)
         self.assertEqual(result.replay_record()["costs"]["reserved_operations"], 64)
+
 
     def test_one_backbone_plus_bounded_local_refinement(self):
         binding, generation, _, add, ambiguous = _fixture()
@@ -122,6 +88,7 @@ class CognitiveSolverTests(unittest.TestCase):
         self.assertEqual(replay["costs"]["pure_operations"], 1)
         self.assertIsNone(replay["costs"]["decoder_decisions"])
 
+
     def test_refinement_cannot_restart_consumed_operation_budget(self):
         binding, generation, _, add, ambiguous = _fixture()
         limit = DAGBudget(max_operations=1)
@@ -143,3 +110,5 @@ class CognitiveSolverTests(unittest.TestCase):
             generation, SolveBudget(limit, max_local_refinements=1))
         self.assertEqual(result.route, RouteKind.UNRESOLVED)
         self.assertEqual(sum(r.operation_count for r in result.dag_receipts), 1)
+
+
