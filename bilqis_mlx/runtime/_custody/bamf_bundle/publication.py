@@ -12,6 +12,9 @@ from pathlib import Path
 
 from bilqis_mlx.data_plane import DataPlaneError, data_plane
 from .codec import load_bamf_bundle, save_bamf_bundle, validate_bamf_bundle_custody
+from .package_import_transition import (
+    is_package_import_transition, require_issued_package_import_transition,
+)
 from .records import (
     BAMF_POINTER_SCHEMA, BamfBundleCandidate, CompleteStudent, canonical, invalid, sha,
 )
@@ -174,6 +177,14 @@ def _validate_parent_transition(run_dir: Path, pointer: dict | None, candidate: 
             or parent.generation != pointer["generation"]
             or parent.parent_manifest_sha256 != pointer["parent_manifest_sha256"]):
         invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
+    if is_package_import_transition(candidate.transition):
+        require_issued_package_import_transition(candidate.transition)
+        if (parent.topology.digest != candidate.topology.digest
+                or parent.extents.digest != candidate.extents.digest
+                or candidate.retained_state.optimizer_step != parent.retained_state.optimizer_step):
+            invalid("BAMF_GENERATION_TRANSITION_INVALID")
+        reconcile_bamf_outbox(run_dir, parent)
+        return
     kind = ("MODEL_SWAP" if parent.topology.digest != candidate.topology.digest else
             "PARAMETER_EXTENSION" if parent.extents.digest != candidate.extents.digest else
             "RETAINED_CANDIDATE")
