@@ -1,5 +1,6 @@
 """Source-bound world rule fixtures use explicit facts, never inferred causes."""
 import copy
+from dataclasses import replace
 import hashlib
 from pathlib import Path
 import unittest
@@ -8,7 +9,9 @@ from unittest.mock import patch
 from bilqis_mlx.live_grade_c import registry_graph
 from bilqis_mlx.source_adapters.world_rules import (
     CAPABILITIES, draw, check, projected_graph, registered_adapter, verify_source,
+    require_registered_source, semantic_footprint,
 )
+from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.vocabulary_growth import digest
 
 
@@ -92,6 +95,32 @@ class QualifiedWorldSourceTests(unittest.TestCase):
                 {**row, 'source_contract_sha256': 'f' * 64}):
             with self.subTest(changed=changed):
                 self.assertFalse(check(changed, graph=self.graph))
+
+    def test_generator_gold_is_independent_of_poisoned_checker_oracle(self):
+        from bilqis_mlx.source_adapters import world_rules
+        for capability in CAPABILITIES:
+            with self.subTest(capability=capability):
+                with patch.object(world_rules, "answer", return_value="FALSE"):
+                    rows = draw(graph=self.graph, capability=capability,
+                                seed=741, each=4)
+                    self.assertEqual(tuple(row["gold"] for row in rows),
+                                     ("TRUE", "FALSE", "TRUE", "FALSE"))
+                    self.assertFalse(check(rows[0], graph=self.graph))
+                    self.assertTrue(check(rows[1], graph=self.graph))
+
+    def test_semantic_footprint_is_source_owned_and_provider_pinned(self):
+        expected = {
+            "WORLD.ACTOR_OF": "ithkuil:ATOM-5d7116db8e1508",
+            "WORLD.BEFORE": "ithkuil:ATOM-ef7cf17b427af9",
+            "WORLD.IS_OCCURRED": "ithkuil:LEXSENSE-294d00be074a56",
+            "WORLD.DIRECT_CAUSE": "ithkuil:LEXSENSE-59819df75e3137",
+        }
+        for capability, root in expected.items():
+            row = draw(graph=self.graph, capability=capability, seed=71, each=1)[0]
+            self.assertEqual(semantic_footprint(row), (root,))
+        with self.assertRaises(BilqisError):
+            require_registered_source(replace(
+                registered_adapter(), semantic_footprint=lambda _row: ("forged",)))
 
     def test_time_order_and_indirect_chain_do_not_establish_direct_cause(self):
         from bilqis_mlx.source_adapters._world.oracle import answer

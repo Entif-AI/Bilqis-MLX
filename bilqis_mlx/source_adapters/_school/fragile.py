@@ -119,7 +119,8 @@ def _fragile_verify_row(row, capability):
 
 def _fragile_structural_capability(rows, limit):
     capabilities = {row.get("capability") for row in rows}
-    if len(capabilities) != 1 or limit < 4 or limit % 2:
+    if (len(capabilities) != 1 or limit < len(TRUTH_PATTERNS)
+            or limit % BOOLEAN_SIGNATURE_OPERAND_COUNT):
         raise ErrorBus.legacy_error(SOURCE.REPLAY.PRESERVATION_U7C_STRUCTURAL_REQUEST_INVALID)
     return next(iter(capabilities))
 

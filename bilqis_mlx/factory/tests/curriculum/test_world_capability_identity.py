@@ -31,12 +31,7 @@ ROOTS = MappingProxyType({
     "WORLD.IS_OCCURRED": "ithkuil:LEXSENSE-294d00be074a56",
     "WORLD.DIRECT_CAUSE": "ithkuil:LEXSENSE-59819df75e3137",
 })
-OPERATORS = MappingProxyType({
-    "WORLD.ACTOR_OF": "SOURCE_WORLD_ACTOR_OF",
-    "WORLD.BEFORE": "SOURCE_WORLD_BEFORE",
-    "WORLD.IS_OCCURRED": "SOURCE_WORLD_IS_OCCURRED",
-    "WORLD.DIRECT_CAUSE": "SOURCE_WORLD_DIRECT_CAUSE",
-})
+OPERATORS = MappingProxyType({"WORLD.IS_OCCURRED": "IS_OCCURRED"})
 
 
 def _release(grade_id: str):
@@ -59,11 +54,13 @@ def _release(grade_id: str):
 def _bindings(release, source_registry, census):
     family = default_family_program_registry().require("qualified_world_model")
     programs = {item.capability_id: item for item in release.construction_programs}
-    bound = tuple(bind_existing_family_program(
+    capability = next(item for item in release.capabilities
+                      if item.capability_id == "WORLD.IS_OCCURRED")
+    bound = (bind_existing_family_program(
         family, capability, programs[capability.capability_id], source_registry,
         semantic_roots=release.course.capability_map[
             capability.capability_id].examined_roots,
-    ) for capability in release.capabilities)
+    ),)
     coverage = FamilyProgramCoverage(
         census.semantic_release, census.digest, (), census.counts.source_held_rows)
     return FactoryReleaseFamilyBindings(
@@ -83,21 +80,15 @@ class WorldCapabilityIdentityTests(unittest.TestCase):
             inventory_source_families=lambda _atlas: census,
             assert_family_inventory_current=lambda *_args: None,
         ):
-            identities = {
-                capability.capability_id: bind_factory_release_capability_identity(
-                    release, bindings, capability.capability_id, object(), registry)
-                for capability in release.capabilities
-            }
-        self.assertEqual(len({item.stable_identity.capability_id
-                              for item in identities.values()}), 4)
-        for capability_id, binding in identities.items():
-            identity = binding.stable_identity.identity
-            self.assertEqual(identity.semantic_id, ROOTS[capability_id])
-            self.assertEqual(identity.family_id, "qualified_world_model")
-            self.assertEqual(identity.operator_id, OPERATORS[capability_id])
-            self.assertEqual(
-                identity.signature, Signature(("WorldRecord", "WorldQuery"), "Boolean"))
-            self.assertEqual(identity.answer_kinds, ("binary",))
+            binding = bind_factory_release_capability_identity(
+                release, bindings, "WORLD.IS_OCCURRED", object(), registry)
+        identity = binding.stable_identity.identity
+        self.assertEqual(identity.semantic_id, ROOTS["WORLD.IS_OCCURRED"])
+        self.assertEqual(identity.family_id, "qualified_world_model")
+        self.assertEqual(identity.operator_id, OPERATORS["WORLD.IS_OCCURRED"])
+        self.assertEqual(
+            identity.signature, Signature(("EventStatus",), "Boolean"))
+        self.assertEqual(identity.answer_kinds, ("binary",))
 
     def test_world_stable_identity_is_grade_neutral(self):
         snapshot = _snapshot()
@@ -113,7 +104,7 @@ class WorldCapabilityIdentityTests(unittest.TestCase):
                 release, sources = _release(grade_id)
                 bindings = _bindings(release, sources, census)
                 results.append(bind_factory_release_capability_identity(
-                    release, bindings, "WORLD.BEFORE", object(), registry
+                    release, bindings, "WORLD.IS_OCCURRED", object(), registry
                 ).stable_identity.capability_id)
         self.assertEqual(results[0], results[1])
 

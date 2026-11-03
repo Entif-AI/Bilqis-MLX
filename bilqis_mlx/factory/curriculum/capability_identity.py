@@ -106,7 +106,10 @@ def _authoritative_operator(
             _fail(_SOURCE_AUTHORITY_DRIFT)
         if taught_roots != (source_root,) or semantic_roots != (source_root,):
             _fail(_FORMAL_COORDINATE_DRIFT)
-        return source_root, operator_id, profile.identity.signature
+        operator = operator_registry.resolve(operator_id)
+        if operator.signature != profile.identity.signature:
+            _fail(_SIGNATURE_AUTHORITY_MISSING)
+        return source_root, operator.operator_id, operator.signature
     adapter = next(
         (item for item in SOURCE_FAMILY_ADAPTERS if item.family_id == family_id),
         None)

@@ -59,20 +59,19 @@ class SemanticRuleRegistryTests(unittest.TestCase):
         declaration = world_rule_profile(operators)
         self.assertIsNone(declaration.source_contract_sha256)
         self.assertEqual(
-            declaration.identity.operator_id, "SOURCE_WORLD_QUERY")
+            declaration.identity.operator_id, "IS_OCCURRED")
         self.assertEqual(
             declaration.identity.signature,
-            Signature(("WorldRecord", "WorldQuery"), "Boolean"))
+            Signature(("EventStatus",), "Boolean"))
         profile = world_rule_profile(operators, registered_adapter())
         self.assertEqual(profile.coverage, WORLD_COVERAGE)
         self.assertEqual(profile.source_adapter_id, "source.bamf.qualified-world/v1")
         self.assertEqual(
             profile.operator_ids,
-            ("BEFORE", "IS_OCCURRED", "ROLE_LOOKUP"))
+            ("IS_OCCURRED",))
         self.assertEqual(
             profile.source_capability_ids,
-            ("WORLD.ACTOR_OF", "WORLD.BEFORE", "WORLD.DIRECT_CAUSE",
-             "WORLD.IS_OCCURRED"))
+            ("WORLD.IS_OCCURRED",))
         self.assertEqual(
             profile.source_contract_sha256,
             registered_adapter().descriptor.implementation_sha256)

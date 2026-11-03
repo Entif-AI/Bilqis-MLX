@@ -9,11 +9,13 @@ from bilqis_mlx.factory.model import CapabilityDefinition, ConstructionProgram, 
 from bilqis_mlx.factory.release import compile_factory_release
 from bilqis_mlx.factory.generation import execute_release_family_program
 from bilqis_mlx.factory.skos_curriculum.registry import (
-    IMPLEMENTATION_UNCOVERED, PROGRAM_BOUND, BoundFamilyProgram,
+    IMPLEMENTATION_UNCOVERED, PROGRAM_BOUND, BoundFamilyProgram, FamilyProgramKey,
     FamilyProgramRegistry, RegisteredFamilyProgram, bind_existing_family_program,
     bind_factory_release_families, default_family_program_registry,
-    uncovered_family_obligations,
+    family_program_coverage, uncovered_family_obligations,
 )
+from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.semantics.foundation.core import Signature
 from bilqis_mlx.factory.skos_curriculum.inventory import _inventory_source_families
 from bilqis_mlx.factory.skos_curriculum.curriculum import (
     LearnedFrontier, _compile_semantic_curriculum_snapshot,
@@ -74,6 +76,23 @@ class FamilyContractsTests(unittest.TestCase):
             registry.require("qualified_world_model").checker_ref,
             "bilqis.factory.source-registry-check/v1")
 
+    def test_behavior_registry_requires_exact_typed_key(self):
+        registry = default_family_program_registry()
+        unary = FamilyProgramKey(
+            "boolean_composition", Signature(("Boolean",), "Boolean"),
+            ("binary",))
+        binary = FamilyProgramKey(
+            "boolean_composition",
+            Signature(("Boolean", "Boolean"), "Boolean"), ("binary",))
+        self.assertNotEqual(unary.canonical, binary.canonical)
+        self.assertEqual(registry.require_key(unary).family_id,
+                         "boolean_composition")
+        self.assertEqual(registry.require_key(binary).family_id,
+                         "boolean_composition")
+        with self.assertRaises(BilqisError):
+            registry.require_key(FamilyProgramKey(
+                "boolean_composition", unary.signature, ("integer",)))
+
 
     def test_missing_constructor_and_wrong_checker_fail_before_ready(self):
         registry = FamilyProgramRegistry((_family(),))
@@ -113,6 +132,75 @@ class FamilyContractsTests(unittest.TestCase):
             {(item.obligation.semantic_id, item.obligation.family_id)
              for item in coverage.dispositions},
             {(item.semantic_id, item.family_id) for item in census.obligations})
+
+    def test_supported_family_rows_are_not_reported_as_uncovered_debt(self):
+        census = _inventory_source_families(_snapshot())
+        target = next(item for item in census.obligations
+                      if item.family_id == "boolean_composition")
+        coverage = family_program_coverage(
+            census, ((target.semantic_id, target.family_id),))
+        supported = tuple(
+            item for item in coverage.dispositions
+            if item.obligation == target)
+        unsupported = tuple(
+            item for item in coverage.dispositions
+            if item.obligation != target)
+        self.assertTrue(supported)
+        self.assertTrue(all(
+            item.implementation_status == PROGRAM_BOUND and item.reason is None
+            for item in supported))
+        self.assertTrue(all(
+            item.implementation_status == IMPLEMENTATION_UNCOVERED
+            and item.reason == item.obligation.reason
+            for item in unsupported))
+
+    def test_missing_typed_key_does_not_abort_unrelated_bound_work(self):
+        course, source_registry = synthetic_release_inputs()
+        release = compile_factory_release(course, source_registry)
+        census = _inventory_source_families(_snapshot())
+        frontier = LearnedFrontier(census.semantic_release)
+        candidate = _compile_semantic_curriculum_snapshot(_snapshot(), (), frontier)
+        lessons = _compile_source_constructive_lessons_snapshot(_snapshot())
+        key = FamilyProgramKey(
+            "fixture_family", Signature(("Boolean",), "Boolean"), ("binary",))
+        registry = FamilyProgramRegistry((RegisteredFamilyProgram(
+            "fixture_family", ("fixture.adapter/v1",),
+            "fixture.constructor/v1", "fixture.checker/v1",
+            lambda *args, **kwargs: args, lambda *args, **kwargs: True,
+            program_keys=(key,)),))
+
+        def identity(_release, _bindings, capability_id, *_):
+            signature = (key.signature if capability_id == "A.C0"
+                         else Signature(("Boolean", "Boolean"), "Boolean"))
+            value = type("Identity", (), {
+                "semantic_id": f"fixture:{capability_id}",
+                "family_id": "fixture_family",
+                "signature": signature,
+                "answer_kinds": ("binary",),
+            })()
+            return type("Binding", (), {
+                "stable_identity": type("Stable", (), {"identity": value})()
+            })()
+
+        with patch.multiple(
+            "bilqis_mlx.factory.skos_curriculum.programs.binding",
+            inventory_source_families=lambda _selection: census,
+            compile_semantic_curriculum=lambda *_args: candidate,
+            compile_source_constructive_lessons=lambda _selection: lessons,
+            assert_family_inventory_current=lambda *_args: None,
+            assert_curriculum_candidate_current=lambda *_args: None,
+            assert_source_lesson_set_current=lambda *_args: None,
+        ), patch(
+            "bilqis_mlx.factory.curriculum.capability_identity."
+            "bind_factory_release_capability_identity",
+            side_effect=identity,
+        ):
+            bindings = bind_factory_release_families(
+                release, registry, source_registry, object(), frontier)
+
+        self.assertEqual(
+            {item.capability_id for item in bindings.bound_programs}, {"A.C0"})
+        self.assertEqual(len(bindings.coverage.dispositions), len(census.obligations))
 
 
     def test_learning_state_cannot_be_forged(self):

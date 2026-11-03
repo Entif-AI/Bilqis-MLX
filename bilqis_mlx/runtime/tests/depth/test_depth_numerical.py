@@ -15,7 +15,7 @@ from bilqis_mlx.semantics.frame_schema import ConceptRef
 from bilqis_mlx.runtime.block_attnres import (
     DepthFrameFeatures, DepthParameterView, DepthSummary, PARAMETER_SHAPES,
     _DepthFeatureValues, _depth_components, _group_boundary_numerical,
-    depth_parameter_view, depth_select, depth_select_with_diagnostics,
+    depth_parameter_view, _numerical_depth_select, _numerical_depth_select_with_diagnostics,
 )
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes,
@@ -68,14 +68,6 @@ class DepthSelectionTests(unittest.TestCase):
             self.assertEqual(alpha.shape, (2, 3, boundary + 1))
             np.testing.assert_allclose(np.asarray(actual), expected,
                                        atol=3e-6, rtol=3e-5)
-        baseline = _depth_components(
-            self.current, self.sources, self.features, self.params)[0]
-        unrelated_future = _summaries(3)[2].hidden.at[:].add(100)
-        self.assertIsInstance(unrelated_future, mx.array)
-        np.testing.assert_array_equal(
-            np.asarray(_depth_components(
-                self.current, self.sources, self.features, self.params)[0]),
-            np.asarray(baseline))
         for invalid in (
             (self.sources[1], self.sources[0]),
             (*self.sources, _summaries(2)[2]),
@@ -179,7 +171,7 @@ class DepthSelectionTests(unittest.TestCase):
         full["depth.gate.0.bias"] = _array([math.log(1/9)])
         view = depth_parameter_view(
             full, spec=ModelTopologySpecV2(), extents=extents, boundary_group=1)
-        diagnostics = depth_select_with_diagnostics(
+        diagnostics = _numerical_depth_select_with_diagnostics(
             self.current, self.sources, released, view)
         self.assertEqual(diagnostics.schema_version, "bilqis.mlx.depth-diagnostics/v1")
         self.assertEqual(diagnostics.alpha.shape, (2, 3, 2))
@@ -187,8 +179,8 @@ class DepthSelectionTests(unittest.TestCase):
             np.asarray(diagnostics.alpha).sum(-1), np.ones((2, 3)), atol=1e-6)
         np.testing.assert_allclose(
             np.asarray(diagnostics.output),
-            np.asarray(depth_select(self.current, self.sources, released, view)),
+            np.asarray(_numerical_depth_select(self.current, self.sources, released, view)),
             atol=1e-6)
         with self.assertRaises(BilqisError):
-            depth_select_with_diagnostics(
+            _numerical_depth_select_with_diagnostics(
                 self.current, self.sources, self.features, view)

@@ -1,4 +1,7 @@
-"""Stable public compatibility module paths over compartmentalized implementations."""
-from pathlib import Path
+"""Readers for immutable historical semantic releases and capability aliases."""
+from pathlib import Path as _Path
 
-__path__.append(str(Path(__file__).with_name("legacy")))
+# Preserve historical module identities while grouping their physical owners.
+__path__.extend(str(_Path(__file__).parent / group)
+                for group in ("_history", "_recovery"))
+del _Path

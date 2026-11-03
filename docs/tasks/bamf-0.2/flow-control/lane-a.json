@@ -1,9 +1,40 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "92bdff370e9be3d0c64eb4ffe300d2448f53d6a1",
-  "updated_at": "2026-11-02T05:10:00Z",
+  "observed_unified": "53655a7a5d513403bcd14e9ffd2e5577411c5832",
+  "updated_at": "2026-11-03T09:19:15Z",
   "exception": null,
-  "items": [],
-  "note": "No Lane A implementation leaf is marked ACTIVE in the current flow-control snapshot. Readiness remains governed by live issue dependencies and the lane execution contract."
+  "items": [
+    {
+      "issue": 420,
+      "pr": null,
+      "state": "WAITING",
+      "head_sha": "2c80599dfac07f3e5eaf5d82adf74411dc21b826",
+      "summary": "A08.3 later failed full pinned EGM acceptance on the preserved candidate; #758 owns the substantive rule qualification/Factory integration repair and #737 remains the later lifecycle refresh.",
+      "resume_trigger": "Remediation #758 is resolved first; then #737 refreshes the repaired candidate onto current reviewed unified and the complete candidate receives fresh merge-readiness EGM.",
+      "closed_pr": 703,
+      "preserved_branch": "feat/bamf-a08-3-420-20261101",
+      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
+      "close_reason": "EGM-Failed; substantive remediation #758 precedes lifecycle remediation #737"
+    },
+    {
+      "issue": 758,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "eb4ff18fa30c5cefe924fd69ad8628409710293c",
+      "summary": "PR #777 is externally merged as 48315ee7bae3caa7d5ac279128c79217b9178d16; its scoped contribution is consumed by reviewed unified.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/758-oracle-proof-20261102",
+      "merged_pr": 777
+    },
+    {
+      "issue": 745,
+      "state": "TURNED_IN",
+      "head_sha": "335361d60a3f4d7050acf01c471f1f94d93a0294",
+      "summary": "PR #765 is externally merged as dfc0c7586c23b6477c08d4db486ade3deeb79fae; historical scoped turn-in is consumed by reviewed unified.",
+      "resume_trigger": null,
+      "merged_pr": 765,
+      "pr": null
+    }
+  ]
 }
