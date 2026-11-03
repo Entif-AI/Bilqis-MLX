@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Mapping
 
@@ -11,6 +11,9 @@ from bilqis_mlx.data_plane import DataPlaneError
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 
 from .motif_codec import snapshot_from_record, snapshot_to_record
+from .package_import_transition import (
+    PACKAGE_IMPORT_TRANSITION_SCHEMA, validate_package_import_transition,
+)
 from .sidecar_contracts import validate_identity_sidecars
 
 BAMF_BUNDLE_SCHEMA = "bilqis.mlx.bamf-generation-bundle/v2"
@@ -26,9 +29,7 @@ SIDECARS = MappingProxyType({
     "evaluation_contract": "evaluation-contract.json",
     "outbox": "outbox.json",
 })
-_TRANSITIONS = frozenset({
-    "INITIAL", "RETAINED_CANDIDATE", "PACKAGE_IMPORT", "PARAMETER_EXTENSION", "MODEL_SWAP",
-})
+_TRANSITIONS = frozenset({"INITIAL", "RETAINED_CANDIDATE", "PARAMETER_EXTENSION", "MODEL_SWAP"})
 
 
 @dataclass(frozen=True)
@@ -49,63 +50,6 @@ class BamfBundleCandidate:
     evaluation_contract: Mapping
     transition: Mapping
     outbox: tuple
-
-
-_PACKAGE_IMPORT_ISSUER = object()
-
-
-@dataclass(frozen=True, init=False)
-class PackageImportBundleCandidate(BamfBundleCandidate):
-    """B13 publication handle issued only after the C12/B12 import authority path."""
-
-    package_sha256: str
-    reset_policy_sha256: str
-    acceptance_sha256: str
-    clearance_sha256: str
-    _issuance: object = field(init=False, repr=False, compare=False)
-
-    def __init__(self, *args, **kwargs):
-        invalid("BAMF_PACKAGE_IMPORT_AUTHORITY_REQUIRED")
-
-    def __post_init__(self):
-        lineage = self.evaluation_contract.get("package_import") \
-            if isinstance(self.evaluation_contract, Mapping) else None
-        if (getattr(self, "_issuance", None) is not _PACKAGE_IMPORT_ISSUER
-                or not all(_hex(value) for value in (
-                    self.package_sha256, self.reset_policy_sha256,
-                    self.acceptance_sha256, self.clearance_sha256))
-                or not isinstance(lineage, Mapping)
-                or lineage.get("schema") != "bilqis.c12.package-import-lineage/v1"
-                or lineage.get("origin") != "PACKAGE_IMPORT"
-                or lineage.get("parent_manifest_sha256") != self.parent_manifest_sha256
-                or lineage.get("package_sha256") != self.package_sha256
-                or lineage.get("reset_policy_sha256") != self.reset_policy_sha256
-                or lineage.get("c05_decision_sha256") != self.acceptance_sha256
-                or lineage.get("a12_clearance_sha256") != self.clearance_sha256
-                or self.transition.get("kind") != "PACKAGE_IMPORT"
-                or self.transition.get("invalidate_derived_caches") is not True):
-            invalid("BAMF_PACKAGE_IMPORT_AUTHORITY_INVALID")
-
-
-def _issue_package_import_candidate(
-        candidate: BamfBundleCandidate, *, package_sha256: str,
-        reset_policy_sha256: str, acceptance_sha256: str,
-        clearance_sha256: str) -> PackageImportBundleCandidate:
-    if type(candidate) is not BamfBundleCandidate:
-        invalid("BAMF_PACKAGE_IMPORT_CANDIDATE_INVALID")
-    issued = object.__new__(PackageImportBundleCandidate)
-    for item in fields(BamfBundleCandidate):
-        object.__setattr__(issued, item.name, getattr(candidate, item.name))
-    for name, value in (
-        ("package_sha256", package_sha256),
-        ("reset_policy_sha256", reset_policy_sha256),
-        ("acceptance_sha256", acceptance_sha256),
-        ("clearance_sha256", clearance_sha256),
-        ("_issuance", _PACKAGE_IMPORT_ISSUER),
-    ):
-        object.__setattr__(issued, name, value)
-    issued.__post_init__()
-    return issued
 
 
 @dataclass(frozen=True)
@@ -191,12 +135,17 @@ def validate_generation_identity(run_id, generation, parent, implementation):
 
 
 def validate_transition(generation: int, transition: Mapping) -> None:
+    if isinstance(transition, Mapping) and transition.get("schema") == PACKAGE_IMPORT_TRANSITION_SCHEMA:
+        if generation == 0:
+            invalid("BAMF_GENERATION_TRANSITION_INVALID")
+        validate_package_import_transition(transition)
+        return
     if (set(transition) != {"schema", "kind", "invalidate_derived_caches"}
             or transition.get("schema") != TRANSITION_SCHEMA
             or transition.get("kind") not in _TRANSITIONS
             or type(transition.get("invalidate_derived_caches")) is not bool
             or (generation == 0) != (transition["kind"] == "INITIAL")
-            or (transition["kind"] in {"PACKAGE_IMPORT", "PARAMETER_EXTENSION", "MODEL_SWAP"}
+            or (transition["kind"] in {"PARAMETER_EXTENSION", "MODEL_SWAP"}
                 and not transition["invalidate_derived_caches"])):
         invalid("BAMF_GENERATION_TRANSITION_INVALID")
 
@@ -227,8 +176,7 @@ def sidecar_records(candidate: BamfBundleCandidate) -> dict:
     from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters
     from bilqis_mlx.runtime.checkpoint_outbox import ordinary_outbox_lineage, with_delivery_outbox
     from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, GenerationProvenance, ModelTopologySpecV2
-    if (type(candidate) not in (
-            BamfBundleCandidate, PackageImportBundleCandidate, CompleteStudent)
+    if (type(candidate) not in (BamfBundleCandidate, CompleteStudent)
             or type(candidate.retained_state) is not CandidateState
             or type(candidate.topology) is not ModelTopologySpecV2
             or type(candidate.extents) is not GenerationExtents

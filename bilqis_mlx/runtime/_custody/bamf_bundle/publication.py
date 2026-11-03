@@ -12,9 +12,11 @@ from pathlib import Path
 
 from bilqis_mlx.data_plane import DataPlaneError, data_plane
 from .codec import load_bamf_bundle, save_bamf_bundle, validate_bamf_bundle_custody
+from .package_import_transition import (
+    is_package_import_transition, require_issued_package_import_transition,
+)
 from .records import (
-    BAMF_POINTER_SCHEMA, BamfBundleCandidate, CompleteStudent,
-    PackageImportBundleCandidate, canonical, invalid, sha,
+    BAMF_POINTER_SCHEMA, BamfBundleCandidate, CompleteStudent, canonical, invalid, sha,
 )
 
 
@@ -175,22 +177,22 @@ def _validate_parent_transition(run_dir: Path, pointer: dict | None, candidate: 
             or parent.generation != pointer["generation"]
             or parent.parent_manifest_sha256 != pointer["parent_manifest_sha256"]):
         invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
-    structural_kind = ("MODEL_SWAP" if parent.topology.digest != candidate.topology.digest else
-                       "PARAMETER_EXTENSION" if parent.extents.digest != candidate.extents.digest else
-                       None)
-    kind = structural_kind or candidate.transition.get("kind")
-    if kind not in {"RETAINED_CANDIDATE", "PACKAGE_IMPORT", "PARAMETER_EXTENSION", "MODEL_SWAP"}:
-        invalid("BAMF_GENERATION_TRANSITION_INVALID")
+    if is_package_import_transition(candidate.transition):
+        require_issued_package_import_transition(candidate.transition)
+        if (parent.topology.digest != candidate.topology.digest
+                or parent.extents.digest != candidate.extents.digest
+                or candidate.retained_state.optimizer_step != parent.retained_state.optimizer_step):
+            invalid("BAMF_GENERATION_TRANSITION_INVALID")
+        reconcile_bamf_outbox(run_dir, parent)
+        return
+    kind = ("MODEL_SWAP" if parent.topology.digest != candidate.topology.digest else
+            "PARAMETER_EXTENSION" if parent.extents.digest != candidate.extents.digest else
+            "RETAINED_CANDIDATE")
     parent_step = parent.retained_state.optimizer_step
     candidate_step = candidate.retained_state.optimizer_step
-    if (candidate_step < parent_step
-            or (kind == "RETAINED_CANDIDATE" and candidate_step <= parent_step)
-            or (kind == "PACKAGE_IMPORT" and candidate_step != parent_step)):
+    if (candidate_step < parent_step or
+            (kind == "RETAINED_CANDIDATE" and candidate_step <= parent_step)):
         invalid("BAMF_REJECTED_CANDIDATE_NOT_GENERATION")
-    if kind == "PACKAGE_IMPORT":
-        if type(candidate) is not PackageImportBundleCandidate:
-            invalid("BAMF_PACKAGE_IMPORT_AUTHORITY_REQUIRED")
-        candidate.__post_init__()
     if candidate.transition.get("kind") != kind:
         invalid("BAMF_GENERATION_TRANSITION_INVALID")
     reconcile_bamf_outbox(run_dir, parent)
@@ -199,11 +201,6 @@ def _validate_parent_transition(run_dir: Path, pointer: dict | None, candidate: 
 def publish_bamf_generation(run_dir: Path, candidate: BamfBundleCandidate, *,
                             reserve_gib: float = 100.0) -> dict:
     """Publish once; retries converge across staging, rename, pointer and outbox crashes."""
-    if (isinstance(candidate, BamfBundleCandidate)
-            and candidate.transition.get("kind") == "PACKAGE_IMPORT"):
-        if type(candidate) is not PackageImportBundleCandidate:
-            invalid("BAMF_PACKAGE_IMPORT_AUTHORITY_REQUIRED")
-        candidate.__post_init__()
     run_dir = Path(run_dir)
     stage = _stage(run_dir)
     try:

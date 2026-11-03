@@ -9,11 +9,7 @@ from bilqis_mlx.runtime.bamf_bundle import publication
 from .contracts import PackageBinding, require
 
 
-def apply_from_current_generation(package, run_dir):
-    """Build a disposable delta against the exact locked published generation."""
-    from .delta import (ReceiverTensor, _apply_delta_tensors, _issue_candidate,
-                        receiver_parameter_schema_digest, receiver_weight_digest)
-
+def _load_current_generation(run_dir):
     run_dir = Path(run_dir)
     with publication._pointer_lock(run_dir):
         pointer = publication._read_pointer(run_dir / 'bamf-state.json')
@@ -25,13 +21,27 @@ def apply_from_current_generation(package, run_dir):
                 and student.generation == pointer['generation']
                 and student.parent_manifest_sha256 == pointer['parent_manifest_sha256'],
                 'receiver generation pointer drift')
-        tensors = tuple(ReceiverTensor(name, tuple(array.shape), array.tobytes())
-                        for name, value in sorted(student.retained_state.optimizer.parameters.items())
-                        for array in (np.asarray(value, dtype='<f4'),))
-        binding = PackageBinding(
-            receiver_weight_digest(tensors), receiver_parameter_schema_digest(tensors),
-            student.topology.digest, student.provenance.release_digest,
-            student.extents.active_semantic_digest, student.extents.factor_map_digest,
-            student.extents.motif_key_map_digest)
-        result = _apply_delta_tensors(package, binding, tensors)
-        return _issue_candidate(pointer['manifest_sha256'], package, binding, tensors, result)
+        return pointer, student
+
+
+def _receiver_tensors(student):
+    from .delta import ReceiverTensor
+    return tuple(ReceiverTensor(name, tuple(array.shape), array.tobytes())
+                 for name, value in sorted(student.retained_state.optimizer.parameters.items())
+                 for array in (np.asarray(value, dtype='<f4'),))
+
+
+def apply_from_current_generation(package, run_dir):
+    """Build a disposable delta against the exact locked published generation."""
+    from .delta import (_apply_delta_tensors, _issue_candidate,
+                        receiver_parameter_schema_digest, receiver_weight_digest)
+
+    pointer, student = _load_current_generation(run_dir)
+    tensors = _receiver_tensors(student)
+    binding = PackageBinding(
+        receiver_weight_digest(tensors), receiver_parameter_schema_digest(tensors),
+        student.topology.digest, student.provenance.release_digest,
+        student.extents.active_semantic_digest, student.extents.factor_map_digest,
+        student.extents.motif_key_map_digest)
+    result = _apply_delta_tensors(package, binding, tensors)
+    return _issue_candidate(pointer['manifest_sha256'], package, binding, tensors, result)

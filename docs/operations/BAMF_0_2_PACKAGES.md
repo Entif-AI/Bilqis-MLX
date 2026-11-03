@@ -18,7 +18,7 @@ allowlist, revoked payload digests and sorted unique revocation-lineage digests.
 Every artifact, including fixtures and behavioral evidence, must appear in the
 public allowlist. Revocation overrides that allowlist. These are embedded clearance
 assertions, not independent source authority. Export and staging therefore grant no
-adoption right. `adopt_screened_delta(...)` requires an A12
+adoption right. `publish_screened_delta_import(...)` requires an A12
 `ExportClearanceReceipt`, verifies its detached signature through C09's
 host-provisioned source-authority registry, binds it to the live A12 selection and
 source frontier, and requires the package `SourceRights` to be its exact portable
@@ -111,7 +111,7 @@ After the disposable candidate has been evaluated with the complete solver,
 decision or evidence object. A rejected candidate is discarded and the current B13
 pointer remains unchanged.
 
-`adopt_screened_delta(...)` is the durable acceptance boundary. It re-reads the
+`publish_screened_delta_import(...)` is the durable acceptance boundary. It re-reads the
 current B13 receiver, rejects stale parent drift, verifies current A12 authority,
 and asks B12 to create a sealed package-import transaction. B12 accepts tensor
 changes only inside the package's declared slices. It resets `m` and `v` on those

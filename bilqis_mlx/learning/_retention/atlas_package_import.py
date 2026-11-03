@@ -1,207 +1,200 @@
-"""B12 custody for an accepted package-import state transition."""
+"""B12 package-import state custody, distinct from native training candidates."""
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from hashlib import sha256
 import json
-import re
+from types import MappingProxyType
 
 import mlx.core as mx
 import numpy as np
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
+from bilqis_mlx.learning.atlas_candidate import CandidateState
+from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
 from bilqis_mlx.runtime.atlas_optimizer import AdamWStateTree
-from .atlas_candidate import CandidateState
-from .atlas_plasticity import IdentityRowAge, PlasticityPolicy
 
 
-IMPORT_TRANSACTION_SCHEMA = "bilqis.mlx.package-import-transaction/v1"
-IMPORT_RESET_SCHEMA = "bilqis.mlx.package-import-reset/v1"
-IMPORT_ORIGIN = "PACKAGE_IMPORT"
-_ISSUER = object()
-_IDENTITY = re.compile(r"identity\.bank\.(\d+)\Z")
+RESET_POLICY_SCHEMA = "bilqis.mlx.package-import-reset-policy/v1"
+TRANSACTION_SCHEMA = "bilqis.mlx.package-import-transaction/v1"
+RESET_POLICY = MappingProxyType({
+    "schema": RESET_POLICY_SCHEMA,
+    "parameters": "IMPORT_DECLARED_SLICES_ONLY",
+    "moments": "ZERO_CHANGED_ELEMENTS",
+    "update_counts": "ZERO_NATIVE_COUNT_CELLS",
+    "identity_row_ages": "ZERO_CHANGED_ROWS",
+    "accepted_fast_since_full": "ZERO",
+    "mode": "PRESERVE",
+    "allocations": "PRESERVE",
+    "optimizer_step": "PRESERVE",
+})
+RESET_POLICY_SHA256 = sha256(json.dumps(
+    dict(RESET_POLICY), sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+).encode("utf-8")).hexdigest()
+_TRANSACTION_ISSUER = object()
 
 
-def _invalid() -> None:
+def _invalid():
     ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
 
 
-def _sha(value) -> bool:
-    return isinstance(value, str) and len(value) == 64 and all(c in "0123456789abcdef" for c in value)
-
-
 @dataclass(frozen=True, order=True)
-class ImportResetSlice:
+class ImportSlice:
     parameter_name: str
     start: int
     stop: int
 
     def __post_init__(self):
-        if (not isinstance(self.parameter_name, str) or not self.parameter_name
+        if (type(self.parameter_name) is not str or not self.parameter_name
                 or type(self.start) is not int or type(self.stop) is not int
                 or not 0 <= self.start < self.stop):
             _invalid()
 
 
-def reset_policy_sha256(slices: tuple[ImportResetSlice, ...]) -> str:
-    _validate_slices(slices)
-    payload = {
-        "schema": IMPORT_RESET_SCHEMA,
-        "origin": IMPORT_ORIGIN,
-        "changed_slices": [
-            {"parameter_name": item.parameter_name, "start": item.start, "stop": item.stop}
-            for item in slices
-        ],
-        "reset": {
-            "optimizer_m": "changed-slice-zero",
-            "optimizer_v": "changed-slice-zero",
-            "optimizer_count": "changed-count-owner-zero",
-            "identity_row_age": "changed-row-zero",
-            "accepted_fast_since_full": 0,
-        },
-    }
-    raw = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
-    return sha256(raw).hexdigest()
-
-
 @dataclass(frozen=True, init=False)
 class PackageImportTransaction:
+    """One B12-owned import proposal; publication remains B13-owned."""
+
     parent: CandidateState
-    retained: CandidateState
-    parent_manifest_sha256: str
-    package_sha256: str
-    reset_slices: tuple[ImportResetSlice, ...]
+    candidate: CandidateState
+    changed_slices: tuple[ImportSlice, ...]
+    changed_identity_rows: tuple[tuple[int, int], ...]
     reset_policy_sha256: str
-    origin: str = IMPORT_ORIGIN
-    schema_version: str = IMPORT_TRANSACTION_SCHEMA
+    schema_version: str = TRANSACTION_SCHEMA
     _issuance: object = field(init=False, repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
         _invalid()
 
     def __post_init__(self):
-        if (getattr(self, "_issuance", None) is not _ISSUER
+        if (getattr(self, "_issuance", None) is not _TRANSACTION_ISSUER
                 or type(self.parent) is not CandidateState
-                or type(self.retained) is not CandidateState
-                or not _sha(self.parent_manifest_sha256) or not _sha(self.package_sha256)
-                or self.origin != IMPORT_ORIGIN
-                or self.schema_version != IMPORT_TRANSACTION_SCHEMA):
+                or type(self.candidate) is not CandidateState
+                or self.changed_slices != _canonical_slices(self.changed_slices)
+                or self.changed_identity_rows != tuple(sorted(set(self.changed_identity_rows)))
+                or self.reset_policy_sha256 != RESET_POLICY_SHA256
+                or self.schema_version != TRANSACTION_SCHEMA):
             _invalid()
         self.parent.__post_init__()
-        self.retained.__post_init__()
-        _validate_slices(self.reset_slices)
-        if (self.reset_policy_sha256 != reset_policy_sha256(self.reset_slices)
-                or self.retained.optimizer_step != self.parent.optimizer_step
-                or self.retained.allocations != self.parent.allocations
-                or self.retained.policy.mode != self.parent.policy.mode
-                or self.retained.policy.accepted_fast_since_full != 0):
+        self.candidate.__post_init__()
+        if (self.candidate.allocations is not self.parent.allocations
+                or self.candidate.optimizer_step != self.parent.optimizer_step
+                or self.candidate.policy.mode != self.parent.policy.mode
+                or self.candidate.policy.accepted_fast_since_full != 0):
             _invalid()
 
 
-def _validate_slices(slices):
-    if (not isinstance(slices, tuple) or not slices
-            or any(type(item) is not ImportResetSlice for item in slices)
-            or slices != tuple(sorted(set(slices)))):
+def _canonical_slices(value) -> tuple[ImportSlice, ...]:
+    if (type(value) is not tuple or not value
+            or any(type(item) is not ImportSlice for item in value)):
         _invalid()
-    spans = {}
-    for item in slices:
+    ordered = tuple(sorted(value))
+    previous = {}
+    for item in ordered:
         item.__post_init__()
-        prior = spans.setdefault(item.parameter_name, [])
-        if any(not (item.stop <= start or stop <= item.start) for start, stop in prior):
+        stop = previous.get(item.parameter_name, -1)
+        if item.start < stop:
             _invalid()
-        prior.append((item.start, item.stop))
+        previous[item.parameter_name] = item.stop
+    return ordered
 
 
-def _reset_array(value, spans):
-    raw = np.asarray(value).reshape(-1).copy()
-    for start, stop in spans:
-        raw[start:stop] = 0
-    return mx.array(raw.reshape(value.shape), dtype=value.dtype)
-
-
-def _rows(parameter, spans):
-    if parameter.ndim < 1:
-        return ()
-    width = parameter.size // parameter.shape[0]
-    return tuple(sorted({row for start, stop in spans
-                         for row in range(start // width, (stop - 1) // width + 1)}))
-
-
-def _reset_count(count, parameter, spans):
-    if count.shape == ():
-        return mx.array(0, dtype=mx.uint64)
-    raw = np.asarray(count).copy()
-    for row in _rows(parameter, spans):
-        raw[row] = 0
-    return mx.array(raw, dtype=mx.uint64)
-
-
-def _validate_parameter_delta(parent, imported, spans):
-    previous = np.asarray(parent).reshape(-1)
-    current = np.asarray(imported).reshape(-1)
-    changed = np.zeros(previous.shape, dtype=bool)
-    for start, stop in spans:
-        changed[start:stop] = True
-    if not np.array_equal(previous[~changed], current[~changed]):
+def _validate_parameters(parent: CandidateState, parameters: Mapping[str, mx.array]):
+    if not isinstance(parameters, Mapping) or set(parameters) != set(parent.optimizer.parameters):
         _invalid()
-
-
-def _reset_policy(parent: PlasticityPolicy, parameters, spans_by_name):
-    touched = set()
-    for name, spans in spans_by_name.items():
-        match = _IDENTITY.fullmatch(name)
-        if match:
-            touched.update((int(match.group(1)), row) for row in _rows(parameters[name], spans))
-    ages = tuple(
-        IdentityRowAge(item.bank_index, item.row_index,
-                       0 if item.identity in touched else item.accepted_age)
-        for item in parent.row_ages)
-    return PlasticityPolicy(parent.mode, 0, ages)
-
-
-def begin_package_import(
-    parent: CandidateState, imported_parameters, reset_slices: tuple[ImportResetSlice, ...],
-    *, parent_manifest_sha256: str, package_sha256: str,
-) -> PackageImportTransaction:
-    """Create one reset import state; this neither decides acceptance nor publishes."""
-    if type(parent) is not CandidateState or not isinstance(imported_parameters, dict):
-        _invalid()
-    parent.__post_init__()
-    _validate_slices(reset_slices)
-    if set(imported_parameters) != set(parent.optimizer.parameters):
-        _invalid()
-    spans_by_name = {}
-    for item in reset_slices:
-        if item.parameter_name not in parent.optimizer.parameters:
+    for name, old in parent.optimizer.parameters.items():
+        new = parameters[name]
+        if (not isinstance(new, mx.array) or new.dtype != mx.float32
+                or new.shape != old.shape or not bool(mx.all(mx.isfinite(new)))):
             _invalid()
-        spans_by_name.setdefault(item.parameter_name, []).append((item.start, item.stop))
-    parameters = {}
-    moments_m, moments_v, counts = {}, {}, {}
-    for name, previous in parent.optimizer.parameters.items():
-        value = imported_parameters[name]
-        if (not isinstance(value, mx.array) or value.shape != previous.shape
-                or value.dtype != mx.float32 or not bool(mx.all(mx.isfinite(value)))):
+
+
+def _slice_masks(parent: CandidateState, parameters, slices):
+    _validate_parameters(parent, parameters)
+    masks = {name: np.zeros(value.size, dtype=np.bool_)
+             for name, value in parent.optimizer.parameters.items()}
+    for item in slices:
+        if item.parameter_name not in masks or item.stop > masks[item.parameter_name].size:
             _invalid()
-        parameters[name] = mx.array(value)
-        spans = spans_by_name.get(name, ())
-        if spans and max(stop for _, stop in spans) > previous.size:
+        masks[item.parameter_name][item.start:item.stop] = True
+    for name, mask in masks.items():
+        before = np.asarray(parent.optimizer.parameters[name]).reshape(-1).view(np.uint32)
+        after = np.asarray(parameters[name]).reshape(-1).view(np.uint32)
+        if not np.array_equal(before[~mask], after[~mask]):
             _invalid()
-        _validate_parameter_delta(previous, value, spans)
-        moments_m[name] = _reset_array(parent.optimizer.m[name], spans) if spans else parent.optimizer.m[name]
-        moments_v[name] = _reset_array(parent.optimizer.v[name], spans) if spans else parent.optimizer.v[name]
-        counts[name] = _reset_count(parent.optimizer.update_counts[name], previous, spans) if spans else parent.optimizer.update_counts[name]
-    optimizer = AdamWStateTree(parameters, moments_m, moments_v, counts)
-    retained = CandidateState(
-        optimizer, _reset_policy(parent.policy, parent.optimizer.parameters, spans_by_name),
-        parent.allocations, parent.optimizer_step)
+    return masks
+
+
+def _reset_counts(count, parameter, mask):
+    reset = np.asarray(count).copy()
+    if not bool(mask.any()):
+        return count, ()
+    if count.ndim == 0:
+        reset[...] = 0
+        return mx.array(reset, dtype=mx.uint64), ()
+    row_width = parameter.size // parameter.shape[0]
+    rows = tuple(int(value) for value in np.unique(np.flatnonzero(mask) // row_width))
+    reset[list(rows)] = 0
+    return mx.array(reset, dtype=mx.uint64), rows
+
+
+def _reset_state(parent: CandidateState, parameters, slices):
+    masks = _slice_masks(parent, parameters, slices)
+    first, second, counts = {}, {}, {}
+    changed_identity_rows = []
+    age_ids = {row.identity for row in parent.policy.row_ages}
+    for name, parameter in parent.optimizer.parameters.items():
+        mask = masks[name]
+        shape = tuple(parameter.shape)
+        for target, source in ((first, parent.optimizer.m), (second, parent.optimizer.v)):
+            if bool(mask.any()):
+                raw = np.asarray(source[name]).copy().reshape(-1)
+                raw[mask] = 0.0
+                target[name] = mx.array(raw.reshape(shape), dtype=mx.float32)
+            else:
+                target[name] = source[name]
+        counts[name], rows = _reset_counts(parent.optimizer.update_counts[name], parameter, mask)
+        if name.startswith("identity.bank.") and rows:
+            try:
+                bank = int(name.rsplit(".", 1)[1])
+            except ValueError:
+                _invalid()
+            identities = tuple((bank, row) for row in rows)
+            if not set(identities).issubset(age_ids):
+                _invalid()
+            changed_identity_rows.extend(identities)
+    changed = set(changed_identity_rows)
+    ages = tuple(IdentityRowAge(row.bank_index, row.row_index,
+                                0 if row.identity in changed else row.accepted_age)
+                 for row in parent.policy.row_ages)
+    policy = PlasticityPolicy(
+        mode=parent.policy.mode, accepted_fast_since_full=0, row_ages=ages,
+        policy_version=parent.policy.policy_version, schema_version=parent.policy.schema_version)
+    optimizer = AdamWStateTree(parameters, first, second, counts)
+    return CandidateState(optimizer, policy, parent.allocations, parent.optimizer_step), tuple(sorted(changed))
+
+
+def _issue_transaction(parent, candidate, slices, changed_identity_rows):
     transaction = object.__new__(PackageImportTransaction)
-    for key, value in (
-        ("parent", parent), ("retained", retained),
-        ("parent_manifest_sha256", parent_manifest_sha256), ("package_sha256", package_sha256),
-        ("reset_slices", reset_slices), ("reset_policy_sha256", reset_policy_sha256(reset_slices)),
-        ("origin", IMPORT_ORIGIN), ("schema_version", IMPORT_TRANSACTION_SCHEMA), ("_issuance", _ISSUER),
-    ):
-        object.__setattr__(transaction, key, value)
+    for name, value in (
+            ("parent", parent), ("candidate", candidate), ("changed_slices", slices),
+            ("changed_identity_rows", changed_identity_rows),
+            ("reset_policy_sha256", RESET_POLICY_SHA256),
+            ("schema_version", TRANSACTION_SCHEMA), ("_issuance", _TRANSACTION_ISSUER)):
+        object.__setattr__(transaction, name, value)
     transaction.__post_init__()
     return transaction
 
+
+def prepare_package_import(
+        parent: CandidateState, parameters: Mapping[str, mx.array],
+        changed_slices: tuple[ImportSlice, ...],
+) -> PackageImportTransaction:
+    """Prepare the reset imported state without deciding retention or publishing it."""
+    if type(parent) is not CandidateState:
+        _invalid()
+    parent.__post_init__()
+    slices = _canonical_slices(changed_slices)
+    candidate, changed_rows = _reset_state(parent, parameters, slices)
+    return _issue_transaction(parent, candidate, slices, changed_rows)
