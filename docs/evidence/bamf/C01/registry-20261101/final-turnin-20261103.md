@@ -76,6 +76,14 @@ existing semantic owners and public interfaces. Remediation issues record the
 specific defects found during review and were consumed into this parent rather
 than creating replacement semantic authority.
 
+This branch placement is explicit repository authority, not an inferred lane
+exception. The root `AGENTS.md` **Mandatory Development Structure Interruption
+Contract**, item 3, requires an encountered structural refactor to remain on the
+already-active feature branch because the offending code is presumed germane to
+that work. The normal Lane A semantic-ownership rule continues to govern semantic
+behavior; the C01 branch carried the mandatory structure-preserving interruption
+and its later defect repairs without acquiring replacement semantic authority.
+
 ## Remaining parent scope
 
 This turn-in proves the scoped C01 structural merge candidate. It does not close
