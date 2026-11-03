@@ -1,7 +1,7 @@
-"""B11.1a source-compiled h0 bridge; deliberately no producer admission.
+"""Historical B11 source-compiled numerical helpers.
 
-Actual group-one capture still needs an executed B08 second motif disposition,
-source-origin B02 vector custody, and a B04/B13 prediction boundary authority.
+Production producer authority lives in ``learning.source_atoms.backbone`` and the
+public B05 selector consumes only that execution-owned receipt chain.
 """
 from __future__ import annotations
 from dataclasses import dataclass
@@ -38,12 +38,6 @@ def compute_compiled_h0(
     # The digest is observational, not a credential for source or neural admission.
     return UnadmittedCompiledH0(encoding.global_seeds,
         _content_digest(encoding.global_seeds))
-
-
-def admit_compiled_backbone_producer(*_args, **_kwargs):
-    """No production issuance before actual B08/group and source-owned custody."""
-    ErrorBus.raise_(SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID,
-                    reason="BLOCKED_PRODUCER_DEPENDENCY")
 
 
 def compute_compiled_members_from_b01(

@@ -17,6 +17,7 @@ import mlx.core as mx
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from .atlas_attention import AttentionCache, AttentionScope, ccgqa
+from .backbone_identity import bamf_parameter_tree_digest, tensor_content_digest
 from .backbone_group_inputs import validated_group_parameters
 from .model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes,
@@ -78,12 +79,20 @@ def _hash_record(record: object) -> str:
 
 def _content_digest(value: mx.array) -> str:
     # Fingerprints never replace the differentiable original tensor.
-    return hashlib.sha256(np.asarray(mx.stop_gradient(value)).tobytes()).hexdigest()
+    return tensor_content_digest(value)
 
 
 def _group_parameter_digest(parameters: Mapping[str, mx.array], names: tuple[str, ...]) -> str:
     return _hash_record([(name, tuple(parameters[name].shape), str(parameters[name].dtype),
                           _content_digest(parameters[name])) for name in names])
+
+
+def _owned_parameter_tree_digest(parameters, spec, extents) -> str:
+    """Use full-model identity when present; preserve B04's local numerical slice."""
+    expected = tuple(item.name for item in expected_bamf_shapes(spec, extents))
+    if set(parameters) == set(expected):
+        return bamf_parameter_tree_digest(parameters, spec=spec, extents=extents)
+    return _group_parameter_digest(parameters, tuple(sorted(parameters)))
 
 
 def _cache_chain_digest(caches: tuple[AttentionCache, ...]) -> str:
@@ -111,8 +120,7 @@ def run_backbone_group_numerical(
     start, end, required = validated_group_parameters(
         hidden, parameters, group_index, spec, extents, scope_ids, valid, sequence_starts)
     parameter_digest = _group_parameter_digest(parameters, tuple(sorted(required)))
-    full_names = tuple(sorted(name for name in parameters if name.startswith("blocks.")))
-    full_digest = _group_parameter_digest(parameters, full_names)
+    full_digest = _owned_parameter_tree_digest(parameters, spec, extents)
     scope_digest = _hash_record({"scope": _content_digest(scope_ids),
                                  "valid": _content_digest(valid),
                                  "starts": None if sequence_starts is None else _content_digest(sequence_starts),
@@ -176,18 +184,30 @@ class UnadmittedBackboneSession:
         self._prefix_digest = prefix_digest
         self._sequence_starts = sequence_starts
         self._results = ()
-        names = tuple(sorted(name for name in self._parameters if name.startswith("blocks.")))
-        self._tree_digest = _group_parameter_digest(self._parameters, names)
+        self._tree_digest = _owned_parameter_tree_digest(
+            self._parameters, self._spec, self._extents)
 
     @property
     def results(self):
         return self._results
 
-    def advance(self):
+    @property
+    def parameter_tree_digest(self):
+        """Observed content identity of the exact B01 block tree this session owns."""
+        return self._tree_digest
+
+    def advance(self, *, next_input=None):
         if len(self._results) >= self._spec.depth_groups:
             _invalid()
-        names = tuple(sorted(name for name in self._parameters if name.startswith("blocks.")))
-        if _group_parameter_digest(self._parameters, names) != self._tree_digest:
+        if next_input is not None:
+            if (not self._results or type(next_input) is not mx.array
+                    or next_input.shape != self._hidden.shape
+                    or next_input.dtype != mx.float32
+                    or not bool(mx.all(mx.isfinite(next_input)))):
+                _invalid()
+            self._hidden = next_input
+        if _owned_parameter_tree_digest(
+                self._parameters, self._spec, self._extents) != self._tree_digest:
             _invalid()
         group_index = len(self._results) + 1
         result = run_backbone_group_numerical(

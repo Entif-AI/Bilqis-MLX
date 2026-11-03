@@ -1,5 +1,5 @@
 {
-  "legacy_raw_file_count": 226,
+  "legacy_raw_file_count": 229,
   "legacy_raw_raise_count": 2030,
   "legacy_raw_raise_groups": [
     {
@@ -10517,6 +10517,97 @@
       "path": "bilqis_mlx/runtime/_source/source_prefetch.py"
     },
     {
+      "code_hint": "HUMAN_TRAINER_MISS_EXPOSURE_STATE_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_MISS_EXPOSURE_STATE_INVALID'",
+      "path": "bilqis_mlx/runtime/_visits/common.py"
+    },
+    {
+      "code_hint": "LESSON_EVIDENCE_OFFERED_IDENTITY_CONFLICT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'LESSON_EVIDENCE_OFFERED_IDENTITY_CONFLICT'",
+      "path": "bilqis_mlx/runtime/_visits/common.py"
+    },
+    {
+      "code_hint": "RETENTION_REQUIRES_ACTIVE_GRADE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'RETENTION_REQUIRES_ACTIVE_GRADE'",
+      "path": "bilqis_mlx/runtime/_visits/common.py"
+    },
+    {
+      "code_hint": "TEACHER_EXPOSURE_HISTORY_INVALID",
+      "count": 3,
+      "exception": "ValueError",
+      "expression": "'TEACHER_EXPOSURE_HISTORY_INVALID'",
+      "path": "bilqis_mlx/runtime/_visits/common.py"
+    },
+    {
+      "code_hint": "CHAMPIONSHIP_SCHOOL_IDENTITY_RESET_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'CHAMPIONSHIP_SCHOOL_IDENTITY_RESET_REQUIRED'",
+      "path": "bilqis_mlx/runtime/_visits/preparation.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_LIVE_SOURCE_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_LIVE_SOURCE_REQUIRED'",
+      "path": "bilqis_mlx/runtime/_visits/preparation.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_NO_SCHEDULED_CAPABILITY",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_NO_SCHEDULED_CAPABILITY'",
+      "path": "bilqis_mlx/runtime/_visits/preparation.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_UNKNOWN_LESSON_GRADE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_UNKNOWN_LESSON_GRADE'",
+      "path": "bilqis_mlx/runtime/_visits/preparation.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_ATTEMPTED_OPTIMIZER_STEP_REGRESSION",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_ATTEMPTED_OPTIMIZER_STEP_REGRESSION'",
+      "path": "bilqis_mlx/runtime/_visits/retention.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_OPTIMIZER_STEP_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_OPTIMIZER_STEP_DRIFT'",
+      "path": "bilqis_mlx/runtime/_visits/retention.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_RETAINED_OPTIMIZER_STEP_REGRESSION",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_RETAINED_OPTIMIZER_STEP_REGRESSION'",
+      "path": "bilqis_mlx/runtime/_visits/retention.py"
+    },
+    {
+      "code_hint": "LEARNING_EXPERIMENT_RETAINED_ADAMW_STEP_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'LEARNING_EXPERIMENT_RETAINED_ADAMW_STEP_DRIFT'",
+      "path": "bilqis_mlx/runtime/_visits/retention.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_SOURCE_PREFETCH_IDENTITY_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_SOURCE_PREFETCH_IDENTITY_DRIFT'",
+      "path": "bilqis_mlx/runtime/_visits/step_sources.py"
+    },
+    {
       "code_hint": "FACTORY_EXECUTABLE_COHORT_CONTRACT_REQUIRED",
       "count": 1,
       "exception": "TypeError",
@@ -11222,97 +11313,6 @@
       "exception": "AssertionError",
       "expression": "'Rosetta owner revision drift requires requalification'",
       "path": "bilqis_mlx/runtime/tests/projection/test_rosetta_observation.py"
-    },
-    {
-      "code_hint": "CHAMPIONSHIP_SCHOOL_IDENTITY_RESET_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CHAMPIONSHIP_SCHOOL_IDENTITY_RESET_REQUIRED'",
-      "path": "bilqis_mlx/runtime/visits.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_ATTEMPTED_OPTIMIZER_STEP_REGRESSION",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_ATTEMPTED_OPTIMIZER_STEP_REGRESSION'",
-      "path": "bilqis_mlx/runtime/visits.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_LIVE_SOURCE_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_LIVE_SOURCE_REQUIRED'",
-      "path": "bilqis_mlx/runtime/visits.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_MISS_EXPOSURE_STATE_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_MISS_EXPOSURE_STATE_INVALID'",
-      "path": "bilqis_mlx/runtime/visits.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_NO_SCHEDULED_CAPABILITY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_NO_SCHEDULED_CAPABILITY'",
-      "path": "bilqis_mlx/runtime/visits.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_OPTIMIZER_STEP_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_OPTIMIZER_STEP_DRIFT'",
-      "path": "bilqis_mlx/runtime/visits.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_RETAINED_OPTIMIZER_STEP_REGRESSION",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_RETAINED_OPTIMIZER_STEP_REGRESSION'",
-      "path": "bilqis_mlx/runtime/visits.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_SOURCE_PREFETCH_IDENTITY_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_SOURCE_PREFETCH_IDENTITY_DRIFT'",
-      "path": "bilqis_mlx/runtime/visits.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_UNKNOWN_LESSON_GRADE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_UNKNOWN_LESSON_GRADE'",
-      "path": "bilqis_mlx/runtime/visits.py"
-    },
-    {
-      "code_hint": "LEARNING_EXPERIMENT_RETAINED_ADAMW_STEP_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'LEARNING_EXPERIMENT_RETAINED_ADAMW_STEP_DRIFT'",
-      "path": "bilqis_mlx/runtime/visits.py"
-    },
-    {
-      "code_hint": "LESSON_EVIDENCE_OFFERED_IDENTITY_CONFLICT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'LESSON_EVIDENCE_OFFERED_IDENTITY_CONFLICT'",
-      "path": "bilqis_mlx/runtime/visits.py"
-    },
-    {
-      "code_hint": "RETENTION_REQUIRES_ACTIVE_GRADE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'RETENTION_REQUIRES_ACTIVE_GRADE'",
-      "path": "bilqis_mlx/runtime/visits.py"
-    },
-    {
-      "code_hint": "TEACHER_EXPOSURE_HISTORY_INVALID",
-      "count": 3,
-      "exception": "ValueError",
-      "expression": "'TEACHER_EXPOSURE_HISTORY_INVALID'",
-      "path": "bilqis_mlx/runtime/visits.py"
     },
     {
       "code_hint": "non-finite JSON literal",
