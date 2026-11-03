@@ -70,9 +70,22 @@ def source(
         Role("actor", ("Frame", "Person")),
         Role("patient", ("Person",)),
     ), scope=scope)
-    actor_binding = (
-        Binding("actor", 0, child_frame=Child()) if child else
-        Binding("actor", 0, concept=Concept(actor, types)))
+    children = ()
+    if child:
+        nested = source(
+            actor="urn:actor:nested", patient="urn:patient:nested",
+            occurrence="c" * 64,
+        )
+        actor_binding = Binding(
+            "actor", 0,
+            child_frame=Child(
+                occurrence_id=nested.frame.occurrence_id,
+                content_digest=nested.frame.content_digest,
+            ),
+        )
+        children = (nested,)
+    else:
+        actor_binding = Binding("actor", 0, concept=Concept(actor, types))
     patient_binding = Binding("patient", 0, concept=Concept(patient, ("Person",)))
     if state == "NONE":
         actor_binding = Binding("actor", 0, state="NONE")
@@ -84,7 +97,7 @@ def source(
             alternatives=(Concept(actor, types), Concept("urn:actor:carol", types)))
     frame = Frame((actor_binding, patient_binding),
                   ("actor", "patient"), occurrence_id=occurrence)
-    return MotifFrameInput(frame, schema)
+    return MotifFrameInput(frame, schema, children)
 
 @lru_cache(maxsize=1)
 def full_first_page() -> MotifManifest:

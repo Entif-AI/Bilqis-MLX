@@ -8,7 +8,9 @@ import numpy as np
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning._engram.tests.motif_fixtures import RELEASE, source
 from bilqis_mlx.learning.atlas_engram import MotifBudget, MotifManifest
-from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
+from bilqis_mlx.learning.atlas_engram_transaction import (
+    MotifAllocationSnapshot, _prepare_candidate_motif_snapshot,
+)
 from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree
 from bilqis_mlx.learning._retention.atlas_candidate import (
@@ -41,9 +43,8 @@ class CandidateTransactionTests(TestCase):
 
     def test_rejection_returns_exact_parent_with_all_custody(self):
         before = self.snapshot(self.parent)
-        candidate = begin_candidate(self.parent, frames=(source(),), budget=MotifBudget(0))
+        candidate = begin_candidate(self.parent, budget=MotifBudget(0))
         candidate = self.step(self.step(candidate))
-        self.assertNotEqual(candidate.allocations.digest, self.parent.allocations.digest)
         self.assertIs(resolve_candidate(candidate, accepted=False), self.parent)
         self.assertEqual(self.snapshot(self.parent), before)
         self.assertEqual(self.parent.policy.accepted_fast_since_full, 7)
@@ -76,7 +77,7 @@ class CandidateTransactionTests(TestCase):
 
     def test_no_loss_or_wholly_frozen_candidate_cannot_advance_clocks_or_allocations(self):
         for kwargs in ({'loss_bearing': False}, {'mask': (False, False)}):
-            candidate = begin_candidate(self.parent, frames=(source(),), budget=MotifBudget(0))
+            candidate = begin_candidate(self.parent, budget=MotifBudget(0))
             result = self.step(candidate, **kwargs)
             self.assertIs(result, candidate)
             self.assertIs(resolve_candidate(result, accepted=True), self.parent)
@@ -106,9 +107,23 @@ class CandidateTransactionTests(TestCase):
             resolve_candidate(begin_candidate(self.parent), accepted=1)
         self.assertEqual(self.snapshot(self.parent), before)
 
-    def test_unmaterialized_slot_allocation_is_rejected(self):
-        with self.assertRaises(BilqisError):
+    def test_raw_caller_motif_frames_are_not_a_candidate_api(self):
+        with self.assertRaises(TypeError):
             begin_candidate(self.parent, frames=(source(),), budget=MotifBudget(2))
+
+        proposal = _prepare_candidate_motif_snapshot(
+            (source(),), self.parent.allocations, MotifBudget(0))
+        with self.assertRaises(BilqisError):
+            replace(self.parent, allocations=proposal.proposed)
+
+    def test_non_genesis_allocations_cannot_become_candidate_state(self):
+        proposal = _prepare_candidate_motif_snapshot(
+            (source(),), self.parent.allocations, MotifBudget(2))
+        self.assertTrue(proposal.proposed.manifest.slots)
+        with self.assertRaises(BilqisError):
+            CandidateState(
+                self.parent.optimizer, self.parent.policy,
+                proposal.proposed, self.parent.optimizer_step)
 
     def test_caller_cannot_issue_transaction_with_arbitrary_optimizer_or_allocation(self):
         changed = AdamWStateTree(
@@ -117,11 +132,10 @@ class CandidateTransactionTests(TestCase):
             {self.name: self.parent.optimizer.update_counts[self.name] + 1})
         with self.assertRaises(BilqisError):
             CandidateTransaction(self.parent, changed, self.parent.allocations, False, 1)
-        legitimate = self.step(begin_candidate(self.parent, frames=(source(),), budget=MotifBudget(0)))
+        legitimate = self.step(begin_candidate(self.parent, budget=MotifBudget(0)))
         with self.assertRaises(BilqisError):
             replace(legitimate, optimizer=changed)
-        forged = replace(legitimate.allocations, observed_uses=(
-            (legitimate.allocations.observed_uses[0][0], 999),))
+        forged = replace(legitimate.allocations, observed_uses=(("a" * 64, 999),))
         with self.assertRaises(BilqisError):
             replace(legitimate, allocations=forged)
         self.assertEqual(resolve_candidate(legitimate, accepted=True).optimizer_step, 12)

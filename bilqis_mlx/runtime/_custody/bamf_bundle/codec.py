@@ -163,7 +163,7 @@ def _tensor_read_path(root: Path, binding: dict) -> tuple[Path, dict]:
 
 def load_bamf_bundle(root: Path, *, expected_manifest_sha256: str | None = None) -> CompleteStudent:
     """Validate manifest and all sidecars before constructing B12 optimizer state."""
-    from bilqis_mlx.learning.atlas_candidate import CandidateState
+    from bilqis_mlx.learning.atlas_candidate import _issue_retained_state
     from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, STATE_SCHEMA
     from bilqis_mlx.runtime.checkpoint_outbox import ordinary_outbox_lineage
     from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, GenerationProvenance, ModelTopologySpecV2
@@ -186,7 +186,8 @@ def load_bamf_bundle(root: Path, *, expected_manifest_sha256: str | None = None)
     tensor_path, tensor_binding = _tensor_read_path(root, manifest["tensors"])
     numerical = _mlx_checkpoint.load_bamf_state_payload(
         tensor_path, tensor_binding, spec, extents)
-    retained = CandidateState(numerical, policy, motif, manifest["optimizer"]["step"])
+    retained = _issue_retained_state(
+        numerical, policy, motif, manifest["optimizer"]["step"])
     return CompleteStudent(
         manifest["run_id"], manifest["generation"], manifest["parent_manifest_sha256"],
         manifest["implementation_sha256"], spec, extents, retained, hp, provenance,
