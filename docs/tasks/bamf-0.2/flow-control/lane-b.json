@@ -1,7 +1,7 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "9bf47289e9ed0a64d275b31c3a7de42c55a8b83e",
+  "observed_unified": "7984d7872d49b3987284692f5398da71f2a72605",
   "updated_at": "2026-11-03T15:45:37Z",
   "exception": null,
   "items": [
@@ -31,12 +31,13 @@
     },
     {
       "issue": 456,
-      "pr": 690,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "58209522c8855245c3b9ae22e1a57255974ffc05",
-      "summary": "B07.1 current-unified CAS continuation repair is locally green: #783 canonical CandidateState repair consumed; non-genesis continuation is B13-custody-bound to an externally pinned manifest digest; affected selection 120/120 zero skips; final exact-head EGM follows this bookkeeping commit.",
+      "summary": "B07 current-unified CAS continuation accepted through human-merged PR #690; #460 now consumes the real source/allocation owner.",
       "resume_trigger": null,
-      "preserved_branch": "codex/783-456-current-unified-20261103"
+      "preserved_branch": "codex/783-456-current-unified-20261103",
+      "merged_pr": 690
     },
     {
       "issue": 455,
@@ -243,6 +244,24 @@
       "summary": "Canonical CandidateState identity repair is consumed by the active #456 integration branch after joined source-to-CAS-to-next-update-to-source proof; final acceptance remains on the parent candidate.",
       "resume_trigger": "Parent #456 completes current-unified integration, affected proof and fresh exact-head review.",
       "preserved_branch": "codex/bamf02-b-783-candidate-identity-20261103"
+    },
+    {
+      "issue": 460,
+      "pr": null,
+      "state": "WAITING",
+      "head_sha": "7984d7872d49b3987284692f5398da71f2a72605",
+      "preserved_branch": "codex/bamf02-b-460-qualified-reads-20261103",
+      "summary": "Source-hit qualification traced after accepted #691/#456; paused at canonical A03 schema structural owner (417 LoC), already covered by C01/#347.",
+      "resume_trigger": "C01/#347 canonical released_frame_schemas structural repair is accepted through reviewed unified; then reactivate and synchronize once before source-read implementation."
+    },
+    {
+      "issue": 481,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "7984d7872d49b3987284692f5398da71f2a72605",
+      "preserved_branch": "codex/bamf02-b-481-schema-proof-20261103",
+      "summary": "Reconcile existing unpatched B01 constructor and full B13 tensor serialization against the expanded normative ledger; source/custody parent gates stay separate.",
+      "resume_trigger": null
     }
   ]
 }
