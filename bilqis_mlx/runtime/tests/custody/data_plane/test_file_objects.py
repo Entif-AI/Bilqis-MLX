@@ -115,8 +115,24 @@ class FileObjectTests(DataPlaneCase):
         alias = self.root / "owned-object-alias"
         os.link(target, alias)
 
+        # Hard-link creation changes ctime on this platform. Refresh the
+        # adversarial ownership receipt to match the now-aliased inode so the
+        # rejection below is isolated to the single-link ownership predicate.
+        linked_state = target.stat()
+        with plane.transaction():
+            plane._db.execute(
+                "INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)",
+                (file_objects._OWNER_KEY_PREFIX + digest,
+                 file_objects._inode_identity(linked_state)))
+        with plane._lock:
+            owner = plane._db.execute(
+                "SELECT value FROM meta WHERE key=?",
+                (file_objects._OWNER_KEY_PREFIX + digest,),
+            ).fetchone()
+
+        self.assertEqual(owner, (file_objects._inode_identity(linked_state),))
+        self.assertEqual(linked_state.st_nlink, 2)
         self.assertFalse(plane.owns_file_object(digest))
-        self.assertEqual(target.stat().st_nlink, 2)
 
         replacement = plane.adopt_file_object(source, digest)
         self.assertEqual(replacement, target)

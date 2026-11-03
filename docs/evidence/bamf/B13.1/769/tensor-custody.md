@@ -73,7 +73,7 @@ python3 -B -m unittest \
   bilqis_mlx.runtime.tests.custody.data_plane.test_events
 ```
 
-Observed on the repaired candidate: 19 targeted tests and 37 existing tests pass
+Observed on the repaired candidate: 20 targeted tests and 37 existing tests pass
 without skips. Controls
 cover unchanged-object reuse, changed-object separation, corruption rejection,
 pointer-crash/retry reuse, caller-alias mutation, competing installation,
