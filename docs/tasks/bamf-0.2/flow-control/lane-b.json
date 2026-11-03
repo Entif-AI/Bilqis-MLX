@@ -34,7 +34,7 @@
       "pr": null,
       "state": "TURNED_IN",
       "head_sha": "c078386bd57a209bb10f55142c7b1c5af94a50b1",
-      "summary": "B07.1 is EGM-Passed and was externally merged through PR #690 as reviewed unified 7984d787; hosted checks were green and the exact candidate is consumed by unified.",
+      "summary": "Human PR690 merge7984d787 and exact final EGM receipt verified;456 explicitly CLOSED COMPLETED.",
       "resume_trigger": null,
       "preserved_branch": "codex/b07-456-source-bridge-20261101",
       "merged_pr": 690
@@ -249,10 +249,10 @@
       "issue": 460,
       "pr": null,
       "state": "WAITING",
-      "head_sha": "7984d7872d49b3987284692f5398da71f2a72605",
-      "preserved_branch": "codex/bamf02-b-460-qualified-reads-20261103",
-      "summary": "Source-hit qualification traced after accepted #691/#456; paused at canonical A03 schema structural owner (417 LoC), already covered by C01/#347.",
-      "resume_trigger": "C01/#347 canonical released_frame_schemas structural repair is accepted through reviewed unified; then reactivate and synchronize once before source-read implementation."
+      "head_sha": "26c1ac60",
+      "preserved_branch": "codex/bamf02-b-460-qualified-reads-20261103-resume",
+      "summary": "Source-context stage23/23 plus physical file4/4 is durable; full hits wait on canonical B13/candidate binding.",
+      "resume_trigger": "Canonical accepted-generation feature/candidate authority from #708/#711/#710 (currently PR809) is accepted through reviewed unified with a usable source-qualified receipt."
     },
     {
       "issue": 481,
@@ -289,6 +289,24 @@
       "head_sha": "05e31a576e3432e4238c9b4477a70d70ec4fc487",
       "preserved_branch": "codex/remediation-710-execution-provenance-20261103",
       "summary": "B12.2 remediation delivered as ready PR #807, stacked on the #711 B09.2 owner: every candidate optimizer step binds to owner-issued execution provenance, so a raw caller mask cannot become final candidate truth.",
+      "resume_trigger": null
+    },
+    {
+      "issue": 451,
+      "pr": null,
+      "state": "WAITING",
+      "head_sha": "0956114dd35f6a368a129a9c6cf179e48a536b65",
+      "preserved_branch": "codex/bamf02-b-451-selector-custody-20261103",
+      "summary": "Engineering custody proof1/1 plus18/18 depth tests; final EGM/turn-in awaits Lane B integration slot.",
+      "resume_trigger": "Existing Lane B candidate PR809 is merged/closed or explicit admission selects451; then sync/revalidate once and perform final pinned EGM."
+    },
+    {
+      "issue": 810,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "e9226be2f6a41f47109ca02a1103a363e64909a7",
+      "preserved_branch": "codex/bamf02-b-810-selection-replay-20261103",
+      "summary": "Repair public B06.3 choice consumption by replaying canonical B06.2 policy; preserve original454 lineage. Source/prediction-owner authority remains separate.",
       "resume_trigger": null
     }
   ]
