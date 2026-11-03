@@ -15,7 +15,7 @@ from bilqis_mlx.semantics.frame_schema import ConceptRef
 from bilqis_mlx.runtime.block_attnres import (
     DepthFrameFeatures, DepthParameterView, DepthSummary, PARAMETER_SHAPES,
     _DepthFeatureValues, _depth_components, _group_boundary_numerical,
-    depth_parameter_view, depth_select, depth_select_with_diagnostics,
+    depth_parameter_view, _numerical_depth_select, _numerical_depth_select_with_diagnostics,
 )
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes,
@@ -162,7 +162,7 @@ class DepthSelectionTests(unittest.TestCase):
             _depth_components(
                 self.current, self.sources, self.features, poisoned_params)
 
-    def test_public_diagnostics_are_source_qualified_and_normalized(self):
+    def test_numerical_diagnostics_are_source_qualified_and_normalized(self):
         released = _released_features(1)
         extents = GenerationExtents(1, 1, "a"*64, "b"*64, released.features.digest)
         full = {item.name: mx.zeros(item.shape, dtype=mx.float32)
@@ -171,7 +171,7 @@ class DepthSelectionTests(unittest.TestCase):
         full["depth.gate.0.bias"] = _array([math.log(1/9)])
         view = depth_parameter_view(
             full, spec=ModelTopologySpecV2(), extents=extents, boundary_group=1)
-        diagnostics = depth_select_with_diagnostics(
+        diagnostics = _numerical_depth_select_with_diagnostics(
             self.current, self.sources, released, view)
         self.assertEqual(diagnostics.schema_version, "bilqis.mlx.depth-diagnostics/v1")
         self.assertEqual(diagnostics.alpha.shape, (2, 3, 2))
@@ -179,8 +179,8 @@ class DepthSelectionTests(unittest.TestCase):
             np.asarray(diagnostics.alpha).sum(-1), np.ones((2, 3)), atol=1e-6)
         np.testing.assert_allclose(
             np.asarray(diagnostics.output),
-            np.asarray(depth_select(self.current, self.sources, released, view)),
+            np.asarray(_numerical_depth_select(self.current, self.sources, released, view)),
             atol=1e-6)
         with self.assertRaises(BilqisError):
-            depth_select_with_diagnostics(
+            _numerical_depth_select_with_diagnostics(
                 self.current, self.sources, self.features, view)

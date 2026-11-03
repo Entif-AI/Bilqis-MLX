@@ -107,7 +107,7 @@ class DepthSelectionDiagnostics:
     schema_version: str = DIAGNOSTICS_SCHEMA
 
 
-def depth_select(
+def _numerical_depth_select(
     current: mx.array, available_summaries: tuple[DepthSummary, ...],
     frame_features: DepthFrameFeatures, params: DepthParameterView,
 ) -> mx.array:
@@ -116,11 +116,11 @@ def depth_select(
     The tuple is ordered (h0,g1,...,gk), k=1..3. Its actual backbone
     provenance must be qualified by the group-capture assembly owner.
     """
-    return depth_select_with_diagnostics(
+    return _numerical_depth_select_with_diagnostics(
         current, available_summaries, frame_features, params).output
 
 
-def depth_select_with_diagnostics(
+def _numerical_depth_select_with_diagnostics(
     current: mx.array, available_summaries: tuple[DepthSummary, ...],
     frame_features: DepthFrameFeatures, params: DepthParameterView,
 ) -> DepthSelectionDiagnostics:
@@ -144,6 +144,22 @@ def depth_select_with_diagnostics(
     output, alpha, gate = _depth_components(
         current, available_summaries, numerical, params)
     return DepthSelectionDiagnostics(output, alpha, gate)
+
+
+def depth_select(
+    current: mx.array, available_summaries: tuple[DepthSummary, ...],
+    frame_features: DepthFrameFeatures, params: DepthParameterView,
+) -> mx.array:
+    """Reject caller summaries until qualified B11 producer admission is consumed."""
+    _invalid()
+
+
+def depth_select_with_diagnostics(
+    current: mx.array, available_summaries: tuple[DepthSummary, ...],
+    frame_features: DepthFrameFeatures, params: DepthParameterView,
+) -> DepthSelectionDiagnostics:
+    """Diagnostics do not bypass the production backbone-provenance hold."""
+    _invalid()
 
 
 @dataclass(frozen=True)
