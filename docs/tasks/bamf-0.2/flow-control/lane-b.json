@@ -208,10 +208,10 @@
     },
     {
       "issue": 778,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "48315ee7bae3caa7d5ac279128c79217b9178d16",
-      "summary": "Repair source-atoms proof imports for canonical file and dotted runner parity; PM-2026-11-01-007.",
+      "pr": 779,
+      "state": "TURNED_IN",
+      "head_sha": "551f9d7f6172113b2c2698178c870cf61c7c35a0",
+      "summary": "Canonical test-import repair #778 is EGM-Passed and turned in through PR #779; file source-positive1/1, unchanged producer16/16, no real student mutation.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-b-778-test-imports-20261103"
     }
