@@ -8,6 +8,7 @@ from pathlib import Path
 
 import bilqis_mlx.runtime.mlx_checkpoint as _mlx_checkpoint
 from bilqis_mlx.data_plane import DataPlaneError, data_plane
+from bilqis_mlx.runtime.disk import assert_headroom
 from .records import (
     SIDECARS, BamfBundleCandidate, BamfGenerationManifest, CompleteStudent,
     canonical, invalid, sha, sidecar_records, validate_sidecars,
@@ -31,12 +32,25 @@ def save_bamf_bundle(candidate: BamfBundleCandidate, destination: Path, *,
     records = sidecar_records(candidate)
     destination.mkdir(parents=True)
     retained = candidate.retained_state
-    tensor = _mlx_checkpoint.save_bamf_state_payload(
-        destination / "bamf-state.safetensors", candidate.topology, candidate.extents,
-        retained.optimizer, optimizer_step=retained.optimizer_step,
-        reserve_gib=reserve_gib)
-    bindings = {}
     plane = data_plane()
+    with plane.transaction():
+        tensor = _mlx_checkpoint.save_bamf_state_payload(
+            destination / "bamf-state.safetensors", candidate.topology, candidate.extents,
+            retained.optimizer, optimizer_step=retained.optimizer_step,
+            reserve_gib=reserve_gib)
+        try:
+            local_tensor = destination / tensor["filename"]
+            object_path = plane.file_object_destination(tensor["sha256"])
+            if not plane.owns_file_object(tensor["sha256"]):
+                assert_headroom(
+                    object_path, required_bytes=local_tensor.stat().st_size,
+                    reserve_gib=reserve_gib)
+            plane.adopt_file_object(local_tensor, tensor["sha256"])
+            local_tensor.unlink()
+            tensor = {**tensor, "object_sha256": tensor["sha256"]}
+        except ValueError:
+            invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
+    bindings = {}
     for name, record in records.items():
         raw = canonical(record)
         digest = sha(raw)
@@ -109,15 +123,42 @@ def validate_bamf_bundle_custody(
     for name in SIDECARS:
         _read_sidecar(root, manifest["sidecars"][name])
     tensor = manifest.get("tensors", {})
-    tensor_path = root / tensor.get("filename", "")
-    if (not isinstance(tensor, dict)
-            or set(tensor) != {"schema", "filename", "sha256", "optimizer_step",
-                               "tensor_count", "uncompressed_bytes"}
-            or Path(tensor.get("filename", "")).name != tensor.get("filename")
-            or tensor_path.is_symlink() or not tensor_path.is_file()
-            or not _mlx_checkpoint.verify_file_digest(tensor_path, tensor.get("sha256"))):
+    legacy_keys = {"schema", "filename", "sha256", "optimizer_step",
+                   "tensor_count", "uncompressed_bytes"}
+    current_keys = legacy_keys | {"object_sha256"}
+    if (not isinstance(tensor, dict) or set(tensor) not in (legacy_keys, current_keys)
+            or Path(tensor.get("filename", "")).name != tensor.get("filename")):
         invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
+    if "object_sha256" in tensor:
+        if tensor["object_sha256"] != tensor.get("sha256"):
+            invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
+        try:
+            data_plane().require_file_object(tensor["object_sha256"])
+        except ValueError:
+            invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
+    else:
+        tensor_path = root / tensor["filename"]
+        if (tensor_path.is_symlink() or not tensor_path.is_file()
+                or not _mlx_checkpoint.verify_file_digest(tensor_path, tensor.get("sha256"))):
+            invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
     return manifest
+
+
+def _tensor_read_path(root: Path, binding: dict) -> tuple[Path, dict]:
+    if "object_sha256" not in binding:
+        return root / binding["filename"], binding
+    try:
+        plane = data_plane()
+        with plane.transaction():
+            digest = binding["object_sha256"]
+            path = plane.require_file_object(digest)
+            if not plane.owns_file_object(digest):
+                assert_headroom(path, required_bytes=path.stat().st_size)
+                path = plane.adopt_file_object(path, digest)
+    except ValueError:
+        invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
+    return path, {key: value for key, value in binding.items()
+                  if key != "object_sha256"} | {"filename": path.name}
 
 
 def load_bamf_bundle(root: Path, *, expected_manifest_sha256: str | None = None) -> CompleteStudent:
@@ -142,8 +183,9 @@ def load_bamf_bundle(root: Path, *, expected_manifest_sha256: str | None = None)
     hp_record = dict(manifest["optimizer"]["hyperparameters"])
     hp_record["betas"] = tuple(hp_record.get("betas", ()))
     hp = AdamWHyperparameters(**hp_record)
+    tensor_path, tensor_binding = _tensor_read_path(root, manifest["tensors"])
     numerical = _mlx_checkpoint.load_bamf_state_payload(
-        root / manifest["tensors"]["filename"], manifest["tensors"], spec, extents)
+        tensor_path, tensor_binding, spec, extents)
     retained = CandidateState(numerical, policy, motif, manifest["optimizer"]["step"])
     return CompleteStudent(
         manifest["run_id"], manifest["generation"], manifest["parent_manifest_sha256"],

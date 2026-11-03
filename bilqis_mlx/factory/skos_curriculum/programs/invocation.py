@@ -67,3 +67,24 @@ def invoke_source_batch(registration, binding, source, atlas,
                           capability_id=binding.capability_id, **kwargs) is not True:
         _fail("BAMF_FAMILY_PROGRAM_CHECK_FAILED")
     return artifact
+
+
+def invoke_same_capability_source_batch(
+        registration, binding, source, atlas,
+        construct_args, construct_kwargs, check_args, check_kwargs):
+    """Use the Factory capability ID when it is also the source capability ID."""
+    if registration.native_capability_id is not None:
+        _fail("BAMF_FAMILY_PROGRAM_NATIVE_SOURCE_SCOPE_REDUNDANT")
+    kwargs = _source_arguments(construct_kwargs, binding)
+    kwargs["capability"] = binding.capability_id
+    rows = registration.construct(source, *construct_args, **kwargs)
+    if type(rows) is not tuple or not rows or any(type(row) is not dict for row in rows):
+        _fail("BAMF_FAMILY_PROGRAM_SOURCE_BATCH_INVALID")
+    artifact = SourceFamilyBatch(
+        binding.capability_id, binding.source_adapter_id,
+        binding.capability_id, binding.generator_id, binding.oracle_id, rows)
+    kwargs = _source_arguments(check_kwargs, binding)
+    if registration.check(source, artifact, *check_args,
+                          capability_id=binding.capability_id, **kwargs) is not True:
+        _fail("BAMF_FAMILY_PROGRAM_CHECK_FAILED")
+    return artifact

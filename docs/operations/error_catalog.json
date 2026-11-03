@@ -1,6 +1,6 @@
 {
-  "legacy_raw_file_count": 229,
-  "legacy_raw_raise_count": 2030,
+  "legacy_raw_file_count": 231,
+  "legacy_raw_raise_count": 2029,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BOOLEAN_ASSOCIATION_B_GRADE_OWNERSHIP_DRIFT",
@@ -11945,6 +11945,132 @@
       "path": "bilqis_mlx/semantics/tests/operators/test_cognitive_operator_native.py"
     },
     {
+      "code_hint": "BOOLEAN_ASSOCIATION_REQUIRES_NUMERIC_SOURCE_ADAPTER",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'BOOLEAN_ASSOCIATION_REQUIRES_NUMERIC_SOURCE_ADAPTER'",
+      "path": "bilqis_mlx/source_adapters/_school/boolean.py"
+    },
+    {
+      "code_hint": "FACTORY_BOOLEAN_PROFILE_PARAMETER_SCOPE_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_BOOLEAN_PROFILE_PARAMETER_SCOPE_DRIFT'",
+      "path": "bilqis_mlx/source_adapters/_school/boolean.py"
+    },
+    {
+      "code_hint": "FACTORY_BOOLEAN_PROFILE_PARAMETER_UNKNOWN",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_BOOLEAN_PROFILE_PARAMETER_UNKNOWN'",
+      "path": "bilqis_mlx/source_adapters/_school/boolean.py"
+    },
+    {
+      "code_hint": "FACTORY_UNKNOWN_BOOLEAN_TEACHING_OPTION",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_UNKNOWN_BOOLEAN_TEACHING_OPTION'",
+      "path": "bilqis_mlx/source_adapters/_school/boolean.py"
+    },
+    {
+      "code_hint": "FACTORY_BOOLEAN_EVIDENCE_PRODUCER_UNRESOLVED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_BOOLEAN_EVIDENCE_PRODUCER_UNRESOLVED:' + root",
+      "path": "bilqis_mlx/source_adapters/_school/evidence.py"
+    },
+    {
+      "code_hint": "FACTORY_MICRO_EVIDENCE_COMPOSITION_AST_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_MICRO_EVIDENCE_COMPOSITION_AST_INVALID'",
+      "path": "bilqis_mlx/source_adapters/_school/evidence.py"
+    },
+    {
+      "code_hint": "FACTORY_MICRO_EVIDENCE_COMPOSITION_KEY_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_MICRO_EVIDENCE_COMPOSITION_KEY_INVALID'",
+      "path": "bilqis_mlx/source_adapters/_school/evidence.py"
+    },
+    {
+      "code_hint": "FACTORY_MICRO_EVIDENCE_KIND_UNSUPPORTED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_MICRO_EVIDENCE_KIND_UNSUPPORTED'",
+      "path": "bilqis_mlx/source_adapters/_school/evidence.py"
+    },
+    {
+      "code_hint": "FACTORY_MICRO_EVIDENCE_PRODUCER_ID_UNRESOLVED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_MICRO_EVIDENCE_PRODUCER_ID_UNRESOLVED'",
+      "path": "bilqis_mlx/source_adapters/_school/evidence.py"
+    },
+    {
+      "code_hint": "FACTORY_MICRO_EVIDENCE_PRODUCER_KEY_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_MICRO_EVIDENCE_PRODUCER_KEY_DRIFT'",
+      "path": "bilqis_mlx/source_adapters/_school/evidence.py"
+    },
+    {
+      "code_hint": "FACTORY_MICRO_EVIDENCE_PRODUCER_ROOT_UNRESOLVED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_MICRO_EVIDENCE_PRODUCER_ROOT_UNRESOLVED'",
+      "path": "bilqis_mlx/source_adapters/_school/evidence.py"
+    },
+    {
+      "code_hint": "FACTORY_MICRO_EVIDENCE_RECORD_MISSING",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_MICRO_EVIDENCE_RECORD_MISSING'",
+      "path": "bilqis_mlx/source_adapters/_school/evidence.py"
+    },
+    {
+      "code_hint": "FACTORY_MICRO_EVIDENCE_REQUIRES_ONE_PRODUCER",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_MICRO_EVIDENCE_REQUIRES_ONE_PRODUCER'",
+      "path": "bilqis_mlx/source_adapters/_school/evidence.py"
+    },
+    {
+      "code_hint": "FACTORY_NUMERIC_CAPABILITY_HAS_NO_ACTIVE_DOMAIN",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_NUMERIC_CAPABILITY_HAS_NO_ACTIVE_DOMAIN'",
+      "path": "bilqis_mlx/source_adapters/_school/numeric.py"
+    },
+    {
+      "code_hint": "FACTORY_NUMERIC_EVIDENCE_KIND_UNSUPPORTED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_NUMERIC_EVIDENCE_KIND_UNSUPPORTED'",
+      "path": "bilqis_mlx/source_adapters/_school/numeric.py"
+    },
+    {
+      "code_hint": "FACTORY_NUMERIC_EVIDENCE_PLAN_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_NUMERIC_EVIDENCE_PLAN_DRIFT'",
+      "path": "bilqis_mlx/source_adapters/_school/numeric.py"
+    },
+    {
+      "code_hint": "FACTORY_NUMERIC_PROFILE_DOMAIN_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_NUMERIC_PROFILE_DOMAIN_INVALID'",
+      "path": "bilqis_mlx/source_adapters/_school/numeric.py"
+    },
+    {
+      "code_hint": "FACTORY_NUMERIC_PROFILE_PARAMETER_UNKNOWN",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_NUMERIC_PROFILE_PARAMETER_UNKNOWN'",
+      "path": "bilqis_mlx/source_adapters/_school/numeric.py"
+    },
+    {
       "code_hint": "COMPOSITION_DUPLICATE_REQUESTED_SEMANTIC",
       "count": 1,
       "exception": "TypedError",
@@ -12463,132 +12589,6 @@
       "path": "bilqis_mlx/source_adapters/predecessor_parity/validation.py"
     },
     {
-      "code_hint": "BOOLEAN_ASSOCIATION_REQUIRES_NUMERIC_SOURCE_ADAPTER",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'BOOLEAN_ASSOCIATION_REQUIRES_NUMERIC_SOURCE_ADAPTER'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FACTORY_BOOLEAN_EVIDENCE_PRODUCER_UNRESOLVED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_BOOLEAN_EVIDENCE_PRODUCER_UNRESOLVED:' + root",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FACTORY_BOOLEAN_PROFILE_PARAMETER_SCOPE_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_BOOLEAN_PROFILE_PARAMETER_SCOPE_DRIFT'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FACTORY_BOOLEAN_PROFILE_PARAMETER_UNKNOWN",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_BOOLEAN_PROFILE_PARAMETER_UNKNOWN'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FACTORY_MICRO_EVIDENCE_COMPOSITION_AST_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_MICRO_EVIDENCE_COMPOSITION_AST_INVALID'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FACTORY_MICRO_EVIDENCE_COMPOSITION_KEY_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_MICRO_EVIDENCE_COMPOSITION_KEY_INVALID'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FACTORY_MICRO_EVIDENCE_KIND_UNSUPPORTED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_MICRO_EVIDENCE_KIND_UNSUPPORTED'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FACTORY_MICRO_EVIDENCE_PRODUCER_ID_UNRESOLVED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_MICRO_EVIDENCE_PRODUCER_ID_UNRESOLVED'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FACTORY_MICRO_EVIDENCE_PRODUCER_KEY_DRIFT",
-      "count": 2,
-      "exception": "ValueError",
-      "expression": "'FACTORY_MICRO_EVIDENCE_PRODUCER_KEY_DRIFT'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FACTORY_MICRO_EVIDENCE_PRODUCER_ROOT_UNRESOLVED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_MICRO_EVIDENCE_PRODUCER_ROOT_UNRESOLVED'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FACTORY_MICRO_EVIDENCE_RECORD_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_MICRO_EVIDENCE_RECORD_MISSING'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FACTORY_MICRO_EVIDENCE_REQUIRES_ONE_PRODUCER",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_MICRO_EVIDENCE_REQUIRES_ONE_PRODUCER'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FACTORY_NUMERIC_CAPABILITY_HAS_NO_ACTIVE_DOMAIN",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_NUMERIC_CAPABILITY_HAS_NO_ACTIVE_DOMAIN'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FACTORY_NUMERIC_EVIDENCE_KIND_UNSUPPORTED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_NUMERIC_EVIDENCE_KIND_UNSUPPORTED'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FACTORY_NUMERIC_EVIDENCE_PLAN_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_NUMERIC_EVIDENCE_PLAN_DRIFT'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FACTORY_NUMERIC_PROFILE_DOMAIN_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_NUMERIC_PROFILE_DOMAIN_INVALID'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FACTORY_NUMERIC_PROFILE_PARAMETER_UNKNOWN",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_NUMERIC_PROFILE_PARAMETER_UNKNOWN'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FACTORY_UNKNOWN_BOOLEAN_TEACHING_OPTION",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_UNKNOWN_BOOLEAN_TEACHING_OPTION'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
       "code_hint": "lacks U7C pattern",
       "count": 1,
       "exception": "AssertionError",
@@ -12600,42 +12600,42 @@
       "count": 1,
       "exception": "AssertionError",
       "expression": "'Pinned original token identity drift'",
-      "path": "bilqis_mlx/source_adapters/tests/test_source_adapters_micro.py"
+      "path": "bilqis_mlx/source_adapters/tests/school/test_boolean.py"
     },
     {
       "code_hint": "INDEPENDENT_FINITE_UNKNOWN_ROOT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'INDEPENDENT_FINITE_UNKNOWN_ROOT'",
-      "path": "bilqis_mlx/source_adapters/tests/test_source_adapters_micro.py"
+      "path": "bilqis_mlx/source_adapters/tests/school/test_boolean.py"
     },
     {
       "code_hint": "INDEPENDENT_FINITE_WORLD_MISMATCH",
       "count": 1,
       "exception": "ValueError",
       "expression": "'INDEPENDENT_FINITE_WORLD_MISMATCH'",
-      "path": "bilqis_mlx/source_adapters/tests/test_source_adapters_micro.py"
+      "path": "bilqis_mlx/source_adapters/tests/school/test_boolean.py"
     },
     {
       "code_hint": "SOURCE_MICRO_ORACLE_CONFLICT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'SOURCE_MICRO_ORACLE_CONFLICT'",
-      "path": "bilqis_mlx/source_adapters/tests/test_source_adapters_micro.py"
+      "path": "bilqis_mlx/source_adapters/tests/school/test_boolean.py"
     },
     {
       "code_hint": "SOURCE_MICRO_UNKNOWN_ROOT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'SOURCE_MICRO_UNKNOWN_ROOT'",
-      "path": "bilqis_mlx/source_adapters/tests/test_source_adapters_micro.py"
+      "path": "bilqis_mlx/source_adapters/tests/school/test_boolean.py"
     },
     {
       "code_hint": "SOURCE_MICRO_WORLD_MISMATCH",
       "count": 1,
       "exception": "ValueError",
       "expression": "'SOURCE_MICRO_WORLD_MISMATCH'",
-      "path": "bilqis_mlx/source_adapters/tests/test_source_adapters_micro.py"
+      "path": "bilqis_mlx/source_adapters/tests/school/test_boolean.py"
     },
     {
       "code_hint": "COMPOSITION_METHOD_EXHAUSTIVE_BUDGET_EXCEEDED",
@@ -13340,6 +13340,34 @@
   ],
   "schema": "bilqis.error-catalog/v1",
   "typed_errors": [
+    {
+      "code": "FACTORY.SEMANTIC_RULE.INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [],
+      "message_key": "errors.factory.semantic_rule.invalid.message",
+      "message_template": "Factory semantic rule contract invalid: {reason}",
+      "next_action": "Restore the canonical semantic rule identity, source authority, and registry binding before retrying.",
+      "operator_steps": [],
+      "owner": "factory.curriculum.rule_registry",
+      "preserve_state": true,
+      "recovery_key": "errors.factory.semantic_rule.invalid.recovery",
+      "self_heal_owner": null,
+      "title": "Factory semantic rule contract invalid"
+    },
+    {
+      "code": "SOURCE.BAMF_WORLD.INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [],
+      "message_key": "errors.source.bamf_world.invalid.message",
+      "message_template": "Qualified world source contract invalid: {reason}",
+      "next_action": "Restore the pinned source rows, canonical provider, and exact world query contract before retrying.",
+      "operator_steps": [],
+      "owner": "source_adapters.world_rules",
+      "preserve_state": true,
+      "recovery_key": "errors.source.bamf_world.invalid.recovery",
+      "self_heal_owner": null,
+      "title": "Qualified world source contract invalid"
+    },
     {
       "code": "SCHOOL.BAMF_ATLAS_ADMISSION.INVALID",
       "disposition": "STAGE_AND_INSPECT",
@@ -14898,7 +14926,7 @@
       "message_template": "Historical evidence failed validation: {reason}.",
       "next_action": "Inspect the recorded bytes and provenance; do not rewrite or resume the artifact.",
       "operator_steps": [],
-      "owner": "compatibility.resume_migration",
+      "owner": "compatibility.legacy.resume_migration",
       "preserve_state": true,
       "recovery_key": "errors.school.state.historical_artifact_invalid.recovery",
       "self_heal_owner": null,
@@ -15095,7 +15123,7 @@
       "owner": "runtime.admission",
       "preserve_state": true,
       "recovery_key": "errors.factory.release.manifest_content_drift.recovery",
-      "self_heal_owner": "compatibility.factory_release_v1",
+      "self_heal_owner": "compatibility.legacy.factory_release_v1",
       "title": "Sealed factory release content does not match its wire identity"
     },
     {

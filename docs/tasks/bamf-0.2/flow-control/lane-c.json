@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "2800946729e484875f7d1f57f0e6d85078936394",
-  "updated_at": "2026-11-02T17:36:44-05:00",
+  "observed_unified": "48315ee7bae3caa7d5ac279128c79217b9178d16",
+  "updated_at": "2026-11-03T09:41:07Z",
   "exception": null,
   "items": [
     {
@@ -68,22 +68,29 @@
     {
       "issue": 641,
       "pr": null,
-      "state": "WAITING",
-      "head_sha": "aa2aec1809256a6270bb8afedc87c2a655175054",
-      "summary": "C10 structural preservation follow-up is the current active Lane C surface.",
-      "resume_trigger": "Issue #641 reaches EGM-Passed on the current durable head and all pre-PR merge-readiness gates are green.",
-      "closed_pr": 739,
-      "preserved_branch": "codex/bamf02-c10-641-proof-20261102",
-      "closed_under": "EGM issue-label queue; EGM-Pending is durable on issue #641",
-      "close_reason": "Await fresh whole-candidate EGM on the durable branch before opening a merge-ready PR."
+      "state": "TURNED_IN",
+      "head_sha": "37efe5b00c285c38a0ef5d2c909385377cbd4ace",
+      "summary": "C10 structural preservation candidate merged through PR #767 and is consumed by reviewed unified.",
+      "resume_trigger": null,
+      "merged_pr": 767,
+      "preserved_branch": "codex/bamf02-c10-641-final-20261103"
+    },
+    {
+      "issue": 766,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "306d8e0f2e4efd9960ea7ec88240fb90547c8cc0",
+      "summary": "Selector pickle regression reproduced twice; two metadata assignments verified on isolated issue branch and consumed into #641. Parent owns aggregate EGM.",
+      "resume_trigger": null
     },
     {
       "issue": 746,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "6cf19868641aa6d3009e9fc63ad7baf66a3f337f",
-      "summary": "C12.2 accepted-import custody/publication remediation is active on a child branch; parent #526 remains parked.",
-      "resume_trigger": null
+      "head_sha": "fef9e73ca018702aa37c450e425efe5fe5f42576",
+      "summary": "C12.2 accepted-import B12 custody and B13 publication remediation is merge-forwarded toward current unified; parent #526/#718 remains parked until the complete owner candidate is proven.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/746-c12-import-commit-20261102"
     }
   ]
 }

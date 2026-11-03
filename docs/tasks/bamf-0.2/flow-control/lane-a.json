@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "2d4b99f3b7f8f82857028a7c1f31c1e5da61b23b",
-  "updated_at": "2026-11-02T20:45:39-05:00",
+  "observed_unified": "53655a7a5d513403bcd14e9ffd2e5577411c5832",
+  "updated_at": "2026-11-03T09:19:15Z",
   "exception": null,
   "items": [
     {
@@ -18,12 +18,22 @@
       "close_reason": "EGM-Failed; substantive remediation #758 precedes lifecycle remediation #737"
     },
     {
+      "issue": 758,
+      "pr": 777,
+      "state": "TURNED_IN",
+      "head_sha": "fe4dcd0b21a3de8e47c0bcf43f9681a92b6a556f",
+      "summary": "A08.3 rule qualification and typed Factory-family remediation is turned in through PR #777 after focused proof and scoped independent EGM; final exact-head review follows PR inventory bookkeeping.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/758-oracle-proof-20261102"
+    },
+    {
       "issue": 745,
-      "pr": 765,
       "state": "TURNED_IN",
       "head_sha": "335361d60a3f4d7050acf01c471f1f94d93a0294",
-      "summary": "A12 source-owner export-clearance remediation is refreshed onto current unified and turned in through PR #765; final #718/#526 EGM remains downstream after integration and #746.",
-      "resume_trigger": null
+      "summary": "PR #765 is externally merged as dfc0c7586c23b6477c08d4db486ade3deeb79fae; historical scoped turn-in is consumed by reviewed unified.",
+      "resume_trigger": null,
+      "merged_pr": 765,
+      "pr": null
     }
   ]
 }
