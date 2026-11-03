@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "05e31a576e3432e4238c9b4477a70d70ec4fc487",
-  "updated_at": "2026-11-03T19:20:00Z",
+  "updated_at": "2026-11-03T19:25:00Z",
   "exception": null,
   "items": [
     {
@@ -284,11 +284,11 @@
     },
     {
       "issue": 710,
-      "pr": null,
-      "state": "ACTIVE",
+      "pr": 807,
+      "state": "TURNED_IN",
       "head_sha": "05e31a576e3432e4238c9b4477a70d70ec4fc487",
       "preserved_branch": "codex/remediation-710-execution-provenance-20261103",
-      "summary": "B12.2 remediation: every candidate optimizer step binds to owner-issued B09.2 execution provenance, so a raw caller mask cannot become final candidate truth.",
+      "summary": "B12.2 remediation delivered as ready PR #807, stacked on the #711 B09.2 owner: every candidate optimizer step binds to owner-issued execution provenance, so a raw caller mask cannot become final candidate truth.",
       "resume_trigger": null
     }
   ]
