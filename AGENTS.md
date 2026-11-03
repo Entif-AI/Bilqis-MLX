@@ -95,6 +95,8 @@ targeted re-audit" is superseded by this rule and
 <!-- BAMF02:EGM-BOUNDED-CONVERGENCE:20261103 -->
 ### EGM review episodes are finite and root-cause routed
 
+ADR-127 is controlling.
+
 The pinned BAMF EGM checkout remains `b3a35956759bf7f024af2ff061b2e0b44b438e4c`
 for reviewer/persona reproducibility. Its historical review-loop termination
 behavior is not BAMF authority. BAMF adds the finite convergence rules below at
