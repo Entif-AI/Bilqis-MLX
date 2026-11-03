@@ -88,6 +88,11 @@ grep -Fx 'INSTALLED_TEST_TOTALS 122 0 0 0' "$proof_root/installed-tests.log"
 Preserve the separate `INSTALLED_WHEEL_MODULE_ORIGINS_OK` grep, the one explicit
 vendor-only exclusion, no-skip assertion and complete module/namespace checks.
 
+After executing the recipe, run `python3 -B docs/evidence/bamf/C01/registry-20261101/verify_repaired_recipe.py "$proof_root"`.
+This deterministic check rejects the stale 187/116 predicates, missing no-skip
+totals and missing installed-origin proof. Its four focused regressions run with
+`python3 -B -m unittest discover -s docs/evidence/bamf/C01/registry-20261101 -p test_verify_repaired_recipe.py`.
+
 The extra six cases are the new owning metadata suite. The 70 repository-only
 script cases and one vendor-only fixture remain covered by the full source suite.
 The fixture JSON travels through the existing package-data rule and is exercised
