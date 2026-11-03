@@ -266,7 +266,7 @@ def main() -> None:
     print("PASS: 43/43 issue API, implementation and acceptance fields match workstack")
     print("PASS: no missing/cyclic dependencies, no obsolete named-grade debt exception")
     spec_count = len(ITEMS) + (len(entries) if registry_path.exists() else len(CHILDREN))
-    print(f"PASS: all {spec_count} BAMF owner/child specs bind exact lane branches and reviewed unified lifecycle")
+    print(f"PASS: all {spec_count} BAMF owner/child specs retain indexed identity and source fingerprints")
     print("PASS: 12 owner issues and 3 repository entrypoints carry ADR-BAMF02-004")
     print("PASS: BAMF EGM operational policy reserves fresh Goldfish review for merge readiness")
     print(f"PASS: {len(CHILDREN)} recursive A09 sub-issues retain exact indexed mirrors, linked ownership and acyclic dependencies")
