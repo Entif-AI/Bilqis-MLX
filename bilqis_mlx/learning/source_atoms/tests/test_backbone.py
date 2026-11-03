@@ -8,7 +8,7 @@ import numpy as np
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.source_atoms.backbone import start_source_backbone_numerical
 from bilqis_mlx.source_adapters.tests.atoms.helpers import REAL_BUNDLE
-from .backbone_test_support import SourceBackboneTestBase
+from bilqis_mlx.learning.source_atoms.tests.backbone_test_support import SourceBackboneTestBase
 
 
 @skipUnless(REAL_BUNDLE, "real pinned A01 artifact not mounted")
