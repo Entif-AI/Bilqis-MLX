@@ -48,6 +48,11 @@ def captured_source_routes(source, dependencies):
             return value.id
         if isinstance(value, ast.Attribute) and value.attr in names:
             return value.attr
+        if (isinstance(value, ast.Call) and isinstance(value.func, ast.Name)
+                and value.func.id == "getattr" and len(value.args) >= 2
+                and isinstance(value.args[1], ast.Constant)
+                and value.args[1].value in names):
+            return value.args[1].value
         return None
 
     for node in ast.walk(tree):
@@ -55,7 +60,7 @@ def captured_source_routes(source, dependencies):
             for alias in node.names:
                 if alias.name in names and (alias.asname or alias.name) in function_names:
                     yield (node.lineno, "captured-import", alias.name)
-        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
             for value in (*node.args.defaults, *node.args.kw_defaults):
                 name = dependency(value)
                 if name:

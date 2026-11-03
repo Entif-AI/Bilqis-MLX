@@ -29,6 +29,9 @@ class FacadeDependencyTests(unittest.TestCase):
             "from facade import helper as alias\ndef read(): return alias()\n",
             "cached = facade.helper\ndef read(): return cached()\n",
             "def read(callback=facade.helper): return callback()\n",
+            "cached = getattr(facade, 'helper')\ndef read(): return cached()\n",
+            "def read(callback=getattr(facade, 'helper')): return callback()\n",
+            "read = lambda callback=facade.helper: callback()\n",
             "def outer():\n cached = helper\n return lambda: cached()\n",
         )
         for source in bad:

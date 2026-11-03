@@ -73,3 +73,12 @@ its existing review episode/cap and final aggregate decision. The separate #801
 recipe must be rerun against the parent's final source. IPR-0220 remains opaque.
 No actual student, own AdamW, teacher, source release, graph, admission, human-run
 or self-merge mutation occurs.
+
+Ordinary independent GPT-6.1 Terra High implementation review found one
+`MECHANICAL_PROOF` gap in the census, not a remaining production capture:
+fixed-name `getattr` aliases/defaults were not detected. Three new controls
+(`getattr` alias/default and lambda default) failed before repair. The repaired
+census handles them and passes all three census tests, zero skips. The reviewer
+read the bounded two-file correction and cleared that specific finding without
+another whole-candidate review. This is not arbitrary Python metaprogramming
+coverage; the production ownership rule is explicit facade attribute lookup.
