@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import os
+import json
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -13,7 +15,7 @@ import bilqis_mlx._data_plane.file_objects as file_objects
 from bilqis_mlx.data_plane import close_data_planes, data_plane
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.bamf_bundle import (
-    load_bamf_bundle, publish_bamf_generation, save_bamf_bundle,
+    load_bamf_bundle, load_bamf_generation, publish_bamf_generation, save_bamf_bundle,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     accepted_state, candidate, parent_state, shape_patch,
@@ -108,6 +110,57 @@ class BamfTensorCasTests(unittest.TestCase):
         self.assertIn(shard, synced)
         self.assertLess(synced.index(root.parent), synced.index(shard))
         self.assertTrue(data_plane().require_file_object(digest).is_file())
+
+    def test_existing_unowned_object_requires_copy_headroom(self):
+        import bilqis_mlx.runtime.bamf_bundle.codec as codec
+        source = candidate(parent_state())
+        manifest = self.save(source, "owned")
+        digest = manifest["tensors"]["sha256"]
+        plane = data_plane()
+        target = plane.require_file_object(digest)
+        plane._db.execute("DELETE FROM meta WHERE key=?", (file_objects._OWNER_KEY_PREFIX + digest,))
+        inode = target.stat().st_ino
+        with patch.object(codec, "assert_headroom", side_effect=RuntimeError("reserve")) as reserve:
+            with self.assertRaisesRegex(RuntimeError, "reserve"):
+                self.save(source, "unowned")
+        self.assertEqual(reserve.call_args.kwargs["reserve_gib"], 100.0)
+        self.assertEqual(reserve.call_args.kwargs["required_bytes"], target.stat().st_size)
+        self.assertEqual(target.stat().st_ino, inode)
+
+    def test_published_generations_reuse_then_separate_payloads(self):
+        run = self.root / "run"
+        state = parent_state()
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            first = publish_bamf_generation(run, candidate(state))
+            first_root = run / first["bundle"]
+            before = {p.name: p.read_bytes() for p in first_root.iterdir()}
+            first_manifest = json.loads(before["manifest.json"])
+            digest = first_manifest["tensors"]["object_sha256"]
+            original = data_plane().require_file_object(digest)
+            original_inode = original.stat().st_ino
+            swap = candidate(state, 1, first["manifest_sha256"])
+            extents = replace(swap.extents, active_semantic_digest="8" * 64)
+            semantic = {**swap.semantic_abi, "active_set_sha256": "8" * 64}
+            swap = replace(swap, extents=extents, semantic_abi=semantic,
+                           transition={**swap.transition, "kind": "PARAMETER_EXTENSION"})
+            second = publish_bamf_generation(run, swap)
+            second_manifest = json.loads((run / second["bundle"] / "manifest.json").read_bytes())
+            self.assertEqual(second_manifest["tensors"]["object_sha256"], digest)
+            self.assertEqual(original.stat().st_ino, original_inode)
+            changed = replace(candidate(accepted_state(state), 2, second["manifest_sha256"]),
+                              extents=extents, semantic_abi=semantic)
+            third = publish_bamf_generation(run, changed)
+            third_manifest = json.loads((run / third["bundle"] / "manifest.json").read_bytes())
+            self.assertNotEqual(third_manifest["tensors"]["object_sha256"], digest)
+            self.assertEqual(load_bamf_generation(run / "bamf-state.json").generation, 2)
+            self.assertEqual(load_bamf_bundle(first_root).generation, 0)
+            self.assertEqual(load_bamf_bundle(run / second["bundle"]).generation, 1)
+            expected_events = [dict(load_bamf_bundle(run / pointer["bundle"]).outbox[0])
+                               for pointer in (first, second, third)]
+        self.assertEqual({p.name: p.read_bytes() for p in first_root.iterdir()}, before)
+        self.assertEqual(len(tuple(original.parent.parent.glob("*/*.safetensors"))), 2)
+        events = [json.loads(line) for line in (run / "events.jsonl").read_text().splitlines()]
+        self.assertEqual(events, expected_events)
 
 
 if __name__ == "__main__":

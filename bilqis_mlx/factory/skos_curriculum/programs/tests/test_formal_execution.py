@@ -1,5 +1,6 @@
 """Real default-program execution must preserve the selected capability meaning."""
 from unittest import TestCase, skipUnless
+from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory.generation import execute_release_family_program
@@ -53,3 +54,21 @@ class FormalProgramExecutionTests(TestCase):
             construct_args=(self.atlas, "bilqis.numeric/v1:school.op.SUCC", inputs, binding),
             check_args=(TypedValue("Number", 3, self.atlas.release_sha256), self.atlas, binding))
         self.assertEqual((result.operator_id, result.positive.value), ("SUCC", 3))
+
+    def test_execution_reenters_stable_capability_identity_owner(self):
+        binding, inputs = formal_case(
+            "BOOL_AND", ("Boolean", True), ("Boolean", False))
+        with patch(
+            "bilqis_mlx.factory.curriculum.capability_identity."
+            "bind_factory_release_capability_identity",
+            side_effect=RuntimeError("stable identity owner reached"),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "stable identity owner reached"):
+                execute_release_family_program(
+                    self.release, self.sources, default_family_program_registry(),
+                    self.atlas, LearnedFrontier(self.atlas.release_sha256), "B.AND",
+                    construct_args=(
+                        self.atlas, "legacy:cogal.operator.AND", inputs, binding),
+                    check_args=(
+                        TypedValue("Boolean", False, self.atlas.release_sha256),
+                        self.atlas, binding))

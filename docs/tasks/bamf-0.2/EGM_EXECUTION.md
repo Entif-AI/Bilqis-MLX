@@ -57,6 +57,74 @@ not call the leaf fully reviewed. Older copied issue/mirror language saying "one
 repair pass and one targeted re-audit" is superseded by this section. Never include
 credentials, private source text or student state in the review packet. IPR-0220
 remains an opaque authority reference.
+## Bounded convergence override
+
+ADR-127 is the controlling architecture decision for this section.
+
+The pinned `b3a359...` checkout is retained for reproducible reviewer personas and
+standards. Its historical review-loop driver repeats until zero findings or manual
+halt. BAMF does **not** inherit that unbounded termination behavior.
+
+### Review episode
+
+- Give each whole merge-candidate review lineage one stable episode identity.
+- Keep the same episode across ordinary repair commits, merge-forwarding required by
+  the same candidate, and exact-head changes that only resolve findings from that
+  episode.
+- Increment one monotonic round number for every complete whole-candidate Goldfish
+  round. Changing the SHA does not reset the counter.
+- The default episode cap is five complete rounds.
+- One complete clean round is sufficient for BAMF implementation merge readiness.
+  A clean round has no unsettled Blocker/Major and no requested reviewer marked
+  missing/failed.
+- At the cap, or on churn, stop automatic review. Return the candidate to design or
+  obtain explicit human authority to continue. Do not silently mint another episode.
+
+Churn means a new blocking finding reverses or materially conflicts with a repair
+made to satisfy an earlier finding at the same ownership locus, or successive rounds
+keep moving the same contract boundary without converging.
+
+### Finding triage before repair
+
+Every Blocker/Major must state its blocking basis and locus. The blocking basis is a
+violated named requirement/authority, a concrete in-scope failure, or a missing
+required ownership/interface/acceptance seam. Classify the locus as
+`TARGET_LOCAL`, `SHARED_CONTRACT`, `PARENT_INTEGRATION`, `AUTHORITY_GAP`, or
+`MECHANICAL_PROOF`.
+
+Repair shared/parent/authority findings at their canonical owner and pause only the
+affected descendants. If two or more late findings share the same root premise or
+owner, promote one systemic finding and stop reviewing descendants against a moving
+foundation until that owner is repaired and rechecked.
+
+### Proof routing
+
+Run deterministic proof before Goldfish. Contract-mirror reconciliation,
+traceability, schema/count checks, source census, dependency readiness, file/ABI
+identity, and other mechanically decidable facts belong in scripts, tests, or focused
+audits. A finding classified `MECHANICAL_PROOF` is closed by its deterministic
+red/green proof and does not require a separate fresh EGM round. Repeated mechanical
+findings should become validator coverage rather than recurring reviewer prompts.
+
+Goldfish remains appropriate for semantic ambiguity, hidden ownership, unsafe
+integration behavior, cross-boundary failure modes, and implementation-readiness
+questions that deterministic proof cannot establish.
+
+### Semantic staleness
+
+Classify changes before invalidating review evidence:
+
+- `NONSEMANTIC`: prose, formatting, bookkeeping, receipt/link cleanup. No fresh EGM.
+- `MECHANICAL_CONFORMANCE`: machine-checkable traceability, mirror, census, or schema
+  repair. Run deterministic proof; no fresh EGM solely for this change.
+- `LOCAL_SEMANTIC`: meaning/behavior within one owned boundary. Re-review that scope.
+- `DEPENDENCY_SEMANTIC`: consumed authority/interface/source meaning changed. Re-review
+  only the impacted consumers.
+- `ARCHITECTURE`: ownership/decomposition/topology changed. Return the affected scope
+  to design before further implementation review.
+
+The owning issue records episode ID, round count, latest reviewed head, open finding
+IDs/loci, and disposition. This state survives compaction and agent turnover.
 ### Finding and remediation lifecycle
 
 The parent merge candidate owns the EGM result. A remediation child does not remain

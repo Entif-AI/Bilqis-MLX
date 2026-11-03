@@ -60,7 +60,8 @@ def provider_implementation_digest():
     """Exact current implementation, independently bound by factory receipts."""
     files = ("live_grade_c.py", "numeric_curriculum.py", "semantics/numeric.py",
              "semantics/numeric_v1.json", "source_adapters/numeric.py", "verification/numeric.py",
-             "source_adapters/school.py", "compatibility/numeric_constructor_v1.json")
+             "source_adapters/school.py", "source_adapters/_school/numeric.py",
+             "compatibility/numeric_constructor_v1.json")
     import hashlib
     return digest({name: hashlib.sha256(source_path(name).read_bytes()).hexdigest() for name in files})
 

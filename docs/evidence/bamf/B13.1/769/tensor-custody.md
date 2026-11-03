@@ -1,0 +1,107 @@
+# Tensor content-addressed custody: follow-up #769
+
+The candidate starts from synchronized Lane B/unified
+`deaa8b9dbd277993f884abeea7413f9cb799d945`, preserving the externally merged
+#753 / PR #768 implementation and its directory-creation regression test. The prior
+reviewed repair consumed unified `dfc0c7586c23b6477c08d4db486ade3deeb79fae`
+through synchronized Lane B; the final sync also consumes unified
+`338a3c5263772566502af70d731b95af1d91a81e`. It preserves the existing issue implementation
+`349ac665880dbdd545cddd0ec8e50817095d73b1`. IPR-0220 governs. Only disposable
+fixtures execute; real student, own AdamW, teacher and original checkpoints remain
+human-owned. This repair does not establish full B13 learning acceptance.
+
+## Storage and compatibility
+
+`DataPlaneFileObjectMixin` owns tensor objects beside the shared data-plane SQLite
+file, addressed by SHA-256. Adoption streams into a private temporary inode,
+flushes/fsyncs its bytes, checks its digest and installs it with a no-overwrite
+hard link. Competing installers verify the winner and detach it when the winner lacks an
+ownership receipt, including an older writer racing outside the SQLite transaction. Every adoption fsyncs the actual object inode, shard, object root and object-root
+parent before returning, including reuse. The existing data-plane SQLite
+transaction serializes adoption across processes. Its existing `meta` table
+records a versioned ownership key with device/inode/ctime/size after byte and
+directory durability; ownership also requires the persisted object to have exactly
+one hard link. No new table or schema version is needed. A verified object with no
+matching ownership receipt, or with an additional hard-link alias, is atomically
+replaced once by an owned single-link copy.
+This isolates old caller links and open descriptors without changing logical
+content or historical bundle bytes. Receipt loss or interrupted publication causes
+a safe re-copy on retry. Verified owned objects reuse the exact inode. Copying
+holds the existing SQLite writer transaction; competing writes may wait within
+the existing busy-timeout contract. The B13 staging write, reserve decision and adoption share that transaction.
+Concurrent distinct-payload processes with budget for one additional copy yield
+one success and one reserve refusal. Cold-read re-ownership also checks reserve
+inside the same serialized decision. Caller source aliases cannot modify the copied object.
+
+The B13 codec serializes its numerical payload through the existing checkpoint
+owner, checks the CAS filesystem's configured disk reserve before an additional
+copy, adopts the payload and removes its staging copy. New tensor bindings carry
+`object_sha256`; cold read resolves and deep-verifies that object before MLX
+construction. If an old published CAS object lacks ownership, the numerical read
+boundary checks the default 100 GiB reserve and adopts an owned copy before opening
+it for MLX. Read-only custody validation continues to verify bytes without
+performing this migration. A pinned prior CAS writer/adopter fixture retains a
+writable descriptor across publication and proves current cold read detaches it,
+keeps all numerical/optimizer identities and old bundle bytes, and refuses the
+copy when headroom is unavailable. Existing six-field local-file v2 bindings remain readable. No old
+bundle or schema is rewritten. A positive compatibility fixture executes the exact
+pre-CAS writer from the pinned unified Git object above (source SHA-256
+`01e66fcbe15802615c3557a2a4b99c0fb75a37d64fe3d61ee30bf56d1301fcdc`).
+It publishes a genuine old local-file v2 bundle, compares every weight/moment/count
+against the pre-save candidate, reads it in a fresh process through the current
+pointer owner and proves every old bundle byte unchanged. This fixture needs Git
+and that commit object; no stored student binary is added to the repository. Existing sidecar validation, generation pointer
+lock, staging, atomic publication and outbox reconciliation retain ownership.
+
+## Reproduction
+
+Run on the supported host with Python and MLX installed:
+
+```sh
+python3 -B scripts/run_tests.py \
+  bilqis_mlx/runtime/tests/custody/data_plane/test_file_objects.py \
+  bilqis_mlx/runtime/tests/custody/bamf_bundle/test_tensor_cas.py \
+  bilqis_mlx/runtime/tests/custody/bamf_bundle/test_pre_cas_compatibility.py \
+  bilqis_mlx/runtime/tests/custody/bamf_bundle/test_tensor_reserve_concurrency.py
+python3 -B -m unittest \
+  bilqis_mlx.runtime.tests.custody.bamf_bundle.test_codec \
+  bilqis_mlx.runtime.tests.custody.bamf_bundle.test_codec_boundaries \
+  bilqis_mlx.runtime.tests.custody.bamf_bundle.test_publication \
+  bilqis_mlx.runtime.tests.custody.bamf_bundle.test_publication_durability \
+  bilqis_mlx.runtime.tests.custody.data_plane.test_store \
+  bilqis_mlx.runtime.tests.custody.data_plane.test_custody \
+  bilqis_mlx.runtime.tests.custody.data_plane.test_events
+```
+
+Observed on the repaired candidate: 20 targeted tests and 37 existing tests pass
+without skips. Controls
+cover unchanged-object reuse, changed-object separation, corruption rejection,
+pointer-crash/retry reuse, caller-alias mutation, competing installation,
+independent-process convergence and directory fsync calls. A three-generation
+published sequence covers data-only active-set extension with identical numerical
+bytes, then a retained numerical update with distinct bytes. It checks exact
+parent-bundle bytes, cold readback and generation-bound outbox delivery. Test fixtures use
+small numerical shapes and patch headroom; production reserve remains 100 GiB.
+Publication intercepts the pointer and verifies fsync of the actual persisted CAS
+inode and its directory ancestry, including object reuse. Reuse observations reset for each publication. Negative controls remove
+CAS file or directory fsync during reuse and prove the pointer check fails before
+installation. Existing unowned single-link objects with an open caller descriptor
+are isolated once; owned receipts survive a data-plane restart.
+Power-loss durability is supported by these ordering tests, not a physical power-cut run.
+
+Incident PM-2026-11-03-001 records the newly discovered CAS gaps and native ledger
+readback. Historical PM-2026-11-01-004/005 remain separate custody/proof provenance.
+Final isolated pinned EGM and hosted PR checks are separate required receipts.
+Source-qualified next-step continuation (#709), cache transitions (#754) and
+accepted feature authority (#708) remain separate owner work.
+
+## Writer-version boundary
+
+Concurrent convergence applies to writers running this implementation. The pinned
+old adopter can propagate `EEXIST` when it loses to an upgraded writer; this patch
+cannot alter already-running old code. The deterministic mixed-version loser
+fixture proves that failure leaves the upgraded object owned and intact, and an
+upgraded retry reuses its inode. If an old writer wins first, the upgraded writer
+verifies and detaches its unowned object. These cases establish custody safety,
+not successful completion of every old binary. Upgrade writers before relying on
+the concurrent-success guarantee.

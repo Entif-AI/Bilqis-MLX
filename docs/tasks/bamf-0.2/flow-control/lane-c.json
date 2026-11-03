@@ -1,17 +1,17 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "deaa8b9dbd277993f884abeea7413f9cb799d945",
-  "updated_at": "2026-11-03T08:12:26.070689Z",
+  "observed_unified": "48315ee7bae3caa7d5ac279128c79217b9178d16",
+  "updated_at": "2026-11-03T07:54:00Z",
   "exception": null,
   "items": [
     {
       "issue": 347,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "cfe7e7ed98f7d3928b50e33c871d56357361e32c",
-      "summary": "Preserved694 and733 repair consumed into isolated C01 continuation;187source/archive,116installed,6CPU-native pass. Whole-candidate EGM pending; full347 holds and baseline770 remain explicit.",
-      "resume_trigger": null,
+      "state": "WAITING",
+      "head_sha": "cb536f744008c7e7575c3d3973c135aa38292fd6",
+      "summary": "C01 structural proof candidate awaits reproducibility remediation.",
+      "resume_trigger": "Remediation #733 is resolved and C01 is selected as Lane C's current integration candidate.",
       "closed_pr": 694,
       "preserved_branch": "codex/bamf02-c01-347-registry-20261101",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
@@ -69,10 +69,11 @@
       "issue": 641,
       "pr": null,
       "state": "TURNED_IN",
-      "head_sha": "4099487b16c6a26cec1888d23310ede7792bb248",
-      "summary": "PR767 externally merged as338a3c52; full scoped641 structural/identity acceptance verified, issue CLOSED. No full355/586 acceptance inferred.",
+      "head_sha": "37efe5b00c285c38a0ef5d2c909385377cbd4ace",
+      "summary": "C10 structural preservation candidate merged through PR #767 and is consumed by reviewed unified.",
       "resume_trigger": null,
-      "merged_pr": 767
+      "merged_pr": 767,
+      "preserved_branch": "codex/bamf02-c10-641-final-20261103"
     },
     {
       "issue": 766,
@@ -80,14 +81,6 @@
       "state": "TURNED_IN",
       "head_sha": "306d8e0f2e4efd9960ea7ec88240fb90547c8cc0",
       "summary": "Selector pickle regression reproduced twice; two metadata assignments verified on isolated issue branch and consumed into #641. Parent owns aggregate EGM.",
-      "resume_trigger": null
-    },
-    {
-      "issue": 770,
-      "pr": null,
-      "state": "READY",
-      "head_sha": null,
-      "summary": "Fourteen identical baseline/candidate issue-contract verification failures have a durable bounded C01 owner. No repair or graph-readiness claim yet.",
       "resume_trigger": null
     }
   ]
