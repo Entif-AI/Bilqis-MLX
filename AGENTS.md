@@ -26,11 +26,25 @@ BAMF execution. Lane A works on `codex/bamf02-a-semantics`, Lane B on
 each implementing issue, the lane writer must fetch and merge the current
 `origin/codex/bamf-unified-base-20261028` into the lane branch, record the unified
 SHA consumed, resolve conflicts, and run the smallest affected verification. Do
-not merge `main` or a sibling lane directly. Completed issue work returns through
-a lane-to-unified PR for explicit human sign-off; no issue authorizes the agent to
-self-merge that PR. After accepted work lands on unified, the next issue in every
-lane repeats the sync-in step so reviewed cross-lane interfaces and instrumentation
-arrive early rather than accumulating as end-of-program conflicts.
+not merge `main` or a sibling lane directly. Keep implementation and review state
+on the owning issue and branch until the work is truly ready to merge. Do not use a
+draft pull request as a queue marker or review-state surrogate. A new exact-head EGM
+request adds `EGM-Pending` to the owning issue. Replace it with `EGM-Passed` only
+after a complete PASS, or with `EGM-Failed` after any Blocker/Major failure. Label
+each independently executable remediation issue created from that failure
+`EGM-Mitigation`. Keep `EGM-Failed` on the owner while repairs are in progress. Move
+the owner back to `EGM-Pending` only when the full known failure set is repaired and
+the next whole candidate is again ready for review. A behavior-changing commit after
+`EGM-Passed` invalidates that state for merge readiness.
+
+Open the lane-to-unified PR only after the candidate is otherwise ready to merge,
+including required EGM PASS and every pre-PR gate available on the branch. Open it
+ready for human review, not as a draft work queue. PR-hosted checks are the final
+integration gate; a behavior-changing repair for a hosted failure invalidates the
+prior EGM PASS. Existing historical/draft PRs remain provenance and need not be
+closed or recreated solely to adopt this policy. No issue authorizes self-merge.
+After accepted work lands on unified, the next issue in every lane repeats the
+sync-in step so reviewed cross-lane interfaces arrive early.
 
 ## BAMF-0.2 flow control and parked-PR discipline — 2026-11-02
 
@@ -78,12 +92,78 @@ The next EGM reviews the next whole merge candidate, not each remediation in
 isolation. Any older copied BAMF issue text prescribing "one repair pass and one
 targeted re-audit" is superseded by this rule and
 `docs/tasks/bamf-0.2/EGM_EXECUTION.md`.
+### Remediation artifacts are a working set, not an archive
+
+Close a remediation issue when its exact recorded defect has been reproduced,
+repaired, covered by a regression, and verified on a durable PR/head. Do not keep
+that child issue open merely because its parent still awaits EGM, sibling work,
+dependency integration, or final human merge. The linked PR is the pending
+integration receipt.
+
+Keep a remediation PR in draft only while its own scoped implementation or known
+Blocker/Major repair is incomplete. Parent-level EGM debt is not a reason for draft
+status. Mark the PR ready when its own acceptance is satisfied; merge or close it
+promptly once its change is consumed by the intended parent/candidate branch.
+Closed issues and merged PRs remain provenance and should not remain in the active
+queue just to preserve history.
+
+If later EGM or integration proves the **same original defect** still exists, reopen
+the remediation issue. If it exposes a different mechanism, newly unlocked gap, or
+new acceptance failure, create a new issue. The owning parent issue/PR carries the
+aggregate EGM pass/fail state and whole-candidate merge readiness.
+Prefer repairing a remediation issue directly on the authorized parent candidate
+branch when writer ownership and review isolation allow it. Do not create a separate
+PR merely to preserve the finding; the issue already provides the durable defect
+record. Use a stacked remediation PR only when branch ownership, concurrent-writer
+isolation, or focused review requires it, and merge/close that PR promptly once its
+bounded repair is consumed.
+Because BAMF PRs normally merge into reviewed integration branches rather than the
+repository default branch, GitHub closing keywords may not retire linked issues.
+After a remediation is accepted or its PR is consumed, explicitly read back and
+close the remediation issue; do not assume `Closes #N` changed issue state.
 
 The repository checker can validate declared state, WIP counts, required resume
 triggers and explicit exceptions. It cannot observe an unrecorded remote mutation or
 an agent merely reading a branch. Updating lane state before mutation therefore
 remains an operator duty. See `ADR-124` and
 `docs/tasks/bamf-0.2/README.md`.
+
+## BAMF-0.2 integration inventory and PR admission — 2026-11-02
+
+ADR-126 separates active implementation WIP from **open implementation-PR
+inventory**. The normal BAMF implementation-PR ceiling is **three total**, with at
+most one current integration candidate per Lane A, B and C. The unified integration
+PR into `main` is a separate program container.
+
+Completing a leaf does not entitle it to an open PR. Before opening a BAMF
+implementation PR, run the live gate:
+
+`python3 -B scripts/check_bamf_flow_control.py --live`
+
+PR admission requires an available slot, a durable issue/head, consumable hard
+prerequisites, required current-unified synchronization, green scoped verification,
+no known candidate-owned Blocker/Major, and no existing PR that already owns the
+same integration delta.
+
+If live implementation inventory exceeds the ceiling, BAMF is in **DRAIN** mode.
+Do not open another implementation PR unless it replaces a PR closed in the same
+operation or the flow-control policy carries an explicit owner-authorized exception.
+New implementation work may proceed on authorized branches/issues without
+increasing PR inventory.
+
+EGM review state and PR timing are governed by the canonical EGM label lifecycle in
+this file. PRs are integration vehicles, not durable EGM queue markers. Do not keep
+an implementation PR open solely to represent `EGM-Pending`, `EGM-Failed`, or
+`EGM-Mitigation`; the issue labels and durable branch/head custody carry that
+state. An active merge or remediation-delivery attempt may still use a PR.
+
+The flow-control checker reconciles the ledger against live GitHub state. An open
+implementation PR that is explicitly represented in the ledger counts even when
+its stacked parent PR has already closed.
+
+PR #741 is the temporary control-plane exception for implementing ADR-126 itself.
+It is not BAMF feature inventory, and its exception expires when PR #741 merges or
+closes. Do not generalize that exception by branch name or reuse it for later work.
 
 ## Context-window protection for repository census commands — 2026-11-02
 
