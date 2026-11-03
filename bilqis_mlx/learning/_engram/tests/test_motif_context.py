@@ -8,7 +8,7 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_engram import motif_keys
 from bilqis_mlx.learning.atlas_engram_source import source_qualified_motif_context
 from bilqis_mlx.semantics.context_eligibility import ContextHold, SourceFrontier
-from . import test_atlas_engram_source as source_fixtures
+from bilqis_mlx.learning._engram.tests import test_atlas_engram_source as source_fixtures
 
 
 @unittest.skipUnless(os.environ.get("BILQIS_ATLAS_REAL_ARTIFACT"),
