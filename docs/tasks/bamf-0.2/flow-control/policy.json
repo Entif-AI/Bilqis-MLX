@@ -49,7 +49,14 @@
         "expires_when": "PR #743 merges or closes."
       }
     ],
-    "admission_exceptions": [],
+    "admission_exceptions": [
+      {
+        "head_branch": "codex/remediation-713-c02-authority-20261103",
+        "reason": "BAMF EGM-Mitigation #713 canonical A05/A06 authority at the C02.1 model-input boundary.",
+        "authority": "Direct project-owner instruction on 2026-11-03 to keep the EGM-Mitigation queue moving",
+        "expires_when": "The #713 remediation PR merges or closes."
+      }
+    ],
     "initial_drain_status": "COMPLETED_WITH_ISSUE_LABEL_QUEUE",
     "initial_drain_closed_prs": [
       640,
