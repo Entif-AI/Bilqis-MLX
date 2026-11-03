@@ -56,8 +56,7 @@ A08.1b.2, A08.1b.5, B02.4, B11.1a and C14.4.
 
 This is mechanical contract verification, not evidence of a runnable graph,
 full #347 completion, source admission, or learning. Parent integration and its
-aggregate EGM remain separate. The implementation-PR inventory is at its three-PR
-ceiling; this feature is preserved for canonical parent consumption rather than
-opening a fourth PR. Historical ABI enforcement remains advisory without an
-external expected fingerprint. IPR-0220 governs. No actual student, matching
+aggregate EGM remain separate. Issue-owned turn-in requires available PR capacity
+and the scoped merge-readiness review. Historical ABI enforcement remains advisory
+without an external expected fingerprint. IPR-0220 governs. No actual student, matching
 AdamW, teacher, champion, checkpoint or human-run state changes.
