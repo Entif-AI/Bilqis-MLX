@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "deaa8b9dbd277993f884abeea7413f9cb799d945",
-  "updated_at": "2026-11-03T08:37:52.035302Z",
+  "updated_at": "2026-11-03T08:56:33.871856Z",
   "exception": null,
   "items": [
     {
@@ -96,6 +96,14 @@
       "state": "TURNED_IN",
       "head_sha": "c27ac97d6015b34b86b14a160f8a51a685d38432",
       "summary": "Public callable metadata defect reproduced56times; six focused tests and parent clean-archive193/installed122 proof pass. Bounded repair consumed; aggregate parent EGM remains.",
+      "resume_trigger": null
+    },
+    {
+      "issue": 774,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "8e6e5dfd5e69e1e8256a0a522519509659294619",
+      "summary": "Both stale historical grep predicates reproduced exit1; exact documented193/122 replacement commands execute successfully on actual source3174c368 proof logs. Consumed into parent; aggregate EGM pending.",
       "resume_trigger": null
     }
   ]

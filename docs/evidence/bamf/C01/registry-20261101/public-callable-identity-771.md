@@ -21,8 +21,8 @@ accessors and wrapped generated methods. Both original defining module and the
 class-qualified name must match before a class member is changed. Inherited
 members are not traversed; functions from other defining modules remain unchanged.
 Wrapper traversal stays within each function's original defining module, restoring
-the public module identity those wrapped functions held before extraction. The four public
-facades import the helper through a private alias and retain their existing
+the public module identity those wrapped functions held before extraction. The four
+public facades import the helper through a private alias and retain their existing
 export lists. No original method body, signature, docstring, object, source guard,
 validation order or compiler packing seam changes.
 
@@ -69,6 +69,7 @@ these exact substitutions for the repaired source:
 grep -Fx 'TEST_TOTALS total=193 passed=193 failed=0 skipped=0 errors=0' \
   "$proof_root/source-tests.log"
 ```
+
 3. In the installed probe, immediately before the case-count assertion, add:
 
 ```python
