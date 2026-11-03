@@ -89,6 +89,9 @@ Preserve the separate `INSTALLED_WHEEL_MODULE_ORIGINS_OK` grep, the one explicit
 vendor-only exclusion, no-skip assertion and complete module/namespace checks.
 
 After executing the recipe, run `python3 -B docs/evidence/bamf/C01/registry-20261101/verify_repaired_recipe.py "$proof_root"`.
+That default invocation applies only to this historical 193/122 source. A later
+overlay must select its own document and declared totals explicitly; the
+[199/122 overlay](integrated-20261103.md) shows its replacement invocation.
 This deterministic check rejects the stale 187/116 predicates, missing no-skip
 totals and missing installed-origin proof. Its four focused regressions run with
 `python3 -B -m unittest discover -s docs/evidence/bamf/C01/registry-20261101 -p test_verify_repaired_recipe.py`.

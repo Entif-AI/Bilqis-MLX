@@ -121,8 +121,9 @@
       "pr": null,
       "state": "READY",
       "head_sha": null,
-      "summary": "Round3 current199 recipe inherits historical193 validator; deterministic current-total proof repair, plus stale next-gate paragraph.",
-      "resume_trigger": null
+      "summary": "Current199/122 inherited-validator failure reproduced; explicit document/source/installed totals now pass actual199/122 logs; historical defaults and10literal regressions green. Full composed201/124 proof pending closure.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-c-787-proof-totals-20261103"
     }
   ]
 }

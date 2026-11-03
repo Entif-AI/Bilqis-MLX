@@ -59,6 +59,15 @@ grep -Fx 'INSTALLED_TEST_TOTALS 122 0 0 0' "$proof_root/installed-tests.log"
 grep -Fx 'INSTALLED_WHEEL_MODULE_ORIGINS_OK' "$proof_root/installed-tests.log"
 ```
 
+Replace the inherited historical-validator step with this invocation for this
+specific 199/122 source. Do not run the default 193/122 validator on these logs:
+
+```console
+python3 -B docs/evidence/bamf/C01/registry-20261101/verify_repaired_recipe.py "$proof_root" \
+  --document docs/evidence/bamf/C01/registry-20261101/integrated-20261103.md \
+  --source-total 199 --installed-total 122
+```
+
 The six native CPU callers use the exact selection in
 [current-20261103.md](current-20261103.md). The actual contract verifier is
 `python3 -B scripts/verify_bamf_0_2_contracts.py`. Registry validation is
@@ -70,8 +79,11 @@ same eight normalization holds remain and executable order is empty.
 
 PR #781 is open with hosted portable/core and Semantic ABI checks successful.
 It remains the current Lane C integration PR. No competing C01 PR is opened.
-The combined C01 branch waits for #781 human integration and an available Lane C
-slot before final current-unified sync and otherwise-ready aggregate EGM.
+The combined C01 branch already contains #781's repair. Once all known repairs,
+available gates and complete final aggregate review pass, the combined parent may
+supersede #781 as consumed in the same governed PR replacement operation. Keep
+#781 intact until that replacement is ready. The ready parent still requires human
+integration before another lane consumes its structural repair through unified.
 The existing episode is `C01-STRUCTURE-20261103`; source changes do not reset its
 round count or five-round cap. This checkpoint claims no new aggregate EGM PASS.
 Full #347, source/evaluator/custody/admission and normalization obligations remain.
