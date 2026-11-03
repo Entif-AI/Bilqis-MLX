@@ -27,7 +27,7 @@ from bilqis_mlx.learning._engram.atlas_engram_identity import (
     MotifMember,
     MotifSlot,
 )
-from bilqis_mlx.learning._engram.atlas_engram_keys import motif_keys
+from bilqis_mlx.learning._engram.atlas_engram_keys import build_motif_input, motif_keys
 from bilqis_mlx.learning._engram.atlas_engram_plan_types import (
     PAGE_GROWTH_SCHEMA,
     PLAN_SCHEMA,
@@ -55,6 +55,6 @@ __all__ = [
     "PLAN_SCHEMA", "VIEW_SCHEMA", "FrameInstanceV2", "FrameSchemaV1",
     "MotifFrameInput", "MotifKey", "MotifManifest", "MotifMember",
     "MotifSlot", "CandidateMotifView", "MotifAllocationPlan", "MotifBudget",
-    "MotifMatch", "MotifPageGrowth", "_plan_page_growth", "motif_keys",
+    "MotifMatch", "MotifPageGrowth", "_plan_page_growth", "build_motif_input", "motif_keys",
     "prepare_motifs", "candidate_motif_manifest", "initialize_planned_motif_slot",
 ]

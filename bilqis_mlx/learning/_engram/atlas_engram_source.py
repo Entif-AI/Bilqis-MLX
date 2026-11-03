@@ -23,7 +23,7 @@ from bilqis_mlx.semantics.released_frame_schemas import (
     lookup_source_pinned_frame_schema,
 )
 from .atlas_engram import (
-    MotifBudget, MotifFrameInput, MotifManifest,
+    MotifBudget, MotifFrameInput, MotifManifest, build_motif_input,
 )
 from .atlas_engram_identity import _SHA, _invalid
 from .atlas_engram_transaction import (
@@ -91,30 +91,6 @@ def _qualify_frame(envelope, snapshot, source_family, atlas_selection,
     return frame, schema
 
 
-def _build_motif_input(occurrence_id, qualified, atomic, stack=frozenset()):
-    if occurrence_id in stack or occurrence_id not in qualified:
-        _invalid("BAMF_MOTIF_CHILD_STRUCTURE_INVALID")
-    frame, schema = qualified[occurrence_id]
-    children, atomic_children = [], []
-    for binding in frame.bindings:
-        child = binding.child_frame
-        if child is None:
-            continue
-        if child.occurrence_id in qualified:
-            nested = _build_motif_input(
-                child.occurrence_id, qualified, atomic, stack | {occurrence_id})
-            if nested.frame.content_digest != child.content_digest:
-                _invalid("BAMF_MOTIF_CHILD_STRUCTURE_INVALID")
-            children.append(nested)
-            continue
-        if (child.occurrence_id not in atomic
-                or atomic[child.occurrence_id].content_digest != child.content_digest):
-            _invalid("BAMF_MOTIF_CHILD_STRUCTURE_INVALID")
-        atomic_children.append(child.occurrence_id)
-    return MotifFrameInput(
-        frame, schema, tuple(children), tuple(sorted(atomic_children)))
-
-
 def _qualified_motif_inputs(projection, snapshot, source_adapter,
                             atlas_selection, source_root, graph):
     adapter_id = source_adapter.descriptor.adapter_id
@@ -135,7 +111,7 @@ def _qualified_motif_inputs(projection, snapshot, source_adapter,
             _invalid("BAMF_MOTIF_CHILD_STRUCTURE_INVALID")
         qualified[frame.occurrence_id] = (frame, schema)
     return tuple(
-        _build_motif_input(envelope.frame.occurrence_id, qualified, atomic)
+        build_motif_input(envelope.frame.occurrence_id, qualified, atomic)
         for envelope in projection.envelopes
         if isinstance(envelope.frame, FrameInstance)
     )

@@ -77,6 +77,31 @@ def _member(binding, role, release: str, structural: bool) -> MotifMember:
                        state, kind, ids, types)
 
 
+def build_motif_input(occurrence_id, qualified, atomic, stack=frozenset()):
+    """Build one canonical nested motif input from already-qualified context."""
+    if occurrence_id in stack or occurrence_id not in qualified:
+        _invalid("BAMF_MOTIF_CHILD_STRUCTURE_INVALID")
+    frame, schema = qualified[occurrence_id]
+    children, atomic_children = [], []
+    for binding in frame.bindings:
+        child = binding.child_frame
+        if child is None:
+            continue
+        if child.occurrence_id in qualified:
+            nested = build_motif_input(
+                child.occurrence_id, qualified, atomic, stack | {occurrence_id})
+            if nested.frame.content_digest != child.content_digest:
+                _invalid("BAMF_MOTIF_CHILD_STRUCTURE_INVALID")
+            children.append(nested)
+            continue
+        if (child.occurrence_id not in atomic
+                or atomic[child.occurrence_id].content_digest != child.content_digest):
+            _invalid("BAMF_MOTIF_CHILD_STRUCTURE_INVALID")
+        atomic_children.append(child.occurrence_id)
+    return MotifFrameInput(
+        frame, schema, tuple(children), tuple(sorted(atomic_children)))
+
+
 def motif_keys(source: MotifFrameInput, release: str) -> tuple[MotifKey, MotifKey]:
     """Derive exact and typed structural identities from the A03-owned wire shape."""
     if (not isinstance(source, MotifFrameInput)
