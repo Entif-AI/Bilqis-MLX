@@ -1,5 +1,9 @@
 """Occurrence-aware frame-schema contracts with source-owned authority."""
 from __future__ import annotations
+from .._public_identity.facade_dependency import public_facade as _public_facade
+
+def _public():
+    return _public_facade("bilqis_mlx.semantics.frame_schema")
 
 import hashlib
 import json
@@ -34,7 +38,7 @@ def _bytes(value: object) -> bytes:
 
 
 def _digest(value: object) -> str:
-    return hashlib.sha256(_bytes(value)).hexdigest()
+    return hashlib.sha256(_public()._bytes(value)).hexdigest()
 
 
 
@@ -48,7 +52,7 @@ def source_node_digest(value: object) -> str:
 
 
 def _occurrence_digest(source_instance_id: str, structural_path: tuple[int, ...]) -> str:
-    return _digest({
+    return _public()._digest({
         "source_instance_id": source_instance_id,
         "structural_path": list(structural_path),
     })
@@ -57,5 +61,5 @@ def _occurrence_digest(source_instance_id: str, structural_path: tuple[int, ...]
 
 def _text(value: object, reason: str) -> str:
     if not isinstance(value, str) or not value:
-        _fail(reason)
+        _public()._fail(reason)
     return value

@@ -1,5 +1,12 @@
 """Compiled-prefix sidecar accounting."""
 from __future__ import annotations
+from .._public_identity.facade_dependency import public_facade as _public_facade
+
+
+def _public():
+    return _public_facade("bilqis_mlx.semantics.frame_compiler")
+
+
 from dataclasses import asdict
 from ..frame_codec import PackDisposition, _canonical_bytes
 from .positions import PositionKind
@@ -23,5 +30,5 @@ def _compile_stats(compiled: CompiledFrameBatch) -> CompileStats:
     return CompileStats(
         len(compiled.positions) - count, count,
         len(compiled.positions), shares,
-        sum(len(_canonical_bytes(asdict(packed.sidecar)))
+        sum(len(_public()._canonical_bytes(_public().asdict(packed.sidecar)))
             for packed in closures))

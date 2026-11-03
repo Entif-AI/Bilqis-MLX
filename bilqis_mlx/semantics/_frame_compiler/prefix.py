@@ -1,5 +1,9 @@
 """Prefix for causal source-prefix compilation."""
 from __future__ import annotations
+from .._public_identity.facade_dependency import public_facade as _public_facade
+
+def _public():
+    return _public_facade("bilqis_mlx.semantics.frame_compiler")
 from ..frame_schema import FrameInstance
 from .approval import _approved_occurrences, _approve_visible_frames
 from .batch import CompiledFrameBatch
@@ -23,10 +27,10 @@ def _pack_closures(closed, approved_by_occurrence, compiler_config):
             schemas.get((frame.frame_schema_id, frame.frame_schema_revision))
             if isinstance(frame, FrameInstance) else None)
         if isinstance(frame, FrameInstance) and schema is None:
-            _invalid("BAMF_PREFIX_SCHEMA_NOT_RELEASED")
+            _public()._invalid("BAMF_PREFIX_SCHEMA_NOT_RELEASED")
         packed = frame_compiler.pack_frame(
             frame, schema=schema, schema_map=compiler_config.schema_map)
-        closing_index = _closure_end(frame, approved_by_occurrence) - 1
+        closing_index = _public()._closure_end(frame, approved_by_occurrence) - 1
         closures.setdefault(closing_index, []).append(
             CompiledPosition(
                 closing_index, PositionKind.CLOSURE,
@@ -48,15 +52,15 @@ def compile_prefix(
             or visible_end > compiler_config.task.causal_prefix_end
             or release != compiler_config.task.semantic_release
             or release != compiler_config.schema_map.semantic_release):
-        _invalid("BAMF_PREFIX_COMPILE_INPUT_INVALID")
+        _public()._invalid("BAMF_PREFIX_COMPILE_INPUT_INVALID")
 
     approved_by_occurrence, duplicates = _approved_occurrences(compiler_config)
-    closed = _source_frames(
+    closed = _public()._source_frames(
         ast, visible_end, approved_by_occurrence)
     # Preflight before packing frames, allocating model positions or padding.
     # No silent truncation is permitted at this boundary.
     if visible_end + len(closed) > MAX_NEURAL_POSITIONS:
-        _invalid("BAMF_PREFIX_NEURAL_LENGTH_EXCEEDED")
+        _public()._invalid("BAMF_PREFIX_NEURAL_LENGTH_EXCEEDED")
     context_digest = _approve_visible_frames(
         ast, visible_end, release, compiler_config, closed,
         approved_by_occurrence, duplicates)
@@ -76,7 +80,7 @@ def compile_prefix(
         ast.source_instance_id, release, visible_end, positions,
         compiler_config.schema_map, context_digest,
         compiler_config.task.scope, policy_version,
-        _prefix_digest(
+        _public()._prefix_digest(
             ast.source_instance_id, release, visible_end,
             compiler_config.schema_map, context_digest, positions,
             compiler_config.task.scope, policy_version))

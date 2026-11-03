@@ -1,5 +1,9 @@
 """Occurrence-aware frame-schema schema with source-owned authority."""
 from __future__ import annotations
+from .._public_identity.facade_dependency import public_facade as _public_facade
+
+def _public():
+    return _public_facade("bilqis_mlx.semantics.frame_schema")
 
 from dataclasses import asdict, dataclass
 
@@ -19,7 +23,7 @@ class SourceSpan:
         if (type(self.start) is not int or type(self.end) is not int
                 or self.start < 0 or self.end < self.start
                 or self.schema_version != SOURCE_SPAN_RECORD):
-            _fail("FRAME_SOURCE_SPAN_INVALID")
+            _public()._fail("FRAME_SOURCE_SPAN_INVALID")
 
 
 
@@ -41,7 +45,7 @@ class RoleSpec:
                 or self.min_cardinality < 0
                 or self.max_cardinality < self.min_cardinality
                 or self.schema_version != ROLE_SPEC_RECORD):
-            _fail("FRAME_ROLE_SPEC_INVALID")
+            _public()._fail("FRAME_ROLE_SPEC_INVALID")
 
 
 
@@ -67,11 +71,11 @@ class FrameSchema:
                 or (self.ast_contract_sha256 is not None
                     and not _SHA256.fullmatch(self.ast_contract_sha256))
                 or self.schema_version != FRAME_SCHEMA_RECORD):
-            _fail("FRAME_SCHEMA_INVALID")
+            _public()._fail("FRAME_SCHEMA_INVALID")
 
     @property
     def identity(self) -> str:
         return f"{self.schema_id}@{self.revision}"
 
     def canonical_bytes(self) -> bytes:
-        return _bytes(asdict(self))
+        return _public()._bytes(_public().asdict(self))

@@ -1,5 +1,9 @@
 """Stats for causal source-prefix compilation."""
 from __future__ import annotations
+from .._public_identity.facade_dependency import public_facade as _public_facade
+
+def _public():
+    return _public_facade("bilqis_mlx.semantics.frame_compiler")
 from dataclasses import dataclass
 from .contracts import _invalid
 
@@ -28,4 +32,4 @@ class CompileStats:
                        for _, count, total in self.disposition_shares)
                 or sum(count for _, count, _ in self.disposition_shares)
                 != self.actual_frames):
-            _invalid("BAMF_PREFIX_STATS_INVALID")
+            _public()._invalid("BAMF_PREFIX_STATS_INVALID")

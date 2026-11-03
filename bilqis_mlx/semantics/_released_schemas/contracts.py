@@ -1,5 +1,9 @@
 """Released frame-schema contracts with source-owned authority."""
 from __future__ import annotations
+from .._public_identity.facade_dependency import public_facade as _public_facade
+
+def _public():
+    return _public_facade("bilqis_mlx.semantics.released_frame_schemas")
 import hashlib
 import json
 import re
@@ -30,7 +34,7 @@ def _unique_pairs(pairs: list[tuple[str, object]]) -> dict:
     result = {}
     for key, value in pairs:
         if key in result:
-            _fail("FRAME_RELEASED_SCHEMA_JSON_DUPLICATE_KEY")
+            _public()._fail("FRAME_RELEASED_SCHEMA_JSON_DUPLICATE_KEY")
         result[key] = value
     return result
 
@@ -38,13 +42,13 @@ def _unique_pairs(pairs: list[tuple[str, object]]) -> dict:
 
 def _json(payload: bytes) -> dict:
     if not isinstance(payload, bytes):
-        _fail("FRAME_RELEASED_SCHEMA_BYTES_REQUIRED")
+        _public()._fail("FRAME_RELEASED_SCHEMA_BYTES_REQUIRED")
     try:
-        value = json.loads(payload, object_pairs_hook=_unique_pairs)
+        value = json.loads(payload, object_pairs_hook=_public()._unique_pairs)
     except BilqisError:
         raise
     except (ValueError, UnicodeError, TypeError):
-        _fail("FRAME_RELEASED_SCHEMA_JSON_INVALID")
+        _public()._fail("FRAME_RELEASED_SCHEMA_JSON_INVALID")
     if not isinstance(value, dict):
-        _fail("FRAME_RELEASED_SCHEMA_JSON_INVALID")
+        _public()._fail("FRAME_RELEASED_SCHEMA_JSON_INVALID")
     return value

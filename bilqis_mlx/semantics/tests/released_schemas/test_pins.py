@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 import json
 import os
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 from bilqis_mlx.semantics import released_frame_schemas as public
@@ -98,6 +99,29 @@ class ReleasedPinsTests(unittest.TestCase):
 
 
 class ReleasedPublicDependencyTests(unittest.TestCase):
+    def test_source_loader_reenters_public_manifest_loader(self):
+        entry = public._source_pins()[0]
+        snapshot = SimpleNamespace(
+            release_sha256=entry['semantic_release'],
+            bundle_id=entry['atlas_bundle_id'],
+            source_bundle_id=entry['source_bundle_id'],
+        )
+        with patch.object(public, 'load_pinned_atlas_snapshot', return_value=snapshot), \
+                patch.object(
+                    public, 'load_released_frame_schemas',
+                    side_effect=RuntimeError('public manifest loader injected')):
+            with self.assertRaisesRegex(
+                    RuntimeError, 'public manifest loader injected'):
+                public._load_pinned_released_frame_schemas('micro', None)
+
+    def test_source_loader_reenters_public_atlas_loader(self):
+        with patch.object(
+                public, 'load_pinned_atlas_snapshot',
+                side_effect=RuntimeError('public atlas loader injected')):
+            with self.assertRaisesRegex(
+                    RuntimeError, 'public atlas loader injected'):
+                public._load_pinned_released_frame_schemas('micro', None)
+
     def test_schema_verifier_reenters_public_lookup(self):
         with patch.object(public, 'lookup_source_pinned_frame_schema',
                           side_effect=RuntimeError('public lookup injected')):

@@ -1,5 +1,9 @@
 """Segments for causal source-prefix compilation."""
 from __future__ import annotations
+from .._public_identity.facade_dependency import public_facade as _public_facade
+
+def _public():
+    return _public_facade("bilqis_mlx.semantics.frame_compiler")
 from dataclasses import dataclass
 from ..domains import contract_digest
 from ..frame_schema import SourceSpan
@@ -36,15 +40,15 @@ class LawfulSourceSegment:
                 or not self.boundary_source_handle
                 or not isinstance(self.config, FrameCompilerConfig)
                 or self.schema_version != LAWFUL_SEGMENT_SCHEMA):
-            _invalid("BAMF_PREFIX_LAWFUL_SEGMENT_INVALID")
+            _public()._invalid("BAMF_PREFIX_LAWFUL_SEGMENT_INVALID")
 
 
 
 def boundary_evidence_digest(segment: LawfulSourceSegment) -> str:
     """Source-adapter evidence identity for a declared lawful split."""
     if not isinstance(segment, LawfulSourceSegment):
-        _invalid("BAMF_PREFIX_SPLIT_INPUT_INVALID")
-    return contract_digest((
+        _public()._invalid("BAMF_PREFIX_SPLIT_INPUT_INVALID")
+    return _public().contract_digest((
         BOUNDARY_EVIDENCE_SCHEMA, segment.origin_source_id,
         segment.global_span.start, segment.global_span.end,
         segment.ast.source_instance_id, segment.boundary_source_handle))
@@ -93,7 +97,7 @@ class CompiledFrameSegments:
                 or self.total_neural_positions != sum(
                     len(item.positions) for item in self.segments)
                 or self.schema_version != COMPILED_SEGMENTS_SCHEMA):
-            _invalid("BAMF_PREFIX_COMPILED_SEGMENTS_INVALID")
+            _public()._invalid("BAMF_PREFIX_COMPILED_SEGMENTS_INVALID")
 
 
 
@@ -104,37 +108,37 @@ def compile_lawful_segments(
     if (not isinstance(segments, tuple) or not segments
             or any(not isinstance(item, LawfulSourceSegment)
                    for item in segments)):
-        _invalid("BAMF_PREFIX_SPLIT_INPUT_INVALID")
+        _public()._invalid("BAMF_PREFIX_SPLIT_INPUT_INVALID")
     origin = segments[0].origin_source_id
-    authority = _segment_authority(segments[0].config)
+    authority = _public()._segment_authority(segments[0].config)
     cursor = 0
     handles = set()
     for segment in segments:
         if (segment.origin_source_id != origin
                 or segment.global_span.start != cursor
                 or segment.boundary_source_handle in handles
-                or _segment_authority(segment.config) != authority):
-            _invalid("BAMF_PREFIX_SPLIT_BOUNDARY_INVALID")
+                or _public()._segment_authority(segment.config) != authority):
+            _public()._invalid("BAMF_PREFIX_SPLIT_BOUNDARY_INVALID")
         cursor = segment.global_span.end
         handles.add(segment.boundary_source_handle)
         grant = next((
             item for item in segment.config.frontier.grants
             if item.source_handle == segment.boundary_source_handle
         ), None)
-        if not _grant_allows(
-                grant, boundary_evidence_digest(segment),
+        if not _public()._grant_allows(
+                grant, _public().boundary_evidence_digest(segment),
                 segment.config, release):
-            _invalid("BAMF_PREFIX_SPLIT_SOURCE_UNAUTHORIZED")
+            _public()._invalid("BAMF_PREFIX_SPLIT_SOURCE_UNAUTHORIZED")
         if len(segment.ast.atoms) > MAX_NEURAL_POSITIONS:
-            _invalid("BAMF_PREFIX_NEURAL_LENGTH_EXCEEDED")
+            _public()._invalid("BAMF_PREFIX_NEURAL_LENGTH_EXCEEDED")
         approved = (
             {item.frame.occurrence_id: item
              for item in segment.config.approved.envelopes}
             if segment.config.approved is not None else {})
-        closed = _source_frames(
+        closed = _public()._source_frames(
             segment.ast, len(segment.ast.atoms), approved)
         if len(segment.ast.atoms) + len(closed) > MAX_NEURAL_POSITIONS:
-            _invalid("BAMF_PREFIX_NEURAL_LENGTH_EXCEEDED")
+            _public()._invalid("BAMF_PREFIX_NEURAL_LENGTH_EXCEEDED")
     from ..frame_compiler import compile_prefix
 
     compiled = tuple(

@@ -1,5 +1,9 @@
 """Batch for causal source-prefix compilation."""
 from __future__ import annotations
+from .._public_identity.facade_dependency import public_facade as _public_facade
+
+def _public():
+    return _public_facade("bilqis_mlx.semantics.frame_compiler")
 from dataclasses import dataclass
 from .maps import PrefixMaps
 from .stats import CompileStats
@@ -37,7 +41,7 @@ class CompiledFrameBatch:
                 or any(not isinstance(item, CompiledPosition)
                        or item.source_index >= self.visible_end
                        for item in self.positions)
-                or not _canonical_position_order(
+                or not _public()._canonical_position_order(
                     self.positions, self.visible_end)
                 or (self.context_digest is None
                     and any(item.kind is PositionKind.CLOSURE
@@ -55,13 +59,13 @@ class CompiledFrameBatch:
                 or any(type(epoch) is not int or epoch < 0
                        for epoch in self.policy_version[1:])
                 or not isinstance(self.cache_key, str)
-                or self.cache_key != _prefix_digest(
+                or self.cache_key != _public()._prefix_digest(
                     self.source_instance_id, self.semantic_release,
                     self.visible_end, self.schema_map,
                     self.context_digest, self.positions,
                     self.scope, self.policy_version)
                 or self.schema_version != COMPILED_BATCH_SCHEMA):
-            _invalid("BAMF_PREFIX_BATCH_INVALID")
+            _public()._invalid("BAMF_PREFIX_BATCH_INVALID")
 
     @property
     def maps(self) -> "PrefixMaps":

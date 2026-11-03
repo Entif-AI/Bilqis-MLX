@@ -1,5 +1,9 @@
 """Receipts for source-owned partial forests."""
 from __future__ import annotations
+from .._public_identity.facade_dependency import public_facade as _public_facade
+
+def _public():
+    return _public_facade("bilqis_mlx.semantics.partial_visible_forest")
 from dataclasses import dataclass
 import re
 from ..domains import contract_digest
@@ -31,7 +35,7 @@ class HiddenParentProvenance:
                 or not isinstance(self.parent_frame_handle, str)
                 or not self.parent_frame_handle
                 or self.schema_version != PARTIAL_PARENT_SCHEMA):
-            _invalid("BAMF_PREFIX_PARTIAL_PARENT_INVALID")
+            _public()._invalid("BAMF_PREFIX_PARTIAL_PARENT_INVALID")
 
 
 
@@ -53,13 +57,13 @@ def _partial_forest_digest(
     visible_frame_handles: tuple[tuple[str, str], ...],
     hidden_parents: tuple[HiddenParentProvenance, ...],
 ) -> str:
-    return contract_digest((
+    return _public().contract_digest((
         PARTIAL_FOREST_SCHEMA,
         source_instance_id,
         semantic_release,
         visible_end,
         compiler_cache_key,
-        tuple(_visible_tree_identity(tree) for tree in visible_forest),
+        tuple(_public()._visible_tree_identity(tree) for tree in visible_forest),
         visible_frame_handles,
         tuple((
             item.child_occurrence_id,
@@ -105,7 +109,7 @@ class PartialVisibleForestReceipt:
                 or any(not isinstance(item, HiddenParentProvenance)
                        for item in self.hidden_parents)
                 or not isinstance(self.digest, str) or not _SHA.fullmatch(self.digest)
-                or self.digest != _partial_forest_digest(
+                or self.digest != _public()._partial_forest_digest(
                     self.source_instance_id,
                     self.semantic_release,
                     self.visible_end,
@@ -114,4 +118,4 @@ class PartialVisibleForestReceipt:
                     self.visible_frame_handles,
                     self.hidden_parents)
                 or self.schema_version != PARTIAL_FOREST_SCHEMA):
-            _invalid("BAMF_PREFIX_PARTIAL_RECEIPT_INVALID")
+            _public()._invalid("BAMF_PREFIX_PARTIAL_RECEIPT_INVALID")

@@ -2,7 +2,9 @@
 from __future__ import annotations
 from dataclasses import replace
 from unittest import TestCase
+from unittest.mock import patch
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.semantics import frame_compiler as public
 from bilqis_mlx.semantics.frame_compiler import compile_prefix, reconstruct
 from bilqis_mlx.semantics.tests.frame_compiler.fixtures import (
     RELEASE, _case,
@@ -10,6 +12,15 @@ from bilqis_mlx.semantics.tests.frame_compiler.fixtures import (
 
 
 class ApprovalTests(TestCase):
+    def test_public_project_context_hook_remains_late_bound(self):
+        ast, config = _case()
+        with patch.object(
+                public, "project_context",
+                side_effect=RuntimeError("public project_context injected")):
+            with self.assertRaisesRegex(
+                    RuntimeError, "public project_context injected"):
+                compile_prefix(ast, 8, RELEASE, config)
+
     def test_first_admission_raw_atom_requires_source_owned_grant(self):
         ast, config = _case()
         first = ast.atoms[0]

@@ -2,7 +2,9 @@
 from __future__ import annotations
 from dataclasses import replace
 from unittest import TestCase
+from unittest.mock import patch
 from bilqis_mlx.semantics import frame_compiler
+from bilqis_mlx.semantics import partial_visible_forest as public_forest
 from bilqis_mlx.semantics.frame_compiler import compile_prefix
 from bilqis_mlx.semantics.frame_schema import FrameTree
 from bilqis_mlx.semantics.tests.frame_compiler.fixtures import RELEASE, _mixed_case
@@ -12,6 +14,28 @@ from bilqis_mlx.semantics.frame_schema import SourceSpan
 
 
 class ValidationTests(TestCase):
+    def test_public_reconstruct_hook_remains_late_bound(self):
+        ast, config = _mixed_case()
+        compiled = compile_prefix(ast, 4, RELEASE, config)
+        with patch.object(
+                public_forest, "reconstruct",
+                side_effect=RuntimeError("public reconstruct injected")):
+            with self.assertRaisesRegex(
+                    RuntimeError, "public reconstruct injected"):
+                frame_compiler.validate_partial_visible_forest(
+                    compiled, ast, config)
+
+    def test_public_compile_hook_remains_late_bound(self):
+        ast, config = _mixed_case()
+        compiled = compile_prefix(ast, 4, RELEASE, config)
+        with patch.object(
+                public_forest, "compile_prefix",
+                side_effect=RuntimeError("public compile_prefix injected")):
+            with self.assertRaisesRegex(
+                    RuntimeError, "public compile_prefix injected"):
+                frame_compiler.validate_partial_visible_forest(
+                    compiled, ast, config)
+
     def test_partial_visible_forest_excludes_future_and_preserves_full_identities(self):
         ast, config = _mixed_case()
         parent = ast.frames[0].root

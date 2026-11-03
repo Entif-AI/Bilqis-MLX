@@ -1,5 +1,9 @@
 """Occurrence-aware frame-schema roles with source-owned authority."""
 from __future__ import annotations
+from .._public_identity.facade_dependency import public_facade as _public_facade
+
+def _public():
+    return _public_facade("bilqis_mlx.semantics.frame_schema")
 
 from dataclasses import dataclass
 from enum import Enum
@@ -36,7 +40,7 @@ class ConceptRef:
                 or any(not isinstance(item, str) or not item for item in self.type_ids)
                 or not isinstance(self.source_reference, str) or not self.source_reference
                 or self.schema_version != CONCEPT_REF_RECORD):
-            _fail("FRAME_CONCEPT_REF_INVALID")
+            _public()._fail("FRAME_CONCEPT_REF_INVALID")
 
     def content_identity(self) -> dict:
         return {
@@ -61,7 +65,7 @@ class ChildFrameRef:
                 or not self.type_ids
                 or self.type_ids != tuple(sorted(set(self.type_ids)))
                 or self.schema_version != CHILD_FRAME_REF_RECORD):
-            _fail("FRAME_CHILD_REF_INVALID")
+            _public()._fail("FRAME_CHILD_REF_INVALID")
 
 
 
@@ -89,7 +93,7 @@ class RoleOccurrence:
                 or not isinstance(self.state, BindingState)
                 or not valid_state
                 or self.schema_version != ROLE_OCCURRENCE_RECORD):
-            _fail("FRAME_ROLE_OCCURRENCE_INVALID")
+            _public()._fail("FRAME_ROLE_OCCURRENCE_INVALID")
 
     @property
     def key(self) -> tuple[str, int]:
@@ -137,7 +141,7 @@ def _frame_content_digest(
     bindings: tuple["RoleOccurrence", ...],
 ) -> str:
     rank = {role_id: index for index, role_id in enumerate(schema_role_order)}
-    return _digest({
+    return _public()._digest({
         "frame_schema_id": frame_schema_id,
         "frame_schema_revision": frame_schema_revision,
         "schema_role_order": list(schema_role_order),

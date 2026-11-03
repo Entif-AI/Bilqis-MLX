@@ -1,5 +1,9 @@
 """Released frame-schema pins with source-owned authority."""
 from __future__ import annotations
+from .._public_identity.facade_dependency import public_facade as _public_facade
+
+def _public():
+    return _public_facade("bilqis_mlx.semantics.released_frame_schemas")
 import hmac
 from pathlib import Path
 from ..atlas_snapshot import AtlasArtifactSelection, load_pinned_atlas_snapshot
@@ -17,20 +21,20 @@ def _source_pins() -> tuple[dict, ...]:
     """Repository-owned pin ledger, itself hash-pinned like the A01 registry."""
     path = Path(__file__).parents[1] / "frame_schema_source_pins_v1.json"
     if path.is_symlink() or not path.is_file():
-        _fail("FRAME_RELEASED_SOURCE_PIN_REGISTRY_MISSING")
+        _public()._fail("FRAME_RELEASED_SOURCE_PIN_REGISTRY_MISSING")
     try:
         payload = path.read_bytes()
     except OSError:
-        _fail("FRAME_RELEASED_SOURCE_PIN_REGISTRY_MISSING")
-    if not hmac.compare_digest(_sha(payload), SOURCE_PIN_REGISTRY_SHA256):
-        _fail("FRAME_RELEASED_SOURCE_PIN_REGISTRY_INVALID")
-    registry = _json(payload)
+        _public()._fail("FRAME_RELEASED_SOURCE_PIN_REGISTRY_MISSING")
+    if not hmac.compare_digest(_public()._sha(payload), SOURCE_PIN_REGISTRY_SHA256):
+        _public()._fail("FRAME_RELEASED_SOURCE_PIN_REGISTRY_INVALID")
+    registry = _public()._json(payload)
     if (set(registry) != {"schema", "entries"}
             or registry["schema"] != SOURCE_PIN_REGISTRY_SCHEMA
-            or payload != _canonical_bytes(registry)
+            or payload != _public()._canonical_bytes(registry)
             or not isinstance(registry["entries"], list)
             or not registry["entries"]):
-        _fail("FRAME_RELEASED_SOURCE_PIN_REGISTRY_INVALID")
+        _public()._fail("FRAME_RELEASED_SOURCE_PIN_REGISTRY_INVALID")
     required = {
         "family", "semantic_release", "atlas_bundle_id",
         "source_bundle_id", "schema_manifest_sha256",
@@ -48,11 +52,11 @@ def _source_pins() -> tuple[dict, ...]:
                 or entry["status"] != SOURCE_PIN_STATUS
                 or entry["source_receipt"]
                 != "docs/evidence/bamf/A03.4/receipt.md"):
-            _fail("FRAME_RELEASED_SOURCE_PIN_REGISTRY_INVALID")
+            _public()._fail("FRAME_RELEASED_SOURCE_PIN_REGISTRY_INVALID")
     entries = tuple(registry["entries"])
     if len({(entry["family"], entry["semantic_release"])
             for entry in entries}) != len(entries):
-        _fail("FRAME_RELEASED_SOURCE_PIN_REGISTRY_INVALID")
+        _public()._fail("FRAME_RELEASED_SOURCE_PIN_REGISTRY_INVALID")
     return entries
 
 
@@ -62,27 +66,27 @@ def _load_pinned_released_frame_schemas(
 ) -> VerifiedReleasedFrameSchemas:
     """Offline source-owner lookup; no caller-supplied schema registry or hash."""
     if not isinstance(source_family, str) or not source_family:
-        _fail("FRAME_RELEASED_SOURCE_FAMILY_INVALID")
+        _public()._fail("FRAME_RELEASED_SOURCE_FAMILY_INVALID")
     # The A01 source pin is checked against its own independent repository
     # ledger before any A03 schema manifest can gain consumer authority.
-    snapshot = load_pinned_atlas_snapshot(atlas_selection)
-    matches = tuple(entry for entry in _source_pins()
+    snapshot = _public().load_pinned_atlas_snapshot(atlas_selection)
+    matches = tuple(entry for entry in _public()._source_pins()
                     if entry["family"] == source_family
                     and entry["semantic_release"] == snapshot.release_sha256
                     and entry["atlas_bundle_id"] == snapshot.bundle_id
                     and entry["source_bundle_id"] == snapshot.source_bundle_id)
     if len(matches) != 1:
-        _fail("FRAME_RELEASED_SOURCE_PIN_NOT_REGISTERED")
+        _public()._fail("FRAME_RELEASED_SOURCE_PIN_NOT_REGISTERED")
     entry = matches[0]
     path = (Path(__file__).parents[1] / "frame_schema_releases") / (
         "frame-schemas-" + entry["schema_manifest_sha256"] + ".json")
     if path.is_symlink() or not path.is_file():
-        _fail("FRAME_RELEASED_MANIFEST_SOURCE_MISSING")
+        _public()._fail("FRAME_RELEASED_MANIFEST_SOURCE_MISSING")
     try:
         payload = path.read_bytes()
     except OSError:
-        _fail("FRAME_RELEASED_MANIFEST_SOURCE_MISSING")
-    return load_released_frame_schemas(
+        _public()._fail("FRAME_RELEASED_MANIFEST_SOURCE_MISSING")
+    return _public().load_released_frame_schemas(
         payload, expected_sha256=entry["schema_manifest_sha256"],
         snapshot=snapshot,
         expected_semantic_release=entry["semantic_release"],
@@ -95,7 +99,7 @@ def lookup_source_pinned_frame_schema(
     source_family: str, atlas_selection: AtlasArtifactSelection,
 ) -> tuple[FrameSchema, ReleasedSchemaBodyWitness]:
     """Resolve an A03 body from repo pins, never from a caller-provided registry."""
-    pinned = _load_pinned_released_frame_schemas(
+    pinned = _public()._load_pinned_released_frame_schemas(
         source_family, atlas_selection)
     witness = pinned.lookup(schema_id, revision)
     body = next(item for item in pinned.manifest.bodies
@@ -111,14 +115,14 @@ def verify_source_pinned_frame_schema(
 ) -> FrameSchema:
     """Production gate: re-enter A01/A03 pins on every candidate verification."""
     if type(candidate) is not FrameSchema:
-        _fail("FRAME_RELEASED_SCHEMA_BODY_INVALID")
+        _public()._fail("FRAME_RELEASED_SCHEMA_BODY_INVALID")
     from ..released_frame_schemas import lookup_source_pinned_frame_schema
 
     canonical, _ = lookup_source_pinned_frame_schema(
         candidate.schema_id, candidate.revision,
         source_family=source_family, atlas_selection=atlas_selection)
     if candidate.canonical_bytes() != canonical.canonical_bytes():
-        _fail("FRAME_RELEASED_SCHEMA_BODY_MISMATCH")
+        _public()._fail("FRAME_RELEASED_SCHEMA_BODY_MISMATCH")
     return canonical
 
 
@@ -128,7 +132,7 @@ def verify_source_pinned_frame_schema_bytes(
     source_family: str, atlas_selection: AtlasArtifactSelection,
 ) -> FrameSchema:
     """JSON key order is ignored, but source-pinned role order and body are not."""
-    candidate = frame_schema_from_bytes(_canonical_bytes(_json(payload)))
+    candidate = _public().frame_schema_from_bytes(_public()._canonical_bytes(_public()._json(payload)))
     from ..released_frame_schemas import verify_source_pinned_frame_schema
 
     return verify_source_pinned_frame_schema(

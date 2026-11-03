@@ -244,6 +244,15 @@
       "summary": "B07/B13 cold-continuation authority remediation is EGM-Passed and consumed into the human-merged #456/PR #690 candidate now present in reviewed unified 7984d787.",
       "resume_trigger": null,
       "preserved_branch": "codex/783-456-current-unified-20261103"
+    },
+    {
+      "issue": 481,
+      "pr": 802,
+      "state": "TURNED_IN",
+      "head_sha": "4dcfc7169738e721df0f1df259f2d9659d54cab4",
+      "preserved_branch": "codex/bamf02-b-481-schema-proof-20261103",
+      "summary": "Ready PR #802: expanded B13.4 schema witness, 215 parameter tensors and 860 exact arrays; 1 native CPU +13 adjacent tests pass, zero skips; same-round EGM0B/0M/0N; parent480/754/372 acceptance remains open.",
+      "resume_trigger": null
     }
   ]
 }

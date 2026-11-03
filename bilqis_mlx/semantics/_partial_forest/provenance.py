@@ -1,5 +1,9 @@
 """Provenance for source-owned partial forests."""
 from __future__ import annotations
+from .._public_identity.facade_dependency import public_facade as _public_facade
+
+def _public():
+    return _public_facade("bilqis_mlx.semantics.partial_visible_forest")
 from ..context_eligibility import ContextEligibility
 from ..domains import contract_digest
 from ..frame_compiler import _invalid
@@ -17,7 +21,7 @@ def _hidden_parent_provenance(
         schema = schemas.get(
             (parent.frame_schema_id, parent.frame_schema_revision))
         if schema is None:
-            _invalid("BAMF_PREFIX_PARTIAL_AUTHORITY_DRIFT")
+            _public()._invalid("BAMF_PREFIX_PARTIAL_AUTHORITY_DRIFT")
         frame_authority = (
             parent.frame_schema_id,
             parent.frame_schema_revision,
@@ -25,7 +29,7 @@ def _hidden_parent_provenance(
         )
     else:
         frame_authority = ("<atomic>", 0, parent.ast_construct)
-    provenance_digest = contract_digest((
+    provenance_digest = _public().contract_digest((
         PARTIAL_PARENT_SCHEMA,
         parent.occurrence_id,
         parent.source_instance_id,

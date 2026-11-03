@@ -1,5 +1,9 @@
 """Occurrence-aware frame-schema ast_identity with source-owned authority."""
 from __future__ import annotations
+from .._public_identity.facade_dependency import public_facade as _public_facade
+
+def _public():
+    return _public_facade("bilqis_mlx.semantics.frame_schema")
 
 from dataclasses import asdict
 import json
@@ -16,13 +20,13 @@ def ast_construct_id(expression: Expression) -> str:
         return "literal:" + expression.type_name
     if isinstance(expression, Apply):
         return "apply:" + expression.operator.symbol
-    _fail("FRAME_NATIVE_AST_CONSTRUCT_INVALID")
+    _public()._fail("FRAME_NATIVE_AST_CONSTRUCT_INVALID")
 
 
 
 def source_ast_construct_id(ast: object) -> str:
     if isinstance(ast, (Literal, Apply)):
-        return ast_construct_id(ast)
+        return _public().ast_construct_id(ast)
     if isinstance(ast, dict):
         kind = ast.get("kind")
         if isinstance(kind, str) and kind:
@@ -30,22 +34,22 @@ def source_ast_construct_id(ast: object) -> str:
         task = ast.get("task")
         if isinstance(task, str) and task:
             return "source-task:" + task
-    _fail("FRAME_SOURCE_AST_CONSTRUCT_INVALID")
+    _public()._fail("FRAME_SOURCE_AST_CONSTRUCT_INVALID")
 
 
 
 def native_ast_content_digest(expression: Expression) -> str:
     """Reuse the existing semantic AST's canonical content identity."""
-    return expression_digest(expression)
+    return _public().expression_digest(expression)
 
 
 
 def _source_payload(ast: object) -> object:
     if isinstance(ast, (Literal, Apply)):
-        return {"native_expression": asdict(ast)}
+        return {"native_expression": _public().asdict(ast)}
     if isinstance(ast, (dict, list, str, int, float, bool)) or ast is None:
         return ast
-    _fail("FRAME_ATOMIC_SOURCE_UNSERIALIZABLE")
+    _public()._fail("FRAME_ATOMIC_SOURCE_UNSERIALIZABLE")
 
 
 
@@ -58,14 +62,14 @@ def atomic_fallback(
     parent_occurrence_id: str | None,
     causal_prefix_end: int,
 ) -> AtomicFrame:
-    payload = _source_payload(ast)
+    payload = _public()._source_payload(ast)
     canonical = json.dumps(
         payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
         allow_nan=False)
-    construct = source_ast_construct_id(ast)
+    construct = _public().source_ast_construct_id(ast)
     return AtomicFrame(
-        occurrence_id=occurrence_id(source_instance_id, structural_path),
-        content_digest=_digest({
+        occurrence_id=_public().occurrence_id(source_instance_id, structural_path),
+        content_digest=_public()._digest({
             "ast_construct": construct,
             "source_payload": json.loads(canonical),
         }),

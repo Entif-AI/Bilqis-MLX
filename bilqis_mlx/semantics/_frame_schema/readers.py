@@ -1,5 +1,9 @@
 """Occurrence-aware frame-schema readers with source-owned authority."""
 from __future__ import annotations
+from .._public_identity.facade_dependency import public_facade as _public_facade
+
+def _public():
+    return _public_facade("bilqis_mlx.semantics.frame_schema")
 
 import json
 
@@ -33,9 +37,9 @@ def frame_schema_from_bytes(payload: bytes) -> FrameSchema:
     except BilqisError:
         raise
     except (KeyError, TypeError, ValueError, UnicodeError) as error:
-        _fail("FRAME_SCHEMA_SERIALIZATION_INVALID:" + type(error).__name__)
+        _public()._fail("FRAME_SCHEMA_SERIALIZATION_INVALID:" + type(error).__name__)
     if schema.canonical_bytes() != payload:
-        _fail("FRAME_SCHEMA_SERIALIZATION_NONCANONICAL")
+        _public()._fail("FRAME_SCHEMA_SERIALIZATION_NONCANONICAL")
     return schema
 
 
@@ -95,7 +99,7 @@ def frame_instance_from_bytes(payload: bytes) -> FrameInstance:
     except BilqisError:
         raise
     except (KeyError, TypeError, ValueError, UnicodeError) as error:
-        _fail("FRAME_INSTANCE_SERIALIZATION_INVALID:" + type(error).__name__)
+        _public()._fail("FRAME_INSTANCE_SERIALIZATION_INVALID:" + type(error).__name__)
     if instance.canonical_bytes() != payload:
-        _fail("FRAME_INSTANCE_SERIALIZATION_NONCANONICAL")
+        _public()._fail("FRAME_INSTANCE_SERIALIZATION_NONCANONICAL")
     return instance
