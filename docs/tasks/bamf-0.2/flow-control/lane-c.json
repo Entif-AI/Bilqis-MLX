@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "aa828eb5cb8822a5614aa3353864bf187f83444d",
-  "updated_at": "2026-11-03T13:35:00.390896+00:00",
+  "updated_at": "2026-11-03T13:44:57.137454+00:00",
   "exception": null,
   "items": [
     {
@@ -10,7 +10,7 @@
       "pr": null,
       "state": "ACTIVE",
       "head_sha": "47188f5340450eeab189995456b14979ad078216",
-      "summary": "Canonical parent already consumed verified770/781 at47188f53 with199archive/source,122installed,6nativeCPU. Selected as combined C01 structural delivery; final aggregate review precedes genuine supersession of child PR781 under ADR125/126.",
+      "summary": "Complete known Round3 defects786/787 consumed and verified:201archive/source,124installed+origins,6nativeCPU;10recipe/13flow tests. Preparing attempt4/5 of same bounded episode, then genuine supersession of consumed781 only after complete PASS.",
       "resume_trigger": null,
       "closed_pr": 694,
       "preserved_branch": "codex/bamf02-c-347-integration-20261103",
@@ -110,18 +110,18 @@
     {
       "issue": 786,
       "pr": null,
-      "state": "READY",
-      "head_sha": null,
-      "summary": "Two public-hook regressions fail before and pass after deferred public dependency resolution; real released-schema owner suite verified. Full composed source/wheel/native proof pending before child closure.",
+      "state": "TURNED_IN",
+      "head_sha": "6f0dd50d",
+      "summary": "Public-hook red2/green2, real owner14/14, composed archive201/installed124+origins/nativeCPU6 pass without skips; repair consumed by parent.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-c-786-public-hooks-20261103"
     },
     {
       "issue": 787,
       "pr": null,
-      "state": "READY",
-      "head_sha": null,
-      "summary": "Current199/122 inherited-validator failure reproduced; explicit document/source/installed totals now pass actual199/122 logs; historical defaults and10literal regressions green. Full composed201/124 proof pending closure.",
+      "state": "TURNED_IN",
+      "head_sha": "d2d2a0bf",
+      "summary": "Current199 validator defect repaired with explicit document/totals; historical193/current199/new201 actual proofs and10regressions pass; composed archive201/installed124/native6 verified.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-c-787-proof-totals-20261103"
     }

@@ -1,5 +1,8 @@
 # C01 combined structural and verifier checkpoint — 3 November 2026
 
+The [round-three repair receipt](round3-repairs-20261103.md) records the newer
+201/124 source; the 199/122 evidence below remains pinned to its stated source.
+
 This is scoped source-frame structural integration proof, not full #347 acceptance.
 Tested source is `47188f5340450eeab189995456b14979ad078216`.
 Lane C `bcae1037a434f886df4e84444cd2dc26daa42dde` consumes reviewed unified
