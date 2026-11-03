@@ -10,10 +10,10 @@
       "pr": null,
       "state": "ACTIVE",
       "head_sha": "cfe7e7ed98f7d3928b50e33c871d56357361e32c",
-      "summary": "Preserved694 and733 repair consumed into isolated C01 continuation;187source/archive,116installed,6CPU-native pass. Whole-candidate EGM pending; full347 holds and baseline770 remain explicit.",
+      "summary": "Canonical structural13b67a59 and verified770/781 repair consumed on synchronized Lane C. Combined focused proof underway; full347 holds remain explicit.",
       "resume_trigger": null,
       "closed_pr": 694,
-      "preserved_branch": "codex/bamf02-c01-347-registry-20261101",
+      "preserved_branch": "codex/bamf02-c-347-integration-20261103",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
       "close_reason": "EGM-Failed; remediation #733"
     },
@@ -90,6 +90,22 @@
       "summary": "C01 mechanical contract-verifier repair is EGM-Passed and ready in PR781;58tests and14live-source pins independently verified;171children/same8holds/no order.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-c-770-contract-verifier-20261103"
+    },
+    {
+      "issue": 771,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "c27ac97d6015b34b86b14a160f8a51a685d38432",
+      "summary": "Public callable metadata defect reproduced56times; six focused tests and parent clean-archive193/installed122 proof pass. Bounded repair consumed; aggregate parent EGM remains.",
+      "resume_trigger": null
+    },
+    {
+      "issue": 774,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "8e6e5dfd5e69e1e8256a0a522519509659294619",
+      "summary": "Both stale historical grep predicates reproduced exit1; exact documented193/122 replacement commands execute successfully on actual source3174c368 proof logs. Consumed into parent; aggregate EGM pending.",
+      "resume_trigger": null
     }
   ]
 }
