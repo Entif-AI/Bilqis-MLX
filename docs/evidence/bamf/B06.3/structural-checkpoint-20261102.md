@@ -58,8 +58,8 @@ FACTORY_SOURCE_ADAPTER_MISSING:bilqis.mlx.grade-a-live-constructor/v1
 
 The drawn row names its registered cohort generator, while raw-atom replay
 looks it up through a registry keyed by callable generator IDs. Do not rewrite
-the row label or substitute source authority to make this pass. Resolve this
-separate owner-binding mechanism with a durable issue and regression, then build
+the row label or substitute source authority to make this pass. Issue #763 records this separate owner-binding mechanism. Resolve it with a
+regression, then build
 the public `refine_selected` witness. Source-owned Atlas selection forwarding
 through embedding/frame factors may also be needed; that is an unverified code
 path observation, not a repaired defect or passing witness.
@@ -72,7 +72,8 @@ Local continuation and proof files:
 `.local/egm-735-736-work-stack/handoff/HANDOFF.json` and
 `.local/egm-735-736-work-stack/handoff/RESUME_PROMPT.md`.
 The root Work Stack and nested school interruption validate successfully; both
-structural tasks are committed, while the source witness remains executing.
+structural tasks are committed. The source witness is held on #763 and remains
+unverified; no mitigation closure is claimed.
 
 Native-process coordination near miss PM-2026-11-02-015 was filed and read back
 through BIOS in the canonical Entif Post-Mortem Ledger. Future native launches

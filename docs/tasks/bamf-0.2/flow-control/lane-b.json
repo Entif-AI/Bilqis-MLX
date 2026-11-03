@@ -192,9 +192,9 @@
     {
       "issue": 759,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "06a736120a940ad3e454b4c6bbfa980d5ac75778",
-      "summary": "Reserve concurrent B07 structural-interruption WIP reported on issue #759; this writer does not mutate its branch or code.",
+      "state": "TURNED_IN",
+      "head_sha": "9d4faac6a601319a0fbad20d73a1d6fc1b1b4a54",
+      "summary": "Concurrent owner closed #759 at its verified bounded acceptance; parent #456 retains final EGM. This writer did not mutate its branch.",
       "resume_trigger": null
     },
     {
@@ -208,10 +208,10 @@
     {
       "issue": 736,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "8c516921e970736b4248793530121e4d4766944f",
-      "summary": "Selected source-positive public B06 refinement and gradient witness on the synchronized isolated candidate. Native execution waits for existing proof PID 74366 to exit.",
-      "resume_trigger": null
+      "state": "BLOCKED",
+      "head_sha": "c147659ee3a333b2ca9517e8014d09d5409a0ea7",
+      "summary": "Source-positive public B06 witness remains absent. Required schema/school structural repairs are committed; real A.IDENTITY source preparation exposes canonical cohort-generator replay gap #763.",
+      "resume_trigger": "Resolve #763 through its canonical source owner and consume the accepted repair; then resume the real pinned-source public refinement/gradient witness on the synchronized candidate."
     }
   ]
 }
