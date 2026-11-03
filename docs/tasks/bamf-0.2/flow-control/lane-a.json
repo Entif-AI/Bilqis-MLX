@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "53655a7a5d513403bcd14e9ffd2e5577411c5832",
-  "updated_at": "2026-11-03T09:19:15Z",
+  "observed_unified": "aa828eb5cb8822a5614aa3353864bf187f83444d",
+  "updated_at": "2026-11-03T12:25:55Z",
   "exception": null,
   "items": [
     {
@@ -26,6 +26,15 @@
       "resume_trigger": null,
       "preserved_branch": "codex/758-oracle-proof-20261102",
       "merged_pr": 777
+    },
+    {
+      "issue": 737,
+      "pr": 782,
+      "state": "TURNED_IN",
+      "head_sha": "12565903b88944510b4652c7d9a61a343ede362c",
+      "summary": "A08.3 current-unified lifecycle refresh is admitted in PR #782 after 34/34 focused proof; final exact-head EGM follows this inventory commit.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/737-a08-lifecycle-20261103"
     },
     {
       "issue": 745,
