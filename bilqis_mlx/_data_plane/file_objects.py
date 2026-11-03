@@ -1,7 +1,6 @@
 """Immutable content-addressed file objects owned by the shared data plane."""
 from __future__ import annotations
 
-import errno
 import hashlib
 import os
 import shutil
@@ -100,15 +99,10 @@ class DataPlaneFileObjectMixin:
             raise ValueError(DataPlaneError.OBJECT_DIGEST_INVALID.value)
         with self._lock:
             target = self._file_object_path(digest, create=True)
-            if target.exists() or target.is_symlink():
-                self.require_file_object(digest)
-            else:
-                try:
-                    os.link(source, target)
-                except OSError as error:
-                    if error.errno != errno.EXDEV:
-                        raise
-                    self._copy_file_object(source, target, digest)
-                self.require_file_object(digest)
-                _fsync_directory(target.parent)
+            if not (target.exists() or target.is_symlink()):
+                self._copy_file_object(source, target, digest)
+            self.require_file_object(digest)
+            # Persist every directory entry before a generation can reference it.
+            for directory in (target.parent, target.parent.parent, self.path.parent):
+                _fsync_directory(directory)
             return target

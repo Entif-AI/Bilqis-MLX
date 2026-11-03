@@ -19,11 +19,12 @@
     },
     {
       "issue": 745,
-      "pr": 765,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "335361d60a3f4d7050acf01c471f1f94d93a0294",
-      "summary": "A12 source-owner export-clearance remediation is refreshed onto current unified and turned in through PR #765; final #718/#526 EGM remains downstream after integration and #746.",
-      "resume_trigger": null
+      "summary": "A12 source-owner export-clearance remediation is refreshed onto current unified and turned in through PR #765; final #718/#526 EGM remains downstream after integration and #746. Human-merged; verified closed on 2026-11-03.",
+      "resume_trigger": null,
+      "closed_pr": 765
     }
   ]
 }
