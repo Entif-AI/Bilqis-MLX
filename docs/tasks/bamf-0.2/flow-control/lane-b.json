@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "deaa8b9dbd277993f884abeea7413f9cb799d945",
-  "updated_at": "2026-11-03T08:03:03.918115+00:00",
+  "updated_at": "2026-11-03T08:50:15.707219+00:00",
   "exception": null,
   "items": [
     {
@@ -189,12 +189,20 @@
     },
     {
       "issue": 769,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "deaa8b9dbd277993f884abeea7413f9cb799d945",
-      "summary": "Consume prior reviewed alias/race/published-custody/legacy-reader repair against the actually landed tensor CAS.",
+      "pr": 773,
+      "state": "TURNED_IN",
+      "head_sha": "d9b71f7a30e639c47291edccc153ecef58dd7b6f",
+      "summary": "Complete CAS ownership/reserve/cold-read follow-up passed final pinned EGM0/0/0;56/56 native and24/24 canonical; ready PR773 targets unified; human merge remains separate.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-b-769-cas-ownership-20261103"
+    },
+    {
+      "issue": 341,
+      "pr": 772,
+      "state": "TURNED_IN",
+      "head_sha": "6acd30544f6f81cb1c1b08524b53f567bd1e0cc0",
+      "summary": "Concurrent cross-cutting governance PR772 is conservatively counted in live inventory; this receipt neither implements nor adopts its proposed policy.",
+      "resume_trigger": null
     }
   ]
 }
