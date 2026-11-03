@@ -114,4 +114,3 @@ class ReleasedSourcePinsTests(unittest.TestCase):
                 "frame:missing", 1, source_family="micro",
                 atlas_selection=replace(
                     selection, release_sha256="0" * 64))
-

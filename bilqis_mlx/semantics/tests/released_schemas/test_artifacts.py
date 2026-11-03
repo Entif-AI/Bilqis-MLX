@@ -109,4 +109,3 @@ class ReleasedArtifactsTests(unittest.TestCase):
             self.assertEqual(
                 caught.exception.context["reason"],
                 "FRAME_RELEASED_MANIFEST_EXISTING_DRIFT")
-

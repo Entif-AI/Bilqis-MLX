@@ -137,4 +137,3 @@ class ReleasedVerificationTests(unittest.TestCase):
                 altered, expected_sha256=hashlib.sha256(altered).hexdigest(),
                 snapshot=_snapshot())
         self.assertEqual(len(digest), 64)
-

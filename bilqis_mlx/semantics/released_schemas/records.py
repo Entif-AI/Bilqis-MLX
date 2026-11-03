@@ -102,4 +102,3 @@ class ReleasedSchemaBodyWitness:
     schema_map_sha256: str
     release_manifest_sha256: str
     schema_version: str = WITNESS_SCHEMA
-

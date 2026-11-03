@@ -128,4 +128,3 @@ def verify_source_pinned_frame_schema_bytes(
     return verify_source_pinned_frame_schema(
         candidate, source_family=source_family,
         atlas_selection=atlas_selection)
-

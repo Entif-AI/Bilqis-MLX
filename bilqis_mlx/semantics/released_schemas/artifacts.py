@@ -47,4 +47,3 @@ def persist_released_frame_schemas(
         if path.read_bytes() != payload:
             _fail("FRAME_RELEASED_MANIFEST_EXISTING_DRIFT")
     return path
-

@@ -113,4 +113,3 @@ def load_released_frame_schemas(
             and manifest.schema_map.digest != expected_schema_map_sha256):
         _fail("FRAME_RELEASED_SCHEMA_MAP_MISMATCH")
     return VerifiedReleasedFrameSchemas(manifest, expected_sha256)
-

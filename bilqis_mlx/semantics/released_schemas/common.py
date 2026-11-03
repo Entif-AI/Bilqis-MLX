@@ -68,4 +68,3 @@ def _json(payload: bytes) -> dict:
     if not isinstance(value, dict):
         _fail("FRAME_RELEASED_SCHEMA_JSON_INVALID")
     return value
-
