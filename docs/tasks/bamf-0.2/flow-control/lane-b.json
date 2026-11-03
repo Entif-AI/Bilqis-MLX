@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "deaa8b9dbd277993f884abeea7413f9cb799d945",
-  "updated_at": "2026-11-03T08:50:15.707219+00:00",
+  "observed_unified": "aa828eb5cb8822a5614aa3353864bf187f83444d",
+  "updated_at": "2026-11-03T12:05:36Z",
   "exception": null,
   "items": [
     {
@@ -199,20 +199,22 @@
     },
     {
       "issue": 449,
-      "pr": 780,
+      "pr": null,
       "state": "TURNED_IN",
-      "head_sha": "4126cdaecd92b2c515693540fb86fd09fde6338d",
-      "summary": "B05.1 depth proof ready in PR #780 after fresh pinned EGM PASS; depth18/18 and source producer16/16 zero skips. Human integration pending.",
+      "head_sha": "1607068b166541a6283695e452da721bbf7482f8",
+      "summary": "PR #780 is externally merged as aa828eb5cb8822a5614aa3353864bf187f83444d; its scoped B05.1 depth proof is consumed by reviewed unified.",
       "resume_trigger": null,
+      "merged_pr": 780,
       "preserved_branch": "codex/bamf02-b-449-depth-proof-20261103"
     },
     {
       "issue": 778,
-      "pr": 779,
+      "pr": null,
       "state": "TURNED_IN",
-      "head_sha": "551f9d7f6172113b2c2698178c870cf61c7c35a0",
-      "summary": "Canonical test-import repair #778 is EGM-Passed and turned in through PR #779; file source-positive1/1, unchanged producer16/16, no real student mutation.",
+      "head_sha": "d1056d86333531431143cd0901fcdfb561b3141b",
+      "summary": "PR #779 is externally merged as edae9d43fe104d8e8fdc125fc6df0b7e428ac7be; its canonical source-atom test-import repair is consumed by reviewed unified.",
       "resume_trigger": null,
+      "merged_pr": 779,
       "preserved_branch": "codex/bamf02-b-778-test-imports-20261103"
     },
     {
