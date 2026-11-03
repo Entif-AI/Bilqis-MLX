@@ -104,6 +104,7 @@ jobs:
           bilqis_mlx/learning/_teaching/tests/test_teacher_observations.py
           bilqis_mlx/runtime/tests/teacher/test_teacher_observation_capture.py
           bilqis_mlx/runtime/tests/teacher/test_capture_identity.py
+          bilqis_mlx/semantics/frame_codec_parts/tests
           bilqis_mlx/runtime/operator_session/tests
           bilqis_mlx/compatibility/live_release_parts/tests/test_providers.py
           bilqis_mlx/runtime/tests/teacher/test_teacher_observation_replay.py
