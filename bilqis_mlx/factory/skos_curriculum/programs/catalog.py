@@ -80,6 +80,6 @@ def default_family_program_registry() -> FamilyProgramRegistry:
             source_validator=require_registered_source,
             program_keys=(FamilyProgramKey(
                 "qualified_world_model",
-                Signature(("WorldRecord", "WorldQuery"), "Boolean"),
+                Signature(("EventStatus",), "Boolean"),
                 ("binary",)),)),
     ))

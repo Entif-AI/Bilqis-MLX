@@ -15,14 +15,11 @@ from .capability_identity_contracts import CapabilityIdentityInput
 
 BOOLEAN_COVERAGE = ("truth-table", "polarity", "legal-connective-pattern")
 NUMERIC_COVERAGE = ("number", "successor", "arithmetic", "range", "overflow")
-WORLD_COVERAGE = ("actor", "time", "state", "causal-relation")
+WORLD_COVERAGE = ("state",)
 _BOOLEAN = ("BOOL_AND", "BOOL_IFF", "BOOL_IMPLIES", "BOOL_OR", "BOOL_XOR")
 _NUMERIC = ("ADD", "DIV", "MOD", "MUL", "SUB")
-_WORLD = ("BEFORE", "IS_OCCURRED", "ROLE_LOOKUP")
-_WORLD_SOURCE_CAPABILITIES = (
-    "WORLD.ACTOR_OF", "WORLD.BEFORE", "WORLD.IS_OCCURRED",
-    "WORLD.DIRECT_CAUSE",
-)
+_WORLD = ("IS_OCCURRED",)
+_WORLD_SOURCE_CAPABILITIES = ("WORLD.IS_OCCURRED",)
 SOURCE_COORDINATE_WIDTH = 3
 
 
@@ -126,22 +123,16 @@ def world_rule_profile(
         operators.resolve(operator_id)
     return SemanticRuleProfile(
         CapabilityIdentityInput(
-            "source.bamf.qualified-world/v1", "qualified_world_model",
-            "SOURCE_WORLD_QUERY",
-            Signature(("WorldRecord", "WorldQuery"), "Boolean"),
+            "ithkuil:LEXSENSE-294d00be074a56", "qualified_world_model",
+            "IS_OCCURRED",
+            Signature(("EventStatus",), "Boolean"),
             ("binary",)),
         WORLD_COVERAGE, tuple(sorted(_WORLD)),
         "source.bamf.qualified-world/v1",
         None if source is None else source.descriptor.implementation_sha256,
         tuple(sorted(_WORLD_SOURCE_CAPABILITIES)),
         tuple(sorted((
-            ("WORLD.ACTOR_OF", "ithkuil:ATOM-5d7116db8e1508",
-             "SOURCE_WORLD_ACTOR_OF"),
-            ("WORLD.BEFORE", "ithkuil:ATOM-ef7cf17b427af9",
-             "SOURCE_WORLD_BEFORE"),
             ("WORLD.IS_OCCURRED", "ithkuil:LEXSENSE-294d00be074a56",
-             "SOURCE_WORLD_IS_OCCURRED"),
-            ("WORLD.DIRECT_CAUSE", "ithkuil:LEXSENSE-59819df75e3137",
-             "SOURCE_WORLD_DIRECT_CAUSE"),
+             "IS_OCCURRED"),
         ))),
     )

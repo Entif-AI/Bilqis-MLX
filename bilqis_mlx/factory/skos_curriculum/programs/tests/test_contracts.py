@@ -154,6 +154,54 @@ class FamilyContractsTests(unittest.TestCase):
             and item.reason == item.obligation.reason
             for item in unsupported))
 
+    def test_missing_typed_key_does_not_abort_unrelated_bound_work(self):
+        course, source_registry = synthetic_release_inputs()
+        release = compile_factory_release(course, source_registry)
+        census = _inventory_source_families(_snapshot())
+        frontier = LearnedFrontier(census.semantic_release)
+        candidate = _compile_semantic_curriculum_snapshot(_snapshot(), (), frontier)
+        lessons = _compile_source_constructive_lessons_snapshot(_snapshot())
+        key = FamilyProgramKey(
+            "fixture_family", Signature(("Boolean",), "Boolean"), ("binary",))
+        registry = FamilyProgramRegistry((RegisteredFamilyProgram(
+            "fixture_family", ("fixture.adapter/v1",),
+            "fixture.constructor/v1", "fixture.checker/v1",
+            lambda *args, **kwargs: args, lambda *args, **kwargs: True,
+            program_keys=(key,)),))
+
+        def identity(_release, _bindings, capability_id, *_):
+            signature = (key.signature if capability_id == "A.C0"
+                         else Signature(("Boolean", "Boolean"), "Boolean"))
+            value = type("Identity", (), {
+                "semantic_id": f"fixture:{capability_id}",
+                "family_id": "fixture_family",
+                "signature": signature,
+                "answer_kinds": ("binary",),
+            })()
+            return type("Binding", (), {
+                "stable_identity": type("Stable", (), {"identity": value})()
+            })()
+
+        with patch.multiple(
+            "bilqis_mlx.factory.skos_curriculum.programs.binding",
+            inventory_source_families=lambda _selection: census,
+            compile_semantic_curriculum=lambda *_args: candidate,
+            compile_source_constructive_lessons=lambda _selection: lessons,
+            assert_family_inventory_current=lambda *_args: None,
+            assert_curriculum_candidate_current=lambda *_args: None,
+            assert_source_lesson_set_current=lambda *_args: None,
+        ), patch(
+            "bilqis_mlx.factory.curriculum.capability_identity."
+            "bind_factory_release_capability_identity",
+            side_effect=identity,
+        ):
+            bindings = bind_factory_release_families(
+                release, registry, source_registry, object(), frontier)
+
+        self.assertEqual(
+            {item.capability_id for item in bindings.bound_programs}, {"A.C0"})
+        self.assertEqual(len(bindings.coverage.dispositions), len(census.obligations))
+
 
     def test_learning_state_cannot_be_forged(self):
         bound = bind_existing_family_program(

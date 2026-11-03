@@ -64,7 +64,9 @@ def _stable_binding_stub(release, bindings, capability_id, *_):
     identity = SimpleNamespace(
         semantic_id=bound.semantic_roots[0],
         family_id=bound.family_id,
-        signature=Signature(("WorldRecord", "WorldQuery"), "Boolean"),
+        signature=(Signature(("EventStatus",), "Boolean")
+                   if bound.family_id == "qualified_world_model"
+                   else Signature(("WorldRecord", "WorldQuery"), "Boolean")),
         answer_kinds=tuple(sorted(capability.answer_kinds)),
         operator_id=bound.semantic_operator_id)
     return SimpleNamespace(stable_identity=SimpleNamespace(identity=identity))

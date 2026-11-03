@@ -10,7 +10,7 @@ from bilqis_mlx.factory.executable_release import compile_executable_factory_rel
 from bilqis_mlx.factory.execution import CurriculumProfile
 from bilqis_mlx.factory.generation import execute_release_family_program
 from bilqis_mlx.factory.live_answers import live_answer_registry
-from bilqis_mlx.factory.teaching import describe_delivered_teaching
+from bilqis_mlx.factory.teaching import describe_delivered_teaching, draw_teaching_option_rows
 from bilqis_mlx.factory.skos_curriculum.registry import (
     IMPLEMENTATION_UNCOVERED, PROGRAM_BOUND, BoundFamilyProgram,
     FamilyProgramRegistry, RegisteredFamilyProgram, bind_existing_family_program,
@@ -78,16 +78,20 @@ class FamilyExecutionTests(unittest.TestCase):
             assert_curriculum_candidate_current=lambda *_args: None,
             assert_source_lesson_set_current=lambda *_args: None,
         ):
-            artifacts = tuple(
-                execute_release_family_program(
-                    release, source_registry, default_family_program_registry(),
-                    object(), frontier, capability.id,
-                    construct_kwargs={"graph": graph, "seed": 420, "each": 12},
-                    check_kwargs={"graph": graph})
-                for capability in capabilities)
+            bindings = bind_factory_release_families(
+                release, default_family_program_registry(), source_registry,
+                object(), frontier)
+            artifacts = (execute_release_family_program(
+                release, source_registry, default_family_program_registry(),
+                object(), frontier, "WORLD.IS_OCCURRED",
+                construct_kwargs={"graph": graph, "seed": 420, "each": 12},
+                check_kwargs={"graph": graph}),)
+        self.assertEqual(
+            {item.capability_id for item in bindings.bound_programs},
+            {"WORLD.IS_OCCURRED"})
         self.assertEqual(
             {artifact.capability_id for artifact in artifacts},
-            {capability.id for capability in capabilities})
+            {"WORLD.IS_OCCURRED"})
         self.assertTrue(all(len(artifact.rows) == 12 for artifact in artifacts))
         self.assertTrue(all(
             {row["gold"] for row in artifact.rows} == {"TRUE", "FALSE"}
@@ -96,21 +100,29 @@ class FamilyExecutionTests(unittest.TestCase):
             artifact.capability_id, "source.direct/" + artifact.capability_id,
             artifact.rows) for artifact in artifacts)
         self.assertTrue(all(delivery.specimen_ids for delivery in deliveries))
+        teacher_rows = draw_teaching_option_rows(
+            None, graph, executable, source_registry,
+            capability="WORLD.IS_OCCURRED",
+            option_id="source.direct/WORLD.IS_OCCURRED", seed=421, each=12)
+        self.assertEqual(len(teacher_rows), 12)
+        self.assertEqual({row["capability"] for row in teacher_rows},
+                         {"WORLD.IS_OCCURRED"})
+        self.assertEqual({row["gold"] for row in teacher_rows}, {"TRUE", "FALSE"})
         self.assertTrue(all(artifact.learning_state == "LEARNING_UNVERIFIED" for artifact in artifacts))
     def test_qualified_world_rejects_provider_and_answer_modality_substitution(self):
         graph = projected_graph(registry_graph())
         adapter = world_adapter()
         capabilities = (
             Capability(
-                "WORLD.BEFORE", "qualified-world",
+                "WORLD.IS_OCCURRED", "qualified-world",
                 "repo:lib/ithkuil/_data/csv/lexicon_root_senses.csv",
-                ("ithkuil:LEXSENSE-59819df75e3137",),
-                ("ithkuil:LEXSENSE-59819df75e3137",), (), (),
+                ("ithkuil:LEXSENSE-294d00be074a56",),
+                ("ithkuil:LEXSENSE-294d00be074a56",), (), (),
                 (AnswerFamily("binary", BINARY),), WORLD_GENERATOR, WORLD_ORACLE),
         )
         course = Course(
             (Grade("D", capabilities, "1" * 64,
-                   (("WORLD.BEFORE", 12),), (("WORLD.BEFORE",),)),),
+                   (("WORLD.IS_OCCURRED", 12),), (("WORLD.IS_OCCURRED",),)),),
             "bamf-a08-world-fixture/v1", "2" * 64, "3" * 64)
         release = compile_factory_release(
             course, SourceAdapterRegistry((adapter,)))
@@ -121,7 +133,7 @@ class FamilyExecutionTests(unittest.TestCase):
         lessons = _compile_source_constructive_lessons_snapshot(_snapshot())
         forged = replace(
             adapter,
-            draw=lambda **_: ({"capability": "WORLD.BEFORE", "forged": True},),
+            draw=lambda **_: ({"capability": "WORLD.IS_OCCURRED", "forged": True},),
             check=lambda *_args, **_kwargs: True)
         with patch.multiple(
             "bilqis_mlx.factory.skos_curriculum.programs.binding",
@@ -136,7 +148,7 @@ class FamilyExecutionTests(unittest.TestCase):
                 execute_release_family_program(
                     release, SourceAdapterRegistry((forged,)),
                     default_family_program_registry(), object(), frontier,
-                    "WORLD.BEFORE",
+                    "WORLD.IS_OCCURRED",
                     construct_kwargs={"graph": graph, "seed": 420, "each": 12},
                     check_kwargs={"graph": graph})
             with self.assertRaises(ValueError):
@@ -144,11 +156,11 @@ class FamilyExecutionTests(unittest.TestCase):
                     default_family_program_registry().require(
                         "qualified_world_model"),
                     CapabilityDefinition(
-                        "WORLD.BEFORE", "D", (),
+                        "WORLD.IS_OCCURRED", "D", (),
                         adapter.descriptor.adapter_id, WORLD_ORACLE,
                         ("integer",)),
                     ConstructionProgram(
-                        "WORLD.BEFORE", adapter.descriptor.adapter_id,
+                        "WORLD.IS_OCCURRED", adapter.descriptor.adapter_id,
                         WORLD_GENERATOR, WORLD_ORACLE, ()),
                     SourceAdapterRegistry((adapter,)))
     def test_qualified_world_rejects_substituted_family_program_registry(self):
@@ -156,10 +168,10 @@ class FamilyExecutionTests(unittest.TestCase):
         adapter = world_adapter()
         source_registry = SourceAdapterRegistry((adapter,))
         capability = Capability(
-            "WORLD.BEFORE", "qualified-world",
+            "WORLD.IS_OCCURRED", "qualified-world",
             "repo:lib/ithkuil/_data/csv/lexicon_root_senses.csv",
-            ("ithkuil:ATOM-ef7cf17b427af9",),
-            ("ithkuil:ATOM-ef7cf17b427af9",), (), (),
+            ("ithkuil:LEXSENSE-294d00be074a56",),
+            ("ithkuil:LEXSENSE-294d00be074a56",), (), (),
             (AnswerFamily("binary", BINARY),), WORLD_GENERATOR, WORLD_ORACLE)
         release = compile_factory_release(Course(
             (Grade("D", (capability,), "1" * 64, ((capability.id, 12),),
