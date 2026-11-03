@@ -13,6 +13,16 @@ from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
 
 
 class DepthSourceSelectionTests(TestCase):
+    def test_public_selectors_keep_pickle_identities(self):
+        import pickle
+        from bilqis_mlx.runtime import block_attnres
+        for name in ('depth_select', 'depth_select_with_diagnostics'):
+            with self.subTest(name=name):
+                value = getattr(block_attnres, name)
+                expected = ('cbilqis_mlx.runtime.block_attnres\n' + name + '\np0\n.').encode()
+                self.assertIs(pickle.loads(expected), value)
+                self.assertEqual(pickle.dumps(value, protocol=0), expected)
+
     def test_selection_reaches_composer(self):
         released = _released_features()
         selection = AtlasArtifactSelection('/unused', '1' * 64, '2' * 64, '3' * 64)
