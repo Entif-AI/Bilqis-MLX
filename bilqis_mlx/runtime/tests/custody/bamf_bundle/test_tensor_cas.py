@@ -111,6 +111,22 @@ class BamfTensorCasTests(unittest.TestCase):
         self.assertLess(synced.index(root.parent), synced.index(shard))
         self.assertTrue(data_plane().require_file_object(digest).is_file())
 
+    def test_existing_unowned_object_requires_copy_headroom(self):
+        import bilqis_mlx.runtime.bamf_bundle.codec as codec
+        source = candidate(parent_state())
+        manifest = self.save(source, "owned")
+        digest = manifest["tensors"]["sha256"]
+        plane = data_plane()
+        target = plane.require_file_object(digest)
+        plane._db.execute("DELETE FROM meta WHERE key=?", (file_objects._OWNER_KEY_PREFIX + digest,))
+        inode = target.stat().st_ino
+        with patch.object(codec, "assert_headroom", side_effect=RuntimeError("reserve")) as reserve:
+            with self.assertRaisesRegex(RuntimeError, "reserve"):
+                self.save(source, "unowned")
+        self.assertEqual(reserve.call_args.kwargs["reserve_gib"], 100.0)
+        self.assertEqual(reserve.call_args.kwargs["required_bytes"], target.stat().st_size)
+        self.assertEqual(target.stat().st_ino, inode)
+
     def test_published_generations_reuse_then_separate_payloads(self):
         run = self.root / "run"
         state = parent_state()

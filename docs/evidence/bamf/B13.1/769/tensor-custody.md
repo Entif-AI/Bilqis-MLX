@@ -15,9 +15,18 @@ human-owned. This repair does not establish full B13 learning acceptance.
 `DataPlaneFileObjectMixin` owns tensor objects beside the shared data-plane SQLite
 file, addressed by SHA-256. Adoption streams into a private temporary inode,
 flushes/fsyncs its bytes, checks its digest and installs it with a no-overwrite
-hard link. Competing installers verify/reuse the winner. The shard, object root
-and object-root parent directories are fsynced before adoption returns, including
-reuse. Caller source aliases cannot modify the copied object.
+hard link. Competing installers verify/reuse the winner. Every adoption fsyncs the actual object inode, shard, object root and object-root
+parent before returning, including reuse. The existing data-plane SQLite
+transaction serializes adoption across processes. Its existing `meta` table
+records a versioned ownership key with device/inode/ctime/size after byte and
+directory durability; no new table or schema version is needed. A verified object
+with no matching ownership receipt is atomically replaced once by an owned copy.
+This isolates old caller links and open descriptors without changing logical
+content or historical bundle bytes. Receipt loss or interrupted publication causes
+a safe re-copy on retry. Verified owned objects reuse the exact inode. Copying
+holds the existing SQLite writer transaction; competing writes may wait within
+the existing busy-timeout contract. The B13 reserve check includes legacy-object
+re-ownership copies. Caller source aliases cannot modify the copied object.
 
 The B13 codec serializes its numerical payload through the existing checkpoint
 owner, checks the CAS filesystem's configured disk reserve before an additional
@@ -52,7 +61,7 @@ python3 -B -m unittest \
   bilqis_mlx.runtime.tests.custody.data_plane.test_events
 ```
 
-Expected: 11 targeted tests and 37 existing tests pass without skips. Controls
+Expected: 15 targeted tests and 37 existing tests pass without skips. Controls
 cover unchanged-object reuse, changed-object separation, corruption rejection,
 pointer-crash/retry reuse, caller-alias mutation, competing installation,
 independent-process convergence and directory fsync calls. A three-generation
@@ -62,8 +71,10 @@ parent-bundle bytes, cold readback and generation-bound outbox delivery. The thr
 race and ancestry tests failed before the additional repair. Test fixtures use
 small numerical shapes and patch headroom; production reserve remains 100 GiB.
 Publication intercepts the pointer and verifies fsync of the actual persisted CAS
-inode and its directory ancestry, including object reuse. Negative controls remove
-CAS file or directory fsync and prove the pointer check fails before installation.
+inode and its directory ancestry, including object reuse. Reuse observations reset for each publication. Negative controls remove
+CAS file or directory fsync during reuse and prove the pointer check fails before
+installation. Existing unowned single-link objects with an open caller descriptor
+are isolated once; owned receipts survive a data-plane restart.
 Power-loss durability is supported by these ordering tests, not a physical power-cut run.
 
 Incident PM-2026-11-03-001 records the newly discovered CAS gaps and native ledger

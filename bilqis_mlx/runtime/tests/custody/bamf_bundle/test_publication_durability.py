@@ -37,7 +37,7 @@ class PublicationDurabilityTests(unittest.TestCase):
             return publish_bamf_generation(self.run, value)
 
     def assert_persisted_tensor_durable(self):
-        synced, current = set(), set()
+        current = set()
         fsync, pointer = os.fsync, publication._atomic_pointer
 
         def identity(path):
@@ -46,14 +46,13 @@ class PublicationDurabilityTests(unittest.TestCase):
 
         def sync(fd):
             state = os.fstat(fd)
-            synced.add((state.st_dev, state.st_ino))
             current.add((state.st_dev, state.st_ino))
             fsync(fd)
 
         def install(path, value):
             manifest = json.loads((path.parent / value['bundle'] / 'manifest.json').read_bytes())
             tensor = data_plane().require_file_object(manifest['tensors']['object_sha256'])
-            self.assertIn(identity(tensor), synced, 'persisted CAS inode must be durable')
+            self.assertIn(identity(tensor), current, 'persisted CAS inode must be durable')
             for directory in (tensor.parent, tensor.parent.parent, tensor.parent.parent.parent):
                 self.assertIn(identity(directory), current, 'CAS ancestry must be durable')
             pointer(path, value)
@@ -69,22 +68,23 @@ class PublicationDurabilityTests(unittest.TestCase):
         self.assert_persisted_tensor_durable()
 
     def test_ordering_witness_detects_unsynced_cas_inode(self):
-        copy = file_objects.DataPlaneFileObjectMixin._copy_file_object
-
-        def unsynced_copy(owner, source, target, digest):
-            with patch.object(os, 'fsync'):
-                copy(owner, source, target, digest)
-
-        with patch.object(file_objects.DataPlaneFileObjectMixin, '_copy_file_object',
-                          new=unsynced_copy):
+        with patch.object(file_objects, '_fsync_file'):
             with self.assertRaisesRegex(AssertionError, 'persisted CAS inode'):
                 self.assert_persisted_tensor_durable()
+        self.assertEqual(self.run.name, 'reuse')
         self.assertFalse((self.run / 'bamf-state.json').exists())
 
     def test_ordering_witness_detects_unsynced_cas_ancestry(self):
-        with patch.object(file_objects, '_fsync_directory'):
+        sync = file_objects._fsync_directory
+
+        def omit_reuse_sync(path):
+            if self.run.name != 'reuse':
+                sync(path)
+
+        with patch.object(file_objects, '_fsync_directory', side_effect=omit_reuse_sync):
             with self.assertRaisesRegex(AssertionError, 'CAS ancestry'):
                 self.assert_persisted_tensor_durable()
+        self.assertEqual(self.run.name, 'reuse')
         self.assertFalse((self.run / 'bamf-state.json').exists())
 
     def test_overlapping_cold_reader_cannot_race_outbox_reconciliation(self):

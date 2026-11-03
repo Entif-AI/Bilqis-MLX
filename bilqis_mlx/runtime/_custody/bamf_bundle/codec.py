@@ -40,7 +40,7 @@ def save_bamf_bundle(candidate: BamfBundleCandidate, destination: Path, *,
     try:
         local_tensor = destination / tensor["filename"]
         object_path = plane.file_object_destination(tensor["sha256"])
-        if not object_path.exists():
+        if not plane.owns_file_object(tensor["sha256"]):
             assert_headroom(
                 object_path, required_bytes=local_tensor.stat().st_size,
                 reserve_gib=reserve_gib)

@@ -5,21 +5,15 @@ import os
 from unittest.mock import patch
 
 from bilqis_mlx._data_plane import file_objects
-from bilqis_mlx.data_plane import data_plane
+from bilqis_mlx.data_plane import close_data_planes, data_plane
 from bilqis_mlx.runtime.tests.custody.data_plane.base import DataPlaneCase
 
 
 def _racing_adopter(source, digest, barrier, results):
     plane = data_plane()
-    link = os.link
-
-    def synchronized_link(origin, destination):
-        barrier.wait(timeout=15)
-        return link(origin, destination)
-
     try:
-        with patch.object(file_objects.os, "link", side_effect=synchronized_link):
-            results.put(str(plane.adopt_file_object(source, digest)))
+        barrier.wait(timeout=15)
+        results.put(str(plane.adopt_file_object(source, digest)))
     except Exception as error:
         results.put(repr(error))
 
@@ -52,6 +46,54 @@ class FileObjectTests(DataPlaneCase):
         with patch.object(file_objects.os, "link", side_effect=competing_link):
             self.assertEqual(plane.adopt_file_object(source, digest), target)
         self.assertEqual(plane.require_file_object(digest), target)
+
+    def test_existing_unowned_inode_isolated_from_open_caller_descriptor(self):
+        source, digest = self.source()
+        plane = data_plane()
+        target = plane.file_object_destination(digest)
+        target.parent.mkdir(parents=True)
+        os.link(source, target)
+        replacement_source = self.root / "same-bytes"
+        replacement_source.write_bytes(source.read_bytes())
+        with source.open("r+b") as caller:
+            source.unlink()
+            old_inode = target.stat().st_ino
+            plane.adopt_file_object(replacement_source, digest)
+            self.assertNotEqual(target.stat().st_ino, old_inode)
+            caller.write(b"corrupted caller bytes")
+            caller.flush()
+            self.assertEqual(plane.require_file_object(digest), target)
+        owned_inode = target.stat().st_ino
+        close_data_planes()
+        data_plane().adopt_file_object(replacement_source, digest)
+        self.assertEqual(target.stat().st_ino, owned_inode)
+
+    def test_reuse_fsyncs_current_object_inode_independently(self):
+        source, digest = self.source()
+        plane = data_plane()
+        target = plane.adopt_file_object(source, digest)
+        synced = []
+        fsync = os.fsync
+
+        def sync(fd):
+            synced.append(os.fstat(fd).st_ino)
+            fsync(fd)
+
+        with patch.object(file_objects.os, "fsync", side_effect=sync):
+            plane.adopt_file_object(source, digest)
+        self.assertIn(target.stat().st_ino, synced)
+
+    def test_interrupted_ownership_publication_retries_without_trusting_inode(self):
+        source, digest = self.source()
+        plane = data_plane()
+        with patch.object(file_objects, "_fsync_file", side_effect=RuntimeError("crash")):
+            with self.assertRaisesRegex(RuntimeError, "crash"):
+                plane.adopt_file_object(source, digest)
+        self.assertFalse(plane.owns_file_object(digest))
+        target = plane.adopt_file_object(source, digest)
+        self.assertTrue(plane.owns_file_object(digest))
+        self.assertEqual(plane.require_file_object(digest), target)
+        self.assertEqual(list(target.parent.iterdir()), [target])
 
     def test_adoption_syncs_directory_ancestry_including_reuse(self):
         source, digest = self.source()
