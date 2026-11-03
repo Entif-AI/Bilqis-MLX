@@ -1,8 +1,9 @@
 """Provenance for source-owned partial forests."""
 from __future__ import annotations
+from .. import partial_visible_forest as _facade
 from ..context_eligibility import ContextEligibility
-from ..domains import contract_digest
-from ..frame_compiler import _invalid
+
+
 from ..frame_schema import AtomicFrame, FrameInstance, FrameSchema
 from .receipts import HiddenParentProvenance, PARTIAL_PARENT_SCHEMA
 
@@ -17,7 +18,7 @@ def _hidden_parent_provenance(
         schema = schemas.get(
             (parent.frame_schema_id, parent.frame_schema_revision))
         if schema is None:
-            _invalid("BAMF_PREFIX_PARTIAL_AUTHORITY_DRIFT")
+            _facade._invalid("BAMF_PREFIX_PARTIAL_AUTHORITY_DRIFT")
         frame_authority = (
             parent.frame_schema_id,
             parent.frame_schema_revision,
@@ -25,7 +26,7 @@ def _hidden_parent_provenance(
         )
     else:
         frame_authority = ("<atomic>", 0, parent.ast_construct)
-    provenance_digest = contract_digest((
+    provenance_digest = _facade.contract_digest((
         PARTIAL_PARENT_SCHEMA,
         parent.occurrence_id,
         parent.source_instance_id,

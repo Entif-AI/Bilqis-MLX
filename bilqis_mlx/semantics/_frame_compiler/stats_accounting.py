@@ -1,7 +1,8 @@
 """Compiled-prefix sidecar accounting."""
 from __future__ import annotations
-from dataclasses import asdict
-from ..frame_codec import PackDisposition, _canonical_bytes
+from .. import frame_compiler as _facade
+
+from ..frame_codec import PackDisposition
 from .positions import PositionKind
 from .batch import CompiledFrameBatch
 from .stats import CompileStats
@@ -23,5 +24,5 @@ def _compile_stats(compiled: CompiledFrameBatch) -> CompileStats:
     return CompileStats(
         len(compiled.positions) - count, count,
         len(compiled.positions), shares,
-        sum(len(_canonical_bytes(asdict(packed.sidecar)))
+        sum(len(_facade._canonical_bytes(_facade.asdict(packed.sidecar)))
             for packed in closures))

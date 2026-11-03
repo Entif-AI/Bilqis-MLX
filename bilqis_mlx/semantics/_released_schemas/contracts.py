@@ -1,5 +1,6 @@
 """Released frame-schema contracts with source-owned authority."""
 from __future__ import annotations
+from .. import released_frame_schemas as _facade
 import hashlib
 import json
 import re
@@ -30,7 +31,7 @@ def _unique_pairs(pairs: list[tuple[str, object]]) -> dict:
     result = {}
     for key, value in pairs:
         if key in result:
-            _fail("FRAME_RELEASED_SCHEMA_JSON_DUPLICATE_KEY")
+            _facade._fail("FRAME_RELEASED_SCHEMA_JSON_DUPLICATE_KEY")
         result[key] = value
     return result
 
@@ -38,13 +39,13 @@ def _unique_pairs(pairs: list[tuple[str, object]]) -> dict:
 
 def _json(payload: bytes) -> dict:
     if not isinstance(payload, bytes):
-        _fail("FRAME_RELEASED_SCHEMA_BYTES_REQUIRED")
+        _facade._fail("FRAME_RELEASED_SCHEMA_BYTES_REQUIRED")
     try:
-        value = json.loads(payload, object_pairs_hook=_unique_pairs)
+        value = json.loads(payload, object_pairs_hook=_facade._unique_pairs)
     except BilqisError:
         raise
     except (ValueError, UnicodeError, TypeError):
-        _fail("FRAME_RELEASED_SCHEMA_JSON_INVALID")
+        _facade._fail("FRAME_RELEASED_SCHEMA_JSON_INVALID")
     if not isinstance(value, dict):
-        _fail("FRAME_RELEASED_SCHEMA_JSON_INVALID")
+        _facade._fail("FRAME_RELEASED_SCHEMA_JSON_INVALID")
     return value

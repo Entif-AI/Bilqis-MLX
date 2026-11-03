@@ -1,11 +1,12 @@
 """Released frame-schema io with source-owned authority."""
 from __future__ import annotations
+from .. import released_frame_schemas as _facade
 from pathlib import Path
 from ...errors import BilqisError
 from ..atlas_projection import FrozenAtlasSnapshot
 from ..frame_codec import SchemaTagEntry, SchemaTagMap
 from ..frame_schema import FrameSchema
-from .contracts import _fail, _sha, _json, _SHA
+from .contracts import _SHA
 from .models import (
     ReleasedSchemaBody, ReleasedFrameSchemaManifest, VerifiedReleasedFrameSchemas,
 )
@@ -22,7 +23,7 @@ def seal_released_frame_schemas(
             or any(not isinstance(schema, FrameSchema) for schema in schemas)
             or not isinstance(schema_map, SchemaTagMap)
             or schema_map.semantic_release != snapshot.release_sha256):
-        _fail("FRAME_RELEASED_MANIFEST_SOURCE_INVALID")
+        _facade._fail("FRAME_RELEASED_MANIFEST_SOURCE_INVALID")
     bodies = tuple(sorted(
         (ReleasedSchemaBody.from_schema(schema) for schema in schemas),
         key=lambda body: (body.schema_id.encode("utf-8"), body.revision)))
@@ -45,17 +46,17 @@ def load_released_frame_schemas(
             or not isinstance(expected_sha256, str)
             or not _SHA.fullmatch(expected_sha256)
             or not isinstance(payload, bytes)
-            or _sha(payload) != expected_sha256):
-        _fail("FRAME_RELEASED_MANIFEST_DIGEST_MISMATCH")
-    value = _json(payload)
+            or _facade._sha(payload) != expected_sha256):
+        _facade._fail("FRAME_RELEASED_MANIFEST_DIGEST_MISMATCH")
+    value = _facade._json(payload)
     if set(value) != {
             "schema_version", "semantic_release", "atlas_bundle_id",
             "source_bundle_id", "schema_map", "bodies"}:
-        _fail("FRAME_RELEASED_MANIFEST_INVALID")
+        _facade._fail("FRAME_RELEASED_MANIFEST_INVALID")
     try:
         tag_map = value["schema_map"]
         if set(tag_map) != {"semantic_release", "entries", "schema_version"}:
-            _fail("FRAME_RELEASED_MANIFEST_INVALID")
+            _facade._fail("FRAME_RELEASED_MANIFEST_INVALID")
         manifest = ReleasedFrameSchemaManifest(
             semantic_release=value["semantic_release"],
             atlas_bundle_id=value["atlas_bundle_id"],
@@ -72,19 +73,19 @@ def load_released_frame_schemas(
     except BilqisError:
         raise
     except (KeyError, TypeError, ValueError):
-        _fail("FRAME_RELEASED_MANIFEST_INVALID")
+        _facade._fail("FRAME_RELEASED_MANIFEST_INVALID")
     if payload != manifest.canonical_bytes():
-        _fail("FRAME_RELEASED_MANIFEST_NONCANONICAL")
+        _facade._fail("FRAME_RELEASED_MANIFEST_NONCANONICAL")
     if (manifest.semantic_release != snapshot.release_sha256
             or manifest.atlas_bundle_id != snapshot.bundle_id
             or manifest.source_bundle_id != snapshot.source_bundle_id):
-        _fail("FRAME_RELEASED_MANIFEST_ATLAS_SOURCE_MISMATCH")
+        _facade._fail("FRAME_RELEASED_MANIFEST_ATLAS_SOURCE_MISMATCH")
     if (expected_semantic_release is not None
             and manifest.semantic_release != expected_semantic_release):
-        _fail("FRAME_RELEASED_MANIFEST_RELEASE_MISMATCH")
+        _facade._fail("FRAME_RELEASED_MANIFEST_RELEASE_MISMATCH")
     if (expected_schema_map_sha256 is not None
             and manifest.schema_map.digest != expected_schema_map_sha256):
-        _fail("FRAME_RELEASED_SCHEMA_MAP_MISMATCH")
+        _facade._fail("FRAME_RELEASED_SCHEMA_MAP_MISMATCH")
     return VerifiedReleasedFrameSchemas(manifest, expected_sha256)
 
 
@@ -95,7 +96,7 @@ def persist_released_frame_schemas(
     """Append-only content-addressed source artifact, never overwrite a release."""
     if not isinstance(directory, Path) or not isinstance(
             manifest, ReleasedFrameSchemaManifest):
-        _fail("FRAME_RELEASED_MANIFEST_PERSIST_INVALID")
+        _facade._fail("FRAME_RELEASED_MANIFEST_PERSIST_INVALID")
     payload = manifest.canonical_bytes()
     path = directory / ("frame-schemas-" + manifest.digest + ".json")
     directory.mkdir(parents=True, exist_ok=True)
@@ -104,5 +105,5 @@ def persist_released_frame_schemas(
             stream.write(payload)
     except FileExistsError:
         if path.read_bytes() != payload:
-            _fail("FRAME_RELEASED_MANIFEST_EXISTING_DRIFT")
+            _facade._fail("FRAME_RELEASED_MANIFEST_EXISTING_DRIFT")
     return path

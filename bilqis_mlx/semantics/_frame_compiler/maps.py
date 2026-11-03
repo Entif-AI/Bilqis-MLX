@@ -1,8 +1,9 @@
 """Maps for causal source-prefix compilation."""
 from __future__ import annotations
+from .. import frame_compiler as _facade
 from dataclasses import dataclass
 from ..frame_schema import SourceSpan
-from .contracts import _invalid, PREFIX_MAPS_SCHEMA, _SHA
+from .contracts import PREFIX_MAPS_SCHEMA, _SHA
 from .positions import PositionKind
 
 
@@ -20,7 +21,7 @@ class SourcePosition:
                 or not isinstance(self.kind, PositionKind)
                 or not isinstance(self.source_reference, str)
                 or not self.source_reference):
-            _invalid("BAMF_PREFIX_SOURCE_POSITION_INVALID")
+            _facade._invalid("BAMF_PREFIX_SOURCE_POSITION_INVALID")
 
 
 
@@ -39,7 +40,7 @@ class ScopeBoundary:
                 or (self.frame_handle is not None
                     and (not isinstance(self.frame_handle, str)
                          or not self.frame_handle))):
-            _invalid("BAMF_PREFIX_SCOPE_BOUNDARY_INVALID")
+            _facade._invalid("BAMF_PREFIX_SCOPE_BOUNDARY_INVALID")
 
 
 
@@ -68,7 +69,7 @@ class RoleAccess:
                 or not isinstance(self.source_references, tuple)
                 or not (len(self.semantic_ids) == len(self.abi_indices)
                         == len(self.source_references))):
-            _invalid("BAMF_PREFIX_ROLE_ACCESS_INVALID")
+            _facade._invalid("BAMF_PREFIX_ROLE_ACCESS_INVALID")
 
 
 
@@ -92,7 +93,7 @@ class ExpansionHandle:
                            self.occurrence_id, self.content_digest,
                            self.projection_digest))
                 or not isinstance(self.source_span, SourceSpan)):
-            _invalid("BAMF_PREFIX_EXPANSION_HANDLE_INVALID")
+            _facade._invalid("BAMF_PREFIX_EXPANSION_HANDLE_INVALID")
 
 
 
@@ -133,4 +134,4 @@ class PrefixMaps:
                 or any(not isinstance(item, ExpansionHandle)
                        for item in self.expansion_handles)
                 or self.schema_version != PREFIX_MAPS_SCHEMA):
-            _invalid("BAMF_PREFIX_MAPS_INVALID")
+            _facade._invalid("BAMF_PREFIX_MAPS_INVALID")

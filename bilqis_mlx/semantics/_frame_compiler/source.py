@@ -1,17 +1,15 @@
 """Source for causal source-prefix compilation."""
 from __future__ import annotations
+from .. import frame_compiler as _facade
 from dataclasses import dataclass
 from ..context_eligibility import (
     ApprovedContextProjection, ContextPolicy, SourceFrontier, SourceGrant,
     TaskScope,
 )
-from ..domains import contract_digest
+
 from ..frame_codec import SchemaTagMap
 from ..frame_schema import FrameSchema, FrameTree
-from .contracts import (
-    _invalid, SOURCE_AST_SCHEMA, SOURCE_ATOM_SCHEMA, COMPILER_CONFIG_SCHEMA,
-    ATOM_EVIDENCE_SCHEMA, _SHA,
-)
+from .contracts import SOURCE_AST_SCHEMA, SOURCE_ATOM_SCHEMA, COMPILER_CONFIG_SCHEMA, ATOM_EVIDENCE_SCHEMA, _SHA
 
 
 def atom_evidence_digest(
@@ -21,8 +19,8 @@ def atom_evidence_digest(
     if (not isinstance(source_instance_id, str) or not source_instance_id
             or not isinstance(atom, SourceAtom)
             or not isinstance(release, str) or not _SHA.fullmatch(release)):
-        _invalid("BAMF_PREFIX_ATOM_EVIDENCE_INVALID")
-    return contract_digest((
+        _facade._invalid("BAMF_PREFIX_ATOM_EVIDENCE_INVALID")
+    return _facade.contract_digest((
         ATOM_EVIDENCE_SCHEMA, source_instance_id, release,
         atom.index, atom.token, atom.source_reference))
 
@@ -42,7 +40,7 @@ class SourceAtom:
                 or not isinstance(self.source_reference, str)
                 or not self.source_reference
                 or self.schema_version != SOURCE_ATOM_SCHEMA):
-            _invalid("BAMF_PREFIX_ATOM_INVALID")
+            _facade._invalid("BAMF_PREFIX_ATOM_INVALID")
 
 
 
@@ -64,7 +62,7 @@ class StreamingAST:
                 or not isinstance(self.frames, tuple)
                 or any(not isinstance(tree, FrameTree) for tree in self.frames)
                 or self.schema_version != SOURCE_AST_SCHEMA):
-            _invalid("BAMF_PREFIX_SOURCE_AST_INVALID")
+            _facade._invalid("BAMF_PREFIX_SOURCE_AST_INVALID")
 
 
 
@@ -92,7 +90,7 @@ class FrameCompilerConfig:
                 or not isinstance(self.policy, ContextPolicy)
                 or self.task.semantic_release != self.schema_map.semantic_release
                 or self.schema_version != COMPILER_CONFIG_SCHEMA):
-            _invalid("BAMF_PREFIX_CONFIG_INVALID")
+            _facade._invalid("BAMF_PREFIX_CONFIG_INVALID")
 
 
 

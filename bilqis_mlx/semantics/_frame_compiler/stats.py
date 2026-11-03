@@ -1,7 +1,8 @@
 """Stats for causal source-prefix compilation."""
 from __future__ import annotations
+from .. import frame_compiler as _facade
 from dataclasses import dataclass
-from .contracts import _invalid
+
 
 
 @dataclass(frozen=True)
@@ -28,4 +29,4 @@ class CompileStats:
                        for _, count, total in self.disposition_shares)
                 or sum(count for _, count, _ in self.disposition_shares)
                 != self.actual_frames):
-            _invalid("BAMF_PREFIX_STATS_INVALID")
+            _facade._invalid("BAMF_PREFIX_STATS_INVALID")

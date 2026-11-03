@@ -1,10 +1,11 @@
 """Positions for causal source-prefix compilation."""
 from __future__ import annotations
+from .. import frame_compiler as _facade
 from dataclasses import dataclass
 from enum import Enum
-from ..domains import contract_digest
+
 from ..frame_codec import PackedFrame, SchemaTagMap
-from .contracts import _invalid, COMPILED_POSITION_SCHEMA, COMPILED_BATCH_SCHEMA
+from .contracts import COMPILED_POSITION_SCHEMA, COMPILED_BATCH_SCHEMA
 from .source import SourceAtom
 
 
@@ -41,7 +42,7 @@ class CompiledPosition:
                     and (not isinstance(self.frame_handle, str)
                          or not self.frame_handle))
                 or self.schema_version != COMPILED_POSITION_SCHEMA):
-            _invalid("BAMF_PREFIX_POSITION_INVALID")
+            _facade._invalid("BAMF_PREFIX_POSITION_INVALID")
 
     @property
     def cache_identity(self) -> tuple:
@@ -59,7 +60,7 @@ def _prefix_digest(
     positions: tuple[CompiledPosition, ...],
     scope: str, policy_version: tuple[str, int, int, int],
 ) -> str:
-    return contract_digest((
+    return _facade.contract_digest((
         COMPILED_BATCH_SCHEMA, source_id, release, visible_end,
         schema_map.digest, context_digest, scope, policy_version,
         tuple(item.cache_identity for item in positions),

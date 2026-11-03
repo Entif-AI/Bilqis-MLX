@@ -1,11 +1,9 @@
 """Rows for causal source-prefix compilation."""
 from __future__ import annotations
+from .. import frame_compiler as _facade
 from dataclasses import dataclass
 from .batch import CompiledFrameBatch
-from .contracts import (
-    COMPILED_ROWS_SCHEMA, TRAINING_EXAMPLE_SCHEMA, HIDDEN_TARGET_SCHEMA,
-    MAX_NEURAL_POSITIONS, ROW_COMPILER_INPUT_ARITY, _invalid,
-)
+from .contracts import COMPILED_ROWS_SCHEMA, TRAINING_EXAMPLE_SCHEMA, HIDDEN_TARGET_SCHEMA, MAX_NEURAL_POSITIONS, ROW_COMPILER_INPUT_ARITY
 from .positions import CompiledPosition
 from .source import StreamingAST, FrameCompilerConfig
 
@@ -26,7 +24,7 @@ class CompiledFrameRows:
                 or len(self.rows) != len(self.padded_positions)
                 or len(self.rows) != len(self.padding_mask)
                 or self.schema_version != COMPILED_ROWS_SCHEMA):
-            _invalid("BAMF_PREFIX_ROWS_INVALID")
+            _facade._invalid("BAMF_PREFIX_ROWS_INVALID")
         width = max((len(row.positions) for row in self.rows), default=0)
         for row, padded, mask in zip(
                 self.rows, self.padded_positions, self.padding_mask):
@@ -39,7 +37,7 @@ class CompiledFrameRows:
                     or mask != (
                         (True,) * len(row.positions)
                         + (False,) * (width - len(row.positions)))):
-                _invalid("BAMF_PREFIX_ROWS_PADDING_INVALID")
+                _facade._invalid("BAMF_PREFIX_ROWS_PADDING_INVALID")
 
 
 
@@ -62,7 +60,7 @@ class HiddenAnswerTargets:
                 or any(type(item) is not bool for item in self.target_mask)
                 or len(self.target_indices) != len(self.target_mask)
                 or self.schema_version != HIDDEN_TARGET_SCHEMA):
-            _invalid("BAMF_PREFIX_TARGETS_INVALID")
+            _facade._invalid("BAMF_PREFIX_TARGETS_INVALID")
 
 
 
@@ -78,7 +76,7 @@ class CompiledTrainingExample:
                 or self.input_view.source_instance_id
                 != self.target_view.source_instance_id
                 or self.schema_version != TRAINING_EXAMPLE_SCHEMA):
-            _invalid("BAMF_PREFIX_TRAINING_EXAMPLE_INVALID")
+            _facade._invalid("BAMF_PREFIX_TRAINING_EXAMPLE_INVALID")
 
 
 
@@ -90,11 +88,10 @@ def compile_training_example(
     """Keep hidden answer tensors outside the model-input/cache contract."""
     if (not isinstance(targets, HiddenAnswerTargets)
             or targets.source_instance_id != ast.source_instance_id):
-        _invalid("BAMF_PREFIX_TARGET_SOURCE_MISMATCH")
-    from ..frame_compiler import compile_prefix
+        _facade._invalid("BAMF_PREFIX_TARGET_SOURCE_MISMATCH")
 
     return CompiledTrainingExample(
-        compile_prefix(ast, visible_end, release, config), targets)
+        _facade.compile_prefix(ast, visible_end, release, config), targets)
 
 
 
@@ -107,11 +104,10 @@ def compile_prefix_rows(
             or any(not isinstance(row, tuple)
                    or len(row) != ROW_COMPILER_INPUT_ARITY
                    for row in rows)):
-        _invalid("BAMF_PREFIX_ROWS_INPUT_INVALID")
-    from ..frame_compiler import compile_prefix
+        _facade._invalid("BAMF_PREFIX_ROWS_INPUT_INVALID")
 
     compiled = tuple(
-        compile_prefix(ast, end, release, config)
+        _facade.compile_prefix(ast, end, release, config)
         for ast, end, config in rows)
     width = max((len(row.positions) for row in compiled), default=0)
     return CompiledFrameRows(

@@ -1,5 +1,6 @@
 """Occurrence-aware frame-schema contracts with source-owned authority."""
 from __future__ import annotations
+from .. import frame_schema as _facade
 
 import hashlib
 import json
@@ -34,7 +35,7 @@ def _bytes(value: object) -> bytes:
 
 
 def _digest(value: object) -> str:
-    return hashlib.sha256(_bytes(value)).hexdigest()
+    return hashlib.sha256(_facade._bytes(value)).hexdigest()
 
 
 
@@ -48,7 +49,7 @@ def source_node_digest(value: object) -> str:
 
 
 def _occurrence_digest(source_instance_id: str, structural_path: tuple[int, ...]) -> str:
-    return _digest({
+    return _facade._digest({
         "source_instance_id": source_instance_id,
         "structural_path": list(structural_path),
     })
@@ -57,5 +58,5 @@ def _occurrence_digest(source_instance_id: str, structural_path: tuple[int, ...]
 
 def _text(value: object, reason: str) -> str:
     if not isinstance(value, str) or not value:
-        _fail(reason)
+        _facade._fail(reason)
     return value

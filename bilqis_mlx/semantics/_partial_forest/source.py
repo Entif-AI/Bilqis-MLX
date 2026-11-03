@@ -1,7 +1,8 @@
 """Source for source-owned partial forests."""
 from __future__ import annotations
-from ..frame_compiler import StreamingAST, _invalid
-from ..frame_schema import AtomicFrame, FrameInstance, FrameTree, validate_frame_tree
+from .. import partial_visible_forest as _facade
+from ..frame_compiler import StreamingAST
+from ..frame_schema import AtomicFrame, FrameInstance, FrameTree
 
 
 def _source_tree_index(
@@ -14,10 +15,10 @@ def _source_tree_index(
     parents: dict[str, str | None] = {}
 
     def walk(tree: FrameTree, parent_occurrence_id: str | None) -> None:
-        validate_frame_tree(tree)
+        _facade.validate_frame_tree(tree)
         frame = tree.root
         if frame.occurrence_id in frames:
-            _invalid("BAMF_PREFIX_PARTIAL_SOURCE_DUPLICATE")
+            _facade._invalid("BAMF_PREFIX_PARTIAL_SOURCE_DUPLICATE")
         frames[frame.occurrence_id] = frame
         parents[frame.occurrence_id] = parent_occurrence_id
         for child in tree.children:

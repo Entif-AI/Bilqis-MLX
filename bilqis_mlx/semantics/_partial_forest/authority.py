@@ -1,9 +1,8 @@
 """Authority for source-owned partial forests."""
 from __future__ import annotations
-from ..context_eligibility import (
-    ContextEligibility, ContextHold, check_context_eligibility,
-)
-from ..frame_compiler import FrameCompilerConfig, _invalid
+from .. import partial_visible_forest as _facade
+from ..context_eligibility import ContextEligibility, ContextHold
+from ..frame_compiler import FrameCompilerConfig
 
 
 def _validate_hidden_parent_current_authority(
@@ -16,11 +15,11 @@ def _validate_hidden_parent_current_authority(
     A13 projection, member evidence, and member handles never enter the p4
     receipt or compiler cache identity.
     """
-    current = check_context_eligibility(
+    current = _facade.check_context_eligibility(
         (envelope,),
         compiler_config.task,
         compiler_config.frontier,
         compiler_config.policy,
     )
     if isinstance(current, ContextHold):
-        _invalid("BAMF_PREFIX_PARTIAL_SOURCE_AUTHORITY_INVALID")
+        _facade._invalid("BAMF_PREFIX_PARTIAL_SOURCE_AUTHORITY_INVALID")

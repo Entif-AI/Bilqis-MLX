@@ -1,11 +1,10 @@
 """Released frame-schema models with source-owned authority."""
 from __future__ import annotations
-from dataclasses import asdict, dataclass
-from ..frame_codec import SchemaTagMap, _canonical_bytes
-from ..frame_schema import FrameSchema, frame_schema_from_bytes
-from .contracts import (
-    _fail, _sha, _json, MANIFEST_SCHEMA, BODY_SCHEMA, WITNESS_SCHEMA, _SHA,
-)
+from .. import released_frame_schemas as _facade
+from dataclasses import dataclass
+from ..frame_codec import SchemaTagMap
+from ..frame_schema import FrameSchema
+from .contracts import MANIFEST_SCHEMA, BODY_SCHEMA, WITNESS_SCHEMA, _SHA
 
 
 @dataclass(frozen=True)
@@ -23,25 +22,25 @@ class ReleasedSchemaBody:
                 or not _SHA.fullmatch(self.schema_body_sha256)
                 or not isinstance(self.canonical_body_json, str)
                 or self.schema_version != BODY_SCHEMA):
-            _fail("FRAME_RELEASED_SCHEMA_BODY_INVALID")
+            _facade._fail("FRAME_RELEASED_SCHEMA_BODY_INVALID")
         body = self.canonical_body_json.encode("utf-8")
-        schema = frame_schema_from_bytes(body)
+        schema = _facade.frame_schema_from_bytes(body)
         if ((schema.schema_id, schema.revision)
                 != (self.schema_id, self.revision)
-                or _sha(body) != self.schema_body_sha256):
-            _fail("FRAME_RELEASED_SCHEMA_BODY_INVALID")
+                or _facade._sha(body) != self.schema_body_sha256):
+            _facade._fail("FRAME_RELEASED_SCHEMA_BODY_INVALID")
 
     @classmethod
     def from_schema(cls, schema: FrameSchema) -> "ReleasedSchemaBody":
         if not isinstance(schema, FrameSchema):
-            _fail("FRAME_RELEASED_SCHEMA_BODY_INVALID")
+            _facade._fail("FRAME_RELEASED_SCHEMA_BODY_INVALID")
         payload = schema.canonical_bytes()
         return cls(
-            schema.schema_id, schema.revision, _sha(payload),
+            schema.schema_id, schema.revision, _facade._sha(payload),
             payload.decode("utf-8"))
 
     def parse(self) -> FrameSchema:
-        return frame_schema_from_bytes(self.canonical_body_json.encode("utf-8"))
+        return _facade.frame_schema_from_bytes(self.canonical_body_json.encode("utf-8"))
 
 
 
@@ -68,29 +67,29 @@ class ReleasedFrameSchemaManifest:
                     self.bodies, key=lambda body: (
                         body.schema_id.encode("utf-8"), body.revision)))
                 or self.schema_version != MANIFEST_SCHEMA):
-            _fail("FRAME_RELEASED_MANIFEST_INVALID")
+            _facade._fail("FRAME_RELEASED_MANIFEST_INVALID")
         identities = tuple(
             (body.schema_id, body.revision) for body in self.bodies)
         if len(identities) != len(set(identities)):
-            _fail("FRAME_RELEASED_SCHEMA_DUPLICATE")
+            _facade._fail("FRAME_RELEASED_SCHEMA_DUPLICATE")
         if self.schema_map != SchemaTagMap.from_schemas(
                 self.semantic_release,
                 tuple(body.parse() for body in self.bodies)):
-            _fail("FRAME_RELEASED_SCHEMA_MAP_MISMATCH")
+            _facade._fail("FRAME_RELEASED_SCHEMA_MAP_MISMATCH")
 
     def canonical_bytes(self) -> bytes:
-        return _canonical_bytes({
+        return _facade._canonical_bytes({
             "schema_version": self.schema_version,
             "semantic_release": self.semantic_release,
             "atlas_bundle_id": self.atlas_bundle_id,
             "source_bundle_id": self.source_bundle_id,
-            "schema_map": asdict(self.schema_map),
-            "bodies": [asdict(body) for body in self.bodies],
+            "schema_map": _facade.asdict(self.schema_map),
+            "bodies": [_facade.asdict(body) for body in self.bodies],
         })
 
     @property
     def digest(self) -> str:
-        return _sha(self.canonical_bytes())
+        return _facade._sha(self.canonical_bytes())
 
 
 
@@ -117,7 +116,7 @@ class VerifiedReleasedFrameSchemas:
                 or not isinstance(self.trusted_sha256, str)
                 or not _SHA.fullmatch(self.trusted_sha256)
                 or self.manifest.digest != self.trusted_sha256):
-            _fail("FRAME_RELEASED_MANIFEST_DIGEST_MISMATCH")
+            _facade._fail("FRAME_RELEASED_MANIFEST_DIGEST_MISMATCH")
 
     def canonical_bytes(self) -> bytes:
         return self.manifest.canonical_bytes()
@@ -128,7 +127,7 @@ class VerifiedReleasedFrameSchemas:
             if (item.schema_id, item.revision) == (schema_id, revision)
         ), None)
         if body is None:
-            _fail("FRAME_RELEASED_SCHEMA_UNKNOWN")
+            _facade._fail("FRAME_RELEASED_SCHEMA_UNKNOWN")
         return ReleasedSchemaBodyWitness(
             self.manifest.semantic_release,
             body.schema_id, body.revision, body.schema_body_sha256,
@@ -141,14 +140,14 @@ class VerifiedReleasedFrameSchemas:
                 or not isinstance(witness, ReleasedSchemaBodyWitness)
                 or witness != self.lookup(
                     schema.schema_id, schema.revision)):
-            _fail("FRAME_RELEASED_SCHEMA_WITNESS_MISMATCH")
-        if _sha(schema.canonical_bytes()) != witness.schema_body_sha256:
-            _fail("FRAME_RELEASED_SCHEMA_BODY_MISMATCH")
+            _facade._fail("FRAME_RELEASED_SCHEMA_WITNESS_MISMATCH")
+        if _facade._sha(schema.canonical_bytes()) != witness.schema_body_sha256:
+            _facade._fail("FRAME_RELEASED_SCHEMA_BODY_MISMATCH")
         return schema
 
     def require_schema_bytes(
         self, payload: bytes, witness: ReleasedSchemaBodyWitness,
     ) -> FrameSchema:
         # JSON object key order is not semantic. Role-array order *is*.
-        schema = frame_schema_from_bytes(_canonical_bytes(_json(payload)))
+        schema = _facade.frame_schema_from_bytes(_facade._canonical_bytes(_facade._json(payload)))
         return self.require_schema(schema, witness)

@@ -1,7 +1,8 @@
 """Bidirectional source-map derivation."""
 from __future__ import annotations
+from .. import frame_compiler as _facade
 from ..frame_schema import SourceSpan
-from .contracts import _invalid
+
 from .positions import PositionKind
 from .batch import CompiledFrameBatch
 from .maps import (
@@ -44,7 +45,7 @@ def _derive_maps(compiled: CompiledFrameBatch) -> PrefixMaps:
             position.packed.projection_sha256, sidecar.source_span))
         start = atom_positions.get(sidecar.source_span.start)
         if start is None:
-            _invalid("BAMF_PREFIX_SCOPE_SOURCE_MISSING")
+            _facade._invalid("BAMF_PREFIX_SCOPE_SOURCE_MISSING")
         boundaries.append(ScopeBoundary(
             sidecar.scope or compiled.scope,
             start, position_index + 1, position.frame_handle))

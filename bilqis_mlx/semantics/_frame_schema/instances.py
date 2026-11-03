@@ -1,15 +1,13 @@
 """Occurrence-aware frame-schema instances with source-owned authority."""
 from __future__ import annotations
+from .. import frame_schema as _facade
 
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 import json
 
-from .contracts import (
-    _fail, _bytes, _occurrence_digest, _text, FRAME_INSTANCE_RECORD,
-    ATOMIC_FRAME_RECORD, FRAME_TREE_RECORD, _SHA256,
-)
+from .contracts import FRAME_INSTANCE_RECORD, ATOMIC_FRAME_RECORD, FRAME_TREE_RECORD, _SHA256
 from .schema import SourceSpan, FrameSchema
-from .roles import RoleOccurrence, FrameEdge, _frame_content_digest
+from .roles import RoleOccurrence, FrameEdge
 
 
 @dataclass(frozen=True)
@@ -47,18 +45,18 @@ class FrameInstance:
                 or type(self.causal_prefix_end) is not int
                 or self.causal_prefix_end < self.source_span.end
                 or self.schema_version != FRAME_INSTANCE_RECORD):
-            _fail("FRAME_INSTANCE_INVALID")
+            _facade._fail("FRAME_INSTANCE_INVALID")
         rank = {role: index for index, role in enumerate(self.schema_role_order)}
         if keys != tuple(sorted(
                 keys, key=lambda key: (rank[key[0]], key[1]))):
-            _fail("FRAME_BINDING_ORDER_NONCANONICAL")
-        if self.occurrence_id != _occurrence_digest(
+            _facade._fail("FRAME_BINDING_ORDER_NONCANONICAL")
+        if self.occurrence_id != _facade._occurrence_digest(
                 self.source_instance_id, self.structural_path):
-            _fail("FRAME_OCCURRENCE_ID_MISMATCH")
-        if self.content_digest != _frame_content_digest(
+            _facade._fail("FRAME_OCCURRENCE_ID_MISMATCH")
+        if self.content_digest != _facade._frame_content_digest(
                 self.frame_schema_id, self.frame_schema_revision,
                 self.schema_role_order, self.bindings):
-            _fail("FRAME_CONTENT_DIGEST_MISMATCH")
+            _facade._fail("FRAME_CONTENT_DIGEST_MISMATCH")
 
     @property
     def child_edges(self) -> tuple[FrameEdge, ...]:
@@ -74,7 +72,7 @@ class FrameInstance:
         )
 
     def canonical_bytes(self) -> bytes:
-        return _bytes(asdict(self))
+        return _facade._bytes(_facade.asdict(self))
 
 
 
@@ -95,7 +93,7 @@ class AtomicFrame:
         try:
             json.loads(self.source_payload)
         except (TypeError, ValueError):
-            _fail("FRAME_ATOMIC_SOURCE_PAYLOAD_INVALID")
+            _facade._fail("FRAME_ATOMIC_SOURCE_PAYLOAD_INVALID")
         if (not _SHA256.fullmatch(self.occurrence_id)
                 or not _SHA256.fullmatch(self.content_digest)
                 or not self.source_instance_id
@@ -106,7 +104,7 @@ class AtomicFrame:
                 or type(self.causal_prefix_end) is not int
                 or self.causal_prefix_end < self.source_span.end
                 or self.schema_version != ATOMIC_FRAME_RECORD):
-            _fail("FRAME_ATOMIC_FALLBACK_INVALID")
+            _facade._fail("FRAME_ATOMIC_FALLBACK_INVALID")
 
     @property
     def source_data(self):
@@ -122,15 +120,15 @@ class FrameTree:
 
     def __post_init__(self) -> None:
         if self.schema_version != FRAME_TREE_RECORD:
-            _fail("FRAME_TREE_INVALID")
+            _facade._fail("FRAME_TREE_INVALID")
 
 
 
 def occurrence_id(source_instance_id: str, structural_path: tuple[int, ...]) -> str:
-    _text(source_instance_id, "FRAME_SOURCE_INSTANCE_ID_INVALID")
+    _facade._text(source_instance_id, "FRAME_SOURCE_INSTANCE_ID_INVALID")
     if any(type(item) is not int or item < 0 for item in structural_path):
-        _fail("FRAME_STRUCTURAL_PATH_INVALID")
-    return _occurrence_digest(source_instance_id, structural_path)
+        _facade._fail("FRAME_STRUCTURAL_PATH_INVALID")
+    return _facade._occurrence_digest(source_instance_id, structural_path)
 
 
 
@@ -138,7 +136,7 @@ def content_digest(
     schema: FrameSchema,
     bindings: tuple[RoleOccurrence, ...],
 ) -> str:
-    return _frame_content_digest(
+    return _facade._frame_content_digest(
         schema.schema_id, schema.revision,
         tuple(role.role_id for role in schema.roles), bindings)
 
@@ -156,15 +154,15 @@ def make_frame_instance(
 ) -> FrameInstance:
     role_ids = {role.role_id for role in schema.roles}
     if any(binding.role_id not in role_ids for binding in bindings):
-        _fail("FRAME_BINDING_ROLE_UNKNOWN")
+        _facade._fail("FRAME_BINDING_ROLE_UNKNOWN")
     rank = {role.role_id: index for index, role in enumerate(schema.roles)}
     ordered = tuple(sorted(
         bindings, key=lambda item: (rank[item.role_id], item.occurrence_index)))
     return FrameInstance(
         frame_schema_id=schema.schema_id,
         frame_schema_revision=schema.revision,
-        occurrence_id=occurrence_id(source_instance_id, structural_path),
-        content_digest=content_digest(schema, ordered),
+        occurrence_id=_facade.occurrence_id(source_instance_id, structural_path),
+        content_digest=_facade.content_digest(schema, ordered),
         source_instance_id=source_instance_id,
         structural_path=structural_path,
         source_span=source_span,

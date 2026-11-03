@@ -1,8 +1,9 @@
 """Visibility for causal source-prefix compilation."""
 from __future__ import annotations
+from .. import frame_compiler as _facade
 from dataclasses import dataclass
-from ..frame_schema import AtomicFrame, FrameInstance, FrameTree, validate_frame_tree
-from .contracts import _invalid, VISIBLE_AST_SCHEMA
+from ..frame_schema import AtomicFrame, FrameInstance, FrameTree
+from .contracts import VISIBLE_AST_SCHEMA
 from .source import SourceAtom, StreamingAST
 
 
@@ -27,7 +28,7 @@ class VisibleAST:
                 or any(not isinstance(tree, FrameTree)
                        for tree in self.frames)
                 or self.schema_version != VISIBLE_AST_SCHEMA):
-            _invalid("BAMF_PREFIX_VISIBLE_AST_INVALID")
+            _facade._invalid("BAMF_PREFIX_VISIBLE_AST_INVALID")
 
 
 
@@ -58,19 +59,19 @@ def _source_frames(
                     item.root.occurrence_id)):
             walk(child)
         frame = tree.root
-        if _closure_end(frame, approved_by_occurrence) > visible_end:
+        if _facade._closure_end(frame, approved_by_occurrence) > visible_end:
             return
-        if any(_closure_end(child.root, approved_by_occurrence) > visible_end
+        if any(_facade._closure_end(child.root, approved_by_occurrence) > visible_end
                for child in tree.children):
-            _invalid("BAMF_PREFIX_CHILD_FUTURE")
+            _facade._invalid("BAMF_PREFIX_CHILD_FUTURE")
         # Future parent structure is never inspected or validated at p.
-        validate_frame_tree(tree)
+        _facade.validate_frame_tree(tree)
         if (frame.occurrence_id in seen
                 or frame.source_instance_id != ast.source_instance_id
                 or frame.causal_prefix_end > len(ast.atoms)
                 or frame.causal_prefix_end == 0
                 or frame.source_span.end > frame.causal_prefix_end):
-            _invalid("BAMF_PREFIX_FRAME_SOURCE_INVALID")
+            _facade._invalid("BAMF_PREFIX_FRAME_SOURCE_INVALID")
         seen.add(frame.occurrence_id)
         ordered.append(frame)
 
@@ -80,8 +81,8 @@ def _source_frames(
                 item.root.source_span.start,
                 item.root.source_span.end,
                 item.root.occurrence_id)):
-        if (_closure_end(tree.root, approved_by_occurrence) <= visible_end
+        if (_facade._closure_end(tree.root, approved_by_occurrence) <= visible_end
                 and tree.root.parent_occurrence_id is not None):
-            _invalid("BAMF_PREFIX_ROOT_PARENT_INVALID")
+            _facade._invalid("BAMF_PREFIX_ROOT_PARENT_INVALID")
         walk(tree)
     return tuple(ordered)
