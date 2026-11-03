@@ -85,10 +85,10 @@
     },
     {
       "issue": 770,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "948f87ef464704651f96fa3214b12c348593da91",
-      "summary": "PR capacity reopened after human merges779/780; stabilize verified mechanical candidate for one fresh scoped merge-readiness EGM.",
+      "pr": 781,
+      "state": "TURNED_IN",
+      "head_sha": "54bb14260039803187dd8d3e65eeec8c76527755",
+      "summary": "C01 mechanical contract-verifier repair is EGM-Passed and ready in PR781;58tests and14live-source pins independently verified;171children/same8holds/no order.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-c-770-contract-verifier-20261103"
     }
