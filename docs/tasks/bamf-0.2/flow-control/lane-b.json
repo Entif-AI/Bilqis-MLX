@@ -181,12 +181,13 @@
     {
       "issue": 753,
       "pr": 768,
-      "state": "WAITING",
+      "state": "TURNED_IN",
       "head_sha": "14c730bb580e0ce5f13e047db57617b0e873f2d3",
       "summary": "Additional complete CAS repair passed final isolated pinned EGM with0Blockers/0Majors/1whitespaceNit; existing PR #768 has a different head and owns integration.",
       "resume_trigger": "PR #768 owner consumes the additional repair candidate and resolves ownership; then synchronize/review the actual combined PR head once before human integration.",
       "repair_head_sha": "1f3095143c6ca178111e4f1d5baeef1752306510",
-      "preserved_branch": "codex/bamf02-b-753-tensor-custody-20261103"
+      "preserved_branch": "codex/bamf02-b-753-tensor-custody-20261103",
+      "repair_state": "WAITING"
     }
   ]
 }
