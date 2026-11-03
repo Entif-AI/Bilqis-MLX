@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "9bf47289e9ed0a64d275b31c3a7de42c55a8b83e",
-  "updated_at": "2026-11-03T16:09:45Z",
+  "observed_unified": "7984d7872d49b3987284692f5398da71f2a72605",
+  "updated_at": "2026-11-03T16:29:43Z",
   "exception": null,
   "items": [
     {
@@ -31,12 +31,13 @@
     },
     {
       "issue": 456,
-      "pr": 690,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "c078386bd57a209bb10f55142c7b1c5af94a50b1",
-      "summary": "B07.1 is EGM-Passed and turned in through open non-draft PR #690 at exact head c078386b; hosted checks are green and human merge is pending.",
+      "summary": "B07.1 is EGM-Passed and was externally merged through PR #690 as reviewed unified 7984d787; hosted checks were green and the exact candidate is consumed by unified.",
       "resume_trigger": null,
-      "preserved_branch": "codex/b07-456-source-bridge-20261101"
+      "preserved_branch": "codex/b07-456-source-bridge-20261101",
+      "merged_pr": 690
     },
     {
       "issue": 455,
@@ -240,7 +241,7 @@
       "pr": null,
       "state": "TURNED_IN",
       "head_sha": "c078386bd57a209bb10f55142c7b1c5af94a50b1",
-      "summary": "B07/B13 cold-continuation authority remediation is EGM-Passed and consumed into the exact #456/PR #690 candidate.",
+      "summary": "B07/B13 cold-continuation authority remediation is EGM-Passed and consumed into the human-merged #456/PR #690 candidate now present in reviewed unified 7984d787.",
       "resume_trigger": null,
       "preserved_branch": "codex/783-456-current-unified-20261103"
     }
