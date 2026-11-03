@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "deaa8b9dbd277993f884abeea7413f9cb799d945",
-  "updated_at": "2026-11-03T08:54:46.985166Z",
+  "updated_at": "2026-11-03T09:10:55.500048Z",
   "exception": null,
   "items": [
     {
@@ -101,9 +101,9 @@
     {
       "issue": 774,
       "pr": null,
-      "state": "ACTIVE",
+      "state": "TURNED_IN",
       "head_sha": null,
-      "summary": "Repair193/122 proof-recipe success predicates found by aggregate EGM; isolated issue branch, no extra PR.",
+      "summary": "Literal stale predicates reproduced; corrected documented commands and four validator adversaries pass against real source3174c368 logs. Parent consumption complete; no child EGM.",
       "resume_trigger": null
     }
   ]
