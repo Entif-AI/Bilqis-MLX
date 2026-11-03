@@ -17,14 +17,15 @@ PROJECTION_SCHEMA = "bilqis.source-atom-owner-projection/v1"
 REFERENCE_SCHEMA = "bilqis.source-atom-reference/v1"
 
 
-def canonical_graph_for(generator: str, oracle: str, source_root: str | Path) -> dict:
+def canonical_graph_for(generator: str, source_root: str | Path) -> dict:
     """Resolve only existing source owners, never a caller-selected token graph."""
     from ..copular import GENERATOR as COPULAR_GENERATOR, ORACLE as COPULAR_ORACLE
     from ..school import live_source_registry
     from ...semantics.frame_adapters import FINITE_NUMERIC_ADAPTER, released_frame_adapter_ids
 
-    owner = live_source_registry().require(generator, oracle)
-    if (generator, oracle) == (COPULAR_GENERATOR, COPULAR_ORACLE):
+    owner = live_source_registry().resolve_owner(generator)
+    if (generator == COPULAR_GENERATOR and
+            COPULAR_ORACLE in owner.descriptor.accepted_oracle_ids):
         from ..copular_curriculum import expanded_graph
         from ...live_grade_c import registry_graph
         expected_root = ROOT
@@ -45,7 +46,7 @@ def canonical_graph_for(generator: str, oracle: str, source_root: str | Path) ->
 
 
 def require_canonical_graph(row: dict, graph: dict, source_root: str | Path) -> dict:
-    canonical = canonical_graph_for(row["generator"], row["oracle"], source_root)
+    canonical = canonical_graph_for(row["generator"], source_root)
     if digest(graph) != digest(canonical):
         invalid("SOURCE_ATOM_SOURCE_GRAPH_DRIFT")
     return canonical

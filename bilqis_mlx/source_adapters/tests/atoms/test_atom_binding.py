@@ -4,6 +4,8 @@ import os
 from unittest import TestCase, skipUnless
 
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.factory.adapters import RegisteredSourceAdapter, SourceAdapterRegistry
+from bilqis_mlx.factory.model import SourceAdapter
 from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.frame_codec import SchemaTagMap
 from bilqis_mlx.semantics.frame_compiler import atom_evidence_digest, compile_prefix
@@ -17,11 +19,72 @@ from bilqis_mlx.source_adapters.copular import CAPABILITY, SYMBOL
 from bilqis_mlx.source_adapters.copular_curriculum import proposed_graph
 from bilqis_mlx.source_adapters.school import live_source_registry
 from bilqis_mlx.live_grade_c import registry_graph
+from bilqis_mlx.grade_a_probe import read_sources
 
 REAL_BUNDLE = os.environ.get("BILQIS_A01_ATLAS_BUNDLE", "")
 
 
 class SourceAtomAdapterTests(TestCase):
+    def test_cohort_owner_resolution_rejects_ambiguous_and_oracle_mismatched_owners(self):
+        def registered(generator: str, cohort: str, oracle: str):
+            descriptor = SourceAdapter(
+                "source.test/" + generator, generator, (oracle,), "0" * 64,
+                cohort_generator_id=cohort)
+            return RegisteredSourceAdapter(
+                descriptor, lambda **_: (), lambda *_args, **_kwargs: True)
+
+        owner = registered("callable.one", "cohort.one", "oracle.v1")
+        registry = SourceAdapterRegistry((owner,))
+        self.assertIs(registry.resolve_owner("callable.one"), owner)
+        self.assertIs(registry.resolve_owner("cohort.one"), owner)
+        with self.assertRaisesRegex(ValueError, "FACTORY_SOURCE_ORACLE_NOT_ADAPTER_OWNED"):
+            registry.resolve_owner("cohort.one", "forged.oracle")
+        ambiguous = SourceAdapterRegistry((
+            registered("callable.one", "shared.cohort", "oracle.v1"),
+            registered("callable.two", "shared.cohort", "oracle.v1"),
+        ))
+        with self.assertRaisesRegex(ValueError, "FACTORY_SOURCE_ADAPTER_OWNER_AMBIGUOUS"):
+            ambiguous.resolve_owner("shared.cohort")
+
+    def test_grade_a_cohort_row_resolves_canonical_callable_owner(self):
+        source_root = ROOT / "vendor" / "legacy-v16"
+        _, _, graph, _, _ = read_sources(source_root)
+        registry = live_source_registry()
+        owner = registry.require(
+            "bilqis_mlx.grade_a_probe.make_record",
+            "bilqis.mlx.grade-a-record-oracle/v2")
+        row = owner.draw(
+            source_root=source_root, graph=graph, course=None,
+            capability="A.IDENTITY", seed=31, each=2)[0]
+
+        self.assertEqual(row["generator"], owner.descriptor.cohort_generator)
+        self.assertNotEqual(row["generator"], owner.descriptor.generator_id)
+        witness, reason = verify_source_row(
+            row, graph, source_root=source_root,
+            source_seed=31, source_each=2, course=None,
+            source_profile_parameters=None)
+        self.assertIsNone(reason)
+        self.assertIsNotNone(witness)
+        self.assertEqual(witness.generator_id, owner.descriptor.generator_id)
+        self.assertEqual(
+            witness.oracle_id, owner.descriptor.accepted_oracle_ids[0])
+
+        forged_generator = {**row, "generator": "forged.generator"}
+        witness, reason = verify_source_row(
+            forged_generator, graph, source_root=source_root,
+            source_seed=31, source_each=2, course=None,
+            source_profile_parameters=None)
+        self.assertIsNone(witness)
+        self.assertEqual(reason, "SOURCE_ATOM_SOURCE_ADAPTER_UNSUPPORTED")
+
+        forged_oracle = {**row, "oracle": "forged.oracle"}
+        witness, reason = verify_source_row(
+            forged_oracle, graph, source_root=source_root,
+            source_seed=31, source_each=2, course=None,
+            source_profile_parameters=None)
+        self.assertIsNone(witness)
+        self.assertEqual(reason, "SOURCE_ATOM_SOURCE_ROW_UNVERIFIED")
+
     def test_unsupported_or_unreproducible_source_row_has_no_witness(self):
         row = {"generator": "missing.generator", "oracle": "missing.oracle",
                "capability": "x", "tokens": [0]}

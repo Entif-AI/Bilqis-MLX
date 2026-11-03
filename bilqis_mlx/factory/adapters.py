@@ -89,6 +89,33 @@ class SourceAdapterRegistry:
             raise ValueError("FACTORY_SOURCE_ORACLE_NOT_ADAPTER_OWNED:" + str(oracle_id))
         return adapter
 
+    def resolve_owner(
+            self, generator_id: str,
+            oracle_id: str | None = None) -> RegisteredSourceAdapter:
+        """Resolve a source owner from its callable or emitted cohort identity."""
+        direct = self._by_generator.get(generator_id)
+        if direct is not None:
+            if oracle_id is None:
+                return direct
+            return self.require(generator_id, oracle_id)
+        cohort_matches = tuple(
+            adapter for adapter in self._by_generator.values()
+            if adapter.descriptor.cohort_generator == generator_id)
+        if not cohort_matches:
+            raise ValueError("FACTORY_SOURCE_ADAPTER_MISSING:" + str(generator_id))
+        if oracle_id is None:
+            if len(cohort_matches) != 1:
+                raise ValueError("FACTORY_SOURCE_ADAPTER_OWNER_AMBIGUOUS:" + str(generator_id))
+            return cohort_matches[0]
+        oracle_matches = tuple(
+            adapter for adapter in cohort_matches
+            if oracle_id in adapter.descriptor.accepted_oracle_ids)
+        if not oracle_matches:
+            raise ValueError("FACTORY_SOURCE_ORACLE_NOT_ADAPTER_OWNED:" + str(oracle_id))
+        if len(oracle_matches) != 1:
+            raise ValueError("FACTORY_SOURCE_ADAPTER_OWNER_AMBIGUOUS:" + str(generator_id))
+        return oracle_matches[0]
+
     def descriptors_for(self, course) -> tuple[SourceAdapter, ...]:
         result = []
         seen = set()
