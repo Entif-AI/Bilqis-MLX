@@ -47,6 +47,20 @@ class FileObjectTests(DataPlaneCase):
             self.assertEqual(plane.adopt_file_object(source, digest), target)
         self.assertEqual(plane.require_file_object(digest), target)
 
+    def test_legacy_competing_installer_cannot_ratify_caller_link(self):
+        source, digest = self.source()
+        plane = data_plane()
+        link = os.link
+
+        def legacy_winner(origin, destination):
+            link(source, destination)
+            raise FileExistsError(destination)
+
+        with patch.object(file_objects.os, "link", side_effect=legacy_winner):
+            target = plane.adopt_file_object(source, digest)
+        source.write_bytes(b"legacy writer retains this alias")
+        self.assertEqual(plane.require_file_object(digest), target)
+
     def test_existing_unowned_inode_isolated_from_open_caller_descriptor(self):
         source, digest = self.source()
         plane = data_plane()

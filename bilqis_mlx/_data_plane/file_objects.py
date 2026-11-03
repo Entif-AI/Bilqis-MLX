@@ -106,7 +106,7 @@ class DataPlaneFileObjectMixin:
                 and row[0] == _inode_identity(state))
 
     def _copy_file_object(self, source: Path, target: Path, digest: str, *,
-                          replace_unowned: bool = False) -> None:
+                          replace_unowned: bool = False) -> bool:
         temporary = target.with_name("." + digest + "." + uuid.uuid4().hex + ".tmp")
         try:
             with source.open("rb") as reader, temporary.open("xb") as writer:
@@ -121,7 +121,8 @@ class DataPlaneFileObjectMixin:
                 try:
                     os.link(temporary, target)
                 except FileExistsError:
-                    pass
+                    return False
+            return True
         finally:
             if temporary.exists() or temporary.is_symlink():
                 temporary.unlink()
@@ -135,12 +136,13 @@ class DataPlaneFileObjectMixin:
             raise ValueError(DataPlaneError.OBJECT_DIGEST_INVALID.value)
         with self.transaction():
             target = self._file_object_path(digest, create=True)
-            if target.exists() or target.is_symlink():
+            installed = False
+            if not (target.exists() or target.is_symlink()):
+                installed = self._copy_file_object(source, target, digest)
+            if not installed:
                 self.require_file_object(digest)
                 if not self.owns_file_object(digest):
                     self._copy_file_object(target, target, digest, replace_unowned=True)
-            else:
-                self._copy_file_object(source, target, digest)
             self.require_file_object(digest)
             _fsync_file(target)
             # Persist every directory entry before a generation can reference it.

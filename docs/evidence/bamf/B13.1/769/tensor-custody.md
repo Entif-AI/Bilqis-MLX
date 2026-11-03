@@ -15,7 +15,8 @@ human-owned. This repair does not establish full B13 learning acceptance.
 `DataPlaneFileObjectMixin` owns tensor objects beside the shared data-plane SQLite
 file, addressed by SHA-256. Adoption streams into a private temporary inode,
 flushes/fsyncs its bytes, checks its digest and installs it with a no-overwrite
-hard link. Competing installers verify/reuse the winner. Every adoption fsyncs the actual object inode, shard, object root and object-root
+hard link. Competing installers verify the winner and detach it when the winner lacks an
+ownership receipt, including an older writer racing outside the SQLite transaction. Every adoption fsyncs the actual object inode, shard, object root and object-root
 parent before returning, including reuse. The existing data-plane SQLite
 transaction serializes adoption across processes. Its existing `meta` table
 records a versioned ownership key with device/inode/ctime/size after byte and
@@ -61,7 +62,7 @@ python3 -B -m unittest \
   bilqis_mlx.runtime.tests.custody.data_plane.test_events
 ```
 
-Expected: 15 targeted tests and 37 existing tests pass without skips. Controls
+Expected: 16 targeted tests and 37 existing tests pass without skips. Controls
 cover unchanged-object reuse, changed-object separation, corruption rejection,
 pointer-crash/retry reuse, caller-alias mutation, competing installation,
 independent-process convergence and directory fsync calls. A three-generation
