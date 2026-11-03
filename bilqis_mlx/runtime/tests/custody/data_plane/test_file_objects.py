@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from bilqis_mlx._data_plane import file_objects
 from bilqis_mlx.data_plane import close_data_planes, data_plane
-from bilqis_mlx.runtime.tests.custody.data_plane.base import DataPlaneCase
+from bilqis_mlx.runtime.tests.custody.data_plane.base import DataPlaneCase, historical_module
 
 
 def _racing_adopter(source, digest, barrier, results):
@@ -59,6 +59,31 @@ class FileObjectTests(DataPlaneCase):
         with patch.object(file_objects.os, "link", side_effect=legacy_winner):
             target = plane.adopt_file_object(source, digest)
         source.write_bytes(b"legacy writer retains this alias")
+        self.assertEqual(plane.require_file_object(digest), target)
+
+    def test_pinned_legacy_loser_fails_safely_and_upgraded_retry_converges(self):
+        legacy = historical_module(
+            self.root, "deaa8b9dbd277993f884abeea7413f9cb799d945",
+            "bilqis_mlx/_data_plane/file_objects.py", "bilqis_mlx._data_plane.legacy_fixture",
+            "bd0ac8d7c8488af69e92a837530c129f9d8df7ee9a525de4627f865c8cb218b1")
+        source, digest = self.source()
+        plane = data_plane()
+        link = os.link
+
+        def upgraded_winner(origin, destination):
+            with patch.object(file_objects.os, "link", link):
+                plane.adopt_file_object(source, digest)
+            return link(origin, destination)
+
+        with patch.object(file_objects.os, "link", side_effect=upgraded_winner):
+            with self.assertRaises(FileExistsError):
+                legacy.DataPlaneFileObjectMixin.adopt_file_object(plane, source, digest)
+        target = plane.require_file_object(digest)
+        inode = target.stat().st_ino
+        self.assertTrue(plane.owns_file_object(digest))
+        self.assertEqual(plane.adopt_file_object(source, digest), target)
+        self.assertEqual(target.stat().st_ino, inode)
+        source.write_bytes(b"failed old writer retains this alias")
         self.assertEqual(plane.require_file_object(digest), target)
 
     def test_existing_unowned_inode_isolated_from_open_caller_descriptor(self):

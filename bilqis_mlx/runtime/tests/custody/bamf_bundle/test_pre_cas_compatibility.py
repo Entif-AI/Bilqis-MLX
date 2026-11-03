@@ -4,7 +4,6 @@ import importlib.util
 import json
 import subprocess
 import sys
-import unittest
 from dataclasses import asdict
 from pathlib import Path
 from unittest.mock import patch
@@ -16,26 +15,13 @@ import bilqis_mlx.runtime.bamf_bundle.publication as publication
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.data_plane import DataPlane, data_plane
 from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation
-from bilqis_mlx.runtime.tests.custody.data_plane.base import DataPlaneCase
+from bilqis_mlx.runtime.tests.custody.data_plane.base import DataPlaneCase, historical_module
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import candidate, parent_state, shape_patch
 
 PRE_CAS = "dfc0c7586c23b6477c08d4db486ade3deeb79fae"
 WRITER_SHA256 = "01e66fcbe15802615c3557a2a4b99c0fb75a37d64fe3d61ee30bf56d1301fcdc"
 LEGACY_CAS = "deaa8b9dbd277993f884abeea7413f9cb799d945"
 
-
-def historical_module(root, revision, relative, name, expected_digest):
-    source = subprocess.run(["git", "show", revision + ":" + relative],
-                            cwd=Path(__file__).resolve().parents[5],
-                            check=True, capture_output=True).stdout
-    unittest.TestCase().assertEqual(hashlib.sha256(source).hexdigest(), expected_digest,
-                                    "historical writer source drift")
-    path = root / (revision + Path(relative).name)
-    path.write_bytes(source)
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
 
 
 def numerical_observation(student):

@@ -26,15 +26,17 @@ This isolates old caller links and open descriptors without changing logical
 content or historical bundle bytes. Receipt loss or interrupted publication causes
 a safe re-copy on retry. Verified owned objects reuse the exact inode. Copying
 holds the existing SQLite writer transaction; competing writes may wait within
-the existing busy-timeout contract. The B13 reserve check includes legacy-object
-re-ownership copies. Caller source aliases cannot modify the copied object.
+the existing busy-timeout contract. The B13 staging write, reserve decision and adoption share that transaction.
+Concurrent distinct-payload processes with budget for one additional copy yield
+one success and one reserve refusal. Cold-read re-ownership also checks reserve
+inside the same serialized decision. Caller source aliases cannot modify the copied object.
 
 The B13 codec serializes its numerical payload through the existing checkpoint
 owner, checks the CAS filesystem's configured disk reserve before an additional
 copy, adopts the payload and removes its staging copy. New tensor bindings carry
 `object_sha256`; cold read resolves and deep-verifies that object before MLX
 construction. If an old published CAS object lacks ownership, the numerical read
-boundary checks the default100GiB reserve and adopts an owned copy before opening
+boundary checks the default 100 GiB reserve and adopts an owned copy before opening
 it for MLX. Read-only custody validation continues to verify bytes without
 performing this migration. A pinned prior CAS writer/adopter fixture retains a
 writable descriptor across publication and proves current cold read detaches it,
@@ -57,7 +59,8 @@ Run on the supported host with Python and MLX installed:
 python3 -B scripts/run_tests.py \
   bilqis_mlx/runtime/tests/custody/data_plane/test_file_objects.py \
   bilqis_mlx/runtime/tests/custody/bamf_bundle/test_tensor_cas.py \
-  bilqis_mlx/runtime/tests/custody/bamf_bundle/test_pre_cas_compatibility.py
+  bilqis_mlx/runtime/tests/custody/bamf_bundle/test_pre_cas_compatibility.py \
+  bilqis_mlx/runtime/tests/custody/bamf_bundle/test_tensor_reserve_concurrency.py
 python3 -B -m unittest \
   bilqis_mlx.runtime.tests.custody.bamf_bundle.test_codec \
   bilqis_mlx.runtime.tests.custody.bamf_bundle.test_codec_boundaries \
@@ -68,7 +71,7 @@ python3 -B -m unittest \
   bilqis_mlx.runtime.tests.custody.data_plane.test_events
 ```
 
-Expected: 17 targeted tests and 37 existing tests pass without skips. Controls
+Expected: 19 targeted tests and 37 existing tests pass without skips. Controls
 cover unchanged-object reuse, changed-object separation, corruption rejection,
 pointer-crash/retry reuse, caller-alias mutation, competing installation,
 independent-process convergence and directory fsync calls. A three-generation
@@ -89,3 +92,14 @@ readback. Historical PM-2026-11-01-004/005 remain separate custody/proof provena
 Final isolated pinned EGM and hosted PR checks are separate required receipts.
 Source-qualified next-step continuation (#709), cache transitions (#754) and
 accepted feature authority (#708) remain separate owner work.
+
+## Writer-version boundary
+
+Concurrent convergence applies to writers running this implementation. The pinned
+old adopter can propagate `EEXIST` when it loses to an upgraded writer; this patch
+cannot alter already-running old code. The deterministic mixed-version loser
+fixture proves that failure leaves the upgraded object owned and intact, and an
+upgraded retry reuses its inode. If an old writer wins first, the upgraded writer
+verifies and detaches its unowned object. These cases establish custody safety,
+not successful completion of every old binary. Upgrade writers before relying on
+the concurrent-success guarantee.
