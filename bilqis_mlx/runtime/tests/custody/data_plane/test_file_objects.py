@@ -107,6 +107,43 @@ class FileObjectTests(DataPlaneCase):
         data_plane().adopt_file_object(replacement_source, digest)
         self.assertEqual(target.stat().st_ino, owned_inode)
 
+    def test_owned_receipt_with_extra_hard_link_is_reisolated_before_reuse(self):
+        source, digest = self.source()
+        plane = data_plane()
+        target = plane.adopt_file_object(source, digest)
+        owned_inode = target.stat().st_ino
+        alias = self.root / "owned-object-alias"
+        os.link(target, alias)
+
+        # Hard-link creation changes ctime on this platform. Refresh the
+        # adversarial ownership receipt to match the now-aliased inode so the
+        # rejection below is isolated to the single-link ownership predicate.
+        linked_state = target.stat()
+        with plane.transaction():
+            plane._db.execute(
+                "INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)",
+                (file_objects._OWNER_KEY_PREFIX + digest,
+                 file_objects._inode_identity(linked_state)))
+        with plane._lock:
+            owner = plane._db.execute(
+                "SELECT value FROM meta WHERE key=?",
+                (file_objects._OWNER_KEY_PREFIX + digest,),
+            ).fetchone()
+
+        self.assertEqual(owner, (file_objects._inode_identity(linked_state),))
+        self.assertEqual(linked_state.st_nlink, 2)
+        self.assertFalse(plane.owns_file_object(digest))
+
+        replacement = plane.adopt_file_object(source, digest)
+        self.assertEqual(replacement, target)
+        self.assertNotEqual(target.stat().st_ino, owned_inode)
+        self.assertEqual(target.stat().st_nlink, 1)
+        self.assertTrue(plane.owns_file_object(digest))
+
+        alias.write_bytes(b"caller retained old owned inode")
+        self.assertEqual(plane.require_file_object(digest), target)
+        self.assertEqual(target.read_bytes(), b"immutable tensor bytes")
+
     def test_reuse_fsyncs_current_object_inode_independently(self):
         source, digest = self.source()
         plane = data_plane()
