@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "05e31a576e3432e4238c9b4477a70d70ec4fc487",
-  "updated_at": "2026-11-03T18:30:00Z",
+  "updated_at": "2026-11-03T18:32:00Z",
   "exception": null,
   "items": [
     {
@@ -267,20 +267,20 @@
     {
       "issue": 708,
       "pr": 804,
-      "state": "ACTIVE",
-      "head_sha": "1caa9ee8",
+      "state": "TURNED_IN",
+      "head_sha": "7d8e3b98",
       "preserved_branch": "codex/remediation-708-feature-authority-20261103",
       "summary": "B13.5 remediation delivered as ready PR #804: the accepted-generation feature receipt is rederived from the admitted source release and retained custody, so a caller-created candidate cannot ratify its own factor-map digest.",
-      "resume_trigger": null
+      "resume_trigger": "PR #804 is merged or closed; the accepted-generation feature authority continues on owner issue #697."
     },
     {
       "issue": 709,
       "pr": 805,
-      "state": "ACTIVE",
+      "state": "TURNED_IN",
       "head_sha": "dc7a2c62",
       "preserved_branch": "codex/remediation-709-cold-resume-20261103",
       "summary": "B13.2 remediation delivered as ready PR #805: the cold-resume witness starts from published accepted-generation custody, cold resumes in a clean process, executes the next controlled optimizer step and publishes the successor generation, with negative controls for synthetic direct save-load.",
-      "resume_trigger": null
+      "resume_trigger": "PR #805 is merged or closed; the B13.2 cold-resume witness continues on owner issue #479."
     }
   ]
 }
