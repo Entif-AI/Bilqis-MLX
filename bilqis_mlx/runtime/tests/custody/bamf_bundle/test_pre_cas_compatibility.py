@@ -4,6 +4,7 @@ import importlib.util
 import json
 import subprocess
 import sys
+import unittest
 from dataclasses import asdict
 from pathlib import Path
 from unittest.mock import patch
@@ -27,8 +28,8 @@ def historical_module(root, revision, relative, name, expected_digest):
     source = subprocess.run(["git", "show", revision + ":" + relative],
                             cwd=Path(__file__).resolve().parents[5],
                             check=True, capture_output=True).stdout
-    if hashlib.sha256(source).hexdigest() != expected_digest:
-        raise AssertionError("historical writer source drift")
+    unittest.TestCase().assertEqual(hashlib.sha256(source).hexdigest(), expected_digest,
+                                    "historical writer source drift")
     path = root / (revision + Path(relative).name)
     path.write_bytes(source)
     spec = importlib.util.spec_from_file_location(name, path)
