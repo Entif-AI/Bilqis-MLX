@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "05e31a576e3432e4238c9b4477a70d70ec4fc487",
-  "updated_at": "2026-11-03T18:12:00Z",
+  "updated_at": "2026-11-03T18:15:00Z",
   "exception": null,
   "items": [
     {
@@ -275,11 +275,11 @@
     },
     {
       "issue": 709,
-      "pr": null,
+      "pr": 805,
       "state": "ACTIVE",
       "head_sha": "dc7a2c62",
       "preserved_branch": "codex/remediation-709-cold-resume-20261103",
-      "summary": "B13.2 remediation: the cold-resume witness now starts from published accepted-generation custody, cold resumes in a clean process, executes the next controlled optimizer step and publishes the successor generation, with negative controls for synthetic direct save-load.",
+      "summary": "B13.2 remediation delivered as ready PR #805: the cold-resume witness starts from published accepted-generation custody, cold resumes in a clean process, executes the next controlled optimizer step and publishes the successor generation, with negative controls for synthetic direct save-load.",
       "resume_trigger": null
     }
   ]
