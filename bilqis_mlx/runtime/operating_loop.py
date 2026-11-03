@@ -2,40 +2,28 @@
 from __future__ import annotations
 
 from .topology_lifecycle import operator_topology
+from .operator_session.operator_preflight import validate_operator_preflight
+from .operator_session.operator_disk import operator_disk_ready
+from .operator_session.operator_finish import finish_operator_session
+from .operator_session.operator_stagnation import start_stagnation_session
+from .operator_session.operator_setup import prepare_operator_session, configure_operator_session
+from .operator_session.operator_visit import execute_operator_visit
+from .operator_session.operator_autonomy import DispatchControl, dispatch_autonomy
+from .operator_session.operator_profiles import numeric_entry_transition, resume_boolean_profile
+from .operator_session.operator_iteration import prepare_operator_iteration
 
-from bilqis_mlx import paths as _paths
 
-import bilqis_mlx.compatibility.executable_projection as _compatibility_executable_projection
 import bilqis_mlx.compatibility.live_releases as _compatibility_live_releases
-import bilqis_mlx.curriculum.scheduler as _curriculum_scheduler
-import bilqis_mlx.factory.schedule as _factory_schedule
-import bilqis_mlx.learning.learning_experiment as _learning_learning_experiment
-import bilqis_mlx.learning.stagnation_control as _learning_stagnation_control
-import bilqis_mlx.learning.student_ops as _learning_student_ops
 import bilqis_mlx.operator_vocabulary as _bilqis_mlx_operator_vocabulary
-import bilqis_mlx.profiles.catalog as _profiles_catalog
-import bilqis_mlx.profiles.school as _profiles_school
-import bilqis_mlx.runtime.admission as _runtime_admission
-import bilqis_mlx.runtime.boundary_commit as _runtime_boundary_commit
 import bilqis_mlx.runtime.checkpoints as _runtime_checkpoints
-import bilqis_mlx.runtime.disk as _runtime_disk
-import bilqis_mlx.runtime.exam_execution as _runtime_exam_execution
 import bilqis_mlx.runtime.experiment_runs as _runtime_experiment_runs
-import bilqis_mlx.runtime.frontier_refresh as _runtime_frontier_refresh
 import bilqis_mlx.runtime.mlx_memory as _runtime_mlx_memory
-import bilqis_mlx.runtime.reconciliation as _runtime_reconciliation
 import bilqis_mlx.runtime.release_adoption as _runtime_release_adoption
 import bilqis_mlx.runtime.session as _runtime_session
-import bilqis_mlx.runtime.state as _runtime_state
 import bilqis_mlx.runtime.timing_trace as _runtime_timing_trace
-import bilqis_mlx.runtime.visits as _runtime_visits
-import bilqis_mlx.state_dag as _state_dag
 import contextlib as _contextlib
-import dataclasses as _dataclasses
-import json as _json
 import pathlib as _pathlib
 import time as _time
-import uuid as _uuid
 
 
 def _stage_atlas_frontier_attempt(run_dir, receipt, proposal, proposal_file, *,
@@ -52,46 +40,14 @@ def _stage_atlas_frontier_attempt(run_dir, receipt, proposal, proposal_file, *,
 
 
 def _numeric_entry_transition(release, graph, *, full_grade_b, experiment_budget):
-    initial, terminal = _profiles_catalog.numeric_scope_bounds()
-    transition = _profiles_catalog.numeric_entry_transition(
-        release, graph, full_boolean=full_grade_b, maximum=initial)
-    return _dataclasses.replace(
-        transition,
-        numeric_scope_final_maximum=(initial if experiment_budget is not None else terminal))
+    return numeric_entry_transition(release, graph, full_grade_b=full_grade_b,
+        experiment_budget=experiment_budget)
 
 
 def _resume_boolean_profile(run_dir, receipt, course_a, source_root, graph,
                             admitted_v2, *, full_grade_b, autonomous_curriculum):
-    """Apply the operator-selected Boolean profile without neural updates."""
-    course = _factory_schedule.schedule_program_from_executable_release(admitted_v2)
-    active_grade_count = len(admitted_v2.execution_plan.grades)
-    target = None
-    if (not autonomous_curriculum and
-            _compatibility_executable_projection.profile_has_legacy_inventory(
-                admitted_v2, course)):
-        if active_grade_count == 1:
-            target = _profiles_school.with_disabled_future_grades(
-                _profiles_school.boolean_entry_profile(full=full_grade_b),
-                tuple(grade.grade_id for grade in admitted_v2.curriculum.grades[2:]))
-        elif full_grade_b:
-            target = _profiles_school.full_boolean_upgrade_profile(admitted_v2.profile)
-        elif active_grade_count <= 2:
-            target = _profiles_school.with_disabled_future_grades(
-                _profiles_school.boolean_entry_profile(full=False),
-                tuple(grade.grade_id for grade in admitted_v2.curriculum.grades[2:]))
-    if target is None or admitted_v2.profile == target:
-        return receipt, course, admitted_v2
-    if receipt["school"]["stage"] == "AWAITING_NEXT_GRADE" and active_grade_count == 1:
-        return _runtime_release_adoption._adopt_executable_profile(
-            run_dir, receipt, course_a, source_root, graph, target)[:3]
-    if active_grade_count < 2:
-        return receipt, course, admitted_v2
-    school = _runtime_state._state_from_json(receipt["school"], course)
-    if not full_grade_b and school.grade != course.grades[-1].id:
-        return receipt, course, admitted_v2
-    return _runtime_release_adoption._adopt_executable_profile(
-        run_dir, receipt, course_a, source_root, graph, target,
-        invalidate_assessment_evidence=full_grade_b)[:3]
+    return resume_boolean_profile(run_dir, receipt, course_a, source_root, graph,
+        admitted_v2, full_grade_b=full_grade_b, autonomous_curriculum=autonomous_curriculum)
 
 
 def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoint: _pathlib.Path,
@@ -127,56 +83,18 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
         boolean_idboolops=boolean_idboolops,
         admit_next_grade_with_debt=admit_next_grade_with_debt,
         full_grade_b=full_grade_b)
-    if (type(minutes) is not int or not 1 <= minutes <= 1440 or
-            type(steps_per_visit) is not int or not 1 <= steps_per_visit <= 2048 or
-            type(max_visits) is not int or max_visits < 0 or
-            type(batch_size) is not int or batch_size < 2 or batch_size % 2 or
-            type(source_prefetch_workers) is not int or
-            not 0 <= source_prefetch_workers <= 2):
-        raise ValueError("HUMAN_TRAINER_INVALID_OPERATOR_LIMITS")
-    grace_requested = stagnation_grace_grade is not None or stagnation_grace_steps != 0
-    if grace_requested and (
-            not resume or not isinstance(stagnation_grace_grade, str) or
-            not stagnation_grace_grade or type(stagnation_grace_steps) is not int or
-            stagnation_grace_steps <= 0):
-        raise ValueError("STAGNATION_GRACE_REQUIRES_EXPLICIT_RESUME_REQUEST")
-    if flash_mode and not resume:
-        raise ValueError("FLASH_MODE_REQUIRES_RESUME")
-    if boolean_composite and not resume:
-        raise ValueError("BOOLEAN_COMPOSITE_REQUIRES_RESUME")
-    if boolean_idboolops and not resume:
-        raise ValueError("BOOLEAN_IDBOOLOPS_REQUIRES_RESUME")
-    if boolean_association_bridge and not resume:
-        raise ValueError("BOOLEAN_ASSOCIATION_BRIDGE_REQUIRES_RESUME")
-    if admit_next_grade_with_debt and not resume:
-        raise ValueError("DEBT_GRADE_ADMISSION_REQUIRES_RESUME")
-    if admit_next_grade_with_debt and numeric_staircase:
-        raise ValueError("DEBT_GRADE_ADMISSION_INCOMPATIBLE_WITH_NUMERIC_STAIRCASE")
-    if autonomous_curriculum and not retention_enabled:
-        raise ValueError("AUTONOMOUS_CURRICULUM_REQUIRES_RETENTION")
-    if autonomous_curriculum and flash_mode:
-        raise ValueError("AUTONOMOUS_CURRICULUM_INCOMPATIBLE_WITH_FLASH_MODE")
-    if retention_enabled or experiment_budget is not None:
-        _runtime_experiment_runs.require_training_run(
-            run_dir, _paths.REPO_ROOT / "runs",
-            issue_budget=experiment_budget)
-    if experiment_budget is not None:
-        experiment_budget.assert_can_allocate(600_000_000)
-    if boolean_association_bridge:
-        saved_path = _pathlib.Path(run_dir).expanduser().resolve() / "state.json"
-        if not saved_path.is_file():
-            raise ValueError("TEACHING_ENRICHMENT_REQUIRES_ADMITTED_FACTORY_RELEASE")
-        saved_release = _state_dag.read_current(_pathlib.Path(run_dir))
-        if not _runtime_admission.admitted_release_supports_teaching_option(
-                _pathlib.Path(run_dir).expanduser().resolve(), saved_release):
-            raise ValueError("TEACHING_ENRICHMENT_NOT_ADMITTED_BY_FACTORY_RELEASE")
-    if not retention_enabled and resume:
-        # Fail before GPU loading, orphan recovery, or any state mutation when
-        # a protected student's policy would otherwise be silently disabled.
-        saved_path = _pathlib.Path(run_dir).expanduser().resolve() / "state.json"
-        if (saved_path.is_file() and _state_dag.read_current(_pathlib.Path(run_dir)).get(
-                "learning_experiment") is not None):
-            raise ValueError("LEARNING_EXPERIMENT_PROTECTED_RESUME_REQUIRES_RETENTION")
+    validate_operator_preflight(
+        run_dir=run_dir, minutes=minutes, steps_per_visit=steps_per_visit,
+        max_visits=max_visits, batch_size=batch_size,
+        source_prefetch_workers=source_prefetch_workers,
+        stagnation_grace_grade=stagnation_grace_grade,
+        stagnation_grace_steps=stagnation_grace_steps, resume=resume,
+        flash_mode=flash_mode, boolean_composite=boolean_composite,
+        boolean_idboolops=boolean_idboolops,
+        boolean_association_bridge=boolean_association_bridge,
+        admit_next_grade_with_debt=admit_next_grade_with_debt,
+        numeric_staircase=numeric_staircase, autonomous_curriculum=autonomous_curriculum,
+        retention_enabled=retention_enabled, experiment_budget=experiment_budget)
     model_topology = operator_topology(run_dir, resume=resume, requested=model_topology)
     import mlx.core as mx
     mx.set_default_device(mx.gpu)
@@ -195,648 +113,81 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
         memory_policy = resources.enter_context(
             _runtime_mlx_memory.training_memory_policy(mx))
         _runtime_timing_trace.trace_mark("MLX_MEMORY_POLICY", **memory_policy)
-        if resume:
-            params, optimizer, graph, receipt, course = _runtime_session._resume_admitted_student(
-                run_dir, manifest, historical_course, course_a, source_root, teacher_sha)
-            admitted_v2 = _runtime_admission._require_executable_factory_admission(
-                run_dir, receipt, graph)
-            receipt, _, admitted_v2, _ = (
-                _runtime_release_adoption._adopt_source_presentation_revision_if_needed(
-                    run_dir, receipt, course_a, source_root, graph, admitted_v2))
-            receipt, course, admitted_v2 = _resume_boolean_profile(
-                run_dir, receipt, course_a, source_root, graph, admitted_v2,
-                full_grade_b=full_grade_b,
-                autonomous_curriculum=autonomous_curriculum)
-            admitted_v2 = _runtime_admission._require_executable_factory_admission(
-                run_dir, receipt, graph)
-            course = _factory_schedule.schedule_program_from_executable_release(admitted_v2)
-            if (admit_next_grade_with_debt and
-                    len(admitted_v2.execution_plan.grades) == 2 and
-                    len(admitted_v2.curriculum.grades) > 2):
-                if admit_next_grade_with_debt:
-                    receipt = _runtime_exam_execution._measure_debt_admission_boundary(
-                        mx, run_dir, receipt, manifest, course, source_root,
-                        params, graph)
-                catalog_transition = _numeric_entry_transition(
-                    admitted_v2, graph, full_grade_b=full_grade_b,
-                    experiment_budget=experiment_budget)
-                params, optimizer, graph, receipt, course = (
-                    _runtime_release_adoption._adopt_catalog_profile(
-                        mx, run_dir, receipt, course_a, source_root, graph,
-                        params, optimizer, catalog_transition,
-                        reserve_gib=reserve_gib,
-                        allow_mastery_debt=admit_next_grade_with_debt))
-            admitted_v2 = _runtime_admission._require_executable_factory_admission(
-                run_dir, receipt, graph)
-            course = _factory_schedule.schedule_program_from_executable_release(admitted_v2)
-            receipt = _runtime_reconciliation._repair_championship_source_context(run_dir, receipt, course)
-        else:
-            if numeric_staircase:
-                raise ValueError('NUMERIC_STAIRCASE_REQUIRES_RESUME')
-            params, optimizer, graph, receipt = _runtime_session._init(
-                run_dir, manifest, course, teacher_sha,
-                historical_teacher, provenance, source_checkpoint,
-                source_root=source_root, reserve_gib=reserve_gib, model_topology=model_topology, qualification=qualification,
-                permitted_preexisting=(
-                    (".experiment-run.json",)
-                    if experiment_budget is not None else ()))
-        if experiment_budget is not None and receipt.get("numeric_scope_final_maximum") is None:
-            receipt = {**receipt, "numeric_scope_final_maximum":
-                       _profiles_catalog.numeric_scope_bounds()[0]}
-        params, optimizer, graph, receipt, course, _ = (
-            _runtime_release_adoption._auto_adopt_known_grade_boundary(
-                mx, run_dir, receipt, course, course_a, source_root, manifest,
-                params, optimizer, graph, reserve_gib=reserve_gib,
-                full_grade_b=full_grade_b, numeric_staircase=numeric_staircase))
+        params, optimizer, graph, receipt, course = prepare_operator_session(
+            resume=resume, run_dir=run_dir, manifest=manifest, historical_course=historical_course,
+            course_a=course_a, source_root=source_root, teacher_sha=teacher_sha,
+            historical_teacher=historical_teacher, provenance=provenance,
+            source_checkpoint=source_checkpoint, course=course, numeric_staircase=numeric_staircase,
+            reserve_gib=reserve_gib, model_topology=model_topology, qualification=qualification,
+            experiment_budget=experiment_budget, mx=mx, full_grade_b=full_grade_b,
+            autonomous_curriculum=autonomous_curriculum, admit_next_grade_with_debt=admit_next_grade_with_debt,
+
+              _resume_boolean_profile=_resume_boolean_profile,
+            _numeric_entry_transition=_numeric_entry_transition)
         receipt, executable_release, schedule_program = _runtime_release_adoption._ensure_executable_release(
             run_dir, receipt, course, course_a, source_root, graph)
-        course = schedule_program
-        with _runtime_timing_trace.trace_span("RECONCILE_VOCABULARY"):
-            receipt = _runtime_reconciliation._reconcile_vocabulary_metadata(
-                run_dir, receipt, course, params, optimizer, graph)
-        learning_settings = (_learning_learning_experiment.Settings(
-            probe_each=experiment_probe_each,
-            mature_max_loss=experiment_mature_max_loss,
-            introduction_extra_loss=experiment_introduction_extra_loss,
-            protected_cap_limit=experiment_protected_cap_limit)
-            if retention_enabled else None)
-        with _runtime_timing_trace.trace_span("RECONCILE_LEARNING_SETTINGS"):
-            receipt = _runtime_reconciliation._reconcile_learning_settings(
-                run_dir, receipt, course, learning_settings, optimizer)
-        if learning_settings is not None:
-            with _runtime_timing_trace.trace_span("SEED_WHOLE_STUDENT_PEAK"):
-                receipt = _runtime_reconciliation._seed_saved_whole_student_peak(
-                    run_dir, receipt, course, optimizer)
-        if learning_settings is not None:
-            receipt = _runtime_frontier_refresh._refresh_fixed_frontier(
-                mx, run_dir, receipt, course, params, optimizer)
-        autonomy_session = None
-        if autonomous_curriculum:
-            from bilqis_mlx.runtime.autonomy_live import LiveAutonomySession
-            autonomy_session = LiveAutonomySession.open(
-                run_dir, source_root, executable_release)
-        source_prefetch_executor = None
-        if learning_settings is not None and source_prefetch_workers:
-            from bilqis_mlx.runtime.source_prefetch import (
-                source_prefetch_pool,
-            )
-            source_prefetch_executor = resources.enter_context(
-                source_prefetch_pool(source_prefetch_workers))
-        school = _runtime_state._state_from_json(receipt["school"], _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course))
-        if autonomy_session is not None:
-            autonomy_session.recover_teaching(
-                receipt, school.current_student)
-        if (stagnation_grace_grade is not None and
-                stagnation_grace_grade not in set(school.active_grades)):
-            raise ValueError("STAGNATION_GRACE_GRADE_NOT_ACTIVE")
-        grace, grace_created = _learning_stagnation_control.reconcile_optimizer_step_grace(
-            receipt.get("stagnation_grace"),
-            requested_grade=stagnation_grace_grade,
-            requested_steps=stagnation_grace_steps,
-            optimizer_step=school.current_student.optimizer_step)
-        if grace != receipt.get("stagnation_grace"):
-            receipt = _runtime_checkpoints._advance(
-                run_dir, {**receipt, "stagnation_grace": grace}, school,
-                result=receipt["result"])
-            if grace_created:
-                _runtime_checkpoints._record(run_dir, {
-                    "event": "SCHOOL_STAGNATION_GRACE_CONFIGURED",
-                    "generation": receipt["generation"],
-                    "grade": grace["grade"],
-                    "started_optimizer_step": grace["started_optimizer_step"],
-                    "optimizer_step_budget": grace["optimizer_step_budget"],
-                    "until_optimizer_step": grace["until_optimizer_step"],
-                    "reason": grace["reason"],
-                    "model_and_optimizer_unchanged": True,
-                })
-        previous_stagnation = receipt.get("stagnation_session")
-        prior_debt = _learning_stagnation_control.quarantined_capabilities(previous_stagnation)
-        school = _runtime_state._state_from_json(receipt["school"], _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course))
-        deferred_before_reentry = school.stage == "DEFERRED_STAGNATION"
-        if prior_debt and deferred_before_reentry:
-            school = _curriculum_scheduler.reactivate_stagnation_debt(_runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course), school, prior_debt)
-            receipt = {**receipt, "school": _dataclasses.asdict(school)}
-        history = list(receipt.get("stagnation_history", ()))
-        if previous_stagnation is not None:
-            history.append({
-                "session_id": previous_stagnation["session_id"],
-                "started_generation": previous_stagnation["started_generation"],
-                "ended_before_generation": receipt["generation"],
-                "quarantined": list(prior_debt),
-                "alerts": list(_learning_stagnation_control.end_of_run_alerts(previous_stagnation)),
-            })
-        receipt["stagnation_history"] = history[-16:]
-        receipt["stagnation_session"] = _learning_stagnation_control.start_session(
-            session_id=_uuid.uuid4().hex, generation=receipt["generation"],
-            required_capabilities=_curriculum_scheduler.assessment_capabilities(
-                _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course), school),
-            progress_checkpoint=_dataclasses.asdict(school.current_student))
-        debt_grades = {capability.partition(".")[0] for capability in prior_debt}
-        grace_reentry = _learning_stagnation_control.grace_suppressed_capabilities(
-            receipt.get("stagnation_grace"), required_capabilities=tuple(prior_debt),
-            optimizer_step=school.current_student.optimizer_step)
-        if (prior_debt and deferred_before_reentry and len(debt_grades) == 1 and
-                set(grace_reentry) != set(prior_debt)):
-            receipt["stagnation_session"], rehabilitation_event = (
-                _learning_stagnation_control.activate_sole_grade_rehabilitation(
-                    receipt["stagnation_session"],
-                    capabilities=tuple(prior_debt),
-                    generation=receipt["generation"]))
-            pending = list(receipt.get("_pending_visit_events", ()))
-            pending.append(rehabilitation_event)
-            receipt["_pending_visit_events"] = pending
-        school = _runtime_state._state_from_json(receipt["school"], _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course))
-        _runtime_checkpoints._record(run_dir, {
-            "event": "SCHOOL_SESSION_STARTED",
-            "generation": receipt["generation"],
-            "run_id": receipt["run_id"],
-            "grade": school.grade,
-            "grade_phase": school.stage,
-            "optimizer_step": school.current_student.optimizer_step,
-            "checkpoint_sha256": school.current_student.sha256,
-            "committed_total_visits": school.visits,
-            "source_prefetch_workers": (source_prefetch_workers
-                                         if source_prefetch_executor is not None else 0),
-            "flash_mode": flash_mode,
-            "boolean_association_bridge": boolean_association_bridge,
-            "autonomous_curriculum": autonomous_curriculum,
-        })
+        receipt, course, learning_settings, autonomy_session, source_prefetch_executor = configure_operator_session(
+            schedule_program=schedule_program, run_dir=run_dir, receipt=receipt, params=params,
+            optimizer=optimizer, graph=graph, experiment_probe_each=experiment_probe_each,
+            experiment_mature_max_loss=experiment_mature_max_loss,
+            experiment_introduction_extra_loss=experiment_introduction_extra_loss,
+            experiment_protected_cap_limit=experiment_protected_cap_limit,
+            retention_enabled=retention_enabled, mx=mx, autonomous_curriculum=autonomous_curriculum,
+            source_root=source_root, executable_release=executable_release,
+            source_prefetch_workers=source_prefetch_workers, resources=resources)
+        receipt, school = start_stagnation_session(
+            run_dir=run_dir, receipt=receipt, course=course, autonomy_session=autonomy_session,
+            stagnation_grace_grade=stagnation_grace_grade,
+            stagnation_grace_steps=stagnation_grace_steps,
+            source_prefetch_workers=source_prefetch_workers,
+            source_prefetch_executor=source_prefetch_executor, flash_mode=flash_mode,
+            boolean_association_bridge=boolean_association_bridge,
+            autonomous_curriculum=autonomous_curriculum)
         visits = 0
         while True:
-            if experiment_budget is not None:
-                experiment_budget.assert_can_allocate(600_000_000)
-            receipt, course, executable_release, schedule_program = (
-                _runtime_release_adoption._advance_numeric_profile(
-                    run_dir, receipt, course_a, source_root, graph, course,
-                    executable_release, schedule_program, numeric_staircase=numeric_staircase))
-            params, optimizer, graph, receipt, course, adopted_boundary = (
-                _runtime_release_adoption._auto_adopt_known_grade_boundary(
-                    mx, run_dir, receipt, course, course_a, source_root, manifest,
-                    params, optimizer, graph, reserve_gib=reserve_gib,
-                    full_grade_b=full_grade_b, numeric_staircase=numeric_staircase))
-            if adopted_boundary:
-                executable_release = _runtime_admission._read_executable_factory_release_artifact(run_dir, receipt)
-                schedule_program = _factory_schedule.schedule_program_from_executable_release(executable_release)
-                if autonomy_session is not None:
-                    autonomy_session.refresh_release(executable_release)
-            course = schedule_program
-            school = _runtime_state._state_from_json(receipt["school"], schedule_program)
-            receipt = _runtime_reconciliation._reconcile_stagnation_scope(
-                run_dir, receipt, course, school)
-            school = _runtime_state._state_from_json(receipt["school"], _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course))
-            autonomy_teaching_work = None
-            budget_reason = _runtime_session.session_stop_reason(
-                stage="MAIN", elapsed_seconds=_time.monotonic() - start, minutes=minutes,
-                visits=visits, max_visits=max_visits)
-            if (autonomy_session is not None and school.stage == "AWAITING_NEXT_GRADE" and
-                    budget_reason is None):
-                autonomy_session.refresh_release(
-                    _runtime_admission._read_executable_factory_release_artifact(run_dir, receipt))
-                proposal, proposal_file = autonomy_session.propose_source_frontier_work(
-                    school.current_student, graph)
-                if proposal.disposition.value == "PROPOSAL":
-                    reason = _stage_atlas_frontier_attempt(
-                        run_dir, receipt, proposal, proposal_file)
-                    break
-            reason = _runtime_session.session_stop_reason(
-                stage=("MAIN" if autonomy_session is not None and
-                       school.stage == "AWAITING_NEXT_GRADE" else school.stage),
-                elapsed_seconds=_time.monotonic() - start,
-                minutes=minutes, visits=visits, max_visits=max_visits,
-                grade=school.grade, flash_mode=flash_mode)
-            if reason is not None:
+            (control, reason, receipt, course, executable_release, schedule_program,
+             params, optimizer, graph, school, autonomy_teaching_work) = prepare_operator_iteration(
+                experiment_budget=experiment_budget, run_dir=run_dir, receipt=receipt,
+                course_a=course_a, source_root=source_root, graph=graph, course=course,
+                executable_release=executable_release, schedule_program=schedule_program,
+                numeric_staircase=numeric_staircase, mx=mx, manifest=manifest, params=params,
+                optimizer=optimizer, reserve_gib=reserve_gib, full_grade_b=full_grade_b,
+                autonomy_session=autonomy_session, start=start, minutes=minutes, visits=visits,
+                max_visits=max_visits, flash_mode=flash_mode, source_checkpoint=source_checkpoint, _stage_atlas_frontier_attempt=_stage_atlas_frontier_attempt)
+            if control is DispatchControl.STOP:
                 break
-            if school.stage.startswith("ASSESS_"):
-                _runtime_checkpoints._notify_viewer({"_runtime_phase": "ASSESSING", "_dashboard_redraw": True})
-                if flash_mode:
-                    # Flash may skip expensive championship/promotion work, but
-                    # it may not skip the fresh cumulative evidence needed to
-                    # choose recovery work or advance the cross-grade spiral.
-                    receipt = _runtime_boundary_commit._flush_flash_student(
-                        run_dir, receipt, course, params, optimizer, graph,
-                        reserve_gib=reserve_gib)
-                    receipt = _runtime_exam_execution._take_exam(
-                        mx, run_dir, receipt, manifest, course, source_root,
-                        source_checkpoint, params, optimizer, graph,
-                        reserve_gib=reserve_gib, scheduler_only=True,
-                        session_elapsed_seconds=_time.monotonic() - start)
-                    if experiment_budget is not None:
-                        experiment_budget.assert_can_allocate(0)
-                    school = _runtime_state._state_from_json(receipt["school"], _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course))
-                    if school.stage.startswith("ASSESS_"):
-                        # Scheduler-only evidence found no remaining imperfect
-                        # grade. Preserve the qualification debt for a full
-                        # authoritative exam rather than minting mastery in flash.
-                        reason = "FLASH_QUALIFICATION_REQUIRED"
-                        break
-                    continue
-                with _runtime_timing_trace.trace_span(
-                        "ASSESSMENT", generation=receipt["generation"],
-                        phase=school.stage, grade=school.grade):
-                    receipt = _runtime_exam_execution._take_exam(
-                        mx, run_dir, receipt, manifest, course, source_root,
-                        source_checkpoint, params, optimizer, graph,
-                        reserve_gib=reserve_gib,
-                        session_elapsed_seconds=_time.monotonic() - start)
-                if experiment_budget is not None:
-                    experiment_budget.assert_can_allocate(0)
+            if control is DispatchControl.CONTINUE:
                 continue
             if autonomous_curriculum:
-                from bilqis_mlx.factory.autonomy import (
-                    AutonomyActionKind)
-                from bilqis_mlx.runtime.autonomy_live import scheduled_teaching_matches
-
-                current_release = _runtime_admission._read_executable_factory_release_artifact(run_dir, receipt)
-                autonomy_session.refresh_release(current_release)
-                action = autonomy_session.action(school.current_student)
-                if action.deferred_obligation_ids:
-                    selected_work = (
-                        action.evidence_work or
-                        (action.teaching_work
-                         if action.kind is AutonomyActionKind.TEACHING
-                         else None))
-                    _runtime_checkpoints._record(run_dir, {
-                        "event": "SCHOOL_AUTONOMY_REMEDIATION_DEFERRED",
-                        "generation": receipt["generation"],
-                        "grade": school.grade,
-                        "deferred_obligations":
-                            list(action.deferred_obligation_ids),
-                        "selected_capability": (
-                            selected_work.capability_id
-                            if selected_work is not None else None),
-                        "student_sha256": school.current_student.sha256,
-                        "optimizer_step":
-                            school.current_student.optimizer_step,
-                        "actual_neural_updates": 0,
-                    })
-                if action.kind is AutonomyActionKind.SAFE_HOLD:
-                    frontier_result = (
-                        autonomy_session.propose_source_frontier_work(
-                            school.current_student, graph))
-                    if frontier_result is not None:
-                        proposal, proposal_file = frontier_result
-                        reason = (
-                            _bilqis_mlx_operator_vocabulary.AUTONOMY_SOURCE_DEVELOPMENT_REQUIRED.code
-                            if proposal.disposition.value ==
-                            "SOURCE_DEVELOPMENT"
-                            else "AUTONOMY_JIT_PROPOSAL_READY")
-                        _runtime_checkpoints._record(run_dir, {
-                            "event": (
-                                "SCHOOL_AUTONOMY_SOURCE_DEVELOPMENT_REQUIRED"
-                                if proposal.disposition.value ==
-                                "SOURCE_DEVELOPMENT"
-                                else "SCHOOL_AUTONOMY_JIT_PROPOSAL_READY"),
-                            "generation": receipt["generation"],
-                            "grade": school.grade,
-                            "deferred_obligations":
-                                list(action.deferred_obligation_ids),
-                            "proposal_sha256": proposal.proposal_sha256,
-                            "proposal_file": proposal_file,
-                            "frontier_sha256": proposal.frontier_sha256,
-                            "candidate_gate_count":
-                                len(proposal.candidate_gates),
-                            "selected_candidate_ids":
-                                list(proposal.selected_candidate_ids),
-                            "student_sha256":
-                                school.current_student.sha256,
-                            "optimizer_step":
-                                school.current_student.optimizer_step,
-                            "model_and_optimizer_unchanged": True,
-                        })
-                    else:
-                        reason = _bilqis_mlx_operator_vocabulary.AUTONOMY_SAFE_HOLD.code
-                        _runtime_checkpoints._record(run_dir, {
-                            "event": "SCHOOL_AUTONOMY_SAFE_HOLD",
-                            "generation": receipt["generation"],
-                            "grade": school.grade,
-                            "deferred_obligations":
-                                list(action.deferred_obligation_ids),
-                            "student_sha256":
-                                school.current_student.sha256,
-                            "optimizer_step":
-                                school.current_student.optimizer_step,
-                            "model_and_optimizer_unchanged": True,
-                        })
+                control, reason, receipt, school, visits, autonomy_teaching_work = dispatch_autonomy(
+                    autonomy_session=autonomy_session, school=school, graph=graph,
+                    receipt=receipt, run_dir=run_dir, mx=mx, params=params, optimizer=optimizer,
+                    course=course, visits=visits, autonomy_teaching_work=autonomy_teaching_work)
+                if control is DispatchControl.STOP:
                     break
-                if action.kind is AutonomyActionKind.SOURCE_COVERAGE:
-                    reason = "AUTONOMY_SOURCE_COVERAGE_REQUIRED"
-                    _runtime_checkpoints._record(run_dir, {
-                        "event": "SCHOOL_AUTONOMY_SOURCE_COVERAGE_BLOCKED",
-                        "generation": receipt["generation"],
-                        "grade": school.grade,
-                        "debt": action.source_coverage_debt,
-                        "model_and_optimizer_unchanged": True,
-                    })
-                    break
-                if action.kind is AutonomyActionKind.LEARNING_EVIDENCE:
-                    optimizer_step = int(optimizer.state["step"].item())
-                    if optimizer_step != school.current_student.optimizer_step:
-                        raise ValueError(
-                            "AUTONOMY_EVIDENCE_REQUIRES_DURABLE_CHECKPOINT")
-                    work = action.evidence_work
-                    evidence = autonomy_session.measure(
-                        graph, work,
-                        checkpoint={
-                            **_dataclasses.asdict(school.current_student),
-                            "model_and_native_adamw": True,
-                        },
-                        seed=_runtime_state._seed(
-                            receipt,
-                            capability="AUTONOMY_EVIDENCE:" +
-                            work.obligation.obligation_id,
-                            step=len(autonomy_session.ledger.receipts) + 1),
-                        predictor=lambda rows: _learning_student_ops._predictions(
-                            mx, params, list(rows), receipt["config"],
-                            receipt["answer_ids"]),
-                    )
-                    _runtime_checkpoints._record(run_dir, {
-                        "event": "SCHOOL_AUTONOMY_EVIDENCE_RECORDED",
-                        "generation": receipt["generation"],
-                        "grade": school.grade,
-                        "capability": work.capability_id,
-                        "obligation": work.obligation.obligation_id,
-                        "passed": evidence.passed,
-                        "cohort_sha256": evidence.cohort_sha256,
-                        "student_sha256": evidence.checkpoint_sha256,
-                        "optimizer_step": evidence.optimizer_step,
-                    })
-                    if evidence.passed:
-                        advanced = autonomy_session.advance_if_complete(
-                            school, work.capability_id)
-                        if advanced != school:
-                            receipt = _runtime_checkpoints._advance(
-                                run_dir, receipt, advanced,
-                                result=_runtime_exam_execution._school_result_label(advanced))
-                            visits += 1
-                            _runtime_checkpoints._record(run_dir, {
-                                "event":
-                                    "SCHOOL_AUTONOMY_EVIDENCE_VISIT_COMPLETED",
-                                "generation": receipt["generation"],
-                                "grade": advanced.grade,
-                                "capability": work.capability_id,
-                                "optimizer_step":
-                                    advanced.current_student.optimizer_step,
-                                "student_sha256":
-                                    advanced.current_student.sha256,
-                                "retained_optimizer_updates": 0,
-                            })
+                if control is DispatchControl.CONTINUE:
                     continue
-                if action.kind is AutonomyActionKind.QUALIFICATION:
-                    scheduled = _curriculum_scheduler.next_capability(school)
-                    if (scheduled is not None and
-                            scheduled in set(autonomy_session.evidence_complete(school.current_student))):
-                        advanced = _curriculum_scheduler.visit(
-                            course, school, scheduled,
-                            school.current_student)
-                        receipt = _runtime_checkpoints._advance(
-                            run_dir, receipt, advanced,
-                            result=_runtime_exam_execution._school_result_label(advanced))
-                        visits += 1
-                        _runtime_checkpoints._record(run_dir, {
-                            "event":
-                                "SCHOOL_AUTONOMY_QUALIFIED_VISIT_COMPLETED",
-                            "generation": receipt["generation"],
-                            "grade": advanced.grade,
-                            "capability": scheduled,
-                            "optimizer_step":
-                                advanced.current_student.optimizer_step,
-                            "student_sha256":
-                                advanced.current_student.sha256,
-                            "retained_optimizer_updates": 0,
-                        })
-                        continue
-                elif action.kind is AutonomyActionKind.TEACHING:
-                    target = action.teaching_work.capability_id
-                    if not scheduled_teaching_matches(school, target):
-                        rerouted = autonomy_session.reroute_teaching(
-                            school, target)
-                        receipt = _runtime_checkpoints._advance(
-                            run_dir, receipt, rerouted,
-                            result=_runtime_exam_execution._school_result_label(rerouted))
-                        school = rerouted
-                        _runtime_checkpoints._record(run_dir, {
-                            "event": "SCHOOL_AUTONOMY_TEACHING_REROUTED",
-                            "generation": receipt["generation"],
-                            "grade": school.grade,
-                            "capability": target,
-                            "student_sha256": school.current_student.sha256,
-                            "optimizer_step":
-                                school.current_student.optimizer_step,
-                            "actual_neural_updates": 0,
-                        })
-                    if not scheduled_teaching_matches(school, target):
-                        raise ValueError(
-                            "AUTONOMY_TEACHING_REROUTE_FAILED")
-                    autonomy_teaching_work = action.teaching_work
-            with _runtime_timing_trace.trace_span("DISK_HEADROOM", visit_index=visits + 1):
-                budget = _runtime_disk.headroom_snapshot(run_dir, required_bytes=600_000_000,
-                                           reserve_gib=reserve_gib)
-            if not budget["sufficient"]:
+            if not operator_disk_ready(run_dir, reserve_gib, visits):
                 reason = "DISK_RESERVE_REACHED"
                 break
-            # Retain the original fail-closed checkpoint preflight against
-            # disk changes between telemetry and the actual write boundary.
-            with _runtime_timing_trace.trace_span("DISK_HEADROOM_ASSERT", visit_index=visits + 1):
-                _runtime_disk.assert_headroom(run_dir, required_bytes=600_000_000,
-                                reserve_gib=reserve_gib)
-            with _runtime_timing_trace.trace_span(
-                    "VISIT_TOTAL", visit_index=visits + 1,
-                    generation=receipt["generation"], phase=school.stage,
-                    grade=school.grade):
-                parent_for_visit = school
-                pending_before = len(receipt.get("_pending_visit_events", ()))
-                _runtime_checkpoints._notify_viewer({"_runtime_phase": "VISITING", "_dashboard_redraw": True})
-                receipt = _runtime_visits._take_visit(
-                    mx, run_dir, receipt, manifest, course, engine,
-                    params, optimizer, graph, steps_per_visit=steps_per_visit,
-                    batch_size=batch_size, reserve_gib=reserve_gib,
-                    source_root=source_root, learning_settings=learning_settings,
-                    boolean_association_bridge=boolean_association_bridge,
-                    autonomy_teaching_option=(autonomy_teaching_work.teaching_option_ids[0]
-                                              if autonomy_teaching_work is not None else None),
-                    source_prefetch_executor=source_prefetch_executor,
-                    source_prefetch_workers=(source_prefetch_workers
-                                             if source_prefetch_executor is not None else 0))
-            visits += 1
-            if autonomous_curriculum:
-                # Autonomy evidence may only refer to a complete, read-back
-                # verified model+AdamW checkpoint. Publish every autonomous
-                # teaching visit immediately instead of carrying RAM-only state.
-                autonomy_visit = (receipt.get("_pending_visit_events") or [{}])[-1]
-                delivery = autonomy_visit.get("autonomy_teaching")
-                receipt = _runtime_boundary_commit._flush_working_student(
-                    mx, run_dir, receipt, manifest, course,
-                    params, optimizer, graph, reserve_gib=reserve_gib,
-                    source_root=source_root)
-                if experiment_budget is not None:
-                    experiment_budget.assert_can_allocate(0)
-                school_after_flush = _runtime_state._state_from_json(
-                    receipt["school"],
-                    _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course))
-                if autonomy_teaching_work is not None:
-                    failed = autonomy_teaching_work.failed_evidence
-                    current = school_after_flush.current_student
-                    durable_autonomy_visit = None
-                    if delivery is not None:
-                        digest = delivery.get("specimen_content_sha256")
-                        durable_autonomy_visit = next((
-                            event for event in reversed(
-                                receipt.get("delivery_outbox", ()))
-                            if (isinstance(
-                                    event.get("autonomy_teaching"), dict) and
-                                event["autonomy_teaching"].get(
-                                    "specimen_content_sha256") == digest)
-                        ), None)
-                        if durable_autonomy_visit is None:
-                            raise ValueError(
-                                "AUTONOMY_TEACHING_DURABLE_EVENT_MISSING")
-                    if (delivery is not None and
-                            current.sha256 != failed.checkpoint_sha256 and
-                            current.optimizer_step > failed.optimizer_step):
-                        intervention = autonomy_session.recover_teaching(
-                            receipt, current)
-                        if intervention is None:
-                            raise ValueError(
-                                "AUTONOMY_TEACHING_DURABLE_RECEIPT_MISSING")
-                        _runtime_checkpoints._record(run_dir, {
-                            "event":
-                                "SCHOOL_AUTONOMY_TEACHING_RECORDED",
-                            "generation": receipt["generation"],
-                            "grade": school_after_flush.grade,
-                            "capability":
-                                autonomy_teaching_work.capability_id,
-                            "obligation": failed.obligation_id,
-                            "parent_student_sha256":
-                                failed.checkpoint_sha256,
-                            "student_sha256": current.sha256,
-                            "optimizer_step": current.optimizer_step,
-                        })
-                    elif (delivery is not None and
-                            current.sha256 == failed.checkpoint_sha256 and
-                            current.optimizer_step == failed.optimizer_step and
-                            durable_autonomy_visit.get(
-                                "retained_optimizer_updates") == 0):
-                        rejected = (
-                            autonomy_session.rejected_attempt_from_event(
-                                durable_autonomy_visit, failed))
-                        _runtime_checkpoints._record(run_dir, {
-                            "event":
-                                "SCHOOL_AUTONOMY_TEACHING_REJECTED_RECORDED",
-                            "generation": receipt["generation"],
-                            "grade": school_after_flush.grade,
-                            "capability":
-                                autonomy_teaching_work.capability_id,
-                            "obligation": failed.obligation_id,
-                            "attempt_id": rejected.attempt_id,
-                            "retention_reason":
-                                rejected.retention_reason,
-                            "student_sha256": current.sha256,
-                            "optimizer_step": current.optimizer_step,
-                            "candidate_optimizer_step":
-                                rejected.candidate_optimizer_step,
-                            "retained_optimizer_updates": 0,
-                        })
-            pending_visits = receipt.get("_pending_visit_events", ())
-            if len(pending_visits) > pending_before:
-                latest_visit = pending_visits[-1]
-                if type(latest_visit.get("attempted_optimizer_updates")) is int:
-                    # Project the complete visit into the live dashboard now,
-                    # but preserve the durable checkpoint-gated event ledger.
-                    # The telemetry layer deduplicates this exact generation
-                    # when the real receipt is published at the boundary.
-                    _runtime_checkpoints._notify_viewer({
-                        **latest_visit,
-                        "_live_ephemeral": True,
-                        "_dashboard_redraw": False,
-                    })
-            after_visit = _runtime_state._state_from_json(receipt["school"], _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course))
-        with _runtime_timing_trace.trace_span("FLUSH_FLASH_STUDENT" if flash_mode else "FLUSH_WORKING_STUDENT",
-                        visits=visits):
-            if experiment_budget is not None:
-                experiment_budget.assert_can_allocate(600_000_000)
-            if flash_mode:
-                receipt = _runtime_boundary_commit._flush_flash_student(
-                    run_dir, receipt, course, params, optimizer, graph,
-                    reserve_gib=reserve_gib)
-            else:
-                receipt = _runtime_boundary_commit._flush_working_student(
-                    mx, run_dir, receipt, manifest, course, params, optimizer, graph,
-                    reserve_gib=reserve_gib, source_root=source_root)
-        if experiment_budget is not None:
-            experiment_budget.assert_can_allocate(0)
-        school = _runtime_state._state_from_json(receipt["school"], _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course))
-        budget = _runtime_disk.headroom_snapshot(run_dir, required_bytes=600_000_000,
-                                   reserve_gib=reserve_gib)
-        elapsed_seconds = round(_time.monotonic() - start, 3)
-        stagnation_alerts = _learning_stagnation_control.end_of_run_alerts(receipt.get("stagnation_session"))
-        stagnation_quarantined = _learning_stagnation_control.quarantined_capabilities(
-            receipt.get("stagnation_session"))
-        _runtime_checkpoints._record(run_dir, {
-            "event": "SCHOOL_SESSION_STOPPED", "stop_reason": reason,
-            "generation": receipt["generation"], "run_id": receipt["run_id"],
-            "optimizer_step": school.current_student.optimizer_step,
-            "checkpoint_sha256": school.current_student.sha256,
-            "visits_this_command": visits, "committed_total_visits": school.visits,
-            "minutes": minutes, "max_visits": max_visits,
-            "elapsed_seconds": elapsed_seconds,
-            "grade_phase": school.stage, "grade": school.grade,
-            "source_prefetch_workers": (source_prefetch_workers
-                                         if source_prefetch_executor is not None else 0),
-            "flash_mode": flash_mode,
-            "boolean_association_bridge": boolean_association_bridge,
-            "autonomous_curriculum": autonomous_curriculum,
-            "resume_required": school.stage not in ("AWAITING_NEXT_GRADE", "AWAITING_NEXT_GRADE_WITH_DEBT"),
-            "stagnation_session_id": receipt.get("stagnation_session", {}).get(
-                "session_id"),
-            "stagnation_quarantined": list(stagnation_quarantined),
-            "stagnation_alerts": list(stagnation_alerts),
-            **{k: budget[k] for k in ("free_bytes", "reserve_bytes", "estimated_write_bytes")},
-        })
-        # Reclaim superseded JSON snapshot storage after the committed stop
-        # receipt. Lossless compression retains exact source bytes and SHA
-        # readback; all complete model/AdamW checkpoints remain untouched.
-        from bilqis_mlx.state_archive import compact_states
-        try:
-            with _runtime_timing_trace.trace_span("STATE_ARCHIVE_COMPACT"):
-                maintenance = compact_states(run_dir, max_files=64)
-        except (OSError, ValueError) as exc:
-            maintenance = {"error": str(exc), "compressed_generations": 0}
-            _runtime_checkpoints._record(run_dir, {"event": "SCHOOL_STATE_ARCHIVE_BLOCKED",
-                              "generation": receipt["generation"],
-                              "reason": str(exc)})
-        _runtime_timing_trace.trace_mark(
-            "OPERATE_END", stop_reason=reason, visits=visits,
-            optimizer_step=school.current_student.optimizer_step)
-        return {
-            "status": receipt["result"],
-            "stop_reason": reason,
-            "elapsed_seconds": elapsed_seconds,
-            "time_limit_minutes": minutes,
-            "max_visits": max_visits,
-            "disk_free_gib": round(budget["free_bytes"] / 1024**3, 3),
-            "disk_reserve_gib": round(budget["reserve_bytes"] / 1024**3, 3),
-            "disk_next_visit_gib": round(budget["estimated_write_bytes"] / 1024**3, 3),
-            "grade": school.grade,
-            "phase": school.stage,
-            "visits_this_command": visits,
-            "committed_total_visits": school.visits,
-            "optimizer_step": school.current_student.optimizer_step,
-            "checkpoint_sha256": school.current_student.sha256,
-            "latest_exam": receipt["last_exam"],
-            "stagnation_quarantined": list(stagnation_quarantined),
-            "stagnation_alerts": list(stagnation_alerts),
-            "stagnation_grace": receipt.get("stagnation_grace"),
-            "experimental_retention": learning_settings is not None,
-            "retention_enabled": learning_settings is not None,
-            "source_prefetch_workers": (source_prefetch_workers
-                                         if source_prefetch_executor is not None else 0),
-            "flash_mode": flash_mode,
-            "boolean_association_bridge": boolean_association_bridge,
-            "state_archive": maintenance,
-            "safe_resume_command": _runtime_session._resume_command(
-                run_dir, source_root, learning_settings,
+            receipt, visits = execute_operator_visit(
+                mx=mx, run_dir=run_dir, receipt=receipt, manifest=manifest, course=course,
+                engine=engine, params=params, optimizer=optimizer, graph=graph,
+                steps_per_visit=steps_per_visit, batch_size=batch_size, reserve_gib=reserve_gib,
+                source_root=source_root, learning_settings=learning_settings,
                 boolean_association_bridge=boolean_association_bridge,
-                autonomous_curriculum=autonomous_curriculum,
-                source_prefetch_workers=source_prefetch_workers),
-            "original_source_checkpoint_modified": False,
-        }
+                autonomy_teaching_work=autonomy_teaching_work,
+                source_prefetch_executor=source_prefetch_executor,
+                source_prefetch_workers=source_prefetch_workers, visits=visits, school=school,
+                autonomous_curriculum=autonomous_curriculum, experiment_budget=experiment_budget,
+                autonomy_session=autonomy_session)
+        return finish_operator_session(
+            mx=mx, run_dir=run_dir, receipt=receipt, manifest=manifest, course=course,
+            params=params, optimizer=optimizer, graph=graph, reserve_gib=reserve_gib,
+            source_root=source_root, experiment_budget=experiment_budget,
+            flash_mode=flash_mode, visits=visits, start=start, reason=reason,
+            minutes=minutes, max_visits=max_visits,
+            source_prefetch_workers=source_prefetch_workers,
+            source_prefetch_executor=source_prefetch_executor,
+            boolean_association_bridge=boolean_association_bridge,
+            autonomous_curriculum=autonomous_curriculum, learning_settings=learning_settings)

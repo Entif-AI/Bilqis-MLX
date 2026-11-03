@@ -93,6 +93,18 @@ class QualifiedWorldSourceTests(unittest.TestCase):
             with self.subTest(changed=changed):
                 self.assertFalse(check(changed, graph=self.graph))
 
+    def test_generator_gold_is_independent_of_poisoned_checker_oracle(self):
+        from bilqis_mlx.source_adapters import world_rules
+        for capability in CAPABILITIES:
+            with self.subTest(capability=capability):
+                with patch.object(world_rules, "answer", return_value="FALSE"):
+                    rows = draw(graph=self.graph, capability=capability,
+                                seed=741, each=4)
+                    self.assertEqual(tuple(row["gold"] for row in rows),
+                                     ("TRUE", "FALSE", "TRUE", "FALSE"))
+                    self.assertFalse(check(rows[0], graph=self.graph))
+                    self.assertTrue(check(rows[1], graph=self.graph))
+
     def test_time_order_and_indirect_chain_do_not_establish_direct_cause(self):
         from bilqis_mlx.source_adapters._world.oracle import answer
         row = draw(graph=self.graph, capability='WORLD.DIRECT_CAUSE', seed=3, each=1)[0]

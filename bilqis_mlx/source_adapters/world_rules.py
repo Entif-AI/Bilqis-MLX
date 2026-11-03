@@ -183,8 +183,10 @@ def draw(source_root=None, graph=None, *, capability: str, seed: int,
     rows = []
     for index in range(each):
         record = _record(rng)
-        record["query"] = _query(record, capability, index % 2 == 0, rng)
-        gold = answer(record)
+        # Construction truth must not depend on the verification oracle.
+        truth = index % 2 == 0
+        record["query"] = _query(record, capability, truth, rng)
+        gold = "TRUE" if truth else "FALSE"
         identity = digest(record)
         rows.append({
             "id": identity, "source_id": identity, "capability": capability,
