@@ -196,14 +196,6 @@
       "resume_trigger": null,
       "merged_pr": 773,
       "preserved_branch": "codex/769-hardlink-proof-20261103"
-    },
-    {
-      "issue": 341,
-      "pr": 772,
-      "state": "TURNED_IN",
-      "head_sha": "6acd30544f6f81cb1c1b08524b53f567bd1e0cc0",
-      "summary": "Concurrent cross-cutting governance PR772 is conservatively counted in live inventory; this receipt neither implements nor adopts its proposed policy.",
-      "resume_trigger": null
     }
   ]
 }
