@@ -94,9 +94,9 @@
     {
       "issue": 801,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "2765b5df6ce0a23c9388800c13375ac2f67a98b3",
-      "summary": "Native CPU recipe/provenance repair from exact C01 parent; separate issue branch for mechanical parent consumption, no child Goldfish.",
+      "state": "TURNED_IN",
+      "head_sha": "bd376f283197d8d0762a5eb453be8879e8847452",
+      "summary": "Scoped mechanical native recipe repair complete atbd376f28: fresh Python3.14/MLX0.32.4 CPU6/6 zero skips,321 archive origins,2 prerequisite/device rejection controls; parent consumes one docs commit and reruns at final source. No child Goldfish/PR.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-c-801-native-recipe-20261103"
     },
