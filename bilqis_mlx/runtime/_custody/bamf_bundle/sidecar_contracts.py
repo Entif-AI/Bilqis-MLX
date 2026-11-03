@@ -59,7 +59,8 @@ def validate_identity_sidecars(extents, provenance, records, invalid):
         invalid()
     semantic = records['semantic_abi']
     compiler = records['compiler_features']
-    if records['step_proofs'].get('schema') != SCHEMAS['step_proofs']:
+    proofs = records.get('step_proofs')
+    if proofs is not None and proofs.get('schema') != SCHEMAS['step_proofs']:
         invalid()
     correction = records['correction_frontier']
     teacher = records['teacher_state']

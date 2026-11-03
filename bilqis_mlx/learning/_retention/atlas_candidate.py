@@ -55,6 +55,31 @@ def _is_genesis_allocations(snapshot: MotifAllocationSnapshot) -> bool:
 
 
 @dataclass(frozen=True)
+class CandidateCustodyIdentity:
+    """The published identity of one accepted generation.
+
+    A candidate step may only be authorised against this identity, so
+    provenance issued for another run, generation, manifest, topology or
+    extents state cannot update this candidate.
+    """
+
+    run_id: str
+    generation: int
+    manifest_sha256: str | None
+    topology_digest: str
+    extents_digest: str
+
+    def __post_init__(self) -> None:
+        if (not isinstance(self.run_id, str) or not self.run_id
+                or type(self.generation) is not int or self.generation < 0
+                or (self.manifest_sha256 is not None
+                    and not _is_digest(self.manifest_sha256))
+                or not _is_digest(self.topology_digest)
+                or not _is_digest(self.extents_digest)):
+            _invalid()
+
+
+@dataclass(frozen=True)
 class CandidateState:
     """The inseparable proposed optimizer, allocation and policy state."""
 
@@ -62,6 +87,7 @@ class CandidateState:
     policy: PlasticityPolicy
     allocations: MotifAllocationSnapshot
     optimizer_step: int
+    custody: CandidateCustodyIdentity | None = None
     step_proofs: tuple = ()
     schema_version: str = STATE_SCHEMA
     _issuance: object = field(init=False, default=None, repr=False, compare=False)
@@ -71,6 +97,8 @@ class CandidateState:
                 or type(self.policy) is not PlasticityPolicy
                 or type(self.allocations) is not MotifAllocationSnapshot
                 or type(self.optimizer_step) is not int or self.optimizer_step < 0
+                or (self.custody is not None
+                    and type(self.custody) is not CandidateCustodyIdentity)
                 or type(self.step_proofs) is not tuple
                 or any(type(proof) is not CandidateStepProof for proof in self.step_proofs)
                 or any(proof.step_index != index + 1
@@ -102,6 +130,10 @@ def _load_retained_candidate_state_with_parts(
     for name, value in (
             ('optimizer', parts.numerical), ('policy', parts.policy),
             ('allocations', parts.motif), ('optimizer_step', parts.optimizer_step),
+            ('custody', CandidateCustodyIdentity(
+                parts.manifest['run_id'], parts.manifest['generation'],
+                expected_manifest_sha256,
+                parts.spec.digest, parts.extents.digest)),
             ('step_proofs', proofs),
             ('schema_version', STATE_SCHEMA),
             ('_issuance', _RETAINED_STATE_ISSUER)):
@@ -259,9 +291,19 @@ def candidate_step(candidate: CandidateTransaction, gradients, execution,
     candidate.__post_init__()
     if type(execution) is not StepExecutionProvenance:
         _invalid()
-    if (execution.parent_candidate_identity_sha256
+    custody = candidate.parent.custody
+    if custody is None:
+        _invalid()
+    if (execution.run_id != custody.run_id
+            or execution.generation != custody.generation + 1
+            or (custody.manifest_sha256 is not None
+                and execution.parent_manifest_sha256 != custody.manifest_sha256)
+            or execution.topology_digest != custody.topology_digest
+            or execution.extents_sha256 != custody.extents_digest
+            or execution.parent_candidate_identity_sha256
             != candidate_identity_digest(candidate.parent)
-            or execution.parent_optimizer_step != candidate.parent.optimizer_step):
+            or execution.parent_optimizer_step != candidate.parent.optimizer_step
+            or execution.candidate_step != candidate.update_steps + 1):
         _invalid()
     update_mask = optimizer_participation_mask(
         execution.mask, candidate.optimizer.update_counts)
@@ -299,11 +341,13 @@ def resolve_candidate(candidate: CandidateTransaction, *, accepted: bool) -> Can
     step = candidate.parent.optimizer_step + candidate.update_steps
     if _is_genesis_allocations(candidate.allocations):
         return CandidateState(candidate.optimizer, policy, candidate.allocations, step,
+                              candidate.parent.custody,
                               tuple(candidate.step_proofs))
     state = object.__new__(CandidateState)
     for name, value in (
             ('optimizer', candidate.optimizer), ('policy', policy),
             ('allocations', candidate.allocations), ('optimizer_step', step),
+            ('custody', candidate.parent.custody),
             ('step_proofs', tuple(candidate.step_proofs)),
             ('schema_version', STATE_SCHEMA), ('_issuance', _RETAINED_STATE_ISSUER)):
         object.__setattr__(state, name, value)

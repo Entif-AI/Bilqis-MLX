@@ -29,9 +29,7 @@ CENSUS_SHAPES = (
 
 
 def execution_provenance(parent, *, rows=(0,), loss_bearing=True, mode="FULL",
-                         run_id="fixture-run", generation=1,
-                         parent_manifest_sha256="4" * 64,
-                         topology_digest="5" * 64):
+                         candidate_step=1):
     """Issue owner provenance for one executed step over the fixture bank.
 
     The provenance binds the exact parent candidate identity and optimizer
@@ -47,14 +45,19 @@ def execution_provenance(parent, *, rows=(0,), loss_bearing=True, mode="FULL",
         mode=mode, eligible_parameter_names=(PARAMETER,),
         frozen_parameter_names=(), admitted_identity_rows=identity,
         fast_identity_rows=identity, established_identity_rows=())
+    candidate_step_ordinal = candidate_step
+    extents = GenerationExtents(
+        1, 1, "a" * 64, parent.allocations.manifest.digest, "c" * 64)
     with ExitStack() as stack:
         for target in CENSUS_SHAPES:
             stack.enter_context(patch(target, return_value=DECLARED))
         return issue_execution_provenance(
             inputs, SemanticDenominator(), (), RoleReadParticipation(),
-            eligibility, active, spec=ModelTopologySpecV2(), extents=EXTENTS,
-            run_id=run_id, generation=generation,
-            parent_manifest_sha256=parent_manifest_sha256,
+            eligibility, active, spec=ModelTopologySpecV2(), extents=extents,
+            run_id=parent.custody.run_id,
+            generation=parent.custody.generation + 1,
+            parent_manifest_sha256=parent.custody.manifest_sha256,
             parent_candidate_identity_sha256=candidate_identity_digest(parent),
             parent_optimizer_step=parent.optimizer_step,
-            topology_digest=topology_digest)
+            topology_digest=parent.custody.topology_digest,
+            candidate_step_ordinal=candidate_step_ordinal)

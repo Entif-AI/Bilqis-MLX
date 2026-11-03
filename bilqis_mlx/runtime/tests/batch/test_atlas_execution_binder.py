@@ -71,6 +71,7 @@ class ExecutionBinderProductionTests(unittest.TestCase):
             "parent_candidate_identity_sha256": "7" * 64,
             "parent_optimizer_step": 11,
             "topology_digest": "8" * 64,
+            "candidate_step_ordinal": 1,
         }
         if parent is not None:
             evidence["parent_candidate_identity_sha256"] = (
@@ -106,7 +107,8 @@ class ExecutionBinderProductionTests(unittest.TestCase):
                 provenance.run_id, provenance.generation,
                 provenance.parent_manifest_sha256,
                 provenance.parent_candidate_identity_sha256,
-                provenance.parent_optimizer_step, provenance.topology_digest)
+                provenance.parent_optimizer_step, provenance.topology_digest,
+                provenance.candidate_step)
 
     def test_same_execution_evidence_reproduces_the_same_provenance(self):
         self.assertEqual(self.bind().digest, self.bind().digest)

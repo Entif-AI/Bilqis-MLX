@@ -12,6 +12,7 @@ another candidate, generation, step, topology or extents state.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 from pathlib import Path
 import sys
 
@@ -69,9 +70,9 @@ def load_accepted_generation(run_dir: Path) -> CompleteStudent:
     return _read_accepted(run_dir)[1]
 
 
-def accepted_generation_identity(run_dir: Path) -> AcceptedGenerationIdentity:
-    """Read the published identity a candidate step must bind itself to."""
-    pointer, student = _read_accepted(run_dir)
+def _identity_of(student: CompleteStudent, run_dir: Path) -> AcceptedGenerationIdentity:
+    """The published identity of one loaded accepted generation."""
+    pointer = json.loads((Path(run_dir) / "bamf-state.json").read_text())
     return AcceptedGenerationIdentity(
         run_id=student.run_id,
         generation=student.generation,
@@ -151,7 +152,7 @@ def admit_candidate_step(run_dir: Path, gradients, *,
     used here.
     """
     parent = load_accepted_generation(run_dir)
-    identity = accepted_generation_identity(run_dir)
+    identity = _identity_of(parent, run_dir)
     eligibility, active_admitted = derive_participation_inputs(parent)
     executed_parameter_names = tuple(sorted(
         item.name for item in _parameter_census(parent).parameters))
@@ -171,6 +172,7 @@ def admit_candidate_step(run_dir: Path, gradients, *,
         parent_candidate_identity_sha256=identity.candidate_identity_sha256,
         parent_optimizer_step=identity.optimizer_step,
         topology_digest=identity.topology_digest,
+        candidate_step_ordinal=1,
         teacher_hparams=teacher_hparams, decay=decay, max_norm=max_norm)
 
 

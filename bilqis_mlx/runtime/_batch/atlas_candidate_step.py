@@ -16,7 +16,7 @@ def production_candidate_step(
         loss_bearing_target, group_eligible, active_admitted, spec, extents,
         run_id, generation, parent_manifest_sha256,
         parent_candidate_identity_sha256, parent_optimizer_step, topology_digest,
-        teacher_hparams, decay, max_norm: float):
+        candidate_step_ordinal, teacher_hparams, decay, max_norm: float):
     """Bind the executed step to owner provenance and run the masked AdamW step."""
     provenance = bind_execution_provenance(
         motif_reads=motif_reads,
@@ -32,7 +32,8 @@ def production_candidate_step(
         parent_manifest_sha256=parent_manifest_sha256,
         parent_candidate_identity_sha256=parent_candidate_identity_sha256,
         parent_optimizer_step=parent_optimizer_step,
-        topology_digest=topology_digest)
+        topology_digest=topology_digest,
+        candidate_step_ordinal=candidate_step_ordinal)
     return candidate_step(
         candidate, gradients, provenance, teacher_hparams, decay=decay,
         loss_bearing=loss_bearing_target, max_norm=max_norm)

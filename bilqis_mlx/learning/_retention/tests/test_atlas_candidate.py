@@ -14,7 +14,8 @@ from bilqis_mlx.learning.atlas_engram_transaction import (
 from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree
 from bilqis_mlx.learning.atlas_candidate import (
-    CandidateState, CandidateTransaction, begin_candidate, candidate_step, resolve_candidate,
+    CandidateCustodyIdentity, CandidateState, CandidateTransaction, begin_candidate,
+    candidate_step, resolve_candidate,
 )
 from bilqis_mlx.learning._retention.tests.execution_fixtures import execution_provenance
 
@@ -26,17 +27,27 @@ class CandidateTransactionTests(TestCase):
         state = AdamWStateTree({name: values}, {name: mx.ones_like(values) * .1},
                               {name: mx.ones_like(values) * .01},
                               {name: mx.array([2, 3], dtype=mx.uint64)})
+        from bilqis_mlx.runtime.model_topology_v2 import (
+            GenerationExtents, ModelTopologySpecV2,
+        )
+        allocations = MotifAllocationSnapshot(MotifManifest(RELEASE))
+        extents = GenerationExtents(
+            1, 1, "a" * 64, allocations.manifest.digest, "c" * 64)
         self.parent = CandidateState(
             state, PlasticityPolicy('ADAPTIVE', 7, (IdentityRowAge(0, 0, 7), IdentityRowAge(0, 1, 2))),
-            MotifAllocationSnapshot(MotifManifest(RELEASE)), 11)
+            allocations, 11,
+            CandidateCustodyIdentity(
+                "fixture-run", 0, "6" * 64, ModelTopologySpecV2().digest,
+                extents.digest))
         self.hp = AdamWHyperparameters(.001, (.9, .95), 1e-8, .01)
         self.name = name
 
     def step(self, candidate, rows=(0,), *, loss_bearing=True):
         return candidate_step(
             candidate, {self.name: mx.array([[3., 4.], [3e38, -3e38]], dtype=mx.float32)},
-            execution_provenance(candidate.parent, rows=rows,
-                                 loss_bearing=loss_bearing), self.hp,
+            execution_provenance(
+                candidate.parent, rows=rows, loss_bearing=loss_bearing,
+                candidate_step=candidate.update_steps + 1), self.hp,
             decay={self.name: True}, loss_bearing=loss_bearing, max_norm=1.)
 
     def snapshot(self, state):
@@ -71,8 +82,9 @@ class CandidateTransactionTests(TestCase):
         first = self.step(begin_candidate(self.parent))
         second = candidate_step(
             first, {self.name: mx.zeros((2, 2), dtype=mx.float32)},
-            execution_provenance(first.parent, rows=(1,)), self.hp,
-            decay={self.name: True},
+            execution_provenance(
+                first.parent, rows=(1,), candidate_step=first.update_steps + 1),
+            self.hp, decay={self.name: True},
             loss_bearing=True, max_norm=1.)
         accepted = resolve_candidate(second, accepted=True)
         self.assertEqual(tuple(r.accepted_age for r in accepted.policy.row_ages), (8, 3))

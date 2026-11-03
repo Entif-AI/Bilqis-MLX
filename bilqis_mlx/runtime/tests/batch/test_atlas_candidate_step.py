@@ -14,7 +14,7 @@ import numpy as np
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.learning.atlas_candidate import (
-    CandidateState, begin_candidate, resolve_candidate,
+    CandidateCustodyIdentity, CandidateState, begin_candidate, resolve_candidate,
 )
 from bilqis_mlx.learning.atlas_engram import MotifManifest
 from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
@@ -42,10 +42,17 @@ class ProductionCandidateStepTests(unittest.TestCase):
             {BANK: values}, {BANK: mx.ones_like(values) * .1},
             {BANK: mx.ones_like(values) * .01},
             {BANK: mx.array([2, 3], dtype=mx.uint64)})
+        allocations = MotifAllocationSnapshot(MotifManifest(RELEASE))
+        extents = GenerationExtents(
+            1, 1, "a" * 64, allocations.manifest.digest, "c" * 64)
+        self.parent_extents = extents
         self.parent = CandidateState(
             state, PlasticityPolicy('ADAPTIVE', 7, (IdentityRowAge(0, 0, 7),
                                                     IdentityRowAge(0, 1, 2))),
-            MotifAllocationSnapshot(MotifManifest(RELEASE)), 11)
+            allocations, 11,
+            CandidateCustodyIdentity(
+                "fixture-run", 0, "6" * 64, ModelTopologySpecV2().digest,
+                extents.digest))
         self.hp = AdamWHyperparameters(.001, (.9, .95), 1e-8, .01)
 
     def step(self, candidate, rows=((0, 0),)):
@@ -64,13 +71,15 @@ class ProductionCandidateStepTests(unittest.TestCase):
                 local_slot_rows=(), loss_bearing_target=True,
                 group_eligible=eligibility,
                 active_admitted=ActiveAdmittedRows(identity_rows=tuple(rows)),
-                spec=ModelTopologySpecV2(), extents=EXTENTS,
-                run_id="fixture-run", generation=1,
-                parent_manifest_sha256="6" * 64,
+                spec=ModelTopologySpecV2(), extents=self.parent_extents,
+                run_id=self.parent.custody.run_id,
+                generation=self.parent.custody.generation + 1,
+                parent_manifest_sha256=self.parent.custody.manifest_sha256,
                 parent_candidate_identity_sha256=candidate_identity_digest(
                     self.parent),
                 parent_optimizer_step=self.parent.optimizer_step,
-                topology_digest="8" * 64,
+                topology_digest=self.parent.custody.topology_digest,
+                candidate_step_ordinal=1,
                 teacher_hparams=self.hp, decay={BANK: True}, max_norm=1.)
 
     def test_production_step_advances_only_the_executed_row(self):
@@ -104,13 +113,15 @@ class ProductionCandidateStepTests(unittest.TestCase):
                     local_slot_rows=(), loss_bearing_target=True,
                     group_eligible=forged,
                     active_admitted=ActiveAdmittedRows(identity_rows=((0, 0),)),
-                    spec=ModelTopologySpecV2(), extents=EXTENTS,
-                    run_id="fixture-run", generation=1,
-                    parent_manifest_sha256="6" * 64,
+                    spec=ModelTopologySpecV2(), extents=self.parent_extents,
+                    run_id=self.parent.custody.run_id,
+                    generation=self.parent.custody.generation + 1,
+                    parent_manifest_sha256=self.parent.custody.manifest_sha256,
                     parent_candidate_identity_sha256=candidate_identity_digest(
                         self.parent),
                     parent_optimizer_step=self.parent.optimizer_step,
-                    topology_digest="8" * 64,
+                    topology_digest=self.parent.custody.topology_digest,
+                    candidate_step_ordinal=1,
                     teacher_hparams=self.hp, decay={BANK: True}, max_norm=1.)
 
 

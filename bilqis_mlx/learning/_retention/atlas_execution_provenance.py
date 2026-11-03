@@ -77,6 +77,7 @@ class StepExecutionProvenance:
     parent_candidate_identity_sha256: str
     parent_optimizer_step: int
     topology_digest: str
+    candidate_step: int
     schema_version: str = EXECUTION_PROVENANCE_SCHEMA
     _issuance: object = field(init=False, default=None, repr=False, compare=False)
 
@@ -96,6 +97,8 @@ class StepExecutionProvenance:
                 or type(self.parent_optimizer_step) is not int
                 or self.parent_optimizer_step < 0
                 or not _is_digest(self.topology_digest)
+                or type(self.candidate_step) is not int
+                or self.candidate_step < 1
                 or self.schema_version != EXECUTION_PROVENANCE_SCHEMA):
             _invalid()
         self.participation.__post_init__()
@@ -114,6 +117,7 @@ class StepExecutionProvenance:
             "parent_candidate_identity_sha256": self.parent_candidate_identity_sha256,
             "parent_optimizer_step": self.parent_optimizer_step,
             "topology_digest": self.topology_digest,
+            "candidate_step": self.candidate_step,
             "schema_version": self.schema_version,
         })
 
@@ -127,7 +131,8 @@ def issue_execution_provenance(
         active_admitted: ActiveAdmittedRows,
         *, spec, extents, run_id: str, generation: int,
         parent_manifest_sha256: str, parent_candidate_identity_sha256: str,
-        parent_optimizer_step: int, topology_digest: str) -> StepExecutionProvenance:
+        parent_optimizer_step: int, topology_digest: str,
+        candidate_step_ordinal: int) -> StepExecutionProvenance:
     """Derive the executed participation and mask, then seal them as provenance.
 
     The caller supplies what the execution path observed. The owner derives
@@ -148,6 +153,7 @@ def issue_execution_provenance(
             ("parent_candidate_identity_sha256", parent_candidate_identity_sha256),
             ("parent_optimizer_step", parent_optimizer_step),
             ("topology_digest", topology_digest),
+            ("candidate_step", candidate_step_ordinal),
             ("schema_version", EXECUTION_PROVENANCE_SCHEMA),
             ("_issuance", _PROVENANCE_ISSUER)):
         object.__setattr__(provenance, name, value)

@@ -30,7 +30,8 @@ def bind_execution_provenance(
         group_eligible, active_admitted: ActiveAdmittedRows,
         spec, extents, run_id: str, generation: int,
         parent_manifest_sha256: str, parent_candidate_identity_sha256: str,
-        parent_optimizer_step: int, topology_digest: str) -> StepExecutionProvenance:
+        parent_optimizer_step: int, topology_digest: str,
+        candidate_step_ordinal: int) -> StepExecutionProvenance:
     """Bind one executed step to owner-issued participation and mask provenance.
 
     The motif read results are the only source of motif participation, and the
@@ -55,4 +56,5 @@ def bind_execution_provenance(
         parent_manifest_sha256=parent_manifest_sha256,
         parent_candidate_identity_sha256=parent_candidate_identity_sha256,
         parent_optimizer_step=parent_optimizer_step,
-        topology_digest=topology_digest)
+        topology_digest=topology_digest,
+        candidate_step_ordinal=candidate_step_ordinal)

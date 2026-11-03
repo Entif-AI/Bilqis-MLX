@@ -132,11 +132,12 @@ def validate_bamf_bundle_custody(
         manifest = BamfGenerationManifest.from_record(json.loads(raw)).to_record()
     except (ValueError, json.JSONDecodeError, KeyError, TypeError):
         invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
-    if (set(manifest.get("sidecars", {})) != set(SIDECARS)
+    recorded = set(manifest.get("sidecars", {}))
+    if (recorded not in (set(SIDECARS), set(SIDECARS) - {"step_proofs"})
             or set(manifest["optimizer"]) != {"schema", "step", "hyperparameters"}
             or manifest["optimizer"]["step"] != manifest.get("tensors", {}).get("optimizer_step")):
         invalid()
-    for name in SIDECARS:
+    for name in recorded:
         _read_sidecar(root, manifest["sidecars"][name])
     tensor = manifest.get("tensors", {})
     legacy_keys = {"schema", "filename", "sha256", "optimizer_step",
@@ -191,7 +192,11 @@ def _load_validated_bundle_parts(
     spec = ModelTopologySpecV2.from_record(manifest["topology"])
     extents = GenerationExtents.from_record(manifest["extents"])
     provenance = GenerationProvenance.from_record(manifest["provenance"])
-    records = {name: _read_sidecar(root, manifest["sidecars"][name]) for name in SIDECARS}
+    recorded = set(manifest["sidecars"])
+    records = {name: _read_sidecar(root, manifest["sidecars"][name])
+               for name in recorded}
+    records.setdefault("step_proofs", {
+        "schema": "bilqis.mlx.bamf-step-proofs/v1", "proofs": []})
     motif, policy = validate_sidecars(extents, provenance, records)
     lineage = {"run_id": manifest["run_id"], "generation": manifest["generation"]}
     if not records["outbox"] or not ordinary_outbox_lineage(lineage, list(records["outbox"])):

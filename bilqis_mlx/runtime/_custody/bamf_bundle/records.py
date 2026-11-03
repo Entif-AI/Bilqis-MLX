@@ -151,7 +151,8 @@ def validate_sidecars(extents, provenance, records: Mapping):
     if (any(not isinstance(records[name], Mapping) for name in SIDECARS
             if name not in ("outbox",)) or type(records["outbox"]) not in (list, tuple)):
         invalid()
-    proofs = records["step_proofs"]
+    proofs = records.get("step_proofs", {
+        "schema": "bilqis.mlx.bamf-step-proofs/v1", "proofs": []})
     if (set(proofs) != {"schema", "proofs"}
             or proofs["schema"] != "bilqis.mlx.bamf-step-proofs/v1"
             or not isinstance(proofs["proofs"], list)):

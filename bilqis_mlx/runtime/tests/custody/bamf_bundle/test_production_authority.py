@@ -39,6 +39,9 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
     admit_candidate_step, derive_participation_inputs,
 )
 
+from bilqis_mlx.learning._retention.tests.execution_fixtures import (
+    execution_provenance,
+)
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     acceptance, accepted_state, candidate, parent_state, retention_decision,
     shape_patch,
@@ -107,6 +110,28 @@ class ProductionAuthorityTests(unittest.TestCase):
                     self.run, {}, motif_reads=(), loss_bearing_target=True,
                     teacher_hparams=None, decay={}, max_norm=1.)
         self.assertTrue(step.called)
+
+    def test_provenance_cannot_replay_onto_another_candidate_or_step(self):
+        self.publish(candidate(parent_state()))
+        with shape_patch():
+            student = admission.load_accepted_generation(self.run)
+        issued = execution_provenance(student.retained_state, rows=(0,))
+        with self.assertRaises(BilqisError):
+            replace(issued, run_id="other-run")
+        with self.assertRaises(BilqisError):
+            replace(issued, generation=99)
+        with self.assertRaises(BilqisError):
+            replace(issued, parent_manifest_sha256="9" * 64)
+        with self.assertRaises(BilqisError):
+            replace(issued, topology_digest="9" * 64)
+        with self.assertRaises(BilqisError):
+            replace(issued, extents_sha256="9" * 64)
+        with self.assertRaises(BilqisError):
+            replace(issued, parent_candidate_identity_sha256="9" * 64)
+        with self.assertRaises(BilqisError):
+            replace(issued, parent_optimizer_step=999)
+        with self.assertRaises(BilqisError):
+            replace(issued, candidate_step=2)
 
     def test_caller_created_candidate_cannot_publish_without_the_decision_owner(self):
         source = candidate(parent_state())
