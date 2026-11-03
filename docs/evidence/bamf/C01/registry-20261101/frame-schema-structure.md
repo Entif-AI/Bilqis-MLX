@@ -51,10 +51,10 @@ also use absolute imports. This sixth new regression raises the previous121-case
 selection to122; adding20schema cases yields142. Previous hosted checkpoints did
 not include this missing case.
 
-Real corpus is read-only from the existing digest-named conformance asset under
-`/Users/cr8s/Code/b11-586-refresh-20261101/.local/a05-5-conformance/` with bundle
-`f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec`.
-Set `BILQIS_ATLAS_REAL_CORPUS` to that directory. No sibling code/branch was merged.
+Real corpus is read-only from the separately supplied digest-named conformance
+asset `f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec`.
+Set `BILQIS_ATLAS_REAL_CORPUS` to the verified directory containing that bundle.
+No sibling code/branch was merged.
 `BILQIS_ATLAS_REAL_ARTIFACT` remains the independently pinned A01 artifact described
 in the released-schema evidence. Run the PR694 portable selection with the new
 `bilqis_mlx/semantics/tests/frame_schema` target and both asset variables set.

@@ -38,10 +38,11 @@ Verification:
 Foreign-CWD command, run from `/tmp`:
 
 ```sh
-BILQIS_ATLAS_REAL_ARTIFACT=/tmp/bamf557-atlas/5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7 \
-  /tmp/c524-venv/bin/python -B \
-  /Users/cr8s/.codex/worktrees/4811/Bilqis/scripts/run_tests.py \
-  /Users/cr8s/.codex/worktrees/4811/Bilqis/bilqis_mlx/semantics/tests/released_schemas
+: "${REPO_ROOT:?Set REPO_ROOT to the verified checkout}"
+: "${BILQIS_ATLAS_REAL_ARTIFACT:?Set the verified A01 artifact directory}"
+: "${PORTABLE_PYTHON:?Set the tested portable Python interpreter}"
+"$PORTABLE_PYTHON" -B "$REPO_ROOT/scripts/run_tests.py" \
+  "$REPO_ROOT/bilqis_mlx/semantics/tests/released_schemas"
 ```
 
 Both runner and target are absolute because the existing runner resolves path
