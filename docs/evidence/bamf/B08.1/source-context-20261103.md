@@ -101,3 +101,18 @@ All 13 worksheet tabs were reconciled directly: 38 changed cells read back with
 zero mismatches; eight inspected formula cells remained formulas. The live canonical
 leaf query reconciles Lane B at 32/55 closed and 23 open; all lanes total 97/163
 closed. B13.4 is 1/4 closed. No B08 leaf was counted closed.
+
+## Canonical dependency hold
+
+The context test also passes through its physical file entrypoint after import-only
+repair `8c729176` (4/4, zero skips). Production-hit work is now WAITING on the
+canonical accepted-generation feature/candidate authority owned by #708/#711/#710,
+currently proposed in open PR #809. Current unified B13 sidecars are storage
+envelopes, explicitly not upstream source/admission authority. A B08-local token or
+a caller-supplied bundle/record cannot substitute for that canonical contract.
+Resume only after the accepted owner interface and a usable source-qualified receipt
+reach reviewed unified; then synchronize and implement both reads once.
+
+B07.1/#456 was separately closed completed after verifying human-merged PR #690
+at7984d787 and its exact final EGM/hosted receipt. The parent B07/B08 outcomes remain
+separate. No new native run or merge was needed for that accepted closeout.
