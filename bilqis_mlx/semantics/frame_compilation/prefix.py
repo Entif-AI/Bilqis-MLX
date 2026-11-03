@@ -83,6 +83,34 @@ def _source_frames(
     return tuple(ordered)
 
 
+def _approved_occurrences(config: FrameCompilerConfig) -> tuple[dict, set]:
+    approved = {}
+    duplicates = set()
+    if config.approved is not None:
+        for envelope in config.approved.envelopes:
+            occurrence = envelope.frame.occurrence_id
+            if occurrence in approved:
+                duplicates.add(occurrence)
+            else:
+                approved[occurrence] = envelope
+        for occurrence in duplicates:
+            approved[occurrence] = None
+    return approved, duplicates
+
+
+def _validate_visible_atoms(
+    ast: StreamingAST, visible_end: int, release: str,
+    config: FrameCompilerConfig,
+) -> None:
+    grants = {grant.source_handle: grant for grant in config.frontier.grants}
+    for atom in ast.atoms[:visible_end]:
+        if not _grant_allows(
+                grants.get(atom.source_reference),
+                atom_evidence_digest(ast.source_instance_id, atom, release),
+                config, release):
+            _invalid("BAMF_PREFIX_ATOM_SOURCE_UNAUTHORIZED")
+
+
 def compile_prefix(
     ast: StreamingAST,
     visible_end: int,
@@ -100,32 +128,14 @@ def compile_prefix(
             or release != compiler_config.schema_map.semantic_release):
         _invalid("BAMF_PREFIX_COMPILE_INPUT_INVALID")
 
-    approved_by_occurrence = {}
-    duplicates = set()
-    if compiler_config.approved is not None:
-        for envelope in compiler_config.approved.envelopes:
-            occurrence = envelope.frame.occurrence_id
-            if occurrence in approved_by_occurrence:
-                duplicates.add(occurrence)
-            else:
-                approved_by_occurrence[occurrence] = envelope
-        for occurrence in duplicates:
-            approved_by_occurrence[occurrence] = None
+    approved_by_occurrence, duplicates = _approved_occurrences(compiler_config)
     closed = _source_frames(
         ast, visible_end, approved_by_occurrence)
     # Preflight before packing frames, allocating model positions or padding.
     # No silent truncation is permitted at this boundary.
     if visible_end + len(closed) > MAX_NEURAL_POSITIONS:
         _invalid("BAMF_PREFIX_NEURAL_LENGTH_EXCEEDED")
-    grants = {
-        grant.source_handle: grant
-        for grant in compiler_config.frontier.grants}
-    for atom in ast.atoms[:visible_end]:
-        if not _grant_allows(
-                grants.get(atom.source_reference),
-                atom_evidence_digest(ast.source_instance_id, atom, release),
-                compiler_config, release):
-            _invalid("BAMF_PREFIX_ATOM_SOURCE_UNAUTHORIZED")
+    _validate_visible_atoms(ast, visible_end, release, compiler_config)
     envelopes = []
     for frame in closed:
         if frame.occurrence_id in duplicates:

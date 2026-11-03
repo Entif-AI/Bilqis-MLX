@@ -4,7 +4,7 @@ from bilqis_mlx.semantics.tests.frame_compilation.helpers import (BilqisError, L
 
 
 class SegmentsTests(unittest.TestCase):
-    def test_lawful_source_boundaries_split_without_truncation(self):
+    def _segments(self):
         _, config = _case()
         segments = []
         for index, (start, end) in enumerate(((0, 800), (800, 1500))):
@@ -35,7 +35,11 @@ class SegmentsTests(unittest.TestCase):
                         (*scoped.frontier.grants, grant),
                         key=lambda item: item.source_handle))))
             segments.append(replace(segment, config=scoped))
-        compiled = compile_lawful_segments(tuple(segments), RELEASE)
+        return tuple(segments)
+
+    def test_lawful_source_boundaries_split_without_truncation(self):
+        segments = self._segments()
+        compiled = compile_lawful_segments(segments, RELEASE)
         self.assertEqual(compiled.total_source_atoms, 1500)
         self.assertEqual(compiled.total_neural_positions, 1500)
         self.assertEqual(
@@ -47,6 +51,9 @@ class SegmentsTests(unittest.TestCase):
         self.assertEqual(
             compiled.segments[-1].positions[-1].atom.source_reference,
             "source:token:1499")
+
+    def test_invalid_boundaries_cannot_requalify_source_segments(self):
+        segments = self._segments()
         with self.assertRaises(BilqisError):
             compile_lawful_segments((
                 segments[0], replace(
@@ -97,6 +104,9 @@ class SegmentsTests(unittest.TestCase):
         self.assertEqual(
             caught.exception.context["reason"],
             "BAMF_PREFIX_SPLIT_SOURCE_UNAUTHORIZED")
+
+    def test_oversized_source_segment_rejects_without_truncation(self):
+        _, config = _case()
         overlong_ast = StreamingAST(
             "synthetic:overlong",
             tuple(SourceAtom(i, f"token:{i}", f"source:token:{i}")
