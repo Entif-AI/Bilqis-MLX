@@ -34,7 +34,7 @@
       "pr": null,
       "state": "TURNED_IN",
       "head_sha": "c078386bd57a209bb10f55142c7b1c5af94a50b1",
-      "summary": "B07.1 is EGM-Passed and was externally merged through PR #690 as reviewed unified 7984d787; hosted checks were green and the exact candidate is consumed by unified.",
+      "summary": "PR690 human-merged as7984d787; #456 explicitly closed completed after exact final receipt and merged-head readback.",
       "resume_trigger": null,
       "preserved_branch": "codex/b07-456-source-bridge-20261101",
       "merged_pr": 690
@@ -248,11 +248,11 @@
     {
       "issue": 460,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "b37eaf93234b40ba7c066d4203ed87b811ee91db",
+      "state": "WAITING",
+      "head_sha": "8c72917662eee6e71d1f7616f16934e2b9230085",
       "preserved_branch": "codex/bamf02-b-460-qualified-reads-20261103-resume",
-      "summary": "ACTIVE source-context stage after accepted C01 PR803: shared source replay and exact A/B/C member/key regression; 23/23 native CPU tests, zero skips. Public hit/B02/B13 binding remains implementation work; no new whole-candidate EGM or PR.",
-      "resume_trigger": null
+      "summary": "Source-context stage is verified23/23 and physical new-context entrypoint4/4. Full B08 hits await the canonical accepted-generation feature/candidate authority proposed in PR809; no consumer-local credential is introduced.",
+      "resume_trigger": "Canonical B13 accepted-generation feature/candidate authority (#708/#711/#710, currently PR809) is accepted through reviewed unified with a usable source-qualified receipt; reactivate, synchronize once and bind both motif reads to those owners."
     },
     {
       "issue": 481,
