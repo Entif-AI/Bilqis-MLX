@@ -16,7 +16,7 @@ from bilqis_mlx.learning.frame_embeddings.tests import test_public_formal_types 
 from bilqis_mlx.semantics.frame_adapters import public_formal_context
 from bilqis_mlx.semantics.frame_schema import FrameInstance
 from bilqis_mlx.semantics.tests.frame_adapters.helpers import SOURCE_ROOT
-from . import test_encoding as fixtures
+from bilqis_mlx.learning.source_atoms.tests import test_encoding as fixtures
 
 
 class SourceBackboneTestBase(TestCase):
