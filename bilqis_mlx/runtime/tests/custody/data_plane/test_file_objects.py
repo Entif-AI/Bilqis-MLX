@@ -92,4 +92,3 @@ class FileObjectTests(DataPlaneCase):
                     worker.terminate()
                     worker.join()
             results.close()
-
