@@ -2,7 +2,7 @@
 
 The candidate starts from synchronized Lane B/unified
 `deaa8b9dbd277993f884abeea7413f9cb799d945`, preserving the externally merged
-#753 / PR #768 implementation and its directory-creation regression. The prior
+#753 / PR #768 implementation and its directory-creation regression test. The prior
 reviewed repair consumed unified `dfc0c7586c23b6477c08d4db486ade3deeb79fae`
 through synchronized Lane B; the final sync also consumes unified
 `338a3c5263772566502af70d731b95af1d91a81e`. It preserves the existing issue implementation
@@ -71,14 +71,14 @@ python3 -B -m unittest \
   bilqis_mlx.runtime.tests.custody.data_plane.test_events
 ```
 
-Expected: 19 targeted tests and 37 existing tests pass without skips. Controls
+Observed on the repaired candidate: 19 targeted tests and 37 existing tests pass
+without skips. Controls
 cover unchanged-object reuse, changed-object separation, corruption rejection,
 pointer-crash/retry reuse, caller-alias mutation, competing installation,
 independent-process convergence and directory fsync calls. A three-generation
 published sequence covers data-only active-set extension with identical numerical
 bytes, then a retained numerical update with distinct bytes. It checks exact
-parent-bundle bytes, cold readback and generation-bound outbox delivery. The three ownership,
-race and ancestry tests failed before the additional repair. Test fixtures use
+parent-bundle bytes, cold readback and generation-bound outbox delivery. Test fixtures use
 small numerical shapes and patch headroom; production reserve remains 100 GiB.
 Publication intercepts the pointer and verifies fsync of the actual persisted CAS
 inode and its directory ancestry, including object reuse. Reuse observations reset for each publication. Negative controls remove
