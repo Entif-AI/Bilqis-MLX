@@ -18,6 +18,7 @@ def restore_public_module(value: _Export, module_name: str) -> _Export:
     if isinstance(value, FunctionType):
         _restore_function(value, module_name)
         return value
+    origin = value.__module__
     value.__module__ = module_name
     prefix = value.__qualname__ + '.'
     for member in vars(value).values():
@@ -28,6 +29,7 @@ def restore_public_module(value: _Export, module_name: str) -> _Export:
         else:
             functions = (member,)
         for function in functions:
-            if isinstance(function, FunctionType) and function.__qualname__.startswith(prefix):
+            if (isinstance(function, FunctionType) and function.__module__ == origin
+                    and function.__qualname__.startswith(prefix)):
                 _restore_function(function, module_name)
     return value

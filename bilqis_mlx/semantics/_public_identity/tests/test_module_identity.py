@@ -61,6 +61,11 @@ class PublicModuleIdentityTests(unittest.TestCase):
 
         inherited_module = Parent.inherited.__module__
         getter = Contract.value.fget
+        def foreign_collision():
+            return 'foreign'
+        foreign_collision.__module__ = 'external.contracts'
+        foreign_collision.__qualname__ = Contract.__qualname__ + '.collision'
+        Contract.collision = staticmethod(foreign_collision)
         self.assertIs(restore_public_module(Contract, 'public.contract'), Contract)
         self.assertIs(Contract.value.fget, getter)
         self.assertEqual(getter.__module__, 'public.contract')
@@ -70,6 +75,7 @@ class PublicModuleIdentityTests(unittest.TestCase):
         self.assertEqual(Contract.constant(), 11)
         self.assertIs(Contract.foreign, external)
         self.assertEqual(external.__module__, 'json')
+        self.assertEqual(foreign_collision.__module__, 'external.contracts')
         self.assertEqual(Parent.inherited.__module__, inherited_module)
 
     def test_wrapped_generated_methods_keep_identity_signature_and_behavior(self):
