@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 import bilqis_mlx.runtime.bamf_bundle.publication as publication
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
+import bilqis_mlx._data_plane.file_objects as file_objects
 from bilqis_mlx.data_plane import close_data_planes, data_plane
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.bamf_bundle import (
@@ -87,6 +88,26 @@ class BamfTensorCasTests(unittest.TestCase):
         self.assertEqual(len(objects_after), 1)
         self.assertEqual(objects_after[0].stat().st_ino, inode)
         self.assertFalse((run / pointer["bundle"] / "bamf-state.safetensors").exists())
+
+    def test_new_cas_directories_are_durable_before_object_publication(self):
+        synced = []
+        original = file_objects._fsync_directory
+
+        def record(path):
+            synced.append(Path(path))
+            original(path)
+
+        with patch.object(file_objects, "_fsync_directory", side_effect=record):
+            manifest = self.save(candidate(parent_state()), "bundle")
+
+        digest = manifest["tensors"]["sha256"]
+        root = (self.root / "plane.sqlite3.objects").resolve()
+        shard = root / digest[:2]
+        self.assertIn(root.parent, synced)
+        self.assertIn(root, synced)
+        self.assertIn(shard, synced)
+        self.assertLess(synced.index(root.parent), synced.index(shard))
+        self.assertTrue(data_plane().require_file_object(digest).is_file())
 
 
 if __name__ == "__main__":

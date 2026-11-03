@@ -46,8 +46,12 @@ class DataPlaneFileObjectMixin:
         root = self.path.with_name(self.path.name + ".objects")
         if root.is_symlink() or (root.exists() and not root.is_dir()):
             raise ValueError(_error(DataPlaneError.OBJECT_CORRUPTED, root))
+        existed = root.exists()
         if create:
             root.mkdir(parents=True, exist_ok=True)
+            if not existed:
+                _fsync_directory(root)
+                _fsync_directory(root.parent)
         if not root.is_dir():
             raise ValueError(_error(DataPlaneError.OBJECT_MISSING, root))
         return root
@@ -59,8 +63,12 @@ class DataPlaneFileObjectMixin:
         shard = root / digest[:2]
         if shard.is_symlink() or (shard.exists() and not shard.is_dir()):
             raise ValueError(_error(DataPlaneError.OBJECT_CORRUPTED, shard))
+        existed = shard.exists()
         if create:
             shard.mkdir(exist_ok=True)
+            if not existed:
+                _fsync_directory(shard)
+                _fsync_directory(root)
         if not shard.is_dir():
             raise ValueError(_error(DataPlaneError.OBJECT_MISSING, digest))
         return shard / (digest + ".safetensors")
