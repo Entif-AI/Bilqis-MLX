@@ -116,6 +116,42 @@ def _qualified_motif_inputs(projection, snapshot, source_adapter,
     )
 
 
+def source_qualified_motif_context(
+    source_adapter: RegisteredSourceAdapter, row: dict,
+    atlas_selection: AtlasArtifactSelection, *, source_root: str | Path,
+    graph: dict, task_scope: TaskScope, source_frontier: SourceFrontier,
+    policy: ContextPolicy, source_seed: int, source_each: int,
+    source_profile_parameters: dict | None = None, course=None,
+):
+    """Replay source authority for allocation and read-side qualification.
+
+    Returned projection and motif inputs are derived data, not transferable
+    admission or retained-parameter credentials. Consumers replay this boundary
+    rather than accepting caller-created context records as source authority.
+    """
+    if (type(atlas_selection) is not AtlasArtifactSelection
+            or type(task_scope) is not TaskScope
+            or type(source_frontier) is not SourceFrontier
+            or type(policy) is not ContextPolicy):
+        _invalid("BAMF_MOTIF_SOURCE_AUTHORITY_INVALID")
+    snapshot = load_pinned_atlas_snapshot(atlas_selection)
+    if snapshot.release_sha256 != task_scope.semantic_release:
+        _invalid("BAMF_MOTIF_SOURCE_AUTHORITY_INVALID")
+    admitted = public_formal_context(
+        source_adapter, row, snapshot,
+        source_root=source_root, graph=graph,
+        task_scope=task_scope, source_frontier=source_frontier,
+        policy=policy, source_seed=source_seed, source_each=source_each,
+        source_profile_parameters=source_profile_parameters, course=course,
+    )
+    if isinstance(admitted, ContextHold):
+        return admitted
+    projection, issued_frontier = admitted
+    qualified = _qualified_motif_inputs(
+        projection, snapshot, source_adapter, atlas_selection, source_root, graph)
+    return projection, qualified, issued_frontier
+
+
 def _prepare_source_qualified_motifs_with_parent(
     source_adapter: RegisteredSourceAdapter,
     row: dict,
@@ -142,21 +178,14 @@ def _prepare_source_qualified_motifs_with_parent(
             or type(parent) is not MotifAllocationSnapshot):
         _invalid("BAMF_MOTIF_SOURCE_AUTHORITY_INVALID")
     parent.__post_init__()
-    snapshot = load_pinned_atlas_snapshot(atlas_selection)
-    if snapshot.release_sha256 != task_scope.semantic_release:
-        _invalid("BAMF_MOTIF_SOURCE_AUTHORITY_INVALID")
-    admitted = public_formal_context(
-        source_adapter, row, snapshot,
-        source_root=source_root, graph=graph,
-        task_scope=task_scope, source_frontier=source_frontier,
+    context = source_qualified_motif_context(
+        source_adapter, row, atlas_selection, source_root=source_root,
+        graph=graph, task_scope=task_scope, source_frontier=source_frontier,
         policy=policy, source_seed=source_seed, source_each=source_each,
-        source_profile_parameters=source_profile_parameters, course=course,
-    )
-    if isinstance(admitted, ContextHold):
-        return admitted
-    projection, issued_frontier = admitted
-    qualified = _qualified_motif_inputs(
-        projection, snapshot, source_adapter, atlas_selection, source_root, graph)
+        source_profile_parameters=source_profile_parameters, course=course)
+    if isinstance(context, ContextHold):
+        return context
+    projection, qualified, issued_frontier = context
     if parent.manifest.semantic_release != task_scope.semantic_release:
         _invalid("BAMF_MOTIF_SOURCE_AUTHORITY_INVALID")
     candidate = _prepare_candidate_motif_snapshot(qualified, parent, budget)
