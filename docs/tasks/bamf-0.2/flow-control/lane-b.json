@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "2800946729e484875f7d1f57f0e6d85078936394",
-  "updated_at": "2026-11-03T07:39:32.080644Z",
+  "updated_at": "2026-11-03T07:51:58.209608Z",
   "exception": null,
   "items": [
     {
@@ -177,6 +177,14 @@
       "resume_trigger": null,
       "merged_pr": 764,
       "pr": null
+    },
+    {
+      "issue": 753,
+      "pr": 768,
+      "state": "TURNED_IN",
+      "head_sha": "0ea77e24d453b14c3a52966a0dd95e4edd63e0a5",
+      "summary": "Read-back concurrent B13 parent #478 tensor-CAS remediation PR768 is open for human integration; canonical issue753 records final EGM PASS. This is inventory reconciliation, not consumption.",
+      "resume_trigger": null
     }
   ]
 }
