@@ -33,11 +33,17 @@ its own contract that the selection is neither a retention decision nor an
 accepted-generation publication grant, so the accepted-generation authority
 cannot rest on the pointer alone.
 
-`bilqis_mlx/learning/_retention/atlas_acceptance.py` is the retention-owner
-seam. The owner mints an `AcceptedCandidateBinding` that covers the exact
-accepted optimizer identity, the accepted feature identity, the optimizer step
-and the retention reason. The binding cannot be constructed outside the owner
-module.
+`bilqis_mlx/learning/_retention/atlas_retention_decision.py` is the retention
+decision owner. It evaluates the measured retention evidence with the
+repository's own precedence and issues an unforgeable accepted or rejected
+decision. `bilqis_mlx/learning/_retention/atlas_acceptance.py` is the
+retention-owner seam that mints the `AcceptedCandidateBinding` from such a
+decision; the binding covers the exact accepted optimizer identity, the
+accepted feature identity, the optimizer step, the retention reason the
+decision owner derived, the decision digest, and the digests of the owner-bound
+step proofs the accepted state carries. Neither the binding nor the decision
+can be constructed outside their owner modules, and publication consumes an
+already-issued decision instead of deciding acceptance itself.
 
 `publish_bamf_generation(run, candidate, acceptance=...)` now refuses to
 publish without a matching binding, refuses a binding minted for another

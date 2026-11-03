@@ -45,6 +45,18 @@ The witness proves:
 - `python3 -m pytest bilqis_mlx/runtime/tests/custody/bamf_bundle/test_cold_resume_continuation.py`
   → 4 passed.
 
+## Uninterrupted and cold continuation
+
+The witness runs the same production continuation twice: once in the parent
+process and once in a clean process that resumes from published custody only.
+Both continuations publish the identical successor generation manifest, the
+identical successor optimizer digest, the identical update counts and the
+identical owner-bound step-proof digests, and both reach the same
+retention-decision owner outcome. The probe no longer synthesizes a next
+visit: it rebuilds the next-visit execution evidence from the published
+custody, measures the retention evidence, and asks the retention decision
+owner to decide before publication.
+
 ## Open limits
 
 - The cross-backend, frozen-v1 and source-qualified retained-learning witness
