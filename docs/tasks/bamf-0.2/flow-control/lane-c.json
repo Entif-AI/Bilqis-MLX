@@ -1,17 +1,17 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "dfc0c7586c23b6477c08d4db486ade3deeb79fae",
-  "updated_at": "2026-11-03T07:37:52.308571Z",
+  "observed_unified": "338a3c5263772566502af70d731b95af1d91a81e",
+  "updated_at": "2026-11-03T07:54:32.651531Z",
   "exception": null,
   "items": [
     {
       "issue": 347,
       "pr": null,
-      "state": "WAITING",
+      "state": "ACTIVE",
       "head_sha": "cb536f744008c7e7575c3d3973c135aa38292fd6",
-      "summary": "C01 structural proof candidate awaits reproducibility remediation.",
-      "resume_trigger": "Remediation #733 is resolved and C01 is selected as Lane C's current integration candidate.",
+      "summary": "Closed733 satisfies named trigger; accepted641/767 drained. C01 selected for preserved recipe consumption and next aggregate merge-readiness proof.",
+      "resume_trigger": null,
       "closed_pr": 694,
       "preserved_branch": "codex/bamf02-c01-347-registry-20261101",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
@@ -68,14 +68,19 @@
     {
       "issue": 641,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "aa2aec1809256a6270bb8afedc87c2a655175054",
-      "summary": "EGM-Passed aa2aec18 satisfies resume trigger; selected nearest-to-merge Lane C candidate for current-unified reconciliation and final proof.",
+      "state": "TURNED_IN",
+      "head_sha": "4099487b16c6a26cec1888d23310ede7792bb248",
+      "summary": "PR767 externally merged as338a3c52; full scoped641 structural/identity acceptance verified, issue CLOSED. No full355/586 acceptance inferred.",
       "resume_trigger": null,
-      "closed_pr": 739,
-      "preserved_branch": "codex/bamf02-c10-641-proof-20261102",
-      "closed_under": "EGM issue-label queue; EGM-Pending is durable on issue #641",
-      "close_reason": "Await fresh whole-candidate EGM on the durable branch before opening a merge-ready PR."
+      "merged_pr": 767
+    },
+    {
+      "issue": 766,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "306d8e0f2e4efd9960ea7ec88240fb90547c8cc0",
+      "summary": "Selector pickle regression reproduced twice; two metadata assignments verified on isolated issue branch and consumed into #641. Parent owns aggregate EGM.",
+      "resume_trigger": null
     }
   ]
 }

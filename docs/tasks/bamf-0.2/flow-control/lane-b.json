@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "2800946729e484875f7d1f57f0e6d85078936394",
-  "updated_at": "2026-11-02T19:44:00-05:00",
+  "updated_at": "2026-11-03T07:51:58.209608Z",
   "exception": null,
   "items": [
     {
@@ -171,10 +171,19 @@
     },
     {
       "issue": 763,
-      "pr": 764,
       "state": "TURNED_IN",
       "head_sha": "e4484e5da1a9b7e982a89aa85b08bd50c67d98cd",
-      "summary": "Generic source-owner resolution repair is turned in for review on PR #764; parent #736 consumes it after landing and retains final merge-candidate EGM ownership.",
+      "summary": "PR #764 is externally merged as 4ea003f0c353a4ffccfe52e6b717f31ce7cfd800; historical scoped turn-in is consumed by reviewed unified.",
+      "resume_trigger": null,
+      "merged_pr": 764,
+      "pr": null
+    },
+    {
+      "issue": 753,
+      "pr": 768,
+      "state": "TURNED_IN",
+      "head_sha": "0ea77e24d453b14c3a52966a0dd95e4edd63e0a5",
+      "summary": "Read-back concurrent B13 parent #478 tensor-CAS remediation PR768 is open for human integration; canonical issue753 records final EGM PASS. This is inventory reconciliation, not consumption.",
       "resume_trigger": null
     }
   ]
