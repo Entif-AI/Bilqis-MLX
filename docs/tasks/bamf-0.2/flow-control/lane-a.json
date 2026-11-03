@@ -1,13 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-<<<<<<< HEAD
-  "observed_unified": "53655a7a5d513403bcd14e9ffd2e5577411c5832",
-  "updated_at": "2026-11-03T12:50:03.361107+00:00",
-=======
-  "observed_unified": "9bf47289e9ed0a64d275b31c3a7de42c55a8b83e",
-  "updated_at": "2026-11-03T15:04:00Z",
->>>>>>> origin/codex/bamf-unified-base-20261028
+  "observed_unified": "05e31a576e3432e4238c9b4477a70d70ec4fc487",
+  "updated_at": "2026-11-03T19:58:00Z",
   "exception": null,
   "items": [
     {
