@@ -199,21 +199,23 @@
     },
     {
       "issue": 449,
-      "pr": 780,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "4126cdaecd92b2c515693540fb86fd09fde6338d",
-      "summary": "B05.1 depth proof ready in PR #780 after fresh pinned EGM PASS; depth18/18 and source producer16/16 zero skips. Human integration pending.",
+      "summary": "PR #780 externally merged; consumed from reviewed unified aa828eb5. Original proof remains on the issue/PR.",
       "resume_trigger": null,
-      "preserved_branch": "codex/bamf02-b-449-depth-proof-20261103"
+      "preserved_branch": "codex/bamf02-b-449-depth-proof-20261103",
+      "merged_pr": 780
     },
     {
       "issue": 778,
-      "pr": 779,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "551f9d7f6172113b2c2698178c870cf61c7c35a0",
-      "summary": "Canonical test-import repair #778 is EGM-Passed and turned in through PR #779; file source-positive1/1, unchanged producer16/16, no real student mutation.",
+      "summary": "PR #779 externally merged; consumed from reviewed unified aa828eb5. Original proof remains on the issue/PR.",
       "resume_trigger": null,
-      "preserved_branch": "codex/bamf02-b-778-test-imports-20261103"
+      "preserved_branch": "codex/bamf02-b-778-test-imports-20261103",
+      "merged_pr": 779
     },
     {
       "issue": 577,
