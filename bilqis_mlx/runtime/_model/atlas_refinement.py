@@ -1,8 +1,11 @@
-"""Private B06 numerical recurrence pending source/backbone assembly.
+"""B06 local refinement over immutable B03/B11 execution outputs.
 
-This module does not publish refine_selected or authenticate hidden-state,
-seed, member or role origins. B03/A05 and B05/B11 qualify those boundaries.
-Prediction-local selection, quotas and routing supervision belong to B06.2.
+The private numerical kernel remains usable for bounded arithmetic tests. The
+public B06.3 assembly path consumes an exact B03 ``FrameEncoding`` plus one
+whole backbone result and a B06.2 ``RefinementChoice``. It derives the selected
+frame seed/member vectors and source handles internally; callers do not provide
+free-floating member matrices or a relabelled frame position. B05/B11 remain the
+owners of backbone provenance and B06.2 owns selection/quota policy.
 """
 from __future__ import annotations
 
@@ -12,9 +15,13 @@ from typing import Mapping
 import mlx.core as mx
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
+from bilqis_mlx.learning.frame_encoder import CompiledEncoderInput, FrameEncoding
+from bilqis_mlx.learning.source_atoms import encode_source_compiled
 from .model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes, validate_bamf_parameters,
 )
+from .refinement_policy import RefinementChoice
+from .refinement_inputs import _selected_frame_inputs
 
 
 WIDTH = ModelTopologySpecV2.width
@@ -35,6 +42,18 @@ class _RefinementResult:
     route_logits: mx.array | None
     passes: int
     schema_version: str = "bilqis.mlx.refinement-numerical-result/provisional-v1"
+
+
+@dataclass(frozen=True)
+class RefinementResult:
+    refinement_key: tuple[tuple[str, int, str, str], int, str]
+    frame_handle: str
+    occurrence_id: str
+    member_handles: tuple[str, ...]
+    hidden: mx.array
+    route_logits: mx.array | None
+    passes: int
+    schema_version: str = "bilqis.mlx.refinement-result/v1"
 
 
 def refinement_parameter_view(parameters: Mapping[str, mx.array], *, spec: ModelTopologySpecV2,
@@ -73,7 +92,8 @@ def _validate(hidden, seed, members, role, passes, parameters):
         if not isinstance(value, mx.array) or value.shape != (WIDTH,) or value.dtype != mx.float32:
             _invalid()
     if (not isinstance(members, mx.array) or members.ndim != MEMBER_RANK or
-            members.shape[0] < 1 or members.shape[1] != WIDTH or members.dtype != mx.float32):
+            (passes > 0 and members.shape[0] < 1) or members.shape[1] != WIDTH or
+            members.dtype != mx.float32):
         _invalid()
     _validate_refinement_parameters(parameters)
     if not all(bool(mx.all(mx.isfinite(value))) for value in
@@ -107,6 +127,61 @@ def _refine_frame(hidden: mx.array, seed: mx.array, members: mx.array, role: mx.
     if not bool(mx.all(mx.isfinite(state))) or not bool(mx.all(mx.isfinite(route_logits))):
         _invalid()
     return _RefinementResult(state, route_logits, passes)
+
+
+def _refine_selected_with(backbone_hidden: mx.array, compiled: CompiledEncoderInput,
+                          encoding: FrameEncoding,
+                          row_index: int, choice: RefinementChoice,
+                          query_role: mx.array,
+                          parameters: Mapping[str, mx.array],
+                          input_resolver) -> RefinementResult:
+    if (not isinstance(backbone_hidden, mx.array)
+            or backbone_hidden.dtype != mx.float32
+            or not bool(mx.all(mx.isfinite(backbone_hidden)))):
+        _invalid()
+    encoding, index, seed, members, member_handles, row_cache_key = input_resolver(
+        compiled, encoding, row_index, choice)
+    if backbone_hidden.shape != encoding.global_seeds.shape:
+        _invalid()
+    numerical = _refine_frame(
+        backbone_hidden[row_index, index], seed, members, query_role,
+        choice.passes, parameters)
+    return RefinementResult(
+        (choice.cache_identity, row_index, row_cache_key),
+        choice.frame_handle, choice.occurrence_id,
+        member_handles, numerical.hidden,
+        numerical.route_logits, numerical.passes)
+
+
+def _refine_selected(backbone_hidden: mx.array, compiled: CompiledEncoderInput,
+                     encoding: FrameEncoding,
+                     row_index: int, choice: RefinementChoice,
+                     query_role: mx.array,
+                     parameters: Mapping[str, mx.array]) -> RefinementResult:
+    """Numerical fixture path; it does not issue production source authority."""
+    return _refine_selected_with(
+        backbone_hidden, compiled, encoding, row_index, choice,
+        query_role, parameters, _selected_frame_inputs)
+
+
+def refine_selected(backbone_hidden: mx.array, compiled: CompiledEncoderInput,
+                    frame_parameters: Mapping[str, mx.array],
+                    sources: tuple, feature_schema,
+                    row_index: int, choice: RefinementChoice,
+                    query_role: mx.array,
+                    parameters: Mapping[str, mx.array]) -> RefinementResult:
+    """Re-derive source-authoritative B02/B03 inputs, then refine one frame.
+
+    The public boundary does not accept caller-created embedding vectors or a
+    caller-supplied FrameEncoding. It invokes the accepted source-owned producer
+    directly, so the exact B03 tensors are downstream of current source/rights
+    validation and the actual B01/B02 parameter tree.
+    """
+    encoding = encode_source_compiled(
+        compiled, frame_parameters, sources, feature_schema)
+    return _refine_selected_with(
+        backbone_hidden, compiled, encoding, row_index, choice,
+        query_role, parameters, _selected_frame_inputs)
 
 
 def routing_logits_from_state(hidden: mx.array, parameters: Mapping[str, mx.array]) -> mx.array:
