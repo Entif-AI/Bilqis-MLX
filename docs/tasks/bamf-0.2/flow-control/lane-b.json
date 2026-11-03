@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "aa828eb5cb8822a5614aa3353864bf187f83444d",
-  "updated_at": "2026-11-03T08:50:15.707219+00:00",
+  "observed_unified": "9bf47289e9ed0a64d275b31c3a7de42c55a8b83e",
+  "updated_at": "2026-11-03T15:45:37Z",
   "exception": null,
   "items": [
     {
@@ -33,10 +33,10 @@
       "issue": 456,
       "pr": 690,
       "state": "TURNED_IN",
-      "head_sha": "203c53eb1252ada8fba8ed6f1e9c7c5c57ca6cde",
-      "summary": "B07.1 is turned in through draft PR #690; the turn-in metadata changed the exact head after the prior PASS, so issue #456 is EGM-Pending for final exact-head review.",
+      "head_sha": "58209522c8855245c3b9ae22e1a57255974ffc05",
+      "summary": "B07.1 current-unified CAS continuation repair is locally green: #783 canonical CandidateState repair consumed; non-genesis continuation is B13-custody-bound to an externally pinned manifest digest; affected selection 120/120 zero skips; final exact-head EGM follows this bookkeeping commit.",
       "resume_trigger": null,
-      "preserved_branch": "codex/b07-456-source-bridge-20261101"
+      "preserved_branch": "codex/783-456-current-unified-20261103"
     },
     {
       "issue": 455,
@@ -234,6 +234,15 @@
       "summary": "B06 source-positive proof paused at organic1029-line compiler structural encounter; canonical C01 already owns106-line wrapper candidate13b67a59. No B06 implementation mutation.",
       "resume_trigger": "C01#347 canonical compiler structural repair is human-integrated through reviewed unified; resync Lane B once, then build a lawful source-owned normal-frame CLOSURE and public refinement/gradient witness.",
       "preserved_branch": "codex/bamf02-b-736-refinement-proof-20261103"
+    },
+    {
+      "issue": 783,
+      "pr": null,
+      "state": "WAITING",
+      "head_sha": "17be8a3d5aebfaba0a88b4190a41027eb6daedfb",
+      "summary": "Canonical CandidateState identity repair is consumed by the active #456 integration branch after joined source-to-CAS-to-next-update-to-source proof; final acceptance remains on the parent candidate.",
+      "resume_trigger": "Parent #456 completes current-unified integration, affected proof and fresh exact-head review.",
+      "preserved_branch": "codex/bamf02-b-783-candidate-identity-20261103"
     }
   ]
 }
