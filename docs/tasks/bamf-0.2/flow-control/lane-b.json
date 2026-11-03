@@ -1,7 +1,7 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "deaa8b9dbd277993f884abeea7413f9cb799d945",
+  "observed_unified": "aa828eb5cb8822a5614aa3353864bf187f83444d",
   "updated_at": "2026-11-03T08:50:15.707219+00:00",
   "exception": null,
   "items": [
@@ -199,21 +199,23 @@
     },
     {
       "issue": 449,
-      "pr": 780,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "4126cdaecd92b2c515693540fb86fd09fde6338d",
-      "summary": "B05.1 depth proof ready in PR #780 after fresh pinned EGM PASS; depth18/18 and source producer16/16 zero skips. Human integration pending.",
+      "summary": "PR#780 is human-merged into reviewed unified; issue#449 is explicitly CLOSED COMPLETED after native readback.",
       "resume_trigger": null,
-      "preserved_branch": "codex/bamf02-b-449-depth-proof-20261103"
+      "preserved_branch": "codex/bamf02-b-449-depth-proof-20261103",
+      "merged_pr": 780
     },
     {
       "issue": 778,
-      "pr": 779,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "551f9d7f6172113b2c2698178c870cf61c7c35a0",
-      "summary": "Canonical test-import repair #778 is EGM-Passed and turned in through PR #779; file source-positive1/1, unchanged producer16/16, no real student mutation.",
+      "summary": "PR#779 is human-merged into reviewed unified; issue#778 is explicitly CLOSED COMPLETED after native readback.",
       "resume_trigger": null,
-      "preserved_branch": "codex/bamf02-b-778-test-imports-20261103"
+      "preserved_branch": "codex/bamf02-b-778-test-imports-20261103",
+      "merged_pr": 779
     },
     {
       "issue": 577,
@@ -223,6 +225,15 @@
       "summary": "B05.4 selector provenance is integrated through human-merged PR #762 and source replay; fresh owned-contract EGM PASS at4126cdae. Issue577 CLOSED; parent assembly/custody/learning remain open.",
       "resume_trigger": null,
       "merged_pr": 762
+    },
+    {
+      "issue": 736,
+      "pr": null,
+      "state": "WAITING",
+      "head_sha": "48315ee7bae3caa7d5ac279128c79217b9178d16",
+      "summary": "B06 source-positive proof paused at organic1029-line compiler structural encounter; canonical C01 already owns106-line wrapper candidate13b67a59. No B06 implementation mutation.",
+      "resume_trigger": "C01#347 canonical compiler structural repair is human-integrated through reviewed unified; resync Lane B once, then build a lawful source-owned normal-frame CLOSURE and public refinement/gradient witness.",
+      "preserved_branch": "codex/bamf02-b-736-refinement-proof-20261103"
     }
   ]
 }
