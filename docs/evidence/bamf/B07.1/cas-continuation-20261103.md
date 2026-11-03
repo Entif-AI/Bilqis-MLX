@@ -48,8 +48,37 @@ generation. The source/forged-history negatives remain in the same selection.
 
 ## Remaining gate
 
-The complete candidate still requires its other affected tests and fresh scoped
-merge-readiness review. Two motif-read files expose the known package-context
-test-runner defect; their file-entrypoint failures are not passing motif-read
-proof. IPR-0220 governs. No actual student, matching AdamW, teacher, champion,
+The complete candidate still requires fresh exact-head merge-readiness review.
+IPR-0220 governs. No actual student, matching AdamW, teacher, champion,
 checkpoint or human-run state was changed; no self-merge is authorized.
+
+## 2026-11-03 current-unified continuation
+
+Reviewed unified advanced to
+`9bf47289e9ed0a64d275b31c3a7de42c55a8b83e` after the #770 verifier and A08.3
+lifecycle integrations. The preserved #783 repair
+`17be8a3d5aebfaba0a88b4190a41027eb6daedfb` was therefore continued on a new
+isolated branch and merge-forwarded, without rebase, in synchronization commit
+`c4dffbf1acf543378ce673f35be23c05163eebf4`. Production code merged without
+conflict; only Lane-B flow bookkeeping required reconciliation to current live
+inventory.
+
+The exact joined pinned-source -> CAS save/load -> one disposable next update ->
+source-qualified continuation selection was rerun against the current-unified
+tree: **14/14 PASS, zero skips**. The broader #456 selection then ran the complete
+B07 motif key/preparation/transaction owners, retained-state custody, canonical
+motif-read package, B13 codec/continuation witness, released-schema source
+authority and public-formal type composition: **103/103 PASS, zero skips**.
+
+The prior two motif-read file-entrypoint failures were reproduced exactly as
+package-relative fixture-import errors under the canonical file runner. The two
+companion tests now use canonical absolute fixture imports, matching the already
+accepted runner contract. AST comparison with all imports removed is identical
+before/after for both files; no test body or production behavior changed. The
+motif-read package itself is now **11/11 PASS, zero skips** under the canonical
+runner.
+
+No source artifact was regenerated, no repository dependency changed, and no
+real learner, optimizer, teacher, champion, checkpoint or human-run state was
+mutated. Final acceptance remains the parent #456 exact-head quality/hosted gates
+and fresh pinned merge-readiness review after push/readback.
