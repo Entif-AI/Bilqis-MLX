@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "dfc0c7586c23b6477c08d4db486ade3deeb79fae",
-  "updated_at": "2026-11-03T07:50:57.363846Z",
+  "observed_unified": "338a3c5263772566502af70d731b95af1d91a81e",
+  "updated_at": "2026-11-03T07:54:00Z",
   "exception": null,
   "items": [
     {
@@ -67,11 +67,13 @@
     },
     {
       "issue": 641,
-      "pr": 767,
+      "pr": null,
       "state": "TURNED_IN",
-      "head_sha": "4099487b16c6a26cec1888d23310ede7792bb248",
-      "summary": "Fresh pinned EGM0B/0M/0N in both personas; current depth16/16 plus9verifier adversaries and historical/current identity receipts. Ready PR767 awaits hosted checks and human integration.",
-      "resume_trigger": null
+      "head_sha": "37efe5b00c285c38a0ef5d2c909385377cbd4ace",
+      "summary": "C10 structural preservation candidate merged through PR #767 and is consumed by reviewed unified.",
+      "resume_trigger": null,
+      "merged_pr": 767,
+      "preserved_branch": "codex/bamf02-c10-641-final-20261103"
     },
     {
       "issue": 766,
