@@ -257,10 +257,10 @@
     {
       "issue": 481,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "7984d7872d49b3987284692f5398da71f2a72605",
+      "state": "TURNED_IN",
+      "head_sha": "4dcfc7169738e721df0f1df259f2d9659d54cab4",
       "preserved_branch": "codex/bamf02-b-481-schema-proof-20261103",
-      "summary": "Reconcile existing unpatched B01 constructor and full B13 tensor serialization against the expanded normative ledger; source/custody parent gates stay separate.",
+      "summary": "B13.4 expanded unbound constructor/full-bundle schema witness: 215 parameters/860 arrays exact; 1 full CPU +13 adjacent pass, zero skips; same-round EGM0B/0M/0N. Full480/754/372 acceptance stays separate.",
       "resume_trigger": null
     }
   ]

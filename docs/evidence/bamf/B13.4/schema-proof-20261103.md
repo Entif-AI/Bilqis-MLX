@@ -52,3 +52,38 @@ The adjacent codec, boundary, sidecar and pre-CAS compatibility selection passes
 No actual student, own AdamW, teacher, champion, saved checkpoint or human-run
 state is changed. Human review owns integration. Parent acceptance remains open.
 Existing PM-2026-11-01-004/-005 custody/proof controls remain applicable.
+
+## Dependency and review receipts
+
+The usable #480 reader/cache-separation checkpoint is
+https://github.com/Entif-AI/Bilqis-MLX/issues/480#issuecomment-6586982500
+at its separate branch head `39bf54e820c6e9f6aef75345557a50f0d51cd7ef`.
+That head is **not integrated into this base**. Its full transition acceptance
+remains EGM-Failed with #754 open. It identifies the existing B13 reader interface;
+it is not substituted for current-code verification.
+
+The actual codec consumed here is the reviewed-unified version at
+`7984d7872d49b3987284692f5398da71f2a72605`, last changed by
+`bcffdcdf` (B07 continuation custody). The current constructor, writer, reader and
+adjacent 13-case selection are exercised directly by this #481 proof. No old
+#480 test result is relabeled as a current-code result.
+
+Fresh isolated GPT-6.1 Terra High Goldfish reviewed executable/test head
+`4dcfc7169738e721df0f1df259f2d9659d54cab4`, using pinned Google EGM
+`b3a35956759bf7f024af2ff061b2e0b44b438e4c`, both codebase-details and
+comprehension personas, and the implementation-readiness standard.
+Episode `B13.4-SCHEMA-20261103`, round 1 of 5. The initial prerequisite-receipt
+finding was contested against the leaf's exact usable-interface rule; the
+reviewer withdrew it after distinguishing scoped receipt from full #480
+acceptance. Final disposition: **0 Blockers, 0 Majors, 0 Nits**, with this explicit
+mechanical receipt binding. No second Goldfish round was spent.
+
+The reviewer inspected source and existing logs without rerunning tests. It
+reported one protocol deviation: writing BIOS reference material to a temporary
+file during bootstrap; no workspace edit or compilation occurred. This does not
+alter the review's findings or claim filesystem isolation.
+
+Structure, governance, docs, Factory architecture, semantic boundaries, release
+version and whitespace checks pass. Changed-code hygiene has zero findings;
+base-aware error control has zero new debt. Local historical ABI checks pass in
+advisory mode because no independent expected fingerprint is supplied.
