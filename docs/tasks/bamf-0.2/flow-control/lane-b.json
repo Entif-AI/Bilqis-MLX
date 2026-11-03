@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "2800946729e484875f7d1f57f0e6d85078936394",
-  "updated_at": "2026-11-02T18:05:00-05:00",
+  "updated_at": "2026-11-02T19:07:00-05:00",
   "exception": null,
   "items": [
     {
@@ -105,8 +105,8 @@
       "issue": 586,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "6caf1f7ac6c22f636ec217968c1e5517a60992b2",
-      "summary": "B11.1a consumed merged remediation #738 and is synchronizing once to current reviewed unified for final engineering verification and whole-candidate EGM readiness.",
+      "head_sha": "966d09a734b6c9d561aa6af240825bcd7012e044",
+      "summary": "B11.1a consumed merged remediation #738 plus completed #747/#748 receipt-layout and real-source proof repairs; whole-candidate engineering verification is in progress before the next fresh EGM.",
       "resume_trigger": null,
       "closed_pr": 640,
       "preserved_branch": "codex/b11-586-source-h0-20261030",
@@ -155,6 +155,22 @@
       "state": "TURNED_IN",
       "head_sha": "44305b1c685fcdd43ded307c8eeae8e4e2808fbf",
       "summary": "B11 selected-state chaining remediation is closed and human-merged into the #586 parent branch.",
+      "resume_trigger": null
+    },
+    {
+      "issue": 747,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "89682d8beca1bfec0e38b0c2a4d3a4d70e06bca1",
+      "summary": "Verified scoped #747 receipt shape/dtype remediation is closed and consumed into the #586 parent candidate.",
+      "resume_trigger": null
+    },
+    {
+      "issue": 748,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "89682d8beca1bfec0e38b0c2a4d3a4d70e06bca1",
+      "summary": "Verified scoped #748 real-source proof-fixture remediation is closed and consumed into the #586 parent candidate.",
       "resume_trigger": null
     }
   ]
