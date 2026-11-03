@@ -14,6 +14,7 @@ from pathlib import Path
 
 import numpy as np
 
+from bilqis_mlx.learning.atlas_acceptance import mint_acceptance_binding
 from bilqis_mlx.runtime.bamf_bundle import (
     load_bamf_generation, publish_bamf_generation,
 )
@@ -51,9 +52,14 @@ def main(argv) -> int:
             "optimizer_step": student.retained_state.optimizer_step,
         }
         successor_state = accepted_state(student.retained_state)
+        successor = candidate(successor_state, student.generation + 1,
+                              pointer["manifest_sha256"])
         published = publish_bamf_generation(
-            run, candidate(successor_state, student.generation + 1,
-                           pointer["manifest_sha256"]))
+            run, successor, acceptance=mint_acceptance_binding(
+                successor.retained_state, run_id=successor.run_id,
+                generation=successor.generation,
+                feature_sha256=successor.extents.factor_map_digest,
+                retention_reason="FIXTURE_RETENTION_ACCEPTED"))
     resumed["published"] = published
     resumed["successor_optimizer_step"] = successor_state.optimizer_step
     resumed["successor_digest"] = retained_digest(successor_state)

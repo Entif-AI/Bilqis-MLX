@@ -18,6 +18,7 @@ from unittest.mock import patch
 
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.learning.atlas_acceptance import mint_acceptance_binding
 from bilqis_mlx.runtime.bamf_bundle import (
     load_bamf_generation, publish_bamf_generation, save_bamf_bundle,
 )
@@ -48,7 +49,12 @@ class BamfColdResumeContinuationTests(unittest.TestCase):
 
     def publish(self, source):
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            return publish_bamf_generation(self.run, source)
+            return publish_bamf_generation(
+                self.run, source, acceptance=mint_acceptance_binding(
+                    source.retained_state, run_id=source.run_id,
+                    generation=source.generation,
+                    feature_sha256=source.extents.factor_map_digest,
+                    retention_reason="FIXTURE_RETENTION_ACCEPTED"))
 
     def probe(self, run=None):
         """Cold resume in a clean process and return its receipt."""

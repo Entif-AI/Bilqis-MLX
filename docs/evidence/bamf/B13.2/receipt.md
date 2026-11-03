@@ -39,7 +39,8 @@ The witness proves:
 ## Verification
 
 - `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/custody/bamf_bundle`
-  → 48 passed, 0 failed, 3 skipped.
+  → 60 passed, 0 failed, 3 skipped. The witness consumes the retention acceptance
+  binding that PR #804 requires for any published generation.
 - `python3 -m pytest bilqis_mlx/runtime/tests/custody/bamf_bundle/test_cold_resume_continuation.py`
   → 4 passed.
 
