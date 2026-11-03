@@ -126,3 +126,26 @@ This repairs the bounded #801 reproduction defect for parent consumption. It doe
 not clear #800 or claim aggregate C01 readiness. The parent must consume the
 recipe and rerun it against its next final source head before the existing final
 aggregate review; the C01 review episode/cap remains unchanged.
+
+## Parent aggregate replay — 3 November 2026
+
+After #800 and #801 were both consumed into the active #347 continuation, the same
+literal recipe was rerun from fresh archive source commit
+`1205b9904bab144679972dba1d652dfa51fed4f6` in a fresh disposable native venv.
+Observed Python 3.14.4 on arm64 macOS, MLX/MLX-Metal 0.32.4, NumPy 2.5.4,
+rdflib 7.6.0, cryptography 50.0.2 and pyshacl 0.40.1. CPU was selected before
+the test selection and remained selected afterward. All six native frame callers
+passed with zero failures, errors or skips, and 322 loaded Bilqis file/namespace
+origins resolved inside the exact archive.
+
+Parent replay receipts:
+
+- source archive SHA-256:
+  `1ed3131252bad408e118e5eb84eb07f5c2866043e669a7d63cb0da1bbba54169`;
+- package-freeze SHA-256:
+  `3e4cbd8577e029ca972a33c43e88fc205355ab8581517e46d34a147b29511d7e`;
+- native log SHA-256:
+  `d85f3e60e46e22f25b2774cf6df77058ec9c1df685b255adb816ac18e80944b7`.
+
+This parent replay remains a disposable native witness only. It performs no student,
+optimizer, teacher, checkpoint, graph or source-admission mutation.
