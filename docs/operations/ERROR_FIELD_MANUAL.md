@@ -1749,7 +1749,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **2029** raw raises across **231** files. The baseline gate permits only reduction.
+Current production scan: **2030** raw raises across **232** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -2090,6 +2090,7 @@ Current production scan: **2029** raw raises across **231** files. The baseline 
 | `COHORT_NOT_COMPARABLE` | 1 | `bilqis_mlx/_release_views/generated_assessment.py` |
 | `COHORT_PROVENANCE_REQUIRED` | 1 | `bilqis_mlx/_release_views/generated_assessment.py` |
 | `COHORT_TOTAL_MISMATCH` | 1 | `bilqis_mlx/_release_views/generated_assessment.py` |
+| `COLD_RESUME_CONTINUATION_REJECTED before=` | 1 | `bilqis_mlx/runtime/tests/custody/bamf_bundle/cold_resume_probe.py` |
 | `COMPOSED_EXAM_PREREQUISITE_GRADE_NOT_PASSED` | 1 | `bilqis_mlx/curriculum/__init__.py` |
 | `COMPOSED_EXAM_UNMASTERED_EARLIER_CONSTITUENT` | 1 | `bilqis_mlx/curriculum/__init__.py` |
 | `COMPOSITION_ANSWER_TYPE_DRIFT` | 1 | `bilqis_mlx/verification/expressions.py` |
