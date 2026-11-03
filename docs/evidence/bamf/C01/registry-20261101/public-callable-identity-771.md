@@ -19,7 +19,9 @@ The shared `_public_identity/module_identity.py` owner restores module metadata
 on the same function/class objects. It handles class/static methods, property
 accessors and wrapped generated methods. Both original defining module and the
 class-qualified name must match before a class member is changed. Inherited
-members are not traversed; foreign functions remain unchanged. The four public
+members are not traversed; functions from other defining modules remain unchanged.
+Wrapper traversal stays within each function's original defining module, restoring
+the public module identity those wrapped functions held before extraction. The four public
 facades import the helper through a private alias and retain their existing
 export lists. No original method body, signature, docstring, object, source guard,
 validation order or compiler packing seam changes.
@@ -61,7 +63,12 @@ these exact substitutions for the repaired source:
 
 1. Set `proof_commit=3174c36897ac0a67c630175692cf39cf58dcf4de`.
 2. Append `bilqis_mlx/semantics/_public_identity/tests` to the source test command;
-   require `TEST_TOTALS total=193 passed=193 failed=0 skipped=0 errors=0`.
+   replace the historical source grep command with:
+
+```sh
+grep -Fx 'TEST_TOTALS total=193 passed=193 failed=0 skipped=0 errors=0' \
+  "$proof_root/source-tests.log"
+```
 3. In the installed probe, immediately before the case-count assertion, add:
 
 ```python
@@ -69,10 +76,16 @@ suite.addTests(unittest.defaultTestLoader.loadTestsFromName(
     'bilqis_mlx.semantics._public_identity.tests.test_module_identity'))
 ```
 
-4. Change only that installed case-count assertion to
-   `assert suite.countTestCases() == 122, suite.countTestCases()` and require
-   `INSTALLED_TEST_TOTALS 122 0 0 0`. Preserve the one explicit vendor-only
-   exclusion, no-skip assertion and complete installed-module/namespace checks.
+4. Change the installed case-count assertion to
+   `assert suite.countTestCases() == 122, suite.countTestCases()` and replace the
+   historical installed total grep command with:
+
+```sh
+grep -Fx 'INSTALLED_TEST_TOTALS 122 0 0 0' "$proof_root/installed-tests.log"
+```
+
+Preserve the separate `INSTALLED_WHEEL_MODULE_ORIGINS_OK` grep, the one explicit
+vendor-only exclusion, no-skip assertion and complete module/namespace checks.
 
 The extra six cases are the new owning metadata suite. The 70 repository-only
 script cases and one vendor-only fixture remain covered by the full source suite.
