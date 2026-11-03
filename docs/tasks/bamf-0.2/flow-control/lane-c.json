@@ -2,15 +2,15 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "7984d7872d49b3987284692f5398da71f2a72605",
-  "updated_at": "2026-11-03T16:55:11Z",
+  "updated_at": "2026-11-03T16:56:51Z",
   "exception": null,
   "items": [
     {
       "issue": 347,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "5f9d484e94a942f5421281187764efbdefa8ee24",
-      "summary": "C01 aggregate continuation consumes current reviewed unified plus completed remediations #800 and #801; final parent verification, hosted checks and exact-head EGM are in progress.",
+      "head_sha": "102b8d261259e422fc573430229dc63b5357e8a0",
+      "summary": "C01 aggregate consumes reviewed unified 7984d787 plus completed #800/#801 repairs. Evidence-complete candidate 102b8d26 is undergoing final flow/quality, hosted and exact-head review; bookkeeping commit follows this recorded candidate.",
       "resume_trigger": null,
       "closed_pr": 694,
       "preserved_branch": "codex/bamf02-c-347-integration-20261103",
