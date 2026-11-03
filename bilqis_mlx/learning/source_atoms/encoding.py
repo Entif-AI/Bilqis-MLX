@@ -5,6 +5,7 @@ from ..frame_encoder import (
     CompiledEncoderInput, CompiledEmbeddingVectors, MemberEmbedding, encode_frames,
 )
 from .embedding import source_atom_vectors
+from .inputs import SourceAtomRow
 
 
 def encode_source_compiled_with_handoffs(compiled, parameters, sources, feature_schema):
@@ -19,6 +20,11 @@ def encode_source_compiled_with_handoffs(compiled, parameters, sources, feature_
             or len(sources) != len(compiled.compiled.rows)):
         invalid("BAMF_SOURCE_ATOM_COMPILED_INPUT_INVALID")
     compiled.__post_init__()
+    if not sources or any(
+            type(source) is not SourceAtomRow
+            or source.selection != sources[0].selection
+            for source in sources):
+        invalid("BAMF_SOURCE_ATOM_SELECTION_MISMATCH")
     if any(compiled.atomic_handles):
         invalid("BAMF_SOURCE_ATOM_ATOMIC_FRAME_AUTHORITY_UNAVAILABLE")
     atom_rows, member_rows, handoffs = [], [], []
@@ -33,13 +39,15 @@ def encode_source_compiled_with_handoffs(compiled, parameters, sources, feature_
         if requests:
             members = embed_atoms(
                 parameters, ConceptBatch((requests,), banks, compiled.extents),
-                compiled.features)[0]
+                compiled.features, atlas_selection=source.selection)[0]
             member_rows.append(tuple(MemberEmbedding(request, members[index])
                                      for index, request in enumerate(requests)))
         else:
             member_rows.append(())
     generated = CompiledEmbeddingVectors(tuple(atom_rows), tuple(member_rows))
-    return encode_frames(compiled, generated, parameters), tuple(handoffs)
+    return encode_frames(
+        compiled, generated, parameters,
+        atlas_selection=sources[0].selection), tuple(handoffs)
 
 
 def encode_source_compiled(compiled, parameters, sources, feature_schema):

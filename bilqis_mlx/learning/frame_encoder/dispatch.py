@@ -6,6 +6,7 @@ from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.runtime.model_topology_v2 import expected_bamf_shapes
 from bilqis_mlx.runtime.model_topology_v2 import validate_bamf_parameters
+from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
 from typing import Mapping
 import mlx.core as mx
 from .contracts import (
@@ -35,12 +36,16 @@ def frame_encoder_parameter_view(parameters: Mapping[str, mx.array], *, spec: Mo
 
 def encode_frames(compiled: FrameEncoderInput | AtomicEncoderInput | CompiledEncoderInput,
                   atom_vectors: tuple[tuple[mx.array, ...], ...] | CompiledEmbeddingVectors,
-                  parameters: Mapping[str, mx.array]) -> FrameEncoding:
+                  parameters: Mapping[str, mx.array], *,
+                  atlas_selection: AtlasArtifactSelection | None = None) -> FrameEncoding:
     """Encode complete groups or preserve approved atomic vectors without detaching."""
     if not isinstance(parameters, Mapping):
         _invalid()
     if type(compiled) is CompiledEncoderInput:
-        return _encode_compiled(compiled, atom_vectors, parameters)
+        return _encode_compiled(
+            compiled, atom_vectors, parameters, atlas_selection=atlas_selection)
+    if atlas_selection is not None:
+        _invalid()
     if type(compiled) not in (FrameEncoderInput, AtomicEncoderInput):
         _invalid()
     compiled.__post_init__()

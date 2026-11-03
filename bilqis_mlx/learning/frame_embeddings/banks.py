@@ -7,6 +7,7 @@ import mlx.core as mx
 from lib.ithkuil.src.skos.publication import json_bytes
 from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, ModelTopologySpecV2, SHA256_HEX_LENGTH
 from bilqis_mlx.semantics.atlas_features import AtlasFeatures
+from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
 from .common import ACTIVE_BANK_SCHEMA, BANK_ROWS, EMBEDDING_INPUT_SCHEMA, INDEXED_LOGITS_SCHEMA, UINT32_MAX, WIDTH, _invalid
 from .requests import FeatureRequest
 from .composition import compose_factor_features
@@ -65,7 +66,8 @@ def _validate_banks(banks):
     if banks[0].active_semantic_digest != digest:
         _invalid()
 
-def embed_atoms(parameters: Mapping[str, mx.array], batch: ConceptBatch, features: AtlasFeatures) -> mx.array:
+def embed_atoms(parameters: Mapping[str, mx.array], batch: ConceptBatch, features: AtlasFeatures, *,
+                atlas_selection: AtlasArtifactSelection | None = None) -> mx.array:
     """Gather active identities and add the actual released factor composition."""
     if (type(batch) is not ConceptBatch or type(batch.extents) is not GenerationExtents or
             type(features) is not AtlasFeatures or not isinstance(parameters, Mapping)):
@@ -76,7 +78,9 @@ def embed_atoms(parameters: Mapping[str, mx.array], batch: ConceptBatch, feature
             batch.banks[0].active_semantic_digest != batch.extents.active_semantic_digest or
             any(bank.weights is not parameters.get(f"identity.bank.{bank.bank_index}") for bank in batch.banks)):
         _invalid()
-    factors = compose_factor_features(parameters, batch.requests, features, extents=batch.extents)
+    factors = compose_factor_features(
+        parameters, batch.requests, features, extents=batch.extents,
+        atlas_selection=atlas_selection)
     identities = []
     active = tuple(frozenset(bank.active_rows) for bank in batch.banks)
     for row in batch.requests:

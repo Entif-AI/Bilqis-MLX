@@ -8,7 +8,8 @@ from .contracts import _invalid
 from .kernel import _encode_one
 
 
-def encode_group(group, supplied, cursor, closure_outputs, compiled, parameters):
+def encode_group(group, supplied, cursor, closure_outputs, compiled, parameters, *,
+                 atlas_selection=None):
     selected = []
     for request in group:
         if type(request) is FeatureRequest:
@@ -31,6 +32,6 @@ def encode_group(group, supplied, cursor, closure_outputs, compiled, parameters)
     matrix = mx.stack(selected)
     factor = frame_factor_terms(
         parameters, group, compiled.features,
-        extents=compiled.extents)
+        extents=compiled.extents, atlas_selection=atlas_selection)
     seed = _encode_one(matrix, factor, parameters)
     return seed, matrix, factor, cursor

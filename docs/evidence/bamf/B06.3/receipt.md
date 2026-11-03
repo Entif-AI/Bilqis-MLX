@@ -10,7 +10,7 @@ the durable student.
 
 Consumed reviewed unified and Lane B baseline:
 
-`77a05ef00337e8a3773d070adad4c8874c9c1034`
+`48315ee7bae3caa7d5ac279128c79217b9178d16`
 
 The final feature SHA is recorded after commit and remote verification; this
 document does not use a working-tree state as a checkpoint identity.
@@ -38,6 +38,18 @@ A05/A13 source identity and rights, derives B01/B02 vectors internally from the
 actual parameter tree, then runs B03. The resulting live `FrameEncoding` remains
 inside the production call rather than becoming a caller-mintable authority
 credential.
+
+The 2026-11-03 current-unified reconciliation exposed one more authority drop in
+that source path: the pinned `AtlasArtifactSelection` carried by `SourceAtomRow`
+was consumed while revalidating raw atoms, but was not forwarded when B02/B03
+rederived member and frame factors. Source-qualified formal types therefore
+failed closed inside `_pinned_source_types` even for a genuine pinned A01 source.
+The source encoder now transports that already-validated selection through
+`embed_atoms` and the compiled `encode_frames` path into `frame_factor_terms`.
+Ordinary B06 callers still cannot provide an Atlas selection, vector set, or
+`FrameEncoding`; the authority originates only from the source row that the
+producer independently revalidates. A batched source encoding must also use one
+identical pinned selection across every row.
 
 This removes the two self-ratification forms reproduced during remediation rather
 than attempting to sign them: a caller cannot alter B02 vectors and launder them
@@ -79,17 +91,18 @@ The first focused B06.3 test run failed to import `refine_selected` from
 `bilqis_mlx.runtime.atlas_refinement`, proving the production assembly boundary
 did not exist before this change.
 
-Current exact-tree tests:
+Current exact-tree tests on current unified:
 
 ```sh
-PYTHONPATH=/tmp/bamf-b14-testdeps:. python3 -B scripts/run_tests.py \
+BILQIS_A01_ATLAS_BUNDLE=/private/tmp/bamf-b06-a01-artifact/\
+5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7 \
+PYTHONPATH=. /private/tmp/bamf769-verify-venv/bin/python -B \
+  scripts/run_tests.py \
   bilqis_mlx/runtime/tests/model/refinement \
   bilqis_mlx/runtime/tests/model/test_atlas_refinement.py \
-  bilqis_mlx/runtime/tests/model/test_refinement_policy.py
-
-PYTHONPATH=/tmp/bamf-b14-testdeps:. python3 -B scripts/run_tests.py \
-  bilqis_mlx/learning/tests/frames \
-  bilqis_mlx/learning/tests/test_frame_encoder.py
+  bilqis_mlx/runtime/tests/model/test_refinement_policy.py \
+  bilqis_mlx/learning/source_atoms/tests/test_encoding.py \
+  bilqis_mlx/learning/frame_embeddings/tests/test_source_bound_literal_factor.py
 
 python3 -B scripts/check_module_size.py
 python3 -B scripts/quality/check_governance_integrity.py \
@@ -101,17 +114,35 @@ python3 -B scripts/error_control_plane.py --check \
 git diff --check
 ```
 
+Before that run, `scripts/bamf/rebuild_atlas_artifact.py` reproduced the registered
+A01 artifact from the retained source bundle and required the exact recorded
+identities: artifact bundle
+`5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7`,
+release `58e0c281b5da18b9b7e6c803709b29eeeb0a88f16b06f48de692808e2fb88306`,
+and source bundle
+`f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec`.
+This is a disposable source witness, not neural admission.
+
 Results:
 
-- refinement execution, numerical kernel and B06.2 policy: **34/34 PASS**, zero skips;
-- B02/B03/source and frame proof: **30 PASS**, **5 explicit skips** because the
-  real pinned A01 artifact is not mounted locally;
+- B06 refinement, policy, source-owned B02/B03 encoding, and factor composition:
+  **52/52 PASS**, **0 skips**;
+- the new source-positive cases execute public `refine_selected` through the
+  genuine pinned A01 source path and prove gradients reach source-owned identity/
+  feature coordinates and B06 refinement parameters;
+- a wider source/frame run executed **41 behavioral tests successfully** before
+  four pre-existing package-relative-import loader errors in source-atom test
+  modules; issue #778 / PR #779 independently owns that canonical-runner defect,
+  so this branch does not duplicate its repair;
 - development structure: **0 violations**;
 - governance integrity: **0 violations**;
 - factory architecture: **PASS**;
 - docs: **PASS**;
 - error control: **new debt 0**;
-- diff check: **clean**.
+- code-smell changed scope: **0 findings**;
+- flow-control policy tests: **13/13 PASS**;
+- live flow-control is reconciled separately against the current open PR inventory;
+- `git diff --check`: **PASS**.
 
 The B06.3-focused adversaries prove exact B03 structural and atomic numerical
 fixture behavior, prediction-boundary mismatch rejection, non-aliasing batch-row
@@ -119,8 +150,9 @@ result keys, absence of caller vector/encoding authority at the public API and
 fail-closed invalid source inputs, zero-pass empty-frame identity, positive-pass empty-frame
 rejection, immutable backbone/seed/member inputs, prediction-local backbone
 gradients, B03 encoder-gradient continuity, and independence from unrelated
-backbone positions. Real source-positive B02/B03 tests remain pinned-artifact
-gated and are not replaced with mocked authority when that artifact is absent.
+backbone positions. The source-positive test is explicitly pinned-artifact gated;
+when the witness is present it runs with zero skips, and it is never replaced with
+mocked source authority.
 
 ## Remaining authority boundaries
 

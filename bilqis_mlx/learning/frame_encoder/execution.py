@@ -17,7 +17,7 @@ from .kernel import (
 )
 
 
-def _encode_compiled(compiled, vectors, parameters):
+def _encode_compiled(compiled, vectors, parameters, *, atlas_selection=None):
     compiled.__post_init__()
     _validate_encoder_parameters(parameters, compiled.extents)
     if (type(vectors) is not CompiledEmbeddingVectors or
@@ -56,7 +56,8 @@ def _encode_compiled(compiled, vectors, parameters):
                 row_factors.append(None)
             elif group:
                 seed, matrix, factor, cursor = encode_group(
-                    group, supplied, cursor, closure_outputs, compiled, parameters)
+                    group, supplied, cursor, closure_outputs, compiled, parameters,
+                    atlas_selection=atlas_selection)
                 row_seeds.append(seed)
                 closure_outputs[position.frame_handle] = seed
                 row_factors.append(factor)
