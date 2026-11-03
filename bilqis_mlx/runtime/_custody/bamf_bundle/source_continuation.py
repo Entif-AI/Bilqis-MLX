@@ -3,10 +3,19 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
 from bilqis_mlx.learning.atlas_engram_source import (
     _prepare_source_qualified_motifs_with_parent,
 )
 from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
+from bilqis_mlx.runtime.bamf_bundle.records import invalid
+
+
+def _required_manifest_sha256(value: object) -> str:
+    if (type(value) is not str or len(value) != SHA256_HEX_LENGTH
+            or any(character not in "0123456789abcdef" for character in value)):
+        invalid()
+    return value
 
 
 def continue_source_qualified_motifs_from_bundle(
@@ -15,6 +24,7 @@ def continue_source_qualified_motifs_from_bundle(
         source_frontier, policy, source_seed: int, source_each: int, budget,
         source_profile_parameters=None, course=None):
     """Continue B07 planning only from one exact custody-validated bundle."""
+    expected_manifest_sha256 = _required_manifest_sha256(expected_manifest_sha256)
     student = load_bamf_bundle(
         Path(retained_bundle_root),
         expected_manifest_sha256=expected_manifest_sha256,

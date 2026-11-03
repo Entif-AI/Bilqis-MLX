@@ -111,9 +111,17 @@ qualification from that exact second bundle. This proves custody-bound continuit
 it does **not** promote B07.1 into B07.2/B07.3 accepted-generation publication
 authority.
 
-Focused repaired proof is **14/14 PASS, zero skips** for custody, retained-state and
-split-entry regressions; the real-source custody/source selection is **13/13 PASS,
-zero skips**. The broadened affected selection is **119/119 PASS, zero skips** across
+The first repaired exact-head review then found one remaining custody bypass: the
+continuation adapter annotated `expected_manifest_sha256` as a string but did not
+runtime-enforce it, while the generic bundle reader permits `None` for local
+self-validation. The adapter now rejects absent, malformed, uppercase or non-hex
+manifest identities before bundle loading. The continuation path therefore requires
+an externally supplied exact lowercase SHA-256 and cannot ask a self-consistent local
+bundle to nominate its own authority.
+
+Focused repaired proof is **14/14 PASS, zero skips** for the real-source custody,
+source-authority and codec selection, including the new missing/malformed manifest
+digest adversary. The broadened affected selection is **120/120 PASS, zero skips** across
 B07 key/preparation/transaction owners, retained candidate state, motif reads, B13
 codec/publication/CAS custody, real public-formal source authority and released-frame
 schema authority. Structure, governance, Factory architecture, docs, changed-scope
