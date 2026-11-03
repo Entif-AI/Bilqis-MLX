@@ -84,7 +84,7 @@ class DataPlaneFileObjectMixin:
         return shard / (digest + ".safetensors")
 
     def require_file_object(self, digest: str) -> Path:
-        """Return one verified immutable file object or fail closed."""
+        """Return a digest-verified path; ownership is established by adoption."""
         target = self._file_object_path(digest, create=False)
         if target.is_symlink() or not target.is_file():
             raise ValueError(_error(DataPlaneError.OBJECT_MISSING, digest))

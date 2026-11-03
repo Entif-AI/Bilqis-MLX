@@ -10,14 +10,31 @@ from unittest.mock import patch
 
 import numpy as np
 
+import bilqis_mlx.runtime.bamf_bundle.codec as codec
 import bilqis_mlx.runtime.bamf_bundle.publication as publication
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
+from bilqis_mlx.data_plane import DataPlane, data_plane
 from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation
 from bilqis_mlx.runtime.tests.custody.data_plane.base import DataPlaneCase
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import candidate, parent_state, shape_patch
 
 PRE_CAS = "dfc0c7586c23b6477c08d4db486ade3deeb79fae"
 WRITER_SHA256 = "01e66fcbe15802615c3557a2a4b99c0fb75a37d64fe3d61ee30bf56d1301fcdc"
+LEGACY_CAS = "deaa8b9dbd277993f884abeea7413f9cb799d945"
+
+
+def historical_module(root, revision, relative, name, expected_digest):
+    source = subprocess.run(["git", "show", revision + ":" + relative],
+                            cwd=Path(__file__).resolve().parents[5],
+                            check=True, capture_output=True).stdout
+    if hashlib.sha256(source).hexdigest() != expected_digest:
+        raise AssertionError("historical writer source drift")
+    path = root / (revision + Path(relative).name)
+    path.write_bytes(source)
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def numerical_observation(student):
@@ -34,6 +51,58 @@ def numerical_observation(student):
 
 
 class PreCasCompatibilityTests(DataPlaneCase):
+    def test_legacy_published_cas_cold_read_detaches_surviving_descriptor(self):
+        writer = historical_module(
+            self.root, LEGACY_CAS, "bilqis_mlx/runtime/_custody/bamf_bundle/codec.py",
+            "bilqis_mlx.runtime.bamf_bundle.legacy_cas_fixture",
+            "d92258e08b398a839ac23f73491abc36c11ee29795021da1e8aba39e040f398b")
+        adopter = historical_module(
+            self.root, LEGACY_CAS, "bilqis_mlx/_data_plane/file_objects.py",
+            "bilqis_mlx._data_plane.legacy_cas_fixture",
+            "bd0ac8d7c8488af69e92a837530c129f9d8df7ee9a525de4627f865c8cb218b1")
+        run, descriptors = self.root / "legacy-cas-run", []
+        source = candidate(parent_state())
+        expected = numerical_observation(source)
+        save = mlx_checkpoint.save_bamf_state_payload
+
+        def retained_descriptor(path, *args, **kwargs):
+            record = save(path, *args, **kwargs)
+            descriptors.append(Path(path).open("r+b"))
+            return record
+
+        try:
+            with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
+                    patch.object(publication, "save_bamf_bundle", writer.save_bamf_bundle), \
+                    patch.object(publication, "load_bamf_bundle", writer.load_bamf_bundle), \
+                    patch.object(DataPlane, "adopt_file_object", adopter.DataPlaneFileObjectMixin.adopt_file_object), \
+                    patch.object(mlx_checkpoint, "save_bamf_state_payload", side_effect=retained_descriptor):
+                pointer = publication.publish_bamf_generation(run, source)
+            bundle = run / pointer["bundle"]
+            before = {path.name: path.read_bytes() for path in bundle.iterdir()}
+            digest = json.loads(before["manifest.json"])["tensors"]["object_sha256"]
+            plane = data_plane()
+            target = plane.require_file_object(digest)
+            original_inode = target.stat().st_ino
+            self.assertFalse(plane.owns_file_object(digest))
+            with shape_patch():
+                with patch.object(codec, "assert_headroom", side_effect=RuntimeError("reserve")):
+                    with self.assertRaisesRegex(RuntimeError, "reserve"):
+                        load_bamf_generation(run / "bamf-state.json")
+                self.assertEqual(target.stat().st_ino, original_inode)
+                self.assertFalse(plane.owns_file_object(digest))
+                loaded = load_bamf_generation(run / "bamf-state.json")
+                self.assertTrue(plane.owns_file_object(digest))
+                self.assertNotEqual(target.stat().st_ino, original_inode)
+                descriptors[0].seek(0)
+                descriptors[0].write(b"old caller mutation")
+                descriptors[0].flush()
+                self.assertEqual(numerical_observation(loaded), expected)
+                self.assertEqual(numerical_observation(load_bamf_generation(run / "bamf-state.json")), expected)
+            self.assertEqual({path.name: path.read_bytes() for path in bundle.iterdir()}, before)
+        finally:
+            for descriptor in descriptors:
+                descriptor.close()
+
     def test_pinned_old_writer_bundle_cold_loads_without_rewriting(self):
         repository = Path(__file__).resolve().parents[5]
         source = subprocess.run(

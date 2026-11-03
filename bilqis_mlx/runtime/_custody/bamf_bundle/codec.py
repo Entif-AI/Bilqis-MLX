@@ -147,7 +147,12 @@ def _tensor_read_path(root: Path, binding: dict) -> tuple[Path, dict]:
     if "object_sha256" not in binding:
         return root / binding["filename"], binding
     try:
-        path = data_plane().require_file_object(binding["object_sha256"])
+        plane = data_plane()
+        digest = binding["object_sha256"]
+        path = plane.require_file_object(digest)
+        if not plane.owns_file_object(digest):
+            assert_headroom(path, required_bytes=path.stat().st_size)
+            path = plane.adopt_file_object(path, digest)
     except ValueError:
         invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
     return path, {key: value for key, value in binding.items()

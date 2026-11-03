@@ -33,7 +33,13 @@ The B13 codec serializes its numerical payload through the existing checkpoint
 owner, checks the CAS filesystem's configured disk reserve before an additional
 copy, adopts the payload and removes its staging copy. New tensor bindings carry
 `object_sha256`; cold read resolves and deep-verifies that object before MLX
-construction. Existing six-field local-file v2 bindings remain readable. No old
+construction. If an old published CAS object lacks ownership, the numerical read
+boundary checks the default100GiB reserve and adopts an owned copy before opening
+it for MLX. Read-only custody validation continues to verify bytes without
+performing this migration. A pinned prior CAS writer/adopter fixture retains a
+writable descriptor across publication and proves current cold read detaches it,
+keeps all numerical/optimizer identities and old bundle bytes, and refuses the
+copy when headroom is unavailable. Existing six-field local-file v2 bindings remain readable. No old
 bundle or schema is rewritten. A positive compatibility fixture executes the exact
 pre-CAS writer from the pinned unified Git object above (source SHA-256
 `01e66fcbe15802615c3557a2a4b99c0fb75a37d64fe3d61ee30bf56d1301fcdc`).
@@ -62,7 +68,7 @@ python3 -B -m unittest \
   bilqis_mlx.runtime.tests.custody.data_plane.test_events
 ```
 
-Expected: 16 targeted tests and 37 existing tests pass without skips. Controls
+Expected: 17 targeted tests and 37 existing tests pass without skips. Controls
 cover unchanged-object reuse, changed-object separation, corruption rejection,
 pointer-crash/retry reuse, caller-alias mutation, competing installation,
 independent-process convergence and directory fsync calls. A three-generation
