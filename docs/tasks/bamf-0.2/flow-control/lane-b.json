@@ -1,7 +1,7 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "deaa8b9dbd277993f884abeea7413f9cb799d945",
+  "observed_unified": "48315ee7bae3caa7d5ac279128c79217b9178d16",
   "updated_at": "2026-11-03T08:50:15.707219+00:00",
   "exception": null,
   "items": [
@@ -196,6 +196,15 @@
       "resume_trigger": null,
       "merged_pr": 773,
       "preserved_branch": "codex/769-hardlink-proof-20261103"
+    },
+    {
+      "issue": 449,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "48315ee7bae3caa7d5ac279128c79217b9178d16",
+      "summary": "Consume verified #756 paired future-group proof after accepted #586 producer integration; verify #449 against current B05/B11.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b-449-depth-proof-20261103"
     }
   ]
 }
