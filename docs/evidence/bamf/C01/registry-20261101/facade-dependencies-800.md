@@ -82,3 +82,57 @@ census handles them and passes all three census tests, zero skips. The reviewer
 read the bounded two-file correction and cleared that specific finding without
 another whole-candidate review. This is not arbitrary Python metaprogramming
 coverage; the production ownership rule is explicit facade attribute lookup.
+
+## Final exact-source packaging and native proof
+
+Tested source: `02115a8060319bf8843abe9127307358fc10f8be`.
+The preceding checkout selection passed 208/208; a fresh archive of this final
+source passed **208/208**, with zero failures/errors/skips. A fresh build venv,
+wheel and isolated installed target passed **131/131**, with zero
+failures/errors/skips and every Bilqis file/namespace origin under that target.
+The one existing vendor-only source fixture remains explicitly excluded from the
+installed selection and is included in the 208-case archive selection.
+
+Observed wheel SHA256:
+`ef55008ffbe091d294450140470cb7be1f0c02b467457c386fdca11a791f04a9`.
+
+The complete #801 native block was executed again in a fresh pinned native venv
+and fresh Git archive, changing only `proof_commit` to this exact source.
+It passed **6/6** on CPU, zero skips, in 0.552 seconds. Command, Python 3.14.3,
+MLX/MLX-Metal 0.32.4, other package pins, before/after device and 321 archive-origin
+receipts are retained together. No persistent learner/optimizer is opened.
+
+For archive/wheel reproduction, follow the complete
+[installed recipe](installed-wheel-probe.md), substituting this source commit.
+Append `bilqis_mlx/semantics/_public_identity/tests` and
+`bilqis_mlx/semantics/tests/public_identity` to its source selection. Add
+`public_identity` to the installed probe's semantic test-package tuple and add
+the existing six callable-identity cases as specified by
+[the identity recipe](public-callable-identity-771.md). Keep the single vendor
+exclusion, no-skip assertion and every module/namespace origin check. The correct
+source and installed success predicates for this source are:
+
+```sh
+grep -Fx 'TEST_TOTALS total=208 passed=208 failed=0 skipped=0 errors=0' \
+  "$proof_root/source-tests.log"
+grep -Fx 'INSTALLED_TEST_TOTALS 131 0 0 0' "$proof_root/installed-tests.log"
+grep -Fx 'INSTALLED_WHEEL_MODULE_ORIGINS_OK' "$proof_root/installed-tests.log"
+```
+
+Validate these exact declared totals with the existing mechanical recipe owner:
+
+```console
+python3 -B docs/evidence/bamf/C01/registry-20261101/verify_repaired_recipe.py "$proof_root" \
+  --document docs/evidence/bamf/C01/registry-20261101/facade-dependencies-800.md \
+  --source-total 208 --installed-total 131
+```
+
+The contract verifier passes its 214 indexed owner/child identity/fingerprint
+checks. Registry integrity remains valid with 171 children; the same eight
+normalization holds and empty executable order remain. The workstack command
+therefore intentionally exits 1 and is not represented as an executable plan.
+Structure/governance/architecture/semantic boundaries/docs/whitespace pass;
+base-aware error control has zero new debt, and changed-code hygiene has zero
+findings. Historical ABI enforcement remains advisory locally without an
+independent expected fingerprint. Source bundles are supplied read-only, not
+regenerated or distributed.
