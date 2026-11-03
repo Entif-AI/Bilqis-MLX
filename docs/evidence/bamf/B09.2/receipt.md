@@ -46,13 +46,25 @@ accepted candidate. Rejection preserves the exact parent ages.
 
 ## Dependency boundary
 
-This candidate deliberately accepts detached typed participation evidence only
-as a fixture-level software contract. Final production turn-in must bind those
-inputs to the actual accepted B05/B08/B11 execution/read receipts. B08.1/#460 is
-currently blocked on the separately decomposed A06/A13/B02 type-authority issue
-#691, so this receipt does not claim production provenance or final B09
-integration. No synthetic motif read, group plan, or caller record is promoted
-into retained authority.
+The participation inputs now come from their owners on the production path.
+`runtime/_custody/bamf_bundle/admission.py` derives the group eligibility from
+the B01 parameter census owner and the retained policy owner, the admitted rows
+from the published custody, the executed parameter names from the same census,
+and the topology and extents from the accepted parent. The production step API
+accepts no caller-authored participation facts, so no caller can claim a
+parameter executed, substitute identity rows or admission state, or reclassify a
+SLOW parameter. The B08 motif read results remain owner records, and the
+binder uses only the participating slots those records report.
+
+The owner also seals the provenance against replay: it binds the run,
+generation, parent manifest, parent candidate identity, parent optimizer step
+and topology digest, and B12.2 refuses provenance issued for another candidate,
+step, generation or topology.
+
+B08.1/#460 remains blocked on the separately decomposed A06/A13/B02 type-authority
+issue #691, so this receipt does not claim the final B09 integration. No
+synthetic motif read, group plan, or caller record is promoted into retained
+authority.
 
 ## Verification
 

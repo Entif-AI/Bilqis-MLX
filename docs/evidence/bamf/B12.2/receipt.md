@@ -2,9 +2,10 @@
 
 Issue: #710 (remediation of #475 / B12.2)
 Lane: B
-Branch: `codex/remediation-710-execution-provenance-20261103`
-Base: `codex/remediation-711-participation-20261103` (stacked on the #711 B09.2 owner)
-Consumed unified head: `05e31a576e3432e4238c9b4477a70d70ec4fc487`
+Branch: `codex/remediation-egm-708-711-integration-20261103`
+Base: `codex/bamf-unified-base-20261028`
+Consumed unified head: `e9226be2f6a41f47109ca02a1103a363e64909a7`
+Final candidate head: `537f4c62`
 
 ## What the previous owner allowed
 

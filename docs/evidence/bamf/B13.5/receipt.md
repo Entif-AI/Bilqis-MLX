@@ -2,8 +2,9 @@
 
 Issue: #708 (remediation of #697 / B13.5)
 Lane: B
-Branch: `codex/remediation-708-feature-authority-20261103`
-Consumed unified head: `05e31a576e3432e4238c9b4477a70d70ec4fc487`
+Branch: `codex/remediation-egm-708-711-integration-20261103`
+Consumed unified head: `e9226be2f6a41f47109ca02a1103a363e64909a7`
+Final candidate head: `537f4c62`
 
 ## The defect
 
