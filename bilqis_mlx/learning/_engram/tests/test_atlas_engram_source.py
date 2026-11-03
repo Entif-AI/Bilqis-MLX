@@ -13,7 +13,7 @@ from bilqis_mlx.learning.atlas_engram import MotifBudget
 from bilqis_mlx.learning.atlas_engram_source import (
     ApprovedMotifCandidate, prepare_source_qualified_motifs,
 )
-from bilqis_mlx.learning._retention.atlas_candidate import (
+from bilqis_mlx.learning.atlas_candidate import (
     CandidateState, _issue_retained_state, begin_candidate,
 )
 from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy

@@ -225,6 +225,15 @@
       "summary": "B05.4 selector provenance is integrated through human-merged PR #762 and source replay; fresh owned-contract EGM PASS at4126cdae. Issue577 CLOSED; parent assembly/custody/learning remain open.",
       "resume_trigger": null,
       "merged_pr": 762
+    },
+    {
+      "issue": 783,
+      "pr": null,
+      "state": "WAITING",
+      "head_sha": "82806ab55b5eef7afbc09ad6c22f8f61c399a427",
+      "summary": "Canonical CandidateState import identity repair verified by joined source\u2192CAS\u2192next-update\u2192source proof14/14 zero skips; PM-2026-11-03-003. Await parent456 consumption and remaining runner repair before aggregate EGM.",
+      "resume_trigger": "Parent456 consumes this exact source-import repair; canonical runner file-context repair clears the remaining two motif-read import failures before final whole-candidate review.",
+      "preserved_branch": "codex/bamf02-b-783-candidate-identity-20261103"
     }
   ]
 }

@@ -30,7 +30,7 @@ from .atlas_engram_transaction import (
     CandidateMotifSnapshot, MotifAllocationSnapshot,
     _prepare_candidate_motif_snapshot,
 )
-from bilqis_mlx.learning._retention.atlas_candidate import CandidateState
+from bilqis_mlx.learning.atlas_candidate import CandidateState
 
 APPROVED_MOTIF_SCHEMA = "bilqis.motif-approved-candidate/v1"
 _BOOLEAN_SOURCE_ADAPTERS = (
