@@ -41,13 +41,19 @@ python3 -B -m unittest \
   bilqis_mlx.runtime.tests.custody.data_plane.test_events
 ```
 
-Expected: 8 targeted tests and 35 existing tests pass without skips. Controls
+Expected: 9 targeted tests and 37 existing tests pass without skips. Controls
 cover unchanged-object reuse, changed-object separation, corruption rejection,
 pointer-crash/retry reuse, caller-alias mutation, competing installation,
-independent-process convergence and directory fsync calls. The three ownership,
+independent-process convergence and directory fsync calls. A three-generation
+published sequence covers data-only active-set extension with identical numerical
+bytes, then a retained numerical update with distinct bytes. It checks exact
+parent-bundle bytes, cold readback and generation-bound outbox delivery. The three ownership,
 race and ancestry tests failed before the additional repair. Test fixtures use
 small numerical shapes and patch headroom; production reserve remains 100 GiB.
-Power-loss durability is supported by ordering tests, not a physical power-cut run.
+Publication intercepts the pointer and verifies fsync of the actual persisted CAS
+inode and its directory ancestry, including object reuse. Negative controls remove
+CAS file or directory fsync and prove the pointer check fails before installation.
+Power-loss durability is supported by these ordering tests, not a physical power-cut run.
 
 Incident PM-2026-11-03-001 records the newly discovered CAS gaps and native ledger
 readback. Historical PM-2026-11-01-004/005 remain separate custody/proof provenance.
