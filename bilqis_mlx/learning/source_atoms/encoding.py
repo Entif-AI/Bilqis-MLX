@@ -7,7 +7,9 @@ from ..frame_encoder import (
 from .embedding import source_atom_vectors
 
 
-def encode_source_compiled_with_handoffs(compiled, parameters, sources, feature_schema):
+def encode_source_compiled_with_handoffs(
+    compiled, parameters, sources, feature_schema, artifact_owner,
+):
     """Encode actual A05 rows and return the verified source handoff closure.
 
     Native atomic-frame closures need their own source-to-identity law and stay
@@ -27,7 +29,7 @@ def encode_source_compiled_with_handoffs(compiled, parameters, sources, feature_
             sources, compiled.member_requests):
         vectors, banks, handoff = source_atom_vectors(
             parameters, row, config, source, compiled.features,
-            feature_schema, compiled.extents)
+            feature_schema, compiled.extents, artifact_owner)
         atom_rows.append(vectors)
         handoffs.append(handoff)
         if requests:
@@ -42,8 +44,8 @@ def encode_source_compiled_with_handoffs(compiled, parameters, sources, feature_
     return encode_frames(compiled, generated, parameters), tuple(handoffs)
 
 
-def encode_source_compiled(compiled, parameters, sources, feature_schema):
+def encode_source_compiled(compiled, parameters, sources, feature_schema, artifact_owner):
     """Compatibility surface returning only the differentiable encoded frames."""
     encoded, _ = encode_source_compiled_with_handoffs(
-        compiled, parameters, sources, feature_schema)
+        compiled, parameters, sources, feature_schema, artifact_owner)
     return encoded
