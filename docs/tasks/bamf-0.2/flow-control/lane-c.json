@@ -1,19 +1,19 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "9bf47289e9ed0a64d275b31c3a7de42c55a8b83e",
-  "updated_at": "2026-11-03T20:50:00Z",
+  "observed_unified": "7984d7872d49b3987284692f5398da71f2a72605",
+  "updated_at": "2026-11-03T22:40:00Z",
   "exception": null,
   "items": [
     {
       "issue": 347,
       "pr": null,
-      "state": "WAITING",
-      "head_sha": "cb536f744008c7e7575c3d3973c135aa38292fd6",
-      "summary": "C01 structural proof candidate awaits reproducibility remediation.",
-      "resume_trigger": "Remediation #733 is resolved and C01 is selected as Lane C's current integration candidate.",
+      "state": "ACTIVE",
+      "head_sha": "102b8d261259e422fc573430229dc63b5357e8a0",
+      "summary": "C01 aggregate consumes reviewed unified 7984d787 plus completed #800/#801 repairs. Evidence-complete candidate 102b8d26 is undergoing final flow/quality, hosted and exact-head review; bookkeeping commit follows this recorded candidate.",
+      "resume_trigger": null,
       "closed_pr": 694,
-      "preserved_branch": "codex/bamf02-c01-347-registry-20261101",
+      "preserved_branch": "codex/bamf02-c-347-integration-20261103",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
       "close_reason": "EGM-Failed; remediation #733"
     },
@@ -78,17 +78,26 @@
       "head_sha": "8a198dd462542ae62d639136797f2b879a7745ba",
       "summary": "C01 mechanical contract-verifier repair is externally merged through PR #781 as f4d8ddfe08a1d378dd0501208693af4a4aa07398; its scoped contribution is consumed by reviewed unified.",
       "resume_trigger": null,
-      "preserved_branch": "codex/bamf02-c-770-contract-verifier-20261103",
-      "merged_pr": 781
+      "merged_pr": 781,
+      "preserved_branch": "codex/bamf02-c-770-contract-verifier-20261103"
     },
     {
       "issue": 800,
       "pr": 803,
       "state": "TURNED_IN",
-      "head_sha": "5f9d484e",
-      "preserved_branch": "codex/bamf02-c-347-integration-20261103",
-      "summary": "Late-bound public-facade dependency repair is ready in PR #803.",
-      "resume_trigger": null
+      "head_sha": "5f9d484e94a942f5421281187764efbdefa8ee24",
+      "summary": "Late-bound public-facade dependency repair is verified and consumed into the active #347 aggregate; ready PR #803 carries the C01 integration candidate.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-c-347-integration-20261103"
+    },
+    {
+      "issue": 801,
+      "pr": null,
+      "state": "TURNED_IN",
+      "summary": "Native CPU witness recipe repair is closed and consumed into the active #347 aggregate from codex/bamf02-c-801-native-recipe-20261103.",
+      "resume_trigger": null,
+      "head_sha": "70d3b398f5c05380b16de878432d6bc25617a25e",
+      "preserved_branch": "codex/bamf02-c-801-native-recipe-20261103"
     },
     {
       "issue": 713,
@@ -96,8 +105,8 @@
       "state": "TURNED_IN",
       "head_sha": "dc57690b",
       "preserved_branch": "codex/remediation-713-c02-authority-20261103",
-      "summary": "C02.1 remediation in ready PR #808: the canonical A06 owner holds feature selection authority.",
-      "resume_trigger": "PR #808 is merged or closed."
+      "summary": "C02.1 remediation in ready PR #808: the canonical A06 owner holds feature selection authority at the C02.1 model-input boundary.",
+      "resume_trigger": "PR #808 merges or closed; the C02.1 authority continues on owner issue #490."
     }
   ]
 }

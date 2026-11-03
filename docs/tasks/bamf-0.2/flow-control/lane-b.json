@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "05e31a576e3432e4238c9b4477a70d70ec4fc487",
-  "updated_at": "2026-11-03T22:08:00Z",
+  "updated_at": "2026-11-03T22:40:00Z",
   "exception": null,
   "items": [
     {
@@ -33,10 +33,10 @@
       "issue": 456,
       "pr": null,
       "state": "TURNED_IN",
-      "head_sha": "58209522c8855245c3b9ae22e1a57255974ffc05",
-      "summary": "B07 current-unified CAS continuation accepted through human-merged PR #690; #460 now consumes the real source/allocation owner.",
+      "head_sha": "c078386bd57a209bb10f55142c7b1c5af94a50b1",
+      "summary": "B07.1 is EGM-Passed and was externally merged through PR #690 as reviewed unified 7984d787; hosted checks were green and the exact candidate is consumed by unified.",
       "resume_trigger": null,
-      "preserved_branch": "codex/783-456-current-unified-20261103",
+      "preserved_branch": "codex/b07-456-source-bridge-20261101",
       "merged_pr": 690
     },
     {
@@ -227,11 +227,11 @@
     {
       "issue": 783,
       "pr": null,
-      "state": "WAITING",
-      "head_sha": "17be8a3d5aebfaba0a88b4190a41027eb6daedfb",
-      "summary": "Canonical CandidateState identity repair is consumed by the active #456 integration branch after joined source-to-CAS-to-next-update-to-source proof; final acceptance remains on the parent candidate.",
-      "resume_trigger": "Parent #456 completes current-unified integration, affected proof and fresh exact-head review.",
-      "preserved_branch": "codex/bamf02-b-783-candidate-identity-20261103"
+      "state": "TURNED_IN",
+      "head_sha": "c078386bd57a209bb10f55142c7b1c5af94a50b1",
+      "summary": "B07/B13 cold-continuation authority remediation is EGM-Passed and consumed into the human-merged #456/PR #690 candidate now present in reviewed unified 7984d787.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/783-456-current-unified-20261103"
     },
     {
       "issue": 460,
@@ -256,37 +256,37 @@
       "issue": 708,
       "pr": 809,
       "state": "TURNED_IN",
-      "head_sha": "93cf0db1",
+      "head_sha": "6b565ba4",
       "preserved_branch": "codex/remediation-egm-708-711-integration-20261103",
-      "summary": "B13.5 remediation: the accepted-generation feature receipt is rederived from the admitted source release, and the generation must carry the retention owner's acceptance binding before it may mint that authority, delivered in the consolidated integration PR #809.",
-      "resume_trigger": "PR #804 is merged or closed; the accepted-generation feature authority continues on owner issue #697."
+      "summary": "B13.5 remediation: the accepted-generation feature receipt is rederived from the admitted source release, and the generation must carry the retention owner's acceptance binding before it may mint that authority.",
+      "resume_trigger": "PR #809 merges or closes; the consolidated candidate continues on its owner issue."
     },
     {
       "issue": 709,
       "pr": null,
       "state": "TURNED_IN",
-      "head_sha": "dc7a2c62",
+      "head_sha": "6b565ba4",
       "preserved_branch": "codex/remediation-egm-708-711-integration-20261103",
-      "summary": "B13.2 remediation: the cold-resume witness starts from published accepted-generation custody, cold resumes in a clean process and continues the next controlled optimizer step, delivered in the consolidated integration PR #809, delivered in the consolidated integration PR #809.",
-      "resume_trigger": "PR #805 is merged or closed; the B13.2 cold-resume witness continues on owner issue #479."
+      "summary": "B13.2 remediation: the cold-resume witness runs the production admission path in a clean process and continues the next controlled optimizer step.",
+      "resume_trigger": "PR #809 merges or closes; the consolidated candidate continues on its owner issue."
     },
     {
       "issue": 711,
       "pr": null,
       "state": "TURNED_IN",
-      "head_sha": "101a2c57",
+      "head_sha": "6b565ba4",
       "preserved_branch": "codex/remediation-egm-708-711-integration-20261103",
-      "summary": "B09.2 remediation: the participation owner derives per-step participation and optimizer masks from executed production authority, with the production binder, delivered in the consolidated integration PR #809, delivered in the consolidated integration PR #809.",
-      "resume_trigger": "PR #806 is merged or closed; the B09.2 owner continues on owner issue #465."
+      "summary": "B09.2 remediation: the participation owner derives per-step participation and optimizer masks from executed production authority, with the production binder.",
+      "resume_trigger": "PR #809 merges or closes; the consolidated candidate continues on its owner issue."
     },
     {
       "issue": 710,
       "pr": null,
       "state": "TURNED_IN",
-      "head_sha": "0a3d5c66",
+      "head_sha": "6b565ba4",
       "preserved_branch": "codex/remediation-egm-708-711-integration-20261103",
-      "summary": "B12.2 remediation: every candidate optimizer step binds to owner-issued execution provenance, and the production candidate step has no caller-mask parameter, delivered in the consolidated integration PR #809, delivered in the consolidated integration PR #809.",
-      "resume_trigger": "PR #807 is merged or closed; the B12.2 binding continues on owner issue #475."
+      "summary": "B12.2 remediation: every candidate optimizer step binds to owner-issued execution provenance, and the production candidate step has no caller-mask parameter.",
+      "resume_trigger": "PR #809 merges or closes; the consolidated candidate continues on its owner issue."
     }
   ]
 }
