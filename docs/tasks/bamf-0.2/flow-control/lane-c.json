@@ -2,18 +2,18 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "7984d7872d49b3987284692f5398da71f2a72605",
-  "updated_at": "2026-11-03T16:29:43Z",
+  "updated_at": "2026-11-03T16:55:11Z",
   "exception": null,
   "items": [
     {
       "issue": 347,
       "pr": null,
-      "state": "WAITING",
-      "head_sha": "cb536f744008c7e7575c3d3973c135aa38292fd6",
-      "summary": "C01 structural aggregate is parked while the current systemic EGM remediations are repaired.",
-      "resume_trigger": "Remediations #800 and #801 are consumed or otherwise resolved and C01 is selected for its next aggregate merge-readiness review.",
+      "state": "ACTIVE",
+      "head_sha": "5f9d484e94a942f5421281187764efbdefa8ee24",
+      "summary": "C01 aggregate continuation consumes current reviewed unified plus completed remediations #800 and #801; final parent verification, hosted checks and exact-head EGM are in progress.",
+      "resume_trigger": null,
       "closed_pr": 694,
-      "preserved_branch": "codex/bamf02-c01-347-registry-20261101",
+      "preserved_branch": "codex/bamf02-c-347-integration-20261103",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
       "close_reason": "EGM-Failed; remediation #733"
     },
@@ -96,18 +96,20 @@
     {
       "issue": 800,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "9bf47289e9ed0a64d275b31c3a7de42c55a8b83e",
-      "summary": "Restore late-bound facade dependency semantics across all extracted C01 source owners against reviewed unified 7984d787.",
+      "state": "TURNED_IN",
+      "head_sha": "5f9d484e94a942f5421281187764efbdefa8ee24",
+      "summary": "Late-bound public-facade dependency repair is verified and consumed into the active #347 aggregate; recursive census has zero unresolved routes, source 200/200, installed 126/126, native 6/6.",
       "resume_trigger": null,
       "preserved_branch": "codex/800-c01-latebound-20261103"
     },
     {
       "issue": 801,
       "pr": null,
-      "state": "READY",
-      "summary": "Make the native C01 CPU witness environment and command mechanically reproducible.",
-      "resume_trigger": null
+      "state": "TURNED_IN",
+      "summary": "Native CPU witness recipe repair is closed and consumed into the active #347 aggregate from codex/bamf02-c-801-native-recipe-20261103.",
+      "resume_trigger": null,
+      "head_sha": "70d3b398f5c05380b16de878432d6bc25617a25e",
+      "preserved_branch": "codex/bamf02-c-801-native-recipe-20261103"
     }
   ]
 }

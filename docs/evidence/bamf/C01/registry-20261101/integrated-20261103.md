@@ -71,8 +71,8 @@ python3 -B docs/evidence/bamf/C01/registry-20261101/verify_repaired_recipe.py "$
   --source-total 199 --installed-total 122
 ```
 
-The six native CPU callers use the exact selection in
-[current-20261103.md](current-20261103.md). The actual contract verifier is
+The six native CPU callers use the exact selection and fresh explicit environment
+in [native-cpu-recipe-801.md](native-cpu-recipe-801.md). The actual contract verifier is
 `python3 -B scripts/verify_bamf_0_2_contracts.py`. Registry validation is
 `python3 -B scripts/check_bamf_workstack.py docs/tasks/bamf-0.2/workstack.json`.
 The latter intentionally exits 1: integrity is valid with 171 children, but the
