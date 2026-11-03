@@ -248,11 +248,11 @@
     {
       "issue": 460,
       "pr": null,
-      "state": "WAITING",
-      "head_sha": "7984d7872d49b3987284692f5398da71f2a72605",
-      "preserved_branch": "codex/bamf02-b-460-qualified-reads-20261103",
-      "summary": "Source-hit qualification traced after accepted #691/#456; paused at canonical A03 schema structural owner (417 LoC), already covered by C01/#347.",
-      "resume_trigger": "C01/#347 canonical released_frame_schemas structural repair is accepted through reviewed unified; then reactivate and synchronize once before source-read implementation."
+      "state": "ACTIVE",
+      "head_sha": "ec4e633a3ba152c9e166331bd703525bf8038293",
+      "preserved_branch": "codex/bamf02-b-460-qualified-reads-20261103-resume",
+      "summary": "Independent B08 source-context stage verified23/23; full production-hit binding remains active on its isolated issue branch.",
+      "resume_trigger": null
     },
     {
       "issue": 481,
@@ -289,6 +289,15 @@
       "head_sha": "05e31a576e3432e4238c9b4477a70d70ec4fc487",
       "preserved_branch": "codex/remediation-710-execution-provenance-20261103",
       "summary": "B12.2 remediation delivered as ready PR #807, stacked on the #711 B09.2 owner: every candidate optimizer step binds to owner-issued execution provenance, so a raw caller mask cannot become final candidate truth.",
+      "resume_trigger": null
+    },
+    {
+      "issue": 451,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "e9226be2f6a41f47109ca02a1103a363e64909a7",
+      "preserved_branch": "codex/bamf02-b-451-selector-custody-20261103",
+      "summary": "B05.3 selector-manifest/cold-custody proof using accepted B01 and B13 schema interfaces; B08/whole-model parent acceptance separate.",
       "resume_trigger": null
     }
   ]
