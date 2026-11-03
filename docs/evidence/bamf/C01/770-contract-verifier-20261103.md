@@ -1,7 +1,7 @@
 # C01 #770: accepted late-child contract verification
 
 As of 2026-11-03, this bounded tooling repair consumes reviewed unified
-`48315ee7bae3caa7d5ac279128c79217b9178d16` on
+`aa828eb5cb8822a5614aa3353864bf187f83444d` on
 `codex/bamf02-c-770-contract-verifier-20261103`. The feature starts from Lane C's
 remote integration branch and merges unified; the separate local Lane C worktree
 and its unpublished commits are preserved.
