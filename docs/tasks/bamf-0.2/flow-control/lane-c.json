@@ -86,10 +86,10 @@
     {
       "issue": 770,
       "pr": null,
-      "state": "WAITING",
+      "state": "ACTIVE",
       "head_sha": "948f87ef464704651f96fa3214b12c348593da91",
-      "summary": "All14verifier failures repaired;58/58 affected tests;14/14 live body pins;171child integrity valid, same8holds and no executable order. Mechanical proof ready for canonical C01 consumption.",
-      "resume_trigger": "Canonical C01 parent consumes this exact repair and completes its aggregate review, or an issue-specific PR slot is available after the current3/3inventory drains.",
+      "summary": "PR capacity reopened after human merges779/780; stabilize verified mechanical candidate for one fresh scoped merge-readiness EGM.",
+      "resume_trigger": null,
       "preserved_branch": "codex/bamf02-c-770-contract-verifier-20261103"
     }
   ]
