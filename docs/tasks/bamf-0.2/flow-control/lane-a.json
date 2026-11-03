@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "2d4b99f3b7f8f82857028a7c1f31c1e5da61b23b",
-  "updated_at": "2026-11-03T07:39:32.080169Z",
+  "observed_unified": "53655a7a5d513403bcd14e9ffd2e5577411c5832",
+  "updated_at": "2026-11-03T12:50:03.361107+00:00",
   "exception": null,
   "items": [
     {
@@ -18,6 +18,16 @@
       "close_reason": "EGM-Failed; substantive remediation #758 precedes lifecycle remediation #737"
     },
     {
+      "issue": 758,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "eb4ff18fa30c5cefe924fd69ad8628409710293c",
+      "summary": "PR #777 is externally merged as 48315ee7bae3caa7d5ac279128c79217b9178d16; its scoped contribution is consumed by reviewed unified.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/758-oracle-proof-20261102",
+      "merged_pr": 777
+    },
+    {
       "issue": 745,
       "state": "TURNED_IN",
       "head_sha": "335361d60a3f4d7050acf01c471f1f94d93a0294",
@@ -25,6 +35,15 @@
       "resume_trigger": null,
       "merged_pr": 765,
       "pr": null
+    },
+    {
+      "issue": 737,
+      "pr": 782,
+      "state": "TURNED_IN",
+      "head_sha": "12565903b88944510b4652c7d9a61a343ede362c",
+      "summary": "A08.3 current-unified lifecycle refresh is admitted in PR #782 after 34/34 focused proof; final exact-head EGM follows this inventory commit.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/737-a08-lifecycle-20261103"
     }
   ]
 }

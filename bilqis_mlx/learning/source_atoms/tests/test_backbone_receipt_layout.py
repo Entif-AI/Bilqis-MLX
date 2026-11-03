@@ -15,7 +15,7 @@ from bilqis_mlx.runtime.backbone_group_numerical import _content_digest
 from bilqis_mlx.runtime.block_attnres import depth_select
 from bilqis_mlx.semantics.domains import contract_digest
 from bilqis_mlx.source_adapters.tests.atoms.helpers import REAL_BUNDLE
-from .backbone_test_support import SourceBackboneTestBase
+from bilqis_mlx.learning.source_atoms.tests.backbone_test_support import SourceBackboneTestBase
 
 
 @skipUnless(REAL_BUNDLE, "real pinned A01 artifact not mounted")

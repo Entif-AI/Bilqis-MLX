@@ -136,10 +136,15 @@ def execute_release_family_program(
     """
     from .skos_curriculum.registry import (
         FamilyProgramRegistry, bind_factory_release_families,
+        default_family_program_registry,
         execute_bound_family_program,
     )
     from .skos_curriculum.common import _fail
     from .skos_curriculum.curriculum import LearnedFrontier
+    from .curriculum.capability_identity import (
+        bind_factory_release_capability_identity,
+    )
+    from ..semantics.cognitive_operators.registry import default_registry
 
     if (type(release) is not FactoryRelease
             or not isinstance(registry, SourceAdapterRegistry)
@@ -148,9 +153,16 @@ def execute_release_family_program(
             or not isinstance(capability_id, str) or not capability_id):
         _fail("FACTORY_FAMILY_EXECUTION_INPUT_INVALID")
     release.verify()
+    canonical_registry = default_family_program_registry()
+    if family_registry.programs != canonical_registry.programs:
+        _fail("FACTORY_FAMILY_EXECUTION_CANONICAL_REGISTRY_REQUIRED")
     bindings = bind_factory_release_families(
-        release, family_registry, registry, atlas, learned_frontier)
+        release, canonical_registry, registry, atlas, learned_frontier)
     binding = bindings.require(capability_id)
+    stable_binding = bind_factory_release_capability_identity(
+        release, bindings, capability_id, atlas,
+        default_registry(bindings.semantic_release))
+    stable = stable_binding.stable_identity.identity
     capability = next((
         item for item in release.capabilities
         if item.capability_id == capability_id), None)
@@ -158,6 +170,14 @@ def execute_release_family_program(
         item for item in release.construction_programs
         if item.capability_id == capability_id), None)
     if (capability is None or program is None
+            or binding.program_key is None
+            or binding.stable_semantic_id != stable.semantic_id
+            or binding.program_key.family_id != stable.family_id
+            or binding.program_key.signature != stable.signature
+            or binding.program_key.answer_kinds != stable.answer_kinds
+            or stable.answer_kinds != tuple(sorted(capability.answer_kinds))
+            or (binding.semantic_operator_id is not None
+                and stable.operator_id != binding.semantic_operator_id)
             or binding.source_adapter_id != capability.source_adapter_id
             or binding.generator_id != program.generator_id
             or binding.oracle_id != program.oracle_id
@@ -167,7 +187,7 @@ def execute_release_family_program(
     if registered.descriptor.adapter_id != binding.source_adapter_id:
         _fail("FACTORY_FAMILY_EXECUTION_SOURCE_ADAPTER_DRIFT")
     return execute_bound_family_program(
-        family_registry, binding,
+        canonical_registry, binding,
         construct_args=construct_args, construct_kwargs=construct_kwargs,
         check_args=check_args, check_kwargs=check_kwargs,
         source_registry=registry, atlas=atlas)

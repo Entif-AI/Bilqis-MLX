@@ -15,7 +15,7 @@ from bilqis_mlx.semantics.frame_adapters import public_formal_context
 from bilqis_mlx.semantics.frame_schema import FrameInstance
 from bilqis_mlx.semantics.tests.frame_adapters.helpers import SOURCE_ROOT
 from bilqis_mlx.source_adapters.tests.atoms.helpers import REAL_BUNDLE
-from .backbone_test_support import SourceBackboneTestBase
+from bilqis_mlx.learning.source_atoms.tests.backbone_test_support import SourceBackboneTestBase
 
 
 @skipUnless(REAL_BUNDLE, 'real pinned A01 artifact not mounted')
