@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "dfc0c7586c23b6477c08d4db486ade3deeb79fae",
-  "updated_at": "2026-11-03T07:52:23.026664+00:00",
+  "observed_unified": "338a3c5263772566502af70d731b95af1d91a81e",
+  "updated_at": "2026-11-03T07:57:41.620801+00:00",
   "exception": null,
   "items": [
     {
@@ -171,22 +171,22 @@
     },
     {
       "issue": 763,
-      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "e4484e5da1a9b7e982a89aa85b08bd50c67d98cd",
-      "summary": "Generic source-owner resolution repair is turned in for review on PR #764; parent #736 consumes it after landing and retains final merge-candidate EGM ownership. Human-merged; verified closed on 2026-11-03.",
+      "summary": "PR #764 is externally merged as 4ea003f0c353a4ffccfe52e6b717f31ce7cfd800; historical scoped turn-in is consumed by reviewed unified.",
       "resume_trigger": null,
-      "closed_pr": 764
+      "merged_pr": 764,
+      "pr": null
     },
     {
       "issue": 753,
       "pr": 768,
       "state": "ACTIVE",
-      "head_sha": "0ea77e24d453b14c3a52966a0dd95e4edd63e0a5",
-      "preserved_branch": "codex/bamf02-b-753-tensor-custody-20261103",
-      "summary": "PR #768 is the existing integration delta. Additional CAS ownership/concurrency/published-proof repairs are durable on the preserved branch; reconcile before final exact-head review.",
+      "head_sha": "14c730bb580e0ce5f13e047db57617b0e873f2d3",
+      "summary": "Existing PR #768 owns integration; additional alias/race/durability/publication/legacy-reader repairs await reconciliation and final review on the preserved branch.",
       "resume_trigger": null,
-      "repair_head_sha": "3ce531f0f380c6ad78635647a4423e4e2bab7089"
+      "repair_head_sha": "364645e44a5ce0dad88ec35e8f3947b0e088a39d",
+      "preserved_branch": "codex/bamf02-b-753-tensor-custody-20261103"
     }
   ]
 }

@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "2d4b99f3b7f8f82857028a7c1f31c1e5da61b23b",
-  "updated_at": "2026-11-02T20:45:39-05:00",
+  "updated_at": "2026-11-03T07:39:32.080169Z",
   "exception": null,
   "items": [
     {
@@ -19,12 +19,12 @@
     },
     {
       "issue": 745,
-      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "335361d60a3f4d7050acf01c471f1f94d93a0294",
-      "summary": "A12 source-owner export-clearance remediation is refreshed onto current unified and turned in through PR #765; final #718/#526 EGM remains downstream after integration and #746. Human-merged; verified closed on 2026-11-03.",
+      "summary": "PR #765 is externally merged as dfc0c7586c23b6477c08d4db486ade3deeb79fae; historical scoped turn-in is consumed by reviewed unified.",
       "resume_trigger": null,
-      "closed_pr": 765
+      "merged_pr": 765,
+      "pr": null
     }
   ]
 }
