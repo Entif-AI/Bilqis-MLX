@@ -24,6 +24,32 @@ def _epoch(value):
     return type(value) is int and value >= 0
 
 
+def _validate_feature_binding(compiler):
+    """Keep recorded source/schema bindings shape-checked when they are present.
+
+    Absence stays legal for historical generations; the accepted-generation
+    feature authority refuses any generation that cannot replay its feature
+    map from the admitted source release.
+    """
+    source = compiler.get('feature_source')
+    if source is not None and (
+            not isinstance(source, dict)
+            or set(source) != {'atlas_bundle_id', 'release_sha256', 'source_bundle_id'}
+            or any(not _digest(source[name]) for name in source)):
+        invalid()
+    schema = compiler.get('feature_schema')
+    if schema is not None and (
+            not isinstance(schema, dict)
+            or set(schema) != {'role_ids', 'schema_ids', 'source_bindings'}
+            or not isinstance(schema['role_ids'], list)
+            or not isinstance(schema['schema_ids'], list)
+            or not isinstance(schema['source_bindings'], list)
+            or any(not isinstance(row, list) or len(row) != 2
+                   or not all(isinstance(value, str) and value for value in row)
+                   for row in schema['source_bindings'])):
+        invalid()
+
+
 def validate_identity_sidecars(extents, provenance, records, invalid):
     """Reject absent ownership identities before constructing any tensor state."""
     if any(records[name].get('schema') != schema for name, schema in SCHEMAS.items()):
@@ -40,6 +66,7 @@ def validate_identity_sidecars(extents, provenance, records, invalid):
             or not all(type(bank) is str and bank.strip() and bank.isprintable() for bank in banks)
             or len(set(banks)) != len(banks)):
         invalid()
+    _validate_feature_binding(compiler)
     if (compiler.get('factor_map_sha256') != extents.factor_map_digest
             or not _digest(compiler.get('compiler_sha256'))
             or any(not _epoch(record.get(key)) for record, keys in (
