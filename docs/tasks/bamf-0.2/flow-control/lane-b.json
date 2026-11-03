@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "05e31a576e3432e4238c9b4477a70d70ec4fc487",
-  "updated_at": "2026-11-03T21:45:00Z",
+  "updated_at": "2026-11-03T22:05:00Z",
   "exception": null,
   "items": [
     {
@@ -254,38 +254,38 @@
     },
     {
       "issue": 708,
-      "pr": null,
+      "pr": 809,
       "state": "TURNED_IN",
       "head_sha": "93cf0db1",
       "preserved_branch": "codex/remediation-egm-708-711-integration-20261103",
-      "summary": "B13.5 remediation: the accepted-generation feature receipt is rederived from the admitted source release, and the generation must carry the retention owner's acceptance binding before it may mint that authority.",
+      "summary": "B13.5 remediation: the accepted-generation feature receipt is rederived from the admitted source release, and the generation must carry the retention owner's acceptance binding before it may mint that authority, delivered in the consolidated integration PR #809.",
       "resume_trigger": "PR #804 is merged or closed; the accepted-generation feature authority continues on owner issue #697."
     },
     {
       "issue": 709,
-      "pr": null,
+      "pr": 809,
       "state": "TURNED_IN",
       "head_sha": "dc7a2c62",
       "preserved_branch": "codex/remediation-egm-708-711-integration-20261103",
-      "summary": "B13.2 remediation: the cold-resume witness starts from published accepted-generation custody, cold resumes in a clean process and continues the next controlled optimizer step.",
+      "summary": "B13.2 remediation: the cold-resume witness starts from published accepted-generation custody, cold resumes in a clean process and continues the next controlled optimizer step, delivered in the consolidated integration PR #809.",
       "resume_trigger": "PR #805 is merged or closed; the B13.2 cold-resume witness continues on owner issue #479."
     },
     {
       "issue": 711,
-      "pr": null,
+      "pr": 809,
       "state": "TURNED_IN",
       "head_sha": "101a2c57",
       "preserved_branch": "codex/remediation-egm-708-711-integration-20261103",
-      "summary": "B09.2 remediation: the participation owner derives per-step participation and optimizer masks from executed production authority, with the production binder.",
+      "summary": "B09.2 remediation: the participation owner derives per-step participation and optimizer masks from executed production authority, with the production binder, delivered in the consolidated integration PR #809.",
       "resume_trigger": "PR #806 is merged or closed; the B09.2 owner continues on owner issue #465."
     },
     {
       "issue": 710,
-      "pr": null,
+      "pr": 809,
       "state": "TURNED_IN",
       "head_sha": "0a3d5c66",
       "preserved_branch": "codex/remediation-egm-708-711-integration-20261103",
-      "summary": "B12.2 remediation: every candidate optimizer step binds to owner-issued execution provenance, and the production candidate step has no caller-mask parameter.",
+      "summary": "B12.2 remediation: every candidate optimizer step binds to owner-issued execution provenance, and the production candidate step has no caller-mask parameter, delivered in the consolidated integration PR #809.",
       "resume_trigger": "PR #807 is merged or closed; the B12.2 binding continues on owner issue #475."
     }
   ]
