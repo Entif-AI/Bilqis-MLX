@@ -7,12 +7,13 @@ from ..frame_encoder import (
 from .embedding import source_atom_vectors
 
 
-def encode_source_compiled(compiled, parameters, sources, feature_schema):
-    """Encode actual A05 rows without accepting arbitrary atom or member vectors.
+def encode_source_compiled_with_handoffs(compiled, parameters, sources, feature_schema):
+    """Encode actual A05 rows and return the verified source handoff closure.
 
     Native atomic-frame closures need their own source-to-identity law and stay
     held. Raw atoms, complete ordinary frames and verified nested frames use
-    existing B02/B03 operations. This does not issue B11 producer admission.
+    existing B02/B03 operations. The returned handoffs are observations from the
+    same validation that produced the vectors; callers cannot supply them.
     """
     if (type(compiled) is not CompiledEncoderInput or type(sources) is not tuple
             or len(sources) != len(compiled.compiled.rows)):
@@ -20,14 +21,15 @@ def encode_source_compiled(compiled, parameters, sources, feature_schema):
     compiled.__post_init__()
     if any(compiled.atomic_handles):
         invalid("BAMF_SOURCE_ATOM_ATOMIC_FRAME_AUTHORITY_UNAVAILABLE")
-    atom_rows, member_rows = [], []
+    atom_rows, member_rows, handoffs = [], [], []
     for row, config, source, requests in zip(
             compiled.compiled.rows, compiled.compiler_configs,
             sources, compiled.member_requests):
-        vectors, banks, _ = source_atom_vectors(
+        vectors, banks, handoff = source_atom_vectors(
             parameters, row, config, source, compiled.features,
             feature_schema, compiled.extents)
         atom_rows.append(vectors)
+        handoffs.append(handoff)
         if requests:
             members = embed_atoms(
                 parameters, ConceptBatch((requests,), banks, compiled.extents),
@@ -37,4 +39,11 @@ def encode_source_compiled(compiled, parameters, sources, feature_schema):
         else:
             member_rows.append(())
     generated = CompiledEmbeddingVectors(tuple(atom_rows), tuple(member_rows))
-    return encode_frames(compiled, generated, parameters)
+    return encode_frames(compiled, generated, parameters), tuple(handoffs)
+
+
+def encode_source_compiled(compiled, parameters, sources, feature_schema):
+    """Compatibility surface returning only the differentiable encoded frames."""
+    encoded, _ = encode_source_compiled_with_handoffs(
+        compiled, parameters, sources, feature_schema)
+    return encoded

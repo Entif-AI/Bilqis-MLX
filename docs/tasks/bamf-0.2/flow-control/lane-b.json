@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "67c964a1548cb0075a28a90aa2565d8bdab0fd71",
-  "updated_at": "2026-11-02T22:20:00Z",
+  "observed_unified": "2800946729e484875f7d1f57f0e6d85078936394",
+  "updated_at": "2026-11-02T19:44:00-05:00",
   "exception": null,
   "items": [
     {
@@ -31,15 +31,12 @@
     },
     {
       "issue": 456,
-      "pr": null,
-      "state": "WAITING",
-      "head_sha": "547471d2b95fadbbd7fa3631db0d0a56a20436c9",
-      "summary": "B07.1 source-qualified motif identity remains parked.",
-      "resume_trigger": "The lane selects B07.1 as its current integration candidate and all known prerequisites are consumable for one final synchronization and merge-readiness pass.",
-      "closed_pr": 690,
-      "preserved_branch": "codex/b07-456-source-bridge-20261101",
-      "closed_under": "Issue-label EGM queue; EGM-Passed is durable on issue #456",
-      "close_reason": "Not an active merge attempt; reopen/create delivery envelope when Lane B selects it for integration."
+      "pr": 690,
+      "state": "TURNED_IN",
+      "head_sha": "203c53eb1252ada8fba8ed6f1e9c7c5c57ca6cde",
+      "summary": "B07.1 is turned in through draft PR #690; the turn-in metadata changed the exact head after the prior PASS, so issue #456 is EGM-Pending for final exact-head review.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/b07-456-source-bridge-20261101"
     },
     {
       "issue": 455,
@@ -104,14 +101,12 @@
     {
       "issue": 586,
       "pr": null,
-      "state": "WAITING",
-      "head_sha": "626b7553de0231592b486cafd1e012012f580144",
-      "summary": "B11.1a execution-owned backbone producer awaits stale-boundary remediation.",
-      "resume_trigger": "Remediation #738 is resolved and the complete candidate is selected for the next merge-readiness EGM.",
-      "closed_pr": 640,
-      "preserved_branch": "codex/b11-586-source-h0-20261030",
-      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
-      "close_reason": "EGM-Failed; remediation #738"
+      "state": "TURNED_IN",
+      "head_sha": "d87859c75177cd807aaaa649efb8b64fa05105b6",
+      "summary": "B11.1a passed fresh whole-candidate EGM, hosted CI and human merge through PR #762; unified consumed it at 2d4b99f3.",
+      "resume_trigger": null,
+      "closed_pr": 762,
+      "preserved_branch": "codex/b11-586-source-h0-20261030"
     },
     {
       "issue": 480,
@@ -151,10 +146,35 @@
     },
     {
       "issue": 738,
-      "pr": 742,
-      "state": "ACTIVE",
+      "pr": null,
+      "state": "TURNED_IN",
       "head_sha": "44305b1c685fcdd43ded307c8eeae8e4e2808fbf",
-      "summary": "Active EGM-Mitigation delivery for #586 stale selected-state chaining.",
+      "summary": "B11 selected-state chaining remediation is closed and human-merged into the #586 parent branch.",
+      "resume_trigger": null,
+      "closed_pr": 742
+    },
+    {
+      "issue": 747,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "89682d8beca1bfec0e38b0c2a4d3a4d70e06bca1",
+      "summary": "Verified scoped #747 receipt shape/dtype remediation is closed and consumed into the #586 parent candidate.",
+      "resume_trigger": null
+    },
+    {
+      "issue": 748,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "89682d8beca1bfec0e38b0c2a4d3a4d70e06bca1",
+      "summary": "Verified scoped #748 real-source proof-fixture remediation is closed and consumed into the #586 parent candidate.",
+      "resume_trigger": null
+    },
+    {
+      "issue": 763,
+      "pr": 764,
+      "state": "TURNED_IN",
+      "head_sha": "e4484e5da1a9b7e982a89aa85b08bd50c67d98cd",
+      "summary": "Generic source-owner resolution repair is turned in for review on PR #764; parent #736 consumes it after landing and retains final merge-candidate EGM ownership.",
       "resume_trigger": null
     }
   ]
