@@ -47,7 +47,7 @@
       "state": "BLOCKED",
       "head_sha": "10375fcc7f0b54bd3cf2e9ecad1820eb465fd76d",
       "summary": "Existing10a41618 consumed; real source4/4, batch61/61, A06features26/26 pass. Independent Terra High review finds original A06 source-selection authority gap unresolved; one new inherited prefix hygiene finding.",
-      "resume_trigger": "A06 source owner supplies an accepted exact feature-artifact identity/receipt or authoritative canonical selection rule; consume it and clear the prefix hygiene finding before final490 review.",
+      "resume_trigger": "Canonical A06 source-owner issue #785 supplies an accepted feature-artifact selection receipt/rule through reviewed unified; consume it, clear prefix hygiene and requalify before final #490 review.",
       "closed_pr": 728,
       "preserved_branch": "codex/bamf02-c-713-authority-20261103",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",

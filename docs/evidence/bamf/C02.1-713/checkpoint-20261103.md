@@ -50,3 +50,7 @@ is claimed. Full parent #490 review remains at its integrated candidate.
 
 IPR-0220 remains opaque. No real student, own AdamW, teacher, checkpoint, source
 release, graph or human-run state was mutated.
+
+Source-owner follow-up: [#785](https://github.com/Entif-AI/Bilqis-MLX/issues/785).
+Incident `PM-2026-11-03-004` is filed/read back in the native ledger; it reuses
+`RC-139` and proposed `PAT-100` without adopting a new policy.
