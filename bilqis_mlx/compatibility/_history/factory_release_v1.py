@@ -9,8 +9,8 @@ from __future__ import annotations
 import hashlib
 import json
 
-from ..errors import ErrorBus, FACTORY
-from ..factory.model import FactoryRelease
+from bilqis_mlx.errors import ErrorBus, FACTORY
+from bilqis_mlx.factory.model import FactoryRelease
 
 
 def _wire_digest(value: object) -> str:

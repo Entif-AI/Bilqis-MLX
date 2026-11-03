@@ -1,8 +1,17 @@
 """Default source-family constructors and independent checkers."""
 from bilqis_mlx.factory.curriculum.formal_lessons import check_formal_lesson, construct_formal_lesson
 from bilqis_mlx.source_adapters.copular import CAPABILITY as COPULAR_SOURCE_CAPABILITY
-from .contracts import SourceFamilyBatch
-from .invocation import invoke_formal, invoke_source_batch
+from bilqis_mlx.source_adapters.world_rules import (
+    CAPABILITIES as WORLD_CAPABILITIES, registered_adapter as world_adapter,
+    require_registered_source,
+)
+from bilqis_mlx.factory.curriculum.rule_registry import world_rule_profile
+from bilqis_mlx.semantics.cognitive_operators.registry import default_registry
+from bilqis_mlx.semantics.foundation.core import Signature
+from .contracts import FamilyProgramKey, SourceFamilyBatch
+from .invocation import (
+    invoke_formal, invoke_same_capability_source_batch, invoke_source_batch,
+)
 from .contracts import FamilyProgramRegistry, RegisteredFamilyProgram
 
 def _source_draw(source, *args, **kwargs):
@@ -34,16 +43,43 @@ def default_family_program_registry() -> FamilyProgramRegistry:
             "boolean_composition", tuple(sorted(formal_adapters[:3])),
             "bilqis.factory.formal-lesson/v1",
             "bilqis.factory.formal-checker/v1",
-            construct_formal_lesson, check_formal_lesson, invoke_bound=invoke_formal),
+            construct_formal_lesson, check_formal_lesson, invoke_bound=invoke_formal,
+            program_keys=(
+                FamilyProgramKey("boolean_composition",
+                    Signature(("Boolean",), "Boolean"), ("binary",)),
+                FamilyProgramKey("boolean_composition",
+                    Signature(("Boolean", "Boolean"), "Boolean"), ("binary",)),
+            )),
         RegisteredFamilyProgram(
             "numeric_composition", (formal_adapters[3],),
             "bilqis.factory.formal-lesson/v1",
             "bilqis.factory.formal-checker/v1",
-            construct_formal_lesson, check_formal_lesson, invoke_bound=invoke_formal),
+            construct_formal_lesson, check_formal_lesson, invoke_bound=invoke_formal,
+            program_keys=(
+                FamilyProgramKey("numeric_composition",
+                    Signature(("Number",), "Number"),
+                    ("binary", "numeric_active")),
+                FamilyProgramKey("numeric_composition",
+                    Signature(("Number", "Number"), "Number"),
+                    ("binary", "numeric_active")),
+            )),
         RegisteredFamilyProgram(
             "source_world_fixture", ("source.ithkuil-reference-identity/v1",),
             "bilqis.factory.source-registry-draw/v1",
             "bilqis.factory.source-registry-check/v1",
             _source_draw, _source_check, invoke_bound=invoke_source_batch,
             native_capability_id=COPULAR_SOURCE_CAPABILITY),
+        RegisteredFamilyProgram(
+            "qualified_world_model", ("source.bamf.qualified-world/v1",),
+            "bilqis.factory.source-registry-draw/v1",
+            "bilqis.factory.source-registry-check/v1",
+            _source_draw, _source_check,
+            invoke_bound=invoke_same_capability_source_batch,
+            rule_profile=world_rule_profile(
+                default_registry("0" * 64), world_adapter()),
+            source_validator=require_registered_source,
+            program_keys=(FamilyProgramKey(
+                "qualified_world_model",
+                Signature(("EventStatus",), "Boolean"),
+                ("binary",)),)),
     ))

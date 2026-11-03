@@ -32,23 +32,24 @@ def save_bamf_bundle(candidate: BamfBundleCandidate, destination: Path, *,
     records = sidecar_records(candidate)
     destination.mkdir(parents=True)
     retained = candidate.retained_state
-    tensor = _mlx_checkpoint.save_bamf_state_payload(
-        destination / "bamf-state.safetensors", candidate.topology, candidate.extents,
-        retained.optimizer, optimizer_step=retained.optimizer_step,
-        reserve_gib=reserve_gib)
     plane = data_plane()
-    try:
-        local_tensor = destination / tensor["filename"]
-        object_path = plane.file_object_destination(tensor["sha256"])
-        if not object_path.exists():
-            assert_headroom(
-                object_path, required_bytes=local_tensor.stat().st_size,
-                reserve_gib=reserve_gib)
-        plane.adopt_file_object(local_tensor, tensor["sha256"])
-        local_tensor.unlink()
-        tensor = {**tensor, "object_sha256": tensor["sha256"]}
-    except ValueError:
-        invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
+    with plane.transaction():
+        tensor = _mlx_checkpoint.save_bamf_state_payload(
+            destination / "bamf-state.safetensors", candidate.topology, candidate.extents,
+            retained.optimizer, optimizer_step=retained.optimizer_step,
+            reserve_gib=reserve_gib)
+        try:
+            local_tensor = destination / tensor["filename"]
+            object_path = plane.file_object_destination(tensor["sha256"])
+            if not plane.owns_file_object(tensor["sha256"]):
+                assert_headroom(
+                    object_path, required_bytes=local_tensor.stat().st_size,
+                    reserve_gib=reserve_gib)
+            plane.adopt_file_object(local_tensor, tensor["sha256"])
+            local_tensor.unlink()
+            tensor = {**tensor, "object_sha256": tensor["sha256"]}
+        except ValueError:
+            invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
     bindings = {}
     for name, record in records.items():
         raw = canonical(record)
@@ -147,7 +148,13 @@ def _tensor_read_path(root: Path, binding: dict) -> tuple[Path, dict]:
     if "object_sha256" not in binding:
         return root / binding["filename"], binding
     try:
-        path = data_plane().require_file_object(binding["object_sha256"])
+        plane = data_plane()
+        with plane.transaction():
+            digest = binding["object_sha256"]
+            path = plane.require_file_object(digest)
+            if not plane.owns_file_object(digest):
+                assert_headroom(path, required_bytes=path.stat().st_size)
+                path = plane.adopt_file_object(path, digest)
     except ValueError:
         invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
     return path, {key: value for key, value in binding.items()
