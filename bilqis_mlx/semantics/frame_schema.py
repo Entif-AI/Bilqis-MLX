@@ -1,6 +1,8 @@
 """Released, occurrence-aware semantic frame records over the native typed AST."""
 from __future__ import annotations
 
+from ._public_identity.module_identity import restore_public_module
+
 from dataclasses import asdict, dataclass
 from enum import Enum
 import hashlib
@@ -69,4 +71,4 @@ for _public in (
     validate_frame_bindings, bind_frame_instance, bind_ast_frames,
     validate_frame_tree, frame_schema_from_bytes, frame_instance_from_bytes,
 ):
-    _public.__module__ = __name__
+    restore_public_module(_public, __name__)

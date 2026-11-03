@@ -7,6 +7,8 @@ invented alongside an untrusted candidate schema.
 """
 from __future__ import annotations
 
+from ._public_identity.module_identity import restore_public_module
+
 from dataclasses import asdict, dataclass
 import hashlib
 import hmac
@@ -52,4 +54,4 @@ for _public in (
     _load_pinned_released_frame_schemas, lookup_source_pinned_frame_schema, verify_source_pinned_frame_schema,
     verify_source_pinned_frame_schema_bytes,
 ):
-    _public.__module__ = __name__
+    restore_public_module(_public, __name__)
