@@ -16,6 +16,7 @@ import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation, publish_bamf_generation
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
+    publish_candidate,
     accepted_state, candidate, parent_state, shape_patch,
 )
 
@@ -34,7 +35,7 @@ class PublicationDurabilityTests(unittest.TestCase):
 
     def publish(self, value):
         with shape_patch(), patch.object(mlx_checkpoint, 'assert_headroom'):
-            return publish_bamf_generation(self.run, value)
+            return publish_candidate(self.run, value)
 
     def assert_persisted_tensor_durable(self):
         current = set()

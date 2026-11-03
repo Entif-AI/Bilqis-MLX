@@ -9,6 +9,7 @@ from unittest.mock import patch
 import mlx.core as mx
 
 from bilqis_mlx.data_plane import data_plane
+from bilqis_mlx.learning.atlas_acceptance import mint_acceptance_binding
 from bilqis_mlx.learning.atlas_candidate import (
     CandidateState, begin_candidate, candidate_step, resolve_candidate,
 )
@@ -16,7 +17,9 @@ from bilqis_mlx.learning.atlas_engram import MotifManifest
 from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
 from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree
-from bilqis_mlx.runtime.bamf_bundle import BamfBundleCandidate
+from bilqis_mlx.runtime.bamf_bundle import (
+    BamfBundleCandidate, publish_bamf_generation,
+)
 from bilqis_mlx.runtime.bamf_bundle.motif_codec import snapshot_to_record
 from bilqis_mlx.runtime.bamf_bundle.records import canonical, sha
 from bilqis_mlx.runtime.model_topology_v2 import (
@@ -143,3 +146,17 @@ def rewrite_motif_bundle_fixture(
 def shape_patch():
     return patch("bilqis_mlx.runtime.model_topology_v2.expected_bamf_shapes",
                  return_value=DECLARED)
+
+
+def acceptance(bundle) -> object:
+    """Mint the retention owner's acceptance binding for one candidate bundle."""
+    return mint_acceptance_binding(
+        bundle.retained_state, run_id=bundle.run_id,
+        generation=bundle.generation,
+        feature_sha256=bundle.extents.factor_map_digest,
+        retention_reason="FIXTURE_RETENTION_ACCEPTED")
+
+
+def publish_candidate(run_dir, bundle):
+    """Publish one candidate with its retention acceptance binding."""
+    return publish_bamf_generation(run_dir, bundle, acceptance=acceptance(bundle))

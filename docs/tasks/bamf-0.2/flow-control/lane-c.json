@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "9bf47289e9ed0a64d275b31c3a7de42c55a8b83e",
-  "updated_at": "2026-11-03T17:45:00Z",
+  "updated_at": "2026-11-03T20:50:00Z",
   "exception": null,
   "items": [
     {
@@ -40,18 +40,6 @@
       "preserved_branch": "fix/bamf-c02-1-source-lineage-20261101",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
       "close_reason": "EGM-Failed; remediation #713"
-    },
-    {
-      "issue": 713,
-      "pr": null,
-      "state": "WAITING",
-      "head_sha": "e428dbd4c05bc6503bc40ac6ddcb4e3530b9d131",
-      "summary": "Stacked C02.1 canonical model-input authority remediation.",
-      "resume_trigger": "The bounded repair is consumed into PR #700 or explicitly selected for focused integration under ADR-125.",
-      "closed_pr": 728,
-      "preserved_branch": "codex/713-canonical-model-input-20261102",
-      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
-      "close_reason": "EGM-Mitigation issue #713"
     },
     {
       "issue": 717,
@@ -97,10 +85,19 @@
       "issue": 800,
       "pr": 803,
       "state": "TURNED_IN",
-      "head_sha": "5f9d484e94a942f5421281187764efbdefa8ee24",
+      "head_sha": "5f9d484e",
       "preserved_branch": "codex/bamf02-c-347-integration-20261103",
-      "summary": "Late-bound public-facade dependency repair is verified and consumed into the active #347 aggregate; ready PR #803 carries the C01 integration candidate.",
+      "summary": "Late-bound public-facade dependency repair is ready in PR #803.",
       "resume_trigger": null
+    },
+    {
+      "issue": 713,
+      "pr": 808,
+      "state": "TURNED_IN",
+      "head_sha": "dc57690b",
+      "preserved_branch": "codex/remediation-713-c02-authority-20261103",
+      "summary": "C02.1 remediation in ready PR #808: the canonical A06 owner holds feature selection authority.",
+      "resume_trigger": "PR #808 is merged or closed."
     }
   ]
 }

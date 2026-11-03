@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "05e31a576e3432e4238c9b4477a70d70ec4fc487",
-  "updated_at": "2026-11-03T18:35:00Z",
+  "updated_at": "2026-11-03T20:42:00Z",
   "exception": null,
   "items": [
     {
@@ -120,18 +120,6 @@
       "preserved_branch": "codex/bamf02-b13-3-480-cache-custody-20261102",
       "closed_under": "EGM issue-label queue; EGM-Pending is durable on issue #480",
       "close_reason": "Await fresh whole-candidate EGM on the durable branch before opening a merge-ready PR."
-    },
-    {
-      "issue": 711,
-      "pr": null,
-      "state": "WAITING",
-      "head_sha": "c4eb468e579fa5f3fee187e663ee5787f92aef05",
-      "summary": "Stacked B09.2 production-authority remediation.",
-      "resume_trigger": "The bounded repair is consumed into PR #692 or explicitly selected for focused integration under ADR-125.",
-      "closed_pr": 727,
-      "preserved_branch": "codex/participation-711-20261102",
-      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
-      "close_reason": "EGM-Mitigation issue #711"
     },
     {
       "issue": 715,
@@ -268,9 +256,9 @@
       "issue": 708,
       "pr": 804,
       "state": "TURNED_IN",
-      "head_sha": "7d8e3b98",
+      "head_sha": "93cf0db1",
       "preserved_branch": "codex/remediation-708-feature-authority-20261103",
-      "summary": "B13.5 remediation delivered as ready PR #804: the accepted-generation feature receipt is rederived from the admitted source release and retained custody, so a caller-created candidate cannot ratify its own factor-map digest.",
+      "summary": "B13.5 remediation in ready PR #804: the accepted-generation feature receipt is rederived from the admitted source release, and the generation must carry the retention owner's acceptance binding before it may mint that authority.",
       "resume_trigger": "PR #804 is merged or closed; the accepted-generation feature authority continues on owner issue #697."
     },
     {
@@ -279,8 +267,26 @@
       "state": "TURNED_IN",
       "head_sha": "dc7a2c62",
       "preserved_branch": "codex/remediation-709-cold-resume-20261103",
-      "summary": "B13.2 remediation delivered as ready PR #805: the cold-resume witness starts from published accepted-generation custody, cold resumes in a clean process, executes the next controlled optimizer step and publishes the successor generation, with negative controls for synthetic direct save-load.",
+      "summary": "B13.2 remediation in ready PR #805: the cold-resume witness starts from published accepted-generation custody, cold resumes in a clean process and continues the next controlled optimizer step.",
       "resume_trigger": "PR #805 is merged or closed; the B13.2 cold-resume witness continues on owner issue #479."
+    },
+    {
+      "issue": 711,
+      "pr": 806,
+      "state": "TURNED_IN",
+      "head_sha": "101a2c57",
+      "preserved_branch": "codex/remediation-711-participation-20261103",
+      "summary": "B09.2 remediation in ready PR #806: the participation owner derives per-step participation and optimizer masks from executed production authority.",
+      "resume_trigger": "PR #806 is merged or closed; the B09.2 owner continues on owner issue #465."
+    },
+    {
+      "issue": 710,
+      "pr": 807,
+      "state": "TURNED_IN",
+      "head_sha": "0a3d5c66",
+      "preserved_branch": "codex/remediation-710-execution-provenance-20261103",
+      "summary": "B12.2 remediation in ready PR #807, stacked on the #711 owner: every candidate optimizer step binds to owner-issued execution provenance.",
+      "resume_trigger": "PR #807 is merged or closed; the B12.2 binding continues on owner issue #475."
     }
   ]
 }
