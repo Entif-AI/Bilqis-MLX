@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 import math
+from types import SimpleNamespace
 from unittest import TestCase
 
 import numpy as np
@@ -11,13 +12,35 @@ from bilqis_mlx.learning.atlas_engram import (
     MotifManifest, MotifSlot, MotifFrameInput, motif_keys,
 )
 from bilqis_mlx.learning.atlas_engram_reads import schema_source_handle
+from bilqis_mlx.learning.atlas_engram_reads.numerical import _lookup_slot
+from bilqis_mlx.learning._engram.tests.motif_fixtures import source as motif_source
 
 
 RELEASE = "a" * 64
 
-from .fixtures import RELEASE, _source, _parameters, _read
+from bilqis_mlx.learning.tests.motif_reads.fixtures import (
+    RELEASE, _source, _parameters, _read,
+)
 
 class NumericalReadTests(TestCase):
+    def test_nested_relation_lookup_uses_child_structure_from_read_row(self):
+        nested_source = motif_source(child=True)
+        child_source = nested_source.children[0]
+        exact, _structural = motif_keys(nested_source, RELEASE)
+        manifest = MotifManifest(RELEASE, (MotifSlot(0, exact),))
+        parent_item = SimpleNamespace(
+            envelope=SimpleNamespace(frame=nested_source.frame),
+            schema=nested_source.schema,
+        )
+        child_item = SimpleNamespace(
+            envelope=SimpleNamespace(frame=child_source.frame),
+            schema=child_source.schema,
+        )
+        self.assertEqual(
+            _lookup_slot(parent_item, manifest, (parent_item, child_item)),
+            (0, "EXACT"),
+        )
+
     def test_exact_hit_both_sites_use_literal_gate_and_keep_padding_unchanged(self):
         position, task, frontier, policy = _source()
         exact, structural = motif_keys(

@@ -9,7 +9,7 @@ from bilqis_mlx.semantics.context_eligibility import ApprovedContextProjection, 
 from bilqis_mlx.semantics.frame_schema import AtomicFrame
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from ..atlas_engram import (
-    INITIAL_MOTIF_CAPACITY, MotifFrameInput, MotifManifest, motif_keys,
+    INITIAL_MOTIF_CAPACITY, MotifManifest, build_motif_input, motif_keys,
 )
 from ..atlas_engram_parameters import MotifParameterView, SITE_COUNT
 
@@ -49,10 +49,21 @@ def _validate_candidate_inputs(
     parameters.__post_init__()
 
 
-def _lookup_slot(item, manifest):
-    exact, structural = motif_keys(
-        MotifFrameInput(item.envelope.frame, item.schema),
-        manifest.semantic_release)
+def _lookup_slot(item, manifest, row):
+    qualified = {
+        position.envelope.frame.occurrence_id:
+            (position.envelope.frame, position.schema)
+        for position in row
+        if position is not None and type(position.envelope.frame) is not AtomicFrame
+    }
+    atomic = {
+        position.envelope.frame.occurrence_id: position.envelope.frame
+        for position in row
+        if position is not None and type(position.envelope.frame) is AtomicFrame
+    }
+    source = build_motif_input(
+        item.envelope.frame.occurrence_id, qualified, atomic)
+    exact, structural = motif_keys(source, manifest.semantic_release)
     slot_id = manifest.lookup(exact)
     disposition = "EXACT"
     if slot_id is None:
@@ -141,7 +152,7 @@ def _read_motif_unqualified_candidate(
                 output.append(state)
                 status.append("HELD")
                 continue
-            slot_id, disposition = _lookup_slot(item, manifest)
+            slot_id, disposition = _lookup_slot(item, manifest, row)
             if slot_id is None:
                 output.append(state)
                 status.append("MISS")

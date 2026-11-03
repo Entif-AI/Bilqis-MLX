@@ -1,7 +1,7 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "deaa8b9dbd277993f884abeea7413f9cb799d945",
+  "observed_unified": "aa828eb5cb8822a5614aa3353864bf187f83444d",
   "updated_at": "2026-11-03T08:50:15.707219+00:00",
   "exception": null,
   "items": [
@@ -32,11 +32,11 @@
     {
       "issue": 456,
       "pr": 690,
-      "state": "TURNED_IN",
+      "state": "ACTIVE",
       "head_sha": "203c53eb1252ada8fba8ed6f1e9c7c5c57ca6cde",
-      "summary": "B07.1 is turned in through draft PR #690; the turn-in metadata changed the exact head after the prior PASS, so issue #456 is EGM-Pending for final exact-head review.",
+      "summary": "Integrate existing EGM-reviewed B07 candidate with current CAS/legacy bundle lookup and authenticated retained-state issuance; actual source/custody proof before final review.",
       "resume_trigger": null,
-      "preserved_branch": "codex/b07-456-source-bridge-20261101"
+      "preserved_branch": "codex/bamf02-b-456-cas-integration-20261103"
     },
     {
       "issue": 455,
@@ -199,21 +199,23 @@
     },
     {
       "issue": 449,
-      "pr": 780,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "4126cdaecd92b2c515693540fb86fd09fde6338d",
-      "summary": "B05.1 depth proof ready in PR #780 after fresh pinned EGM PASS; depth18/18 and source producer16/16 zero skips. Human integration pending.",
+      "summary": "PR#780 human-merged; issue#449 explicitly CLOSED COMPLETED.",
       "resume_trigger": null,
-      "preserved_branch": "codex/bamf02-b-449-depth-proof-20261103"
+      "preserved_branch": "codex/bamf02-b-449-depth-proof-20261103",
+      "merged_pr": 780
     },
     {
       "issue": 778,
-      "pr": 779,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "551f9d7f6172113b2c2698178c870cf61c7c35a0",
-      "summary": "Canonical test-import repair #778 is EGM-Passed and turned in through PR #779; file source-positive1/1, unchanged producer16/16, no real student mutation.",
+      "summary": "PR#779 human-merged; issue#778 explicitly CLOSED COMPLETED.",
       "resume_trigger": null,
-      "preserved_branch": "codex/bamf02-b-778-test-imports-20261103"
+      "preserved_branch": "codex/bamf02-b-778-test-imports-20261103",
+      "merged_pr": 779
     },
     {
       "issue": 577,

@@ -75,7 +75,10 @@ class MotifPreparationTests(TestCase):
         b = motif_keys(source(actor="urn:actor:carol"), RELEASE)[0]
         c = motif_keys(source(actor="urn:actor:dan"), RELEASE)[0]
         manifest = MotifManifest(RELEASE, (MotifSlot(0, a), MotifSlot(1, b)))
-        with patch("bilqis_mlx.learning.atlas_engram._bucket", return_value="collision"):
+        with patch(
+            "bilqis_mlx.learning._engram.atlas_engram_identity._bucket",
+            return_value="collision",
+        ):
             self.assertEqual(manifest.lookup(a), 0)
             self.assertEqual(manifest.lookup(b), 1)
             self.assertIsNone(manifest.lookup(c))
