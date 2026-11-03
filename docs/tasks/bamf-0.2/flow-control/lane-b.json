@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "2800946729e484875f7d1f57f0e6d85078936394",
-  "updated_at": "2026-11-02T19:07:00-05:00",
+  "updated_at": "2026-11-02T19:44:00-05:00",
   "exception": null,
   "items": [
     {
@@ -31,15 +31,12 @@
     },
     {
       "issue": 456,
-      "pr": null,
-      "state": "WAITING",
-      "head_sha": "547471d2b95fadbbd7fa3631db0d0a56a20436c9",
-      "summary": "B07.1 source-qualified motif identity remains parked.",
-      "resume_trigger": "The lane selects B07.1 as its current integration candidate and all known prerequisites are consumable for one final synchronization and merge-readiness pass.",
-      "closed_pr": 690,
-      "preserved_branch": "codex/b07-456-source-bridge-20261101",
-      "closed_under": "Issue-label EGM queue; EGM-Passed is durable on issue #456",
-      "close_reason": "Not an active merge attempt; reopen/create delivery envelope when Lane B selects it for integration."
+      "pr": 690,
+      "state": "TURNED_IN",
+      "head_sha": "203c53eb1252ada8fba8ed6f1e9c7c5c57ca6cde",
+      "summary": "B07.1 is turned in through draft PR #690; the turn-in metadata changed the exact head after the prior PASS, so issue #456 is EGM-Pending for final exact-head review.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/b07-456-source-bridge-20261101"
     },
     {
       "issue": 455,
@@ -103,15 +100,13 @@
     },
     {
       "issue": 586,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "966d09a734b6c9d561aa6af240825bcd7012e044",
-      "summary": "B11.1a consumed merged remediation #738 plus completed #747/#748 receipt-layout and real-source proof repairs; whole-candidate engineering verification is in progress before the next fresh EGM.",
+      "pr": 762,
+      "state": "TURNED_IN",
+      "head_sha": "c99e7f669dc650073e34a924725ecc2c44dae0d0",
+      "summary": "B11.1a passed fresh whole-candidate EGM on exact implementation head c99e7f66 after consuming #738/#747/#748 and is turned in through non-draft PR #762; hosted CI is the remaining integration gate.",
       "resume_trigger": null,
       "closed_pr": 640,
-      "preserved_branch": "codex/b11-586-source-h0-20261030",
-      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
-      "close_reason": "Prior PR closed after EGM failure; durable branch reactivated after #738 acceptance"
+      "preserved_branch": "codex/b11-586-source-h0-20261030"
     },
     {
       "issue": 480,
