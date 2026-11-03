@@ -1,6 +1,7 @@
 """Small real-B12 fixtures for B13.1 custody tests."""
 from __future__ import annotations
 
+from contextlib import ExitStack
 from copy import deepcopy
 import os
 from pathlib import Path
@@ -10,6 +11,7 @@ import mlx.core as mx
 
 from bilqis_mlx.data_plane import data_plane
 from bilqis_mlx.learning.atlas_acceptance import mint_acceptance_binding
+from bilqis_mlx.learning.atlas_retention_decision import decide_candidate_retention
 from bilqis_mlx.learning.atlas_candidate import (
     CandidateState, begin_candidate, candidate_step, resolve_candidate,
 )
@@ -52,7 +54,7 @@ def accepted_state(parent: CandidateState) -> CandidateState:
     transaction = begin_candidate(parent)
     transaction = candidate_step(
         transaction, {NAME: mx.array([[3., 4.], [0., 0.]], dtype=mx.float32)},
-        execution_provenance(rows=(0,)), HP, decay={NAME: True},
+        execution_provenance(transaction.parent, rows=(0,)), HP, decay={NAME: True},
         loss_bearing=True, max_norm=1.)
     return resolve_candidate(transaction, accepted=True)
 
@@ -61,7 +63,7 @@ def rejected_state(parent: CandidateState) -> CandidateState:
     transaction = begin_candidate(parent)
     transaction = candidate_step(
         transaction, {NAME: mx.ones((2, 2), dtype=mx.float32)},
-        execution_provenance(rows=(0,)), HP, decay={NAME: True},
+        execution_provenance(transaction.parent, rows=(0,)), HP, decay={NAME: True},
         loss_bearing=True, max_norm=1.)
     return resolve_candidate(transaction, accepted=False)
 
@@ -70,7 +72,7 @@ def next_accepted_step(parent: CandidateState) -> CandidateState:
     transaction = begin_candidate(parent)
     transaction = candidate_step(
         transaction, {NAME: mx.array([[.25, -.5], [0., 0.]], dtype=mx.float32)},
-        execution_provenance(rows=(0,)), HP, decay={NAME: True},
+        execution_provenance(transaction.parent, rows=(0,)), HP, decay={NAME: True},
         loss_bearing=True, max_norm=1.)
     return resolve_candidate(transaction, accepted=True)
 
@@ -145,17 +147,34 @@ def rewrite_motif_bundle_fixture(
 
 
 def shape_patch():
-    return patch("bilqis_mlx.runtime.model_topology_v2.expected_bamf_shapes",
-                 return_value=DECLARED)
+    """Bind the B01 parameter ledger owner to the fixture's single bank."""
+    stack = ExitStack()
+    for target in ("bilqis_mlx.runtime.model_topology_v2.expected_bamf_shapes",
+                   "bilqis_mlx.runtime.topology_v2.ledger.expected_bamf_shapes",
+                   "bilqis_mlx.learning.atlas_participation_census."
+                   "expected_bamf_shapes",
+                   "bilqis_mlx.learning._retention.atlas_participation_census."
+                   "expected_bamf_shapes",
+                   ):
+        stack.enter_context(patch(target, return_value=DECLARED))
+    return stack
+
+
+def retention_decision(*, accepted=True) -> object:
+    """Issue the retention decision owner's decision for the fixture candidate."""
+    return decide_candidate_retention(
+        no_target_gain=not accepted, same_grade_net_gain=1,
+        fixed_grade_regression=False, active_grade_regression=False,
+        whole_school_regression=False, frontier_measured=True,
+        fragile_losses=0, exceeded=False)
 
 
 def acceptance(bundle) -> object:
     """Mint the retention owner's acceptance binding for one candidate bundle."""
     return mint_acceptance_binding(
-        bundle.retained_state, run_id=bundle.run_id,
+        retention_decision(), bundle.retained_state, run_id=bundle.run_id,
         generation=bundle.generation,
-        feature_sha256=bundle.extents.factor_map_digest,
-        retention_reason="FIXTURE_RETENTION_ACCEPTED")
+        feature_sha256=bundle.extents.factor_map_digest)
 
 
 def publish_candidate(run_dir, bundle):

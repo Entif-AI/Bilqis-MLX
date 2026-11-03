@@ -4,24 +4,50 @@ This is the production path from executed-step evidence to a published accepted
 generation. The B09.2 binder derives the participation and the mask, the
 retention owner mints the acceptance binding, and B13 custody publishes the
 generation only with that binding. No test helper is involved.
+
+The generation identity used to bind a step comes from the published custody,
+never from caller parameters, so a provenance record cannot be replayed onto
+another candidate, generation, step, topology or extents state.
 """
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
+import sys
 
-from bilqis_mlx.learning.atlas_acceptance import mint_acceptance_binding
+from bilqis_mlx.learning.atlas_acceptance import (
+    candidate_identity_digest, mint_acceptance_binding,
+)
+from bilqis_mlx.learning.atlas_retention_decision import (
+    CandidateRetentionDecision,
+)
 from bilqis_mlx.learning.atlas_candidate import (
     CandidateState, CandidateTransaction, begin_candidate, resolve_candidate,
 )
+from bilqis_mlx.learning.atlas_plasticity import group_eligibility, next_update_mode
+from bilqis_mlx.learning.atlas_participation import ActiveAdmittedRows
 from bilqis_mlx.runtime.atlas_candidate_step import production_candidate_step
+from bilqis_mlx.runtime.model_topology_v2 import ParameterCensus
 
 from .codec import load_bamf_bundle
 from .publication import _pointer_lock, _read_pointer, publish_bamf_generation
 from .records import BamfBundleCandidate, CompleteStudent, invalid
 
 
-def load_accepted_generation(run_dir: Path) -> CompleteStudent:
-    """Load the currently published accepted generation under the pointer lock."""
+@dataclass(frozen=True)
+class AcceptedGenerationIdentity:
+    """The published identity of the accepted generation in custody."""
+
+    run_id: str
+    generation: int
+    manifest_sha256: str
+    topology_digest: str
+    extents_digest: str
+    optimizer_step: int
+    candidate_identity_sha256: str
+
+
+def _read_accepted(run_dir: Path):
     run_dir = Path(run_dir)
     pointer_path = run_dir / "bamf-state.json"
     with _pointer_lock(run_dir):
@@ -35,7 +61,25 @@ def load_accepted_generation(run_dir: Path) -> CompleteStudent:
                 or student.generation != pointer["generation"]
                 or student.parent_manifest_sha256 != pointer["parent_manifest_sha256"]):
             invalid("BAMF_GENERATION_POINTER_DRIFT")
-    return student
+    return pointer, student
+
+
+def load_accepted_generation(run_dir: Path) -> CompleteStudent:
+    """Load the currently published accepted generation under the pointer lock."""
+    return _read_accepted(run_dir)[1]
+
+
+def accepted_generation_identity(run_dir: Path) -> AcceptedGenerationIdentity:
+    """Read the published identity a candidate step must bind itself to."""
+    pointer, student = _read_accepted(run_dir)
+    return AcceptedGenerationIdentity(
+        run_id=student.run_id,
+        generation=student.generation,
+        manifest_sha256=pointer["manifest_sha256"],
+        topology_digest=student.topology.digest,
+        extents_digest=student.extents.digest,
+        optimizer_step=student.retained_state.optimizer_step,
+        candidate_identity_sha256=candidate_identity_digest(student.retained_state))
 
 
 def derive_successor_bundle(parent: CompleteStudent, retained_state: CandidateState,
@@ -66,42 +110,82 @@ def derive_successor_bundle(parent: CompleteStudent, retained_state: CandidateSt
         dict(parent.evaluation_contract), transition, tuple(delivery_events))
 
 
-def admit_candidate_step(parent: CompleteStudent, gradients, *,
-                         motif_reads, executed_parameter_names,
-                         visible_identity_rows, feedback_identity_rows,
-                         local_slot_rows, loss_bearing_target, group_eligible,
-                         active_admitted, spec, extents, teacher_hparams,
-                         decay, max_norm: float) -> CandidateTransaction:
-    """Run one candidate optimizer step through the production participation binder.
+def _parameter_census(parent: CompleteStudent) -> ParameterCensus:
+    """The B01 parameter census owner for the accepted generation.
 
-    The participation and the mask come from the B09.2 owner binder, and the
-    step refuses anything that is not owner-issued provenance.
+    The declared parameter set is read through the census owner module that the
+    participation owner validates against, so both see exactly the same ledger.
     """
+    owner = sys.modules["bilqis_mlx.learning.atlas_participation_census"]
+    return ParameterCensus(
+        parent.topology.digest, parent.extents.digest,
+        owner.expected_bamf_shapes(parent.topology, parent.extents))
+
+
+def derive_participation_inputs(parent: CompleteStudent):
+    """Derive the participation inputs from their owners.
+
+    The group eligibility comes from the B01 parameter census owner and the
+    retained policy owner, the admitted rows from the published custody, and
+    the executed parameter names from the same census. A caller cannot
+    reclassify a parameter, substitute identity rows or admission state, or
+    claim a parameter executed when the owners do not report it.
+    """
+    census = _parameter_census(parent)
+    mode = next_update_mode(parent.retained_state.policy,
+                             teacher_requests_full=False)
+    eligibility = group_eligibility(
+        mode, census, parent.retained_state.policy.row_ages)
+    return eligibility, ActiveAdmittedRows(
+        identity_rows=eligibility.admitted_identity_rows)
+
+
+def admit_candidate_step(run_dir: Path, gradients, *,
+                         motif_reads, loss_bearing_target, teacher_hparams,
+                         decay, max_norm: float) -> CandidateTransaction:
+    """Run one candidate optimizer step for the accepted generation in custody.
+
+    The participation inputs are derived from their owners, the step binds
+    itself to the published generation identity, and provenance issued for
+    another candidate, generation, step, topology or extents state cannot be
+    used here.
+    """
+    parent = load_accepted_generation(run_dir)
+    identity = accepted_generation_identity(run_dir)
+    eligibility, active_admitted = derive_participation_inputs(parent)
+    executed_parameter_names = tuple(sorted(
+        item.name for item in _parameter_census(parent).parameters))
     return production_candidate_step(
         begin_candidate(parent.retained_state), gradients,
         motif_reads=motif_reads,
         executed_parameter_names=executed_parameter_names,
-        visible_identity_rows=visible_identity_rows,
-        feedback_identity_rows=feedback_identity_rows,
-        local_slot_rows=local_slot_rows,
+        visible_identity_rows=eligibility.admitted_identity_rows,
+        feedback_identity_rows=(),
+        local_slot_rows=(),
         loss_bearing_target=loss_bearing_target,
-        group_eligible=group_eligible, active_admitted=active_admitted,
-        spec=spec, extents=extents, teacher_hparams=teacher_hparams,
-        decay=decay, max_norm=max_norm)
+        group_eligible=eligibility,
+        active_admitted=active_admitted,
+        spec=parent.topology, extents=parent.extents,
+        run_id=identity.run_id, generation=identity.generation + 1,
+        parent_manifest_sha256=identity.manifest_sha256,
+        parent_candidate_identity_sha256=identity.candidate_identity_sha256,
+        parent_optimizer_step=identity.optimizer_step,
+        topology_digest=identity.topology_digest,
+        teacher_hparams=teacher_hparams, decay=decay, max_norm=max_norm)
 
 
 def accept_and_publish(run_dir: Path, bundle: BamfBundleCandidate,
                        retained_state: CandidateState, *,
-                       feature_sha256: str, retention_reason: str,
-                       step_proofs: tuple = ()) -> dict:
-    """Accept a candidate with the retention owner and publish it with that binding.
+                       decision: CandidateRetentionDecision,
+                       feature_sha256: str) -> dict:
+    """Publish a candidate that the retention decision owner has accepted.
 
-    The retention owner mints the acceptance binding for the exact accepted
-    optimizer state and the owner-bound step proofs. B13 custody publishes the
-    generation only when the binding matches the candidate it publishes.
+    Publication does not decide that the candidate was accepted. The retention
+    decision owner issues the decision, the retention owner mints the acceptance
+    binding from that decision, and B13 custody publishes the generation only
+    when the binding matches the candidate it publishes.
     """
     binding = mint_acceptance_binding(
-        retained_state, run_id=bundle.run_id, generation=bundle.generation,
-        feature_sha256=feature_sha256, retention_reason=retention_reason,
-        step_proofs=tuple(step_proofs))
+        decision, retained_state, run_id=bundle.run_id,
+        generation=bundle.generation, feature_sha256=feature_sha256)
     return publish_bamf_generation(run_dir, bundle, acceptance=binding)

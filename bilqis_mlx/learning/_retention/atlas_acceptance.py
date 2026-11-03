@@ -13,12 +13,15 @@ from dataclasses import dataclass, field
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 
+from .atlas_retention_decision import CandidateRetentionDecision
+
 ACCEPTANCE_SCHEMA = "bilqis.mlx.accepted-candidate-binding/v1"
 DIGEST_HEX_LENGTH = 64
 _BINDING_ISSUER = object()
 _BINDING_FIELDS = (
     "run_id", "generation", "candidate_identity_sha256", "feature_sha256",
-    "optimizer_step", "retention_reason", "step_proof_sha256", "schema_version",
+    "optimizer_step", "retention_reason", "step_proof_sha256",
+    "decision_sha256", "schema_version",
 )
 
 
@@ -60,6 +63,7 @@ class AcceptedCandidateBinding:
     feature_sha256: str
     optimizer_step: int
     retention_reason: str
+    decision_sha256: str
     step_proof_sha256: tuple = ()
     schema_version: str = ACCEPTANCE_SCHEMA
     _issuance: object = field(init=False, default=None, repr=False, compare=False)
@@ -76,6 +80,7 @@ class AcceptedCandidateBinding:
                 or not self.retention_reason
                 or type(self.step_proof_sha256) is not tuple
                 or any(not _is_digest(item) for item in self.step_proof_sha256)
+                or not _is_digest(self.decision_sha256)
                 or self.schema_version != ACCEPTANCE_SCHEMA):
             _invalid()
 
@@ -105,23 +110,28 @@ class AcceptedCandidateBinding:
         return binding
 
 
-def mint_acceptance_binding(state, *, run_id: str, generation: int,
-                            feature_sha256: str, retention_reason: str,
-                            step_proofs: tuple = ()) -> AcceptedCandidateBinding:
-    """Mint the retention owner's acceptance binding for one candidate state.
+def mint_acceptance_binding(decision: CandidateRetentionDecision, state, *,
+                            run_id: str, generation: int,
+                            feature_sha256: str) -> AcceptedCandidateBinding:
+    """Mint the retention owner's acceptance binding for one accepted candidate.
 
-    The binding covers the accepted optimizer identity and the digests of the
-    owner-bound step proofs, so the published generation's custody records
-    which owner-issued provenance backed its steps.
+    Only an owner-issued accepted retention decision can mint this record. The
+    binding covers the accepted optimizer identity, the retention reason that
+    the decision owner derived, and the digests of the owner-bound step proofs
+    the accepted state carries.
     """
+    if type(decision) is not CandidateRetentionDecision or not decision.accepted:
+        _invalid()
     binding = object.__new__(AcceptedCandidateBinding)
     for name, value in (
             ("run_id", run_id), ("generation", generation),
             ("candidate_identity_sha256", candidate_identity_digest(state)),
             ("feature_sha256", feature_sha256),
             ("optimizer_step", state.optimizer_step),
-            ("retention_reason", retention_reason),
-            ("step_proof_sha256", tuple(proof.digest for proof in step_proofs)),
+            ("retention_reason", decision.reason),
+            ("step_proof_sha256", tuple(
+                proof.digest for proof in state.step_proofs)),
+            ("decision_sha256", decision.digest),
             ("schema_version", ACCEPTANCE_SCHEMA), ("_issuance", _BINDING_ISSUER)):
         object.__setattr__(binding, name, value)
     binding.__post_init__()

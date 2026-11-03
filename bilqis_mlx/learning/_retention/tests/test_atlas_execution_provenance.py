@@ -60,16 +60,19 @@ class ExecutionProvenanceBindingTests(unittest.TestCase):
             self.step(candidate, mx.array([True, False]))
 
     def test_forged_provenance_cannot_be_constructed_by_a_caller(self):
-        issued = execution_provenance(rows=(0,))
+        issued = execution_provenance(self.parent, rows=(0,))
         with self.assertRaises(BilqisError):
             StepExecutionProvenance(
                 issued.participation, issued.mask, issued.eligible_parameter_names,
-                issued.extents_sha256)
+                issued.extents_sha256, issued.run_id, issued.generation,
+                issued.parent_manifest_sha256,
+                issued.parent_candidate_identity_sha256,
+                issued.parent_optimizer_step, issued.topology_digest)
         with self.assertRaises(BilqisError):
             replace(issued, mask=issued.mask)
 
     def test_recorded_proof_binds_the_owner_derived_mask(self):
-        issued = execution_provenance(rows=(0,))
+        issued = execution_provenance(self.parent, rows=(0,))
         candidate = self.step(begin_candidate(self.parent), issued)
         self.assertEqual(len(candidate.step_proofs), 1)
         proof = candidate.step_proofs[0]
@@ -81,13 +84,13 @@ class ExecutionProvenanceBindingTests(unittest.TestCase):
             np.asarray(accepted.optimizer.update_counts[NAME]), [3, 3])
 
     def test_unparticipating_rows_never_advance(self):
-        candidate = self.step(begin_candidate(self.parent), execution_provenance(rows=()))
+        candidate = self.step(begin_candidate(self.parent), execution_provenance(self.parent, rows=()))
         accepted = resolve_candidate(candidate, accepted=True)
         np.testing.assert_array_equal(
             np.asarray(accepted.optimizer.update_counts[NAME]), [2, 3])
 
     def test_provenance_for_another_parameter_set_is_refused(self):
-        issued = execution_provenance(rows=(0,))
+        issued = execution_provenance(self.parent, rows=(0,))
         with self.assertRaises(BilqisError):
             other = replace(issued, eligible_parameter_names=("features.norm",))
             self.step(begin_candidate(self.parent), other)

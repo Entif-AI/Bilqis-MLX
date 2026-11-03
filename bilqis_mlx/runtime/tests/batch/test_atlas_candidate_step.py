@@ -12,6 +12,7 @@ import mlx.core as mx
 import numpy as np
 
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.learning.atlas_candidate import (
     CandidateState, begin_candidate, resolve_candidate,
 )
@@ -64,6 +65,12 @@ class ProductionCandidateStepTests(unittest.TestCase):
                 group_eligible=eligibility,
                 active_admitted=ActiveAdmittedRows(identity_rows=tuple(rows)),
                 spec=ModelTopologySpecV2(), extents=EXTENTS,
+                run_id="fixture-run", generation=1,
+                parent_manifest_sha256="6" * 64,
+                parent_candidate_identity_sha256=candidate_identity_digest(
+                    self.parent),
+                parent_optimizer_step=self.parent.optimizer_step,
+                topology_digest="8" * 64,
                 teacher_hparams=self.hp, decay={BANK: True}, max_norm=1.)
 
     def test_production_step_advances_only_the_executed_row(self):
@@ -98,6 +105,12 @@ class ProductionCandidateStepTests(unittest.TestCase):
                     group_eligible=forged,
                     active_admitted=ActiveAdmittedRows(identity_rows=((0, 0),)),
                     spec=ModelTopologySpecV2(), extents=EXTENTS,
+                    run_id="fixture-run", generation=1,
+                    parent_manifest_sha256="6" * 64,
+                    parent_candidate_identity_sha256=candidate_identity_digest(
+                        self.parent),
+                    parent_optimizer_step=self.parent.optimizer_step,
+                    topology_digest="8" * 64,
                     teacher_hparams=self.hp, decay={BANK: True}, max_norm=1.)
 
 

@@ -20,16 +20,15 @@ from unittest.mock import patch
 
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.learning.atlas_acceptance import mint_acceptance_binding
 from bilqis_mlx.runtime.bamf_bundle import (
     load_bamf_generation, publish_bamf_generation, save_bamf_bundle,
 )
 
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.cold_resume_probe import (
-    retained_digest,
+    continue_generation, retained_digest,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    candidate, parent_state, shape_patch,
+    candidate, parent_state, publish_candidate, shape_patch,
 )
 
 PROBE = ("bilqis_mlx.runtime.tests.custody.bamf_bundle.cold_resume_probe")
@@ -51,12 +50,7 @@ class BamfColdResumeContinuationTests(unittest.TestCase):
 
     def publish(self, source):
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            return publish_bamf_generation(
-                self.run, source, acceptance=mint_acceptance_binding(
-                    source.retained_state, run_id=source.run_id,
-                    generation=source.generation,
-                    feature_sha256=source.extents.factor_map_digest,
-                    retention_reason="FIXTURE_RETENTION_ACCEPTED"))
+            return publish_candidate(self.run, source)
 
     def probe(self, run=None):
         """Cold resume in a clean process and return its receipt."""
@@ -115,6 +109,26 @@ class BamfColdResumeContinuationTests(unittest.TestCase):
             cwd=str(REPOSITORY_ROOT), capture_output=True, text=True,
             env=dict(os.environ), timeout=300)
         self.assertNotEqual(process.returncode, 0)
+
+    def test_uninterrupted_and_cold_continuation_publish_the_same_successor(self):
+        initial = parent_state()
+        self.publish(candidate(initial))
+        second = self.root / "uninterrupted"
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            publish_candidate(second, candidate(initial))
+        uninterrupted = continue_generation(second)
+        cold = self.probe()
+        self.assertEqual(cold["published"]["manifest_sha256"],
+                         uninterrupted["published"]["manifest_sha256"])
+        self.assertEqual(cold["successor_digest"], uninterrupted["successor_digest"])
+        self.assertEqual(cold["successor_update_counts"],
+                         uninterrupted["successor_update_counts"])
+        self.assertEqual(cold["successor_proof_digests"],
+                         uninterrupted["successor_proof_digests"])
+        self.assertEqual(cold["decision"]["decision"],
+                         uninterrupted["decision"]["decision"])
+        self.assertEqual(cold["decision"]["decision_sha256"],
+                         uninterrupted["decision"]["decision_sha256"])
 
     def test_cold_resume_refuses_a_generation_without_published_custody(self):
         process = subprocess.run(

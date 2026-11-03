@@ -12,6 +12,7 @@ from unittest.mock import patch
 import mlx.core as mx
 
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.learning.atlas_engram_reads import MotifReadResult
 from bilqis_mlx.learning.atlas_execution_provenance import (
     StepExecutionProvenance,
@@ -51,6 +52,7 @@ def eligibility(mode="FULL", admitted=((0, 0),), eligible=(BANK, MOTIF)):
 
 class ExecutionBinderProductionTests(unittest.TestCase):
     def bind(self, **overrides):
+        parent = overrides.pop("parent", None)
         evidence = {
             "motif_reads": (motif_read((0,)),),
             "executed_parameter_names": (BANK, MOTIF),
@@ -63,7 +65,17 @@ class ExecutionBinderProductionTests(unittest.TestCase):
                 identity_rows=((0, 0),), motif_slots=(0,)),
             "spec": ModelTopologySpecV2(),
             "extents": EXTENTS,
+            "run_id": "fixture-run",
+            "generation": 1,
+            "parent_manifest_sha256": "6" * 64,
+            "parent_candidate_identity_sha256": "7" * 64,
+            "parent_optimizer_step": 11,
+            "topology_digest": "8" * 64,
         }
+        if parent is not None:
+            evidence["parent_candidate_identity_sha256"] = (
+                candidate_identity_digest(parent))
+            evidence["parent_optimizer_step"] = parent.optimizer_step
         evidence.update(overrides)
         with patch(CENSUS_SHAPE[0], return_value=DECLARED), \
                 patch(CENSUS_SHAPE[1], return_value=DECLARED):
@@ -90,7 +102,11 @@ class ExecutionBinderProductionTests(unittest.TestCase):
         with self.assertRaises(BilqisError):
             StepExecutionProvenance(
                 provenance.participation, provenance.mask,
-                provenance.eligible_parameter_names, provenance.extents_sha256)
+                provenance.eligible_parameter_names, provenance.extents_sha256,
+                provenance.run_id, provenance.generation,
+                provenance.parent_manifest_sha256,
+                provenance.parent_candidate_identity_sha256,
+                provenance.parent_optimizer_step, provenance.topology_digest)
 
     def test_same_execution_evidence_reproduces_the_same_provenance(self):
         self.assertEqual(self.bind().digest, self.bind().digest)

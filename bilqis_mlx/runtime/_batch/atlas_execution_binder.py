@@ -28,7 +28,9 @@ def bind_execution_provenance(
         visible_identity_rows: tuple, feedback_identity_rows: tuple,
         local_slot_rows: tuple, loss_bearing_target: bool,
         group_eligible, active_admitted: ActiveAdmittedRows,
-        spec, extents) -> StepExecutionProvenance:
+        spec, extents, run_id: str, generation: int,
+        parent_manifest_sha256: str, parent_candidate_identity_sha256: str,
+        parent_optimizer_step: int, topology_digest: str) -> StepExecutionProvenance:
     """Bind one executed step to owner-issued participation and mask provenance.
 
     The motif read results are the only source of motif participation, and the
@@ -48,4 +50,9 @@ def bind_execution_provenance(
         loss_bearing_target=bool(loss_bearing_target))
     return issue_execution_provenance(
         inputs, SemanticDenominator(), motif_reads, RoleReadParticipation(),
-        group_eligible, active_admitted, spec=spec, extents=extents)
+        group_eligible, active_admitted, spec=spec, extents=extents,
+        run_id=run_id, generation=generation,
+        parent_manifest_sha256=parent_manifest_sha256,
+        parent_candidate_identity_sha256=parent_candidate_identity_sha256,
+        parent_optimizer_step=parent_optimizer_step,
+        topology_digest=topology_digest)

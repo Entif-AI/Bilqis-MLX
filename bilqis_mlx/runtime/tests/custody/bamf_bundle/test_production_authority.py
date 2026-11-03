@@ -1,0 +1,169 @@
+"""Production authority adversaries for the consolidated EGM-Mitigation candidate.
+
+These witnesses cover the authority seams end to end: owner-derived participation
+inputs, provenance that cannot be replayed, retention acceptance that only the
+retention decision owner can grant, and step proofs that survive immutable B13
+publication and cold readback.
+"""
+from __future__ import annotations
+
+import inspect
+import json
+from dataclasses import replace
+import os
+import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
+
+import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
+from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.learning.atlas_acceptance import (
+    AcceptedCandidateBinding, mint_acceptance_binding,
+)
+from bilqis_mlx.learning.atlas_plasticity import next_update_mode
+from bilqis_mlx.learning.atlas_retention_decision import (
+    CandidateRetentionDecision, decide_candidate_retention,
+)
+from bilqis_mlx.runtime.bamf_bundle import (
+    load_bamf_generation, publish_bamf_generation,
+)
+from bilqis_mlx.learning.atlas_participation import (
+    ActiveAdmittedRows, parameter_update_mask, step_participation,
+)
+from bilqis_mlx.learning.atlas_participation import (
+    RoleReadParticipation, SemanticDenominator, StepParticipationInputs,
+)
+from bilqis_mlx.runtime.bamf_bundle import admission
+from bilqis_mlx.runtime.bamf_bundle.admission import (
+    admit_candidate_step, derive_participation_inputs,
+)
+
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
+    acceptance, accepted_state, candidate, parent_state, retention_decision,
+    shape_patch,
+)
+
+
+def _participation():
+    return step_participation(
+        StepParticipationInputs(executed_parameter_names=("identity.bank.0",)),
+        SemanticDenominator(), (), RoleReadParticipation())
+
+
+def _active():
+    return ActiveAdmittedRows(identity_rows=((0, 0),))
+
+
+class ProductionAuthorityTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = TemporaryDirectory()
+        self.root = Path(self.temporary.name)
+        self.run = self.root / "run"
+        self.environment = patch.dict(
+            os.environ, {"BILQIS_DATA_PLANE": str(self.root / "plane.sqlite3")})
+        self.environment.start()
+
+    def tearDown(self):
+        self.environment.stop()
+        self.temporary.cleanup()
+
+    def publish(self, source):
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            return publish_bamf_generation(self.run, source, acceptance=acceptance(source))
+
+    def test_production_step_accepts_no_caller_participation_facts(self):
+        """The production API takes no caller-authored participation facts."""
+        parameters = set(inspect.signature(
+            admit_candidate_step).parameters)
+        for forbidden in ("executed_parameter_names", "visible_identity_rows",
+                          "feedback_identity_rows", "local_slot_rows",
+                          "group_eligible", "active_admitted", "spec", "extents",
+                          "update_mask"):
+            self.assertNotIn(forbidden, parameters)
+
+    def test_group_eligibility_comes_from_the_ledger_and_policy_owners(self):
+        self.publish(candidate(parent_state()))
+        with shape_patch():
+            student = admission.load_accepted_generation(self.run)
+            eligibility, active = derive_participation_inputs(student)
+        derived = set(eligibility.eligible_parameter_names) | set(
+            eligibility.frozen_parameter_names)
+        self.assertTrue(derived)
+        self.assertFalse(set(eligibility.eligible_parameter_names)
+                         & set(eligibility.frozen_parameter_names))
+        self.assertEqual(eligibility.mode, next_update_mode(
+            student.retained_state.policy, teacher_requests_full=False))
+        self.assertEqual(active.identity_rows, eligibility.admitted_identity_rows)
+        self.assertEqual(active.identity_rows, eligibility.admitted_identity_rows)
+
+    def test_production_step_reaches_the_owner_binder(self):
+        self.publish(candidate(parent_state()))
+        with shape_patch(), patch.object(
+                admission, "production_candidate_step",
+                side_effect=admission.production_candidate_step) as step:
+            with self.assertRaises(BilqisError):
+                admit_candidate_step(
+                    self.run, {}, motif_reads=(), loss_bearing_target=True,
+                    teacher_hparams=None, decay={}, max_norm=1.)
+        self.assertTrue(step.called)
+
+    def test_caller_created_candidate_cannot_publish_without_the_decision_owner(self):
+        source = candidate(parent_state())
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            with self.assertRaises(BilqisError):
+                publish_bamf_generation(self.run, source)
+        self.assertFalse((self.run / "bamf-state.json").exists())
+
+    def test_caller_cannot_mint_a_retention_decision(self):
+        decision = retention_decision()
+        with self.assertRaises(BilqisError):
+            CandidateRetentionDecision(
+                decision.decision, decision.reason, decision.target_gain,
+                decision.protected_net_gain)
+
+    def test_acceptance_requires_an_accepted_decision(self):
+        source = candidate(parent_state())
+        rejected = decide_candidate_retention(
+            no_target_gain=True, same_grade_net_gain=0,
+            fixed_grade_regression=False, active_grade_regression=False,
+            whole_school_regression=False, frontier_measured=True,
+            fragile_losses=0, exceeded=False)
+        with self.assertRaises(BilqisError):
+            mint_acceptance_binding(
+                rejected, source.retained_state, run_id=source.run_id,
+                generation=source.generation,
+                feature_sha256=source.extents.factor_map_digest)
+
+    def test_step_proofs_survive_publication_and_cold_readback(self):
+        initial = parent_state()
+        first = self.publish(candidate(initial))
+        retained = accepted_state(initial)
+        second = self.publish(candidate(retained, 1, first["manifest_sha256"]))
+        with shape_patch():
+            student = load_bamf_generation(self.run / "bamf-state.json")
+        proofs = student.retained_state.step_proofs
+        self.assertEqual(len(proofs), 1)
+        binding = AcceptedCandidateBinding.from_record(json.loads(
+            (self.run / "bamf-acceptance" / f"{second['manifest_sha256']}.json")
+            .read_text()))
+        self.assertEqual(list(binding.step_proof_sha256),
+                         [proof.digest for proof in proofs])
+
+    def test_tampered_step_proof_fails_custody_validation(self):
+        initial = parent_state()
+        first = self.publish(candidate(initial))
+        retained = accepted_state(initial)
+        second = self.publish(candidate(retained, 1, first["manifest_sha256"]))
+        proofs = (self.run / "bamf-bundles" / second["manifest_sha256"]
+                  / "step-proofs.json")
+        record = json.loads(proofs.read_text())
+        record["proofs"][0]["mask_sha256"] = "0" * 64
+        proofs.write_text(json.dumps(record))
+        with shape_patch():
+            with self.assertRaises(BilqisError):
+                load_bamf_generation(self.run / "bamf-state.json")
+
+
+if __name__ == "__main__":
+    unittest.main()

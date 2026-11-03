@@ -17,15 +17,19 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_acceptance import (
     AcceptedCandidateBinding, mint_acceptance_binding,
 )
+from bilqis_mlx.learning.atlas_retention_decision import (
+    CandidateRetentionDecision, decide_candidate_retention,
+)
 from bilqis_mlx.runtime.bamf_bundle import (
     publish_bamf_generation, read_accepted_generation_feature_receipt,
 )
 
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, accepted_state, candidate, parent_state, shape_patch,
+    acceptance, accepted_state, candidate, parent_state, retention_decision,
+    shape_patch,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.test_feature_authority import (
-    FEATURE_SCHEMA, RELEASE, source_features, feature_bound,
+    RELEASE, source_features, feature_bound,
 )
 
 
@@ -66,9 +70,8 @@ class GenerationAcceptanceProvenanceTests(unittest.TestCase):
     def test_acceptance_with_another_feature_identity_is_refused(self):
         source = candidate(parent_state())
         binding = mint_acceptance_binding(
-            source.retained_state, run_id=source.run_id,
-            generation=source.generation, feature_sha256="a" * 64,
-            retention_reason="FIXTURE_RETENTION_ACCEPTED")
+            retention_decision(), source.retained_state, run_id=source.run_id,
+            generation=source.generation, feature_sha256="a" * 64)
         with self.assertRaises(BilqisError) as failure:
             self.publish(source, acceptance=binding)
         self.assertEqual(
@@ -82,7 +85,30 @@ class GenerationAcceptanceProvenanceTests(unittest.TestCase):
             AcceptedCandidateBinding(
                 binding.run_id, binding.generation,
                 binding.candidate_identity_sha256, binding.feature_sha256,
-                binding.optimizer_step, binding.retention_reason)
+                binding.optimizer_step, binding.retention_reason,
+                binding.decision_sha256)
+
+    def test_caller_cannot_mint_acceptance_without_a_retention_decision(self):
+        source = candidate(parent_state())
+        with self.assertRaises(BilqisError):
+            mint_acceptance_binding(
+                "FIXTURE_RETENTION_ACCEPTED", source.retained_state,
+                run_id=source.run_id, generation=source.generation,
+                feature_sha256=source.extents.factor_map_digest)
+
+    def test_a_rejected_retention_decision_cannot_mint_acceptance(self):
+        source = candidate(parent_state())
+        rejected = decide_candidate_retention(
+            no_target_gain=True, same_grade_net_gain=0,
+            fixed_grade_regression=False, active_grade_regression=False,
+            whole_school_regression=False, frontier_measured=True,
+            fragile_losses=0, exceeded=False)
+        self.assertFalse(rejected.accepted)
+        with self.assertRaises(BilqisError):
+            mint_acceptance_binding(
+                rejected, source.retained_state, run_id=source.run_id,
+                generation=source.generation,
+                feature_sha256=source.extents.factor_map_digest)
 
     def test_receipt_refuses_a_generation_without_acceptance_custody(self):
         features = source_features()

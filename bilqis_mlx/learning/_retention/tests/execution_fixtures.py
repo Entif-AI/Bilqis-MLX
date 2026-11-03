@@ -4,6 +4,7 @@ from __future__ import annotations
 from contextlib import ExitStack
 from unittest.mock import patch
 
+from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.learning.atlas_execution_provenance import (
     issue_execution_provenance,
 )
@@ -27,8 +28,15 @@ CENSUS_SHAPES = (
 )
 
 
-def execution_provenance(*, rows=(0,), loss_bearing=True, mode="FULL"):
-    """Issue owner provenance for one executed step over the fixture bank."""
+def execution_provenance(parent, *, rows=(0,), loss_bearing=True, mode="FULL",
+                         run_id="fixture-run", generation=1,
+                         parent_manifest_sha256="4" * 64,
+                         topology_digest="5" * 64):
+    """Issue owner provenance for one executed step over the fixture bank.
+
+    The provenance binds the exact parent candidate identity and optimizer
+    step, so it cannot be replayed onto another candidate or step.
+    """
     identity = tuple((0, row) for row in rows)
     inputs = StepParticipationInputs(
         visible_identity_rows=identity,
@@ -44,4 +52,9 @@ def execution_provenance(*, rows=(0,), loss_bearing=True, mode="FULL"):
             stack.enter_context(patch(target, return_value=DECLARED))
         return issue_execution_provenance(
             inputs, SemanticDenominator(), (), RoleReadParticipation(),
-            eligibility, active, spec=ModelTopologySpecV2(), extents=EXTENTS)
+            eligibility, active, spec=ModelTopologySpecV2(), extents=EXTENTS,
+            run_id=run_id, generation=generation,
+            parent_manifest_sha256=parent_manifest_sha256,
+            parent_candidate_identity_sha256=candidate_identity_digest(parent),
+            parent_optimizer_step=parent.optimizer_step,
+            topology_digest=topology_digest)

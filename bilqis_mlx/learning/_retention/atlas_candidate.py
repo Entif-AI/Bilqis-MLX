@@ -21,6 +21,7 @@ from bilqis_mlx.learning.atlas_plasticity import (
 )
 from bilqis_mlx.runtime.atlas_optimizer import AdamWStateTree, _adamw_update
 
+from .atlas_acceptance import candidate_identity_digest
 from .atlas_execution_provenance import (
     StepExecutionProvenance, mask_digest, participation_digest,
 )
@@ -95,10 +96,13 @@ def _load_retained_candidate_state_with_parts(
 
     parts = _load_validated_bundle_parts(
         bundle_root, expected_manifest_sha256=expected_manifest_sha256)
+    proofs = tuple(CandidateStepProof.from_record(item)
+                   for item in parts.records["step_proofs"]["proofs"])
     state = object.__new__(CandidateState)
     for name, value in (
             ('optimizer', parts.numerical), ('policy', parts.policy),
             ('allocations', parts.motif), ('optimizer_step', parts.optimizer_step),
+            ('step_proofs', proofs),
             ('schema_version', STATE_SCHEMA),
             ('_issuance', _RETAINED_STATE_ISSUER)):
         object.__setattr__(state, name, value)
@@ -141,6 +145,26 @@ class CandidateStepProof:
         payload = json.dumps(asdict(self), sort_keys=True, separators=(",", ":"),
                              ensure_ascii=False, allow_nan=False)
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+    def to_record(self) -> dict:
+        """Durable custody record of one owner-bound step proof."""
+        record = asdict(self)
+        record["proof_sha256"] = self.digest
+        return record
+
+    @classmethod
+    def from_record(cls, record) -> "CandidateStepProof":
+        names = ("step_index", "provenance_sha256", "participation_sha256",
+                 "mask_sha256", "parameter_names", "loss_bearing", "schema_version")
+        if (not isinstance(record, dict)
+                or set(record) != set(names) | {"proof_sha256"}):
+            _invalid()
+        proof = cls(**{name: (tuple(record[name])
+                              if name == "parameter_names" else record[name])
+                          for name in names})
+        if record["proof_sha256"] != proof.digest:
+            _invalid()
+        return proof
 
 
 @dataclass(frozen=True, init=False)
@@ -234,6 +258,10 @@ def candidate_step(candidate: CandidateTransaction, gradients, execution,
         _invalid()
     candidate.__post_init__()
     if type(execution) is not StepExecutionProvenance:
+        _invalid()
+    if (execution.parent_candidate_identity_sha256
+            != candidate_identity_digest(candidate.parent)
+            or execution.parent_optimizer_step != candidate.parent.optimizer_step):
         _invalid()
     update_mask = optimizer_participation_mask(
         execution.mask, candidate.optimizer.update_counts)

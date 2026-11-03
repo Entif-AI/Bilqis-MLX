@@ -30,7 +30,9 @@ RELEASE = "1" * 64
 ATLAS_BUNDLE = "2" * 64
 SOURCE_BUNDLE = "3" * 64
 ARBITRARY = "b" * 64
-FEATURE_SCHEMA = {"role_ids": [], "schema_ids": [], "source_bindings": []}
+def feature_schema() -> dict:
+    """One recorded feature schema shape with no categorical bindings."""
+    return {"role_ids": [], "schema_ids": [], "source_bindings": []}
 
 
 def source_features() -> AtlasFeatures:
@@ -52,7 +54,7 @@ def feature_bound(source, features: AtlasFeatures, *, digest=None, release=RELEA
                 "atlas_bundle_id": ATLAS_BUNDLE,
                 "release_sha256": release,
                 "source_bundle_id": SOURCE_BUNDLE},
-            "feature_schema": dict(FEATURE_SCHEMA)},
+            "feature_schema": feature_schema()},
         correction_frontier={
             **source.correction_frontier, "release_digest": release})
 

@@ -14,6 +14,7 @@ SCHEMAS = MappingProxyType({
     'correction_frontier': 'bilqis.mlx.bamf-correction-frontier/v1',
     'teacher_state': 'bilqis.mlx.bamf-teacher-state/v1',
     'evaluation_contract': 'bilqis.mlx.bamf-evaluation-contract/v1',
+    'step_proofs': 'bilqis.mlx.bamf-step-proofs/v1',
 })
 
 
@@ -58,6 +59,8 @@ def validate_identity_sidecars(extents, provenance, records, invalid):
         invalid()
     semantic = records['semantic_abi']
     compiler = records['compiler_features']
+    if records['step_proofs'].get('schema') != SCHEMAS['step_proofs']:
+        invalid()
     correction = records['correction_frontier']
     teacher = records['teacher_state']
     banks = semantic.get('bank_identities')

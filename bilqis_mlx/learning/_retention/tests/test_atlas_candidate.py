@@ -35,7 +35,8 @@ class CandidateTransactionTests(TestCase):
     def step(self, candidate, rows=(0,), *, loss_bearing=True):
         return candidate_step(
             candidate, {self.name: mx.array([[3., 4.], [3e38, -3e38]], dtype=mx.float32)},
-            execution_provenance(rows=rows, loss_bearing=loss_bearing), self.hp,
+            execution_provenance(candidate.parent, rows=rows,
+                                 loss_bearing=loss_bearing), self.hp,
             decay={self.name: True}, loss_bearing=loss_bearing, max_norm=1.)
 
     def snapshot(self, state):
@@ -70,7 +71,8 @@ class CandidateTransactionTests(TestCase):
         first = self.step(begin_candidate(self.parent))
         second = candidate_step(
             first, {self.name: mx.zeros((2, 2), dtype=mx.float32)},
-            execution_provenance(rows=(1,)), self.hp, decay={self.name: True},
+            execution_provenance(first.parent, rows=(1,)), self.hp,
+            decay={self.name: True},
             loss_bearing=True, max_norm=1.)
         accepted = resolve_candidate(second, accepted=True)
         self.assertEqual(tuple(r.accepted_age for r in accepted.policy.row_ages), (8, 3))
