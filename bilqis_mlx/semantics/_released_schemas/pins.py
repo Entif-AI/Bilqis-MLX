@@ -112,6 +112,8 @@ def verify_source_pinned_frame_schema(
     """Production gate: re-enter A01/A03 pins on every candidate verification."""
     if type(candidate) is not FrameSchema:
         _fail("FRAME_RELEASED_SCHEMA_BODY_INVALID")
+    from ..released_frame_schemas import lookup_source_pinned_frame_schema
+
     canonical, _ = lookup_source_pinned_frame_schema(
         candidate.schema_id, candidate.revision,
         source_family=source_family, atlas_selection=atlas_selection)
@@ -127,6 +129,8 @@ def verify_source_pinned_frame_schema_bytes(
 ) -> FrameSchema:
     """JSON key order is ignored, but source-pinned role order and body are not."""
     candidate = frame_schema_from_bytes(_canonical_bytes(_json(payload)))
+    from ..released_frame_schemas import verify_source_pinned_frame_schema
+
     return verify_source_pinned_frame_schema(
         candidate, source_family=source_family,
         atlas_selection=atlas_selection)

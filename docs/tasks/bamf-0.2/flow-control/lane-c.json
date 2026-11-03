@@ -112,8 +112,9 @@
       "pr": null,
       "state": "READY",
       "head_sha": null,
-      "summary": "Round3 public released-schema fault-route regression; two literal failing-before probes; repair on separate issue branch then consume parent.",
-      "resume_trigger": null
+      "summary": "Two public-hook regressions fail before and pass after deferred public dependency resolution; real released-schema owner suite verified. Full composed source/wheel/native proof pending before child closure.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-c-786-public-hooks-20261103"
     },
     {
       "issue": 787,

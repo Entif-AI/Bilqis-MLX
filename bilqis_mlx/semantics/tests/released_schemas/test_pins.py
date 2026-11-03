@@ -4,6 +4,8 @@ from dataclasses import replace
 import json
 import os
 import unittest
+from unittest.mock import patch
+from bilqis_mlx.semantics import released_frame_schemas as public
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.frame_codec import SchemaTagMap
@@ -12,7 +14,7 @@ from bilqis_mlx.semantics.released_frame_schemas import (
     seal_released_frame_schemas, verify_source_pinned_frame_schema,
     verify_source_pinned_frame_schema_bytes,
 )
-from bilqis_mlx.semantics.tests.released_schemas.fixtures import _snapshot
+from bilqis_mlx.semantics.tests.released_schemas.fixtures import _schema, _snapshot
 
 
 class ReleasedPinsTests(unittest.TestCase):
@@ -93,3 +95,20 @@ class ReleasedPinsTests(unittest.TestCase):
                 "frame:missing", 1, source_family="micro",
                 atlas_selection=replace(
                     selection, release_sha256="0" * 64))
+
+
+class ReleasedPublicDependencyTests(unittest.TestCase):
+    def test_schema_verifier_reenters_public_lookup(self):
+        with patch.object(public, 'lookup_source_pinned_frame_schema',
+                          side_effect=RuntimeError('public lookup injected')):
+            with self.assertRaisesRegex(RuntimeError, 'public lookup injected'):
+                public.verify_source_pinned_frame_schema(
+                    _schema(), source_family='micro', atlas_selection=None)
+
+    def test_bytes_verifier_reenters_public_verifier(self):
+        with patch.object(public, 'verify_source_pinned_frame_schema',
+                          side_effect=RuntimeError('public verifier injected')):
+            with self.assertRaisesRegex(RuntimeError, 'public verifier injected'):
+                public.verify_source_pinned_frame_schema_bytes(
+                    _schema().canonical_bytes(), source_family='micro',
+                    atlas_selection=None)
