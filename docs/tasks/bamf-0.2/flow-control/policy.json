@@ -76,6 +76,12 @@
         "reason": "BAMF EGM-Mitigation #711 B09.2 production-authoritative participation masks.",
         "authority": "Direct project-owner instruction on 2026-11-03 to keep the EGM-Mitigation queue moving",
         "expires_when": "The #711 remediation PR merges or closes."
+      },
+      {
+        "head_branch": "codex/remediation-710-execution-provenance-20261103",
+        "reason": "BAMF EGM-Mitigation #710 B12.2 execution-provenance binding, stacked on the #711 owner.",
+        "authority": "Direct project-owner instruction on 2026-11-03 to keep the EGM-Mitigation queue moving",
+        "expires_when": "The #710 remediation PR merges or closes."
       }
     ],
     "initial_drain_status": "COMPLETED_WITH_ISSUE_LABEL_QUEUE",

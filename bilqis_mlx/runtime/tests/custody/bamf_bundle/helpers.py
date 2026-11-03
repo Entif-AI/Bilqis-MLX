@@ -12,6 +12,7 @@ from bilqis_mlx.data_plane import data_plane
 from bilqis_mlx.learning.atlas_candidate import (
     CandidateState, begin_candidate, candidate_step, resolve_candidate,
 )
+from bilqis_mlx.learning._retention.tests.execution_fixtures import execution_provenance
 from bilqis_mlx.learning.atlas_engram import MotifManifest
 from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
 from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
@@ -48,7 +49,7 @@ def accepted_state(parent: CandidateState) -> CandidateState:
     transaction = begin_candidate(parent)
     transaction = candidate_step(
         transaction, {NAME: mx.array([[3., 4.], [0., 0.]], dtype=mx.float32)},
-        {NAME: mx.array([True, False])}, HP, decay={NAME: True},
+        execution_provenance(rows=(0,)), HP, decay={NAME: True},
         loss_bearing=True, max_norm=1.)
     return resolve_candidate(transaction, accepted=True)
 
@@ -57,7 +58,7 @@ def rejected_state(parent: CandidateState) -> CandidateState:
     transaction = begin_candidate(parent)
     transaction = candidate_step(
         transaction, {NAME: mx.ones((2, 2), dtype=mx.float32)},
-        {NAME: mx.array([True, False])}, HP, decay={NAME: True},
+        execution_provenance(rows=(0,)), HP, decay={NAME: True},
         loss_bearing=True, max_norm=1.)
     return resolve_candidate(transaction, accepted=False)
 
@@ -66,7 +67,7 @@ def next_accepted_step(parent: CandidateState) -> CandidateState:
     transaction = begin_candidate(parent)
     transaction = candidate_step(
         transaction, {NAME: mx.array([[.25, -.5], [0., 0.]], dtype=mx.float32)},
-        {NAME: mx.array([True, False])}, HP, decay={NAME: True},
+        execution_provenance(rows=(0,)), HP, decay={NAME: True},
         loss_bearing=True, max_norm=1.)
     return resolve_candidate(transaction, accepted=True)
 

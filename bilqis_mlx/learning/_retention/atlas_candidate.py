@@ -1,8 +1,9 @@
 """B12.2 in-memory candidate custody over existing numerical owners.
 
-Masks remain caller-supplied. B11/B09 attest execution and eligibility; B13/C
-publish retained generations. New motif slots require materialized tensors and
-are rejected here. Teacher observations stay outside the candidate state.
+Each optimizer step binds to owner-issued B09.2 execution provenance. A raw
+caller mask is not an execution authority. B13/C publish retained
+generations. New motif slots require materialized tensors and are rejected
+here. Teacher observations stay outside the candidate state.
 """
 from __future__ import annotations
 
@@ -18,8 +19,14 @@ from bilqis_mlx.learning.atlas_plasticity import (
 )
 from bilqis_mlx.runtime.atlas_optimizer import AdamWStateTree, _adamw_update
 
+from .atlas_execution_provenance import (
+    StepExecutionProvenance, mask_digest, participation_digest,
+)
+from .atlas_participation import optimizer_participation_mask
+
 STATE_SCHEMA = 'bilqis.mlx.candidate-state/provisional-v1'
 TRANSACTION_SCHEMA = 'bilqis.mlx.candidate-transaction/provisional-v1'
+STEP_PROOF_SCHEMA = 'bilqis.mlx.candidate-step-proof/v1'
 _TRANSACTION_ISSUER = object()
 _RETAINED_STATE_ISSUER = object()
 
@@ -85,6 +92,39 @@ def _load_retained_candidate_state_with_parts(
     return state, parts
 
 
+@dataclass(frozen=True)
+class CandidateStepProof:
+    """Owner-bound proof of one executed optimizer step.
+
+    The proof records digests of the owner-issued execution provenance and its
+    derived participation and mask. It never stores a caller mask mapping.
+    """
+
+    step_index: int
+    provenance_sha256: str
+    participation_sha256: str
+    mask_sha256: str
+    parameter_names: tuple[str, ...]
+    loss_bearing: bool
+    schema_version: str = STEP_PROOF_SCHEMA
+
+    def __post_init__(self) -> None:
+        if (type(self.step_index) is not int or self.step_index < 1
+                or not isinstance(self.provenance_sha256, str)
+                or len(self.provenance_sha256) != 64
+                or not isinstance(self.participation_sha256, str)
+                or len(self.participation_sha256) != 64
+                or not isinstance(self.mask_sha256, str)
+                or len(self.mask_sha256) != 64
+                or type(self.parameter_names) is not tuple
+                or self.parameter_names != tuple(sorted(set(self.parameter_names)))
+                or any(not isinstance(name, str) or not name
+                       for name in self.parameter_names)
+                or type(self.loss_bearing) is not bool
+                or self.schema_version != STEP_PROOF_SCHEMA):
+            _invalid()
+
+
 @dataclass(frozen=True, init=False)
 class CandidateTransaction:
     """One speculative branch; no method mutates or publishes its parent."""
@@ -94,6 +134,7 @@ class CandidateTransaction:
     allocations: MotifAllocationSnapshot
     teacher_requests_full: bool
     update_steps: int = 0
+    step_proofs: tuple = ()
     schema_version: str = TRANSACTION_SCHEMA
     _issuance: object = field(init=False, repr=False, compare=False)
 
@@ -109,6 +150,11 @@ class CandidateTransaction:
                 or type(self.allocations) is not MotifAllocationSnapshot
                 or type(self.teacher_requests_full) is not bool
                 or type(self.update_steps) is not int or self.update_steps < 0
+                or type(self.step_proofs) is not tuple
+                or len(self.step_proofs) != self.update_steps
+                or any(type(proof) is not CandidateStepProof for proof in self.step_proofs)
+                or any(proof.step_index != index + 1
+                       for index, proof in enumerate(self.step_proofs))
                 or self.schema_version != TRANSACTION_SCHEMA):
             _invalid()
         self.parent.__post_init__()
@@ -131,12 +177,14 @@ class CandidateTransaction:
         return next_update_mode(self.parent.policy, teacher_requests_full=self.teacher_requests_full)
 
 
-def _issue_transaction(parent, optimizer, teacher_requests_full, update_steps=0):
+def _issue_transaction(parent, optimizer, teacher_requests_full, update_steps=0,
+                       step_proofs=()):
     """Continue optimizer-only candidate state; allocation state is immutable here."""
     candidate = object.__new__(CandidateTransaction)
     for name, value in (
             ('parent', parent), ('optimizer', optimizer), ('allocations', parent.allocations),
             ('teacher_requests_full', teacher_requests_full), ('update_steps', update_steps),
+            ('step_proofs', tuple(step_proofs)),
             ('schema_version', TRANSACTION_SCHEMA), ('_issuance', _TRANSACTION_ISSUER)):
         object.__setattr__(candidate, name, value)
     candidate.__post_init__()
@@ -154,24 +202,35 @@ def begin_candidate(parent: CandidateState, *, budget=None,
     return _issue_transaction(parent, parent.optimizer, teacher_requests_full)
 
 
-def candidate_step(candidate: CandidateTransaction, gradients, update_mask,
+def candidate_step(candidate: CandidateTransaction, gradients, execution,
                    teacher_hparams, *, decay, loss_bearing: bool,
                    max_norm: float) -> CandidateTransaction:
-    """Mask before clipping and delegate exact native AdamW to B12.1/B12.3.
+    """Bind the step to owner-issued execution provenance, then run native AdamW.
 
-    Counts identify actual participating rows, including numerical-zero
-    gradients. No-loss and wholly frozen steps preserve the transaction object.
+    The mask comes from the B09.2 owner's provenance, never from a caller
+    mapping. Counts identify actual participating rows, including
+    numerical-zero gradients. No-loss and wholly frozen steps preserve the
+    transaction object.
     """
     if type(candidate) is not CandidateTransaction:
         _invalid()
     candidate.__post_init__()
+    if type(execution) is not StepExecutionProvenance:
+        _invalid()
+    update_mask = optimizer_participation_mask(
+        execution.mask, candidate.optimizer.update_counts)
     optimizer = _adamw_update(
         candidate.optimizer, gradients, update_mask, teacher_hparams,
         decay=decay, loss_bearing=loss_bearing, max_norm=max_norm)
     if optimizer is candidate.optimizer:
         return candidate
+    proof = CandidateStepProof(
+        candidate.update_steps + 1, execution.digest,
+        participation_digest(execution.participation), mask_digest(execution.mask),
+        tuple(sorted(update_mask)), bool(loss_bearing))
     return _issue_transaction(candidate.parent, optimizer,
-                                candidate.teacher_requests_full, candidate.update_steps + 1)
+                              candidate.teacher_requests_full, candidate.update_steps + 1,
+                              candidate.step_proofs + (proof,))
 
 
 def resolve_candidate(candidate: CandidateTransaction, *, accepted: bool) -> CandidateState:

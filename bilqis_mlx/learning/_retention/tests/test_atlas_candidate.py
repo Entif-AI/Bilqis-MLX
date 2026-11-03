@@ -16,6 +16,7 @@ from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateT
 from bilqis_mlx.learning.atlas_candidate import (
     CandidateState, CandidateTransaction, begin_candidate, candidate_step, resolve_candidate,
 )
+from bilqis_mlx.learning._retention.tests.execution_fixtures import execution_provenance
 
 
 class CandidateTransactionTests(TestCase):
@@ -31,11 +32,11 @@ class CandidateTransactionTests(TestCase):
         self.hp = AdamWHyperparameters(.001, (.9, .95), 1e-8, .01)
         self.name = name
 
-    def step(self, candidate, mask=(True, False), *, loss_bearing=True):
+    def step(self, candidate, rows=(0,), *, loss_bearing=True):
         return candidate_step(
             candidate, {self.name: mx.array([[3., 4.], [3e38, -3e38]], dtype=mx.float32)},
-            {self.name: mx.array(mask)}, self.hp, decay={self.name: True},
-            loss_bearing=loss_bearing, max_norm=1.)
+            execution_provenance(rows=rows, loss_bearing=loss_bearing), self.hp,
+            decay={self.name: True}, loss_bearing=loss_bearing, max_norm=1.)
 
     def snapshot(self, state):
         return tuple(np.asarray(getattr(state.optimizer, field)[self.name]).tobytes()
@@ -69,14 +70,14 @@ class CandidateTransactionTests(TestCase):
         first = self.step(begin_candidate(self.parent))
         second = candidate_step(
             first, {self.name: mx.zeros((2, 2), dtype=mx.float32)},
-            {self.name: mx.array([False, True])}, self.hp, decay={self.name: True},
+            execution_provenance(rows=(1,)), self.hp, decay={self.name: True},
             loss_bearing=True, max_norm=1.)
         accepted = resolve_candidate(second, accepted=True)
         self.assertEqual(tuple(r.accepted_age for r in accepted.policy.row_ages), (8, 3))
         np.testing.assert_array_equal(np.asarray(accepted.optimizer.update_counts[self.name]), [3, 4])
 
     def test_no_loss_or_wholly_frozen_candidate_cannot_advance_clocks_or_allocations(self):
-        for kwargs in ({'loss_bearing': False}, {'mask': (False, False)}):
+        for kwargs in ({'loss_bearing': False}, {'rows': ()}):
             candidate = begin_candidate(self.parent, budget=MotifBudget(0))
             result = self.step(candidate, **kwargs)
             self.assertIs(result, candidate)
