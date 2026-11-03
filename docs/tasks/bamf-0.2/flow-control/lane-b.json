@@ -100,12 +100,12 @@
     },
     {
       "issue": 586,
-      "pr": 762,
+      "pr": null,
       "state": "TURNED_IN",
-      "head_sha": "c99e7f669dc650073e34a924725ecc2c44dae0d0",
-      "summary": "B11.1a passed fresh whole-candidate EGM on exact implementation head c99e7f66 after consuming #738/#747/#748 and is turned in through non-draft PR #762; hosted CI is the remaining integration gate.",
+      "head_sha": "d87859c75177cd807aaaa649efb8b64fa05105b6",
+      "summary": "B11.1a passed fresh whole-candidate EGM, hosted CI and human merge through PR #762; unified consumed it at 2d4b99f3.",
       "resume_trigger": null,
-      "closed_pr": 640,
+      "closed_pr": 762,
       "preserved_branch": "codex/b11-586-source-h0-20261030"
     },
     {
@@ -167,6 +167,14 @@
       "state": "TURNED_IN",
       "head_sha": "89682d8beca1bfec0e38b0c2a4d3a4d70e06bca1",
       "summary": "Verified scoped #748 real-source proof-fixture remediation is closed and consumed into the #586 parent candidate.",
+      "resume_trigger": null
+    },
+    {
+      "issue": 763,
+      "pr": 764,
+      "state": "TURNED_IN",
+      "head_sha": "e4484e5da1a9b7e982a89aa85b08bd50c67d98cd",
+      "summary": "Generic source-owner resolution repair is turned in for review on PR #764; parent #736 consumes it after landing and retains final merge-candidate EGM ownership.",
       "resume_trigger": null
     }
   ]

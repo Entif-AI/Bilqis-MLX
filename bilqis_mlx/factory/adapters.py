@@ -81,13 +81,48 @@ class SourceAdapterRegistry:
             raise ValueError("FACTORY_DUPLICATE_GENERATOR_ADAPTER:" + key)
         self._by_generator[key] = adapter
 
+    @staticmethod
+    def _missing(generator_id: str):
+        raise ValueError("FACTORY_SOURCE_ADAPTER_MISSING:" + str(generator_id))
+
+    @staticmethod
+    def _oracle_not_owned(oracle_id: str):
+        raise ValueError("FACTORY_SOURCE_ORACLE_NOT_ADAPTER_OWNED:" + str(oracle_id))
+
     def require(self, generator_id: str, oracle_id: str) -> RegisteredSourceAdapter:
         adapter = self._by_generator.get(generator_id)
         if adapter is None:
-            raise ValueError("FACTORY_SOURCE_ADAPTER_MISSING:" + str(generator_id))
+            self._missing(generator_id)
         if oracle_id not in adapter.descriptor.accepted_oracle_ids:
-            raise ValueError("FACTORY_SOURCE_ORACLE_NOT_ADAPTER_OWNED:" + str(oracle_id))
+            self._oracle_not_owned(oracle_id)
         return adapter
+
+    def resolve_owner(
+            self, generator_id: str,
+            oracle_id: str | None = None) -> RegisteredSourceAdapter:
+        """Resolve a source owner from its callable or emitted cohort identity."""
+        direct = self._by_generator.get(generator_id)
+        if direct is not None:
+            if oracle_id is None:
+                return direct
+            return self.require(generator_id, oracle_id)
+        cohort_matches = tuple(
+            adapter for adapter in self._by_generator.values()
+            if adapter.descriptor.cohort_generator == generator_id)
+        if not cohort_matches:
+            self._missing(generator_id)
+        if oracle_id is None:
+            if len(cohort_matches) != 1:
+                self._missing(generator_id)
+            return cohort_matches[0]
+        oracle_matches = tuple(
+            adapter for adapter in cohort_matches
+            if oracle_id in adapter.descriptor.accepted_oracle_ids)
+        if not oracle_matches:
+            self._oracle_not_owned(oracle_id)
+        if len(oracle_matches) != 1:
+            self._missing(generator_id)
+        return oracle_matches[0]
 
     def descriptors_for(self, course) -> tuple[SourceAdapter, ...]:
         result = []
