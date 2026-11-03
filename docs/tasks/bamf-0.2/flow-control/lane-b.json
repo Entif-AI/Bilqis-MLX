@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "67c964a1548cb0075a28a90aa2565d8bdab0fd71",
-  "updated_at": "2026-11-02T22:20:00Z",
+  "observed_unified": "2800946729e484875f7d1f57f0e6d85078936394",
+  "updated_at": "2026-11-02T23:58:26.105463+00:00",
   "exception": null,
   "items": [
     {
@@ -152,9 +152,33 @@
     {
       "issue": 738,
       "pr": 742,
-      "state": "ACTIVE",
+      "state": "TURNED_IN",
       "head_sha": "44305b1c685fcdd43ded307c8eeae8e4e2808fbf",
-      "summary": "Active EGM-Mitigation delivery for #586 stale selected-state chaining.",
+      "summary": "Scoped stale-boundary repair #738 closed COMPLETED; PR #742 merged. Later receipt-layout and proof-fixture findings belong to #747/#748.",
+      "resume_trigger": null
+    },
+    {
+      "issue": 747,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "89682d8beca1bfec0e38b0c2a4d3a4d70e06bca1",
+      "summary": "Verified scoped #747 repair on codex/747-backbone-receipt-shape: native source/receipt suite 35/35, zero skips/errors. Parent #586 must consume repair before whole-candidate EGM.",
+      "resume_trigger": null
+    },
+    {
+      "issue": 748,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "89682d8beca1bfec0e38b0c2a4d3a4d70e06bca1",
+      "summary": "Verified scoped #748 repair on codex/747-backbone-receipt-shape: native source/receipt suite 35/35, zero skips/errors. Parent #586 must consume repair before whole-candidate EGM.",
+      "resume_trigger": null
+    },
+    {
+      "issue": 756,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "2800946729e484875f7d1f57f0e6d85078936394",
+      "summary": "Selected bounded future-group independence proof repair on isolated branch codex/756-future-group-witness. Parent #449 producer/EGM obligations remain parked.",
       "resume_trigger": null
     }
   ]
