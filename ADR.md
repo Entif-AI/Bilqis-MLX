@@ -2661,4 +2661,139 @@ PRs are the one-time grandfathered drain inventory; the normal ceiling of three
 still blocks new admission. The drain proceeds through EGM, repair and merge, not
 through summary closure. This correction supersedes any contrary initial-drain
 description in the first implementation of ADR-126.
+## ADR-127 | 2026-11-03 | EGM review episodes are bounded, persistent, and root-cause routed
 
+**Scope:** BAMF-0.2 implementation and merge-readiness review. This decision
+governs how fresh-context Goldfish review is counted, invalidated, repeated, and
+terminated across repair commits. ADR-125 continues to govern remediation
+lifecycle and parent-owned aggregate EGM. ADR-126 continues to govern PR
+inventory and drain behavior.
+
+**Problem:** BAMF pins Google Elephant-Goldfish Model commit
+`b3a35956759bf7f024af2ff061b2e0b44b438e4c` for reviewer/persona
+reproducibility. That historical review-loop implementation repeats until zero
+findings or explicit human halt. In BAMF practice, a whole-candidate review could
+find one new Major, cause a repair and new exact head, then begin another
+apparently fresh review cycle with no durable episode counter. Exact-head
+reproducibility therefore interacted with repair churn as an accidental liveness
+bug: changing the candidate revision could erase the operational history of how
+many whole-candidate review rounds had already occurred.
+
+The same failure pattern appears when mechanical proof gaps, shared-contract
+defects, or unstable parent assumptions are repeatedly handed back to Goldfish as
+if each were a new local semantic question. This spends fresh-context review on
+facts that deterministic tooling or one canonical owner can settle, and can turn
+review into an expanding remediation tree rather than a bounded merge-readiness
+gate.
+
+**Decision:** Preserve the pinned `b3a359...` checkout for historical
+reproducibility of reviewer personas and standards, but do not inherit its
+unbounded termination behavior as BAMF orchestration policy.
+
+One merge-candidate lineage owns one persistent EGM review episode across ordinary
+repair commits. The episode identity and round count survive exact-head changes
+that repair findings from that same lineage. A new Git SHA does not reset the
+episode.
+
+The default episode cap is **five complete whole-candidate Goldfish rounds**.
+One complete round with no unsettled Blocker/Major and no requested reviewer
+missing or failed is sufficient for BAMF implementation merge readiness. At the
+five-round cap, or when review churn is detected, automatic Goldfish review stops.
+The candidate returns to design or requires explicit human authority to continue.
+Rewriting, rebasing, merge-forwarding, or otherwise changing target bytes does not
+silently mint another episode.
+
+**Churn** exists when a later blocking finding reverses or materially conflicts
+with a repair made to satisfy an earlier finding at the same ownership locus, or
+when successive rounds repeatedly move the same contract boundary instead of
+converging. Churn is a design/control signal, not a reason to consume an unlimited
+number of additional reviewers.
+
+### Finding basis and ownership
+
+Every Blocker/Major must identify at least one blocking basis:
+
+- a violated named requirement, invariant, or authority;
+- a concrete in-scope failure scenario; or
+- a missing required ownership, interface, or acceptance seam whose absence
+  prevents correct implementation.
+
+A reviewer preference, speculative future feature, or generalized desire for
+additional future-proofing is not blocking by itself.
+
+Before repair, classify the finding locus as:
+
+- `TARGET_LOCAL`;
+- `SHARED_CONTRACT`;
+- `PARENT_INTEGRATION`;
+- `AUTHORITY_GAP`; or
+- `MECHANICAL_PROOF`.
+
+Target-local defects may be repaired at the candidate. Shared-contract,
+parent-integration, and authority defects are promoted to their canonical owner;
+affected descendants pause rather than independently encoding competing local
+repairs. If multiple late findings share one root premise or canonical owner,
+promote one systemic finding and treat only the impacted subtree as stale.
+
+### Proof routing
+
+Use the cheapest proof mechanism capable of establishing the invariant.
+Traceability, schema shape, counts, contract mirrors, source census, dependency
+readiness, file/ABI identity, and other mechanically decidable facts belong in
+validators, tests, or focused audits before Goldfish. A `MECHANICAL_PROOF`
+finding closes through deterministic red/green proof and does not require a fresh
+Goldfish round solely because its implementation changed.
+
+Goldfish remains the review mechanism for adversarial semantic ambiguity, hidden
+ownership, unsafe integration behavior, cross-boundary failure modes, and
+implementation-readiness questions that deterministic proof cannot establish.
+
+When the same mechanically recognizable defect class appears repeatedly, encode
+that lesson in executable validation rather than paying fresh review cost every
+time.
+
+### Semantic staleness
+
+Review applicability is invalidated by semantic impact, not arbitrary byte drift.
+Classify candidate changes as:
+
+- `NONSEMANTIC`: prose, formatting, bookkeeping, receipt/link cleanup. Existing
+  review remains applicable.
+- `MECHANICAL_CONFORMANCE`: machine-checkable traceability, mirror, census,
+  schema, or identity repair. Deterministic proof is required; full fresh EGM is
+  not required solely for this change.
+- `LOCAL_SEMANTIC`: meaning or behavior changes inside one owned boundary.
+  Re-review that scope.
+- `DEPENDENCY_SEMANTIC`: consumed authority, interface, or source meaning
+  changed. Re-review only impacted consumers.
+- `ARCHITECTURE`: ownership, decomposition, or topology changed. Return the
+  affected scope to design before implementation review resumes.
+
+An unrelated reviewed-unified advance does not by itself stale a parked
+candidate.
+
+### Durable episode evidence
+
+The owning issue records the episode ID, monotonic round count, latest reviewed
+head, unresolved finding IDs/loci, and current disposition. That state survives
+agent turnover and context compaction. Historical EGM receipts remain valid
+provenance under the method/tool pin recorded when they were produced; this ADR
+does not retroactively relabel them.
+
+**Relationship to ADR-125:** ADR-125 already makes the parent candidate the owner
+of aggregate EGM and prevents every remediation child from retaining its own
+review queue. ADR-127 adds a finite review budget and root-cause routing to that
+parent-owned aggregate review.
+
+**Relationship to ADR-126:** ADR-126 drains integration inventory through EGM,
+repair, and merge rather than bulk closure. ADR-127 prevents EGM itself from
+becoming an unbounded reason that grandfathered integration candidates never
+leave DRAIN.
+
+**Human ratification:** On 2026-11-03 the project owner explicitly challenged the
+absence of an ADR for this governance change. This entry records the controlling
+decision rather than leaving the behavior only in agent instructions and an
+execution guide.
+
+**Status:** Accepted as the controlling BAMF-0.2 EGM convergence and review-episode
+policy.

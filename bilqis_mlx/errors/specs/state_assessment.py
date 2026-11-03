@@ -79,7 +79,7 @@ class StateAssessment:
 
     HISTORICAL_ARTIFACT_INVALID = _spec(
         ("SCHOOL", "STATE", "HISTORICAL_ARTIFACT_INVALID"),
-        owner="compatibility.resume_migration",
+        owner="compatibility.legacy.resume_migration",
         title="Historical artifact validation failed",
         message_template="Historical evidence failed validation: {reason}.",
         disposition="PRESERVE_AND_INSPECT",

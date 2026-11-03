@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from types import SimpleNamespace
 import unittest
+from bilqis_mlx.semantics.foundation.core import Signature
 from unittest.mock import patch
 
 from bilqis_mlx.factory.adapters import RegisteredSourceAdapter, SourceAdapterRegistry
@@ -53,3 +55,18 @@ def _capability(grade="B", capability_id="B.AND"):
 def _program(capability_id="B.AND", oracle=ORACLE):
     return ConstructionProgram(
         capability_id, ADAPTER, GENERATOR, oracle, ("A.IDENTITY",))
+
+
+def _stable_binding_stub(release, bindings, capability_id, *_):
+    bound = bindings.require(capability_id)
+    capability = next(item for item in release.capabilities
+                      if item.capability_id == capability_id)
+    identity = SimpleNamespace(
+        semantic_id=bound.semantic_roots[0],
+        family_id=bound.family_id,
+        signature=(Signature(("EventStatus",), "Boolean")
+                   if bound.family_id == "qualified_world_model"
+                   else Signature(("WorldRecord", "WorldQuery"), "Boolean")),
+        answer_kinds=tuple(sorted(capability.answer_kinds)),
+        operator_id=bound.semantic_operator_id)
+    return SimpleNamespace(stable_identity=SimpleNamespace(identity=identity))

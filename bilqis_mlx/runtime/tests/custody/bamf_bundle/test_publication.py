@@ -14,6 +14,7 @@ from unittest.mock import patch
 
 import bilqis_mlx.runtime.bamf_bundle.publication as publication
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
+from bilqis_mlx.data_plane import data_plane
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.bamf_bundle import (
     load_bamf_generation, publish_bamf_generation, record_bamf_rejection,
@@ -280,12 +281,13 @@ class BamfPublicationTests(unittest.TestCase):
                 shutil.rmtree(bundle)
                 backup.rename(bundle)
 
-    def test_rejection_requires_valid_local_tensor_payload(self):
+    def test_rejection_requires_valid_content_addressed_tensor_payload(self):
         published = self.publish(candidate(parent_state()))
         with shape_patch():
             student = load_bamf_generation(self.run / "bamf-state.json")
         bundle = self.run / published["bundle"]
-        tensor = bundle / "bamf-state.safetensors"
+        manifest = json.loads((bundle / "manifest.json").read_text())
+        tensor = data_plane().require_file_object(manifest["tensors"]["object_sha256"])
         original = tensor.read_bytes()
         outside = self.root / "outside-tensor.safetensors"
         outside.write_bytes(original)

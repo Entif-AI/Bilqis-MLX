@@ -23,6 +23,10 @@ from bilqis_mlx.factory.skos_curriculum.lesson_compiler import (
 )
 from bilqis_mlx.factory.tests.sources.test_skos_curriculum import _snapshot
 from bilqis_mlx.factory.tests.support import synthetic_release_inputs
+from bilqis_mlx.source_adapters.world_rules import (
+    GENERATOR as WORLD_GENERATOR, ORACLE as WORLD_ORACLE,
+    registered_adapter as world_adapter,
+)
 
 
 from bilqis_mlx.factory.skos_curriculum.programs.tests.fixtures import (
@@ -31,6 +35,21 @@ from bilqis_mlx.factory.skos_curriculum.programs.tests.fixtures import (
 
 
 class FamilyBindingTests(unittest.TestCase):
+    def test_world_binding_requires_exact_source_semantic_coordinate(self):
+        adapter = world_adapter()
+        registration = default_family_program_registry().require("qualified_world_model")
+        capability = CapabilityDefinition(
+            "WORLD.BEFORE", "D", (), adapter.descriptor.adapter_id,
+            WORLD_ORACLE, ("binary",))
+        program = ConstructionProgram(
+            capability.capability_id, adapter.descriptor.adapter_id,
+            WORLD_GENERATOR, WORLD_ORACLE, ())
+        with self.assertRaises(ValueError):
+            bind_existing_family_program(
+                registration, capability, program,
+                SourceAdapterRegistry((adapter,)),
+                semantic_roots=("ithkuil:LEXSENSE-59819df75e3137",))
+
     def test_release_boundary_replays_a08_currentness_before_program_binding(self):
         course, source_registry = synthetic_release_inputs()
         release = compile_factory_release(course, source_registry)
