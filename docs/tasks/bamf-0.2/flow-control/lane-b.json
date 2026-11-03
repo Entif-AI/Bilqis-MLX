@@ -249,7 +249,7 @@
       "issue": 460,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "ec4e633a3ba152c9e166331bd703525bf8038293",
+      "head_sha": "8c729176",
       "preserved_branch": "codex/bamf02-b-460-qualified-reads-20261103-resume",
       "summary": "Independent B08 source-context stage verified23/23; full production-hit binding remains active on its isolated issue branch.",
       "resume_trigger": null
@@ -294,11 +294,11 @@
     {
       "issue": 451,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "e9226be2f6a41f47109ca02a1103a363e64909a7",
+      "state": "WAITING",
+      "head_sha": "636d6283",
       "preserved_branch": "codex/bamf02-b-451-selector-custody-20261103",
-      "summary": "B05.3 selector-manifest/cold-custody proof using accepted B01 and B13 schema interfaces; B08/whole-model parent acceptance separate.",
-      "resume_trigger": null
+      "summary": "B05.3 engineering proof complete: native full custody1/1 plus adjacent depth18/18; ordinary independent review clear. Await lane integration slot before final pinned EGM and PR admission.",
+      "resume_trigger": "Existing Lane B integration PR #809 is merged/closed or an explicit lane admission exception selects #451; then reconcile live inventory, synchronize once if required, run affected checks and request final whole-candidate EGM."
     }
   ]
 }

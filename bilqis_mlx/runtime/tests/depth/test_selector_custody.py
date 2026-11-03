@@ -23,9 +23,9 @@ from bilqis_mlx.runtime.tests.depth.depth_helpers import _released_features, _hi
 
 
 SHARED = ("norm", "query", "key", "value", "output")
-DEPTH_NAMES = {*("depth." + name for name in SHARED),
+DEPTH_NAMES = frozenset({*("depth." + name for name in SHARED),
                *(f"depth.gate.{group}.{part}" for group in range(3)
-                 for part in ("vector", "bias"))}
+                 for part in ("vector", "bias"))})
 
 
 @unittest.skipUnless(os.environ.get("BILQIS_BAMF_FULL_WITNESS"),
