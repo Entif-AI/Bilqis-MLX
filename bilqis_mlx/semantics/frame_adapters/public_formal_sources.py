@@ -60,7 +60,8 @@ def source_graph_for_adapter(adapter_id: str):
 
 def verify_draw(adapter, row, source_root, graph, span, seed, each, profile, course):
     adapter_id = adapter.descriptor.adapter_id
-    if type(seed) is not int or type(each) is not int or not 1 <= each <= MAX_PUBLIC_FORMAL_DRAW_EACH:
+    if (type(row) is not dict or type(seed) is not int or type(each) is not int
+            or not 1 <= each <= MAX_PUBLIC_FORMAL_DRAW_EACH):
         _adapter_fail("BAMF_CONTEXT_PUBLIC_FORMAL_DRAW_PROVENANCE_INVALID",
                       adapter_id, span, "<public-formal>")
     arguments = dict(source_root=source_root, graph=graph, course=course,
@@ -72,9 +73,15 @@ def verify_draw(adapter, row, source_root, graph, span, seed, each, profile, cou
     except (KeyError, TypeError, ValueError):
         _adapter_fail("BAMF_CONTEXT_PUBLIC_FORMAL_DRAW_PROVENANCE_INVALID",
                       adapter_id, span, "<public-formal>")
-    if not isinstance(rows, (tuple, list)) or not any(candidate == row for candidate in rows):
+    if not isinstance(rows, (tuple, list)):
         _adapter_fail("BAMF_CONTEXT_PUBLIC_FORMAL_ROW_IDENTITY_UNVERIFIED",
                       adapter_id, span, "<public-formal>")
+    matched = next((candidate for candidate in rows
+                    if type(candidate) is dict and candidate == row), None)
+    if matched is None:
+        _adapter_fail("BAMF_CONTEXT_PUBLIC_FORMAL_ROW_IDENTITY_UNVERIFIED",
+                      adapter_id, span, "<public-formal>")
+    return matched
 
 
 def validate_policy(snapshot, task, frontier, policy, adapter_id, span):

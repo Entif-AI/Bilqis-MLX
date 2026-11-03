@@ -1,8 +1,13 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
+<<<<<<< HEAD
   "observed_unified": "53655a7a5d513403bcd14e9ffd2e5577411c5832",
   "updated_at": "2026-11-03T12:50:03.361107+00:00",
+=======
+  "observed_unified": "9bf47289e9ed0a64d275b31c3a7de42c55a8b83e",
+  "updated_at": "2026-11-03T15:04:00Z",
+>>>>>>> origin/codex/bamf-unified-base-20261028
   "exception": null,
   "items": [
     {
@@ -26,6 +31,16 @@
       "resume_trigger": null,
       "preserved_branch": "codex/758-oracle-proof-20261102",
       "merged_pr": 777
+    },
+    {
+      "issue": 737,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "93d3fe62df1be9f8aae995aa8446bac1bea427ea",
+      "summary": "A08.3 current-unified lifecycle refresh passed exact-head EGM and is externally merged through PR #782 as reviewed unified 9bf47289e9ed0a64d275b31c3a7de42c55a8b83e.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/737-a08-lifecycle-20261103",
+      "merged_pr": 782
     },
     {
       "issue": 745,
