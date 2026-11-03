@@ -168,6 +168,14 @@
       "head_sha": "89682d8beca1bfec0e38b0c2a4d3a4d70e06bca1",
       "summary": "Verified scoped #748 real-source proof-fixture remediation is closed and consumed into the #586 parent candidate.",
       "resume_trigger": null
+    },
+    {
+      "issue": 763,
+      "pr": 764,
+      "state": "TURNED_IN",
+      "head_sha": "e4484e5da1a9b7e982a89aa85b08bd50c67d98cd",
+      "summary": "Generic source-owner resolution repair is turned in for review on PR #764; parent #736 consumes it after landing and retains final merge-candidate EGM ownership.",
+      "resume_trigger": null
     }
   ]
 }
