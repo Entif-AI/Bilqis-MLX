@@ -1,5 +1,5 @@
 {
-  "legacy_raw_file_count": 226,
+  "legacy_raw_file_count": 228,
   "legacy_raw_raise_count": 2030,
   "legacy_raw_raise_groups": [
     {
@@ -12470,83 +12470,6 @@
       "path": "bilqis_mlx/source_adapters/school.py"
     },
     {
-      "code_hint": "FACTORY_BOOLEAN_EVIDENCE_PRODUCER_UNRESOLVED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_BOOLEAN_EVIDENCE_PRODUCER_UNRESOLVED:' + root",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FACTORY_BOOLEAN_PROFILE_PARAMETER_SCOPE_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_BOOLEAN_PROFILE_PARAMETER_SCOPE_DRIFT'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FACTORY_BOOLEAN_PROFILE_PARAMETER_UNKNOWN",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_BOOLEAN_PROFILE_PARAMETER_UNKNOWN'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FACTORY_MICRO_EVIDENCE_COMPOSITION_AST_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_MICRO_EVIDENCE_COMPOSITION_AST_INVALID'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FACTORY_MICRO_EVIDENCE_COMPOSITION_KEY_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_MICRO_EVIDENCE_COMPOSITION_KEY_INVALID'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FACTORY_MICRO_EVIDENCE_KIND_UNSUPPORTED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_MICRO_EVIDENCE_KIND_UNSUPPORTED'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FACTORY_MICRO_EVIDENCE_PRODUCER_ID_UNRESOLVED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_MICRO_EVIDENCE_PRODUCER_ID_UNRESOLVED'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FACTORY_MICRO_EVIDENCE_PRODUCER_KEY_DRIFT",
-      "count": 2,
-      "exception": "ValueError",
-      "expression": "'FACTORY_MICRO_EVIDENCE_PRODUCER_KEY_DRIFT'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FACTORY_MICRO_EVIDENCE_PRODUCER_ROOT_UNRESOLVED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_MICRO_EVIDENCE_PRODUCER_ROOT_UNRESOLVED'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FACTORY_MICRO_EVIDENCE_RECORD_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_MICRO_EVIDENCE_RECORD_MISSING'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FACTORY_MICRO_EVIDENCE_REQUIRES_ONE_PRODUCER",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_MICRO_EVIDENCE_REQUIRES_ONE_PRODUCER'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
       "code_hint": "FACTORY_NUMERIC_CAPABILITY_HAS_NO_ACTIVE_DOMAIN",
       "count": 1,
       "exception": "ValueError",
@@ -12587,6 +12510,83 @@
       "exception": "ValueError",
       "expression": "'FACTORY_UNKNOWN_BOOLEAN_TEACHING_OPTION'",
       "path": "bilqis_mlx/source_adapters/school.py"
+    },
+    {
+      "code_hint": "FACTORY_BOOLEAN_PROFILE_PARAMETER_SCOPE_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_BOOLEAN_PROFILE_PARAMETER_SCOPE_DRIFT'",
+      "path": "bilqis_mlx/source_adapters/school_sources/constructors.py"
+    },
+    {
+      "code_hint": "FACTORY_BOOLEAN_PROFILE_PARAMETER_UNKNOWN",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_BOOLEAN_PROFILE_PARAMETER_UNKNOWN'",
+      "path": "bilqis_mlx/source_adapters/school_sources/constructors.py"
+    },
+    {
+      "code_hint": "FACTORY_BOOLEAN_EVIDENCE_PRODUCER_UNRESOLVED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_BOOLEAN_EVIDENCE_PRODUCER_UNRESOLVED:' + root",
+      "path": "bilqis_mlx/source_adapters/school_sources/evidence.py"
+    },
+    {
+      "code_hint": "FACTORY_MICRO_EVIDENCE_COMPOSITION_AST_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_MICRO_EVIDENCE_COMPOSITION_AST_INVALID'",
+      "path": "bilqis_mlx/source_adapters/school_sources/evidence.py"
+    },
+    {
+      "code_hint": "FACTORY_MICRO_EVIDENCE_COMPOSITION_KEY_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_MICRO_EVIDENCE_COMPOSITION_KEY_INVALID'",
+      "path": "bilqis_mlx/source_adapters/school_sources/evidence.py"
+    },
+    {
+      "code_hint": "FACTORY_MICRO_EVIDENCE_KIND_UNSUPPORTED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_MICRO_EVIDENCE_KIND_UNSUPPORTED'",
+      "path": "bilqis_mlx/source_adapters/school_sources/evidence.py"
+    },
+    {
+      "code_hint": "FACTORY_MICRO_EVIDENCE_PRODUCER_ID_UNRESOLVED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_MICRO_EVIDENCE_PRODUCER_ID_UNRESOLVED'",
+      "path": "bilqis_mlx/source_adapters/school_sources/evidence.py"
+    },
+    {
+      "code_hint": "FACTORY_MICRO_EVIDENCE_PRODUCER_KEY_DRIFT",
+      "count": 2,
+      "exception": "ValueError",
+      "expression": "'FACTORY_MICRO_EVIDENCE_PRODUCER_KEY_DRIFT'",
+      "path": "bilqis_mlx/source_adapters/school_sources/evidence.py"
+    },
+    {
+      "code_hint": "FACTORY_MICRO_EVIDENCE_PRODUCER_ROOT_UNRESOLVED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_MICRO_EVIDENCE_PRODUCER_ROOT_UNRESOLVED'",
+      "path": "bilqis_mlx/source_adapters/school_sources/evidence.py"
+    },
+    {
+      "code_hint": "FACTORY_MICRO_EVIDENCE_RECORD_MISSING",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_MICRO_EVIDENCE_RECORD_MISSING'",
+      "path": "bilqis_mlx/source_adapters/school_sources/evidence.py"
+    },
+    {
+      "code_hint": "FACTORY_MICRO_EVIDENCE_REQUIRES_ONE_PRODUCER",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_MICRO_EVIDENCE_REQUIRES_ONE_PRODUCER'",
+      "path": "bilqis_mlx/source_adapters/school_sources/evidence.py"
     },
     {
       "code_hint": "lacks U7C pattern",

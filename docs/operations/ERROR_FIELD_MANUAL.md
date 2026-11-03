@@ -1725,7 +1725,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **2030** raw raises across **226** files. The baseline gate permits only reduction.
+Current production scan: **2030** raw raises across **228** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -2354,9 +2354,9 @@ Current production scan: **2030** raw raises across **226** files. The baseline 
 | `FACTORY_ASSESSMENT_SCOPE_DUPLICATE_CAPABILITY` | 1 | `bilqis_mlx/factory/lifecycle/assessment.py` |
 | `FACTORY_ASSESSMENT_SCOPE_EMPTY` | 2 | `bilqis_mlx/_release_views/live_curriculum.py`, `bilqis_mlx/factory/lifecycle/assessment.py` |
 | `FACTORY_ASSESSMENT_SCOPE_UNKNOWN_CAPABILITY` | 1 | `bilqis_mlx/factory/lifecycle/assessment.py` |
-| `FACTORY_BOOLEAN_EVIDENCE_PRODUCER_UNRESOLVED` | 1 | `bilqis_mlx/source_adapters/school.py` |
-| `FACTORY_BOOLEAN_PROFILE_PARAMETER_SCOPE_DRIFT` | 1 | `bilqis_mlx/source_adapters/school.py` |
-| `FACTORY_BOOLEAN_PROFILE_PARAMETER_UNKNOWN` | 1 | `bilqis_mlx/source_adapters/school.py` |
+| `FACTORY_BOOLEAN_EVIDENCE_PRODUCER_UNRESOLVED` | 1 | `bilqis_mlx/source_adapters/school_sources/evidence.py` |
+| `FACTORY_BOOLEAN_PROFILE_PARAMETER_SCOPE_DRIFT` | 1 | `bilqis_mlx/source_adapters/school_sources/constructors.py` |
+| `FACTORY_BOOLEAN_PROFILE_PARAMETER_UNKNOWN` | 1 | `bilqis_mlx/source_adapters/school_sources/constructors.py` |
 | `FACTORY_BOOLEAN_PROFILE_SELECTION_INVALID` | 1 | `bilqis_mlx/profiles/school.py` |
 | `FACTORY_CATALOG_BOUNDARY_COHORT_REQUIRED` | 1 | `bilqis_mlx/runtime/release_adoption.py` |
 | `FACTORY_CATALOG_NO_DISABLED_GRADE` | 1 | `bilqis_mlx/profiles/catalog.py` |
@@ -2489,14 +2489,14 @@ Current production scan: **2030** raw raises across **226** files. The baseline 
 | `FACTORY_LESSON_CAPABILITY_NOT_ADMITTED` | 1 | `bilqis_mlx/runtime/assessment.py` |
 | `FACTORY_LESSON_GRADE_NOT_RELEASED` | 1 | `bilqis_mlx/_release_views/live_curriculum.py` |
 | `FACTORY_LESSON_PROVIDER_BINDING_DRIFT` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `FACTORY_MICRO_EVIDENCE_COMPOSITION_AST_INVALID` | 1 | `bilqis_mlx/source_adapters/school.py` |
-| `FACTORY_MICRO_EVIDENCE_COMPOSITION_KEY_INVALID` | 1 | `bilqis_mlx/source_adapters/school.py` |
-| `FACTORY_MICRO_EVIDENCE_KIND_UNSUPPORTED` | 1 | `bilqis_mlx/source_adapters/school.py` |
-| `FACTORY_MICRO_EVIDENCE_PRODUCER_ID_UNRESOLVED` | 1 | `bilqis_mlx/source_adapters/school.py` |
-| `FACTORY_MICRO_EVIDENCE_PRODUCER_KEY_DRIFT` | 2 | `bilqis_mlx/source_adapters/school.py` |
-| `FACTORY_MICRO_EVIDENCE_PRODUCER_ROOT_UNRESOLVED` | 1 | `bilqis_mlx/source_adapters/school.py` |
-| `FACTORY_MICRO_EVIDENCE_RECORD_MISSING` | 1 | `bilqis_mlx/source_adapters/school.py` |
-| `FACTORY_MICRO_EVIDENCE_REQUIRES_ONE_PRODUCER` | 1 | `bilqis_mlx/source_adapters/school.py` |
+| `FACTORY_MICRO_EVIDENCE_COMPOSITION_AST_INVALID` | 1 | `bilqis_mlx/source_adapters/school_sources/evidence.py` |
+| `FACTORY_MICRO_EVIDENCE_COMPOSITION_KEY_INVALID` | 1 | `bilqis_mlx/source_adapters/school_sources/evidence.py` |
+| `FACTORY_MICRO_EVIDENCE_KIND_UNSUPPORTED` | 1 | `bilqis_mlx/source_adapters/school_sources/evidence.py` |
+| `FACTORY_MICRO_EVIDENCE_PRODUCER_ID_UNRESOLVED` | 1 | `bilqis_mlx/source_adapters/school_sources/evidence.py` |
+| `FACTORY_MICRO_EVIDENCE_PRODUCER_KEY_DRIFT` | 2 | `bilqis_mlx/source_adapters/school_sources/evidence.py` |
+| `FACTORY_MICRO_EVIDENCE_PRODUCER_ROOT_UNRESOLVED` | 1 | `bilqis_mlx/source_adapters/school_sources/evidence.py` |
+| `FACTORY_MICRO_EVIDENCE_RECORD_MISSING` | 1 | `bilqis_mlx/source_adapters/school_sources/evidence.py` |
+| `FACTORY_MICRO_EVIDENCE_REQUIRES_ONE_PRODUCER` | 1 | `bilqis_mlx/source_adapters/school_sources/evidence.py` |
 | `FACTORY_NUMERIC_CAPABILITY_HAS_NO_ACTIVE_DOMAIN` | 1 | `bilqis_mlx/source_adapters/school.py` |
 | `FACTORY_NUMERIC_EVIDENCE_KIND_UNSUPPORTED` | 1 | `bilqis_mlx/source_adapters/school.py` |
 | `FACTORY_NUMERIC_EVIDENCE_PLAN_DRIFT` | 1 | `bilqis_mlx/source_adapters/school.py` |
