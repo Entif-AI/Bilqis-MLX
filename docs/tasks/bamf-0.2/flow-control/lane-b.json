@@ -1,7 +1,7 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "05e31a576e3432e4238c9b4477a70d70ec4fc487",
+  "observed_unified": "e9226be2f6a41f47109ca02a1103a363e64909a7",
   "updated_at": "2026-11-03T19:25:00Z",
   "exception": null,
   "items": [
@@ -248,11 +248,11 @@
     {
       "issue": 460,
       "pr": null,
-      "state": "WAITING",
+      "state": "ACTIVE",
       "head_sha": "7984d7872d49b3987284692f5398da71f2a72605",
       "preserved_branch": "codex/bamf02-b-460-qualified-reads-20261103",
-      "summary": "Source-hit qualification traced after accepted #691/#456; paused at canonical A03 schema structural owner (417 LoC), already covered by C01/#347.",
-      "resume_trigger": "C01/#347 canonical released_frame_schemas structural repair is accepted through reviewed unified; then reactivate and synchronize once before source-read implementation."
+      "summary": "Resumed after C01 structural repair landed through reviewed unified e9226be2; implementing source-qualified two-site motif reads.",
+      "resume_trigger": null
     },
     {
       "issue": 481,
