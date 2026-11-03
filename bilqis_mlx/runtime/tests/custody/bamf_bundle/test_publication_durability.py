@@ -8,7 +8,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-import mlx.core as mx
+from bilqis_mlx._data_plane import file_objects
+from bilqis_mlx.data_plane import data_plane
 import bilqis_mlx.runtime.bamf_bundle.publication as publication
 import bilqis_mlx.runtime.checkpoints as checkpoints
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
@@ -35,27 +36,56 @@ class PublicationDurabilityTests(unittest.TestCase):
         with shape_patch(), patch.object(mlx_checkpoint, 'assert_headroom'):
             return publish_bamf_generation(self.run, value)
 
-    def test_tensor_file_is_fsynced_before_pointer_can_be_installed(self):
-        tensor_inode, synced = [], set()
-        save, fsync, pointer = mx.save_safetensors, os.fsync, publication._atomic_pointer
+    def assert_persisted_tensor_durable(self):
+        synced, current = set(), set()
+        fsync, pointer = os.fsync, publication._atomic_pointer
 
-        def save_tensor(path, arrays):
-            save(path, arrays)
-            tensor_inode.append(os.stat(path).st_ino)
+        def identity(path):
+            state = path.stat()
+            return state.st_dev, state.st_ino
 
         def sync(fd):
-            synced.add(os.fstat(fd).st_ino)
+            state = os.fstat(fd)
+            synced.add((state.st_dev, state.st_ino))
+            current.add((state.st_dev, state.st_ino))
             fsync(fd)
 
         def install(path, value):
-            self.assertEqual(len(tensor_inode), 1)
-            self.assertIn(tensor_inode[0], synced, 'tensor bytes must be durable before the pointer')
+            manifest = json.loads((path.parent / value['bundle'] / 'manifest.json').read_bytes())
+            tensor = data_plane().require_file_object(manifest['tensors']['object_sha256'])
+            self.assertIn(identity(tensor), synced, 'persisted CAS inode must be durable')
+            for directory in (tensor.parent, tensor.parent.parent, tensor.parent.parent.parent):
+                self.assertIn(identity(directory), current, 'CAS ancestry must be durable')
             pointer(path, value)
 
-        with patch.object(mx, 'save_safetensors', side_effect=save_tensor), \
-                patch.object(os, 'fsync', side_effect=sync), \
+        with patch.object(os, 'fsync', side_effect=sync), \
                 patch.object(publication, '_atomic_pointer', side_effect=install):
-            self.publish(candidate(parent_state()))
+            for name in ('initial', 'reuse'):
+                current.clear()
+                self.run = self.root / name
+                self.publish(candidate(parent_state()))
+
+    def test_tensor_file_is_fsynced_before_pointer_can_be_installed(self):
+        self.assert_persisted_tensor_durable()
+
+    def test_ordering_witness_detects_unsynced_cas_inode(self):
+        copy = file_objects.DataPlaneFileObjectMixin._copy_file_object
+
+        def unsynced_copy(owner, source, target, digest):
+            with patch.object(os, 'fsync'):
+                copy(owner, source, target, digest)
+
+        with patch.object(file_objects.DataPlaneFileObjectMixin, '_copy_file_object',
+                          new=unsynced_copy):
+            with self.assertRaisesRegex(AssertionError, 'persisted CAS inode'):
+                self.assert_persisted_tensor_durable()
+        self.assertFalse((self.run / 'bamf-state.json').exists())
+
+    def test_ordering_witness_detects_unsynced_cas_ancestry(self):
+        with patch.object(file_objects, '_fsync_directory'):
+            with self.assertRaisesRegex(AssertionError, 'CAS ancestry'):
+                self.assert_persisted_tensor_durable()
+        self.assertFalse((self.run / 'bamf-state.json').exists())
 
     def test_overlapping_cold_reader_cannot_race_outbox_reconciliation(self):
         for operation in ('publish', 'load'):

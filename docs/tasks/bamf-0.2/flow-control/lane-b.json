@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "2800946729e484875f7d1f57f0e6d85078936394",
-  "updated_at": "2026-11-03T07:51:58.209608Z",
+  "observed_unified": "deaa8b9dbd277993f884abeea7413f9cb799d945",
+  "updated_at": "2026-11-03T08:03:03.918115+00:00",
   "exception": null,
   "items": [
     {
@@ -180,11 +180,21 @@
     },
     {
       "issue": 753,
-      "pr": 768,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "0ea77e24d453b14c3a52966a0dd95e4edd63e0a5",
-      "summary": "Read-back concurrent B13 parent #478 tensor-CAS remediation PR768 is open for human integration; canonical issue753 records final EGM PASS. This is inventory reconciliation, not consumption.",
-      "resume_trigger": null
+      "summary": "Original tensor CAS implementation externally merged as deaa8b9d; follow-up #769 owns additional ownership/race/proof defects.",
+      "resume_trigger": null,
+      "merged_pr": 768
+    },
+    {
+      "issue": 769,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "deaa8b9dbd277993f884abeea7413f9cb799d945",
+      "summary": "Consume prior reviewed alias/race/published-custody/legacy-reader repair against the actually landed tensor CAS.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b-769-cas-ownership-20261103"
     }
   ]
 }
