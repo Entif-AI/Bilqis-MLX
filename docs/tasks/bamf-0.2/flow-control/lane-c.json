@@ -86,10 +86,10 @@
     {
       "issue": 770,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "c08aabb9",
-      "summary": "Repair14inherited contract-verifier failures against exact canonical late-child and dispatch evidence.",
-      "resume_trigger": null,
+      "state": "WAITING",
+      "head_sha": "948f87ef464704651f96fa3214b12c348593da91",
+      "summary": "All14verifier failures repaired;58/58 affected tests;14/14 live body pins;171child integrity valid, same8holds and no executable order. Mechanical proof ready for canonical C01 consumption.",
+      "resume_trigger": "Canonical C01 parent consumes this exact repair and completes its aggregate review, or an issue-specific PR slot is available after the current3/3inventory drains.",
       "preserved_branch": "codex/bamf02-c-770-contract-verifier-20261103"
     }
   ]
