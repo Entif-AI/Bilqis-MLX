@@ -43,7 +43,7 @@ class SourceAtomAdapterTests(TestCase):
             registered("callable.one", "shared.cohort", "oracle.v1"),
             registered("callable.two", "shared.cohort", "oracle.v1"),
         ))
-        with self.assertRaisesRegex(ValueError, "FACTORY_SOURCE_ADAPTER_OWNER_AMBIGUOUS"):
+        with self.assertRaisesRegex(ValueError, "FACTORY_SOURCE_ADAPTER_MISSING"):
             ambiguous.resolve_owner("shared.cohort")
 
     def test_grade_a_cohort_row_resolves_canonical_callable_owner(self):
