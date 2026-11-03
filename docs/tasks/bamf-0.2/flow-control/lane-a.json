@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "53655a7a5d513403bcd14e9ffd2e5577411c5832",
-  "updated_at": "2026-11-03T12:50:03.361107+00:00",
+  "observed_unified": "aa828eb5cb8822a5614aa3353864bf187f83444d",
+  "updated_at": "2026-11-03T13:10:47.387115+00:00",
   "exception": null,
   "items": [
     {
@@ -44,6 +44,15 @@
       "summary": "A08.3 current-unified lifecycle refresh is admitted in PR #782 after 34/34 focused proof; final exact-head EGM follows this inventory commit.",
       "resume_trigger": null,
       "preserved_branch": "codex/737-a08-lifecycle-20261103"
+    },
+    {
+      "issue": 785,
+      "pr": null,
+      "state": "BLOCKED",
+      "head_sha": "4b170d5d84a1b26799de59409e3d81a1f993b26e",
+      "summary": "Same pinned A01 admits two valid A06 feature selections (micro6schemas/full18,228concepts each); no single-global-profile authority inferred. Needed A03 owner localization encountered417-line released-schema file. Complete task preserved in BIOS Work Stack.",
+      "resume_trigger": "Canonical #347 released-schema structural repair reaches reviewed unified; activate785, sync once, verify owner and companion tests below240, then resume exact A03/A06 selection-authority trace without inventing global profile authority.",
+      "preserved_branch": "codex/bamf02-a-785-source-features-20261103"
     }
   ]
 }
