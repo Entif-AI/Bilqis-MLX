@@ -1,5 +1,8 @@
 # Installed source-frame interface probe
 
+Current 3 November continuation: [current exact-source receipt](current-20261103.md).
+The original proof and review state below remain historical.
+
 The refreshed candidate, including the accepted unified codec and #731 repair,
 was built from git archive commit
 `7c8b75a418e726060945f2b9cbe296063b7d9ee4` in a fresh temporary source tree. A separate build environment

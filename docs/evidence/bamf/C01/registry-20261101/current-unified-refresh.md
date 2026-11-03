@@ -1,5 +1,8 @@
 # C01 current-unified structural turn-in — 2 November 2026
 
+Current 3 November continuation: [current exact-source receipt](current-20261103.md).
+The original proof and review state below remain historical.
+
 Consumed reviewed unified `67c964a1548cb0075a28a90aa2565d8bdab0fd71`
 through synchronized/pushed Lane C `46bfa98d564e1262be43463ec96d3ce1a95aa8c4`.
 PR #699 merged, satisfying the recorded primary-drain trigger. C01 was activated
