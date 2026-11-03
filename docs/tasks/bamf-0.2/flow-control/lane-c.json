@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "aa828eb5cb8822a5614aa3353864bf187f83444d",
-  "updated_at": "2026-11-03T13:22:28.721476+00:00",
+  "updated_at": "2026-11-03T13:35:00.390896+00:00",
   "exception": null,
   "items": [
     {
@@ -105,6 +105,22 @@
       "state": "TURNED_IN",
       "head_sha": "8e6e5dfd5e69e1e8256a0a522519509659294619",
       "summary": "Both stale historical grep predicates reproduced exit1; exact documented193/122 replacement commands execute successfully on actual source3174c368 proof logs. Consumed into parent; aggregate EGM pending.",
+      "resume_trigger": null
+    },
+    {
+      "issue": 786,
+      "pr": null,
+      "state": "READY",
+      "head_sha": null,
+      "summary": "Round3 public released-schema fault-route regression; two literal failing-before probes; repair on separate issue branch then consume parent.",
+      "resume_trigger": null
+    },
+    {
+      "issue": 787,
+      "pr": null,
+      "state": "READY",
+      "head_sha": null,
+      "summary": "Round3 current199 recipe inherits historical193 validator; deterministic current-total proof repair, plus stale next-gate paragraph.",
       "resume_trigger": null
     }
   ]
