@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "2800946729e484875f7d1f57f0e6d85078936394",
-  "updated_at": "2026-11-03T00:04:41.844795+00:00",
+  "updated_at": "2026-11-03T00:09:47.897877+00:00",
   "exception": null,
   "items": [
     {
@@ -184,9 +184,9 @@
     {
       "issue": 757,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "692ad4c88ae4c43dc5f1ec0ad6ba4aa14a3f0e50",
-      "summary": "Selected public B05 admission hold until qualified #586 producer authority is consumed. Preserve private equations and source-feature numerical proofs.",
+      "state": "TURNED_IN",
+      "head_sha": "f596a71173fb7c7080cc2e4e501e2ffba1e6b6bb",
+      "summary": "Verified public B05 pre-qualification hold; private numerical proofs preserved, 18/18 depth tests zero skips. Durable branch codex/757-public-selector-admission. Parent #577 retains qualified #586 producer integration and whole-candidate EGM.",
       "resume_trigger": null
     }
   ]
