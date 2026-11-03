@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "9bf47289e9ed0a64d275b31c3a7de42c55a8b83e",
-  "updated_at": "2026-11-03T14:57:36Z",
+  "updated_at": "2026-11-03T15:45:37Z",
   "exception": null,
   "items": [
     {
@@ -33,8 +33,8 @@
       "issue": 456,
       "pr": 690,
       "state": "TURNED_IN",
-      "head_sha": "2f8754d1609dc0f1a721adb5521db67799b7139c",
-      "summary": "B07.1 current-unified CAS continuation is locally green: #783 canonical CandidateState repair consumed; parent selection 103/103 zero skips; canonical motif-read package 11/11; final exact-head EGM follows this bookkeeping commit.",
+      "head_sha": "58209522c8855245c3b9ae22e1a57255974ffc05",
+      "summary": "B07.1 current-unified CAS continuation repair is locally green: #783 canonical CandidateState repair consumed; non-genesis continuation is B13-custody-bound to an externally pinned manifest digest; affected selection 120/120 zero skips; final exact-head EGM follows this bookkeeping commit.",
       "resume_trigger": null,
       "preserved_branch": "codex/783-456-current-unified-20261103"
     },
