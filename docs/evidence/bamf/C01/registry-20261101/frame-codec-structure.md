@@ -60,8 +60,9 @@ Exact source commit `4ab0752d` passed all six native M3 caller cases without ski
 in a detached checkout under the sovereign MLX test lease. Cumulative structure
 and hygiene checks pass across 112 Python files, with zero findings/new debt.
 The isolated installed wheel passed 93/93 with both real fixtures, no skips and
-verified installed module origins. See [the exact probe recipe](installed-wheel-probe.md)
-for its wheel hash, selectors and explicit repository-only exclusions.
+verified installed module origins. The [later installed-wheel recipe](installed-wheel-probe.md)
+records the subsequent 116-case selection, wheel identities and repository-only
+exclusions; it does not supply the historical 93-case wheel hash or selector.
 
 All five mandatory structural predicates are now locally satisfied. Completing
 this Work Stack interruption permits the original interface-receipt work to resume;
