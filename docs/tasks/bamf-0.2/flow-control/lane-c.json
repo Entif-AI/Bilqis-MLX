@@ -1,7 +1,7 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "338a3c5263772566502af70d731b95af1d91a81e",
+  "observed_unified": "48315ee7bae3caa7d5ac279128c79217b9178d16",
   "updated_at": "2026-11-03T07:54:00Z",
   "exception": null,
   "items": [
@@ -82,6 +82,15 @@
       "head_sha": "306d8e0f2e4efd9960ea7ec88240fb90547c8cc0",
       "summary": "Selector pickle regression reproduced twice; two metadata assignments verified on isolated issue branch and consumed into #641. Parent owns aggregate EGM.",
       "resume_trigger": null
+    },
+    {
+      "issue": 770,
+      "pr": 781,
+      "state": "TURNED_IN",
+      "head_sha": "54bb14260039803187dd8d3e65eeec8c76527755",
+      "summary": "C01 mechanical contract-verifier repair is EGM-Passed and ready in PR781;58tests and14live-source pins independently verified;171children/same8holds/no order.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-c-770-contract-verifier-20261103"
     }
   ]
 }
