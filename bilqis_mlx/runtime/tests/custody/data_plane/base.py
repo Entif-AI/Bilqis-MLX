@@ -36,4 +36,3 @@ def historical_module(root, revision, relative, name, expected_digest):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
-
