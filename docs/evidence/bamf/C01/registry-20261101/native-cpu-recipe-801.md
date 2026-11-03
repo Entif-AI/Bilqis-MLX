@@ -10,16 +10,18 @@ Git, tar, package-index access, and a clone containing the tested source below.
 before creating the environment. No activated environment or bare `python` is
 assumed. Run the complete block from the repository root.
 
-The tested archive source is `76f55ca807e457b69447d7a04c1afe94e19ee10a`:
+The historical tested archive source is `76f55ca807e457b69447d7a04c1afe94e19ee10a`:
 the exact C01 parent `2765b5df6ce0a23c9388800c13375ac2f67a98b3` consumed into
 synchronized Lane C/unified `7984d787`. This identifies tested source; it does
 not claim that the parent passed aggregate review. A later parent candidate
-must record its own source commit and rerun the same selection.
+must record its own source commit and rerun the same selection. The block is
+parameterized for that purpose: `C01_PROOF_COMMIT` selects a later exact source,
+while the historical source remains the default.
 
 ```sh
 set -eu
 proof_repo=$(git rev-parse --show-toplevel)
-proof_commit=76f55ca807e457b69447d7a04c1afe94e19ee10a
+proof_commit=${C01_PROOF_COMMIT:-76f55ca807e457b69447d7a04c1afe94e19ee10a}
 native_python=$(command -v python3.14)
 "$native_python" - <<'PYPREFLIGHT'
 import platform, sys
@@ -130,8 +132,9 @@ aggregate review; the C01 review episode/cap remains unchanged.
 ## Parent aggregate replay — 3 November 2026
 
 After #800 and #801 were both consumed into the active #347 continuation, the same
-literal recipe was rerun from fresh archive source commit
-`1205b9904bab144679972dba1d652dfa51fed4f6` in a fresh disposable native venv.
+parameterized recipe was rerun with
+`C01_PROOF_COMMIT=1205b9904bab144679972dba1d652dfa51fed4f6` from that fresh archive
+source commit in a fresh disposable native venv.
 Observed Python 3.14.4 on arm64 macOS, MLX/MLX-Metal 0.32.4, NumPy 2.5.4,
 rdflib 7.6.0, cryptography 50.0.2 and pyshacl 0.40.1. CPU was selected before
 the test selection and remained selected afterward. All six native frame callers
