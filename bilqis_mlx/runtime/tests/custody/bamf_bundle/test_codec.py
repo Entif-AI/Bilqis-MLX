@@ -19,10 +19,13 @@ import numpy as np
 import bilqis_mlx.runtime.bamf_bundle.codec as codec
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError, ErrorBus
+from bilqis_mlx.learning.atlas_engram import MotifKey, MotifManifest, MotifSlot
+from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
 from bilqis_mlx.runtime.bamf_bundle import load_bamf_bundle, save_bamf_bundle
 
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    NAME, accepted_state, candidate, next_accepted_step, parent_state, shape_patch,
+    NAME, accepted_state, candidate, next_accepted_step, parent_state,
+    rewrite_motif_bundle_fixture, shape_patch,
 )
 
 
@@ -90,6 +93,27 @@ class BamfBundleCodecTests(unittest.TestCase):
             [sys.executable, "-c", script, str(self.root / "bundle")],
             check=True, capture_output=True, text=True)
         self.assertEqual(json.loads(completed.stdout), expected)
+
+    def test_authenticated_non_genesis_motif_state_round_trips_and_resumes(self):
+        parent = parent_state()
+        key = MotifKey(
+            "STRUCTURAL", "b" * 64, "fixture:frame", 1, (), "f" * 64,
+            "fixture:scope")
+        allocations = MotifAllocationSnapshot(
+            MotifManifest("b" * 64, (MotifSlot(0, key),)),
+            ((key.digest, 3),),
+        )
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            manifest = save_bamf_bundle(candidate(parent), self.root / "motif-bundle")
+            manifest = rewrite_motif_bundle_fixture(
+                self.root / "motif-bundle", manifest, allocations)
+            loaded = load_bamf_bundle(
+                self.root / "motif-bundle",
+                expected_manifest_sha256=manifest["manifest_sha256"])
+        self.assertEqual(loaded.retained_state.allocations, allocations)
+        resumed = next_accepted_step(loaded.retained_state)
+        self.assertEqual(resumed.allocations, allocations)
+        self.assertEqual(resumed.optimizer_step, parent.optimizer_step + 1)
 
     def test_corrupt_or_inconsistent_sidecar_fails_before_tensor_load(self):
         source = candidate(parent_state())
