@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "9bf47289e9ed0a64d275b31c3a7de42c55a8b83e",
-  "updated_at": "2026-11-03T21:20:00Z",
+  "updated_at": "2026-11-03T20:42:00Z",
   "exception": null,
   "items": [
     {
@@ -87,7 +87,7 @@
       "state": "TURNED_IN",
       "head_sha": "5f9d484e",
       "preserved_branch": "codex/bamf02-c-347-integration-20261103",
-      "summary": "Late-bound public-facade dependency repair is ready in PR #803.",
+      "summary": "Late-bound public-facade dependency repair is ready in PR #803 for the C01 aggregate.",
       "resume_trigger": null
     },
     {
@@ -96,8 +96,8 @@
       "state": "TURNED_IN",
       "head_sha": "dc57690b",
       "preserved_branch": "codex/remediation-713-c02-authority-20261103",
-      "summary": "C02.1 remediation in ready PR #808: the canonical A06 owner holds feature selection authority.",
-      "resume_trigger": "PR #808 is merged or closed."
+      "summary": "C02.1 remediation in ready PR #808: the canonical A06 owner holds feature selection authority at the C02.1 model-input boundary.",
+      "resume_trigger": "PR #808 is merged or closed; the C02.1 authority continues on owner issue #490."
     }
   ]
 }

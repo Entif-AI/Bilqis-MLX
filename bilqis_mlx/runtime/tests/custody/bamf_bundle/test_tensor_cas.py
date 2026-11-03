@@ -18,6 +18,7 @@ from bilqis_mlx.runtime.bamf_bundle import (
     load_bamf_bundle, load_bamf_generation, publish_bamf_generation, save_bamf_bundle,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
+    publish_candidate,
     accepted_state, candidate, parent_state, shape_patch,
 )
 
@@ -80,12 +81,12 @@ class BamfTensorCasTests(unittest.TestCase):
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
                 patch.object(publication, "_atomic_pointer", side_effect=RuntimeError("crash")):
             with self.assertRaisesRegex(RuntimeError, "crash"):
-                publish_bamf_generation(run, source)
+                publish_candidate(run, source)
         objects = tuple((self.root / "plane.sqlite3.objects").glob("*/*"))
         self.assertEqual(len(objects), 1)
         inode = objects[0].stat().st_ino
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            pointer = publish_bamf_generation(run, source)
+            pointer = publish_candidate(run, source)
         objects_after = tuple((self.root / "plane.sqlite3.objects").glob("*/*"))
         self.assertEqual(len(objects_after), 1)
         self.assertEqual(objects_after[0].stat().st_ino, inode)
@@ -131,7 +132,7 @@ class BamfTensorCasTests(unittest.TestCase):
         run = self.root / "run"
         state = parent_state()
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            first = publish_bamf_generation(run, candidate(state))
+            first = publish_candidate(run, candidate(state))
             first_root = run / first["bundle"]
             before = {p.name: p.read_bytes() for p in first_root.iterdir()}
             first_manifest = json.loads(before["manifest.json"])
@@ -143,13 +144,13 @@ class BamfTensorCasTests(unittest.TestCase):
             semantic = {**swap.semantic_abi, "active_set_sha256": "8" * 64}
             swap = replace(swap, extents=extents, semantic_abi=semantic,
                            transition={**swap.transition, "kind": "PARAMETER_EXTENSION"})
-            second = publish_bamf_generation(run, swap)
+            second = publish_candidate(run, swap)
             second_manifest = json.loads((run / second["bundle"] / "manifest.json").read_bytes())
             self.assertEqual(second_manifest["tensors"]["object_sha256"], digest)
             self.assertEqual(original.stat().st_ino, original_inode)
             changed = replace(candidate(accepted_state(state), 2, second["manifest_sha256"]),
                               extents=extents, semantic_abi=semantic)
-            third = publish_bamf_generation(run, changed)
+            third = publish_candidate(run, changed)
             third_manifest = json.loads((run / third["bundle"] / "manifest.json").read_bytes())
             self.assertNotEqual(third_manifest["tensors"]["object_sha256"], digest)
             self.assertEqual(load_bamf_generation(run / "bamf-state.json").generation, 2)

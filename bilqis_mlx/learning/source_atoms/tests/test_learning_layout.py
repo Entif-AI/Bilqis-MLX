@@ -42,7 +42,11 @@ class LearningLayoutTests(TestCase):
                 observed.add(path.stem)
                 name = "bilqis_mlx.learning." + path.stem
                 _assert_owner_alias(self, root, path)
-        self.assertEqual(len(observed), 39)
+<<<<<<< HEAD
+        self.assertEqual(len(observed), 40)
+=======
+        self.assertEqual(len(observed), 40)
+>>>>>>> origin/codex/remediation-708-feature-authority-20261103
 
     def test_compatibility_alias_contract_rejects_regular_duplicates_and_other_links(self):
         from tempfile import TemporaryDirectory
