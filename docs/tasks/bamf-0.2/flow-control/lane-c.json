@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "9bf47289e9ed0a64d275b31c3a7de42c55a8b83e",
-  "updated_at": "2026-11-03T15:04:00Z",
+  "updated_at": "2026-11-03T17:45:00Z",
   "exception": null,
   "items": [
     {
@@ -92,6 +92,15 @@
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-c-770-contract-verifier-20261103",
       "merged_pr": 781
+    },
+    {
+      "issue": 800,
+      "pr": 803,
+      "state": "TURNED_IN",
+      "head_sha": "5f9d484e94a942f5421281187764efbdefa8ee24",
+      "preserved_branch": "codex/bamf02-c-347-integration-20261103",
+      "summary": "Late-bound public-facade dependency repair is verified and consumed into the active #347 aggregate; ready PR #803 carries the C01 integration candidate.",
+      "resume_trigger": null
     }
   ]
 }
