@@ -65,11 +65,14 @@ class FileObjectTests(DataPlaneCase):
                 self.assertIn(directory, synced)
 
     def test_independent_process_writers_converge_on_one_object(self):
+        from bilqis_mlx.runtime.tests.custody.data_plane.test_file_objects import (
+            _racing_adopter as process_target,
+        )
         source, digest = self.source()
         plane = data_plane()
         context = multiprocessing.get_context("spawn")
         barrier, results = context.Barrier(2), context.Queue()
-        workers = [context.Process(target=_racing_adopter,
+        workers = [context.Process(target=process_target,
                                    args=(source, digest, barrier, results))
                    for unused in range(2)]
         try:
