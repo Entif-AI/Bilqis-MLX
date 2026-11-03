@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "67c964a1548cb0075a28a90aa2565d8bdab0fd71",
-  "updated_at": "2026-11-02T22:20:00Z",
+  "updated_at": "2026-11-03T07:52:23.027310+00:00",
   "exception": null,
   "items": [
     {
@@ -67,11 +67,11 @@
     },
     {
       "issue": 641,
-      "pr": null,
-      "state": "WAITING",
-      "head_sha": "aa2aec1809256a6270bb8afedc87c2a655175054",
-      "summary": "C10 structural preservation follow-up is the current active Lane C surface.",
-      "resume_trigger": "Issue #641 reaches EGM-Passed on the current durable head and all pre-PR merge-readiness gates are green.",
+      "pr": 767,
+      "state": "TURNED_IN",
+      "head_sha": "6c1f0777",
+      "summary": "Concurrent C10 structural candidate turned in through PR #767; live inventory reconciled without changing its implementation.",
+      "resume_trigger": null,
       "closed_pr": 739,
       "preserved_branch": "codex/bamf02-c10-641-proof-20261102",
       "closed_under": "EGM issue-label queue; EGM-Pending is durable on issue #641",

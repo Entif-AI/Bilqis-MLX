@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "dfc0c7586c23b6477c08d4db486ade3deeb79fae",
-  "updated_at": "2026-11-03T07:43:00.810432+00:00",
+  "updated_at": "2026-11-03T07:52:23.026664+00:00",
   "exception": null,
   "items": [
     {
@@ -180,12 +180,13 @@
     },
     {
       "issue": 753,
-      "pr": null,
+      "pr": 768,
       "state": "ACTIVE",
-      "head_sha": "349ac665880dbdd545cddd0ec8e50817095d73b1",
+      "head_sha": "0ea77e24d453b14c3a52966a0dd95e4edd63e0a5",
       "preserved_branch": "codex/bamf02-b-753-tensor-custody-20261103",
-      "summary": "Consume existing tensor CAS repair; available global inventory resumes current-unified proof and whole-candidate EGM.",
-      "resume_trigger": null
+      "summary": "PR #768 is the existing integration delta. Additional CAS ownership/concurrency/published-proof repairs are durable on the preserved branch; reconcile before final exact-head review.",
+      "resume_trigger": null,
+      "repair_head_sha": "3ce531f0f380c6ad78635647a4423e4e2bab7089"
     }
   ]
 }
