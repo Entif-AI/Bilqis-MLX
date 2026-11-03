@@ -151,11 +151,12 @@
     },
     {
       "issue": 738,
-      "pr": 742,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "44305b1c685fcdd43ded307c8eeae8e4e2808fbf",
       "summary": "B11 selected-state chaining remediation is closed and human-merged into the #586 parent branch.",
-      "resume_trigger": null
+      "resume_trigger": null,
+      "closed_pr": 742
     },
     {
       "issue": 747,
