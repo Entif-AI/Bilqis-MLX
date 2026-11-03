@@ -1,0 +1,33 @@
+{
+  "accepted_unified": "dfc0c7586c23b6477c08d4db486ade3deeb79fae",
+  "allowed_delta": [
+    "bilqis_mlx/runtime/_depth/depth_contracts.py",
+    "bilqis_mlx/runtime/tests/depth/test_depth_contracts.py"
+  ],
+  "file_lines": {
+    "bilqis_mlx/runtime/_depth/__init__.py": 3,
+    "bilqis_mlx/runtime/_depth/block_attnres.py": 98,
+    "bilqis_mlx/runtime/_depth/depth_contracts.py": 213,
+    "bilqis_mlx/runtime/_depth/depth_selection.py": 155,
+    "bilqis_mlx/runtime/tests/depth/__init__.py": 1,
+    "bilqis_mlx/runtime/tests/depth/depth_helpers.py": 125,
+    "bilqis_mlx/runtime/tests/depth/test_block_attnres.py": 119,
+    "bilqis_mlx/runtime/tests/depth/test_depth_contracts.py": 174,
+    "bilqis_mlx/runtime/tests/depth/test_depth_numerical.py": 194,
+    "bilqis_mlx/runtime/tests/depth/test_depth_source_selection.py": 26
+  },
+  "inspected_file_sha256": {
+    "bilqis_mlx/runtime/_depth/__init__.py": "b543b2734b5693306414543cd2463353cc1d682be703a310e0453b6fafba6370",
+    "bilqis_mlx/runtime/_depth/block_attnres.py": "4d7cb5ffc4c62a2d8515f9e73dc4d4f718c11a914214eb79b9bc01ee43ebd0df",
+    "bilqis_mlx/runtime/_depth/depth_contracts.py": "8a01106a17556415f27758f1cc195daaec1cdbff7d4791dd09fc9ee687256209",
+    "bilqis_mlx/runtime/_depth/depth_selection.py": "d11dbe3d2d85aba9b6b599dd61a6e8e89f41f7df6fc21299ab7ee265757a346d",
+    "bilqis_mlx/runtime/tests/depth/__init__.py": "285f5dc28125fabf8ed614997b2cfbc38858f5388b504498d5337f880abc790d",
+    "bilqis_mlx/runtime/tests/depth/depth_helpers.py": "c5f33365e3eabae7f80c3ee0978e455234f5d822b103a7a1b78ad44307c6fa8e",
+    "bilqis_mlx/runtime/tests/depth/test_block_attnres.py": "70ea8b11202281163d5f666a48ba02d8ec963785931ae50bea3a85f2c6b876fc",
+    "bilqis_mlx/runtime/tests/depth/test_depth_contracts.py": "915fc737440ff571f72b7f58ef01e63a88418d3852e27b76aea649b7b5685cd3",
+    "bilqis_mlx/runtime/tests/depth/test_depth_numerical.py": "5a742303d222b16957c029a0b9043dc08a6ad46bc598d9b510fe693d43ef959d",
+    "bilqis_mlx/runtime/tests/depth/test_depth_source_selection.py": "2d55ea8ed75c7a641770b1f01aa276218b478c28cd33df7664e0b5a2b234103e",
+    "docs/evidence/bamf/C10.2-641/test_verify_current_integration.py": "45a2c5a4095fd5df2fa86260b02726c5e426d76d85a90588a45f4154ea9bdd03",
+    "docs/evidence/bamf/C10.2-641/verify_current_integration.py": "accdba62216b20b1b0322f4ec1f6b945700b9d0c444459921dac33d6d3832aac"
+  }
+}

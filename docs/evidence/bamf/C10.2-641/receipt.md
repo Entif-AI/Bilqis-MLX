@@ -1,4 +1,84 @@
-# C10 structural follow-up #641: accepted B05 extraction reconciliation
+# C10 structural follow-up #641: current integration and historical preservation
+
+3 November 2026 UTC; Lane C #344. IPR-0220 governs. This candidate consumes
+reviewed unified `dfc0c7586c23b6477c08d4db486ade3deeb79fae` from Lane C
+`af5e3ce4`. Historical candidate `aa2aec1809256a6270bb8afedc87c2a655175054`
+has been consumed without reverting subsequent reviewed B05 changes.
+
+## Current acceptance
+
+The original extraction already landed via #652. This candidate adds only the
+public `depth_parameter_view.__module__` identity repair and its pickle regression
+to current production/test sources. `verify_current_integration.py` compares every
+current direct depth production/test file against the immutable consumed unified
+commit. It permits exactly that metadata line and literal regression; any other
+source change, missing/additional file or structural-target failure rejects.
+`current-integration.json` additionally binds all inspected bytes and both new
+verification helpers. These checks preserve the accepted source-selection,
+generation identity and source-authority changes in unified.
+
+The old `verify_preservation.py --check` remains unchanged. Its evidence applies
+only to the historical candidate: running it against current sources correctly
+fails with `definition/decorator drift: DepthParameterView`. Historical AST
+identity must not be claimed for the changed current B05 implementation. No quality
+baseline, original definition digest, assertion or threshold was weakened.
+
+Executed proof: historical `PRESERVATION_RECEIPT_OK`; current depth CPU suite
+**15 passed, zero skips**; historical/current verifier adversaries **9 passed**;
+current exact-overlay receipt passes. Historical production/test inventories retain
+15/27 original definitions. Current owners remain below 240 lines with at most
+12 direct Python files. Historical counts below describe their pinned snapshot.
+
+## Fresh-environment reproduction
+
+Prerequisites: macOS 14+ Apple Silicon, Python 3.14 with venv/pip, Git history
+containing both pinned commits, network access for the declared packages, and this
+candidate checked out at repository root. These tiny CPU checks do not initialize
+or train a persistent student. No source fixture or saved run is required.
+
+```sh
+C641_REPO="$PWD"
+C641_GIT_DIR=$(git rev-parse --path-format=absolute --git-common-dir)
+C641_WORK=$(mktemp -d "${TMPDIR:-/tmp}/bamf641-proof.XXXXXX")
+python3 -m venv "$C641_WORK/runtime"
+C641_PY="$C641_WORK/runtime/bin/python"
+"$C641_PY" -m pip install mlx==0.32.4 numpy==2.5.4 cryptography==50.0.2 \
+  -r "$C641_REPO/lib/ithkuil/requirements-semantic.txt"
+"$C641_PY" -B -m unittest discover -s docs/evidence/bamf/C10.2-641 -p 'test_*.py' -v
+"$C641_PY" -B docs/evidence/bamf/C10.2-641/verify_current_integration.py --check
+"$C641_PY" -B - <<'PYCPU'
+import mlx.core as mx, runpy, sys
+mx.set_default_device(mx.cpu)
+sys.argv = ['scripts/run_tests.py', 'bilqis_mlx/runtime/tests/depth']
+runpy.run_path(sys.argv[0], run_name='__main__')
+PYCPU
+mkdir "$C641_WORK/historical"
+git archive aa2aec1809256a6270bb8afedc87c2a655175054 | tar -x -C "$C641_WORK/historical"
+(
+  cd "$C641_WORK/historical"
+  GIT_DIR="$C641_GIT_DIR" PYTHONPATH=. "$C641_PY" -B - <<'PYHISTORY'
+import mlx.core as mx, runpy, sys
+mx.set_default_device(mx.cpu)
+sys.argv = ['verify_preservation.py', '--check']
+runpy.run_path('docs/evidence/bamf/C10.2-641/verify_preservation.py', run_name='__main__')
+PYHISTORY
+)
+```
+
+The fresh runtime used MLX 0.32.4, NumPy 2.5.4 and cryptography 50.0.2.
+The historical archive is read using the repository's Git object database;
+no branch is switched or rewritten. The original preservation JSON is retained
+byte-for-byte. New overlay checks pin accepted successor sources independently.
+Current EGM/hosted status belongs to the exact issue/PR receipts, not historical
+PR #739. No acceptance of B11 producer authority, B08 admission, retained learning,
+#355 or #586 follows from this structural turn-in. No self-merge or durable student,
+own AdamW, teacher, champion, source release or graph mutation is authorized.
+
+## Historical receipt — aa2aec18 only
+
+The following record describes the previous snapshot and its original failures.
+Its old reproduction commands must run inside that snapshot, as shown above.
+
 
 2026-11-02; Lane C #344; issue #641; structural parent #520. IPR-0220 governs.
 Base: synchronized Lane C `46bfa98d564e1262be43463ec96d3ce1a95aa8c4`, containing
