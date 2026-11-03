@@ -92,6 +92,52 @@ The next EGM reviews the next whole merge candidate, not each remediation in
 isolation. Any older copied BAMF issue text prescribing "one repair pass and one
 targeted re-audit" is superseded by this rule and
 `docs/tasks/bamf-0.2/EGM_EXECUTION.md`.
+<!-- BAMF02:EGM-BOUNDED-CONVERGENCE:20261103 -->
+### EGM review episodes are finite and root-cause routed
+
+The pinned BAMF EGM checkout remains `b3a35956759bf7f024af2ff061b2e0b44b438e4c`
+for reviewer/persona reproducibility. Its historical review-loop termination
+behavior is not BAMF authority. BAMF adds the finite convergence rules below at
+the orchestration boundary.
+
+One merge candidate has one persistent EGM episode across repair commits. The
+episode counter belongs to the candidate lineage, not the exact Git SHA, so a
+repair does not reset it. The default episode cap is **five complete
+whole-candidate rounds**. A complete clean round with no unsettled Blocker/Major
+is sufficient for BAMF implementation merge readiness. A failed or missing
+requested reviewer does not make a clean round. At the five-round cap, or when
+review churn is detected, automatic review stops and the owner returns the
+candidate to design or asks the human for an explicit override. Do not start a
+new episode merely by rewriting, rebasing, or changing the candidate head.
+
+Before repairing a Blocker/Major, classify its basis and owner. A blocking
+finding must identify a violated requirement/authority, a concrete in-scope
+failure, or a missing required ownership/interface/acceptance seam. Classify it
+as `TARGET_LOCAL`, `SHARED_CONTRACT`, `PARENT_INTEGRATION`, `AUTHORITY_GAP`, or
+`MECHANICAL_PROOF`. Shared, parent, and authority findings are repaired once at
+their canonical owner; affected descendants wait for that repair instead of
+inventing local variants. If multiple late findings share one premise or owner,
+pause only that affected subtree and treat the pattern as a systemic design
+signal rather than spawning more independent mitigation reviews.
+
+Route proof to the cheapest mechanism that can establish it. Traceability,
+schema shape, counts, contract mirrors, source census, dependency readiness, and
+other deterministic facts belong in validators/tests/audits. Goldfish is for
+adversarial semantic, ownership, integration, and implementation-readiness
+uncertainty that deterministic proof cannot settle. A mechanically proved repair
+does not consume another Goldfish round by itself.
+
+Review staleness follows semantic impact, not raw byte drift. Nonsemantic edits
+and receipt/bookkeeping changes keep the prior review applicable. Mechanical
+conformance repairs require their deterministic proof. Local or dependency
+semantic changes invalidate only the affected review scope. Ownership,
+decomposition, or topology changes return the affected scope to design. An
+unrelated unified advance does not stale a parked candidate.
+
+For an active failed episode, repair the complete known set before the next
+whole-candidate round. If the next round finds a new Major, first decide whether
+it is genuinely novel, a repeated systemic finding, or a deterministic-proof
+gap. The answer determines repair routing; it never resets the episode budget.
 ### Remediation artifacts are a working set, not an archive
 
 Close a remediation issue when its exact recorded defect has been reproduced,
