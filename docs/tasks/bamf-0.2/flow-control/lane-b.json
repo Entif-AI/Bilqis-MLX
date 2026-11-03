@@ -256,12 +256,13 @@
     },
     {
       "issue": 481,
-      "pr": 802,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "4dcfc7169738e721df0f1df259f2d9659d54cab4",
       "preserved_branch": "codex/bamf02-b-481-schema-proof-20261103",
       "summary": "Ready PR #802: expanded B13.4 schema witness, 215 parameter tensors and 860 exact arrays; 1 native CPU +13 adjacent tests pass, zero skips; same-round EGM0B/0M/0N; parent480/754/372 acceptance remains open.",
-      "resume_trigger": null
+      "resume_trigger": null,
+      "merged_pr": 802
     },
     {
       "issue": 708,
