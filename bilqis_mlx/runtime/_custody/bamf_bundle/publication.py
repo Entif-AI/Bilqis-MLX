@@ -11,10 +11,15 @@ import uuid
 from pathlib import Path
 
 from bilqis_mlx.data_plane import DataPlaneError, data_plane
+from bilqis_mlx.learning.atlas_acceptance import (
+    AcceptedCandidateBinding, candidate_identity_digest,
+)
 from .codec import load_bamf_bundle, save_bamf_bundle, validate_bamf_bundle_custody
 from .records import (
     BAMF_POINTER_SCHEMA, BamfBundleCandidate, CompleteStudent, canonical, invalid, sha,
 )
+
+ACCEPTANCE_DIR = "bamf-acceptance"
 
 
 def _require_run_root(run_dir: Path) -> None:
@@ -187,10 +192,53 @@ def _validate_parent_transition(run_dir: Path, pointer: dict | None, candidate: 
     reconcile_bamf_outbox(run_dir, parent)
 
 
+def _acceptance_path(run_dir: Path, manifest_sha256: str) -> Path:
+    """One content-addressed acceptance binding per published generation."""
+    root = run_dir / ACCEPTANCE_DIR
+    if root.is_symlink() or (root.exists() and not root.is_dir()):
+        invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
+    root.mkdir(exist_ok=True)
+    if root.is_symlink() or not root.is_dir():
+        invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
+    return root / f"{manifest_sha256}.json"
+
+
+def _require_acceptance(candidate: BamfBundleCandidate,
+                         acceptance: AcceptedCandidateBinding | None) -> AcceptedCandidateBinding:
+    """Publication is not acceptance: the retention owner must have accepted it."""
+    if type(acceptance) is not AcceptedCandidateBinding:
+        invalid("BAMF_GENERATION_ACCEPTANCE_REQUIRED")
+    if (acceptance.run_id != candidate.run_id
+            or acceptance.generation != candidate.generation
+            or acceptance.feature_sha256 != candidate.extents.factor_map_digest
+            or acceptance.optimizer_step != candidate.retained_state.optimizer_step
+            or acceptance.candidate_identity_sha256
+            != candidate_identity_digest(candidate.retained_state)):
+        invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+    return acceptance
+
+
+def _write_acceptance(run_dir: Path, manifest_sha256: str,
+                       acceptance: AcceptedCandidateBinding) -> None:
+    """Persist the acceptance binding before the pointer names the generation."""
+    path = _acceptance_path(run_dir, manifest_sha256)
+    raw = canonical(acceptance.to_record())
+    fd, temporary = tempfile.mkstemp(prefix=".bamf-acceptance-", dir=path.parent)
+    try:
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(raw); stream.flush(); os.fsync(stream.fileno())
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+
+
 def publish_bamf_generation(run_dir: Path, candidate: BamfBundleCandidate, *,
+                            acceptance: AcceptedCandidateBinding | None = None,
                             reserve_gib: float = 100.0) -> dict:
     """Publish once; retries converge across staging, rename, pointer and outbox crashes."""
     run_dir = Path(run_dir)
+    accepted = _require_acceptance(candidate, acceptance)
     stage = _stage(run_dir)
     try:
         manifest = save_bamf_bundle(candidate, stage, reserve_gib=reserve_gib)
@@ -207,6 +255,7 @@ def publish_bamf_generation(run_dir: Path, candidate: BamfBundleCandidate, *,
                 shutil.rmtree(stage)
                 student = load_bamf_bundle(
                     run_dir / current["bundle"], expected_manifest_sha256=digest)
+                _write_acceptance(run_dir, digest, accepted)
                 reconcile_bamf_outbox(run_dir, student)
                 return current
             _validate_parent_transition(run_dir, current, candidate)
@@ -222,6 +271,7 @@ def publish_bamf_generation(run_dir: Path, candidate: BamfBundleCandidate, *,
                     os.fsync(directory)
                 finally:
                     os.close(directory)
+            _write_acceptance(run_dir, digest, accepted)
             pointer = {
                 "schema": BAMF_POINTER_SCHEMA, "run_id": candidate.run_id,
                 "generation": candidate.generation,

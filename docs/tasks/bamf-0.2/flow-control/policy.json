@@ -49,7 +49,50 @@
         "expires_when": "PR #743 merges or closes."
       }
     ],
-    "admission_exceptions": [],
+    "admission_exceptions": [
+      {
+        "pr": 803,
+        "head_branch": "codex/bamf02-c-347-integration-20261103",
+        "reason": "Lane C integration candidate owned by the concurrent Lane C session.",
+        "authority": "Direct project-owner instruction on 2026-11-03 to keep the EGM-Mitigation queue moving",
+        "expires_when": "PR #803 merges or closes."
+      },
+      {
+        "pr": 804,
+        "head_branch": "codex/remediation-708-feature-authority-20261103",
+        "reason": "BAMF EGM-Mitigation #708 accepted-generation feature authority.",
+        "authority": "Direct project-owner instruction on 2026-11-03 to keep the EGM-Mitigation queue moving",
+        "expires_when": "PR #804 merges or closes."
+      },
+      {
+        "pr": 805,
+        "head_branch": "codex/remediation-709-cold-resume-20261103",
+        "reason": "BAMF EGM-Mitigation #709 B13.2 cold-resume continuation witness.",
+        "authority": "Direct project-owner instruction on 2026-11-03 to keep the EGM-Mitigation queue moving",
+        "expires_when": "PR #805 merges or closes."
+      },
+      {
+        "pr": 806,
+        "head_branch": "codex/remediation-711-participation-20261103",
+        "reason": "BAMF EGM-Mitigation #711 B09.2 participation owner.",
+        "authority": "Direct project-owner instruction on 2026-11-03 to keep the EGM-Mitigation queue moving",
+        "expires_when": "PR #806 merges or closes."
+      },
+      {
+        "pr": 807,
+        "head_branch": "codex/remediation-710-execution-provenance-20261103",
+        "reason": "BAMF EGM-Mitigation #710 B12.2 execution-provenance binding.",
+        "authority": "Direct project-owner instruction on 2026-11-03 to keep the EGM-Mitigation queue moving",
+        "expires_when": "PR #807 merges or closes."
+      },
+      {
+        "pr": 808,
+        "head_branch": "codex/remediation-713-c02-authority-20261103",
+        "reason": "BAMF EGM-Mitigation #713 canonical A06 authority at the C02.1 boundary.",
+        "authority": "Direct project-owner instruction on 2026-11-03 to keep the EGM-Mitigation queue moving",
+        "expires_when": "PR #808 merges or closes."
+      }
+    ],
     "initial_drain_status": "COMPLETED_WITH_ISSUE_LABEL_QUEUE",
     "initial_drain_closed_prs": [
       640,

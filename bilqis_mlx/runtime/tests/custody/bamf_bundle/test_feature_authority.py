@@ -22,6 +22,7 @@ from bilqis_mlx.runtime.bamf_bundle import feature_authority
 from bilqis_mlx.semantics.atlas_features import AtlasFeatures
 
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
+    publish_candidate,
     candidate, parent_state, shape_patch,
 )
 
@@ -72,7 +73,7 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
 
     def publish(self, source):
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            return publish_bamf_generation(self.run, source)
+            return publish_candidate(self.run, source)
 
     def source_replay(self, features):
         """Stand in for the externally supplied admitted source artifact."""

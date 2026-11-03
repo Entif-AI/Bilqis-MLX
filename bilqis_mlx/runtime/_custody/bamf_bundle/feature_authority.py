@@ -7,17 +7,21 @@ factor-map digest.
 """
 from __future__ import annotations
 
+import json
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
 
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.learning.atlas_acceptance import (
+    AcceptedCandidateBinding, candidate_identity_digest,
+)
 from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest
 from bilqis_mlx.semantics.atlas_snapshot import (
     AtlasArtifactSelection, load_pinned_atlas_snapshot,
 )
 
 from .codec import load_bamf_bundle
-from .publication import _pointer_lock, _read_pointer
+from .publication import ACCEPTANCE_DIR, _pointer_lock, _read_pointer
 from .records import canonical, invalid, sha
 
 RECEIPT_SCHEMA = "bilqis.mlx.bamf-accepted-generation-feature-receipt/v1"
@@ -40,6 +44,7 @@ class AcceptedGenerationFeatureReceipt:
     predecessor_feature_sha256: str | None
     compiler_sha256: str
     implementation_sha256: str
+    acceptance_sha256: str
     source_atlas_bundle_id: str
     source_release_sha256: str
     source_source_bundle_id: str
@@ -49,8 +54,9 @@ class AcceptedGenerationFeatureReceipt:
         digests = (
             self.generation_manifest_sha256, self.semantic_release,
             self.active_set_sha256, self.feature_sha256, self.compiler_sha256,
-            self.implementation_sha256, self.source_atlas_bundle_id,
-            self.source_release_sha256, self.source_source_bundle_id,
+            self.implementation_sha256, self.acceptance_sha256,
+            self.source_atlas_bundle_id, self.source_release_sha256,
+            self.source_source_bundle_id,
         )
         if (self.schema_version != RECEIPT_SCHEMA
                 or not isinstance(self.run_id, str) or not self.run_id
@@ -135,6 +141,30 @@ def _accepted_generation(pointer_path: Path):
     return pointer, student
 
 
+def _accepted_binding(run_dir: Path, pointer: dict, student) -> AcceptedCandidateBinding:
+    """Read the retention owner's acceptance binding for the accepted generation.
+
+    Publication is not acceptance. Without a matching retention binding the
+    generation may not mint accepted-generation authority.
+    """
+    path = run_dir / ACCEPTANCE_DIR / f"{pointer['manifest_sha256']}.json"
+    if path.is_symlink() or not path.is_file():
+        invalid("BAMF_GENERATION_ACCEPTANCE_MISSING")
+    try:
+        record = json.loads(path.read_bytes())
+        binding = AcceptedCandidateBinding.from_record(record)
+    except (UnicodeDecodeError, json.JSONDecodeError, BilqisError):
+        invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
+    if (binding.run_id != pointer["run_id"]
+            or binding.generation != pointer["generation"]
+            or binding.feature_sha256 != student.extents.factor_map_digest
+            or binding.optimizer_step != student.retained_state.optimizer_step
+            or binding.candidate_identity_sha256
+            != candidate_identity_digest(student.retained_state)):
+        invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+    return binding
+
+
 def _authenticate_features(student, artifact_path: str):
     """Replay the admitted source release and rederive the accepted feature map."""
     compiler = student.compiler_features
@@ -170,6 +200,7 @@ def read_accepted_generation_feature_receipt(
     not the replayed source map cannot mint a receipt.
     """
     pointer, student = _accepted_generation(pointer_path)
+    binding = _accepted_binding(pointer_path.parent, pointer, student)
     features = _authenticate_features(student, artifact_path)
     predecessor = features.predecessor_digest
     if student.generation == 0:
@@ -188,6 +219,7 @@ def read_accepted_generation_feature_receipt(
         predecessor_feature_sha256=predecessor,
         compiler_sha256=student.compiler_features["compiler_sha256"],
         implementation_sha256=student.implementation_sha256,
+        acceptance_sha256=binding.digest,
         source_atlas_bundle_id=features.atlas_bundle_id,
         source_release_sha256=features.semantic_release,
         source_source_bundle_id=features.source_bundle_id,
