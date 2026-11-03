@@ -193,5 +193,3 @@ class VerifiedReleasedFrameSchemas:
         # JSON object key order is not semantic. Role-array order *is*.
         schema = frame_schema_from_bytes(_canonical_bytes(_json(payload)))
         return self.require_schema(schema, witness)
-
-

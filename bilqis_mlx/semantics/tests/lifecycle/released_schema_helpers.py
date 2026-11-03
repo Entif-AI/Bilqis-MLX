@@ -77,6 +77,3 @@ def _release():
         expected_schema_map_sha256=tag_map.digest,
     )
     return schema, tag_map, payload, digest, verified
-
-
-

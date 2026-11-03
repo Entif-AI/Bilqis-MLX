@@ -198,4 +198,3 @@ def _mixed_case():
     ast = replace(base_ast, frames=(
         FrameTree(parent, (FrameTree(child),)), FrameTree(atomic)))
     return ast, _with_atom_grants(ast, config)
-

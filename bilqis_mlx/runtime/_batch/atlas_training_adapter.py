@@ -98,19 +98,22 @@ def _require_source_lineage(ast, frames, visible, graph) -> None:
 
 
 def _require_semantic_authority(
-        compiler_config: FrameCompilerConfig, atlas_features: AtlasFeatures,
-        projection: ApprovedContextProjection, task_scope: TaskScope,
+        compiler_config: FrameCompilerConfig, task_scope: TaskScope,
         source_frontier: SourceFrontier,
-        eligibility_policy: ContextPolicy, atlas_selection, feature_schema) -> None:
+        eligibility_policy: ContextPolicy, atlas_selection,
+        feature_artifact_path) -> AtlasFeatures:
     if (type(compiler_config) is not FrameCompilerConfig
-            or type(atlas_features) is not AtlasFeatures
             or compiler_config.approved is not None
             or compiler_config.task != task_scope
             or compiler_config.frontier != source_frontier
-            or compiler_config.policy != eligibility_policy
+            or compiler_config.policy != eligibility_policy):
+        _invalid('UPSTREAM_SEMANTIC_AUTHORITY_MISMATCH')
+    atlas_features = rederive_training_authority(
+        compiler_config, atlas_selection, feature_artifact_path)
+    if (type(atlas_features) is not AtlasFeatures
             or atlas_features.semantic_release != task_scope.semantic_release):
         _invalid('UPSTREAM_SEMANTIC_AUTHORITY_MISMATCH')
-    rederive_training_authority(compiler_config, atlas_features, atlas_selection, feature_schema)
+    return atlas_features
 
 
 def _source_features(
@@ -138,13 +141,13 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
                            rehearsal_by_id: dict, visible_ends: dict,
                            source_ast_for: Callable,
                            compiler_config: FrameCompilerConfig,
-                           atlas_features: AtlasFeatures,
+                           feature_artifact_path,
                            answer_plan_for: Callable,
                            frames_for_ast: Callable, task_scope: TaskScope,
                            source_frontier: SourceFrontier,
                            eligibility_policy: ContextPolicy, generation_binding: str,
                            target_encoders: dict | None = None, sealed_holdout_ids=(),
-                           atlas_selection=None, feature_schema=None) -> BamfTrainingBatch:
+                           atlas_selection=None) -> BamfTrainingBatch:
     """Compile source-oracled delivery through accepted A05/A06 owners."""
     if not isinstance(source_context, SourceExecutionContext):
         _invalid('SOURCE_CONTEXT_REQUIRED')
@@ -179,6 +182,7 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
     if (not isinstance(sealed_holdout_ids, (tuple, list, frozenset)) or
             any(not isinstance(identity, str) for identity in sealed_holdout_ids)):
         _invalid('HOLDOUT_IDENTITIES_INVALID')
+    atlas_features = None
     heads = {head.kind: head for head in release.answer_heads}
     result = []
     for row in delivered_rows:
@@ -239,9 +243,10 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
             frames, task_scope, source_frontier, eligibility_policy)
         if type(projection) is not ApprovedContextProjection:
             _invalid('CONTEXT_NOT_ELIGIBLE')
-        _require_semantic_authority(
-            compiler_config, atlas_features, projection, task_scope,
-            source_frontier, eligibility_policy, atlas_selection, feature_schema)
+        if atlas_features is None:
+            atlas_features = _require_semantic_authority(
+                compiler_config, task_scope, source_frontier, eligibility_policy,
+                atlas_selection, feature_artifact_path)
         eligibility_digest = projection.digest
         prefix = compile_prefix(
             ast, len(visible), task_scope.semantic_release,

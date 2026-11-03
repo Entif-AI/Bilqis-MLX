@@ -161,7 +161,7 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
     def setUp(self):
         # Synthetic factory fixtures have no source-pinned A01 artifact.
         authority = patch('bilqis_mlx.runtime.atlas_training_adapter.rederive_training_authority')
-        authority.start()
+        self.authority = authority.start()
         self.addCleanup(authority.stop)
         course, graph, sources, answers, _ = closed_source_fixture()
         registered = sources.require('fixture.z-generator/v1', 'fixture.z-oracle/v1')
@@ -207,6 +207,7 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
             (schema,), SchemaTagMap.from_schemas(semantic_release, (schema,)),
             None,
             base_task, base_frontier, base_policy)
+        self.authority.return_value = _atlas_features(legitimate_asts, semantic_release)
         return compile_training_batch(rows, self.context, {'context': 1024},
             delivery=delivery, delivery_capability='Z.C0', delivery_release_sha256=release_sha or self.context.release.release_sha256,
             teacher_strategy={'policy': 'focused'}, requested_count=3, optimizer_step_seed=42,
@@ -216,7 +217,7 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
                     tokens, self.context.release.release_sha256,
                     self.context.graph)),
             compiler_config=compiler_config,
-            atlas_features=_atlas_features(legitimate_asts, semantic_release),
+            feature_artifact_path='synthetic:feature-artifact',
             answer_plan_for=lambda *args: {**answer_plan_for(*args), 'generation_binding': self.model_generation},
             frames_for_ast=frames_for_ast, task_scope=task,
             source_frontier=frontier, eligibility_policy=context_policy,
