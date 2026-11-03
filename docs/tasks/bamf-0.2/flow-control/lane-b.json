@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "2800946729e484875f7d1f57f0e6d85078936394",
-  "updated_at": "2026-11-03T08:01:59.510354Z",
+  "observed_unified": "deaa8b9dbd277993f884abeea7413f9cb799d945",
+  "updated_at": "2026-11-03T09:03:01.707403Z",
   "exception": null,
   "items": [
     {
@@ -182,10 +182,29 @@
       "issue": 753,
       "pr": null,
       "state": "TURNED_IN",
-      "head_sha": "14c730bb580e0ce5f13e047db57617b0e873f2d3",
-      "summary": "PR768 externally merged asdeaa8b9d; tensor CAS remediation is consumed from reviewed unified, not independently implemented by this C01 candidate.",
+      "head_sha": "0ea77e24d453b14c3a52966a0dd95e4edd63e0a5",
+      "summary": "Original tensor CAS implementation externally merged as deaa8b9d; follow-up #769 owns additional ownership/race/proof defects.",
       "resume_trigger": null,
       "merged_pr": 768
+    },
+    {
+      "issue": 769,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "ea1f154ceb67db899f7bc75fa2ee96fe8b5050f7",
+      "summary": "PR773 externally merged as18cc1c0fe35be7096fdf951b39ce20e1667ff779; consumed from reviewed unified.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b-769-cas-ownership-20261103",
+      "merged_pr": 773
+    },
+    {
+      "issue": 341,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "6acd30544f6f81cb1c1b08524b53f567bd1e0cc0",
+      "summary": "PR772 externally merged asf7a7adfdbfdb8d85cc30b938b2bf5ba841d70391; consumed from reviewed unified.",
+      "resume_trigger": null,
+      "merged_pr": 772
     }
   ]
 }
