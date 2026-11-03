@@ -6,14 +6,24 @@ from typing import Any
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
+from bilqis_mlx.semantics.atlas_features import FeatureRow
+from bilqis_mlx.semantics.frame_compiler import CompiledFrameBatch
 
 
 @dataclass(frozen=True)
 class BamfModelInput:
-    prefix: Any
-    features: tuple
+    prefix: CompiledFrameBatch
+    features: tuple[FeatureRow, ...]
     eligibility_digest: str
     answer_plan: tuple
+
+    def __post_init__(self) -> None:
+        if (type(self.prefix) is not CompiledFrameBatch
+                or type(self.features) is not tuple
+                or any(type(item) is not FeatureRow for item in self.features)
+                or not isinstance(self.eligibility_digest, str)
+                or type(self.answer_plan) is not tuple):
+            _invalid('MODEL_INPUT_INVALID')
 
 
 @dataclass(frozen=True)

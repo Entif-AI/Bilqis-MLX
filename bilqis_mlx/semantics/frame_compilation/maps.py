@@ -1,0 +1,184 @@
+"""Source-to-neural coordinates and expansion handles."""
+from __future__ import annotations
+from .common import (PREFIX_MAPS_SCHEMA, SourceSpan, _SHA, _invalid, dataclass)
+from .positions import (CompiledFrameBatch, PositionKind)
+
+@dataclass(frozen=True)
+class SourcePosition:
+    position_index: int
+    source_span: SourceSpan
+    kind: PositionKind
+    source_reference: str
+
+    def __post_init__(self) -> None:
+        if (type(self.position_index) is not int
+                or self.position_index < 0
+                or not isinstance(self.source_span, SourceSpan)
+                or not isinstance(self.kind, PositionKind)
+                or not isinstance(self.source_reference, str)
+                or not self.source_reference):
+            _invalid("BAMF_PREFIX_SOURCE_POSITION_INVALID")
+
+
+@dataclass(frozen=True)
+class ScopeBoundary:
+    scope: str
+    start_position: int
+    end_position: int
+    frame_handle: str | None
+
+    def __post_init__(self) -> None:
+        if (not isinstance(self.scope, str) or not self.scope
+                or type(self.start_position) is not int
+                or type(self.end_position) is not int
+                or not 0 <= self.start_position <= self.end_position
+                or (self.frame_handle is not None
+                    and (not isinstance(self.frame_handle, str)
+                         or not self.frame_handle))):
+            _invalid("BAMF_PREFIX_SCOPE_BOUNDARY_INVALID")
+
+
+@dataclass(frozen=True)
+class RoleAccess:
+    frame_handle: str
+    position_index: int
+    role_id: str
+    occurrence_index: int
+    state: str
+    semantic_ids: tuple[str, ...]
+    abi_indices: tuple[int, ...]
+    source_references: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        if (not isinstance(self.frame_handle, str)
+                or not self.frame_handle
+                or type(self.position_index) is not int
+                or self.position_index < 0
+                or not isinstance(self.role_id, str) or not self.role_id
+                or type(self.occurrence_index) is not int
+                or self.occurrence_index < 0
+                or not isinstance(self.state, str) or not self.state
+                or not isinstance(self.semantic_ids, tuple)
+                or not isinstance(self.abi_indices, tuple)
+                or not isinstance(self.source_references, tuple)
+                or not (len(self.semantic_ids) == len(self.abi_indices)
+                        == len(self.source_references))):
+            _invalid("BAMF_PREFIX_ROLE_ACCESS_INVALID")
+
+
+@dataclass(frozen=True)
+class ExpansionHandle:
+    frame_handle: str
+    position_index: int
+    occurrence_id: str
+    content_digest: str
+    projection_digest: str
+    source_span: SourceSpan
+
+    def __post_init__(self) -> None:
+        if (not isinstance(self.frame_handle, str)
+                or not self.frame_handle
+                or type(self.position_index) is not int
+                or self.position_index < 0
+                or any(not isinstance(item, str)
+                       or not _SHA.fullmatch(item)
+                       for item in (
+                           self.occurrence_id, self.content_digest,
+                           self.projection_digest))
+                or not isinstance(self.source_span, SourceSpan)):
+            _invalid("BAMF_PREFIX_EXPANSION_HANDLE_INVALID")
+
+
+@dataclass(frozen=True)
+class PrefixMaps:
+    position_to_source: tuple[SourcePosition, ...]
+    source_to_positions: tuple[tuple[int, ...], ...]
+    prefix_ends: tuple[int, ...]
+    scope_boundaries: tuple[ScopeBoundary, ...]
+    padding_mask: tuple[bool, ...]
+    role_access: tuple[RoleAccess, ...]
+    expansion_handles: tuple[ExpansionHandle, ...]
+    schema_version: str = PREFIX_MAPS_SCHEMA
+
+    def __post_init__(self) -> None:
+        if (not isinstance(self.position_to_source, tuple)
+                or any(not isinstance(item, SourcePosition)
+                       for item in self.position_to_source)
+                or not isinstance(self.source_to_positions, tuple)
+                or any(not isinstance(row, tuple)
+                       or any(type(index) is not int or index < 0
+                              for index in row)
+                       for row in self.source_to_positions)
+                or not isinstance(self.prefix_ends, tuple)
+                or any(type(index) is not int or index < 0
+                       for index in self.prefix_ends)
+                or not isinstance(self.scope_boundaries, tuple)
+                or any(not isinstance(item, ScopeBoundary)
+                       for item in self.scope_boundaries)
+                or not isinstance(self.padding_mask, tuple)
+                or any(type(item) is not bool
+                       for item in self.padding_mask)
+                or len(self.padding_mask) != len(self.position_to_source)
+                or not isinstance(self.role_access, tuple)
+                or any(not isinstance(item, RoleAccess)
+                       for item in self.role_access)
+                or not isinstance(self.expansion_handles, tuple)
+                or any(not isinstance(item, ExpansionHandle)
+                       for item in self.expansion_handles)
+                or self.schema_version != PREFIX_MAPS_SCHEMA):
+            _invalid("BAMF_PREFIX_MAPS_INVALID")
+
+
+def _derive_maps(compiled: CompiledFrameBatch) -> PrefixMaps:
+    source_positions = []
+    source_to_positions = [
+        set() for _ in range(compiled.visible_end)]
+    prefix_ends = [0] * (compiled.visible_end + 1)
+    role_access = []
+    expansion_handles = []
+    boundaries = [ScopeBoundary(
+        compiled.scope, 0, len(compiled.positions), None)]
+    atom_positions = {}
+    for position_index, position in enumerate(compiled.positions):
+        source_index = position.source_index
+        prefix_ends[source_index + 1] += 1
+        if position.kind is PositionKind.ATOM:
+            source_positions.append(SourcePosition(
+                position_index, SourceSpan(source_index, source_index + 1),
+                PositionKind.ATOM, position.atom.source_reference))
+            source_to_positions[source_index].add(position_index)
+            atom_positions[source_index] = position_index
+            continue
+        sidecar = position.packed.sidecar
+        source_positions.append(SourcePosition(
+            position_index, sidecar.source_span,
+            PositionKind.CLOSURE, position.frame_handle))
+        for index in range(
+                sidecar.source_span.start,
+                min(sidecar.source_span.end, compiled.visible_end)):
+            source_to_positions[index].add(position_index)
+        source_to_positions[source_index].add(position_index)
+        expansion_handles.append(ExpansionHandle(
+            position.frame_handle, position_index,
+            sidecar.occurrence_id, sidecar.content_digest,
+            position.packed.projection_sha256, sidecar.source_span))
+        start = atom_positions.get(sidecar.source_span.start)
+        if start is None:
+            _invalid("BAMF_PREFIX_SCOPE_SOURCE_MISSING")
+        boundaries.append(ScopeBoundary(
+            sidecar.scope or compiled.scope,
+            start, position_index + 1, position.frame_handle))
+        for member in sidecar.constituents:
+            role_access.append(RoleAccess(
+                position.frame_handle, position_index,
+                member.role_id, member.occurrence_index,
+                member.state, member.semantic_ids,
+                member.abi_indices, member.source_references))
+    for index in range(1, len(prefix_ends)):
+        prefix_ends[index] += prefix_ends[index - 1]
+    return PrefixMaps(
+        tuple(source_positions),
+        tuple(tuple(sorted(indices)) for indices in source_to_positions),
+        tuple(prefix_ends), tuple(boundaries),
+        (True,) * len(compiled.positions),
+        tuple(role_access), tuple(expansion_handles))
