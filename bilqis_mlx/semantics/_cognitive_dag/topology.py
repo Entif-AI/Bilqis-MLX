@@ -95,4 +95,3 @@ def _visible_source(
     return TypedValue(
         "ConceptRef", occurrence.concept, binding.task.semantic_release,
         source_handle=member.source_handle)
-

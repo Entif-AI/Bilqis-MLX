@@ -142,4 +142,3 @@ class ContractsTests(TestCase):
         foreign = TypedValue("Number", 5, "b" * 64)
         with self.assertRaises(BilqisError):
             DAGResult(foreign, valid.receipt)
-

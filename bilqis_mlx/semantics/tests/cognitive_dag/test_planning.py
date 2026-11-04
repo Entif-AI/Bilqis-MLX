@@ -121,4 +121,3 @@ class PlanningTests(TestCase):
             ("answer", "DIV", (
                 _literal(values[0]).identity,
                 _literal(values[2]).identity)),))
-

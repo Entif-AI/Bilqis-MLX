@@ -135,4 +135,3 @@ class MemoTests(TestCase):
         self.assertEqual(second.answer.state, ValueState.NONE)
         self.assertEqual((second.receipt.operation_count,
                           second.receipt.memo_hit_count), (1, 0))
-

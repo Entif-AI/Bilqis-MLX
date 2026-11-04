@@ -196,4 +196,3 @@ class ContextPolicy:
                 or self.allowed_join_sets != tuple(sorted(set(self.allowed_join_sets)))
                 or self.schema_version != POLICY_SCHEMA):
             _invalid("BAMF_CONTEXT_POLICY_INVALID")
-

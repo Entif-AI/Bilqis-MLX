@@ -92,4 +92,3 @@ def project_context(
         return approved
     return ApprovedContextProjection(
         approved, tuple(sorted(frames, key=lambda item: item.frame_handle)))
-

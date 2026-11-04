@@ -119,4 +119,3 @@ class ExecutionTests(TestCase):
         ):
             with self.assertRaises(BilqisError):
                 _execute(program, revoked)
-

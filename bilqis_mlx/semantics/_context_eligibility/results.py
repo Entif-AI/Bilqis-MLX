@@ -69,4 +69,3 @@ class ContextHold:
                 or self.diagnostics != tuple(sorted(set(self.diagnostics)))
                 or self.schema_version != CONTEXT_HOLD_SCHEMA):
             _invalid("BAMF_CONTEXT_HOLD_INVALID")
-
