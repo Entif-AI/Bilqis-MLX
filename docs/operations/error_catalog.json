@@ -11238,11 +11238,11 @@
       "path": "bilqis_mlx/runtime/tests/admission/test_atlas_lease_renewal.py"
     },
     {
-      "code_hint": "A05 requires a typed source AST",
+      "code_hint": "model-input planning entered before A06 authority rejection",
       "count": 1,
       "exception": "AssertionError",
-      "expression": "'A05 requires a typed source AST'",
-      "path": "bilqis_mlx/runtime/tests/batch/test_atlas_training_adapter.py"
+      "expression": "'model-input planning entered before A06 authority rejection'",
+      "path": "bilqis_mlx/runtime/tests/batch/test_atlas_training_real_source.py"
     },
     {
       "code_hint": "missing source manifest",
