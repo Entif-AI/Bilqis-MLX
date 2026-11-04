@@ -2835,7 +2835,7 @@ shared file concurrently without explicit coordination. An observed competing
 process or unexpected remote mutation requires reconciliation before writing;
 the mere existence of another worktree or previous agent name does not.
 
-**Executable continuity receipt:** `scripts/bamf_writer_handoff.py` emits a
+**Executable continuity receipt:** `scripts/bamf/writer_handoff.py` emits a
 versioned JSON handoff bearing issue, execution epoch, canonical worktree path,
 branch, local HEAD, upstream, exact live remote HEAD and content-sensitive dirty
 worktree fingerprint. The resumed worker verifies that snapshot before editing;

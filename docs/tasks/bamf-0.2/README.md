@@ -42,9 +42,9 @@ No new permission or issue re-assignment is necessary when the same logical
 worker continues on unchanged state. If an actual competing writer exists,
 coordinate the shared path or use an independent issue branch; do not force-push
 or mutate the competitor's uncommitted work. Every planned handoff/compaction
-should carry JSON from `python3 -B scripts/bamf_writer_handoff.py emit --issue
+should carry JSON from `python3 -B scripts/bamf/writer_handoff.py emit --issue
 <ISSUE> --epoch <STABLE-EPOCH> --worktree <WORKTREE>`. The successor saves that
-JSON and runs `python3 -B scripts/bamf_writer_handoff.py verify --payload
+JSON and runs `python3 -B scripts/bamf/writer_handoff.py verify --payload
 <HANDOFF-JSON-FILE> --worktree <WORKTREE>`. `CONTINUATION_MATCH` removes the
 false issue-ownership hold; an actual branch/remote/dirty-state mismatch must be
 reconciled. This verifies continuity, not exclusive distributed ownership.

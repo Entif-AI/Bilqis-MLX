@@ -75,11 +75,11 @@ When ownership is genuinely ambiguous, name the concrete conflicting live
 writer/ref or uncommitted collision rather than asserting a phantom lock.
 
 **Required handoff payload:** Before a planned compaction or agent transfer,
-run `python3 -B scripts/bamf_writer_handoff.py emit --issue <ISSUE> --epoch
+run `python3 -B scripts/bamf/writer_handoff.py emit --issue <ISSUE> --epoch
 <STABLE-EPOCH> --worktree <WORKTREE>` and carry the **complete JSON output** in
 the compacted handoff, including issue, epoch, exact worktree, branch, local HEAD,
 upstream and remote HEAD, and worktree-dirty fingerprint. Save that JSON as a
-local file for `python3 -B scripts/bamf_writer_handoff.py verify --payload
+local file for `python3 -B scripts/bamf/writer_handoff.py verify --payload
 <HANDOFF-JSON-FILE> --worktree <WORKTREE>` when resuming. A
 `CONTINUATION_MATCH` proves the preserved Git snapshot still matches and permits
 resuming **without inventing a new issue claim**. The verifier reads the real

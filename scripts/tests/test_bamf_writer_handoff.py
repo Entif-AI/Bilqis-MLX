@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.bamf_writer_handoff import HandoffError, emit, verify
+from scripts.bamf.writer_handoff import HandoffError, emit, verify
 
 
 class WriterHandoffTests(unittest.TestCase):
