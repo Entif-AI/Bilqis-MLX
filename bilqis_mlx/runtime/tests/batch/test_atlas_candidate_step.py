@@ -1,25 +1,27 @@
-"""Production-path adversary for the B12.2 candidate step.
-
-The production step takes executed evidence, binds it through the B09.2 owner
-and runs the masked native AdamW step. It has no caller-mask parameter.
-"""
+"""Fail-closed production path for B09.2/B12.2 candidate steps."""
 from __future__ import annotations
 
+import inspect
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import mlx.core as mx
-import numpy as np
 
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.learning.atlas_candidate import (
-    CandidateState, begin_candidate, resolve_candidate,
+    CandidateCustodyIdentity, CandidateState, begin_candidate,
 )
 from bilqis_mlx.learning.atlas_engram import MotifManifest
 from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
-from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
+from bilqis_mlx.learning.atlas_plasticity import (
+    GroupEligibility, IdentityRowAge, PlasticityPolicy,
+)
 from bilqis_mlx.runtime.atlas_candidate_step import production_candidate_step
+from bilqis_mlx.runtime.atlas_model import BamfGradientExecution
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree
+from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, Initializer, ModelTopologySpecV2, ParameterGroup,
     ParameterSpec,
@@ -27,11 +29,16 @@ from bilqis_mlx.runtime.model_topology_v2 import (
 
 BANK = "identity.bank.0"
 RELEASE = "b" * 64
-DECLARED = (ParameterSpec(BANK, (2, 2), Initializer.MATRIX,
-                           ParameterGroup.IDENTITY_ROW_AGE, True),)
-EXTENTS = GenerationExtents(1, 1, "a" * 64, "b" * 64, "c" * 64)
-CENSUS_SHAPE = ("bilqis_mlx.learning.atlas_participation_census.expected_bamf_shapes",
-                 "bilqis_mlx.learning._retention.atlas_participation_census.expected_bamf_shapes")
+DECLARED = (ParameterSpec(
+    BANK, (2, 2), Initializer.MATRIX, ParameterGroup.IDENTITY_ROW_AGE, True),)
+CENSUS_SHAPE = (
+    "bilqis_mlx.learning.atlas_participation_census.expected_bamf_shapes",
+    "bilqis_mlx.learning._retention.atlas_participation_census.expected_bamf_shapes",
+)
+DIGEST_SHAPE = (
+    "bilqis_mlx.runtime.topology_v2.validation.expected_bamf_shapes",
+    "bilqis_mlx.runtime.backbone_identity.expected_bamf_shapes",
+)
 
 
 class ProductionCandidateStepTests(unittest.TestCase):
@@ -41,64 +48,144 @@ class ProductionCandidateStepTests(unittest.TestCase):
             {BANK: values}, {BANK: mx.ones_like(values) * .1},
             {BANK: mx.ones_like(values) * .01},
             {BANK: mx.array([2, 3], dtype=mx.uint64)})
+        allocations = MotifAllocationSnapshot(MotifManifest(RELEASE))
+        self.extents = GenerationExtents(
+            1, 1, "a" * 64, allocations.manifest.digest, "c" * 64)
         self.parent = CandidateState(
-            state, PlasticityPolicy('ADAPTIVE', 7, (IdentityRowAge(0, 0, 7),
-                                                    IdentityRowAge(0, 1, 2))),
-            MotifAllocationSnapshot(MotifManifest(RELEASE)), 11)
+            state, PlasticityPolicy(
+                "ADAPTIVE", 7,
+                (IdentityRowAge(0, 0, 7), IdentityRowAge(0, 1, 2))),
+            allocations, 11,
+            CandidateCustodyIdentity(
+                "fixture-run", 0, "6" * 64, ModelTopologySpecV2().digest,
+                self.extents.digest))
         self.hp = AdamWHyperparameters(.001, (.9, .95), 1e-8, .01)
 
-    def step(self, candidate, rows=((0, 0),)):
-        from bilqis_mlx.learning.atlas_plasticity import GroupEligibility
-        from bilqis_mlx.learning.atlas_participation import ActiveAdmittedRows
-        eligibility = GroupEligibility(
-            mode="FULL", eligible_parameter_names=(BANK,), frozen_parameter_names=(),
-            admitted_identity_rows=tuple(rows), fast_identity_rows=tuple(rows),
+    def eligibility(self, *, mode="FULL"):
+        return GroupEligibility(
+            mode=mode, eligible_parameter_names=(BANK,), frozen_parameter_names=(),
+            admitted_identity_rows=((0, 0),), fast_identity_rows=((0, 0),),
             established_identity_rows=())
+
+    def step(self, candidate, *, loss_bearing_target=False, eligibility=None):
         with patch(CENSUS_SHAPE[0], return_value=DECLARED), \
                 patch(CENSUS_SHAPE[1], return_value=DECLARED):
             return production_candidate_step(
                 candidate, {BANK: mx.array([[3., 4.], [0., 0.]], dtype=mx.float32)},
-                motif_reads=(), executed_parameter_names=(BANK,),
-                visible_identity_rows=tuple(rows), feedback_identity_rows=(),
-                local_slot_rows=(), loss_bearing_target=True,
-                group_eligible=eligibility,
-                active_admitted=ActiveAdmittedRows(identity_rows=tuple(rows)),
-                spec=ModelTopologySpecV2(), extents=EXTENTS,
+                loss_bearing_target=loss_bearing_target,
+                group_eligible=eligibility or self.eligibility(),
+                spec=ModelTopologySpecV2(), extents=self.extents,
+                run_id=self.parent.custody.run_id,
+                generation=self.parent.custody.generation + 1,
+                parent_manifest_sha256=self.parent.custody.manifest_sha256,
+                parent_candidate_identity_sha256=candidate_identity_digest(self.parent),
+                parent_optimizer_step=self.parent.optimizer_step,
+                topology_digest=self.parent.custody.topology_digest,
+                candidate_step_ordinal=1,
                 teacher_hparams=self.hp, decay={BANK: True}, max_norm=1.)
 
-    def test_production_step_advances_only_the_executed_row(self):
-        candidate = self.step(begin_candidate(self.parent))
-        accepted = resolve_candidate(candidate, accepted=True)
-        np.testing.assert_array_equal(
-            np.asarray(accepted.optimizer.update_counts[BANK]), [3, 3])
-        self.assertEqual(len(candidate.step_proofs), 1)
-        self.assertEqual(candidate.step_proofs[0].parameter_names, (BANK,))
+    def gradient_execution(self, manifest_sha256):
+        patches = (
+            patch(DIGEST_SHAPE[0], return_value=DECLARED),
+            patch(DIGEST_SHAPE[1], return_value=DECLARED),
+        )
+        for item in patches:
+            item.start()
+            self.addCleanup(item.stop)
+        execution = SimpleNamespace(
+            output=SimpleNamespace(
+                generation_binding=execution_generation_digest(
+                    self.parent.optimizer.parameters,
+                    spec=ModelTopologySpecV2(), extents=self.extents,
+                )
+            ),
+            custody_run_id=self.parent.custody.run_id,
+            custody_generation=self.parent.custody.generation,
+            custody_manifest_sha256=manifest_sha256,
+        )
+        gradient = object.__new__(BamfGradientExecution)
+        object.__setattr__(gradient, "execution", execution)
+        object.__setattr__(gradient, "gradients", {BANK: mx.zeros((2, 2))})
+        return gradient
 
-    def test_production_step_has_no_caller_mask_parameter(self):
+    def test_step_accepts_no_caller_execution_or_motif_facts(self):
+        parameters = set(inspect.signature(production_candidate_step).parameters)
+        for forbidden in (
+                "motif_reads", "executed_parameter_names", "visible_identity_rows",
+                "feedback_identity_rows", "local_slot_rows", "active_admitted"):
+            self.assertNotIn(forbidden, parameters)
+
+    def test_no_loss_step_is_an_exact_noop(self):
+        parent = begin_candidate(self.parent)
+        self.assertIs(self.step(parent), parent)
+
+    def test_loss_bearing_step_fails_closed_without_b11_execution_trace(self):
+        with self.assertRaises(BilqisError):
+            self.step(begin_candidate(self.parent), loss_bearing_target=True)
+
+    def test_forged_fast_reclassification_is_refused_before_any_update(self):
+        with self.assertRaises(BilqisError):
+            self.step(
+                begin_candidate(self.parent),
+                eligibility=self.eligibility(mode="FAST"))
+
+    def test_matching_b13_custody_reaches_the_execution_binder(self):
         candidate = begin_candidate(self.parent)
-        with self.assertRaises(TypeError):
-            self.step(candidate, update_mask={BANK: mx.array([True, False])})
+        gradient = self.gradient_execution(self.parent.custody.manifest_sha256)
+        marker = object()
+        accepted = object()
+        with patch.object(BamfGradientExecution, "__post_init__", return_value=None), \
+                patch(
+                    "bilqis_mlx.runtime.atlas_candidate_step.bind_execution_provenance",
+                    return_value=marker,
+                ) as binder, \
+                patch(
+                    "bilqis_mlx.runtime.atlas_candidate_step.candidate_step",
+                    return_value=accepted,
+                ) as apply_step:
+            result = production_candidate_step(
+                candidate,
+                loss_bearing_target=True,
+                gradient_execution=gradient,
+                group_eligible=self.eligibility(),
+                spec=ModelTopologySpecV2(), extents=self.extents,
+                run_id=self.parent.custody.run_id,
+                generation=self.parent.custody.generation + 1,
+                parent_manifest_sha256=self.parent.custody.manifest_sha256,
+                parent_candidate_identity_sha256=candidate_identity_digest(self.parent),
+                parent_optimizer_step=self.parent.optimizer_step,
+                topology_digest=self.parent.custody.topology_digest,
+                candidate_step_ordinal=1,
+                teacher_hparams=self.hp, decay={BANK: True}, max_norm=1.,
+            )
+        self.assertIs(result, accepted)
+        self.assertIs(binder.call_args.kwargs["loss_execution"], gradient.execution)
+        self.assertIs(apply_step.call_args.args[1], gradient.gradients)
 
-    def test_forged_group_classification_is_refused(self):
-        from bilqis_mlx.learning.atlas_plasticity import GroupEligibility
-        from bilqis_mlx.learning.atlas_participation import ActiveAdmittedRows
-        forged = GroupEligibility(
-            mode="FAST", eligible_parameter_names=(BANK,), frozen_parameter_names=(),
-            admitted_identity_rows=((0, 0),), fast_identity_rows=((0, 0),),
-            established_identity_rows=())
-        with patch(CENSUS_SHAPE[0], return_value=DECLARED), \
-                patch(CENSUS_SHAPE[1], return_value=DECLARED):
+    def test_sibling_b13_manifest_cannot_replay_gradient_execution(self):
+        candidate = begin_candidate(self.parent)
+        gradient = self.gradient_execution("7" * 64)
+        with patch.object(BamfGradientExecution, "__post_init__", return_value=None), \
+                patch(
+                    "bilqis_mlx.runtime.atlas_candidate_step.bind_execution_provenance",
+                ) as binder:
             with self.assertRaises(BilqisError):
                 production_candidate_step(
-                    begin_candidate(self.parent),
-                    {BANK: mx.array([[3., 4.], [0., 0.]], dtype=mx.float32)},
-                    motif_reads=(), executed_parameter_names=(BANK,),
-                    visible_identity_rows=((0, 0),), feedback_identity_rows=(),
-                    local_slot_rows=(), loss_bearing_target=True,
-                    group_eligible=forged,
-                    active_admitted=ActiveAdmittedRows(identity_rows=((0, 0),)),
-                    spec=ModelTopologySpecV2(), extents=EXTENTS,
-                    teacher_hparams=self.hp, decay={BANK: True}, max_norm=1.)
+                    candidate,
+                    loss_bearing_target=True,
+                    gradient_execution=gradient,
+                    group_eligible=self.eligibility(),
+                    spec=ModelTopologySpecV2(), extents=self.extents,
+                    run_id=self.parent.custody.run_id,
+                    generation=self.parent.custody.generation + 1,
+                    parent_manifest_sha256=self.parent.custody.manifest_sha256,
+                    parent_candidate_identity_sha256=candidate_identity_digest(self.parent),
+                    parent_optimizer_step=self.parent.optimizer_step,
+                    topology_digest=self.parent.custody.topology_digest,
+                    candidate_step_ordinal=1,
+                    teacher_hparams=self.hp, decay={BANK: True}, max_norm=1.,
+                )
+        binder.assert_not_called()
 
 
 if __name__ == "__main__":
