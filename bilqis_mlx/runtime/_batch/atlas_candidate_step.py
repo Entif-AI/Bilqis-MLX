@@ -4,18 +4,18 @@ from __future__ import annotations
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.learning.atlas_candidate import candidate_step
 from bilqis_mlx.runtime.atlas_model import BamfGradientExecution
+from bilqis_mlx.runtime.atlas_execution_binder import bind_execution_provenance
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 
 
 def _invalid(reason):
     ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID, reason=reason)
-from bilqis_mlx.runtime.atlas_execution_binder import bind_execution_provenance
 
 
 def production_candidate_step(
         candidate, gradients=None, *, loss_bearing_target,
         gradient_execution=None,
-        group_eligible, active_admitted, spec, extents,
+        group_eligible, spec, extents,
         run_id, generation, parent_manifest_sha256,
         parent_candidate_identity_sha256, parent_optimizer_step, topology_digest,
         candidate_step_ordinal, teacher_hparams, decay, max_norm: float):
@@ -30,7 +30,16 @@ def production_candidate_step(
             candidate.optimizer.parameters, spec=spec, extents=extents)
         if gradient_execution.execution.output.generation_binding != expected_generation:
             _invalid("B11_GRADIENT_EXECUTION_CANDIDATE_MISMATCH")
-        loss_execution = gradient_execution.execution
+        custody = candidate.parent.custody
+        execution = gradient_execution.execution
+        if (
+            custody is None
+            or execution.custody_run_id != custody.run_id
+            or execution.custody_generation != custody.generation
+            or execution.custody_manifest_sha256 != custody.manifest_sha256
+        ):
+            _invalid("B11_GRADIENT_EXECUTION_CUSTODY_MISMATCH")
+        loss_execution = execution
         actual_gradients = gradient_execution.gradients
     elif gradient_execution is not None:
         _invalid("B11_GRADIENT_EXECUTION_UNEXPECTED")
@@ -38,7 +47,6 @@ def production_candidate_step(
         loss_bearing_target=loss_bearing_target,
         loss_execution=loss_execution,
         group_eligible=group_eligible,
-        active_admitted=active_admitted,
         spec=spec, extents=extents,
         run_id=run_id, generation=generation,
         parent_manifest_sha256=parent_manifest_sha256,

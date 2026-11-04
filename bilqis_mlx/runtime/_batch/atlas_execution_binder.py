@@ -20,7 +20,7 @@ def _invalid(reason: str) -> None:
 def bind_execution_provenance(
         *, loss_bearing_target: bool,
         loss_execution=None,
-        group_eligible, active_admitted: ActiveAdmittedRows,
+        group_eligible,
         spec, extents, run_id: str, generation: int,
         parent_manifest_sha256: str, parent_candidate_identity_sha256: str,
         parent_optimizer_step: int, topology_digest: str,
@@ -33,6 +33,7 @@ def bind_execution_provenance(
         if loss_execution is not None:
             _invalid("B11_EXECUTION_AUTHORITY_UNEXPECTED")
         inputs = StepParticipationInputs(loss_bearing_target=False)
+        active_admitted = ActiveAdmittedRows()
     else:
         execution = require_bamf_loss_execution(loss_execution)
         inputs = StepParticipationInputs(
@@ -42,8 +43,20 @@ def bind_execution_provenance(
             executed_parameter_names=execution.dense_parameter_names,
             loss_bearing_target=True,
         )
+        active_admitted = ActiveAdmittedRows(
+            identity_rows=group_eligible.admitted_identity_rows,
+            motif_slots=tuple(sorted({
+                slot
+                for result in execution.motif_reads
+                for slot in result.participating_slots
+            })),
+            feature_rows=execution.feature_rows,
+            local_slot_rows=execution.local_slot_rows,
+        )
     return issue_execution_provenance(
-        inputs, SemanticDenominator(), (), RoleReadParticipation(),
+        inputs, SemanticDenominator(), (
+            execution.motif_reads if loss_bearing_target else ()),
+        RoleReadParticipation(),
         group_eligible, active_admitted, spec=spec, extents=extents,
         run_id=run_id, generation=generation,
         parent_manifest_sha256=parent_manifest_sha256,

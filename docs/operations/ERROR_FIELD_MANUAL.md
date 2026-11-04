@@ -1749,7 +1749,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **2031** raw raises across **233** files. The baseline gate permits only reduction.
+Current production scan: **2030** raw raises across **232** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -3594,7 +3594,6 @@ Current production scan: **2031** raw raises across **233** files. The baseline 
 | `_INVALID` | 1 | `bilqis_mlx/factory/curriculum/candidate_frontier_io.py` |
 | `_STALE` | 1 | `bilqis_mlx/factory/curriculum/candidate_frontier_io.py` |
 | `boom` | 1 | `bilqis_mlx/runtime/tests/model/parity/test_mlx_memory.py` |
-| `compiled must be CompiledEncoderInput` | 1 | `bilqis_mlx/learning/source_atoms/backbone_identity.py` |
 | `disposable interruption before pointer publication` | 1 | `bilqis_mlx/runtime/tests/admission/test_atlas_lease_renewal.py` |
 | `evaluator-owned cache reached by solver` | 1 | `bilqis_mlx/semantics/tests/operators/test_cognitive_operator_native.py` |
 | `exact cached route must preempt neural` | 1 | `bilqis_mlx/runtime/tests/capability/test_cognitive_solver.py` |

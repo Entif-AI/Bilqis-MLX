@@ -47,6 +47,7 @@ class _SourceBackboneProducerSession:
         self._receipts = ()
         self._motif_manifest = None
         self._motif_seal = None
+        self._motif_read = None
 
     def _bind_authoritative_inputs(self, sources, feature_schema):
         self._sources = sources
@@ -125,6 +126,7 @@ class _SourceBackboneProducerSession:
                 self._compiled, self._parameters, self._sources,
                 self._motif_manifest, spec=topology, extents=self._compiled.extents,
                 site_index=1, hidden=expected.hidden, seal=self._motif_seal)
+            self._motif_read = motif
             hidden = motif.hidden
             motif_disposition = HIT if motif.participating_slots else NO_HIT
             motif_read_digest = contract_digest((
