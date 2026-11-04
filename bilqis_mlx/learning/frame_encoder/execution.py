@@ -17,7 +17,7 @@ from .kernel import (
 )
 
 
-def _encode_compiled(compiled, vectors, parameters):
+def _encode_compiled(compiled, vectors, parameters, *, atlas_selections=None):
     compiled.__post_init__()
     _validate_encoder_parameters(parameters, compiled.extents)
     if (type(vectors) is not CompiledEmbeddingVectors or
@@ -29,11 +29,17 @@ def _encode_compiled(compiled, vectors, parameters):
     atomic_rows = vectors.atomic_frames or tuple(() for _ in compiled.compiled.rows)
     if len(atomic_rows) != len(vectors.atoms):
         _invalid()
+    if atlas_selections is None:
+        atlas_selections = (None,) * len(compiled.compiled.rows)
+    if (type(atlas_selections) is not tuple
+            or len(atlas_selections) != len(compiled.compiled.rows)):
+        _invalid()
     seeds, members, factors = [], [], []
     width = len(compiled.compiled.padded_positions[0])
-    for row, groups, projection, atoms, supplied, expected, atomic_frames, atomic_handles in zip(
+    for row, groups, projection, atoms, supplied, expected, atomic_frames, atomic_handles, atlas_selection in zip(
             compiled.compiled.rows, compiled._groups, compiled._projections,
-            vectors.atoms, vectors.members, compiled.member_requests, atomic_rows, compiled.atomic_handles):
+            vectors.atoms, vectors.members, compiled.member_requests, atomic_rows,
+            compiled.atomic_handles, atlas_selections):
         if (not isinstance(atoms, mx.array) or atoms.shape != (row.visible_end, WIDTH) or atoms.dtype != mx.float32 or
                 not bool(mx.all(mx.isfinite(atoms))) or type(supplied) is not tuple or
                 any(type(item) is not MemberEmbedding for item in supplied) or
@@ -56,7 +62,8 @@ def _encode_compiled(compiled, vectors, parameters):
                 row_factors.append(None)
             elif group:
                 seed, matrix, factor, cursor = encode_group(
-                    group, supplied, cursor, closure_outputs, compiled, parameters)
+                    group, supplied, cursor, closure_outputs, compiled, parameters,
+                    atlas_selection=atlas_selection)
                 row_seeds.append(seed)
                 closure_outputs[position.frame_handle] = seed
                 row_factors.append(factor)

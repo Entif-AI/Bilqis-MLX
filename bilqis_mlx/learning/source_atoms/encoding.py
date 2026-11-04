@@ -33,13 +33,15 @@ def encode_source_compiled_with_handoffs(compiled, parameters, sources, feature_
         if requests:
             members = embed_atoms(
                 parameters, ConceptBatch((requests,), banks, compiled.extents),
-                compiled.features)[0]
+                compiled.features, atlas_selection=source.selection)[0]
             member_rows.append(tuple(MemberEmbedding(request, members[index])
                                      for index, request in enumerate(requests)))
         else:
             member_rows.append(())
     generated = CompiledEmbeddingVectors(tuple(atom_rows), tuple(member_rows))
-    return encode_frames(compiled, generated, parameters), tuple(handoffs)
+    return encode_frames(
+        compiled, generated, parameters,
+        atlas_selections=tuple(source.selection for source in sources)), tuple(handoffs)
 
 
 def encode_source_compiled(compiled, parameters, sources, feature_schema):

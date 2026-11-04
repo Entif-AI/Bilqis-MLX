@@ -38,7 +38,6 @@ def estimate_row_activation_bytes(
         layer_elements + frame_elements + constituent_elements
         + depth_elements + target_elements)
 
-
 def plan_microbatches(
     delivered_rows: tuple[ResourceRow, ...],
     topology: ModelTopologySpecV2,
