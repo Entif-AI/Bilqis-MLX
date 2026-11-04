@@ -90,6 +90,24 @@ continuity receipt, **not a distributed lock**: it cannot prove that another
 process will not begin writing later. Maintain actual per-branch/shared-path
 coordination during ongoing edits.
 
+**Passing-test evidence reuse (2026-11-04):** Do **not** rerun a passing test
+suite merely because a new agent resumed, a PR was opened/updated, a branch was
+rebased onto an equivalent reviewed head, or time passed. A passing run remains
+valid until a later change can plausibly invalidate what it proved. Determine
+invalidation from the diff since the exact tested head and the suite's dependency
+surface: production code, fixtures/goldens, tests themselves, generators, runtime
+dependencies, build/test harnesses, or environment/configuration consumed by that
+suite. Documentation, governance prose, issue/PR bookkeeping, flow-control limits,
+handoff metadata, and unrelated workflow orchestration do **not** invalidate
+semantic/neural/custody suites by themselves. If no invalidating change exists,
+reuse the prior exact-head passing receipt and record `TEST_EVIDENCE_REUSED` with
+the tested head and comparison range instead of spending 10-15+ minutes rerunning
+it. Run the **smallest newly affected check only** when a change has a narrow
+surface. Escalate to a broad/expensive suite only when its dependency closure was
+actually touched, the prior run was incomplete/failed/untrustworthy, or a human
+explicitly requests fresh verification. A merge commit is not automatic
+invalidation; inspect what it introduced.
+
 Every lane-owned BAMF implementation leaf or open lane PR must be represented in that lane's
 machine-readable state under `docs/tasks/bamf-0.2/flow-control/`. Before substantive
 branch mutation, the operator must run `python3 -B scripts/check_bamf_flow_control.py`

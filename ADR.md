@@ -2815,7 +2815,7 @@ different agent, declining to resume their own in-flight issue.
 no per-lane PR cap; permit up to **six** simultaneous `ACTIVE` items in each lane.
 Within those bounds, independent issue-scoped branches/worktrees and agent
 writers can make progress concurrently. Hosted quality CI checks the static
-flow-control schema/state and regression tests but does not perform a live
+flow-control schema/state but does not perform a live
 GitHub PR-inventory reconciliation. The operator still performs the `--live`
 inventory check at actual PR admission and resolves tracked-state drift then.
 Where that optional live endpoint is unavailable (for example local TLS failure),
@@ -2853,3 +2853,41 @@ throughput permissions, not proof that a specific candidate is ready to merge.
 
 **Implementation:** `AGENTS.md`, `docs/tasks/bamf-0.2/README.md`, the
 flow-control policy, hosted `.github/workflows/quality.yml`, and focused tests.
+
+## ADR-129 | 2026-11-04 | Passing verification remains valid until its dependency surface changes
+
+**Status:** Accepted by direct owner instruction on 2026-11-04.
+
+**Problem:** Several repository suites now cost roughly 10-15 minutes or more.
+Agents and hosted CI have been rerunning them at branch/PR/agent boundaries even
+when no intervening change could affect the behavior those suites established.
+This consumes scarce execution time and serializes parallel work without adding
+evidence.
+
+**Decision:** Treat a successful test receipt as reusable evidence bound to its
+exact tested head, suite identity and environment. A later candidate must rerun
+that suite only when the diff since the tested head intersects the suite's actual
+dependency surface: implementation code, fixtures/goldens, tests, generators,
+dependencies, relevant runtime configuration, or the harness itself. Agent
+handoff/compaction, PR metadata, governance/docs changes, flow-control policy,
+unrelated CI orchestration, and merge commits carrying only such changes do not
+invalidate behavioral suites. Where only a narrow dependency changed, run the
+smallest affected check rather than the broad suite.
+
+**Evidence rule:** If a prior pass is reused, record `TEST_EVIDENCE_REUSED`, the
+prior tested SHA, current candidate SHA, comparison range and why no invalidating
+path changed. Fresh broad verification remains mandatory when dependency impact
+cannot be bounded, the prior receipt is missing/incomplete/untrustworthy, an
+environment dependency changed, or the owner explicitly requests it.
+
+**Hosted implementation:** `quality.yml` classifies the diff before expensive
+verification and skips broad semantic/custody suites when their dependency
+surface is untouched. Static governance/docs/architecture checks may still run.
+Manual workflow dispatch intentionally requests a fresh run. The exhaustive
+semantic workflow is no longer triggered merely because `quality.yml` changed.
+
+**Application to ADR-128/PR #822:** The concurrency, compaction-handoff and CI
+governance changes do not modify Bilqis semantic, Factory, custody, neural, source,
+fixture or runtime behavior. Existing passing expensive-suite evidence therefore
+remains applicable; this change requires only lightweight structural/workflow
+validation, not another broad test campaign.

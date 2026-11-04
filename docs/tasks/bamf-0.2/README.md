@@ -50,6 +50,22 @@ false issue-ownership hold; an actual branch/remote/dirty-state mismatch must be
 reconciled. This verifies continuity, not exclusive distributed ownership.
 See `AGENTS.md` and ADR-128.
 
+### Reuse passing verification until invalidated
+
+Passing verification is durable evidence, not a ritual to repeat at every PR or
+agent boundary. Before rerunning an expensive suite, compare the candidate against
+the exact head that last passed it. Reuse that receipt when no intervening change
+touches the suite's production inputs, tests/fixtures, generators, dependencies,
+runtime configuration, or harness. Record the tested head and comparison range as
+`TEST_EVIDENCE_REUSED`. Governance/docs/flow-control/handoff-only changes should
+run only their cheap structural checks and must not trigger semantic, custody,
+neural, or exhaustive profile suites. A later merge invalidates a prior run only
+when the merged delta intersects the suite's dependency surface.
+
+Hosted `quality.yml` follows this rule: it classifies the PR/push diff first and
+skips broad semantic/custody test suites when no expensive-test dependency surface
+changed. Manual dispatch remains an explicit request for fresh verification.
+
 The lane is not a conveyor belt that must keep every open PR warm. The normal limit
 is **six `ACTIVE` implementation leaves per lane** under the 2026-11-04 owner
 amendment. Prefer finishing near-to-merge leaves while allowing independent
