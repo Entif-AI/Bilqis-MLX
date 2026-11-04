@@ -10,6 +10,17 @@ from .contracts import (
     MAX_DAG_NODES, TASK_GOAL_SCHEMA, _SHA, _invalid, _name,
 )
 
+MAX_UNRESOLVED_LOOKUPS = 1
+
+
+def _invalid_selected_binding(item):
+    if not isinstance(item, tuple) or len(item) != 3:
+        return True
+    node_id, operator_id, refs = item
+    return (not _name(node_id) or not _name(operator_id)
+            or not isinstance(refs, tuple)
+            or any(not _name(ref) for ref in refs))
+
 @dataclass(frozen=True)
 class TaskGoal:
     goal_id: str
@@ -119,22 +130,20 @@ class DAGReceipt:
                 or self.operation_count + self.memo_hit_count
                 > self.lookup_count
                 or self.lookup_count - (
-                    self.operation_count + self.memo_hit_count) > 1
+                    self.operation_count + self.memo_hit_count)
+                > MAX_UNRESOLVED_LOOKUPS
                 or not isinstance(self.selected_bindings, tuple)
                 or not isinstance(self.executed_nodes, tuple)
-                or any(not isinstance(item, tuple) or len(item) != 3
-                       or not _name(item[0]) or not _name(item[1])
-                       or not isinstance(item[2], tuple)
-                       or any(not _name(ref) for ref in item[2])
+                or any(_invalid_selected_binding(item)
                        for item in self.selected_bindings)
-                or len({item[0] for item in self.selected_bindings})
+                or len({node_id for node_id, _, _ in self.selected_bindings})
                 != len(self.selected_bindings)
                 or any(not _name(item) for item in self.executed_nodes)
                 or len(set(self.executed_nodes)) != len(self.executed_nodes)
                 or len(self.executed_nodes) != (
                     self.operation_count + self.memo_hit_count)
                 or not set(self.executed_nodes).issubset(
-                    {item[0] for item in self.selected_bindings})
+                    {node_id for node_id, _, _ in self.selected_bindings})
                 or (self.unresolved_signature is not None
                     and not _name(self.unresolved_signature))
                 or (self.lookup_count > len(self.executed_nodes)

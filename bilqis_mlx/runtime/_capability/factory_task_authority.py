@@ -14,6 +14,7 @@ from bilqis_mlx.semantics.cognitive_operators import OperatorBinding
 from bilqis_mlx.semantics.domains import contract_digest
 
 from .capability_evaluation import _invalid
+from bilqis_mlx.source_adapters.task_goal_registry import require_task_goal_lowerer
 
 
 _ISSUER = object()
@@ -40,7 +41,10 @@ class FactoryTaskAuthority:
     source_row_id: str
     source_row_sha256: str
     source_binding_sha256: str
-    training_authority_sha256: str
+    training_authority_sha256: str | None
+    source_family_id: str
+    episode_id: str
+    lowerer_sha256: str
     _issuance: object = field(init=False, repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
@@ -54,7 +58,10 @@ class FactoryTaskAuthority:
                     self.release_sha256, self.generation_binding,
                     self.capability_id, self.source_row_id,
                     self.source_row_sha256, self.source_binding_sha256,
-                    self.training_authority_sha256))
+                    self.source_family_id, self.episode_id, self.lowerer_sha256))
+                or (self.training_authority_sha256 is not None
+                    and (not isinstance(self.training_authority_sha256, str)
+                         or not self.training_authority_sha256))
                 or self.goal.goal_id != self.source_row_id
                 or self.goal.semantic_release != self.binding.task.semantic_release
                 or self.goal.scope != self.binding.task.scope
@@ -72,6 +79,9 @@ class FactoryTaskAuthority:
             "row": self.source_row_id,
             "row_sha256": self.source_row_sha256,
             "training_authority": self.training_authority_sha256,
+            "source_family": self.source_family_id,
+            "episode": self.episode_id,
+            "lowerer": self.lowerer_sha256,
         }, sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(wire.encode()).hexdigest()
 
@@ -79,24 +89,39 @@ class FactoryTaskAuthority:
 def factory_task_authority(
     source_context: SourceExecutionContext,
     compiled_batch: BamfCompiledBatch,
+    *,
+    generation_binding: str | None = None,
 ) -> FactoryTaskAuthority:
     """Ask only the admitted source owner to lower one exact gold-blind task."""
     if (type(source_context) is not SourceExecutionContext
-            or type(compiled_batch) is not BamfCompiledBatch
-            or compiled_batch.training_authority is None):
+            or type(compiled_batch) is not BamfCompiledBatch):
         _invalid("BAMF_C04_FACTORY_TASK_AUTHORITY_REQUIRED")
     source_context.__post_init__()
     compiled_batch.__post_init__()
-    authority = compiled_batch.training_authority
+    training = compiled_batch.training_authority
     source = compiled_batch.sources[0]
     row = source.source_row
-    if (authority.release_sha256 != source_context.release.release_sha256
-            or authority.source_row_id != row.get("id")
-            or authority.source_row_sha256 != content_digest((row,))
-            or authority.delivery_capability != row.get("capability")):
-        _invalid("BAMF_C04_FACTORY_TASK_SOURCE_MISMATCH")
+    row_id = row.get("id")
+    capability_id = row.get("capability")
+    row_sha256 = content_digest((row,))
+    if training is None:
+        if not isinstance(generation_binding, str) or not generation_binding:
+            _invalid("BAMF_C04_EVALUATION_GENERATION_REQUIRED")
+        release_sha256 = source_context.release.release_sha256
+        training_sha256 = None
+    else:
+        if (training.release_sha256 != source_context.release.release_sha256
+                or training.source_row_id != row_id
+                or training.source_row_sha256 != row_sha256
+                or training.delivery_capability != capability_id
+                or (generation_binding is not None
+                    and generation_binding != training.generation_binding)):
+            _invalid("BAMF_C04_FACTORY_TASK_SOURCE_MISMATCH")
+        generation_binding = training.generation_binding
+        release_sha256 = training.release_sha256
+        training_sha256 = training.digest
     execution = source_context.release.execution_plan.capability_map.get(
-        authority.delivery_capability)
+        capability_id)
     if execution is None:
         _invalid("BAMF_C04_FACTORY_TASK_CAPABILITY_MISSING")
     adapter = runtime_adapter_for_release(
@@ -104,10 +129,21 @@ def factory_task_authority(
         source_context.release, source_context.source_registry, execution,
         drift_code="BAMF_C04_FACTORY_TASK_ADAPTER_DRIFT",
     )
-    if adapter.task_goal is None:
+    try:
+        lowerer = require_task_goal_lowerer(
+            execution.provider_id, execution.provider_implementation_sha256)
+    except ValueError:
         _invalid("BAMF_C04_SOURCE_TASK_LOWERER_REQUIRED")
-    lowered = adapter.task_goal(
+    family = contract_digest({
+        "schema": "bilqis.mlx.source-draw-family/v1",
+        "provider": execution.provider_id,
+        "implementation": execution.provider_implementation_sha256,
+        "capability": execution.capability_id,
+        "seed": source.source_seed,
+    })
+    lowered = lowerer.lower(
         _source_view(row),
+        semantic_release=compiled_batch.compiled.features.semantic_release,
         source_root=source_context.source_root,
         graph=source_context.graph,
         release=source_context.release,
@@ -121,13 +157,16 @@ def factory_task_authority(
     item = object.__new__(FactoryTaskAuthority)
     for name, value in (
         ("goal", goal), ("binding", binding),
-        ("release_sha256", authority.release_sha256),
-        ("generation_binding", authority.generation_binding),
-        ("capability_id", authority.delivery_capability),
-        ("source_row_id", authority.source_row_id),
-        ("source_row_sha256", authority.source_row_sha256),
+        ("release_sha256", release_sha256),
+        ("generation_binding", generation_binding),
+        ("capability_id", capability_id),
+        ("source_row_id", row_id),
+        ("source_row_sha256", row_sha256),
         ("source_binding_sha256", contract_digest(binding)),
-        ("training_authority_sha256", authority.digest),
+        ("training_authority_sha256", training_sha256),
+        ("source_family_id", family),
+        ("episode_id", row_id),
+        ("lowerer_sha256", lowerer.implementation_sha256),
         ("_issuance", _ISSUER),
     ):
         object.__setattr__(item, name, value)

@@ -1,10 +1,7 @@
 """Factory C04 task authority keeps evaluator truth outside source lowering."""
-from dataclasses import replace
 import unittest
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.factory.adapters import SourceAdapterRegistry
-from bilqis_mlx.factory.tests.test_teaching import closed_source_fixture
 from bilqis_mlx.runtime.factory_task_authority import (
     FactoryTaskAuthority, _source_view,
 )
@@ -32,13 +29,6 @@ class FactoryTaskAuthorityTests(unittest.TestCase):
     def test_caller_cannot_construct_factory_task_authority(self):
         with self.assertRaises(BilqisError):
             FactoryTaskAuthority()
-
-    def test_registered_source_task_lowerer_must_be_callable(self):
-        _, _, sources, _, _ = closed_source_fixture()
-        registered = sources.require("fixture.z-generator/v1", "fixture.z-oracle/v1")
-        with self.assertRaises(ValueError):
-            SourceAdapterRegistry((replace(registered, task_goal="caller-selected"),))
-
 
 if __name__ == "__main__":
     unittest.main()

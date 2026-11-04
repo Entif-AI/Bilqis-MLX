@@ -15,11 +15,14 @@ from unittest.mock import patch
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.bamf_bundle import (
-    publish_bamf_generation, read_accepted_generation_feature_receipt,
+    authenticate_bamf_candidate_features, publish_bamf_generation,
+    read_accepted_generation_feature_receipt,
     verify_accepted_generation_feature_receipt,
 )
 from bilqis_mlx.runtime.bamf_bundle import feature_authority
 from bilqis_mlx.semantics.atlas_features import AtlasFeatures
+from bilqis_mlx.semantics.atlas_projection import FrozenAtlasSnapshot
+from bilqis_mlx.semantics.atlas_projection_parts.releases import AtlasCounts
 
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     publish_candidate,
@@ -59,6 +62,16 @@ def feature_bound(source, features: AtlasFeatures, *, digest=None, release=RELEA
             **source.correction_frontier, "release_digest": release})
 
 
+def frozen_snapshot(selection):
+    return FrozenAtlasSnapshot(
+        "bilqis.atlas.snapshot/v1", selection.bundle_id,
+        selection.release_sha256, selection.source_bundle_id,
+        "4" * 64, "5" * 64, "6" * 64, "7" * 64, "8" * 64, "9" * 64,
+        "a" * 64, AtlasCounts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+        (), (), (), (), (), (), (),
+    )
+
+
 class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
     def setUp(self):
         self.temporary = TemporaryDirectory()
@@ -81,7 +94,7 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
         """Stand in for the externally supplied admitted source artifact."""
         return patch.multiple(
             feature_authority,
-            load_pinned_atlas_snapshot=lambda selection: selection,
+            load_pinned_atlas_snapshot=frozen_snapshot,
             build_feature_manifest=lambda snapshot, schema: features,
         )
 
@@ -101,6 +114,20 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
         self.assertEqual(receipt.semantic_release, RELEASE)
         self.assertEqual(receipt.source_atlas_bundle_id, ATLAS_BUNDLE)
         self.assertIsNone(receipt.predecessor_feature_sha256)
+
+    def test_unaccepted_candidate_can_only_replay_its_recorded_source_features(self):
+        features = source_features()
+        proposed = feature_bound(candidate(parent_state()), features)
+        with self.source_replay(features):
+            replayed = authenticate_bamf_candidate_features(proposed, "/artifact")
+        self.assertEqual(replayed, features)
+
+        forged = feature_bound(proposed, features, digest=ARBITRARY)
+        with self.source_replay(features), self.assertRaises(BilqisError) as failure:
+            authenticate_bamf_candidate_features(forged, "/artifact")
+        self.assertEqual(
+            failure.exception.context["reason"],
+            "BAMF_FEATURE_SOURCE_REPLAY_MISMATCH")
 
     def test_arbitrary_digest_candidate_cannot_self_ratify(self):
         features = source_features()

@@ -20,12 +20,14 @@ from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_man
 from bilqis_mlx.semantics.atlas_snapshot import (
     AtlasArtifactSelection, load_pinned_atlas_snapshot,
 )
+from bilqis_mlx.semantics.atlas_projection import FrozenAtlasSnapshot
 
 from .codec import load_bamf_bundle
 from .publication import (
     ACCEPTANCE_DIR, _pointer_lock, _read_pointer,
 )
 from .records import BAMF_POINTER_SCHEMA, canonical, invalid, sha
+from .records import BamfBundleCandidate
 
 RECEIPT_SCHEMA = "bilqis.mlx.bamf-accepted-generation-feature-receipt/v1"
 FEATURE_SOURCE_KEYS = frozenset({
@@ -89,6 +91,28 @@ class AcceptedGenerationFeatureReceipt:
         if record["receipt_sha256"] != receipt.digest:
             invalid("BAMF_FEATURE_RECEIPT_INVALID")
         return receipt
+
+
+@dataclass(frozen=True)
+class AuthenticatedCandidateFeatureContext:
+    """Source-replayed feature inputs for pre-acceptance evaluation only."""
+
+    selection: AtlasArtifactSelection
+    snapshot: FrozenAtlasSnapshot
+    schema: FeatureSchema
+    features: object
+
+    def __post_init__(self) -> None:
+        if (type(self.selection) is not AtlasArtifactSelection
+                or type(self.snapshot) is not FrozenAtlasSnapshot
+                or type(self.schema) is not FeatureSchema
+                or self.features.semantic_release != self.selection.release_sha256
+                or self.features.atlas_bundle_id != self.selection.bundle_id
+                or self.features.source_bundle_id != self.selection.source_bundle_id
+                or self.snapshot.release_sha256 != self.selection.release_sha256
+                or self.snapshot.bundle_id != self.selection.bundle_id
+                or self.snapshot.source_bundle_id != self.selection.source_bundle_id):
+            invalid("BAMF_FEATURE_CONTEXT_INVALID")
 
 
 def _hex(value: object) -> bool:
@@ -210,6 +234,38 @@ def _authenticate_features(student, artifact_path: str):
     if student.provenance.release_digest != features.semantic_release:
         invalid("BAMF_FEATURE_RELEASE_DRIFT")
     return features
+
+
+def authenticate_bamf_candidate_features(
+        candidate: BamfBundleCandidate, artifact_path: str):
+    """Re-derive a proposed generation's feature map from its recorded source.
+
+    This is deliberately pre-acceptance authority.  It proves only that the
+    candidate's recorded feature identity is reproducible from the admitted
+    Atlas source; it does not mint acceptance, publication, or live-generation
+    authority.
+    """
+    return authenticate_bamf_candidate_feature_context(
+        candidate, artifact_path).features
+
+
+def authenticate_bamf_candidate_feature_context(
+        candidate: BamfBundleCandidate,
+        artifact_path: str) -> AuthenticatedCandidateFeatureContext:
+    """Return the exact source selection, schema and replayed feature map."""
+    if not isinstance(candidate, BamfBundleCandidate):
+        invalid("BAMF_FEATURE_CANDIDATE_REQUIRED")
+    source = _feature_source(candidate.compiler_features)
+    schema = _feature_schema(candidate.compiler_features)
+    selection = AtlasArtifactSelection(
+        str(artifact_path), source["atlas_bundle_id"],
+        source["release_sha256"], source["source_bundle_id"])
+    snapshot = load_pinned_atlas_snapshot(selection)
+    features = _authenticate_features(candidate, artifact_path)
+    context = AuthenticatedCandidateFeatureContext(
+        selection, snapshot, schema, features)
+    context.__post_init__()
+    return context
 
 
 def read_accepted_generation_feature_receipt(
