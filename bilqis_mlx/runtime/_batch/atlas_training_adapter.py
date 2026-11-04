@@ -8,7 +8,9 @@ from __future__ import annotations
 from graphlib import CycleError, TopologicalSorter
 from typing import Callable
 
-from bilqis_mlx.runtime.source_execution import SourceExecutionContext
+from bilqis_mlx.runtime.source_execution import (
+    SourceBatchAuthority, SourceExecutionContext, _source_content,
+)
 from bilqis_mlx.factory.adapters import validate_instructional_constituents
 from bilqis_mlx.factory.generation import runtime_adapter_for_release
 from bilqis_mlx.factory.teaching import DeliveredTeaching, describe_delivered_teaching, content_digest
@@ -64,6 +66,7 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
                            topology, *, delivery: DeliveredTeaching, delivery_capability: str,
                            delivery_release_sha256: str, teacher_strategy: dict,
                            requested_count: int, optimizer_step_seed: int,
+                           source_authority: SourceBatchAuthority,
                            rehearsal_by_id: dict, visible_ends: dict,
                            source_ast_for: Callable, compile_prefix: Callable,
                            feature_requests_for: Callable, features_for: Callable, answer_plan_for: Callable,
@@ -81,12 +84,14 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
         _invalid('UPSTREAM_INTERFACES_REQUIRED')
     if (type(task_scope) is not TaskScope
             or type(source_frontier) is not SourceFrontier
-            or type(eligibility_policy) is not ContextPolicy):
+            or type(eligibility_policy) is not ContextPolicy
+            or type(source_authority) is not SourceBatchAuthority):
         _invalid('CONTEXT_AUTHORITY_REQUIRED')
     source_context.release.verify()
     source_context.release.verify_semantic_catalog(source_context.graph)
     release = source_context.release
     capabilities = release.execution_plan.capability_map
+    source_authority.__post_init__()
     if (delivery_release_sha256 != release.release_sha256 or not isinstance(delivery, DeliveredTeaching)
             or delivery_capability not in capabilities):
         _invalid('DELIVERY_RELEASE_INVALID')
@@ -96,6 +101,15 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
         _invalid('DELIVERY_INVALID')
     if delivery != expected or len(delivery.specimen_ids) != len(delivered_rows):
         _invalid('DELIVERY_CONTENT_MISMATCH')
+    owner = capabilities[delivery_capability]
+    if (source_authority.release_sha256 != release.release_sha256
+            or source_authority.capability_id != delivery_capability
+            or source_authority.provider_id != owner.provider_id
+            or source_authority.provider_implementation_sha256
+            != owner.provider_implementation_sha256
+            or source_authority.content_sha256 != _source_content(delivered_rows)
+            or source_authority.each != len(delivered_rows)):
+        _invalid('TRAINING_SOURCE_AUTHORITY_MISMATCH')
     if (type(requested_count) is not int or requested_count < len(delivered_rows)
             or type(optimizer_step_seed) is not int or optimizer_step_seed < 0
             or not isinstance(teacher_strategy, dict) or not isinstance(rehearsal_by_id, dict)
@@ -107,7 +121,7 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
         _invalid('HOLDOUT_IDENTITIES_INVALID')
     heads = {head.kind: head for head in release.answer_heads}
     result = []
-    for row in delivered_rows:
+    for row_index, row in enumerate(delivered_rows):
         if not isinstance(row, dict):
             _invalid('ROW_INVALID')
         identity, capability = row.get('id'), row.get('capability')
@@ -116,9 +130,8 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
         if identity in sealed_holdout_ids:
             _invalid('SEALED_HOLDOUT_IN_TRAINING')
         source_id, operation_id = row.get('source_id'), row.get('operation_id')
-        family, episode = row.get('source_family_id'), row.get('episode_id')
-        if any(value is not None and (not isinstance(value, str) or not value) for value in (family, episode)):
-            _invalid('SOURCE_FAMILY_IDENTITY_INVALID')
+        family = source_authority.source_family_id
+        episode = source_authority.episode_ids[row_index]
         if operation_id is None and isinstance(row.get('record'), dict):
             operation_id = row['record'].get('operator')
         if ((source_id is not None and (not isinstance(source_id, str) or not source_id)) or

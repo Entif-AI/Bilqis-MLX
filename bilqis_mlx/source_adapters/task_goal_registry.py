@@ -6,6 +6,7 @@ import hashlib
 from pathlib import Path
 
 from .numeric_task_goal import lower_numeric_task_goal
+from .answer_choice_task_goal import lower_answer_choice_task_goal
 
 
 def _digest(path: Path) -> str:
@@ -32,16 +33,40 @@ class RegisteredTaskGoalLowerer:
 
 def live_task_goal_lowerers():
     """Repository-owned interpretation adapters, separate from source-provider identity."""
-    from bilqis_mlx.live_grade_c import provider_implementation_digest
+    from bilqis_mlx.source_adapters.school import (
+        a_provider_digest, b_composite_digest, b_digest, b_idboolops_digest,
+        c_provider_digest,
+    )
 
-    path = Path(__file__).resolve().parents[2] / "source_adapters/numeric_task_goal.py"
+    root = Path(__file__).resolve().parent
+    path = root / "numeric_task_goal.py"
     numeric = RegisteredTaskGoalLowerer(
-        "bilqis_mlx.numeric_curriculum.draw_numeric",
-        provider_implementation_digest(),
+        "source.finite-numeric/v2",
+        c_provider_digest(),
         "bilqis.c04.numeric-task-goal/v1",
         _digest(path), lower_numeric_task_goal,
     )
-    return (numeric,)
+    answer_path = root / "answer_choice_task_goal.py"
+    answer_digest = _digest(answer_path)
+    choices = (
+        RegisteredTaskGoalLowerer(
+            "source.micro.predicates/v1", a_provider_digest(),
+            "bilqis.c04.answer-choice-task-goal/v1", answer_digest,
+            lower_answer_choice_task_goal),
+        RegisteredTaskGoalLowerer(
+            "source.micro.boolean-connectives/v1", b_digest(),
+            "bilqis.c04.answer-choice-task-goal/v1", answer_digest,
+            lower_answer_choice_task_goal),
+        RegisteredTaskGoalLowerer(
+            "source.micro.boolean-composite/v1", b_composite_digest(),
+            "bilqis.c04.answer-choice-task-goal/v1", answer_digest,
+            lower_answer_choice_task_goal),
+        RegisteredTaskGoalLowerer(
+            "source.micro.boolean-identification/v1", b_idboolops_digest(),
+            "bilqis.c04.answer-choice-task-goal/v1", answer_digest,
+            lower_answer_choice_task_goal),
+    )
+    return (numeric, *choices)
 
 
 def require_task_goal_lowerer(provider_id: str, provider_sha256: str):

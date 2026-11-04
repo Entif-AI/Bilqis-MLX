@@ -134,13 +134,19 @@ def factory_task_authority(
             execution.provider_id, execution.provider_implementation_sha256)
     except ValueError:
         _invalid("BAMF_C04_SOURCE_TASK_LOWERER_REQUIRED")
-    family = contract_digest({
-        "schema": "bilqis.mlx.source-draw-family/v1",
-        "provider": execution.provider_id,
-        "implementation": execution.provider_implementation_sha256,
-        "capability": execution.capability_id,
-        "seed": source.source_seed,
-    })
+    family = row.get("source_family_id")
+    if not isinstance(family, str) or not family:
+        family = contract_digest({
+            "schema": "bilqis.mlx.source-draw-family/v1",
+            "provider": execution.provider_id,
+            "implementation": execution.provider_implementation_sha256,
+            "capability": execution.capability_id,
+            "seed": source.source_seed,
+            "each": source.source_each,
+        })
+    episode = row.get("episode_id")
+    if not isinstance(episode, str) or not episode:
+        episode = row_id
     lowered = lowerer.lower(
         _source_view(row),
         semantic_release=compiled_batch.compiled.features.semantic_release,
@@ -165,7 +171,7 @@ def factory_task_authority(
         ("source_binding_sha256", contract_digest(binding)),
         ("training_authority_sha256", training_sha256),
         ("source_family_id", family),
-        ("episode_id", row_id),
+        ("episode_id", episode),
         ("lowerer_sha256", lowerer.implementation_sha256),
         ("_issuance", _ISSUER),
     ):

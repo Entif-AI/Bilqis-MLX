@@ -48,6 +48,8 @@ def _compute(operator_id: str, values: tuple[object, ...],
         return values[1] in values[0].type_ids
     if operator_id == "MEMBER_OF":
         return values[0] in values[1]
+    if operator_id in {"SELECT_BOOLEAN", "SELECT_OPERATOR_ID", "SELECT_NUMBER"}:
+        return values[0]
     if operator_id == "BOOL_NOT":
         return not values[0]
     if operator_id == "BOOL_AND":

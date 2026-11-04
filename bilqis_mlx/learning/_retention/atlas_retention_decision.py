@@ -147,3 +147,30 @@ def decide_candidate_retention(
         SCHOOL.MODEL_TOPOLOGY.INVALID,
         reason="BAMF_C05_SOURCE_OWNER_REQUIRED",
     )
+
+
+def issue_factory_retention_decision(owner_evaluation) -> CandidateRetentionDecision:
+    """Issue live acceptance authority only from the unforgeable Factory C05 owner."""
+    from bilqis_mlx.runtime.factory_retention_owner import FactoryRetentionEvaluation
+    from bilqis_mlx.runtime.capability_retention import DecisionStatus
+
+    if type(owner_evaluation) is not FactoryRetentionEvaluation:
+        _invalid()
+    owner_evaluation.__post_init__()
+    result = owner_evaluation.decision
+    decision = object.__new__(CandidateRetentionDecision)
+    status = (ACCEPTED_DECISION if result.status is DecisionStatus.ELIGIBLE
+              else REJECTED_DECISION)
+    for name, value in (
+        ("decision", status),
+        ("reason", result.reason),
+        ("parent_generation", owner_evaluation.parent_candidate_sha256),
+        ("candidate_generation", owner_evaluation.candidate_candidate_sha256),
+        ("evidence_sha256", result.evidence_sha256),
+        ("policy_sha256", result.policy_sha256),
+        ("schema_version", DECISION_SCHEMA),
+        ("_issuance", _DECISION_ISSUER),
+    ):
+        object.__setattr__(decision, name, value)
+    decision.__post_init__()
+    return decision

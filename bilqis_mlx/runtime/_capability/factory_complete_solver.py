@@ -49,7 +49,7 @@ def _factory_gold(source_context, row, goal):
     if execution is None:
         _invalid("BAMF_C05_GOLD_CAPABILITY_MISSING")
     raw = row.get("gold")
-    if goal.output_signature != "Number" or type(raw) not in (int, str):
+    if type(raw) not in (int, str):
         _invalid("BAMF_C05_GOLD_MODALITY_UNSUPPORTED")
     text = str(raw)
     matches = []
@@ -60,7 +60,16 @@ def _factory_gold(source_context, row, goal):
             matches.append(family.kind)
     if len(matches) != 1:
         _invalid("BAMF_C05_GOLD_MODALITY_AMBIGUOUS")
-    return TypedValue("Number", int(text), goal.semantic_release)
+    family = matches[0]
+    if goal.output_signature == "Number" and family == "numeric_active":
+        return TypedValue("Number", int(text), goal.semantic_release)
+    if goal.output_signature == "Boolean" and family == "binary":
+        if text not in {"FALSE", "TRUE"}:
+            _invalid("BAMF_C05_GOLD_MODALITY_UNSUPPORTED")
+        return TypedValue("Boolean", text == "TRUE", goal.semantic_release)
+    if goal.output_signature == "OperatorId" and family == "boolean_operator":
+        return TypedValue("OperatorId", text, goal.semantic_release)
+    _invalid("BAMF_C05_GOLD_MODALITY_UNSUPPORTED")
 
 
 def factory_evaluation_instrument(

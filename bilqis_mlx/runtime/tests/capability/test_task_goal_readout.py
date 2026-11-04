@@ -4,13 +4,18 @@ from dataclasses import replace
 import unittest
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.learning.atlas_readout import predict_typed
+from bilqis_mlx.learning.atlas_readout import DecisionKind, predict_typed
 from bilqis_mlx.learning.atlas_readout.decoder.tests.helpers import case
 from bilqis_mlx.runtime.task_goal_readout import (
     augment_answer_plan_for_task_goal, proposal_from_task_goal_output,
     task_goal_route_decisions,
 )
 from bilqis_mlx.runtime.cognitive_solver import NeuralRequest
+from bilqis_mlx.source_adapters.answer_choice_task_goal import (
+    lower_answer_choice_task_goal,
+)
+from bilqis_mlx.curriculum import AnswerFamily, BINARY
+from types import SimpleNamespace
 from bilqis_mlx.runtime.tests.capability.capability_retention_helpers import (
     CANDIDATE, _cases,
 )
@@ -65,6 +70,37 @@ class TaskGoalReadoutTests(unittest.TestCase):
         fake = deepcopy(output)
         with self.assertRaises(BilqisError):
             proposal_from_task_goal_output(goal, request, fake)
+
+    def test_fixed_selector_routes_only_source_visible_answer_operand(self):
+        _, _, _, memory, context, plan, semantics, parameters = self._case()
+        capability = SimpleNamespace(
+            capability_id="A.IDENTITY",
+            answer_families=(AnswerFamily("binary", BINARY),),
+        )
+        goal, binding = lower_answer_choice_task_goal(
+            {"id": "answer-choice", "capability": "A.IDENTITY", "tokens": [1, 2]},
+            semantic_release=semantics.features.semantic_release,
+            capability=capability,
+        )
+        route = task_goal_route_decisions(goal)
+        self.assertEqual(len(route), 1)
+        self.assertIs(route[0].kind, DecisionKind.OPERAND)
+        self.assertEqual(len(route[0].legal_values), 2)
+        self.assertFalse(any(item.kind is DecisionKind.OPERATOR for item in route))
+
+        plan = replace(plan, generation_binding=CANDIDATE)
+        output = predict_typed(
+            memory, context, augment_answer_plan_for_task_goal(plan, goal),
+            semantics, parameters)
+        request = NeuralRequest(
+            goal.goal_id, "Boolean", contract_digest(binding), CANDIDATE,
+            goal.allowed_operator_ids)
+        proposal = proposal_from_task_goal_output(goal, request, output)
+        node = proposal.goal.expression_or_holes.nodes[0]
+        self.assertEqual(node.operator_id, "SELECT_BOOLEAN")
+        self.assertEqual(node.candidate_operand_refs, ())
+        self.assertEqual(len(node.operands), 1)
+        self.assertIn(node.operands[0].identity, route[0].legal_values)
 
 
 if __name__ == "__main__":

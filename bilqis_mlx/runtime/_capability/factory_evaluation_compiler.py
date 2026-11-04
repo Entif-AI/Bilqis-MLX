@@ -15,6 +15,7 @@ from bilqis_mlx.semantics.context_eligibility import (
 )
 from bilqis_mlx.semantics.frame_compiler import compile_prefix_rows
 from bilqis_mlx.source_adapters.atoms.admission import public_formal_atom_context
+from bilqis_mlx.source_adapters.atoms.authority import canonical_graph_for
 
 from .capability_evaluation import _invalid
 
@@ -62,14 +63,22 @@ def compile_factory_evaluation_batch(
     source_context.release.verify_semantic_catalog(source_context.graph)
     authenticated = authenticate_bamf_candidate_feature_context(
         candidate, artifact_path)
+    execution = source_context.release.execution_plan.capability_map[
+        row["capability"]]
+    profile_parameters = (dict(execution.provider_parameters)
+                          if execution.provider_parameters else None)
+    source_graph = canonical_graph_for(
+        row.get("generator"), source_context.source_root)
     task, frontier, policy = _evaluation_context(
         authenticated.features.semantic_release,
         row["capability"], len(row["tokens"]),
     )
     ast, config = public_formal_atom_context(
-        authenticated.selection, row, source_context.graph,
+        authenticated.selection, row, source_graph,
         source_root=source_context.source_root,
         source_seed=source_seed, source_each=source_each,
+        course=source_context.release.curriculum,
+        source_profile_parameters=profile_parameters,
         task=task, frontier=frontier, policy=policy,
     )
     rows = compile_prefix_rows(
@@ -77,8 +86,9 @@ def compile_factory_evaluation_batch(
     compiled = CompiledEncoderInput(
         rows, (config,), authenticated.features, candidate.extents)
     source = SourceAtomRow(
-        authenticated.selection, row, source_context.graph,
-        Path(source_context.source_root), source_seed, source_each)
+        authenticated.selection, row, source_graph,
+        Path(source_context.source_root), source_seed, source_each,
+        source_context.release.curriculum, profile_parameters)
     batch = BamfCompiledBatch(
         compiled, (source,), authenticated.schema)
     batch.__post_init__()

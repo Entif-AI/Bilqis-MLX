@@ -4,7 +4,8 @@ from bilqis_mlx.errors import ErrorBus, SCHOOL
 STATE_SCHEMA = "bilqis.mlx.candidate-state/provisional-v1"
 TRANSACTION_SCHEMA = "bilqis.mlx.candidate-transaction/provisional-v1"
 LEGACY_STEP_PROOF_SCHEMA = "bilqis.mlx.candidate-step-proof/v1"
-STEP_PROOF_SCHEMA = "bilqis.mlx.candidate-step-proof/v2"
+PREVIOUS_STEP_PROOF_SCHEMA = "bilqis.mlx.candidate-step-proof/v2"
+STEP_PROOF_SCHEMA = "bilqis.mlx.candidate-step-proof/v3"
 DIGEST_HEX_LENGTH = 64
 TRANSACTION_ISSUER = object()
 RETAINED_STATE_ISSUER = object()

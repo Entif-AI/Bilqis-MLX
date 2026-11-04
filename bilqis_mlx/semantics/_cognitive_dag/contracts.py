@@ -128,20 +128,20 @@ class DAGNode:
                        or tuple(sorted(set(group), key=lambda ref: ref.identity))
                        != group for group in self.candidate_operand_refs)
                 or (any(ref is None for ref in self.operands)
-                    and (self.operator_id is not None
-                         or not self.candidate_operand_refs
+                    and (not self.candidate_operand_refs
                          or any(not self.candidate_operand_refs[index]
                                 for index, ref in enumerate(self.operands)
                                 if ref is None)))
                 or (self.operator_id is not None
-                    and (self.candidate_operand_refs or self.constraints))
+                    and self.candidate_operator_ids)
+                or (self.operator_id is not None
+                    and self.constraints and not any(ref is None for ref in self.operands))
                 or not isinstance(self.constraints, tuple)
                 or any(item not in (
                     "SOURCE_VISIBLE", "TYPE_COMPATIBLE", "APPLICABLE")
                     for item in self.constraints)
                 or tuple(sorted(set(self.constraints))) != self.constraints
-                or (self.operator_id is None) == (
-                    not self.candidate_operator_ids)
+                or (self.operator_id is None and not self.candidate_operator_ids)
                 or self.schema_version != DAG_NODE_SCHEMA):
             _invalid("BAMF_DAG_NODE_INVALID")
 

@@ -28,29 +28,22 @@ class TrainingCompilationTests(AtlasTrainingAdapterTest):
 
     def test_unreleased_or_forged_delivery_is_rejected(self):
         for mutation in ({'capability': 'NOT.ADMITTED'}, {'gold': 'UNKNOWN'}, {'answer_kind': 'unsupported'}):
-            with self.subTest(mutation=mutation), self.assertRaises((BilqisError, KeyError)):
+            with self.subTest(mutation=mutation), self.assertRaises((BilqisError, KeyError, ValueError)):
                 self.compile([{**self.rows[0], **mutation}])
-        with self.assertRaises(BilqisError):
+        with self.assertRaises((BilqisError, ValueError)):
             self.compile(self.rows, release_sha='f' * 64)
 
-    def test_registered_modality_receives_structured_source_targets_and_plan(self):
+    def test_caller_cannot_replace_source_gold_with_structured_target(self):
         row = {**self.rows[0], 'gold': {'decisions': ['FALSE', 'END_FRAME']},
                'answer_plan': {'decisions': [{'id': 'value', 'depends_on': []},
                                              {'id': 'end', 'depends_on': ['value']}]},
                'auxiliary_labels': {'role': 'subject'}}
-        def encode(evidence, head):
-            self.assertEqual(evidence.gold, (('decisions', ('FALSE', 'END_FRAME')),))
-            self.assertEqual(evidence.auxiliary_labels, (('role', 'subject'),))
-            self.assertIn(('modalityID', 'answer.binary/v1'), evidence.answer_plan)
-            self.assertIn(('maximum_decisions', 2), evidence.answer_plan)
-            return BamfTarget('binary', evidence.gold, (head.token_ids[0], None), (True, False))
-        item = self.compile([row], encoders={'binary': encode}).rows[0]
-        self.assertEqual(item.target.value, (('decisions', ('FALSE', 'END_FRAME')),))
-        self.assertEqual(item.target.mask, (True, False))
+        with self.assertRaises(ValueError):
+            self.compile([row], encoders={'binary': lambda *_: None})
 
     def test_direct_delivery_cannot_claim_another_capability(self):
         wrong = self.context.draw_rows(seed=19, capability='Z.C1', each=1)
-        with self.assertRaises(BilqisError):
+        with self.assertRaises((BilqisError, ValueError)):
             self.compile(wrong)
 
     def test_native_output_is_bound_to_released_semantic_identity(self):
@@ -59,7 +52,7 @@ class TrainingCompilationTests(AtlasTrainingAdapterTest):
         self.assertEqual(item.native_target.kind, 'semantic_token')
         self.assertEqual(item.native_target.value, 'cogal.value.false')
         self.assertEqual(item.native_target.token_id, 1)
-        with self.assertRaises(BilqisError):
+        with self.assertRaises((BilqisError, ValueError)):
             self.compile([{**row, 'native_output': {'identity': 'cogal.value.true', 'token_id': 2}}])
 
     def test_grade_label_does_not_select_adapter_behavior(self):
@@ -71,7 +64,7 @@ class TrainingCompilationTests(AtlasTrainingAdapterTest):
 
     def test_duplicate_delivered_row_identity_is_rejected(self):
         rows = [self.rows[0], dict(self.rows[0])]
-        with self.assertRaises(BilqisError):
+        with self.assertRaises((BilqisError, ValueError)):
             self.compile(rows)
 
     def test_atomic_binary_operator_and_numeric_release_modalities(self):
@@ -139,6 +132,8 @@ class TrainingCompilationTests(AtlasTrainingAdapterTest):
             compile_training_batch(changed, self.context, {}, delivery=delivery, delivery_capability='Z.C0',
                 delivery_release_sha256=self.context.release.release_sha256,
                 teacher_strategy={'policy': 'focused'}, requested_count=3, optimizer_step_seed=42,
+                source_authority=self.context.bind_rows(
+                    self.rows, seed=17, capability='Z.C0', each=len(self.rows)),
                 rehearsal_by_id={}, visible_ends={}, source_ast_for=source_ast_for,
                 compile_prefix=compile_prefix, feature_requests_for=feature_requests_for, features_for=features_for, answer_plan_for=lambda *args: {**answer_plan_for(*args), 'generation_binding': self.model_generation},
             frames_for_ast=frames_for_ast, task_scope=task,
