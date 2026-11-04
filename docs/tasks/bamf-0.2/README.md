@@ -22,20 +22,31 @@ First ready child candidates: A [A01.1 #396](https://github.com/Entif-AI/Bilqis-
 - Lane C: [Training and integration](https://github.com/Entif-AI/Bilqis-MLX/issues/344), branch `codex/bamf02-c-runtime`, start [C01 #347](https://github.com/Entif-AI/Bilqis-MLX/issues/347). [Launch instructions](EXECUTION_LANE_C.md).
 
 The common integration trunk is `codex/bamf-unified-base-20261028`. It is a living
-reviewed branch: every implementing issue first merges the current unified trunk
-into its assigned lane, and every completed issue returns by PR from that lane
-into unified for human sign-off. Do not merge `main` or a sibling lane directly.
-Lane C still owns shared trainer/CLI/runtime surfaces; this ownership rule prevents
-races but does not make Lane C the integration trunk. CPU source/fixture work
+reviewed branch: each independently owned issue may use its own branch/worktree;
+each final integration candidate consumes current unified before the review/merge
+gate. Multiple issue PRs per lane may coexist. Do not merge `main` or a sibling
+lane directly. Lane C still owns shared trainer/CLI/runtime surfaces; this
+ownership rule prevents races but does not make Lane C the integration trunk.
+CPU source/fixture work
 proceeds concurrently. MLX evaluation and neural updates use one serialized M3
 Ultra lane. The first durable student gate is [C16](issues/C16.md); full delivery
 is [C15](issues/C15.md).
 
 ## Flow control and parked PR discipline
 
+**Compaction recovery:** Resume the same issue and preserved branch/worktree when
+context compacts. An `ACTIVE` lane entry, checkpoint, previous worker label, or
+historical worktree is not a live exclusive lease. Inspect actual Git status,
+remote head and any concurrently writing process before declaring contention.
+No new permission or issue re-assignment is necessary when the same logical
+worker continues on unchanged state. If an actual competing writer exists,
+coordinate the shared path or use an independent issue branch; do not force-push
+or mutate the competitor's uncommitted work. See `AGENTS.md` and ADR-128.
+
 The lane is not a conveyor belt that must keep every open PR warm. The normal limit
-is **two `ACTIVE` implementation leaves per lane**, and the default preference is to
-finish the nearest-to-merge active leaf before taking another. `READY`, `WAITING`,
+is **six `ACTIVE` implementation leaves per lane** under the 2026-11-04 owner
+amendment. Prefer finishing near-to-merge leaves while allowing independent
+agents to work on other dependency-ready leaves. `READY`, `WAITING`,
 `BLOCKED` and `TURNED_IN` are not implementation WIP.
 
 Machine-readable policy and lane state live in [`flow-control/`](flow-control/).
@@ -44,8 +55,9 @@ Before branch mutation:
 1. run `python3 -B scripts/check_bamf_flow_control.py`;
 2. confirm the target leaf is represented in the correct lane file;
 3. if it is parked, verify its recorded resume trigger has actually occurred;
-4. change it to `ACTIVE` before refreshing/syncing/reviewing its branch;
-5. keep the lane at or below the normal active limit unless the lane file contains
+4. if parked, change it to `ACTIVE` after the trigger; if already `ACTIVE`,
+   a compacted continuation retains that state without another issue claim;
+5. keep the lane at or below six active leaves unless the lane file contains
    an explicit exception with reason, authority and expiry.
 
 A `WAITING` or `BLOCKED` PR is frozen. Do not merge-forward it, rebase it, rerun
@@ -57,13 +69,17 @@ dependency queues from masquerading as implementation throughput.
 ### Integration inventory and DRAIN mode
 
 ADR-126 adds a separate integration-inventory gate. ACTIVE WIP remains governed by
-ADR-124, but open BAMF implementation PRs are capped at **three total**, normally one
-current integration candidate per lane. The unified integration PR into `main`
-does not consume an implementation slot.
+ADR-124, but open BAMF implementation PRs are now capped at **twelve total**,
+up from three, by explicit owner direction on 2026-11-04. Multiple independent
+integration candidates may coexist in any lane; the former one-PR-per-lane
+restriction is retired. The unified integration PR into `main` does not consume
+an implementation slot.
 
 A completed leaf can remain on a durable branch. Before PR creation, run
-`python3 -B scripts/check_bamf_flow_control.py --live`. The live gate reconciles
-GitHub against the lane ledgers and checks PR admission.
+`python3 -B scripts/check_bamf_flow_control.py --live`. The local/operator live
+gate reconciles GitHub against lane ledgers and checks PR admission. Hosted CI
+validates static policy and tests only so independently opened PRs cannot make
+otherwise valid CI runs fail because of ledger update timing.
 
 When open implementation inventory is above the ceiling, the program is in
 **DRAIN** mode. No new implementation PRs are admitted. The existing implementation
@@ -101,9 +117,10 @@ A non-grandfathered open `WAITING` or `BLOCKED` PR requires an explicit
 
 ## Turn-in
 
-Keep one writer per lane. At issue start, sync the current unified trunk into the
-lane and record the consumed unified SHA. Push coherent commits, record exact proof
-on the issue, then open a PR from the lane branch into
+Keep one mutating writer per branch/shared path, **not per lane or issue across
+compactions**. At final turn-in, sync the current unified trunk into the issue
+branch and record the consumed unified SHA. Push coherent commits, record exact proof
+on the issue, then open a PR from the issue branch into
 `codex/bamf-unified-base-20261028` and add the issue closing keyword to the PR
 Development section. Human sign-off is required before that PR merges. Main merge
 and a durable live student launch remain operator actions. Context is a cache; the

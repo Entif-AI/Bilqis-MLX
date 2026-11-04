@@ -2797,3 +2797,45 @@ execution guide.
 
 **Status:** Accepted as the controlling BAMF-0.2 EGM convergence and review-episode
 policy.
+
+## ADR-128 | 2026-11-04 | Expand independent BAMF throughput and distinguish writer continuity from locks
+
+**Status:** Accepted by direct owner instruction on 2026-11-04. Amends the
+concurrency ceilings in ADR-124 and ADR-126; leaves their dependency, review,
+source-gold, actual mutation safety and merge-authority requirements intact.
+
+**Problem:** The original three-open-PR cap and one-candidate-per-lane expectation
+serialized independent agents. Hosted CI also fetched mutable global GitHub PR
+inventory and failed unrelated change sets when its live count/ledger timing
+diverged. Separately, compacted agents sometimes treated the prior agent's
+`ACTIVE` issue, worktree, branch or checkpoint as an exclusive lock held by a
+different agent, declining to resume their own in-flight issue.
+
+**Decision:** Permit up to **twelve** open BAMF implementation PRs overall, with
+no per-lane PR cap; permit up to **six** simultaneous `ACTIVE` items in each lane.
+Within those bounds, independent issue-scoped branches/worktrees and agent
+writers can make progress concurrently. Hosted quality CI checks the static
+flow-control schema/state and regression tests but does not perform a live
+GitHub PR-inventory reconciliation. The operator still performs the `--live`
+inventory check at actual PR admission and resolves tracked-state drift then.
+
+**Compaction continuity:** A context compaction, handoff, unchanged `ACTIVE`
+ledger item, previous agent identity, checkpoint comment or recorded worktree
+does **not** grant another actor exclusive ownership of an issue. Recover on
+the same preserved branch/worktree; inspect working-tree changes, local HEAD,
+remote head and any actual concurrent writer before changing shared paths.
+When a successor really is continuing the same work epoch with unchanged Git
+state, it may continue without reacquiring the issue or inventing a lease.
+Checkpoint comments and WIP ledgers are not atomic locks. Independent branches
+on the same issue may exist, but they must not write to the same branch or
+shared file concurrently without explicit coordination. An observed competing
+process or unexpected remote mutation requires reconciliation before writing;
+the mere existence of another worktree or previous agent name does not.
+
+**Preserved boundaries:** No forced pushes; no overwrite of another writer's
+uncommitted work; no self-merge, bypass of scoped verification/EGM, or automatic
+neural-training/optimizer/checkpoint mutation. PR-count and WIP expansions are
+throughput permissions, not proof that a specific candidate is ready to merge.
+
+**Implementation:** `AGENTS.md`, `docs/tasks/bamf-0.2/README.md`, the
+flow-control policy, hosted `.github/workflows/quality.yml`, and focused tests.

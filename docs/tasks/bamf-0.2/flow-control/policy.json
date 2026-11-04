@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-policy/v2",
   "version": "2.0.0",
   "effective_date": "2026-11-02",
-  "normal_active_limit_per_lane": 2,
+  "normal_active_limit_per_lane": 6,
   "states": {
     "ACTIVE": {
       "counts_as_wip": true,
@@ -31,7 +31,7 @@
     }
   },
   "open_pr_inventory": {
-    "normal_limit_total": 3,
+    "normal_limit_total": 12,
     "unified_branch": "codex/bamf-unified-base-20261028",
     "drain_epoch_started_at": "2026-11-02T21:15:00Z",
     "grandfathered_prs": [],

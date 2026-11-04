@@ -41,12 +41,9 @@ jobs:
           esac
           python3 -B scripts/check_module_size.py --changed-from "$BASE_REF"
           python3 -B scripts/quality/check_governance_integrity.py --base-ref "$BASE_REF"
-      - name: Enforce BAMF lane flow control and live PR inventory
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
+      - name: Check BAMF flow-control policy and regression tests
         run: |
-          python3 -B scripts/check_bamf_flow_control.py --live
+          python3 -B scripts/check_bamf_flow_control.py
           python3 -B -m unittest \
             scripts.tests.test_bamf_flow_control \
             scripts.tests.test_bamf_flow_control_live
