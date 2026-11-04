@@ -23,7 +23,7 @@ from .atlas_training_authority import rederive_training_authority
 from .atlas_training_contracts import (
     BamfModelInput, BamfTarget, BamfTargetEvidence, BamfDeliveryProvenance,
     BamfTrainingRow, BamfTrainingBatch, PaddedMicrobatch,
-    _invalid, _freeze, require_current_release,
+    _invalid, _freeze, _issue_training_batch, require_current_release,
 )
 from .atlas_training_delivery import (
     pad_microbatches, attach_auxiliaries, execute_with_backend,
@@ -286,4 +286,6 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
         provenance = BamfDeliveryProvenance(identity, source_id, capability, operation_id,
             _freeze(teacher_strategy), requested_count, len(delivered_rows), rehearsal, optimizer_step_seed, family, episode)
         result.append(BamfTrainingRow(BamfModelInput(prefix, features, eligibility_digest, plan), target, native_target, provenance))
-    return BamfTrainingBatch(release.release_sha256, generation_binding, content_digest(delivered_rows), tuple(result))
+    return _issue_training_batch(
+        release.release_sha256, generation_binding, content_digest(delivered_rows),
+        delivery_capability, tuple(result))

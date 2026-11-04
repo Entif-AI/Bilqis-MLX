@@ -120,6 +120,7 @@ def _forward_participation(params, batch, plan, output, producer, accepted_cache
         tuple(sorted(dense)),
         (() if producer._motif_read is None else (producer._motif_read,)),
         batch.compiled.features.role_map,
+        batch.training_authority,
     )
 
 
@@ -180,6 +181,9 @@ def _forward_bamf_impl(
         params, spec=spec, extents=extents)
     if answer_plan.generation_binding != generation:
         _invalid("B11_GENERATION_BINDING_MISMATCH")
+    if (compiled_batch.training_authority is not None
+            and compiled_batch.training_authority.generation_binding != generation):
+        _invalid("B11_TRAINING_AUTHORITY_GENERATION_MISMATCH")
 
     producer, accepted_cache = _source_producer(
         params, compiled_batch, generation, cache)
