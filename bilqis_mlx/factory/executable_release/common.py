@@ -48,5 +48,3 @@ def _tuples(value):
     if isinstance(value, dict):
         return {key: _tuples(item) for key, item in value.items()}
     return value
-
-

@@ -52,4 +52,3 @@ def answer_heads_from_executable_release(
             "implementation_sha256": modality.implementation_sha256,
         }
     return result
-

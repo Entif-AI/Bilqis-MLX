@@ -181,5 +181,3 @@ class ExecutableFactoryRelease:
             raise ValueError("FACTORY_EXECUTABLE_RELEASE_MANIFEST_CONTENT_DRIFT")
         release.verify()
         return release
-
-

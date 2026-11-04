@@ -89,5 +89,3 @@ def _decode_verification(value: dict) -> ExecutableVerificationReceipt:
             VerifiedAssessmentSeal(**_tuples(item))
             for item in value["assessments"]),
     )
-
-

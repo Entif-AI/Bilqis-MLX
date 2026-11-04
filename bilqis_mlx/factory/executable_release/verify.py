@@ -149,5 +149,3 @@ def _verify_release_lineage(release: ExecutableFactoryRelease) -> None:
         transition.semantic_geometry != SemanticGeometryChange.INCOMPATIBLE.value,
         _ReleaseError.LINEAGE_DRIFT,
     )
-
-

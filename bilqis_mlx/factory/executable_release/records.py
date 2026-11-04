@@ -161,5 +161,3 @@ class ExecutableAdmissionReceipt:
                 or self.optimizer_step > optimizer_step
                 or (self.optimizer_step == optimizer_step and self.student_sha256 != student_sha256)):
             raise ValueError("FACTORY_EXECUTABLE_ADMISSION_BASELINE_DRIFT")
-
-
