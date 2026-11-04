@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "9bf47289e9ed0a64d275b31c3a7de42c55a8b83e",
-  "updated_at": "2026-11-03T20:05:00Z",
+  "observed_unified": "4f5f432647fb113fa8786ae5f03f57b86d512105",
+  "updated_at": "2026-11-04T16:39:00Z",
   "exception": null,
   "items": [
     {
@@ -93,10 +93,10 @@
     {
       "issue": 713,
       "pr": 808,
-      "state": "TURNED_IN",
-      "head_sha": "dc57690b",
+      "state": "ACTIVE",
+      "head_sha": "ccec0e824e549ce5225a569cd5a6f49df5a365c9",
       "preserved_branch": "codex/remediation-713-c02-authority-20261103",
-      "summary": "C02.1 remediation delivered as ready PR #808: the canonical A06 owner holds feature selection authority at the C02.1 model-input boundary, merged onto current unified.",
+      "summary": "Project owner selected PR #808 for conflict reconciliation onto reviewed unified 4f5f432647fb113fa8786ae5f03f57b86d512105 before fresh exact-head validation.",
       "resume_trigger": null
     }
   ]
