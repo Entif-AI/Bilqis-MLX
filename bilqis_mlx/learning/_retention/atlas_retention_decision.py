@@ -136,39 +136,14 @@ class ParsedCandidateRetentionDecision:
 def decide_candidate_retention(
         *, parent_solver, candidate_solver, target_capability, policy, cohorts,
         parent_state, candidate_state) -> CandidateRetentionDecision:
-    """Run C05's evaluator using custody-derived candidate-state identities.
+    """Fail closed until Factory/source owns the complete C05 screen.
 
-    A caller cannot issue a live decision using primitive measurements or by
-    retargeting an existing PairedRetentionEvidence value.
+    C05 currently provides owner-run evaluation, but these arguments still
+    include caller-supplied solvers, policy and cohorts. Their self-consistency
+    cannot establish source provenance. Only an integrated Factory/backend
+    evaluator may eventually authorize live B13 acceptance.
     """
-    from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
-    from bilqis_mlx.learning.atlas_candidate import CandidateState
-    from bilqis_mlx.runtime.capability_retention import (
-        DecisionStatus, evaluate_retention_candidate,
+    ErrorBus.Raise(
+        SCHOOL.MODEL_TOPOLOGY.INVALID,
+        reason="BAMF_C05_SOURCE_OWNER_REQUIRED",
     )
-
-    if type(parent_state) is not CandidateState or type(candidate_state) is not CandidateState:
-        _invalid()
-    parent_id = candidate_identity_digest(parent_state)
-    candidate_id = candidate_identity_digest(candidate_state)
-    result = evaluate_retention_candidate(
-        parent_solver, candidate_solver, target_capability, policy, cohorts,
-        parent_id, candidate_id,
-    )
-    if (result.parent_generation != parent_id
-            or result.candidate_generation != candidate_id):
-        _invalid()
-    decision = object.__new__(CandidateRetentionDecision)
-    for name, value in (
-            ("decision", ACCEPTED_DECISION
-             if result.status is DecisionStatus.ELIGIBLE else REJECTED_DECISION),
-            ("reason", result.reason),
-            ("parent_generation", parent_id),
-            ("candidate_generation", candidate_id),
-            ("evidence_sha256", result.evidence_sha256),
-            ("policy_sha256", result.policy_sha256),
-            ("schema_version", DECISION_SCHEMA),
-            ("_issuance", _DECISION_ISSUER)):
-        object.__setattr__(decision, name, value)
-    decision.__post_init__()
-    return decision

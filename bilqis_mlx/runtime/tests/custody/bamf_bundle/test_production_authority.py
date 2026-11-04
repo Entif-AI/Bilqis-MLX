@@ -170,6 +170,20 @@ class ProductionAuthorityTests(unittest.TestCase):
                 whole_school_regression=False, frontier_measured=True,
                 fragile_losses=0, exceeded=False)
 
+    def test_caller_selected_c05_screen_cannot_issue_live_authority(self):
+        from bilqis_mlx.runtime.tests.capability.capability_retention_helpers import (
+            _screen_inputs,
+        )
+        screen = _screen_inputs()
+        with self.assertRaises(BilqisError) as failure:
+            decide_candidate_retention(
+                parent_solver=screen[0], candidate_solver=screen[1],
+                target_capability=screen[2], policy=screen[3], cohorts=screen[4],
+                parent_state=parent_state(),
+                candidate_state=accepted_state(parent_state()))
+        self.assertEqual(failure.exception.context["reason"],
+                         "BAMF_C05_SOURCE_OWNER_REQUIRED")
+
     def test_acceptance_requires_an_accepted_decision(self):
         source = candidate(parent_state())
         rejected = retention_decision(

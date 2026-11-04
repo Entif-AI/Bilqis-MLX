@@ -1,9 +1,7 @@
-"""B13.2 cold-resume continuation witnesses through the published pointer path.
+"""Disposable B13.2 cold-resume and uninterrupted numerical diagnostics.
 
-The witness starts from a source-qualified accepted generation published
-through the real pointer and lock path, cold resumes it in a clean process,
-executes the next controlled optimizer step and publishes the successor
-generation. Synthetic direct save-load paths cannot satisfy acceptance.
+The synthetic objective verifies B12/AdamW persistence and B13 pointer/lock
+behavior. It is not source-qualified Factory or live B11 trainer acceptance.
 """
 from __future__ import annotations
 
@@ -23,6 +21,7 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.bamf_bundle import (
     load_bamf_generation, publish_bamf_generation, save_bamf_bundle,
 )
+from bilqis_mlx.runtime.bamf_bundle import admission
 
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.cold_resume_probe import (
     continue_generation, retained_digest,
@@ -52,6 +51,29 @@ class BamfColdResumeContinuationTests(unittest.TestCase):
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             return publish_candidate(self.run, source)
 
+    @staticmethod
+    def in_memory_student(source, pointer):
+        """Keep the just-published fixture in memory without loading it back."""
+        from dataclasses import replace
+        from bilqis_mlx.learning.atlas_candidate import CandidateCustodyIdentity
+        from bilqis_mlx.runtime.bamf_bundle.records import (
+            CompleteStudent, sidecar_records,
+        )
+
+        records = sidecar_records(source)
+        retained = replace(
+            source.retained_state,
+            custody=CandidateCustodyIdentity(
+                source.run_id, source.generation, pointer["manifest_sha256"],
+                source.topology.digest, source.extents.digest))
+        return CompleteStudent(
+            source.run_id, source.generation, source.parent_manifest_sha256,
+            source.implementation_sha256, source.topology, source.extents,
+            retained, source.optimizer_hyperparameters, source.provenance,
+            source.semantic_abi, source.compiler_features, source.correction_frontier,
+            source.teacher_state, source.evaluation_contract, source.transition,
+            tuple(records["outbox"]))
+
     def probe(self, run=None):
         """Cold resume in a clean process and return its receipt."""
         target = Path(run or self.run)
@@ -75,7 +97,9 @@ class BamfColdResumeContinuationTests(unittest.TestCase):
         self.assertEqual(receipt["successor_optimizer_step"],
                          initial.optimizer_step + 1)
         counts = receipt["successor_update_counts"]["identity.bank.0"]
-        self.assertEqual(counts, [3, 4])
+        # The disposable execution fixture reports row 0 only. Row 1 must
+        # not advance merely because B01 declares it in the same tensor.
+        self.assertEqual(counts, [3, 3])
         self.assertEqual(receipt["published"]["generation"], 1)
         self.assertEqual(
             receipt["published"]["parent_manifest_sha256"], first["manifest_sha256"])
@@ -95,7 +119,7 @@ class BamfColdResumeContinuationTests(unittest.TestCase):
         self.assertEqual(
             [int(value) for value in
              np.asarray(student.retained_state.optimizer.update_counts["identity.bank.0"])],
-            [3, 4])
+            [3, 3])
 
     def test_synthetic_direct_save_load_cannot_satisfy_acceptance(self):
         initial = parent_state()
@@ -114,9 +138,24 @@ class BamfColdResumeContinuationTests(unittest.TestCase):
         initial = parent_state()
         self.publish(candidate(initial))
         second = self.root / "uninterrupted"
+        source = candidate(initial)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            publish_candidate(second, candidate(initial))
-        uninterrupted = continue_generation(second)
+            held_pointer = publish_candidate(second, source)
+            held = self.in_memory_student(source, held_pointer)
+        with patch(
+                "bilqis_mlx.runtime.tests.custody.bamf_bundle.cold_resume_probe."
+                "load_accepted_generation",
+                side_effect=AssertionError("uninterrupted arm reloaded")), \
+                patch(
+                    "bilqis_mlx.runtime.bamf_bundle.admission.load_accepted_generation",
+                    side_effect=AssertionError("uninterrupted arm reloaded")), \
+                patch(
+                    "bilqis_mlx.runtime.bamf_bundle.load_bamf_generation",
+                    side_effect=AssertionError("uninterrupted arm reloaded")):
+            with shape_patch():
+                admission._published_in_memory_identity(second, held)
+            uninterrupted = continue_generation(
+                second, student=held, pointer=held_pointer)
         cold = self.probe()
         self.assertEqual(cold["published"]["manifest_sha256"],
                          uninterrupted["published"]["manifest_sha256"])
@@ -129,6 +168,92 @@ class BamfColdResumeContinuationTests(unittest.TestCase):
                          uninterrupted["decision"]["decision"])
         self.assertEqual(cold["decision"]["decision_sha256"],
                          uninterrupted["decision"]["decision_sha256"])
+
+    def test_live_loss_bearing_path_requires_execution_owner(self):
+        self.publish(candidate(parent_state()))
+        with shape_patch():
+            with self.assertRaises(BilqisError) as failure:
+                admission.admit_candidate_step(
+                    self.run, {}, loss_bearing_target=True,
+                    teacher_hparams=None, decay={}, max_norm=1.)
+        self.assertEqual(failure.exception.context["reason"],
+                         "B11_EXECUTION_AUTHORITY_REQUIRED")
+
+    def test_factory_teacher_source_next_visit_survives_cold_owner_readback(self):
+        """Check persisted next-visit identity with disposable source evidence."""
+        import copy
+        import random
+        from dataclasses import asdict
+
+        from bilqis_mlx.compatibility import historical_teacher_policy as engine
+        from bilqis_mlx.curriculum.scheduler import next_capability, start_new
+        from bilqis_mlx.factory.schedule import schedule_program_from_executable_release
+        from bilqis_mlx.factory.tests.test_teaching import closed_source_fixture
+        from bilqis_mlx.learning.champions import Checkpoint
+        from bilqis_mlx.learning.teacher_strategy_population import BAMF_SUCCESSOR_SELECTION
+        from bilqis_mlx.learning.tests.test_teacher_vnext_replay import _teacher
+        from bilqis_mlx.runtime import admission as factory_admission, state
+        from bilqis_mlx.runtime.source_execution import SourceExecutionContext
+        from bilqis_mlx.runtime.teacher_policy_selection import select_visit_policy
+
+        _, graph, sources, answers, release = closed_source_fixture()
+        release_file = factory_admission._persist_executable_factory_release(
+            self.root, release)
+        program = schedule_program_from_executable_release(release)
+        school = start_new(
+            program, Checkpoint("a" * 64, "bundles/fixture", 0, True))
+        teacher, _, _ = _teacher()
+        teacher["selection_contract"] = BAMF_SUCCESSOR_SELECTION
+        teacher["events"] = 100
+        teacher["global_stats"] = {
+            key: {"trials": 10, "reward_sum": index, "reward_ema": index}
+            for index, key in enumerate(teacher["strategies"])
+        }
+        teacher["grade_stats"] = {}
+        receipt = {
+            "run_id": "next-visit-fixture",
+            "generation": 7,
+            "school": asdict(school),
+            "teacher": teacher,
+            "factory_release_sha256": release.release_sha256,
+            "factory_release_file": release_file,
+            "curriculum_mode": "fixture",
+            "numeric_maximum": 7,
+        }
+
+        def evidence(active_release, active_receipt, active_teacher):
+            active_program = schedule_program_from_executable_release(active_release)
+            active_school = state._state_from_json(
+                active_receipt["school"], active_program)
+            capability = next_capability(active_school)
+            self.assertIsNotNone(capability)
+            seed = state._seed(active_receipt, capability=capability)
+            context = SourceExecutionContext(
+                active_release, graph, None, sources, answers)
+            rows = context.draw_rows(seed=seed, capability=capability, each=2)
+            policy_key, policy, metadata = select_visit_policy(
+                engine, active_teacher, capability, active_school,
+                random.Random(seed), None,
+                f"{active_receipt['curriculum_mode']}/{active_receipt['numeric_maximum']}",
+                None, capability.split(".", 1)[0],
+                len(active_program.grades[0].capabilities))
+            return {
+                "release": active_release.release_sha256,
+                "capability": capability,
+                "seed": seed,
+                "rows": tuple(row["id"] for row in rows),
+                "policy_key": policy_key,
+                "policy": policy,
+                "selection_reason": metadata["selection_reason"],
+            }
+
+        uninterrupted = evidence(release, copy.deepcopy(receipt), copy.deepcopy(teacher))
+        cold_receipt = json.loads(json.dumps(receipt))
+        cold_release = factory_admission._read_executable_factory_release_artifact(
+            self.root, cold_receipt)
+        self.assertIsNot(cold_release, release)
+        cold = evidence(cold_release, cold_receipt, json.loads(json.dumps(teacher)))
+        self.assertEqual(cold, uninterrupted)
 
     def test_cold_resume_refuses_a_generation_without_published_custody(self):
         process = subprocess.run(

@@ -1,11 +1,9 @@
-"""Clean-process cold-resume probe used by the B13.2 continuation witness.
+"""Disposable B13.2 numerical cold-resume diagnostic.
 
-The probe owns no production authority. It loads the published accepted
-generation through the production custody path, executes the next optimizer
-step through the production participation binder, measures the retention
-evidence, asks the retention decision owner to decide, and publishes the
-successor generation through the production admission path. The parent test
-compares the cold-resumed successor with an uninterrupted continuation.
+The probe owns no production training authority. The synthetic quadratic
+objective and test-issued B12 execution provenance exercise retained AdamW and
+B13 custody, but do not qualify a Factory/teacher visit. Loss-bearing live
+admission remains blocked until the B11.2 execution owner is available.
 """
 from __future__ import annotations
 
@@ -17,16 +15,21 @@ from pathlib import Path
 import mlx.core as mx
 import numpy as np
 
-from bilqis_mlx.learning.atlas_candidate import resolve_candidate
-from bilqis_mlx.learning.atlas_retention_decision import decide_candidate_retention
+from bilqis_mlx.learning.atlas_candidate import (
+    begin_candidate, candidate_step, resolve_candidate,
+)
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters
 from bilqis_mlx.runtime.bamf_bundle.admission import (
-    accept_and_publish, admit_candidate_step, derive_successor_bundle,
-    load_accepted_generation,
+    accept_and_publish, derive_successor_bundle, load_accepted_generation,
 )
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
+from bilqis_mlx.learning._retention.tests.execution_fixtures import (
+    execution_provenance,
+)
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
+    retention_decision, shape_patch,
+)
 
 # The probe target sits below the published parameters so the first retained
 # step, with the retained optimizer moments, reduces the measured probe loss.
@@ -70,17 +73,19 @@ def probe_gradients(parameters, target) -> dict:
             for name, value in parameters.items()}
 
 
-def continue_generation(run) -> dict:
-    """Continue the published generation once and publish the successor.
+def continue_generation(run, *, student=None, pointer=None) -> dict:
+    """Run one disposable controlled update from in-memory or cold custody.
 
-    The same function serves the uninterrupted continuation and the clean
-    process cold resume, so both run identical production semantics.
+    Supplying a loaded student is the uninterrupted arm: it does not reload
+    the accepted state during continuation. The subprocess arm cold-loads it.
     """
     run = Path(run)
     pointer_path = run / "bamf-state.json"
-    pointer = json.loads(pointer_path.read_text())
+    if pointer is None:
+        pointer = json.loads(pointer_path.read_text())
     with shape_patch():
-        student = load_accepted_generation(run)
+        if student is None:
+            student = load_accepted_generation(run)
         resumed = {
             "generation": student.generation,
             "manifest_sha256": pointer["manifest_sha256"],
@@ -92,24 +97,22 @@ def continue_generation(run) -> dict:
         parameters = student.retained_state.optimizer.parameters
         target = probe_target(parameters)
         loss_before = probe_loss(parameters, target)
-        transaction = admit_candidate_step(
-            run, probe_gradients(parameters, target),
-            motif_reads=(), loss_bearing_target=True,
-            teacher_hparams=AdamWHyperparameters(
-                LEARNING_RATE, (.9, .95), 1e-8, .01),
-            decay={name: True for name in names}, max_norm=1.)
+        transaction = begin_candidate(student.retained_state)
+        transaction = candidate_step(
+            transaction, probe_gradients(parameters, target),
+            execution_provenance(
+                transaction.parent, rows=(0,),
+                candidate_step=transaction.update_steps + 1),
+            AdamWHyperparameters(LEARNING_RATE, (.9, .95), 1e-8, .01),
+            decay={name: True for name in names},
+            loss_bearing=True, max_norm=1.)
         accepted = resolve_candidate(transaction, accepted=True)
         loss_after = probe_loss(accepted.optimizer.parameters, target)
         gain = loss_before - loss_after
         # Disposable numerical probe only: it is not a Factory/teacher screen.
-        from bilqis_mlx.runtime.tests.capability.capability_retention_helpers import (
-            _screen_inputs,
-        )
-        screen = _screen_inputs(protected_loss=2 if gain > 0.0 else 3)
-        decision = decide_candidate_retention(
-            parent_solver=screen[0], candidate_solver=screen[1],
-            target_capability=screen[2], policy=screen[3], cohorts=screen[4],
-            parent_state=student.retained_state, candidate_state=accepted)
+        decision = retention_decision(
+            accepted=gain > 0.0,
+            parent=student.retained_state, retained=accepted)
         if not decision.accepted:
             raise ValueError(
                 f"COLD_RESUME_CONTINUATION_REJECTED before={loss_before} after={loss_after}")

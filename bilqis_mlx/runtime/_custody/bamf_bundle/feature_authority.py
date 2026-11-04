@@ -25,7 +25,7 @@ from .codec import load_bamf_bundle
 from .publication import (
     ACCEPTANCE_DIR, _pointer_lock, _read_pointer,
 )
-from .records import canonical, invalid, sha
+from .records import BAMF_POINTER_SCHEMA, canonical, invalid, sha
 
 RECEIPT_SCHEMA = "bilqis.mlx.bamf-accepted-generation-feature-receipt/v1"
 FEATURE_SOURCE_KEYS = frozenset({
@@ -159,7 +159,9 @@ def _accepted_binding(run_dir: Path, pointer: dict, student) -> AcceptedCandidat
         binding = AcceptedCandidateBinding.from_record(record)
     except (UnicodeDecodeError, json.JSONDecodeError, BilqisError):
         invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
-    if (binding.schema_version != ACCEPTANCE_SCHEMA
+    if (pointer.get("schema") != BAMF_POINTER_SCHEMA
+            or binding.schema_version != ACCEPTANCE_SCHEMA
+            or binding.digest != pointer.get("acceptance_sha256")
             or binding.run_id != pointer["run_id"]
             or binding.generation != pointer["generation"]
             or binding.feature_sha256 != student.extents.factor_map_digest

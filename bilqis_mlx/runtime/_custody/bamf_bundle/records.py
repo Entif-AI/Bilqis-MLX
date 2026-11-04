@@ -14,7 +14,8 @@ from .motif_codec import snapshot_from_record, snapshot_to_record
 from .sidecar_contracts import validate_identity_sidecars
 
 BAMF_BUNDLE_SCHEMA = "bilqis.mlx.bamf-generation-bundle/v2"
-BAMF_POINTER_SCHEMA = "bilqis.mlx.bamf-generation-pointer/v1"
+LEGACY_BAMF_POINTER_SCHEMA = "bilqis.mlx.bamf-generation-pointer/v1"
+BAMF_POINTER_SCHEMA = "bilqis.mlx.bamf-generation-pointer/v2"
 TRANSITION_SCHEMA = "bilqis.mlx.bamf-generation-transition/v1"
 SIDECARS = MappingProxyType({
     "semantic_abi": "semantic-abi.json",

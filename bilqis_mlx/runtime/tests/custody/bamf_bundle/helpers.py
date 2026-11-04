@@ -171,16 +171,16 @@ def shape_patch():
 
 
 def retention_decision(*, accepted=True, parent=None, retained=None) -> object:
-    """Run the C05 owner screen on disposable, explicit fixture solvers."""
+    """Issue a test-only token from the unshipped disposable C05 harness."""
     from bilqis_mlx.runtime.tests.capability.capability_retention_helpers import (
         _screen_inputs,
     )
+    from tests.bamf_disposable_retention import issue_disposable_screen
     screen = _screen_inputs(protected_loss=2 if accepted else 3)
-    return decide_candidate_retention(
-        parent_solver=screen[0], candidate_solver=screen[1],
-        target_capability=screen[2], policy=screen[3], cohorts=screen[4],
-        parent_state=parent if parent is not None else parent_state(),
-        candidate_state=retained if retained is not None else parent_state(),
+    return issue_disposable_screen(
+        screen,
+        parent if parent is not None else parent_state(),
+        retained if retained is not None else parent_state(),
     )
 
 

@@ -10,13 +10,16 @@ import tempfile
 import uuid
 from pathlib import Path
 
-from bilqis_mlx.data_plane import DataPlaneError, data_plane
+from bilqis_mlx.data_plane import (
+    DataPlaneError, SHA256_HEX_LENGTH, data_plane,
+)
 from bilqis_mlx.learning.atlas_acceptance import (
     ACCEPTANCE_SCHEMA, AcceptedCandidateBinding, candidate_identity_digest,
 )
 from .codec import load_bamf_bundle, save_bamf_bundle, validate_bamf_bundle_custody
 from .records import (
-    BAMF_POINTER_SCHEMA, BamfBundleCandidate, CompleteStudent, canonical, invalid, sha,
+    BAMF_POINTER_SCHEMA, LEGACY_BAMF_POINTER_SCHEMA,
+    BamfBundleCandidate, CompleteStudent, canonical, invalid, sha,
 )
 
 ACCEPTANCE_DIR = "bamf-acceptance"
@@ -64,10 +67,18 @@ def _read_pointer(path: Path) -> dict | None:
         invalid()
     bundle_value = pointer.get("bundle") if isinstance(pointer, dict) else None
     bundle = Path(bundle_value) if isinstance(bundle_value, str) else Path()
-    expected = {"schema", "run_id", "generation", "parent_manifest_sha256",
-                "bundle", "manifest_sha256"}
+    base_fields = {"schema", "run_id", "generation",
+                   "parent_manifest_sha256", "bundle", "manifest_sha256"}
+    schema = pointer.get("schema") if isinstance(pointer, dict) else None
+    expected = (base_fields | {"acceptance_sha256"}
+                if schema == BAMF_POINTER_SCHEMA else base_fields)
     if (not isinstance(pointer, dict) or set(pointer) != expected
-            or pointer.get("schema") != BAMF_POINTER_SCHEMA
+            or schema not in {BAMF_POINTER_SCHEMA, LEGACY_BAMF_POINTER_SCHEMA}
+            or (schema == BAMF_POINTER_SCHEMA
+                and (not isinstance(pointer.get("acceptance_sha256"), str)
+                     or len(pointer["acceptance_sha256"]) != SHA256_HEX_LENGTH
+                     or any(c not in "0123456789abcdef"
+                            for c in pointer["acceptance_sha256"])))
             or not isinstance(pointer.get("run_id"), str) or not pointer["run_id"]
             or type(pointer.get("generation")) is not int or bundle.is_absolute()
             or bundle_value != f"bamf-bundles/{pointer.get('manifest_sha256')}"
@@ -278,7 +289,9 @@ def publish_bamf_generation(run_dir: Path, candidate: BamfBundleCandidate, *,
             if current is not None and current["generation"] == candidate.generation:
                 if (current["run_id"] != candidate.run_id
                         or current["manifest_sha256"] != digest
-                        or current["parent_manifest_sha256"] != candidate.parent_manifest_sha256):
+                        or current["parent_manifest_sha256"] != candidate.parent_manifest_sha256
+                        or current["schema"] != BAMF_POINTER_SCHEMA
+                        or current["acceptance_sha256"] != accepted.digest):
                     invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
                 shutil.rmtree(stage)
                 student = load_bamf_bundle(
@@ -304,7 +317,8 @@ def publish_bamf_generation(run_dir: Path, candidate: BamfBundleCandidate, *,
                 "schema": BAMF_POINTER_SCHEMA, "run_id": candidate.run_id,
                 "generation": candidate.generation,
                 "parent_manifest_sha256": candidate.parent_manifest_sha256,
-                "bundle": str(target.relative_to(run_dir)), "manifest_sha256": digest,
+                "bundle": str(target.relative_to(run_dir)),
+                "manifest_sha256": digest, "acceptance_sha256": accepted.digest,
             }
             _atomic_pointer(pointer_path, pointer)
             student = load_bamf_bundle(target, expected_manifest_sha256=digest)

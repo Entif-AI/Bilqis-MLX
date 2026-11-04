@@ -23,7 +23,11 @@ from bilqis_mlx.learning.atlas_retention_decision import (
     LEGACY_DECISION_SCHEMA, CandidateRetentionDecision, decide_candidate_retention,
 )
 from bilqis_mlx.runtime.bamf_bundle import (
-    publish_bamf_generation, read_accepted_generation_feature_receipt,
+    publish_bamf_generation, load_bamf_generation,
+    read_accepted_generation_feature_receipt,
+)
+from bilqis_mlx.runtime.bamf_bundle.records import (
+    LEGACY_BAMF_POINTER_SCHEMA,
 )
 
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
@@ -124,7 +128,7 @@ class GenerationAcceptanceProvenanceTests(unittest.TestCase):
         with self.assertRaises(BilqisError) as failure:
             self.publish(source, acceptance=altered)
         self.assertEqual(failure.exception.context["reason"],
-                         "BAMF_GENERATION_ACCEPTANCE_DRIFT")
+                         "DATA_PLANE_BUNDLE_IDENTITY_CONFLICT")
         self.assertEqual(json.loads((self.run / "bamf-state.json").read_text()), first)
 
     def test_cold_readback_refuses_resigned_foreign_step_proof(self):
@@ -149,6 +153,49 @@ class GenerationAcceptanceProvenanceTests(unittest.TestCase):
                     self.run / "bamf-state.json", "/artifact")
         self.assertEqual(failure.exception.context["reason"],
                          "BAMF_GENERATION_ACCEPTANCE_DRIFT")
+
+    def test_cold_readback_refuses_rehashed_retention_policy(self):
+        features = source_features()
+        source = feature_bound(candidate(parent_state()), features)
+        self.publish(source, acceptance=acceptance(source))
+        path = self.run / "bamf-acceptance" / f"{json_manifest_sha(self.run)}.json"
+        record = json.loads(path.read_text())
+        record["policy_sha256"] = "0" * 64
+        record["binding_sha256"] = hashlib.sha256(canonical({
+            key: value for key, value in record.items()
+            if key != "binding_sha256"
+        })).hexdigest()
+        path.write_text(json.dumps(record))
+        with shape_patch(), \
+                patch("bilqis_mlx.runtime.bamf_bundle.feature_authority."
+                      "build_feature_manifest", return_value=features), \
+                patch("bilqis_mlx.runtime.bamf_bundle.feature_authority."
+                      "load_pinned_atlas_snapshot", side_effect=lambda selection: selection):
+            with self.assertRaises(BilqisError) as failure:
+                read_accepted_generation_feature_receipt(
+                    self.run / "bamf-state.json", "/artifact")
+        self.assertEqual(failure.exception.context["reason"],
+                         "BAMF_GENERATION_ACCEPTANCE_DRIFT")
+
+    def test_historical_pointer_can_cold_load_without_minting_new_authority(self):
+        features = source_features()
+        source = feature_bound(candidate(parent_state()), features)
+        self.publish(source, acceptance=acceptance(source))
+        pointer_path = self.run / "bamf-state.json"
+        pointer = json.loads(pointer_path.read_text())
+        pointer["schema"] = LEGACY_BAMF_POINTER_SCHEMA
+        pointer.pop("acceptance_sha256")
+        pointer_path.write_text(json.dumps(pointer))
+        with shape_patch():
+            self.assertEqual(
+                load_bamf_generation(pointer_path).run_id, source.run_id)
+        with shape_patch(), \
+                patch("bilqis_mlx.runtime.bamf_bundle.feature_authority."
+                      "build_feature_manifest", return_value=features), \
+                patch("bilqis_mlx.runtime.bamf_bundle.feature_authority."
+                      "load_pinned_atlas_snapshot", side_effect=lambda selection: selection):
+            with self.assertRaises(BilqisError):
+                read_accepted_generation_feature_receipt(pointer_path, "/artifact")
 
     def test_caller_cannot_construct_an_acceptance_binding(self):
         source = candidate(parent_state())
