@@ -20,6 +20,8 @@ class DecisionKind(str, Enum):
     ROLE = 'ROLE'
     CONTROL = 'CONTROL'
     EPISTEMIC = 'EPISTEMIC'
+    OPERATOR = 'OPERATOR'
+    OPERAND = 'OPERAND'
 
 
 def _text(value):
@@ -39,7 +41,8 @@ class DecisionSpec:
     def __post_init__(self):
         types = {DecisionKind.VALUE: (ConceptRef, RoleOccurrence),
                  DecisionKind.ROLE: (RoleCandidate,), DecisionKind.CONTROL: (ControlAction,),
-                 DecisionKind.EPISTEMIC: (str,)}
+                 DecisionKind.EPISTEMIC: (str,), DecisionKind.OPERATOR: (str,),
+                 DecisionKind.OPERAND: (str,)}
         if (self.schema_version != DECISION_SCHEMA or not _text(self.decision_id)
                 or (self.role_id is not None and not _text(self.role_id))
                 or type(self.occurrence) is not int or self.occurrence < 0
