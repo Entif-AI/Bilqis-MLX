@@ -12,7 +12,7 @@ from pathlib import Path
 
 from bilqis_mlx.data_plane import DataPlaneError, data_plane
 from bilqis_mlx.learning.atlas_acceptance import (
-    AcceptedCandidateBinding, candidate_identity_digest,
+    ACCEPTANCE_SCHEMA, AcceptedCandidateBinding, candidate_identity_digest,
 )
 from .codec import load_bamf_bundle, save_bamf_bundle, validate_bamf_bundle_custody
 from .records import (
@@ -208,7 +208,8 @@ def _require_acceptance(candidate: BamfBundleCandidate,
     """Publication is not acceptance: the retention owner must have accepted it."""
     if type(acceptance) is not AcceptedCandidateBinding:
         invalid("BAMF_GENERATION_ACCEPTANCE_REQUIRED")
-    if (acceptance.run_id != candidate.run_id
+    if (acceptance.schema_version != ACCEPTANCE_SCHEMA
+            or acceptance.run_id != candidate.run_id
             or acceptance.generation != candidate.generation
             or acceptance.feature_sha256 != candidate.extents.factor_map_digest
             or acceptance.optimizer_step != candidate.retained_state.optimizer_step
@@ -220,11 +221,35 @@ def _require_acceptance(candidate: BamfBundleCandidate,
     return acceptance
 
 
+def _require_accepted_parent(run_dir: Path, candidate: BamfBundleCandidate,
+                             acceptance: AcceptedCandidateBinding) -> None:
+    """Verify the C05 parent identity against immutable B13 parent custody."""
+    if candidate.generation == 0:
+        return  # Genesis admission is a distinct upstream source/bootstrap gate.
+    parent_sha = candidate.parent_manifest_sha256
+    if parent_sha is None:
+        invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+    parent = load_bamf_bundle(
+        run_dir / "bamf-bundles" / parent_sha,
+        expected_manifest_sha256=parent_sha)
+    if (parent.run_id != candidate.run_id
+            or parent.generation + 1 != candidate.generation
+            or acceptance.parent_candidate_identity_sha256
+            != candidate_identity_digest(parent.retained_state)):
+        invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+
+
 def _write_acceptance(run_dir: Path, manifest_sha256: str,
                        acceptance: AcceptedCandidateBinding) -> None:
     """Persist the acceptance binding before the pointer names the generation."""
     path = _acceptance_path(run_dir, manifest_sha256)
     raw = canonical(acceptance.to_record())
+    if path.is_symlink():
+        invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
+    if path.exists():
+        if not path.is_file() or path.read_bytes() != raw:
+            invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+        return
     fd, temporary = tempfile.mkstemp(prefix=".bamf-acceptance-", dir=path.parent)
     try:
         with os.fdopen(fd, "wb") as stream:
@@ -249,6 +274,7 @@ def publish_bamf_generation(run_dir: Path, candidate: BamfBundleCandidate, *,
         pointer_path = run_dir / "bamf-state.json"
         with _pointer_lock(run_dir):
             current = _read_pointer(pointer_path)
+            _require_accepted_parent(run_dir, candidate, accepted)
             if current is not None and current["generation"] == candidate.generation:
                 if (current["run_id"] != candidate.run_id
                         or current["manifest_sha256"] != digest

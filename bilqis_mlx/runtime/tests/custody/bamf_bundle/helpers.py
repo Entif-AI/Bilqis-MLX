@@ -170,19 +170,24 @@ def shape_patch():
     return stack
 
 
-def retention_decision(*, accepted=True) -> object:
-    """Issue the retention decision owner's decision for the fixture candidate."""
+def retention_decision(*, accepted=True, parent=None, retained=None) -> object:
+    """Run the C05 owner screen on disposable, explicit fixture solvers."""
+    from bilqis_mlx.runtime.tests.capability.capability_retention_helpers import (
+        _screen_inputs,
+    )
+    screen = _screen_inputs(protected_loss=2 if accepted else 3)
     return decide_candidate_retention(
-        no_target_gain=not accepted, same_grade_net_gain=1,
-        fixed_grade_regression=False, active_grade_regression=False,
-        whole_school_regression=False, frontier_measured=True,
-        fragile_losses=0, exceeded=False)
+        parent_solver=screen[0], candidate_solver=screen[1],
+        target_capability=screen[2], policy=screen[3], cohorts=screen[4],
+        parent_state=parent if parent is not None else parent_state(),
+        candidate_state=retained if retained is not None else parent_state(),
+    )
 
 
 def acceptance(bundle) -> object:
     """Mint the retention owner's acceptance binding for one candidate bundle."""
     return mint_acceptance_binding(
-        retention_decision(), bundle.retained_state, run_id=bundle.run_id,
+        retention_decision(retained=bundle.retained_state), bundle.retained_state, run_id=bundle.run_id,
         generation=bundle.generation,
         feature_sha256=bundle.extents.factor_map_digest)
 

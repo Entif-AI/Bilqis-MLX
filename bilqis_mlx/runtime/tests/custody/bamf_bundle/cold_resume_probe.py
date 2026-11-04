@@ -101,11 +101,15 @@ def continue_generation(run) -> dict:
         accepted = resolve_candidate(transaction, accepted=True)
         loss_after = probe_loss(accepted.optimizer.parameters, target)
         gain = loss_before - loss_after
+        # Disposable numerical probe only: it is not a Factory/teacher screen.
+        from bilqis_mlx.runtime.tests.capability.capability_retention_helpers import (
+            _screen_inputs,
+        )
+        screen = _screen_inputs(protected_loss=2 if gain > 0.0 else 3)
         decision = decide_candidate_retention(
-            no_target_gain=not gain > 0.0, same_grade_net_gain=1 if gain > 0.0 else 0,
-            fixed_grade_regression=False, active_grade_regression=False,
-            whole_school_regression=False, frontier_measured=True,
-            fragile_losses=0, exceeded=False)
+            parent_solver=screen[0], candidate_solver=screen[1],
+            target_capability=screen[2], policy=screen[3], cohorts=screen[4],
+            parent_state=student.retained_state, candidate_state=accepted)
         if not decision.accepted:
             raise ValueError(
                 f"COLD_RESUME_CONTINUATION_REJECTED before={loss_before} after={loss_after}")

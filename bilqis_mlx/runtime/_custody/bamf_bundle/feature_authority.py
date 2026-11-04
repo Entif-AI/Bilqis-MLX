@@ -13,6 +13,7 @@ from pathlib import Path
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_acceptance import (
+    ACCEPTANCE_SCHEMA,
     AcceptedCandidateBinding, candidate_identity_digest,
 )
 from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest
@@ -21,7 +22,9 @@ from bilqis_mlx.semantics.atlas_snapshot import (
 )
 
 from .codec import load_bamf_bundle
-from .publication import ACCEPTANCE_DIR, _pointer_lock, _read_pointer
+from .publication import (
+    ACCEPTANCE_DIR, _pointer_lock, _read_pointer,
+)
 from .records import canonical, invalid, sha
 
 RECEIPT_SCHEMA = "bilqis.mlx.bamf-accepted-generation-feature-receipt/v1"
@@ -156,7 +159,8 @@ def _accepted_binding(run_dir: Path, pointer: dict, student) -> AcceptedCandidat
         binding = AcceptedCandidateBinding.from_record(record)
     except (UnicodeDecodeError, json.JSONDecodeError, BilqisError):
         invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
-    if (binding.run_id != pointer["run_id"]
+    if (binding.schema_version != ACCEPTANCE_SCHEMA
+            or binding.run_id != pointer["run_id"]
             or binding.generation != pointer["generation"]
             or binding.feature_sha256 != student.extents.factor_map_digest
             or binding.optimizer_step != student.retained_state.optimizer_step
@@ -165,6 +169,18 @@ def _accepted_binding(run_dir: Path, pointer: dict, student) -> AcceptedCandidat
             or binding.step_proof_sha256 != tuple(
                 proof.digest for proof in student.retained_state.step_proofs)):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+    if student.generation > 0:
+        parent_sha = student.parent_manifest_sha256
+        if parent_sha is None:
+            invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+        parent = load_bamf_bundle(
+            run_dir / "bamf-bundles" / parent_sha,
+            expected_manifest_sha256=parent_sha)
+        if (parent.generation + 1 != student.generation
+                or parent.run_id != student.run_id
+                or binding.parent_candidate_identity_sha256
+                != candidate_identity_digest(parent.retained_state)):
+            invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
     return binding
 
 

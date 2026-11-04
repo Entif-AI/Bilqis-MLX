@@ -144,16 +144,22 @@ class ProductionAuthorityTests(unittest.TestCase):
         decision = retention_decision()
         with self.assertRaises(BilqisError):
             CandidateRetentionDecision(
-                decision.decision, decision.reason, decision.target_gain,
-                decision.protected_net_gain)
+                decision.decision, decision.reason, decision.parent_generation,
+                decision.candidate_generation, decision.evidence_sha256,
+                decision.policy_sha256)
+
+    def test_primitive_retention_claims_cannot_issue_authority(self):
+        with self.assertRaises(TypeError):
+            decide_candidate_retention(
+                no_target_gain=False, same_grade_net_gain=1,
+                fixed_grade_regression=False, active_grade_regression=False,
+                whole_school_regression=False, frontier_measured=True,
+                fragile_losses=0, exceeded=False)
 
     def test_acceptance_requires_an_accepted_decision(self):
         source = candidate(parent_state())
-        rejected = decide_candidate_retention(
-            no_target_gain=True, same_grade_net_gain=0,
-            fixed_grade_regression=False, active_grade_regression=False,
-            whole_school_regression=False, frontier_measured=True,
-            fragile_losses=0, exceeded=False)
+        rejected = retention_decision(
+            accepted=False, retained=source.retained_state)
         with self.assertRaises(BilqisError):
             mint_acceptance_binding(
                 rejected, source.retained_state, run_id=source.run_id,

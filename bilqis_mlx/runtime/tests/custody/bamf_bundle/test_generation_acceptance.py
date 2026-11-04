@@ -73,7 +73,7 @@ class GenerationAcceptanceProvenanceTests(unittest.TestCase):
     def test_acceptance_with_another_feature_identity_is_refused(self):
         source = candidate(parent_state())
         binding = mint_acceptance_binding(
-            retention_decision(), source.retained_state, run_id=source.run_id,
+            retention_decision(retained=source.retained_state), source.retained_state, run_id=source.run_id,
             generation=source.generation, feature_sha256="a" * 64)
         with self.assertRaises(BilqisError) as failure:
             self.publish(source, acceptance=binding)
@@ -127,11 +127,32 @@ class GenerationAcceptanceProvenanceTests(unittest.TestCase):
         source = candidate(parent_state())
         binding = acceptance(source)
         with self.assertRaises(BilqisError):
-            AcceptedCandidateBinding(
-                binding.run_id, binding.generation,
-                binding.candidate_identity_sha256, binding.feature_sha256,
-                binding.optimizer_step, binding.retention_reason,
-                binding.decision_sha256)
+            AcceptedCandidateBinding(**binding._public_record())
+
+    def test_accepted_c05_decision_cannot_transfer_to_different_optimizer(self):
+        source = candidate(parent_state())
+        decision = retention_decision(retained=source.retained_state)
+        another = accepted_state(parent_state())
+        with self.assertRaises(BilqisError):
+            mint_acceptance_binding(
+                decision, another, run_id=source.run_id,
+                generation=source.generation,
+                feature_sha256=source.extents.factor_map_digest)
+
+    def test_parent_custody_rejects_a_screen_for_another_parent(self):
+        initial = parent_state()
+        first = self.publish(candidate(initial), acceptance=acceptance(candidate(initial)))
+        successor = candidate(accepted_state(initial), 1, first["manifest_sha256"])
+        wrong_parent = accepted_state(initial)
+        binding = mint_acceptance_binding(
+            retention_decision(parent=wrong_parent, retained=successor.retained_state),
+            successor.retained_state, run_id=successor.run_id,
+            generation=successor.generation,
+            feature_sha256=successor.extents.factor_map_digest)
+        with self.assertRaises(BilqisError) as failure:
+            self.publish(successor, acceptance=binding)
+        self.assertEqual(failure.exception.context["reason"],
+                         "BAMF_GENERATION_ACCEPTANCE_DRIFT")
 
     def test_caller_cannot_mint_acceptance_without_a_retention_decision(self):
         source = candidate(parent_state())
@@ -154,11 +175,8 @@ class GenerationAcceptanceProvenanceTests(unittest.TestCase):
 
     def test_a_rejected_retention_decision_cannot_mint_acceptance(self):
         source = candidate(parent_state())
-        rejected = decide_candidate_retention(
-            no_target_gain=True, same_grade_net_gain=0,
-            fixed_grade_regression=False, active_grade_regression=False,
-            whole_school_regression=False, frontier_measured=True,
-            fragile_losses=0, exceeded=False)
+        rejected = retention_decision(
+            accepted=False, retained=source.retained_state)
         self.assertFalse(rejected.accepted)
         with self.assertRaises(BilqisError):
             mint_acceptance_binding(
