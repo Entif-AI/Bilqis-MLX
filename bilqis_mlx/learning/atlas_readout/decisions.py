@@ -92,6 +92,8 @@ class DecodeState:
     def status(self):
         if _ended(self.committed):
             return DecodeStatus.COMPLETE
+        if self.plan.route_only and len(self.committed) == len(self.plan.decisions):
+            return DecodeStatus.COMPLETE
         if self.remaining_capacity == 0:
             return DecodeStatus.PARTIAL
         return DecodeStatus.ACTIVE if ready_decisions(self) else DecodeStatus.UNRESOLVED

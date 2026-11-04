@@ -6,6 +6,8 @@ from dataclasses import replace
 from bilqis_mlx.learning.atlas_readout import (
     AnswerPlan, DecisionKind, DecisionSpec, ExecutionMode, ModelOutput,
 )
+from bilqis_mlx.learning.atlas_readout.plan import ROUTE_MODALITY
+from bilqis_mlx.semantics.frame_schema import SourceSpan
 from bilqis_mlx.learning.atlas_readout.decoder.prediction import issued_output
 from bilqis_mlx.runtime.atlas_model import BamfCompiledBatch, forward_bamf
 from bilqis_mlx.runtime.cognitive_solver import NeuralProposal, NeuralRequest
@@ -71,6 +73,18 @@ def augment_answer_plan_for_task_goal(
     return replace(plan, decisions=(*route, *ordinary))
 
 
+def task_goal_route_plan(goal: TaskGoal, compiled_batch, snapshot, generation_binding):
+    """Build a route-only B10 plan over the exact compiled source prefix."""
+    route = task_goal_route_decisions(goal)
+    if not route:
+        _invalid("BAMF_C04_TASK_GOAL_ROUTE_REQUIRED")
+    compiled = compiled_batch.compiled.compiled.rows[0]
+    return AnswerPlan(
+        ROUTE_MODALITY, len(compiled.positions), route, None, snapshot,
+        SourceSpan(0, 0), generation_binding,
+    )
+
+
 def proposal_from_task_goal_output(
     goal: TaskGoal,
     request: NeuralRequest,
@@ -134,19 +148,26 @@ def b11_task_goal_proposer(
     """Close C04's neural seam over one exact Factory-owned B11 source row."""
     if (type(compiled_batch) is not BamfCompiledBatch
             or type(plan) is not AnswerPlan
-            or type(authority) is not FactoryTaskAuthority
-            or compiled_batch.training_authority is None):
+            or type(authority) is not FactoryTaskAuthority):
         _invalid("BAMF_C04_B11_TASK_PROPOSER_AUTHORITY_REQUIRED")
     authority.__post_init__()
     compiled_batch.__post_init__()
     training = compiled_batch.training_authority
-    if (training.digest != authority.training_authority_sha256
+    training_mismatch = (
+        (training is None) != (authority.training_authority_sha256 is None)
+        or (training is not None and (
+            training.digest != authority.training_authority_sha256
             or training.generation_binding != authority.generation_binding
             or training.delivery_capability != authority.capability_id
-            or training.source_row_id != authority.source_row_id
-            or plan.generation_binding != authority.generation_binding):
+            or training.source_row_id != authority.source_row_id)))
+    if (training_mismatch or plan.generation_binding != authority.generation_binding):
         _invalid("BAMF_C04_B11_TASK_PROPOSER_CUSTODY_MISMATCH")
-    routed_plan = augment_answer_plan_for_task_goal(plan, authority.goal)
+    if plan.route_only:
+        if plan.decisions != task_goal_route_decisions(authority.goal):
+            _invalid("BAMF_C04_B11_TASK_ROUTE_PLAN_MISMATCH")
+        routed_plan = plan
+    else:
+        routed_plan = augment_answer_plan_for_task_goal(plan, authority.goal)
 
     def propose(request: NeuralRequest):
         if (type(request) is not NeuralRequest
@@ -168,5 +189,6 @@ __all__ = (
     "augment_answer_plan_for_task_goal",
     "b11_task_goal_proposer",
     "proposal_from_task_goal_output",
+    "task_goal_route_plan",
     "task_goal_route_decisions",
 )

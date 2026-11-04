@@ -107,7 +107,8 @@ def validate_decoder_inputs(memory, context, plan, semantics, parameters):
         context.__post_init__()
     plan.__post_init__()
     semantics.__post_init__()
-    _validate_domain(plan.allowed_output_schema, semantics.features)
+    if not plan.route_only:
+        _validate_domain(plan.allowed_output_schema, semantics.features)
     if (memory.generation_binding != plan.generation_binding
             or len(memory.compiled.positions) != plan.input_prefix_end
             or memory.compiled.semantic_release != plan.snapshot.release_sha256
