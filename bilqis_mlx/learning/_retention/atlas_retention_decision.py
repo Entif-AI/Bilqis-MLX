@@ -74,12 +74,13 @@ class CandidateRetentionDecision:
         }
 
     @classmethod
-    def from_record(cls, record) -> "CandidateRetentionDecision":
+    def from_record(cls, record) -> "ParsedCandidateRetentionDecision":
+        """Read a historical decision without restoring live issuer capability."""
         names = ("decision", "reason", "target_gain", "protected_net_gain",
                  "schema_version")
         if not isinstance(record, dict) or set(record) != set(names) | {"decision_sha256"}:
             _invalid()
-        decision = object.__new__(cls)
+        decision = object.__new__(ParsedCandidateRetentionDecision)
         for name in names:
             object.__setattr__(decision, name, record[name])
         object.__setattr__(decision, "_issuance", _DECISION_ISSUER)
@@ -87,6 +88,10 @@ class CandidateRetentionDecision:
         if record["decision_sha256"] != decision.digest:
             _invalid()
         return decision
+
+
+class ParsedCandidateRetentionDecision(CandidateRetentionDecision):
+    """Verified historical decision; never accepted as a live owner-issued decision."""
 
 
 def decide_candidate_retention(

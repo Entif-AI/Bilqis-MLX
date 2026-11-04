@@ -141,6 +141,17 @@ class GenerationAcceptanceProvenanceTests(unittest.TestCase):
                 run_id=source.run_id, generation=source.generation,
                 feature_sha256=source.extents.factor_map_digest)
 
+    def test_historical_decision_cannot_mint_live_acceptance(self):
+        source = candidate(parent_state())
+        parsed = CandidateRetentionDecision.from_record(retention_decision().to_record())
+        self.assertNotEqual(type(parsed), CandidateRetentionDecision)
+        self.assertTrue(parsed.accepted)
+        with self.assertRaises(BilqisError):
+            mint_acceptance_binding(
+                parsed, source.retained_state, run_id=source.run_id,
+                generation=source.generation,
+                feature_sha256=source.extents.factor_map_digest)
+
     def test_a_rejected_retention_decision_cannot_mint_acceptance(self):
         source = candidate(parent_state())
         rejected = decide_candidate_retention(
