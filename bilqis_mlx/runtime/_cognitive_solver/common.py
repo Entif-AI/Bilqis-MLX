@@ -28,4 +28,3 @@ def _sha(value: object) -> bool:
 
 def _name(value: object) -> bool:
     return isinstance(value, str) and bool(value)
-
