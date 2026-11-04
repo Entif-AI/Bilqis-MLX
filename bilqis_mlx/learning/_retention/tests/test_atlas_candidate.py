@@ -14,8 +14,8 @@ from bilqis_mlx.learning.atlas_engram_transaction import (
 from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree
 from bilqis_mlx.learning.atlas_candidate import (
-    CandidateCustodyIdentity, CandidateState, CandidateTransaction, begin_candidate,
-    candidate_step, resolve_candidate,
+    CandidateCustodyIdentity, CandidateState, CandidateStepProof,
+    CandidateTransaction, begin_candidate, candidate_step, resolve_candidate,
 )
 from bilqis_mlx.learning._retention.tests.execution_fixtures import execution_provenance
 
@@ -154,3 +154,16 @@ class CandidateTransactionTests(TestCase):
         with self.assertRaises(BilqisError):
             replace(legitimate, allocations=forged)
         self.assertEqual(resolve_candidate(legitimate, accepted=True).optimizer_step, 12)
+
+    def test_v2_step_proof_roundtrips_source_training_authority(self):
+        proof = CandidateStepProof(
+            1, "1" * 64, "2" * 64, "3" * 64, (self.name,), True,
+            source_release_sha256="4" * 64,
+            training_batch_sha256="5" * 64,
+            target_capability_id="A.TEST",
+            training_authority_sha256="6" * 64,
+        )
+        record = proof.to_record()
+        self.assertEqual(record["schema_version"], "bilqis.mlx.candidate-step-proof/v2")
+        self.assertEqual(record["target_capability_id"], "A.TEST")
+        self.assertEqual(CandidateStepProof.from_record(record), proof)

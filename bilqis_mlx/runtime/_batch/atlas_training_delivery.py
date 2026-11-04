@@ -4,7 +4,8 @@ from __future__ import annotations
 from dataclasses import replace
 
 from .atlas_training_contracts import (
-    PaddedMicrobatch, _invalid, _freeze, require_current_release,
+    PaddedMicrobatch, _invalid, _freeze, _reissue_training_batch,
+    require_current_release,
 )
 
 MAX_COMPILED_CONTEXT_POSITIONS = 1024
@@ -53,7 +54,7 @@ def attach_auxiliaries(batch, evidence_by_row, *, verify):
                 _invalid('AUXILIARY_EVIDENCE_UNVERIFIED')
             targets.append((name, _freeze(value), regime, _freeze(receipt)))
         result.append(replace(row, auxiliaries=tuple(targets)))
-    return replace(batch, rows=tuple(result))
+    return _reissue_training_batch(batch, rows=tuple(result))
 
 
 def execute_with_backend(batch, source_context, topology, *, generation_binding, training, model_backend, invoke):
@@ -120,4 +121,4 @@ def resolve_batch_rules(batch, source_context, *, released_signatures_for, rule_
         if not isinstance(policy, tuple) or not policy:
             _invalid('SOURCE_RULE_POLICY_REQUIRED')
         result.append(replace(row, rule_policy=policy))
-    return replace(batch, rows=tuple(result))
+    return _reissue_training_batch(batch, rows=tuple(result))

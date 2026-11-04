@@ -56,4 +56,6 @@ def production_candidate_step(
         candidate_step_ordinal=candidate_step_ordinal)
     return candidate_step(
         candidate, actual_gradients, provenance, teacher_hparams, decay=decay,
-        loss_bearing=loss_bearing_target, max_norm=max_norm)
+        loss_bearing=loss_bearing_target, max_norm=max_norm,
+        training_authority=(getattr(loss_execution, "training_authority", None)
+                            if loss_execution is not None else None))

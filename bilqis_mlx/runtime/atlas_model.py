@@ -15,15 +15,21 @@ from bilqis_mlx.runtime.atlas_model_training import (
     bamf_value_and_grad,
     loss_bearing_bamf,
 )
+from bilqis_mlx.runtime.atlas_training_authority import (
+    BamfTrainingAuthority,
+    bind_compiled_training_batch,
+)
 
 __all__ = (
     "Backend",
     "BamfCompiledBatch",
     "BamfLossExecution",
     "BamfGradientExecution",
+    "BamfTrainingAuthority",
     "model_backend",
     "forward_bamf",
     "loss_bearing_bamf",
     "bamf_value_and_grad",
     "require_bamf_loss_execution",
+    "bind_compiled_training_batch",
 )

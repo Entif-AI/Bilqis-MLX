@@ -13,6 +13,7 @@ from bilqis_mlx.learning.atlas_readout import LossParts, ModelOutput
 from bilqis_mlx.learning.frame_encoder import CompiledEncoderInput
 from bilqis_mlx.learning.source_atoms.inputs import SourceAtomRow
 from bilqis_mlx.semantics.atlas_features import FeatureSchema
+from bilqis_mlx.runtime.atlas_training_authority import BamfTrainingAuthority
 
 
 def _invalid(reason: str) -> None:
@@ -39,6 +40,7 @@ class _ForwardRecord:
     dense_parameter_names: tuple[str, ...]
     motif_reads: tuple
     role_map: tuple[tuple[str, int], ...]
+    training_authority: BamfTrainingAuthority | None
 
 
 class _ForwardRegistry:
@@ -82,6 +84,7 @@ class BamfLossExecution:
     local_slot_rows: tuple[int, ...]
     dense_parameter_names: tuple[str, ...]
     motif_reads: tuple
+    training_authority: BamfTrainingAuthority | None
     schema_version: str = "bilqis.mlx.b11-loss-execution/v1"
     _issuance: object = field(init=False, repr=False, compare=False)
 
@@ -124,6 +127,8 @@ class BamfLossExecution:
             or self.dense_parameter_names
             != tuple(sorted(set(self.dense_parameter_names)))
             or type(self.motif_reads) is not tuple
+            or (self.training_authority is not None
+                and type(self.training_authority) is not BamfTrainingAuthority)
             or self.schema_version != "bilqis.mlx.b11-loss-execution/v1"
         ):
             _invalid("B11_LOSS_EXECUTION_INVALID")
@@ -173,6 +178,7 @@ def _issue_loss_execution(output, loss, record, participation):
         ("local_slot_rows", record.local_slot_rows),
         ("dense_parameter_names", record.dense_parameter_names),
         ("motif_reads", record.motif_reads),
+        ("training_authority", record.training_authority),
         ("schema_version", "bilqis.mlx.b11-loss-execution/v1"),
         ("_issuance", _LOSS_EXECUTION_ISSUER),
     ):
@@ -198,6 +204,7 @@ class BamfCompiledBatch:
     compiled: CompiledEncoderInput
     sources: tuple[SourceAtomRow, ...]
     feature_schema: FeatureSchema
+    training_authority: BamfTrainingAuthority | None = None
     schema_version: str = "bilqis.mlx.b11-compiled-batch/v1"
 
     def __post_init__(self) -> None:
@@ -209,6 +216,8 @@ class BamfCompiledBatch:
             or len(self.sources) != 1
             or any(type(item) is not SourceAtomRow for item in self.sources)
             or type(self.feature_schema) is not FeatureSchema
+            or (self.training_authority is not None
+                and type(self.training_authority) is not BamfTrainingAuthority)
         ):
             _invalid("B11_COMPILED_BATCH_INVALID")
         self.compiled.__post_init__()

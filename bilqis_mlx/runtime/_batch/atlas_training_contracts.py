@@ -1,7 +1,9 @@
 """Immutable BAMF batch records and exact release-consumption boundary."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+import hashlib
+import json
 from typing import Any
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
@@ -56,12 +58,63 @@ class BamfTrainingRow:
     rule_policy: tuple = ()
 
 
-@dataclass(frozen=True)
+_TRAINING_BATCH_ISSUER = object()
+
+
+@dataclass(frozen=True, init=False)
 class BamfTrainingBatch:
     release_sha256: str
     generation_binding: str
     delivered_content_sha256: str
+    delivery_capability: str
     rows: tuple[BamfTrainingRow, ...]
+    _issuance: object = field(init=False, repr=False, compare=False)
+
+    def __init__(self, *args, **kwargs):
+        _invalid('TRAINING_BATCH_CALLER_CONSTRUCTION_FORBIDDEN')
+
+    def __post_init__(self):
+        if (getattr(self, '_issuance', None) is not _TRAINING_BATCH_ISSUER
+                or not all(isinstance(value, str) and value for value in (
+                    self.release_sha256, self.generation_binding,
+                    self.delivered_content_sha256, self.delivery_capability))
+                or type(self.rows) is not tuple or not self.rows
+                or any(type(row) is not BamfTrainingRow for row in self.rows)):
+            _invalid('TRAINING_BATCH_INVALID')
+
+    @property
+    def authority_digest(self) -> str:
+        payload = {
+            'release_sha256': self.release_sha256,
+            'generation_binding': self.generation_binding,
+            'delivered_content_sha256': self.delivered_content_sha256,
+            'delivery_capability': self.delivery_capability,
+            'rows': tuple((row.provenance.row_id, row.provenance.capability_id)
+                          for row in self.rows),
+        }
+        wire = json.dumps(payload, sort_keys=True, separators=(',', ':'))
+        return hashlib.sha256(wire.encode()).hexdigest()
+
+
+def _issue_training_batch(release_sha256, generation_binding, delivered_content_sha256,
+                          delivery_capability, rows):
+    batch = object.__new__(BamfTrainingBatch)
+    for name, value in (
+            ('release_sha256', release_sha256),
+            ('generation_binding', generation_binding),
+            ('delivered_content_sha256', delivered_content_sha256),
+            ('delivery_capability', delivery_capability),
+            ('rows', tuple(rows)), ('_issuance', _TRAINING_BATCH_ISSUER)):
+        object.__setattr__(batch, name, value)
+    batch.__post_init__()
+    return batch
+
+
+def _reissue_training_batch(batch: BamfTrainingBatch, *, rows):
+    batch.__post_init__()
+    return _issue_training_batch(
+        batch.release_sha256, batch.generation_binding,
+        batch.delivered_content_sha256, batch.delivery_capability, rows)
 
 
 @dataclass(frozen=True)
@@ -90,6 +143,7 @@ def require_current_release(batch: BamfTrainingBatch, source_context: SourceExec
     """Refuse a prepared batch after its Factory release or semantic graph changes."""
     if not isinstance(batch, BamfTrainingBatch) or not isinstance(source_context, SourceExecutionContext):
         _invalid('SOURCE_CONTEXT_REQUIRED')
+    batch.__post_init__()
     source_context.release.verify()
     source_context.release.verify_semantic_catalog(source_context.graph)
     if (batch.release_sha256 != source_context.release.release_sha256 or
