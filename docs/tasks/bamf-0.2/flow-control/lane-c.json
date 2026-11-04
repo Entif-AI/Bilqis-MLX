@@ -92,12 +92,13 @@
     },
     {
       "issue": 800,
-      "pr": 803,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "5f9d484e94a942f5421281187764efbdefa8ee24",
       "summary": "Late-bound public-facade dependency repair is verified and consumed into the active #347 aggregate; ready PR #803 carries the C01 integration candidate.",
       "resume_trigger": null,
-      "preserved_branch": "codex/bamf02-c-347-integration-20261103"
+      "preserved_branch": "codex/bamf02-c-347-integration-20261103",
+      "merged_pr": 803
     },
     {
       "issue": 801,
