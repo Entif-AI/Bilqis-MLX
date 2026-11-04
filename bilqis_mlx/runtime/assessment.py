@@ -1,4 +1,5 @@
 """Source cohort persistence and assessment lifetimes."""
+from ..live_curriculum import draw_course_rows
 from ._assessment.executable_custody import (
     _draw_executable_scope_cohort, _load_executable_cohort, _persist_executable_cohort,
 )

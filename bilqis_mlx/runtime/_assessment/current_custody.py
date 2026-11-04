@@ -7,7 +7,7 @@ from ...errors import ErrorBus, FACTORY
 from ...factory.executable_release import ExecutableAdmissionReceipt
 from ...factory.generation import draw_executable_release_rows
 from ...generated_assessment import EXECUTABLE_COHORT_SCHEMA, verify_stored_cohort
-from ...live_curriculum import cohort_contract as _cohort_contract, draw_course_rows
+from ...live_curriculum import cohort_contract as _cohort_contract
 from ..source_execution import SourceExecutionContext
 from ..state import _durable_json
 from .executable_custody import _load_executable_cohort
@@ -23,14 +23,15 @@ def _draw_live_rows(source_root, graph, *, seed, capability=None, each=None,
             raise TypeError(FACTORY.EXECUTION.ASSESSMENT_SOURCE_CONTEXT_REQUIRED.legacy_codes[0])
         return source_context.draw_rows(seed=seed, capability=capability, each=each)
     if executable_release is not None:
-        from ..source_adapters.school import live_source_registry
+        from ...source_adapters.school import live_source_registry
         return draw_executable_release_rows(
             source_root, graph, executable_release, live_source_registry(),
             seed=seed, capability=capability, each=each)
     if course is None:
         raise ValueError("FACTORY_RELEASE_REQUIRED_FOR_SOURCE_GENERATION")
-    return draw_course_rows(source_root, graph, course, seed=seed,
-                            capability=capability, each=each)
+    from .. import assessment as _assessment
+    return _assessment.draw_course_rows(
+        source_root, graph, course, seed=seed, capability=capability, each=each)
 
 
 def released_lesson_source_identity(release, capability: str) -> tuple[str, str]:
