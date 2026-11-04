@@ -95,10 +95,11 @@ class AcceptedCandidateBinding:
         return {**self._public_record(), "binding_sha256": self.digest}
 
     @classmethod
-    def from_record(cls, record) -> "AcceptedCandidateBinding":
+    def from_record(cls, record) -> "ParsedAcceptedCandidateBinding":
+        """Parse historical custody evidence without granting publication authority."""
         if not isinstance(record, dict) or set(record) != set(_BINDING_FIELDS) | {"binding_sha256"}:
             _invalid()
-        binding = object.__new__(cls)
+        binding = object.__new__(ParsedAcceptedCandidateBinding)
         for name in _BINDING_FIELDS:
             value = record[name]
             object.__setattr__(binding, name,
@@ -108,6 +109,16 @@ class AcceptedCandidateBinding:
         if record["binding_sha256"] != binding.digest:
             _invalid()
         return binding
+
+
+class ParsedAcceptedCandidateBinding(AcceptedCandidateBinding):
+    """Read-only accepted-generation evidence, never a live retention capability.
+
+    The live publisher requires the exact AcceptedCandidateBinding type, which
+    can only be minted by the retention owner. This subclass preserves the
+    historical record's fields and digest for readback without passing that
+    publication boundary.
+    """
 
 
 def mint_acceptance_binding(decision: CandidateRetentionDecision, state, *,
