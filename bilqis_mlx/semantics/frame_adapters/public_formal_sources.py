@@ -6,6 +6,7 @@ from ...factory.source_identity import canonical_source_adapter
 from ...generated_assessment import digest
 from ..atlas_projection import FrozenAtlasSnapshot
 from ..context_eligibility import PUBLIC_FORMAL, ContextPolicy, SourceFrontier, TaskScope
+from ..frame_schema import SourceSpan
 from .common import (
     BOOLEAN_COMPOSITE_ADAPTER, BOOLEAN_CONNECTIVE_ADAPTER,
     BOOLEAN_IDENTIFICATION_ADAPTER, FINITE_NUMERIC_ADAPTER,

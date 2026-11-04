@@ -142,18 +142,19 @@ it is genuinely novel, a repeated systemic finding, or a deterministic-proof
 gap. The answer determines repair routing; it never resets the episode budget.
 ### Remediation artifacts are a working set, not an archive
 
-Close a remediation issue when its exact recorded defect has been reproduced,
-repaired, covered by a regression, and verified on a durable PR/head. Do not keep
-that child issue open merely because its parent still awaits EGM, sibling work,
-dependency integration, or final human merge. The linked PR is the pending
-integration receipt.
+Keep a remediation issue open until its exact recorded defect has been reproduced,
+repaired, covered by a regression, verified on a durable PR/head, **and the accepted
+implementation has actually merged into its intended integration branch**. A green
+or review-ready PR/head is evidence that the repair is code-complete, not that the
+issue lifecycle is complete. Final parent EGM or sibling work may remain outstanding,
+but the remediation issue closes only after merge readback proves its code landed.
 
 Keep a remediation PR in draft only while its own scoped implementation or known
 Blocker/Major repair is incomplete. Parent-level EGM debt is not a reason for draft
 status. Mark the PR ready when its own acceptance is satisfied; merge or close it
 promptly once its change is consumed by the intended parent/candidate branch.
 Closed issues and merged PRs remain provenance and should not remain in the active
-queue just to preserve history.
+queue just to preserve history once the merge-backed close condition is satisfied.
 
 If later EGM or integration proves the **same original defect** still exists, reopen
 the remediation issue. If it exposes a different mechanism, newly unlocked gap, or
@@ -167,8 +168,9 @@ isolation, or focused review requires it, and merge/close that PR promptly once 
 bounded repair is consumed.
 Because BAMF PRs normally merge into reviewed integration branches rather than the
 repository default branch, GitHub closing keywords may not retire linked issues.
-After a remediation is accepted or its PR is consumed, explicitly read back and
-close the remediation issue; do not assume `Closes #N` changed issue state.
+After the remediation PR is consumed by and merged into its intended integration
+branch, explicitly read back the merge and issue state, then close the remediation
+issue; do not assume `Closes #N` changed issue state.
 
 The repository checker can validate declared state, WIP counts, required resume
 triggers and explicit exceptions. It cannot observe an unrecorded remote mutation or
