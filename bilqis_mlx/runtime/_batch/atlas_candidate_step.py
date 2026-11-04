@@ -1,31 +1,51 @@
-"""Production candidate step: bind executed evidence, then run one native step.
-
-This is the production path from executed-step evidence to an optimizer step.
-The participation and the mask come from the B09.2 owner's binder, and the
-step refuses anything that is not owner-issued provenance.
-"""
+"""Production candidate-step boundary for B09.2/B12.2 execution authority."""
 from __future__ import annotations
 
+from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.learning.atlas_candidate import candidate_step
+from bilqis_mlx.runtime.atlas_model import BamfGradientExecution
+from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
+
+
+def _invalid(reason):
+    ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID, reason=reason)
 from bilqis_mlx.runtime.atlas_execution_binder import bind_execution_provenance
 
 
 def production_candidate_step(
-        candidate, gradients, *, motif_reads, executed_parameter_names,
-        visible_identity_rows, feedback_identity_rows, local_slot_rows,
-        loss_bearing_target, group_eligible, active_admitted, spec, extents,
-        teacher_hparams, decay, max_norm: float):
-    """Bind the executed step to owner provenance and run the masked AdamW step."""
+        candidate, gradients=None, *, loss_bearing_target,
+        gradient_execution=None,
+        group_eligible, active_admitted, spec, extents,
+        run_id, generation, parent_manifest_sha256,
+        parent_candidate_identity_sha256, parent_optimizer_step, topology_digest,
+        candidate_step_ordinal, teacher_hparams, decay, max_norm: float):
+    """Run only when the binder can issue truthful execution provenance."""
+    loss_execution = None
+    actual_gradients = gradients
+    if loss_bearing_target:
+        if type(gradient_execution) is not BamfGradientExecution:
+            _invalid("B11_GRADIENT_EXECUTION_REQUIRED")
+        gradient_execution.__post_init__()
+        expected_generation = execution_generation_digest(
+            candidate.optimizer.parameters, spec=spec, extents=extents)
+        if gradient_execution.execution.output.generation_binding != expected_generation:
+            _invalid("B11_GRADIENT_EXECUTION_CANDIDATE_MISMATCH")
+        loss_execution = gradient_execution.execution
+        actual_gradients = gradient_execution.gradients
+    elif gradient_execution is not None:
+        _invalid("B11_GRADIENT_EXECUTION_UNEXPECTED")
     provenance = bind_execution_provenance(
-        motif_reads=motif_reads,
-        executed_parameter_names=executed_parameter_names,
-        visible_identity_rows=visible_identity_rows,
-        feedback_identity_rows=feedback_identity_rows,
-        local_slot_rows=local_slot_rows,
         loss_bearing_target=loss_bearing_target,
+        loss_execution=loss_execution,
         group_eligible=group_eligible,
         active_admitted=active_admitted,
-        spec=spec, extents=extents)
+        spec=spec, extents=extents,
+        run_id=run_id, generation=generation,
+        parent_manifest_sha256=parent_manifest_sha256,
+        parent_candidate_identity_sha256=parent_candidate_identity_sha256,
+        parent_optimizer_step=parent_optimizer_step,
+        topology_digest=topology_digest,
+        candidate_step_ordinal=candidate_step_ordinal)
     return candidate_step(
-        candidate, gradients, provenance, teacher_hparams, decay=decay,
+        candidate, actual_gradients, provenance, teacher_hparams, decay=decay,
         loss_bearing=loss_bearing_target, max_norm=max_norm)
