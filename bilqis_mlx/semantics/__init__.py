@@ -49,17 +49,6 @@ __all__ = (
 numeric.evaluate = _memoize_source(semantics=(
     numeric.CONTRACT, numeric.NUMBER_MAX))(numeric.evaluate)
 
-# Atlas aliases are registered after foundation aliases because Atlas internals
-# still import those stable semantic identities during initialization.
-from .atlas import feature_io as atlas_feature_io, snapshot as atlas_snapshot
-from .atlas import vocabulary as atlas_vocabulary
-from .atlas import vocabulary_resources as atlas_vocabulary_resources
-from .atlas import vocabulary_transaction as atlas_vocabulary_transaction
-
-for _legacy_name, _module in (
-    ("atlas_feature_io", atlas_feature_io), ("atlas_snapshot", atlas_snapshot),
-    ("atlas_vocabulary", atlas_vocabulary),
-    ("atlas_vocabulary_resources", atlas_vocabulary_resources),
-    ("atlas_vocabulary_transaction", atlas_vocabulary_transaction),
-):
-    _sys.modules[f"{__name__}.{_legacy_name}"] = _module
+# Legacy Atlas module names remain importable through thin compatibility modules.
+# Do not eagerly import Atlas here: the pure semantics package is part of the
+# cognitive-solver trust boundary and must not acquire Factory/source dependencies.

@@ -67,8 +67,8 @@ class CognitiveSolverTests(unittest.TestCase):
 
     def test_replay_reserves_unknown_executor_cost_without_inventing_work(self):
         binding, generation, budget, add, ambiguous = _fixture()
-        from bilqis_mlx.runtime import cognitive_solver
-        execute = cognitive_solver.execute_dag
+        from bilqis_mlx.runtime._cognitive_solver import execution as solver_execution
+        execute = solver_execution.execute_dag
         calls = 0
 
         def interrupted(goal, *args, **kwargs):
@@ -83,7 +83,7 @@ class CognitiveSolverTests(unittest.TestCase):
                                   request.generation_digest,
                                   request.unresolved_signature, "b" * 64)
 
-        with patch.object(cognitive_solver, "execute_dag", interrupted):
+        with patch.object(solver_execution, "execute_dag", interrupted):
             result = solve_task(
                 ambiguous, SolveContext(binding, neural_proposer=proposal),
                 generation, budget)
