@@ -107,6 +107,7 @@ def _forward_participation(params, batch, plan, producer, accepted_cache):
         (0,),
         tuple(sorted(dense)),
         (() if producer._motif_read is None else (producer._motif_read,)),
+        batch.compiled.features.role_map,
     )
 
 

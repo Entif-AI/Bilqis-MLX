@@ -38,6 +38,7 @@ def bind_execution_provenance(
         execution = require_bamf_loss_execution(loss_execution)
         inputs = StepParticipationInputs(
             visible_identity_rows=execution.visible_identity_rows,
+            feedback_identity_rows=execution.feedback_identity_rows,
             visible_feature_rows=execution.feature_rows,
             local_slot_rows=execution.local_slot_rows,
             executed_parameter_names=execution.dense_parameter_names,
@@ -54,9 +55,13 @@ def bind_execution_provenance(
             local_slot_rows=execution.local_slot_rows,
         )
     return issue_execution_provenance(
-        inputs, SemanticDenominator(), (
+        inputs, SemanticDenominator(
+            identity_rows=execution.semantic_denominator_identity_rows,
+            feature_rows=execution.semantic_denominator_feature_rows,
+        ) if loss_bearing_target else SemanticDenominator(), (
             execution.motif_reads if loss_bearing_target else ()),
-        RoleReadParticipation(),
+        RoleReadParticipation(execution.role_read_feature_rows)
+        if loss_bearing_target else RoleReadParticipation(),
         group_eligible, active_admitted, spec=spec, extents=extents,
         run_id=run_id, generation=generation,
         parent_manifest_sha256=parent_manifest_sha256,

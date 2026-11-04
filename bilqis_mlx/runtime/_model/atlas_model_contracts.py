@@ -38,6 +38,7 @@ class _ForwardRecord:
     local_slot_rows: tuple[int, ...]
     dense_parameter_names: tuple[str, ...]
     motif_reads: tuple
+    role_map: tuple[tuple[str, int], ...]
 
 
 class _ForwardRegistry:
@@ -73,7 +74,11 @@ class BamfLossExecution:
     custody_generation: int | None
     custody_manifest_sha256: str | None
     visible_identity_rows: tuple[tuple[int, int], ...]
+    feedback_identity_rows: tuple[tuple[int, int], ...]
+    semantic_denominator_identity_rows: tuple[tuple[int, int], ...]
     feature_rows: tuple[tuple[str, int], ...]
+    semantic_denominator_feature_rows: tuple[tuple[str, int], ...]
+    role_read_feature_rows: tuple[tuple[str, int], ...]
     local_slot_rows: tuple[int, ...]
     dense_parameter_names: tuple[str, ...]
     motif_reads: tuple
@@ -106,7 +111,15 @@ class BamfLossExecution:
             or not custody_valid
             or self.visible_identity_rows
             != tuple(sorted(set(self.visible_identity_rows)))
+            or self.feedback_identity_rows
+            != tuple(sorted(set(self.feedback_identity_rows)))
+            or self.semantic_denominator_identity_rows
+            != tuple(sorted(set(self.semantic_denominator_identity_rows)))
             or self.feature_rows != tuple(sorted(set(self.feature_rows)))
+            or self.semantic_denominator_feature_rows
+            != tuple(sorted(set(self.semantic_denominator_feature_rows)))
+            or self.role_read_feature_rows
+            != tuple(sorted(set(self.role_read_feature_rows)))
             or self.local_slot_rows != tuple(sorted(set(self.local_slot_rows)))
             or self.dense_parameter_names
             != tuple(sorted(set(self.dense_parameter_names)))
@@ -143,7 +156,7 @@ class BamfGradientExecution:
         require_bamf_loss_execution(self.execution)
 
 
-def _issue_loss_execution(output, loss, record):
+def _issue_loss_execution(output, loss, record, participation):
     execution = object.__new__(BamfLossExecution)
     for name, value in (
         ("output", output),
@@ -152,7 +165,11 @@ def _issue_loss_execution(output, loss, record):
         ("custody_generation", record.custody_generation),
         ("custody_manifest_sha256", record.custody_manifest_sha256),
         ("visible_identity_rows", record.visible_identity_rows),
+        ("feedback_identity_rows", participation[0]),
+        ("semantic_denominator_identity_rows", participation[1]),
         ("feature_rows", record.feature_rows),
+        ("semantic_denominator_feature_rows", participation[2]),
+        ("role_read_feature_rows", participation[3]),
         ("local_slot_rows", record.local_slot_rows),
         ("dense_parameter_names", record.dense_parameter_names),
         ("motif_reads", record.motif_reads),
