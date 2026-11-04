@@ -1,11 +1,14 @@
-"""Production binder from executed-step evidence to B09.2 participation and mask.
+"""Fail-closed B09.2 binder until B11/B08 execution authority is executable.
 
-This is the production entry point for candidate-step participation. It
-consumes the evidence the execution and read owners produced: the B08 motif
-read results, the executed parameter names, the gathered identity rows and the
-local slot rows. Motif participation comes only from the read results, so a
-caller cannot claim a motif slot the read owner did not report, and the mask
-always comes from the B09.2 owner.
+B01 can prove the declared tensor census and plasticity groups, but it cannot
+prove that a tensor participated in one objective.  The current public B08 read
+is quarantined to no-hit, and B11.2 has not yet installed the single production
+backend/gradient dispatch that can own a loss-bearing execution trace.
+
+Consequently this boundary may issue only non-authorizing no-loss provenance.
+It deliberately accepts no caller-supplied dense names, row gathers or motif
+read records.  When B11.2 lands, that owner must replace this hold with a typed
+execution-owned trace rather than reopening structural claims as credentials.
 """
 from __future__ import annotations
 
@@ -17,6 +20,7 @@ from bilqis_mlx.learning.atlas_participation import (
     ActiveAdmittedRows, RoleReadParticipation, SemanticDenominator,
     StepParticipationInputs,
 )
+from bilqis_mlx.learning.atlas_participation_census import validate_group_census
 
 
 def _invalid(reason: str) -> None:
@@ -24,33 +28,21 @@ def _invalid(reason: str) -> None:
 
 
 def bind_execution_provenance(
-        *, motif_reads: tuple, executed_parameter_names: tuple,
-        visible_identity_rows: tuple, feedback_identity_rows: tuple,
-        local_slot_rows: tuple, loss_bearing_target: bool,
+        *, loss_bearing_target: bool,
         group_eligible, active_admitted: ActiveAdmittedRows,
         spec, extents, run_id: str, generation: int,
         parent_manifest_sha256: str, parent_candidate_identity_sha256: str,
         parent_optimizer_step: int, topology_digest: str,
         candidate_step_ordinal: int) -> StepExecutionProvenance:
-    """Bind one executed step to owner-issued participation and mask provenance.
-
-    The motif read results are the only source of motif participation, and the
-    executed parameter names are the only source of dense participation. The
-    returned provenance carries the owner-derived mask, so B12.2 never accepts
-    a caller mask.
-    """
-    if not isinstance(motif_reads, tuple):
-        _invalid("MOTIF_READ_RESULTS_REQUIRED")
-    if not isinstance(executed_parameter_names, tuple):
-        _invalid("EXECUTED_PARAMETER_NAMES_REQUIRED")
-    inputs = StepParticipationInputs(
-        visible_identity_rows=tuple(visible_identity_rows),
-        feedback_identity_rows=tuple(feedback_identity_rows),
-        local_slot_rows=tuple(local_slot_rows),
-        executed_parameter_names=tuple(executed_parameter_names),
-        loss_bearing_target=bool(loss_bearing_target))
+    """Issue only inert provenance while no production execution owner exists."""
+    if type(loss_bearing_target) is not bool:
+        _invalid("LOSS_BEARING_TARGET_REQUIRED")
+    validate_group_census(group_eligible, spec, extents)
+    if loss_bearing_target:
+        _invalid("B11_EXECUTION_AUTHORITY_REQUIRED")
+    inputs = StepParticipationInputs(loss_bearing_target=False)
     return issue_execution_provenance(
-        inputs, SemanticDenominator(), motif_reads, RoleReadParticipation(),
+        inputs, SemanticDenominator(), (), RoleReadParticipation(),
         group_eligible, active_admitted, spec=spec, extents=extents,
         run_id=run_id, generation=generation,
         parent_manifest_sha256=parent_manifest_sha256,

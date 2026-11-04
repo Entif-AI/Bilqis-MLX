@@ -124,13 +124,11 @@ def _parameter_census(parent: CompleteStudent) -> ParameterCensus:
 
 
 def derive_participation_inputs(parent: CompleteStudent):
-    """Derive the participation inputs from their owners.
+    """Derive structural eligibility from B01 and the retained policy.
 
     The group eligibility comes from the B01 parameter census owner and the
-    retained policy owner, the admitted rows from the published custody, and
-    the executed parameter names from the same census. A caller cannot
-    reclassify a parameter, substitute identity rows or admission state, or
-    claim a parameter executed when the owners do not report it.
+    retained policy owner, and the admitted rows from published custody.
+    Neither the census nor these eligibility facts prove actual execution.
     """
     census = _parameter_census(parent)
     mode = next_update_mode(parent.retained_state.policy,
@@ -142,27 +140,19 @@ def derive_participation_inputs(parent: CompleteStudent):
 
 
 def admit_candidate_step(run_dir: Path, gradients, *,
-                         motif_reads, loss_bearing_target, teacher_hparams,
+                         loss_bearing_target, teacher_hparams,
                          decay, max_norm: float) -> CandidateTransaction:
-    """Run one candidate optimizer step for the accepted generation in custody.
+    """Enter production admission for a candidate step bound to published custody.
 
-    The participation inputs are derived from their owners, the step binds
-    itself to the published generation identity, and provenance issued for
-    another candidate, generation, step, topology or extents state cannot be
-    used here.
+    B11.2 has not installed an execution-owned dense trace, while B08 permits
+    no live motif hits. Loss-bearing steps therefore fail closed in the B09
+    binder rather than claiming that declared census members executed.
     """
     parent = load_accepted_generation(run_dir)
     identity = _identity_of(parent, run_dir)
     eligibility, active_admitted = derive_participation_inputs(parent)
-    executed_parameter_names = tuple(sorted(
-        item.name for item in _parameter_census(parent).parameters))
     return production_candidate_step(
         begin_candidate(parent.retained_state), gradients,
-        motif_reads=motif_reads,
-        executed_parameter_names=executed_parameter_names,
-        visible_identity_rows=eligibility.admitted_identity_rows,
-        feedback_identity_rows=(),
-        local_slot_rows=(),
         loss_bearing_target=loss_bearing_target,
         group_eligible=eligibility,
         active_admitted=active_admitted,

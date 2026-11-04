@@ -1,22 +1,12 @@
-"""Production-path adversaries for the B09.2 execution binder.
-
-The binder is the production entry point for candidate-step participation. It
-must derive participation from the execution and read owners, and it must not
-accept a caller-asserted mask or a forged group classification.
-"""
+"""Fail-closed production authority tests for the B09.2 execution binder."""
 from __future__ import annotations
 
+import inspect
 import unittest
 from unittest.mock import patch
 
-import mlx.core as mx
-
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
-from bilqis_mlx.learning.atlas_engram_reads import MotifReadResult
-from bilqis_mlx.learning.atlas_execution_provenance import (
-    StepExecutionProvenance,
-)
+from bilqis_mlx.learning.atlas_execution_provenance import StepExecutionProvenance
 from bilqis_mlx.learning.atlas_participation import ActiveAdmittedRows
 from bilqis_mlx.learning.atlas_plasticity import GroupEligibility
 from bilqis_mlx.runtime.atlas_execution_binder import bind_execution_provenance
@@ -28,38 +18,33 @@ from bilqis_mlx.runtime.model_topology_v2 import (
 BANK = "identity.bank.0"
 MOTIF = "motif.page.0"
 DECLARED = (
-    ParameterSpec(BANK, (2, 2), Initializer.MATRIX, ParameterGroup.IDENTITY_ROW_AGE, True),
-    ParameterSpec(MOTIF, (8, 8), Initializer.MATRIX, ParameterGroup.FAST, True),
+    ParameterSpec(BANK, (2, 2), Initializer.MATRIX,
+                  ParameterGroup.IDENTITY_ROW_AGE, True),
+    ParameterSpec(MOTIF, (8, 8), Initializer.MATRIX,
+                  ParameterGroup.FAST, True),
 )
 EXTENTS = GenerationExtents(1, 1, "a" * 64, "b" * 64, "c" * 64)
-CENSUS_SHAPE = ("bilqis_mlx.learning.atlas_participation_census.expected_bamf_shapes",
-                 "bilqis_mlx.learning._retention.atlas_participation_census.expected_bamf_shapes")
-
-
-def motif_read(slots):
-    """One B08 read-owner result with the given participating motif slots."""
-    width = ModelTopologySpecV2.width
-    return MotifReadResult(
-        mx.zeros((1, 1, width), dtype=mx.float32), (("MISS",),), tuple(slots), (None,))
+CENSUS_SHAPE = (
+    "bilqis_mlx.learning.atlas_participation_census.expected_bamf_shapes",
+    "bilqis_mlx.learning._retention.atlas_participation_census.expected_bamf_shapes",
+)
 
 
 def eligibility(mode="FULL", admitted=((0, 0),), eligible=(BANK, MOTIF)):
     return GroupEligibility(
-        mode=mode, eligible_parameter_names=tuple(eligible),
-        frozen_parameter_names=(), admitted_identity_rows=tuple(admitted),
-        fast_identity_rows=tuple(admitted), established_identity_rows=())
+        mode=mode,
+        eligible_parameter_names=tuple(eligible),
+        frozen_parameter_names=(),
+        admitted_identity_rows=tuple(admitted),
+        fast_identity_rows=tuple(admitted),
+        established_identity_rows=(),
+    )
 
 
 class ExecutionBinderProductionTests(unittest.TestCase):
     def bind(self, **overrides):
-        parent = overrides.pop("parent", None)
         evidence = {
-            "motif_reads": (motif_read((0,)),),
-            "executed_parameter_names": (BANK, MOTIF),
-            "visible_identity_rows": ((0, 0),),
-            "feedback_identity_rows": (),
-            "local_slot_rows": (),
-            "loss_bearing_target": True,
+            "loss_bearing_target": False,
             "group_eligible": eligibility(),
             "active_admitted": ActiveAdmittedRows(
                 identity_rows=((0, 0),), motif_slots=(0,)),
@@ -73,27 +58,31 @@ class ExecutionBinderProductionTests(unittest.TestCase):
             "topology_digest": "8" * 64,
             "candidate_step_ordinal": 1,
         }
-        if parent is not None:
-            evidence["parent_candidate_identity_sha256"] = (
-                candidate_identity_digest(parent))
-            evidence["parent_optimizer_step"] = parent.optimizer_step
         evidence.update(overrides)
         with patch(CENSUS_SHAPE[0], return_value=DECLARED), \
                 patch(CENSUS_SHAPE[1], return_value=DECLARED):
             return bind_execution_provenance(**evidence)
 
-    def test_binder_derives_participation_from_the_read_owners(self):
+    def test_binder_accepts_no_caller_execution_or_motif_facts(self):
+        parameters = set(inspect.signature(bind_execution_provenance).parameters)
+        for forbidden in (
+                "motif_reads", "executed_parameter_names", "visible_identity_rows",
+                "feedback_identity_rows", "local_slot_rows"):
+            self.assertNotIn(forbidden, parameters)
+
+    def test_no_loss_binder_issues_empty_non_authorizing_provenance(self):
         provenance = self.bind()
-        motif = provenance.mask.parameter(MOTIF)
-        self.assertEqual(motif.row_indices, (0,))
-        self.assertEqual(provenance.mask.parameter(BANK).row_indices, (0,))
-        self.assertTrue(provenance.mask.has_loss_bearing_target)
+        self.assertFalse(provenance.mask.has_loss_bearing_target)
+        self.assertEqual(provenance.participation.dense_parameter_names, ())
+        for item in provenance.mask.parameters:
+            self.assertFalse(item.whole_parameter)
+            self.assertEqual(item.row_indices, ())
 
-    def test_unread_motif_slots_cannot_be_claimed(self):
-        provenance = self.bind(motif_reads=(motif_read(()),))
-        self.assertEqual(provenance.mask.parameter(MOTIF).row_indices, ())
+    def test_loss_bearing_step_fails_closed_until_b11_execution_owner_exists(self):
+        with self.assertRaises(BilqisError):
+            self.bind(loss_bearing_target=True)
 
-    def test_forged_fast_reclassification_of_a_slow_parameter_is_refused(self):
+    def test_forged_fast_reclassification_of_slow_parameter_is_refused(self):
         forged = eligibility(mode="FAST", admitted=((0, 0),), eligible=(BANK, MOTIF))
         with self.assertRaises(BilqisError):
             self.bind(group_eligible=forged)
@@ -109,12 +98,6 @@ class ExecutionBinderProductionTests(unittest.TestCase):
                 provenance.parent_candidate_identity_sha256,
                 provenance.parent_optimizer_step, provenance.topology_digest,
                 provenance.candidate_step)
-
-    def test_same_execution_evidence_reproduces_the_same_provenance(self):
-        self.assertEqual(self.bind().digest, self.bind().digest)
-        self.assertNotEqual(
-            self.bind().digest,
-            self.bind(executed_parameter_names=(BANK,)).digest)
 
 
 if __name__ == "__main__":

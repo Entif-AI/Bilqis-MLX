@@ -79,7 +79,7 @@ class ProductionAuthorityTests(unittest.TestCase):
         """The production API takes no caller-authored participation facts."""
         parameters = set(inspect.signature(
             admit_candidate_step).parameters)
-        for forbidden in ("executed_parameter_names", "visible_identity_rows",
+        for forbidden in ("motif_reads", "executed_parameter_names", "visible_identity_rows",
                           "feedback_identity_rows", "local_slot_rows",
                           "group_eligible", "active_admitted", "spec", "extents",
                           "update_mask"):
@@ -107,9 +107,23 @@ class ProductionAuthorityTests(unittest.TestCase):
                 side_effect=admission.production_candidate_step) as step:
             with self.assertRaises(BilqisError):
                 admit_candidate_step(
-                    self.run, {}, motif_reads=(), loss_bearing_target=True,
+                    self.run, {}, loss_bearing_target=True,
                     teacher_hparams=None, decay={}, max_norm=1.)
         self.assertTrue(step.called)
+
+    def test_no_loss_step_cannot_promote_census_to_execution(self):
+        self.publish(candidate(parent_state()))
+        marker = object()
+        with shape_patch(), patch.object(
+                admission, "production_candidate_step", return_value=marker) as step:
+            result = admit_candidate_step(
+                self.run, {}, loss_bearing_target=False,
+                teacher_hparams=None, decay={}, max_norm=1.)
+        self.assertIs(result, marker)
+        for forbidden in ("motif_reads", "executed_parameter_names",
+                          "visible_identity_rows", "feedback_identity_rows",
+                          "local_slot_rows"):
+            self.assertNotIn(forbidden, step.call_args.kwargs)
 
     def test_provenance_cannot_replay_onto_another_candidate_or_step(self):
         self.publish(candidate(parent_state()))
