@@ -57,7 +57,29 @@ def _active_banks(parameters, batch: BamfCompiledBatch, plan: AnswerPlan):
     return tuple(banks)
 
 
-def _forward_participation(params, batch, plan, producer, accepted_cache):
+def _executed_readout_parameters(plan, output):
+    """Return only readout tensors whose decoder branches actually executed."""
+    dense = {
+        "readout.state_norm", "readout.output_norm", "readout.query",
+        "readout.key", "readout.value", "readout.output",
+    }
+    executed_ids = {decision.decision_id for decision in output.decisions}
+    kinds = {decision.kind for decision in output.decisions}
+    if DecisionKind.CONTROL in kinds:
+        dense.update(("readout.control", "readout.control_bias"))
+    if DecisionKind.ROLE in kinds:
+        dense.add("readout.role_query")
+    if DecisionKind.EPISTEMIC in kinds:
+        dense.update(("readout.epistemic", "readout.epistemic_bias"))
+    if any(
+        decision.decision_id in executed_ids and decision.depends_on
+        for decision in plan.decisions
+    ):
+        dense.add("readout.feedback")
+    return dense
+
+
+def _forward_participation(params, batch, plan, output, producer, accepted_cache):
     source = batch.sources[0]
     snapshot = load_pinned_atlas_snapshot(source.selection)
     row = batch.compiled.compiled.rows[0]
@@ -83,18 +105,8 @@ def _forward_participation(params, batch, plan, producer, accepted_cache):
     dense.update((
         "features.gates", "features.project_type", "features.project_role",
         "features.project_schema", "features.project_graph", "features.norm",
-        "readout.state_norm", "readout.output_norm", "readout.query",
-        "readout.key", "readout.value", "readout.output",
     ))
-    kinds = {decision.kind for decision in plan.decisions}
-    if DecisionKind.CONTROL in kinds:
-        dense.update(("readout.control", "readout.control_bias"))
-    if DecisionKind.ROLE in kinds:
-        dense.add("readout.role_query")
-    if DecisionKind.EPISTEMIC in kinds:
-        dense.update(("readout.epistemic", "readout.epistemic_bias"))
-    if any(decision.depends_on for decision in plan.decisions):
-        dense.add("readout.feedback")
+    dense.update(_executed_readout_parameters(plan, output))
     if not dense <= set(params):
         _invalid("B11_EXECUTED_PARAMETER_CENSUS_MISMATCH")
     return _ForwardRecord(
@@ -201,7 +213,7 @@ def _forward_bamf_impl(
         _invalid("B11_TYPED_OUTPUT_INVALID")
     return _FORWARD_ISSUANCE.issue(
         output, _forward_participation(
-            params, compiled_batch, answer_plan, producer, accepted_cache))
+            params, compiled_batch, answer_plan, output, producer, accepted_cache))
 
 
 def forward_bamf(

@@ -4,6 +4,7 @@ import unittest
 
 from bilqis_mlx.learning.atlas_readout import DecisionKind, RoleCandidate
 from bilqis_mlx.semantics.frame_schema import ConceptRef
+from bilqis_mlx.runtime.atlas_model_forward import _executed_readout_parameters
 from bilqis_mlx.runtime.atlas_model_training import _loss_participation
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 
@@ -16,6 +17,25 @@ def _concept(name, index):
 
 
 class LossParticipationTests(unittest.TestCase):
+    def test_never_executed_readout_head_is_not_reported_as_execution(self):
+        plan = SimpleNamespace(decisions=(
+            SimpleNamespace(decision_id="control", depends_on=()),
+            SimpleNamespace(decision_id="role", depends_on=("control",)),
+            SimpleNamespace(decision_id="epistemic", depends_on=("role",)),
+        ))
+        output = SimpleNamespace(decisions=(
+            SimpleNamespace(decision_id="control", kind=DecisionKind.CONTROL),
+            SimpleNamespace(decision_id="role", kind=DecisionKind.ROLE),
+        ))
+
+        names = _executed_readout_parameters(plan, output)
+
+        self.assertIn("readout.control", names)
+        self.assertIn("readout.role_query", names)
+        self.assertIn("readout.feedback", names)
+        self.assertNotIn("readout.epistemic", names)
+        self.assertNotIn("readout.epistemic_bias", names)
+
     def test_loss_owner_records_denominators_feedback_and_role_reads(self):
         parent = _concept("concept:parent", 3)
         bank_rows = ModelTopologySpecV2.semantic_bank_rows
