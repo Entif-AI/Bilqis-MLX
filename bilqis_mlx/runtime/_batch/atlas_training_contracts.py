@@ -1,7 +1,10 @@
 """Immutable BAMF batch records and exact release-consumption boundary."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, is_dataclass
+from enum import Enum
+import hashlib
+import json
 from typing import Any
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
@@ -93,6 +96,38 @@ def _freeze(value):
     if isinstance(value, dict) and all(isinstance(key, str) for key in value):
         return tuple((key, _freeze(value[key])) for key in sorted(value))
     _invalid('UNSUPPORTED_SOURCE_OR_PROVENANCE_VALUE')
+
+
+def _canonical_json_value(value):
+    """Convert exact C02 records into an unambiguous JSON-safe digest form."""
+    if is_dataclass(value):
+        value = asdict(value)
+    if value is None or type(value) in (str, bool, int, float):
+        return value
+    if isinstance(value, bytes):
+        return {"__bilqis_bytes_hex__": value.hex()}
+    if isinstance(value, Enum):
+        return {
+            "__bilqis_enum__": (
+                value.__class__.__module__, value.__class__.__qualname__,
+                _canonical_json_value(value.value),
+            )
+        }
+    if isinstance(value, (list, tuple)):
+        return [_canonical_json_value(item) for item in value]
+    if isinstance(value, dict) and all(isinstance(key, str) for key in value):
+        return {key: _canonical_json_value(value[key]) for key in sorted(value)}
+    _invalid('UNSUPPORTED_CANONICAL_DIGEST_VALUE')
+
+
+def _canonical_digest(value, *, trailing_newline: bool = False) -> str:
+    payload = json.dumps(
+        _canonical_json_value(value), sort_keys=True, separators=(",", ":"),
+        ensure_ascii=False, allow_nan=False,
+    )
+    if trailing_newline:
+        payload += "\n"
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def require_current_release(batch: BamfTrainingBatch, source_context: SourceExecutionContext, *,
