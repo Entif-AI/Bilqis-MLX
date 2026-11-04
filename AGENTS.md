@@ -176,6 +176,38 @@ an agent merely reading a branch. Updating lane state before mutation therefore
 remains an operator duty. See `ADR-124` and
 `docs/tasks/bamf-0.2/README.md`.
 
+## BAMF-0.2 GitHub Project dashboard authority — 2026-11-03
+
+The `BAMF-0.2 Execution` GitHub Project is a read-model and dashboard. It may
+summarize repository state, but it does not own execution state, EGM state, issue
+state, dependency authority, or merge readiness. The repository issues and
+labels, ADRs, BAMF task registry, flow-control records, dependency evidence, and
+execution receipts remain authoritative.
+
+- Treat `BAMF-Leaf` as a one-time structural projection of the current BAMF leaf
+  set for Project filtering. Do not build automatic leaf-label synchronization or
+  infer leaf authority from Project membership.
+- Use the canonical issue labels `EGM-Pending`, `EGM-Failed`, `EGM-Mitigation`,
+  and `EGM-Passed` for EGM state. Do not add a duplicate Project EGM field or use
+  PR status tokens as a second EGM state machine.
+- Project views, filters, charts, and insights may derive from authoritative
+  labels and issue/PR state. They must remain observational.
+- Project `Status` is not issue-close authority. Keep the Project workflow that
+  closes an issue merely because `Status` becomes `Done` disabled.
+- For a bounded implementing issue, a verified accepted merge into its owning
+  reviewed integration target is the normal repository closeout boundary once
+  the issue's acceptance and EGM obligations are satisfied. Close that issue as
+  `completed` immediately after merge readback; do not accumulate merged zombie
+  issues for later cleanup.
+- BAMF implementation PRs commonly target the reviewed unified trunk rather than
+  the repository default branch. Do not assume GitHub's default linked-PR
+  auto-close will fire; the closeout operator must explicitly close the owning
+  issue after verifying the merge. Regressions may reopen the issue or create a
+  new one.
+- Do not close a group/integration parent merely because one scoped child,
+  mitigation, or structural PR merged. The parent closes only when its own
+  aggregate acceptance, child, hold, and remediation gates are satisfied.
+
 ## BAMF-0.2 integration inventory and PR admission — 2026-11-02
 
 ADR-126 separates active implementation WIP from **open implementation-PR
