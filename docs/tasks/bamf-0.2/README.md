@@ -41,7 +41,14 @@ remote head and any concurrently writing process before declaring contention.
 No new permission or issue re-assignment is necessary when the same logical
 worker continues on unchanged state. If an actual competing writer exists,
 coordinate the shared path or use an independent issue branch; do not force-push
-or mutate the competitor's uncommitted work. See `AGENTS.md` and ADR-128.
+or mutate the competitor's uncommitted work. Every planned handoff/compaction
+should carry JSON from `python3 -B scripts/bamf_writer_handoff.py emit --issue
+<ISSUE> --epoch <STABLE-EPOCH> --worktree <WORKTREE>`. The successor saves that
+JSON and runs `python3 -B scripts/bamf_writer_handoff.py verify --payload
+<HANDOFF-JSON-FILE> --worktree <WORKTREE>`. `CONTINUATION_MATCH` removes the
+false issue-ownership hold; an actual branch/remote/dirty-state mismatch must be
+reconciled. This verifies continuity, not exclusive distributed ownership.
+See `AGENTS.md` and ADR-128.
 
 The lane is not a conveyor belt that must keep every open PR warm. The normal limit
 is **six `ACTIVE` implementation leaves per lane** under the 2026-11-04 owner

@@ -74,6 +74,22 @@ mutable branch/path, coordinate or isolate work; do not overwrite its edits.
 When ownership is genuinely ambiguous, name the concrete conflicting live
 writer/ref or uncommitted collision rather than asserting a phantom lock.
 
+**Required handoff payload:** Before a planned compaction or agent transfer,
+run `python3 -B scripts/bamf_writer_handoff.py emit --issue <ISSUE> --epoch
+<STABLE-EPOCH> --worktree <WORKTREE>` and carry the **complete JSON output** in
+the compacted handoff, including issue, epoch, exact worktree, branch, local HEAD,
+upstream and remote HEAD, and worktree-dirty fingerprint. Save that JSON as a
+local file for `python3 -B scripts/bamf_writer_handoff.py verify --payload
+<HANDOFF-JSON-FILE> --worktree <WORKTREE>` when resuming. A
+`CONTINUATION_MATCH` proves the preserved Git snapshot still matches and permits
+resuming **without inventing a new issue claim**. The verifier reads the real
+upstream ref and fingerprints modified/untracked files. On mismatch, inspect
+the changed facts and reconcile, not automatically refuse the issue. Network
+failure is `UNVERIFIED`, not evidence of a competing agent. The JSON is a
+continuity receipt, **not a distributed lock**: it cannot prove that another
+process will not begin writing later. Maintain actual per-branch/shared-path
+coordination during ongoing edits.
+
 Every lane-owned BAMF implementation leaf or open lane PR must be represented in that lane's
 machine-readable state under `docs/tasks/bamf-0.2/flow-control/`. Before substantive
 branch mutation, the operator must run `python3 -B scripts/check_bamf_flow_control.py`

@@ -2835,6 +2835,17 @@ shared file concurrently without explicit coordination. An observed competing
 process or unexpected remote mutation requires reconciliation before writing;
 the mere existence of another worktree or previous agent name does not.
 
+**Executable continuity receipt:** `scripts/bamf_writer_handoff.py` emits a
+versioned JSON handoff bearing issue, execution epoch, canonical worktree path,
+branch, local HEAD, upstream, exact live remote HEAD and content-sensitive dirty
+worktree fingerprint. The resumed worker verifies that snapshot before editing;
+matching state is `CONTINUATION_MATCH`, not a requirement to acquire the issue
+again. A mismatch requires a targeted reconciliation of that field; neither
+stale handoff nor tool/network failure establishes someone else's ownership.
+Live remote verification is required for a positive match. A matching snapshot
+does not grant exclusive process-level lock ownership, so actual concurrent
+writers still require coordination.
+
 **Preserved boundaries:** No forced pushes; no overwrite of another writer's
 uncommitted work; no self-merge, bypass of scoped verification/EGM, or automatic
 neural-training/optimizer/checkpoint mutation. PR-count and WIP expansions are
