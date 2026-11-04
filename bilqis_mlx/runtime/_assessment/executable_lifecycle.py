@@ -181,5 +181,3 @@ def _candidate_executable_cohort(
     pointer = _persist_executable_cohort(
         run_dir, manifest, actual, cohort)
     return cohort, pointer
-
-

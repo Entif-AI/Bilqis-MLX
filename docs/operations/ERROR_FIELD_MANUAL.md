@@ -1749,7 +1749,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **2030** raw raises across **232** files. The baseline gate permits only reduction.
+Current production scan: **2030** raw raises across **235** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -2002,10 +2002,10 @@ Current production scan: **2030** raw raises across **232** files. The baseline 
 | `CHAMPIONSHIP_COHORT_RUBRIC_IDENTITY_DRIFT` | 1 | `bilqis_mlx/learning/_championship/championship_witnesses.py` |
 | `CHAMPIONSHIP_COMPLETE_SOLVER_PROVENANCE_INVALID` | 1 | `bilqis_mlx/learning/_championship/championship_witnesses.py` |
 | `CHAMPIONSHIP_EARNING_CHECKPOINT_UNSAFE` | 1 | `bilqis_mlx/learning/championship_runtime.py` |
-| `CHAMPIONSHIP_EARNING_COHORT_CONTENT_DRIFT` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `CHAMPIONSHIP_EARNING_COHORT_IDENTITY_REQUIRED` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `CHAMPIONSHIP_EARNING_COHORT_MISSING` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `CHAMPIONSHIP_EARNING_COHORT_SOURCE_DRIFT` | 1 | `bilqis_mlx/runtime/assessment.py` |
+| `CHAMPIONSHIP_EARNING_COHORT_CONTENT_DRIFT` | 1 | `bilqis_mlx/runtime/_assessment/current_custody.py` |
+| `CHAMPIONSHIP_EARNING_COHORT_IDENTITY_REQUIRED` | 1 | `bilqis_mlx/runtime/_assessment/current_custody.py` |
+| `CHAMPIONSHIP_EARNING_COHORT_MISSING` | 1 | `bilqis_mlx/runtime/_assessment/current_custody.py` |
+| `CHAMPIONSHIP_EARNING_COHORT_SOURCE_DRIFT` | 1 | `bilqis_mlx/runtime/_assessment/current_custody.py` |
 | `CHAMPIONSHIP_EARNING_GRAPH_DRIFT` | 1 | `bilqis_mlx/learning/championship_runtime.py` |
 | `CHAMPIONSHIP_EARNING_SCORE_DRIFT` | 1 | `bilqis_mlx/learning/championship_runtime.py` |
 | `CHAMPIONSHIP_EPOCH_ACTIVE_ROLES_INVALID` | 1 | `bilqis_mlx/learning/epoch_championships.py` |
@@ -2428,22 +2428,22 @@ Current production scan: **2030** raw raises across **232** files. The baseline 
 | `FACTORY_EXECUTABLE_ADMISSION_RELEASE_MISMATCH` | 1 | `bilqis_mlx/factory/executable_release.py` |
 | `FACTORY_EXECUTABLE_ADMISSION_RELEASE_REQUIRED` | 2 | `bilqis_mlx/factory/executable_release.py` |
 | `FACTORY_EXECUTABLE_ADMISSION_STEP_INVALID` | 1 | `bilqis_mlx/factory/executable_release.py` |
-| `FACTORY_EXECUTABLE_COHORT_CONTENT_DRIFT` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `FACTORY_EXECUTABLE_COHORT_CONTRACT_DRIFT` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `FACTORY_EXECUTABLE_COHORT_CONTRACT_REQUIRED` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `FACTORY_EXECUTABLE_COHORT_CUSTODY_DRIFT` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `FACTORY_EXECUTABLE_COHORT_METADATA_DRIFT` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `FACTORY_EXECUTABLE_COHORT_MISSING` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `FACTORY_EXECUTABLE_COHORT_POINTER_DRIFT` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `FACTORY_EXECUTABLE_COHORT_POINTER_INVALID` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `FACTORY_EXECUTABLE_COHORT_RELEASE_DRIFT` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `FACTORY_EXECUTABLE_COHORT_SCOPE_DRIFT` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `FACTORY_EXECUTABLE_COHORT_SEED_REQUIRED` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `FACTORY_EXECUTABLE_COHORT_SOURCE_MANIFEST_REQUIRED` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `FACTORY_EXECUTABLE_COHORT_UNSAFE_DIRECTORY` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `FACTORY_EXECUTABLE_COHORT_WRITEBACK_DRIFT` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `FACTORY_EXECUTABLE_FRESH_GENERALIZATION_COHORT_EXHAUSTED` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `FACTORY_EXECUTABLE_GENERALIZATION_BURN_LEDGER_INVALID` | 1 | `bilqis_mlx/runtime/assessment.py` |
+| `FACTORY_EXECUTABLE_COHORT_CONTENT_DRIFT` | 1 | `bilqis_mlx/runtime/_assessment/executable_custody.py` |
+| `FACTORY_EXECUTABLE_COHORT_CONTRACT_DRIFT` | 1 | `bilqis_mlx/runtime/_assessment/executable_custody.py` |
+| `FACTORY_EXECUTABLE_COHORT_CONTRACT_REQUIRED` | 1 | `bilqis_mlx/runtime/_assessment/executable_custody.py` |
+| `FACTORY_EXECUTABLE_COHORT_CUSTODY_DRIFT` | 1 | `bilqis_mlx/runtime/_assessment/executable_custody.py` |
+| `FACTORY_EXECUTABLE_COHORT_METADATA_DRIFT` | 1 | `bilqis_mlx/runtime/_assessment/executable_custody.py` |
+| `FACTORY_EXECUTABLE_COHORT_MISSING` | 1 | `bilqis_mlx/runtime/_assessment/executable_custody.py` |
+| `FACTORY_EXECUTABLE_COHORT_POINTER_DRIFT` | 1 | `bilqis_mlx/runtime/_assessment/executable_custody.py` |
+| `FACTORY_EXECUTABLE_COHORT_POINTER_INVALID` | 1 | `bilqis_mlx/runtime/_assessment/executable_custody.py` |
+| `FACTORY_EXECUTABLE_COHORT_RELEASE_DRIFT` | 1 | `bilqis_mlx/runtime/_assessment/executable_custody.py` |
+| `FACTORY_EXECUTABLE_COHORT_SCOPE_DRIFT` | 1 | `bilqis_mlx/runtime/_assessment/executable_custody.py` |
+| `FACTORY_EXECUTABLE_COHORT_SEED_REQUIRED` | 1 | `bilqis_mlx/runtime/_assessment/executable_custody.py` |
+| `FACTORY_EXECUTABLE_COHORT_SOURCE_MANIFEST_REQUIRED` | 1 | `bilqis_mlx/runtime/_assessment/executable_custody.py` |
+| `FACTORY_EXECUTABLE_COHORT_UNSAFE_DIRECTORY` | 1 | `bilqis_mlx/runtime/_assessment/executable_custody.py` |
+| `FACTORY_EXECUTABLE_COHORT_WRITEBACK_DRIFT` | 1 | `bilqis_mlx/runtime/_assessment/executable_custody.py` |
+| `FACTORY_EXECUTABLE_FRESH_GENERALIZATION_COHORT_EXHAUSTED` | 1 | `bilqis_mlx/runtime/_assessment/executable_lifecycle.py` |
+| `FACTORY_EXECUTABLE_GENERALIZATION_BURN_LEDGER_INVALID` | 1 | `bilqis_mlx/runtime/_assessment/executable_lifecycle.py` |
 | `FACTORY_EXECUTABLE_GENERATION_REGISTRY_REQUIRED` | 1 | `bilqis_mlx/factory/generation.py` |
 | `FACTORY_EXECUTABLE_GENERATION_RELEASE_REQUIRED` | 1 | `bilqis_mlx/factory/generation.py` |
 | `FACTORY_EXECUTABLE_GENERATION_UNKNOWN_CAPABILITY` | 1 | `bilqis_mlx/factory/generation.py` |
@@ -2470,12 +2470,12 @@ Current production scan: **2030** raw raises across **232** files. The baseline 
 | `FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_REQUIRED` | 1 | `bilqis_mlx/factory/executable_release.py` |
 | `FACTORY_EXECUTABLE_RELEASE_REQUIRED` | 2 | `bilqis_mlx/factory/executable_release.py`, `bilqis_mlx/runtime/_operator/admission.py` |
 | `FACTORY_EXECUTABLE_RELEASE_SCHEMA_INVALID` | 1 | `bilqis_mlx/factory/executable_release.py` |
-| `FACTORY_EXECUTABLE_SAVED_COHORT_CURRENT_ADMISSION_DRIFT` | 2 | `bilqis_mlx/runtime/assessment.py` |
-| `FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_LINEAGE_DRIFT` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_POINTER_INVALID` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_STUDENT_DRIFT` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_UNAUTHORIZED` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `FACTORY_EXECUTABLE_SAVED_COHORT_SCOPE_REQUIRED` | 1 | `bilqis_mlx/runtime/assessment.py` |
+| `FACTORY_EXECUTABLE_SAVED_COHORT_CURRENT_ADMISSION_DRIFT` | 2 | `bilqis_mlx/runtime/_assessment/current_custody.py` |
+| `FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_LINEAGE_DRIFT` | 1 | `bilqis_mlx/runtime/_assessment/current_custody.py` |
+| `FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_POINTER_INVALID` | 1 | `bilqis_mlx/runtime/_assessment/current_custody.py` |
+| `FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_STUDENT_DRIFT` | 1 | `bilqis_mlx/runtime/_assessment/current_custody.py` |
+| `FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_UNAUTHORIZED` | 1 | `bilqis_mlx/runtime/_assessment/current_custody.py` |
+| `FACTORY_EXECUTABLE_SAVED_COHORT_SCOPE_REQUIRED` | 1 | `bilqis_mlx/runtime/_assessment/current_custody.py` |
 | `FACTORY_EXECUTION_GENERATION_ADAPTER_DRIFT` | 1 | `bilqis_mlx/factory/generation.py` |
 | `FACTORY_EXECUTION_GENERATION_ANSWER_DRIFT` | 1 | `bilqis_mlx/factory/generation.py` |
 | `FACTORY_EXECUTION_GENERATION_EMPTY_SCOPE` | 1 | `bilqis_mlx/factory/generation.py` |
@@ -2511,9 +2511,9 @@ Current production scan: **2030** raw raises across **232** files. The baseline 
 | `FACTORY_LEGACY_COURSE_REQUIRED` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
 | `FACTORY_LEGACY_COURSE_SOURCE_BINDING_MISSING` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
 | `FACTORY_LEGACY_SCHEDULE_COURSE_REQUIRED` | 1 | `bilqis_mlx/compatibility/schedule_program.py` |
-| `FACTORY_LESSON_CAPABILITY_NOT_ADMITTED` | 1 | `bilqis_mlx/runtime/assessment.py` |
+| `FACTORY_LESSON_CAPABILITY_NOT_ADMITTED` | 1 | `bilqis_mlx/runtime/_assessment/current_custody.py` |
 | `FACTORY_LESSON_GRADE_NOT_RELEASED` | 1 | `bilqis_mlx/_release_views/live_curriculum.py` |
-| `FACTORY_LESSON_PROVIDER_BINDING_DRIFT` | 1 | `bilqis_mlx/runtime/assessment.py` |
+| `FACTORY_LESSON_PROVIDER_BINDING_DRIFT` | 1 | `bilqis_mlx/runtime/_assessment/current_custody.py` |
 | `FACTORY_MICRO_EVIDENCE_COMPOSITION_AST_INVALID` | 1 | `bilqis_mlx/source_adapters/_school/evidence.py` |
 | `FACTORY_MICRO_EVIDENCE_COMPOSITION_KEY_INVALID` | 1 | `bilqis_mlx/source_adapters/_school/evidence.py` |
 | `FACTORY_MICRO_EVIDENCE_KIND_UNSUPPORTED` | 1 | `bilqis_mlx/source_adapters/_school/evidence.py` |
@@ -2589,7 +2589,7 @@ Current production scan: **2030** raw raises across **232** files. The baseline 
 | `FACTORY_RELEASE_NOT_ADMITTED_FOR_RUNTIME` | 1 | `bilqis_mlx/runtime/_operator/admission.py` |
 | `FACTORY_RELEASE_PREDECESSOR_AMBIGUOUS` | 1 | `bilqis_mlx/compatibility/live_release_parts/reconstruction.py` |
 | `FACTORY_RELEASE_PROVIDER_DIGEST_DRIFT` | 1 | `bilqis_mlx/compatibility/live_release_parts/receipts.py` |
-| `FACTORY_RELEASE_REQUIRED_FOR_SOURCE_GENERATION` | 1 | `bilqis_mlx/runtime/assessment.py` |
+| `FACTORY_RELEASE_REQUIRED_FOR_SOURCE_GENERATION` | 1 | `bilqis_mlx/runtime/_assessment/current_custody.py` |
 | `FACTORY_RELEASE_REQUIRES_EXECUTABLE_COURSE` | 1 | `bilqis_mlx/factory/lifecycle/release.py` |
 | `FACTORY_RELEASE_RUNTIME_SOURCE_ADAPTER_DRIFT` | 1 | `bilqis_mlx/runtime/_operator/admission.py` |
 | `FACTORY_RELEASE_SEMANTIC_BINDING_DRIFT` | 1 | `bilqis_mlx/factory/model.py` |
@@ -2904,11 +2904,11 @@ Current production scan: **2030** raw raises across **232** files. The baseline 
 | `HUMAN_TRAINER_CAPABILITY_CUSTODY_PATH_DRIFT` | 1 | `bilqis_mlx/runtime/_custody/checkpoint_retention.py` |
 | `HUMAN_TRAINER_CAPABILITY_CUSTODY_REFERENCE_DRIFT` | 1 | `bilqis_mlx/runtime/_custody/checkpoint_retention.py` |
 | `HUMAN_TRAINER_CAPABILITY_CUSTODY_SHA_DRIFT` | 1 | `bilqis_mlx/runtime/_custody/checkpoint_retention.py` |
-| `HUMAN_TRAINER_COHORT_POINTER_CONTENT_DRIFT` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `HUMAN_TRAINER_COHORT_POINTER_DRIFT` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `HUMAN_TRAINER_COHORT_POINTER_INVALID` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `HUMAN_TRAINER_COHORT_POINTER_MISSING` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `HUMAN_TRAINER_COHORT_VERSION_MISMATCH` | 1 | `bilqis_mlx/runtime/assessment.py` |
+| `HUMAN_TRAINER_COHORT_POINTER_CONTENT_DRIFT` | 1 | `bilqis_mlx/runtime/_assessment/current_custody.py` |
+| `HUMAN_TRAINER_COHORT_POINTER_DRIFT` | 1 | `bilqis_mlx/runtime/_assessment/current_custody.py` |
+| `HUMAN_TRAINER_COHORT_POINTER_INVALID` | 1 | `bilqis_mlx/runtime/_assessment/current_custody.py` |
+| `HUMAN_TRAINER_COHORT_POINTER_MISSING` | 1 | `bilqis_mlx/runtime/_assessment/current_custody.py` |
+| `HUMAN_TRAINER_COHORT_VERSION_MISMATCH` | 1 | `bilqis_mlx/runtime/_assessment/current_custody.py` |
 | `HUMAN_TRAINER_COMPLETE_CHECKPOINT_READBACK_DRIFT` | 1 | `bilqis_mlx/runtime/_custody/checkpoint_bundle.py` |
 | `HUMAN_TRAINER_CURRENT_VOCAB_ANSWER_HEAD_DRIFT` | 1 | `bilqis_mlx/runtime/_custody/resume_metadata.py` |
 | `HUMAN_TRAINER_CURRENT_VOCAB_GRAPH_EMBEDDING_DRIFT` | 1 | `bilqis_mlx/runtime/_custody/resume_metadata.py` |
@@ -2916,12 +2916,12 @@ Current production scan: **2030** raw raises across **232** files. The baseline 
 | `HUMAN_TRAINER_EXAM_OUTSIDE_SCHEDULED_BOUNDARY` | 1 | `bilqis_mlx/runtime/exam_execution.py` |
 | `HUMAN_TRAINER_EXAM_SCORE_SCOPE_DRIFT` | 1 | `bilqis_mlx/runtime/exam_execution.py` |
 | `HUMAN_TRAINER_EXTERNAL_SOURCE_ROOT_FORBIDDEN` | 1 | `bilqis_mlx/presentation/operator_cli/command.py` |
-| `HUMAN_TRAINER_FRESH_GENERALIZATION_COHORT_EXHAUSTED` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `HUMAN_TRAINER_GENERALIZATION_BURN_LEDGER_INVALID` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `HUMAN_TRAINER_GENERALIZATION_EXPOSURE_CONTENT_DRIFT` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `HUMAN_TRAINER_GENERALIZATION_EXPOSURE_EVIDENCE_MISSING` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `HUMAN_TRAINER_GENERATED_COHORT_CUSTODY_DRIFT` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `HUMAN_TRAINER_GENERATED_COHORT_WRITEBACK_DRIFT` | 1 | `bilqis_mlx/runtime/assessment.py` |
+| `HUMAN_TRAINER_FRESH_GENERALIZATION_COHORT_EXHAUSTED` | 1 | `bilqis_mlx/runtime/_assessment/current_lifecycle.py` |
+| `HUMAN_TRAINER_GENERALIZATION_BURN_LEDGER_INVALID` | 1 | `bilqis_mlx/runtime/_assessment/current_lifecycle.py` |
+| `HUMAN_TRAINER_GENERALIZATION_EXPOSURE_CONTENT_DRIFT` | 1 | `bilqis_mlx/runtime/_assessment/current_lifecycle.py` |
+| `HUMAN_TRAINER_GENERALIZATION_EXPOSURE_EVIDENCE_MISSING` | 1 | `bilqis_mlx/runtime/_assessment/current_lifecycle.py` |
+| `HUMAN_TRAINER_GENERATED_COHORT_CUSTODY_DRIFT` | 1 | `bilqis_mlx/runtime/_assessment/current_custody.py` |
+| `HUMAN_TRAINER_GENERATED_COHORT_WRITEBACK_DRIFT` | 1 | `bilqis_mlx/runtime/_assessment/current_custody.py` |
 | `HUMAN_TRAINER_HISTORICAL_EXAM_ADMISSION_INVALID` | 1 | `bilqis_mlx/runtime/_operator/admission.py` |
 | `HUMAN_TRAINER_HISTORICAL_EXAM_ADMISSION_REQUIRED` | 1 | `bilqis_mlx/runtime/_operator/admission.py` |
 | `HUMAN_TRAINER_HISTORICAL_EXAM_LINEAGE_DRIFT` | 1 | `bilqis_mlx/runtime/_operator/admission.py` |
@@ -3499,7 +3499,7 @@ Current production scan: **2030** raw raises across **232** files. The baseline 
 | `STAGNATION_REHABILITATION_REQUIRES_SOLE_GRADE` | 1 | `bilqis_mlx/learning/stagnation_control.py` |
 | `STAGNATION_REHABILITATION_STATE_DRIFT` | 1 | `bilqis_mlx/learning/stagnation_control.py` |
 | `STAGNATION_REQUIRED_SCOPE_INVALID` | 1 | `bilqis_mlx/learning/stagnation_control.py` |
-| `STAGNATION_ROUTINE_EVALUATION_HAS_NO_ACTIVE_CAPABILITIES` | 1 | `bilqis_mlx/runtime/assessment.py` |
+| `STAGNATION_ROUTINE_EVALUATION_HAS_NO_ACTIVE_CAPABILITIES` | 1 | `bilqis_mlx/runtime/_assessment/current_lifecycle.py` |
 | `STAGNATION_SCOPE_RECONCILIATION_GENERATION_DRIFT` | 1 | `bilqis_mlx/runtime/_custody/reconciliation.py` |
 | `STAGNATION_SCOPE_RECONCILIATION_INVALID_GENERATION` | 1 | `bilqis_mlx/learning/stagnation_control.py` |
 | `STAGNATION_SCORE_OBSERVATION_INVALID` | 1 | `bilqis_mlx/learning/stagnation_control.py` |

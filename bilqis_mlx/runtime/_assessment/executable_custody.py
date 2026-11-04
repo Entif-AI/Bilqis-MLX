@@ -120,5 +120,3 @@ def _load_executable_cohort(
     except ValueError as exc:
         raise ValueError("FACTORY_EXECUTABLE_COHORT_CONTENT_DRIFT") from exc
     return cohort
-
-

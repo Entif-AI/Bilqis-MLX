@@ -1,5 +1,5 @@
 {
-  "legacy_raw_file_count": 232,
+  "legacy_raw_file_count": 235,
   "legacy_raw_raise_count": 2030,
   "legacy_raw_raise_groups": [
     {
@@ -9355,6 +9355,293 @@
       "path": "bilqis_mlx/runtime/_admission/jit_adoption.py"
     },
     {
+      "code_hint": "CHAMPIONSHIP_EARNING_COHORT_CONTENT_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'CHAMPIONSHIP_EARNING_COHORT_CONTENT_DRIFT'",
+      "path": "bilqis_mlx/runtime/_assessment/current_custody.py"
+    },
+    {
+      "code_hint": "CHAMPIONSHIP_EARNING_COHORT_IDENTITY_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'CHAMPIONSHIP_EARNING_COHORT_IDENTITY_REQUIRED'",
+      "path": "bilqis_mlx/runtime/_assessment/current_custody.py"
+    },
+    {
+      "code_hint": "CHAMPIONSHIP_EARNING_COHORT_MISSING",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'CHAMPIONSHIP_EARNING_COHORT_MISSING'",
+      "path": "bilqis_mlx/runtime/_assessment/current_custody.py"
+    },
+    {
+      "code_hint": "CHAMPIONSHIP_EARNING_COHORT_SOURCE_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'CHAMPIONSHIP_EARNING_COHORT_SOURCE_DRIFT'",
+      "path": "bilqis_mlx/runtime/_assessment/current_custody.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_SAVED_COHORT_CURRENT_ADMISSION_DRIFT",
+      "count": 2,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_SAVED_COHORT_CURRENT_ADMISSION_DRIFT'",
+      "path": "bilqis_mlx/runtime/_assessment/current_custody.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_LINEAGE_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_LINEAGE_DRIFT'",
+      "path": "bilqis_mlx/runtime/_assessment/current_custody.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_POINTER_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_POINTER_INVALID'",
+      "path": "bilqis_mlx/runtime/_assessment/current_custody.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_STUDENT_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_STUDENT_DRIFT'",
+      "path": "bilqis_mlx/runtime/_assessment/current_custody.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_UNAUTHORIZED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_UNAUTHORIZED'",
+      "path": "bilqis_mlx/runtime/_assessment/current_custody.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_SAVED_COHORT_SCOPE_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_SAVED_COHORT_SCOPE_REQUIRED'",
+      "path": "bilqis_mlx/runtime/_assessment/current_custody.py"
+    },
+    {
+      "code_hint": "FACTORY_LESSON_CAPABILITY_NOT_ADMITTED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_LESSON_CAPABILITY_NOT_ADMITTED'",
+      "path": "bilqis_mlx/runtime/_assessment/current_custody.py"
+    },
+    {
+      "code_hint": "FACTORY_LESSON_PROVIDER_BINDING_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_LESSON_PROVIDER_BINDING_DRIFT'",
+      "path": "bilqis_mlx/runtime/_assessment/current_custody.py"
+    },
+    {
+      "code_hint": "FACTORY_RELEASE_REQUIRED_FOR_SOURCE_GENERATION",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_RELEASE_REQUIRED_FOR_SOURCE_GENERATION'",
+      "path": "bilqis_mlx/runtime/_assessment/current_custody.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_COHORT_POINTER_CONTENT_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_COHORT_POINTER_CONTENT_DRIFT'",
+      "path": "bilqis_mlx/runtime/_assessment/current_custody.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_COHORT_POINTER_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_COHORT_POINTER_DRIFT'",
+      "path": "bilqis_mlx/runtime/_assessment/current_custody.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_COHORT_POINTER_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_COHORT_POINTER_INVALID'",
+      "path": "bilqis_mlx/runtime/_assessment/current_custody.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_COHORT_POINTER_MISSING",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_COHORT_POINTER_MISSING'",
+      "path": "bilqis_mlx/runtime/_assessment/current_custody.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_COHORT_VERSION_MISMATCH",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_COHORT_VERSION_MISMATCH'",
+      "path": "bilqis_mlx/runtime/_assessment/current_custody.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_GENERATED_COHORT_CUSTODY_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_GENERATED_COHORT_CUSTODY_DRIFT'",
+      "path": "bilqis_mlx/runtime/_assessment/current_custody.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_GENERATED_COHORT_WRITEBACK_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_GENERATED_COHORT_WRITEBACK_DRIFT'",
+      "path": "bilqis_mlx/runtime/_assessment/current_custody.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_FRESH_GENERALIZATION_COHORT_EXHAUSTED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_FRESH_GENERALIZATION_COHORT_EXHAUSTED'",
+      "path": "bilqis_mlx/runtime/_assessment/current_lifecycle.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_GENERALIZATION_BURN_LEDGER_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_GENERALIZATION_BURN_LEDGER_INVALID'",
+      "path": "bilqis_mlx/runtime/_assessment/current_lifecycle.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_GENERALIZATION_EXPOSURE_CONTENT_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_GENERALIZATION_EXPOSURE_CONTENT_DRIFT'",
+      "path": "bilqis_mlx/runtime/_assessment/current_lifecycle.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_GENERALIZATION_EXPOSURE_EVIDENCE_MISSING",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_GENERALIZATION_EXPOSURE_EVIDENCE_MISSING'",
+      "path": "bilqis_mlx/runtime/_assessment/current_lifecycle.py"
+    },
+    {
+      "code_hint": "STAGNATION_ROUTINE_EVALUATION_HAS_NO_ACTIVE_CAPABILITIES",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'STAGNATION_ROUTINE_EVALUATION_HAS_NO_ACTIVE_CAPABILITIES'",
+      "path": "bilqis_mlx/runtime/_assessment/current_lifecycle.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_COHORT_CONTRACT_REQUIRED",
+      "count": 1,
+      "exception": "TypeError",
+      "expression": "'FACTORY_EXECUTABLE_COHORT_CONTRACT_REQUIRED'",
+      "path": "bilqis_mlx/runtime/_assessment/executable_custody.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_COHORT_SEED_REQUIRED",
+      "count": 1,
+      "exception": "TypeError",
+      "expression": "'FACTORY_EXECUTABLE_COHORT_SEED_REQUIRED'",
+      "path": "bilqis_mlx/runtime/_assessment/executable_custody.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_COHORT_CONTENT_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_COHORT_CONTENT_DRIFT'",
+      "path": "bilqis_mlx/runtime/_assessment/executable_custody.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_COHORT_CONTRACT_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_COHORT_CONTRACT_DRIFT'",
+      "path": "bilqis_mlx/runtime/_assessment/executable_custody.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_COHORT_CUSTODY_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_COHORT_CUSTODY_DRIFT'",
+      "path": "bilqis_mlx/runtime/_assessment/executable_custody.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_COHORT_METADATA_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_COHORT_METADATA_DRIFT'",
+      "path": "bilqis_mlx/runtime/_assessment/executable_custody.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_COHORT_MISSING",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_COHORT_MISSING'",
+      "path": "bilqis_mlx/runtime/_assessment/executable_custody.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_COHORT_POINTER_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_COHORT_POINTER_DRIFT'",
+      "path": "bilqis_mlx/runtime/_assessment/executable_custody.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_COHORT_POINTER_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_COHORT_POINTER_INVALID'",
+      "path": "bilqis_mlx/runtime/_assessment/executable_custody.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_COHORT_RELEASE_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_COHORT_RELEASE_DRIFT'",
+      "path": "bilqis_mlx/runtime/_assessment/executable_custody.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_COHORT_SCOPE_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_COHORT_SCOPE_DRIFT'",
+      "path": "bilqis_mlx/runtime/_assessment/executable_custody.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_COHORT_SOURCE_MANIFEST_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_COHORT_SOURCE_MANIFEST_REQUIRED'",
+      "path": "bilqis_mlx/runtime/_assessment/executable_custody.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_COHORT_UNSAFE_DIRECTORY",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_COHORT_UNSAFE_DIRECTORY'",
+      "path": "bilqis_mlx/runtime/_assessment/executable_custody.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_COHORT_WRITEBACK_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_COHORT_WRITEBACK_DRIFT'",
+      "path": "bilqis_mlx/runtime/_assessment/executable_custody.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_FRESH_GENERALIZATION_COHORT_EXHAUSTED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_FRESH_GENERALIZATION_COHORT_EXHAUSTED'",
+      "path": "bilqis_mlx/runtime/_assessment/executable_lifecycle.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_GENERALIZATION_BURN_LEDGER_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_GENERALIZATION_BURN_LEDGER_INVALID'",
+      "path": "bilqis_mlx/runtime/_assessment/executable_lifecycle.py"
+    },
+    {
       "code_hint": "LEARNING_EXPERIMENT_INCOMPLETE_SAME_GRADE_PROMOTION",
       "count": 1,
       "exception": "ValueError",
@@ -10606,293 +10893,6 @@
       "exception": "ValueError",
       "expression": "'HUMAN_TRAINER_SOURCE_PREFETCH_IDENTITY_DRIFT'",
       "path": "bilqis_mlx/runtime/_visits/step_sources.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_COHORT_CONTRACT_REQUIRED",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'FACTORY_EXECUTABLE_COHORT_CONTRACT_REQUIRED'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_COHORT_SEED_REQUIRED",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'FACTORY_EXECUTABLE_COHORT_SEED_REQUIRED'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "CHAMPIONSHIP_EARNING_COHORT_CONTENT_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CHAMPIONSHIP_EARNING_COHORT_CONTENT_DRIFT'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "CHAMPIONSHIP_EARNING_COHORT_IDENTITY_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CHAMPIONSHIP_EARNING_COHORT_IDENTITY_REQUIRED'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "CHAMPIONSHIP_EARNING_COHORT_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CHAMPIONSHIP_EARNING_COHORT_MISSING'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "CHAMPIONSHIP_EARNING_COHORT_SOURCE_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CHAMPIONSHIP_EARNING_COHORT_SOURCE_DRIFT'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_COHORT_CONTENT_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_COHORT_CONTENT_DRIFT'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_COHORT_CONTRACT_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_COHORT_CONTRACT_DRIFT'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_COHORT_CUSTODY_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_COHORT_CUSTODY_DRIFT'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_COHORT_METADATA_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_COHORT_METADATA_DRIFT'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_COHORT_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_COHORT_MISSING'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_COHORT_POINTER_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_COHORT_POINTER_DRIFT'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_COHORT_POINTER_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_COHORT_POINTER_INVALID'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_COHORT_RELEASE_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_COHORT_RELEASE_DRIFT'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_COHORT_SCOPE_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_COHORT_SCOPE_DRIFT'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_COHORT_SOURCE_MANIFEST_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_COHORT_SOURCE_MANIFEST_REQUIRED'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_COHORT_UNSAFE_DIRECTORY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_COHORT_UNSAFE_DIRECTORY'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_COHORT_WRITEBACK_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_COHORT_WRITEBACK_DRIFT'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_FRESH_GENERALIZATION_COHORT_EXHAUSTED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_FRESH_GENERALIZATION_COHORT_EXHAUSTED'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_GENERALIZATION_BURN_LEDGER_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_GENERALIZATION_BURN_LEDGER_INVALID'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_SAVED_COHORT_CURRENT_ADMISSION_DRIFT",
-      "count": 2,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_SAVED_COHORT_CURRENT_ADMISSION_DRIFT'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_LINEAGE_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_LINEAGE_DRIFT'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_POINTER_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_POINTER_INVALID'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_STUDENT_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_STUDENT_DRIFT'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_UNAUTHORIZED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_UNAUTHORIZED'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_SAVED_COHORT_SCOPE_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_SAVED_COHORT_SCOPE_REQUIRED'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_LESSON_CAPABILITY_NOT_ADMITTED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_LESSON_CAPABILITY_NOT_ADMITTED'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_LESSON_PROVIDER_BINDING_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_LESSON_PROVIDER_BINDING_DRIFT'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "FACTORY_RELEASE_REQUIRED_FOR_SOURCE_GENERATION",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_RELEASE_REQUIRED_FOR_SOURCE_GENERATION'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_COHORT_POINTER_CONTENT_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_COHORT_POINTER_CONTENT_DRIFT'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_COHORT_POINTER_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_COHORT_POINTER_DRIFT'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_COHORT_POINTER_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_COHORT_POINTER_INVALID'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_COHORT_POINTER_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_COHORT_POINTER_MISSING'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_COHORT_VERSION_MISMATCH",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_COHORT_VERSION_MISMATCH'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_FRESH_GENERALIZATION_COHORT_EXHAUSTED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_FRESH_GENERALIZATION_COHORT_EXHAUSTED'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_GENERALIZATION_BURN_LEDGER_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_GENERALIZATION_BURN_LEDGER_INVALID'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_GENERALIZATION_EXPOSURE_CONTENT_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_GENERALIZATION_EXPOSURE_CONTENT_DRIFT'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_GENERALIZATION_EXPOSURE_EVIDENCE_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_GENERALIZATION_EXPOSURE_EVIDENCE_MISSING'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_GENERATED_COHORT_CUSTODY_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_GENERATED_COHORT_CUSTODY_DRIFT'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_GENERATED_COHORT_WRITEBACK_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_GENERATED_COHORT_WRITEBACK_DRIFT'",
-      "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "STAGNATION_ROUTINE_EVALUATION_HAS_NO_ACTIVE_CAPABILITIES",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'STAGNATION_ROUTINE_EVALUATION_HAS_NO_ACTIVE_CAPABILITIES'",
-      "path": "bilqis_mlx/runtime/assessment.py"
     },
     {
       "code_hint": "AUTONOMY_FRONTIER_BUILDER_MISSING",

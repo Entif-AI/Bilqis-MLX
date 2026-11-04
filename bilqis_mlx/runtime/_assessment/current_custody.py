@@ -206,5 +206,3 @@ def _verify_saved_cohort(run_dir, receipt, course, *, sealed_v1_release=None):
         sealed_v1_release = _verified_historical_cohort_release(run_dir, receipt)
     return verify_legacy_saved_cohort(
         run_dir, receipt, course, sealed_v1_release=sealed_v1_release)
-
-
