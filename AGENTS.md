@@ -192,9 +192,21 @@ execution receipts remain authoritative.
   PR status tokens as a second EGM state machine.
 - Project views, filters, charts, and insights may derive from authoritative
   labels and issue/PR state. They must remain observational.
-- Never enable a Project workflow that closes an issue when Project `Status`
-  becomes `Done`. Close issues only through the repository's owning acceptance,
-  remediation, and explicit closeout rules.
+- Project `Status` is not issue-close authority. Keep the Project workflow that
+  closes an issue merely because `Status` becomes `Done` disabled.
+- For a bounded implementing issue, a verified accepted merge into its owning
+  reviewed integration target is the normal repository closeout boundary once
+  the issue's acceptance and EGM obligations are satisfied. Close that issue as
+  `completed` immediately after merge readback; do not accumulate merged zombie
+  issues for later cleanup.
+- BAMF implementation PRs commonly target the reviewed unified trunk rather than
+  the repository default branch. Do not assume GitHub's default linked-PR
+  auto-close will fire; the closeout operator must explicitly close the owning
+  issue after verifying the merge. Regressions may reopen the issue or create a
+  new one.
+- Do not close a group/integration parent merely because one scoped child,
+  mitigation, or structural PR merged. The parent closes only when its own
+  aggregate acceptance, child, hold, and remediation gates are satisfied.
 
 ## BAMF-0.2 integration inventory and PR admission — 2026-11-02
 

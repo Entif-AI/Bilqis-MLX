@@ -48,9 +48,20 @@ authoritative.
   field or encode it in PR status tokens.
 - Project views, charts, and filters may summarize authoritative repository state.
   They must not create a competing workflow state machine.
-- Do not enable any Project workflow that closes an issue because Project
-  `Status` becomes `Done`. Issue closure remains an explicit repository action
-  under the owning issue's acceptance and remediation rules.
+- Project `Status` is not issue-close authority. Keep the Project workflow that
+  closes an issue merely because `Status` becomes `Done` disabled.
+- For a bounded implementing issue, once its accepted implementation PR is
+  confirmed merged into the owning reviewed integration target and the issue's
+  acceptance/EGM obligations are satisfied, close the issue as `completed`
+  immediately. Do not leave merged work open for later bookkeeping cleanup.
+- BAMF implementation PRs commonly merge into the reviewed unified trunk rather
+  than the repository default branch, so do not rely on GitHub's default linked-PR
+  auto-close behavior. The closeout operator must read back the merge and close
+  the owning issue explicitly. A later regression may reopen that issue or create
+  a new one.
+- Group/integration parents remain open while their own aggregate acceptance,
+  child, hold, or remediation scope is unresolved, even when one scoped child or
+  structural PR has merged.
 
 ## Mandatory development structure discipline — 2026-10-29
 
