@@ -29,6 +29,8 @@ class BamfTrainingAuthority:
     delivery_capability: str
     source_row_id: str
     source_row_sha256: str
+    source_family_id: str
+    episode_id: str
     _issuance: object = field(init=False, repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
@@ -37,7 +39,8 @@ class BamfTrainingAuthority:
     def __post_init__(self):
         if (getattr(self, "_issuance", None) is not _ISSUER
                 or not all(isinstance(value, str) and value for value in (
-                    self.delivery_capability, self.source_row_id))
+                    self.delivery_capability, self.source_row_id,
+                    self.source_family_id, self.episode_id))
                 or not all(isinstance(value, str) and _SHA.fullmatch(value)
                            for value in (self.release_sha256,
                                self.generation_binding,
@@ -54,12 +57,17 @@ class BamfTrainingAuthority:
             "capability": self.delivery_capability,
             "row": self.source_row_id,
             "row_sha256": self.source_row_sha256,
+            "source_family": self.source_family_id,
+            "episode": self.episode_id,
         }
         wire = json.dumps(payload, sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(wire.encode()).hexdigest()
 
 
 def _issue(batch, source):
+    provenance = batch.rows[0].provenance
+    if not provenance.source_family_id or not provenance.episode_id:
+        _invalid("B11_TRAINING_SOURCE_INDEPENDENCE_REQUIRED")
     authority = object.__new__(BamfTrainingAuthority)
     for name, value in (
         ("release_sha256", batch.release_sha256),
@@ -68,6 +76,8 @@ def _issue(batch, source):
         ("delivery_capability", batch.delivery_capability),
         ("source_row_id", source.source_row["id"]),
         ("source_row_sha256", content_digest((source.source_row,))),
+        ("source_family_id", provenance.source_family_id),
+        ("episode_id", provenance.episode_id),
         ("_issuance", _ISSUER),
     ):
         object.__setattr__(authority, name, value)

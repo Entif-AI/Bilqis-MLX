@@ -1,5 +1,6 @@
 """Gold-blind C04 lowering for admitted finite-number arithmetic rows."""
 from __future__ import annotations
+import json
 
 from bilqis_mlx.semantics.cognitive_dag import (
     DAGNode, DAGOperand, DAGProgram, RefKind, task_goal_from_program,
@@ -24,6 +25,14 @@ _PURPOSE = "C04_SOLVER"
 _PRINCIPAL = "bamf-c04-numeric"
 _TENANT = "bamf-c05"
 _JURISDICTION = "LOCAL"
+_CAPABILITY_OPERATOR = {
+    "C.COUNT": "COUNT",
+    "C.SUCCESSOR": "SUCC",
+    "C.ADD": "ADD",
+    "C.SUB": "SUB",
+    "C.MUL": "MUL",
+    "C.DIV": "DIV",
+}
 
 
 def _grant(handle, evidence, semantic_release, scope):
@@ -53,8 +62,18 @@ def lower_numeric_task_goal(
             or not isinstance(row["record"].get("symbols"), list)
             or row.get("capability") != capability.capability_id):
         raise ValueError("BAMF_C04_NUMERIC_SOURCE_VIEW_INVALID")
+    if row.get("answer_kind") == "binary":
+        from .answer_choice_task_goal import lower_answer_choice_task_goal
+        return lower_answer_choice_task_goal(
+            row, semantic_release=semantic_release, capability=capability,
+            release=release)
     expression = decode(row["record"]["symbols"])
     declared = capability.capability_id.removeprefix("C.")
+    if declared == "NUMBER" and isinstance(expression, Literal):
+        from .answer_choice_task_goal import lower_answer_choice_task_goal
+        return lower_answer_choice_task_goal(
+            row, semantic_release=semantic_release, capability=capability,
+            release=release)
     if (isinstance(expression, Apply)
             and expression.operator.symbol == "school.op.EQ"
             and declared != "EQ"):
@@ -62,7 +81,7 @@ def lower_numeric_task_goal(
     if not isinstance(expression, Apply):
         raise ValueError("BAMF_C04_NUMERIC_OPERATION_REQUIRED")
     actual = expression.operator.symbol.removeprefix("school.op.")
-    if actual not in released_numeric.OPERATIONS or actual == "COUNT":
+    if actual not in released_numeric.OPERATIONS:
         raise ValueError("BAMF_C04_NUMERIC_OPERATION_UNSUPPORTED")
 
     maximum = _maximum(capability)
@@ -94,6 +113,27 @@ def lower_numeric_task_goal(
 
     def visit(item, path: tuple[int, ...], *, root=False):
         if isinstance(item, Literal):
+            if item.type_name == "NumberSet":
+                try:
+                    raw = json.loads(item.value)
+                except (TypeError, ValueError, json.JSONDecodeError) as exc:
+                    raise ValueError("BAMF_C04_NUMERIC_SET_INVALID") from exc
+                if (not isinstance(raw, list)
+                        or any(type(value) is not int or not 0 <= value <= maximum
+                               for value in raw)):
+                    raise ValueError("BAMF_C04_NUMERIC_SET_INVALID")
+                value = tuple(sorted(set(raw)))
+                handle = "source:numeric-set:" + contract_digest((row_id, path, value))
+                typed = TypedValue("NumberSet", value, semantic_release, handle)
+                source = SourceOperand(
+                    typed, SourceKind.TASK_VISIBLE, "source:numeric-row:" + row_id,
+                    len(row.get("tokens", ())))
+                operands.append(source)
+                grants.append(_grant(
+                    handle, source_operand_digest(source), semantic_release,
+                    capability.capability_id))
+                return DAGOperand(
+                    RefKind.LITERAL, "NumberSet", source_handle=handle)
             if item.type_name != "Number":
                 raise ValueError("BAMF_C04_NUMERIC_LITERAL_TYPE_UNSUPPORTED")
             value = int(item.value)
@@ -120,9 +160,9 @@ def lower_numeric_task_goal(
         node_id = "numeric:" + ("root" if root else ".".join(map(str, path)))
         if root:
             admitted = tuple(
-                item.source_anchor.removeprefix("school.op.")
+                _CAPABILITY_OPERATOR[item.capability_id]
                 for item in release.execution_plan.capabilities
-                if item.source_anchor.startswith("school.op."))
+                if item.capability_id in _CAPABILITY_OPERATOR)
             candidates = tuple(sorted(
                 operator for operator in admitted
                 if operator in {candidate.operator_id for candidate in registry.specs}

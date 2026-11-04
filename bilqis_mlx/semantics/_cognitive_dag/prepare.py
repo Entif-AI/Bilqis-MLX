@@ -110,14 +110,13 @@ def _prepare(goal: TaskGoal, binding: OperatorBinding):
                  or hole_candidate_viable(spec, node)))
         if node.operator_id is not None and not matches:
             _invalid("BAMF_DAG_OPERATOR_SIGNATURE_INVALID")
-        if node.operator_id is None:
-            decisions += (
-                (1 if len(matches) > 1 else 0)
-                + sum(1 for index, operand in enumerate(node.operands)
-                      if operand is None
-                      and len(node.candidate_operand_refs[index]) > 1))
-            if decisions > budget.max_decisions:
-                _invalid("BAMF_DAG_DECISION_BUDGET_EXCEEDED")
+        decisions += (
+            (1 if node.operator_id is None and len(matches) > 1 else 0)
+            + sum(1 for index, operand in enumerate(node.operands)
+                  if operand is None
+                  and len(node.candidate_operand_refs[index]) > 1))
+        if decisions > budget.max_decisions:
+            _invalid("BAMF_DAG_DECISION_BUDGET_EXCEEDED")
         if any(ref is None for ref in node.operands):
             # Bounded *local* legality check, not speculative DAG/tree search.
             # Never execute candidates or inspect evaluation gold.

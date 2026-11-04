@@ -17,6 +17,7 @@ from bilqis_mlx.learning.atlas_candidate import (
     CandidateCustodyIdentity, CandidateState, CandidateStepProof,
     CandidateTransaction, begin_candidate, candidate_step, resolve_candidate,
 )
+from bilqis_mlx.learning._retention._atlas_candidate.common import PREVIOUS_STEP_PROOF_SCHEMA
 from bilqis_mlx.learning._retention.tests.execution_fixtures import execution_provenance
 
 
@@ -162,6 +163,7 @@ class CandidateTransactionTests(TestCase):
             training_batch_sha256="5" * 64,
             target_capability_id="A.TEST",
             training_authority_sha256="6" * 64,
+            schema_version=PREVIOUS_STEP_PROOF_SCHEMA,
         )
         record = proof.to_record()
         self.assertEqual(record["schema_version"], "bilqis.mlx.candidate-step-proof/v2")

@@ -33,14 +33,13 @@ def task_goal_route_decisions(goal: TaskGoal) -> tuple[DecisionSpec, ...]:
     result = []
     prior = ()
     for node in goal.expression_or_holes.nodes:
-        if node.operator_id is not None:
-            continue
-        operator_id = _operator_id(node)
-        result.append(DecisionSpec(
-            operator_id, None, 0, DecisionKind.OPERATOR,
-            node.candidate_operator_ids, prior,
-        ))
-        prior = (operator_id,)
+        if node.operator_id is None:
+            operator_id = _operator_id(node)
+            result.append(DecisionSpec(
+                operator_id, None, 0, DecisionKind.OPERATOR,
+                node.candidate_operator_ids, prior,
+            ))
+            prior = (operator_id,)
         for index, (fixed, candidates) in enumerate(zip(
                 node.operands, node.candidate_operand_refs)):
             if fixed is not None:
@@ -102,10 +101,12 @@ def proposal_from_task_goal_output(
         _invalid("BAMF_C04_TASK_GOAL_ROUTE_INCOMPLETE")
     nodes = []
     for node in goal.expression_or_holes.nodes:
-        if node.operator_id is not None:
+        if node.operator_id is not None and all(
+                operand is not None for operand in node.operands):
             nodes.append(node)
             continue
-        operator = committed[_operator_id(node)]
+        operator = (node.operator_id if node.operator_id is not None
+                    else committed[_operator_id(node)])
         operands = list(node.operands)
         for index, (fixed, candidates) in enumerate(zip(
                 node.operands, node.candidate_operand_refs)):

@@ -3,13 +3,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 import json
-from .common import (LEGACY_STEP_PROOF_SCHEMA, STEP_PROOF_SCHEMA, invalid, is_digest)
+from .common import (
+    LEGACY_STEP_PROOF_SCHEMA, PREVIOUS_STEP_PROOF_SCHEMA, STEP_PROOF_SCHEMA,
+    invalid, is_digest,
+)
 
 _LEGACY_FIELDS = ("step_index", "provenance_sha256", "participation_sha256",
                   "mask_sha256", "parameter_names", "loss_bearing", "schema_version")
 _V2_FIELDS = _LEGACY_FIELDS[:-1] + ("source_release_sha256",
     "training_batch_sha256", "target_capability_id", "training_authority_sha256",
     "schema_version")
+_V3_FIELDS = _V2_FIELDS[:-1] + (
+    "source_family_id", "episode_id", "schema_version")
 
 @dataclass(frozen=True)
 class CandidateStepProof:
@@ -29,6 +34,8 @@ class CandidateStepProof:
     training_batch_sha256: str | None = None
     target_capability_id: str | None = None
     training_authority_sha256: str | None = None
+    source_family_id: str | None = None
+    episode_id: str | None = None
     schema_version: str = STEP_PROOF_SCHEMA
 
     def __post_init__(self) -> None:
@@ -42,19 +49,29 @@ class CandidateStepProof:
                        for name in self.parameter_names)
                 or type(self.loss_bearing) is not bool
                 or self.schema_version not in (
-                    LEGACY_STEP_PROOF_SCHEMA, STEP_PROOF_SCHEMA)):
+                    LEGACY_STEP_PROOF_SCHEMA, PREVIOUS_STEP_PROOF_SCHEMA,
+                    STEP_PROOF_SCHEMA)):
             invalid()
         authority = (
             self.source_release_sha256, self.training_batch_sha256,
             self.target_capability_id, self.training_authority_sha256)
         if self.schema_version == LEGACY_STEP_PROOF_SCHEMA:
-            if authority != (None, None, None, None):
+            if (authority != (None, None, None, None)
+                    or self.source_family_id is not None
+                    or self.episode_id is not None):
                 invalid()
         elif (not is_digest(self.source_release_sha256)
                 or not is_digest(self.training_batch_sha256)
                 or not isinstance(self.target_capability_id, str)
                 or not self.target_capability_id
                 or not is_digest(self.training_authority_sha256)):
+            invalid()
+        if self.schema_version == PREVIOUS_STEP_PROOF_SCHEMA:
+            if self.source_family_id is not None or self.episode_id is not None:
+                invalid()
+        elif self.schema_version == STEP_PROOF_SCHEMA and (
+                not isinstance(self.source_family_id, str) or not self.source_family_id
+                or not isinstance(self.episode_id, str) or not self.episode_id):
             invalid()
 
     @property
@@ -66,7 +83,8 @@ class CandidateStepProof:
 
     def _payload(self) -> dict:
         names = (_LEGACY_FIELDS if self.schema_version == LEGACY_STEP_PROOF_SCHEMA
-                 else _V2_FIELDS)
+                 else _V2_FIELDS if self.schema_version == PREVIOUS_STEP_PROOF_SCHEMA
+                 else _V3_FIELDS)
         return {name: getattr(self, name) for name in names}
 
     def to_record(self) -> dict:
@@ -78,7 +96,9 @@ class CandidateStepProof:
     @classmethod
     def from_record(cls, record) -> "CandidateStepProof":
         schema = record.get("schema_version") if isinstance(record, dict) else None
-        names = (_LEGACY_FIELDS if schema == LEGACY_STEP_PROOF_SCHEMA else _V2_FIELDS)
+        names = (_LEGACY_FIELDS if schema == LEGACY_STEP_PROOF_SCHEMA
+                 else _V2_FIELDS if schema == PREVIOUS_STEP_PROOF_SCHEMA
+                 else _V3_FIELDS)
         if (not isinstance(record, dict)
                 or set(record) != set(names) | {"proof_sha256"}):
             invalid()

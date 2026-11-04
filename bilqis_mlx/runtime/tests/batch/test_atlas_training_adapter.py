@@ -211,6 +211,8 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
         return compile_training_batch(rows, self.context, {'context': 1024},
             delivery=delivery, delivery_capability='Z.C0', delivery_release_sha256=release_sha or self.context.release.release_sha256,
             teacher_strategy={'policy': 'focused'}, requested_count=3, optimizer_step_seed=42,
+            source_authority=self.context.bind_rows(
+                rows, seed=17, capability='Z.C0', each=len(rows)),
             rehearsal_by_id={rows[0]['id']: 'prior'}, visible_ends=visible_ends,
             source_ast_for=source_ast_override or (
                 lambda tokens: source_ast_for(

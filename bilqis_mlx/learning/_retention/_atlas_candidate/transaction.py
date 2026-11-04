@@ -23,6 +23,7 @@ class CandidateTransaction:
     teacher_requests_full: bool
     update_steps: int = 0
     step_proofs: tuple = ()
+    training_authorities: tuple = ()
     schema_version: str = TRANSACTION_SCHEMA
     _issuance: object = field(init=False, repr=False, compare=False)
 
@@ -40,6 +41,8 @@ class CandidateTransaction:
                 or type(self.update_steps) is not int or self.update_steps < 0
                 or type(self.step_proofs) is not tuple
                 or len(self.step_proofs) != self.update_steps
+                or type(self.training_authorities) is not tuple
+                or len(self.training_authorities) != self.update_steps
                 or any(type(proof) is not CandidateStepProof for proof in self.step_proofs)
                 or any(proof.step_index != index + 1
                        for index, proof in enumerate(self.step_proofs))
@@ -66,13 +69,14 @@ class CandidateTransaction:
 
 
 def _issue_transaction(parent, optimizer, teacher_requests_full, update_steps=0,
-                       step_proofs=()):
+                       step_proofs=(), training_authorities=()):
     """Continue optimizer-only candidate state; allocation state is immutable here."""
     candidate = object.__new__(CandidateTransaction)
     for name, value in (
             ('parent', parent), ('optimizer', optimizer), ('allocations', parent.allocations),
             ('teacher_requests_full', teacher_requests_full), ('update_steps', update_steps),
             ('step_proofs', tuple(step_proofs)),
+            ('training_authorities', tuple(training_authorities)),
             ('schema_version', TRANSACTION_SCHEMA), ('_issuance', TRANSACTION_ISSUER)):
         object.__setattr__(candidate, name, value)
     candidate.__post_init__()
@@ -148,10 +152,13 @@ def candidate_step(candidate: CandidateTransaction, gradients, execution,
             training_batch_sha256=training_authority.training_batch_sha256,
             target_capability_id=training_authority.delivery_capability,
             training_authority_sha256=training_authority.digest,
+            source_family_id=training_authority.source_family_id,
+            episode_id=training_authority.episode_id,
             schema_version=STEP_PROOF_SCHEMA)
-    return _issue_transaction(candidate.parent, optimizer,
-                              candidate.teacher_requests_full, candidate.update_steps + 1,
-                              candidate.step_proofs + (proof,))
+    return _issue_transaction(
+        candidate.parent, optimizer, candidate.teacher_requests_full,
+        candidate.update_steps + 1, candidate.step_proofs + (proof,),
+        candidate.training_authorities + (training_authority,))
 
 
 def resolve_candidate(candidate: CandidateTransaction, *, accepted: bool) -> CandidateState:
