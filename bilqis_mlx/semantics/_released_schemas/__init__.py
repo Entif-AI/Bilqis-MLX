@@ -1,1 +1,1 @@
-"""A03 released-schema implementation owners."""
+"""Frozen frame-schema artifacts and source-owned pins."""

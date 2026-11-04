@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "05e31a576e3432e4238c9b4477a70d70ec4fc487",
-  "updated_at": "2026-11-03T19:58:00Z",
+  "observed_unified": "7984d7872d49b3987284692f5398da71f2a72605",
+  "updated_at": "2026-11-03T16:29:43Z",
   "exception": null,
   "items": [
     {
@@ -10,8 +10,8 @@
       "pr": null,
       "state": "WAITING",
       "head_sha": "2c80599dfac07f3e5eaf5d82adf74411dc21b826",
-      "summary": "A08.3 later failed full pinned EGM acceptance on the preserved candidate; #758 owns the substantive rule qualification/Factory integration repair and #737 remains the later lifecycle refresh.",
-      "resume_trigger": "Remediation #758 is resolved first; then #737 refreshes the repaired candidate onto current reviewed unified and the complete candidate receives fresh merge-readiness EGM.",
+      "summary": "A08.3's substantive and lifecycle remediations are merged into reviewed unified; the parent remains parked under its still-live EGM-Failed aggregate state.",
+      "resume_trigger": "The owning parent #420 aggregate EGM disposition is reconciled against the merged #758/#737 repairs and the parent is explicitly selected for any further merge-readiness action.",
       "closed_pr": 703,
       "preserved_branch": "feat/bamf-a08-3-420-20261101",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
@@ -32,7 +32,7 @@
       "pr": null,
       "state": "TURNED_IN",
       "head_sha": "93d3fe62df1be9f8aae995aa8446bac1bea427ea",
-      "summary": "A08.3 current-unified lifecycle refresh passed exact-head EGM and is externally merged through PR #782 as reviewed unified 9bf47289e9ed0a64d275b31c3a7de42c55a8b83e.",
+      "summary": "A08.3 lifecycle remediation passed exact-head EGM and was externally merged through PR #782; issue #737 is now closed with EGM-Passed and its contribution is consumed by reviewed unified.",
       "resume_trigger": null,
       "preserved_branch": "codex/737-a08-lifecycle-20261103",
       "merged_pr": 782
@@ -45,16 +45,6 @@
       "resume_trigger": null,
       "merged_pr": 765,
       "pr": null
-    },
-    {
-      "issue": 737,
-      "pr": null,
-      "state": "TURNED_IN",
-      "head_sha": "12565903b88944510b4652c7d9a61a343ede362c",
-      "summary": "A08.3 current-unified lifecycle refresh is admitted in PR #782 after 34/34 focused proof; final exact-head EGM follows this inventory commit.",
-      "resume_trigger": null,
-      "preserved_branch": "codex/737-a08-lifecycle-20261103",
-      "merged_pr": 782
     }
   ]
 }

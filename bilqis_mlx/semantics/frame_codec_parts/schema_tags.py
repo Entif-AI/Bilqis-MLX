@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 import hashlib
 
+from ..frame_schema import FrameSchema
 from .common import (
     CODEC_VERSION, COMPACT_BYTES_SCHEMA, COMPACT_CODEC_ID, PRESENCE_MASK,
     SCHEMA_LIMIT, SCHEMA_MAP_SCHEMA, SCHEMA_TAG_ENTRY_SCHEMA, SLOT_COUNT,
