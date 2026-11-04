@@ -121,6 +121,10 @@ def _producer_summaries(producer, boundary_group, params):
         _invalid()
     receipts = _SourceBackboneProducerSession._validated_receipts(
         producer, boundary_group)
+    # One source selection has one sealed parameter view. Rehashing the entire
+    # model for each receipt adds no verification strength within this call.
+    parameter_tree_digest = params.parameter_tree_digest
+    generation_digest = params.generation_digest
     for index, item in enumerate(receipts):
         if (item.source_id != SOURCE_ORDER[index]
                 or (index and item.predecessor_receipt_digest != receipts[index - 1].receipt_digest)
@@ -129,8 +133,8 @@ def _producer_summaries(producer, boundary_group, params):
                 or item.generation_digest != receipts[0].generation_digest
                 or item.parameter_tree_digest != receipts[0].parameter_tree_digest
                 or item.prefix_digest != receipts[0].prefix_digest
-                or item.parameter_tree_digest != params.parameter_tree_digest
-                or item.generation_digest != params.generation_digest):
+                or item.parameter_tree_digest != parameter_tree_digest
+                or item.generation_digest != generation_digest):
             _invalid()
     summaries = tuple(DepthSummary(
         item.source_id, item.completed_layer,
