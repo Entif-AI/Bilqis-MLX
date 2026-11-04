@@ -4,14 +4,16 @@ from __future__ import annotations
 from dataclasses import replace
 
 from bilqis_mlx.learning.atlas_readout import (
-    AnswerPlan, DecisionKind, DecisionSpec, ModelOutput,
+    AnswerPlan, DecisionKind, DecisionSpec, ExecutionMode, ModelOutput,
 )
 from bilqis_mlx.learning.atlas_readout.decoder.prediction import issued_output
+from bilqis_mlx.runtime.atlas_model import BamfCompiledBatch, forward_bamf
 from bilqis_mlx.runtime.cognitive_solver import NeuralProposal, NeuralRequest
 from bilqis_mlx.semantics.cognitive_dag import DAGNode, TaskGoal
 from bilqis_mlx.semantics.domains import contract_digest
 
 from .capability_evaluation import _invalid
+from .factory_task_authority import FactoryTaskAuthority
 
 
 def _operator_id(node: DAGNode) -> str:
@@ -121,8 +123,50 @@ def proposal_from_task_goal_output(
     )
 
 
+def b11_task_goal_proposer(
+    parameters,
+    compiled_batch: BamfCompiledBatch,
+    plan: AnswerPlan,
+    authority: FactoryTaskAuthority,
+    *,
+    accepted_cache=None,
+):
+    """Close C04's neural seam over one exact Factory-owned B11 source row."""
+    if (type(compiled_batch) is not BamfCompiledBatch
+            or type(plan) is not AnswerPlan
+            or type(authority) is not FactoryTaskAuthority
+            or compiled_batch.training_authority is None):
+        _invalid("BAMF_C04_B11_TASK_PROPOSER_AUTHORITY_REQUIRED")
+    authority.__post_init__()
+    compiled_batch.__post_init__()
+    training = compiled_batch.training_authority
+    if (training.digest != authority.training_authority_sha256
+            or training.generation_binding != authority.generation_binding
+            or training.delivery_capability != authority.capability_id
+            or training.source_row_id != authority.source_row_id
+            or plan.generation_binding != authority.generation_binding):
+        _invalid("BAMF_C04_B11_TASK_PROPOSER_CUSTODY_MISMATCH")
+    routed_plan = augment_answer_plan_for_task_goal(plan, authority.goal)
+
+    def propose(request: NeuralRequest):
+        if (type(request) is not NeuralRequest
+                or request.goal_id != authority.goal.goal_id
+                or request.source_binding_digest != authority.source_binding_sha256
+                or request.generation_digest != authority.generation_binding
+                or request.allowed_operator_ids != authority.goal.allowed_operator_ids):
+            _invalid("BAMF_C04_B11_TASK_REQUEST_MISMATCH")
+        output = forward_bamf(
+            parameters, compiled_batch, routed_plan,
+            ExecutionMode.INFERENCE, accepted_cache,
+        )
+        return proposal_from_task_goal_output(authority.goal, request, output)
+
+    return propose
+
+
 __all__ = (
     "augment_answer_plan_for_task_goal",
+    "b11_task_goal_proposer",
     "proposal_from_task_goal_output",
     "task_goal_route_decisions",
 )
