@@ -7,6 +7,8 @@ exact candidate state.
 from __future__ import annotations
 
 import os
+import hashlib
+import json
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -31,6 +33,7 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.test_feature_authority import (
     RELEASE, source_features, feature_bound,
 )
+from bilqis_mlx.runtime.bamf_bundle.records import canonical
 
 
 class GenerationAcceptanceProvenanceTests(unittest.TestCase):
@@ -77,6 +80,43 @@ class GenerationAcceptanceProvenanceTests(unittest.TestCase):
         self.assertEqual(
             failure.exception.context["reason"],
             "BAMF_GENERATION_ACCEPTANCE_DRIFT")
+
+    def test_publication_refuses_binding_with_foreign_step_proof(self):
+        source = candidate(accepted_state(parent_state()))
+        record = acceptance(source).to_record()
+        record["step_proof_sha256"] = ("0" * 64,)
+        record["binding_sha256"] = hashlib.sha256(canonical({
+            key: value for key, value in record.items()
+            if key != "binding_sha256"
+        })).hexdigest()
+        forged = AcceptedCandidateBinding.from_record(record)
+        with self.assertRaises(BilqisError) as failure:
+            self.publish(source, acceptance=forged)
+        self.assertEqual(failure.exception.context["reason"],
+                         "BAMF_GENERATION_ACCEPTANCE_DRIFT")
+
+    def test_cold_readback_refuses_resigned_foreign_step_proof(self):
+        features = source_features()
+        source = feature_bound(candidate(accepted_state(parent_state())), features)
+        self.publish(source, acceptance=acceptance(source))
+        path = self.run / "bamf-acceptance" / f"{json_manifest_sha(self.run)}.json"
+        record = json.loads(path.read_text())
+        record["step_proof_sha256"] = ["0" * 64]
+        record["binding_sha256"] = hashlib.sha256(canonical({
+            key: value for key, value in record.items()
+            if key != "binding_sha256"
+        })).hexdigest()
+        path.write_text(json.dumps(record))
+        with shape_patch(), \
+                patch("bilqis_mlx.runtime.bamf_bundle.feature_authority."
+                      "build_feature_manifest", return_value=features), \
+                patch("bilqis_mlx.runtime.bamf_bundle.feature_authority."
+                      "load_pinned_atlas_snapshot", side_effect=lambda selection: selection):
+            with self.assertRaises(BilqisError) as failure:
+                read_accepted_generation_feature_receipt(
+                    self.run / "bamf-state.json", "/artifact")
+        self.assertEqual(failure.exception.context["reason"],
+                         "BAMF_GENERATION_ACCEPTANCE_DRIFT")
 
     def test_caller_cannot_construct_an_acceptance_binding(self):
         source = candidate(parent_state())

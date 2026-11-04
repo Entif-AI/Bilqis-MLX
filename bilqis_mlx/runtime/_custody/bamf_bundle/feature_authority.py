@@ -161,7 +161,9 @@ def _accepted_binding(run_dir: Path, pointer: dict, student) -> AcceptedCandidat
             or binding.feature_sha256 != student.extents.factor_map_digest
             or binding.optimizer_step != student.retained_state.optimizer_step
             or binding.candidate_identity_sha256
-            != candidate_identity_digest(student.retained_state)):
+            != candidate_identity_digest(student.retained_state)
+            or binding.step_proof_sha256 != tuple(
+                proof.digest for proof in student.retained_state.step_proofs)):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
     return binding
 

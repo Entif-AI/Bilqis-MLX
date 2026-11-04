@@ -213,7 +213,9 @@ def _require_acceptance(candidate: BamfBundleCandidate,
             or acceptance.feature_sha256 != candidate.extents.factor_map_digest
             or acceptance.optimizer_step != candidate.retained_state.optimizer_step
             or acceptance.candidate_identity_sha256
-            != candidate_identity_digest(candidate.retained_state)):
+            != candidate_identity_digest(candidate.retained_state)
+            or acceptance.step_proof_sha256 != tuple(
+                proof.digest for proof in candidate.retained_state.step_proofs)):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
     return acceptance
 
