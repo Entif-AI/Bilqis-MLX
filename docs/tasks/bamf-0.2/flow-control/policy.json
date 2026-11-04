@@ -47,6 +47,12 @@
         "reason": "Focused governance/docs PR implementing the project-owner EGM issue-label lifecycle; it is not BAMF implementation inventory.",
         "authority": "Direct project-owner instruction on 2026-11-02",
         "expires_when": "PR #743 merges or closes."
+      },
+      {
+        "pr": 814,
+        "reason": "BAMF Project dashboard governance documentation PR changing only AGENTS.md and README.md; no BAMF implementation leaf or integration behavior.",
+        "authority": "ADR-126 implementation-PR inventory excludes non-implementation governance work; verified PR #814 file scope and open state on 2026-11-03.",
+        "expires_when": "PR #814 merges or closes."
       }
     ],
     "admission_exceptions": [
