@@ -1749,7 +1749,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **2009** raw raises across **234** files. The baseline gate permits only reduction.
+Current production scan: **2030** raw raises across **238** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -2422,8 +2422,12 @@ Current production scan: **2009** raw raises across **234** files. The baseline 
 | `FACTORY_EVIDENCE_WITNESS_ADAPTER_REQUIRED` | 1 | `bilqis_mlx/factory/adapters.py` |
 | `FACTORY_EVIDENCE_WITNESS_EXHAUSTED` | 1 | `bilqis_mlx/factory/lifecycle/evidence.py` |
 | `FACTORY_EVIDENCE_WITNESS_RESULT_INVALID` | 1 | `bilqis_mlx/factory/adapters.py` |
+| `FACTORY_EXECUTABLE_ADMISSION_BASELINE_DRIFT` | 1 | `bilqis_mlx/factory/executable_release/records.py` |
 | `FACTORY_EXECUTABLE_ADMISSION_RECEIPT_INVALID` | 1 | `bilqis_mlx/runtime/_operator/admission.py` |
 | `FACTORY_EXECUTABLE_ADMISSION_RECEIPT_REQUIRED` | 1 | `bilqis_mlx/runtime/_operator/admission.py` |
+| `FACTORY_EXECUTABLE_ADMISSION_RELEASE_MISMATCH` | 1 | `bilqis_mlx/factory/executable_release/records.py` |
+| `FACTORY_EXECUTABLE_ADMISSION_RELEASE_REQUIRED` | 2 | `bilqis_mlx/factory/executable_release/admission.py`, `bilqis_mlx/factory/executable_release/records.py` |
+| `FACTORY_EXECUTABLE_ADMISSION_STEP_INVALID` | 1 | `bilqis_mlx/factory/executable_release/records.py` |
 | `FACTORY_EXECUTABLE_COHORT_CONTENT_DRIFT` | 1 | `bilqis_mlx/runtime/_assessment/executable_custody.py` |
 | `FACTORY_EXECUTABLE_COHORT_CONTRACT_DRIFT` | 1 | `bilqis_mlx/runtime/_assessment/executable_custody.py` |
 | `FACTORY_EXECUTABLE_COHORT_CONTRACT_REQUIRED` | 1 | `bilqis_mlx/runtime/_assessment/executable_custody.py` |
@@ -2444,14 +2448,28 @@ Current production scan: **2009** raw raises across **234** files. The baseline 
 | `FACTORY_EXECUTABLE_GENERATION_RELEASE_REQUIRED` | 1 | `bilqis_mlx/factory/generation.py` |
 | `FACTORY_EXECUTABLE_GENERATION_UNKNOWN_CAPABILITY` | 1 | `bilqis_mlx/factory/generation.py` |
 | `FACTORY_EXECUTABLE_PROFILE_TRANSITION_MISMATCH` | 1 | `bilqis_mlx/runtime/release_adoption.py` |
+| `FACTORY_EXECUTABLE_RELEASE_ANSWER_HEAD_CATALOG_DRIFT` | 1 | `bilqis_mlx/factory/executable_release/release.py` |
+| `FACTORY_EXECUTABLE_RELEASE_ANSWER_HEAD_INVALID` | 1 | `bilqis_mlx/factory/executable_release/records.py` |
 | `FACTORY_EXECUTABLE_RELEASE_ARTIFACT_DIGEST_DRIFT` | 1 | `bilqis_mlx/runtime/_operator/admission.py` |
+| `FACTORY_EXECUTABLE_RELEASE_ASSESSMENT_SEAL_INVALID` | 1 | `bilqis_mlx/factory/executable_release/records.py` |
 | `FACTORY_EXECUTABLE_RELEASE_DIGEST_INVALID` | 1 | `bilqis_mlx/runtime/_operator/admission.py` |
+| `FACTORY_EXECUTABLE_RELEASE_DUPLICATE_SPECIMEN` | 1 | `bilqis_mlx/factory/executable_release/compile.py` |
 | `FACTORY_EXECUTABLE_RELEASE_DURABLE_ARTIFACT_DRIFT` | 1 | `bilqis_mlx/runtime/_operator/admission.py` |
 | `FACTORY_EXECUTABLE_RELEASE_DURABLE_ARTIFACT_MISSING` | 1 | `bilqis_mlx/runtime/_operator/admission.py` |
 | `FACTORY_EXECUTABLE_RELEASE_DURABLE_READBACK_DRIFT` | 1 | `bilqis_mlx/runtime/_operator/admission.py` |
 | `FACTORY_EXECUTABLE_RELEASE_DURABLE_SCHEMA_INVALID` | 1 | `bilqis_mlx/runtime/_operator/admission.py` |
+| `FACTORY_EXECUTABLE_RELEASE_INCOMPATIBLE_GEOMETRY` | 1 | `bilqis_mlx/factory/executable_release/compile.py` |
+| `FACTORY_EXECUTABLE_RELEASE_INVALID_INPUT` | 1 | `bilqis_mlx/factory/executable_release/compile.py` |
+| `FACTORY_EXECUTABLE_RELEASE_LINEAGE_DRIFT` | 1 | `bilqis_mlx/factory/executable_release/compile.py` |
+| `FACTORY_EXECUTABLE_RELEASE_LINEAGE_WITHOUT_PREDECESSOR` | 1 | `bilqis_mlx/factory/executable_release/compile.py` |
+| `FACTORY_EXECUTABLE_RELEASE_MANIFEST_CONTENT_DRIFT` | 1 | `bilqis_mlx/factory/executable_release/release.py` |
+| `FACTORY_EXECUTABLE_RELEASE_MANIFEST_INVALID` | 1 | `bilqis_mlx/factory/executable_release/release.py` |
 | `FACTORY_EXECUTABLE_RELEASE_NOT_ADMITTED_FOR_RUNTIME` | 1 | `bilqis_mlx/runtime/_operator/admission.py` |
-| `FACTORY_EXECUTABLE_RELEASE_REQUIRED` | 1 | `bilqis_mlx/runtime/_operator/admission.py` |
+| `FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_DRIFT` | 1 | `bilqis_mlx/factory/executable_release/release.py` |
+| `FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_INVALID` | 2 | `bilqis_mlx/factory/executable_release/compile.py` |
+| `FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_REQUIRED` | 1 | `bilqis_mlx/factory/executable_release/release.py` |
+| `FACTORY_EXECUTABLE_RELEASE_REQUIRED` | 2 | `bilqis_mlx/factory/executable_release/admission.py`, `bilqis_mlx/runtime/_operator/admission.py` |
+| `FACTORY_EXECUTABLE_RELEASE_SCHEMA_INVALID` | 1 | `bilqis_mlx/factory/executable_release/release.py` |
 | `FACTORY_EXECUTABLE_SAVED_COHORT_CURRENT_ADMISSION_DRIFT` | 2 | `bilqis_mlx/runtime/_assessment/current_custody.py` |
 | `FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_LINEAGE_DRIFT` | 1 | `bilqis_mlx/runtime/_assessment/current_custody.py` |
 | `FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_POINTER_INVALID` | 1 | `bilqis_mlx/runtime/_assessment/current_custody.py` |
