@@ -1,6 +1,6 @@
 {
-  "legacy_raw_file_count": 232,
-  "legacy_raw_raise_count": 2030,
+  "legacy_raw_file_count": 233,
+  "legacy_raw_raise_count": 2031,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BOOLEAN_ASSOCIATION_B_GRADE_OWNERSHIP_DRIFT",
@@ -8387,6 +8387,13 @@
       "exception": "ValueError",
       "expression": "'MENTOR_EPOCH_TITLE_ORIGIN_PROVENANCE_INVALID'",
       "path": "bilqis_mlx/learning/lesson_guidance.py"
+    },
+    {
+      "code_hint": "compiled must be CompiledEncoderInput",
+      "count": 1,
+      "exception": "TypeError",
+      "expression": "'compiled must be CompiledEncoderInput'",
+      "path": "bilqis_mlx/learning/source_atoms/backbone_identity.py"
     },
     {
       "code_hint": "STAGNATION_FIRST_RECOVERY_DUPLICATE",

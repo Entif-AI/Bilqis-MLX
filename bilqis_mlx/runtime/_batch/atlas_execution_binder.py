@@ -1,15 +1,4 @@
-"""Fail-closed B09.2 binder until B11/B08 execution authority is executable.
-
-B01 can prove the declared tensor census and plasticity groups, but it cannot
-prove that a tensor participated in one objective.  The current public B08 read
-is quarantined to no-hit, and B11.2 has not yet installed the single production
-backend/gradient dispatch that can own a loss-bearing execution trace.
-
-Consequently this boundary may issue only non-authorizing no-loss provenance.
-It deliberately accepts no caller-supplied dense names, row gathers or motif
-read records.  When B11.2 lands, that owner must replace this hold with a typed
-execution-owned trace rather than reopening structural claims as credentials.
-"""
+"""B09.2 binder consuming only B11-issued production execution authority."""
 from __future__ import annotations
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
@@ -21,6 +10,7 @@ from bilqis_mlx.learning.atlas_participation import (
     StepParticipationInputs,
 )
 from bilqis_mlx.learning.atlas_participation_census import validate_group_census
+from bilqis_mlx.runtime.atlas_model import require_bamf_loss_execution
 
 
 def _invalid(reason: str) -> None:
@@ -29,18 +19,29 @@ def _invalid(reason: str) -> None:
 
 def bind_execution_provenance(
         *, loss_bearing_target: bool,
+        loss_execution=None,
         group_eligible, active_admitted: ActiveAdmittedRows,
         spec, extents, run_id: str, generation: int,
         parent_manifest_sha256: str, parent_candidate_identity_sha256: str,
         parent_optimizer_step: int, topology_digest: str,
         candidate_step_ordinal: int) -> StepExecutionProvenance:
-    """Issue only inert provenance while no production execution owner exists."""
+    """Issue inert no-loss provenance or bind the exact B11 loss execution."""
     if type(loss_bearing_target) is not bool:
         _invalid("LOSS_BEARING_TARGET_REQUIRED")
     validate_group_census(group_eligible, spec, extents)
-    if loss_bearing_target:
-        _invalid("B11_EXECUTION_AUTHORITY_REQUIRED")
-    inputs = StepParticipationInputs(loss_bearing_target=False)
+    if not loss_bearing_target:
+        if loss_execution is not None:
+            _invalid("B11_EXECUTION_AUTHORITY_UNEXPECTED")
+        inputs = StepParticipationInputs(loss_bearing_target=False)
+    else:
+        execution = require_bamf_loss_execution(loss_execution)
+        inputs = StepParticipationInputs(
+            visible_identity_rows=execution.visible_identity_rows,
+            visible_feature_rows=execution.feature_rows,
+            local_slot_rows=execution.local_slot_rows,
+            executed_parameter_names=execution.dense_parameter_names,
+            loss_bearing_target=True,
+        )
     return issue_execution_provenance(
         inputs, SemanticDenominator(), (), RoleReadParticipation(),
         group_eligible, active_admitted, spec=spec, extents=extents,

@@ -78,7 +78,7 @@ class ExecutionBinderProductionTests(unittest.TestCase):
             self.assertFalse(item.whole_parameter)
             self.assertEqual(item.row_indices, ())
 
-    def test_loss_bearing_step_fails_closed_until_b11_execution_owner_exists(self):
+    def test_loss_bearing_step_requires_exact_b11_execution_owner(self):
         with self.assertRaises(BilqisError):
             self.bind(loss_bearing_target=True)
 
