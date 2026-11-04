@@ -3,10 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 from pathlib import Path
-from .. import numeric as released_numeric
+from ..foundation import numeric as released_numeric
 from ..context_eligibility import ContextEligibility, ContextPolicy, SourceFrontier, TaskScope
-from ..core import Signature
-from ..domains import FiniteDomain, contract_digest
+from ..foundation.core import Signature
+from ..foundation.domains import FiniteDomain, contract_digest
 from .common import OPERATOR_SCHEMA, REGISTRY_SCHEMA, BINDING_SCHEMA, _NATIVE_NUMERIC, _SHA, _invalid
 from .types import SourceOperand
 

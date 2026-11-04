@@ -9,9 +9,11 @@ from bilqis_mlx.runtime.capability_retention import (
     candidate_work_disposition, case_census_digest, configuration_outcome, evaluate_capabilities, retain_candidate,
 )
 from bilqis_mlx.runtime.cognitive_solver import NeuralProposal, SolveBudget, SolveContext
-from bilqis_mlx.semantics.cognitive_dag import DAGBudget, DAGNode
+from bilqis_mlx.semantics.cognitive_dag import (
+    DAGBudget, DAGNode, task_goal_from_program,
+)
 from bilqis_mlx.semantics.cognitive_operators import TypedValue
-from bilqis_mlx.semantics.tests.test_cognitive_dag import _goal, _literal, _program, _result
+from bilqis_mlx.semantics.tests.test_cognitive_dag import _literal, _program, _result
 from bilqis_mlx.semantics.tests.test_cognitive_operators import RELEASE, SCOPE, _case, _with_frame, _grant
 from bilqis_mlx.semantics.context_eligibility import frame_evidence_digest, member_evidence_digest
 from bilqis_mlx.semantics.frame_schema import FrameSchema, RoleSpec, make_frame_instance
@@ -27,7 +29,8 @@ def _cases(capability, group, count, prefix):
         binding, values = _case(("Number", left), ("Number", right))
         node = DAGNode("answer", None, tuple(_literal(v) for v in values),
                        "Number", SCOPE, candidate_operator_ids=("ADD", "SUB"))
-        goal = replace(_goal(_program(node), binding), goal_id=f"{prefix}:{index}")
+        goal = task_goal_from_program(
+            _program(node), binding, goal_id=f"{prefix}:{index}")
         cases.append(EvaluationCase(
             goal.goal_id, capability, group, f"held-family:{prefix}",
             f"held-episode:{prefix}:{index}", goal,

@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "7984d7872d49b3987284692f5398da71f2a72605",
-  "updated_at": "2026-11-03T22:40:00Z",
+  "updated_at": "2026-11-04T18:00:00Z",
   "exception": null,
   "items": [
     {
@@ -108,6 +108,15 @@
       "preserved_branch": "codex/remediation-713-c02-authority-20261103",
       "summary": "C02.1 remediation in ready PR #808: the canonical A06 owner holds feature selection authority at the C02.1 model-input boundary.",
       "resume_trigger": "PR #808 merges or closed; the C02.1 authority continues on owner issue #490."
+    },
+    {
+      "issue": 708,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "b7c802b0f1e9ce7061fefefe1fb7be8f074c57c4",
+      "preserved_branch": "cos/remediation-708-c05-owner-20261104",
+      "summary": "C05/B13.5 remediation is implementing a Factory/source-qualified retention owner so caller-selected solvers, cohorts and policy cannot mint accepted-generation authority.",
+      "resume_trigger": null
     }
   ]
 }

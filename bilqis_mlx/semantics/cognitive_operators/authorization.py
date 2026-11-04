@@ -1,8 +1,8 @@
 """Source grants, visible frames and independent applicability."""
 from __future__ import annotations
 from ..context_eligibility import ContextEligibility, ContextHold, check_context_eligibility
-from ..domains import FiniteDomain, ValueCodec
-from ..frame_schema import FrameInstance
+from ..foundation.domains import FiniteDomain, ValueCodec
+from .._frame_schema.instances import FrameInstance
 from .common import _invalid
 from .registry import CognitiveOperatorSpec, OperatorBinding
 from .types import SourceKind, TypedValue, ValueState, numeric_domain_digest, source_operand_digest
