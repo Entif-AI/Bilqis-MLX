@@ -50,7 +50,8 @@ def answer_loss(output,targets,mask):
                              output.plan.snapshot.release_sha256)
         losses[record.kind].append(typed_decision_loss(head,target,legal_values=record.candidates))
     means={kind:(mx.mean(mx.stack(items)) if items else zero) for kind,items in losses.items()}
-    primary=means[DecisionKind.VALUE]+means[DecisionKind.CONTROL]
+    primary=(means[DecisionKind.VALUE]+means[DecisionKind.CONTROL]
+             +means[DecisionKind.OPERATOR]+means[DecisionKind.OPERAND])
     role=means[DecisionKind.ROLE]*AUXILIARY_WEIGHT
     epistemic=means[DecisionKind.EPISTEMIC]*AUXILIARY_WEIGHT
     return LossParts(primary,role,epistemic,primary+role+epistemic)
