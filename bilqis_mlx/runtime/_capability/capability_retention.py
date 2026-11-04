@@ -223,20 +223,24 @@ def evaluate_retention_candidate(
     This is the owner-run screen from #744. Accepting a caller-built
     PairedRetentionEvidence would let a caller retarget its generation digests.
     """
+    required_kinds = (
+        EvidenceKind.FRESH_TARGET, EvidenceKind.FRESH_LESSON,
+        EvidenceKind.FIXED_SCHOOL,
+    )
     if (not isinstance(parent_solver, CompleteSolver)
             or not isinstance(candidate_solver, CompleteSolver)
             or not isinstance(policy, RetentionPolicy)
             or not isinstance(target_capability, str) or not target_capability
-            or not isinstance(cohorts, tuple) or len(cohorts) != 3
+            or not isinstance(cohorts, tuple)
             or not all(isinstance(cohort, EvaluationCohort) for cohort in cohorts)
-            or tuple(cohort.kind for cohort in cohorts) != (
-                EvidenceKind.FRESH_TARGET, EvidenceKind.FRESH_LESSON,
-                EvidenceKind.FIXED_SCHOOL)):
+            or tuple(cohort.kind for cohort in cohorts) != required_kinds):
         _invalid("BAMF_RETENTION_SCREEN_INPUT_INVALID")
     pairs = tuple(AssessmentPair(
         evaluate_capabilities(parent_solver, cohort, parent_generation),
         evaluate_capabilities(candidate_solver, cohort, candidate_generation),
     ) for cohort in cohorts)
+    target_pair, fresh_lesson_pair, fixed_school_pair = pairs
     evidence = PairedRetentionEvidence(
-        target_capability, policy, pairs[0], pairs[1], pairs[2])
+        target_capability, policy,
+        target_pair, fresh_lesson_pair, fixed_school_pair)
     return retain_candidate(parent_generation, candidate_generation, evidence)

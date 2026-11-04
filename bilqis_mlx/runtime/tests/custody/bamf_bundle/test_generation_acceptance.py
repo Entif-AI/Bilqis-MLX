@@ -17,10 +17,10 @@ from unittest.mock import patch
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_acceptance import (
-    AcceptedCandidateBinding, mint_acceptance_binding,
+    LEGACY_ACCEPTANCE_SCHEMA, AcceptedCandidateBinding, mint_acceptance_binding,
 )
 from bilqis_mlx.learning.atlas_retention_decision import (
-    CandidateRetentionDecision, decide_candidate_retention,
+    LEGACY_DECISION_SCHEMA, CandidateRetentionDecision, decide_candidate_retention,
 )
 from bilqis_mlx.runtime.bamf_bundle import (
     publish_bamf_generation, read_accepted_generation_feature_receipt,
@@ -100,6 +100,33 @@ class GenerationAcceptanceProvenanceTests(unittest.TestCase):
         self.assertEqual(failure.exception.context["reason"],
                          "BAMF_GENERATION_ACCEPTANCE_REQUIRED")
 
+    def test_v1_acceptance_record_remains_readable_but_not_authoritative(self):
+        source = candidate(parent_state())
+        issued = acceptance(source)
+        fields = (
+            "run_id", "generation", "candidate_identity_sha256",
+            "feature_sha256", "optimizer_step", "retention_reason",
+            "step_proof_sha256", "decision_sha256",
+        )
+        legacy = {name: getattr(issued, name) for name in fields}
+        legacy["schema_version"] = LEGACY_ACCEPTANCE_SCHEMA
+        legacy["binding_sha256"] = hashlib.sha256(canonical(legacy)).hexdigest()
+        parsed = AcceptedCandidateBinding.from_record(legacy)
+        self.assertEqual(parsed.to_record(), legacy)
+        with self.assertRaises(BilqisError):
+            self.publish(source, acceptance=parsed)
+
+    def test_replay_cannot_replace_immutable_acceptance_evidence(self):
+        source = candidate(parent_state())
+        first = self.publish(source, acceptance=acceptance(source))
+        altered = acceptance(source)
+        object.__setattr__(altered, "policy_sha256", "0" * 64)
+        with self.assertRaises(BilqisError) as failure:
+            self.publish(source, acceptance=altered)
+        self.assertEqual(failure.exception.context["reason"],
+                         "BAMF_GENERATION_ACCEPTANCE_DRIFT")
+        self.assertEqual(json.loads((self.run / "bamf-state.json").read_text()), first)
+
     def test_cold_readback_refuses_resigned_foreign_step_proof(self):
         features = source_features()
         source = feature_bound(candidate(accepted_state(parent_state())), features)
@@ -171,6 +198,24 @@ class GenerationAcceptanceProvenanceTests(unittest.TestCase):
             mint_acceptance_binding(
                 parsed, source.retained_state, run_id=source.run_id,
                 generation=source.generation,
+                feature_sha256=source.extents.factor_map_digest)
+
+    def test_v1_decision_record_remains_readable_without_issuance(self):
+        source = candidate(parent_state())
+        legacy = {
+            "decision": "PROVISIONAL",
+            "reason": "PAIRED_SCREEN_WITHIN_BUDGET",
+            "target_gain": True,
+            "protected_net_gain": 1,
+            "schema_version": LEGACY_DECISION_SCHEMA,
+        }
+        legacy["decision_sha256"] = hashlib.sha256(canonical(legacy)).hexdigest()
+        parsed = CandidateRetentionDecision.from_record(legacy)
+        self.assertEqual(parsed.to_record(), legacy)
+        with self.assertRaises(BilqisError):
+            mint_acceptance_binding(
+                parsed, source.retained_state,
+                run_id=source.run_id, generation=source.generation,
                 feature_sha256=source.extents.factor_map_digest)
 
     def test_a_rejected_retention_decision_cannot_mint_acceptance(self):
