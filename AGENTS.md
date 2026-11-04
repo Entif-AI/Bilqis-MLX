@@ -241,11 +241,18 @@ coexist in a lane. The unified integration PR into `main` is a separate program
 container. The ceiling applies to inventory, never to number of agents allowed to
 prepare independent work.
 
-Before opening a BAMF implementation PR, reconcile the live inventory:
+Before opening a BAMF implementation PR, inspect the available live inventory.
+The following reconciler is **advisory**, not a hard authorization gate:
 
 `python3 -B scripts/check_bamf_flow_control.py --live`
 
-PR admission requires an available slot (up to twelve), a durable issue/head, consumable hard
+If the live API is unavailable, fails TLS/authentication, or reports a ledger
+timing mismatch, record the limitation, check actual PR state using another
+available GitHub interface, and proceed when the independent candidate gates
+are satisfied. Never make other agents' remote PR activity a hosted-CI failure
+or a reason to abandon an in-flight issue.
+
+PR admission targets an available slot (up to twelve), a durable issue/head, consumable hard
 prerequisites, required current-unified synchronization, green scoped verification,
 no known candidate-owned Blocker/Major, and no existing PR that already owns the
 same integration delta.

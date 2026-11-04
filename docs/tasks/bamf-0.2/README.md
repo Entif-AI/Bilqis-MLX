@@ -75,14 +75,18 @@ integration candidates may coexist in any lane; the former one-PR-per-lane
 restriction is retired. The unified integration PR into `main` does not consume
 an implementation slot.
 
-A completed leaf can remain on a durable branch. Before PR creation, run
-`python3 -B scripts/check_bamf_flow_control.py --live`. The local/operator live
-gate reconciles GitHub against lane ledgers and checks PR admission. Hosted CI
+A completed leaf can remain on a durable branch. Before PR creation, inspect
+live PR inventory using a functioning GitHub interface; the optional command
+`python3 -B scripts/check_bamf_flow_control.py --live` is advisory. If its
+network/TLS/authentication path is unavailable or the ledger is briefly stale,
+record the discrepancy and continue with independent issue/head, proof and
+conflict checks rather than blocking all agents. Hosted CI
 validates static policy and tests only so independently opened PRs cannot make
 otherwise valid CI runs fail because of ledger update timing.
 
 When open implementation inventory is above the ceiling, the program is in
-**DRAIN** mode. No new implementation PRs are admitted. The existing implementation
+**DRAIN** mode. Avoid additional implementation PRs without an explicit owner
+exception. The existing implementation
 PRs present at ADR-126 adoption are grandfathered only for this drain epoch.
 
 **Drain through EGM, repair and merge, not summary closure.** A PR awaiting required

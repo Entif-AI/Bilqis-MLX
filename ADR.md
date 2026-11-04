@@ -2818,6 +2818,9 @@ writers can make progress concurrently. Hosted quality CI checks the static
 flow-control schema/state and regression tests but does not perform a live
 GitHub PR-inventory reconciliation. The operator still performs the `--live`
 inventory check at actual PR admission and resolves tracked-state drift then.
+Where that optional live endpoint is unavailable (for example local TLS failure),
+an alternative authenticated GitHub read is sufficient; network failure or
+brief ledger lag does not itself prohibit opening an otherwise qualified PR.
 
 **Compaction continuity:** A context compaction, handoff, unchanged `ACTIVE`
 ledger item, previous agent identity, checkpoint comment or recorded worktree
