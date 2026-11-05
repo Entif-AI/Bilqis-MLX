@@ -20,7 +20,7 @@ from bilqis_mlx.source_adapters.bravo.fixture import (
 from bilqis_mlx.source_adapters.bravo.receipt import (
     EXPECTED_QUESTIONS, EXPECTED_RENDERED,
 )
-from bilqis_mlx.source_adapters.evidence_frames import (
+from bilqis_mlx.source_adapters.evidence.evidence_frames import (
     PUBLIC_FIXTURE_SOURCE, EvidenceSemanticAuthority, SourceSpan,
     build_public_fixture_snapshot,
 )
@@ -42,7 +42,7 @@ class PublicBravoFixtureTests(unittest.TestCase):
         authority = EvidenceSemanticAuthority(
             RELEASE, STUDY, HOUR, AGENT, "UNIT_CONVERT", GRANT)
         self._authority = patch(
-            "bilqis_mlx.source_adapters.evidence_frames."
+            "bilqis_mlx.source_adapters.evidence.evidence_frames."
             "resolve_public_fixture_authority",
             return_value=authority)
         self._authority.start()
@@ -91,6 +91,12 @@ class PublicBravoFixtureTests(unittest.TestCase):
         self.assertEqual(
             {row.source_manifest_cid for row in split.heldout_witnesses},
             {split.heldout_source_manifest_cid})
+        self.assertEqual(
+            {row.rights for row in split.heldout_witnesses},
+            {split.heldout_rights})
+        self.assertEqual(
+            split.heldout_rights,
+            receipt.rights)
 
     def test_self_consistently_rehashed_tampering_fails_replay(self):
         receipt = self.receipt()
@@ -103,7 +109,7 @@ class PublicBravoFixtureTests(unittest.TestCase):
             verify_public_bravo_fixture_receipt(
                 tampered, atlas_selection=self.selection)
 
-    def test_heldout_rights_purpose_is_bound_and_replayed(self):
+    def test_heldout_rights_purpose_drift_is_rejected_by_split_contract(self):
         receipt = self.receipt()
         split = receipt.f10_proof.independent_split
         changed_witness = replace(
@@ -113,22 +119,12 @@ class PublicBravoFixtureTests(unittest.TestCase):
                 purpose="EVALUATION",
             ),
         )
-        changed_split = replace(
-            split,
-            heldout_witnesses=(
-                changed_witness, *split.heldout_witnesses[1:]),
-        )
-        tampered = replace(
-            receipt,
-            f10_proof=replace(
-                receipt.f10_proof,
-                independent_split=changed_split,
-            ),
-        )
-        self.assertNotEqual(tampered.receipt_sha256, receipt.receipt_sha256)
         with self.assertRaises(BilqisError):
-            verify_public_bravo_fixture_receipt(
-                tampered, atlas_selection=self.selection)
+            replace(
+                split,
+                heldout_witnesses=(
+                    changed_witness, *split.heldout_witnesses[1:]),
+            )
 
     def test_manifest_family_or_source_tampering_fails_replay(self):
         receipt = self.receipt()
@@ -138,6 +134,9 @@ class PublicBravoFixtureTests(unittest.TestCase):
             replace(receipt.witnesses[0], lesson_id="forged-lesson"),
             replace(receipt.witnesses[0], source_family_id="evidence-family:forged"),
             replace(receipt.witnesses[0], source_span_end=receipt.witnesses[0].source_span_end - 1),
+            replace(
+                receipt.witnesses[0],
+                rights=replace(receipt.witnesses[0].rights, purpose="FORGED_PURPOSE")),
         ):
             with self.subTest(changed=changed):
                 with self.assertRaises(BilqisError):
@@ -145,6 +144,25 @@ class PublicBravoFixtureTests(unittest.TestCase):
                         receipt, witnesses=(changed, *receipt.witnesses[1:]))
                     verify_public_bravo_fixture_receipt(
                         tampered, atlas_selection=self.selection)
+
+    def test_heldout_rights_purpose_tampering_fails_replay(self):
+        receipt = self.receipt()
+        split = receipt.f10_proof.independent_split
+        forged_rights = replace(split.heldout_rights, purpose="FORGED_PURPOSE")
+        forged_witnesses = tuple(
+            replace(row, rights=forged_rights)
+            for row in split.heldout_witnesses)
+        tampered_split = replace(
+            split,
+            heldout_rights=forged_rights,
+            heldout_witnesses=forged_witnesses)
+        tampered = replace(
+            receipt,
+            f10_proof=replace(
+                receipt.f10_proof, independent_split=tampered_split))
+        with self.assertRaises(BilqisError):
+            verify_public_bravo_fixture_receipt(
+                tampered, atlas_selection=self.selection)
 
     def test_fixture_receipt_is_reproducible_and_source_digest_is_literal(self):
         first = self.receipt()

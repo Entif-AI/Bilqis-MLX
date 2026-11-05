@@ -16,7 +16,7 @@ from bilqis_mlx.learning.atlas_engram_source import (
 from bilqis_mlx.learning.atlas_candidate import CandidateState, begin_candidate
 from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
 from bilqis_mlx.runtime.atlas_optimizer import AdamWStateTree
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.context_eligibility import (
     PUBLIC_FORMAL, ContextPolicy, SourceFrontier, TaskScope,
 )
@@ -141,7 +141,7 @@ class SourceQualifiedMotifTests(TestCase):
                 self.assertTrue(frontier.grants)
 
     def test_approved_digest_and_frontier_replay_the_same_source_owner_projection(self):
-        from bilqis_mlx.semantics.atlas_snapshot import load_pinned_atlas_snapshot
+        from bilqis_mlx.semantics.atlas.snapshot import load_pinned_atlas_snapshot
         from bilqis_mlx.semantics.frame_adapters import public_formal_context
 
         (selection, source_root, graph, adapter, row, task, policy,

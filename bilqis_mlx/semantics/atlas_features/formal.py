@@ -3,7 +3,7 @@ from dataclasses import replace
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 
-from ..atlas_snapshot import AtlasArtifactSelection, load_pinned_atlas_snapshot
+from ..atlas.snapshot import AtlasArtifactSelection, load_pinned_atlas_snapshot
 from ..frame_adapters.common import (
     BOOLEAN_COMPOSITE_ADAPTER, BOOLEAN_CONNECTIVE_ADAPTER,
     BOOLEAN_IDENTIFICATION_ADAPTER, FINITE_NUMERIC_ADAPTER, MICRO_PREDICATE_ADAPTER,

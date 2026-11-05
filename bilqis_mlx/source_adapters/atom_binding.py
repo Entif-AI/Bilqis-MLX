@@ -4,7 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from ..errors import BilqisError, ErrorBus, SEMANTIC_FRAME
-from ..semantics.atlas_snapshot import AtlasArtifactSelection, load_pinned_atlas_snapshot
+from ..semantics.atlas.snapshot import AtlasArtifactSelection, load_pinned_atlas_snapshot
 from ..semantics.frame_compiler import CompiledFrameBatch, FrameCompilerConfig
 from ..semantics.source_atom_binding import (
     SourceAtomHandoff, SourceRowWitness, _resolve_visible_atoms,

@@ -2,7 +2,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from bilqis_mlx.semantics.atlas_projection import FrozenAtlasSnapshot, CorpusCoverageRow
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from .adapters import SourceFamilyAdapter, SOURCE_FAMILY_ADAPTERS
 from .common import (_fail, _SHA, _load_pinned, LEARNED_FRONTIER_SCHEMA,
     CURRICULUM_CANDIDATE_SCHEMA, LEARNING_UNVERIFIED, SOURCE_PROJECTION_ONLY)

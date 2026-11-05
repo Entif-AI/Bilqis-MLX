@@ -8,7 +8,7 @@ from __future__ import annotations
 from dataclasses import replace
 import hashlib
 
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.context_eligibility import ContextPolicy, SourceFrontier
 
 from bilqis_mlx.factory.candidate_frontier import CandidateFrontierRelease

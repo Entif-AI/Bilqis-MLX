@@ -32,6 +32,8 @@ def compile_typed_reconstructions(
         rows.append(TypedEvidenceReconstruction(
             record_id=record_id,
             source_family_id=first.source_family_id,
+            interpretation_revision=candidates.interpretation_revision,
+            rights=candidates.rights,
             template_lineage=first.template_lineage,
             actor_ref=frame.actor_ref,
             category_ref=frame.category_ref,
@@ -81,10 +83,23 @@ def split_evidence_families(
     held = tuple(sorted({by_record[item] for item in heldout_record_ids}))
     if set(train) & set(held):
         _fail("BAMF_EVIDENCE_SPLIT_WITNESS_NOT_INDEPENDENT")
-    payload = repr((train_record_ids, heldout_record_ids, train, held)).encode("utf-8")
+    payload = repr((
+        train_record_ids,
+        heldout_record_ids,
+        train,
+        held,
+        candidates.interpretation_revision,
+        candidates.rights,
+    )).encode("utf-8")
     return EvidenceSplitReceipt(
-        tuple(train_record_ids), tuple(heldout_record_ids), train, held,
-        sha256(payload).hexdigest())
+        train_record_ids=tuple(train_record_ids),
+        heldout_record_ids=tuple(heldout_record_ids),
+        train_family_ids=train,
+        heldout_family_ids=held,
+        interpretation_revision=candidates.interpretation_revision,
+        rights=candidates.rights,
+        receipt_sha256=sha256(payload).hexdigest(),
+    )
 
 
 def plan_fresh_challenge(
@@ -103,6 +118,8 @@ def plan_fresh_challenge(
         if lesson.record_id in set(heldout_record_ids)))
     return EvidenceChallengePlan(
         split=split,
+        interpretation_revision=candidates.interpretation_revision,
+        rights=candidates.rights,
         train_template_groups=_template_groups(candidates, train_record_ids),
         heldout_template_groups=_template_groups(candidates, heldout_record_ids),
         post_exam_teachable_lesson_ids=heldout_lesson_ids,

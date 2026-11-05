@@ -4,8 +4,9 @@ from __future__ import annotations
 from decimal import Decimal, InvalidOperation, localcontext
 
 from bilqis_mlx.errors import BilqisError, ErrorBus, SCHOOL
-from bilqis_mlx.source_adapters.evidence_frames import (
-    PUBLIC_FIXTURE, BamfEvidenceSnapshot, EvidenceDerivation, EvidenceFrame,
+from bilqis_mlx.source_adapters.evidence.evidence_frames import (
+    PUBLIC_FIXTURE, UNCLASSIFIED,
+    BamfEvidenceSnapshot, EvidenceDerivation, EvidenceFrame,
     EvidenceRecord, EvidenceRights, EvidenceSemanticAuthority, EventTime,
     SourceSpan, source_family_id, source_manifest_semantic_authority,
     verification_state,
@@ -167,8 +168,10 @@ def compile_evidence_lessons(
             or semantic_release != authority.semantic_release
             or semantic_release != adjudicated_snapshot.semantic_release):
         _fail("BAMF_EVIDENCE_COMPILER_AUTHORITY_MISMATCH")
-    if (source_rights.regime != PUBLIC_FIXTURE or not source_rights.allowed_training
-            or not source_rights.public_export_allowed):
+    if (not source_rights.allowed_training
+            or source_rights.regime == UNCLASSIFIED
+            or (source_rights.regime == PUBLIC_FIXTURE
+                and not source_rights.public_export_allowed)):
         holds = tuple(EvidenceHold(
             EvidenceLessonStatus.SOURCE_HELD,
             "RIGHTS_NOT_PUBLIC_TRAINING_QUALIFIED", record.record_id)
