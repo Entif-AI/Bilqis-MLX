@@ -249,10 +249,10 @@
       "issue": 460,
       "pr": null,
       "state": "WAITING",
-      "head_sha": "144c7cf34dc5ae373fed0e20285b486129d3835e",
+      "head_sha": "deea6d34",
       "preserved_branch": "codex/bamf02-b-460-qualified-reads-20261105",
-      "summary": "B08.1 source replay now derives collision-checked schema grants from pinned source schemas; public hits remain fail-closed because reviewed unified lacks #809 accepted-generation feature/candidate authority.",
-      "resume_trigger": "Draft PR #809 accepted-generation feature receipt/publication authority is human-accepted through reviewed unified; then synchronize once and bind B08 reads to that pointer-locked accepted generation."
+      "summary": "B08.1 source replay remains identity-only and public hits remain quarantined. The 2026-11-05 consumer-minted schema-grant experiment was independently rejected and reverted before PR because A13 owns rights and the synthetic grant was absent from projection digest identity.",
+      "resume_trigger": "A13/source-owner schema rights plus #809 accepted-generation feature/publication authority are human-accepted through reviewed unified; then synchronize once and bind B08 reads without consumer-minted credentials."
     },
     {
       "issue": 481,

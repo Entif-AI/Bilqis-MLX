@@ -144,3 +144,19 @@ a caller bundle path was deliberately discarded because it would reproduce the
 authority defect this hold exists to prevent. Resume after the #809
 accepted-generation feature/publication authority is human-accepted through
 reviewed unified, then bind B08 read tensors and allocations to that exact owner.
+
+### Retraction — 2026-11-05
+
+Independent read-only review rejected the source-schema grant experiment before any
+PR was opened. The implementation moved authority into the wrong owner: B07/B08
+minted a new `SourceGrant` from a pinned schema witness even though A13 owns source
+rights. It also appended that grant after `ApprovedContextProjection` had already
+been minted, so schema-grant evidence/revocation did not participate in the
+projection digest. Revoked-schema behavior was therefore not proven by the earlier
+test receipt. Commit `deea6d34` reverts implementation commit `144c7cf3`.
+
+The valid retained conclusion is narrower: pinned schema identity can prove which
+schema was observed, but it cannot issue rights. B08 remains fail-closed until the
+actual A13/source-owner grant machinery and accepted-generation authority are
+available through reviewed unified. No PR consumed the rejected change. Incident
+`PM-2026-11-05-002` records the near miss.
