@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "d29fd6cd290d88f0b3dbd1557b7ce229db0caab3",
-  "updated_at": "2026-11-05T06:27:03+00:00",
+  "updated_at": "2026-11-05T06:48:17.267448+00:00",
   "exception": null,
   "items": [
     {
@@ -325,12 +325,22 @@
     },
     {
       "issue": 451,
-      "pr": 849,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "ebe19aaed0a3d345135acc06d6e8a12ffd00ef54",
       "preserved_branch": "codex/bamf02-b-451-selector-custody-20261103",
-      "summary": "Ready PR849; pinned EGM PASS0B/0M/0N and CPU19/19. UNBOUND selector identity/schema/cold custody only; hosted and human merge pending.",
-      "resume_trigger": null
+      "summary": "SelectorcustodyPR849externallymergedandconsumed; scoped tensoridentity/coldcustodyproof, no general sourceadmissioninferred.",
+      "resume_trigger": null,
+      "merged_pr": 849
+    },
+    {
+      "issue": 810,
+      "pr": null,
+      "state": "WAITING",
+      "head_sha": "344c4a58",
+      "preserved_branch": "codex/bamf02-b-810-selection-replay-20261103",
+      "summary": "Stopped solver interruption resumed and committed344c4a58:18/18focused,5closure/9state/4route/14testproof, hygiene0newfindings. Original11featureWIPfiles remainbyteidentical/unstaged. NextDAGinterruptionunfinished; no feature acceptance/EGM/PR.",
+      "resume_trigger": "C785canonical-source trace completes or blocks, then explicitly select810next recorded DAG structural interruption; feature mutation waits for that repair plus canonical prefix/prediction/query-role authority."
     }
   ]
 }

@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "77cd6bf9a49d947d602797c9f5554971ef555728",
-  "updated_at": "2026-11-05T06:21:11+00:00",
+  "updated_at": "2026-11-05T06:48:17.266256+00:00",
   "exception": null,
   "items": [
     {
@@ -68,12 +68,13 @@
     },
     {
       "issue": 842,
-      "pr": 846,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "eead07f2c2b01cf43e5916bd934b04cfd9c2c9ff",
       "preserved_branch": "codex/bamf02-a-842-execution-structure-20261105",
-      "summary": "PR846 consumed reviewed unified70a4ef1e after PR847. Conflicts were flow-control-only; Factory diff from the prior candidate is empty. Extraction proof, focused30/30, historical17/17 and pinned real-source4/4 all pass under the merged runner, so prior whole-candidate EGM PASS remains applicable.",
-      "resume_trigger": null
+      "summary": "FactoryexecutionstructuralPR846externallymergedas879c39ddandconsumed; source-selectionauthoritynotinferred.",
+      "resume_trigger": null,
+      "merged_pr": 846
     },
     {
       "issue": 845,
@@ -87,10 +88,10 @@
     {
       "issue": 785,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "aebc8b94be40738797912f94cd53aaa5b7ff6dac",
-      "summary": "Accepted842Factoryexecutionstructureresolvesrecordedtraceinterruption. Selected785onlyforcanonicaladmitted-selectionauthorityinvestigation; no source/profileadmissionorqualificationinferred.",
-      "resume_trigger": null,
+      "state": "WAITING",
+      "head_sha": "934ae6bafde08818d46d178c1e18bbdbfe534d61",
+      "summary": "842Factorystructuralinterruptionaccepted; genericFactoryprofile/release/admissionrouteinspectedafter77cdintake. No actualA01/A03/A06schema-adapterselectionbinderlocated. RealC02interface4/4passes; authorityqualificationnotclaimed.",
+      "resume_trigger": "Canonical A06/Factory owner supplies an accepted source/profile selection declaration/receipt or already-approved derivation binding A01release/Atlas/source, exactA03schema/role/adaptertuple, featurebundle/digest andpredecessorlineage.",
       "preserved_branch": "codex/bamf02-a-785-source-features-20261103"
     }
   ]
