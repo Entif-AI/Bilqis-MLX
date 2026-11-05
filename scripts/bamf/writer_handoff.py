@@ -57,9 +57,11 @@ def observed(root: Path) -> dict[str, str | None]:
     diff = subprocess.run(
         ["git", "diff", "HEAD", "--binary"], cwd=path, capture_output=True, check=True
     ).stdout
-    dirty = hashlib.sha256(b"bilqis.bamf.worktree-fingerprint/v2\0")
+    dirty = hashlib.sha256(b"bilqis.bamf.worktree-fingerprint/v3\0")
     _hash_part(dirty, status.encode())
     _hash_part(dirty, diff)
+    _hash_part(dirty, git(path, "ls-files", "--stage", "-z").encode())
+    _hash_part(dirty, git(path, "ls-files", "-v", "-z").encode())
     untracked = git(path, "ls-files", "--others", "--exclude-standard", "-z")
     # git's text output strips only the final NUL; embedded NULs remain.
     for relative in sorted(item for item in untracked.split("\0") if item):

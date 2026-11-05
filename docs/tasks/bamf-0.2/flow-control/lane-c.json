@@ -130,10 +130,19 @@
     {
       "issue": 832,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "f93ef4a8757999d06b4f5dfb0ae6f46f70001fcb",
+      "state": "TURNED_IN",
+      "head_sha": "30a79175cc8b54da5c54ebf23f9f52e30eda8247",
       "preserved_branch": "codex/bamf02-c-829-local-handoff-20261104",
-      "summary": "Round2 shared fingerprint representation Major: replace unframed concatenation with typed length-delimited records; parent829 episode remains2/5.",
+      "summary": "Typed length-framing defect fixed and verified12/12 at durable30a79175; child CLOSED. Separate missing index state belongs to834.",
+      "resume_trigger": null
+    },
+    {
+      "issue": 834,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "30a79175cc8b54da5c54ebf23f9f52e30eda8247",
+      "preserved_branch": "codex/bamf02-c-829-local-handoff-20261104",
+      "summary": "Round3 missing index-state Major: bind entries/stages/flags separately from HEAD-to-worktree diff; parent episode remains3/5.",
       "resume_trigger": null
     }
   ]

@@ -177,6 +177,46 @@ class WriterHandoffTests(unittest.TestCase):
             with self.assertRaisesRegex(HandoffError, "unsupported untracked entry"):
                 emit(self.repo, 832, "epoch-829")
 
+    def blob(self, content: str) -> str:
+        return subprocess.run(["git", "hash-object", "-w", "--stdin"],
+                              cwd=self.repo, input=content, text=True,
+                              capture_output=True, check=True).stdout.strip()
+
+    def test_index_only_content_change_cannot_hide_behind_same_worktree(self) -> None:
+        path = self.repo / "file.txt"
+        path.write_text("staged B\n")
+        self.run_git("add", "file.txt")
+        path.write_text("worktree C\n")
+        payload = emit(self.repo, 834, "epoch-829")
+        status = subprocess.check_output(["git", "status", "--porcelain"], cwd=self.repo)
+        self.run_git("update-index", "--cacheinfo", "100644", self.blob("staged D\n"), "file.txt")
+        self.assertEqual("worktree C\n", path.read_text())
+        self.assertEqual(status, subprocess.check_output(["git", "status", "--porcelain"], cwd=self.repo))
+        with self.assertRaisesRegex(HandoffError, "worktree_status"):
+            verify(self.repo, payload)
+
+    def test_changed_unmerged_index_stage_requires_reconciliation(self) -> None:
+        base, first, second = (self.blob(text) for text in ("base\n", "ours B\n", "ours D\n"))
+
+        def stages(ours):
+            data = ("0 " + "0" * 40 + "\tfile.txt\n" +
+                    f"100644 {base} 1\tfile.txt\n100644 {ours} 2\tfile.txt\n" +
+                    f"100644 {base} 3\tfile.txt\n")
+            subprocess.run(["git", "update-index", "--index-info"], cwd=self.repo,
+                           input=data, text=True, capture_output=True, check=True)
+
+        stages(first)
+        payload = emit(self.repo, 834, "epoch-829")
+        stages(second)
+        with self.assertRaisesRegex(HandoffError, "worktree_status"):
+            verify(self.repo, payload)
+
+    def test_index_flag_change_requires_reconciliation(self) -> None:
+        payload = emit(self.repo, 834, "epoch-829")
+        self.run_git("update-index", "--assume-unchanged", "file.txt")
+        with self.assertRaisesRegex(HandoffError, "worktree_status"):
+            verify(self.repo, payload)
+
 
 if __name__ == "__main__":
     unittest.main()
