@@ -9,8 +9,8 @@
       "issue": 423,
       "pr": 858,
       "state": "TURNED_IN",
-      "head_sha": "42a00888811a7a84b473e54773a416e43e49cdc8",
-      "summary": "A10.3 implementation is complete: literal PUBLIC_FIXTURE receipt binds exact source bytes, parsed record, frame/rendering, four lesson golds, exact checker witnesses, immutable source-family identity, rights, interpretation revision and split receipt. Paraphrase/duplicate witness laundering is rejected while an independently adjudicated episode may enter holdout. A10 fixture/evidence tests 17/17; governance 11/11; architecture/docs/compile/diff/flow clean; exact error-control-plane new debt 0; EGM_PENDING.",
+      "head_sha": "b965f3d77e17ead8a46b210093b8aed3a3abb6c6",
+      "summary": "A10.3 implementation is complete and review-hardened: source family identity is bound to source manifest/digest/span rather than mutable adjudication labels; literal PUBLIC_FIXTURE receipt binds exact source bytes, record/frame/rendering, four source-bound gold/checker witnesses, rights/interpretation lineage, rejected duplicate-split F10 proof, distinct-source heldout receipt, and full nested receipt integrity. A10 fixture/evidence tests 18/18; governance 11/11; architecture/docs/compile/diff/flow clean; exact error-control-plane new debt 0; fresh re-review pending.",
       "resume_trigger": "Fresh independent exact-head EGM plus human integration review for PR #858.",
       "preserved_branch": "codex/bamf02-a10-3-423-20261105"
     },
