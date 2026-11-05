@@ -8,7 +8,7 @@
     {
       "issue": 475,
       "pr": null,
-      "state": "ACTIVE",
+      "state": "WAITING",
       "head_sha": "b5c3df440d397c0c2cd2165d5f2c015c1d1e7a0c",
       "summary": "B12.2 remains the current primary Lane B integration surface; remediation #710 owns the unresolved execution-provenance defect.",
       "resume_trigger": "Remediation #710 is consumed; issue #475 transitions to EGM-Pending; fresh exact-head EGM passes; an integration PR slot is available.",
@@ -102,7 +102,7 @@
     {
       "issue": 719,
       "pr": 854,
-      "state": "WAITING",
+      "state": "ACTIVE",
       "head_sha": "207c61c0934b5ae464c10dc14aa01ddd19adcb9e",
       "summary": "B14.4 EGM remediation locally complete in draft PR #854: cache rebuild eligibility is issued only from live B13 accepted-generation custody, signed A12 source clearance and current context/policy authority; caller-minted matching receipts fail closed.",
       "resume_trigger": "Fresh pinned EGM passes on the final immutable #854 head and hosted checks are green.",
