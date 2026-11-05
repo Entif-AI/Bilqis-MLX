@@ -28,10 +28,7 @@ from .contracts import (
 )
 
 
-def _compiled_groups(row, config, source_ast=None, receipt=None, artifact_owner=None):
-    if artifact_owner is None:
-        _invalid()
-    artifact_owner.require_row(row)
+def _compiled_groups(row, config, source_ast=None, receipt=None):
     if source_ast is None:
         if receipt is not None:
             _invalid()
@@ -100,6 +97,11 @@ def _compiled_groups(row, config, source_ast=None, receipt=None, artifact_owner=
     return tuple(groups), projection
 
 
+def _owned_compiled_groups(row, config, artifact_owner, source_ast=None, receipt=None):
+    artifact_owner.require_row(row)
+    return _compiled_groups(row, config, source_ast, receipt)
+
+
 @dataclass(frozen=True)
 class CompiledEncoderInput:
     """Actual A05 rows, current compiler authority and released B02 features."""
@@ -142,9 +144,8 @@ class CompiledEncoderInput:
         source_asts = self.source_asts or (None,) * len(self.compiled.rows)
         receipts = self.partial_forest_receipts or (None,) * len(self.compiled.rows)
         checked = tuple(
-            _compiled_groups(
-                row, config, source_ast, receipt,
-                self.packed_frame_artifact_owner)
+            _owned_compiled_groups(
+                row, config, self.packed_frame_artifact_owner, source_ast, receipt)
             for row, config, source_ast, receipt in zip(
                 self.compiled.rows, self.compiler_configs,
                 source_asts, receipts))
