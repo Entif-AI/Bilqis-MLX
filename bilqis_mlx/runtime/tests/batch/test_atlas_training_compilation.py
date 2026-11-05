@@ -37,17 +37,20 @@ class TrainingCompilationTests(AtlasTrainingAdapterTest):
             self.compile(self.rows, release_sha='f' * 64)
 
     def test_registered_modality_receives_structured_source_targets_and_plan(self):
-        row = {**self.rows[0], 'gold': {'decisions': ['FALSE', 'END_FRAME']},
+        row = {**self.rows[0],
                'answer_plan': {'decisions': [{'id': 'value', 'depends_on': []},
                                              {'id': 'end', 'depends_on': ['value']}]},
                'auxiliary_labels': {'role': 'subject'}}
         def encode(evidence, head):
-            self.assertEqual(evidence.gold, (('decisions', ('FALSE', 'END_FRAME')),))
+            self.assertEqual(evidence.gold, 'FALSE')
             self.assertEqual(evidence.auxiliary_labels, (('role', 'subject'),))
             self.assertIn(('modalityID', 'answer.binary/v1'), evidence.answer_plan)
             self.assertIn(('maximum_decisions', 2), evidence.answer_plan)
-            return BamfTarget('binary', evidence.gold, (head.token_ids[0], None), (True, False))
-        item = self.compile([row], encoders={'binary': encode}).rows[0]
+            value = (('decisions', (evidence.gold, 'END_FRAME')),)
+            return BamfTarget('binary', value, (head.token_ids[0], None), (True, False))
+        item = self.compile(
+            [row], encoders={'binary': encode},
+            source_context=self.source_owned_context([row])).rows[0]
         self.assertEqual(item.target.value, (('decisions', ('FALSE', 'END_FRAME')),))
         self.assertEqual(item.target.mask, (True, False))
 

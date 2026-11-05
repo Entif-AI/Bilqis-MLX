@@ -14,12 +14,13 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
     load_accepted_generation,
 )
 from bilqis_mlx.runtime.capability_retention import (
-    Decision, EvidenceKind, EvaluationCohort, RetentionPolicy, case_census_digest,
+    Decision, EvidenceKind, EvidenceStage, EvaluationCohort, RetentionPolicy, case_census_digest,
     evaluate_retention_candidate,
 )
 from bilqis_mlx.semantics.domains import contract_digest
 from bilqis_mlx.state_dag import read_current
 from bilqis_mlx.fixed_frontier import frontier_exam
+from bilqis_mlx.runtime.source_execution import _source_family
 
 from .capability_evaluation import _invalid
 from .factory_complete_solver import (
@@ -32,6 +33,8 @@ C05_PROBE_EACH = 6
 C05_PROTECTED_REFERENCE_LOSS = 1
 C05_FRESH_TARGET_SEED_OFFSET = 104729
 C05_FRESH_LESSON_SEED_OFFSET = 130363
+C05_MAX_FRESH_DRAWS = 32
+CURRENT_EVIDENCE_STAGE = EvidenceStage.FOUNDATION_ACQUISITION
 SHA256_HEX_LENGTH = 64
 _OWNER_ISSUER = object()
 
@@ -140,15 +143,57 @@ def _instruments(source_context, candidate, artifact_path, rows, *, seed, each=N
     ) for row in rows)
 
 
-def _fresh_rows(source_context, capabilities, *, seed):
-    rows = []
-    for capability in capabilities:
-        rows.extend(source_context.draw_rows(
-            seed=seed, capability=capability, each=C05_PROBE_EACH))
-    return tuple(rows)
+@dataclass(frozen=True)
+class _FreshDraw:
+    seed: int
+    rows: tuple[dict, ...]
 
 
-def _cohort(kind, instruments, groups, release, policy, training):
+def _independent_draw(source_context, rows, seed, training):
+    families, episodes, identities = set(), set(), set()
+    for row in rows:
+        identity = row.get("id")
+        if not isinstance(identity, str) or not identity:
+            _invalid("BAMF_C05_FRESH_SOURCE_ROW_INVALID")
+        family = row.get("source_family_id")
+        if not isinstance(family, str) or not family:
+            execution = source_context.release.execution_plan.capability_map[row["capability"]]
+            family = _source_family(execution, seed=seed, each=C05_PROBE_EACH)
+        episode = row.get("episode_id")
+        if not isinstance(episode, str) or not episode:
+            episode = identity
+        if identity in identities or episode in episodes:
+            return False
+        identities.add(identity)
+        episodes.add(episode)
+        families.add(family)
+    return not (families.intersection(training[0])
+                or episodes.intersection(training[1])
+                or identities.intersection(training[1]))
+
+
+def _fresh_rows(
+        source_context, capabilities, *, seed, training, require_independent=True):
+    """Redraw whole owner cohorts on provenance collisions, never on scores."""
+    for offset in range(C05_MAX_FRESH_DRAWS):
+        draw_seed = seed + offset
+        rows = []
+        for capability in capabilities:
+            drawn = source_context.draw_rows(
+                seed=draw_seed, capability=capability, each=C05_PROBE_EACH)
+            if (len(drawn) != C05_PROBE_EACH
+                    or any(row.get("capability") != capability for row in drawn)):
+                _invalid("BAMF_C05_FRESH_SOURCE_COVERAGE_INCOMPLETE")
+            rows.extend(drawn)
+        comparison = training if require_independent else ((), ())
+        if _independent_draw(source_context, rows, draw_seed, comparison):
+            return _FreshDraw(draw_seed, tuple(rows))
+    _invalid("BAMF_C05_INDEPENDENT_SOURCE_DRAW_EXHAUSTED")
+
+
+def _cohort(
+        kind, instruments, groups, release, policy, training, *,
+        evidence_stage=EvidenceStage.FOUNDATION_ACQUISITION):
     cases = tuple(item.case for item in instruments)
     rubric = contract_digest(tuple(
         (item.grade_id, item.assessment_blueprint_sha256)
@@ -161,12 +206,14 @@ def _cohort(kind, instruments, groups, release, policy, training):
     source = release.execution_plan.projection_digests.source
     return EvaluationCohort(
         kind, cases, tuple(groups), rubric, scope, source, policy.digest(),
-        training[0], training[1], case_census_digest(cases))
+        training[0], training[1], case_census_digest(cases),
+        evidence_stage=evidence_stage)
 
 
 def _policy_and_cohorts(
     release, groups, target_capability, target_group, training,
-    target_instruments, lesson_instruments, fixed_instruments,
+    target_instruments, lesson_instruments, fixed_instruments, *,
+    evidence_stage=EvidenceStage.FOUNDATION_ACQUISITION,
 ):
     required = (
         (EvidenceKind.FRESH_TARGET,
@@ -183,14 +230,15 @@ def _policy_and_cohorts(
         C05_PROBE_EACH, required)
     target_cohort = _cohort(
         EvidenceKind.FRESH_TARGET, target_instruments,
-        ((target_capability, target_group),), release, policy, training)
+        ((target_capability, target_group),), release, policy, training,
+        evidence_stage=evidence_stage)
     lesson_groups = tuple(pair for pair in groups if pair[1] == target_group)
     lesson_cohort = _cohort(
         EvidenceKind.FRESH_LESSON, lesson_instruments,
-        lesson_groups, release, policy, training)
+        lesson_groups, release, policy, training, evidence_stage=evidence_stage)
     fixed_cohort = _cohort(
         EvidenceKind.FIXED_SCHOOL, fixed_instruments,
-        groups, release, policy, training)
+        groups, release, policy, training, evidence_stage=evidence_stage)
     return policy, (target_cohort, lesson_cohort, fixed_cohort)
 
 
@@ -228,16 +276,20 @@ def evaluate_factory_retention_candidate(
     fresh_seed = _owner_seed(
         release.release_sha256, cache, target_capability, candidate_sha256)
 
-    target_seed = fresh_seed + C05_FRESH_TARGET_SEED_OFFSET
-    lesson_seed = fresh_seed + C05_FRESH_LESSON_SEED_OFFSET
-    target_rows = _fresh_rows(source_context, (target_capability,), seed=target_seed)
-    lesson_rows = _fresh_rows(source_context, lesson_capabilities, seed=lesson_seed)
+    target_draw = _fresh_rows(
+        source_context, (target_capability,),
+        seed=fresh_seed + C05_FRESH_TARGET_SEED_OFFSET, training=training,
+        require_independent=CURRENT_EVIDENCE_STAGE is EvidenceStage.STRICT_GENERALIZATION)
+    lesson_draw = _fresh_rows(
+        source_context, lesson_capabilities,
+        seed=fresh_seed + C05_FRESH_LESSON_SEED_OFFSET, training=training,
+        require_independent=CURRENT_EVIDENCE_STAGE is EvidenceStage.STRICT_GENERALIZATION)
     target_instruments = _instruments(
-        source_context, candidate_bundle, artifact_path, target_rows,
-        seed=target_seed, each=C05_PROBE_EACH)
+        source_context, candidate_bundle, artifact_path, target_draw.rows,
+        seed=target_draw.seed, each=C05_PROBE_EACH)
     lesson_instruments = _instruments(
-        source_context, candidate_bundle, artifact_path, lesson_rows,
-        seed=lesson_seed, each=C05_PROBE_EACH)
+        source_context, candidate_bundle, artifact_path, lesson_draw.rows,
+        seed=lesson_draw.seed, each=C05_PROBE_EACH)
 
     receipt = read_current(run_dir)
     if receipt.get("factory_release_sha256") != release.release_sha256:
@@ -254,7 +306,8 @@ def evaluate_factory_retention_candidate(
 
     policy, cohorts = _policy_and_cohorts(
         release, groups, target_capability, target_group, training,
-        target_instruments, lesson_instruments, fixed_instruments)
+        target_instruments, lesson_instruments, fixed_instruments,
+        evidence_stage=CURRENT_EVIDENCE_STAGE)
 
     all_instruments = tuple(dict(
         (item.case.case_id, item)

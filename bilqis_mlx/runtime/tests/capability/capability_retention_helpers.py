@@ -5,7 +5,7 @@ import unittest
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.capability_retention import (
     AssessmentPair, CompleteSolver, EvaluationCase, EvaluationCohort,
-    EvidenceKind, PairedRetentionEvidence, RetentionPolicy,
+    EvidenceKind, EvidenceStage, PairedRetentionEvidence, RetentionPolicy,
     candidate_work_disposition, case_census_digest, configuration_outcome, evaluate_capabilities, retain_candidate,
 )
 from bilqis_mlx.runtime.cognitive_solver import NeuralProposal, SolveBudget, SolveContext
@@ -80,7 +80,7 @@ def _screen_inputs(protected_loss=2, labels=("amber", "violet")):
         return EvaluationCohort(
             kind, cases, groups, "d" * 64, "e" * 64, "f" * 64,
             policy.digest(), ("trained-family",), ("trained-episode",),
-            dict(required)[kind])
+            dict(required)[kind], evidence_stage=EvidenceStage.STRICT_GENERALIZATION)
     cohorts = (
         cohort(EvidenceKind.FRESH_TARGET, target, (("target", labels[0]),)),
         cohort(EvidenceKind.FRESH_LESSON, target + fresh, census[:2]),

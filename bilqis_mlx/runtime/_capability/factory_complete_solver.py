@@ -123,11 +123,23 @@ def factory_complete_solver(
                                for item in instruments)):
         _invalid("BAMF_C05_FACTORY_INSTRUMENTS_REQUIRED")
     generation = _generation(candidate)
+    by_goal = {item.case.goal.goal_id: item for item in instruments}
+    if len(by_goal) != len(instruments):
+        _invalid("BAMF_C05_FACTORY_INSTRUMENT_GOAL_CONFLICT")
     contexts = {}
     parameters = candidate.retained_state.optimizer.parameters
     feature_context = authenticate_bamf_candidate_feature_context(
         candidate, artifact_path)
-    for instrument in instruments:
+
+    def context_for(goal, requested_generation):
+        instrument = by_goal.get(goal.goal_id)
+        if requested_generation != generation or instrument is None:
+            _invalid("BAMF_C05_FACTORY_SOLVER_GENERATION_OR_TASK_DRIFT")
+        if goal != instrument.case.goal:
+            _invalid("BAMF_C05_FACTORY_SOLVER_SOURCE_DRIFT")
+        cached = contexts.get(goal.goal_id)
+        if cached is not None:
+            return cached
         batch = compile_factory_evaluation_batch(
             source_context, candidate, artifact_path, instrument.row,
             source_seed=instrument.source_seed, source_each=instrument.source_each)
@@ -141,17 +153,9 @@ def factory_complete_solver(
             authority.goal, batch, feature_context.snapshot, generation)
         proposer = b11_task_goal_proposer(
             parameters, batch, plan, authority)
-        contexts[authority.goal.goal_id] = SolveContext(
+        context = SolveContext(
             authority.binding, neural_proposer=proposer)
-
-    def context_for(goal, requested_generation):
-        if requested_generation != generation or goal.goal_id not in contexts:
-            _invalid("BAMF_C05_FACTORY_SOLVER_GENERATION_OR_TASK_DRIFT")
-        context = contexts[goal.goal_id]
-        expected = next(item.case.goal for item in instruments
-                        if item.case.case_id == goal.goal_id)
-        if goal != expected:
-            _invalid("BAMF_C05_FACTORY_SOLVER_SOURCE_DRIFT")
+        contexts[goal.goal_id] = context
         return context
 
     budget = SolveBudget(DAGBudget(), max_neural_calls=1)

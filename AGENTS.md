@@ -182,6 +182,50 @@ expensive probe is still running so the successor does not launch a duplicate.
 Acceptance-scale witnesses belong at a stable boundary after cheaper evidence has
 changed; they are not the ordinary inner debugging loop.
 
+**Precedence-ordered diagnosis for expensive qualification gates (ADR-131):** When
+an acceptance or retention decision has ordered rejection predicates, diagnosis
+must evaluate the cheapest decisive predicate first and stop as soon as that result
+already determines rejection. Do not eagerly run later cohorts, whole-school
+screens, or other lower-priority gates merely to rediscover a decision that an
+earlier predicate has already fixed. Keep this diagnostic path **non-authorizing**:
+it may reuse the exact production source rows, candidate, solver semantics and
+policy inputs, but it must not mint the production acceptance/retention authority.
+Only the full production owner may do that at the final acceptance boundary.
+
+Hoist and reuse invariant source compilation, Factory/model construction, bundle
+loading, custody validation and other setup within one diagnostic process whenever
+the tested semantics allow it. Before launching a multi-minute witness, account for
+its case count, repeated compilation/setup passes and parent/candidate solve count;
+if those costs can be separated without weakening the invariant, separate them.
+Any expensive rejection path must expose the exact rejection reason plus useful
+stage timing/score evidence. A multi-minute witness that reports only `accepted =
+false` is insufficient diagnostic observability and must be repaired before the
+same execution family is repeated. The final authoritative witness still runs in
+full once a cheaper diagnostic has demonstrated a relevant repair and the candidate
+is otherwise stable.
+
+**Five-minute socket ceiling for chunky local work (ADR-132):** If a local command
+could plausibly run longer than five minutes, do not keep an interactive agent/tool
+socket open waiting for it. Launch it with
+`python3 -B scripts/bamf/detached_long_run.py launch ... -- <command>` so the child
+continues in its own session, writes a combined log plus machine-readable completion
+receipt, and sends a macOS desktop notification with sound when it exits. Before
+detaching, the launcher must copy a digest-verified source snapshot of the current
+worktree and run the worker plus all relative-path subprocesses from that snapshot.
+Concurrent edits to the original worktree must therefore be invisible to the run.
+The receipt records source/snapshot digests, and any mutation of the snapshot by the
+detached command itself fails the run. Do not replace this isolation with a convention
+that agents merely promise not to edit shared files. A detached run launched under the
+older v1 runner cannot be retrofitted safely while it is executing; keep its imported
+source surface frozen until it exits. The
+controlling agent may remain connected only long enough to verify that the detached
+worker launched and its PID/receipt paths exist. It must then yield the turn, report
+the exact log/receipt paths, and tell the human what continuation message to send
+after the notification. **Do not poll the detached job from chat.** A successor
+reads the receipt and log after the human returns, reconciles the result, and only
+then decides the next action. Interactive execution remains appropriate for work
+expected to finish comfortably below five minutes.
+
 Every lane-owned BAMF implementation leaf or open lane PR must be represented in that lane's
 machine-readable state under `docs/tasks/bamf-0.2/flow-control/`. Before substantive
 branch mutation, the operator must run `python3 -B scripts/check_bamf_flow_control.py`
@@ -419,7 +463,7 @@ New semantic releases default to staging. A human-started BAMF run may authorize
 continued source-valid expansion only through an explicit persisted admission
 lease and the existing Factory/admission owner. First live adoption requires the
 BAMF successor's disposable C16 ([#382](https://github.com/Entif-AI/Bilqis-MLX/issues/382)) source, custody and retained-learning
-witness: a strictly improved fresh target, preserved cumulative retention, complete
+witness: a source-valid acquired or retained taught target under the active developmental evidence policy, preserved cumulative retention, complete
 rejection rollback and equivalent cold-resume output and next update. This witness
 precedes the operator's first persistent student start. Historical #324 comparison
 is not its prerequisite. Only the human operator starts, resumes or stops the
@@ -437,6 +481,19 @@ generation, graduation gating, teacher-miss injection, or score comparison. A fu
 generalization regime requires a new explicit human admission after the student reaches
 an appropriate maturity boundary. Ordinary grade/stage movement is never promotion
 authority; only the scheduler's actual grade-exam epoch advance can open promotion.
+
+**FOUNDATION_EVIDENCE_POLICY_ACTIVE:** During the current FOUNDATION_ACQUISITION
+stage, teacher-forced gold may be visible to the learning or integration witness.
+Exact replay of a taught specimen is valid evidence. Exact memorization, cache lookup,
+memoized procedures and learned memory all count as successful acquisition. Do not
+require a held-out specimen, independent source family, fresh episode, unseen filler or
+novel composition for foundation acceptance. During BAMF-0.2 alpha, still measure
+novelty continuously by perturbing surface identity, role binding, relation polarity,
+composition depth and semantic distance. Those novelty results are diagnostic only and
+must not independently veto retention, promotion or graduation. Advancement uses the
+success ratio at the current earned complexity, and previously shown examples count.
+Preserve source correctness, rights, custody, rollback and protected-retention checks.
+Do not turn evaluation purity into a substitute acceptance gate.
 
 ## CONTROLLING USER CORRECTION — 2026-10-23: #150 decomposes factory mechanics, not roots
 
@@ -560,7 +617,7 @@ sweep.
 
 **MANDATORY AUTHORITY-CONVERGENCE CONTRACT:** Read [`docs/architecture/10_CURRICULUM_AUTHORITY_CONVERGENCE_20261019.md`](docs/architecture/10_CURRICULUM_AUTHORITY_CONVERGENCE_20261019.md) before changing curriculum semantics, execution profiles, source bindings, answer modalities, factory release identity, assessment scope, championship dependencies, New Ithkuil ingestion, telemetry inventory, or the factory migration plan. Preserve source roles: direct user decisions and current normative specs govern; the Ledger normalizes; the Curriculum Registry and Ithkuil corpus provide evidence/provenance; roadmaps and research seeds guide sequencing; historical releases remain compatibility evidence. Do not silently promote a historical experiment into current architecture or collapse a recorded conflict into implementation.
 
-**MANDATORY CURRICULUM FACTORY CONTRACT:** Read [`docs/specifications/0001_GENERATIVE_CURRICULUM_FACTORY.md`](docs/specifications/0001_GENERATIVE_CURRICULUM_FACTORY.md) before changing semantics, source construction, lessons, grades, assessment lifetime, admission, graduation, curriculum runtime, or documentation architecture. The factory is the only permitted production route from admitted semantics to an executable grade: **no factory release, no grade**. New grades must be declarative factory instances and must not add canonical `live_grade_*`, `grade_*_trainer`, grade-specific scheduler/evaluator/dashboard branches, or alternative runtime paths. Unit/contract tests belong beside their owning packages; top-level tests are integration/system only. SPEC-0001 requires the generic runtime cutover, A/B/C migration, routine/promotion developmental assessment, and synthetic Grade Z extensibility test. Fresh generalization is explicitly inactive until a future human-directed maturity policy re-admits it.
+**MANDATORY CURRICULUM FACTORY CONTRACT:** Read [`docs/specifications/0001_GENERATIVE_CURRICULUM_FACTORY.md`](docs/specifications/0001_GENERATIVE_CURRICULUM_FACTORY.md) before changing semantics, source construction, lessons, grades, assessment lifetime, admission, graduation, curriculum runtime, or documentation architecture. The factory is the only permitted production route from admitted semantics to an executable grade: **no factory release, no grade**. New grades must be declarative factory instances and must not add canonical `live_grade_*`, `grade_*_trainer`, grade-specific scheduler/evaluator/dashboard branches, or alternative runtime paths. Unit/contract tests belong beside their owning packages; top-level tests are integration/system only. SPEC-0001 requires the generic runtime cutover, A/B/C migration, routine/promotion developmental assessment, and synthetic Grade Z extensibility test. Generalization and novelty are measured in alpha but are not fixed advancement gates; any later fixed held-out/generalization gate requires explicit human admission.
 
 **ISSUE #150 MICRO-SPEC EXECUTION BOUNDARY:** Read [`SPEC-0005`](docs/specifications/0005_FACTORY_MICROSPEC_WORKSTACK.md) and [`TASK-0003`](docs/tasks/0003_FACTORY_CLOSURE_CODEX_RUN_PROTOCOL.md) for the workstack/executor contract. Each fresh execution session reads root `README.md` and `AGENTS.md` once before source mutation, then bootstraps only the authorities needed for its current bounded work. After bootstrap, ordinary leaf execution is page-local: the issue number is the durable bookmark, and the executor reads only that leaf, its live page gate/amendments, its named direct prerequisites, and its declared files. `FACTORY_DEPENDENCY_BLOCKED` is a staleable observation; recheck only the named direct prerequisites, without requiring a same-page amendment merely to reevaluate dependency state. Do not hydrate parent issue #150, the full manifest, all receipts, or a global ready set during ordinary leaf execution. Git and GitHub receipts are durable state; model context is cache. Keep healthy warm sessions across cold page boundaries and do not start a new expensive session solely for isolation. Put transient current-page state in the active handoff or issue checkpoint, never durable architecture prose. A leaf still requires exact dependencies, bounded read/write surfaces, named symbols, compatibility invariants, focused verification, and stop/block rules. Do not rediscover architecture by broad exploration or create root-by-root tickets merely to make the graph larger.
 

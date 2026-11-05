@@ -5,7 +5,7 @@ import unittest
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.capability_retention import (
     AssessmentPair, CompleteSolver, EvaluationCase, EvaluationCohort,
-    EvidenceKind, PairedRetentionEvidence, RetentionPolicy,
+    EvidenceKind, EvidenceStage, PairedRetentionEvidence, RetentionPolicy,
     candidate_work_disposition, case_census_digest, configuration_outcome, evaluate_capabilities, retain_candidate,
 )
 from bilqis_mlx.runtime.cognitive_solver import NeuralProposal, SolveBudget, SolveContext
@@ -117,6 +117,16 @@ class CapabilityEvaluationTests(unittest.TestCase):
         with self.assertRaises(BilqisError):
             replace(evidence.fixed_school.parent.cohort,
                     cases=(evidence.fixed_school.parent.cohort.cases[0],) * 16)
+
+    def test_foundation_stage_allows_taught_specimen_overlap(self):
+        cohort = _evidence().target.parent.cohort
+        taught = replace(
+            cohort,
+            evidence_stage=EvidenceStage.FOUNDATION_ACQUISITION,
+            training_family_ids=(cohort.cases[0].source_family_id,),
+            training_episode_ids=(cohort.cases[0].episode_id,),
+        )
+        self.assertEqual(taught.evidence_stage, EvidenceStage.FOUNDATION_ACQUISITION)
 
     def test_foreign_rubric_and_budget_cannot_pair(self):
         evidence = _evidence()

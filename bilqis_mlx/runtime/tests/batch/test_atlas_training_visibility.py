@@ -11,7 +11,8 @@ class TrainingVisibilityTests(AtlasTrainingAdapterTest):
         changed = [{**self.rows[0], 'gold': 'TRUE', 'tokens': [1, 2, 2],
                     'auxiliary_labels': {'role': 'different'},
                     'feature_requests': [('LEAKED_GOLD_TRUE', 'bad', 'bad', 'bad')]}]
-        second = self.compile(changed).rows[0]
+        second = self.compile(
+            changed, source_context=self.source_owned_context(changed)).rows[0]
         self.assertEqual(first.model_input, second.model_input)
         self.assertNotEqual(first.target.value, second.target.value)
 
@@ -66,7 +67,10 @@ class TrainingVisibilityTests(AtlasTrainingAdapterTest):
 
     def test_gold_only_change_cannot_reach_input_or_features(self):
         first = self.compile(self.rows).rows[0]
-        second = self.compile([{**self.rows[0], 'gold': 'TRUE', 'auxiliary_labels': {'role': 'x'}}]).rows[0]
+        changed = [{**self.rows[0], 'gold': 'TRUE',
+                    'auxiliary_labels': {'role': 'x'}}]
+        second = self.compile(
+            changed, source_context=self.source_owned_context(changed)).rows[0]
         self.assertEqual(first.model_input, second.model_input)
         self.assertNotEqual(first.target, second.target)
 

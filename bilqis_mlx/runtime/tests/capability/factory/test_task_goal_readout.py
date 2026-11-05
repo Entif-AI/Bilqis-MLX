@@ -10,7 +10,10 @@ from bilqis_mlx.runtime.task_goal_readout import (
     augment_answer_plan_for_task_goal, proposal_from_task_goal_output,
     task_goal_route_decisions,
 )
-from bilqis_mlx.runtime.cognitive_solver import NeuralRequest
+from bilqis_mlx.runtime.cognitive_solver import (
+    GenerationBinding, NeuralRequest, RouteKind, SolveBudget, SolveContext,
+    solve_task,
+)
 from bilqis_mlx.source_adapters.answer_choice_task_goal import (
     lower_answer_choice_task_goal,
 )
@@ -101,6 +104,25 @@ class TaskGoalReadoutTests(unittest.TestCase):
         self.assertEqual(node.candidate_operand_refs, ())
         self.assertEqual(len(node.operands), 1)
         self.assertIn(node.operands[0].identity, route[0].legal_values)
+
+        result = solve_task(
+            goal,
+            SolveContext(
+                binding,
+                neural_proposer=lambda live_request: proposal_from_task_goal_output(
+                    goal, live_request, output),
+            ),
+            GenerationBinding(
+                CANDIDATE, goal.semantic_release, contract_digest(binding)),
+            SolveBudget(goal.budget),
+        )
+        selected = next(
+            item.typed for item in binding.operands
+            if item.typed.source_handle == node.operands[0].source_handle)
+        self.assertEqual(result.route, RouteKind.NEURAL_COMPOSITION)
+        self.assertEqual(result.answer.type_name, selected.type_name)
+        self.assertEqual(result.answer.value, selected.value)
+        self.assertEqual(result.answer.semantic_release, selected.semantic_release)
 
 
 if __name__ == "__main__":

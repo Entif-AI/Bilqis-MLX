@@ -283,10 +283,9 @@ def _fills_declared_holes(candidate: TaskGoal, original: TaskGoal) -> bool:
                 or len(node.operands) != len(source.operands)):
             return False
         if source.operator_id is not None:
-            if node != source:
+            if node.operator_id != source.operator_id:
                 return False
-            continue
-        if node.operator_id is None:
+        elif node.operator_id is None:
             if (not set(node.candidate_operator_ids).issubset(
                     source.candidate_operator_ids)
                     or node.constraints != source.constraints):

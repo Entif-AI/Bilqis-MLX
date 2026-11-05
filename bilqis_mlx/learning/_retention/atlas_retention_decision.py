@@ -1,7 +1,9 @@
 """C05-owned, custody-bound B13 retention decisions.
 
-The runtime evaluator must execute the complete paired screen. Caller-provided
-booleans and historical decision JSON cannot authorize generation publication.
+The runtime evaluator must execute the stage-authoritative C05 screen.
+Caller-provided booleans and historical decision JSON cannot authorize generation
+publication. Foundation acquisition authorizes from fixed-school preservation;
+fresh/generalization cohorts remain non-authorizing measurements under ADR-134.
 """
 from __future__ import annotations
 
@@ -42,7 +44,7 @@ def _digest(value: object) -> bool:
 
 @dataclass(frozen=True)
 class CandidateRetentionDecision:
-    """Live token issued only after C05 runs its complete paired evaluation."""
+    """Live token issued only after C05 runs its stage-authoritative evaluation."""
 
     decision: str
     reason: str

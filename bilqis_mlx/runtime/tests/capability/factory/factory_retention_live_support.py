@@ -31,12 +31,58 @@ from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateT
 from bilqis_mlx.runtime.bamf_bundle import BamfBundleCandidate
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationProvenance, Initializer, ModelTopologySpecV2, expected_bamf_shapes,
+    initialize_bamf_parameter,
 )
 from bilqis_mlx.semantics.abi import HISTORICAL_PREFIX_SIZE
+from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest
+from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.frame_adapters import (
+    BOOLEAN_CONNECTIVE_ADAPTER, FINITE_NUMERIC_ADAPTER, MICRO_PREDICATE_ADAPTER,
+)
+from bilqis_mlx.semantics.released_frame_schemas import (
+    _load_pinned_released_frame_schemas,
+)
 from bilqis_mlx.source_adapters.school import live_source_registry
 
 
 HP = AdamWHyperparameters(.001, (.9, .95), 1e-8, .01)
+C05_GENESIS_SEED = 70805
+C05_TRAINING_LEARNING_RATE = 1e-5
+
+
+def _genesis_parameter(base_parameters, item):
+    """Preserve source-owned identity rows; initialize model-owned tensors via B01."""
+    if item.initializer is Initializer.IDENTITY_BANK:
+        source = base_parameters.get(item.name)
+        if not isinstance(source, mx.array) or source.shape != item.shape:
+            raise AssertionError("C05 source-owned identity bank unavailable")
+        return source
+    return mx.array(
+        initialize_bamf_parameter(item, run_seed=C05_GENESIS_SEED),
+        dtype=mx.float32,
+    )
+
+
+def canonical_feature_schema(selection):
+    """Compose the A06 schema from every source-pinned A03 family."""
+    adapters = {
+        "boolean": BOOLEAN_CONNECTIVE_ADAPTER,
+        "micro": MICRO_PREDICATE_ADAPTER,
+        "numeric": FINITE_NUMERIC_ADAPTER,
+    }
+    bindings = []
+    roles = set()
+    schemas = []
+    for family in ("boolean", "micro", "numeric"):
+        manifest = _load_pinned_released_frame_schemas(family, selection).manifest
+        for body in manifest.bodies:
+            schema = body.parse()
+            schemas.append(schema.schema_id)
+            bindings.append((schema.schema_id, adapters[family]))
+            roles.update(role.role_id for role in schema.roles)
+    return FeatureSchema(
+        tuple(sorted(roles)), tuple(sorted(schemas)),
+        source_bindings=tuple(sorted(bindings)))
 
 
 def live_factory_context(root: Path, source: Path):
@@ -95,18 +141,22 @@ def live_factory_context(root: Path, source: Path):
         release, transition.graph, source, sources, answers), manifest
 
 
-def genesis_bundle(base, snapshot, schema):
+def genesis_bundle(base, snapshot, schema, artifact_path):
     """Build full-topology generation zero from the real A01 parameter surface."""
     allocations = MotifAllocationSnapshot(MotifManifest(snapshot.release_sha256))
+    selection = AtlasArtifactSelection(
+        str(artifact_path), snapshot.bundle_id, snapshot.release_sha256,
+        snapshot.source_bundle_id)
+    schema = canonical_feature_schema(selection)
+    features = build_feature_manifest(snapshot, schema)
     extents = replace(
         base.compiled.extents,
         motif_key_map_digest=allocations.manifest.digest,
+        factor_map_digest=features.digest,
     )
     declared = expected_bamf_shapes(ModelTopologySpecV2(), extents)
     parameters = {
-        item.name: (base.parameters[item.name]
-                    if base.parameters[item.name].shape == item.shape
-                    else mx.zeros(item.shape, dtype=mx.float32))
+        item.name: _genesis_parameter(base.parameters, item)
         for item in declared
     }
     rowwise = {Initializer.IDENTITY_BANK, Initializer.MOTIF_PAGE,
@@ -170,4 +220,7 @@ def genesis_bundle(base, snapshot, schema):
     return bundle, declared
 
 
-__all__ = ("HP", "genesis_bundle", "live_factory_context")
+__all__ = (
+    "C05_GENESIS_SEED", "C05_TRAINING_LEARNING_RATE", "HP",
+    "canonical_feature_schema", "genesis_bundle", "live_factory_context",
+)
