@@ -4,7 +4,7 @@ Issue: #427
 Lane: A
 Implementation base reviewed unified: 88ac132db2fd1c3606fa5f06637d10a7ab40cba4
 Latest reviewed unified consumed before final turn-in: 22314c413ba137df69b3d6b35768fe65e1556bfe
-Implementation checkpoint: 68f288cd9e20b54bbc8c0b8a775196b9f3335ba8
+Implementation checkpoint: 99277203ea3511d68e3cac0aacf0f28769530885
 Branch: codex/bamf02-a12-1-427-20261105
 Disposition: TURNED_IN / EGM_PENDING
 
@@ -41,18 +41,23 @@ are current source and derived-source pin ledgers.
 
 ## Observable behavior
 
-audit_atlas_authority(release, abi, ast, lesson_manifest, registry_mirror)
-accepts only the current immutable typed records, reloads the repository-pinned
-A01 snapshot, re-enters the repository-owned A03 frame-schema pin ledger, and
-returns a deterministic AuthorityReceipt containing separate consumer bindings
-and graph/formal-domain digests. Lesson semantic IDs, constituents, and
-prerequisite closure must all resolve inside the admitted A01/formal-domain
-authority set.
+audit_atlas_authority(release, abi, ast, lesson_manifest, registry_mirror,
+*, abi_prior, source_bundle_path) accepts only the current immutable typed
+records plus two replay locators owned by existing upstream authorities. The
+VocabularyPrior is revalidated by the A02 planner; source_bundle_path is only a
+locator whose content-addressed identity is verified against A01. The audit
+replays VocabularyExtension, RegistryMirrorDelta and the complete Factory
+lesson set from those pinned owners before returning a deterministic
+AuthorityReceipt. It also re-enters the repository-owned A03 frame-schema pin
+ledger and separately binds the read-only graph/formal-domain projections.
 
 A deliberate ABI release mismatch is rejected at the first audit boundary with
-A12_AUTHORITY_SOURCE_BINDING_MISMATCH. An unpinned A03 manifest is rejected with
-A12_AUTHORITY_AST_SOURCE_PIN_MISMATCH, and a lesson that smuggles a foreign
-constituent/prerequisite is rejected with A12_AUTHORITY_LESSON_SOURCE_MISMATCH.
+A12_AUTHORITY_SOURCE_BINDING_MISMATCH. Self-consistent caller tampering of the
+ABI source-allocation/prospective-feature digests is rejected with
+A12_AUTHORITY_ABI_SOURCE_MISMATCH; caller-minted Registry source-record lineage
+is rejected with A12_AUTHORITY_REGISTRY_MIRROR_MISMATCH; and lesson census or
+source-evidence drift is rejected with A12_AUTHORITY_LESSON_SOURCE_MISMATCH. An
+unpinned A03 manifest is rejected with A12_AUTHORITY_AST_SOURCE_PIN_MISMATCH.
 A held source identity remains held even when a nearby admitted concept receives
 a plausible English gloss or its labels are renamed/reordered: the held identity
 cannot be activated through the vocabulary planner, projected into prospective
@@ -65,34 +70,36 @@ admission.
 
 ## Verification
 
-Owner suite, default:
+Owner suite, source-free:
 
-python3 -B scripts/run_tests.py bilqis_mlx/semantics/tests/test_atlas_release_audit.py
+python3 -B scripts/run_tests.py bilqis_mlx/semantics/tests/test_atlas_release_audit.py bilqis_mlx/semantics/tests/test_atlas_release_held_gloss.py bilqis_mlx/semantics/tests/test_atlas_export_clearance.py
 
-Result: 10 passed, 0 failed, 1 expected optional-real-source skip.
+Result: 9 passed, 0 failed, 0 skipped.
 
 Real producer replay, using the repository-pinned A01 artifact and its exact
 source bundle:
 
-BILQIS_A01_ATLAS_BUNDLE=<pinned-atlas-artifact> BILQIS_A01_SOURCE_BUNDLE=<pinned-source-bundle> python3 -B scripts/run_tests.py bilqis_mlx/semantics/tests/test_atlas_release_audit.py
+BILQIS_A01_ATLAS_BUNDLE=<pinned-atlas-artifact> BILQIS_A01_SOURCE_BUNDLE=<pinned-source-bundle> python3 -B scripts/run_tests.py bilqis_mlx/semantics/tests/test_atlas_release_replay.py
 
-Result: 9 passed, 0 failed, 0 skipped. The replay exercised the current A02
-vocabulary planner and Registry mirror builder, the current A03 pinned released
-frame-schema loader, the current Factory source-lesson compiler, and the A12.1
-audit.
+This resumed repair environment did not contain the external pinned source
+artifact paths, so this optional integration witness was not rerun locally. The
+source-free owner tests exercise the A12 replay boundary with deterministic
+producer substitutes; hosted CI and the fresh exact-head EGM remain required.
 
 Adjacent owner proof:
 
-python3 -B scripts/run_tests.py bilqis_mlx/semantics/tests/released_schemas bilqis_mlx/semantics/tests/atlas/test_vocabulary_planning.py bilqis_mlx/factory/tests/skos/test_skos_curriculum_constructive.py
+python3 -B scripts/run_tests.py bilqis_mlx/semantics/tests/released_schemas bilqis_mlx/semantics/tests/atlas/test_vocabulary_planning.py bilqis_mlx/semantics/tests/atlas/test_vocabulary_resources.py bilqis_mlx/factory/tests/skos/test_skos_curriculum_constructive.py bilqis_mlx/semantics/tests/test_atlas_features.py
 
-Result: 24 passed, 0 failed, 2 expected optional-source skips.
+Result: 26 passed, 0 failed, 2 expected optional-source skips.
 
 Additional gates:
 
 - python3 -B scripts/check_semantic_boundaries.py -> SEMANTIC_BOUNDARIES_OK
-- governance/error-contract tests -> 11 passed, 0 failed
 - exact error-control-plane relative to reviewed unified -> new debt 0
-- module-size/development-structure check -> 0 violations
+- changed-file smell audit -> 0 findings
+- module-size/development-structure check -> 0 violations after splitting the
+  387-line audit owner into a 19-line facade plus 131/120/95-line cohesive
+  submodules; companion tests are all <240 lines
 - governance-integrity check -> 0 violations
 - py_compile -> clean
 - git diff --check -> clean
@@ -110,9 +117,12 @@ Additional gates:
 
 ## Independent review
 
-The first fresh exact-head EGM on 859dd3fc identified one Blocker and two Majors:
-the audit did not re-enter the A03 source-pin ledger, lesson constituents and
-prerequisite closure were not checked against admitted semantic authority, and
-the required cross-surface held-gloss adversary had not been demonstrated. This
-receipt records the resulting repair. A fresh independent EGM of the final
-repair head remains required before integration.
+The first fresh exact-head EGM on 859dd3fc identified one Blocker and two Majors
+around A03 pinning, lesson authority and the held-gloss adversary. The next
+exact-head reviews on e929ed23 found a further source-authentication gap: A12
+could still accept self-consistent caller-minted VocabularyExtension,
+RegistryMirror and lesson evidence, and the companion test file violated the
+repository structure contract. The repair now replays those consumers through
+their existing A02/A01/A08 producers, propagates source-owned held reasons, and
+remediates the structural offender without weakening the gate. A fresh
+independent EGM of the final pushed head remains required before integration.

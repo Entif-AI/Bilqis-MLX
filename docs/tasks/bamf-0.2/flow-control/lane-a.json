@@ -2,16 +2,16 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "22314c413ba137df69b3d6b35768fe65e1556bfe",
-  "updated_at": "2026-11-05T13:05:25Z",
+  "updated_at": "2026-11-05T13:43:09Z",
   "exception": null,
   "items": [
     {
       "issue": 427,
       "pr": 861,
       "state": "TURNED_IN",
-      "head_sha": "1573038d1b9ee8e618626274fac3e78724bc98a5",
-      "summary": "A12.1 current-owner audit remains turned in as draft PR #861. The receipt binds current typed ABI, source-pinned released AST/frame schemas, Factory source lessons, read-only graph projection, Registry mirror, and exact prior-ABI ledger to one repository-pinned A01 release without resurrecting the historical competing owner. Initial head 2a314e44 was semantically green but hosted portable-core rejected audit_atlas_authority as a 106-line changed function. Refactor 1573038d extracts _validated_audit_snapshot and _consumer_bindings without weakening validation or changing receipt semantics. Local proof: atlas audit/export 8 pass / 0 fail / 1 expected optional source skip; adjacent released-schema/vocabulary/curriculum 24 pass / 0 fail / 2 expected optional skips; semantic boundaries green; exact error debt 0; Factory/docs/flow green; changed-file smell 0; compile/diff clean. Fresh hosted checks and fresh exact-head independent EGM remain required.",
-      "resume_trigger": "If hosted portable-core/portable/Semantic ABI and fresh exact-head EGM are clean on the final PR head, mark PR #861 ready for human integration. Close #427 only after accepted merge. Parent A12/#364, #295 and #309 remain open; this child does not claim neural admission or full parent cutover.",
+      "head_sha": "99277203ea3511d68e3cac0aacf0f28769530885",
+      "summary": "A12.1 PR #861 remains TURNED_IN/DRAFT after exact-head review exposed additional authority gaps on e929ed23. Repair checkpoint 99277203 replays VocabularyExtension through the existing A02 VocabularyPrior authority, replays RegistryMirrorDelta from the content-addressed A01 source bundle, recompiles the complete Factory lesson set from source, preserves source-owned held reasons across feature/prospective/vocabulary refusal, and structurally splits the oversized audit/test surfaces without weakening validation. Post-reconciliation local proof: focused A12 9/9; adjacent released-schema/vocabulary/resource/curriculum/feature 26 pass / 0 fail / 2 expected external-source skips; semantic boundaries, governance integrity, structure, compile/diff green; exact error debt 0; changed-file smell 0. Fresh hosted checks and fresh exact-head independent EGM remain required.",
+      "resume_trigger": "Push the reconciled repair head only if the remote branch is unchanged from the consumed 384d09a4 writer update; then wait for hosted portable-core/portable/Semantic ABI and obtain fresh independent exact-head EGM. If clean, mark PR #861 ready for human integration. Close #427 only after accepted merge. Parent A12/#364, #295 and #309 remain open.",
       "preserved_branch": "codex/bamf02-a12-1-427-20261105"
     },
     {
