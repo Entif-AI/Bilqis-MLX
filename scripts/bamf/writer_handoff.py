@@ -7,6 +7,8 @@ This is a compaction handoff, NOT a distributed lock or writer lease.
 from __future__ import annotations
 
 import argparse
+from contextlib import ExitStack
+import errno
 import hashlib
 import json
 import os
@@ -36,22 +38,46 @@ def _hash_part(digest, payload: bytes) -> None:
     digest.update(payload)
 
 
+def _capture_path(root: Path, relative: str, *, allow_missing: bool) -> tuple[bytes, int, bytes]:
+    directory_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    parts = Path(relative).parts
+    with ExitStack() as descriptors:
+        parent = os.open(root, directory_flags)
+        descriptors.callback(os.close, parent)
+        try:
+            for component in parts[:-1]:
+                try:
+                    parent = os.open(component, directory_flags, dir_fd=parent)
+                except OSError as exc:
+                    if exc.errno in (errno.ELOOP, errno.ENOTDIR):
+                        raise HandoffError(f"unsafe symlink or non-directory ancestor: {relative}") from exc
+                    raise
+                descriptors.callback(os.close, parent)
+            name = parts[-1]
+            metadata = os.stat(name, dir_fd=parent, follow_symlinks=False)
+            if stat.S_ISLNK(metadata.st_mode):
+                return b"symlink", stat.S_IMODE(metadata.st_mode), os.fsencode(os.readlink(name, dir_fd=parent))
+            if not stat.S_ISREG(metadata.st_mode):
+                raise HandoffError(f"unsupported captured entry: {relative}")
+            try:
+                descriptor = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=parent)
+            except OSError as exc:
+                if exc.errno == errno.ELOOP:
+                    raise HandoffError(f"captured path changed to symlink before open: {relative}") from exc
+                raise
+            with os.fdopen(descriptor, "rb") as source:
+                metadata = os.fstat(source.fileno())
+                if not stat.S_ISREG(metadata.st_mode):
+                    raise HandoffError(f"unsupported captured entry after open: {relative}")
+                return b"file", stat.S_IMODE(metadata.st_mode), source.read()
+        except FileNotFoundError:
+            if not allow_missing:
+                raise
+            return b"absent", 0, b""
+
+
 def _hash_path(digest, root: Path, relative: str, *, allow_missing: bool = False) -> None:
-    file = root / relative
-    try:
-        metadata = file.lstat()
-    except FileNotFoundError:
-        if not allow_missing:
-            raise
-        kind, mode, payload = b"absent", 0, b""
-    else:
-        mode = stat.S_IMODE(metadata.st_mode)
-        if stat.S_ISLNK(metadata.st_mode):
-            kind, payload = b"symlink", os.fsencode(file.readlink())
-        elif stat.S_ISREG(metadata.st_mode):
-            kind, payload = b"file", file.read_bytes()
-        else:
-            raise HandoffError(f"unsupported captured entry: {relative}")
+    kind, mode, payload = _capture_path(root, relative, allow_missing=allow_missing)
     for part in (os.fsencode(relative), kind, mode.to_bytes(4, "big"), payload):
         _hash_part(digest, part)
 
