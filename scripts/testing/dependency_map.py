@@ -6,7 +6,7 @@ from collections import defaultdict, deque
 from pathlib import Path
 
 
-IGNORED_PARTS = {".git", ".local", ".venv", "node_modules", "runs", "vendor"}
+IGNORED_PARTS = frozenset({".git", ".local", ".venv", "node_modules", "runs", "vendor"})
 
 
 def _python_files(root: Path) -> tuple[Path, ...]:

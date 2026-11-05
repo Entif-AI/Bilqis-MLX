@@ -20,7 +20,7 @@ else:
 
 RECEIPT_DIR = Path(".local/test-gate")
 TESTMON_DATA = Path(".testmondata")
-IGNORED_PARTS = {".git", ".local", ".venv", "node_modules", "runs", "vendor"}
+IGNORED_PARTS = frozenset({".git", ".local", ".venv", "node_modules", "runs", "vendor"})
 
 
 @dataclass(frozen=True)
