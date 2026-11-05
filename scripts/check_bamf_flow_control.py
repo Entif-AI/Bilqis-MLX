@@ -10,22 +10,22 @@ import sys
 from pathlib import Path
 
 if __package__:
-    from scripts.bamf_flow_control_core import (
+    from scripts.flow_control.core import (
         DEFAULT_DIR,
         FlowControlError,
         validate_flow_control,
     )
-    from scripts.bamf_flow_control_live import (
+    from scripts.flow_control.live import (
         validate_live_from_environment,
         validate_live_pr_inventory,
     )
 else:
-    from bamf_flow_control_core import (
+    from flow_control.core import (
         DEFAULT_DIR,
         FlowControlError,
         validate_flow_control,
     )
-    from bamf_flow_control_live import (
+    from flow_control.live import (
         validate_live_from_environment,
         validate_live_pr_inventory,
     )

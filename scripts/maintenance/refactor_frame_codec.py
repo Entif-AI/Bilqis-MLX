@@ -10,7 +10,7 @@ import subprocess
 import textwrap
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 CODEC = Path("bilqis_mlx/semantics/frame_codec.py")
 TEST = Path("bilqis_mlx/semantics/tests/test_frame_codec.py")
 

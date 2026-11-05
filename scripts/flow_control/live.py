@@ -10,13 +10,13 @@ from pathlib import Path
 from typing import Any
 
 if __package__:
-    from scripts.bamf_flow_control_core import (
+    from .core import (
         DEFAULT_DIR,
         FlowControlError,
         validated_state,
     )
 else:
-    from bamf_flow_control_core import DEFAULT_DIR, FlowControlError, validated_state
+    from core import DEFAULT_DIR, FlowControlError, validated_state
 
 
 def exception_matches(pr: dict[str, Any], exception: dict[str, Any]) -> bool:

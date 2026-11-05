@@ -4,7 +4,7 @@ import subprocess
 import tempfile
 import unittest
 
-from scripts import differential_test_gate as gate
+from scripts.testing import differential_test_gate as gate
 
 
 class DifferentialTestGateTests(unittest.TestCase):
