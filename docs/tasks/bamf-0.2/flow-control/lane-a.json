@@ -1,18 +1,19 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "1599a67b4ac481c796e26fa302db829db3910e00",
-  "updated_at": "2026-11-05T14:17:21Z",
+  "observed_unified": "beb699ad7f131bd97a0983c3f27f8a53f7a240cc",
+  "updated_at": "2026-11-05T14:32:00Z",
   "exception": null,
   "items": [
     {
       "issue": 427,
-      "pr": 861,
+      "pr": null,
       "state": "TURNED_IN",
-      "head_sha": "854c9262022c6399b821216d2c7243715ffd2f97",
-      "summary": "A12.1 PR #861 closes the final proof gap with two real A01 source compilations/persistences in separate roots that deterministically replay A02 allocation/mirror, A03 frame sealing, A08 lessons and A12 audit, preserve prior accepted ABI indices, and propagate one new semantic through lessons and graph projection. The 83.692s two-regeneration witness passed 1/1; source-free A12 proof 10/10 and governance/structure/smell/flow gates are green. This branch has now consumed accepted A10.3 reviewed-unified 1599a67b; fresh hosted and exact-head independent review remain required on the reconciled head.",
-      "resume_trigger": "Publish the reconciled exact head, require hosted portable-core/portable/Semantic ABI plus fresh exact-head independent EGM, then merge only if clean. Close #427 only after accepted merge. Parent A12/#364, #295 and #309 remain separate.",
-      "preserved_branch": "codex/bamf02-a12-1-427-20261105"
+      "head_sha": "16f9fb673b377d561ecbffd820e09b3c30de8f3c",
+      "summary": "A12.1 final PR #861 head 16f9fb67 merged as reviewed-unified beb699ad. The substantive proof head 854c9262 passed two independent real A01 source compilations/persistences with deterministic A02 allocation/mirror, A03 frame reseal, A08 lessons and A12 audit; prior ABI indices stayed fixed while one new semantic propagated through lessons and graph projection. Reconciled exact head 8211a6a0 then passed hosted portable-core/portable/Semantic ABI and fresh independent EGM CLEAN; 8211..16f9 changed only this flow ledger. Post-merge EGM found no runtime defect and identified only the stale #427 custody fields repaired by this entry.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a12-1-427-20261105",
+      "merged_pr": 861
     },
     {
       "issue": 426,
@@ -26,10 +27,10 @@
     },
     {
       "issue": 423,
-      "pr": null,
+      "pr": 865,
       "state": "TURNED_IN",
-      "head_sha": "e9fa36a009daf65e5b19a52351993eb2e7d4e242",
-      "summary": "A10.3 exact head e9fa36a0 passed real-pinned public BRAVO receipt proof, hosted portable-core/portable/Semantic ABI and fresh independent exact-head EGM after binding full heldout rights into every replayable gold witness. Merged through PR #858 as reviewed-unified 1599a67b; #423 and parent A10/#361 are closed completed.",
+      "head_sha": "70c49117ae992e2357b7a81f90eb014655e9f8f3",
+      "summary": "A10.3 public-fixture/F10/full-rights work from PR #858 remains accepted and merged as reviewed-unified 1599a67b, but #423 and parent A10/#361 were reopened after live reconciliation recovered the preserved F06 PRIVATE_REAL synthetic-lifecycle acceptance clause: source -> interpretation -> lesson -> trainer preparation must preserve protected sentinels while refusing public leakage, not merely reject at export. Follow-up draft PR #865 exact head 70c49117 carries that scoped repair; hosted portable-core/portable/Semantic ABI are green and fresh independent exact-head EGM is pending.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a10-3-423-20261105",
       "merged_pr": 858
