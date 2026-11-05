@@ -2,16 +2,16 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "6e12e5a077183713241bb9b2b0d0762d8d95fa47",
-  "updated_at": "2026-11-05T08:53:16.253411+00:00",
+  "updated_at": "2026-11-05T08:55:48.773325+00:00",
   "exception": null,
   "items": [
     {
       "issue": 424,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "8019bf5d945a1d9f8f5a11983ef43fbb008a365f",
-      "summary": "A11.1 active on clean issue branch from synchronized Lane A integration; implementing checker-grounded structural contrast transformations against accepted A03/A08 contracts.",
-      "resume_trigger": null,
+      "pr": 853,
+      "state": "TURNED_IN",
+      "head_sha": "20fc97766b01b1f3f737bcf0099e125f9533dc31",
+      "summary": "A11.1 implemented on clean issue branch: seven checker-grounded structural contrast families, immutable source/variant lineage separation, schema/cardinality/type applicability, deterministic seeded variants, paraphrase deduplication and independent checker replay. 36 passed / 1 intentional real-Atlas skip plus 11 governance checks; EGM_PENDING.",
+      "resume_trigger": "Independent exact-head EGM + human integration review for PR #853.",
       "preserved_branch": "codex/bamf02-a11-1-424-20261105"
     },
     {
