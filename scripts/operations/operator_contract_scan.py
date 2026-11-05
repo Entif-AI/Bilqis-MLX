@@ -19,6 +19,10 @@ GATE_COLLECTION_NAMES = frozenset(
 # that canonical identity rather than being reclassified as "new" merely
 # because anti-monolith governance moved the source file on disk.
 LOGICAL_SOURCE_COMPARTMENTS = (
+    (("bilqis_mlx", "_release_views"), ("bilqis_mlx",)),
+    (("bilqis_mlx", "_source_evidence"), ("bilqis_mlx",)),
+    (("bilqis_mlx", "compatibility", "_recovery"),
+     ("bilqis_mlx", "compatibility")),
     (("bilqis_mlx", "factory", "curriculum"), ("bilqis_mlx", "factory")),
     (("bilqis_mlx", "factory", "lifecycle"), ("bilqis_mlx", "factory")),
     (("bilqis_mlx", "factory", "sources"), ("bilqis_mlx", "factory")),
@@ -35,8 +39,9 @@ def logical_source_path(path: Path, root: Path) -> str:
     relative = path.relative_to(root)
     parts = relative.parts
     for physical, canonical in LOGICAL_SOURCE_COMPARTMENTS:
-        if parts[:3] == physical:
-            return Path(*canonical, *parts[3:]).as_posix()
+        width = len(physical)
+        if parts[:width] == physical:
+            return Path(*canonical, *parts[width:]).as_posix()
     return relative.as_posix()
 
 

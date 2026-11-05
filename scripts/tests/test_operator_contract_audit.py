@@ -26,6 +26,23 @@ class OperatorContractAuditTests(unittest.TestCase):
             "bilqis_mlx/semantics/abi.py",
         )
         self.assertEqual(
+            logical_source_path(
+                root / "bilqis_mlx/_release_views/fixed_frontier.py", root),
+            "bilqis_mlx/fixed_frontier.py",
+        )
+        self.assertEqual(
+            logical_source_path(
+                root / "bilqis_mlx/_source_evidence/grade_a_probe.py", root),
+            "bilqis_mlx/grade_a_probe.py",
+        )
+        self.assertEqual(
+            logical_source_path(
+                root / "bilqis_mlx/compatibility/_recovery/settled_matchup_recovery.py",
+                root,
+            ),
+            "bilqis_mlx/compatibility/settled_matchup_recovery.py",
+        )
+        self.assertEqual(
             logical_source_path(root / "bilqis_mlx/runtime/visits.py", root),
             "bilqis_mlx/runtime/visits.py",
         )
