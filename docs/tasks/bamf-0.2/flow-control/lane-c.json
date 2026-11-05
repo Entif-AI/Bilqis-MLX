@@ -113,9 +113,9 @@
       "issue": 829,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "06eb34d0435d2f41c6f3561cf8cad6988d5b849f",
+      "head_sha": "4334288fccf392585f7ae5a1fdd7d5f6b855fd88",
       "preserved_branch": "codex/bamf02-c-829-local-handoff-20261104",
-      "summary": "Reproduced handoff failure on local feature branch with no upstream. Preserve complete local evidence and report UNVERIFIED without weakening live-remote continuation proof.",
+      "summary": "Complete known handoff repair set consumed;15/15 tests and static gates pass. Stable whole candidate enters C829-HANDOFF-20261104 round4/5; no source/neural mutation.",
       "resume_trigger": null
     },
     {
@@ -139,10 +139,10 @@
     {
       "issue": 834,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "30a79175cc8b54da5c54ebf23f9f52e30eda8247",
+      "state": "TURNED_IN",
+      "head_sha": "4334288fccf392585f7ae5a1fdd7d5f6b855fd88",
       "preserved_branch": "codex/bamf02-c-829-local-handoff-20261104",
-      "summary": "Round3 missing index-state Major: bind entries/stages/flags separately from HEAD-to-worktree diff; parent episode remains3/5.",
+      "summary": "Missing staged index state reproduced in3cases, bound through entries/stages/flags and verified15/15 at durable4334288f; child CLOSED. Parent829 owns aggregate review.",
       "resume_trigger": null
     }
   ]
