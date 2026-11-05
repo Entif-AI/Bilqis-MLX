@@ -1,147 +1,203 @@
-"""Private B07 protocol probe with caller-supplied native A03/A13 record types."""
+"""B07.1 source-qualified motif preparation tests."""
+import inspect
+import os
+from pathlib import Path
+import unittest
 from dataclasses import replace
 from unittest import TestCase
 
+import mlx.core as mx
+
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.learning.atlas_engram import MotifBudget, MotifManifest
+from bilqis_mlx.learning.atlas_engram import MotifBudget
 from bilqis_mlx.learning.atlas_engram_source import (
-    ApprovedMotifCandidate, _probe_approved_motifs,
+    ApprovedMotifCandidate, prepare_source_qualified_motifs,
 )
-from bilqis_mlx.semantics.atlas_projection import (
-    AbiEntry, AtlasConcept, AtlasCounts, FrozenAtlasConcept,
-    FrozenAtlasSnapshot, SourceRecordRef,
-)
+from bilqis_mlx.learning.atlas_candidate import CandidateState, begin_candidate
+from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
+from bilqis_mlx.runtime.atlas_optimizer import AdamWStateTree
+from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.context_eligibility import (
-    PUBLIC_FORMAL, ContextEligibility, ContextHold, ContextMember,
-    ContextPolicy, SourceFrontier, SourceGrant, TaskScope,
-    frame_evidence_digest, member_evidence_digest,
-)
-from bilqis_mlx.semantics.frame_schema import (
-    ConceptRef, FrameSchema, RoleOccurrence, RoleSpec, SourceSpan,
-    make_frame_instance,
+    PUBLIC_FORMAL, ContextPolicy, SourceFrontier, TaskScope,
 )
 
-RELEASE = "a" * 64
-
-def protocol_source_case(*, forged_type: bool = False):
-    concept = ConceptRef(
-        "formal:entity.0", RELEASE, 0,
-        ("Number",) if forged_type else ("Entity",), "source:fixture:entity.0")
-    schema = FrameSchema(
-        "source:relation", 1, "source:relation",
-        (RoleSpec("actor", ("Entity", "Number"), 1, 1),),
-        "ORDERED", "source-expression")
-    frame = make_frame_instance(
-        schema, source_instance_id="source:frame:0",
-        structural_path=(), source_span=SourceSpan(0, 8),
-        parent_occurrence_id=None,
-        bindings=(RoleOccurrence("actor", 0, concept=concept),),
-        causal_prefix_end=8)
-    member = ContextMember("actor", 0, "source:member:actor", 8)
-    grants = (
-        SourceGrant(
-            "source:frame", "synthetic:principal", "synthetic:tenant",
-            PUBLIC_FORMAL, RELEASE, frame_evidence_digest(frame),
-            ("TRAINING",), ("synthetic:region",), ("synthetic:public",),
-            1, 1, 2, 0),
-        SourceGrant(
-            member.source_handle, "synthetic:principal", "synthetic:tenant",
-            PUBLIC_FORMAL, RELEASE, member_evidence_digest(frame, member),
-            ("TRAINING",), ("synthetic:region",), ("synthetic:public",),
-            1, 1, 2, 0),
-    )
-    envelope = ContextEligibility(
-        "frame:0", frame, "source:frame", (member,),
-        "synthetic:principal", "synthetic:tenant", "TRAINING",
-        PUBLIC_FORMAL, RELEASE, "synthetic:region", "synthetic:public",
-        PUBLIC_FORMAL, 1, 1, 1, 2, 0, None, 8)
-    task = TaskScope(
-        "synthetic:principal", "synthetic:tenant", "TRAINING",
-        RELEASE, "synthetic:region", "synthetic:public", 3, 5, 8)
-    policy = ContextPolicy(
-        "synthetic:policy", 1, 1, ("TRAINING",), (PUBLIC_FORMAL,),
-        ("synthetic:region",), ("synthetic:public",), (PUBLIC_FORMAL,),
-        ((PUBLIC_FORMAL, PUBLIC_FORMAL),),
-        ((PUBLIC_FORMAL, PUBLIC_FORMAL, PUBLIC_FORMAL),))
-    frontier = SourceFrontier(
-        1, 1, tuple(sorted(grants, key=lambda item: item.source_handle)))
-    entry = AbiEntry(0, 0, 0, concept.semantic_id, None, "FORMAL_DOMAIN",
-                     True, True, "fixture")
-    source_concept = AtlasConcept(
-        concept.semantic_id, "concept", ("Entity",), (), (), (), (),
-        (SourceRecordRef("fixture", "fixture", concept.semantic_id),))
-    frozen = FrozenAtlasConcept(
-        source_concept, 0, 0, 0, True, "ADMITTED", True, "fixture")
-    snapshot = FrozenAtlasSnapshot(
-        "bilqis.semantic-atlas-snapshot/v1",
-        "a" * 64, RELEASE, "b" * 64, "c" * 64, "d" * 64,
-        "e" * 64, "f" * 64, "0" * 64, "1" * 64, "2" * 64,
-        AtlasCounts(1, 1, 1, 1, 1, 1, 0, 0, 0, 0),
-        (), (entry,), (frozen,), (), (), ((concept.semantic_id, 0),),
-        ((concept.semantic_id, 0),))
-    return (envelope,), task, frontier, policy, (schema,), snapshot
+REAL_BUNDLE = "5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7"
+REAL_RELEASE = "58e0c281b5da18b9b7e6c803709b29eeeb0a88f16b06f48de692808e2fb88306"
+REAL_SOURCE_BUNDLE = "f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec"
 
 
-class ApprovedMotifSourceTests(TestCase):
-    def test_native_record_protocol_proposes_without_admission_authority(self):
-        envelopes, task, frontier, policy, schemas, snapshot = protocol_source_case()
-        result = _probe_approved_motifs(
-            envelopes, task, frontier, policy, schemas, snapshot,
-            MotifManifest(RELEASE), MotifBudget(2))
-        self.assertIsInstance(result, ApprovedMotifCandidate)
-        self.assertEqual(len(result.candidate.plan.allocated), 2)
-        self.assertEqual(result.candidate.matches[0].disposition, "EXACT")
-        self.assertEqual(len(result.approved_context_digest), 64)
-        self.assertEqual(result.candidate.plan.allocated[0].key.kind, "STRUCTURAL")
+@unittest.skipUnless(
+    os.environ.get("BILQIS_ATLAS_REAL_ARTIFACT"),
+    "real repo-pinned A01 artifact supplied at source turn-in",
+)
+class SourceQualifiedMotifTests(TestCase):
+    def _case(self, grade="A"):
+        from bilqis_mlx.grade_a_probe import read_sources
+        from bilqis_mlx.live_grade_c import draw as draw_numeric_rows, registry_graph
+        from bilqis_mlx.source_adapters.school import (
+            A_ORACLE, B_ORACLE, C_ORACLE, live_source_registry,
+        )
 
-    def test_revoked_source_member_does_not_allocate_motif(self):
-        envelopes, task, frontier, policy, schemas, snapshot = protocol_source_case()
-        revoked = replace(frontier, grants=tuple(
-            replace(grant, revoked=True)
-            if grant.source_handle == "source:member:actor" else grant
-            for grant in frontier.grants))
-        result = _probe_approved_motifs(
-            envelopes, task, revoked, policy, schemas, snapshot,
-            MotifManifest(RELEASE), MotifBudget(2))
-        self.assertIsInstance(result, ContextHold)
-        self.assertIn("BAMF_CONTEXT_SOURCE_REVOKED", result.reason_codes)
+        selection = AtlasArtifactSelection(
+            os.environ["BILQIS_ATLAS_REAL_ARTIFACT"],
+            REAL_BUNDLE, REAL_RELEASE, REAL_SOURCE_BUNDLE,
+        )
+        source_root = Path(__file__).resolve().parents[4] / "vendor/legacy-v16"
+        micro_graph = read_sources(source_root)[2]
+        registry = live_source_registry()
+        if grade == "A":
+            graph = micro_graph
+            adapter = registry.require(
+                "bilqis_mlx.grade_a_probe.make_record", A_ORACLE)
+            seed, each, profile = 31, 2, None
+            row = adapter.draw(
+                source_root=source_root, graph=graph, course=None,
+                capability="A.IDENTITY", seed=seed, each=each)[0]
+        elif grade == "B":
+            graph = micro_graph
+            adapter = registry.require(
+                "bilqis_mlx.live_grade_b.draw_connectives", B_ORACLE)
+            seed, each, profile = 31, 4, None
+            row = adapter.draw(
+                source_root=source_root, graph=graph, course=None,
+                capability="B.AND", seed=seed, each=each)[0]
+        elif grade == "C":
+            graph = registry_graph()
+            adapter = registry.require(
+                "bilqis_mlx.numeric_curriculum.draw_numeric", C_ORACLE)
+            seed, each = 19, 12
+            profile = {"numbers": ("0", "1", "2", "3")}
+            row = next(item for item in draw_numeric_rows(
+                graph, seed=seed, maximum=3) if item["capability"] == "C.ADD")
+        else:
+            raise AssertionError(grade)
+        task = TaskScope(
+            "synthetic:principal", "synthetic:tenant", "TRAINING",
+            REAL_RELEASE, "synthetic:region", "synthetic:public", 3, 5, 30)
+        policy = ContextPolicy(
+            "synthetic:policy", 1, 1, ("TRAINING",), (PUBLIC_FORMAL,),
+            ("synthetic:region",), ("synthetic:public",), (PUBLIC_FORMAL,),
+            ((PUBLIC_FORMAL, PUBLIC_FORMAL),),
+            tuple((PUBLIC_FORMAL,) * count for count in range(3, 25)))
+        return selection, source_root, graph, adapter, row, task, policy, seed, each, profile
 
-    def test_source_owned_types_reject_forged_but_role_allowed_type(self):
-        envelopes, task, frontier, policy, schemas, snapshot = protocol_source_case(
-            forged_type=True)
-        with self.assertRaises(BilqisError) as caught:
-            _probe_approved_motifs(
-                envelopes, task, frontier, policy, schemas, snapshot,
-                MotifManifest(RELEASE), MotifBudget(2))
-        self.assertEqual(
-            caught.exception.context["reason"],
-            "FRAME_CONCEPT_TYPE_AUTHORITY_MISMATCH")
+    def _prepare(self, *, grade="A", frontier=None, graph=None, selection=None,
+                 row=None, budget=None):
+        (actual_selection, source_root, actual_graph, adapter, actual_row,
+         task, policy, seed, each, profile) = self._case(grade)
+        return prepare_source_qualified_motifs(
+            adapter, actual_row if row is None else row,
+            actual_selection if selection is None else selection,
+            source_root=source_root, graph=actual_graph if graph is None else graph,
+            task_scope=task,
+            source_frontier=SourceFrontier(1, 1, ()) if frontier is None else frontier,
+            policy=policy, source_seed=seed, source_each=each,
+            source_profile_parameters=profile,
+            budget=MotifBudget(64) if budget is None else budget,
+        )
 
-    def test_protocol_inactive_abi_is_rejected(self):
-        envelopes, task, frontier, policy, schemas, snapshot = protocol_source_case()
-        inactive = replace(
-            snapshot,
-            abi_entries=(replace(snapshot.abi_entries[0], active=False),),
-            concepts=(replace(snapshot.concepts[0], active=False),))
-        with self.assertRaises(BilqisError) as caught:
-            _probe_approved_motifs(
-                envelopes, task, frontier, policy, schemas, inactive,
-                MotifManifest(RELEASE), MotifBudget(2))
-        self.assertEqual(
-            caught.exception.context["reason"],
-            "BAMF_MOTIF_SEMANTIC_NOT_ADMITTED")
+    def test_production_api_has_no_caller_schema_snapshot_or_grant_surface(self):
+        import bilqis_mlx.learning.atlas_engram_source as source_module
 
-    def test_source_schema_or_release_mismatch_fails_closed(self):
-        envelopes, task, frontier, policy, schemas, snapshot = protocol_source_case()
-        for changed in (
-            {"schemas": ()},
-            {"snapshot": replace(snapshot, release_sha256="9" * 64)},
-            {"parent_manifest": MotifManifest("9" * 64)},
+        parameters = inspect.signature(prepare_source_qualified_motifs).parameters
+        for forbidden in (
+            "envelopes", "schemas", "snapshot", "source_authorities", "grants",
+            "prior_pending", "prior_observed_uses", "parent", "retained_state",
         ):
-            args = dict(
-                envelopes=envelopes, task=task, frontier=frontier,
-                policy=policy, schemas=schemas, snapshot=snapshot,
-                parent_manifest=MotifManifest(RELEASE), budget=MotifBudget(2))
-            args.update(changed)
-            with self.subTest(changed=changed), self.assertRaises(BilqisError):
-                _probe_approved_motifs(**args)
+            self.assertNotIn(forbidden, parameters)
+        self.assertFalse(hasattr(source_module, "_probe_approved_motifs"))
+        self.assertNotIn("frames", inspect.signature(begin_candidate).parameters)
+
+    def test_source_candidate_cannot_launder_history_into_retention(self):
+        name = "identity.bank.0"
+        values = mx.array([[.5, -.25]], dtype=mx.float32)
+        optimizer = AdamWStateTree(
+            {name: values}, {name: mx.zeros_like(values)},
+            {name: mx.zeros_like(values)},
+            {name: mx.array([0], dtype=mx.uint64)},
+        )
+        approved, _frontier = self._prepare()
+        with self.assertRaises(BilqisError):
+            CandidateState(
+                optimizer, PlasticityPolicy("ADAPTIVE", 0, (IdentityRowAge(0, 0, 0),)),
+                approved.candidate.proposed, 0,
+            )
+
+    def test_real_source_replay_qualifies_pinned_schema_and_owner_grants(self):
+        for grade in ("A", "B", "C"):
+            with self.subTest(grade=grade):
+                result = self._prepare(grade=grade)
+                self.assertIsInstance(result, tuple)
+                candidate, frontier = result
+                self.assertIsInstance(candidate, ApprovedMotifCandidate)
+                self.assertIsInstance(frontier, SourceFrontier)
+                kinds = tuple(slot.key.kind for slot in candidate.candidate.view.plan.allocated)
+                self.assertIn("STRUCTURAL", kinds)
+                self.assertIn("EXACT", kinds)
+                first_exact = kinds.index("EXACT")
+                self.assertTrue(all(kind == "STRUCTURAL" for kind in kinds[:first_exact]))
+                self.assertTrue(all(kind == "EXACT" for kind in kinds[first_exact:]))
+                self.assertEqual(candidate.candidate.view.plan.allocated[0].key.semantic_release, REAL_RELEASE)
+                self.assertTrue(frontier.grants)
+
+    def test_approved_digest_and_frontier_replay_the_same_source_owner_projection(self):
+        from bilqis_mlx.semantics.atlas_snapshot import load_pinned_atlas_snapshot
+        from bilqis_mlx.semantics.frame_adapters import public_formal_context
+
+        (selection, source_root, graph, adapter, row, task, policy,
+         seed, each, profile) = self._case()
+        candidate, frontier = self._prepare()
+        replayed = public_formal_context(
+            adapter, row, load_pinned_atlas_snapshot(selection),
+            source_root=source_root, graph=graph, task_scope=task,
+            source_frontier=frontier, policy=policy, source_seed=seed,
+            source_each=each, source_profile_parameters=profile)
+        self.assertIsInstance(replayed, tuple)
+        projection, replayed_frontier = replayed
+        self.assertEqual(projection.digest, candidate.approved_context_digest)
+        self.assertEqual(replayed_frontier, frontier)
+
+    def test_source_replay_rejects_tampered_row_and_graph(self):
+        selection, _, graph, _, row, *_ = self._case()
+        forged_row = dict(row)
+        forged_row["gold"] = "caller:forged"
+        forged_graph = dict(graph)
+        forged_graph["tokens"] = list(reversed(graph["tokens"]))
+        for changed in ({"row": forged_row}, {"graph": forged_graph}):
+            with self.subTest(changed=tuple(changed)), self.assertRaises(BilqisError):
+                self._prepare(selection=selection, **changed)
+
+    def test_source_replay_rejects_row_proxy_that_reads_as_another_draw(self):
+        (selection, source_root, graph, adapter, row, _task, _policy,
+         seed, each, _profile) = self._case()
+        shadow = adapter.draw(
+            source_root=source_root, graph=graph, course=None,
+            capability=row["capability"], seed=seed + 1, each=each)[0]
+
+        class ShadowRow(dict):
+            def __init__(self, baseline, visible):
+                super().__init__(baseline)
+                self.visible = visible
+
+            def get(self, key, default=None):
+                return self.visible.get(key, default)
+
+            def __getitem__(self, key):
+                return self.visible[key]
+
+        self.assertNotEqual(row, shadow)
+        with self.assertRaises(BilqisError):
+            self._prepare(selection=selection, row=ShadowRow(row, shadow))
+
+    def test_revoked_issued_grant_is_not_silently_reissued(self):
+        _, frontier = self._prepare()
+        revoked = replace(frontier, grants=tuple(
+            replace(grant, revoked=True) if index == 0 else grant
+            for index, grant in enumerate(frontier.grants)))
+        with self.assertRaises(BilqisError):
+            self._prepare(frontier=revoked)
+
+    def test_wrong_atlas_release_fails_before_preparation(self):
+        selection, *_ = self._case()
+        with self.assertRaises(BilqisError):
+            self._prepare(selection=replace(selection, release_sha256="0" * 64))

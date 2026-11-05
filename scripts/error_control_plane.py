@@ -12,6 +12,7 @@ import ast
 from collections import Counter, defaultdict
 from dataclasses import asdict
 import json
+import os
 from pathlib import Path
 import sys
 
@@ -21,6 +22,14 @@ OPERATIONS = ROOT / "docs" / "operations"
 CATALOG_JSON = OPERATIONS / "error_catalog.json"
 MANUAL = OPERATIONS / "ERROR_FIELD_MANUAL.md"
 BASELINE = ROOT / "docs/evidence/development/operator_contract_baseline.json"
+
+
+def quality_base_ref(explicit: str | None, environ=None) -> str | None:
+    """Use the exact reviewed base when a local/CI quality caller supplies it."""
+    if explicit:
+        return explicit
+    environment = os.environ if environ is None else environ
+    return environment.get("BILQIS_QUALITY_BASE_REF") or None
 
 
 def _call_name(node: ast.AST) -> str:
@@ -52,12 +61,14 @@ def _code_hint(node: ast.AST) -> str:
 def raw_error_sites() -> tuple[dict, ...]:
     """Return grouped production raise sites whose identity contains raw prose."""
     from operations.operator_contract_audit import _repository_python_files
+    from operations.operator_contract_scan import _module_string_constants
 
     counts: Counter[tuple[str, str, str, str]] = Counter()
     for path in _repository_python_files(ROOT):
         if "__pycache__" in path.parts:
             continue
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        module_strings = _module_string_constants(tree)
         for node in ast.walk(tree):
             if not isinstance(node, ast.Raise) or not isinstance(node.exc, ast.Call):
                 continue
@@ -65,6 +76,8 @@ def raw_error_sites() -> tuple[dict, ...]:
             if not exception.endswith("Error") or not node.exc.args:
                 continue
             identity = node.exc.args[0]
+            if isinstance(identity, ast.Name) and identity.id in module_strings:
+                identity = ast.Constant(value=module_strings[identity.id])
             if not _contains_string_literal(identity):
                 continue
             expression = ast.unparse(identity)
@@ -313,7 +326,7 @@ def main() -> int:
     if args.write_docs:
         write_docs()
         return 0
-    return check(args.base_ref)
+    return check(quality_base_ref(args.base_ref))
 
 
 if __name__ == "__main__":

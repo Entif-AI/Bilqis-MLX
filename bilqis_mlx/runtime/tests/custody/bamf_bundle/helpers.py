@@ -1,10 +1,14 @@
 """Small real-B12 fixtures for B13.1 custody tests."""
 from __future__ import annotations
 
+from copy import deepcopy
+import os
+from pathlib import Path
 from unittest.mock import patch
 
 import mlx.core as mx
 
+from bilqis_mlx.data_plane import data_plane
 from bilqis_mlx.learning.atlas_candidate import (
     CandidateState, begin_candidate, candidate_step, resolve_candidate,
 )
@@ -13,6 +17,8 @@ from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
 from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree
 from bilqis_mlx.runtime.bamf_bundle import BamfBundleCandidate
+from bilqis_mlx.runtime.bamf_bundle.motif_codec import snapshot_to_record
+from bilqis_mlx.runtime.bamf_bundle.records import canonical, sha
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, GenerationProvenance, Initializer, ModelTopologySpecV2,
     ParameterGroup, ParameterSpec,
@@ -89,6 +95,49 @@ def candidate(state: CandidateState, generation=0, parent=None) -> BamfBundleCan
          "teacher_epoch": 3, "next_seed": 42, "cursor": "lesson:7"},
         {"schema": "bilqis.mlx.bamf-evaluation-contract/v1", "contract_sha256": "9" * 64},
         transition, ({"event": "FIXTURE_ACCEPTED", "optimizer_step": state.optimizer_step},))
+
+
+def rewrite_motif_bundle_fixture(
+        bundle_root: Path, manifest: dict, allocations: MotifAllocationSnapshot) -> dict:
+    """Replace fixture motif bytes, then rebind exact immutable custody metadata."""
+    root = Path(bundle_root)
+    record = deepcopy({key: value for key, value in manifest.items()
+                       if key != "manifest_sha256"})
+    raw_motif = canonical(snapshot_to_record(allocations))
+    motif_sha = sha(raw_motif)
+    motif_path = root / record["sidecars"]["motif_allocation"]["filename"]
+    with motif_path.open("wb") as stream:
+        stream.write(raw_motif)
+        stream.flush()
+        os.fsync(stream.fileno())
+    data_plane().put_object(motif_sha, raw_motif)
+    record["sidecars"]["motif_allocation"] = {
+        "filename": motif_path.name,
+        "sha256": motif_sha,
+        "object_sha256": motif_sha,
+    }
+    prior_extents = record["extents"]
+    record["extents"] = GenerationExtents(
+        prior_extents["semantic_bank_count"], prior_extents["motif_page_count"],
+        prior_extents["active_semantic_digest"], allocations.manifest.digest,
+        prior_extents["factor_map_digest"],
+    ).to_record()
+    raw_manifest = canonical(record)
+    manifest_sha = sha(raw_manifest)
+    manifest_path = root / "manifest.json"
+    with manifest_path.open("wb") as stream:
+        stream.write(raw_manifest)
+        stream.flush()
+        os.fsync(stream.fileno())
+    data_plane().put_node(
+        manifest_sha, raw_manifest, record["generation"],
+        record["parent_manifest_sha256"])
+    directory = os.open(root, os.O_RDONLY)
+    try:
+        os.fsync(directory)
+    finally:
+        os.close(directory)
+    return {**record, "manifest_sha256": manifest_sha}
 
 
 def shape_patch():

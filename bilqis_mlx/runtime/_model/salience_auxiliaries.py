@@ -1,24 +1,18 @@
 """Bind source/outcome salience labels to exact C02 delivery rows."""
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, replace
-import hashlib
-import json
+from dataclasses import dataclass, replace
 
 from ..learning.atlas_salience import SalienceEvidence, derive_salience, verify_salience_inputs
 from ..learning.salience_contracts import AuthoritySnapshot, _invalid, _name, _sha, _signature, _signing_bytes
 from ..semantics.cognitive_dependencies import DependencyKind, DependencyRef
 from .atlas_training_adapter import BamfTrainingBatch, BamfTrainingRow, attach_auxiliaries, require_current_release
+from .atlas_training_contracts import _canonical_digest
 
 
 def _row_digest(row):
-    # C02 feature records may contain finite scalar floats. Bind exact JSON values.
-    try:
-        payload = json.dumps((asdict(row.model_input), asdict(row.provenance)),
-            sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode('utf-8')
-    except (TypeError, ValueError):
-        _invalid("BAMF_SALIENCE_ROW_NOT_SERIALIZABLE")
-    return hashlib.sha256(payload).hexdigest()
+    # Bind the exact model input and provenance, including packed frame bytes.
+    return _canonical_digest((row.model_input, row.provenance))
 
 
 @dataclass(frozen=True)

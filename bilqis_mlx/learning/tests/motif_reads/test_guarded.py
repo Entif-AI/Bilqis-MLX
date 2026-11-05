@@ -27,9 +27,10 @@ from bilqis_mlx.semantics.frame_schema import ConceptRef, RoleOccurrence, Source
 
 RELEASE = "a" * 64
 
-from .fixtures import ACCESS_SCOPE, REAL_RELEASE, REAL_BUNDLE, REAL_SOURCE_BUNDLE
-
-from .fixtures import _source_bound_read_case
+from bilqis_mlx.learning.tests.motif_reads.fixtures import (
+    ACCESS_SCOPE, REAL_BUNDLE, REAL_RELEASE, REAL_SOURCE_BUNDLE,
+    _source_bound_read_case,
+)
 
 class GuardedReadTests(TestCase):
     def test_public_read_entrypoint_requires_source_qualified_contract(self):

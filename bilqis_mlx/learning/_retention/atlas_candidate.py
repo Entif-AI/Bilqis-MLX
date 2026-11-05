@@ -11,10 +11,8 @@ from dataclasses import dataclass, field
 import mlx.core as mx
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
-from bilqis_mlx.learning.atlas_engram import MotifBudget
-from bilqis_mlx.learning.atlas_engram_transaction import (
-    MotifAllocationSnapshot, prepare_candidate_motif_snapshot,
-)
+from bilqis_mlx.learning.atlas_engram import INITIAL_MOTIF_CAPACITY, MotifBudget
+from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
 from bilqis_mlx.learning.atlas_plasticity import (
     PlasticityPolicy, advance_candidate_policy, next_update_mode,
 )
@@ -23,10 +21,20 @@ from bilqis_mlx.runtime.atlas_optimizer import AdamWStateTree, _adamw_update
 STATE_SCHEMA = 'bilqis.mlx.candidate-state/provisional-v1'
 TRANSACTION_SCHEMA = 'bilqis.mlx.candidate-transaction/provisional-v1'
 _TRANSACTION_ISSUER = object()
+_RETAINED_STATE_ISSUER = object()
 
 
 def _invalid():
     ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+
+
+def _is_genesis_allocations(snapshot: MotifAllocationSnapshot) -> bool:
+    return (type(snapshot) is MotifAllocationSnapshot
+            and not snapshot.manifest.slots
+            and snapshot.manifest.capacity == INITIAL_MOTIF_CAPACITY
+            and not snapshot.observed_uses
+            and not snapshot.pending_keys
+            and not snapshot.aliases)
 
 
 @dataclass(frozen=True)
@@ -38,6 +46,7 @@ class CandidateState:
     allocations: MotifAllocationSnapshot
     optimizer_step: int
     schema_version: str = STATE_SCHEMA
+    _issuance: object = field(init=False, default=None, repr=False, compare=False)
 
     def __post_init__(self):
         if (type(self.optimizer) is not AdamWStateTree
@@ -49,10 +58,31 @@ class CandidateState:
         self.optimizer.validate()
         self.policy.validate()
         self.allocations.__post_init__()
+        if (not _is_genesis_allocations(self.allocations)
+                and getattr(self, '_issuance', None) is not _RETAINED_STATE_ISSUER):
+            _invalid()
         for row in self.policy.row_ages:
             count = self.optimizer.update_counts.get(f'identity.bank.{row.bank_index}')
             if count is None or count.ndim != 1 or row.row_index >= count.shape[0]:
                 _invalid()
+
+
+def _load_retained_candidate_state_with_parts(
+        bundle_root, *, expected_manifest_sha256: str):
+    """Rehydrate retained state only from B13-validated immutable custody."""
+    from bilqis_mlx.runtime.bamf_bundle.codec import _load_validated_bundle_parts
+
+    parts = _load_validated_bundle_parts(
+        bundle_root, expected_manifest_sha256=expected_manifest_sha256)
+    state = object.__new__(CandidateState)
+    for name, value in (
+            ('optimizer', parts.numerical), ('policy', parts.policy),
+            ('allocations', parts.motif), ('optimizer_step', parts.optimizer_step),
+            ('schema_version', STATE_SCHEMA),
+            ('_issuance', _RETAINED_STATE_ISSUER)):
+        object.__setattr__(state, name, value)
+    state.__post_init__()
+    return state, parts
 
 
 @dataclass(frozen=True, init=False)
@@ -85,8 +115,7 @@ class CandidateTransaction:
         self.optimizer.validate()
         self.allocations.__post_init__()
         # Slot tensors are not materialized by this transaction slice.
-        if (self.allocations.manifest != self.parent.allocations.manifest
-                or self.allocations.aliases != self.parent.allocations.aliases
+        if (self.allocations is not self.parent.allocations
                 or set(self.optimizer.parameters) != set(self.parent.optimizer.parameters)):
             _invalid()
         for name, count in self.optimizer.update_counts.items():
@@ -102,11 +131,11 @@ class CandidateTransaction:
         return next_update_mode(self.parent.policy, teacher_requests_full=self.teacher_requests_full)
 
 
-def _issue_transaction(parent, optimizer, allocations, teacher_requests_full, update_steps=0):
-    """Only the two owner transition paths issue process-local candidate handles."""
+def _issue_transaction(parent, optimizer, teacher_requests_full, update_steps=0):
+    """Continue optimizer-only candidate state; allocation state is immutable here."""
     candidate = object.__new__(CandidateTransaction)
     for name, value in (
-            ('parent', parent), ('optimizer', optimizer), ('allocations', allocations),
+            ('parent', parent), ('optimizer', optimizer), ('allocations', parent.allocations),
             ('teacher_requests_full', teacher_requests_full), ('update_steps', update_steps),
             ('schema_version', TRANSACTION_SCHEMA), ('_issuance', _TRANSACTION_ISSUER)):
         object.__setattr__(candidate, name, value)
@@ -114,15 +143,15 @@ def _issue_transaction(parent, optimizer, allocations, teacher_requests_full, up
     return candidate
 
 
-def begin_candidate(parent: CandidateState, *, frames=(), budget=None,
+def begin_candidate(parent: CandidateState, *, budget=None,
                     teacher_requests_full: bool = False) -> CandidateTransaction:
-    """Stage B07's pending keys/counters, without inventing initialized slots."""
+    """Begin optimizer-only work from one validated retained parent."""
     if type(parent) is not CandidateState or type(teacher_requests_full) is not bool:
         _invalid()
     parent.__post_init__()
-    proposal = prepare_candidate_motif_snapshot(
-        frames, parent.allocations, MotifBudget(0) if budget is None else budget)
-    return _issue_transaction(parent, parent.optimizer, proposal.proposed, teacher_requests_full)
+    if budget is not None and type(budget) is not MotifBudget:
+        _invalid()
+    return _issue_transaction(parent, parent.optimizer, teacher_requests_full)
 
 
 def candidate_step(candidate: CandidateTransaction, gradients, update_mask,
@@ -141,7 +170,7 @@ def candidate_step(candidate: CandidateTransaction, gradients, update_mask,
         decay=decay, loss_bearing=loss_bearing, max_norm=max_norm)
     if optimizer is candidate.optimizer:
         return candidate
-    return _issue_transaction(candidate.parent, optimizer, candidate.allocations,
+    return _issue_transaction(candidate.parent, optimizer,
                                 candidate.teacher_requests_full, candidate.update_steps + 1)
 
 
@@ -162,5 +191,14 @@ def resolve_candidate(candidate: CandidateTransaction, *, accepted: bool) -> Can
     policy = advance_candidate_policy(
         candidate.parent.policy, teacher_requests_full=candidate.teacher_requests_full,
         accepted=True, participating_rows=rows)
-    return CandidateState(candidate.optimizer, policy, candidate.allocations,
-                          candidate.parent.optimizer_step + candidate.update_steps)
+    step = candidate.parent.optimizer_step + candidate.update_steps
+    if _is_genesis_allocations(candidate.allocations):
+        return CandidateState(candidate.optimizer, policy, candidate.allocations, step)
+    state = object.__new__(CandidateState)
+    for name, value in (
+            ('optimizer', candidate.optimizer), ('policy', policy),
+            ('allocations', candidate.allocations), ('optimizer_step', step),
+            ('schema_version', STATE_SCHEMA), ('_issuance', _RETAINED_STATE_ISSUER)):
+        object.__setattr__(state, name, value)
+    state.__post_init__()
+    return state

@@ -1,33 +1,133 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "92bdff370e9be3d0c64eb4ffe300d2448f53d6a1",
-  "updated_at": "2026-11-02T05:10:00Z",
+  "observed_unified": "70a4ef1e883d348920d64083c7546f443a90ef77",
+  "updated_at": "2026-11-05T06:20:10+00:00",
   "exception": null,
   "items": [
     {
-      "issue": 524,
-      "pr": 699,
-      "state": "ACTIVE",
-      "head_sha": "f3e99245c49f7df897d71cdcc7dfc69710014c65",
-      "summary": "C11.3 structural-interruption checkpoint is the current primary Lane C implementation surface.",
-      "resume_trigger": null
-    },
-    {
       "issue": 347,
-      "pr": 694,
+      "pr": null,
       "state": "WAITING",
-      "head_sha": "cb5da461d6c35672001bd061040260ac7f9a5f21",
-      "summary": "C01 structural interface-receipt interruption remains parked.",
-      "resume_trigger": "The current Lane C primary work drains or an explicit C01 resume decision selects this surface as the next active leaf."
+      "head_sha": "102b8d261259e422fc573430229dc63b5357e8a0",
+      "summary": "Scoped C01 structure externally integrated through803/e9226be2; full347 remains open with eight normalization holds and empty executable order.",
+      "resume_trigger": "Canonical owners resolve the eight normalization holds recorded on347 and admit an executable order; full347 is explicitly selected for continuation.",
+      "closed_pr": 694,
+      "preserved_branch": "codex/bamf02-c-347-integration-20261103",
+      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
+      "close_reason": "EGM-Failed; remediation #733"
     },
     {
       "issue": 526,
-      "pr": 680,
+      "pr": null,
       "state": "WAITING",
       "head_sha": "41e37cf60a934181548e9b343ddab1ce2b3849a7",
-      "summary": "C12.2 local cognitive-package exchange slice is proven; broader adoption/custody remains.",
-      "resume_trigger": "The current Lane C primary work drains and C12 adoption/custody becomes the selected dependency-ready next surface; sync reviewed unified once at activation."
+      "summary": "717receiver authority and744C05screen are consumed;745A12clearance merged. Remaining718/746bridge waits for production importer ownership.",
+      "resume_trigger": "746has a real production package-importer/operator owner, completes its existing acceptance and is consumed by718/526; then select526for integration.",
+      "closed_pr": 680,
+      "preserved_branch": "codex/bamf02-c12-526-exchange-20261101",
+      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
+      "close_reason": "EGM-Failed; remediations #717/#718"
+    },
+    {
+      "issue": 490,
+      "pr": null,
+      "state": "WAITING",
+      "head_sha": "d1b4860389e35950e643bffbdec0e2febb1b7506",
+      "summary": "Scoped713/808 consumed;490remains held by canonical initial A06 source/profile selection authority785.",
+      "resume_trigger": "Canonical785source/profile/generation selection authority is accepted and consumable;490is selected for final merge-readiness review.",
+      "closed_pr": 700,
+      "preserved_branch": "fix/bamf-c02-1-source-lineage-20261101",
+      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
+      "close_reason": "EGM-Failed; remediation #713"
+    },
+    {
+      "issue": 713,
+      "state": "TURNED_IN",
+      "head_sha": "73f6a3b753f1cd29ba9a1453b1fec1a3674894b1",
+      "summary": "PR808 externally merged as b0892466d10dc08fb4e3c312177a6df7b85188c9 and issue713 is closed. Scoped repair is no longer implementation WIP; independent source-selection authority785 and aggregate490 acceptance remain separate.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/remediation-713-c02-authority-20261103",
+      "pr": null,
+      "merged_pr": 808
+    },
+    {
+      "issue": 717,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "6cf19868641aa6d3009e9fc63ad7baf66a3f337f",
+      "summary": "Closed scoped receiver/parent authority repair consumed on526owner branch6cf19868; focused4/4 and cognitive43/43 recorded by owner. Parent owns aggregate EGM.",
+      "resume_trigger": null,
+      "closed_pr": 726,
+      "preserved_branch": "codex/717-receiver-authority-20261102",
+      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
+      "close_reason": "EGM-Mitigation issue #717"
+    },
+    {
+      "issue": 641,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "37efe5b00c285c38a0ef5d2c909385377cbd4ace",
+      "summary": "C10 structural preservation candidate merged through PR #767 and is consumed by reviewed unified.",
+      "resume_trigger": null,
+      "merged_pr": 767,
+      "preserved_branch": "codex/bamf02-c10-641-final-20261103"
+    },
+    {
+      "issue": 766,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "306d8e0f2e4efd9960ea7ec88240fb90547c8cc0",
+      "summary": "Selector pickle regression reproduced twice; two metadata assignments verified on isolated issue branch and consumed into #641. Parent owns aggregate EGM.",
+      "resume_trigger": null
+    },
+    {
+      "issue": 770,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "8a198dd462542ae62d639136797f2b879a7745ba",
+      "summary": "C01 mechanical contract-verifier repair is externally merged through PR #781 as f4d8ddfe08a1d378dd0501208693af4a4aa07398; its scoped contribution is consumed by reviewed unified.",
+      "resume_trigger": null,
+      "merged_pr": 781,
+      "preserved_branch": "codex/bamf02-c-770-contract-verifier-20261103"
+    },
+    {
+      "issue": 800,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "5f9d484e94a942f5421281187764efbdefa8ee24",
+      "summary": "Late-bound public-facade dependency repair is verified and consumed into the active #347 aggregate; ready PR #803 carries the C01 integration candidate.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-c-347-integration-20261103",
+      "merged_pr": 803
+    },
+    {
+      "issue": 801,
+      "pr": null,
+      "state": "TURNED_IN",
+      "summary": "Native CPU witness recipe repair is closed and consumed into the active #347 aggregate from codex/bamf02-c-801-native-recipe-20261103.",
+      "resume_trigger": null,
+      "head_sha": "70d3b398f5c05380b16de878432d6bc25617a25e",
+      "preserved_branch": "codex/bamf02-c-801-native-recipe-20261103"
+    },
+    {
+      "issue": 843,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "9cfb7309c094f0da90457293308a77b397051797",
+      "preserved_branch": "codex/bamf-pre-spend-scope-gate-20261105",
+      "summary": "Governance PR843 externally merged as2debce4f; synchronized lane intake, no implementation acceptance inferred.",
+      "resume_trigger": null,
+      "merged_pr": 843
+    },
+    {
+      "issue": 829,
+      "pr": null,
+      "state": "WAITING",
+      "head_sha": "93fe19ab2504ed6bd17156cb6f58487892ec77b7",
+      "preserved_branch": "codex/bamf02-c-829-local-handoff-20261104",
+      "summary": "20/20focused tests; implementation75e47376preserved. EGM-Failed episode C829-HANDOFF-20261104 exhausted5/5. User questioned further spend; operator recommended parking. No sixth round or PR.",
+      "resume_trigger": "Explicit human override for additional review or explicit accepted human disposition underADR127; general continuous-work authority is not an override."
     }
   ]
 }

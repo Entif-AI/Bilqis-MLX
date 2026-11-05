@@ -21,42 +21,159 @@ Factory with source-qualified typed rules and grade-neutral admission and teachi
 These are implementation requirements, not proof that the new runtime exists.
 
 The unified branch is the reviewed integration trunk and remains live throughout
-BAMF execution. Lane A works on `codex/bamf02-a-semantics`, Lane B on
-`codex/bamf02-b-neural`, and Lane C on `codex/bamf02-c-runtime`. Before beginning
-each implementing issue, the lane writer must fetch and merge the current
-`origin/codex/bamf-unified-base-20261028` into the lane branch, record the unified
-SHA consumed, resolve conflicts, and run the smallest affected verification. Do
-not merge `main` or a sibling lane directly. Completed issue work returns through
-a lane-to-unified PR for explicit human sign-off; no issue authorizes the agent to
-self-merge that PR. After accepted work lands on unified, the next issue in every
-lane repeats the sync-in step so reviewed cross-lane interfaces and instrumentation
-arrive early rather than accumulating as end-of-program conflicts.
+BAMF execution. Lane A's historical integration branch is
+`codex/bamf02-a-semantics`, Lane B's is `codex/bamf02-b-neural`, and Lane C's is
+`codex/bamf02-c-runtime`. Independent issue-scoped branches/worktrees may coexist
+within each lane. **One writer means one independently mutating writer per branch
+and shared file at a time, not one agent per lane or one agent for the lifetime
+of an issue.** Coordinate shared integration changes through the relevant owner.
+Before a feature's integration turn-in, consume the current
+`origin/codex/bamf-unified-base-20261028`, record the unified SHA consumed,
+resolve conflicts, and run the smallest affected verification. Do not merge
+`main` or a sibling lane directly. Keep implementation and review state
+on the owning issue and branch until the work is truly ready to merge. Do not use a
+draft pull request as a queue marker or review-state surrogate. A new exact-head EGM
+request adds `EGM-Pending` to the owning issue. Replace it with `EGM-Passed` only
+after a complete PASS, or with `EGM-Failed` after any Blocker/Major failure. Label
+each independently executable remediation issue created from that failure
+`EGM-Mitigation`. Keep `EGM-Failed` on the owner while repairs are in progress. Move
+the owner back to `EGM-Pending` only when the full known failure set is repaired and
+the next whole candidate is again ready for review. A behavior-changing commit after
+`EGM-Passed` invalidates that state for merge readiness.
+
+Open the lane-to-unified PR only after the candidate is otherwise ready to merge,
+including required EGM PASS and every pre-PR gate available on the branch. Open it
+ready for human review, not as a draft work queue. PR-hosted checks are the final
+integration gate; a behavior-changing repair for a hosted failure invalidates the
+prior EGM PASS. Existing historical/draft PRs remain provenance and need not be
+closed or recreated solely to adopt this policy. No issue authorizes self-merge.
+After accepted work lands on unified, the next issue in every lane repeats the
+sync-in step so reviewed cross-lane interfaces arrive early.
 
 ## BAMF-0.2 flow control and parked-PR discipline — 2026-11-02
 
 BAMF execution distinguishes **implementation WIP** from review, dependency and
-authority inventory. The normal ceiling is **two `ACTIVE` implementation leaves per
-lane**. `READY`, `WAITING`, `BLOCKED` and `TURNED_IN` do not count as active WIP.
-The ceiling is a flow-control limit, not permission to fill both slots when one
-nearer-to-merge leaf can be driven home first.
+authority inventory. The normal ceiling is **six `ACTIVE` implementation leaves per
+lane** (owner-directed concurrency expansion, 2026-11-04). `READY`, `WAITING`,
+`BLOCKED` and `TURNED_IN` do not count as active WIP. Parallelism is welcomed
+when independent branch/worktree writers have disjoint ownership; integration
+and shared-file mutation still follow verified single-writer coordination.
+
+**Compaction and resumed-agent ownership (2026-11-04):** A conversation or
+worker context compaction is **not** a competing writer, a new issue claimant,
+or a lease-loss event. An `ACTIVE` ledger item, prior agent name, checkpoint
+comment, historical worktree, or in-flight issue assignment is not a live lock.
+Resume on the exact preserved issue/branch/worktree after inspecting `git status`,
+current branch HEAD, remote ref, relevant checkpoint/handoff and actual competing
+process/writer evidence. An unchanged remote ref plus the same preserved
+worktree/continuation is positive continuity evidence. Do **not** refuse to
+continue merely because the earlier context or another agent identifier appears
+as the recorded owner. Do **not** start another agent or fresh issue branch solely
+because the context compacted. If a different live writer truly owns the same
+mutable branch/path, coordinate or isolate work; do not overwrite its edits.
+When ownership is genuinely ambiguous, name the concrete conflicting live
+writer/ref or uncommitted collision rather than asserting a phantom lock.
+
+**Required handoff payload:** Before a planned compaction or agent transfer,
+run `python3 -B scripts/bamf/writer_handoff.py emit --issue <ISSUE> --epoch
+<STABLE-EPOCH> --worktree <WORKTREE>` and carry the **complete JSON output** in
+the compacted handoff, including issue, epoch, exact worktree, branch, local HEAD,
+upstream and remote HEAD, and worktree-dirty fingerprint. Save that JSON as a
+local file for `python3 -B scripts/bamf/writer_handoff.py verify --payload
+<HANDOFF-JSON-FILE> --worktree <WORKTREE>` when resuming. A
+`CONTINUATION_MATCH` proves the preserved Git snapshot still matches and permits
+resuming **without inventing a new issue claim**. The verifier reads the real
+upstream ref and fingerprints modified/untracked files. On mismatch, inspect
+the changed facts and reconcile, not automatically refuse the issue. Network
+failure is `UNVERIFIED`, not evidence of a competing agent. The JSON is a
+continuity receipt, **not a distributed lock**: it cannot prove that another
+process will not begin writing later. Maintain actual per-branch/shared-path
+coordination during ongoing edits.
+
+**Passing-test evidence reuse (2026-11-04):** Do **not** rerun a passing test
+suite merely because a new agent resumed, a PR was opened/updated, a branch was
+rebased onto an equivalent reviewed head, or time passed. A passing run remains
+valid until a later change can plausibly invalidate what it proved. Determine
+invalidation from the diff since the exact tested head and the suite's dependency
+surface: production code, fixtures/goldens, tests themselves, generators, runtime
+dependencies, build/test harnesses, or environment/configuration consumed by that
+suite. Documentation, governance prose, issue/PR bookkeeping, flow-control limits,
+handoff metadata, and unrelated workflow orchestration do **not** invalidate
+semantic/neural/custody suites by themselves. If no invalidating change exists,
+reuse the prior exact-head passing receipt and record `TEST_EVIDENCE_REUSED` with
+the tested head and comparison range instead of spending 10-15+ minutes rerunning
+it. Run the **smallest newly affected check only** when a change has a narrow
+surface. Escalate to a broad/expensive suite only when its dependency closure was
+actually touched, the prior run was incomplete/failed/untrustworthy, or a human
+explicitly requests fresh verification. A merge commit is not automatic
+invalidation; inspect what it introduced.
+
+**Scope-expansion gate, not a decomposition gate (2026-11-05):** New issues,
+branches/worktrees, and PRs are intentionally cheap coordination primitives when
+they partition **already-authorized required scope**. Do not force independently
+deliverable work back into a large parent merely because the parent could absorb
+it. Prefer decomposition when it improves parallelism, turn-in latency, failure
+locality, review isolation, or early information.
+
+Classify proposed work before implementation:
+
+- `DECOMPOSE`: a strict subset of an existing issue/spec's required acceptance,
+  adding no new obligation. Record the parent plus exact inherited clause(s) and
+  `new_acceptance=false`. This may create its own issue, branch/worktree, and PR
+  without proving that decomposition itself is a new blocker.
+- `EXPAND`: any obligation, correctness criterion, cleanup, architecture change,
+  or review demand that cannot be traced to existing required acceptance. Before
+  spending on that delta, write at most **120 words** naming `delivery`,
+  `required_by`, `defer_failure`, and `cheapest_next`, then choose
+  `PROCEED | PARK | DROP`.
+  - `PROCEED`: the expansion is required for current delivery/correctness/safety.
+  - `PARK`: useful, but current delivery does not require it; preserve only a tiny
+    note/backlog pointer until explicitly selected.
+  - `DROP`: duplicate, speculative, cosmetic, or peripheral; spend nothing.
+
+For new remediation issues, keep the GitHub body **under about 250 words by
+default** and point to inherited/versioned authority under ADR-118. If a bounded
+child/helper grows past **3 commits, 3 touched files, or 250 net changed lines**, or
+reveals a second independent problem, perform a **scope-drift audit** before more
+work. If every obligation still maps to inherited required clauses, keep going and
+split again when useful; do not collapse it back into the parent. Only the
+untraceable delta is `EXPAND` and must pass the expansion gate. Never run EGM to
+manufacture authority for an expansion that current delivery does not require.
+
+**Diagnostic-loop budget (2026-11-05):** Differential test selection does not
+authorize unbounded bespoke probes. Treat any live Factory/MLX/full-model witness,
+large inline Python diagnostic, or end-to-end acceptance reconstruction as
+**expensive execution**. Do not rerun the same probe against unchanged relevant
+code/inputs; reuse its result. After one exploratory inline probe, move repeated
+diagnosis into a named focused test/helper or parameterized diagnostic so setup and
+results are reproducible. If varying seeds/hyperparameters/cases, sweep them in one
+process and hoist invariant Factory/model/bundle setup rather than cold-starting the
+whole stack once per variant. After **two unsuccessful full-cost witness attempts**
+for the same hypothesis, stop the end-to-end loop and isolate/profile the failing
+stage before another full witness. A compaction handoff must state whether an
+expensive probe is still running so the successor does not launch a duplicate.
+Acceptance-scale witnesses belong at a stable boundary after cheaper evidence has
+changed; they are not the ordinary inner debugging loop.
 
 Every lane-owned BAMF implementation leaf or open lane PR must be represented in that lane's
 machine-readable state under `docs/tasks/bamf-0.2/flow-control/`. Before substantive
 branch mutation, the operator must run `python3 -B scripts/check_bamf_flow_control.py`
-and make the intended leaf `ACTIVE`. A `WAITING` or `BLOCKED` item must record its
+and ensure the intended leaf is `ACTIVE`. An already-`ACTIVE` leaf remains active
+when its own agent context resumes; compaction does not require changing state,
+acquiring the same issue again, or asking the owner for reauthorization.
+A `WAITING` or `BLOCKED` item must record its
 specific resume trigger. Parked work must **not** be merge-forwarded, rebased, fully
 revalidated, sent for fresh exact-head review, or otherwise refreshed merely because
 unified advanced. First confirm that its recorded resume trigger actually occurred,
 then update the lane state to `ACTIVE`, then sync/revalidate once as required by the
 leaf contract.
 
-Prefer the item with the fewest remaining gates to accepted integration before
-opening or advancing another dependency-ready leaf. A third simultaneous `ACTIVE`
-item is exceptional and must carry a machine-readable lane exception naming the
-reason, authority and expiry condition. Do not silently expand WIP because review or
-external gates are slow. Human review, EGM, dependency acceptance and other parked
-gates remain real obligations; classifying them as non-WIP means **freeze until the
-gate changes**, not ignore them.
+Prioritize completing near-to-merge work without serializing independent,
+dependency-ready leaves. A seventh simultaneous `ACTIVE` item requires a
+machine-readable lane exception naming its reason, authority and expiry condition.
+Human review, EGM, dependency acceptance and other parked gates remain real
+obligations; classifying them as non-WIP means **freeze until the gate changes**,
+not ignore them.
 
 <!-- BAMF02:EGM-MERGE-READINESS-GATE:20261102 -->
 ### EGM is a merge-readiness gate, not a per-fix loop
@@ -78,12 +195,171 @@ The next EGM reviews the next whole merge candidate, not each remediation in
 isolation. Any older copied BAMF issue text prescribing "one repair pass and one
 targeted re-audit" is superseded by this rule and
 `docs/tasks/bamf-0.2/EGM_EXECUTION.md`.
+<!-- BAMF02:EGM-BOUNDED-CONVERGENCE:20261103 -->
+### EGM review episodes are finite and root-cause routed
+
+ADR-127 is controlling.
+
+The pinned BAMF EGM checkout remains `b3a35956759bf7f024af2ff061b2e0b44b438e4c`
+for reviewer/persona reproducibility. Its historical review-loop termination
+behavior is not BAMF authority. BAMF adds the finite convergence rules below at
+the orchestration boundary.
+
+One merge candidate has one persistent EGM episode across repair commits. The
+episode counter belongs to the candidate lineage, not the exact Git SHA, so a
+repair does not reset it. The default episode cap is **five complete
+whole-candidate rounds**. A complete clean round with no unsettled Blocker/Major
+is sufficient for BAMF implementation merge readiness. A failed or missing
+requested reviewer does not make a clean round. At the five-round cap, or when
+review churn is detected, automatic review stops and the owner returns the
+candidate to design or asks the human for an explicit override. Do not start a
+new episode merely by rewriting, rebasing, or changing the candidate head.
+
+Before repairing a Blocker/Major, classify its basis and owner. A blocking
+finding must identify a violated requirement/authority, a concrete in-scope
+failure, or a missing required ownership/interface/acceptance seam. Classify it
+as `TARGET_LOCAL`, `SHARED_CONTRACT`, `PARENT_INTEGRATION`, `AUTHORITY_GAP`, or
+`MECHANICAL_PROOF`. Shared, parent, and authority findings are repaired once at
+their canonical owner; affected descendants wait for that repair instead of
+inventing local variants. If multiple late findings share one premise or owner,
+pause only that affected subtree and treat the pattern as a systemic design
+signal rather than spawning more independent mitigation reviews.
+
+Route proof to the cheapest mechanism that can establish it. Traceability,
+schema shape, counts, contract mirrors, source census, dependency readiness, and
+other deterministic facts belong in validators/tests/audits. Goldfish is for
+adversarial semantic, ownership, integration, and implementation-readiness
+uncertainty that deterministic proof cannot settle. A mechanically proved repair
+does not consume another Goldfish round by itself.
+
+Review staleness follows semantic impact, not raw byte drift. Nonsemantic edits
+and receipt/bookkeeping changes keep the prior review applicable. Mechanical
+conformance repairs require their deterministic proof. Local or dependency
+semantic changes invalidate only the affected review scope. Ownership,
+decomposition, or topology changes return the affected scope to design. An
+unrelated unified advance does not stale a parked candidate.
+
+For an active failed episode, repair the complete known set before the next
+whole-candidate round. If the next round finds a new Major, first decide whether
+it is genuinely novel, a repeated systemic finding, or a deterministic-proof
+gap. The answer determines repair routing; it never resets the episode budget.
+### Remediation artifacts are a working set, not an archive
+
+Close a remediation issue when its exact recorded defect has been reproduced,
+repaired, covered by a regression, and verified on a durable PR/head. Do not keep
+that child issue open merely because its parent still awaits EGM, sibling work,
+dependency integration, or final human merge. The linked PR is the pending
+integration receipt.
+
+Keep a remediation PR in draft only while its own scoped implementation or known
+Blocker/Major repair is incomplete. Parent-level EGM debt is not a reason for draft
+status. Mark the PR ready when its own acceptance is satisfied; merge or close it
+promptly once its change is consumed by the intended parent/candidate branch.
+Closed issues and merged PRs remain provenance and should not remain in the active
+queue just to preserve history.
+
+If later EGM or integration proves the **same original defect** still exists, reopen
+the remediation issue. If it exposes a different mechanism, newly unlocked gap, or
+new acceptance failure, create a new issue. The owning parent issue/PR carries the
+aggregate EGM pass/fail state and whole-candidate merge readiness.
+Prefer repairing a remediation issue directly on the authorized parent candidate
+branch when writer ownership and review isolation allow it. Do not create a separate
+PR merely to preserve the finding; the issue already provides the durable defect
+record. Use a stacked remediation PR only when branch ownership, concurrent-writer
+isolation, or focused review requires it, and merge/close that PR promptly once its
+bounded repair is consumed.
+Because BAMF PRs normally merge into reviewed integration branches rather than the
+repository default branch, GitHub closing keywords may not retire linked issues.
+After a remediation is accepted or its PR is consumed, explicitly read back and
+close the remediation issue; do not assume `Closes #N` changed issue state.
 
 The repository checker can validate declared state, WIP counts, required resume
 triggers and explicit exceptions. It cannot observe an unrecorded remote mutation or
 an agent merely reading a branch. Updating lane state before mutation therefore
-remains an operator duty. See `ADR-124` and
+remains an operator duty. **The ledger is scheduling state, never a distributed
+mutex.** See `ADR-124` and
 `docs/tasks/bamf-0.2/README.md`.
+
+## BAMF-0.2 GitHub Project dashboard authority — 2026-11-03
+
+The `BAMF-0.2 Execution` GitHub Project is a read-model and dashboard. It may
+summarize repository state, but it does not own execution state, EGM state, issue
+state, dependency authority, or merge readiness. The repository issues and
+labels, ADRs, BAMF task registry, flow-control records, dependency evidence, and
+execution receipts remain authoritative.
+
+- Treat `BAMF-Leaf` as a one-time structural projection of the current BAMF leaf
+  set for Project filtering. Do not build automatic leaf-label synchronization or
+  infer leaf authority from Project membership.
+- Use the canonical issue labels `EGM-Pending`, `EGM-Failed`, `EGM-Mitigation`,
+  and `EGM-Passed` for EGM state. Do not add a duplicate Project EGM field or use
+  PR status tokens as a second EGM state machine.
+- Project views, filters, charts, and insights may derive from authoritative
+  labels and issue/PR state. They must remain observational.
+- Project `Status` is not issue-close authority. Keep the Project workflow that
+  closes an issue merely because `Status` becomes `Done` disabled.
+- For a bounded implementing issue, a verified accepted merge into its owning
+  reviewed integration target is the normal repository closeout boundary once
+  the issue's acceptance and EGM obligations are satisfied. Close that issue as
+  `completed` immediately after merge readback; do not accumulate merged zombie
+  issues for later cleanup.
+- BAMF implementation PRs commonly target the reviewed unified trunk rather than
+  the repository default branch. Do not assume GitHub's default linked-PR
+  auto-close will fire; the closeout operator must explicitly close the owning
+  issue after verifying the merge. Regressions may reopen the issue or create a
+  new one.
+- Do not close a group/integration parent merely because one scoped child,
+  mitigation, or structural PR merged. The parent closes only when its own
+  aggregate acceptance, child, hold, and remediation gates are satisfied.
+
+## BAMF-0.2 integration inventory and PR admission — 2026-11-02
+
+ADR-126 separates active implementation WIP from **open implementation-PR
+inventory**. The 2026-11-04 owner amendment raises the normal BAMF
+implementation-PR ceiling from three to **twelve total**. There is **no one-PR-per-lane
+restriction**: independent, correctly owned, reviewed integration candidates may
+coexist in a lane. The unified integration PR into `main` is a separate program
+container. The ceiling applies to inventory, never to number of agents allowed to
+prepare independent work.
+
+Before opening a BAMF implementation PR, inspect the available live inventory.
+The following reconciler is **advisory**, not a hard authorization gate:
+
+`python3 -B scripts/check_bamf_flow_control.py --live`
+
+If the live API is unavailable, fails TLS/authentication, or reports a ledger
+timing mismatch, record the limitation, check actual PR state using another
+available GitHub interface, and proceed when the independent candidate gates
+are satisfied. Never make other agents' remote PR activity a hosted-CI failure
+or a reason to abandon an in-flight issue.
+
+PR admission targets an available slot (up to twelve), a durable issue/head, consumable hard
+prerequisites, required current-unified synchronization, green scoped verification,
+no known candidate-owned Blocker/Major, and no existing PR that already owns the
+same integration delta.
+
+If live implementation inventory exceeds the ceiling, BAMF is in **DRAIN** mode.
+Do not open another implementation PR unless it replaces a PR closed in the same
+operation or the flow-control policy carries an explicit owner-authorized exception.
+New implementation work may proceed on authorized branches/issues without
+increasing PR inventory.
+
+EGM review state and PR timing are governed by the canonical EGM label lifecycle in
+this file. PRs are integration vehicles, not durable EGM queue markers. Do not keep
+an implementation PR open solely to represent `EGM-Pending`, `EGM-Failed`, or
+`EGM-Mitigation`; the issue labels and durable branch/head custody carry that
+state. An active merge or remediation-delivery attempt may still use a PR.
+
+The flow-control checker reconciles the ledger against live GitHub state. An open
+implementation PR that is explicitly represented in the ledger counts even when
+its stacked parent PR has already closed. **CI runs the static policy and regression
+suite only**; CI must not fail an otherwise valid PR because another agent
+opened or closed a PR before the shared ledger caught up. Live reconciliation
+remains a local/operator admission check, not a repository-wide CI bottleneck.
+
+PR #741 is the temporary control-plane exception for implementing ADR-126 itself.
+It is not BAMF feature inventory, and its exception expires when PR #741 merges or
+closes. Do not generalize that exception by branch name or reuse it for later work.
 
 ## Context-window protection for repository census commands — 2026-11-02
 

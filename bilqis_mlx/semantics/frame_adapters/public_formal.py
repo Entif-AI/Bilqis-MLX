@@ -27,7 +27,7 @@ def public_formal_context(
     course=None,
 ) -> tuple[ApprovedContextProjection, SourceFrontier] | ContextHold:
     """Reproduce a complete source row before creating any PUBLIC_FORMAL grants."""
-    tokens = row.get("tokens") if isinstance(row, dict) else None
+    tokens = row.get("tokens") if type(row) is dict else None
     if not isinstance(tokens, list) or not tokens:
         _adapter_fail("BAMF_CONTEXT_PUBLIC_FORMAL_TOKENS_MISSING",
                       "<unknown>", SourceSpan(0, 0), "<public-formal>")
@@ -36,8 +36,8 @@ def public_formal_context(
     source_adapter = canonical_adapter(source_adapter, span)
     adapter_id = source_adapter.descriptor.adapter_id
     root, graph = canonical_graph(source_root, graph, adapter_id, span)
-    verify_draw(source_adapter, row, root, graph, span, source_seed,
-                source_each, source_profile_parameters, course)
+    row = verify_draw(source_adapter, row, root, graph, span, source_seed,
+                      source_each, source_profile_parameters, course)
     validate_policy(snapshot, task_scope, source_frontier, policy, adapter_id, span)
     if span.end > task_scope.causal_prefix_end:
         return ContextHold(("BAMF_CONTEXT_INVISIBLE_PREFIX",), (), ())
