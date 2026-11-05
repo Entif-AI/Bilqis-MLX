@@ -47,9 +47,35 @@
         "reason": "Focused governance/docs PR implementing the project-owner EGM issue-label lifecycle; it is not BAMF implementation inventory.",
         "authority": "Direct project-owner instruction on 2026-11-02",
         "expires_when": "PR #743 merges or closes."
+      },
+      {
+        "pr": 814,
+        "reason": "BAMF Project dashboard governance documentation PR changing only AGENTS.md and README.md; no BAMF implementation leaf or integration behavior.",
+        "authority": "ADR-126 implementation-PR inventory excludes non-implementation governance work; verified PR #814 file scope and open state on 2026-11-03.",
+        "expires_when": "PR #814 merges or closes."
+      },
+      {
+        "pr": 839,
+        "reason": "Test and CI infrastructure PR for differential verification and script organization; it does not implement a BAMF feature leaf or integration candidate.",
+        "authority": "ADR-126 implementation-PR inventory excludes non-implementation infrastructure work; verified PR #839 file scope and open state on 2026-11-04.",
+        "expires_when": "PR #839 merges or closes."
       }
     ],
-    "admission_exceptions": [],
+    "admission_exceptions": [
+      {
+        "pr": 803,
+        "head_branch": "codex/bamf02-c-347-integration-20261103",
+        "reason": "Lane C integration candidate owned by the concurrent Lane C session.",
+        "authority": "Direct project-owner instruction on 2026-11-03 to keep the EGM-Mitigation queue moving",
+        "expires_when": "PR #803 merges or closes."
+      },
+      {
+        "head_branch": "codex/remediation-egm-708-711-integration-20261103",
+        "reason": "Combined EGM-Mitigation integration candidate for #708, #709, #710 and #711, replacing PRs #804, #805, #806 and #807.",
+        "authority": "Direct project-owner instruction on 2026-11-03 to consolidate the EGM-Mitigation remediation PRs.",
+        "expires_when": "The combined remediation PR merges or closes."
+      }
+    ],
     "initial_drain_status": "COMPLETED_WITH_ISSUE_LABEL_QUEUE",
     "initial_drain_closed_prs": [
       640,

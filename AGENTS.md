@@ -41,6 +41,33 @@ the owner back to `EGM-Pending` only when the full known failure set is repaired
 the next whole candidate is again ready for review. A behavior-changing commit after
 `EGM-Passed` invalidates that state for merge readiness.
 
+### Differential verification and expensive-test reuse — 2026-11-04
+
+Use two verification tiers. During ordinary leaf development, run
+`npm run verify:leaf`. Its test selector uses `BILQIS_TEST_BASE_REF`, the last local
+passing leaf receipt, or `HEAD^1` in that order; it never uses
+`BILQIS_QUALITY_BASE_REF` as a test-impact boundary. The quality base may remain
+distant when structural governance needs historical debt/regression comparison.
+
+`npm run test:changed` first bounds work to direct owner tests from the near-head
+diff. Pytest-testmon may refine that bounded set when its dependency database is
+warm, and pytest-xdist runs the selected tests in parallel when available. On a cold
+database the same bounded tests seed testmon data for later edits. Testmon never
+turns a partial cache into permission to collect the whole repository. Passing leaf
+and pre-merge gates write ignored receipts under
+`.local/test-gate/`. If the exact HEAD plus working-tree fingerprint has already
+passed the same gate, do not rerun it merely because an agent resumed, compacted,
+changed issue pages, or reached another checkpoint. The gate reports the prior pass
+as reused. Set `BILQIS_TEST_FORCE=1` only when there is a concrete reason to discard
+that proof.
+
+Run `npm run verify:premerge` only at an actual integration/turn-in boundary or when
+a change can invalidate broad prior evidence. That gate executes the repository's
+existing aggregate runner. A new source/configuration change,
+failed test, changed dependency/toolchain, or altered test policy can invalidate the
+prior broad receipt; prose-only progress and unchanged code cannot. Install the
+optional accelerator dependencies with `python3 -m pip install -e '.[test]'`.
+
 Open the lane-to-unified PR only after the candidate is otherwise ready to merge,
 including required EGM PASS and every pre-PR gate available on the branch. Open it
 ready for human review, not as a draft work queue. PR-hosted checks are the final
@@ -245,18 +272,19 @@ it is genuinely novel, a repeated systemic finding, or a deterministic-proof
 gap. The answer determines repair routing; it never resets the episode budget.
 ### Remediation artifacts are a working set, not an archive
 
-Close a remediation issue when its exact recorded defect has been reproduced,
-repaired, covered by a regression, and verified on a durable PR/head. Do not keep
-that child issue open merely because its parent still awaits EGM, sibling work,
-dependency integration, or final human merge. The linked PR is the pending
-integration receipt.
+Keep a remediation issue open until its exact recorded defect has been reproduced,
+repaired, covered by a regression, verified on a durable PR/head, **and the accepted
+implementation has actually merged into its intended integration branch**. A green
+or review-ready PR/head is evidence that the repair is code-complete, not that the
+issue lifecycle is complete. Final parent EGM or sibling work may remain outstanding,
+but the remediation issue closes only after merge readback proves its code landed.
 
 Keep a remediation PR in draft only while its own scoped implementation or known
 Blocker/Major repair is incomplete. Parent-level EGM debt is not a reason for draft
 status. Mark the PR ready when its own acceptance is satisfied; merge or close it
 promptly once its change is consumed by the intended parent/candidate branch.
 Closed issues and merged PRs remain provenance and should not remain in the active
-queue just to preserve history.
+queue just to preserve history once the merge-backed close condition is satisfied.
 
 If later EGM or integration proves the **same original defect** still exists, reopen
 the remediation issue. If it exposes a different mechanism, newly unlocked gap, or
@@ -270,8 +298,9 @@ isolation, or focused review requires it, and merge/close that PR promptly once 
 bounded repair is consumed.
 Because BAMF PRs normally merge into reviewed integration branches rather than the
 repository default branch, GitHub closing keywords may not retire linked issues.
-After a remediation is accepted or its PR is consumed, explicitly read back and
-close the remediation issue; do not assume `Closes #N` changed issue state.
+After the remediation PR is consumed by and merged into its intended integration
+branch, explicitly read back the merge and issue state, then close the remediation
+issue; do not assume `Closes #N` changed issue state.
 
 The repository checker can validate declared state, WIP counts, required resume
 triggers and explicit exceptions. It cannot observe an unrecorded remote mutation or

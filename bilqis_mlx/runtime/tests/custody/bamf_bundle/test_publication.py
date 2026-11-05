@@ -21,6 +21,7 @@ from bilqis_mlx.runtime.bamf_bundle import (
 )
 
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
+    publish_candidate,
     accepted_state, candidate, parent_state, rejected_state, shape_patch,
 )
 
@@ -40,7 +41,7 @@ class BamfPublicationTests(unittest.TestCase):
 
     def publish(self, source):
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            return publish_bamf_generation(self.run, source)
+            return publish_candidate(self.run, source)
 
     def test_accepted_generation_advances_once_and_parent_bundle_remains(self):
         initial_state = parent_state()
@@ -61,7 +62,7 @@ class BamfPublicationTests(unittest.TestCase):
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
                 patch.object(publication, "_atomic_pointer", side_effect=RuntimeError("crash")):
             with self.assertRaisesRegex(RuntimeError, "crash"):
-                publish_bamf_generation(self.run, source)
+                publish_candidate(self.run, source)
         self.assertFalse((self.run / "bamf-state.json").exists())
         published = self.publish(source)
         self.assertTrue((self.run / published["bundle"]).is_dir())
@@ -148,7 +149,7 @@ class BamfPublicationTests(unittest.TestCase):
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
                 patch.object(publication, "reconcile_bamf_outbox", side_effect=RuntimeError("crash")):
             with self.assertRaisesRegex(RuntimeError, "crash"):
-                publish_bamf_generation(self.run, source)
+                publish_candidate(self.run, source)
         self.assertTrue((self.run / "bamf-state.json").is_file())
         with shape_patch():
             first = load_bamf_generation(self.run / "bamf-state.json")
