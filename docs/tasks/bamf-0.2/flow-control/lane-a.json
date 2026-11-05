@@ -2,15 +2,15 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "7e4f92e062299909dd47b547b8b4897a189c3738",
-  "updated_at": "2026-11-05T22:29:00Z",
+  "updated_at": "2026-11-05T22:46:00Z",
   "exception": null,
   "items": [
     {
       "issue": 429,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "7e4f92e062299909dd47b547b8b4897a189c3738",
-      "summary": "A12.3 started from reviewed-unified 7e4f92e0. Scope: prove one Grade-D-equivalent data-only semantic successor and held-source exclusion across ABI/features/Factory/teacher-target surfaces without neural updates.",
+      "state": "TURNED_IN",
+      "head_sha": "20b43ad3ecdfe68f9c10f69244164bd554a4ba7e",
+      "summary": "A12.3 substantive proof head 20b43ad3 adds no production semantic path: it proves one source-qualified inactive semantic reaches append-only A02 allocation plus A08 source lesson with prior active indices unchanged, strengthens F17 held-gloss proof with explicit no-factor/no-active-row assertions, and reuses the generic Grade-D executable successor system witness. Focused 19/19 plus Grade-D system 1/1 pass; semantic boundaries, Factory architecture, docs, structure, smell, error debt and diff gates are green. EGM_PENDING.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a12-3-429-20261105"
     },
