@@ -8,7 +8,7 @@ from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.semantics.frame_schema import RoleOccurrence
 from bilqis_mlx.factory.semantic_contrast.types import AllowedVariation, ContrastFamily, ContrastSourceFrame, ObservationState, TemporalStatus
 
-_SHA = re.compile(r"[0-9a-f]{64}\\Z")
+_SHA = re.compile(r"[0-9a-f]{64}\Z")
 SCHEMA = "bilqis.semantic-contrast-lesson/v1"
 LINEAGE_SCHEMA = "bilqis.semantic-contrast-lineage/v1"
 VARIANT_SCHEMA = "bilqis.semantic-contrast-variant/v1"
