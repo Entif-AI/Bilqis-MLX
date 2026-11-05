@@ -361,7 +361,7 @@
       "title": "BAMF-0.2 A08.1 | Own the source-family coverage census and constructive checker contract",
       "body_sha256": "dd0a51cab417a6f945329c7af59a840584ab9bca4c40d861c232c8f55578c586",
       "clause_span": [],
-      "source_parent_sha256": "6924a223cde966504bea7c2bac484a843506d899cfe3cb76bca9ab66b8bb2d39"
+      "source_parent_sha256": "ee0db92baaf6032ddab9e25bd062037fc8d8fa54ebaf9ab2d549caa229e5cc9c"
     },
     {
       "key": "A08.1a",
@@ -381,7 +381,7 @@
         0,
         2
       ],
-      "source_parent_sha256": "6924a223cde966504bea7c2bac484a843506d899cfe3cb76bca9ab66b8bb2d39"
+      "source_parent_sha256": "ee0db92baaf6032ddab9e25bd062037fc8d8fa54ebaf9ab2d549caa229e5cc9c"
     },
     {
       "key": "A08.1b",
@@ -398,7 +398,7 @@
         2,
         4
       ],
-      "source_parent_sha256": "6924a223cde966504bea7c2bac484a843506d899cfe3cb76bca9ab66b8bb2d39"
+      "source_parent_sha256": "ee0db92baaf6032ddab9e25bd062037fc8d8fa54ebaf9ab2d549caa229e5cc9c"
     },
     {
       "key": "A08.2",
@@ -415,7 +415,7 @@
         4,
         7
       ],
-      "source_parent_sha256": "6924a223cde966504bea7c2bac484a843506d899cfe3cb76bca9ab66b8bb2d39"
+      "source_parent_sha256": "ee0db92baaf6032ddab9e25bd062037fc8d8fa54ebaf9ab2d549caa229e5cc9c"
     },
     {
       "key": "A08.3",
@@ -432,7 +432,7 @@
         7,
         11
       ],
-      "source_parent_sha256": "6924a223cde966504bea7c2bac484a843506d899cfe3cb76bca9ab66b8bb2d39"
+      "source_parent_sha256": "ee0db92baaf6032ddab9e25bd062037fc8d8fa54ebaf9ab2d549caa229e5cc9c"
     },
     {
       "key": "A09.1",
@@ -1699,7 +1699,7 @@
         0,
         4
       ],
-      "source_parent_sha256": "3f31a57ea7a80dd84595f4898055c2fbaa7d73693798d5a2596b7a186e3656b1"
+      "source_parent_sha256": "3beb54e2ed9f69222610fe693d7eece51e667b97bf1ca752be4ff4fa5cfa21c8"
     },
     {
       "key": "C01.2",
@@ -1716,7 +1716,7 @@
         4,
         8
       ],
-      "source_parent_sha256": "3f31a57ea7a80dd84595f4898055c2fbaa7d73693798d5a2596b7a186e3656b1"
+      "source_parent_sha256": "3beb54e2ed9f69222610fe693d7eece51e667b97bf1ca752be4ff4fa5cfa21c8"
     },
     {
       "key": "C01.3",
@@ -1733,7 +1733,7 @@
         8,
         11
       ],
-      "source_parent_sha256": "3f31a57ea7a80dd84595f4898055c2fbaa7d73693798d5a2596b7a186e3656b1"
+      "source_parent_sha256": "3beb54e2ed9f69222610fe693d7eece51e667b97bf1ca752be4ff4fa5cfa21c8"
     },
     {
       "key": "C01.4",
@@ -1750,7 +1750,7 @@
         11,
         14
       ],
-      "source_parent_sha256": "3f31a57ea7a80dd84595f4898055c2fbaa7d73693798d5a2596b7a186e3656b1"
+      "source_parent_sha256": "3beb54e2ed9f69222610fe693d7eece51e667b97bf1ca752be4ff4fa5cfa21c8"
     },
     {
       "key": "C02.1",
@@ -1772,7 +1772,7 @@
         0,
         4
       ],
-      "source_parent_sha256": "f9f2563c466887415f26801184c8651cc7d37a6f35f91cacf7c2ab29cbf09d0b"
+      "source_parent_sha256": "7337f48ccbb3dbd89c5d1d114c28d01815ed3e19b4c5008c66495ea36838c187"
     },
     {
       "key": "C02.2",
@@ -1789,7 +1789,7 @@
         4,
         8
       ],
-      "source_parent_sha256": "f9f2563c466887415f26801184c8651cc7d37a6f35f91cacf7c2ab29cbf09d0b"
+      "source_parent_sha256": "7337f48ccbb3dbd89c5d1d114c28d01815ed3e19b4c5008c66495ea36838c187"
     },
     {
       "key": "C02.3",
@@ -1806,7 +1806,7 @@
         8,
         11
       ],
-      "source_parent_sha256": "f9f2563c466887415f26801184c8651cc7d37a6f35f91cacf7c2ab29cbf09d0b"
+      "source_parent_sha256": "7337f48ccbb3dbd89c5d1d114c28d01815ed3e19b4c5008c66495ea36838c187"
     },
     {
       "key": "C02.4",
@@ -1821,9 +1821,9 @@
       "body_sha256": "4634543b3b1e4fab1c077c584859d8040b144e8594d7acd44994b379ff1c21f9",
       "clause_span": [
         11,
-        14
+        16
       ],
-      "source_parent_sha256": "f9f2563c466887415f26801184c8651cc7d37a6f35f91cacf7c2ab29cbf09d0b"
+      "source_parent_sha256": "7337f48ccbb3dbd89c5d1d114c28d01815ed3e19b4c5008c66495ea36838c187"
     },
     {
       "key": "C03.1",
@@ -1912,7 +1912,7 @@
         0,
         3
       ],
-      "source_parent_sha256": "71efa9cb0c3ba83e1557414d8ee6ceb59fc47c22ef9e2da8dd156642c8a13c62"
+      "source_parent_sha256": "0f297051c6e9cfae170bd4de6d7ab3fcea143d07b03048ad1ce8a1014ce7545d"
     },
     {
       "key": "C04.2",
@@ -1929,7 +1929,7 @@
         3,
         6
       ],
-      "source_parent_sha256": "71efa9cb0c3ba83e1557414d8ee6ceb59fc47c22ef9e2da8dd156642c8a13c62"
+      "source_parent_sha256": "0f297051c6e9cfae170bd4de6d7ab3fcea143d07b03048ad1ce8a1014ce7545d"
     },
     {
       "key": "C04.3",
@@ -1946,7 +1946,7 @@
         6,
         9
       ],
-      "source_parent_sha256": "71efa9cb0c3ba83e1557414d8ee6ceb59fc47c22ef9e2da8dd156642c8a13c62"
+      "source_parent_sha256": "0f297051c6e9cfae170bd4de6d7ab3fcea143d07b03048ad1ce8a1014ce7545d"
     },
     {
       "key": "C05.1",
@@ -1966,7 +1966,7 @@
         0,
         4
       ],
-      "source_parent_sha256": "80c4762399e38936dd796a7e63162f75afcd91b17671999732d7bb8379ec754c"
+      "source_parent_sha256": "ec9e3cfccaef9cb6fc9e69c1cdc63f3bf31b0edee30e3ae1f09b90de0a08d07c"
     },
     {
       "key": "C05.2",
@@ -1983,7 +1983,7 @@
         4,
         8
       ],
-      "source_parent_sha256": "80c4762399e38936dd796a7e63162f75afcd91b17671999732d7bb8379ec754c"
+      "source_parent_sha256": "ec9e3cfccaef9cb6fc9e69c1cdc63f3bf31b0edee30e3ae1f09b90de0a08d07c"
     },
     {
       "key": "C05.3",
@@ -1998,9 +1998,9 @@
       "body_sha256": "c2fb6cdb50effae8b9e0f10dedf8187ddf05e99d571ce0b7a1eb6199c45c9295",
       "clause_span": [
         8,
-        13
+        12
       ],
-      "source_parent_sha256": "80c4762399e38936dd796a7e63162f75afcd91b17671999732d7bb8379ec754c"
+      "source_parent_sha256": "ec9e3cfccaef9cb6fc9e69c1cdc63f3bf31b0edee30e3ae1f09b90de0a08d07c"
     },
     {
       "key": "C06.1",
@@ -2450,7 +2450,7 @@
         0,
         4
       ],
-      "source_parent_sha256": "641275d0352088e4acabacd31ddb6f117d0e1b870950438db38a9296efbc3f10"
+      "source_parent_sha256": "30675a0feba3b2c61cdb6f914940c2d64de6e8887485476e192a0ec4dabaf8b7"
     },
     {
       "key": "C13.2",
@@ -2467,7 +2467,7 @@
         4,
         8
       ],
-      "source_parent_sha256": "641275d0352088e4acabacd31ddb6f117d0e1b870950438db38a9296efbc3f10"
+      "source_parent_sha256": "30675a0feba3b2c61cdb6f914940c2d64de6e8887485476e192a0ec4dabaf8b7"
     },
     {
       "key": "C13.3",
@@ -2482,9 +2482,9 @@
       "body_sha256": "58d348358c1d63214fc37be0815d245557b1cca84bdd79c0b10829f488b6c659",
       "clause_span": [
         8,
-        11
+        13
       ],
-      "source_parent_sha256": "641275d0352088e4acabacd31ddb6f117d0e1b870950438db38a9296efbc3f10"
+      "source_parent_sha256": "30675a0feba3b2c61cdb6f914940c2d64de6e8887485476e192a0ec4dabaf8b7"
     },
     {
       "key": "C14.1",
@@ -2502,7 +2502,7 @@
       "title": "BAMF-0.2 C14.1 | Own the source-defined developmental program and interleaved scheduling policy",
       "body_sha256": "4b2a63f37fce41bc17f0db6a87cbec1046c3ef7592f5533d37f07ce5c906e782",
       "clause_span": [],
-      "source_parent_sha256": "7ef262560752bdfb1ce6ebe2e0da3d5aa69c2e7a5e767dc7a839ac0f6e66c4c2"
+      "source_parent_sha256": "df7b2270def04f33a3f46eca095bdc9426fb3d3fa595f31e282074f607182505"
     },
     {
       "key": "C14.1a",
@@ -2523,7 +2523,7 @@
         0,
         5
       ],
-      "source_parent_sha256": "d093b1b16cb30920b992eca45b7b7606e343814af58c7789ac57456825ea1ce7"
+      "source_parent_sha256": "df7b2270def04f33a3f46eca095bdc9426fb3d3fa595f31e282074f607182505"
     },
     {
       "key": "C14.1b",
@@ -2540,7 +2540,7 @@
         5,
         10
       ],
-      "source_parent_sha256": "d093b1b16cb30920b992eca45b7b7606e343814af58c7789ac57456825ea1ce7"
+      "source_parent_sha256": "df7b2270def04f33a3f46eca095bdc9426fb3d3fa595f31e282074f607182505"
     },
     {
       "key": "C14.2",
@@ -2557,7 +2557,7 @@
         10,
         15
       ],
-      "source_parent_sha256": "7ef262560752bdfb1ce6ebe2e0da3d5aa69c2e7a5e767dc7a839ac0f6e66c4c2"
+      "source_parent_sha256": "df7b2270def04f33a3f46eca095bdc9426fb3d3fa595f31e282074f607182505"
     },
     {
       "key": "C14.3",
@@ -2574,7 +2574,7 @@
         15,
         20
       ],
-      "source_parent_sha256": "7ef262560752bdfb1ce6ebe2e0da3d5aa69c2e7a5e767dc7a839ac0f6e66c4c2"
+      "source_parent_sha256": "df7b2270def04f33a3f46eca095bdc9426fb3d3fa595f31e282074f607182505"
     },
     {
       "key": "C15.1",
@@ -2684,7 +2684,7 @@
       "title": "BAMF-0.2 C16.1 | Own persistent student create and correctly bound initial generation",
       "body_sha256": "67170c53e7ce634008cc5a136e41a68a85b2b3984fb4fba515eda65cf6f99ee5",
       "clause_span": [],
-      "source_parent_sha256": "f71413dd71de481ed1bb7c877be91c3d616128058a40120bc2efaa4726a5ac47"
+      "source_parent_sha256": "1c838a92bba99aeb2bf605a7ab79de63e5378dc742f96e707c223d61893bfd1e"
     },
     {
       "key": "C16.1a",
@@ -2705,7 +2705,7 @@
         0,
         4
       ],
-      "source_parent_sha256": "f71413dd71de481ed1bb7c877be91c3d616128058a40120bc2efaa4726a5ac47"
+      "source_parent_sha256": "1c838a92bba99aeb2bf605a7ab79de63e5378dc742f96e707c223d61893bfd1e"
     },
     {
       "key": "C16.1b",
@@ -2722,7 +2722,7 @@
         4,
         8
       ],
-      "source_parent_sha256": "f71413dd71de481ed1bb7c877be91c3d616128058a40120bc2efaa4726a5ac47"
+      "source_parent_sha256": "1c838a92bba99aeb2bf605a7ab79de63e5378dc742f96e707c223d61893bfd1e"
     },
     {
       "key": "C16.2",
@@ -2739,7 +2739,7 @@
         8,
         12
       ],
-      "source_parent_sha256": "f71413dd71de481ed1bb7c877be91c3d616128058a40120bc2efaa4726a5ac47"
+      "source_parent_sha256": "1c838a92bba99aeb2bf605a7ab79de63e5378dc742f96e707c223d61893bfd1e"
     },
     {
       "key": "C16.3",
@@ -2756,7 +2756,7 @@
         12,
         17
       ],
-      "source_parent_sha256": "f71413dd71de481ed1bb7c877be91c3d616128058a40120bc2efaa4726a5ac47"
+      "source_parent_sha256": "1c838a92bba99aeb2bf605a7ab79de63e5378dc742f96e707c223d61893bfd1e"
     },
     {
       "key": "A08.1b.1",
