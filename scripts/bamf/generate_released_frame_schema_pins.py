@@ -107,21 +107,17 @@ def _checked_row(adapter, row, snapshot, graph):
 
 
 def _evidence_schema():
-    """A03-owned role contract for the BRAVO evidence adapter.
+    """A03-owned released AGENT-role contract for the BRAVO adapter.
 
-    This is a frame contract, not a vocabulary registry. Category identity and
-    unit laws remain owned by A01 and the cognitive-operator domain.
+    The application EvidenceFrame retains category/status/duration values.
+    Their identities and value laws remain owned by A01 and the cognitive
+    operator domain; A03 publishes only the released semantic role A10 needs.
     """
     return FrameSchema(
-        schema_id="frame:bravo.evidence.activity/v1",
+        schema_id="frame:bravo.evidence.actor/v1",
         revision=1,
-        ast_construct="source:bravo-evidence-activity",
-        roles=(
-            RoleSpec("agent", ("Entity",), 1, 1),
-            RoleSpec("category", ("ConceptRef",), 1, 1),
-            RoleSpec("status", ("EventStatus",), 1, 1),
-            RoleSpec("reported_duration", ("Duration",), 0, 1),
-        ),
+        ast_construct="source:bravo-evidence-actor",
+        roles=(RoleSpec("agent", ("Entity",), 1, 1),),
         order_mode="ORDERED",
         scope="source-evidence",
     )

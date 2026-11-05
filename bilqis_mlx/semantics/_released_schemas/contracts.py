@@ -15,7 +15,7 @@ BODY_SCHEMA = "bilqis.released-frame-schema-body/v1"
 WITNESS_SCHEMA = "bilqis.released-frame-schema-body-witness/v1"
 SOURCE_PIN_REGISTRY_SCHEMA = "bilqis.frame-schema-source-pins/v1"
 SOURCE_PIN_REGISTRY_SHA256 = (
-    "101cf62df6f6dcf5f84c605782b33e069d3e3e026017f2f15e69d683ea2b73f0")
+    "a57aa1de7b18697cd669f6218b4a24d29c47deb8054fcc64c44f641c2ff572dd")
 SOURCE_PIN_STATUS = "A03_SOURCE_ATTESTED_NOT_NEURAL_ADMITTED"
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 

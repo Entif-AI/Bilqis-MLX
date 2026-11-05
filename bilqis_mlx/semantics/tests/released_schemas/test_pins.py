@@ -10,12 +10,18 @@ from bilqis_mlx.semantics import released_frame_schemas as public
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.frame_codec import SchemaTagMap
+from bilqis_mlx.semantics.frame_schema import (
+    RoleOccurrence, SourceSpan, bind_frame_instance,
+)
 from bilqis_mlx.semantics.released_frame_schemas import (
     lookup_source_pinned_frame_schema, load_released_frame_schemas,
     seal_released_frame_schemas, verify_source_pinned_frame_schema,
     verify_source_pinned_frame_schema_bytes,
 )
 from bilqis_mlx.semantics.tests.released_schemas.fixtures import _schema, _snapshot
+from bilqis_mlx.semantics.tests.frame_schema.fixtures import (
+    _concept as _frame_concept, _snapshot as _frame_snapshot,
+)
 
 
 class ReleasedPinsTests(unittest.TestCase):
@@ -42,12 +48,23 @@ class ReleasedPinsTests(unittest.TestCase):
                 self.assertEqual(len(staged.manifest.bodies), expected_count)
                 if family == "evidence":
                     schema = staged.manifest.bodies[0].parse()
-                    self.assertEqual(schema.schema_id, "frame:bravo.evidence.activity/v1")
-                    self.assertEqual(
-                        tuple(role.role_id for role in schema.roles),
-                        ("agent", "category", "status", "reported_duration"),
-                    )
+                    self.assertEqual(schema.schema_id, "frame:bravo.evidence.actor/v1")
+                    self.assertEqual(tuple(role.role_id for role in schema.roles), ("agent",))
                     self.assertEqual(schema.roles[0].allowed_type_ids, ("Entity",))
+                    actor = _frame_concept("actor_01", 0, "Entity")
+                    bound = bind_frame_instance(
+                        schema,
+                        _frame_snapshot(actor),
+                        source_instance_id="bravo-public-fixture",
+                        structural_path=(),
+                        source_span=SourceSpan(0, 8),
+                        parent_occurrence_id=None,
+                        bindings=(RoleOccurrence("agent", 0, concept=actor),),
+                        causal_prefix_end=8,
+                        declared_scope="source-evidence",
+                    )
+                    self.assertEqual(bound.bindings[0].role_id, "agent")
+                    self.assertEqual(bound.bindings[0].concept.semantic_id, actor.semantic_id)
                 for body in staged.manifest.bodies:
                     schema, witness = lookup_source_pinned_frame_schema(
                         body.schema_id, body.revision,

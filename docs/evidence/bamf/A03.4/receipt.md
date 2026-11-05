@@ -131,19 +131,23 @@ families. Issue #578 was therefore reopened without invalidating the prior
 three-family receipts.
 
 The A03 source-owner generator now publishes one additional `evidence` family
-with the immutable `frame:bravo.evidence.activity/v1@1` schema. Its role order
-is `agent`, `category`, `status`, `reported_duration`; the `agent` role admits
-`Entity` and the remaining role contracts preserve category, event-status, and
-duration typing without creating an A10-local role registry. Category identity
-and exact unit-law authority remain separately owned by A01 and the cognitive
-operator domain.
+with the immutable `frame:bravo.evidence.actor/v1@1` schema. It publishes the
+single released `agent` role A10 explicitly requires, with admitted type
+`Entity`. A first review correctly rejected an earlier four-role draft because
+it used `ConceptRef`, `EventStatus`, and `Duration` operator/value wrapper names
+as if they were FrameSchema semantic type IDs. Those fields remain owned by the
+A10 application record plus A01/cognitive-operator authority; A03 does not mint
+a second category/status/duration ontology. A direct binding witness now loads
+the source-pinned evidence schema and successfully binds its `agent` role
+through the production `bind_frame_instance` validator against an authoritative
+`Entity` concept fixture.
 
 The generated evidence manifest is
-`68bc1e032fde3597167bcd31ba5cddd2fa6dec88f9d4cbfb12748480b7e4eeea` and
+`87f37f9fa149db418acd5ae6597b1d75febceaacf260b53638d982806c91f291` and
 its schema-map digest is
-`62f4690abea5cf25bb30f42d4e2ac94895a9367a17e9e16cefef202821068e61`.
+`bc0c513b84442acf7d407586d3262fc502b0ac66ca9ad4880e3ce0801bfaf5bf`.
 The four-family source-pin registry now hashes to
-`101cf62df6f6dcf5f84c605782b33e069d3e3e026017f2f15e69d683ea2b73f0`.
+`a57aa1de7b18697cd669f6218b4a24d29c47deb8054fcc64c44f641c2ff572dd`.
 The generator reproduced the existing three family manifests byte-for-byte.
 
 Failing-before proof: the real source-pin lookup test failed with
