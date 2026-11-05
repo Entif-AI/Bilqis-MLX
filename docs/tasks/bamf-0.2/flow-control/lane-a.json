@@ -2,16 +2,16 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "22314c413ba137df69b3d6b35768fe65e1556bfe",
-  "updated_at": "2026-11-05T11:17:00Z",
+  "updated_at": "2026-11-05T13:05:25Z",
   "exception": null,
   "items": [
     {
       "issue": 427,
-      "pr": null,
+      "pr": 861,
       "state": "TURNED_IN",
-      "head_sha": "68f288cd9e20b54bbc8c0b8a775196b9f3335ba8",
-      "summary": "A12.1 current-owner audit is implemented in atlas_release_audit.py without resurrecting the historical competing module. The receipt binds current typed ABI, source-pinned released AST/frame schemas, Factory source lessons, a read-only graph projection, Registry mirror, and the exact prior-ABI ledger to one repository-pinned A01 release. copular_registry_v1.json is correctly classified as the prior-ABI ledger; formal-domain dispositions are derived from the frozen snapshot bindings. Unit audit/export tests pass 8/8 with one optional source witness skipped; the real pinned A01/A02/A03/Factory/registry replay passes 9/9. Adjacent released-schema/vocabulary/curriculum tests pass 24/24 with two expected optional-source skips; semantic-boundary, governance, error-control, structure, compile and diff checks are green.",
-      "resume_trigger": "Fresh exact-head independent EGM plus hosted PR checks and human integration review. Parent A12/#364, #295 and #309 remain open; this child does not claim neural admission or full parent cutover.",
+      "head_sha": "1573038d1b9ee8e618626274fac3e78724bc98a5",
+      "summary": "A12.1 current-owner audit remains turned in as draft PR #861. The receipt binds current typed ABI, source-pinned released AST/frame schemas, Factory source lessons, read-only graph projection, Registry mirror, and exact prior-ABI ledger to one repository-pinned A01 release without resurrecting the historical competing owner. Initial head 2a314e44 was semantically green but hosted portable-core rejected audit_atlas_authority as a 106-line changed function. Refactor 1573038d extracts _validated_audit_snapshot and _consumer_bindings without weakening validation or changing receipt semantics. Local proof: atlas audit/export 8 pass / 0 fail / 1 expected optional source skip; adjacent released-schema/vocabulary/curriculum 24 pass / 0 fail / 2 expected optional skips; semantic boundaries green; exact error debt 0; Factory/docs/flow green; changed-file smell 0; compile/diff clean. Fresh hosted checks and fresh exact-head independent EGM remain required.",
+      "resume_trigger": "If hosted portable-core/portable/Semantic ABI and fresh exact-head EGM are clean on the final PR head, mark PR #861 ready for human integration. Close #427 only after accepted merge. Parent A12/#364, #295 and #309 remain open; this child does not claim neural admission or full parent cutover.",
       "preserved_branch": "codex/bamf02-a12-1-427-20261105"
     },
     {
