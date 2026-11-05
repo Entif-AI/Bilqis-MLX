@@ -50,6 +50,9 @@ from bilqis_mlx.runtime.tests.capability.factory.factory_retention_next_step_wit
 from bilqis_mlx.runtime.tests.capability.factory.factory_retention_lesson_diagnostic import (
     diagnose_factory_retention_lesson,
 )
+from bilqis_mlx.runtime.tests.capability.factory.factory_retention_fixed_diagnostic import (
+    diagnose_fixed_capability,
+)
 from bilqis_mlx.runtime.tests.capability.factory.factory_retention_target_diagnostic import (
     diagnose_factory_retention_target,
 )
@@ -318,6 +321,25 @@ class FactoryRetentionOwnerLiveTests(SourceBackboneTestBase):
                 "candidate_generation": after.generation_binding,
             }
             print("C05_TRAINING_STEP_DIAGNOSTIC " + json.dumps(receipt, sort_keys=True))
+
+    def test_source_owned_c05_fixed_and_diagnostic(self):
+        source_context, _ = live_factory_context(self.root, self.source)
+        genesis, _ = genesis_bundle(
+            self, self.snapshot, self.schema, self.artifact)
+        with tempfile.TemporaryDirectory() as directory:
+            run_dir = Path(directory)
+            parent, cache = _initialize_generation(
+                run_dir, source_context, genesis)
+            transaction = _source_owned_candidate_step(
+                run_dir, source_context, parent, cache, self.artifact)
+            receipt = diagnose_fixed_capability(
+                source_context, transaction, str(self.artifact), TARGET, "B.AND",
+                run_dir=run_dir)
+            self.assertFalse(receipt["authorizing"])
+            self.assertEqual(receipt["protected_capability"], "B.AND")
+            self.assertEqual(receipt["total"], FIXED_EACH["B.AND"])
+            print("C05_FIXED_CAPABILITY_DIAGNOSTIC " + json.dumps(
+                receipt, sort_keys=True), flush=True)
 
     def test_source_owned_c05_acceptance_publishes_exact_successor(self):
         source_context, _ = live_factory_context(self.root, self.source)

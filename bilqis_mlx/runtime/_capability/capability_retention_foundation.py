@@ -1,14 +1,51 @@
 """Foundation-acquisition C05 screen: fixed-school authority, fresh cohorts telemetry only."""
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import dataclass, replace
 
 from ..learning.retention_policy import retention_reason, scaled_loss_allowance
 from ..semantics.domains import contract_digest
-from .capability_evaluation import Assessment, case_census_digest, evaluate_capabilities
+from .capability_evaluation import (
+    Assessment, EvidenceKind, EvidenceStage, EvaluationCohort, _invalid, _names, _sha,
+    case_census_digest, evaluate_capabilities,
+)
 from .capability_retention import (
     AssessmentPair, Decision, DecisionStatus, RetentionPolicy,
 )
+
+
+@dataclass(frozen=True)
+class FoundationRetentionPolicy:
+    """Authorizing foundation policy binds only fixed-school preservation evidence."""
+    capability_groups: tuple[tuple[str, str], ...]
+    protected_groups: tuple[str, ...]
+    protected_reference_losses: tuple[tuple[str, int], ...]
+    probe_each: int
+    fixed_census_digest: str
+    schema_version: str = "bilqis.c05.foundation-retention-policy/v1"
+
+    def __post_init__(self):
+        if (not isinstance(self.capability_groups, tuple) or not self.capability_groups
+                or any(not isinstance(pair, tuple) or len(pair) != 2
+                       or not all(isinstance(item, str) and item for item in pair)
+                       for pair in self.capability_groups)
+                or len(dict(self.capability_groups)) != len(self.capability_groups)
+                or not _names(self.protected_groups)
+                or not set(self.protected_groups) <= set(dict(self.capability_groups).values())
+                or type(self.probe_each) is not int or not 2 <= self.probe_each <= 48
+                or not isinstance(self.protected_reference_losses, tuple)
+                or any(not isinstance(pair, tuple) or len(pair) != 2
+                       or pair[0] not in dict(self.capability_groups)
+                       or type(pair[1]) is not int or not 0 <= pair[1] <= self.probe_each
+                       for pair in self.protected_reference_losses)
+                or len(dict(self.protected_reference_losses))
+                != len(self.protected_reference_losses)
+                or not _sha(self.fixed_census_digest)
+                or self.schema_version != "bilqis.c05.foundation-retention-policy/v1"):
+            _invalid("BAMF_FOUNDATION_RETENTION_POLICY_INVALID")
+
+    def digest(self):
+        return contract_digest(self)
 
 
 def _cohort_contract(target_capability, policy, cohorts):
@@ -30,8 +67,23 @@ def _cohort_contract(target_capability, policy, cohorts):
                    or cohort.expected_case_digest
                    != dict(policy.required_census_digests)[cohort.kind]
                    for cohort in cohorts)):
-        from .capability_evaluation import _invalid
         _invalid("BAMF_RETENTION_COMPLETE_COVERAGE_REQUIRED")
+    return target_group
+
+
+def _fixed_cohort_contract(target_capability, policy, fixed):
+    target_group = dict(policy.capability_groups).get(target_capability)
+    if (target_group is None
+            or target_group not in policy.protected_groups
+            or set(dict(policy.protected_reference_losses))
+            != set(dict(policy.capability_groups)) - {target_capability}
+            or type(fixed) is not EvaluationCohort
+            or fixed.kind is not EvidenceKind.FIXED_SCHOOL
+            or fixed.evidence_stage is not EvidenceStage.FOUNDATION_ACQUISITION
+            or set(fixed.capability_groups) != set(policy.capability_groups)
+            or fixed.policy_sha256 != policy.digest()
+            or fixed.expected_case_digest != policy.fixed_census_digest):
+        _invalid("BAMF_FOUNDATION_FIXED_SCHOOL_CONTRACT_INVALID")
     return target_group
 
 
@@ -50,13 +102,23 @@ def _evidence_digest(
     })
 
 
-def evaluate_foundation_retention_candidate(
-        parent_solver, candidate_solver, target_capability: str,
-        policy: RetentionPolicy, cohorts, parent_generation: str,
-        candidate_generation: str) -> Decision:
-    """Evaluate fixed-school authority first and stop on a final protected loss."""
-    target_group = _cohort_contract(target_capability, policy, cohorts)
-    fixed = cohorts[2]
+def _fixed_evidence_digest(
+        target_capability, policy, fixed, fixed_pair_digests,
+        blocking_capability=None):
+    return contract_digest({
+        "schema": "bilqis.c05.foundation-fixed-school-evidence/v1",
+        "target_capability": target_capability,
+        "policy_sha256": policy.digest(),
+        "fixed_school_census": fixed.expected_case_digest,
+        "fixed_pairs": tuple(fixed_pair_digests),
+        "blocking_capability": blocking_capability,
+    })
+
+
+def _evaluate_fixed_school(
+        parent_solver, candidate_solver, target_capability, policy, fixed,
+        parent_generation, candidate_generation, evidence_digest):
+    target_group = dict(policy.capability_groups)[target_capability]
     groups = dict(fixed.capability_groups)
     references = dict(policy.protected_reference_losses)
     same_grade = tuple(
@@ -102,10 +164,8 @@ def evaluate_foundation_retention_candidate(
             return Decision(
                 DecisionStatus.REJECT, "PROTECTED_CAPABILITY_REGRESSION",
                 parent_generation, candidate_generation,
-                _evidence_digest(
-                    target_capability, policy, cohorts, pair_digests,
-                    blocking_capability=capability),
-                policy.digest(), blocking_capability=capability)
+                evidence_digest(pair_digests, capability), policy.digest(),
+                blocking_capability=capability)
 
     parent_assessment = Assessment(
         fixed, parent_generation,
@@ -136,8 +196,39 @@ def evaluate_foundation_retention_candidate(
         DecisionStatus.ELIGIBLE if reason == "PAIRED_SCREEN_WITHIN_BUDGET"
         else DecisionStatus.REJECT,
         reason, parent_generation, candidate_generation,
-        _evidence_digest(target_capability, policy, cohorts, pair_digests),
-        policy.digest())
+        evidence_digest(pair_digests, None), policy.digest())
 
 
-__all__ = ("evaluate_foundation_retention_candidate",)
+def evaluate_foundation_retention_candidate(
+        parent_solver, candidate_solver, target_capability: str,
+        policy: RetentionPolicy, cohorts, parent_generation: str,
+        candidate_generation: str) -> Decision:
+    """Evaluate fixed-school authority first and stop on a final protected loss."""
+    _cohort_contract(target_capability, policy, cohorts)
+    fixed = cohorts[2]
+    return _evaluate_fixed_school(
+        parent_solver, candidate_solver, target_capability, policy, fixed,
+        parent_generation, candidate_generation,
+        lambda pair_digests, blocking: _evidence_digest(
+            target_capability, policy, cohorts, pair_digests,
+            blocking_capability=blocking))
+
+
+def evaluate_foundation_fixed_school_candidate(
+        parent_solver, candidate_solver, target_capability: str,
+        policy: FoundationRetentionPolicy, fixed: EvaluationCohort,
+        parent_generation: str, candidate_generation: str) -> Decision:
+    """Production foundation path: authorizing fixed school only, no fresh telemetry."""
+    _fixed_cohort_contract(target_capability, policy, fixed)
+    return _evaluate_fixed_school(
+        parent_solver, candidate_solver, target_capability, policy, fixed,
+        parent_generation, candidate_generation,
+        lambda pair_digests, blocking: _fixed_evidence_digest(
+            target_capability, policy, fixed, pair_digests,
+            blocking_capability=blocking))
+
+
+__all__ = (
+    "FoundationRetentionPolicy", "evaluate_foundation_fixed_school_candidate",
+    "evaluate_foundation_retention_candidate",
+)

@@ -7,6 +7,8 @@ from unittest.mock import Mock, patch
 from bilqis_mlx.learning.atlas_retention_decision import (
     decide_candidate_retention, issue_factory_retention_decision,
 )
+from bilqis_mlx.learning.atlas_candidate import CandidateTransaction
+import bilqis_mlx.runtime.factory_retention_owner as owner
 from bilqis_mlx.runtime.factory_retention_owner import (
     C05_MAX_FRESH_DRAWS, FactoryRetentionEvaluation, _cohort, _fresh_rows,
     evaluate_factory_retention_candidate,
@@ -31,6 +33,57 @@ def _rows(prefix):
 
 
 class FactoryRetentionOwnerAdversarialTests(unittest.TestCase):
+    def test_foundation_owner_does_not_construct_measure_only_fresh_cohorts(self):
+        release_sha = "a" * 64
+        target = "B.IDBOOLOPS"
+        capabilities = (
+            SimpleNamespace(capability_id="B.AND", grade_id="B"),
+            SimpleNamespace(capability_id=target, grade_id="B"),
+        )
+        release = SimpleNamespace(
+            release_sha256=release_sha,
+            execution_plan=SimpleNamespace(
+                capabilities=capabilities,
+                capability_map={item.capability_id: item for item in capabilities},
+            ),
+        )
+        source = SimpleNamespace(__post_init__=lambda: None, release=release)
+        candidate = object.__new__(CandidateTransaction)
+        object.__setattr__(candidate, "training_authorities", (
+            SimpleNamespace(delivery_capability=target, release_sha256=release_sha),
+        ))
+        fixed = SimpleNamespace(rows=({"id": "fixed"},), seed=7)
+        fresh = Mock(side_effect=AssertionError(
+            "foundation acceptance constructed measure-only fresh rows"))
+        decision = SimpleNamespace()
+
+        with patch.multiple(
+                owner,
+                create=True,
+                _training_exclusions=Mock(return_value=(("trained-family",), ("trained-episode",))),
+                _candidate_from_live_parent=Mock(return_value=(
+                    object(), object(), object(), object())),
+                candidate_identity_digest=Mock(return_value="d" * 64),
+                _owner_seed=Mock(return_value=11),
+                read_current=Mock(return_value={"factory_release_sha256": release_sha}),
+                frontier_exam=Mock(return_value={"factory_release_sha256": release_sha}),
+                load_frontier_cohort=Mock(return_value=fixed),
+                _fresh_rows=fresh,
+                _instruments=Mock(return_value=(SimpleNamespace(case=SimpleNamespace()),)),
+                case_census_digest=Mock(return_value="e" * 64),
+                _cohort=Mock(return_value=object()),
+                FoundationRetentionPolicy=Mock(return_value=object()),
+                factory_complete_solver=Mock(side_effect=((object(), "b" * 64),
+                                                          (object(), "c" * 64))),
+                evaluate_foundation_fixed_school_candidate=Mock(return_value=decision),
+                _issue_owner_evaluation=Mock(return_value="evaluation"),
+        ):
+            result = evaluate_factory_retention_candidate(
+                source, candidate, "artifact", target, run_dir=Path("unused"))
+
+        self.assertEqual(result, "evaluation")
+        fresh.assert_not_called()
+
     def test_real_source_replays_failed_run_overlap_and_redraws_exact_cohort(self):
         from bilqis_mlx.runtime.tests.capability.factory.factory_retention_live_support import (
             live_factory_context,

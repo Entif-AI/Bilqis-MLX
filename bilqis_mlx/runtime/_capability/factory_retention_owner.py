@@ -23,6 +23,9 @@ from bilqis_mlx.fixed_frontier import frontier_exam
 from bilqis_mlx.runtime.source_execution import _source_family
 
 from .capability_evaluation import _invalid
+from .capability_retention_foundation import (
+    FoundationRetentionPolicy, evaluate_foundation_fixed_school_candidate,
+)
 from .factory_complete_solver import (
     FactoryEvaluationInstrument, _factory_evaluation_instrument, _generation,
     factory_complete_solver,
@@ -272,24 +275,6 @@ def evaluate_factory_retention_candidate(
         _invalid("BAMF_C05_TARGET_NOT_OWNED_BY_TRAINING")
     parent, candidate_bundle, candidate_state, cache = _candidate_from_live_parent(
         run_dir, candidate)
-    candidate_sha256 = candidate_identity_digest(candidate_state)
-    fresh_seed = _owner_seed(
-        release.release_sha256, cache, target_capability, candidate_sha256)
-
-    target_draw = _fresh_rows(
-        source_context, (target_capability,),
-        seed=fresh_seed + C05_FRESH_TARGET_SEED_OFFSET, training=training,
-        require_independent=CURRENT_EVIDENCE_STAGE is EvidenceStage.STRICT_GENERALIZATION)
-    lesson_draw = _fresh_rows(
-        source_context, lesson_capabilities,
-        seed=fresh_seed + C05_FRESH_LESSON_SEED_OFFSET, training=training,
-        require_independent=CURRENT_EVIDENCE_STAGE is EvidenceStage.STRICT_GENERALIZATION)
-    target_instruments = _instruments(
-        source_context, candidate_bundle, artifact_path, target_draw.rows,
-        seed=target_draw.seed, each=C05_PROBE_EACH)
-    lesson_instruments = _instruments(
-        source_context, candidate_bundle, artifact_path, lesson_draw.rows,
-        seed=lesson_draw.seed, each=C05_PROBE_EACH)
 
     receipt = read_current(run_dir)
     if receipt.get("factory_release_sha256") != release.release_sha256:
@@ -303,6 +288,41 @@ def evaluate_factory_retention_candidate(
     fixed_instruments = _instruments(
         source_context, candidate_bundle, artifact_path, fixed.rows,
         seed=fixed.seed)
+
+    if CURRENT_EVIDENCE_STAGE is EvidenceStage.FOUNDATION_ACQUISITION:
+        fixed_cases = tuple(item.case for item in fixed_instruments)
+        policy = FoundationRetentionPolicy(
+            groups, tuple(dict.fromkeys(group for _, group in groups)),
+            tuple((capability, C05_PROTECTED_REFERENCE_LOSS)
+                  for capability, _ in groups if capability != target_capability),
+            C05_PROBE_EACH, case_census_digest(fixed_cases))
+        fixed_cohort = _cohort(
+            EvidenceKind.FIXED_SCHOOL, fixed_instruments, groups,
+            release, policy, training, evidence_stage=CURRENT_EVIDENCE_STAGE)
+        parent_solver, parent_generation = factory_complete_solver(
+            source_context, parent, artifact_path, fixed_instruments)
+        candidate_solver, candidate_generation = factory_complete_solver(
+            source_context, candidate_bundle, artifact_path, fixed_instruments)
+        decision = evaluate_foundation_fixed_school_candidate(
+            parent_solver, candidate_solver, target_capability, policy, fixed_cohort,
+            parent_generation, candidate_generation)
+        return _issue_owner_evaluation(decision, parent, candidate_bundle)
+
+    candidate_sha256 = candidate_identity_digest(candidate_state)
+    fresh_seed = _owner_seed(
+        release.release_sha256, cache, target_capability, candidate_sha256)
+    target_draw = _fresh_rows(
+        source_context, (target_capability,),
+        seed=fresh_seed + C05_FRESH_TARGET_SEED_OFFSET, training=training)
+    lesson_draw = _fresh_rows(
+        source_context, lesson_capabilities,
+        seed=fresh_seed + C05_FRESH_LESSON_SEED_OFFSET, training=training)
+    target_instruments = _instruments(
+        source_context, candidate_bundle, artifact_path, target_draw.rows,
+        seed=target_draw.seed, each=C05_PROBE_EACH)
+    lesson_instruments = _instruments(
+        source_context, candidate_bundle, artifact_path, lesson_draw.rows,
+        seed=lesson_draw.seed, each=C05_PROBE_EACH)
 
     policy, cohorts = _policy_and_cohorts(
         release, groups, target_capability, target_group, training,
