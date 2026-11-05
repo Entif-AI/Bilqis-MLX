@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "879c39dd68308c7a8e5f8c09bc1624317f47b457",
-  "updated_at": "2026-11-05T06:21:11+00:00",
+  "observed_unified": "d29fd6cd290d88f0b3dbd1557b7ce229db0caab3",
+  "updated_at": "2026-11-05T06:27:03+00:00",
   "exception": null,
   "items": [
     {
@@ -308,10 +308,20 @@
       "pr": null,
       "state": "TURNED_IN",
       "head_sha": "edae20526c34b628fa63a895fb852921007f42a0",
-      "preserved_branch": "codex/bamf02-b-784-runner-context-20261105",
       "summary": "PR847 externally merged as70a4ef1e883d348920d64083c7546f443a90ef77 after focused14/14andmotif5/5 proof and pinned EGM PASS; issue784 is closed completed. The three broader script import failures remain separately owned by844.",
       "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b-784-runner-context-20261105",
       "merged_pr": 847
+    },
+    {
+      "issue": 844,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "030880888e09ddbaba98973962af844b9bec7ccc",
+      "summary": "PR848 externally merged asd29fd6cd; issue844 explicitly CLOSED COMPLETED after readback. Import-only repair with177/177 combined runner proof; actual learner/source unchanged.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b-844-script-imports-20261105",
+      "merged_pr": 848
     },
     {
       "issue": 451,
