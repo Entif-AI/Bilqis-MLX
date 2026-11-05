@@ -76,3 +76,11 @@ at canonical ledger Incidents row269; no new governance rule or pattern adopted.
 Episode `A824-structure-20261104` remains round1/5. The initial FAIL is preserved;
 resolution of its two scoped findings requires readback rather than resetting the
 episode or claiming a new whole-candidate round.
+
+
+Scoped resolution audit at `e855f408` closes both original Majors. The initial
+FAIL is retained as history, with no new whole-review round. A documentation nit
+about test ownership and unsupported test examples is corrected: the catalog test
+owns identity/pickle and `_digest` patch behavior; lineage proof concerns release
+geometry, not a claimed student/optimizer transaction. Final disposition is PASS
+on the complete known finding set, with no unsettled Blocker/Major.

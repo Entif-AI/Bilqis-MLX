@@ -45,11 +45,11 @@ classmethod/staticmethod functions. Keep dataclass-generated behavior, names and
 qualnames intact, so pickle and introspection still use the original public path.
 Do not introduce module replacement, dynamic import search paths or new APIs.
 
-Modify `factory/tests/test_executable_release.py` to retain public identity,
-pickle and facade-patch regressions. Create companion files in that same tests
-directory: `_executable_release_support.py` for unchanged shared disposable
+Modify `factory/tests/test_executable_release.py` to retain instructional closure,
+source footprint, graph and historical compatibility tests. Create companion
+files in that same tests directory: `_executable_release_support.py` for unchanged shared disposable
 fixtures; `test_executable_release_catalog.py` for semantic graph/catalog and
-native modality checks; `test_executable_release_lineage.py` for successor and
+native modality checks, plus public identity/pickle/facade-patch regression; `test_executable_release_lineage.py` for successor and
 predecessor custody; `test_executable_release_manifest.py` for manifests,
 rehashing/tamper and verification. Preserve the existing 22 test methods' bodies
 and move them by those responsibilities. Add the public identity regression.
@@ -71,9 +71,9 @@ exclusions, governance baselines, debt thresholds or runtime error behavior.
    canonical manifest bytes and release digest must match exactly. Compare moved
    definition ASTs after undoing only facade qualification of global lookups.
 4. Explicitly verify class/function/method module names, pickle roundtrip,
-   public `draw_execution_rows` monkeypatch behavior and resolution of postponed
+   public `_digest` monkeypatch behavior and resolution of postponed
    public type annotations. Rehashed profile/provider/specimen drift must still
-   reject, as must wrong predecessor/student/optimizer lineage. A valid
+   reject, as must incompatible predecessor semantic geometry. A valid
    twelve-capability successor remains accepted by the existing test.
 5. Stage every new source file, regenerate the error artifacts, and run the
    existing committed-input error-control check. Compare original/candidate raw
