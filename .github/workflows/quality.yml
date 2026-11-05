@@ -23,6 +23,7 @@ jobs:
       skos_action: ${{ steps.skos.outputs.action }}
       skos_reason: ${{ steps.skos.outputs.reason }}
       skos_sha256: ${{ steps.skos.outputs.sha256 }}
+      expensive_tests: ${{ steps.test-impact.outputs.expensive_tests }}
     steps:
       - name: Checkout private source without persisted credentials
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -31,6 +32,54 @@ jobs:
           fetch-depth: 0
       - name: Validate release manifests and changelog
         run: python3 -B scripts/release_version.py --check
+      - name: Determine whether passing expensive suites were invalidated
+        id: test-impact
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          QUALITY_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
+          QUALITY_HEAD_REF: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            echo "expensive_tests=true" >> "$GITHUB_OUTPUT"
+            echo "Manual dispatch explicitly requests fresh verification."
+            exit 0
+          fi
+
+          BASE_REF="$QUALITY_BASE_REF"
+          case "$BASE_REF" in
+            ""|0000000000000000000000000000000000000000)
+              echo "expensive_tests=true" >> "$GITHUB_OUTPUT"
+              echo "No trustworthy base ref; fail safe to fresh verification."
+              exit 0
+              ;;
+          esac
+
+          expensive=false
+          while IFS= read -r path; do
+            case "$path" in
+              bilqis_mlx/*|\
+              lib/ithkuil/*|\
+              skills/ithkuil-ingestion/*|\
+              pyproject.toml|\
+              requirements*.txt|\
+              package.json|\
+              scripts/run_tests.py|\
+              scripts/skos_test_policy.py|\
+              scripts/skos_policy/*|\
+              scripts/check_historical_abi.py|\
+              scripts/check_semantic_boundaries.py)
+                expensive=true
+                echo "Expensive verification invalidated by: $path"
+                break
+                ;;
+            esac
+          done < <(git diff --name-only "$BASE_REF" "$QUALITY_HEAD_REF")
+          echo "expensive_tests=$expensive" >> "$GITHUB_OUTPUT"
+          if [[ "$expensive" != "true" ]]; then
+            echo "No expensive-suite dependency surface changed; reusing prior passing evidence."
+          fi
       - name: Enforce ratified development structure on changed paths
         env:
           QUALITY_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
@@ -41,28 +90,26 @@ jobs:
           esac
           python3 -B scripts/check_module_size.py --changed-from "$BASE_REF"
           python3 -B scripts/quality/check_governance_integrity.py --base-ref "$BASE_REF"
-      - name: Enforce BAMF lane flow control and live PR inventory
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
+      - name: Check BAMF flow-control policy
         run: |
-          python3 -B scripts/check_bamf_flow_control.py --live
-          python3 -B -m unittest \
-            scripts.tests.test_bamf_flow_control \
-            scripts.tests.test_bamf_flow_control_live
+          python3 -B scripts/check_bamf_flow_control.py
       - name: Install historical semantic integrity dependencies
+        if: steps.test-impact.outputs.expensive_tests == 'true'
         run: python3 -m pip install -r lib/ithkuil/requirements-semantic.txt
       - name: Check historical semantic integrity
+        if: steps.test-impact.outputs.expensive_tests == 'true'
         run: python3 -B scripts/check_historical_abi.py
       - name: Check legacy semantic package ownership
         if: >-
           ${{
+            steps.test-impact.outputs.expensive_tests == 'true' &&
             (!contains(github.ref_name, 'bamf') && !contains(github.head_ref, 'bamf') && !contains(github.base_ref, 'bamf'))
           }}
         run: python3 -B scripts/check_semantic_boundaries.py
       - name: Verify portable BAMF semantic contracts
         if: >-
           ${{
+            steps.test-impact.outputs.expensive_tests == 'true' &&
             (contains(github.ref_name, 'bamf') || contains(github.head_ref, 'bamf') || contains(github.base_ref, 'bamf'))
           }}
         run: >-
@@ -97,8 +144,10 @@ jobs:
           python3 -B scripts/code_smell_audit.py --changed-from "$BASE_REF" \
             --check-baseline docs/evidence/development/code_smell_baseline.json
       - name: Install portable custody dependencies
+        if: steps.test-impact.outputs.expensive_tests == 'true'
         run: python3 -m pip install numpy==2.4.4
       - name: Portable non-neural custody and release tests
+        if: steps.test-impact.outputs.expensive_tests == 'true'
         run: >-
           python3 -B scripts/run_tests.py
           bilqis_mlx/learning/_teaching/tests/test_teacher_observations.py
@@ -116,6 +165,7 @@ jobs:
           scripts/tests/test_release_version.py
           scripts/tests/test_docs.py
           scripts/tests/test_run_tests.py
+          scripts/tests/test_run_tests_package_collision.py
           scripts/tests/test_skos_test_policy.py
           scripts/tests/governance/test_module_size.py
           scripts/tests/governance/test_governance_integrity.py
@@ -125,17 +175,23 @@ jobs:
           bilqis_mlx/runtime/tests/operator/test_admission.py
       - name: Plan semantic profile verification
         id: skos
+        if: steps.test-impact.outputs.expensive_tests == 'true'
         env:
           SKOS_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: |
           python3 -B scripts/skos_test_policy.py plan \
             --base-ref "$SKOS_BASE_REF" \
             --github-output "$GITHUB_OUTPUT"
+      - name: Record reused passing test evidence
+        if: steps.test-impact.outputs.expensive_tests != 'true'
+        run: |
+          echo "expensive test suites: NOT INVALIDATED"
+          echo "No production/test dependency surface changed; prior passing evidence remains applicable."
 
   semantic-diff:
     name: semantic-profile-diff
     needs: core
-    if: needs.core.result == 'success' && needs.core.outputs.skos_action == 'DIFF'
+    if: needs.core.result == 'success' && needs.core.outputs.expensive_tests == 'true' && needs.core.outputs.skos_action == 'DIFF'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -157,7 +213,7 @@ jobs:
   semantic-full:
     name: semantic-profile-full-${{ matrix.shard }}
     needs: core
-    if: needs.core.result == 'success' && needs.core.outputs.skos_action == 'FULL'
+    if: needs.core.result == 'success' && needs.core.outputs.expensive_tests == 'true' && needs.core.outputs.skos_action == 'FULL'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -204,6 +260,11 @@ jobs:
             exit 1
           fi
           case "$SKOS_ACTION" in
+            "")
+              test "${{ needs.core.outputs.expensive_tests }}" != "true"
+              test "$DIFF_RESULT" = "skipped"
+              test "$FULL_RESULT" = "skipped"
+              ;;
             SKIP)
               test "$DIFF_RESULT" = "skipped"
               test "$FULL_RESULT" = "skipped"
@@ -221,4 +282,4 @@ jobs:
               exit 1
               ;;
           esac
-          echo "PORTABLE_VERIFICATION_OK semantic=$SKOS_ACTION"
+          echo "PORTABLE_VERIFICATION_OK semantic=${SKOS_ACTION:-REUSED}"

@@ -12,13 +12,13 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, bamf_parameter_census,
 )
-from bilqis_mlx.runtime.atlas_training_adapter import (
-    BamfDeliveryProvenance, BamfModelInput, BamfTarget, BamfTrainingRow,
-)
 from bilqis_mlx.runtime.atlas_resources import (
     BackendStepReceipt, FrameStats, GradientChunk, MemoryBudget, ResourceRow,
     accumulate_gradients, apply_one_adamw_step, estimate_row_activation_bytes,
     indices_for_plan, plan_microbatches,
+)
+from bilqis_mlx.runtime.tests.batch.test_atlas_training_adapter import (
+    AtlasTrainingAdapterTest as TrainingFixture,
 )
 from bilqis_mlx.runtime.atlas_memory_retry import (
     OOMReceipt, RestorationReceipt, RetryState, RetryStatus,
@@ -56,25 +56,16 @@ class AtlasResourcesTests(AtlasResourcesFixture):
             rows, self.topology, self.budget))
 
     def test_c02_delivered_row_identity_is_bound_to_compiler_frame_statistics(self):
-        target = BamfTarget("binary", "TRUE", 1, True)
-        delivered = BamfTrainingRow(
-            BamfModelInput(
-                prefix=None, features=(), eligibility_digest="e" * 64,
-                answer_plan=(
-                    ("generation_binding", GENERATION),
-                    ("maximum_decisions", 2),
-                )),
-            target, None,
-            BamfDeliveryProvenance(
-                row_id="source:actual", source_id="source:fixture",
-                capability_id="capability:fixture", operation_id=None,
-                teacher_strategy=(), requested_count=1,
-                delivered_count=1, rehearsal=None, optimizer_step_seed=73),
-        )
+        fixture = TrainingFixture()
+        fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        fixture.model_generation = GENERATION
+        delivered = fixture.compile(fixture.rows).rows[0]
+        target = delivered.target
         stats = _rows(1)[0].frame_stats
         resource = ResourceRow.from_training_row(
             delivered, stats, generation_binding=GENERATION, delivered_content_sha256="e" * 64)
-        self.assertEqual(resource.row_id, "source:actual")
+        self.assertEqual(resource.row_id, delivered.provenance.row_id)
         self.assertEqual(resource.frame_stats, stats)
         self.assertEqual(resource.target_decisions, 2)
         changed = ResourceRow.from_training_row(
@@ -86,7 +77,9 @@ class AtlasResourcesTests(AtlasResourcesFixture):
         state = RetryState.start(original_plan, retained_candidate_digest='a' * 64,
                                  optimizer_snapshot_digest='b' * 64)
         failure = OOMReceipt('oom:changed-content', original_plan.microbatch_size,
-            original_plan.source_digest, GENERATION, 73, 50 * 1024**3, 0, 720, 'MemoryError')
+            original_plan.source_digest, GENERATION,
+            original_plan.optimizer_step_seed, 50 * 1024**3, 0, 720,
+            'MemoryError')
         restored = []
         def restore(candidate, optimizer, generation):
             restored.append(candidate)

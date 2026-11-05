@@ -2797,3 +2797,143 @@ execution guide.
 
 **Status:** Accepted as the controlling BAMF-0.2 EGM convergence and review-episode
 policy.
+
+## ADR-128 | 2026-11-04 | Expand independent BAMF throughput and distinguish writer continuity from locks
+
+**Status:** Accepted by direct owner instruction on 2026-11-04. Amends the
+concurrency ceilings in ADR-124 and ADR-126; leaves their dependency, review,
+source-gold, actual mutation safety and merge-authority requirements intact.
+
+**Problem:** The original three-open-PR cap and one-candidate-per-lane expectation
+serialized independent agents. Hosted CI also fetched mutable global GitHub PR
+inventory and failed unrelated change sets when its live count/ledger timing
+diverged. Separately, compacted agents sometimes treated the prior agent's
+`ACTIVE` issue, worktree, branch or checkpoint as an exclusive lock held by a
+different agent, declining to resume their own in-flight issue.
+
+**Decision:** Permit up to **twelve** open BAMF implementation PRs overall, with
+no per-lane PR cap; permit up to **six** simultaneous `ACTIVE` items in each lane.
+Within those bounds, independent issue-scoped branches/worktrees and agent
+writers can make progress concurrently. Hosted quality CI checks the static
+flow-control schema/state but does not perform a live
+GitHub PR-inventory reconciliation. The operator still performs the `--live`
+inventory check at actual PR admission and resolves tracked-state drift then.
+Where that optional live endpoint is unavailable (for example local TLS failure),
+an alternative authenticated GitHub read is sufficient; network failure or
+brief ledger lag does not itself prohibit opening an otherwise qualified PR.
+
+**Compaction continuity:** A context compaction, handoff, unchanged `ACTIVE`
+ledger item, previous agent identity, checkpoint comment or recorded worktree
+does **not** grant another actor exclusive ownership of an issue. Recover on
+the same preserved branch/worktree; inspect working-tree changes, local HEAD,
+remote head and any actual concurrent writer before changing shared paths.
+When a successor really is continuing the same work epoch with unchanged Git
+state, it may continue without reacquiring the issue or inventing a lease.
+Checkpoint comments and WIP ledgers are not atomic locks. Independent branches
+on the same issue may exist, but they must not write to the same branch or
+shared file concurrently without explicit coordination. An observed competing
+process or unexpected remote mutation requires reconciliation before writing;
+the mere existence of another worktree or previous agent name does not.
+
+**Executable continuity receipt:** `scripts/bamf/writer_handoff.py` emits a
+versioned JSON handoff bearing issue, execution epoch, canonical worktree path,
+branch, local HEAD, upstream, exact live remote HEAD and content-sensitive dirty
+worktree fingerprint. The resumed worker verifies that snapshot before editing;
+matching state is `CONTINUATION_MATCH`, not a requirement to acquire the issue
+again. A mismatch requires a targeted reconciliation of that field; neither
+stale handoff nor tool/network failure establishes someone else's ownership.
+Live remote verification is required for a positive match. A matching snapshot
+does not grant exclusive process-level lock ownership, so actual concurrent
+writers still require coordination.
+
+**Preserved boundaries:** No forced pushes; no overwrite of another writer's
+uncommitted work; no self-merge, bypass of scoped verification/EGM, or automatic
+neural-training/optimizer/checkpoint mutation. PR-count and WIP expansions are
+throughput permissions, not proof that a specific candidate is ready to merge.
+
+**Implementation:** `AGENTS.md`, `docs/tasks/bamf-0.2/README.md`, the
+flow-control policy, hosted `.github/workflows/quality.yml`, and focused tests.
+
+## ADR-129 | 2026-11-04 | Passing verification remains valid until its dependency surface changes
+
+**Status:** Accepted by direct owner instruction on 2026-11-04.
+
+**Problem:** Several repository suites now cost roughly 10-15 minutes or more.
+Agents and hosted CI have been rerunning them at branch/PR/agent boundaries even
+when no intervening change could affect the behavior those suites established.
+This consumes scarce execution time and serializes parallel work without adding
+evidence.
+
+**Decision:** Treat a successful test receipt as reusable evidence bound to its
+exact tested head, suite identity and environment. A later candidate must rerun
+that suite only when the diff since the tested head intersects the suite's actual
+dependency surface: implementation code, fixtures/goldens, tests, generators,
+dependencies, relevant runtime configuration, or the harness itself. Agent
+handoff/compaction, PR metadata, governance/docs changes, flow-control policy,
+unrelated CI orchestration, and merge commits carrying only such changes do not
+invalidate behavioral suites. Where only a narrow dependency changed, run the
+smallest affected check rather than the broad suite.
+
+**Evidence rule:** If a prior pass is reused, record `TEST_EVIDENCE_REUSED`, the
+prior tested SHA, current candidate SHA, comparison range and why no invalidating
+path changed. Fresh broad verification remains mandatory when dependency impact
+cannot be bounded, the prior receipt is missing/incomplete/untrustworthy, an
+environment dependency changed, or the owner explicitly requests it.
+
+**Hosted implementation:** `quality.yml` classifies the diff before expensive
+verification and skips broad semantic/custody suites when their dependency
+surface is untouched. Static governance/docs/architecture checks may still run.
+Manual workflow dispatch intentionally requests a fresh run. The exhaustive
+semantic workflow is no longer triggered merely because `quality.yml` changed.
+
+**Application to ADR-128/PR #822:** The concurrency, compaction-handoff and CI
+governance changes do not modify Bilqis semantic, Factory, custody, neural, source,
+fixture or runtime behavior. Existing passing expensive-suite evidence therefore
+remains applicable; this change requires only lightweight structural/workflow
+validation, not another broad test campaign.
+
+## ADR-130 | 2026-11-05 | Gate scope expansion, not decomposition
+
+**Status:** Accepted by direct owner instruction on 2026-11-05.
+
+**Problem:** ADR-127 can stop an EGM loop only after substantial work has already
+been spent. But treating issue/branch creation itself as the waste would recreate
+the opposite failure: giant tickets, serialized execution, slow turn-in, late
+failure discovery, and poor parallelism. BAMF's recursive decomposition exists to
+avoid exactly that.
+
+**Decision:** Distinguish **decomposition** from **scope expansion**. A child that
+inherits a strict subset of already-authorized required acceptance and adds no new
+obligation may be given its own issue, branch/worktree, and PR whenever that improves
+parallelism, failure locality, review isolation, turn-in speed, or information yield.
+Its minimal receipt names the parent, exact inherited clauses, and
+`new_acceptance=false`. It does not need to prove that creating the child is itself
+a present blocker.
+
+Only a delta that cannot be traced to existing required acceptance is scope
+expansion. Before spending on that delta, record in at most 120 words the current
+delivery, named requirement/blocker, concrete consequence of deferral, and cheapest
+adequate next step; classify it `PROCEED`, `PARK`, or `DROP`. `PROCEED` means the
+new obligation is required for current delivery/correctness/safety. `PARK` preserves
+only a small pointer until selected. `DROP` ends spend.
+
+New remediation issue bodies should remain concise (about 250 words or less by
+default), pointing to inherited/versioned authority under ADR-118. Crossing 3
+commits, 3 touched files, or 250 net changed lines is a **scope-drift tripwire**, not
+a command to absorb the child back into its parent. Re-check clause traceability:
+if all work is still inherited, continue and decompose again when useful; only the
+untraceable delta requires expansion authority. Discovery of a second independent
+problem gets the same classification.
+
+EGM remains a merge-readiness tool for already-authorized scope. It may discover a
+real defect, but cannot by itself convert a peripheral improvement into a new project
+obligation. This rule suppresses net-new scope creep while preserving aggressive
+decomposition as a throughput strategy.
+
+**Diagnostic spend is also governed:** a manually constructed end-to-end probe is
+not exempt merely because it is not called a test. Repeating an expensive probe with
+unchanged relevant code and inputs adds no evidence and should reuse the prior
+result. Repeated parameter exploration must amortize invariant setup in one process.
+After two unsuccessful full-cost attempts under the same hypothesis, further
+end-to-end execution pauses until a cheaper staged/profiled diagnostic changes the
+evidence. Compaction must preserve in-flight probe status to prevent duplicate runs.

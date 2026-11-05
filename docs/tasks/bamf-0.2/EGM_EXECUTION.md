@@ -49,7 +49,12 @@ behavior-changing repair, remove the stale PASS state and return to `EGM-Pending
 only when the repaired whole candidate is again ready for exact-head review.
 
 If a merge-readiness EGM finds new Blocker/Major defects, record that exact-head
-review and route independently remediable work to durable issues. Repair the whole
+review and classify each finding as inherited scope or expansion. An independently
+executable repair that maps to existing required acceptance may and often should be
+decomposed into its own issue/branch for parallel execution. A valid reviewer finding
+that adds an obligation beyond existing acceptance is not, by itself, authority to
+expand the project; apply the root scope-expansion gate to that delta.
+Repair the whole
 known set before requesting another fresh EGM on the next stable merge candidate.
 A same-context review is not a Goldfish review. If the pinned checkout or an
 independent review is unavailable at merge readiness, keep or add `EGM-Pending`; do
@@ -135,9 +140,11 @@ parent must consume the fix before its next merge-readiness EGM.
 
 A later EGM finding reopens that child only when it demonstrates that the same
 recorded defect still exists or the fix was reverted. A distinct failure mechanism
-or newly exposed gap gets a new remediation issue with its own reproduction and
-acceptance. This keeps the open issue/PR set aligned with actionable work rather
-than accumulating historical review findings.
+or newly exposed gap that still maps to existing required acceptance may get a new
+decomposed remediation issue directly. If it introduces a new obligation, only that
+expansion must pass the scope-expansion gate; otherwise park or drop it. This keeps
+decomposition cheap without turning every technically valid review observation into
+new project scope.
 When the authorized parent candidate branch can take the repair without violating
 writer ownership, apply the fix there and use the remediation issue as the durable
 finding record. Create a stacked remediation PR only when isolation is materially

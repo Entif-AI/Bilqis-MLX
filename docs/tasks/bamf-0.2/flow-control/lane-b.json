@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "05e31a576e3432e4238c9b4477a70d70ec4fc487",
-  "updated_at": "2026-11-03T19:25:00Z",
+  "observed_unified": "e58dd31574a6ee2ce0b3e35f92293a09befd15c1",
+  "updated_at": "2026-11-05T05:30:58.846723+00:00",
   "exception": null,
   "items": [
     {
@@ -123,12 +123,12 @@
     },
     {
       "issue": 711,
-      "pr": 806,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "12c1c03b",
       "summary": "B09.2 remediation delivered as ready PR #806: the participation owner derives per-step participation and optimizer masks from executed production authority instead of a caller assertion, on current unified.",
       "resume_trigger": "The bounded repair is consumed into PR #692 or explicitly selected for focused integration under ADR-125.",
-      "closed_pr": 727,
+      "closed_pr": 806,
       "preserved_branch": "codex/remediation-711-participation-20261103",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
       "close_reason": "EGM-Mitigation issue #711"
@@ -248,11 +248,11 @@
     {
       "issue": 460,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "8c729176",
-      "preserved_branch": "codex/bamf02-b-460-qualified-reads-20261103-resume",
-      "summary": "Independent B08 source-context stage verified23/23; full production-hit binding remains active on its isolated issue branch.",
-      "resume_trigger": null
+      "state": "WAITING",
+      "head_sha": "7984d7872d49b3987284692f5398da71f2a72605",
+      "preserved_branch": "codex/bamf02-b-460-qualified-reads-20261103",
+      "summary": "Source-hit qualification traced after accepted #691/#456; paused at canonical A03 schema structural owner (417 LoC), already covered by C01/#347.",
+      "resume_trigger": "C01/#347 canonical released_frame_schemas structural repair is accepted through reviewed unified; then reactivate and synchronize once before source-read implementation."
     },
     {
       "issue": 481,
@@ -266,30 +266,51 @@
     },
     {
       "issue": 708,
-      "pr": 804,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "7d8e3b98",
       "preserved_branch": "codex/remediation-708-feature-authority-20261103",
       "summary": "B13.5 remediation delivered as ready PR #804: the accepted-generation feature receipt is rederived from the admitted source release and retained custody, so a caller-created candidate cannot ratify its own factor-map digest.",
-      "resume_trigger": "PR #804 is merged or closed; the accepted-generation feature authority continues on owner issue #697."
+      "resume_trigger": "PR #804 closed; the consolidated remediation continues in PR #809 and the accepted-generation feature authority continues on owner issue #697.",
+      "closed_pr": 804
     },
     {
       "issue": 709,
-      "pr": 805,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "dc7a2c62",
       "preserved_branch": "codex/remediation-709-cold-resume-20261103",
       "summary": "B13.2 remediation delivered as ready PR #805: the cold-resume witness starts from published accepted-generation custody, cold resumes in a clean process, executes the next controlled optimizer step and publishes the successor generation, with negative controls for synthetic direct save-load.",
-      "resume_trigger": "PR #805 is merged or closed; the B13.2 cold-resume witness continues on owner issue #479."
+      "resume_trigger": "PR #805 closed; the consolidated remediation continues in PR #809 and the B13.2 cold-resume witness continues on owner issue #479.",
+      "closed_pr": 805
     },
     {
       "issue": 710,
-      "pr": 807,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "05e31a576e3432e4238c9b4477a70d70ec4fc487",
       "preserved_branch": "codex/remediation-710-execution-provenance-20261103",
       "summary": "B12.2 remediation delivered as ready PR #807, stacked on the #711 B09.2 owner: every candidate optimizer step binds to owner-issued execution provenance, so a raw caller mask cannot become final candidate truth.",
+      "resume_trigger": "PR #807 closed; the consolidated remediation continues in PR #809.",
+      "closed_pr": 807
+    },
+    {
+      "issue": 708,
+      "pr": 809,
+      "state": "ACTIVE",
+      "head_sha": "b7c802b0",
+      "preserved_branch": "codex/remediation-egm-708-711-integration-20261103",
+      "summary": "Consolidated #708/#709/#710/#711 remediation candidate remains active: mechanically clean at the recorded head, but positive Factory/C05 source authority, B11/B08 execution authority, and production continuation evidence remain unfinished.",
       "resume_trigger": null
+    },
+    {
+      "issue": 784,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "e58dd31574a6ee2ce0b3e35f92293a09befd15c1",
+      "summary": "Resume preserved runner package-context candidate from808a without touching unrelated dirty lane metadata; isolated issue feature consumes current reviewed unified before code adoption and complete regression proof.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b-784-runner-context-20261105"
     },
     {
       "issue": 451,
@@ -297,7 +318,7 @@
       "state": "ACTIVE",
       "head_sha": "0956114dd35f6a368a129a9c6cf179e48a536b65",
       "preserved_branch": "codex/bamf02-b-451-selector-custody-20261103",
-      "summary": "B05.3 selected for merge-readiness continuation under ADR-128; synchronize current unified and evaluate proof dependencies.",
+      "summary": "B05.3 selected for merge-readiness continuation; evaluate proof dependencies against current unified.",
       "resume_trigger": null
     }
   ]
