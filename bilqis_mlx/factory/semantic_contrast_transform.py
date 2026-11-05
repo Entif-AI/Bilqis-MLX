@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from types import MappingProxyType
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.semantics.frame_schema import BindingState, FrameInstance, RoleOccurrence
@@ -112,7 +113,7 @@ def _morphology(source: ContrastSourceFrame, variation: AllowedVariation) -> tup
     return {"morphology": variation.morphology}, "source-authorized-morphology-alternative"
 
 
-_TRANSFORMS = {
+_TRANSFORMS = MappingProxyType({
     ContrastFamily.ROLE_SWAP: _role_swap,
     ContrastFamily.CARDINALITY_CHANGE: _cardinality,
     ContrastFamily.SCOPE_NEGATION: _scope,
@@ -120,7 +121,7 @@ _TRANSFORMS = {
     ContrastFamily.PLANNED_OCCURRED: _status,
     ContrastFamily.MISSING_NEGATIVE: _observation,
     ContrastFamily.MORPHOLOGY_ALTERNATIVE: _morphology,
-}
+)
 
 
 def apply_variation(source: ContrastSourceFrame, variation: AllowedVariation) -> tuple[ContrastVariant, str]:
