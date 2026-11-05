@@ -81,6 +81,20 @@ class EvidenceFrameTests(unittest.TestCase):
         self.assertEqual(result.lessons[3].gold, "60")
         self.assertTrue(result.lessons[3].check())
 
+    def test_non_hour_report_does_not_mint_hour_to_minute_gold(self):
+        record = replace(
+            self.snapshot.records[0],
+            reported_value=ReportedValue("15", "fixture:admitted-unit:minute"),
+            unit_label="min",
+        )
+        with self.assertRaises(BilqisError) as caught:
+            compile_evidence_lessons(
+                replace(self.snapshot, records=(record,)), self.rights, RELEASE)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_EVIDENCE_DURATION_UNIT_UNQUALIFIED",
+        )
+
     def test_planned_and_unknown_duration_are_distinct_from_completed_and_zero(self):
         record = self.snapshot.records[0]
         planned = replace(record, status="PLANNED")
@@ -190,11 +204,25 @@ class EvidenceFrameTests(unittest.TestCase):
             adjudication_ref="adjudication:fixture-002",
             source_span=SourceSpan(0, len(PUBLIC_FIXTURE_SOURCE)),
         )
-        independent = compile_evidence_lessons(
+        same_episode_different_adjudication = compile_evidence_lessons(
             replace(self.snapshot, records=(original, other)), self.rights, RELEASE)
+        with self.assertRaises(ValueError):
+            split_evidence_families(
+                same_episode_different_adjudication,
+                train_record_ids=(original.record_id,),
+                heldout_record_ids=(other.record_id,),
+            )
+
+        separate_episode = replace(
+            other,
+            source_span=SourceSpan(
+                len(PUBLIC_FIXTURE_SOURCE), 2 * len(PUBLIC_FIXTURE_SOURCE)),
+        )
+        independent = compile_evidence_lessons(
+            replace(self.snapshot, records=(original, separate_episode)), self.rights, RELEASE)
         receipt = split_evidence_families(
             independent, train_record_ids=(original.record_id,),
-            heldout_record_ids=(other.record_id,))
+            heldout_record_ids=(separate_episode.record_id,))
         self.assertNotEqual(receipt.train_family_ids, receipt.heldout_family_ids)
 
     def test_fresh_challenge_splits_source_families_before_template_groups(self):
@@ -204,6 +232,8 @@ class EvidenceFrameTests(unittest.TestCase):
             original,
             record_id="fixture-002",
             adjudication_ref="adjudication:fixture-002",
+            source_span=SourceSpan(
+                len(PUBLIC_FIXTURE_SOURCE), 2 * len(PUBLIC_FIXTURE_SOURCE)),
         )
         result = compile_evidence_lessons(
             replace(self.snapshot, records=(original, paraphrase, other)),

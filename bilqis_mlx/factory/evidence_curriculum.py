@@ -112,7 +112,9 @@ class EvidenceChallengePlan:
     post_exam_teachable_lesson_ids: tuple[str, ...]
 
 
-def _minutes(decimal: str) -> tuple[str, EvidenceDerivation]:
+def _minutes(decimal: str, unit_label: str) -> tuple[str, EvidenceDerivation]:
+    if unit_label != "h":
+        _fail("BAMF_EVIDENCE_DURATION_UNIT_UNQUALIFIED")
     try:
         value = Decimal(decimal)
     except InvalidOperation:
@@ -216,7 +218,7 @@ def _lessons(snapshot: BamfEvidenceSnapshot, record: EvidenceRecord) -> tuple[Ev
     if record.reported_value.decimal is None:
         rows.append(("minutes", "Convert the reported duration to minutes.", "UNKNOWN", None))
     else:
-        value, derivation = _minutes(record.reported_value.decimal)
+        value, derivation = _minutes(record.reported_value.decimal, record.unit_label)
         derivation = EvidenceDerivation(
             derivation.operator_id, derivation.input_value,
             record.reported_value.unit_ref, derivation.output_value, derivation.output_unit)

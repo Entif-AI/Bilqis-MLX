@@ -12,6 +12,7 @@ from hashlib import sha256
 import re
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
+from bilqis_mlx.semantics.frame_schema import occurrence_id
 
 
 SCHEMA = "BamfEvidenceSnapshot/v1"
@@ -180,12 +181,12 @@ class EvidenceDerivation:
 
 
 def source_family_id(snapshot: BamfEvidenceSnapshot, record: EvidenceRecord) -> str:
-    """One adjudicated source episode stays one family across renderings."""
-    return "evidence-family:" + _digest(
-        snapshot.source_manifest_cid,
-        snapshot.source_byte_digest,
-        record.adjudication_ref,
+    """One source episode stays one family across interpretation/adjudication."""
+    source_instance_id = "bravo-evidence:" + _digest(
+        snapshot.source_manifest_cid, snapshot.source_byte_digest,
     )
+    return "evidence-family:" + occurrence_id(
+        source_instance_id, (record.source_span.start, record.source_span.end))
 
 
 def verification_state(record: EvidenceRecord) -> str:
