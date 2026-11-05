@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "05e31a576e3432e4238c9b4477a70d70ec4fc487",
-  "updated_at": "2026-11-04T17:06:00Z",
+  "observed_unified": "e58dd31574a6ee2ce0b3e35f92293a09befd15c1",
+  "updated_at": "2026-11-05T05:30:58.846723+00:00",
   "exception": null,
   "items": [
     {
@@ -302,6 +302,15 @@
       "preserved_branch": "codex/remediation-egm-708-711-integration-20261103",
       "summary": "Consolidated #708/#709/#710/#711 remediation candidate remains active: mechanically clean at the recorded head, but positive Factory/C05 source authority, B11/B08 execution authority, and production continuation evidence remain unfinished.",
       "resume_trigger": null
+    },
+    {
+      "issue": 784,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "e58dd31574a6ee2ce0b3e35f92293a09befd15c1",
+      "summary": "Resume preserved runner package-context candidate from808a without touching unrelated dirty lane metadata; isolated issue feature consumes current reviewed unified before code adoption and complete regression proof.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b-784-runner-context-20261105"
     }
   ]
 }
