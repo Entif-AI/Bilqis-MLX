@@ -103,8 +103,8 @@
       "issue": 719,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "fe5f4a1380ff14dabb98d3b07fb00ffcc4bc442a",
-      "summary": "B14.4 EGM remediation: bind cache rebuild eligibility to current B13 accepted-generation custody plus A12/source-rights and context-policy authority.",
+      "head_sha": "207c61c0934b5ae464c10dc14aa01ddd19adcb9e",
+      "summary": "B14.4 EGM remediation locally complete: cache rebuild eligibility is issued only from live B13 accepted-generation custody, signed A12 source clearance and current context/policy authority; caller-minted matching receipts fail closed.",
       "resume_trigger": null,
       "preserved_branch": "codex/719-cache-eligibility-authority-20261105"
     },
