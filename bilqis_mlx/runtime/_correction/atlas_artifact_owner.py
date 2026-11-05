@@ -127,7 +127,9 @@ def _packed_frame_node(row: CompiledFrameBatch, packed) -> ArtifactNode:
         *(ref for item in sidecar.constituents for ref in item.source_references),
     }
     dependencies = {
-        DependencyRef(DependencyKind.SOURCE, "source:" + ref)
+        DependencyRef(
+            DependencyKind.SOURCE,
+            ref if ref.startswith("source:") else "source:" + ref)
         for ref in source_refs
     }
     dependencies.update((

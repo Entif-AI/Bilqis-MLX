@@ -155,6 +155,13 @@ class FrameEncoderTests(unittest.TestCase):
                       if position.packed is not None)
         owner = compiled.packed_frame_artifact_owner
         node = owner.node_for(packed)
+        canonical_member_sources = {
+            ref for item in packed.sidecar.constituents
+            for ref in item.source_references if ref.startswith("source:")}
+        node_sources = {ref.key for ref in node.immediate_dependencies
+                        if ref.kind.value == "SOURCE"}
+        self.assertTrue(canonical_member_sources <= node_sources)
+        self.assertFalse(any(key.startswith("source:source:") for key in node_sources))
         source = next(ref for ref in node.immediate_dependencies
                       if ref.kind.value == "SOURCE")
         queue = owner.apply_correction(_event(source), AUTHORITY)
