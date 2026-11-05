@@ -58,3 +58,16 @@ and no broad-suite PASS is claimed. The runner's required focused14/14 and actua
 motif5/5 evidence remains distinct. Logs: `scripts-suite.log` and
 `baseline-affected-scripts.log`. This independent import-migration repair is tracked by #844; source-owned test bodies are not rewritten to hide runner
 context defects.
+
+
+## Independent review and CI enrollment
+
+Fresh pinned EGM at `54507813` returns PASS with no unsettled Blocker/Major,
+episode `B784-runner-20261105` round1/5. Required authority/persona/standard reads
+completed. The reviewer inspected the red/green receipts without rerunning tests
+or independently revalidating the external artifact. The documentation signature
+nit is corrected. The new collision/namespace test file is explicitly enrolled
+next to the original runner test in portable CI; no existing target is removed.
+Runtime source and test bodies remain byte-identical to reviewed/tested source;
+passing14/14 and5/5 evidence is reused under ADR-129. Hosted execution remains
+the final CI gate. The unrelated three baseline imports are tracked by #844.

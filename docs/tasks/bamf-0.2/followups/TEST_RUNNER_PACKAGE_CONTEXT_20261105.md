@@ -13,7 +13,7 @@ Modify `scripts/run_tests.py` only at these responsibilities:
 1. `_module_name` retains the original relative-path digest. If every parent path
    segment is a Python identifier, prepend the full native dotted parent package;
    otherwise keep the original top-level synthetic name. Root files also keep it.
-2. Add `_verify_package_context(name, path, root)`. For each native parent prefix,
+2. Add `_verify_package_context(name, root)`. For each native parent prefix,
    use standard `importlib.util.find_spec` and `importlib.import_module`. Require
    the expected source directory first in both spec search locations and loaded
    `__path__`, with every allowed search path inside the repository root. This
@@ -32,6 +32,10 @@ Modify `scripts/run_tests.py` only at these responsibilities:
    unittest path. If re-execution of the same file fails, restore its previous
    synthetic module entry; remove only the newly installed entry when none
    existed. Do not remove an unrelated module installed by another action.
+
+Modify `.github/workflows/quality.yml` to add the new package-collision test
+file immediately after the existing `scripts/tests/test_run_tests.py` target in
+the portable custody/release selection. Retain every existing target and gate.
 
 Root precedence, ignored-directory selection, directory and dotted targets,
 source-only geometry shim, duplicate-basename discovery, imported-TestCase
