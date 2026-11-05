@@ -2426,3 +2426,514 @@ recorded in `ADR.md`.
 
 **Status:** Accepted as the controlling BAMF-0.2 lane flow-control and parked-PR
 discipline.
+## ADR-125 | 2026-11-02 | Remediation artifacts close at local acceptance; parent owns aggregate EGM
+
+**Problem:** BAMF review findings had begun to accumulate as open issues and draft
+PRs even after their exact defects were repaired. Those artifacts were being kept
+open until the entire parent feature, sibling set, dependency graph and final EGM
+cycle completed. That turns GitHub's open set into historical storage. Every agent
+that searches for related open issues or current PRs then pays a growing discovery,
+classification and context cost for work that is already finished.
+
+**Decision:** Open issues and PRs represent the current actionable working set.
+Historical provenance belongs in closed issues and merged/closed PRs.
+
+A remediation issue closes when its exact recorded defect has been reproduced,
+repaired, regression-covered and verified on a durable PR/head. The issue does not
+remain open merely because a parent issue or integration PR still awaits EGM,
+sibling remediation, dependency acceptance or final human merge. The linked PR and
+closed issue retain the implementation and provenance receipt.
+
+A remediation PR remains draft only while its own scoped implementation is
+incomplete or a known Blocker/Major against that scope remains unresolved. Parent
+EGM debt is not a draft condition. Once the PR's scoped acceptance is satisfied,
+mark it ready for review. Merge or close it promptly when its change is consumed by
+the intended parent/candidate branch. Do not retain an open PR merely as evidence.
+Do not create a separate remediation PR merely to preserve a review finding when
+the authorized parent candidate branch can safely accept the fix under current
+writer coordination. The remediation issue is the durable finding record. A stacked
+PR is justified when it provides necessary writer isolation, branch ownership, or
+focused review; otherwise repair the parent candidate directly.
+Because the reviewed BAMF integration trunk is not the repository default branch,
+GitHub closing keywords are not sufficient closeout machinery. Operators must
+explicitly verify the linked remediation issue state and close satisfied children
+after their repair is accepted or consumed.
+
+The owning parent issue/PR carries aggregate merge-readiness state, including the
+fresh pinned EGM result. A later EGM or integration finding reopens a closed
+remediation issue only when it proves the same original defect still exists, was
+reverted, or its stated acceptance was false. A different failure mechanism,
+newly exposed gap or new acceptance failure gets a new remediation issue with its
+own reproduction and bounded acceptance.
+
+**Relationship to ADR-121:** ADR-121 remains the general issue-lifecycle contract.
+For remediation children, this ADR narrows ADR-121's earlier requirement that
+accepted work first be integrated into reviewed unified before issue closure. A
+durable verified remediation PR is sufficient to close the child issue; the parent
+still cannot claim acceptance until it consumes that fix and satisfies its own
+integration and EGM gates.
+
+**Operational effect:** The open issue/PR set should approximate executable work
+plus meaningful parent/integration containers. Review sweeps search a bounded current
+frontier instead of repeatedly rediscovering completed defects. EGM can continue to
+unlock new defects without causing the backlog to grow monotonically.
+
+**Human ratification:** The project owner explicitly directed this lifecycle on
+2026-11-02 after observing that retaining repaired children until whole-program
+completion was neither sensible nor scalable.
+
+**Status:** Accepted as the remediation issue/PR lifecycle for BAMF-0.2 and
+successor Bilqis-MLX work.
+
+## ADR-126 | 2026-11-02 | Bound integration inventory and gate PR admission
+
+**Scope:** BAMF-0.2 implementation across Lanes A, B and C. This decision governs
+open implementation-PR inventory, PR admission, blocked-candidate retirement and
+queue-drain behavior. ADR-124 continues to govern active implementation WIP and
+parked-branch mutation. ADR-125 continues to govern remediation lifecycle.
+
+**Problem:** ADR-124 limits `ACTIVE` implementation work but deliberately excludes
+`READY`, `WAITING`, `BLOCKED` and `TURNED_IN` items from WIP. This prevents
+parked work from consuming continuous engineering capacity, but it does not bound
+integration inventory. A lane can therefore satisfy its ACTIVE WIP limit while
+accumulating arbitrarily many open pull requests.
+
+Open PRs impose integration cost even when nobody is modifying them. They enlarge
+the review frontier, age against the reviewed integration trunk, accumulate
+conflicts, obscure merge priority, increase discovery and reconciliation work, and
+encourage remediation around candidates that are not presently capable of
+integration.
+
+An implementable issue is not automatically entitled to an open pull request.
+Issues define durable work and ownership. Commits preserve implementation
+provenance. Pull requests are temporary integration vehicles.
+
+**Decision:** BAMF tracks **active implementation WIP** and **open
+implementation-PR inventory** as separate quantities. ADR-124's lane-local ACTIVE
+ceiling remains unchanged.
+
+The normal open implementation-PR ceiling is **three total across BAMF**, with at
+most one current integration candidate for each of Lanes A, B and C. The unified
+integration PR into `main` is a separate program-level container and does not
+consume one of these three implementation slots. The ceiling is a maximum, not a
+target. A lane does not open a PR merely because a leaf implementation is complete.
+
+### PR admission
+
+A new implementation PR may be opened only when all of the following are true:
+
+- an implementation-PR slot is available;
+- the candidate has a durable owning issue and implementation head;
+- every hard prerequisite required for its current integration boundary is
+  consumable;
+- the candidate has synchronized with the reviewed integration trunk when its
+  contract requires synchronization;
+- its scoped acceptance and affected verification are green;
+- no known Blocker or Major owned by the candidate remains unresolved;
+- no existing open PR already owns the same integration delta;
+- opening the PR creates a credible path to integration rather than durable
+  parking.
+
+Implementation may continue on an authorized branch without an open PR. Completion
+of a leaf does not override PR admission.
+
+### Blocked and waiting work
+
+A branch, commit, issue and verification receipt are sufficient to preserve blocked
+or waiting implementation.
+
+An implementation PR that becomes materially blocked by another owner or by an
+external prerequisite SHOULD be closed after its exact head and continuation
+trigger are preserved. Reopen the PR or create a new integration vehicle when the
+trigger is satisfied.
+
+A long-lived open `WAITING` or `BLOCKED` PR requires an explicit exception that
+identifies why an open PR is required instead of durable branch/issue custody, the
+blocking condition, the exact resume trigger, the authority for retaining the PR,
+and the expiry condition. Review convenience and historical provenance are not
+sufficient exceptions.
+
+### Remediation and EGM
+
+ADR-125 remains controlling. A review finding may receive a durable remediation
+issue without receiving another PR. Repair the authorized parent candidate directly
+when writer coordination permits. A stacked remediation PR is justified only when
+independent writer custody, branch ownership, necessary review isolation or another
+concrete integration constraint requires it. Once consumed, merge or close it
+promptly.
+
+Fresh pinned EGM remains a merge-readiness gate. Do not create or retain additional
+PR inventory merely to obtain separate EGM receipts for individual repairs.
+Complete the known engineering and remediation queue first, stabilize the
+candidate, then obtain fresh exact-head EGM for the whole merge candidate.
+
+### Drain mode
+
+If open BAMF implementation-PR inventory exceeds the normal ceiling, BAMF enters
+**DRAIN** mode automatically.
+
+While DRAIN is active:
+
+- no new implementation PR may be opened unless it replaces another PR that is
+  closed in the same operation or carries an explicit owner-authorized exception;
+- new implementation work may proceed only when it does not increase open PR
+  inventory;
+- priority goes to merging, consuming, repairing in place, closing, superseding or
+  directly unlocking existing integration candidates;
+- decomposition and issue creation may continue when they clarify durable
+  ownership.
+
+DRAIN ends when live open implementation-PR inventory is at or below the normal
+ceiling. The PRs open at adoption are transitional grandfathered inventory only;
+grandfathering permits them to drain, not to reproduce.
+
+### Mechanical enforcement
+
+Repository-declared flow state is not sufficient evidence of compliance. The BAMF
+flow-control checker MUST reconcile its machine-readable ledger against live GitHub
+state.
+
+The live gate fails when an open BAMF implementation PR is absent from the ledger,
+the ledger retains a closed or merged PR as open inventory, a newly admitted PR
+violates DRAIN, a non-grandfathered `WAITING` or `BLOCKED` open PR lacks its
+required retention exception, or multiple PRs claim an unapproved integration
+surface.
+
+CI MUST run the live reconciliation. During the initial drain epoch, the current
+open implementation PR set is explicitly grandfathered so existing candidates can
+merge or close; the global overage itself does not block the very merges needed to
+reduce it. No new implementation PR is grandfathered automatically.
+
+### Operational effect
+
+Issue decomposition may remain fine-grained without producing matching PR
+cardinality.
+
+**Issues optimize ownership and specification. Commits optimize provenance and
+reversibility. PRs optimize integration.**
+
+**Relationship to ADR-124:** ADR-124 continues to limit simultaneous branch
+mutation. Its definition of ACTIVE WIP is unchanged. This ADR adds a separate bound
+on integration inventory.
+
+**Relationship to ADR-125:** ADR-125 continues to govern remediation closeout and
+parent-owned aggregate EGM. This ADR adds admission and inventory controls that
+prevent remediation artifacts from recreating the same queue growth elsewhere.
+
+**Human ratification:** The project owner explicitly directed this decision on
+2026-11-02 after reviewing ADR-124/125 and requiring both a new ADR and stronger
+mechanical enforcement.
+
+**Initial drain attempt (reversed):** The first implementation temporarily
+closed 17 parked `WAITING` PRs after preserving their branch/head/issue/resume
+custody. This was an incorrect interpretation of DRAIN. The project owner clarified
+that existing candidates must remain open while pinned EGM, remediation and
+merge-readiness work proceeds. All 17 PRs were reopened at their original exact
+heads; the implementation inventory returned to the 19 adoption-time candidates,
+all of which remain grandfathered for this drain epoch. See the owner clarification
+below.
+
+**Status:** Accepted as the controlling BAMF-0.2 integration-inventory and PR
+admission policy.
+
+### ADR-126 Clarification | 2026-11-02 | Drain through EGM and merge, not bulk closure
+
+**Owner clarification:** DRAIN means stop admitting new implementation PRs and reduce
+existing inventory by satisfying its merge requirements, including fresh pinned EGM,
+repairing candidates in place, and merging eligible candidates. It does **not** mean
+closing every PR whose flow state is `WAITING`.
+
+A PR awaiting required EGM review or other merge-readiness evidence is still an
+actionable integration candidate. EGM review is a merge prerequisite, not a reason
+to close the PR. Keep such candidates open while the authorized EGM/repair/merge
+process is active. Do not close a PR solely to make the inventory number smaller or
+to make the checker report NORMAL.
+
+Close a parked PR only when it is genuinely superseded, duplicate, no longer
+selected for integration, materially blocked with no active EGM/merge path, or
+otherwise explicitly directed by the project owner. Preserve its exact head,
+branch, issue and resume trigger before closure.
+
+The bulk closure of 17 `WAITING` PRs performed during the first ADR-126
+implementation on 2026-11-02 was an incorrect interpretation and was reversed.
+All 17 PRs were reopened at their original heads. The existing 19 implementation
+PRs are the one-time grandfathered drain inventory; the normal ceiling of three
+still blocks new admission. The drain proceeds through EGM, repair and merge, not
+through summary closure. This correction supersedes any contrary initial-drain
+description in the first implementation of ADR-126.
+## ADR-127 | 2026-11-03 | EGM review episodes are bounded, persistent, and root-cause routed
+
+**Scope:** BAMF-0.2 implementation and merge-readiness review. This decision
+governs how fresh-context Goldfish review is counted, invalidated, repeated, and
+terminated across repair commits. ADR-125 continues to govern remediation
+lifecycle and parent-owned aggregate EGM. ADR-126 continues to govern PR
+inventory and drain behavior.
+
+**Problem:** BAMF pins Google Elephant-Goldfish Model commit
+`b3a35956759bf7f024af2ff061b2e0b44b438e4c` for reviewer/persona
+reproducibility. That historical review-loop implementation repeats until zero
+findings or explicit human halt. In BAMF practice, a whole-candidate review could
+find one new Major, cause a repair and new exact head, then begin another
+apparently fresh review cycle with no durable episode counter. Exact-head
+reproducibility therefore interacted with repair churn as an accidental liveness
+bug: changing the candidate revision could erase the operational history of how
+many whole-candidate review rounds had already occurred.
+
+The same failure pattern appears when mechanical proof gaps, shared-contract
+defects, or unstable parent assumptions are repeatedly handed back to Goldfish as
+if each were a new local semantic question. This spends fresh-context review on
+facts that deterministic tooling or one canonical owner can settle, and can turn
+review into an expanding remediation tree rather than a bounded merge-readiness
+gate.
+
+**Decision:** Preserve the pinned `b3a359...` checkout for historical
+reproducibility of reviewer personas and standards, but do not inherit its
+unbounded termination behavior as BAMF orchestration policy.
+
+One merge-candidate lineage owns one persistent EGM review episode across ordinary
+repair commits. The episode identity and round count survive exact-head changes
+that repair findings from that same lineage. A new Git SHA does not reset the
+episode.
+
+The default episode cap is **five complete whole-candidate Goldfish rounds**.
+One complete round with no unsettled Blocker/Major and no requested reviewer
+missing or failed is sufficient for BAMF implementation merge readiness. At the
+five-round cap, or when review churn is detected, automatic Goldfish review stops.
+The candidate returns to design or requires explicit human authority to continue.
+Rewriting, rebasing, merge-forwarding, or otherwise changing target bytes does not
+silently mint another episode.
+
+**Churn** exists when a later blocking finding reverses or materially conflicts
+with a repair made to satisfy an earlier finding at the same ownership locus, or
+when successive rounds repeatedly move the same contract boundary instead of
+converging. Churn is a design/control signal, not a reason to consume an unlimited
+number of additional reviewers.
+
+### Finding basis and ownership
+
+Every Blocker/Major must identify at least one blocking basis:
+
+- a violated named requirement, invariant, or authority;
+- a concrete in-scope failure scenario; or
+- a missing required ownership, interface, or acceptance seam whose absence
+  prevents correct implementation.
+
+A reviewer preference, speculative future feature, or generalized desire for
+additional future-proofing is not blocking by itself.
+
+Before repair, classify the finding locus as:
+
+- `TARGET_LOCAL`;
+- `SHARED_CONTRACT`;
+- `PARENT_INTEGRATION`;
+- `AUTHORITY_GAP`; or
+- `MECHANICAL_PROOF`.
+
+Target-local defects may be repaired at the candidate. Shared-contract,
+parent-integration, and authority defects are promoted to their canonical owner;
+affected descendants pause rather than independently encoding competing local
+repairs. If multiple late findings share one root premise or canonical owner,
+promote one systemic finding and treat only the impacted subtree as stale.
+
+### Proof routing
+
+Use the cheapest proof mechanism capable of establishing the invariant.
+Traceability, schema shape, counts, contract mirrors, source census, dependency
+readiness, file/ABI identity, and other mechanically decidable facts belong in
+validators, tests, or focused audits before Goldfish. A `MECHANICAL_PROOF`
+finding closes through deterministic red/green proof and does not require a fresh
+Goldfish round solely because its implementation changed.
+
+Goldfish remains the review mechanism for adversarial semantic ambiguity, hidden
+ownership, unsafe integration behavior, cross-boundary failure modes, and
+implementation-readiness questions that deterministic proof cannot establish.
+
+When the same mechanically recognizable defect class appears repeatedly, encode
+that lesson in executable validation rather than paying fresh review cost every
+time.
+
+### Semantic staleness
+
+Review applicability is invalidated by semantic impact, not arbitrary byte drift.
+Classify candidate changes as:
+
+- `NONSEMANTIC`: prose, formatting, bookkeeping, receipt/link cleanup. Existing
+  review remains applicable.
+- `MECHANICAL_CONFORMANCE`: machine-checkable traceability, mirror, census,
+  schema, or identity repair. Deterministic proof is required; full fresh EGM is
+  not required solely for this change.
+- `LOCAL_SEMANTIC`: meaning or behavior changes inside one owned boundary.
+  Re-review that scope.
+- `DEPENDENCY_SEMANTIC`: consumed authority, interface, or source meaning
+  changed. Re-review only impacted consumers.
+- `ARCHITECTURE`: ownership, decomposition, or topology changed. Return the
+  affected scope to design before implementation review resumes.
+
+An unrelated reviewed-unified advance does not by itself stale a parked
+candidate.
+
+### Durable episode evidence
+
+The owning issue records the episode ID, monotonic round count, latest reviewed
+head, unresolved finding IDs/loci, and current disposition. That state survives
+agent turnover and context compaction. Historical EGM receipts remain valid
+provenance under the method/tool pin recorded when they were produced; this ADR
+does not retroactively relabel them.
+
+**Relationship to ADR-125:** ADR-125 already makes the parent candidate the owner
+of aggregate EGM and prevents every remediation child from retaining its own
+review queue. ADR-127 adds a finite review budget and root-cause routing to that
+parent-owned aggregate review.
+
+**Relationship to ADR-126:** ADR-126 drains integration inventory through EGM,
+repair, and merge rather than bulk closure. ADR-127 prevents EGM itself from
+becoming an unbounded reason that grandfathered integration candidates never
+leave DRAIN.
+
+**Human ratification:** On 2026-11-03 the project owner explicitly challenged the
+absence of an ADR for this governance change. This entry records the controlling
+decision rather than leaving the behavior only in agent instructions and an
+execution guide.
+
+**Status:** Accepted as the controlling BAMF-0.2 EGM convergence and review-episode
+policy.
+
+## ADR-128 | 2026-11-04 | Expand independent BAMF throughput and distinguish writer continuity from locks
+
+**Status:** Accepted by direct owner instruction on 2026-11-04. Amends the
+concurrency ceilings in ADR-124 and ADR-126; leaves their dependency, review,
+source-gold, actual mutation safety and merge-authority requirements intact.
+
+**Problem:** The original three-open-PR cap and one-candidate-per-lane expectation
+serialized independent agents. Hosted CI also fetched mutable global GitHub PR
+inventory and failed unrelated change sets when its live count/ledger timing
+diverged. Separately, compacted agents sometimes treated the prior agent's
+`ACTIVE` issue, worktree, branch or checkpoint as an exclusive lock held by a
+different agent, declining to resume their own in-flight issue.
+
+**Decision:** Permit up to **twelve** open BAMF implementation PRs overall, with
+no per-lane PR cap; permit up to **six** simultaneous `ACTIVE` items in each lane.
+Within those bounds, independent issue-scoped branches/worktrees and agent
+writers can make progress concurrently. Hosted quality CI checks the static
+flow-control schema/state but does not perform a live
+GitHub PR-inventory reconciliation. The operator still performs the `--live`
+inventory check at actual PR admission and resolves tracked-state drift then.
+Where that optional live endpoint is unavailable (for example local TLS failure),
+an alternative authenticated GitHub read is sufficient; network failure or
+brief ledger lag does not itself prohibit opening an otherwise qualified PR.
+
+**Compaction continuity:** A context compaction, handoff, unchanged `ACTIVE`
+ledger item, previous agent identity, checkpoint comment or recorded worktree
+does **not** grant another actor exclusive ownership of an issue. Recover on
+the same preserved branch/worktree; inspect working-tree changes, local HEAD,
+remote head and any actual concurrent writer before changing shared paths.
+When a successor really is continuing the same work epoch with unchanged Git
+state, it may continue without reacquiring the issue or inventing a lease.
+Checkpoint comments and WIP ledgers are not atomic locks. Independent branches
+on the same issue may exist, but they must not write to the same branch or
+shared file concurrently without explicit coordination. An observed competing
+process or unexpected remote mutation requires reconciliation before writing;
+the mere existence of another worktree or previous agent name does not.
+
+**Executable continuity receipt:** `scripts/bamf/writer_handoff.py` emits a
+versioned JSON handoff bearing issue, execution epoch, canonical worktree path,
+branch, local HEAD, upstream, exact live remote HEAD and content-sensitive dirty
+worktree fingerprint. The resumed worker verifies that snapshot before editing;
+matching state is `CONTINUATION_MATCH`, not a requirement to acquire the issue
+again. A mismatch requires a targeted reconciliation of that field; neither
+stale handoff nor tool/network failure establishes someone else's ownership.
+Live remote verification is required for a positive match. A matching snapshot
+does not grant exclusive process-level lock ownership, so actual concurrent
+writers still require coordination.
+
+**Preserved boundaries:** No forced pushes; no overwrite of another writer's
+uncommitted work; no self-merge, bypass of scoped verification/EGM, or automatic
+neural-training/optimizer/checkpoint mutation. PR-count and WIP expansions are
+throughput permissions, not proof that a specific candidate is ready to merge.
+
+**Implementation:** `AGENTS.md`, `docs/tasks/bamf-0.2/README.md`, the
+flow-control policy, hosted `.github/workflows/quality.yml`, and focused tests.
+
+## ADR-129 | 2026-11-04 | Passing verification remains valid until its dependency surface changes
+
+**Status:** Accepted by direct owner instruction on 2026-11-04.
+
+**Problem:** Several repository suites now cost roughly 10-15 minutes or more.
+Agents and hosted CI have been rerunning them at branch/PR/agent boundaries even
+when no intervening change could affect the behavior those suites established.
+This consumes scarce execution time and serializes parallel work without adding
+evidence.
+
+**Decision:** Treat a successful test receipt as reusable evidence bound to its
+exact tested head, suite identity and environment. A later candidate must rerun
+that suite only when the diff since the tested head intersects the suite's actual
+dependency surface: implementation code, fixtures/goldens, tests, generators,
+dependencies, relevant runtime configuration, or the harness itself. Agent
+handoff/compaction, PR metadata, governance/docs changes, flow-control policy,
+unrelated CI orchestration, and merge commits carrying only such changes do not
+invalidate behavioral suites. Where only a narrow dependency changed, run the
+smallest affected check rather than the broad suite.
+
+**Evidence rule:** If a prior pass is reused, record `TEST_EVIDENCE_REUSED`, the
+prior tested SHA, current candidate SHA, comparison range and why no invalidating
+path changed. Fresh broad verification remains mandatory when dependency impact
+cannot be bounded, the prior receipt is missing/incomplete/untrustworthy, an
+environment dependency changed, or the owner explicitly requests it.
+
+**Hosted implementation:** `quality.yml` classifies the diff before expensive
+verification and skips broad semantic/custody suites when their dependency
+surface is untouched. Static governance/docs/architecture checks may still run.
+Manual workflow dispatch intentionally requests a fresh run. The exhaustive
+semantic workflow is no longer triggered merely because `quality.yml` changed.
+
+**Application to ADR-128/PR #822:** The concurrency, compaction-handoff and CI
+governance changes do not modify Bilqis semantic, Factory, custody, neural, source,
+fixture or runtime behavior. Existing passing expensive-suite evidence therefore
+remains applicable; this change requires only lightweight structural/workflow
+validation, not another broad test campaign.
+
+## ADR-130 | 2026-11-05 | Gate scope expansion, not decomposition
+
+**Status:** Accepted by direct owner instruction on 2026-11-05.
+
+**Problem:** ADR-127 can stop an EGM loop only after substantial work has already
+been spent. But treating issue/branch creation itself as the waste would recreate
+the opposite failure: giant tickets, serialized execution, slow turn-in, late
+failure discovery, and poor parallelism. BAMF's recursive decomposition exists to
+avoid exactly that.
+
+**Decision:** Distinguish **decomposition** from **scope expansion**. A child that
+inherits a strict subset of already-authorized required acceptance and adds no new
+obligation may be given its own issue, branch/worktree, and PR whenever that improves
+parallelism, failure locality, review isolation, turn-in speed, or information yield.
+Its minimal receipt names the parent, exact inherited clauses, and
+`new_acceptance=false`. It does not need to prove that creating the child is itself
+a present blocker.
+
+Only a delta that cannot be traced to existing required acceptance is scope
+expansion. Before spending on that delta, record in at most 120 words the current
+delivery, named requirement/blocker, concrete consequence of deferral, and cheapest
+adequate next step; classify it `PROCEED`, `PARK`, or `DROP`. `PROCEED` means the
+new obligation is required for current delivery/correctness/safety. `PARK` preserves
+only a small pointer until selected. `DROP` ends spend.
+
+New remediation issue bodies should remain concise (about 250 words or less by
+default), pointing to inherited/versioned authority under ADR-118. Crossing 3
+commits, 3 touched files, or 250 net changed lines is a **scope-drift tripwire**, not
+a command to absorb the child back into its parent. Re-check clause traceability:
+if all work is still inherited, continue and decompose again when useful; only the
+untraceable delta requires expansion authority. Discovery of a second independent
+problem gets the same classification.
+
+EGM remains a merge-readiness tool for already-authorized scope. It may discover a
+real defect, but cannot by itself convert a peripheral improvement into a new project
+obligation. This rule suppresses net-new scope creep while preserving aggressive
+decomposition as a throughput strategy.
+
+**Diagnostic spend is also governed:** a manually constructed end-to-end probe is
+not exempt merely because it is not called a test. Repeating an expensive probe with
+unchanged relevant code and inputs adds no evidence and should reuse the prior
+result. Repeated parameter exploration must amortize invariant setup in one process.
+After two unsuccessful full-cost attempts under the same hypothesis, further
+end-to-end execution pauses until a cheaper staged/profiled diagnostic changes the
+evidence. Compaction must preserve in-flight probe status to prevent duplicate runs.

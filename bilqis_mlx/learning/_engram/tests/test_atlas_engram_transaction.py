@@ -3,7 +3,7 @@ from dataclasses import replace
 from unittest import TestCase
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_engram import INITIAL_MOTIF_CAPACITY, MOTIF_PAGE_STATE_BYTES, MotifBudget, MotifManifest, MotifSlot, motif_keys
-from bilqis_mlx.learning.atlas_engram_transaction import CandidateMotifSnapshot, MotifAliasArtifact, MotifAllocationSnapshot, prepare_candidate_motif_snapshot, verify_candidate_motif_snapshot
+from bilqis_mlx.learning.atlas_engram_transaction import CandidateMotifSnapshot, MotifAliasArtifact, MotifAllocationSnapshot, _prepare_candidate_motif_snapshot, _verify_candidate_motif_snapshot
 from bilqis_mlx.learning._engram.tests.motif_fixtures import (
     RELEASE, full_first_page, source,
 )
@@ -14,9 +14,9 @@ class MotifTransactionTests(TestCase):
         parent = MotifAllocationSnapshot(MotifManifest(RELEASE))
         before = parent.digest
         observations = (source(), source(actor="urn:actor:carol"))
-        first = prepare_candidate_motif_snapshot(
+        first = _prepare_candidate_motif_snapshot(
             observations, parent, MotifBudget(4))
-        second = prepare_candidate_motif_snapshot(
+        second = _prepare_candidate_motif_snapshot(
             observations, parent, MotifBudget(4))
         self.assertIsInstance(first, CandidateMotifSnapshot)
         self.assertEqual(first, second)
@@ -26,7 +26,7 @@ class MotifTransactionTests(TestCase):
         self.assertEqual(parent.digest, before)
         self.assertEqual(parent.manifest.slots, ())
         self.assertEqual(parent.observed_uses, ())
-        verify_candidate_motif_snapshot(
+        _verify_candidate_motif_snapshot(
             first, frames=observations, parent=parent, budget=MotifBudget(4))
 
     def test_prior_accepted_counters_change_priority_without_parent_mutation(self):
@@ -36,7 +36,7 @@ class MotifTransactionTests(TestCase):
         parent = MotifAllocationSnapshot(
             MotifManifest(RELEASE), ((rare_exact.digest, 100),))
         before = parent.digest
-        proposal = prepare_candidate_motif_snapshot(
+        proposal = _prepare_candidate_motif_snapshot(
             (rare, frequent, frequent, frequent), parent, MotifBudget(3))
         allocated = proposal.view.plan.allocated
         self.assertEqual([slot.key.kind for slot in allocated],
@@ -50,17 +50,17 @@ class MotifTransactionTests(TestCase):
         parent = MotifAllocationSnapshot(MotifManifest(RELEASE))
         frames = (source(),)
         budget = MotifBudget(2)
-        candidate = prepare_candidate_motif_snapshot(frames, parent, budget)
+        candidate = _prepare_candidate_motif_snapshot(frames, parent, budget)
         wrong_counts = replace(candidate.proposed, observed_uses=(
             (candidate.proposed.observed_uses[0][0], 999),))
         with self.assertRaises(BilqisError):
-            verify_candidate_motif_snapshot(
+            _verify_candidate_motif_snapshot(
                 replace(candidate, proposed=wrong_counts),
                 frames=frames, parent=parent, budget=budget)
         foreign_parent = MotifAllocationSnapshot(
             MotifManifest(RELEASE, (candidate.proposed.manifest.slots[0],)))
         with self.assertRaises(BilqisError):
-            verify_candidate_motif_snapshot(
+            _verify_candidate_motif_snapshot(
                 candidate, frames=frames, parent=foreign_parent, budget=budget)
         changed_slot = replace(
             candidate.proposed.manifest.slots[1],
@@ -69,7 +69,7 @@ class MotifTransactionTests(TestCase):
             candidate.proposed.manifest,
             slots=(candidate.proposed.manifest.slots[0], changed_slot))
         with self.assertRaises(BilqisError):
-            verify_candidate_motif_snapshot(
+            _verify_candidate_motif_snapshot(
                 replace(candidate, proposed=replace(
                     candidate.proposed, manifest=forged_manifest)),
                 frames=frames, parent=parent, budget=budget)
@@ -80,28 +80,28 @@ class MotifTransactionTests(TestCase):
             MotifManifest(RELEASE, (MotifSlot(0, exact),)))
         alias = MotifAliasArtifact(
             "9" * 64, "8" * 64, RELEASE, exact.digest, "7" * 64)
-        proposal = prepare_candidate_motif_snapshot(
+        proposal = _prepare_candidate_motif_snapshot(
             (source(),), parent, MotifBudget(0), source_aliases=(alias,))
         self.assertEqual(proposal.proposed.aliases, (alias,))
         self.assertEqual(proposal.proposed.manifest.slots, parent.manifest.slots)
         self.assertEqual(proposal.proposed.manifest.lookup(exact), 0)
         self.assertEqual(parent.aliases, ())
-        verify_candidate_motif_snapshot(
+        _verify_candidate_motif_snapshot(
             proposal, frames=(source(),), parent=parent,
             budget=MotifBudget(0), source_aliases=(alias,))
         with self.assertRaises(BilqisError):
-            prepare_candidate_motif_snapshot(
+            _prepare_candidate_motif_snapshot(
                 (source(),), parent, MotifBudget(0),
                 source_aliases=(alias, replace(alias, source_attestation_digest="6"*64)))
         with self.assertRaises(BilqisError):
-            prepare_candidate_motif_snapshot(
+            _prepare_candidate_motif_snapshot(
                 (source(),), parent, MotifBudget(0),
                 source_aliases=(replace(alias, new_key_digest="5"*64),))
 
     def test_full_capacity_and_no_budget_keep_parent_state_unchanged(self):
         parent = MotifAllocationSnapshot(full_first_page())
         before = parent.digest
-        candidate = prepare_candidate_motif_snapshot(
+        candidate = _prepare_candidate_motif_snapshot(
             (source(),), parent, MotifBudget(0))
         self.assertEqual(candidate.proposed.manifest, parent.manifest)
         self.assertEqual(candidate.view.plan.allocated, ())
@@ -112,13 +112,13 @@ class MotifTransactionTests(TestCase):
 
     def test_pending_keys_survive_candidate_boundary_and_allocate_without_reobservation(self):
         parent = MotifAllocationSnapshot(MotifManifest(RELEASE))
-        observed = prepare_candidate_motif_snapshot(
+        observed = _prepare_candidate_motif_snapshot(
             (source(),), parent, MotifBudget(0))
         self.assertEqual(len(observed.proposed.pending_keys), 2)
         self.assertEqual(len(observed.proposed.manifest.slots), 0)
         # Treat this snapshot only as a hypothetical B13-retained input.
         # No operation in this module publishes or accepts it.
-        next_candidate = prepare_candidate_motif_snapshot(
+        next_candidate = _prepare_candidate_motif_snapshot(
             (), observed.proposed, MotifBudget(2))
         self.assertEqual(len(next_candidate.view.plan.allocated), 2)
         self.assertEqual(next_candidate.proposed.pending_keys, ())
@@ -135,7 +135,7 @@ class MotifTransactionTests(TestCase):
         parent = MotifAllocationSnapshot(
             full_first_page(), (("f" * 64, 7),))
         before = parent.digest
-        candidate = prepare_candidate_motif_snapshot(
+        candidate = _prepare_candidate_motif_snapshot(
             (source(),), parent,
             MotifBudget(2, page_growth_bytes=MOTIF_PAGE_STATE_BYTES))
         self.assertEqual(candidate.view.page_growth.added_pages, 1)

@@ -39,7 +39,9 @@ class TrainingDeliveryTests(AtlasTrainingAdapterTest):
         batch = self.compile(self.context.draw_rows(seed=17, capability='Z.C0', each=2))
         groups = pad_microbatches(batch, {}, 100, plan_microbatches=lambda rows, topology, budget: ((0, 1),),
             indices_for_plan=lambda plan: plan,
-            positions_for=lambda prefix: tuple(int(x) for x in prefix.ast.value.split(',')))
+            positions_for=lambda prefix: tuple(
+                int(x) for x in
+            prefix.source_instance_id.removeprefix('synthetic:ast:').split(',')))
         self.assertEqual(groups[0].positions, ((1, 2, None), (1, 2, 1)))
         self.assertEqual(groups[0].padding_mask, ((True, True, False), (True, True, True)))
         with self.assertRaises(BilqisError):

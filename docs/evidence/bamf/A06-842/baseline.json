@@ -1,0 +1,299 @@
+{
+  "metadata": {
+    "CapabilityExecution": {
+      "annotations": {
+        "answer_families": "tuple[AnswerFamily, ...]",
+        "capability_id": "str",
+        "composed_of": "tuple[str, ...]",
+        "construction_program_id": "str",
+        "exam_item_count": "int",
+        "grade_id": "str",
+        "oracle_id": "str",
+        "prerequisites": "tuple[str, ...]",
+        "provider_id": "str",
+        "provider_implementation_sha256": "str",
+        "provider_parameters": "tuple[tuple[str, tuple[str, ...]], ...]",
+        "source_anchor": "str",
+        "stage": "int",
+        "teaching_option_ids": "tuple[str, ...]",
+        "variation_axes": "tuple[str, ...]"
+      },
+      "module": "bilqis_mlx.factory.execution",
+      "qualname": "CapabilityExecution"
+    },
+    "CapabilityProfile": {
+      "annotations": {
+        "answer_family_values": "tuple[tuple[str, tuple[str, ...]], ...]",
+        "capability_id": "str",
+        "provider_parameters": "tuple[tuple[str, tuple[str, ...]], ...]"
+      },
+      "module": "bilqis_mlx.factory.execution",
+      "qualname": "CapabilityProfile"
+    },
+    "CapabilityProjectionDigests": {
+      "annotations": {
+        "answer_schema": "str",
+        "assessment": "str",
+        "capability_id": "str",
+        "coverage": "str",
+        "schedule": "str",
+        "source": "str",
+        "teaching": "str"
+      },
+      "module": "bilqis_mlx.factory.execution",
+      "qualname": "CapabilityProjectionDigests"
+    },
+    "CurriculumDelta": {
+      "annotations": {
+        "added_capabilities": "tuple[str, ...]",
+        "added_grades": "tuple[str, ...]",
+        "changed_capabilities": "tuple[str, ...]",
+        "next_curriculum_sha256": "str",
+        "next_plan_sha256": "str",
+        "next_source_binding_sha256": "str",
+        "previous_curriculum_sha256": "str",
+        "previous_plan_sha256": "str",
+        "previous_source_binding_sha256": "str",
+        "projection_changes": "tuple[str, ...]",
+        "removed_capabilities": "tuple[str, ...]",
+        "removed_grades": "tuple[str, ...]",
+        "revised_grades": "tuple[str, ...]",
+        "semantic_geometry": "str"
+      },
+      "module": "bilqis_mlx.factory.execution",
+      "qualname": "CurriculumDelta"
+    },
+    "CurriculumProfile": {
+      "annotations": {
+        "grades": "tuple[GradeProfile, ...]",
+        "profile_id": "str"
+      },
+      "module": "bilqis_mlx.factory.execution",
+      "qualname": "CurriculumProfile"
+    },
+    "ExecutionPlan": {
+      "annotations": {
+        "capabilities": "tuple[CapabilityExecution, ...]",
+        "capability_projection_digests": "tuple[CapabilityProjectionDigests, ...]",
+        "curriculum_sha256": "str",
+        "grades": "tuple[GradeExecution, ...]",
+        "profile_id": "str",
+        "projection_digests": "ProjectionDigests",
+        "source_binding_sha256": "str"
+      },
+      "module": "bilqis_mlx.factory.execution",
+      "qualname": "ExecutionPlan"
+    },
+    "GradeExecution": {
+      "annotations": {
+        "assessment_blueprint_sha256": "str",
+        "capabilities": "tuple[str, ...]",
+        "cumulative_scope": "tuple[str, ...]",
+        "grade_id": "str",
+        "teaching_stages": "tuple[tuple[str, ...], ...]"
+      },
+      "module": "bilqis_mlx.factory.execution",
+      "qualname": "GradeExecution"
+    },
+    "GradeProfile": {
+      "annotations": {
+        "capabilities": "tuple[CapabilityProfile, ...]",
+        "enabled_capabilities": "tuple[str, ...] | None",
+        "grade_id": "str"
+      },
+      "module": "bilqis_mlx.factory.execution",
+      "qualname": "GradeProfile"
+    },
+    "PlanLineage": {
+      "annotations": {
+        "next_curriculum_sha256": "str",
+        "previous_curriculum_sha256": "str",
+        "semantic_geometry": "SemanticGeometryChange"
+      },
+      "module": "bilqis_mlx.factory.execution",
+      "qualname": "PlanLineage"
+    },
+    "ProjectionDigests": {
+      "annotations": {
+        "answer_schema": "str",
+        "assessment": "str",
+        "coverage": "str",
+        "roster": "str",
+        "schedule": "str",
+        "source": "str",
+        "teaching": "str"
+      },
+      "module": "bilqis_mlx.factory.execution",
+      "qualname": "ProjectionDigests"
+    },
+    "SemanticGeometryChange": {
+      "annotations": {},
+      "module": "bilqis_mlx.factory.execution",
+      "qualname": "SemanticGeometryChange"
+    },
+    "_answer_families": {
+      "annotations": {
+        "profile": "CapabilityProfile | None"
+      },
+      "module": "bilqis_mlx.factory.execution",
+      "qualname": "_answer_families",
+      "signature": "(capability, profile: 'CapabilityProfile | None')"
+    },
+    "_capability_projection_digests": {
+      "annotations": {
+        "capabilities": "tuple[CapabilityExecution, ...]",
+        "return": "tuple[CapabilityProjectionDigests, ...]",
+        "source_bindings": "SourceBindingSet"
+      },
+      "module": "bilqis_mlx.factory.execution",
+      "qualname": "_capability_projection_digests",
+      "signature": "(capabilities: 'tuple[CapabilityExecution, ...]', source_bindings: 'SourceBindingSet') -> 'tuple[CapabilityProjectionDigests, ...]'"
+    },
+    "_compile_profiled_grades": {
+      "annotations": {
+        "curriculum": "CurriculumDefinition",
+        "profile": "CurriculumProfile",
+        "registry": "SourceAdapterRegistry",
+        "return": "tuple[tuple[GradeExecution, ...], tuple[CapabilityExecution, ...]]",
+        "source_bindings": "SourceBindingSet"
+      },
+      "module": "bilqis_mlx.factory.execution",
+      "qualname": "_compile_profiled_grades",
+      "signature": "(curriculum: 'CurriculumDefinition', source_bindings: 'SourceBindingSet', profile: 'CurriculumProfile', registry: 'SourceAdapterRegistry') -> 'tuple[tuple[GradeExecution, ...], tuple[CapabilityExecution, ...]]'"
+    },
+    "_digest": {
+      "annotations": {
+        "return": "str"
+      },
+      "module": "bilqis_mlx.factory.execution",
+      "qualname": "_digest",
+      "signature": "(value) -> 'str'"
+    },
+    "_enabled_for_grade": {
+      "annotations": {
+        "grade_profile": "GradeProfile | None",
+        "return": "tuple[str, ...]"
+      },
+      "module": "bilqis_mlx.factory.execution",
+      "qualname": "_enabled_for_grade",
+      "signature": "(grade, grade_profile: 'GradeProfile | None') -> 'tuple[str, ...]'"
+    },
+    "_normalize_inputs": {
+      "annotations": {
+        "curriculum": "CurriculumDefinition | Course",
+        "source_bindings": "SourceBindingSet | None"
+      },
+      "module": "bilqis_mlx.factory.execution",
+      "qualname": "_normalize_inputs",
+      "signature": "(curriculum: 'CurriculumDefinition | Course', source_bindings: 'SourceBindingSet | None', answer_registry)"
+    },
+    "_pairs": {
+      "annotations": {
+        "return": "tuple[tuple[str, tuple[str, ...]], ...]"
+      },
+      "module": "bilqis_mlx.factory.execution",
+      "qualname": "_pairs",
+      "signature": "(value) -> 'tuple[tuple[str, tuple[str, ...]], ...]'"
+    },
+    "_profile_maps": {
+      "annotations": {
+        "curriculum": "CurriculumDefinition",
+        "profile": "CurriculumProfile"
+      },
+      "module": "bilqis_mlx.factory.execution",
+      "qualname": "_profile_maps",
+      "signature": "(curriculum: 'CurriculumDefinition', profile: 'CurriculumProfile')"
+    },
+    "_profiled_grade": {
+      "annotations": {
+        "active_capabilities": "set[str]",
+        "bindings": "SourceBindingSet",
+        "cumulative": "tuple[str, ...]",
+        "curriculum": "CurriculumDefinition",
+        "enabled": "tuple[str, ...]",
+        "grade_profile": "GradeProfile | None",
+        "registry": "SourceAdapterRegistry"
+      },
+      "module": "bilqis_mlx.factory.execution",
+      "qualname": "_profiled_grade",
+      "signature": "(curriculum: 'CurriculumDefinition', grade, grade_profile: 'GradeProfile | None', bindings: 'SourceBindingSet', registry: 'SourceAdapterRegistry', cumulative: 'tuple[str, ...]', enabled: 'tuple[str, ...]', active_capabilities: 'set[str]')"
+    },
+    "_projection_digests": {
+      "annotations": {
+        "capabilities": "tuple[CapabilityExecution, ...]",
+        "grades": "tuple[GradeExecution, ...]",
+        "return": "ProjectionDigests",
+        "source_bindings": "SourceBindingSet"
+      },
+      "module": "bilqis_mlx.factory.execution",
+      "qualname": "_projection_digests",
+      "signature": "(grades: 'tuple[GradeExecution, ...]', capabilities: 'tuple[CapabilityExecution, ...]', source_bindings: 'SourceBindingSet') -> 'ProjectionDigests'"
+    },
+    "_stages": {
+      "annotations": {
+        "enabled": "tuple[str, ...]"
+      },
+      "module": "bilqis_mlx.factory.execution",
+      "qualname": "_stages",
+      "signature": "(grade, enabled: 'tuple[str, ...]')"
+    },
+    "_verify_lineage_curriculum": {
+      "annotations": {
+        "current": "ExecutionPlan",
+        "lineage": "PlanLineage",
+        "previous": "ExecutionPlan",
+        "return": "None"
+      },
+      "module": "bilqis_mlx.factory.execution",
+      "qualname": "_verify_lineage_curriculum",
+      "signature": "(previous: 'ExecutionPlan', current: 'ExecutionPlan', lineage: 'PlanLineage') -> 'None'"
+    },
+    "compile_execution_plan": {
+      "annotations": {
+        "curriculum": "CurriculumDefinition | Course",
+        "profile": "CurriculumProfile",
+        "registry": "SourceAdapterRegistry",
+        "return": "ExecutionPlan",
+        "source_bindings": "SourceBindingSet | None"
+      },
+      "module": "bilqis_mlx.factory.execution",
+      "qualname": "compile_execution_plan",
+      "signature": "(curriculum: 'CurriculumDefinition | Course', profile: 'CurriculumProfile', registry: 'SourceAdapterRegistry', *, source_bindings: 'SourceBindingSet | None' = None, answer_registry=None) -> 'ExecutionPlan'"
+    },
+    "diff_execution_plans": {
+      "annotations": {
+        "current": "ExecutionPlan",
+        "lineage": "PlanLineage | None",
+        "previous": "ExecutionPlan",
+        "return": "CurriculumDelta"
+      },
+      "module": "bilqis_mlx.factory.execution",
+      "qualname": "diff_execution_plans",
+      "signature": "(previous: 'ExecutionPlan', current: 'ExecutionPlan', *, lineage: 'PlanLineage | None' = None) -> 'CurriculumDelta'"
+    }
+  },
+  "objects": {
+    "boolean": {
+      "json_sha256": "0ff490a08b9a3689dea6f5df4e03eea076f59f7ffd64a214c442dc11d01c2a59",
+      "pickle_bytes": 9607,
+      "pickle_sha256": "91709efa00b12f2c2ca8fb7ff22f948fe1268ebb52255aa125a00037dd173203"
+    },
+    "delta": {
+      "json_sha256": "00a6b8467c4457239eea10bea2cab6ee57f3b9ff3d6b74ece59e61c092b10dcb",
+      "pickle_bytes": 902,
+      "pickle_sha256": "5b01f2da7f4098b5d876be58158b310da18f7e8590cb1a210f627fd4d24afc7e"
+    },
+    "full": {
+      "json_sha256": "adf3811c39759a4fa02e347f2e8eab7454f72cb77351969a33702f4145024fbe",
+      "pickle_bytes": 5424,
+      "pickle_sha256": "972e67bafb159779e424d4f848e5b63b8568a7dafc5dc48b4f1cbb84953fa094"
+    },
+    "reduced": {
+      "json_sha256": "39caf1a7495ddfb4ef620261b065488a382c5d97deaa5d4b213add32e00a4c53",
+      "pickle_bytes": 4882,
+      "pickle_sha256": "f5c29fd1cb27cd75b8590b13513890803035a885ec5775e15a43fe996bd5641f"
+    }
+  },
+  "python": "3.14.4 (main, Apr  7 2026, 13:13:20) [Clang 16.0.0 (clang-1600.0.26.6)]",
+  "source": "e58dd31574a6ee2ce0b3e35f92293a09befd15c1"
+}
