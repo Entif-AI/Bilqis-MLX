@@ -121,7 +121,7 @@ _TRANSFORMS = MappingProxyType({
     ContrastFamily.PLANNED_OCCURRED: _status,
     ContrastFamily.MISSING_NEGATIVE: _observation,
     ContrastFamily.MORPHOLOGY_ALTERNATIVE: _morphology,
-)
+})
 
 
 def apply_variation(source: ContrastSourceFrame, variation: AllowedVariation) -> tuple[ContrastVariant, str]:
