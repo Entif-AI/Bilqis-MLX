@@ -1,7 +1,7 @@
 """Query-swap diagnostics expose a predictor that ignores the query."""
 import unittest
 
-from scripts.issue349_query_probe import query_pair_scores
+from scripts.experiments.issue349_query_probe import query_pair_scores
 
 
 class QueryPairScoreTests(unittest.TestCase):
