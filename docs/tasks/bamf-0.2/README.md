@@ -66,18 +66,18 @@ Hosted `quality.yml` follows this rule: it classifies the PR/push diff first and
 skips broad semantic/custody test suites when no expensive-test dependency surface
 changed. Manual dispatch remains an explicit request for fresh verification.
 
-### Spend nothing until scope earns it
+### Decompose freely; gate only net-new scope
 
-Before creating a remediation issue, branch/worktree, PR, or new review episode,
-apply the root `AGENTS.md` pre-spend scope gate. The default is to **absorb** a
-necessary repair into its existing owner, **park** a useful non-blocker as a tiny
-handoff note, or **drop** peripheral work. Only a concrete present-delivery blocker
-that cannot be safely absorbed earns `PROCEED` and a new artifact.
+Issue/branch creation is not the waste target. A strict subset of already-required
+parent acceptance may be decomposed into its own issue, branch/worktree, and PR
+whenever that improves parallelism, faster turn-in/failure, review isolation, or
+earlier information. Record the parent and inherited clauses; do not add acceptance.
 
-For bounded remediation/helper work, the initial small-work assumption expires at
-3 commits, 3 touched files, or 250 net changed lines. Stop and re-check delivery
-necessity before crossing that boundary. EGM is downstream of this decision, never
-a mechanism for discovering whether the work deserved to exist.
+Apply the root `AGENTS.md` gate only to obligations that do **not** trace to existing
+required scope. Those expansions must be justified as needed for current delivery,
+parked, or dropped. If a child grows past 3 commits, 3 files, or 250 net changed
+lines, audit traceability: split again if the work is still inherited; gate only
+the untraceable delta. EGM is downstream of scope authority, never its source.
 
 The lane is not a conveyor belt that must keep every open PR warm. The normal limit
 is **six `ACTIVE` implementation leaves per lane** under the 2026-11-04 owner

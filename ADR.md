@@ -2892,38 +2892,40 @@ fixture or runtime behavior. Existing passing expensive-suite evidence therefore
 remains applicable; this change requires only lightweight structural/workflow
 validation, not another broad test campaign.
 
-## ADR-130 | 2026-11-05 | Scope must earn spend before durable remediation work exists
+## ADR-130 | 2026-11-05 | Gate scope expansion, not decomposition
 
 **Status:** Accepted by direct owner instruction on 2026-11-05.
 
-**Problem:** ADR-127 can stop an EGM review loop after it has already consumed
-issues, branches, commits, code churn and several review rounds. The larger waste
-occurs earlier: a technically real but project-peripheral finding can become a long
-issue, isolated branch and substantial implementation before anyone asks whether
-current BAMF delivery needs it at all.
+**Problem:** ADR-127 can stop an EGM loop only after substantial work has already
+been spent. But treating issue/branch creation itself as the waste would recreate
+the opposite failure: giant tickets, serialized execution, slow turn-in, late
+failure discovery, and poor parallelism. BAMF's recursive decomposition exists to
+avoid exactly that.
 
-**Decision:** Before a new issue, branch/worktree, remediation PR, or fresh review
-episode is created, the agent must make a concise pre-spend decision against the
-current delivery target. In at most 120 words, identify the exact delivery target,
-the named acceptance/blocker requiring action now, the concrete consequence of
-deferral, why the current owner cannot absorb the work, and the cheapest adequate
-next step. Classify the result as `ABSORB`, `PROCEED`, `PARK`, or `DROP`.
+**Decision:** Distinguish **decomposition** from **scope expansion**. A child that
+inherits a strict subset of already-authorized required acceptance and adds no new
+obligation may be given its own issue, branch/worktree, and PR whenever that improves
+parallelism, failure locality, review isolation, turn-in speed, or information yield.
+Its minimal receipt names the parent, exact inherited clauses, and
+`new_acceptance=false`. It does not need to prove that creating the child is itself
+a present blocker.
 
-Only `PROCEED` authorizes a new durable work artifact. `ABSORB` keeps necessary
-work on the existing owner/branch. `PARK` permits only a tiny continuation note,
-not a new issue/branch/PR/review. `DROP` ends spend. A reviewer finding, code smell,
-possible cleanup, architectural nicety, or generally useful improvement does not
-by itself satisfy present-delivery necessity.
+Only a delta that cannot be traced to existing required acceptance is scope
+expansion. Before spending on that delta, record in at most 120 words the current
+delivery, named requirement/blocker, concrete consequence of deferral, and cheapest
+adequate next step; classify it `PROCEED`, `PARK`, or `DROP`. `PROCEED` means the
+new obligation is required for current delivery/correctness/safety. `PARK` preserves
+only a small pointer until selected. `DROP` ends spend.
 
 New remediation issue bodies should remain concise (about 250 words or less by
-default); ADR-118 already places normative engineering detail in versioned repo
-authority rather than duplicating it in GitHub prose. For work initially treated as
-bounded remediation/helper scope, exceeding 3 commits, 3 touched files, or 250 net
-changed lines invalidates the original small-work assumption and requires the scope
-decision to be repeated before further implementation or review. Discovery of a
-second independent problem has the same effect.
+default), pointing to inherited/versioned authority under ADR-118. Crossing 3
+commits, 3 touched files, or 250 net changed lines is a **scope-drift tripwire**, not
+a command to absorb the child back into its parent. Re-check clause traceability:
+if all work is still inherited, continue and decompose again when useful; only the
+untraceable delta requires expansion authority. Discovery of a second independent
+problem gets the same classification.
 
-This is not a ban on valuable cleanup or research. It is an ordering rule: current
-delivery blockers spend first; useful non-blockers wait until explicitly selected.
-EGM remains a merge-readiness tool for already-justified work, never a mechanism for
-discovering whether a peripheral repair deserved an issue in the first place.
+EGM remains a merge-readiness tool for already-authorized scope. It may discover a
+real defect, but cannot by itself convert a peripheral improvement into a new project
+obligation. This rule suppresses net-new scope creep while preserving aggressive
+decomposition as a throughput strategy.

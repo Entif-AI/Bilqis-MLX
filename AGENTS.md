@@ -108,33 +108,37 @@ actually touched, the prior run was incomplete/failed/untrustworthy, or a human
 explicitly requests fresh verification. A merge commit is not automatic
 invalidation; inspect what it introduced.
 
-**Pre-spend scope gate (2026-11-05):** A finding, improvement opportunity, or
-review comment is **not** authorization to mint durable work. Before creating a
-new GitHub issue, issue-specific branch/worktree, remediation PR, or fresh review
-episode, write a scope receipt of at most **120 words** containing:
-`delivery` (current issue/PR/milestone), `required_by` (named acceptance criterion
-or concrete blocker), `defer_failure` (what present delivery actually cannot do if
-this waits), `reuse` (why the existing owner/branch cannot absorb it),
-`cheapest_next` (smallest evidence/mutation that resolves it), and one verdict:
-`ABSORB | PROCEED | PARK | DROP`.
+**Scope-expansion gate, not a decomposition gate (2026-11-05):** New issues,
+branches/worktrees, and PRs are intentionally cheap coordination primitives when
+they partition **already-authorized required scope**. Do not force independently
+deliverable work back into a large parent merely because the parent could absorb
+it. Prefer decomposition when it improves parallelism, turn-in latency, failure
+locality, review isolation, or early information.
 
-- `ABSORB`: necessary now, but the current issue/branch can own it. Create nothing.
-- `PROCEED`: directly blocks current delivery or a required correctness/safety gate,
-  cannot be safely absorbed, and the proposed next step is the cheapest adequate
-  remedy. Only this verdict permits a new issue/branch/review artifact.
-- `PARK`: useful but not presently blocking delivery. Create no issue, branch, PR,
-  or EGM episode; preserve at most a three-line note in the current handoff/owner.
-- `DROP`: speculative, duplicate, cosmetic, or peripheral to the current delivery
-  path. Spend nothing further.
+Classify proposed work before implementation:
+
+- `DECOMPOSE`: a strict subset of an existing issue/spec's required acceptance,
+  adding no new obligation. Record the parent plus exact inherited clause(s) and
+  `new_acceptance=false`. This may create its own issue, branch/worktree, and PR
+  without proving that decomposition itself is a new blocker.
+- `EXPAND`: any obligation, correctness criterion, cleanup, architecture change,
+  or review demand that cannot be traced to existing required acceptance. Before
+  spending on that delta, write at most **120 words** naming `delivery`,
+  `required_by`, `defer_failure`, and `cheapest_next`, then choose
+  `PROCEED | PARK | DROP`.
+  - `PROCEED`: the expansion is required for current delivery/correctness/safety.
+  - `PARK`: useful, but current delivery does not require it; preserve only a tiny
+    note/backlog pointer until explicitly selected.
+  - `DROP`: duplicate, speculative, cosmetic, or peripheral; spend nothing.
 
 For new remediation issues, keep the GitHub body **under about 250 words by
-default**; normative detail belongs in the existing owner or versioned repo spec
-under ADR-118. Re-run the scope gate **before further spending** if a bounded
-remediation/helper unexpectedly grows past **3 commits, 3 touched files, or 250
-net changed lines**, or reveals a second independent problem. Crossing a tripwire
-does not forbid the work; it invalidates the original small-work assumption and
-requires a fresh present-delivery justification. Never run EGM to justify work
-that has not already passed this gate.
+default** and point to inherited/versioned authority under ADR-118. If a bounded
+child/helper grows past **3 commits, 3 touched files, or 250 net changed lines**, or
+reveals a second independent problem, perform a **scope-drift audit** before more
+work. If every obligation still maps to inherited required clauses, keep going and
+split again when useful; do not collapse it back into the parent. Only the
+untraceable delta is `EXPAND` and must pass the expansion gate. Never run EGM to
+manufacture authority for an expansion that current delivery does not require.
 
 Every lane-owned BAMF implementation leaf or open lane PR must be represented in that lane's
 machine-readable state under `docs/tasks/bamf-0.2/flow-control/`. Before substantive
