@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -55,7 +56,9 @@ def observed(root: Path) -> dict[str, str | None]:
     # git's text output strips only the final NUL; embedded NULs remain.
     for relative in sorted(item for item in untracked.split("\0") if item):
         file = path / relative
-        if file.is_file():
+        if file.is_symlink():
+            dirty.update(relative.encode() + b"\0symlink\0" + os.fsencode(file.readlink()))
+        elif file.is_file():
             dirty.update(relative.encode() + b"\0" + file.read_bytes())
     return {
         "worktree": str(path),

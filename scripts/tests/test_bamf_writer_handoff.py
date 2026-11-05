@@ -111,6 +111,26 @@ class WriterHandoffTests(unittest.TestCase):
         with self.assertRaisesRegex(HandoffError, "remote changed after last fetch"):
             verify(self.repo, payload)
 
+    def test_untracked_symlink_retargeting_requires_reconciliation(self) -> None:
+        self.run_git("switch", "-c", "local-only")
+        for kind in ("dangling", "directory", "file"):
+            with self.subTest(kind=kind):
+                targets = [Path(self.temp.name) / f"{kind}-{side}" for side in ("left", "right")]
+                for target in targets:
+                    if kind == "directory":
+                        target.mkdir()
+                    elif kind == "file":
+                        target.write_text("same referent bytes\n")
+                link = self.repo / f"draft-{kind}-link"
+                link.symlink_to(targets[0])
+                payload = emit(self.repo, 831, "epoch-829")
+                self.assertEqual("UNVERIFIED", verify(self.repo, payload)["status"])
+                link.unlink()
+                link.symlink_to(targets[1])
+                with self.assertRaisesRegex(HandoffError, "worktree_status"):
+                    verify(self.repo, payload)
+                link.unlink()
+
 
 if __name__ == "__main__":
     unittest.main()

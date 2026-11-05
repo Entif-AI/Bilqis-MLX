@@ -117,6 +117,15 @@
       "preserved_branch": "codex/bamf02-c-829-local-handoff-20261104",
       "summary": "Reproduced handoff failure on local feature branch with no upstream. Preserve complete local evidence and report UNVERIFIED without weakening live-remote continuation proof.",
       "resume_trigger": null
+    },
+    {
+      "issue": 831,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "9ae048b18c21d19f95f82d44ecdcf53a65b1c2a0",
+      "preserved_branch": "codex/bamf02-c-829-local-handoff-20261104",
+      "summary": "C829 round1 shared-contract Major: bind untracked symlink text in dirty fingerprint. Canonical repair stays on829 parent branch; no child PR/review loop.",
+      "resume_trigger": null
     }
   ]
 }
