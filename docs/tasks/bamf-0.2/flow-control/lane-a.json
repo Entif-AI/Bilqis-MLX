@@ -99,7 +99,7 @@
       "state": "ACTIVE",
       "head_sha": "8019bf5d945a1d9f8f5a11983ef43fbb008a365f",
       "preserved_branch": "codex/bamf02-a-395-acceptance-20261105",
-      "summary": "Resume trigger satisfied: A08.3 #420 is CLOSED EGM-Passed and consumed by reviewed unified. Resuming only the remaining three-successor/restart/held/fixed-point acceptance on current Lane A.",
+      "summary": "A08.3 #420 resume trigger consumed. Source-qualified Boolean/numeric/world acceptance plus six-successor cold-resume runway are green; exact-head EGM is the remaining pre-PR gate.",
       "resume_trigger": null
     }
   ]
