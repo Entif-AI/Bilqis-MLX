@@ -36,7 +36,11 @@ from bilqis_mlx.learning.atlas_participation import (
 )
 from bilqis_mlx.runtime.bamf_bundle import admission
 from bilqis_mlx.runtime.bamf_bundle.admission import (
-    admit_candidate_step, derive_participation_inputs,
+    admit_candidate_step, bind_accepted_execution_cache,
+    derive_participation_inputs,
+)
+from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
+    AcceptedExecutionCache, require_accepted_execution_cache,
 )
 
 from bilqis_mlx.learning._retention.tests.execution_fixtures import (
@@ -98,7 +102,19 @@ class ProductionAuthorityTests(unittest.TestCase):
         self.assertEqual(eligibility.mode, next_update_mode(
             student.retained_state.policy, teacher_requests_full=False))
         self.assertEqual(active.identity_rows, eligibility.admitted_identity_rows)
-        self.assertEqual(active.identity_rows, eligibility.admitted_identity_rows)
+
+    def test_only_accepted_b13_custody_mints_live_execution_cache(self):
+        self.publish(candidate(parent_state()))
+        with shape_patch():
+            cache = bind_accepted_execution_cache(self.run)
+        self.assertIs(require_accepted_execution_cache(cache), cache)
+        self.assertEqual(cache.run_id, "fixture-run")
+        self.assertEqual(
+            cache.motif_manifest.digest,
+            parent_state().allocations.manifest.digest,
+        )
+        with self.assertRaises(BilqisError):
+            AcceptedExecutionCache()
 
     def test_production_step_reaches_the_owner_binder(self):
         self.publish(candidate(parent_state()))
@@ -124,6 +140,24 @@ class ProductionAuthorityTests(unittest.TestCase):
                           "visible_identity_rows", "feedback_identity_rows",
                           "local_slot_rows"):
             self.assertNotIn(forbidden, step.call_args.kwargs)
+
+    def test_admission_forwards_the_b11_gradient_execution_without_rederiving_it(self):
+        self.publish(candidate(parent_state()))
+        owner_execution = object()
+        marker = object()
+        with shape_patch(), patch.object(
+                admission, "production_candidate_step", return_value=marker) as step:
+            result = admit_candidate_step(
+                self.run,
+                loss_bearing_target=True,
+                gradient_execution=owner_execution,
+                teacher_hparams=None,
+                decay={},
+                max_norm=1.,
+            )
+        self.assertIs(result, marker)
+        self.assertIs(step.call_args.kwargs["gradient_execution"], owner_execution)
+        self.assertIsNone(step.call_args.args[1])
 
     def test_provenance_cannot_replay_onto_another_candidate_or_step(self):
         self.publish(candidate(parent_state()))

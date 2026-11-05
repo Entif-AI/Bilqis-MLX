@@ -1,22 +1,24 @@
-"""B11 execution from replayed A05/A01 source inputs.
-
-The numerical precursor remains available for bounded equation tests. The producer
-session below is the execution-owned source for B05 boundary receipts; it never
-authorizes a B08 motif hit or claims retained-generation custody.
-"""
+"""B11 execution from replayed A05/A01 source inputs and retained B08 state."""
 import mlx.core as mx
 
+from ..atlas_engram import MotifManifest
+from ..atlas_engram_reads.source_owner import (
+    _B13_EXECUTION_SEAL, _read_retained_compiled_motifs,
+)
+from ..atlas_plasticity import adapter_forward, adapter_parameter_view
 from ...runtime.backbone_group_numerical import (
     UnadmittedBackboneSession, _content_digest,
 )
 from ...runtime.backbone_identity import execution_generation_digest
-from ...runtime.block_attnres import SOURCE_ORDER, depth_select
+from ...runtime.block_attnres import SOURCE_ORDER, depth_select, source_depth_select
+from ...runtime.block_attnres import depth_parameter_view
 from ...runtime.model_topology_v2 import ModelTopologySpecV2
 from ...semantics.domains import contract_digest
 from .backbone_receipts import (
-    MOTIF_POSITION, NO_HIT, NOT_APPLICABLE,
+    HIT, MOTIF_POSITION, NO_HIT, NOT_APPLICABLE,
     _invalid as _invalid_producer_receipt, _issue_from_producer,
 )
+from .backbone_identity import compiled_prefix_digest
 from .encoding import encode_source_compiled, encode_source_compiled_with_handoffs
 
 
@@ -25,6 +27,7 @@ class _SourceBackboneProducerSession:
 
     def __init__(self, encoded, handoffs, parameters, compiled):
         self._compiled = compiled
+        self._encoded = encoded
         self._parameters = dict(parameters)
         self._sources = None
         self._feature_schema = None
@@ -32,7 +35,7 @@ class _SourceBackboneProducerSession:
         self._topology = ModelTopologySpecV2()
         self._generation = execution_generation_digest(
             parameters, spec=self._topology, extents=compiled.extents)
-        self._prefix = contract_digest(compiled.compiled)
+        self._prefix = compiled_prefix_digest(compiled)
         valid = mx.array([[position is not None for position in row]
                           for row in encoded.handles], dtype=mx.bool_)
         self._session = UnadmittedBackboneSession(
@@ -42,6 +45,9 @@ class _SourceBackboneProducerSession:
             generation=self._generation, prefix_digest=self._prefix)
         self._depth_inputs = ()
         self._receipts = ()
+        self._motif_manifest = None
+        self._motif_seal = None
+        self._motif_read = None
 
     def _bind_authoritative_inputs(self, sources, feature_schema):
         self._sources = sources
@@ -56,7 +62,7 @@ class _SourceBackboneProducerSession:
         topology = ModelTopologySpecV2()
         generation = execution_generation_digest(
             self._parameters, spec=topology, extents=self._compiled.extents)
-        prefix = contract_digest(self._compiled.compiled)
+        prefix = compiled_prefix_digest(self._compiled)
         if (source_digest != self._source_digest or topology.digest != self._topology.digest
                 or generation != self._generation or prefix != self._prefix):
             _invalid_producer_receipt()
@@ -96,7 +102,11 @@ class _SourceBackboneProducerSession:
                 expected = replay.advance()
             else:
                 features, view = self._depth_inputs[group_index - 2]
-                selected = depth_select(self, features, view)
+                selected = (source_depth_select(self, view) if features is None
+                            else depth_select(self, features, view))
+                selected = adapter_forward(selected, adapter_parameter_view(
+                    self._parameters, spec=topology, extents=self._compiled.extents,
+                    group_index=group_index - 2))
                 expected = replay.advance(next_input=selected)
         fields = (
             "group_index", "layer_start", "layer_end", "parameter_content_digest",
@@ -108,22 +118,37 @@ class _SourceBackboneProducerSession:
                 or _content_digest(result.hidden) != _content_digest(expected.hidden)):
             _invalid_producer_receipt()
         source_id = SOURCE_ORDER[target]
+        hidden = expected.hidden
         motif_disposition = NO_HIT if source_id == "g1" else NOT_APPLICABLE
         motif_position = MOTIF_POSITION if source_id == "g1" else ""
-        motif_read_digest = (
-            contract_digest(("B08_QUARANTINED_NO_HIT", source_digest, prefix,
-                             generation, expected.execution_digest, MOTIF_POSITION))
-            if source_id == "g1" else contract_digest(()))
+        if source_id == "g1" and self._motif_manifest is not None:
+            motif = _read_retained_compiled_motifs(
+                self._compiled, self._parameters, self._sources,
+                self._motif_manifest, spec=topology, extents=self._compiled.extents,
+                site_index=1, hidden=expected.hidden, seal=self._motif_seal)
+            self._motif_read = motif
+            hidden = motif.hidden
+            motif_disposition = HIT if motif.participating_slots else NO_HIT
+            motif_read_digest = contract_digest((
+                "B08_SOURCE_QUALIFIED_READ_V1", motif.dispositions,
+                motif.participating_slots, motif.context_digests,
+                _content_digest(hidden), source_digest, prefix, generation,
+                expected.execution_digest, MOTIF_POSITION))
+        else:
+            motif_read_digest = (
+                contract_digest(("B08_QUARANTINED_NO_HIT", source_digest, prefix,
+                                 generation, expected.execution_digest, MOTIF_POSITION))
+                if source_id == "g1" else contract_digest(()))
         return dict(
             source_id=source_id, completed_layer=expected.layer_end,
-            hidden=expected.hidden, source_handoff_digest=source_digest,
+            hidden=hidden, source_handoff_digest=source_digest,
             topology_digest=topology.digest, generation_digest=generation,
             parameter_tree_digest=expected.full_parameter_tree_digest,
             prefix_digest=prefix, scope_digest=expected.scope_content_digest,
             input_digest=expected.input_content_digest,
-            output_digest=_content_digest(expected.hidden),
-            output_shape=tuple(expected.hidden.shape),
-            output_dtype=str(expected.hidden.dtype),
+            output_digest=_content_digest(hidden),
+            output_shape=tuple(hidden.shape),
+            output_dtype=str(hidden.dtype),
             cache_chain_digest=expected.cache_chain_digest,
             numerical_execution_digest=expected.execution_digest,
             predecessor_receipt_digest=self._receipts[target - 1].receipt_digest,
@@ -153,12 +178,17 @@ class _SourceBackboneProducerSession:
     def advance(self, frame_features=None, depth_parameters=None):
         completed = len(self._session.results)
         if completed:
-            if frame_features is None or depth_parameters is None:
+            if depth_parameters is None:
                 _invalid_producer_receipt()
-            if (frame_features.boundary_group != completed
+            if ((frame_features is not None
+                 and frame_features.boundary_group != completed)
                     or depth_parameters.boundary_group != completed):
                 _invalid_producer_receipt()
-            selected = depth_select(self, frame_features, depth_parameters)
+            selected = (source_depth_select(self, depth_parameters) if frame_features is None
+                        else depth_select(self, frame_features, depth_parameters))
+            selected = adapter_forward(selected, adapter_parameter_view(
+                self._parameters, spec=self._topology, extents=self._compiled.extents,
+                group_index=completed - 1))
             result = self._session.advance(next_input=selected)
             self._depth_inputs += ((frame_features, depth_parameters),)
         else:
@@ -185,7 +215,7 @@ def start_source_backbone_numerical(compiled, parameters, sources, feature_schem
         spec=ModelTopologySpecV2(), extents=compiled.extents,
         scope_ids=mx.zeros(valid.shape, dtype=mx.int32), valid=valid,
         generation=compiled.extents.digest,
-        prefix_digest=contract_digest(compiled.compiled))
+        prefix_digest=compiled_prefix_digest(compiled))
 
 
 def start_source_backbone_producer(
@@ -198,4 +228,69 @@ def start_source_backbone_producer(
     producer._bind_authoritative_inputs(sources, feature_schema)
     producer._receipts = ()
     producer._receipts = (_issue_from_producer(producer),)
+    return producer
+
+
+def complete_source_backbone_producer(producer):
+    """Advance the source-owned producer through the complete 12-layer backbone.
+
+    The caller supplies no depth summaries, selected hidden states, parameter
+    names, or execution labels.  B11 owns the ordered g1/g2/g3 execution and
+    derives both depth-parameter views from the producer's already-bound B01
+    tree and generation extents.
+    """
+    if type(producer) is not _SourceBackboneProducerSession:
+        _invalid_producer_receipt()
+    while len(producer._session.results) < producer._topology.depth_groups:
+        completed = len(producer._session.results)
+        if completed == 0:
+            producer.advance()
+            continue
+        view = depth_parameter_view(
+            producer._parameters,
+            spec=producer._topology,
+            extents=producer._compiled.extents,
+            boundary_group=completed,
+        )
+        producer.advance(depth_parameters=view)
+    if len(producer._session.results) != producer._topology.depth_groups or tuple(
+            item.source_id for item in producer.receipts
+    ) != SOURCE_ORDER:
+        _invalid_producer_receipt()
+    return producer
+
+
+def finalize_source_backbone_hidden(producer):
+    """Return the final B11 hidden after g3 selection and adapter application."""
+    complete_source_backbone_producer(producer)
+    view = depth_parameter_view(
+        producer._parameters,
+        spec=producer._topology,
+        extents=producer._compiled.extents,
+        boundary_group=producer._topology.depth_groups,
+    )
+    selected = source_depth_select(producer, view)
+    return adapter_forward(
+        selected,
+        adapter_parameter_view(
+            producer._parameters,
+            spec=producer._topology,
+            extents=producer._compiled.extents,
+            group_index=producer._topology.depth_groups - 1,
+        ),
+    )
+
+
+def start_retained_source_backbone_producer(
+    compiled, parameters, sources, feature_schema, manifest, *, seal,
+):
+    """B13-only B11 producer whose g1 boundary executes the retained B08 read."""
+    if seal is not _B13_EXECUTION_SEAL or type(manifest) is not MotifManifest:
+        _invalid_producer_receipt()
+    producer = start_source_backbone_producer(
+        compiled, parameters, sources, feature_schema)
+    if manifest.digest != compiled.extents.motif_key_map_digest:
+        _invalid_producer_receipt()
+    producer._motif_manifest = manifest
+    producer._motif_seal = seal
     return producer

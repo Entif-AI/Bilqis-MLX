@@ -54,6 +54,7 @@ def _rows(value) -> bool:
 class StepParticipationInputs:
     visible_identity_rows: tuple[tuple[int, int], ...] = ()
     feedback_identity_rows: tuple[tuple[int, int], ...] = ()
+    visible_feature_rows: tuple[tuple[str, int], ...] = ()
     local_slot_rows: tuple[int, ...] = ()
     executed_parameter_names: tuple[str, ...] = ()
     loss_bearing_target: bool = True
@@ -62,6 +63,7 @@ class StepParticipationInputs:
     def __post_init__(self) -> None:
         if (not _pairs(self.visible_identity_rows)
                 or not _pairs(self.feedback_identity_rows)
+                or not _feature_rows(self.visible_feature_rows)
                 or not _rows(self.local_slot_rows)
                 or type(self.executed_parameter_names) is not tuple
                 or self.executed_parameter_names != tuple(sorted(set(self.executed_parameter_names)))
@@ -166,7 +168,8 @@ def step_participation(
         slot for result in motif_reads for slot in result.participating_slots
     }))
     features = tuple(sorted(set(
-        semantic_denominator.feature_rows + role_reads.feature_rows)))
+        inputs.visible_feature_rows
+        + semantic_denominator.feature_rows + role_reads.feature_rows)))
     return StepParticipation(
         identity, motif, features, inputs.local_slot_rows,
         inputs.executed_parameter_names, True)

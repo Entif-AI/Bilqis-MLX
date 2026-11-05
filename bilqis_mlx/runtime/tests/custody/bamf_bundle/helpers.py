@@ -161,6 +161,8 @@ def shape_patch():
     stack = ExitStack()
     for target in ("bilqis_mlx.runtime.model_topology_v2.expected_bamf_shapes",
                    "bilqis_mlx.runtime.topology_v2.ledger.expected_bamf_shapes",
+                   "bilqis_mlx.runtime.topology_v2.validation.expected_bamf_shapes",
+                   "bilqis_mlx.runtime.backbone_identity.expected_bamf_shapes",
                    "bilqis_mlx.learning.atlas_participation_census."
                    "expected_bamf_shapes",
                    "bilqis_mlx.learning._retention.atlas_participation_census."

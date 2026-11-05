@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "05e31a576e3432e4238c9b4477a70d70ec4fc487",
-  "updated_at": "2026-11-03T22:40:00Z",
+  "updated_at": "2026-11-04T18:15:00Z",
   "exception": null,
   "items": [
     {
@@ -273,11 +273,11 @@
     {
       "issue": 711,
       "pr": null,
-      "state": "TURNED_IN",
-      "head_sha": "6b565ba4",
-      "preserved_branch": "codex/remediation-egm-708-711-integration-20261103",
-      "summary": "B09.2 remediation: the participation owner derives per-step participation and optimizer masks from executed production authority, with the production binder.",
-      "resume_trigger": "PR #809 merges or closes; the consolidated candidate continues on its owner issue."
+      "state": "ACTIVE",
+      "head_sha": "b7c802b0f1e9ce7061fefefe1fb7be8f074c57c4",
+      "preserved_branch": "cos/remediation-710-711-positive-execution-20261104",
+      "summary": "B09.2 remediation reopened for positive production acceptance: recover the source-owned B08/B11 execution work, prove actual execution participation, and keep census/gradient magnitude out of authority.",
+      "resume_trigger": null
     },
     {
       "issue": 710,

@@ -7,7 +7,6 @@ from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_execution_provenance import StepExecutionProvenance
-from bilqis_mlx.learning.atlas_participation import ActiveAdmittedRows
 from bilqis_mlx.learning.atlas_plasticity import GroupEligibility
 from bilqis_mlx.runtime.atlas_execution_binder import bind_execution_provenance
 from bilqis_mlx.runtime.model_topology_v2 import (
@@ -46,8 +45,6 @@ class ExecutionBinderProductionTests(unittest.TestCase):
         evidence = {
             "loss_bearing_target": False,
             "group_eligible": eligibility(),
-            "active_admitted": ActiveAdmittedRows(
-                identity_rows=((0, 0),), motif_slots=(0,)),
             "spec": ModelTopologySpecV2(),
             "extents": EXTENTS,
             "run_id": "fixture-run",
@@ -67,7 +64,7 @@ class ExecutionBinderProductionTests(unittest.TestCase):
         parameters = set(inspect.signature(bind_execution_provenance).parameters)
         for forbidden in (
                 "motif_reads", "executed_parameter_names", "visible_identity_rows",
-                "feedback_identity_rows", "local_slot_rows"):
+                "feedback_identity_rows", "local_slot_rows", "active_admitted"):
             self.assertNotIn(forbidden, parameters)
 
     def test_no_loss_binder_issues_empty_non_authorizing_provenance(self):
@@ -78,7 +75,7 @@ class ExecutionBinderProductionTests(unittest.TestCase):
             self.assertFalse(item.whole_parameter)
             self.assertEqual(item.row_indices, ())
 
-    def test_loss_bearing_step_fails_closed_until_b11_execution_owner_exists(self):
+    def test_loss_bearing_step_requires_exact_b11_execution_owner(self):
         with self.assertRaises(BilqisError):
             self.bind(loss_bearing_target=True)
 

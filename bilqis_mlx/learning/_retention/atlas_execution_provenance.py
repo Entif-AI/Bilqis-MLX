@@ -146,7 +146,8 @@ def issue_execution_provenance(
     provenance = object.__new__(StepExecutionProvenance)
     for name, value in (
             ("participation", participation), ("mask", mask),
-            ("eligible_parameter_names", tuple(group_eligible.eligible_parameter_names)),
+            ("eligible_parameter_names", tuple(sorted(
+                group_eligible.eligible_parameter_names))),
             ("extents_sha256", extents.digest),
             ("run_id", run_id), ("generation", generation),
             ("parent_manifest_sha256", parent_manifest_sha256),

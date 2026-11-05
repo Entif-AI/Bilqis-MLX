@@ -30,6 +30,7 @@ from bilqis_mlx.learning.atlas_candidate import (
 from bilqis_mlx.learning.atlas_plasticity import group_eligibility, next_update_mode
 from bilqis_mlx.learning.atlas_participation import ActiveAdmittedRows
 from bilqis_mlx.runtime.atlas_candidate_step import production_candidate_step
+from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.model_topology_v2 import ParameterCensus
 
 from .codec import load_bamf_bundle
@@ -41,6 +42,7 @@ from .records import (
     BAMF_POINTER_SCHEMA, BamfBundleCandidate, CompleteStudent,
     canonical, invalid, sha, sidecar_records,
 )
+from .execution_cache import _issue_accepted_execution_cache
 
 
 @dataclass(frozen=True)
@@ -76,6 +78,25 @@ def _read_accepted(run_dir: Path):
 def load_accepted_generation(run_dir: Path) -> CompleteStudent:
     """Load the currently published accepted generation under the pointer lock."""
     return _read_accepted(run_dir)[1]
+
+
+def bind_accepted_execution_cache(run_dir: Path):
+    """Authenticate the live accepted generation and mint its retained B08 cache."""
+    run_dir = Path(run_dir)
+    _pointer, student = _read_accepted(run_dir)
+    identity = _published_in_memory_identity(run_dir, student)
+    generation_binding = execution_generation_digest(
+        student.retained_state.optimizer.parameters,
+        spec=student.topology,
+        extents=student.extents,
+    )
+    return _issue_accepted_execution_cache(
+        run_id=identity.run_id,
+        generation=identity.generation,
+        accepted_manifest_sha256=identity.manifest_sha256,
+        generation_binding=generation_binding,
+        motif_manifest=student.retained_state.allocations.manifest,
+    )
 
 
 def _identity_from_pointer(
@@ -210,14 +231,15 @@ def derive_participation_inputs(parent: CompleteStudent):
 
 
 def _admit_loaded_candidate_step(
-        parent: CompleteStudent, identity: AcceptedGenerationIdentity, gradients, *,
-        loss_bearing_target, teacher_hparams,
+        parent: CompleteStudent, identity: AcceptedGenerationIdentity, gradients=None, *,
+        loss_bearing_target, gradient_execution=None, teacher_hparams,
         decay, max_norm: float) -> CandidateTransaction:
-    """Pass a custody-verified generation to the production execution guard.
+    """Pass custody-verified state plus B11 execution truth to B09/B12.
 
-    B11.2 has not installed an execution-owned dense trace, while B08 permits
-    no live motif hits. Loss-bearing steps therefore fail closed in the B09
-    binder rather than claiming that declared census members executed.
+    Raw gradients remain usable only for the no-loss no-op path. A loss-bearing
+    update must carry the unforgeable ``BamfGradientExecution`` issued by the
+    real B11 forward/backward owner; B09 then derives participation and the
+    final update mask from that same execution record.
     """
     if (type(parent) is not CompleteStudent
             or type(identity) is not AcceptedGenerationIdentity
@@ -229,12 +251,12 @@ def _admit_loaded_candidate_step(
             or identity.candidate_identity_sha256
             != candidate_identity_digest(parent.retained_state)):
         invalid("BAMF_GENERATION_POINTER_DRIFT")
-    eligibility, active_admitted = derive_participation_inputs(parent)
+    eligibility, _active_admitted = derive_participation_inputs(parent)
     return production_candidate_step(
         begin_candidate(parent.retained_state), gradients,
         loss_bearing_target=loss_bearing_target,
+        gradient_execution=gradient_execution,
         group_eligible=eligibility,
-        active_admitted=active_admitted,
         spec=parent.topology, extents=parent.extents,
         run_id=identity.run_id, generation=identity.generation + 1,
         parent_manifest_sha256=identity.manifest_sha256,
@@ -246,19 +268,20 @@ def _admit_loaded_candidate_step(
 
 
 def admit_uninterrupted_candidate_step(
-        run_dir: Path, parent: CompleteStudent, gradients, *,
-        loss_bearing_target, teacher_hparams,
+        run_dir: Path, parent: CompleteStudent, gradients=None, *,
+        loss_bearing_target, gradient_execution=None, teacher_hparams,
         decay, max_norm: float) -> CandidateTransaction:
     """Continue held state only after full current B13 custody authentication."""
     identity = _published_in_memory_identity(run_dir, parent)
     return _admit_loaded_candidate_step(
         parent, identity, gradients,
         loss_bearing_target=loss_bearing_target,
+        gradient_execution=gradient_execution,
         teacher_hparams=teacher_hparams, decay=decay, max_norm=max_norm)
 
 
-def admit_candidate_step(run_dir: Path, gradients, *,
-                         loss_bearing_target, teacher_hparams,
+def admit_candidate_step(run_dir: Path, gradients=None, *,
+                         loss_bearing_target, gradient_execution=None, teacher_hparams,
                          decay, max_norm: float) -> CandidateTransaction:
     """Cold-load the accepted state and enter the production execution guard."""
     pointer, parent = _read_accepted(run_dir)
@@ -266,6 +289,7 @@ def admit_candidate_step(run_dir: Path, gradients, *,
     return _admit_loaded_candidate_step(
         parent, identity, gradients,
         loss_bearing_target=loss_bearing_target,
+        gradient_execution=gradient_execution,
         teacher_hparams=teacher_hparams, decay=decay, max_norm=max_norm)
 
 
