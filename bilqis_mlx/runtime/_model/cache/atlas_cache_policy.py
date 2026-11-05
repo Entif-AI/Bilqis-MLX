@@ -8,13 +8,12 @@ from typing import Callable
 import numpy as np
 
 from bilqis_mlx.errors import BilqisError
-
 from .atlas_cache_binding import (
     CacheArtifact,
     CacheBinding,
     CacheByteCost,
     cache_byte_cost,
-    require_cache_binding,
+    _require_cache_binding,
 )
 
 
@@ -88,7 +87,7 @@ def _fallback(fp32_recompute, reason: str) -> CacheInferenceResult:
     return CacheInferenceResult(fp32_recompute(), False, reason, None)
 
 
-def interactive_cache_inference(
+def _interactive_cache_inference(
     artifact: CacheArtifact,
     expected_binding: CacheBinding,
     *,
@@ -97,13 +96,16 @@ def interactive_cache_inference(
     fp32_recompute: Callable[[], object],
     quality_check: Callable[[object], CacheQualityObservation],
     policy: CacheQualityPolicy,
+    authority,
 ) -> CacheInferenceResult:
     """Use a derived cache only after binding, decode, and declared quality checks."""
     if not isinstance(policy, CacheQualityPolicy):
         _invalid()
     policy.validate()
     try:
-        require_cache_binding(artifact, expected_binding)
+        from .atlas_cache_eligibility import validate_current_binding
+        validate_current_binding(authority, expected_binding)
+        _require_cache_binding(artifact, expected_binding, authority)
     except BilqisError:
         return _fallback(fp32_recompute, FALLBACK_BINDING)
     if artifact_owner is None:
@@ -112,12 +114,14 @@ def interactive_cache_inference(
     if not isinstance(artifact_owner, ExactCacheArtifactOwner):
         _invalid()
     try:
-        artifact_owner.require(artifact, expected_binding)
+        artifact_owner.require(authority, artifact, expected_binding)
     except BilqisError:
         return _fallback(fp32_recompute, FALLBACK_CORRECTION)
-    from .atlas_cache_records import decode_cache
+    from .atlas_cache_records import _decode_cache
     try:
-        approximate = decode_cache(artifact, expected_binding)
+        approximate = _decode_cache(
+            artifact, expected_binding, authority=authority
+        )
     except BilqisError:
         return _fallback(fp32_recompute, FALLBACK_DECODE)
     if not callable(cached_infer) or not callable(quality_check):

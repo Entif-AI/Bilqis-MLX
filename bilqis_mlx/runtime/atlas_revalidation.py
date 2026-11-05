@@ -1,28 +1,72 @@
-"""Public C09 correction/revalidation surface.
-
-Implementation is split by authority, evidence records, queue state and pure engine
-operations so the public API stays stable without one oversized owner module.
-"""
-from ._revalidation_base import (
-    CORRECTION_EVENT_SCHEMA, REVALIDATED_ARTIFACT_SCHEMA,
-    REVALIDATION_FRONTIER_SCHEMA, REVALIDATION_TASK_SCHEMA,
-    REVALIDATION_QUEUE_SCHEMA, STATE_TRANSITION_SCHEMA,
-    REVALIDATION_PROGRESS_SCHEMA, SOURCE_AUTHORITY_SCOPE_SCHEMA,
-    SOURCE_AUTHORITY_KEY_SCHEMA, SOURCE_AUTHORITY_REGISTRY_SCHEMA,
-    MAX_REVALIDATION_PRIORITY, _canonical_bytes, _digest, _invalid, _name,
-    _refs_payload, _time,
+"""Public C09 correction/revalidation contracts and operations."""
+from .atlas_revalidation_common import (
+    CORRECTION_EVENT_SCHEMA,
+    MAX_REVALIDATION_PRIORITY,
+    REVALIDATED_ARTIFACT_SCHEMA,
+    REVALIDATION_FRONTIER_SCHEMA,
+    REVALIDATION_PROGRESS_SCHEMA,
+    REVALIDATION_QUEUE_SCHEMA,
+    REVALIDATION_TASK_SCHEMA,
+    SOURCE_AUTHORITY_KEY_SCHEMA,
+    SOURCE_AUTHORITY_REGISTRY_SCHEMA,
+    SOURCE_AUTHORITY_SCOPE_SCHEMA,
+    STATE_TRANSITION_SCHEMA,
+    _digest,
+    _invalid,
+    _name,
 )
-from ._revalidation_events import CorrectionEvent, RevalidatedArtifact, RevalidationFrontier
-from ._revalidation_queue import (
-    RevalidationTask, StateTransition, RevalidationQueue, RevalidationProgress,
+from .atlas_revalidation_evidence import (
+    CorrectionEvent,
+    RevalidatedArtifact,
+    RevalidationFrontier,
+    StateTransition,
 )
-from ._revalidation_authority import (
-    SourceAuthorityScope, SourceAuthorityKey, SourceAuthorityRegistry,
+from .atlas_revalidation_queue import (
+    RevalidationProgress,
+    RevalidationQueue,
+    RevalidationTask,
 )
-from ._revalidation_engine import (
-    apply_correction, read_artifact, next_revalidation_task, revalidate_node,
+from .atlas_revalidation_runtime import (
     advance_revalidation,
+    apply_correction,
+    next_revalidation_task,
+    read_artifact,
+    revalidate_node,
+)
+from .atlas_source_authority import (
+    SourceAuthorityKey,
+    SourceAuthorityRegistry,
+    SourceAuthorityScope,
 )
 from .atlas_cache_owner import ExactCacheArtifactOwner, cache_artifact_digest
 
-__all__ = tuple(name for name in globals() if not name.startswith("__"))
+__all__ = [
+    "CORRECTION_EVENT_SCHEMA",
+    "MAX_REVALIDATION_PRIORITY",
+    "REVALIDATED_ARTIFACT_SCHEMA",
+    "REVALIDATION_FRONTIER_SCHEMA",
+    "REVALIDATION_PROGRESS_SCHEMA",
+    "REVALIDATION_QUEUE_SCHEMA",
+    "REVALIDATION_TASK_SCHEMA",
+    "SOURCE_AUTHORITY_KEY_SCHEMA",
+    "SOURCE_AUTHORITY_REGISTRY_SCHEMA",
+    "SOURCE_AUTHORITY_SCOPE_SCHEMA",
+    "STATE_TRANSITION_SCHEMA",
+    "CorrectionEvent",
+    "RevalidatedArtifact",
+    "RevalidationFrontier",
+    "RevalidationProgress",
+    "RevalidationQueue",
+    "RevalidationTask",
+    "SourceAuthorityKey",
+    "SourceAuthorityRegistry",
+    "SourceAuthorityScope",
+    "StateTransition",
+    "ExactCacheArtifactOwner",
+    "cache_artifact_digest",
+    "advance_revalidation",
+    "apply_correction",
+    "next_revalidation_task",
+    "read_artifact",
+    "revalidate_node",
+]

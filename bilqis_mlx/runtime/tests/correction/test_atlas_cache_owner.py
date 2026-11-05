@@ -7,6 +7,9 @@ from bilqis_mlx.runtime.atlas_cache_codec import (
     HEAD_WIDTH, CacheBinding, CacheQualityObservation, CacheQualityPolicy,
     codec_manifest, encode_cold_cache, interactive_cache_inference,
 )
+from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import (
+    CACHE_AUTHORITY, OWNER_ID, PUBLIC_KEY_HEX, install_test_owner,
+)
 from bilqis_mlx.runtime.atlas_revalidation import ExactCacheArtifactOwner
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
     AUTHORITY, _event, _result,
@@ -19,26 +22,37 @@ def _binding() -> CacheBinding:
         generation_sha256="1" * 64,
         lineage_sha256="2" * 64,
         topology_sha256="3" * 64,
-        source_rights_sha256="4" * 64,
-        causal_prefix_sha256="5" * 64,
-        masks_sha256="6" * 64,
-        scope_sha256="7" * 64,
-        key_sha256="8" * 64,
+        source_release_sha256="4" * 64,
+        semantic_release_sha256="5" * 64,
+        source_rights_sha256="6" * 64,
+        rights_purpose_sha256="7" * 64,
+        policy_epoch_sha256="8" * 64,
+        context_eligibility_sha256="9" * 64,
+        causal_prefix_sha256="a" * 64,
+        masks_sha256="b" * 64,
+        scope_sha256="c" * 64,
+        key_sha256="d" * 64,
+        inference_state_sha256="e" * 64,
         offset=17,
+        artifact_authority_id=OWNER_ID,
+        artifact_authority_public_key_hex=PUBLIC_KEY_HEX,
     )
 
 
 class ExactCacheArtifactOwnerTests(unittest.TestCase):
     def setUp(self):
+        install_test_owner(self)
         self.binding = _binding()
         values = np.ones((256, HEAD_WIDTH), dtype=np.float32)
         self.artifact = encode_cold_cache(
-            values, self.binding.codec_manifest, binding=self.binding)
-        self.owner = ExactCacheArtifactOwner(self.artifact, self.binding)
+            CACHE_AUTHORITY, values, self.binding.codec_manifest,
+            binding=self.binding)
+        self.owner = ExactCacheArtifactOwner(
+            CACHE_AUTHORITY, self.artifact, self.binding)
 
     def infer(self, owner):
         return interactive_cache_inference(
-            self.artifact, self.binding, artifact_owner=owner,
+            CACHE_AUTHORITY, self.artifact, self.binding, artifact_owner=owner,
             cached_infer=lambda _: "CACHE",
             fp32_recompute=lambda: "FP32",
             quality_check=lambda _: CacheQualityObservation(True, 0.0),
@@ -64,7 +78,8 @@ class ExactCacheArtifactOwnerTests(unittest.TestCase):
     def test_changed_or_revoked_cache_cannot_influence_inference(self):
         for digest, eligible in (("b" * 64, True), (None, False)):
             with self.subTest(eligible=eligible):
-                owner = ExactCacheArtifactOwner(self.artifact, self.binding)
+                owner = ExactCacheArtifactOwner(
+                    CACHE_AUTHORITY, self.artifact, self.binding)
                 event = _event(owner.rights_dependency)
                 owner.apply_correction(event, AUTHORITY)
                 node = owner.current_node

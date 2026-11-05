@@ -7,6 +7,11 @@ import unittest
 import numpy as np
 
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import (
+    CACHE_AUTHORITY,
+    OWNER_ID,
+    PUBLIC_KEY_HEX,
+)
 from bilqis_mlx.runtime.atlas_cache_codec import (
     HEAD_WIDTH,
     CacheBinding,
@@ -23,28 +28,55 @@ from bilqis_mlx.runtime.atlas_cache_codec import (
 from bilqis_mlx.runtime.atlas_revalidation import ExactCacheArtifactOwner
 
 
+_RAW_ENCODE = encode_cold_cache
+_RAW_DECODE = decode_cache
+_RAW_INFERENCE = interactive_cache_inference
+
+
+def encode_cold_cache(*args, **kwargs):
+    return _RAW_ENCODE(CACHE_AUTHORITY, *args, **kwargs)
+
+
+def decode_cache(*args, **kwargs):
+    return _RAW_DECODE(CACHE_AUTHORITY, *args, **kwargs)
+
+
+def interactive_cache_inference(*args, **kwargs):
+    return _RAW_INFERENCE(CACHE_AUTHORITY, *args, **kwargs)
+
+
 def _binding(manifest=None) -> CacheBinding:
     return CacheBinding(
         manifest or codec_manifest(),
         generation_sha256="1" * 64,
         lineage_sha256="2" * 64,
         topology_sha256="3" * 64,
-        source_rights_sha256="4" * 64,
-        causal_prefix_sha256="5" * 64,
-        masks_sha256="6" * 64,
-        scope_sha256="7" * 64,
-        key_sha256="8" * 64,
+        source_release_sha256="4" * 64,
+        semantic_release_sha256="5" * 64,
+        source_rights_sha256="6" * 64,
+        rights_purpose_sha256="7" * 64,
+        policy_epoch_sha256="8" * 64,
+        context_eligibility_sha256="9" * 64,
+        causal_prefix_sha256="a" * 64,
+        masks_sha256="b" * 64,
+        scope_sha256="c" * 64,
+        key_sha256="d" * 64,
+        inference_state_sha256="e" * 64,
         offset=17,
+        artifact_authority_id=OWNER_ID,
+        artifact_authority_public_key_hex=PUBLIC_KEY_HEX,
     )
 
 
 class CachePolicyTests(unittest.TestCase):
     def setUp(self):
+        from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import install_test_owner
+        install_test_owner(self)
         self.manifest = codec_manifest()
         self.binding = _binding(self.manifest)
         self.values = np.ones((256, HEAD_WIDTH), dtype=np.float32)
         self.artifact = encode_cold_cache(self.values, self.manifest, binding=self.binding)
-        self.owner = ExactCacheArtifactOwner(self.artifact, self.binding)
+        self.owner = ExactCacheArtifactOwner(CACHE_AUTHORITY, self.artifact, self.binding)
 
     def test_reference_candidate_evaluation_is_exact_fp32_only(self):
         values = np.arange(12, dtype=np.float32).reshape(3, 4)
@@ -97,10 +129,22 @@ class CachePolicyTests(unittest.TestCase):
 
 
     def test_lossy_cache_owners_have_no_training_gold_or_sidecar_dependencies(self):
-        from bilqis_mlx.runtime import atlas_cache_policy, atlas_cache_records
+        from bilqis_mlx.runtime import (
+            atlas_cache_binding,
+            atlas_cache_codec,
+            atlas_cache_policy,
+            atlas_cache_rebuild,
+            atlas_cache_records,
+        )
 
         imports = set()
-        for module in (atlas_cache_policy, atlas_cache_records):
+        for module in (
+            atlas_cache_binding,
+            atlas_cache_codec,
+            atlas_cache_policy,
+            atlas_cache_rebuild,
+            atlas_cache_records,
+        ):
             tree = ast.parse(Path(module.__file__).read_text())
             for node in ast.walk(tree):
                 if isinstance(node, ast.Import):
@@ -143,7 +187,8 @@ class CachePolicyTests(unittest.TestCase):
         agreement = int(np.argmax(approximate)) == int(np.argmax(reference))
         result = interactive_cache_inference(
             key_artifact, self.binding,
-            artifact_owner=ExactCacheArtifactOwner(key_artifact, self.binding),
+            artifact_owner=ExactCacheArtifactOwner(
+                CACHE_AUTHORITY, key_artifact, self.binding),
             cached_infer=lambda k: attention(k, cached_values),
             fp32_recompute=lambda: reference.copy(),
             quality_check=lambda output: CacheQualityObservation(
