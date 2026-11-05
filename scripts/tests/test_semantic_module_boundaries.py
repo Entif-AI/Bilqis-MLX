@@ -38,11 +38,21 @@ class SemanticBoundaryTests(unittest.TestCase):
             for part in ("semantics", "verification", "source_adapters"):
                 (project / "bilqis_mlx" / part).mkdir(parents=True)
             (project / "bilqis_mlx" / "consumer.py").write_text(
-                "from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection\n",
+                "from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection\n"
+                "from bilqis_mlx.semantics import atlas_snapshot\n",
+                encoding="utf-8")
+            (project / "bilqis_mlx" / "semantics" / "consumer.py").write_text(
+                "from . import atlas_snapshot\n",
                 encoding="utf-8")
             problems = inspect_semantic_boundaries(project)
-            self.assertEqual(len(problems), 1)
-            self.assertIn("SEMANTIC_IMPORT_ROLE LEGACY_COMPATIBILITY_ALIAS", problems[0])
+            legacy = [
+                item for item in problems
+                if "SEMANTIC_IMPORT_ROLE LEGACY_COMPATIBILITY_ALIAS" in item
+            ]
+            self.assertEqual(len(legacy), 3)
+            self.assertTrue(any("consumer.py:1" in item for item in legacy))
+            self.assertTrue(any("consumer.py:2" in item for item in legacy))
+            self.assertTrue(any("semantics/consumer.py:1" in item for item in legacy))
 
     def test_canonical_owner_and_declared_compatibility_facade_are_allowed(self):
         self.assertEqual(

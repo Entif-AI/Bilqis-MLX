@@ -57,6 +57,21 @@ def _import_targets(node: ast.AST, module: tuple[str, ...]) -> tuple[str, ...]:
     return ()
 
 
+def _semantic_import_targets(node: ast.AST, module: tuple[str, ...]) -> tuple[str, ...]:
+    targets = list(_import_targets(node, module))
+    if not isinstance(node, ast.ImportFrom):
+        return tuple(targets)
+    base = targets[0] if targets else ""
+    if _semantic_import_role(base) is not None:
+        return tuple(targets)
+    targets.extend(
+        ".".join((base, entry.name)).strip(".")
+        for entry in node.names
+        if entry.name != "*"
+    )
+    return tuple(target for target in targets if target)
+
+
 def _semantic_import_role(target: str) -> str | None:
     for declared, role in sorted(
             SEMANTIC_IMPORT_ROLES, key=lambda item: len(item[0]), reverse=True):
@@ -102,7 +117,7 @@ def _owner_boundary_problems(root: Path, src: Path) -> list[str]:
 def _declared_role_problems(path: Path, root: Path, module: tuple[str, ...]) -> list[str]:
     problems = []
     for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
-        for target in _import_targets(node, module):
+        for target in _semantic_import_targets(node, module):
             role = _semantic_import_role(target)
             if role in FORBIDDEN_CURRENT_IMPORT_ROLES:
                 problems.append(
