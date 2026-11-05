@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "aa828eb5cb8822a5614aa3353864bf187f83444d",
-  "updated_at": "2026-11-03T13:10:47.387115+00:00",
+  "updated_at": "2026-11-05T00:19:14Z",
   "exception": null,
   "items": [
     {
@@ -48,10 +48,10 @@
     {
       "issue": 785,
       "pr": null,
-      "state": "BLOCKED",
+      "state": "ACTIVE",
       "head_sha": "4b170d5d84a1b26799de59409e3d81a1f993b26e",
-      "summary": "Same pinned A01 admits two valid A06 feature selections (micro6schemas/full18,228concepts each); no single-global-profile authority inferred. Needed A03 owner localization encountered417-line released-schema file. Complete task preserved in BIOS Work Stack.",
-      "resume_trigger": "Canonical #347 released-schema structural repair reaches reviewed unified; activate785, sync once, verify owner and companion tests below240, then resume exact A03/A06 selection-authority trace without inventing global profile authority.",
+      "summary": "C01 structural prerequisite reached reviewed unified through PR803/e9226be2. Resume canonical A06 selection-authority investigation after current-unified sync; no artifact authority inferred.",
+      "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a-785-source-features-20261103"
     }
   ]
