@@ -4,7 +4,7 @@ import hashlib
 
 from bilqis_mlx.factory.formal_constructive import _resolve_from_bindings
 from bilqis_mlx.semantics.atlas_projection import AbiEntry, FormalDomainBinding
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.cognitive_operators import (
     OperatorBinding, SourceKind, SourceOperand, TypedValue, default_registry,
     numeric_domain_digest, operator_grant_digest, source_operand_digest,

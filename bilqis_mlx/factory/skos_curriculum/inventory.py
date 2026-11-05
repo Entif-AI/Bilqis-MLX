@@ -4,7 +4,7 @@ from urllib.parse import urlsplit
 from lib.ithkuil.src.skos.identity import Identity
 from bilqis_mlx.semantics.atlas_projection import (ATLAS_SNAPSHOT_SCHEMA,
     FrozenAtlasConcept, FrozenAtlasRelation, FrozenAtlasSnapshot)
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from .adapters import SOURCE_FAMILY_ADAPTERS
 from .common import (_fail, _digest, _load_pinned, _SEMANTIC_RELATIONS,
     _SOURCE_TABLES, _FORMAL_FAMILIES, _FORMAL_ID_PREFIXES)

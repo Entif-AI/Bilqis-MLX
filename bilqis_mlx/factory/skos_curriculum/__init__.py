@@ -1,5 +1,5 @@
 """A01 source-qualified A08 family inventory and constructive proposals."""
-from bilqis_mlx.semantics.atlas_snapshot import load_pinned_atlas_snapshot
+from bilqis_mlx.semantics.atlas.snapshot import load_pinned_atlas_snapshot
 from .common import (FAMILY_INVENTORY_SCHEMA, FAMILY_OBLIGATION_SCHEMA,
     FAMILY_CONCEPT_SCHEMA, FAMILY_RULE_SCHEMA, CURRICULUM_CANDIDATE_SCHEMA,
     LEARNED_FRONTIER_SCHEMA, SOURCE_LESSON_SCHEMA, SOURCE_LESSON_SET_SCHEMA,

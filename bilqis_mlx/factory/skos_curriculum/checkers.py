@@ -1,7 +1,7 @@
 """Independent source replay and exact constructive lesson checking."""
 from __future__ import annotations
 from bilqis_mlx.semantics.atlas_projection import FrozenAtlasSnapshot
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from .common import (_fail, _load_pinned, _SEMANTIC_RELATIONS, SOURCE_FACT_ARITY,
     SOURCE_FACT_PREFIX_ARITY, SOURCE_FACT_REF_INDEX)
 from .inventory import _inventory_source_families

@@ -9,7 +9,7 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory import morphology_lessons as lessons
 from bilqis_mlx.factory.morphology_lesson_types import MorphologyDirection
 from bilqis_mlx.factory.morphology_source import MorphologySourceLaw
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.context_eligibility import (
     ContextHold,
     ContextPolicy,

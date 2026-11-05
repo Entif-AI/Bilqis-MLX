@@ -16,7 +16,7 @@ from bilqis_mlx.factory.curriculum.formal_lesson_types import formal_variation_a
 from bilqis_mlx.semantics.atlas_projection import (
     FormalDomainBinding, compile_atlas_release, persist_atlas_release,
 )
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.cognitive_operators import TypedValue
 
 from bilqis_mlx.factory.tests.formal_lesson_fixtures import (

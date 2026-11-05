@@ -1,10 +1,19 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "e836f90925cfe1b94cbb638aa25933cc2fe70ab1",
-  "updated_at": "2026-11-05T15:43:27Z",
+  "observed_unified": "7c8974191f5c9c5449f1056149776771ad2b72f3",
+  "updated_at": "2026-11-05T16:03:09Z",
   "exception": null,
   "items": [
+    {
+      "issue": 428,
+      "pr": 869,
+      "state": "TURNED_IN",
+      "head_sha": "9119d7265d555124c2396fcae0e48122ca807e91",
+      "summary": "A12.2 implementation candidate PR #869 consumes reviewed-unified 7c897419. Substantive head 9119d726 cuts all current repository callers from the legacy semantics.atlas_snapshot alias to canonical semantics.atlas.snapshot, adds immutable declared semantic import/ownership roles that forbid legacy aliases as current authority while preserving historical decode compatibility, and closes the first exact-head EGM Major by rejecting package-named and relative ImportFrom alias forms as well as direct legacy-module imports. The source-to-consumer/rebuild receipt and #295 acceptance matrix remain bound to the accepted A12.1 semantic proof. Source-free A12/boundary proof is 16/16; affected Factory/runtime/import-only checks are green apart from one inherited learning-layout literal count unrelated to this patch; CI-equivalent changed-file smell reports zero new findings. Hosted checks and fresh exact-head EGM rebind are pending.",
+      "resume_trigger": "Hosted checks and fresh exact-head EGM pass on the final PR #869 candidate.",
+      "preserved_branch": "codex/bamf02-a12-2-428-20261105"
+    },
     {
       "issue": 427,
       "pr": null,

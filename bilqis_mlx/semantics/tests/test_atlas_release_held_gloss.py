@@ -19,7 +19,7 @@ from bilqis_mlx.semantics.atlas_projection import (
     AtlasLabel, SHAPE_POLICY,
     _canonical_bytes as _atlas_bytes, _digest as _atlas_sha256,
 )
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 
 
 def _held_gloss_fixture():

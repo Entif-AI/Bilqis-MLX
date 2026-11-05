@@ -13,7 +13,7 @@ from bilqis_mlx.factory import morphology_source as source
 from bilqis_mlx.semantics.atlas_projection import (
     FormalDomainBinding, compile_atlas_release, persist_atlas_release,
 )
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 
 
 COMPOSITION_ID = "COMP-1a7a421841756f"

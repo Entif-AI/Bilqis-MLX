@@ -21,7 +21,7 @@ from bilqis_mlx.semantics.atlas_projection import (
     compile_atlas_release,
     persist_atlas_release,
 )
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.context_eligibility import (
     ContextPolicy,
     SourceFrontier,
