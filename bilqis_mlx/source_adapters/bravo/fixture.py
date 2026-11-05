@@ -16,9 +16,13 @@ from bilqis_mlx.factory.evidence_curriculum import (
     compile_evidence_lessons,
     split_evidence_families,
 )
+from bilqis_mlx.semantics.atlas.snapshot_contracts import AtlasArtifactSelection
 from bilqis_mlx.source_adapters.evidence_frames import (
     PUBLIC_FIXTURE,
     PUBLIC_FIXTURE_SOURCE,
+    PUBLIC_INDEPENDENT_BUNDLE_SOURCE,
+    PUBLIC_INDEPENDENT_MANIFEST_CID,
+    PUBLIC_INDEPENDENT_SOURCE,
     BamfEvidenceSnapshot,
     EvidenceRecord,
     EvidenceRights,
@@ -39,9 +43,6 @@ from bilqis_mlx.source_adapters.bravo.receipt import (
     PublicBravoFixtureReceipt,
     PublicLessonWitness,
 )
-
-
-INDEPENDENT_SOURCE = "actor=actor_02; category=study; status=completed; duration=0.50 h"
 
 
 def _fail(reason: str) -> None:
@@ -141,23 +142,22 @@ def _same_family_rejection(
 def _independent_split(
     primary: PublicLessonWitness,
     primary_snapshot: BamfEvidenceSnapshot,
-    *,
-    semantic_release: str,
-    category_ref: str,
-    hour_unit_ref: str,
-    agent_role_ref: str,
 ) -> ExternalWitnessSplitReceipt:
-    source_digest = sha256(INDEPENDENT_SOURCE.encode("utf-8")).hexdigest()
+    semantic_release = primary_snapshot.semantic_release
+    primary_record = _record(primary_snapshot)
+    source_digest = sha256(PUBLIC_INDEPENDENT_BUNDLE_SOURCE.encode("utf-8")).hexdigest()
     record = parse_public_fixture_source(
-        INDEPENDENT_SOURCE,
-        category_ref=category_ref,
-        hour_unit_ref=hour_unit_ref,
-        agent_role_ref=agent_role_ref,
+        PUBLIC_INDEPENDENT_SOURCE,
+        category_ref=primary_record.category_ref,
+        hour_unit_ref=primary_record.reported_value.unit_ref,
+        agent_role_ref=primary_record.agent_role_ref,
     )
+    second_start = len(PUBLIC_FIXTURE_SOURCE) + 1
     record = EvidenceRecord(
         record_id="fixture-002",
         actor_ref=record.actor_ref,
-        source_span=record.source_span,
+        source_span=type(record.source_span)(
+            second_start, second_start + len(PUBLIC_INDEPENDENT_SOURCE)),
         category_ref=record.category_ref,
         category_label=record.category_label,
         status=record.status,
@@ -172,15 +172,16 @@ def _independent_split(
     rights = EvidenceRights(PUBLIC_FIXTURE, "TRAINING", True, True)
     snapshot = BamfEvidenceSnapshot(
         snapshot_id="bamf-public-fixture-002",
-        source_manifest_cid="public-fixture:bravo-a10-independent/v1:" + source_digest,
+        source_manifest_cid=PUBLIC_INDEPENDENT_MANIFEST_CID,
         source_byte_digest=source_digest,
         interpretation_revision="bravo-public-fixture/v1",
         semantic_release=semantic_release,
         rights=rights,
-        records=(record,),
+        records=(primary_record, record),
     )
     candidates = compile_evidence_lessons(snapshot, rights, semantic_release)
-    heldout = next(iter(candidates.lessons))
+    heldout = next(
+        lesson for lesson in candidates.lessons if lesson.record_id == record.record_id)
     if not heldout.check():
         _fail("BAMF_PUBLIC_BRAVO_INDEPENDENT_CHECKER_FAILED")
     return ExternalWitnessSplitReceipt(
@@ -196,25 +197,20 @@ def _independent_split(
 
 def compile_public_bravo_fixture_receipt(
     *,
-    semantic_release: str,
-    category_ref: str,
-    hour_unit_ref: str,
-    agent_role_ref: str,
+    atlas_selection: AtlasArtifactSelection,
 ) -> PublicBravoFixtureReceipt:
     """Compile the exact public fixture and bind every derivative to one family."""
     snapshot, rights = build_public_fixture_snapshot(
-        semantic_release=semantic_release,
-        category_ref=category_ref,
-        hour_unit_ref=hour_unit_ref,
-        agent_role_ref=agent_role_ref,
+        atlas_selection=atlas_selection,
     )
     record = _record(snapshot)
+    semantic_release = snapshot.semantic_release
     candidates = compile_evidence_lessons(snapshot, rights, semantic_release)
     witnesses = _witnesses(candidates, snapshot, record)
     first: EvidenceLesson = next(iter(candidates.lessons))
-    if (first.frame.category_ref != category_ref
-            or first.frame.actor_role_ref != agent_role_ref
-            or first.frame.reported_unit_ref != hour_unit_ref
+    if (first.frame.category_ref != record.category_ref
+            or first.frame.actor_role_ref != record.agent_role_ref
+            or first.frame.reported_unit_ref != record.reported_value.unit_ref
             or first.rendered != EXPECTED_RENDERED):
         _fail("BAMF_PUBLIC_BRAVO_FRAME_INVALID")
     split = split_evidence_families(
@@ -228,10 +224,6 @@ def compile_public_bravo_fixture_receipt(
         independent_split=_independent_split(
             witnesses[0],
             snapshot,
-            semantic_release=semantic_release,
-            category_ref=category_ref,
-            hour_unit_ref=hour_unit_ref,
-            agent_role_ref=agent_role_ref,
         ),
     )
     return PublicBravoFixtureReceipt(

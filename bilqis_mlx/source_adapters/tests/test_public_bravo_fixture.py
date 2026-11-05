@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 from hashlib import sha256
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory.evidence_curriculum import (
@@ -11,9 +12,11 @@ from bilqis_mlx.factory.evidence_curriculum import (
 )
 from bilqis_mlx.source_adapters.evidence_frames import (
     PUBLIC_FIXTURE_SOURCE,
+    EvidenceSemanticAuthority,
     SourceSpan,
     build_public_fixture_snapshot,
 )
+from bilqis_mlx.semantics.atlas.snapshot_contracts import AtlasArtifactSelection
 from bilqis_mlx.source_adapters.bravo.fixture import (
     EXPECTED_QUESTIONS,
     EXPECTED_RENDERED,
@@ -21,19 +24,32 @@ from bilqis_mlx.source_adapters.bravo.fixture import (
 )
 
 
-RELEASE = "a" * 64
-STUDY = "LEXSENSE-24e0d37974513f"
-HOUR = "fixture:admitted-unit:hour"
-AGENT = "AG-7ebd45a9797f21"
+RELEASE = "58e0c281b5da18b9b7e6c803709b29eeeb0a88f16b06f48de692808e2fb88306"
+STUDY = (
+    "https://github.com/Entif-AI/Bilqis-MLX/id/sense/"
+    "NI-LEXICON-CURRICULUM/LEXROOT-3e51e33b4a970f/STEM%203/BSC"
+)
+HOUR = "h"
+AGENT = "agent"
 
 
 class PublicBravoFixtureTests(unittest.TestCase):
+    def setUp(self):
+        self.selection = AtlasArtifactSelection(
+            "synthetic:test-atlas", "b" * 64, RELEASE, "c" * 64)
+        authority = EvidenceSemanticAuthority(
+            RELEASE, STUDY, HOUR, AGENT, "UNIT_CONVERT",
+            "059ccd2a33330473973914b94fc0d772d6f845b6ee9c8e736f1876e6a9823e9f")
+        self._source_authority = patch(
+            "bilqis_mlx.source_adapters.evidence_frames."
+            "resolve_public_fixture_authority",
+            return_value=authority)
+        self._source_authority.start()
+        self.addCleanup(self._source_authority.stop)
+
     def receipt(self):
         return compile_public_bravo_fixture_receipt(
-            semantic_release=RELEASE,
-            category_ref=STUDY,
-            hour_unit_ref=HOUR,
-            agent_role_ref=AGENT,
+            atlas_selection=self.selection,
         )
 
     def test_literal_fixture_receipt_binds_exact_source_record_frame_lessons_and_checkers(self):
@@ -109,10 +125,7 @@ class PublicBravoFixtureTests(unittest.TestCase):
 
     def test_paraphrase_or_duplicate_cannot_create_an_independent_witness(self):
         snapshot, rights = build_public_fixture_snapshot(
-            semantic_release=RELEASE,
-            category_ref=STUDY,
-            hour_unit_ref=HOUR,
-            agent_role_ref=AGENT,
+            atlas_selection=self.selection,
         )
         original = snapshot.records[0]
         paraphrase = replace(
