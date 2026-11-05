@@ -1,10 +1,19 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "70a4ef1e883d348920d64083c7546f443a90ef77",
-  "updated_at": "2026-11-05T06:20:10+00:00",
+  "observed_unified": "6e12e5a077183713241bb9b2b0d0762d8d95fa47",
+  "updated_at": "2026-11-05T09:03:29.170876+00:00",
   "exception": null,
   "items": [
+    {
+      "issue": 558,
+      "pr": null,
+      "state": "WAITING",
+      "head_sha": "f99903f3",
+      "summary": "C08.4 software contract checkpoint complete on current reviewed unified: typed distributed-step identity, deterministic disjoint rank partitions, FP32 weighted reduction, duplicate/stale/lost-rank rejection, single logical commit replay guard, resume execution metadata, backend capability surface and retained-gain topology benchmark policy. 12/12 distributed tests, 20/20 with adjacent C08 resources, 11/11 governance; same-host 2-rank ring probe passes global mean 4.0 on both ranks.",
+      "resume_trigger": "Final issue acceptance requires (1) actual heterogeneous Apple-Silicon two-worker benchmark with measured wall/communication/peak-memory/retained-gain comparison and (2) current accepted B11/B12/B13 model/optimizer/custody receipts to bind the logical commit to the real candidate transaction. Same-host two-rank probe is explicitly not that heterogeneous acceptance.",
+      "preserved_branch": "codex/bamf02-c08-4-558-20261105"
+    },
     {
       "issue": 347,
       "pr": null,
