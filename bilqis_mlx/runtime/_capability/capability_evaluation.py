@@ -1,7 +1,7 @@
 """Evaluator-side complete-solver measurements and advisory paired eligibility."""
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum
 import re
 from typing import Callable
@@ -14,6 +14,8 @@ from ..semantics.domains import contract_digest
 from .cognitive_solver import (
     CapabilityResult, GenerationBinding, SolveBudget, SolveContext, solve_task,
 )
+from .cognitive_artifact_owner import CognitiveArtifactOwner
+from ..semantics.memo import PureOperationMemo
 
 CAPABILITY_GROUP_ARITY = 2
 
@@ -114,6 +116,10 @@ class CompleteSolver:
     """Bind the actual solver to task-local source and one opaque generation ID."""
     context_for: Callable[[TaskGoal, str], SolveContext]
     budget: SolveBudget
+    memo: PureOperationMemo = field(
+        default_factory=PureOperationMemo, init=False, repr=False, compare=False)
+    artifact_owner: CognitiveArtifactOwner = field(
+        default_factory=CognitiveArtifactOwner, init=False, repr=False, compare=False)
 
     def __post_init__(self):
         if not callable(self.context_for) or not isinstance(self.budget, SolveBudget):
@@ -123,6 +129,11 @@ class CompleteSolver:
         context = self.context_for(goal, generation)
         if not isinstance(context, SolveContext):
             _invalid("BAMF_SOLVER_SOURCE_CONTEXT_INVALID")
+        context = replace(
+            context,
+            memo=context.memo or self.memo,
+            artifact_owner=self.artifact_owner,
+        )
         binding = GenerationBinding(
             generation, goal.semantic_release, contract_digest(context.binding))
         result = solve_task(goal, context, binding, self.budget)

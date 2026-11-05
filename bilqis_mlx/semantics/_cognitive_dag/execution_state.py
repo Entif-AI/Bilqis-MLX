@@ -15,7 +15,10 @@ _CONTINUE = object()
 
 
 class _Execution:
-    def __init__(self, goal, binding, memo, operation_limit, preparation):
+    def __init__(
+        self, goal, binding, memo, operation_limit, preparation,
+        artifact_owner=None, support_task_sha256=None,
+    ):
         self.goal = goal
         self.binding = binding
         self.memo = memo
@@ -35,6 +38,38 @@ class _Execution:
         self.executed: list[str] = []
         self.results: dict[str, _public().TypedValue] = {}
         self.lineage: dict[str, str] = {}
+        self.artifact_owner = artifact_owner
+        self.support_task_sha256 = support_task_sha256
+
+    def cache_dependencies(self, refs, spec, numeric):
+        source_handles = set()
+        for ref in refs:
+            if ref.kind is _public().RefKind.LITERAL:
+                source_handles.add(ref.source_handle)
+            elif ref.kind is _public().RefKind.INPUT:
+                envelope = next(
+                    item for item in self.binding.frames
+                    if item.frame_handle == ref.frame_handle)
+                source_handles.add(envelope.source_handle)
+                member = next(
+                    item for item in envelope.members
+                    if (item.role_id, item.occurrence_index)
+                    == (ref.role_id, ref.occurrence_index))
+                source_handles.add(member.source_handle)
+        source_handles.add("source:operator:" + spec.operator_id)
+        if numeric is not None:
+            source_handles.add(self.binding.numeric_source_handle)
+        predecessor_keys = tuple(sorted(
+            self.lineage[ref.result_node_id]
+            for ref in refs if ref.kind is _public().RefKind.RESULT))
+        return (
+            tuple(sorted(item for item in source_handles if item is not None)),
+            predecessor_keys,
+            _public().contract_digest(self.binding.policy),
+            _public().contract_digest((
+                self.binding.frontier.rights_epoch,
+                self.binding.frontier.correction_generation)),
+        )
 
     def finish(self, answer: TypedValue, reason: str | None = None) -> DAGResult:
         return _public().DAGResult(answer, _public().DAGReceipt(
@@ -101,6 +136,19 @@ class _Execution:
                         _public().ValueState.VALUE, _public().ValueState.NONE)
                     or cached.source_handle is not None):
                 _public()._invalid("BAMF_DAG_MEMO_VALUE_INVALID")
+            if self.artifact_owner is not None:
+                sources, parents, policy_digest, rights_digest = (
+                    self.cache_dependencies(refs, spec, numeric))
+                self.artifact_owner.require_exact_cache(
+                    key=key,
+                    content_digest=_public().contract_digest(cached),
+                    source_handles=sources,
+                    predecessor_keys=parents,
+                    operator_id=spec.operator_id,
+                    semantic_release=self.release,
+                    policy_digest=policy_digest,
+                    rights_digest=rights_digest,
+                    task_sha256=self.support_task_sha256)
             self.hits += 1
             value = cached
         else:
@@ -109,6 +157,19 @@ class _Execution:
             if self.memo is not None and value.state in (
                     _public().ValueState.VALUE, _public().ValueState.NONE):
                 _public()._memo_put_verified(self.memo, key, value)
+                if self.artifact_owner is not None:
+                    sources, parents, policy_digest, rights_digest = (
+                        self.cache_dependencies(refs, spec, numeric))
+                    self.artifact_owner.materialize_exact_cache(
+                        key=key,
+                        content_digest=_public().contract_digest(value),
+                        source_handles=sources,
+                        predecessor_keys=parents,
+                        operator_id=spec.operator_id,
+                        semantic_release=self.release,
+                        policy_digest=policy_digest,
+                        rights_digest=rights_digest,
+                        task_sha256=self.support_task_sha256)
         self.results[node.node_id] = value
         self.lineage[node.node_id] = key
         self.executed.append(node.node_id)

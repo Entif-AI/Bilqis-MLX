@@ -13,6 +13,10 @@ from .cognitive_solver import SOLVE_REPLAY_SCHEMA
 from .operator_registry import RouteKind
 from ..semantics.cognitive_dag import DAGReceipt
 from ..semantics.cognitive_operators import ValueState
+from .cognitive_artifact_owner import CognitiveArtifactOwner
+from .atlas_requalification import (
+    CapabilitySupport, RequalificationLedger, RequalificationStatus,
+)
 
 HISTORY_SCHEMA = "bilqis.c05.frozen-assessment/v1"
 TRANSLATION_SCHEMA = "bilqis.c05.translation/v1"
@@ -168,6 +172,45 @@ def freeze_assessment(assessment: Assessment) -> FrozenHistory:
     payload = json.dumps(record, sort_keys=True, separators=(",", ":"),
                          ensure_ascii=False, allow_nan=False).encode("utf-8")
     return FrozenHistory(payload, hashlib.sha256(payload).hexdigest())
+
+
+def materialize_capability_support(
+    assessment: Assessment, artifact_owner: CognitiveArtifactOwner,
+) -> RequalificationLedger:
+    """Derive learned support only from the retained assessment's real reads."""
+    if (not isinstance(assessment, Assessment)
+            or not isinstance(artifact_owner, CognitiveArtifactOwner)):
+        _invalid("BAMF_C09_CAPABILITY_SUPPORT_INVALID")
+    history = freeze_assessment(assessment)
+    supports = []
+    for capability_id, _ in assessment.cohort.capability_groups:
+        cases = tuple(
+            case for case in assessment.cohort.cases
+            if case.capability_id == capability_id)
+        artifact_ids = tuple(sorted({
+            artifact_id
+            for case in cases
+            for artifact_id in artifact_owner.support_for_task(
+                contract_digest(case.goal))
+        }))
+        if not artifact_ids:
+            continue
+        source_anchor_ids = tuple(sorted({
+            family if family.startswith("source:") else "source:" + family
+            for family in (case.source_family_id for case in cases)
+        }))
+        support = CapabilitySupport(
+            capability_id=capability_id,
+            support_artifact_ids=artifact_ids,
+            source_anchor_ids=source_anchor_ids,
+            retained_generation_sha256=assessment.generation_digest,
+            observation_ids=tuple(sorted(case.episode_id for case in cases)),
+            status=RequalificationStatus.QUALIFIED,
+        )
+        artifact_owner.materialize_capability_support(support, history.sha256)
+        supports.append(support)
+    return RequalificationLedger(tuple(sorted(
+        supports, key=lambda item: item.capability_id)))
 
 
 @dataclass(frozen=True)

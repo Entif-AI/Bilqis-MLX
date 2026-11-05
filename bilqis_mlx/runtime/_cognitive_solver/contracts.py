@@ -23,6 +23,7 @@ from ...semantics.memo import PureOperationMemo
 from ..operator_registry import (
     RouteKind, RouteRegistry, default_route_registry,
 )
+from ..cognitive_artifact_owner import CognitiveArtifactOwner
 
 
 GENERATION_BINDING_SCHEMA = "bilqis.c04.generation-binding/v1"
@@ -156,6 +157,7 @@ class SolveContext:
     local_refiner: Callable[[NeuralRequest, int], NeuralProposal | None] | None = None
     deterministic_fallback: QualifiedComposition | None = None
     memo: PureOperationMemo | None = None
+    artifact_owner: CognitiveArtifactOwner | None = None
     route_registry: RouteRegistry = field(default_factory=default_route_registry)
     schema_version: str = SOLVE_CONTEXT_SCHEMA
 
@@ -175,6 +177,8 @@ class SolveContext:
                                        _public().QualifiedComposition))
                 or (self.memo is not None
                     and not isinstance(self.memo, _public().PureOperationMemo))
+                or (self.artifact_owner is not None
+                    and not isinstance(self.artifact_owner, CognitiveArtifactOwner))
                 or not isinstance(self.route_registry, _public().RouteRegistry)
                 or self.schema_version != _public().SOLVE_CONTEXT_SCHEMA):
             _public()._invalid("BAMF_C04_SOLVE_CONTEXT_INVALID")
