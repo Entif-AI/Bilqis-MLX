@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import Enum
 from fractions import Fraction
 
-from bilqis_mlx.source_adapters.evidence_frames import (
+from bilqis_mlx.source_adapters.evidence.evidence_frames import (
     PRIVATE_REAL, PUBLIC_FIXTURE,
     EvidenceDerivation, EvidenceFrame, EvidenceRights,
     EventTime, SourceSpan,

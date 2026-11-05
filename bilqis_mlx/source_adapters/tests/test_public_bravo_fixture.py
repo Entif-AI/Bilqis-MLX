@@ -20,7 +20,7 @@ from bilqis_mlx.source_adapters.bravo.fixture import (
 from bilqis_mlx.source_adapters.bravo.receipt import (
     EXPECTED_QUESTIONS, EXPECTED_RENDERED,
 )
-from bilqis_mlx.source_adapters.evidence_frames import (
+from bilqis_mlx.source_adapters.evidence.evidence_frames import (
     PUBLIC_FIXTURE_SOURCE, EvidenceSemanticAuthority, SourceSpan,
     build_public_fixture_snapshot,
 )
@@ -42,7 +42,7 @@ class PublicBravoFixtureTests(unittest.TestCase):
         authority = EvidenceSemanticAuthority(
             RELEASE, STUDY, HOUR, AGENT, "UNIT_CONVERT", GRANT)
         self._authority = patch(
-            "bilqis_mlx.source_adapters.evidence_frames."
+            "bilqis_mlx.source_adapters.evidence.evidence_frames."
             "resolve_public_fixture_authority",
             return_value=authority)
         self._authority.start()

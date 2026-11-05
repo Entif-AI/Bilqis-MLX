@@ -10,7 +10,7 @@ from bilqis_mlx.factory.evidence_curriculum import (
     compile_evidence_lessons, split_evidence_families,
 )
 from bilqis_mlx.semantics.atlas.snapshot_contracts import AtlasArtifactSelection
-from bilqis_mlx.source_adapters.evidence_frames import (
+from bilqis_mlx.source_adapters.evidence.evidence_frames import (
     PUBLIC_FIXTURE,
     PUBLIC_FIXTURE_SOURCE,
     PUBLIC_INDEPENDENT_BUNDLE_SOURCE,

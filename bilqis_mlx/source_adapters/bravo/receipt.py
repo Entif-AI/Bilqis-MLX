@@ -8,7 +8,7 @@ import re
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.factory.evidence_curriculum import EvidenceSplitReceipt
-from bilqis_mlx.source_adapters.evidence_frames import (
+from bilqis_mlx.source_adapters.evidence.evidence_frames import (
     PUBLIC_FIXTURE, PUBLIC_FIXTURE_SOURCE, EvidenceRights,
 )
 

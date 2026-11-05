@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from hashlib import sha256
 
 from bilqis_mlx.semantics.cognitive_operators import default_registry, operator_grant_digest
-from bilqis_mlx.source_adapters.evidence_types import (
+from bilqis_mlx.source_adapters.evidence.evidence_types import (
     BamfEvidenceSnapshot,
     EvidenceRecord,
     EvidenceSemanticAuthority,

@@ -12082,56 +12082,56 @@
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_DUPLICATE_REQUESTED_SEMANTIC'",
-      "path": "bilqis_mlx/source_adapters/catalog.py"
+      "path": "bilqis_mlx/source_adapters/catalog/__init__.py"
     },
     {
       "code_hint": "COMPOSITION_DUPLICATE_SOURCE_BINDING",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_DUPLICATE_SOURCE_BINDING'",
-      "path": "bilqis_mlx/source_adapters/catalog.py"
+      "path": "bilqis_mlx/source_adapters/catalog/__init__.py"
     },
     {
       "code_hint": "COMPOSITION_INVALID_SOURCE_CATALOG",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_INVALID_SOURCE_CATALOG'",
-      "path": "bilqis_mlx/source_adapters/catalog.py"
+      "path": "bilqis_mlx/source_adapters/catalog/__init__.py"
     },
     {
       "code_hint": "COMPOSITION_INVALID_SOURCE_SIGNATURE",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_INVALID_SOURCE_SIGNATURE'",
-      "path": "bilqis_mlx/source_adapters/catalog.py"
+      "path": "bilqis_mlx/source_adapters/catalog/__init__.py"
     },
     {
       "code_hint": "COMPOSITION_SOURCE_ARITY_DRIFT",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_SOURCE_ARITY_DRIFT'",
-      "path": "bilqis_mlx/source_adapters/catalog.py"
+      "path": "bilqis_mlx/source_adapters/catalog/__init__.py"
     },
     {
       "code_hint": "COMPOSITION_SOURCE_MEANING_CONTRACT_DRIFT",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_SOURCE_MEANING_CONTRACT_DRIFT'",
-      "path": "bilqis_mlx/source_adapters/catalog.py"
+      "path": "bilqis_mlx/source_adapters/catalog/__init__.py"
     },
     {
       "code_hint": "COMPOSITION_SOURCE_TOKEN_IDENTITY_DRIFT",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_SOURCE_TOKEN_IDENTITY_DRIFT'",
-      "path": "bilqis_mlx/source_adapters/catalog.py"
+      "path": "bilqis_mlx/source_adapters/catalog/__init__.py"
     },
     {
       "code_hint": "COMPOSITION_UNRESOLVED_SEMANTIC_ID",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_UNRESOLVED_SEMANTIC_ID'",
-      "path": "bilqis_mlx/source_adapters/catalog.py"
+      "path": "bilqis_mlx/source_adapters/catalog/__init__.py"
     },
     {
       "code_hint": "COPULAR_CODEC_INCOMPLETE",
@@ -12264,49 +12264,49 @@
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_MICRO_ENTITY_SHAPE'",
-      "path": "bilqis_mlx/source_adapters/micro.py"
+      "path": "bilqis_mlx/source_adapters/micro/__init__.py"
     },
     {
       "code_hint": "COMPOSITION_MICRO_INCOMPLETE_APPLICATION",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_MICRO_INCOMPLETE_APPLICATION'",
-      "path": "bilqis_mlx/source_adapters/micro.py"
+      "path": "bilqis_mlx/source_adapters/micro/__init__.py"
     },
     {
       "code_hint": "COMPOSITION_MICRO_INVALID_AST",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_MICRO_INVALID_AST'",
-      "path": "bilqis_mlx/source_adapters/micro.py"
+      "path": "bilqis_mlx/source_adapters/micro/__init__.py"
     },
     {
       "code_hint": "COMPOSITION_MICRO_LITERAL_SHAPE",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_MICRO_LITERAL_SHAPE'",
-      "path": "bilqis_mlx/source_adapters/micro.py"
+      "path": "bilqis_mlx/source_adapters/micro/__init__.py"
     },
     {
       "code_hint": "COMPOSITION_MICRO_OPERATOR_NAME_INVALID",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_MICRO_OPERATOR_NAME_INVALID'",
-      "path": "bilqis_mlx/source_adapters/micro.py"
+      "path": "bilqis_mlx/source_adapters/micro/__init__.py"
     },
     {
       "code_hint": "COMPOSITION_MICRO_OPERATOR_SHAPE",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_MICRO_OPERATOR_SHAPE'",
-      "path": "bilqis_mlx/source_adapters/micro.py"
+      "path": "bilqis_mlx/source_adapters/micro/__init__.py"
     },
     {
       "code_hint": "COMPOSITION_MICRO_UNSUPPORTED_SOURCE_NODE",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_MICRO_UNSUPPORTED_SOURCE_NODE'",
-      "path": "bilqis_mlx/source_adapters/micro.py"
+      "path": "bilqis_mlx/source_adapters/micro/__init__.py"
     },
     {
       "code_hint": "NUMERIC_CODEC_CONTEXT_OVERFLOW",

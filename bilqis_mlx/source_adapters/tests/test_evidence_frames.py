@@ -10,7 +10,7 @@ from bilqis_mlx.semantics.atlas.snapshot_contracts import AtlasArtifactSelection
 from bilqis_mlx.source_adapters.tests._evidence_cases import (
     EvidenceFamilyAuthorityCases,
 )
-from bilqis_mlx.source_adapters.evidence_frames import (
+from bilqis_mlx.source_adapters.evidence.evidence_frames import (
     LEGACY_PUBLIC_FIXTURE_MANIFEST_CID,
     PUBLIC_FIXTURE_SOURCE,
     BamfEvidenceSnapshot,
@@ -51,7 +51,7 @@ class EvidenceFrameTests(EvidenceFamilyAuthorityCases, unittest.TestCase):
             RELEASE, STUDY, HOUR, AGENT, "UNIT_CONVERT",
             "059ccd2a33330473973914b94fc0d772d6f845b6ee9c8e736f1876e6a9823e9f")
         self._source_authority = patch(
-            "bilqis_mlx.source_adapters.evidence_frames."
+            "bilqis_mlx.source_adapters.evidence.evidence_frames."
             "resolve_public_fixture_authority",
             return_value=authority)
         self._source_authority.start()

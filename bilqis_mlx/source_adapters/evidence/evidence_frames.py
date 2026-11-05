@@ -20,7 +20,7 @@ from bilqis_mlx.semantics.released_frame_schemas import (
 )
 
 
-from bilqis_mlx.source_adapters.evidence_source_manifests import (
+from bilqis_mlx.source_adapters.evidence.source_manifests import (
     PRIVATE_REAL_FIXTURE_MANIFEST_CID,
     PRIVATE_REAL_FIXTURE_SOURCE,
     PUBLIC_DUPLICATE_MANIFEST_CID,
@@ -38,7 +38,7 @@ from bilqis_mlx.source_adapters.evidence_source_manifests import (
     source_family_id,
     source_manifest_semantic_authority,
 )
-from bilqis_mlx.source_adapters.evidence_types import (
+from bilqis_mlx.source_adapters.evidence.evidence_types import (
     SCHEMA, PRIVATE_REAL, PUBLIC_FIXTURE, UNCLASSIFIED,
     BamfEvidenceSnapshot, EvidenceDerivation, EvidenceFrame, EvidenceRecord,
     EvidenceRights, EvidenceSemanticAuthority, EventTime, ReportedValue,

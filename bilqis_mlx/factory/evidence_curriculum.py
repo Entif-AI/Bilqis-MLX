@@ -4,7 +4,7 @@ from __future__ import annotations
 from decimal import Decimal, InvalidOperation, localcontext
 
 from bilqis_mlx.errors import BilqisError, ErrorBus, SCHOOL
-from bilqis_mlx.source_adapters.evidence_frames import (
+from bilqis_mlx.source_adapters.evidence.evidence_frames import (
     PUBLIC_FIXTURE, UNCLASSIFIED,
     BamfEvidenceSnapshot, EvidenceDerivation, EvidenceFrame,
     EvidenceRecord, EvidenceRights, EvidenceSemanticAuthority, EventTime,
