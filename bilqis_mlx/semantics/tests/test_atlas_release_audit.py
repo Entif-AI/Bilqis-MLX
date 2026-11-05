@@ -7,15 +7,25 @@ import unittest
 from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError, ErrorBus, SEMANTIC_FRAME
+from bilqis_mlx.factory.skos_curriculum import (
+    _compile_source_constructive_lessons_snapshot,
+)
+from bilqis_mlx.factory.tests.sources.test_skos_curriculum import (
+    _snapshot as _source_grade_snapshot,
+)
 from bilqis_mlx.factory.skos_curriculum.lesson_types import SourceConstructiveLessonSet
-from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents
+from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, ModelTopologySpecV2
 from bilqis_mlx.semantics.atlas.vocabulary import (
     VocabularyAllocation, VocabularyExtension, VocabularyPrior,
+    plan_vocabulary_extension,
 )
 from bilqis_mlx.semantics.atlas.vocabulary_resources import (
     RegistryMirrorDelta, RegistryMirrorRow,
 )
 from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest
+from bilqis_mlx.semantics.atlas_projection import (
+    SHAPE_POLICY, _canonical_bytes as _atlas_bytes, _digest as _atlas_sha256,
+)
 from bilqis_mlx.semantics.atlas.snapshot_contracts import AtlasArtifactSelection
 from bilqis_mlx.semantics.atlas_release_audit import SOURCE_DISPOSITIONS, audit_atlas_authority
 from bilqis_mlx.semantics.frame_codec import SchemaTagMap
@@ -115,6 +125,51 @@ def _audit(fixture, *, abi=None, ast=None, lessons=None, mirror=None):
 
 
 class AtlasAuthorityAuditTests(unittest.TestCase):
+    def test_data_only_source_successor_reuses_generic_semantic_path(self):
+        snapshot = _source_grade_snapshot()
+        active_ids = tuple(
+            entry.semantic_id for entry in snapshot.abi_entries if entry.active)
+        active_indices = tuple(
+            entry.index for entry in snapshot.abi_entries if entry.active)
+        snapshot = replace(
+            snapshot,
+            shape_policy_sha256=_atlas_sha256(_atlas_bytes(SHAPE_POLICY)),
+            active_set_sha256=_atlas_sha256(_atlas_bytes(list(active_indices))),
+        )
+        features = build_feature_manifest(snapshot, FeatureSchema((), ()))
+        prior = VocabularyPrior(
+            AtlasArtifactSelection(
+                "fixture", snapshot.bundle_id, snapshot.release_sha256,
+                snapshot.source_bundle_id),
+            GenerationExtents(
+                1, 1, snapshot.active_set_sha256, "b" * 64, features.digest),
+            features, FeatureSchema((), ()), active_ids, "e" * 64,
+        )
+        successor_id = "urn:lex:root"
+        with patch(
+                "bilqis_mlx.semantics.atlas.vocabulary_planning."
+                "load_pinned_atlas_snapshot",
+                return_value=snapshot):
+            extension = plan_vocabulary_extension(
+                prior, (successor_id,), ModelTopologySpecV2())
+
+        lessons = _compile_source_constructive_lessons_snapshot(snapshot)
+        allocation, = extension.allocations
+        self.assertEqual(allocation.semantic_id, successor_id)
+        self.assertEqual(allocation.abi_index, snapshot.abi_for_semantic(successor_id).index)
+        self.assertEqual(
+            extension.active_indices,
+            tuple(sorted((*active_indices, allocation.abi_index))))
+        self.assertEqual(
+            tuple(
+                entry.index for entry in snapshot.abi_entries
+                if entry.semantic_id in active_ids),
+            active_indices)
+        self.assertTrue(any(
+            lesson.semantic_id == successor_id
+            and lesson.family_id == "positive_identity"
+            for lesson in lessons.lessons))
+
     def test_current_consumers_bind_one_pinned_source_deterministically(self):
         fixture = _typed_authority_fixture()
         snapshot = fixture[0]

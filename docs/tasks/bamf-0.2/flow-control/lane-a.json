@@ -1,10 +1,19 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "309c727a7fa33401a18442bb652a2e55413a4e69",
-  "updated_at": "2026-11-05T16:17:00Z",
+  "observed_unified": "7e4f92e062299909dd47b547b8b4897a189c3738",
+  "updated_at": "2026-11-05T22:29:00Z",
   "exception": null,
   "items": [
+    {
+      "issue": 429,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "7e4f92e062299909dd47b547b8b4897a189c3738",
+      "summary": "A12.3 started from reviewed-unified 7e4f92e0. Scope: prove one Grade-D-equivalent data-only semantic successor and held-source exclusion across ABI/features/Factory/teacher-target surfaces without neural updates.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a12-3-429-20261105"
+    },
     {
       "issue": 428,
       "pr": null,

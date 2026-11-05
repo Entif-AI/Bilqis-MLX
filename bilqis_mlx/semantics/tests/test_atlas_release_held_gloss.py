@@ -56,6 +56,9 @@ class AtlasHeldGlossAuthorityTests(unittest.TestCase):
         self.assertNotIn(held.semantic_id,
                          {entry.semantic_id for entry in snapshot.abi_entries})
         features = build_feature_manifest(snapshot, FeatureSchema((), ()))
+        self.assertNotIn(
+            held.semantic_id, {item.semantic_id for item in features.concepts})
+        self.assertNotIn(held.semantic_id, _prior(snapshot, features).active_semantic_ids)
         self.assertIn((held.semantic_id, held.reason_code), features.held_reasons)
         with self.assertRaises(BilqisError) as caught:
             features.features_for(held.semantic_id, "UNKNOWN", "UNKNOWN", "task:held")
