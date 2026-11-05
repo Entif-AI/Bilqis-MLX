@@ -8,9 +8,11 @@ This continuation consumes reviewed unified
 `ATLAS_FEATURE` and `PACKED_FRAME` owners with production materialization and
 before-next-use correction gates for three previously unowned C09 artifact kinds:
 
-- `EXACT_CACHE` from real `PureOperationMemo` writes and reads in `execute_dag`;
+- `EXACT_CACHE` from real `PureOperationMemo` writes and reads in `execute_dag`,
+  including the canonical task time scope;
 - `OPERATOR_COMPOSITION` only after the existing solver qualification contract
-  accepts a `QualifiedComposition` for the current source/rights/correction scope;
+  accepts and successfully executes a `QualifiedComposition` for the current
+  source/rights/correction/time scope;
 - `CAPABILITY_SUPPORT` from a completed assessment and the artifact IDs actually
   used by its production `CompleteSolver`.
 
@@ -35,7 +37,7 @@ behavioral work:
 - `runtime/cognitive_solver.py`: 494 -> 40 LoC, followed by the existing route/session
   decomposition so changed-scope code-smell checks remain clean.
 
-The new `cognitive_artifact_owner.py` is 217 LoC. No touched or added code file
+The new `cognitive_artifact_owner.py` is 243 LoC. No touched or added code file
 crosses the repository structure threshold.
 
 ## Verification

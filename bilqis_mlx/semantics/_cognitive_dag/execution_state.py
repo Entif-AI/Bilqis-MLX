@@ -69,6 +69,7 @@ class _Execution:
             _public().contract_digest((
                 self.binding.frontier.rights_epoch,
                 self.binding.frontier.correction_generation)),
+            _public().contract_digest(self.binding.task),
         )
 
     def finish(self, answer: TypedValue, reason: str | None = None) -> DAGResult:
@@ -137,7 +138,7 @@ class _Execution:
                     or cached.source_handle is not None):
                 _public()._invalid("BAMF_DAG_MEMO_VALUE_INVALID")
             if self.artifact_owner is not None:
-                sources, parents, policy_digest, rights_digest = (
+                sources, parents, policy_digest, rights_digest, time_digest = (
                     self.cache_dependencies(refs, spec, numeric))
                 self.artifact_owner.require_exact_cache(
                     key=key,
@@ -148,6 +149,7 @@ class _Execution:
                     semantic_release=self.release,
                     policy_digest=policy_digest,
                     rights_digest=rights_digest,
+                    time_digest=time_digest,
                     task_sha256=self.support_task_sha256)
             self.hits += 1
             value = cached
@@ -158,7 +160,7 @@ class _Execution:
                     _public().ValueState.VALUE, _public().ValueState.NONE):
                 _public()._memo_put_verified(self.memo, key, value)
                 if self.artifact_owner is not None:
-                    sources, parents, policy_digest, rights_digest = (
+                    sources, parents, policy_digest, rights_digest, time_digest = (
                         self.cache_dependencies(refs, spec, numeric))
                     self.artifact_owner.materialize_exact_cache(
                         key=key,
@@ -169,6 +171,7 @@ class _Execution:
                         semantic_release=self.release,
                         policy_digest=policy_digest,
                         rights_digest=rights_digest,
+                        time_digest=time_digest,
                         task_sha256=self.support_task_sha256)
         self.results[node.node_id] = value
         self.lineage[node.node_id] = key

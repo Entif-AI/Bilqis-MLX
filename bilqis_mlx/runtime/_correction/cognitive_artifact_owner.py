@@ -55,6 +55,9 @@ def _composition_dependencies(composition, binding) -> tuple[DependencyRef, ...]
             DependencyKind.RIGHTS,
             "rights:" + contract_digest((
                 composition.rights_epoch, composition.correction_generation))),
+        DependencyRef(
+            DependencyKind.TIME,
+            "time:task:" + contract_digest(binding.task)),
     ))
     return tuple(sorted(refs))
 
@@ -113,6 +116,7 @@ class CognitiveArtifactOwner:
         self, *, key: str, content_digest: str, source_handles: tuple[str, ...],
         predecessor_keys: tuple[str, ...], operator_id: str,
         semantic_release: str, policy_digest: str, rights_digest: str,
+        time_digest: str,
     ) -> ArtifactNode:
         refs = set(_source_refs(source_handles))
         refs.update(
@@ -123,6 +127,7 @@ class CognitiveArtifactOwner:
             DependencyRef(DependencyKind.RELEASE, "release:" + semantic_release),
             DependencyRef(DependencyKind.POLICY, "policy:" + policy_digest),
             DependencyRef(DependencyKind.RIGHTS, "rights:" + rights_digest),
+            DependencyRef(DependencyKind.TIME, "time:task:" + time_digest),
         ))
         return ArtifactNode(
             artifact_id="cache:" + key,

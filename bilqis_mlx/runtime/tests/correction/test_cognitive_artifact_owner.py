@@ -39,6 +39,10 @@ class CognitiveArtifactOwnerTests(unittest.TestCase):
         source = next(
             ref for ref in cache.immediate_dependencies
             if ref.kind is DependencyKind.SOURCE)
+        self.assertTrue(any(
+            ref.kind is DependencyKind.TIME
+            and ref.key.startswith("time:task:")
+            for ref in cache.immediate_dependencies))
         event = _event(source)
         queue = solver.artifact_owner.apply_correction(event, AUTHORITY)
         self.assertIn(cache.artifact_id, queue.held_artifact_ids)
@@ -87,6 +91,10 @@ class CognitiveArtifactOwnerTests(unittest.TestCase):
             if ref.kind is DependencyKind.ARTIFACT}
         self.assertTrue(cache_ids)
         self.assertTrue(cache_ids <= composition_artifacts)
+        self.assertTrue(any(
+            ref.kind is DependencyKind.TIME
+            and ref.key.startswith("time:task:")
+            for ref in composition_node.immediate_dependencies))
         source = next(
             ref for ref in composition_node.immediate_dependencies
             if ref.kind is DependencyKind.SOURCE)
