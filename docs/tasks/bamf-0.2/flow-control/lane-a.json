@@ -7,11 +7,11 @@
   "items": [
     {
       "issue": 422,
-      "pr": null,
+      "pr": 855,
       "state": "TURNED_IN",
-      "head_sha": "202dbb313b3681c2730974da8c2ee93acb8fb738",
+      "head_sha": "90adf0371e5d63c17f6aa674d9d2ac78db67bdcc",
       "summary": "A10.2 implementation is complete on its issue-scoped branch: typed reconstructions preserve reported/computed values, negation, time/interpretation alternatives and template lineage; fresh challenges split immutable source families before within-family template grouping, with scored holdouts remaining teachable. Focused/adjacent tests 17 passed; governance/error-contract tests 11 passed; compile/diff/flow-control green; EGM_PENDING.",
-      "resume_trigger": "Open the A10.2 integration PR against reviewed unified and obtain fresh independent EGM before merge.",
+      "resume_trigger": "Fresh independent exact-head EGM plus human integration review for PR #855.",
       "preserved_branch": "codex/bamf02-a10-2-422-20261105"
     },
     {
