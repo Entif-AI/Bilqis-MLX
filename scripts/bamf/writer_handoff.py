@@ -29,21 +29,23 @@ def git(root: Path, *args: str) -> str:
     return result.stdout.strip()
 
 
-def observed(root: Path) -> dict[str, str]:
+def observed(root: Path) -> dict[str, str | None]:
     path = Path(git(root, "rev-parse", "--show-toplevel")).resolve()
     branch = git(path, "symbolic-ref", "--quiet", "--short", "HEAD")
     local_sha = git(path, "rev-parse", "HEAD")
-    upstream = git(path, "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}")
-    remote_sha = git(path, "rev-parse", "@{upstream}")
-    remote_name, _, remote_branch = upstream.partition("/")
-    remote_lines = git(path, "ls-remote", "--heads", remote_name, f"refs/heads/{remote_branch}")
-    if not remote_lines:
-        raise HandoffError(f"upstream branch {upstream} missing on remote")
-    actual_remote_sha = remote_lines.split()[0]
-    if actual_remote_sha != remote_sha:
-        raise HandoffError(
-            f"remote changed after last fetch: tracked={remote_sha}, live={actual_remote_sha}; fetch and reconcile"
-        )
+    upstream = git(path, "for-each-ref", "--format=%(upstream:short)", f"refs/heads/{branch}") or None
+    remote_sha = None
+    if upstream is not None:
+        remote_sha = git(path, "rev-parse", "@{upstream}")
+        remote_name, _, remote_branch = upstream.partition("/")
+        remote_lines = git(path, "ls-remote", "--heads", remote_name, f"refs/heads/{remote_branch}")
+        if not remote_lines:
+            raise HandoffError(f"upstream branch {upstream} missing on remote")
+        actual_remote_sha = remote_lines.split()[0]
+        if actual_remote_sha != remote_sha:
+            raise HandoffError(
+                f"remote changed after last fetch: tracked={remote_sha}, live={actual_remote_sha}; fetch and reconcile"
+            )
     status = git(path, "status", "--porcelain=v1", "--untracked-files=all")
     diff = subprocess.run(
         ["git", "diff", "HEAD", "--binary"], cwd=path, capture_output=True, check=True
@@ -68,7 +70,11 @@ def observed(root: Path) -> dict[str, str]:
 def emit(root: Path, issue: int, epoch: str) -> dict[str, object]:
     if issue <= 0 or not epoch.strip():
         raise HandoffError("positive issue number and stable epoch are required")
-    return {"schema": SCHEMA, "issue": issue, "epoch": epoch, **observed(root)}
+    snapshot = observed(root)
+    result = {"schema": SCHEMA, "issue": issue, "epoch": epoch, **snapshot}
+    if snapshot["upstream"] is None:
+        result.update(status="UNVERIFIED", reason="NO_UPSTREAM")
+    return result
 
 
 def verify(root: Path, payload: dict[str, object]) -> dict[str, object]:
@@ -78,6 +84,9 @@ def verify(root: Path, payload: dict[str, object]) -> dict[str, object]:
     for key, value in current.items():
         if payload.get(key) != value:
             raise HandoffError(f"continuation mismatch on {key}: expected {payload.get(key)!r}, observed {value!r}")
+    if current["upstream"] is None:
+        return {"status": "UNVERIFIED", "reason": "NO_UPSTREAM",
+                "issue": payload["issue"], "epoch": payload["epoch"], **current}
     # Remote head is checked live; neither this nor a payload is an exclusive process lease.
     return {"status": "CONTINUATION_MATCH", "issue": payload["issue"], "epoch": payload["epoch"], **current}
 
@@ -103,7 +112,7 @@ def main() -> int:
         print(f"BAMF_HANDOFF_HOLD: {exc}", file=sys.stderr)
         return 1
     print(json.dumps(result, indent=2, sort_keys=True))
-    return 0
+    return 2 if result.get("status") == "UNVERIFIED" and args.action == "verify" else 0
 
 
 if __name__ == "__main__":

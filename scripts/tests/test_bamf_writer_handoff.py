@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -52,6 +54,62 @@ class WriterHandoffTests(unittest.TestCase):
         subprocess.run(["git", "clone", "-q", "-b", "work", str(self.remote), str(other)], check=True)
         with self.assertRaisesRegex(HandoffError, "worktree"):
             verify(other, payload)
+
+    def test_local_only_branch_preserves_dirty_evidence_without_remote_match(self) -> None:
+        self.run_git("switch", "-c", "local-only")
+        local = self.repo / "local.txt"
+        local.write_text("preserved draft\n")
+        payload = emit(self.repo, 829, "epoch-829")
+        self.assertEqual("local-only", payload["branch"])
+        self.assertEqual(str(self.repo.resolve()), payload["worktree"])
+        self.assertIsNone(payload["upstream"])
+        self.assertIsNone(payload["observed_remote_head"])
+        self.assertEqual("UNVERIFIED", payload["status"])
+        self.assertEqual("NO_UPSTREAM", payload["reason"])
+        self.assertEqual("UNVERIFIED", verify(self.repo, payload)["status"])
+        local.write_text("changed draft\n")
+        with self.assertRaisesRegex(HandoffError, "worktree_status"):
+            verify(self.repo, payload)
+
+    def test_adding_upstream_to_local_snapshot_requires_reconciliation(self) -> None:
+        self.run_git("switch", "-c", "local-only")
+        payload = emit(self.repo, 829, "epoch-829")
+        self.run_git("branch", "--set-upstream-to=origin/work")
+        with self.assertRaisesRegex(HandoffError, "upstream"):
+            verify(self.repo, payload)
+
+    def test_local_only_cli_emits_json_but_verification_is_not_success(self) -> None:
+        self.run_git("switch", "-c", "local-only")
+        script = Path(__file__).resolve().parents[1] / "bamf/writer_handoff.py"
+        command = [sys.executable, str(script), "--worktree", str(self.repo)]
+        emitted = subprocess.run(
+            [*command, "emit", "--issue", "829", "--epoch", "epoch-829"],
+            capture_output=True, text=True, check=True,
+        )
+        payload = json.loads(emitted.stdout)
+        saved = Path(self.temp.name) / "handoff.json"
+        saved.write_text(emitted.stdout)
+        result = subprocess.run(
+            [*command, "verify", "--payload", str(saved)],
+            capture_output=True, text=True,
+        )
+        self.assertEqual(2, result.returncode)
+        self.assertEqual("UNVERIFIED", json.loads(result.stdout)["status"])
+        self.assertEqual(payload["head"], json.loads(result.stdout)["head"])
+
+    def test_unfetched_remote_advance_still_requires_reconciliation(self) -> None:
+        payload = emit(self.repo, 829, "epoch-829")
+        other = Path(self.temp.name) / "other"
+        subprocess.run(["git", "clone", "-q", "-b", "work", str(self.remote), str(other)], check=True)
+        for args in (("config", "user.email", "test@example.invalid"),
+                     ("config", "user.name", "Test")):
+            subprocess.run(["git", *args], cwd=other, check=True)
+        (other / "file.txt").write_text("remote change\n")
+        for args in (("add", "."), ("commit", "-qm", "remote advance"),
+                     ("push", "-q", "origin", "work")):
+            subprocess.run(["git", *args], cwd=other, check=True)
+        with self.assertRaisesRegex(HandoffError, "remote changed after last fetch"):
+            verify(self.repo, payload)
 
 
 if __name__ == "__main__":
