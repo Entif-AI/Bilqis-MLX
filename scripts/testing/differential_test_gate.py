@@ -241,7 +241,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("gate", choices=("leaf", "premerge", "status"))
     args = parser.parse_args(argv)
-    root = Path(__file__).resolve().parents[1]
+    root = Path(__file__).resolve().parents[2]
     if args.gate == "leaf":
         return run_leaf(root)
     if args.gate == "premerge":

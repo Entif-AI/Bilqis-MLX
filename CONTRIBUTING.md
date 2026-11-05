@@ -10,7 +10,7 @@ Ignored `runs/`, `vendor/legacy-v16/runs/`, `.local/`, and `data/` store mutable
 
 ## Changes and commits
 
-Use Conventional Commit subjects: `feat(scope): …`, `fix(scope): …`, `docs: …`, `test: …`, `refactor: …`, `perf: …`, `ci: …`, `build: …`, or `chore: …`. Breaking changes use `!` and a corresponding migration note. Each commit should leave independently verifiable code. `python3 -B scripts/release_version.py --validate-subject 'fix(training): preserve custody'` checks the syntax.
+Use Conventional Commit subjects: `feat(scope): …`, `fix(scope): …`, `docs: …`, `test: …`, `refactor: …`, `perf: …`, `ci: …`, `build: …`, or `chore: …`. Breaking changes use `!` and a corresponding migration note. Each commit should leave independently verifiable code. `python3 -B scripts/maintenance/release_version.py --validate-subject 'fix(training): preserve custody'` checks the syntax.
 
 Run `python3 -B -m unittest discover -s tests -q` on Apple Silicon for the full MLX-dependent suite, plus `npm run quality:check` and `npm run release:check`. The portable GitHub CI intentionally does not create neural updates, download the human student, or claim Linux MLX parity.
 
