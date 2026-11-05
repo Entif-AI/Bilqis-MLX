@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "22314c413ba137df69b3d6b35768fe65e1556bfe",
-  "updated_at": "2026-11-05T11:03:00Z",
+  "updated_at": "2026-11-05T11:17:00Z",
   "exception": null,
   "items": [
     {
@@ -10,7 +10,7 @@
       "pr": null,
       "state": "TURNED_IN",
       "head_sha": "68f288cd9e20b54bbc8c0b8a775196b9f3335ba8",
-      "summary": "A12.1 current-owner audit is implemented in atlas_release_audit.py without resurrecting the historical competing module. The receipt binds current typed ABI, source-pinned released AST/frame schemas, Factory source lessons, a read-only graph projection, and Registry mirror to one repository-pinned A01 release while keeping declared formal domains separate. Unit audit/export tests pass 8/8 with one optional source witness skipped; the real pinned A01/A02/A03/Factory/registry replay passes 9/9. Adjacent released-schema/vocabulary/curriculum tests pass 24/24 with two expected optional-source skips; semantic-boundary, governance, error-control, structure, compile and diff checks are green.",
+      "summary": "A12.1 current-owner audit is implemented in atlas_release_audit.py without resurrecting the historical competing module. The receipt binds current typed ABI, source-pinned released AST/frame schemas, Factory source lessons, a read-only graph projection, Registry mirror, and the exact prior-ABI ledger to one repository-pinned A01 release. copular_registry_v1.json is correctly classified as the prior-ABI ledger; formal-domain dispositions are derived from the frozen snapshot bindings. Unit audit/export tests pass 8/8 with one optional source witness skipped; the real pinned A01/A02/A03/Factory/registry replay passes 9/9. Adjacent released-schema/vocabulary/curriculum tests pass 24/24 with two expected optional-source skips; semantic-boundary, governance, error-control, structure, compile and diff checks are green.",
       "resume_trigger": "Fresh exact-head independent EGM plus hosted PR checks and human integration review. Parent A12/#364, #295 and #309 remain open; this child does not claim neural admission or full parent cutover.",
       "preserved_branch": "codex/bamf02-a12-1-427-20261105"
     },

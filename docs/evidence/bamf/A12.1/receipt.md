@@ -18,6 +18,9 @@ or neural admission.
 - Source bundle: f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec
 - A03 released-frame schemas are loaded through the repository-owned current
   source-pin ledger after consuming merged PR #859 / reviewed unified 978ac927.
+- Prior ABI ledger: copular_registry_v1.json, verified against the frozen
+  snapshot prior_abi_sha256
+  30d18c7140d49c168488416e04644b934ea79492561c2b73f65e55be18ed4e8c.
 
 ## Source-to-consumer table
 
@@ -29,10 +32,12 @@ or neural admission.
 | Graph projection | frozen A01 FrozenAtlasSnapshot | independently derived digest over current read-only semantic/concept lookup and relations |
 | Registry mirror | RegistryMirrorDelta | A02 allocation digest, predecessor, active indices and exact rows |
 
-Declared formal-domain bindings remain separate source authorities and are
-digest-bound individually. atlas_projection.py is classified as a historical
-compatibility facade, not an independent current semantic authority. The A01 and
-A03 repository pin ledgers are current source and derived-source pin ledgers.
+Declared formal-domain bindings are derived from the frozen snapshot and remain
+separate source authorities, digest-bound individually. copular_registry_v1.json
+is the current predecessor/prior-ABI ledger, not a formal domain.
+atlas_projection.py is classified as a historical compatibility facade, not an
+independent current semantic authority. The A01 and A03 repository pin ledgers
+are current source and derived-source pin ledgers.
 
 ## Observable behavior
 

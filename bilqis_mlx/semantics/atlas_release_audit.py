@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from hashlib import sha256
+from pathlib import Path
 import re
 
 from bilqis_mlx.factory.skos_curriculum.lesson_types import (
@@ -26,13 +27,12 @@ _SIGNATURE = re.compile(r"[0-9a-f]{128}")
 EXPORT_CLEARANCE_SCHEMA = "bilqis.a12.export-clearance/v1"
 AUTHORITY_AUDIT_SCHEMA = "bilqis.a12.semantic-authority-audit/v1"
 AUTHORITY_AUDIT_STATUS = "SOURCE_ATTESTED_NOT_NEURAL_ADMITTED"
+SOURCE_DISPOSITION_PARTS = 2
 
 SOURCE_DISPOSITIONS = (
     ("atlas_source_pins_v1.json", "CURRENT_SOURCE_PIN_LEDGER"),
     ("frame_schema_source_pins_v1.json", "CURRENT_DERIVED_SOURCE_PIN_LEDGER"),
-    ("copular_registry_v1.json", "DECLARED_FORMAL_DOMAIN"),
-    ("legacy_abi_v1.json", "DECLARED_FORMAL_DOMAIN"),
-    ("numeric_v1.json", "DECLARED_FORMAL_DOMAIN"),
+    ("copular_registry_v1.json", "CURRENT_PRIOR_ABI_LEDGER"),
     ("atlas_projection.py", "HISTORICAL_COMPATIBILITY_FACADE"),
 )
 
@@ -45,6 +45,19 @@ def _digests(values, *, allow_empty=False):
 
 def _sha(value) -> str:
     return sha256(_canonical_bytes(value)).hexdigest()
+
+
+def _current_prior_abi_sha256() -> str:
+    path = Path(__file__).with_name("copular_registry_v1.json")
+    if path.is_symlink() or not path.is_file():
+        _fail("A12_AUTHORITY_PRIOR_ABI_MISSING")
+    return sha256(path.read_bytes()).hexdigest()
+
+
+def _source_dispositions(snapshot) -> tuple[tuple[str, str], ...]:
+    return SOURCE_DISPOSITIONS + tuple(
+        (binding.source_owner, "DECLARED_FORMAL_DOMAIN")
+        for binding in snapshot.formal_domain_bindings)
 
 
 @dataclass(frozen=True)
@@ -74,6 +87,7 @@ class AuthorityReceipt:
     atlas_bundle_id: str
     consumer_bindings: tuple[ConsumerBinding, ...]
     graph_projection_sha256: str
+    prior_abi_sha256: str
     formal_domain_digests: tuple[str, ...]
     source_dispositions: tuple[tuple[str, str], ...]
     audit_sha256: str
@@ -85,7 +99,7 @@ class AuthorityReceipt:
                 for value in (
                     self.source_release_sha256, self.source_bundle_id,
                     self.atlas_bundle_id, self.graph_projection_sha256,
-                    self.audit_sha256))
+                    self.prior_abi_sha256, self.audit_sha256))
                 or type(self.consumer_bindings) is not tuple
                 or tuple(item.consumer for item in self.consumer_bindings)
                 != ("abi", "ast_frames", "lessons", "graph_projection",
@@ -93,7 +107,14 @@ class AuthorityReceipt:
                 or any(type(item) is not ConsumerBinding
                        for item in self.consumer_bindings)
                 or not _digests(self.formal_domain_digests, allow_empty=True)
-                or self.source_dispositions != SOURCE_DISPOSITIONS
+                or self.source_dispositions[:len(SOURCE_DISPOSITIONS)]
+                != SOURCE_DISPOSITIONS
+                or any(
+                    type(item) is not tuple
+                    or len(item) != SOURCE_DISPOSITION_PARTS
+                    or not all(type(value) is str and value for value in item)
+                    or item[1] != "DECLARED_FORMAL_DOMAIN"
+                    for item in self.source_dispositions[len(SOURCE_DISPOSITIONS):])
                 or self.status != AUTHORITY_AUDIT_STATUS
                 or self.schema_version != AUTHORITY_AUDIT_SCHEMA):
             _fail("A12_AUTHORITY_RECEIPT_INVALID")
@@ -150,6 +171,8 @@ def audit_atlas_authority(
             or registry_mirror.source_bundle_id != snapshot.source_bundle_id
             or ast_manifest.atlas_bundle_id != snapshot.bundle_id):
         _fail("A12_AUTHORITY_SOURCE_BINDING_MISMATCH")
+    if snapshot.prior_abi_sha256 != _current_prior_abi_sha256():
+        _fail("A12_AUTHORITY_PRIOR_ABI_MISMATCH")
     if any(
             item.semantic_id not in abi_ids
             or item.abi_index != abi_ids[item.semantic_id].index
@@ -176,6 +199,7 @@ def audit_atlas_authority(
             for lesson in lesson_manifest.lessons):
         _fail("A12_AUTHORITY_LESSON_SOURCE_MISMATCH")
     graph_digest = _graph_projection(snapshot)
+    source_dispositions = _source_dispositions(snapshot)
     formal_digests = tuple(sorted(
         _sha(asdict(binding)) for binding in snapshot.formal_domain_bindings))
     bindings = (
@@ -205,12 +229,14 @@ def audit_atlas_authority(
         "source_bundle": snapshot.source_bundle_id,
         "atlas_bundle": snapshot.bundle_id,
         "consumers": [asdict(item) for item in bindings],
+        "prior_abi": snapshot.prior_abi_sha256,
         "formal_domains": formal_digests,
-        "source_dispositions": SOURCE_DISPOSITIONS,
+        "source_dispositions": source_dispositions,
     }
     return AuthorityReceipt(
         snapshot.release_sha256, snapshot.source_bundle_id, snapshot.bundle_id,
-        bindings, graph_digest, formal_digests, SOURCE_DISPOSITIONS,
+        bindings, graph_digest, snapshot.prior_abi_sha256, formal_digests,
+        source_dispositions,
         _sha(evidence))
 
 

@@ -119,7 +119,9 @@ class AtlasAuthorityAuditTests(unittest.TestCase):
         snapshot, selection, abi, ast, lessons, mirror = _typed_authority_fixture()
         with patch(
                 "bilqis_mlx.semantics.atlas_release_audit.load_pinned_atlas_snapshot",
-                return_value=snapshot):
+                return_value=snapshot), patch(
+                "bilqis_mlx.semantics.atlas_release_audit._current_prior_abi_sha256",
+                return_value=snapshot.prior_abi_sha256):
             first = audit_atlas_authority(
                 selection, abi, ast, lessons, mirror)
             second = audit_atlas_authority(
@@ -132,13 +134,23 @@ class AtlasAuthorityAuditTests(unittest.TestCase):
         self.assertEqual(
             {item.semantic_release for item in first.consumer_bindings},
             {snapshot.release_sha256})
-        self.assertEqual(first.source_dispositions, SOURCE_DISPOSITIONS)
+        self.assertEqual(
+            first.source_dispositions[:len(SOURCE_DISPOSITIONS)],
+            SOURCE_DISPOSITIONS)
+        self.assertEqual(first.prior_abi_sha256, snapshot.prior_abi_sha256)
+        self.assertEqual(
+            first.source_dispositions[len(SOURCE_DISPOSITIONS):],
+            tuple(
+                (binding.source_owner, "DECLARED_FORMAL_DOMAIN")
+                for binding in snapshot.formal_domain_bindings))
 
     def test_first_mismatched_consumer_fails_closed(self):
         snapshot, selection, abi, ast, lessons, mirror = _typed_authority_fixture()
         with patch(
                 "bilqis_mlx.semantics.atlas_release_audit.load_pinned_atlas_snapshot",
-                return_value=snapshot):
+                return_value=snapshot), patch(
+                "bilqis_mlx.semantics.atlas_release_audit._current_prior_abi_sha256",
+                return_value=snapshot.prior_abi_sha256):
             with self.assertRaises(BilqisError) as caught:
                 audit_atlas_authority(
                     selection, replace(abi, semantic_release="9" * 64),
@@ -151,7 +163,9 @@ class AtlasAuthorityAuditTests(unittest.TestCase):
         snapshot, selection, abi, ast, lessons, mirror = _typed_authority_fixture()
         with patch(
                 "bilqis_mlx.semantics.atlas_release_audit.load_pinned_atlas_snapshot",
-                return_value=snapshot):
+                return_value=snapshot), patch(
+                "bilqis_mlx.semantics.atlas_release_audit._current_prior_abi_sha256",
+                return_value=snapshot.prior_abi_sha256):
             baseline = audit_atlas_authority(
                 selection, abi, ast, lessons, mirror)
             stale_shadow = {
@@ -208,6 +222,17 @@ class AtlasAuthorityAuditTests(unittest.TestCase):
             selection, abi, ast, lessons, mirror)
         self.assertEqual(receipt.source_release_sha256, snapshot.release_sha256)
         self.assertEqual(len(receipt.consumer_bindings), 5)
+        self.assertEqual(
+            receipt.prior_abi_sha256,
+            "30d18c7140d49c168488416e04644b934ea79492561c2b73f65e55be18ed4e8c")
+        self.assertIn(
+            ("bilqis_mlx/semantics/legacy_abi_v1.json",
+             "DECLARED_FORMAL_DOMAIN"),
+            receipt.source_dispositions)
+        self.assertIn(
+            ("bilqis_mlx/semantics/numeric_v1.json",
+             "DECLARED_FORMAL_DOMAIN"),
+            receipt.source_dispositions)
 
 
 class AtlasExportClearanceTests(unittest.TestCase):
