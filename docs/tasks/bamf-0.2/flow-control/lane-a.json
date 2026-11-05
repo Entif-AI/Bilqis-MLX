@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "7984d7872d49b3987284692f5398da71f2a72605",
-  "updated_at": "2026-11-03T16:29:43Z",
+  "observed_unified": "06eb34d0435d2f41c6f3561cf8cad6988d5b849f",
+  "updated_at": "2026-11-05T00:39:51.576704+00:00",
   "exception": null,
   "items": [
     {
@@ -45,6 +45,33 @@
       "resume_trigger": null,
       "merged_pr": 765,
       "pr": null
+    },
+    {
+      "issue": 785,
+      "pr": null,
+      "state": "WAITING",
+      "head_sha": "06eb34d0435d2f41c6f3561cf8cad6988d5b849f",
+      "summary": "C01 schema trigger satisfied; source trace finds no admitted profile/release/generation selector for the chosen A06 bindings. Structural interruption is owned by #824.",
+      "resume_trigger": "Consume #824 structural repair to continue the existing Factory selector trace; qualification additionally requires an independently admitted source profile/release/generation selecting exact schema/adapter/predecessor bindings.",
+      "preserved_branch": "codex/bamf02-a-785-source-features-20261103"
+    },
+    {
+      "issue": 824,
+      "pr": 830,
+      "state": "TURNED_IN",
+      "head_sha": "16e14ab6c6f0550112aa8786fb2b86465fdad75b",
+      "summary": "Structural repair ready in PR830 after pinned review findings resolved; 23/23 and exact representative manifest bytes/digest preserved; error inventory2029 unchanged. Human integration and hosted final gates remain.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a-824-release-structure-20261104"
+    },
+    {
+      "issue": 833,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "06eb34d0435d2f41c6f3561cf8cad6988d5b849f",
+      "summary": "Mandatory context eligibility structural interruption during424 source trace; preserve all source gates, eligibility/transition decisions and digest identities.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a-833-context-structure-20261104"
     }
   ]
 }
