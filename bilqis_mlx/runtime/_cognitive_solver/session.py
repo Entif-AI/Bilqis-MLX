@@ -83,8 +83,7 @@ class _SolveSession:
     def support_artifacts(self):
         if self.artifact_owner is None:
             return frozenset()
-        return frozenset(
-            self.artifact_owner.support_for_task(self.task_sha256))
+        return frozenset(self.artifact_owner.active_support(self.task_sha256))
 
     def materialize_composition(self, cached, before):
         if self.artifact_owner is None:

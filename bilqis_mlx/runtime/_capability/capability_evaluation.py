@@ -119,7 +119,7 @@ class CompleteSolver:
     memo: PureOperationMemo = field(
         default_factory=PureOperationMemo, init=False, repr=False, compare=False)
     artifact_owner: CognitiveArtifactOwner = field(
-        default_factory=CognitiveArtifactOwner, init=False, repr=False, compare=False)
+        default_factory=CognitiveArtifactOwner, repr=False, compare=False)
 
     def __post_init__(self):
         if not callable(self.context_for) or not isinstance(self.budget, SolveBudget):
@@ -129,6 +129,9 @@ class CompleteSolver:
         context = self.context_for(goal, generation)
         if not isinstance(context, SolveContext):
             _invalid("BAMF_SOLVER_SOURCE_CONTEXT_INVALID")
+        if (context.artifact_owner is not None
+                and context.artifact_owner is not self.artifact_owner):
+            _invalid("BAMF_C09_ARTIFACT_OWNER_DRIFT")
         context = replace(
             context,
             memo=context.memo or self.memo,
@@ -136,7 +139,13 @@ class CompleteSolver:
         )
         binding = GenerationBinding(
             generation, goal.semantic_release, contract_digest(context.binding))
-        result = solve_task(goal, context, binding, self.budget)
+        self.artifact_owner.begin_evaluation(contract_digest(goal))
+        try:
+            result = solve_task(goal, context, binding, self.budget)
+        except Exception:
+            self.artifact_owner.abort_evaluation()
+            raise
+        self.artifact_owner.finish_evaluation(result)
         tools = contract_digest({
             "budget": self.budget, "routes": context.route_registry,
             "operators": context.binding.registry})
@@ -192,8 +201,12 @@ def evaluate_capabilities(solver, cohort, generation) -> Assessment:
             or not isinstance(cohort, EvaluationCohort) or not _sha(generation)):
         _invalid("BAMF_ASSESSMENT_INPUT_INVALID")
     measurements = tuple(solver.evaluate(case.goal, generation) for case in cohort.cases)
-    return Assessment(cohort, generation, tuple(item[0] for item in measurements),
-                      tuple(item[1] for item in measurements))
+    assessment = Assessment(
+        cohort, generation, tuple(item[0] for item in measurements),
+        tuple(item[1] for item in measurements))
+    from .capability_evidence_history import materialize_capability_support
+    materialize_capability_support(assessment, solver.artifact_owner)
+    return assessment
 
 EvidenceKind.__module__ = "bilqis_mlx.runtime.capability_retention"
 EvaluationCase.__module__ = "bilqis_mlx.runtime.capability_retention"

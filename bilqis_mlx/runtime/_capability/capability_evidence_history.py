@@ -189,9 +189,10 @@ def materialize_capability_support(
             if case.capability_id == capability_id)
         artifact_ids = tuple(sorted({
             artifact_id
-            for case in cases
-            for artifact_id in artifact_owner.support_for_task(
-                contract_digest(case.goal))
+            for case, result in zip(
+                assessment.cohort.cases, assessment.results)
+            if case.capability_id == capability_id
+            for artifact_id in artifact_owner.support_for_result(result)
         }))
         if not artifact_ids:
             continue
@@ -209,8 +210,10 @@ def materialize_capability_support(
         )
         artifact_owner.materialize_capability_support(support, history.sha256)
         supports.append(support)
-    return RequalificationLedger(tuple(sorted(
+    ledger = RequalificationLedger(tuple(sorted(
         supports, key=lambda item: item.capability_id)))
+    artifact_owner.bind_capability_ledger(assessment.digest(), ledger)
+    return ledger
 
 
 @dataclass(frozen=True)

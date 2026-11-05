@@ -158,7 +158,6 @@ class _Execution:
             value = _public()._compute_after_authorization(spec, inputs, self.binding)
             if self.memo is not None and value.state in (
                     _public().ValueState.VALUE, _public().ValueState.NONE):
-                _public()._memo_put_verified(self.memo, key, value)
                 if self.artifact_owner is not None:
                     sources, parents, policy_digest, rights_digest, time_digest = (
                         self.cache_dependencies(refs, spec, numeric))
@@ -173,6 +172,7 @@ class _Execution:
                         rights_digest=rights_digest,
                         time_digest=time_digest,
                         task_sha256=self.support_task_sha256)
+                _public()._memo_put_verified(self.memo, key, value)
         self.results[node.node_id] = value
         self.lineage[node.node_id] = key
         self.executed.append(node.node_id)

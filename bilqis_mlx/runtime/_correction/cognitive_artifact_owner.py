@@ -68,7 +68,10 @@ class CognitiveArtifactOwner:
     def __init__(self):
         self._index = DependencyIndex.build(())
         self._queue = None
-        self._task_support: dict[str, set[str]] = {}
+        self._active_task_sha256: str | None = None
+        self._active_support: set[str] | None = None
+        self._result_support: dict[str, tuple[str, ...]] = {}
+        self._capability_ledgers: dict[str, object] = {}
 
     @property
     def index(self) -> DependencyIndex:
@@ -87,8 +90,6 @@ class CognitiveArtifactOwner:
             if existing != node:
                 _invalid("BAMF_C09_ARTIFACT_NODE_INVALID")
             return existing
-        if self._queue is not None and self._queue.pending:
-            _invalid("BAMF_C09_ARTIFACT_HELD")
         self._index = DependencyIndex.build((*self._index.nodes, node))
         return node
 
@@ -106,11 +107,62 @@ class CognitiveArtifactOwner:
         return node
 
     def _remember(self, task_sha256: str | None, artifact_id: str) -> None:
-        if task_sha256 is not None:
-            self._task_support.setdefault(task_sha256, set()).add(artifact_id)
+        if task_sha256 is None:
+            return
+        if (self._active_support is None
+                or task_sha256 != self._active_task_sha256):
+            _invalid("BAMF_C09_SUPPORT_SCOPE_INVALID")
+        self._active_support.add(artifact_id)
 
-    def support_for_task(self, task_sha256: str) -> tuple[str, ...]:
-        return tuple(sorted(self._task_support.get(task_sha256, ())))
+    def begin_evaluation(self, task_sha256: str) -> None:
+        if (not isinstance(task_sha256, str) or not task_sha256
+                or self._active_support is not None):
+            _invalid("BAMF_C09_SUPPORT_SCOPE_INVALID")
+        self._active_task_sha256 = task_sha256
+        self._active_support = set()
+
+    def active_support(self, task_sha256: str) -> tuple[str, ...]:
+        if (self._active_support is None
+                or task_sha256 != self._active_task_sha256):
+            _invalid("BAMF_C09_SUPPORT_SCOPE_INVALID")
+        return tuple(sorted(self._active_support))
+
+    def finish_evaluation(self, result) -> tuple[str, ...]:
+        if self._active_support is None:
+            _invalid("BAMF_C09_SUPPORT_SCOPE_INVALID")
+        support = tuple(sorted(self._active_support))
+        result_digest = contract_digest(result.replay_record())
+        existing = self._result_support.get(result_digest)
+        if existing is not None and existing != support:
+            _invalid("BAMF_C09_SUPPORT_RESULT_DRIFT")
+        self._result_support[result_digest] = support
+        self._active_task_sha256 = None
+        self._active_support = None
+        return support
+
+    def abort_evaluation(self) -> None:
+        self._active_task_sha256 = None
+        self._active_support = None
+
+    def support_for_result(self, result) -> tuple[str, ...]:
+        try:
+            return self._result_support[contract_digest(result.replay_record())]
+        except KeyError:
+            _invalid("BAMF_C09_SUPPORT_RESULT_MISSING")
+
+    def bind_capability_ledger(self, assessment_digest: str, ledger) -> None:
+        if not isinstance(assessment_digest, str) or not assessment_digest:
+            _invalid("BAMF_C09_CAPABILITY_SUPPORT_INVALID")
+        existing = self._capability_ledgers.get(assessment_digest)
+        if existing is not None and existing != ledger:
+            _invalid("BAMF_C09_CAPABILITY_SUPPORT_INVALID")
+        self._capability_ledgers[assessment_digest] = ledger
+
+    def capability_ledger(self, assessment_digest: str):
+        try:
+            return self._capability_ledgers[assessment_digest]
+        except KeyError:
+            _invalid("BAMF_C09_CAPABILITY_SUPPORT_INVALID")
 
     def exact_cache_node(
         self, *, key: str, content_digest: str, source_handles: tuple[str, ...],
@@ -221,6 +273,15 @@ class CognitiveArtifactOwner:
     ):
         from bilqis_mlx.runtime._revalidation_engine import apply_correction
         self._queue = apply_correction(event, self._index, authority_registry)
+        if self._capability_ledgers:
+            from bilqis_mlx.runtime.atlas_requalification import (
+                mark_affected_capabilities,
+            )
+            self._capability_ledgers = {
+                assessment_digest: mark_affected_capabilities(
+                    ledger, self._index, self._queue).ledger
+                for assessment_digest, ledger in self._capability_ledgers.items()
+            }
         return self._queue
 
     def advance(
