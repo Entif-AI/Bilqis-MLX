@@ -1,16 +1,15 @@
-"""Integrity-bearing receipt types for the BAMF A10.3 public BRAVO fixture."""
+"""Replayable receipt types for the BAMF A10.3 public BRAVO fixture."""
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from hashlib import sha256
 import json
+import re
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.factory.evidence_curriculum import EvidenceSplitReceipt
 from bilqis_mlx.source_adapters.evidence_frames import (
-    PUBLIC_FIXTURE,
-    PUBLIC_FIXTURE_SOURCE,
-    EvidenceRights,
+    PUBLIC_FIXTURE, PUBLIC_FIXTURE_SOURCE, EvidenceRights,
 )
 
 
@@ -26,12 +25,8 @@ EXPECTED_QUESTIONS = (
     "What reported duration?",
     "Convert the reported duration to minutes.",
 )
-EXPECTED_GOLDS = (
-    ("Planned or completed?", EXPECTED_STATUS),
-    ("What reported duration?", EXPECTED_REPORTED_DECIMAL),
-    ("Convert the reported duration to minutes.", "15"),
-)
 EXPECTED_SAME_FAMILY_REJECTION = "BAMF_EVIDENCE_SPLIT_WITNESS_NOT_INDEPENDENT"
+_SHA = re.compile(r"^[0-9a-f]{64}$")
 
 
 def _fail(reason: str) -> None:
@@ -39,7 +34,8 @@ def _fail(reason: str) -> None:
 
 
 def canonical_digest(payload: object) -> str:
-    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    encoded = json.dumps(
+        payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return sha256(encoded).hexdigest()
 
 
@@ -54,42 +50,44 @@ def _split_digest(split: EvidenceSplitReceipt) -> str:
 
 
 @dataclass(frozen=True)
-class PublicLessonWitness:
+class ExternalGoldWitness:
+    """Source- and checker-bound attestation for one independently replayable gold."""
+
     lesson_id: str
-    source_family_id: str
-    interpretation_revision: str
-    rights_regime: str
-    checker_id: str
-    checker_passed: bool
-    external_witness_ref: str
     source_manifest_cid: str
     source_byte_digest: str
     source_span_start: int
     source_span_end: int
+    source_family_id: str
+    interpretation_revision: str
+    semantic_release: str
+    rights_regime: str
+    checker_id: str
     question: str
     gold: str
 
     def __post_init__(self) -> None:
-        if (self.rights_regime != PUBLIC_FIXTURE
-                or self.checker_id != "bilqis.evidence-exact-checker/v1"
-                or self.checker_passed is not True
-                or not self.external_witness_ref
+        if (not self.lesson_id
                 or not self.source_manifest_cid
+                or not _SHA.fullmatch(self.source_byte_digest)
                 or self.source_span_start < 0
-                or self.source_span_end <= self.source_span_start):
-            _fail("BAMF_PUBLIC_BRAVO_LESSON_WITNESS_INVALID")
+                or self.source_span_end <= self.source_span_start
+                or not self.source_family_id
+                or not self.interpretation_revision
+                or not _SHA.fullmatch(self.semantic_release)
+                or self.rights_regime != PUBLIC_FIXTURE
+                or self.checker_id != "bilqis.evidence-exact-checker/v1"
+                or not self.question
+                or not self.gold):
+            _fail("BAMF_PUBLIC_BRAVO_GOLD_WITNESS_INVALID")
 
     @property
-    def source_binding_sha256(self) -> str:
-        return canonical_digest({
-            "source_manifest_cid": self.source_manifest_cid,
-            "source_byte_digest": self.source_byte_digest,
-            "source_span": (self.source_span_start, self.source_span_end),
-            "external_witness_ref": self.external_witness_ref,
-            "lesson_id": self.lesson_id,
-            "question": self.question,
-            "gold": self.gold,
-        })
+    def witness_sha256(self) -> str:
+        return canonical_digest(asdict(self))
+
+
+# Historical import name for the A10.3 draft; semantics are now replayable.
+PublicLessonWitness = ExternalGoldWitness
 
 
 @dataclass(frozen=True)
@@ -100,13 +98,21 @@ class ExternalWitnessSplitReceipt:
     heldout_source_digest: str
     train_source_manifest_cid: str
     heldout_source_manifest_cid: str
-    heldout_external_witness_ref: str
+    heldout_witnesses: tuple[ExternalGoldWitness, ...]
 
     def __post_init__(self) -> None:
         if (self.train_family_id == self.heldout_family_id
                 or self.train_source_digest == self.heldout_source_digest
                 or self.train_source_manifest_cid == self.heldout_source_manifest_cid
-                or not self.heldout_external_witness_ref):
+                or len(self.heldout_witnesses) != len(EXPECTED_QUESTIONS)
+                or tuple(item.question for item in self.heldout_witnesses)
+                != EXPECTED_QUESTIONS
+                or any(item.source_family_id != self.heldout_family_id
+                       for item in self.heldout_witnesses)
+                or any(item.source_byte_digest != self.heldout_source_digest
+                       for item in self.heldout_witnesses)
+                or any(item.source_manifest_cid != self.heldout_source_manifest_cid
+                       for item in self.heldout_witnesses)):
             _fail("BAMF_PUBLIC_BRAVO_EXTERNAL_SPLIT_INVALID")
 
     @property
@@ -141,7 +147,7 @@ class PublicBravoFixtureReceipt:
     rights: EvidenceRights
     source_family_id: str
     rendered: str
-    witnesses: tuple[PublicLessonWitness, ...]
+    witnesses: tuple[ExternalGoldWitness, ...]
     split_receipt: EvidenceSplitReceipt
     f10_proof: F10WitnessProof
 
@@ -154,14 +160,19 @@ class PublicBravoFixtureReceipt:
                 or self.rights.regime != PUBLIC_FIXTURE
                 or not self.rights.allowed_training
                 or not self.rights.public_export_allowed
-                or not self.witnesses
+                or tuple(item.question for item in self.witnesses) != EXPECTED_QUESTIONS
                 or self.split_receipt.receipt_sha256 != _split_digest(self.split_receipt)
-                or any(w.source_family_id != self.source_family_id for w in self.witnesses)
-                or any(w.interpretation_revision != self.interpretation_revision
-                       for w in self.witnesses)
-                or any(w.rights_regime != self.rights.regime for w in self.witnesses)
-                or any(w.source_manifest_cid != self.source_manifest_cid for w in self.witnesses)
-                or any(w.source_byte_digest != self.source_byte_digest for w in self.witnesses)):
+                or any(item.source_family_id != self.source_family_id
+                       for item in self.witnesses)
+                or any(item.interpretation_revision != self.interpretation_revision
+                       for item in self.witnesses)
+                or any(item.rights_regime != self.rights.regime for item in self.witnesses)
+                or any(item.semantic_release != self.semantic_release
+                       for item in self.witnesses)
+                or any(item.source_manifest_cid != self.source_manifest_cid
+                       for item in self.witnesses)
+                or any(item.source_byte_digest != self.source_byte_digest
+                       for item in self.witnesses)):
             _fail("BAMF_PUBLIC_BRAVO_RECEIPT_INVALID")
 
     @property

@@ -1,47 +1,35 @@
-"""Literal public BRAVO fixture acceptance receipt for BAMF A10.3.
-
-This module commits the public-safe fixture witness, not a second evidence
-compiler.  It binds the exact source bytes to the already-owned A10.1/A10.2
-parser, frame, lesson, checker, family, rights, and interpretation contracts.
-"""
+"""Literal public BRAVO fixture receipt and replay verifier for BAMF A10.3."""
 from __future__ import annotations
 
+from dataclasses import replace
 from hashlib import sha256
 
 from bilqis_mlx.errors import BilqisError, ErrorBus, SCHOOL
 from bilqis_mlx.factory.evidence_curriculum import (
-    EvidenceLesson,
-    EvidenceSplitReceipt,
-    LessonCandidateSet,
-    compile_evidence_lessons,
-    split_evidence_families,
+    EvidenceLesson, EvidenceSplitReceipt, LessonCandidateSet,
+    compile_evidence_lessons, split_evidence_families,
 )
+from bilqis_mlx.semantics.atlas.snapshot_contracts import AtlasArtifactSelection
 from bilqis_mlx.source_adapters.evidence_frames import (
     PUBLIC_FIXTURE,
     PUBLIC_FIXTURE_SOURCE,
+    PUBLIC_INDEPENDENT_BUNDLE_SOURCE,
+    PUBLIC_INDEPENDENT_MANIFEST_CID,
+    PUBLIC_INDEPENDENT_SOURCE,
     BamfEvidenceSnapshot,
     EvidenceRecord,
     EvidenceRights,
+    SourceSpan,
     build_public_fixture_snapshot,
     parse_public_fixture_source,
+    source_manifest_semantic_authority,
 )
 from bilqis_mlx.source_adapters.bravo.receipt import (
-    EXPECTED_ACTOR_REF,
-    EXPECTED_GOLDS,
-    EXPECTED_QUESTIONS,
-    EXPECTED_RECORD_ID,
-    EXPECTED_RENDERED,
-    EXPECTED_REPORTED_DECIMAL,
-    EXPECTED_STATUS,
-    ExternalWitnessSplitReceipt,
-    F10WitnessProof,
-    FIXTURE_SCHEMA,
-    PublicBravoFixtureReceipt,
-    PublicLessonWitness,
+    EXPECTED_ACTOR_REF, EXPECTED_QUESTIONS, EXPECTED_RECORD_ID,
+    EXPECTED_RENDERED, EXPECTED_REPORTED_DECIMAL, EXPECTED_STATUS,
+    ExternalGoldWitness, ExternalWitnessSplitReceipt, F10WitnessProof,
+    FIXTURE_SCHEMA, PublicBravoFixtureReceipt,
 )
-
-
-INDEPENDENT_SOURCE = "actor=actor_02; category=study; status=completed; duration=0.50 h"
 
 
 def _fail(reason: str) -> None:
@@ -64,68 +52,46 @@ def _witnesses(
     candidates: LessonCandidateSet,
     snapshot: BamfEvidenceSnapshot,
     record: EvidenceRecord,
-) -> tuple[PublicLessonWitness, ...]:
-    if tuple(lesson.question for lesson in candidates.lessons) != EXPECTED_QUESTIONS:
+) -> tuple[ExternalGoldWitness, ...]:
+    lessons = candidates.lessons
+    if (tuple(lesson.question for lesson in lessons) != EXPECTED_QUESTIONS
+            or len(lessons) != len(EXPECTED_QUESTIONS)):
         _fail("BAMF_PUBLIC_BRAVO_QUESTION_SET_INVALID")
-    if not candidates.lessons:
-        _fail("BAMF_PUBLIC_BRAVO_LESSONS_MISSING")
-    actual_golds = {lesson.question: lesson.gold for lesson in candidates.lessons}
-    if any(actual_golds.get(question) != gold for question, gold in EXPECTED_GOLDS):
-        _fail("BAMF_PUBLIC_BRAVO_GOLD_INVALID")
-    rows = tuple(PublicLessonWitness(
-        lesson_id=lesson.lesson_id,
-        source_family_id=lesson.source_family_id,
-        interpretation_revision=lesson.frame.interpretation_revision,
-        rights_regime=lesson.rights.regime,
-        checker_id=lesson.checker_id,
-        checker_passed=lesson.check(),
-        external_witness_ref=record.adjudication_ref or "",
-        source_manifest_cid=snapshot.source_manifest_cid,
-        source_byte_digest=snapshot.source_byte_digest,
-        source_span_start=record.source_span.start,
-        source_span_end=record.source_span.end,
-        question=lesson.question,
-        gold=lesson.gold,
-    ) for lesson in candidates.lessons)
-    if not all(row.checker_passed for row in rows):
-        _fail("BAMF_PUBLIC_BRAVO_CHECKER_FAILED")
-    return rows
+    rows = []
+    for lesson in lessons:
+        if not lesson.check():
+            _fail("BAMF_PUBLIC_BRAVO_CHECKER_FAILED")
+        rows.append(ExternalGoldWitness(
+            lesson_id=lesson.lesson_id,
+            source_manifest_cid=snapshot.source_manifest_cid,
+            source_byte_digest=snapshot.source_byte_digest,
+            source_span_start=record.source_span.start,
+            source_span_end=record.source_span.end,
+            source_family_id=lesson.source_family_id,
+            interpretation_revision=lesson.frame.interpretation_revision,
+            semantic_release=snapshot.semantic_release,
+            rights_regime=lesson.rights.regime,
+            checker_id=lesson.checker_id,
+            question=lesson.question,
+            gold=lesson.gold,
+        ))
+    return tuple(rows)
 
 
 def _same_family_rejection(
     snapshot: BamfEvidenceSnapshot,
     rights: EvidenceRights,
-    semantic_release: str,
     record: EvidenceRecord,
 ) -> str:
-    renamed = EvidenceRecord(
+    renamed = replace(
+        record,
         record_id="fixture-001-renamed",
-        actor_ref=record.actor_ref,
-        source_span=record.source_span,
-        category_ref=record.category_ref,
-        category_label=record.category_label,
-        status=record.status,
-        reported_value=record.reported_value,
-        unit_label=record.unit_label,
-        event_time=record.event_time,
-        observed_at=record.observed_at,
-        alternatives=record.alternatives,
         adjudication_ref="adjudication:renamed-does-not-create-evidence",
-        agent_role_ref=record.agent_role_ref,
-        negated=record.negated,
     )
     candidates = compile_evidence_lessons(
-        BamfEvidenceSnapshot(
-            snapshot_id=snapshot.snapshot_id,
-            source_manifest_cid=snapshot.source_manifest_cid,
-            source_byte_digest=snapshot.source_byte_digest,
-            interpretation_revision=snapshot.interpretation_revision,
-            semantic_release=snapshot.semantic_release,
-            rights=snapshot.rights,
-            records=(record, renamed),
-        ),
+        replace(snapshot, records=(record, renamed)),
         rights,
-        semantic_release,
+        snapshot.semantic_release,
     )
     try:
         split_evidence_families(
@@ -138,101 +104,87 @@ def _same_family_rejection(
     _fail("BAMF_PUBLIC_BRAVO_SAME_FAMILY_ADVERSARY_ACCEPTED")
 
 
-def _independent_split(
-    primary: PublicLessonWitness,
+def _independent_snapshot(
     primary_snapshot: BamfEvidenceSnapshot,
-    *,
-    semantic_release: str,
-    category_ref: str,
-    hour_unit_ref: str,
-    agent_role_ref: str,
-) -> ExternalWitnessSplitReceipt:
-    source_digest = sha256(INDEPENDENT_SOURCE.encode("utf-8")).hexdigest()
-    record = parse_public_fixture_source(
-        INDEPENDENT_SOURCE,
-        category_ref=category_ref,
-        hour_unit_ref=hour_unit_ref,
-        agent_role_ref=agent_role_ref,
+) -> tuple[BamfEvidenceSnapshot, EvidenceRights]:
+    authority = source_manifest_semantic_authority(primary_snapshot)
+    start = len(PUBLIC_FIXTURE_SOURCE) + 1
+    parsed = parse_public_fixture_source(
+        PUBLIC_INDEPENDENT_SOURCE,
+        category_ref=authority.category_ref,
+        hour_unit_ref=authority.hour_unit_ref,
+        agent_role_ref=authority.agent_role_ref,
     )
-    record = EvidenceRecord(
+    record = replace(
+        parsed,
         record_id="fixture-002",
-        actor_ref=record.actor_ref,
-        source_span=record.source_span,
-        category_ref=record.category_ref,
-        category_label=record.category_label,
-        status=record.status,
-        reported_value=record.reported_value,
-        unit_label=record.unit_label,
-        event_time=record.event_time,
-        observed_at=record.observed_at,
-        alternatives=record.alternatives,
+        source_span=SourceSpan(start, start + len(PUBLIC_INDEPENDENT_SOURCE)),
         adjudication_ref="adjudication:independent-public-fixture-002",
-        agent_role_ref=record.agent_role_ref,
     )
     rights = EvidenceRights(PUBLIC_FIXTURE, "TRAINING", True, True)
     snapshot = BamfEvidenceSnapshot(
         snapshot_id="bamf-public-fixture-002",
-        source_manifest_cid="public-fixture:bravo-a10-independent/v1:" + source_digest,
-        source_byte_digest=source_digest,
+        source_manifest_cid=PUBLIC_INDEPENDENT_MANIFEST_CID,
+        source_byte_digest=sha256(
+            PUBLIC_INDEPENDENT_BUNDLE_SOURCE.encode("utf-8")).hexdigest(),
         interpretation_revision="bravo-public-fixture/v1",
-        semantic_release=semantic_release,
+        semantic_release=authority.semantic_release,
         rights=rights,
         records=(record,),
     )
-    candidates = compile_evidence_lessons(snapshot, rights, semantic_release)
-    heldout = next(iter(candidates.lessons))
-    if not heldout.check():
-        _fail("BAMF_PUBLIC_BRAVO_INDEPENDENT_CHECKER_FAILED")
+    return snapshot, rights
+
+
+def _independent_split(
+    primary_witnesses: tuple[ExternalGoldWitness, ...],
+    primary_snapshot: BamfEvidenceSnapshot,
+) -> ExternalWitnessSplitReceipt:
+    snapshot, rights = _independent_snapshot(primary_snapshot)
+    record = snapshot.records[0]
+    candidates = compile_evidence_lessons(
+        snapshot, rights, snapshot.semantic_release)
+    heldout = _witnesses(candidates, snapshot, record)
+    train_family = primary_witnesses[0].source_family_id
+    heldout_family = heldout[0].source_family_id
+    if any(item.source_family_id != heldout_family for item in heldout):
+        _fail("BAMF_PUBLIC_BRAVO_INDEPENDENT_FAMILY_INVALID")
     return ExternalWitnessSplitReceipt(
-        train_family_id=primary.source_family_id,
-        heldout_family_id=heldout.source_family_id,
+        train_family_id=train_family,
+        heldout_family_id=heldout_family,
         train_source_digest=primary_snapshot.source_byte_digest,
         heldout_source_digest=snapshot.source_byte_digest,
         train_source_manifest_cid=primary_snapshot.source_manifest_cid,
         heldout_source_manifest_cid=snapshot.source_manifest_cid,
-        heldout_external_witness_ref=record.adjudication_ref or "",
+        heldout_witnesses=heldout,
     )
 
 
 def compile_public_bravo_fixture_receipt(
-    *,
-    semantic_release: str,
-    category_ref: str,
-    hour_unit_ref: str,
-    agent_role_ref: str,
+    *, atlas_selection: AtlasArtifactSelection,
 ) -> PublicBravoFixtureReceipt:
-    """Compile the exact public fixture and bind every derivative to one family."""
+    """Replay source owners and exact checkers into one public acceptance receipt."""
     snapshot, rights = build_public_fixture_snapshot(
-        semantic_release=semantic_release,
-        category_ref=category_ref,
-        hour_unit_ref=hour_unit_ref,
-        agent_role_ref=agent_role_ref,
-    )
+        atlas_selection=atlas_selection)
     record = _record(snapshot)
-    candidates = compile_evidence_lessons(snapshot, rights, semantic_release)
+    candidates = compile_evidence_lessons(
+        snapshot, rights, snapshot.semantic_release)
     witnesses = _witnesses(candidates, snapshot, record)
-    first: EvidenceLesson = next(iter(candidates.lessons))
-    if (first.frame.category_ref != category_ref
-            or first.frame.actor_role_ref != agent_role_ref
-            or first.frame.reported_unit_ref != hour_unit_ref
+    first: EvidenceLesson = candidates.lessons[0]
+    expected_golds = (
+        first.frame.category_ref, EXPECTED_STATUS,
+        EXPECTED_REPORTED_DECIMAL, "15")
+    if (tuple(item.gold for item in witnesses) != expected_golds
             or first.rendered != EXPECTED_RENDERED):
-        _fail("BAMF_PUBLIC_BRAVO_FRAME_INVALID")
-    split = split_evidence_families(
+        _fail("BAMF_PUBLIC_BRAVO_GOLD_INVALID")
+    split: EvidenceSplitReceipt = split_evidence_families(
         candidates,
         train_record_ids=(record.record_id,),
         heldout_record_ids=(),
     )
     f10_proof = F10WitnessProof(
         same_family_rejection_reason=_same_family_rejection(
-            snapshot, rights, semantic_release, record),
-        independent_split=_independent_split(
-            witnesses[0],
-            snapshot,
-            semantic_release=semantic_release,
-            category_ref=category_ref,
-            hour_unit_ref=hour_unit_ref,
-            agent_role_ref=agent_role_ref,
-        ),
+            snapshot, rights, record),
+        independent_split=_independent_split(witnesses, snapshot),
     )
     return PublicBravoFixtureReceipt(
         schema=FIXTURE_SCHEMA,
@@ -245,7 +197,7 @@ def compile_public_bravo_fixture_receipt(
         category_ref=record.category_ref,
         agent_role_ref=record.agent_role_ref,
         reported_unit_ref=record.reported_value.unit_ref,
-        semantic_release=semantic_release,
+        semantic_release=snapshot.semantic_release,
         interpretation_revision=snapshot.interpretation_revision,
         rights=rights,
         source_family_id=first.source_family_id,
@@ -254,3 +206,18 @@ def compile_public_bravo_fixture_receipt(
         split_receipt=split,
         f10_proof=f10_proof,
     )
+
+
+def verify_public_bravo_fixture_receipt(
+    receipt: PublicBravoFixtureReceipt,
+    *,
+    atlas_selection: AtlasArtifactSelection,
+) -> PublicBravoFixtureReceipt:
+    """Reconstruct public evidence and reject even self-consistently rehashed tampering."""
+    if type(receipt) is not PublicBravoFixtureReceipt:
+        _fail("BAMF_PUBLIC_BRAVO_RECEIPT_INVALID")
+    expected = compile_public_bravo_fixture_receipt(
+        atlas_selection=atlas_selection)
+    if receipt != expected or receipt.receipt_sha256 != expected.receipt_sha256:
+        _fail("BAMF_PUBLIC_BRAVO_REPLAY_MISMATCH")
+    return receipt
