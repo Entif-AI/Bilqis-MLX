@@ -6,8 +6,10 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
+from scripts.bamf import writer_handoff
 from scripts.bamf.writer_handoff import HandoffError, emit, verify
 
 
@@ -160,9 +162,20 @@ class WriterHandoffTests(unittest.TestCase):
             verify(self.repo, payload)
 
     def test_unsupported_untracked_entry_cannot_issue_a_snapshot(self) -> None:
-        os.mkfifo(self.repo / "pipe")
-        with self.assertRaisesRegex(HandoffError, "unsupported untracked entry"):
-            emit(self.repo, 832, "epoch-829")
+        path = self.repo / "pipe"
+        path.write_text("enumerated as a regular file\n")
+        read_git = writer_handoff.git
+
+        def replace_after_enumeration(root, *args):
+            result = read_git(root, *args)
+            if args[0] == "ls-files":
+                path.unlink()
+                os.mkfifo(path)
+            return result
+
+        with patch.object(writer_handoff, "git", side_effect=replace_after_enumeration):
+            with self.assertRaisesRegex(HandoffError, "unsupported untracked entry"):
+                emit(self.repo, 832, "epoch-829")
 
 
 if __name__ == "__main__":
