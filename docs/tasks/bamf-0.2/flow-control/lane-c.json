@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "2debce4f4e389c95af295048ff624a54f47c5477",
-  "updated_at": "2026-11-05T06:09:49.823075+00:00",
+  "observed_unified": "70a4ef1e883d348920d64083c7546f443a90ef77",
+  "updated_at": "2026-11-05T06:20:10+00:00",
   "exception": null,
   "items": [
     {
@@ -44,8 +44,8 @@
     {
       "issue": 713,
       "state": "TURNED_IN",
-      "head_sha": "ccec0e824e549ce5225a569cd5a6f49df5a365c9",
-      "summary": "Scoped C02.1 interface PR808 externally merged as b0892466d10dc08fb4e3c312177a6df7b85188c9; no broader785/490source-selection acceptance inferred.",
+      "head_sha": "73f6a3b753f1cd29ba9a1453b1fec1a3674894b1",
+      "summary": "PR808 externally merged as b0892466d10dc08fb4e3c312177a6df7b85188c9 and issue713 is closed. Scoped repair is no longer implementation WIP; independent source-selection authority785 and aggregate490 acceptance remain separate.",
       "resume_trigger": null,
       "preserved_branch": "codex/remediation-713-c02-authority-20261103",
       "pr": null,

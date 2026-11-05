@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "05e31a576e3432e4238c9b4477a70d70ec4fc487",
-  "updated_at": "2026-11-05T06:11:52.571809+00:00",
+  "observed_unified": "70a4ef1e883d348920d64083c7546f443a90ef77",
+  "updated_at": "2026-11-05T06:20:10+00:00",
   "exception": null,
   "items": [
     {
@@ -305,12 +305,13 @@
     },
     {
       "issue": 784,
-      "pr": 847,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "edae20526c34b628fa63a895fb852921007f42a0",
       "preserved_branch": "codex/bamf02-b-784-runner-context-20261105",
-      "summary": "Live inventory reconciliation: ready runner-context PR847targets reviewed unified. Its owner records pinned EGM PASS, focused14/14andmotif5/5, broader165/168with3knownbaselineimports tracked844. No whole-suite PASS or merge inferred.",
-      "resume_trigger": null
+      "summary": "PR847 externally merged as70a4ef1e883d348920d64083c7546f443a90ef77 after focused14/14andmotif5/5 proof and pinned EGM PASS. The three broader script import failures remain separately owned by844.",
+      "resume_trigger": null,
+      "merged_pr": 847
     }
   ]
 }

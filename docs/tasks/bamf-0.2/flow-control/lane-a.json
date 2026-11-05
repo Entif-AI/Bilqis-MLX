@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "2debce4f4e389c95af295048ff624a54f47c5477",
-  "updated_at": "2026-11-05T06:10:37.407700+00:00",
+  "observed_unified": "70a4ef1e883d348920d64083c7546f443a90ef77",
+  "updated_at": "2026-11-05T06:20:10+00:00",
   "exception": null,
   "items": [
     {
@@ -59,7 +59,7 @@
       "issue": 824,
       "state": "TURNED_IN",
       "head_sha": "16e14ab6c6f0550112aa8786fb2b86465fdad75b",
-      "summary": "Structural repair ready in PR830 after pinned review findings resolved; 23/23 and exact representative manifest bytes/digest preserved; error inventory2029 unchanged. Human integration and hosted final gates remain.",
+      "summary": "PR830 externally merged ase58dd31574a6ee2ce0b3e35f92293a09befd15c1; bounded structural acceptance and EGM satisfied. Owning issue explicitly closed completed after readback; source/parent acceptance remains separate.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a-824-release-structure-20261104",
       "pr": null,
@@ -69,7 +69,7 @@
       "issue": 833,
       "state": "TURNED_IN",
       "head_sha": "1985f621ca5ac26c734a64d65693c045b870ce57",
-      "summary": "Ready PR836 after exact-head pinned EGM PASS round1/5 and25/25 focused proof; representative decisions/evidence/cache/C09 bytes and error inventory preserved. Human integration and final hosted gates remain.",
+      "summary": "PR836 externally merged asfeaef7d78516e346030cb0e88eecfc27089e957e; bounded structural acceptance and EGM satisfied. Owning issue explicitly closed completed after readback; source/parent acceptance remains separate.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a-833-context-structure-20261104",
       "pr": null,
