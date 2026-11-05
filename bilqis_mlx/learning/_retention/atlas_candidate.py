@@ -7,14 +7,12 @@ here. Teacher observations stay outside the candidate state.
 """
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
-import hashlib
-import json
+from dataclasses import dataclass, field
 
 import mlx.core as mx
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
-from bilqis_mlx.learning.atlas_engram import INITIAL_MOTIF_CAPACITY, MotifBudget
+from bilqis_mlx.learning.atlas_engram import MotifBudget
 from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
 from bilqis_mlx.learning.atlas_plasticity import (
     PlasticityPolicy, advance_candidate_policy, next_update_mode,
@@ -25,196 +23,20 @@ from .atlas_execution_provenance import (
     StepExecutionProvenance, mask_digest, participation_digest,
 )
 from .atlas_participation import optimizer_participation_mask
+from .atlas_candidate_provenance import (
+    CandidateCustodyIdentity, CandidateStepProof, candidate_identity_digest,
+)
+from .atlas_candidate_state import (
+    CandidateState, is_genesis_allocations, issue_retained_candidate_state,
+    load_retained_candidate_state_with_parts,
+)
 
-STATE_SCHEMA = 'bilqis.mlx.candidate-state/provisional-v1'
 TRANSACTION_SCHEMA = 'bilqis.mlx.candidate-transaction/provisional-v1'
-STEP_PROOF_SCHEMA = 'bilqis.mlx.candidate-step-proof/v1'
-DIGEST_HEX_LENGTH = 64
 _TRANSACTION_ISSUER = object()
-_RETAINED_STATE_ISSUER = object()
 
 
 def _invalid():
     ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
-
-
-def _is_digest(value) -> bool:
-    """One lowercase hex digest identity, expressed as a domain contract."""
-    return (isinstance(value, str) and len(value) == DIGEST_HEX_LENGTH
-            and all(char in "0123456789abcdef" for char in value))
-
-
-def candidate_identity_digest(state) -> str:
-    """Digest the exact optimizer state used as the B12 parent identity."""
-    import numpy as np
-
-    optimizer = state.optimizer
-    parts = {}
-    for group in ("parameters", "m", "v", "update_counts"):
-        parts[group] = {
-            name: np.asarray(value).tobytes().hex()
-            for name, value in sorted(getattr(optimizer, group).items())
-        }
-    payload = json.dumps(
-        {"state": parts, "optimizer_step": state.optimizer_step},
-        sort_keys=True, separators=(",", ":"), ensure_ascii=False,
-        allow_nan=False,
-    )
-    return hashlib.sha256((payload + "\n").encode("utf-8")).hexdigest()
-
-
-def _is_genesis_allocations(snapshot: MotifAllocationSnapshot) -> bool:
-    return (type(snapshot) is MotifAllocationSnapshot
-            and not snapshot.manifest.slots
-            and snapshot.manifest.capacity == INITIAL_MOTIF_CAPACITY
-            and not snapshot.observed_uses
-            and not snapshot.pending_keys
-            and not snapshot.aliases)
-
-
-@dataclass(frozen=True)
-class CandidateCustodyIdentity:
-    """The published identity of one accepted generation.
-
-    A candidate step may only be authorised against this identity, so
-    provenance issued for another run, generation, manifest, topology or
-    extents state cannot update this candidate.
-    """
-
-    run_id: str
-    generation: int
-    manifest_sha256: str | None
-    topology_digest: str
-    extents_digest: str
-
-    def __post_init__(self) -> None:
-        if (not isinstance(self.run_id, str) or not self.run_id
-                or type(self.generation) is not int or self.generation < 0
-                or (self.manifest_sha256 is not None
-                    and not _is_digest(self.manifest_sha256))
-                or not _is_digest(self.topology_digest)
-                or not _is_digest(self.extents_digest)):
-            _invalid()
-
-
-@dataclass(frozen=True)
-class CandidateState:
-    """The inseparable proposed optimizer, allocation and policy state."""
-
-    optimizer: AdamWStateTree
-    policy: PlasticityPolicy
-    allocations: MotifAllocationSnapshot
-    optimizer_step: int
-    custody: CandidateCustodyIdentity | None = None
-    step_proofs: tuple = ()
-    schema_version: str = STATE_SCHEMA
-    _issuance: object = field(init=False, default=None, repr=False, compare=False)
-
-    def __post_init__(self):
-        if (type(self.optimizer) is not AdamWStateTree
-                or type(self.policy) is not PlasticityPolicy
-                or type(self.allocations) is not MotifAllocationSnapshot
-                or type(self.optimizer_step) is not int or self.optimizer_step < 0
-                or (self.custody is not None
-                    and type(self.custody) is not CandidateCustodyIdentity)
-                or type(self.step_proofs) is not tuple
-                or any(type(proof) is not CandidateStepProof for proof in self.step_proofs)
-                or any(proof.step_index != index + 1
-                       for index, proof in enumerate(self.step_proofs))
-                or self.schema_version != STATE_SCHEMA):
-            _invalid()
-        self.optimizer.validate()
-        self.policy.validate()
-        self.allocations.__post_init__()
-        if (not _is_genesis_allocations(self.allocations)
-                and getattr(self, '_issuance', None) is not _RETAINED_STATE_ISSUER):
-            _invalid()
-        for row in self.policy.row_ages:
-            count = self.optimizer.update_counts.get(f'identity.bank.{row.bank_index}')
-            if count is None or count.ndim != 1 or row.row_index >= count.shape[0]:
-                _invalid()
-
-
-def _load_retained_candidate_state_with_parts(
-        bundle_root, *, expected_manifest_sha256: str):
-    """Rehydrate retained state only from B13-validated immutable custody."""
-    from bilqis_mlx.runtime.bamf_bundle.codec import _load_validated_bundle_parts
-
-    parts = _load_validated_bundle_parts(
-        bundle_root, expected_manifest_sha256=expected_manifest_sha256)
-    proofs = tuple(CandidateStepProof.from_record(item)
-                   for item in parts.records["step_proofs"]["proofs"])
-    state = object.__new__(CandidateState)
-    for name, value in (
-            ('optimizer', parts.numerical), ('policy', parts.policy),
-            ('allocations', parts.motif), ('optimizer_step', parts.optimizer_step),
-            ('custody', CandidateCustodyIdentity(
-                parts.manifest['run_id'], parts.manifest['generation'],
-                expected_manifest_sha256,
-                parts.spec.digest, parts.extents.digest)),
-            ('step_proofs', proofs),
-            ('schema_version', STATE_SCHEMA),
-            ('_issuance', _RETAINED_STATE_ISSUER)):
-        object.__setattr__(state, name, value)
-    state.__post_init__()
-    return state, parts
-
-
-@dataclass(frozen=True)
-class CandidateStepProof:
-    """Owner-bound proof of one executed optimizer step.
-
-    The proof records digests of the owner-issued execution provenance and its
-    derived participation and mask. It never stores a caller mask mapping.
-    """
-
-    step_index: int
-    provenance_sha256: str
-    participation_sha256: str
-    mask_sha256: str
-    parameter_names: tuple[str, ...]
-    loss_bearing: bool
-    schema_version: str = STEP_PROOF_SCHEMA
-
-    def __post_init__(self) -> None:
-        if (type(self.step_index) is not int or self.step_index < 1
-                or not _is_digest(self.provenance_sha256)
-                or not _is_digest(self.participation_sha256)
-                or not _is_digest(self.mask_sha256)
-                or type(self.parameter_names) is not tuple
-                or self.parameter_names != tuple(sorted(set(self.parameter_names)))
-                or any(not isinstance(name, str) or not name
-                       for name in self.parameter_names)
-                or type(self.loss_bearing) is not bool
-                or self.schema_version != STEP_PROOF_SCHEMA):
-            _invalid()
-
-    @property
-    def digest(self) -> str:
-        """Content identity of one owner-bound step proof."""
-        payload = json.dumps(asdict(self), sort_keys=True, separators=(",", ":"),
-                             ensure_ascii=False, allow_nan=False)
-        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
-
-    def to_record(self) -> dict:
-        """Durable custody record of one owner-bound step proof."""
-        record = asdict(self)
-        record["proof_sha256"] = self.digest
-        return record
-
-    @classmethod
-    def from_record(cls, record) -> "CandidateStepProof":
-        names = ("step_index", "provenance_sha256", "participation_sha256",
-                 "mask_sha256", "parameter_names", "loss_bearing", "schema_version")
-        if (not isinstance(record, dict)
-                or set(record) != set(names) | {"proof_sha256"}):
-            _invalid()
-        proof = cls(**{name: (tuple(record[name])
-                              if name == "parameter_names" else record[name])
-                          for name in names})
-        if record["proof_sha256"] != proof.digest:
-            _invalid()
-        return proof
 
 
 @dataclass(frozen=True, init=False)
@@ -357,17 +179,14 @@ def resolve_candidate(candidate: CandidateTransaction, *, accepted: bool) -> Can
         candidate.parent.policy, teacher_requests_full=candidate.teacher_requests_full,
         accepted=True, participating_rows=rows)
     step = candidate.parent.optimizer_step + candidate.update_steps
-    if _is_genesis_allocations(candidate.allocations):
+    if is_genesis_allocations(candidate.allocations):
         return CandidateState(candidate.optimizer, policy, candidate.allocations, step,
                               candidate.parent.custody,
                               tuple(candidate.step_proofs))
-    state = object.__new__(CandidateState)
-    for name, value in (
-            ('optimizer', candidate.optimizer), ('policy', policy),
-            ('allocations', candidate.allocations), ('optimizer_step', step),
-            ('custody', candidate.parent.custody),
-            ('step_proofs', tuple(candidate.step_proofs)),
-            ('schema_version', STATE_SCHEMA), ('_issuance', _RETAINED_STATE_ISSUER)):
-        object.__setattr__(state, name, value)
-    state.__post_init__()
-    return state
+    return issue_retained_candidate_state(
+        candidate.optimizer, policy, candidate.allocations, step,
+        candidate.parent.custody, candidate.step_proofs)
+
+
+# Compatibility for the B13 codec while candidate state remains split internally.
+_load_retained_candidate_state_with_parts = load_retained_candidate_state_with_parts

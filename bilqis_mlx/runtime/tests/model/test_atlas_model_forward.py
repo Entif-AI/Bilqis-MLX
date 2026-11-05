@@ -101,7 +101,7 @@ class AtlasModelSourceForwardTests(SourceBackboneTestBase):
         )
         self.assertEqual(output.committed[0].value, ControlAction.END_FRAME)
 
-    def test_loss_execution_is_issued_only_from_exact_live_forward(self):
+    def _loss_execution_fixture(self):
         genesis = MotifAllocationSnapshot(
             MotifManifest(self.snapshot.release_sha256))
         compiled = replace(
@@ -128,26 +128,9 @@ class AtlasModelSourceForwardTests(SourceBackboneTestBase):
             {"finish": True},
             cache=cache,
         )
-        execution = gradient_execution.execution
-        self.assertEqual(execution.custody_run_id, "source-backed-forward")
-        self.assertEqual(execution.custody_generation, 0)
-        self.assertEqual(execution.custody_manifest_sha256, "6" * 64)
-        self.assertIn("blocks.0.query", execution.dense_parameter_names)
-        self.assertEqual(
-            float(mx.abs(
-                gradient_execution.gradients["blocks.0.query"]).sum()), 0.0)
-        self.assertEqual(
-            execution.visible_identity_rows,
-            tuple(sorted(set(
-                divmod(index, ModelTopologySpecV2.semantic_bank_rows)
-                for index in self.source.source_row["tokens"][:2]
-            ))),
-        )
-        with self.assertRaises(BilqisError):
-            BamfLossExecution()
-        with self.assertRaises(BilqisError):
-            BamfGradientExecution()
+        return compiled, genesis, gradient_execution, gradient_execution.execution
 
+    def _bound_provenance(self, compiled, execution):
         ages = tuple(
             IdentityRowAge(bank, row, 0)
             for bank, row in execution.visible_identity_rows
@@ -170,10 +153,11 @@ class AtlasModelSourceForwardTests(SourceBackboneTestBase):
             topology_digest=spec.digest,
             candidate_step_ordinal=1,
         )
-        self.assertTrue(
-            provenance.mask.parameter("blocks.0.query").whole_parameter)
-        self.assertTrue(provenance.mask.has_loss_bearing_target)
+        return ages, spec, extents, eligibility, provenance
 
+    def _candidate_transaction(
+            self, compiled, genesis, gradient_execution, ages, spec, extents,
+            eligibility):
         declared = expected_bamf_shapes(spec, extents)
         rowwise = {
             Initializer.IDENTITY_BANK,
@@ -229,6 +213,39 @@ class AtlasModelSourceForwardTests(SourceBackboneTestBase):
             decay={item.name: item.decay for item in declared},
             max_norm=1.0,
         )
+        return transaction
+
+    def test_loss_execution_is_issued_only_from_exact_live_forward(self):
+        compiled, genesis, gradient_execution, execution = (
+            self._loss_execution_fixture())
+        self.assertEqual(execution.custody_run_id, "source-backed-forward")
+        self.assertEqual(execution.custody_generation, 0)
+        self.assertEqual(execution.custody_manifest_sha256, "6" * 64)
+        self.assertIn("blocks.0.query", execution.dense_parameter_names)
+        self.assertEqual(
+            float(mx.abs(
+                gradient_execution.gradients["blocks.0.query"]).sum()), 0.0)
+        self.assertEqual(
+            execution.visible_identity_rows,
+            tuple(sorted(set(
+                divmod(index, ModelTopologySpecV2.semantic_bank_rows)
+                for index in self.source.source_row["tokens"][:2]
+            ))),
+        )
+        with self.assertRaises(BilqisError):
+            BamfLossExecution()
+        with self.assertRaises(BilqisError):
+            BamfGradientExecution()
+
+        ages, spec, extents, eligibility, provenance = self._bound_provenance(
+            compiled, execution)
+        self.assertTrue(
+            provenance.mask.parameter("blocks.0.query").whole_parameter)
+        self.assertTrue(provenance.mask.has_loss_bearing_target)
+
+        transaction = self._candidate_transaction(
+            compiled, genesis, gradient_execution, ages, spec, extents,
+            eligibility)
         self.assertEqual(transaction.update_steps, 1)
         self.assertEqual(
             int(transaction.optimizer.update_counts["blocks.0.query"]), 1)

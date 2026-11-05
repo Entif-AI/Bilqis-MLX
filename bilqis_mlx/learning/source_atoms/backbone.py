@@ -53,9 +53,7 @@ class _SourceBackboneProducerSession:
         self._sources = sources
         self._feature_schema = feature_schema
 
-    def _receipt_values(self, result=None):
-        if self._sources is None or self._feature_schema is None:
-            _invalid_producer_receipt()
+    def _replay_receipt_context(self):
         encoded, handoffs = encode_source_compiled_with_handoffs(
             self._compiled, self._parameters, self._sources, self._feature_schema)
         source_digest = contract_digest(tuple(item.digest for item in handoffs))
@@ -73,24 +71,30 @@ class _SourceBackboneProducerSession:
             spec=topology, extents=self._compiled.extents,
             scope_ids=mx.zeros(valid.shape, dtype=mx.int32), valid=valid,
             generation=generation, prefix_digest=prefix)
-        if result is None:
-            hidden = encoded.global_seeds
-            output = _content_digest(hidden)
-            return dict(
-                source_id="h0", completed_layer=0, hidden=hidden,
-                source_handoff_digest=source_digest, topology_digest=topology.digest,
-                generation_digest=generation,
-                parameter_tree_digest=replay.parameter_tree_digest,
-                prefix_digest=prefix,
-                scope_digest=contract_digest((source_digest, prefix, generation)),
-                input_digest=source_digest, output_digest=output,
-                output_shape=tuple(hidden.shape), output_dtype=str(hidden.dtype),
-                cache_chain_digest=contract_digest(()),
-                numerical_execution_digest=contract_digest((
-                    "h0", output, replay.parameter_tree_digest)),
-                predecessor_receipt_digest=source_digest,
-                motif_disposition=NOT_APPLICABLE, motif_read_position="",
-                motif_read_digest=contract_digest(()))
+        return encoded, source_digest, topology, generation, prefix, replay
+
+    def _h0_receipt_values(
+            self, encoded, source_digest, topology, generation, prefix, replay):
+        hidden = encoded.global_seeds
+        output = _content_digest(hidden)
+        return dict(
+            source_id="h0", completed_layer=0, hidden=hidden,
+            source_handoff_digest=source_digest, topology_digest=topology.digest,
+            generation_digest=generation,
+            parameter_tree_digest=replay.parameter_tree_digest,
+            prefix_digest=prefix,
+            scope_digest=contract_digest((source_digest, prefix, generation)),
+            input_digest=source_digest, output_digest=output,
+            output_shape=tuple(hidden.shape), output_dtype=str(hidden.dtype),
+            cache_chain_digest=contract_digest(()),
+            numerical_execution_digest=contract_digest((
+                "h0", output, replay.parameter_tree_digest)),
+            predecessor_receipt_digest=source_digest,
+            motif_disposition=NOT_APPLICABLE, motif_read_position="",
+            motif_read_digest=contract_digest(()))
+
+    def _group_receipt_values(
+            self, result, source_digest, topology, generation, prefix, replay):
         target = result.group_index
         if (target < 1 or target > len(self._session.results)
                 or result is not self._session.results[target - 1]
@@ -154,6 +158,14 @@ class _SourceBackboneProducerSession:
             predecessor_receipt_digest=self._receipts[target - 1].receipt_digest,
             motif_disposition=motif_disposition, motif_read_position=motif_position,
             motif_read_digest=motif_read_digest)
+
+    def _receipt_values(self, result=None):
+        if self._sources is None or self._feature_schema is None:
+            _invalid_producer_receipt()
+        context = self._replay_receipt_context()
+        if result is None:
+            return self._h0_receipt_values(*context)
+        return self._group_receipt_values(result, *context[1:])
 
     def _validated_receipts(self, boundary_group):
         if (not isinstance(boundary_group, int) or isinstance(boundary_group, bool)
