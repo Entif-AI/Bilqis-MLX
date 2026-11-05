@@ -1,109 +1,91 @@
-"""Repository-owned A06 feature artifact selection over pinned A01/A03 authority."""
+"""Source-owned A06 feature selection over pinned A01/A03 authority."""
 from __future__ import annotations
 
-import hmac
-import json
-from pathlib import Path
-
 from .snapshot import AtlasArtifactSelection, load_pinned_atlas_snapshot
-from .feature_io_contracts import _SHA, _canonical, _digest, _invalid
+from .feature_io_contracts import _invalid
 from .feature_io_storage import load_feature_manifest
+from ..atlas_features import FeatureSchema, build_feature_manifest
+from ..frame_adapters import (
+    BOOLEAN_CONNECTIVE_ADAPTER,
+    FINITE_NUMERIC_ADAPTER,
+    MICRO_PREDICATE_ADAPTER,
+    released_frame_adapter_ids,
+)
+from ..released_frame_schemas import _load_pinned_released_frame_schemas
 
 
-SOURCE_PIN_REGISTRY_SCHEMA = "bilqis.atlas-feature-source-pins/v1"
-SOURCE_PIN_REGISTRY_SHA256 = (
-    "931e55956f58e42dafa28c543cfb7dd567fc864912825918449d1c99c9c70317")
-SOURCE_PIN_STATUS = "A06_SOURCE_ATTESTED_NOT_NEURAL_ADMITTED"
+# A06 feature geometry is selected by the source-frame surface the BAMF runtime
+# actually admits, not by every A03 family that happens to exist in the repo.
+# This keeps unrelated future schema families from silently changing established
+# feature coordinates. A newly supported family must be deliberately added here
+# together with its released source adapter.
+_SOURCE_FAMILY_ADAPTERS = (
+    ("boolean", BOOLEAN_CONNECTIVE_ADAPTER),
+    ("micro", MICRO_PREDICATE_ADAPTER),
+    ("numeric", FINITE_NUMERIC_ADAPTER),
+)
 
 
-def _a03_pin_set_digest(snapshot) -> str:
-    from ..released_frame_schemas import _source_pins
-
-    entries = tuple(sorted(({
-        "family": entry["family"],
-        "schema_manifest_sha256": entry["schema_manifest_sha256"],
-        "schema_map_sha256": entry["schema_map_sha256"],
-    } for entry in _source_pins()
-        if entry["semantic_release"] == snapshot.release_sha256
-        and entry["atlas_bundle_id"] == snapshot.bundle_id
-        and entry["source_bundle_id"] == snapshot.source_bundle_id),
-        key=lambda entry: entry["family"]))
-    if (not entries
-            or len({entry["family"] for entry in entries}) != len(entries)):
-        _invalid("BAMF_FEATURE_A03_PIN_SET_INVALID")
-    return _digest(_canonical(entries))
-
-
-def _feature_source_pins() -> tuple[dict, ...]:
-    path = Path(__file__).resolve().parents[1] / "atlas_feature_source_pins_v1.json"
-    if path.is_symlink() or not path.is_file():
-        _invalid("BAMF_FEATURE_SOURCE_PIN_REGISTRY_MISSING")
-    try:
-        payload = path.read_bytes()
-        registry = json.loads(payload)
-    except (OSError, ValueError, UnicodeError):
-        _invalid("BAMF_FEATURE_SOURCE_PIN_REGISTRY_INVALID")
-    if (not hmac.compare_digest(_digest(payload), SOURCE_PIN_REGISTRY_SHA256)
-            or not isinstance(registry, dict)
-            or set(registry) != {"schema", "entries"}
-            or registry["schema"] != SOURCE_PIN_REGISTRY_SCHEMA
-            or payload != _canonical(registry)
-            or not isinstance(registry["entries"], list)
-            or not registry["entries"]):
-        _invalid("BAMF_FEATURE_SOURCE_PIN_REGISTRY_INVALID")
-    required = {
-        "semantic_release", "atlas_bundle_id", "source_bundle_id",
-        "a03_pin_set_sha256", "feature_bundle_id", "feature_digest",
-        "predecessor_digest", "source_receipt", "status"}
-    for entry in registry["entries"]:
-        predecessor = entry.get("predecessor_digest") if isinstance(entry, dict) else None
-        if (not isinstance(entry, dict) or set(entry) != required
-                or any(not isinstance(entry[name], str) or not _SHA.fullmatch(entry[name])
-                       for name in (
-                           "semantic_release", "atlas_bundle_id", "source_bundle_id",
-                           "a03_pin_set_sha256", "feature_bundle_id", "feature_digest"))
-                or (predecessor is not None
-                    and (not isinstance(predecessor, str) or not _SHA.fullmatch(predecessor)))
-                or entry["source_receipt"] != "docs/evidence/bamf/A06.2/receipt.md"
-                or entry["status"] != SOURCE_PIN_STATUS):
-            _invalid("BAMF_FEATURE_SOURCE_PIN_REGISTRY_INVALID")
-    entries = tuple(registry["entries"])
-    if len({(
-            entry["semantic_release"], entry["atlas_bundle_id"],
-            entry["source_bundle_id"], entry["a03_pin_set_sha256"])
-            for entry in entries}) != len(entries):
-        _invalid("BAMF_FEATURE_SOURCE_PIN_REGISTRY_INVALID")
-    return entries
-
-
-def load_source_pinned_feature_manifest(
-    bundle_dir: str | Path, *, atlas_selection: AtlasArtifactSelection,
+def _source_owned_feature_schema(
+    atlas_selection: AtlasArtifactSelection,
 ):
-    """Load the one A06 artifact selected by repository A01+A03 pins.
-
-    ``bundle_dir`` is only a locator.  The accepted artifact identity comes from
-    the hash-pinned A06 registry and its exact A01/A03 authority binding.
-    """
+    """Rebuild the canonical A06 schema from source-owned released adapters."""
     if type(atlas_selection) is not AtlasArtifactSelection:
         _invalid("BAMF_FEATURE_SOURCE_SELECTION_INVALID")
     snapshot = load_pinned_atlas_snapshot(atlas_selection)
-    a03_digest = _a03_pin_set_digest(snapshot)
-    matches = tuple(entry for entry in _feature_source_pins()
-                    if entry["semantic_release"] == snapshot.release_sha256
-                    and entry["atlas_bundle_id"] == snapshot.bundle_id
-                    and entry["source_bundle_id"] == snapshot.source_bundle_id
-                    and entry["a03_pin_set_sha256"] == a03_digest)
-    if len(matches) != 1:
-        _invalid("BAMF_FEATURE_SOURCE_PIN_NOT_REGISTERED")
-    pin = matches[0]
-    if pin["predecessor_digest"] is not None:
-        _invalid("BAMF_FEATURE_PREDECESSOR_AUTHORITY_REQUIRED")
-    return load_feature_manifest(
+    released = set(released_frame_adapter_ids())
+    required = {adapter for _family, adapter in _SOURCE_FAMILY_ADAPTERS}
+    if not required <= released:
+        _invalid("BAMF_FEATURE_SOURCE_ADAPTER_NOT_RELEASED")
+
+    roles: set[str] = set()
+    schemas: list[str] = []
+    bindings: list[tuple[str, str]] = []
+    for family, adapter in _SOURCE_FAMILY_ADAPTERS:
+        manifest = _load_pinned_released_frame_schemas(
+            family, atlas_selection).manifest
+        for body in manifest.bodies:
+            schema = body.parse()
+            schemas.append(schema.schema_id)
+            bindings.append((schema.schema_id, adapter))
+            roles.update(role.role_id for role in schema.roles)
+
+    try:
+        feature_schema = FeatureSchema(
+            tuple(sorted(roles)),
+            tuple(sorted(schemas)),
+            source_bindings=tuple(sorted(bindings)),
+        )
+    except Exception:
+        _invalid("BAMF_FEATURE_SOURCE_PROFILE_INVALID")
+    return snapshot, feature_schema
+
+
+def load_source_pinned_feature_manifest(
+    bundle_dir,
+    *,
+    atlas_selection: AtlasArtifactSelection,
+):
+    """Load the exact feature artifact implied by source-owned runtime support.
+
+    The caller supplies only a locator. A01 selects the frozen Atlas release,
+    released frame adapters select the A03 families, and A06 deterministically
+    rebuilds the expected feature manifest. The loaded content-addressed artifact
+    must match that source-derived identity exactly.
+
+    This deliberately does not digest the global A03 registry. Adding an unrelated
+    source family therefore cannot rewrite existing BAMF feature coordinates.
+    """
+    snapshot, feature_schema = _source_owned_feature_schema(atlas_selection)
+    expected = build_feature_manifest(snapshot, feature_schema)
+    features = load_feature_manifest(
         bundle_dir,
-        expected_bundle_id=pin["feature_bundle_id"],
-        expected_feature_digest=pin["feature_digest"],
+        expected_feature_digest=expected.digest,
         expected_semantic_release=snapshot.release_sha256,
         expected_source_bundle_id=snapshot.source_bundle_id,
         expected_atlas_bundle_id=snapshot.bundle_id,
         predecessor=None,
     )
+    if features != expected:
+        _invalid("BAMF_FEATURE_SOURCE_PROFILE_MISMATCH")
+    return features
