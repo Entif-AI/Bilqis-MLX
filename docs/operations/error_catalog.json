@@ -1,5 +1,5 @@
 {
-  "legacy_raw_file_count": 231,
+  "legacy_raw_file_count": 239,
   "legacy_raw_raise_count": 2029,
   "legacy_raw_raise_groups": [
     {
@@ -4518,6 +4518,279 @@
       "path": "bilqis_mlx/diagnostics/trajectories.py"
     },
     {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_INVALID_INPUT",
+      "count": 1,
+      "exception": "TypeError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_INVALID_INPUT'",
+      "path": "bilqis_mlx/factory/_executable_release/compile.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_DUPLICATE_SPECIMEN",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_DUPLICATE_SPECIMEN:' + execution.capability_id",
+      "path": "bilqis_mlx/factory/_executable_release/evidence.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_ADMISSION_RELEASE_REQUIRED",
+      "count": 1,
+      "exception": "TypeError",
+      "expression": "'FACTORY_EXECUTABLE_ADMISSION_RELEASE_REQUIRED'",
+      "path": "bilqis_mlx/factory/_executable_release/operations.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_INVALID",
+      "count": 2,
+      "exception": "TypeError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_INVALID'",
+      "path": "bilqis_mlx/factory/_executable_release/operations.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_REQUIRED",
+      "count": 1,
+      "exception": "TypeError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_REQUIRED'",
+      "path": "bilqis_mlx/factory/_executable_release/operations.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_INCOMPATIBLE_GEOMETRY",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_INCOMPATIBLE_GEOMETRY'",
+      "path": "bilqis_mlx/factory/_executable_release/operations.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_LINEAGE_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_LINEAGE_DRIFT'",
+      "path": "bilqis_mlx/factory/_executable_release/operations.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_LINEAGE_WITHOUT_PREDECESSOR",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_LINEAGE_WITHOUT_PREDECESSOR'",
+      "path": "bilqis_mlx/factory/_executable_release/operations.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_ADMISSION_RELEASE_REQUIRED",
+      "count": 1,
+      "exception": "TypeError",
+      "expression": "'FACTORY_EXECUTABLE_ADMISSION_RELEASE_REQUIRED'",
+      "path": "bilqis_mlx/factory/_executable_release/primitives.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_ADMISSION_BASELINE_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_ADMISSION_BASELINE_DRIFT'",
+      "path": "bilqis_mlx/factory/_executable_release/primitives.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_ADMISSION_RELEASE_MISMATCH",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_ADMISSION_RELEASE_MISMATCH'",
+      "path": "bilqis_mlx/factory/_executable_release/primitives.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_ADMISSION_STEP_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_ADMISSION_STEP_INVALID'",
+      "path": "bilqis_mlx/factory/_executable_release/primitives.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_ANSWER_HEAD_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_ANSWER_HEAD_INVALID'",
+      "path": "bilqis_mlx/factory/_executable_release/primitives.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_ASSESSMENT_SEAL_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_ASSESSMENT_SEAL_INVALID'",
+      "path": "bilqis_mlx/factory/_executable_release/primitives.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_REQUIRED",
+      "count": 1,
+      "exception": "TypeError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_REQUIRED'",
+      "path": "bilqis_mlx/factory/_executable_release/release.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_ANSWER_HEAD_CATALOG_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_ANSWER_HEAD_CATALOG_DRIFT'",
+      "path": "bilqis_mlx/factory/_executable_release/release.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_MANIFEST_CONTENT_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_MANIFEST_CONTENT_DRIFT'",
+      "path": "bilqis_mlx/factory/_executable_release/release.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_MANIFEST_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_MANIFEST_INVALID'",
+      "path": "bilqis_mlx/factory/_executable_release/release.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_DRIFT'",
+      "path": "bilqis_mlx/factory/_executable_release/release.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_SCHEMA_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_SCHEMA_INVALID'",
+      "path": "bilqis_mlx/factory/_executable_release/release.py"
+    },
+    {
+      "code_hint": "FACTORY_PROFILE_DIMENSION_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PROFILE_DIMENSION_INVALID'",
+      "path": "bilqis_mlx/factory/_execution/common.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTION_PLAN_INVALID_INPUT",
+      "count": 2,
+      "exception": "TypeError",
+      "expression": "'FACTORY_EXECUTION_PLAN_INVALID_INPUT'",
+      "path": "bilqis_mlx/factory/_execution/compilation.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTION_PLAN_REGISTRY_REQUIRED",
+      "count": 1,
+      "exception": "TypeError",
+      "expression": "'FACTORY_EXECUTION_PLAN_REGISTRY_REQUIRED'",
+      "path": "bilqis_mlx/factory/_execution/compilation.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTION_PLAN_ANSWER_REGISTRY_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTION_PLAN_ANSWER_REGISTRY_REQUIRED'",
+      "path": "bilqis_mlx/factory/_execution/compilation.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTION_PLAN_LEGACY_BINDINGS_AMBIGUOUS",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTION_PLAN_LEGACY_BINDINGS_AMBIGUOUS'",
+      "path": "bilqis_mlx/factory/_execution/compilation.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTION_PLAN_SOURCE_BINDINGS_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTION_PLAN_SOURCE_BINDINGS_REQUIRED'",
+      "path": "bilqis_mlx/factory/_execution/compilation.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTION_PLAN_DIFF_INVALID_INPUT",
+      "count": 1,
+      "exception": "TypeError",
+      "expression": "'FACTORY_EXECUTION_PLAN_DIFF_INVALID_INPUT'",
+      "path": "bilqis_mlx/factory/_execution/lineage.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTION_PLAN_LINEAGE_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTION_PLAN_LINEAGE_REQUIRED'",
+      "path": "bilqis_mlx/factory/_execution/lineage.py"
+    },
+    {
+      "code_hint": "FACTORY_PLAN_LINEAGE_CURRICULUM_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PLAN_LINEAGE_CURRICULUM_DRIFT'",
+      "path": "bilqis_mlx/factory/_execution/lineage.py"
+    },
+    {
+      "code_hint": "FACTORY_PROFILE_ANSWER_VALUES_NOT_CANONICAL_SUBSET",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PROFILE_ANSWER_VALUES_NOT_CANONICAL_SUBSET:' + capability.capability_id",
+      "path": "bilqis_mlx/factory/_execution/profiling.py"
+    },
+    {
+      "code_hint": "FACTORY_PROFILE_CAPABILITY_OUTSIDE_GRADE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PROFILE_CAPABILITY_OUTSIDE_GRADE:' + grade.grade_id",
+      "path": "bilqis_mlx/factory/_execution/profiling.py"
+    },
+    {
+      "code_hint": "FACTORY_PROFILE_DISABLED_CONSTITUENT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PROFILE_DISABLED_CONSTITUENT:' + cap.capability_id",
+      "path": "bilqis_mlx/factory/_execution/profiling.py"
+    },
+    {
+      "code_hint": "FACTORY_PROFILE_DISABLED_PREREQUISITE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PROFILE_DISABLED_PREREQUISITE:' + cap.capability_id",
+      "path": "bilqis_mlx/factory/_execution/profiling.py"
+    },
+    {
+      "code_hint": "FACTORY_PROFILE_EMPTY_EXECUTION",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PROFILE_EMPTY_EXECUTION'",
+      "path": "bilqis_mlx/factory/_execution/profiling.py"
+    },
+    {
+      "code_hint": "FACTORY_PROFILE_OVERRIDE_FOR_DISABLED_CAPABILITY",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PROFILE_OVERRIDE_FOR_DISABLED_CAPABILITY:' + grade.grade_id",
+      "path": "bilqis_mlx/factory/_execution/profiling.py"
+    },
+    {
+      "code_hint": "FACTORY_PROFILE_OVERRIDE_FOR_DISABLED_GRADE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PROFILE_OVERRIDE_FOR_DISABLED_GRADE:' + grade.grade_id",
+      "path": "bilqis_mlx/factory/_execution/profiling.py"
+    },
+    {
+      "code_hint": "FACTORY_PROFILE_STAGES_MUST_PARTITION_ENABLED_CAPABILITIES",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PROFILE_STAGES_MUST_PARTITION_ENABLED_CAPABILITIES'",
+      "path": "bilqis_mlx/factory/_execution/profiling.py"
+    },
+    {
+      "code_hint": "FACTORY_PROFILE_UNKNOWN_ANSWER_FAMILY",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PROFILE_UNKNOWN_ANSWER_FAMILY:' + capability.capability_id",
+      "path": "bilqis_mlx/factory/_execution/profiling.py"
+    },
+    {
+      "code_hint": "FACTORY_PROFILE_UNKNOWN_GRADE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PROFILE_UNKNOWN_GRADE:' + ','.join(sorted(unknown))",
+      "path": "bilqis_mlx/factory/_execution/profiling.py"
+    },
+    {
       "code_hint": "FACTORY_INVALID_REGISTERED_SOURCE_ADAPTER",
       "count": 1,
       "exception": "TypeError",
@@ -5687,199 +5960,10 @@
       "path": "bilqis_mlx/factory/curriculum_definition.py"
     },
     {
-      "code_hint": "FACTORY_EXECUTABLE_ADMISSION_RELEASE_REQUIRED",
-      "count": 2,
-      "exception": "TypeError",
-      "expression": "'FACTORY_EXECUTABLE_ADMISSION_RELEASE_REQUIRED'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_INVALID_INPUT",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_INVALID_INPUT'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_INVALID",
-      "count": 2,
-      "exception": "TypeError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_INVALID'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_REQUIRED",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_REQUIRED'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_REQUIRED",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_REQUIRED'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_ADMISSION_BASELINE_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_ADMISSION_BASELINE_DRIFT'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_ADMISSION_RELEASE_MISMATCH",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_ADMISSION_RELEASE_MISMATCH'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_ADMISSION_STEP_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_ADMISSION_STEP_INVALID'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_ANSWER_HEAD_CATALOG_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_ANSWER_HEAD_CATALOG_DRIFT'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_ANSWER_HEAD_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_ANSWER_HEAD_INVALID'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_ASSESSMENT_SEAL_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_ASSESSMENT_SEAL_INVALID'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_DUPLICATE_SPECIMEN",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_DUPLICATE_SPECIMEN:' + execution.capability_id",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_INCOMPATIBLE_GEOMETRY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_INCOMPATIBLE_GEOMETRY'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_LINEAGE_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_LINEAGE_DRIFT'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_LINEAGE_WITHOUT_PREDECESSOR",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_LINEAGE_WITHOUT_PREDECESSOR'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_MANIFEST_CONTENT_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_MANIFEST_CONTENT_DRIFT'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_MANIFEST_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_MANIFEST_INVALID'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_DRIFT'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_SCHEMA_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_SCHEMA_INVALID'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTION_PLAN_DIFF_INVALID_INPUT",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'FACTORY_EXECUTION_PLAN_DIFF_INVALID_INPUT'",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTION_PLAN_INVALID_INPUT",
-      "count": 2,
-      "exception": "TypeError",
-      "expression": "'FACTORY_EXECUTION_PLAN_INVALID_INPUT'",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTION_PLAN_REGISTRY_REQUIRED",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'FACTORY_EXECUTION_PLAN_REGISTRY_REQUIRED'",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTION_PLAN_ANSWER_REGISTRY_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTION_PLAN_ANSWER_REGISTRY_REQUIRED'",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTION_PLAN_LEGACY_BINDINGS_AMBIGUOUS",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTION_PLAN_LEGACY_BINDINGS_AMBIGUOUS'",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTION_PLAN_LINEAGE_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTION_PLAN_LINEAGE_REQUIRED'",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTION_PLAN_SOURCE_BINDINGS_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTION_PLAN_SOURCE_BINDINGS_REQUIRED'",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
       "code_hint": "FACTORY_PLAN_LINEAGE_CURRICULUM_DIGEST_INVALID",
       "count": 1,
       "exception": "ValueError",
       "expression": "'FACTORY_PLAN_LINEAGE_CURRICULUM_DIGEST_INVALID'",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_PLAN_LINEAGE_CURRICULUM_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PLAN_LINEAGE_CURRICULUM_DRIFT'",
       "path": "bilqis_mlx/factory/execution.py"
     },
     {
@@ -5890,45 +5974,10 @@
       "path": "bilqis_mlx/factory/execution.py"
     },
     {
-      "code_hint": "FACTORY_PROFILE_ANSWER_VALUES_NOT_CANONICAL_SUBSET",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PROFILE_ANSWER_VALUES_NOT_CANONICAL_SUBSET:' + capability.capability_id",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
       "code_hint": "FACTORY_PROFILE_CAPABILITY_ID_REQUIRED",
       "count": 1,
       "exception": "ValueError",
       "expression": "'FACTORY_PROFILE_CAPABILITY_ID_REQUIRED'",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_PROFILE_CAPABILITY_OUTSIDE_GRADE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PROFILE_CAPABILITY_OUTSIDE_GRADE:' + grade.grade_id",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_PROFILE_DIMENSION_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PROFILE_DIMENSION_INVALID'",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_PROFILE_DISABLED_CONSTITUENT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PROFILE_DISABLED_CONSTITUENT:' + cap.capability_id",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_PROFILE_DISABLED_PREREQUISITE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PROFILE_DISABLED_PREREQUISITE:' + cap.capability_id",
       "path": "bilqis_mlx/factory/execution.py"
     },
     {
@@ -5943,13 +5992,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'FACTORY_PROFILE_DUPLICATE_GRADE_OVERRIDE'",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_PROFILE_EMPTY_EXECUTION",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PROFILE_EMPTY_EXECUTION'",
       "path": "bilqis_mlx/factory/execution.py"
     },
     {
@@ -5971,41 +6013,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'FACTORY_PROFILE_ID_REQUIRED'",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_PROFILE_OVERRIDE_FOR_DISABLED_CAPABILITY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PROFILE_OVERRIDE_FOR_DISABLED_CAPABILITY:' + grade.grade_id",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_PROFILE_OVERRIDE_FOR_DISABLED_GRADE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PROFILE_OVERRIDE_FOR_DISABLED_GRADE:' + grade.grade_id",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_PROFILE_STAGES_MUST_PARTITION_ENABLED_CAPABILITIES",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PROFILE_STAGES_MUST_PARTITION_ENABLED_CAPABILITIES'",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_PROFILE_UNKNOWN_ANSWER_FAMILY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PROFILE_UNKNOWN_ANSWER_FAMILY:' + capability.capability_id",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_PROFILE_UNKNOWN_GRADE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PROFILE_UNKNOWN_GRADE:' + ','.join(sorted(unknown))",
       "path": "bilqis_mlx/factory/execution.py"
     },
     {
