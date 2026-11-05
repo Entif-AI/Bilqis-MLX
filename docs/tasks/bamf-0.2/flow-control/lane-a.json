@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "70a4ef1e883d348920d64083c7546f443a90ef77",
-  "updated_at": "2026-11-05T06:20:10+00:00",
+  "updated_at": "2026-11-05T06:21:11+00:00",
   "exception": null,
   "items": [
     {
@@ -78,10 +78,10 @@
     {
       "issue": 842,
       "pr": 846,
-      "state": "ACTIVE",
-      "head_sha": "770c89873b8856ad3ef253ade8fda827d511599b",
+      "state": "TURNED_IN",
+      "head_sha": "eead07f2c2b01cf43e5916bd934b04cfd9c2c9ff",
       "preserved_branch": "codex/bamf02-a-842-execution-structure-20261105",
-      "summary": "PR846 reactivated only to consume reviewed unified after PR847 merged and resolve the resulting integration conflict. Prior whole-candidate EGM PASS remains scoped to executable bytes unless conflict resolution changes behavior.",
+      "summary": "PR846 consumed reviewed unified70a4ef1e after PR847. Conflicts were flow-control-only; Factory diff from the prior candidate is empty. Extraction proof, focused30/30, historical17/17 and pinned real-source4/4 all pass under the merged runner, so prior whole-candidate EGM PASS remains applicable.",
       "resume_trigger": null
     },
     {
