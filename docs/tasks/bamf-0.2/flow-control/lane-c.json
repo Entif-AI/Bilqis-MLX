@@ -102,12 +102,13 @@
     },
     {
       "issue": 713,
-      "pr": 808,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "dc57690b",
       "preserved_branch": "codex/remediation-713-c02-authority-20261103",
-      "summary": "C02.1 remediation in ready PR #808: the canonical A06 owner holds feature selection authority at the C02.1 model-input boundary.",
-      "resume_trigger": "PR #808 merges or closed; the C02.1 authority continues on owner issue #490."
+      "summary": "C02.1 remediation merged through PR #808: the canonical A06 owner holds feature selection authority at the C02.1 model-input boundary.",
+      "resume_trigger": null,
+      "merged_pr": 808
     }
   ]
 }
