@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "70a4ef1e883d348920d64083c7546f443a90ef77",
-  "updated_at": "2026-11-05T06:21:11+00:00",
+  "observed_unified": "6e12e5a077183713241bb9b2b0d0762d8d95fa47",
+  "updated_at": "2026-11-05T08:40:00+00:00",
   "exception": null,
   "items": [
     {
@@ -91,6 +91,15 @@
       "head_sha": "a0a00feff65915f17063ece7fef2a88ed0ece98a",
       "preserved_branch": "codex/bamf02-a-842-execution-structure-20261105",
       "summary": "Scoped842round1 source-inspection/literal-proof repair durable and regression-verified at a0a00fef; consumed by parent candidate, no separate PR.",
+      "resume_trigger": null
+    },
+    {
+      "issue": 395,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "8019bf5d945a1d9f8f5a11983ef43fbb008a365f",
+      "preserved_branch": "codex/bamf02-a-395-acceptance-20261105",
+      "summary": "Resume trigger satisfied: A08.3 #420 is CLOSED EGM-Passed and consumed by reviewed unified. Resuming only the remaining three-successor/restart/held/fixed-point acceptance on current Lane A.",
       "resume_trigger": null
     }
   ]
