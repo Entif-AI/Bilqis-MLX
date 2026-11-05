@@ -102,7 +102,7 @@
     {
       "issue": 719,
       "pr": 854,
-      "state": "ACTIVE",
+      "state": "WAITING",
       "head_sha": "207c61c0934b5ae464c10dc14aa01ddd19adcb9e",
       "summary": "B14.4 EGM remediation locally complete in draft PR #854: cache rebuild eligibility is issued only from live B13 accepted-generation custody, signed A12 source clearance and current context/policy authority; caller-minted matching receipts fail closed.",
       "resume_trigger": "Fresh pinned EGM passes on the final immutable #854 head and hosted checks are green.",
