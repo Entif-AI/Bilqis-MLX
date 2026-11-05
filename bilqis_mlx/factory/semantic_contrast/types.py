@@ -9,7 +9,7 @@ import re
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.semantics.frame_schema import BindingState, ConceptRef, FrameInstance, FrameSchema
 
-_SHA = re.compile(r"[0-9a-f]{64}\\Z")
+_SHA = re.compile(r"[0-9a-f]{64}\Z")
 
 
 def _fail(reason: str) -> None:
