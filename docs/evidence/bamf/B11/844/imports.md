@@ -42,3 +42,16 @@ changed; runner, production dependencies, fixtures and test bodies are identical
 readback for the observed baseline. No new source qualification or actual
 student/native AdamW/teacher/checkpoint/graph/source mutation. IPR-0220 remains
 open; human integration is separate from review readiness.
+
+## Integrated runner check
+
+Accepted #784/PR847 merged as unified `70a4ef1e`; this branch consumes that
+head in merge `1f84411f`. The flow-ledger conflict retained both independent
+issue records, marks #784 merged/closed and #844 turned in as PR848.
+The changed runner invalidates the old full-suite harness receipt, so the
+combined canonical `scripts/tests` selection was rerun: **177/177, zero skips**,
+at `1f84411f`. Detailed log: `.local/844-script-imports/combined-suite.log`.
+The three import fixes and every non-import test AST node remain unchanged.
+Pinned review round1 has no unsettled findings after independent mechanical
+resolution at `a5550d34`; only this receipt and lifecycle metadata follow.
+Human integration and final hosted checks remain separate.
