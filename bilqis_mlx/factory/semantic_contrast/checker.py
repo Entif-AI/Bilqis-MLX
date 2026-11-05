@@ -6,9 +6,9 @@ import json
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.semantics.frame_schema import BindingState, ChildFrameRef, RoleOccurrence
-from bilqis_mlx.factory.semantic_contrast_models import VARIANT_SCHEMA, ContrastLineage, ContrastVariant, LessonSpec
-from bilqis_mlx.factory.semantic_contrast_transform import apply_variation
-from bilqis_mlx.factory.semantic_contrast_types import AllowedVariation, ContrastFamily, ContrastSourceFrame
+from bilqis_mlx.factory.semantic_contrast.models import VARIANT_SCHEMA, ContrastLineage, ContrastVariant, LessonSpec
+from bilqis_mlx.factory.semantic_contrast.transform import apply_variation
+from bilqis_mlx.factory.semantic_contrast.types import AllowedVariation, ContrastFamily, ContrastSourceFrame
 
 
 def _fail(reason: str) -> None:
@@ -107,7 +107,6 @@ def generate_contrasts(
             family, source_frame, variation, variant, lineage,
             applicability, question, outcome,
         )
-        # Surface labels are intentionally excluded from structural identity.
         unique.setdefault(lineage.variant_id, lesson)
     return tuple(sorted(
         unique.values(),

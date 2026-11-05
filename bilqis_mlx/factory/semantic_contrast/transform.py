@@ -6,8 +6,8 @@ from types import MappingProxyType
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.semantics.frame_schema import BindingState, FrameInstance, RoleOccurrence
-from bilqis_mlx.factory.semantic_contrast_models import ContrastVariant
-from bilqis_mlx.factory.semantic_contrast_types import AllowedVariation, ContrastFamily, ContrastSourceFrame
+from bilqis_mlx.factory.semantic_contrast.models import ContrastVariant
+from bilqis_mlx.factory.semantic_contrast.types import AllowedVariation, ContrastFamily, ContrastSourceFrame
 
 
 def _fail(reason: str) -> None:

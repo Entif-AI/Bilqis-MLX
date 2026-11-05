@@ -6,7 +6,7 @@ import re
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.semantics.frame_schema import RoleOccurrence
-from bilqis_mlx.factory.semantic_contrast_types import AllowedVariation, ContrastFamily, ContrastSourceFrame, ObservationState, TemporalStatus
+from bilqis_mlx.factory.semantic_contrast.types import AllowedVariation, ContrastFamily, ContrastSourceFrame, ObservationState, TemporalStatus
 
 _SHA = re.compile(r"[0-9a-f]{64}\\Z")
 SCHEMA = "bilqis.semantic-contrast-lesson/v1"
@@ -120,5 +120,3 @@ class LessonSpec:
                 or self.checker_id != CHECKER
                 or self.schema != SCHEMA):
             _fail("BAMF_SEMANTIC_CONTRAST_LESSON_INVALID")
-
-

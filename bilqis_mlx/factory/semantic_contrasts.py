@@ -3,9 +3,9 @@
 Implementation is split by contract, immutable model, transformation, and checker
 responsibility so the public surface stays stable while each module remains small.
 """
-from bilqis_mlx.factory.semantic_contrast_checker import check_contrast, generate_contrasts
-from bilqis_mlx.factory.semantic_contrast_models import ContrastLineage, ContrastVariant, LessonSpec
-from bilqis_mlx.factory.semantic_contrast_types import (
+from bilqis_mlx.factory.semantic_contrast.checker import check_contrast, generate_contrasts
+from bilqis_mlx.factory.semantic_contrast.models import ContrastLineage, ContrastVariant, LessonSpec
+from bilqis_mlx.factory.semantic_contrast.types import (
     AllowedVariation,
     ContrastFamily,
     ContrastSourceFrame,
