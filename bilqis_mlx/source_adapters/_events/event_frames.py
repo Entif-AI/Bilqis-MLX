@@ -22,6 +22,12 @@ from ..semantics.core import Apply, Operation, Signature, literal
 from ..factory.verification import (
     EVENT_FRAME_ORACLE as ORACLE, event_frame_answer as independent_answer,
 )
+from ..factory.semantic_contrast.teaching import (
+    OPTION_ID as SEMANTIC_CONTRAST_OPTION,
+    check_contrast_row,
+    contrast_semantic_footprint,
+    enrich_contrasts,
+)
 from ..vocabulary_growth import AdmittedToken, append_catalog, digest
 
 DIALECT = 'bilqis.finite-event-frame/v1'
@@ -34,6 +40,29 @@ SPECS = MappingProxyType({
 })
 SYMBOLS = {cap: 'experiment.ithkuil.op.' + cap.split('.')[1] for cap in SPECS}
 TRUE, FALSE = 'cogal.value.true', 'cogal.value.false'
+PROVIDER_IMPLEMENTATION_FILES = (
+    'source_adapters/event_frames.py',
+    'verification/event_frames.py',
+    'factory/semantic_contrast/teaching.py',
+    'factory/semantic_contrast/checker.py',
+    'factory/semantic_contrast/models.py',
+    'factory/semantic_contrast/transform.py',
+    'factory/semantic_contrast/types.py',
+)
+
+
+def provider_implementation_digest(overrides=None):
+    overrides = {} if overrides is None else overrides
+    def source_bytes(name):
+        if name in overrides:
+            return overrides[name]
+        if name == 'source_adapters/event_frames.py':
+            return Path(__file__).read_bytes()
+        return (ROOT/'bilqis_mlx'/name).read_bytes()
+    return digest({
+        name: hashlib.sha256(source_bytes(name)).hexdigest()
+        for name in PROVIDER_IMPLEMENTATION_FILES
+    })
 
 
 @lru_cache(maxsize=1)
@@ -104,6 +133,8 @@ def draw(source_root, graph, *, seed, each=12, capability, **_):
 
 
 def check(row, *, graph, **_):
+    if row.get('generator') == SEMANTIC_CONTRAST_OPTION:
+        return check_contrast_row(row, graph=graph)
     try:
         record = row['record']; cap = record['capability']
         return (row['gold']==independent_answer(record) and
@@ -117,18 +148,30 @@ def check(row, *, graph, **_):
         return False
 
 
+def semantic_footprint(row):
+    if row.get('generator') == SEMANTIC_CONTRAST_OPTION:
+        return contrast_semantic_footprint(row)
+    root = row.get('root')
+    if not isinstance(root, str) or not root:
+        from ..errors import ErrorBus, SCHOOL
+        ErrorBus.raise_(
+            SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID,
+            reason='EVENT_FRAME_SEMANTIC_FOOTPRINT_INVALID',
+        )
+    return (root,)
+
+
 def registered_adapter():
-    sources = {
-        'source_adapters/event_frames.py': Path(__file__),
-        'verification/event_frames.py': ROOT/'bilqis_mlx/verification/event_frames.py',
-    }
-    fingerprint = digest({name: hashlib.sha256(path.read_bytes()).hexdigest()
-                          for name, path in sources.items()})
     return RegisteredSourceAdapter(SourceAdapter('source.issue349.event-frames/v1',
-        GENERATOR,(ORACLE,),fingerprint,
-        variation_axes=('event-identity','before-state','after-state','fact-order','fresh-seed')),
-        draw,check,witness=lambda row,obligation,**kw: check(row,**kw) and
-            obligation.key in SPECS[row['capability']][1])
+        GENERATOR,(ORACLE,),provider_implementation_digest(),
+        variation_axes=('event-identity','before-state','after-state','fact-order','fresh-seed'),
+        teaching_option_ids=(SEMANTIC_CONTRAST_OPTION,)),
+        draw,check,
+        witness=lambda row,obligation,**kw: check(row,**kw) and
+            row.get('generator') == GENERATOR and
+            obligation.key in SPECS[row['capability']][1],
+        enrich=enrich_contrasts,
+        semantic_footprint=semantic_footprint)
 
 
 def expanded_graph(parent):
