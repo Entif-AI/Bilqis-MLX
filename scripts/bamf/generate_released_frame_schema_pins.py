@@ -26,7 +26,9 @@ from bilqis_mlx.semantics.frame_adapters import (
     bind_registered_source_row,
 )
 from bilqis_mlx.semantics.frame_codec import SchemaTagMap, _canonical_bytes
-from bilqis_mlx.semantics.frame_schema import SourceSpan, ast_construct_id
+from bilqis_mlx.semantics.frame_schema import (
+    FrameSchema, RoleSpec, SourceSpan, ast_construct_id,
+)
 from bilqis_mlx.semantics.released_frame_schemas import (
     persist_released_frame_schemas, seal_released_frame_schemas,
 )
@@ -104,11 +106,33 @@ def _checked_row(adapter, row, snapshot, graph):
     return span
 
 
+def _evidence_schema():
+    """A03-owned role contract for the BRAVO evidence adapter.
+
+    This is a frame contract, not a vocabulary registry. Category identity and
+    unit laws remain owned by A01 and the cognitive-operator domain.
+    """
+    return FrameSchema(
+        schema_id="frame:bravo.evidence.activity/v1",
+        revision=1,
+        ast_construct="source:bravo-evidence-activity",
+        roles=(
+            RoleSpec("agent", ("Entity",), 1, 1),
+            RoleSpec("category", ("ConceptRef",), 1, 1),
+            RoleSpec("status", ("EventStatus",), 1, 1),
+            RoleSpec("reported_duration", ("Duration",), 0, 1),
+        ),
+        order_mode="ORDERED",
+        scope="source-evidence",
+    )
+
+
 def _catalogs(snapshot):
     micro = read_sources(SOURCE_ROOT)[2]
     numeric = registry_graph()
     registry = live_source_registry()
-    catalogs = {family: {} for family in ("micro", "boolean", "numeric")}
+    catalogs = {family: {} for family in ("micro", "boolean", "evidence", "numeric")}
+    _add(catalogs["evidence"], _evidence_schema())
 
     adapter = registry.require(
         "bilqis_mlx.grade_a_probe.make_record", A_ORACLE)

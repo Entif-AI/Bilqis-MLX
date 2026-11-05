@@ -150,3 +150,12 @@ Failing-before proof: the real source-pin lookup test failed with
 `FRAME_RELEASED_SOURCE_PIN_NOT_REGISTERED` for family `evidence`. After the
 repair, that same real A01-backed lookup passed and verified the exact evidence
 schema body. No neural admission or learner mutation occurred.
+
+Fresh review also found a historical duplicate CLI implementation at
+`scripts/generate_released_frame_schema_pins.py` beside the compartmentalized
+`scripts/bamf/generate_released_frame_schema_pins.py`. Leaving both as complete
+implementations would permit publication drift. The BAMF path is now the single
+implementation authority; the historical root path is a thin compatibility
+launcher. Both entrypoints were run independently into disposable directories
+against the pinned A01 artifact and produced byte-identical pin registries and
+release trees, including the same four families and registry digest above.
