@@ -1,28 +1,38 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "eedfdaef9f528c02618963c8486ade4d12fcb18f",
-  "updated_at": "2026-11-05T09:47:24+00:00",
+  "observed_unified": "2cb50e3a9319552ca847ba69ad8b2beeb03cf194",
+  "updated_at": "2026-11-05T09:53:36+00:00",
   "exception": null,
   "items": [
     {
+      "issue": 425,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "ad7374138e718e77df62933e16ee36bbf1d59346",
+      "summary": "A11.2 implementation is complete: source-valid ambiguity is deterministically ranked and capped at four interpretations, unresolved answers remain explicit alternative targets, and deterministic presentation noise carries exact type/location/amount/seed lineage without mutating canonical source, structural variant, or gold. A11 owner + A11.2 tests 17/17; governance/error-contract tests 11/11; compile/diff/flow-control green; EGM_PENDING.",
+      "resume_trigger": "Open the A11.2 integration PR against reviewed unified and obtain fresh independent EGM before merge.",
+      "preserved_branch": "codex/bamf02-a11-2-425-20261105"
+    },
+    {
       "issue": 422,
-      "pr": 855,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "90adf0371e5d63c17f6aa674d9d2ac78db67bdcc",
       "summary": "A10.2 implementation is complete on its issue-scoped branch: typed reconstructions preserve reported/computed values, negation, time/interpretation alternatives and template lineage; fresh challenges split immutable source families before within-family template grouping, with scored holdouts remaining teachable. Focused/adjacent tests 17 passed; governance/error-contract tests 11 passed; compile/diff/flow-control green; EGM_PENDING.",
-      "resume_trigger": "Fresh independent exact-head EGM plus human integration review for PR #855.",
-      "preserved_branch": "codex/bamf02-a10-2-422-20261105"
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a10-2-422-20261105",
+      "merged_pr": 855
     },
     {
       "issue": 424,
       "pr": null,
       "state": "TURNED_IN",
-      "head_sha": "3c5bf4d4571cca8a020ba8bbcf5609fcdd0261e4",
-      "summary": "A11.1 implemented with seven checker-grounded structural contrast families and refactored into focused type/model/transform/checker modules while preserving the public semantic_contrasts.py API. Semantic ABI integrity and portable verification pass at exact head 3c5bf4d4571cca8a020ba8bbcf5609fcdd0261e4; EGM_PENDING.",
+      "head_sha": "04b7ad8622355273410cb38cb141bb5689e3ee73",
+      "summary": "A11.1 implementation merged through PR #853; post-merge owner tests exposed a SHA-anchor regression, repaired by PR #856. The repair head restores all 11/11 A11.1 owner tests and 11/11 governance checks; both implementation and repair are now consumed by reviewed unified.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a11-1-424-20261105",
-      "merged_pr": 853
+      "merged_pr": 856
     },
     {
       "issue": 421,
