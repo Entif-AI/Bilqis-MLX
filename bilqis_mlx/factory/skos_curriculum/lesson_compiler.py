@@ -97,4 +97,4 @@ def _compile_source_constructive_lessons_snapshot(
             constituents, prerequisites, axes))
     return SourceConstructiveLessonSet(
         atlas.release_sha256, census.digest, tuple(lessons),
-        tuple(uncovered))
+        tuple(uncovered), tuple(census.source_held))

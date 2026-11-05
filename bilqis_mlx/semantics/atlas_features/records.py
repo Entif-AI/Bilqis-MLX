@@ -133,6 +133,12 @@ class AtlasFeatures:
             (entry for entry in self.concepts if entry.semantic_id == semantic_id),
             None)
         if item is None:
+            held_reason = dict(self.held_reasons).get(semantic_id)
+            if held_reason is not None:
+                _invalid(
+                    "BAMF_FEATURE_CONCEPT_NOT_ADMITTED",
+                    source_reason_codes=(held_reason,),
+                )
             _invalid("BAMF_FEATURE_CONCEPT_NOT_ADMITTED")
         if isinstance(concept, ConceptRef) and (
                 concept.abi_index != item.abi_index

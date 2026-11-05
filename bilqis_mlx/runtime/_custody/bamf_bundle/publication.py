@@ -330,19 +330,32 @@ def publish_bamf_generation(run_dir: Path, candidate: BamfBundleCandidate, *,
         raise
 
 
+def _load_generation_locked(pointer_path: Path) -> tuple[CompleteStudent, dict]:
+    pointer = _read_pointer(pointer_path)
+    if pointer is None:
+        invalid(DataPlaneError.BUNDLE_ROOT_UNSAFE)
+    _live_bundle_manifest(pointer_path.parent, pointer)
+    student = load_bamf_bundle(
+        pointer_path.parent / "bamf-bundles" / pointer["manifest_sha256"],
+        expected_manifest_sha256=pointer["manifest_sha256"])
+    if (student.run_id != pointer["run_id"] or student.generation != pointer["generation"]
+            or student.parent_manifest_sha256 != pointer["parent_manifest_sha256"]):
+        invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
+    return student, pointer
+
+
+def load_bamf_generation_authority(pointer_path: Path) -> tuple[CompleteStudent, str]:
+    """Read current accepted B13 authority without mutating delivery state."""
+    pointer_path = Path(pointer_path)
+    with _pointer_lock(pointer_path.parent):
+        student, pointer = _load_generation_locked(pointer_path)
+        return student, pointer["manifest_sha256"]
+
+
 def load_bamf_generation(pointer_path: Path, *, publish_missing_outbox: bool = True) -> CompleteStudent:
     pointer_path = Path(pointer_path)
     with _pointer_lock(pointer_path.parent):
-        pointer = _read_pointer(pointer_path)
-        if pointer is None:
-            invalid(DataPlaneError.BUNDLE_ROOT_UNSAFE)
-        _live_bundle_manifest(pointer_path.parent, pointer)
-        student = load_bamf_bundle(
-            pointer_path.parent / "bamf-bundles" / pointer["manifest_sha256"],
-            expected_manifest_sha256=pointer["manifest_sha256"])
-        if (student.run_id != pointer["run_id"] or student.generation != pointer["generation"]
-                or student.parent_manifest_sha256 != pointer["parent_manifest_sha256"]):
-            invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
+        student, _ = _load_generation_locked(pointer_path)
         reconcile_bamf_outbox(
             pointer_path.parent, student, publish_missing=publish_missing_outbox)
         return student

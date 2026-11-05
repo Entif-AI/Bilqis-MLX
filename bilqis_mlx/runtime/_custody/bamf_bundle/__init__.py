@@ -7,7 +7,8 @@ from .feature_authority import (
     verify_accepted_generation_feature_receipt,
 )
 from .publication import (
-    load_bamf_generation, publish_bamf_generation, record_bamf_rejection,
+    load_bamf_generation, load_bamf_generation_authority,
+    publish_bamf_generation, record_bamf_rejection,
 )
 from .source_continuation import continue_source_qualified_motifs_from_bundle
 from .records import (
@@ -19,7 +20,8 @@ __all__ = (
     "BAMF_BUNDLE_SCHEMA", "BAMF_POINTER_SCHEMA", "BamfBundleCandidate",
     "BamfGenerationManifest", "CompleteStudent", "save_bamf_bundle", "load_bamf_bundle",
     "continue_source_qualified_motifs_from_bundle",
-    "publish_bamf_generation", "load_bamf_generation", "record_bamf_rejection",
+    "publish_bamf_generation", "load_bamf_generation",
+    "load_bamf_generation_authority", "record_bamf_rejection",
     "AcceptedGenerationFeatureReceipt", "AuthenticatedCandidateFeatureContext",
     "authenticate_bamf_candidate_feature_context", "read_accepted_generation_feature_receipt",
     "authenticate_bamf_candidate_features",
