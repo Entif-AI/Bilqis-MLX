@@ -70,7 +70,7 @@ def _witnesses(
     if not candidates.lessons:
         _fail("BAMF_PUBLIC_BRAVO_LESSONS_MISSING")
     actual_golds = {lesson.question: lesson.gold for lesson in candidates.lessons}
-    if any(actual_golds.get(question) != gold for question, gold in EXPECTED_GOLDS.items()):
+    if any(actual_golds.get(question) != gold for question, gold in EXPECTED_GOLDS):
         _fail("BAMF_PUBLIC_BRAVO_GOLD_INVALID")
     rows = tuple(PublicLessonWitness(
         lesson_id=lesson.lesson_id,

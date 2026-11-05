@@ -26,11 +26,11 @@ EXPECTED_QUESTIONS = (
     "What reported duration?",
     "Convert the reported duration to minutes.",
 )
-EXPECTED_GOLDS = {
-    "Planned or completed?": EXPECTED_STATUS,
-    "What reported duration?": EXPECTED_REPORTED_DECIMAL,
-    "Convert the reported duration to minutes.": "15",
-}
+EXPECTED_GOLDS = (
+    ("Planned or completed?", EXPECTED_STATUS),
+    ("What reported duration?", EXPECTED_REPORTED_DECIMAL),
+    ("Convert the reported duration to minutes.", "15"),
+)
 EXPECTED_SAME_FAMILY_REJECTION = "BAMF_EVIDENCE_SPLIT_WITNESS_NOT_INDEPENDENT"
 
 
