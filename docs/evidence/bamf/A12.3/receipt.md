@@ -69,8 +69,21 @@ For the selected held source row:
   in the source-eligible census or lesson surface.
 
 Because trainable semantic rows are created only from verified
-`VocabularyExtension.allocations`, refusal before allocation means the held
-identity has no path to a staged trainable model row.
+`VocabularyExtension.allocations`, refusal before allocation already made the
+production path fail closed. A post-merge independent review nevertheless found
+that #429's acceptance language requires this downstream boundary to be observed
+directly rather than inferred. The follow-up boundary witness therefore forges a
+held allocation request into `apply_vocabulary_extension`, proves source replay
+rejects it with `BAMF_FEATURE_PROSPECTIVE_SOURCE_HELD`, preserves the exact
+source reason, and proves `_stage_extension_rows` is never called.
+
+The same review found that source-lesson omission did not literally exercise the
+teacher-target construction boundary. The follow-up teacher witness supplies a
+held semantic through the normal released-training adapter while preserving
+source lineage and context eligibility. The Atlas feature authority rejects the
+held semantic with `BAMF_FEATURE_CONCEPT_NOT_ADMITTED` and the exact
+source-owned reason before `BamfTarget` construction. This closes the literal
+F17 target-construction clause without modifying the production runtime.
 
 ## Reused parent acceptance evidence
 
@@ -105,6 +118,14 @@ python3 -B scripts/run_tests.py tests/system/test_factory_multi_successor.py
 ```
 
 Result: 1 passed, 0 failed, 0 skipped.
+
+Post-merge literal held-boundary witnesses:
+
+```text
+python3 -B scripts/run_tests.py +  bilqis_mlx/semantics/tests/test_atlas_release_held_boundaries.py
+```
+
+Result: 2 passed, 0 failed, 0 skipped.
 
 Additional gates:
 

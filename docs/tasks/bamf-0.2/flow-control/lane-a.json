@@ -1,18 +1,18 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "cc6c0dfead8a03553ce8d146af6956df7085104c",
-  "updated_at": "2026-11-05T22:42:00Z",
+  "observed_unified": "22d23ddfc5cc2781c5ae210d0c1185c6176753fb",
+  "updated_at": "2026-11-05T22:49:00Z",
   "exception": null,
   "items": [
     {
       "issue": 429,
       "pr": null,
-      "state": "TURNED_IN",
-      "head_sha": "63f0fcc81257622d8487bd6b01183b2fb7de69d5",
-      "summary": "A12.3 final PR #871 head 63f0fcc8 merged into reviewed unified as cc6c0dfe. Substantive proof head 20b43ad3 proves one source-qualified inactive semantic reaches the generic append-only A02/A08 path with prior ABI indices unchanged; F17 held-gloss proof preserves the source-owned hold reason while refusing ABI/factor/Factory promotion; the existing generic Grade-D executable successor witness passed 1/1. Focused 19/19, semantic/Factory/structure/docs/error gates and hosted portable-core/portable/Semantic ABI passed. Fresh pinned EGM was CLEAN at exact semantic head 21fc0422; the later 63f0fcc8 delta was flow-control/PR bookkeeping only.",
+      "state": "ACTIVE",
+      "head_sha": "22d23ddfc5cc2781c5ae210d0c1185c6176753fb",
+      "summary": "A12.3 PR #871 final head 63f0fcc8 merged as cc6c0dfe and post-merge custody PR #873 merged as 22d23ddf. A post-merge independent review recovered one proof-only acceptance gap: #429 literally requires direct observable refusal at trainable-row staging and teacher-target construction, while PR #871 proved only the upstream fail-closed authority seams. Boundary-proof remediation is active on codex/bamf02-a12-3-429-boundary-proof-20261105; accepted #871 source-successor/F17 evidence remains valid for its actual surface.",
       "resume_trigger": null,
-      "preserved_branch": "codex/bamf02-a12-3-429-20261105",
+      "preserved_branch": "codex/bamf02-a12-3-429-boundary-proof-20261105",
       "merged_pr": 871
     },
     {
