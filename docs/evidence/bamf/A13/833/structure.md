@@ -63,3 +63,11 @@ Historical ABI external expectation remains advisory/unconfigured.
 authority remain separately open. Actual student/native AdamW/teacher, source
 release, graph, archives, checkpoints and reserve remain untouched. Only the human
 starts/resumes real neural updates. IPR-0220 remains open.
+
+Final independent pinned review at `1985f621` is PASS with no unsettled
+Blocker/Major: episode `A833-structure-20261104`, round1/5. Both personas,
+implementation-readiness standard, full governing instructions and protected
+authority were read. The reviewer compared source and receipts without rerunning
+tests. Ready PR836 targets unified; human integration remains pending. Subsequent
+flow/evidence-only commits retain this source review and passing test evidence
+under ADR-129.

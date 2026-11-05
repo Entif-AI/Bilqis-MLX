@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "06eb34d0435d2f41c6f3561cf8cad6988d5b849f",
-  "updated_at": "2026-11-05T00:39:51.576704+00:00",
+  "updated_at": "2026-11-05T00:55:05.883527+00:00",
   "exception": null,
   "items": [
     {
@@ -66,10 +66,10 @@
     },
     {
       "issue": 833,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "06eb34d0435d2f41c6f3561cf8cad6988d5b849f",
-      "summary": "Mandatory context eligibility structural interruption during424 source trace; preserve all source gates, eligibility/transition decisions and digest identities.",
+      "pr": 836,
+      "state": "TURNED_IN",
+      "head_sha": "1985f621ca5ac26c734a64d65693c045b870ce57",
+      "summary": "Ready PR836 after exact-head pinned EGM PASS round1/5 and25/25 focused proof; representative decisions/evidence/cache/C09 bytes and error inventory preserved. Human integration and final hosted gates remain.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a-833-context-structure-20261104"
     }
