@@ -4,7 +4,7 @@ Issue: #427
 Lane: A
 Implementation base reviewed unified: 88ac132db2fd1c3606fa5f06637d10a7ab40cba4
 Latest reviewed unified consumed before final turn-in: 22314c413ba137df69b3d6b35768fe65e1556bfe
-Implementation checkpoint: 99277203ea3511d68e3cac0aacf0f28769530885
+Implementation checkpoint: f82cda87d044871c7bbff1026376400b5c37cea8
 Branch: codex/bamf02-a12-1-427-20261105
 Disposition: TURNED_IN / EGM_PENDING
 
@@ -70,11 +70,17 @@ admission.
 
 ## Verification
 
-Owner suite, source-free:
+Owner suite, source-free, including the final independent-review repair:
 
 python3 -B scripts/run_tests.py bilqis_mlx/semantics/tests/test_atlas_release_audit.py bilqis_mlx/semantics/tests/test_atlas_release_held_gloss.py bilqis_mlx/semantics/tests/test_atlas_export_clearance.py
 
-Result: 9 passed, 0 failed, 0 skipped.
+Result: 10 passed, 0 failed, 0 skipped in an isolated verification venv with
+`rdflib`, `pyshacl`, and `cryptography` installed. The final repair moves
+detached signature verification into the exported clearance validator itself,
+so caller-minted 128-hex signatures cannot obtain a clearance digest merely by
+matching release/frontier/artifact fields. The stale-shadow regression now
+poisons the actual historical catalog loader and proves the current A12 path
+does not consult it.
 
 Real producer replay, using the repository-pinned A01 artifact and its exact
 source bundle:
@@ -124,5 +130,12 @@ could still accept self-consistent caller-minted VocabularyExtension,
 RegistryMirror and lesson evidence, and the companion test file violated the
 repository structure contract. The repair now replays those consumers through
 their existing A02/A01/A08 producers, propagates source-owned held reasons, and
-remediates the structural offender without weakening the gate. A fresh
-independent EGM of the final pushed head remains required before integration.
+remediates the structural offender without weakening the gate. Independent
+review of a0c0a6b1 then found one remaining Major: the exported clearance
+validator checked signature shape but left detached-signature authentication to
+test-local composition, permitting caller-minted clearance evidence. It also
+found the stale-shadow regression vacuous. Checkpoint f82cda87 makes the
+trusted `SourceAuthorityRegistry` mandatory in the public validator, performs
+`verify_detached` before clearance, and replaces the vacuous shadow test with a
+poisoned historical-loader witness. A fresh independent EGM of the final pushed
+head remains required before integration.
