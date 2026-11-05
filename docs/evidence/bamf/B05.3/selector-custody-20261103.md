@@ -66,14 +66,12 @@ ordinary reviewer verified the repair with no remaining findings. The 1/1 native
 witness was rerun afterward. No artificial production failure or behavior repair
 is claimed for this verification-only change.
 
-## Turn-in boundary
+## Historical turn-in boundary — 3 November 2026
 
-No whole-candidate EGM has been requested. Current live Lane B integration PR #809
-already owns the lane's integration candidate; PR #808 belongs to Lane C. Final
-#451 turn-in must wait for Lane B candidate admission, reconcile the current live
-ledger, synchronize once if required, run affected gates and perform pinned
-whole-candidate EGM under one persistent review episode. This proof does not
-consume a Goldfish round by itself. Do not open another queue-marker PR.
+At that time, Lane B PR #809 occupied the available lane integration slot, so
+#451 was parked pending admission. ADR-128 superseded that restriction; the
+5 November continuation below records the current selection and requirements.
+No whole-candidate EGM was requested in the original proof.
 
 Issue #451 remains open. Full B05.2 source-authorized motif placement and the
 assembled parent contracts remain separate. IPR-0220 stays opaque. No actual
@@ -101,3 +99,12 @@ runner output is retained locally at `/tmp/b451-focused-20261105.log`.
 This establishes the same UNBOUND owned selector identity and custody scope. It
 does not establish source admission, retained learning, or full B05 assembly.
 Independent whole-candidate EGM and human integration remain outstanding.
+
+Pre-PR checks against unified `70a4ef1e883d348920d64083c7546f443a90ef77`:
+module size and governance integrity each reported zero violations; changed-file
+code-smell audit scanned one file with zero findings; docs check passed; base-scoped
+error control reported 2,029 raw sites, 2,270 existing opaque/numeric debt sites,
+and zero new debt. The historical ABI guard passed in advisory mode only: no
+independent expected semantic ABI hash was supplied. Detailed local command output
+is retained under `/tmp/b451-{size,governance,smell,docs,error,abi}-20261105.log`.
+The later evidence-only edits do not change the earlier 19-test proof surface.
