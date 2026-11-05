@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from decimal import Decimal, InvalidOperation
 from enum import Enum
 
 from bilqis_mlx.source_adapters.evidence_frames import (
@@ -41,12 +42,17 @@ class EvidenceLesson:
     derivation: EvidenceDerivation | None = None
 
     def check(self) -> bool:
-        if self.frame.record_id != self.record_id or self.rights.regime != PUBLIC_FIXTURE:
+        if (self.frame.record_id != self.record_id
+                or self.rights.regime != PUBLIC_FIXTURE
+                or self.frame.actor_role_ref != "agent"):
             return False
         if self.question == "What category?":
-            return self.gold == self.frame.category_ref
+            return bool(self.frame.category_ref) and self.gold == self.frame.category_ref
         if self.question == "Planned or completed?":
-            return self.gold == self.frame.status
+            return (
+                self.frame.status in {"PLANNED", "COMPLETED", "UNKNOWN"}
+                and self.gold == self.frame.status
+            )
         if self.question == "What reported duration?":
             expected = (
                 "UNKNOWN" if self.frame.reported_decimal is None
@@ -56,12 +62,25 @@ class EvidenceLesson:
         if self.question == "Convert the reported duration to minutes.":
             if self.frame.reported_decimal is None:
                 return self.gold == "UNKNOWN" and self.derivation is None
+            try:
+                value = Decimal(self.frame.reported_decimal)
+            except InvalidOperation:
+                return False
+            if not value.is_finite() or value < 0:
+                return False
+            expected = format((value * Decimal(60)).normalize(), "f")
+            if "." in expected:
+                expected = expected.rstrip("0").rstrip(".")
+            expected = expected or "0"
             return (
                 self.derivation is not None
-                and self.derivation.output_value == self.gold
                 and self.derivation.operator_id == "UNIT_CONVERT"
-                and self.derivation.input_unit_ref == self.frame.reported_unit_ref
+                and self.derivation.input_value == self.frame.reported_decimal
+                and self.derivation.input_unit_ref == "h"
+                and self.frame.reported_unit_ref == "h"
                 and self.derivation.output_unit == "min"
+                and self.gold == expected
+                and self.derivation.output_value == expected
             )
         return False
 
