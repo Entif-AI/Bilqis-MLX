@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "eedfdaef9f528c02618963c8486ade4d12fcb18f",
-  "updated_at": "2026-11-05T09:52:31+00:00",
+  "observed_unified": "2cb50e3a9319552ca847ba69ad8b2beeb03cf194",
+  "updated_at": "2026-11-05T09:53:36+00:00",
   "exception": null,
   "items": [
     {
@@ -10,28 +10,29 @@
       "pr": null,
       "state": "TURNED_IN",
       "head_sha": "ad7374138e718e77df62933e16ee36bbf1d59346",
-      "summary": "A11.2 implementation is complete on its issue-scoped branch: source-valid ambiguity is deterministically ranked and capped at four interpretations, unresolved answers remain explicit alternative targets, and deterministic presentation noise carries exact type/location/amount/seed lineage without mutating canonical source, structural variant, or gold. A11 owner + A11.2 tests 17/17; governance/error-contract tests 11/11; compile/diff/flow-control green; EGM_PENDING.",
-      "resume_trigger": "After A11.1 regression-repair PR #856 lands in reviewed unified, resync this branch and open the A11.2 integration PR if no other vehicle owns its delta.",
+      "summary": "A11.2 implementation is complete: source-valid ambiguity is deterministically ranked and capped at four interpretations, unresolved answers remain explicit alternative targets, and deterministic presentation noise carries exact type/location/amount/seed lineage without mutating canonical source, structural variant, or gold. A11 owner + A11.2 tests 17/17; governance/error-contract tests 11/11; compile/diff/flow-control green; EGM_PENDING.",
+      "resume_trigger": "Open the A11.2 integration PR against reviewed unified and obtain fresh independent EGM before merge.",
       "preserved_branch": "codex/bamf02-a11-2-425-20261105"
     },
     {
       "issue": 422,
-      "pr": 855,
+      "pr": null,
       "state": "TURNED_IN",
-      "head_sha": "5f87f6ae750475298b6c732282843b8b7ce5a470",
-      "summary": "A10.2 typed reconstructions and source-family-first challenge planning are implemented, synchronized to current unified, locally verified, and hosted checks are green; independent EGM remains pending.",
-      "resume_trigger": "Fresh independent exact-head EGM plus human integration review for PR #855.",
-      "preserved_branch": "codex/bamf02-a10-2-422-20261105"
+      "head_sha": "90adf0371e5d63c17f6aa674d9d2ac78db67bdcc",
+      "summary": "A10.2 implementation is complete on its issue-scoped branch: typed reconstructions preserve reported/computed values, negation, time/interpretation alternatives and template lineage; fresh challenges split immutable source families before within-family template grouping, with scored holdouts remaining teachable. Focused/adjacent tests 17 passed; governance/error-contract tests 11 passed; compile/diff/flow-control green; EGM_PENDING.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a10-2-422-20261105",
+      "merged_pr": 855
     },
     {
       "issue": 424,
-      "pr": 856,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "04b7ad8622355273410cb38cb141bb5689e3ee73",
-      "summary": "A11.1 merged through PR #853, then its issue-owned tests exposed a refactor regression in SHA end anchoring. PR #856 restores exact 64-hex validation; owner suite 11/11 and governance 11/11 pass at repair head 04b7ad86; EGM_PENDING.",
-      "resume_trigger": "Human integration review plus independent EGM for regression-repair PR #856.",
-      "preserved_branch": "codex/bamf02-a11-1-424-regex-repair-20261105",
-      "merged_pr": 853
+      "summary": "A11.1 implementation merged through PR #853; post-merge owner tests exposed a SHA-anchor regression, repaired by PR #856. The repair head restores all 11/11 A11.1 owner tests and 11/11 governance checks; both implementation and repair are now consumed by reviewed unified.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a11-1-424-20261105",
+      "merged_pr": 856
     },
     {
       "issue": 421,
