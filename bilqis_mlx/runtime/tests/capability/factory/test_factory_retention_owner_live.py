@@ -330,11 +330,11 @@ class FactoryRetentionOwnerLiveTests(SourceBackboneTestBase):
             run_dir = Path(directory)
             parent, cache = _initialize_generation(
                 run_dir, source_context, genesis)
-            transaction = _source_owned_candidate_step(
+            transaction, gradient, _row, _targets = _source_owned_candidate_step_evidence(
                 run_dir, source_context, parent, cache, self.artifact)
             receipt = diagnose_fixed_capability(
                 source_context, transaction, str(self.artifact), TARGET, "B.AND",
-                run_dir=run_dir)
+                run_dir=run_dir, gradient=gradient)
             self.assertFalse(receipt["authorizing"])
             self.assertEqual(receipt["protected_capability"], "B.AND")
             self.assertEqual(receipt["total"], FIXED_EACH["B.AND"])

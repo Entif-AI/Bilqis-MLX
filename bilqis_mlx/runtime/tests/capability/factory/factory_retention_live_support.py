@@ -47,7 +47,11 @@ from bilqis_mlx.source_adapters.school import live_source_registry
 
 HP = AdamWHyperparameters(.001, (.9, .95), 1e-8, .01)
 C05_GENESIS_SEED = 70805
-C05_TRAINING_LEARNING_RATE = 1e-5
+# ADR-134 permits non-destructive intermediate foundation updates without an
+# immediate taught-row win. The prior 1e-6 sweep arm moved the taught margin in
+# the correct direction while 1e-5 crossed it in one step but regressed fixed
+# B.AND. Use the smaller already-observed teacher rate for the acceptance witness.
+C05_TRAINING_LEARNING_RATE = 1e-6
 
 
 def _genesis_parameter(base_parameters, item):
