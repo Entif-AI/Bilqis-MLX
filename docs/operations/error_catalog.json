@@ -11270,14 +11270,14 @@
       "count": 1,
       "exception": "AssertionError",
       "expression": "'exact cached route must preempt neural'",
-      "path": "bilqis_mlx/runtime/tests/capability/test_cognitive_solver.py"
+      "path": "bilqis_mlx/runtime/tests/capability/solver/test_cognitive_solver.py"
     },
     {
       "code_hint": "malformed decoder payload",
       "count": 1,
       "exception": "ValueError",
       "expression": "'malformed decoder payload'",
-      "path": "bilqis_mlx/runtime/tests/capability/test_cognitive_solver.py"
+      "path": "bilqis_mlx/runtime/tests/capability/solver/test_cognitive_solver.py"
     },
     {
       "code_hint": "COLD_RESUME_CONTINUATION_REJECTED before=",

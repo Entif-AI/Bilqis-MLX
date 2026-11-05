@@ -31,7 +31,7 @@ from bilqis_mlx.runtime.tests.capability.solver_helpers import _fixture
 
 class CognitiveSolverTests(unittest.TestCase):
     def test_solver_transitive_imports_exclude_gold_evaluator(self):
-        root = Path(__file__).resolve().parents[4]
+        root = Path(__file__).resolve().parents[5]
         pending = ["bilqis_mlx.runtime.cognitive_solver"]
         seen = set()
         while pending:
