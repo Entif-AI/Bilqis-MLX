@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "06eb34d0435d2f41c6f3561cf8cad6988d5b849f",
-  "updated_at": "2026-11-05T00:19:14Z",
+  "updated_at": "2026-11-05T00:24:30Z",
   "exception": null,
   "items": [
     {
@@ -49,10 +49,10 @@
     {
       "issue": 785,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "4b170d5d84a1b26799de59409e3d81a1f993b26e",
-      "summary": "C01 structural prerequisite reached reviewed unified through PR803/e9226be2. Resume canonical A06 selection-authority investigation after current-unified sync; no artifact authority inferred.",
-      "resume_trigger": null,
+      "state": "BLOCKED",
+      "head_sha": "aebc8b94be40738797912f94cd53aaa5b7ff6dac",
+      "summary": "C01 structural trigger resolved and current unified06eb34d0 consumed on preserved785 branch. A06 owner26/26 and two source-valid profile artifact replays pass. Missing accepted profile/generation selection binding remains; no global profile or source attestation invented.",
+      "resume_trigger": "An accepted source/profile/generation owner selects the A03 schema inventory and adapter bindings plus A01/feature/predecessor identities, or supplies a canonical derivation rule; then consume and prove the qualification at A06 before C02 acceptance.",
       "preserved_branch": "codex/bamf02-a-785-source-features-20261103"
     }
   ]
