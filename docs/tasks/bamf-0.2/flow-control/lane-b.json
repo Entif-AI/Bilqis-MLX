@@ -316,9 +316,9 @@
     {
       "issue": 844,
       "pr": 848,
-      "state": "TURNED_IN",
-      "head_sha": "a5550d34863989fa258b8f81b61916300f26a868",
-      "summary": "Ready PR848; canonical imports and test bodies preserved. Pinned review documentation finding resolved; combine accepted784 runner and verify affected script tests. Human merge pending.",
+      "state": "ACTIVE",
+      "head_sha": "a0e8466ee4d724ac48cb395df5314ec9495a2a62",
+      "summary": "PR848 reactivated only to consume reviewed unified after PR846 merged and resolve the resulting integration conflict. Prior EGM-Passed and test evidence remain applicable unless the sync changes owned executable behavior.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-b-844-script-imports-20261105"
     }
