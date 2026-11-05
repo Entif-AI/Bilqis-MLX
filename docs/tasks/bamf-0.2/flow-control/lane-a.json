@@ -1,24 +1,34 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "88ac132db2fd1c3606fa5f06637d10a7ab40cba4",
-  "updated_at": "2026-11-05T10:15:20+00:00",
+  "observed_unified": "22314c413ba137df69b3d6b35768fe65e1556bfe",
+  "updated_at": "2026-11-05T13:01:32Z",
   "exception": null,
   "items": [
     {
-      "issue": 426,
-      "pr": 860,
+      "issue": 427,
+      "pr": null,
       "state": "TURNED_IN",
-      "head_sha": "38e41d521ade59d283a1c9547b18efe5927e8019",
-      "summary": "A11.3 review-hardened implementation is complete: the real event-frame source owner retains direct GENERATOR/ORACLE/draw authority and exposes source.semantic-contrast/v1 only as an optional teaching strategy. A real ExecutableFactoryRelease resolves it through the live registry without monkey-patching; contrast rows independently replay gold, answer kind and semantic roots while ordinary event-frame draw/oracle behavior remains unchanged. A11 suites 22/22; event/provider regression 11/11; governance 11/11; exact error-control-plane new debt 0; architecture/docs/compile/diff clean.",
-      "resume_trigger": "Fresh exact-head EGM/re-audit of the repaired real-owner integration plus human integration review for PR #860.",
-      "preserved_branch": "codex/bamf02-a11-3-426-20261105"
+      "head_sha": "68f288cd9e20b54bbc8c0b8a775196b9f3335ba8",
+      "summary": "A12.1 current-owner audit is implemented in atlas_release_audit.py without resurrecting the historical competing module. The receipt binds current typed ABI, source-pinned released AST/frame schemas, Factory source lessons, a read-only graph projection, and Registry mirror to one repository-pinned A01 release while keeping declared formal domains separate. Unit audit/export tests pass 8/8 with one optional source witness skipped; the real pinned A01/A02/A03/Factory/registry replay passes 9/9. Adjacent released-schema/vocabulary/curriculum tests pass 24/24 with two expected optional-source skips; semantic-boundary, governance, error-control, structure, compile and diff checks are green.",
+      "resume_trigger": "Fresh exact-head independent EGM plus hosted PR checks and human integration review. Parent A12/#364, #295 and #309 remain open; this child does not claim neural admission or full parent cutover.",
+      "preserved_branch": "codex/bamf02-a12-1-427-20261105"
+    },
+    {
+      "issue": 426,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "9180b0a8157a9478499f02787dbdce314ad99374",
+      "summary": "A11.3 exact head 9180b0a8 passed local, hosted portable-core/portable/Semantic ABI and fresh independent exact-head review, then merged through PR #860 as reviewed unified 22314c413ba137df69b3d6b35768fe65e1556bfe. #426 and parent A11/#362 are explicitly closed completed.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a11-3-426-20261105",
+      "merged_pr": 860
     },
     {
       "issue": 423,
       "pr": 858,
       "state": "WAITING",
-      "head_sha": "6c37819aa6968326c3cefd470f39dcd226cc91ec",
+      "head_sha": "c59bdf041198107b0cd03b12f5662dbab0f30e1f",
       "summary": "A10.3 PR #858 is DRAFT after post-merge EGM reopened prerequisite #421. Its own re-review also found remaining source-episode identity and external-witness acceptance Majors; do not represent it as merge-ready.",
       "resume_trigger": "Consume the accepted #421/A10.1 authority and source-episode identity repair, then resync/rebase #858, remove duplicate upstream fixes, rerun F10 receipt acceptance and obtain fresh exact-head EGM.",
       "preserved_branch": "codex/bamf02-a10-3-423-20261105",
@@ -60,11 +70,11 @@
     },
     {
       "issue": 421,
-      "pr": null,
-      "state": "WAITING",
-      "head_sha": "4df4d1b0cba1bb02d5d52155298e2b85bc640b37",
-      "summary": "A10.1 was reopened by independent post-merge EGM. Two acceptance defects are repaired on codex/bamf02-a-421-egm-repair-20261105, but released source-pinned AGENT/schema authority remains unresolved; the repair owner is addressing A03 authority rather than inventing A10-local semantics.",
-      "resume_trigger": "Accepted A03/released semantic authority must bind the A10 category/unit/AGENT references, and the final source-episode identity contract must reject duplicate/reformatted copies before #421 can re-close.",
+      "pr": 862,
+      "state": "TURNED_IN",
+      "head_sha": "28517f32c036f6cb55d742b6276811f3d85fdd7f",
+      "summary": "A10.1 post-merge repair remains turned in as PR #862. Independent exact-head review rejected three incomplete family-root designs: interpreted episode fields (2223c1ab), caller-supplied opaque source_episode_ref (2a9fe4e9), and raw content+span promoted into independence authority (9ff227c0). Repair 912f2fc7 resolves family identity through the existing BamfEvidenceSnapshot/v1 sourceManifestCID boundary: registered content-bound source-family manifests map exact spans to source-owner family roots. Duplicate source material at a second span remains the same family; authorized repack preserves family identity; unregistered caller-minted manifests fail closed; separately qualified fixture episodes are independent only when their registered source manifest declares distinct families. Concurrent owner repairs 26e32982 and b08628b5 make the lesson checker independent from generator gold and preserve exact high-precision unit conversion; 4530b101 satisfies operator-debt policy with named decimal factors. Merge history preserves all writers. Hosted CI then exposed module growth in evidence_frames.py; refactor 28517f32 extracts the typed BamfEvidenceSnapshot/v1 contracts into evidence_types.py while preserving the public evidence_frames import surface and passing development-structure policy. Combined real pinned A01+A03+unit suite passes 23/23; focused+adjacent passes 27 / 0 failed / 1 expected optional skip; governance 11/11; exact debt 0; module-size and changed-file smell 0; Factory/docs/flow/compile/diff clean. Fresh hosted checks and fresh exact-head EGM are required on the final pushed custody head.",
+      "resume_trigger": "Keep PR #862 non-mergeable until final exact-head hosted checks and fresh independent EGM are clean. Then mark ready for human integration if needed. Re-close #421 only after accepted repair merges. PR #858 remains waiting until that acceptance lands, then must consume source-manifest family authority plus independently checked gold and rerun F10/external-witness acceptance.",
       "preserved_branch": "codex/bamf02-a-421-egm-repair-20261105",
       "merged_pr": 852
     },
