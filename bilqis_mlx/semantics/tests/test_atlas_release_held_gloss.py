@@ -1,0 +1,110 @@
+"""A12 F17 held-gloss adversary across semantic and teacher surfaces."""
+from dataclasses import replace
+import unittest
+from unittest.mock import patch
+
+from bilqis_mlx.errors import BilqisError
+
+
+class AtlasHeldGlossAuthorityTests(unittest.TestCase):
+    def test_held_gloss_cannot_promote_and_keeps_source_reason(self):
+        from bilqis_mlx.factory.skos_curriculum import (
+            LearnedFrontier, SOURCE_FAMILY_ADAPTERS,
+            _compile_semantic_curriculum_snapshot,
+            _compile_source_constructive_lessons_snapshot,
+        )
+        from bilqis_mlx.factory.tests.test_skos_curriculum import _snapshot
+        from bilqis_mlx.semantics.atlas_features import (
+            FeatureSchema, build_feature_manifest,
+            plan_prospective_identity_features,
+        )
+        from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, ModelTopologySpecV2
+        from bilqis_mlx.semantics.atlas.vocabulary import VocabularyPrior, plan_vocabulary_extension
+        from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+        from bilqis_mlx.semantics.atlas_projection import (
+            AtlasLabel, SHAPE_POLICY,
+            _canonical_bytes as _atlas_bytes, _digest as _atlas_sha256,
+        )
+
+        original = replace(
+            _snapshot(),
+            shape_policy_sha256=_atlas_sha256(_atlas_bytes(SHAPE_POLICY)),
+        )
+        held = next(row for row in original.withheld_rows
+                    if row.source_disposition == "SOURCE_HELD")
+        admitted = original.concepts[0]
+        renamed = replace(
+            admitted, concept=replace(
+                admitted.concept,
+                labels=(AtlasLabel("altLabel", "near synonym"),
+                        AtlasLabel("prefLabel", "plausible English gloss matching the held source"))))
+        relabeled = replace(original, concepts=(renamed, *original.concepts[1:]))
+
+        for snapshot in (original, relabeled):
+            with self.subTest(labels=snapshot.concepts[0].concept.labels):
+                self.assertNotIn(held.semantic_id,
+                                 {entry.semantic_id for entry in snapshot.abi_entries})
+                features = build_feature_manifest(snapshot, FeatureSchema((), ()))
+                self.assertIn((held.semantic_id, held.reason_code), features.held_reasons)
+                with self.assertRaises(BilqisError) as caught:
+                    features.features_for(held.semantic_id, "UNKNOWN", "UNKNOWN", "task:held")
+                self.assertEqual(caught.exception.context["reason"],
+                                 "BAMF_FEATURE_CONCEPT_NOT_ADMITTED")
+                self.assertEqual(caught.exception.context["source_reason_codes"],
+                                 (held.reason_code,))
+                with self.assertRaises(BilqisError) as caught:
+                    plan_prospective_identity_features(
+                        snapshot, features, (held.semantic_id,),
+                        expected_feature_digest=features.digest)
+                self.assertEqual(caught.exception.context["reason"],
+                                 "BAMF_FEATURE_PROSPECTIVE_SOURCE_HELD")
+                self.assertEqual(caught.exception.context["source_reason_codes"],
+                                 (held.reason_code,))
+
+                selection = AtlasArtifactSelection(
+                    "fixture", snapshot.bundle_id, snapshot.release_sha256,
+                    snapshot.source_bundle_id)
+                active = tuple(entry.semantic_id for entry in snapshot.abi_entries if entry.active)
+                active_indices = tuple(sorted(
+                    entry.index for entry in snapshot.abi_entries if entry.active))
+                bank_count = max(
+                    1, max(active_indices, default=0)
+                    // ModelTopologySpecV2.semantic_bank_rows + 1)
+                prior = VocabularyPrior(
+                    selection,
+                    GenerationExtents(bank_count, 1,
+                                      _atlas_sha256(_atlas_bytes(list(active_indices))),
+                                      "b" * 64, features.digest),
+                    features, FeatureSchema((), ()), active, "e" * 64)
+                with patch(
+                    "bilqis_mlx.semantics.atlas.vocabulary_planning.load_pinned_atlas_snapshot",
+                    return_value=snapshot), self.assertRaises(BilqisError) as caught:
+                    plan_vocabulary_extension(prior, (held.semantic_id,), ModelTopologySpecV2())
+                self.assertEqual(caught.exception.context["reason"],
+                                 "BAMF_FEATURE_PROSPECTIVE_SOURCE_HELD")
+                self.assertEqual(caught.exception.context["source_reason_codes"],
+                                 (held.reason_code,))
+
+                source_lessons = _compile_source_constructive_lessons_snapshot(snapshot).lessons
+                self.assertFalse(any(
+                    held.semantic_id in (lesson.semantic_id, *lesson.constituents,
+                                         *lesson.prerequisite_closure)
+                    for lesson in source_lessons))
+                teacher = _compile_semantic_curriculum_snapshot(
+                    snapshot, SOURCE_FAMILY_ADAPTERS,
+                    LearnedFrontier(snapshot.release_sha256,
+                                    claimed_exposed=(held.semantic_id,),
+                                    claimed_qualified=(held.semantic_id,)))
+                self.assertNotIn(held.semantic_id, teacher.source_eligible_concept_ids)
+                self.assertFalse(any(
+                    held.semantic_id in (lesson.semantic_id, *lesson.constituents,
+                                         *lesson.prerequisite_closure)
+                    for lesson in teacher.source_lessons))
+                source_hold = next(row for row in teacher.source_hold_rows
+                                   if row.semantic_id == held.semantic_id)
+                self.assertEqual((source_hold.reason_code, source_hold.owner),
+                                 (held.reason_code, held.owner))
+
+
+if __name__ == "__main__":
+    unittest.main()
