@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "06eb34d0435d2f41c6f3561cf8cad6988d5b849f",
-  "updated_at": "2026-11-05T00:55:05.883527+00:00",
+  "observed_unified": "e58dd31574a6ee2ce0b3e35f92293a09befd15c1",
+  "updated_at": "2026-11-05T05:34:38.479838+00:00",
   "exception": null,
   "items": [
     {
@@ -72,6 +72,15 @@
       "summary": "Ready PR836 after exact-head pinned EGM PASS round1/5 and25/25 focused proof; representative decisions/evidence/cache/C09 bytes and error inventory preserved. Human integration and final hosted gates remain.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a-833-context-structure-20261104"
+    },
+    {
+      "issue": 842,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "e58dd31574a6ee2ce0b3e35f92293a09befd15c1",
+      "preserved_branch": "codex/bamf02-a-842-execution-structure-20261105",
+      "summary": "Organic564-line Factory execution interruption during785profile-selector trace; preserve contracts/ASTs/digests and mirrored tests. Per-user separate issue branch from synchronized Lane A source, no source qualification inferred.",
+      "resume_trigger": null
     }
   ]
 }
