@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from hashlib import sha256
 import os
 import unittest
 
@@ -25,9 +26,30 @@ AGENT = "agent"
 SOURCE_BUNDLE = "f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec"
 ATLAS_BUNDLE = "5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7"
 ATLAS_RELEASE = "58e0c281b5da18b9b7e6c803709b29eeeb0a88f16b06f48de692808e2fb88306"
+DOUBLE_SOURCE = PUBLIC_FIXTURE_SOURCE + "\n" + PUBLIC_FIXTURE_SOURCE
 
 
 class EvidenceFamilyAuthorityCases:
+    def _two_occurrence_snapshot(self, *, second_record_id):
+        digest = sha256(DOUBLE_SOURCE.encode("utf-8")).hexdigest()
+        first = replace(
+            self.snapshot.records[0],
+            source_span=SourceSpan(0, len(PUBLIC_FIXTURE_SOURCE)),
+        )
+        second_start = len(PUBLIC_FIXTURE_SOURCE) + 1
+        second = replace(
+            first, record_id=second_record_id,
+            source_span=SourceSpan(second_start, second_start + len(PUBLIC_FIXTURE_SOURCE)),
+            adjudication_ref=f"adjudication:{second_record_id}",
+        )
+        snapshot = replace(
+            self.snapshot,
+            source_manifest_cid="public-fixture:bravo-a10-double/v1:" + digest,
+            source_byte_digest=digest,
+            records=(first, second),
+        )
+        return snapshot, first, second
+
     def test_paraphrases_of_one_episode_cannot_cross_independent_split(self):
         original = self.snapshot.records[0]
         sibling = replace(original, record_id="fixture-001-paraphrase")
@@ -51,51 +73,28 @@ class EvidenceFamilyAuthorityCases:
                 copied, train_record_ids=(original.record_id,),
                 heldout_record_ids=(adjudicated_copy.record_id,))
 
-        relocated = replace(
-            adjudicated_copy,
-            source_span=SourceSpan(
-                len(PUBLIC_FIXTURE_SOURCE), 2 * len(PUBLIC_FIXTURE_SOURCE)))
-        relocated_result = self.compile(
-            replace(self.snapshot, records=(original, relocated)))
-        with self.assertRaises(ValueError):
-            split_evidence_families(
-                relocated_result, train_record_ids=(original.record_id,),
-                heldout_record_ids=(relocated.record_id,))
-
-        separate = replace(
-            relocated, record_id="fixture-003",
-            source_episode_ref="source-episode:bravo-a10-public-fixture-003",
-            actor_ref="actor_02")
-        independent = self.compile(
-            replace(self.snapshot, records=(original, separate)))
+        combined, first, separate = self._two_occurrence_snapshot(
+            second_record_id="fixture-003")
+        independent = self.compile(combined)
         receipt = split_evidence_families(
-            independent, train_record_ids=(original.record_id,),
+            independent, train_record_ids=(first.record_id,),
             heldout_record_ids=(separate.record_id,))
         self.assertNotEqual(receipt.train_family_ids, receipt.heldout_family_ids)
 
-    def test_manifest_digest_and_span_cannot_manufacture_new_episode_family(self):
+    def test_manifest_repacking_cannot_manufacture_new_episode_family(self):
         original = self.snapshot.records[0]
-        copied = replace(
-            original, record_id="fixture-copy",
-            source_span=SourceSpan(
-                len(PUBLIC_FIXTURE_SOURCE), 2 * len(PUBLIC_FIXTURE_SOURCE)))
+        copied = replace(original, record_id="fixture-copy")
         repacked = replace(
             self.snapshot, source_manifest_cid="public-fixture:repacked",
-            source_byte_digest="d" * 64, records=(copied,))
+            records=(copied,))
         self.assertEqual(
             source_family_id(self.snapshot, original),
             source_family_id(repacked, copied))
 
     def test_distinct_source_observation_occurrences_remain_independent(self):
-        original = self.snapshot.records[0]
-        separate = replace(
-            original,
-            record_id="fixture-separate",
-            source_episode_ref="source-episode:bravo-a10-public-fixture-separate",
-            adjudication_ref="adjudication:fixture-separate",
-        )
-        result = self.compile(
-            replace(self.snapshot, records=(original, separate)))
+        combined, original, separate = self._two_occurrence_snapshot(
+            second_record_id="fixture-separate")
+        result = self.compile(combined)
         receipt = split_evidence_families(
             result,
             train_record_ids=(original.record_id,),
@@ -122,16 +121,11 @@ class EvidenceFamilyAuthorityCases:
             )
 
     def test_fresh_challenge_splits_source_families_before_template_groups(self):
-        original = self.snapshot.records[0]
+        combined, original, other = self._two_occurrence_snapshot(
+            second_record_id="fixture-002")
         paraphrase = replace(original, record_id="fixture-001-paraphrase")
-        other = replace(
-            original, record_id="fixture-002",
-            source_episode_ref="source-episode:bravo-a10-public-fixture-002",
-            adjudication_ref="adjudication:fixture-002", actor_ref="actor_02",
-            source_span=SourceSpan(
-                len(PUBLIC_FIXTURE_SOURCE), 2 * len(PUBLIC_FIXTURE_SOURCE)))
-        result = self.compile(
-            replace(self.snapshot, records=(original, paraphrase, other)))
+        result = self.compile(replace(
+            combined, records=(original, paraphrase, other)))
         with self.assertRaises(ValueError):
             plan_fresh_challenge(
                 result, train_record_ids=(original.record_id,),
