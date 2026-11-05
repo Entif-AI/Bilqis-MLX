@@ -2,15 +2,15 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "22d23ddfc5cc2781c5ae210d0c1185c6176753fb",
-  "updated_at": "2026-11-05T22:49:00Z",
+  "updated_at": "2026-11-05T22:54:00Z",
   "exception": null,
   "items": [
     {
       "issue": 429,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "22d23ddfc5cc2781c5ae210d0c1185c6176753fb",
-      "summary": "A12.3 PR #871 final head 63f0fcc8 merged as cc6c0dfe and post-merge custody PR #873 merged as 22d23ddf. A post-merge independent review recovered one proof-only acceptance gap: #429 literally requires direct observable refusal at trainable-row staging and teacher-target construction, while PR #871 proved only the upstream fail-closed authority seams. Boundary-proof remediation is active on codex/bamf02-a12-3-429-boundary-proof-20261105; accepted #871 source-successor/F17 evidence remains valid for its actual surface.",
+      "state": "TURNED_IN",
+      "head_sha": "1b69365e9e2bf2bf1087bb09433915916c8462ab",
+      "summary": "A12.3 PR #871 merged as cc6c0dfe and custody PR #873 merged as 22d23ddf. Post-merge review recovered a literal proof gap only: trainable-row staging and teacher-target construction had not been exercised directly. Substantive remediation head 1b69365e adds two direct fail-closed witnesses: forged held allocation is rejected before _stage_extension_rows with the exact source-held reason, and held semantic training input is rejected before BamfTarget construction with the exact source-held reason. Combined focused surface 21/21 plus generic Grade-D successor 1/1 pass; semantic boundaries, Factory architecture, flow, docs, structure, smell, error debt and diff gates are green. Fresh exact-head EGM pending.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a12-3-429-boundary-proof-20261105",
       "merged_pr": 871
