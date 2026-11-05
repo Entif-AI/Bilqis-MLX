@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "70a4ef1e883d348920d64083c7546f443a90ef77",
-  "updated_at": "2026-11-05T06:36:17.870697+00:00",
+  "updated_at": "2026-11-05T06:38:51.620454+00:00",
   "exception": null,
   "items": [
     {
@@ -315,11 +315,11 @@
     {
       "issue": 810,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "e9226be2f6a41f47109ca02a1103a363e64909a7",
+      "state": "WAITING",
+      "head_sha": "344c4a58",
       "preserved_branch": "codex/bamf02-b-810-selection-replay-20261103",
-      "summary": "Repair public B06.3 choice consumption by replaying canonical B06.2 policy; preserve original454 lineage. Source/prediction-owner authority remains separate.",
-      "resume_trigger": null
+      "summary": "Stopped solver interruption resumed and committed344c4a58:18/18focused,5closure/9state/4route/14testproof, hygiene0newfindings. Original11featureWIPfiles remainbyteidentical/unstaged. NextDAGinterruptionunfinished; no feature acceptance/EGM/PR.",
+      "resume_trigger": "C785canonical-source trace completes or blocks, then explicitly select810next recorded DAG structural interruption; feature mutation waits for that repair plus canonical prefix/prediction/query-role authority."
     },
     {
       "issue": 784,
