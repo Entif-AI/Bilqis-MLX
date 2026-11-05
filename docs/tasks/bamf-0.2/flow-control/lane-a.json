@@ -1,18 +1,19 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "7e4f92e062299909dd47b547b8b4897a189c3738",
-  "updated_at": "2026-11-05T23:05:00Z",
+  "observed_unified": "cc6c0dfead8a03553ce8d146af6956df7085104c",
+  "updated_at": "2026-11-05T22:42:00Z",
   "exception": null,
   "items": [
     {
       "issue": 429,
-      "pr": 871,
+      "pr": null,
       "state": "TURNED_IN",
-      "head_sha": "20b43ad3ecdfe68f9c10f69244164bd554a4ba7e",
-      "summary": "A12.3 substantive proof head 20b43ad3 adds no production semantic path: it proves one source-qualified inactive semantic reaches append-only A02 allocation plus A08 source lesson with prior active indices unchanged, strengthens F17 held-gloss proof with explicit no-factor/no-active-row assertions, and reuses the generic Grade-D executable successor system witness. Focused 19/19 plus Grade-D system 1/1 pass; semantic boundaries, Factory architecture, docs, structure, smell, error debt and diff gates are green. Fresh pinned EGM CLEAN at exact head 21fc0422; PR #871 opened to reviewed-unified. Hosted checks pending.",
+      "head_sha": "63f0fcc81257622d8487bd6b01183b2fb7de69d5",
+      "summary": "A12.3 final PR #871 head 63f0fcc8 merged into reviewed unified as cc6c0dfe. Substantive proof head 20b43ad3 proves one source-qualified inactive semantic reaches the generic append-only A02/A08 path with prior ABI indices unchanged; F17 held-gloss proof preserves the source-owned hold reason while refusing ABI/factor/Factory promotion; the existing generic Grade-D executable successor witness passed 1/1. Focused 19/19, semantic/Factory/structure/docs/error gates and hosted portable-core/portable/Semantic ABI passed. Fresh pinned EGM was CLEAN at exact semantic head 21fc0422; the later 63f0fcc8 delta was flow-control/PR bookkeeping only.",
       "resume_trigger": null,
-      "preserved_branch": "codex/bamf02-a12-3-429-20261105"
+      "preserved_branch": "codex/bamf02-a12-3-429-20261105",
+      "merged_pr": 871
     },
     {
       "issue": 428,
