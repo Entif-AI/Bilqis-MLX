@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "672f97d7049dd951f86630844e3a80b60c4563dd",
-  "updated_at": "2026-11-05T14:03:49+00:00",
+  "updated_at": "2026-11-05T14:06:06+00:00",
   "exception": null,
   "items": [
     {
@@ -133,9 +133,9 @@
       "issue": 752,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "09f9b330deedcf5c0c3f44c40a6aab0f0a91adc2",
+      "head_sha": "1f1596b4ef4439971f08937b289c785d5c755cc5",
       "preserved_branch": "codex/752-artifact-owner-continue-20261105",
-      "summary": "ATLAS_FEATURE and PACKED_FRAME owner proofs remain preserved. EXACT_CACHE is now merge-forwarded through unified cache authority/currentness: the B14 inference boundary requires both the opaque accepted cache authority and the exact C09 artifact owner, holds signed corrections before reuse, releases equal-output revalidation, and falls back to FP32 on missing/changed/revoked ownership. Remaining: motif production read consumer, operator-composition durable correction owner, capability-support initial materializer.",
+      "summary": "ATLAS_FEATURE, PACKED_FRAME, and EXACT_CACHE now use the current canonical C09 revalidation modules. Exact-cache inference requires current accepted cache authority plus the exact correction owner; signed holds fail closed to FP32 and equal-output revalidation releases reuse. Superseded _revalidation_* modules were removed after #862. Remaining: motif production read consumer, operator-composition durable correction owner, capability-support initial production materializer.",
       "resume_trigger": null
     }
   ]
