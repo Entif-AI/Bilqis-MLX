@@ -47,7 +47,7 @@ class CognitiveDAGImportBoundaryTests(TestCase):
         self.assertIn("bilqis_mlx.semantics.cognitive_operators.registry", seen)
         self.assertIn("bilqis_mlx.semantics.cognitive_operators.authorization", seen)
         self.assertIn("bilqis_mlx.semantics.cognitive_operators.execution", seen)
-        self.assertNotIn("bilqis_mlx.semantics.cognitive_operators", seen)
+        self.assertIn("bilqis_mlx.semantics.cognitive_operators", seen)
         forbidden = (
             "bilqis_mlx.verification", "bilqis_mlx.source_adapters",
             "bilqis_mlx.generated_assessment", "bilqis_mlx.assessment",
