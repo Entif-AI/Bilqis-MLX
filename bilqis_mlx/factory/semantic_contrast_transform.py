@@ -52,91 +52,95 @@ def _sorted_bindings(source: ContrastSourceFrame, bindings: tuple[RoleOccurrence
     return tuple(sorted(bindings, key=lambda item: (rank[item.role_id], item.occurrence_index)))
 
 
-def apply_variation(source: ContrastSourceFrame, variation: AllowedVariation) -> tuple[ContrastVariant, str]:
+def _role_swap(source: ContrastSourceFrame, variation: AllowedVariation) -> tuple[dict, str]:
+    left = _binding(source.frame, variation.role_a, 0)
+    right = _binding(source.frame, variation.role_b, 0)
+    replaced = []
+    for item in source.frame.bindings:
+        target = right if item.key == left.key else left if item.key == right.key else None
+        replaced.append(RoleOccurrence(item.role_id, item.occurrence_index, **_target_kwargs(target)) if target else item)
+    return {"bindings": tuple(replaced)}, "two-present-role-bindings"
+
+
+def _cardinality(source: ContrastSourceFrame, variation: AllowedVariation) -> tuple[dict, str]:
     bindings = source.frame.bindings
-    scope = source.scope
-    negated = source.negated
-    status = source.status
-    observation = source.observation_state
-    morphology = source.source_morphology
-
-    if variation.family is ContrastFamily.ROLE_SWAP:
-        left = _binding(source.frame, variation.role_a, 0)
-        right = _binding(source.frame, variation.role_b, 0)
-        replaced = []
-        for item in bindings:
-            if item.key == left.key:
-                replaced.append(RoleOccurrence(item.role_id, item.occurrence_index, **_target_kwargs(right)))
-            elif item.key == right.key:
-                replaced.append(RoleOccurrence(item.role_id, item.occurrence_index, **_target_kwargs(left)))
-            else:
-                replaced.append(item)
-        bindings = tuple(replaced)
-        applicability = "two-present-role-bindings"
-    elif variation.family is ContrastFamily.CARDINALITY_CHANGE:
-        same_role = tuple(item for item in bindings if item.role_id == variation.role_id)
-        if variation.remove:
-            target = _binding(source.frame, variation.role_id, variation.occurrence_index)
-            bindings = tuple(item for item in bindings if item.key != target.key)
-            # Reindex the retained role occurrences canonically after removal.
-            retained = [item for item in bindings if item.role_id == variation.role_id]
-            remapped = {item.key: index for index, item in enumerate(retained)}
-            bindings = tuple(
-                replace(item, occurrence_index=remapped[item.key])
-                if item.role_id == variation.role_id else item
-                for item in bindings)
-            applicability = "existing-role-occurrence-removal"
-        else:
-            if variation.concept.semantic_release != source.semantic_release:
-                _fail("BAMF_SEMANTIC_CONTRAST_RELEASE_MISMATCH")
-            next_index = max((item.occurrence_index for item in same_role), default=-1) + 1
-            bindings = bindings + (RoleOccurrence(
-                variation.role_id, next_index, concept=variation.concept),)
-            applicability = "role-cardinality-extension"
-    elif variation.family is ContrastFamily.SCOPE_NEGATION:
-        scope = variation.scope
-        negated = variation.negated
-        if scope == source.scope and negated == source.negated:
-            _fail("BAMF_SEMANTIC_CONTRAST_NOOP")
-        applicability = "scope-or-negation-change"
-    elif variation.family is ContrastFamily.KNOWN_UNKNOWN:
+    same_role = tuple(item for item in bindings if item.role_id == variation.role_id)
+    if variation.remove:
         target = _binding(source.frame, variation.role_id, variation.occurrence_index)
-        if target.state is BindingState.UNKNOWN:
-            _fail("BAMF_SEMANTIC_CONTRAST_NOOP")
-        bindings = tuple(
-            RoleOccurrence(item.role_id, item.occurrence_index, state=BindingState.UNKNOWN)
-            if item.key == target.key else item
-            for item in bindings)
-        applicability = "known-binding-to-unknown"
-    elif variation.family is ContrastFamily.PLANNED_OCCURRED:
-        status = variation.status
-        if status is source.status:
-            _fail("BAMF_SEMANTIC_CONTRAST_NOOP")
-        applicability = "planned-occurred-status-change"
-    elif variation.family is ContrastFamily.MISSING_NEGATIVE:
-        observation = variation.observation_state
-        if observation is source.observation_state:
-            _fail("BAMF_SEMANTIC_CONTRAST_NOOP")
-        applicability = "missing-negative-observation-distinction"
-    elif variation.family is ContrastFamily.MORPHOLOGY_ALTERNATIVE:
-        if variation.morphology not in source.authorized_morphology_alternatives:
-            _fail("BAMF_SEMANTIC_CONTRAST_MORPHOLOGY_UNAUTHORIZED")
-        morphology = variation.morphology
-        if morphology == source.source_morphology:
-            _fail("BAMF_SEMANTIC_CONTRAST_NOOP")
-        applicability = "source-authorized-morphology-alternative"
-    else:
-        _fail("BAMF_SEMANTIC_CONTRAST_FAMILY_UNSUPPORTED")
+        bindings = tuple(item for item in bindings if item.key != target.key)
+        retained = [item for item in bindings if item.role_id == variation.role_id]
+        remapped = {item.key: index for index, item in enumerate(retained)}
+        bindings = tuple(replace(item, occurrence_index=remapped[item.key]) if item.role_id == variation.role_id else item for item in bindings)
+        return {"bindings": bindings}, "existing-role-occurrence-removal"
+    if variation.concept.semantic_release != source.semantic_release:
+        _fail("BAMF_SEMANTIC_CONTRAST_RELEASE_MISMATCH")
+    next_index = max((item.occurrence_index for item in same_role), default=-1) + 1
+    return {"bindings": bindings + (RoleOccurrence(variation.role_id, next_index, concept=variation.concept),)}, "role-cardinality-extension"
 
+
+def _scope(source: ContrastSourceFrame, variation: AllowedVariation) -> tuple[dict, str]:
+    if variation.scope == source.scope and variation.negated == source.negated:
+        _fail("BAMF_SEMANTIC_CONTRAST_NOOP")
+    return {"scope": variation.scope, "negated": variation.negated}, "scope-or-negation-change"
+
+
+def _known_unknown(source: ContrastSourceFrame, variation: AllowedVariation) -> tuple[dict, str]:
+    target = _binding(source.frame, variation.role_id, variation.occurrence_index)
+    if target.state is BindingState.UNKNOWN:
+        _fail("BAMF_SEMANTIC_CONTRAST_NOOP")
+    bindings = tuple(RoleOccurrence(item.role_id, item.occurrence_index, state=BindingState.UNKNOWN) if item.key == target.key else item for item in source.frame.bindings)
+    return {"bindings": bindings}, "known-binding-to-unknown"
+
+
+def _status(source: ContrastSourceFrame, variation: AllowedVariation) -> tuple[dict, str]:
+    if variation.status is source.status:
+        _fail("BAMF_SEMANTIC_CONTRAST_NOOP")
+    return {"status": variation.status}, "planned-occurred-status-change"
+
+
+def _observation(source: ContrastSourceFrame, variation: AllowedVariation) -> tuple[dict, str]:
+    if variation.observation_state is source.observation_state:
+        _fail("BAMF_SEMANTIC_CONTRAST_NOOP")
+    return {"observation": variation.observation_state}, "missing-negative-observation-distinction"
+
+
+def _morphology(source: ContrastSourceFrame, variation: AllowedVariation) -> tuple[dict, str]:
+    if variation.morphology not in source.authorized_morphology_alternatives:
+        _fail("BAMF_SEMANTIC_CONTRAST_MORPHOLOGY_UNAUTHORIZED")
+    if variation.morphology == source.source_morphology:
+        _fail("BAMF_SEMANTIC_CONTRAST_NOOP")
+    return {"morphology": variation.morphology}, "source-authorized-morphology-alternative"
+
+
+_TRANSFORMS = {
+    ContrastFamily.ROLE_SWAP: _role_swap,
+    ContrastFamily.CARDINALITY_CHANGE: _cardinality,
+    ContrastFamily.SCOPE_NEGATION: _scope,
+    ContrastFamily.KNOWN_UNKNOWN: _known_unknown,
+    ContrastFamily.PLANNED_OCCURRED: _status,
+    ContrastFamily.MISSING_NEGATIVE: _observation,
+    ContrastFamily.MORPHOLOGY_ALTERNATIVE: _morphology,
+}
+
+
+def apply_variation(source: ContrastSourceFrame, variation: AllowedVariation) -> tuple[ContrastVariant, str]:
+    state = {
+        "bindings": source.frame.bindings,
+        "scope": source.scope,
+        "negated": source.negated,
+        "status": source.status,
+        "observation": source.observation_state,
+        "morphology": source.source_morphology,
+    }
+    changes, applicability = _TRANSFORMS[variation.family](source, variation)
+    state.update(changes)
     return ContrastVariant(
         source.frame.occurrence_id,
         source.frame.content_digest,
-        _sorted_bindings(source, bindings),
-        scope,
-        negated,
-        status,
-        observation,
-        morphology,
+        _sorted_bindings(source, state["bindings"]),
+        state["scope"],
+        state["negated"],
+        state["status"],
+        state["observation"],
+        state["morphology"],
     ), applicability
-
-
