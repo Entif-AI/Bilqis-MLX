@@ -1,16 +1,16 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "6e12e5a077183713241bb9b2b0d0762d8d95fa47",
-  "updated_at": "2026-11-05T08:55:48.773325+00:00",
+  "observed_unified": "046cb64f180af1b1b73098d0d4e025f05ad2548b",
+  "updated_at": "2026-11-05T09:39:40+00:00",
   "exception": null,
   "items": [
     {
       "issue": 424,
       "pr": 853,
       "state": "TURNED_IN",
-      "head_sha": "20fc97766b01b1f3f737bcf0099e125f9533dc31",
-      "summary": "A11.1 implemented on clean issue branch: seven checker-grounded structural contrast families, immutable source/variant lineage separation, schema/cardinality/type applicability, deterministic seeded variants, paraphrase deduplication and independent checker replay. 36 passed / 1 intentional real-Atlas skip plus 11 governance checks; EGM_PENDING.",
+      "head_sha": "3c5bf4d4571cca8a020ba8bbcf5609fcdd0261e4",
+      "summary": "A11.1 implemented with seven checker-grounded structural contrast families and refactored into focused type/model/transform/checker modules while preserving the public semantic_contrasts.py API. Semantic ABI integrity and portable verification pass at exact head 3c5bf4d4571cca8a020ba8bbcf5609fcdd0261e4; EGM_PENDING.",
       "resume_trigger": "Independent exact-head EGM + human integration review for PR #853.",
       "preserved_branch": "codex/bamf02-a11-1-424-20261105"
     },
@@ -19,8 +19,8 @@
       "pr": 852,
       "state": "TURNED_IN",
       "head_sha": "888c609cdeb4da9eeb9ca99b7f8bdf087188ca04",
-      "summary": "A10.1 turned in as PR #852; 15/15 focused+adjacent and 11/11 governance PASS; EGM_PENDING.",
-      "resume_trigger": "Independent exact-head EGM + human integration review.",
+      "summary": "A10.1 implemented on clean issue branch: provenance-safe BamfEvidenceSnapshot/v1 adapter, literal PUBLIC_FIXTURE parser, exact typed lesson compiler, source-family split independence, rights holds, missing-report verification state, and protected-sentinel non-leakage. Focused/adjacent tests 15 passed; governance/error-contract tests 11 passed; EGM_PENDING.",
+      "resume_trigger": "Independent exact-head review/EGM and human integration review for PR #852.",
       "preserved_branch": "codex/bamf02-a10-1-421-20261105"
     },
     {
@@ -28,8 +28,8 @@
       "pr": null,
       "state": "WAITING",
       "head_sha": "c2e212e0bef7975e78dfc2f0a6071e21566b6539",
-      "summary": "A09.5 focused implementation passes current unified; accepted source-to-staged realization authority still lacks three genuinely new post-A/B/C successor bindings.",
-      "resume_trigger": "Accepted realization/staging authority provides >=3 genuinely new post-A/B/C source-qualified successor bindings or equivalent owner contract.",
+      "summary": "A09.5 focused implementation passes on current unified, but three genuine post-A/B/C source-to-staged successor realizations are not yet accepted; #420 supplied rule/family authority, not the required realization breadth.",
+      "resume_trigger": "Accepted realization/staging authority must provide at least three genuinely new source-qualified candidate-to-staged-successor bindings beyond historical A/B/C, or an accepted equivalent owner contract.",
       "preserved_branch": "codex/bamf02-a09-5-395-20261105"
     },
     {
@@ -37,7 +37,7 @@
       "pr": null,
       "state": "TURNED_IN",
       "head_sha": "93d3fe62df1be9f8aae995aa8446bac1bea427ea",
-      "summary": "A08.3 aggregate accepted/closed after #758/#777 and #737/#782 remediation; final pinned EGM 0B/0M.",
+      "summary": "A08.3 aggregate accepted: remediation PRs #777/#782 merged; final pinned EGM passed 0 Blockers/0 Majors; #420 closed completed on 2026-11-05.",
       "resume_trigger": null,
       "preserved_branch": "codex/737-a08-lifecycle-20261103",
       "merged_pr": 782
