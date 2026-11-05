@@ -165,6 +165,7 @@ jobs:
           scripts/tests/test_release_version.py
           scripts/tests/test_docs.py
           scripts/tests/test_run_tests.py
+          scripts/tests/test_run_tests_package_collision.py
           scripts/tests/test_skos_test_policy.py
           scripts/tests/governance/test_module_size.py
           scripts/tests/governance/test_governance_integrity.py

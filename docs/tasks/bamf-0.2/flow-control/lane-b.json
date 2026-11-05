@@ -305,19 +305,20 @@
     },
     {
       "issue": 784,
-      "pr": 847,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "edae20526c34b628fa63a895fb852921007f42a0",
-      "summary": "Ready PR847; pinned EGM PASS and final hosted portable/ABI/eight semantic shards SUCCESS. Human merge pending; parent source/learning acceptance separate.",
+      "summary": "PR847 human-merged as70a4ef1e; issue784 explicitly CLOSED COMPLETED after readback. Scoped runner proof only; parent source/learning acceptance separate.",
       "resume_trigger": null,
-      "preserved_branch": "codex/bamf02-b-784-runner-context-20261105"
+      "preserved_branch": "codex/bamf02-b-784-runner-context-20261105",
+      "merged_pr": 847
     },
     {
       "issue": 844,
-      "pr": null,
+      "pr": 848,
       "state": "TURNED_IN",
       "head_sha": "a5550d34863989fa258b8f81b61916300f26a868",
-      "summary": "Canonical helper imports repaired; 12/12 focused and171/171 script tests. Pinned EGM round1 documentation finding mechanically resolved; ready for PR admission. Human merge pending.",
+      "summary": "Ready PR848; canonical imports and test bodies preserved. Pinned review documentation finding resolved; combine accepted784 runner and verify affected script tests. Human merge pending.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-b-844-script-imports-20261105"
     }
