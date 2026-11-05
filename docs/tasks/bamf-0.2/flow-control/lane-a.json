@@ -2,15 +2,15 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "7c8974191f5c9c5449f1056149776771ad2b72f3",
-  "updated_at": "2026-11-05T15:53:26Z",
+  "updated_at": "2026-11-05T15:56:57Z",
   "exception": null,
   "items": [
     {
       "issue": 428,
       "pr": 869,
       "state": "TURNED_IN",
-      "head_sha": "e6646edd6d299e5de72d2d30371c85743e2b84fd",
-      "summary": "A12.2 implementation candidate PR #869 consumes reviewed-unified 7c897419. Substantive head e6646edd cuts all current repository callers from the legacy semantics.atlas_snapshot alias to canonical semantics.atlas.snapshot, adds declared semantic import/ownership roles that forbid legacy aliases as current authority while preserving historical decode compatibility, and records the source-to-consumer/rebuild receipt plus #295 acceptance matrix. Source-free A12/boundary tests are green, affected Factory/runtime/import-only checks are green apart from one inherited learning-layout literal count unrelated to this patch; hosted checks and fresh exact-head EGM are pending.",
+      "head_sha": "3b0c1775e0d5c2cb7eb76a8d3a97b64282746a1e",
+      "summary": "A12.2 implementation candidate PR #869 consumes reviewed-unified 7c897419. Substantive head 3b0c1775 cuts all current repository callers from the legacy semantics.atlas_snapshot alias to canonical semantics.atlas.snapshot, adds immutable declared semantic import/ownership roles that forbid legacy aliases as current authority while preserving historical decode compatibility, and records the source-to-consumer/rebuild receipt plus #295 acceptance matrix. Source-free A12/boundary proof is 16/16; affected Factory/runtime/import-only checks are green apart from one inherited learning-layout literal count unrelated to this patch; CI-equivalent changed-file smell reports zero new findings. Hosted checks and fresh exact-head EGM are pending.",
       "resume_trigger": "Hosted checks and fresh exact-head EGM pass on the final PR #869 candidate.",
       "preserved_branch": "codex/bamf02-a12-2-428-20261105"
     },
