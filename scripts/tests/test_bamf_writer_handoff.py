@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -130,6 +131,38 @@ class WriterHandoffTests(unittest.TestCase):
                 with self.assertRaisesRegex(HandoffError, "worktree_status"):
                     verify(self.repo, payload)
                 link.unlink()
+
+    def test_untracked_symlink_and_file_bytes_cannot_alias(self) -> None:
+        for first in ("symlink", "file"):
+            with self.subTest(first=first):
+                path = self.repo / f"draft-{first}"
+                if first == "symlink":
+                    path.symlink_to("target")
+                else:
+                    path.write_bytes(b"symlink\0target")
+                payload = emit(self.repo, 832, "epoch-829")
+                self.assertEqual("CONTINUATION_MATCH", verify(self.repo, payload)["status"])
+                path.unlink()
+                if first == "file":
+                    path.symlink_to("target")
+                else:
+                    path.write_bytes(b"symlink\0target")
+                with self.assertRaisesRegex(HandoffError, "worktree_status"):
+                    verify(self.repo, payload)
+
+    def test_untracked_executable_mode_change_requires_reconciliation(self) -> None:
+        path = self.repo / "script"
+        path.write_text("unchanged bytes\n")
+        path.chmod(0o644)
+        payload = emit(self.repo, 832, "epoch-829")
+        path.chmod(0o755)
+        with self.assertRaisesRegex(HandoffError, "worktree_status"):
+            verify(self.repo, payload)
+
+    def test_unsupported_untracked_entry_cannot_issue_a_snapshot(self) -> None:
+        os.mkfifo(self.repo / "pipe")
+        with self.assertRaisesRegex(HandoffError, "unsupported untracked entry"):
+            emit(self.repo, 832, "epoch-829")
 
 
 if __name__ == "__main__":

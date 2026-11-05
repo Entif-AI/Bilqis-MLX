@@ -121,10 +121,19 @@
     {
       "issue": 831,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "9ae048b18c21d19f95f82d44ecdcf53a65b1c2a0",
+      "state": "TURNED_IN",
+      "head_sha": "f93ef4a8757999d06b4f5dfb0ae6f46f70001fcb",
       "preserved_branch": "codex/bamf02-c-829-local-handoff-20261104",
-      "summary": "C829 round1 shared-contract Major: bind untracked symlink text in dirty fingerprint. Canonical repair stays on829 parent branch; no child PR/review loop.",
+      "summary": "Exact symlink-retargeting defect reproduced in3cases, fixed and verified on durable parent829 headf93ef4a8; child CLOSED. New type-framing mechanism is separately owned by832.",
+      "resume_trigger": null
+    },
+    {
+      "issue": 832,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "f93ef4a8757999d06b4f5dfb0ae6f46f70001fcb",
+      "preserved_branch": "codex/bamf02-c-829-local-handoff-20261104",
+      "summary": "Round2 shared fingerprint representation Major: replace unframed concatenation with typed length-delimited records; parent829 episode remains2/5.",
       "resume_trigger": null
     }
   ]

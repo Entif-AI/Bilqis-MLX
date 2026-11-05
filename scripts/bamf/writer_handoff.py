@@ -10,6 +10,7 @@ import argparse
 import hashlib
 import json
 import os
+import stat
 import subprocess
 import sys
 from pathlib import Path
@@ -28,6 +29,11 @@ def git(root: Path, *args: str) -> str:
     if result.returncode:
         raise HandoffError(f"git {' '.join(args)} failed: {result.stderr.strip()}")
     return result.stdout.strip()
+
+
+def _hash_part(digest, payload: bytes) -> None:
+    digest.update(len(payload).to_bytes(8, "big"))
+    digest.update(payload)
 
 
 def observed(root: Path) -> dict[str, str | None]:
@@ -51,15 +57,23 @@ def observed(root: Path) -> dict[str, str | None]:
     diff = subprocess.run(
         ["git", "diff", "HEAD", "--binary"], cwd=path, capture_output=True, check=True
     ).stdout
-    dirty = hashlib.sha256(status.encode() + diff)
+    dirty = hashlib.sha256(b"bilqis.bamf.worktree-fingerprint/v2\0")
+    _hash_part(dirty, status.encode())
+    _hash_part(dirty, diff)
     untracked = git(path, "ls-files", "--others", "--exclude-standard", "-z")
     # git's text output strips only the final NUL; embedded NULs remain.
     for relative in sorted(item for item in untracked.split("\0") if item):
         file = path / relative
-        if file.is_symlink():
-            dirty.update(relative.encode() + b"\0symlink\0" + os.fsencode(file.readlink()))
-        elif file.is_file():
-            dirty.update(relative.encode() + b"\0" + file.read_bytes())
+        metadata = file.lstat()
+        if stat.S_ISLNK(metadata.st_mode):
+            kind, payload = b"symlink", os.fsencode(file.readlink())
+        elif stat.S_ISREG(metadata.st_mode):
+            kind, payload = b"file", file.read_bytes()
+        else:
+            raise HandoffError(f"unsupported untracked entry: {relative}")
+        for part in (os.fsencode(relative), kind,
+                     stat.S_IMODE(metadata.st_mode).to_bytes(4, "big"), payload):
+            _hash_part(dirty, part)
     return {
         "worktree": str(path),
         "branch": branch,
