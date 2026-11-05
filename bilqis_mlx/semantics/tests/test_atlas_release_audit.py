@@ -1,23 +1,46 @@
-"""A12 export clearance is source-owner signed and live-frontier bound."""
+"""A12 current consumers share source authority; exports stay frontier-bound."""
 from dataclasses import replace
+import hashlib
 import json
+import os
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.factory.skos_curriculum import compile_source_constructive_lessons
+from bilqis_mlx.factory.skos_curriculum.lesson_types import (
+    SourceConstructiveLessonSet,
+)
 from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
 )
+from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, ModelTopologySpecV2
+from bilqis_mlx.semantics.atlas.snapshot import load_pinned_atlas_snapshot
+from bilqis_mlx.semantics.atlas.vocabulary import (
+    VocabularyAllocation, VocabularyExtension, VocabularyPrior,
+    plan_vocabulary_extension,
+)
+from bilqis_mlx.semantics.atlas.vocabulary_resources import (
+    RegistryMirrorDelta, RegistryMirrorRow, build_registry_mirror_delta,
+)
+from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest
 from bilqis_mlx.semantics.atlas.snapshot_contracts import AtlasArtifactSelection
 from bilqis_mlx.semantics.atlas_release_audit import (
-    ExportClearanceReceipt, validate_export_clearance_context,
+    ExportClearanceReceipt, SOURCE_DISPOSITIONS, audit_atlas_authority,
+    validate_export_clearance_context,
 )
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
 from bilqis_mlx.semantics.context_eligibility import SourceFrontier
 from bilqis_mlx.semantics.domains import contract_digest
+from bilqis_mlx.semantics.frame_codec import SchemaTagMap
+from bilqis_mlx.semantics.released_frame_schemas import (
+    _load_pinned_released_frame_schemas, load_released_frame_schemas,
+    seal_released_frame_schemas,
+)
 
 
 PRIVATE = Ed25519PrivateKey.from_private_bytes(bytes.fromhex("29" * 32))
@@ -49,6 +72,142 @@ def _verify(receipt, selection, frontier, artifacts):
         receipt.source_owner, receipt.dependency(),
         receipt.signature_hex, receipt.signing_bytes())
     return validate_export_clearance_context(receipt, selection, frontier, artifacts)
+
+
+def _typed_authority_fixture():
+    from bilqis_mlx.semantics.tests.test_atlas_features import _snapshot
+    snapshot = _snapshot((
+        ("urn:concept:prior", ("urn:type:Entity",)),
+        ("urn:concept:next", ("urn:type:Entity",)),
+    ))
+    selection = AtlasArtifactSelection(
+        "fixture-atlas", snapshot.bundle_id, snapshot.release_sha256,
+        snapshot.source_bundle_id)
+    entry = next(
+        item for item in snapshot.abi_entries
+        if item.semantic_id == "urn:concept:next")
+    allocation = VocabularyAllocation(
+        entry.semantic_id, entry.index, entry.bank, entry.row, entry.source)
+    abi = VocabularyExtension(
+        "e" * 64, "f" * 64, snapshot.source_bundle_id,
+        snapshot.release_sha256, "1" * 64, "2" * 64, "3" * 64,
+        (allocation,), (entry.index,), "4" * 64, max(1, entry.bank + 1))
+    mirror = RegistryMirrorDelta(
+        abi.semantic_release, abi.source_bundle_id, abi.parent_generation_id,
+        abi.source_allocation_digest, abi.active_indices,
+        tuple(RegistryMirrorRow(
+            item.semantic_id, item.abi_index, item.bank, item.row,
+            item.source_status, "fixture description", "7" * 64)
+              for item in abi.allocations))
+    from bilqis_mlx.semantics.tests.released_schemas.fixtures import _schema
+    schema = _schema()
+    tag_map = SchemaTagMap.from_schemas(snapshot.release_sha256, (schema,))
+    staged = seal_released_frame_schemas((schema,), tag_map, snapshot)
+    payload = staged.canonical_bytes()
+    manifest_digest = hashlib.sha256(payload).hexdigest()
+    ast = load_released_frame_schemas(
+        payload, expected_sha256=manifest_digest, snapshot=snapshot,
+        expected_semantic_release=snapshot.release_sha256,
+        expected_schema_map_sha256=tag_map.digest)
+    lessons = SourceConstructiveLessonSet(
+        snapshot.release_sha256, "5" * 64, (), ())
+    return snapshot, selection, abi, ast, lessons, mirror
+
+
+class AtlasAuthorityAuditTests(unittest.TestCase):
+    def test_current_consumers_bind_one_pinned_source(self):
+        snapshot, selection, abi, ast, lessons, mirror = _typed_authority_fixture()
+        with patch(
+                "bilqis_mlx.semantics.atlas_release_audit.load_pinned_atlas_snapshot",
+                return_value=snapshot):
+            first = audit_atlas_authority(
+                selection, abi, ast, lessons, mirror)
+            second = audit_atlas_authority(
+                selection, abi, ast, lessons, mirror)
+        self.assertEqual(first, second)
+        self.assertEqual(
+            tuple(item.consumer for item in first.consumer_bindings),
+            ("abi", "ast_frames", "lessons", "graph_projection",
+             "registry_mirror"))
+        self.assertEqual(
+            {item.semantic_release for item in first.consumer_bindings},
+            {snapshot.release_sha256})
+        self.assertEqual(first.source_dispositions, SOURCE_DISPOSITIONS)
+
+    def test_first_mismatched_consumer_fails_closed(self):
+        snapshot, selection, abi, ast, lessons, mirror = _typed_authority_fixture()
+        with patch(
+                "bilqis_mlx.semantics.atlas_release_audit.load_pinned_atlas_snapshot",
+                return_value=snapshot):
+            with self.assertRaises(BilqisError) as caught:
+                audit_atlas_authority(
+                    selection, replace(abi, semantic_release="9" * 64),
+                    ast, lessons, mirror)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "A12_AUTHORITY_SOURCE_BINDING_MISMATCH")
+
+    def test_stale_shadow_catalog_is_not_an_authority_input(self):
+        snapshot, selection, abi, ast, lessons, mirror = _typed_authority_fixture()
+        with patch(
+                "bilqis_mlx.semantics.atlas_release_audit.load_pinned_atlas_snapshot",
+                return_value=snapshot):
+            baseline = audit_atlas_authority(
+                selection, abi, ast, lessons, mirror)
+            stale_shadow = {
+                "urn:concept:next": "plausible renamed gloss",
+                "semantic_release": "0" * 64,
+            }
+            stale_shadow["urn:concept:next"] = "another label"
+            replay = audit_atlas_authority(
+                selection, abi, ast, lessons, mirror)
+        self.assertEqual(replay, baseline)
+
+    @unittest.skipUnless(
+        os.environ.get("BILQIS_A01_ATLAS_BUNDLE")
+        and os.environ.get("BILQIS_A01_SOURCE_BUNDLE"),
+        "real pinned A01 artifact/source bundle is an optional integration witness",
+    )
+    def test_real_pinned_producers_replay_one_authority(self):
+        selection = _selection()
+        selection = replace(
+            selection, path=os.environ["BILQIS_A01_ATLAS_BUNDLE"])
+        snapshot = load_pinned_atlas_snapshot(selection)
+        feature_schema = FeatureSchema((), ())
+        features = build_feature_manifest(snapshot, feature_schema)
+        active = tuple(
+            entry.semantic_id for entry in snapshot.abi_entries if entry.active)
+        bank_count = max(
+            1,
+            max((entry.index for entry in snapshot.abi_entries if entry.active),
+                default=0) // ModelTopologySpecV2.semantic_bank_rows + 1)
+        prior = VocabularyPrior(
+            selection,
+            GenerationExtents(
+                bank_count, 1, snapshot.active_set_sha256,
+                "b" * 64, features.digest),
+            features, feature_schema, active, "e" * 64)
+        active_set = set(active)
+        next_source = next(
+            entry for entry in snapshot.abi_entries
+            if entry.semantic_id not in active_set
+            and any(item.concept.semantic_id == entry.semantic_id
+                    for item in snapshot.concepts)
+            and not any(
+                row.semantic_id == entry.semantic_id
+                and row.source_disposition != "SOURCE_ELIGIBLE"
+                for row in snapshot.withheld_rows))
+        abi = plan_vocabulary_extension(
+            prior, (next_source.semantic_id,), ModelTopologySpecV2())
+        mirror = build_registry_mirror_delta(
+            prior, abi,
+            source_bundle_path=Path(os.environ["BILQIS_A01_SOURCE_BUNDLE"]))
+        ast = _load_pinned_released_frame_schemas("boolean", selection)
+        lessons = compile_source_constructive_lessons(selection)
+        receipt = audit_atlas_authority(
+            selection, abi, ast, lessons, mirror)
+        self.assertEqual(receipt.source_release_sha256, snapshot.release_sha256)
+        self.assertEqual(len(receipt.consumer_bindings), 5)
 
 
 class AtlasExportClearanceTests(unittest.TestCase):
