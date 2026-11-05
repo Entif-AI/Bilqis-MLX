@@ -14,6 +14,14 @@ from bilqis_mlx.factory.semantic_contrast.ambiguity import (
     explore_ambiguity,
 )
 from bilqis_mlx.factory.semantic_contrast.models import ContrastLineage, ContrastVariant, LessonSpec
+from bilqis_mlx.factory.semantic_contrast.teaching import (
+    CHOICE_REGISTRY_KEY,
+    OPTION_ID,
+    ContrastTeachingChoice,
+    check_contrast_row,
+    contrast_semantic_footprint,
+    enrich_contrasts,
+)
 from bilqis_mlx.factory.semantic_contrast.types import (
     AllowedVariation,
     ContrastFamily,
@@ -27,17 +35,23 @@ __all__ = (
     "AmbiguityExploration",
     "AmbiguityTarget",
     "ContrastFamily",
+    "ContrastTeachingChoice",
     "ContrastLineage",
     "ContrastSourceFrame",
     "ContrastVariant",
+    "CHOICE_REGISTRY_KEY",
     "LessonSpec",
     "MAX_AMBIGUITY_INTERPRETATIONS",
     "NoiseSignature",
     "NoisyLessonPresentation",
     "ObservationState",
+    "OPTION_ID",
     "TemporalStatus",
     "apply_presentation_noise",
     "check_contrast",
+    "check_contrast_row",
+    "contrast_semantic_footprint",
+    "enrich_contrasts",
     "explore_ambiguity",
     "generate_contrasts",
 )
