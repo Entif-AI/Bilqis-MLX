@@ -20,12 +20,14 @@ def cached(session):
     for cached in session.ordered_cache:
         if not session.qualified(cached):
             continue
+        before = session.support_artifacts()
         try:
             solved = session.evaluate(cached.goal)
         except _public().BilqisError:
             session.fallback_reason = "BAMF_C04_CACHED_DAG_REJECTED"
             continue
         if solved.answer.state is _public().ValueState.VALUE:
+            session.materialize_composition(cached, before)
             return session.result(
                 solved.answer, _public().RouteKind.CACHED_COMPOSITION, 0)
     return _CONTINUE
@@ -67,12 +69,14 @@ def fallback(session):
     cached = session.context.deterministic_fallback
     if cached is None or not session.qualified(cached):
         return _CONTINUE
+    before = session.support_artifacts()
     try:
         fallback = session.evaluate(cached.goal)
     except _public().BilqisError:
         session.fallback_reason = "BAMF_C04_FALLBACK_DAG_REJECTED"
         return _CONTINUE
     if fallback.answer.state is _public().ValueState.VALUE:
+        session.materialize_composition(cached, before)
         return session.result(
             fallback.answer, _public().RouteKind.DETERMINISTIC_FALLBACK,
             session.neural_calls)

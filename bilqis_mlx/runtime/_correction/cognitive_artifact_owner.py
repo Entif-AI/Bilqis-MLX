@@ -146,31 +146,52 @@ class CognitiveArtifactOwner:
         self._remember(task_sha256, node.artifact_id)
         return node
 
-    def composition_node(self, composition, binding) -> ArtifactNode:
+    def composition_node(
+        self, composition, binding, support_artifact_ids=(),
+    ) -> ArtifactNode:
         digest = contract_digest(composition)
+        refs = set(_composition_dependencies(composition, binding))
+        refs.update(
+            DependencyRef(DependencyKind.ARTIFACT, artifact_id)
+            for artifact_id in support_artifact_ids)
         return ArtifactNode(
             artifact_id="composition:" + digest,
             kind=ArtifactKind.OPERATOR_COMPOSITION,
             content_digest=digest,
             eligible=True,
-            immediate_dependencies=_composition_dependencies(composition, binding),
+            immediate_dependencies=tuple(sorted(refs)),
             impact=3,
             exigency=3,
         )
 
     def materialize_composition(
         self, composition, binding, task_sha256: str | None = None,
+        support_artifact_ids=(),
     ) -> ArtifactNode:
-        node = self._add(self.composition_node(composition, binding))
+        node = self._add(self.composition_node(
+            composition, binding, support_artifact_ids))
         self._remember(task_sha256, node.artifact_id)
         return node
 
     def require_composition(
         self, composition, binding, task_sha256: str | None = None,
     ) -> ArtifactNode:
-        node = self._require(self.composition_node(composition, binding))
+        expected_id = "composition:" + contract_digest(composition)
+        node = self._index.node(expected_id)
+        if (node.kind is not ArtifactKind.OPERATOR_COMPOSITION
+                or node.content_digest != contract_digest(composition)):
+            _invalid("BAMF_C09_ARTIFACT_INELIGIBLE")
+        if self._queue is not None:
+            from bilqis_mlx.runtime._revalidation_engine import read_artifact
+            node = read_artifact(self._index, self._queue, expected_id)
+        elif not node.eligible:
+            _invalid("BAMF_C09_ARTIFACT_INELIGIBLE")
         self._remember(task_sha256, node.artifact_id)
         return node
+
+    def has_composition(self, composition) -> bool:
+        artifact_id = "composition:" + contract_digest(composition)
+        return any(node.artifact_id == artifact_id for node in self._index.nodes)
 
     def materialize_capability_support(self, support, history_sha256: str) -> ArtifactNode:
         refs = {

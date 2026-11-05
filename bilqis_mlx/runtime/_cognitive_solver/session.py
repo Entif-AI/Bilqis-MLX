@@ -74,12 +74,25 @@ class _SolveSession:
             and self.context.qualification_verifier is not None
             and self.context.qualification_verifier(cached) is True
             and _public()._goal_allowed(cached.goal, self.task, self.budget))
-        if qualified and self.artifact_owner is not None:
-            self.artifact_owner.materialize_composition(
-                cached, self.binding, self.task_sha256)
+        if (qualified and self.artifact_owner is not None
+                and self.artifact_owner.has_composition(cached)):
             self.artifact_owner.require_composition(
                 cached, self.binding, self.task_sha256)
         return qualified
+
+    def support_artifacts(self):
+        if self.artifact_owner is None:
+            return frozenset()
+        return frozenset(
+            self.artifact_owner.support_for_task(self.task_sha256))
+
+    def materialize_composition(self, cached, before):
+        if self.artifact_owner is None:
+            return
+        support_artifact_ids = tuple(sorted(
+            self.support_artifacts() - frozenset(before)))
+        self.artifact_owner.materialize_composition(
+            cached, self.binding, self.task_sha256, support_artifact_ids)
 
 
     def execute_proposal(self,

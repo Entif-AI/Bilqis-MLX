@@ -79,6 +79,14 @@ class CognitiveArtifactOwnerTests(unittest.TestCase):
         composition_node = next(
             node for node in materialized
             if node.kind is ArtifactKind.OPERATOR_COMPOSITION)
+        cache_ids = {
+            node.artifact_id for node in materialized
+            if node.kind is ArtifactKind.EXACT_CACHE}
+        composition_artifacts = {
+            ref.key for ref in composition_node.immediate_dependencies
+            if ref.kind is DependencyKind.ARTIFACT}
+        self.assertTrue(cache_ids)
+        self.assertTrue(cache_ids <= composition_artifacts)
         source = next(
             ref for ref in composition_node.immediate_dependencies
             if ref.kind is DependencyKind.SOURCE)
