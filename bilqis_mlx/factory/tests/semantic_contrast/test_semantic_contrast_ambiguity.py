@@ -13,7 +13,7 @@ from bilqis_mlx.factory.semantic_contrasts import (
     explore_ambiguity,
     generate_contrasts,
 )
-from bilqis_mlx.factory.tests.test_semantic_contrasts import concept, source_frame
+from bilqis_mlx.factory.tests.semantic_contrast.test_semantic_contrasts import concept, source_frame
 
 
 class SemanticContrastAmbiguityTests(unittest.TestCase):

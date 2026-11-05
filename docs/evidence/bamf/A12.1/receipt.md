@@ -2,7 +2,8 @@
 
 Issue: #427
 Lane: A
-Base reviewed unified: 88ac132db2fd1c3606fa5f06637d10a7ab40cba4
+Implementation base reviewed unified: 88ac132db2fd1c3606fa5f06637d10a7ab40cba4
+Latest reviewed unified consumed before final turn-in: 22314c413ba137df69b3d6b35768fe65e1556bfe
 Implementation checkpoint: 68f288cd9e20b54bbc8c0b8a775196b9f3335ba8
 Branch: codex/bamf02-a12-1-427-20261105
 Disposition: TURNED_IN / EGM_PENDING
@@ -15,8 +16,8 @@ or neural admission.
 - Atlas bundle: 5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7
 - Semantic release: 58e0c281b5da18b9b7e6c803709b29eeeb0a88f16b06f48de692808e2fb88306
 - Source bundle: f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec
-- A03 boolean released-schema manifest used by the real replay:
-  639f102ee55ef11d2c4860ccad06a9d90cc0abfcec52acefa2f7bcb576a21cf7
+- A03 released-frame schemas are loaded through the repository-owned current
+  source-pin ledger after consuming merged PR #859 / reviewed unified 978ac927.
 
 ## Source-to-consumer table
 

@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "88ac132db2fd1c3606fa5f06637d10a7ab40cba4",
-  "updated_at": "2026-11-05T10:59:49Z",
+  "observed_unified": "22314c413ba137df69b3d6b35768fe65e1556bfe",
+  "updated_at": "2026-11-05T11:03:00Z",
   "exception": null,
   "items": [
     {
@@ -16,12 +16,13 @@
     },
     {
       "issue": 426,
-      "pr": 860,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "9180b0a8157a9478499f02787dbdce314ad99374",
-      "summary": "A11.3 is technically cleared on PR #860 exact head 9180b0a8. The real event-frame owner retains direct GENERATOR/ORACLE/draw authority and optional semantic-contrast teaching; provider identity now binds the complete semantic-contrast executable dependency set and runtime rejects drift. Local semantic-contrast 24/24, event/provider 11/11 and governance 11/11 pass with exact new debt 0. Hosted portable-core, portable and Semantic ABI all pass; fresh exact-head independent review is CLEAN with no Blocker, Major or meaningful Minor.",
-      "resume_trigger": "Human integration review/merge for PR #860. Keep #426 open until accepted merge, then close explicitly and reconcile parent #362.",
-      "preserved_branch": "codex/bamf02-a11-3-426-20261105"
+      "summary": "A11.3 exact head 9180b0a8 passed local, hosted portable-core/portable/Semantic ABI and fresh independent exact-head review, then merged through PR #860 as reviewed unified 22314c413ba137df69b3d6b35768fe65e1556bfe. #426 and parent A11/#362 are explicitly closed completed.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a11-3-426-20261105",
+      "merged_pr": 860
     },
     {
       "issue": 423,
@@ -72,8 +73,8 @@
       "pr": null,
       "state": "WAITING",
       "head_sha": "4df4d1b0cba1bb02d5d52155298e2b85bc640b37",
-      "summary": "A10.1 was reopened by independent post-merge EGM. Two acceptance defects are repaired on codex/bamf02-a-421-egm-repair-20261105, but released source-pinned AGENT/schema authority remains unresolved; the repair owner is addressing A03 authority rather than inventing A10-local semantics.",
-      "resume_trigger": "Accepted A03/released semantic authority must bind the A10 category/unit/AGENT references, and the final source-episode identity contract must reject duplicate/reformatted copies before #421 can re-close.",
+      "summary": "A10.1 was reopened by independent post-merge EGM. Two defects are repaired on codex/bamf02-a-421-egm-repair-20261105. A03 source-pinned BRAVO AGENT authority has now merged through PR #859 as reviewed unified 978ac927; the remaining acceptance blocker is the stable source-episode/root-lineage identity that must survive duplicate placement and reformatting before #421 can re-close.",
+      "resume_trigger": "Consume merged A03/#859 authority on the repair branch and establish the duplicate/reformat-resistant source-episode/root-lineage identity; rerun focused acceptance and fresh exact-head independent review before re-closing #421.",
       "preserved_branch": "codex/bamf02-a-421-egm-repair-20261105",
       "merged_pr": 852
     },
