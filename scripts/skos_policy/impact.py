@@ -10,10 +10,12 @@ from .bundle import CANARY_TESTS, RECEIPT_PATH, TestPlan, is_bundle_path, semant
 
 POLICY_SENSITIVE_PATHS = frozenset({
     "scripts/run_tests.py",
-    ".github/workflows/quality.yml",
     ".github/workflows/semantic-profile-full.yml",
-    "package.json",
 })
+
+
+def is_policy_code_path(path: str) -> bool:
+    return path == "scripts/skos_test_policy.py" or path.startswith("scripts/skos_policy/")
 
 CROSS_CUTTING_SKOS_MODULES = frozenset({
     "build", "builder", "canonical", "configuration", "conformance",
@@ -25,11 +27,7 @@ CROSS_CUTTING_SKOS_MODULES = frozenset({
 
 
 def is_policy_path(path: str) -> bool:
-    return (
-        path == "scripts/skos_test_policy.py"
-        or path.startswith("scripts/skos_policy/")
-        or path in POLICY_SENSITIVE_PATHS
-    )
+    return is_policy_code_path(path) or path in POLICY_SENSITIVE_PATHS
 
 
 def _fixture_owners(root: Path, changed: str) -> tuple[str, ...]:
@@ -141,6 +139,36 @@ def _source_owners(root: Path, changed: str) -> set[str]:
     return owners
 
 
+def _preflight_plan(
+    relevant: tuple[str, ...],
+    policy_changes: tuple[str, ...],
+    bundle_changes: tuple[str, ...],
+    receipt_changed: bool,
+) -> TestPlan | None:
+    if any(path in POLICY_SENSITIVE_PATHS for path in policy_changes):
+        return TestPlan("FULL", reason="TEST_POLICY_CHANGED")
+    if policy_changes and not bundle_changes and not receipt_changed:
+        return TestPlan("SKIP", reason="SEMANTIC_POLICY_CODE_ONLY")
+    if not bundle_changes and receipt_changed:
+        return TestPlan("FULL", reason="RECEIPT_ONLY_CHANGED")
+    if any(path.startswith("lib/ithkuil/_data/") for path in bundle_changes):
+        return TestPlan("FULL", reason="CANONICAL_CORPUS_CHANGED")
+    ingestion_contracts = {
+        "lib/ithkuil/ingestion_contract.json",
+        "lib/ithkuil/requirements-extraction.txt",
+        "lib/ithkuil/requirements-falkor.txt",
+        "lib/ithkuil/requirements-semantic.txt",
+    }
+    if any(
+        path.startswith("skills/ithkuil-ingestion/")
+        or path == "scripts/package_ithkuil_skill.py"
+        or path in ingestion_contracts
+        for path in bundle_changes
+    ):
+        return TestPlan("FULL", reason="INGESTION_OR_PACKAGE_CONTRACT_CHANGED")
+    return None
+
+
 def classify_changes(root: Path, changed_paths: tuple[str, ...]) -> TestPlan:
     relevant = tuple(sorted({
         path for path in changed_paths
@@ -148,25 +176,13 @@ def classify_changes(root: Path, changed_paths: tuple[str, ...]) -> TestPlan:
     }))
     if not relevant:
         return TestPlan("SKIP", reason="NO_SEMANTIC_PROFILE_CHANGES")
-    if any(is_policy_path(path) for path in relevant):
-        return TestPlan("FULL", reason="TEST_POLICY_CHANGED")
+    policy_changes = tuple(path for path in relevant if is_policy_path(path))
     bundle_changes = tuple(path for path in relevant if is_bundle_path(path))
-    if not bundle_changes and str(RECEIPT_PATH) in relevant:
-        return TestPlan("FULL", reason="RECEIPT_ONLY_CHANGED")
-    if any(path.startswith("lib/ithkuil/_data/") for path in bundle_changes):
-        return TestPlan("FULL", reason="CANONICAL_CORPUS_CHANGED")
-    if any(
-        path.startswith("skills/ithkuil-ingestion/")
-        or path == "scripts/package_ithkuil_skill.py"
-        or path in {
-            "lib/ithkuil/ingestion_contract.json",
-            "lib/ithkuil/requirements-extraction.txt",
-            "lib/ithkuil/requirements-falkor.txt",
-            "lib/ithkuil/requirements-semantic.txt",
-        }
-        for path in bundle_changes
-    ):
-        return TestPlan("FULL", reason="INGESTION_OR_PACKAGE_CONTRACT_CHANGED")
+    receipt_changed = str(RECEIPT_PATH) in relevant
+    preflight = _preflight_plan(
+        relevant, policy_changes, bundle_changes, receipt_changed)
+    if preflight is not None:
+        return preflight
 
     selected: set[str] = set()
     needs_canaries = False

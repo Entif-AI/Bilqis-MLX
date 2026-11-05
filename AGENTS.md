@@ -37,6 +37,33 @@ the owner back to `EGM-Pending` only when the full known failure set is repaired
 the next whole candidate is again ready for review. A behavior-changing commit after
 `EGM-Passed` invalidates that state for merge readiness.
 
+### Differential verification and expensive-test reuse — 2026-11-04
+
+Use two verification tiers. During ordinary leaf development, run
+`npm run verify:leaf`. Its test selector uses `BILQIS_TEST_BASE_REF`, the last local
+passing leaf receipt, or `HEAD^1` in that order; it never uses
+`BILQIS_QUALITY_BASE_REF` as a test-impact boundary. The quality base may remain
+distant when structural governance needs historical debt/regression comparison.
+
+`npm run test:changed` first bounds work to direct owner tests from the near-head
+diff. Pytest-testmon may refine that bounded set when its dependency database is
+warm, and pytest-xdist runs the selected tests in parallel when available. On a cold
+database the same bounded tests seed testmon data for later edits. Testmon never
+turns a partial cache into permission to collect the whole repository. Passing leaf
+and pre-merge gates write ignored receipts under
+`.local/test-gate/`. If the exact HEAD plus working-tree fingerprint has already
+passed the same gate, do not rerun it merely because an agent resumed, compacted,
+changed issue pages, or reached another checkpoint. The gate reports the prior pass
+as reused. Set `BILQIS_TEST_FORCE=1` only when there is a concrete reason to discard
+that proof.
+
+Run `npm run verify:premerge` only at an actual integration/turn-in boundary or when
+a change can invalidate broad prior evidence. That gate executes the repository's
+existing aggregate runner. A new source/configuration change,
+failed test, changed dependency/toolchain, or altered test policy can invalidate the
+prior broad receipt; prose-only progress and unchanged code cannot. Install the
+optional accelerator dependencies with `python3 -m pip install -e '.[test]'`.
+
 Open the lane-to-unified PR only after the candidate is otherwise ready to merge,
 including required EGM PASS and every pre-PR gate available on the branch. Open it
 ready for human review, not as a draft work queue. PR-hosted checks are the final

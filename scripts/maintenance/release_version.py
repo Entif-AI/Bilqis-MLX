@@ -12,7 +12,7 @@ import subprocess
 import tomllib
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 VERSION = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$")
 CONVENTIONAL = re.compile(
     r"^(feat|fix|docs|test|build|ci|perf|refactor|chore|revert)(\([a-z0-9][a-z0-9-]*\))?!?: .{3,}$"
