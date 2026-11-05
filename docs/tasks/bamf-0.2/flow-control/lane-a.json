@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "22314c413ba137df69b3d6b35768fe65e1556bfe",
-  "updated_at": "2026-11-05T12:54:42Z",
+  "updated_at": "2026-11-05T12:57:47Z",
   "exception": null,
   "items": [
     {
@@ -72,9 +72,9 @@
       "issue": 421,
       "pr": 862,
       "state": "TURNED_IN",
-      "head_sha": "e44a95a3",
-      "summary": "A10.1 post-merge repair remains turned in as draft PR #862. Independent exact-head review rejected three successive incomplete family-root designs: interpreted episode fields (2223c1ab), a caller-supplied opaque source_episode_ref (2a9fe4e9), and raw source content+span promoted into independence authority (9ff227c0). Semantic repair 912f2fc7 resolves family identity through the existing BamfEvidenceSnapshot/v1 sourceManifestCID boundary: a content-bound registered source-family manifest maps exact source spans to source-owner family roots. Duplicating one source occurrence at a second span remains the same family; an authorized repack manifest preserves that family; an unregistered caller-minted manifest fails closed; a separately qualified PUBLIC_FIXTURE episode is independent only when its registered source manifest declares a distinct family. The v1 record shape remains unchanged. Concurrent repair 26e32982 independently hardens EvidenceLesson.check so correlated generator corruption cannot self-validate category/status/unit-conversion gold; both histories are preserved by merge candidate e44a95a3. Failing-before regressions proved both the duplicate-at-new-span family leak and the earlier checker correlation leak. Combined real pinned A01+A03+unit evidence passes 23/23; focused+adjacent passes 27 / 0 failed / 1 expected optional skip; governance 11/11; exact debt 0; changed-file smell 0; Factory/docs/flow/compile/diff clean. Fresh exact-head EGM and restarted hosted checks remain required after this custody update.",
-      "resume_trigger": "If fresh independent exact-head EGM and hosted checks are clean on the final PR head, promote PR #862 from draft for human integration. Re-close #421 only after accepted repair merges. PR #858 remains waiting until that acceptance lands, then must consume source-manifest family authority and independently checked gold before rerunning F10/external-witness acceptance.",
+      "head_sha": "a044613f",
+      "summary": "A10.1 post-merge repair remains turned in as draft PR #862. Independent exact-head review rejected three incomplete family-root designs: interpreted episode fields (2223c1ab), caller-supplied opaque source_episode_ref (2a9fe4e9), and raw content+span promoted into independence authority (9ff227c0). Repair 912f2fc7 resolves family identity through the existing BamfEvidenceSnapshot/v1 sourceManifestCID boundary: registered content-bound source-family manifests map exact spans to source-owner family roots. Duplicate source material at a second span remains the same family; authorized repack preserves family identity; unregistered caller-minted manifests fail closed; separately qualified fixture episodes are independent only when their registered source manifest declares distinct families. Concurrent owner repairs 26e32982 and b08628b5 make the lesson checker independent from generator gold and preserve exact high-precision unit conversion; 4530b101 names decimal factors to satisfy operator-debt policy. All histories are reconciled in merge candidate a044613f. Failing-before regressions preserve the prior family-root and checker defects. Combined real pinned A01+A03+unit suite passes 23/23; focused+adjacent passes 27 / 0 failed / 1 expected optional skip; governance 11/11; exact debt 0; changed-file smell 0; Factory/docs/flow/compile/diff clean. Fresh hosted checks and fresh exact-head EGM are required on the final pushed custody head.",
+      "resume_trigger": "If fresh independent exact-head EGM and hosted checks are clean on the final pushed PR head, promote PR #862 from draft for human integration. Re-close #421 only after accepted repair merges. PR #858 remains waiting until that acceptance lands, then must consume source-manifest family authority plus independently checked gold and rerun F10/external-witness acceptance.",
       "preserved_branch": "codex/bamf02-a-421-egm-repair-20261105",
       "merged_pr": 852
     },
