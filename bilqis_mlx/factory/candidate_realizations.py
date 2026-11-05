@@ -43,6 +43,36 @@ def project_realized_target(
     return (_capability,), projected[len(current.semantic_catalog):]
 
 
+def realized_source_sense_id(semantic_id):
+    """Return the source sense owned by the code realization for an atlas identity."""
+    if semantic_id != _COPULAR_ATLAS_SEMANTIC_ID:
+        raise ValueError
+    return _COPULAR_SOURCE_SENSE_ID
+
+
+def project_authoritative_target(semantic_id, current, selected_obligations):
+    """Derive one A09 projection from the code-owned realization authority."""
+    from dataclasses import replace
+    from .atlas_frontier_selection_validation import (
+        TargetDeltaProjection, catalog_digest, obligation_signature,
+    )
+
+    capabilities, identities = project_realized_target(semantic_id, current)
+    provisional = TargetDeltaProjection(
+        semantic_id=semantic_id,
+        obligation_signature=obligation_signature(selected_obligations),
+        current_release_sha256=current.release_sha256,
+        current_semantic_catalog_sha256=current.semantic_catalog_sha256,
+        added_capability_ids=capabilities,
+        introduced_semantic_ids=identities,
+        projected_semantic_catalog_sha256=catalog_digest(
+            current.semantic_catalog + identities),
+        projection_sha256="0" * 64,
+    )
+    return replace(
+        provisional, projection_sha256=provisional.expected_digest())
+
+
 def prepare_realized_candidates(frontier, current, parent_graph, *,
                                 source_root, source_registry, answer_registry):
     result = []
