@@ -78,13 +78,13 @@ candidate qualification owner and is not silently closed by this leaf.
 ## Verification performed on the cutover candidate
 
 - `python3 -B scripts/check_semantic_boundaries.py` -> `SEMANTIC_BOUNDARIES_OK`
-- semantic boundary/A12 source-free suite -> 15 passed, 12 subtests
+- semantic boundary/A12 source-free suite -> 16 passed, 12 subtests
 - Factory/curriculum affected surface -> 223 passed, 13 expected skips, 78 subtests
 - runtime/source-adapter affected surface -> 5 passed, 16 expected skips, 2 subtests
 - development-structure check -> 0 violations
 - Factory architecture -> green
 - BAMF flow control -> green, Lane A ACTIVE 1/6
-- changed-file smell -> 0 findings
+- changed-file smell against the repository baseline -> 0 new findings; three inherited baseline findings remain unchanged
 - error-control plane -> new debt 0
 - `git diff --check` -> clean
 

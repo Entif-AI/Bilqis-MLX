@@ -23,21 +23,21 @@ PERMITTED = {
     "source_adapters": frozenset({"source_adapters", "semantics"}),
     "verification": frozenset({"verification", "semantics"}),
 }
-SEMANTIC_IMPORT_ROLES = {
-    "bilqis_mlx.semantics.atlas.feature_io": "CURRENT_DERIVED_SOURCE_OWNER",
-    "bilqis_mlx.semantics.atlas.snapshot": "CURRENT_SOURCE_OWNER",
-    "bilqis_mlx.semantics.atlas.vocabulary": "CURRENT_ABI_OWNER",
-    "bilqis_mlx.semantics.atlas.vocabulary_resources": "CURRENT_DERIVED_ABI_OWNER",
-    "bilqis_mlx.semantics.atlas.vocabulary_transaction": "CURRENT_ABI_TRANSACTION_OWNER",
-    "bilqis_mlx.semantics.atlas_feature_io": "LEGACY_COMPATIBILITY_ALIAS",
-    "bilqis_mlx.semantics.atlas_snapshot": "LEGACY_COMPATIBILITY_ALIAS",
-    "bilqis_mlx.semantics.atlas_vocabulary": "LEGACY_COMPATIBILITY_ALIAS",
-    "bilqis_mlx.semantics.atlas_vocabulary_resources": "LEGACY_COMPATIBILITY_ALIAS",
-    "bilqis_mlx.semantics.atlas_vocabulary_transaction": "LEGACY_COMPATIBILITY_ALIAS",
-    "bilqis_mlx.semantics.atlas_projection": "HISTORICAL_COMPATIBILITY_FACADE",
-    "bilqis_mlx.semantics.frame_schema": "HISTORICAL_COMPATIBILITY_FACADE",
-    "bilqis_mlx.semantics.released_frame_schemas": "DERIVED_SOURCE_FACADE",
-}
+SEMANTIC_IMPORT_ROLES = (
+    ("bilqis_mlx.semantics.atlas.feature_io", "CURRENT_DERIVED_SOURCE_OWNER"),
+    ("bilqis_mlx.semantics.atlas.snapshot", "CURRENT_SOURCE_OWNER"),
+    ("bilqis_mlx.semantics.atlas.vocabulary", "CURRENT_ABI_OWNER"),
+    ("bilqis_mlx.semantics.atlas.vocabulary_resources", "CURRENT_DERIVED_ABI_OWNER"),
+    ("bilqis_mlx.semantics.atlas.vocabulary_transaction", "CURRENT_ABI_TRANSACTION_OWNER"),
+    ("bilqis_mlx.semantics.atlas_feature_io", "LEGACY_COMPATIBILITY_ALIAS"),
+    ("bilqis_mlx.semantics.atlas_snapshot", "LEGACY_COMPATIBILITY_ALIAS"),
+    ("bilqis_mlx.semantics.atlas_vocabulary", "LEGACY_COMPATIBILITY_ALIAS"),
+    ("bilqis_mlx.semantics.atlas_vocabulary_resources", "LEGACY_COMPATIBILITY_ALIAS"),
+    ("bilqis_mlx.semantics.atlas_vocabulary_transaction", "LEGACY_COMPATIBILITY_ALIAS"),
+    ("bilqis_mlx.semantics.atlas_projection", "HISTORICAL_COMPATIBILITY_FACADE"),
+    ("bilqis_mlx.semantics.frame_schema", "HISTORICAL_COMPATIBILITY_FACADE"),
+    ("bilqis_mlx.semantics.released_frame_schemas", "DERIVED_SOURCE_FACADE"),
+)
 FORBIDDEN_CURRENT_IMPORT_ROLES = frozenset({"LEGACY_COMPATIBILITY_ALIAS"})
 STATUS_STRINGS = frozenset(
     item.value for result_type in (ProofStatus, CoverageStatus, LawCheckStatus)
@@ -59,7 +59,7 @@ def _import_targets(node: ast.AST, module: tuple[str, ...]) -> tuple[str, ...]:
 
 def _semantic_import_role(target: str) -> str | None:
     for declared, role in sorted(
-            SEMANTIC_IMPORT_ROLES.items(), key=lambda item: len(item[0]), reverse=True):
+            SEMANTIC_IMPORT_ROLES, key=lambda item: len(item[0]), reverse=True):
         if target == declared or target.startswith(declared + "."):
             return role
     return None
@@ -78,12 +78,8 @@ def _imports_shadow_policy(node: ast.AST) -> bool:
     return False
 
 
-def inspect_semantic_boundaries(root: Path) -> tuple[str, ...]:
-    """Report dependency/status-ownership violations without changing files."""
-    src = root / "bilqis_mlx"
+def _owner_boundary_problems(root: Path, src: Path) -> list[str]:
     problems = []
-    if not all((src / name).is_dir() for name in OWNERS):
-        return ("MISSING_SEMANTIC_DOMAIN_PACKAGE",)
     for owner in sorted(OWNERS):
         for path in sorted((src / owner).rglob("*.py")):
             if "tests" in path.relative_to(src).parts:
@@ -100,6 +96,23 @@ def inspect_semantic_boundaries(root: Path) -> tuple[str, ...]:
                 if (isinstance(node, ast.Constant) and isinstance(node.value, str) and
                         node.value in STATUS_STRINGS and path.name != "outcomes.py"):
                     problems.append(f"{path.relative_to(root)}:{node.lineno} RAW_RESULT_STATUS {node.value}")
+    return problems
+
+
+def _declared_role_problems(path: Path, root: Path, module: tuple[str, ...]) -> list[str]:
+    problems = []
+    for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+        for target in _import_targets(node, module):
+            role = _semantic_import_role(target)
+            if role in FORBIDDEN_CURRENT_IMPORT_ROLES:
+                problems.append(
+                    f"{path.relative_to(root)}:{node.lineno} "
+                    f"SEMANTIC_IMPORT_ROLE {role} {target}")
+    return problems
+
+
+def _repository_policy_problems(root: Path, src: Path) -> list[str]:
+    problems = []
     for path in sorted((src / "composition").rglob("*.py")) if (src / "composition").exists() else ():
         problems.append(f"{path.relative_to(root)} OBSOLETE_COMPOSITION_MODULE")
     for path in sorted(src.rglob("*.py")):
@@ -110,12 +123,7 @@ def inspect_semantic_boundaries(root: Path) -> tuple[str, ...]:
         for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
             if _imports_shadow_policy(node):
                 problems.append(f"{path.relative_to(root)}:{node.lineno} UNAPPROVED_SHADOW_POLICY_IMPORT")
-            for target in _import_targets(node, module):
-                role = _semantic_import_role(target)
-                if role in FORBIDDEN_CURRENT_IMPORT_ROLES:
-                    problems.append(
-                        f"{path.relative_to(root)}:{node.lineno} "
-                        f"SEMANTIC_IMPORT_ROLE {role} {target}")
+        problems.extend(_declared_role_problems(path, root, module))
     scripts = root / "scripts"
     for path in sorted(scripts.rglob("*.py")) if scripts.exists() else ():
         if not path.is_file():
@@ -124,12 +132,17 @@ def inspect_semantic_boundaries(root: Path) -> tuple[str, ...]:
         if "tests" in relative.parts:
             continue
         module = tuple(relative.with_suffix("").parts)
-        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
-            for target in _import_targets(node, module):
-                role = _semantic_import_role(target)
-                if role in FORBIDDEN_CURRENT_IMPORT_ROLES:
-                    problems.append(
-                        f"{relative}:{node.lineno} SEMANTIC_IMPORT_ROLE {role} {target}")
+        problems.extend(_declared_role_problems(path, root, module))
+    return problems
+
+
+def inspect_semantic_boundaries(root: Path) -> tuple[str, ...]:
+    """Report dependency/status-ownership violations without changing files."""
+    src = root / "bilqis_mlx"
+    if not all((src / name).is_dir() for name in OWNERS):
+        return ("MISSING_SEMANTIC_DOMAIN_PACKAGE",)
+    problems = _owner_boundary_problems(root, src)
+    problems.extend(_repository_policy_problems(root, src))
     return tuple(problems)
 
 

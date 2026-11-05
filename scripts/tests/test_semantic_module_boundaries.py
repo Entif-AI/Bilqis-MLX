@@ -46,10 +46,10 @@ class SemanticBoundaryTests(unittest.TestCase):
 
     def test_canonical_owner_and_declared_compatibility_facade_are_allowed(self):
         self.assertEqual(
-            SEMANTIC_IMPORT_ROLES["bilqis_mlx.semantics.atlas.snapshot"],
+            dict(SEMANTIC_IMPORT_ROLES)["bilqis_mlx.semantics.atlas.snapshot"],
             "CURRENT_SOURCE_OWNER")
         self.assertEqual(
-            SEMANTIC_IMPORT_ROLES["bilqis_mlx.semantics.atlas_projection"],
+            dict(SEMANTIC_IMPORT_ROLES)["bilqis_mlx.semantics.atlas_projection"],
             "HISTORICAL_COMPATIBILITY_FACADE")
         with tempfile.TemporaryDirectory() as temp:
             project = Path(temp)
