@@ -6,6 +6,9 @@ import unittest
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_engram import motif_keys
+from bilqis_mlx.learning.atlas_engram_reads import (
+    schema_evidence_digest, schema_source_handle,
+)
 from bilqis_mlx.learning.atlas_engram_source import source_qualified_motif_context
 from bilqis_mlx.semantics.context_eligibility import ContextHold, SourceFrontier
 from bilqis_mlx.learning._engram.tests import test_atlas_engram_source as source_fixtures
@@ -42,6 +45,10 @@ class MotifContextTests(unittest.TestCase):
                                      tuple(binding.key for binding in item.frame.bindings))
                     for key in motif_keys(item, planned.candidate.proposed.manifest.semantic_release):
                         self.assertIsNotNone(planned.candidate.proposed.manifest.lookup(key))
+                    grant = next(grant for grant in frontier.grants
+                                 if grant.source_handle == schema_source_handle(item.schema))
+                    self.assertEqual(grant.evidence_digest, schema_evidence_digest(item.schema))
+                    self.assertFalse(grant.revoked)
 
     def test_source_prefix_hold_returns_no_qualified_context(self):
         task = source_fixtures.SourceQualifiedMotifTests()._case()[5]
@@ -61,3 +68,13 @@ class MotifContextTests(unittest.TestCase):
         for name in ("projection", "envelopes", "schemas", "manifest", "parent",
                      "parameters", "features", "source_family"):
             self.assertNotIn(name, parameters)
+
+    def test_caller_cannot_replace_source_qualified_schema_grant(self):
+        _projection, inputs, frontier = self.replay()
+        handle = schema_source_handle(inputs[0].schema)
+        canonical = next(grant for grant in frontier.grants
+                         if grant.source_handle == handle)
+        forged = replace(canonical, evidence_digest="0" * 64)
+        with self.assertRaises(BilqisError):
+            self.replay(source_frontier=SourceFrontier(
+                frontier.rights_epoch, frontier.correction_generation, (forged,)))

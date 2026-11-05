@@ -9,7 +9,8 @@ from bilqis_mlx.semantics.atlas_snapshot import (
     AtlasArtifactSelection, load_pinned_atlas_snapshot,
 )
 from bilqis_mlx.semantics.context_eligibility import (
-    ApprovedContextProjection, ContextHold, ContextPolicy, SourceFrontier, TaskScope,
+    ApprovedContextProjection, ContextHold, ContextPolicy, SourceFrontier,
+    SourceGrant, TaskScope,
 )
 from bilqis_mlx.semantics.frame_adapters.common import (
     BOOLEAN_COMPOSITE_ADAPTER, BOOLEAN_CONNECTIVE_ADAPTER,
@@ -21,6 +22,9 @@ from bilqis_mlx.semantics.frame_adapters.public_formal_sources import canonical_
 from bilqis_mlx.semantics.frame_schema import FrameInstance, validate_frame_bindings
 from bilqis_mlx.semantics.released_frame_schemas import (
     lookup_source_pinned_frame_schema,
+)
+from bilqis_mlx.learning.atlas_engram_reads.source import (
+    schema_evidence_digest, schema_source_handle,
 )
 from .atlas_engram import (
     MotifBudget, MotifFrameInput, MotifManifest, build_motif_input,
@@ -116,6 +120,36 @@ def _qualified_motif_inputs(projection, snapshot, source_adapter,
     )
 
 
+def _with_source_qualified_schema_grants(
+        projection, qualified, task_scope, source_frontier):
+    """Bind read-side schema grants to the same source-qualified frame replay."""
+    if task_scope.purpose is None:
+        _invalid("BAMF_MOTIF_SOURCE_AUTHORITY_INVALID")
+    schemas = {item.frame.occurrence_id: item.schema for item in qualified}
+    grants = {item.source_handle: item for item in source_frontier.grants}
+    for envelope in projection.envelopes:
+        schema = schemas.get(envelope.frame.occurrence_id)
+        if schema is None:
+            continue
+        grant = SourceGrant(
+            schema_source_handle(schema), task_scope.principal_id,
+            task_scope.tenant_id, envelope.source_regime,
+            task_scope.semantic_release, schema_evidence_digest(schema),
+            (task_scope.purpose,), (task_scope.jurisdiction,),
+            (task_scope.scope,), source_frontier.rights_epoch,
+            source_frontier.correction_generation, envelope.observed_at,
+            envelope.effective_from, envelope.effective_until,
+        )
+        prior = grants.get(grant.source_handle)
+        if prior is not None and prior != grant:
+            _invalid("BAMF_MOTIF_SOURCE_SCHEMA_GRANT_COLLISION")
+        grants[grant.source_handle] = grant
+    return SourceFrontier(
+        source_frontier.rights_epoch, source_frontier.correction_generation,
+        tuple(sorted(grants.values(), key=lambda item: item.source_handle)),
+    )
+
+
 def source_qualified_motif_context(
     source_adapter: RegisteredSourceAdapter, row: dict,
     atlas_selection: AtlasArtifactSelection, *, source_root: str | Path,
@@ -149,6 +183,8 @@ def source_qualified_motif_context(
     projection, issued_frontier = admitted
     qualified = _qualified_motif_inputs(
         projection, snapshot, source_adapter, atlas_selection, source_root, graph)
+    issued_frontier = _with_source_qualified_schema_grants(
+        projection, qualified, task_scope, issued_frontier)
     return projection, qualified, issued_frontier
 
 
