@@ -1,4 +1,5 @@
 """Behavioral contract of the import/status boundary auditor."""
+import importlib
 from pathlib import Path
 import tempfile
 import unittest
@@ -59,6 +60,11 @@ class SemanticBoundaryTests(unittest.TestCase):
                 "from bilqis_mlx.semantics.atlas_projection import compile_atlas_release\n",
                 encoding="utf-8")
             self.assertEqual(inspect_semantic_boundaries(project), ())
+
+    def test_legacy_atlas_alias_remains_decode_only_compatible(self):
+        canonical = importlib.import_module("bilqis_mlx.semantics.atlas.snapshot")
+        legacy = importlib.import_module("bilqis_mlx.semantics.atlas_snapshot")
+        self.assertIs(legacy, canonical)
 
     def test_linter_catches_illegal_import_and_inline_status(self):
         with tempfile.TemporaryDirectory() as temp:
