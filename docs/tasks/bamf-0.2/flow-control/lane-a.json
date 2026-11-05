@@ -1,18 +1,28 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "eedfdaef9f528c02618963c8486ade4d12fcb18f",
-  "updated_at": "2026-11-05T09:47:24+00:00",
+  "observed_unified": "2cb50e3a9319552ca847ba69ad8b2beeb03cf194",
+  "updated_at": "2026-11-05T10:02:12+00:00",
   "exception": null,
   "items": [
     {
+      "issue": 423,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "2cb50e3a9319552ca847ba69ad8b2beeb03cf194",
+      "summary": "A10.3 is active from exact current Lane A/reviewed-unified head. Owned scope is the literal PUBLIC_FIXTURE acceptance receipt, exact checker witnesses, and lawful source-family/rights/interpretation lineage; no PRIVATE_REAL intake or neural state.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a10-3-423-20261105"
+    },
+    {
       "issue": 422,
-      "pr": 855,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "90adf0371e5d63c17f6aa674d9d2ac78db67bdcc",
       "summary": "A10.2 implementation is complete on its issue-scoped branch: typed reconstructions preserve reported/computed values, negation, time/interpretation alternatives and template lineage; fresh challenges split immutable source families before within-family template grouping, with scored holdouts remaining teachable. Focused/adjacent tests 17 passed; governance/error-contract tests 11 passed; compile/diff/flow-control green; EGM_PENDING.",
-      "resume_trigger": "Fresh independent exact-head EGM plus human integration review for PR #855.",
-      "preserved_branch": "codex/bamf02-a10-2-422-20261105"
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a10-2-422-20261105",
+      "merged_pr": 855
     },
     {
       "issue": 424,
