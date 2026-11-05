@@ -133,10 +133,10 @@
     {
       "issue": 711,
       "pr": null,
-      "state": "TURNED_IN",
-      "head_sha": "12c1c03b",
-      "summary": "B09.2 remediation delivered as ready PR #806: the participation owner derives per-step participation and optimizer masks from executed production authority instead of a caller assertion, on current unified.",
-      "resume_trigger": "The bounded repair is consumed into PR #692 or explicitly selected for focused integration under ADR-125.",
+      "state": "ACTIVE",
+      "head_sha": "beb699ad",
+      "summary": "B09.2 remediation #711 is explicitly selected for focused integration on the independent unified-base branch codex/egm-710-711-unified-20261105; #708/#709/#809 remain excluded.",
+      "resume_trigger": null,
       "closed_pr": 806,
       "preserved_branch": "codex/remediation-711-participation-20261103",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
@@ -296,11 +296,11 @@
     {
       "issue": 710,
       "pr": null,
-      "state": "TURNED_IN",
-      "head_sha": "05e31a576e3432e4238c9b4477a70d70ec4fc487",
+      "state": "ACTIVE",
+      "head_sha": "beb699ad",
       "preserved_branch": "codex/remediation-710-execution-provenance-20261103",
-      "summary": "B12.2 remediation delivered as ready PR #807, stacked on the #711 B09.2 owner: every candidate optimizer step binds to owner-issued execution provenance, so a raw caller mask cannot become final candidate truth.",
-      "resume_trigger": "PR #807 closed; the consolidated remediation continues in PR #809.",
+      "summary": "B12.2 remediation #710 is explicitly selected with #711 for independent focused integration on codex/egm-710-711-unified-20261105; no new work is folded into PR #809.",
+      "resume_trigger": null,
       "closed_pr": 807
     },
     {
