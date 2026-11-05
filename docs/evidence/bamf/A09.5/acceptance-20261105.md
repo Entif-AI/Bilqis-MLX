@@ -38,7 +38,7 @@ Observed acceptance witnesses include:
 - Released Boolean and numeric programs execute under their exact pinned semantics.
 - The source-qualified world program checks every row of its real batch and produces the same semantic result under another grade label.
 - Six precompiled C→H successors preserve the same checkpoint across cold admission/resume, accumulate protected debt, and reach `WHOLE_SCHOOL_MASTERED` only after that debt is actually cleared.
-- The A09 frontier/adapter suite separately verifies deterministic selection, staged restart custody, prerequisite-local blocking, explicit `IMPLEMENTATION_UNCOVERED`, and held/fixed-point termination.
+- The frontier suite separately verifies deterministic selection, staged restart custody, prerequisite-local blocking, explicit `IMPLEMENTATION_UNCOVERED`, and held/fixed-point termination (`python3 -B scripts/run_tests.py bilqis_mlx/factory/tests/curriculum/frontier`: 106 passed / 1 intentional skip).
 
 The single skip is `test_real_pinned_a01_a08_snapshot_if_supplied`, which requires the raw precompiled source corpus through `BILQIS_ATLAS_REAL_CORPUS`; the pinned release bundle used by the executable A08.3 tests is present and was exercised. No raw-corpus substitute was invented.
 
@@ -48,4 +48,4 @@ The disposable issue-worktree `.venv` contains the CI-declared semantic dependen
 
 ## Disposition
 
-A09.5 behavioral acceptance is satisfied on the current candidate lineage. No neural training or live student mutation occurred. Fresh exact-head EGM remains required before PR creation because the accepted A08.3 dependency and current unified have changed since the prior A09.5 review.
+A09.5 behavioral acceptance is **not yet satisfied**. The source-qualified rule/program and generic multi-successor Factory witnesses above are supporting evidence only. Production `candidate_realizations` still exposes only the accepted copular source→staged realization, so the issue-owned requirement for three successive planner-generated `next_atlas_delta` proposals beyond historical A/B/C cannot yet be executed honestly. The candidate remains WAITING until an accepted realization/staging owner supplies at least three genuinely new source-qualified candidate→staged-successor bindings, or an accepted equivalent contract. After that authority lands, rerun the three-successive-delta + restart + held-only + fixed-point acceptance and then fresh exact-head EGM. No neural training or live student mutation occurred.

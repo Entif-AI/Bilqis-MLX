@@ -96,11 +96,11 @@
     {
       "issue": 395,
       "pr": null,
-      "state": "ACTIVE",
+      "state": "WAITING",
       "head_sha": "8019bf5d945a1d9f8f5a11983ef43fbb008a365f",
       "preserved_branch": "codex/bamf02-a-395-acceptance-20261105",
-      "summary": "A08.3 #420 resume trigger consumed. Source-qualified Boolean/numeric/world acceptance plus six-successor cold-resume runway are green; exact-head EGM is the remaining pre-PR gate.",
-      "resume_trigger": null
+      "summary": "A08.3 #420 is accepted and consumed, but A09.5 remains WAITING: production candidate_realizations still has only the copular source\u2192staged realization, so the owned three-successive next_atlas_delta acceptance cannot yet run.",
+      "resume_trigger": "Accepted realization/staging authority supplies at least three genuinely new source-qualified candidate\u2192staged-successor bindings (or accepted equivalent); then run three-successive-delta + restart/held/fixed-point acceptance and fresh exact-head EGM."
     }
   ]
 }
