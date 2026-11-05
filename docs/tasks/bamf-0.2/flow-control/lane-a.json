@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "22314c413ba137df69b3d6b35768fe65e1556bfe",
-  "updated_at": "2026-11-05T11:15:23Z",
+  "updated_at": "2026-11-05T12:32:37Z",
   "exception": null,
   "items": [
     {
@@ -72,9 +72,9 @@
       "issue": 421,
       "pr": 862,
       "state": "TURNED_IN",
-      "head_sha": "fd39db9a59d218fcc88c89f62ee66f501c5d8a04",
-      "summary": "A10.1 post-merge repair is turned in as draft PR #862 after consuming merged A01/A03/operator authority and replacing manifestation/span family identity with source-semantic episode identity. Duplicate/repacked/relocated copies stay one family; a genuinely different source-native episode may be independent. Real pinned A01+A03+unit authority witness passes 16/16 with no skip; focused+adjacent evidence proof 20 passed / 0 failed / 1 optional skip without the artifact env var; governance 11/11; exact debt 0; Factory/docs/flow/compile/diff checks clean. Fresh exact-head independent EGM and hosted checks remain the turn-in gates.",
-      "resume_trigger": "If hosted checks and fresh exact-head independent EGM are clean, promote PR #862 from draft for human integration. Re-close #421 only after accepted repair merges. PR #858 remains waiting until that acceptance lands.",
+      "head_sha": "b003098587642987045813c69d4d733abf651089",
+      "summary": "A10.1 post-merge repair remains turned in as draft PR #862. Fresh exact-head EGM rejected prior head 2223c1ab with one F10/root-lineage Major: family identity still depended on interpreted episode fields. Repair b0030985 adds explicit source-native source_episode_ref and derives family identity only from that immutable root, so same-root corrections remain correlated while independently sourced otherwise-identical episodes remain distinct. Failing-before regression reproduced the old split leak. Real pinned A01+A03+unit proof passes 19/19; focused+adjacent proof passes 23 / 0 failed / 1 expected optional skip; governance 11/11; exact debt 0; changed-file smell 0; Factory/docs/flow/compile/diff clean; hosted portable-core/portable/Semantic ABI all pass. Fresh exact-head re-EGM remains required after this custody update.",
+      "resume_trigger": "If fresh independent exact-head EGM is clean on the final PR head, promote PR #862 from draft for human integration. Re-close #421 only after accepted repair merges. PR #858 remains waiting until that acceptance lands, then must consume source_episode_ref/root-lineage authority and rerun F10/external-witness acceptance.",
       "preserved_branch": "codex/bamf02-a-421-egm-repair-20261105",
       "merged_pr": 852
     },
