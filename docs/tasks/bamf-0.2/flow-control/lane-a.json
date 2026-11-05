@@ -21,7 +21,12 @@
       "head_sha": "6c37819aa6968326c3cefd470f39dcd226cc91ec",
       "summary": "A10.3 PR #858 is DRAFT after post-merge EGM reopened prerequisite #421. Its own re-review also found remaining source-episode identity and external-witness acceptance Majors; do not represent it as merge-ready.",
       "resume_trigger": "Consume the accepted #421/A10.1 authority and source-episode identity repair, then resync/rebase #858, remove duplicate upstream fixes, rerun F10 receipt acceptance and obtain fresh exact-head EGM.",
-      "preserved_branch": "codex/bamf02-a10-3-423-20261105"
+      "preserved_branch": "codex/bamf02-a10-3-423-20261105",
+      "open_pr_exception": {
+        "reason": "PR #858 was converted to draft after independent review reopened prerequisite #421 and found remaining A10.3 acceptance Majors; closing it would discard the reviewable remediation vehicle before its recorded upstream resume trigger.",
+        "authority": "Independent post-merge EGM on #421 plus exact-head A10.3 re-review on 2026-11-05; AGENTS.md/ADR-128 flow-control policy permits explicit WAITING-PR exceptions.",
+        "expires_when": "Accepted #421 repair lands and #858 resumes for exact-head remediation/EGM, or #858 is superseded/closed."
+      }
     },
     {
       "issue": 425,
