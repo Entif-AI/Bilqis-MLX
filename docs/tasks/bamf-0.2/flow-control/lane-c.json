@@ -1,10 +1,19 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "70a4ef1e883d348920d64083c7546f443a90ef77",
-  "updated_at": "2026-11-05T06:20:10+00:00",
+  "observed_unified": "6e12e5a077183713241bb9b2b0d0762d8d95fa47",
+  "updated_at": "2026-11-05T09:09:07.879457+00:00",
   "exception": null,
   "items": [
+    {
+      "issue": 559,
+      "pr": null,
+      "state": "WAITING",
+      "head_sha": "19ffe3d25ded5079f473e07aad55c453755dfbf9",
+      "summary": "C14.4 public/synthetic untrusted-swarm software checkpoint complete: frozen content-addressed work manifests, Ed25519 signed worker receipts, environment identity, expiry/replay/generation/source/budget checks, exact adapter binding, independent canonical evaluation, retention gate, rejection non-mutation, dense-update fail-closed and opportunistic dispatch. 11/11 owned tests; 29/29 with adjacent C09/C12; 11/11 governance.",
+      "resume_trigger": "Final issue acceptance requires accepted current B13 generation/cold-resume, C05 retention/admission, C12 bounded package/adoption, and C14 continuing-program dispatch receipts so this protocol can bind to the real canonical-school admission path rather than fixture callbacks.",
+      "preserved_branch": "codex/bamf02-c14-4-559-20261105"
+    },
     {
       "issue": 347,
       "pr": null,
