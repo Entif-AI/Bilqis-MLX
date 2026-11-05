@@ -32,7 +32,7 @@ def _answer_for_binding(binding: RoleOccurrence) -> str:
     if type(binding.child_frame) is ChildFrameRef:
         return binding.child_frame.content_digest
     _fail("BAMF_SEMANTIC_CONTRAST_CHECKER_INVALID")
-    raise AssertionError("unreachable")
+    raise AssertionError
 
 
 def _checker_outcome(
@@ -58,7 +58,7 @@ def _checker_outcome(
     if family is ContrastFamily.MORPHOLOGY_ALTERNATIVE:
         return "Which source-authorized morphology is realized?", variant.morphology
     _fail("BAMF_SEMANTIC_CONTRAST_CHECKER_INVALID")
-    raise AssertionError("unreachable")
+    raise AssertionError
 
 
 def _lineage(
