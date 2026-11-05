@@ -50,19 +50,31 @@ jobs:
           python3 -B -m unittest \
             scripts.tests.test_bamf_flow_control \
             scripts.tests.test_bamf_flow_control_live
+      - name: Determine semantic verification scope
+        id: semantic_scope
+        env:
+          SEMANTIC_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: >-
+          python3 -B scripts/testing/semantic_scope.py
+          --base-ref "$SEMANTIC_BASE_REF"
+          --github-output "$GITHUB_OUTPUT"
       - name: Install historical semantic integrity dependencies
+        if: steps.semantic_scope.outputs.run == 'true'
         run: python3 -m pip install -r lib/ithkuil/requirements-semantic.txt
       - name: Check historical semantic integrity
+        if: steps.semantic_scope.outputs.run == 'true'
         run: python3 -B scripts/check_historical_abi.py
       - name: Check legacy semantic package ownership
         if: >-
           ${{
+            steps.semantic_scope.outputs.run == 'true' &&
             (!contains(github.ref_name, 'bamf') && !contains(github.head_ref, 'bamf') && !contains(github.base_ref, 'bamf'))
           }}
         run: python3 -B scripts/check_semantic_boundaries.py
       - name: Verify portable BAMF semantic contracts
         if: >-
           ${{
+            steps.semantic_scope.outputs.run == 'true' &&
             (contains(github.ref_name, 'bamf') || contains(github.head_ref, 'bamf') || contains(github.base_ref, 'bamf'))
           }}
         run: >-
