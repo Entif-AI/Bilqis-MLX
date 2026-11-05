@@ -24,14 +24,14 @@ class DifferentialTestGateTests(unittest.TestCase):
         subprocess.run(["git", "commit", "-qm", "base"], cwd=root, check=True)
         return temporary
 
-    def test_fresh_worktree_baseline_is_current_head_not_parent_commit(self):
+    def test_fresh_worktree_baseline_is_parent_commit(self):
         temporary = self._repo()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name)
         (root / "pkg" / "thing.py").write_text("VALUE = 2\n")
         subprocess.run(["git", "commit", "-qam", "change"], cwd=root, check=True)
 
-        self.assertEqual(gate.resolve_test_base(root, environ={}), "HEAD")
+        self.assertEqual(gate.resolve_test_base(root, environ={}), "HEAD^1")
 
     def test_last_passing_head_becomes_next_commit_test_base(self):
         temporary = self._repo()
@@ -90,6 +90,36 @@ class DifferentialTestGateTests(unittest.TestCase):
         plan = gate.plan_leaf(root, base_ref="HEAD")
 
         self.assertEqual(plan.tests, ("pkg/tests/test_thing.py",))
+
+    def test_cold_plan_follows_flattened_private_owner_import(self):
+        temporary = self._repo()
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name)
+        runtime = root / "pkg" / "runtime"
+        private = runtime / "_capability"
+        private.mkdir(parents=True)
+        (runtime / "__init__.py").write_text(
+            "from pathlib import Path\n"
+            "_OWNER_GROUPS = ('_capability',)\n"
+            "__path__.extend(str(Path(__file__).parent / name) for name in _OWNER_GROUPS)\n")
+        (private / "thing.py").write_text("VALUE = 1\n")
+        (runtime / "public_api.py").write_text("from pkg.runtime.thing import VALUE\n")
+        runtime_tests = runtime / "tests"
+        runtime_tests.mkdir()
+        (runtime_tests / "test_thing.py").write_text(
+            "from pkg.runtime.thing import VALUE\n")
+        (runtime_tests / "test_public_api.py").write_text(
+            "from pkg.runtime.public_api import VALUE\n")
+        subprocess.run(["git", "add", "."], cwd=root, check=True)
+        subprocess.run(["git", "commit", "-qm", "private owner"], cwd=root, check=True)
+        (private / "thing.py").write_text("VALUE = 2\n")
+
+        plan = gate.plan_leaf(root, base_ref="HEAD")
+
+        self.assertEqual(plan.tests, (
+            "pkg/runtime/tests/test_public_api.py",
+            "pkg/runtime/tests/test_thing.py",
+        ))
 
     def test_warm_testmon_plan_remains_bounded_to_owner_tests(self):
         temporary = self._repo()

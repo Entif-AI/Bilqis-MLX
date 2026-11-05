@@ -1,6 +1,7 @@
 """Positive #708 witness: Factory-owned C05 reaches live B13 publication."""
 from __future__ import annotations
 
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -43,11 +44,6 @@ from bilqis_mlx.runtime.tests.capability.factory_retention_live_support import (
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import acceptance
 
 
-ARTIFACT = Path(
-    "/Users/emilie/Code/bamf-planning-20261027/lane-a-execution-20261028/"
-    "a03-4-atlas-staging/"
-    "5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7"
-)
 TARGET = "B.IDBOOLOPS"
 TRAIN_SEED = 46117
 FIXED_SEED = 7331
@@ -106,9 +102,13 @@ def _training_batch(source_context, row, generation):
 
 class FactoryRetentionOwnerLiveTests(SourceBackboneTestBase):
     def setUp(self):
-        super().setUp()
-        if not ARTIFACT.is_dir():
+        artifact = os.environ.get("BILQIS_A01_ATLAS_BUNDLE")
+        if not artifact:
             self.skipTest("BILQIS_A01_ATLAS_BUNDLE fixture is not mounted")
+        self.artifact = Path(artifact)
+        if not self.artifact.is_dir():
+            self.skipTest("BILQIS_A01_ATLAS_BUNDLE fixture is not mounted")
+        super().setUp()
         self.root = Path.cwd()
         self.source = (self.root / "vendor/legacy-v16").resolve()
         if not self.source.is_dir():
@@ -141,7 +141,7 @@ class FactoryRetentionOwnerLiveTests(SourceBackboneTestBase):
                 spec=parent.topology, extents=parent.extents)
             training = _training_batch(source_context, row, generation)
             compiled = compile_factory_evaluation_batch(
-                source_context, parent, str(ARTIFACT), row,
+                source_context, parent, str(self.artifact), row,
                 source_seed=TRAIN_SEED, source_each=1)
             live_batch = bind_compiled_training_batch(
                 training, compiled.compiled, compiled.sources,
@@ -149,11 +149,11 @@ class FactoryRetentionOwnerLiveTests(SourceBackboneTestBase):
             )
             authority = factory_task_authority(source_context, live_batch)
             feature_context = authenticate_bamf_candidate_feature_context(
-                parent, str(ARTIFACT))
+                parent, str(self.artifact))
             plan = task_goal_route_plan(
                 authority.goal, live_batch, feature_context.snapshot, generation)
             expected = factory_evaluation_instrument(
-                source_context, parent, str(ARTIFACT), row,
+                source_context, parent, str(self.artifact), row,
                 source_seed=TRAIN_SEED, source_each=1).case.gold
             route = task_goal_route_decisions(authority.goal)
             self.assertEqual(len(route), 1)
@@ -182,7 +182,7 @@ class FactoryRetentionOwnerLiveTests(SourceBackboneTestBase):
             self.assertEqual(len(transaction.training_authorities), 1)
 
             evaluation = evaluate_factory_retention_candidate(
-                source_context, transaction, str(ARTIFACT), TARGET,
+                source_context, transaction, str(self.artifact), TARGET,
                 run_dir=run_dir)
             decision = issue_factory_retention_decision(evaluation)
             self.assertTrue(decision.accepted)

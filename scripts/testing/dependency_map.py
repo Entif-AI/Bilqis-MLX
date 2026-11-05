@@ -25,6 +25,51 @@ def _module_name(root: Path, path: Path) -> str:
     return ".".join(parts)
 
 
+def _owner_roots(root: Path) -> tuple[tuple[Path, str], ...]:
+    """Return package search-path extensions declared through ``_OWNER_GROUPS``."""
+    owners: list[tuple[Path, str]] = []
+    for package_init in _python_files(root):
+        if package_init.name != "__init__.py":
+            continue
+        try:
+            tree = ast.parse(package_init.read_text(errors="ignore"))
+        except (OSError, SyntaxError):
+            continue
+        groups: tuple[str, ...] = ()
+        for node in tree.body:
+            if not isinstance(node, ast.Assign):
+                continue
+            if not any(isinstance(target, ast.Name) and target.id == "_OWNER_GROUPS"
+                       for target in node.targets):
+                continue
+            try:
+                value = ast.literal_eval(node.value)
+            except (ValueError, TypeError):
+                continue
+            if isinstance(value, (tuple, list)) and all(isinstance(item, str) for item in value):
+                groups = tuple(value)
+        if not groups:
+            continue
+        package_module = _module_name(root, package_init)
+        owners.extend(
+            ((package_init.parent / group).resolve(), package_module)
+            for group in groups
+        )
+    return tuple(owners)
+
+
+def _module_aliases(root: Path, path: Path, owners: tuple[tuple[Path, str], ...]) -> tuple[str, ...]:
+    aliases = {_module_name(root, path)}
+    resolved = path.resolve()
+    for owner_root, package_module in owners:
+        if resolved != owner_root and owner_root not in resolved.parents:
+            continue
+        relative = resolved.relative_to(owner_root).with_suffix("")
+        parts = relative.parts[:-1] if relative.parts and relative.parts[-1] == "__init__" else relative.parts
+        aliases.add(".".join((package_module, *parts)))
+    return tuple(sorted(alias for alias in aliases if alias))
+
+
 def _imports(path: Path, module_name: str) -> set[str]:
     try:
         tree = ast.parse(path.read_text(errors="ignore"))
@@ -61,7 +106,11 @@ def _resolve(import_name: str, modules: dict[str, Path]) -> Path | None:
 def affected_test_map(root: Path, changed: tuple[Path, ...]) -> dict[Path, tuple[Path, ...]]:
     """Map each changed module to tests that import it directly or transitively."""
     files = _python_files(root)
-    modules = {_module_name(root, path): path for path in files}
+    owners = _owner_roots(root)
+    modules: dict[str, Path] = {}
+    for path in files:
+        for module in _module_aliases(root, path, owners):
+            modules.setdefault(module, path)
     reverse: dict[Path, set[Path]] = defaultdict(set)
     for importer in files:
         for import_name in _imports(importer, _module_name(root, importer)):
@@ -71,7 +120,7 @@ def affected_test_map(root: Path, changed: tuple[Path, ...]) -> dict[Path, tuple
 
     result: dict[Path, tuple[Path, ...]] = {}
     for relative in changed:
-        start = (root / relative).resolve()
+        start = root / relative
         queue = deque((start,))
         seen = {start}
         tests: set[Path] = set()

@@ -111,7 +111,7 @@ def resolve_test_base(
             ["git", "merge-base", "--is-ancestor", previous.head, "HEAD"], cwd=root
         ).returncode == 0:
             return previous.head
-    return "HEAD"
+    return "HEAD^1" if _valid_ref(root, "HEAD^1") else "HEAD"
 
 
 def _changed_paths(root: Path, base_ref: str) -> tuple[str, ...]:
