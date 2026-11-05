@@ -86,6 +86,14 @@ class SkosTestPolicyTests(unittest.TestCase):
             self.assertEqual(plan.action, "SKIP")
             self.assertEqual(plan.reason, "NO_SEMANTIC_PROFILE_CHANGES")
 
+    def test_omnibus_ci_and_package_changes_do_not_force_semantic_profile(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._root(temporary)
+            plan = skos_test_policy.classify_changes(
+                root, ("package.json", ".github/workflows/quality.yml"))
+            self.assertEqual(plan.action, "SKIP")
+            self.assertEqual(plan.reason, "NO_SEMANTIC_PROFILE_CHANGES")
+
     def test_semantic_change_requires_current_receipt(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = self._root(temporary)
@@ -127,14 +135,14 @@ class SkosTestPolicyTests(unittest.TestCase):
             self.assertEqual(helper.action, "DIFF")
             self.assertIn("lib/ithkuil/tests/test_skos_alpha.py", helper.tests)
 
-    def test_cross_cutting_policy_corpus_unknown_and_receipt_only_changes_are_full(self):
+    def test_cross_cutting_harness_corpus_unknown_and_receipt_only_changes_are_full(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = self._root(temporary)
             (root / "lib/ithkuil/src/skos/new_surface.py").write_text("")
             cases = {
                 "lib/ithkuil/_data/source.csv": "CANONICAL_CORPUS_CHANGED",
                 "lib/ithkuil/src/skos/canonical.py": "CROSS_CUTTING_MODULE_CHANGED:canonical",
-                "scripts/skos_test_policy.py": "TEST_POLICY_CHANGED",
+                ".github/workflows/semantic-profile-full.yml": "TEST_POLICY_CHANGED",
                 str(skos_test_policy.RECEIPT_PATH): "RECEIPT_ONLY_CHANGED",
                 "lib/ithkuil/src/skos/new_surface.py": "UNKNOWN_SKOS_OWNER:lib/ithkuil/src/skos/new_surface.py",
             }
@@ -153,14 +161,14 @@ class SkosTestPolicyTests(unittest.TestCase):
             self.assertEqual(plan.action, "DIFF")
             self.assertIn("lib/ithkuil/tests/test_skos_notation.py", plan.tests)
 
-    def test_policy_helper_change_is_full_without_receipt_refresh(self):
+    def test_policy_code_change_uses_focused_policy_tests_not_semantic_profile(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = self._root(temporary)
             self._write_current_receipt(root)
             plan = skos_test_policy.plan_for_changes(
                 root, ("scripts/skos_policy/impact.py",))
-            self.assertEqual(plan.action, "FULL")
-            self.assertEqual(plan.reason, "TEST_POLICY_CHANGED")
+            self.assertEqual(plan.action, "SKIP")
+            self.assertEqual(plan.reason, "SEMANTIC_POLICY_CODE_ONLY")
 
     def test_forced_exhaustive_ignores_differential_classification(self):
         with tempfile.TemporaryDirectory() as temporary:

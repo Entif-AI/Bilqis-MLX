@@ -53,6 +53,12 @@
         "reason": "BAMF Project dashboard governance documentation PR changing only AGENTS.md and README.md; no BAMF implementation leaf or integration behavior.",
         "authority": "ADR-126 implementation-PR inventory excludes non-implementation governance work; verified PR #814 file scope and open state on 2026-11-03.",
         "expires_when": "PR #814 merges or closes."
+      },
+      {
+        "pr": 839,
+        "reason": "Test and CI infrastructure PR for differential verification and script organization; it does not implement a BAMF feature leaf or integration candidate.",
+        "authority": "ADR-126 implementation-PR inventory excludes non-implementation infrastructure work; verified PR #839 file scope and open state on 2026-11-04.",
+        "expires_when": "PR #839 merges or closes."
       }
     ],
     "admission_exceptions": [
