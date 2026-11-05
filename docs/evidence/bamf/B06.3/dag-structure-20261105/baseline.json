@@ -1,0 +1,252 @@
+{
+  "source": "ce58deccb0371dc2f8ebe1adb3b36e4730c247b0",
+  "python": "3.14.4 (main, Apr  7 2026, 13:13:20) [Clang 16.0.0 (clang-1600.0.26.6)]",
+  "metadata": {
+    "_invalid": {
+      "module": "bilqis_mlx.semantics.cognitive_dag",
+      "qualname": "_invalid",
+      "annotations": {
+        "reason": "str",
+        "return": "None"
+      },
+      "signature": "(reason: 'str') -> 'None'"
+    },
+    "_memo_get_verified": {
+      "module": "bilqis_mlx.semantics.cognitive_dag",
+      "qualname": "_memo_get_verified",
+      "annotations": {
+        "memo": "PureOperationMemo",
+        "key": "str",
+        "return": "TypedValue | None"
+      },
+      "signature": "(memo: 'PureOperationMemo', key: 'str') -> 'TypedValue | None'"
+    },
+    "_memo_put_verified": {
+      "module": "bilqis_mlx.semantics.cognitive_dag",
+      "qualname": "_memo_put_verified",
+      "annotations": {
+        "memo": "PureOperationMemo",
+        "key": "str",
+        "value": "TypedValue",
+        "return": "None"
+      },
+      "signature": "(memo: 'PureOperationMemo', key: 'str', value: 'TypedValue') -> 'None'"
+    },
+    "_name": {
+      "module": "bilqis_mlx.semantics.cognitive_dag",
+      "qualname": "_name",
+      "annotations": {
+        "value": "object",
+        "return": "bool"
+      },
+      "signature": "(value: 'object') -> 'bool'"
+    },
+    "RefKind": {
+      "module": "bilqis_mlx.semantics.cognitive_dag",
+      "qualname": "RefKind",
+      "annotations": {}
+    },
+    "DAGOperand": {
+      "module": "bilqis_mlx.semantics.cognitive_dag",
+      "qualname": "DAGOperand",
+      "annotations": {
+        "kind": "RefKind",
+        "type_name": "str",
+        "source_handle": "str | None",
+        "frame_handle": "str | None",
+        "frame_occurrence_id": "str | None",
+        "role_id": "str | None",
+        "occurrence_index": "int | None",
+        "result_node_id": "str | None",
+        "schema_version": "str"
+      }
+    },
+    "DAGNode": {
+      "module": "bilqis_mlx.semantics.cognitive_dag",
+      "qualname": "DAGNode",
+      "annotations": {
+        "node_id": "str",
+        "operator_id": "str | None",
+        "operands": "tuple[DAGOperand | None, ...]",
+        "expected_output_type": "str",
+        "scope": "str",
+        "candidate_operator_ids": "tuple[str, ...]",
+        "candidate_operand_refs": "tuple[tuple[DAGOperand, ...], ...]",
+        "constraints": "tuple[str, ...]",
+        "schema_version": "str"
+      }
+    },
+    "DAGProgram": {
+      "module": "bilqis_mlx.semantics.cognitive_dag",
+      "qualname": "DAGProgram",
+      "annotations": {
+        "nodes": "tuple[DAGNode, ...]",
+        "output_node_id": "str",
+        "scope": "str",
+        "schema_version": "str"
+      }
+    },
+    "DAGBudget": {
+      "module": "bilqis_mlx.semantics.cognitive_dag",
+      "qualname": "DAGBudget",
+      "annotations": {
+        "max_nodes": "int",
+        "max_depth": "int",
+        "max_operations": "int",
+        "max_decisions": "int",
+        "schema_version": "str"
+      }
+    },
+    "TaskGoal": {
+      "module": "bilqis_mlx.semantics.cognitive_dag",
+      "qualname": "TaskGoal",
+      "annotations": {
+        "goal_id": "str",
+        "output_signature": "str",
+        "source_visible_bindings": "tuple[str, ...]",
+        "expression_or_holes": "DAGProgram",
+        "allowed_operator_ids": "tuple[str, ...]",
+        "budget": "DAGBudget",
+        "semantic_release": "str",
+        "scope": "str",
+        "schema_version": "str"
+      }
+    },
+    "DAGReceipt": {
+      "module": "bilqis_mlx.semantics.cognitive_dag",
+      "qualname": "DAGReceipt",
+      "annotations": {
+        "semantic_release": "str",
+        "source_binding_digest": "str",
+        "operation_count": "int",
+        "lookup_count": "int",
+        "memo_hit_count": "int",
+        "selected_bindings": "tuple[tuple[str, str, tuple[str, ...]], ...]",
+        "executed_nodes": "tuple[str, ...]",
+        "unresolved_signature": "str | None",
+        "schema_version": "str"
+      }
+    },
+    "DAGResult": {
+      "module": "bilqis_mlx.semantics.cognitive_dag",
+      "qualname": "DAGResult",
+      "annotations": {
+        "answer": "TypedValue",
+        "receipt": "DAGReceipt",
+        "schema_version": "str"
+      }
+    },
+    "_topological": {
+      "module": "bilqis_mlx.semantics.cognitive_dag",
+      "qualname": "_topological",
+      "annotations": {
+        "program": "DAGProgram",
+        "budget": "DAGBudget",
+        "return": "tuple[DAGNode, ...]"
+      },
+      "signature": "(program: 'DAGProgram', budget: 'DAGBudget') -> 'tuple[DAGNode, ...]'"
+    },
+    "_visible_source": {
+      "module": "bilqis_mlx.semantics.cognitive_dag",
+      "qualname": "_visible_source",
+      "annotations": {
+        "ref": "DAGOperand",
+        "binding": "OperatorBinding",
+        "approved": "dict",
+        "return": "TypedValue | None"
+      },
+      "signature": "(ref: 'DAGOperand', binding: 'OperatorBinding', approved: 'dict') -> 'TypedValue | None'"
+    },
+    "_prepare": {
+      "module": "bilqis_mlx.semantics.cognitive_dag",
+      "qualname": "_prepare",
+      "annotations": {
+        "goal": "TaskGoal",
+        "binding": "OperatorBinding"
+      },
+      "signature": "(goal: 'TaskGoal', binding: 'OperatorBinding')"
+    },
+    "_grant_record": {
+      "module": "bilqis_mlx.semantics.cognitive_dag",
+      "qualname": "_grant_record",
+      "annotations": {
+        "handle": "str",
+        "binding": "OperatorBinding"
+      },
+      "signature": "(handle: 'str', binding: 'OperatorBinding')"
+    },
+    "_dependency_record": {
+      "module": "bilqis_mlx.semantics.cognitive_dag",
+      "qualname": "_dependency_record",
+      "annotations": {
+        "ref": "DAGOperand",
+        "value": "TypedValue",
+        "binding": "OperatorBinding",
+        "lineage": "dict[str, str]",
+        "return": "tuple"
+      },
+      "signature": "(ref: 'DAGOperand', value: 'TypedValue', binding: 'OperatorBinding', lineage: 'dict[str, str]') -> 'tuple'"
+    },
+    "_consulted_dependencies": {
+      "module": "bilqis_mlx.semantics.cognitive_dag",
+      "qualname": "_consulted_dependencies",
+      "annotations": {
+        "operator_id": "str",
+        "inputs": "tuple[TypedValue, ...]",
+        "binding": "OperatorBinding",
+        "return": "tuple"
+      },
+      "signature": "(operator_id: 'str', inputs: 'tuple[TypedValue, ...]', binding: 'OperatorBinding') -> 'tuple'"
+    },
+    "execute_dag": {
+      "module": "bilqis_mlx.semantics.cognitive_dag",
+      "qualname": "execute_dag",
+      "annotations": {
+        "goal": "TaskGoal",
+        "binding": "OperatorBinding",
+        "memo": "PureOperationMemo | None",
+        "operation_limit": "int | None",
+        "return": "DAGResult"
+      },
+      "signature": "(goal: 'TaskGoal', binding: 'OperatorBinding', *, memo: 'PureOperationMemo | None' = None, operation_limit: 'int | None' = None) -> 'DAGResult'"
+    }
+  },
+  "snapshots": {
+    "program": {
+      "canonical_json": "{\"nodes\":[{\"candidate_operand_refs\":[],\"candidate_operator_ids\":[],\"constraints\":[],\"expected_output_type\":\"Number\",\"node_id\":\"mul\",\"operands\":[{\"frame_handle\":null,\"frame_occurrence_id\":null,\"kind\":\"LITERAL\",\"occurrence_index\":null,\"result_node_id\":null,\"role_id\":null,\"schema_version\":\"bilqis.cognitive-dag-operand/v1\",\"source_handle\":\"source:literal:0\",\"type_name\":\"Number\"},{\"frame_handle\":null,\"frame_occurrence_id\":null,\"kind\":\"LITERAL\",\"occurrence_index\":null,\"result_node_id\":null,\"role_id\":null,\"schema_version\":\"bilqis.cognitive-dag-operand/v1\",\"source_handle\":\"source:literal:1\",\"type_name\":\"Number\"}],\"operator_id\":\"MUL\",\"schema_version\":\"bilqis.cognitive-dag-node/v1\",\"scope\":\"synthetic:task\"},{\"candidate_operand_refs\":[],\"candidate_operator_ids\":[],\"constraints\":[],\"expected_output_type\":\"Number\",\"node_id\":\"add\",\"operands\":[{\"frame_handle\":null,\"frame_occurrence_id\":null,\"kind\":\"RESULT\",\"occurrence_index\":null,\"result_node_id\":\"mul\",\"role_id\":null,\"schema_version\":\"bilqis.cognitive-dag-operand/v1\",\"source_handle\":null,\"type_name\":\"Number\"},{\"frame_handle\":null,\"frame_occurrence_id\":null,\"kind\":\"LITERAL\",\"occurrence_index\":null,\"result_node_id\":null,\"role_id\":null,\"schema_version\":\"bilqis.cognitive-dag-operand/v1\",\"source_handle\":\"source:literal:2\",\"type_name\":\"Number\"}],\"operator_id\":\"ADD\",\"schema_version\":\"bilqis.cognitive-dag-node/v1\",\"scope\":\"synthetic:task\"}],\"output_node_id\":\"add\",\"schema_version\":\"bilqis.cognitive-dag-program/v1\",\"scope\":\"synthetic:task\"}",
+      "protocol4_pickle_hex": "8004953b030000000000008c2262696c7169735f6d6c782e73656d616e746963732e636f676e69746976655f646167948c0a44414750726f6772616d9493942981947d94288c056e6f6465739468008c074441474e6f64659493942981947d94288c076e6f64655f6964948c036d756c948c0b6f70657261746f725f6964948c034d554c948c086f706572616e64739468008c0a4441474f706572616e649493942981947d94288c046b696e649468008c075265664b696e649493948c074c49544552414c94859452948c09747970655f6e616d65948c064e756d626572948c0d736f757263655f68616e646c65948c10736f757263653a6c69746572616c3a30948c0c6672616d655f68616e646c65944e8c136672616d655f6f6363757272656e63655f6964944e8c07726f6c655f6964944e8c106f6363757272656e63655f696e646578944e8c0e726573756c745f6e6f64655f6964944e8c0e736368656d615f76657273696f6e948c1f62696c7169732e636f676e69746976652d6461672d6f706572616e642f763194756268102981947d9428681368186819681a681b8c10736f757263653a6c69746572616c3a3194681d4e681e4e681f4e68204e68214e68226823756286948c1465787065637465645f6f75747075745f7479706594681a8c0573636f7065948c0e73796e7468657469633a7461736b948c1663616e6469646174655f6f70657261746f725f69647394298c1663616e6469646174655f6f706572616e645f7265667394298c0b636f6e73747261696e7473942968228c1c62696c7169732e636f676e69746976652d6461672d6e6f64652f763194756268072981947d9428680a8c0361646494680c8c0341444494680e68102981947d9428681368158c06524553554c5494859452946819681a681b4e681d4e681e4e681f4e68204e6821680b68226823756268102981947d9428681368186819681a681b8c10736f757263653a6c69746572616c3a3294681d4e681e4e681f4e68204e68214e68226823756286946828681a6829682a682b29682c29682d296822682e756286948c0e6f75747075745f6e6f64655f69649468316829682a68228c1f62696c7169732e636f676e69746976652d6461672d70726f6772616d2f76319475622e",
+      "json_sha256": "b11c2c4e189e4fdee22519afee90442d34682f271fcf6aad089af0a76b92f544",
+      "pickle_sha256": "5640938c03f5892671e65d16b6341a3ddcd294ec784b3662aaf58561dc1de991"
+    },
+    "goal": {
+      "canonical_json": "{\"allowed_operator_ids\":[\"ADD\",\"MUL\"],\"budget\":{\"max_decisions\":64,\"max_depth\":8,\"max_nodes\":64,\"max_operations\":64,\"schema_version\":\"bilqis.cognitive-dag-budget/v1\"},\"expression_or_holes\":{\"nodes\":[{\"candidate_operand_refs\":[],\"candidate_operator_ids\":[],\"constraints\":[],\"expected_output_type\":\"Number\",\"node_id\":\"mul\",\"operands\":[{\"frame_handle\":null,\"frame_occurrence_id\":null,\"kind\":\"LITERAL\",\"occurrence_index\":null,\"result_node_id\":null,\"role_id\":null,\"schema_version\":\"bilqis.cognitive-dag-operand/v1\",\"source_handle\":\"source:literal:0\",\"type_name\":\"Number\"},{\"frame_handle\":null,\"frame_occurrence_id\":null,\"kind\":\"LITERAL\",\"occurrence_index\":null,\"result_node_id\":null,\"role_id\":null,\"schema_version\":\"bilqis.cognitive-dag-operand/v1\",\"source_handle\":\"source:literal:1\",\"type_name\":\"Number\"}],\"operator_id\":\"MUL\",\"schema_version\":\"bilqis.cognitive-dag-node/v1\",\"scope\":\"synthetic:task\"},{\"candidate_operand_refs\":[],\"candidate_operator_ids\":[],\"constraints\":[],\"expected_output_type\":\"Number\",\"node_id\":\"add\",\"operands\":[{\"frame_handle\":null,\"frame_occurrence_id\":null,\"kind\":\"RESULT\",\"occurrence_index\":null,\"result_node_id\":\"mul\",\"role_id\":null,\"schema_version\":\"bilqis.cognitive-dag-operand/v1\",\"source_handle\":null,\"type_name\":\"Number\"},{\"frame_handle\":null,\"frame_occurrence_id\":null,\"kind\":\"LITERAL\",\"occurrence_index\":null,\"result_node_id\":null,\"role_id\":null,\"schema_version\":\"bilqis.cognitive-dag-operand/v1\",\"source_handle\":\"source:literal:2\",\"type_name\":\"Number\"}],\"operator_id\":\"ADD\",\"schema_version\":\"bilqis.cognitive-dag-node/v1\",\"scope\":\"synthetic:task\"}],\"output_node_id\":\"add\",\"schema_version\":\"bilqis.cognitive-dag-program/v1\",\"scope\":\"synthetic:task\"},\"goal_id\":\"synthetic:goal\",\"output_signature\":\"Number\",\"schema_version\":\"bilqis.task-goal/v1\",\"scope\":\"synthetic:task\",\"semantic_release\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"source_visible_bindings\":[\"literal:source:literal:0\",\"literal:source:literal:1\",\"literal:source:literal:2\"]}",
+      "protocol4_pickle_hex": "80049519050000000000008c2262696c7169735f6d6c782e73656d616e746963732e636f676e69746976655f646167948c085461736b476f616c9493942981947d94288c07676f616c5f6964948c0e73796e7468657469633a676f616c948c106f75747075745f7369676e6174757265948c064e756d626572948c17736f757263655f76697369626c655f62696e64696e6773948c186c69746572616c3a736f757263653a6c69746572616c3a30948c186c69746572616c3a736f757263653a6c69746572616c3a31948c186c69746572616c3a736f757263653a6c69746572616c3a329487948c1365787072657373696f6e5f6f725f686f6c65739468008c0a44414750726f6772616d9493942981947d94288c056e6f6465739468008c074441474e6f64659493942981947d94288c076e6f64655f6964948c036d756c948c0b6f70657261746f725f6964948c034d554c948c086f706572616e64739468008c0a4441474f706572616e649493942981947d94288c046b696e649468008c075265664b696e649493948c074c49544552414c94859452948c09747970655f6e616d659468088c0d736f757263655f68616e646c65948c10736f757263653a6c69746572616c3a30948c0c6672616d655f68616e646c65944e8c136672616d655f6f6363757272656e63655f6964944e8c07726f6c655f6964944e8c106f6363757272656e63655f696e646578944e8c0e726573756c745f6e6f64655f6964944e8c0e736368656d615f76657273696f6e948c1f62696c7169732e636f676e69746976652d6461672d6f706572616e642f7631947562681e2981947d9428682168266827680868288c10736f757263653a6c69746572616c3a3194682a4e682b4e682c4e682d4e682e4e682f6830756286948c1465787065637465645f6f75747075745f747970659468088c0573636f7065948c0e73796e7468657469633a7461736b948c1663616e6469646174655f6f70657261746f725f69647394298c1663616e6469646174655f6f706572616e645f7265667394298c0b636f6e73747261696e74739429682f8c1c62696c7169732e636f676e69746976652d6461672d6e6f64652f763194756268152981947d942868188c0361646494681a8c0341444494681c681e2981947d9428682168238c06524553554c5494859452946827680868284e682a4e682b4e682c4e682d4e682e6819682f68307562681e2981947d9428682168266827680868288c10736f757263653a6c69746572616c3a3294682a4e682b4e682c4e682d4e682e4e682f6830756286946835680868366837683829683929683a29682f683b756286948c0e6f75747075745f6e6f64655f696494683e68366837682f8c1f62696c7169732e636f676e69746976652d6461672d70726f6772616d2f76319475628c14616c6c6f7765645f6f70657261746f725f69647394683f681b86948c066275646765749468008c094441474275646765749493942981947d94288c096d61785f6e6f646573944b408c096d61785f6465707468944b088c0e6d61785f6f7065726174696f6e73944b408c0d6d61785f6465636973696f6e73944b40682f8c1e62696c7169732e636f676e69746976652d6461672d6275646765742f76319475628c1073656d616e7469635f72656c65617365948c40616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161619468366837682f8c1362696c7169732e7461736b2d676f616c2f76319475622e",
+      "json_sha256": "ba2dcce92a8ebefcb688766ec2ba740ea9888ada47931c48c48c0d080f181685",
+      "pickle_sha256": "0cf102518869a7e319267b932b6c29a3a81209e7b5e356e7a7ada9c2b56391e4"
+    },
+    "computed": {
+      "canonical_json": "{\"answer\":{\"schema_version\":\"bilqis.cognitive-typed-value/v1\",\"semantic_release\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"source_handle\":null,\"state\":\"VALUE\",\"type_name\":\"Number\",\"value\":10},\"receipt\":{\"executed_nodes\":[\"mul\",\"add\"],\"lookup_count\":2,\"memo_hit_count\":0,\"operation_count\":2,\"schema_version\":\"bilqis.cognitive-dag-receipt/v1\",\"selected_bindings\":[[\"mul\",\"MUL\",[\"literal:source:literal:0\",\"literal:source:literal:1\"]],[\"add\",\"ADD\",[\"result:mul\",\"literal:source:literal:2\"]]],\"semantic_release\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"source_binding_digest\":\"60eb56c0012b60e57b0561523d6cb7dacf7e681080144aecd1d5c2c959d10fa5\",\"unresolved_signature\":null},\"schema_version\":\"bilqis.cognitive-dag-result/v1\"}",
+      "protocol4_pickle_hex": "8004952f030000000000008c2262696c7169735f6d6c782e73656d616e746963732e636f676e69746976655f646167948c09444147526573756c749493942981947d94288c06616e73776572948c2e62696c7169735f6d6c782e73656d616e746963732e636f676e69746976655f6f70657261746f72732e7479706573948c0a547970656456616c75659493942981947d94288c09747970655f6e616d65948c064e756d626572948c0576616c7565944b0a8c1073656d616e7469635f72656c65617365948c4061616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161948c0d736f757263655f68616e646c65944e8c0573746174659468068c0a56616c756553746174659493948c0556414c554594859452948c0e736368656d615f76657273696f6e948c1f62696c7169732e636f676e69746976652d74797065642d76616c75652f76319475628c07726563656970749468008c0a444147526563656970749493942981947d9428680e680f8c15736f757263655f62696e64696e675f646967657374948c4036306562353663303031326236306535376230353631353233643663623764616366376536383130383031343461656364316435633263393539643130666135948c0f6f7065726174696f6e5f636f756e74944b028c0c6c6f6f6b75705f636f756e74944b028c0e6d656d6f5f6869745f636f756e74944b008c1173656c65637465645f62696e64696e6773948c036d756c948c034d554c948c186c69746572616c3a736f757263653a6c69746572616c3a30948c186c69746572616c3a736f757263653a6c69746572616c3a3194869487948c03616464948c03414444948c0a726573756c743a6d756c948c186c69746572616c3a736f757263653a6c69746572616c3a32948694879486948c0e65786563757465645f6e6f646573946824682a86948c14756e7265736f6c7665645f7369676e6174757265944e68178c1f62696c7169732e636f676e69746976652d6461672d726563656970742f763194756268178c1e62696c7169732e636f676e69746976652d6461672d726573756c742f76319475622e",
+      "json_sha256": "0a213c47e656bbc2f0d36f386d83489e279787fa9e27dd2faca70a8cd88d4188",
+      "pickle_sha256": "862849cb65a6cf07cdc0375bef109c07e3991865c98d17730be6b056d36ce696"
+    },
+    "memo_hit": {
+      "canonical_json": "{\"answer\":{\"schema_version\":\"bilqis.cognitive-typed-value/v1\",\"semantic_release\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"source_handle\":null,\"state\":\"VALUE\",\"type_name\":\"Number\",\"value\":10},\"receipt\":{\"executed_nodes\":[\"mul\",\"add\"],\"lookup_count\":2,\"memo_hit_count\":2,\"operation_count\":0,\"schema_version\":\"bilqis.cognitive-dag-receipt/v1\",\"selected_bindings\":[[\"mul\",\"MUL\",[\"literal:source:literal:0\",\"literal:source:literal:1\"]],[\"add\",\"ADD\",[\"result:mul\",\"literal:source:literal:2\"]]],\"semantic_release\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"source_binding_digest\":\"60eb56c0012b60e57b0561523d6cb7dacf7e681080144aecd1d5c2c959d10fa5\",\"unresolved_signature\":null},\"schema_version\":\"bilqis.cognitive-dag-result/v1\"}",
+      "protocol4_pickle_hex": "8004952f030000000000008c2262696c7169735f6d6c782e73656d616e746963732e636f676e69746976655f646167948c09444147526573756c749493942981947d94288c06616e73776572948c2e62696c7169735f6d6c782e73656d616e746963732e636f676e69746976655f6f70657261746f72732e7479706573948c0a547970656456616c75659493942981947d94288c09747970655f6e616d65948c064e756d626572948c0576616c7565944b0a8c1073656d616e7469635f72656c65617365948c4061616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161948c0d736f757263655f68616e646c65944e8c0573746174659468068c0a56616c756553746174659493948c0556414c554594859452948c0e736368656d615f76657273696f6e948c1f62696c7169732e636f676e69746976652d74797065642d76616c75652f76319475628c07726563656970749468008c0a444147526563656970749493942981947d9428680e680f8c15736f757263655f62696e64696e675f646967657374948c4036306562353663303031326236306535376230353631353233643663623764616366376536383130383031343461656364316435633263393539643130666135948c0f6f7065726174696f6e5f636f756e74944b008c0c6c6f6f6b75705f636f756e74944b028c0e6d656d6f5f6869745f636f756e74944b028c1173656c65637465645f62696e64696e6773948c036d756c948c034d554c948c186c69746572616c3a736f757263653a6c69746572616c3a30948c186c69746572616c3a736f757263653a6c69746572616c3a3194869487948c03616464948c03414444948c0a726573756c743a6d756c948c186c69746572616c3a736f757263653a6c69746572616c3a32948694879486948c0e65786563757465645f6e6f646573946824682a86948c14756e7265736f6c7665645f7369676e6174757265944e68178c1f62696c7169732e636f676e69746976652d6461672d726563656970742f763194756268178c1e62696c7169732e636f676e69746976652d6461672d726573756c742f76319475622e",
+      "json_sha256": "30ec5eb9de79cdb30a7c3118dc96ead012ce8cc4eba7b806792edfae6a6bd964",
+      "pickle_sha256": "5575a0d801600d69f8e2c7451ec48e9161c4226fe0b8b41b94eccfe24cf7f4e2"
+    },
+    "exhausted": {
+      "canonical_json": "{\"answer\":{\"schema_version\":\"bilqis.cognitive-typed-value/v1\",\"semantic_release\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"source_handle\":null,\"state\":\"UNRESOLVED\",\"type_name\":\"Number\",\"value\":null},\"receipt\":{\"executed_nodes\":[],\"lookup_count\":1,\"memo_hit_count\":0,\"operation_count\":0,\"schema_version\":\"bilqis.cognitive-dag-receipt/v1\",\"selected_bindings\":[[\"mul\",\"MUL\",[\"literal:source:literal:0\",\"literal:source:literal:1\"]],[\"add\",\"ADD\",[\"result:mul\",\"literal:source:literal:2\"]]],\"semantic_release\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"source_binding_digest\":\"60eb56c0012b60e57b0561523d6cb7dacf7e681080144aecd1d5c2c959d10fa5\",\"unresolved_signature\":\"mul:Number\"},\"schema_version\":\"bilqis.cognitive-dag-result/v1\"}",
+      "protocol4_pickle_hex": "8004953a030000000000008c2262696c7169735f6d6c782e73656d616e746963732e636f676e69746976655f646167948c09444147526573756c749493942981947d94288c06616e73776572948c2e62696c7169735f6d6c782e73656d616e746963732e636f676e69746976655f6f70657261746f72732e7479706573948c0a547970656456616c75659493942981947d94288c09747970655f6e616d65948c064e756d626572948c0576616c7565944e8c1073656d616e7469635f72656c65617365948c4061616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161948c0d736f757263655f68616e646c65944e8c0573746174659468068c0a56616c756553746174659493948c0a554e5245534f4c56454494859452948c0e736368656d615f76657273696f6e948c1f62696c7169732e636f676e69746976652d74797065642d76616c75652f76319475628c07726563656970749468008c0a444147526563656970749493942981947d9428680e680f8c15736f757263655f62696e64696e675f646967657374948c4036306562353663303031326236306535376230353631353233643663623764616366376536383130383031343461656364316435633263393539643130666135948c0f6f7065726174696f6e5f636f756e74944b008c0c6c6f6f6b75705f636f756e74944b018c0e6d656d6f5f6869745f636f756e74944b008c1173656c65637465645f62696e64696e6773948c036d756c948c034d554c948c186c69746572616c3a736f757263653a6c69746572616c3a30948c186c69746572616c3a736f757263653a6c69746572616c3a3194869487948c03616464948c03414444948c0a726573756c743a6d756c948c186c69746572616c3a736f757263653a6c69746572616c3a32948694879486948c0e65786563757465645f6e6f64657394298c14756e7265736f6c7665645f7369676e6174757265948c0a6d756c3a4e756d6265729468178c1f62696c7169732e636f676e69746976652d6461672d726563656970742f763194756268178c1e62696c7169732e636f676e69746976652d6461672d726573756c742f76319475622e",
+      "json_sha256": "25b8fba544a93b0a3ec81df6871b287fcead814573d8710183cc20d5fe9afaa2",
+      "pickle_sha256": "fd52a836184e705c7ed774525c56d5f9b82db8cbfa6b7ac4be5b86dcdb03dc7f"
+    },
+    "ambiguous": {
+      "canonical_json": "{\"answer\":{\"schema_version\":\"bilqis.cognitive-typed-value/v1\",\"semantic_release\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"source_handle\":null,\"state\":\"UNRESOLVED\",\"type_name\":\"Number\",\"value\":null},\"receipt\":{\"executed_nodes\":[],\"lookup_count\":0,\"memo_hit_count\":0,\"operation_count\":0,\"schema_version\":\"bilqis.cognitive-dag-receipt/v1\",\"selected_bindings\":[],\"semantic_release\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"source_binding_digest\":\"60eb56c0012b60e57b0561523d6cb7dacf7e681080144aecd1d5c2c959d10fa5\",\"unresolved_signature\":\"answer:Number\"},\"schema_version\":\"bilqis.cognitive-dag-result/v1\"}",
+      "protocol4_pickle_hex": "800495be020000000000008c2262696c7169735f6d6c782e73656d616e746963732e636f676e69746976655f646167948c09444147526573756c749493942981947d94288c06616e73776572948c2e62696c7169735f6d6c782e73656d616e746963732e636f676e69746976655f6f70657261746f72732e7479706573948c0a547970656456616c75659493942981947d94288c09747970655f6e616d65948c064e756d626572948c0576616c7565944e8c1073656d616e7469635f72656c65617365948c4061616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161948c0d736f757263655f68616e646c65944e8c0573746174659468068c0a56616c756553746174659493948c0a554e5245534f4c56454494859452948c0e736368656d615f76657273696f6e948c1f62696c7169732e636f676e69746976652d74797065642d76616c75652f76319475628c07726563656970749468008c0a444147526563656970749493942981947d9428680e680f8c15736f757263655f62696e64696e675f646967657374948c4036306562353663303031326236306535376230353631353233643663623764616366376536383130383031343461656364316435633263393539643130666135948c0f6f7065726174696f6e5f636f756e74944b008c0c6c6f6f6b75705f636f756e74944b008c0e6d656d6f5f6869745f636f756e74944b008c1173656c65637465645f62696e64696e677394298c0e65786563757465645f6e6f64657394298c14756e7265736f6c7665645f7369676e6174757265948c0d616e737765723a4e756d6265729468178c1f62696c7169732e636f676e69746976652d6461672d726563656970742f763194756268178c1e62696c7169732e636f676e69746976652d6461672d726573756c742f76319475622e",
+      "json_sha256": "843a340a0c1fd6b40b699d45e1c99facad5758b7a082d95c58176ad5fbcbdeb7",
+      "pickle_sha256": "4267321c93899bb3e71313f4bc5d58851c0c112d01a956789a43f27be420c541"
+    }
+  }
+}
