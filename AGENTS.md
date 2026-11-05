@@ -108,6 +108,34 @@ actually touched, the prior run was incomplete/failed/untrustworthy, or a human
 explicitly requests fresh verification. A merge commit is not automatic
 invalidation; inspect what it introduced.
 
+**Pre-spend scope gate (2026-11-05):** A finding, improvement opportunity, or
+review comment is **not** authorization to mint durable work. Before creating a
+new GitHub issue, issue-specific branch/worktree, remediation PR, or fresh review
+episode, write a scope receipt of at most **120 words** containing:
+`delivery` (current issue/PR/milestone), `required_by` (named acceptance criterion
+or concrete blocker), `defer_failure` (what present delivery actually cannot do if
+this waits), `reuse` (why the existing owner/branch cannot absorb it),
+`cheapest_next` (smallest evidence/mutation that resolves it), and one verdict:
+`ABSORB | PROCEED | PARK | DROP`.
+
+- `ABSORB`: necessary now, but the current issue/branch can own it. Create nothing.
+- `PROCEED`: directly blocks current delivery or a required correctness/safety gate,
+  cannot be safely absorbed, and the proposed next step is the cheapest adequate
+  remedy. Only this verdict permits a new issue/branch/review artifact.
+- `PARK`: useful but not presently blocking delivery. Create no issue, branch, PR,
+  or EGM episode; preserve at most a three-line note in the current handoff/owner.
+- `DROP`: speculative, duplicate, cosmetic, or peripheral to the current delivery
+  path. Spend nothing further.
+
+For new remediation issues, keep the GitHub body **under about 250 words by
+default**; normative detail belongs in the existing owner or versioned repo spec
+under ADR-118. Re-run the scope gate **before further spending** if a bounded
+remediation/helper unexpectedly grows past **3 commits, 3 touched files, or 250
+net changed lines**, or reveals a second independent problem. Crossing a tripwire
+does not forbid the work; it invalidates the original small-work assumption and
+requires a fresh present-delivery justification. Never run EGM to justify work
+that has not already passed this gate.
+
 Every lane-owned BAMF implementation leaf or open lane PR must be represented in that lane's
 machine-readable state under `docs/tasks/bamf-0.2/flow-control/`. Before substantive
 branch mutation, the operator must run `python3 -B scripts/check_bamf_flow_control.py`

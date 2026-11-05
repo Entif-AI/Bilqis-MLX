@@ -66,6 +66,19 @@ Hosted `quality.yml` follows this rule: it classifies the PR/push diff first and
 skips broad semantic/custody test suites when no expensive-test dependency surface
 changed. Manual dispatch remains an explicit request for fresh verification.
 
+### Spend nothing until scope earns it
+
+Before creating a remediation issue, branch/worktree, PR, or new review episode,
+apply the root `AGENTS.md` pre-spend scope gate. The default is to **absorb** a
+necessary repair into its existing owner, **park** a useful non-blocker as a tiny
+handoff note, or **drop** peripheral work. Only a concrete present-delivery blocker
+that cannot be safely absorbed earns `PROCEED` and a new artifact.
+
+For bounded remediation/helper work, the initial small-work assumption expires at
+3 commits, 3 touched files, or 250 net changed lines. Stop and re-check delivery
+necessity before crossing that boundary. EGM is downstream of this decision, never
+a mechanism for discovering whether the work deserved to exist.
+
 The lane is not a conveyor belt that must keep every open PR warm. The normal limit
 is **six `ACTIVE` implementation leaves per lane** under the 2026-11-04 owner
 amendment. Prefer finishing near-to-merge leaves while allowing independent

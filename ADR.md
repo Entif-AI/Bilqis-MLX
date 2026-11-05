@@ -2891,3 +2891,39 @@ governance changes do not modify Bilqis semantic, Factory, custody, neural, sour
 fixture or runtime behavior. Existing passing expensive-suite evidence therefore
 remains applicable; this change requires only lightweight structural/workflow
 validation, not another broad test campaign.
+
+## ADR-130 | 2026-11-05 | Scope must earn spend before durable remediation work exists
+
+**Status:** Accepted by direct owner instruction on 2026-11-05.
+
+**Problem:** ADR-127 can stop an EGM review loop after it has already consumed
+issues, branches, commits, code churn and several review rounds. The larger waste
+occurs earlier: a technically real but project-peripheral finding can become a long
+issue, isolated branch and substantial implementation before anyone asks whether
+current BAMF delivery needs it at all.
+
+**Decision:** Before a new issue, branch/worktree, remediation PR, or fresh review
+episode is created, the agent must make a concise pre-spend decision against the
+current delivery target. In at most 120 words, identify the exact delivery target,
+the named acceptance/blocker requiring action now, the concrete consequence of
+deferral, why the current owner cannot absorb the work, and the cheapest adequate
+next step. Classify the result as `ABSORB`, `PROCEED`, `PARK`, or `DROP`.
+
+Only `PROCEED` authorizes a new durable work artifact. `ABSORB` keeps necessary
+work on the existing owner/branch. `PARK` permits only a tiny continuation note,
+not a new issue/branch/PR/review. `DROP` ends spend. A reviewer finding, code smell,
+possible cleanup, architectural nicety, or generally useful improvement does not
+by itself satisfy present-delivery necessity.
+
+New remediation issue bodies should remain concise (about 250 words or less by
+default); ADR-118 already places normative engineering detail in versioned repo
+authority rather than duplicating it in GitHub prose. For work initially treated as
+bounded remediation/helper scope, exceeding 3 commits, 3 touched files, or 250 net
+changed lines invalidates the original small-work assumption and requires the scope
+decision to be repeated before further implementation or review. Discovery of a
+second independent problem has the same effect.
+
+This is not a ban on valuable cleanup or research. It is an ordering rule: current
+delivery blockers spend first; useful non-blockers wait until explicitly selected.
+EGM remains a merge-readiness tool for already-justified work, never a mechanism for
+discovering whether a peripheral repair deserved an issue in the first place.
