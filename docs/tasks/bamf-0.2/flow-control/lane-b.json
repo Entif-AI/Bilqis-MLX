@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "beb699ad7f131bd97a0983c3f27f8a53f7a240cc",
-  "updated_at": "2026-11-05T06:27:03+00:00",
+  "observed_unified": "7e4f92e062299909dd47b547b8b4897a189c3738",
+  "updated_at": "2026-11-05T22:38:54Z",
   "exception": null,
   "items": [
     {
@@ -132,13 +132,13 @@
     },
     {
       "issue": 711,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "beb699ad",
-      "summary": "B09.2 remediation #711 is explicitly selected for focused integration on the independent unified-base branch codex/egm-710-711-unified-20261105; #708/#709/#809 remain excluded.",
+      "pr": 872,
+      "state": "TURNED_IN",
+      "head_sha": "cd0af8b52b95212da76551f79bff27f5cc6e4aca",
+      "summary": "Ready PR #872 independently delivers B09.2 #711 plus its coherent B12.2 #710 consumer against unified 7e4f92e0: live B11 participation and B13 custody own the update path; affected 139-test sweep and quality:changed pass; fresh whole-parent EGM remains a parent merge-readiness gate.",
       "resume_trigger": null,
       "closed_pr": 806,
-      "preserved_branch": "codex/remediation-711-participation-20261103",
+      "preserved_branch": "codex/egm-710-711-unified-20261105",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
       "close_reason": "EGM-Mitigation issue #711"
     },
@@ -296,10 +296,10 @@
     {
       "issue": 710,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "beb699ad",
-      "preserved_branch": "codex/remediation-710-execution-provenance-20261103",
-      "summary": "B12.2 remediation #710 is explicitly selected with #711 for independent focused integration on codex/egm-710-711-unified-20261105; no new work is folded into PR #809.",
+      "state": "TURNED_IN",
+      "head_sha": "cd0af8b52b95212da76551f79bff27f5cc6e4aca",
+      "preserved_branch": "codex/egm-710-711-unified-20261105",
+      "summary": "B12.2 #710 is co-delivered by ready PR #872 under upstream B09.2 #711 ownership against unified 7e4f92e0: candidate steps require owner-issued execution provenance and current B13 custody, with durable step proofs and caller authority removed from the public admission seam; #708/#709/#809 are untouched.",
       "resume_trigger": null,
       "closed_pr": 807
     },
