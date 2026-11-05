@@ -6,7 +6,7 @@ def _public():
     return _public_facade("bilqis_mlx.semantics.released_frame_schemas")
 import hmac
 from pathlib import Path
-from ..atlas_snapshot import AtlasArtifactSelection, load_pinned_atlas_snapshot
+from ..atlas.snapshot import AtlasArtifactSelection, load_pinned_atlas_snapshot
 from ..frame_codec import _canonical_bytes
 from ..frame_schema import FrameSchema, frame_schema_from_bytes
 from .contracts import (

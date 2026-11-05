@@ -12,7 +12,7 @@ import json
 from bilqis_mlx.semantics.atlas_projection import (
     CorpusCoverageRow, FrozenAtlasSnapshot,
 )
-from bilqis_mlx.semantics.atlas_snapshot import (
+from bilqis_mlx.semantics.atlas.snapshot import (
     AtlasArtifactSelection, load_pinned_atlas_snapshot,
 )
 

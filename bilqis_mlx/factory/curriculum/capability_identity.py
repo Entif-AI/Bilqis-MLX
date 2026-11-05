@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.semantics.cognitive_operators import OperatorRegistry
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.factory.model import FactoryRelease
 from bilqis_mlx.factory.curriculum.formal_constructive import (
     resolve_formal_source_operators,

@@ -18,7 +18,7 @@ from bilqis_mlx.semantics.context_eligibility import (
     SourceFrontier, SourceGrant, TaskScope,
     frame_evidence_digest, member_evidence_digest,
 )
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.released_frame_schemas import (
     lookup_source_pinned_frame_schema,
 )

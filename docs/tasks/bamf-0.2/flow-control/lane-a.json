@@ -1,10 +1,19 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "e836f90925cfe1b94cbb638aa25933cc2fe70ab1",
-  "updated_at": "2026-11-05T15:43:27Z",
+  "observed_unified": "7c8974191f5c9c5449f1056149776771ad2b72f3",
+  "updated_at": "2026-11-05T15:47:13Z",
   "exception": null,
   "items": [
+    {
+      "issue": 428,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "7c8974191f5c9c5449f1056149776771ad2b72f3",
+      "summary": "A12.2 started from reviewed-unified 7c897419 after A12.1/#427 and A10 custody closeout. Scope is the declared semantic-import/ownership cutover, active caller migration off legacy Atlas aliases, source-to-consumer/rebuild receipt, and exact #295 acceptance disposition; no neural or optimizer mutation is authorized.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a12-2-428-20261105"
+    },
     {
       "issue": 427,
       "pr": null,

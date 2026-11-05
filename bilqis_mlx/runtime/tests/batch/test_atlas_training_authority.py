@@ -8,7 +8,7 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.atlas_training_adapter import _require_semantic_authority
 from bilqis_mlx.semantics.atlas.feature_io import persist_feature_manifest
 from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection, load_pinned_atlas_snapshot
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection, load_pinned_atlas_snapshot
 from bilqis_mlx.semantics.context_eligibility import ContextPolicy, SourceFrontier, TaskScope
 from bilqis_mlx.semantics.frame_adapters import (
     BOOLEAN_CONNECTIVE_ADAPTER, FINITE_NUMERIC_ADAPTER, MICRO_PREDICATE_ADAPTER,

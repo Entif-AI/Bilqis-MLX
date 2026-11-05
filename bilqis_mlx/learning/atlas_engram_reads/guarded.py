@@ -7,7 +7,7 @@ import mlx.core as mx
 
 from bilqis_mlx.semantics.context_eligibility import ApprovedContextProjection, ContextHold, ContextPolicy, SourceFrontier, TaskScope, project_context
 from bilqis_mlx.semantics.frame_schema import AtomicFrame
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.released_frame_schemas import (
     lookup_source_pinned_frame_schema,
 )

@@ -1,6 +1,6 @@
 """Re-enter source-owned A01/A03/A06 authority before preparing model inputs."""
 from bilqis_mlx.semantics.atlas.feature_io import load_source_pinned_feature_manifest
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection, load_pinned_atlas_snapshot
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection, load_pinned_atlas_snapshot
 from bilqis_mlx.semantics.released_frame_schemas import (
     _load_pinned_released_frame_schemas, _source_pins,
 )

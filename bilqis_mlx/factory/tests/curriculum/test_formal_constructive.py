@@ -17,7 +17,7 @@ from bilqis_mlx.factory.formal_constructive import (
 from bilqis_mlx.semantics.atlas_projection import (
     AbiEntry, FormalDomainBinding, compile_atlas_release, persist_atlas_release,
 )
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.cognitive_operators import (
     OperatorRegistry, default_registry, operator_grant_digest,
 )

@@ -3,7 +3,10 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from scripts.check_semantic_boundaries import inspect_semantic_boundaries
+from scripts.check_semantic_boundaries import (
+    SEMANTIC_IMPORT_ROLES,
+    inspect_semantic_boundaries,
+)
 from bilqis_mlx.verification.outcomes import LawCheckStatus
 
 
@@ -27,6 +30,35 @@ class SemanticBoundaryTests(unittest.TestCase):
 
     def test_real_semantic_packages_obey_ownership(self):
         self.assertEqual(inspect_semantic_boundaries(ROOT), ())
+
+    def test_legacy_atlas_alias_is_not_a_current_import_surface(self):
+        with tempfile.TemporaryDirectory() as temp:
+            project = Path(temp)
+            for part in ("semantics", "verification", "source_adapters"):
+                (project / "bilqis_mlx" / part).mkdir(parents=True)
+            (project / "bilqis_mlx" / "consumer.py").write_text(
+                "from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection\n",
+                encoding="utf-8")
+            problems = inspect_semantic_boundaries(project)
+            self.assertEqual(len(problems), 1)
+            self.assertIn("SEMANTIC_IMPORT_ROLE LEGACY_COMPATIBILITY_ALIAS", problems[0])
+
+    def test_canonical_owner_and_declared_compatibility_facade_are_allowed(self):
+        self.assertEqual(
+            SEMANTIC_IMPORT_ROLES["bilqis_mlx.semantics.atlas.snapshot"],
+            "CURRENT_SOURCE_OWNER")
+        self.assertEqual(
+            SEMANTIC_IMPORT_ROLES["bilqis_mlx.semantics.atlas_projection"],
+            "HISTORICAL_COMPATIBILITY_FACADE")
+        with tempfile.TemporaryDirectory() as temp:
+            project = Path(temp)
+            for part in ("semantics", "verification", "source_adapters"):
+                (project / "bilqis_mlx" / part).mkdir(parents=True)
+            (project / "bilqis_mlx" / "consumer.py").write_text(
+                "from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection\n"
+                "from bilqis_mlx.semantics.atlas_projection import compile_atlas_release\n",
+                encoding="utf-8")
+            self.assertEqual(inspect_semantic_boundaries(project), ())
 
     def test_linter_catches_illegal_import_and_inline_status(self):
         with tempfile.TemporaryDirectory() as temp:
