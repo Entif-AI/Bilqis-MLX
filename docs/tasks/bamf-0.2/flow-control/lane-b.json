@@ -125,8 +125,8 @@
       "issue": 754,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "b3ae176eb93dc73fffe6f66a4050885fb3f1ca25",
-      "summary": "B13.3 EGM remediation active: attention caches are now bound to exact parameter content, model swaps fail closed, and parameter-extension generation identity invalidates stale caches; accepted-publication/cold-resume proof remains separate and must consume #709.",
+      "head_sha": "00c31b06d15aa759fb94f7d51b1500da7c15b455",
+      "summary": "B13.3 EGM remediation active: native attention caches bind exact parameter content; real B13 accepted-generation publication, model swap, and parameter extension all invalidate stale caches and fresh rebuild preserves answers. Cold-resume/frozen-v1 completion remains and cold resume must consume #709.",
       "resume_trigger": null,
       "preserved_branch": "codex/754-cache-transition-20261105"
     },
