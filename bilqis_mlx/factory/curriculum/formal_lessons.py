@@ -1,7 +1,7 @@
 """Task-scoped formal lesson proposals with independent typed checking."""
 from __future__ import annotations
 
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.cognitive_operators import OperatorBinding, TypedValue
 from bilqis_mlx.semantics.domains import contract_digest
 

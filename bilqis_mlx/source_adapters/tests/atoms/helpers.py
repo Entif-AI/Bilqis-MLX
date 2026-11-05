@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 from bilqis_mlx.live_grade_c import registry_graph
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.context_eligibility import (
     PUBLIC_FORMAL, ContextPolicy, SourceFrontier, TaskScope,
 )

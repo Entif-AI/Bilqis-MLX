@@ -21,7 +21,7 @@ from bilqis_mlx.runtime.tests.test_atlas_training_adapter import answer_plan_for
 from bilqis_mlx.semantics.atlas.feature_io import persist_feature_manifest
 from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest
 from bilqis_mlx.semantics.atlas_features.formal import source_qualified_feature_row
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection, load_pinned_atlas_snapshot
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection, load_pinned_atlas_snapshot
 from bilqis_mlx.semantics.context_eligibility import PUBLIC_FORMAL, ContextPolicy, SourceFrontier, SourceGrant, TaskScope
 from bilqis_mlx.semantics.frame_adapters import bind_registered_source_row, public_formal_context
 from bilqis_mlx.semantics.frame_adapters import (

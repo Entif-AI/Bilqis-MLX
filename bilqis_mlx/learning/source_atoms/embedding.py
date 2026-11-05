@@ -2,7 +2,7 @@
 import mlx.core as mx
 
 from ...semantics.atlas_features import build_feature_manifest
-from ...semantics.atlas_snapshot import load_pinned_atlas_snapshot
+from ...semantics.atlas.snapshot import load_pinned_atlas_snapshot
 from ...semantics.source_atom_binding.common import invalid
 from ...source_adapters.atom_binding import (
     build_source_atom_handoff, require_pinned_embedding_ready,

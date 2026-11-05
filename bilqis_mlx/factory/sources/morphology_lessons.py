@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import asdict
 from pathlib import Path
 
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.context_eligibility import (
     ContextPolicy,
     ContextHold,

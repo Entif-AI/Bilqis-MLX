@@ -49,26 +49,25 @@
         "expires_when": "PR #743 merges or closes."
       },
       {
-        "pr": 814,
-        "reason": "BAMF Project dashboard governance documentation PR changing only AGENTS.md and README.md; no BAMF implementation leaf or integration behavior.",
-        "authority": "ADR-126 implementation-PR inventory excludes non-implementation governance work; verified PR #814 file scope and open state on 2026-11-03.",
-        "expires_when": "PR #814 merges or closes."
+        "pr": 866,
+        "reason": "Post-merge governance/bookkeeping repair only: reconciles the already-merged A12.1 PR #861 custody fields in Lane A flow-control state and introduces no BAMF implementation or runtime change.",
+        "authority": "AGENTS.md passing-test evidence reuse and review-staleness rules classify documentation, issue/PR bookkeeping, and flow-control-only changes as nonsemantic; open_pr_inventory.non_implementation_exceptions is the existing machine-readable classification mechanism.",
+        "expires_when": "PR #866 merges or closes."
       },
       {
-        "pr": 839,
-        "reason": "Test and CI infrastructure PR for differential verification and script organization; it does not implement a BAMF feature leaf or integration candidate.",
-        "authority": "ADR-126 implementation-PR inventory excludes non-implementation infrastructure work; verified PR #839 file scope and open state on 2026-11-04.",
-        "expires_when": "PR #839 merges or closes."
+        "pr": 868,
+        "reason": "Post-merge governance/bookkeeping repair only: reconciles the already-merged A10.3 PR #865 custody fields in Lane A flow-control state and introduces no BAMF implementation or runtime change.",
+        "authority": "AGENTS.md passing-test evidence reuse and review-staleness rules classify documentation, issue/PR bookkeeping, and flow-control-only changes as nonsemantic; open_pr_inventory.non_implementation_exceptions is the existing machine-readable classification mechanism.",
+        "expires_when": "PR #868 merges or closes."
+      },
+      {
+        "pr": 870,
+        "reason": "Post-merge governance/bookkeeping repair only: reconciles the already-merged A12.2 PR #869 custody fields in Lane A flow-control state and introduces no BAMF implementation or runtime change.",
+        "authority": "AGENTS.md passing-test evidence reuse and review-staleness rules classify documentation, issue/PR bookkeeping, and flow-control-only changes as nonsemantic; open_pr_inventory.non_implementation_exceptions is the existing machine-readable classification mechanism.",
+        "expires_when": "PR #870 merges or closes."
       }
     ],
     "admission_exceptions": [
-      {
-        "pr": 803,
-        "head_branch": "codex/bamf02-c-347-integration-20261103",
-        "reason": "Lane C integration candidate owned by the concurrent Lane C session.",
-        "authority": "Direct project-owner instruction on 2026-11-03 to keep the EGM-Mitigation queue moving",
-        "expires_when": "PR #803 merges or closes."
-      },
       {
         "head_branch": "codex/remediation-egm-708-711-integration-20261103",
         "reason": "Combined EGM-Mitigation integration candidate for #708, #709, #710 and #711, replacing PRs #804, #805, #806 and #807.",
