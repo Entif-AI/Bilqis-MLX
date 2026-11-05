@@ -45,6 +45,8 @@ def _split_digest(split: EvidenceSplitReceipt) -> str:
         split.heldout_record_ids,
         split.train_family_ids,
         split.heldout_family_ids,
+        split.interpretation_revision,
+        split.rights,
     )).encode("utf-8")
     return sha256(payload).hexdigest()
 

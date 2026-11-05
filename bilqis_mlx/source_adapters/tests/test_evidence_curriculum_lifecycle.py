@@ -14,7 +14,10 @@ from bilqis_mlx.semantics.atlas.snapshot_contracts import AtlasArtifactSelection
 from bilqis_mlx.source_adapters.evidence_frames import (
     EvidenceSemanticAuthority,
     EventTime,
+    PRIVATE_REAL_FIXTURE_SOURCE,
+    PRIVATE_REAL_FIXTURE_MANIFEST_CID,
     build_public_fixture_snapshot,
+    build_private_real_fixture_snapshot,
     public_export,
 )
 from bilqis_mlx.source_adapters.tests.test_evidence_frames import (
@@ -80,11 +83,14 @@ class EvidenceCurriculumLifecycleTests(unittest.TestCase):
         self.assertEqual(unambiguous.lessons[0].frame.occurrence_truth, "FALSE")
 
     def test_private_real_reaches_trainer_preparation_but_cannot_export(self):
-        rights = replace(
-            self.rights, regime="PRIVATE_REAL", public_export_allowed=False)
-        private_record = replace(
-            self.snapshot.records[0], actor_ref="PROTECTED_SENTINEL_DO_NOT_EXPORT")
-        snapshot = replace(self.snapshot, rights=rights, records=(private_record,))
+        snapshot, rights = build_private_real_fixture_snapshot(
+            atlas_selection=self.selection)
+        private_record = snapshot.records[0]
+        self.assertEqual(snapshot.source_manifest_cid, PRIVATE_REAL_FIXTURE_MANIFEST_CID)
+        self.assertNotEqual(snapshot.source_manifest_cid, self.snapshot.source_manifest_cid)
+        self.assertNotEqual(snapshot.source_byte_digest, self.snapshot.source_byte_digest)
+        self.assertIn("PROTECTED_SENTINEL_DO_NOT_EXPORT", PRIVATE_REAL_FIXTURE_SOURCE)
+        self.assertEqual(private_record.actor_ref, "PROTECTED_SENTINEL_DO_NOT_EXPORT")
         result = self.compile(snapshot, rights)
         self.assertEqual(len(result.lessons), 4)
         self.assertEqual(result.holds, ())
@@ -123,6 +129,28 @@ class EvidenceCurriculumLifecycleTests(unittest.TestCase):
         self.assertEqual(
             caught.exception.context["reason"],
             "BAMF_EVIDENCE_PUBLIC_EXPORT_FORBIDDEN")
+
+    def test_split_receipt_identity_binds_rights_and_interpretation_revision(self):
+        snapshot, rights = build_private_real_fixture_snapshot(
+            atlas_selection=self.selection)
+        result = self.compile(snapshot, rights)
+        record_id = snapshot.records[0].record_id
+        original = plan_fresh_challenge(
+            result, train_record_ids=(record_id,), heldout_record_ids=()).split
+
+        changed_rights = replace(rights, purpose="EVALUATION")
+        rights_result = self.compile(
+            replace(snapshot, rights=changed_rights), changed_rights)
+        rights_split = plan_fresh_challenge(
+            rights_result, train_record_ids=(record_id,), heldout_record_ids=()).split
+        self.assertNotEqual(original.receipt_sha256, rights_split.receipt_sha256)
+
+        revised_snapshot = replace(
+            snapshot, interpretation_revision="bravo-private-real-fixture/v2")
+        revision_result = self.compile(revised_snapshot, rights)
+        revision_split = plan_fresh_challenge(
+            revision_result, train_record_ids=(record_id,), heldout_record_ids=()).split
+        self.assertNotEqual(original.receipt_sha256, revision_split.receipt_sha256)
 
     def test_unclassified_material_is_held_before_training_or_export(self):
         rights = replace(

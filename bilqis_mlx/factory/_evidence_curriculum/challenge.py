@@ -83,7 +83,14 @@ def split_evidence_families(
     held = tuple(sorted({by_record[item] for item in heldout_record_ids}))
     if set(train) & set(held):
         _fail("BAMF_EVIDENCE_SPLIT_WITNESS_NOT_INDEPENDENT")
-    payload = repr((train_record_ids, heldout_record_ids, train, held)).encode("utf-8")
+    payload = repr((
+        train_record_ids,
+        heldout_record_ids,
+        train,
+        held,
+        candidates.interpretation_revision,
+        candidates.rights,
+    )).encode("utf-8")
     return EvidenceSplitReceipt(
         train_record_ids=tuple(train_record_ids),
         heldout_record_ids=tuple(heldout_record_ids),
