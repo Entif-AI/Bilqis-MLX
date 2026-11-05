@@ -2,9 +2,18 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "6e12e5a077183713241bb9b2b0d0762d8d95fa47",
-  "updated_at": "2026-11-05T08:47:59.312478+00:00",
+  "updated_at": "2026-11-05T09:41:41+00:00",
   "exception": null,
   "items": [
+    {
+      "issue": 422,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "2fe7188f8bab67460dda90ba4a6442cefa98c06c",
+      "summary": "A10.2 is active on an issue-scoped branch from current Lane A, consuming A10.1 PR #852 through exact reviewed dependency head 3a96c9056d5e821f0376962bdd15788dc86a442e.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a10-2-422-20261105"
+    },
     {
       "issue": 421,
       "pr": 852,
