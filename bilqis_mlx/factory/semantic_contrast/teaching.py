@@ -2,10 +2,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.factory.semantic_contrast.checker import check_contrast, generate_contrasts
-from bilqis_mlx.factory.semantic_contrast.models import LessonSpec
+from bilqis_mlx.factory.semantic_contrast.models import CHECKER
 from bilqis_mlx.factory.semantic_contrast.types import (
     AllowedVariation,
     ContrastFamily,
@@ -106,6 +105,8 @@ def check_contrast_row(row: dict, *, graph=None, **_) -> bool:
         row.get("source_id") == lesson.lineage.source_occurrence_id
         and row.get("gold") == lesson.expected_answer
         and row.get("question") == lesson.question
+        and row.get("answer_kind") == choice.answer_kind
+        and tuple(row.get("source_roots", ())) == choice.source_roots
         and row.get("contrast_family") == lesson.family.value
         and row.get("generator") == OPTION_ID
         and row.get("oracle") == lesson.checker_id
