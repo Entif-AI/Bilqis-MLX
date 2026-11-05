@@ -14,7 +14,7 @@ from bilqis_mlx.source_adapters.evidence_frames import (
     SourceSpan,
     build_public_fixture_snapshot,
 )
-from bilqis_mlx.source_adapters.public_bravo_fixture import (
+from bilqis_mlx.source_adapters.bravo.fixture import (
     EXPECTED_QUESTIONS,
     EXPECTED_RENDERED,
     compile_public_bravo_fixture_receipt,

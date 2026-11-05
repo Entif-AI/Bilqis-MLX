@@ -25,7 +25,7 @@ from bilqis_mlx.source_adapters.evidence_frames import (
     build_public_fixture_snapshot,
     parse_public_fixture_source,
 )
-from bilqis_mlx.source_adapters.public_bravo_receipt import (
+from bilqis_mlx.source_adapters.bravo.receipt import (
     EXPECTED_ACTOR_REF,
     EXPECTED_GOLDS,
     EXPECTED_QUESTIONS,
