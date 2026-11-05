@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from ..adapters import SourceAdapterRegistry
 from ..curriculum_definition import CurriculumDefinition, SourceBindingSet
-from .profiles import CapabilityProfile, CurriculumProfile, GradeProfile
-from .records import CapabilityExecution, GradeExecution
+from ..execution import CapabilityProfile, CurriculumProfile, GradeProfile
+from ..execution import CapabilityExecution, GradeExecution
 from .. import execution as _api
 
 

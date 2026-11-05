@@ -4,8 +4,8 @@ from __future__ import annotations
 from ...curriculum import Course
 from ..adapters import SourceAdapterRegistry
 from ..curriculum_definition import CurriculumDefinition, SourceBindingSet
-from .profiles import CurriculumProfile
-from .records import ExecutionPlan
+from ..execution import CurriculumProfile
+from ..execution import ExecutionPlan
 from .. import execution as _api
 
 

@@ -4714,67 +4714,11 @@
       "path": "bilqis_mlx/factory/_execution/lineage.py"
     },
     {
-      "code_hint": "FACTORY_PLAN_LINEAGE_CURRICULUM_DIGEST_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PLAN_LINEAGE_CURRICULUM_DIGEST_INVALID'",
-      "path": "bilqis_mlx/factory/_execution/lineage.py"
-    },
-    {
       "code_hint": "FACTORY_PLAN_LINEAGE_CURRICULUM_DRIFT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'FACTORY_PLAN_LINEAGE_CURRICULUM_DRIFT'",
       "path": "bilqis_mlx/factory/_execution/lineage.py"
-    },
-    {
-      "code_hint": "FACTORY_PLAN_LINEAGE_SEMANTIC_CATALOG_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PLAN_LINEAGE_SEMANTIC_CATALOG_INVALID'",
-      "path": "bilqis_mlx/factory/_execution/lineage.py"
-    },
-    {
-      "code_hint": "FACTORY_PROFILE_CAPABILITY_ID_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PROFILE_CAPABILITY_ID_REQUIRED'",
-      "path": "bilqis_mlx/factory/_execution/profiles.py"
-    },
-    {
-      "code_hint": "FACTORY_PROFILE_DUPLICATE_CAPABILITY_OVERRIDE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PROFILE_DUPLICATE_CAPABILITY_OVERRIDE'",
-      "path": "bilqis_mlx/factory/_execution/profiles.py"
-    },
-    {
-      "code_hint": "FACTORY_PROFILE_DUPLICATE_GRADE_OVERRIDE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PROFILE_DUPLICATE_GRADE_OVERRIDE'",
-      "path": "bilqis_mlx/factory/_execution/profiles.py"
-    },
-    {
-      "code_hint": "FACTORY_PROFILE_ENABLED_CAPABILITIES_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PROFILE_ENABLED_CAPABILITIES_INVALID'",
-      "path": "bilqis_mlx/factory/_execution/profiles.py"
-    },
-    {
-      "code_hint": "FACTORY_PROFILE_GRADE_ID_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PROFILE_GRADE_ID_REQUIRED'",
-      "path": "bilqis_mlx/factory/_execution/profiles.py"
-    },
-    {
-      "code_hint": "FACTORY_PROFILE_ID_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PROFILE_ID_REQUIRED'",
-      "path": "bilqis_mlx/factory/_execution/profiles.py"
     },
     {
       "code_hint": "FACTORY_PROFILE_ANSWER_VALUES_NOT_CANONICAL_SUBSET",
@@ -6014,6 +5958,62 @@
       "exception": "ValueError",
       "expression": "'FACTORY_SOURCE_BINDING_IDENTITY_INVALID'",
       "path": "bilqis_mlx/factory/curriculum_definition.py"
+    },
+    {
+      "code_hint": "FACTORY_PLAN_LINEAGE_CURRICULUM_DIGEST_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PLAN_LINEAGE_CURRICULUM_DIGEST_INVALID'",
+      "path": "bilqis_mlx/factory/execution.py"
+    },
+    {
+      "code_hint": "FACTORY_PLAN_LINEAGE_SEMANTIC_CATALOG_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PLAN_LINEAGE_SEMANTIC_CATALOG_INVALID'",
+      "path": "bilqis_mlx/factory/execution.py"
+    },
+    {
+      "code_hint": "FACTORY_PROFILE_CAPABILITY_ID_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PROFILE_CAPABILITY_ID_REQUIRED'",
+      "path": "bilqis_mlx/factory/execution.py"
+    },
+    {
+      "code_hint": "FACTORY_PROFILE_DUPLICATE_CAPABILITY_OVERRIDE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PROFILE_DUPLICATE_CAPABILITY_OVERRIDE'",
+      "path": "bilqis_mlx/factory/execution.py"
+    },
+    {
+      "code_hint": "FACTORY_PROFILE_DUPLICATE_GRADE_OVERRIDE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PROFILE_DUPLICATE_GRADE_OVERRIDE'",
+      "path": "bilqis_mlx/factory/execution.py"
+    },
+    {
+      "code_hint": "FACTORY_PROFILE_ENABLED_CAPABILITIES_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PROFILE_ENABLED_CAPABILITIES_INVALID'",
+      "path": "bilqis_mlx/factory/execution.py"
+    },
+    {
+      "code_hint": "FACTORY_PROFILE_GRADE_ID_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PROFILE_GRADE_ID_REQUIRED'",
+      "path": "bilqis_mlx/factory/execution.py"
+    },
+    {
+      "code_hint": "FACTORY_PROFILE_ID_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PROFILE_ID_REQUIRED'",
+      "path": "bilqis_mlx/factory/execution.py"
     },
     {
       "code_hint": "FACTORY_EXECUTABLE_GENERATION_REGISTRY_REQUIRED",

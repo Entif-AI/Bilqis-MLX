@@ -30,6 +30,7 @@ class PublicExecutionContractTests(unittest.TestCase):
                 self.assertEqual(value.__module__, "bilqis_mlx.factory.execution")
                 self.assertEqual(value.__qualname__, name)
                 typing.get_type_hints(value)
+                self.assertIn("class " + name, inspect.getsource(value))
         for function in (
                 execution.compile_execution_plan, execution.diff_execution_plans,
                 execution.ExecutionPlan.grade_map.fget,

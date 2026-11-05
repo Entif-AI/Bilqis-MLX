@@ -47,7 +47,7 @@ def dump(node):
     return ast.dump(node, include_attributes=False)
 
 
-extracted = {}
+extracted = definitions(ast.parse((ROOT / OWNER).read_text()))
 for path in (ROOT / 'bilqis_mlx/factory/_execution').glob('*.py'):
     for name, node in definitions(ast.parse(path.read_text())).items():
         assert name not in extracted, name
@@ -91,12 +91,31 @@ for name, expected in baseline['metadata'].items():
     if inspect.isfunction(value):
         actual['signature'] = str(inspect.signature(value))
     assert actual == expected, name
-plan = execution.compile_execution_plan(
-    _synthetic_course(), execution.CurriculumProfile.full(), _synthetic_registry())
-assert plan.digest() == baseline['objects']['full']['json_sha256']
-payload = pickle.dumps(plan, protocol=4)
-assert hashlib.sha256(payload).hexdigest() == baseline['objects']['full']['pickle_sha256']
-assert pickle.loads(payload) == plan
+from dataclasses import asdict
+from bilqis_mlx.factory.tests.execution_plan.fixtures import _synthetic_boolean_course
+
+course = _synthetic_course()
+full = execution.compile_execution_plan(
+    course, execution.CurriculumProfile.full(), _synthetic_registry())
+reduced = execution.compile_execution_plan(
+    course, execution.CurriculumProfile('six', grades=(execution.GradeProfile(
+        'Z', enabled_capabilities=tuple(c.id for c in course.grades[0].capabilities[:6])),)),
+    _synthetic_registry())
+boolean_course, boolean_registry = _synthetic_boolean_course()
+boolean = execution.compile_execution_plan(
+    boolean_course, execution.CurriculumProfile.full(), boolean_registry)
+objects = dict(full=full, reduced=reduced, boolean=boolean,
+               delta=execution.diff_execution_plans(full, reduced))
+snapshots = json.loads(Path(__file__).with_name('snapshots.json').read_text())
+for name, value in objects.items():
+    literal = snapshots[name]
+    canonical = json.dumps(asdict(value), sort_keys=True, separators=(',', ':'))
+    assert canonical == literal['canonical_json'], name
+    payload = pickle.dumps(value, protocol=4)
+    old_payload = bytes.fromhex(literal['protocol4_pickle_hex'])
+    assert payload == old_payload, name
+    assert hashlib.sha256(payload).hexdigest() == baseline['objects'][name]['pickle_sha256']
+    assert pickle.loads(old_payload) == value, name
 paths = [ROOT / OWNER, ROOT / TEST,
          *(ROOT / 'bilqis_mlx/factory/_execution').glob('*.py'),
          *new_tests.glob('*.py')]

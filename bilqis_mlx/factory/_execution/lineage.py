@@ -1,66 +1,14 @@
 """Factory execution lineage owner."""
 from __future__ import annotations
 
-from dataclasses import dataclass
-from enum import Enum
-from .records import ExecutionPlan
+from ..execution import CurriculumDelta, ExecutionPlan, PlanLineage
 from .. import execution as _api
 
 
-class SemanticGeometryChange(str, Enum):
-    UNCHANGED = "UNCHANGED"
-    APPEND_ONLY_EXPANSION = "APPEND_ONLY_EXPANSION"
-    INCOMPATIBLE = "INCOMPATIBLE"
 
 
-@dataclass(frozen=True)
-class PlanLineage:
-    previous_curriculum_sha256: str
-    next_curriculum_sha256: str
-    semantic_geometry: SemanticGeometryChange
-
-    def __post_init__(self) -> None:
-        for value in (
-                self.previous_curriculum_sha256,
-                self.next_curriculum_sha256):
-            if (not isinstance(value, str) or len(value) != 64 or
-                    any(c not in "0123456789abcdef" for c in value)):
-                raise ValueError("FACTORY_PLAN_LINEAGE_CURRICULUM_DIGEST_INVALID")
-
-    @classmethod
-    def from_semantic_catalogs(
-            cls, previous: ExecutionPlan, current: ExecutionPlan,
-            previous_tokens: tuple[str, ...], current_tokens: tuple[str, ...]):
-        if (not previous_tokens or not current_tokens or
-                len(set(previous_tokens)) != len(previous_tokens) or
-                len(set(current_tokens)) != len(current_tokens)):
-            raise ValueError("FACTORY_PLAN_LINEAGE_SEMANTIC_CATALOG_INVALID")
-        if current_tokens == previous_tokens:
-            geometry = _api.SemanticGeometryChange.UNCHANGED
-        elif current_tokens[:len(previous_tokens)] == previous_tokens:
-            geometry = _api.SemanticGeometryChange.APPEND_ONLY_EXPANSION
-        else:
-            geometry = _api.SemanticGeometryChange.INCOMPATIBLE
-        return cls(
-            previous.curriculum_sha256, current.curriculum_sha256, geometry)
 
 
-@dataclass(frozen=True)
-class CurriculumDelta:
-    previous_plan_sha256: str
-    next_plan_sha256: str
-    previous_curriculum_sha256: str
-    next_curriculum_sha256: str
-    previous_source_binding_sha256: str
-    next_source_binding_sha256: str
-    added_grades: tuple[str, ...]
-    removed_grades: tuple[str, ...]
-    revised_grades: tuple[str, ...]
-    added_capabilities: tuple[str, ...]
-    removed_capabilities: tuple[str, ...]
-    changed_capabilities: tuple[str, ...]
-    projection_changes: tuple[str, ...]
-    semantic_geometry: str
 
 
 def _verify_lineage_curriculum(

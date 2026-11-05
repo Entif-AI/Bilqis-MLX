@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from ..curriculum_definition import SourceBindingSet
-from .records import (CapabilityExecution, GradeExecution, ProjectionDigests, CapabilityProjectionDigests)
+from ..execution import (CapabilityExecution, GradeExecution, ProjectionDigests, CapabilityProjectionDigests)
 from .. import execution as _api
 
 
