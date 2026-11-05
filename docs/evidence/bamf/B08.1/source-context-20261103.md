@@ -116,3 +116,31 @@ reach reviewed unified; then synchronize and implement both reads once.
 B07.1/#456 was separately closed completed after verifying human-merged PR #690
 at7984d787 and its exact final EGM/hosted receipt. The parent B07/B08 outcomes remain
 separate. No new native run or merge was needed for that accepted closeout.
+
+## Source-schema grant checkpoint — 2026-11-05
+
+Current reviewed unified `70a4ef1e883d348920d64083c7546f443a90ef77` was
+consumed before this bounded continuation. Commit
+`144c7cf34dc5ae373fed0e20285b486129d3835e` closes one remaining source-side
+read prerequisite: `source_qualified_motif_context` now derives the motif schema
+grant from the same pinned source schema it already validates for allocation/read
+context. Existing caller grants are collision checked; a caller cannot replace the
+schema evidence and obtain a read grant. This does not authorize a motif hit by
+itself.
+
+Focused real-source verification using the content-addressed A01 artifact:
+
+- source replay + numerical read eligibility: 10/10 PASS;
+- forged source-schema grant: rejected;
+- source prefix/revocation behavior: PASS;
+- `BAMF_FLOW_CONTROL_OK`, Lane B active 1/6;
+- changed source code smell audit: zero findings;
+- `git diff --check`: clean.
+
+Public hits remain fail closed. Draft PR #809 contains the proposed
+pointer-locked accepted-generation feature receipt, but #708 remains open and the
+PR is not accepted into reviewed unified. A provisional B08 wrapper that accepted
+a caller bundle path was deliberately discarded because it would reproduce the
+authority defect this hold exists to prevent. Resume after the #809
+accepted-generation feature/publication authority is human-accepted through
+reviewed unified, then bind B08 read tensors and allocations to that exact owner.
