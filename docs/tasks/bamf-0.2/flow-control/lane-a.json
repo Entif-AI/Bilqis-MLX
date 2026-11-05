@@ -1,27 +1,47 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "046cb64f180af1b1b73098d0d4e025f05ad2548b",
-  "updated_at": "2026-11-05T09:39:40+00:00",
+  "observed_unified": "eedfdaef9f528c02618963c8486ade4d12fcb18f",
+  "updated_at": "2026-11-05T09:50:52+00:00",
   "exception": null,
   "items": [
     {
-      "issue": 424,
-      "pr": 853,
+      "issue": 425,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "db13fad17d108bc4c09cf6447436edbb774ddf19",
+      "summary": "A11.2 is active on its issue-scoped branch from current reviewed unified, consuming the A11.1 merged implementation plus exact regression-repair head 04b7ad8622355273410cb38cb141bb5689e3ee73 from PR #856.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a11-2-425-20261105"
+    },
+    {
+      "issue": 422,
+      "pr": 855,
       "state": "TURNED_IN",
-      "head_sha": "3c5bf4d4571cca8a020ba8bbcf5609fcdd0261e4",
-      "summary": "A11.1 implemented with seven checker-grounded structural contrast families and refactored into focused type/model/transform/checker modules while preserving the public semantic_contrasts.py API. Semantic ABI integrity and portable verification pass at exact head 3c5bf4d4571cca8a020ba8bbcf5609fcdd0261e4; EGM_PENDING.",
-      "resume_trigger": "Independent exact-head EGM + human integration review for PR #853.",
-      "preserved_branch": "codex/bamf02-a11-1-424-20261105"
+      "head_sha": "5f87f6ae750475298b6c732282843b8b7ce5a470",
+      "summary": "A10.2 typed reconstructions and source-family-first challenge planning are implemented, synchronized to current unified, locally verified, and hosted checks are green; independent EGM remains pending.",
+      "resume_trigger": "Fresh independent exact-head EGM plus human integration review for PR #855.",
+      "preserved_branch": "codex/bamf02-a10-2-422-20261105"
+    },
+    {
+      "issue": 424,
+      "pr": 856,
+      "state": "TURNED_IN",
+      "head_sha": "04b7ad8622355273410cb38cb141bb5689e3ee73",
+      "summary": "A11.1 merged through PR #853, then its issue-owned tests exposed a refactor regression in SHA end anchoring. PR #856 restores exact 64-hex validation; owner suite 11/11 and governance 11/11 pass at repair head 04b7ad86; EGM_PENDING.",
+      "resume_trigger": "Human integration review plus independent EGM for regression-repair PR #856.",
+      "preserved_branch": "codex/bamf02-a11-1-424-regex-repair-20261105",
+      "merged_pr": 853
     },
     {
       "issue": 421,
-      "pr": 852,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "888c609cdeb4da9eeb9ca99b7f8bdf087188ca04",
       "summary": "A10.1 implemented on clean issue branch: provenance-safe BamfEvidenceSnapshot/v1 adapter, literal PUBLIC_FIXTURE parser, exact typed lesson compiler, source-family split independence, rights holds, missing-report verification state, and protected-sentinel non-leakage. Focused/adjacent tests 15 passed; governance/error-contract tests 11 passed; EGM_PENDING.",
-      "resume_trigger": "Independent exact-head review/EGM and human integration review for PR #852.",
-      "preserved_branch": "codex/bamf02-a10-1-421-20261105"
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a10-1-421-20261105",
+      "merged_pr": 852
     },
     {
       "issue": 395,
