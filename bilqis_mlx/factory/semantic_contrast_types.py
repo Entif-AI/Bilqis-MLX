@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+from types import MappingProxyType
 import re
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
@@ -186,7 +187,7 @@ def _validate_morphology(item: AllowedVariation) -> None:
         _fail("BAMF_SEMANTIC_CONTRAST_VARIATION_INVALID")
 
 
-_VARIATION_VALIDATORS = {
+_VARIATION_VALIDATORS = MappingProxyType({
     ContrastFamily.ROLE_SWAP: _validate_role_swap,
     ContrastFamily.CARDINALITY_CHANGE: _validate_cardinality,
     ContrastFamily.SCOPE_NEGATION: _validate_scope,
@@ -194,4 +195,4 @@ _VARIATION_VALIDATORS = {
     ContrastFamily.PLANNED_OCCURRED: _validate_status,
     ContrastFamily.MISSING_NEGATIVE: _validate_observation,
     ContrastFamily.MORPHOLOGY_ALTERNATIVE: _validate_morphology,
-}
+)
