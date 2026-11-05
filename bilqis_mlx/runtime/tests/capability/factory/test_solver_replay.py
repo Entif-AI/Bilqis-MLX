@@ -27,7 +27,7 @@ from bilqis_mlx.semantics.tests.test_cognitive_operators import (
     RELEASE, SCOPE, _case,
 )
 
-from bilqis_mlx.runtime.tests.capability.solver_helpers import _fixture
+from bilqis_mlx.runtime.tests.capability.factory.solver_helpers import _fixture
 
 class CognitiveSolverTests(unittest.TestCase):
     def test_replay_record_retains_costs_and_handles_without_source_payloads(self):

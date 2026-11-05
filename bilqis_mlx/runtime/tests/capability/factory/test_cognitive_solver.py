@@ -27,7 +27,7 @@ from bilqis_mlx.semantics.tests.test_cognitive_operators import (
     RELEASE, SCOPE, _case,
 )
 
-from bilqis_mlx.runtime.tests.capability.solver_helpers import _fixture
+from bilqis_mlx.runtime.tests.capability.factory.solver_helpers import _fixture
 
 class CognitiveSolverTests(unittest.TestCase):
     def test_applicable_exact_operator_wins_with_full_score_no_neural(self):

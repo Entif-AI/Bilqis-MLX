@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import tempfile
+from types import MappingProxyType
 import unittest
 from unittest.mock import patch
 
@@ -37,7 +38,7 @@ from bilqis_mlx.runtime.tests.batch.test_atlas_training_adapter import (
     _source_context, answer_plan_for, compile_prefix, feature_requests_for,
     features_for, source_ast_for,
 )
-from bilqis_mlx.runtime.tests.capability.factory_retention_live_support import (
+from bilqis_mlx.runtime.tests.capability.factory.factory_retention_live_support import (
     HP, genesis_bundle, live_factory_context,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import acceptance
@@ -51,13 +52,13 @@ ARTIFACT = Path(
 TARGET = "B.IDBOOLOPS"
 TRAIN_SEED = 46117
 FIXED_SEED = 7331
-FIXED_EACH = {
+FIXED_EACH = MappingProxyType({
     "A.IDENTITY": 2, "A.PARENT": 2, "A.LINK": 2, "A.MEMBER": 2,
     "A.EDGE": 2, "A.MAPS": 2,
     "B.AND": 4, "B.IFF": 4, "B.COMPOSITE": 1, "B.IDBOOLOPS": 1,
     "C.COUNT": 3, "C.NUMBER": 3, "C.SUCCESSOR": 3, "C.ADD": 3,
     "C.SUB": 3, "C.MUL": 3, "C.DIV": 3,
-}
+})
 
 
 def _fixed_school(run_dir, source_context, manifest_sha256):
@@ -114,96 +115,102 @@ class FactoryRetentionOwnerLiveTests(SourceBackboneTestBase):
         if not self.source.is_dir():
             self.skipTest("pinned legacy source fixture is not mounted")
 
+    def _seed_parent(self, run_dir, source_context, genesis):
+        with patch(
+            "bilqis_mlx.runtime.bamf_bundle.codec.assert_headroom",
+            return_value=None,
+        ):
+            first = publish_bamf_generation(
+                run_dir, genesis, acceptance=acceptance(genesis))
+        parent = load_accepted_generation(run_dir)
+        cache = bind_accepted_execution_cache(run_dir)
+        fixed = _fixed_school(run_dir, source_context, first["manifest_sha256"])
+        state_dag.persist(run_dir, {
+            "generation": 0,
+            "factory_release_sha256": source_context.release.release_sha256,
+            "last_exam": fixed,
+        })
+        return parent, cache
+
+    def _candidate_transaction(self, run_dir, source_context, parent, cache):
+        row = source_context.draw_rows(
+            seed=TRAIN_SEED, capability=TARGET, each=1)[0]
+        generation = execution_generation_digest(
+            parent.retained_state.optimizer.parameters,
+            spec=parent.topology, extents=parent.extents)
+        training = _training_batch(source_context, row, generation)
+        compiled = compile_factory_evaluation_batch(
+            source_context, parent, str(ARTIFACT), row,
+            source_seed=TRAIN_SEED, source_each=1)
+        live_batch = bind_compiled_training_batch(
+            training, compiled.compiled, compiled.sources, compiled.feature_schema)
+        authority = factory_task_authority(source_context, live_batch)
+        feature_context = authenticate_bamf_candidate_feature_context(
+            parent, str(ARTIFACT))
+        plan = task_goal_route_plan(
+            authority.goal, live_batch, feature_context.snapshot, generation)
+        expected = factory_evaluation_instrument(
+            source_context, parent, str(ARTIFACT), row,
+            source_seed=TRAIN_SEED, source_each=1).case.gold
+        route = task_goal_route_decisions(authority.goal)
+        self.assertEqual(len(route), 1)
+        node = authority.goal.expression_or_holes.nodes[0]
+        handle = next(
+            item.typed.source_handle for item in authority.binding.operands
+            if item.typed.type_name == expected.type_name
+            and item.typed.value == expected.value)
+        selected = next(
+            item for item in node.candidate_operand_refs[0]
+            if item.source_handle == handle)
+        targets = (DecisionOutput(route[0].decision_id, selected.identity),)
+        gradient = bamf_value_and_grad(
+            dict(parent.retained_state.optimizer.parameters),
+            live_batch, plan, targets, {route[0].decision_id: True}, cache)
+        declared = expected_bamf_shapes(parent.topology, parent.extents)
+        transaction = admit_uninterrupted_candidate_step(
+            run_dir, parent, loss_bearing_target=True, gradient_execution=gradient,
+            teacher_hparams=HP,
+            decay={item.name: item.decay for item in declared}, max_norm=1.0)
+        self.assertEqual(transaction.update_steps, 1)
+        self.assertEqual(len(transaction.training_authorities), 1)
+        return transaction
+
+    def _assert_published_successor(
+        self, run_dir, source_context, parent, cache, transaction,
+    ):
+        evaluation = evaluate_factory_retention_candidate(
+            source_context, transaction, str(ARTIFACT), TARGET, run_dir=run_dir)
+        decision = issue_factory_retention_decision(evaluation)
+        self.assertTrue(decision.accepted)
+        retained = resolve_candidate(transaction, accepted=True)
+        successor = derive_successor_bundle(
+            parent, retained,
+            parent_manifest_sha256=cache.accepted_manifest_sha256,
+            delivery_events=())
+        with patch(
+            "bilqis_mlx.runtime.bamf_bundle.codec.assert_headroom",
+            return_value=None,
+        ):
+            published = accept_and_publish(
+                run_dir, successor, retained, decision=decision,
+                feature_sha256=successor.extents.factor_map_digest)
+        cold = load_accepted_generation(run_dir)
+        self.assertEqual(cold.generation, 1)
+        self.assertEqual(
+            candidate_identity_digest(cold.retained_state),
+            candidate_identity_digest(retained))
+        self.assertEqual(published["generation"], 1)
+
     def test_source_owned_c05_acceptance_publishes_exact_successor(self):
         source_context, _ = live_factory_context(self.root, self.source)
         genesis, _ = genesis_bundle(self, self.snapshot, self.schema)
         with tempfile.TemporaryDirectory() as directory:
             run_dir = Path(directory)
-            with patch(
-                "bilqis_mlx.runtime.bamf_bundle.codec.assert_headroom",
-                return_value=None,
-            ):
-                first = publish_bamf_generation(
-                    run_dir, genesis, acceptance=acceptance(genesis))
-            parent = load_accepted_generation(run_dir)
-            cache = bind_accepted_execution_cache(run_dir)
-            fixed = _fixed_school(run_dir, source_context, first["manifest_sha256"])
-            state_dag.persist(run_dir, {
-                "generation": 0,
-                "factory_release_sha256": source_context.release.release_sha256,
-                "last_exam": fixed,
-            })
-
-            row = source_context.draw_rows(
-                seed=TRAIN_SEED, capability=TARGET, each=1)[0]
-            generation = execution_generation_digest(
-                parent.retained_state.optimizer.parameters,
-                spec=parent.topology, extents=parent.extents)
-            training = _training_batch(source_context, row, generation)
-            compiled = compile_factory_evaluation_batch(
-                source_context, parent, str(ARTIFACT), row,
-                source_seed=TRAIN_SEED, source_each=1)
-            live_batch = bind_compiled_training_batch(
-                training, compiled.compiled, compiled.sources,
-                compiled.feature_schema,
-            )
-            authority = factory_task_authority(source_context, live_batch)
-            feature_context = authenticate_bamf_candidate_feature_context(
-                parent, str(ARTIFACT))
-            plan = task_goal_route_plan(
-                authority.goal, live_batch, feature_context.snapshot, generation)
-            expected = factory_evaluation_instrument(
-                source_context, parent, str(ARTIFACT), row,
-                source_seed=TRAIN_SEED, source_each=1).case.gold
-            route = task_goal_route_decisions(authority.goal)
-            self.assertEqual(len(route), 1)
-            node = authority.goal.expression_or_holes.nodes[0]
-            handle = next(
-                item.typed.source_handle for item in authority.binding.operands
-                if item.typed.type_name == expected.type_name
-                and item.typed.value == expected.value)
-            selected = next(
-                item for item in node.candidate_operand_refs[0]
-                if item.source_handle == handle)
-            targets = (DecisionOutput(route[0].decision_id, selected.identity),)
-            mask = {route[0].decision_id: True}
-            gradient = bamf_value_and_grad(
-                dict(parent.retained_state.optimizer.parameters),
-                live_batch, plan, targets, mask, cache)
-            declared = expected_bamf_shapes(parent.topology, parent.extents)
-            transaction = admit_uninterrupted_candidate_step(
-                run_dir, parent,
-                loss_bearing_target=True, gradient_execution=gradient,
-                teacher_hparams=HP,
-                decay={item.name: item.decay for item in declared},
-                max_norm=1.0,
-            )
-            self.assertEqual(transaction.update_steps, 1)
-            self.assertEqual(len(transaction.training_authorities), 1)
-
-            evaluation = evaluate_factory_retention_candidate(
-                source_context, transaction, str(ARTIFACT), TARGET,
-                run_dir=run_dir)
-            decision = issue_factory_retention_decision(evaluation)
-            self.assertTrue(decision.accepted)
-            retained = resolve_candidate(transaction, accepted=True)
-            successor = derive_successor_bundle(
-                parent, retained,
-                parent_manifest_sha256=cache.accepted_manifest_sha256,
-                delivery_events=())
-            with patch(
-                "bilqis_mlx.runtime.bamf_bundle.codec.assert_headroom",
-                return_value=None,
-            ):
-                published = accept_and_publish(
-                    run_dir, successor, retained, decision=decision,
-                    feature_sha256=successor.extents.factor_map_digest)
-            cold = load_accepted_generation(run_dir)
-            self.assertEqual(cold.generation, 1)
-            self.assertEqual(
-                candidate_identity_digest(cold.retained_state),
-                candidate_identity_digest(retained))
-            self.assertEqual(published["generation"], 1)
+            parent, cache = self._seed_parent(run_dir, source_context, genesis)
+            transaction = self._candidate_transaction(
+                run_dir, source_context, parent, cache)
+            self._assert_published_successor(
+                run_dir, source_context, parent, cache, transaction)
 
 
 if __name__ == "__main__":

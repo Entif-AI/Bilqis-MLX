@@ -58,7 +58,7 @@ class _SourceBackboneProducerSession:
         self._sources = sources
         self._feature_schema = feature_schema
 
-    def _receipt_values(self, result=None):
+    def _receipt_replay(self):
         if self._sources is None or self._feature_schema is None:
             _invalid_producer_receipt()
         encoded, handoffs = self._encoded, self._handoffs
@@ -78,6 +78,36 @@ class _SourceBackboneProducerSession:
             spec=topology, extents=self._compiled.extents,
             scope_ids=mx.zeros(valid.shape, dtype=mx.int32), valid=valid,
             generation=generation, prefix_digest=prefix)
+        return encoded, source_digest, topology, generation, prefix, replay
+
+    def _motif_receipt_fields(
+        self, source_id, expected, hidden, source_digest, prefix, generation, topology,
+    ):
+        motif_disposition = NO_HIT if source_id == "g1" else NOT_APPLICABLE
+        motif_position = MOTIF_POSITION if source_id == "g1" else ""
+        if source_id == "g1" and self._motif_manifest is not None:
+            motif = _read_retained_compiled_motifs(
+                self._compiled, self._parameters, self._sources,
+                self._motif_manifest, spec=topology, extents=self._compiled.extents,
+                site_index=1, hidden=expected.hidden, seal=self._motif_seal)
+            self._motif_read = motif
+            hidden = motif.hidden
+            motif_disposition = HIT if motif.participating_slots else NO_HIT
+            motif_read_digest = contract_digest((
+                "B08_SOURCE_QUALIFIED_READ_V1", motif.dispositions,
+                motif.participating_slots, motif.context_digests,
+                _content_digest(hidden), source_digest, prefix, generation,
+                expected.execution_digest, MOTIF_POSITION))
+        else:
+            motif_read_digest = (
+                contract_digest(("B08_QUARANTINED_NO_HIT", source_digest, prefix,
+                                 generation, expected.execution_digest, MOTIF_POSITION))
+                if source_id == "g1" else contract_digest(()))
+        return hidden, motif_disposition, motif_position, motif_read_digest
+
+    def _receipt_values(self, result=None):
+        encoded, source_digest, topology, generation, prefix, replay = (
+            self._receipt_replay())
         if result is None:
             hidden = encoded.global_seeds
             output = _content_digest(hidden)
@@ -124,26 +154,9 @@ class _SourceBackboneProducerSession:
             _invalid_producer_receipt()
         source_id = SOURCE_ORDER[target]
         hidden = expected.hidden
-        motif_disposition = NO_HIT if source_id == "g1" else NOT_APPLICABLE
-        motif_position = MOTIF_POSITION if source_id == "g1" else ""
-        if source_id == "g1" and self._motif_manifest is not None:
-            motif = _read_retained_compiled_motifs(
-                self._compiled, self._parameters, self._sources,
-                self._motif_manifest, spec=topology, extents=self._compiled.extents,
-                site_index=1, hidden=expected.hidden, seal=self._motif_seal)
-            self._motif_read = motif
-            hidden = motif.hidden
-            motif_disposition = HIT if motif.participating_slots else NO_HIT
-            motif_read_digest = contract_digest((
-                "B08_SOURCE_QUALIFIED_READ_V1", motif.dispositions,
-                motif.participating_slots, motif.context_digests,
-                _content_digest(hidden), source_digest, prefix, generation,
-                expected.execution_digest, MOTIF_POSITION))
-        else:
-            motif_read_digest = (
-                contract_digest(("B08_QUARANTINED_NO_HIT", source_digest, prefix,
-                                 generation, expected.execution_digest, MOTIF_POSITION))
-                if source_id == "g1" else contract_digest(()))
+        hidden, motif_disposition, motif_position, motif_read_digest = (
+            self._motif_receipt_fields(
+                source_id, expected, hidden, source_digest, prefix, generation, topology))
         return dict(
             source_id=source_id, completed_layer=expected.layer_end,
             hidden=hidden, source_handoff_digest=source_digest,

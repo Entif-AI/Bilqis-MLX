@@ -1,6 +1,7 @@
 """Gold-blind C04 lowering for admitted finite-number arithmetic rows."""
 from __future__ import annotations
 import json
+from types import MappingProxyType
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.semantics.cognitive_dag import (
@@ -26,14 +27,14 @@ _PURPOSE = "C04_SOLVER"
 _PRINCIPAL = "bamf-c04-numeric"
 _TENANT = "bamf-c05"
 _JURISDICTION = "LOCAL"
-_CAPABILITY_OPERATOR = {
+_CAPABILITY_OPERATOR = MappingProxyType({
     "C.COUNT": "COUNT",
     "C.SUCCESSOR": "SUCC",
     "C.ADD": "ADD",
     "C.SUB": "SUB",
     "C.MUL": "MUL",
     "C.DIV": "DIV",
-}
+})
 
 
 def _invalid(reason: str):
@@ -56,6 +57,84 @@ def _maximum(capability) -> int:
             _invalid("BAMF_C04_NUMERIC_DOMAIN_INVALID")
         return len(numbers) - 1
     return released_numeric.NUMBER_MAX
+
+
+def _visit_numeric(
+    item, path, *, root, row, row_id, semantic_release, capability, release,
+    registry, maximum, actual, operands, grants, nodes,
+):
+    if isinstance(item, Literal):
+        if item.type_name == "NumberSet":
+            try:
+                raw = json.loads(item.value)
+            except (TypeError, ValueError, json.JSONDecodeError):
+                _invalid("BAMF_C04_NUMERIC_SET_INVALID")
+            if (not isinstance(raw, list)
+                    or any(type(value) is not int or not 0 <= value <= maximum
+                           for value in raw)):
+                _invalid("BAMF_C04_NUMERIC_SET_INVALID")
+            value = tuple(sorted(set(raw)))
+            handle = "source:numeric-set:" + contract_digest((row_id, path, value))
+            typed = TypedValue("NumberSet", value, semantic_release, handle)
+            source = SourceOperand(
+                typed, SourceKind.TASK_VISIBLE, "source:numeric-row:" + row_id,
+                len(row.get("tokens", ())))
+            operands.append(source)
+            grants.append(_grant(
+                handle, source_operand_digest(source), semantic_release,
+                capability.capability_id))
+            return DAGOperand(RefKind.LITERAL, "NumberSet", source_handle=handle)
+        if item.type_name != "Number":
+            _invalid("BAMF_C04_NUMERIC_LITERAL_TYPE_UNSUPPORTED")
+        value = int(item.value)
+        if not 0 <= value <= maximum:
+            _invalid("BAMF_C04_NUMERIC_LITERAL_OUTSIDE_DOMAIN")
+        handle = "source:numeric-literal:" + contract_digest((row_id, path, value))
+        typed = TypedValue("Number", value, semantic_release, handle)
+        source = SourceOperand(
+            typed, SourceKind.TASK_VISIBLE, "source:numeric-row:" + row_id,
+            len(row.get("tokens", ())))
+        operands.append(source)
+        grants.append(_grant(
+            handle, source_operand_digest(source), semantic_release,
+            capability.capability_id))
+        return DAGOperand(RefKind.LITERAL, "Number", source_handle=handle)
+    if not isinstance(item, Apply):
+        _invalid("BAMF_C04_NUMERIC_EXPRESSION_INVALID")
+    refs = tuple(_visit_numeric(
+        child, (*path, index), root=False, row=row, row_id=row_id,
+        semantic_release=semantic_release, capability=capability, release=release,
+        registry=registry, maximum=maximum, actual=actual, operands=operands,
+        grants=grants, nodes=nodes,
+    ) for index, child in enumerate(item.arguments))
+    operator = item.operator.symbol.removeprefix("school.op.")
+    spec = registry.resolve(operator)
+    if tuple(ref.type_name for ref in refs) != spec.signature.inputs:
+        _invalid("BAMF_C04_NUMERIC_SIGNATURE_DRIFT")
+    node_id = "numeric:" + ("root" if root else ".".join(map(str, path)))
+    if root:
+        admitted = tuple(
+            _CAPABILITY_OPERATOR[entry.capability_id]
+            for entry in release.execution_plan.capabilities
+            if entry.capability_id in _CAPABILITY_OPERATOR)
+        candidates = tuple(sorted(
+            candidate for candidate in admitted
+            if candidate in {spec_item.operator_id for spec_item in registry.specs}
+            and registry.resolve(candidate).signature == spec.signature
+            and registry.resolve(candidate).applicability == spec.applicability))
+        if actual not in candidates:
+            _invalid("BAMF_C04_NUMERIC_OPERATOR_NOT_ADMITTED")
+        node = DAGNode(
+            node_id, None, refs, spec.signature.output,
+            capability.capability_id, candidates, (),
+            ("APPLICABLE", "SOURCE_VISIBLE", "TYPE_COMPATIBLE"),
+        )
+    else:
+        node = DAGNode(
+            node_id, operator, refs, spec.signature.output,
+            capability.capability_id)
+    nodes.append(node)
+    return DAGOperand(RefKind.RESULT, spec.signature.output, result_node_id=node_id)
 
 
 def lower_numeric_task_goal(
@@ -116,78 +195,11 @@ def lower_numeric_task_goal(
     nodes = []
     row_id = str(row.get("id") or row.get("source_id") or "numeric-row")
 
-    def visit(item, path: tuple[int, ...], *, root=False):
-        if isinstance(item, Literal):
-            if item.type_name == "NumberSet":
-                try:
-                    raw = json.loads(item.value)
-                except (TypeError, ValueError, json.JSONDecodeError):
-                    _invalid("BAMF_C04_NUMERIC_SET_INVALID")
-                if (not isinstance(raw, list)
-                        or any(type(value) is not int or not 0 <= value <= maximum
-                               for value in raw)):
-                    _invalid("BAMF_C04_NUMERIC_SET_INVALID")
-                value = tuple(sorted(set(raw)))
-                handle = "source:numeric-set:" + contract_digest((row_id, path, value))
-                typed = TypedValue("NumberSet", value, semantic_release, handle)
-                source = SourceOperand(
-                    typed, SourceKind.TASK_VISIBLE, "source:numeric-row:" + row_id,
-                    len(row.get("tokens", ())))
-                operands.append(source)
-                grants.append(_grant(
-                    handle, source_operand_digest(source), semantic_release,
-                    capability.capability_id))
-                return DAGOperand(
-                    RefKind.LITERAL, "NumberSet", source_handle=handle)
-            if item.type_name != "Number":
-                _invalid("BAMF_C04_NUMERIC_LITERAL_TYPE_UNSUPPORTED")
-            value = int(item.value)
-            if not 0 <= value <= maximum:
-                _invalid("BAMF_C04_NUMERIC_LITERAL_OUTSIDE_DOMAIN")
-            handle = "source:numeric-literal:" + contract_digest((row_id, path, value))
-            typed = TypedValue("Number", value, semantic_release, handle)
-            source = SourceOperand(
-                typed, SourceKind.TASK_VISIBLE, "source:numeric-row:" + row_id,
-                len(row.get("tokens", ())))
-            operands.append(source)
-            grants.append(_grant(
-                handle, source_operand_digest(source), semantic_release,
-                capability.capability_id))
-            return DAGOperand(RefKind.LITERAL, "Number", source_handle=handle)
-        if not isinstance(item, Apply):
-            _invalid("BAMF_C04_NUMERIC_EXPRESSION_INVALID")
-        refs = tuple(visit(child, (*path, index))
-                     for index, child in enumerate(item.arguments))
-        operator = item.operator.symbol.removeprefix("school.op.")
-        spec = registry.resolve(operator)
-        if tuple(ref.type_name for ref in refs) != spec.signature.inputs:
-            _invalid("BAMF_C04_NUMERIC_SIGNATURE_DRIFT")
-        node_id = "numeric:" + ("root" if root else ".".join(map(str, path)))
-        if root:
-            admitted = tuple(
-                _CAPABILITY_OPERATOR[item.capability_id]
-                for item in release.execution_plan.capabilities
-                if item.capability_id in _CAPABILITY_OPERATOR)
-            candidates = tuple(sorted(
-                operator for operator in admitted
-                if operator in {candidate.operator_id for candidate in registry.specs}
-                and registry.resolve(operator).signature == spec.signature
-                and registry.resolve(operator).applicability == spec.applicability))
-            if actual not in candidates:
-                _invalid("BAMF_C04_NUMERIC_OPERATOR_NOT_ADMITTED")
-            node = DAGNode(
-                node_id, None, refs, spec.signature.output,
-                capability.capability_id, candidates, (),
-                ("APPLICABLE", "SOURCE_VISIBLE", "TYPE_COMPATIBLE"),
-            )
-        else:
-            node = DAGNode(
-                node_id, operator, refs, spec.signature.output,
-                capability.capability_id)
-        nodes.append(node)
-        return DAGOperand(RefKind.RESULT, spec.signature.output, result_node_id=node_id)
-
-    visit(expression, (), root=True)
+    _visit_numeric(
+        expression, (), root=True, row=row, row_id=row_id,
+        semantic_release=semantic_release, capability=capability, release=release,
+        registry=registry, maximum=maximum, actual=actual, operands=operands,
+        grants=grants, nodes=nodes)
     used_operators = {
         operator for node in nodes
         for operator in ((node.operator_id,) if node.operator_id else node.candidate_operator_ids)

@@ -1,5 +1,6 @@
 """Gold-blind C04 lowering for bounded Factory-owned answer domains."""
 from __future__ import annotations
+from types import MappingProxyType
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.semantics.cognitive_dag import (
@@ -19,11 +20,11 @@ _PURPOSE = "C04_SOLVER"
 _PRINCIPAL = "bamf-c04-answer-choice"
 _TENANT = "bamf-c05"
 _JURISDICTION = "LOCAL"
-_SUPPORTED = {
+_SUPPORTED = MappingProxyType({
     "binary": ("Boolean", "SELECT_BOOLEAN"),
     "boolean_operator": ("OperatorId", "SELECT_OPERATOR_ID"),
     "numeric_active": ("Number", "SELECT_NUMBER"),
-}
+})
 
 
 def _invalid(reason: str):

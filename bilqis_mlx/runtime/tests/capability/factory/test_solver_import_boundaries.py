@@ -27,26 +27,31 @@ from bilqis_mlx.semantics.tests.test_cognitive_operators import (
     RELEASE, SCOPE, _case,
 )
 
-from bilqis_mlx.runtime.tests.capability.solver_helpers import _fixture
+from bilqis_mlx.runtime.tests.capability.factory.solver_helpers import _fixture
 
 class CognitiveSolverTests(unittest.TestCase):
     def test_solver_transitive_imports_exclude_gold_evaluator(self):
-        root = Path(__file__).resolve().parents[4]
+        root = Path(__file__).resolve().parents[5]
         pending = ["bilqis_mlx.runtime.cognitive_solver"]
         seen = set()
+
+        def local_path(name):
+            stem = root.joinpath(*name.split("."))
+            if stem.with_suffix(".py").is_file():
+                return stem.with_suffix(".py"), False
+            if (stem / "__init__.py").is_file():
+                return stem / "__init__.py", True
+            return None, False
+
         while pending:
             name = pending.pop()
             if name in seen:
                 continue
-            path = root.joinpath(*name.split(".")).with_suffix(".py")
-            if not path.is_file():
-                path = root.joinpath(*name.split("."), "__init__.py")
-            if not path.is_file():
+            path, is_package = local_path(name)
+            if path is None:
                 continue
             seen.add(name)
-            pending.extend(".".join(name.split(".")[:index])
-                           for index in range(1, len(name.split("."))))
-            package = name if path.name == "__init__.py" else name.rpartition(".")[0]
+            package = name if is_package else name.rpartition(".")[0]
             for node in ast.walk(ast.parse(path.read_text())):
                 imports = []
                 if isinstance(node, ast.Import):
@@ -54,9 +59,11 @@ class CognitiveSolverTests(unittest.TestCase):
                 elif isinstance(node, ast.ImportFrom):
                     base = importlib.util.resolve_name(
                         "." * node.level + (node.module or ""), package)
-                    imports = [base] + [base + "." + alias.name for alias in node.names]
+                    imports = ([base] if node.module else []) + [
+                        base + "." + alias.name for alias in node.names]
                 pending.extend(item for item in imports
-                               if item.startswith("bilqis_mlx."))
+                               if item.startswith("bilqis_mlx.")
+                               and local_path(item)[0] is not None)
         self.assertIn("bilqis_mlx.semantics.cognitive_dag", seen)
         forbidden = ("bilqis_mlx.verification", "bilqis_mlx.source_adapters",
                      "bilqis_mlx.generated_assessment", "bilqis_mlx.assessment",

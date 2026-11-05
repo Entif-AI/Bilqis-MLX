@@ -31,7 +31,7 @@ SEMANTIC_PATTERNS = (
     "bilqis_mlx/vocabulary_growth.py",
     "scripts/check_historical_abi.py",
     "scripts/check_semantic_boundaries.py",
-    "scripts/tests/test_semantic_module_boundaries.py",
+    "scripts/tests/tooling/test_semantic_module_boundaries.py",
     "scripts/run_tests.py",
     ".github/workflows/semantic-profile-full.yml",
     ".github/workflows/semantic-abi-integrity.yml",
