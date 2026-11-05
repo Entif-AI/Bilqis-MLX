@@ -22,7 +22,7 @@ def policy(
 ) -> dict:
     return {
         "schema": "bilqis.bamf.flow-control-policy/v2",
-        "normal_active_limit_per_lane": 2,
+        "normal_active_limit_per_lane": 6,
         "states": {
             "ACTIVE": {
                 "counts_as_wip": True,
@@ -51,7 +51,7 @@ def policy(
             },
         },
         "open_pr_inventory": {
-            "normal_limit_total": 3,
+            "normal_limit_total": 12,
             "unified_branch": "unified",
             "grandfathered_prs": grandfathered_prs or [],
             "non_implementation_exceptions": non_implementation_exceptions or [],
