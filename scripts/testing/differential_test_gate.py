@@ -12,6 +12,11 @@ from pathlib import Path
 import subprocess
 import sys
 
+if __package__:
+    from .dependency_map import affected_test_map
+else:
+    from dependency_map import affected_test_map
+
 
 RECEIPT_DIR = Path(".local/test-gate")
 TESTMON_DATA = Path(".testmondata")
@@ -139,10 +144,15 @@ def _nearest_test_scope(root: Path, relative: Path) -> tuple[Path, ...]:
 def _candidate_tests(root: Path, changed: tuple[str, ...]) -> tuple[str, ...]:
     selected: set[Path] = set()
     python_changes = [Path(name) for name in changed if name.endswith(".py")]
+    dependency_tests = affected_test_map(root, tuple(python_changes))
     for relative in python_changes:
         absolute = root / relative
         if "tests" in relative.parts and relative.name.startswith("test_"):
             selected.add(absolute)
+            continue
+        mapped = dependency_tests.get(relative, ())
+        if mapped:
+            selected.update(mapped)
             continue
         module = ".".join(relative.with_suffix("").parts)
         stem = relative.stem
