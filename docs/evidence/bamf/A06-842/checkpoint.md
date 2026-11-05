@@ -31,3 +31,9 @@ Use the historical test entrypoint or the split package, rather than both, when 
 ## Review state
 
 Round 1 at472989ac found a missing durable literal witness (MECHANICAL_PROOF). A reviewer source-inspection concern also reproduced OSError for public classes (TARGET_LOCAL). The repair keeps all 11 original classes in the 218-line public owner, adds source-inspection regression, and commits the original local literal snapshots. The source verifier now proves all25definitions across that owner and extracted algorithms. Aggregate EGM remains failed until a complete subsequent round; no PASS or merge readiness is claimed. Handoff #829 remains separately parked at its exhausted five-round cap; this Factory extraction does not continue or reset that episode.
+
+## Current-unified intake and scope audit
+
+Consumed governance-only unified `2debce4f4e389c95af295048ff624a54f47c5477` after the repaired code head `a0a00feff65915f17063ece7fef2a88ed0ece98a`. The delta changes AGENTS/ADR/BAMF operating prose, not executable dependencies; passing behavioral evidence remains applicable under ADR129. Lane A/C are synchronized to that reviewed trunk.
+
+ADR130 classification: `DECOMPOSE`, parent785's mandatory encountered-file interruption and #842's structural/compatibility/literal-output acceptance, `new_acceptance=false`. The >3-file/250-line scope-drift audit maps every production/test move to extraction and unchanged behavior, snapshots/verifier to the required literal proof, error docs to the moved raise inventory, and ledger/receipts to required bookkeeping. #845 inherits the same compatibility and literal-output clauses. No new feature, source policy or helper scope is admitted.

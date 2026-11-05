@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "e58dd31574a6ee2ce0b3e35f92293a09befd15c1",
-  "updated_at": "2026-11-05T06:00:40.422595+00:00",
+  "observed_unified": "2debce4f4e389c95af295048ff624a54f47c5477",
+  "updated_at": "2026-11-05T06:02:32.935941+00:00",
   "exception": null,
   "items": [
     {
@@ -79,18 +79,18 @@
       "issue": 842,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "e58dd31574a6ee2ce0b3e35f92293a09befd15c1",
+      "head_sha": "a0a00feff65915f17063ece7fef2a88ed0ece98a",
       "preserved_branch": "codex/bamf02-a-842-execution-structure-20261105",
-      "summary": "Organic564-line Factory execution interruption during785profile-selector trace; preserve contracts/ASTs/digests and mirrored tests. Per-user separate issue branch from synchronized Lane A source, no source qualification inferred.",
+      "summary": "Structural extraction and all known round1 repairs verified; public owner218lines,17files<240. Sameepisode A842-EXECUTION-20261105 round1 failed; full repaired candidate preparing round2. No source selection/admission inferred.",
       "resume_trigger": null
     },
     {
       "issue": 845,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "472989acda0a184b9bc190c12a9ac754599656e3",
+      "state": "TURNED_IN",
+      "head_sha": "a0a00feff65915f17063ece7fef2a88ed0ece98a",
       "preserved_branch": "codex/bamf02-a-842-execution-structure-20261105",
-      "summary": "Bounded842round1 repair: retain public class source inspection and durable literal compatibility snapshots. Same active candidate branch; no separate PR or source admission.",
+      "summary": "Scoped842round1 source-inspection/literal-proof repair durable and regression-verified at a0a00fef; consumed by parent candidate, no separate PR.",
       "resume_trigger": null
     }
   ]
