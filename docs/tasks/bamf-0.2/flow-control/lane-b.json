@@ -1,7 +1,7 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "879c39dd68308c7a8e5f8c09bc1624317f47b457",
+  "observed_unified": "d29fd6cd290d88f0b3dbd1557b7ce229db0caab3",
   "updated_at": "2026-11-05T06:27:03+00:00",
   "exception": null,
   "items": [
@@ -315,12 +315,22 @@
     },
     {
       "issue": 844,
-      "pr": 848,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "030880888e09ddbaba98973962af844b9bec7ccc",
-      "summary": "PR848 consumed reviewed unified879c39dd after PR846. Conflict was lane-b flow metadata only; owned import-test files are unchanged. Affected tests12/12 and full scripts/tests177/177 pass with zero skips, so prior EGM-Passed remains applicable.",
+      "summary": "PR848 externally merged asd29fd6cd; issue844 explicitly CLOSED COMPLETED after readback. Import-only repair with177/177 combined runner proof; actual learner/source unchanged.",
       "resume_trigger": null,
-      "preserved_branch": "codex/bamf02-b-844-script-imports-20261105"
+      "preserved_branch": "codex/bamf02-b-844-script-imports-20261105",
+      "merged_pr": 848
+    },
+    {
+      "issue": 451,
+      "pr": 849,
+      "state": "TURNED_IN",
+      "head_sha": "ebe19aaed0a3d345135acc06d6e8a12ffd00ef54",
+      "preserved_branch": "codex/bamf02-b-451-selector-custody-20261103",
+      "summary": "Ready PR849; pinned EGM PASS0B/0M/0N and CPU19/19. UNBOUND selector identity/schema/cold custody only; hosted and human merge pending.",
+      "resume_trigger": null
     }
   ]
 }
