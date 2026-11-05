@@ -2,6 +2,7 @@
 from __future__ import annotations
 import json
 
+from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.semantics.cognitive_dag import (
     DAGNode, DAGOperand, DAGProgram, RefKind, task_goal_from_program,
 )
@@ -35,6 +36,10 @@ _CAPABILITY_OPERATOR = {
 }
 
 
+def _invalid(reason: str):
+    ErrorBus.raise_(SCHOOL.BAMF_SOLVER.INVALID, reason=reason)
+
+
 def _grant(handle, evidence, semantic_release, scope):
     return SourceGrant(
         handle, _PRINCIPAL, _TENANT, PUBLIC_FORMAL, semantic_release, evidence,
@@ -48,7 +53,7 @@ def _maximum(capability) -> int:
     if numbers:
         expected = tuple(str(index) for index in range(len(numbers)))
         if tuple(numbers) != expected:
-            raise ValueError("BAMF_C04_NUMERIC_DOMAIN_INVALID")
+            _invalid("BAMF_C04_NUMERIC_DOMAIN_INVALID")
         return len(numbers) - 1
     return released_numeric.NUMBER_MAX
 
@@ -61,7 +66,7 @@ def lower_numeric_task_goal(
             or not isinstance(row.get("record"), dict)
             or not isinstance(row["record"].get("symbols"), list)
             or row.get("capability") != capability.capability_id):
-        raise ValueError("BAMF_C04_NUMERIC_SOURCE_VIEW_INVALID")
+        _invalid("BAMF_C04_NUMERIC_SOURCE_VIEW_INVALID")
     if row.get("answer_kind") == "binary":
         from .answer_choice_task_goal import lower_answer_choice_task_goal
         return lower_answer_choice_task_goal(
@@ -79,10 +84,10 @@ def lower_numeric_task_goal(
             and declared != "EQ"):
         expression = expression.arguments[0]
     if not isinstance(expression, Apply):
-        raise ValueError("BAMF_C04_NUMERIC_OPERATION_REQUIRED")
+        _invalid("BAMF_C04_NUMERIC_OPERATION_REQUIRED")
     actual = expression.operator.symbol.removeprefix("school.op.")
     if actual not in released_numeric.OPERATIONS:
-        raise ValueError("BAMF_C04_NUMERIC_OPERATION_UNSUPPORTED")
+        _invalid("BAMF_C04_NUMERIC_OPERATION_UNSUPPORTED")
 
     maximum = _maximum(capability)
     domain = FiniteDomain(
@@ -116,12 +121,12 @@ def lower_numeric_task_goal(
             if item.type_name == "NumberSet":
                 try:
                     raw = json.loads(item.value)
-                except (TypeError, ValueError, json.JSONDecodeError) as exc:
-                    raise ValueError("BAMF_C04_NUMERIC_SET_INVALID") from exc
+                except (TypeError, ValueError, json.JSONDecodeError):
+                    _invalid("BAMF_C04_NUMERIC_SET_INVALID")
                 if (not isinstance(raw, list)
                         or any(type(value) is not int or not 0 <= value <= maximum
                                for value in raw)):
-                    raise ValueError("BAMF_C04_NUMERIC_SET_INVALID")
+                    _invalid("BAMF_C04_NUMERIC_SET_INVALID")
                 value = tuple(sorted(set(raw)))
                 handle = "source:numeric-set:" + contract_digest((row_id, path, value))
                 typed = TypedValue("NumberSet", value, semantic_release, handle)
@@ -135,10 +140,10 @@ def lower_numeric_task_goal(
                 return DAGOperand(
                     RefKind.LITERAL, "NumberSet", source_handle=handle)
             if item.type_name != "Number":
-                raise ValueError("BAMF_C04_NUMERIC_LITERAL_TYPE_UNSUPPORTED")
+                _invalid("BAMF_C04_NUMERIC_LITERAL_TYPE_UNSUPPORTED")
             value = int(item.value)
             if not 0 <= value <= maximum:
-                raise ValueError("BAMF_C04_NUMERIC_LITERAL_OUTSIDE_DOMAIN")
+                _invalid("BAMF_C04_NUMERIC_LITERAL_OUTSIDE_DOMAIN")
             handle = "source:numeric-literal:" + contract_digest((row_id, path, value))
             typed = TypedValue("Number", value, semantic_release, handle)
             source = SourceOperand(
@@ -150,13 +155,13 @@ def lower_numeric_task_goal(
                 capability.capability_id))
             return DAGOperand(RefKind.LITERAL, "Number", source_handle=handle)
         if not isinstance(item, Apply):
-            raise ValueError("BAMF_C04_NUMERIC_EXPRESSION_INVALID")
+            _invalid("BAMF_C04_NUMERIC_EXPRESSION_INVALID")
         refs = tuple(visit(child, (*path, index))
                      for index, child in enumerate(item.arguments))
         operator = item.operator.symbol.removeprefix("school.op.")
         spec = registry.resolve(operator)
         if tuple(ref.type_name for ref in refs) != spec.signature.inputs:
-            raise ValueError("BAMF_C04_NUMERIC_SIGNATURE_DRIFT")
+            _invalid("BAMF_C04_NUMERIC_SIGNATURE_DRIFT")
         node_id = "numeric:" + ("root" if root else ".".join(map(str, path)))
         if root:
             admitted = tuple(
@@ -169,7 +174,7 @@ def lower_numeric_task_goal(
                 and registry.resolve(operator).signature == spec.signature
                 and registry.resolve(operator).applicability == spec.applicability))
             if actual not in candidates:
-                raise ValueError("BAMF_C04_NUMERIC_OPERATOR_NOT_ADMITTED")
+                _invalid("BAMF_C04_NUMERIC_OPERATOR_NOT_ADMITTED")
             node = DAGNode(
                 node_id, None, refs, spec.signature.output,
                 capability.capability_id, candidates, (),

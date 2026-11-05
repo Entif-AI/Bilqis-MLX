@@ -32,6 +32,7 @@ C05_PROBE_EACH = 6
 C05_PROTECTED_REFERENCE_LOSS = 1
 C05_FRESH_TARGET_SEED_OFFSET = 104729
 C05_FRESH_LESSON_SEED_OFFSET = 130363
+SHA256_HEX_LENGTH = 64
 _OWNER_ISSUER = object()
 
 
@@ -49,7 +50,8 @@ class FactoryRetentionEvaluation:
     def __post_init__(self):
         if (getattr(self, "_issuance", None) is not _OWNER_ISSUER
                 or type(self.decision) is not Decision
-                or not all(isinstance(value, str) and len(value) == 64
+                or not all(isinstance(value, str)
+                           and len(value) == SHA256_HEX_LENGTH
                            for value in (self.parent_candidate_sha256,
                                          self.candidate_candidate_sha256))):
             _invalid("BAMF_C05_FACTORY_EVALUATION_INVALID")

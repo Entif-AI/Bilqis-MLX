@@ -5,8 +5,16 @@ from dataclasses import dataclass
 import hashlib
 from pathlib import Path
 
+from bilqis_mlx.errors import ErrorBus, SCHOOL
+
 from .numeric_task_goal import lower_numeric_task_goal
 from .answer_choice_task_goal import lower_answer_choice_task_goal
+
+SHA256_HEX_LENGTH = 64
+
+
+def _invalid(reason: str):
+    ErrorBus.raise_(SCHOOL.BAMF_SOLVER.INVALID, reason=reason)
 
 
 def _digest(path: Path) -> str:
@@ -25,10 +33,10 @@ class RegisteredTaskGoalLowerer:
         if (not all(isinstance(value, str) and value for value in (
                 self.provider_id, self.provider_implementation_sha256,
                 self.lowerer_id, self.implementation_sha256))
-                or len(self.provider_implementation_sha256) != 64
-                or len(self.implementation_sha256) != 64
+                or len(self.provider_implementation_sha256) != SHA256_HEX_LENGTH
+                or len(self.implementation_sha256) != SHA256_HEX_LENGTH
                 or not callable(self.lower)):
-            raise ValueError("BAMF_C04_TASK_LOWERER_INVALID")
+            _invalid("BAMF_C04_TASK_LOWERER_INVALID")
 
 
 def live_task_goal_lowerers():
@@ -74,7 +82,7 @@ def require_task_goal_lowerer(provider_id: str, provider_sha256: str):
                     if item.provider_id == provider_id
                     and item.provider_implementation_sha256 == provider_sha256)
     if len(matches) != 1:
-        raise ValueError("BAMF_C04_SOURCE_TASK_LOWERER_REQUIRED")
+        _invalid("BAMF_C04_SOURCE_TASK_LOWERER_REQUIRED")
     matches[0].__post_init__()
     return matches[0]
 

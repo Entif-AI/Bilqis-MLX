@@ -1,6 +1,6 @@
 {
-  "legacy_raw_file_count": 239,
-  "legacy_raw_raise_count": 2029,
+  "legacy_raw_file_count": 240,
+  "legacy_raw_raise_count": 2030,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BOOLEAN_ASSOCIATION_B_GRADE_OWNERSHIP_DRIFT",
@@ -11278,6 +11278,13 @@
       "exception": "ValueError",
       "expression": "'malformed decoder payload'",
       "path": "bilqis_mlx/runtime/tests/capability/test_cognitive_solver.py"
+    },
+    {
+      "code_hint": "COLD_RESUME_CONTINUATION_REJECTED before=",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "f'COLD_RESUME_CONTINUATION_REJECTED before={loss_before} after={loss_after}'",
+      "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/cold_resume_probe.py"
     },
     {
       "code_hint": "test synchronization timed out",

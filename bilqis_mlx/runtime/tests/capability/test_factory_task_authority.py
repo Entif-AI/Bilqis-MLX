@@ -47,7 +47,7 @@ class FactoryTaskAuthorityTests(unittest.TestCase):
         row = {"id": "row-1", "capability": "A.IDENTITY", "tokens": [1],
                "gold": "TRUE"}
         release = "a" * 64
-        with self.assertRaises(ValueError):
+        with self.assertRaises(BilqisError):
             lower_answer_choice_task_goal(
                 row, semantic_release=release, capability=binary)
 

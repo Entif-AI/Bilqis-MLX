@@ -2,6 +2,7 @@
 from types import SimpleNamespace
 import unittest
 
+from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.source_adapters.numeric import encode
 from bilqis_mlx.source_adapters.numeric_task_goal import lower_numeric_task_goal
 from bilqis_mlx.semantics.numeric import calculate, number
@@ -15,7 +16,9 @@ def _capability(name="ADD"):
 
 
 def _release(*operators):
-    items = tuple(SimpleNamespace(source_anchor="school.op." + item)
+    items = tuple(SimpleNamespace(
+        capability_id="C." + item,
+        source_anchor="school.op." + item)
                   for item in operators)
     return SimpleNamespace(execution_plan=SimpleNamespace(capabilities=items))
 
@@ -46,10 +49,13 @@ class NumericTaskGoalTests(unittest.TestCase):
             "id": "numeric-case-1", "capability": "C.ADD", "gold": "5",
             "record": {"symbols": encode(expression)}, "tokens": [1, 2, 3, 4],
         }
-        with self.assertRaisesRegex(ValueError, "SOURCE_VIEW_INVALID"):
+        with self.assertRaises(BilqisError) as raised:
             lower_numeric_task_goal(
                 row, semantic_release="b" * 64, capability=_capability(),
                 release=_release("ADD", "SUB"))
+        self.assertEqual(
+            raised.exception.context["reason"],
+            "BAMF_C04_NUMERIC_SOURCE_VIEW_INVALID")
 
 
 if __name__ == "__main__":

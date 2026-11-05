@@ -1,6 +1,7 @@
 """Gold-blind C04 lowering for bounded Factory-owned answer domains."""
 from __future__ import annotations
 
+from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.semantics.cognitive_dag import (
     DAGNode, DAGOperand, DAGProgram, RefKind, task_goal_from_program,
 )
@@ -25,6 +26,10 @@ _SUPPORTED = {
 }
 
 
+def _invalid(reason: str):
+    ErrorBus.raise_(SCHOOL.BAMF_SOLVER.INVALID, reason=reason)
+
+
 def _grant(handle, evidence, semantic_release, scope):
     return SourceGrant(
         handle, _PRINCIPAL, _TENANT, PUBLIC_FORMAL, semantic_release, evidence,
@@ -38,10 +43,10 @@ def _answer_family(capability, answer_kind=None):
         if family.kind in _SUPPORTED
         and (answer_kind is None or family.kind == answer_kind))
     if len(matches) != 1:
-        raise ValueError("BAMF_C04_ANSWER_CHOICE_FAMILY_UNSUPPORTED")
+        _invalid("BAMF_C04_ANSWER_CHOICE_FAMILY_UNSUPPORTED")
     family = matches[0]
     if not family.values or len(set(family.values)) != len(family.values):
-        raise ValueError("BAMF_C04_ANSWER_CHOICE_DOMAIN_INVALID")
+        _invalid("BAMF_C04_ANSWER_CHOICE_DOMAIN_INVALID")
     return family
 
 
@@ -52,7 +57,7 @@ def lower_answer_choice_task_goal(
     if (not isinstance(row, dict) or "gold" in row
             or row.get("capability") != capability.capability_id
             or not isinstance(row.get("id"), str) or not row["id"]):
-        raise ValueError("BAMF_C04_ANSWER_CHOICE_SOURCE_VIEW_INVALID")
+        _invalid("BAMF_C04_ANSWER_CHOICE_SOURCE_VIEW_INVALID")
     family = _answer_family(capability, row.get("answer_kind"))
     type_name, operator_id = _SUPPORTED[family.kind]
     release = semantic_release
@@ -79,7 +84,7 @@ def lower_answer_choice_task_goal(
                    else int(value) if type_name == "Number"
                    else value)
         if type_name == "Boolean" and value not in {"FALSE", "TRUE"}:
-            raise ValueError("BAMF_C04_BINARY_DOMAIN_INVALID")
+            _invalid("BAMF_C04_BINARY_DOMAIN_INVALID")
         handle = "source:answer-choice:" + contract_digest((
             row_id, family.kind, value))
         typed = TypedValue(type_name, payload, release, handle)

@@ -1,7 +1,7 @@
 """Runtime inputs closed over one verified executable factory release."""
 from __future__ import annotations
 
-from bilqis_mlx.errors import ErrorBus, FACTORY
+from bilqis_mlx.errors import ErrorBus, FACTORY, SCHOOL
 from bilqis_mlx.factory.teaching import content_digest
 from bilqis_mlx.semantics.domains import contract_digest
 
@@ -15,6 +15,10 @@ from ..factory.executable_release import ExecutableFactoryRelease
 
 _SOURCE_BATCH_ISSUER = object()
 _DERIVED_ROW_KEYS = frozenset(("grade", "native_output", "auxiliary_labels"))
+
+
+def _invalid_source_batch(reason: str):
+    ErrorBus.raise_(SCHOOL.BAMF_TRAINING_ADAPTER.INVALID, reason=reason)
 
 
 def _source_content(rows) -> str:
@@ -52,7 +56,7 @@ class SourceBatchAuthority:
     _issuance: object = field(init=False, repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
-        raise TypeError("FACTORY_SOURCE_BATCH_CALLER_CONSTRUCTION_FORBIDDEN")
+        _invalid_source_batch("FACTORY_SOURCE_BATCH_CALLER_CONSTRUCTION_FORBIDDEN")
 
     def __post_init__(self):
         if (getattr(self, "_issuance", None) is not _SOURCE_BATCH_ISSUER
@@ -66,7 +70,7 @@ class SourceBatchAuthority:
                 or len(self.episode_ids) != self.each
                 or any(not isinstance(value, str) or not value
                        for value in self.episode_ids)):
-            raise ValueError("FACTORY_SOURCE_BATCH_AUTHORITY_INVALID")
+            _invalid_source_batch("FACTORY_SOURCE_BATCH_AUTHORITY_INVALID")
 
 
 @dataclass(frozen=True)
@@ -126,10 +130,10 @@ class SourceExecutionContext:
                 or type(seed) is not int or seed < 0
                 or not isinstance(capability, str) or not capability
                 or type(each) is not int or each < 1):
-            raise ValueError("FACTORY_SOURCE_BATCH_BINDING_INVALID")
+            _invalid_source_batch("FACTORY_SOURCE_BATCH_BINDING_INVALID")
         expected = self.draw_rows(seed=seed, capability=capability, each=each)
         if _source_content(rows) != _source_content(expected):
-            raise ValueError("FACTORY_SOURCE_BATCH_CONTENT_DRIFT")
+            _invalid_source_batch("FACTORY_SOURCE_BATCH_CONTENT_DRIFT")
         execution = self.release.execution_plan.capability_map[capability]
         content = _source_content(expected)
         family = _source_family(execution, seed=seed, each=each)
