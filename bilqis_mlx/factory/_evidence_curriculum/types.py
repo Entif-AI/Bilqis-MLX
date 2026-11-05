@@ -15,21 +15,29 @@ class EvidenceLessonStatus(str, Enum):
     SOURCE_HELD = "SOURCE_HELD"
 
 
+_DECIMAL_FACTOR_TWO = 2
+_DECIMAL_FACTOR_FIVE = 5
+
+
 def _finite_decimal(value: Fraction) -> str | None:
     numerator = value.numerator
     denominator = value.denominator
     twos = 0
     fives = 0
-    while denominator % 2 == 0:
-        denominator //= 2
+    while denominator % _DECIMAL_FACTOR_TWO == 0:
+        denominator //= _DECIMAL_FACTOR_TWO
         twos += 1
-    while denominator % 5 == 0:
-        denominator //= 5
+    while denominator % _DECIMAL_FACTOR_FIVE == 0:
+        denominator //= _DECIMAL_FACTOR_FIVE
         fives += 1
     if denominator != 1:
         return None
     places = max(twos, fives)
-    scaled = numerator * (2 ** (places - twos)) * (5 ** (places - fives))
+    scaled = (
+        numerator
+        * (_DECIMAL_FACTOR_TWO ** (places - twos))
+        * (_DECIMAL_FACTOR_FIVE ** (places - fives))
+    )
     sign = "-" if scaled < 0 else ""
     digits = str(abs(scaled))
     if places == 0:
