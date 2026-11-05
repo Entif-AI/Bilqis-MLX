@@ -61,7 +61,7 @@ class ExternalGoldWitness:
     source_family_id: str
     interpretation_revision: str
     semantic_release: str
-    rights_regime: str
+    rights: EvidenceRights
     checker_id: str
     question: str
     gold: str
@@ -75,7 +75,8 @@ class ExternalGoldWitness:
                 or not self.source_family_id
                 or not self.interpretation_revision
                 or not _SHA.fullmatch(self.semantic_release)
-                or self.rights_regime != PUBLIC_FIXTURE
+                or type(self.rights) is not EvidenceRights
+                or self.rights.regime != PUBLIC_FIXTURE
                 or self.checker_id != "bilqis.evidence-exact-checker/v1"
                 or not self.question
                 or not self.gold):
@@ -166,7 +167,7 @@ class PublicBravoFixtureReceipt:
                        for item in self.witnesses)
                 or any(item.interpretation_revision != self.interpretation_revision
                        for item in self.witnesses)
-                or any(item.rights_regime != self.rights.regime for item in self.witnesses)
+                or any(item.rights != self.rights for item in self.witnesses)
                 or any(item.semantic_release != self.semantic_release
                        for item in self.witnesses)
                 or any(item.source_manifest_cid != self.source_manifest_cid

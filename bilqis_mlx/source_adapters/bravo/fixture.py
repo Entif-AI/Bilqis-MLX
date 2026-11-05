@@ -70,7 +70,7 @@ def _witnesses(
             source_family_id=lesson.source_family_id,
             interpretation_revision=lesson.frame.interpretation_revision,
             semantic_release=snapshot.semantic_release,
-            rights_regime=lesson.rights.regime,
+            rights=lesson.rights,
             checker_id=lesson.checker_id,
             question=lesson.question,
             gold=lesson.gold,
