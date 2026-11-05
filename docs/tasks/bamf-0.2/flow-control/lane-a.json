@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "06eb34d0435d2f41c6f3561cf8cad6988d5b849f",
-  "updated_at": "2026-11-05T00:25:11.266189+00:00",
+  "updated_at": "2026-11-05T00:34:53.192369+00:00",
   "exception": null,
   "items": [
     {
@@ -57,10 +57,10 @@
     },
     {
       "issue": 824,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "06eb34d0435d2f41c6f3561cf8cad6988d5b849f",
-      "summary": "Mandatory executable Factory release structural interruption discovered tracing #785; preserve release bytes, identities and behavior while splitting implementation and companion tests below240 LoC.",
+      "pr": 830,
+      "state": "TURNED_IN",
+      "head_sha": "16e14ab6c6f0550112aa8786fb2b86465fdad75b",
+      "summary": "Structural repair ready in PR830 after pinned review findings resolved; 23/23 and exact representative manifest bytes/digest preserved; error inventory2029 unchanged. Human integration and hosted final gates remain.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a-824-release-structure-20261104"
     }
