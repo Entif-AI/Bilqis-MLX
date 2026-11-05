@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "7984d7872d49b3987284692f5398da71f2a72605",
-  "updated_at": "2026-11-03T16:29:43Z",
+  "observed_unified": "e58dd31574a6ee2ce0b3e35f92293a09befd15c1",
+  "updated_at": "2026-11-05T05:30:58.847437+00:00",
   "exception": null,
   "items": [
     {
@@ -45,6 +45,35 @@
       "resume_trigger": null,
       "merged_pr": 765,
       "pr": null
+    },
+    {
+      "issue": 785,
+      "pr": null,
+      "state": "WAITING",
+      "head_sha": "06eb34d0435d2f41c6f3561cf8cad6988d5b849f",
+      "summary": "C01 schema trigger satisfied; source trace finds no admitted profile/release/generation selector for the chosen A06 bindings. Structural interruption is owned by #824.",
+      "resume_trigger": "Consume #824 structural repair to continue the existing Factory selector trace; qualification additionally requires an independently admitted source profile/release/generation selecting exact schema/adapter/predecessor bindings.",
+      "preserved_branch": "codex/bamf02-a-785-source-features-20261103"
+    },
+    {
+      "issue": 824,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "16e14ab6c6f0550112aa8786fb2b86465fdad75b",
+      "summary": "PR830 externally merged ase58dd31574a6ee2ce0b3e35f92293a09befd15c1; bounded structural acceptance and EGM satisfied. Owning issue explicitly closed completed after readback; source/parent acceptance remains separate.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a-824-release-structure-20261104",
+      "merged_pr": 830
+    },
+    {
+      "issue": 833,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "1985f621ca5ac26c734a64d65693c045b870ce57",
+      "summary": "PR836 externally merged asfeaef7d78516e346030cb0e88eecfc27089e957e; bounded structural acceptance and EGM satisfied. Owning issue explicitly closed completed after readback; source/parent acceptance remains separate.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a-833-context-structure-20261104",
+      "merged_pr": 836
     }
   ]
 }

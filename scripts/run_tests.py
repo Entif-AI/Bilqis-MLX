@@ -3,6 +3,7 @@
 
 import argparse
 import hashlib
+import importlib
 import importlib.util
 import os
 from pathlib import Path
@@ -69,8 +70,45 @@ def exclude_ithkuil_tests(paths: tuple[Path, ...], root: Path) -> tuple[Path, ..
 
 
 def _module_name(path: Path, root: Path) -> str:
-    digest = hashlib.sha256(str(path.relative_to(root)).encode()).hexdigest()
-    return f"_bilqis_test_{digest}"
+    relative = path.relative_to(root)
+    digest = hashlib.sha256(str(relative).encode()).hexdigest()
+    name = f"_bilqis_test_{digest}"
+    package = relative.parent.parts
+    if package and all(part.isidentifier() for part in package):
+        return ".".join((*package, name))
+    return name
+
+
+def _verify_package_context(name: str, root: Path) -> None:
+    """Require native package resolution and cached descendants to stay local."""
+    parts = name.split(".")[:-1]
+    for index in range(len(parts)):
+        package = ".".join(parts[:index + 1])
+        expected = root.joinpath(*parts[:index + 1]).resolve()
+        spec = importlib.util.find_spec(package)
+        locations = None if spec is None else spec.submodule_search_locations
+        paths = [] if locations is None else [Path(p).resolve() for p in locations]
+        if not paths or paths[0] != expected or any(not p.is_relative_to(root.resolve()) for p in paths):
+            raise ImportError(f"unsafe test package context: {package}")
+        loaded = importlib.import_module(package)
+        actual = [Path(p).resolve() for p in getattr(loaded, "__path__", ())]
+        if not actual or actual[0] != expected or any(not p.is_relative_to(root.resolve()) for p in actual):
+            raise ImportError(f"unsafe loaded test package context: {package}")
+    if not parts:
+        return
+    parent = ".".join(parts)
+    for key, module in tuple(sys.modules.items()):
+        if not key.startswith(parent + "."):
+            continue
+        spec = getattr(module, "__spec__", None)
+        locations = None if spec is None else spec.submodule_search_locations
+        origin = None if spec is None else spec.origin
+        sources = list(locations) if locations is not None else ([origin] if origin else [])
+        if not sources or any(
+            not any(Path(p).resolve().is_relative_to(location) for location in actual)
+            for p in sources
+        ):
+            raise ImportError(f"unsafe cached test package member: {key}")
 
 
 def _local_test_suite(suite: unittest.TestSuite, module_name: str) -> unittest.TestSuite:
@@ -90,16 +128,27 @@ def load_test_files(paths: tuple[Path, ...], root: Path) -> unittest.TestSuite:
     sys.path[:] = [root_string, *(entry for entry in sys.path if entry != root_string)]
     for path in paths:
         name = _module_name(path, root)
-        spec = importlib.util.spec_from_file_location(name, path)
-        if spec is None or spec.loader is None:
-            raise ImportError(f"cannot load test module: {path}")
-        module = importlib.util.module_from_spec(spec)
-        sys.modules[name] = module
         try:
-            spec.loader.exec_module(module)
+            _verify_package_context(name, root)
+            existing = sys.modules.get(name)
+            if existing is not None and Path(getattr(existing, "__file__", "")).resolve() != path.resolve():
+                raise ImportError(f"unsafe existing test module: {name}")
+            spec = importlib.util.spec_from_file_location(name, path)
+            if spec is None or spec.loader is None:
+                raise ImportError(f"cannot load test module: {path}")
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[name] = module
+            try:
+                spec.loader.exec_module(module)
+            except Exception:
+                if sys.modules.get(name) is module:
+                    if existing is None:
+                        del sys.modules[name]
+                    else:
+                        sys.modules[name] = existing
+                raise
         except Exception as error:
             suite.addTest(_LoadFailure(path, error, error.__traceback__))
-            del sys.modules[name]
             continue
         suite.addTests(_local_test_suite(
             unittest.defaultTestLoader.loadTestsFromModule(module), name))
