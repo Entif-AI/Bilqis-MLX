@@ -315,11 +315,11 @@
     },
     {
       "issue": 451,
-      "pr": null,
+      "pr": 849,
       "state": "TURNED_IN",
       "head_sha": "ebe19aaed0a3d345135acc06d6e8a12ffd00ef54",
       "preserved_branch": "codex/bamf02-b-451-selector-custody-20261103",
-      "summary": "B05.3 CPU19/19 and all scoped guards pass; pinned EGM episode B451-selector-custody-20261105 round1 PASS0B/0M/0N. UNBOUND selector schema/cold custody only; ready for human integration PR.",
+      "summary": "Ready PR849; pinned EGM PASS0B/0M/0N and CPU19/19. UNBOUND selector identity/schema/cold custody only; hosted and human merge pending.",
       "resume_trigger": null
     }
   ]
