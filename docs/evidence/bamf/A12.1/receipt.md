@@ -3,7 +3,7 @@
 Issue: #427
 Lane: A
 Implementation base reviewed unified: 88ac132db2fd1c3606fa5f06637d10a7ab40cba4
-Latest reviewed unified consumed before final turn-in: 22314c413ba137df69b3d6b35768fe65e1556bfe
+Latest reviewed unified consumed before final turn-in: 672f97d7049dd951f86630844e3a80b60c4563dd
 Implementation checkpoint: c2a3c9e27f98f38c4e904bd9bd7d4a05002b3739
 Branch: codex/bamf02-a12-1-427-20261105
 Disposition: TURNED_IN / EGM_PENDING
@@ -114,6 +114,7 @@ Additional gates:
 - governance-integrity check -> 0 violations
 - py_compile -> clean
 - git diff --check -> clean
+- post-unified-merge replay on 672f97d7 repeated focused 10/10, real producer 1/1, adjacent 26 passed / 0 failed / 2 expected skips, and all gates above green
 
 ## Existing-owner disposition and non-claims
 

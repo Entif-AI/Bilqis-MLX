@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "22314c413ba137df69b3d6b35768fe65e1556bfe",
-  "updated_at": "2026-11-05T13:58:48Z",
+  "observed_unified": "672f97d7049dd951f86630844e3a80b60c4563dd",
+  "updated_at": "2026-11-05T14:02:00Z",
   "exception": null,
   "items": [
     {
@@ -10,8 +10,8 @@
       "pr": 861,
       "state": "TURNED_IN",
       "head_sha": "c2a3c9e27f98f38c4e904bd9bd7d4a05002b3739",
-      "summary": "A12.1 PR #861 remains TURNED_IN/DRAFT after independent review required two final acceptance repairs beyond a5b73bd5: the Factory lesson-emission surface now carries exact source-owned SOURCE_HELD rows/reasons rather than silently excluding them, and the real producer composition is witnessed end to end. The canonical A01 source bundle regenerated exact release 58e0c281... and exact Atlas bundle 5f8fba20..., then the unmocked A02 planner -> Registry mirror -> A03 released-frame loader -> A08 lesson compiler -> A12 audit replay passed 1/1. Source-free focused proof is 10/10; adjacent 26 pass / 0 fail / 2 expected optional-source skips; semantic boundaries, governance, structure, error debt, smell, py_compile and diff gates are green. Fresh hosted checks and fresh exact-head independent EGM remain required.",
-      "resume_trigger": "Push the c2a3c9e2 repair plus refreshed custody only if the remote PR branch is unchanged from consumed a5b73bd5; then require exact-head hosted portable-core/portable/Semantic ABI and fresh independent EGM. If clean, mark PR #861 ready for human integration. Close #427 only after accepted merge. Parent A12/#364, #295 and #309 remain open.",
+      "summary": "A12.1 PR #861 remains TURNED_IN after consuming unified 672f97d7. Independent review required two final acceptance repairs beyond a5b73bd5: the Factory lesson-emission surface now carries exact source-owned SOURCE_HELD rows/reasons rather than silently excluding them, and the real producer composition is witnessed end to end. The canonical A01 source bundle regenerated exact release 58e0c281... and exact Atlas bundle 5f8fba20..., then the unmocked A02 planner -> Registry mirror -> A03 released-frame loader -> A08 lesson compiler -> A12 audit replay passed 1/1. Source-free focused proof is 10/10; adjacent 26 pass / 0 fail / 2 expected optional-source skips; post-merge focused 10/10, real producer 1/1 and adjacent 26 pass / 0 fail / 2 expected skips all pass on unified 672f97d7; semantic boundaries, governance, structure, error debt, smell and diff gates are green. Fresh hosted checks and exact-head independent EGM remain required.",
+      "resume_trigger": "After post-merge local proof, push the unified reconciliation only if remote #861 head is unchanged; then require exact-head hosted portable-core/portable/Semantic ABI and fresh independent EGM. If clean, mark PR #861 ready for human integration. Close #427 only after accepted merge. Parent A12/#364, #295 and #309 remain open.",
       "preserved_branch": "codex/bamf02-a12-1-427-20261105"
     },
     {
@@ -70,11 +70,11 @@
     },
     {
       "issue": 421,
-      "pr": null,
-      "state": "WAITING",
-      "head_sha": "4df4d1b0cba1bb02d5d52155298e2b85bc640b37",
-      "summary": "A10.1 was reopened by independent post-merge EGM. Two defects are repaired on codex/bamf02-a-421-egm-repair-20261105. A03 source-pinned BRAVO AGENT authority has now merged through PR #859 as reviewed unified 978ac927; the remaining acceptance blocker is the stable source-episode/root-lineage identity that must survive duplicate placement and reformatting before #421 can re-close.",
-      "resume_trigger": "Consume merged A03/#859 authority on the repair branch and establish the duplicate/reformat-resistant source-episode/root-lineage identity; rerun focused acceptance and fresh exact-head independent review before re-closing #421.",
+      "pr": 862,
+      "state": "TURNED_IN",
+      "head_sha": "28517f32c036f6cb55d742b6276811f3d85fdd7f",
+      "summary": "A10.1 post-merge repair remains turned in as PR #862. Independent exact-head review rejected three incomplete family-root designs: interpreted episode fields (2223c1ab), caller-supplied opaque source_episode_ref (2a9fe4e9), and raw content+span promoted into independence authority (9ff227c0). Repair 912f2fc7 resolves family identity through the existing BamfEvidenceSnapshot/v1 sourceManifestCID boundary: registered content-bound source-family manifests map exact spans to source-owner family roots. Duplicate source material at a second span remains the same family; authorized repack preserves family identity; unregistered caller-minted manifests fail closed; separately qualified fixture episodes are independent only when their registered source manifest declares distinct families. Concurrent owner repairs 26e32982 and b08628b5 make the lesson checker independent from generator gold and preserve exact high-precision unit conversion; 4530b101 satisfies operator-debt policy with named decimal factors. Merge history preserves all writers. Hosted CI then exposed module growth in evidence_frames.py; refactor 28517f32 extracts the typed BamfEvidenceSnapshot/v1 contracts into evidence_types.py while preserving the public evidence_frames import surface and passing development-structure policy. Combined real pinned A01+A03+unit suite passes 23/23; focused+adjacent passes 27 / 0 failed / 1 expected optional skip; governance 11/11; exact debt 0; module-size and changed-file smell 0; Factory/docs/flow/compile/diff clean. Fresh hosted checks and fresh exact-head EGM are required on the final pushed custody head.",
+      "resume_trigger": "Keep PR #862 non-mergeable until final exact-head hosted checks and fresh independent EGM are clean. Then mark ready for human integration if needed. Re-close #421 only after accepted repair merges. PR #858 remains waiting until that acceptance lands, then must consume source-manifest family authority plus independently checked gold and rerun F10/external-witness acceptance.",
       "preserved_branch": "codex/bamf02-a-421-egm-repair-20261105",
       "merged_pr": 852
     },

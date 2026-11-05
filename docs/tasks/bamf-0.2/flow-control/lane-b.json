@@ -100,6 +100,15 @@
       "close_reason": "EGM-Failed; remediation #719"
     },
     {
+      "issue": 719,
+      "pr": 854,
+      "state": "ACTIVE",
+      "head_sha": "3e173b1c2d44fe37ff3f9fed5037600722dfe0e6",
+      "summary": "B14.4 EGM remediation locally complete in draft PR #854: owner-bound cache authority now governs issuance and public cache use, derives canonical FP32 from the owner, rejects stale authenticated bindings, and fails closed across persistence-time authority drift.",
+      "resume_trigger": "Fresh pinned EGM passes on the final immutable #854 head and hosted checks are green.",
+      "preserved_branch": "codex/719-cache-eligibility-authority-20261105"
+    },
+    {
       "issue": 586,
       "pr": null,
       "state": "TURNED_IN",
