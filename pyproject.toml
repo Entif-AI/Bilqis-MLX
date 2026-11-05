@@ -3,7 +3,7 @@ name = "bilqis-mlx-private"
 version = "0.5.0"
 description = "Private, source-grounded MLX successor to Bilqis School50"
 requires-python = ">=3.11"
-dependencies = ["cryptography"]
+dependencies = ["cryptography", "rdflib==7.6.0"]
 
 [project.optional-dependencies]
 test = [
