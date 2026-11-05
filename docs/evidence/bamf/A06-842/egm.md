@@ -15,3 +15,13 @@ Comprehension additionally raised an unverified public class source-inspection c
 Repair: preserve all four original JSON and protocol4pickle snapshots in `snapshots.json`; reconstruct/compare all four and load all old payloads in the verifier. Keep the11original public classes in execution.py (218lines), extracting algorithms only. Add source-inspection assertions alongside existing module/annotation/pickle/patch regressions. One initial repair test exposed a missing PlanLineage annotation import; restore it and rerun focused proof. No baseline or governance changes.
 
 No aggregate PASS yet. #829 is a separate, exhausted and parked episode; no additional round is authorized there.
+
+## Round 2 — PASS
+
+Reviewed exact whole candidate: `6dc77625f8e0b15f328eacf43681da37cc15b1cf`.
+Executable repair head: `a0a00feff65915f17063ece7fef2a88ed0ece98a`.
+Latest reviewed unified consumed: `2debce4f4e389c95af295048ff624a54f47c5477` (governance-only intake).
+
+Fresh Terra High Codebase Details and Comprehension reviewers completed their required pinned persona/standard/issue/source/test/evidence/diff reads. Both returned PASS with no Blocker, Major or Nit. Codebase Details first disclosed incomplete truncated reads, then completed them in bounded chunks before final PASS; the incomplete interim status was not counted as clean. Comprehension confirmed no required reads remained missing. Literal payload structures/hashes and verifier coverage were inspected; tests were not rerun by read-only reviewers. Deterministic owner proof supplies byte comparisons and old-pickle readback.
+
+Episode disposition: PASS at round2/5; all known round1 findings repaired and scoped845closed. No further round required. Subsequent receipt/inventory changes are NONSEMANTIC and preserve this review's applicability under ADR127/129. PR-hosted checks and human integration remain outstanding. No self-merge. #785/#490 source-selection authority remains unresolved; #829 remains separately parked without an override.

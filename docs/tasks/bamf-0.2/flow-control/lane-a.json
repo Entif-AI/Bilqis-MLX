@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "2debce4f4e389c95af295048ff624a54f47c5477",
-  "updated_at": "2026-11-05T06:02:32.935941+00:00",
+  "updated_at": "2026-11-05T06:09:49.822045+00:00",
   "exception": null,
   "items": [
     {
@@ -78,10 +78,10 @@
     {
       "issue": 842,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "a0a00feff65915f17063ece7fef2a88ed0ece98a",
+      "state": "READY",
+      "head_sha": "6dc77625f8e0b15f328eacf43681da37cc15b1cf",
       "preserved_branch": "codex/bamf02-a-842-execution-structure-20261105",
-      "summary": "Structural extraction and all known round1 repairs verified; public owner218lines,17files<240. Sameepisode A842-EXECUTION-20261105 round1 failed; full repaired candidate preparing round2. No source selection/admission inferred.",
+      "summary": "Whole structural candidate EGM PASS at6dc77625, episode A842-EXECUTION-20261105 round2/5; scoped845closed; all focused/real-source/AST/literal/static gates green. Ready for human integration, no source-selection acceptance.",
       "resume_trigger": null
     },
     {
