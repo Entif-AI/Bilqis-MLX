@@ -294,11 +294,11 @@
     {
       "issue": 451,
       "pr": null,
-      "state": "WAITING",
-      "head_sha": "636d6283",
+      "state": "ACTIVE",
+      "head_sha": "0956114dd35f6a368a129a9c6cf179e48a536b65",
       "preserved_branch": "codex/bamf02-b-451-selector-custody-20261103",
-      "summary": "B05.3 engineering proof complete: native full custody1/1 plus adjacent depth18/18; ordinary independent review clear. Await lane integration slot before final pinned EGM and PR admission.",
-      "resume_trigger": "Existing Lane B integration PR #809 is merged/closed or an explicit lane admission exception selects #451; then reconcile live inventory, synchronize once if required, run affected checks and request final whole-candidate EGM."
+      "summary": "B05.3 selected for merge-readiness continuation under ADR-128; synchronize current unified and evaluate proof dependencies.",
+      "resume_trigger": null
     }
   ]
 }
