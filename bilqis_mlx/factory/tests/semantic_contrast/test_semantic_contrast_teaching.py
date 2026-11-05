@@ -17,6 +17,7 @@ from bilqis_mlx.factory.curriculum_definition import (
     GradeSpec,
     SourceBindingSet,
 )
+from bilqis_mlx.factory.adapters import SourceAdapterRegistry
 from bilqis_mlx.factory.executable_release import compile_executable_factory_release
 from bilqis_mlx.factory.execution import CurriculumProfile
 from bilqis_mlx.factory.semantic_contrasts import (
@@ -122,6 +123,41 @@ class SemanticContrastTeacherBridgeTests(unittest.TestCase):
         self.assertIn(OPTION_ID, execution.teaching_option_ids)
         adapter = self.registry.require(event_frames.GENERATOR, event_frames.ORACLE)
         self.assertIs(adapter.enrich, enrich_contrasts)
+
+    def test_provider_identity_binds_semantic_contrast_teaching_implementation(self):
+        baseline = event_frames.provider_implementation_digest()
+        drifted = event_frames.provider_implementation_digest({
+            "factory/semantic_contrast/teaching.py": b"drifted teaching implementation",
+        })
+        self.assertNotEqual(baseline, drifted)
+        self.assertEqual(
+            event_frames.registered_adapter().descriptor.implementation_sha256,
+            baseline,
+        )
+
+    def test_release_rejects_semantic_contrast_provider_identity_drift(self):
+        adapter = event_frames.registered_adapter()
+        drifted = replace(
+            adapter,
+            descriptor=replace(
+                adapter.descriptor,
+                implementation_sha256="f" * 64,
+            ),
+        )
+        registry = SourceAdapterRegistry((drifted,))
+        with self.assertRaisesRegex(
+            ValueError, "FACTORY_TEACHING_PROVIDER_DRIFT",
+        ):
+            draw_teaching_option_rows(
+                None,
+                self.graph_with_choice(),
+                self.release,
+                registry,
+                capability=CAPABILITY,
+                option_id=OPTION_ID,
+                seed=7,
+                each=1,
+            )
 
     def test_contrast_choice_runs_through_real_factory_teaching_option_interface(self):
         graph = self.graph_with_choice()

@@ -40,6 +40,25 @@ SPECS = MappingProxyType({
 })
 SYMBOLS = {cap: 'experiment.ithkuil.op.' + cap.split('.')[1] for cap in SPECS}
 TRUE, FALSE = 'cogal.value.true', 'cogal.value.false'
+PROVIDER_IMPLEMENTATION_FILES = (
+    'source_adapters/event_frames.py',
+    'verification/event_frames.py',
+    'factory/semantic_contrast/teaching.py',
+    'factory/semantic_contrast/checker.py',
+    'factory/semantic_contrast/models.py',
+    'factory/semantic_contrast/transform.py',
+    'factory/semantic_contrast/types.py',
+)
+
+
+def provider_implementation_digest(overrides=None):
+    overrides = {} if overrides is None else overrides
+    return digest({
+        name: hashlib.sha256(
+            overrides.get(name, (ROOT/'bilqis_mlx'/name).read_bytes())
+        ).hexdigest()
+        for name in PROVIDER_IMPLEMENTATION_FILES
+    })
 
 
 @lru_cache(maxsize=1)
@@ -139,10 +158,8 @@ def semantic_footprint(row):
 
 
 def registered_adapter():
-    fingerprint = digest({name:hashlib.sha256((ROOT/'bilqis_mlx'/name).read_bytes()).hexdigest()
-        for name in ('source_adapters/event_frames.py','verification/event_frames.py')})
     return RegisteredSourceAdapter(SourceAdapter('source.issue349.event-frames/v1',
-        GENERATOR,(ORACLE,),fingerprint,
+        GENERATOR,(ORACLE,),provider_implementation_digest(),
         variation_axes=('event-identity','before-state','after-state','fact-order','fresh-seed'),
         teaching_option_ids=(SEMANTIC_CONTRAST_OPTION,)),
         draw,check,
