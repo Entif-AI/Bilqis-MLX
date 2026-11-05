@@ -2891,3 +2891,49 @@ governance changes do not modify Bilqis semantic, Factory, custody, neural, sour
 fixture or runtime behavior. Existing passing expensive-suite evidence therefore
 remains applicable; this change requires only lightweight structural/workflow
 validation, not another broad test campaign.
+
+## ADR-130 | 2026-11-05 | Gate scope expansion, not decomposition
+
+**Status:** Accepted by direct owner instruction on 2026-11-05.
+
+**Problem:** ADR-127 can stop an EGM loop only after substantial work has already
+been spent. But treating issue/branch creation itself as the waste would recreate
+the opposite failure: giant tickets, serialized execution, slow turn-in, late
+failure discovery, and poor parallelism. BAMF's recursive decomposition exists to
+avoid exactly that.
+
+**Decision:** Distinguish **decomposition** from **scope expansion**. A child that
+inherits a strict subset of already-authorized required acceptance and adds no new
+obligation may be given its own issue, branch/worktree, and PR whenever that improves
+parallelism, failure locality, review isolation, turn-in speed, or information yield.
+Its minimal receipt names the parent, exact inherited clauses, and
+`new_acceptance=false`. It does not need to prove that creating the child is itself
+a present blocker.
+
+Only a delta that cannot be traced to existing required acceptance is scope
+expansion. Before spending on that delta, record in at most 120 words the current
+delivery, named requirement/blocker, concrete consequence of deferral, and cheapest
+adequate next step; classify it `PROCEED`, `PARK`, or `DROP`. `PROCEED` means the
+new obligation is required for current delivery/correctness/safety. `PARK` preserves
+only a small pointer until selected. `DROP` ends spend.
+
+New remediation issue bodies should remain concise (about 250 words or less by
+default), pointing to inherited/versioned authority under ADR-118. Crossing 3
+commits, 3 touched files, or 250 net changed lines is a **scope-drift tripwire**, not
+a command to absorb the child back into its parent. Re-check clause traceability:
+if all work is still inherited, continue and decompose again when useful; only the
+untraceable delta requires expansion authority. Discovery of a second independent
+problem gets the same classification.
+
+EGM remains a merge-readiness tool for already-authorized scope. It may discover a
+real defect, but cannot by itself convert a peripheral improvement into a new project
+obligation. This rule suppresses net-new scope creep while preserving aggressive
+decomposition as a throughput strategy.
+
+**Diagnostic spend is also governed:** a manually constructed end-to-end probe is
+not exempt merely because it is not called a test. Repeating an expensive probe with
+unchanged relevant code and inputs adds no evidence and should reuse the prior
+result. Repeated parameter exploration must amortize invariant setup in one process.
+After two unsuccessful full-cost attempts under the same hypothesis, further
+end-to-end execution pauses until a cheaper staged/profiled diagnostic changes the
+evidence. Compaction must preserve in-flight probe status to prevent duplicate runs.
