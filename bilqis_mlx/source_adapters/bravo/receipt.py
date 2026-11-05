@@ -61,7 +61,7 @@ class ExternalGoldWitness:
     source_family_id: str
     interpretation_revision: str
     semantic_release: str
-    rights_regime: str
+    rights: EvidenceRights
     checker_id: str
     question: str
     gold: str
@@ -75,7 +75,10 @@ class ExternalGoldWitness:
                 or not self.source_family_id
                 or not self.interpretation_revision
                 or not _SHA.fullmatch(self.semantic_release)
-                or self.rights_regime != PUBLIC_FIXTURE
+                or type(self.rights) is not EvidenceRights
+                or self.rights.regime != PUBLIC_FIXTURE
+                or not self.rights.allowed_training
+                or not self.rights.public_export_allowed
                 or self.checker_id != "bilqis.evidence-exact-checker/v1"
                 or not self.question
                 or not self.gold):
@@ -98,12 +101,17 @@ class ExternalWitnessSplitReceipt:
     heldout_source_digest: str
     train_source_manifest_cid: str
     heldout_source_manifest_cid: str
+    heldout_rights: EvidenceRights
     heldout_witnesses: tuple[ExternalGoldWitness, ...]
 
     def __post_init__(self) -> None:
         if (self.train_family_id == self.heldout_family_id
                 or self.train_source_digest == self.heldout_source_digest
                 or self.train_source_manifest_cid == self.heldout_source_manifest_cid
+                or type(self.heldout_rights) is not EvidenceRights
+                or self.heldout_rights.regime != PUBLIC_FIXTURE
+                or not self.heldout_rights.allowed_training
+                or not self.heldout_rights.public_export_allowed
                 or len(self.heldout_witnesses) != len(EXPECTED_QUESTIONS)
                 or tuple(item.question for item in self.heldout_witnesses)
                 != EXPECTED_QUESTIONS
@@ -112,6 +120,8 @@ class ExternalWitnessSplitReceipt:
                 or any(item.source_byte_digest != self.heldout_source_digest
                        for item in self.heldout_witnesses)
                 or any(item.source_manifest_cid != self.heldout_source_manifest_cid
+                       for item in self.heldout_witnesses)
+                or any(item.rights != self.heldout_rights
                        for item in self.heldout_witnesses)):
             _fail("BAMF_PUBLIC_BRAVO_EXTERNAL_SPLIT_INVALID")
 
@@ -166,7 +176,7 @@ class PublicBravoFixtureReceipt:
                        for item in self.witnesses)
                 or any(item.interpretation_revision != self.interpretation_revision
                        for item in self.witnesses)
-                or any(item.rights_regime != self.rights.regime for item in self.witnesses)
+                or any(item.rights != self.rights for item in self.witnesses)
                 or any(item.semantic_release != self.semantic_release
                        for item in self.witnesses)
                 or any(item.source_manifest_cid != self.source_manifest_cid

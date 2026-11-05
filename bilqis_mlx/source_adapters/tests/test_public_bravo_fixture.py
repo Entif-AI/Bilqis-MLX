@@ -91,6 +91,12 @@ class PublicBravoFixtureTests(unittest.TestCase):
         self.assertEqual(
             {row.source_manifest_cid for row in split.heldout_witnesses},
             {split.heldout_source_manifest_cid})
+        self.assertEqual(
+            {row.rights for row in split.heldout_witnesses},
+            {split.heldout_rights})
+        self.assertEqual(
+            split.heldout_rights,
+            receipt.rights)
 
     def test_self_consistently_rehashed_tampering_fails_replay(self):
         receipt = self.receipt()
@@ -111,6 +117,9 @@ class PublicBravoFixtureTests(unittest.TestCase):
             replace(receipt.witnesses[0], lesson_id="forged-lesson"),
             replace(receipt.witnesses[0], source_family_id="evidence-family:forged"),
             replace(receipt.witnesses[0], source_span_end=receipt.witnesses[0].source_span_end - 1),
+            replace(
+                receipt.witnesses[0],
+                rights=replace(receipt.witnesses[0].rights, purpose="FORGED_PURPOSE")),
         ):
             with self.subTest(changed=changed):
                 with self.assertRaises(BilqisError):
@@ -118,6 +127,25 @@ class PublicBravoFixtureTests(unittest.TestCase):
                         receipt, witnesses=(changed, *receipt.witnesses[1:]))
                     verify_public_bravo_fixture_receipt(
                         tampered, atlas_selection=self.selection)
+
+    def test_heldout_rights_purpose_tampering_fails_replay(self):
+        receipt = self.receipt()
+        split = receipt.f10_proof.independent_split
+        forged_rights = replace(split.heldout_rights, purpose="FORGED_PURPOSE")
+        forged_witnesses = tuple(
+            replace(row, rights=forged_rights)
+            for row in split.heldout_witnesses)
+        tampered_split = replace(
+            split,
+            heldout_rights=forged_rights,
+            heldout_witnesses=forged_witnesses)
+        tampered = replace(
+            receipt,
+            f10_proof=replace(
+                receipt.f10_proof, independent_split=tampered_split))
+        with self.assertRaises(BilqisError):
+            verify_public_bravo_fixture_receipt(
+                tampered, atlas_selection=self.selection)
 
     def test_fixture_receipt_is_reproducible_and_source_digest_is_literal(self):
         first = self.receipt()

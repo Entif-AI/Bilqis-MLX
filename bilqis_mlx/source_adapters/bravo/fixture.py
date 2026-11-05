@@ -70,7 +70,7 @@ def _witnesses(
             source_family_id=lesson.source_family_id,
             interpretation_revision=lesson.frame.interpretation_revision,
             semantic_release=snapshot.semantic_release,
-            rights_regime=lesson.rights.regime,
+            rights=lesson.rights,
             checker_id=lesson.checker_id,
             question=lesson.question,
             gold=lesson.gold,
@@ -155,6 +155,7 @@ def _independent_split(
         heldout_source_digest=snapshot.source_byte_digest,
         train_source_manifest_cid=primary_snapshot.source_manifest_cid,
         heldout_source_manifest_cid=snapshot.source_manifest_cid,
+        heldout_rights=rights,
         heldout_witnesses=heldout,
     )
 

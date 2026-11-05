@@ -6,7 +6,8 @@ from enum import Enum
 from fractions import Fraction
 
 from bilqis_mlx.source_adapters.evidence_frames import (
-    PUBLIC_FIXTURE, EvidenceDerivation, EvidenceFrame, EvidenceRights,
+    PRIVATE_REAL, PUBLIC_FIXTURE,
+    EvidenceDerivation, EvidenceFrame, EvidenceRights,
     EventTime, SourceSpan,
 )
 
@@ -75,7 +76,8 @@ class EvidenceLesson:
 
     def check(self) -> bool:
         if (self.frame.record_id != self.record_id
-                or self.rights.regime != PUBLIC_FIXTURE
+                or self.rights.regime not in {PUBLIC_FIXTURE, PRIVATE_REAL}
+                or not self.rights.allowed_training
                 or self.frame.actor_role_ref != "agent"):
             return False
         if self.question == "What category?":

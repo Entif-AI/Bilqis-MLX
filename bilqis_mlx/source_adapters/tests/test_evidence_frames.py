@@ -261,23 +261,55 @@ class EvidenceFrameTests(EvidenceFamilyAuthorityCases, unittest.TestCase):
             replace(self.snapshot, records=(replace(source, negated=True),)))
         self.assertEqual(unambiguous.lessons[0].frame.occurrence_truth, "FALSE")
 
-    def test_private_or_unclassified_material_is_rejected_before_public_export(self):
-        for regime in ("PRIVATE_REAL", "UNCLASSIFIED"):
-            with self.subTest(regime=regime):
-                rights = replace(self.rights, regime=regime, public_export_allowed=False)
-                private_record = replace(
-                    self.snapshot.records[0], actor_ref="PROTECTED_SENTINEL_DO_NOT_EXPORT")
-                snapshot = replace(self.snapshot, rights=rights, records=(private_record,))
-                result = self.compile(snapshot, rights)
-                self.assertNotIn("PROTECTED_SENTINEL_DO_NOT_EXPORT", repr(result))
-                self.assertEqual(result.lessons, ())
-                self.assertEqual(result.holds[0].status, EvidenceLessonStatus.SOURCE_HELD)
-                with self.assertRaises(BilqisError) as caught:
-                    public_export(result)
-                self.assertEqual(
-                    caught.exception.context["reason"],
-                    "BAMF_EVIDENCE_PUBLIC_EXPORT_HELD",
-                )
+    def test_private_real_reaches_trainer_preparation_but_cannot_export(self):
+        rights = replace(
+            self.rights, regime="PRIVATE_REAL", public_export_allowed=False)
+        private_record = replace(
+            self.snapshot.records[0],
+            actor_ref="PROTECTED_SENTINEL_DO_NOT_EXPORT")
+        snapshot = replace(
+            self.snapshot, rights=rights, records=(private_record,))
+
+        result = self.compile(snapshot, rights)
+        self.assertEqual(len(result.lessons), 4)
+        self.assertEqual(result.holds, ())
+        self.assertTrue(all(lesson.check() for lesson in result.lessons))
+        prepared = compile_typed_reconstructions(result)
+        self.assertEqual(len(prepared), 1)
+        self.assertEqual(
+            prepared[0].actor_ref, "PROTECTED_SENTINEL_DO_NOT_EXPORT")
+        challenge = plan_fresh_challenge(
+            result,
+            train_record_ids=(private_record.record_id,),
+            heldout_record_ids=(),
+        )
+        self.assertEqual(
+            challenge.split.train_record_ids, (private_record.record_id,))
+        with self.assertRaises(BilqisError) as caught:
+            public_export(result)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_EVIDENCE_PUBLIC_EXPORT_FORBIDDEN",
+        )
+
+    def test_unclassified_material_is_held_before_training_or_export(self):
+        rights = replace(
+            self.rights, regime="UNCLASSIFIED", public_export_allowed=False)
+        record = replace(
+            self.snapshot.records[0],
+            actor_ref="UNCLASSIFIED_SENTINEL_DO_NOT_EXPORT")
+        snapshot = replace(self.snapshot, rights=rights, records=(record,))
+        result = self.compile(snapshot, rights)
+        self.assertNotIn("UNCLASSIFIED_SENTINEL_DO_NOT_EXPORT", repr(result))
+        self.assertEqual(result.lessons, ())
+        self.assertEqual(
+            result.holds[0].status, EvidenceLessonStatus.SOURCE_HELD)
+        with self.assertRaises(BilqisError) as caught:
+            public_export(result)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_EVIDENCE_PUBLIC_EXPORT_HELD",
+        )
 
     def test_unadjudicated_record_is_held_without_blocking_qualified_sibling(self):
         qualified = self.snapshot.records[0]
