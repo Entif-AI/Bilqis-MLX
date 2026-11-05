@@ -54,3 +54,25 @@ profile and predecessor. #420 still lacks aggregate actor/time/causal world-rule
 qualification; #395 remains dependent on that breadth. This structural repair
 neither closes those issues nor establishes neural learning. IPR-0220 remains
 open; PM-2026-11-03-004 / RC-139 remains the source-selection incident.
+
+## Round-one findings and deterministic repair
+
+Pinned independent review of `77ae274d` found two Majors: stale generated error
+inventory and an underspecified normative implementation plan. The error generator
+had run before newly extracted files were staged. It scans Git-tracked paths;
+no private-directory exclusion defect exists. The committed-tree check reproduced
+`ERROR_FIELD_MANUAL_STALE` before repair. Stage-aware regeneration restores all
+2,029 raw raises: original/candidate exception identity and multiplicity multisets
+are exactly equal, with zero missing or added identities. The repaired check
+reports zero new debt. No scanner rule or baseline changed.
+
+The specification now names every created/modified owner, movement and facade
+compatibility mechanics, ordered phases and concrete negative/positive checks.
+These are mechanical/documentation repairs. Runtime source and tests remain
+byte-identical to reviewed `77ae274d`; its 23/23 passing evidence is reused under
+ADR-129. Incident `PM-2026-11-04-001` / `RC-144` is filed and natively read back
+at canonical ledger Incidents row269; no new governance rule or pattern adopted.
+
+Episode `A824-structure-20261104` remains round1/5. The initial FAIL is preserved;
+resolution of its two scoped findings requires readback rather than resetting the
+episode or claiming a new whole-candidate round.
