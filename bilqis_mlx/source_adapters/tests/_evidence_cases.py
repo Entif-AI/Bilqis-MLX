@@ -1,0 +1,156 @@
+"""Reusable A10.1 F10 and authority cases; mixed into the issue-owned suite."""
+from __future__ import annotations
+
+from dataclasses import replace
+import os
+import unittest
+
+from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.factory.evidence_curriculum import (
+    compile_evidence_lessons, plan_fresh_challenge, split_evidence_families,
+)
+from bilqis_mlx.semantics.atlas.snapshot_contracts import AtlasArtifactSelection
+from bilqis_mlx.source_adapters.evidence_frames import (
+    PUBLIC_FIXTURE_SOURCE, ReportedValue, SourceSpan,
+    build_public_fixture_snapshot, source_family_id,
+)
+
+
+STUDY = (
+    "https://github.com/Entif-AI/Bilqis-MLX/id/sense/"
+    "NI-LEXICON-CURRICULUM/LEXROOT-3e51e33b4a970f/STEM%203/BSC"
+)
+HOUR = "h"
+AGENT = "agent"
+SOURCE_BUNDLE = "f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec"
+ATLAS_BUNDLE = "5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7"
+ATLAS_RELEASE = "58e0c281b5da18b9b7e6c803709b29eeeb0a88f16b06f48de692808e2fb88306"
+
+
+class EvidenceFamilyAuthorityCases:
+    def test_paraphrases_of_one_episode_cannot_cross_independent_split(self):
+        original = self.snapshot.records[0]
+        sibling = replace(original, record_id="fixture-001-paraphrase")
+        result = self.compile(replace(self.snapshot, records=(original, sibling)))
+        with self.assertRaises(ValueError):
+            split_evidence_families(
+                result, train_record_ids=(original.record_id,),
+                heldout_record_ids=(sibling.record_id,))
+        same_side = split_evidence_families(
+            result, train_record_ids=(original.record_id, sibling.record_id),
+            heldout_record_ids=())
+        self.assertEqual(len(same_side.train_family_ids), 1)
+
+        adjudicated_copy = replace(
+            original, record_id="fixture-002",
+            adjudication_ref="adjudication:fixture-002")
+        copied = self.compile(
+            replace(self.snapshot, records=(original, adjudicated_copy)))
+        with self.assertRaises(ValueError):
+            split_evidence_families(
+                copied, train_record_ids=(original.record_id,),
+                heldout_record_ids=(adjudicated_copy.record_id,))
+
+        relocated = replace(
+            adjudicated_copy,
+            source_span=SourceSpan(
+                len(PUBLIC_FIXTURE_SOURCE), 2 * len(PUBLIC_FIXTURE_SOURCE)))
+        relocated_result = self.compile(
+            replace(self.snapshot, records=(original, relocated)))
+        with self.assertRaises(ValueError):
+            split_evidence_families(
+                relocated_result, train_record_ids=(original.record_id,),
+                heldout_record_ids=(relocated.record_id,))
+
+        separate = replace(
+            relocated, record_id="fixture-003", actor_ref="actor_02")
+        independent = self.compile(
+            replace(self.snapshot, records=(original, separate)))
+        receipt = split_evidence_families(
+            independent, train_record_ids=(original.record_id,),
+            heldout_record_ids=(separate.record_id,))
+        self.assertNotEqual(receipt.train_family_ids, receipt.heldout_family_ids)
+
+    def test_manifest_digest_and_span_cannot_manufacture_new_episode_family(self):
+        original = self.snapshot.records[0]
+        copied = replace(
+            original, record_id="fixture-copy",
+            source_span=SourceSpan(
+                len(PUBLIC_FIXTURE_SOURCE), 2 * len(PUBLIC_FIXTURE_SOURCE)))
+        repacked = replace(
+            self.snapshot, source_manifest_cid="public-fixture:repacked",
+            source_byte_digest="d" * 64, records=(copied,))
+        self.assertEqual(
+            source_family_id(self.snapshot, original),
+            source_family_id(repacked, copied))
+
+    def test_fresh_challenge_splits_source_families_before_template_groups(self):
+        original = self.snapshot.records[0]
+        paraphrase = replace(original, record_id="fixture-001-paraphrase")
+        other = replace(
+            original, record_id="fixture-002",
+            adjudication_ref="adjudication:fixture-002", actor_ref="actor_02",
+            source_span=SourceSpan(
+                len(PUBLIC_FIXTURE_SOURCE), 2 * len(PUBLIC_FIXTURE_SOURCE)))
+        result = self.compile(
+            replace(self.snapshot, records=(original, paraphrase, other)))
+        with self.assertRaises(ValueError):
+            plan_fresh_challenge(
+                result, train_record_ids=(original.record_id,),
+                heldout_record_ids=(paraphrase.record_id,))
+        plan = plan_fresh_challenge(
+            result,
+            train_record_ids=(original.record_id, paraphrase.record_id),
+            heldout_record_ids=(other.record_id,))
+        self.assertEqual(len(plan.split.train_family_ids), 1)
+        self.assertEqual(len(plan.split.heldout_family_ids), 1)
+        self.assertEqual(plan.train_template_groups[0][1], "T1")
+        self.assertEqual(plan.heldout_template_groups[0][1], "T1")
+        self.assertEqual(
+            set(plan.post_exam_teachable_lesson_ids),
+            {lesson.lesson_id for lesson in result.lessons
+             if lesson.record_id == other.record_id})
+
+    def test_missing_report_is_verification_needed_not_nonoccurrence(self):
+        record = replace(
+            self.snapshot.records[0], status="PLANNED",
+            reported_value=ReportedValue(None, HOUR),
+            alternatives=("EXPECTED_REPORT_MISSING",))
+        result = self.compile(replace(self.snapshot, records=(record,)))
+        self.assertEqual(
+            result.lessons[0].frame.verification_state, "VERIFICATION_NEEDED")
+        self.assertNotIn("NON_OCCURRENCE", result.lessons[0].frame.alternatives)
+
+    def test_compiler_reenters_semantic_authority_before_gold(self):
+        record = self.snapshot.records[0]
+        for forged in (
+            replace(record, category_ref="fixture:invented-category"),
+            replace(record, agent_role_ref="fixture:invented-agent-role"),
+            replace(record, reported_value=ReportedValue("0.25", "invented-unit")),
+        ):
+            with self.subTest(forged=forged):
+                with self.assertRaises(BilqisError) as caught:
+                    self.compile(replace(self.snapshot, records=(forged,)))
+                self.assertEqual(
+                    caught.exception.context["reason"],
+                    "BAMF_EVIDENCE_COMPILER_AUTHORITY_MISMATCH")
+
+    @unittest.skipUnless(
+        os.environ.get("BILQIS_A01_ATLAS_BUNDLE"),
+        "real pinned A01 artifact is an optional integration witness",
+    )
+    def test_real_pinned_a01_a03_and_unit_authority_build_fixture(self):
+        self._source_authority.stop()
+        self._compiler_authority.stop()
+        selection = AtlasArtifactSelection(
+            os.environ["BILQIS_A01_ATLAS_BUNDLE"],
+            ATLAS_BUNDLE, ATLAS_RELEASE, SOURCE_BUNDLE)
+        snapshot, rights = build_public_fixture_snapshot(
+            atlas_selection=selection)
+        result = compile_evidence_lessons(snapshot, rights, selection)
+        self.assertEqual(snapshot.semantic_release, ATLAS_RELEASE)
+        self.assertEqual(snapshot.records[0].category_ref, STUDY)
+        self.assertEqual(snapshot.records[0].reported_value.unit_ref, HOUR)
+        self.assertEqual(snapshot.records[0].agent_role_ref, AGENT)
+        self.assertEqual(result.lessons[3].gold, "15")
+        self.assertTrue(all(lesson.check() for lesson in result.lessons))

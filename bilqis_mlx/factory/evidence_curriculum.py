@@ -1,115 +1,28 @@
 """A10.1 BRAVO evidence-to-lesson compiler over provenance-safe records."""
 from __future__ import annotations
 
-from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
-from enum import Enum
-from hashlib import sha256
 
-from bilqis_mlx.errors import ErrorBus, SCHOOL
+from bilqis_mlx.errors import BilqisError, ErrorBus, SCHOOL
 from bilqis_mlx.source_adapters.evidence_frames import (
     PUBLIC_FIXTURE, BamfEvidenceSnapshot, EvidenceDerivation, EvidenceFrame,
     EvidenceRecord, EvidenceRights, EventTime, SourceSpan, source_family_id,
-    verification_state,
+    resolve_public_fixture_authority, verification_state,
 )
-
-
-class EvidenceLessonStatus(str, Enum):
-    SOURCE_HELD = "SOURCE_HELD"
+from bilqis_mlx.semantics.atlas.snapshot_contracts import AtlasArtifactSelection
+from bilqis_mlx.semantics.cognitive_operators import TypedValue
+from ._evidence_curriculum.challenge import (
+    compile_typed_reconstructions, plan_fresh_challenge,
+    split_evidence_families,
+)
+from ._evidence_curriculum.types import (
+    EvidenceChallengePlan, EvidenceHold, EvidenceLesson, EvidenceLessonStatus,
+    EvidenceSplitReceipt, LessonCandidateSet, TypedEvidenceReconstruction,
+)
 
 
 def _fail(reason: str) -> None:
     ErrorBus.raise_(SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID, reason=reason)
-
-
-@dataclass(frozen=True)
-class EvidenceHold:
-    status: EvidenceLessonStatus
-    reason: str
-    record_id: str
-
-
-@dataclass(frozen=True)
-class EvidenceLesson:
-    lesson_id: str
-    record_id: str
-    source_family_id: str
-    source_span: SourceSpan
-    frame: EvidenceFrame
-    question: str
-    gold: str
-    rendered: str
-    task_modality: str
-    positive_family: str
-    negative_family: str
-    template_lineage: str
-    checker_id: str
-    prerequisite_capabilities: tuple[str, ...]
-    rights: EvidenceRights
-    derivation: EvidenceDerivation | None = None
-
-    def check(self) -> bool:
-        if self.frame.record_id != self.record_id or self.rights.regime != PUBLIC_FIXTURE:
-            return False
-        if self.question == "What category?":
-            return self.gold == self.frame.category_ref
-        if self.question == "Planned or completed?":
-            return self.gold == self.frame.status
-        if self.question == "What reported duration?":
-            expected = "UNKNOWN" if self.frame.reported_decimal is None else self.frame.reported_decimal
-            return self.gold == expected
-        if self.question == "Convert the reported duration to minutes.":
-            if self.frame.reported_decimal is None:
-                return self.gold == "UNKNOWN" and self.derivation is None
-            return (self.derivation is not None
-                    and self.derivation.output_value == self.gold
-                    and self.derivation.operator_id == "duration.hour-to-minute/v1")
-        return False
-
-
-@dataclass(frozen=True)
-class LessonCandidateSet:
-    snapshot_id: str
-    source_byte_digest: str
-    interpretation_revision: str
-    semantic_release: str
-    rights: EvidenceRights
-    lessons: tuple[EvidenceLesson, ...]
-    holds: tuple[EvidenceHold, ...]
-
-
-@dataclass(frozen=True)
-class EvidenceSplitReceipt:
-    train_record_ids: tuple[str, ...]
-    heldout_record_ids: tuple[str, ...]
-    train_family_ids: tuple[str, ...]
-    heldout_family_ids: tuple[str, ...]
-    receipt_sha256: str
-
-
-@dataclass(frozen=True)
-class TypedEvidenceReconstruction:
-    record_id: str
-    source_family_id: str
-    template_lineage: str
-    actor_ref: str
-    category_ref: str
-    status: str
-    reported_value: str | None
-    reported_unit_ref: str
-    computed_values: tuple[EvidenceDerivation, ...]
-    negated: bool
-    event_time: EventTime
-    alternatives: tuple[str, ...]
-    verification_state: str
-
-
-@dataclass(frozen=True)
-class EvidenceChallengePlan:
-    split: EvidenceSplitReceipt
-    train_template_groups: tuple[tuple[str, str, tuple[str, ...]], ...]
-    heldout_template_groups: tuple[tuple[str, str, tuple[str, ...]], ...]
-    post_exam_teachable_lesson_ids: tuple[str, ...]
 
 
 def _minutes(decimal: str, unit_label: str) -> tuple[str, EvidenceDerivation]:
@@ -231,9 +144,11 @@ def _lessons(snapshot: BamfEvidenceSnapshot, record: EvidenceRecord) -> tuple[Ev
 def compile_evidence_lessons(
     adjudicated_snapshot: BamfEvidenceSnapshot,
     source_rights: EvidenceRights,
-    semantic_release: str,
+    atlas_selection: AtlasArtifactSelection,
 ) -> LessonCandidateSet:
     """Compile only currently qualified source evidence into deterministic lessons."""
+    authority = resolve_public_fixture_authority(atlas_selection)
+    semantic_release = authority.semantic_release
     if (type(adjudicated_snapshot) is not BamfEvidenceSnapshot
             or type(source_rights) is not EvidenceRights
             or source_rights != adjudicated_snapshot.rights
@@ -250,6 +165,15 @@ def compile_evidence_lessons(
             adjudicated_snapshot.source_byte_digest,
             adjudicated_snapshot.interpretation_revision,
             semantic_release, source_rights, (), holds)
+    for record in adjudicated_snapshot.records:
+        if (record.category_ref != authority.category_ref
+                or record.agent_role_ref != authority.agent_role_ref):
+            _fail("BAMF_EVIDENCE_COMPILER_AUTHORITY_MISMATCH")
+        try:
+            TypedValue(
+                "UnitName", record.reported_value.unit_ref, semantic_release)
+        except BilqisError:
+            _fail("BAMF_EVIDENCE_COMPILER_AUTHORITY_MISMATCH")
     qualified = tuple(record for record in adjudicated_snapshot.records
                       if record.adjudication_ref is not None)
     record_holds = tuple(EvidenceHold(
@@ -263,96 +187,3 @@ def compile_evidence_lessons(
         adjudicated_snapshot.source_byte_digest,
         adjudicated_snapshot.interpretation_revision,
         semantic_release, source_rights, lessons, record_holds)
-
-
-def compile_typed_reconstructions(
-    candidates: LessonCandidateSet,
-) -> tuple[TypedEvidenceReconstruction, ...]:
-    """Project each qualified source episode without collapsing reported and derived state."""
-    by_record: dict[str, list[EvidenceLesson]] = {}
-    for lesson in candidates.lessons:
-        by_record.setdefault(lesson.record_id, []).append(lesson)
-    rows = []
-    for record_id in sorted(by_record):
-        lessons = by_record[record_id]
-        first = lessons[0]
-        frame = first.frame
-        derivations = tuple(
-            lesson.derivation for lesson in lessons if lesson.derivation is not None)
-        rows.append(TypedEvidenceReconstruction(
-            record_id=record_id,
-            source_family_id=first.source_family_id,
-            template_lineage=first.template_lineage,
-            actor_ref=frame.actor_ref,
-            category_ref=frame.category_ref,
-            status=frame.status,
-            reported_value=frame.reported_decimal,
-            reported_unit_ref=frame.reported_unit_ref,
-            computed_values=derivations,
-            negated=frame.negated,
-            event_time=frame.event_time,
-            alternatives=frame.alternatives,
-            verification_state=frame.verification_state,
-        ))
-    return tuple(rows)
-
-
-def _template_groups(
-    candidates: LessonCandidateSet, record_ids: tuple[str, ...],
-) -> tuple[tuple[str, str, tuple[str, ...]], ...]:
-    selected = set(record_ids)
-    groups: dict[tuple[str, str], list[str]] = {}
-    for lesson in candidates.lessons:
-        if lesson.record_id in selected:
-            groups.setdefault(
-                (lesson.source_family_id, lesson.template_lineage), []).append(lesson.lesson_id)
-    return tuple(
-        (family, lineage, tuple(sorted(ids)))
-        for (family, lineage), ids in sorted(groups.items()))
-
-
-def plan_fresh_challenge(
-    candidates: LessonCandidateSet, *,
-    train_record_ids: tuple[str, ...],
-    heldout_record_ids: tuple[str, ...],
-) -> EvidenceChallengePlan:
-    """Split immutable source families first, then group renderings inside each side."""
-    split = split_evidence_families(
-        candidates,
-        train_record_ids=train_record_ids,
-        heldout_record_ids=heldout_record_ids,
-    )
-    heldout_lesson_ids = tuple(sorted(
-        lesson.lesson_id for lesson in candidates.lessons
-        if lesson.record_id in set(heldout_record_ids)))
-    return EvidenceChallengePlan(
-        split=split,
-        train_template_groups=_template_groups(candidates, train_record_ids),
-        heldout_template_groups=_template_groups(candidates, heldout_record_ids),
-        post_exam_teachable_lesson_ids=heldout_lesson_ids,
-    )
-
-
-def split_evidence_families(
-    candidates: LessonCandidateSet, *,
-    train_record_ids: tuple[str, ...],
-    heldout_record_ids: tuple[str, ...],
-) -> EvidenceSplitReceipt:
-    """Prove that one underlying source episode cannot straddle an independent split."""
-    if set(train_record_ids) & set(heldout_record_ids):
-        _fail("BAMF_EVIDENCE_SPLIT_RECORD_OVERLAP")
-    by_record: dict[str, str] = {}
-    for lesson in candidates.lessons:
-        prior = by_record.setdefault(lesson.record_id, lesson.source_family_id)
-        if prior != lesson.source_family_id:
-            _fail("BAMF_EVIDENCE_SPLIT_FAMILY_DRIFT")
-    if any(item not in by_record for item in (*train_record_ids, *heldout_record_ids)):
-        _fail("BAMF_EVIDENCE_SPLIT_RECORD_UNKNOWN")
-    train = tuple(sorted({by_record[item] for item in train_record_ids}))
-    held = tuple(sorted({by_record[item] for item in heldout_record_ids}))
-    if set(train) & set(held):
-        _fail("BAMF_EVIDENCE_SPLIT_WITNESS_NOT_INDEPENDENT")
-    payload = repr((train_record_ids, heldout_record_ids, train, held)).encode("utf-8")
-    return EvidenceSplitReceipt(
-        tuple(train_record_ids), tuple(heldout_record_ids), train, held,
-        sha256(payload).hexdigest())

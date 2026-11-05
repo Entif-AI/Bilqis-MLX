@@ -12,7 +12,14 @@ from hashlib import sha256
 import re
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
-from bilqis_mlx.semantics.frame_schema import occurrence_id
+from bilqis_mlx.semantics.atlas.snapshot import load_pinned_atlas_snapshot
+from bilqis_mlx.semantics.atlas.snapshot_contracts import AtlasArtifactSelection
+from bilqis_mlx.semantics.cognitive_operators import (
+    TypedValue, UnitConversion, default_registry,
+)
+from bilqis_mlx.semantics.released_frame_schemas import (
+    lookup_source_pinned_frame_schema,
+)
 
 
 SCHEMA = "BamfEvidenceSnapshot/v1"
@@ -23,6 +30,12 @@ PUBLIC_FIXTURE_SOURCE = "actor=actor_01; category=study; status=completed; durat
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _STATUS = frozenset({"PLANNED", "COMPLETED", "UNKNOWN"})
 _DURATION_FIELD_PARTS = 2
+_STUDY_SOURCE_ROW_KEY = "LEXSENSE-24e0d37974513f"
+_EVIDENCE_SCHEMA_ID = "frame:bravo.evidence.actor/v1"
+_EVIDENCE_SCHEMA_REVISION = 1
+_AGENT_ROLE_ID = "agent"
+_HOUR_UNIT = "h"
+_MINUTE_UNIT = "min"
 
 
 def _fail(reason: str) -> None:
@@ -180,13 +193,84 @@ class EvidenceDerivation:
     output_unit: str
 
 
-def source_family_id(snapshot: BamfEvidenceSnapshot, record: EvidenceRecord) -> str:
-    """One source episode stays one family across interpretation/adjudication."""
-    source_instance_id = "bravo-evidence:" + _digest(
-        snapshot.source_manifest_cid, snapshot.source_byte_digest,
+@dataclass(frozen=True)
+class EvidenceSemanticAuthority:
+    semantic_release: str
+    category_ref: str
+    hour_unit_ref: str
+    agent_role_ref: str
+    unit_operator_id: str
+
+    def __post_init__(self) -> None:
+        if (not _SHA.fullmatch(self.semantic_release)
+                or not all(_text(value) for value in (
+                    self.category_ref, self.hour_unit_ref,
+                    self.agent_role_ref, self.unit_operator_id))
+                or self.hour_unit_ref != _HOUR_UNIT
+                or self.agent_role_ref != _AGENT_ROLE_ID
+                or self.unit_operator_id != "UNIT_CONVERT"):
+            _fail("BAMF_EVIDENCE_SEMANTIC_AUTHORITY_INVALID")
+
+
+def resolve_public_fixture_authority(
+    atlas_selection: AtlasArtifactSelection,
+) -> EvidenceSemanticAuthority:
+    """Re-enter the accepted A01/A03/operator owners for fixture semantics."""
+    if type(atlas_selection) is not AtlasArtifactSelection:
+        _fail("BAMF_EVIDENCE_ATLAS_SELECTION_REQUIRED")
+    snapshot = load_pinned_atlas_snapshot(atlas_selection)
+    category_matches = tuple(
+        item.concept.semantic_id
+        for item in snapshot.concepts
+        if any(source.key == _STUDY_SOURCE_ROW_KEY
+               for source in item.concept.source_rows)
     )
-    return "evidence-family:" + occurrence_id(
-        source_instance_id, (record.source_span.start, record.source_span.end))
+    if len(category_matches) != 1:
+        _fail("BAMF_EVIDENCE_CATEGORY_AUTHORITY_MISMATCH")
+    schema, _ = lookup_source_pinned_frame_schema(
+        _EVIDENCE_SCHEMA_ID, _EVIDENCE_SCHEMA_REVISION,
+        source_family="evidence", atlas_selection=atlas_selection)
+    roles = tuple(role for role in schema.roles if role.role_id == _AGENT_ROLE_ID)
+    if (len(roles) != 1 or roles[0].min_cardinality != 1
+            or roles[0].max_cardinality != 1
+            or "Entity" not in roles[0].allowed_type_ids):
+        _fail("BAMF_EVIDENCE_AGENT_ROLE_AUTHORITY_MISMATCH")
+    # These constructors re-enter the current cognitive-operator declarations;
+    # neither the fixture nor the caller gets to mint a unit or conversion edge.
+    TypedValue("UnitName", _HOUR_UNIT, snapshot.release_sha256)
+    UnitConversion(_HOUR_UNIT, _MINUTE_UNIT, 60, 1)
+    operator = default_registry(snapshot.release_sha256).resolve("UNIT_CONVERT")
+    return EvidenceSemanticAuthority(
+        snapshot.release_sha256, category_matches[0], _HOUR_UNIT,
+        roles[0].role_id, operator.operator_id)
+
+
+def _source_episode_identity(record: EvidenceRecord) -> str:
+    """Identity from source-native episode semantics, never manifestation place.
+
+    Source manifest, byte digest, byte span, interpretation/adjudication and
+    observed-at metadata remain provenance.  They cannot manufacture an
+    independent episode when identical source content is copied or reformatted.
+    """
+    return _digest(
+        record.actor_ref,
+        record.category_label,
+        record.status,
+        record.reported_value.decimal
+        if record.reported_value.decimal is not None else "<UNKNOWN>",
+        record.unit_label,
+        record.event_time.start_iso or "<NONE>",
+        record.event_time.end_iso or "<NONE>",
+        record.event_time.time_zone,
+        "NEGATED" if record.negated else "AFFIRMED",
+    )
+
+
+def source_family_id(snapshot: BamfEvidenceSnapshot, record: EvidenceRecord) -> str:
+    """One source episode stays one family across copies and interpretations."""
+    if type(snapshot) is not BamfEvidenceSnapshot or type(record) is not EvidenceRecord:
+        _fail("BAMF_EVIDENCE_FAMILY_INPUT_INVALID")
+    return "evidence-family:" + _source_episode_identity(record)
 
 
 def verification_state(record: EvidenceRecord) -> str:
@@ -232,21 +316,22 @@ def parse_public_fixture_source(
 
 
 def build_public_fixture_snapshot(
-    *, semantic_release: str, category_ref: str,
-    hour_unit_ref: str, agent_role_ref: str,
+    *, atlas_selection: AtlasArtifactSelection,
 ) -> tuple[BamfEvidenceSnapshot, EvidenceRights]:
     """Create the literal public fixture prescribed by A10 without private data."""
+    authority = resolve_public_fixture_authority(atlas_selection)
     rights = EvidenceRights(PUBLIC_FIXTURE, "TRAINING", True, True)
     record = parse_public_fixture_source(
-        PUBLIC_FIXTURE_SOURCE, category_ref=category_ref,
-        hour_unit_ref=hour_unit_ref, agent_role_ref=agent_role_ref)
+        PUBLIC_FIXTURE_SOURCE, category_ref=authority.category_ref,
+        hour_unit_ref=authority.hour_unit_ref,
+        agent_role_ref=authority.agent_role_ref)
     digest = sha256(PUBLIC_FIXTURE_SOURCE.encode("utf-8")).hexdigest()
     snapshot = BamfEvidenceSnapshot(
         snapshot_id="bamf-public-fixture-001",
         source_manifest_cid="public-fixture:bravo-a10-1/v1:" + digest,
         source_byte_digest=digest,
         interpretation_revision="bravo-public-fixture/v1",
-        semantic_release=semantic_release,
+        semantic_release=authority.semantic_release,
         rights=rights,
         records=(record,),
     )
