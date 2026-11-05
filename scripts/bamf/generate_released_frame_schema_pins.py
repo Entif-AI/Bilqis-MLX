@@ -1,4 +1,4 @@
-"""Stage A03 schema-body releases from actual pinned A01 and registered A/B/C.
+"""Stage A03 schema-body releases from pinned A01, registered A/B/C, and A03-owned evidence roles.
 
 This is a source-owner generator, not a neural admission action. The produced
 pin registry must be independently reviewed and its digest pinned in code.
