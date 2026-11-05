@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "1599a67b4ac481c796e26fa302db829db3910e00",
-  "updated_at": "2026-11-05T14:16:00Z",
+  "updated_at": "2026-11-05T14:17:21Z",
   "exception": null,
   "items": [
     {
@@ -66,13 +66,13 @@
     },
     {
       "issue": 421,
-      "pr": 862,
+      "pr": null,
       "state": "TURNED_IN",
-      "head_sha": "28517f32c036f6cb55d742b6276811f3d85fdd7f",
-      "summary": "A10.1 post-merge repair remains turned in as PR #862. Independent exact-head review rejected three incomplete family-root designs: interpreted episode fields (2223c1ab), caller-supplied opaque source_episode_ref (2a9fe4e9), and raw content+span promoted into independence authority (9ff227c0). Repair 912f2fc7 resolves family identity through the existing BamfEvidenceSnapshot/v1 sourceManifestCID boundary: registered content-bound source-family manifests map exact spans to source-owner family roots. Duplicate source material at a second span remains the same family; authorized repack preserves family identity; unregistered caller-minted manifests fail closed; separately qualified fixture episodes are independent only when their registered source manifest declares distinct families. Concurrent owner repairs 26e32982 and b08628b5 make the lesson checker independent from generator gold and preserve exact high-precision unit conversion; 4530b101 satisfies operator-debt policy with named decimal factors. Merge history preserves all writers. Hosted CI then exposed module growth in evidence_frames.py; refactor 28517f32 extracts the typed BamfEvidenceSnapshot/v1 contracts into evidence_types.py while preserving the public evidence_frames import surface and passing development-structure policy. Combined real pinned A01+A03+unit suite passes 23/23; focused+adjacent passes 27 / 0 failed / 1 expected optional skip; governance 11/11; exact debt 0; module-size and changed-file smell 0; Factory/docs/flow/compile/diff clean. Fresh hosted checks and fresh exact-head EGM are required on the final pushed custody head.",
-      "resume_trigger": "Keep PR #862 non-mergeable until final exact-head hosted checks and fresh independent EGM are clean. Then mark ready for human integration if needed. Re-close #421 only after accepted repair merges. PR #858 remains waiting until that acceptance lands, then must consume source-manifest family authority plus independently checked gold and rerun F10/external-witness acceptance.",
+      "head_sha": "4fa82bbf686183ac2071f2ce44805deb189ea3a9",
+      "summary": "A10.1 post-merge repair passed hosted portable-core/portable/Semantic ABI and fresh independent exact-head review at 4fa82bbf, then merged through PR #862 as reviewed unified 672f97d7. The accepted repair preserves the owned compile_evidence_lessons(snapshot, rights, semantic_release) API, binds family identity through registered source manifests, keeps unit/AGENT/category/operator authority fail-closed, independently checks gold, preserves exact conversion precision and retains the exact historical public-fixture manifest alias without a generic legacy parser. Issue #421 is closed completed.",
+      "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a-421-egm-repair-20261105",
-      "merged_pr": 852
+      "merged_pr": 862
     },
     {
       "issue": 395,
