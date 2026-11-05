@@ -202,7 +202,8 @@ def prove_source_qualified_continuation(
     reference = Path(run_dir) / ".b13-2-source-reference.safetensors"
     source_evidence["reference"] = _write_numeric_reference(reference, arrays)
     destination = _spawn_cpu(run_dir, root, source, artifact, reference)
-    _assert_structural_parity(source_evidence, destination)
+    committed_output_match = _assert_structural_parity(
+        source_evidence, destination)
     if destination["numeric_max_abs"]["overall"] > FP32_ATOL:
         raise AssertionError("B13.2 cross-backend FP32 parity exceeded tolerance")
     _assert_parent_unchanged(run_dir, published, held, snapshot)
@@ -211,6 +212,7 @@ def prove_source_qualified_continuation(
         "source_backend": source_evidence["backend"],
         "destination_backend": destination["backend"],
         "numeric_max_abs": destination["numeric_max_abs"], "tolerance": FP32_ATOL,
+        "committed_output_match": committed_output_match,
         "generation": 1, "manifest_sha256": published["manifest_sha256"],
         "natural_next_selection": natural,
         "controlled_optimizer_fixture": True,

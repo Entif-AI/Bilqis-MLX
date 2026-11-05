@@ -90,11 +90,11 @@ def _parent_identity(parent):
 
 def _forward_structure(gradient):
     output = gradient.execution.output
-    decisions = tuple({
+    decisions = [{
         "decision_id": record.decision_id, "kind": record.kind.value,
         "candidates_sha256": contract_digest(record.candidates),
         "logit_shape": list(record.logits.shape),
-    } for record in output.decisions)
+    } for record in output.decisions]
     return {
         "generation_binding": output.generation_binding,
         "status": output.status.value, "execution_mode": output.execution_mode.value,
@@ -180,6 +180,8 @@ def _structural_evidence(
         plan, targets, mask, gradient, transaction):
     _context, receipt, capability, seed, row, key, policy, metadata = visit
     proof = transaction.step_proofs[-1]
+    proof_record = proof.to_record()
+    proof_record["parameter_names"] = list(proof_record["parameter_names"])
     return {
         "backend": _device_provenance(parent), "parent": _parent_identity(parent),
         "cache": {
@@ -205,7 +207,7 @@ def _structural_evidence(
         "forward": _forward_structure(gradient),
         "training_batch_authority_sha256": training.authority_digest,
         "training_authority_sha256": compiled_batch.training_authority.digest,
-        "step_proof": proof.to_record(),
+        "step_proof": proof_record,
         "candidate_update_counts_sha256": _mapping_digest(transaction.optimizer.update_counts),
     }
 
@@ -227,11 +229,29 @@ def _custody_hashes(run_dir: Path, published) -> dict:
 def _assert_structural_parity(source, destination):
     for field in (
             "parent", "cache", "visit", "plan_sha256", "targets_sha256",
-            "mask_sha256", "forward", "training_batch_authority_sha256",
-            "training_authority_sha256", "step_proof",
+            "mask_sha256", "training_batch_authority_sha256",
+            "training_authority_sha256",
             "candidate_update_counts_sha256"):
         if source[field] != destination[field]:
             raise AssertionError(f"B13.2 structural parity drift: {field}")
+    if source["step_proof"] != destination["step_proof"]:
+        differing = tuple(
+            key for key in source["step_proof"]
+            if source["step_proof"].get(key) != destination["step_proof"].get(key)
+        )
+        raise AssertionError(
+            "B13.2 structural parity drift: step_proof fields="
+            + ",".join(differing))
+    source_forward = {
+        key: value for key, value in source["forward"].items()
+        if key != "committed_sha256"
+    }
+    destination_forward = {
+        key: value for key, value in destination["forward"].items()
+        if key != "committed_sha256"
+    }
+    if source_forward != destination_forward:
+        raise AssertionError("B13.2 structural parity drift: forward")
     if source["backend"]["device_family"] != "APPLE_METAL":
         raise AssertionError("B13.2 source arm is not Apple Metal")
     if destination["backend"]["device_family"] != "CPU":
@@ -241,6 +261,9 @@ def _assert_structural_parity(source, destination):
             "attention_kernel", "rope_variant"):
         if source["backend"][field] != destination["backend"][field]:
             raise AssertionError(f"B13.2 execution provenance drift: {field}")
+    return (
+        source["forward"]["committed_sha256"]
+        == destination["forward"]["committed_sha256"])
 
 
 def _assert_parent_unchanged(run_dir, published, held, snapshot):

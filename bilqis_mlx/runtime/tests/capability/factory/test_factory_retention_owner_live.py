@@ -24,7 +24,9 @@ import mlx.core as mx
 
 from bilqis_mlx.factory import assessment_scope_contract
 from bilqis_mlx.generated_assessment import make_cohort
-from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
+from bilqis_mlx.learning.atlas_acceptance import (
+    candidate_identity_digest, mint_acceptance_binding,
+)
 from bilqis_mlx.learning.atlas_candidate import begin_candidate, resolve_candidate
 from bilqis_mlx.learning.atlas_readout import DecisionOutput, ExecutionMode
 from bilqis_mlx.learning.atlas_retention_decision import issue_factory_retention_decision
@@ -69,7 +71,9 @@ from bilqis_mlx.runtime.tests.capability.factory.factory_retention_target_diagno
 from bilqis_mlx.runtime.tests.capability.factory.source_training_support import (
     source_training_batch,
 )
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import acceptance
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
+    acceptance, retention_decision,
+)
 
 
 TARGET = "B.IDBOOLOPS"
@@ -199,7 +203,10 @@ def _publish_c05_successor(run_dir, source_context, parent, cache, artifact, tra
     retained = resolve_candidate(transaction, accepted=True)
     successor = derive_successor_bundle(
         parent, retained, parent_manifest_sha256=cache.accepted_manifest_sha256,
-        delivery_events=())
+        delivery_events=({
+            "event": "BAMF_GENERATION_ACCEPTED",
+            "optimizer_step": retained.optimizer_step,
+        },))
     with patch(
         "bilqis_mlx.runtime.bamf_bundle.codec.assert_headroom",
         return_value=None,
@@ -207,6 +214,37 @@ def _publish_c05_successor(run_dir, source_context, parent, cache, artifact, tra
         published = accept_and_publish(
             run_dir, successor, retained, decision=decision,
             feature_sha256=successor.extents.factor_map_digest)
+    return successor, retained, published
+
+
+def _publish_disposable_source_qualified_successor(
+        run_dir, parent, cache, transaction):
+    """Publish a real source-trained step without treating it as C05 learning proof.
+
+    The candidate step itself is produced by the live Factory/B11/B12 path.  The
+    acceptance token is deliberately the test-only C05 fixture so B13.2 can
+    exercise pointer/lock/cold-resume continuation independently of the separate
+    retained-learning acceptance witness.
+    """
+    retained = resolve_candidate(transaction, accepted=True)
+    successor = derive_successor_bundle(
+        parent, retained, parent_manifest_sha256=cache.accepted_manifest_sha256,
+        delivery_events=({
+            "event": "BAMF_GENERATION_ACCEPTED",
+            "optimizer_step": retained.optimizer_step,
+        },))
+    decision = retention_decision(
+        parent=parent.retained_state, retained=retained)
+    binding = mint_acceptance_binding(
+        decision, retained, run_id=successor.run_id,
+        generation=successor.generation,
+        feature_sha256=successor.extents.factor_map_digest)
+    with patch(
+        "bilqis_mlx.runtime.bamf_bundle.codec.assert_headroom",
+        return_value=None,
+    ):
+        published = publish_bamf_generation(
+            run_dir, successor, acceptance=binding)
     return successor, retained, published
 
 
@@ -351,7 +389,7 @@ class FactoryRetentionOwnerLiveTests(SourceBackboneTestBase):
             print("C05_FIXED_CAPABILITY_DIAGNOSTIC " + json.dumps(
                 receipt, sort_keys=True), flush=True)
 
-    def test_disposable_learning_candidate_can_publish_then_continue(self):
+    def test_source_qualified_candidate_can_publish_then_continue(self):
         source_context, _ = live_factory_context(self.root, self.source)
         genesis, _ = genesis_bundle(
             self, self.snapshot, self.schema, self.artifact)
@@ -361,8 +399,8 @@ class FactoryRetentionOwnerLiveTests(SourceBackboneTestBase):
                 run_dir, source_context, genesis)
             transaction = _source_owned_candidate_step(
                 run_dir, source_context, parent, cache, self.artifact)
-            successor, retained, published = _publish_c05_successor(
-                run_dir, source_context, parent, cache, self.artifact, transaction)
+            successor, retained, published = _publish_disposable_source_qualified_successor(
+                run_dir, parent, cache, transaction)
             _assert_published_generation_one(run_dir, retained, published)
             witness = prove_source_qualified_continuation(
                 run_dir, source_context, self.artifact, successor, published,
