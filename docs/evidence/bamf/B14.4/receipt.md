@@ -44,17 +44,19 @@ Knowing the public MAC algorithm or supplying an attacker registry/key does not
 permit a cache-operation caller to mint a valid authenticator without the
 pre-bound authority capability.
 
-The focused tests create that capability only in a test fixture by explicitly
-bypassing the production constructor with `object.__new__` and assigning its
-private slots. That is a synthetic same-process test mechanism, not production
-provenance and not a security boundary. The production runtime contains no such
-mint path.
+The focused tests obtain that capability from an isolated test-only owner created
+by `_new_authority_owner()` and install only that owner's lookup during the test.
+They do not populate private object slots. Production still exposes no
+registry/key-taking authority mint. This fail-closed posture is the accepted #720
+boundary until the upstream run owner supplies the production capability.
 
 `rebuild_revoked_cache()` accepts an immutable eligibility receipt for the new
-binding and a callable canonical FP32 source. It never decodes or relabels the
-stale artifact. The fresh source must be finite exact FP32, the rebuilt artifact
-must bind to the new identity, and only that newly encoded artifact is handed to
-the persistence callback. Reusing the same binding is rejected.
+binding. It no longer accepts a caller-selected canonical FP32 source. The
+capability owner supplies the current canonical source beside the B13/A12/context
+authority inputs. Rebuild validates the receipt, derives fresh finite FP32 bytes
+through that owner, consumes the receipt once, persists the rebuilt artifact, and
+rechecks current authority before reporting success. It never decodes or relabels
+the stale artifact. Reusing the same binding is rejected.
 
 ## Adversarial proof
 
@@ -66,6 +68,7 @@ The focused tests prove:
 - every newly added identity field invalidates an old record;
 - an ineligible or mismatched eligibility receipt cannot persist anything;
 - non-FP32 or non-finite canonical source input rejects;
+- the public rebuild signature exposes no caller-supplied canonical FP32 source;
 - stale-record relabeling under the same binding rejects;
 - a stale compressed payload cannot be relabelled under a new rights binding by
   replacing its binding/header metadata;
@@ -81,12 +84,18 @@ The focused tests prove:
   qualified canonical FP32 source and new binding are the same;
 - a poisoned codec entrypoint is never reached when stale source-rights identity
   is rejected, directly witnessing rejection before payload decode;
+- public encode, decode and inference re-derive owner-current B13/A12/policy/
+  context identity before cache use, so an old authenticated binding is rejected
+  even when the caller supplies that same old binding;
+- if owner authority changes inside the persistence callback, rebuild does not
+  report success and the stored artifact is rejected by the public read boundary;
 - cache policy, record and rebuild owners import no training, AdamW, gold or frame
   sidecar dependency.
 
 ## Verification
 
-Final focused cache suite: 45/45 pass. Correction/revalidation coverage including
+Historical focused cache suite at the original B14.4 checkpoint: 45/45 pass.
+Correction/revalidation coverage including
 the frozen pre-split canonical signing-byte compatibility witness passes 19/19;
 the split helper again emits the historical literal LF byte rather than the two
 bytes `\\n`. Development-structure and governance checks report zero violations;
@@ -162,6 +171,42 @@ development-structure, governance-integrity and code-smell checks report **zero
 new findings**, and `git diff --check` is clean. These are implementation proofs,
 not the final review gate: a fresh pinned EGM on the final immutable PR head is
 still required before #719 or B14.4 can claim EGM acceptance.
+
+### Exact-head follow-up after the second pinned review
+
+A second fresh pinned review of PR #854 head
+`59f45809b1c8b23d9ace4f5cb1f1a0870d53b37b` found two additional Blockers and
+two Majors. The Blockers were real use-boundary defects: an old authenticated
+binding could still be decoded when the caller supplied that same old binding,
+and rebuild still accepted caller-authored FP32 bytes as the canonical source.
+
+Implementation commit `3e173b1c2d44fe37ff3f9fed5037600722dfe0e6`
+repairs those defects and tightens the persistence race:
+
+- public encode, decode and interactive inference now verify the requested
+  binding against the capability owner's current B13/A12/source/policy/context
+  state before cache bytes can be produced or consumed;
+- canonical FP32 recomputation moved behind the owner-bound eligibility inputs;
+  the cache-operation caller cannot supply replacement FP32 bytes;
+- rebuild rechecks owner currentness after the persistence callback. Authority
+  drift during that callback makes the operation fail, and the public read path
+  rejects any artifact that became stale during the callback;
+- regressions cover old-binding reuse after owner policy drift and policy drift
+  during persistence, including the requirement that stale bytes never reach
+  cache decode or attention.
+
+The remaining production-issuer observation is not repaired by adding a new mint.
+#720 explicitly accepted a fail-closed production posture with no exposed issuer.
+This branch preserves that boundary. The legitimate owner path is exercised by an
+isolated owner seam that supplies live B13/A12/context authority; production stays
+unavailable until that upstream owner supplies the pre-bound capability.
+
+Current affected verification is **67/67 PASS**. Error-control reports **zero new
+opaque error/numeric debt**. Base-aware development-structure, governance and
+code-smell checks report **zero new findings**. BAMF flow-control remains Lane B
+**2/6 ACTIVE** with **15/15 PASS**, and `git diff --check` is clean. A fresh pinned
+review of the new immutable branch head remains required before claiming EGM
+acceptance.
 
 No actual student, native AdamW, teacher, checkpoint, source release, admission,
 human-run state or production cache caller was modified. B13 accepted generation
