@@ -18,106 +18,102 @@ from bilqis_mlx.semantics.released_frame_schemas import _load_pinned_released_fr
 from bilqis_mlx.semantics.tests.test_atlas_release_audit import _selection
 
 
+def _held_gloss_fixture():
+    from bilqis_mlx.factory.tests.test_skos_curriculum import _snapshot
+    from bilqis_mlx.semantics.atlas_projection import AtlasLabel
+
+    original = _snapshot()
+    held = next(
+        row for row in original.withheld_rows
+        if row.source_disposition == "SOURCE_HELD")
+    admitted = original.concepts[0]
+    renamed = replace(
+        admitted,
+        concept=replace(
+            admitted.concept,
+            labels=(
+                AtlasLabel("altLabel", "near synonym"),
+                AtlasLabel(
+                    "prefLabel",
+                    "plausible English gloss matching the held source"),
+            )))
+    return original, replace(
+        original, concepts=(renamed, *original.concepts[1:])), held
+
+
 class AtlasAuthorityIntegrationTests(unittest.TestCase):
-    def test_held_gloss_cannot_promote_across_semantic_or_teacher_surfaces(self):
+    def _assert_held_source_stays_unadmitted(self, snapshot, held):
         from bilqis_mlx.factory.skos_curriculum import (
             LearnedFrontier, SOURCE_FAMILY_ADAPTERS,
             _compile_semantic_curriculum_snapshot,
             _compile_source_constructive_lessons_snapshot,
         )
-        from bilqis_mlx.factory.tests.test_skos_curriculum import _snapshot
         from bilqis_mlx.semantics.atlas_features import (
-            FeatureSchema, build_feature_manifest,
             plan_prospective_identity_features,
         )
-        from bilqis_mlx.runtime.model_topology_v2 import (
-            GenerationExtents, ModelTopologySpecV2,
-        )
-        from bilqis_mlx.semantics.atlas.vocabulary import (
-            VocabularyPrior, plan_vocabulary_extension,
-        )
         from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
-        from bilqis_mlx.semantics.atlas_projection import AtlasLabel
 
-        original = _snapshot()
-        held = next(
-            row for row in original.withheld_rows
-            if row.source_disposition == "SOURCE_HELD")
-        admitted = original.concepts[0]
-        plausible = "plausible English gloss matching the held source"
-        renamed = replace(
-            admitted,
-            concept=replace(
-                admitted.concept,
-                labels=(
-                    AtlasLabel("altLabel", "near synonym"),
-                    AtlasLabel("prefLabel", plausible),
-                )))
-        relabeled = replace(
-            original, concepts=(renamed, *original.concepts[1:]))
+        admitted_ids = {entry.semantic_id for entry in snapshot.abi_entries}
+        self.assertNotIn(held.semantic_id, admitted_ids)
+        features = build_feature_manifest(snapshot, FeatureSchema((), ()))
+        self.assertIn((held.semantic_id, held.reason_code), features.held_reasons)
+        with self.assertRaises(BilqisError) as caught:
+            features.features_for(
+                held.semantic_id, "UNKNOWN", "UNKNOWN", "task:held")
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_FEATURE_CONCEPT_NOT_ADMITTED")
+        with self.assertRaises(BilqisError):
+            plan_prospective_identity_features(
+                snapshot, features, (held.semantic_id,),
+                expected_feature_digest=features.digest)
 
+        selection = AtlasArtifactSelection(
+            "fixture", snapshot.bundle_id, snapshot.release_sha256,
+            snapshot.source_bundle_id)
+        active = tuple(
+            entry.semantic_id for entry in snapshot.abi_entries if entry.active)
+        prior = VocabularyPrior(
+            selection,
+            GenerationExtents(
+                1, 1, snapshot.active_set_sha256,
+                "b" * 64, features.digest),
+            features, FeatureSchema((), ()), active, "e" * 64)
+        with patch(
+                "bilqis_mlx.semantics.atlas.vocabulary_planning.load_pinned_atlas_snapshot",
+                return_value=snapshot), self.assertRaises(BilqisError):
+            plan_vocabulary_extension(
+                prior, (held.semantic_id,), ModelTopologySpecV2())
+
+        source_lessons = _compile_source_constructive_lessons_snapshot(
+            snapshot).lessons
+        self.assertFalse(any(
+            held.semantic_id in (
+                lesson.semantic_id, *lesson.constituents,
+                *lesson.prerequisite_closure)
+            for lesson in source_lessons))
+        teacher = _compile_semantic_curriculum_snapshot(
+            snapshot, SOURCE_FAMILY_ADAPTERS,
+            LearnedFrontier(
+                snapshot.release_sha256,
+                claimed_exposed=(held.semantic_id,),
+                claimed_qualified=(held.semantic_id,)))
+        self.assertNotIn(held.semantic_id, teacher.source_eligible_concept_ids)
+        self.assertFalse(any(
+            held.semantic_id in (
+                lesson.semantic_id, *lesson.constituents,
+                *lesson.prerequisite_closure)
+            for lesson in teacher.source_lessons))
+        self.assertEqual(
+            next(row for row in teacher.source_hold_rows
+                 if row.semantic_id == held.semantic_id).reason_code,
+            held.reason_code)
+
+    def test_held_gloss_cannot_promote_across_semantic_or_teacher_surfaces(self):
+        original, relabeled, held = _held_gloss_fixture()
         for snapshot in (original, relabeled):
             with self.subTest(labels=snapshot.concepts[0].concept.labels):
-                admitted_ids = {entry.semantic_id for entry in snapshot.abi_entries}
-                self.assertNotIn(held.semantic_id, admitted_ids)
-
-                features = build_feature_manifest(snapshot, FeatureSchema((), ()))
-                self.assertIn(
-                    (held.semantic_id, held.reason_code), features.held_reasons)
-                with self.assertRaises(BilqisError) as caught:
-                    features.features_for(
-                        held.semantic_id, "UNKNOWN", "UNKNOWN", "task:held")
-                self.assertEqual(
-                    caught.exception.context["reason"],
-                    "BAMF_FEATURE_CONCEPT_NOT_ADMITTED")
-                with self.assertRaises(BilqisError):
-                    plan_prospective_identity_features(
-                        snapshot, features, (held.semantic_id,),
-                        expected_feature_digest=features.digest)
-
-                selection = AtlasArtifactSelection(
-                    "fixture", snapshot.bundle_id, snapshot.release_sha256,
-                    snapshot.source_bundle_id)
-                active = tuple(
-                    entry.semantic_id for entry in snapshot.abi_entries
-                    if entry.active)
-                prior = VocabularyPrior(
-                    selection,
-                    GenerationExtents(
-                        1, 1, snapshot.active_set_sha256,
-                        "b" * 64, features.digest),
-                    features, FeatureSchema((), ()), active, "e" * 64)
-                with patch(
-                        "bilqis_mlx.semantics.atlas.vocabulary_planning.load_pinned_atlas_snapshot",
-                        return_value=snapshot), self.assertRaises(BilqisError):
-                    plan_vocabulary_extension(
-                        prior, (held.semantic_id,), ModelTopologySpecV2())
-
-                source_lessons = _compile_source_constructive_lessons_snapshot(
-                    snapshot).lessons
-                self.assertFalse(any(
-                    held.semantic_id in (
-                        lesson.semantic_id, *lesson.constituents,
-                        *lesson.prerequisite_closure)
-                    for lesson in source_lessons))
-
-                teacher = _compile_semantic_curriculum_snapshot(
-                    snapshot, SOURCE_FAMILY_ADAPTERS,
-                    LearnedFrontier(
-                        snapshot.release_sha256,
-                        claimed_exposed=(held.semantic_id,),
-                        claimed_qualified=(held.semantic_id,)))
-                self.assertNotIn(
-                    held.semantic_id, teacher.source_eligible_concept_ids)
-                self.assertFalse(any(
-                    held.semantic_id in (
-                        lesson.semantic_id, *lesson.constituents,
-                        *lesson.prerequisite_closure)
-                    for lesson in teacher.source_lessons))
-                self.assertEqual(
-                    next(row for row in teacher.source_hold_rows
-                         if row.semantic_id == held.semantic_id).reason_code,
-                    held.reason_code)
+                self._assert_held_source_stays_unadmitted(snapshot, held)
 
     @unittest.skipUnless(
         os.environ.get("BILQIS_A01_ATLAS_BUNDLE")
