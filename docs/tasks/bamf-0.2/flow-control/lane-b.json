@@ -8,7 +8,7 @@
     {
       "issue": 475,
       "pr": null,
-      "state": "WAITING",
+      "state": "ACTIVE",
       "head_sha": "b5c3df440d397c0c2cd2165d5f2c015c1d1e7a0c",
       "summary": "B12.2 remains the current primary Lane B integration surface; remediation #710 owns the unresolved execution-provenance defect.",
       "resume_trigger": "Remediation #710 is consumed; issue #475 transitions to EGM-Pending; fresh exact-head EGM passes; an integration PR slot is available.",
