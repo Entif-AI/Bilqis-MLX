@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "2debce4f4e389c95af295048ff624a54f47c5477",
-  "updated_at": "2026-11-05T06:09:49.822045+00:00",
+  "updated_at": "2026-11-05T06:10:37.407700+00:00",
   "exception": null,
   "items": [
     {
@@ -77,11 +77,11 @@
     },
     {
       "issue": 842,
-      "pr": null,
-      "state": "READY",
-      "head_sha": "6dc77625f8e0b15f328eacf43681da37cc15b1cf",
+      "pr": 846,
+      "state": "TURNED_IN",
+      "head_sha": "92144d10891381b960535701f05298e84c4f170d",
       "preserved_branch": "codex/bamf02-a-842-execution-structure-20261105",
-      "summary": "Whole structural candidate EGM PASS at6dc77625, episode A842-EXECUTION-20261105 round2/5; scoped845closed; all focused/real-source/AST/literal/static gates green. Ready for human integration, no source-selection acceptance.",
+      "summary": "Ready PR846targets reviewed unified. Whole candidate EGM PASS at6dc77625, episode A842-EXECUTION-20261105 round2/5;845closed, proof green. Hosted checks/human merge pending;785/490source-selection hold remains.",
       "resume_trigger": null
     },
     {

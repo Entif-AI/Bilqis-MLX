@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "05e31a576e3432e4238c9b4477a70d70ec4fc487",
-  "updated_at": "2026-11-04T17:06:00Z",
+  "updated_at": "2026-11-05T06:11:52.571809+00:00",
   "exception": null,
   "items": [
     {
@@ -301,6 +301,15 @@
       "head_sha": "b7c802b0",
       "preserved_branch": "codex/remediation-egm-708-711-integration-20261103",
       "summary": "Consolidated #708/#709/#710/#711 remediation candidate remains active: mechanically clean at the recorded head, but positive Factory/C05 source authority, B11/B08 execution authority, and production continuation evidence remain unfinished.",
+      "resume_trigger": null
+    },
+    {
+      "issue": 784,
+      "pr": 847,
+      "state": "TURNED_IN",
+      "head_sha": "edae20526c34b628fa63a895fb852921007f42a0",
+      "preserved_branch": "codex/bamf02-b-784-runner-context-20261105",
+      "summary": "Live inventory reconciliation: ready runner-context PR847targets reviewed unified. Its owner records pinned EGM PASS, focused14/14andmotif5/5, broader165/168with3knownbaselineimports tracked844. No whole-suite PASS or merge inferred.",
       "resume_trigger": null
     }
   ]
