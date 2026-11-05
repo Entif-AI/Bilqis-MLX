@@ -78,10 +78,10 @@
     {
       "issue": 842,
       "pr": 846,
-      "state": "TURNED_IN",
-      "head_sha": "92144d10891381b960535701f05298e84c4f170d",
+      "state": "ACTIVE",
+      "head_sha": "770c89873b8856ad3ef253ade8fda827d511599b",
       "preserved_branch": "codex/bamf02-a-842-execution-structure-20261105",
-      "summary": "Ready PR846targets reviewed unified. Whole candidate EGM PASS at6dc77625, episode A842-EXECUTION-20261105 round2/5;845closed, proof green. Hosted checks/human merge pending;785/490source-selection hold remains.",
+      "summary": "PR846 reactivated only to consume reviewed unified after PR847 merged and resolve the resulting integration conflict. Prior whole-candidate EGM PASS remains scoped to executable bytes unless conflict resolution changes behavior.",
       "resume_trigger": null
     },
     {
