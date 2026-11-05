@@ -109,6 +109,33 @@ class PublicBravoFixtureTests(unittest.TestCase):
             verify_public_bravo_fixture_receipt(
                 tampered, atlas_selection=self.selection)
 
+    def test_heldout_rights_purpose_is_bound_and_replayed(self):
+        receipt = self.receipt()
+        split = receipt.f10_proof.independent_split
+        changed_witness = replace(
+            split.heldout_witnesses[0],
+            rights=replace(
+                split.heldout_witnesses[0].rights,
+                purpose="EVALUATION",
+            ),
+        )
+        changed_split = replace(
+            split,
+            heldout_witnesses=(
+                changed_witness, *split.heldout_witnesses[1:]),
+        )
+        tampered = replace(
+            receipt,
+            f10_proof=replace(
+                receipt.f10_proof,
+                independent_split=changed_split,
+            ),
+        )
+        self.assertNotEqual(tampered.receipt_sha256, receipt.receipt_sha256)
+        with self.assertRaises(BilqisError):
+            verify_public_bravo_fixture_receipt(
+                tampered, atlas_selection=self.selection)
+
     def test_manifest_family_or_source_tampering_fails_replay(self):
         receipt = self.receipt()
         with self.assertRaises(BilqisError):
