@@ -70,11 +70,11 @@
     },
     {
       "issue": 421,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "94193f51451ad8216beb4b62a6fec79c07796a4c",
-      "summary": "A10.1 post-merge repair now consumes accepted A01/A03/operator authority and replaces manifestation/span family identity with source-semantic episode identity. The literal fixture resolves category identity from the repository-pinned A01 source row, AGENT role from the source-pinned A03 evidence schema, and h->min authority from the existing cognitive-operator contract. Duplicate/repacked/relocated copies stay one family; a genuinely different source-native episode may be independent. Real pinned evidence + adjacent source-context tests pass 21/21; governance 11/11; exact debt 0; structure/governance/Factory/semantic-boundary/docs/flow/compile/diff checks are clean.",
-      "resume_trigger": "Push the repaired exact head, obtain fresh independent review of the A01/A03/operator authority binding and F10 duplicate/reformat identity, then re-close #421 only after accepted repair integration. PR #858 remains waiting until that acceptance lands.",
+      "pr": 862,
+      "state": "TURNED_IN",
+      "head_sha": "fd39db9a59d218fcc88c89f62ee66f501c5d8a04",
+      "summary": "A10.1 post-merge repair is turned in as draft PR #862 after consuming merged A01/A03/operator authority and replacing manifestation/span family identity with source-semantic episode identity. Duplicate/repacked/relocated copies stay one family; a genuinely different source-native episode may be independent. Real pinned A01+A03+unit authority witness passes 16/16 with no skip; focused+adjacent evidence proof 20 passed / 0 failed / 1 optional skip without the artifact env var; governance 11/11; exact debt 0; Factory/docs/flow/compile/diff checks clean. Fresh exact-head independent EGM and hosted checks remain the turn-in gates.",
+      "resume_trigger": "If hosted checks and fresh exact-head independent EGM are clean, promote PR #862 from draft for human integration. Re-close #421 only after accepted repair merges. PR #858 remains waiting until that acceptance lands.",
       "preserved_branch": "codex/bamf02-a-421-egm-repair-20261105",
       "merged_pr": 852
     },
