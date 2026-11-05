@@ -59,6 +59,12 @@
       "reason": "Post-merge governance/bookkeeping repair only: reconciles the already-merged A10.3 PR #865 custody fields in Lane A flow-control state and introduces no BAMF implementation or runtime change.",
       "authority": "AGENTS.md passing-test evidence reuse and review-staleness rules classify documentation, issue/PR bookkeeping, and flow-control-only changes as nonsemantic; open_pr_inventory.non_implementation_exceptions is the existing machine-readable classification mechanism.",
       "expires_when": "PR #868 merges or closes."
+      },
+      {
+        "pr": 870,
+        "reason": "Post-merge governance/bookkeeping repair only: reconciles the already-merged A12.2 PR #869 custody fields in Lane A flow-control state and introduces no BAMF implementation or runtime change.",
+        "authority": "AGENTS.md passing-test evidence reuse and review-staleness rules classify documentation, issue/PR bookkeeping, and flow-control-only changes as nonsemantic; open_pr_inventory.non_implementation_exceptions is the existing machine-readable classification mechanism.",
+        "expires_when": "PR #870 merges or closes."
       }
     ],
     "admission_exceptions": [],
