@@ -83,10 +83,15 @@ class AtlasHeldGlossAuthorityTests(unittest.TestCase):
 
     def _assert_teacher_refusal(self, snapshot, held):
         source_lessons = _compile_source_constructive_lessons_snapshot(snapshot).lessons
+        lesson_set = _compile_source_constructive_lessons_snapshot(snapshot)
         self.assertFalse(any(
             held.semantic_id in (lesson.semantic_id, *lesson.constituents,
                                  *lesson.prerequisite_closure)
             for lesson in source_lessons))
+        factory_hold = next(row for row in lesson_set.source_holds
+                            if row.semantic_id == held.semantic_id)
+        self.assertEqual((factory_hold.reason_code, factory_hold.owner),
+                         (held.reason_code, held.owner))
         teacher = _compile_semantic_curriculum_snapshot(
             snapshot, SOURCE_FAMILY_ADAPTERS,
             LearnedFrontier(snapshot.release_sha256,

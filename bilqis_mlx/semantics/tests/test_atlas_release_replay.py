@@ -1,17 +1,29 @@
 """Optional real-source replay witness for the A12 authority audit."""
 import os
+import json
 from pathlib import Path
 import unittest
 
 from bilqis_mlx.factory.skos_curriculum.checkers import compile_source_constructive_lessons
 from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, ModelTopologySpecV2
 from bilqis_mlx.semantics.atlas.snapshot import load_pinned_atlas_snapshot
+from bilqis_mlx.semantics.atlas.snapshot_contracts import AtlasArtifactSelection
 from bilqis_mlx.semantics.atlas.vocabulary import VocabularyPrior, plan_vocabulary_extension
 from bilqis_mlx.semantics.atlas.vocabulary_resources import build_registry_mirror_delta
 from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest
 from bilqis_mlx.semantics.atlas_release_audit import audit_atlas_authority
 from bilqis_mlx.semantics.released_frame_schemas import _load_pinned_released_frame_schemas
-from bilqis_mlx.semantics.tests.test_atlas_release_audit import _typed_authority_fixture
+
+ROOT = Path(__file__).resolve().parents[3]
+
+
+def _registered_real_selection() -> AtlasArtifactSelection:
+    registry = json.loads(
+        (ROOT / "bilqis_mlx/semantics/atlas_source_pins_v1.json").read_text())
+    entry, = registry["entries"]
+    return AtlasArtifactSelection(
+        os.environ["BILQIS_A01_ATLAS_BUNDLE"],
+        entry["bundle_id"], entry["release_sha256"], entry["source_bundle_id"])
 
 
 @unittest.skipUnless(
@@ -20,10 +32,7 @@ from bilqis_mlx.semantics.tests.test_atlas_release_audit import _typed_authority
 )
 class AtlasAuthorityRealReplayTests(unittest.TestCase):
     def test_real_pinned_producers_replay_one_authority(self):
-        selection = _typed_authority_fixture()[1]
-        selection = type(selection)(
-            os.environ["BILQIS_A01_ATLAS_BUNDLE"], selection.bundle_id,
-            selection.release_sha256, selection.source_bundle_id)
+        selection = _registered_real_selection()
         snapshot = load_pinned_atlas_snapshot(selection)
         feature_schema = FeatureSchema((), ())
         features = build_feature_manifest(snapshot, feature_schema)
