@@ -18,7 +18,7 @@ from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
     _issue_accepted_execution_cache,
 )
 from bilqis_mlx.runtime.topology_v2.ledger import bamf_parameter_census
-from bilqis_mlx.semantics.atlas_snapshot import load_pinned_atlas_snapshot
+from bilqis_mlx.semantics.atlas.snapshot import load_pinned_atlas_snapshot
 from bilqis_mlx.semantics.frame_codec import SchemaTagMap
 from bilqis_mlx.semantics.frame_schema import FrameSchema, RoleSpec, SourceSpan
 from bilqis_mlx.semantics.released_frame_schemas import (

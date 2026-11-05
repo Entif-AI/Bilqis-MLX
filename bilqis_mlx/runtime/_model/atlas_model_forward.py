@@ -19,7 +19,7 @@ from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
 from bilqis_mlx.runtime.model_topology_v2 import (
     ModelTopologySpecV2, expected_bamf_shapes, validate_bamf_parameters,
 )
-from bilqis_mlx.semantics.atlas_snapshot import load_pinned_atlas_snapshot
+from bilqis_mlx.semantics.atlas.snapshot import load_pinned_atlas_snapshot
 from bilqis_mlx.semantics.context_eligibility import ApprovedContextProjection
 
 from .atlas_model_backend import Backend, model_backend
