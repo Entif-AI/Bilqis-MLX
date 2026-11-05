@@ -7,10 +7,9 @@ from bilqis_mlx.errors import BilqisError, ErrorBus, SCHOOL
 from bilqis_mlx.source_adapters.evidence_frames import (
     PUBLIC_FIXTURE, BamfEvidenceSnapshot, EvidenceDerivation, EvidenceFrame,
     EvidenceRecord, EvidenceRights, EvidenceSemanticAuthority, EventTime,
-    SourceSpan, source_family_id, resolve_public_fixture_authority,
+    SourceSpan, source_family_id, source_manifest_semantic_authority,
     verification_state,
 )
-from bilqis_mlx.semantics.atlas.snapshot_contracts import AtlasArtifactSelection
 from bilqis_mlx.semantics.cognitive_operators import TypedValue
 from ._evidence_curriculum.challenge import (
     compile_typed_reconstructions, plan_fresh_challenge,
@@ -157,14 +156,15 @@ def _lessons(
 def compile_evidence_lessons(
     adjudicated_snapshot: BamfEvidenceSnapshot,
     source_rights: EvidenceRights,
-    atlas_selection: AtlasArtifactSelection,
+    semantic_release: str,
 ) -> LessonCandidateSet:
     """Compile only currently qualified source evidence into deterministic lessons."""
-    authority = resolve_public_fixture_authority(atlas_selection)
-    semantic_release = authority.semantic_release
+    authority = source_manifest_semantic_authority(adjudicated_snapshot)
     if (type(adjudicated_snapshot) is not BamfEvidenceSnapshot
             or type(source_rights) is not EvidenceRights
             or source_rights != adjudicated_snapshot.rights
+            or type(semantic_release) is not str
+            or semantic_release != authority.semantic_release
             or semantic_release != adjudicated_snapshot.semantic_release):
         _fail("BAMF_EVIDENCE_COMPILER_AUTHORITY_MISMATCH")
     if (source_rights.regime != PUBLIC_FIXTURE or not source_rights.allowed_training

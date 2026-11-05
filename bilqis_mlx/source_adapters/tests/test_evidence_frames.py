@@ -33,7 +33,7 @@ from bilqis_mlx.factory.evidence_curriculum import (
 )
 
 
-RELEASE = "a" * 64
+RELEASE = "58e0c281b5da18b9b7e6c803709b29eeeb0a88f16b06f48de692808e2fb88306"
 STUDY = (
     "https://github.com/Entif-AI/Bilqis-MLX/id/sense/"
     "NI-LEXICON-CURRICULUM/LEXROOT-3e51e33b4a970f/STEM%203/BSC"
@@ -47,19 +47,14 @@ class EvidenceFrameTests(EvidenceFamilyAuthorityCases, unittest.TestCase):
         self.selection = AtlasArtifactSelection(
             "synthetic:test-atlas", "b" * 64, RELEASE, "c" * 64)
         authority = EvidenceSemanticAuthority(
-            RELEASE, STUDY, HOUR, AGENT, "UNIT_CONVERT")
+            RELEASE, STUDY, HOUR, AGENT, "UNIT_CONVERT",
+            "059ccd2a33330473973914b94fc0d772d6f845b6ee9c8e736f1876e6a9823e9f")
         self._source_authority = patch(
             "bilqis_mlx.source_adapters.evidence_frames."
             "resolve_public_fixture_authority",
             return_value=authority)
-        self._compiler_authority = patch(
-            "bilqis_mlx.factory.evidence_curriculum."
-            "resolve_public_fixture_authority",
-            return_value=authority)
         self._source_authority.start()
-        self._compiler_authority.start()
         self.addCleanup(self._source_authority.stop)
-        self.addCleanup(self._compiler_authority.stop)
         self.snapshot, self.rights = build_public_fixture_snapshot(
             atlas_selection=self.selection,
         )
@@ -68,7 +63,7 @@ class EvidenceFrameTests(EvidenceFamilyAuthorityCases, unittest.TestCase):
         return compile_evidence_lessons(
             self.snapshot if snapshot is None else snapshot,
             self.rights if rights is None else rights,
-            self.selection)
+            RELEASE)
 
     def test_public_curriculum_api_keeps_facade_module_identity(self):
         self.assertEqual(
@@ -76,6 +71,19 @@ class EvidenceFrameTests(EvidenceFamilyAuthorityCases, unittest.TestCase):
         self.assertEqual(
             split_evidence_families.__module__,
             "bilqis_mlx.factory.evidence_curriculum")
+        self.assertEqual(
+            tuple(inspect.signature(compile_evidence_lessons).parameters),
+            ("adjudicated_snapshot", "source_rights", "semantic_release"),
+        )
+        with self.assertRaises(BilqisError):
+            compile_evidence_lessons(
+                self.snapshot, self.rights, "f" * 64)
+        with self.assertRaises(BilqisError):
+            compile_evidence_lessons(
+                replace(self.snapshot, semantic_release="f" * 64),
+                self.rights,
+                "f" * 64,
+            )
 
     def test_source_episode_identity_is_derived_not_caller_supplied(self):
         self.assertNotIn(

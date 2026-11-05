@@ -173,9 +173,11 @@ class EvidenceSemanticAuthority:
     hour_unit_ref: str
     agent_role_ref: str
     unit_operator_id: str
+    unit_operator_grant_sha256: str
 
     def __post_init__(self) -> None:
         if (not _SHA.fullmatch(self.semantic_release)
+                or not _SHA.fullmatch(self.unit_operator_grant_sha256)
                 or not all(_text(value) for value in (
                     self.category_ref, self.hour_unit_ref,
                     self.agent_role_ref, self.unit_operator_id))

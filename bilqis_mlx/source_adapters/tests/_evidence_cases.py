@@ -225,13 +225,12 @@ class EvidenceFamilyAuthorityCases:
     )
     def test_real_pinned_a01_a03_and_unit_authority_build_fixture(self):
         self._source_authority.stop()
-        self._compiler_authority.stop()
         selection = AtlasArtifactSelection(
             os.environ["BILQIS_A01_ATLAS_BUNDLE"],
             ATLAS_BUNDLE, ATLAS_RELEASE, SOURCE_BUNDLE)
         snapshot, rights = build_public_fixture_snapshot(
             atlas_selection=selection)
-        result = compile_evidence_lessons(snapshot, rights, selection)
+        result = compile_evidence_lessons(snapshot, rights, ATLAS_RELEASE)
         self.assertEqual(snapshot.semantic_release, ATLAS_RELEASE)
         self.assertEqual(snapshot.records[0].category_ref, STUDY)
         self.assertEqual(snapshot.records[0].reported_value.unit_ref, HOUR)
