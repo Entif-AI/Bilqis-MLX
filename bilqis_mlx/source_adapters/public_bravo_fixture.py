@@ -40,7 +40,11 @@ EXPECTED_QUESTIONS = (
     "What reported duration?",
     "Convert the reported duration to minutes.",
 )
-EXPECTED_GOLDS_SUFFIX = (EXPECTED_STATUS, EXPECTED_REPORTED_DECIMAL, "15")
+EXPECTED_GOLDS = {
+    "Planned or completed?": EXPECTED_STATUS,
+    "What reported duration?": EXPECTED_REPORTED_DECIMAL,
+    "Convert the reported duration to minutes.": "15",
+}
 
 
 def _fail(reason: str) -> None:
@@ -125,12 +129,9 @@ def _witnesses(candidates: LessonCandidateSet) -> tuple[PublicLessonWitness, ...
         _fail("BAMF_PUBLIC_BRAVO_QUESTION_SET_INVALID")
     if not candidates.lessons:
         _fail("BAMF_PUBLIC_BRAVO_LESSONS_MISSING")
-    if candidates.lessons[1].gold != EXPECTED_GOLDS_SUFFIX[0]:
-        _fail("BAMF_PUBLIC_BRAVO_STATUS_GOLD_INVALID")
-    if candidates.lessons[2].gold != EXPECTED_GOLDS_SUFFIX[1]:
-        _fail("BAMF_PUBLIC_BRAVO_REPORTED_GOLD_INVALID")
-    if candidates.lessons[3].gold != EXPECTED_GOLDS_SUFFIX[2]:
-        _fail("BAMF_PUBLIC_BRAVO_DERIVED_GOLD_INVALID")
+    actual_golds = {lesson.question: lesson.gold for lesson in candidates.lessons}
+    if any(actual_golds.get(question) != gold for question, gold in EXPECTED_GOLDS.items()):
+        _fail("BAMF_PUBLIC_BRAVO_GOLD_INVALID")
     rows = tuple(PublicLessonWitness(
         lesson_id=lesson.lesson_id,
         source_family_id=lesson.source_family_id,
@@ -163,7 +164,7 @@ def compile_public_bravo_fixture_receipt(
     record = _record(snapshot)
     candidates = compile_evidence_lessons(snapshot, rights, semantic_release)
     witnesses = _witnesses(candidates)
-    first: EvidenceLesson = candidates.lessons[0]
+    first: EvidenceLesson = next(iter(candidates.lessons))
     if (first.frame.category_ref != category_ref
             or first.frame.actor_role_ref != agent_role_ref
             or first.frame.reported_unit_ref != hour_unit_ref
