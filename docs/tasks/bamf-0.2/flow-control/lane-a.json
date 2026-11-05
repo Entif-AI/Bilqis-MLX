@@ -1,18 +1,19 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "7c8974191f5c9c5449f1056149776771ad2b72f3",
-  "updated_at": "2026-11-05T16:03:09Z",
+  "observed_unified": "309c727a7fa33401a18442bb652a2e55413a4e69",
+  "updated_at": "2026-11-05T16:17:00Z",
   "exception": null,
   "items": [
     {
       "issue": 428,
-      "pr": 869,
+      "pr": null,
       "state": "TURNED_IN",
-      "head_sha": "9119d7265d555124c2396fcae0e48122ca807e91",
-      "summary": "A12.2 implementation candidate PR #869 consumes reviewed-unified 7c897419. Substantive head 9119d726 cuts all current repository callers from the legacy semantics.atlas_snapshot alias to canonical semantics.atlas.snapshot, adds immutable declared semantic import/ownership roles that forbid legacy aliases as current authority while preserving historical decode compatibility, and closes the first exact-head EGM Major by rejecting package-named and relative ImportFrom alias forms as well as direct legacy-module imports. The source-to-consumer/rebuild receipt and #295 acceptance matrix remain bound to the accepted A12.1 semantic proof. Source-free A12/boundary proof is 16/16; affected Factory/runtime/import-only checks are green apart from one inherited learning-layout literal count unrelated to this patch; CI-equivalent changed-file smell reports zero new findings. Hosted checks and fresh exact-head EGM rebind are pending.",
-      "resume_trigger": "Hosted checks and fresh exact-head EGM pass on the final PR #869 candidate.",
-      "preserved_branch": "codex/bamf02-a12-2-428-20261105"
+      "head_sha": "eb4e7b81aca10223e59b94448b7cd29e4a25f2ba",
+      "summary": "A12.2 final PR #869 head eb4e7b81 merged into reviewed unified as 309c727a. Substantive guard repair 9119d726 closes the first exact-head EGM Major by rejecting direct legacy-module, package-named and relative ImportFrom uses of semantics.atlas_snapshot while retaining exact historical decode/import compatibility. The source-to-consumer table and rebuild receipt remain bound to accepted A12.1 semantic proof. Exact final hosted portable-core/portable/Semantic ABI passed and fresh independent EGM was CLEAN. Issue #428 and existing owner #295 are CLOSED completed; parent A12/#364 remains OPEN because A12.3/#429 remains.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a12-2-428-20261105",
+      "merged_pr": 869
     },
     {
       "issue": 427,
