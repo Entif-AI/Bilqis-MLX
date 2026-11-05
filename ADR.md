@@ -2929,3 +2929,11 @@ EGM remains a merge-readiness tool for already-authorized scope. It may discover
 real defect, but cannot by itself convert a peripheral improvement into a new project
 obligation. This rule suppresses net-new scope creep while preserving aggressive
 decomposition as a throughput strategy.
+
+**Diagnostic spend is also governed:** a manually constructed end-to-end probe is
+not exempt merely because it is not called a test. Repeating an expensive probe with
+unchanged relevant code and inputs adds no evidence and should reuse the prior
+result. Repeated parameter exploration must amortize invariant setup in one process.
+After two unsuccessful full-cost attempts under the same hypothesis, further
+end-to-end execution pauses until a cheaper staged/profiled diagnostic changes the
+evidence. Compaction must preserve in-flight probe status to prevent duplicate runs.

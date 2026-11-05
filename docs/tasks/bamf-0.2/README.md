@@ -79,6 +79,12 @@ parked, or dropped. If a child grows past 3 commits, 3 files, or 250 net changed
 lines, audit traceability: split again if the work is still inherited; gate only
 the untraceable delta. EGM is downstream of scope authority, never its source.
 
+Expensive diagnostics obey the same spend discipline. Do not repeatedly rebuild a
+live Factory/model/bundle stack in separate ad hoc Python invocations while varying
+one seed or hypothesis. Reuse identical results, parameterize repeated experiments
+inside one process, and after two failed full-cost witness attempts switch to a
+smaller staged/profiled proof before another end-to-end run.
+
 The lane is not a conveyor belt that must keep every open PR warm. The normal limit
 is **six `ACTIVE` implementation leaves per lane** under the 2026-11-04 owner
 amendment. Prefer finishing near-to-merge leaves while allowing independent

@@ -140,6 +140,21 @@ split again when useful; do not collapse it back into the parent. Only the
 untraceable delta is `EXPAND` and must pass the expansion gate. Never run EGM to
 manufacture authority for an expansion that current delivery does not require.
 
+**Diagnostic-loop budget (2026-11-05):** Differential test selection does not
+authorize unbounded bespoke probes. Treat any live Factory/MLX/full-model witness,
+large inline Python diagnostic, or end-to-end acceptance reconstruction as
+**expensive execution**. Do not rerun the same probe against unchanged relevant
+code/inputs; reuse its result. After one exploratory inline probe, move repeated
+diagnosis into a named focused test/helper or parameterized diagnostic so setup and
+results are reproducible. If varying seeds/hyperparameters/cases, sweep them in one
+process and hoist invariant Factory/model/bundle setup rather than cold-starting the
+whole stack once per variant. After **two unsuccessful full-cost witness attempts**
+for the same hypothesis, stop the end-to-end loop and isolate/profile the failing
+stage before another full witness. A compaction handoff must state whether an
+expensive probe is still running so the successor does not launch a duplicate.
+Acceptance-scale witnesses belong at a stable boundary after cheaper evidence has
+changed; they are not the ordinary inner debugging loop.
+
 Every lane-owned BAMF implementation leaf or open lane PR must be represented in that lane's
 machine-readable state under `docs/tasks/bamf-0.2/flow-control/`. Before substantive
 branch mutation, the operator must run `python3 -B scripts/check_bamf_flow_control.py`
