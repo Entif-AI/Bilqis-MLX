@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "c1f3c5b76b281df67a8369259bb28976dfd1aea2",
-  "updated_at": "2026-11-05T13:57:15+00:00",
+  "observed_unified": "672f97d7049dd951f86630844e3a80b60c4563dd",
+  "updated_at": "2026-11-05T14:03:49+00:00",
   "exception": null,
   "items": [
     {
@@ -133,9 +133,9 @@
       "issue": 752,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "54200b32bd154074f07ebecf2e5f3fe80e99f6dd",
+      "head_sha": "09f9b330deedcf5c0c3f44c40a6aab0f0a91adc2",
       "preserved_branch": "codex/752-artifact-owner-continue-20261105",
-      "summary": "ATLAS_FEATURE and PACKED_FRAME owner proofs remain preserved; exact-cache production inference now requires an actual C09 owner over the B14 CacheArtifact/CacheBinding, holds signed corrections before reuse, releases equal-output revalidation, and fails closed to FP32 on missing/changed/revoked ownership. Remaining: motif production read consumer, operator-composition owner, capability-support initial materializer.",
+      "summary": "ATLAS_FEATURE and PACKED_FRAME owner proofs remain preserved. EXACT_CACHE is now merge-forwarded through unified cache authority/currentness: the B14 inference boundary requires both the opaque accepted cache authority and the exact C09 artifact owner, holds signed corrections before reuse, releases equal-output revalidation, and falls back to FP32 on missing/changed/revoked ownership. Remaining: motif production read consumer, operator-composition durable correction owner, capability-support initial materializer.",
       "resume_trigger": null
     }
   ]
