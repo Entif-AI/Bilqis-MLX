@@ -38,7 +38,8 @@ class CognitiveDAGImportBoundaryTests(TestCase):
                 elif isinstance(node, ast.ImportFrom):
                     base = importlib.util.resolve_name(
                         "." * node.level + (node.module or ""), package)
-                    imports.append(base)
+                    if node.module:
+                        imports.append(base)
                     imports.extend(base + "." + alias.name for alias in node.names)
                 pending.extend(
                     candidate for candidate in imports
@@ -47,7 +48,7 @@ class CognitiveDAGImportBoundaryTests(TestCase):
         self.assertIn("bilqis_mlx.semantics.cognitive_operators.registry", seen)
         self.assertIn("bilqis_mlx.semantics.cognitive_operators.authorization", seen)
         self.assertIn("bilqis_mlx.semantics.cognitive_operators.execution", seen)
-        self.assertIn("bilqis_mlx.semantics.cognitive_operators", seen)
+        self.assertNotIn("bilqis_mlx.semantics.cognitive_operators", seen)
         forbidden = (
             "bilqis_mlx.verification", "bilqis_mlx.source_adapters",
             "bilqis_mlx.generated_assessment", "bilqis_mlx.assessment",
