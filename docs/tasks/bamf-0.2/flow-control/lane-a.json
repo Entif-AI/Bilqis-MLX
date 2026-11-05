@@ -1,21 +1,37 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "70a4ef1e883d348920d64083c7546f443a90ef77",
-  "updated_at": "2026-11-05T06:21:11+00:00",
+  "observed_unified": "6e12e5a077183713241bb9b2b0d0762d8d95fa47",
+  "updated_at": "2026-11-05T08:43:28.975140+00:00",
   "exception": null,
   "items": [
     {
-      "issue": 420,
+      "issue": 421,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "8019bf5d945a1d9f8f5a11983ef43fbb008a365f",
+      "summary": "A10.1 active on clean issue branch from synchronized Lane A integration. Public-safe BRAVO evidence fixture path selected; PRIVATE_PILOT/PRIVATE_REAL contents are not required for owned acceptance.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a10-1-421-20261105"
+    },
+    {
+      "issue": 395,
       "pr": null,
       "state": "WAITING",
-      "head_sha": "2c80599dfac07f3e5eaf5d82adf74411dc21b826",
-      "summary": "A08.3's substantive and lifecycle remediations are merged into reviewed unified; the parent remains parked under its still-live EGM-Failed aggregate state.",
-      "resume_trigger": "The owning parent #420 aggregate EGM disposition is reconciled against the merged #758/#737 repairs and the parent is explicitly selected for any further merge-readiness action.",
-      "closed_pr": 703,
-      "preserved_branch": "feat/bamf-a08-3-420-20261101",
-      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
-      "close_reason": "EGM-Failed; substantive remediation #758 precedes lifecycle remediation #737"
+      "head_sha": "c2e212e0bef7975e78dfc2f0a6071e21566b6539",
+      "summary": "A09.5 focused implementation passes on current unified, but three genuine post-A/B/C source-to-staged successor realizations are not yet accepted; #420 supplied rule/family authority, not the required realization breadth.",
+      "resume_trigger": "Accepted realization/staging authority must provide at least three genuinely new source-qualified candidate-to-staged-successor bindings beyond historical A/B/C, or an accepted equivalent owner contract.",
+      "preserved_branch": "codex/bamf02-a09-5-395-20261105"
+    },
+    {
+      "issue": 420,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "93d3fe62df1be9f8aae995aa8446bac1bea427ea",
+      "summary": "A08.3 aggregate accepted: remediation PRs #777/#782 merged; final pinned EGM passed 0 Blockers/0 Majors; #420 closed completed on 2026-11-05.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/737-a08-lifecycle-20261103",
+      "merged_pr": 782
     },
     {
       "issue": 758,
