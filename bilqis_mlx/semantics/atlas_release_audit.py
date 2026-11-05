@@ -132,14 +132,34 @@ def _graph_projection(snapshot) -> str:
     })
 
 
-def audit_atlas_authority(
-        release, abi, ast, lesson_manifest, registry_mirror) -> AuthorityReceipt:
-    """Replay the pinned source and bind each current consumer to that authority.
+def _consumer_bindings(
+        snapshot, abi, ast, lesson_manifest, registry_mirror, graph_digest):
+    ast_manifest = ast.manifest
+    return (
+        ConsumerBinding(
+            "abi", abi.schema_version, snapshot.release_sha256,
+            snapshot.source_bundle_id, _sha(asdict(abi))),
+        ConsumerBinding(
+            "ast_frames", ast_manifest.schema_version,
+            snapshot.release_sha256, snapshot.source_bundle_id,
+            ast.trusted_sha256),
+        ConsumerBinding(
+            "lessons", lesson_manifest.schema,
+            snapshot.release_sha256, snapshot.source_bundle_id,
+            _sha(asdict(lesson_manifest))),
+        ConsumerBinding(
+            "graph_projection", "bilqis.a12.graph-projection/v1",
+            snapshot.release_sha256, snapshot.source_bundle_id,
+            graph_digest),
+        ConsumerBinding(
+            "registry_mirror", registry_mirror.schema_version,
+            snapshot.release_sha256, snapshot.source_bundle_id,
+            registry_mirror.digest),
+    )
 
-    The receipt is an audit witness, not a neural-admission grant.  It accepts
-    only current typed producer records and recomputes the source graph from the
-    independently pinned A01 snapshot.
-    """
+
+def _validated_audit_snapshot(
+        release, abi, ast, lesson_manifest, registry_mirror):
     if (type(release) is not AtlasArtifactSelection
             or type(abi) is not VocabularyExtension
             or type(ast) is not VerifiedReleasedFrameSchemas
@@ -147,11 +167,6 @@ def audit_atlas_authority(
             or type(registry_mirror) is not RegistryMirrorDelta):
         _fail("A12_AUTHORITY_TYPED_INPUT_REQUIRED")
     snapshot = load_pinned_atlas_snapshot(release)
-    abi_ids = {entry.semantic_id: entry for entry in snapshot.abi_entries}
-    formal_ids = {
-        semantic_id for binding in snapshot.formal_domain_bindings
-        for semantic_id in binding.semantic_ids
-    }
     ast_manifest = ast.manifest
     for value in (abi, lesson_manifest, registry_mirror):
         if hasattr(value, "__post_init__"):
@@ -173,56 +188,45 @@ def audit_atlas_authority(
         _fail("A12_AUTHORITY_SOURCE_BINDING_MISMATCH")
     if snapshot.prior_abi_sha256 != _current_prior_abi_sha256():
         _fail("A12_AUTHORITY_PRIOR_ABI_MISMATCH")
+    abi_ids = {entry.semantic_id: entry for entry in snapshot.abi_entries}
     if any(
             item.semantic_id not in abi_ids
             or item.abi_index != abi_ids[item.semantic_id].index
             for item in abi.allocations):
         _fail("A12_AUTHORITY_ABI_SOURCE_MISMATCH")
-    if (registry_mirror.allocation_source_digest
-            != abi.source_allocation_digest
-            or registry_mirror.predecessor_generation_id
-            != abi.parent_generation_id
+    if (registry_mirror.allocation_source_digest != abi.source_allocation_digest
+            or registry_mirror.predecessor_generation_id != abi.parent_generation_id
             or registry_mirror.active_indices != abi.active_indices
             or len(registry_mirror.rows) != len(abi.allocations)
             or any(
-                (row.semantic_id, row.abi_index, row.bank, row.row,
-                 row.source_status)
+                (row.semantic_id, row.abi_index, row.bank, row.row, row.source_status)
                 != (allocation.semantic_id, allocation.abi_index,
                     allocation.bank, allocation.row, allocation.source_status)
-                for row, allocation in zip(
-                    registry_mirror.rows, abi.allocations))):
+                for row, allocation in zip(registry_mirror.rows, abi.allocations))):
         _fail("A12_AUTHORITY_REGISTRY_MIRROR_MISMATCH")
-    allowed_lesson_ids = set(abi_ids) | formal_ids
+    formal_ids = {
+        semantic_id for binding in snapshot.formal_domain_bindings
+        for semantic_id in binding.semantic_ids
+    }
     if any(
-            lesson.semantic_id not in allowed_lesson_ids
+            lesson.semantic_id not in set(abi_ids) | formal_ids
             or lesson.semantic_release != snapshot.release_sha256
             for lesson in lesson_manifest.lessons):
         _fail("A12_AUTHORITY_LESSON_SOURCE_MISMATCH")
+    return snapshot
+
+
+def audit_atlas_authority(
+        release, abi, ast, lesson_manifest, registry_mirror) -> AuthorityReceipt:
+    """Replay the pinned source and bind each current consumer to that authority."""
+    snapshot = _validated_audit_snapshot(
+        release, abi, ast, lesson_manifest, registry_mirror)
     graph_digest = _graph_projection(snapshot)
     source_dispositions = _source_dispositions(snapshot)
     formal_digests = tuple(sorted(
         _sha(asdict(binding)) for binding in snapshot.formal_domain_bindings))
-    bindings = (
-        ConsumerBinding(
-            "abi", abi.schema_version, snapshot.release_sha256,
-            snapshot.source_bundle_id, _sha(asdict(abi))),
-        ConsumerBinding(
-            "ast_frames", ast_manifest.schema_version,
-            snapshot.release_sha256, snapshot.source_bundle_id,
-            ast.trusted_sha256),
-        ConsumerBinding(
-            "lessons", lesson_manifest.schema,
-            snapshot.release_sha256, snapshot.source_bundle_id,
-            _sha(asdict(lesson_manifest))),
-        ConsumerBinding(
-            "graph_projection", "bilqis.a12.graph-projection/v1",
-            snapshot.release_sha256, snapshot.source_bundle_id,
-            graph_digest),
-        ConsumerBinding(
-            "registry_mirror", registry_mirror.schema_version,
-            snapshot.release_sha256, snapshot.source_bundle_id,
-            registry_mirror.digest),
-    )
+    bindings = _consumer_bindings(
+        snapshot, abi, ast, lesson_manifest, registry_mirror, graph_digest)
     evidence = {
         "schema": AUTHORITY_AUDIT_SCHEMA,
         "release": snapshot.release_sha256,
@@ -236,8 +240,7 @@ def audit_atlas_authority(
     return AuthorityReceipt(
         snapshot.release_sha256, snapshot.source_bundle_id, snapshot.bundle_id,
         bindings, graph_digest, snapshot.prior_abi_sha256, formal_digests,
-        source_dispositions,
-        _sha(evidence))
+        source_dispositions, _sha(evidence))
 
 
 @dataclass(frozen=True)
