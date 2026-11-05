@@ -46,6 +46,7 @@ class _SourceBackboneProducerSession:
             generation=self._generation, prefix_digest=self._prefix)
         self._depth_inputs = ()
         self._receipts = ()
+        self._receipt_refs = ()
         self._receipt_seals = ()
         self._result_refs = ()
         self._result_seals = ()
@@ -164,8 +165,10 @@ class _SourceBackboneProducerSession:
                 or boundary_group < 1 or boundary_group > len(self._receipts) - 1):
             _invalid_producer_receipt()
         prefix = self._receipts[:boundary_group + 1]
+        trusted = self._receipt_refs[:boundary_group + 1]
         seals = self._receipt_seals[:boundary_group + 1]
-        if (len(seals) != len(prefix)
+        if (len(trusted) != len(prefix)
+                or len(seals) != len(prefix)
                 or len(self._result_refs) < boundary_group
                 or len(self._result_seals) < boundary_group
                 or len(self._session.results) < boundary_group):
@@ -177,17 +180,22 @@ class _SourceBackboneProducerSession:
             if (receipt.receipt_digest != seal[0]
                     or receipt.output_digest != seal[1]):
                 _invalid_producer_receipt()
+            owned = trusted[index]
+            owned._validate_contents()
+            if (owned.receipt_digest != seal[0]
+                    or owned.output_digest != seal[1]):
+                _invalid_producer_receipt()
             if index:
                 result = self._session.results[index - 1]
                 result_seal = self._result_seals[index - 1]
                 if (result is not self._result_refs[index - 1]
                         or result.execution_digest != result_seal[0]
                         or _content_digest(result.hidden) != result_seal[1]
-                        or receipt.numerical_execution_digest != result.execution_digest
-                        or receipt.parameter_tree_digest != result.full_parameter_tree_digest
-                        or receipt.cache_chain_digest != result.cache_chain_digest):
+                        or owned.numerical_execution_digest != result.execution_digest
+                        or owned.parameter_tree_digest != result.full_parameter_tree_digest
+                        or owned.cache_chain_digest != result.cache_chain_digest):
                     _invalid_producer_receipt()
-            verified.append(receipt)
+            verified.append(owned)
         return tuple(verified)
 
     @property
@@ -216,6 +224,7 @@ class _SourceBackboneProducerSession:
             result = self._session.advance()
         receipt = _issue_from_producer(self, result)
         self._receipts += (receipt,)
+        self._receipt_refs += (receipt,)
         self._receipt_seals += ((receipt.receipt_digest, receipt.output_digest),)
         self._result_refs += (result,)
         self._result_seals += ((result.execution_digest, _content_digest(result.hidden)),)
@@ -251,6 +260,7 @@ def start_source_backbone_producer(
     producer._receipts = ()
     receipt = _issue_from_producer(producer)
     producer._receipts = (receipt,)
+    producer._receipt_refs = (receipt,)
     producer._receipt_seals = ((receipt.receipt_digest, receipt.output_digest),)
     return producer
 
