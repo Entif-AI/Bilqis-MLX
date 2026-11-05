@@ -20,7 +20,7 @@ PRIVATE_REAL = "PRIVATE_REAL"
 UNCLASSIFIED = "UNCLASSIFIED"
 PUBLIC_FIXTURE_SOURCE = "actor=actor_01; category=study; status=completed; duration=0.25 h"
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
-_STATUS = frozenset({"PLANNED", "COMPLETED", "UNKNOWN"})
+_STATUS = frozenset({"PLANNED", "COMPLETED", "UNKNOWN"})\n_DURATION_FIELD_PARTS = 2
 
 
 def _fail(reason: str) -> None:
@@ -210,7 +210,7 @@ def parse_public_fixture_source(
         if fields["status"] != "completed":
             raise ValueError
         duration_parts = fields["duration"].split(" ")
-        if len(duration_parts) != 2 or duration_parts[1] != "h":
+        if len(duration_parts) != _DURATION_FIELD_PARTS or duration_parts[1] != "h":
             raise ValueError
         Decimal(duration_parts[0])
     except (ValueError, InvalidOperation):
