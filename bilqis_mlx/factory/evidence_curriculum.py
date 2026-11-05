@@ -6,8 +6,9 @@ from decimal import Decimal, InvalidOperation
 from bilqis_mlx.errors import BilqisError, ErrorBus, SCHOOL
 from bilqis_mlx.source_adapters.evidence_frames import (
     PUBLIC_FIXTURE, BamfEvidenceSnapshot, EvidenceDerivation, EvidenceFrame,
-    EvidenceRecord, EvidenceRights, EventTime, SourceSpan, source_family_id,
-    resolve_public_fixture_authority, verification_state,
+    EvidenceRecord, EvidenceRights, EvidenceSemanticAuthority, EventTime,
+    SourceSpan, source_family_id, resolve_public_fixture_authority,
+    verification_state,
 )
 from bilqis_mlx.semantics.atlas.snapshot_contracts import AtlasArtifactSelection
 from bilqis_mlx.semantics.cognitive_operators import TypedValue
@@ -25,8 +26,13 @@ def _fail(reason: str) -> None:
     ErrorBus.raise_(SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID, reason=reason)
 
 
-def _minutes(decimal: str, unit_label: str) -> tuple[str, EvidenceDerivation]:
-    if unit_label != "h":
+def _minutes(
+    decimal: str,
+    record: EvidenceRecord,
+    authority: EvidenceSemanticAuthority,
+) -> tuple[str, EvidenceDerivation]:
+    if (record.reported_value.unit_ref != authority.hour_unit_ref
+            or record.unit_label != authority.hour_unit_ref):
         _fail("BAMF_EVIDENCE_DURATION_UNIT_UNQUALIFIED")
     try:
         value = Decimal(decimal)
@@ -38,7 +44,8 @@ def _minutes(decimal: str, unit_label: str) -> tuple[str, EvidenceDerivation]:
         normalized = normalized.rstrip("0").rstrip(".")
     normalized = normalized or "0"
     return normalized, EvidenceDerivation(
-        "duration.hour-to-minute/v1", decimal, "reported-unit", normalized, "minute")
+        authority.unit_operator_id, decimal, authority.hour_unit_ref,
+        normalized, "min")
 
 
 def _render(record: EvidenceRecord) -> str:
@@ -104,7 +111,11 @@ def _frame(snapshot: BamfEvidenceSnapshot, record: EvidenceRecord) -> EvidenceFr
     )
 
 
-def _lessons(snapshot: BamfEvidenceSnapshot, record: EvidenceRecord) -> tuple[EvidenceLesson, ...]:
+def _lessons(
+    snapshot: BamfEvidenceSnapshot,
+    record: EvidenceRecord,
+    authority: EvidenceSemanticAuthority,
+) -> tuple[EvidenceLesson, ...]:
     frame = _frame(snapshot, record)
     rendered = _render(record)
     family = frame.source_family_id
@@ -131,10 +142,8 @@ def _lessons(snapshot: BamfEvidenceSnapshot, record: EvidenceRecord) -> tuple[Ev
     if record.reported_value.decimal is None:
         rows.append(("minutes", "Convert the reported duration to minutes.", "UNKNOWN", None))
     else:
-        value, derivation = _minutes(record.reported_value.decimal, record.unit_label)
-        derivation = EvidenceDerivation(
-            derivation.operator_id, derivation.input_value,
-            record.reported_value.unit_ref, derivation.output_value, derivation.output_unit)
+        value, derivation = _minutes(
+            record.reported_value.decimal, record, authority)
         rows.append(("minutes", "Convert the reported duration to minutes.", value, derivation))
     return tuple(EvidenceLesson(
         lesson_id=f"{record.record_id}:{snapshot.interpretation_revision}:{suffix}", question=question, gold=gold,
@@ -174,6 +183,9 @@ def compile_evidence_lessons(
                 "UnitName", record.reported_value.unit_ref, semantic_release)
         except BilqisError:
             _fail("BAMF_EVIDENCE_COMPILER_AUTHORITY_MISMATCH")
+        if (record.reported_value.unit_ref != authority.hour_unit_ref
+                or record.unit_label != authority.hour_unit_ref):
+            _fail("BAMF_EVIDENCE_DURATION_UNIT_UNQUALIFIED")
     qualified = tuple(record for record in adjudicated_snapshot.records
                       if record.adjudication_ref is not None)
     record_holds = tuple(EvidenceHold(
@@ -181,9 +193,19 @@ def compile_evidence_lessons(
         for record in adjudicated_snapshot.records if record.adjudication_ref is None)
     lessons = tuple(
         lesson for record in qualified
-        for lesson in _lessons(adjudicated_snapshot, record))
+        for lesson in _lessons(adjudicated_snapshot, record, authority))
     return LessonCandidateSet(
         adjudicated_snapshot.snapshot_id,
         adjudicated_snapshot.source_byte_digest,
         adjudicated_snapshot.interpretation_revision,
         semantic_release, source_rights, lessons, record_holds)
+
+
+# Preserve the public facade identity after the implementation was compartmentalized.
+for _public_api in (
+        EvidenceChallengePlan, EvidenceHold, EvidenceLesson, EvidenceLessonStatus,
+        EvidenceSplitReceipt, LessonCandidateSet, TypedEvidenceReconstruction,
+        compile_typed_reconstructions, plan_fresh_challenge,
+        split_evidence_families):
+    _public_api.__module__ = __name__
+del _public_api

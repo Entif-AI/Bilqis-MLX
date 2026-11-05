@@ -23,6 +23,7 @@ from bilqis_mlx.source_adapters.evidence_frames import (
     public_export,
 )
 from bilqis_mlx.factory.evidence_curriculum import (
+    EvidenceLesson,
     EvidenceLessonStatus,
     compile_typed_reconstructions,
     compile_evidence_lessons,
@@ -68,6 +69,13 @@ class EvidenceFrameTests(EvidenceFamilyAuthorityCases, unittest.TestCase):
             self.rights if rights is None else rights,
             self.selection)
 
+    def test_public_curriculum_api_keeps_facade_module_identity(self):
+        self.assertEqual(
+            EvidenceLesson.__module__, "bilqis_mlx.factory.evidence_curriculum")
+        self.assertEqual(
+            split_evidence_families.__module__,
+            "bilqis_mlx.factory.evidence_curriculum")
+
     def test_public_fixture_is_parsed_from_exact_source_bytes(self):
         record = parse_public_fixture_source(
             PUBLIC_FIXTURE_SOURCE, category_ref=STUDY, hour_unit_ref=HOUR,
@@ -98,7 +106,9 @@ class EvidenceFrameTests(EvidenceFamilyAuthorityCases, unittest.TestCase):
         self.assertEqual(result.lessons[0].frame.occurrence_truth, "TRUE")
         self.assertEqual(result.lessons[3].question, "Convert the reported duration to minutes.")
         self.assertEqual(result.lessons[3].gold, "15")
-        self.assertEqual(result.lessons[3].derivation.operator_id, "duration.hour-to-minute/v1")
+        self.assertEqual(result.lessons[3].derivation.operator_id, "UNIT_CONVERT")
+        self.assertEqual(result.lessons[3].derivation.input_unit_ref, HOUR)
+        self.assertEqual(result.lessons[3].derivation.output_unit, "min")
         self.assertTrue(all(lesson.check() for lesson in result.lessons))
 
     def test_exact_hour_conversion_preserves_trailing_zero_magnitude(self):

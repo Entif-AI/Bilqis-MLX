@@ -84,6 +84,24 @@ class EvidenceFamilyAuthorityCases:
             source_family_id(self.snapshot, original),
             source_family_id(repacked, copied))
 
+    def test_distinct_source_observation_occurrences_remain_independent(self):
+        original = self.snapshot.records[0]
+        separate = replace(
+            original,
+            record_id="fixture-separate",
+            observed_at="2026-01-02T00:00:00Z",
+            adjudication_ref="adjudication:fixture-separate",
+        )
+        result = self.compile(
+            replace(self.snapshot, records=(original, separate)))
+        receipt = split_evidence_families(
+            result,
+            train_record_ids=(original.record_id,),
+            heldout_record_ids=(separate.record_id,),
+        )
+        self.assertNotEqual(
+            receipt.train_family_ids, receipt.heldout_family_ids)
+
     def test_fresh_challenge_splits_source_families_before_template_groups(self):
         original = self.snapshot.records[0]
         paraphrase = replace(original, record_id="fixture-001-paraphrase")
@@ -123,17 +141,25 @@ class EvidenceFamilyAuthorityCases:
 
     def test_compiler_reenters_semantic_authority_before_gold(self):
         record = self.snapshot.records[0]
-        for forged in (
-            replace(record, category_ref="fixture:invented-category"),
-            replace(record, agent_role_ref="fixture:invented-agent-role"),
-            replace(record, reported_value=ReportedValue("0.25", "invented-unit")),
+        for forged, reason in (
+            (replace(record, category_ref="fixture:invented-category"),
+             "BAMF_EVIDENCE_COMPILER_AUTHORITY_MISMATCH"),
+            (replace(record, agent_role_ref="fixture:invented-agent-role"),
+             "BAMF_EVIDENCE_COMPILER_AUTHORITY_MISMATCH"),
+            (replace(record, reported_value=ReportedValue("0.25", "invented-unit")),
+             "BAMF_EVIDENCE_COMPILER_AUTHORITY_MISMATCH"),
+            (replace(
+                record,
+                reported_value=ReportedValue("0.25", "min"),
+                unit_label="h",
+            ), "BAMF_EVIDENCE_DURATION_UNIT_UNQUALIFIED"),
+            (replace(record, unit_label="min"),
+             "BAMF_EVIDENCE_DURATION_UNIT_UNQUALIFIED"),
         ):
             with self.subTest(forged=forged):
                 with self.assertRaises(BilqisError) as caught:
                     self.compile(replace(self.snapshot, records=(forged,)))
-                self.assertEqual(
-                    caught.exception.context["reason"],
-                    "BAMF_EVIDENCE_COMPILER_AUTHORITY_MISMATCH")
+                self.assertEqual(caught.exception.context["reason"], reason)
 
     @unittest.skipUnless(
         os.environ.get("BILQIS_A01_ATLAS_BUNDLE"),

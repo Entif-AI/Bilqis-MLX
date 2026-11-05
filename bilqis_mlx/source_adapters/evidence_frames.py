@@ -249,8 +249,10 @@ def _source_episode_identity(record: EvidenceRecord) -> str:
     """Identity from source-native episode semantics, never manifestation place.
 
     Source manifest, byte digest, byte span, interpretation/adjudication and
-    observed-at metadata remain provenance.  They cannot manufacture an
-    independent episode when identical source content is copied or reformatted.
+    record IDs remain provenance. They cannot manufacture an independent episode
+    when identical source content is copied or reformatted. The source-native
+    observation occurrence is part of identity so genuinely distinct episodes
+    with the same semantic payload do not collapse into one family.
     """
     return _digest(
         record.actor_ref,
@@ -262,6 +264,7 @@ def _source_episode_identity(record: EvidenceRecord) -> str:
         record.event_time.start_iso or "<NONE>",
         record.event_time.end_iso or "<NONE>",
         record.event_time.time_zone,
+        record.observed_at,
         "NEGATED" if record.negated else "AFFIRMED",
     )
 

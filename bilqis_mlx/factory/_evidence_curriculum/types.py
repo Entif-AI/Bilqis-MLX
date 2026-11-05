@@ -59,7 +59,9 @@ class EvidenceLesson:
             return (
                 self.derivation is not None
                 and self.derivation.output_value == self.gold
-                and self.derivation.operator_id == "duration.hour-to-minute/v1"
+                and self.derivation.operator_id == "UNIT_CONVERT"
+                and self.derivation.input_unit_ref == self.frame.reported_unit_ref
+                and self.derivation.output_unit == "min"
             )
         return False
 
