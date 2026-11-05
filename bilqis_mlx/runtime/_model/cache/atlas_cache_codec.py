@@ -237,5 +237,6 @@ from .atlas_cache_runtime import (
     decode_cache,
     encode_cold_cache,
     interactive_cache_inference,
+    issue_cache_eligibility,
     rebuild_revoked_cache,
 )

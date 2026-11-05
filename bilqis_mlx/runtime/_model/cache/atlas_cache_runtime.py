@@ -72,6 +72,11 @@ class CacheAuthorityRuntime:
                 or not hmac.compare_digest(authenticator, expected)):
             _invalid()
 
+    def _verify_detached(self, owner_id, dependency, signature_hex, payload) -> None:
+        """Verify a source-owner statement through this host-bound registry."""
+        registry, _ = _authority_state(self)
+        registry.verify_detached(owner_id, dependency, signature_hex, payload)
+
 def _require_authority(authority: CacheAuthorityRuntime) -> CacheAuthorityRuntime:
     if type(authority) is not CacheAuthorityRuntime:
         _invalid()
@@ -122,3 +127,8 @@ def rebuild_revoked_cache(
         persist=persist,
         authority=_require_authority(authority),
     )
+
+
+def issue_cache_eligibility(authority, binding, **authority_inputs):
+    from .atlas_cache_rebuild import issue_cache_eligibility as _issue
+    return _issue(_require_authority(authority), binding, **authority_inputs)

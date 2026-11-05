@@ -12,6 +12,7 @@ from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import (
     CACHE_AUTHORITY,
     OWNER_ID,
     PUBLIC_KEY_HEX,
+    eligibility_receipt,
 )
 from bilqis_mlx.runtime.atlas_cache_codec import (
     HEAD_WIDTH,
@@ -70,15 +71,7 @@ def _binding() -> CacheBinding:
 
 
 def _receipt(binding: CacheBinding, *, eligible=True) -> CacheEligibilityReceipt:
-    return CacheEligibilityReceipt(
-        binding.source_release_sha256,
-        binding.semantic_release_sha256,
-        binding.source_rights_sha256,
-        binding.rights_purpose_sha256,
-        binding.policy_epoch_sha256,
-        binding.context_eligibility_sha256,
-        eligible,
-    )
+    return eligibility_receipt(binding, eligible=eligible)
 
 
 class RevokedCacheRebuildTests(unittest.TestCase):
