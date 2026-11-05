@@ -12,8 +12,11 @@ from bilqis_mlx.factory.evidence_curriculum import (
 )
 from bilqis_mlx.semantics.atlas.snapshot_contracts import AtlasArtifactSelection
 from bilqis_mlx.source_adapters.evidence_frames import (
-    PUBLIC_FIXTURE_SOURCE, ReportedValue, SourceSpan,
-    build_public_fixture_snapshot, source_family_id,
+    PUBLIC_DUPLICATE_MANIFEST_CID, PUBLIC_DUPLICATE_SOURCE,
+    PUBLIC_FIXTURE_REPACK_MANIFEST_CID, PUBLIC_FIXTURE_SOURCE,
+    PUBLIC_INDEPENDENT_BUNDLE_SOURCE, PUBLIC_INDEPENDENT_MANIFEST_CID,
+    PUBLIC_INDEPENDENT_SOURCE, ReportedValue, SourceSpan,
+    build_public_fixture_snapshot, parse_public_fixture_source, source_family_id,
 )
 
 
@@ -26,29 +29,54 @@ AGENT = "agent"
 SOURCE_BUNDLE = "f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec"
 ATLAS_BUNDLE = "5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7"
 ATLAS_RELEASE = "58e0c281b5da18b9b7e6c803709b29eeeb0a88f16b06f48de692808e2fb88306"
-DOUBLE_SOURCE = PUBLIC_FIXTURE_SOURCE + "\n" + PUBLIC_FIXTURE_SOURCE
-
-
 class EvidenceFamilyAuthorityCases:
-    def _two_occurrence_snapshot(self, *, second_record_id):
-        digest = sha256(DOUBLE_SOURCE.encode("utf-8")).hexdigest()
+    def _duplicate_source_snapshot(self, *, second_record_id):
         first = replace(
             self.snapshot.records[0],
             source_span=SourceSpan(0, len(PUBLIC_FIXTURE_SOURCE)),
         )
         second_start = len(PUBLIC_FIXTURE_SOURCE) + 1
-        second = replace(
+        duplicate = replace(
             first, record_id=second_record_id,
-            source_span=SourceSpan(second_start, second_start + len(PUBLIC_FIXTURE_SOURCE)),
+            source_span=SourceSpan(
+                second_start, second_start + len(PUBLIC_FIXTURE_SOURCE)),
             adjudication_ref=f"adjudication:{second_record_id}",
         )
         snapshot = replace(
             self.snapshot,
-            source_manifest_cid="public-fixture:bravo-a10-double/v1:" + digest,
-            source_byte_digest=digest,
-            records=(first, second),
+            source_manifest_cid=PUBLIC_DUPLICATE_MANIFEST_CID,
+            source_byte_digest=sha256(
+                PUBLIC_DUPLICATE_SOURCE.encode("utf-8")).hexdigest(),
+            records=(first, duplicate),
         )
-        return snapshot, first, second
+        return snapshot, first, duplicate
+
+    def _independent_source_snapshot(self, *, second_record_id):
+        first = replace(
+            self.snapshot.records[0],
+            source_span=SourceSpan(0, len(PUBLIC_FIXTURE_SOURCE)),
+        )
+        parsed = parse_public_fixture_source(
+            PUBLIC_INDEPENDENT_SOURCE,
+            category_ref=first.category_ref,
+            hour_unit_ref=first.reported_value.unit_ref,
+            agent_role_ref=first.agent_role_ref,
+        )
+        second_start = len(PUBLIC_FIXTURE_SOURCE) + 1
+        separate = replace(
+            parsed, record_id=second_record_id,
+            source_span=SourceSpan(
+                second_start, second_start + len(PUBLIC_INDEPENDENT_SOURCE)),
+            adjudication_ref=f"adjudication:{second_record_id}",
+        )
+        snapshot = replace(
+            self.snapshot,
+            source_manifest_cid=PUBLIC_INDEPENDENT_MANIFEST_CID,
+            source_byte_digest=sha256(
+                PUBLIC_INDEPENDENT_BUNDLE_SOURCE.encode("utf-8")).hexdigest(),
+            records=(first, separate),
+        )
+        return snapshot, first, separate
 
     def test_paraphrases_of_one_episode_cannot_cross_independent_split(self):
         original = self.snapshot.records[0]
@@ -73,7 +101,7 @@ class EvidenceFamilyAuthorityCases:
                 copied, train_record_ids=(original.record_id,),
                 heldout_record_ids=(adjudicated_copy.record_id,))
 
-        combined, first, separate = self._two_occurrence_snapshot(
+        combined, first, separate = self._independent_source_snapshot(
             second_record_id="fixture-003")
         independent = self.compile(combined)
         receipt = split_evidence_families(
@@ -81,18 +109,34 @@ class EvidenceFamilyAuthorityCases:
             heldout_record_ids=(separate.record_id,))
         self.assertNotEqual(receipt.train_family_ids, receipt.heldout_family_ids)
 
+    def test_unregistered_source_manifest_cannot_mint_family_authority(self):
+        forged = replace(
+            self.snapshot,
+            source_manifest_cid="public-fixture:caller-minted/v1:" + "f" * 64,
+        )
+        with self.assertRaises(BilqisError):
+            source_family_id(forged, forged.records[0])
+
     def test_manifest_repacking_cannot_manufacture_new_episode_family(self):
         original = self.snapshot.records[0]
         copied = replace(original, record_id="fixture-copy")
         repacked = replace(
-            self.snapshot, source_manifest_cid="public-fixture:repacked",
+            self.snapshot, source_manifest_cid=PUBLIC_FIXTURE_REPACK_MANIFEST_CID,
             records=(copied,))
         self.assertEqual(
             source_family_id(self.snapshot, original),
             source_family_id(repacked, copied))
 
+    def test_duplicate_source_at_second_span_cannot_manufacture_family(self):
+        combined, original, duplicate = self._duplicate_source_snapshot(
+            second_record_id="fixture-duplicate")
+        self.assertEqual(
+            source_family_id(combined, original),
+            source_family_id(combined, duplicate),
+        )
+
     def test_distinct_source_observation_occurrences_remain_independent(self):
-        combined, original, separate = self._two_occurrence_snapshot(
+        combined, original, separate = self._independent_source_snapshot(
             second_record_id="fixture-separate")
         result = self.compile(combined)
         receipt = split_evidence_families(
@@ -121,7 +165,7 @@ class EvidenceFamilyAuthorityCases:
             )
 
     def test_fresh_challenge_splits_source_families_before_template_groups(self):
-        combined, original, other = self._two_occurrence_snapshot(
+        combined, original, other = self._independent_source_snapshot(
             second_record_id="fixture-002")
         paraphrase = replace(original, record_id="fixture-001-paraphrase")
         result = self.compile(replace(

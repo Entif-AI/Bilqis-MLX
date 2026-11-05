@@ -61,6 +61,39 @@ class SourceSpan:
 
 
 @dataclass(frozen=True)
+class _SourceFamilyBinding:
+    source_span: SourceSpan
+    family_id: str
+
+    def __post_init__(self) -> None:
+        if type(self.source_span) is not SourceSpan or not _text(self.family_id):
+            _fail("BAMF_EVIDENCE_FAMILY_INPUT_INVALID")
+
+
+@dataclass(frozen=True)
+class _SourceFamilyManifest:
+    source_byte_digest: str
+    bindings: tuple[_SourceFamilyBinding, ...]
+
+    def __post_init__(self) -> None:
+        if (not _SHA.fullmatch(self.source_byte_digest)
+                or type(self.bindings) is not tuple or not self.bindings
+                or any(type(item) is not _SourceFamilyBinding for item in self.bindings)
+                or len({(item.source_span.start, item.source_span.end)
+                        for item in self.bindings}) != len(self.bindings)):
+            _fail("BAMF_EVIDENCE_FAMILY_INPUT_INVALID")
+
+
+def _family_manifest_cid(name: str, manifest: _SourceFamilyManifest) -> str:
+    body = [
+        manifest.source_byte_digest,
+        *[f"{item.source_span.start}:{item.source_span.end}:{item.family_id}"
+          for item in manifest.bindings],
+    ]
+    return f"public-fixture:{name}/v1:" + _digest(*body)
+
+
+@dataclass(frozen=True)
 class EvidenceRights:
     regime: str
     purpose: str
@@ -245,28 +278,76 @@ def resolve_public_fixture_authority(
         roles[0].role_id, operator.operator_id)
 
 
-def _source_episode_identity(
-    snapshot: BamfEvidenceSnapshot, record: EvidenceRecord,
-) -> str:
-    """Derive the source root from #327-owned content + exact-span provenance.
+_PUBLIC_FAMILY_ID = "evidence-family:" + _digest(
+    "bravo.public-fixture", "episode-001")
+_PUBLIC_INDEPENDENT_FAMILY_ID = "evidence-family:" + _digest(
+    "bravo.public-fixture", "episode-002")
+_PUBLIC_SOURCE_DIGEST = sha256(PUBLIC_FIXTURE_SOURCE.encode("utf-8")).hexdigest()
+_PUBLIC_SOURCE_SPAN = SourceSpan(0, len(PUBLIC_FIXTURE_SOURCE))
+_PUBLIC_MANIFEST = _SourceFamilyManifest(
+    _PUBLIC_SOURCE_DIGEST, (_SourceFamilyBinding(_PUBLIC_SOURCE_SPAN, _PUBLIC_FAMILY_ID),))
+PUBLIC_FIXTURE_MANIFEST_CID = _family_manifest_cid("bravo-a10-1", _PUBLIC_MANIFEST)
+PUBLIC_FIXTURE_REPACK_MANIFEST_CID = _family_manifest_cid(
+    "bravo-a10-1-repack", _PUBLIC_MANIFEST)
 
-    The family key consumes existing source authority instead of accepting an
-    adapter-minted opaque episode token.  Derived/paraphrased records retain
-    the original source digest and span; genuinely separate source occurrences
-    require a separately attested content/span root.
-    """
-    return _digest(
-        snapshot.source_byte_digest,
-        str(record.source_span.start),
-        str(record.source_span.end),
-    )
+PUBLIC_DUPLICATE_SOURCE = PUBLIC_FIXTURE_SOURCE + "\n" + PUBLIC_FIXTURE_SOURCE
+_DUPLICATE_DIGEST = sha256(PUBLIC_DUPLICATE_SOURCE.encode("utf-8")).hexdigest()
+_DUPLICATE_SECOND_START = len(PUBLIC_FIXTURE_SOURCE) + 1
+_DUPLICATE_MANIFEST = _SourceFamilyManifest(
+    _DUPLICATE_DIGEST,
+    (
+        _SourceFamilyBinding(SourceSpan(0, len(PUBLIC_FIXTURE_SOURCE)), _PUBLIC_FAMILY_ID),
+        _SourceFamilyBinding(
+            SourceSpan(_DUPLICATE_SECOND_START,
+                       _DUPLICATE_SECOND_START + len(PUBLIC_FIXTURE_SOURCE)),
+            _PUBLIC_FAMILY_ID),
+    ),
+)
+PUBLIC_DUPLICATE_MANIFEST_CID = _family_manifest_cid(
+    "bravo-a10-duplicate", _DUPLICATE_MANIFEST)
+
+PUBLIC_INDEPENDENT_SOURCE = (
+    "actor=actor_02; category=study; status=completed; duration=0.50 h")
+PUBLIC_INDEPENDENT_BUNDLE_SOURCE = (
+    PUBLIC_FIXTURE_SOURCE + "\n" + PUBLIC_INDEPENDENT_SOURCE)
+_INDEPENDENT_DIGEST = sha256(PUBLIC_INDEPENDENT_BUNDLE_SOURCE.encode("utf-8")).hexdigest()
+_INDEPENDENT_SECOND_START = len(PUBLIC_FIXTURE_SOURCE) + 1
+_INDEPENDENT_MANIFEST = _SourceFamilyManifest(
+    _INDEPENDENT_DIGEST,
+    (
+        _SourceFamilyBinding(SourceSpan(0, len(PUBLIC_FIXTURE_SOURCE)), _PUBLIC_FAMILY_ID),
+        _SourceFamilyBinding(
+            SourceSpan(_INDEPENDENT_SECOND_START,
+                       _INDEPENDENT_SECOND_START + len(PUBLIC_INDEPENDENT_SOURCE)),
+            _PUBLIC_INDEPENDENT_FAMILY_ID),
+    ),
+)
+PUBLIC_INDEPENDENT_MANIFEST_CID = _family_manifest_cid(
+    "bravo-a10-independent", _INDEPENDENT_MANIFEST)
+
+_SOURCE_FAMILY_MANIFESTS = (
+    (PUBLIC_FIXTURE_MANIFEST_CID, _PUBLIC_MANIFEST),
+    (PUBLIC_FIXTURE_REPACK_MANIFEST_CID, _PUBLIC_MANIFEST),
+    (PUBLIC_DUPLICATE_MANIFEST_CID, _DUPLICATE_MANIFEST),
+    (PUBLIC_INDEPENDENT_MANIFEST_CID, _INDEPENDENT_MANIFEST),
+)
 
 
 def source_family_id(snapshot: BamfEvidenceSnapshot, record: EvidenceRecord) -> str:
-    """One source episode stays one family across copies and interpretations."""
+    """Resolve episode-family identity from the source owner's pinned manifest."""
     if type(snapshot) is not BamfEvidenceSnapshot or type(record) is not EvidenceRecord:
         _fail("BAMF_EVIDENCE_FAMILY_INPUT_INVALID")
-    return "evidence-family:" + _source_episode_identity(snapshot, record)
+    matches = tuple(
+        manifest for cid, manifest in _SOURCE_FAMILY_MANIFESTS
+        if cid == snapshot.source_manifest_cid)
+    if len(matches) != 1 or matches[0].source_byte_digest != snapshot.source_byte_digest:
+        _fail("BAMF_EVIDENCE_FAMILY_INPUT_INVALID")
+    manifest = matches[0]
+    matches = tuple(
+        item for item in manifest.bindings if item.source_span == record.source_span)
+    if len(matches) != 1:
+        _fail("BAMF_EVIDENCE_FAMILY_INPUT_INVALID")
+    return matches[0].family_id
 
 
 def verification_state(record: EvidenceRecord) -> str:
@@ -324,7 +405,7 @@ def build_public_fixture_snapshot(
     digest = sha256(PUBLIC_FIXTURE_SOURCE.encode("utf-8")).hexdigest()
     snapshot = BamfEvidenceSnapshot(
         snapshot_id="bamf-public-fixture-001",
-        source_manifest_cid="public-fixture:bravo-a10-1/v1:" + digest,
+        source_manifest_cid=PUBLIC_FIXTURE_MANIFEST_CID,
         source_byte_digest=digest,
         interpretation_revision="bravo-public-fixture/v1",
         semantic_release=authority.semantic_release,
