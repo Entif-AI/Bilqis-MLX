@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "6e12e5a077183713241bb9b2b0d0762d8d95fa47",
-  "updated_at": "2026-11-05T09:43:48+00:00",
+  "observed_unified": "046cb64f180af1b1b73098d0d4e025f05ad2548b",
+  "updated_at": "2026-11-05T09:45:51+00:00",
   "exception": null,
   "items": [
     {
@@ -11,17 +11,18 @@
       "state": "TURNED_IN",
       "head_sha": "202dbb313b3681c2730974da8c2ee93acb8fb738",
       "summary": "A10.2 implementation is complete on its issue-scoped branch: typed reconstructions preserve reported/computed values, negation, time/interpretation alternatives and template lineage; fresh challenges split immutable source families before within-family template grouping, with scored holdouts remaining teachable. Focused/adjacent tests 17 passed; governance/error-contract tests 11 passed; compile/diff/flow-control green; EGM_PENDING.",
-      "resume_trigger": "After A10.1 PR #852 lands in reviewed unified, resync this branch to current unified and open the A10.2 integration PR if no other PR already owns its delta.",
+      "resume_trigger": "Open the A10.2 integration PR against reviewed unified and obtain fresh independent EGM before merge.",
       "preserved_branch": "codex/bamf02-a10-2-422-20261105"
     },
     {
       "issue": 421,
-      "pr": 852,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "888c609cdeb4da9eeb9ca99b7f8bdf087188ca04",
       "summary": "A10.1 implemented on clean issue branch: provenance-safe BamfEvidenceSnapshot/v1 adapter, literal PUBLIC_FIXTURE parser, exact typed lesson compiler, source-family split independence, rights holds, missing-report verification state, and protected-sentinel non-leakage. Focused/adjacent tests 15 passed; governance/error-contract tests 11 passed; EGM_PENDING.",
-      "resume_trigger": "Independent exact-head review/EGM and human integration review for PR #852.",
-      "preserved_branch": "codex/bamf02-a10-1-421-20261105"
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a10-1-421-20261105",
+      "merged_pr": 852
     },
     {
       "issue": 395,
