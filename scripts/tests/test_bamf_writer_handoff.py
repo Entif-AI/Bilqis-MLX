@@ -4,34 +4,16 @@ import json
 import os
 import subprocess
 import sys
-import tempfile
 import unittest
 from unittest.mock import patch
 from pathlib import Path
 
 from scripts.bamf import writer_handoff
 from scripts.bamf.writer_handoff import HandoffError, emit, verify
+from scripts.tests.bamf_handoff.fixtures import WriterHandoffFixture
 
 
-class WriterHandoffTests(unittest.TestCase):
-    def setUp(self) -> None:
-        self.temp = tempfile.TemporaryDirectory()
-        self.addCleanup(self.temp.cleanup)
-        self.repo = Path(self.temp.name) / "work"
-        self.remote = Path(self.temp.name) / "remote.git"
-        subprocess.run(["git", "init", "--bare", "-q", str(self.remote)], check=True)
-        subprocess.run(["git", "init", "-q", "-b", "work", str(self.repo)], check=True)
-        self.run_git("config", "user.email", "test@example.invalid")
-        self.run_git("config", "user.name", "Test")
-        (self.repo / "file.txt").write_text("initial\n")
-        self.run_git("add", ".")
-        self.run_git("commit", "-qm", "initial")
-        self.run_git("remote", "add", "origin", str(self.remote))
-        self.run_git("push", "-q", "-u", "origin", "work")
-
-    def run_git(self, *args: str) -> None:
-        subprocess.run(["git", *args], cwd=self.repo, check=True, capture_output=True)
-
+class WriterHandoffTests(WriterHandoffFixture):
     def test_same_worktree_same_branch_head_and_dirty_state_resumes(self) -> None:
         (self.repo / "local.txt").write_text("keep this\n")
         payload = emit(self.repo, 709, "epoch-709")
@@ -174,7 +156,7 @@ class WriterHandoffTests(unittest.TestCase):
             return result
 
         with patch.object(writer_handoff, "git", side_effect=replace_after_enumeration):
-            with self.assertRaisesRegex(HandoffError, "unsupported untracked entry"):
+            with self.assertRaisesRegex(HandoffError, "unsupported captured entry"):
                 emit(self.repo, 832, "epoch-829")
 
     def blob(self, content: str) -> str:
@@ -214,6 +196,31 @@ class WriterHandoffTests(unittest.TestCase):
     def test_index_flag_change_requires_reconciliation(self) -> None:
         payload = emit(self.repo, 834, "epoch-829")
         self.run_git("update-index", "--assume-unchanged", "file.txt")
+        with self.assertRaisesRegex(HandoffError, "worktree_status"):
+            verify(self.repo, payload)
+
+    def test_existing_suppression_flags_cannot_hide_tracked_content_edits(self) -> None:
+        path = self.repo / "file.txt"
+        for flag in ("assume-unchanged", "skip-worktree"):
+            with self.subTest(flag=flag):
+                self.run_git("update-index", "--" + flag, "file.txt")
+                payload = emit(self.repo, 835, "epoch-829")
+                self.assertEqual("CONTINUATION_MATCH", verify(self.repo, payload)["status"])
+                path.write_text("hidden tracked edit\n")
+                try:
+                    with self.assertRaisesRegex(HandoffError, "worktree_status"):
+                        verify(self.repo, payload)
+                finally:
+                    self.run_git("update-index", "--no-" + flag, "file.txt")
+                    path.write_text("initial\n")
+
+    def test_absent_skipped_path_restored_without_index_change_requires_reconciliation(self) -> None:
+        path = self.repo / "file.txt"
+        self.run_git("update-index", "--skip-worktree", "file.txt")
+        path.unlink()
+        payload = emit(self.repo, 835, "epoch-829")
+        self.assertEqual("CONTINUATION_MATCH", verify(self.repo, payload)["status"])
+        path.write_text("restored file\n")
         with self.assertRaisesRegex(HandoffError, "worktree_status"):
             verify(self.repo, payload)
 

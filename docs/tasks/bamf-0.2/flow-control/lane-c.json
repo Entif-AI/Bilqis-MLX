@@ -144,6 +144,15 @@
       "preserved_branch": "codex/bamf02-c-829-local-handoff-20261104",
       "summary": "Missing staged index state reproduced in3cases, bound through entries/stages/flags and verified15/15 at durable4334288f; child CLOSED. Parent829 owns aggregate review.",
       "resume_trigger": null
+    },
+    {
+      "issue": 835,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "6cc4161265ebfbf6d268c333570d2f894ee80e54",
+      "preserved_branch": "codex/bamf02-c-829-local-handoff-20261104",
+      "summary": "Round4 hidden tracked-content Major: hash filesystem state of assume-unchanged/skip-worktree paths through the canonical entry encoder; episode remains4/5.",
+      "resume_trigger": null
     }
   ]
 }

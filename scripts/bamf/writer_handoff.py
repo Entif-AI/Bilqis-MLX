@@ -36,6 +36,26 @@ def _hash_part(digest, payload: bytes) -> None:
     digest.update(payload)
 
 
+def _hash_path(digest, root: Path, relative: str, *, allow_missing: bool = False) -> None:
+    file = root / relative
+    try:
+        metadata = file.lstat()
+    except FileNotFoundError:
+        if not allow_missing:
+            raise
+        kind, mode, payload = b"absent", 0, b""
+    else:
+        mode = stat.S_IMODE(metadata.st_mode)
+        if stat.S_ISLNK(metadata.st_mode):
+            kind, payload = b"symlink", os.fsencode(file.readlink())
+        elif stat.S_ISREG(metadata.st_mode):
+            kind, payload = b"file", file.read_bytes()
+        else:
+            raise HandoffError(f"unsupported captured entry: {relative}")
+    for part in (os.fsencode(relative), kind, mode.to_bytes(4, "big"), payload):
+        _hash_part(digest, part)
+
+
 def observed(root: Path) -> dict[str, str | None]:
     path = Path(git(root, "rev-parse", "--show-toplevel")).resolve()
     branch = git(path, "symbolic-ref", "--quiet", "--short", "HEAD")
@@ -57,25 +77,21 @@ def observed(root: Path) -> dict[str, str | None]:
     diff = subprocess.run(
         ["git", "diff", "HEAD", "--binary"], cwd=path, capture_output=True, check=True
     ).stdout
-    dirty = hashlib.sha256(b"bilqis.bamf.worktree-fingerprint/v3\0")
+    dirty = hashlib.sha256(b"bilqis.bamf.worktree-fingerprint/v4\0")
     _hash_part(dirty, status.encode())
     _hash_part(dirty, diff)
     _hash_part(dirty, git(path, "ls-files", "--stage", "-z").encode())
-    _hash_part(dirty, git(path, "ls-files", "-v", "-z").encode())
+    index_flags = git(path, "ls-files", "-v", "-z")
+    _hash_part(dirty, index_flags.encode())
+    for record in index_flags.split("\0"):
+        if record and (record[0].islower() or record[0] == "S"):
+            _hash_part(dirty, b"hidden-tracked")
+            _hash_path(dirty, path, record[2:], allow_missing=True)
     untracked = git(path, "ls-files", "--others", "--exclude-standard", "-z")
     # git's text output strips only the final NUL; embedded NULs remain.
     for relative in sorted(item for item in untracked.split("\0") if item):
-        file = path / relative
-        metadata = file.lstat()
-        if stat.S_ISLNK(metadata.st_mode):
-            kind, payload = b"symlink", os.fsencode(file.readlink())
-        elif stat.S_ISREG(metadata.st_mode):
-            kind, payload = b"file", file.read_bytes()
-        else:
-            raise HandoffError(f"unsupported untracked entry: {relative}")
-        for part in (os.fsencode(relative), kind,
-                     stat.S_IMODE(metadata.st_mode).to_bytes(4, "big"), payload):
-            _hash_part(dirty, part)
+        _hash_part(dirty, b"untracked")
+        _hash_path(dirty, path, relative)
     return {
         "worktree": str(path),
         "branch": branch,
