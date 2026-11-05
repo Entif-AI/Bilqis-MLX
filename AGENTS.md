@@ -108,6 +108,53 @@ actually touched, the prior run was incomplete/failed/untrustworthy, or a human
 explicitly requests fresh verification. A merge commit is not automatic
 invalidation; inspect what it introduced.
 
+**Scope-expansion gate, not a decomposition gate (2026-11-05):** New issues,
+branches/worktrees, and PRs are intentionally cheap coordination primitives when
+they partition **already-authorized required scope**. Do not force independently
+deliverable work back into a large parent merely because the parent could absorb
+it. Prefer decomposition when it improves parallelism, turn-in latency, failure
+locality, review isolation, or early information.
+
+Classify proposed work before implementation:
+
+- `DECOMPOSE`: a strict subset of an existing issue/spec's required acceptance,
+  adding no new obligation. Record the parent plus exact inherited clause(s) and
+  `new_acceptance=false`. This may create its own issue, branch/worktree, and PR
+  without proving that decomposition itself is a new blocker.
+- `EXPAND`: any obligation, correctness criterion, cleanup, architecture change,
+  or review demand that cannot be traced to existing required acceptance. Before
+  spending on that delta, write at most **120 words** naming `delivery`,
+  `required_by`, `defer_failure`, and `cheapest_next`, then choose
+  `PROCEED | PARK | DROP`.
+  - `PROCEED`: the expansion is required for current delivery/correctness/safety.
+  - `PARK`: useful, but current delivery does not require it; preserve only a tiny
+    note/backlog pointer until explicitly selected.
+  - `DROP`: duplicate, speculative, cosmetic, or peripheral; spend nothing.
+
+For new remediation issues, keep the GitHub body **under about 250 words by
+default** and point to inherited/versioned authority under ADR-118. If a bounded
+child/helper grows past **3 commits, 3 touched files, or 250 net changed lines**, or
+reveals a second independent problem, perform a **scope-drift audit** before more
+work. If every obligation still maps to inherited required clauses, keep going and
+split again when useful; do not collapse it back into the parent. Only the
+untraceable delta is `EXPAND` and must pass the expansion gate. Never run EGM to
+manufacture authority for an expansion that current delivery does not require.
+
+**Diagnostic-loop budget (2026-11-05):** Differential test selection does not
+authorize unbounded bespoke probes. Treat any live Factory/MLX/full-model witness,
+large inline Python diagnostic, or end-to-end acceptance reconstruction as
+**expensive execution**. Do not rerun the same probe against unchanged relevant
+code/inputs; reuse its result. After one exploratory inline probe, move repeated
+diagnosis into a named focused test/helper or parameterized diagnostic so setup and
+results are reproducible. If varying seeds/hyperparameters/cases, sweep them in one
+process and hoist invariant Factory/model/bundle setup rather than cold-starting the
+whole stack once per variant. After **two unsuccessful full-cost witness attempts**
+for the same hypothesis, stop the end-to-end loop and isolate/profile the failing
+stage before another full witness. A compaction handoff must state whether an
+expensive probe is still running so the successor does not launch a duplicate.
+Acceptance-scale witnesses belong at a stable boundary after cheaper evidence has
+changed; they are not the ordinary inner debugging loop.
+
 Every lane-owned BAMF implementation leaf or open lane PR must be represented in that lane's
 machine-readable state under `docs/tasks/bamf-0.2/flow-control/`. Before substantive
 branch mutation, the operator must run `python3 -B scripts/check_bamf_flow_control.py`
