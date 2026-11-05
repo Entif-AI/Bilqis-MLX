@@ -1,21 +1,91 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "70a4ef1e883d348920d64083c7546f443a90ef77",
-  "updated_at": "2026-11-05T06:21:11+00:00",
+  "observed_unified": "88ac132db2fd1c3606fa5f06637d10a7ab40cba4",
+  "updated_at": "2026-11-05T10:15:20+00:00",
   "exception": null,
   "items": [
     {
-      "issue": 420,
+      "issue": 426,
+      "pr": 860,
+      "state": "TURNED_IN",
+      "head_sha": "38e41d521ade59d283a1c9547b18efe5927e8019",
+      "summary": "A11.3 review-hardened implementation is complete: the real event-frame source owner retains direct GENERATOR/ORACLE/draw authority and exposes source.semantic-contrast/v1 only as an optional teaching strategy. A real ExecutableFactoryRelease resolves it through the live registry without monkey-patching; contrast rows independently replay gold, answer kind and semantic roots while ordinary event-frame draw/oracle behavior remains unchanged. A11 suites 22/22; event/provider regression 11/11; governance 11/11; exact error-control-plane new debt 0; architecture/docs/compile/diff clean.",
+      "resume_trigger": "Fresh exact-head EGM/re-audit of the repaired real-owner integration plus human integration review for PR #860.",
+      "preserved_branch": "codex/bamf02-a11-3-426-20261105"
+    },
+    {
+      "issue": 423,
+      "pr": 858,
+      "state": "WAITING",
+      "head_sha": "6c37819aa6968326c3cefd470f39dcd226cc91ec",
+      "summary": "A10.3 PR #858 is DRAFT after post-merge EGM reopened prerequisite #421. Its own re-review also found remaining source-episode identity and external-witness acceptance Majors; do not represent it as merge-ready.",
+      "resume_trigger": "Consume the accepted #421/A10.1 authority and source-episode identity repair, then resync/rebase #858, remove duplicate upstream fixes, rerun F10 receipt acceptance and obtain fresh exact-head EGM.",
+      "preserved_branch": "codex/bamf02-a10-3-423-20261105",
+      "open_pr_exception": {
+        "reason": "PR #858 was converted to draft after independent review reopened prerequisite #421 and found remaining A10.3 acceptance Majors; closing it would discard the reviewable remediation vehicle before its recorded upstream resume trigger.",
+        "authority": "Independent post-merge EGM on #421 plus exact-head A10.3 re-review on 2026-11-05; AGENTS.md/ADR-128 flow-control policy permits explicit WAITING-PR exceptions.",
+        "expires_when": "Accepted #421 repair lands and #858 resumes for exact-head remediation/EGM, or #858 is superseded/closed."
+      }
+    },
+    {
+      "issue": 425,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "098e1ebeec2ffa4a6cd050847523ed6b045fb119",
+      "summary": "A11.2 merged through PR #857 as reviewed-unified 88ac132db2fd1c3606fa5f06637d10a7ab40cba4 and issue #425 is closed completed; hosted portable-core/portable/Semantic ABI all passed.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a11-2-425-20261105",
+      "merged_pr": 857
+    },
+    {
+      "issue": 422,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "90adf0371e5d63c17f6aa674d9d2ac78db67bdcc",
+      "summary": "A10.2 implementation is complete on its issue-scoped branch: typed reconstructions preserve reported/computed values, negation, time/interpretation alternatives and template lineage; fresh challenges split immutable source families before within-family template grouping, with scored holdouts remaining teachable. Focused/adjacent tests 17 passed; governance/error-contract tests 11 passed; compile/diff/flow-control green; EGM_PENDING.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a10-2-422-20261105",
+      "merged_pr": 855
+    },
+    {
+      "issue": 424,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "04b7ad8622355273410cb38cb141bb5689e3ee73",
+      "summary": "A11.1 implementation merged through PR #853; post-merge owner tests exposed a SHA-anchor regression, repaired by PR #856. The repair head restores all 11/11 A11.1 owner tests and 11/11 governance checks; both implementation and repair are now consumed by reviewed unified.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a11-1-424-20261105",
+      "merged_pr": 856
+    },
+    {
+      "issue": 421,
       "pr": null,
       "state": "WAITING",
-      "head_sha": "2c80599dfac07f3e5eaf5d82adf74411dc21b826",
-      "summary": "A08.3's substantive and lifecycle remediations are merged into reviewed unified; the parent remains parked under its still-live EGM-Failed aggregate state.",
-      "resume_trigger": "The owning parent #420 aggregate EGM disposition is reconciled against the merged #758/#737 repairs and the parent is explicitly selected for any further merge-readiness action.",
-      "closed_pr": 703,
-      "preserved_branch": "feat/bamf-a08-3-420-20261101",
-      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
-      "close_reason": "EGM-Failed; substantive remediation #758 precedes lifecycle remediation #737"
+      "head_sha": "4df4d1b0cba1bb02d5d52155298e2b85bc640b37",
+      "summary": "A10.1 was reopened by independent post-merge EGM. Two acceptance defects are repaired on codex/bamf02-a-421-egm-repair-20261105, but released source-pinned AGENT/schema authority remains unresolved; the repair owner is addressing A03 authority rather than inventing A10-local semantics.",
+      "resume_trigger": "Accepted A03/released semantic authority must bind the A10 category/unit/AGENT references, and the final source-episode identity contract must reject duplicate/reformatted copies before #421 can re-close.",
+      "preserved_branch": "codex/bamf02-a-421-egm-repair-20261105",
+      "merged_pr": 852
+    },
+    {
+      "issue": 395,
+      "pr": null,
+      "state": "WAITING",
+      "head_sha": "c2e212e0bef7975e78dfc2f0a6071e21566b6539",
+      "summary": "A09.5 focused implementation passes on current unified, but three genuine post-A/B/C source-to-staged successor realizations are not yet accepted; #420 supplied rule/family authority, not the required realization breadth.",
+      "resume_trigger": "Accepted realization/staging authority must provide at least three genuinely new source-qualified candidate-to-staged-successor bindings beyond historical A/B/C, or an accepted equivalent owner contract.",
+      "preserved_branch": "codex/bamf02-a09-5-395-20261105"
+    },
+    {
+      "issue": 420,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "93d3fe62df1be9f8aae995aa8446bac1bea427ea",
+      "summary": "A08.3 aggregate accepted: remediation PRs #777/#782 merged; final pinned EGM passed 0 Blockers/0 Majors; #420 closed completed on 2026-11-05.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/737-a08-lifecycle-20261103",
+      "merged_pr": 782
     },
     {
       "issue": 758,
