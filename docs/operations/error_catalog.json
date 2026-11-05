@@ -11959,6 +11959,27 @@
       "path": "bilqis_mlx/semantics/tests/operators/test_cognitive_operator_native.py"
     },
     {
+      "code_hint": "EVENT_FRAME_INVALID_DRAW",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'EVENT_FRAME_INVALID_DRAW'",
+      "path": "bilqis_mlx/source_adapters/_events/event_frames.py"
+    },
+    {
+      "code_hint": "EVENT_FRAME_SOURCE_PDF_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'EVENT_FRAME_SOURCE_PDF_DRIFT'",
+      "path": "bilqis_mlx/source_adapters/_events/event_frames.py"
+    },
+    {
+      "code_hint": "FACTORY_TEACHING_OPTION_NOT_RELEASED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_TEACHING_OPTION_NOT_RELEASED'",
+      "path": "bilqis_mlx/source_adapters/_events/event_intro.py"
+    },
+    {
       "code_hint": "BOOLEAN_ASSOCIATION_REQUIRES_NUMERIC_SOURCE_ADAPTER",
       "count": 1,
       "exception": "ValueError",
@@ -12244,27 +12265,6 @@
       "exception": "ValueError",
       "expression": "'COPULAR_PARENT_CATALOG_INCOMPATIBLE'",
       "path": "bilqis_mlx/source_adapters/copular_curriculum.py"
-    },
-    {
-      "code_hint": "EVENT_FRAME_INVALID_DRAW",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'EVENT_FRAME_INVALID_DRAW'",
-      "path": "bilqis_mlx/source_adapters/event_frames.py"
-    },
-    {
-      "code_hint": "EVENT_FRAME_SOURCE_PDF_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'EVENT_FRAME_SOURCE_PDF_DRIFT'",
-      "path": "bilqis_mlx/source_adapters/event_frames.py"
-    },
-    {
-      "code_hint": "FACTORY_TEACHING_OPTION_NOT_RELEASED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_TEACHING_OPTION_NOT_RELEASED'",
-      "path": "bilqis_mlx/source_adapters/event_intro.py"
     },
     {
       "code_hint": "COMPOSITION_MICRO_ENTITY_SHAPE",

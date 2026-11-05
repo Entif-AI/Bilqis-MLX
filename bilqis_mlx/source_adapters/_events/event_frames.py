@@ -26,7 +26,7 @@ from ..vocabulary_growth import AdmittedToken, append_catalog, digest
 
 DIALECT = 'bilqis.finite-event-frame/v1'
 GENERATOR = 'bilqis.issue349.event-frames/v1'
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 SPECS = MappingProxyType({
     'D.EVENT_OCCURRENCE': ('LEXSENSE-294d00be074a56', ('A.IDENTITY',)),
     'D.COMMENCEMENT': ('LEXSENSE-45453409b348c4', ('D.EVENT_OCCURRENCE',)),
@@ -118,8 +118,12 @@ def check(row, *, graph, **_):
 
 
 def registered_adapter():
-    fingerprint = digest({name:hashlib.sha256((ROOT/'bilqis_mlx'/name).read_bytes()).hexdigest()
-        for name in ('source_adapters/event_frames.py','verification/event_frames.py')})
+    sources = {
+        'source_adapters/event_frames.py': Path(__file__),
+        'verification/event_frames.py': ROOT/'bilqis_mlx/verification/event_frames.py',
+    }
+    fingerprint = digest({name: hashlib.sha256(path.read_bytes()).hexdigest()
+                          for name, path in sources.items()})
     return RegisteredSourceAdapter(SourceAdapter('source.issue349.event-frames/v1',
         GENERATOR,(ORACLE,),fingerprint,
         variation_axes=('event-identity','before-state','after-state','fact-order','fresh-seed')),

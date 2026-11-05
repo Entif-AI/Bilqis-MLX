@@ -2331,10 +2331,10 @@ Current production scan: **2030** raw raises across **240** files. The baseline 
 | `DUPLICATE_ITHKUIL_BRIDGE_ID` | 1 | `bilqis_mlx/_source_evidence/ithkuil_alignment.py` |
 | `DUPLICATE_TAUGHT_ROOT` | 1 | `bilqis_mlx/curriculum/__init__.py` |
 | `Dashboard refresh interval must be positive` | 1 | `bilqis_mlx/presentation/dashboard_watch.py` |
-| `EVENT_FRAME_INVALID_DRAW` | 1 | `bilqis_mlx/source_adapters/event_frames.py` |
+| `EVENT_FRAME_INVALID_DRAW` | 1 | `bilqis_mlx/source_adapters/_events/event_frames.py` |
 | `EVENT_FRAME_INVALID_EVENTS` | 1 | `bilqis_mlx/verification/event_frames.py` |
 | `EVENT_FRAME_INVALID_RECORD` | 1 | `bilqis_mlx/verification/event_frames.py` |
-| `EVENT_FRAME_SOURCE_PDF_DRIFT` | 1 | `bilqis_mlx/source_adapters/event_frames.py` |
+| `EVENT_FRAME_SOURCE_PDF_DRIFT` | 1 | `bilqis_mlx/source_adapters/_events/event_frames.py` |
 | `EVENT_FRAME_UNDECLARED_QUERY` | 1 | `bilqis_mlx/verification/event_frames.py` |
 | `EVENT_FRAME_UNKNOWN_CAPABILITY` | 1 | `bilqis_mlx/verification/event_frames.py` |
 | `EXAM_ANSWER_OUTSIDE_CAPABILITY_ABI` | 1 | `bilqis_mlx/curriculum/__init__.py` |
@@ -2633,7 +2633,7 @@ Current production scan: **2030** raw raises across **240** files. The baseline 
 | `FACTORY_TEACHING_OPTION_EMPTY` | 1 | `bilqis_mlx/factory/lifecycle/teaching.py` |
 | `FACTORY_TEACHING_OPTION_HAS_NO_IMPLEMENTATION` | 2 | `bilqis_mlx/factory/adapters.py`, `bilqis_mlx/factory/lifecycle/teaching.py` |
 | `FACTORY_TEACHING_OPTION_ID_REQUIRED` | 1 | `bilqis_mlx/runtime/_operator/admission.py` |
-| `FACTORY_TEACHING_OPTION_NOT_RELEASED` | 2 | `bilqis_mlx/factory/lifecycle/teaching.py`, `bilqis_mlx/source_adapters/event_intro.py` |
+| `FACTORY_TEACHING_OPTION_NOT_RELEASED` | 2 | `bilqis_mlx/factory/lifecycle/teaching.py`, `bilqis_mlx/source_adapters/_events/event_intro.py` |
 | `FACTORY_TEACHING_SOURCE_ORACLE_DISAGREEMENT` | 1 | `bilqis_mlx/factory/lifecycle/teaching.py` |
 | `FACTORY_TEACHING_UNKNOWN_CAPABILITY` | 3 | `bilqis_mlx/factory/adapters.py` |
 | `FACTORY_TYPED_SAME_GRADE_REVISION_REQUIRES_GRAPH` | 1 | `bilqis_mlx/compatibility/live_release_parts/providers.py` |
