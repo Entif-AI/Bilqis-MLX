@@ -7,7 +7,7 @@ from scripts.check_semantic_boundaries import inspect_semantic_boundaries
 from bilqis_mlx.verification.outcomes import LawCheckStatus
 
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 
 
 class SemanticBoundaryTests(unittest.TestCase):

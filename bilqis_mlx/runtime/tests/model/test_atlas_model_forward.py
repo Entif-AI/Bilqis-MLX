@@ -101,7 +101,7 @@ class AtlasModelSourceForwardTests(SourceBackboneTestBase):
         )
         self.assertEqual(output.committed[0].value, ControlAction.END_FRAME)
 
-    def test_loss_execution_is_issued_only_from_exact_live_forward(self):
+    def _live_gradient_execution(self):
         genesis = MotifAllocationSnapshot(
             MotifManifest(self.snapshot.release_sha256))
         compiled = replace(
@@ -173,7 +173,19 @@ class AtlasModelSourceForwardTests(SourceBackboneTestBase):
         self.assertTrue(
             provenance.mask.parameter("blocks.0.query").whole_parameter)
         self.assertTrue(provenance.mask.has_loss_bearing_target)
+        return compiled, gradient_execution, execution, genesis
 
+    def _production_candidate_from_live_execution(
+        self, compiled, gradient_execution, execution, genesis,
+    ):
+        ages = tuple(
+            IdentityRowAge(bank, row, 0)
+            for bank, row in execution.visible_identity_rows
+        )
+        spec = ModelTopologySpecV2()
+        extents = compiled.extents
+        eligibility = group_eligibility(
+            "FULL", bamf_parameter_census(spec, extents), ages)
         declared = expected_bamf_shapes(spec, extents)
         rowwise = {
             Initializer.IDENTITY_BANK,
@@ -232,3 +244,9 @@ class AtlasModelSourceForwardTests(SourceBackboneTestBase):
         self.assertEqual(transaction.update_steps, 1)
         self.assertEqual(
             int(transaction.optimizer.update_counts["blocks.0.query"]), 1)
+
+    def test_loss_execution_is_issued_only_from_exact_live_forward(self):
+        compiled, gradient_execution, execution, genesis = (
+            self._live_gradient_execution())
+        self._production_candidate_from_live_execution(
+            compiled, gradient_execution, execution, genesis)

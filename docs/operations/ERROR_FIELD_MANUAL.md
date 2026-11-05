@@ -3595,9 +3595,9 @@ Current production scan: **2030** raw raises across **240** files. The baseline 
 | `boom` | 1 | `bilqis_mlx/runtime/tests/model/parity/test_mlx_memory.py` |
 | `disposable interruption before pointer publication` | 1 | `bilqis_mlx/runtime/tests/admission/test_atlas_lease_renewal.py` |
 | `evaluator-owned cache reached by solver` | 1 | `bilqis_mlx/semantics/tests/operators/test_cognitive_operator_native.py` |
-| `exact cached route must preempt neural` | 1 | `bilqis_mlx/runtime/tests/capability/test_cognitive_solver.py` |
+| `exact cached route must preempt neural` | 1 | `bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver.py` |
 | `lacks U7C pattern` | 1 | `bilqis_mlx/source_adapters/tests/boolean/test_grade_b_u7c_causal_cells.py` |
-| `malformed decoder payload` | 1 | `bilqis_mlx/runtime/tests/capability/test_cognitive_solver.py` |
+| `malformed decoder payload` | 1 | `bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver.py` |
 | `malformed translated score` | 1 | `bilqis_mlx/runtime/tests/capability/test_capability_evidence_history.py` |
 | `missing source manifest` | 1 | `bilqis_mlx/runtime/tests/capability/test_capability_authority.py` |
 | `model-input planning entered before A06 authority rejection` | 1 | `bilqis_mlx/runtime/tests/batch/test_atlas_training_real_source.py` |

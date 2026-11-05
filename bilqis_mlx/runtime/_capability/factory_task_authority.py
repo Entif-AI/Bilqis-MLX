@@ -31,6 +31,25 @@ def _source_view(row: dict) -> dict:
             if key not in _PRIVATE_SOURCE_KEYS}
 
 
+def _generation_authority(
+    source_context, compiled_batch, row_id, capability_id, row_sha256,
+    generation_binding,
+):
+    training = compiled_batch.training_authority
+    if training is None:
+        if not isinstance(generation_binding, str) or not generation_binding:
+            _invalid("BAMF_C04_EVALUATION_GENERATION_REQUIRED")
+        return generation_binding, source_context.release.release_sha256, None
+    if (training.release_sha256 != source_context.release.release_sha256
+            or training.source_row_id != row_id
+            or training.source_row_sha256 != row_sha256
+            or training.delivery_capability != capability_id
+            or (generation_binding is not None
+                and generation_binding != training.generation_binding)):
+        _invalid("BAMF_C04_FACTORY_TASK_SOURCE_MISMATCH")
+    return training.generation_binding, training.release_sha256, training.digest
+
+
 @dataclass(frozen=True, init=False)
 class FactoryTaskAuthority:
     goal: TaskGoal
@@ -98,28 +117,14 @@ def factory_task_authority(
         _invalid("BAMF_C04_FACTORY_TASK_AUTHORITY_REQUIRED")
     source_context.__post_init__()
     compiled_batch.__post_init__()
-    training = compiled_batch.training_authority
     source = compiled_batch.sources[0]
     row = source.source_row
     row_id = row.get("id")
     capability_id = row.get("capability")
     row_sha256 = content_digest((row,))
-    if training is None:
-        if not isinstance(generation_binding, str) or not generation_binding:
-            _invalid("BAMF_C04_EVALUATION_GENERATION_REQUIRED")
-        release_sha256 = source_context.release.release_sha256
-        training_sha256 = None
-    else:
-        if (training.release_sha256 != source_context.release.release_sha256
-                or training.source_row_id != row_id
-                or training.source_row_sha256 != row_sha256
-                or training.delivery_capability != capability_id
-                or (generation_binding is not None
-                    and generation_binding != training.generation_binding)):
-            _invalid("BAMF_C04_FACTORY_TASK_SOURCE_MISMATCH")
-        generation_binding = training.generation_binding
-        release_sha256 = training.release_sha256
-        training_sha256 = training.digest
+    generation_binding, release_sha256, training_sha256 = _generation_authority(
+        source_context, compiled_batch, row_id, capability_id, row_sha256,
+        generation_binding)
     execution = source_context.release.execution_plan.capability_map.get(
         capability_id)
     if execution is None:

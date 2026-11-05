@@ -164,6 +164,36 @@ def _cohort(kind, instruments, groups, release, policy, training):
         training[0], training[1], case_census_digest(cases))
 
 
+def _policy_and_cohorts(
+    release, groups, target_capability, target_group, training,
+    target_instruments, lesson_instruments, fixed_instruments,
+):
+    required = (
+        (EvidenceKind.FRESH_TARGET,
+         case_census_digest(tuple(item.case for item in target_instruments))),
+        (EvidenceKind.FRESH_LESSON,
+         case_census_digest(tuple(item.case for item in lesson_instruments))),
+        (EvidenceKind.FIXED_SCHOOL,
+         case_census_digest(tuple(item.case for item in fixed_instruments))),
+    )
+    policy = RetentionPolicy(
+        groups, tuple(dict.fromkeys(group for _, group in groups)),
+        tuple((capability, C05_PROTECTED_REFERENCE_LOSS)
+              for capability, _ in groups if capability != target_capability),
+        C05_PROBE_EACH, required)
+    target_cohort = _cohort(
+        EvidenceKind.FRESH_TARGET, target_instruments,
+        ((target_capability, target_group),), release, policy, training)
+    lesson_groups = tuple(pair for pair in groups if pair[1] == target_group)
+    lesson_cohort = _cohort(
+        EvidenceKind.FRESH_LESSON, lesson_instruments,
+        lesson_groups, release, policy, training)
+    fixed_cohort = _cohort(
+        EvidenceKind.FIXED_SCHOOL, fixed_instruments,
+        groups, release, policy, training)
+    return policy, (target_cohort, lesson_cohort, fixed_cohort)
+
+
 def evaluate_factory_retention_candidate(
     source_context,
     candidate: CandidateTransaction,
@@ -222,29 +252,9 @@ def evaluate_factory_retention_candidate(
         source_context, candidate_bundle, artifact_path, fixed.rows,
         seed=fixed.seed)
 
-    required = (
-        (EvidenceKind.FRESH_TARGET,
-         case_census_digest(tuple(item.case for item in target_instruments))),
-        (EvidenceKind.FRESH_LESSON,
-         case_census_digest(tuple(item.case for item in lesson_instruments))),
-        (EvidenceKind.FIXED_SCHOOL,
-         case_census_digest(tuple(item.case for item in fixed_instruments))),
-    )
-    policy = RetentionPolicy(
-        groups, tuple(dict.fromkeys(group for _, group in groups)),
-        tuple((capability, C05_PROTECTED_REFERENCE_LOSS)
-              for capability, _ in groups if capability != target_capability),
-        C05_PROBE_EACH, required)
-    target_cohort = _cohort(
-        EvidenceKind.FRESH_TARGET, target_instruments,
-        ((target_capability, target_group),), release, policy, training)
-    lesson_groups = tuple(pair for pair in groups if pair[1] == target_group)
-    lesson_cohort = _cohort(
-        EvidenceKind.FRESH_LESSON, lesson_instruments,
-        lesson_groups, release, policy, training)
-    fixed_cohort = _cohort(
-        EvidenceKind.FIXED_SCHOOL, fixed_instruments,
-        groups, release, policy, training)
+    policy, cohorts = _policy_and_cohorts(
+        release, groups, target_capability, target_group, training,
+        target_instruments, lesson_instruments, fixed_instruments)
 
     all_instruments = tuple(dict(
         (item.case.case_id, item)
@@ -256,7 +266,7 @@ def evaluate_factory_retention_candidate(
         source_context, candidate_bundle, artifact_path, all_instruments)
     decision = evaluate_retention_candidate(
         parent_solver, candidate_solver, target_capability, policy,
-        (target_cohort, lesson_cohort, fixed_cohort),
+        cohorts,
         parent_generation, candidate_generation)
     return _issue_owner_evaluation(decision, parent, candidate_bundle)
 
