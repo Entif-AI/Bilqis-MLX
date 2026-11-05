@@ -14,6 +14,7 @@ from bilqis_mlx.semantics.cognitive_dependencies import (
 )
 from bilqis_mlx.runtime.atlas_revalidation import (
     CorrectionEvent, RevalidatedArtifact, RevalidationFrontier,
+    StateTransition,
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
     advance_revalidation as _advance_revalidation,
     apply_correction as _apply_correction,
@@ -152,3 +153,38 @@ def _chain() -> tuple[DependencyIndex, DependencyRef, DependencyRef]:
     return DependencyIndex.build((
         feature, frame, motif, cache, composition, capability, unrelated,
     )), source_a, source_b
+
+
+class CanonicalSigningBytesCompatibilityTests(unittest.TestCase):
+    def test_pre_split_signing_bytes_keep_literal_lf_terminator(self):
+        dependency = DependencyRef(DependencyKind.SOURCE, "source:x")
+        event = CorrectionEvent(
+            "e", dependency, "owner", "1" * 64, "2" * 64, "3" * 64,
+            1, 2, 3, 4, "reason", "0" * 128,
+        )
+        result = RevalidatedArtifact(
+            "artifact:x", (dependency,), "4" * 64, True, "5" * 64,
+            "e", "1" * 64, "owner", "0" * 128,
+        )
+        transition = StateTransition(
+            "artifact:x", "0" * 64, "4" * 64, False, True, "5" * 64,
+            "e", "1" * 64, "owner", "0" * 128, (dependency,), True,
+        )
+        expected_event = (
+            b'{"dependency":{"key":"source:x","kind":"SOURCE","schema_version":"bilqis.c09.dependency-ref/v1"},'
+            b'"effective_time":2,"event_id":"e","new_evidence_sha256":"' + b"3" * 64
+            + b'","observed_at":3,"old_evidence_sha256":"' + b"2" * 64
+            + b'","reason_code":"reason","recorded_at":4,"schema_version":"bilqis.c09.correction-event/v3",'
+            b'"source_owner":"owner","source_receipt_sha256":"' + b"1" * 64
+            + b'","source_time":1,"supersedes_event_ids":[]}\n'
+        )
+        expected_revalidated = (
+            b'{"artifact_id":"artifact:x","content_digest":"' + b"4" * 64
+            + b'","correction_event_id":"e","correction_receipt_sha256":"' + b"1" * 64
+            + b'","eligible":true,"immediate_dependencies":[{"key":"source:x","kind":"SOURCE",'
+            b'"schema_version":"bilqis.c09.dependency-ref/v1"}],"schema_version":"bilqis.c09.revalidated-artifact/v3",'
+            b'"source_owner":"owner","source_receipt_sha256":"' + b"5" * 64 + b'"}\n'
+        )
+        self.assertEqual(event.signing_bytes(), expected_event)
+        self.assertEqual(result.signing_bytes(), expected_revalidated)
+        self.assertEqual(transition.revalidated_signing_bytes(), expected_revalidated)
