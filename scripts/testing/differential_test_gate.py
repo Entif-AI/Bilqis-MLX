@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 from dataclasses import asdict, dataclass
 import hashlib
 import importlib.util
@@ -21,6 +22,8 @@ else:
 RECEIPT_DIR = Path(".local/test-gate")
 TESTMON_DATA = Path(".testmondata")
 IGNORED_PARTS = frozenset({".git", ".local", ".venv", "node_modules", "runs", "vendor"})
+LEAF_GATE_POLICY_NAME = "BILQIS_LEAF_GATE_POLICY"
+DETACHED_ONLY_POLICY = "DETACHED_ONLY"
 
 
 @dataclass(frozen=True)
@@ -141,6 +144,25 @@ def _nearest_test_scope(root: Path, relative: Path) -> tuple[Path, ...]:
     return ()
 
 
+def _leaf_schedulable(test: Path) -> bool:
+    """Return False for tests that must run only as explicit detached witnesses."""
+    try:
+        tree = ast.parse(test.read_text(errors="ignore"))
+    except (OSError, SyntaxError):
+        return True
+    for node in tree.body:
+        if not isinstance(node, (ast.Assign, ast.AnnAssign)):
+            continue
+        targets = node.targets if isinstance(node, ast.Assign) else (node.target,)
+        value = node.value
+        if not isinstance(value, ast.Constant) or not isinstance(value.value, str):
+            continue
+        if any(isinstance(target, ast.Name) and target.id == LEAF_GATE_POLICY_NAME
+               for target in targets):
+            return value.value != DETACHED_ONLY_POLICY
+    return True
+
+
 def _candidate_tests(root: Path, changed: tuple[str, ...]) -> tuple[str, ...]:
     selected: set[Path] = set()
     python_changes = [Path(name) for name in changed if name.endswith(".py")]
@@ -165,7 +187,11 @@ def _candidate_tests(root: Path, changed: tuple[str, ...]) -> tuple[str, ...]:
         if not matches:
             matches.update(scope)
         selected.update(matches)
-    return tuple(str(path.relative_to(root)) for path in sorted(selected))
+    return tuple(
+        str(path.relative_to(root))
+        for path in sorted(selected)
+        if _leaf_schedulable(path)
+    )
 
 
 def plan_leaf(root: Path, *, base_ref: str | None = None) -> LeafPlan:

@@ -91,6 +91,22 @@ class DifferentialTestGateTests(unittest.TestCase):
 
         self.assertEqual(plan.tests, ("pkg/tests/test_thing.py",))
 
+    def test_cold_plan_excludes_detached_only_witnesses(self):
+        temporary = self._repo()
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name)
+        (root / "pkg" / "tests" / "test_expensive.py").write_text(
+            'BILQIS_LEAF_GATE_POLICY = "DETACHED_ONLY"\n'
+            "from pkg.thing import VALUE\n"
+        )
+        subprocess.run(["git", "add", "."], cwd=root, check=True)
+        subprocess.run(["git", "commit", "-qm", "expensive witness"], cwd=root, check=True)
+        (root / "pkg" / "thing.py").write_text("VALUE = 2\n")
+
+        plan = gate.plan_leaf(root, base_ref="HEAD")
+
+        self.assertEqual(plan.tests, ("pkg/tests/test_thing.py",))
+
     def test_warm_testmon_plan_remains_bounded_to_owner_tests(self):
         temporary = self._repo()
         self.addCleanup(temporary.cleanup)

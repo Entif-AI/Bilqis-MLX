@@ -1,5 +1,15 @@
-"""Positive #708 witness: Factory-owned C05 reaches live B13 publication."""
+"""Disposable full-model C05/C16 learning diagnostics and B13.2 continuation.
+
+This module is not the #708 feature-authority acceptance surface.  It exercises
+real source-backed MLX learning behavior and may be expensive; #708 provenance is
+covered by the custody/feature-authority suites.
+"""
 from __future__ import annotations
+
+# This module executes real MLX/source-backed acceptance and diagnostics. Ordinary
+# differential leaf verification must not schedule it on an interactive socket;
+# run its witnesses explicitly through scripts/bamf/detached_long_run.py.
+BILQIS_LEAF_GATE_POLICY = "DETACHED_ONLY"
 
 import json
 import os
@@ -341,7 +351,7 @@ class FactoryRetentionOwnerLiveTests(SourceBackboneTestBase):
             print("C05_FIXED_CAPABILITY_DIAGNOSTIC " + json.dumps(
                 receipt, sort_keys=True), flush=True)
 
-    def test_source_owned_c05_acceptance_publishes_exact_successor(self):
+    def test_disposable_learning_candidate_can_publish_then_continue(self):
         source_context, _ = live_factory_context(self.root, self.source)
         genesis, _ = genesis_bundle(
             self, self.snapshot, self.schema, self.artifact)
