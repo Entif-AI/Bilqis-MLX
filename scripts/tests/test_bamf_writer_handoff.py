@@ -168,7 +168,7 @@ class WriterHandoffTests(unittest.TestCase):
 
         def replace_after_enumeration(root, *args):
             result = read_git(root, *args)
-            if args[0] == "ls-files":
+            if args[0] == "ls-files" and "--others" in args:
                 path.unlink()
                 os.mkfifo(path)
             return result
