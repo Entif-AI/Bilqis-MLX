@@ -119,6 +119,24 @@ class EvidenceFrameTests(EvidenceFamilyAuthorityCases, unittest.TestCase):
         self.assertEqual(result.lessons[3].derivation.output_unit, "min")
         self.assertTrue(all(lesson.check() for lesson in result.lessons))
 
+    def test_exact_checker_rejects_correlated_generator_corruption(self):
+        result = self.compile()
+        minutes = result.lessons[3]
+        self.assertFalse(replace(
+            minutes,
+            gold="14",
+            derivation=replace(minutes.derivation, output_value="14"),
+        ).check())
+        self.assertFalse(replace(
+            result.lessons[1],
+            gold="FORGED",
+            frame=replace(result.lessons[1].frame, status="FORGED"),
+        ).check())
+        self.assertFalse(replace(
+            result.lessons[0],
+            frame=replace(result.lessons[0].frame, actor_role_ref="forged-role"),
+        ).check())
+
     def test_exact_hour_conversion_preserves_trailing_zero_magnitude(self):
         record = replace(
             self.snapshot.records[0], reported_value=ReportedValue("1", HOUR))
