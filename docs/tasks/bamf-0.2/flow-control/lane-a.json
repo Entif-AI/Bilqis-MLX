@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "e58dd31574a6ee2ce0b3e35f92293a09befd15c1",
-  "updated_at": "2026-11-05T05:30:58.847437+00:00",
+  "updated_at": "2026-11-05T06:36:17.870569+00:00",
   "exception": null,
   "items": [
     {
@@ -74,6 +74,16 @@
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a-833-context-structure-20261104",
       "merged_pr": 836
+    },
+    {
+      "issue": 842,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "0bf808711c82a36768ecc383e81e7002149769f7",
+      "preserved_branch": "codex/bamf02-a-842-execution-structure-20261105",
+      "summary": "PR846externallymergedas879c39dd; scopedFactorystructureconsumed.785source-ownertracecanresumeaftercanonicalsync; no initialselectionauthorityinferred.",
+      "resume_trigger": null,
+      "merged_pr": 846
     }
   ]
 }
