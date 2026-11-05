@@ -108,3 +108,18 @@ and zero new debt. The historical ABI guard passed in advisory mode only: no
 independent expected semantic ABI hash was supplied. Detailed local command output
 is retained under `/tmp/b451-{size,governance,smell,docs,error,abi}-20261105.log`.
 The later evidence-only edits do not change the earlier 19-test proof surface.
+
+## Independent merge-readiness review
+
+Pinned EGM `b3a35956759bf7f024af2ff061b2e0b44b438e4c`, episode
+`B451-selector-custody-20261105` round1/5, reviewed `ebe19aae`: PASS with
+zero Blockers/Majors/Nits. Both personas and readiness standard were read.
+The actual issue receipt records review scope and verification.
+
+Consumed next unified `879c39dd` (#842 Factory execution structural repair).
+`TEST_EVIDENCE_REUSED`: the 19/19 receipt at `815e649a` remains valid. The
+merge changes Factory execution owners/tests, generated error docs and flow
+metadata; selector, B01 constructor/schema, B13 writer/reader, depth fixtures,
+MLX dependencies and runner are unchanged. This proof does not call Factory
+execution. The reviewed issue-owned test is unchanged; no fresh EGM is needed
+for lifecycle and evidence-only changes under ADR-127/129.

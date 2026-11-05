@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "e58dd31574a6ee2ce0b3e35f92293a09befd15c1",
-  "updated_at": "2026-11-05T05:30:58.847437+00:00",
+  "observed_unified": "70a4ef1e883d348920d64083c7546f443a90ef77",
+  "updated_at": "2026-11-05T06:21:11+00:00",
   "exception": null,
   "items": [
     {
@@ -57,23 +57,41 @@
     },
     {
       "issue": 824,
-      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "16e14ab6c6f0550112aa8786fb2b86465fdad75b",
       "summary": "PR830 externally merged ase58dd31574a6ee2ce0b3e35f92293a09befd15c1; bounded structural acceptance and EGM satisfied. Owning issue explicitly closed completed after readback; source/parent acceptance remains separate.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a-824-release-structure-20261104",
+      "pr": null,
       "merged_pr": 830
     },
     {
       "issue": 833,
-      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "1985f621ca5ac26c734a64d65693c045b870ce57",
       "summary": "PR836 externally merged asfeaef7d78516e346030cb0e88eecfc27089e957e; bounded structural acceptance and EGM satisfied. Owning issue explicitly closed completed after readback; source/parent acceptance remains separate.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a-833-context-structure-20261104",
+      "pr": null,
       "merged_pr": 836
+    },
+    {
+      "issue": 842,
+      "pr": 846,
+      "state": "TURNED_IN",
+      "head_sha": "eead07f2c2b01cf43e5916bd934b04cfd9c2c9ff",
+      "preserved_branch": "codex/bamf02-a-842-execution-structure-20261105",
+      "summary": "PR846 consumed reviewed unified70a4ef1e after PR847. Conflicts were flow-control-only; Factory diff from the prior candidate is empty. Extraction proof, focused30/30, historical17/17 and pinned real-source4/4 all pass under the merged runner, so prior whole-candidate EGM PASS remains applicable.",
+      "resume_trigger": null
+    },
+    {
+      "issue": 845,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "a0a00feff65915f17063ece7fef2a88ed0ece98a",
+      "preserved_branch": "codex/bamf02-a-842-execution-structure-20261105",
+      "summary": "Scoped842round1 source-inspection/literal-proof repair durable and regression-verified at a0a00fef; consumed by parent candidate, no separate PR.",
+      "resume_trigger": null
     }
   ]
 }

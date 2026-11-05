@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "e58dd31574a6ee2ce0b3e35f92293a09befd15c1",
-  "updated_at": "2026-11-05T05:30:58.846723+00:00",
+  "observed_unified": "879c39dd68308c7a8e5f8c09bc1624317f47b457",
+  "updated_at": "2026-11-05T06:21:11+00:00",
   "exception": null,
   "items": [
     {
@@ -306,19 +306,20 @@
     {
       "issue": 784,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "e58dd31574a6ee2ce0b3e35f92293a09befd15c1",
-      "summary": "Resume preserved runner package-context candidate from808a without touching unrelated dirty lane metadata; isolated issue feature consumes current reviewed unified before code adoption and complete regression proof.",
+      "state": "TURNED_IN",
+      "head_sha": "edae20526c34b628fa63a895fb852921007f42a0",
+      "preserved_branch": "codex/bamf02-b-784-runner-context-20261105",
+      "summary": "PR847 externally merged as70a4ef1e883d348920d64083c7546f443a90ef77 after focused14/14andmotif5/5 proof and pinned EGM PASS; issue784 is closed completed. The three broader script import failures remain separately owned by844.",
       "resume_trigger": null,
-      "preserved_branch": "codex/bamf02-b-784-runner-context-20261105"
+      "merged_pr": 847
     },
     {
       "issue": 451,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "0956114dd35f6a368a129a9c6cf179e48a536b65",
+      "state": "TURNED_IN",
+      "head_sha": "ebe19aaed0a3d345135acc06d6e8a12ffd00ef54",
       "preserved_branch": "codex/bamf02-b-451-selector-custody-20261103",
-      "summary": "B05.3 selected for merge-readiness continuation; evaluate proof dependencies against current unified.",
+      "summary": "B05.3 CPU19/19 and all scoped guards pass; pinned EGM episode B451-selector-custody-20261105 round1 PASS0B/0M/0N. UNBOUND selector schema/cold custody only; ready for human integration PR.",
       "resume_trigger": null
     }
   ]
