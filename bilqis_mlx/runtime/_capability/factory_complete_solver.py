@@ -72,7 +72,7 @@ def _factory_gold(source_context, row, goal):
     _invalid("BAMF_C05_GOLD_MODALITY_UNSUPPORTED")
 
 
-def factory_evaluation_instrument(
+def _factory_evaluation_instrument(
     source_context: SourceExecutionContext,
     candidate: BamfBundleCandidate,
     artifact_path: str,
@@ -80,9 +80,9 @@ def factory_evaluation_instrument(
     *,
     source_seed: int,
     source_each: int,
+    generation: str,
 ) -> FactoryEvaluationInstrument:
     """Freeze one independent Factory row into a C05 case without solver choice."""
-    generation = _generation(candidate)
     batch = compile_factory_evaluation_batch(
         source_context, candidate, artifact_path, row,
         source_seed=source_seed, source_each=source_each)
@@ -95,6 +95,21 @@ def factory_evaluation_instrument(
         authority.source_family_id, authority.episode_id, authority.goal,
         _factory_gold(source_context, row, authority.goal))
     return FactoryEvaluationInstrument(case, dict(row), source_seed, source_each)
+
+
+def factory_evaluation_instrument(
+    source_context: SourceExecutionContext,
+    candidate: BamfBundleCandidate,
+    artifact_path: str,
+    row: dict,
+    *,
+    source_seed: int,
+    source_each: int,
+) -> FactoryEvaluationInstrument:
+    return _factory_evaluation_instrument(
+        source_context, candidate, artifact_path, row,
+        source_seed=source_seed, source_each=source_each,
+        generation=_generation(candidate))
 
 
 def factory_complete_solver(

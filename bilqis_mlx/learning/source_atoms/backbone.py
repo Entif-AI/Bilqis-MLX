@@ -28,6 +28,7 @@ class _SourceBackboneProducerSession:
     def __init__(self, encoded, handoffs, parameters, compiled):
         self._compiled = compiled
         self._encoded = encoded
+        self._handoffs = tuple(handoffs)
         self._parameters = dict(parameters)
         self._sources = None
         self._feature_schema = None
@@ -45,6 +46,9 @@ class _SourceBackboneProducerSession:
             generation=self._generation, prefix_digest=self._prefix)
         self._depth_inputs = ()
         self._receipts = ()
+        self._receipt_seals = ()
+        self._result_refs = ()
+        self._result_seals = ()
         self._motif_manifest = None
         self._motif_seal = None
         self._motif_read = None
@@ -56,12 +60,12 @@ class _SourceBackboneProducerSession:
     def _receipt_values(self, result=None):
         if self._sources is None or self._feature_schema is None:
             _invalid_producer_receipt()
-        encoded, handoffs = encode_source_compiled_with_handoffs(
-            self._compiled, self._parameters, self._sources, self._feature_schema)
+        encoded, handoffs = self._encoded, self._handoffs
+        for handoff in handoffs:
+            handoff.__post_init__()
         source_digest = contract_digest(tuple(item.digest for item in handoffs))
         topology = ModelTopologySpecV2()
-        generation = execution_generation_digest(
-            self._parameters, spec=topology, extents=self._compiled.extents)
+        generation = self._generation
         prefix = compiled_prefix_digest(self._compiled)
         if (source_digest != self._source_digest or topology.digest != self._topology.digest
                 or generation != self._generation or prefix != self._prefix):
@@ -160,15 +164,30 @@ class _SourceBackboneProducerSession:
                 or boundary_group < 1 or boundary_group > len(self._receipts) - 1):
             _invalid_producer_receipt()
         prefix = self._receipts[:boundary_group + 1]
+        seals = self._receipt_seals[:boundary_group + 1]
+        if (len(seals) != len(prefix)
+                or len(self._result_refs) < boundary_group
+                or len(self._result_seals) < boundary_group
+                or len(self._session.results) < boundary_group):
+            _invalid_producer_receipt()
         verified = []
         for index, receipt in enumerate(prefix):
-            result = None if index == 0 else self._session.results[index - 1]
-            expected = _issue_from_producer(self, result)
             receipt._validate_contents()
-            if (receipt.receipt_digest != expected.receipt_digest
-                    or _content_digest(receipt.hidden) != _content_digest(expected.hidden)):
+            seal = seals[index]
+            if (receipt.receipt_digest != seal[0]
+                    or receipt.output_digest != seal[1]):
                 _invalid_producer_receipt()
-            verified.append(expected)
+            if index:
+                result = self._session.results[index - 1]
+                result_seal = self._result_seals[index - 1]
+                if (result is not self._result_refs[index - 1]
+                        or result.execution_digest != result_seal[0]
+                        or _content_digest(result.hidden) != result_seal[1]
+                        or receipt.numerical_execution_digest != result.execution_digest
+                        or receipt.parameter_tree_digest != result.full_parameter_tree_digest
+                        or receipt.cache_chain_digest != result.cache_chain_digest):
+                    _invalid_producer_receipt()
+            verified.append(receipt)
         return tuple(verified)
 
     @property
@@ -197,6 +216,9 @@ class _SourceBackboneProducerSession:
             result = self._session.advance()
         receipt = _issue_from_producer(self, result)
         self._receipts += (receipt,)
+        self._receipt_seals += ((receipt.receipt_digest, receipt.output_digest),)
+        self._result_refs += (result,)
+        self._result_seals += ((result.execution_digest, _content_digest(result.hidden)),)
         return receipt
 
 
@@ -227,7 +249,9 @@ def start_source_backbone_producer(
     producer = _SourceBackboneProducerSession(encoded, handoffs, parameters, compiled)
     producer._bind_authoritative_inputs(sources, feature_schema)
     producer._receipts = ()
-    producer._receipts = (_issue_from_producer(producer),)
+    receipt = _issue_from_producer(producer)
+    producer._receipts = (receipt,)
+    producer._receipt_seals = ((receipt.receipt_digest, receipt.output_digest),)
     return producer
 
 
