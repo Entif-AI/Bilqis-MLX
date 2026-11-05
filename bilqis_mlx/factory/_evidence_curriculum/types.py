@@ -135,6 +135,8 @@ class EvidenceSplitReceipt:
     heldout_record_ids: tuple[str, ...]
     train_family_ids: tuple[str, ...]
     heldout_family_ids: tuple[str, ...]
+    interpretation_revision: str
+    rights: EvidenceRights
     receipt_sha256: str
 
 
@@ -142,6 +144,8 @@ class EvidenceSplitReceipt:
 class TypedEvidenceReconstruction:
     record_id: str
     source_family_id: str
+    interpretation_revision: str
+    rights: EvidenceRights
     template_lineage: str
     actor_ref: str
     category_ref: str
@@ -158,6 +162,8 @@ class TypedEvidenceReconstruction:
 @dataclass(frozen=True)
 class EvidenceChallengePlan:
     split: EvidenceSplitReceipt
+    interpretation_revision: str
+    rights: EvidenceRights
     train_template_groups: tuple[tuple[str, str, tuple[str, ...]], ...]
     heldout_template_groups: tuple[tuple[str, str, tuple[str, ...]], ...]
     post_exam_teachable_lesson_ids: tuple[str, ...]
