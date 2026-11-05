@@ -9,7 +9,8 @@ from hashlib import sha256
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.source_adapters.evidence_frames import (
     PUBLIC_FIXTURE, BamfEvidenceSnapshot, EvidenceDerivation, EvidenceFrame,
-    EvidenceRecord, EvidenceRights, SourceSpan, source_family_id, verification_state,
+    EvidenceRecord, EvidenceRights, EventTime, SourceSpan, source_family_id,
+    verification_state,
 )
 
 
@@ -41,6 +42,7 @@ class EvidenceLesson:
     task_modality: str
     positive_family: str
     negative_family: str
+    template_lineage: str
     checker_id: str
     prerequisite_capabilities: tuple[str, ...]
     rights: EvidenceRights
@@ -85,6 +87,31 @@ class EvidenceSplitReceipt:
     receipt_sha256: str
 
 
+@dataclass(frozen=True)
+class TypedEvidenceReconstruction:
+    record_id: str
+    source_family_id: str
+    template_lineage: str
+    actor_ref: str
+    category_ref: str
+    status: str
+    reported_value: str | None
+    reported_unit_ref: str
+    computed_values: tuple[EvidenceDerivation, ...]
+    negated: bool
+    event_time: EventTime
+    alternatives: tuple[str, ...]
+    verification_state: str
+
+
+@dataclass(frozen=True)
+class EvidenceChallengePlan:
+    split: EvidenceSplitReceipt
+    train_template_groups: tuple[tuple[str, str, tuple[str, ...]], ...]
+    heldout_template_groups: tuple[tuple[str, str, tuple[str, ...]], ...]
+    post_exam_teachable_lesson_ids: tuple[str, ...]
+
+
 def _minutes(decimal: str) -> tuple[str, EvidenceDerivation]:
     try:
         value = Decimal(decimal)
@@ -102,12 +129,44 @@ def _minutes(decimal: str) -> tuple[str, EvidenceDerivation]:
 def _render(record: EvidenceRecord) -> str:
     decimal = record.reported_value.decimal
     if decimal is None:
+        if record.negated:
+            return f"{record.actor_ref} reported not {record.category_label}; duration is unknown."
         return f"{record.actor_ref} reported {record.category_label}; duration is unknown."
+    if record.negated and record.status == "COMPLETED":
+        return (
+            f"{record.actor_ref} did not complete {record.category_label} "
+            f"for {decimal} {record.unit_label}."
+        )
+    if record.negated and record.status == "PLANNED":
+        return (
+            f"{record.actor_ref} does not plan {record.category_label} "
+            f"for {decimal} {record.unit_label}."
+        )
+    if record.negated:
+        return f"{record.actor_ref} reported not {record.category_label} for {decimal} {record.unit_label}."
     if record.status == "COMPLETED":
         return f"{record.actor_ref} completed {record.category_label} for {decimal} {record.unit_label}."
     if record.status == "PLANNED":
         return f"{record.actor_ref} plans {record.category_label} for {decimal} {record.unit_label}."
     return f"{record.actor_ref} reported {record.category_label} for {decimal} {record.unit_label}."
+
+
+def _template_lineage(record: EvidenceRecord) -> str:
+    if record.negated:
+        if record.reported_value.decimal is None:
+            return "T3N"
+        if record.status == "COMPLETED":
+            return "T1N"
+        if record.status == "PLANNED":
+            return "T2N"
+        return "T0N"
+    if record.reported_value.decimal is None:
+        return "T3"
+    if record.status == "COMPLETED":
+        return "T1"
+    if record.status == "PLANNED":
+        return "T2"
+    return "T0"
 
 
 def _frame(snapshot: BamfEvidenceSnapshot, record: EvidenceRecord) -> EvidenceFrame:
@@ -121,6 +180,7 @@ def _frame(snapshot: BamfEvidenceSnapshot, record: EvidenceRecord) -> EvidenceFr
         reported_unit_ref=record.reported_value.unit_ref,
         event_time=record.event_time,
         alternatives=record.alternatives,
+        negated=record.negated,
         verification_state=verification_state(record),
         source_digest=snapshot.source_byte_digest,
         interpretation_revision=snapshot.interpretation_revision,
@@ -142,6 +202,7 @@ def _lessons(snapshot: BamfEvidenceSnapshot, record: EvidenceRecord) -> tuple[Ev
         task_modality="typed-evidence-reconstruction/v1",
         positive_family="source-adjudicated-positive/v1",
         negative_family="source-authorized-contrast/v1",
+        template_lineage=_template_lineage(record),
         checker_id="bilqis.evidence-exact-checker/v1",
         prerequisite_capabilities=("semantic.role.AGENT", "semantic.status", "semantic.duration"),
         rights=snapshot.rights,
@@ -200,6 +261,74 @@ def compile_evidence_lessons(
         adjudicated_snapshot.source_byte_digest,
         adjudicated_snapshot.interpretation_revision,
         semantic_release, source_rights, lessons, record_holds)
+
+
+def compile_typed_reconstructions(
+    candidates: LessonCandidateSet,
+) -> tuple[TypedEvidenceReconstruction, ...]:
+    """Project each qualified source episode without collapsing reported and derived state."""
+    by_record: dict[str, list[EvidenceLesson]] = {}
+    for lesson in candidates.lessons:
+        by_record.setdefault(lesson.record_id, []).append(lesson)
+    rows = []
+    for record_id in sorted(by_record):
+        lessons = by_record[record_id]
+        first = lessons[0]
+        frame = first.frame
+        derivations = tuple(
+            lesson.derivation for lesson in lessons if lesson.derivation is not None)
+        rows.append(TypedEvidenceReconstruction(
+            record_id=record_id,
+            source_family_id=first.source_family_id,
+            template_lineage=first.template_lineage,
+            actor_ref=frame.actor_ref,
+            category_ref=frame.category_ref,
+            status=frame.status,
+            reported_value=frame.reported_decimal,
+            reported_unit_ref=frame.reported_unit_ref,
+            computed_values=derivations,
+            negated=frame.negated,
+            event_time=frame.event_time,
+            alternatives=frame.alternatives,
+            verification_state=frame.verification_state,
+        ))
+    return tuple(rows)
+
+
+def _template_groups(
+    candidates: LessonCandidateSet, record_ids: tuple[str, ...],
+) -> tuple[tuple[str, str, tuple[str, ...]], ...]:
+    selected = set(record_ids)
+    groups: dict[tuple[str, str], list[str]] = {}
+    for lesson in candidates.lessons:
+        if lesson.record_id in selected:
+            groups.setdefault(
+                (lesson.source_family_id, lesson.template_lineage), []).append(lesson.lesson_id)
+    return tuple(
+        (family, lineage, tuple(sorted(ids)))
+        for (family, lineage), ids in sorted(groups.items()))
+
+
+def plan_fresh_challenge(
+    candidates: LessonCandidateSet, *,
+    train_record_ids: tuple[str, ...],
+    heldout_record_ids: tuple[str, ...],
+) -> EvidenceChallengePlan:
+    """Split immutable source families first, then group renderings inside each side."""
+    split = split_evidence_families(
+        candidates,
+        train_record_ids=train_record_ids,
+        heldout_record_ids=heldout_record_ids,
+    )
+    heldout_lesson_ids = tuple(sorted(
+        lesson.lesson_id for lesson in candidates.lessons
+        if lesson.record_id in set(heldout_record_ids)))
+    return EvidenceChallengePlan(
+        split=split,
+        train_template_groups=_template_groups(candidates, train_record_ids),
+        heldout_template_groups=_template_groups(candidates, heldout_record_ids),
+        post_exam_teachable_lesson_ids=heldout_lesson_ids,
+    )
 
 
 def split_evidence_families(

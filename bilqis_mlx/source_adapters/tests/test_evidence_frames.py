@@ -18,7 +18,9 @@ from bilqis_mlx.source_adapters.evidence_frames import (
 )
 from bilqis_mlx.factory.evidence_curriculum import (
     EvidenceLessonStatus,
+    compile_typed_reconstructions,
     compile_evidence_lessons,
+    plan_fresh_challenge,
     split_evidence_families,
 )
 
@@ -117,6 +119,38 @@ class EvidenceFrameTests(unittest.TestCase):
         self.assertEqual(result.lessons[0].frame.event_time.end_iso, "2026-01-02T09:00:00Z")
         self.assertEqual(result.lessons[0].frame.alternatives, ("EVENT_TIME_CONTRADICTORY",))
 
+    def test_typed_reconstruction_preserves_reported_computed_negation_and_alternatives(self):
+        source = self.snapshot.records[0]
+        record = replace(
+            source,
+            negated=True,
+            alternatives=("EVENT_TIME_DISPUTED", "ALTERNATE_INTERPRETATION"),
+        )
+        result = compile_evidence_lessons(
+            replace(self.snapshot, records=(record,)), self.rights, RELEASE)
+        reconstruction = compile_typed_reconstructions(result)[0]
+        self.assertEqual(reconstruction.reported_value, "0.25")
+        self.assertEqual(reconstruction.reported_unit_ref, HOUR)
+        self.assertEqual(reconstruction.computed_values[0].output_value, "15")
+        self.assertTrue(reconstruction.negated)
+        self.assertEqual(reconstruction.template_lineage, "T1N")
+        self.assertEqual(
+            result.lessons[0].rendered,
+            "actor_01 did not complete study for 0.25 h.",
+        )
+        self.assertEqual(result.lessons[0].frame.occurrence_truth, "UNKNOWN")
+        self.assertEqual(
+            reconstruction.alternatives,
+            ("EVENT_TIME_DISPUTED", "ALTERNATE_INTERPRETATION"),
+        )
+
+        unambiguous = compile_evidence_lessons(
+            replace(self.snapshot, records=(replace(source, negated=True),)),
+            self.rights,
+            RELEASE,
+        )
+        self.assertEqual(unambiguous.lessons[0].frame.occurrence_truth, "FALSE")
+
     def test_private_or_unclassified_material_is_rejected_before_public_export(self):
         for regime in ("PRIVATE_REAL", "UNCLASSIFIED"):
             with self.subTest(regime=regime):
@@ -162,6 +196,41 @@ class EvidenceFrameTests(unittest.TestCase):
             independent, train_record_ids=(original.record_id,),
             heldout_record_ids=(other.record_id,))
         self.assertNotEqual(receipt.train_family_ids, receipt.heldout_family_ids)
+
+    def test_fresh_challenge_splits_source_families_before_template_groups(self):
+        original = self.snapshot.records[0]
+        paraphrase = replace(original, record_id="fixture-001-paraphrase")
+        other = replace(
+            original,
+            record_id="fixture-002",
+            adjudication_ref="adjudication:fixture-002",
+        )
+        result = compile_evidence_lessons(
+            replace(self.snapshot, records=(original, paraphrase, other)),
+            self.rights,
+            RELEASE,
+        )
+        with self.assertRaises(ValueError):
+            plan_fresh_challenge(
+                result,
+                train_record_ids=(original.record_id,),
+                heldout_record_ids=(paraphrase.record_id,),
+            )
+
+        plan = plan_fresh_challenge(
+            result,
+            train_record_ids=(original.record_id, paraphrase.record_id),
+            heldout_record_ids=(other.record_id,),
+        )
+        self.assertEqual(len(plan.split.train_family_ids), 1)
+        self.assertEqual(len(plan.split.heldout_family_ids), 1)
+        self.assertEqual(plan.train_template_groups[0][1], "T1")
+        self.assertEqual(plan.heldout_template_groups[0][1], "T1")
+        self.assertEqual(
+            set(plan.post_exam_teachable_lesson_ids),
+            {lesson.lesson_id for lesson in result.lessons
+             if lesson.record_id == other.record_id},
+        )
 
     def test_unadjudicated_record_is_held_without_blocking_qualified_sibling(self):
         qualified = self.snapshot.records[0]

@@ -101,6 +101,7 @@ class EvidenceRecord:
     alternatives: tuple[str, ...]
     adjudication_ref: str | None
     agent_role_ref: str
+    negated: bool = False
 
     def __post_init__(self) -> None:
         if (not all(_text(value) for value in (
@@ -113,6 +114,7 @@ class EvidenceRecord:
                 or type(self.reported_value) is not ReportedValue
                 or type(self.event_time) is not EventTime
                 or type(self.alternatives) is not tuple
+                or type(self.negated) is not bool
                 or any(not _text(item) for item in self.alternatives)
                 or len(set(self.alternatives)) != len(self.alternatives)):
             _fail("BAMF_EVIDENCE_RECORD_INVALID")
@@ -154,6 +156,7 @@ class EvidenceFrame:
     reported_unit_ref: str
     event_time: EventTime
     alternatives: tuple[str, ...]
+    negated: bool
     verification_state: str
     source_digest: str
     interpretation_revision: str
@@ -163,7 +166,7 @@ class EvidenceFrame:
     @property
     def occurrence_truth(self) -> str:
         if self.status == "COMPLETED" and self.verification_state == "ADJUDICATED":
-            return "TRUE"
+            return "FALSE" if self.negated else "TRUE"
         return "UNKNOWN"
 
 
