@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
 from bilqis_mlx.errors import ErrorBus, SCHOOL
@@ -82,4 +83,28 @@ def require_accepted_execution_cache(cache) -> AcceptedExecutionCache:
     return cache
 
 
-__all__ = ("AcceptedExecutionCache", "require_accepted_execution_cache")
+def bind_accepted_execution_cache(pointer_path: Path) -> AcceptedExecutionCache:
+    """Mint B11 cache authority only from current B13 generation authority."""
+    from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
+    from .publication import load_bamf_generation_authority
+
+    student, manifest_sha256 = load_bamf_generation_authority(Path(pointer_path))
+    generation_binding = execution_generation_digest(
+        student.retained_state.optimizer.parameters,
+        spec=student.topology,
+        extents=student.extents,
+    )
+    return _issue_accepted_execution_cache(
+        run_id=student.run_id,
+        generation=student.generation,
+        accepted_manifest_sha256=manifest_sha256,
+        generation_binding=generation_binding,
+        motif_manifest=student.retained_state.allocations.manifest,
+    )
+
+
+__all__ = (
+    "AcceptedExecutionCache",
+    "bind_accepted_execution_cache",
+    "require_accepted_execution_cache",
+)

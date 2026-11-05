@@ -140,6 +140,34 @@ class GroupEligibility:
     established_identity_rows: tuple[tuple[int, int], ...]
     schema_version: str = ELIGIBILITY_SCHEMA
 
+    def __post_init__(self) -> None:
+        names = self.eligible_parameter_names + self.frozen_parameter_names
+        admitted = set(self.admitted_identity_rows)
+        fast = set(self.fast_identity_rows)
+        established = set(self.established_identity_rows)
+        if (self.mode not in UPDATE_MODES
+                or type(self.eligible_parameter_names) is not tuple
+                or type(self.frozen_parameter_names) is not tuple
+                or len(names) != len(set(names))
+                or any(not isinstance(name, str) or not name for name in names)
+                or not _valid_identity_pairs(self.admitted_identity_rows)
+                or not _valid_identity_pairs(self.fast_identity_rows)
+                or not _valid_identity_pairs(self.established_identity_rows)
+                or fast & established
+                or fast | established != admitted
+                or self.schema_version != ELIGIBILITY_SCHEMA):
+            _invalid()
+
+
+def _valid_identity_pairs(value: object) -> bool:
+    return (type(value) is tuple
+            and value == tuple(sorted(set(value)))
+            and all(type(item) is tuple and len(item) == 2
+                    and type(item[0]) is int and item[0] >= 0
+                    and type(item[1]) is int
+                    and 0 <= item[1] < ModelTopologySpecV2.semantic_bank_rows
+                    for item in value))
+
 
 def group_eligibility(
     mode: str, manifest: ParameterCensus,

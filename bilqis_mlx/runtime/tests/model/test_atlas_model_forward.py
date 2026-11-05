@@ -5,9 +5,9 @@ from unittest import skipUnless
 import mlx.core as mx
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.learning.atlas_candidate import (
     CandidateCustodyIdentity, CandidateState, begin_candidate,
+    candidate_identity_digest,
 )
 from bilqis_mlx.learning.atlas_engram import MotifManifest
 from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot

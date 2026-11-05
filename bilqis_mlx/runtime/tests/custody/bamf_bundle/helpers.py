@@ -10,7 +10,11 @@ import mlx.core as mx
 
 from bilqis_mlx.data_plane import data_plane
 from bilqis_mlx.learning.atlas_candidate import (
-    CandidateState, begin_candidate, candidate_step, resolve_candidate,
+    CandidateCustodyIdentity, CandidateState, begin_candidate, candidate_step,
+    resolve_candidate,
+)
+from bilqis_mlx.learning._retention.tests.execution_fixtures import (
+    execution_provenance,
 )
 from bilqis_mlx.learning.atlas_engram import MotifManifest
 from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
@@ -30,6 +34,7 @@ IMPLEMENTATION = "e" * 64
 DECLARED = (ParameterSpec(NAME, (2, 2), Initializer.MATRIX,
                           ParameterGroup.IDENTITY_ROW_AGE, True),)
 HP = AdamWHyperparameters(.001, (.9, .95), 1e-8, .01)
+FIXTURE_PARENT_MANIFEST = "6" * 64
 
 
 def parent_state() -> CandidateState:
@@ -40,15 +45,24 @@ def parent_state() -> CandidateState:
         {NAME: mx.array([2, 3], dtype=mx.uint64)})
     policy = PlasticityPolicy(
         "ADAPTIVE", 7, (IdentityRowAge(0, 0, 7), IdentityRowAge(0, 1, 2)))
+    allocations = MotifAllocationSnapshot(MotifManifest(RELEASE))
+    extents = GenerationExtents(
+        1, 1, "a" * 64, allocations.manifest.digest, "c" * 64)
     return CandidateState(
-        optimizer, policy, MotifAllocationSnapshot(MotifManifest(RELEASE)), 11)
+        optimizer, policy, allocations, 11,
+        CandidateCustodyIdentity(
+            "fixture-run", 0, FIXTURE_PARENT_MANIFEST,
+            ModelTopologySpecV2().digest, extents.digest))
 
 
 def accepted_state(parent: CandidateState) -> CandidateState:
     transaction = begin_candidate(parent)
     transaction = candidate_step(
         transaction, {NAME: mx.array([[3., 4.], [0., 0.]], dtype=mx.float32)},
-        {NAME: mx.array([True, False])}, HP, decay={NAME: True},
+        execution_provenance(
+            transaction.parent, rows=(0,),
+            candidate_step=transaction.update_steps + 1),
+        HP, decay={NAME: True},
         loss_bearing=True, max_norm=1.)
     return resolve_candidate(transaction, accepted=True)
 
@@ -57,7 +71,10 @@ def rejected_state(parent: CandidateState) -> CandidateState:
     transaction = begin_candidate(parent)
     transaction = candidate_step(
         transaction, {NAME: mx.ones((2, 2), dtype=mx.float32)},
-        {NAME: mx.array([True, False])}, HP, decay={NAME: True},
+        execution_provenance(
+            transaction.parent, rows=(0,),
+            candidate_step=transaction.update_steps + 1),
+        HP, decay={NAME: True},
         loss_bearing=True, max_norm=1.)
     return resolve_candidate(transaction, accepted=False)
 
@@ -66,7 +83,10 @@ def next_accepted_step(parent: CandidateState) -> CandidateState:
     transaction = begin_candidate(parent)
     transaction = candidate_step(
         transaction, {NAME: mx.array([[.25, -.5], [0., 0.]], dtype=mx.float32)},
-        {NAME: mx.array([True, False])}, HP, decay={NAME: True},
+        execution_provenance(
+            transaction.parent, rows=(0,),
+            candidate_step=transaction.update_steps + 1),
+        HP, decay={NAME: True},
         loss_bearing=True, max_norm=1.)
     return resolve_candidate(transaction, accepted=True)
 

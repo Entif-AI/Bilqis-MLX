@@ -6,6 +6,7 @@ import os
 import shutil
 import subprocess
 import sys
+import inspect
 import unittest
 from dataclasses import replace
 from pathlib import Path
@@ -19,6 +20,11 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.bamf_bundle import (
     load_bamf_generation, publish_bamf_generation, record_bamf_rejection,
 )
+from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
+    bind_accepted_execution_cache,
+)
+from bilqis_mlx.runtime.atlas_candidate_step import admit_current_candidate_step
+from bilqis_mlx.runtime.model_topology_v2 import ParameterCensus
 
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     accepted_state, candidate, parent_state, rejected_state, shape_patch,
@@ -55,6 +61,63 @@ class BamfPublicationTests(unittest.TestCase):
         self.assertEqual(loaded.parent_manifest_sha256, first["manifest_sha256"])
         self.assertTrue((self.run / first["bundle"]).is_dir())
         self.assertNotEqual(first["manifest_sha256"], second["manifest_sha256"])
+
+    def test_execution_cache_is_minted_from_current_b13_authority(self):
+        from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import DECLARED
+
+        published = self.publish(candidate(parent_state()))
+        pointer = self.run / "bamf-state.json"
+        with shape_patch(), patch(
+                "bilqis_mlx.runtime.backbone_identity.expected_bamf_shapes",
+                return_value=DECLARED,
+        ), patch(
+                "bilqis_mlx.runtime.topology_v2.validation.expected_bamf_shapes",
+                return_value=DECLARED,
+        ):
+            cache = bind_accepted_execution_cache(pointer)
+        self.assertEqual(cache.run_id, "fixture-run")
+        self.assertEqual(cache.generation, 0)
+        self.assertEqual(
+            cache.accepted_manifest_sha256, published["manifest_sha256"])
+        self.assertEqual(cache.motif_manifest.digest, parent_state().allocations.manifest.digest)
+
+    def test_public_candidate_admission_derives_all_authority_from_b13(self):
+        from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import DECLARED, HP
+
+        published = self.publish(candidate(parent_state()))
+        pointer = self.run / "bamf-state.json"
+        parameters = set(inspect.signature(admit_current_candidate_step).parameters)
+        for forbidden in (
+                "group_eligible", "active_admitted", "spec", "extents",
+                "run_id", "generation", "parent_manifest_sha256",
+                "parent_candidate_identity_sha256", "parent_optimizer_step",
+                "topology_digest", "candidate_step_ordinal"):
+            self.assertNotIn(forbidden, parameters)
+
+        with shape_patch(), patch(
+                    "bilqis_mlx.runtime.atlas_candidate_step.bamf_parameter_census",
+                    return_value=ParameterCensus(
+                        candidate(parent_state()).topology.digest,
+                        candidate(parent_state()).extents.digest,
+                        DECLARED,
+                    ),
+                ), patch(
+                    "bilqis_mlx.learning.atlas_participation_census.expected_bamf_shapes",
+                    return_value=DECLARED,
+                ), patch(
+                    "bilqis_mlx.learning._retention.atlas_participation_census.expected_bamf_shapes",
+                    return_value=DECLARED,
+                ):
+            transaction = admit_current_candidate_step(
+                pointer,
+                loss_bearing_target=False,
+                teacher_hparams=HP,
+                decay={"identity.bank.0": True},
+                max_norm=1.0,
+            )
+        self.assertEqual(transaction.parent.custody.manifest_sha256,
+                         published["manifest_sha256"])
+        self.assertEqual(transaction.update_steps, 0)
 
     def test_retry_converges_after_renamed_bundle_before_pointer(self):
         source = candidate(parent_state())

@@ -20,11 +20,18 @@ from .atlas_participation import (
 )
 
 EXECUTION_PROVENANCE_SCHEMA = "bilqis.mlx.b09-execution-provenance/v1"
+DIGEST_HEX_LENGTH = 64
 _PROVENANCE_ISSUER = object()
 
 
 def _invalid() -> None:
     ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+
+
+def _is_digest(value) -> bool:
+    """One lowercase hex digest identity, expressed as a domain contract."""
+    return (isinstance(value, str) and len(value) == DIGEST_HEX_LENGTH
+            and all(char in "0123456789abcdef" for char in value))
 
 
 def _canonical(value) -> bytes:
@@ -64,6 +71,13 @@ class StepExecutionProvenance:
     mask: UpdateMask
     eligible_parameter_names: tuple[str, ...]
     extents_sha256: str
+    run_id: str
+    generation: int
+    parent_manifest_sha256: str
+    parent_candidate_identity_sha256: str
+    parent_optimizer_step: int
+    topology_digest: str
+    candidate_step: int
     schema_version: str = EXECUTION_PROVENANCE_SCHEMA
     _issuance: object = field(init=False, default=None, repr=False, compare=False)
 
@@ -75,8 +89,16 @@ class StepExecutionProvenance:
                 or type(self.eligible_parameter_names) is not tuple
                 or self.eligible_parameter_names != tuple(sorted(set(
                     self.eligible_parameter_names)))
-                or not isinstance(self.extents_sha256, str)
-                or len(self.extents_sha256) != 64
+                or not _is_digest(self.extents_sha256)
+                or not isinstance(self.run_id, str) or not self.run_id
+                or type(self.generation) is not int or self.generation < 1
+                or not _is_digest(self.parent_manifest_sha256)
+                or not _is_digest(self.parent_candidate_identity_sha256)
+                or type(self.parent_optimizer_step) is not int
+                or self.parent_optimizer_step < 0
+                or not _is_digest(self.topology_digest)
+                or type(self.candidate_step) is not int
+                or self.candidate_step < 1
                 or self.schema_version != EXECUTION_PROVENANCE_SCHEMA):
             _invalid()
         self.participation.__post_init__()
@@ -89,6 +111,13 @@ class StepExecutionProvenance:
             "mask_sha256": mask_digest(self.mask),
             "eligible_parameter_names": list(self.eligible_parameter_names),
             "extents_sha256": self.extents_sha256,
+            "run_id": self.run_id,
+            "generation": self.generation,
+            "parent_manifest_sha256": self.parent_manifest_sha256,
+            "parent_candidate_identity_sha256": self.parent_candidate_identity_sha256,
+            "parent_optimizer_step": self.parent_optimizer_step,
+            "topology_digest": self.topology_digest,
+            "candidate_step": self.candidate_step,
             "schema_version": self.schema_version,
         })
 
@@ -100,7 +129,10 @@ def issue_execution_provenance(
         role_reads: RoleReadParticipation,
         group_eligible,
         active_admitted: ActiveAdmittedRows,
-        *, spec, extents) -> StepExecutionProvenance:
+        *, spec, extents, run_id: str, generation: int,
+        parent_manifest_sha256: str, parent_candidate_identity_sha256: str,
+        parent_optimizer_step: int, topology_digest: str,
+        candidate_step_ordinal: int) -> StepExecutionProvenance:
     """Derive the executed participation and mask, then seal them as provenance.
 
     The caller supplies what the execution path observed. The owner derives
@@ -117,6 +149,12 @@ def issue_execution_provenance(
             ("eligible_parameter_names", tuple(sorted(
                 group_eligible.eligible_parameter_names))),
             ("extents_sha256", extents.digest),
+            ("run_id", run_id), ("generation", generation),
+            ("parent_manifest_sha256", parent_manifest_sha256),
+            ("parent_candidate_identity_sha256", parent_candidate_identity_sha256),
+            ("parent_optimizer_step", parent_optimizer_step),
+            ("topology_digest", topology_digest),
+            ("candidate_step", candidate_step_ordinal),
             ("schema_version", EXECUTION_PROVENANCE_SCHEMA),
             ("_issuance", _PROVENANCE_ISSUER)):
         object.__setattr__(provenance, name, value)
