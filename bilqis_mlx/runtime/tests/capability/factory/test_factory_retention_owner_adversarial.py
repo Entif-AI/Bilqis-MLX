@@ -15,6 +15,10 @@ from bilqis_mlx.runtime.factory_retention_owner import (
 )
 from bilqis_mlx.runtime.tests.capability.capability_retention_helpers import _screen_inputs
 from bilqis_mlx.runtime.tests.capability.factory import factory_retention_target_diagnostic as diagnostic
+from bilqis_mlx.runtime.tests.capability.factory.factory_retention_fixed_diagnostic import (
+    _optimizer_delta_summary,
+)
+import mlx.core as mx
 from bilqis_mlx.semantics.cognitive_operators import TypedValue
 from bilqis_mlx.runtime.source_execution import _source_family
 from bilqis_mlx.errors.model import BilqisError
@@ -33,6 +37,30 @@ def _rows(prefix):
 
 
 class FactoryRetentionOwnerAdversarialTests(unittest.TestCase):
+    def test_optimizer_delta_summary_distinguishes_decay_only_from_gradient_driven_change(self):
+        parent = SimpleNamespace(retained_state=SimpleNamespace(
+            optimizer=SimpleNamespace(parameters={
+                "blocks.0.query": mx.array([1.0], dtype=mx.float32),
+                "readout.query": mx.array([2.0], dtype=mx.float32),
+            })))
+        candidate = SimpleNamespace(optimizer=SimpleNamespace(parameters={
+            "blocks.0.query": mx.array([0.99], dtype=mx.float32),
+            "readout.query": mx.array([2.1], dtype=mx.float32),
+        }))
+        gradient = SimpleNamespace(gradients={
+            "blocks.0.query": mx.array([0.0], dtype=mx.float32),
+            "readout.query": mx.array([3.0], dtype=mx.float32),
+        })
+
+        summary = _optimizer_delta_summary(parent, candidate, gradient)
+
+        self.assertEqual(summary["blocks"]["nonzero_gradient_parameters"], 0)
+        self.assertEqual(summary["blocks"]["changed_parameters"], 1)
+        self.assertEqual(summary["blocks"]["zero_gradient_changed_parameters"], 1)
+        self.assertEqual(summary["readout"]["nonzero_gradient_parameters"], 1)
+        self.assertEqual(summary["readout"]["changed_parameters"], 1)
+        self.assertEqual(summary["readout"]["zero_gradient_changed_parameters"], 0)
+
     def test_foundation_owner_does_not_construct_measure_only_fresh_cohorts(self):
         release_sha = "a" * 64
         target = "B.IDBOOLOPS"
