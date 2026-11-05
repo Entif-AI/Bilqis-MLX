@@ -35,7 +35,7 @@ from bilqis_mlx.runtime.model_topology_v2 import (
 )
 from bilqis_mlx.semantics.abi import HISTORICAL_PREFIX_SIZE
 from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.frame_adapters import (
     BOOLEAN_CONNECTIVE_ADAPTER, FINITE_NUMERIC_ADAPTER, MICRO_PREDICATE_ADAPTER,
 )

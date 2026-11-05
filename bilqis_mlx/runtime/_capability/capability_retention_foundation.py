@@ -13,6 +13,10 @@ from .capability_retention import (
     AssessmentPair, Decision, DecisionStatus, RetentionPolicy,
 )
 
+_PAIR_WIDTH = 2
+_MIN_PROBE_EACH = 2
+_MAX_PROBE_EACH = 48
+
 
 @dataclass(frozen=True)
 class FoundationRetentionPolicy:
@@ -26,15 +30,16 @@ class FoundationRetentionPolicy:
 
     def __post_init__(self):
         if (not isinstance(self.capability_groups, tuple) or not self.capability_groups
-                or any(not isinstance(pair, tuple) or len(pair) != 2
+                or any(not isinstance(pair, tuple) or len(pair) != _PAIR_WIDTH
                        or not all(isinstance(item, str) and item for item in pair)
                        for pair in self.capability_groups)
                 or len(dict(self.capability_groups)) != len(self.capability_groups)
                 or not _names(self.protected_groups)
                 or not set(self.protected_groups) <= set(dict(self.capability_groups).values())
-                or type(self.probe_each) is not int or not 2 <= self.probe_each <= 48
+                or type(self.probe_each) is not int
+                or not _MIN_PROBE_EACH <= self.probe_each <= _MAX_PROBE_EACH
                 or not isinstance(self.protected_reference_losses, tuple)
-                or any(not isinstance(pair, tuple) or len(pair) != 2
+                or any(not isinstance(pair, tuple) or len(pair) != _PAIR_WIDTH
                        or pair[0] not in dict(self.capability_groups)
                        or type(pair[1]) is not int or not 0 <= pair[1] <= self.probe_each
                        for pair in self.protected_reference_losses)

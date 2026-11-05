@@ -1749,7 +1749,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **2030** raw raises across **240** files. The baseline gate permits only reduction.
+Current production scan: **2072** raw raises across **248** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -1886,6 +1886,30 @@ Current production scan: **2030** raw raises across **240** files. The baseline 
 | `AUTONOMY_UNKNOWN_EVIDENCE_OBLIGATION` | 1 | `bilqis_mlx/factory/autonomy.py` |
 | `AUTONOMY_UNSAFE_ARTIFACT_DIRECTORY` | 3 | `bilqis_mlx/runtime/_admission/autonomy_state.py` |
 | `AUTONOMY_WORK_ITEM_INVALID` | 1 | `bilqis_mlx/factory/autonomy.py` |
+| `B13.2 accepted bundle/CAS mutated` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_next_step_evidence.py` |
+| `B13.2 accepted pointer mutated` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_next_step_evidence.py` |
+| `B13.2 cold accepted parent drift or generation-2 publication` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_next_step_evidence.py` |
+| `B13.2 committed semantic output drift` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_next_step_witness.py` |
+| `B13.2 controlled capability selection drift` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_next_step_state.py` |
+| `B13.2 cross-backend FP32 parity exceeded tolerance` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_next_step_witness.py` |
+| `B13.2 destination arm is not CPU` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_next_step_evidence.py` |
+| `B13.2 execution provenance drift` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_next_step_evidence.py` |
+| `B13.2 execution seal already written` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_next_step_state.py` |
+| `B13.2 expected exactly one route decision` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_next_step_witness.py` |
+| `B13.2 in-memory accepted parent mutated` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_next_step_evidence.py` |
+| `B13.2 natural Factory next capability drift` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_next_step_witness.py` |
+| `B13.2 natural Factory next-selection cold readback drift` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_next_step_witness.py` |
+| `B13.2 next step did not execute exactly once` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_next_step_witness.py` |
+| `B13.2 numeric` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_next_step_evidence.py` |
+| `B13.2 numeric reference already exists` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_next_step_evidence.py` |
+| `B13.2 numeric reference census drift` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_next_step_evidence.py` |
+| `B13.2 numeric reference schema drift` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_next_step_evidence.py` |
+| `B13.2 numeric tensor contract drift` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_next_step_evidence.py` |
+| `B13.2 sealed execution drift` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_next_step_state.py` |
+| `B13.2 sealed visit drift` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_next_step_state.py` |
+| `B13.2 source arm is not Apple Metal` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_next_step_evidence.py` |
+| `B13.2 structural parity drift` | 3 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_next_step_evidence.py` |
+| `B13.2 witness requires published accepted generation one` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_next_step_witness.py` |
 | `BACKUP_ARCHIVE_ROOT_SYMLINK` | 1 | `bilqis_mlx/_operations/backup.py` |
 | `BACKUP_ARCHIVE_SYMLINK_PARENT` | 1 | `bilqis_mlx/_operations/backup.py` |
 | `BACKUP_ARCHIVE_TREE_SYMLINK` | 1 | `bilqis_mlx/_operations/backup.py` |
@@ -1934,6 +1958,22 @@ Current production scan: **2030** raw raises across **240** files. The baseline 
 | `BOOLEAN_COMPOSITE_REQUIRES_RESUME` | 1 | `bilqis_mlx/runtime/operator_session/operator_preflight.py` |
 | `BOOLEAN_IDBOOLOPS_REQUIRES_RESUME` | 1 | `bilqis_mlx/runtime/operator_session/operator_preflight.py` |
 | `BRIDGE_LEGACY_ALIAS_INVALID` | 1 | `bilqis_mlx/_source_evidence/ithkuil_alignment.py` |
+| `C05 Factory retention did not accept source-owned candidate` | 1 | `bilqis_mlx/runtime/tests/capability/factory/test_factory_retention_owner_live.py` |
+| `C05 fixed diagnostic Factory release drift` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_fixed_diagnostic.py` |
+| `C05 fixed diagnostic capability is not admitted` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_fixed_diagnostic.py` |
+| `C05 fixed diagnostic cohort unavailable` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_fixed_diagnostic.py` |
+| `C05 fixed diagnostic optimizer census drift` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_fixed_diagnostic.py` |
+| `C05 fixed diagnostic protected capability absent` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_fixed_diagnostic.py` |
+| `C05 fixed diagnostic training authority drift` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_fixed_diagnostic.py` |
+| `C05 lesson diagnostic capability is not admitted` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_lesson_diagnostic.py` |
+| `C05 lesson diagnostic training authority drift` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_lesson_diagnostic.py` |
+| `C05 source-owned MLX backend is not GPU` | 1 | `bilqis_mlx/runtime/tests/capability/factory/test_factory_retention_owner_live.py` |
+| `C05 source-owned generation-one publication drift` | 1 | `bilqis_mlx/runtime/tests/capability/factory/test_factory_retention_owner_live.py` |
+| `C05 source-owned identity bank unavailable` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_live_support.py` |
+| `C05 source-owned route decision drift` | 1 | `bilqis_mlx/runtime/tests/capability/factory/test_factory_retention_owner_live.py` |
+| `C05 source-owned step did not execute exactly once` | 1 | `bilqis_mlx/runtime/tests/capability/factory/test_factory_retention_owner_live.py` |
+| `C05 target diagnostic capability is not admitted` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_target_diagnostic.py` |
+| `C05 target diagnostic training authority drift` | 1 | `bilqis_mlx/runtime/tests/capability/factory/factory_retention_target_diagnostic.py` |
 | `CANDIDATE_FRONTIER_ARTIFACT_UNREADABLE` | 1 | `bilqis_mlx/factory/curriculum/candidate_frontier_io.py` |
 | `CANDIDATE_FRONTIER_BUILDER_STALE` | 1 | `bilqis_mlx/factory/curriculum/candidate_frontier_io.py` |
 | `CANDIDATE_FRONTIER_CANDIDATE_INVALID` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |

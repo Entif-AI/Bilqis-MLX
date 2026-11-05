@@ -218,18 +218,7 @@ def _developmental_evidence_policy(root: Path) -> tuple[str, ...]:
                 + ".".join(keys)
                 + f":expected={value!r}:actual={actual!r}")
 
-    for relative in FOUNDATION_POLICY_DOCS:
-        document = root / relative
-        if not document.is_file():
-            problems.append(f"{relative} DEVELOPMENTAL_POLICY_DOC_MISSING")
-            continue
-        text = document.read_text()
-        if FOUNDATION_POLICY_MARKER not in text:
-            problems.append(f"{relative} DEVELOPMENTAL_POLICY_MARKER_MISSING")
-        for phrase in PREMATURE_FOUNDATION_GATES:
-            if phrase in text:
-                problems.append(
-                    f"{relative} PREMATURE_FOUNDATION_GENERALIZATION_GATE:{phrase}")
+    problems.extend(_developmental_policy_docs(root))
 
     owner = root / "bilqis_mlx/runtime/_capability/factory_retention_owner.py"
     if not owner.is_file():
@@ -248,6 +237,23 @@ def _developmental_evidence_policy(root: Path) -> tuple[str, ...]:
             problems.append("CAPABILITY_EVALUATION_DEFAULT_STAGE_DRIFT")
         if 'STRICT_GENERALIZATION = "STRICT_GENERALIZATION"' not in source:
             problems.append("STRICT_GENERALIZATION_OPT_IN_MISSING")
+    return tuple(problems)
+
+
+def _developmental_policy_docs(root: Path) -> tuple[str, ...]:
+    problems = []
+    for relative in FOUNDATION_POLICY_DOCS:
+        document = root / relative
+        if not document.is_file():
+            problems.append(f"{relative} DEVELOPMENTAL_POLICY_DOC_MISSING")
+            continue
+        text = document.read_text()
+        if FOUNDATION_POLICY_MARKER not in text:
+            problems.append(f"{relative} DEVELOPMENTAL_POLICY_MARKER_MISSING")
+        for phrase in PREMATURE_FOUNDATION_GATES:
+            if phrase in text:
+                problems.append(
+                    f"{relative} PREMATURE_FOUNDATION_GENERALIZATION_GATE:{phrase}")
     return tuple(problems)
 
 

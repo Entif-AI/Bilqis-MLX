@@ -24,16 +24,7 @@ from bilqis_mlx.runtime.tests.capability.factory.factory_retention_target_diagno
 )
 
 
-def diagnose_factory_retention_lesson(
-    source_context,
-    candidate,
-    artifact_path: str,
-    target_capability: str,
-    *,
-    run_dir: Path,
-):
-    """Measure C05's same-grade gate without issuing acceptance authority."""
-    started = perf_counter()
+def _lesson_setup(source_context, candidate, target_capability):
     source_context.__post_init__()
     release = source_context.release
     capability_map = release.execution_plan.capability_map
@@ -50,6 +41,85 @@ def diagnose_factory_retention_lesson(
         for authority in candidate.training_authorities
     ):
         raise AssertionError("C05 lesson diagnostic training authority drift")
+    return release, target_group, lesson_capabilities, training
+
+
+def _lesson_scores(
+    lesson_capabilities, target_capability, instruments,
+    parent_solver, parent_generation, candidate_solver, candidate_generation,
+):
+    scores = {
+        capability: {"parent_correct": 0, "candidate_correct": 0, "total": 0}
+        for capability in lesson_capabilities
+    }
+    changed_cases = []
+    for instrument in instruments:
+        case = instrument.case
+        capability = case.capability_id
+        parent_result, parent_contract = parent_solver.evaluate(
+            case.goal, parent_generation)
+        candidate_result, candidate_contract = candidate_solver.evaluate(
+            case.goal, candidate_generation)
+        parent_answer = _answer_identity(parent_result.answer)
+        candidate_answer = _answer_identity(candidate_result.answer)
+        gold = _answer_identity(case.gold)
+        parent_match = parent_answer == gold
+        candidate_match = candidate_answer == gold
+        score = scores[capability]
+        score["parent_correct"] += int(parent_match)
+        score["candidate_correct"] += int(candidate_match)
+        score["total"] += 1
+        if parent_match != candidate_match or parent_answer != candidate_answer:
+            changed_cases.append({
+                "case_id": case.case_id,
+                "capability": capability,
+                "gold": _value_receipt(case.gold),
+                "parent": {
+                    "correct": parent_match,
+                    "answer": _value_receipt(parent_result.answer),
+                    "route": parent_result.route.value,
+                },
+                "candidate": {
+                    "correct": candidate_match,
+                    "answer": _value_receipt(candidate_result.answer),
+                    "route": candidate_result.route.value,
+                },
+                "solver_contract_match": parent_contract == candidate_contract,
+            })
+    capability_scores = []
+    protected_exceeded = []
+    same_grade_net_gain = 0
+    for capability in lesson_capabilities:
+        score = scores[capability]
+        delta = score["candidate_correct"] - score["parent_correct"]
+        same_grade_net_gain += delta
+        allowance = None
+        if capability != target_capability:
+            allowance = scaled_loss_allowance(
+                score["total"], C05_PROTECTED_REFERENCE_LOSS, C05_PROBE_EACH)
+            if -delta > allowance:
+                protected_exceeded.append(capability)
+        capability_scores.append({
+            "capability": capability,
+            **score,
+            "delta": delta,
+            "protected_loss_allowance": allowance,
+        })
+    return capability_scores, protected_exceeded, same_grade_net_gain, changed_cases
+
+
+def diagnose_factory_retention_lesson(
+    source_context,
+    candidate,
+    artifact_path: str,
+    target_capability: str,
+    *,
+    run_dir: Path,
+):
+    """Measure C05's same-grade gate without issuing acceptance authority."""
+    started = perf_counter()
+    release, target_group, lesson_capabilities, training = _lesson_setup(
+        source_context, candidate, target_capability)
 
     bound_at = perf_counter()
     parent, candidate_bundle, candidate_state, cache = _candidate_from_live_parent(
@@ -73,64 +143,11 @@ def diagnose_factory_retention_lesson(
         source_context, candidate_bundle, artifact_path, instruments)
     candidate_solver_done = perf_counter()
 
-    scores = {
-        capability: {"parent_correct": 0, "candidate_correct": 0, "total": 0}
-        for capability in lesson_capabilities
-    }
-    changed_cases = []
-    for instrument in instruments:
-        case = instrument.case
-        capability = case.capability_id
-        parent_result, parent_contract = parent_solver.evaluate(
-            case.goal, parent_generation)
-        candidate_result, candidate_contract = candidate_solver.evaluate(
-            case.goal, candidate_generation)
-        parent_match = _answer_identity(parent_result.answer) == _answer_identity(case.gold)
-        candidate_match = (
-            _answer_identity(candidate_result.answer) == _answer_identity(case.gold))
-        score = scores[capability]
-        score["parent_correct"] += int(parent_match)
-        score["candidate_correct"] += int(candidate_match)
-        score["total"] += 1
-        if parent_match != candidate_match or _answer_identity(parent_result.answer) != _answer_identity(
-            candidate_result.answer
-        ):
-            changed_cases.append({
-                "case_id": case.case_id,
-                "capability": capability,
-                "gold": _value_receipt(case.gold),
-                "parent": {
-                    "correct": parent_match,
-                    "answer": _value_receipt(parent_result.answer),
-                    "route": parent_result.route.value,
-                },
-                "candidate": {
-                    "correct": candidate_match,
-                    "answer": _value_receipt(candidate_result.answer),
-                    "route": candidate_result.route.value,
-                },
-                "solver_contract_match": parent_contract == candidate_contract,
-            })
-
-    capability_scores = []
-    protected_exceeded = []
-    same_grade_net_gain = 0
-    for capability in lesson_capabilities:
-        score = scores[capability]
-        delta = score["candidate_correct"] - score["parent_correct"]
-        same_grade_net_gain += delta
-        allowance = None
-        if capability != target_capability:
-            allowance = scaled_loss_allowance(
-                score["total"], C05_PROTECTED_REFERENCE_LOSS, C05_PROBE_EACH)
-            if -delta > allowance:
-                protected_exceeded.append(capability)
-        capability_scores.append({
-            "capability": capability,
-            **score,
-            "delta": delta,
-            "protected_loss_allowance": allowance,
-        })
+    capability_scores, protected_exceeded, same_grade_net_gain, changed_cases = (
+        _lesson_scores(
+            lesson_capabilities, target_capability, instruments,
+            parent_solver, parent_generation, candidate_solver, candidate_generation)
+    )
 
     reason = retention_reason(
         no_target_gain=False,

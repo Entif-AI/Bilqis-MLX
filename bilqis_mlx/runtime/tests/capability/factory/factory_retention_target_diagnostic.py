@@ -30,6 +30,50 @@ def _value_receipt(value):
     }
 
 
+def _evaluate_solver_cases(
+    parent_solver, parent_generation, candidate_solver, candidate_generation,
+    instruments,
+):
+    parent_correct = candidate_correct = 0
+    cases = []
+    for instrument in instruments:
+        case = instrument.case
+        parent_at = perf_counter()
+        parent_result, parent_contract = parent_solver.evaluate(
+            case.goal, parent_generation)
+        parent_done = perf_counter()
+        candidate_result, candidate_contract = candidate_solver.evaluate(
+            case.goal, candidate_generation)
+        candidate_done = perf_counter()
+        parent_match = _answer_identity(parent_result.answer) == _answer_identity(case.gold)
+        candidate_match = (
+            _answer_identity(candidate_result.answer) == _answer_identity(case.gold))
+        parent_correct += int(parent_match)
+        candidate_correct += int(candidate_match)
+        cases.append({
+            "case_id": case.case_id,
+            "gold": _value_receipt(case.gold),
+            "parent": {
+                "correct": parent_match,
+                "answer": _value_receipt(parent_result.answer),
+                "route": parent_result.route.value,
+                "neural_calls": parent_result.neural_calls,
+                "fallback_reason": parent_result.fallback_reason,
+                "solve_seconds": parent_done - parent_at,
+            },
+            "candidate": {
+                "correct": candidate_match,
+                "answer": _value_receipt(candidate_result.answer),
+                "route": candidate_result.route.value,
+                "neural_calls": candidate_result.neural_calls,
+                "fallback_reason": candidate_result.fallback_reason,
+                "solve_seconds": candidate_done - parent_done,
+            },
+            "solver_contract_match": parent_contract == candidate_contract,
+        })
+    return parent_correct, candidate_correct, cases
+
+
 def diagnose_factory_retention_target(
     source_context,
     candidate,
@@ -74,44 +118,9 @@ def diagnose_factory_retention_target(
         source_context, candidate_bundle, artifact_path, target_instruments)
     candidate_solver_done = perf_counter()
 
-    parent_correct = 0
-    candidate_correct = 0
-    cases = []
-    for instrument in target_instruments:
-        case = instrument.case
-        parent_at = perf_counter()
-        parent_result, parent_contract = parent_solver.evaluate(
-            case.goal, parent_generation)
-        parent_done = perf_counter()
-        candidate_result, candidate_contract = candidate_solver.evaluate(
-            case.goal, candidate_generation)
-        candidate_done = perf_counter()
-        parent_match = _answer_identity(parent_result.answer) == _answer_identity(case.gold)
-        candidate_match = (
-            _answer_identity(candidate_result.answer) == _answer_identity(case.gold))
-        parent_correct += int(parent_match)
-        candidate_correct += int(candidate_match)
-        cases.append({
-            "case_id": case.case_id,
-            "gold": _value_receipt(case.gold),
-            "parent": {
-                "correct": parent_match,
-                "answer": _value_receipt(parent_result.answer),
-                "route": parent_result.route.value,
-                "neural_calls": parent_result.neural_calls,
-                "fallback_reason": parent_result.fallback_reason,
-                "solve_seconds": parent_done - parent_at,
-            },
-            "candidate": {
-                "correct": candidate_match,
-                "answer": _value_receipt(candidate_result.answer),
-                "route": candidate_result.route.value,
-                "neural_calls": candidate_result.neural_calls,
-                "fallback_reason": candidate_result.fallback_reason,
-                "solve_seconds": candidate_done - parent_done,
-            },
-            "solver_contract_match": parent_contract == candidate_contract,
-        })
+    parent_correct, candidate_correct, cases = _evaluate_solver_cases(
+        parent_solver, parent_generation, candidate_solver, candidate_generation,
+        target_instruments)
 
     finished = perf_counter()
     delta = candidate_correct - parent_correct

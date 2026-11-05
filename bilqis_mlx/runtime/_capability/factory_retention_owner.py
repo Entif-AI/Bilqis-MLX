@@ -245,6 +245,84 @@ def _policy_and_cohorts(
     return policy, (target_cohort, lesson_cohort, fixed_cohort)
 
 
+def _fixed_school_instruments(
+    source_context, candidate_bundle, artifact_path, run_dir, release,
+):
+    receipt = read_current(run_dir)
+    if receipt.get("factory_release_sha256") != release.release_sha256:
+        _invalid("BAMF_C05_FACTORY_RELEASE_DRIFT")
+    fixed_exam = frontier_exam(receipt)
+    fixed = load_frontier_cohort(run_dir, fixed_exam)
+    if fixed is None:
+        _invalid("BAMF_C05_FIXED_SCHOOL_COHORT_REQUIRED")
+    if fixed_exam.get("factory_release_sha256") != release.release_sha256:
+        _invalid("BAMF_C05_FIXED_SCHOOL_RELEASE_DRIFT")
+    return _instruments(
+        source_context, candidate_bundle, artifact_path, fixed.rows,
+        seed=fixed.seed)
+
+
+def _foundation_retention_evaluation(
+    source_context, parent, candidate_bundle, artifact_path, target_capability,
+    release, groups, training, fixed_instruments,
+):
+    fixed_cases = tuple(item.case for item in fixed_instruments)
+    policy = FoundationRetentionPolicy(
+        groups, tuple(dict.fromkeys(group for _, group in groups)),
+        tuple((capability, C05_PROTECTED_REFERENCE_LOSS)
+              for capability, _ in groups if capability != target_capability),
+        C05_PROBE_EACH, case_census_digest(fixed_cases))
+    fixed_cohort = _cohort(
+        EvidenceKind.FIXED_SCHOOL, fixed_instruments, groups,
+        release, policy, training, evidence_stage=CURRENT_EVIDENCE_STAGE)
+    parent_solver, parent_generation = factory_complete_solver(
+        source_context, parent, artifact_path, fixed_instruments)
+    candidate_solver, candidate_generation = factory_complete_solver(
+        source_context, candidate_bundle, artifact_path, fixed_instruments)
+    decision = evaluate_foundation_fixed_school_candidate(
+        parent_solver, candidate_solver, target_capability, policy, fixed_cohort,
+        parent_generation, candidate_generation)
+    return _issue_owner_evaluation(decision, parent, candidate_bundle)
+
+
+def _adaptive_retention_evaluation(
+    source_context, parent, candidate_bundle, candidate_state, artifact_path,
+    target_capability, target_group, lesson_capabilities, release, groups,
+    training, fixed_instruments, cache,
+):
+    candidate_sha256 = candidate_identity_digest(candidate_state)
+    fresh_seed = _owner_seed(
+        release.release_sha256, cache, target_capability, candidate_sha256)
+    target_draw = _fresh_rows(
+        source_context, (target_capability,),
+        seed=fresh_seed + C05_FRESH_TARGET_SEED_OFFSET, training=training)
+    lesson_draw = _fresh_rows(
+        source_context, lesson_capabilities,
+        seed=fresh_seed + C05_FRESH_LESSON_SEED_OFFSET, training=training)
+    target_instruments = _instruments(
+        source_context, candidate_bundle, artifact_path, target_draw.rows,
+        seed=target_draw.seed, each=C05_PROBE_EACH)
+    lesson_instruments = _instruments(
+        source_context, candidate_bundle, artifact_path, lesson_draw.rows,
+        seed=lesson_draw.seed, each=C05_PROBE_EACH)
+    policy, cohorts = _policy_and_cohorts(
+        release, groups, target_capability, target_group, training,
+        target_instruments, lesson_instruments, fixed_instruments,
+        evidence_stage=CURRENT_EVIDENCE_STAGE)
+    all_instruments = tuple(dict(
+        (item.case.case_id, item)
+        for item in (*target_instruments, *lesson_instruments, *fixed_instruments)
+    ).values())
+    parent_solver, parent_generation = factory_complete_solver(
+        source_context, parent, artifact_path, all_instruments)
+    candidate_solver, candidate_generation = factory_complete_solver(
+        source_context, candidate_bundle, artifact_path, all_instruments)
+    decision = evaluate_retention_candidate(
+        parent_solver, candidate_solver, target_capability, policy,
+        cohorts, parent_generation, candidate_generation)
+    return _issue_owner_evaluation(decision, parent, candidate_bundle)
+
+
 def evaluate_factory_retention_candidate(
     source_context,
     candidate: CandidateTransaction,
@@ -275,73 +353,17 @@ def evaluate_factory_retention_candidate(
         _invalid("BAMF_C05_TARGET_NOT_OWNED_BY_TRAINING")
     parent, candidate_bundle, candidate_state, cache = _candidate_from_live_parent(
         run_dir, candidate)
-
-    receipt = read_current(run_dir)
-    if receipt.get("factory_release_sha256") != release.release_sha256:
-        _invalid("BAMF_C05_FACTORY_RELEASE_DRIFT")
-    fixed_exam = frontier_exam(receipt)
-    fixed = load_frontier_cohort(run_dir, fixed_exam)
-    if fixed is None:
-        _invalid("BAMF_C05_FIXED_SCHOOL_COHORT_REQUIRED")
-    if fixed_exam.get("factory_release_sha256") != release.release_sha256:
-        _invalid("BAMF_C05_FIXED_SCHOOL_RELEASE_DRIFT")
-    fixed_instruments = _instruments(
-        source_context, candidate_bundle, artifact_path, fixed.rows,
-        seed=fixed.seed)
+    fixed_instruments = _fixed_school_instruments(
+        source_context, candidate_bundle, artifact_path, run_dir, release)
 
     if CURRENT_EVIDENCE_STAGE is EvidenceStage.FOUNDATION_ACQUISITION:
-        fixed_cases = tuple(item.case for item in fixed_instruments)
-        policy = FoundationRetentionPolicy(
-            groups, tuple(dict.fromkeys(group for _, group in groups)),
-            tuple((capability, C05_PROTECTED_REFERENCE_LOSS)
-                  for capability, _ in groups if capability != target_capability),
-            C05_PROBE_EACH, case_census_digest(fixed_cases))
-        fixed_cohort = _cohort(
-            EvidenceKind.FIXED_SCHOOL, fixed_instruments, groups,
-            release, policy, training, evidence_stage=CURRENT_EVIDENCE_STAGE)
-        parent_solver, parent_generation = factory_complete_solver(
-            source_context, parent, artifact_path, fixed_instruments)
-        candidate_solver, candidate_generation = factory_complete_solver(
-            source_context, candidate_bundle, artifact_path, fixed_instruments)
-        decision = evaluate_foundation_fixed_school_candidate(
-            parent_solver, candidate_solver, target_capability, policy, fixed_cohort,
-            parent_generation, candidate_generation)
-        return _issue_owner_evaluation(decision, parent, candidate_bundle)
-
-    candidate_sha256 = candidate_identity_digest(candidate_state)
-    fresh_seed = _owner_seed(
-        release.release_sha256, cache, target_capability, candidate_sha256)
-    target_draw = _fresh_rows(
-        source_context, (target_capability,),
-        seed=fresh_seed + C05_FRESH_TARGET_SEED_OFFSET, training=training)
-    lesson_draw = _fresh_rows(
-        source_context, lesson_capabilities,
-        seed=fresh_seed + C05_FRESH_LESSON_SEED_OFFSET, training=training)
-    target_instruments = _instruments(
-        source_context, candidate_bundle, artifact_path, target_draw.rows,
-        seed=target_draw.seed, each=C05_PROBE_EACH)
-    lesson_instruments = _instruments(
-        source_context, candidate_bundle, artifact_path, lesson_draw.rows,
-        seed=lesson_draw.seed, each=C05_PROBE_EACH)
-
-    policy, cohorts = _policy_and_cohorts(
-        release, groups, target_capability, target_group, training,
-        target_instruments, lesson_instruments, fixed_instruments,
-        evidence_stage=CURRENT_EVIDENCE_STAGE)
-
-    all_instruments = tuple(dict(
-        (item.case.case_id, item)
-        for item in (*target_instruments, *lesson_instruments, *fixed_instruments)
-    ).values())
-    parent_solver, parent_generation = factory_complete_solver(
-        source_context, parent, artifact_path, all_instruments)
-    candidate_solver, candidate_generation = factory_complete_solver(
-        source_context, candidate_bundle, artifact_path, all_instruments)
-    decision = evaluate_retention_candidate(
-        parent_solver, candidate_solver, target_capability, policy,
-        cohorts,
-        parent_generation, candidate_generation)
-    return _issue_owner_evaluation(decision, parent, candidate_bundle)
+        return _foundation_retention_evaluation(
+            source_context, parent, candidate_bundle, artifact_path,
+            target_capability, release, groups, training, fixed_instruments)
+    return _adaptive_retention_evaluation(
+        source_context, parent, candidate_bundle, candidate_state, artifact_path,
+        target_capability, target_group, lesson_capabilities, release, groups,
+        training, fixed_instruments, cache)
 
 
 __all__ = ("FactoryRetentionEvaluation", "evaluate_factory_retention_candidate")

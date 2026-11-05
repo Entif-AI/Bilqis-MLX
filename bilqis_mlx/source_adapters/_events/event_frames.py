@@ -33,6 +33,7 @@ from ..vocabulary_growth import AdmittedToken, append_catalog, digest
 DIALECT = 'bilqis.finite-event-frame/v1'
 GENERATOR = 'bilqis.issue349.event-frames/v1'
 ROOT = Path(__file__).resolve().parents[3]
+_BALANCE_MODULUS = 2
 SPECS = MappingProxyType({
     'D.EVENT_OCCURRENCE': ('LEXSENSE-294d00be074a56', ('A.IDENTITY',)),
     'D.COMMENCEMENT': ('LEXSENSE-45453409b348c4', ('D.EVENT_OCCURRENCE',)),
@@ -119,7 +120,7 @@ def draw(source_root, graph, *, seed, each=12, capability, **_):
         record = dict(task=DIALECT, events=events, query=query, capability=capability)
         selected = next(e for e in events if e[0]==query)
         gold = evaluate(expression(graph,capability,*selected[1:]))
-        if gold != (len(rows)%2 == 0):
+        if gold != (len(rows) % _BALANCE_MODULUS == 0):
             continue
         identity = digest(record)
         if identity in seen:

@@ -18,6 +18,7 @@ from bilqis_mlx.source_adapters.task_goal_registry import require_task_goal_lowe
 
 
 _ISSUER = object()
+_LOWERING_RESULT_WIDTH = 2
 _PRIVATE_SOURCE_KEYS = frozenset((
     "gold", "native_output", "auxiliary_labels", "answer", "label",
     "expected", "expected_answer", "score", "oracle_result",
@@ -160,7 +161,7 @@ def factory_task_authority(
         release=source_context.release,
         capability=execution,
     )
-    if (not isinstance(lowered, tuple) or len(lowered) != 2
+    if (not isinstance(lowered, tuple) or len(lowered) != _LOWERING_RESULT_WIDTH
             or type(lowered[0]) is not TaskGoal
             or type(lowered[1]) is not OperatorBinding):
         _invalid("BAMF_C04_SOURCE_TASK_LOWERING_INVALID")

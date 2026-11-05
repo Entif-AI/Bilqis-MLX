@@ -17,7 +17,7 @@ from bilqis_mlx.learning.atlas_acceptance import (
     AcceptedCandidateBinding, candidate_identity_digest,
 )
 from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest
-from bilqis_mlx.semantics.atlas_snapshot import (
+from bilqis_mlx.semantics.atlas.snapshot import (
     AtlasArtifactSelection, load_pinned_atlas_snapshot,
 )
 from bilqis_mlx.semantics.atlas_projection import FrozenAtlasSnapshot
