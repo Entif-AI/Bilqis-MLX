@@ -4,7 +4,7 @@ Issue: #427
 Lane: A
 Implementation base reviewed unified: 88ac132db2fd1c3606fa5f06637d10a7ab40cba4
 Latest reviewed unified consumed before final turn-in: 22314c413ba137df69b3d6b35768fe65e1556bfe
-Implementation checkpoint: f82cda87d044871c7bbff1026376400b5c37cea8
+Implementation checkpoint: c2a3c9e27f98f38c4e904bd9bd7d4a05002b3739
 Branch: codex/bamf02-a12-1-427-20261105
 Disposition: TURNED_IN / EGM_PENDING
 
@@ -62,7 +62,10 @@ A held source identity remains held even when a nearby admitted concept receives
 a plausible English gloss or its labels are renamed/reordered: the held identity
 cannot be activated through the vocabulary planner, projected into prospective
 factor features, emitted as a Factory source lesson, or promoted by the
-curriculum/teacher candidate surface; its source-owned hold reason is preserved.
+curriculum/teacher candidate surface. The Factory `SourceConstructiveLessonSet`
+now carries the exact source-owned `SOURCE_HELD` rows alongside emitted lessons,
+so omission is observable with the original reason/owner rather than becoming a
+silent exclusion; the teacher surface preserves the same evidence.
 
 The status remains SOURCE_ATTESTED_NOT_NEURAL_ADMITTED; this leaf does not
 upgrade staged A02 vocabulary state or source-projection lessons into neural
@@ -87,10 +90,12 @@ source bundle:
 
 BILQIS_A01_ATLAS_BUNDLE=<pinned-atlas-artifact> BILQIS_A01_SOURCE_BUNDLE=<pinned-source-bundle> python3 -B scripts/run_tests.py bilqis_mlx/semantics/tests/test_atlas_release_replay.py
 
-This resumed repair environment did not contain the external pinned source
-artifact paths, so this optional integration witness was not rerun locally. The
-source-free owner tests exercise the A12 replay boundary with deterministic
-producer substitutes; hosted CI and the fresh exact-head EGM remain required.
+Result: 1 passed, 0 failed, 0 skipped. The canonical A01 conformance source
+bundle was located by its content address, and the production A01 compiler
+regenerated semantic release `58e0c281...` and exact Atlas bundle
+`5f8fba20...` before the witness ran. The unmocked chain then exercised the
+current A02 vocabulary planner, source-backed Registry mirror builder, A03
+pinned released-frame loader, A08 source-lesson compiler, and A12 audit.
 
 Adjacent owner proof:
 
@@ -137,5 +142,11 @@ test-local composition, permitting caller-minted clearance evidence. It also
 found the stale-shadow regression vacuous. Checkpoint f82cda87 makes the
 trusted `SourceAuthorityRegistry` mandatory in the public validator, performs
 `verify_detached` before clearance, and replaces the vacuous shadow test with a
-poisoned historical-loader witness. A fresh independent EGM of the final pushed
-head remains required before integration.
+poisoned historical-loader witness. Independent review of the subsequent
+`a0c0a6b1` repair also required the Factory lesson-emission surface itself to
+carry the exact source-owned held reason and required an unmocked real-producer
+replay of the newly wired authority composition. Checkpoint `c2a3c9e2` closes
+both: `SourceConstructiveLessonSet.source_holds` preserves the A01 hold records,
+and the regenerated exact A01 artifact passed the full A02/A03/A08/A12 replay
+witness 1/1. A fresh independent EGM of the final pushed head remains required
+before integration.

@@ -2,16 +2,16 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "22314c413ba137df69b3d6b35768fe65e1556bfe",
-  "updated_at": "2026-11-05T13:43:09Z",
+  "updated_at": "2026-11-05T13:58:48Z",
   "exception": null,
   "items": [
     {
       "issue": 427,
       "pr": 861,
       "state": "TURNED_IN",
-      "head_sha": "f82cda87d044871c7bbff1026376400b5c37cea8",
-      "summary": "A12.1 PR #861 remains TURNED_IN/DRAFT after exact-head review of a0c0a6b1 found one remaining export-authority Major and one vacuous stale-shadow regression. Repair checkpoint f82cda87 makes the trusted SourceAuthorityRegistry mandatory inside the exported clearance validator, verifies the detached owner signature before returning clearance, and turns the stale-shadow test into a poison witness against the real historical catalog loader. Earlier source replay repairs remain intact. Local proof at f82cda87: focused A12/export/held-gloss 10/10; semantic boundaries green; BAMF flow-control green; exact error debt 0; changed-file smell 0; py_compile/diff clean. Fresh hosted checks and fresh exact-head independent EGM remain required.",
-      "resume_trigger": "Push the final repair custody head only if the remote PR branch is still at consumed a0c0a6b1; then wait for hosted portable-core/portable/Semantic ABI and obtain fresh independent exact-head EGM. If clean, mark PR #861 ready for human integration. Close #427 only after accepted merge. Parent A12/#364, #295 and #309 remain open.",
+      "head_sha": "c2a3c9e27f98f38c4e904bd9bd7d4a05002b3739",
+      "summary": "A12.1 PR #861 remains TURNED_IN/DRAFT after independent review required two final acceptance repairs beyond a5b73bd5: the Factory lesson-emission surface now carries exact source-owned SOURCE_HELD rows/reasons rather than silently excluding them, and the real producer composition is witnessed end to end. The canonical A01 source bundle regenerated exact release 58e0c281... and exact Atlas bundle 5f8fba20..., then the unmocked A02 planner -> Registry mirror -> A03 released-frame loader -> A08 lesson compiler -> A12 audit replay passed 1/1. Source-free focused proof is 10/10; adjacent 26 pass / 0 fail / 2 expected optional-source skips; semantic boundaries, governance, structure, error debt, smell, py_compile and diff gates are green. Fresh hosted checks and fresh exact-head independent EGM remain required.",
+      "resume_trigger": "Push the c2a3c9e2 repair plus refreshed custody only if the remote PR branch is unchanged from consumed a5b73bd5; then require exact-head hosted portable-core/portable/Semantic ABI and fresh independent EGM. If clean, mark PR #861 ready for human integration. Close #427 only after accepted merge. Parent A12/#364, #295 and #309 remain open.",
       "preserved_branch": "codex/bamf02-a12-1-427-20261105"
     },
     {
