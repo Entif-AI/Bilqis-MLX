@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "70a4ef1e883d348920d64083c7546f443a90ef77",
-  "updated_at": "2026-11-05T06:51:51.530503+00:00",
+  "observed_unified": "77cd6bf9a49d947d602797c9f5554971ef555728",
+  "updated_at": "2026-11-05T06:27:03+00:00",
   "exception": null,
   "items": [
     {
@@ -266,13 +266,12 @@
     },
     {
       "issue": 708,
-      "pr": null,
-      "state": "TURNED_IN",
-      "head_sha": "7d8e3b98",
-      "preserved_branch": "codex/remediation-708-feature-authority-20261103",
-      "summary": "B13.5 remediation delivered as ready PR #804: the accepted-generation feature receipt is rederived from the admitted source release and retained custody, so a caller-created candidate cannot ratify its own factor-map digest.",
-      "resume_trigger": "PR #804 closed; the consolidated remediation continues in PR #809 and the accepted-generation feature authority continues on owner issue #697.",
-      "closed_pr": 804
+      "pr": 809,
+      "state": "ACTIVE",
+      "head_sha": "b7c802b0",
+      "preserved_branch": "codex/remediation-egm-708-711-integration-20261103",
+      "summary": "Consolidated #708/#709/#710/#711 remediation candidate remains active: mechanically clean at the recorded head, but positive Factory/C05 source authority, B11/B08 execution authority, and production continuation evidence remain unfinished.",
+      "resume_trigger": null
     },
     {
       "issue": 709,
@@ -295,22 +294,34 @@
       "closed_pr": 807
     },
     {
-      "issue": 708,
-      "pr": 809,
-      "state": "ACTIVE",
-      "head_sha": "b7c802b0",
-      "preserved_branch": "codex/remediation-egm-708-711-integration-20261103",
-      "summary": "Consolidated #708/#709/#710/#711 remediation candidate remains active: mechanically clean at the recorded head, but positive Factory/C05 source authority, B11/B08 execution authority, and production continuation evidence remain unfinished.",
-      "resume_trigger": null
+      "issue": 784,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "edae20526c34b628fa63a895fb852921007f42a0",
+      "summary": "PR847 externally merged as70a4ef1e883d348920d64083c7546f443a90ef77 after focused14/14andmotif5/5 proof and pinned EGM PASS; issue784 is closed completed. The three broader script import failures remain separately owned by844.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b-784-runner-context-20261105",
+      "merged_pr": 847
+    },
+    {
+      "issue": 844,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "030880888e09ddbaba98973962af844b9bec7ccc",
+      "summary": "PR848 externally merged asd29fd6cd; issue844 explicitly CLOSED COMPLETED after readback. Import-only repair with177/177 combined runner proof; actual learner/source unchanged.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b-844-script-imports-20261105",
+      "merged_pr": 848
     },
     {
       "issue": 451,
       "pr": null,
-      "state": "WAITING",
-      "head_sha": "0956114dd35f6a368a129a9c6cf179e48a536b65",
+      "state": "TURNED_IN",
+      "head_sha": "ebe19aaed0a3d345135acc06d6e8a12ffd00ef54",
       "preserved_branch": "codex/bamf02-b-451-selector-custody-20261103",
-      "summary": "Engineering custody proof1/1 plus18/18 depth tests; final EGM/turn-in awaits Lane B integration slot.",
-      "resume_trigger": "Existing Lane B candidate PR809 is merged/closed or explicit admission selects451; then sync/revalidate once and perform final pinned EGM."
+      "summary": "Ready PR849; pinned EGM PASS0B/0M/0N and CPU19/19. UNBOUND selector identity/schema/cold custody only; hosted and human merge pending.",
+      "resume_trigger": null,
+      "merged_pr": 849
     },
     {
       "issue": 810,
@@ -320,16 +331,6 @@
       "preserved_branch": "codex/bamf02-b-810-selection-replay-20261103",
       "summary": "C785traceat75198aa2isheldonselectionauthority, satisfyingrecordedresume trigger. Explicitlyselect810nextpreservedDAGstructuralinterruption; solverleafcommitted, original11featurefilesremainpreserved. No feature/sourceadmission work.",
       "resume_trigger": null
-    },
-    {
-      "issue": 784,
-      "pr": null,
-      "state": "TURNED_IN",
-      "head_sha": "edae20526c34b628fa63a895fb852921007f42a0",
-      "preserved_branch": "codex/bamf02-b-784-runner-context-20261105",
-      "summary": "PR847externallymergedas70a4ef1e; runner-contextrepairconsumed, no fullBAMFacceptanceinferred.",
-      "resume_trigger": null,
-      "merged_pr": 847
     }
   ]
 }

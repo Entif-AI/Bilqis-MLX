@@ -5,7 +5,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from scripts.check_factory_workstack import WorkstackError, ready_specs, validate_manifest
+from scripts.bamf.check_factory_workstack import WorkstackError, ready_specs, validate_manifest
 
 
 def leaf(
