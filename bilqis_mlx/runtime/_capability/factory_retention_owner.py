@@ -23,8 +23,8 @@ from bilqis_mlx.fixed_frontier import frontier_exam
 
 from .capability_evaluation import _invalid
 from .factory_complete_solver import (
-    FactoryEvaluationInstrument, factory_complete_solver,
-    factory_evaluation_instrument,
+    FactoryEvaluationInstrument, _factory_evaluation_instrument, _generation,
+    factory_complete_solver,
 )
 
 
@@ -124,15 +124,17 @@ def _candidate_from_live_parent(run_dir: Path, transaction: CandidateTransaction
 
 
 def _instruments(source_context, candidate, artifact_path, rows, *, seed, each=None):
+    generation = _generation(candidate)
     counts = {}
     if each is None:
         for row in rows:
             capability = row.get("capability")
             counts[capability] = counts.get(capability, 0) + 1
-    return tuple(factory_evaluation_instrument(
+    return tuple(_factory_evaluation_instrument(
         source_context, candidate, artifact_path, row,
         source_seed=seed,
         source_each=(each if each is not None else counts[row.get("capability")]),
+        generation=generation,
     ) for row in rows)
 
 
@@ -152,7 +154,7 @@ def _cohort(kind, instruments, groups, release, policy, training):
     scope = contract_digest((
         release.execution_plan.curriculum_sha256,
         release.execution_plan.profile_id,
-        tuple(groups),
+        policy.capability_groups,
     ))
     source = release.execution_plan.projection_digests.source
     return EvaluationCohort(

@@ -1,13 +1,15 @@
 """Caller-substitution regressions for the Factory-owned C05 admission seam."""
 from pathlib import Path
+from types import SimpleNamespace
 import unittest
 
 from bilqis_mlx.learning.atlas_retention_decision import (
     decide_candidate_retention, issue_factory_retention_decision,
 )
 from bilqis_mlx.runtime.factory_retention_owner import (
-    FactoryRetentionEvaluation, evaluate_factory_retention_candidate,
+    FactoryRetentionEvaluation, _cohort, evaluate_factory_retention_candidate,
 )
+from bilqis_mlx.runtime.tests.capability.capability_retention_helpers import _screen_inputs
 
 
 class FactoryRetentionOwnerAdversarialTests(unittest.TestCase):
@@ -37,6 +39,26 @@ class FactoryRetentionOwnerAdversarialTests(unittest.TestCase):
                 object(), object(), "artifact", "B.IDBOOLOPS",
                 run_dir=Path("unused"), cohorts=(), policy=object(),
             )
+
+    def test_owner_cohorts_share_one_factory_evaluation_scope(self):
+        _, _, _, policy, cohorts = _screen_inputs()
+        release = SimpleNamespace(execution_plan=SimpleNamespace(
+            curriculum_sha256="1" * 64,
+            profile_id="factory-c05-test",
+            grades=(SimpleNamespace(
+                grade_id="A", assessment_blueprint_sha256="2" * 64),),
+            projection_digests=SimpleNamespace(source="3" * 64),
+        ))
+        training = (("trained-family",), ("trained-episode",))
+        rebuilt = tuple(_cohort(
+            cohort.kind,
+            tuple(SimpleNamespace(case=case) for case in cohort.cases),
+            cohort.capability_groups,
+            release,
+            policy,
+            training,
+        ) for cohort in cohorts)
+        self.assertEqual(len({cohort.scope_sha256 for cohort in rebuilt}), 1)
 
 
 if __name__ == "__main__":
