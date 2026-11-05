@@ -5,8 +5,9 @@
 This continuation consumes reviewed unified
 `22314c413ba137df69b3d6b35768fe65e1556bfe` on top of preserved #752 head
 `b4ce2c5562b34dc5b38a5b216c4b9f0d1a45496e`. It extends the already-produced
-`ATLAS_FEATURE` and `PACKED_FRAME` owners with production materialization and
-before-next-use correction gates for three previously unowned C09 artifact kinds:
+`ATLAS_FEATURE` and `PACKED_FRAME` owners with production materialization for three
+previously unowned C09 artifact kinds, plus before-next-use correction gates where
+the artifact is actually reused as current cognition:
 
 - `EXACT_CACHE` from real `PureOperationMemo` writes and reads in `execute_dag`,
   including the canonical task time scope;
@@ -14,14 +15,21 @@ before-next-use correction gates for three previously unowned C09 artifact kinds
   accepts and successfully executes a `QualifiedComposition` for the current
   source/rights/correction/time scope;
 - `CAPABILITY_SUPPORT` from a completed assessment and the artifact IDs actually
-  used by its production `CompleteSolver`.
+  used by its production `CompleteSolver`. This artifact is the C09.2 correction
+  ledger: its non-test readers mark or publish `REQUALIFICATION_REQUIRED` state.
+  Those invalidation/requalification reads are intentionally not treated as reuse of
+  qualified cognition, because blocking the notification on the hold it reports
+  would prevent the recovery path itself.
 
 No caller can register an arbitrary `ArtifactNode`. The owner derives IDs, content
 digests and immediate dependency edges from the production objects it receives.
 Correction state stays in one `CognitiveArtifactOwner` retained by `CompleteSolver`.
 Exact memo hits and qualified-composition reuse call the owner before the value is
 used. Learned support is then materialized as immutable `CapabilitySupport` records
-linked to the frozen assessment history and its actual support artifacts.
+linked to the frozen assessment history and its actual support artifacts. Existing
+C09.2 `mark_affected_capabilities` / C10 invalidation-intent readers consume those
+records only to preserve and communicate the fact that support requires fresh
+qualification; they do not use the stale support as permission for inference.
 
 `MOTIF` remains unimplemented here because current reviewed unified still has no
 non-test production motif consumer that can own a before-next-use gate. Creating a
