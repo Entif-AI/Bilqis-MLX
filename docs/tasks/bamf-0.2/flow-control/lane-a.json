@@ -2,16 +2,16 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "2cb50e3a9319552ca847ba69ad8b2beeb03cf194",
-  "updated_at": "2026-11-05T10:02:12+00:00",
+  "updated_at": "2026-11-05T10:03:34+00:00",
   "exception": null,
   "items": [
     {
       "issue": 423,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "2cb50e3a9319552ca847ba69ad8b2beeb03cf194",
-      "summary": "A10.3 is active from exact current Lane A/reviewed-unified head. Owned scope is the literal PUBLIC_FIXTURE acceptance receipt, exact checker witnesses, and lawful source-family/rights/interpretation lineage; no PRIVATE_REAL intake or neural state.",
-      "resume_trigger": null,
+      "state": "TURNED_IN",
+      "head_sha": "42a00888811a7a84b473e54773a416e43e49cdc8",
+      "summary": "A10.3 implementation is complete: literal PUBLIC_FIXTURE receipt binds exact source bytes, parsed record, frame/rendering, four lesson golds, exact checker witnesses, immutable source-family identity, rights, interpretation revision and split receipt. Paraphrase/duplicate witness laundering is rejected while an independently adjudicated episode may enter holdout. A10 fixture/evidence tests 17/17; governance 11/11; architecture/docs/compile/diff/flow clean; exact error-control-plane new debt 0; EGM_PENDING.",
+      "resume_trigger": "Open issue-scoped PR against reviewed unified, obtain fresh independent EGM and human integration review.",
       "preserved_branch": "codex/bamf02-a10-3-423-20261105"
     },
     {
