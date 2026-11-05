@@ -16,6 +16,7 @@ from bilqis_mlx.learning.frame_encoder import (
     CompiledEncoderInput, CompiledEmbeddingVectors, MemberEmbedding, AtomicFrameEmbedding,
 )
 from bilqis_mlx.learning.tests.test_frame_embeddings import _context_for
+from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event, _result
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes,
 )
@@ -146,6 +147,39 @@ class FrameEncoderTests(unittest.TestCase):
                            for index, request in enumerate(compiled.member_requests[0])),))
         return compiled, vectors, ast
 
+
+    def test_correction_holds_actual_packed_frame_before_reconstruction(self):
+        compiled, vectors, _ = self.compiled_inputs()
+        row = compiled.compiled.rows[0]
+        packed = next(position.packed for position in row.positions
+                      if position.packed is not None)
+        owner = compiled.packed_frame_artifact_owner
+        node = owner.node_for(packed)
+        source = next(ref for ref in node.immediate_dependencies
+                      if ref.kind.value == "SOURCE")
+        queue = owner.apply_correction(_event(source), AUTHORITY)
+        self.assertEqual(queue.held_artifact_ids, (node.artifact_id,))
+        with self.assertRaises(BilqisError) as caught:
+            encode_frames(compiled, vectors, self.params)
+        self.assertEqual(caught.exception.context["reason"],
+                         "BAMF_C09_ARTIFACT_HELD")
+
+    def test_equal_packed_frame_revalidation_releases_actual_encoder_read(self):
+        compiled, vectors, _ = self.compiled_inputs()
+        row = compiled.compiled.rows[0]
+        packed = next(position.packed for position in row.positions
+                      if position.packed is not None)
+        owner = compiled.packed_frame_artifact_owner
+        node = owner.node_for(packed)
+        source = next(ref for ref in node.immediate_dependencies
+                      if ref.kind.value == "SOURCE")
+        event = _event(source)
+        owner.apply_correction(event, AUTHORITY)
+        progress = owner.advance(
+            _result(node, digest=node.content_digest, correction=event), AUTHORITY)
+        self.assertEqual(progress.queue.pending, ())
+        self.assertEqual(progress.queue.held_artifact_ids, ())
+        encode_frames(compiled, vectors, self.params)
 
     def empty_inputs(self):
         full,vectors,ast=self.compiled_inputs()
