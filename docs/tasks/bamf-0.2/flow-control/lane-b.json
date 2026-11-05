@@ -125,8 +125,8 @@
       "issue": 754,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "00c31b06d15aa759fb94f7d51b1500da7c15b455",
-      "summary": "B13.3 EGM remediation active: native attention caches bind exact parameter content; real B13 accepted-generation publication, model swap, and parameter extension all invalidate stale caches and fresh rebuild preserves answers. Cold-resume/frozen-v1 completion remains and cold resume must consume #709.",
+      "head_sha": "75185447763a34d7c2154965b07f832b681babe2",
+      "summary": "B13.3 EGM remediation active: native attention caches bind exact parameter content; real B13 accepted-generation publication, model swap, and parameter extension invalidate stale caches and fresh rebuild preserves answers. The prior genuine frozen-v1 witness is restored but NOT_MEASURED on this workstation because its pinned archive is absent; cold resume must consume #709.",
       "resume_trigger": null,
       "preserved_branch": "codex/754-cache-transition-20261105"
     },
