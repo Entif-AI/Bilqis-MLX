@@ -16,6 +16,7 @@ from bilqis_mlx.factory.semantic_contrast.types import (
 
 
 MAX_AMBIGUITY_INTERPRETATIONS = 4
+SHA256_HEX_LENGTH = 64
 _NOISE_TYPES = frozenset({"MASK_TEXT"})
 
 
@@ -68,7 +69,7 @@ class AmbiguityExploration:
                 or any(item.source.frame.occurrence_id != self.source_occurrence_id
                        for item in self.interpretations)
                 or type(self.target) is not AmbiguityTarget
-                or len(self.ranking_sha256) != 64):
+                or len(self.ranking_sha256) != SHA256_HEX_LENGTH):
             _fail("BAMF_SEMANTIC_AMBIGUITY_EXPLORATION_INVALID")
 
 
@@ -110,7 +111,7 @@ class NoisyLessonPresentation:
                 or not _text(self.presented_question)
                 or type(self.signature) is not NoiseSignature
                 or not _text(self.weakness_id)
-                or len(self.weakness_id) != 64):
+                or len(self.weakness_id) != SHA256_HEX_LENGTH):
             _fail("BAMF_SEMANTIC_NOISY_PRESENTATION_INVALID")
 
 
