@@ -137,6 +137,27 @@ class EvidenceFrameTests(EvidenceFamilyAuthorityCases, unittest.TestCase):
             frame=replace(result.lessons[0].frame, actor_role_ref="forged-role"),
         ).check())
 
+        precise = "0.12345678901234567890123456789"
+        record = replace(
+            self.snapshot.records[0],
+            reported_value=ReportedValue(precise, HOUR),
+        )
+        precise_result = self.compile(replace(self.snapshot, records=(record,)))
+        precise_minutes = precise_result.lessons[3]
+        self.assertEqual(
+            precise_minutes.gold,
+            "7.4074073407407407340740740734",
+        )
+        self.assertTrue(precise_minutes.check())
+        self.assertFalse(replace(
+            precise_minutes,
+            gold="7.407407340740740734074074073",
+            derivation=replace(
+                precise_minutes.derivation,
+                output_value="7.407407340740740734074074073",
+            ),
+        ).check())
+
     def test_exact_hour_conversion_preserves_trailing_zero_magnitude(self):
         record = replace(
             self.snapshot.records[0], reported_value=ReportedValue("1", HOUR))

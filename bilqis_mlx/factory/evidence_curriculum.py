@@ -1,7 +1,7 @@
 """A10.1 BRAVO evidence-to-lesson compiler over provenance-safe records."""
 from __future__ import annotations
 
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, InvalidOperation, localcontext
 
 from bilqis_mlx.errors import BilqisError, ErrorBus, SCHOOL
 from bilqis_mlx.source_adapters.evidence_frames import (
@@ -38,8 +38,12 @@ def _minutes(
         value = Decimal(decimal)
     except InvalidOperation:
         _fail("BAMF_EVIDENCE_DURATION_INVALID")
-    minutes = value * Decimal(60)
-    normalized = format(minutes.normalize(), "f")
+    if not value.is_finite() or value < 0:
+        _fail("BAMF_EVIDENCE_DURATION_INVALID")
+    with localcontext() as context:
+        context.prec = max(1, len(value.as_tuple().digits) + 2)
+        minutes = value * Decimal(60)
+    normalized = format(minutes, "f")
     if "." in normalized:
         normalized = normalized.rstrip("0").rstrip(".")
     normalized = normalized or "0"
