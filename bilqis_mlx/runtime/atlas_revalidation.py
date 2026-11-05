@@ -23,5 +23,6 @@ from ._revalidation_engine import (
     apply_correction, read_artifact, next_revalidation_task, revalidate_node,
     advance_revalidation,
 )
+from .atlas_cache_owner import ExactCacheArtifactOwner, cache_artifact_digest
 
 __all__ = tuple(name for name in globals() if not name.startswith("__"))
