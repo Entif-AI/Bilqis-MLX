@@ -2,16 +2,16 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "6e12e5a077183713241bb9b2b0d0762d8d95fa47",
-  "updated_at": "2026-11-05T09:41:41+00:00",
+  "updated_at": "2026-11-05T09:43:48+00:00",
   "exception": null,
   "items": [
     {
       "issue": 422,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "2fe7188f8bab67460dda90ba4a6442cefa98c06c",
-      "summary": "A10.2 is active on an issue-scoped branch from current Lane A, consuming A10.1 PR #852 through exact reviewed dependency head 3a96c9056d5e821f0376962bdd15788dc86a442e.",
-      "resume_trigger": null,
+      "state": "TURNED_IN",
+      "head_sha": "202dbb313b3681c2730974da8c2ee93acb8fb738",
+      "summary": "A10.2 implementation is complete on its issue-scoped branch: typed reconstructions preserve reported/computed values, negation, time/interpretation alternatives and template lineage; fresh challenges split immutable source families before within-family template grouping, with scored holdouts remaining teachable. Focused/adjacent tests 17 passed; governance/error-contract tests 11 passed; compile/diff/flow-control green; EGM_PENDING.",
+      "resume_trigger": "After A10.1 PR #852 lands in reviewed unified, resync this branch to current unified and open the A10.2 integration PR if no other PR already owns its delta.",
       "preserved_branch": "codex/bamf02-a10-2-422-20261105"
     },
     {
