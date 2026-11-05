@@ -204,6 +204,8 @@ def prove_source_qualified_continuation(
     destination = _spawn_cpu(run_dir, root, source, artifact, reference)
     committed_output_match = _assert_structural_parity(
         source_evidence, destination)
+    if not committed_output_match:
+        raise AssertionError("B13.2 committed semantic output drift")
     if destination["numeric_max_abs"]["overall"] > FP32_ATOL:
         raise AssertionError("B13.2 cross-backend FP32 parity exceeded tolerance")
     _assert_parent_unchanged(run_dir, published, held, snapshot)
