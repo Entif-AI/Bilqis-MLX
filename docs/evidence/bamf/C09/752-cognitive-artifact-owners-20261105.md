@@ -70,9 +70,10 @@ remain skips rather than being represented as fresh real-source proof. The prese
 
 Fresh pinned Google EGM is intentionally not consumed for this intermediate repair.
 `docs/tasks/bamf-0.2/EGM_EXECUTION.md` reserves Goldfish for an otherwise merge-ready
-whole candidate. #752 remains `EGM_PENDING` because production `MOTIF` ownership is
-still absent. A fresh ordinary independent review may inspect this immutable tranche;
-it does not substitute for Goldfish merge-readiness review.
+whole candidate. #752 is not yet eligible to request that whole-candidate review
+because production `MOTIF` ownership is still absent. A fresh ordinary independent
+review may inspect this immutable tranche; it does not substitute for Goldfish
+merge-readiness review or authorize the `EGM-Pending` label.
 
 IPR-0220 remains an opaque controlling authority. This work does not run or mutate the
 human student, AdamW, teacher, source admission, checkpoints, or excluded #708/#709/#809
