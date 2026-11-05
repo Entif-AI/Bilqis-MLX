@@ -2,16 +2,16 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "eedfdaef9f528c02618963c8486ade4d12fcb18f",
-  "updated_at": "2026-11-05T09:50:52+00:00",
+  "updated_at": "2026-11-05T09:52:31+00:00",
   "exception": null,
   "items": [
     {
       "issue": 425,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "db13fad17d108bc4c09cf6447436edbb774ddf19",
-      "summary": "A11.2 is active on its issue-scoped branch from current reviewed unified, consuming the A11.1 merged implementation plus exact regression-repair head 04b7ad8622355273410cb38cb141bb5689e3ee73 from PR #856.",
-      "resume_trigger": null,
+      "state": "TURNED_IN",
+      "head_sha": "ad7374138e718e77df62933e16ee36bbf1d59346",
+      "summary": "A11.2 implementation is complete on its issue-scoped branch: source-valid ambiguity is deterministically ranked and capped at four interpretations, unresolved answers remain explicit alternative targets, and deterministic presentation noise carries exact type/location/amount/seed lineage without mutating canonical source, structural variant, or gold. A11 owner + A11.2 tests 17/17; governance/error-contract tests 11/11; compile/diff/flow-control green; EGM_PENDING.",
+      "resume_trigger": "After A11.1 regression-repair PR #856 lands in reviewed unified, resync this branch and open the A11.2 integration PR if no other vehicle owns its delta.",
       "preserved_branch": "codex/bamf02-a11-2-425-20261105"
     },
     {
