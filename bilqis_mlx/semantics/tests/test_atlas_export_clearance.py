@@ -43,10 +43,8 @@ def _receipt(selection, frontier, exported, *, private=(), revoked=(), lineage=(
 
 
 def _verify(receipt, selection, frontier, artifacts):
-    REGISTRY.verify_detached(
-        receipt.source_owner, receipt.dependency(),
-        receipt.signature_hex, receipt.signing_bytes())
-    return validate_export_clearance_context(receipt, selection, frontier, artifacts)
+    return validate_export_clearance_context(
+        receipt, selection, frontier, artifacts, REGISTRY)
 
 
 class AtlasExportClearanceTests(unittest.TestCase):
@@ -66,6 +64,11 @@ class AtlasExportClearanceTests(unittest.TestCase):
         with self.assertRaises(Exception):
             _verify(replace(self.receipt, signature_hex="0" * 128),
                     self.selection, self.frontier, self.public)
+
+    def test_authority_registry_is_required_by_public_validator(self):
+        with self.assertRaises(Exception):
+            validate_export_clearance_context(
+                self.receipt, self.selection, self.frontier, self.public, None)
 
     def test_stale_foreign_private_revoked_or_mismatched_state_is_rejected(self):
         with self.assertRaises(Exception):

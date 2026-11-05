@@ -3,6 +3,8 @@ from dataclasses import asdict, dataclass
 from hashlib import sha256
 import re
 
+from bilqis_mlx.runtime.atlas_revalidation import SourceAuthorityRegistry
+
 from ..atlas.snapshot_contracts import AtlasArtifactSelection, _require_registered_source_pin
 from ..atlas_projection import HEX64, _canonical_bytes, _fail
 from ..cognitive_dependencies import DependencyKind, DependencyRef
@@ -67,15 +69,20 @@ class ExportClearanceReceipt:
         return sha256(self.signing_bytes()).hexdigest()
 
 
-def validate_export_clearance_context(receipt, selection, source_frontier, artifact_digests):
+def validate_export_clearance_context(
+        receipt, selection, source_frontier, artifact_digests, authority_registry):
     """Bind a verified owner receipt to the selected release and live rights state."""
     if (type(receipt) is not ExportClearanceReceipt
             or type(selection) is not AtlasArtifactSelection
             or type(source_frontier) is not SourceFrontier
-            or not _digests(artifact_digests)):
+            or not _digests(artifact_digests)
+            or not isinstance(authority_registry, SourceAuthorityRegistry)):
         _fail("A12_EXPORT_CLEARANCE_CONTEXT_INVALID")
     receipt.__post_init__()
     source_frontier.__post_init__()
+    authority_registry.verify_detached(
+        receipt.source_owner, receipt.dependency(),
+        receipt.signature_hex, receipt.signing_bytes())
     _require_registered_source_pin(selection)
     if (receipt.atlas_bundle_id != selection.bundle_id
             or receipt.semantic_release != selection.release_sha256

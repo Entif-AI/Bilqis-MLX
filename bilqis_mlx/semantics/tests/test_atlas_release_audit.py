@@ -167,11 +167,10 @@ class AtlasAuthorityAuditTests(unittest.TestCase):
 
     def test_stale_shadow_catalog_cannot_change_current_semantics(self):
         fixture = _typed_authority_fixture()
-        with _replayed(fixture):
+        with _replayed(fixture), patch(
+                "bilqis_mlx.semantics.foundation.catalog.load_catalog",
+                side_effect=AssertionError("historical catalog consulted by current A12 path")):
             baseline = _audit(fixture)
-            stale_shadow = {"urn:concept:next": "plausible renamed gloss",
-                            "semantic_release": "0" * 64}
-            stale_shadow["urn:concept:next"] = "another label"
             replay = _audit(fixture)
         self.assertEqual(replay, baseline)
 
