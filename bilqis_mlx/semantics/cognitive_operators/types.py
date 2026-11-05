@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 from fractions import Fraction
-from ..domains import FiniteDomain, contract_digest
-from ..frame_schema import ConceptRef
+from ..foundation.domains import FiniteDomain, contract_digest
+from .._frame_schema.roles import ConceptRef
 from .common import VALUE_SCHEMA, SOURCE_OPERAND_SCHEMA, _SHA, _UNITS, _invalid
 
 class ValueState(str, Enum):
