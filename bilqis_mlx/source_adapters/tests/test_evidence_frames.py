@@ -11,6 +11,7 @@ from bilqis_mlx.source_adapters.tests._evidence_cases import (
     EvidenceFamilyAuthorityCases,
 )
 from bilqis_mlx.source_adapters.evidence_frames import (
+    LEGACY_PUBLIC_FIXTURE_MANIFEST_CID,
     PUBLIC_FIXTURE_SOURCE,
     BamfEvidenceSnapshot,
     EvidenceSemanticAuthority,
@@ -125,6 +126,17 @@ class EvidenceFrameTests(EvidenceFamilyAuthorityCases, unittest.TestCase):
         self.assertEqual(result.lessons[3].derivation.operator_id, "UNIT_CONVERT")
         self.assertEqual(result.lessons[3].derivation.input_unit_ref, HOUR)
         self.assertEqual(result.lessons[3].derivation.output_unit, "min")
+        self.assertTrue(all(lesson.check() for lesson in result.lessons))
+
+    def test_accepted_v1_public_snapshot_manifest_identity_still_compiles(self):
+        legacy = replace(
+            self.snapshot,
+            source_manifest_cid=LEGACY_PUBLIC_FIXTURE_MANIFEST_CID,
+        )
+        result = compile_evidence_lessons(legacy, self.rights, RELEASE)
+        self.assertEqual(result.holds, ())
+        self.assertEqual(tuple(lesson.gold for lesson in result.lessons),
+                         (STUDY, "COMPLETED", "0.25", "15"))
         self.assertTrue(all(lesson.check() for lesson in result.lessons))
 
     def test_exact_checker_rejects_correlated_generator_corruption(self):

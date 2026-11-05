@@ -142,6 +142,8 @@ _PUBLIC_MANIFEST = _SourceFamilyManifest(
     _PUBLIC_SOURCE_DIGEST,
     _PUBLIC_SEMANTIC_AUTHORITY,
     (_SourceFamilyBinding(_PUBLIC_SOURCE_SPAN, _PUBLIC_FAMILY_ID),))
+LEGACY_PUBLIC_FIXTURE_MANIFEST_CID = (
+    "public-fixture:bravo-a10-1/v1:" + _PUBLIC_SOURCE_DIGEST)
 PUBLIC_FIXTURE_MANIFEST_CID = _family_manifest_cid("bravo-a10-1", _PUBLIC_MANIFEST)
 PUBLIC_FIXTURE_REPACK_MANIFEST_CID = _family_manifest_cid(
     "bravo-a10-1-repack", _PUBLIC_MANIFEST)
@@ -184,6 +186,9 @@ PUBLIC_INDEPENDENT_MANIFEST_CID = _family_manifest_cid(
     "bravo-a10-independent", _INDEPENDENT_MANIFEST)
 
 _SOURCE_FAMILY_MANIFESTS = (
+    # Exact accepted pre-manifest fixture identity. This is a single
+    # compatibility alias, not a generic legacy parser.
+    (LEGACY_PUBLIC_FIXTURE_MANIFEST_CID, _PUBLIC_MANIFEST),
     (PUBLIC_FIXTURE_MANIFEST_CID, _PUBLIC_MANIFEST),
     (PUBLIC_FIXTURE_REPACK_MANIFEST_CID, _PUBLIC_MANIFEST),
     (PUBLIC_DUPLICATE_MANIFEST_CID, _DUPLICATE_MANIFEST),
