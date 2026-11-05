@@ -12,181 +12,227 @@ from hashlib import sha256
 import re
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
+from bilqis_mlx.semantics.atlas.snapshot import load_pinned_atlas_snapshot
+from bilqis_mlx.semantics.atlas.snapshot_contracts import AtlasArtifactSelection
+from bilqis_mlx.semantics.cognitive_operators import (
+    TypedValue, UnitConversion, default_registry, operator_grant_digest,
+)
+from bilqis_mlx.semantics.released_frame_schemas import (
+    lookup_source_pinned_frame_schema,
+)
 
 
-SCHEMA = "BamfEvidenceSnapshot/v1"
-PUBLIC_FIXTURE = "PUBLIC_FIXTURE"
-PRIVATE_REAL = "PRIVATE_REAL"
-UNCLASSIFIED = "UNCLASSIFIED"
+from bilqis_mlx.source_adapters.evidence_types import (
+    SCHEMA, PRIVATE_REAL, PUBLIC_FIXTURE, UNCLASSIFIED,
+    BamfEvidenceSnapshot, EvidenceDerivation, EvidenceFrame, EvidenceRecord,
+    EvidenceRights, EvidenceSemanticAuthority, EventTime, ReportedValue,
+    SourceSpan, _SHA, _fail, _text,
+)
+
+
 PUBLIC_FIXTURE_SOURCE = "actor=actor_01; category=study; status=completed; duration=0.25 h"
-_SHA = re.compile(r"[0-9a-f]{64}\Z")
-_STATUS = frozenset({"PLANNED", "COMPLETED", "UNKNOWN"})
 _DURATION_FIELD_PARTS = 2
-
-
-def _fail(reason: str) -> None:
-    ErrorBus.raise_(SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID, reason=reason)
+_STUDY_SOURCE_ROW_KEY = "LEXSENSE-24e0d37974513f"
+_EVIDENCE_SCHEMA_ID = "frame:bravo.evidence.actor/v1"
+_EVIDENCE_SCHEMA_REVISION = 1
+_AGENT_ROLE_ID = "agent"
+_HOUR_UNIT = "h"
+_MINUTE_UNIT = "min"
+_PINNED_EVIDENCE_RELEASE = (
+    "58e0c281b5da18b9b7e6c803709b29eeeb0a88f16b06f48de692808e2fb88306")
+_PINNED_STUDY_CATEGORY = (
+    "https://github.com/Entif-AI/Bilqis-MLX/id/sense/"
+    "NI-LEXICON-CURRICULUM/LEXROOT-3e51e33b4a970f/STEM%203/BSC")
 
 
 def _digest(*parts: str) -> str:
     return sha256("\x1f".join(parts).encode("utf-8")).hexdigest()
 
 
-def _text(value: object) -> bool:
-    return type(value) is str and bool(value)
-
-
 @dataclass(frozen=True)
-class SourceSpan:
-    start: int
-    end: int
-
-    def __post_init__(self) -> None:
-        if type(self.start) is not int or type(self.end) is not int or not 0 <= self.start < self.end:
-            _fail("BAMF_EVIDENCE_SOURCE_SPAN_INVALID")
-
-
-@dataclass(frozen=True)
-class EvidenceRights:
-    regime: str
-    purpose: str
-    allowed_training: bool
-    public_export_allowed: bool
-
-    def __post_init__(self) -> None:
-        if (self.regime not in {PUBLIC_FIXTURE, PRIVATE_REAL, UNCLASSIFIED}
-                or not _text(self.purpose)
-                or type(self.allowed_training) is not bool
-                or type(self.public_export_allowed) is not bool):
-            _fail("BAMF_EVIDENCE_RIGHTS_INVALID")
-        if self.regime != PUBLIC_FIXTURE and self.public_export_allowed:
-            _fail("BAMF_EVIDENCE_PRIVATE_EXPORT_INVALID")
-
-
-@dataclass(frozen=True)
-class ReportedValue:
-    decimal: str | None
-    unit_ref: str
-
-    def __post_init__(self) -> None:
-        if ((self.decimal is not None and not _text(self.decimal))
-                or not _text(self.unit_ref)):
-            _fail("BAMF_EVIDENCE_REPORTED_VALUE_INVALID")
-
-
-@dataclass(frozen=True)
-class EventTime:
-    start_iso: str | None
-    end_iso: str | None
-    time_zone: str
-
-    def __post_init__(self) -> None:
-        if (self.start_iso is not None and not _text(self.start_iso)) or (
-                self.end_iso is not None and not _text(self.end_iso)) or not _text(self.time_zone):
-            _fail("BAMF_EVIDENCE_EVENT_TIME_INVALID")
-
-
-@dataclass(frozen=True)
-class EvidenceRecord:
-    record_id: str
-    actor_ref: str
+class _SourceFamilyBinding:
     source_span: SourceSpan
-    category_ref: str
-    category_label: str
-    status: str
-    reported_value: ReportedValue
-    unit_label: str
-    event_time: EventTime
-    observed_at: str
-    alternatives: tuple[str, ...]
-    adjudication_ref: str | None
-    agent_role_ref: str
-    negated: bool = False
+    family_id: str
 
     def __post_init__(self) -> None:
-        if (not all(_text(value) for value in (
-                    self.record_id, self.actor_ref, self.category_ref,
-                    self.category_label, self.unit_label, self.observed_at,
-                    self.agent_role_ref))
-                or (self.adjudication_ref is not None and not _text(self.adjudication_ref))
-                or type(self.source_span) is not SourceSpan
-                or self.status not in _STATUS
-                or type(self.reported_value) is not ReportedValue
-                or type(self.event_time) is not EventTime
-                or type(self.alternatives) is not tuple
-                or type(self.negated) is not bool
-                or any(not _text(item) for item in self.alternatives)
-                or len(set(self.alternatives)) != len(self.alternatives)):
-            _fail("BAMF_EVIDENCE_RECORD_INVALID")
+        if type(self.source_span) is not SourceSpan or not _text(self.family_id):
+            _fail("BAMF_EVIDENCE_FAMILY_INPUT_INVALID")
 
 
 @dataclass(frozen=True)
-class BamfEvidenceSnapshot:
-    snapshot_id: str
-    source_manifest_cid: str
+class _SourceFamilyManifest:
     source_byte_digest: str
-    interpretation_revision: str
-    semantic_release: str
-    rights: EvidenceRights
-    records: tuple[EvidenceRecord, ...]
-    schema: str = SCHEMA
+    semantic_authority: EvidenceSemanticAuthority
+    bindings: tuple[_SourceFamilyBinding, ...]
 
     def __post_init__(self) -> None:
-        if (not all(_text(value) for value in (
-                    self.snapshot_id, self.source_manifest_cid,
-                    self.interpretation_revision, self.semantic_release))
-                or not _SHA.fullmatch(self.semantic_release)
-                or not _SHA.fullmatch(self.source_byte_digest)
-                or type(self.rights) is not EvidenceRights
-                or type(self.records) is not tuple
-                or any(type(item) is not EvidenceRecord for item in self.records)
-                or len({item.record_id for item in self.records}) != len(self.records)
-                or self.schema != SCHEMA):
-            _fail("BAMF_EVIDENCE_SNAPSHOT_INVALID")
+        if (not _SHA.fullmatch(self.source_byte_digest)
+                or type(self.semantic_authority) is not EvidenceSemanticAuthority
+                or type(self.bindings) is not tuple or not self.bindings
+                or any(type(item) is not _SourceFamilyBinding for item in self.bindings)
+                or len({(item.source_span.start, item.source_span.end)
+                        for item in self.bindings}) != len(self.bindings)):
+            _fail("BAMF_EVIDENCE_FAMILY_INPUT_INVALID")
 
 
-@dataclass(frozen=True)
-class EvidenceFrame:
-    record_id: str
-    actor_ref: str
-    actor_role_ref: str
-    category_ref: str
-    status: str
-    reported_decimal: str | None
-    reported_unit_ref: str
-    event_time: EventTime
-    alternatives: tuple[str, ...]
-    negated: bool
-    verification_state: str
-    source_digest: str
-    interpretation_revision: str
-    semantic_release: str
-    source_family_id: str
-
-    @property
-    def occurrence_truth(self) -> str:
-        if self.status == "COMPLETED" and self.verification_state == "ADJUDICATED":
-            return "FALSE" if self.negated else "TRUE"
-        return "UNKNOWN"
+def _family_manifest_cid(name: str, manifest: _SourceFamilyManifest) -> str:
+    authority = manifest.semantic_authority
+    body = [
+        manifest.source_byte_digest,
+        authority.semantic_release,
+        authority.category_ref,
+        authority.hour_unit_ref,
+        authority.agent_role_ref,
+        authority.unit_operator_id,
+        authority.unit_operator_grant_sha256,
+        *[f"{item.source_span.start}:{item.source_span.end}:{item.family_id}"
+          for item in manifest.bindings],
+    ]
+    return f"public-fixture:{name}/v1:" + _digest(*body)
 
 
-@dataclass(frozen=True)
-class EvidenceDerivation:
-    operator_id: str
-    input_value: str
-    input_unit_ref: str
-    output_value: str
-    output_unit: str
+def resolve_public_fixture_authority(
+    atlas_selection: AtlasArtifactSelection,
+) -> EvidenceSemanticAuthority:
+    """Re-enter the accepted A01/A03/operator owners for fixture semantics."""
+    if type(atlas_selection) is not AtlasArtifactSelection:
+        _fail("BAMF_EVIDENCE_ATLAS_SELECTION_REQUIRED")
+    snapshot = load_pinned_atlas_snapshot(atlas_selection)
+    category_matches = tuple(
+        item.concept.semantic_id
+        for item in snapshot.concepts
+        if any(source.key == _STUDY_SOURCE_ROW_KEY
+               for source in item.concept.source_rows)
+    )
+    if len(category_matches) != 1:
+        _fail("BAMF_EVIDENCE_CATEGORY_AUTHORITY_MISMATCH")
+    schema, _ = lookup_source_pinned_frame_schema(
+        _EVIDENCE_SCHEMA_ID, _EVIDENCE_SCHEMA_REVISION,
+        source_family="evidence", atlas_selection=atlas_selection)
+    roles = tuple(role for role in schema.roles if role.role_id == _AGENT_ROLE_ID)
+    if (len(roles) != 1 or roles[0].min_cardinality != 1
+            or roles[0].max_cardinality != 1
+            or "Entity" not in roles[0].allowed_type_ids):
+        _fail("BAMF_EVIDENCE_AGENT_ROLE_AUTHORITY_MISMATCH")
+    # These constructors re-enter the current cognitive-operator declarations;
+    # neither the fixture nor the caller gets to mint a unit or conversion edge.
+    TypedValue("UnitName", _HOUR_UNIT, snapshot.release_sha256)
+    UnitConversion(_HOUR_UNIT, _MINUTE_UNIT, 60, 1)
+    operator = default_registry(snapshot.release_sha256).resolve("UNIT_CONVERT")
+    return EvidenceSemanticAuthority(
+        snapshot.release_sha256, category_matches[0], _HOUR_UNIT,
+        roles[0].role_id, operator.operator_id, operator_grant_digest(operator))
+
+
+_PUBLIC_FAMILY_ID = "evidence-family:" + _digest(
+    "bravo.public-fixture", "episode-001")
+_PUBLIC_INDEPENDENT_FAMILY_ID = "evidence-family:" + _digest(
+    "bravo.public-fixture", "episode-002")
+_PUBLIC_SEMANTIC_AUTHORITY = EvidenceSemanticAuthority(
+    _PINNED_EVIDENCE_RELEASE,
+    _PINNED_STUDY_CATEGORY,
+    _HOUR_UNIT,
+    _AGENT_ROLE_ID,
+    "UNIT_CONVERT",
+    "059ccd2a33330473973914b94fc0d772d6f845b6ee9c8e736f1876e6a9823e9f",
+)
+_PUBLIC_SOURCE_DIGEST = sha256(PUBLIC_FIXTURE_SOURCE.encode("utf-8")).hexdigest()
+_PUBLIC_SOURCE_SPAN = SourceSpan(0, len(PUBLIC_FIXTURE_SOURCE))
+_PUBLIC_MANIFEST = _SourceFamilyManifest(
+    _PUBLIC_SOURCE_DIGEST,
+    _PUBLIC_SEMANTIC_AUTHORITY,
+    (_SourceFamilyBinding(_PUBLIC_SOURCE_SPAN, _PUBLIC_FAMILY_ID),))
+LEGACY_PUBLIC_FIXTURE_MANIFEST_CID = (
+    "public-fixture:bravo-a10-1/v1:" + _PUBLIC_SOURCE_DIGEST)
+PUBLIC_FIXTURE_MANIFEST_CID = _family_manifest_cid("bravo-a10-1", _PUBLIC_MANIFEST)
+PUBLIC_FIXTURE_REPACK_MANIFEST_CID = _family_manifest_cid(
+    "bravo-a10-1-repack", _PUBLIC_MANIFEST)
+
+PUBLIC_DUPLICATE_SOURCE = PUBLIC_FIXTURE_SOURCE + "\n" + PUBLIC_FIXTURE_SOURCE
+_DUPLICATE_DIGEST = sha256(PUBLIC_DUPLICATE_SOURCE.encode("utf-8")).hexdigest()
+_DUPLICATE_SECOND_START = len(PUBLIC_FIXTURE_SOURCE) + 1
+_DUPLICATE_MANIFEST = _SourceFamilyManifest(
+    _DUPLICATE_DIGEST,
+    _PUBLIC_SEMANTIC_AUTHORITY,
+    (
+        _SourceFamilyBinding(SourceSpan(0, len(PUBLIC_FIXTURE_SOURCE)), _PUBLIC_FAMILY_ID),
+        _SourceFamilyBinding(
+            SourceSpan(_DUPLICATE_SECOND_START,
+                       _DUPLICATE_SECOND_START + len(PUBLIC_FIXTURE_SOURCE)),
+            _PUBLIC_FAMILY_ID),
+    ),
+)
+PUBLIC_DUPLICATE_MANIFEST_CID = _family_manifest_cid(
+    "bravo-a10-duplicate", _DUPLICATE_MANIFEST)
+
+PUBLIC_INDEPENDENT_SOURCE = (
+    "actor=actor_02; category=study; status=completed; duration=0.50 h")
+PUBLIC_INDEPENDENT_BUNDLE_SOURCE = (
+    PUBLIC_FIXTURE_SOURCE + "\n" + PUBLIC_INDEPENDENT_SOURCE)
+_INDEPENDENT_DIGEST = sha256(PUBLIC_INDEPENDENT_BUNDLE_SOURCE.encode("utf-8")).hexdigest()
+_INDEPENDENT_SECOND_START = len(PUBLIC_FIXTURE_SOURCE) + 1
+_INDEPENDENT_MANIFEST = _SourceFamilyManifest(
+    _INDEPENDENT_DIGEST,
+    _PUBLIC_SEMANTIC_AUTHORITY,
+    (
+        _SourceFamilyBinding(SourceSpan(0, len(PUBLIC_FIXTURE_SOURCE)), _PUBLIC_FAMILY_ID),
+        _SourceFamilyBinding(
+            SourceSpan(_INDEPENDENT_SECOND_START,
+                       _INDEPENDENT_SECOND_START + len(PUBLIC_INDEPENDENT_SOURCE)),
+            _PUBLIC_INDEPENDENT_FAMILY_ID),
+    ),
+)
+PUBLIC_INDEPENDENT_MANIFEST_CID = _family_manifest_cid(
+    "bravo-a10-independent", _INDEPENDENT_MANIFEST)
+
+_SOURCE_FAMILY_MANIFESTS = (
+    # Exact accepted pre-manifest fixture identity. This is a single
+    # compatibility alias, not a generic legacy parser.
+    (LEGACY_PUBLIC_FIXTURE_MANIFEST_CID, _PUBLIC_MANIFEST),
+    (PUBLIC_FIXTURE_MANIFEST_CID, _PUBLIC_MANIFEST),
+    (PUBLIC_FIXTURE_REPACK_MANIFEST_CID, _PUBLIC_MANIFEST),
+    (PUBLIC_DUPLICATE_MANIFEST_CID, _DUPLICATE_MANIFEST),
+    (PUBLIC_INDEPENDENT_MANIFEST_CID, _INDEPENDENT_MANIFEST),
+)
 
 
 def source_family_id(snapshot: BamfEvidenceSnapshot, record: EvidenceRecord) -> str:
-    """One source episode stays one family regardless of derivative adjudication labels."""
-    return "evidence-family:" + _digest(
-        snapshot.source_manifest_cid,
-        snapshot.source_byte_digest,
-        str(record.source_span.start),
-        str(record.source_span.end),
-    )
+    """Resolve episode-family identity from the source owner's pinned manifest."""
+    if type(snapshot) is not BamfEvidenceSnapshot or type(record) is not EvidenceRecord:
+        _fail("BAMF_EVIDENCE_FAMILY_INPUT_INVALID")
+    matches = tuple(
+        manifest for cid, manifest in _SOURCE_FAMILY_MANIFESTS
+        if cid == snapshot.source_manifest_cid)
+    if len(matches) != 1 or matches[0].source_byte_digest != snapshot.source_byte_digest:
+        _fail("BAMF_EVIDENCE_FAMILY_INPUT_INVALID")
+    manifest = matches[0]
+    matches = tuple(
+        item for item in manifest.bindings if item.source_span == record.source_span)
+    if len(matches) != 1:
+        _fail("BAMF_EVIDENCE_FAMILY_INPUT_INVALID")
+    return matches[0].family_id
+
+
+def source_manifest_semantic_authority(
+    snapshot: BamfEvidenceSnapshot,
+) -> EvidenceSemanticAuthority:
+    """Resolve the source owner's registered semantic binding for a snapshot."""
+    if type(snapshot) is not BamfEvidenceSnapshot:
+        _fail("BAMF_EVIDENCE_FAMILY_INPUT_INVALID")
+    matches = tuple(
+        manifest for cid, manifest in _SOURCE_FAMILY_MANIFESTS
+        if cid == snapshot.source_manifest_cid)
+    if (len(matches) != 1
+            or matches[0].source_byte_digest != snapshot.source_byte_digest
+            or matches[0].semantic_authority.semantic_release
+            != snapshot.semantic_release):
+        _fail("BAMF_EVIDENCE_COMPILER_AUTHORITY_MISMATCH")
+    authority = matches[0].semantic_authority
+    operator = default_registry(authority.semantic_release).resolve(
+        authority.unit_operator_id)
+    if operator_grant_digest(operator) != authority.unit_operator_grant_sha256:
+        _fail("BAMF_EVIDENCE_COMPILER_AUTHORITY_MISMATCH")
+    return authority
 
 
 def verification_state(record: EvidenceRecord) -> str:
@@ -232,21 +278,24 @@ def parse_public_fixture_source(
 
 
 def build_public_fixture_snapshot(
-    *, semantic_release: str, category_ref: str,
-    hour_unit_ref: str, agent_role_ref: str,
+    *, atlas_selection: AtlasArtifactSelection,
 ) -> tuple[BamfEvidenceSnapshot, EvidenceRights]:
     """Create the literal public fixture prescribed by A10 without private data."""
+    authority = resolve_public_fixture_authority(atlas_selection)
+    if authority != _PUBLIC_MANIFEST.semantic_authority:
+        _fail("BAMF_EVIDENCE_COMPILER_AUTHORITY_MISMATCH")
     rights = EvidenceRights(PUBLIC_FIXTURE, "TRAINING", True, True)
     record = parse_public_fixture_source(
-        PUBLIC_FIXTURE_SOURCE, category_ref=category_ref,
-        hour_unit_ref=hour_unit_ref, agent_role_ref=agent_role_ref)
+        PUBLIC_FIXTURE_SOURCE, category_ref=authority.category_ref,
+        hour_unit_ref=authority.hour_unit_ref,
+        agent_role_ref=authority.agent_role_ref)
     digest = sha256(PUBLIC_FIXTURE_SOURCE.encode("utf-8")).hexdigest()
     snapshot = BamfEvidenceSnapshot(
         snapshot_id="bamf-public-fixture-001",
-        source_manifest_cid="public-fixture:bravo-a10-1/v1:" + digest,
+        source_manifest_cid=PUBLIC_FIXTURE_MANIFEST_CID,
         source_byte_digest=digest,
         interpretation_revision="bravo-public-fixture/v1",
-        semantic_release=semantic_release,
+        semantic_release=authority.semantic_release,
         rights=rights,
         records=(record,),
     )

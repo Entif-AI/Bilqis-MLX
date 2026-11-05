@@ -1,13 +1,20 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from hashlib import sha256
+import inspect
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.semantics.atlas.snapshot_contracts import AtlasArtifactSelection
+from bilqis_mlx.source_adapters.tests._evidence_cases import (
+    EvidenceFamilyAuthorityCases,
+)
 from bilqis_mlx.source_adapters.evidence_frames import (
+    LEGACY_PUBLIC_FIXTURE_MANIFEST_CID,
     PUBLIC_FIXTURE_SOURCE,
     BamfEvidenceSnapshot,
+    EvidenceSemanticAuthority,
     EvidenceRecord,
     EvidenceRights,
     EventTime,
@@ -18,6 +25,7 @@ from bilqis_mlx.source_adapters.evidence_frames import (
     public_export,
 )
 from bilqis_mlx.factory.evidence_curriculum import (
+    EvidenceLesson,
     EvidenceLessonStatus,
     compile_typed_reconstructions,
     compile_evidence_lessons,
@@ -26,25 +34,69 @@ from bilqis_mlx.factory.evidence_curriculum import (
 )
 
 
-RELEASE = "a" * 64
-STUDY = "LEXSENSE-24e0d37974513f"
-HOUR = "fixture:admitted-unit:hour"
-AGENT = "AG-7ebd45a9797f21"
+RELEASE = "58e0c281b5da18b9b7e6c803709b29eeeb0a88f16b06f48de692808e2fb88306"
+STUDY = (
+    "https://github.com/Entif-AI/Bilqis-MLX/id/sense/"
+    "NI-LEXICON-CURRICULUM/LEXROOT-3e51e33b4a970f/STEM%203/BSC"
+)
+HOUR = "h"
+AGENT = "agent"
 
 
-class EvidenceFrameTests(unittest.TestCase):
+class EvidenceFrameTests(EvidenceFamilyAuthorityCases, unittest.TestCase):
     def setUp(self):
+        self.selection = AtlasArtifactSelection(
+            "synthetic:test-atlas", "b" * 64, RELEASE, "c" * 64)
+        authority = EvidenceSemanticAuthority(
+            RELEASE, STUDY, HOUR, AGENT, "UNIT_CONVERT",
+            "059ccd2a33330473973914b94fc0d772d6f845b6ee9c8e736f1876e6a9823e9f")
+        self._source_authority = patch(
+            "bilqis_mlx.source_adapters.evidence_frames."
+            "resolve_public_fixture_authority",
+            return_value=authority)
+        self._source_authority.start()
+        self.addCleanup(self._source_authority.stop)
         self.snapshot, self.rights = build_public_fixture_snapshot(
-            semantic_release=RELEASE,
-            category_ref=STUDY,
-            hour_unit_ref=HOUR,
-            agent_role_ref=AGENT,
+            atlas_selection=self.selection,
         )
+
+    def compile(self, snapshot=None, rights=None):
+        return compile_evidence_lessons(
+            self.snapshot if snapshot is None else snapshot,
+            self.rights if rights is None else rights,
+            RELEASE)
+
+    def test_public_curriculum_api_keeps_facade_module_identity(self):
+        self.assertEqual(
+            EvidenceLesson.__module__, "bilqis_mlx.factory.evidence_curriculum")
+        self.assertEqual(
+            split_evidence_families.__module__,
+            "bilqis_mlx.factory.evidence_curriculum")
+        self.assertEqual(
+            tuple(inspect.signature(compile_evidence_lessons).parameters),
+            ("adjudicated_snapshot", "source_rights", "semantic_release"),
+        )
+        with self.assertRaises(BilqisError):
+            compile_evidence_lessons(
+                self.snapshot, self.rights, "f" * 64)
+        with self.assertRaises(BilqisError):
+            compile_evidence_lessons(
+                replace(self.snapshot, semantic_release="f" * 64),
+                self.rights,
+                "f" * 64,
+            )
+
+    def test_source_episode_identity_is_derived_not_caller_supplied(self):
+        self.assertNotIn(
+            "source_episode_ref",
+            inspect.signature(parse_public_fixture_source).parameters,
+        )
+        self.assertNotIn("source_episode_ref", EvidenceRecord.__dataclass_fields__)
 
     def test_public_fixture_is_parsed_from_exact_source_bytes(self):
         record = parse_public_fixture_source(
-            PUBLIC_FIXTURE_SOURCE, category_ref=STUDY, hour_unit_ref=HOUR,
-            agent_role_ref=AGENT)
+            PUBLIC_FIXTURE_SOURCE,
+            category_ref=STUDY, hour_unit_ref=HOUR, agent_role_ref=AGENT)
         self.assertEqual(record.actor_ref, "actor_01")
         self.assertEqual(record.category_label, "study")
         self.assertEqual(record.status, "COMPLETED")
@@ -57,7 +109,7 @@ class EvidenceFrameTests(unittest.TestCase):
                 category_ref=STUDY, hour_unit_ref=HOUR, agent_role_ref=AGENT)
 
     def test_literal_public_fixture_compiles_source_linked_exact_lessons(self):
-        result = compile_evidence_lessons(self.snapshot, self.rights, RELEASE)
+        result = self.compile()
         self.assertEqual(result.holds, ())
         self.assertEqual(len(result.lessons), 4)
         self.assertEqual(result.lessons[0].rendered, "actor_01 completed study for 0.25 h.")
@@ -71,29 +123,92 @@ class EvidenceFrameTests(unittest.TestCase):
         self.assertEqual(result.lessons[0].frame.occurrence_truth, "TRUE")
         self.assertEqual(result.lessons[3].question, "Convert the reported duration to minutes.")
         self.assertEqual(result.lessons[3].gold, "15")
-        self.assertEqual(result.lessons[3].derivation.operator_id, "duration.hour-to-minute/v1")
+        self.assertEqual(result.lessons[3].derivation.operator_id, "UNIT_CONVERT")
+        self.assertEqual(result.lessons[3].derivation.input_unit_ref, HOUR)
+        self.assertEqual(result.lessons[3].derivation.output_unit, "min")
         self.assertTrue(all(lesson.check() for lesson in result.lessons))
+
+    def test_accepted_v1_public_snapshot_manifest_identity_still_compiles(self):
+        legacy = replace(
+            self.snapshot,
+            source_manifest_cid=LEGACY_PUBLIC_FIXTURE_MANIFEST_CID,
+        )
+        result = compile_evidence_lessons(legacy, self.rights, RELEASE)
+        self.assertEqual(result.holds, ())
+        self.assertEqual(tuple(lesson.gold for lesson in result.lessons),
+                         (STUDY, "COMPLETED", "0.25", "15"))
+        self.assertTrue(all(lesson.check() for lesson in result.lessons))
+
+    def test_exact_checker_rejects_correlated_generator_corruption(self):
+        result = self.compile()
+        minutes = result.lessons[3]
+        self.assertFalse(replace(
+            minutes,
+            gold="14",
+            derivation=replace(minutes.derivation, output_value="14"),
+        ).check())
+        self.assertFalse(replace(
+            result.lessons[1],
+            gold="FORGED",
+            frame=replace(result.lessons[1].frame, status="FORGED"),
+        ).check())
+        self.assertFalse(replace(
+            result.lessons[0],
+            frame=replace(result.lessons[0].frame, actor_role_ref="forged-role"),
+        ).check())
+
+        precise = "0.12345678901234567890123456789"
+        record = replace(
+            self.snapshot.records[0],
+            reported_value=ReportedValue(precise, HOUR),
+        )
+        precise_result = self.compile(replace(self.snapshot, records=(record,)))
+        precise_minutes = precise_result.lessons[3]
+        self.assertEqual(
+            precise_minutes.gold,
+            "7.4074073407407407340740740734",
+        )
+        self.assertTrue(precise_minutes.check())
+        self.assertFalse(replace(
+            precise_minutes,
+            gold="7.407407340740740734074074073",
+            derivation=replace(
+                precise_minutes.derivation,
+                output_value="7.407407340740740734074074073",
+            ),
+        ).check())
 
     def test_exact_hour_conversion_preserves_trailing_zero_magnitude(self):
         record = replace(
             self.snapshot.records[0], reported_value=ReportedValue("1", HOUR))
-        result = compile_evidence_lessons(
-            replace(self.snapshot, records=(record,)), self.rights, RELEASE)
+        result = self.compile(replace(self.snapshot, records=(record,)))
         self.assertEqual(result.lessons[3].gold, "60")
         self.assertTrue(result.lessons[3].check())
+
+    def test_non_hour_report_does_not_mint_hour_to_minute_gold(self):
+        record = replace(
+            self.snapshot.records[0],
+            reported_value=ReportedValue("15", "min"),
+            unit_label="min",
+        )
+        with self.assertRaises(BilqisError) as caught:
+            self.compile(replace(self.snapshot, records=(record,)))
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_EVIDENCE_DURATION_UNIT_UNQUALIFIED",
+        )
 
     def test_planned_and_unknown_duration_are_distinct_from_completed_and_zero(self):
         record = self.snapshot.records[0]
         planned = replace(record, status="PLANNED")
         planned_snapshot = replace(self.snapshot, records=(planned,))
-        planned_result = compile_evidence_lessons(planned_snapshot, self.rights, RELEASE)
+        planned_result = self.compile(planned_snapshot)
         self.assertEqual(planned_result.lessons[0].rendered, "actor_01 plans study for 0.25 h.")
         self.assertEqual(planned_result.lessons[1].gold, "PLANNED")
         self.assertEqual(planned_result.lessons[0].frame.occurrence_truth, "UNKNOWN")
 
         unknown = replace(record, reported_value=ReportedValue(None, HOUR))
-        unknown_result = compile_evidence_lessons(
-            replace(self.snapshot, records=(unknown,)), self.rights, RELEASE)
+        unknown_result = self.compile(replace(self.snapshot, records=(unknown,)))
         self.assertEqual(
             unknown_result.lessons[0].rendered,
             "actor_01 reported study; duration is unknown.",
@@ -102,8 +217,7 @@ class EvidenceFrameTests(unittest.TestCase):
         self.assertEqual(unknown_result.lessons[3].gold, "UNKNOWN")
 
         zero = replace(record, reported_value=ReportedValue("0", HOUR))
-        zero_result = compile_evidence_lessons(
-            replace(self.snapshot, records=(zero,)), self.rights, RELEASE)
+        zero_result = self.compile(replace(self.snapshot, records=(zero,)))
         self.assertEqual(zero_result.lessons[2].gold, "0")
         self.assertEqual(zero_result.lessons[3].gold, "0")
 
@@ -114,8 +228,7 @@ class EvidenceFrameTests(unittest.TestCase):
                 "2026-01-02T10:00:00Z", "2026-01-02T09:00:00Z", "UTC"),
             alternatives=("EVENT_TIME_CONTRADICTORY",),
         )
-        result = compile_evidence_lessons(
-            replace(self.snapshot, records=(record,)), self.rights, RELEASE)
+        result = self.compile(replace(self.snapshot, records=(record,)))
         self.assertEqual(result.lessons[0].frame.event_time.start_iso, "2026-01-02T10:00:00Z")
         self.assertEqual(result.lessons[0].frame.event_time.end_iso, "2026-01-02T09:00:00Z")
         self.assertEqual(result.lessons[0].frame.alternatives, ("EVENT_TIME_CONTRADICTORY",))
@@ -127,8 +240,7 @@ class EvidenceFrameTests(unittest.TestCase):
             negated=True,
             alternatives=("EVENT_TIME_DISPUTED", "ALTERNATE_INTERPRETATION"),
         )
-        result = compile_evidence_lessons(
-            replace(self.snapshot, records=(record,)), self.rights, RELEASE)
+        result = self.compile(replace(self.snapshot, records=(record,)))
         reconstruction = compile_typed_reconstructions(result)[0]
         self.assertEqual(reconstruction.reported_value, "0.25")
         self.assertEqual(reconstruction.reported_unit_ref, HOUR)
@@ -145,11 +257,8 @@ class EvidenceFrameTests(unittest.TestCase):
             ("EVENT_TIME_DISPUTED", "ALTERNATE_INTERPRETATION"),
         )
 
-        unambiguous = compile_evidence_lessons(
-            replace(self.snapshot, records=(replace(source, negated=True),)),
-            self.rights,
-            RELEASE,
-        )
+        unambiguous = self.compile(
+            replace(self.snapshot, records=(replace(source, negated=True),)))
         self.assertEqual(unambiguous.lessons[0].frame.occurrence_truth, "FALSE")
 
     def test_private_or_unclassified_material_is_rejected_before_public_export(self):
@@ -159,7 +268,7 @@ class EvidenceFrameTests(unittest.TestCase):
                 private_record = replace(
                     self.snapshot.records[0], actor_ref="PROTECTED_SENTINEL_DO_NOT_EXPORT")
                 snapshot = replace(self.snapshot, rights=rights, records=(private_record,))
-                result = compile_evidence_lessons(snapshot, rights, RELEASE)
+                result = self.compile(snapshot, rights)
                 self.assertNotIn("PROTECTED_SENTINEL_DO_NOT_EXPORT", repr(result))
                 self.assertEqual(result.lessons, ())
                 self.assertEqual(result.holds[0].status, EvidenceLessonStatus.SOURCE_HELD)
@@ -170,108 +279,19 @@ class EvidenceFrameTests(unittest.TestCase):
                     "BAMF_EVIDENCE_PUBLIC_EXPORT_HELD",
                 )
 
-    def test_paraphrases_of_one_episode_cannot_cross_independent_split(self):
-        original = self.snapshot.records[0]
-        sibling = replace(
-            original,
-            record_id="fixture-001-paraphrase",
-            adjudication_ref="adjudication:renamed-does-not-create-evidence",
-        )
-        same_family = replace(self.snapshot, records=(original, sibling))
-        result = compile_evidence_lessons(same_family, self.rights, RELEASE)
-        with self.assertRaises(ValueError):
-            split_evidence_families(
-                result, train_record_ids=(original.record_id,),
-                heldout_record_ids=(sibling.record_id,))
-
-        same_side = split_evidence_families(
-            result, train_record_ids=(original.record_id, sibling.record_id),
-            heldout_record_ids=())
-        self.assertEqual(len(same_side.train_family_ids), 1)
-
-        joined_source = PUBLIC_FIXTURE_SOURCE + "\n" + PUBLIC_FIXTURE_SOURCE
-        second_start = len(PUBLIC_FIXTURE_SOURCE) + 1
-        second_end = second_start + len(PUBLIC_FIXTURE_SOURCE)
-        independent_snapshot = replace(
-            self.snapshot,
-            source_byte_digest=sha256(joined_source.encode("utf-8")).hexdigest(),
-            source_manifest_cid="public-fixture:two-source-episodes/v1",
-        )
-        original = replace(
-            original,
-            source_span=SourceSpan(0, len(PUBLIC_FIXTURE_SOURCE)),
-        )
-        other = replace(
-            original,
-            record_id="fixture-002",
-            adjudication_ref="adjudication:fixture-002",
-            source_span=SourceSpan(second_start, second_end),
-        )
-        independent = compile_evidence_lessons(
-            replace(independent_snapshot, records=(original, other)), self.rights, RELEASE)
-        receipt = split_evidence_families(
-            independent, train_record_ids=(original.record_id,),
-            heldout_record_ids=(other.record_id,))
-        self.assertNotEqual(receipt.train_family_ids, receipt.heldout_family_ids)
-
-    def test_fresh_challenge_splits_source_families_before_template_groups(self):
-        original = self.snapshot.records[0]
-        paraphrase = replace(original, record_id="fixture-001-paraphrase")
-        joined_source = PUBLIC_FIXTURE_SOURCE + "\n" + PUBLIC_FIXTURE_SOURCE
-        second_start = len(PUBLIC_FIXTURE_SOURCE) + 1
-        second_end = second_start + len(PUBLIC_FIXTURE_SOURCE)
-        snapshot = replace(
-            self.snapshot,
-            source_byte_digest=sha256(joined_source.encode("utf-8")).hexdigest(),
-            source_manifest_cid="public-fixture:two-source-episodes/v1",
-        )
-        other = replace(
-            original,
-            record_id="fixture-002",
-            adjudication_ref="adjudication:fixture-002",
-            source_span=SourceSpan(second_start, second_end),
-        )
-        result = compile_evidence_lessons(
-            replace(snapshot, records=(original, paraphrase, other)),
-            self.rights,
-            RELEASE,
-        )
-        with self.assertRaises(ValueError):
-            plan_fresh_challenge(
-                result,
-                train_record_ids=(original.record_id,),
-                heldout_record_ids=(paraphrase.record_id,),
-            )
-
-        plan = plan_fresh_challenge(
-            result,
-            train_record_ids=(original.record_id, paraphrase.record_id),
-            heldout_record_ids=(other.record_id,),
-        )
-        self.assertEqual(len(plan.split.train_family_ids), 1)
-        self.assertEqual(len(plan.split.heldout_family_ids), 1)
-        self.assertEqual(plan.train_template_groups[0][1], "T1")
-        self.assertEqual(plan.heldout_template_groups[0][1], "T1")
-        self.assertEqual(
-            set(plan.post_exam_teachable_lesson_ids),
-            {lesson.lesson_id for lesson in result.lessons
-             if lesson.record_id == other.record_id},
-        )
-
     def test_unadjudicated_record_is_held_without_blocking_qualified_sibling(self):
         qualified = self.snapshot.records[0]
         held = replace(qualified, record_id="fixture-held", adjudication_ref=None)
-        result = compile_evidence_lessons(
-            replace(self.snapshot, records=(qualified, held)), self.rights, RELEASE)
+        result = self.compile(replace(self.snapshot, records=(qualified, held)))
         self.assertEqual(len(result.lessons), 4)
         self.assertEqual(tuple(item.record_id for item in result.holds), ("fixture-held",))
         self.assertEqual(result.holds[0].reason, "SOURCE_UNADJUDICATED")
         self.assertIs(public_export(result), result)
 
     def test_interpretation_revision_changes_dependent_lessons_not_episode_identity(self):
-        first = compile_evidence_lessons(self.snapshot, self.rights, RELEASE)
+        first = self.compile()
         corrected = replace(self.snapshot, interpretation_revision="bravo-public-fixture/v2")
-        second = compile_evidence_lessons(corrected, self.rights, RELEASE)
+        second = self.compile(corrected)
         self.assertEqual(
             {lesson.source_family_id for lesson in first.lessons},
             {lesson.source_family_id for lesson in second.lessons},
@@ -284,19 +304,6 @@ class EvidenceFrameTests(unittest.TestCase):
             {lesson.frame.category_ref for lesson in first.lessons},
             {lesson.frame.category_ref for lesson in second.lessons},
         )
-
-    def test_missing_report_is_verification_needed_not_nonoccurrence(self):
-        record = replace(
-            self.snapshot.records[0],
-            status="PLANNED",
-            reported_value=ReportedValue(None, HOUR),
-            alternatives=("EXPECTED_REPORT_MISSING",),
-        )
-        result = compile_evidence_lessons(
-            replace(self.snapshot, records=(record,)), self.rights, RELEASE)
-        self.assertEqual(result.lessons[0].frame.verification_state, "VERIFICATION_NEEDED")
-        self.assertNotIn("NON_OCCURRENCE", result.lessons[0].frame.alternatives)
-
 
 if __name__ == "__main__":
     unittest.main()
