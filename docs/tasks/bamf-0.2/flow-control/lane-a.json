@@ -2,16 +2,16 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "6e12e5a077183713241bb9b2b0d0762d8d95fa47",
-  "updated_at": "2026-11-05T08:43:28.975140+00:00",
+  "updated_at": "2026-11-05T08:47:59.312478+00:00",
   "exception": null,
   "items": [
     {
       "issue": 421,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "8019bf5d945a1d9f8f5a11983ef43fbb008a365f",
-      "summary": "A10.1 active on clean issue branch from synchronized Lane A integration. Public-safe BRAVO evidence fixture path selected; PRIVATE_PILOT/PRIVATE_REAL contents are not required for owned acceptance.",
-      "resume_trigger": null,
+      "pr": 852,
+      "state": "TURNED_IN",
+      "head_sha": "888c609cdeb4da9eeb9ca99b7f8bdf087188ca04",
+      "summary": "A10.1 implemented on clean issue branch: provenance-safe BamfEvidenceSnapshot/v1 adapter, literal PUBLIC_FIXTURE parser, exact typed lesson compiler, source-family split independence, rights holds, missing-report verification state, and protected-sentinel non-leakage. Focused/adjacent tests 15 passed; governance/error-contract tests 11 passed; EGM_PENDING.",
+      "resume_trigger": "Independent exact-head review/EGM and human integration review for PR #852.",
       "preserved_branch": "codex/bamf02-a10-1-421-20261105"
     },
     {
