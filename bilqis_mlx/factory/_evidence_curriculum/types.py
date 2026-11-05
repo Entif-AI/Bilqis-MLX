@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from decimal import Decimal, InvalidOperation
 from enum import Enum
+from fractions import Fraction
 
 from bilqis_mlx.source_adapters.evidence_frames import (
     PUBLIC_FIXTURE, EvidenceDerivation, EvidenceFrame, EvidenceRights,
@@ -13,6 +13,30 @@ from bilqis_mlx.source_adapters.evidence_frames import (
 
 class EvidenceLessonStatus(str, Enum):
     SOURCE_HELD = "SOURCE_HELD"
+
+
+def _finite_decimal(value: Fraction) -> str | None:
+    numerator = value.numerator
+    denominator = value.denominator
+    twos = 0
+    fives = 0
+    while denominator % 2 == 0:
+        denominator //= 2
+        twos += 1
+    while denominator % 5 == 0:
+        denominator //= 5
+        fives += 1
+    if denominator != 1:
+        return None
+    places = max(twos, fives)
+    scaled = numerator * (2 ** (places - twos)) * (5 ** (places - fives))
+    sign = "-" if scaled < 0 else ""
+    digits = str(abs(scaled))
+    if places == 0:
+        return sign + digits
+    digits = digits.rjust(places + 1, "0")
+    result = sign + digits[:-places] + "." + digits[-places:]
+    return result.rstrip("0").rstrip(".") or "0"
 
 
 @dataclass(frozen=True)
@@ -63,15 +87,14 @@ class EvidenceLesson:
             if self.frame.reported_decimal is None:
                 return self.gold == "UNKNOWN" and self.derivation is None
             try:
-                value = Decimal(self.frame.reported_decimal)
-            except InvalidOperation:
+                value = Fraction(self.frame.reported_decimal)
+            except (ValueError, ZeroDivisionError):
                 return False
-            if not value.is_finite() or value < 0:
+            if value < 0:
                 return False
-            expected = format((value * Decimal(60)).normalize(), "f")
-            if "." in expected:
-                expected = expected.rstrip("0").rstrip(".")
-            expected = expected or "0"
+            expected = _finite_decimal(value * 60)
+            if expected is None:
+                return False
             return (
                 self.derivation is not None
                 and self.derivation.operator_id == "UNIT_CONVERT"
