@@ -31,7 +31,7 @@ class DifferentialTestGateTests(unittest.TestCase):
         (root / "pkg" / "thing.py").write_text("VALUE = 2\n")
         subprocess.run(["git", "commit", "-qam", "change"], cwd=root, check=True)
 
-        self.assertEqual(gate.resolve_test_base(root), "HEAD")
+        self.assertEqual(gate.resolve_test_base(root, environ={}), "HEAD")
 
     def test_last_passing_head_becomes_next_commit_test_base(self):
         temporary = self._repo()
@@ -50,7 +50,7 @@ class DifferentialTestGateTests(unittest.TestCase):
         (root / "pkg" / "thing.py").write_text("VALUE = 2\n")
         subprocess.run(["git", "commit", "-qam", "change"], cwd=root, check=True)
 
-        self.assertEqual(gate.resolve_test_base(root), passing_head)
+        self.assertEqual(gate.resolve_test_base(root, environ={}), passing_head)
 
     def test_explicit_test_base_is_independent_of_quality_base(self):
         temporary = self._repo()
@@ -74,6 +74,21 @@ class DifferentialTestGateTests(unittest.TestCase):
         plan = gate.plan_leaf(root, base_ref="HEAD")
 
         self.assertEqual(plan.mode, "cold-targeted")
+        self.assertEqual(plan.tests, ("pkg/tests/test_thing.py",))
+
+    def test_cold_plan_follows_transitive_python_imports(self):
+        temporary = self._repo()
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name)
+        (root / "pkg" / "facade.py").write_text("from pkg.thing import VALUE\n")
+        (root / "pkg" / "tests" / "test_thing.py").write_text(
+            "from pkg.facade import VALUE\n")
+        subprocess.run(["git", "add", "."], cwd=root, check=True)
+        subprocess.run(["git", "commit", "-qm", "facade"], cwd=root, check=True)
+        (root / "pkg" / "thing.py").write_text("VALUE = 2\n")
+
+        plan = gate.plan_leaf(root, base_ref="HEAD")
+
         self.assertEqual(plan.tests, ("pkg/tests/test_thing.py",))
 
     def test_warm_testmon_plan_remains_bounded_to_owner_tests(self):
