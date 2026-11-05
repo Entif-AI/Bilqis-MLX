@@ -1,10 +1,19 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "6e12e5a077183713241bb9b2b0d0762d8d95fa47",
-  "updated_at": "2026-11-05T08:47:59.312478+00:00",
+  "observed_unified": "046cb64f180af1b1b73098d0d4e025f05ad2548b",
+  "updated_at": "2026-11-05T09:39:40+00:00",
   "exception": null,
   "items": [
+    {
+      "issue": 424,
+      "pr": 853,
+      "state": "TURNED_IN",
+      "head_sha": "3c5bf4d4571cca8a020ba8bbcf5609fcdd0261e4",
+      "summary": "A11.1 implemented with seven checker-grounded structural contrast families and refactored into focused type/model/transform/checker modules while preserving the public semantic_contrasts.py API. Semantic ABI integrity and portable verification pass at exact head 3c5bf4d4571cca8a020ba8bbcf5609fcdd0261e4; EGM_PENDING.",
+      "resume_trigger": "Independent exact-head EGM + human integration review for PR #853.",
+      "preserved_branch": "codex/bamf02-a11-1-424-20261105"
+    },
     {
       "issue": 421,
       "pr": 852,
