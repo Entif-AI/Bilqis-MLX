@@ -103,8 +103,8 @@
       "issue": 719,
       "pr": 854,
       "state": "ACTIVE",
-      "head_sha": "207c61c0934b5ae464c10dc14aa01ddd19adcb9e",
-      "summary": "B14.4 EGM remediation locally complete in draft PR #854: cache rebuild eligibility is issued only from live B13 accepted-generation custody, signed A12 source clearance and current context/policy authority; caller-minted matching receipts fail closed.",
+      "head_sha": "76f144c9690de21d550f0dbf0a7af8905c0f655f",
+      "summary": "B14.4 EGM remediation locally complete in draft PR #854: owner-bound cache authority now selects current B13/A12/context policy state, derives lineage/inference identity, rejects caller-selected authority worlds and consumes each current eligibility receipt once.",
       "resume_trigger": "Fresh pinned EGM passes on the final immutable #854 head and hosted checks are green.",
       "preserved_branch": "codex/719-cache-eligibility-authority-20261105"
     },

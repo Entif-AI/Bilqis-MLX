@@ -118,6 +118,51 @@ repairs those findings; another exact-head independent review is required. This
 review stream is defect-discovery evidence and does not substitute for the
 required pinned EGM receipt.
 
+## 2026-11-05 #719 owner-bound eligibility repair
+
+Fresh pinned Google EGM at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`
+reviewed PR #854 head `0341232765ed10a4d134b2c79ac28105671557e1`
+and returned **NOT PASS** with one Blocker and four unique Majors. The review
+found that the eligibility issuer remained importable, policy/context and the
+B13 run selector were still caller-controlled, lineage/inference identities were
+not owner-derived, and issued rebuild receipts were reusable across later
+authority changes.
+
+Implementation commit `76f144c9690de21d550f0dbf0a7af8905c0f655f`
+repairs those seams as one authority-boundary change:
+
+- `CacheAuthorityRuntime` now owns a current eligibility resolver. The public
+  issuance API accepts only that opaque capability plus the requested binding;
+  callers can no longer pass a pointer path, policy, context, source frontier or
+  A12 receipt into the issuance boundary.
+- The resolver supplies the authoritative B13 pointer and current A12/source,
+  context and policy inputs. Issuance re-reads B13 custody, verifies the signed
+  A12 clearance, reprojects the current context and cross-checks the retained
+  rights/correction frontier.
+- Lineage is derived from the B13 run identity. Optimizer-independent inference
+  state is derived from the complete validated executable parameter tree through
+  `execution_generation_digest`; neither remains a caller-ratifiable label.
+- The former module-level `_issue_eligibility` mint is gone. A caller-created
+  receipt or a receipt registered by an unrelated test/factory owner cannot enter
+  the production receipt registry.
+- Eligibility is owner-scoped and one-use. Rebuild re-derives current authority
+  before work and again immediately before consuming the receipt and persistence.
+  A policy/context or generation change after issuance therefore fails closed;
+  a successfully consumed receipt cannot be replayed.
+
+The new adversaries were red before repair for the exposed mint, reusable receipt
+and unchecked lineage/inference identities. Post-repair coverage also proves that
+another internally valid B13 run cannot replace the capability-bound run, a
+self-consistent caller policy/context cannot replace the owner policy/context,
+and owner policy drift after issuance rejects before persistence.
+
+Affected cache/A12/context/B13 verification is now **65/65 PASS**. BAMF
+flow-control remains Lane B **2/6 ACTIVE** with **15/15 PASS**. Base-aware
+development-structure, governance-integrity and code-smell checks report **zero
+new findings**, and `git diff --check` is clean. These are implementation proofs,
+not the final review gate: a fresh pinned EGM on the final immutable PR head is
+still required before #719 or B14.4 can claim EGM acceptance.
+
 No actual student, native AdamW, teacher, checkpoint, source release, admission,
 human-run state or production cache caller was modified. B13 accepted generation
 custody and parent B14 full integration remain open.
