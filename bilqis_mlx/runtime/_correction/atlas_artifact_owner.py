@@ -7,14 +7,14 @@ from bilqis_mlx.semantics.domains import contract_digest
 from bilqis_mlx.semantics.cognitive_dependencies import (
     ArtifactKind, ArtifactNode, DependencyIndex, DependencyKind, DependencyRef,
 )
-from bilqis_mlx.runtime._revalidation_base import _invalid
-from bilqis_mlx.runtime._revalidation_authority import SourceAuthorityRegistry
-from bilqis_mlx.runtime._revalidation_engine import (
+from bilqis_mlx.runtime.atlas_revalidation_common import _invalid
+from bilqis_mlx.runtime.atlas_source_authority import SourceAuthorityRegistry
+from bilqis_mlx.runtime.atlas_revalidation_runtime import (
     advance_revalidation, apply_correction, next_revalidation_task,
     read_artifact, revalidate_node,
 )
-from bilqis_mlx.runtime._revalidation_events import CorrectionEvent, RevalidationFrontier
-from bilqis_mlx.runtime._revalidation_queue import RevalidationProgress, RevalidationQueue
+from bilqis_mlx.runtime.atlas_revalidation_evidence import CorrectionEvent, RevalidationFrontier
+from bilqis_mlx.runtime.atlas_revalidation_queue import RevalidationProgress, RevalidationQueue
 
 
 def _artifact_id(features: AtlasFeatures) -> str:
