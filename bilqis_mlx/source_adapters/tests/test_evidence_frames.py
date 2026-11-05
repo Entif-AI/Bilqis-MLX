@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from hashlib import sha256
 import unittest
 
 from bilqis_mlx.errors import BilqisError
@@ -171,7 +172,11 @@ class EvidenceFrameTests(unittest.TestCase):
 
     def test_paraphrases_of_one_episode_cannot_cross_independent_split(self):
         original = self.snapshot.records[0]
-        sibling = replace(original, record_id="fixture-001-paraphrase")
+        sibling = replace(
+            original,
+            record_id="fixture-001-paraphrase",
+            adjudication_ref="adjudication:renamed-does-not-create-evidence",
+        )
         same_family = replace(self.snapshot, records=(original, sibling))
         result = compile_evidence_lessons(same_family, self.rights, RELEASE)
         with self.assertRaises(ValueError):
@@ -184,14 +189,26 @@ class EvidenceFrameTests(unittest.TestCase):
             heldout_record_ids=())
         self.assertEqual(len(same_side.train_family_ids), 1)
 
+        joined_source = PUBLIC_FIXTURE_SOURCE + "\n" + PUBLIC_FIXTURE_SOURCE
+        second_start = len(PUBLIC_FIXTURE_SOURCE) + 1
+        second_end = second_start + len(PUBLIC_FIXTURE_SOURCE)
+        independent_snapshot = replace(
+            self.snapshot,
+            source_byte_digest=sha256(joined_source.encode("utf-8")).hexdigest(),
+            source_manifest_cid="public-fixture:two-source-episodes/v1",
+        )
+        original = replace(
+            original,
+            source_span=SourceSpan(0, len(PUBLIC_FIXTURE_SOURCE)),
+        )
         other = replace(
             original,
             record_id="fixture-002",
             adjudication_ref="adjudication:fixture-002",
-            source_span=SourceSpan(0, len(PUBLIC_FIXTURE_SOURCE)),
+            source_span=SourceSpan(second_start, second_end),
         )
         independent = compile_evidence_lessons(
-            replace(self.snapshot, records=(original, other)), self.rights, RELEASE)
+            replace(independent_snapshot, records=(original, other)), self.rights, RELEASE)
         receipt = split_evidence_families(
             independent, train_record_ids=(original.record_id,),
             heldout_record_ids=(other.record_id,))
@@ -200,13 +217,22 @@ class EvidenceFrameTests(unittest.TestCase):
     def test_fresh_challenge_splits_source_families_before_template_groups(self):
         original = self.snapshot.records[0]
         paraphrase = replace(original, record_id="fixture-001-paraphrase")
+        joined_source = PUBLIC_FIXTURE_SOURCE + "\n" + PUBLIC_FIXTURE_SOURCE
+        second_start = len(PUBLIC_FIXTURE_SOURCE) + 1
+        second_end = second_start + len(PUBLIC_FIXTURE_SOURCE)
+        snapshot = replace(
+            self.snapshot,
+            source_byte_digest=sha256(joined_source.encode("utf-8")).hexdigest(),
+            source_manifest_cid="public-fixture:two-source-episodes/v1",
+        )
         other = replace(
             original,
             record_id="fixture-002",
             adjudication_ref="adjudication:fixture-002",
+            source_span=SourceSpan(second_start, second_end),
         )
         result = compile_evidence_lessons(
-            replace(self.snapshot, records=(original, paraphrase, other)),
+            replace(snapshot, records=(original, paraphrase, other)),
             self.rights,
             RELEASE,
         )

@@ -180,11 +180,12 @@ class EvidenceDerivation:
 
 
 def source_family_id(snapshot: BamfEvidenceSnapshot, record: EvidenceRecord) -> str:
-    """One adjudicated source episode stays one family across renderings."""
+    """One source episode stays one family regardless of derivative adjudication labels."""
     return "evidence-family:" + _digest(
         snapshot.source_manifest_cid,
         snapshot.source_byte_digest,
-        record.adjudication_ref,
+        str(record.source_span.start),
+        str(record.source_span.end),
     )
 
 
