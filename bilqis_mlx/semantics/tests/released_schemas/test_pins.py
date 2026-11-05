@@ -31,14 +31,23 @@ class ReleasedPinsTests(unittest.TestCase):
             "58e0c281b5da18b9b7e6c803709b29eeeb0a88f16b06f48de692808e2fb88306",
             "f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec",
         )
-        for family in ("micro", "boolean", "numeric"):
+        expected_counts = {"micro": 6, "boolean": 6, "evidence": 1, "numeric": 6}
+        for family, expected_count in expected_counts.items():
             with self.subTest(family=family):
                 from bilqis_mlx.semantics.released_frame_schemas import (
                     _load_pinned_released_frame_schemas,
                 )
                 staged = _load_pinned_released_frame_schemas(
                     family, selection)
-                self.assertEqual(len(staged.manifest.bodies), 6)
+                self.assertEqual(len(staged.manifest.bodies), expected_count)
+                if family == "evidence":
+                    schema = staged.manifest.bodies[0].parse()
+                    self.assertEqual(schema.schema_id, "frame:bravo.evidence.activity/v1")
+                    self.assertEqual(
+                        tuple(role.role_id for role in schema.roles),
+                        ("agent", "category", "status", "reported_duration"),
+                    )
+                    self.assertEqual(schema.roles[0].allowed_type_ids, ("Entity",))
                 for body in staged.manifest.bodies:
                     schema, witness = lookup_source_pinned_frame_schema(
                         body.schema_id, body.revision,

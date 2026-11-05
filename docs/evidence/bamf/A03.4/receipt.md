@@ -121,3 +121,32 @@ must call these source-pinned functions themselves before motif-key/readout
 admission; they must not accept caller-provided witnesses as credentials.
 A13 rights/revocation and cache dependency gates remain independent.
 No neural admission, training or merge occurred.
+
+## 2026-11-05 downstream authority repair
+
+A post-merge A10.1 audit exposed one missing A03 consumer authority: the
+BRAVO evidence adapter required a source-pinned released `AGENT` role but the
+published A03.4 registry contained only `micro`, `boolean`, and `numeric`
+families. Issue #578 was therefore reopened without invalidating the prior
+three-family receipts.
+
+The A03 source-owner generator now publishes one additional `evidence` family
+with the immutable `frame:bravo.evidence.activity/v1@1` schema. Its role order
+is `agent`, `category`, `status`, `reported_duration`; the `agent` role admits
+`Entity` and the remaining role contracts preserve category, event-status, and
+duration typing without creating an A10-local role registry. Category identity
+and exact unit-law authority remain separately owned by A01 and the cognitive
+operator domain.
+
+The generated evidence manifest is
+`68bc1e032fde3597167bcd31ba5cddd2fa6dec88f9d4cbfb12748480b7e4eeea` and
+its schema-map digest is
+`62f4690abea5cf25bb30f42d4e2ac94895a9367a17e9e16cefef202821068e61`.
+The four-family source-pin registry now hashes to
+`101cf62df6f6dcf5f84c605782b33e069d3e3e026017f2f15e69d683ea2b73f0`.
+The generator reproduced the existing three family manifests byte-for-byte.
+
+Failing-before proof: the real source-pin lookup test failed with
+`FRAME_RELEASED_SOURCE_PIN_NOT_REGISTERED` for family `evidence`. After the
+repair, that same real A01-backed lookup passed and verified the exact evidence
+schema body. No neural admission or learner mutation occurred.
