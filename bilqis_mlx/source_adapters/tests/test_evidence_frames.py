@@ -10,6 +10,7 @@ from bilqis_mlx.source_adapters.tests._evidence_cases import (
     EvidenceFamilyAuthorityCases,
 )
 from bilqis_mlx.source_adapters.evidence_frames import (
+    PUBLIC_FIXTURE_EPISODE_REF,
     PUBLIC_FIXTURE_SOURCE,
     BamfEvidenceSnapshot,
     EvidenceSemanticAuthority,
@@ -78,8 +79,10 @@ class EvidenceFrameTests(EvidenceFamilyAuthorityCases, unittest.TestCase):
 
     def test_public_fixture_is_parsed_from_exact_source_bytes(self):
         record = parse_public_fixture_source(
-            PUBLIC_FIXTURE_SOURCE, category_ref=STUDY, hour_unit_ref=HOUR,
-            agent_role_ref=AGENT)
+            PUBLIC_FIXTURE_SOURCE,
+            source_episode_ref=PUBLIC_FIXTURE_EPISODE_REF,
+            category_ref=STUDY, hour_unit_ref=HOUR, agent_role_ref=AGENT)
+        self.assertEqual(record.source_episode_ref, PUBLIC_FIXTURE_EPISODE_REF)
         self.assertEqual(record.actor_ref, "actor_01")
         self.assertEqual(record.category_label, "study")
         self.assertEqual(record.status, "COMPLETED")
@@ -89,6 +92,7 @@ class EvidenceFrameTests(EvidenceFamilyAuthorityCases, unittest.TestCase):
         with self.assertRaises(BilqisError):
             parse_public_fixture_source(
                 PUBLIC_FIXTURE_SOURCE.replace("completed", "maybe"),
+                source_episode_ref=PUBLIC_FIXTURE_EPISODE_REF,
                 category_ref=STUDY, hour_unit_ref=HOUR, agent_role_ref=AGENT)
 
     def test_literal_public_fixture_compiles_source_linked_exact_lessons(self):

@@ -27,6 +27,7 @@ PUBLIC_FIXTURE = "PUBLIC_FIXTURE"
 PRIVATE_REAL = "PRIVATE_REAL"
 UNCLASSIFIED = "UNCLASSIFIED"
 PUBLIC_FIXTURE_SOURCE = "actor=actor_01; category=study; status=completed; duration=0.25 h"
+PUBLIC_FIXTURE_EPISODE_REF = "source-episode:bravo-a10-public-fixture-001"
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _STATUS = frozenset({"PLANNED", "COMPLETED", "UNKNOWN"})
 _DURATION_FIELD_PARTS = 2
@@ -103,6 +104,7 @@ class EventTime:
 @dataclass(frozen=True)
 class EvidenceRecord:
     record_id: str
+    source_episode_ref: str
     actor_ref: str
     source_span: SourceSpan
     category_ref: str
@@ -119,7 +121,7 @@ class EvidenceRecord:
 
     def __post_init__(self) -> None:
         if (not all(_text(value) for value in (
-                    self.record_id, self.actor_ref, self.category_ref,
+                    self.record_id, self.source_episode_ref, self.actor_ref, self.category_ref,
                     self.category_label, self.unit_label, self.observed_at,
                     self.agent_role_ref))
                 or (self.adjudication_ref is not None and not _text(self.adjudication_ref))
@@ -246,27 +248,15 @@ def resolve_public_fixture_authority(
 
 
 def _source_episode_identity(record: EvidenceRecord) -> str:
-    """Identity from source-native episode semantics, never manifestation place.
+    """Hash the immutable source-native root lineage, never interpreted fields.
 
-    Source manifest, byte digest, byte span, interpretation/adjudication and
-    record IDs remain provenance. They cannot manufacture an independent episode
-    when identical source content is copied or reformatted. The source-native
-    observation occurrence is part of identity so genuinely distinct episodes
-    with the same semantic payload do not collapse into one family.
+    A source adapter assigns ``source_episode_ref`` from the source system's
+    occurrence/root identity. Copies, reformatting, interpretation corrections,
+    adjudication revisions and normalized field changes retain that root. Two
+    separately sourced episodes may therefore remain distinct even when every
+    interpreted payload field and timestamp happen to match.
     """
-    return _digest(
-        record.actor_ref,
-        record.category_label,
-        record.status,
-        record.reported_value.decimal
-        if record.reported_value.decimal is not None else "<UNKNOWN>",
-        record.unit_label,
-        record.event_time.start_iso or "<NONE>",
-        record.event_time.end_iso or "<NONE>",
-        record.event_time.time_zone,
-        record.observed_at,
-        "NEGATED" if record.negated else "AFFIRMED",
-    )
+    return _digest(record.source_episode_ref)
 
 
 def source_family_id(snapshot: BamfEvidenceSnapshot, record: EvidenceRecord) -> str:
@@ -285,7 +275,8 @@ def verification_state(record: EvidenceRecord) -> str:
 
 
 def parse_public_fixture_source(
-    source_text: str, *, category_ref: str, hour_unit_ref: str, agent_role_ref: str,
+    source_text: str, *, source_episode_ref: str, category_ref: str,
+    hour_unit_ref: str, agent_role_ref: str,
 ) -> EvidenceRecord:
     """Parse the one rights-cleared literal fixture without using free-form inference."""
     expected_parts = (
@@ -308,7 +299,8 @@ def parse_public_fixture_source(
     except (ValueError, InvalidOperation):
         _fail("BAMF_EVIDENCE_PUBLIC_FIXTURE_PARSE_INVALID")
     return EvidenceRecord(
-        record_id="fixture-001", actor_ref=fields["actor"],
+        record_id="fixture-001", source_episode_ref=source_episode_ref,
+        actor_ref=fields["actor"],
         source_span=SourceSpan(0, len(source_text)), category_ref=category_ref,
         category_label=fields["category"], status="COMPLETED",
         reported_value=ReportedValue(duration_parts[0], hour_unit_ref),
@@ -325,7 +317,8 @@ def build_public_fixture_snapshot(
     authority = resolve_public_fixture_authority(atlas_selection)
     rights = EvidenceRights(PUBLIC_FIXTURE, "TRAINING", True, True)
     record = parse_public_fixture_source(
-        PUBLIC_FIXTURE_SOURCE, category_ref=authority.category_ref,
+        PUBLIC_FIXTURE_SOURCE, source_episode_ref=PUBLIC_FIXTURE_EPISODE_REF,
+        category_ref=authority.category_ref,
         hour_unit_ref=authority.hour_unit_ref,
         agent_role_ref=authority.agent_role_ref)
     digest = sha256(PUBLIC_FIXTURE_SOURCE.encode("utf-8")).hexdigest()

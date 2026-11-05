@@ -63,7 +63,9 @@ class EvidenceFamilyAuthorityCases:
                 heldout_record_ids=(relocated.record_id,))
 
         separate = replace(
-            relocated, record_id="fixture-003", actor_ref="actor_02")
+            relocated, record_id="fixture-003",
+            source_episode_ref="source-episode:bravo-a10-public-fixture-003",
+            actor_ref="actor_02")
         independent = self.compile(
             replace(self.snapshot, records=(original, separate)))
         receipt = split_evidence_families(
@@ -89,7 +91,7 @@ class EvidenceFamilyAuthorityCases:
         separate = replace(
             original,
             record_id="fixture-separate",
-            observed_at="2026-01-02T00:00:00Z",
+            source_episode_ref="source-episode:bravo-a10-public-fixture-separate",
             adjudication_ref="adjudication:fixture-separate",
         )
         result = self.compile(
@@ -102,11 +104,29 @@ class EvidenceFamilyAuthorityCases:
         self.assertNotEqual(
             receipt.train_family_ids, receipt.heldout_family_ids)
 
+    def test_same_root_correction_cannot_manufacture_independent_family(self):
+        original = self.snapshot.records[0]
+        corrected = replace(
+            original,
+            record_id="fixture-corrected",
+            status="PLANNED",
+            adjudication_ref="adjudication:fixture-corrected",
+        )
+        result = self.compile(
+            replace(self.snapshot, records=(original, corrected)))
+        with self.assertRaises(ValueError):
+            split_evidence_families(
+                result,
+                train_record_ids=(original.record_id,),
+                heldout_record_ids=(corrected.record_id,),
+            )
+
     def test_fresh_challenge_splits_source_families_before_template_groups(self):
         original = self.snapshot.records[0]
         paraphrase = replace(original, record_id="fixture-001-paraphrase")
         other = replace(
             original, record_id="fixture-002",
+            source_episode_ref="source-episode:bravo-a10-public-fixture-002",
             adjudication_ref="adjudication:fixture-002", actor_ref="actor_02",
             source_span=SourceSpan(
                 len(PUBLIC_FIXTURE_SOURCE), 2 * len(PUBLIC_FIXTURE_SOURCE)))
