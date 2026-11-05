@@ -1,5 +1,6 @@
 """Deterministic test-only cache authority; never production provenance."""
 from unittest.mock import patch
+from types import SimpleNamespace
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -47,10 +48,38 @@ _test_eligibility_issue, _test_eligibility_validate, _test_eligibility_consume =
         lambda authority, binding: binding_digest(binding).hex()
     )
 )
-def install_test_owner(test_case, *, eligibility=True):
+class _TestCanonicalSourceOwner:
+    source = None
+
+
+_test_canonical_owner = _TestCanonicalSourceOwner()
+
+
+def set_test_canonical_source(source):
+    _test_canonical_owner.source = source
+
+
+def _test_rebuild_inputs():
+    source = _test_canonical_owner.source
+    return SimpleNamespace(
+        canonical_fp32_source=lambda binding: source()
+    )
+
+
+def install_test_owner(test_case, *, eligibility=True, current_binding=True):
     patcher = patch.object(_runtime, "_authority_state", _test_lookup)
     patcher.start()
     test_case.addCleanup(patcher.stop)
+    test_case.addCleanup(set_test_canonical_source, None)
+    if current_binding:
+        binding_owner = patch.object(
+            _eligibility, "validate_current_binding", lambda authority, binding: None)
+        rebuild_binding_owner = patch.object(
+            _rebuild, "validate_current_binding", lambda authority, binding: None)
+        binding_owner.start()
+        rebuild_binding_owner.start()
+        test_case.addCleanup(binding_owner.stop)
+        test_case.addCleanup(rebuild_binding_owner.stop)
     if eligibility:
         validate_owner = patch.object(
             _rebuild, "validate_eligibility", _test_eligibility_validate)
@@ -75,4 +104,5 @@ def authority_for_registry(registry, *, eligibility_source=None):
     return _test_issue(registry, _CACHE_MAC_KEY, eligibility_source)
 
 
-CACHE_AUTHORITY = _test_issue(AUTHORITY_REGISTRY, _CACHE_MAC_KEY)
+CACHE_AUTHORITY = _test_issue(
+    AUTHORITY_REGISTRY, _CACHE_MAC_KEY, _test_rebuild_inputs)

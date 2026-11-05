@@ -9,8 +9,10 @@ import numpy as np
 from .atlas_cache_binding import CacheArtifact, CacheBinding, binding_digest
 from .atlas_cache_eligibility import (
     CacheEligibilityReceipt,
+    _canonical_fp32_values,
     consume_eligibility,
     issue_cache_eligibility,
+    validate_current_binding,
     validate_eligibility,
 )
 
@@ -31,7 +33,6 @@ def _rebuild_revoked_cache(
     new_binding: CacheBinding,
     *,
     eligibility_receipt: CacheEligibilityReceipt,
-    canonical_fp32_source: Callable[[], np.ndarray],
     persist: Callable[[CacheArtifact], None],
     authority,
 ) -> CacheRebuildResult:
@@ -41,9 +42,9 @@ def _rebuild_revoked_cache(
     validate_eligibility(authority, eligibility_receipt, new_binding)
     if stale_artifact.binding_sha256 == binding_digest(new_binding):
         _invalid()
-    if not callable(canonical_fp32_source) or not callable(persist):
+    if not callable(persist):
         _invalid()
-    values = canonical_fp32_source()
+    values = _canonical_fp32_values(authority, new_binding)
     if not isinstance(values, np.ndarray):
         _invalid()
     if values.dtype != np.dtype(np.float32) or not np.isfinite(values).all():
@@ -60,4 +61,5 @@ def _rebuild_revoked_cache(
         _invalid()
     consume_eligibility(authority, eligibility_receipt, new_binding)
     persist(rebuilt)
+    validate_current_binding(authority, new_binding)
     return CacheRebuildResult(rebuilt, True)

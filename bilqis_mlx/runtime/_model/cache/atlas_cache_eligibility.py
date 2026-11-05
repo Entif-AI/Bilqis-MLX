@@ -19,6 +19,7 @@ class CacheEligibilityInputs:
     frames: tuple
     task_scope: object
     policy: object
+    canonical_fp32_source: object
 
 
 @dataclass(frozen=True)
@@ -49,6 +50,13 @@ class _AuthoritativeCacheIdentity:
     inference_state_sha256: str
 
 
+@dataclass(frozen=True)
+class _IssuedEligibility:
+    receipt: CacheEligibilityReceipt
+    authority: object
+    identity: _AuthoritativeCacheIdentity
+
+
 def _invalid() -> None:
     from .atlas_cache_codec import _invalid as codec_invalid
     codec_invalid()
@@ -68,9 +76,19 @@ def _require_inputs(inputs) -> CacheEligibilityInputs:
             or type(inputs.task_scope) is not TaskScope
             or type(inputs.policy) is not ContextPolicy
             or type(inputs.frames) is not tuple
-            or type(inputs.export_artifact_digests) is not tuple):
+            or type(inputs.export_artifact_digests) is not tuple
+            or not callable(inputs.canonical_fp32_source)):
         _invalid()
     return inputs
+
+
+def _canonical_fp32_values(authority, binding: CacheBinding):
+    """Recompute cache values through the authority owner's current source."""
+    inputs = authority._current_eligibility_inputs()
+    source = getattr(inputs, "canonical_fp32_source", None)
+    if not callable(source):
+        _invalid()
+    return source(binding)
 
 
 def _source_context_identity(authority, student, inputs) -> tuple[str, str, str, str]:
@@ -141,6 +159,11 @@ def _authoritative_identity(authority, binding: CacheBinding) -> _AuthoritativeC
     return identity
 
 
+def validate_current_binding(authority, binding: CacheBinding) -> None:
+    """Require one cache binding to equal the owner's current authority state."""
+    _authoritative_identity(authority, binding)
+
+
 def _new_eligibility_boundary(authoritative_identity):
     """Return an isolated receipt owner; separate factories cannot register here."""
     issued = {}
@@ -157,7 +180,7 @@ def _new_eligibility_boundary(authoritative_identity):
             binding.context_eligibility_sha256,
             True,
         )
-        issued[id(receipt)] = (receipt, authority, snapshot)
+        issued[id(receipt)] = _IssuedEligibility(receipt, authority, snapshot)
         return receipt
 
     def validate(authority, receipt: CacheEligibilityReceipt, binding: CacheBinding) -> None:
@@ -165,10 +188,11 @@ def _new_eligibility_boundary(authoritative_identity):
         if not isinstance(receipt, CacheEligibilityReceipt) or receipt.eligible is not True:
             _invalid()
         entry = issued.get(id(receipt))
-        if entry is None or entry[0] is not receipt or entry[1] is not authority:
+        if (entry is None or entry.receipt is not receipt
+                or entry.authority is not authority):
             _invalid()
         current = authoritative_identity(authority, binding)
-        if current != entry[2]:
+        if current != entry.identity:
             _invalid()
         expected = (
             binding_digest(binding).hex(), binding.source_release_sha256,

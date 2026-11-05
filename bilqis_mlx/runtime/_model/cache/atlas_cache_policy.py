@@ -101,6 +101,8 @@ def _interactive_cache_inference(
         _invalid()
     policy.validate()
     try:
+        from .atlas_cache_eligibility import validate_current_binding
+        validate_current_binding(authority, expected_binding)
         _require_cache_binding(artifact, expected_binding, authority)
     except BilqisError:
         return _fallback(fp32_recompute, FALLBACK_BINDING)

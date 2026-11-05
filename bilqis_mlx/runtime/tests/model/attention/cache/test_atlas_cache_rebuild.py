@@ -13,6 +13,7 @@ from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import (
     OWNER_ID,
     PUBLIC_KEY_HEX,
     eligibility_receipt,
+    set_test_canonical_source,
 )
 from bilqis_mlx.runtime.atlas_cache_codec import (
     HEAD_WIDTH,
@@ -43,7 +44,8 @@ def decode_cache(*args, **kwargs):
 _RAW_REBUILD = rebuild_revoked_cache
 
 
-def rebuild_revoked_cache(*args, **kwargs):
+def rebuild_revoked_cache(*args, canonical_fp32_source, **kwargs):
+    set_test_canonical_source(canonical_fp32_source)
     return _RAW_REBUILD(CACHE_AUTHORITY, *args, **kwargs)
 
 
@@ -301,7 +303,6 @@ class RevokedCacheRebuildTests(unittest.TestCase):
                 self.stale,
                 new_binding,
                 eligibility_receipt=_receipt(new_binding),
-                canonical_fp32_source=lambda: self.canonical.copy(),
                 persist=lambda _: None,
                 authority_registry=AUTHORITY_REGISTRY,
             )

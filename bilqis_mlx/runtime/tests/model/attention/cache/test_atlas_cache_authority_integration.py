@@ -22,6 +22,7 @@ from bilqis_mlx.runtime.atlas_cache_codec import (
 )
 from bilqis_mlx.runtime.atlas_cache_binding import binding_digest
 from bilqis_mlx.runtime.atlas_cache_eligibility import CacheEligibilityInputs
+from bilqis_mlx.runtime.atlas_cache_records import _encode_cold_cache
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
@@ -184,7 +185,7 @@ def _binding(pointer, source, selection, clearance, frames, task, frontier, poli
 
 class CacheAuthorityIntegrationTests(unittest.TestCase):
     def setUp(self):
-        install_test_owner(self, eligibility=False)
+        install_test_owner(self, eligibility=False, current_binding=False)
 
     def test_caller_matching_receipt_is_not_authority(self):
         binding = CacheBinding(
@@ -195,21 +196,17 @@ class CacheAuthorityIntegrationTests(unittest.TestCase):
             binding.semantic_release_sha256, binding.source_rights_sha256,
             binding.rights_purpose_sha256, binding.policy_epoch_sha256,
             binding.context_eligibility_sha256, True)
-        stale = encode_cold_cache(
-            authority_for_registry(SourceAuthorityRegistry((SourceAuthorityKey(
-                OWNER_ID, PUBLIC_KEY_HEX,
-                (SourceAuthorityScope(DependencyKind.ARTIFACT, "cache:"),)),))),
+        authority = authority_for_registry(SourceAuthorityRegistry((SourceAuthorityKey(
+            OWNER_ID, PUBLIC_KEY_HEX,
+            (SourceAuthorityScope(DependencyKind.ARTIFACT, "cache:"),)),)))
+        stale = _encode_cold_cache(
             np.zeros((256, HEAD_WIDTH), dtype=np.float32), binding.codec_manifest,
-            binding=binding)
+            binding=binding, authority=authority)
         with self.assertRaises(BilqisError):
             rebuild_revoked_cache(
-                authority_for_registry(SourceAuthorityRegistry((SourceAuthorityKey(
-                    OWNER_ID, PUBLIC_KEY_HEX,
-                    (SourceAuthorityScope(DependencyKind.ARTIFACT, "cache:"),)),))),
+                authority,
                 stale, replace(binding, policy_epoch_sha256="f" * 64),
                 eligibility_receipt=forged,
-                canonical_fp32_source=lambda: np.zeros(
-                    (256, HEAD_WIDTH), dtype=np.float32),
                 persist=lambda _: self.fail("caller receipt persisted"))
 
     def test_live_b13_a12_and_context_authority_issue_exact_rebuild_receipt(self):
@@ -225,6 +222,7 @@ class CacheAuthorityIntegrationTests(unittest.TestCase):
             inputs = CacheEligibilityInputs(
                 run / "bamf-state.json", clearance, selection, frontier,
                 _EXPORTED, frames, task, policy,
+                lambda binding: np.zeros((256, HEAD_WIDTH), dtype=np.float32),
             )
             authority = authority_for_registry(
                 _registry(), eligibility_source=lambda: inputs)
@@ -233,15 +231,14 @@ class CacheAuthorityIntegrationTests(unittest.TestCase):
             with _cache_shape_patch():
                 receipt = issue_cache_eligibility(authority, binding)
             stale_binding = replace(binding, generation_sha256="f" * 64)
-            stale = encode_cold_cache(
-                authority, np.ones((256, HEAD_WIDTH), dtype=np.float32),
-                stale_binding.codec_manifest, binding=stale_binding)
+            stale = _encode_cold_cache(
+                np.ones((256, HEAD_WIDTH), dtype=np.float32),
+                stale_binding.codec_manifest, binding=stale_binding,
+                authority=authority)
             persisted = []
             with _cache_shape_patch():
                 rebuilt = rebuild_revoked_cache(
                     authority, stale, binding, eligibility_receipt=receipt,
-                    canonical_fp32_source=lambda: np.zeros(
-                        (256, HEAD_WIDTH), dtype=np.float32),
                     persist=persisted.append)
             self.assertTrue(rebuilt.persisted)
             self.assertEqual(persisted, [rebuilt.artifact])

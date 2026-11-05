@@ -95,16 +95,22 @@ def _require_authority(authority: CacheAuthorityRuntime) -> CacheAuthorityRuntim
 
 def encode_cold_cache(authority, cache, codec_manifest, *, binding):
     from .atlas_cache_records import _encode_cold_cache
+    from .atlas_cache_eligibility import validate_current_binding
+    authority = _require_authority(authority)
+    validate_current_binding(authority, binding)
     return _encode_cold_cache(
         cache, codec_manifest, binding=binding,
-        authority=_require_authority(authority),
+        authority=authority,
     )
 
 
 def decode_cache(authority, artifact, expected_binding):
     from .atlas_cache_records import _decode_cache
+    from .atlas_cache_eligibility import validate_current_binding
+    authority = _require_authority(authority)
+    validate_current_binding(authority, expected_binding)
     return _decode_cache(
-        artifact, expected_binding, authority=_require_authority(authority),
+        artifact, expected_binding, authority=authority,
     )
 
 
@@ -124,15 +130,13 @@ def interactive_cache_inference(
 
 
 def rebuild_revoked_cache(
-    authority, stale_artifact, new_binding, *, eligibility_receipt,
-    canonical_fp32_source, persist,
+    authority, stale_artifact, new_binding, *, eligibility_receipt, persist,
 ):
     from .atlas_cache_rebuild import _rebuild_revoked_cache
     return _rebuild_revoked_cache(
         stale_artifact,
         new_binding,
         eligibility_receipt=eligibility_receipt,
-        canonical_fp32_source=canonical_fp32_source,
         persist=persist,
         authority=_require_authority(authority),
     )
