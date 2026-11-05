@@ -29,8 +29,16 @@ runner changes. Its different focused cases/counts must not be substituted for
 this branch's actual assertions. Flow-only metadata reconciles previously
 accepted PR830/836/808 and represents independently active #784.
 
-Final structure/governance/hygiene/docs/static flow and pinned independent review
-are reported on #844 at the durable head. PM-2026-11-01-007 has native ledger
+At implementation head `fe0939b0`, final issue receipts and independent review
+were still pending. Fresh pinned review `B844-script-imports-20261105` round1/5
+verified the import changes and test logs, and found this premature receipt claim
+as its sole documentation finding. The claim is corrected here; mechanical
+resolution and actual gate receipts must be read back before PR admission.
+PM-2026-11-05-001 records the finding with native ledger verification.
+
+`TEST_EVIDENCE_REUSED`: 12/12 and 171/171 at `fe0939b0` remain applicable after
+consuming unified `2debce4f`: only governance, documentation and flow metadata
+changed; runner, production dependencies, fixtures and test bodies are identical. PM-2026-11-01-007 has native ledger
 readback for the observed baseline. No new source qualification or actual
 student/native AdamW/teacher/checkpoint/graph/source mutation. IPR-0220 remains
 open; human integration is separate from review readiness.
