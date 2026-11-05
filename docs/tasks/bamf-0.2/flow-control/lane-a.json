@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "beb699ad7f131bd97a0983c3f27f8a53f7a240cc",
-  "updated_at": "2026-11-05T14:32:00Z",
+  "observed_unified": "e836f90925cfe1b94cbb638aa25933cc2fe70ab1",
+  "updated_at": "2026-11-05T15:43:27Z",
   "exception": null,
   "items": [
     {
@@ -27,13 +27,13 @@
     },
     {
       "issue": 423,
-      "pr": 865,
+      "pr": null,
       "state": "TURNED_IN",
-      "head_sha": "70c49117ae992e2357b7a81f90eb014655e9f8f3",
-      "summary": "A10.3 public-fixture/F10/full-rights work from PR #858 remains accepted and merged as reviewed-unified 1599a67b, but #423 and parent A10/#361 were reopened after live reconciliation recovered the preserved F06 PRIVATE_REAL synthetic-lifecycle acceptance clause: source -> interpretation -> lesson -> trainer preparation must preserve protected sentinels while refusing public leakage, not merely reject at export. Follow-up draft PR #865 exact head 70c49117 carries that scoped repair; hosted portable-core/portable/Semantic ABI are green and fresh independent exact-head EGM is pending.",
+      "head_sha": "3f15216b3acaa1e1345b24c54205918ee8d06783",
+      "summary": "A10.3 public-fixture/F10/full-rights work from PR #858 remains accepted at reviewed-unified 1599a67b. The preserved F06 PRIVATE_REAL lifecycle gap recovered during post-merge reconciliation was repaired by PR #865 final head 3f15216b: a distinct synthetic protected source manifestation now traverses source -> interpretation -> lesson -> trainer preparation without public leakage, and split-receipt identity binds complete rights plus interpretation revision. Exact-head hosted portable-core/portable/Semantic ABI passed and independent EGM was CLEAN. PR #865 merged into reviewed unified as e836f909; #423 may close after this custody repair lands, followed by parent A10/#361 if aggregate acceptance remains satisfied.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a10-3-423-20261105",
-      "merged_pr": 858
+      "merged_pr": 865
     },
     {
       "issue": 425,
