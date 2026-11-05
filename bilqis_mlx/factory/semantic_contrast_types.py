@@ -143,33 +143,55 @@ class AllowedVariation:
             _fail("BAMF_SEMANTIC_CONTRAST_VARIATION_INVALID")
         if self.surface_label is not None and not _text(self.surface_label):
             _fail("BAMF_SEMANTIC_CONTRAST_VARIATION_INVALID")
-        if self.family is ContrastFamily.ROLE_SWAP:
-            if (not all(_text(x) for x in (self.role_a, self.role_b, self.query_role))
-                    or self.role_a == self.role_b):
-                _fail("BAMF_SEMANTIC_CONTRAST_VARIATION_INVALID")
-        elif self.family is ContrastFamily.CARDINALITY_CHANGE:
-            if not _text(self.role_id):
-                _fail("BAMF_SEMANTIC_CONTRAST_VARIATION_INVALID")
-            if self.remove:
-                if type(self.occurrence_index) is not int or self.occurrence_index < 0 or self.concept is not None:
-                    _fail("BAMF_SEMANTIC_CONTRAST_VARIATION_INVALID")
-            elif type(self.concept) is not ConceptRef or self.occurrence_index is not None:
-                _fail("BAMF_SEMANTIC_CONTRAST_VARIATION_INVALID")
-        elif self.family is ContrastFamily.SCOPE_NEGATION:
-            if not _text(self.scope) or type(self.negated) is not bool:
-                _fail("BAMF_SEMANTIC_CONTRAST_VARIATION_INVALID")
-        elif self.family is ContrastFamily.KNOWN_UNKNOWN:
-            if not _text(self.role_id) or type(self.occurrence_index) is not int or self.occurrence_index < 0:
-                _fail("BAMF_SEMANTIC_CONTRAST_VARIATION_INVALID")
-        elif self.family is ContrastFamily.PLANNED_OCCURRED:
-            if type(self.status) is not TemporalStatus or self.status is TemporalStatus.UNKNOWN:
-                _fail("BAMF_SEMANTIC_CONTRAST_VARIATION_INVALID")
-        elif self.family is ContrastFamily.MISSING_NEGATIVE:
-            if (type(self.observation_state) is not ObservationState
-                    or self.observation_state not in {ObservationState.MISSING, ObservationState.NEGATIVE}):
-                _fail("BAMF_SEMANTIC_CONTRAST_VARIATION_INVALID")
-        elif self.family is ContrastFamily.MORPHOLOGY_ALTERNATIVE:
-            if not _text(self.morphology):
-                _fail("BAMF_SEMANTIC_CONTRAST_VARIATION_INVALID")
+        _VARIATION_VALIDATORS[self.family](self)
 
 
+def _validate_role_swap(item: AllowedVariation) -> None:
+    if not all(_text(x) for x in (item.role_a, item.role_b, item.query_role)) or item.role_a == item.role_b:
+        _fail("BAMF_SEMANTIC_CONTRAST_VARIATION_INVALID")
+
+
+def _validate_cardinality(item: AllowedVariation) -> None:
+    if not _text(item.role_id):
+        _fail("BAMF_SEMANTIC_CONTRAST_VARIATION_INVALID")
+    if item.remove:
+        if type(item.occurrence_index) is not int or item.occurrence_index < 0 or item.concept is not None:
+            _fail("BAMF_SEMANTIC_CONTRAST_VARIATION_INVALID")
+    elif type(item.concept) is not ConceptRef or item.occurrence_index is not None:
+        _fail("BAMF_SEMANTIC_CONTRAST_VARIATION_INVALID")
+
+
+def _validate_scope(item: AllowedVariation) -> None:
+    if not _text(item.scope) or type(item.negated) is not bool:
+        _fail("BAMF_SEMANTIC_CONTRAST_VARIATION_INVALID")
+
+
+def _validate_unknown(item: AllowedVariation) -> None:
+    if not _text(item.role_id) or type(item.occurrence_index) is not int or item.occurrence_index < 0:
+        _fail("BAMF_SEMANTIC_CONTRAST_VARIATION_INVALID")
+
+
+def _validate_status(item: AllowedVariation) -> None:
+    if type(item.status) is not TemporalStatus or item.status is TemporalStatus.UNKNOWN:
+        _fail("BAMF_SEMANTIC_CONTRAST_VARIATION_INVALID")
+
+
+def _validate_observation(item: AllowedVariation) -> None:
+    if type(item.observation_state) is not ObservationState or item.observation_state not in {ObservationState.MISSING, ObservationState.NEGATIVE}:
+        _fail("BAMF_SEMANTIC_CONTRAST_VARIATION_INVALID")
+
+
+def _validate_morphology(item: AllowedVariation) -> None:
+    if not _text(item.morphology):
+        _fail("BAMF_SEMANTIC_CONTRAST_VARIATION_INVALID")
+
+
+_VARIATION_VALIDATORS = {
+    ContrastFamily.ROLE_SWAP: _validate_role_swap,
+    ContrastFamily.CARDINALITY_CHANGE: _validate_cardinality,
+    ContrastFamily.SCOPE_NEGATION: _validate_scope,
+    ContrastFamily.KNOWN_UNKNOWN: _validate_unknown,
+    ContrastFamily.PLANNED_OCCURRED: _validate_status,
+    ContrastFamily.MISSING_NEGATIVE: _validate_observation,
+    ContrastFamily.MORPHOLOGY_ALTERNATIVE: _validate_morphology,
+}
