@@ -70,6 +70,15 @@
       "resume_trigger": null
     },
     {
+      "issue": 719,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "fe5f4a1380ff14dabb98d3b07fb00ffcc4bc442a",
+      "summary": "B14.4 EGM remediation: bind cache rebuild eligibility to current B13 accepted-generation custody plus A12/source-rights and context-policy authority.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/719-cache-eligibility-authority-20261105"
+    },
+    {
       "issue": 478,
       "pr": 704,
       "state": "TURNED_IN",
