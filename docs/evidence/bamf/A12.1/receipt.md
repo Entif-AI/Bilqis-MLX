@@ -43,12 +43,21 @@ are current source and derived-source pin ledgers.
 
 audit_atlas_authority(release, abi, ast, lesson_manifest, registry_mirror)
 accepts only the current immutable typed records, reloads the repository-pinned
-A01 snapshot, and returns a deterministic AuthorityReceipt containing separate
-consumer bindings and graph/formal-domain digests.
+A01 snapshot, re-enters the repository-owned A03 frame-schema pin ledger, and
+returns a deterministic AuthorityReceipt containing separate consumer bindings
+and graph/formal-domain digests. Lesson semantic IDs, constituents, and
+prerequisite closure must all resolve inside the admitted A01/formal-domain
+authority set.
 
 A deliberate ABI release mismatch is rejected at the first audit boundary with
-A12_AUTHORITY_SOURCE_BINDING_MISMATCH. A stale shadow catalog or renamed
-plausible gloss is not an authority input and cannot alter the audit receipt.
+A12_AUTHORITY_SOURCE_BINDING_MISMATCH. An unpinned A03 manifest is rejected with
+A12_AUTHORITY_AST_SOURCE_PIN_MISMATCH, and a lesson that smuggles a foreign
+constituent/prerequisite is rejected with A12_AUTHORITY_LESSON_SOURCE_MISMATCH.
+A held source identity remains held even when a nearby admitted concept receives
+a plausible English gloss or its labels are renamed/reordered: the held identity
+cannot be activated through the vocabulary planner, projected into prospective
+factor features, emitted as a Factory source lesson, or promoted by the
+curriculum/teacher candidate surface; its source-owned hold reason is preserved.
 
 The status remains SOURCE_ATTESTED_NOT_NEURAL_ADMITTED; this leaf does not
 upgrade staged A02 vocabulary state or source-projection lessons into neural
@@ -60,7 +69,7 @@ Owner suite, default:
 
 python3 -B scripts/run_tests.py bilqis_mlx/semantics/tests/test_atlas_release_audit.py
 
-Result: 8 passed, 0 failed, 1 expected optional-real-source skip.
+Result: 10 passed, 0 failed, 1 expected optional-real-source skip.
 
 Real producer replay, using the repository-pinned A01 artifact and its exact
 source bundle:
@@ -101,5 +110,9 @@ Additional gates:
 
 ## Independent review
 
-Fresh exact-head EGM: pending at this receipt checkpoint. Integration requires a
-fresh independent review of the final branch head.
+The first fresh exact-head EGM on 859dd3fc identified one Blocker and two Majors:
+the audit did not re-enter the A03 source-pin ledger, lesson constituents and
+prerequisite closure were not checked against admitted semantic authority, and
+the required cross-surface held-gloss adversary had not been demonstrated. This
+receipt records the resulting repair. A fresh independent EGM of the final
+repair head remains required before integration.

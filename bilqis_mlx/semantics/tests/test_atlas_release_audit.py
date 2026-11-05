@@ -13,7 +13,7 @@ from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory.skos_curriculum import compile_source_constructive_lessons
 from bilqis_mlx.factory.skos_curriculum.lesson_types import (
-    SourceConstructiveLessonSet,
+    SourceConstructiveLesson, SourceConstructiveLessonSet,
 )
 from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
@@ -111,17 +111,27 @@ def _typed_authority_fixture():
         expected_schema_map_sha256=tag_map.digest)
     lessons = SourceConstructiveLessonSet(
         snapshot.release_sha256, "5" * 64, (), ())
-    return snapshot, selection, abi, ast, lessons, mirror
+    ast_pin = {
+        "family": "fixture",
+        "semantic_release": snapshot.release_sha256,
+        "atlas_bundle_id": snapshot.bundle_id,
+        "source_bundle_id": snapshot.source_bundle_id,
+        "schema_manifest_sha256": ast.trusted_sha256,
+        "schema_map_sha256": ast.manifest.schema_map.digest,
+    }
+    return snapshot, selection, abi, ast, lessons, mirror, ast_pin
 
 
 class AtlasAuthorityAuditTests(unittest.TestCase):
     def test_current_consumers_bind_one_pinned_source(self):
-        snapshot, selection, abi, ast, lessons, mirror = _typed_authority_fixture()
+        snapshot, selection, abi, ast, lessons, mirror, ast_pin = _typed_authority_fixture()
         with patch(
                 "bilqis_mlx.semantics.atlas_release_audit.load_pinned_atlas_snapshot",
                 return_value=snapshot), patch(
                 "bilqis_mlx.semantics.atlas_release_audit._current_prior_abi_sha256",
-                return_value=snapshot.prior_abi_sha256):
+                return_value=snapshot.prior_abi_sha256), patch(
+                "bilqis_mlx.semantics.atlas_release_audit._source_pins",
+                return_value=(ast_pin,)):
             first = audit_atlas_authority(
                 selection, abi, ast, lessons, mirror)
             second = audit_atlas_authority(
@@ -145,12 +155,14 @@ class AtlasAuthorityAuditTests(unittest.TestCase):
                 for binding in snapshot.formal_domain_bindings))
 
     def test_first_mismatched_consumer_fails_closed(self):
-        snapshot, selection, abi, ast, lessons, mirror = _typed_authority_fixture()
+        snapshot, selection, abi, ast, lessons, mirror, ast_pin = _typed_authority_fixture()
         with patch(
                 "bilqis_mlx.semantics.atlas_release_audit.load_pinned_atlas_snapshot",
                 return_value=snapshot), patch(
                 "bilqis_mlx.semantics.atlas_release_audit._current_prior_abi_sha256",
-                return_value=snapshot.prior_abi_sha256):
+                return_value=snapshot.prior_abi_sha256), patch(
+                "bilqis_mlx.semantics.atlas_release_audit._source_pins",
+                return_value=(ast_pin,)):
             with self.assertRaises(BilqisError) as caught:
                 audit_atlas_authority(
                     selection, replace(abi, semantic_release="9" * 64),
@@ -160,12 +172,14 @@ class AtlasAuthorityAuditTests(unittest.TestCase):
             "A12_AUTHORITY_SOURCE_BINDING_MISMATCH")
 
     def test_stale_shadow_catalog_is_not_an_authority_input(self):
-        snapshot, selection, abi, ast, lessons, mirror = _typed_authority_fixture()
+        snapshot, selection, abi, ast, lessons, mirror, ast_pin = _typed_authority_fixture()
         with patch(
                 "bilqis_mlx.semantics.atlas_release_audit.load_pinned_atlas_snapshot",
                 return_value=snapshot), patch(
                 "bilqis_mlx.semantics.atlas_release_audit._current_prior_abi_sha256",
-                return_value=snapshot.prior_abi_sha256):
+                return_value=snapshot.prior_abi_sha256), patch(
+                "bilqis_mlx.semantics.atlas_release_audit._source_pins",
+                return_value=(ast_pin,)):
             baseline = audit_atlas_authority(
                 selection, abi, ast, lessons, mirror)
             stale_shadow = {
@@ -176,6 +190,152 @@ class AtlasAuthorityAuditTests(unittest.TestCase):
             replay = audit_atlas_authority(
                 selection, abi, ast, lessons, mirror)
         self.assertEqual(replay, baseline)
+
+    def test_unpinned_ast_and_foreign_lesson_inputs_fail_closed(self):
+        snapshot, selection, abi, ast, lessons, mirror, ast_pin = _typed_authority_fixture()
+        common = (
+            patch(
+                "bilqis_mlx.semantics.atlas_release_audit.load_pinned_atlas_snapshot",
+                return_value=snapshot),
+            patch(
+                "bilqis_mlx.semantics.atlas_release_audit._current_prior_abi_sha256",
+                return_value=snapshot.prior_abi_sha256),
+        )
+        with common[0], common[1], patch(
+                "bilqis_mlx.semantics.atlas_release_audit._source_pins",
+                return_value=()):
+            with self.assertRaises(BilqisError) as caught:
+                audit_atlas_authority(selection, abi, ast, lessons, mirror)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "A12_AUTHORITY_AST_SOURCE_PIN_MISMATCH")
+
+        entry = next(iter(snapshot.abi_entries))
+        lesson = SourceConstructiveLesson(
+            snapshot.release_sha256, entry.semantic_id, "positive_identity",
+            "8" * 64,
+            ("identity", entry.semantic_id, "source:fixture"),
+            ("identity", entry.semantic_id, "source:contrast"),
+            "SEMANTIC_ID", "fixture.checker/v1", (entry.semantic_id,), (),
+            ("source-identity",))
+        forged = replace(
+            lesson,
+            constituents=(entry.semantic_id, "urn:foreign:not-admitted"),
+            prerequisite_closure=("urn:foreign:not-admitted",))
+        forged_set = replace(lessons, lessons=(forged,))
+        with patch(
+                "bilqis_mlx.semantics.atlas_release_audit.load_pinned_atlas_snapshot",
+                return_value=snapshot), patch(
+                "bilqis_mlx.semantics.atlas_release_audit._current_prior_abi_sha256",
+                return_value=snapshot.prior_abi_sha256), patch(
+                "bilqis_mlx.semantics.atlas_release_audit._source_pins",
+                return_value=(ast_pin,)):
+            with self.assertRaises(BilqisError) as caught:
+                audit_atlas_authority(
+                    selection, abi, ast, forged_set, mirror)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "A12_AUTHORITY_LESSON_SOURCE_MISMATCH")
+
+    def test_held_gloss_cannot_promote_across_semantic_or_teacher_surfaces(self):
+        from bilqis_mlx.factory.skos_curriculum import (
+            LearnedFrontier, SOURCE_FAMILY_ADAPTERS,
+            _compile_semantic_curriculum_snapshot,
+            _compile_source_constructive_lessons_snapshot,
+        )
+        from bilqis_mlx.factory.tests.test_skos_curriculum import _snapshot
+        from bilqis_mlx.semantics.atlas_features import (
+            FeatureSchema, build_feature_manifest,
+            plan_prospective_identity_features,
+        )
+        from bilqis_mlx.runtime.model_topology_v2 import (
+            GenerationExtents, ModelTopologySpecV2,
+        )
+        from bilqis_mlx.semantics.atlas.vocabulary import (
+            VocabularyPrior, plan_vocabulary_extension,
+        )
+        from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+        from bilqis_mlx.semantics.atlas_projection import AtlasLabel
+
+        original = _snapshot()
+        held = next(
+            row for row in original.withheld_rows
+            if row.source_disposition == "SOURCE_HELD")
+        admitted = original.concepts[0]
+        plausible = "plausible English gloss matching the held source"
+        renamed = replace(
+            admitted,
+            concept=replace(
+                admitted.concept,
+                labels=(
+                    AtlasLabel("altLabel", "near synonym"),
+                    AtlasLabel("prefLabel", plausible),
+                )))
+        relabeled = replace(
+            original, concepts=(renamed, *original.concepts[1:]))
+
+        for snapshot in (original, relabeled):
+            with self.subTest(labels=snapshot.concepts[0].concept.labels):
+                admitted_ids = {entry.semantic_id for entry in snapshot.abi_entries}
+                self.assertNotIn(held.semantic_id, admitted_ids)
+
+                features = build_feature_manifest(snapshot, FeatureSchema((), ()))
+                self.assertIn(
+                    (held.semantic_id, held.reason_code), features.held_reasons)
+                with self.assertRaises(BilqisError) as caught:
+                    features.features_for(
+                        held.semantic_id, "UNKNOWN", "UNKNOWN", "task:held")
+                self.assertEqual(
+                    caught.exception.context["reason"],
+                    "BAMF_FEATURE_CONCEPT_NOT_ADMITTED")
+                with self.assertRaises(BilqisError):
+                    plan_prospective_identity_features(
+                        snapshot, features, (held.semantic_id,),
+                        expected_feature_digest=features.digest)
+
+                selection = AtlasArtifactSelection(
+                    "fixture", snapshot.bundle_id, snapshot.release_sha256,
+                    snapshot.source_bundle_id)
+                active = tuple(
+                    entry.semantic_id for entry in snapshot.abi_entries
+                    if entry.active)
+                prior = VocabularyPrior(
+                    selection,
+                    GenerationExtents(
+                        1, 1, snapshot.active_set_sha256,
+                        "b" * 64, features.digest),
+                    features, FeatureSchema((), ()), active, "e" * 64)
+                with patch(
+                        "bilqis_mlx.semantics.atlas.vocabulary_planning.load_pinned_atlas_snapshot",
+                        return_value=snapshot), self.assertRaises(BilqisError):
+                    plan_vocabulary_extension(
+                        prior, (held.semantic_id,), ModelTopologySpecV2())
+
+                source_lessons = _compile_source_constructive_lessons_snapshot(
+                    snapshot).lessons
+                self.assertFalse(any(
+                    held.semantic_id in (
+                        lesson.semantic_id, *lesson.constituents,
+                        *lesson.prerequisite_closure)
+                    for lesson in source_lessons))
+
+                teacher = _compile_semantic_curriculum_snapshot(
+                    snapshot, SOURCE_FAMILY_ADAPTERS,
+                    LearnedFrontier(
+                        snapshot.release_sha256,
+                        claimed_exposed=(held.semantic_id,),
+                        claimed_qualified=(held.semantic_id,)))
+                self.assertNotIn(
+                    held.semantic_id, teacher.source_eligible_concept_ids)
+                self.assertFalse(any(
+                    held.semantic_id in (
+                        lesson.semantic_id, *lesson.constituents,
+                        *lesson.prerequisite_closure)
+                    for lesson in teacher.source_lessons))
+                self.assertEqual(
+                    next(row for row in teacher.source_hold_rows
+                         if row.semantic_id == held.semantic_id).reason_code,
+                    held.reason_code)
 
     @unittest.skipUnless(
         os.environ.get("BILQIS_A01_ATLAS_BUNDLE")

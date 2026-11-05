@@ -21,6 +21,7 @@ from .cognitive_dependencies import DependencyKind, DependencyRef
 from .context_eligibility import SourceFrontier
 from .domains import contract_digest
 from .released_frame_schemas import VerifiedReleasedFrameSchemas
+from .released_frame_schemas import _source_pins
 
 
 _SIGNATURE = re.compile(r"[0-9a-f]{128}")
@@ -172,6 +173,15 @@ def _validated_audit_snapshot(
         if hasattr(value, "__post_init__"):
             value.__post_init__()
     ast.__post_init__()
+    ast_pins = tuple(
+        entry for entry in _source_pins()
+        if entry["semantic_release"] == snapshot.release_sha256
+        and entry["atlas_bundle_id"] == snapshot.bundle_id
+        and entry["source_bundle_id"] == snapshot.source_bundle_id
+        and entry["schema_manifest_sha256"] == ast.trusted_sha256
+        and entry["schema_map_sha256"] == ast_manifest.schema_map.digest)
+    if len(ast_pins) != 1:
+        _fail("A12_AUTHORITY_AST_SOURCE_PIN_MISMATCH")
     if (snapshot.release_sha256 != release.release_sha256
             or snapshot.source_bundle_id != release.source_bundle_id
             or snapshot.bundle_id != release.bundle_id
@@ -208,9 +218,13 @@ def _validated_audit_snapshot(
         semantic_id for binding in snapshot.formal_domain_bindings
         for semantic_id in binding.semantic_ids
     }
+    admitted_semantic_ids = set(abi_ids) | formal_ids
     if any(
-            lesson.semantic_id not in set(abi_ids) | formal_ids
+            lesson.semantic_id not in admitted_semantic_ids
             or lesson.semantic_release != snapshot.release_sha256
+            or any(item not in admitted_semantic_ids
+                   for item in (*lesson.constituents,
+                                *lesson.prerequisite_closure))
             for lesson in lesson_manifest.lessons):
         _fail("A12_AUTHORITY_LESSON_SOURCE_MISMATCH")
     return snapshot
