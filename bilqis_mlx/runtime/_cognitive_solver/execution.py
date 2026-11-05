@@ -26,15 +26,17 @@ def _fills_declared_holes(candidate: TaskGoal, original: TaskGoal) -> bool:
                 or len(node.operands) != len(source.operands)):
             return False
         if source.operator_id is not None:
-            if node != source:
+            if (node.operator_id != source.operator_id
+                    or node.candidate_operator_ids != source.candidate_operator_ids):
                 return False
-            continue
-        if node.operator_id is None:
+        elif node.operator_id is None:
             if (not set(node.candidate_operator_ids).issubset(
                     source.candidate_operator_ids)
-                    or node.constraints != source.constraints):
+                    or not node.candidate_operator_ids):
                 return False
         elif node.operator_id not in source.candidate_operator_ids:
+            return False
+        elif node.candidate_operator_ids:
             return False
         for index, (fixed, chosen) in enumerate(zip(source.operands, node.operands)):
             if fixed is not None:
@@ -46,6 +48,11 @@ def _fills_declared_holes(candidate: TaskGoal, original: TaskGoal) -> bool:
             elif not set(node.candidate_operand_refs[index]).issubset(
                     source.candidate_operand_refs[index]):
                 return False
+        unresolved = (node.operator_id is None
+                      or any(operand is None for operand in node.operands))
+        if (unresolved and node.constraints != source.constraints
+                or not unresolved and node.constraints not in (source.constraints, ())):
+            return False
     return True
 
 

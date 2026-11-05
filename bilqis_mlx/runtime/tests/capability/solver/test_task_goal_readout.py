@@ -10,7 +10,11 @@ from bilqis_mlx.runtime.task_goal_readout import (
     augment_answer_plan_for_task_goal, proposal_from_task_goal_output,
     task_goal_route_decisions,
 )
-from bilqis_mlx.runtime.cognitive_solver import NeuralRequest
+from bilqis_mlx.runtime.cognitive_solver import (
+    GenerationBinding, NeuralRequest, SolveBudget, SolveContext, solve_task,
+)
+from bilqis_mlx.runtime.operator_registry import RouteKind
+from bilqis_mlx.semantics.cognitive_dag import DAGBudget
 from bilqis_mlx.source_adapters.answer_choice_task_goal import (
     lower_answer_choice_task_goal,
 )
@@ -101,6 +105,36 @@ class TaskGoalReadoutTests(unittest.TestCase):
         self.assertEqual(node.candidate_operand_refs, ())
         self.assertEqual(len(node.operands), 1)
         self.assertIn(node.operands[0].identity, route[0].legal_values)
+
+    def test_fixed_operator_operand_hole_is_admissible_neural_refinement(self):
+        _, _, _, memory, context, plan, semantics, parameters = self._case()
+        capability = SimpleNamespace(
+            capability_id="A.IDENTITY",
+            answer_families=(AnswerFamily("binary", BINARY),),
+        )
+        goal, binding = lower_answer_choice_task_goal(
+            {"id": "answer-choice", "capability": "A.IDENTITY", "tokens": [1, 2]},
+            semantic_release=semantics.features.semantic_release,
+            capability=capability,
+        )
+        plan = replace(plan, generation_binding=CANDIDATE)
+        routed = augment_answer_plan_for_task_goal(plan, goal)
+        output = predict_typed(memory, context, routed, semantics, parameters)
+
+        def proposer(request):
+            return proposal_from_task_goal_output(goal, request, output)
+
+        result = solve_task(
+            goal,
+            SolveContext(binding, neural_proposer=proposer),
+            GenerationBinding(
+                CANDIDATE, goal.semantic_release, contract_digest(binding)),
+            SolveBudget(DAGBudget()),
+        )
+
+        self.assertIs(result.route, RouteKind.NEURAL_COMPOSITION)
+        self.assertIsNone(result.fallback_reason)
+        self.assertEqual(result.answer.state.value, "VALUE")
 
 
 if __name__ == "__main__":
