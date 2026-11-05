@@ -32,7 +32,7 @@ from bilqis_mlx.factory.teaching import (
     describe_delivered_teaching,
     draw_teaching_option_rows,
 )
-from bilqis_mlx.factory.tests.test_semantic_contrasts import source_frame
+from bilqis_mlx.factory.tests.semantic_contrast.test_semantic_contrasts import source_frame
 from bilqis_mlx.live_grade_c import registry_graph
 from bilqis_mlx.source_adapters import event_frames
 from bilqis_mlx.source_adapters.school import live_source_registry
