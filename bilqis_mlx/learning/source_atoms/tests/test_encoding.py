@@ -8,6 +8,10 @@ import numpy as np
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.frame_encoder import CompiledEncoderInput
 from bilqis_mlx.learning.source_atoms import SourceAtomRow, encode_source_compiled
+from bilqis_mlx.runtime.atlas_artifact_owner import AtlasFeatureArtifactOwner
+from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
+    AUTHORITY, _event, _result,
+)
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes,
 )
@@ -30,6 +34,7 @@ class SourceEncodingTests(TestCase):
             self.snapshot.active_set_sha256, "b" * 64, features.digest)
         rows = compile_prefix_rows(((ast, 2, self.config),), self.snapshot.release_sha256)
         self.compiled = CompiledEncoderInput(rows, (self.config,), features, extents)
+        self.artifact_owner = AtlasFeatureArtifactOwner(features, self.schema)
         self.parameters = {
             item.name: mx.zeros(item.shape, dtype=mx.float32)
             for item in expected_bamf_shapes(ModelTopologySpecV2(), extents)}
@@ -44,7 +49,8 @@ class SourceEncodingTests(TestCase):
         return encode_source_compiled(
             self.compiled if compiled is None else compiled,
             self.parameters if parameters is None else parameters,
-            (self.source if source is None else source,), self.schema)
+            (self.source if source is None else source,), self.schema,
+            self.artifact_owner)
 
     def test_real_b03_result_matches_literal_source_owned_identity_and_factor_equation(self):
         before = {key: id(value) for key, value in self.parameters.items()}
@@ -92,6 +98,43 @@ class SourceEncodingTests(TestCase):
         with self.assertRaises(BilqisError):
             self.encode(compiled=changed)
 
+    def test_source_correction_holds_real_features_before_next_use(self):
+        event = _event(self.artifact_owner.source_dependency)
+        queue = self.artifact_owner.apply_correction(event, AUTHORITY)
+        self.assertEqual(
+            queue.held_artifact_ids,
+            (self.artifact_owner.current_node.artifact_id,))
+        with self.assertRaises(BilqisError) as caught:
+            self.encode()
+        self.assertEqual(caught.exception.context["reason"],
+                         "BAMF_C09_ARTIFACT_HELD")
+
+    def test_equal_revalidation_clears_hold_but_changed_output_rejects_old_features(self):
+        event = _event(self.artifact_owner.source_dependency)
+        self.artifact_owner.apply_correction(event, AUTHORITY)
+        progress = self.artifact_owner.advance(
+            _result(
+                self.artifact_owner.current_node,
+                digest=self.artifact_owner.current_node.content_digest,
+                correction=event),
+            AUTHORITY)
+        self.assertEqual(progress.queue.pending, ())
+        self.assertEqual(progress.queue.held_artifact_ids, ())
+        self.encode()
+
+        changed_owner = AtlasFeatureArtifactOwner(self.compiled.features, self.schema)
+        changed_event = _event(changed_owner.source_dependency)
+        changed_owner.apply_correction(changed_event, AUTHORITY)
+        changed_owner.advance(_result(
+            changed_owner.current_node, digest="c" * 64,
+            correction=changed_event), AUTHORITY)
+        with self.assertRaises(BilqisError) as caught:
+            encode_source_compiled(
+                self.compiled, self.parameters, (self.source,), self.schema,
+                changed_owner)
+        self.assertEqual(caught.exception.context["reason"],
+                         "BAMF_C09_ATLAS_FEATURE_CONTENT_DRIFT")
+
     def test_partial_parameter_tree_and_caller_atom_vectors_are_not_accepted(self):
         partial = {key: value for key, value in self.parameters.items()
                    if key != "blocks.11.ffn_in"}
@@ -100,4 +143,5 @@ class SourceEncodingTests(TestCase):
         with self.assertRaises(TypeError):
             encode_source_compiled(
                 self.compiled, self.parameters, (self.source,), self.schema,
+                self.artifact_owner,
                 atom_vectors=mx.zeros((1, 2, 768)))

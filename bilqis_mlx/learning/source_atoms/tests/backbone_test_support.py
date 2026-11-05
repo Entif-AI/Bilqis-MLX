@@ -8,6 +8,7 @@ from bilqis_mlx.learning.frame_embeddings import FeatureRequest
 from bilqis_mlx.learning.source_atoms.backbone import (
     start_source_backbone_numerical, start_source_backbone_producer,
 )
+from bilqis_mlx.runtime.atlas_artifact_owner import AtlasFeatureArtifactOwner
 from bilqis_mlx.runtime.block_attnres import DepthFrameFeatures, depth_parameter_view
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2, expected_bamf_shapes
 from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest
@@ -32,6 +33,7 @@ class SourceBackboneTestBase(TestCase):
         features = build_feature_manifest(self.snapshot, self.schema)
         extents = replace(self.compiled.extents, factor_map_digest=features.digest)
         self.compiled = replace(self.compiled, features=features, extents=extents)
+        self.artifact_owner = AtlasFeatureArtifactOwner(features, self.schema)
         self.parameters = {
             item.name: (self.parameters[item.name]
                         if self.parameters[item.name].shape == item.shape
@@ -46,12 +48,13 @@ class SourceBackboneTestBase(TestCase):
         return start_source_backbone_numerical(
             self.compiled if compiled is None else compiled,
             self.parameters if parameters is None else parameters,
-            (self.source,) if sources is None else sources, self.schema)
+            (self.source,) if sources is None else sources, self.schema,
+            self.artifact_owner)
 
     def producer(self, parameters=None):
         return start_source_backbone_producer(
             self.compiled, self.parameters if parameters is None else parameters,
-            (self.source,), self.schema)
+            (self.source,), self.schema, self.artifact_owner)
 
     def _depth_context(self):
         formal_fixtures.PublicFormalTypeCompositionTests.setUpClass()

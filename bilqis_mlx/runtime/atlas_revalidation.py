@@ -38,6 +38,7 @@ from .atlas_source_authority import (
     SourceAuthorityRegistry,
     SourceAuthorityScope,
 )
+from .atlas_cache_owner import ExactCacheArtifactOwner, cache_artifact_digest
 
 __all__ = [
     "CORRECTION_EVENT_SCHEMA",
@@ -61,6 +62,8 @@ __all__ = [
     "SourceAuthorityRegistry",
     "SourceAuthorityScope",
     "StateTransition",
+    "ExactCacheArtifactOwner",
+    "cache_artifact_digest",
     "advance_revalidation",
     "apply_correction",
     "next_revalidation_task",

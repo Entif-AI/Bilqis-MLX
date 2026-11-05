@@ -1,6 +1,7 @@
 """Differentiable raw-atom vectors from the actual released B01 parameters."""
 import mlx.core as mx
 
+from ...runtime.atlas_artifact_owner import AtlasFeatureArtifactOwner
 from ...semantics.atlas_features import build_feature_manifest
 from ...semantics.atlas_snapshot import load_pinned_atlas_snapshot
 from ...semantics.source_atom_binding.common import invalid
@@ -15,14 +16,18 @@ from ...runtime.model_topology_v2 import ModelTopologySpecV2
 from .inputs import SourceAtomRow
 
 
-def source_atom_vectors(parameters, compiled, config, source, features, feature_schema, extents):
+def source_atom_vectors(
+    parameters, compiled, config, source, features, feature_schema, extents,
+    artifact_owner,
+):
     """Recheck source/rights before gathering any identity tensor.
 
     Native formal signatures remain source metadata. A06 alone owns categorical
     feature types. Unframed atoms use its existing NONE role/schema and local
     slot zero, without casting the atom to a caller-created ConceptRef.
     """
-    if type(source) is not SourceAtomRow:
+    if (type(source) is not SourceAtomRow
+            or type(artifact_owner) is not AtlasFeatureArtifactOwner):
         invalid("BAMF_SOURCE_ATOM_INPUT_INVALID")
     snapshot = load_pinned_atlas_snapshot(source.selection)
     expected_features = build_feature_manifest(snapshot, feature_schema)
@@ -32,6 +37,7 @@ def source_atom_vectors(parameters, compiled, config, source, features, feature_
             or extents.active_semantic_digest != snapshot.active_set_sha256
             or extents.semantic_bank_count < minimum_bank_count):
         invalid("BAMF_SOURCE_ATOM_GENERATION_DRIFT")
+    artifact_owner.require(features)
     handoff = build_source_atom_handoff(
         compiled, config, source.selection, source.source_row, source.graph,
         **source.replay_arguments())

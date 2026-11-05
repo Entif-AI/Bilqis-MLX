@@ -25,6 +25,7 @@ from bilqis_mlx.runtime.atlas_cache_codec import (
     record_header_bytes,
     reference_candidate_evaluation,
 )
+from bilqis_mlx.runtime.atlas_revalidation import ExactCacheArtifactOwner
 
 
 _RAW_ENCODE = encode_cold_cache
@@ -75,6 +76,7 @@ class CachePolicyTests(unittest.TestCase):
         self.binding = _binding(self.manifest)
         self.values = np.ones((256, HEAD_WIDTH), dtype=np.float32)
         self.artifact = encode_cold_cache(self.values, self.manifest, binding=self.binding)
+        self.owner = ExactCacheArtifactOwner(CACHE_AUTHORITY, self.artifact, self.binding)
 
     def test_reference_candidate_evaluation_is_exact_fp32_only(self):
         values = np.arange(12, dtype=np.float32).reshape(3, 4)
@@ -101,6 +103,7 @@ class CachePolicyTests(unittest.TestCase):
                 result = interactive_cache_inference(
                     self.artifact,
                     self.binding,
+                    artifact_owner=self.owner,
                     cached_infer=lambda _: {"answer": "CACHE"},
                     fp32_recompute=lambda: reference,
                     quality_check=lambda _: observation,
@@ -113,6 +116,7 @@ class CachePolicyTests(unittest.TestCase):
         accepted = interactive_cache_inference(
             self.artifact,
             self.binding,
+            artifact_owner=self.owner,
             cached_infer=lambda _: {"answer": "CACHE"},
             fp32_recompute=lambda: reference,
             quality_check=lambda _: CacheQualityObservation(True, 0.01),
@@ -183,6 +187,8 @@ class CachePolicyTests(unittest.TestCase):
         agreement = int(np.argmax(approximate)) == int(np.argmax(reference))
         result = interactive_cache_inference(
             key_artifact, self.binding,
+            artifact_owner=ExactCacheArtifactOwner(
+                CACHE_AUTHORITY, key_artifact, self.binding),
             cached_infer=lambda k: attention(k, cached_values),
             fp32_recompute=lambda: reference.copy(),
             quality_check=lambda output: CacheQualityObservation(
@@ -201,6 +207,7 @@ class CachePolicyTests(unittest.TestCase):
         for artifact in (None, object(), {"binding_sha256": b"x"*32}):
             result = interactive_cache_inference(
                 artifact, self.binding,
+                artifact_owner=self.owner,
                 cached_infer=lambda _: self.fail("malformed cache influenced output"),
                 fp32_recompute=lambda: "FP32",
                 quality_check=lambda _: CacheQualityObservation(True, 0.0),
