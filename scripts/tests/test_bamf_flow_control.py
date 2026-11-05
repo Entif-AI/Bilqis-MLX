@@ -46,12 +46,12 @@ class BamfFlowControlTests(FixtureMixin):
             policy_value=policy(grandfathered_prs=[10]),
         )
         summaries = validate_flow_control(root)
-        self.assertIn("Lane A: ACTIVE 0/2; tracked 1", summaries)
+        self.assertIn("Lane A: ACTIVE 0/6; tracked 1", summaries)
 
-    def test_normal_limit_rejects_third_active_item(self) -> None:
+    def test_normal_limit_rejects_seventh_active_item(self) -> None:
         root = self.write_fixture(
             {
-                "A": lane("A", [active(1, 11), active(2, 12), active(3, 13)]),
+                "A": lane("A", [active(i, i + 10) for i in range(1, 8)]),
                 "B": lane("B", []),
                 "C": lane("C", []),
             }
@@ -62,17 +62,23 @@ class BamfFlowControlTests(FixtureMixin):
     def test_explicit_exception_allows_over_limit(self) -> None:
         root = self.write_fixture(
             {
-                "A": lane(
-                    "A",
-                    [active(1, 11), active(2, 12), active(3, 13)],
-                    exception(),
-                ),
+                "A": lane("A", [active(i, i + 10) for i in range(1, 8)], exception()),
                 "B": lane("B", []),
                 "C": lane("C", []),
             }
         )
         summaries = validate_flow_control(root)
-        self.assertIn("Lane A: ACTIVE 3/2; tracked 3", summaries)
+        self.assertIn("Lane A: ACTIVE 7/6; tracked 7", summaries)
+
+    def test_six_parallel_issue_branches_are_within_lane_limit(self) -> None:
+        root = self.write_fixture(
+            {
+                "A": lane("A", [active(i, i + 10) for i in range(1, 7)]),
+                "B": lane("B", []),
+                "C": lane("C", []),
+            }
+        )
+        self.assertIn("Lane A: ACTIVE 6/6; tracked 6", validate_flow_control(root))
 
     def test_repository_snapshot_is_valid(self) -> None:
         summaries = validate_flow_control()

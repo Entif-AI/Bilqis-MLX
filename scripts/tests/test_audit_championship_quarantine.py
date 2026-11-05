@@ -6,7 +6,7 @@ from pathlib import Path
 import tempfile
 from unittest import TestCase
 
-from scripts.audit_championship_quarantine import audit
+from scripts.operations.audit_championship_quarantine import audit
 
 
 def _write_run(root: Path, *, withheld: bool) -> None:

@@ -12,6 +12,18 @@ from scripts import error_control_plane
 
 
 class ErrorInventoryTests(unittest.TestCase):
+    def test_quality_base_ref_prefers_explicit_then_environment(self):
+        environment = {"BILQIS_QUALITY_BASE_REF": "reviewed-base"}
+        self.assertEqual(
+            error_control_plane.quality_base_ref("explicit-base", environment),
+            "explicit-base",
+        )
+        self.assertEqual(
+            error_control_plane.quality_base_ref(None, environment),
+            "reviewed-base",
+        )
+        self.assertIsNone(error_control_plane.quality_base_ref(None, {}))
+
     def test_literal_and_module_constants_group_as_same_identity(self):
         source = '''\
 MESSAGE = "EXAMPLE_CODE: details"

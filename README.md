@@ -32,6 +32,37 @@ unified trunk for human sign-off; the issue never authorizes self-merging that P
 Accepted cross-lane work becomes available to the other lanes through the next
 issue-boundary sync from unified.
 
+## BAMF-0.2 GitHub Project dashboard contract — 2026-11-03
+
+The `BAMF-0.2 Execution` GitHub Project is an observability surface. It does not
+own execution state, EGM state, issue state, dependency authority, or merge
+readiness. Repository issues and labels, ADRs, the BAMF task registry,
+flow-control records, dependency evidence, and execution receipts remain
+authoritative.
+
+- `BAMF-Leaf` is a one-time structural projection of the current BAMF leaf set for
+  dashboard filtering. Do not add automatic leaf-label synchronization or treat
+  the Project as the source of leaf identity.
+- EGM state is read from the canonical issue labels `EGM-Pending`, `EGM-Failed`,
+  `EGM-Mitigation`, and `EGM-Passed`. Do not duplicate EGM state in a Project
+  field or encode it in PR status tokens.
+- Project views, charts, and filters may summarize authoritative repository state.
+  They must not create a competing workflow state machine.
+- Project `Status` is not issue-close authority. Keep the Project workflow that
+  closes an issue merely because `Status` becomes `Done` disabled.
+- For a bounded implementing issue, once its accepted implementation PR is
+  confirmed merged into the owning reviewed integration target and the issue's
+  acceptance/EGM obligations are satisfied, close the issue as `completed`
+  immediately. Do not leave merged work open for later bookkeeping cleanup.
+- BAMF implementation PRs commonly merge into the reviewed unified trunk rather
+  than the repository default branch, so do not rely on GitHub's default linked-PR
+  auto-close behavior. The closeout operator must read back the merge and close
+  the owning issue explicitly. A later regression may reopen that issue or create
+  a new one.
+- Group/integration parents remain open while their own aggregate acceptance,
+  child, hold, or remediation scope is unresolved, even when one scoped child or
+  structural PR has merged.
+
 ## Mandatory development structure discipline — 2026-10-29
 
 **This rule is a development interruption contract, not a repository-wide cleanup

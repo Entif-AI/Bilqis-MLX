@@ -15,7 +15,9 @@ from bilqis_mlx.learning.atlas_engram_reads import _read_motif_unqualified_candi
 
 RELEASE = "a" * 64
 
-from .fixtures import RELEASE, _source, _parameters, _read
+from bilqis_mlx.learning.tests.motif_reads.fixtures import (
+    RELEASE, _parameters, _read, _source,
+)
 
 class GradientsReadTests(TestCase):
     def test_hit_gradients_reach_page_projection_and_gate_at_each_site(self):
