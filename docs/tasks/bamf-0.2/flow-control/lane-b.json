@@ -249,10 +249,10 @@
       "issue": 460,
       "pr": null,
       "state": "WAITING",
-      "head_sha": "7984d7872d49b3987284692f5398da71f2a72605",
-      "preserved_branch": "codex/bamf02-b-460-qualified-reads-20261103",
-      "summary": "Source-hit qualification traced after accepted #691/#456; paused at canonical A03 schema structural owner (417 LoC), already covered by C01/#347.",
-      "resume_trigger": "C01/#347 canonical released_frame_schemas structural repair is accepted through reviewed unified; then reactivate and synchronize once before source-read implementation."
+      "head_sha": "144c7cf34dc5ae373fed0e20285b486129d3835e",
+      "preserved_branch": "codex/bamf02-b-460-qualified-reads-20261105",
+      "summary": "B08.1 source replay now derives collision-checked schema grants from pinned source schemas; public hits remain fail-closed because reviewed unified lacks #809 accepted-generation feature/candidate authority.",
+      "resume_trigger": "Draft PR #809 accepted-generation feature receipt/publication authority is human-accepted through reviewed unified; then synchronize once and bind B08 reads to that pointer-locked accepted generation."
     },
     {
       "issue": 481,
@@ -306,11 +306,12 @@
     {
       "issue": 784,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "e58dd31574a6ee2ce0b3e35f92293a09befd15c1",
-      "summary": "Resume preserved runner package-context candidate from808a without touching unrelated dirty lane metadata; isolated issue feature consumes current reviewed unified before code adoption and complete regression proof.",
+      "state": "TURNED_IN",
+      "head_sha": "edae20526c34b628fa63a895fb852921007f42a0",
+      "summary": "B784 runner package-context repair passed pinned EGM and hosted verification; human-merged PR #847 is consumed by reviewed unified 70a4ef1e.",
       "resume_trigger": null,
-      "preserved_branch": "codex/bamf02-b-784-runner-context-20261105"
+      "preserved_branch": "codex/bamf02-b-784-runner-context-20261105",
+      "merged_pr": 847
     }
   ]
 }
