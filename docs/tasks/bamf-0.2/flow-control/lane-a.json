@@ -7,11 +7,11 @@
   "items": [
     {
       "issue": 426,
-      "pr": null,
+      "pr": 860,
       "state": "TURNED_IN",
       "head_sha": "38e41d521ade59d283a1c9547b18efe5927e8019",
       "summary": "A11.3 review-hardened implementation is complete: the real event-frame source owner retains direct GENERATOR/ORACLE/draw authority and exposes source.semantic-contrast/v1 only as an optional teaching strategy. A real ExecutableFactoryRelease resolves it through the live registry without monkey-patching; contrast rows independently replay gold, answer kind and semantic roots while ordinary event-frame draw/oracle behavior remains unchanged. A11 suites 22/22; event/provider regression 11/11; governance 11/11; exact error-control-plane new debt 0; architecture/docs/compile/diff clean.",
-      "resume_trigger": "Obtain fresh exact-head review of 38e41d521ade59d283a1c9547b18efe5927e8019; if clean, open the issue-scoped PR and proceed to independent EGM/human integration review.",
+      "resume_trigger": "Fresh exact-head EGM/re-audit of the repaired real-owner integration plus human integration review for PR #860.",
       "preserved_branch": "codex/bamf02-a11-3-426-20261105"
     },
     {
