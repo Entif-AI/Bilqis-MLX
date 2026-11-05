@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "4f5f432647fb113fa8786ae5f03f57b86d512105",
-  "updated_at": "2026-11-04T16:39:00Z",
+  "observed_unified": "06eb34d0435d2f41c6f3561cf8cad6988d5b849f",
+  "updated_at": "2026-11-05T00:19:14Z",
   "exception": null,
   "items": [
     {
@@ -32,23 +32,24 @@
     {
       "issue": 490,
       "pr": null,
-      "state": "WAITING",
-      "head_sha": "d1b4860389e35950e643bffbdec0e2febb1b7506",
-      "summary": "C02.1 parent candidate awaits canonical model-input authority repair.",
-      "resume_trigger": "Remediation #713 is consumed into the candidate and C02.1 is selected for final merge-readiness review.",
+      "state": "BLOCKED",
+      "head_sha": "06eb34d0435d2f41c6f3561cf8cad6988d5b849f",
+      "summary": "PR808 merged into reviewed unified; source06eb34d0 passes61/61 batch tests with real pinned A01, zero skips. Ordinary Terra High review confirms original A06 initial-selection authority gap remains at #785. No aggregate EGM PASS or full C02 acceptance.",
+      "resume_trigger": "A06 source owner #785 supplies an accepted artifact-selection receipt or canonical derivation rule; consume it through reviewed unified, then requalify the consumer.",
       "closed_pr": 700,
-      "preserved_branch": "fix/bamf-c02-1-source-lineage-20261101",
+      "preserved_branch": "codex/bamf02-c-490-acceptance-20261104",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
       "close_reason": "EGM-Failed; remediation #713"
     },
     {
       "issue": 713,
-      "pr": 808,
-      "state": "ACTIVE",
+      "pr": null,
+      "state": "BLOCKED",
       "head_sha": "ccec0e824e549ce5225a569cd5a6f49df5a365c9",
-      "summary": "Project owner selected PR #808 for conflict reconciliation onto reviewed unified 4f5f432647fb113fa8786ae5f03f57b86d512105 before fresh exact-head validation.",
-      "resume_trigger": null,
-      "preserved_branch": "codex/remediation-713-c02-authority-20261103"
+      "summary": "PR808 merged into reviewed unified; source06eb34d0 passes61/61 batch tests with real pinned A01, zero skips. Ordinary Terra High review confirms original A06 initial-selection authority gap remains at #785. No aggregate EGM PASS or full C02 acceptance.",
+      "resume_trigger": "A06 source owner #785 supplies an accepted artifact-selection receipt or canonical derivation rule; consume it through reviewed unified, then requalify the consumer.",
+      "preserved_branch": "codex/remediation-713-c02-authority-20261103",
+      "merged_pr": 808
     },
     {
       "issue": 717,
