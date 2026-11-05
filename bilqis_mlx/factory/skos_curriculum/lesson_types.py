@@ -1,6 +1,7 @@
 """Typed source-fact lesson proposals, never learner credit."""
 from __future__ import annotations
 from dataclasses import dataclass
+from bilqis_mlx.semantics.atlas_projection import CorpusCoverageRow
 from .common import (LEARNING_UNVERIFIED, SOURCE_PROJECTION_ONLY,
     SOURCE_LESSON_SCHEMA, SOURCE_LESSON_SET_SCHEMA, _SHA, _fail)
 from .types import FamilyObligation
@@ -64,6 +65,7 @@ class SourceConstructiveLessonSet:
     census_digest: str
     lessons: tuple[SourceConstructiveLesson, ...]
     uncovered: tuple[FamilyObligation, ...]
+    source_holds: tuple[CorpusCoverageRow, ...] = ()
     learning_state: str = LEARNING_UNVERIFIED
     source_authority: str = SOURCE_PROJECTION_ONLY
     schema: str = SOURCE_LESSON_SET_SCHEMA
@@ -71,7 +73,11 @@ class SourceConstructiveLessonSet:
     def __post_init__(self) -> None:
         if (not isinstance(self.lessons, tuple)
                 or any(not isinstance(item, SourceConstructiveLesson)
-                       for item in self.lessons)):
+                       for item in self.lessons)
+                or type(self.source_holds) is not tuple
+                or any(type(item) is not CorpusCoverageRow
+                       or item.source_disposition != "SOURCE_HELD"
+                       for item in self.source_holds)):
             _fail("BAMF_LESSON_SET_INVALID")
         keys = tuple(
             (item.semantic_id, item.family_id) for item in self.lessons)

@@ -1,17 +1,17 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "672f97d7049dd951f86630844e3a80b60c4563dd",
-  "updated_at": "2026-11-05T14:01:44Z",
+  "observed_unified": "1599a67b4ac481c796e26fa302db829db3910e00",
+  "updated_at": "2026-11-05T14:17:21Z",
   "exception": null,
   "items": [
     {
       "issue": 427,
-      "pr": null,
+      "pr": 861,
       "state": "TURNED_IN",
-      "head_sha": "68f288cd9e20b54bbc8c0b8a775196b9f3335ba8",
-      "summary": "A12.1 current-owner audit is implemented in atlas_release_audit.py without resurrecting the historical competing module. The receipt binds current typed ABI, source-pinned released AST/frame schemas, Factory source lessons, a read-only graph projection, and Registry mirror to one repository-pinned A01 release while keeping declared formal domains separate. Unit audit/export tests pass 8/8 with one optional source witness skipped; the real pinned A01/A02/A03/Factory/registry replay passes 9/9. Adjacent released-schema/vocabulary/curriculum tests pass 24/24 with two expected optional-source skips; semantic-boundary, governance, error-control, structure, compile and diff checks are green.",
-      "resume_trigger": "Fresh exact-head independent EGM plus hosted PR checks and human integration review. Parent A12/#364, #295 and #309 remain open; this child does not claim neural admission or full parent cutover.",
+      "head_sha": "854c9262022c6399b821216d2c7243715ffd2f97",
+      "summary": "A12.1 PR #861 closes the final proof gap with two real A01 source compilations/persistences in separate roots that deterministically replay A02 allocation/mirror, A03 frame sealing, A08 lessons and A12 audit, preserve prior accepted ABI indices, and propagate one new semantic through lessons and graph projection. The 83.692s two-regeneration witness passed 1/1; source-free A12 proof 10/10 and governance/structure/smell/flow gates are green. This branch has now consumed accepted A10.3 reviewed-unified 1599a67b; fresh hosted and exact-head independent review remain required on the reconciled head.",
+      "resume_trigger": "Publish the reconciled exact head, require hosted portable-core/portable/Semantic ABI plus fresh exact-head independent EGM, then merge only if clean. Close #427 only after accepted merge. Parent A12/#364, #295 and #309 remain separate.",
       "preserved_branch": "codex/bamf02-a12-1-427-20261105"
     },
     {
@@ -26,12 +26,13 @@
     },
     {
       "issue": 423,
-      "pr": 858,
+      "pr": null,
       "state": "TURNED_IN",
-      "head_sha": "bfad4ccfd35660b2026eaee8b3caafec4bb4eea5",
-      "summary": "A10.3 PR #858 has consumed accepted A10.1 repair #862 through reviewed unified 672f97d7. Conflict resolution keeps the merged A10.1 source-manifest/family/semantic authority and removes the obsolete A10.3 duplicate edits to evidence_frames.py. The A10.3 public BRAVO receipt now enters through the accepted AtlasArtifactSelection boundary instead of caller-supplied semantic refs, and its independent F10 witness uses the registered A10.1 independent-source manifest. Focused A10.1+A10.3 proof passes 29 / 0 failed / 1 expected optional pinned-source skip; governance 11/11; Factory/docs/compile/diff/flow clean; exact error debt 0; changed-file smell 0.",
-      "resume_trigger": "Push the reconciled head only if the remote PR branch is still at consumed c59bdf04, wait for hosted portable-core/portable/Semantic ABI, then obtain fresh independent exact-head EGM. If clean, mark PR #858 ready for human integration and keep #423 open until accepted merge.",
-      "preserved_branch": "codex/bamf02-a10-3-423-20261105"
+      "head_sha": "e9fa36a009daf65e5b19a52351993eb2e7d4e242",
+      "summary": "A10.3 exact head e9fa36a0 passed real-pinned public BRAVO receipt proof, hosted portable-core/portable/Semantic ABI and fresh independent exact-head EGM after binding full heldout rights into every replayable gold witness. Merged through PR #858 as reviewed-unified 1599a67b; #423 and parent A10/#361 are closed completed.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a10-3-423-20261105",
+      "merged_pr": 858
     },
     {
       "issue": 425,
