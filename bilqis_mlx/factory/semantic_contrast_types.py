@@ -195,4 +195,4 @@ _VARIATION_VALIDATORS = MappingProxyType({
     ContrastFamily.PLANNED_OCCURRED: _validate_status,
     ContrastFamily.MISSING_NEGATIVE: _validate_observation,
     ContrastFamily.MORPHOLOGY_ALTERNATIVE: _validate_morphology,
-)
+})
