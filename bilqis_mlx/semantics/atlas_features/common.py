@@ -35,10 +35,11 @@ _ADMITTED_GRAPH_PREDICATES = frozenset({
 })
 
 
-def _invalid(reason: str) -> None:
+def _invalid(reason: str, **context: object) -> None:
     ErrorBus.raise_(
         SEMANTIC_FRAME.BINDING.INVALID,
         reason=reason, role_id="<atlas-feature>", span_start=0, span_end=0,
+        **context,
     )
 
 

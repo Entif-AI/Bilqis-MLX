@@ -1,18 +1,19 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "672f97d7049dd951f86630844e3a80b60c4563dd",
-  "updated_at": "2026-11-05T14:01:44Z",
+  "observed_unified": "beb699ad7f131bd97a0983c3f27f8a53f7a240cc",
+  "updated_at": "2026-11-05T14:32:00Z",
   "exception": null,
   "items": [
     {
       "issue": 427,
       "pr": null,
       "state": "TURNED_IN",
-      "head_sha": "68f288cd9e20b54bbc8c0b8a775196b9f3335ba8",
-      "summary": "A12.1 current-owner audit is implemented in atlas_release_audit.py without resurrecting the historical competing module. The receipt binds current typed ABI, source-pinned released AST/frame schemas, Factory source lessons, a read-only graph projection, and Registry mirror to one repository-pinned A01 release while keeping declared formal domains separate. Unit audit/export tests pass 8/8 with one optional source witness skipped; the real pinned A01/A02/A03/Factory/registry replay passes 9/9. Adjacent released-schema/vocabulary/curriculum tests pass 24/24 with two expected optional-source skips; semantic-boundary, governance, error-control, structure, compile and diff checks are green.",
-      "resume_trigger": "Fresh exact-head independent EGM plus hosted PR checks and human integration review. Parent A12/#364, #295 and #309 remain open; this child does not claim neural admission or full parent cutover.",
-      "preserved_branch": "codex/bamf02-a12-1-427-20261105"
+      "head_sha": "16f9fb673b377d561ecbffd820e09b3c30de8f3c",
+      "summary": "A12.1 final PR #861 head 16f9fb67 merged as reviewed-unified beb699ad. The substantive proof head 854c9262 passed two independent real A01 source compilations/persistences with deterministic A02 allocation/mirror, A03 frame reseal, A08 lessons and A12 audit; prior ABI indices stayed fixed while one new semantic propagated through lessons and graph projection. Reconciled exact head 8211a6a0 then passed hosted portable-core/portable/Semantic ABI and fresh independent EGM CLEAN; 8211..16f9 changed only this flow ledger. Post-merge EGM found no runtime defect and identified only the stale #427 custody fields repaired by this entry.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a12-1-427-20261105",
+      "merged_pr": 861
     },
     {
       "issue": 426,
@@ -26,12 +27,13 @@
     },
     {
       "issue": 423,
-      "pr": 858,
+      "pr": 865,
       "state": "TURNED_IN",
-      "head_sha": "bfad4ccfd35660b2026eaee8b3caafec4bb4eea5",
-      "summary": "A10.3 PR #858 has consumed accepted A10.1 repair #862 through reviewed unified 672f97d7. Conflict resolution keeps the merged A10.1 source-manifest/family/semantic authority and removes the obsolete A10.3 duplicate edits to evidence_frames.py. The A10.3 public BRAVO receipt now enters through the accepted AtlasArtifactSelection boundary instead of caller-supplied semantic refs, and its independent F10 witness uses the registered A10.1 independent-source manifest. Focused A10.1+A10.3 proof passes 29 / 0 failed / 1 expected optional pinned-source skip; governance 11/11; Factory/docs/compile/diff/flow clean; exact error debt 0; changed-file smell 0.",
-      "resume_trigger": "Push the reconciled head only if the remote PR branch is still at consumed c59bdf04, wait for hosted portable-core/portable/Semantic ABI, then obtain fresh independent exact-head EGM. If clean, mark PR #858 ready for human integration and keep #423 open until accepted merge.",
-      "preserved_branch": "codex/bamf02-a10-3-423-20261105"
+      "head_sha": "70c49117ae992e2357b7a81f90eb014655e9f8f3",
+      "summary": "A10.3 public-fixture/F10/full-rights work from PR #858 remains accepted and merged as reviewed-unified 1599a67b, but #423 and parent A10/#361 were reopened after live reconciliation recovered the preserved F06 PRIVATE_REAL synthetic-lifecycle acceptance clause: source -> interpretation -> lesson -> trainer preparation must preserve protected sentinels while refusing public leakage, not merely reject at export. Follow-up draft PR #865 exact head 70c49117 carries that scoped repair; hosted portable-core/portable/Semantic ABI are green and fresh independent exact-head EGM is pending.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a10-3-423-20261105",
+      "merged_pr": 858
     },
     {
       "issue": 425,
