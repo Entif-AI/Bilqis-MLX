@@ -12,6 +12,7 @@ from bilqis_mlx.runtime.atlas_revalidation import (
 )
 from bilqis_mlx.runtime.atlas_cache_codec import CacheAuthorityRuntime
 from bilqis_mlx.runtime import atlas_cache_rebuild as _rebuild
+from bilqis_mlx.runtime import atlas_cache_eligibility as _eligibility
 from bilqis_mlx.runtime.atlas_cache_binding import binding_digest
 from bilqis_mlx.runtime.atlas_cache_rebuild import CacheEligibilityReceipt
 
@@ -41,33 +42,37 @@ _CACHE_MAC_KEY = bytes(range(32, 64))
 from bilqis_mlx.runtime import atlas_cache_runtime as _runtime
 
 _test_lookup, _test_issue = _runtime._new_authority_owner()
-_test_eligibility_lookup, _test_eligibility_issue = _rebuild._new_eligibility_owner()
+_test_eligibility_issue, _test_eligibility_validate, _test_eligibility_consume = (
+    _eligibility._new_eligibility_boundary(
+        lambda authority, binding: binding_digest(binding).hex()
+    )
+)
 def install_test_owner(test_case, *, eligibility=True):
     patcher = patch.object(_runtime, "_authority_state", _test_lookup)
     patcher.start()
     test_case.addCleanup(patcher.stop)
     if eligibility:
-        eligibility_owner = patch.object(
-            _rebuild, "_eligibility_state", _test_eligibility_lookup)
-        eligibility_owner.start()
-        test_case.addCleanup(eligibility_owner.stop)
+        validate_owner = patch.object(
+            _rebuild, "validate_eligibility", _test_eligibility_validate)
+        consume_owner = patch.object(
+            _rebuild, "consume_eligibility", _test_eligibility_consume)
+        validate_owner.start()
+        consume_owner.start()
+        test_case.addCleanup(validate_owner.stop)
+        test_case.addCleanup(consume_owner.stop)
 
 
 def eligibility_receipt(binding, *, eligible=True):
-    return _test_eligibility_issue(CacheEligibilityReceipt(
-        binding_digest(binding).hex(),
-        binding.source_release_sha256,
-        binding.semantic_release_sha256,
-        binding.source_rights_sha256,
-        binding.rights_purpose_sha256,
-        binding.policy_epoch_sha256,
-        binding.context_eligibility_sha256,
-        eligible,
-    ))
+    receipt = _test_eligibility_issue(CACHE_AUTHORITY, binding)
+    return receipt if eligible else CacheEligibilityReceipt(
+        receipt.binding_sha256, receipt.source_release_sha256,
+        receipt.semantic_release_sha256, receipt.source_rights_sha256,
+        receipt.rights_purpose_sha256, receipt.policy_epoch_sha256,
+        receipt.context_eligibility_sha256, False)
 
 
-def authority_for_registry(registry):
-    return _test_issue(registry, _CACHE_MAC_KEY)
+def authority_for_registry(registry, *, eligibility_source=None):
+    return _test_issue(registry, _CACHE_MAC_KEY, eligibility_source)
 
 
 CACHE_AUTHORITY = _test_issue(AUTHORITY_REGISTRY, _CACHE_MAC_KEY)

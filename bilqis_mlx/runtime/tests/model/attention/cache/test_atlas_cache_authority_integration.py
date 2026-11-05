@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from contextlib import ExitStack
 import json
 import os
 from pathlib import Path
@@ -20,12 +21,14 @@ from bilqis_mlx.runtime.atlas_cache_codec import (
     encode_cold_cache, issue_cache_eligibility, rebuild_revoked_cache,
 )
 from bilqis_mlx.runtime.atlas_cache_binding import binding_digest
+from bilqis_mlx.runtime.atlas_cache_eligibility import CacheEligibilityInputs
+from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
 )
 from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    candidate, parent_state, shape_patch,
+    DECLARED, candidate, parent_state, shape_patch,
 )
 from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import (
     OWNER_ID, PUBLIC_KEY_HEX, authority_for_registry, install_test_owner,
@@ -50,6 +53,20 @@ _A12_PUBLIC = _A12_PRIVATE.public_key().public_bytes(
     Encoding.Raw, PublicFormat.Raw).hex()
 _A12_OWNER = "fixture:a12-source-owner"
 _EXPORTED = ("1" * 64,)
+
+
+def _cache_shape_patch():
+    stack = ExitStack()
+    stack.enter_context(shape_patch())
+    stack.enter_context(patch(
+        "bilqis_mlx.runtime.backbone_identity.expected_bamf_shapes",
+        return_value=DECLARED,
+    ))
+    stack.enter_context(patch(
+        "bilqis_mlx.runtime.topology_v2.validation.expected_bamf_shapes",
+        return_value=DECLARED,
+    ))
+    return stack
 
 
 def _selection() -> AtlasArtifactSelection:
@@ -112,6 +129,59 @@ def _clearance(selection, frontier):
         receipt, signature_hex=_A12_PRIVATE.sign(receipt.signing_bytes()).hex())
 
 
+def _registry() -> SourceAuthorityRegistry:
+    return SourceAuthorityRegistry(tuple(sorted((
+        SourceAuthorityKey(
+            OWNER_ID, PUBLIC_KEY_HEX,
+            (SourceAuthorityScope(DependencyKind.ARTIFACT, "cache:"),)),
+        SourceAuthorityKey(
+            _A12_OWNER, _A12_PUBLIC,
+            (SourceAuthorityScope(DependencyKind.ARTIFACT, "a12-export:"),)),
+    ), key=lambda item: item.owner_id)))
+
+
+def _source(selection, frontier):
+    source = candidate(parent_state())
+    return replace(
+        source,
+        provenance=replace(
+            source.provenance, release_digest=selection.release_sha256),
+        correction_frontier={
+            **source.correction_frontier,
+            "release_digest": selection.release_sha256,
+            "rights_epoch": frontier.rights_epoch,
+            "correction_generation": frontier.correction_generation,
+        },
+        compiler_features={
+            **source.compiler_features,
+            "rights_epoch": frontier.rights_epoch,
+            "correction_generation": frontier.correction_generation,
+        },
+    )
+
+
+def _binding(pointer, source, selection, clearance, frames, task, frontier, policy):
+    projection = project_context(frames, task, frontier, policy)
+    purpose = contract_digest({
+        "purpose": task.purpose, "jurisdiction": task.jurisdiction,
+        "scope": task.scope})
+    policy_digest = contract_digest({
+        "policy_id": policy.policy_id, "policy_epoch": policy.policy_epoch,
+        "rights_epoch": policy.rights_epoch})
+    lineage_digest = contract_digest({
+        "schema": "bilqis.mlx.bamf-cache-lineage/v1", "run_id": source.run_id})
+    with _cache_shape_patch():
+        inference_digest = execution_generation_digest(
+            source.retained_state.optimizer.parameters,
+            spec=source.topology, extents=source.extents)
+    return CacheBinding(
+        codec_manifest(), pointer["manifest_sha256"], lineage_digest,
+        source.topology.digest, selection.source_bundle_id,
+        selection.release_sha256, clearance.clearance_sha256, purpose,
+        policy_digest, projection.digest, "a" * 64, "b" * 64,
+        "c" * 64, "d" * 64, inference_digest, 17, OWNER_ID, PUBLIC_KEY_HEX)
+
+
 class CacheAuthorityIntegrationTests(unittest.TestCase):
     def setUp(self):
         install_test_owner(self, eligibility=False)
@@ -145,85 +215,51 @@ class CacheAuthorityIntegrationTests(unittest.TestCase):
     def test_live_b13_a12_and_context_authority_issue_exact_rebuild_receipt(self):
         selection = _selection()
         frames, task, frontier, policy = _context(selection.release_sha256)
-        projection = project_context(frames, task, frontier, policy)
         clearance = _clearance(selection, frontier)
-        registry = SourceAuthorityRegistry(tuple(sorted((
-            SourceAuthorityKey(
-                OWNER_ID, PUBLIC_KEY_HEX,
-                (SourceAuthorityScope(DependencyKind.ARTIFACT, "cache:"),)),
-            SourceAuthorityKey(
-                _A12_OWNER, _A12_PUBLIC,
-                (SourceAuthorityScope(DependencyKind.ARTIFACT, "a12-export:"),)),
-        ), key=lambda item: item.owner_id)))
-        authority = authority_for_registry(registry)
         with TemporaryDirectory() as temporary, patch.dict(
                 os.environ, {"BILQIS_DATA_PLANE": str(Path(temporary) / "plane.sqlite3")}):
             run = Path(temporary) / "run"
-            source = candidate(parent_state())
-            source = replace(
-                source,
-                provenance=replace(
-                    source.provenance, release_digest=selection.release_sha256),
-                correction_frontier={
-                    **source.correction_frontier,
-                    "release_digest": selection.release_sha256,
-                    "rights_epoch": frontier.rights_epoch,
-                    "correction_generation": frontier.correction_generation,
-                },
-                compiler_features={
-                    **source.compiler_features,
-                    "rights_epoch": frontier.rights_epoch,
-                    "correction_generation": frontier.correction_generation,
-                })
+            source = _source(selection, frontier)
             with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
                 pointer = publish_bamf_generation(run, source)
-            purpose = contract_digest({
-                "purpose": task.purpose, "jurisdiction": task.jurisdiction,
-                "scope": task.scope})
-            policy_digest = contract_digest({
-                "policy_id": policy.policy_id, "policy_epoch": policy.policy_epoch,
-                "rights_epoch": policy.rights_epoch})
-            binding = CacheBinding(
-                codec_manifest(), pointer["manifest_sha256"], "2" * 64,
-                source.topology.digest, selection.source_bundle_id,
-                selection.release_sha256, clearance.clearance_sha256, purpose,
-                policy_digest, projection.digest, "a" * 64, "b" * 64,
-                "c" * 64, "d" * 64, "e" * 64, 17, OWNER_ID, PUBLIC_KEY_HEX)
-            with shape_patch():
-                receipt = issue_cache_eligibility(
-                    authority, binding, pointer_path=run / "bamf-state.json",
-                    export_clearance=clearance, atlas_selection=selection,
-                    source_frontier=frontier, export_artifact_digests=_EXPORTED,
-                    frames=frames, task_scope=task, policy=policy)
+            inputs = CacheEligibilityInputs(
+                run / "bamf-state.json", clearance, selection, frontier,
+                _EXPORTED, frames, task, policy,
+            )
+            authority = authority_for_registry(
+                _registry(), eligibility_source=lambda: inputs)
+            binding = _binding(
+                pointer, source, selection, clearance, frames, task, frontier, policy)
+            with _cache_shape_patch():
+                receipt = issue_cache_eligibility(authority, binding)
             stale_binding = replace(binding, generation_sha256="f" * 64)
             stale = encode_cold_cache(
                 authority, np.ones((256, HEAD_WIDTH), dtype=np.float32),
                 stale_binding.codec_manifest, binding=stale_binding)
             persisted = []
-            rebuilt = rebuild_revoked_cache(
-                authority, stale, binding, eligibility_receipt=receipt,
-                canonical_fp32_source=lambda: np.zeros(
-                    (256, HEAD_WIDTH), dtype=np.float32),
-                persist=persisted.append)
+            with _cache_shape_patch():
+                rebuilt = rebuild_revoked_cache(
+                    authority, stale, binding, eligibility_receipt=receipt,
+                    canonical_fp32_source=lambda: np.zeros(
+                        (256, HEAD_WIDTH), dtype=np.float32),
+                    persist=persisted.append)
             self.assertTrue(rebuilt.persisted)
             self.assertEqual(persisted, [rebuilt.artifact])
 
             for changed in (
                 replace(binding, generation_sha256="0" * 64),
+                replace(binding, lineage_sha256="0" * 64),
                 replace(binding, source_release_sha256="0" * 64),
                 replace(binding, semantic_release_sha256="0" * 64),
                 replace(binding, source_rights_sha256="0" * 64),
                 replace(binding, rights_purpose_sha256="0" * 64),
                 replace(binding, policy_epoch_sha256="0" * 64),
                 replace(binding, context_eligibility_sha256="0" * 64),
+                replace(binding, inference_state_sha256="0" * 64),
             ):
                 with self.subTest(changed=changed), self.assertRaises(BilqisError), \
-                        shape_patch():
-                    issue_cache_eligibility(
-                        authority, changed, pointer_path=run / "bamf-state.json",
-                        export_clearance=clearance, atlas_selection=selection,
-                        source_frontier=frontier, export_artifact_digests=_EXPORTED,
-                        frames=frames, task_scope=task, policy=policy)
+                        _cache_shape_patch():
+                    issue_cache_eligibility(authority, changed)
 
 
 if __name__ == "__main__":

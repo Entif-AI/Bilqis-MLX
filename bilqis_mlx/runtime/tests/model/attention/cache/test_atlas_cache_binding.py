@@ -218,10 +218,11 @@ class CacheBindingAndCostTests(unittest.TestCase):
         self.assertEqual(decoded.shape, self.values.shape)
 
     def test_production_cache_runtime_exposes_no_authority_mint(self):
-        from bilqis_mlx.runtime import atlas_cache_runtime
+        from bilqis_mlx.runtime import atlas_cache_rebuild, atlas_cache_runtime
 
         self.assertFalse(hasattr(atlas_cache_runtime, "_host_cache_authority"))
         self.assertFalse(hasattr(CacheAuthorityRuntime, "_issue"))
+        self.assertFalse(hasattr(atlas_cache_rebuild, "_issue_eligibility"))
         for name, value in vars(atlas_cache_runtime).items():
             if not callable(value) or getattr(value, "__module__", None) != atlas_cache_runtime.__name__:
                 continue

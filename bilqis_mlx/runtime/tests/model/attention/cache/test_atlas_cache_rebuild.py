@@ -208,6 +208,26 @@ class RevokedCacheRebuildTests(unittest.TestCase):
                 )
             self.assertEqual(persisted, [])
 
+    def test_successful_eligibility_receipt_cannot_be_reused(self):
+        new_binding = replace(self.old_binding, policy_epoch_sha256="f" * 64)
+        receipt = _receipt(new_binding)
+        first = rebuild_revoked_cache(
+            self.stale,
+            new_binding,
+            eligibility_receipt=receipt,
+            canonical_fp32_source=lambda: self.canonical.copy(),
+            persist=lambda _: None,
+        )
+        self.assertTrue(first.persisted)
+        with self.assertRaises(BilqisError):
+            rebuild_revoked_cache(
+                self.stale,
+                new_binding,
+                eligibility_receipt=receipt,
+                canonical_fp32_source=lambda: self.canonical.copy(),
+                persist=lambda _: self.fail("reused eligibility persisted"),
+            )
+
     def test_rebuild_requires_finite_exact_fp32_canonical_source(self):
         new_binding = replace(self.old_binding, policy_epoch_sha256="f" * 64)
         for values in (

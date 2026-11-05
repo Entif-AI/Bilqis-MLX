@@ -23,11 +23,13 @@ def _new_authority_owner():
         entry = issued.get(id(authority))
         if entry is None or entry[0] is not authority:
             _invalid()
-        return entry[1], entry[2]
+        return entry[1], entry[2], entry[3]
 
-    def issue(registry, mac_key):
+    def issue(registry, mac_key, eligibility_source=None):
+        if eligibility_source is not None and not callable(eligibility_source):
+            _invalid()
         authority = object.__new__(CacheAuthorityRuntime)
-        issued[id(authority)] = (authority, registry, mac_key)
+        issued[id(authority)] = (authority, registry, mac_key, eligibility_source)
         return authority
 
     return require, issue
@@ -50,7 +52,7 @@ class CacheAuthorityRuntime:
         _invalid()
 
     def _require_binding_authority(self, binding) -> None:
-        registry, _ = _authority_state(self)
+        registry, _, _ = _authority_state(self)
         registry.require_claimed_authority(
             binding.artifact_authority_id,
             DependencyRef(DependencyKind.ARTIFACT, f"cache:{binding.key_sha256}"),
@@ -61,7 +63,7 @@ class CacheAuthorityRuntime:
         if type(subject) is not bytes:
             _invalid()
         self._require_binding_authority(binding)
-        _, mac_key = _authority_state(self)
+        _, mac_key, _ = _authority_state(self)
         return hmac.new(
             mac_key, subject, hashlib.sha256,
         ).digest()[:CACHE_AUTHENTICATOR_BYTES]
@@ -74,8 +76,15 @@ class CacheAuthorityRuntime:
 
     def _verify_detached(self, owner_id, dependency, signature_hex, payload) -> None:
         """Verify a source-owner statement through this host-bound registry."""
-        registry, _ = _authority_state(self)
+        registry, _, _ = _authority_state(self)
         registry.verify_detached(owner_id, dependency, signature_hex, payload)
+
+    def _current_eligibility_inputs(self):
+        """Read current rebuild authority from the owner-bound resolver."""
+        _, _, source = _authority_state(self)
+        if source is None:
+            _invalid()
+        return source()
 
 def _require_authority(authority: CacheAuthorityRuntime) -> CacheAuthorityRuntime:
     if type(authority) is not CacheAuthorityRuntime:
@@ -129,6 +138,6 @@ def rebuild_revoked_cache(
     )
 
 
-def issue_cache_eligibility(authority, binding, **authority_inputs):
-    from .atlas_cache_rebuild import issue_cache_eligibility as _issue
-    return _issue(_require_authority(authority), binding, **authority_inputs)
+def issue_cache_eligibility(authority, binding):
+    from .atlas_cache_eligibility import issue_cache_eligibility as _issue
+    return _issue(_require_authority(authority), binding)
