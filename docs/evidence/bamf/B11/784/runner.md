@@ -56,6 +56,5 @@ Git runner at unchanged base `e58dd315`: stale imports of
 `bamf` and `experiments`, respectively. No new regression is attributed to #784,
 and no broad-suite PASS is claimed. The runner's required focused14/14 and actual
 motif5/5 evidence remains distinct. Logs: `scripts-suite.log` and
-`baseline-affected-scripts.log`. This independent import-migration repair needs a
-bounded follow-up; source-owned test bodies are not rewritten to hide runner
+`baseline-affected-scripts.log`. This independent import-migration repair is tracked by #844; source-owned test bodies are not rewritten to hide runner
 context defects.
