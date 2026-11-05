@@ -79,3 +79,25 @@ Issue #451 remains open. Full B05.2 source-authorized motif placement and the
 assembled parent contracts remain separate. IPR-0220 stays opaque. No actual
 student, optimizer update, teacher, checkpoint lineage, source, graph, human-run
 or self-merge mutation was performed.
+
+## Continuation — 5 November 2026
+
+ADR-128 supersedes the former one-PR-per-lane admission hold above. #451 was
+selected ACTIVE, and this candidate consumed unified
+`70a4ef1e883d348920d64083c7546f443a90ef77` in merge
+`815e649aa25782ce147dac3a56fd7efe963ae1d8`. The #450 numerical candidate
+`cb22592c7bf07494b865152cf7dd3f1255926bb9` is an ancestor; its broader
+source-authorized dependencies remain separate. B01 #346 and B04 #350 are closed.
+
+The original exact-head evidence was reviewed against the integration diff. The
+runner changed, so the original test receipt was not reused as proof of the current
+harness. On CPU with `BILQIS_BAMF_FULL_WITNESS=1`, the complete package-local depth
+directory passed **19/19, zero skips**, including the full native cold-custody
+witness, at merge `815e649a`. The runner reported `TEST_TOTALS total=19 passed=19
+failed=0 skipped=0 errors=0`. The shell wrapper's post-run attempt to assign zsh's
+read-only `status` variable failed after the runner had reported success; the full
+runner output is retained locally at `/tmp/b451-focused-20261105.log`.
+
+This establishes the same UNBOUND owned selector identity and custody scope. It
+does not establish source admission, retained learning, or full B05 assembly.
+Independent whole-candidate EGM and human integration remain outstanding.
