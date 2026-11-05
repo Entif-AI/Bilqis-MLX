@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 from bilqis_mlx.semantics.atlas_features import AtlasFeatures, FeatureSchema
+from bilqis_mlx.semantics.frame_compiler import CompiledFrameBatch, CompiledFrameRows
+from bilqis_mlx.semantics.domains import contract_digest
 from bilqis_mlx.semantics.cognitive_dependencies import (
     ArtifactKind, ArtifactNode, DependencyIndex, DependencyKind, DependencyRef,
 )
@@ -104,6 +106,118 @@ class AtlasFeatureArtifactOwner:
         task = next_revalidation_task(self._index, self._queue)
         if task is None:
             _invalid("BAMF_C09_ATLAS_FEATURE_REVALIDATION_NOT_PENDING")
+        transition = revalidate_node(
+            self._index.node(task.artifact_id), frontier, authority_registry)
+        progress = advance_revalidation(
+            self._index, self._queue, transition, authority_registry)
+        self._index = progress.index
+        self._queue = progress.queue
+        return progress
+
+
+
+def _packed_frame_node(row: CompiledFrameBatch, packed) -> ArtifactNode:
+    """Derive C09 identity only from one compiler-owned PackedFrame."""
+    from bilqis_mlx.semantics.frame_codec import PackedFrame
+    if type(row) is not CompiledFrameBatch or type(packed) is not PackedFrame:
+        _invalid("BAMF_C09_PACKED_FRAME_OWNER_INVALID")
+    sidecar = packed.sidecar
+    source_refs = {
+        sidecar.source_instance_id,
+        *(ref for item in sidecar.constituents for ref in item.source_references),
+    }
+    dependencies = {
+        DependencyRef(DependencyKind.SOURCE, "source:" + ref)
+        for ref in source_refs
+    }
+    dependencies.update((
+        DependencyRef(DependencyKind.RELEASE, "release:" + packed.semantic_release),
+        DependencyRef(
+            DependencyKind.POLICY,
+            "policy:" + contract_digest((row.scope, row.policy_version[0], row.policy_version[1]))),
+        DependencyRef(
+            DependencyKind.RIGHTS,
+            "rights:" + contract_digest((row.policy_version[2], row.policy_version[3]))),
+    ))
+    return ArtifactNode(
+        artifact_id="frame:" + sidecar.occurrence_id,
+        kind=ArtifactKind.PACKED_FRAME,
+        content_digest=packed.projection_sha256,
+        eligible=True,
+        immediate_dependencies=tuple(sorted(dependencies)),
+        impact=0,
+        exigency=0,
+    )
+
+
+class PackedFrameArtifactOwner:
+    """Own correction state for actual A05 PackedFrame objects consumed by B03."""
+
+    def __init__(self, rows: CompiledFrameRows):
+        if type(rows) is not CompiledFrameRows or not rows.rows:
+            _invalid("BAMF_C09_PACKED_FRAME_OWNER_INVALID")
+        self._rows = rows
+        nodes = {}
+        for row in rows.rows:
+            for position in row.positions:
+                if position.packed is None:
+                    continue
+                node = _packed_frame_node(row, position.packed)
+                prior = nodes.get(node.artifact_id)
+                if prior is not None and prior != node:
+                    _invalid("BAMF_C09_PACKED_FRAME_IDENTITY_DRIFT")
+                nodes[node.artifact_id] = node
+        self._index = DependencyIndex.build(tuple(nodes.values()))
+        self._queue: RevalidationQueue | None = None
+
+    @property
+    def index(self) -> DependencyIndex:
+        return self._index
+
+    @property
+    def queue(self) -> RevalidationQueue | None:
+        return self._queue
+
+    def node_for(self, packed) -> ArtifactNode:
+        from bilqis_mlx.semantics.frame_codec import PackedFrame
+        if type(packed) is not PackedFrame:
+            _invalid("BAMF_C09_PACKED_FRAME_OWNER_INVALID")
+        return self._index.node("frame:" + packed.sidecar.occurrence_id)
+
+    def require_row(self, row: CompiledFrameBatch) -> tuple[ArtifactNode, ...]:
+        if type(row) is not CompiledFrameBatch or row not in self._rows.rows:
+            _invalid("BAMF_C09_PACKED_FRAME_OWNER_MISMATCH")
+        result = []
+        for position in row.positions:
+            if position.packed is None:
+                continue
+            expected = _packed_frame_node(row, position.packed)
+            node = self.node_for(position.packed)
+            if (node.content_digest != expected.content_digest
+                    or node.immediate_dependencies != expected.immediate_dependencies):
+                _invalid("BAMF_C09_PACKED_FRAME_CONTENT_DRIFT")
+            if self._queue is not None:
+                node = read_artifact(self._index, self._queue, node.artifact_id)
+            elif not node.eligible:
+                _invalid("BAMF_C09_ARTIFACT_INELIGIBLE")
+            result.append(node)
+        return tuple(result)
+
+    def apply_correction(
+        self, event: CorrectionEvent, authority_registry: SourceAuthorityRegistry,
+    ) -> RevalidationQueue:
+        self._queue = apply_correction(event, self._index, authority_registry)
+        return self._queue
+
+    def advance(
+        self, frontier: RevalidationFrontier,
+        authority_registry: SourceAuthorityRegistry,
+    ) -> RevalidationProgress:
+        if self._queue is None:
+            _invalid("BAMF_C09_PACKED_FRAME_REVALIDATION_NOT_HELD")
+        task = next_revalidation_task(self._index, self._queue)
+        if task is None:
+            _invalid("BAMF_C09_PACKED_FRAME_REVALIDATION_NOT_PENDING")
         transition = revalidate_node(
             self._index.node(task.artifact_id), frontier, authority_registry)
         progress = advance_revalidation(
