@@ -1,13 +1,13 @@
 """Bind source/outcome salience labels to exact C02 delivery rows."""
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 
 from ..learning.atlas_salience import SalienceEvidence, derive_salience, verify_salience_inputs
 from ..learning.salience_contracts import AuthoritySnapshot, _invalid, _name, _sha, _signature, _signing_bytes
 from ..semantics.cognitive_dependencies import DependencyKind, DependencyRef
 from .atlas_training_adapter import BamfTrainingBatch, BamfTrainingRow, attach_auxiliaries, require_current_release
-from .atlas_training_contracts import _canonical_digest
+from .atlas_training_contracts import _canonical_digest, _reissue_training_batch
 
 
 def _row_digest(row):
@@ -103,6 +103,6 @@ def attach_salience_labels(batch, source_context, records, authority_snapshot, *
     # C02 replaces all head labels. Supply the verified complete map to preserve other heads.
     labelled = attach_auxiliaries(batch, merged, verify=lambda row_id, name, value, regime, receipt:
         merged.get(row_id, {}).get(name) == (value, regime, receipt))
-    return replace(labelled, rows=tuple(
+    return _reissue_training_batch(labelled, rows=tuple(
         changed if labels.get(original.provenance.row_id) else original
         for original, changed in zip(batch.rows, labelled.rows)))

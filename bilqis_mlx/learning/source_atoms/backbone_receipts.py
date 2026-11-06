@@ -13,6 +13,7 @@ from ...semantics.domains import contract_digest
 
 
 NO_HIT = "NO_HIT_QUARANTINED"
+HIT = "SOURCE_QUALIFIED_HIT"
 NOT_APPLICABLE = "NOT_APPLICABLE"
 MOTIF_POSITION = "AFTER_LAYER_4_BEFORE_CAPTURE"
 _HIDDEN_FRAME_RANK = 3
@@ -71,7 +72,8 @@ class ProducedBackboneBoundary:
             self.numerical_execution_digest, self.predecessor_receipt_digest,
             self.motif_read_digest, self.receipt_digest,
         )
-        expected_motif = NO_HIT if self.source_id == "g1" else NOT_APPLICABLE
+        expected_motif = ({NO_HIT, HIT} if self.source_id == "g1"
+                          else {NOT_APPLICABLE})
         expected_position = MOTIF_POSITION if self.source_id == "g1" else ""
         if (expected_index < 0
                 or self.completed_layer != COMPLETED_LAYERS[expected_index]
@@ -82,7 +84,7 @@ class ProducedBackboneBoundary:
                 or any(not isinstance(value, str) or not _SHA256.fullmatch(value)
                        for value in digests)
                 or self.output_digest != _content_digest(self.hidden)
-                or self.motif_disposition != expected_motif
+                or self.motif_disposition not in expected_motif
                 or self.motif_read_position != expected_position
                 or self.receipt_digest != contract_digest(receipt_projection(self.__dict__))):
             _invalid()

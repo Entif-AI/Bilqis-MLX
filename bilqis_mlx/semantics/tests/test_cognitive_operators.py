@@ -201,7 +201,8 @@ class CognitiveOperatorsTests(unittest.TestCase):
                     candidate for candidate in imports
                     if candidate.startswith("bilqis_mlx.")
                     and local_path(candidate)[0] is not None)
-        self.assertIn("bilqis_mlx.semantics.numeric", seen)
+        self.assertIn("bilqis_mlx.semantics.foundation.numeric", seen)
+        self.assertNotIn("bilqis_mlx.semantics.numeric", seen)
         forbidden = (
             "bilqis_mlx.verification", "bilqis_mlx.source_adapters",
             "bilqis_mlx.generated_assessment", "bilqis_mlx.assessment",

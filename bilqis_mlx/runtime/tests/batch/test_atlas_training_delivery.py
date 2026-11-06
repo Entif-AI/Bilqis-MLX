@@ -8,24 +8,37 @@ from bilqis_mlx.runtime.tests.test_atlas_training_adapter import (
 class TrainingDeliveryTests(AtlasTrainingAdapterTest):
     def test_source_family_and_episode_independence(self):
         from bilqis_mlx.runtime.atlas_training_adapter import require_independent_cohorts
+        authority = self.context.bind_rows(
+            self.rows, seed=17, capability='Z.C0', each=len(self.rows))
         batch = self.compile(self.rows)
-        self.assertEqual(batch.rows[0].provenance.source_family_id, 'family-1')
-        self.assertEqual(batch.rows[0].provenance.episode_id, 'episode-1')
+        self.assertEqual(
+            batch.rows[0].provenance.source_family_id,
+            authority.source_family_id)
+        self.assertEqual(
+            batch.rows[0].provenance.episode_id,
+            authority.episode_ids[0])
         with self.assertRaises(BilqisError):
             require_independent_cohorts(batch, batch)
-        sibling = self.compile([{**self.rows[0], 'id': 'other', 'source_family_id': 'family-2', 'episode_id': 'episode-2'}])
-        require_independent_cohorts(batch, sibling)
-        missing = self.compile([{key: value for key, value in self.rows[0].items() if key != 'source_family_id'}])
+        spoofed = [{**self.rows[0], 'source_family_id': 'family-2',
+                    'episode_id': 'episode-2'}]
+        same_family = self.compile(
+            spoofed, source_context=self.source_owned_context(spoofed))
         with self.assertRaises(BilqisError):
-            require_independent_cohorts(missing, sibling)
+            require_independent_cohorts(batch, same_family)
+        sibling_rows = self.context.draw_rows(
+            seed=19, capability='Z.C0', each=1)
+        sibling = self.compile(sibling_rows, source_seed=19)
+        require_independent_cohorts(batch, sibling)
 
     def test_released_signatures_select_rules_without_grade_input(self):
         from bilqis_mlx.runtime.atlas_training_adapter import resolve_batch_rules
+        authority = self.context.bind_rows(
+            self.rows, seed=17, capability='Z.C0', each=len(self.rows))
         batch = self.compile(self.rows)
         def signatures(release, graph, roots):
             return (('fixture.operator', 'Boolean*Boolean->Boolean'),)
         def rules(source_anchor, semantic_signatures, family):
-            self.assertEqual(family, 'family-1')
+            self.assertEqual(family, authority.source_family_id)
             return ('boolean-rules/v1',) if semantic_signatures[0][1].startswith('Boolean') else ('integer-rules/v1',)
         first = resolve_batch_rules(batch, self.context, released_signatures_for=signatures, rule_set_for=rules)
         self.assertEqual(first.rows[0].rule_policy, ('boolean-rules/v1',))

@@ -14,8 +14,11 @@ from bilqis_mlx.learning.atlas_engram_transaction import (
 from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree
 from bilqis_mlx.learning.atlas_candidate import (
-    CandidateState, CandidateTransaction, begin_candidate, candidate_step, resolve_candidate,
+    CandidateCustodyIdentity, CandidateState, CandidateStepProof,
+    CandidateTransaction, begin_candidate, candidate_step, resolve_candidate,
 )
+from bilqis_mlx.learning._retention._atlas_candidate.common import PREVIOUS_STEP_PROOF_SCHEMA
+from bilqis_mlx.learning._retention.tests.execution_fixtures import execution_provenance
 
 
 class CandidateTransactionTests(TestCase):
@@ -25,17 +28,28 @@ class CandidateTransactionTests(TestCase):
         state = AdamWStateTree({name: values}, {name: mx.ones_like(values) * .1},
                               {name: mx.ones_like(values) * .01},
                               {name: mx.array([2, 3], dtype=mx.uint64)})
+        from bilqis_mlx.runtime.model_topology_v2 import (
+            GenerationExtents, ModelTopologySpecV2,
+        )
+        allocations = MotifAllocationSnapshot(MotifManifest(RELEASE))
+        extents = GenerationExtents(
+            1, 1, "a" * 64, allocations.manifest.digest, "c" * 64)
         self.parent = CandidateState(
             state, PlasticityPolicy('ADAPTIVE', 7, (IdentityRowAge(0, 0, 7), IdentityRowAge(0, 1, 2))),
-            MotifAllocationSnapshot(MotifManifest(RELEASE)), 11)
+            allocations, 11,
+            CandidateCustodyIdentity(
+                "fixture-run", 0, "6" * 64, ModelTopologySpecV2().digest,
+                extents.digest))
         self.hp = AdamWHyperparameters(.001, (.9, .95), 1e-8, .01)
         self.name = name
 
-    def step(self, candidate, mask=(True, False), *, loss_bearing=True):
+    def step(self, candidate, rows=(0,), *, loss_bearing=True):
         return candidate_step(
             candidate, {self.name: mx.array([[3., 4.], [3e38, -3e38]], dtype=mx.float32)},
-            {self.name: mx.array(mask)}, self.hp, decay={self.name: True},
-            loss_bearing=loss_bearing, max_norm=1.)
+            execution_provenance(
+                candidate.parent, rows=rows, loss_bearing=loss_bearing,
+                candidate_step=candidate.update_steps + 1), self.hp,
+            decay={self.name: True}, loss_bearing=loss_bearing, max_norm=1.)
 
     def snapshot(self, state):
         return tuple(np.asarray(getattr(state.optimizer, field)[self.name]).tobytes()
@@ -69,14 +83,16 @@ class CandidateTransactionTests(TestCase):
         first = self.step(begin_candidate(self.parent))
         second = candidate_step(
             first, {self.name: mx.zeros((2, 2), dtype=mx.float32)},
-            {self.name: mx.array([False, True])}, self.hp, decay={self.name: True},
+            execution_provenance(
+                first.parent, rows=(1,), candidate_step=first.update_steps + 1),
+            self.hp, decay={self.name: True},
             loss_bearing=True, max_norm=1.)
         accepted = resolve_candidate(second, accepted=True)
         self.assertEqual(tuple(r.accepted_age for r in accepted.policy.row_ages), (8, 3))
         np.testing.assert_array_equal(np.asarray(accepted.optimizer.update_counts[self.name]), [3, 4])
 
     def test_no_loss_or_wholly_frozen_candidate_cannot_advance_clocks_or_allocations(self):
-        for kwargs in ({'loss_bearing': False}, {'mask': (False, False)}):
+        for kwargs in ({'loss_bearing': False}, {'rows': ()}):
             candidate = begin_candidate(self.parent, budget=MotifBudget(0))
             result = self.step(candidate, **kwargs)
             self.assertIs(result, candidate)
@@ -139,3 +155,17 @@ class CandidateTransactionTests(TestCase):
         with self.assertRaises(BilqisError):
             replace(legitimate, allocations=forged)
         self.assertEqual(resolve_candidate(legitimate, accepted=True).optimizer_step, 12)
+
+    def test_v2_step_proof_roundtrips_source_training_authority(self):
+        proof = CandidateStepProof(
+            1, "1" * 64, "2" * 64, "3" * 64, (self.name,), True,
+            source_release_sha256="4" * 64,
+            training_batch_sha256="5" * 64,
+            target_capability_id="A.TEST",
+            training_authority_sha256="6" * 64,
+            schema_version=PREVIOUS_STEP_PROOF_SCHEMA,
+        )
+        record = proof.to_record()
+        self.assertEqual(record["schema_version"], "bilqis.mlx.candidate-step-proof/v2")
+        self.assertEqual(record["target_capability_id"], "A.TEST")
+        self.assertEqual(CandidateStepProof.from_record(record), proof)

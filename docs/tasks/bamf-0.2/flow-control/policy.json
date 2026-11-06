@@ -79,7 +79,14 @@
         "expires_when": "PR #875 merges or closes."
       }
     ],
-    "admission_exceptions": [],
+    "admission_exceptions": [
+      {
+        "head_branch": "codex/remediation-egm-708-711-integration-20261103",
+        "reason": "Combined EGM-Mitigation integration candidate for #708, #709, #710 and #711, replacing PRs #804, #805, #806 and #807.",
+        "authority": "Direct project-owner instruction on 2026-11-03 to consolidate the EGM-Mitigation remediation PRs.",
+        "expires_when": "The combined remediation PR merges or closes."
+      }
+    ],
     "initial_drain_status": "COMPLETED_WITH_ISSUE_LABEL_QUEUE",
     "initial_drain_closed_prs": [
       640,

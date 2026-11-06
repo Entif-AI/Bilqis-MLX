@@ -4,7 +4,10 @@ from typing import Mapping
 
 import mlx.core as mx
 
-from bilqis_mlx.learning.frame_embeddings import compose_factor_features
+from bilqis_mlx.learning.frame_embeddings import (
+    EmptyFrameFactorTerms, FrameFactorTerms, compose_factor_features,
+)
+from bilqis_mlx.learning.frame_encoder import FrameEncoding
 from .depth_contracts import (
     WIDTH, INNER, MIN_COMPLETED_GROUPS, MAX_COMPLETED_GROUPS, FRAME_RANK,
     BATCH_POSITION_AXES, PARAMETER_SHAPES, DIAGNOSTICS_SCHEMA, SOURCE_ORDER,
@@ -118,6 +121,10 @@ def _producer_summaries(producer, boundary_group, params):
         _invalid()
     receipts = _SourceBackboneProducerSession._validated_receipts(
         producer, boundary_group)
+    # One source selection has one sealed parameter view. Rehashing the entire
+    # model for each receipt adds no verification strength within this call.
+    parameter_tree_digest = params.parameter_tree_digest
+    generation_digest = params.generation_digest
     for index, item in enumerate(receipts):
         if (item.source_id != SOURCE_ORDER[index]
                 or (index and item.predecessor_receipt_digest != receipts[index - 1].receipt_digest)
@@ -126,8 +133,8 @@ def _producer_summaries(producer, boundary_group, params):
                 or item.generation_digest != receipts[0].generation_digest
                 or item.parameter_tree_digest != receipts[0].parameter_tree_digest
                 or item.prefix_digest != receipts[0].prefix_digest
-                or item.parameter_tree_digest != params.parameter_tree_digest
-                or item.generation_digest != params.generation_digest):
+                or item.parameter_tree_digest != parameter_tree_digest
+                or item.generation_digest != generation_digest):
             _invalid()
     summaries = tuple(DepthSummary(
         item.source_id, item.completed_layer,
@@ -152,6 +159,53 @@ def depth_select_with_diagnostics(producer, frame_features, params):
         current, summaries, frame_features, params)
 
 
+def source_depth_select_with_diagnostics(producer, params):
+    """Select depth only from the B11 producer's executed source factors."""
+    from bilqis_mlx.learning.source_atoms.backbone import _SourceBackboneProducerSession
+    if (type(producer) is not _SourceBackboneProducerSession
+            or type(params) is not DepthParameterView
+            or type(producer._encoded) is not FrameEncoding):
+        _invalid()
+    summaries, receipts = _producer_summaries(
+        producer, params.boundary_group, params)
+    encoded = producer._encoded
+    if (encoded.global_seeds.shape != receipts[0].hidden.shape
+            or len(encoded.features) != encoded.global_seeds.shape[0]
+            or any(len(row) != encoded.global_seeds.shape[1]
+                   for row in encoded.features)):
+        _invalid()
+    rows = []
+    for row in encoded.features:
+        values = []
+        for factor in row:
+            if factor is None:
+                values.append(mx.zeros((WIDTH,), dtype=mx.float32))
+            elif type(factor) in (FrameFactorTerms, EmptyFrameFactorTerms):
+                if (factor.feature_digest != producer._compiled.features.digest
+                        or factor.semantic_release
+                        != producer._compiled.features.semantic_release
+                        or factor.type_role768.shape != (WIDTH,)
+                        or factor.type_role768.dtype != mx.float32):
+                    _invalid()
+                values.append(factor.type_role768)
+            else:
+                _invalid()
+        rows.append(mx.stack(tuple(values)))
+    numerical = _DepthFeatureValues(
+        encoded.global_seeds, mx.stack(tuple(rows)),
+        producer._compiled.features.semantic_release,
+        producer._compiled.features.digest, params.boundary_group)
+    output, alpha, gate = _depth_components(
+        receipts[params.boundary_group].hidden, summaries, numerical, params)
+    return DepthSelectionDiagnostics(output, alpha, gate)
+
+
+def source_depth_select(producer, params):
+    return source_depth_select_with_diagnostics(producer, params).output
+
+
 DepthSelectionDiagnostics.__module__ = "bilqis_mlx.runtime.block_attnres"
 depth_select.__module__ = "bilqis_mlx.runtime.block_attnres"
 depth_select_with_diagnostics.__module__ = "bilqis_mlx.runtime.block_attnres"
+source_depth_select.__module__ = "bilqis_mlx.runtime.block_attnres"
+source_depth_select_with_diagnostics.__module__ = "bilqis_mlx.runtime.block_attnres"

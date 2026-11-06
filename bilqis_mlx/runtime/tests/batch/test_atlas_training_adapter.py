@@ -181,16 +181,34 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
         self.model_generation = 'fixture-model-generation'
         self.rows = self.context.draw_rows(seed=17, capability='Z.C0', each=1)
 
+    def source_owned_context(self, rows, *, seed=17):
+        """Bind deliberate fixture variants as rows emitted by the source owner."""
+        registered = self.context.source_registry.require(
+            'fixture.z-generator/v1', 'fixture.z-oracle/v1')
+        owned = tuple(dict(row) for row in rows)
+
+        def draw(**kwargs):
+            if (kwargs.get('capability') == 'Z.C0'
+                    and kwargs.get('seed') == seed
+                    and kwargs.get('each') == len(owned)):
+                return owned
+            return registered.draw(**kwargs)
+
+        registry = SourceAdapterRegistry((replace(registered, draw=draw),))
+        return replace(self.context, source_registry=registry)
+
     def compile(self, rows, *, release_sha=None, encoders=None, policy='allow',
                 generation=None, sealed=(), context_mutator=None,
                 frames_override=None, source_ast_override=None,
-                delivery_override=None, extra_kwargs=None):
+                delivery_override=None, extra_kwargs=None,
+                source_context=None, source_seed=17):
+        context = source_context or self.context
         delivery = delivery_override or describe_delivered_teaching(
-            self.context.release, 'Z.C0', 'source.direct/Z.C0', rows)
+            context.release, 'Z.C0', 'source.direct/Z.C0', rows)
         visible_ends = {rows[0]['id']: 2}
         frames_for_ast, base_task, base_frontier, base_policy = _source_context(
-            rows, self.context.release.release_sha256, visible_ends, policy,
-            self.context.graph)
+            rows, context.release.release_sha256, visible_ends, policy,
+            context.graph)
         task, frontier, context_policy = base_task, base_frontier, base_policy
         if context_mutator is not None:
             task, frontier, context_policy = context_mutator(
@@ -199,7 +217,7 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
             frames_for_ast = frames_override
         legitimate_asts = tuple(source_ast_for(
             tuple(row['tokens'][:visible_ends.get(row['id'], len(row['tokens']))]),
-            self.context.release.release_sha256, self.context.graph)
+            context.release.release_sha256, context.graph)
             for row in rows)
         schema = _training_schema()
         semantic_release = base_task.semantic_release
@@ -208,14 +226,16 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
             None,
             base_task, base_frontier, base_policy)
         self.authority.return_value = _atlas_features(legitimate_asts, semantic_release)
-        return compile_training_batch(rows, self.context, {'context': 1024},
-            delivery=delivery, delivery_capability='Z.C0', delivery_release_sha256=release_sha or self.context.release.release_sha256,
+        return compile_training_batch(rows, context, {'context': 1024},
+            delivery=delivery, delivery_capability='Z.C0', delivery_release_sha256=release_sha or context.release.release_sha256,
             teacher_strategy={'policy': 'focused'}, requested_count=3, optimizer_step_seed=42,
+            source_authority=context.bind_rows(
+                rows, seed=source_seed, capability='Z.C0', each=len(rows)),
             rehearsal_by_id={rows[0]['id']: 'prior'}, visible_ends=visible_ends,
             source_ast_for=source_ast_override or (
                 lambda tokens: source_ast_for(
-                    tokens, self.context.release.release_sha256,
-                    self.context.graph)),
+                    tokens, context.release.release_sha256,
+                    context.graph)),
             compiler_config=compiler_config,
             feature_artifact_path='synthetic:feature-artifact',
             answer_plan_for=lambda *args: {**answer_plan_for(*args), 'generation_binding': self.model_generation},

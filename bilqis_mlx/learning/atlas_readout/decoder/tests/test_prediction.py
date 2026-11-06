@@ -25,6 +25,24 @@ def logits(output,key):
 
 
 class PredictionTests(unittest.TestCase):
+    def test_generic_route_decisions_commit_typed_operator_and_operand_strings(self):
+        memory, context, plan, semantics, parameters = case()
+        route = replace(plan, decisions=(
+            DecisionSpec('route.operator', None, 0, DecisionKind.OPERATOR,
+                         ('ADD', 'SUB')),
+            DecisionSpec('route.operand.0', None, 0, DecisionKind.OPERAND,
+                         ('literal:left', 'literal:right'), ('route.operator',)),
+            *plan.decisions,
+        ))
+
+        output = predict_typed(memory, context, route, semantics, parameters)
+
+        committed = {item.decision_id: item.value for item in output.committed}
+        self.assertIn(committed['route.operator'], ('ADD', 'SUB'))
+        self.assertIn(committed['route.operand.0'], ('literal:left', 'literal:right'))
+        self.assertTrue(any(item.kind is DecisionKind.OPERATOR for item in output.decisions))
+        self.assertTrue(any(item.kind is DecisionKind.OPERAND for item in output.decisions))
+
     def test_complete_output_is_source_valid_and_unassisted(self):
         memory,context,plan,semantics,params=case()
         output=predict_typed(memory,context,plan,semantics,params)

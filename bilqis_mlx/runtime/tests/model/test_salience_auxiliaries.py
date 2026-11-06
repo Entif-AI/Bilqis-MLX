@@ -6,6 +6,7 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.salience_auxiliaries import RowSalienceBinding, attach_salience_labels
 from bilqis_mlx.runtime.tests.test_atlas_training_adapter import AtlasTrainingAdapterTest
 from bilqis_mlx.runtime.atlas_training_adapter import execute_with_backend
+from bilqis_mlx.runtime.atlas_training_contracts import _reissue_training_batch
 from bilqis_mlx.learning.atlas_salience import derive_salience, verify_salience_inputs
 from bilqis_mlx.learning.salience_contracts import AuthoritySnapshot, Metric
 from bilqis_mlx.learning.tests.test_atlas_salience import _CONTEXT, _REGISTRY, _policy, _fact, _signed
@@ -42,7 +43,7 @@ class SalienceAuxiliaryTests(unittest.TestCase):
         first, second = self.batch.rows
         first = replace(first, auxiliaries=(('role', 'subject', 'SOURCE', 'fixture-role-receipt'),))
         second = replace(second, auxiliaries=(('epistemic_state', 1, 'SOURCE', 'fixture-epistemic-receipt'),))
-        batch = replace(self.batch, rows=(first, second))
+        batch = _reissue_training_batch(self.batch, rows=(first, second))
         def verify_existing(row_id, name, value, regime, receipt):
             return (row_id, name, value, regime, receipt) in (
                 (first.provenance.row_id, *first.auxiliaries[0]),

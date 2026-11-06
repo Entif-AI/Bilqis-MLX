@@ -2937,3 +2937,193 @@ result. Repeated parameter exploration must amortize invariant setup in one proc
 After two unsuccessful full-cost attempts under the same hypothesis, further
 end-to-end execution pauses until a cheaper staged/profiled diagnostic changes the
 evidence. Compaction must preserve in-flight probe status to prevent duplicate runs.
+
+## ADR-131 | 2026-11-05 | Expensive qualification diagnosis follows decision precedence and preserves full authority at the boundary
+
+**Status:** Accepted by direct owner instruction on 2026-11-05 after the #708 C05
+source-owned acceptance witness required 1768.874 seconds and returned only a
+generic rejection.
+
+**Problem:** A logically single acceptance assertion can hide a large qualification
+workload. The #708 C05 witness currently spans 6 fresh-target cases, 24 fresh
+same-grade cases and 43 fixed-school cases. Its present construction performs 73
+instrument compilations, another parent and candidate compilation for each case,
+and 146 parent/candidate solves before the test can report acceptance. When an early
+retention predicate already determines rejection, eagerly paying the remaining
+cohort cost adds no diagnostic evidence. Worse, a generic Boolean rejection after a
+multi-minute run forces another expensive execution merely to learn which predicate
+failed.
+
+**Decision:** Expensive acceptance/retention diagnosis must follow the production
+decision's rejection precedence. Evaluate the cheapest decisive predicate first and
+stop when its result already fixes the production outcome. For C05 this means
+testing the exact fresh-target cohort first; only positive target gain justifies
+fresh same-grade evaluation, and only a surviving same-grade result justifies the
+fixed-school screen. The diagnostic may reuse the exact production source rows,
+candidate state, solver semantics and policy inputs, but remains explicitly
+**non-authorizing**. It must not issue a Factory retention evaluation, accepted
+generation, or equivalent production authority. The full owner-controlled screen
+remains the sole acceptance authority and runs at the final stable boundary after a
+cheaper diagnostic has demonstrated a relevant repair.
+
+**Cost discipline:** Invariant setup is hoisted and reused within one process where
+semantics permit: source compilation, Factory/model construction, bundle loading,
+custody validation and other unchanged setup must not be rebuilt per seed, case,
+parent/candidate comparison or diagnostic stage merely for convenience. Before a
+multi-minute witness is launched, the operator should account for case count,
+repeated compilation/setup passes and solve count, then split mechanically separable
+cost from semantic proof. This extends ADR-129's evidence-reuse rule and ADR-130's
+diagnostic-loop budget from rerun prevention to the internal structure of a single
+expensive witness.
+
+**Observability:** Every expensive rejection path must report the exact rejection
+reason and enough stage timing/score evidence to determine the next bounded
+diagnostic. A multi-minute witness that returns only `accepted = false` or an
+equivalent generic assertion is not an acceptable debugging interface. Repair that
+observability before repeating the same execution family.
+
+**Preserved boundaries:** This ADR does not weaken C05, alter retention thresholds,
+replace source-qualified evidence with synthetic fixtures, or authorize acceptance
+from a partial screen. It changes the development and diagnostic path only. The
+final production acceptance witness remains complete and authoritative.
+
+## ADR-132 | 2026-11-05 | Long local commands detach from interactive agent sockets and notify the operator
+
+**Status:** Accepted by direct owner instruction on 2026-11-05.
+
+**Problem:** Some legitimate BAMF qualification, EGM, neural and integration tasks
+cannot always be reduced below several minutes. Holding an interactive execution
+socket open while such a command runs consumes platform resources, degrades service
+quality, and encourages agents to sit in a polling loop rather than yield cleanly.
+The repository therefore needs a durable asynchronous handoff for local computation,
+not merely a request that agents "wait less."
+
+**Decision:** Five minutes is the interactive socket ceiling. Any local command that
+could plausibly exceed it is launched detached with
+`scripts/bamf/detached_long_run.py`. The launcher gives the child an independent
+session, closes interactive stdin, writes a durable PID file, combined stdout/stderr
+log and machine-readable completion receipt, and on macOS emits a desktop
+notification with the `Glass` sound when the command exits. The initiating agent
+verifies launch only, reports the artifact paths and continuation instruction, then
+ends its turn. It does not hold the chat/tool socket open and does not poll.
+
+After the notification, the human returns control to an agent. That agent reads the
+completion receipt and log, reconciles the result against current Git/worktree state
+and continues from the recorded outcome. The detached command is computation, not a
+background agent: it may not make unapproved external/public/destructive decisions,
+self-merge, or infer authority from successful exit.
+
+**Failure semantics:** Missing receipt, stale PID, command crash, notification
+failure, or ambiguous external side effect is not success. Reconcile the durable log
+and target state before retry. The five-minute boundary does not justify detaching an
+interactive command that requires human input or credentials mid-run; such work must
+be redesigned or explicitly handled at its interaction boundary.
+
+**Implementation:** Root `AGENTS.md` plus
+`scripts/bamf/detached_long_run.py`. This ADR composes with ADR-129 evidence reuse,
+ADR-130 diagnostic-loop budgeting and ADR-131 precedence-ordered qualification.
+
+## ADR-133 | 2026-11-05 | Foundation learning accepts taught acquisition; fixed generalization gates wait for maturity
+
+**Status:** Accepted by direct owner correction on 2026-11-05; measurement semantics refined by ADR-134.
+
+**Problem:** The repository repeatedly reintroduced conventional held-out and
+generalization requirements while Bilqis still had a tiny semantic inventory. This
+conflicted with the intended developmental curriculum and with the architecture's
+deliberate use of exact retrieval, memoization, caches, motif memory and rote learning.
+It also turned foundation integration witnesses into premature transfer tests.
+
+**Decision:** The current stage is FOUNDATION_ACQUISITION. Teacher-forced gold may be
+present in teaching and integration witnesses. The same specimen may be taught and
+replayed. Exact memorization, cache retrieval, memoized procedures and learned memory
+are valid successful mechanisms. Foundation acceptance may use
+TEACHER_FORCED_ACQUISITION, EXACT_TAUGHT_RECALL or
+TAUGHT_COMPOSITION_REPLICATION. It does not require a held-out specimen, independent
+source family, fresh episode, unseen filler or novel composition.
+
+Generalization, transfer and independence tests remain useful instruments, but they are
+not live acceptance gates. ADR-134 clarifies that BAMF-0.2 alpha should measure them
+continuously as non-authorizing competence-frontier telemetry rather than leaving them
+dormant. Any later fixed novelty or held-out gate requires explicit human admission.
+
+**Structural enforcement:** The machine authority is
+`docs/specifications/developmental_evidence_policy.json`. Root guidance, SPEC-0001,
+BAMF-0.2, C05 and C16 carry the FOUNDATION_EVIDENCE_POLICY_ACTIVE marker.
+`scripts/check_factory_architecture.py` validates the policy and those markers so a
+later edit cannot silently restore premature generalization as a foundation gate.
+
+**Still enforced:** Source correctness, rights, semantic identity, custody, rollback,
+protected-retention limits and human neural-update authority remain active. This ADR
+changes developmental evidence maturity, not those safety or provenance boundaries.
+
+## ADR-134 | 2026-11-05 | Alpha advancement follows earned complexity; novelty is measured, not gated
+
+**Status:** Accepted by direct owner correction on 2026-11-05. This refines ADR-097
+and ADR-133 for BAMF-0.2 alpha.
+
+**Problem:** Treating held-out or generalized performance as a separate pass/fail gate
+misrepresents Bilqis's developmental training regime. The system intentionally builds a
+large explicit semantic memory through repetition, retrieval, composition and gradual
+curriculum growth rather than learning from trillions of stochastic examples. Exact
+repetition therefore remains useful evidence even when a specimen has been seen many
+times. The curriculum's rising semantic breadth and composition complexity already
+create increasing difficulty.
+
+**Decision:** BAMF-0.2 alpha advancement uses the success ratio at the learner's current
+earned complexity. Previously shown examples count fully. Training and evaluation pools
+may grow incrementally or logarithmically as the curriculum expands. Generalization,
+transfer and novelty remain continuously measured, but no held-out, fresh-family or
+novel-composition result may independently veto retention, promotion or graduation.
+Candidate retention also does not require an immediate target-score increase from every
+optimizer step. Non-destructive intermediate updates may accumulate. The existing
+teacher-owned no-gain retirement remains responsible for abandoning strategies that
+repeatedly fail to produce useful learning.
+
+Novelty diagnostics should begin with small meaning-preserving changes such as surface
+name substitutions, then increase role changes, relation polarity changes, composition
+depth, distractors and semantic distance. Record pass/failure ratios by complexity and
+variation distance and report the first region where competence breaks down. This
+competence frontier is more useful during alpha than a binary generalization gate.
+
+**Interpretation:** A correct answer may come from exact memory, cache retrieval,
+memoized procedure, learned weights, deterministic composition or another authorized
+route. Familiarity does not invalidate the answer. A later fixed held-out/generalization
+gate requires a new explicit human decision.
+
+**Structural enforcement:** docs/specifications/developmental_evidence_policy.json
+sets generalization_status=MEASURE_ONLY, keeps novelty non-authorizing, and defines
+alpha advancement as CURRENT_EARNED_COMPLEXITY_SUCCESS_RATIO.
+scripts/check_factory_architecture.py validates these fields and the active
+FOUNDATION_EVIDENCE_POLICY_ACTIVE markers.
+
+## ADR-135 | 2026-11-05 | Detached long runs execute from digest-pinned source snapshots
+
+**Status:** Accepted by direct owner instruction on 2026-11-05 while the #708/#709
+acceptance witness was active.
+
+**Problem:** ADR-132 detached long work from the interactive socket but still executed
+the command and any later subprocesses from the live mutable worktree. A long parent
+process could therefore import one version of a module, then spawn a clean child after
+an agent edited the same worktree, causing source and destination arms of one witness
+to execute different code. Avoiding edits by convention is not concurrency control.
+
+**Decision:** Every new detached long run must first materialize a complete source
+snapshot of its requested worktree, excluding only non-source/runtime-cache roots such
+as `.git`, `.local`, virtual environments, bytecode caches and `node_modules`. The
+launcher verifies that the source digest is stable across the copy and that the copied
+tree has the same digest, rejects source symlinks that escape the worktree, then starts
+the detached worker from the copied runner inside that snapshot. The command executes
+with the snapshot as cwd, so recursively spawned relative-path Python processes inherit
+the same source image even while development continues in the original worktree.
+
+The receipt records original worktree, snapshot path, source digest and snapshot
+digest. The worker re-verifies the snapshot before command execution and again after
+the command. If the command mutates its own source snapshot, the run fails even when
+the command itself returned zero. Run-local logs, receipts and PIDs remain outside the
+snapshot. Snapshot isolation is the concurrency mechanism; promises not to edit the
+live worktree are not.
+
+**Transition:** A detached process already launched under the v1 runner cannot be
+redirected into a snapshot without changing its execution environment mid-witness.
+Such an in-flight v1 run keeps its relevant source surface frozen until completion;
+all newly launched runs use the v2 snapshot contract.

@@ -1,7 +1,7 @@
 """Pure release metadata/commit contract, no GitHub mutations."""
 import unittest
 
-from scripts.release_version import changelog_section, conventional, VERSION
+from scripts.maintenance.release_version import changelog_section, conventional, VERSION
 
 
 class ReleaseVersionTests(unittest.TestCase):
