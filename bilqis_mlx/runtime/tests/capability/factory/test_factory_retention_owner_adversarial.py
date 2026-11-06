@@ -14,8 +14,8 @@ from bilqis_mlx.runtime.factory_retention_owner import (
     evaluate_factory_retention_candidate,
 )
 from bilqis_mlx.runtime.tests.capability.capability_retention_helpers import _screen_inputs
-from bilqis_mlx.runtime.tests.capability.factory import factory_retention_target_diagnostic as diagnostic
-from bilqis_mlx.runtime.tests.capability.factory.factory_retention_fixed_diagnostic import (
+from bilqis_mlx.runtime.tests.capability.factory.retention import factory_retention_target_diagnostic as diagnostic
+from bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_fixed_diagnostic import (
     _optimizer_delta_summary,
 )
 import mlx.core as mx
@@ -113,7 +113,7 @@ class FactoryRetentionOwnerAdversarialTests(unittest.TestCase):
         fresh.assert_not_called()
 
     def test_real_source_replays_failed_run_overlap_and_redraws_exact_cohort(self):
-        from bilqis_mlx.runtime.tests.capability.factory.factory_retention_live_support import (
+        from bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_live_support import (
             live_factory_context,
         )
         root = Path(__file__).resolve().parents[5]

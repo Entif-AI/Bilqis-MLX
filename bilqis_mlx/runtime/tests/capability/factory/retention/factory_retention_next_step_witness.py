@@ -146,7 +146,7 @@ def run_cold_destination(run_dir, source_context, artifact, reference_path):
 def _spawn_cpu(run_dir, root, source, artifact, reference):
     process = subprocess.run(
         [sys.executable, "-m",
-         "bilqis_mlx.runtime.tests.capability.factory.factory_retention_next_step_probe",
+         "bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_next_step_probe",
          str(run_dir), str(root), str(source), str(artifact), str(reference)],
         cwd=str(root), capture_output=True, text=True, env=dict(os.environ), timeout=900)
     if process.returncode:
@@ -157,7 +157,7 @@ def _spawn_cpu(run_dir, root, source, artifact, reference):
 def _spawn_cpu_natural(run_dir, root, source):
     process = subprocess.run(
         [sys.executable, "-m",
-         "bilqis_mlx.runtime.tests.capability.factory.factory_retention_next_step_probe",
+         "bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_next_step_probe",
          "natural", str(run_dir), str(root), str(source)],
         cwd=str(root), capture_output=True, text=True, env=dict(os.environ), timeout=300)
     if process.returncode:

@@ -26,7 +26,7 @@ REGISTRY = SourceAuthorityRegistry((SourceAuthorityKey(
 
 
 def _selection():
-    path = Path(__file__).resolve().parents[1] / "atlas_source_pins_v1.json"
+    path = Path(__file__).resolve().parents[2] / "atlas_source_pins_v1.json"
     entry = json.loads(path.read_text())["entries"][0]
     return AtlasArtifactSelection(
         "fixture-atlas", entry["bundle_id"], entry["release_sha256"],

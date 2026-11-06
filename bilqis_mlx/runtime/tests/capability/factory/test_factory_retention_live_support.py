@@ -8,7 +8,7 @@ import numpy as np
 from bilqis_mlx.runtime.model_topology_v2 import (
     Initializer, ParameterGroup, ParameterSpec, initialize_bamf_parameter,
 )
-from bilqis_mlx.runtime.tests.capability.factory.factory_retention_live_support import (
+from bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_live_support import (
     C05_GENESIS_SEED, _genesis_parameter,
 )
 
