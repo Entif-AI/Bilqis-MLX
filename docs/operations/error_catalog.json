@@ -1,6 +1,6 @@
 {
-  "legacy_raw_file_count": 247,
-  "legacy_raw_raise_count": 2067,
+  "legacy_raw_file_count": 248,
+  "legacy_raw_raise_count": 2072,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BOOLEAN_ASSOCIATION_B_GRADE_OWNERSHIP_DRIFT",
@@ -11509,6 +11509,41 @@
       "exception": "AssertionError",
       "expression": "'C05 target diagnostic training authority drift'",
       "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_target_diagnostic.py"
+    },
+    {
+      "code_hint": "C05 source-owned generation-one publication drift",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'C05 source-owned generation-one publication drift'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/owner_live_support.py"
+    },
+    {
+      "code_hint": "C05 source-owned route decision drift",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'C05 source-owned route decision drift'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/owner_live_support.py"
+    },
+    {
+      "code_hint": "C05 source-owned step did not execute exactly once",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'C05 source-owned step did not execute exactly once'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/owner_live_support.py"
+    },
+    {
+      "code_hint": "C05 Factory retention did not accept source-owned candidate",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "f'C05 Factory retention did not accept source-owned candidate: reason={decision.reason} evidence={decision.evidence_sha256} policy={decision.policy_sha256} blocking_capability={evaluation.decision.blocking_capability}'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/owner_live_support.py"
+    },
+    {
+      "code_hint": "C05 source-owned MLX backend is not GPU",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "f'C05 source-owned MLX backend is not GPU: {backend.device}'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/owner_live_support.py"
     },
     {
       "code_hint": "exact cached route must preempt neural",
