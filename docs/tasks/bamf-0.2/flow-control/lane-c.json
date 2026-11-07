@@ -131,11 +131,11 @@
     },
     {
       "issue": 752,
-      "pr": 864,
+      "pr": null,
       "state": "ACTIVE",
-      "head_sha": "3b15844acd138b5a470168db9c86c10878017130",
-      "preserved_branch": "codex/752-artifact-owner-continue-20261105",
-      "summary": "ATLAS_FEATURE, PACKED_FRAME, and EXACT_CACHE now use the current canonical C09 revalidation modules. Exact-cache inference requires current accepted cache authority plus the exact correction owner; signed holds fail closed to FP32 and equal-output revalidation releases reuse. Superseded _revalidation_* modules were removed after #862. Remaining: motif production read consumer, operator-composition durable correction owner, capability-support initial production materializer.",
+      "head_sha": "6f75e97affb2d6166c3e11f4ab7c14dba7163ee4",
+      "preserved_branch": "codex/752-final-prime-20261106",
+      "summary": "Final C09 implementation checkpoint. All six production artifact owners carry direct dependency custody and before-use holds; accepted-run correction plus signed revalidation evidence replay durably across cold restart; exact-cache, motif, operator-composition and capability-support custody retain authority across reuse. Operator compositions bind producing generation and admit newly materialized affected nodes into an active hold. Capability support indexes source row/digest, training batch/proof and producing generation. Production owner priorities are non-tie and queue ordering remains exigency then impact with topology precedence. Focused acceptance 68/68; changed-scope quality and BAMF contracts green. Fresh exact-head EGM and PR still pending.",
       "resume_trigger": null
     }
   ]

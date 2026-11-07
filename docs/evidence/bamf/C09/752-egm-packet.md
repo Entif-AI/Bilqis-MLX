@@ -14,7 +14,8 @@ findings.
   semantic and learned artifacts
 - Reviewed integration trunk: `codex/bamf-unified-base-20261028`
 - Consumed unified SHA: `aef69dae9179bb09f85f955b8a494f6582eac942`
-- Candidate branch: `codex/752-final-20261106`
+- Candidate branch: `codex/752-final-prime-20261106`
+- Implementation checkpoint: `6f75e97affb2d6166c3e11f4ab7c14dba7163ee4`
 
 The Goldfish MUST resolve the candidate's exact HEAD itself before review and
 report that SHA in its verdict.
@@ -81,14 +82,20 @@ wording and legitimate new evidence must not be treated as the stale replay.
 - `OPERATOR_COMPOSITION`: `SolveContext` owns qualified reusable composition
   custody for the real cognitive-solver path. A neural composition enters that
   custody only after source/generation checks and successful DAG execution,
-  then the retained context can reuse it without another neural call. No
-  process-global authority is permitted.
+  then the retained context can reuse it without another neural call. Each
+  retained composition binds the exact producing generation digest. If a
+  correction is already active when another affected composition is learned,
+  that new node joins the same hold queue immediately rather than escaping the
+  correction window. No process-global authority is permitted.
 - `CAPABILITY_SUPPORT`: accepted B13 generation custody plus source-qualified
   training authority/step-proof provenance owns learned-support
   materialization. The accepted progression entrypoint cold-loads this owner
   from B13 custody and also requires its exact training generation binding to
   equal the current replay generation. Progression may consume current support
-  but must not mint it.
+  but must not mint it. Immediate dependency indexing includes the source row,
+  source-row digest, source release, producing generation, training-batch
+  identity and training-authority proof, in addition to retention policy and
+  accepted-generation custody.
 - Capability-support correction holds are journaled under the exact accepted
   generation/capability custody. A fresh accepted-progression load must
   re-verify and rehydrate the signed hold with the source authority registry,
@@ -115,6 +122,17 @@ wording and legitimate new evidence must not be treated as the stale replay.
   support owners register on bind/load. Cold restart re-establishes the
   host-provisioned source authority and replays the same signed accepted-run
   ledger before those retained artifacts may influence output.
+- Source-owner recomputation evidence returns through
+  `SourceExecutionContext.record_revalidation()`. Revalidation artifacts are
+  signature-verified, must bind an already accepted correction receipt, and
+  are appended to the same accepted-run event ledger. Live dispatch advances
+  only the owner whose actual next queued task is present in the signed
+  frontier; cold replay applies correction and revalidation records in order,
+  so a legitimately cleared hold stays cleared after process restart without
+  granting the runtime authority to manufacture replacement evidence.
+- Production owner nodes carry explicit reuse priorities instead of tie-only
+  zeroes. The canonical queue still orders exigency before impact and preserves
+  dependency-topology precedence over numeric priority.
 - `BamfCompiledBatch` and `SolveContext` validation preserve already-issued
   owner objects; validation never replaces correction custody.
 - Generic C09 fixtures are not sufficient evidence unless the corresponding
@@ -132,6 +150,8 @@ Review the complete diff from
 - `bilqis_mlx/runtime/_correction/owners/atlas_capability_support_owner.py`
 - `bilqis_mlx/runtime/_correction/owners/atlas_owner_ingress.py`
 - `bilqis_mlx/runtime/_correction/accepted_corrections.py`
+- `bilqis_mlx/runtime/_correction/accepted_correction_ledger.py`
+- `bilqis_mlx/runtime/_correction/accepted_correction_runtime.py`
 - `bilqis_mlx/learning/source_atoms/`
 - `bilqis_mlx/learning/frame_encoder/compiled.py`
 - `bilqis_mlx/runtime/_model/`
@@ -143,13 +163,19 @@ Review the complete diff from
 - `bilqis_mlx/runtime/_capability/capability_authority.py`
 - focused tests under `bilqis_mlx/runtime/tests/correction/`, capability,
   custody, cache, frame-encoder and source-atom test surfaces.
+- `bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver_retention.py`
+- `bilqis_mlx/runtime/tests/custody/bamf_bundle/test_accepted_runtime_custody.py`
 
 ## Verification receipts before EGM
 
-- Focused C09/custody acceptance suite: `109 passed, 0 failed, 0 skipped`.
+- Focused C09/custody acceptance suite: `68 passed, 0 failed, 0 skipped` on
+  implementation checkpoint `6f75e97affb2d6166c3e11f4ab7c14dba7163ee4`.
 - `npm run quality:changed`: development structure OK; governance integrity
   OK; BAMF flow control OK; 15/15 flow-control tests passed; zero new
-  changed-file smell findings.
+  changed-file smell findings against reviewed unified. Four inherited
+  branch-density/long-function findings remain baseline debt in
+  `capability_authority.py` and `cognitive_solver.py` and are not introduced by
+  #752.
 - `scripts/verify_bamf_0_2_contracts.py`: all 43 issue mirrors matched the
   workstack receipts; all 214 owner/child specs retained indexed identity and
   source fingerprints; no missing/cyclic dependencies. Eight pre-existing
