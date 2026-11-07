@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "5f8f3d4b42cc4656020e4427c7d8e822825a36f9",
-  "updated_at": "2026-11-07T17:41:20Z",
+  "observed_unified": "9301e41ef215b9d035449c3260c7cd0f8ee0b5a7",
+  "updated_at": "2026-11-07T18:21:51Z",
   "exception": null,
   "items": [
     {
@@ -221,8 +221,8 @@
       "issue": 906,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "ee644401d12275c98e454156fd49193e57e5cead",
-      "summary": "A13 EGM-Mitigation follow-on is semantic-candidate complete at ee644401: finite validity is bound to exact A01 source/release plus actor/policy/rights/correction authority; timeless PUBLIC_FORMAL remains unchanged. Disposable integration with #752 passed durable packed-frame hold-before-reuse and cold replay. Fresh EGM and turn-in gates remain.",
+      "head_sha": "3b80a76c0acafce79a061174554fb8ade0c62618",
+      "summary": "A13 EGM-Mitigation follow-on repaired after EGM round 1 rejected caller-owned temporal authority and a skipped real-A01 witness. The producer now issues a hash-pinned opaque SourceContextTransitionAuthority from the exact A01 source; callers cannot choose task, policy, frontier, current time, or validity bounds. Current-unified proof: source-context 10/10, C09 boundary 5/5, real A01 3/3 with zero skips, changed-scope quality green. Disposable join with authoritative #752 consumer head 03e7a3c0 proves durable hold-before-reuse plus cold replay and its accepted-runtime suite passes 9/9. Targeted EGM re-audit is pending.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a-906-temporal-context-20261107"
     }
