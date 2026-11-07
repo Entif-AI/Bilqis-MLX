@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "3899649586b105b075e92f0ee3c51e80c379b473",
-  "updated_at": "2026-11-07T04:52:37Z",
+  "updated_at": "2026-11-07T04:56:53Z",
   "exception": null,
   "items": [
     {
@@ -100,7 +100,7 @@
       "pr": null,
       "state": "WAITING",
       "head_sha": "8457161520ae02173ef7c021e0cd7916b66467fc",
-      "summary": "A02.1 now stages an exact append-only vocabulary successor from accepted B13 feature authority and leaves the accepted generation pointer unchanged. Preflight review corrected an earlier C07 authority bypass: Lane A no longer mints parameter-extension publication authority, and ordinary B13 publication fails closed on vocabulary changes until the C07 adoption executor exists. B13 recursive predecessor-lineage projection and accepted-active-set replay are repaired; focused staging/authority and semantic checks are green. Final #399 acceptance remains blocked on C07.1b/#510 atomic adoption.",
+      "summary": "A02.1 now stages an exact append-only vocabulary successor from accepted B13 feature authority and leaves the accepted generation pointer unchanged. Preflight review corrected an earlier C07 authority bypass: Lane A no longer mints parameter-extension publication authority, and ordinary B13 publication fails closed on vocabulary changes until the C07 adoption executor exists. B13 recursive predecessor-lineage projection and accepted-active-set replay are repaired. The detached full-topology staging witness passed 1/1 in 169.561s from immutable snapshot 83ea9786 with source_mutated=false; focused staging/authority and semantic checks are also green. Final #399 acceptance remains blocked on C07.1b/#510 atomic adoption.",
       "resume_trigger": "C07.1b/#510 must provide the persisted-lease-gated atomic adoption executor for the exact A02 staged candidate. #510 in turn remains acceptance-blocked on A09.5/#395 obtaining at least three genuinely new source-qualified candidate-to-staged-successor realizations beyond historical A/B/C.",
       "preserved_branch": "codex/bamf02-a-399-production-admission-20261106",
       "closed_pr": 887,

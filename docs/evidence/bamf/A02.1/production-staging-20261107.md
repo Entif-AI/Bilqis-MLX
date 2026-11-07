@@ -57,7 +57,21 @@ git diff --check:                  pass
 
 Historical note: an earlier full-topology witness completed 1/1 PASS in 336.214s after repairing a duplicate Python module identity. That witness exercised direct A02 pointer publication and therefore is **not current admission acceptance evidence** after the C07 boundary correction. It remains diagnostic history only.
 
-The current full-topology staging witness is `test_production_staging.py`. If run, it must use the repository detached long-run protocol; it proves staging and fail-closed publication, not C07 adoption.
+The current full-topology staging witness is `test_production_staging.py`. It was run through the repository detached long-run protocol from an immutable source snapshot and passed:
+
+```text
+snapshot/source/final sha256: 83ea978691054b0eb25912f31cda9d9af8d3af805e41e3ab330ac8c113a9243f
+command: env BILQIS_BAMF_FULL_WITNESS=1 python3 -B scripts/run_tests.py \
+  bilqis_mlx/runtime/tests/custody/bamf_bundle/vocabulary/test_production_staging.py
+Ran 1 test in 169.561s
+OK
+TEST_TOTALS total=1 passed=1 failed=0 skipped=0 errors=0
+detached receipt status: PASS
+returncode: 0
+source_mutated: false
+```
+
+Receipt: `/private/tmp/bamf-a02-399-full-staging-20261107.receipt.json`; log: `/private/tmp/bamf-a02-399-full-staging-20261107.log`. This proves the corrected A02 staging path and fail-closed publication boundary. It does **not** prove or authorize C07 admission.
 
 ## Dependency and disposition
 
@@ -65,7 +79,7 @@ The current full-topology staging witness is `test_production_staging.py`. If ru
 - C07.1b/#510 is the required downstream owner for persisted-lease validation plus atomic adoption of the exact A02 staged candidate.
 - #510 is not presently completion-ready because A09.5/#395 still lacks its required three genuinely new source-qualified candidate-to-staged-successor realizations; #395 records that as its explicit resume trigger.
 - C05 leaves #501-#503 and C06 leaves #504-#507 are closed accepted; A12 is closed. The unresolved A09.5 realization breadth is the material current blocker for the C07 acceptance chain.
-- PR #887 remains draft and must not claim `Closes #399` while this blocker exists.
+- PR #887 is closed unmerged under the BAMF WAITING issue/branch queue; the implementation branch remains preserved.
 - Official merge-readiness EGM has **not** begun. The earlier fresh reviewers were preflight only because hosted checks were not yet green when they were launched.
 - No self-merge or issue closure is authorized.
 - #478 / PR #885 remains waiting on a genuinely accepted A02/C07 production receipt, not this staging receipt.
