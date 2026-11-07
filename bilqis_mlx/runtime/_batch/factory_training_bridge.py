@@ -136,8 +136,10 @@ def _bind_b11_rows(source_context, candidate, authenticated, training, source_ro
             authenticated.selection, item.row, item.source_graph,
             Path(source_context.source_root), source_seed, source_each,
             source_context.release.curriculum, profile)
-        compiled_rows.append(bind_compiled_training_batch(
-            training, compiled, (source,), authenticated.schema, row_index=index))
+        batch = bind_compiled_training_batch(
+            training, compiled, (source,), authenticated.schema, row_index=index)
+        source_context.register_compiled_batch(batch)
+        compiled_rows.append(batch)
     return tuple(compiled_rows)
 
 

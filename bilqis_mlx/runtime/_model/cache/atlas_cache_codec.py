@@ -233,6 +233,8 @@ from .atlas_cache_rebuild import (  # noqa: E402
     validate_eligibility,
 )
 from .atlas_cache_runtime import (
+    apply_cache_correction,
+    bind_cache_artifact_owner,
     CacheAuthorityRuntime,
     decode_cache,
     encode_cold_cache,
