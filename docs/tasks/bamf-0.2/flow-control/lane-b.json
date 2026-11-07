@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "0afb12a08848a6f2aba3b83b26f1466ea708d857",
-  "updated_at": "2026-11-07T02:32:52+00:00",
+  "observed_unified": "aef69dae9179bb09f85f955b8a494f6582eac942",
+  "updated_at": "2026-11-07T02:54:54+00:00",
   "exception": null,
   "items": [
     {
@@ -345,8 +345,8 @@
       "issue": 476,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "0afb12a08848a6f2aba3b83b26f1466ea708d857",
-      "summary": "B12.3 full-completion work active on a fresh issue branch, reconciling historical scalar migration, accepted global optimizer steps, preclip participation masking, and persisted row-age separation against current reviewed unified.",
+      "head_sha": "540519899454065d9d44331a9809511838d5aee3",
+      "summary": "B12.3 implementation and acceptance closure is complete on the synchronized candidate: capability-gated historical scalar migration, accepted global optimizer steps, preclip participation masking, and separate retained-candidate row ages are verified; exact-head EGM is next.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-b12-3-476-complete-20261106"
     }

@@ -38,8 +38,13 @@ actual durable training initiation.
 ## Full-completion reconciliation — 2026-11-06
 
 The historical status above is preserved as the truth of the original numerical
-cut. Current reviewed unified `0afb12a08848a6f2aba3b83b26f1466ea708d857`
-now contains the accepted upstream seams that were missing then:
+cut. The #476 implementation began from reviewed unified
+`0afb12a08848a6f2aba3b83b26f1466ea708d857`, which already contained the
+accepted upstream seams that were missing then. Before merge-readiness review it
+also consumed current reviewed unified
+`aef69dae9179bb09f85f955b8a494f6582eac942` through merge
+`540519899454065d9d44331a9809511838d5aee3`; that advance changes only C02.1
+real-source tests/evidence and does not overlap B12.3 implementation paths:
 
 - #465 / B09.2 is CLOSED / COMPLETED / `EGM-Passed`; production participation
   and update masks are derived from B11 execution authority rather than caller
@@ -138,6 +143,17 @@ PASS; changed-file structure PASS; diff hygiene PASS; no new changed-file code-s
 finding. The workstack validator remains globally `held` only by its eight recorded
 normalization holds (`A03.4`, `A05.4`, `A05.5`, `A08.1b.2`, `A08.1b.5`, `B02.4`,
 `B11.1a`, `C14.4`); it reports no #476-specific issue.
+
+The final physical-owner split is covered by **58/58 focused tests** across native
+optimizer/migration, refinement, attention/GQA and backbone owners, plus **5/5**
+runtime module-discovery/physical-group tests. A broad differential leaf run also
+surfaced unrelated repository debt and missing local historical artifacts. Its six
+cache-authority publication errors reproduce unchanged on reviewed unified
+`aef69dae9179bb09f85f955b8a494f6582eac942`; the legacy checkpoint-dependent source
+tests likewise cannot run in this disposable worktree without their ignored model
+artifact. The one candidate-local discovery mismatch exposed by that broad run was
+repaired and the dedicated 5/5 owner-identity suite now passes. Those inherited or
+environment-gated failures are not used as B12.3 acceptance evidence.
 
 Fresh merge-readiness Goldfish review is still required before #476 can be marked
 `EGM-Passed` or closed. No live student, durable optimizer lineage, teacher,
