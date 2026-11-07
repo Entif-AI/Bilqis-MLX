@@ -330,3 +330,38 @@ The current legacy-trainer authority contract names
 as the adaptation oracle. B13.5's historical note about the earlier inherited #906
 static failure is retained as chronology, while the current evidence names that
 canonical run explicitly so the present static guard can validate this receipt.
+
+### Replacement aggregate on reviewed unified `d4bad39a`
+
+The required ADR-132/ADR-136 snapshot-isolated replacement premerge ran from exact
+candidate `4d6f60901d12dcb9016776b3f4b43e9c4bda17da` with immutable source/snapshot
+digest `207a2d236aded990ef23175de313c2a45be90aa15ac12cd3afca0d665bf24ef9`.
+The detached runner completed without source mutation and reported:
+
+- **3,620 total**;
+- **3,448 passed**;
+- **167 explicit skips**;
+- **5 errors**;
+- **450.733s**.
+
+All five errors are the same C09 packed-frame ownership failure,
+`BAMF_C09_PACKED_FRAME_IDENTITY_DRIFT`, from the nested-frame fixture path in:
+
+- `bilqis_mlx/learning/tests/frames/test_compiled.py`;
+- `bilqis_mlx/learning/tests/frames/test_execution.py`;
+- `bilqis_mlx/learning/tests/frames/test_members.py`.
+
+The exact three-file selection was then run on a pristine detached worktree at the
+reviewed-unified head `d4bad39a32a80acbffdb9f891a906892ab2e9fab`. It reproduced
+the same **5 errors / 1 pass** with the same `BAMF_C09_PACKED_FRAME_IDENTITY_DRIFT`
+reason. Therefore the aggregate is not globally green, but its complete failing set
+is inherited from the newly integrated C09 base and is not localized to the #697
+diff. #697 does not modify the failing nested-frame fixtures or the C09 packed-frame
+owner merely to make an unrelated base regression disappear.
+
+The #697 authority queue itself remains clear: the post-sync B13.5 feature lineage,
+acceptance, publication and full custody selections are green, repository quality
+gates are green, and the preserved A02/#399 production consumer witness is green.
+This base-vs-candidate classification is the deterministic qualification used to
+enter fresh whole-candidate EGM round 2; it is not represented as a clean global
+premerge pass.
