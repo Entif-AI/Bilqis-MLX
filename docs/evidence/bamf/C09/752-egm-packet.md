@@ -69,15 +69,26 @@ wording and legitimate new evidence must not be treated as the stale replay.
 - `MOTIF`: authenticated B13 accepted-execution cache owns retained motif
   manifest state used by the retained source read path.
 - `EXACT_CACHE`: cache policy/runtime owns lossy exact-cache admission and must
-  fail closed to exact FP32 recomputation when correction custody is absent or
-  stale.
+  retain correction custody behind the opaque cache authority, keyed by the
+  authenticated binding plus exact stored-artifact digest. Callers cannot mint
+  or substitute a fresh empty-queue owner; held/changed/ineligible cache state
+  fails closed to exact FP32 recomputation.
 - `OPERATOR_COMPOSITION`: `SolveContext` owns qualified reusable composition
-  custody for the real cognitive-solver path; no process-global authority is
-  permitted.
+  custody for the real cognitive-solver path. A neural composition enters that
+  custody only after source/generation checks and successful DAG execution,
+  then the retained context can reuse it without another neural call. No
+  process-global authority is permitted.
 - `CAPABILITY_SUPPORT`: accepted B13 generation custody plus source-qualified
   training authority/step-proof provenance owns learned-support
-  materialization. Progression may consume current support but must not mint
-  it.
+  materialization. The accepted progression entrypoint cold-loads this owner
+  from B13 custody and also requires its exact training generation binding to
+  equal the current replay generation. Progression may consume current support
+  but must not mint it.
+- Signed correction ingress routes only to owners with a direct dependent for
+  the corrected dependency. An unrelated correction therefore cannot replace
+  another owner's active hold queue.
+- `BamfCompiledBatch` and `SolveContext` validation preserve already-issued
+  owner objects; validation never replaces correction custody.
 - Generic C09 fixtures are not sufficient evidence unless the corresponding
   production owner/read path is actually connected.
 
@@ -86,11 +97,12 @@ wording and legitimate new evidence must not be treated as the stale replay.
 Review the complete diff from
 `origin/codex/bamf-unified-base-20261028...HEAD`, with particular attention to:
 
-- `bilqis_mlx/runtime/_correction/atlas_artifact_owner.py`
-- `bilqis_mlx/runtime/_correction/atlas_cache_owner.py`
-- `bilqis_mlx/runtime/_correction/atlas_motif_owner.py`
-- `bilqis_mlx/runtime/_correction/operator_composition_owner.py`
-- `bilqis_mlx/runtime/_correction/atlas_capability_support_owner.py`
+- `bilqis_mlx/runtime/_correction/owners/atlas_artifact_owner.py`
+- `bilqis_mlx/runtime/_correction/owners/atlas_cache_owner.py`
+- `bilqis_mlx/runtime/_correction/owners/atlas_motif_owner.py`
+- `bilqis_mlx/runtime/_correction/owners/operator_composition_owner.py`
+- `bilqis_mlx/runtime/_correction/owners/atlas_capability_support_owner.py`
+- `bilqis_mlx/runtime/_correction/owners/atlas_owner_ingress.py`
 - `bilqis_mlx/learning/source_atoms/`
 - `bilqis_mlx/learning/frame_encoder/compiled.py`
 - `bilqis_mlx/runtime/_model/`
@@ -104,7 +116,7 @@ Review the complete diff from
 
 ## Verification receipts before EGM
 
-- Focused C09/custody acceptance suite: `81 passed, 0 failed, 0 skipped`.
+- Focused C09/custody acceptance suite: `83 passed, 0 failed, 0 skipped`.
 - `npm run quality:changed`: development structure OK; governance integrity
   OK; BAMF flow control OK; 15/15 flow-control tests passed; zero new
   changed-file smell findings.

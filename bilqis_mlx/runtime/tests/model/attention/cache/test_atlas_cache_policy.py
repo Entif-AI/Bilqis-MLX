@@ -17,7 +17,7 @@ from bilqis_mlx.runtime.atlas_cache_codec import (
     CacheBinding,
     CacheQualityObservation,
     CacheQualityPolicy,
-    cache_byte_cost,
+    bind_cache_artifact_owner, cache_byte_cost,
     codec_manifest,
     decode_cache,
     encode_cold_cache,
@@ -25,7 +25,6 @@ from bilqis_mlx.runtime.atlas_cache_codec import (
     record_header_bytes,
     reference_candidate_evaluation,
 )
-from bilqis_mlx.runtime.atlas_revalidation import ExactCacheArtifactOwner
 
 
 _RAW_ENCODE = encode_cold_cache
@@ -76,7 +75,8 @@ class CachePolicyTests(unittest.TestCase):
         self.binding = _binding(self.manifest)
         self.values = np.ones((256, HEAD_WIDTH), dtype=np.float32)
         self.artifact = encode_cold_cache(self.values, self.manifest, binding=self.binding)
-        self.owner = ExactCacheArtifactOwner(CACHE_AUTHORITY, self.artifact, self.binding)
+        self.owner = bind_cache_artifact_owner(
+            CACHE_AUTHORITY, self.artifact, self.binding)
 
     def test_reference_candidate_evaluation_is_exact_fp32_only(self):
         values = np.arange(12, dtype=np.float32).reshape(3, 4)
@@ -187,7 +187,7 @@ class CachePolicyTests(unittest.TestCase):
         agreement = int(np.argmax(approximate)) == int(np.argmax(reference))
         result = interactive_cache_inference(
             key_artifact, self.binding,
-            artifact_owner=ExactCacheArtifactOwner(
+            artifact_owner=bind_cache_artifact_owner(
                 CACHE_AUTHORITY, key_artifact, self.binding),
             cached_infer=lambda k: attention(k, cached_values),
             fp32_recompute=lambda: reference.copy(),

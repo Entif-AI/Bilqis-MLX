@@ -5,6 +5,7 @@ import hashlib
 import hmac
 
 from ..semantics.cognitive_dependencies import DependencyKind, DependencyRef
+from .atlas_cache_binding import CacheArtifact, binding_digest
 
 
 CACHE_AUTHENTICATOR_BYTES = 16
@@ -23,13 +24,14 @@ def _new_authority_owner():
         entry = issued.get(id(authority))
         if entry is None or entry[0] is not authority:
             _invalid()
-        return entry[1], entry[2], entry[3]
+        return entry[1], entry[2], entry[3], entry[4]
 
     def issue(registry, mac_key, eligibility_source=None):
         if eligibility_source is not None and not callable(eligibility_source):
             _invalid()
         authority = object.__new__(CacheAuthorityRuntime)
-        issued[id(authority)] = (authority, registry, mac_key, eligibility_source)
+        issued[id(authority)] = (
+            authority, registry, mac_key, eligibility_source, {})
         return authority
 
     return require, issue
@@ -52,7 +54,7 @@ class CacheAuthorityRuntime:
         _invalid()
 
     def _require_binding_authority(self, binding) -> None:
-        registry, _, _ = _authority_state(self)
+        registry, _, _, _ = _authority_state(self)
         registry.require_claimed_authority(
             binding.artifact_authority_id,
             DependencyRef(DependencyKind.ARTIFACT, f"cache:{binding.key_sha256}"),
@@ -63,7 +65,7 @@ class CacheAuthorityRuntime:
         if type(subject) is not bytes:
             _invalid()
         self._require_binding_authority(binding)
-        _, mac_key, _ = _authority_state(self)
+        _, mac_key, _, _ = _authority_state(self)
         return hmac.new(
             mac_key, subject, hashlib.sha256,
         ).digest()[:CACHE_AUTHENTICATOR_BYTES]
@@ -76,12 +78,12 @@ class CacheAuthorityRuntime:
 
     def _verify_detached(self, owner_id, dependency, signature_hex, payload) -> None:
         """Verify a source-owner statement through this host-bound registry."""
-        registry, _, _ = _authority_state(self)
+        registry, _, _, _ = _authority_state(self)
         registry.verify_detached(owner_id, dependency, signature_hex, payload)
 
     def _current_eligibility_inputs(self):
         """Read current rebuild authority from the owner-bound resolver."""
-        _, _, source = _authority_state(self)
+        _, _, source, _ = _authority_state(self)
         if source is None:
             _invalid()
         return source()
@@ -91,6 +93,28 @@ def _require_authority(authority: CacheAuthorityRuntime) -> CacheAuthorityRuntim
         _invalid()
     _authority_state(authority)
     return authority
+
+
+def bind_cache_artifact_owner(authority, artifact, binding):
+    from bilqis_mlx.runtime.atlas_cache_owner import (
+        _issue_exact_cache_artifact_owner, cache_artifact_digest,
+    )
+    authority = _require_authority(authority)
+    _, _, _, owners = _authority_state(authority)
+    key = (bytes(binding_digest(binding)), cache_artifact_digest(artifact))
+    owner = owners.get(key)
+    if owner is None:
+        owner = _issue_exact_cache_artifact_owner(authority, artifact, binding)
+        owners[key] = owner
+    return owner
+
+
+def apply_cache_correction(
+    authority, artifact, binding, event, authority_registry,
+):
+    """Deliver one qualified C09 correction into opaque cache custody."""
+    owner = bind_cache_artifact_owner(authority, artifact, binding)
+    return owner.apply_correction(event, authority_registry)
 
 
 def encode_cold_cache(authority, cache, codec_manifest, *, binding):
@@ -119,9 +143,15 @@ def interactive_cache_inference(
     fp32_recompute, quality_check, policy, artifact_owner=None,
 ):
     from .atlas_cache_policy import _interactive_cache_inference
+    retained_owner = None
+    if isinstance(artifact, CacheArtifact):
+        retained_owner = bind_cache_artifact_owner(
+            authority, artifact, expected_binding)
+        if artifact_owner is not None and artifact_owner is not retained_owner:
+            _invalid()
     return _interactive_cache_inference(
         artifact, expected_binding,
-        artifact_owner=artifact_owner,
+        artifact_owner=retained_owner,
         cached_infer=cached_infer,
         fp32_recompute=fp32_recompute,
         quality_check=quality_check,

@@ -7,6 +7,7 @@ from bilqis_mlx.learning.atlas_engram import MotifManifest
 from bilqis_mlx.learning.frame_encoder import CompiledEncoderInput
 from bilqis_mlx.learning.tests.test_frame_encoder import FrameEncoderTests
 from bilqis_mlx.runtime.atlas_motif_owner import MotifArtifactOwner
+from bilqis_mlx.runtime.atlas_revalidation import apply_motif_correction
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
     _issue_accepted_execution_cache, bind_motif_artifact_owner,
 )
@@ -34,7 +35,9 @@ class MotifArtifactOwnerTests(unittest.TestCase):
 
     def test_source_correction_holds_real_frame_before_motif_lookup(self):
         source = self.owner.source_dependencies[0]
-        queue = self.owner.apply_correction(_event(source), AUTHORITY)
+        apply_motif_correction(
+            self.cache, self.compiled, _event(source), AUTHORITY)
+        queue = self.owner.queue
         self.assertTrue(queue.held_artifact_ids)
         with self.assertRaises(BilqisError) as caught:
             self.owner.require(self.cache, self.compiled)
@@ -46,7 +49,9 @@ class MotifArtifactOwnerTests(unittest.TestCase):
     def test_equal_input_revalidation_stops_before_motif(self):
         source = self.owner.source_dependencies[0]
         event = _event(source)
-        queue = self.owner.apply_correction(event, AUTHORITY)
+        apply_motif_correction(
+            self.cache, self.compiled, event, AUTHORITY)
+        queue = self.owner.queue
         held = self.owner.index.node(queue.held_artifact_ids[0])
         progress = self.owner.advance(
             _result(held, digest=held.content_digest, correction=event), AUTHORITY)
@@ -57,7 +62,9 @@ class MotifArtifactOwnerTests(unittest.TestCase):
     def test_changed_input_propagates_hold_to_manifest(self):
         source = self.owner.source_dependencies[0]
         event = _event(source)
-        queue = self.owner.apply_correction(event, AUTHORITY)
+        apply_motif_correction(
+            self.cache, self.compiled, event, AUTHORITY)
+        queue = self.owner.queue
         held = self.owner.index.node(queue.held_artifact_ids[0])
         self.owner.advance(
             _result(held, digest="9" * 64, correction=event), AUTHORITY)

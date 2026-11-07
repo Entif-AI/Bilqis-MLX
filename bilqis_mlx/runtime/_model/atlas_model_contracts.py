@@ -223,11 +223,16 @@ class BamfCompiledBatch:
         ):
             _invalid("B11_COMPILED_BATCH_INVALID")
         self.compiled.__post_init__()
-        object.__setattr__(
-            self,
-            "atlas_feature_artifact_owner",
-            AtlasFeatureArtifactOwner(self.compiled.features, self.feature_schema),
-        )
+        owner = getattr(self, "atlas_feature_artifact_owner", None)
+        if owner is None:
+            object.__setattr__(
+                self,
+                "atlas_feature_artifact_owner",
+                AtlasFeatureArtifactOwner(
+                    self.compiled.features, self.feature_schema),
+            )
+        else:
+            owner.require(self.compiled.features, self.feature_schema)
 
 
 __all__ = (

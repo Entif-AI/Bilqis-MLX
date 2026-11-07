@@ -19,6 +19,9 @@ from bilqis_mlx.runtime.atlas_revalidation_evidence import CorrectionEvent, Reva
 from bilqis_mlx.runtime.atlas_revalidation_queue import RevalidationProgress, RevalidationQueue
 
 
+_ISSUER = object()
+
+
 def cache_artifact_digest(artifact: CacheArtifact) -> str:
     """Hash the exact stored cache representation, not caller metadata."""
     if not isinstance(artifact, CacheArtifact):
@@ -85,16 +88,26 @@ def _node(authority, artifact: CacheArtifact, binding: CacheBinding) -> Artifact
 class ExactCacheArtifactOwner:
     """Retain correction holds across actual cache reads and recomputation."""
 
-    def __init__(self, authority, artifact: CacheArtifact, binding: CacheBinding):
+    def __init__(self, *args, **kwargs):
+        _invalid("BAMF_C09_EXACT_CACHE_OWNER_CALLER_CONSTRUCTION_FORBIDDEN")
+
+    def _initialize(self, authority, artifact: CacheArtifact, binding: CacheBinding, issuer):
+        if issuer is not _ISSUER:
+            _invalid("BAMF_C09_EXACT_CACHE_OWNER_ISSUER_INVALID")
         node = _node(authority, artifact, binding)
         self._authority = authority
         self._artifact_id = node.artifact_id
         self._index = DependencyIndex.build((node,))
         self._queue: RevalidationQueue | None = None
+        return self
 
     @property
     def current_node(self) -> ArtifactNode:
         return self._index.node(self._artifact_id)
+
+    @property
+    def index(self) -> DependencyIndex:
+        return self._index
 
     @property
     def queue(self) -> RevalidationQueue | None:
@@ -143,3 +156,8 @@ class ExactCacheArtifactOwner:
         self._index = progress.index
         self._queue = progress.queue
         return progress
+
+
+def _issue_exact_cache_artifact_owner(authority, artifact, binding):
+    owner = object.__new__(ExactCacheArtifactOwner)
+    return owner._initialize(authority, artifact, binding, _ISSUER)

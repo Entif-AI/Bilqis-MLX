@@ -76,6 +76,10 @@ class AtlasFeatureArtifactOwner:
         return self._index.node(self._current_artifact_id)
 
     @property
+    def index(self) -> DependencyIndex:
+        return self._index
+
+    @property
     def queue(self) -> RevalidationQueue | None:
         return self._queue
 

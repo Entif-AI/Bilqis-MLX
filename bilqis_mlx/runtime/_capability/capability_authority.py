@@ -206,7 +206,8 @@ def evaluate_progression_authority(
         if not isinstance(capability_support_owner, CapabilitySupportArtifactOwner):
             return held("CURRENT_CAPABILITY_SUPPORT_REQUIRED")
         try:
-            capability_support_owner.require(capability_id)
+            capability_support_owner.require(
+                capability_id, current.generation_digest)
         except BilqisError:
             return held("CURRENT_CAPABILITY_SUPPORT_HELD")
     for kind, verifier in ((AuthorityKind.SOURCE_RIGHTS, source_rights),
@@ -232,3 +233,21 @@ def evaluate_progression_authority(
         return held("PREREQUISITE_EVIDENCE_INSUFFICIENT", blocked)
     return ProgressionGate(GateStatus.ELIGIBLE, "UNIFORM_FACTORY_PREFLIGHT_PASSED",
                            request, tuple(authorities))
+
+
+def evaluate_accepted_progression_authority(
+        run_dir, release, capability_id, target_evidence, prerequisite_evidence,
+        current, **authority_inputs) -> ProgressionGate:
+    """Evaluate learned progression from current accepted B13 support custody."""
+    from pathlib import Path
+    from bilqis_mlx.runtime.atlas_capability_support_owner import (
+        load_capability_support_owner,
+    )
+    if not isinstance(run_dir, Path):
+        _invalid("BAMF_PROGRESSION_ACCEPTED_RUN_REQUIRED")
+    owner = load_capability_support_owner(run_dir, capability_id)
+    if "capability_support_owner" in authority_inputs:
+        _invalid("BAMF_PROGRESSION_CALLER_SUPPORT_FORBIDDEN")
+    return evaluate_progression_authority(
+        release, capability_id, target_evidence, prerequisite_evidence, current,
+        capability_support_owner=owner, **authority_inputs)

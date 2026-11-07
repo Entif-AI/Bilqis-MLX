@@ -1,16 +1,17 @@
 """C09 exact-cache ownership on the real B14 inference path."""
+from dataclasses import replace
 import unittest
 
 import numpy as np
 
 from bilqis_mlx.runtime.atlas_cache_codec import (
     HEAD_WIDTH, CacheBinding, CacheQualityObservation, CacheQualityPolicy,
-    codec_manifest, encode_cold_cache, interactive_cache_inference,
+    apply_cache_correction, bind_cache_artifact_owner, codec_manifest,
+    encode_cold_cache, interactive_cache_inference,
 )
 from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import (
     CACHE_AUTHORITY, OWNER_ID, PUBLIC_KEY_HEX, install_test_owner,
 )
-from bilqis_mlx.runtime.atlas_revalidation import ExactCacheArtifactOwner
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
     AUTHORITY, _event, _result,
 )
@@ -47,7 +48,7 @@ class ExactCacheArtifactOwnerTests(unittest.TestCase):
         self.artifact = encode_cold_cache(
             CACHE_AUTHORITY, values, self.binding.codec_manifest,
             binding=self.binding)
-        self.owner = ExactCacheArtifactOwner(
+        self.owner = bind_cache_artifact_owner(
             CACHE_AUTHORITY, self.artifact, self.binding)
 
     def infer(self, owner):
@@ -61,7 +62,8 @@ class ExactCacheArtifactOwnerTests(unittest.TestCase):
 
     def test_signed_rights_correction_holds_cache_before_next_use(self):
         event = _event(self.owner.rights_dependency)
-        queue = self.owner.apply_correction(event, AUTHORITY)
+        queue = apply_cache_correction(
+            CACHE_AUTHORITY, self.artifact, self.binding, event, AUTHORITY)
         self.assertEqual(queue.held_artifact_ids,
                          (self.owner.current_node.artifact_id,))
         held = self.infer(self.owner)
@@ -76,12 +78,19 @@ class ExactCacheArtifactOwnerTests(unittest.TestCase):
         self.assertEqual((accepted.value, accepted.used_cache), ("CACHE", True))
 
     def test_changed_or_revoked_cache_cannot_influence_inference(self):
-        for digest, eligible in (("b" * 64, True), (None, False)):
+        for index, (digest, eligible) in enumerate((("b" * 64, True), (None, False))):
             with self.subTest(eligible=eligible):
-                owner = ExactCacheArtifactOwner(
+                self.binding = replace(
+                    self.binding, key_sha256=("c" if index else "d") * 64)
+                values = np.ones((256, HEAD_WIDTH), dtype=np.float32)
+                self.artifact = encode_cold_cache(
+                    CACHE_AUTHORITY, values, self.binding.codec_manifest,
+                    binding=self.binding)
+                owner = bind_cache_artifact_owner(
                     CACHE_AUTHORITY, self.artifact, self.binding)
                 event = _event(owner.rights_dependency)
-                owner.apply_correction(event, AUTHORITY)
+                apply_cache_correction(
+                    CACHE_AUTHORITY, self.artifact, self.binding, event, AUTHORITY)
                 node = owner.current_node
                 owner.advance(_result(
                     node,
@@ -92,10 +101,10 @@ class ExactCacheArtifactOwnerTests(unittest.TestCase):
                 result = self.infer(owner)
                 self.assertEqual((result.value, result.used_cache), ("FP32", False))
 
-    def test_missing_owner_fails_closed_to_fp32(self):
-        result = self.infer(None)
-        self.assertEqual((result.value, result.used_cache, result.fallback_reason), (
-            "FP32", False, "CORRECTION_HOLD_OR_OWNER_REQUIRED"))
+    def test_caller_cannot_replace_authority_owned_owner(self):
+        from bilqis_mlx.runtime.atlas_revalidation import ExactCacheArtifactOwner
+        with self.assertRaises(Exception):
+            ExactCacheArtifactOwner(CACHE_AUTHORITY, self.artifact, self.binding)
 
 
 if __name__ == "__main__":
