@@ -98,7 +98,7 @@ def _compiled_groups(row, config, source_ast=None, receipt=None):
 
 
 def _owned_compiled_groups(row, config, artifact_owner, source_ast=None, receipt=None):
-    artifact_owner.require_row(row, config)
+    artifact_owner.require_row(row)
     return _compiled_groups(row, config, source_ast, receipt)
 
 
@@ -140,7 +140,7 @@ class CompiledEncoderInput:
         if not hasattr(self, "packed_frame_artifact_owner"):
             object.__setattr__(
                 self, "packed_frame_artifact_owner",
-                PackedFrameArtifactOwner(self.compiled, self.compiler_configs))
+                PackedFrameArtifactOwner(self.compiled))
         source_asts = self.source_asts or (None,) * len(self.compiled.rows)
         receipts = self.partial_forest_receipts or (None,) * len(self.compiled.rows)
         checked = tuple(

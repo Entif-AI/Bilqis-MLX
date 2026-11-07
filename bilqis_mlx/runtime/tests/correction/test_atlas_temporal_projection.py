@@ -2,8 +2,6 @@
 import unittest
 
 from bilqis_mlx.learning.tests.test_frame_encoder import FrameEncoderTests
-from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.runtime.atlas_artifact_owner import PackedFrameArtifactOwner
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
     AUTHORITY, ArtifactKind, DependencyIndex, DependencyKind, TemporalEvent,
     TemporalEventKind, TemporalStatus, _event, _node,
@@ -13,26 +11,16 @@ from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
 
 
 class TemporalProjectionTests(unittest.TestCase):
-    def test_real_packed_frame_owner_holds_when_source_grant_expires(self):
+    def test_real_packed_frame_owner_projects_context_time_dependency(self):
         fixture = FrameEncoderTests()
         fixture.setUp()
         compiled, _vectors, _ast = fixture.compiled_inputs()
-        row = compiled.compiled.rows[0]
-        config = compiled.compiler_configs[0]
-        envelope = config.approved.envelopes[0]
-        affected_handles = {
-            envelope.source_handle,
-            *(member.source_handle for member in envelope.members),
+        owner = compiled.packed_frame_artifact_owner
+        context_digests = {
+            row.context_digest for row in compiled.compiled.rows
+            if row.context_digest is not None
         }
-        expiring_frontier = replace(
-            config.frontier,
-            grants=tuple(
-                replace(grant, effective_until=6)
-                if grant.source_handle in affected_handles else grant
-                for grant in config.frontier.grants),
-        )
-        before = replace(config, frontier=expiring_frontier)
-        owner = PackedFrameArtifactOwner(compiled.compiled, (before,))
+        self.assertTrue(context_digests)
         nodes = owner.index.nodes
         self.assertTrue(nodes)
         for node in nodes:
@@ -40,19 +28,14 @@ class TemporalProjectionTests(unittest.TestCase):
                 ref for ref in node.immediate_dependencies
                 if ref.kind is DependencyKind.TIME)
             self.assertEqual(len(time_refs), 1)
-            self.assertTrue(time_refs[0].key.startswith("time:context-boundary:"))
-
-        after = replace(before, task=replace(before.task, effective_time=6))
-        with self.assertRaises(BilqisError) as caught:
-            owner.require_row(row, after)
-        self.assertEqual(
-            caught.exception.context["reason"],
-            "BAMF_C09_ARTIFACT_HELD",
-        )
-        self.assertEqual(
-            owner._temporal_holds,
-            {node.artifact_id for node in nodes},
-        )
+            self.assertTrue(time_refs[0].key.startswith("time:asof:context:"))
+            self.assertIn(time_refs[0].key.removeprefix("time:asof:context:"),
+                          context_digests)
+        time_ref = next(
+            ref for ref in nodes[0].immediate_dependencies
+            if ref.kind is DependencyKind.TIME)
+        queue = owner.apply_correction(_event(time_ref), AUTHORITY)
+        self.assertIn(nodes[0].artifact_id, queue.held_artifact_ids)
 
     def _temporal_projection_fixture(self):
         planned = TemporalEvent(
