@@ -1,4 +1,5 @@
 """Accepted-run production ingress for post-remediation stale replay faults."""
+from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
