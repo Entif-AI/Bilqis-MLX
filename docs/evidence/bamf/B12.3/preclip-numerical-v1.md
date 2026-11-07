@@ -158,3 +158,17 @@ environment-gated failures are not used as B12.3 acceptance evidence.
 Fresh merge-readiness Goldfish review is still required before #476 can be marked
 `EGM-Passed` or closed. No live student, durable optimizer lineage, teacher,
 champion, checkpoint or original artifact was mutated by this implementation.
+
+### Merge-readiness review availability — 2026-11-06
+
+The exact implementation candidate is
+`0b2cb9e17c3e78d999611980543396b60cb7638d`, pushed to
+`codex/bamf02-b12-3-476-complete-20261106`. The owning issue is correctly marked
+`EGM-Pending`. Two detached fresh-context reviewer launches were attempted under the
+pinned `b3a35956759bf7f024af2ff061b2e0b44b438e4c` EGM personas and implementation
+readiness standard. Neither reviewer actually started: Gemini CLI exited for missing
+authentication configuration and Claude Code exited `Not logged in`. Both detached
+receipts report `source_mutated=false`. These are reviewer-infrastructure failures,
+not EGM findings and not completed EGM rounds. Repository policy therefore forbids
+claiming `EGM-Passed` or opening the implementation PR until an authenticated fresh
+Goldfish can review this candidate.

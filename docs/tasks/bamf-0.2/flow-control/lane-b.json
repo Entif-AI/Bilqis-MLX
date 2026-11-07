@@ -345,8 +345,8 @@
       "issue": 476,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "540519899454065d9d44331a9809511838d5aee3",
-      "summary": "B12.3 implementation and acceptance closure is complete on the synchronized candidate: capability-gated historical scalar migration, accepted global optimizer steps, preclip participation masking, and separate retained-candidate row ages are verified; exact-head EGM is next.",
+      "head_sha": "0b2cb9e17c3e78d999611980543396b60cb7638d",
+      "summary": "B12.3 implementation and acceptance closure is complete on the synchronized candidate: capability-gated historical scalar migration, accepted global optimizer steps, preclip participation masking, and separate retained-candidate row ages are verified. Exact-head EGM remains pending because both available local reviewer CLIs exited before review for missing authentication; no PR is opened until EGM passes.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-b12-3-476-complete-20261106"
     }
