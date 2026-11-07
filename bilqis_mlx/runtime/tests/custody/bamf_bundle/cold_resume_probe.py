@@ -102,7 +102,8 @@ def continue_generation(run, *, student=None, pointer=None) -> dict:
             transaction, probe_gradients(parameters, target),
             execution_provenance(
                 transaction.parent, rows=(0,),
-                candidate_step=transaction.update_steps + 1),
+                candidate_step=transaction.update_steps + 1,
+                extents=student.extents),
             AdamWHyperparameters(LEARNING_RATE, (.9, .95), 1e-8, .01),
             spec=student.topology, extents=student.extents,
             loss_bearing=True, max_norm=1.)

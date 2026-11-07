@@ -304,6 +304,7 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
             accepted_parent = load_accepted_generation(run)
         parent, transaction, retained, _authority = _source_qualified_state(
             accepted_parent.retained_state,
+            extents=accepted_parent.extents,
             capability=TARGET,
             source_row="source:capability-support:requalified",
             source_family="source-family:capability-support:requalified",

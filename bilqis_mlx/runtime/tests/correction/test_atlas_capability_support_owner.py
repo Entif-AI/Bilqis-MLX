@@ -76,12 +76,12 @@ def _training_authority(
     return issue_training_authority(batch, source, provenance)
 
 
-def _source_qualified_state(parent=None, **authority_kwargs):
+def _source_qualified_state(parent=None, extents=None, **authority_kwargs):
     parent = parent_state() if parent is None else parent
     transaction = begin_candidate(parent)
     authority = _training_authority(**authority_kwargs)
     spec = ModelTopologySpecV2()
-    extents = GenerationExtents(
+    extents = extents or GenerationExtents(
         1, 1, "a" * 64, parent.allocations.manifest.digest, "c" * 64)
     with shape_patch():
         transaction = candidate_step(
@@ -89,7 +89,8 @@ def _source_qualified_state(parent=None, **authority_kwargs):
             {NAME: mx.array([[3., 4.], [0., 0.]], dtype=mx.float32)},
             execution_provenance(
                 transaction.parent, rows=(0,),
-                candidate_step=transaction.update_steps + 1),
+                candidate_step=transaction.update_steps + 1,
+                extents=extents),
             HP, spec=spec, extents=extents, loss_bearing=True, max_norm=1.,
             training_authority=authority)
     return parent, transaction, resolve_candidate(transaction, accepted=True), authority

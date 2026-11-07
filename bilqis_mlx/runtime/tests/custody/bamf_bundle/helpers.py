@@ -26,7 +26,7 @@ from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree
 from bilqis_mlx.runtime.bamf_bundle import (
     BamfBundleCandidate, prepare_initial_generation, publish_bamf_generation,
-    publish_initial_generation, load_bamf_generation,
+    publish_initial_generation, load_bamf_generation, derive_successor_bundle,
 )
 from bilqis_mlx.runtime.bamf_bundle.genesis_foundation import (
     initial_foundation_sidecars,
@@ -242,7 +242,6 @@ def candidate(state: CandidateState, generation=0, parent=None) -> BamfBundleCan
 
 def rewrite_motif_bundle_fixture(
         bundle_root: Path, manifest: dict, allocations: MotifAllocationSnapshot) -> dict:
-    """Replace fixture motif bytes, then rebind exact immutable custody metadata."""
     root = Path(bundle_root)
     record = deepcopy({key: value for key, value in manifest.items()
                        if key != "manifest_sha256"})
@@ -284,7 +283,6 @@ def rewrite_motif_bundle_fixture(
 
 
 def shape_patch():
-    """Bind the B01 parameter ledger owner to the fixture's single bank."""
     stack = ExitStack()
     for target in ("bilqis_mlx.runtime.model_topology_v2.expected_bamf_shapes",
                    "bilqis_mlx.runtime.topology_v2.ledger.expected_bamf_shapes",
@@ -305,7 +303,6 @@ def shape_patch():
 
 
 def retention_decision(*, accepted=True, parent=None, retained=None) -> object:
-    """Issue a test-only token from the unshipped disposable C05 harness."""
     from bilqis_mlx.runtime.tests.capability.capability_retention_helpers import (
         _screen_inputs,
     )
@@ -319,7 +316,6 @@ def retention_decision(*, accepted=True, parent=None, retained=None) -> object:
 
 
 def acceptance(bundle, *, parent=None) -> object:
-    """Mint the retention owner's acceptance binding for one candidate bundle."""
     return mint_acceptance_binding(
         retention_decision(parent=parent, retained=bundle.retained_state),
         bundle.retained_state, run_id=bundle.run_id,
@@ -328,20 +324,25 @@ def acceptance(bundle, *, parent=None) -> object:
 
 
 def publish_candidate(run_dir, bundle):
-    """Use production genesis for fixture generation zero; C05 only for successors."""
     if bundle.generation == 0:
         prepared = genesis_preparation(
             run_id=bundle.run_id,
             foundation_row_ages=bundle.retained_state.policy.row_ages,
             delivery_events=({"event": "FIXTURE_GENESIS", "optimizer_step": 0},))
         return publish_initial_generation(run_dir, prepared, reserve_gib=0.)
-    parent = None
+    parent = load_bamf_generation(Path(run_dir) / "bamf-state.json")
     if bundle.run_identity is None:
-        parent = load_bamf_generation(Path(run_dir) / "bamf-state.json")
         bundle = replace(bundle, run_identity=parent.run_identity)
-    elif bundle.generation > 0:
-        parent = load_bamf_generation(Path(run_dir) / "bamf-state.json")
-    if (parent is not None and bundle.topology == parent.topology
+    if bundle.transition.get("kind") == "RETAINED_CANDIDATE":
+        retained = replace(
+            bundle.retained_state,
+            allocations=parent.retained_state.allocations,
+            custody=parent.retained_state.custody)
+        bundle = derive_successor_bundle(
+            parent, retained,
+            parent_manifest_sha256=parent.manifest_sha256,
+            delivery_events=bundle.outbox)
+    elif (bundle.topology == parent.topology
             and bundle.extents.semantic_bank_count == parent.extents.semantic_bank_count
             and bundle.extents.motif_page_count == parent.extents.motif_page_count
             and bundle.extents.active_semantic_digest
@@ -355,5 +356,4 @@ def publish_candidate(run_dir, bundle):
             bundle, extents=parent.extents, retained_state=retained)
     return publish_bamf_generation(
         run_dir, bundle,
-        acceptance=acceptance(
-            bundle, parent=None if parent is None else parent.retained_state))
+        acceptance=acceptance(bundle, parent=parent.retained_state))
