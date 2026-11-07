@@ -32,12 +32,14 @@ from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
 from bilqis_mlx.runtime.topology_v2.ledger import bamf_parameter_census
 from bilqis_mlx.runtime.model_topology_v2 import Initializer, expected_bamf_shapes
 from bilqis_mlx.semantics.atlas.snapshot import load_pinned_atlas_snapshot
+from bilqis_mlx.semantics.frame_adapters import bind_registered_source_row
 from bilqis_mlx.semantics.frame_codec import SchemaTagMap
-from bilqis_mlx.semantics.frame_schema import (
-    ConceptRef, FrameSchema, RoleSpec, SourceSpan,
-)
+from bilqis_mlx.semantics.frame_schema import FrameSchema, RoleSpec, SourceSpan
 from bilqis_mlx.semantics.released_frame_schemas import (
     load_released_frame_schemas, seal_released_frame_schemas,
+)
+from bilqis_mlx.source_adapters.school import (
+    A_ORACLE, live_source_registry,
 )
 from bilqis_mlx.source_adapters.tests.atoms.helpers import REAL_BUNDLE
 
@@ -129,9 +131,7 @@ class AtlasModelRetainedMotifTests(SourceOwnedMotifReadTests):
             spec, extents, manifest, slot_id,
         )
 
-    def _real_output_denominator_case(self):
-        (compiled, parameters, source, feature_schema, plan, cache,
-         spec, extents, manifest, _slot_id) = self._runtime_fixture()
+    def _source_owned_unseen_concepts(self, compiled, source, plan):
         snapshot = plan.snapshot
         row = compiled.compiled.rows[0]
         visible = {
@@ -139,19 +139,36 @@ class AtlasModelRetainedMotifTests(SourceOwnedMotifReadTests):
             for abi_index in tuple(source.source_row.get("tokens", ()))[:row.visible_end]
             for entry in (snapshot.abi(abi_index),)
         }
-        output_entries = tuple(
-            entry for entry in snapshot.abi_entries
-            if entry.active and (entry.bank, entry.row) not in visible
-        )[:3]
-        self.assertEqual(len(output_entries), 3)
+        adapter = live_source_registry().require(
+            "bilqis_mlx.grade_a_probe.make_record", A_ORACLE)
+        rows = adapter.draw(
+            source_root=source.source_root, graph=source.graph, course=None,
+            capability="A.IDENTITY", seed=source.source_seed, each=10)
+        allowed_types = plan.allowed_output_schema.schema.roles[0].allowed_type_ids
+        concepts = {}
+        for source_row in rows:
+            tree = bind_registered_source_row(
+                adapter, source_row, snapshot,
+                source_root=source.source_root, graph=source.graph,
+                source_span=SourceSpan(0, len(source_row["tokens"])),
+                causal_prefix_end=len(source_row["tokens"]))
+            for binding in tree.root.bindings:
+                if binding.concept is None or binding.concept.type_ids != allowed_types:
+                    continue
+                entry = snapshot.abi_for_semantic(binding.concept.semantic_id)
+                identity = (entry.bank, entry.row)
+                if identity not in visible:
+                    concepts.setdefault(identity, binding.concept)
+        self.assertGreaterEqual(len(concepts), 2)
+        return tuple(concepts.items())[:2]
+
+    def _real_output_denominator_case(self):
+        (compiled, parameters, source, feature_schema, plan, cache,
+         spec, extents, manifest, _slot_id) = self._runtime_fixture()
+        snapshot = plan.snapshot
         role = plan.allowed_output_schema.schema.roles[0]
-        candidates = tuple(
-            ConceptRef(
-                entry.semantic_id, snapshot.release_sha256, entry.index,
-                role.allowed_type_ids, entry.source,
-            )
-            for entry in output_entries[:2]
-        )
+        ((denominator, candidate), (unrelated, _unrelated_concept)
+         ) = self._source_owned_unseen_concepts(compiled, source, plan)
         value_plan = AnswerPlan(
             plan.modality_id, plan.input_prefix_end,
             (
@@ -161,7 +178,7 @@ class AtlasModelRetainedMotifTests(SourceOwnedMotifReadTests):
                 ),
                 DecisionSpec(
                     "value", role.role_id, 0, DecisionKind.VALUE,
-                    candidates, ("emit",),
+                    (candidate,), ("emit",),
                 ),
                 DecisionSpec(
                     "finish", None, 0, DecisionKind.CONTROL,
@@ -175,14 +192,14 @@ class AtlasModelRetainedMotifTests(SourceOwnedMotifReadTests):
             parameters,
             BamfCompiledBatch(compiled, (source,), feature_schema),
             value_plan,
-            (DecisionOutput("value", candidates[0]),),
+            (DecisionOutput("value", candidate),),
             {"value": True},
             cache=cache,
         )
-        denominator = tuple(
-            (entry.bank, entry.row) for entry in output_entries[:2])
-        unrelated = (output_entries[2].bank, output_entries[2].row)
-        return parameters, manifest, spec, extents, gradient, denominator, unrelated
+        return (
+            parameters, manifest, spec, extents, gradient,
+            (denominator,), unrelated,
+        )
 
     def test_retained_b08_hit_enters_the_same_loss_bearing_b09_trace(self):
         (compiled, parameters, source, feature_schema, plan, cache,

@@ -312,3 +312,50 @@ pre-existing dependency-normalization holds. The B11.1a hold is stale normalizat
 rather than missing executable authority: #586 is closed after human-merged PR
 #762 (`2d4b99f3...`). No unresolved B11.1a implementation is required by this
 B12 parent closeout.
+
+## EGM round 4 | failed candidate and source-authority repair
+
+Exact reviewed candidate:
+`1ea767836061d503deed5291031649f4e890063e` against reviewed unified
+`bb8e83f03e38b64018cfe357addd90a0a6d67297`.
+
+Three fresh pinned reviewers completed round 4:
+
+- contract review: **PASS — 0 Blockers / 0 Majors / 0 Nits**;
+- authority/custody review: **PASS — 0 Blockers / 0 Majors / 0 Nits**;
+- regression/integration review: **FAIL — 0 Blockers / 1 Major / 0 Nits**.
+
+The unique Major invalidated the round-3 description of the first denominator
+repair as a lawful tied-output witness. Although that test did cross the real
+production B11 -> B09 -> B12 path, it selected active unseen ABI entries and
+constructed `ConceptRef` values by assigning the synthetic output role's allowed
+types. On the accepted A01 fixture those selected legacy registry entries were
+absent from `snapshot.concepts`; they therefore had no frozen concept-type authority.
+The test proved downstream optimizer participation from an active denominator, but
+not from a source/type-authorized tied output candidate.
+
+The round-4 repair does not weaken source validation or add production behavior.
+Instead, the test now obtains denominator/control concepts from the existing
+Grade-A source-adapter authority:
+
+1. the real `A.IDENTITY` adapter deterministically draws additional rows from the
+   same accepted source graph and replay seed;
+2. each row is passed through `bind_registered_source_row`, so the resulting
+   `ConceptRef` values carry the adapter/semantic-graph-derived ABI identity,
+   `Entity` type and source reference;
+3. only source-bound concepts absent from the current input's visible identity rows
+   and compatible with the output role are eligible for the witness;
+4. `legacy:micro.entity.E` at identity row `(0, 30)` is used as the sole lawful
+   VALUE candidate and production semantic-denominator row;
+5. independently source-bound `legacy:micro.entity.C` at `(0, 28)` is admitted
+   only as the nonparticipating preservation control.
+
+Production `bamf_value_and_grad` emits `((0, 30),)` as the semantic denominator
+and the identity-row numerical gradient is exactly zero. Passing that exact
+`BamfGradientExecution` unchanged through production B09/B12 advances row
+`(0, 30)`'s update count to 1. Row `(0, 28)`, which is neither visible nor in
+the denominator, remains byte-identical across parameters, first moment, second
+moment and update count.
+
+The repaired real-source suite is again **5/5 PASS, zero skips/errors**. No
+production module, source-authority contract or optimizer authority changed.
