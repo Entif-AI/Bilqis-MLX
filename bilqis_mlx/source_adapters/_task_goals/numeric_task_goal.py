@@ -268,4 +268,4 @@ def resolve_numeric_task_goal(
             goal.expression_or_holes, nodes=tuple(nodes)))
 
 
-__all__ = ("lower_numeric_task_goal",)
+__all__ = ("lower_numeric_task_goal", "resolve_numeric_task_goal")

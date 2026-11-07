@@ -165,7 +165,7 @@ class FactoryTrainingBridgeTests(SourceBackboneTestBase):
                     self.assertTrue(bool(mx.all(mx.isfinite(decision.logits))))
 
     def test_source_owner_mints_b10_operator_training_target(self):
-        rows, prepared = self.prepare("C.ADD", 37115, 1)
+        rows, prepared = self.prepare("C.ADD", 37115, 3)
         compiled = prepared.compiled_rows[0]
         authority = factory_task_authority(self.context, compiled)
         resolved = factory_task_training_goal(self.context, compiled, authority)
