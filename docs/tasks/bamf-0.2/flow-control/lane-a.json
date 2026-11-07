@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "5f8f3d4b42cc4656020e4427c7d8e822825a36f9",
-  "updated_at": "2026-11-07T17:21:45Z",
+  "updated_at": "2026-11-07T17:41:20Z",
   "exception": null,
   "items": [
     {
@@ -221,8 +221,8 @@
       "issue": 906,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "5f8f3d4b42cc4656020e4427c7d8e822825a36f9",
-      "summary": "A13 EGM-Mitigation follow-on is active from current reviewed unified. Scope is the existing-A13 production temporal/frontier producer required to make transition_context emit a typed invalidation for a retained artifact consumed by #752; no wall-clock, evidence-timestamp-as-expiry, signer, or event-ontology invention is authorized.",
+      "head_sha": "ee644401d12275c98e454156fd49193e57e5cead",
+      "summary": "A13 EGM-Mitigation follow-on is semantic-candidate complete at ee644401: finite validity is bound to exact A01 source/release plus actor/policy/rights/correction authority; timeless PUBLIC_FORMAL remains unchanged. Disposable integration with #752 passed durable packed-frame hold-before-reuse and cold replay. Fresh EGM and turn-in gates remain.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a-906-temporal-context-20261107"
     }
