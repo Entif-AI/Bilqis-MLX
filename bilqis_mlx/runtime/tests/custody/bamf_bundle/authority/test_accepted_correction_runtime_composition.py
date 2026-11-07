@@ -22,10 +22,12 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     acceptance, candidate, parent_state, shape_patch,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
-    AUTHORITY, _SOURCE_OWNER, _TEST_PUBLIC, _event, _result,
+    AUTHORITY, _SOURCE_OWNER, _TEST_PUBLIC, _event, _result, _sign_event,
 )
 from bilqis_mlx.runtime.tests.capability.factory.solver_helpers import _fixture
-from bilqis_mlx.runtime.cognitive_solver import QualifiedComposition, SolveContext
+from bilqis_mlx.runtime.cognitive_solver import (
+    NeuralProposal, QualifiedComposition, SolveContext, solve_task,
+)
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
 from bilqis_mlx.semantics.domains import contract_digest
 
@@ -71,6 +73,34 @@ class AcceptedCorrectionCompositionTests(unittest.TestCase):
             binding, qualified_compositions=compositions,
             qualification_verifier=lambda item: True), compositions
 
+    def _concurrent_corrections(self, binding):
+        dependency = DependencyRef(
+            DependencyKind.SOURCE,
+            "source:binding:" + contract_digest(binding),
+        )
+        first = _event(dependency)
+        second = _sign_event(replace(
+            first,
+            event_id="correction:synthetic:2",
+            source_receipt_sha256="e" * 64,
+            old_evidence_sha256="b" * 64,
+            new_evidence_sha256="c" * 64,
+            recorded_at=631,
+            source_signature_hex="0" * 128,
+        ))
+        return first, second
+
+    def _record_equal_revalidation(self, owner, composition, correction):
+        node = owner.node_for(composition)
+        with shape_patch():
+            return record_accepted_revalidation(
+                self.run,
+                _result(
+                    node, digest=node.content_digest,
+                    correction=correction),
+                AUTHORITY,
+            )
+
     def test_correction_seen_before_composition_exists_holds_later_materialization(self):
         self.publish(candidate(parent_state()))
         binding, generation, _budget, add, _ambiguous = _fixture()
@@ -93,6 +123,37 @@ class AcceptedCorrectionCompositionTests(unittest.TestCase):
         self.assertEqual(owner.queue.event.event_id, correction.event_id)
         with self.assertRaises(BilqisError):
             owner.require(learned, binding)
+
+    def test_neural_answer_cannot_escape_accepted_hold_installed_during_retention(self):
+        self.publish(candidate(parent_state()))
+        binding, generation, budget, add, ambiguous = _fixture()
+
+        def neural(request):
+            return NeuralProposal(
+                add, request.source_binding_digest, request.generation_digest,
+                request.unresolved_signature, "c" * 64)
+
+        context = SolveContext(binding, neural_proposer=neural)
+        with shape_patch():
+            bind_accepted_correction_authority(self.run, AUTHORITY)
+            register_solve_context(self.run, context, AUTHORITY)
+        correction = _event(DependencyRef(
+            DependencyKind.SOURCE,
+            "source:binding:" + contract_digest(binding)))
+        with shape_patch():
+            record_accepted_correction(self.run, correction, AUTHORITY)
+        self.assertIsNone(context.operator_composition_artifact_owner.queue)
+
+        with self.assertRaises(BilqisError) as caught:
+            solve_task(ambiguous, context, generation, budget)
+        self.assertEqual(
+            caught.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
+        owner = context.operator_composition_artifact_owner
+        retained = owner.compositions
+        self.assertEqual(len(retained), 1)
+        self.assertIn(
+            owner.node_for(retained[0]).artifact_id,
+            owner.queue.held_artifact_ids)
 
     def test_real_source_operand_correction_holds_operator_composition(self):
         self.publish(candidate(parent_state()))
@@ -191,3 +252,62 @@ class AcceptedCorrectionCompositionTests(unittest.TestCase):
             self.assertEqual(owner.queue.event.event_id, correction.event_id)
             with self.assertRaises(BilqisError):
                 owner.require(compositions[0], binding)
+
+    def test_late_materialization_rechecks_all_active_concurrent_branches(self):
+        self.publish(candidate(parent_state()))
+        binding, context, compositions = self._composition_context(1)
+        with shape_patch():
+            bind_accepted_correction_authority(self.run, AUTHORITY)
+            register_solve_context(self.run, context, AUTHORITY)
+        correction_a, correction_b = self._concurrent_corrections(binding)
+        owner = context.operator_composition_artifact_owner
+
+        with shape_patch():
+            record_accepted_correction(self.run, correction_a, AUTHORITY)
+        self._record_equal_revalidation(
+            owner, compositions[0], correction_a)
+        with shape_patch():
+            record_accepted_correction(self.run, correction_b, AUTHORITY)
+        self._record_equal_revalidation(
+            owner, compositions[0], correction_b)
+        self.assertEqual(owner.queue.held_artifact_ids, ())
+
+        _binding, generation, _budget, add, _ambiguous = _fixture()
+        learned = QualifiedComposition(
+            add, generation.source_binding_digest, generation.generation_digest,
+            binding.frontier.rights_epoch, binding.frontier.correction_generation,
+            "f" * 64)
+        self.assertTrue(owner.remember(learned, binding))
+        with self.assertRaises(BilqisError) as held:
+            owner.require(learned, binding)
+        self.assertEqual(
+            held.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
+        target = owner._accepted_correction_target
+        self.assertTrue(any(
+            event.event_id == correction_a.event_id
+            for event in target.pending
+        ) or (
+            owner.queue is not None
+            and owner.queue.event.event_id == correction_a.event_id
+        ))
+        for correction in (correction_a, correction_b):
+            if (owner.queue is None
+                    or owner.queue.event.event_id != correction.event_id):
+                continue
+            self._record_equal_revalidation(owner, learned, correction)
+        if owner.queue is not None and owner.queue.pending:
+            self._record_equal_revalidation(
+                owner, learned, owner.queue.event)
+        self.assertIsNotNone(owner.require(learned, binding))
+        learned_artifact_id = (
+            "composition:" + learned.qualification_receipt_sha256)
+        self.assertIn(
+            learned_artifact_id,
+            owner._accepted_correction_target.branch_reconciled_artifacts[
+                correction_a.event_id],
+        )
+        self.assertIn(
+            learned_artifact_id,
+            owner._accepted_correction_target.branch_reconciled_artifacts[
+                correction_b.event_id],
+        )

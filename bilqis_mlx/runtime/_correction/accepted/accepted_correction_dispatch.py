@@ -62,6 +62,8 @@ class AcceptedCorrectionRuntime:
                 break
             owner.advance(RevalidationFrontier((candidate,)), registry)
             consumed.add((candidate.correction_event_id, candidate.artifact_id))
+            target.mark_branch_reconciled(
+                candidate.correction_event_id, candidate.artifact_id)
         relevant = {
             (item.correction_event_id, item.artifact_id)
             for item in frontier.results
@@ -93,7 +95,10 @@ class AcceptedCorrectionRuntime:
             self._restore_branches(target)
             target.seen.update(seen_event_ids)
             self._replay(target)
+            if self.registry is not None:
+                target.reconcile_late_materializations(self.registry)
             self._retry_deferred(target)
+            self._retry_context_deferred(target)
             from .accepted_stale_replay_runtime import replay_stale_evidence
             replay_stale_evidence(self)
 
@@ -166,6 +171,7 @@ class AcceptedCorrectionRuntime:
                 if not target.advance_context(frontier, self.registry):
                     target.context_deferred[event_id] = frontier
                     continue
+                target.context_deferred.pop(event_id, None)
             elif record["event"] == REVALIDATION_EVENT:
                 frontier = frontier_from_record(record)
                 if not self._advance(target, event_id, frontier, self.registry):

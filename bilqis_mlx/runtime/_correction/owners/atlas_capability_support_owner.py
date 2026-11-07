@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from dataclasses import replace
 from bilqis_mlx.semantics.cognitive_dependencies import (
     ArtifactKind, ArtifactNode, DependencyIndex,
 )
@@ -24,7 +23,7 @@ from .capability_support_journal import (
 )
 from .capability_support_loading import load_current_support
 from .capability_support_requalification import (
-    install_ledger, install_requalification, rehydrate_support_hold,
+    install_requalification, rehydrate_support_hold,
 )
 
 
@@ -80,17 +79,11 @@ class CapabilitySupportArtifactOwner:
             _invalid("BAMF_C09_CONTEXT_REVALIDATION_INDEX_DRIFT")
         self._index = index
         if transition.changed:
-            current = self.support
-            if current.status is RequalificationStatus.QUALIFIED:
-                install_ledger(self, RequalificationLedger(
-                    capabilities=(replace(
-                        current,
-                        status=RequalificationStatus.REQUALIFICATION_REQUIRED,
-                    ),),
-                    historical=(*self.ledger.historical, current),
-                    pending_source_tasks=self.ledger.pending_source_tasks,
-                    pending_c10_intents=self.ledger.pending_c10_intents,
-                ))
+            from bilqis_mlx.runtime.atlas_requalification import (
+                mark_context_affected_capability,
+            )
+            self.install_requalification(
+                mark_context_affected_capability(self.ledger, transition))
 
     @property
     def queue(self) -> RevalidationQueue | None:

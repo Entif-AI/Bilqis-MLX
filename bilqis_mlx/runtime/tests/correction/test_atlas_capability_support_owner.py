@@ -145,6 +145,12 @@ class CapabilitySupportOwnerTests(CapabilitySupportOwnerFixture):
         self.assertIs(
             owner.support.status,
             RequalificationStatus.REQUALIFICATION_REQUIRED)
+        self.assertEqual(len(owner.ledger.pending_source_tasks), 1)
+        self.assertEqual(owner.ledger.pending_c10_intents, ())
+        task = owner.ledger.pending_source_tasks[0]
+        self.assertIsNone(task.correction_event_id)
+        self.assertEqual(task.context_event_id, transition.context_event_id)
+        self.assertEqual(task.reason_code, "CONTEXT_SUPPORT_REQUALIFICATION")
         with self.assertRaises(BilqisError) as caught:
             owner.require(TARGET)
         self.assertEqual(
@@ -222,6 +228,11 @@ class CapabilitySupportOwnerTests(CapabilitySupportOwnerFixture):
         self.assertIs(
             cold_owner.support.status,
             RequalificationStatus.REQUALIFICATION_REQUIRED)
+        self.assertEqual(len(cold_owner.ledger.pending_source_tasks), 1)
+        self.assertEqual(cold_owner.ledger.pending_c10_intents, ())
+        self.assertEqual(
+            cold_owner.ledger.pending_source_tasks[0].context_event_id,
+            invalidation.event_id)
         with self.assertRaises(BilqisError):
             cold_owner.require(TARGET)
         records = read_records(self.run, published["manifest_sha256"])

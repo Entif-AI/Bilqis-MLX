@@ -145,6 +145,5 @@ class CognitiveSolverRetentionTests(unittest.TestCase):
         self.assertTrue(owner.remember(learned, binding))
         self.assertIn(owner.node_for(learned).artifact_id, owner.queue.held_artifact_ids)
 
-
 if __name__ == "__main__":
     unittest.main()

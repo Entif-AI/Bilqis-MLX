@@ -174,6 +174,48 @@ class OperatorCompositionArtifactOwner:
         self._queue = apply_correction(event, self._index, authority_registry)
         return self._queue
 
+    def hold_late_correction(
+        self, event: CorrectionEvent, artifact_ids: tuple[str, ...],
+        authority_registry: SourceAuthorityRegistry,
+    ) -> RevalidationQueue:
+        """Hold only compositions materialized after this branch was reconciled."""
+        if (not isinstance(event, CorrectionEvent)
+                or not isinstance(artifact_ids, tuple)
+                or not artifact_ids
+                or artifact_ids != tuple(sorted(set(artifact_ids)))
+                or not isinstance(authority_registry, SourceAuthorityRegistry)):
+            _invalid("BAMF_C09_OPERATOR_COMPOSITION_LATE_HOLD_INVALID")
+        authority_registry.verify_correction(event)
+        tasks = []
+        for artifact_id in artifact_ids:
+            node = self._index.node(artifact_id)
+            if event.dependency not in node.immediate_dependencies:
+                _invalid("BAMF_C09_OPERATOR_COMPOSITION_LATE_HOLD_DRIFT")
+            tasks.append(_task(node, event.dependency))
+        if self._queue is not None and self._queue.pending:
+            if self._queue.event.event_id != event.event_id:
+                _invalid("BAMF_C09_OPERATOR_COMPOSITION_LATE_HOLD_BUSY")
+            history_ids = {
+                transition.artifact_id for transition in self._queue.history}
+            pending_by_id = {
+                task.artifact_id: task for task in self._queue.pending}
+            for task in tasks:
+                if task.artifact_id not in history_ids:
+                    pending_by_id.setdefault(task.artifact_id, task)
+            pending = _sort_tasks(tuple(pending_by_id.values()))
+            self._queue = RevalidationQueue(
+                event, pending,
+                tuple(sorted(task.artifact_id for task in pending)),
+                self._queue.history,
+            )
+            return self._queue
+        pending = _sort_tasks(tuple(tasks))
+        self._queue = RevalidationQueue(
+            event, pending,
+            tuple(sorted(task.artifact_id for task in pending)),
+        )
+        return self._queue
+
     def advance(
         self, frontier: RevalidationFrontier,
         authority_registry: SourceAuthorityRegistry,

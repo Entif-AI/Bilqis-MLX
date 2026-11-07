@@ -159,6 +159,74 @@ class AcceptedContextOrderingTests(unittest.TestCase):
             tuple(sorted((source_ref, z_time))),
         )
 
+    def test_same_context_lower_priority_evidence_defers_until_priority_frontier(self):
+        case = source_owned_temporal_case()
+        old_digest, new_digest = case.previous.digest, "e" * 64
+        old_time = DependencyRef(
+            DependencyKind.TIME, "time:asof:context:" + old_digest)
+        new_time = DependencyRef(
+            DependencyKind.TIME, "time:asof:context:" + new_digest)
+        high = ArtifactNode(
+            "frame:priority-high", ArtifactKind.PACKED_FRAME, "a" * 64, True,
+            (old_time,), impact=3, exigency=3)
+        low = ArtifactNode(
+            "frame:priority-low", ArtifactKind.PACKED_FRAME, "b" * 64, True,
+            (old_time,), impact=1, exigency=1)
+        owner = _ContextOwner((high, low))
+        cache = self._publish()
+        with shape_patch():
+            register_accepted_target(
+                self.run, cache.accepted_manifest_sha256, "PRIORITY", owner,
+                lambda current, event, source_authority: _route(
+                    current, event, source_authority),
+                AUTHORITY,
+            )
+            host = AcceptedRuntimeHost(self.run, AUTHORITY)
+        invalidation = _event(case, old_digest, new_digest)
+        receipt = self._persist_invalidation(cache, invalidation)
+
+        low_result = _signed_context_result(
+            low, invalidation=invalidation, accepted_event_id=receipt,
+            dependencies=(new_time,))
+        with shape_patch():
+            low_record = host.record_context_revalidation(
+                ContextRevalidationFrontier((low_result,)))
+        target = owner._accepted_correction_target
+        self.assertIn(low_record, target.context_deferred)
+        with self.assertRaises(BilqisError):
+            require_pending_corrections(owner, low.artifact_id)
+
+        high_result = _signed_context_result(
+            high, invalidation=invalidation, accepted_event_id=receipt,
+            dependencies=(new_time,))
+        with shape_patch():
+            host.record_context_revalidation(
+                ContextRevalidationFrontier((high_result,)))
+        self.assertNotIn(low_record, target.context_deferred)
+        self.assertIsNone(require_pending_corrections(owner, high.artifact_id))
+        self.assertIsNone(require_pending_corrections(owner, low.artifact_id))
+
+        admission._EXECUTION_CACHE_OWNER.entries.clear()
+        _RUNTIME_OWNER.clear()
+        cold_owner = _ContextOwner((high, low))
+        with shape_patch():
+            cold_cache = bind_accepted_execution_cache(self.run)
+            register_accepted_target(
+                self.run, cold_cache.accepted_manifest_sha256,
+                "PRIORITY", cold_owner,
+                lambda current, event, source_authority: _route(
+                    current, event, source_authority),
+                AUTHORITY,
+            )
+        self.assertEqual(
+            cold_owner._accepted_correction_target.context_deferred, {})
+        self.assertIsNone(
+            require_pending_corrections(cold_owner, high.artifact_id))
+        self.assertIsNone(
+            require_pending_corrections(cold_owner, low.artifact_id))
+        self.assertEqual(
+            cold_owner._accepted_correction_target.context_deferred, {})
+
     def test_equal_context_revalidation_keeps_real_packed_frame_readable(self):
         case = source_owned_temporal_case()
         owner = case.owner()

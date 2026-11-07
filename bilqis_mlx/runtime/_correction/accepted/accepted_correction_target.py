@@ -25,6 +25,9 @@ class AcceptedCorrectionTarget:
     pending: list[CorrectionEvent] = field(default_factory=list)
     deferred: dict[str, RevalidationFrontier] = field(default_factory=dict)
     revalidation_consumed: dict[str, set[tuple[str, str]]] = field(default_factory=dict)
+    branch_reconciled_artifacts: dict[str, set[str]] = field(
+        default_factory=dict)
+    late_branch_pending: dict[str, set[str]] = field(default_factory=dict)
     process_fault_holds: set[str] = field(default_factory=set)
     context_queues: dict[str, ContextRevalidationQueue] = field(
         default_factory=dict)
@@ -78,6 +81,8 @@ class AcceptedCorrectionTarget:
         if superseded:
             self.pending[:] = [
                 item for item in self.pending if item.event_id not in superseded]
+            for event_id in superseded:
+                self.late_branch_pending.pop(event_id, None)
         active_id = self._active_event_id()
         if active_id is not None and active_id not in superseded:
             self._stage(event)
@@ -149,7 +154,12 @@ class AcceptedCorrectionTarget:
                 return False
         for item in relevant:
             task = next_context_revalidation_task(owner.index, queue)
-            if task is None or task.artifact_id != item.artifact_id:
+            if task is None:
+                from .atlas_revalidation_common import _invalid
+                _invalid("BAMF_C09_CONTEXT_REVALIDATION_OUT_OF_ORDER")
+            if task.artifact_id != item.artifact_id:
+                if item.artifact_id in queue.held_artifact_ids:
+                    return False
                 from .atlas_revalidation_common import _invalid
                 _invalid("BAMF_C09_CONTEXT_REVALIDATION_OUT_OF_ORDER")
             transition = revalidate_context_node(
@@ -169,6 +179,44 @@ class AcceptedCorrectionTarget:
             self.context_queues.pop(context_event_id, None)
         self._refresh_waiting_contexts()
         return True
+
+    def mark_branch_reconciled(
+        self, event_id: str, artifact_id: str,
+    ) -> None:
+        self.branch_reconciled_artifacts.setdefault(
+            event_id, set()).add(artifact_id)
+
+    def reconcile_late_materializations(
+        self, registry: SourceAuthorityRegistry,
+    ) -> None:
+        owner = self.owner
+        hold_late = getattr(owner, "hold_late_correction", None)
+        if owner is None or not callable(hold_late):
+            return
+        already_pending = {event.event_id for event in self.pending}
+        queue = getattr(owner, "queue", None)
+        active_queue_id = (
+            queue.event.event_id if queue is not None and queue.pending else None)
+        for branches in self.branches.values():
+            for branch in branches.active:
+                event = branch.event
+                reconciled = self.branch_reconciled_artifacts.get(
+                    event.event_id, set())
+                late_ids = {
+                    node.artifact_id
+                    for node in owner.index.direct_dependents(event.dependency)
+                    if node.artifact_id not in reconciled
+                }
+                if not late_ids:
+                    continue
+                if active_queue_id == event.event_id:
+                    hold_late(event, tuple(sorted(late_ids)), registry)
+                    continue
+                self.late_branch_pending.setdefault(
+                    event.event_id, set()).update(late_ids)
+                if event.event_id not in already_pending:
+                    self._stage(event)
+                    already_pending.add(event.event_id)
 
     def record_correction_branch(
         self, event: CorrectionEvent, registry: SourceAuthorityRegistry,
@@ -193,7 +241,15 @@ class AcceptedCorrectionTarget:
             owner = self.owner
             if owner is None:
                 return False
-            self.apply(owner, event, registry)
+            late_ids = self.late_branch_pending.pop(event.event_id, None)
+            if late_ids is not None:
+                hold_late = getattr(owner, "hold_late_correction", None)
+                if not callable(hold_late):
+                    from .atlas_revalidation_common import _invalid
+                    _invalid("BAMF_C09_LATE_BRANCH_OWNER_UNSUPPORTED")
+                hold_late(event, tuple(sorted(late_ids)), registry)
+            else:
+                self.apply(owner, event, registry)
             self._sync_owner_pending()
             return True
         self._sync_owner_pending()
