@@ -26,8 +26,9 @@ from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree
 from bilqis_mlx.runtime.bamf_bundle import (
     BamfBundleCandidate, prepare_initial_generation, publish_bamf_generation,
-    publish_initial_generation, load_bamf_generation, derive_successor_bundle,
+    publish_initial_generation, load_bamf_generation,
 )
+from bilqis_mlx.runtime._custody.bamf_bundle.admission import derive_successor_bundle
 from bilqis_mlx.runtime.bamf_bundle.genesis_foundation import (
     initial_foundation_sidecars,
 )
