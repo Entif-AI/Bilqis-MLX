@@ -133,9 +133,9 @@
       "issue": 752,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "cf1e46bb576be119fe99e48ad113d7319d42ef43",
+      "head_sha": "4ff3294abfae8d39c25d6ba525dd1ba3bc6c7cf7",
       "preserved_branch": "codex/752-post-egm-h1-fixes-20261107",
-      "summary": "H3 historical FAIL preserved. All seven findings are engineering-repaired. #906 source-owned temporal authority is integrated; real producer -> C09 durable invalidation -> live/cold retained hold is proven. Latest reviewed unified cc48ac40 (#479/B13.2) was consumed at merge 0290f00f; its delta is test/evidence-only for #752 surfaces, new controls pass 8/8 with one intended full-witness skip. Changed-scope quality and 43/43 contracts are green. Candidate is frozen for the explicitly authorized H4 whole-candidate EGM.",
+      "summary": "H3 historical FAIL remains immutable. Fresh H4 on 5480830d failed 0 Blockers / 2 Majors: accepted C09 temporal ingress dropped #906 source-owned transition authority, and capability-support live generation identity reused the pre-update B11 source generation. Both have failing-before regressions and semantic repairs at 4ff3294a; widened 72/72 runtime/custody/capability proof, changed-scope quality, 43/43 contracts and diff hygiene are green. Candidate remains ACTIVE pending a newly frozen fresh-context H4 re-review.",
       "resume_trigger": null
     },
     {

@@ -459,3 +459,66 @@ legacy-trainer authority and its 7/7 regressions PASS, BAMF flow control and
 This is the final engineering freeze before the explicitly authorized H4
 whole-candidate review. H3 remains immutable historical FAIL until and after that
 review; no H4 verdict is claimed here.
+
+### H4 exact-head review and remediation checkpoint
+
+Fresh isolated H4 review of exact candidate
+`5480830d1ca8a762b58e676a6ab33218e1bea54e` against reviewed unified
+`cc48ac40d875f0c2ae8ffbdc70001dbfc4815334` used pinned Elephant-Goldfish
+`b3a35956759bf7f024af2ff061b2e0b44b438e4c`. The exact-head verdict was
+**FAIL - 0 Blockers, 2 Majors, 0 Nits**. This is append-only later review evidence;
+historical H3 remains immutable **FAIL - 3 Blockers, 4 Majors, 0 Nits**.
+
+The first H4 Major was an `AUTHORITY_GAP` at the accepted C09 temporal ingress.
+The accepted host still accepted raw frames, task scope, source frontier and policy,
+then reran `transition_context()` directly. A caller holding otherwise legitimate
+finite #906 frames could therefore choose `effective_time == effective_until` and
+bypass the source-owned `source_lesson_expiry_task()` boundary. A failing-before
+regression reproduced the defect: the forged call emitted no `BilqisError`, so the
+test failed exactly because caller-selected expiry was still admissible.
+
+Semantic repair `4ff3294abfae8d39c25d6ba525dd1ba3bc6c7cf7` removes that raw authority seam.
+`AcceptedRuntimeHost.record_context_transition()` now accepts the source-owned
+`SourceLessonContexts` object and rejects raw caller state. C09 revalidates the
+opaque #906 `SourceContextTransitionAuthority`, reconstructs the source frontier
+from that authority plus its issued grants, derives the expiry task internally via
+`source_lesson_expiry_task()`, and only then emits the existing typed
+`C09ContextInvalidation`. No wall clock, TTL, evidence timestamp, correction signer,
+`CorrectionEvent` conversion or replacement event ontology was introduced. The
+adversarial regression now passes and proves the rejected forged call appends no
+accepted-C09 record.
+
+The second H4 Major was a `SHARED_CONTRACT` generation-identity mismatch in
+capability-support custody. B11 correctly records the pre-update execution generation
+that issued its training authority, and that source-generation identity remains valid
+provenance. C09 had also reused that historical source generation as the live support
+owner's generation binding, however, while progression asks for the current accepted
+post-update execution generation. A failing-before retained-update regression proved
+the mismatch by raising `BAMF_C09_CAPABILITY_SUPPORT_GENERATION_DRIFT` after a real
+weight-changing retained candidate was accepted.
+
+The same semantic repair preserves the historical source-generation anchor inside the
+accepted provenance record but binds the live capability-support owner to the current
+accepted execution generation, recomputed from the authenticated current accepted
+student. The retained-update regression now passes, while source provenance and
+correction ancestry remain unchanged.
+
+Post-repair executable proof on the canonical branch:
+
+- both new regressions demonstrated failing-before behavior for the intended reasons;
+- accepted temporal ingress focused tests: **3/3 PASS** after repair;
+- capability-support owner plus current-generation regression: **8/8 PASS**;
+- capability progression plus cold accepted-history checks: **8/8 PASS**;
+- widened correction, capability, accepted-runtime, custody, recovery and stale-replay
+  ring: **72/72 PASS**;
+- changed-scope development structure and governance: **PASS, 0 violations**;
+- changed-file smell delta: **0 new findings**;
+- legacy-trainer authority: **PASS, 7/7**;
+- BAMF flow control: **PASS, 15/15**;
+- BAMF contract mirrors: **43/43 PASS**;
+- `git diff --check`: **PASS**.
+
+Engineering disposition: the complete known H4 finding set is repaired at semantic
+head `4ff3294a...`. H4 itself remains historical FAIL until a new fresh-context
+whole-candidate review evaluates a newly frozen exact head. No PR, merge, issue
+closure, or neural/trainer mutation is claimed here.
