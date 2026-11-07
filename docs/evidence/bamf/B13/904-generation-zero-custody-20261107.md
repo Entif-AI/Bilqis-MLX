@@ -106,3 +106,66 @@ Repository gates are also green against reviewed unified `cc48ac40...`: module-s
 The only implementation-side adjustment after the unified refresh is a behavior-preserving split of the enlarged acceptance-provenance test module into publication, authority and shared-fixture files so each companion test remains below the repository's structure threshold. No production behavior or acceptance criterion was weakened.
 
 #904 is therefore no longer dependency-held. Its remaining merge-readiness gate is fresh exact-head EGM plus hosted verification/PR turn-in. Human merge and issue closure remain outside this checkpoint's authority.
+
+## EGM round-3 Major remediation — 2026-11-07
+
+The round-3 codebase-details review failed exact candidate
+`c609cd3a264444717f8aa59d65c5f0ce0a15c295` with two Majors. This repair
+consumed reviewed unified `d4bad39a32a80acbffdb9f891a906892ab2e9fab`
+before mutation. The semantic repair candidate is
+`4bad7631eca877ee660bca72b0505cc34ad72fe7`.
+
+Major 1 is closed by moving generation-zero model identity back under the
+accepted B01 owner. `prepare_initial_generation(...)` no longer accepts
+caller-selected topology, extents, or implementation SHA. It derives generation
+extents from the already-bound semantic ABI/compiler sidecars plus the internal
+motif allocation, independently regenerates B01's canonical `ParameterCensus`,
+fingerprints the accepted B01 topology implementation surface, and rejects any
+supplied B01 authority mismatch before model allocation. C16 may carry the
+already-authorized declaration but cannot become its trust root.
+
+Major 2 is closed at the shared mutation boundary itself.
+`_publish_authorized_generation(...)` validates the exact live generation-zero
+bootstrap capability for generation 0 and the exact C05
+`AcceptedCandidateBinding` for successors before staging or pointer mutation.
+Direct import/call therefore cannot bypass either generation-specific authority
+gate.
+
+The current reviewed-unified correction/replay surface also required one
+integration repair: C09 accepted-support loading now authenticates B13 bootstrap
+evidence for generation zero without misclassifying it as C05 retention
+acceptance. Generation zero contributes no C05 source anchors; source-qualified
+support begins with the first accepted successor as before.
+
+Exact snapshot-pinned M3 Ultra proof:
+
+- literal generation-zero source/B01/shared-sink negatives: **4/4 PASS** at
+  `4bad7631eca877ee660bca72b0505cc34ad72fe7`;
+- generation-zero authority: **9/9 PASS** at the Major-repair candidate;
+- successor acceptance authority, including direct shared-sink bypass:
+  **12/12 PASS**;
+- reviewed-unified accepted correction/replay integration: **26/26 PASS**;
+- complete B13 custody tree: **155 total / 150 passed / 0 failed / 5 explicit
+  optional/environment skips**;
+- opt-in B01 parameter-schema plus complete clean-process cold-resume witnesses:
+  **2/2 PASS**.
+
+The first complete-tree run after the Major repair failed 26 reviewed-unified
+accepted-correction tests because those fixtures still attempted generation-zero
+publication through the successor-only C05 API. That failure was preserved and
+repaired by routing fixture genesis through the production B13 bootstrap and by
+teaching accepted-support replay to distinguish bootstrap evidence from C05
+source-qualified acceptance. The next focused integration ring passed 26/26 and
+the complete custody tree passed 150/150 runnable tests.
+
+Current legacy-trainer adaptation authority, when legacy behavior is materially
+consulted, is exclusively:
+
+- branch: `codex/337-replay-349-20261026`;
+- worktree: `/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026`;
+- canonical run:
+  `/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`.
+
+Prometheus remains historical evidence only and is not a current BAMF adaptation
+oracle. No actual learner, persistent optimizer, or human-owned training run was
+started by this remediation.
