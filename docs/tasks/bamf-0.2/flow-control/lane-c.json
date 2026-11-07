@@ -9,8 +9,8 @@
       "issue": 516,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "a888d3fd3f889401601ee81663fa5a29145043f9",
-      "summary": "C09.1 semantic repair candidate a888d3fd closes the original five Majors plus residual accepted-context, learned-support and late-composition custody findings; the branch remains ACTIVE only for exact-head qualification and EGM turn-in.",
+      "head_sha": "fb4e3541ba01b08ed69a040b63a9be7d04b7cb35",
+      "summary": "C09.1 semantic repair candidate fb4e3541 closes the prior five-Major round: replay-safe context evidence, direct composition policy/time provenance, stale B11 context rejection, physical rematerialization holds, and exact-cache A13 context reachability. The branch remains ACTIVE only for exact-head qualification and EGM turn-in.",
       "resume_trigger": null,
       "preserved_branch": "codex/516-c09-1-egm-remediation-20261107"
     },
