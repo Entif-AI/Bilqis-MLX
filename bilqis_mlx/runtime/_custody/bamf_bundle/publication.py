@@ -128,6 +128,7 @@ def _require_accepted_parent(run_dir: Path, candidate: BamfBundleCandidate,
         expected_manifest_sha256=parent_sha)
     if (parent.run_id != candidate.run_id
             or parent.generation + 1 != candidate.generation
+            or candidate.run_identity != parent.run_identity
             or acceptance.parent_candidate_identity_sha256
             != candidate_identity_digest(parent.retained_state)):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")

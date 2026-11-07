@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from contextlib import ExitStack
 from copy import deepcopy
+from dataclasses import replace
 import os
 from pathlib import Path
 from unittest.mock import patch
@@ -25,7 +26,7 @@ from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree
 from bilqis_mlx.runtime.bamf_bundle import (
     BamfBundleCandidate, prepare_initial_generation, publish_bamf_generation,
-    publish_initial_generation,
+    publish_initial_generation, load_bamf_generation,
 )
 from bilqis_mlx.runtime.bamf_bundle.motif_codec import snapshot_to_record
 from bilqis_mlx.runtime.bamf_bundle.records import canonical, sha
@@ -88,7 +89,9 @@ def _genesis_defaults():
     }
 
 
-def genesis_preparation(*, run_seed=17, delivery_events=None, **overrides):
+def genesis_preparation(*, run_id="fixture-run", run_seed=17,
+                        topology=None, implementation_sha256=IMPLEMENTATION,
+                        delivery_events=None, **overrides):
     """Enter B13 generation zero through the production constructor and issuer."""
     from bilqis_mlx.runtime.tests.operator.test_admission import _executable_fixture
     release, graph = _executable_fixture()
@@ -99,11 +102,12 @@ def genesis_preparation(*, run_seed=17, delivery_events=None, **overrides):
         semantic_graph_sha256=_fingerprint(graph), graph=graph)
     values = _genesis_defaults() | overrides
     return prepare_initial_generation(
-        run_id="fixture-run", run_seed=run_seed, origin_checkpoint=origin,
+        run_id=run_id, run_seed=run_seed, origin_checkpoint=origin,
         release=release, admission=admission, graph=graph,
-        topology=ModelTopologySpecV2(),
+        topology=topology or ModelTopologySpecV2(),
         extents=values["extents"], optimizer_hyperparameters=HP,
-        provenance=values["provenance"], implementation_sha256=IMPLEMENTATION,
+        provenance=values["provenance"],
+        implementation_sha256=implementation_sha256,
         semantic_abi=values["semantic_abi"],
         compiler_features=values["compiler_features"],
         correction_frontier=values["correction_frontier"],
@@ -297,7 +301,22 @@ def acceptance(bundle) -> object:
 
 
 def publish_candidate(run_dir, bundle):
-    """Publish one retained successor with its C05 acceptance binding."""
+    """Use production genesis for fixture generation zero; C05 only for successors."""
     if bundle.generation == 0:
-        raise AssertionError("GENERATION_ZERO_MUST_USE_PRODUCTION_B13_BOOTSTRAP")
+        motif = MotifManifest(bundle.provenance.release_digest)
+        extents = replace(bundle.extents, motif_key_map_digest=motif.digest)
+        prepared = genesis_preparation(
+            run_id=bundle.run_id, topology=bundle.topology,
+            implementation_sha256=bundle.implementation_sha256,
+            extents=extents, provenance=bundle.provenance,
+            semantic_abi=dict(bundle.semantic_abi),
+            compiler_features=dict(bundle.compiler_features),
+            correction_frontier=dict(bundle.correction_frontier),
+            teacher_state=dict(bundle.teacher_state),
+            evaluation_contract=dict(bundle.evaluation_contract),
+            delivery_events=tuple(bundle.outbox))
+        return publish_initial_generation(run_dir, prepared, reserve_gib=0.)
+    if bundle.run_identity is None:
+        parent = load_bamf_generation(Path(run_dir) / "bamf-state.json")
+        bundle = replace(bundle, run_identity=parent.run_identity)
     return publish_bamf_generation(run_dir, bundle, acceptance=acceptance(bundle))
