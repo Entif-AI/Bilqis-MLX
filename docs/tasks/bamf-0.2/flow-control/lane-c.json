@@ -9,8 +9,8 @@
       "issue": 516,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "48119c4d2909e95191b19c1b4013652f43f2d3f6",
-      "summary": "C09.1 exact-unified EGM remediation is active on the dedicated #516 branch. Original five Majors are repaired; current continuation closes residual accepted-context, learned-support and late-composition custody findings before one fresh whole-candidate EGM.",
+      "head_sha": "a888d3fd3f889401601ee81663fa5a29145043f9",
+      "summary": "C09.1 semantic repair candidate a888d3fd closes the original five Majors plus residual accepted-context, learned-support and late-composition custody findings; the branch remains ACTIVE only for exact-head qualification and EGM turn-in.",
       "resume_trigger": null,
       "preserved_branch": "codex/516-c09-1-egm-remediation-20261107"
     },
