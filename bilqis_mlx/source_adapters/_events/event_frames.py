@@ -258,23 +258,39 @@ def registered_adapter():
         semantic_footprint=semantic_footprint)
 
 
-def expanded_graph(parent):
+def projected_graph(parent, capabilities):
+    """Append only the requested prerequisite-closed event identities."""
+    if (type(capabilities) is not tuple or not capabilities
+            or len(set(capabilities)) != len(capabilities)
+            or any(capability not in SOURCE_SPECS for capability in capabilities)):
+        _source_invalid('EVENT_FRAME_CATALOG_PROJECTION_INVALID')
     sources = source_senses(); admissions = []
-    for cap, (sense, prereqs) in SPECS.items():
+    available = set(parent.get('tokens', ()))
+    for cap in capabilities:
+        sense, prereqs = SPECS[cap]
         if SYMBOLS[cap] in parent['tokens']:
+            available.add(SYMBOLS[cap])
             continue
+        required_event_tokens = tuple(
+            SYMBOLS[item] for item in prereqs if item in SYMBOLS)
+        if any(token not in available for token in required_event_tokens):
+            _source_invalid('EVENT_FRAME_CATALOG_PREREQUISITE_MISSING')
         row = sources[cap]; proof = source_contract_digest(cap)
         if cap == 'D.EVENT_OCCURRENCE':
             prerequisite_tokens = ('development.Event.E0',)
         else:
-            prerequisite_tokens = tuple(SYMBOLS[item] for item in prereqs
-                                        if item in SYMBOLS)
+            prerequisite_tokens = required_event_tokens
         admissions.append(AdmittedToken(SYMBOLS[cap], SEMANTIC_IDS[cap],
             row['sense_summary']+'; finite event observation/transition only; morphology not realized',
             'new_ithkuil','compositional',row['source_url'],row['source_text_sha256'],
             proof,registered_adapter().descriptor.implementation_sha256,
             prerequisite_tokens,cap,proof,signature='Boolean*Boolean->Boolean',arity=2))
+        available.add(SYMBOLS[cap])
     return append_catalog(parent,tuple(admissions),allow_disposable_fixtures=True)[0] if admissions else parent
+
+
+def expanded_graph(parent):
+    return projected_graph(parent, tuple(SOURCE_SPECS))
 
 
 def compile_tranche(current, graph, *, source_root, source_registry, answer_registry):
