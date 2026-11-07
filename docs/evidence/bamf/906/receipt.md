@@ -81,6 +81,8 @@ Focused verification on that synchronized tree:
 - governance integrity: 0 violations;
 - changed-file smell audit: 0 new findings;
 - legacy-trainer authority: 6/6 PASS;
+- canonical legacy-trainer source:
+  `/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`;
 - BAMF flow-control: PASS; tests 15/15;
 - `git diff --check`: PASS.
 
