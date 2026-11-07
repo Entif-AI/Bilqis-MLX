@@ -1,7 +1,7 @@
 """BAMF pre-RoPE QKV projection and boundary-aware causal convolution."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import hashlib
 from importlib.metadata import version as _package_version
 import json
@@ -172,13 +172,15 @@ def _attention_parameter_identity(params: Mapping[str, mx.array]) -> tuple[mx.ar
     return identity
 
 
-def _attention_parameter_digest(identity: tuple[mx.array, ...]) -> str:
-    """Return a diagnostic receipt for one process-local tensor identity tuple."""
+def _attention_parameter_digest(identity: tuple[mx.array, ...], *,
+                                generation: str, layer: int) -> str:
+    """Return a deterministic generation-bound receipt without reading tensor bytes."""
     record = tuple(
-        (name, id(value), tuple(value.shape), str(value.dtype))
+        (name, tuple(value.shape), str(value.dtype))
         for name, value in zip(ATTENTION_PARAMETER_NAMES, identity, strict=True))
     return hashlib.sha256(json.dumps(
-        record, separators=(",", ":"), ensure_ascii=True).encode("ascii")).hexdigest()
+        (generation, layer, record), separators=(",", ":"),
+        ensure_ascii=True).encode("ascii")).hexdigest()
 
 
 @dataclass(frozen=True)
@@ -211,15 +213,12 @@ class AttentionCache:
     valid: mx.array
     layer: int
     generation: str
-    parameter_identity: tuple[mx.array, ...]
+    parameter_identity: tuple[mx.array, ...] = field(repr=False, compare=False)
+    parameter_digest: str
     prefix_digest: str
     start_offset: int
     rope_variant: tuple = ROPE_VARIANT
     mlx_version: str = MLX_VERSION
-
-    @property
-    def parameter_digest(self) -> str:
-        return _attention_parameter_digest(self.parameter_identity)
 
     def to_record(self) -> dict:
         dimensions, base, traditional, scale = self.rope_variant
@@ -247,12 +246,15 @@ def _validate_attention(params, hidden, mask, scope, cache, offset) -> None:
             ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.MISMATCH)
         return
     current_parameter_identity = _attention_parameter_identity(params)
+    current_parameter_digest = _attention_parameter_digest(
+        current_parameter_identity, generation=scope.generation, layer=scope.layer)
     if (type(cache) is not AttentionCache or cache.layer != scope.layer or
             cache.generation != scope.generation or cache.prefix_digest != scope.parent_prefix_digest or
             type(cache.parameter_identity) is not tuple or
             len(cache.parameter_identity) != len(current_parameter_identity) or
             any(cached is not current for cached, current in
                 zip(cache.parameter_identity, current_parameter_identity, strict=True)) or
+            cache.parameter_digest != current_parameter_digest or
             cache.rope_variant != ROPE_VARIANT or cache.mlx_version != MLX_VERSION or
             type(cache.convolution) is not QKVConvolutionCache or
             not isinstance(cache.key, mx.array) or cache.key.ndim != HEAD_ARRAY_RANK or
@@ -315,8 +317,11 @@ def ccgqa(params: Mapping[str, mx.array], h: mx.array, mask: mx.array, scope: At
     attended = mx.where(has_key[:, None], attended, 0)
     joined = attended.transpose(0, 2, 1, 3).reshape(batch, length, QUERY_HEADS * HEAD_DIMENSION)
     output = joined @ params["output"].T
+    parameter_identity = _attention_parameter_identity(params)
     next_cache = AttentionCache(k, v, convolution, scope_ids, all_sequences, valid,
-                                scope.layer, scope.generation,
-                                _attention_parameter_identity(params), scope.prefix_digest,
+                                scope.layer, scope.generation, parameter_identity,
+                                _attention_parameter_digest(
+                                    parameter_identity, generation=scope.generation,
+                                    layer=scope.layer), scope.prefix_digest,
                                 offset if cache is None else cache.start_offset)
     return output, next_cache
