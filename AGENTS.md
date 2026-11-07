@@ -8,6 +8,30 @@ trainer, scheduler, teacher, retention, admission, and controller logic unless t
 active BAMF issue explicitly owns a change to it. Do not merge or copy newer `main`
 controller code into this branch simply to catch up with `main`.
 
+<!-- BAMF02:LEGACY-TRAINER-AUTHORITY:20261107 -->
+### Legacy trainer adaptation authority — 2026-11-07
+
+When any issue, remediation, EGM review, compatibility task, or worklog needs to
+inspect or adapt behavior from the **latest legacy trainer**, the sole current
+adaptation oracle is the preserved Factory replay worktree and run below:
+
+- worktree: `/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026`
+- branch: `codex/337-replay-349-20261026`
+- run: `/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`
+
+Run `python3 -B scripts/check_legacy_trainer_authority.py --live` before using
+legacy behavior as an implementation or review premise. Record that receipt in the
+issue/PR worklog when the legacy trainer materially informs the change.
+
+Prometheus remains valid **historical evidence about the Prometheus lineage only**.
+`runs/codex-0001-prometheus`, the root `npm start`/`verify` convenience commands,
+and Prometheus-specific ADR observations are not the latest legacy-trainer
+adaptation source. Do not infer current legacy trainer policy, resume shape,
+teacher behavior, scheduler behavior, or compatibility expectations from
+Prometheus when implementing BAMF or another successor. Historical Prometheus
+mentions must be labeled as historical/non-authoritative for adaptation rather
+than presented as the current legacy baseline.
+
 The BAMF architecture, including `ADR-BAMF02-004`, and issue hierarchy live in
 `docs/architecture/BAMF_0_2.md` and `docs/tasks/bamf-0.2/`. The imported New Ithkuil/SKOS source lives under
 `lib/ithkuil/` with its ingestion Skill and fingerprinted test policy. Treat those

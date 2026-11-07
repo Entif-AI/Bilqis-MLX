@@ -1,0 +1,18 @@
+{
+  "schema": "bilqis.bamf.legacy-trainer-authority/v1",
+  "version": "1.0.0",
+  "effective_date": "2026-11-07",
+  "purpose": "latest legacy trainer adaptation and compatibility oracle",
+  "source_branch": "codex/337-replay-349-20261026",
+  "source_worktree": "/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026",
+  "source_run": "/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay",
+  "source_state": "/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay/state.json",
+  "operator_preflight": "python3 -B scripts/check_legacy_trainer_authority.py --live",
+  "historical_non_authoritative_runs": [
+    {
+      "name": "Prometheus",
+      "run": "runs/codex-0001-prometheus",
+      "disposition": "historical evidence only; never the latest legacy-trainer adaptation source"
+    }
+  ]
+}
