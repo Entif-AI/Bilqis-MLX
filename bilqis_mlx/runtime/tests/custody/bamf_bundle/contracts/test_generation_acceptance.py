@@ -34,11 +34,7 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     acceptance, accepted_state, candidate, parent_state, retention_decision,
     shape_patch,
 )
-<<<<<<<< HEAD:bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/test_generation_acceptance.py
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.test_feature_authority import (
-========
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.contracts.test_feature_authority import (
->>>>>>>> origin/codex/bamf-unified-base-20261028:bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/test_generation_acceptance.py
     RELEASE, source_features, feature_bound,
 )
 from bilqis_mlx.runtime.bamf_bundle.records import canonical
