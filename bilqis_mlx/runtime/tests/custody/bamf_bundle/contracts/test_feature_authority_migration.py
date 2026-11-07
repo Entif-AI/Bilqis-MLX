@@ -1,4 +1,5 @@
 """Post-cap migration proofs for B13.5 accepted feature authority."""
+import os
 from dataclasses import replace
 from unittest.mock import patch
 
@@ -70,16 +71,17 @@ class AcceptedFeatureMigrationTests(FeatureLineageCase):
             "invalidate_derived_caches": True})
         self.publish(changed)
 
-        for locator in (atlas_root, second_artifact.path):
-            with self.subTest(locator=locator), shape_patch(), patch(
+        with patch.dict(
+                os.environ, {"BILQIS_ATLAS_ARTIFACT_ROOT": str(atlas_root)}), \
+                shape_patch(), patch(
                     "bilqis_mlx.semantics.atlas.snapshot._require_registered_source_pin"):
-                receipt, current, predecessor = read_accepted_generation_feature_lineage(
-                    self.pointer, locator)
+            receipt, current, predecessor = read_accepted_generation_feature_lineage(
+                self.pointer)
 
-            self.assertEqual(receipt.feature_sha256, second_features.digest)
-            self.assertEqual(receipt.predecessor_feature_sha256, first_features.digest)
-            self.assertEqual(
-                (current, predecessor), (second_features, first_features))
+        self.assertEqual(receipt.feature_sha256, second_features.digest)
+        self.assertEqual(receipt.predecessor_feature_sha256, first_features.digest)
+        self.assertEqual(
+            (current, predecessor), (second_features, first_features))
 
     def test_live_v2_cutover_preserves_changed_feature_construction_history(self):
         root = source_features()
@@ -164,7 +166,7 @@ class AcceptedFeatureMigrationTests(FeatureLineageCase):
                 side_effect=frozen_snapshot), patch.object(
                 feature_authority, "build_feature_manifest", side_effect=replay):
             receipt, current, predecessor = read_accepted_generation_feature_lineage(
-                self.pointer, "/artifact")
+                self.pointer)
 
         self.assertEqual(receipt.generation, 2)
         self.assertEqual(receipt.feature_sha256, changed.digest)

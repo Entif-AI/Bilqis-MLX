@@ -50,10 +50,10 @@ class AcceptedFeatureLineageTests(FeatureLineageCase):
                 side_effect=frozen_snapshot), patch.object(
                 feature_authority, "build_feature_manifest", side_effect=replay):
             receipt, current, predecessor = read_accepted_generation_feature_lineage(
-                self.pointer, "/artifact")
+                self.pointer)
             self.assertEqual(
                 verify_accepted_generation_feature_receipt(
-                    self.pointer, "/artifact", receipt), receipt)
+                    self.pointer, receipt), receipt)
         self.assertEqual(receipt.generation, 1)
         self.assertEqual(receipt.feature_sha256, successor.digest)
         self.assertEqual(receipt.predecessor_feature_sha256, root.digest)
@@ -69,7 +69,7 @@ class AcceptedFeatureLineageTests(FeatureLineageCase):
                     replace(receipt, predecessor_feature_sha256=ARBITRARY)):
                 with self.subTest(forged=forged), self.assertRaises(BilqisError):
                     verify_accepted_generation_feature_receipt(
-                        self.pointer, "/artifact", forged)
+                        self.pointer, forged)
 
     def test_retained_successor_binds_the_feature_map_its_parent_consumed(self):
         root = source_features()
@@ -81,7 +81,7 @@ class AcceptedFeatureLineageTests(FeatureLineageCase):
 
         with shape_patch(), self.source_replay(root):
             receipt, current, predecessor = read_accepted_generation_feature_lineage(
-                self.pointer, "/artifact")
+                self.pointer)
 
         self.assertEqual(receipt.generation, 1)
         self.assertEqual(receipt.feature_sha256, root.digest)
@@ -109,7 +109,7 @@ class AcceptedFeatureLineageTests(FeatureLineageCase):
 
         with shape_patch(), self.source_replay(root):
             receipt, current, predecessor = read_accepted_generation_feature_lineage(
-                self.pointer, "/artifact")
+                self.pointer)
 
         self.assertEqual(receipt.generation, 1)
         self.assertEqual(receipt.feature_sha256, root.digest)
@@ -158,10 +158,10 @@ class AcceptedFeatureLineageTests(FeatureLineageCase):
                 side_effect=frozen_snapshot), patch.object(
                 feature_authority, "build_feature_manifest", side_effect=replay):
             receipt, current, predecessor = read_accepted_generation_feature_lineage(
-                self.pointer, "/artifact")
+                self.pointer)
             self.assertEqual(
                 verify_accepted_generation_feature_receipt(
-                    self.pointer, "/artifact", receipt), receipt)
+                    self.pointer, receipt), receipt)
 
         self.assertEqual(receipt.generation, 2)
         self.assertEqual(receipt.feature_sha256, changed.digest)

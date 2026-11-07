@@ -28,7 +28,10 @@ class FeatureLineageCase(unittest.TestCase):
         self.run = self.root / "run"
         self.pointer = self.run / "bamf-state.json"
         self.environment = patch.dict(
-            os.environ, {"BILQIS_DATA_PLANE": str(self.root / "plane.sqlite3")})
+            os.environ, {
+                "BILQIS_DATA_PLANE": str(self.root / "plane.sqlite3"),
+                "BILQIS_ATLAS_ARTIFACT_ROOT": str(self.root / "atlas"),
+            })
         self.environment.start()
 
     def tearDown(self):

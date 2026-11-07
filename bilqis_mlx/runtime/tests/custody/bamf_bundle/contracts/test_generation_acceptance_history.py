@@ -43,7 +43,10 @@ class GenerationAcceptanceHistoryTests(unittest.TestCase):
         self.root = Path(self.temporary.name)
         self.run = self.root / "run"
         self.environment = patch.dict(
-            os.environ, {"BILQIS_DATA_PLANE": str(self.root / "plane.sqlite3")})
+            os.environ, {
+                "BILQIS_DATA_PLANE": str(self.root / "plane.sqlite3"),
+                "BILQIS_ATLAS_ARTIFACT_ROOT": str(self.root / "atlas"),
+            })
         self.environment.start()
 
     def tearDown(self):
@@ -134,7 +137,7 @@ class GenerationAcceptanceHistoryTests(unittest.TestCase):
                       "load_pinned_atlas_snapshot", side_effect=lambda selection: selection):
             with self.assertRaises(BilqisError) as failure:
                 read_accepted_generation_feature_receipt(
-                    self.run / "bamf-state.json", "/artifact")
+                    self.run / "bamf-state.json")
         self.assertEqual(failure.exception.context["reason"],
                          "BAMF_GENERATION_ACCEPTANCE_DRIFT")
 
@@ -157,7 +160,7 @@ class GenerationAcceptanceHistoryTests(unittest.TestCase):
                       "load_pinned_atlas_snapshot", side_effect=lambda selection: selection):
             with self.assertRaises(BilqisError) as failure:
                 read_accepted_generation_feature_receipt(
-                    self.run / "bamf-state.json", "/artifact")
+                    self.run / "bamf-state.json")
         self.assertEqual(failure.exception.context["reason"],
                          "BAMF_GENERATION_ACCEPTANCE_DRIFT")
 
@@ -178,7 +181,7 @@ class GenerationAcceptanceHistoryTests(unittest.TestCase):
                 patch("bilqis_mlx.runtime.bamf_bundle.feature_authority."
                       "load_pinned_atlas_snapshot", side_effect=lambda selection: selection):
             with self.assertRaises(BilqisError):
-                read_accepted_generation_feature_receipt(pointer_path, "/artifact")
+                read_accepted_generation_feature_receipt(pointer_path)
 
     def test_caller_cannot_construct_an_acceptance_binding(self):
         source = candidate(parent_state())

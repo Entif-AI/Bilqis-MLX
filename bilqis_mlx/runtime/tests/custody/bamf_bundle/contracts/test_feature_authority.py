@@ -81,7 +81,10 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
         self.run = self.root / "run"
         self.pointer = self.run / "bamf-state.json"
         self.environment = patch.dict(
-            os.environ, {"BILQIS_DATA_PLANE": str(self.root / "plane.sqlite3")})
+            os.environ, {
+                "BILQIS_DATA_PLANE": str(self.root / "plane.sqlite3"),
+                "BILQIS_ATLAS_ARTIFACT_ROOT": str(self.root / "atlas"),
+            })
         self.environment.start()
 
     def tearDown(self):
@@ -103,7 +106,7 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
     def read_receipt(self, features):
         """Read the live accepted receipt under the custody and source seams."""
         with shape_patch(), self.source_replay(features):
-            return read_accepted_generation_feature_receipt(self.pointer, "/artifact")
+            return read_accepted_generation_feature_receipt(self.pointer)
 
     def test_accepted_generation_mints_source_replayed_receipt(self):
         features = source_features()
@@ -150,7 +153,7 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
         with shape_patch(), self.source_replay(features):
             with self.assertRaises(BilqisError) as failure:
                 verify_accepted_generation_feature_receipt(
-                    self.pointer, "/artifact", forged)
+                    self.pointer, forged)
         self.assertEqual(
             failure.exception.context["reason"], "BAMF_FEATURE_RECEIPT_MISMATCH")
 
@@ -189,7 +192,7 @@ with shape_patch(), patch.object(
         feature_authority, "load_pinned_atlas_snapshot",
         side_effect=frozen_snapshot), patch.object(
         feature_authority, "build_feature_manifest", return_value=features):
-    print(read_accepted_generation_feature_receipt(Path(__import__('sys').argv[1]), "/artifact").digest)
+    print(read_accepted_generation_feature_receipt(Path(__import__('sys').argv[1])).digest)
 """, str(self.pointer)],
             cwd=Path.cwd(), env=os.environ.copy(), text=True,
             capture_output=True, check=True)

@@ -39,7 +39,7 @@ class AcceptedFeatureHistoryTests(FeatureLineageCase):
         parent_acceptance.write_text(json.dumps(record))
 
         with shape_patch(), self.source_replay(root), self.assertRaises(BilqisError):
-            read_accepted_generation_feature_lineage(self.pointer, "/artifact")
+            read_accepted_generation_feature_lineage(self.pointer)
 
     def test_long_accepted_history_has_no_python_recursion_ceiling(self):
         root = source_features()
@@ -71,7 +71,7 @@ class AcceptedFeatureHistoryTests(FeatureLineageCase):
                 return_value="a" * 64), patch.object(
                 feature_authority, "_authenticate_features", return_value=root):
             current, current_binding, predecessor = feature_authority._accepted_feature_chain(
-                self.run, manifests[-1], students[manifests[-1]], "/artifact",
+                self.run, manifests[-1], students[manifests[-1]],
                 expected_acceptance_sha256="b" * 64)
 
         self.assertIs(current, root)

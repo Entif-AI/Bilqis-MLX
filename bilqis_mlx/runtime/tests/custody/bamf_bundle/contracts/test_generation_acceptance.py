@@ -48,7 +48,10 @@ class GenerationAcceptanceProvenanceTests(unittest.TestCase):
         self.root = Path(self.temporary.name)
         self.run = self.root / "run"
         self.environment = patch.dict(
-            os.environ, {"BILQIS_DATA_PLANE": str(self.root / "plane.sqlite3")})
+            os.environ, {
+                "BILQIS_DATA_PLANE": str(self.root / "plane.sqlite3"),
+                "BILQIS_ATLAS_ARTIFACT_ROOT": str(self.root / "atlas"),
+            })
         self.environment.start()
 
     def tearDown(self):
@@ -173,7 +176,7 @@ class GenerationAcceptanceProvenanceTests(unittest.TestCase):
                       "load_pinned_atlas_snapshot", side_effect=lambda selection: selection):
             with self.assertRaises(BilqisError) as failure:
                 read_accepted_generation_feature_receipt(
-                    self.run / "bamf-state.json", "/artifact")
+                    self.run / "bamf-state.json")
         self.assertEqual(
             failure.exception.context["reason"],
             "BAMF_GENERATION_ACCEPTANCE_MISSING")
