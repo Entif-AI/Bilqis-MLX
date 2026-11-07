@@ -363,3 +363,71 @@ Truthful disposition remains unchanged: H3 is historical FAIL; six findings are 
 Major 3 remains open upstream on production temporal-authority production. No H4, final
 PR, merge of #752 into unified/main, issue closure, neural mutation, trainer run, or
 Prometheus use is authorized or implied.
+
+### Major 3 closure after reviewed #906 integration
+
+The upstream authority gap is now resolved through reviewed integration rather than
+a branch-local synthetic time source. PR #907 merged #906 into reviewed unified at
+`fd9ef2890149ab5ae395640ce980a20f13a388c6`, carrying semantic repair
+`3b80a76c0acafce79a061174554fb8ade0c62618`.
+
+The canonical #752 branch merged that reviewed unified at
+`b177af8cd545d40454a9c7b26c9e4ab1f49fc640`. The only semantic integration
+conflict was accepted-generation custody: #752 keeps the split
+`accepted_runtime.py` owner while consuming #478's reviewed
+`_require_published_acceptance(...)` check at both cold and in-memory accepted
+generation boundaries.
+
+The former synthetic Major-3 witness was replaced with the actual producer to
+consumer path. The regression now:
+
+1. obtains `SourceContextTransitionAuthority` from
+   `issue_source_context_transition_authority(SELECTION)`;
+2. derives task, policy, frontier and finite validity only from that hash-pinned
+   source/policy authority;
+3. retains a production `PackedFrameArtifactOwner` whose TIME edge names the
+   approved context digest;
+4. crosses only the owner-issued boundary using `source_lesson_expiry_task(...)`;
+5. records the transition through `AcceptedRuntimeHost.record_context_transition(...)`;
+6. persists `BAMF_C09_CONTEXT_INVALIDATION` without a `CorrectionEvent` or signer;
+7. proves `BAMF_C09_ARTIFACT_HELD` before live retained-artifact reuse; and
+8. clears process-local custody, rebinds the accepted generation, and proves the
+   same hold after cold replay.
+
+The integrated behavioral test landed at
+`3c6d08cd119fbf47b87147b65121b9aad2e1edc6`. Current-unified structure policy
+then required the accepted-runtime test module to be split below the 240-line
+threshold. That behavior-preserving split and source-owned temporal fixture
+extraction landed at
+`cf1e46bb576be119fe99e48ad113d7319d42ef43`.
+
+Post-integration proof:
+
+- reviewed #478 acceptance and publication durability: **28/28 PASS**;
+- accepted #752 correction runtime, including the real #906 temporal path:
+  **9/9 PASS**;
+- complete C09 correction directory: **37/37 PASS**;
+- preservation ring across accepted-runtime custody/recovery, stale replay,
+  motif ownership, capability-support lineage/ownership, exact-cache authority,
+  and production cold-read custody: **45/45 PASS**;
+- #906 source-authority contracts: **10/10 PASS**;
+- exact mounted A01 source witness: **3/3 PASS, 0 skips**;
+- `quality:changed` against reviewed unified: **PASS**, development structure
+  and governance integrity 0 violations, 0 new changed-file smell findings,
+  legacy-trainer authority 7/7 PASS, BAMF flow control 15/15 PASS;
+- BAMF contract mirrors: **43/43 PASS**;
+- `git diff --check`: **PASS**.
+
+The legacy-trainer checker initially failed on pristine reviewed unified
+`fd9ef289...` because the newly merged #906 receipt named a legacy-trainer
+check without naming the canonical source run. The same failure reproduced on
+an untouched detached unified worktree. The #752 integration therefore adds only
+the missing canonical source path to that receipt; no #906 behavior changes.
+
+Engineering disposition: all seven historical H3 findings now have integrated
+repairs and the previously open Major 3 authority seam has an end-to-end
+production-path witness. Historical H3 remains immutable **FAIL - 3 Blockers,
+4 Majors, 0 Nits**. This section does not claim H4 PASS. The user explicitly
+authorized continuation of #752 after #907 merged, satisfying the prior gate for
+the next whole-candidate EGM review. No neural execution, trainer run, H4 verdict,
+PR merge, or issue closure is implied.

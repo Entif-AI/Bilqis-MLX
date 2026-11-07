@@ -133,9 +133,9 @@
       "issue": 752,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "03e7a3c060bc49962ccfe049417090ea2c1c6ec0",
+      "head_sha": "cf1e46bb576be119fe99e48ad113d7319d42ef43",
       "preserved_branch": "codex/752-post-egm-h1-fixes-20261107",
-      "summary": "H3 historical FAIL preserved. #906 producer authority is EGM-Passed and merged into reviewed unified as PR #907 / fd9ef289, and the user explicitly resumed #752. Lane-C consumer c8c96758 remains the accepted durable C09ContextInvalidation path. The branch is integrating current unified, including #478 custody hardening, before full Major 3 proof and the next whole-candidate review.",
+      "summary": "H3 historical FAIL preserved. All seven H3 findings are now engineering-repaired after reviewed #906 merged as fd9ef289. Canonical #752 consumed current unified at b177af8c, preserved #478 accepted-custody checks in the split accepted_runtime owner, and replaced the synthetic Major-3 witness with the real source-owned temporal authority -> durable C09 invalidation -> live/cold retained hold path. Current proof: 28/28 custody, 9/9 accepted runtime, 37/37 correction, 45/45 preservation, #906 10/10 + real A01 3/3; changed-scope quality and BAMF contracts green. Exact whole candidate is ready for the user-authorized H4 EGM review.",
       "resume_trigger": null
     },
     {
