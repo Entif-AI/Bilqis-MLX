@@ -140,7 +140,7 @@ def legacy_numeric_staircase_preflight(
         "final_maximum": FINAL_MAXIMUM,
         "resume_maximum": (
             maximum if isinstance(maximum, int)
-            else scope.get("resume_maximum", 3)),
+            else scope.get("resume_maximum", INITIAL_MAXIMUM)),
         "source_student_sha256": checkpoint_sha256,
         "neural_updates": 0,
         "profile_id": factory.get("profile_id") if factory is not None else None,

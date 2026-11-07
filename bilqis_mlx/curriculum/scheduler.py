@@ -1210,6 +1210,10 @@ def read_state(path: Path, program) -> SchoolState:
     raw["promotion_sweep_scores"] = tuple(
         (capability, correct, total)
         for capability, correct, total in raw.get("promotion_sweep_scores", ()))
+    raw["promotion_sweep_retry_scores"] = tuple(
+        (capability, correct, total)
+        for capability, correct, total in raw.get(
+            "promotion_sweep_retry_scores", ()))
     raw["introduction_frontiers"] = tuple(
         (grade, stage) for grade, stage in raw.get("introduction_frontiers", ()))
     raw["current_student"] = Checkpoint(**raw["current_student"])
