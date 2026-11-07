@@ -25,13 +25,17 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
 class PublicationDurabilityTests(unittest.TestCase):
     def setUp(self):
         self.temporary = TemporaryDirectory()
+        self.data_plane_temporary = TemporaryDirectory()
         self.root = Path(self.temporary.name)
         self.run = self.root / 'run'
-        self.environment = patch.dict(os.environ, {'BILQIS_DATA_PLANE': str(self.root / 'plane.sqlite3')})
+        self.environment = patch.dict(
+            os.environ,
+            {'BILQIS_DATA_PLANE': str(Path(self.data_plane_temporary.name) / 'plane.sqlite3')})
         self.environment.start()
 
     def tearDown(self):
         self.environment.stop()
+        self.data_plane_temporary.cleanup()
         self.temporary.cleanup()
 
     def publish(self, value):
@@ -110,6 +114,32 @@ class PublicationDurabilityTests(unittest.TestCase):
 
         with patch.object(os, 'fsync', side_effect=sync), \
                 patch.object(publication_storage, '_fsync_directory', side_effect=sync_path), \
+                patch.object(publication, '_atomic_pointer', side_effect=install):
+            self.publish(candidate(parent_state()))
+
+    def test_fresh_nested_run_root_ancestry_is_durable_before_pointer_install(self):
+        durable = set()
+        fsync, pointer = os.fsync, publication._atomic_pointer
+        self.run = self.root / 'runs' / 'nested' / 'run'
+
+        def identity(path):
+            state = path.stat()
+            return state.st_dev, state.st_ino
+
+        def sync(fd):
+            state = os.fstat(fd)
+            durable.add((state.st_dev, state.st_ino))
+            fsync(fd)
+
+        def install(path, pointer_value):
+            for directory in (
+                    self.run, self.run.parent, self.run.parent.parent, self.root):
+                self.assertIn(
+                    identity(directory), durable,
+                    f'fresh run ancestry must be durable before pointer publication: {directory}')
+            pointer(path, pointer_value)
+
+        with patch.object(os, 'fsync', side_effect=sync), \
                 patch.object(publication, '_atomic_pointer', side_effect=install):
             self.publish(candidate(parent_state()))
 
