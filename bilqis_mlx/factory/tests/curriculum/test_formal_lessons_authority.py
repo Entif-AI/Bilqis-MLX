@@ -16,7 +16,7 @@ from bilqis_mlx.factory.curriculum.formal_lesson_types import formal_variation_a
 from bilqis_mlx.semantics.atlas_projection import (
     FormalDomainBinding, compile_atlas_release, persist_atlas_release,
 )
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.cognitive_operators import TypedValue
 
 from bilqis_mlx.factory.tests.formal_lesson_fixtures import (
@@ -103,9 +103,7 @@ class FormalLessonAuthorityTests(unittest.TestCase):
         binding, typed = _case(
             "COUNT", ("EntitySet", ("alpha", "beta")))
         source = _source()
-        self.assertIn(
-            (FORMAL[2][0], "OPERATOR_SOURCE_SIGNATURE_MISMATCH"),
-            source.uncovered)
+        self.assertEqual(source.uncovered, ())
         with patch(
                 "bilqis_mlx.factory.formal_lessons.resolve_formal_source_operators",
                 return_value=source):
@@ -114,7 +112,7 @@ class FormalLessonAuthorityTests(unittest.TestCase):
                     _selection(), FORMAL[2][0], typed, binding)
         self.assertEqual(
             caught.exception.context["reason"],
-            "BAMF_FORMAL_LESSON_SOURCE_UNCOVERED")
+            "BAMF_OPERATOR_SIGNATURE_MISMATCH")
 
     def test_checker_rejects_forged_gold_without_calling_generator(self):
         binding, inputs = _case("SUCC", ("Number", 2))

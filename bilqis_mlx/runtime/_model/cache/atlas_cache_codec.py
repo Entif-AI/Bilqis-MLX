@@ -218,15 +218,25 @@ from .atlas_cache_records import (
     CACHE_MODE_ROT3,
     CacheArtifact,
     CacheBinding,
-    encode_cold_cache,
-    decode_cache,
 )
 
 from .atlas_cache_binding import (
     CacheByteCost, binding_digest, cache_byte_cost, record_header_bytes,
-    require_cache_binding,
 )
 from .atlas_cache_policy import (
     CacheInferenceResult, CacheQualityObservation, CacheQualityPolicy,
-    interactive_cache_inference, reference_candidate_evaluation,
+    reference_candidate_evaluation,
+)
+from .atlas_cache_rebuild import (  # noqa: E402
+    CacheEligibilityReceipt,
+    CacheRebuildResult,
+    validate_eligibility,
+)
+from .atlas_cache_runtime import (
+    CacheAuthorityRuntime,
+    decode_cache,
+    encode_cold_cache,
+    interactive_cache_inference,
+    issue_cache_eligibility,
+    rebuild_revoked_cache,
 )

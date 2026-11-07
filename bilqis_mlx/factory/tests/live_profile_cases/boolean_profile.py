@@ -66,7 +66,7 @@ release_rows = []
 for capability in release.execution_plan.grade_map["B"].capabilities:
     release_rows.extend(draw_executable_release_rows(
         source, graph, release, registry,
-        legacy_course=course, seed=20261019,
+        seed=20261019,
         capability=capability))
 assert release_rows == rows
 release_heads = answer_heads_from_executable_release(

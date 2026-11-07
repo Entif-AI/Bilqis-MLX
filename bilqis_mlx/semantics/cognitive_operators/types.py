@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 from fractions import Fraction
-from ..domains import FiniteDomain, contract_digest
-from ..frame_schema import ConceptRef
+from ..foundation.domains import FiniteDomain, contract_digest
+from .._frame_schema.roles import ConceptRef
 from .common import VALUE_SCHEMA, SOURCE_OPERAND_SCHEMA, _SHA, _UNITS, _invalid
 
 class ValueState(str, Enum):
@@ -82,9 +82,13 @@ class TypedValue:
         validators = {
             "Boolean": lambda v: type(v) is bool,
             "Number": lambda v: type(v) is int,
+            "NumberSet": lambda v: isinstance(v, tuple)
+            and all(type(x) is int and x >= 0 for x in v)
+            and v == tuple(sorted(set(v))),
             "Index": lambda v: type(v) is int and v >= 0,
             "Entity": lambda v: isinstance(v, str) and bool(v),
             "RoleId": lambda v: isinstance(v, str) and bool(v),
+            "OperatorId": lambda v: isinstance(v, str) and bool(v),
             "TypeName": lambda v: isinstance(v, str) and bool(v),
             "UnitName": lambda v: isinstance(v, str) and v in _UNITS,
             "EventStatus": lambda v: v in ("PLANNED", "OCCURRED"),

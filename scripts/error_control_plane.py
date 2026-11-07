@@ -12,6 +12,7 @@ import ast
 from collections import Counter, defaultdict
 from dataclasses import asdict
 import json
+import os
 from pathlib import Path
 import sys
 
@@ -21,6 +22,14 @@ OPERATIONS = ROOT / "docs" / "operations"
 CATALOG_JSON = OPERATIONS / "error_catalog.json"
 MANUAL = OPERATIONS / "ERROR_FIELD_MANUAL.md"
 BASELINE = ROOT / "docs/evidence/development/operator_contract_baseline.json"
+
+
+def quality_base_ref(explicit: str | None, environ=None) -> str | None:
+    """Use the exact reviewed base when a local/CI quality caller supplies it."""
+    if explicit:
+        return explicit
+    environment = os.environ if environ is None else environ
+    return environment.get("BILQIS_QUALITY_BASE_REF") or None
 
 
 def _call_name(node: ast.AST) -> str:
@@ -317,7 +326,7 @@ def main() -> int:
     if args.write_docs:
         write_docs()
         return 0
-    return check(args.base_ref)
+    return check(quality_base_ref(args.base_ref))
 
 
 if __name__ == "__main__":

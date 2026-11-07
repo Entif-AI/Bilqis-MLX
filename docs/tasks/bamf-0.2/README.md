@@ -32,6 +32,17 @@ proceeds concurrently. MLX evaluation and neural updates use one serialized M3
 Ultra lane. The first durable student gate is [C16](issues/C16.md); full delivery
 is [C15](issues/C15.md).
 
+## Latest legacy trainer source
+
+Any issue that needs to adapt behavior from the latest legacy trainer uses the
+preserved Factory replay at
+`/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`,
+not the Prometheus training run. See
+[`LEGACY_TRAINER_AUTHORITY.md`](LEGACY_TRAINER_AUTHORITY.md) and run
+`python3 -B scripts/check_legacy_trainer_authority.py --live` before relying on
+legacy behavior in implementation or review. Prometheus remains historical lineage
+evidence only.
+
 ## Flow control and parked PR discipline
 
 **Compaction recovery:** Resume the same issue and preserved branch/worktree when
@@ -65,6 +76,25 @@ when the merged delta intersects the suite's dependency surface.
 Hosted `quality.yml` follows this rule: it classifies the PR/push diff first and
 skips broad semantic/custody test suites when no expensive-test dependency surface
 changed. Manual dispatch remains an explicit request for fresh verification.
+
+### Decompose freely; gate only net-new scope
+
+Issue/branch creation is not the waste target. A strict subset of already-required
+parent acceptance may be decomposed into its own issue, branch/worktree, and PR
+whenever that improves parallelism, faster turn-in/failure, review isolation, or
+earlier information. Record the parent and inherited clauses; do not add acceptance.
+
+Apply the root `AGENTS.md` gate only to obligations that do **not** trace to existing
+required scope. Those expansions must be justified as needed for current delivery,
+parked, or dropped. If a child grows past 3 commits, 3 files, or 250 net changed
+lines, audit traceability: split again if the work is still inherited; gate only
+the untraceable delta. EGM is downstream of scope authority, never its source.
+
+Expensive diagnostics obey the same spend discipline. Do not repeatedly rebuild a
+live Factory/model/bundle stack in separate ad hoc Python invocations while varying
+one seed or hypothesis. Reuse identical results, parameterize repeated experiments
+inside one process, and after two failed full-cost witness attempts switch to a
+smaller staged/profiled proof before another end-to-end run.
 
 The lane is not a conveyor belt that must keep every open PR warm. The normal limit
 is **six `ACTIVE` implementation leaves per lane** under the 2026-11-04 owner

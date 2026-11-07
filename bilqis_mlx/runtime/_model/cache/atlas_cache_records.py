@@ -7,9 +7,11 @@ import numpy as np
 
 if TYPE_CHECKING:
     from .atlas_cache_codec import Rot3Manifest
+    from .atlas_cache_runtime import CacheAuthorityRuntime
 
 from .atlas_cache_binding import (
-    CacheArtifact, CacheBinding, binding_digest, require_cache_binding, validate_binding,
+    CacheArtifact, CacheBinding, binding_digest, _payload_authenticator_fields,
+    _require_cache_binding, validate_binding,
     cache_byte_cost, MAX_EFFECTIVE_BITS, CACHE_MODE_FP32, CACHE_MODE_ROT3,
 )
 
@@ -48,14 +50,24 @@ def _validate_manifest(manifest: Rot3Manifest) -> None:
     manifest.validate()
 
 
-def _fp32_artifact(values, bound) -> CacheArtifact:
+def _fp32_artifact(values, bound, binding, authority) -> CacheArtifact:
     count, width = values.shape
-    return CacheArtifact(CACHE_MODE_FP32, count, count, width, bound, b"", b"", b"",
-                         np.asarray(values, dtype="<f4", order="C").tobytes(order="C"))
+    payload = np.asarray(values, dtype="<f4", order="C").tobytes(order="C")
+    tag = _payload_authenticator_fields(
+        authority, binding, CACHE_MODE_FP32, count, count, width, bound,
+        b"", b"", b"", payload,
+    )
+    return CacheArtifact(
+        CACHE_MODE_FP32, count, count, width, bound, b"", b"", b"", payload, tag,
+    )
 
 
-def encode_cold_cache(
-    cache, codec_manifest: Rot3Manifest, *, binding: CacheBinding,
+def _encode_cold_cache(
+    cache,
+    codec_manifest: Rot3Manifest,
+    *,
+    binding: CacheBinding,
+    authority: CacheAuthorityRuntime,
 ) -> CacheArtifact:
     """Encode one [vectors,24] cold record under the B14.2 size policy."""
     _validate_manifest(codec_manifest)
@@ -65,7 +77,7 @@ def encode_cold_cache(
     values = _vectors(cache, codec.HEAD_WIDTH)
     true_vectors = int(values.shape[0])
     if true_vectors < MIN_COMPRESSED_VECTORS:
-        return _fp32_artifact(values, bound)
+        return _fp32_artifact(values, bound, binding, authority)
 
     padded_vectors = (
         (true_vectors + BLOCK_VECTORS - 1) // BLOCK_VECTORS * BLOCK_VECTORS
@@ -88,26 +100,50 @@ def encode_cold_cache(
         relative[nonzero] = np.rint(scaled).astype(np.uint8)
 
     codes = codec.quantize_directions(padded).reshape(-1)
+    direction_codes = codec.pack_3bit(codes)
+    relative_norms = relative.reshape(-1).tobytes(order="C")
+    block_max_norms = np.asarray(
+        maxima, dtype="<f4", order="C"
+    ).tobytes(order="C")
+    tag = _payload_authenticator_fields(
+        authority,
+        binding,
+        CACHE_MODE_ROT3,
+        true_vectors,
+        padded_vectors,
+        codec.HEAD_WIDTH,
+        bound,
+        direction_codes,
+        relative_norms,
+        block_max_norms,
+        b"",
+    )
     artifact = CacheArtifact(
         CACHE_MODE_ROT3,
         true_vectors,
         padded_vectors,
         codec.HEAD_WIDTH,
         bound,
-        codec.pack_3bit(codes),
-        relative.reshape(-1).tobytes(order="C"),
-        np.asarray(maxima, dtype="<f4", order="C").tobytes(order="C"),
+        direction_codes,
+        relative_norms,
+        block_max_norms,
         b"",
+        tag,
     )
     if cache_byte_cost(artifact).effective_bits_per_channel > MAX_EFFECTIVE_BITS:
-        return _fp32_artifact(values, bound)
+        return _fp32_artifact(values, bound, binding, authority)
+    _require_cache_binding(artifact, binding, authority)
     return artifact
 
 
-def _validate_artifact(artifact: CacheArtifact, binding: CacheBinding) -> None:
+def _validate_artifact(
+    artifact: CacheArtifact,
+    binding: CacheBinding,
+    authority: CacheAuthorityRuntime,
+) -> None:
     if not isinstance(artifact, CacheArtifact) or not isinstance(binding, CacheBinding):
         _invalid()
-    require_cache_binding(artifact, binding)
+    _require_cache_binding(artifact, binding, authority)
     codec = _codec()
     if (
         type(artifact.true_vectors) is not int
@@ -127,9 +163,14 @@ def _validate_artifact(artifact: CacheArtifact, binding: CacheBinding) -> None:
         _invalid()
 
 
-def decode_cache(artifact: CacheArtifact, expected_binding: CacheBinding) -> np.ndarray:
+def _decode_cache(
+    artifact: CacheArtifact,
+    expected_binding: CacheBinding,
+    *,
+    authority: CacheAuthorityRuntime,
+) -> np.ndarray:
     """Decode B14.2 record bytes and restore the stored vector norm."""
-    _validate_artifact(artifact, expected_binding)
+    _validate_artifact(artifact, expected_binding, authority)
     codec = _codec()
     if artifact.mode == CACHE_MODE_FP32:
         if (

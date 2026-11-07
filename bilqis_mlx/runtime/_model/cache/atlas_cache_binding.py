@@ -8,12 +8,16 @@ import math
 import struct
 from typing import TYPE_CHECKING
 
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
 if TYPE_CHECKING:
     from .atlas_cache_codec import Rot3Manifest
+    from .atlas_cache_runtime import CacheAuthorityRuntime
 
 
 DIGEST_HEX_CHARS = 64
 BINDING_DIGEST_BYTES = 32
+PAYLOAD_BINDING_TAG_BYTES = 16
 RECORD_HEADER_LIMIT = 64
 RECORD_HEADER_MAGIC = b"B3C1"
 MODE_FP32_BYTE = b"F"
@@ -32,12 +36,20 @@ class CacheBinding:
     generation_sha256: str
     lineage_sha256: str
     topology_sha256: str
+    source_release_sha256: str
+    semantic_release_sha256: str
     source_rights_sha256: str
+    rights_purpose_sha256: str
+    policy_epoch_sha256: str
+    context_eligibility_sha256: str
     causal_prefix_sha256: str
     masks_sha256: str
     scope_sha256: str
     key_sha256: str
+    inference_state_sha256: str
     offset: int
+    artifact_authority_id: str
+    artifact_authority_public_key_hex: str
 
 
 @dataclass(frozen=True)
@@ -53,9 +65,14 @@ class CacheArtifact:
     relative_norms: bytes
     block_max_norms_fp32: bytes
     fp32_payload: bytes
+    payload_binding_tag: bytes | None = None
     header_bytes: bytes | None = None
 
     def __post_init__(self) -> None:
+        if type(self.payload_binding_tag) is not bytes or (
+            len(self.payload_binding_tag) != PAYLOAD_BINDING_TAG_BYTES
+        ):
+            _invalid()
         if self.header_bytes is None:
             object.__setattr__(self, "header_bytes", record_header_bytes(self))
 
@@ -98,14 +115,31 @@ def validate_binding(binding: CacheBinding, codec_manifest=None) -> None:
         binding.generation_sha256,
         binding.lineage_sha256,
         binding.topology_sha256,
+        binding.source_release_sha256,
+        binding.semantic_release_sha256,
         binding.source_rights_sha256,
+        binding.rights_purpose_sha256,
+        binding.policy_epoch_sha256,
+        binding.context_eligibility_sha256,
         binding.causal_prefix_sha256,
         binding.masks_sha256,
         binding.scope_sha256,
         binding.key_sha256,
+        binding.inference_state_sha256,
     )):
         _invalid()
     if type(binding.offset) is not int or not 0 <= binding.offset <= MAX_U32:
+        _invalid()
+    if (not isinstance(binding.artifact_authority_id, str)
+            or not binding.artifact_authority_id):
+        _invalid()
+    if not _sha256_hex(binding.artifact_authority_public_key_hex):
+        _invalid()
+    try:
+        Ed25519PublicKey.from_public_bytes(
+            bytes.fromhex(binding.artifact_authority_public_key_hex)
+        )
+    except ValueError:
         _invalid()
 
 
@@ -124,12 +158,20 @@ def binding_digest(binding: CacheBinding) -> bytes:
             "rotation_seed": manifest.rotation_seed,
         },
         "generation_sha256": binding.generation_sha256,
+        "artifact_authority_id": binding.artifact_authority_id,
+        "artifact_authority_public_key_hex": binding.artifact_authority_public_key_hex,
+        "inference_state_sha256": binding.inference_state_sha256,
         "key_sha256": binding.key_sha256,
         "lineage_sha256": binding.lineage_sha256,
         "masks_sha256": binding.masks_sha256,
         "offset": binding.offset,
+        "policy_epoch_sha256": binding.policy_epoch_sha256,
+        "rights_purpose_sha256": binding.rights_purpose_sha256,
         "scope_sha256": binding.scope_sha256,
+        "semantic_release_sha256": binding.semantic_release_sha256,
+        "source_release_sha256": binding.source_release_sha256,
         "source_rights_sha256": binding.source_rights_sha256,
+        "context_eligibility_sha256": binding.context_eligibility_sha256,
         "topology_sha256": binding.topology_sha256,
     }
     canonical = json.dumps(
@@ -138,12 +180,94 @@ def binding_digest(binding: CacheBinding) -> bytes:
     return hashlib.sha256(canonical).digest()
 
 
+
+def _payload_authenticator_subject_fields(
+    mode: str,
+    true_vectors: int,
+    padded_vectors: int,
+    head_width: int,
+    binding_sha256: bytes,
+    direction_codes: bytes,
+    relative_norms: bytes,
+    block_max_norms_fp32: bytes,
+    fp32_payload: bytes,
+) -> bytes:
+    """Hash one exact cache record subject before host-keyed authentication."""
+    if type(binding_sha256) is not bytes or len(binding_sha256) != BINDING_DIGEST_BYTES:
+        _invalid()
+    payloads = (
+        direction_codes, relative_norms, block_max_norms_fp32, fp32_payload,
+    )
+    if not all(type(payload) is bytes for payload in payloads):
+        _invalid()
+    if mode == CACHE_MODE_FP32:
+        mode_byte = MODE_FP32_BYTE
+    elif mode == CACHE_MODE_ROT3:
+        mode_byte = MODE_ROT3_BYTE
+    else:
+        _invalid()
+    if (type(true_vectors) is not int
+            or type(padded_vectors) is not int
+            or type(head_width) is not int):
+        _invalid()
+    digest = hashlib.sha256()
+    digest.update(b"bamf-cache-authenticator-subject-v1\0")
+    digest.update(binding_sha256)
+    digest.update(mode_byte)
+    digest.update(struct.pack("<III", true_vectors, padded_vectors, head_width))
+    for payload in payloads:
+        digest.update(struct.pack("<Q", len(payload)))
+        digest.update(payload)
+    return digest.digest()
+
+
+def _payload_authenticator_subject(artifact: CacheArtifact) -> bytes:
+    """Build the exact subject authenticated by the host cache capability."""
+    if not isinstance(artifact, CacheArtifact):
+        _invalid()
+    return _payload_authenticator_subject_fields(
+        artifact.mode,
+        artifact.true_vectors,
+        artifact.padded_vectors,
+        artifact.head_width,
+        artifact.binding_sha256,
+        artifact.direction_codes,
+        artifact.relative_norms,
+        artifact.block_max_norms_fp32,
+        artifact.fp32_payload,
+    )
+
+
+def _payload_authenticator_fields(
+    authority: CacheAuthorityRuntime,
+    binding: CacheBinding,
+    mode: str,
+    true_vectors: int,
+    padded_vectors: int,
+    head_width: int,
+    binding_sha256: bytes,
+    direction_codes: bytes,
+    relative_norms: bytes,
+    block_max_norms_fp32: bytes,
+    fp32_payload: bytes,
+) -> bytes:
+    subject = _payload_authenticator_subject_fields(
+        mode, true_vectors, padded_vectors, head_width, binding_sha256,
+        direction_codes, relative_norms, block_max_norms_fp32, fp32_payload,
+    )
+    return authority._authenticate(binding, subject)
+
+
 def record_header_bytes(artifact: CacheArtifact) -> bytes:
     from .atlas_cache_codec import HEAD_WIDTH
     if not isinstance(artifact, CacheArtifact):
         _invalid()
     if type(artifact.binding_sha256) is not bytes or (
         len(artifact.binding_sha256) != BINDING_DIGEST_BYTES
+    ):
+        _invalid()
+    if type(artifact.payload_binding_tag) is not bytes or (
+        len(artifact.payload_binding_tag) != PAYLOAD_BINDING_TAG_BYTES
     ):
         _invalid()
     if (type(artifact.true_vectors) is not int
@@ -161,6 +285,7 @@ def record_header_bytes(artifact: CacheArtifact) -> bytes:
         RECORD_HEADER_MAGIC
         + mode
         + artifact.binding_sha256
+        + artifact.payload_binding_tag
         + struct.pack("<II", artifact.true_vectors, artifact.padded_vectors)
     )
     if len(header) > RECORD_HEADER_LIMIT:
@@ -193,13 +318,24 @@ def cache_byte_cost(artifact: CacheArtifact) -> CacheByteCost:
     return CacheByteCost(header_bytes, payload_bytes, total, bits)
 
 
-def require_cache_binding(artifact: CacheArtifact, binding: CacheBinding) -> None:
+def _require_cache_binding(
+    artifact: CacheArtifact,
+    binding: CacheBinding,
+    authority: CacheAuthorityRuntime,
+) -> None:
     """Reject stale rights/generation/prefix/mask/scope state before decode."""
+    from .atlas_cache_runtime import _require_authority
     if not isinstance(artifact, CacheArtifact):
         _invalid()
+    _require_authority(authority)
     validate_binding(binding)
     if (type(artifact.header_bytes) is not bytes
         or artifact.header_bytes != record_header_bytes(artifact)):
         _invalid()
     if artifact.binding_sha256 != binding_digest(binding):
         _invalid()
+    authority._verify(
+        binding,
+        _payload_authenticator_subject(artifact),
+        artifact.payload_binding_tag,
+    )

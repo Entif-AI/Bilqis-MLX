@@ -36,6 +36,9 @@ PHYSICAL_OWNER_GROUPS = frozenset({
 def logical_source_path(path: str) -> str:
     """Preserve established module identity across runtime physical grouping."""
     parts = Path(path).parts
+    if (len(parts) >= 4
+            and parts[:3] == ("bilqis_mlx", "semantics", "_cognitive_dag")):
+        return "bilqis_mlx/semantics/cognitive_dag.py"
     if len(parts) >= 4 and parts[:2] == ("bilqis_mlx", "runtime") and parts[2] in PHYSICAL_OWNER_GROUPS:
         return Path(*parts[:2], *parts[3:]).as_posix()
     return Path(path).as_posix()
@@ -197,8 +200,14 @@ def _base_findings(merge_base,records):
     for status,old,new in records:
         result=subprocess.run(['git','show',f'{merge_base}:{old}'],cwd=ROOT,text=True,
                               capture_output=True)
+        logical_old = logical_source_path(new)
+        if result.returncode != 0 and logical_old != new:
+            canonical=subprocess.run(
+                ['git','show',f'{merge_base}:{logical_old}'],cwd=ROOT,text=True,
+                capture_output=True)
+            if canonical.returncode==0:
+                result=canonical
         if result.returncode != 0 and status.startswith('R'):
-            logical_old = logical_source_path(new)
             owners=physical_owners[logical_old]
             if len(owners)==1:
                 result=subprocess.run(['git','show',f'{merge_base}:{owners[0]}'],

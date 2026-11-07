@@ -1,0 +1,52 @@
+{
+  "schema": "bilqis.developmental-evidence-policy/v1",
+  "current_stage": "FOUNDATION_ACQUISITION",
+  "generalization_status": "MEASURE_ONLY",
+  "fixed_generalization_gate_authority": "EXPLICIT_HUMAN_ADMISSION",
+  "current_acceptance": {
+    "teacher_forced_gold_allowed": true,
+    "same_specimen_replay_allowed": true,
+    "exact_memorization_counts_as_learning": true,
+    "cache_memoization_retrieval_counts_as_learning": true,
+    "held_out_required": false,
+    "independent_source_family_required": false,
+    "fresh_episode_required": false,
+    "novel_composition_required": false,
+    "allowed_evidence_kinds": [
+      "TEACHER_FORCED_ACQUISITION",
+      "EXACT_TAUGHT_RECALL",
+      "TAUGHT_COMPOSITION_REPLICATION"
+    ]
+  },
+  "alpha_advancement": {
+    "basis": "CURRENT_EARNED_COMPLEXITY_SUCCESS_RATIO",
+    "previously_shown_examples_count": true,
+    "held_out_required": false,
+    "novelty_required": false,
+    "pool_growth": "INCREMENTAL_OR_LOGARITHMIC",
+    "complexity_growth": "EARNED"
+  },
+  "candidate_retention": {
+    "immediate_target_gain_required": false,
+    "protected_regression_checks_required": true,
+    "no_gain_strategy_retirement_remains_teacher_owned": true
+  },
+  "novelty_measurement": {
+    "required": true,
+    "authorizing": false,
+    "may_veto_advancement": false,
+    "record_pass_failure_ratios": true,
+    "record_breakdown_frontier": true,
+    "axes": [
+      "SURFACE_IDENTITY",
+      "ROLE_BINDING",
+      "RELATION_POLARITY",
+      "COMPOSITION_DEPTH",
+      "DISTRACTOR_LOAD",
+      "SEMANTIC_DISTANCE"
+    ]
+  },
+  "future_fixed_gate": {
+    "requires_explicit_human_admission": true
+  }
+}

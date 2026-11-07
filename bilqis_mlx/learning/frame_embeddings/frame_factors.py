@@ -5,7 +5,7 @@ from typing import Mapping
 import mlx.core as mx
 from bilqis_mlx.runtime.model_topology_v2 import FEATURE_NONE_ROW, GenerationExtents
 from bilqis_mlx.semantics.atlas_features import AtlasFeatures, _factor_overflow
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.context_eligibility import ApprovedContextProjection
 from bilqis_mlx.semantics.frame_schema import FrameInstance
 from .common import FactorGate, _invalid

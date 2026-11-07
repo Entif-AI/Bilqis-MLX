@@ -36,20 +36,10 @@ class TrainingCompilationTests(AtlasTrainingAdapterTest):
         with self.assertRaises(BilqisError):
             self.compile(self.rows, release_sha='f' * 64)
 
-    def test_registered_modality_receives_structured_source_targets_and_plan(self):
-        row = {**self.rows[0], 'gold': {'decisions': ['FALSE', 'END_FRAME']},
-               'answer_plan': {'decisions': [{'id': 'value', 'depends_on': []},
-                                             {'id': 'end', 'depends_on': ['value']}]},
-               'auxiliary_labels': {'role': 'subject'}}
-        def encode(evidence, head):
-            self.assertEqual(evidence.gold, (('decisions', ('FALSE', 'END_FRAME')),))
-            self.assertEqual(evidence.auxiliary_labels, (('role', 'subject'),))
-            self.assertIn(('modalityID', 'answer.binary/v1'), evidence.answer_plan)
-            self.assertIn(('maximum_decisions', 2), evidence.answer_plan)
-            return BamfTarget('binary', evidence.gold, (head.token_ids[0], None), (True, False))
-        item = self.compile([row], encoders={'binary': encode}).rows[0]
-        self.assertEqual(item.target.value, (('decisions', ('FALSE', 'END_FRAME')),))
-        self.assertEqual(item.target.mask, (True, False))
+    def test_caller_cannot_inject_structured_target_encoder(self):
+        import inspect
+        from bilqis_mlx.runtime.atlas_training_adapter import compile_training_batch
+        self.assertNotIn('target_encoders', inspect.signature(compile_training_batch).parameters)
 
     def test_direct_delivery_cannot_claim_another_capability(self):
         wrong = self.context.draw_rows(seed=19, capability='Z.C1', each=1)

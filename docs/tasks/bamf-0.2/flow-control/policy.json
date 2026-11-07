@@ -47,9 +47,46 @@
         "reason": "Focused governance/docs PR implementing the project-owner EGM issue-label lifecycle; it is not BAMF implementation inventory.",
         "authority": "Direct project-owner instruction on 2026-11-02",
         "expires_when": "PR #743 merges or closes."
+      },
+      {
+        "pr": 866,
+        "reason": "Post-merge governance/bookkeeping repair only: reconciles the already-merged A12.1 PR #861 custody fields in Lane A flow-control state and introduces no BAMF implementation or runtime change.",
+        "authority": "AGENTS.md passing-test evidence reuse and review-staleness rules classify documentation, issue/PR bookkeeping, and flow-control-only changes as nonsemantic; open_pr_inventory.non_implementation_exceptions is the existing machine-readable classification mechanism.",
+        "expires_when": "PR #866 merges or closes."
+      },
+      {
+        "pr": 868,
+        "reason": "Post-merge governance/bookkeeping repair only: reconciles the already-merged A10.3 PR #865 custody fields in Lane A flow-control state and introduces no BAMF implementation or runtime change.",
+        "authority": "AGENTS.md passing-test evidence reuse and review-staleness rules classify documentation, issue/PR bookkeeping, and flow-control-only changes as nonsemantic; open_pr_inventory.non_implementation_exceptions is the existing machine-readable classification mechanism.",
+        "expires_when": "PR #868 merges or closes."
+      },
+      {
+        "pr": 870,
+        "reason": "Post-merge governance/bookkeeping repair only: reconciles the already-merged A12.2 PR #869 custody fields in Lane A flow-control state and introduces no BAMF implementation or runtime change.",
+        "authority": "AGENTS.md passing-test evidence reuse and review-staleness rules classify documentation, issue/PR bookkeeping, and flow-control-only changes as nonsemantic; open_pr_inventory.non_implementation_exceptions is the existing machine-readable classification mechanism.",
+        "expires_when": "PR #870 merges or closes."
+      },
+      {
+        "pr": 873,
+        "reason": "Post-merge governance/bookkeeping repair only: reconciles the already-merged A12.3 PR #871 custody fields in Lane A flow-control state and introduces no BAMF implementation or runtime change.",
+        "authority": "AGENTS.md passing-test evidence reuse and review-staleness rules classify documentation, issue/PR bookkeeping, and flow-control-only changes as nonsemantic; open_pr_inventory.non_implementation_exceptions is the existing machine-readable classification mechanism.",
+        "expires_when": "PR #873 merges or closes."
+      },
+      {
+        "pr": 875,
+        "reason": "Final post-merge governance/bookkeeping repair only: reconciles the accepted A12.3 remediation PR #874 custody fields in Lane A flow-control state and introduces no BAMF implementation or runtime change.",
+        "authority": "AGENTS.md passing-test evidence reuse and review-staleness rules classify documentation, issue/PR bookkeeping, and flow-control-only changes as nonsemantic; open_pr_inventory.non_implementation_exceptions is the existing machine-readable classification mechanism.",
+        "expires_when": "PR #875 merges or closes."
       }
     ],
-    "admission_exceptions": [],
+    "admission_exceptions": [
+      {
+        "head_branch": "codex/remediation-egm-708-711-integration-20261103",
+        "reason": "Combined EGM-Mitigation integration candidate for #708, #709, #710 and #711, replacing PRs #804, #805, #806 and #807.",
+        "authority": "Direct project-owner instruction on 2026-11-03 to consolidate the EGM-Mitigation remediation PRs.",
+        "expires_when": "The combined remediation PR merges or closes."
+      }
+    ],
     "initial_drain_status": "COMPLETED_WITH_ISSUE_LABEL_QUEUE",
     "initial_drain_closed_prs": [
       640,

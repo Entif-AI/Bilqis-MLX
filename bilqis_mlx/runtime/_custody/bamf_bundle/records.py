@@ -11,10 +11,14 @@ from bilqis_mlx.data_plane import DataPlaneError
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 
 from .motif_codec import snapshot_from_record, snapshot_to_record
+from .package_import_transition import (
+    PACKAGE_IMPORT_TRANSITION_SCHEMA, validate_package_import_transition,
+)
 from .sidecar_contracts import validate_identity_sidecars
 
 BAMF_BUNDLE_SCHEMA = "bilqis.mlx.bamf-generation-bundle/v2"
-BAMF_POINTER_SCHEMA = "bilqis.mlx.bamf-generation-pointer/v1"
+LEGACY_BAMF_POINTER_SCHEMA = "bilqis.mlx.bamf-generation-pointer/v1"
+BAMF_POINTER_SCHEMA = "bilqis.mlx.bamf-generation-pointer/v2"
 TRANSITION_SCHEMA = "bilqis.mlx.bamf-generation-transition/v1"
 SIDECARS = MappingProxyType({
     "semantic_abi": "semantic-abi.json",
@@ -24,6 +28,7 @@ SIDECARS = MappingProxyType({
     "correction_frontier": "correction-frontier.json",
     "teacher_state": "teacher-state.json",
     "evaluation_contract": "evaluation-contract.json",
+    "step_proofs": "step-proofs.json",
     "outbox": "outbox.json",
 })
 _TRANSITIONS = frozenset({"INITIAL", "RETAINED_CANDIDATE", "PARAMETER_EXTENSION", "MODEL_SWAP"})
@@ -132,6 +137,11 @@ def validate_generation_identity(run_id, generation, parent, implementation):
 
 
 def validate_transition(generation: int, transition: Mapping) -> None:
+    if isinstance(transition, Mapping) and transition.get("schema") == PACKAGE_IMPORT_TRANSITION_SCHEMA:
+        if generation == 0:
+            invalid("BAMF_GENERATION_TRANSITION_INVALID")
+        validate_package_import_transition(transition)
+        return
     if (set(transition) != {"schema", "kind", "invalidate_derived_caches"}
             or transition.get("schema") != TRANSITION_SCHEMA
             or transition.get("kind") not in _TRANSITIONS
@@ -149,6 +159,12 @@ def validate_sidecars(extents, provenance, records: Mapping):
         invalid()
     if (any(not isinstance(records[name], Mapping) for name in SIDECARS
             if name not in ("outbox",)) or type(records["outbox"]) not in (list, tuple)):
+        invalid()
+    proofs = records.get("step_proofs", {
+        "schema": "bilqis.mlx.bamf-step-proofs/v1", "proofs": []})
+    if (set(proofs) != {"schema", "proofs"}
+            or proofs["schema"] != "bilqis.mlx.bamf-step-proofs/v1"
+            or not isinstance(proofs["proofs"], list)):
         invalid()
     validate_identity_sidecars(extents, provenance, records, invalid)
     try:
@@ -195,6 +211,11 @@ def sidecar_records(candidate: BamfBundleCandidate) -> dict:
         "correction_frontier": dict(candidate.correction_frontier),
         "teacher_state": dict(candidate.teacher_state),
         "evaluation_contract": dict(candidate.evaluation_contract),
+        "step_proofs": {
+            "schema": "bilqis.mlx.bamf-step-proofs/v1",
+            "proofs": [proof.to_record()
+                       for proof in candidate.retained_state.step_proofs],
+        },
         "outbox": outbox,
     }
     validate_sidecars(candidate.extents, candidate.provenance, records)

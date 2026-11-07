@@ -38,6 +38,11 @@ class EvidenceKind(str, Enum):
     FIXED_SCHOOL = "FIXED_SCHOOL"
 
 
+class EvidenceStage(str, Enum):
+    FOUNDATION_ACQUISITION = "FOUNDATION_ACQUISITION"
+    STRICT_GENERALIZATION = "STRICT_GENERALIZATION"
+
+
 @dataclass(frozen=True)
 class EvaluationCase:
     case_id: str
@@ -77,6 +82,7 @@ class EvaluationCohort:
     training_family_ids: tuple[str, ...]
     training_episode_ids: tuple[str, ...]
     expected_case_digest: str
+    evidence_stage: EvidenceStage = EvidenceStage.FOUNDATION_ACQUISITION
     schema_version: str = "bilqis.c05.evaluation-cohort/v1"
 
     def __post_init__(self):
@@ -93,6 +99,7 @@ class EvaluationCohort:
                     self.policy_sha256, self.expected_case_digest))
                 or not _names(self.training_family_ids)
                 or not _names(self.training_episode_ids)
+                or not isinstance(self.evidence_stage, EvidenceStage)
                 or self.schema_version != "bilqis.c05.evaluation-cohort/v1"):
             _invalid("BAMF_EVALUATION_COHORT_INVALID")
         if (case_census_digest(self.cases) != self.expected_case_digest
@@ -101,11 +108,12 @@ class EvaluationCohort:
                 or {(case.capability_id, case.group_id) for case in self.cases}
                 != set(self.capability_groups)):
             _invalid("BAMF_EVALUATION_CENSUS_DRIFT")
-        if self.kind is not EvidenceKind.FIXED_SCHOOL and (
+        if (self.evidence_stage is EvidenceStage.STRICT_GENERALIZATION
+                and self.kind is not EvidenceKind.FIXED_SCHOOL and (
                 {case.source_family_id for case in self.cases}
                 & set(self.training_family_ids)
                 or {case.episode_id for case in self.cases}
-                & set(self.training_episode_ids)):
+                & set(self.training_episode_ids))):
             _invalid("BAMF_EVALUATION_TRAINING_PROVENANCE_OVERLAP")
 
 
@@ -185,6 +193,7 @@ def evaluate_capabilities(solver, cohort, generation) -> Assessment:
                       tuple(item[1] for item in measurements))
 
 EvidenceKind.__module__ = "bilqis_mlx.runtime.capability_retention"
+EvidenceStage.__module__ = "bilqis_mlx.runtime.capability_retention"
 EvaluationCase.__module__ = "bilqis_mlx.runtime.capability_retention"
 EvaluationCohort.__module__ = "bilqis_mlx.runtime.capability_retention"
 CompleteSolver.__module__ = "bilqis_mlx.runtime.capability_retention"

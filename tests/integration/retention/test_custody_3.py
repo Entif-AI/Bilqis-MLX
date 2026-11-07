@@ -1,11 +1,15 @@
 """Retention integration contracts; original evidence and boundaries preserved."""
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 from bilqis_mlx import trainer as trainer
 from bilqis_mlx.learning.learning_experiment import Settings
-from tests.integration.retention.fixtures import VisitFixture, _BatchCaptured, _rows, _visit_program, _visit_release
+from tests.integration.retention.fixtures import (
+    VisitFixture, _BatchCaptured, _rows, _school, _school_receipt,
+    _visit_program, _visit_release,
+)
 
 
 class CustodyTests(VisitFixture, unittest.TestCase):
@@ -14,9 +18,8 @@ class CustodyTests(VisitFixture, unittest.TestCase):
                   "contrast": 1., "distill": 0., "preview": 0}
         teacher = {"strategies": {"p": policy}}
         engine = SimpleNamespace(pick=lambda *_: ("p", policy))
-        school = SimpleNamespace(stage="MAIN", grade="B", visits=0,
-                                 champions={"A": {"optimizer_step": 1}})
         course = _visit_program()
+        school = _school(course)
         misses = [
             {"id": f"miss:{index}", "source_id": f"miss:{index}",
              "capability": "B.XOR", "answer_kind": "binary",
@@ -33,7 +36,7 @@ class CustodyTests(VisitFixture, unittest.TestCase):
             for index in range(8)
         )
         receipt = {"teacher": teacher, "generation": 1, "run_id": "capacity",
-                   "school": {}, "teacher_misses": misses, "config": {},
+                   "school": _school_receipt(school), "teacher_misses": misses, "config": {},
                    "answer_ids": [6, 7], "curriculum_mode": "fixture-school"}
         optimizer = SimpleNamespace(learning_rate=0.0001,
                                     state={"step": SimpleNamespace(item=lambda: 1)})
@@ -50,7 +53,8 @@ class CustodyTests(VisitFixture, unittest.TestCase):
             return {row["id"]: ("FALSE" if row["gold"] == "TRUE" else "TRUE")
                     for row in rows}
 
-        with (patch('bilqis_mlx.runtime.state._state_from_json', return_value=school),
+        with (TemporaryDirectory() as temporary,
+              patch('bilqis_mlx.runtime.state._state_from_json', return_value=school),
               patch('bilqis_mlx.runtime.admission._read_executable_factory_release_artifact',
                            return_value=_visit_release(course)),
               patch('bilqis_mlx.factory.schedule.schedule_program_from_executable_release',
@@ -72,7 +76,7 @@ class CustodyTests(VisitFixture, unittest.TestCase):
                            return_value=preservation),
               patch('bilqis_mlx.learning.student_ops._train_step', side_effect=inspect_batch)):
             with self.assertRaisesRegex(_BatchCaptured, "STOP_BEFORE_ANY_OPTIMIZER"):
-                trainer._take_visit(None, Path("/never-opened"), receipt, {},
+                trainer._take_visit(None, Path(temporary), receipt, {},
                                     course, engine, {}, optimizer, {},
                                     steps_per_visit=1, batch_size=32,
                                     reserve_gib=0., source_root=Path("/not-used"),
@@ -83,7 +87,7 @@ class CustodyTests(VisitFixture, unittest.TestCase):
                          {row["id"] for row in captured},
                          {row["id"] for row in preservation})
         delivered_misses = {row["id"] for row in captured if row["id"].startswith("miss:")}
-        self.assertEqual(len(delivered_misses), 23)
+        self.assertEqual(len(delivered_misses), 22)
         self.assertTrue(any(
             row["id"].startswith("B.XOR:") for row in captured),
             "A fresh current-capability row must survive miss replay and preservation")
@@ -93,9 +97,8 @@ class CustodyTests(VisitFixture, unittest.TestCase):
                   "contrast": 1., "distill": 0., "preview": 0}
         teacher = {"strategies": {"p": policy}}
         engine = SimpleNamespace(pick=lambda *_: ("p", policy))
-        school = SimpleNamespace(stage="MAIN", grade="B", visits=0,
-                                 champions={"A": {"optimizer_step": 1}})
         course = _visit_program()
+        school = _school(course)
         misses = [
             {"id": f"miss:{index}", "source_id": f"miss:{index}",
              "capability": "B.XOR", "answer_kind": "binary",
@@ -112,7 +115,7 @@ class CustodyTests(VisitFixture, unittest.TestCase):
             for index in range(8)
         )
         receipt = {"teacher": teacher, "generation": 1, "run_id": "capacity",
-                   "school": {}, "teacher_misses": misses, "config": {},
+                   "school": _school_receipt(school), "teacher_misses": misses, "config": {},
                    "answer_ids": [6, 7], "curriculum_mode": "fixture-school"}
         optimizer = SimpleNamespace(learning_rate=0.0001,
                                     state={"step": SimpleNamespace(item=lambda: 1)})
@@ -129,7 +132,8 @@ class CustodyTests(VisitFixture, unittest.TestCase):
             return {row["id"]: ("FALSE" if row["gold"] == "TRUE" else "TRUE")
                     for row in rows}
 
-        with (patch('bilqis_mlx.runtime.state._state_from_json', return_value=school),
+        with (TemporaryDirectory() as temporary,
+              patch('bilqis_mlx.runtime.state._state_from_json', return_value=school),
               patch('bilqis_mlx.runtime.admission._read_executable_factory_release_artifact',
                            return_value=_visit_release(course)),
               patch('bilqis_mlx.factory.schedule.schedule_program_from_executable_release',
@@ -151,7 +155,7 @@ class CustodyTests(VisitFixture, unittest.TestCase):
                            return_value=preservation),
               patch('bilqis_mlx.learning.student_ops._train_step', side_effect=inspect_batch)):
             with self.assertRaisesRegex(_BatchCaptured, "STOP_BEFORE_ANY_OPTIMIZER"):
-                trainer._take_visit(None, Path("/never-opened"), receipt, {},
+                trainer._take_visit(None, Path(temporary), receipt, {},
                                     course, engine, {}, optimizer, {},
                                     steps_per_visit=1, batch_size=32,
                                     reserve_gib=0., source_root=Path("/not-used"),
@@ -162,7 +166,7 @@ class CustodyTests(VisitFixture, unittest.TestCase):
                          {row["id"] for row in captured},
                          {row["id"] for row in preservation})
         delivered_misses = {row["id"] for row in captured if row["id"].startswith("miss:")}
-        self.assertEqual(len(delivered_misses), 23)
+        self.assertEqual(len(delivered_misses), 22)
         self.assertTrue(any(
             row["id"].startswith("B.XOR:") for row in captured),
             "A fresh current-capability row must survive miss replay and preservation")

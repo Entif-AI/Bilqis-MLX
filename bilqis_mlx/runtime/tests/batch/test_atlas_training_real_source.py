@@ -16,12 +16,13 @@ from bilqis_mlx.factory.teaching import describe_delivered_teaching
 from bilqis_mlx.grade_a_probe import read_sources
 from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.runtime.atlas_training_adapter import compile_training_batch
+from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.runtime.tests.test_atlas_training_adapter import answer_plan_for
 from bilqis_mlx.semantics.atlas.feature_io import persist_feature_manifest
 from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest
 from bilqis_mlx.semantics.atlas_features.formal import source_qualified_feature_row
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection, load_pinned_atlas_snapshot
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection, load_pinned_atlas_snapshot
 from bilqis_mlx.semantics.context_eligibility import PUBLIC_FORMAL, ContextPolicy, SourceFrontier, SourceGrant, TaskScope
 from bilqis_mlx.semantics.frame_adapters import bind_registered_source_row, public_formal_context
 from bilqis_mlx.semantics.frame_adapters import (
@@ -67,7 +68,10 @@ class RealTrainingAuthorityTests(unittest.TestCase):
         release = compile_executable_factory_release(curriculum, bindings, CurriculumProfile.full(),
             registry, answers, source_root=source, graph=graph, verification_seed=31)
         cls.context = SourceExecutionContext(release, graph, source, registry, answers)
-        cls.row = cls.context.draw_rows(seed=31, capability='A.IDENTITY', each=2)[0]
+        cls.rows = tuple(cls.context.draw_rows(seed=31, capability='A.IDENTITY', each=2))
+        cls.row = cls.rows[0]
+        cls.source_authority = cls.context.bind_rows(
+            cls.rows, seed=31, capability='A.IDENTITY', each=2)
         cls.selection = AtlasArtifactSelection(ARTIFACT,
             '5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7',
             '58e0c281b5da18b9b7e6c803709b29eeeb0a88f16b06f48de692808e2fb88306',
@@ -80,20 +84,33 @@ class RealTrainingAuthorityTests(unittest.TestCase):
             (PUBLIC_FORMAL,), ((PUBLIC_FORMAL, PUBLIC_FORMAL),),
             tuple((PUBLIC_FORMAL,) * count for count in range(3, 25)))
         adapter = registry.require('bilqis_mlx.grade_a_probe.make_record', A_ORACLE)
-        projection, frontier = public_formal_context(adapter, cls.row, snapshot, source_root=source,
-            graph=graph, task_scope=task, source_frontier=SourceFrontier(1, 1, ()),
-            policy=policy, source_seed=31, source_each=2)
-        tree = bind_registered_source_row(adapter, cls.row, snapshot, source_root=source, graph=graph,
-            source_span=SourceSpan(0, end), causal_prefix_end=end)
-        source_id = tree.root.source_instance_id
-        atoms = tuple(SourceAtom(i, graph['tokens'][token], f'{source_id}#atom:{i}')
-                      for i, token in enumerate(cls.row['tokens']))
-        ast = StreamingAST(source_id, atoms, (tree,))
-        grants = tuple(SourceGrant(atom.source_reference, 'p', 't', PUBLIC_FORMAL,
-            snapshot.release_sha256, atom_evidence_digest(source_id, atom, snapshot.release_sha256),
-            ('TRAINING',), ('r',), ('s',), 1, 1, 0, 0) for atom in atoms)
-        frontier = replace(frontier, grants=tuple(sorted((*frontier.grants, *grants), key=lambda item: item.source_handle)))
-        frames = tuple(item for item in projection.envelopes if type(item.frame) is FrameInstance)
+        frontier = SourceFrontier(1, 1, ())
+        ast_by_tokens, projection_by_source = {}, {}
+        frames = ()
+        for row in cls.rows:
+            projection, frontier = public_formal_context(
+                adapter, row, snapshot, source_root=source, graph=graph,
+                task_scope=task, source_frontier=frontier, policy=policy,
+                source_seed=31, source_each=2)
+            tree = bind_registered_source_row(
+                adapter, row, snapshot, source_root=source, graph=graph,
+                source_span=SourceSpan(0, len(row['tokens'])),
+                causal_prefix_end=len(row['tokens']))
+            source_id = tree.root.source_instance_id
+            atoms = tuple(SourceAtom(i, graph['tokens'][token], f'{source_id}#atom:{i}')
+                          for i, token in enumerate(row['tokens']))
+            ast = StreamingAST(source_id, atoms, (tree,))
+            grants = tuple(SourceGrant(atom.source_reference, 'p', 't', PUBLIC_FORMAL,
+                snapshot.release_sha256,
+                atom_evidence_digest(source_id, atom, snapshot.release_sha256),
+                ('TRAINING',), ('r',), ('s',), 1, 1, 0, 0) for atom in atoms)
+            frontier = replace(frontier, grants=tuple(sorted(
+                {*frontier.grants, *grants}, key=lambda item: item.source_handle)))
+            ast_by_tokens[tuple(row['tokens'])] = ast
+            projection_by_source[source_id] = projection
+            if row is cls.row:
+                frames = tuple(item for item in projection.envelopes
+                               if type(item.frame) is FrameInstance)
         schema_ids = tuple(sorted({item.frame.frame_schema_id for item in frames}))
         roles = tuple(sorted({binding.role_id for item in frames for binding in item.frame.bindings}))
         cls.row_feature_schema = FeatureSchema(roles, schema_ids, source_bindings=tuple(
@@ -106,11 +123,15 @@ class RealTrainingAuthorityTests(unittest.TestCase):
         manifest = _load_pinned_released_frame_schemas('micro', cls.selection).manifest
         cls.config = FrameCompilerConfig(tuple(body.parse() for body in manifest.bodies),
             manifest.schema_map, None, task, frontier, policy)
-        cls.args = dict(delivery=describe_delivered_teaching(release, 'A.IDENTITY', 'source.direct/A.IDENTITY', (cls.row,)),
+        cls.args = dict(delivery=describe_delivered_teaching(
+                release, 'A.IDENTITY', 'source.direct/A.IDENTITY', cls.rows),
             delivery_capability='A.IDENTITY', delivery_release_sha256=release.release_sha256,
-            teacher_strategy={}, requested_count=1, optimizer_step_seed=1, rehearsal_by_id={},
-            visible_ends={cls.row['id']: end}, source_ast_for=lambda _: ast,
-            answer_plan_for=lambda *args: answer_plan_for(*args), frames_for_ast=lambda _: projection.envelopes,
+            teacher_strategy={}, requested_count=2, optimizer_step_seed=1, rehearsal_by_id={},
+            source_authority=cls.source_authority,
+            visible_ends={row['id']: len(row['tokens']) for row in cls.rows},
+            source_ast_for=lambda tokens: ast_by_tokens[tuple(tokens)],
+            answer_plan_for=lambda *args: answer_plan_for(*args),
+            frames_for_ast=lambda ast: projection_by_source[ast.source_instance_id].envelopes,
             task_scope=task, source_frontier=frontier, eligibility_policy=policy,
             generation_binding=release.release_sha256, atlas_selection=cls.selection,
             feature_artifact_path=cls.feature_receipt.path)
@@ -120,7 +141,7 @@ class RealTrainingAuthorityTests(unittest.TestCase):
         cls._feature_root.cleanup()
 
     def compile(self, config):
-        return compile_training_batch((self.row,), self.context, {'context': 1024},
+        return compile_training_batch(self.rows, self.context, ModelTopologySpecV2(),
             compiler_config=config, **self.args)
 
     def test_real_row_accepts_canonical_and_rejects_noncanonical_a05(self):
@@ -155,7 +176,7 @@ class RealTrainingAuthorityTests(unittest.TestCase):
         self.assertEqual(alternate_features.semantic_release, self.features.semantic_release)
         self.assertNotEqual(alternate_features.digest, self.features.digest)
         with self.assertRaises(TypeError):
-            compile_training_batch((self.row,), self.context, {'context': 1024},
+            compile_training_batch((self.row,), self.context, ModelTopologySpecV2(),
                 compiler_config=self.config, atlas_features=alternate_features,
                 feature_schema=alternate_schema, **self.args)
 
@@ -185,5 +206,5 @@ class RealTrainingAuthorityTests(unittest.TestCase):
                 'answer_plan_for': model_input_planning_entered,
             }
             with self.assertRaises(BilqisError):
-                compile_training_batch((self.row,), self.context, {'context': 1024},
+                compile_training_batch(self.rows, self.context, ModelTopologySpecV2(),
                     compiler_config=self.config, **args)

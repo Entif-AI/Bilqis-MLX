@@ -31,7 +31,7 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
       - name: Validate release manifests and changelog
-        run: python3 -B scripts/release_version.py --check
+        run: python3 -B scripts/maintenance/release_version.py --check
       - name: Determine whether passing expensive suites were invalidated
         id: test-impact
         shell: bash
@@ -165,7 +165,8 @@ jobs:
           scripts/tests/test_release_version.py
           scripts/tests/test_docs.py
           scripts/tests/test_run_tests.py
-          scripts/tests/test_skos_test_policy.py
+          scripts/tests/test_run_tests_package_collision.py
+          scripts/tests/tooling/test_skos_test_policy.py
           scripts/tests/governance/test_module_size.py
           scripts/tests/governance/test_governance_integrity.py
           bilqis_mlx/factory/tests/lifecycle/test_release.py

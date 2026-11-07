@@ -29,9 +29,13 @@ def _grade_cohort_contract(course, grade):
             ABI_REFACTORED_A_GENERATOR_SHA256,
             HISTORICAL_A_GENERATOR_SHA256,
             HISTORICAL_A_RUBRIC_SHA256,
+            SOURCE_RELOCATED_A_GENERATOR_SHA256,
         )
         if grade.assessment_sha256 == HISTORICAL_A_RUBRIC_SHA256:
-            if source_sha != ABI_REFACTORED_A_GENERATOR_SHA256:
+            if source_sha not in {
+                    ABI_REFACTORED_A_GENERATOR_SHA256,
+                    SOURCE_RELOCATED_A_GENERATOR_SHA256,
+            }:
                 raise ValueError("HISTORICAL_GRADE_A_SOURCE_COMPATIBILITY_NOT_PROVEN")
             source_sha = HISTORICAL_A_GENERATOR_SHA256
     return grade.assessment_sha256, schema, adapter.cohort_generator, source_sha

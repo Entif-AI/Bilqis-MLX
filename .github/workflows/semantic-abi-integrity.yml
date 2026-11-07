@@ -63,7 +63,7 @@ jobs:
               bilqis_mlx/vocabulary_growth.py|\
               scripts/check_historical_abi.py|\
               scripts/check_semantic_boundaries.py|\
-              scripts/tests/test_semantic_module_boundaries.py)
+              scripts/tests/tooling/test_semantic_module_boundaries.py)
                 run=true
                 echo "Semantic ABI owned path changed: $path"
                 break
@@ -102,7 +102,7 @@ jobs:
           bilqis_mlx/factory/tests/test_grade_admission.py
           bilqis_mlx/diagnostics/tests/test_health_shadow.py
           bilqis_mlx/diagnostics/tests/test_candidate_shadow.py
-          scripts/tests/test_semantic_module_boundaries.py
+          scripts/tests/tooling/test_semantic_module_boundaries.py
           bilqis_mlx/semantics/tests/foundation/test_domain_contracts.py
           bilqis_mlx/verification/tests/test_construction_contracts.py
           bilqis_mlx/factory/tests/lifecycle/test_release_outcome_contracts.py

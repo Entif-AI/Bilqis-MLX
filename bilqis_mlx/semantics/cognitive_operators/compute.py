@@ -1,8 +1,8 @@
 """Deterministic source-owned operator evaluation after authorization."""
 from __future__ import annotations
 from fractions import Fraction
-from .. import numeric as released_numeric
-from ..frame_schema import BindingState
+from ..foundation import numeric as released_numeric
+from .._frame_schema.roles import BindingState
 from .authorization import _frame
 from .common import _NATIVE_NUMERIC, _SOURCE_INAPPLICABLE, _invalid
 from .registry import OperatorBinding
@@ -48,6 +48,8 @@ def _compute(operator_id: str, values: tuple[object, ...],
         return values[1] in values[0].type_ids
     if operator_id == "MEMBER_OF":
         return values[0] in values[1]
+    if operator_id in {"SELECT_BOOLEAN", "SELECT_OPERATOR_ID", "SELECT_NUMBER"}:
+        return values[0]
     if operator_id == "BOOL_NOT":
         return not values[0]
     if operator_id == "BOOL_AND":

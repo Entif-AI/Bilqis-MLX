@@ -32,6 +32,16 @@ def _prospective_entries(release, semantic_ids):
     for semantic_id in semantic_ids:
         entry = abi_by_id.get(semantic_id)
         if entry is None:
+            reasons = tuple(sorted({
+                row.reason_code for row in release.withheld_rows
+                if row.semantic_id == semantic_id
+                and row.source_disposition == "SOURCE_HELD"
+            }))
+            if reasons:
+                _invalid(
+                    "BAMF_FEATURE_PROSPECTIVE_SOURCE_HELD",
+                    source_reason_codes=reasons,
+                )
             _invalid("BAMF_FEATURE_PROSPECTIVE_IDENTITY_UNKNOWN")
         if entry.active or entry.source not in {"CANONICAL_SKOS", "FORMAL_DOMAIN"}:
             _invalid("BAMF_FEATURE_PROSPECTIVE_IDENTITY_NOT_INACTIVE")
@@ -56,10 +66,19 @@ def _prospective_source_rows(release, entries, included):
         coverage = tuple(
             item for item in release.withheld_rows
             if item.semantic_id == semantic_id)
+        held = tuple(
+            item for item in coverage
+            if getattr(item, "source_disposition", None) == "SOURCE_HELD")
+        if held:
+            reasons = tuple(sorted({item.reason_code for item in held}))
+            _invalid(
+                "BAMF_FEATURE_PROSPECTIVE_SOURCE_HELD",
+                source_reason_codes=reasons,
+            )
         if coverage and any(
                 getattr(item, "source_disposition", None) != "SOURCE_ELIGIBLE"
                 for item in coverage):
-            _invalid("BAMF_FEATURE_PROSPECTIVE_SOURCE_HELD")
+            _invalid("BAMF_FEATURE_PROSPECTIVE_SOURCE_INELIGIBLE")
 
     return {
         semantic_id: item.concept

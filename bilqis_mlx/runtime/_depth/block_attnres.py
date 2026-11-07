@@ -35,7 +35,8 @@ from .depth_contracts import (
 from .depth_selection import (
     DepthSelectionDiagnostics, _depth_components, _numerical_depth_select,
     _numerical_depth_select_with_diagnostics, _rms_norm, depth_select,
-    depth_select_with_diagnostics,
+    depth_select_with_diagnostics, source_depth_select,
+    source_depth_select_with_diagnostics,
 )
 
 

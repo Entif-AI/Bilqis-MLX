@@ -6,6 +6,11 @@ import unittest
 import numpy as np
 
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import (
+    CACHE_AUTHORITY,
+    OWNER_ID,
+    PUBLIC_KEY_HEX,
+)
 from bilqis_mlx.runtime.atlas_cache_codec import (
     BLOCK_VECTORS,
     CACHE_MODE_FP32,
@@ -22,14 +27,42 @@ from bilqis_mlx.runtime.atlas_cache_codec import (
 )
 
 
+_RAW_ENCODE = encode_cold_cache
+_RAW_DECODE = decode_cache
+
+
+def encode_cold_cache(*args, **kwargs):
+    return _RAW_ENCODE(CACHE_AUTHORITY, *args, **kwargs)
+
+
+def decode_cache(*args, **kwargs):
+    return _RAW_DECODE(CACHE_AUTHORITY, *args, **kwargs)
+
+
 class Rot3NormAndFallbackTests(unittest.TestCase):
     def setUp(self):
+        from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import install_test_owner
+        install_test_owner(self)
         self.manifest = codec_manifest()
         self.binding = CacheBinding(
-            self.manifest, generation_sha256="1"*64, lineage_sha256="2"*64,
-            topology_sha256="3"*64, source_rights_sha256="4"*64,
-            causal_prefix_sha256="5"*64, masks_sha256="6"*64,
-            scope_sha256="7"*64, key_sha256="8"*64, offset=17,
+            self.manifest,
+            generation_sha256="1" * 64,
+            lineage_sha256="2" * 64,
+            topology_sha256="3" * 64,
+            source_release_sha256="4" * 64,
+            semantic_release_sha256="5" * 64,
+            source_rights_sha256="6" * 64,
+            rights_purpose_sha256="7" * 64,
+            policy_epoch_sha256="8" * 64,
+            context_eligibility_sha256="9" * 64,
+            causal_prefix_sha256="a" * 64,
+            masks_sha256="b" * 64,
+            scope_sha256="c" * 64,
+            key_sha256="d" * 64,
+            inference_state_sha256="e" * 64,
+            offset=17,
+            artifact_authority_id=OWNER_ID,
+            artifact_authority_public_key_hex=PUBLIC_KEY_HEX,
         )
 
     def test_direct_records_import_is_order_independent(self):
@@ -96,20 +129,20 @@ class Rot3NormAndFallbackTests(unittest.TestCase):
 
     def test_tail_padding_is_canonical_and_decode_returns_true_length(self):
         rng = np.random.default_rng(2483)
-        values = rng.normal(size=(MIN_COMPRESSED_VECTORS + 27, HEAD_WIDTH)).astype(np.float32)
+        values = rng.normal(size=(MIN_COMPRESSED_VECTORS + 31, HEAD_WIDTH)).astype(np.float32)
         artifact = encode_cold_cache(values, self.manifest, binding=self.binding)
-        self.assertEqual((artifact.true_vectors, artifact.padded_vectors), (283, 288))
-        self.assertEqual(artifact.relative_norms[283:], bytes(5))
+        self.assertEqual((artifact.true_vectors, artifact.padded_vectors), (287, 288))
+        self.assertEqual(artifact.relative_norms[287:], bytes(1))
         codes = unpack_3bit(artifact.direction_codes, artifact.padded_vectors * HEAD_WIDTH)
         codes = codes.reshape(artifact.padded_vectors, HEAD_WIDTH)
-        canonical = quantize_directions(np.zeros((5, HEAD_WIDTH), dtype=np.float32))
-        np.testing.assert_array_equal(codes[283:], canonical)
+        canonical = quantize_directions(np.zeros((1, HEAD_WIDTH), dtype=np.float32))
+        np.testing.assert_array_equal(codes[287:], canonical)
         self.assertEqual(decode_cache(artifact, self.binding).shape, values.shape)
 
         forged_norms = bytearray(artifact.relative_norms)
-        forged_norms[283] = 1
+        forged_norms[287] = 1
         forged_codes = codes.copy()
-        forged_codes[283, 0] = (int(forged_codes[283, 0]) + 1) % 8
+        forged_codes[287, 0] = (int(forged_codes[287, 0]) + 1) % 8
         for changes in (
             {"relative_norms": bytes(forged_norms)},
             {"direction_codes": pack_3bit(forged_codes.reshape(-1))},

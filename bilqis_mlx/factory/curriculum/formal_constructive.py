@@ -13,7 +13,7 @@ import re
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.semantics.atlas_projection import AbiEntry, FormalDomainBinding
-from bilqis_mlx.semantics.atlas_snapshot import (
+from bilqis_mlx.semantics.atlas.snapshot import (
     AtlasArtifactSelection, load_pinned_atlas_snapshot,
 )
 from bilqis_mlx.semantics.cognitive_operators import (

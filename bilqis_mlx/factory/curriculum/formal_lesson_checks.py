@@ -1,7 +1,7 @@
 """Source replay and independent checking helpers for formal lessons."""
 from __future__ import annotations
 
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.cognitive_operators import (
     OperatorBinding, OperatorRegistry, SourceOperand, TypedValue, ValueState,
     execute_pure, operator_grant_digest, source_operand_digest,
