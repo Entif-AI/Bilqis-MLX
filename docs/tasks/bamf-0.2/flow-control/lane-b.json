@@ -383,10 +383,10 @@
     {
       "issue": 904,
       "pr": null,
-      "state": "WAITING",
-      "head_sha": "1bba69e385f2666a5a185aa9114a3f64cd3f7685",
-      "summary": "B13.6 generation-zero custody is implemented and exact-head proven: production bootstrap authority replaces test-only C05 genesis acceptance, immutable run identity persists operator run_seed, and successors preserve existing C05 acceptance.",
-      "resume_trigger": "Accepted B13.1/#478 dependency receipt lands through reviewed unified; then refresh from unified, rerun only dependency-sensitive proof, spend fresh EGM at merge-readiness, and turn in #904.",
+      "state": "ACTIVE",
+      "head_sha": "f8a47e4d434d96f4d53ba08ddfb5ae844d7a8e5a",
+      "summary": "B13.6 generation-zero custody has consumed accepted B13.1/#478 through reviewed unified cc48ac40 and passed refreshed dependency-sensitive custody, publication, cold-resume, authority and static proof. Fresh exact-head EGM is the remaining merge-readiness gate.",
+      "resume_trigger": "Fresh exact-head EGM passes on the stable refreshed candidate and hosted checks are green; then turn in #904 to reviewed unified without self-merge.",
       "preserved_branch": "codex/904-b13-6-generation-zero-20261107"
     }
   ]

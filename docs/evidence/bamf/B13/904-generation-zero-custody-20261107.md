@@ -77,3 +77,32 @@ Each was repaired in tests/fixtures without weakening production validation. The
 #904 is **not merge-ready** because its direct B13.1 dependency is still authority-held. The required publication interface exists on reviewed unified, which was sufficient for implementation/proof, but final turn-in must consume an accepted B13.1 dependency receipt. Therefore no fresh EGM and no parking PR are justified now.
 
 After reviewed integration, C16.1b #543 must bind the actual admitted Factory foundation/topology/teacher/optimizer to this B13 boundary; C03 remains the owner of the true teacher-visit identity. No `run_id`, `episode_id`, or `optimizer_step_seed` may substitute for the persisted `run_seed` or future visit identity.
+
+## Dependency refresh and merge-readiness checkpoint — 2026-11-07
+
+The prior WAITING condition is now satisfied. B13.1/#478 passed its final EGM review, PR #885 merged into reviewed unified as `9301e41ef215b9d035449c3260c7cd0f8ee0b5a7`, and #478 is closed with `EGM-Passed`. The current reviewed unified consumed by this refresh is `cc48ac40d875f0c2ae8ffbdc70001dbfc4815334`; ancestry verification confirms that it contains the #885 merge.
+
+The parked #904 branch was reconciled with accepted B13 authority and then merged with the current reviewed unified without rewriting history:
+
+- accepted-authority reconciliation: `29058d3bde6d3913a04e8849950eac8572fc4df4`;
+- reviewed-unified merge: `918694f83b9e4773a0ba6affcdcaa6563b8da94b`;
+- refreshed semantic/test candidate: `f8a47e4d434d96f4d53ba08ddfb5ae844d7a8e5a`.
+
+The dependency-sensitive proof on the refreshed candidate is green:
+
+- complete B13 custody tree: **123 total / 118 passed / 0 failed / 5 explicit optional/environment skips**;
+- opt-in complete clean-process numerical custody witness: **1/1 PASS**;
+- generation-acceptance publication witnesses: **10/10 PASS**;
+- generation-acceptance authority witnesses: **10/10 PASS**;
+- generation-zero authority: **8/8 PASS**;
+- publication transaction: **18/18 PASS**;
+- publication durability: **8/8 PASS**;
+- cold-resume continuation: **8/8 PASS**;
+- full-resume non-environment controls: **3/3 PASS**;
+- post-split acceptance-contract package: **39 passed / 0 failed / 1 explicit opt-in skip**.
+
+Repository gates are also green against reviewed unified `cc48ac40...`: module-size check has zero violations; error-control reports new debt 0; changed-file smell audit reports zero findings; Factory architecture, BAMF flow-control and governance-integrity checks pass; `git diff --check` is clean.
+
+The only implementation-side adjustment after the unified refresh is a behavior-preserving split of the enlarged acceptance-provenance test module into publication, authority and shared-fixture files so each companion test remains below the repository's structure threshold. No production behavior or acceptance criterion was weakened.
+
+#904 is therefore no longer dependency-held. Its remaining merge-readiness gate is fresh exact-head EGM plus hosted verification/PR turn-in. Human merge and issue closure remain outside this checkpoint's authority.
