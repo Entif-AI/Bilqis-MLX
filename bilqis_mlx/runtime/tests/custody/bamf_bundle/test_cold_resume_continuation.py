@@ -169,7 +169,7 @@ class BamfColdResumeContinuationTests(unittest.TestCase):
         self.assertEqual(cold["decision"]["decision_sha256"],
                          uninterrupted["decision"]["decision_sha256"])
 
-    def test_live_loss_bearing_path_requires_execution_owner(self):
+    def test_live_loss_bearing_path_requires_gradient_execution_owner(self):
         self.publish(candidate(parent_state()))
         with shape_patch():
             with self.assertRaises(BilqisError) as failure:
@@ -177,7 +177,7 @@ class BamfColdResumeContinuationTests(unittest.TestCase):
                     self.run, {}, loss_bearing_target=True,
                     teacher_hparams=None, decay={}, max_norm=1.)
         self.assertEqual(failure.exception.context["reason"],
-                         "B11_EXECUTION_AUTHORITY_REQUIRED")
+                         "B11_GRADIENT_EXECUTION_REQUIRED")
 
     def test_factory_teacher_source_next_visit_survives_cold_owner_readback(self):
         """Check persisted next-visit identity with disposable source evidence."""

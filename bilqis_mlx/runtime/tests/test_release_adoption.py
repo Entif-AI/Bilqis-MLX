@@ -239,11 +239,12 @@ class EarlierGradeExpansionTests(unittest.TestCase):
             carried_mastery_debt=('B.AND', 'C.COUNT'),
             frontier_priority_visits=17, bounded_debt_visits=4)
 
-    def test_additive_prior_grade_revision_preserves_frontier_and_adds_debt(self):
+    def test_additive_prior_grade_revision_reenters_frontier_and_adds_debt(self):
         state, revised, appended = _profile_transition(self.previous, self.successor, self.school)
         self.assertFalse(appended)
         self.assertEqual(revised, 'B')
-        self.assertEqual((state.grade, state.stage, state.queue), ('C', 'RECOVERY_1', ('C.NUMBER', 'B.AND')))
+        self.assertEqual((state.grade, state.stage, state.queue),
+                         ('C', 'MAIN', ('C.COUNT', 'C.NUMBER')))
         self.assertEqual(state.current_student, self.school.current_student)
         self.assertEqual((state.visits, state.frontier_priority_visits, state.bounded_debt_visits), (123, 17, 4))
         self.assertEqual(state.carried_mastery_debt, ('B.AND', 'C.COUNT', 'B.NOT', 'B.OR', 'B.XOR', 'B.IMPLIES', 'B.COMPOSITE', 'B.IDBOOLOPS'))

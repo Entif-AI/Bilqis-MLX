@@ -14,7 +14,7 @@ class _Session:
 
     def advance(self, *, next_input=None):
         self.next_inputs.append(next_input)
-        result = object()
+        result = SimpleNamespace(execution_digest="fixture-execution", hidden=object())
         self.results.append(result)
         return result
 
@@ -25,6 +25,13 @@ class BoundaryChainingTests(unittest.TestCase):
         producer._session = _Session(completed)
         producer._depth_inputs = ()
         producer._receipts = ()
+        producer._receipt_refs = ()
+        producer._receipt_seals = ()
+        producer._result_refs = ()
+        producer._result_seals = ()
+        producer._parameters = {"fixture": object()}
+        producer._topology = object()
+        producer._compiled = SimpleNamespace(extents=object())
         return producer
 
     def test_stale_boundary_fails_before_depth_selection_or_execution(self):
@@ -43,13 +50,24 @@ class BoundaryChainingTests(unittest.TestCase):
         features = SimpleNamespace(boundary_group=2)
         view = SimpleNamespace(boundary_group=2)
         selected = object()
-        receipt = object()
+        adapter_parameters = object()
+        adapted = object()
+        receipt = SimpleNamespace(
+            receipt_digest="fixture-receipt", output_digest="fixture-output")
         with (patch.object(backbone, "depth_select", return_value=selected) as select,
+              patch.object(backbone, "adapter_parameter_view",
+                           return_value=adapter_parameters) as parameter_view,
+              patch.object(backbone, "adapter_forward", return_value=adapted) as adapt,
+              patch.object(backbone, "_content_digest", return_value="fixture-hidden"),
               patch.object(backbone, "_issue_from_producer", return_value=receipt)):
             actual = producer.advance(features, view)
         select.assert_called_once_with(producer, features, view)
+        parameter_view.assert_called_once_with(
+            producer._parameters, spec=producer._topology,
+            extents=producer._compiled.extents, group_index=1)
+        adapt.assert_called_once_with(selected, adapter_parameters)
         self.assertIs(actual, receipt)
-        self.assertEqual(producer._session.next_inputs, [selected])
+        self.assertEqual(producer._session.next_inputs, [adapted])
         self.assertEqual(producer._depth_inputs, ((features, view),))
         self.assertEqual(producer._receipts, (receipt,))
 
