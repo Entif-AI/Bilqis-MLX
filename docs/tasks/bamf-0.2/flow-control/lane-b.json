@@ -134,8 +134,8 @@
       "issue": 754,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "73785a21a737d9591ee905b4c993a65487474cf9",
-      "summary": "B13.3 EGM remediation active on current unified: native attention caches use exact in-process MLX tensor identity for fast runtime rejection while durable cache receipts remain deterministic from accepted generation/layer/shape/dtype metadata; accepted B13 MODEL_SWAP and PARAMETER_EXTENSION publication carry the actual accepted-student attention cache across the production transition classifier, reject stale state, and rebuild to the fresh answer path. #709 cold continuation is consumed, and the genuine canonical Prometheus frozen-v1 witness passed read-only with its pinned manifest digest.",
+      "head_sha": "978953bfa8ee664e45a253b71c8f7e56dfc3c103",
+      "summary": "B13.3 EGM remediation active on current unified: native attention caches weak-bind the exact in-process MLX tensor objects for fast runtime rejection without pinning retired model weights, while durable cache receipts remain deterministic from accepted generation/layer/shape/dtype metadata; accepted B13 MODEL_SWAP and PARAMETER_EXTENSION publication carry the actual accepted-student attention cache across the production transition classifier, reject stale state, and rebuild to the fresh answer path. #709 cold continuation is consumed, and the genuine canonical Prometheus frozen-v1 witness passed read-only with its pinned manifest digest.",
       "resume_trigger": null,
       "preserved_branch": "codex/754-cache-transition-20261105"
     },
