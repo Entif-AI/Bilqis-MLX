@@ -55,6 +55,92 @@ class PreparedFactoryTrainingBatch:
             _invalid("FACTORY_TRAINING_BRIDGE_INVALID")
 
 
+@dataclass(frozen=True)
+class _FactorySourceRow:
+    row: dict
+    ast: object
+    projection: object
+    source_graph: object
+    config: FrameCompilerConfig
+    task: TaskScope
+    frontier: SourceFrontier
+    policy: ContextPolicy
+
+
+def _prepare_source_row(source_context, authenticated, adapter, manifest, schema_ids,
+                        profile, row, *, capability, source_seed, source_each):
+    if row.get("capability") != capability:
+        _invalid("FACTORY_TRAINING_CAPABILITY_MISMATCH")
+    source_graph = canonical_graph_for(row.get("generator"), source_context.source_root)
+    task, frontier, policy = public_training_context(
+        authenticated.features.semantic_release, capability, len(row.get("tokens", ())))
+    projection, frame_frontier = public_formal_context(
+        adapter, row, authenticated.snapshot,
+        source_root=source_context.source_root, graph=source_graph,
+        task_scope=task, source_frontier=frontier, policy=policy,
+        source_seed=source_seed, source_each=source_each,
+        source_profile_parameters=profile, course=source_context.release.curriculum)
+    if type(projection) is not ApprovedContextProjection:
+        _invalid("FACTORY_TRAINING_CONTEXT_HELD")
+    end = len(row["tokens"])
+    tree = bind_registered_source_row(
+        adapter, row, authenticated.snapshot,
+        source_root=source_context.source_root, graph=source_graph,
+        source_span=SourceSpan(0, end), causal_prefix_end=end,
+        course=source_context.release.curriculum)
+    if schemas_cover_tree(tree, schema_ids):
+        atom_ast, atom_config = public_formal_atom_context(
+            authenticated.selection, row, source_graph,
+            source_root=source_context.source_root, source_seed=source_seed,
+            source_each=source_each, task=task, frontier=frame_frontier,
+            policy=policy, course=source_context.release.curriculum,
+            source_profile_parameters=profile)
+        ast = replace(atom_ast, frames=(tree,))
+        current = atom_config.frontier
+        config = FrameCompilerConfig(
+            tuple(body.parse() for body in manifest.bodies), manifest.schema_map,
+            None, task, current, policy)
+        approved = project_context(projection.envelopes, task, current, policy)
+    else:
+        atom_ast, atom_config = public_formal_atom_context(
+            authenticated.selection, row, source_graph,
+            source_root=source_context.source_root, source_seed=source_seed,
+            source_each=source_each, task=task, frontier=frontier,
+            policy=policy, course=source_context.release.curriculum,
+            source_profile_parameters=profile)
+        ast, approved, config, current = atom_ast, None, atom_config, atom_config.frontier
+    return _FactorySourceRow(
+        row, ast, approved, source_graph, config, task, current, policy)
+
+
+def _bind_b11_rows(source_context, candidate, authenticated, training, source_rows,
+                   profile, *, source_seed, source_each):
+    compiled_rows = []
+    for index, item in enumerate(source_rows):
+        approved_config = (item.config if item.projection is None
+                           else replace(item.config, approved=item.projection))
+        prefix = training.rows[index].model_input.prefix
+        compiled_frame_rows = CompiledFrameRows(
+            (prefix,), (prefix.positions,), ((True,) * len(prefix.positions),))
+        if item.projection is None:
+            compiled = CompiledEncoderInput(
+                compiled_frame_rows, (approved_config,), authenticated.features,
+                candidate.extents)
+        else:
+            receipt = validate_partial_visible_forest(prefix, item.ast, approved_config)
+            compiled = CompiledEncoderInput(
+                compiled_frame_rows, (approved_config,), authenticated.features,
+                candidate.extents, source_asts=(item.ast,),
+                partial_forest_receipts=(receipt,))
+        source = SourceAtomRow(
+            authenticated.selection, item.row, item.source_graph,
+            Path(source_context.source_root), source_seed, source_each,
+            source_context.release.curriculum, profile)
+        compiled_rows.append(bind_compiled_training_batch(
+            training, compiled, (source,), authenticated.schema, row_index=index))
+    return tuple(compiled_rows)
+
+
 def prepare_factory_training_batch(
     source_context: SourceExecutionContext,
     candidate: BamfBundleCandidate,
@@ -103,71 +189,14 @@ def prepare_factory_training_batch(
     schema_ids = frozenset(body.schema_id for body in manifest.bodies)
     profile = (dict(execution.provider_parameters)
                if execution.provider_parameters else None)
-    source_asts = []
-    projections = []
-    source_graphs = []
-    configs = []
-    tasks = []
-    frontiers = []
-    policies = []
-    for row in rows:
-        if row.get("capability") != capability:
-            _invalid("FACTORY_TRAINING_CAPABILITY_MISMATCH")
-        source_graph = canonical_graph_for(
-            row.get("generator"), source_context.source_root)
-        task, frontier, policy = public_training_context(
-            authenticated.features.semantic_release, capability,
-            len(row.get("tokens", ())))
-        projection, frame_frontier = public_formal_context(
-            adapter, row, authenticated.snapshot,
-            source_root=source_context.source_root, graph=source_graph,
-            task_scope=task, source_frontier=frontier, policy=policy,
-            source_seed=source_seed, source_each=source_each,
-            source_profile_parameters=profile,
-            course=source_context.release.curriculum)
-        if type(projection) is not ApprovedContextProjection:
-            _invalid("FACTORY_TRAINING_CONTEXT_HELD")
-        end = len(row["tokens"])
-        tree = bind_registered_source_row(
-            adapter, row, authenticated.snapshot,
-            source_root=source_context.source_root, graph=source_graph,
-            source_span=SourceSpan(0, end), causal_prefix_end=end,
-            course=source_context.release.curriculum)
-        if schemas_cover_tree(tree, schema_ids):
-            atom_ast, atom_config = public_formal_atom_context(
-                authenticated.selection, row, source_graph,
-                source_root=source_context.source_root, source_seed=source_seed,
-                source_each=source_each, task=task, frontier=frame_frontier,
-                policy=policy, course=source_context.release.curriculum,
-                source_profile_parameters=profile)
-            ast = replace(atom_ast, frames=(tree,))
-            current = atom_config.frontier
-            config = FrameCompilerConfig(
-                tuple(body.parse() for body in manifest.bodies), manifest.schema_map,
-                None, task, current, policy)
-            approved = project_context(
-                projection.envelopes, task, current, policy)
-        else:
-            atom_ast, atom_config = public_formal_atom_context(
-                authenticated.selection, row, source_graph,
-                source_root=source_context.source_root, source_seed=source_seed,
-                source_each=source_each, task=task, frontier=frontier,
-                policy=policy, course=source_context.release.curriculum,
-                source_profile_parameters=profile)
-            ast, approved, config, current = (
-                atom_ast, None, atom_config, atom_config.frontier)
-        source_asts.append(ast)
-        source_graphs.append(source_graph)
-        projections.append(approved)
-        configs.append(config)
-        tasks.append(task)
-        frontiers.append(current)
-        policies.append(policy)
-    projections = tuple(projections)
-    by_tokens = dict(zip((tuple(row["tokens"]) for row in rows), source_asts))
+    source_rows = tuple(_prepare_source_row(
+        source_context, authenticated, adapter, manifest, schema_ids, profile, row,
+        capability=capability, source_seed=source_seed, source_each=source_each)
+        for row in rows)
+    by_tokens = {tuple(item.row["tokens"]): item.ast for item in source_rows}
     if len(by_tokens) != len(rows):
         _invalid("FACTORY_TRAINING_AMBIGUOUS_SOURCE_PREFIX")
-    by_ast = dict(zip((id(ast) for ast in source_asts), projections))
+    by_ast = {id(item.ast): item.projection for item in source_rows}
     training = compile_training_batch(
         rows, source_context, candidate.topology, delivery=delivery,
         delivery_capability=capability,
@@ -179,41 +208,21 @@ def prepare_factory_training_batch(
         rehearsal_by_id=(rehearsal_by_id or {}),
         visible_ends={row["id"]: len(row["tokens"]) for row in rows},
         source_ast_for=lambda tokens: by_tokens[tuple(tokens)],
-        compiler_config=tuple(configs), feature_artifact_path=feature_artifact_path,
+        compiler_config=tuple(item.config for item in source_rows),
+        feature_artifact_path=feature_artifact_path,
         answer_plan_for=lambda prefix, release, cap, kind: training_answer_plan(
             prefix, release, kind, generation_binding),
         frames_for_ast=lambda ast: (() if by_ast[id(ast)] is None
                                     else by_ast[id(ast)].envelopes),
-        task_scope=tuple(tasks), source_frontier=tuple(frontiers),
-        eligibility_policy=tuple(policies),
+        task_scope=tuple(item.task for item in source_rows),
+        source_frontier=tuple(item.frontier for item in source_rows),
+        eligibility_policy=tuple(item.policy for item in source_rows),
         generation_binding=generation_binding,
         atlas_selection=authenticated.selection)
-    compiled_rows = []
-    for index, (row, ast, projection, source_graph, config) in enumerate(zip(
-            rows, source_asts, projections, source_graphs, configs)):
-        approved_config = (config if projection is None
-                           else replace(config, approved=projection))
-        prefix = training.rows[index].model_input.prefix
-        compiled_frame_rows = CompiledFrameRows(
-            (prefix,), (prefix.positions,), ((True,) * len(prefix.positions),))
-        if projection is None:
-            compiled = CompiledEncoderInput(
-                compiled_frame_rows, (approved_config,), authenticated.features,
-                candidate.extents)
-        else:
-            receipt = validate_partial_visible_forest(prefix, ast, approved_config)
-            compiled = CompiledEncoderInput(
-                compiled_frame_rows, (approved_config,), authenticated.features,
-                candidate.extents, source_asts=(ast,),
-                partial_forest_receipts=(receipt,))
-        source = SourceAtomRow(
-            authenticated.selection, row, source_graph,
-            Path(source_context.source_root), source_seed, source_each,
-            source_context.release.curriculum, profile)
-        compiled_rows.append(bind_compiled_training_batch(
-            training, compiled, (source,), authenticated.schema,
-            row_index=index))
-    prepared = PreparedFactoryTrainingBatch(training, tuple(compiled_rows))
+    compiled_rows = _bind_b11_rows(
+        source_context, candidate, authenticated, training, source_rows, profile,
+        source_seed=source_seed, source_each=source_each)
+    prepared = PreparedFactoryTrainingBatch(training, compiled_rows)
     prepared.__post_init__()
     return prepared
 
