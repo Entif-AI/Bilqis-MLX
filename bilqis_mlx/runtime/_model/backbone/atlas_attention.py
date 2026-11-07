@@ -8,7 +8,6 @@ import json
 from typing import Mapping
 
 import mlx.core as mx
-import numpy as np
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from .model_topology_v2 import (
@@ -160,18 +159,24 @@ def _valid_digest(value) -> bool:
             all(character in "0123456789abcdef" for character in value))
 
 
-def _attention_parameter_digest(params: Mapping[str, mx.array]) -> str:
-    """Bind a derived cache to the exact attention tensors that created it."""
+def _attention_parameter_identity(params: Mapping[str, mx.array]) -> tuple[mx.array, ...]:
+    """Borrow the exact in-process attention tensors that created a disposable cache."""
     if not isinstance(params, Mapping):
         ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
     try:
-        record = tuple(
-            (name, tuple(params[name].shape), str(params[name].dtype),
-             hashlib.sha256(
-                 np.asarray(mx.stop_gradient(params[name])).tobytes()).hexdigest())
-            for name in ATTENTION_PARAMETER_NAMES)
-    except (KeyError, TypeError, AttributeError):
+        identity = tuple(params[name] for name in ATTENTION_PARAMETER_NAMES)
+    except KeyError:
         ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+    if any(not isinstance(value, mx.array) for value in identity):
+        ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+    return identity
+
+
+def _attention_parameter_digest(identity: tuple[mx.array, ...]) -> str:
+    """Return a diagnostic receipt for one process-local tensor identity tuple."""
+    record = tuple(
+        (name, id(value), tuple(value.shape), str(value.dtype))
+        for name, value in zip(ATTENTION_PARAMETER_NAMES, identity, strict=True))
     return hashlib.sha256(json.dumps(
         record, separators=(",", ":"), ensure_ascii=True).encode("ascii")).hexdigest()
 
@@ -206,11 +211,15 @@ class AttentionCache:
     valid: mx.array
     layer: int
     generation: str
-    parameter_digest: str
+    parameter_identity: tuple[mx.array, ...]
     prefix_digest: str
     start_offset: int
     rope_variant: tuple = ROPE_VARIANT
     mlx_version: str = MLX_VERSION
+
+    @property
+    def parameter_digest(self) -> str:
+        return _attention_parameter_digest(self.parameter_identity)
 
     def to_record(self) -> dict:
         dimensions, base, traditional, scale = self.rope_variant
@@ -237,9 +246,13 @@ def _validate_attention(params, hidden, mask, scope, cache, offset) -> None:
         if scope.parent_prefix_digest is not None:
             ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.MISMATCH)
         return
+    current_parameter_identity = _attention_parameter_identity(params)
     if (type(cache) is not AttentionCache or cache.layer != scope.layer or
             cache.generation != scope.generation or cache.prefix_digest != scope.parent_prefix_digest or
-            cache.parameter_digest != _attention_parameter_digest(params) or
+            type(cache.parameter_identity) is not tuple or
+            len(cache.parameter_identity) != len(current_parameter_identity) or
+            any(cached is not current for cached, current in
+                zip(cache.parameter_identity, current_parameter_identity, strict=True)) or
             cache.rope_variant != ROPE_VARIANT or cache.mlx_version != MLX_VERSION or
             type(cache.convolution) is not QKVConvolutionCache or
             not isinstance(cache.key, mx.array) or cache.key.ndim != HEAD_ARRAY_RANK or
@@ -304,6 +317,6 @@ def ccgqa(params: Mapping[str, mx.array], h: mx.array, mask: mx.array, scope: At
     output = joined @ params["output"].T
     next_cache = AttentionCache(k, v, convolution, scope_ids, all_sequences, valid,
                                 scope.layer, scope.generation,
-                                _attention_parameter_digest(params), scope.prefix_digest,
+                                _attention_parameter_identity(params), scope.prefix_digest,
                                 offset if cache is None else cache.start_offset)
     return output, next_cache
