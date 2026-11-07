@@ -314,3 +314,20 @@ must supply the real changed task/frontier/policy inputs that cause
 `transition_context()` to emit an invalidation. C09 does not infer elapsed time or
 invent an expiry. The durable Lane-C consumption seam is implemented; review status
 remains unchanged until a separately authorized review action occurs.
+
+### Qualified M3 execution addendum
+
+After the implementation/evidence head `e7ca7fb8ee49f69f4b6364d55b646dc91b19d73b`
+was pushed and read back exactly, the new regression was re-run from a fresh snapshot
+on the existing qualified M3 Ultra environment. This replaces the local interpreter
+limitation above with executable product evidence without changing the historical H3
+review state.
+
+- focused `test_accepted_correction_runtime.py`: **11/11 PASS**;
+- affected `runtime/tests/correction` plus accepted-runtime regression:
+  **52 passed, 8 subtests passed**;
+- no H4, EGM, PR, or merge was started.
+
+This proves the new Lane-C typed-event ledger, live hold and cold replay behavior. It
+does **not** prove the still-missing upstream production producer for real time-sensitive
+task/frontier/policy changes, so Major 3 remains open at that authority boundary.
