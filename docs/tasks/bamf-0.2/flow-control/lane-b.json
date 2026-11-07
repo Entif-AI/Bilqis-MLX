@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "5f8f3d4b42cc4656020e4427c7d8e822825a36f9",
-  "updated_at": "2026-11-07T12:41:00-05:00",
+  "updated_at": "2026-11-07T13:07:38-05:00",
   "exception": null,
   "items": [
     {
@@ -76,10 +76,10 @@
     {
       "issue": 478,
       "pr": 885,
-      "state": "ACTIVE",
-      "head_sha": "d51bb12f2caa0391f97d2409ef2791b9df800b6f",
-      "head_sha_role": "latest exact semantic repair head with fresh full-custody, 54/54 cognitive-package and hosted proof; immediately following evidence/flow-control-only bookkeeping may reuse this proof under AGENTS.md TEST_EVIDENCE_REUSED",
-      "summary": "B13.1 round 5 found one PARENT_INTEGRATION Major after comprehension PASS: C12 package-adoption could consume pointer+bundle custody as an authoritative parent without authenticating the bound acceptance receipt. Repair d51bb12f routes the C12 receiver through shared B13 generation validation plus acceptance authentication. Missing and re-signed-drifted acceptance witnesses fail closed after repair; cognitive-package is 54/54; fresh full B13 custody is 111 total / 107 passed / 0 failed / 4 explicit skips; hosted portable-core, semantic-abi-integrity and aggregate portable are green; merge state is CLEAN. Same-round round-5 delta reinspection is the remaining review-readiness gate; no round 6 is opened.",
+      "state": "READY",
+      "head_sha": "ec9188d10112bed5c0a42f138e9bceda81a4af1c",
+      "head_sha_role": "final reviewed head; semantic repair proof is bound to d51bb12f and reused across the docs/flow-only d51bb12f..ec9188d1 range under AGENTS.md TEST_EVIDENCE_REUSED",
+      "summary": "B13.1 #478 is review-ready. Round-5 same-round reinspection cleared the final C12 package-parent authority Major with PASS from both comprehension and codebase-details reviewers: 0 unsettled Blockers / 0 unsettled Majors. Semantic repair d51bb12f routes C12 through shared B13 acceptance-authenticated authority; missing and re-signed-drifted acceptance witnesses fail closed before successor publication. Cognitive-package is 54/54; fresh full B13 custody is 111 total / 107 passed / 0 failed / 4 explicit skips; final-head hosted portable-core, semantic-abi-integrity and aggregate portable are green; PR #885 is CLEAN and ready for human review. Human merge and issue closure remain external authority.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-b13-1-478-complete-20261106"
     },
