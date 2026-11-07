@@ -46,7 +46,7 @@ def verify_current_implementations(successor, source_registry, answer_registry):
 
 
 @dataclass(frozen=True)
-class PreparedSuccessorRuntime:
+class _PreparedSuccessorRuntime:
     """The one mutable learner lane as immutable executor inputs.
 
     Constructing this record grants no admission authority.  Every execution
@@ -72,8 +72,8 @@ class PreparedSuccessorRuntime:
             raise ValueError("JIT_ADOPTION_EXECUTOR_CONTEXT_INVALID")
 
 
-def execute_prepared_successor_adoption(
-        runtime: PreparedSuccessorRuntime, *, frontier, current, ledger, plan,
+def _execute_prepared_successor_adoption(
+        runtime: _PreparedSuccessorRuntime, *, frontier, current, ledger, plan,
         checkpoint, proposal, staged, source_registry, answer_registry):
     """Freshly revalidate then enter the existing atomic prepared-successor owner.
 
@@ -81,7 +81,7 @@ def execute_prepared_successor_adoption(
     create a lease, reinterpret a source approval, or claim that a disposable
     C07 contract is production run authority.
     """
-    if not isinstance(runtime, PreparedSuccessorRuntime):
+    if not isinstance(runtime, _PreparedSuccessorRuntime):
         raise ValueError("JIT_ADOPTION_EXECUTOR_RUNTIME_INVALID")
     selected = resolve_ready_candidate(
         frontier, current, ledger, plan, checkpoint, proposal, staged)

@@ -8,7 +8,7 @@ from bilqis_mlx.factory.autonomy import compile_autonomy_plan, initial_evidence_
 from bilqis_mlx.factory.jit_curriculum import propose_curriculum_delta
 from bilqis_mlx.runtime import release_adoption
 from bilqis_mlx.runtime.jit_adoption import (
-    PreparedSuccessorRuntime, execute_prepared_successor_adoption,
+    _PreparedSuccessorRuntime, _execute_prepared_successor_adoption,
 )
 from bilqis_mlx.runtime.tests.admission.prepared_successor_fixtures import (
     PreparedSuccessorFixture,
@@ -26,7 +26,7 @@ class AtlasAdoptionExecutorTests(PreparedSuccessorFixture, unittest.TestCase):
         return plan, ledger, proposal
 
     def _runtime(self, mx=None):
-        return PreparedSuccessorRuntime(
+        return _PreparedSuccessorRuntime(
             mx, self.root, self.receipt, None, None, self.graph,
             self.parameters, self.optimizer, 0.)
 
@@ -41,7 +41,7 @@ class AtlasAdoptionExecutorTests(PreparedSuccessorFixture, unittest.TestCase):
                 side_effect=AssertionError("stale executor entered commit")):
             with self.assertRaisesRegex(
                     ValueError, "JIT_ADOPTION_RUNTIME_CONTEXT_CHANGED"):
-                execute_prepared_successor_adoption(
+                _execute_prepared_successor_adoption(
                     self._runtime(), frontier=self.frontier, current=self.current,
                     ledger=ledger, plan=plan, checkpoint=self.checkpoint,
                     proposal=proposal, staged=(self.staged,),
@@ -81,7 +81,7 @@ class AtlasAdoptionExecutorTests(PreparedSuccessorFixture, unittest.TestCase):
                     {row["id"]: row["gold"] for row in rows}), patch.object(
                 native.optim.AdamW, "update",
                 side_effect=AssertionError("neural optimizer update")):
-            result = execute_prepared_successor_adoption(
+            result = _execute_prepared_successor_adoption(
                 self._runtime(native.mx), frontier=self.frontier,
                 current=self.current, ledger=ledger, plan=plan,
                 checkpoint=self.checkpoint, proposal=proposal,
