@@ -4,6 +4,7 @@
 
 - Issue: #399 — A02.1 | Allocate stable semantic banks and activate admitted identity rows
 - Branch: `codex/bamf02-a-399-production-admission-20261106`
+- Turn-in PR: #887 into `codex/bamf-unified-base-20261028`
 - Reviewed integration trunk consumed: `3899649586b105b075e92f0ee3c51e80c379b473`
 - Implementation commit: `f77a37ea` (`feat(bamf): complete A02 production vocabulary admission`)
 - Post-sync integrated code head before this receipt: `9dac486a06ea8a5ae70a1ec6b93afa20a2aa7bdb`
