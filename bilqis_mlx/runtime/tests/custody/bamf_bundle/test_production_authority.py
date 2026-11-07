@@ -48,7 +48,7 @@ from bilqis_mlx.learning._retention.tests.execution_fixtures import (
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     acceptance, accepted_state, candidate, parent_state, retention_decision,
-    shape_patch,
+    publish_candidate, shape_patch,
 )
 
 
@@ -77,7 +77,7 @@ class ProductionAuthorityTests(unittest.TestCase):
 
     def publish(self, source):
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            return publish_bamf_generation(self.run, source, acceptance=acceptance(source))
+            return publish_candidate(self.run, source)
 
     def test_production_step_accepts_no_caller_participation_facts(self):
         """The production API takes no caller-authored participation facts."""
@@ -106,12 +106,13 @@ class ProductionAuthorityTests(unittest.TestCase):
     def test_only_accepted_b13_custody_mints_live_execution_cache(self):
         self.publish(candidate(parent_state()))
         with shape_patch():
+            student = admission.load_accepted_generation(self.run)
             cache = bind_accepted_execution_cache(self.run)
         self.assertIs(require_accepted_execution_cache(cache), cache)
         self.assertEqual(cache.run_id, "fixture-run")
         self.assertEqual(
             cache.motif_manifest.digest,
-            parent_state().allocations.manifest.digest,
+            student.retained_state.allocations.manifest.digest,
         )
         with self.assertRaises(BilqisError):
             AcceptedExecutionCache()

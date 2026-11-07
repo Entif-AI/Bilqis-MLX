@@ -18,22 +18,43 @@ from .records import (
 ACCEPTANCE_DIR = "bamf-acceptance"
 
 
+def _fsync_directory(path: Path) -> None:
+    directory = os.open(path, os.O_RDONLY)
+    try:
+        os.fsync(directory)
+    finally:
+        os.close(directory)
+
+
 def _require_run_root(run_dir: Path) -> None:
     if run_dir.is_symlink() or (run_dir.exists() and not run_dir.is_dir()):
         invalid(DataPlaneError.BUNDLE_ROOT_UNSAFE)
+    created: list[Path] = []
+    ancestor = run_dir
+    while not ancestor.exists():
+        created.append(ancestor)
+        ancestor = ancestor.parent
     run_dir.mkdir(parents=True, exist_ok=True)
     if run_dir.is_symlink() or not run_dir.is_dir():
         invalid(DataPlaneError.BUNDLE_ROOT_UNSAFE)
+    if created:
+        for directory in created:
+            _fsync_directory(directory)
+        _fsync_directory(ancestor)
 
 
 def _require_bundle_root(run_dir: Path, *, create: bool) -> Path:
     root = run_dir / "bamf-bundles"
     if root.is_symlink() or (root.exists() and not root.is_dir()):
         invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
+    existed = root.exists()
     if create:
         root.mkdir(exist_ok=True)
     if root.is_symlink() or not root.is_dir():
         invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
+    if create and not existed:
+        _fsync_directory(root)
+        _fsync_directory(run_dir)
     return root
 
 
@@ -111,11 +132,7 @@ def _atomic_pointer(path: Path, pointer: dict) -> None:
             stream.flush()
             os.fsync(stream.fileno())
         os.replace(temporary, path)
-        directory = os.open(path.parent, os.O_RDONLY)
-        try:
-            os.fsync(directory)
-        finally:
-            os.close(directory)
+        _fsync_directory(path.parent)
     finally:
         if os.path.exists(temporary):
             os.unlink(temporary)
@@ -134,9 +151,13 @@ def _acceptance_path(run_dir: Path, manifest_sha256: str) -> Path:
     root = run_dir / ACCEPTANCE_DIR
     if root.is_symlink() or (root.exists() and not root.is_dir()):
         invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
+    existed = root.exists()
     root.mkdir(exist_ok=True)
     if root.is_symlink() or not root.is_dir():
         invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
+    if not existed:
+        _fsync_directory(root)
+        _fsync_directory(run_dir)
     return root / f"{manifest_sha256}.json"
 
 
@@ -149,6 +170,7 @@ def _write_acceptance(run_dir: Path, manifest_sha256: str,
     if path.exists():
         if not path.is_file() or path.read_bytes() != raw:
             invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+        _fsync_directory(path.parent)
         return
     fd, temporary = tempfile.mkstemp(prefix=".bamf-acceptance-", dir=path.parent)
     try:
@@ -157,6 +179,7 @@ def _write_acceptance(run_dir: Path, manifest_sha256: str,
             stream.flush()
             os.fsync(stream.fileno())
         os.replace(temporary, path)
+        _fsync_directory(path.parent)
     finally:
         if os.path.exists(temporary):
             os.unlink(temporary)

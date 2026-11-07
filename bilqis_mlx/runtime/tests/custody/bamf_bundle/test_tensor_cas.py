@@ -139,6 +139,8 @@ class BamfTensorCasTests(unittest.TestCase):
             digest = first_manifest["tensors"]["object_sha256"]
             original = data_plane().require_file_object(digest)
             original_inode = original.stat().st_ino
+            initial = load_bamf_generation(run / "bamf-state.json")
+            state = initial.retained_state
             swap = candidate(state, 1, first["manifest_sha256"])
             extents = replace(swap.extents, active_semantic_digest="8" * 64)
             semantic = {**swap.semantic_abi, "active_set_sha256": "8" * 64}

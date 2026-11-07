@@ -1,15 +1,20 @@
 """Crash-idempotent, serialized B13.1 pointer publication and outbox recovery."""
 from __future__ import annotations
 
+import json
 import os
 import shutil
 from pathlib import Path
 
 from bilqis_mlx.data_plane import DataPlaneError, data_plane
+from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_acceptance import (
     ACCEPTANCE_SCHEMA, AcceptedCandidateBinding, candidate_identity_digest,
 )
 from .codec import load_bamf_bundle, save_bamf_bundle
+from .package_import_transition import (
+    is_package_import_transition, require_issued_package_import_transition,
+)
 from .records import (
     BAMF_POINTER_SCHEMA, BamfBundleCandidate, CompleteStudent, canonical, invalid, sha,
 )
@@ -82,16 +87,23 @@ def _validate_parent_transition(run_dir: Path, pointer: dict | None, candidate: 
             or parent.generation != pointer["generation"]
             or parent.parent_manifest_sha256 != pointer["parent_manifest_sha256"]):
         invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
-    kind = ("MODEL_SWAP" if parent.topology.digest != candidate.topology.digest else
-            "PARAMETER_EXTENSION" if parent.extents.digest != candidate.extents.digest else
-            "RETAINED_CANDIDATE")
     parent_step = parent.retained_state.optimizer_step
     candidate_step = candidate.retained_state.optimizer_step
-    if (candidate_step < parent_step or
-            (kind == "RETAINED_CANDIDATE" and candidate_step <= parent_step)):
-        invalid("BAMF_REJECTED_CANDIDATE_NOT_GENERATION")
-    if candidate.transition.get("kind") != kind:
-        invalid("BAMF_GENERATION_TRANSITION_INVALID")
+    if is_package_import_transition(candidate.transition):
+        require_issued_package_import_transition(candidate.transition)
+        if (parent.topology.digest != candidate.topology.digest
+                or parent.extents.digest != candidate.extents.digest
+                or candidate_step != parent_step):
+            invalid("BAMF_GENERATION_TRANSITION_INVALID")
+    else:
+        kind = ("MODEL_SWAP" if parent.topology.digest != candidate.topology.digest else
+                "PARAMETER_EXTENSION" if parent.extents.digest != candidate.extents.digest else
+                "RETAINED_CANDIDATE")
+        if (candidate_step < parent_step or
+                (kind == "RETAINED_CANDIDATE" and candidate_step <= parent_step)):
+            invalid("BAMF_REJECTED_CANDIDATE_NOT_GENERATION")
+        if candidate.transition.get("kind") != kind:
+            invalid("BAMF_GENERATION_TRANSITION_INVALID")
     reconcile_bamf_outbox(run_dir, parent)
 
 
@@ -215,11 +227,48 @@ def _load_generation_locked(pointer_path: Path) -> tuple[CompleteStudent, dict]:
     return student, pointer
 
 
+def _require_published_acceptance(
+        run_dir: Path, pointer: dict, student: CompleteStudent) -> AcceptedCandidateBinding:
+    """Authenticate the acceptance receipt bound by one live BAMF pointer."""
+    if pointer.get("schema") != BAMF_POINTER_SCHEMA:
+        invalid("BAMF_GENERATION_ACCEPTANCE_MISSING")
+    acceptance_path = (
+        Path(run_dir) / ACCEPTANCE_DIR / f"{pointer['manifest_sha256']}.json")
+    if acceptance_path.is_symlink() or not acceptance_path.is_file():
+        invalid("BAMF_GENERATION_ACCEPTANCE_MISSING")
+    try:
+        record = json.loads(acceptance_path.read_bytes())
+        if student.generation == 0:
+            from .genesis import (
+                InitialGenerationBinding,
+                validate_parsed_initial_generation_binding,
+            )
+            acceptance = InitialGenerationBinding.from_record(record)
+            validate_parsed_initial_generation_binding(
+                student, acceptance, pointer["acceptance_sha256"])
+            return acceptance
+        acceptance = AcceptedCandidateBinding.from_record(record)
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError, BilqisError):
+        invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
+    if (acceptance.digest != pointer["acceptance_sha256"]
+            or acceptance.run_id != student.run_id
+            or acceptance.generation != student.generation
+            or acceptance.feature_sha256 != student.extents.factor_map_digest
+            or acceptance.optimizer_step != student.retained_state.optimizer_step
+            or acceptance.candidate_identity_sha256
+            != candidate_identity_digest(student.retained_state)
+            or acceptance.step_proof_sha256 != tuple(
+                proof.digest for proof in student.retained_state.step_proofs)):
+        invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+    return acceptance
+
+
 def load_bamf_generation_authority(pointer_path: Path) -> tuple[CompleteStudent, str]:
     """Read current accepted B13 authority without mutating delivery state."""
     pointer_path = Path(pointer_path)
     with _pointer_lock(pointer_path.parent):
         student, pointer = _load_generation_locked(pointer_path)
+        _require_published_acceptance(pointer_path.parent, pointer, student)
         return student, pointer["manifest_sha256"]
 
 

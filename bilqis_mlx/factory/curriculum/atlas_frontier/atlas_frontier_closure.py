@@ -199,6 +199,8 @@ def _merge_status(current: ClosureStatus, dependency: ClosureStatus) -> ClosureS
 
 
 def _semantic_roots_for_release(current_release, mastered: tuple[str, ...]) -> tuple[str, ...]:
+    from . import candidate_realizations
+
     if hasattr(current_release, "course"):
         capability_map = current_release.course.capability_map
     else:
@@ -209,6 +211,10 @@ def _semantic_roots_for_release(current_release, mastered: tuple[str, ...]) -> t
         if definition is None:
             _fail("BAMF_PLANNER_PREREQUISITE_EVIDENCE_INCOMPLETE")
         roots.update(definition.examined_roots)
+        try:
+            roots.add(candidate_realizations.realized_atlas_semantic_id(capability_id))
+        except ValueError:
+            pass
     return tuple(sorted(roots))
 
 

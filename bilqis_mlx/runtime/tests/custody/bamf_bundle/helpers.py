@@ -91,7 +91,7 @@ def _genesis_defaults():
 
 def genesis_preparation(*, run_id="fixture-run", run_seed=17,
                         topology=None, implementation_sha256=IMPLEMENTATION,
-                        delivery_events=None, **overrides):
+                        delivery_events=None, foundation_row_ages=None, **overrides):
     """Enter B13 generation zero through the production constructor and issuer."""
     from bilqis_mlx.runtime.tests.operator.test_admission import _executable_fixture
     release, graph = _executable_fixture()
@@ -113,6 +113,8 @@ def genesis_preparation(*, run_id="fixture-run", run_seed=17,
         correction_frontier=values["correction_frontier"],
         teacher_state=values["teacher_state"],
         evaluation_contract=values["evaluation_contract"],
+        foundation_row_ages=(
+            () if foundation_row_ages is None else foundation_row_ages),
         delivery_events=(
             ({"event": "FIXTURE_GENESIS", "optimizer_step": 0},)
             if delivery_events is None else delivery_events),
@@ -310,6 +312,7 @@ def publish_candidate(run_dir, bundle):
             run_id=bundle.run_id, topology=bundle.topology,
             implementation_sha256=bundle.implementation_sha256,
             extents=extents, provenance=bundle.provenance,
+            foundation_row_ages=bundle.retained_state.policy.row_ages,
             semantic_abi=dict(bundle.semantic_abi),
             compiler_features=dict(bundle.compiler_features),
             correction_frontier=dict(bundle.correction_frontier),

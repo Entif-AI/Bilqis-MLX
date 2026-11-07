@@ -147,7 +147,8 @@ class BamfColdResumeContinuationTests(unittest.TestCase):
             from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
                 genesis_preparation,
             )
-            prepared = genesis_preparation()
+            prepared = genesis_preparation(
+                foundation_row_ages=parent_state().policy.row_ages)
             held_pointer = publish_initial_generation(
                 second, prepared, reserve_gib=0.)
             held = self.in_memory_student(prepared.candidate, held_pointer)

@@ -12,14 +12,12 @@ another candidate, generation, step, topology or extents state.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-import json
 from pathlib import Path
 import sys
 
 from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
-from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_acceptance import (
-    AcceptedCandidateBinding, candidate_identity_digest, mint_acceptance_binding,
+    candidate_identity_digest, mint_acceptance_binding,
 )
 from bilqis_mlx.learning.atlas_retention_decision import (
     CandidateRetentionDecision,
@@ -35,7 +33,8 @@ from bilqis_mlx.runtime.model_topology_v2 import ParameterCensus
 
 from .codec import load_bamf_bundle
 from .publication import (
-    ACCEPTANCE_DIR, _live_bundle_manifest, _pointer_lock, _read_pointer,
+    _live_bundle_manifest, _pointer_lock, _read_pointer,
+    _require_published_acceptance,
     publish_bamf_generation,
 )
 from .records import (
@@ -72,6 +71,7 @@ def _read_accepted(run_dir: Path):
                 or student.generation != pointer["generation"]
                 or student.parent_manifest_sha256 != pointer["parent_manifest_sha256"]):
             invalid("BAMF_GENERATION_POINTER_DRIFT")
+        _require_published_acceptance(run_dir, pointer, student)
     return pointer, student
 
 
@@ -152,34 +152,7 @@ def _published_in_memory_identity(
             if (not isinstance(stored, dict)
                     or stored.get("sha256") != sha(canonical(record))):
                 invalid("BAMF_GENERATION_POINTER_DRIFT")
-        acceptance_path = (
-            run_dir / ACCEPTANCE_DIR / f"{identity.manifest_sha256}.json")
-        if acceptance_path.is_symlink() or not acceptance_path.is_file():
-            invalid("BAMF_GENERATION_ACCEPTANCE_MISSING")
-        try:
-            record = json.loads(acceptance_path.read_bytes())
-            if student.generation == 0 and student.run_identity is not None:
-                from .genesis import (
-                    InitialGenerationBinding,
-                    validate_parsed_initial_generation_binding,
-                )
-                acceptance = InitialGenerationBinding.from_record(record)
-                validate_parsed_initial_generation_binding(
-                    student, acceptance, pointer["acceptance_sha256"])
-                return identity
-            acceptance = AcceptedCandidateBinding.from_record(record)
-        except (OSError, UnicodeDecodeError, json.JSONDecodeError, BilqisError):
-            invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
-        if (acceptance.digest != pointer["acceptance_sha256"]
-                or acceptance.run_id != identity.run_id
-                or acceptance.generation != identity.generation
-                or acceptance.feature_sha256 != student.extents.factor_map_digest
-                or acceptance.optimizer_step != identity.optimizer_step
-                or acceptance.candidate_identity_sha256
-                != identity.candidate_identity_sha256
-                or acceptance.step_proof_sha256 != tuple(
-                    proof.digest for proof in student.retained_state.step_proofs)):
-            invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+        _require_published_acceptance(run_dir, pointer, student)
     return identity
 
 
@@ -306,7 +279,8 @@ def admit_candidate_step(run_dir: Path, gradients=None, *,
 def accept_and_publish(run_dir: Path, bundle: BamfBundleCandidate,
                        retained_state: CandidateState, *,
                        decision: CandidateRetentionDecision,
-                       feature_sha256: str) -> dict:
+                       feature_sha256: str,
+                       reserve_gib: float = 100.0) -> dict:
     """Publish a candidate that the retention decision owner has accepted.
 
     Publication does not decide that the candidate was accepted. The retention
@@ -317,4 +291,5 @@ def accept_and_publish(run_dir: Path, bundle: BamfBundleCandidate,
     binding = mint_acceptance_binding(
         decision, retained_state, run_id=bundle.run_id,
         generation=bundle.generation, feature_sha256=feature_sha256)
-    return publish_bamf_generation(run_dir, bundle, acceptance=binding)
+    return publish_bamf_generation(
+        run_dir, bundle, acceptance=binding, reserve_gib=reserve_gib)

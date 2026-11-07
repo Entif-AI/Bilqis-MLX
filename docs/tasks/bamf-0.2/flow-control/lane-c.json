@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "70a4ef1e883d348920d64083c7546f443a90ef77",
-  "updated_at": "2026-11-05T06:20:10+00:00",
+  "observed_unified": "9301e41ef215b9d035449c3260c7cd0f8ee0b5a7",
+  "updated_at": "2026-11-07T18:29:11Z",
   "exception": null,
   "items": [
     {
@@ -121,13 +121,22 @@
       "merged_pr": 843
     },
     {
+      "issue": 746,
+      "pr": 903,
+      "state": "TURNED_IN",
+      "head_sha": "ebd5a417bb73525a0853a03291dd1ee065d88357",
+      "preserved_branch": "codex/746-c12-import-commit-20261102",
+      "summary": "Review-ready #746 authority closure is turned in at PR #903: production C12 receive -> A12/C09 verify -> B12 import -> C05 screen -> B13 publication, with exact-head and expanded affected validation green and no child EGM spent.",
+      "resume_trigger": null
+    },
+    {
       "issue": 829,
-      "pr": null,
-      "state": "WAITING",
-      "head_sha": "93fe19ab2504ed6bd17156cb6f58487892ec77b7",
+      "pr": 908,
+      "state": "TURNED_IN",
+      "head_sha": "94d5763dcedd049db65e0a080238786ca0f53542",
       "preserved_branch": "codex/bamf02-c-829-local-handoff-20261104",
-      "summary": "20/20focused tests; implementation75e47376preserved. EGM-Failed episode C829-HANDOFF-20261104 exhausted5/5. User questioned further spend; operator recommended parking. No sixth round or PR.",
-      "resume_trigger": "Explicit human override for additional review or explicit accepted human disposition underADR127; general continuous-work authority is not an override."
+      "summary": "Human-authorized EGM round 6 accepted; semantic repair 94d5763d with 21/21 focused proof. Synced reviewed unified 9301e41e without semantic implementation/test change and opened ready PR #908 from sync head 246e7ea3.",
+      "resume_trigger": null
     }
   ]
 }

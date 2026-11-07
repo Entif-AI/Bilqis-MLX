@@ -26,7 +26,7 @@ from bilqis_mlx.runtime.model_topology_v2 import (
     Initializer, ModelTopologySpecV2, ParameterGroup, ParameterSpec,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    DECLARED, candidate, parent_state, retention_decision,
+    DECLARED, candidate, parent_state, publish_candidate, retention_decision,
 )
 
 
@@ -141,16 +141,20 @@ class CacheSeparationTests(unittest.TestCase):
 
     def _publish_initial(self, run: Path, state: CandidateState):
         with _shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            return _publish(run, candidate(state), parent_state_for_acceptance=state)
+            return publish_candidate(run, candidate(state))
 
     def test_published_parameter_extension_invalidates_real_cache_and_rebuilds(self):
         run = self.root / "extension"
         state = _attention_state()
         first = self._publish_initial(run, state)
         with _shape_patch():
-            _, first_authority, _, _, stale = _cache_for(
+            parent, first_authority, _, _, stale = _cache_for(
                 run, self.hidden, self.ids, self.valid)
-        successor = candidate(state, 1, first["manifest_sha256"])
+        successor = replace(
+            candidate(parent.retained_state, 1, first["manifest_sha256"]),
+            run_identity=parent.run_identity,
+            extents=parent.extents,
+        )
         extents = replace(successor.extents, active_semantic_digest="8" * 64)
         successor = replace(
             successor, extents=extents,
@@ -158,7 +162,9 @@ class CacheSeparationTests(unittest.TestCase):
             transition={**successor.transition, "kind": "PARAMETER_EXTENSION",
                         "invalidate_derived_caches": True})
         with _shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            second = _publish(run, successor, parent_state_for_acceptance=state)
+            second = _publish(
+                run, successor,
+                parent_state_for_acceptance=parent.retained_state)
             student, authority, params, _, _ = _cache_for(
                 run, self.hidden, self.ids, self.valid)
         self.assertEqual(student.transition["kind"], "PARAMETER_EXTENSION")
@@ -174,25 +180,31 @@ class CacheSeparationTests(unittest.TestCase):
         state = _attention_state()
         first = self._publish_initial(run, state)
         with _shape_patch():
-            _, first_authority, _, _, stale = _cache_for(
+            parent, first_authority, _, _, stale = _cache_for(
                 run, self.hidden, self.ids, self.valid)
-        params = dict(state.optimizer.parameters)
+        params = dict(parent.retained_state.optimizer.parameters)
         params["blocks.0.query"] = params["blocks.0.query"] + mx.array(.001, dtype=mx.float32)
         changed_optimizer = AdamWStateTree(
-            params, state.optimizer.m, state.optimizer.v, state.optimizer.update_counts)
+            params, parent.retained_state.optimizer.m, parent.retained_state.optimizer.v,
+            parent.retained_state.optimizer.update_counts)
         changed_state = CandidateState(
-            changed_optimizer, state.policy, state.allocations, state.optimizer_step, state.custody)
+            changed_optimizer, parent.retained_state.policy,
+            parent.retained_state.allocations, parent.retained_state.optimizer_step,
+            parent.retained_state.custody)
         # BAMF-0.2 freezes one topology today. This controlled identity-only variant
         # drives B13's production MODEL_SWAP classifier without changing tensor shapes.
         with patch.object(ModelTopologySpecV2, "__post_init__", return_value=None):
             swapped_topology = replace(ModelTopologySpecV2(), default_run_seed=1)
             successor = replace(
                 candidate(changed_state, 1, first["manifest_sha256"]),
+                run_identity=parent.run_identity,
                 topology=swapped_topology,
                 transition={"schema": "bilqis.mlx.bamf-generation-transition/v1",
                             "kind": "MODEL_SWAP", "invalidate_derived_caches": True})
             with _shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-                second = _publish(run, successor, parent_state_for_acceptance=state)
+                second = _publish(
+                    run, successor,
+                    parent_state_for_acceptance=parent.retained_state)
                 student, authority, next_params, _, _ = _cache_for(
                     run, self.hidden, self.ids, self.valid)
         self.assertEqual(student.transition["kind"], "MODEL_SWAP")

@@ -15,8 +15,8 @@ import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.bamf_bundle import (
     InitialGenerationBinding, PreparedInitialGeneration,
-    load_bamf_generation, prepare_initial_generation, publish_bamf_generation,
-    publish_initial_generation,
+    load_bamf_generation, load_bamf_generation_authority,
+    prepare_initial_generation, publish_bamf_generation, publish_initial_generation,
 )
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
@@ -63,6 +63,16 @@ class GenerationZeroAuthorityTests(unittest.TestCase):
                      student.retained_state.optimizer.update_counts):
             for value in tree.values():
                 self.assertFalse(bool(mx.any(value)))
+
+    def test_generation_zero_authenticates_through_shared_accepted_authority_loader(self):
+        prepared, pointer = self.publish_genesis(run_seed=74)
+        with shape_patch():
+            student, manifest = load_bamf_generation_authority(
+                self.run / "bamf-state.json")
+        self.assertEqual(manifest, pointer["manifest_sha256"])
+        self.assertEqual(student.run_identity.digest,
+                         prepared.candidate.run_identity.digest)
+        self.assertEqual(student.run_identity.run_seed, 74)
 
     def test_generation_zero_refuses_c05_candidate_acceptance(self):
         legacy = candidate(parent_state())

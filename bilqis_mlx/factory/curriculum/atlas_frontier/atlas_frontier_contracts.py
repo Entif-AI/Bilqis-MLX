@@ -62,7 +62,10 @@ class PrerequisiteEdge:
                 or self.semantic_id == self.prerequisite_semantic_id
                 or type(self.source_evidence_sha256) is not str
                 or not _SHA.fullmatch(self.source_evidence_sha256)
-                or self.status != "SOURCE_DECLARED_UNVERIFIED"
+                or self.status not in {
+                    "SOURCE_DECLARED_UNVERIFIED",
+                    "FRONTIER_HYPOTHESIS_UNVERIFIED",
+                }
                 or self.schema != EDGE_SCHEMA):
             _fail("BAMF_PLANNER_PREREQUISITE_EDGE_INVALID")
 
