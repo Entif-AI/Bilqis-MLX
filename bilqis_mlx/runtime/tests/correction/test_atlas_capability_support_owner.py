@@ -152,7 +152,9 @@ class CapabilitySupportOwnerTests(unittest.TestCase):
         owner.advance(
             _result(node, digest=node.content_digest, correction=correction), AUTHORITY)
         self.assertEqual(owner.require(TARGET).status, "QUALIFIED")
-        self.assertIsNone(self.load_support().queue)
+        with self.assertRaises(BilqisError):
+            self.load_support()
+        self.assertIsNone(self.load_support(AUTHORITY).queue)
 
         self.assertTrue(apply_capability_support_correction(
             owner, correction, AUTHORITY))
@@ -162,8 +164,23 @@ class CapabilitySupportOwnerTests(unittest.TestCase):
         with self.assertRaises(BilqisError):
             owner.require(TARGET)
         self.assertEqual(
-            self.load_support().support.status,
+            self.load_support(AUTHORITY).support.status,
             "REQUALIFICATION_REQUIRED")
+
+    def test_deleting_active_hold_state_cannot_masquerade_as_clear(self):
+        published, _authority = self.publish_support()
+        owner = self.load_support()
+        correction = _event(_ref(DependencyKind.SOURCE, SOURCE_ROW))
+        self.assertTrue(apply_capability_support_correction(
+            owner, correction, AUTHORITY))
+        hold_dir = (
+            self.run / "c09-capability-support" / published["manifest_sha256"])
+        state_path = next(hold_dir.glob("*.json"))
+        marker_path = state_path.with_suffix(state_path.suffix + ".seen")
+        self.assertTrue(marker_path.is_file())
+        state_path.unlink()
+        with self.assertRaises(BilqisError):
+            self.load_support(AUTHORITY)
 
 
 if __name__ == "__main__":

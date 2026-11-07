@@ -27,7 +27,8 @@ from .atlas_revalidation_runtime import (
 )
 from .atlas_source_authority import SourceAuthorityRegistry
 from .capability_support_journal import (
-    clear_journal, event_from_record, journal_path, read_journal, write_journal,
+    event_from_record, journal_path, read_journal, transition_from_record,
+    write_journal,
 )
 
 
@@ -230,10 +231,17 @@ class CapabilitySupportArtifactOwner:
                     capability_id=self.capability_id,
                     manifest_sha256=self._support.retained_generation_sha256,
                     artifact_id=self.current_node.artifact_id,
-                    state="REQUALIFICATION_REQUIRED", event=self._queue.event)
+                    state="REQUALIFICATION_REQUIRED", event=self._queue.event,
+                    transition=transition)
         elif (self._journal_path is not None
               and not self._queue.held_artifact_ids and not self._queue.pending):
-            clear_journal(self._journal_path)
+            write_journal(
+                self._journal_path,
+                capability_id=self.capability_id,
+                manifest_sha256=self._support.retained_generation_sha256,
+                artifact_id=self.current_node.artifact_id,
+                state="CLEARED", event=self._queue.event,
+                transition=transition)
         return progress
 
 
@@ -297,16 +305,34 @@ def load_capability_support_owner(
     if (hold.get("capability_id") != capability_id
             or hold.get("manifest_sha256") != manifest_sha256
             or hold.get("artifact_id") != node.artifact_id
-            or hold.get("state") not in {"HELD", "REQUALIFICATION_REQUIRED"}):
+            or hold.get("state") not in {
+                "HELD", "CLEARED", "REQUALIFICATION_REQUIRED"}):
         _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_DRIFT")
     event = event_from_record(hold.get("event"))
+    if not isinstance(authority_registry, SourceAuthorityRegistry):
+        _invalid("BAMF_C09_CAPABILITY_SUPPORT_CORRECTION_AUTHORITY_REQUIRED")
+    authority_registry.verify_correction(event)
+    transition = transition_from_record(hold.get("transition"))
+    if transition is not None:
+        authority_registry.verify_transition(transition)
+        if (transition.artifact_id != node.artifact_id
+                or transition.correction_event_id != event.event_id
+                or transition.correction_receipt_sha256
+                != event.source_receipt_sha256):
+            _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_DRIFT")
+    if hold["state"] == "CLEARED":
+        if transition is None or transition.changed:
+            _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_DRIFT")
+        return owner
     if hold["state"] == "REQUALIFICATION_REQUIRED":
+        if transition is None or not transition.changed:
+            _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_DRIFT")
         owner._support = replace(
             owner._support,
             status=RequalificationStatus.REQUALIFICATION_REQUIRED)
         return owner
-    if not isinstance(authority_registry, SourceAuthorityRegistry):
-        _invalid("BAMF_C09_CAPABILITY_SUPPORT_CORRECTION_AUTHORITY_REQUIRED")
+    if transition is not None:
+        _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_DRIFT")
     owner._queue = apply_correction(event, owner._index, authority_registry)
     return owner
 

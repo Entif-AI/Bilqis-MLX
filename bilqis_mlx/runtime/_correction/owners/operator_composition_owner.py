@@ -90,9 +90,23 @@ class OperatorCompositionArtifactOwner:
         self._compositions[key] = composition
         self._cache_keys.add(key)
         self._materialized.add(key)
-        self._index = DependencyIndex.build(tuple(
-            _node(self._compositions[key], binding)
-            for key in sorted(self._compositions)))
+        existing_nodes = {
+            existing_node.artifact_id: existing_node
+            for existing_node in self._index.nodes
+        }
+        rebuilt = []
+        for composition_key in sorted(self._compositions):
+            expected = _node(self._compositions[composition_key], binding)
+            prior = existing_nodes.get(expected.artifact_id)
+            if prior is not None:
+                if (prior.content_digest != expected.content_digest
+                        or prior.immediate_dependencies
+                        != expected.immediate_dependencies):
+                    _invalid("BAMF_C09_OPERATOR_COMPOSITION_CONTENT_DRIFT")
+                rebuilt.append(prior)
+            else:
+                rebuilt.append(expected)
+        self._index = DependencyIndex.build(tuple(rebuilt))
 
     def node_for(self, composition) -> ArtifactNode:
         return self._index.node("composition:" + composition.qualification_receipt_sha256)
