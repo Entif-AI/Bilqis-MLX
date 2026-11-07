@@ -1,5 +1,5 @@
 {
-  "legacy_raw_file_count": 248,
+  "legacy_raw_file_count": 249,
   "legacy_raw_raise_count": 2072,
   "legacy_raw_raise_groups": [
     {
@@ -11546,18 +11546,18 @@
       "path": "bilqis_mlx/runtime/tests/capability/factory/retention/owner_live_support.py"
     },
     {
-      "code_hint": "exact cached route must preempt neural",
-      "count": 1,
-      "exception": "AssertionError",
-      "expression": "'exact cached route must preempt neural'",
-      "path": "bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver.py"
-    },
-    {
       "code_hint": "malformed decoder payload",
       "count": 1,
       "exception": "ValueError",
       "expression": "'malformed decoder payload'",
       "path": "bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver.py"
+    },
+    {
+      "code_hint": "exact cached route must preempt neural",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'exact cached route must preempt neural'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver_retention.py"
     },
     {
       "code_hint": "missing source manifest",

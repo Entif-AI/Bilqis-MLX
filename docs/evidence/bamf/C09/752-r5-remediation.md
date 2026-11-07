@@ -11,11 +11,13 @@ EGM episode `C09-752-EGM-20261107`, round `5/5`.
 - Named source: `#516` — BAMF-0.2 C09.1
 - Round-5 reviewed head: `b81fd8799b502e0e88706e63e6c40058acfdcc6a`
 - Round-5 branch: `codex/752-final-prime-20261106`
-- Remediation branch: `codex/752-r5-remediation-20261107`
+- Historical Round-5 remediation branch: `codex/752-r5-remediation-20261107`
+- Final engineering recut branch: `codex/752-final-recut-20261107`
 - Required integration trunk: `codex/bamf-unified-base-20261028`
-- Unified SHA fetched for the remediation integration boundary:
-  `3899649586b105b075e92f0ee3c51e80c379b473`
-- Repaired checkpoint: pending final commit/freeze
+- Current unified SHA consumed by the final recut integration boundary:
+  `58eb36bba1958e0b3ca5d6aa3080260ccac3e9a1`
+- Current code checkpoint before the final evidence-only freeze:
+  `a18394d7a7bb5fa301dec2b1f2cc62ff65f1c99d`
 
 Round 5 was a FAIL. This packet does not revise that verdict, claim a sixth
 review round, claim EGM PASS, authorize a PR, or authorize merge/issue closure.
@@ -223,8 +225,11 @@ artifact. It supplements rather than rewrites the historical Round-5 packet.
 
 ## Current verification receipts
 
-These receipts belong to the uncommitted Round-5 remediation working tree and
-must be refreshed only if their dependency surface changes.
+The original focused receipts below were produced while the Round-5 remediation
+body was being assembled. The final recut has since committed that body, replayed
+only the #752/C09 semantic history onto current unified, and revalidated the
+affected integration seams. Historical receipts are retained for lineage and are
+not presented as proof of a later exact head.
 
 - Focused accepted-run remediation core: **20/20 PASS**.
   Covers concurrent branches, future-dependent correction activation, exact
@@ -241,6 +246,47 @@ must be refreshed only if their dependency surface changes.
   ACTIVE and #752 is not blocked by a competing writer.
 - `git diff --check`: **PASS**.
 - Host ingress and real exact-cache consumer witness: **7/7 PASS**.
+- Final recut on unified
+  `58eb36bba1958e0b3ca5d6aa3080260ccac3e9a1`:
+  - `quality:changed`: **PASS** with four inherited code-smell findings and
+    **0 new changed-file findings**.
+  - legacy-trainer authority checker: **PASS**; checker regressions **7/7 PASS**.
+    The authoritative replay source remains
+    `/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`;
+    Prometheus is stale and is not an adaptation source.
+  - BAMF flow control: **PASS**; flow-control regressions **15/15 PASS**.
+  - BAMF contract verification: **43/43 PASS**.
+  - `git diff --check`: **PASS**.
+  - focused accepted-correction / stale-replay / source / exact-cache /
+    grouped-runtime / model-contract / model-forward / C02 batch seam:
+    **26 passed, 11 skipped, 84 subtests passed**.
+- The earlier exact candidate `f72c77171c6e1ba8b0a36a875ce8cd83fc86e2ca`
+  produced a detached `verify:leaf` FAIL on an immutable M3 Ultra snapshot
+  (`49838d198cae67708ac6d9fd24e779e26b9109b18052ff208059f6877328f35b`).
+  All **86 unique failing test identities** from that candidate reproduce on
+  pristine consumed unified `53eba37e5c9dd6ad065b1980fa4850c484aaa624`;
+  there were **0 candidate-only failing identities**. That receipt is therefore
+  retained as inherited-baseline attribution, not as a PASS and not as a #752
+  regression. The later unified advance to `58eb36bb...` invalidated it as the
+  final-head leaf receipt.
+- Exact current code head `a18394d7a7bb5fa301dec2b1f2cc62ff65f1c99d`
+  was then run through detached `verify:leaf` on M3 Ultra against unified
+  `58eb36bba1958e0b3ca5d6aa3080260ccac3e9a1`. The immutable source/snapshot
+  digest was
+  `1a0bd993a9355ba1b5e2ba1a6c392eddb3d99c04874e7a283dea343bb0b43ce0`;
+  the receipt finished **FAIL** with no source mutation. The differential gate
+  reported **90 failed, 2785 passed, 187 skipped, 87 errors, and 1313 subtests
+  passed**. This is not recorded as a PASS.
+- Baseline attribution against pristine current unified used a second immutable
+  M3 Ultra snapshot
+  (`cab241e5b7019c0af6aebc1dd560c7f3cef156b8d7d01f587d8b744f0610c184`).
+  Replaying the exact current red identities with the same xdist shape showed
+  the same inherited failure/collection families. Twelve identities whose
+  status differed under parallel scheduling were then isolated on both the
+  candidate and pristine unified; both produced exactly **3 failed, 2 passed,
+  7 errors**. The seven errors are the same missing pinned legacy-parent
+  fixture, and the three failures are the same numeric-staircase baseline
+  failures. No #752-introduced failing behavior was identified.
 
 The historical Round-5 candidate receipts remain historical evidence only and
 do not prove this remediation. Repository-required changed-scope and detached
@@ -253,11 +299,14 @@ Populate these only after the engineering body is committed, current unified
 is consumed at the integration boundary, and the remote feature ref is read
 back exactly.
 
-- Repaired exact head: `PENDING`
-- Consumed unified exact head: `PENDING_INTEGRATION`
-- `quality:changed`: `PENDING`
-- BAMF contracts: `PENDING`
-- detached `verify:leaf`: `PENDING`
-- detached `verify:premerge`: `PENDING_INTEGRATION`
+- Repaired code head before evidence-only freeze:
+  `a18394d7a7bb5fa301dec2b1f2cc62ff65f1c99d`
+- Consumed unified exact head:
+  `58eb36bba1958e0b3ca5d6aa3080260ccac3e9a1`
+- `quality:changed`: `PASS`
+- BAMF contracts: `PASS_43_OF_43`
+- detached `verify:leaf`:
+  `FAIL_INHERITED_BASELINE_NO_752_SPECIFIC_FAILURE_IDENTIFIED`
+- detached `verify:premerge`: `PENDING`
 - EGM: `BLOCKED_AFTER_ROUND_5_PENDING_EXPLICIT_AUTHORITY`
 - Final PR: `BLOCKED_PENDING_AUTHORIZED_EGM_PASS`
