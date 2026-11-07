@@ -18,7 +18,7 @@
     {
       "issue": 465,
       "pr": null,
-      "state": "WAITING",
+      "state": "ACTIVE",
       "head_sha": "a1025e442277ee71b2120f87b9254179cee88dfb",
       "summary": "B09.2 parent candidate awaits production-authority remediation.",
       "resume_trigger": "Remediation #711 is consumed into the candidate, required B05/B08/B11 production provenance is consumable, and the candidate is selected for merge-readiness review.",
@@ -78,12 +78,12 @@
       "pr": 885,
       "state": "WAITING",
       "head_sha": "e50d759cc45bf61807f62ee62d7354052a3f0db8",
-      "summary": "B13.1 implementation and exact-head hosted verification are complete on draft PR #885. #708/PR #809 now supplies the B13 predecessor-feature authority that unblocks A02.1's recorded resume trigger, but A02.1/#399 has not yet produced the production allocation/admission receipt #478 must consume; fresh merge-readiness EGM is therefore not yet admissible.",
-      "resume_trigger": "A02.1/#399 completes production successor allocation/admission using the accepted #708/#809 predecessor-feature authority and publishes a consumable production receipt; then synchronize #478 once, consume that receipt, run only invalidated proof, obtain the required fresh isolated pinned Google EGM, and promote PR #885 only if all gates pass.",
+      "summary": "B13.1 reactivated after root-cause tracing showed the remaining A02/C07 cycle is blocked on a B13-owned accepted-run custody seam: #399 already stages the exact native BAMF candidate, while #510 must authenticate that candidate and the concrete accepted runtime without reconstructing legacy optimizer state. A09.5/PR #891 is now consumed by reviewed unified. #478 owns the missing accepted-run projection and is the canonical place to break the cycle.",
+      "resume_trigger": null,
       "open_pr_exception": {
         "reason": "The user explicitly directed continuation on existing PR #885 and preservation of the truthful blocked PR state rather than closing/recreating the integration vehicle while the direct A02 dependency remains unconsumable.",
         "authority": "User directive for #478 continuation plus flow-control policy open-PR exception contract.",
-        "expires_when": "A02.1/#399 publishes the consumable production allocation/admission receipt and #478 is reactivated for exact consumption/EGM, or PR #885 is otherwise closed/replaced under human-directed reconciliation."
+        "expires_when": "PR #885 becomes review-ready after current-unified synchronization, accepted-run projection repair, downstream A02/C07 consumption, scoped proof and fresh pinned EGM, or is otherwise closed/replaced under human-directed reconciliation."
       },
       "preserved_branch": "codex/bamf02-b13-1-478-complete-20261106"
     },
