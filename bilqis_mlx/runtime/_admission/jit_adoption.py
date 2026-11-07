@@ -82,7 +82,7 @@ def execute_prepared_successor_adoption(
     C07 contract is production run authority.
     """
     if not isinstance(runtime, PreparedSuccessorRuntime):
-        raise ValueError("JIT_ADOPTION_EXECUTOR_CONTEXT_INVALID")
+        raise ValueError("JIT_ADOPTION_EXECUTOR_RUNTIME_INVALID")
     selected = resolve_ready_candidate(
         frontier, current, ledger, plan, checkpoint, proposal, staged)
     verify_current_implementations(
