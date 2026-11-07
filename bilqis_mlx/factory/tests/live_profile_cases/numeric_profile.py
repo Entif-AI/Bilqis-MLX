@@ -29,7 +29,6 @@ numeric_rows = []
 for capability in numeric_release.execution_plan.grade_map["C"].capabilities:
     numeric_rows.extend(draw_executable_release_rows(
         source, numeric_transition.graph, numeric_release, registry,
-        legacy_course=numeric_course,
         seed=20261019,
         capability=capability))
 assert numeric_rows

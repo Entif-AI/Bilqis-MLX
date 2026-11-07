@@ -44,6 +44,10 @@ def restore_promotion_attempt_fields(raw: dict) -> bool:
         "promotion_sweep_attempt_student_sha256")
     raw["promotion_sweep_attempt_scope"] = tuple(
         raw.get("promotion_sweep_attempt_scope", ()))
+    raw["promotion_sweep_retry_scores"] = tuple(
+        (capability, correct, total)
+        for capability, correct, total in raw.get(
+            "promotion_sweep_retry_scores", ()))
     return legacy
 
 

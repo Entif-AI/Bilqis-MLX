@@ -27,7 +27,14 @@ from tests.integration.numeric.fixtures import NumericStaircaseFixture
 class NumericProfileFixture(NumericStaircaseFixture):
     @staticmethod
     def _perfect_to_boundary(program, school):
-        for index in range(32):
+        capability_count = len(program.grades[school.grade_index].capabilities)
+        maximum_assessments = (
+            capability_count
+            + capability_count * (capability_count + 1) // 2
+            + len(school.active_grades)
+            + 2
+        )
+        for index in range(maximum_assessments):
             if school.stage == 'AWAITING_NEXT_GRADE':
                 return school
             while next_capability(school):
@@ -47,7 +54,9 @@ class NumericProfileFixture(NumericStaircaseFixture):
                 school.current_student.optimizer_step,
                 program.digest(), rubric, scores,
                 f'fixture-perfect-{index}'))
-        raise AssertionError('fixture did not reach AWAITING_NEXT_GRADE')
+        raise AssertionError(
+            'fixture did not reach AWAITING_NEXT_GRADE within derived '
+            f'grade bound {maximum_assessments}')
 
     def _bind_perfect_boundary(
             self, record, release, course, program, *, run_dir=None, graph=None):

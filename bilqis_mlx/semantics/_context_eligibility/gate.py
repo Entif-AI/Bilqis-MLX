@@ -1,7 +1,7 @@
 """Combined source-bound context eligibility gate."""
 from __future__ import annotations
 
-from .. import context_eligibility as _api
+import bilqis_mlx.semantics.context_eligibility as _api
 from .checks import check_envelope, check_grants, check_joins, check_task, member_evidence
 
 

@@ -103,9 +103,7 @@ class FormalLessonAuthorityTests(unittest.TestCase):
         binding, typed = _case(
             "COUNT", ("EntitySet", ("alpha", "beta")))
         source = _source()
-        self.assertIn(
-            (FORMAL[2][0], "OPERATOR_SOURCE_SIGNATURE_MISMATCH"),
-            source.uncovered)
+        self.assertEqual(source.uncovered, ())
         with patch(
                 "bilqis_mlx.factory.formal_lessons.resolve_formal_source_operators",
                 return_value=source):
@@ -114,7 +112,7 @@ class FormalLessonAuthorityTests(unittest.TestCase):
                     _selection(), FORMAL[2][0], typed, binding)
         self.assertEqual(
             caught.exception.context["reason"],
-            "BAMF_FORMAL_LESSON_SOURCE_UNCOVERED")
+            "BAMF_OPERATOR_SIGNATURE_MISMATCH")
 
     def test_checker_rejects_forged_gold_without_calling_generator(self):
         binding, inputs = _case("SUCC", ("Number", 2))

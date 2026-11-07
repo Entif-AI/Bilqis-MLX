@@ -32,7 +32,11 @@ class SourceMemoExamTests(TestCase):
 
         with patch.object(typed_answer_training, "forward_arrays", side_effect=network) as forward:
             for answer in (0, 2, 1):
-                weights = {"embedding.weight": np.zeros((4, 1)), "answer": answer}
+                weights = {
+                    "embedding.weight": np.zeros((4, 1)),
+                    "position.weight": np.zeros((96, 1)),
+                    "answer": answer,
+                }
                 measured.append(trainer._predictions(mx, weights, [row], config, [0, 1]))
             conflicting = trainer._predictions(mx, weights, [{**row, "gold": "0"}], config, [0, 1])
         self.assertEqual(forward.call_count, 4)
@@ -64,7 +68,10 @@ class SourceMemoExamTests(TestCase):
         with patch('bilqis_mlx.runtime.mlx_parity.forward_arrays', side_effect=network):
             for identity, correct in (("weak", False), ("strong", True), ("later-weak", False)):
                 predictions = trainer._predictions(
-                    mx, {"identity": identity, "correct": correct}, [row], config, [6, 7])
+                    mx, {
+                        "position.weight": np.zeros((96, 1)),
+                        "identity": identity, "correct": correct,
+                    }, [row], config, [6, 7])
                 results.append(score(cohort, predictions, {
                     "sha256": identity, "optimizer_step": len(results),
                     "model_and_native_adamw": True})["scores"]["C.ADD"]["correct"])

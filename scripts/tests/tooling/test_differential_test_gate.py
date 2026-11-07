@@ -130,6 +130,15 @@ class DifferentialTestGateTests(unittest.TestCase):
         self.assertEqual(plan.mode, "skip")
         self.assertEqual(plan.tests, ())
 
+    def test_source_runner_uses_module_invocation_for_repository_package_context(self):
+        command = gate._source_runner_command(("pkg/tests/test_thing.py",))
+
+        self.assertEqual(
+            command,
+            [gate.sys.executable, "-B", "-m", "scripts.run_tests",
+             "pkg/tests/test_thing.py"],
+        )
+
     def test_matching_success_receipt_reuses_without_rerun(self):
         temporary = self._repo()
         self.addCleanup(temporary.cleanup)

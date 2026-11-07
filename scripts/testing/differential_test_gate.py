@@ -225,6 +225,11 @@ def _pytest_command(mode: str, tests: tuple[str, ...] = ()) -> list[str]:
     return command
 
 
+def _source_runner_command(tests: tuple[str, ...] = ()) -> list[str]:
+    """Invoke the repository runner with package context intact."""
+    return [sys.executable, "-B", "-m", "scripts.run_tests", *tests]
+
+
 def _run(root: Path, gate_name: str, base_ref: str, command: list[str]) -> int:
     print(f"TEST_GATE_RUN gate={gate_name} base={base_ref} command={' '.join(command)}")
     result = subprocess.run(command, cwd=root, check=False)
@@ -254,7 +259,7 @@ def run_leaf(root: Path) -> int:
             plan.base_ref, command, True))
         return 0
     if not _pytest_available():
-        command = [sys.executable, "-B", "scripts/run_tests.py", *plan.tests]
+        command = _source_runner_command(plan.tests)
     elif plan.tests:
         command = _pytest_command(plan.mode, plan.tests)
     else:
@@ -269,7 +274,7 @@ def run_premerge(root: Path) -> int:
         print(f"TEST_GATE_REUSED gate=premerge head={previous.head}")
         return 0
     base = resolve_test_base(root, gate="premerge")
-    command = [sys.executable, "-B", "scripts/run_tests.py"]
+    command = _source_runner_command()
     return _run(root, "premerge", base, command)
 
 
