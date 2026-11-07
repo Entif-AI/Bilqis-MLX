@@ -1,21 +1,19 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "d29fd6cd290d88f0b3dbd1557b7ce229db0caab3",
-  "updated_at": "2026-11-05T06:27:03+00:00",
+  "observed_unified": "aef69dae9179bb09f85f955b8a494f6582eac942",
+  "updated_at": "2026-11-07T02:57:47Z",
   "exception": null,
   "items": [
     {
       "issue": 475,
       "pr": null,
-      "state": "WAITING",
-      "head_sha": "b5c3df440d397c0c2cd2165d5f2c015c1d1e7a0c",
-      "summary": "B12.2 remains the current primary Lane B integration surface; remediation #710 owns the unresolved execution-provenance defect.",
-      "resume_trigger": "Remediation #710 is consumed; issue #475 transitions to EGM-Pending; fresh exact-head EGM passes; an integration PR slot is available.",
-      "closed_pr": 695,
-      "preserved_branch": "codex/b12-475-initialized-rows-20261101",
-      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
-      "close_reason": "EGM-Failed; remediation #710"
+      "state": "TURNED_IN",
+      "head_sha": "e99630d4812a852589dae55dac61bd398b3fba08",
+      "summary": "B12.2 is complete and closed: PR #882 was human-merged into reviewed unified as 0afb12a0 after hosted portable/core and semantic-ABI success plus fresh focused acceptance proof.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b12-2-475-complete-20261106",
+      "merged_pr": 882
     },
     {
       "issue": 465,
@@ -74,6 +72,15 @@
       "preserved_branch": "feat/bamf-b13-5-697-generation-feature-binding-20261101",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
       "close_reason": "EGM-Failed; remediation #708"
+    },
+    {
+      "issue": 478,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "1826a53502cbbb6cc11877f7f3bf0f01188152e4",
+      "summary": "B13.1 completion is active on a fresh current-unified branch, reconciling already-merged atomic custody, tensor CAS, accepted-generation and cold-continuation evidence against the full leaf acceptance contract.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b13-1-478-complete-20261106"
     },
     {
       "issue": 479,
