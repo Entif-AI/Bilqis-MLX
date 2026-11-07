@@ -15,9 +15,11 @@
 
 ## Changed paths
 
+- `bilqis_mlx/runtime/tests/batch/test_factory_training_bridge.py`
 - `docs/evidence/bamf/C04/parent-acceptance.md`
 - `docs/evidence/bamf/C04/receipt.md`
-- `docs/evidence/bamf/C04/egm.md` after fresh review
+
+`docs/evidence/bamf/C04/egm.md` is added only after the exact repaired head receives its fresh independent re-audit.
 
 No production code change is required: the reviewed C04 implementation is already present on
 the consumed unified base. This branch exists to perform the dependency requalification and
@@ -41,7 +43,9 @@ Current-tree source readback confirms:
 - exact full score and replay-safe cost accounting;
 - no assessment/gold import in the solver closure;
 - literal `ADD(MUL(2,3),4) == 10` with two pure calls;
-- live typed TaskGoal readout -> neural proposal -> pure solver route.
+- fresh ROLE_LOOKUP cases through CompleteSolver;
+- live typed TaskGoal readout -> neural proposal -> pure solver route;
+- closeout regression: source-owned Factory authority -> real B11 proposer/forward -> legal source-visible binding -> pure operator.
 
 ## Test command for human/CI replay
 
@@ -54,10 +58,7 @@ python3 -B scripts/run_tests.py \
   bilqis_mlx/semantics/tests/cognitive_dag
 ```
 
-This chat execution surface cannot execute the mounted Studio repository inside the mandated
-code-execution container, so it does not fabricate a new local test run. The closeout consumes
-the exact upstream run receipts above and requires fresh hosted PR checks plus independent
-review of this current-tree disposition.
+No new local test result is claimed in this receipt until the exact repaired head is exercised. Historical results above are consumed from their cited exact run receipts. Fresh hosted PR checks and an independent exact-head re-audit are required before this closeout is marked complete.
 
 ## Observed outcome
 
