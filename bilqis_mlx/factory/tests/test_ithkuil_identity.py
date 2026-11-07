@@ -309,11 +309,7 @@ class IthkuilIdentityFactoryTests(unittest.TestCase):
                     Checkpoint("e" * 64, "bundles/fixture", 0, True), self.parent_graph)
             self.assertEqual(proposal.disposition, ProposalDisposition.SOURCE_DEVELOPMENT)
             staged = load_staged_candidates(root, self.frontier, self.current)
-            self.assertIn(self.staged, staged)
-            self.assertEqual(
-                {item.target_capability_id for item in staged},
-                {CAPABILITY, "D.EVENT_OCCURRENCE"},
-            )
+            self.assertEqual(staged, (self.staged,))
             self.assertEqual(session.ledger.receipts, ())
 
     def test_ready_catalog_proposal_uses_existing_student_transaction(self):

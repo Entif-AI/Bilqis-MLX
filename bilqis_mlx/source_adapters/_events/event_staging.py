@@ -48,6 +48,48 @@ def event_grade_id(curriculum):
     return available[0]
 
 
+def _admission(capability, sources):
+    row = sources[capability]
+    proof = source_contract_digest(capability)
+    _, prerequisites = SPECS[capability]
+    required_event_tokens = tuple(
+        SYMBOLS[item] for item in prerequisites if item in SYMBOLS)
+    prerequisite_tokens = (
+        ('development.Event.E0',) if capability == 'D.EVENT_OCCURRENCE'
+        else required_event_tokens
+    )
+    return AdmittedToken(
+        SYMBOLS[capability], SEMANTIC_IDS[capability],
+        row['sense_summary'] +
+        '; finite event observation/transition only; morphology not realized',
+        'new_ithkuil', 'compositional', row['source_url'],
+        row['source_text_sha256'], proof, provider_implementation_digest(),
+        prerequisite_tokens, capability, proof,
+        signature='Boolean*Boolean->Boolean', arity=2,
+    )
+
+
+def _canonical_node(entry):
+    return {
+        'id': entry.token_id,
+        'family': entry.source_kind,
+        'subtype': entry.representation,
+        'signature': entry.signature,
+        'arity': entry.arity,
+        'stage': 0,
+        'source': entry.source_locator,
+        'semantic_id': entry.semantic_id,
+        'meaning': entry.meaning,
+        'capability_id': entry.capability_id,
+        'admission_receipt': entry.admission_receipt,
+        'state': entry.state,
+        'edges': [
+            {'kind': 'prerequisite', 'target': prerequisite}
+            for prerequisite in entry.prerequisite_tokens
+        ],
+    }
+
+
 def projected_graph(parent, capabilities):
     """Append only the requested prerequisite-closed event identities."""
     if (type(capabilities) is not tuple or not capabilities
@@ -59,28 +101,18 @@ def projected_graph(parent, capabilities):
     available = set(parent.get('tokens', ()))
     for capability in capabilities:
         _, prerequisites = SPECS[capability]
+        admission = _admission(capability, sources)
         if SYMBOLS[capability] in parent['tokens']:
+            index = parent['tokens'].index(SYMBOLS[capability])
+            if parent['nodes'][index] != _canonical_node(admission):
+                source_invalid('EVENT_FRAME_EXISTING_ROW_AUTHORITY_DRIFT')
             available.add(SYMBOLS[capability])
             continue
         required_event_tokens = tuple(
             SYMBOLS[item] for item in prerequisites if item in SYMBOLS)
         if any(token not in available for token in required_event_tokens):
             source_invalid('EVENT_FRAME_CATALOG_PREREQUISITE_MISSING')
-        row = sources[capability]
-        proof = source_contract_digest(capability)
-        prerequisite_tokens = (
-            ('development.Event.E0',) if capability == 'D.EVENT_OCCURRENCE'
-            else required_event_tokens
-        )
-        admissions.append(AdmittedToken(
-            SYMBOLS[capability], SEMANTIC_IDS[capability],
-            row['sense_summary'] +
-            '; finite event observation/transition only; morphology not realized',
-            'new_ithkuil', 'compositional', row['source_url'],
-            row['source_text_sha256'], proof, provider_implementation_digest(),
-            prerequisite_tokens, capability, proof,
-            signature='Boolean*Boolean->Boolean', arity=2,
-        ))
+        admissions.append(admission)
         available.add(SYMBOLS[capability])
     return (
         append_catalog(parent, tuple(admissions), allow_disposable_fixtures=True)[0]

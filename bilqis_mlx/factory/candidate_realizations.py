@@ -81,41 +81,54 @@ def realized_source_sense_id(semantic_id):
     return ithkuil_events.SOURCE_SPECS[capability].sense_id
 
 
+def prepare_realized_candidate(
+        frontier, current, parent_graph, semantic_id, *,
+        source_root, source_registry, answer_registry):
+    """Stage one explicitly selected code-owned realization without admission."""
+    project_realized_target(semantic_id, current)
+    if semantic_id == _COPULAR_ATLAS_SEMANTIC_ID:
+        realization, capability = ithkuil_identity, _COPULAR_CAPABILITY
+        graph = realization.expanded_graph(parent_graph)
+        staged = realization.stage_identity(
+            frontier, current, graph,
+            source_root=source_root, source_registry=source_registry,
+            answer_registry=answer_registry,
+        )
+    else:
+        capability = _EVENT_ATLAS_IDENTITIES.get(semantic_id)
+        if capability is None:
+            raise ValueError
+        realization = ithkuil_events
+        staged = realization.stage_capability(
+            frontier, current, parent_graph, capability,
+            source_root=source_root, source_registry=source_registry,
+            answer_registry=answer_registry,
+        )
+        graph = realization.projected_graph(parent_graph, (capability,))
+    staged.successor.verify_semantic_catalog(graph)
+    return staged
+
+
 def prepare_realized_candidates(frontier, current, parent_graph, *,
                                 source_root, source_registry, answer_registry):
-    result = []
-    available = {c.target_sense_id: c for c in frontier.candidates
-                 if c.proposed_capability_id and
-                 c.proposed_capability_id not in current.curriculum.capability_map}
-    for sense_id, realization, capability in _realizations():
-        if sense_id not in available:
-            continue
-        semantic_id = (_COPULAR_ATLAS_SEMANTIC_ID if realization is ithkuil_identity
-                       else ithkuil_events.atlas_semantic_id(capability))
-        try:
-            project_realized_target(semantic_id, current)
-        except ValueError:
-            continue
-        if realization is ithkuil_identity:
-            graph = realization.expanded_graph(parent_graph)
-            staged = realization.stage_identity(
-                frontier, current, graph,
-                source_root=source_root, source_registry=source_registry,
-                answer_registry=answer_registry,
-            )
-        else:
-            prerequisites = realization.SOURCE_SPECS[capability].prerequisites
-            if any(item not in current.curriculum.capability_map for item in prerequisites):
-                continue
-            staged = realization.stage_capability(
-                frontier, current, parent_graph, capability,
-                source_root=source_root, source_registry=source_registry,
-                answer_registry=answer_registry,
-            )
-            graph = realization.projected_graph(parent_graph, (capability,))
-        staged.successor.verify_semantic_catalog(graph)
-        result.append(staged)
-    return tuple(result)
+    """Preserve the legacy ambient boundary: only its historical copular candidate."""
+    available = {
+        candidate.target_sense_id
+        for candidate in frontier.candidates
+        if candidate.proposed_capability_id
+        and candidate.proposed_capability_id not in current.curriculum.capability_map
+    }
+    if _COPULAR_SOURCE_SENSE_ID not in available:
+        return ()
+    try:
+        project_realized_target(_COPULAR_ATLAS_SEMANTIC_ID, current)
+    except ValueError:
+        return ()
+    return (prepare_realized_candidate(
+        frontier, current, parent_graph, _COPULAR_ATLAS_SEMANTIC_ID,
+        source_root=source_root, source_registry=source_registry,
+        answer_registry=answer_registry,
+    ),)
 
 
 def admitted_candidate_graph(staged, parent_graph):

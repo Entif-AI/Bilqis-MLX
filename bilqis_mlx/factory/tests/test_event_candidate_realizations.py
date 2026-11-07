@@ -8,6 +8,7 @@ import tempfile
 import unittest
 from dataclasses import replace
 
+from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.compatibility.executable_projection import compile_projected_executable_release
 from bilqis_mlx.factory import candidate_realizations
 from bilqis_mlx.factory.candidate_frontier import load_candidate_frontier
@@ -60,17 +61,11 @@ class EventCandidateRealizationTests(unittest.TestCase):
         graph = self.parent_graph
         observed = []
         for capability in event_frames.SOURCE_SPECS:
-            staged_candidates = candidate_realizations.prepare_realized_candidates(
-                self.frontier, current, graph,
+            staged = candidate_realizations.prepare_realized_candidate(
+                self.frontier, current, graph, event_frames.atlas_semantic_id(capability),
                 source_root=LEGACY, source_registry=self.source_registry,
                 answer_registry=self.answer_registry,
             )
-            matches = tuple(
-                item for item in staged_candidates
-                if item.target_capability_id == capability
-            )
-            self.assertEqual(len(matches), 1)
-            staged = matches[0]
             self.assertEqual(staged.source_sense_id,
                              event_frames.SOURCE_SPECS[capability].sense_id)
             self.assertEqual(staged.successor.transition.added_capabilities, (capability,))
@@ -91,13 +86,10 @@ class EventCandidateRealizationTests(unittest.TestCase):
         current = self.current
         graph = self.parent_graph
         for capability in event_frames.SOURCE_SPECS:
-            staged = next(
-                item for item in candidate_realizations.prepare_realized_candidates(
-                    self.frontier, current, graph,
-                    source_root=LEGACY, source_registry=self.source_registry,
-                    answer_registry=self.answer_registry,
-                )
-                if item.target_capability_id == capability
+            staged = candidate_realizations.prepare_realized_candidate(
+                self.frontier, current, graph, event_frames.atlas_semantic_id(capability),
+                source_root=LEGACY, source_registry=self.source_registry,
+                answer_registry=self.answer_registry,
             )
             with tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary)
@@ -122,14 +114,26 @@ class EventCandidateRealizationTests(unittest.TestCase):
                 candidate_realizations.realized_source_sense_id(semantic_id),
                 event_frames.SOURCE_SPECS[capability].sense_id,
             )
-            staged = candidate_realizations.prepare_realized_candidates(
-                self.frontier, current, graph,
+            staged = candidate_realizations.prepare_realized_candidate(
+                self.frontier, current, graph, semantic_id,
                 source_root=LEGACY, source_registry=self.source_registry,
                 answer_registry=self.answer_registry,
             )
-            match = next(item for item in staged if item.target_capability_id == capability)
-            graph = candidate_realizations.admitted_candidate_graph(match, graph)
-            current = match.successor
+            graph = candidate_realizations.admitted_candidate_graph(staged, graph)
+            current = staged.successor
+
+    def test_foreign_same_name_event_row_cannot_be_reused_as_source_authority(self):
+        graph = event_frames.projected_graph(
+            self.parent_graph, ('D.EVENT_OCCURRENCE',))
+        token = event_frames.SYMBOLS['D.EVENT_OCCURRENCE']
+        index = graph['tokens'].index(token)
+        foreign = dict(graph['nodes'][index], semantic_id='foreign:event-occurrence')
+        graph['nodes'][index] = foreign
+        graph['row_contract_sha256'][token] = hashlib.sha256(json.dumps(
+            foreign, sort_keys=True, separators=(',', ':'), ensure_ascii=False,
+            allow_nan=False).encode()).hexdigest()
+        with self.assertRaises(BilqisError):
+            event_frames.projected_graph(graph, ('D.EVENT_OCCURRENCE',))
 
     def test_event_grade_container_is_selected_from_structure_not_grade_name(self):
         curriculum = self.current.curriculum
