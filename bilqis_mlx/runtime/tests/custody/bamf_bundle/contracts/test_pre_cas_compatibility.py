@@ -20,7 +20,9 @@ from bilqis_mlx.runtime.bamf_bundle import (
     load_bamf_generation, publish_bamf_generation,
 )
 from bilqis_mlx.runtime.bamf_bundle.codec import save_bamf_bundle
-from bilqis_mlx.runtime.bamf_bundle.records import BAMF_POINTER_SCHEMA, canonical
+from bilqis_mlx.runtime.bamf_bundle.records import (
+    ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA, BAMF_POINTER_SCHEMA, canonical,
+)
 from bilqis_mlx.runtime.tests.custody.data_plane.base import DataPlaneCase, historical_module
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     acceptance, accepted_state, candidate, next_accepted_step, parent_state,
@@ -165,7 +167,7 @@ class PreCasCompatibilityTests(DataPlaneCase):
             publish_candidate(run, successor)
         self.assertEqual(json.loads((run / "bamf-state.json").read_text())["generation"], 0)
 
-    def test_live_v2_non_genesis_parent_cannot_authorize_fresh_successor(self):
+    def test_live_v2_non_genesis_parent_migrates_to_acceptance_bound_successor(self):
         run = self.root / "v2-upgrade-run"
         genesis = candidate(parent_state())
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
@@ -206,6 +208,14 @@ class PreCasCompatibilityTests(DataPlaneCase):
             generation=generation_two.generation,
             feature_sha256=generation_two.extents.factor_map_digest)
 
-        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
-                self.assertRaises(BilqisError):
-            publish_bamf_generation(run, generation_two, acceptance=accepted_two)
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            successor = publish_bamf_generation(
+                run, generation_two, acceptance=accepted_two)
+
+        self.assertEqual(successor["generation"], 2)
+        child_manifest = json.loads(
+            (run / successor["bundle"] / "manifest.json").read_text())
+        self.assertEqual(
+            child_manifest["schema"], ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA)
+        self.assertEqual(
+            child_manifest["parent_acceptance_sha256"], accepted_one.digest)

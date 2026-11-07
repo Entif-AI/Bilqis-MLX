@@ -22,7 +22,7 @@ from .publication import _require_published_acceptance
 from .records import BamfBundleCandidate, invalid
 from ._feature_acceptance import (
     accepted_binding_for_manifest, accepted_generation,
-    parent_acceptance_from_manifest,
+    parent_acceptance_anchor_from_manifest,
 )
 from ._feature_receipt import AcceptedGenerationFeatureReceipt, is_digest
 
@@ -86,6 +86,21 @@ def _feature_schema(compiler_features: dict) -> FeatureSchema:
         invalid("BAMF_FEATURE_SCHEMA_BINDING_INVALID")
 
 
+def _artifact_path_for_bundle(artifact_path: str, bundle_id: str) -> Path:
+    """Resolve one recorded Atlas bundle without granting caller locator authority.
+
+    Atlas releases are persisted as ``<root>/<bundle_id>``.  Callers may hand us
+    either that root or the exact current bundle path; historical replay derives
+    every other release path from the custody-recorded bundle digest.
+    """
+    supplied = Path(artifact_path)
+    if supplied.name == bundle_id:
+        return supplied
+    if is_digest(supplied.name) and (supplied / "manifest.json").is_file():
+        return supplied.parent / bundle_id
+    return supplied / bundle_id
+
+
 def _authenticate_features(student, artifact_path: str, *, predecessor=None):
     """Replay the admitted source release and rederive the accepted feature map."""
     compiler = student.compiler_features
@@ -98,7 +113,8 @@ def _authenticate_features(student, artifact_path: str, *, predecessor=None):
             schema.role_ids, schema.schema_ids, predecessor,
             schema.source_bindings)
     selection = AtlasArtifactSelection(
-        str(artifact_path), source["atlas_bundle_id"],
+        str(_artifact_path_for_bundle(artifact_path, source["atlas_bundle_id"])),
+        source["atlas_bundle_id"],
         source["release_sha256"], source["source_bundle_id"])
     snapshot = load_pinned_atlas_snapshot(selection)
     try:
@@ -123,9 +139,10 @@ def _accepted_feature_chain(run_dir: Path, manifest_sha256: str, student,
     current_sha = manifest_sha256
     current = student
     current_acceptance = expected_acceptance_sha256
+    legacy_feature_tail = False
 
     while True:
-        binding = accepted_binding_for_manifest(
+        binding = None if legacy_feature_tail else accepted_binding_for_manifest(
             run_dir, current_sha, current,
             expected_acceptance_sha256=current_acceptance)
         history.append((current, binding))
@@ -140,7 +157,13 @@ def _accepted_feature_chain(run_dir: Path, manifest_sha256: str, student,
         if (parent.run_id != current.run_id
                 or parent.generation + 1 != current.generation):
             invalid("BAMF_FEATURE_PREDECESSOR_UNAUTHENTICATED")
-        current_acceptance = parent_acceptance_from_manifest(run_dir, current_sha)
+        if not legacy_feature_tail:
+            parent_acceptance = parent_acceptance_anchor_from_manifest(
+                run_dir, current_sha)
+            if parent_acceptance is None:
+                legacy_feature_tail = True
+            else:
+                current_acceptance = parent_acceptance
         current_sha = parent_sha
         current = parent
 
@@ -148,6 +171,8 @@ def _accepted_feature_chain(run_dir: Path, manifest_sha256: str, student,
     features = _authenticate_features(genesis, artifact_path)
     predecessor = None
     result_binding = history[0][1]
+    if result_binding is None:
+        invalid("BAMF_GENERATION_ACCEPTANCE_MISSING")
     for child, _ in reversed(history[:-1]):
         parent = current
         predecessor = features
@@ -193,7 +218,8 @@ def authenticate_bamf_candidate_feature_context(
     source = _feature_source(candidate.compiler_features)
     schema = _feature_schema(candidate.compiler_features)
     selection = AtlasArtifactSelection(
-        str(artifact_path), source["atlas_bundle_id"],
+        str(_artifact_path_for_bundle(artifact_path, source["atlas_bundle_id"])),
+        source["atlas_bundle_id"],
         source["release_sha256"], source["source_bundle_id"])
     snapshot = load_pinned_atlas_snapshot(selection)
     features = _authenticate_features(candidate, artifact_path)

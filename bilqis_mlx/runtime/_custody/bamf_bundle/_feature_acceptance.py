@@ -12,7 +12,8 @@ from bilqis_mlx.learning.atlas_acceptance import (
 from .codec import load_bamf_bundle
 from .publication import ACCEPTANCE_DIR, _pointer_lock, _read_pointer
 from .records import (
-    ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA, BamfGenerationManifest, invalid, sha,
+    ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA, BAMF_BUNDLE_SCHEMA,
+    BamfGenerationManifest, invalid, sha,
 )
 from ._feature_receipt import is_digest
 
@@ -71,8 +72,9 @@ def accepted_binding_for_manifest(
     return binding
 
 
-def parent_acceptance_from_manifest(run_dir: Path, manifest_sha256: str) -> str:
-    """Read the immutable child-manifest binding to its accepted parent receipt."""
+def parent_acceptance_anchor_from_manifest(
+        run_dir: Path, manifest_sha256: str) -> str | None:
+    """Read a v3 parent-acceptance anchor; v2 marks the legacy cutover boundary."""
     path = run_dir / "bamf-bundles" / manifest_sha256 / "manifest.json"
     if path.is_symlink() or not path.is_file():
         invalid("BAMF_GENERATION_ACCEPTANCE_MISSING")
@@ -83,6 +85,8 @@ def parent_acceptance_from_manifest(run_dir: Path, manifest_sha256: str) -> str:
         manifest = BamfGenerationManifest.from_record(json.loads(raw)).to_record()
     except (UnicodeDecodeError, json.JSONDecodeError, BilqisError):
         invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
+    if manifest.get("schema") == BAMF_BUNDLE_SCHEMA:
+        return None
     parent_acceptance = manifest.get("parent_acceptance_sha256")
     if (manifest.get("schema") != ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA
             or not is_digest(parent_acceptance)):

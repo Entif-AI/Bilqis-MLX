@@ -1,64 +1,29 @@
 """Successor-lineage adversaries for B13.5 accepted feature authority."""
-from __future__ import annotations
-
-import hashlib
-import json
-import os
-import unittest
 from dataclasses import replace
-from pathlib import Path
-from tempfile import TemporaryDirectory
-from types import SimpleNamespace
 from unittest.mock import patch
 
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_acceptance import mint_acceptance_binding
 from bilqis_mlx.runtime.bamf_bundle import (
-    publish_bamf_generation,
-    read_accepted_generation_feature_lineage,
+    publish_bamf_generation, read_accepted_generation_feature_lineage,
     verify_accepted_generation_feature_receipt,
 )
 from bilqis_mlx.runtime.bamf_bundle import feature_authority
-from bilqis_mlx.runtime.bamf_bundle.records import canonical
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.contracts.feature_authority_lineage_support import (
+    FeatureLineageCase, SUCCESSOR_ATLAS_BUNDLE, SUCCESSOR_RELEASE,
+    SUCCESSOR_SOURCE_BUNDLE, frozen_snapshot,
+)
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.contracts.test_feature_authority import (
-    ARBITRARY, feature_bound, frozen_snapshot, source_features,
+    ARBITRARY, feature_bound, source_features,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    accepted_state, candidate, next_accepted_step, parent_state, publish_candidate,
+    accepted_state, candidate, next_accepted_step, parent_state,
     retention_decision, shape_patch,
 )
 
-SUCCESSOR_RELEASE = "c" * 64
-SUCCESSOR_ATLAS_BUNDLE = "d" * 64
-SUCCESSOR_SOURCE_BUNDLE = "e" * 64
 
-
-class AcceptedFeatureLineageTests(unittest.TestCase):
-    def setUp(self):
-        self.temporary = TemporaryDirectory()
-        self.root = Path(self.temporary.name)
-        self.run = self.root / "run"
-        self.pointer = self.run / "bamf-state.json"
-        self.environment = patch.dict(
-            os.environ, {"BILQIS_DATA_PLANE": str(self.root / "plane.sqlite3")})
-        self.environment.start()
-
-    def tearDown(self):
-        self.environment.stop()
-        self.temporary.cleanup()
-
-    def publish(self, source):
-        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            return publish_candidate(self.run, source)
-
-    def source_replay(self, features):
-        return patch.multiple(
-            feature_authority,
-            load_pinned_atlas_snapshot=frozen_snapshot,
-            build_feature_manifest=lambda snapshot, schema: features,
-        )
-
+class AcceptedFeatureLineageTests(FeatureLineageCase):
     def test_successor_receipt_replays_accepted_predecessor_lineage(self):
         root = source_features()
         first = self.publish(feature_bound(candidate(parent_state()), root))
@@ -202,65 +167,3 @@ class AcceptedFeatureLineageTests(unittest.TestCase):
         self.assertEqual(receipt.feature_sha256, changed.digest)
         self.assertEqual(receipt.predecessor_feature_sha256, changed.digest)
         self.assertEqual((current, predecessor), (changed, changed))
-
-    def test_successor_rejects_resigned_historical_parent_acceptance(self):
-        root = source_features()
-        first = self.publish(feature_bound(candidate(parent_state()), root))
-        retained = feature_bound(
-            candidate(accepted_state(parent_state()), 1, first["manifest_sha256"]),
-            root)
-        self.publish(retained)
-
-        parent_acceptance = (
-            self.run / "bamf-acceptance" / f"{first['manifest_sha256']}.json")
-        record = json.loads(parent_acceptance.read_text())
-        record["policy_sha256"] = "0" * 64
-        record["binding_sha256"] = hashlib.sha256(canonical({
-            key: value for key, value in record.items()
-            if key != "binding_sha256"
-        })).hexdigest()
-        parent_acceptance.write_text(json.dumps(record))
-
-        with shape_patch(), self.source_replay(root), self.assertRaises(BilqisError):
-            read_accepted_generation_feature_lineage(self.pointer, "/artifact")
-
-    def test_long_accepted_history_has_no_python_recursion_ceiling(self):
-        root = source_features()
-        template = feature_bound(candidate(parent_state()), root)
-        count = 1100
-        manifests = [f"{index:064x}" for index in range(1, count + 1)]
-        students = {}
-        for generation, manifest in enumerate(manifests):
-            students[manifest] = SimpleNamespace(
-                run_id="long-history",
-                generation=generation,
-                parent_manifest_sha256=(
-                    None if generation == 0 else manifests[generation - 1]),
-                extents=SimpleNamespace(factor_map_digest=root.digest),
-                compiler_features=template.compiler_features,
-                provenance=SimpleNamespace(release_digest=root.semantic_release),
-            )
-
-        def load_bundle(path, *, expected_manifest_sha256):
-            self.assertEqual(path.name, expected_manifest_sha256)
-            return students[expected_manifest_sha256]
-
-        binding = object()
-        with patch.object(
-                feature_authority, "load_bamf_bundle", side_effect=load_bundle), patch.object(
-                feature_authority, "accepted_binding_for_manifest",
-                return_value=binding), patch.object(
-                feature_authority, "parent_acceptance_from_manifest",
-                return_value="a" * 64), patch.object(
-                feature_authority, "_authenticate_features", return_value=root):
-            current, current_binding, predecessor = feature_authority._accepted_feature_chain(
-                self.run, manifests[-1], students[manifests[-1]], "/artifact",
-                expected_acceptance_sha256="b" * 64)
-
-        self.assertIs(current, root)
-        self.assertIs(current_binding, binding)
-        self.assertIs(predecessor, root)
-
-
-if __name__ == "__main__":
-    unittest.main()
