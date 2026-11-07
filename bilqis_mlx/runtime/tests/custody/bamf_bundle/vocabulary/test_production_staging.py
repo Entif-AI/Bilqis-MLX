@@ -1,4 +1,5 @@
-"""Full-topology A02 production admission through accepted B13 custody."""
+"""Full-topology A02 staging through accepted B13 custody."""
+from contextlib import ExitStack
 from dataclasses import replace
 import os
 from pathlib import Path
@@ -19,10 +20,12 @@ from bilqis_mlx.runtime.atlas_optimizer import (
     AdamWHyperparameters, _create_unbound_bamf_optimizer,
 )
 from bilqis_mlx.runtime.bamf_bundle import (
-    BamfBundleCandidate, admit_vocabulary_extension, load_bamf_generation,
-    publish_bamf_generation, read_vocabulary_admission_receipt,
+    BamfBundleCandidate, load_bamf_generation, publish_bamf_generation,
+    stage_vocabulary_extension,
 )
-from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, GenerationProvenance, ModelTopologySpecV2
+from bilqis_mlx.runtime.model_topology_v2 import (
+    GenerationExtents, GenerationProvenance, ModelTopologySpecV2,
+)
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import retention_decision
 from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest
 from bilqis_mlx.semantics.tests.atlas.vocabulary_fixtures import _allocation_fixture
@@ -32,8 +35,8 @@ HP = AdamWHyperparameters(.001, (.9, .95), 1e-8, .01)
 
 
 @unittest.skipUnless(os.environ.get("BILQIS_BAMF_FULL_WITNESS"),
-                     "full v2 production-admission witness is explicitly gated")
-class A02ProductionAdmissionTests(unittest.TestCase):
+                     "full v2 production-staging witness is explicitly gated")
+class A02ProductionStagingTests(unittest.TestCase):
     def setUp(self):
         self.temporary = TemporaryDirectory()
         self.root = Path(self.temporary.name)
@@ -84,7 +87,7 @@ class A02ProductionAdmissionTests(unittest.TestCase):
             generation=bundle.generation, feature_sha256=bundle.extents.factor_map_digest)
         return publish_bamf_generation(self.run, bundle, acceptance=binding)
 
-    def test_admits_bank_extension_and_derives_cold_receipt(self):
+    def _publish_source_parent(self):
         snapshot, _ = _allocation_fixture(highest=8192)
         root_snapshot = replace(
             snapshot, bundle_id="1" * 64, release_sha256="2" * 64,
@@ -104,15 +107,16 @@ class A02ProductionAdmissionTests(unittest.TestCase):
         root_state = CandidateState(
             optimizer, PlasticityPolicy("FOUNDATION", 0, (IdentityRowAge(0, 0, 0),)),
             allocations, 0)
-        root_bundle = self._bundle(
-            root_state, root_extents, root_features, root_snapshot, 0, None)
-        first = self._accept(root_bundle)
+        first = self._accept(self._bundle(
+            root_state, root_extents, root_features, root_snapshot, 0, None))
         current_extents = replace(root_extents, factor_map_digest=current_features.digest)
-        current_bundle = self._bundle(
+        current = self._bundle(
             root_state, current_extents, current_features, current_snapshot,
             1, first["manifest_sha256"])
-        self._accept(current_bundle, parent_state=root_state)
+        self._accept(current, parent_state=root_state)
+        return root_snapshot, current_snapshot, optimizer
 
+    def _source_patches(self, root_snapshot, current_snapshot):
         def source_snapshot(selection):
             return (root_snapshot if selection.release_sha256 == root_snapshot.release_sha256
                     else current_snapshot)
@@ -120,50 +124,53 @@ class A02ProductionAdmissionTests(unittest.TestCase):
         source_nt = (
             '<urn:concept:8192> <http://www.w3.org/2004/02/skos/core#definition> '
             '"semantic role 8192"@en .\n').encode("utf-8")
-        patches = (
-            patch("bilqis_mlx.runtime.bamf_bundle.feature_authority.load_pinned_atlas_snapshot",
-                  side_effect=source_snapshot),
-            patch("bilqis_mlx.runtime.bamf_bundle.vocabulary_admission.load_pinned_atlas_snapshot",
-                  side_effect=source_snapshot),
-            patch("bilqis_mlx.semantics.atlas.vocabulary_planning.load_pinned_atlas_snapshot",
-                  side_effect=source_snapshot),
-            patch("bilqis_mlx.semantics.atlas.vocabulary_resources.load_pinned_atlas_snapshot",
-                  side_effect=source_snapshot),
-            patch("bilqis_mlx.semantics.atlas.vocabulary_resources._verify_bundle",
-                  return_value=(current_snapshot.source_bundle_id, {"canonical.nt": source_nt})),
-        )
-        with patches[0], patches[1], patches[2], patches[3], patches[4]:
+        stack = ExitStack()
+        for target in (
+                "bilqis_mlx.runtime.bamf_bundle.feature_authority.load_pinned_atlas_snapshot",
+                "bilqis_mlx.runtime.bamf_bundle.vocabulary_admission.load_pinned_atlas_snapshot",
+                "bilqis_mlx.semantics.atlas.vocabulary_planning.load_pinned_atlas_snapshot",
+                "bilqis_mlx.semantics.atlas.vocabulary_resources.load_pinned_atlas_snapshot"):
+            stack.enter_context(patch(target, side_effect=source_snapshot))
+        stack.enter_context(patch(
+            "bilqis_mlx.semantics.atlas.vocabulary_resources._verify_bundle",
+            return_value=(current_snapshot.source_bundle_id, {"canonical.nt": source_nt})))
+        return stack
+
+    def _generic_binding(self, parent, staged):
+        state = staged.candidate.retained_state
+        decision = retention_decision(parent=parent.retained_state, retained=state)
+        return mint_acceptance_binding(
+            decision, state, run_id=staged.candidate.run_id,
+            generation=staged.candidate.generation,
+            feature_sha256=staged.candidate.extents.factor_map_digest)
+
+    def test_stages_bank_extension_without_granting_admission(self):
+        root_snapshot, current_snapshot, optimizer = self._publish_source_parent()
+        parent = load_bamf_generation(self.pointer, publish_missing_outbox=False)
+        with self._source_patches(root_snapshot, current_snapshot):
             with self.assertRaises(BilqisError):
-                admit_vocabulary_extension(
+                stage_vocabulary_extension(
                     self.run, "/artifact", Path("/source"),
                     ("urn:concept:not-present",))
-            self.assertEqual(
-                load_bamf_generation(self.pointer, publish_missing_outbox=False).generation, 1)
-            with patch(
-                    "bilqis_mlx.runtime.bamf_bundle.publication._atomic_pointer",
-                    side_effect=RuntimeError("pre-pointer crash")):
-                with self.assertRaisesRegex(RuntimeError, "pre-pointer crash"):
-                    admit_vocabulary_extension(
-                        self.run, "/artifact", Path("/source"),
-                        ("urn:concept:8192",))
-            self.assertEqual(
-                load_bamf_generation(self.pointer, publish_missing_outbox=False).generation, 1)
-            receipt = admit_vocabulary_extension(
+            staged = stage_vocabulary_extension(
                 self.run, "/artifact", Path("/source"), ("urn:concept:8192",))
-            cold = read_vocabulary_admission_receipt(self.pointer, "/artifact")
-        self.assertEqual(receipt, cold)
-        self.assertEqual(receipt.generation, 2)
-        self.assertEqual(receipt.semantic_bank_count, 2)
-        accepted = load_bamf_generation(self.pointer, publish_missing_outbox=False)
+        self.assertEqual(
+            load_bamf_generation(self.pointer, publish_missing_outbox=False).generation, 1)
+        self.assertEqual(staged.receipt.generation, 2)
+        self.assertEqual(staged.receipt.semantic_bank_count, 2)
+        self.assertEqual(staged.receipt.status, "STAGED_NOT_ADMITTED")
         np.testing.assert_array_equal(
-            np.asarray(accepted.retained_state.optimizer.parameters["identity.bank.0"]),
+            np.asarray(staged.candidate.retained_state.optimizer.parameters["identity.bank.0"]),
             np.asarray(optimizer.parameters["identity.bank.0"]))
-        np.testing.assert_array_equal(
-            np.asarray(accepted.retained_state.optimizer.m["identity.bank.0"]),
-            np.asarray(optimizer.m["identity.bank.0"]))
         self.assertTrue(bool(mx.all(
-            accepted.retained_state.optimizer.update_counts["identity.bank.1"] == 0)))
-        self.assertIn(IdentityRowAge(1, 0, 0), accepted.retained_state.policy.row_ages)
+            staged.candidate.retained_state.optimizer.update_counts["identity.bank.1"] == 0)))
+        self.assertIn(IdentityRowAge(1, 0, 0), staged.candidate.retained_state.policy.row_ages)
+        with self.assertRaises(BilqisError) as failure:
+            publish_bamf_generation(
+                self.run, staged.candidate,
+                acceptance=self._generic_binding(parent, staged))
+        self.assertEqual(
+            failure.exception.context["reason"], "BAMF_ATLAS_ADMISSION_EXECUTOR_REQUIRED")
 
 
 if __name__ == "__main__":

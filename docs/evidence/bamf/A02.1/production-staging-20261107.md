@@ -1,72 +1,71 @@
-# A02.1 production successor allocation/admission receipt — 2026-11-07
+# A02.1 production staging and admission-boundary correction — 2026-11-07
 
 ## Scope
 
 - Issue: #399 — A02.1 | Allocate stable semantic banks and activate admitted identity rows
 - Branch: `codex/bamf02-a-399-production-admission-20261106`
-- Turn-in PR: #887 into `codex/bamf-unified-base-20261028`
+- Draft PR: #887 into `codex/bamf-unified-base-20261028`
 - Reviewed integration trunk consumed: `3899649586b105b075e92f0ee3c51e80c379b473`
-- Implementation commit: `f77a37ea` (`feat(bamf): complete A02 production vocabulary admission`)
-- Post-sync integrated code head before this receipt: `9dac486a06ea8a5ae70a1ec6b93afa20a2aa7bdb`
-- Dependency authority consumed: reviewed B13 accepted-generation predecessor-feature authority from #708/#809, already present in reviewed unified.
+- Dependency authority consumed: reviewed B13 accepted-generation feature authority from #708/#809.
+- Additional B13 integration repair in this branch: recursive predecessor-bearing feature lineage is rederived through the same accepted source authority so A02 does not mint a parallel factor-map authority.
 - Rejected historical PR #698 lineage was not revived or used as current authority.
 
-## Implemented outcome
+## Correct ownership boundary
 
-A02.1 now consumes accepted B13 feature lineage to authenticate a predecessor-bearing `AtlasFeatures/v2` map before successor allocation. The production path derives and publishes an append-only vocabulary successor with:
+A02 owns deterministic append-only allocation and preparation. C07 owns admission authorization and atomic adoption.
+
+The public A02 path therefore now returns an exact `A02StagedVocabularyExtension` containing the complete `BamfBundleCandidate` plus immutable `A02VocabularyStagingReceipt`. It does **not** mint a publication capability and does **not** advance the accepted generation pointer.
+
+The staged candidate binds:
 
 - stable `bank * 8192 + row` ABI allocation;
-- exact predecessor generation, source-allocation digest, admitted IDs and feature-map binding;
-- zero moments/counts for newly admitted identity rows;
+- exact accepted parent generation and B13 predecessor-feature receipt;
+- source-allocation digest, complete plan digest and admitted IDs;
+- exact prepared extents and active-mask identity;
+- zero moments/counts for newly staged identity rows;
 - exact preservation of all pre-existing parameter, moment and count bytes;
 - source-derived Registry mirror and conservative bank resource estimate;
-- immutable A02 admission decision/evidence bound to the publication capability;
-- fail-closed publication so ordinary C05 retention authority cannot activate semantic rows;
-- cold-readback A02 production receipt derived from accepted B13 custody.
+- accepted active semantic ABI separately from immutable source feature-map authority.
 
-The public predecessor guard remains fail-closed. Caller-supplied coherent digests cannot satisfy `BAMF_VOCABULARY_PREDECESSOR_FEATURE_AUTHORITY_REQUIRED`; the production owner path must supply the authenticated B13 predecessor feature context.
+B13 publication now fails closed with `BAMF_ATLAS_ADMISSION_EXECUTOR_REQUIRED` whenever a candidate attempts to change semantic-bank count or active-set digest through ordinary retention publication. No A02-owned parameter-extension publication token remains.
 
-## Authority repairs discovered during implementation
+## Material findings and repairs
 
-Independent read-only review found four material authority/custody defects in the in-progress implementation. All were repaired before turn-in:
+Preflight review found material defects in the earlier turn-in. They were accepted rather than contested away:
 
-1. Replayed or mutated admission-plan evidence could ride a previously valid acceptance binding. Publication now rebinds the decision, plan, Registry mirror and resource estimate.
-2. Parameter-extension issuance could preserve policy clocks while mutating existing optimizer rows. The owner-private issuer now enforces append-only optimizer state and zero new moments/counts.
-3. Live `VocabularyAdmissionDecision` authority could be minted from free-form caller values. Live issuance now requires an opaque owner evaluation derived from exact A02/B13 objects.
-4. Generic C05 acceptance could publish semantic bank-count/active-set changes. Publication now requires `SOURCE_PARAMETER_EXTENSION_ADMITTED` authority for vocabulary extent/active-set changes.
+1. **C07 authority bypass — Blocker.** The earlier `admit_vocabulary_extension()` directly minted A02 acceptance and called `publish_bamf_generation()`. C07 #380/#510 explicitly owns persisted lease authorization and atomic adoption for subsequent source-valid additions. The A02-owned publication path and its live token issuer were removed.
+2. **Admission evidence replay.** The earlier acceptance design did not initially bind the entire plan payload. The staging receipt now binds the complete canonical plan digest; C07 will need to consume this exact staged evidence when its executor becomes available.
+3. **Existing optimizer mutation.** Parameter-extension state issuance now rejects changes to all pre-existing parameter/moment/count rows and requires zero moments/counts for new identity rows.
+4. **Generic retention bypass.** Ordinary C05 retention acceptance cannot publish a semantic-bank or active-set change; publication requires the missing C07 adoption executor instead.
+5. **Recursive B13 predecessor lineage.** Reviewed B13 source-rederivation authority existed through #708/#809, but the accepted reader could not recursively reconstruct predecessor-bearing feature lineage. This branch repairs that projection while preserving source ownership.
+6. **Successive A02 parent state.** The earlier path rebuilt the active set from immutable source `entry.active` flags. Accepted BAMF `PlasticityPolicy.row_ages` now supplies the admitted identity-row set, while the source snapshot remains the immutable semantic-ID/index authority. Active semantic ABI and feature-map authority remain distinct identities.
 
-One reviewer proposal to require the C07 Atlas release-admission lease for this operation was contested as an authority-domain conflation. #399/#348 own activation/allocation of identities from the already admitted semantic release bound to the accepted generation and explicitly own the crash-before-pointer-publication acceptance. C07 governs adoption of new Factory/Atlas release deltas. No new C07 dependency was introduced.
+The previous claim that C07 governed only new Atlas releases was incorrect and is withdrawn. C07 explicitly governs subsequent source-valid additions under a persisted lease.
 
 ## Verification
 
-Full production witness on the pre-sync implementation:
+Current cheap verification after the ownership correction:
 
 ```text
-BILQIS_BAMF_FULL_WITNESS=1 python3 -B scripts/run_tests.py \
-  bilqis_mlx/runtime/tests/custody/bamf_bundle/vocabulary/test_production_admission.py
-
-Ran 1 test in 336.214s
-OK
-TEST_TOTALS total=1 passed=1 failed=0 skipped=0 errors=0
+A02 staging/authority regressions: 3 passed, 0 failed, 0 skipped
+A02 semantic owner suites:         11 passed, 0 failed, 2 explicit opt-in skips
+changed-file smell audit:          0 findings
+error-control new debt:            0
+flow-control checker:              pass
+git diff --check:                  pass
 ```
 
-That witness exercised generation 0/1 source custody, rejection of an unqualified admission, crash before pointer publication, retry, generation-2 `BAMF_A02_VOCABULARY_ADMITTED` publication, and cold receipt readback. The first detached attempt failed only because the implementation imported the physical grouped `CandidateState` module path and therefore created a second Python class identity; the canonical owner-path import repair produced the passing witness. The failed detached receipt remains preserved as diagnostic history.
+Historical note: an earlier full-topology witness completed 1/1 PASS in 336.214s after repairing a duplicate Python module identity. That witness exercised direct A02 pointer publication and therefore is **not current admission acceptance evidence** after the C07 boundary correction. It remains diagnostic history only.
 
-After merging current reviewed unified `3899649586b105b075e92f0ee3c51e80c379b473`, the smallest affected checks were rerun:
+The current full-topology staging witness is `test_production_staging.py`. If run, it must use the repository detached long-run protocol; it proves staging and fail-closed publication, not C07 adoption.
 
-```text
-authority/capability regressions: 4 passed, 0 failed, 0 skipped
-A02 semantic owner suites:        11 passed, 0 failed, 2 explicit opt-in skips
-tensor CAS + cold resume:         14 passed, 0 failed, 0 skipped
-git diff --check:                 pass
-```
+## Dependency and disposition
 
-The consumed unified delta refactors optimizer update-count shape selection through `declared_update_count_shape` without changing identity-bank rowwise count geometry; the post-sync focused custody checks pass.
-
-## Turn-in disposition
-
-- Implementation: complete for the #399-owned production successor allocation/admission boundary.
-- EGM: `EGM_PENDING` at turn-in. The fresh reviewer should review the immutable final PR head, not an uncommitted worktree.
-- Self-merge: not authorized.
-- Issue closure: do not close #399 until independent EGM/hosted checks and human/integration acceptance are satisfied.
-- Downstream: this receipt is intended to satisfy the A02 production-receipt dependency recorded by #478 / PR #885 once #399 is accepted.
+- #399 is **WAITING**, not complete.
+- C07.1b/#510 is the required downstream owner for persisted-lease validation plus atomic adoption of the exact A02 staged candidate.
+- #510 is not presently completion-ready because A09.5/#395 still lacks its required three genuinely new source-qualified candidate-to-staged-successor realizations; #395 records that as its explicit resume trigger.
+- C05 leaves #501-#503 and C06 leaves #504-#507 are closed accepted; A12 is closed. The unresolved A09.5 realization breadth is the material current blocker for the C07 acceptance chain.
+- PR #887 remains draft and must not claim `Closes #399` while this blocker exists.
+- Official merge-readiness EGM has **not** begun. The earlier fresh reviewers were preflight only because hosted checks were not yet green when they were launched.
+- No self-merge or issue closure is authorized.
+- #478 / PR #885 remains waiting on a genuinely accepted A02/C07 production receipt, not this staging receipt.

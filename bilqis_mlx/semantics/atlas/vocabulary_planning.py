@@ -54,8 +54,10 @@ def _verify_prior_snapshot(
         _invalid("BAMF_VOCABULARY_PRIOR_ACTIVE_ID_UNKNOWN")
     if (active != tuple(sorted(set(active)))
             or any(index > UINT32_MAX for index in active)
-            or tuple(item.semantic_id for item in prior.features.concepts)
-            != tuple(sorted(prior.active_semantic_ids, key=lambda name: name.encode("utf-8")))
+            or (prior.feature_schema.predecessor is None
+                and tuple(item.semantic_id for item in prior.features.concepts)
+                != tuple(sorted(
+                    prior.active_semantic_ids, key=lambda name: name.encode("utf-8"))))
             or _atlas_sha256(_atlas_bytes(list(active))) != prior.extents.active_semantic_digest
             or any(index >= prior.extents.semantic_bank_count * BANK_SIZE for index in active)):
         _invalid("BAMF_VOCABULARY_PRIOR_ACTIVE_SET_DRIFT")

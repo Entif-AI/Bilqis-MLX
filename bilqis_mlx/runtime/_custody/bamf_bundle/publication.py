@@ -110,52 +110,7 @@ def _require_acceptance(candidate: BamfBundleCandidate,
             or acceptance.step_proof_sha256 != tuple(
                 proof.digest for proof in candidate.retained_state.step_proofs)):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
-    if acceptance.retention_reason == "SOURCE_PARAMETER_EXTENSION_ADMITTED":
-        _require_parameter_extension_evidence(candidate, acceptance)
     return acceptance
-
-
-def _require_parameter_extension_evidence(
-        candidate: BamfBundleCandidate,
-        acceptance: AcceptedCandidateBinding) -> None:
-    """Bind A02 publication authority to its immutable admission evidence."""
-    from bilqis_mlx.runtime.bamf_bundle._vocabulary_admission_records import EVENT
-    from bilqis_mlx.vocabulary_growth import digest as semantic_digest
-
-    events = [event for event in candidate.outbox
-              if isinstance(event, dict) and event.get("event") == EVENT]
-    if len(events) != 1 or candidate.transition.get("kind") != "PARAMETER_EXTENSION":
-        invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
-    event = events[0]
-    decision = event.get("decision")
-    plan = event.get("plan")
-    mirror = event.get("registry_mirror")
-    resources = event.get("resource_estimate")
-    if (not isinstance(decision, dict)
-            or not isinstance(plan, dict)
-            or not isinstance(mirror, dict)
-            or not isinstance(resources, dict)):
-        invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
-    decision_sha = sha(canonical(decision))
-    if (event.get("decision_sha256") != decision_sha
-            or acceptance.decision_sha256 != decision_sha
-            or decision.get("run_id") != candidate.run_id
-            or decision.get("generation") != candidate.generation
-            or decision.get("candidate_identity_sha256")
-            != acceptance.candidate_identity_sha256
-            or decision.get("parent_candidate_identity_sha256")
-            != acceptance.parent_candidate_identity_sha256
-            or decision.get("feature_sha256") != candidate.extents.factor_map_digest
-            or decision.get("prepared_extents_sha256") != candidate.extents.digest
-            or plan.get("source_allocation_digest")
-            != decision.get("source_allocation_sha256")
-            or semantic_digest(mirror) != decision.get("registry_mirror_sha256")
-            or sha(canonical(resources)) != decision.get("resource_estimate_sha256")
-            or candidate.semantic_abi.get("active_set_sha256")
-            != candidate.extents.active_semantic_digest
-            or candidate.semantic_abi.get("semantic_bank_count")
-            != candidate.extents.semantic_bank_count):
-        invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
 
 
 def _require_accepted_parent(run_dir: Path, candidate: BamfBundleCandidate,
@@ -179,9 +134,8 @@ def _require_accepted_parent(run_dir: Path, candidate: BamfBundleCandidate,
         or parent.extents.active_semantic_digest
         != candidate.extents.active_semantic_digest
     )
-    if (vocabulary_changed
-            and acceptance.retention_reason != "SOURCE_PARAMETER_EXTENSION_ADMITTED"):
-        invalid("BAMF_A02_VOCABULARY_ADMISSION_REQUIRED")
+    if vocabulary_changed:
+        invalid("BAMF_ATLAS_ADMISSION_EXECUTOR_REQUIRED")
 
 
 def publish_bamf_generation(run_dir: Path, candidate: BamfBundleCandidate, *,
