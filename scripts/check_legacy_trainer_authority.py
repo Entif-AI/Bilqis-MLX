@@ -24,7 +24,7 @@ PROMETHEUS_CURRENT_RE = re.compile(
     r"|\b(?:trainer|training|baseline|resume|adapt(?:ation|ing)?)\b.{0,100}\bprometheus\b)"
 )
 HISTORICAL_QUALIFIER_RE = re.compile(
-    r"(?i)\b(?:historical|history|non-authoritative|evidence only|not (?:the )?(?:current|latest)|not the prometheus|not .*adaptation source)\b"
+    r"(?i)\b(?:historical|history|non-authoritative|evidence only|not (?:the )?(?:current|latest)|not the prometheus|not .*adaptation source|(?:no|stale) prometheus)\b"
 )
 
 
