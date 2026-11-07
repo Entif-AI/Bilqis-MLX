@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "bd3657e170c8bdc046a7bb28524c0fb829ca7ce9",
-  "updated_at": "2026-11-07T09:45:11Z",
+  "observed_unified": "9301e41ef215b9d035449c3260c7cd0f8ee0b5a7",
+  "updated_at": "2026-11-07T18:29:11Z",
   "exception": null,
   "items": [
     {
@@ -131,12 +131,12 @@
     },
     {
       "issue": 829,
-      "pr": null,
-      "state": "WAITING",
-      "head_sha": "93fe19ab2504ed6bd17156cb6f58487892ec77b7",
+      "pr": 908,
+      "state": "TURNED_IN",
+      "head_sha": "94d5763dcedd049db65e0a080238786ca0f53542",
       "preserved_branch": "codex/bamf02-c-829-local-handoff-20261104",
-      "summary": "20/20focused tests; implementation75e47376preserved. EGM-Failed episode C829-HANDOFF-20261104 exhausted5/5. User questioned further spend; operator recommended parking. No sixth round or PR.",
-      "resume_trigger": "Explicit human override for additional review or explicit accepted human disposition underADR127; general continuous-work authority is not an override."
+      "summary": "Human-authorized EGM round 6 accepted; semantic repair 94d5763d with 21/21 focused proof. Synced reviewed unified 9301e41e without semantic implementation/test change and opened ready PR #908 from sync head 246e7ea3.",
+      "resume_trigger": null
     }
   ]
 }
