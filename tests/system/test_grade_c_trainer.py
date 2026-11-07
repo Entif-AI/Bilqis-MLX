@@ -138,7 +138,10 @@ class GradeCTrainerTests(unittest.TestCase):
             accepted_authority=AUTHORITY, source_manifest_sha256=self.manifest["manifest_sha256"],
             teacher_source_sha256=self.policy_sha, grade_b_code_sha256=b_digest(),
             curriculum_mode=B_RELEASE,school=asdict(school),model_bundle=pointer.filename,
-            config={"heads":3,"layers":6}, answer_ids=[6,7],
+            config={
+                "heads": 3, "layers": 6, "width": 12,
+                "expansion": 2, "context": 96,
+            }, answer_ids=[6,7],
             parameter_shapes={n:list(v.shape) for n,v in params.items()},
             semantic_graph_sha256=_fingerprint(self.parent_graph),
             live_rubric_sha256=self.previous.grades[-1].assessment_sha256,
