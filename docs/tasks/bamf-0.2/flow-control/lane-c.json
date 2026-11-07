@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "bb8e83f03e38b64018cfe357addd90a0a6d67297",
-  "updated_at": "2026-11-07T07:47:14+00:00",
+  "observed_unified": "bd3657e170c8bdc046a7bb28524c0fb829ca7ce9",
+  "updated_at": "2026-11-07T15:34:00+00:00",
   "exception": null,
   "items": [
     {
@@ -20,10 +20,10 @@
     {
       "issue": 376,
       "pr": null,
-      "state": "WAITING",
-      "head_sha": "31582efffc422628ac9b64a50859801fa066d346",
-      "summary": "C03 parent-owned teacher lineage projection, grade-neutral Factory acceptance, structural teacher-owner repairs and current observation/replay evidence are implemented and focused-green. Final atomic teacher-state consumption remains B13-owned and cannot land before accepted B13.1 custody/admission authority.",
-      "resume_trigger": "B13.1 #478 / PR #885 is accepted and consumed into reviewed unified with its A02.1/C07.1b/A09.5 dependency chain satisfied; then reactivate #376, sync unified once, wire the C03 projection at the accepted B13 seam, run exact-head verification and EGM, and turn in the parent.",
+      "state": "ACTIVE",
+      "head_sha": "c3297ec4ba4d8c4a91a1bc2757d49c7d8ba27ec1",
+      "summary": "C03 scoped integration active: define the true teacher-visit identity from authenticated B13 run lineage plus persisted C03 selection state; no run_id, episode_id or optimizer_step_seed substitution.",
+      "resume_trigger": null,
       "preserved_branch": "codex/bamf02-c03-376-20261107"
     },
     {
