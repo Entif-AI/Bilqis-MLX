@@ -23,9 +23,10 @@ from bilqis_mlx.learning.atlas_retention_decision import (
     LEGACY_DECISION_SCHEMA, CandidateRetentionDecision, decide_candidate_retention,
 )
 from bilqis_mlx.runtime.bamf_bundle import (
-    publish_bamf_generation, load_bamf_generation,
+    publish_bamf_generation, load_bamf_generation, load_bamf_generation_authority,
     read_accepted_generation_feature_receipt,
 )
+from bilqis_mlx.runtime.bamf_bundle import admission
 from bilqis_mlx.runtime.bamf_bundle.records import (
     LEGACY_BAMF_POINTER_SCHEMA,
 )
@@ -294,6 +295,48 @@ class GenerationAcceptanceProvenanceTests(unittest.TestCase):
         self.assertEqual(
             failure.exception.context["reason"],
             "BAMF_GENERATION_ACCEPTANCE_MISSING")
+
+    def test_accepted_authority_loaders_require_acceptance_custody(self):
+        source = candidate(parent_state())
+        self.publish(source, acceptance=acceptance(source))
+        binding_path = (self.run / "bamf-acceptance"
+                        / f"{json_manifest_sha(self.run)}.json")
+        binding_path.unlink()
+        pointer_path = self.run / "bamf-state.json"
+        with shape_patch():
+            for name, loader in (
+                    ("publication authority", lambda: load_bamf_generation_authority(pointer_path)),
+                    ("admission authority", lambda: admission.load_accepted_generation(self.run))):
+                with self.subTest(loader=name):
+                    with self.assertRaises(BilqisError) as failure:
+                        loader()
+                    self.assertEqual(
+                        failure.exception.context["reason"],
+                        "BAMF_GENERATION_ACCEPTANCE_MISSING")
+
+    def test_accepted_authority_loaders_reject_rehashed_acceptance_drift(self):
+        source = candidate(parent_state())
+        self.publish(source, acceptance=acceptance(source))
+        binding_path = (self.run / "bamf-acceptance"
+                        / f"{json_manifest_sha(self.run)}.json")
+        record = json.loads(binding_path.read_text())
+        record["optimizer_step"] += 1
+        record["binding_sha256"] = hashlib.sha256(canonical({
+            key: value for key, value in record.items()
+            if key != "binding_sha256"
+        })).hexdigest()
+        binding_path.write_text(json.dumps(record))
+        pointer_path = self.run / "bamf-state.json"
+        with shape_patch():
+            for name, loader in (
+                    ("publication authority", lambda: load_bamf_generation_authority(pointer_path)),
+                    ("admission authority", lambda: admission.load_accepted_generation(self.run))):
+                with self.subTest(loader=name):
+                    with self.assertRaises(BilqisError) as failure:
+                        loader()
+                    self.assertEqual(
+                        failure.exception.context["reason"],
+                        "BAMF_GENERATION_ACCEPTANCE_DRIFT")
 
 
 def json_manifest_sha(run_dir: Path) -> str:
