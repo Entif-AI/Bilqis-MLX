@@ -131,7 +131,9 @@ evidence used for this WAITING checkpoint.
 This worktree cannot execute the live operator preflight because the governing
 record points at
 `/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026`, which is
-not mounted on this machine. Prometheus was not substituted.
+not mounted on this machine. The canonical current adaptation run is
+`/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`.
+Prometheus was not substituted.
 
 The live #376 authority clarification records the current preserved source as
 branch `codex/337-replay-349-20261026`, head

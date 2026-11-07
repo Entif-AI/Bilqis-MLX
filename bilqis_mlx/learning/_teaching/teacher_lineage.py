@@ -34,7 +34,8 @@ def _lineage_payload(epoch: TeacherEpoch, *, adaptation: Mapping,
 
 def _projection(epoch: TeacherEpoch, *, adaptation: Mapping,
                 source_teacher_sha256: str, teacher_epoch: int,
-                next_seed: int, cursor: str) -> TeacherCustodyProjection:
+                next_seed: int, cursor: str,
+                last_visit: Mapping | None = None) -> TeacherCustodyProjection:
     if (type(teacher_epoch) is not int or teacher_epoch < 0
             or type(next_seed) is not int or next_seed < 0
             or not isinstance(cursor, str) or not cursor):
@@ -51,6 +52,9 @@ def _projection(epoch: TeacherEpoch, *, adaptation: Mapping,
             epoch, adaptation=adaptation,
             source_teacher_sha256=source_teacher_sha256),
     }
+    if last_visit is not None:
+        from .teacher_visit_identity import TeacherVisitIdentity
+        state["last_visit"] = TeacherVisitIdentity.from_record(last_visit).to_record()
     return TeacherCustodyProjection(state, identity, teacher_epoch)
 
 
@@ -81,7 +85,9 @@ def restore_teacher_lineage(
     expected_outer = {
         "schema", "teacher_identity", "teacher_epoch", "next_seed", "cursor", "c03_lineage",
     }
-    if (not isinstance(teacher_state, Mapping) or set(teacher_state) != expected_outer
+    actual_outer = set(teacher_state) if isinstance(teacher_state, Mapping) else set()
+    if (not isinstance(teacher_state, Mapping)
+            or actual_outer not in (expected_outer, expected_outer | {"last_visit"})
             or teacher_state.get("schema") != TEACHER_STATE_SCHEMA
             or not valid_hex(teacher_state.get("teacher_identity"), 64)
             or type(teacher_state.get("teacher_epoch")) is not int
@@ -118,6 +124,14 @@ def restore_teacher_lineage(
         lineage["source_teacher_sha256"], authority, lineage["student_sha256"])
     if identity != teacher_state["teacher_identity"]:
         invalid("TEACHER_LINEAGE_IDENTITY_DRIFT")
+    if "last_visit" in teacher_state:
+        from .teacher_visit_identity import TeacherVisitIdentity
+        visit = TeacherVisitIdentity.from_record(teacher_state["last_visit"])
+        if (visit.teacher_epoch > teacher_state["teacher_epoch"]
+                or (visit.teacher_epoch == teacher_state["teacher_epoch"]
+                    and (visit.teacher_identity != teacher_state["teacher_identity"]
+                         or visit.student_sha256 != lineage["student_sha256"]))):
+            invalid("TEACHER_VISIT_IDENTITY_DRIFT")
     return TeacherEpoch(
         lineage["prior_region"], lineage["current_region"], lineage["student_sha256"],
         HISTORICAL_REPLAY_HEAD, canonical(lineage["prior_teacher"]),
@@ -157,7 +171,8 @@ def advance_teacher_lineage(
         next_epoch, adaptation=adaptation_ref(lineage["adaptation_authority"]),
         source_teacher_sha256=lineage["source_teacher_sha256"],
         teacher_epoch=previous_state["teacher_epoch"] + 1,
-        next_seed=next_seed, cursor=cursor)
+        next_seed=next_seed, cursor=cursor,
+        last_visit=previous_state.get("last_visit"))
 
 
 __all__ = (

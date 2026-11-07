@@ -7,6 +7,10 @@ from bilqis_mlx.learning.teacher_lineage import (
     HISTORICAL_REPLAY_HEAD, adaptation_authority_ref, advance_teacher_lineage,
     bind_next_teacher_epoch, initialize_teacher_lineage, restore_teacher_lineage,
 )
+from bilqis_mlx.learning.teacher_visit_identity import (
+    TeacherVisitIdentity, derive_teacher_visit_identity,
+    record_teacher_visit_identity,
+)
 from bilqis_mlx.learning.tests.teacher_strategy_test_support import teacher_fixture
 
 
@@ -121,6 +125,79 @@ class TeacherLineageTests(unittest.TestCase):
                 initialize_teacher_lineage(
                     receipt, _student("a" * 64, "student-a"), adaptation,
                     prior_region="legacy-region", next_seed=seed, cursor=cursor)
+
+    def test_true_visit_identity_uses_run_and_persisted_teacher_selection_state(self):
+        _teacher, _adaptation, projection = self.initialize()
+        visit = derive_teacher_visit_identity(
+            projection.teacher_state,
+            run_identity_sha256="1" * 64, run_seed=17, generation=0,
+            accepted_manifest_sha256="2" * 64,
+            capability_id="C.ADD", policy_key="p-strong")
+        self.assertEqual(visit.run_seed, 17)
+        self.assertEqual(visit.selection_seed, 42)
+        self.assertEqual(visit.cursor, "lesson:7")
+        self.assertEqual(visit.teacher_identity, projection.teacher_identity)
+        self.assertEqual(visit.teacher_epoch, 0)
+        self.assertEqual(visit.student_sha256, "a" * 64)
+        self.assertEqual(len(visit.visit_id), 64)
+
+        recorded = record_teacher_visit_identity(projection.teacher_state, visit)
+        self.assertEqual(recorded.teacher_state["last_visit"], visit.to_record())
+        restored = restore_teacher_lineage(recorded.teacher_state)
+        self.assertEqual(restored.student_sha256, "a" * 64)
+
+    def test_visit_identity_is_not_episode_or_optimizer_seed_alias(self):
+        _teacher, _adaptation, projection = self.initialize()
+        base = dict(
+            teacher_state=projection.teacher_state,
+            run_identity_sha256="1" * 64, run_seed=17, generation=4,
+            accepted_manifest_sha256="2" * 64,
+            capability_id="C.ADD", policy_key="p-strong")
+        actual = derive_teacher_visit_identity(**base)
+        for key, value in (
+                ("run_seed", 18), ("generation", 5),
+                ("run_identity_sha256", "3" * 64),
+                ("accepted_manifest_sha256", "4" * 64),
+                ("capability_id", "C.SUB"), ("policy_key", "p-weak")):
+            with self.subTest(key=key):
+                changed = dict(base)
+                changed[key] = value
+                self.assertNotEqual(
+                    derive_teacher_visit_identity(**changed).visit_id,
+                    actual.visit_id)
+
+    def test_caller_cannot_record_a_rewritten_selection_seed(self):
+        _teacher, _adaptation, projection = self.initialize()
+        visit = derive_teacher_visit_identity(
+            projection.teacher_state,
+            run_identity_sha256="1" * 64, run_seed=17, generation=0,
+            accepted_manifest_sha256="2" * 64,
+            capability_id="C.ADD", policy_key="p-strong")
+        forged = TeacherVisitIdentity(
+            visit.run_identity_sha256, visit.run_seed, visit.generation,
+            visit.accepted_manifest_sha256, visit.teacher_identity,
+            visit.teacher_epoch, visit.student_sha256, visit.selection_seed + 1,
+            visit.cursor, visit.capability_id, visit.policy_key)
+        with self.assertRaises(BilqisError):
+            record_teacher_visit_identity(projection.teacher_state, forged)
+
+    def test_accepted_teacher_successor_preserves_prior_visit_evidence(self):
+        _teacher, _adaptation, projection = self.initialize()
+        visit = derive_teacher_visit_identity(
+            projection.teacher_state,
+            run_identity_sha256="1" * 64, run_seed=17, generation=0,
+            accepted_manifest_sha256="2" * 64,
+            capability_id="C.ADD", policy_key="p-strong")
+        recorded = record_teacher_visit_identity(projection.teacher_state, visit)
+        next_epoch = bind_next_teacher_epoch(
+            recorded.teacher_state, _student("b" * 64, "student-b"),
+            bank_identity="bank:v2", plasticity_identity="plasticity:adaptive")
+        advanced = advance_teacher_lineage(
+            recorded.teacher_state, next_epoch,
+            next_seed=43, cursor="lesson:8")
+        self.assertEqual(advanced.teacher_state["last_visit"], visit.to_record())
+        self.assertEqual(advanced.teacher_state["next_seed"], 43)
+        self.assertEqual(advanced.teacher_state["cursor"], "lesson:8")
 
 
 if __name__ == "__main__":
