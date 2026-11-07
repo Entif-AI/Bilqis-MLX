@@ -178,7 +178,7 @@ class AtlasGQATests(unittest.TestCase):
             swapped, self.hidden[:, :3], self.valid[:, :3], first_scope)
         self.assertEqual(cache.parameter_digest, rebuilt_cache.parameter_digest)
         self.assertTrue(any(
-            before is not after for before, after in
+            before() is not after() for before, after in
             zip(cache.parameter_identity, rebuilt_cache.parameter_identity, strict=True)))
         second, _ = ccgqa(
             swapped, self.hidden[:, 3:4], self.valid[:, 3:4], next_scope,
