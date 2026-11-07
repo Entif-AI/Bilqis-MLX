@@ -255,6 +255,30 @@ class BamfColdResumeContinuationTests(unittest.TestCase):
         cold = evidence(cold_release, cold_receipt, json.loads(json.dumps(teacher)))
         self.assertEqual(cold, uninterrupted)
 
+    def test_cold_continuation_ignores_absent_or_corrupt_disposable_cache(self):
+        initial = parent_state()
+        absent_run = self.root / "cache-absent"
+        corrupt_run = self.root / "cache-corrupt"
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            publish_candidate(absent_run, candidate(initial))
+            publish_candidate(corrupt_run, candidate(initial))
+
+        disposable = corrupt_run / "inference-cache.bin"
+        corrupt_bytes = b"stale derived inference cache: never durable learning custody"
+        disposable.write_bytes(corrupt_bytes)
+
+        absent = self.probe(absent_run)
+        corrupt = self.probe(corrupt_run)
+
+        self.assertEqual(corrupt["successor_digest"], absent["successor_digest"])
+        self.assertEqual(corrupt["successor_optimizer_step"],
+                         absent["successor_optimizer_step"])
+        self.assertEqual(corrupt["successor_update_counts"],
+                         absent["successor_update_counts"])
+        self.assertEqual(corrupt["decision"]["decision_sha256"],
+                         absent["decision"]["decision_sha256"])
+        self.assertEqual(disposable.read_bytes(), corrupt_bytes)
+
     def test_cold_resume_refuses_a_generation_without_published_custody(self):
         process = subprocess.run(
             [sys.executable, "-m", PROBE, str(self.root / "absent")],
