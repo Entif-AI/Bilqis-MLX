@@ -121,13 +121,6 @@ def prepare_realized_candidate(
     return staged
 
 
-def realized_source_sense_id(semantic_id):
-    """Return the source sense owned by the code realization for an atlas identity."""
-    if semantic_id != _COPULAR_ATLAS_SEMANTIC_ID:
-        raise ValueError
-    return _COPULAR_SOURCE_SENSE_ID
-
-
 def project_authoritative_target(semantic_id, current, selected_obligations):
     """Derive one A09 projection from the code-owned realization authority."""
     from dataclasses import replace

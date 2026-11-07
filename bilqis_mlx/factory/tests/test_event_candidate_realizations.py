@@ -11,8 +11,30 @@ from dataclasses import replace
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.compatibility.executable_projection import compile_projected_executable_release
 from bilqis_mlx.factory import candidate_realizations
+from bilqis_mlx.factory.atlas_frontier import (
+    AtlasCoverageEpoch,
+    AtlasLearnerEvidence,
+    next_atlas_delta,
+)
+from bilqis_mlx.factory.autonomy import (
+    EvidenceReceipt,
+    compile_autonomy_plan,
+    initial_evidence_ledger,
+    obligations_for_capability,
+    record_evidence,
+)
 from bilqis_mlx.factory.candidate_frontier import load_candidate_frontier
+from bilqis_mlx.factory.jit_curriculum import CurriculumDeltaProposal
 from bilqis_mlx.factory.live_answers import live_answer_registry
+from bilqis_mlx.factory.tests.curriculum.frontier.atlas_frontier_closure_fixtures import (
+    rehash,
+    row,
+)
+from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier_selection import (
+    _candidate,
+    _closure,
+    _snapshot,
+)
 from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.live_grade_c import registry_graph
 from bilqis_mlx.source_adapters import event_frames
@@ -73,6 +95,81 @@ class EventCandidateRealizationTests(unittest.TestCase):
             graph = candidate_realizations.admitted_candidate_graph(staged, graph)
             current = staged.successor
             observed.append(capability)
+        self.assertEqual(tuple(observed), tuple(event_frames.SOURCE_SPECS))
+
+    def test_atlas_adapter_proposes_three_real_source_qualified_successors(self):
+        current = self.current
+        graph = self.parent_graph
+        observed = []
+        mastered = {"A.IDENTITY"}
+        for capability in event_frames.SOURCE_SPECS:
+            semantic_id = event_frames.atlas_semantic_id(capability)
+            staged = candidate_realizations.prepare_realized_candidate(
+                self.frontier, current, graph, semantic_id,
+                source_root=LEGACY, source_registry=self.source_registry,
+                answer_registry=self.answer_registry,
+            )
+            snapshot = _snapshot(current, prerequisite_edges=())
+            snapshot = rehash(
+                snapshot,
+                source_eligible_concept_ids=(semantic_id,),
+                coverage_rows=(row(semantic_id),),
+                prerequisite_edges=(),
+                candidate_frontier_sha256=self.frontier.release_sha256,
+                staged_factory_release_sha256s=(staged.successor.release_sha256,),
+                source_held_rows=(),
+                cursor=0,
+            )
+            closure = _closure(
+                snapshot, (_candidate(snapshot, semantic_id),), order=(semantic_id,))
+            plan = compile_autonomy_plan(current)
+            checkpoint = "e" * 64
+            step = 0
+            ledger = initial_evidence_ledger(current, plan=plan)
+            receipt_index = 0
+            for prerequisite in sorted(mastered):
+                for obligation in obligations_for_capability(
+                        current, prerequisite, plan=plan):
+                    receipt_index += 1
+                    ledger = record_evidence(
+                        current,
+                        ledger,
+                        EvidenceReceipt(
+                            obligation.obligation_id,
+                            f"event-prerequisite-{capability}-{receipt_index}",
+                            checkpoint,
+                            step,
+                            hashlib.sha256(
+                                f"event-prerequisite:{capability}:{receipt_index}".encode()
+                            ).hexdigest(),
+                            obligation.minimum_specimens,
+                            True,
+                        ),
+                        plan=plan,
+                        current_checkpoint_sha256=checkpoint,
+                        current_optimizer_step=step,
+                    )
+            learner = AtlasLearnerEvidence(
+                ledger, checkpoint, step)
+            proposal = next_atlas_delta(
+                AtlasCoverageEpoch(
+                    snapshot=snapshot,
+                    closure=closure,
+                    candidate_frontier=self.frontier,
+                    current_release=current,
+                    staged_candidates=(staged,),
+                ),
+                learner,
+                plan,
+            )
+            self.assertIsInstance(proposal, CurriculumDeltaProposal)
+            self.assertEqual(proposal.selected_candidate_ids, (staged.candidate_id,))
+            self.assertEqual(
+                proposal.selected_successor_sha256, staged.successor.release_sha256)
+            observed.append(capability)
+            graph = candidate_realizations.admitted_candidate_graph(staged, graph)
+            current = staged.successor
+            mastered.add(capability)
         self.assertEqual(tuple(observed), tuple(event_frames.SOURCE_SPECS))
 
     def test_each_successive_event_stage_restarts_as_the_same_candidate(self):
