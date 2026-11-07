@@ -7,7 +7,7 @@ Reviewed unified base: `9301e41ef215b9d035449c3260c7cd0f8ee0b5a7`
 Semantic repair commit: `3b80a76c`
 Current synchronized branch head before evidence commit: `db27df4abb9471b1593da36e86401b636ec5d09a`
 Branch: `codex/bamf02-a-906-temporal-context-20261107`
-Review disposition: `EGM_FAILED_ROUND_1_REPAIRED_PENDING_REAUDIT`
+Review disposition: `EGM_PASSED_TARGETED_REAUDIT`
 
 ## Outcome
 
@@ -123,6 +123,21 @@ and cold-restart persistence.
 
 The joined proof is integration evidence only. No #752 code is merged into the
 #906 feature branch.
+
+## EGM targeted re-audit
+
+The same Goldfish reviewer performed the permitted targeted re-audit of the
+Round 1 Blocker and Major at exact head
+`4e3b88262c79771138a3d7d97169394d73581c72`, based on reviewed unified
+`9301e41ef215b9d035449c3260c7cd0f8ee0b5a7`.
+
+Verdict: **PASS**. Zero Blockers, Majors, Minors, or Nits remain in the
+targeted scope. The reviewer independently confirmed the hash-pinned authority
+bytes and source-only issuance boundary, re-ran source-context **10/10**, exact
+mounted A01 **3/3 with zero skips**, and semantics context **25/25**, and
+verified disposable joined head
+`40d84d361b06169f51cc45ae33e3d1288e9a4e29` is the exact merge of #906
+repair `3b80a76c...` and authoritative #752 consumer `03e7a3c0...`.
 
 ## Safety and authority
 
