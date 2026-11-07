@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "5f8f3d4b42cc4656020e4427c7d8e822825a36f9",
-  "updated_at": "2026-11-07T13:07:38-05:00",
+  "observed_unified": "9301e41ef215b9d035449c3260c7cd0f8ee0b5a7",
+  "updated_at": "2026-11-07T14:24:54-05:00",
   "exception": null,
   "items": [
     {
@@ -76,22 +76,24 @@
     {
       "issue": 478,
       "pr": 885,
-      "state": "READY",
-      "head_sha": "ec9188d10112bed5c0a42f138e9bceda81a4af1c",
-      "head_sha_role": "final reviewed head; semantic repair proof is bound to d51bb12f and reused across the docs/flow-only d51bb12f..ec9188d1 range under AGENTS.md TEST_EVIDENCE_REUSED",
-      "summary": "B13.1 #478 is review-ready. Round-5 same-round reinspection cleared the final C12 package-parent authority Major with PASS from both comprehension and codebase-details reviewers: 0 unsettled Blockers / 0 unsettled Majors. Semantic repair d51bb12f routes C12 through shared B13 acceptance-authenticated authority; missing and re-signed-drifted acceptance witnesses fail closed before successor publication. Cognitive-package is 54/54; fresh full B13 custody is 111 total / 107 passed / 0 failed / 4 explicit skips; final-head hosted portable-core, semantic-abi-integrity and aggregate portable are green; PR #885 is CLEAN and ready for human review. Human merge and issue closure remain external authority.",
+      "state": "TURNED_IN",
+      "head_sha": "f166cac5db1e217880ce706efb51408001c7231e",
+      "head_sha_role": "merged PR head; semantic repair proof is bound to d51bb12f and reused across the docs/flow-only d51bb12f..f166cac5 range under AGENTS.md TEST_EVIDENCE_REUSED",
+      "summary": "B13.1 #478 is accepted and closed. PR #885 was human-merged into reviewed unified as 9301e41e after round-5 same-round reinspection PASS from both reviewers, exact-head hosted semantic-abi-integrity/portable-core/portable success, and CLEAN merge state. The accepted B13.1 custody surface is now consumable by B13.2 #479.",
       "resume_trigger": null,
-      "preserved_branch": "codex/bamf02-b13-1-478-complete-20261106"
+      "preserved_branch": "codex/bamf02-b13-1-478-complete-20261106",
+      "merged_pr": 885
     },
     {
       "issue": 479,
-      "pr": null,
-      "state": "WAITING",
-      "head_sha": "d18997f2b5c9314a6f4fd15dd590fabfd2dd3546",
-      "summary": "B13.2 cold-resume proof remains incomplete.",
-      "resume_trigger": "Remediation #709 proves the required real cold resume through the next controlled optimizer step and the accepted B13.1 custody surface is consumable.",
+      "pr": 909,
+      "state": "TURNED_IN",
+      "head_sha": "c83a9c274d1b9d01d1e3b5d6af1a0e7732f1cc8d",
+      "head_sha_role": "current pre-PR head; corrected EGM-reviewed head is 58dc31f8, semantic/test proof is 62237b46, and c83a9c27 adds only the pre-existing baseline learning-owner census repair. Final docs/flow-only turn-in bookkeeping may advance the Git head under AGENTS.md TEST_EVIDENCE_REUSED.",
+      "summary": "B13.2 #479 is turned in as ready PR #909 after corrected round-2 EGM PASS from both fresh Goldfish reviewers: 0 unsettled Blockers / 0 unsettled Majors. Accepted-custody continuation is 8/8; mutation controls are 3/3; complete 214-tensor / 79,469,798-parameter custody is 1/1 with an unchanged detached snapshot; source-qualified Apple Metal to CPU next-step continuation is 1/1 with committed semantic-output parity, max abs drift 2.35140323638916e-05 inside the 0.002 FP32 tolerance, unchanged accepted parent and no generation-2 publication; canonical Microspenics source /Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay supplies legacy-v1 bundle best-18601-70d09abe56ca, which passes 1/1 after live authority validation. Premerge retry at c83a9c27 passed 3520 total / 3360 passed / 0 failed / 160 explicit skips / 0 errors after binding the canonical external legacy-runs fixture; c83a9c27 also contains the test-only 41->42 learning-owner census repair whose failure reproduced on consumed unified. Hosted PR checks and human merge remain external authority.",
+      "resume_trigger": null,
       "closed_pr": 677,
-      "preserved_branch": "codex/bamf02-b13-2-479-cold-resume-20261101",
+      "preserved_branch": "codex/bamf02-b13-2-479-complete-20261107",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
       "close_reason": "EGM-Failed; remediation #709"
     },
@@ -141,11 +143,12 @@
     {
       "issue": 754,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "978953bfa8ee664e45a253b71c8f7e56dfc3c103",
-      "summary": "B13.3 EGM remediation active on current unified: native attention caches weak-bind the exact in-process MLX tensor objects for fast runtime rejection without pinning retired model weights, while durable cache receipts remain deterministic from accepted generation/layer/shape/dtype metadata; accepted B13 MODEL_SWAP and PARAMETER_EXTENSION publication carry the actual accepted-student attention cache across the production transition classifier, reject stale state, and rebuild to the fresh answer path. #709 cold continuation is consumed, and the genuine canonical Prometheus frozen-v1 witness passed read-only with its pinned manifest digest.",
+      "state": "TURNED_IN",
+      "head_sha": "beae73a57df182fd478856a340b0685d861095b1",
+      "summary": "B13.3 remediation was accepted and merged through PR #902. Its cache-transition and cold-continuation repairs remain accepted. Its Prometheus frozen-v1 witness is historical evidence about the Prometheus lineage only and is not current BAMF legacy-trainer compatibility authority; successor compatibility work must use the canonical Microspenics source declared by AGENTS.md and LEGACY_TRAINER_AUTHORITY.md.",
       "resume_trigger": null,
-      "preserved_branch": "codex/754-cache-transition-20261105"
+      "preserved_branch": "codex/754-cache-transition-20261105",
+      "merged_pr": 902
     },
     {
       "issue": 711,
