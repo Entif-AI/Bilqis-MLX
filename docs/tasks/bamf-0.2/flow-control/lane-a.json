@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "947a4ddda2c133cabec846b09d3b58d18732dcf1",
-  "updated_at": "2026-11-07T10:09:42Z",
+  "observed_unified": "5f8f3d4b42cc4656020e4427c7d8e822825a36f9",
+  "updated_at": "2026-11-07T17:21:45Z",
   "exception": null,
   "items": [
     {
@@ -216,6 +216,15 @@
       "preserved_branch": "codex/bamf02-a-842-execution-structure-20261105",
       "summary": "Scoped842round1 source-inspection/literal-proof repair durable and regression-verified at a0a00fef; consumed by parent candidate, no separate PR.",
       "resume_trigger": null
+    },
+    {
+      "issue": 906,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "5f8f3d4b42cc4656020e4427c7d8e822825a36f9",
+      "summary": "A13 EGM-Mitigation follow-on is active from current reviewed unified. Scope is the existing-A13 production temporal/frontier producer required to make transition_context emit a typed invalidation for a retained artifact consumed by #752; no wall-clock, evidence-timestamp-as-expiry, signer, or event-ontology invention is authorized.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a-906-temporal-context-20261107"
     }
   ]
 }

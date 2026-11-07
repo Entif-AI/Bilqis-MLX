@@ -6,11 +6,15 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory.skos_curriculum.checkers import compile_source_constructive_lessons
 from bilqis_mlx.factory.skos_curriculum.source_context import (
     issue_source_lesson_contexts, project_source_lesson_contexts,
+    source_lesson_expiry_task,
+)
+from bilqis_mlx.factory.skos_curriculum.source_context_policy import (
+    declare_source_context_policy_window,
 )
 from bilqis_mlx.factory.skos_curriculum.programs.tests.real_fixtures import ARTIFACT, selection
 from bilqis_mlx.factory.tests.skos.test_source_context import _task, _policy
 from bilqis_mlx.semantics.context_eligibility import (
-    ApprovedContextProjection, ContextHold, SourceFrontier,
+    ApprovedContextProjection, ContextHold, SourceFrontier, transition_context,
 )
 
 
@@ -46,3 +50,26 @@ class RealSourceLessonContextTests(TestCase):
         with self.assertRaises(BilqisError):
             issue_source_lesson_contexts(
                 self.lesson, self.lessons, self.atlas, self.task, self.policy, revoked)
+
+    def test_real_pinned_source_crosses_only_explicit_policy_expiry(self):
+        empty = SourceFrontier(2, 3, ())
+        validity = declare_source_context_policy_window(
+            self.atlas, self.task, self.policy, empty,
+            observed_at=self.task.observed_frontier,
+            effective_from=0, effective_until=self.task.effective_time + 1)
+        contexts, frontier = issue_source_lesson_contexts(
+            self.lesson, self.lessons, self.atlas, self.task, self.policy, empty,
+            validity=validity)
+        before = project_source_lesson_contexts(
+            contexts, self.task, frontier, self.policy)
+        self.assertIsInstance(before, ApprovedContextProjection)
+        expiry_task = source_lesson_expiry_task(
+            contexts, self.task, frontier, self.policy)
+        transition = transition_context(
+            before, (contexts.positive.envelope, contexts.contrast.envelope),
+            expiry_task, frontier, self.policy)
+        self.assertIsInstance(transition.current, ContextHold)
+        self.assertEqual(
+            transition.current.reason_codes,
+            ("BAMF_CONTEXT_TEMPORAL_MISMATCH",))
+        self.assertEqual(len(transition.invalidations), 1)

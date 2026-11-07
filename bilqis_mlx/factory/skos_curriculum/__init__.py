@@ -23,8 +23,13 @@ from .registry import (IMPLEMENTATION_UNCOVERED, PROGRAM_BOUND,
     FamilyCoverageDisposition, FamilyProgramCoverage, FamilyProgramRegistry,
     RegisteredFamilyProgram, bind_factory_release_families,
     default_family_program_registry, uncovered_family_obligations)
-from .source_context import (SourceLessonContexts, issue_source_lesson_contexts,
-    project_source_lesson_contexts)
+from .source_context import (
+    SourceLessonContexts, issue_source_lesson_contexts,
+    project_source_lesson_contexts, source_lesson_expiry_task,
+)
+from .source_context_policy import (
+    SourceContextPolicyWindow, declare_source_context_policy_window,
+)
 
 __all__ = [
     "SOURCE_FAMILY_ADAPTERS", "SourceFamilyAdapter", "SemanticFamilyInventory",
@@ -39,6 +44,7 @@ __all__ = [
     "FamilyProgramCoverage", "FamilyProgramRegistry", "RegisteredFamilyProgram",
     "bind_factory_release_families", "default_family_program_registry",
     "uncovered_family_obligations",
-    "SourceLessonContexts", "issue_source_lesson_contexts",
-    "project_source_lesson_contexts",
+    "SourceContextPolicyWindow", "SourceLessonContexts",
+    "declare_source_context_policy_window", "issue_source_lesson_contexts",
+    "project_source_lesson_contexts", "source_lesson_expiry_task",
 ]
