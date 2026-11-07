@@ -169,17 +169,21 @@ def _accepted_generation(pointer_path: Path):
     return pointer, student
 
 
-def _accepted_binding(run_dir: Path, pointer: dict, student) -> AcceptedCandidateBinding:
-    """Read the retention owner's acceptance binding for the accepted generation.
-
-    Publication is not acceptance. Without a matching retention binding the
-    generation may not mint accepted-generation authority.
-    """
+def _accepted_binding(run_dir: Path, pointer: dict, student):
+    """Read the owner-issued publication authority for the accepted generation."""
     path = run_dir / ACCEPTANCE_DIR / f"{pointer['manifest_sha256']}.json"
     if path.is_symlink() or not path.is_file():
         invalid("BAMF_GENERATION_ACCEPTANCE_MISSING")
     try:
         record = json.loads(path.read_bytes())
+        if student.generation == 0 and student.run_identity is not None:
+            from .genesis import (
+                InitialGenerationBinding, validate_parsed_initial_generation_binding,
+            )
+            binding = InitialGenerationBinding.from_record(record)
+            validate_parsed_initial_generation_binding(
+                student, binding, pointer["acceptance_sha256"])
+            return binding
         binding = AcceptedCandidateBinding.from_record(record)
     except (UnicodeDecodeError, json.JSONDecodeError, BilqisError):
         invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")

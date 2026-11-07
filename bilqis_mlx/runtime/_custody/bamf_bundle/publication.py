@@ -98,6 +98,8 @@ def _validate_parent_transition(run_dir: Path, pointer: dict | None, candidate: 
 def _require_acceptance(candidate: BamfBundleCandidate,
                          acceptance: AcceptedCandidateBinding | None) -> AcceptedCandidateBinding:
     """Publication is not acceptance: the retention owner must have accepted it."""
+    if candidate.generation == 0:
+        invalid("BAMF_INITIAL_GENERATION_BOOTSTRAP_REQUIRED")
     if type(acceptance) is not AcceptedCandidateBinding:
         invalid("BAMF_GENERATION_ACCEPTANCE_REQUIRED")
     if (acceptance.schema_version != ACCEPTANCE_SCHEMA
@@ -134,9 +136,16 @@ def _require_accepted_parent(run_dir: Path, candidate: BamfBundleCandidate,
 def publish_bamf_generation(run_dir: Path, candidate: BamfBundleCandidate, *,
                             acceptance: AcceptedCandidateBinding | None = None,
                             reserve_gib: float = 100.0) -> dict:
-    """Publish once; retries converge across staging, rename, pointer and outbox crashes."""
-    run_dir = Path(run_dir)
+    """Publish one retained successor; generation zero has a separate B13 gate."""
     accepted = _require_acceptance(candidate, acceptance)
+    return _publish_authorized_generation(
+        run_dir, candidate, accepted, reserve_gib=reserve_gib)
+
+
+def _publish_authorized_generation(run_dir: Path, candidate: BamfBundleCandidate,
+                                   authority, *, reserve_gib: float) -> dict:
+    """Shared crash-safe transaction after the generation owner authenticates authority."""
+    run_dir = Path(run_dir)
     stage = _stage(run_dir)
     try:
         manifest = save_bamf_bundle(candidate, stage, reserve_gib=reserve_gib)
@@ -145,18 +154,19 @@ def publish_bamf_generation(run_dir: Path, candidate: BamfBundleCandidate, *,
         pointer_path = run_dir / "bamf-state.json"
         with _pointer_lock(run_dir):
             current = _read_pointer(pointer_path)
-            _require_accepted_parent(run_dir, candidate, accepted)
+            if candidate.generation > 0:
+                _require_accepted_parent(run_dir, candidate, authority)
             if current is not None and current["generation"] == candidate.generation:
                 if (current["run_id"] != candidate.run_id
                         or current["manifest_sha256"] != digest
                         or current["parent_manifest_sha256"] != candidate.parent_manifest_sha256
                         or current["schema"] != BAMF_POINTER_SCHEMA
-                        or current["acceptance_sha256"] != accepted.digest):
+                        or current["acceptance_sha256"] != authority.digest):
                     invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
                 shutil.rmtree(stage)
                 student = load_bamf_bundle(
                     run_dir / current["bundle"], expected_manifest_sha256=digest)
-                _write_acceptance(run_dir, digest, accepted)
+                _write_acceptance(run_dir, digest, authority)
                 reconcile_bamf_outbox(run_dir, student)
                 return current
             _validate_parent_transition(run_dir, current, candidate)
@@ -172,13 +182,13 @@ def publish_bamf_generation(run_dir: Path, candidate: BamfBundleCandidate, *,
                     os.fsync(directory)
                 finally:
                     os.close(directory)
-            _write_acceptance(run_dir, digest, accepted)
+            _write_acceptance(run_dir, digest, authority)
             pointer = {
                 "schema": BAMF_POINTER_SCHEMA, "run_id": candidate.run_id,
                 "generation": candidate.generation,
                 "parent_manifest_sha256": candidate.parent_manifest_sha256,
                 "bundle": str(target.relative_to(run_dir)),
-                "manifest_sha256": digest, "acceptance_sha256": accepted.digest,
+                "manifest_sha256": digest, "acceptance_sha256": authority.digest,
             }
             _atomic_pointer(pointer_path, pointer)
             student = load_bamf_bundle(target, expected_manifest_sha256=digest)

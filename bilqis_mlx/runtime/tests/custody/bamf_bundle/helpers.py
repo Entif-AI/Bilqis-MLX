@@ -10,6 +10,7 @@ from unittest.mock import patch
 import mlx.core as mx
 
 from bilqis_mlx.data_plane import data_plane
+from bilqis_mlx.factory.executable_release import admit_executable_factory_release
 from bilqis_mlx.learning.atlas_acceptance import mint_acceptance_binding
 from bilqis_mlx.learning.atlas_retention_decision import decide_candidate_retention
 from bilqis_mlx.learning.atlas_candidate import (
@@ -20,16 +21,19 @@ from bilqis_mlx.learning._retention.tests.execution_fixtures import execution_pr
 from bilqis_mlx.learning.atlas_engram import MotifManifest
 from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
 from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
+from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree
 from bilqis_mlx.runtime.bamf_bundle import (
-    BamfBundleCandidate, publish_bamf_generation,
+    BamfBundleCandidate, prepare_initial_generation, publish_bamf_generation,
+    publish_initial_generation,
 )
 from bilqis_mlx.runtime.bamf_bundle.motif_codec import snapshot_to_record
 from bilqis_mlx.runtime.bamf_bundle.records import canonical, sha
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, GenerationProvenance, Initializer, ModelTopologySpecV2,
-    ParameterGroup, ParameterSpec,
+    ParameterCensus, ParameterGroup, ParameterSpec,
 )
+from bilqis_mlx.runtime.state import _fingerprint
 
 NAME = "identity.bank.0"
 RELEASE = "b" * 64
@@ -38,6 +42,84 @@ DECLARED = (ParameterSpec(NAME, (2, 2), Initializer.EMBEDDING,
                           ParameterGroup.IDENTITY_ROW_AGE, True),)
 HP = AdamWHyperparameters(.001, (.9, .95), 1e-8, .01)
 FIXTURE_PARENT_MANIFEST = "6" * 64
+
+
+def _genesis_defaults():
+    provenance = GenerationProvenance(
+        "fixture-source", "d" * 64, "fixture-teacher", 3)
+    motif = MotifManifest(provenance.release_digest)
+    extents = GenerationExtents(
+        1, 1, "a" * 64, motif.digest, "c" * 64)
+    return {
+        "provenance": provenance,
+        "extents": extents,
+        "semantic_abi": {
+            "schema": "bilqis.mlx.bamf-semantic-abi/v1",
+            "active_set_sha256": "a" * 64,
+            "semantic_bank_count": 1,
+            "bank_identities": ["bank:0"],
+        },
+        "compiler_features": {
+            "schema": "bilqis.mlx.bamf-compiler-features/v1",
+            "factor_map_sha256": "c" * 64,
+            "compiler_sha256": "f" * 64,
+            "rights_epoch": 2,
+            "correction_generation": 4,
+        },
+        "correction_frontier": {
+            "schema": "bilqis.mlx.bamf-correction-frontier/v1",
+            "source_identity": "fixture-source",
+            "release_digest": "d" * 64,
+            "rights_epoch": 2,
+            "correction_generation": 4,
+            "frontier": [],
+        },
+        "teacher_state": {
+            "schema": "bilqis.mlx.bamf-teacher-state/v1",
+            "teacher_identity": "fixture-teacher",
+            "teacher_epoch": 3,
+            "next_seed": 42,
+            "cursor": "lesson:7",
+        },
+        "evaluation_contract": {
+            "schema": "bilqis.mlx.bamf-evaluation-contract/v1",
+            "contract_sha256": "9" * 64,
+        },
+    }
+
+
+def genesis_preparation(*, run_seed=17, delivery_events=None, **overrides):
+    """Enter B13 generation zero through the production constructor and issuer."""
+    from bilqis_mlx.runtime.tests.operator.test_admission import _executable_fixture
+    release, graph = _executable_fixture()
+    origin = Checkpoint("7" * 64, "bundles/foundation-origin", 0, True)
+    admission = admit_executable_factory_release(
+        release, student_sha256=origin.sha256,
+        optimizer_step=origin.optimizer_step,
+        semantic_graph_sha256=_fingerprint(graph), graph=graph)
+    values = _genesis_defaults() | overrides
+    return prepare_initial_generation(
+        run_id="fixture-run", run_seed=run_seed, origin_checkpoint=origin,
+        release=release, admission=admission, graph=graph,
+        topology=ModelTopologySpecV2(),
+        extents=values["extents"], optimizer_hyperparameters=HP,
+        provenance=values["provenance"], implementation_sha256=IMPLEMENTATION,
+        semantic_abi=values["semantic_abi"],
+        compiler_features=values["compiler_features"],
+        correction_frontier=values["correction_frontier"],
+        teacher_state=values["teacher_state"],
+        evaluation_contract=values["evaluation_contract"],
+        delivery_events=(
+            ({"event": "FIXTURE_GENESIS", "optimizer_step": 0},)
+            if delivery_events is None else delivery_events),
+    )
+
+
+def publish_genesis(run_dir, *, run_seed=17, **overrides):
+    """Publish a real production generation zero, never a test-minted C05 token."""
+    return publish_initial_generation(
+        run_dir, genesis_preparation(run_seed=run_seed, **overrides),
+        reserve_gib=0.)
 
 
 def parent_state() -> CandidateState:
@@ -184,6 +266,11 @@ def shape_patch():
                    "expected_bamf_shapes",
                    ):
         stack.enter_context(patch(target, return_value=DECLARED))
+    def census(spec, extents):
+        return ParameterCensus(spec.digest, extents.digest, DECLARED)
+    stack.enter_context(patch(
+        "bilqis_mlx.runtime.topology_v2.construction.bamf_parameter_census",
+        side_effect=census))
     return stack
 
 
@@ -210,5 +297,7 @@ def acceptance(bundle) -> object:
 
 
 def publish_candidate(run_dir, bundle):
-    """Publish one candidate with its retention acceptance binding."""
+    """Publish one retained successor with its C05 acceptance binding."""
+    if bundle.generation == 0:
+        raise AssertionError("GENERATION_ZERO_MUST_USE_PRODUCTION_B13_BOOTSTRAP")
     return publish_bamf_generation(run_dir, bundle, acceptance=acceptance(bundle))

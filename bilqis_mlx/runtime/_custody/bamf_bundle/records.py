@@ -26,6 +26,7 @@ SIDECARS = MappingProxyType({
     "teacher_state": "teacher-state.json",
     "evaluation_contract": "evaluation-contract.json",
     "step_proofs": "step-proofs.json",
+    "run_identity": "run-identity.json",
     "outbox": "outbox.json",
 })
 _TRANSITIONS = frozenset({"INITIAL", "RETAINED_CANDIDATE", "PARAMETER_EXTENSION", "MODEL_SWAP"})
@@ -49,6 +50,7 @@ class BamfBundleCandidate:
     evaluation_contract: Mapping
     transition: Mapping
     outbox: tuple
+    run_identity: object | None = None
 
 
 @dataclass(frozen=True)
@@ -147,10 +149,12 @@ def validate_transition(generation: int, transition: Mapping) -> None:
 def validate_sidecars(extents, provenance, records: Mapping):
     from bilqis_mlx.learning.atlas_engram import INITIAL_MOTIF_CAPACITY
     from bilqis_mlx.learning.atlas_plasticity import PlasticityPolicy
-    if not isinstance(records, Mapping) or set(records) != set(SIDECARS):
+    required = set(SIDECARS) - {"run_identity"}
+    if (not isinstance(records, Mapping)
+            or set(records) not in (required, set(SIDECARS))):
         invalid()
-    if (any(not isinstance(records[name], Mapping) for name in SIDECARS
-            if name not in ("outbox",)) or type(records["outbox"]) not in (list, tuple)):
+    if (any(not isinstance(records[name], Mapping) for name in records
+            if name != "outbox") or type(records["outbox"]) not in (list, tuple)):
         invalid()
     proofs = records.get("step_proofs", {
         "schema": "bilqis.mlx.bamf-step-proofs/v1", "proofs": []})
@@ -210,5 +214,10 @@ def sidecar_records(candidate: BamfBundleCandidate) -> dict:
         },
         "outbox": outbox,
     }
+    if candidate.run_identity is not None:
+        from .genesis import BamfRunIdentity
+        if type(candidate.run_identity) is not BamfRunIdentity:
+            invalid("BAMF_RUN_IDENTITY_INVALID")
+        records["run_identity"] = candidate.run_identity.to_record()
     validate_sidecars(candidate.extents, candidate.provenance, records)
     return records

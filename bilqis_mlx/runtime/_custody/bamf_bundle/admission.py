@@ -157,8 +157,17 @@ def _published_in_memory_identity(
         if acceptance_path.is_symlink() or not acceptance_path.is_file():
             invalid("BAMF_GENERATION_ACCEPTANCE_MISSING")
         try:
-            acceptance = AcceptedCandidateBinding.from_record(
-                json.loads(acceptance_path.read_bytes()))
+            record = json.loads(acceptance_path.read_bytes())
+            if student.generation == 0 and student.run_identity is not None:
+                from .genesis import (
+                    InitialGenerationBinding,
+                    validate_parsed_initial_generation_binding,
+                )
+                acceptance = InitialGenerationBinding.from_record(record)
+                validate_parsed_initial_generation_binding(
+                    student, acceptance, pointer["acceptance_sha256"])
+                return identity
+            acceptance = AcceptedCandidateBinding.from_record(record)
         except (OSError, UnicodeDecodeError, json.JSONDecodeError, BilqisError):
             invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
         if (acceptance.digest != pointer["acceptance_sha256"]
@@ -199,7 +208,8 @@ def derive_successor_bundle(parent: CompleteStudent, retained_state: CandidateSt
         retained_state, parent.optimizer_hyperparameters, parent.provenance,
         dict(parent.semantic_abi), dict(parent.compiler_features),
         dict(parent.correction_frontier), dict(parent.teacher_state),
-        dict(parent.evaluation_contract), transition, tuple(delivery_events))
+        dict(parent.evaluation_contract), transition, tuple(delivery_events),
+        parent.run_identity)
 
 
 def _parameter_census(parent: CompleteStudent) -> ParameterCensus:
