@@ -12,6 +12,7 @@ from bilqis_mlx.runtime.atlas_attention import (
     ATTENTION_PARAMETER_NAMES, AttentionScope, attention_parameter_view,
     ccgqa, project_convolved_qkv,
 )
+from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes, initialize_bamf_parameter,
 )
@@ -104,6 +105,7 @@ class AtlasGQATests(unittest.TestCase):
         manifest = cache.to_record()
         self.assertEqual(manifest["layer"], 0)
         self.assertEqual(manifest["generation"], digest("generation"))
+        self.assertEqual(manifest["parameter_digest"], cache.parameter_digest)
         self.assertEqual(manifest["prefix_digest"], digest("full"))
         self.assertEqual(manifest["scope"], np.asarray(self.ids).tolist())
         self.assertEqual(manifest["rope"], {"dimensions": 24, "base": 10000, "traditional": False, "scale": 1.0})
@@ -159,6 +161,34 @@ class AtlasGQATests(unittest.TestCase):
                         replace(next_scope, layer=1), replace(next_scope, parent_prefix_digest=digest("wrong"))):
             with self.assertRaises(BilqisError):
                 ccgqa(self.params, self.hidden[:, :1], self.valid[:, :1], changed, cache=cache, offset=5)
+
+    def test_model_parameter_swap_rejects_cache_then_fresh_rebuild_matches(self):
+        first_scope = self.scope(self.ids[:, :3], self.starts[:, :3], "first")
+        _, cache = ccgqa(
+            self.params, self.hidden[:, :3], self.valid[:, :3], first_scope)
+        swapped = dict(self.params)
+        swapped["query"] = self.params["query"] + mx.array(.001, dtype=mx.float32)
+        next_scope = self.scope(
+            self.ids[:, 3:4], self.starts[:, 3:4], "next", "first")
+        with self.assertRaises(BilqisError):
+            ccgqa(
+                swapped, self.hidden[:, 3:4], self.valid[:, 3:4], next_scope,
+                cache=cache, offset=3)
+        first, rebuilt_cache = ccgqa(
+            swapped, self.hidden[:, :3], self.valid[:, :3], first_scope)
+        self.assertEqual(cache.parameter_digest, rebuilt_cache.parameter_digest)
+        self.assertTrue(any(
+            before() is not after() for before, after in
+            zip(cache.parameter_identity, rebuilt_cache.parameter_identity, strict=True)))
+        second, _ = ccgqa(
+            swapped, self.hidden[:, 3:4], self.valid[:, 3:4], next_scope,
+            cache=rebuilt_cache, offset=3)
+        expected, _ = ccgqa(
+            swapped, self.hidden[:, :4], self.valid[:, :4],
+            self.scope(self.ids[:, :4], self.starts[:, :4], "rebuilt"))
+        np.testing.assert_allclose(
+            np.asarray(mx.concatenate((first, second), axis=1)),
+            np.asarray(expected), atol=2e-6, rtol=3e-5)
 
     def test_zero_mask_backward_and_malformed_cache_fail_closed(self):
         empty = mx.zeros((2, 5), dtype=mx.bool_)
@@ -232,3 +262,37 @@ class AtlasGQATests(unittest.TestCase):
             with self.assertRaises(BilqisError):
                 attention_parameter_view(
                     parameters, spec=spec, extents=extents, layer=layer)
+
+    def test_parameter_extension_changes_owned_generation_and_invalidates_cache(self):
+        spec = ModelTopologySpecV2()
+        first_extents = GenerationExtents(1, 1, "a" * 64, "b" * 64, "c" * 64)
+        next_extents = GenerationExtents(2, 1, "d" * 64, "b" * 64, "c" * 64)
+        first_parameters = {
+            item.name: mx.zeros(item.shape, dtype=mx.float32)
+            for item in expected_bamf_shapes(spec, first_extents)
+        }
+        next_parameters = {
+            item.name: mx.zeros(item.shape, dtype=mx.float32)
+            for item in expected_bamf_shapes(spec, next_extents)
+        }
+        first_generation = execution_generation_digest(
+            first_parameters, spec=spec, extents=first_extents)
+        next_generation = execution_generation_digest(
+            next_parameters, spec=spec, extents=next_extents)
+        self.assertNotEqual(first_generation, next_generation)
+        first_view = attention_parameter_view(
+            first_parameters, spec=spec, extents=first_extents, layer=0)
+        next_view = attention_parameter_view(
+            next_parameters, spec=spec, extents=next_extents, layer=0)
+        first_scope = replace(
+            self.scope(self.ids[:, :3], self.starts[:, :3], "first"),
+            generation=first_generation)
+        _, cache = ccgqa(
+            first_view, self.hidden[:, :3], self.valid[:, :3], first_scope)
+        next_scope = replace(
+            self.scope(self.ids[:, 3:4], self.starts[:, 3:4], "next", "first"),
+            generation=next_generation)
+        with self.assertRaises(BilqisError):
+            ccgqa(
+                next_view, self.hidden[:, 3:4], self.valid[:, 3:4], next_scope,
+                cache=cache, offset=3)

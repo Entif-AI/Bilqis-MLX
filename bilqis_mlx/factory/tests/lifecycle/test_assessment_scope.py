@@ -26,11 +26,11 @@ class AssessmentScopeContractTests(unittest.TestCase):
         self.full = compile_executable_factory_release(
             self.curriculum, self.bindings, CurriculumProfile.full(),
             self.registry, self.answers, source_root=None, graph=self.graph,
-            verification_seed=43, legacy_course=self.course)
+            verification_seed=43)
         self.reduced = compile_executable_factory_release(
             self.curriculum, self.bindings, _profile(),
             self.registry, self.answers, source_root=None, graph=self.graph,
-            verification_seed=43, legacy_course=self.course,
+            verification_seed=43,
             predecessor=self.full)
 
     def test_unrelated_b_profile_change_preserves_a_scope_rubric_and_source(self):

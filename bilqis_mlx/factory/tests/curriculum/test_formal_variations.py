@@ -35,7 +35,7 @@ _SEMANTIC = {operator_id: semantic_id for semantic_id, _, operator_id in FORMAL}
 
 
 class FormalVariationTests(TestCase):
-    def test_thirteen_cases_separate_lawful_variation_from_count_debt(self):
+    def test_thirteen_cases_separate_lawful_variation_from_count_type_mismatch(self):
         seen = {operator_id: set() for operator_id in _SEMANTIC}
         source = _source()
         with patch(
@@ -63,7 +63,7 @@ class FormalVariationTests(TestCase):
                             typed_inputs, binding)
                     self.assertEqual(
                         caught.exception.context["reason"],
-                        "BAMF_FORMAL_LESSON_SOURCE_UNCOVERED")
+                        "BAMF_OPERATOR_SIGNATURE_MISMATCH")
                     seen["COUNT"].add(
                         tuple(item.value for item in typed_inputs))
 
