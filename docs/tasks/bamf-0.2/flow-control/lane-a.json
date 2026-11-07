@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "3899649586b105b075e92f0ee3c51e80c379b473",
-  "updated_at": "2026-11-07T05:03:55Z",
+  "updated_at": "2026-11-07T05:12:30Z",
   "exception": null,
   "items": [
     {
@@ -98,11 +98,20 @@
     {
       "issue": 888,
       "pr": null,
-      "state": "ACTIVE",
+      "state": "WAITING",
       "head_sha": "3899649586b105b075e92f0ee3c51e80c379b473",
-      "summary": "A09.5a realization-breadth child: bind accepted #420/#758/#737 Boolean, numeric and qualified-world authority into at least three genuine source-qualified candidate-to-staged-successor realizations. Strict subset of #395 acceptance; no new acceptance, C07 lease/admission, learner run or optimizer mutation.",
-      "resume_trigger": null,
+      "summary": "A09.5a realization-breadth child. Read-only authority audit rejected relabeling accepted A/B/C Boolean/numeric/qualified-world rules as new D meanings and confirmed the existing event-frame implementation remains prototype authority. Implementation is parked until #889 makes primary-source-only candidates stageable and #890 promotes three exact D event realizations to accepted source authority.",
+      "resume_trigger": "#889 primary-source staging repair and #890 source-qualified D event realization authority must be accepted/consumable.",
       "preserved_branch": "codex/bamf02-a09-5a-888-realizations-20261107"
+    },
+    {
+      "issue": 889,
+      "pr": null,
+      "state": "READY",
+      "head_sha": "4e3f36afbd41856fe671bcd1dfb159df51eeb6b2",
+      "summary": "A09.5b staging-contract repair implemented: exact primary source-sense/text-hash authority remains sufficient when a valid frontier candidate has no auxiliary lexicon evidence rows. Focused candidate-staging tests pass 9/9 and existing Ithkuil staging tests pass 17/17; provider/oracle/prerequisite/admission gates remain unchanged. Awaiting cohesive Lane A review/integration with realization authority.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a09-5b-889-primary-source-20261107"
     },
     {
       "issue": 395,
