@@ -387,3 +387,60 @@ Together with the focused B13 suites and inherited-base proof above, this closes
 deterministic engineering queue for fresh whole-candidate EGM round 2. The semantic
 implementation remains `a211836f59a2a7c4949d585f2e30060473a53a38`; later receipt
 bookkeeping is nonsemantic.
+
+### Round-2 findings after concurrent exact-head reviews
+
+Two independently launched fresh round-2 packets were recorded during concurrent
+closeout orchestration. Their history is preserved rather than silently renumbered.
+Both failed, so the next fresh whole-candidate review is round 3.
+
+The first packet reviewed `d873cea0e448f8adddf1b74102529bb8872ca584` and found a
+target-local unchanged-map defect: a valid accepted successor could retain the exact
+same factor-map identity while advancing independent compiler/correction metadata,
+yet B13.5 classified it as a changed feature map because it compared the whole
+compiler sidecar. Failing-before
+`test_retained_successor_allows_independent_correction_epoch_advance` reproduced the
+defect. Semantic repair `9fb2b1308b22caab399289bed7a6250b11ebf880` now classifies
+retained maps by the accepted factor-map identity, source-replays the child's own
+recorded source/schema without inventing a feature-construction predecessor, verifies
+the replayed digest equals the accepted parent map, and still binds the immediate
+accepted parent as generation ancestry.
+
+A second fresh round-2 packet reviewed `7046f0c7d160e3e6f81323f967c92fa796c90731`.
+Its comprehension reviewer passed with no Blocker/Major, but codebase-details found
+two target-local Majors. The same-map metadata Major overlapped the repair above. The
+remaining Major exposed the pinned/pre-CAS writer compatibility fallback: after B13
+had derived the exact live parent acceptance for a fresh generation > 0, a writer
+that rejected the new `parent_acceptance_sha256` argument could be retried without
+that argument, producing an accepted unbound v2 child that could never satisfy B13.5
+historical lineage.
+
+Failing-before
+`test_pinned_old_writer_cannot_publish_fresh_accepted_successor` produced **2 PASS /
+1 FAIL** because the expected `BilqisError` was not raised. Semantic repair
+`142f6e01b54959c14ff40328c9e6b0b0c82b038f` preserves pinned old-writer genesis
+compatibility and same-generation unbound replay, but fails closed for a fresh
+generation > 0 when the writer cannot persist the immutable parent-acceptance anchor.
+The round-2 `CompleteStudent` v2-only docstring Nit was also corrected.
+
+Passing-after qualification on semantic head `142f6e01` against reviewed unified
+`d4bad39a32a80acbffdb9f891a906892ab2e9fab`:
+
+- pinned/pre-CAS compatibility: **3/3 PASS**;
+- feature authority + lineage: **12/12 PASS**;
+- generation acceptance/provenance: **20/20 PASS**;
+- publication: **18/18 PASS**;
+- complete B13 custody package: **140 PASS / 5 explicit skips / 0 failures**;
+- governance integrity, Factory architecture, docs, error-control, changed-file
+  smell, development structure, flow-control, static legacy-trainer guard and
+  `git diff --check`: **PASS**; error-control new debt 0, changed-file smell findings
+  0, flow-control unit suite **15/15 PASS**;
+- forced-serial differential leaf: **100 passed + 68 subtests**, 137 deselected,
+  exit 0 in 150.38s;
+- exact-head disposable A02/#399 composition: full-topology production staging
+  **1/1 PASS in 197.133s**; ordinary vocabulary planner **5/5 PASS + 1 optional
+  real-source skip**; caller-minted predecessor authority remains fail-closed.
+
+Because `142f6e01` changes publication behavior, the earlier aggregate cannot be
+reused as final qualification. One fresh ADR-132/ADR-136 snapshot-isolated premerge
+aggregate is required before #697 may return to `EGM-Pending` for round 3.
