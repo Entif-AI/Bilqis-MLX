@@ -73,6 +73,41 @@ class MlxMappingTests(unittest.TestCase):
             parity.native_optimizer_to_mlx(
                 opt.state_dict(),{"weight":p.data},parameter_order=("other",))
 
+    def test_uniform_historical_step_maps_to_scalar_and_row_counts(self):
+        import mlx.core as mx
+        import torch
+        p=torch.nn.Parameter(torch.tensor([[.2,.3],[.4,.5]],dtype=torch.float32))
+        q=torch.nn.Parameter(torch.tensor([.6,.7,.8],dtype=torch.float32))
+        opt=torch.optim.AdamW([p,q],lr=.001)
+        for _ in range(3):
+            p.grad=torch.ones_like(p)
+            q.grad=torch.ones_like(q)
+            opt.step()
+        counts=parity.native_uniform_step_counts(
+            opt.state_dict(),{"p":p.data,"q":q.data},
+            parameter_order=("p","q"),count_shapes={"p":(2,),"q":()})
+        np.testing.assert_array_equal(np.asarray(counts["p"]),np.array([3,3],dtype=np.uint64))
+        self.assertEqual(int(counts["q"].item()),3)
+        self.assertEqual(counts["p"].dtype,mx.uint64)
+        self.assertEqual(counts["q"].dtype,mx.uint64)
+        with self.assertRaisesRegex(ValueError,"COUNT_GEOMETRY_INVALID"):
+            parity.native_uniform_step_counts(
+                opt.state_dict(),{"p":p.data,"q":q.data},
+                parameter_order=("p","q"),count_shapes={"p":(3,),"q":()})
+
+    def test_historical_count_mapping_rejects_nonuniform_step_contract(self):
+        import torch
+        p=torch.nn.Parameter(torch.tensor([.2,.3],dtype=torch.float32))
+        q=torch.nn.Parameter(torch.tensor([.4,.5],dtype=torch.float32))
+        opt=torch.optim.AdamW([p,q],lr=.001)
+        p.grad=torch.ones_like(p);q.grad=torch.ones_like(q);opt.step()
+        state=opt.state_dict()
+        state["state"][state["param_groups"][0]["params"][1]]["step"]=torch.tensor(2.)
+        with self.assertRaisesRegex(ValueError,"STEPS_DISAGREE"):
+            parity.native_uniform_step_counts(
+                state,{"p":p.data,"q":q.data},parameter_order=("p","q"),
+                count_shapes={"p":(),"q":()})
+
 
 if __name__=="__main__":
     unittest.main()

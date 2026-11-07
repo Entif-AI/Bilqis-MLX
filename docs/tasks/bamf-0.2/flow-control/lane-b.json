@@ -6,28 +6,33 @@
   "exception": null,
   "items": [
     {
+      "issue": 476,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "aef69dae9179bb09f85f955b8a494f6582eac942",
+      "summary": "B12.3 full completion active on fresh isolated branch; consumes completed #465/#474/#475 and reconciles remaining scalar-step migration, accepted optimizer-step, preclip masking, and persisted row-age acceptance.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/476-b12-3-complete-20261106"
+    },
+    {
       "issue": 475,
       "pr": null,
-      "state": "WAITING",
-      "head_sha": "b5c3df440d397c0c2cd2165d5f2c015c1d1e7a0c",
-      "summary": "B12.2 remains the current primary Lane B integration surface; remediation #710 owns the unresolved execution-provenance defect.",
-      "resume_trigger": "Remediation #710 is consumed; issue #475 transitions to EGM-Pending; fresh exact-head EGM passes; an integration PR slot is available.",
-      "closed_pr": 695,
+      "state": "TURNED_IN",
+      "head_sha": "e99630d4812a852589dae55dac61bd398b3fba08",
+      "summary": "B12.2 is CLOSED/COMPLETED/EGM-Passed; documentation closeout PR #882 merged after accepted #809 production-custody remediation.",
+      "resume_trigger": null,
       "preserved_branch": "codex/b12-475-initialized-rows-20261101",
-      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
-      "close_reason": "EGM-Failed; remediation #710"
+      "merged_pr": 882
     },
     {
       "issue": 465,
       "pr": null,
-      "state": "WAITING",
-      "head_sha": "a1025e442277ee71b2120f87b9254179cee88dfb",
-      "summary": "B09.2 parent candidate awaits production-authority remediation.",
-      "resume_trigger": "Remediation #711 is consumed into the candidate, required B05/B08/B11 production provenance is consumable, and the candidate is selected for merge-readiness review.",
-      "closed_pr": 692,
+      "state": "TURNED_IN",
+      "head_sha": "e8021fe7ebee4c2fea1c197d62cdaa313dd4bec6",
+      "summary": "B09.2 is CLOSED/COMPLETED/EGM-Passed; closeout PR #881 merged after accepted #809 authority remediation.",
+      "resume_trigger": null,
       "preserved_branch": "codex/b09-465-participation-20261101",
-      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
-      "close_reason": "EGM-Failed; remediation #711"
+      "merged_pr": 881
     },
     {
       "issue": 456,

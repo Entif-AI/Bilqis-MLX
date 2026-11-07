@@ -172,6 +172,38 @@ def native_optimizer_to_mlx(optimizer_state, model_weights, *, parameter_order):
             "full_training_continuation_proven":False}, candidate
 
 
+def native_uniform_step_counts(optimizer_state, model_weights, *, parameter_order,
+                               count_shapes):
+    """Map one proven historical all-parameter step into B12 count geometry.
+
+    The historical mapper above rejects unequal native per-parameter steps. Only
+    after that proof succeeds may the shared scalar step be expanded across the
+    target optimizer's scalar or leading-row count cells. This does not infer a
+    migration from elapsed time or from an arbitrary caller-supplied scalar.
+    """
+    from collections.abc import Mapping
+    import numpy as np
+    import mlx.core as mx
+    keys = list(parameter_order)
+    report, _ = native_optimizer_to_mlx(
+        optimizer_state, model_weights, parameter_order=keys)
+    if not isinstance(count_shapes, Mapping) or set(count_shapes) != set(keys):
+        raise ValueError("MLX_BAMF_COUNT_GEOMETRY_NOT_BIJECTIVE")
+    step = report["native_step"]
+    if step < 0 or step > int(np.iinfo(np.uint64).max):
+        raise ValueError("MLX_BAMF_HISTORICAL_STEP_OUT_OF_RANGE")
+    counts = {}
+    for key in keys:
+        shape = count_shapes[key]
+        weight = model_weights[key]
+        valid = shape == () or (len(weight.shape) >= 1 and shape == (int(weight.shape[0]),))
+        if not isinstance(shape, tuple) or not valid:
+            raise ValueError("MLX_BAMF_COUNT_GEOMETRY_INVALID")
+        counts[key] = mx.full(shape, step, dtype=mx.uint64)
+    mx.eval(counts)
+    return counts
+
+
 def probe(checkpoint: Path, legacy_source: Path, *, expected_sha256: str = AUDITED_PARENT.sha256):
     """Verify the exact historical student with the original loader on CPU."""
     import numpy as np
