@@ -16,6 +16,7 @@ import numpy as np
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.runtime.mlx_parity import clip_gradients
+from bilqis_mlx.runtime.optimizer_count_geometry import declared_update_count_shape
 
 
 ROW_COUNT_RANK = 1
@@ -206,17 +207,15 @@ def _create_unbound_bamf_optimizer(spec, extents, *, run_seed):
     matrices retain scalar counts. Decay flags come only from the same ledger.
     """
     from bilqis_mlx.runtime.model_topology_v2 import (
-        Initializer, MATRIX_RANK, create_unbound_bamf_state, expected_bamf_shapes,
+        create_unbound_bamf_state, expected_bamf_shapes,
     )
 
     parameters, native, manifest = create_unbound_bamf_state(spec, extents, run_seed=run_seed)
     declared = expected_bamf_shapes(spec, extents)
-    table_initializers = {Initializer.IDENTITY_BANK, Initializer.MOTIF_PAGE, Initializer.FEATURE_TABLE}
-    counts = {}
-    for item in declared:
-        rowwise = (item.initializer in table_initializers or
-                   (item.initializer is Initializer.EMBEDDING and len(item.shape) == MATRIX_RANK))
-        counts[item.name] = mx.zeros((item.shape[0],) if rowwise else (), dtype=mx.uint64)
+    counts = {
+        item.name: mx.zeros(declared_update_count_shape(item), dtype=mx.uint64)
+        for item in declared
+    }
     state = AdamWStateTree(parameters, {item.name: native[item.name]["m"] for item in declared},
                            {item.name: native[item.name]["v"] for item in declared}, counts)
     decay = MappingProxyType({item.name: item.decay for item in declared})
