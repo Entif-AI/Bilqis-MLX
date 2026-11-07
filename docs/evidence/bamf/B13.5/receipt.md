@@ -625,3 +625,47 @@ in `test_members.py`. No additional #697-local failure appeared.
 The complete known engineering queue is therefore repaired and deterministically
 qualified for fresh whole-candidate EGM round 5, the ADR-127 default episode cap.
 No round-5 EGM PASS is claimed by this receipt.
+
+### EGM round 5 — capped disposition
+
+Fresh whole-candidate round 5 reviewed exact pushed candidate
+`a459654341433e4a9397b17db6821096db876a03`, with semantic implementation
+`68d3f287122b5ff8e70337e15655e225d073fa3a`, reviewed unified
+`d4bad39a32a80acbffdb9f891a906892ab2e9fab`, and pinned EGM
+`b3a35956759bf7f024af2ff061b2e0b44b438e4c`.
+
+Both requested fresh reviewers completed. Round 5 returned **FAIL**.
+
+The codebase-details reviewer found one `TARGET_LOCAL` Blocker. The independent
+comprehension reviewer found the same root defect as a `TARGET_LOCAL` Major, so
+the overlapping observations are promoted to one systemic finding under the EGM
+convergence policy:
+
+- **multi-release Atlas artifact resolution is missing from accepted feature-lineage
+  replay.** `_accepted_feature_chain()` receives one `artifact_path` and reuses
+  it while reconstructing genesis and every changed descendant. Each generation,
+  however, may bind a different immutable Atlas bundle/release/source identity.
+  The real Atlas loader interprets that path as the exact pinned bundle and checks
+  its identity, so a genuine accepted
+  `F0(bundle A) -> F1(bundle B)` lineage cannot source-replay both generations
+  from one path. The existing changed-release regression patches the source loader
+  and manifest builder and therefore does not exercise this real locator contract.
+  A future repair, if authorized, needs an authority-safe per-generation artifact
+  resolver or custody-bound mapping plus a real-loader multi-release cold-read
+  regression.
+
+The comprehension reviewer also raised one `PARENT_INTEGRATION` Major: the A02
+planner on reviewed unified does not itself consume the B13 receipt yet. That is a
+real integration-state observation, but #399 is the separately owned downstream
+A02 consumer by the #697 contract. The preserved #399 branch already supplied the
+disposable compatibility proof recorded above. #697 must not absorb A02 authority;
+if work continues after the cap, the integration/ordering observation remains
+routed to the #399 boundary rather than becoming permission to edit A02 here.
+
+The five aggregate C09 `BAMF_C09_PACKED_FRAME_IDENTITY_DRIFT` errors remain
+inherited/base-only and unrelated to the round-5 disposition.
+
+Round 5 is the ADR-127 default episode cap. `EGM-Failed` remains correct.
+Automatic repair/re-review stops here: no round 6, new episode, `EGM-Pending`
+transition, or PR is authorized without a design return or explicit human
+authority. Human-only merge authority remains unchanged.
