@@ -114,7 +114,7 @@ def _interactive_cache_inference(
     if not isinstance(artifact_owner, ExactCacheArtifactOwner):
         _invalid()
     try:
-        artifact_owner.require(artifact, expected_binding)
+        artifact_owner.require(authority, artifact, expected_binding)
     except BilqisError:
         return _fallback(fp32_recompute, FALLBACK_CORRECTION)
     from .atlas_cache_records import _decode_cache

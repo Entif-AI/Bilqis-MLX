@@ -29,6 +29,7 @@ from bilqis_mlx.runtime.atlas_training_authority import _issue as issue_training
 from bilqis_mlx.runtime.atlas_training_contracts import (
     BamfDeliveryProvenance, BamfTrainingRow, _issue_training_batch,
 )
+from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, ModelTopologySpecV2
 from bilqis_mlx.runtime.bamf_bundle.admission import accept_and_publish
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     HP, NAME, candidate, parent_state, retention_decision, shape_patch,
@@ -68,14 +69,18 @@ def _source_qualified_state():
     parent = parent_state()
     transaction = begin_candidate(parent)
     authority = _training_authority()
-    transaction = candidate_step(
-        transaction,
-        {NAME: mx.array([[3., 4.], [0., 0.]], dtype=mx.float32)},
-        execution_provenance(
-            transaction.parent, rows=(0,),
-            candidate_step=transaction.update_steps + 1),
-        HP, decay={NAME: True}, loss_bearing=True, max_norm=1.,
-        training_authority=authority)
+    spec = ModelTopologySpecV2()
+    extents = GenerationExtents(
+        1, 1, "a" * 64, parent.allocations.manifest.digest, "c" * 64)
+    with shape_patch():
+        transaction = candidate_step(
+            transaction,
+            {NAME: mx.array([[3., 4.], [0., 0.]], dtype=mx.float32)},
+            execution_provenance(
+                transaction.parent, rows=(0,),
+                candidate_step=transaction.update_steps + 1),
+            HP, spec=spec, extents=extents, loss_bearing=True, max_norm=1.,
+            training_authority=authority)
     return parent, transaction, resolve_candidate(transaction, accepted=True), authority
 
 

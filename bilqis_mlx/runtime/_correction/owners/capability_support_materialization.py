@@ -130,4 +130,3 @@ def materialized_support(binding, student, manifest_sha256, capability_id):
     if len(generation_bindings) != 1:
         _invalid("BAMF_C09_CAPABILITY_SUPPORT_GENERATION_AMBIGUOUS")
     return support, node, generation_bindings
-

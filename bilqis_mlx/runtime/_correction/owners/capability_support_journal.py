@@ -229,4 +229,3 @@ def read_journal(path: Path, *, capability_id: str,
     if not _seen(capability_id, manifest_sha256, artifact_id):
         _invalid("BAMF_C09_CAPABILITY_SUPPORT_COMMITMENT_MISSING")
     return record
-
