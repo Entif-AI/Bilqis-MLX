@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "3899649586b105b075e92f0ee3c51e80c379b473",
-  "updated_at": "2026-11-07T05:36:46+00:00",
+  "observed_unified": "bd3657e170c8bdc046a7bb28524c0fb829ca7ce9",
+  "updated_at": "2026-11-07T14:43:00+00:00",
   "exception": null,
   "items": [
     {
@@ -368,6 +368,15 @@
       "summary": "Ready PR #892 turns in B12.4 against reviewed unified 38996495. Fresh whole-candidate Chat on Steroids EGM round 2 passed semantic head c7747196 with 0 Blockers / 0 Majors / 0 Nits after repairing the round-1 TARGET_LOCAL decay-authority Major. Candidate-owned proof is green; representative aggregate failures reproduce on exact reviewed unified and are disclosed as inherited base debt. ADR-128 governs admission at twelve total PRs with no per-lane PR cap.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-b12-4-477-complete-20261106"
+    },
+    {
+      "issue": 904,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "bd3657e170c8bdc046a7bb28524c0fb829ca7ce9",
+      "summary": "B13.6 generation-zero custody active: replace test-only C05 genesis acceptance with B13-owned bootstrap binding, persist operator run_seed, and expose authenticated generation-zero lineage for C16/B13.2.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/904-b13-6-generation-zero-20261107"
     }
   ]
 }
