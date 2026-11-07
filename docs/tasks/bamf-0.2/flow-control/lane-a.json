@@ -2,12 +2,12 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "3899649586b105b075e92f0ee3c51e80c379b473",
-  "updated_at": "2026-11-07T04:36:02Z",
+  "updated_at": "2026-11-07T04:52:37Z",
   "exception": null,
   "items": [
     {
       "issue": 429,
-      "pr": 887,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "eb4219907dfc738c843cbba00765e4294426d351",
       "summary": "A12.3 completed across accepted PR #871 plus post-merge boundary remediation PR #874. PR #874 final head eb421990 merged into reviewed unified as 4cffd8c7 after fresh pinned EGM CLEAN at exact semantic head 97300f46 and hosted portable-core/portable/Semantic ABI PASS; the only post-EGM delta was Lane A PR bookkeeping. The remediation directly proves SOURCE_HELD refusal before trainable-row staging and before BamfTarget construction with the exact source-owned reason. Earlier #871 data-only successor/F17 source evidence remains accepted; custody PR #873 merged as 22d23ddf.",
@@ -97,11 +97,11 @@
     },
     {
       "issue": 399,
-      "pr": null,
-      "state": "TURNED_IN",
-      "head_sha": "9dac486a06ea8a5ae70a1ec6b93afa20a2aa7bdb",
-      "summary": "A02.1 production successor allocation/admission is implemented on the accepted #708/#809 B13 predecessor-feature authority, synchronized through reviewed unified 38996495. Full production admission/cold-readback witness passed 1/1; post-sync authority regressions passed 4/4, A02 semantic owners 11/11 with 2 explicit opt-in skips, and tensor-CAS/cold-resume 14/14. Turned in with EGM_PENDING; no self-merge or issue closure is authorized.",
-      "resume_trigger": null,
+      "pr": 887,
+      "state": "WAITING",
+      "head_sha": "8457161520ae02173ef7c021e0cd7916b66467fc",
+      "summary": "A02.1 now stages an exact append-only vocabulary successor from accepted B13 feature authority and leaves the accepted generation pointer unchanged. Preflight review corrected an earlier C07 authority bypass: Lane A no longer mints parameter-extension publication authority, and ordinary B13 publication fails closed on vocabulary changes until the C07 adoption executor exists. B13 recursive predecessor-lineage projection and accepted-active-set replay are repaired; focused staging/authority and semantic checks are green. Final #399 acceptance remains blocked on C07.1b/#510 atomic adoption.",
+      "resume_trigger": "C07.1b/#510 must provide the persisted-lease-gated atomic adoption executor for the exact A02 staged candidate. #510 in turn remains acceptance-blocked on A09.5/#395 obtaining at least three genuinely new source-qualified candidate-to-staged-successor realizations beyond historical A/B/C.",
       "preserved_branch": "codex/bamf02-a-399-production-admission-20261106"
     },
     {
