@@ -80,7 +80,12 @@ def _validate_source_identity(source) -> None:
     elif type(source) is AtlasArtifactIdentity:
         source.__post_init__()
     else:
-        _fail("ATLAS_SOURCE_IDENTITY_INVALID")
+        # Preserve the public source-pin boundary's historical wrong-type
+        # contract.  The pathless identity type validates itself at its own
+        # construction/resolution boundary; callers that hand this source-pin
+        # API some unrelated object still failed as a malformed selection before
+        # portable identity support existed.
+        _fail("ATLAS_SOURCE_SELECTION_INVALID")
 
 
 def _require_registered_source_pin(source) -> None:
