@@ -1,16 +1,16 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "d29fd6cd290d88f0b3dbd1557b7ce229db0caab3",
-  "updated_at": "2026-11-05T06:27:03+00:00",
+  "observed_unified": "aef69dae9179bb09f85f955b8a494f6582eac942",
+  "updated_at": "2026-11-07T03:36:46+00:00",
   "exception": null,
   "items": [
     {
       "issue": 476,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "aef69dae9179bb09f85f955b8a494f6582eac942",
-      "summary": "B12.3 full completion active on fresh isolated branch; consumes completed #465/#474/#475 and reconciles remaining scalar-step migration, accepted optimizer-step, preclip masking, and persisted row-age acceptance.",
+      "head_sha": "e4ab53d0ce3ccbd9f1e5fed9685c3dfbc6ef8074",
+      "summary": "B12.3 implementation complete pending merge-readiness gates: historical uniform-step mapping is repaired; completed #465/#474/#475 provide accepted production participation/custody; focused B12/B13 acceptance is green.",
       "resume_trigger": null,
       "preserved_branch": "codex/476-b12-3-complete-20261106"
     },
