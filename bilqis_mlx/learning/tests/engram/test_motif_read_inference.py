@@ -1,5 +1,5 @@
 """Test motif read inference."""
-from bilqis_mlx.learning.tests.test_atlas_engram_reads import (
+from bilqis_mlx.learning.tests.motif_reads.fixtures import (
     MotifFrameInput, MotifManifest, MotifSlot, RELEASE,
     TestCase, _parameters, _read, _source,
     math, motif_keys, np, replace,

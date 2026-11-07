@@ -1,9 +1,12 @@
 """MotifKeyTests through the existing engram owner contracts."""
-from bilqis_mlx.learning.tests.test_atlas_engram_allocation import (
-    BilqisError, Concept, Frame, MotifBudget,
-    MotifFrameInput, MotifManifest, RELEASE, Role,
-    SCOPE, Schema, TestCase, motif_keys,
-    prepare_motifs, replace, source,
+from unittest import TestCase
+
+from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.learning.atlas_engram import (
+    MotifBudget, MotifFrameInput, MotifManifest, motif_keys, prepare_motifs,
+)
+from bilqis_mlx.learning._engram.tests.motif_fixtures import (
+    Concept, Frame, RELEASE, Role, SCOPE, Schema, replace, source,
 )
 
 
@@ -49,12 +52,18 @@ class MotifKeyTests(TestCase):
 
     def test_distinct_child_occurrences_preserve_exact_identity(self):
         first = source(child=True)
+        first_child = first.children[0]
+        changed_child = replace(
+            first_child,
+            frame=replace(first_child.frame, occurrence_id="e" * 64),
+        )
         changed_binding = replace(
             first.frame.bindings[0],
             child_frame=replace(first.frame.bindings[0].child_frame,
                                 occurrence_id="e" * 64))
         second = replace(first, frame=replace(
-            first.frame, bindings=(changed_binding, first.frame.bindings[1])))
+            first.frame, bindings=(changed_binding, first.frame.bindings[1])),
+            children=(changed_child,))
         a_exact, a_structural = motif_keys(first, RELEASE)
         b_exact, b_structural = motif_keys(second, RELEASE)
         self.assertNotEqual(a_exact, b_exact)
@@ -62,13 +71,23 @@ class MotifKeyTests(TestCase):
 
     def test_structural_child_filler_abstracts_exact_content_but_keeps_relation(self):
         first = source(child=True)
+        first_child = first.children[0]
         original = first.frame.bindings[0]
+        changed_child = replace(
+            first_child,
+            frame=replace(
+                first_child.frame,
+                occurrence_id="e" * 64,
+                content_digest="f" * 64,
+            ),
+        )
         second = replace(first, frame=replace(
             first.frame, bindings=(
                 replace(original, child_frame=replace(
                     original.child_frame, occurrence_id="e" * 64,
                     content_digest="f" * 64)),
-                first.frame.bindings[1])))
+                first.frame.bindings[1])),
+            children=(changed_child,))
         exact_a, structural_a = motif_keys(first, RELEASE)
         exact_b, structural_b = motif_keys(second, RELEASE)
         self.assertNotEqual(exact_a.relation_signature,

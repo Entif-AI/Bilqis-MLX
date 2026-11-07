@@ -37,16 +37,16 @@ class FactoryRetentionOwnerLiveTests(SourceBackboneTestBase):
     def setUp(self):
         if not mx.metal.is_available():
             self.skipTest("B13.2 source witness requires Apple Metal")
-        previous_device = mx.default_device()
-        mx.set_default_device(mx.gpu)
-        self.addCleanup(mx.set_default_device, previous_device)
-        super().setUp()
         artifact = os.environ.get("BILQIS_A01_ATLAS_BUNDLE")
         if not artifact:
             self.skipTest("BILQIS_A01_ATLAS_BUNDLE fixture is not mounted")
         self.artifact = Path(artifact)
         if not self.artifact.is_dir():
             self.skipTest("BILQIS_A01_ATLAS_BUNDLE fixture is not mounted")
+        previous_device = mx.default_device()
+        mx.set_default_device(mx.gpu)
+        self.addCleanup(mx.set_default_device, previous_device)
+        super().setUp()
         self.root = Path.cwd()
         self.source = (self.root / "vendor/legacy-v16").resolve()
         if not self.source.is_dir():

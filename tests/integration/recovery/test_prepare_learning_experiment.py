@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts.prepare_learning_experiment import (
+from scripts.experiments.prepare_learning_experiment import (
     execute, digest, ROOT, disposition_plan, _manifest_path,
 )
 
@@ -36,7 +36,7 @@ class PreparedExperimentTests(unittest.TestCase):
         report=execute(self.source,self.destination)
         self.assertFalse(report["cloned"])
         self.assertFalse(self.destination.exists())
-        with patch("scripts.prepare_learning_experiment.trainer_guard"):
+        with patch("scripts.experiments.prepare_learning_experiment.trainer_guard"):
             clone=execute(self.source,self.destination,confirm=True,reserve_gib=0)
         self.assertTrue(clone["cloned"])
         self.assertEqual(clone["verified_files"],3)

@@ -1,7 +1,7 @@
 """Evidence identities and context boundary validation."""
 from __future__ import annotations
 
-from .. import context_eligibility as _api
+import bilqis_mlx.semantics.context_eligibility as _api
 
 
 def _invalid(reason: str) -> None:
