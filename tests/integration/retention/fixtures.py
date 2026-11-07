@@ -1,9 +1,16 @@
 """Retention integration contracts; original evidence and boundaries preserved."""
+from dataclasses import asdict, replace
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 from unittest.mock import patch
 from bilqis_mlx import trainer as trainer
+from bilqis_mlx.curriculum.scheduler import start_new
+from bilqis_mlx.factory.curriculum_definition import (
+    CapabilitySourceBinding, SourceBindingSet,
+)
 from bilqis_mlx.learning.learning_experiment import Settings
+from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.factory.schedule import ScheduleCapability, ScheduleGrade, ScheduleProgram
 
 
@@ -37,9 +44,54 @@ def _visit_program():
 def _visit_release(program):
     # The prefetch identity is bound to the admitted executable release, not
     # merely to the scheduler's projected capability set.
-    return SimpleNamespace(release_sha256="f" * 64,
-                           execution_plan=SimpleNamespace(
-        capabilities=tuple(program.capability_map.values())))
+    executions = tuple(
+        SimpleNamespace(
+            capability_id=capability.id,
+            prerequisites=(),
+            variation_axes=(),
+            teaching_option_ids=("source.direct/" + capability.id,),
+            provider_id="fixture.provider/" + capability.id,
+            provider_implementation_sha256="a" * 64,
+        )
+        for grade in program.grades
+        for capability in grade.capabilities
+    )
+    bindings = SourceBindingSet(tuple(
+        CapabilitySourceBinding(
+            capability_id=item.capability_id,
+            source_anchor="fixture:" + item.capability_id,
+            generator_id="fixture.generator/" + item.capability_id,
+            oracle_id="fixture.oracle/" + item.capability_id,
+        )
+        for item in executions
+    ))
+    return SimpleNamespace(
+        release_sha256="f" * 64,
+        execution_plan=SimpleNamespace(
+            capabilities=executions,
+            capability_map={item.capability_id: item for item in executions},
+        ),
+        source_bindings=bindings,
+        curriculum=SimpleNamespace(capability_map={}),
+    )
+
+
+def _school(program, *, visits=0, carried_debt=False):
+    student = Checkpoint("e" * 64, "bundles/retention-fixture", 1, True)
+    state = start_new(program, student)
+    return replace(
+        state,
+        grade_index=1,
+        stage="MAIN",
+        queue=("B.XOR",),
+        visits=visits,
+        champions={} if carried_debt else {"A": student},
+        carried_mastery_debt=("A.IDENTITY",) if carried_debt else (),
+    )
+
+
+def _school_receipt(school):
+    return {"current_student": asdict(school.current_student)}
 
 
 def _prefetch_visit_fixture():
@@ -47,13 +99,10 @@ def _prefetch_visit_fixture():
               "contrast": 1., "distill": 0., "preview": 0}
     teacher = {"strategies": {"p": policy}}
     engine = SimpleNamespace(pick=lambda *_: ("p", policy))
-    school = SimpleNamespace(
-        stage="MAIN", grade="B", visits=0,
-        champions={"A": {"optimizer_step": 1}},
-        current_student=SimpleNamespace(sha256="e" * 64))
+    school = _school(_visit_program())
     receipt = {
         "teacher": teacher, "generation": 7, "run_id": "prefetch-fixture",
-        "school": {}, "teacher_misses": [], "config": {},
+        "school": _school_receipt(school), "teacher_misses": [], "config": {},
         "answer_ids": [6, 7], "curriculum_mode": "fixture-school",
         "semantic_graph_sha256": "d" * 64,
     }
@@ -114,12 +163,10 @@ class VisitFixture:
                   "contrast": 1., "distill": 0., "preview": 0}
         teacher = {"strategies": {"p": policy}}
         engine = SimpleNamespace(pick=lambda *_: ("p", policy))
-        school = SimpleNamespace(stage="MAIN", grade="B", visits=0,
-                                 champions={} if carried_debt else {"A": {"optimizer_step": 1}},
-                                 carried_mastery_debt=("A.IDENTITY",) if carried_debt else ())
         course = _visit_program()
+        school = _school(course, carried_debt=carried_debt)
         receipt = {"teacher": teacher, "generation": 1, "run_id": "disposable",
-                   "school": {}, "teacher_misses": [], "config": {},
+                   "school": _school_receipt(school), "teacher_misses": [], "config": {},
                    "answer_ids": [6, 7], "curriculum_mode": "fixture-school"}
         optimizer = SimpleNamespace(learning_rate=0.0001,
                                     state={"step": SimpleNamespace(item=lambda: 1)})
@@ -136,7 +183,8 @@ class VisitFixture:
             return {row["id"]: ("FALSE" if row["gold"] == "TRUE" else "TRUE")
                     for row in rows}
 
-        with (patch('bilqis_mlx.runtime.state._state_from_json', return_value=school),
+        with (TemporaryDirectory() as temporary,
+              patch('bilqis_mlx.runtime.state._state_from_json', return_value=school),
               patch('bilqis_mlx.runtime.admission._read_executable_factory_release_artifact',
                            return_value=_visit_release(course)),
               patch('bilqis_mlx.factory.schedule.schedule_program_from_executable_release',
@@ -156,7 +204,7 @@ class VisitFixture:
               patch("bilqis_mlx.learning.fragile_replay.load_replay_rows", return_value=()),
               patch('bilqis_mlx.learning.student_ops._train_step', side_effect=inspect_batch)):
             with self.assertRaisesRegex(_BatchCaptured, "STOP_BEFORE_ANY_OPTIMIZER"):
-                trainer._take_visit(None, Path("/never-opened"), receipt, {},
+                trainer._take_visit(None, Path(temporary), receipt, {},
                                     course, engine, {}, optimizer, {},
                                     steps_per_visit=1, batch_size=8,
                                     reserve_gib=0., source_root=Path("/not-used"),

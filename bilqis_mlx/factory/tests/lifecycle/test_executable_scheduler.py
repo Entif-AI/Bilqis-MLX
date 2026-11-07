@@ -49,11 +49,11 @@ class ExecutableSchedulerTests(unittest.TestCase):
         self.full = compile_executable_factory_release(
             curriculum, bindings, CurriculumProfile.full(),
             self.providers, answers, source_root=None, graph=self.graph,
-            verification_seed=61, legacy_course=self.course)
+            verification_seed=61)
         self.reduced = compile_executable_factory_release(
             curriculum, bindings, _profile(),
             self.providers, answers, source_root=None, graph=self.graph,
-            verification_seed=61, legacy_course=self.course,
+            verification_seed=61,
             predecessor=self.full)
 
     def _finish_a(self, release):
@@ -152,7 +152,7 @@ class ExecutableSchedulerTests(unittest.TestCase):
                 grades=(GradeProfile("B", enabled_capabilities=()),)),
             self.providers, _boolean_answers(),
             source_root=None, graph=self.graph,
-            verification_seed=67, legacy_course=self.course)
+            verification_seed=67)
         program = schedule_program_from_executable_release(a_only)
 
         self.assertEqual(
@@ -170,7 +170,7 @@ class ExecutableSchedulerTests(unittest.TestCase):
                 grades=(GradeProfile("B", enabled_capabilities=()),)),
             self.providers, answers,
             source_root=None, graph=self.graph,
-            verification_seed=71, legacy_course=self.course)
+            verification_seed=71)
         a_program, state = self._finish_a(a_only)
         self.assertEqual(state.stage, "AWAITING_NEXT_GRADE")
 
@@ -181,8 +181,7 @@ class ExecutableSchedulerTests(unittest.TestCase):
             answers,
             source_root=None,
             graph=self.graph,
-            verification_seed=73,
-            legacy_course=self.course)
+            verification_seed=73)
         b_program = schedule_program_from_executable_release(successor)
         adopted = adopt_appended_program(a_program, b_program, state)
 
@@ -205,7 +204,7 @@ class ExecutableSchedulerTests(unittest.TestCase):
                 grades=(GradeProfile("B", enabled_capabilities=()),)),
             self.providers, answers,
             source_root=None, graph=self.graph,
-            verification_seed=79, legacy_course=self.course)
+            verification_seed=79)
         a_program = schedule_program_from_executable_release(a_only)
         student = _checkpoint()
         state = start_new(a_program, student)
@@ -218,7 +217,7 @@ class ExecutableSchedulerTests(unittest.TestCase):
             for capability in grade.capabilities
         }
         weak = grade.capabilities[0]
-        scores[weak.id] = Score(weak.exam_item_count // 2,
+        scores[weak.id] = Score(weak.exam_item_count - 1,
                                 weak.exam_item_count)
         exam = Assessment(
             student.sha256, student.optimizer_step, a_program.digest(),
@@ -233,7 +232,7 @@ class ExecutableSchedulerTests(unittest.TestCase):
         successor = compile_successor_profile_release(
             a_only, boolean_kernel_profile(), self.providers, answers,
             source_root=None, graph=self.graph,
-            verification_seed=83, legacy_course=self.course)
+            verification_seed=83)
         b_program = schedule_program_from_executable_release(successor)
         adopted, revised_grade, appended = _profile_transition(
             a_program, b_program, state)
