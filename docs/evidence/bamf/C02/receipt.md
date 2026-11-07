@@ -29,7 +29,8 @@
 - The operator runtime lineage for later C16 work is
   `/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`.
   It was inspected read-only at generation 24254. C02 did not mutate or resume it,
-  and the stale Prometheus trainer is not a BAMF activation path.
+  and the historical, non-authoritative Prometheus trainer is not a BAMF
+  activation path.
 
 ## Changed paths
 
