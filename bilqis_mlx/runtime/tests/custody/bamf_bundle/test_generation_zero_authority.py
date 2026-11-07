@@ -15,10 +15,13 @@ import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.bamf_bundle import (
     InitialGenerationBinding, PreparedInitialGeneration,
-    load_bamf_generation, publish_bamf_generation, publish_initial_generation,
+    load_bamf_generation, prepare_initial_generation, publish_bamf_generation,
+    publish_initial_generation,
 )
+from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, candidate, genesis_preparation, parent_state, shape_patch,
+    HP, IMPLEMENTATION, acceptance, candidate, genesis_preparation,
+    parent_state, shape_patch,
 )
 
 
@@ -70,6 +73,48 @@ class GenerationZeroAuthorityTests(unittest.TestCase):
         self.assertEqual(
             failure.exception.context["reason"],
             "BAMF_INITIAL_GENERATION_BOOTSTRAP_REQUIRED")
+
+    def test_source_admission_drift_rejects_before_any_run_write(self):
+        from bilqis_mlx.factory.executable_release import admit_executable_factory_release
+        from bilqis_mlx.learning.champions import Checkpoint
+        from bilqis_mlx.runtime.state import _fingerprint
+        from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import _genesis_defaults
+        from bilqis_mlx.runtime.tests.operator.test_admission import _executable_fixture
+
+        release, graph = _executable_fixture()
+        origin = Checkpoint("7" * 64, "bundles/foundation-origin", 0, True)
+        admission = admit_executable_factory_release(
+            release, student_sha256="8" * 64,
+            optimizer_step=origin.optimizer_step,
+            semantic_graph_sha256=_fingerprint(graph), graph=graph)
+        values = _genesis_defaults()
+        with shape_patch(), self.assertRaises(BilqisError) as failure:
+            prepare_initial_generation(
+                run_id="fixture-run", run_seed=73,
+                origin_checkpoint=origin, release=release, admission=admission,
+                graph=graph, topology=ModelTopologySpecV2(),
+                extents=values["extents"], optimizer_hyperparameters=HP,
+                provenance=values["provenance"],
+                implementation_sha256=IMPLEMENTATION,
+                semantic_abi=values["semantic_abi"],
+                compiler_features=values["compiler_features"],
+                correction_frontier=values["correction_frontier"],
+                teacher_state=values["teacher_state"],
+                evaluation_contract=values["evaluation_contract"])
+        self.assertEqual(
+            failure.exception.context["reason"],
+            "BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
+        self.assertFalse(self.run.exists())
+
+    def test_corrupt_run_identity_sidecar_rejects_cold_read(self):
+        _, pointer = self.publish_genesis(run_seed=79)
+        bundle = self.run / "bamf-bundles" / pointer["manifest_sha256"]
+        identity = bundle / "run-identity.json"
+        record = json.loads(identity.read_text())
+        record["run_seed"] = 80
+        identity.write_text(json.dumps(record, sort_keys=True))
+        with shape_patch(), self.assertRaises(BilqisError):
+            load_bamf_generation(self.run / "bamf-state.json")
 
     def test_persisted_bootstrap_record_never_regains_live_authority(self):
         prepared = None
