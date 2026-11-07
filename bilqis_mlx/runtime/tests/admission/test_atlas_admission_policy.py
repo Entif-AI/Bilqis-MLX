@@ -42,7 +42,7 @@ class AtlasAdmissionPolicyTests(unittest.TestCase):
         self.assertEqual(unleased.status.value, 'STAGED')
         self.assertEqual(unleased.reason, 'EXPLICIT_ATLAS_LEASE_REQUIRED')
         authorized = advance_atlas_frontier(self.context, self.envelope, self.lease)
-        self.assertEqual(authorized.reason, 'ADOPTION_EXECUTOR_UNAVAILABLE')
+        self.assertEqual(authorized.reason, 'ACCEPTED_RUN_AUTHORITY_UNAVAILABLE')
         self.assertEqual(authorized.lease_sha256, self.lease.digest())
         self.assertEqual(authorized.proposal_sha256, self.native.proposal.proposal_sha256)
         self.assertFalse(authorized.state_adopted)
@@ -57,7 +57,7 @@ class AtlasAdmissionPolicyTests(unittest.TestCase):
                 candidate_bindings=(self.native.staged.binding,))
             result = advance_atlas_frontier(replace(self.context, checkpoint=checkpoint),
                                             self.envelope_for(proposal), self.lease)
-            self.assertEqual(result.reason, 'ADOPTION_EXECUTOR_UNAVAILABLE')
+            self.assertEqual(result.reason, 'ACCEPTED_RUN_AUTHORITY_UNAVAILABLE')
             self.assertEqual(result.lease_sha256, self.lease.digest())
             seen.append(result.proposal_sha256)
         self.assertEqual(len(set(seen)), 3)
@@ -115,4 +115,4 @@ class AtlasAdmissionPolicyTests(unittest.TestCase):
             self.assertEqual(caught.exception.context['reason'], reason)
         self.assertEqual(advance_atlas_frontier(
             self.context, self.envelope, self.lease).reason,
-            'ADOPTION_EXECUTOR_UNAVAILABLE')
+            'ACCEPTED_RUN_AUTHORITY_UNAVAILABLE')
