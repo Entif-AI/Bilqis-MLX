@@ -122,7 +122,7 @@ class PreCasCompatibilityTests(DataPlaneCase):
             "import json,sys",
             "from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation",
             "from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch",
-            "from bilqis_mlx.runtime.tests.custody.bamf_bundle.test_pre_cas_compatibility import numerical_observation",
+            "from bilqis_mlx.runtime.tests.custody.bamf_bundle.contracts.test_pre_cas_compatibility import numerical_observation",
             "with shape_patch(): student=load_bamf_generation(sys.argv[1],publish_missing_outbox=False)",
             "print(json.dumps(numerical_observation(student),sort_keys=True))",
         ))

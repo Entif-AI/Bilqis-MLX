@@ -90,9 +90,10 @@ class ExecutableAutonomyTests(TestCase):
             "tokens": [*fixture.graph["tokens"], "fixture.appended.identity"]}
         successor = compile_executable_factory_release(
             curriculum, bindings, CurriculumProfile.full(),
-            fixture.registry, fixture.answers, source_root=None,
+            fixture.registry_with_revised_roots({"Z.C6": "fixture.op.6"}),
+            fixture.answers, source_root=None,
             graph=expanded_graph, verification_seed=20261019,
-            legacy_course=expanded_course, predecessor=self.release)
+            predecessor=self.release)
         successor_plan = compile_autonomy_plan(successor)
         reconciled = reconcile_successor_evidence(
             self.release, successor, ledger,
@@ -130,9 +131,10 @@ class ExecutableAutonomyTests(TestCase):
             "tokens": [*fixture.graph["tokens"], "fixture.appended.identity"]}
         successor = compile_executable_factory_release(
             curriculum, bindings, CurriculumProfile.full(),
-            fixture.registry, fixture.answers, source_root=None,
+            fixture.registry_with_revised_roots({"Z.C6": "fixture.op.6"}),
+            fixture.answers, source_root=None,
             graph=expanded_graph, verification_seed=20261019,
-            legacy_course=expanded_course, predecessor=self.release)
+            predecessor=self.release)
         successor_plan = compile_autonomy_plan(successor)
         with TemporaryDirectory() as directory:
             root = Path(directory)

@@ -1,5 +1,6 @@
 """Gold-blind C04 lowering for bounded Factory-owned answer domains."""
 from __future__ import annotations
+from dataclasses import replace
 from types import MappingProxyType
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
@@ -109,4 +110,39 @@ def lower_answer_choice_task_goal(
     return task_goal_from_program(program, binding, goal_id=row_id), binding
 
 
-__all__ = ("lower_answer_choice_task_goal",)
+def resolve_answer_choice_task_goal(
+    row: dict, *, semantic_release: str, capability, **kwargs,
+):
+    """Resolve only the source-owned answer-choice hole for training evidence."""
+    if not isinstance(row, dict) or "gold" not in row:
+        _invalid("BAMF_C04_ANSWER_CHOICE_TRAINING_TARGET_INVALID")
+    source = dict(row)
+    gold = source.pop("gold")
+    goal, binding = lower_answer_choice_task_goal(
+        source, semantic_release=semantic_release, capability=capability, **kwargs)
+    family = _answer_family(capability, row.get("answer_kind"))
+    type_name, _operator_id = _SUPPORTED[family.kind]
+    text = str(gold)
+    if text not in family.values:
+        _invalid("BAMF_C04_ANSWER_CHOICE_TRAINING_TARGET_INVALID")
+    payload = (text == "TRUE" if type_name == "Boolean"
+               else int(text) if type_name == "Number" else text)
+    handles = tuple(
+        operand.typed.source_handle for operand in binding.operands
+        if operand.typed.type_name == type_name and operand.typed.value == payload)
+    node = goal.expression_or_holes.nodes[0]
+    if len(handles) != 1 or len(node.candidate_operand_refs) != 1:
+        _invalid("BAMF_C04_ANSWER_CHOICE_TRAINING_TARGET_INVALID")
+    selected = tuple(
+        ref for ref in node.candidate_operand_refs[0]
+        if ref.source_handle == handles[0])
+    if len(selected) != 1:
+        _invalid("BAMF_C04_ANSWER_CHOICE_TRAINING_TARGET_INVALID")
+    solved = replace(
+        node, operands=(selected[0],), candidate_operand_refs=(), constraints=())
+    return replace(
+        goal, expression_or_holes=replace(
+            goal.expression_or_holes, nodes=(solved,)))
+
+
+__all__ = ("lower_answer_choice_task_goal", "resolve_answer_choice_task_goal")

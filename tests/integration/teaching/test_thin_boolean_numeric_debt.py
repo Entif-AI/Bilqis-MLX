@@ -137,7 +137,7 @@ class ThinBooleanNumericDebtTests(unittest.TestCase):
         self.assertEqual(numeric['school']['queue'], ['C.COUNT'])
         self.assertTrue({'B.NOT', 'B.AND'} <= set(numeric['school']['carried_mastery_debt']))
         self.assertFalse(numeric['school']['champions'])
-        self.assertEqual(numeric['numeric_maximum'], 3)
+        self.assertEqual(numeric['numeric_maximum'], 4 if automatic else 3)
         self.assertEqual(numeric['numeric_scope_final_maximum'], 4)
         self.assertEqual(int(grown_own.state['step'].item()), int(own.state['step'].item()))
         self.assertEqual(numeric['mentor_epoch']['previous_boundary_checkpoint'],

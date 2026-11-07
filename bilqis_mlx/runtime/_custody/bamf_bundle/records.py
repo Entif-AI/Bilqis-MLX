@@ -11,6 +11,9 @@ from bilqis_mlx.data_plane import DataPlaneError
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 
 from .motif_codec import snapshot_from_record, snapshot_to_record
+from .package_import_transition import (
+    PACKAGE_IMPORT_TRANSITION_SCHEMA, validate_package_import_transition,
+)
 from .sidecar_contracts import validate_identity_sidecars
 
 BAMF_BUNDLE_SCHEMA = "bilqis.mlx.bamf-generation-bundle/v2"
@@ -134,6 +137,11 @@ def validate_generation_identity(run_id, generation, parent, implementation):
 
 
 def validate_transition(generation: int, transition: Mapping) -> None:
+    if isinstance(transition, Mapping) and transition.get("schema") == PACKAGE_IMPORT_TRANSITION_SCHEMA:
+        if generation == 0:
+            invalid("BAMF_GENERATION_TRANSITION_INVALID")
+        validate_package_import_transition(transition)
+        return
     if (set(transition) != {"schema", "kind", "invalidate_derived_caches"}
             or transition.get("schema") != TRANSITION_SCHEMA
             or transition.get("kind") not in _TRANSITIONS

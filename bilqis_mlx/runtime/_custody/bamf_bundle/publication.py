@@ -10,6 +10,9 @@ from bilqis_mlx.learning.atlas_acceptance import (
     ACCEPTANCE_SCHEMA, AcceptedCandidateBinding, candidate_identity_digest,
 )
 from .codec import load_bamf_bundle, save_bamf_bundle
+from .package_import_transition import (
+    is_package_import_transition, require_issued_package_import_transition,
+)
 from .records import (
     BAMF_POINTER_SCHEMA, BamfBundleCandidate, CompleteStudent, canonical, invalid, sha,
 )
@@ -82,16 +85,23 @@ def _validate_parent_transition(run_dir: Path, pointer: dict | None, candidate: 
             or parent.generation != pointer["generation"]
             or parent.parent_manifest_sha256 != pointer["parent_manifest_sha256"]):
         invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
-    kind = ("MODEL_SWAP" if parent.topology.digest != candidate.topology.digest else
-            "PARAMETER_EXTENSION" if parent.extents.digest != candidate.extents.digest else
-            "RETAINED_CANDIDATE")
     parent_step = parent.retained_state.optimizer_step
     candidate_step = candidate.retained_state.optimizer_step
-    if (candidate_step < parent_step or
-            (kind == "RETAINED_CANDIDATE" and candidate_step <= parent_step)):
-        invalid("BAMF_REJECTED_CANDIDATE_NOT_GENERATION")
-    if candidate.transition.get("kind") != kind:
-        invalid("BAMF_GENERATION_TRANSITION_INVALID")
+    if is_package_import_transition(candidate.transition):
+        require_issued_package_import_transition(candidate.transition)
+        if (parent.topology.digest != candidate.topology.digest
+                or parent.extents.digest != candidate.extents.digest
+                or candidate_step != parent_step):
+            invalid("BAMF_GENERATION_TRANSITION_INVALID")
+    else:
+        kind = ("MODEL_SWAP" if parent.topology.digest != candidate.topology.digest else
+                "PARAMETER_EXTENSION" if parent.extents.digest != candidate.extents.digest else
+                "RETAINED_CANDIDATE")
+        if (candidate_step < parent_step or
+                (kind == "RETAINED_CANDIDATE" and candidate_step <= parent_step)):
+            invalid("BAMF_REJECTED_CANDIDATE_NOT_GENERATION")
+        if candidate.transition.get("kind") != kind:
+            invalid("BAMF_GENERATION_TRANSITION_INVALID")
     reconcile_bamf_outbox(run_dir, parent)
 
 

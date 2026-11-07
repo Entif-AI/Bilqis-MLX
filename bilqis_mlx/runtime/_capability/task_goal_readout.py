@@ -84,6 +84,49 @@ def task_goal_route_plan(goal: TaskGoal, compiled_batch, snapshot, generation_bi
     )
 
 
+def task_goal_training_targets(goal: TaskGoal, resolved: TaskGoal):
+    """Project one source-resolved goal onto the exact B10 route decisions."""
+    if (type(goal) is not TaskGoal or type(resolved) is not TaskGoal
+            or goal.goal_id != resolved.goal_id
+            or goal.semantic_release != resolved.semantic_release
+            or goal.scope != resolved.scope):
+        _invalid("BAMF_C04_TASK_GOAL_TRAINING_TARGET_INVALID")
+    route = task_goal_route_decisions(goal)
+    original = {node.node_id: node for node in goal.expression_or_holes.nodes}
+    solved = {node.node_id: node for node in resolved.expression_or_holes.nodes}
+    if set(original) != set(solved) or not route:
+        _invalid("BAMF_C04_TASK_GOAL_TRAINING_TARGET_INVALID")
+    values = {}
+    for node_id, node in original.items():
+        target = solved[node_id]
+        if node.operator_id is None:
+            if (target.operator_id not in node.candidate_operator_ids
+                    or target.candidate_operator_ids):
+                _invalid("BAMF_C04_TASK_GOAL_TRAINING_TARGET_INVALID")
+            values[_operator_id(node)] = target.operator_id
+        elif target.operator_id != node.operator_id:
+            _invalid("BAMF_C04_TASK_GOAL_TRAINING_TARGET_INVALID")
+        for index, (fixed, candidates) in enumerate(zip(
+                node.operands, node.candidate_operand_refs)):
+            resolved_operand = target.operands[index]
+            if fixed is None:
+                identities = tuple(ref.identity for ref in candidates)
+                if (resolved_operand is None
+                        or resolved_operand.identity not in identities):
+                    _invalid("BAMF_C04_TASK_GOAL_TRAINING_TARGET_INVALID")
+                values[_operand_id(node, index)] = resolved_operand.identity
+            elif resolved_operand != fixed:
+                _invalid("BAMF_C04_TASK_GOAL_TRAINING_TARGET_INVALID")
+    if set(values) != {item.decision_id for item in route}:
+        _invalid("BAMF_C04_TASK_GOAL_TRAINING_TARGET_INVALID")
+    from bilqis_mlx.learning.atlas_readout import DecisionOutput
+    return (
+        tuple(DecisionOutput(item.decision_id, values[item.decision_id])
+              for item in route),
+        {item.decision_id: True for item in route},
+    )
+
+
 def proposal_from_task_goal_output(
     goal: TaskGoal,
     request: NeuralRequest,
@@ -192,4 +235,5 @@ __all__ = (
     "proposal_from_task_goal_output",
     "task_goal_route_plan",
     "task_goal_route_decisions",
+    "task_goal_training_targets",
 )

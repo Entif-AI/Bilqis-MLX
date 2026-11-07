@@ -24,7 +24,6 @@ from bilqis_mlx.runtime.bamf_bundle.records import CompleteStudent, sidecar_reco
 from bilqis_mlx.runtime.factory_complete_solver import factory_evaluation_instrument
 from bilqis_mlx.runtime.factory_evaluation_compiler import compile_factory_evaluation_batch
 from bilqis_mlx.runtime.factory_task_authority import factory_task_authority
-from bilqis_mlx.runtime.model_topology_v2 import expected_bamf_shapes
 from bilqis_mlx.runtime.task_goal_readout import task_goal_route_decisions, task_goal_route_plan
 
 from .factory_retention_next_step_evidence import (
@@ -100,11 +99,10 @@ def _targets(context, parent, artifact, row, seed, authority):
 
 
 def _candidate_step(run_dir, parent, gradient, policy, *, cold):
-    declared = expected_bamf_shapes(parent.topology, parent.extents)
     kwargs = {
         "loss_bearing_target": True, "gradient_execution": gradient,
         "teacher_hparams": replace(HP, learning_rate=float(policy["lr"])),
-        "decay": {item.name: item.decay for item in declared}, "max_norm": 1.0,
+        "max_norm": 1.0,
     }
     if cold:
         return admit_candidate_step(run_dir, **kwargs)

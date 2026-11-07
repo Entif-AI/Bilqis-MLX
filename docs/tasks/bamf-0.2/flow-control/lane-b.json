@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "aef69dae9179bb09f85f955b8a494f6582eac942",
-  "updated_at": "2026-11-07T03:08:30Z",
+  "observed_unified": "5f8f3d4b42cc4656020e4427c7d8e822825a36f9",
+  "updated_at": "2026-11-07T12:05:00-05:00",
   "exception": null,
   "items": [
     {
@@ -40,7 +40,7 @@
     {
       "issue": 455,
       "pr": null,
-      "state": "WAITING",
+      "state": "ACTIVE",
       "head_sha": "39732bdb053e33cd917ed03de43ac02ed638474b",
       "summary": "B06.4 parent candidate awaits B06.3 acceptance and stacked repair consumption.",
       "resume_trigger": "B06.3/#454 is accepted sufficiently for this dependency and remediation PR #725 is consumed or otherwise resolved.",
@@ -141,6 +141,15 @@
       "preserved_branch": "codex/bamf02-b13-3-480-cache-custody-20261102",
       "closed_under": "EGM issue-label queue; EGM-Pending is durable on issue #480",
       "close_reason": "Await fresh whole-candidate EGM on the durable branch before opening a merge-ready PR."
+    },
+    {
+      "issue": 754,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "978953bfa8ee664e45a253b71c8f7e56dfc3c103",
+      "summary": "B13.3 EGM remediation active on current unified: native attention caches weak-bind the exact in-process MLX tensor objects for fast runtime rejection without pinning retired model weights, while durable cache receipts remain deterministic from accepted generation/layer/shape/dtype metadata; accepted B13 MODEL_SWAP and PARAMETER_EXTENSION publication carry the actual accepted-student attention cache across the production transition classifier, reject stale state, and rebuild to the fresh answer path. #709 cold continuation is consumed, and the genuine canonical Prometheus frozen-v1 witness passed read-only with its pinned manifest digest.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/754-cache-transition-20261105"
     },
     {
       "issue": 711,
@@ -352,6 +361,25 @@
       "preserved_branch": "codex/bamf02-b-451-selector-custody-20261103",
       "summary": "Ready PR849; pinned EGM PASS0B/0M/0N and CPU19/19. UNBOUND selector identity/schema/cold custody only; hosted and human merge pending.",
       "resume_trigger": null
+    },
+    {
+      "issue": 476,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "a5c25eb140f1af05ad2b270ed38f7a2b5af42230",
+      "summary": "B12.3 passed fresh Chat on Steroids Goldfish review and human merge through PR #886; reviewed unified consumed the exact candidate as merge 3899649586b105b075e92f0ee3c51e80c379b473 and issue #476 is closed completed.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b12-3-476-complete-20261106",
+      "merged_pr": 886
+    },
+    {
+      "issue": 477,
+      "pr": 892,
+      "state": "TURNED_IN",
+      "head_sha": "95b1a776ae79d03934d123845081ba71d6edf842",
+      "summary": "Ready PR #892 turns in B12.4 against reviewed unified 38996495. Fresh whole-candidate Chat on Steroids EGM round 2 passed semantic head c7747196 with 0 Blockers / 0 Majors / 0 Nits after repairing the round-1 TARGET_LOCAL decay-authority Major. Candidate-owned proof is green; representative aggregate failures reproduce on exact reviewed unified and are disclosed as inherited base debt. ADR-128 governs admission at twelve total PRs with no per-lane PR cap.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b12-4-477-complete-20261106"
     }
   ]
 }

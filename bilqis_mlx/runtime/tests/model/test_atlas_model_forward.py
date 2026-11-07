@@ -238,7 +238,6 @@ class AtlasModelSourceForwardTests(SourceBackboneTestBase):
             candidate_step_ordinal=1,
             teacher_hparams=AdamWHyperparameters(
                 .001, (.9, .95), 1e-8, .01),
-            decay={item.name: item.decay for item in declared},
             max_norm=1.0,
         )
         self.assertEqual(transaction.update_steps, 1)

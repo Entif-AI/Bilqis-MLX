@@ -24,7 +24,9 @@ from bilqis_mlx.runtime.atlas_revalidation import (
 )
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import candidate, parent_state, shape_patch
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
+    acceptance, candidate, parent_state, shape_patch,
+)
 from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import (
     OWNER_ID, PUBLIC_KEY_HEX, authority_for_registry, install_test_owner,
 )
@@ -71,7 +73,7 @@ def _source(selection, frontier, *, run_id="fixture-run"):
 
 def _publish(run, source):
     with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-        return publish_bamf_generation(run, source)
+        return publish_bamf_generation(run, source, acceptance=acceptance(source))
 
 
 def _inputs(run, clearance, selection, frontier, frames, task, policy):

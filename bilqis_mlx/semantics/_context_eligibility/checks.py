@@ -1,7 +1,7 @@
 """Pure checks used by the combined context eligibility gate."""
 from __future__ import annotations
 
-from .. import context_eligibility as _api
+import bilqis_mlx.semantics.context_eligibility as _api
 
 
 def check_task(frames, task_scope, source_frontier, policy, hold):

@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 
 from bilqis_mlx.fixed_frontier import load_frontier_cohort
 from bilqis_mlx.learning.atlas_candidate import CandidateTransaction, resolve_candidate
+from bilqis_mlx.learning.atlas_package_import import PackageImportTransaction
 from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.runtime.atlas_training_authority import BamfTrainingAuthority
 from bilqis_mlx.runtime.bamf_bundle import BamfBundleCandidate
@@ -76,7 +77,8 @@ from ._factory_retention_support import (
     C05_FRESH_LESSON_SEED_OFFSET, C05_FRESH_TARGET_SEED_OFFSET,
     C05_MAX_FRESH_DRAWS, C05_PROBE_EACH, C05_PROTECTED_REFERENCE_LOSS,
     _candidate_from_live_parent, _cohort, _fresh_rows, _instruments,
-    _owner_seed, _policy_and_cohorts, _training_exclusions,
+    _owner_seed, _package_import_from_live_parent, _policy_and_cohorts,
+    _training_exclusions,
 )
 
 def _fixed_school_instruments(
@@ -200,4 +202,49 @@ def evaluate_factory_retention_candidate(
         training, fixed_instruments, cache)
 
 
-__all__ = ("FactoryRetentionEvaluation", "evaluate_factory_retention_candidate")
+def evaluate_factory_package_import(
+    source_context,
+    transaction: PackageImportTransaction,
+    artifact_path: str,
+    target_capability: str,
+    *,
+    run_dir: Path,
+):
+    """Run the same C05 owner over a B12 package-import state proposal."""
+    if (type(transaction) is not PackageImportTransaction
+            or not isinstance(target_capability, str) or not target_capability
+            or not isinstance(run_dir, Path)):
+        _invalid("BAMF_C05_PACKAGE_IMPORT_INPUT_INVALID")
+    source_context.__post_init__()
+    release = source_context.release
+    capability_map = release.execution_plan.capability_map
+    if target_capability not in capability_map:
+        _invalid("BAMF_C05_TARGET_CAPABILITY_NOT_ADMITTED")
+    groups = tuple((item.capability_id, item.grade_id)
+                   for item in release.execution_plan.capabilities)
+    target_group = capability_map[target_capability].grade_id
+    lesson_capabilities = tuple(capability for capability, group in groups
+                                if group == target_group)
+    # A package import is not a training episode. C05 still owns every source draw
+    # and complete-solver comparison, but there is no neural-training provenance
+    # to exclude from those draws.
+    training = ((), ())
+    parent, candidate_bundle, candidate_state, cache = _package_import_from_live_parent(
+        run_dir, transaction)
+    fixed_instruments = _fixed_school_instruments(
+        source_context, candidate_bundle, artifact_path, run_dir, release)
+
+    if CURRENT_EVIDENCE_STAGE is EvidenceStage.FOUNDATION_ACQUISITION:
+        return _foundation_retention_evaluation(
+            source_context, parent, candidate_bundle, artifact_path,
+            target_capability, release, groups, training, fixed_instruments)
+    return _adaptive_retention_evaluation(
+        source_context, parent, candidate_bundle, candidate_state, artifact_path,
+        target_capability, target_group, lesson_capabilities, release, groups,
+        training, fixed_instruments, cache)
+
+
+__all__ = (
+    "FactoryRetentionEvaluation", "evaluate_factory_package_import",
+    "evaluate_factory_retention_candidate",
+)

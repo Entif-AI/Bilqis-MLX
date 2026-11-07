@@ -104,7 +104,7 @@ def continue_generation(run, *, student=None, pointer=None) -> dict:
                 transaction.parent, rows=(0,),
                 candidate_step=transaction.update_steps + 1),
             AdamWHyperparameters(LEARNING_RATE, (.9, .95), 1e-8, .01),
-            decay={name: True for name in names},
+            spec=student.topology, extents=student.extents,
             loss_bearing=True, max_norm=1.)
         accepted = resolve_candidate(transaction, accepted=True)
         loss_after = probe_loss(accepted.optimizer.parameters, target)

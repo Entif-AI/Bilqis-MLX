@@ -34,7 +34,7 @@ from bilqis_mlx.runtime.model_topology_v2 import (
 NAME = "identity.bank.0"
 RELEASE = "b" * 64
 IMPLEMENTATION = "e" * 64
-DECLARED = (ParameterSpec(NAME, (2, 2), Initializer.MATRIX,
+DECLARED = (ParameterSpec(NAME, (2, 2), Initializer.EMBEDDING,
                           ParameterGroup.IDENTITY_ROW_AGE, True),)
 HP = AdamWHyperparameters(.001, (.9, .95), 1e-8, .01)
 FIXTURE_PARENT_MANIFEST = "6" * 64
@@ -59,31 +59,46 @@ def parent_state() -> CandidateState:
 
 def accepted_state(parent: CandidateState) -> CandidateState:
     transaction = begin_candidate(parent)
-    transaction = candidate_step(
-        transaction, {NAME: mx.array([[3., 4.], [0., 0.]], dtype=mx.float32)},
-        execution_provenance(transaction.parent, rows=(0,),
-                                   candidate_step=transaction.update_steps + 1), HP, decay={NAME: True},
-        loss_bearing=True, max_norm=1.)
+    spec = ModelTopologySpecV2()
+    extents = GenerationExtents(
+        1, 1, "a" * 64, parent.allocations.manifest.digest, "c" * 64)
+    with shape_patch():
+        transaction = candidate_step(
+            transaction, {NAME: mx.array([[3., 4.], [0., 0.]], dtype=mx.float32)},
+            execution_provenance(transaction.parent, rows=(0,),
+                                       candidate_step=transaction.update_steps + 1), HP,
+            spec=spec, extents=extents,
+            loss_bearing=True, max_norm=1.)
     return resolve_candidate(transaction, accepted=True)
 
 
 def rejected_state(parent: CandidateState) -> CandidateState:
     transaction = begin_candidate(parent)
-    transaction = candidate_step(
-        transaction, {NAME: mx.ones((2, 2), dtype=mx.float32)},
-        execution_provenance(transaction.parent, rows=(0,),
-                                   candidate_step=transaction.update_steps + 1), HP, decay={NAME: True},
-        loss_bearing=True, max_norm=1.)
+    spec = ModelTopologySpecV2()
+    extents = GenerationExtents(
+        1, 1, "a" * 64, parent.allocations.manifest.digest, "c" * 64)
+    with shape_patch():
+        transaction = candidate_step(
+            transaction, {NAME: mx.ones((2, 2), dtype=mx.float32)},
+            execution_provenance(transaction.parent, rows=(0,),
+                                       candidate_step=transaction.update_steps + 1), HP,
+            spec=spec, extents=extents,
+            loss_bearing=True, max_norm=1.)
     return resolve_candidate(transaction, accepted=False)
 
 
 def next_accepted_step(parent: CandidateState) -> CandidateState:
     transaction = begin_candidate(parent)
-    transaction = candidate_step(
-        transaction, {NAME: mx.array([[.25, -.5], [0., 0.]], dtype=mx.float32)},
-        execution_provenance(transaction.parent, rows=(0,),
-                                   candidate_step=transaction.update_steps + 1), HP, decay={NAME: True},
-        loss_bearing=True, max_norm=1.)
+    spec = ModelTopologySpecV2()
+    extents = GenerationExtents(
+        1, 1, "a" * 64, parent.allocations.manifest.digest, "c" * 64)
+    with shape_patch():
+        transaction = candidate_step(
+            transaction, {NAME: mx.array([[.25, -.5], [0., 0.]], dtype=mx.float32)},
+            execution_provenance(transaction.parent, rows=(0,),
+                                       candidate_step=transaction.update_steps + 1), HP,
+            spec=spec, extents=extents,
+            loss_bearing=True, max_norm=1.)
     return resolve_candidate(transaction, accepted=True)
 
 

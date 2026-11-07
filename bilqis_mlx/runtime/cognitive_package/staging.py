@@ -16,6 +16,7 @@ def export_capability(generation, signature, rights):
 
 
 def stage_import(package, receiver):
+    """Compare supplied labels only; this does not establish receiver custody."""
     require(type(package) is CognitivePackage, 'invalid cognitive package')
     package.__post_init__()
     require(type(receiver) is PackageBinding, 'invalid receiver binding')

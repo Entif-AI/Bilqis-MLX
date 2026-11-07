@@ -22,6 +22,11 @@ from bilqis_mlx.runtime.bamf_bundle import (
     load_bamf_generation, publish_bamf_generation, save_bamf_bundle,
 )
 from bilqis_mlx.runtime.bamf_bundle import admission
+from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
+    require_accepted_execution_cache,
+)
+from bilqis_mlx.runtime.bamf_bundle.records import SIDECARS
+from bilqis_mlx.runtime.atlas_model_forward import _source_producer
 
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.cold_resume_probe import (
     continue_generation, retained_digest,
@@ -169,13 +174,13 @@ class BamfColdResumeContinuationTests(unittest.TestCase):
         self.assertEqual(cold["decision"]["decision_sha256"],
                          uninterrupted["decision"]["decision_sha256"])
 
-    def test_live_loss_bearing_path_requires_execution_owner(self):
+    def test_live_loss_bearing_path_requires_gradient_execution_owner(self):
         self.publish(candidate(parent_state()))
         with shape_patch():
             with self.assertRaises(BilqisError) as failure:
                 admission.admit_candidate_step(
                     self.run, {}, loss_bearing_target=True,
-                    teacher_hparams=None, decay={}, max_norm=1.)
+                    teacher_hparams=None, max_norm=1.)
         self.assertEqual(failure.exception.context["reason"],
                          "B11_GRADIENT_EXECUTION_REQUIRED")
 
@@ -254,6 +259,50 @@ class BamfColdResumeContinuationTests(unittest.TestCase):
         self.assertIsNot(cold_release, release)
         cold = evidence(cold_release, cold_receipt, json.loads(json.dumps(teacher)))
         self.assertEqual(cold, uninterrupted)
+
+    def test_cold_continuation_reissues_cache_and_rejects_stale_or_corrupt_cache(self):
+        initial = parent_state()
+        absent_run = self.root / "cache-absent"
+        stale_run = self.root / "cache-stale"
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            publish_candidate(absent_run, candidate(initial))
+            pointer = publish_candidate(stale_run, candidate(initial))
+            stale_cache = admission.bind_accepted_execution_cache(stale_run)
+
+        bundle = stale_run / pointer["bundle"]
+        manifest = json.loads((bundle / "manifest.json").read_text())
+        self.assertEqual(set(manifest["sidecars"]), set(SIDECARS))
+        self.assertFalse(any(
+            "cache" in binding["filename"]
+            for binding in manifest["sidecars"].values()))
+
+        absent = self.probe(absent_run)
+        stale = self.probe(stale_run)
+        with shape_patch():
+            fresh_cache = admission.bind_accepted_execution_cache(stale_run)
+
+        self.assertEqual(stale["successor_digest"], absent["successor_digest"])
+        self.assertEqual(stale["successor_optimizer_step"],
+                         absent["successor_optimizer_step"])
+        self.assertEqual(stale["successor_update_counts"],
+                         absent["successor_update_counts"])
+        self.assertEqual(stale["decision"]["decision_sha256"],
+                         absent["decision"]["decision_sha256"])
+        self.assertEqual(stale_cache.generation, 0)
+        self.assertEqual(fresh_cache.generation, 1)
+        self.assertNotEqual(stale_cache.accepted_manifest_sha256,
+                            fresh_cache.accepted_manifest_sha256)
+        self.assertNotEqual(stale_cache.generation_binding,
+                            fresh_cache.generation_binding)
+        with self.assertRaises(BilqisError) as mismatch:
+            _source_producer(
+                None, None, fresh_cache.generation_binding, stale_cache)
+        self.assertEqual(mismatch.exception.context["reason"],
+                         "B11_ACCEPTED_CACHE_GENERATION_MISMATCH")
+
+        object.__setattr__(stale_cache, "generation_binding", "corrupt")
+        with self.assertRaises(BilqisError):
+            require_accepted_execution_cache(stale_cache)
 
     def test_cold_resume_refuses_a_generation_without_published_custody(self):
         process = subprocess.run(

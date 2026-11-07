@@ -86,7 +86,7 @@ class ProductionAuthorityTests(unittest.TestCase):
         for forbidden in ("motif_reads", "executed_parameter_names", "visible_identity_rows",
                           "feedback_identity_rows", "local_slot_rows",
                           "group_eligible", "active_admitted", "spec", "extents",
-                          "update_mask"):
+                          "update_mask", "decay"):
             self.assertNotIn(forbidden, parameters)
 
     def test_group_eligibility_comes_from_the_ledger_and_policy_owners(self):
@@ -124,7 +124,7 @@ class ProductionAuthorityTests(unittest.TestCase):
             with self.assertRaises(BilqisError):
                 admit_candidate_step(
                     self.run, {}, loss_bearing_target=True,
-                    teacher_hparams=None, decay={}, max_norm=1.)
+                    teacher_hparams=None, max_norm=1.)
         self.assertTrue(step.called)
 
     def test_no_loss_step_cannot_promote_census_to_execution(self):
@@ -134,7 +134,7 @@ class ProductionAuthorityTests(unittest.TestCase):
                 admission, "production_candidate_step", return_value=marker) as step:
             result = admit_candidate_step(
                 self.run, {}, loss_bearing_target=False,
-                teacher_hparams=None, decay={}, max_norm=1.)
+                teacher_hparams=None, max_norm=1.)
         self.assertIs(result, marker)
         for forbidden in ("motif_reads", "executed_parameter_names",
                           "visible_identity_rows", "feedback_identity_rows",
@@ -152,7 +152,6 @@ class ProductionAuthorityTests(unittest.TestCase):
                 loss_bearing_target=True,
                 gradient_execution=owner_execution,
                 teacher_hparams=None,
-                decay={},
                 max_norm=1.,
             )
         self.assertIs(result, marker)

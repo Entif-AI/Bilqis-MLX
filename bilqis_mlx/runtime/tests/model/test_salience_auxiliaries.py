@@ -25,11 +25,14 @@ class SalienceAuxiliaryTests(unittest.TestCase):
         self.fixture.model_generation = "d" * 64
         rows = self.fixture.context.draw_rows(seed=17, capability='Z.C0', each=2)
         self.batch = self.fixture.compile(rows)
-        context = replace(_CONTEXT, capability_id='Z.C0', source_family_id='family-1',
-                          semantic_release=self.batch.release_sha256)
+        source_family_id = self.batch.rows[0].provenance.source_family_id
+        context = replace(_CONTEXT, capability_id='Z.C0',
+                          source_family_id=source_family_id,
+                          semantic_release=self.batch.release_sha256,
+                          generation_digest=self.batch.generation_binding)
         self.snapshot = AuthoritySnapshot((context,), 100, _REGISTRY)
         policy = _signed(replace(_policy(), semantic_release=context.semantic_release,
-                                 source_family_ids=('family-1',)))
+                                 source_family_ids=(source_family_id,)))
         self.evidence = derive_salience(verify_salience_inputs(
             (_fact(Metric.DECLARED_IMPACT, 2, policy, context=context),
              _fact(Metric.BLOCKED_COUNT, 0, policy, context=context)), policy, self.snapshot, context))

@@ -31,7 +31,7 @@ class EvidenceCurriculumLifecycleTests(unittest.TestCase):
             "synthetic:test-atlas", "b" * 64, RELEASE, "c" * 64)
         authority = EvidenceSemanticAuthority(
             RELEASE, STUDY, HOUR, AGENT, "UNIT_CONVERT",
-            "059ccd2a33330473973914b94fc0d772d6f845b6ee9c8e736f1876e6a9823e9f")
+            "bbd41d53aa83ed844e81e5c8582057efc5bc2121012b813026627582865d32f3")
         self._source_authority = patch(
             "bilqis_mlx.source_adapters.evidence.evidence_frames."
             "resolve_public_fixture_authority",

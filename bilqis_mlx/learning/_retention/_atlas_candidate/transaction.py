@@ -5,7 +5,9 @@ import mlx.core as mx
 from bilqis_mlx.learning.atlas_engram import MotifBudget
 from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
 from bilqis_mlx.learning.atlas_plasticity import advance_candidate_policy, next_update_mode
-from bilqis_mlx.runtime.atlas_optimizer import AdamWStateTree, _adamw_update
+from bilqis_mlx.runtime.atlas_optimizer import (
+    AdamWStateTree, _adamw_update, reconcile_b01_optimizer_manifest,
+)
 from ..atlas_execution_provenance import StepExecutionProvenance, mask_digest, participation_digest
 from ..atlas_participation import optimizer_participation_mask
 from .common import (LEGACY_STEP_PROOF_SCHEMA, STEP_PROOF_SCHEMA, RETAINED_STATE_ISSUER,
@@ -95,7 +97,7 @@ def begin_candidate(parent: CandidateState, *, budget=None,
 
 
 def candidate_step(candidate: CandidateTransaction, gradients, execution,
-                   teacher_hparams, *, decay, loss_bearing: bool,
+                   teacher_hparams, *, spec, extents, loss_bearing: bool,
                    max_norm: float, training_authority=None) -> CandidateTransaction:
     """Bind the step to owner-issued execution provenance, then run native AdamW.
 
@@ -112,6 +114,15 @@ def candidate_step(candidate: CandidateTransaction, gradients, execution,
     custody = candidate.parent.custody
     if custody is None:
         invalid()
+    from bilqis_mlx.runtime.model_topology_v2 import (
+        GenerationExtents, ModelTopologySpecV2,
+    )
+    if (type(spec) is not ModelTopologySpecV2
+            or type(extents) is not GenerationExtents
+            or spec.digest != custody.topology_digest
+            or extents.digest != custody.extents_digest):
+        invalid()
+    decay = reconcile_b01_optimizer_manifest(candidate.optimizer, spec, extents)
     from ..atlas_acceptance import candidate_identity_digest
     if (execution.run_id != custody.run_id
             or execution.generation != custody.generation + 1

@@ -1,5 +1,5 @@
 """Test motif read boundaries."""
-from bilqis_mlx.learning.tests.test_atlas_engram_reads import (
+from bilqis_mlx.learning.tests.motif_reads.fixtures import (
     ACCESS_SCOPE, AtlasArtifactSelection, BilqisError, ConceptRef,
     ContextEligibility, ContextMember, ContextPolicy, MotifFrameInput,
     MotifManifest, MotifReadPosition, MotifSlot, PUBLIC_FORMAL,
