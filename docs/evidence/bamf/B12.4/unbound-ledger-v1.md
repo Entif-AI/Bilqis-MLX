@@ -71,12 +71,15 @@ remain single entries in the complete tree.
 Red-first evidence: the new
 `test_decay_manifest_is_derived_from_b01_not_the_caller` initially failed
 because `production_candidate_step` still exposed `decay` in its signature.
-After the repair the focused production boundary is **8/8 PASS**, including an
-adversary that rejects both wrong row/scalar count geometry and a consistently
-misowned prefix. Nearby acceptance evidence is **14/14** B13 production
+After the repair the focused production boundary is **9/9 PASS**, including
+adversaries that reject wrong row/scalar count geometry, a consistently misowned
+prefix and an otherwise-valid tree reordered away from the B01 ledger. The decay
+witness uses a B01 declaration with `decay=False`, proving production derives the
+flag rather than hardcoding the positive case. Nearby acceptance evidence is
+**14/14** B13 production
 authority, **7/7** cold continuation, **13/13** optimizer construction/arithmetic,
 **11/11** plasticity/prefix, **5/5** depth-prefix, **6/6** attention and **5/5**
-readout-prefix tests: **69 passed, 0 failed**. The two live-source model-forward
+readout-prefix tests: **70 passed, 0 failed**. The two live-source model-forward
 tests remain expected environment skips because the real pinned A01 artifact is
 not mounted in this disposable worktree.
 
@@ -87,7 +90,9 @@ confirmed all of them: six cache-authority tests stop at the pre-existing B13
 generation-acceptance requirement, one cache-policy subtest fails only under
 xdist because execnet cannot serialize NumPy's dtype object, and the unchanged
 legacy backbone wrapper imports a pre-relocation test module. None is used as
-B12.4 acceptance evidence.
+B12.4 acceptance evidence. The exact commands, failure identities and the
+discarded stale-base comparison are preserved in
+`docs/evidence/bamf/B12.4/leaf-baseline-classification-v1.md`.
 
 Post-commit `quality:changed` passes: module-size and governance checks are
 clean, the changed-file smell audit scanned ten files with zero findings, BAMF

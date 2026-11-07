@@ -30,9 +30,20 @@ from bilqis_mlx.runtime.model_topology_v2 import (
 )
 
 BANK = "identity.bank.0"
+FEATURE = "features.type"
 RELEASE = "b" * 64
 DECLARED = (ParameterSpec(
     BANK, (2, 2), Initializer.EMBEDDING, ParameterGroup.IDENTITY_ROW_AGE, True),)
+NO_DECAY_DECLARED = (ParameterSpec(
+    BANK, (2, 2), Initializer.EMBEDDING, ParameterGroup.IDENTITY_ROW_AGE, False),)
+ORDERED_DECLARED = (
+    ParameterSpec(
+        BANK, (2, 2), Initializer.EMBEDDING,
+        ParameterGroup.IDENTITY_ROW_AGE, True),
+    ParameterSpec(
+        FEATURE, (2, 2), Initializer.EMBEDDING,
+        ParameterGroup.FAST, False),
+)
 CENSUS_SHAPE = (
     "bilqis_mlx.learning.atlas_participation_census.expected_bamf_shapes",
     "bilqis_mlx.learning._retention.atlas_participation_census.expected_bamf_shapes",
@@ -127,10 +138,10 @@ class ProductionCandidateStepTests(unittest.TestCase):
         self.assertNotIn("decay", parameters)
         candidate = begin_candidate(self.parent)
         marker = object()
-        with patch(CENSUS_SHAPE[0], return_value=DECLARED), \
-                patch(CENSUS_SHAPE[1], return_value=DECLARED), \
-                patch(CENSUS_SHAPE[2], return_value=DECLARED), \
-                patch(CENSUS_SHAPE[3], return_value=DECLARED), \
+        with patch(CENSUS_SHAPE[0], return_value=NO_DECAY_DECLARED), \
+                patch(CENSUS_SHAPE[1], return_value=NO_DECAY_DECLARED), \
+                patch(CENSUS_SHAPE[2], return_value=NO_DECAY_DECLARED), \
+                patch(CENSUS_SHAPE[3], return_value=NO_DECAY_DECLARED), \
                 patch(
                     "bilqis_mlx.runtime.atlas_candidate_step.candidate_step",
                     return_value=marker,
@@ -151,7 +162,7 @@ class ProductionCandidateStepTests(unittest.TestCase):
                 teacher_hparams=self.hp, max_norm=1.,
             )
         self.assertIs(result, marker)
-        self.assertEqual(apply_step.call_args.kwargs["decay"], {BANK: True})
+        self.assertEqual(apply_step.call_args.kwargs["decay"], {BANK: False})
 
     def test_b01_manifest_rejects_wrong_count_geometry_and_misowned_prefix(self):
         optimizer = self.parent.optimizer
@@ -171,6 +182,21 @@ class ProductionCandidateStepTests(unittest.TestCase):
                         self.assertRaises(BilqisError):
                     reconcile_b01_optimizer_manifest(
                         malformed, ModelTopologySpecV2(), self.extents)
+
+    def test_b01_manifest_rejects_valid_tree_reordered_away_from_ledger(self):
+        values = mx.ones((2, 2), dtype=mx.float32)
+        reversed_names = (FEATURE, BANK)
+        state = AdamWStateTree(
+            {name: values for name in reversed_names},
+            {name: mx.zeros_like(values) for name in reversed_names},
+            {name: mx.zeros_like(values) for name in reversed_names},
+            {name: mx.zeros((2,), dtype=mx.uint64) for name in reversed_names},
+        )
+        with patch(CENSUS_SHAPE[2], return_value=ORDERED_DECLARED), \
+                patch(CENSUS_SHAPE[3], return_value=ORDERED_DECLARED), \
+                self.assertRaises(BilqisError):
+            reconcile_b01_optimizer_manifest(
+                state, ModelTopologySpecV2(), self.extents)
 
     def test_no_loss_step_is_an_exact_noop(self):
         parent = begin_candidate(self.parent)
