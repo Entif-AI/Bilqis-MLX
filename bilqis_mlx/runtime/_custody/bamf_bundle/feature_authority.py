@@ -12,10 +12,6 @@ from dataclasses import asdict, dataclass, fields
 from pathlib import Path
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.learning.atlas_acceptance import (
-    ACCEPTANCE_SCHEMA,
-    AcceptedCandidateBinding, candidate_identity_digest,
-)
 from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest
 from bilqis_mlx.semantics.atlas.snapshot import (
     AtlasArtifactSelection, load_pinned_atlas_snapshot,
@@ -24,9 +20,9 @@ from bilqis_mlx.semantics.atlas_projection import FrozenAtlasSnapshot
 
 from .codec import load_bamf_bundle
 from .publication import (
-    ACCEPTANCE_DIR, _pointer_lock, _read_pointer,
+    _pointer_lock, _read_pointer, _require_published_acceptance,
 )
-from .records import BAMF_POINTER_SCHEMA, canonical, invalid, sha
+from .records import canonical, invalid, sha
 from .records import BamfBundleCandidate
 
 RECEIPT_SCHEMA = "bilqis.mlx.bamf-accepted-generation-feature-receipt/v1"
@@ -171,47 +167,7 @@ def _accepted_generation(pointer_path: Path):
 
 def _accepted_binding(run_dir: Path, pointer: dict, student):
     """Read the owner-issued publication authority for the accepted generation."""
-    path = run_dir / ACCEPTANCE_DIR / f"{pointer['manifest_sha256']}.json"
-    if path.is_symlink() or not path.is_file():
-        invalid("BAMF_GENERATION_ACCEPTANCE_MISSING")
-    try:
-        record = json.loads(path.read_bytes())
-        if student.generation == 0 and student.run_identity is not None:
-            from .genesis import (
-                InitialGenerationBinding, validate_parsed_initial_generation_binding,
-            )
-            binding = InitialGenerationBinding.from_record(record)
-            validate_parsed_initial_generation_binding(
-                student, binding, pointer["acceptance_sha256"])
-            return binding
-        binding = AcceptedCandidateBinding.from_record(record)
-    except (UnicodeDecodeError, json.JSONDecodeError, BilqisError):
-        invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
-    if (pointer.get("schema") != BAMF_POINTER_SCHEMA
-            or binding.schema_version != ACCEPTANCE_SCHEMA
-            or binding.digest != pointer.get("acceptance_sha256")
-            or binding.run_id != pointer["run_id"]
-            or binding.generation != pointer["generation"]
-            or binding.feature_sha256 != student.extents.factor_map_digest
-            or binding.optimizer_step != student.retained_state.optimizer_step
-            or binding.candidate_identity_sha256
-            != candidate_identity_digest(student.retained_state)
-            or binding.step_proof_sha256 != tuple(
-                proof.digest for proof in student.retained_state.step_proofs)):
-        invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
-    if student.generation > 0:
-        parent_sha = student.parent_manifest_sha256
-        if parent_sha is None:
-            invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
-        parent = load_bamf_bundle(
-            run_dir / "bamf-bundles" / parent_sha,
-            expected_manifest_sha256=parent_sha)
-        if (parent.generation + 1 != student.generation
-                or parent.run_id != student.run_id
-                or binding.parent_candidate_identity_sha256
-                != candidate_identity_digest(parent.retained_state)):
-            invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
-    return binding
+    return _require_published_acceptance(run_dir, pointer, student)
 
 
 def _authenticate_features(student, artifact_path: str):

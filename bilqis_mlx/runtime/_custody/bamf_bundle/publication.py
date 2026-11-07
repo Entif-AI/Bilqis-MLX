@@ -260,6 +260,16 @@ def _require_published_acceptance(
             or acceptance.step_proof_sha256 != tuple(
                 proof.digest for proof in student.retained_state.step_proofs)):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+    parent_sha = student.parent_manifest_sha256
+    if parent_sha is None:
+        invalid("BAMF_RUN_IDENTITY_DRIFT")
+    parent = load_bamf_bundle(
+        Path(run_dir) / "bamf-bundles" / parent_sha,
+        expected_manifest_sha256=parent_sha)
+    if (parent.run_id != student.run_id
+            or parent.generation + 1 != student.generation
+            or parent.run_identity != student.run_identity):
+        invalid("BAMF_RUN_IDENTITY_DRIFT")
     return acceptance
 
 

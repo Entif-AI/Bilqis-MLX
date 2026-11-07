@@ -1,5 +1,7 @@
 """Split B13.5 acceptance-provenance witnesses."""
 from ._generation_acceptance_support import *
+import bilqis_mlx.runtime.bamf_bundle.feature_authority as feature_authority
+import bilqis_mlx.runtime.bamf_bundle.publication as publication
 
 
 class GenerationAcceptanceAuthorityTests(GenerationAcceptanceFixture, unittest.TestCase):
@@ -140,6 +142,58 @@ class GenerationAcceptanceAuthorityTests(GenerationAcceptanceFixture, unittest.T
                     self.assertEqual(
                         failure.exception.context["reason"],
                         "BAMF_GENERATION_ACCEPTANCE_DRIFT")
+
+    def test_authoritative_successor_reads_reject_run_identity_drift(self):
+        features = source_features()
+        source = self.feature_source(features)
+        self.publish(source, acceptance=self.binding(source))
+        pointer_path = self.run / "bamf-state.json"
+        real_load = publication.load_bamf_bundle
+
+        def drifted_load(path, *, expected_manifest_sha256=None):
+            student = real_load(
+                path, expected_manifest_sha256=expected_manifest_sha256)
+            if student.generation > 0:
+                identity = replace(
+                    student.run_identity,
+                    run_seed=student.run_identity.run_seed + 1,
+                )
+                return replace(student, run_identity=identity)
+            return student
+
+        with shape_patch(), patch.object(
+                publication, "load_bamf_bundle", side_effect=drifted_load):
+            with self.assertRaises(BilqisError) as failure:
+                load_bamf_generation_authority(pointer_path)
+            self.assertEqual(
+                failure.exception.context["reason"],
+                "BAMF_RUN_IDENTITY_DRIFT")
+
+        real_feature_load = feature_authority.load_bamf_bundle
+
+        def drifted_feature_load(path, *, expected_manifest_sha256=None):
+            student = real_feature_load(
+                path, expected_manifest_sha256=expected_manifest_sha256)
+            if student.generation > 0:
+                identity = replace(
+                    student.run_identity,
+                    run_seed=student.run_identity.run_seed + 1,
+                )
+                return replace(student, run_identity=identity)
+            return student
+
+        with shape_patch(), \
+                patch.object(feature_authority, "load_bamf_bundle",
+                             side_effect=drifted_feature_load), \
+                patch.object(feature_authority, "build_feature_manifest",
+                             return_value=features), \
+                patch.object(feature_authority, "load_pinned_atlas_snapshot",
+                             side_effect=lambda selection: selection):
+            with self.assertRaises(BilqisError) as failure:
+                read_accepted_generation_feature_receipt(pointer_path, "/artifact")
+            self.assertEqual(
+                failure.exception.context["reason"],
+                "BAMF_RUN_IDENTITY_DRIFT")
 
 
 if __name__ == "__main__":

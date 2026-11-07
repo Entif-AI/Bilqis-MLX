@@ -12,6 +12,7 @@ from unittest.mock import patch
 import mlx.core as mx
 
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
+import bilqis_mlx.runtime.bamf_bundle.feature_authority as feature_authority
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.bamf_bundle import (
     InitialGenerationBinding, PreparedInitialGeneration,
@@ -83,6 +84,25 @@ class GenerationZeroAuthorityTests(unittest.TestCase):
         self.assertEqual(
             failure.exception.context["reason"],
             "BAMF_INITIAL_GENERATION_BOOTSTRAP_REQUIRED")
+
+    def test_generation_zero_feature_authority_refuses_legacy_c05_binding(self):
+        legacy = candidate(parent_state())
+        binding = acceptance(legacy)
+        manifest_sha = "f" * 64
+        acceptance_dir = self.run / "bamf-acceptance"
+        acceptance_dir.mkdir(parents=True)
+        (acceptance_dir / f"{manifest_sha}.json").write_text(
+            json.dumps(binding.to_record()))
+        pointer = {
+            "schema": "bilqis.mlx.bamf-generation-pointer/v2",
+            "manifest_sha256": manifest_sha,
+            "acceptance_sha256": binding.digest,
+        }
+        with self.assertRaises(BilqisError) as failure:
+            feature_authority._accepted_binding(self.run, pointer, legacy)
+        self.assertEqual(
+            failure.exception.context["reason"],
+            "BAMF_GENERATION_ACCEPTANCE_INVALID")
 
     def test_source_admission_drift_rejects_before_any_run_write(self):
         from bilqis_mlx.factory.executable_release import admit_executable_factory_release
