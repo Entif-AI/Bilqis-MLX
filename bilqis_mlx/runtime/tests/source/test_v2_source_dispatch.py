@@ -20,7 +20,8 @@ class V2SourceDispatchTests(unittest.TestCase):
                 each=1, course=legacy, executable_release=release)
         self.assertEqual(actual, expected)
         self.assertIs(executable.call_args.args[2], release)
-        self.assertEqual(executable.call_args.kwargs["legacy_course"], legacy)
+        self.assertTrue(all(argument is not legacy for argument in executable.call_args.args))
+        self.assertNotIn("legacy_course", executable.call_args.kwargs)
 
 
 if __name__ == "__main__":

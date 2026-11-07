@@ -1,116 +1,24 @@
 """Crash-idempotent, serialized B13.1 pointer publication and outbox recovery."""
 from __future__ import annotations
 
-import contextlib
-import fcntl
-import json
 import os
 import shutil
-import tempfile
-import uuid
 from pathlib import Path
 
 from bilqis_mlx.data_plane import DataPlaneError, data_plane
-from .codec import load_bamf_bundle, save_bamf_bundle, validate_bamf_bundle_custody
+from bilqis_mlx.learning.atlas_acceptance import (
+    ACCEPTANCE_SCHEMA, AcceptedCandidateBinding, candidate_identity_digest,
+)
+from .codec import load_bamf_bundle, save_bamf_bundle
 from .records import (
     BAMF_POINTER_SCHEMA, BamfBundleCandidate, CompleteStudent, canonical, invalid, sha,
 )
 
-
-def _require_run_root(run_dir: Path) -> None:
-    if run_dir.is_symlink() or (run_dir.exists() and not run_dir.is_dir()): invalid(DataPlaneError.BUNDLE_ROOT_UNSAFE)
-    run_dir.mkdir(parents=True, exist_ok=True)
-    if run_dir.is_symlink() or not run_dir.is_dir(): invalid(DataPlaneError.BUNDLE_ROOT_UNSAFE)
-
-def _require_bundle_root(run_dir: Path, *, create: bool) -> Path:
-    root = run_dir / "bamf-bundles"
-    if root.is_symlink() or (root.exists() and not root.is_dir()): invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
-    if create: root.mkdir(exist_ok=True)
-    if root.is_symlink() or not root.is_dir(): invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
-    return root
-
-@contextlib.contextmanager
-def _pointer_lock(run_dir: Path):
-    _require_run_root(run_dir)
-    lock = run_dir / ".bamf-pointer.lock"
-    if lock.is_symlink():
-        invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
-    flags = os.O_RDWR | os.O_CREAT | getattr(os, "O_NOFOLLOW", 0)
-    fd = os.open(lock, flags, 0o600)
-    try:
-        try:
-            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError:
-            invalid("BAMF_POINTER_WRITER_ACTIVE")
-        yield
-    finally:
-        fcntl.flock(fd, fcntl.LOCK_UN)
-        os.close(fd)
-
-
-def _read_pointer(path: Path) -> dict | None:
-    if not path.exists() and not path.is_symlink():
-        return None
-    if path.is_symlink() or not path.is_file():
-        invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
-    try:
-        pointer = json.loads(path.read_bytes())
-    except (UnicodeDecodeError, json.JSONDecodeError):
-        invalid()
-    bundle_value = pointer.get("bundle") if isinstance(pointer, dict) else None
-    bundle = Path(bundle_value) if isinstance(bundle_value, str) else Path()
-    expected = {"schema", "run_id", "generation", "parent_manifest_sha256",
-                "bundle", "manifest_sha256"}
-    if (not isinstance(pointer, dict) or set(pointer) != expected
-            or pointer.get("schema") != BAMF_POINTER_SCHEMA
-            or not isinstance(pointer.get("run_id"), str) or not pointer["run_id"]
-            or type(pointer.get("generation")) is not int or bundle.is_absolute()
-            or bundle_value != f"bamf-bundles/{pointer.get('manifest_sha256')}"
-            or tuple(bundle.parts) != ("bamf-bundles", pointer.get("manifest_sha256"))
-            or any(part in ("", ".", "..") for part in bundle.parts)):
-        invalid()
-    return pointer
-
-
-def _live_bundle_manifest(run_dir: Path, pointer: dict) -> dict:
-    root = _require_bundle_root(run_dir, create=False)
-    bundle = root / pointer["manifest_sha256"]
-    manifest = validate_bamf_bundle_custody(
-        bundle, expected_manifest_sha256=pointer["manifest_sha256"])
-    if (manifest["run_id"] != pointer["run_id"]
-            or manifest["generation"] != pointer["generation"]
-            or manifest["parent_manifest_sha256"] != pointer["parent_manifest_sha256"]):
-        invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
-    return manifest
-
-
-def _atomic_pointer(path: Path, pointer: dict) -> None:
-    if path.is_symlink():
-        invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
-    raw = canonical(pointer)
-    fd, temporary = tempfile.mkstemp(prefix=".bamf-pointer-", dir=path.parent)
-    try:
-        with os.fdopen(fd, "wb") as stream:
-            stream.write(raw); stream.flush(); os.fsync(stream.fileno())
-        os.replace(temporary, path)
-        directory = os.open(path.parent, os.O_RDONLY)
-        try:
-            os.fsync(directory)
-        finally:
-            os.close(directory)
-    finally:
-        if os.path.exists(temporary):
-            os.unlink(temporary)
-
-
-def _stage(run_dir: Path) -> Path:
-    _require_run_root(run_dir)
-    root = run_dir / ".bamf-staging"
-    if root.is_symlink() or (root.exists() and not root.is_dir()):
-        invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
-    root.mkdir(exist_ok=True)
-    return root / ("generation-" + uuid.uuid4().hex)
-
+from ._publication_storage import (
+    ACCEPTANCE_DIR, _acceptance_path, _atomic_pointer, _live_bundle_manifest,
+    _pointer_lock, _read_pointer, _require_bundle_root, _require_run_root,
+    _stage, _write_acceptance,
+)
 
 def reconcile_bamf_outbox(run_dir: Path, student: CompleteStudent, *, publish_missing=True) -> bool:
     """Reconcile while the caller holds the generation pointer writer lock."""
@@ -187,10 +95,48 @@ def _validate_parent_transition(run_dir: Path, pointer: dict | None, candidate: 
     reconcile_bamf_outbox(run_dir, parent)
 
 
+def _require_acceptance(candidate: BamfBundleCandidate,
+                         acceptance: AcceptedCandidateBinding | None) -> AcceptedCandidateBinding:
+    """Publication is not acceptance: the retention owner must have accepted it."""
+    if type(acceptance) is not AcceptedCandidateBinding:
+        invalid("BAMF_GENERATION_ACCEPTANCE_REQUIRED")
+    if (acceptance.schema_version != ACCEPTANCE_SCHEMA
+            or acceptance.run_id != candidate.run_id
+            or acceptance.generation != candidate.generation
+            or acceptance.feature_sha256 != candidate.extents.factor_map_digest
+            or acceptance.optimizer_step != candidate.retained_state.optimizer_step
+            or acceptance.candidate_identity_sha256
+            != candidate_identity_digest(candidate.retained_state)
+            or acceptance.step_proof_sha256 != tuple(
+                proof.digest for proof in candidate.retained_state.step_proofs)):
+        invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+    return acceptance
+
+
+def _require_accepted_parent(run_dir: Path, candidate: BamfBundleCandidate,
+                             acceptance: AcceptedCandidateBinding) -> None:
+    """Verify the C05 parent identity against immutable B13 parent custody."""
+    if candidate.generation == 0:
+        return  # Genesis admission is a distinct upstream source/bootstrap gate.
+    parent_sha = candidate.parent_manifest_sha256
+    if parent_sha is None:
+        invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+    parent = load_bamf_bundle(
+        run_dir / "bamf-bundles" / parent_sha,
+        expected_manifest_sha256=parent_sha)
+    if (parent.run_id != candidate.run_id
+            or parent.generation + 1 != candidate.generation
+            or acceptance.parent_candidate_identity_sha256
+            != candidate_identity_digest(parent.retained_state)):
+        invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+
+
 def publish_bamf_generation(run_dir: Path, candidate: BamfBundleCandidate, *,
+                            acceptance: AcceptedCandidateBinding | None = None,
                             reserve_gib: float = 100.0) -> dict:
     """Publish once; retries converge across staging, rename, pointer and outbox crashes."""
     run_dir = Path(run_dir)
+    accepted = _require_acceptance(candidate, acceptance)
     stage = _stage(run_dir)
     try:
         manifest = save_bamf_bundle(candidate, stage, reserve_gib=reserve_gib)
@@ -199,14 +145,18 @@ def publish_bamf_generation(run_dir: Path, candidate: BamfBundleCandidate, *,
         pointer_path = run_dir / "bamf-state.json"
         with _pointer_lock(run_dir):
             current = _read_pointer(pointer_path)
+            _require_accepted_parent(run_dir, candidate, accepted)
             if current is not None and current["generation"] == candidate.generation:
                 if (current["run_id"] != candidate.run_id
                         or current["manifest_sha256"] != digest
-                        or current["parent_manifest_sha256"] != candidate.parent_manifest_sha256):
+                        or current["parent_manifest_sha256"] != candidate.parent_manifest_sha256
+                        or current["schema"] != BAMF_POINTER_SCHEMA
+                        or current["acceptance_sha256"] != accepted.digest):
                     invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
                 shutil.rmtree(stage)
                 student = load_bamf_bundle(
                     run_dir / current["bundle"], expected_manifest_sha256=digest)
+                _write_acceptance(run_dir, digest, accepted)
                 reconcile_bamf_outbox(run_dir, student)
                 return current
             _validate_parent_transition(run_dir, current, candidate)
@@ -222,11 +172,13 @@ def publish_bamf_generation(run_dir: Path, candidate: BamfBundleCandidate, *,
                     os.fsync(directory)
                 finally:
                     os.close(directory)
+            _write_acceptance(run_dir, digest, accepted)
             pointer = {
                 "schema": BAMF_POINTER_SCHEMA, "run_id": candidate.run_id,
                 "generation": candidate.generation,
                 "parent_manifest_sha256": candidate.parent_manifest_sha256,
-                "bundle": str(target.relative_to(run_dir)), "manifest_sha256": digest,
+                "bundle": str(target.relative_to(run_dir)),
+                "manifest_sha256": digest, "acceptance_sha256": accepted.digest,
             }
             _atomic_pointer(pointer_path, pointer)
             student = load_bamf_bundle(target, expected_manifest_sha256=digest)
@@ -238,19 +190,32 @@ def publish_bamf_generation(run_dir: Path, candidate: BamfBundleCandidate, *,
         raise
 
 
+def _load_generation_locked(pointer_path: Path) -> tuple[CompleteStudent, dict]:
+    pointer = _read_pointer(pointer_path)
+    if pointer is None:
+        invalid(DataPlaneError.BUNDLE_ROOT_UNSAFE)
+    _live_bundle_manifest(pointer_path.parent, pointer)
+    student = load_bamf_bundle(
+        pointer_path.parent / "bamf-bundles" / pointer["manifest_sha256"],
+        expected_manifest_sha256=pointer["manifest_sha256"])
+    if (student.run_id != pointer["run_id"] or student.generation != pointer["generation"]
+            or student.parent_manifest_sha256 != pointer["parent_manifest_sha256"]):
+        invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
+    return student, pointer
+
+
+def load_bamf_generation_authority(pointer_path: Path) -> tuple[CompleteStudent, str]:
+    """Read current accepted B13 authority without mutating delivery state."""
+    pointer_path = Path(pointer_path)
+    with _pointer_lock(pointer_path.parent):
+        student, pointer = _load_generation_locked(pointer_path)
+        return student, pointer["manifest_sha256"]
+
+
 def load_bamf_generation(pointer_path: Path, *, publish_missing_outbox: bool = True) -> CompleteStudent:
     pointer_path = Path(pointer_path)
     with _pointer_lock(pointer_path.parent):
-        pointer = _read_pointer(pointer_path)
-        if pointer is None:
-            invalid(DataPlaneError.BUNDLE_ROOT_UNSAFE)
-        _live_bundle_manifest(pointer_path.parent, pointer)
-        student = load_bamf_bundle(
-            pointer_path.parent / "bamf-bundles" / pointer["manifest_sha256"],
-            expected_manifest_sha256=pointer["manifest_sha256"])
-        if (student.run_id != pointer["run_id"] or student.generation != pointer["generation"]
-                or student.parent_manifest_sha256 != pointer["parent_manifest_sha256"]):
-            invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
+        student, _ = _load_generation_locked(pointer_path)
         reconcile_bamf_outbox(
             pointer_path.parent, student, publish_missing=publish_missing_outbox)
         return student

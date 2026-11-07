@@ -25,7 +25,7 @@ from bilqis_mlx.semantics.atlas_projection import (
     persist_atlas_release,
     validate_atlas_release,
 )
-from bilqis_mlx.semantics.atlas_snapshot import (
+from bilqis_mlx.semantics.atlas.snapshot import (
     AtlasArtifactSelection, load_pinned_atlas_snapshot,
 )
 from lib.ithkuil.src.skos.canonical import canonicalize

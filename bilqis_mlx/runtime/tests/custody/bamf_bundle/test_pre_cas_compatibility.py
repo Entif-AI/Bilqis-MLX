@@ -16,7 +16,9 @@ import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.data_plane import DataPlane, data_plane
 from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation
 from bilqis_mlx.runtime.tests.custody.data_plane.base import DataPlaneCase, historical_module
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import candidate, parent_state, shape_patch
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
+    candidate, parent_state, publish_candidate, shape_patch,
+)
 
 PRE_CAS = "dfc0c7586c23b6477c08d4db486ade3deeb79fae"
 WRITER_SHA256 = "01e66fcbe15802615c3557a2a4b99c0fb75a37d64fe3d61ee30bf56d1301fcdc"
@@ -63,7 +65,7 @@ class PreCasCompatibilityTests(DataPlaneCase):
                     patch.object(publication, "load_bamf_bundle", writer.load_bamf_bundle), \
                     patch.object(DataPlane, "adopt_file_object", adopter.DataPlaneFileObjectMixin.adopt_file_object), \
                     patch.object(mlx_checkpoint, "save_bamf_state_payload", side_effect=retained_descriptor):
-                pointer = publication.publish_bamf_generation(run, source)
+                pointer = publish_candidate(run, source)
             bundle = run / pointer["bundle"]
             before = {path.name: path.read_bytes() for path in bundle.iterdir()}
             digest = json.loads(before["manifest.json"])["tensors"]["object_sha256"]
@@ -107,7 +109,7 @@ class PreCasCompatibilityTests(DataPlaneCase):
         expected = numerical_observation(initial)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
                 patch.object(publication, "save_bamf_bundle", side_effect=writer.save_bamf_bundle):
-            pointer = publication.publish_bamf_generation(run, initial)
+            pointer = publish_candidate(run, initial)
         bundle = run / pointer["bundle"]
         before = {path.name: path.read_bytes() for path in bundle.iterdir()}
         manifest = json.loads(before["manifest.json"])

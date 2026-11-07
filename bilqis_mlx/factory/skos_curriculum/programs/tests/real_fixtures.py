@@ -6,7 +6,7 @@ from bilqis_mlx.factory.live_releases import boolean_successor
 from bilqis_mlx.factory.release import compile_factory_release
 from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.paths import REPO_ROOT, LEGACY_SOURCE
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.source_adapters.school import live_source_registry
 from bilqis_mlx.factory.tests.curriculum.formal_lesson_fixtures import _case
 

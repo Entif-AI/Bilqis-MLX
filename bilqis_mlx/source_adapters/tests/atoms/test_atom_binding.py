@@ -6,7 +6,7 @@ from unittest import TestCase, skipUnless
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory.adapters import RegisteredSourceAdapter, SourceAdapterRegistry
 from bilqis_mlx.factory.model import SourceAdapter
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.frame_codec import SchemaTagMap
 from bilqis_mlx.semantics.frame_compiler import atom_evidence_digest, compile_prefix
 from bilqis_mlx.semantics.source_atom_binding import AtomBindingDisposition

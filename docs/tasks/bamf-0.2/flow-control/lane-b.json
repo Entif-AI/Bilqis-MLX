@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "d29fd6cd290d88f0b3dbd1557b7ce229db0caab3",
-  "updated_at": "2026-11-05T06:27:03+00:00",
+  "observed_unified": "3899649586b105b075e92f0ee3c51e80c379b473",
+  "updated_at": "2026-11-07T05:36:46+00:00",
   "exception": null,
   "items": [
     {
@@ -98,6 +98,15 @@
       "preserved_branch": "codex/bamf02-b14-4-485-refresh-20261101",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
       "close_reason": "EGM-Failed; remediation #719"
+    },
+    {
+      "issue": 719,
+      "pr": 854,
+      "state": "ACTIVE",
+      "head_sha": "3e173b1c2d44fe37ff3f9fed5037600722dfe0e6",
+      "summary": "B14.4 EGM remediation locally complete in draft PR #854: owner-bound cache authority now governs issuance and public cache use, derives canonical FP32 from the owner, rejects stale authenticated bindings, and fails closed across persistence-time authority drift.",
+      "resume_trigger": "Fresh pinned EGM passes on the final immutable #854 head and hosted checks are green.",
+      "preserved_branch": "codex/719-cache-eligibility-authority-20261105"
     },
     {
       "issue": 586,
@@ -340,6 +349,25 @@
       "preserved_branch": "codex/bamf02-b-451-selector-custody-20261103",
       "summary": "Ready PR849; pinned EGM PASS0B/0M/0N and CPU19/19. UNBOUND selector identity/schema/cold custody only; hosted and human merge pending.",
       "resume_trigger": null
+    },
+    {
+      "issue": 476,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "a5c25eb140f1af05ad2b270ed38f7a2b5af42230",
+      "summary": "B12.3 passed fresh Chat on Steroids Goldfish review and human merge through PR #886; reviewed unified consumed the exact candidate as merge 3899649586b105b075e92f0ee3c51e80c379b473 and issue #476 is closed completed.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b12-3-476-complete-20261106",
+      "merged_pr": 886
+    },
+    {
+      "issue": 477,
+      "pr": 892,
+      "state": "TURNED_IN",
+      "head_sha": "95b1a776ae79d03934d123845081ba71d6edf842",
+      "summary": "Ready PR #892 turns in B12.4 against reviewed unified 38996495. Fresh whole-candidate Chat on Steroids EGM round 2 passed semantic head c7747196 with 0 Blockers / 0 Majors / 0 Nits after repairing the round-1 TARGET_LOCAL decay-authority Major. Candidate-owned proof is green; representative aggregate failures reproduce on exact reviewed unified and are disclosed as inherited base debt. ADR-128 governs admission at twelve total PRs with no per-lane PR cap.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b12-4-477-complete-20261106"
     }
   ]
 }

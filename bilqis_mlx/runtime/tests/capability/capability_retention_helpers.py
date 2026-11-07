@@ -5,7 +5,7 @@ import unittest
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.capability_retention import (
     AssessmentPair, CompleteSolver, EvaluationCase, EvaluationCohort,
-    EvidenceKind, PairedRetentionEvidence, RetentionPolicy,
+    EvidenceKind, EvidenceStage, PairedRetentionEvidence, RetentionPolicy,
     candidate_work_disposition, case_census_digest, configuration_outcome, evaluate_capabilities, retain_candidate,
 )
 from bilqis_mlx.runtime.cognitive_solver import NeuralProposal, SolveBudget, SolveContext
@@ -50,6 +50,17 @@ def _solver(contexts, correct):
     return CompleteSolver(context_for, SolveBudget(DAGBudget()))
 
 def _evidence(protected_loss=2, labels=("amber", "violet")):
+    parent_solver, candidate_solver, target_capability, policy, cohorts = _screen_inputs(
+        protected_loss, labels)
+    def pair(cohort):
+        return AssessmentPair(
+            evaluate_capabilities(parent_solver, cohort, PARENT),
+            evaluate_capabilities(candidate_solver, cohort, CANDIDATE))
+    pairs = tuple(pair(cohort) for cohort in cohorts)
+    return PairedRetentionEvidence(target_capability, policy, *pairs)
+
+
+def _screen_inputs(protected_loss=2, labels=("amber", "violet")):
     census = (("target", labels[0]), ("protected", labels[0]), ("other", labels[1]))
     target, a = _cases("target", labels[0], 3, "target")
     protected, b = _cases("protected", labels[0], 12, "protected")
@@ -65,19 +76,17 @@ def _evidence(protected_loss=2, labels=("amber", "violet")):
     after = ({case.case_id for case in target + fresh + other}
              | {case.case_id for case in protected[protected_loss:]})
     parent_solver, candidate_solver = _solver(contexts, before), _solver(contexts, after)
-    def pair(kind, cases, groups):
-        cohort = EvaluationCohort(
+    def cohort(kind, cases, groups):
+        return EvaluationCohort(
             kind, cases, groups, "d" * 64, "e" * 64, "f" * 64,
             policy.digest(), ("trained-family",), ("trained-episode",),
-            dict(required)[kind])
-        return AssessmentPair(
-            evaluate_capabilities(parent_solver, cohort, PARENT),
-            evaluate_capabilities(candidate_solver, cohort, CANDIDATE))
-    return PairedRetentionEvidence(
-        "target", policy,
-        pair(EvidenceKind.FRESH_TARGET, target, (("target", labels[0]),)),
-        pair(EvidenceKind.FRESH_LESSON, target + fresh, census[:2]),
-        pair(EvidenceKind.FIXED_SCHOOL, target + protected + other, census))
+            dict(required)[kind], evidence_stage=EvidenceStage.STRICT_GENERALIZATION)
+    cohorts = (
+        cohort(EvidenceKind.FRESH_TARGET, target, (("target", labels[0]),)),
+        cohort(EvidenceKind.FRESH_LESSON, target + fresh, census[:2]),
+        cohort(EvidenceKind.FIXED_SCHOOL, target + protected + other, census),
+    )
+    return parent_solver, candidate_solver, "target", policy, cohorts
 
 def _rescore(pair, before, after):
     contexts = {}

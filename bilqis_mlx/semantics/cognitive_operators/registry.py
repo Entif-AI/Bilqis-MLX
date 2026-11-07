@@ -3,10 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 from pathlib import Path
-from .. import numeric as released_numeric
+from ..foundation import numeric as released_numeric
 from ..context_eligibility import ContextEligibility, ContextPolicy, SourceFrontier, TaskScope
-from ..core import Signature
-from ..domains import FiniteDomain, contract_digest
+from ..foundation.core import Signature
+from ..foundation.domains import FiniteDomain, contract_digest
 from .common import OPERATOR_SCHEMA, REGISTRY_SCHEMA, BINDING_SCHEMA, _NATIVE_NUMERIC, _SHA, _invalid
 from .types import SourceOperand
 
@@ -161,6 +161,9 @@ _DECLARATIONS = (
     ("TYPE_OF", ("ConceptRef",), "TypeSet", "SOURCE_TYPES"),
     ("HAS_TYPE", ("ConceptRef", "TypeName"), "Boolean", "SOURCE_TYPES"),
     ("MEMBER_OF", ("Entity", "EntitySet"), "Boolean", "SOURCE_SET"),
+    ("SELECT_BOOLEAN", ("Boolean",), "Boolean", "TASK_VISIBLE_CHOICE"),
+    ("SELECT_OPERATOR_ID", ("OperatorId",), "OperatorId", "TASK_VISIBLE_CHOICE"),
+    ("SELECT_NUMBER", ("Number",), "Number", "TASK_VISIBLE_CHOICE"),
     ("BOOL_NOT", ("Boolean",), "Boolean", "SOURCE_BOOLEAN"),
     ("BOOL_AND", ("Boolean", "Boolean"), "Boolean", "SOURCE_BOOLEAN"),
     ("BOOL_OR", ("Boolean", "Boolean"), "Boolean", "SOURCE_BOOLEAN"),
@@ -176,7 +179,7 @@ _DECLARATIONS = (
     ("LT", ("Number", "Number"), "Boolean", "FINITE_NUMBER"),
     ("LE", ("Number", "Number"), "Boolean", "FINITE_NUMBER"),
     ("SUCC", ("Number",), "Number", "FINITE_NUMBER"),
-    ("COUNT", ("EntitySet",), "Number", "FINITE_NUMBER"),
+    ("COUNT", ("NumberSet",), "Number", "FINITE_NUMBER"),
     ("UNIT_CONVERT", ("Duration", "UnitName"), "Duration", "EXACT_DURATION"),
     ("PARENT_OF", ("FrameHandle", "FrameHandle"), "Boolean", "VISIBLE_FRAME"),
     ("BEFORE", ("FrameHandle", "FrameHandle"), "Boolean", "VISIBLE_FRAME"),

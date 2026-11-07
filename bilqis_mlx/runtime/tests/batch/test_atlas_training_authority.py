@@ -8,7 +8,7 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.atlas_training_adapter import _require_semantic_authority
 from bilqis_mlx.semantics.atlas.feature_io import persist_feature_manifest
 from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection, load_pinned_atlas_snapshot
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection, load_pinned_atlas_snapshot
 from bilqis_mlx.semantics.context_eligibility import ContextPolicy, SourceFrontier, TaskScope
 from bilqis_mlx.semantics.frame_adapters import (
     BOOLEAN_CONNECTIVE_ADAPTER, FINITE_NUMERIC_ADAPTER, MICRO_PREDICATE_ADAPTER,
@@ -27,6 +27,7 @@ class CanonicalTrainingAuthorityTests(unittest.TestCase):
             '58e0c281b5da18b9b7e6c803709b29eeeb0a88f16b06f48de692808e2fb88306',
             'f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec')
         snapshot = load_pinned_atlas_snapshot(cls.selection)
+        cls.snapshot = snapshot
         adapters = {
             'boolean': BOOLEAN_CONNECTIVE_ADAPTER,
             'micro': MICRO_PREDICATE_ADAPTER,
@@ -64,6 +65,25 @@ class CanonicalTrainingAuthorityTests(unittest.TestCase):
 
     def test_canonical_feature_artifact_is_loaded_from_a06_authority(self):
         self.assertEqual(self.check(self.config), self.features)
+
+    def test_source_valid_narrower_feature_profile_cannot_substitute(self):
+        pinned = _load_pinned_released_frame_schemas('micro', self.selection).manifest
+        roles = {
+            role.role_id
+            for body in pinned.bodies
+            for role in body.parse().roles
+        }
+        schemas = tuple(body.parse().schema_id for body in pinned.bodies)
+        alternate = build_feature_manifest(self.snapshot, FeatureSchema(
+            tuple(sorted(roles)), tuple(sorted(schemas)),
+            source_bindings=tuple(
+                sorted((schema_id, MICRO_PREDICATE_ADAPTER)
+                       for schema_id in schemas)),
+        ))
+        with TemporaryDirectory() as root:
+            receipt = persist_feature_manifest(alternate, root)
+            with self.assertRaises(BilqisError):
+                self.check(self.config, receipt.path)
 
     def test_same_schema_noncanonical_tag_map_rejected(self):
         entries = self.config.schema_map.entries

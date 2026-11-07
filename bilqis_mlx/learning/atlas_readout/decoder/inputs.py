@@ -97,19 +97,23 @@ def _epistemic(semantics, plan):
 
 
 def validate_decoder_inputs(memory, context, plan, semantics, parameters):
-    if (type(memory) is not DecoderMemory or type(context) is not ApprovedContextProjection
+    if (type(memory) is not DecoderMemory
+            or (context is not None and type(context) is not ApprovedContextProjection)
             or type(plan) is not AnswerPlan or type(semantics) is not ReadoutSemantics
             or not isinstance(parameters, Mapping)):
         invalid()
     memory.__post_init__()
-    context.__post_init__()
+    if context is not None:
+        context.__post_init__()
     plan.__post_init__()
     semantics.__post_init__()
-    _validate_domain(plan.allowed_output_schema, semantics.features)
+    if not plan.route_only:
+        _validate_domain(plan.allowed_output_schema, semantics.features)
     if (memory.generation_binding != plan.generation_binding
             or len(memory.compiled.positions) != plan.input_prefix_end
             or memory.compiled.semantic_release != plan.snapshot.release_sha256
-            or context.digest != memory.compiled.context_digest
+            or (context is None) != (memory.compiled.context_digest is None)
+            or (context is not None and context.digest != memory.compiled.context_digest)
             or plan.source_span.end > memory.compiled.visible_end
             or semantics.extents.active_semantic_digest != plan.snapshot.active_set_sha256
             or not {key for key, _ in memory.anchors} <= {d.decision_id for d in plan.decisions}

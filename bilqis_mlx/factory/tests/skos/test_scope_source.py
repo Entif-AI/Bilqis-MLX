@@ -11,7 +11,7 @@ from bilqis_mlx.factory.skos_curriculum.scope_source import (
     source_scope_debt,
 )
 from bilqis_mlx.factory.skos_curriculum import inventory_source_families
-from bilqis_mlx.semantics.atlas_snapshot import (
+from bilqis_mlx.semantics.atlas.snapshot import (
     AtlasArtifactSelection, load_pinned_atlas_snapshot,
 )
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from ...semantics.atlas_snapshot import load_pinned_atlas_snapshot
+from ...semantics.atlas.snapshot import load_pinned_atlas_snapshot
 from ...semantics.context_eligibility import (
     PUBLIC_FORMAL, ContextPolicy, SourceFrontier, SourceGrant, TaskScope,
 )

@@ -113,7 +113,7 @@ The factory compiles reusable programs and release artifacts. It does not own mu
 
 ### 3.1 One execution path
 
-Every admitted grade uses the same construction, lesson, routine-assessment, promotion, admission, telemetry, and release interfaces. Generalization remains a dormant historical/research capability until a future explicit maturity policy re-admits it; grade identity may not reactivate it.
+Every admitted grade uses the same construction, lesson, routine-assessment, promotion, admission, telemetry, and release interfaces. Generalization and novelty are continuously measurable in BAMF-0.2 alpha, but they are diagnostic dimensions rather than independent advancement gates. Grade identity may not turn them into gates.
 
 Production runtime code MUST NOT select behavior by letter-grade identity. Code such as `if grade == "B"` or imports such as `live_grade_b` are allowed only inside explicit compatibility adapters while those adapters are being retired. Compatibility code MUST NOT be the canonical path for a new grade.
 
@@ -137,15 +137,15 @@ The trainer does not generate gold answers.
 
 ### 3.5 Teaching and assessment share meaning, not specimens
 
-Teaching and assessment are compiled from the same verified semantic and construction contracts. They use independent specimen identities and explicit lifecycle rules.
+Teaching and assessment are compiled from the same verified semantic and construction contracts. During the current foundation stage they may reuse the same specimen identity under explicit lifecycle rules. Teacher-forced gold may be supplied as instruction. Later maturity policies may require independent specimens.
 
 A successful compile does not prove student mastery. A successful source-oracle check does not authorize neural training. A successful training visit does not authorize promotion.
 
-### 3.6 Generalization is part of graduation
+### 3.6 Generalization is measured, not gated, during alpha
 
-A grade cannot graduate solely by passing a familiar cohort.
+**FOUNDATION_EVIDENCE_POLICY_ACTIVE:** The current stage is FOUNDATION_ACQUISITION. Exact taught recall, teacher-forced acquisition and taught-composition replication are valid current evidence. Exact memorization, cache retrieval and memoized procedures count as successful mechanisms. Previously shown specimens count toward advancement at the current earned complexity. Held-out specimens, independent source families, fresh episodes and novel compositions are not current promotion or retention gates.
 
-Promotion requires independent fresh source-valid evidence generated from the same released semantic contract. The factory must make the lifetime and contamination status of every assessment cohort explicit.
+Generalization, transfer and independent held-out evidence are measured throughout alpha as non-authorizing diagnostics. The factory records success and failure against increasing variation and complexity so the operator can see the competence breakdown frontier. Any later decision to make novelty or held-out performance an independent gate requires explicit human admission.
 
 ### 3.7 Progression may carry explicit mastery debt without fabricating graduation
 
@@ -395,7 +395,7 @@ bilqis_mlx/
     coverage.py       coverage obligations and debt
     generation.py     deterministic specimen generation
     teaching.py       verified teacher-option construction
-    assessment.py     routine/promotion plans plus dormant historical generalization compatibility
+    assessment.py     routine/promotion plans plus non-authorizing novelty/generalization measurement
     verification.py   independent source and structural checks
     release.py        FactoryRelease assembly and validation
     artifacts.py      serializable receipts and schemas
@@ -453,37 +453,37 @@ Assessment lifetime must be explicit and generic. The runtime must never infer i
 
 ### 7.1 Routine assessment
 
-Routine MAIN/RECOVERY evaluation uses fresh source-valid specimens on each scheduled cycle. Its purpose is learning-state measurement and scheduler/teacher evidence.
+Routine MAIN/RECOVERY evaluation may mix previously shown source-valid specimens with new variants. Its purpose is learning-state measurement and scheduler/teacher evidence. Freshness is a recorded property, not a prerequisite for credit.
 
 Routine assessment may feed exact source-verified misses back into teaching because those specimens are not promotion authority.
 
 ### 7.2 Promotion attempt
 
-Promotion uses a fixed cohort only within one explicit qualification attempt so parent/candidate and retry comparisons remain interpretable.
+Promotion uses an explicit qualification cohort so pass/failure ratios remain interpretable. That cohort may contain previously shown or repeatedly rehearsed specimens. Familiarity does not invalidate credit.
 
-Failed promotion questions and their gold answers remain valid supervised teaching material after scoring, as the user has explicitly required. Promotion scoring inference never receives gold, but the teacher may train on failed promotion specimens and retry the same fixed attempt.
+Failed promotion questions and their gold answers remain valid supervised teaching material after scoring. Teacher-forced integration or acquisition witnesses may expose gold directly. Any advancement-scoring mode must identify whether gold was visible so the measurement can be interpreted correctly, but gold visibility is not a repository-wide purity gate.
 
-Passing the fixed promotion cohort is evidence of satisfying the current explicit classroom criterion. It is not a claim of out-of-sample generalization, and the developmental school must not pretend otherwise.
+Passing the promotion cohort is evidence of satisfying the current classroom criterion at the current earned complexity. It need not be out-of-sample evidence.
 
-### 7.3 Deferred generalization regime — inactive
+### 7.3 Generalization and novelty diagnostics — measure-only
 
-**Controlling correction, 2026-10-27:** the current Bilqis student is too early in development for a mandatory out-of-sample generalization regime. Fresh GENERALIZATION assessment is therefore inactive for current training and graduation.
+**Controlling correction, refined 2026-11-05:** the current Bilqis student is too early in development for a mandatory out-of-sample generalization regime. BAMF-0.2 alpha still measures generalization and novelty continuously as complexity grows, but those measurements do not independently authorize or veto training, retention, promotion or graduation.
 
 The production runtime MUST NOT:
 
-- generate a fresh generalization cohort after promotion;
 - require generalization evidence for grade or whole-school graduation;
 - inject generalization-only misses into the teacher;
-- treat ordinary grade/stage movement as authority to open promotion or generalization;
-- compare routine/promotion scores against historical generalization samples as one longitudinal series.
+- reject a passing current-complexity cohort solely because its specimens were previously shown;
+- reject a candidate solely because a held-out or novel perturbation fails;
+- silently combine novelty diagnostics with advancement scores as if they were one gate.
 
-Historical generalization cohort files, enums, readers, and regression fixtures remain preserved for compatibility and research. They are not current execution authority. A future generalization regime requires a separate explicit human decision that defines the maturity boundary, its pedagogical purpose, activation criteria, and how evidence affects training.
+The runtime SHOULD generate bounded novelty diagnostics as observational work permits. Start with low-distance perturbations such as name swaps or equivalent surface substitutions. Increase role changes, relation polarity changes, composition depth and semantic distance as the curriculum earns higher complexity. Record the pass/failure ratio and the first observed breakdown region. Historical generalization cohort files, enums, readers and fixtures remain compatible measurement surfaces.
 
 The absence of generalization evidence does not block current graduation.
 
 ### 7.4 Cumulative school graduation
 
-Whole-school graduation requires one intact causal student with its own native AdamW to satisfy the governing cumulative championship/graduation contract. Factory release and current routine/promotion criteria remain structural requirements. Generalization is not a current requirement.
+Whole-school graduation requires one intact causal student with its own native AdamW to satisfy the governing cumulative championship/graduation contract. Factory release and current routine/promotion criteria remain structural requirements. Previously shown examples may contribute fully to those criteria. Generalization and novelty remain measured diagnostics, not alpha graduation requirements.
 
 ### 7.5 Cohort provenance
 
@@ -513,21 +513,21 @@ When an assessment identifies a failure, the teacher may receive:
 - source-world shape;
 - prerequisite relation;
 - depth/complexity class;
-- exact specimen only when its assessment lifecycle permits teaching.
+- the exact specimen, including repeated use when useful.
 
-The factory then generates fresh source-valid teaching specimens for the deficient semantic family.
+The factory may replay the exact specimen, generate near variants, or generate new source-valid specimens for the deficient semantic family.
 
-No policy may silently convert an immutable qualification cohort into a reusable classroom simply because exact misses are convenient.
+No policy may impose a secret embargo that prevents useful exact replay during BAMF-0.2 alpha.
 
-## 9. Future generalization and leakage controls — dormant
+## 9. Generalization and novelty measurement — alpha observational
 
-The factory may preserve machinery for a future maturity-stage test of whether an apparent skill survives changes that should preserve meaning, but the live developmental school does not invoke that machinery today.
+The factory measures how an apparent skill survives changes that should preserve meaning. These measurements are observational during alpha and do not independently gate advancement.
 
 Each capability release declares applicable variation axes. Examples include world identity, entity names, operand order, source-world cardinality, structural depth, equivalent construction, answer balance, and prerequisite composition.
 
-If a future human-directed policy reactivates generalization, its gate must draw across those axes. Until then, these axes are research metadata rather than graduation criteria.
+The evaluator should increase novelty gradually, preferably with bounded incremental or logarithmic expansion of the example pool. It records success rate by earned complexity and variation distance, including exact repeats, low-distance substitutions, relation changes and deeper compositions. The useful output is a competence frontier: where performance begins to fail as novelty and complexity rise.
 
-The factory must support cheap leakage baselines. Examples include answer prediction from sequence length, token counts, fixed positions, or other surface statistics. If a cheap baseline explains a capability at near-mastery accuracy, the release must either justify that signal as semantically intended or redesign the construction before claiming abstract acquisition.
+Cheap leakage baselines may still be measured for research. They do not invalidate alpha acquisition or advancement unless the human explicitly promotes such a measurement into a gate.
 
 ## 10. Reuse contract
 
@@ -579,7 +579,7 @@ The test MUST prove that adding Grade Z requires zero changes to:
 - generic trainer;
 - scheduler;
 - evaluation runtime;
-- promotion code and dormant generalization compatibility surfaces;
+- promotion code and non-authorizing novelty/generalization measurement surfaces;
 - dashboard;
 - checkpoint handling;
 - teacher runtime.
@@ -760,7 +760,7 @@ SPEC-0001 is implemented only when all of the following are true:
 3. No canonical grade-specific trainer/evaluator/admission path remains.
 4. A/B/C semantics and historical receipts remain readable and source-verifiable.
 5. The historical false-positive B evidence remains readable as a fresh-cohort diagnostic without gating current developmental graduation.
-6. Routine and promotion assessment lifecycles are distinct and mechanically enforced; dormant historical generalization evidence remains compatibility-readable but unscheduled.
+6. Routine and promotion assessment lifecycles are distinct and mechanically enforced; novelty/generalization evidence remains compatibility-readable and may be measured observationally without becoming an alpha advancement gate.
 7. Candidate retention and championship logic consume generic learning/evaluation artifacts rather than grade-specific data shapes.
 8. Teacher options are generated through generic verified construction contracts without hidden grade-specific quotas.
 9. Unit/contract tests are organized beside their code packages. Top-level tests contain only integration/system proofs.

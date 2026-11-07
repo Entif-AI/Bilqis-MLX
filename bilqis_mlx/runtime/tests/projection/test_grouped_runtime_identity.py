@@ -15,9 +15,9 @@ import bilqis_mlx.runtime as runtime
 
 GROUPS = MappingProxyType({
     "_source": ("source_development", "source_execution", "source_prefetch"),
-    "_model": ("atlas_attention", "atlas_optimizer", "atlas_refinement",
+    "_model": ("atlas_attention", "atlas_optimizer",
                "backbone_group_numerical", "backbone_source_bridge", "model_topology",
-               "mlx_memory", "mlx_parity", "refinement_policy", "salience_auxiliaries",
+               "mlx_memory", "mlx_parity", "salience_auxiliaries",
                "topology_lifecycle"),
     "_custody": ("boundary_commit", "disk", "experiment_runs", "mlx_checkpoint",
                  "outbox_lineage", "session", "state", "timing_trace", "reconciliation"),
@@ -25,7 +25,8 @@ GROUPS = MappingProxyType({
                   "qualification_manifest", "qualification_results"),
     "_teacher": ("teacher_observation_capture", "teacher_observation_replay",
                  "teacher_policy_selection"),
-    "_depth": ("block_attnres",),
+    "_depth": ("atlas_refinement", "block_attnres", "refinement_contracts",
+               "refinement_policy", "refinement_ranking"),
     "_correction": ("atlas_requalification", "atlas_temporal_revalidation",
                     "atlas_correction_branches", "atlas_requalification_contracts",
                     "atlas_temporal_contracts", "atlas_stale_replay"),
