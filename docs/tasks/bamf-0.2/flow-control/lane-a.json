@@ -98,7 +98,7 @@
     {
       "issue": 888,
       "pr": 891,
-      "state": "READY",
+      "state": "ACTIVE",
       "head_sha": "f956f79af91a5ebc1b8709fb24527dad36a58b1b",
       "summary": "A09.5a exposes three genuine post-A/B/C source-qualified event realizations through an explicit target-selected candidate-realization seam: D.EVENT_OCCURRENCE, D.COMMENCEMENT and D.TERMINATION. The first event preserves the accepted 227-row numeric allocation frontier by reserving the already-authorized copular row before its own row; later copular activation can consume that preallocated identity with zero semantic rewrite, and copular-first/event-first both remain valid. project_realized_target now advertises the exact semantic suffix actually staged, including the copular reservation on the first event, so #395 AtlasDeltaAdapter projection/staged matching will not falsely classify the valid successor as IMPLEMENTATION_UNCOVERED. The legacy ambient live boundary remains copular-only; source-order permutation and real grade-relabel staging preserve the realization decision; persisted restart returns the same candidate; and foreign same-name rows are rejected unless they equal the canonical source-owned node contract. Focused event realization/order/restart/relabel/authority proof 8/8, source authority 6/6, generic staging 9/9 and legacy Ithkuil compatibility 17/17 pass; module-size, error-control new debt, governance, Factory architecture, flow-control, diff hygiene and changed-file smell gates are green. No C07 lease/admission or learner/optimizer mutation occurs.",
       "resume_trigger": null,
@@ -125,10 +125,10 @@
     {
       "issue": 395,
       "pr": null,
-      "state": "WAITING",
+      "state": "ACTIVE",
       "head_sha": "c2e212e0bef7975e78dfc2f0a6071e21566b6539",
       "summary": "A09.5 focused implementation passes on current unified, but three genuine post-A/B/C source-to-staged successor realizations are not yet accepted; #420 supplied rule/family authority, not the required realization breadth.",
-      "resume_trigger": "Accepted realization/staging authority must provide at least three genuinely new source-qualified candidate-to-staged-successor bindings beyond historical A/B/C, or an accepted equivalent owner contract.",
+      "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a09-5-395-20261105"
     },
     {
