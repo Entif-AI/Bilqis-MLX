@@ -9,14 +9,43 @@ import uuid
 
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
 from .atlas_revalidation_common import _invalid
-from .atlas_revalidation_evidence import CorrectionEvent
+from .atlas_revalidation_evidence import CorrectionEvent, StateTransition
 
 SCHEMA = "bilqis.c09.capability-support-hold/v1"
+MARKER_SCHEMA = "bilqis.c09.capability-support-hold-seen/v1"
 
 
 def journal_path(run_dir: Path, manifest_sha256: str, capability_id: str) -> Path:
     key = hashlib.sha256(capability_id.encode("utf-8")).hexdigest()
     return Path(run_dir) / "c09-capability-support" / manifest_sha256 / f"{key}.json"
+
+
+def _marker_path(path: Path) -> Path:
+    return path.with_suffix(path.suffix + ".seen")
+
+
+def _atomic_json(path: Path, data: dict, *, replace_existing: bool) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name("." + path.name + "." + uuid.uuid4().hex + ".tmp")
+    with temporary.open("x", encoding="utf-8") as stream:
+        json.dump(data, stream, sort_keys=True, separators=(",", ":"))
+        stream.write("\n")
+        stream.flush()
+        os.fsync(stream.fileno())
+    if replace_existing:
+        os.replace(temporary, path)
+    else:
+        try:
+            os.link(temporary, path)
+        except FileExistsError:
+            pass
+        finally:
+            temporary.unlink(missing_ok=True)
+    fd = os.open(path.parent, os.O_RDONLY)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
 
 
 def _event_record(event: CorrectionEvent) -> dict:
@@ -57,40 +86,103 @@ def event_from_record(record: dict) -> CorrectionEvent:
         _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_INVALID")
 
 
+def _transition_record(transition: StateTransition | None) -> dict | None:
+    if transition is None:
+        return None
+    return {
+        "artifact_id": transition.artifact_id,
+        "previous_content_digest": transition.previous_content_digest,
+        "new_content_digest": transition.new_content_digest,
+        "previous_eligible": transition.previous_eligible,
+        "new_eligible": transition.new_eligible,
+        "source_receipt_sha256": transition.source_receipt_sha256,
+        "correction_event_id": transition.correction_event_id,
+        "correction_receipt_sha256": transition.correction_receipt_sha256,
+        "source_owner": transition.source_owner,
+        "source_signature_hex": transition.source_signature_hex,
+        "immediate_dependencies": [
+            {"kind": ref.kind.value, "key": ref.key}
+            for ref in transition.immediate_dependencies
+        ],
+        "changed": transition.changed,
+    }
+
+
+def transition_from_record(record: dict | None) -> StateTransition | None:
+    if record is None:
+        return None
+    try:
+        return StateTransition(
+            artifact_id=record["artifact_id"],
+            previous_content_digest=record["previous_content_digest"],
+            new_content_digest=record["new_content_digest"],
+            previous_eligible=record["previous_eligible"],
+            new_eligible=record["new_eligible"],
+            source_receipt_sha256=record["source_receipt_sha256"],
+            correction_event_id=record["correction_event_id"],
+            correction_receipt_sha256=record["correction_receipt_sha256"],
+            source_owner=record["source_owner"],
+            source_signature_hex=record["source_signature_hex"],
+            immediate_dependencies=tuple(sorted(
+                DependencyRef(DependencyKind(item["kind"]), item["key"])
+                for item in record["immediate_dependencies"])),
+            changed=record["changed"],
+        )
+    except (KeyError, TypeError, ValueError):
+        _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_INVALID")
+
+
 def write_journal(path: Path, *, capability_id: str, manifest_sha256: str,
-                  artifact_id: str, state: str, event: CorrectionEvent) -> None:
+                  artifact_id: str, state: str, event: CorrectionEvent,
+                  transition: StateTransition | None = None) -> None:
+    if state not in {"HELD", "CLEARED", "REQUALIFICATION_REQUIRED"}:
+        _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_INVALID")
+    if (state == "HELD") != (transition is None):
+        _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_INVALID")
+    marker = {
+        "schema_version": MARKER_SCHEMA,
+        "capability_id": capability_id,
+        "manifest_sha256": manifest_sha256,
+        "artifact_id": artifact_id,
+    }
+    marker_path = _marker_path(path)
+    _atomic_json(marker_path, marker, replace_existing=False)
+    try:
+        current_marker = json.loads(marker_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_INVALID")
+    if current_marker != marker:
+        _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_DRIFT")
     data = {
         "schema_version": SCHEMA, "capability_id": capability_id,
         "manifest_sha256": manifest_sha256, "artifact_id": artifact_id,
         "state": state, "event": _event_record(event),
+        "transition": _transition_record(transition),
     }
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name("." + path.name + "." + uuid.uuid4().hex + ".tmp")
-    with temporary.open("x", encoding="utf-8") as stream:
-        json.dump(data, stream, sort_keys=True, separators=(",", ":"))
-        stream.write("\n"); stream.flush(); os.fsync(stream.fileno())
-    os.replace(temporary, path)
-    fd = os.open(path.parent, os.O_RDONLY)
-    try:
-        os.fsync(fd)
-    finally:
-        os.close(fd)
+    _atomic_json(path, data, replace_existing=True)
 
 
 def read_journal(path: Path) -> dict | None:
-    if not path.exists():
+    marker_path = _marker_path(path)
+    marker_exists = marker_path.exists()
+    journal_exists = path.exists()
+    if not marker_exists and not journal_exists:
         return None
-    if path.is_symlink() or not path.is_file():
+    if (not marker_exists or not journal_exists
+            or marker_path.is_symlink() or not marker_path.is_file()
+            or path.is_symlink() or not path.is_file()):
         _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_INVALID")
     try:
+        marker = json.loads(marker_path.read_text(encoding="utf-8"))
         record = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError):
         _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_INVALID")
-    if not isinstance(record, dict) or record.get("schema_version") != SCHEMA:
+    if (not isinstance(marker, dict)
+            or marker.get("schema_version") != MARKER_SCHEMA
+            or not isinstance(record, dict)
+            or record.get("schema_version") != SCHEMA
+            or any(marker.get(key) != record.get(key)
+                   for key in ("capability_id", "manifest_sha256", "artifact_id"))):
         _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_INVALID")
     return record
-
-
-def clear_journal(path: Path) -> None:
-    path.unlink(missing_ok=True)
 

@@ -87,8 +87,10 @@ wording and legitimate new evidence must not be treated as the stale replay.
 - Capability-support correction holds are journaled under the exact accepted
   generation/capability custody. A fresh accepted-progression load must
   re-verify and rehydrate the signed hold with the source authority registry,
-  or fail closed; changed support persists as requalification-required and an
-  equal revalidation clears the journal.
+  or fail closed. A never-deleted correction-seen marker distinguishes an
+  uncorrected capability from missing/tampered state; equal and changed
+  revalidations persist explicit signed-transition-backed `CLEARED` or
+  `REQUALIFICATION_REQUIRED` states rather than authorizing by file deletion.
 - Signed correction ingress routes only to owners with a direct dependent for
   the corrected dependency. An unrelated correction therefore cannot replace
   another owner's active hold queue.
@@ -121,7 +123,7 @@ Review the complete diff from
 
 ## Verification receipts before EGM
 
-- Focused C09/custody acceptance suite: `85 passed, 0 failed, 0 skipped`.
+- Focused C09/custody acceptance suite: `86 passed, 0 failed, 0 skipped`.
 - `npm run quality:changed`: development structure OK; governance integrity
   OK; BAMF flow control OK; 15/15 flow-control tests passed; zero new
   changed-file smell findings.

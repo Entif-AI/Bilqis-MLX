@@ -100,6 +100,20 @@ class CognitiveSolverTests(unittest.TestCase):
         result = solve_task(ambiguous, context, generation, budget)
         self.assertEqual(result.route, RouteKind.CACHED_COMPOSITION)
 
+        owner.apply_correction(event, AUTHORITY)
+        node = owner.node_for(cached)
+        owner.advance(
+            _result(node, digest=node.content_digest, eligible=False,
+                    correction=event), AUTHORITY)
+        replacement = QualifiedComposition(
+            add, generation.source_binding_digest,
+            binding.frontier.rights_epoch,
+            binding.frontier.correction_generation, "b" * 64)
+        owner.remember(replacement, binding)
+        self.assertFalse(owner.node_for(cached).eligible)
+        with self.assertRaises(BilqisError):
+            owner.require(cached, binding)
+
     def test_neural_proposes_only_a_source_bound_dag_for_unresolved_part(self):
         binding, generation, budget, add, ambiguous = _fixture()
         calls = []
