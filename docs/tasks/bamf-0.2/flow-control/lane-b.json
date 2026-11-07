@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "9301e41ef215b9d035449c3260c7cd0f8ee0b5a7",
-  "updated_at": "2026-11-07T13:19:19-05:00",
+  "updated_at": "2026-11-07T13:33:54-05:00",
   "exception": null,
   "items": [
     {
@@ -88,8 +88,9 @@
       "issue": 479,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "9301e41ef215b9d035449c3260c7cd0f8ee0b5a7",
-      "summary": "B13.2 completion pass is active on current reviewed unified. Remediation #709 is closed EGM-Passed with the real source-qualified pointer/lock cold-resume, next controlled optimizer-step and cross-backend continuation witness, and B13.1 #478 is now accepted through merged PR #885. This pass consumes those accepted authorities and reconciles the preserved complete numerical-custody witness before final merge-readiness EGM.",
+      "head_sha": "62237b4666513f7555d142d0b25fb0e001f87f81",
+      "head_sha_role": "exact semantic/test candidate: accepted B13.1/#709 lineage plus restored complete numerical-custody witness; final receipt/flow bookkeeping may advance the Git head without invalidating this proof under AGENTS.md TEST_EVIDENCE_REUSED",
+      "summary": "B13.2 completion candidate is mechanically ready for final merge-readiness EGM. Current accepted-custody continuation is 8/8; mutation controls are 3/3; the complete 214-tensor / 79,469,798-parameter custody witness is 1/1 with a clean detached snapshot; and the real source-qualified Apple Metal to CPU next-step continuation is 1/1 with committed semantic-output parity, max abs drift 2.35140323638916e-05 inside the 0.002 FP32 tolerance, unchanged accepted parent and no generation-2 publication. Genuine historical-v1 compatibility is consumed from accepted merged #754/PR #902 proof (1/1, canonical manifest dbcddbe9...). No known #479 Blocker/Major remains before fresh EGM.",
       "resume_trigger": null,
       "closed_pr": 677,
       "preserved_branch": "codex/bamf02-b13-2-479-complete-20261107",
