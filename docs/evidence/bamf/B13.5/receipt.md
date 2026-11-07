@@ -144,3 +144,31 @@ C07 authority into B13. No durable student start, optimizer update, admission,
 or source promotion was performed by this reconciliation. Parent #697 still
 requires its own fresh exact-head EGM before merge readiness; #708's prior EGM
 PASS is not inherited.
+
+### Merge-readiness proof before EGM
+
+Semantic implementation commit: `584159e000a857bf7284d5ab5a3677a28702b316`.
+Review episode: `697-b13-5-20261107`, round 1.
+
+- differential leaf selection: **36 passed + 7 subtests**, 0 failures;
+- flow-control tests: **15/15 PASS**;
+- governance, Factory architecture, documentation, changed-file smell and
+  error-control gates: **PASS**, with error-control new debt 0 and changed-file
+  smell findings 0;
+- `git diff --check`: **PASS**;
+- full differential premerge selection: **3,470 total / 3,261 passed / 18
+  errors / 191 skipped**. The 18 errors are unavailable legacy-fixture setup,
+  not #697 behavior failures. Representative failures reproduce unchanged on
+  pristine reviewed unified `cc48ac40`: missing
+  `vendor/legacy-v16/.../student-116760-7e9af4651f28.pt` in the Grade-C source
+  and generated-test setup paths, and missing `vendor/legacy-v16/runs` in the
+  Grade-C trainer setup path. The targeted #697/B13.5 and A02 authority tests in
+  the same premerge selection are green.
+- the repository static legacy-trainer check also fails unchanged on pristine
+  reviewed unified because `docs/evidence/bamf/906/receipt.md` omits the
+  canonical run identity. #697 does not modify that unrelated #906 evidence;
+  the legacy-trainer checker unit suite itself passes **6/6**.
+
+No failing premerge observation is localized to the #697 diff. The exact
+candidate is therefore eligible for its required fresh pinned whole-candidate
+EGM; no PR is opened before that review.
