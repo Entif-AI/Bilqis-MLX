@@ -84,7 +84,15 @@ class GenerationAcceptanceFixture:
         return replace(
             candidate(retained, 1, self._parent_pointer["manifest_sha256"]),
             run_identity=parent.run_identity,
+            implementation_sha256=parent.implementation_sha256,
+            topology=parent.topology,
             extents=parent.extents,
+            provenance=parent.provenance,
+            semantic_abi=dict(parent.semantic_abi),
+            compiler_features=dict(parent.compiler_features),
+            correction_frontier=dict(parent.correction_frontier),
+            teacher_state=dict(parent.teacher_state),
+            evaluation_contract=dict(parent.evaluation_contract),
         )
 
     def binding(self, source):

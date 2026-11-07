@@ -76,7 +76,7 @@ class GenerationZeroSourceAuthorityTests(unittest.TestCase):
                 publish_initial_generation(self.run, forged, reserve_gib=0.)
         self.assertEqual(
             failure.exception.context["reason"],
-            "BAMF_INITIAL_GENERATION_MODEL_AUTHORITY_DRIFT")
+            "BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
         self.assertFalse((self.run / "bamf-state.json").exists())
 
     def test_wrong_b01_model_authority_rejects_before_allocation(self):
