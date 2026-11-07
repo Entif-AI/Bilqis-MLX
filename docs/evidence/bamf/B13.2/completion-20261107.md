@@ -150,8 +150,47 @@ candidate:
 
 The first attempted round-2 Goldfish review was aborted before verdict when this
 authority error was discovered. It is `OBSOLETE/SUPERSEDED`, not PASS or FAIL, and
-does not count as a completed round. Fresh pinned Goldfish remains the merge-readiness
-gate after this corrected evidence head is mechanically revalidated. This receipt
-does not call #479 `EGM-Passed`, authorize self-merge, or authorize a live student
-start.
+does not count as a completed round.
+
+## Corrected round-2 EGM result
+
+The corrected exact-head review used candidate
+`58dc31f85dd6711887de8d774ab4518119dbd3d3` with semantic/test head
+`62237b4666513f7555d142d0b25fb0e001f87f81` and reviewed-unified ancestry
+`9301e41ef215b9d035449c3260c7cd0f8ee0b5a7`.
+
+Two fresh Goldfish reviewers independently returned PASS:
+
+- comprehension / re-implementation: **PASS — 0 unsettled Blockers / 0 unsettled Majors**;
+- codebase-details / integration: **PASS — 0 unsettled Blockers / 0 unsettled Majors**.
+
+Both reviewers verified the corrected Microspenics authority boundary. Prometheus is
+historical-only and is not consumed as current compatibility authority. The
+comprehension review independently verified complete generation custody, published
+pointer/lock cold resume, Factory next-visit reconstruction, exactly one controlled
+next optimizer step, source-qualified Metal-to-CPU continuation, human-run/operator
+lock/resource boundaries and the canonical Microspenics frozen-v1 witness. The
+codebase-details review independently verified the actual 214-tensor / 79,469,798
+parameter production numerical tree, accepted #478/#709 ancestry, parent/pointer
+immutability, genuine Microspenics bundle identity, read-only v1 loading and v2
+rejection before v2 tensor construction.
+
+Review family: `78092a13-20d4-4812-bfae-74724bda8d91`.
+
+Live reviewed unified subsequently advanced to
+`fd9ef2890149ab5ae395640ce980a20f13a388c6` only through A13 temporal-context and
+C01 handoff changes. No intervening path touches B13 custody, Factory-retention
+continuation, legacy-trainer authority, model topology or this leaf's test surfaces.
+Under ADR-127 that unrelated drift does not invalidate this reviewed candidate.
+
+`62237b46..58dc31f8` changes only evidence and flow-control bookkeeping. Semantic,
+custody and MLX proof is therefore retained under AGENTS.md `TEST_EVIDENCE_REUSED`.
+Any final EGM-result/turn-in bookkeeping after `58dc31f8` is likewise documentation
+and coordination state only and does not invalidate the reviewed behavior.
+
+## Turn-in disposition
+
+#479 B13.2 is EGM-passed and ready for the repository pre-merge gate and human PR
+review. This receipt does not authorize self-merge or a live student start. Issue
+closure remains tied to accepted integration into reviewed unified.
 
