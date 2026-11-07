@@ -1,9 +1,9 @@
 # C02 | Completion receipt
 
-`issue_key`: C02 / #371  
-`lane`: C  
-`reviewed_integration_base`: `3899649586b105b075e92f0ee3c51e80c379b473`  
-`implementation_head`: `daaabc2872d4da624f34c22c1a842c20cee7a508`  
+`issue_key`: C02 / #371
+`lane`: C
+`reviewed_integration_base`: `3899649586b105b075e92f0ee3c51e80c379b473`
+`implementation_head`: `daaabc2872d4da624f34c22c1a842c20cee7a508`
 `feature_branch`: `codex/bamf02-c02-371-complete-20261106`
 
 ## Consumed authority and dependencies
