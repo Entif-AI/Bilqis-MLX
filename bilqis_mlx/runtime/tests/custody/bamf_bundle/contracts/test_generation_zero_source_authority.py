@@ -13,6 +13,9 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.bamf_bundle import publish_initial_generation
 from bilqis_mlx.runtime.bamf_bundle.genesis import _issue_binding
 from bilqis_mlx.runtime.bamf_bundle import genesis as genesis_owner
+from bilqis_mlx.runtime.bamf_bundle.genesis_records import (
+    mint_initial_generation_binding,
+)
 from bilqis_mlx.runtime.model_topology_v2 import (
     B01GenerationAuthority, ParameterCensus, b01_generation_authority,
 )
@@ -126,8 +129,54 @@ class GenerationZeroSourceAuthorityTests(unittest.TestCase):
                 self.run, prepared.candidate, object(), reserve_gib=0.)
         self.assertEqual(
             failure.exception.context["reason"],
-            "BAMF_INITIAL_GENERATION_BINDING_DRIFT")
+            "BAMF_INITIAL_GENERATION_PREPARATION_REQUIRED")
         self.assertFalse(self.run.exists())
+
+    def test_direct_mint_cannot_authorize_shared_publication_sink(self):
+        from bilqis_mlx.runtime.bamf_bundle import publication
+
+        with shape_patch():
+            prepared = genesis_preparation(run_seed=233)
+        minted = mint_initial_generation_binding(prepared.candidate)
+        with patch.object(mlx_checkpoint, "assert_headroom"), self.assertRaises(BilqisError) as failure:
+            publication._publish_authorized_generation(
+                self.run, prepared.candidate, minted, reserve_gib=0.)
+        self.assertEqual(
+            failure.exception.context["reason"],
+            "BAMF_INITIAL_GENERATION_PREPARATION_REQUIRED")
+        self.assertFalse(self.run.exists())
+
+    def test_valid_factory_cannot_issue_caller_authored_b01_candidate(self):
+        with shape_patch():
+            prepared = genesis_preparation(run_seed=239)
+        foreign_identity = replace(
+            prepared.candidate.run_identity,
+            initial_implementation_sha256="1" * 64)
+        foreign = replace(
+            prepared.candidate,
+            implementation_sha256="1" * 64,
+            run_identity=foreign_identity)
+        with shape_patch(), self.assertRaises(BilqisError) as failure:
+            _issue_binding(
+                foreign, release=prepared.release, admission=prepared.admission,
+                graph=prepared.graph, origin_checkpoint=prepared.origin_checkpoint)
+        self.assertEqual(
+            failure.exception.context["reason"],
+            "BAMF_INITIAL_GENERATION_MODEL_AUTHORITY_DRIFT")
+
+    def test_valid_factory_cannot_relabel_seeded_genesis_state(self):
+        with shape_patch():
+            prepared = genesis_preparation(run_seed=241)
+        relabeled = replace(
+            prepared.candidate,
+            run_identity=replace(prepared.candidate.run_identity, run_seed=242))
+        with shape_patch(), self.assertRaises(BilqisError) as failure:
+            _issue_binding(
+                relabeled, release=prepared.release, admission=prepared.admission,
+                graph=prepared.graph, origin_checkpoint=prepared.origin_checkpoint)
+        self.assertEqual(
+            failure.exception.context["reason"],
+            "BAMF_INITIAL_GENERATION_MODEL_AUTHORITY_DRIFT")
 
 
 if __name__ == "__main__":

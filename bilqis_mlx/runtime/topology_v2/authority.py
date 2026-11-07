@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 from typing import Mapping
 import hashlib
@@ -25,6 +26,14 @@ IMPLEMENTATION_FILES = (
     "construction.py",
     "serialization.py",
 )
+
+
+class B01GenerationAuthorityError(str, Enum):
+    EXTENTS_AUTHORITY_INVALID = "B01_GENERATION_EXTENTS_AUTHORITY_INVALID"
+    AUTHORITY_INVALID = "B01_GENERATION_AUTHORITY_INVALID"
+    EXTENTS_TYPE_INVALID = "B01_GENERATION_EXTENTS_TYPE_INVALID"
+    AUTHORITY_TYPE_INVALID = "B01_GENERATION_AUTHORITY_TYPE_INVALID"
+    AUTHORITY_DRIFT = "B01_GENERATION_AUTHORITY_DRIFT"
 
 
 def _sha(value: object) -> bool:
@@ -68,7 +77,7 @@ def b01_generation_extents(*, semantic_abi: Mapping, compiler_features: Mapping,
             or not _sha(compiler_features.get("factor_map_sha256"))
             or type(motif_page_count) is not int or motif_page_count < 1
             or not _sha(motif_key_map_digest)):
-        raise ValueError("B01_GENERATION_EXTENTS_AUTHORITY_INVALID")
+        raise ValueError(B01GenerationAuthorityError.EXTENTS_AUTHORITY_INVALID.value)
     return GenerationExtents(
         semantic_abi["semantic_bank_count"], motif_page_count,
         semantic_abi["active_set_sha256"], motif_key_map_digest,
@@ -87,13 +96,13 @@ class B01GenerationAuthority:
         if (self.schema_version != AUTHORITY_SCHEMA
                 or type(self.parameter_census) is not ParameterCensus
                 or not _sha(self.implementation_sha256)):
-            raise ValueError("B01_GENERATION_AUTHORITY_INVALID")
+            raise ValueError(B01GenerationAuthorityError.AUTHORITY_INVALID.value)
 
 
 def b01_generation_authority(extents: GenerationExtents) -> B01GenerationAuthority:
     """Bind the accepted B01 census and current B01 implementation surface."""
     if type(extents) is not GenerationExtents:
-        raise ValueError("B01_GENERATION_EXTENTS_TYPE_INVALID")
+        raise ValueError(B01GenerationAuthorityError.EXTENTS_TYPE_INVALID.value)
     topology = ModelTopologySpecV2()
     return B01GenerationAuthority(
         bamf_parameter_census(topology, extents),
@@ -105,8 +114,8 @@ def validate_b01_generation_authority(
         extents: GenerationExtents) -> tuple[ModelTopologySpecV2, str]:
     """Reconstruct B01 authority; a matching caller record does not mint it."""
     if type(authority) is not B01GenerationAuthority:
-        raise ValueError("B01_GENERATION_AUTHORITY_TYPE_INVALID")
+        raise ValueError(B01GenerationAuthorityError.AUTHORITY_TYPE_INVALID.value)
     expected = b01_generation_authority(extents)
     if authority != expected:
-        raise ValueError("B01_GENERATION_AUTHORITY_DRIFT")
+        raise ValueError(B01GenerationAuthorityError.AUTHORITY_DRIFT.value)
     return ModelTopologySpecV2(), expected.implementation_sha256

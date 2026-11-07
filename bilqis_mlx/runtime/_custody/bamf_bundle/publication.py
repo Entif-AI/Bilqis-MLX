@@ -159,8 +159,14 @@ def _publish_authorized_generation(run_dir: Path, candidate: BamfBundleCandidate
                                    authority, *, reserve_gib: float) -> dict:
     """Shared crash-safe transaction after the generation owner authenticates authority."""
     if candidate.generation == 0:
-        from .genesis import validate_initial_generation_binding
-        validate_initial_generation_binding(candidate, authority)
+        from .genesis import (
+            PreparedInitialGeneration, validate_initial_generation_preparation,
+        )
+        if (type(authority) is not PreparedInitialGeneration
+                or authority.candidate is not candidate):
+            invalid("BAMF_INITIAL_GENERATION_PREPARATION_REQUIRED")
+        validate_initial_generation_preparation(authority)
+        authority = authority.binding
     else:
         authority = _require_acceptance(candidate, authority)
     run_dir = Path(run_dir)

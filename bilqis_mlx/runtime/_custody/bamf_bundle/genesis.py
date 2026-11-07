@@ -19,7 +19,7 @@ from bilqis_mlx.runtime.atlas_optimizer import (
 )
 from bilqis_mlx.runtime.model_topology_v2 import (
     B01GenerationAuthority, GenerationProvenance,
-    b01_generation_extents,
+    ModelTopologySpecV2, b01_generation_authority, b01_generation_extents,
     validate_b01_generation_authority,
 )
 from bilqis_mlx.runtime.state import _fingerprint
@@ -112,7 +112,48 @@ def _issue_binding(
     _validate_candidate_source_authority(
         candidate, release=release, admission=admission, graph=graph,
         origin_checkpoint=origin_checkpoint)
+    _validate_candidate_b01_authority(candidate)
     return mint_initial_generation_binding(candidate)
+
+
+def _validate_candidate_b01_authority(candidate: BamfBundleCandidate) -> None:
+    """Rebuild generation-zero B01 geometry and seeded numerical state."""
+    if (type(candidate) is not BamfBundleCandidate
+            or type(candidate.run_identity) is not BamfRunIdentity
+            or type(candidate.topology) is not ModelTopologySpecV2
+            or candidate.generation != 0):
+        invalid("BAMF_INITIAL_GENERATION_MODEL_AUTHORITY_DRIFT")
+    try:
+        allocations = MotifAllocationSnapshot(
+            MotifManifest(candidate.provenance.release_digest))
+        extents = b01_generation_extents(
+            semantic_abi=candidate.semantic_abi,
+            compiler_features=candidate.compiler_features,
+            motif_page_count=allocations.manifest.capacity // INITIAL_MOTIF_CAPACITY,
+            motif_key_map_digest=allocations.manifest.digest)
+        authority = b01_generation_authority(extents)
+        topology, implementation_sha256 = validate_b01_generation_authority(
+            authority, extents)
+        optimizer, _decay, _initialization = _create_unbound_bamf_optimizer(
+            topology, extents, run_seed=candidate.run_identity.run_seed)
+        expected_policy = PlasticityPolicy(
+            "FOUNDATION", 0, candidate.retained_state.policy.row_ages)
+        expected_state = CandidateState(
+            optimizer, expected_policy, allocations, 0)
+    except (TypeError, ValueError, KeyError, AttributeError):
+        invalid("BAMF_INITIAL_GENERATION_MODEL_AUTHORITY_DRIFT")
+    if (candidate.topology.digest != authority.parameter_census.topology_digest
+            or candidate.extents != extents
+            or candidate.extents.digest != authority.parameter_census.extents_digest
+            or candidate.implementation_sha256 != implementation_sha256
+            or candidate.retained_state.policy != expected_policy
+            or candidate.retained_state.allocations != allocations
+            or candidate.retained_state.optimizer_step != 0
+            or candidate.retained_state.custody is not None
+            or candidate.retained_state.step_proofs != ()
+            or candidate_identity_digest(candidate.retained_state)
+            != candidate_identity_digest(expected_state)):
+        invalid("BAMF_INITIAL_GENERATION_MODEL_AUTHORITY_DRIFT")
 
 
 def prepare_initial_generation(
@@ -179,6 +220,8 @@ def prepare_initial_generation(
 
 def validate_initial_generation_binding(candidate, binding) -> None:
     """Require a live B13 bootstrap capability for the exact generation-zero state."""
+    if type(binding) is InitialGenerationBinding:
+        binding.__post_init__()
     if (type(candidate) is not BamfBundleCandidate
             or type(binding) is not InitialGenerationBinding
             or candidate.generation != 0 or candidate.parent_manifest_sha256 is not None
@@ -190,6 +233,18 @@ def validate_initial_generation_binding(candidate, binding) -> None:
             or binding.feature_sha256 != candidate.extents.factor_map_digest
             or binding.optimizer_step != candidate.retained_state.optimizer_step):
         invalid("BAMF_INITIAL_GENERATION_BINDING_DRIFT")
+
+
+def validate_initial_generation_preparation(prepared: PreparedInitialGeneration) -> None:
+    """Replay all Factory/source/B01 authority immediately before mutation."""
+    if type(prepared) is not PreparedInitialGeneration:
+        invalid("BAMF_INITIAL_GENERATION_PREPARATION_REQUIRED")
+    _validate_candidate_source_authority(
+        prepared.candidate, release=prepared.release,
+        admission=prepared.admission, graph=prepared.graph,
+        origin_checkpoint=prepared.origin_checkpoint)
+    _validate_candidate_b01_authority(prepared.candidate)
+    validate_initial_generation_binding(prepared.candidate, prepared.binding)
 
 
 def validate_parsed_initial_generation_binding(student, binding, expected_digest: str) -> None:
@@ -208,13 +263,7 @@ def validate_parsed_initial_generation_binding(student, binding, expected_digest
 
 def publish_initial_generation(run_dir, prepared: PreparedInitialGeneration, *, reserve_gib=100.0):
     """Publish genesis through the existing B13 transaction, never through C05."""
-    if type(prepared) is not PreparedInitialGeneration:
-        invalid("BAMF_INITIAL_GENERATION_PREPARATION_REQUIRED")
-    _validate_candidate_source_authority(
-        prepared.candidate, release=prepared.release,
-        admission=prepared.admission, graph=prepared.graph,
-        origin_checkpoint=prepared.origin_checkpoint)
-    validate_initial_generation_binding(prepared.candidate, prepared.binding)
+    validate_initial_generation_preparation(prepared)
     from .publication import _publish_authorized_generation
     return _publish_authorized_generation(
-        run_dir, prepared.candidate, prepared.binding, reserve_gib=reserve_gib)
+        run_dir, prepared.candidate, prepared, reserve_gib=reserve_gib)
