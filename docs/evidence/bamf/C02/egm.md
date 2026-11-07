@@ -60,10 +60,67 @@ step contract. Until that downstream C08/B12 integration exists, C02 fails close
 instead of fabricating multirow optimizer custody. Live durable launch/iteration
 remains C16 operator authority.
 
+## Round 2 | pre-merge disposition
+
+Fresh pinned `codebase-details` and `comprehension` Goldfish reviewed exact
+candidate `f9f87d8b613a128d672cfbb6ca7c15dc4b839f90` against reviewed unified
+`3899649586b105b075e92f0ee3c51e80c379b473`. Both returned **PASS, 0
+Blockers / 0 Majors / 0 Nits**. That disposition authorized turn-in only. It
+did not authorize self-merge.
+
+PR #893 was later updated to consume reviewed unified
+`db7fd553a2e5deac65574851a16f34e8303a1b90` plus the changed-file hygiene
+repair, producing feature head
+`3e959177314fbd43def41547fd34a1e1701c8909`. Because that exact head/base pair
+differed from the reviewed pair, #371 was correctly returned to `EGM-Pending`
+before the new Studio witness completed.
+
+## Post-merge integration correction
+
+PR #893 was externally merged into the reviewed unified trunk as
+`53eba37e5c9dd6ad065b1980fa4850c484aaa624` while the detached exact-head
+Studio proof for `3e959177...` was still running. The merge is historical
+state, not acceptance evidence.
+
+That detached witness failed **11 passed / 1 error** with
+`source_mutated=false`. The only failing predicate was the real production
+candidate step:
+
+`TypeError: admit_uninterrupted_candidate_step() got an unexpected keyword argument 'decay'`.
+
+B12.4 had intentionally moved weight-decay authority into
+`reconcile_b01_optimizer_manifest(...)` inside the candidate transaction.
+C02 still carried the obsolete caller-supplied `decay` argument. The
+post-merge repair therefore removed that duplicate authority instead of adding
+a compatibility shim.
+
+Repair branch:
+`codex/bamf02-c02-371-postmerge-20261107`.
+
+Exact repair implementation head:
+`0a5d0343085a4e18cd64bf00fe25e74eb76f5cac`.
+
+The exact previously failing Studio test then passed **1/1**. The complete
+detached acceptance proof on the same repair head passed **12/12**, zero
+skips/errors, return code 0, with
+`source_mutated=false`.
+
+Detached repair receipt:
+`/Users/emilie/Code/371-c02-complete-20261106/.local/c02-371-postmerge-repair-proof/receipt.json`.
+
+Detached repair snapshot SHA-256:
+`9d26c9def8fcff4cdabc18172770b1713fe42ea99803846f667204faa24265b3`.
+
+The failure and containment are also preserved as
+`PM-2026-11-07-003` in the canonical Entif Post-Mortem Ledger. #371 remains
+open and `EGM-Pending` until a fresh whole-candidate review binds to the final
+post-merge repair/evidence head.
+
 ## Exact repair proof
 
-CPU authority proof on the exact behavior implementation head
-`dc67a3c8d2d6edbf9ca63dcd6ed105d9fed4909c`:
+CPU authority proof remains valid on the post-merge repair implementation head
+`0a5d0343085a4e18cd64bf00fe25e74eb76f5cac`: the repair changes only the
+obsolete optimizer-authority call boundary and its direct tests.
 
 ```bash
 /Users/cr8s/Code/bilqis-skos-19/.venv/bin/python -B scripts/run_tests.py \
@@ -79,11 +136,15 @@ Deterministic repository gates:
 ```bash
 python3 -B scripts/check_bamf_flow_control.py
 python3 -B scripts/verify_bamf_0_2_contracts.py
-git diff --check 3899649586b105b075e92f0ee3c51e80c379b473..HEAD
+python3 -B scripts/code_smell_audit.py \
+  --changed-from 53eba37e5c9dd6ad065b1980fa4850c484aaa624 \
+  --check-baseline docs/evidence/development/code_smell_baseline.json
+git diff --check 53eba37e5c9dd6ad065b1980fa4850c484aaa624..HEAD
 ```
 
 Results: `BAMF_FLOW_CONTROL_OK`; **43/43** checked-in issue mirrors and **214**
-owner/child identities/fingerprints verified; diff check clean.
+owner/child identities/fingerprints verified; changed-file smell audit **0
+findings**; diff check clean.
 
 Mac Studio repair proof used the repository detached-runner snapshot, with the
 accepted A01 artifact fixture mounted explicitly:
@@ -96,10 +157,10 @@ accepted A01 artifact fixture mounted explicitly:
   bilqis_mlx/runtime/tests/capability/factory/test_task_goal_readout.py
 ```
 
-Detached exact-head receipt:
-`/Users/emilie/Code/371-c02-complete-20261106/.local/c02-371-topology-proof/receipt.json`.
+Current detached exact-head receipt:
+`/Users/emilie/Code/371-c02-complete-20261106/.local/c02-371-postmerge-repair-proof/receipt.json`.
 Result: **12 passed, 0 failed, 0 skipped, 0 errors**, return code 0. Snapshot
-SHA-256 `221c737c8ce048edf541a42dc8491129532782e629da99fa8b2a82b9774ae681`
+SHA-256 `9d26c9def8fcff4cdabc18172770b1713fe42ea99803846f667204faa24265b3`
 was unchanged after execution (`source_mutated=false`).
 
 ## Runtime lineage clarification
@@ -117,6 +178,7 @@ C02 did not mutate, resume, or train that run. The disposable exact-head proof
 above remains isolated. Historical Prometheus trainer evidence is non-authoritative
 for this handoff and is not the current legacy-trainer adaptation source.
 
-Round 2 is a fresh whole-candidate re-audit of the repaired head plus this
-turn-in evidence. Its final disposition is recorded in the issue/PR receipt once
-the independent reviewers return; no Blocker/Major is silently waived.
+The next review is a fresh whole-candidate re-audit of the post-merge repair
+plus this evidence successor. Its final disposition is recorded in the
+issue/repair-PR receipt only after independent reviewers return; no
+Blocker/Major is silently waived.
