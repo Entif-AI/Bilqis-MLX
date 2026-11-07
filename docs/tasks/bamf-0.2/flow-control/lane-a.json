@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "bd3657e170c8bdc046a7bb28524c0fb829ca7ce9",
-  "updated_at": "2026-11-07T15:03:00+00:00",
+  "updated_at": "2026-11-07T15:23:00+00:00",
   "exception": null,
   "items": [
     {
@@ -193,10 +193,10 @@
     {
       "issue": 354,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "bd3657e170c8bdc046a7bb28524c0fb829ca7ce9",
-      "summary": "A13 parent scoped integration active: issue source-owned complete compiled-prefix inventory grant after exact A05 compilation; accepted A13 children remain closed.",
-      "resume_trigger": null,
+      "state": "WAITING",
+      "head_sha": "06ef583f0722075bbb3bd1dbb8df6d931a1011b7",
+      "summary": "Scoped A13/A05 prefix-authority repair is implemented and proven: A05 owns compiled-prefix identity/evidence and A13 issues the exact source grant after replay.",
+      "resume_trigger": "Reviewed unified consumes this branch and #354 is selected for parent acceptance/re-review, or a new A13-owned defect is found.",
       "preserved_branch": "codex/354-a13-prefix-inventory-20261107"
     }
   ]
