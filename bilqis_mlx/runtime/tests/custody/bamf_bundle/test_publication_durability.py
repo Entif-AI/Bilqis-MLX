@@ -84,11 +84,18 @@ class PublicationDurabilityTests(unittest.TestCase):
         def install(path, pointer_value):
             acceptance = (path.parent / 'bamf-acceptance'
                           / f"{pointer_value['manifest_sha256']}.json")
+            bundle_root = path.parent / 'bamf-bundles'
             self.assertIn(identity(acceptance), durable,
                           'acceptance receipt inode must be durable')
             self.assertIn(
                 identity(acceptance.parent), durable,
                 'acceptance directory must be durable before pointer publication')
+            self.assertIn(
+                identity(bundle_root), durable,
+                'bundle directory must be durable before pointer publication')
+            self.assertIn(
+                identity(path.parent), durable,
+                'run directory must durably link custody directories before pointer publication')
             pointer(path, pointer_value)
 
         with patch.object(os, 'fsync', side_effect=sync), \

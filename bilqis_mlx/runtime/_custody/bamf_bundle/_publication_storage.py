@@ -40,10 +40,14 @@ def _require_bundle_root(run_dir: Path, *, create: bool) -> Path:
     root = run_dir / "bamf-bundles"
     if root.is_symlink() or (root.exists() and not root.is_dir()):
         invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
+    existed = root.exists()
     if create:
         root.mkdir(exist_ok=True)
     if root.is_symlink() or not root.is_dir():
         invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
+    if create and not existed:
+        _fsync_directory(root)
+        _fsync_directory(run_dir)
     return root
 
 
@@ -140,9 +144,13 @@ def _acceptance_path(run_dir: Path, manifest_sha256: str) -> Path:
     root = run_dir / ACCEPTANCE_DIR
     if root.is_symlink() or (root.exists() and not root.is_dir()):
         invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
+    existed = root.exists()
     root.mkdir(exist_ok=True)
     if root.is_symlink() or not root.is_dir():
         invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
+    if not existed:
+        _fsync_directory(root)
+        _fsync_directory(run_dir)
     return root / f"{manifest_sha256}.json"
 
 
