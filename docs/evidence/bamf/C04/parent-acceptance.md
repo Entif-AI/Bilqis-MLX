@@ -114,6 +114,4 @@ missing upstream interfaces are now present in the consumed ancestry, the actual
 readout path is exercised, and later production-authority remediation re-ran the
 solver/replay/import/readout surface successfully.
 
-Therefore #498, #499, #500 and parent #373 are **implementation-complete and ready for
-human-reviewed integration of this closeout receipt**. GitHub issues remain open until the
-human merges the closeout PR; no self-merge or manual early closure is authorized.
+Children #498, #499 and #500 were already closed under ADR-121 after their reviewed implementation landed. Parent #373 is now **implementation-complete and ready for human-reviewed integration of this closeout receipt**. #373 remains open until the human merges the closeout PR; no self-merge or manual early closure is authorized.
