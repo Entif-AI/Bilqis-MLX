@@ -169,7 +169,7 @@ class BamfColdResumeContinuationTests(unittest.TestCase):
         self.assertEqual(cold["decision"]["decision_sha256"],
                          uninterrupted["decision"]["decision_sha256"])
 
-    def test_live_loss_bearing_path_requires_execution_owner(self):
+    def test_live_loss_bearing_path_requires_gradient_execution_owner(self):
         self.publish(candidate(parent_state()))
         with shape_patch():
             with self.assertRaises(BilqisError) as failure:

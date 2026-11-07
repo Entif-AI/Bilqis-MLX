@@ -79,6 +79,16 @@ class CacheAuthorityRuntime:
         registry, _, _ = _authority_state(self)
         registry.verify_detached(owner_id, dependency, signature_hex, payload)
 
+    def _validate_export_clearance_context(
+            self, receipt, selection, source_frontier, artifact_digests):
+        """Validate A12 clearance without exposing the bound authority registry."""
+        from bilqis_mlx.semantics.atlas_release_audit import (
+            validate_export_clearance_context,
+        )
+        registry, _, _ = _authority_state(self)
+        return validate_export_clearance_context(
+            receipt, selection, source_frontier, artifact_digests, registry)
+
     def _current_eligibility_inputs(self):
         """Read current rebuild authority from the owner-bound resolver."""
         _, _, source = _authority_state(self)
