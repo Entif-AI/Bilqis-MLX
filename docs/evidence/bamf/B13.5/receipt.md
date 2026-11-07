@@ -680,3 +680,51 @@ Round 5 is the ADR-127 default episode cap. `EGM-Failed` remains correct.
 Automatic repair/re-review stops here: no round 6, new episode, `EGM-Pending`
 transition, or PR is authorized without a design return or explicit human
 authority. Human-only merge authority remains unchanged.
+
+### Human-authorized post-cap repair — 2026-11-07
+
+The project owner explicitly granted post-cap authority to repair the obvious
+round-5 defects. This does not erase episode `697-b13-5-20261107`, reset its
+five-round count, or manufacture an automatic round 6. It opens one bounded
+human-authorized repair epoch while preserving human-only merge authority.
+
+Semantic repair `2d4d013eb8fb591bec6a79c85bb21575ddfecb81` closes both
+accepted round-5 target-local findings:
+
+1. **Multi-release Atlas replay.** B13 now derives each historical Atlas path
+   from the custody-recorded content-addressed bundle identity. The caller may
+   provide the artifact root or the exact current bundle; it cannot choose a
+   separate historical path per generation. A failing-before real-loader witness
+   reproduced `ATLAS_SNAPSHOT_EXPECTED_BUNDLE_MISMATCH` for two sibling immutable
+   Atlas releases. Passing-after replay reconstructs the exact predecessor and
+   changed feature maps through the real snapshot loader and feature compiler.
+2. **Live bundle/v2 cutover.** The current writer may advance a live accepted
+   non-genesis bundle/v2 tip into an acceptance-bound v3 child. The child seals
+   the exact live parent acceptance digest. Replay treats that sealed/live v2 tip
+   as the compatibility boundary: older immutable v2 bundle ancestry remains
+   available for feature-construction reconstruction without pretending it had
+   native v3 parent-acceptance anchors. Pinned old writers still cannot mint a
+   fresh accepted successor.
+
+The lineage tests were split into focused modules after the structure gate caught
+the original 411-line test file. All changed test modules are now below the
+repository structural threshold.
+
+Exact post-cap proof on semantic head `2d4d013e`:
+
+- complete B13 bundle suite: **146 PASS / 5 explicit skips / 0 failures** across
+  **151 total** in 114.486s;
+- focused lineage/migration/history/pre-CAS proof: **12/12 PASS**;
+- development structure: **PASS, 0 violations**;
+- governance integrity: **PASS, 0 violations**;
+- current Microspenics legacy-trainer authority: **PASS**;
+- BAMF flow-control validation: **PASS**;
+- `git diff --check`: **PASS**;
+- disposable #399/A02 full-topology production staging with the exact repaired
+  B13 production files: **1/1 PASS in 193.155s**;
+- #399/A02 planner: **5/5 PASS + 1 explicit optional real-source skip**, with
+  caller-minted predecessor authority still rejected.
+
+`EGM-Failed` remains the historical automatic-episode disposition until the
+human-authorized post-cap targeted reinspection of these repaired loci completes.
+That reinspection is not round 6 and does not reopen unrelated review budget.
