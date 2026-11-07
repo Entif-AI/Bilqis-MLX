@@ -125,7 +125,7 @@
     {
       "issue": 395,
       "pr": 891,
-      "state": "WAITING",
+      "state": "ACTIVE",
       "head_sha": "8e4fd3bee22cb2a9730a1d3f10ed219fe3dd4fad",
       "summary": "A09.5 parent adapter is preserved on PR #891 and consumed current reviewed unified, but fresh exact-head EGM correctly rejected the claimed realization-breadth closure: the current three-successor proof traverses newly promoted event authorities rather than #888's required accepted A08.3 Boolean/numeric/qualified-world family authorities. Parent completion waits on the #888 repair, then requires one fresh whole-candidate EGM pass and hosted/human integration.",
       "resume_trigger": "#888 binds accepted #420/#758/#737 family/rule/source authority into three real staged successors and the combined candidate passes fresh exact-head EGM.",
