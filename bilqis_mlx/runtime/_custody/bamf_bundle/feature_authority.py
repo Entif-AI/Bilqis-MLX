@@ -133,13 +133,14 @@ def _accepted_feature_chain(run_dir: Path, manifest_sha256: str, student,
     if parent.run_id != student.run_id or parent.generation + 1 != student.generation:
         invalid("BAMF_FEATURE_PREDECESSOR_UNAUTHENTICATED")
     parent_acceptance = parent_acceptance_from_manifest(run_dir, manifest_sha256)
-    prior, _, prior_predecessor = _accepted_feature_chain(
+    prior, _, _ = _accepted_feature_chain(
         run_dir, parent_sha, parent, artifact_path,
         expected_acceptance_sha256=parent_acceptance)
-    if (student.extents.factor_map_digest == parent.extents.factor_map_digest
-            and student.compiler_features == parent.compiler_features
-            and student.provenance.release_digest == parent.provenance.release_digest):
-        return prior, binding, prior
+    if student.extents.factor_map_digest == parent.extents.factor_map_digest:
+        features = _authenticate_features(student, artifact_path)
+        if features.digest != prior.digest:
+            invalid("BAMF_FEATURE_PREDECESSOR_UNAUTHENTICATED")
+        return features, binding, prior
     features = _authenticate_features(student, artifact_path, predecessor=prior)
     if features.predecessor_digest != prior.digest:
         invalid("BAMF_FEATURE_PREDECESSOR_UNAUTHENTICATED")

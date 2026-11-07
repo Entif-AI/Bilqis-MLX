@@ -119,6 +119,34 @@ class AcceptedFeatureLineageTests(unittest.TestCase):
         self.assertEqual(receipt.predecessor_feature_sha256, root.digest)
         self.assertEqual((current, predecessor), (root, root))
 
+    def test_retained_successor_allows_independent_correction_epoch_advance(self):
+        root = source_features()
+        first = self.publish(feature_bound(candidate(parent_state()), root))
+        retained = feature_bound(
+            candidate(accepted_state(parent_state()), 1, first["manifest_sha256"]),
+            root)
+        retained = replace(
+            retained,
+            compiler_features={
+                **retained.compiler_features,
+                "correction_generation": retained.compiler_features["correction_generation"] + 1,
+            },
+            correction_frontier={
+                **retained.correction_frontier,
+                "correction_generation": retained.correction_frontier["correction_generation"] + 1,
+            },
+        )
+        self.publish(retained)
+
+        with shape_patch(), self.source_replay(root):
+            receipt, current, predecessor = read_accepted_generation_feature_lineage(
+                self.pointer, "/artifact")
+
+        self.assertEqual(receipt.generation, 1)
+        self.assertEqual(receipt.feature_sha256, root.digest)
+        self.assertEqual(receipt.predecessor_feature_sha256, root.digest)
+        self.assertEqual((current, predecessor), (root, root))
+
     def test_successor_rejects_resigned_historical_parent_acceptance(self):
         root = source_features()
         first = self.publish(feature_bound(candidate(parent_state()), root))
