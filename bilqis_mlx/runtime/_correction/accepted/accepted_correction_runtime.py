@@ -10,7 +10,7 @@ from .atlas_source_authority import SourceAuthorityRegistry
 
 
 def refresh_owner_corrections(owner) -> None:
-    """Activate a previously observed correction after an owner gains dependencies."""
+    """Reconcile durable accepted evidence before this physical owner is used."""
     target = getattr(owner, "_accepted_correction_target", None)
     if target is None:
         return
@@ -19,14 +19,19 @@ def refresh_owner_corrections(owner) -> None:
         if any(candidate is target for candidate in runtime.targets.values())
     ), None)
     if retained_runtime is not None and retained_runtime.registry is not None:
-        target.activate_pending(retained_runtime.registry)
-        retained_runtime._retry_deferred(target)
+        with retained_runtime.lock:
+            retained_runtime._replay(target)
+            target.activate_pending(retained_runtime.registry)
+            retained_runtime._retry_deferred(target)
+            from .accepted_stale_replay_runtime import replay_persisted_faults
+            replay_persisted_faults(retained_runtime)
 
 
 def require_pending_corrections(owner, artifact_id: str) -> None:
     """Fail closed when accepted correction state blocks this physical owner."""
     if getattr(owner, "_accepted_owner_superseded", False):
         _invalid("BAMF_C09_ARTIFACT_OWNER_SUPERSEDED")
+    refresh_owner_corrections(owner)
     target = getattr(owner, "_accepted_correction_target", None)
     if target is None:
         return

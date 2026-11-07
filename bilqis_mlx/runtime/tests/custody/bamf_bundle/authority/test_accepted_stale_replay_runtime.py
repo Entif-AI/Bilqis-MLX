@@ -8,15 +8,25 @@ import unittest
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.accepted_corrections import (
-    record_accepted_correction, record_accepted_derived_claim,
+    _RUNTIME_OWNER, record_accepted_correction, record_accepted_derived_claim,
     record_accepted_remediation, record_accepted_revalidation,
     register_solve_context,
 )
+from bilqis_mlx.runtime.akasha_outbox import pending_events
+from bilqis_mlx.runtime.atlas_capability_support_owner import (
+    load_capability_support_owner,
+)
 from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
+from bilqis_mlx.runtime.bamf_bundle.admission import (
+    accept_and_publish, bind_accepted_execution_cache,
+)
 from bilqis_mlx.runtime.cognitive_solver import QualifiedComposition, SolveContext
 from bilqis_mlx.runtime.tests.capability.factory.solver_helpers import _fixture
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, candidate, parent_state, shape_patch,
+    acceptance, candidate, parent_state, retention_decision, shape_patch,
+)
+from bilqis_mlx.runtime.tests.correction.test_atlas_capability_support_owner import (
+    SOURCE_ROW, TARGET, _source_qualified_state,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
     AUTHORITY, _event, _result,
@@ -44,6 +54,53 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
     def tearDown(self):
         self.environment.stop()
         self.temporary.cleanup()
+
+    def _publish_source_qualified_support(self, run):
+        parent, transaction, retained, _authority = _source_qualified_state()
+        bundle = candidate(retained)
+        decision = retention_decision(parent=parent, retained=retained)
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            published = accept_and_publish(
+                run, bundle, retained, decision=decision,
+                feature_sha256=bundle.extents.factor_map_digest,
+                training_authorities=transaction.training_authorities,
+            )
+            accepted_manifest = bind_accepted_execution_cache(
+                run).accepted_manifest_sha256
+        self.assertEqual(accepted_manifest, published["manifest_sha256"])
+        return accepted_manifest
+
+    @staticmethod
+    def _late_support_evidence(accepted_manifest):
+        correction = _event(DependencyRef(DependencyKind.SOURCE, SOURCE_ROW))
+        artifact_id = "capability-support:" + TARGET
+        remediation = RemediationReceipt(
+            remediation_id="remediation:late-support",
+            correction_event_id=correction.event_id,
+            correction_receipt_sha256=correction.source_receipt_sha256,
+            original_actor_id="actor:late-support",
+            original_source_event_id="event:planned",
+            original_source_time=570,
+            superseded_fact_digest="a" * 64,
+            superseded_source_receipt_sha256="1" * 64,
+            affected_artifact_ids=(artifact_id,),
+            retained_generation_sha256=accepted_manifest,
+            completed_at=650,
+            status=RemediationStatus.COMPLETED,
+        )
+        stale = DerivedClaim(
+            claim_id="claim:late-support-stale", actor_id="actor:late-support",
+            source_event_id="event:planned", source_time=570,
+            source_receipt_sha256="1" * 64, fact_digest="a" * 64,
+            observed_at=660, derived_path=(artifact_id,),
+        )
+        later = DerivedClaim(
+            claim_id="claim:late-support-independent", actor_id="actor:independent",
+            source_event_id="event:independent", source_time=720,
+            source_receipt_sha256="2" * 64, fact_digest="a" * 64,
+            observed_at=725, derived_path=(artifact_id,),
+        )
+        return correction, remediation, stale, later
 
     def test_post_remediation_stale_claim_enters_accepted_runtime_and_blocks_reuse(self):
         binding, generation, _budget, add, _ambiguous = _fixture()
@@ -171,6 +228,55 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
             )
         self.assertEqual(faults, ())
         self.assertEqual(owner.require(cached, binding), node)
+
+    def test_stale_fault_requalifies_support_loaded_only_after_fault(self):
+        run = self.root / "late-support-run"
+        accepted_manifest = self._publish_source_qualified_support(run)
+        correction, remediation, stale, later = self._late_support_evidence(
+            accepted_manifest)
+        with shape_patch():
+            record_accepted_correction(run, correction, AUTHORITY)
+            record_accepted_remediation(run, remediation, AUTHORITY)
+            _event_id, faults = record_accepted_derived_claim(run, stale, AUTHORITY)
+        self.assertEqual(len(faults), 1)
+        update = faults[0].requalification
+        self.assertEqual(update.affected_capability_ids, (TARGET,))
+        self.assertEqual(len(update.new_source_tasks), 1)
+        self.assertEqual(len(update.new_c10_intents), 1)
+        with shape_patch():
+            self.assertEqual(
+                bind_accepted_execution_cache(run).accepted_manifest_sha256,
+                accepted_manifest,
+            )
+
+        with shape_patch():
+            owner = load_capability_support_owner(run, TARGET, AUTHORITY)
+        self.assertEqual(owner.support.status, "REQUALIFICATION_REQUIRED")
+        self.assertEqual(owner.ledger.pending_source_tasks, update.ledger.pending_source_tasks)
+        self.assertEqual(owner.ledger.pending_c10_intents, update.ledger.pending_c10_intents)
+        with self.assertRaises(BilqisError):
+            owner.require(TARGET)
+        outbox = run / "akasha-outbox.sqlite3"
+        self.assertEqual(len(pending_events(outbox)), 1)
+
+        _RUNTIME_OWNER.clear()
+        del owner
+        with shape_patch():
+            cold = load_capability_support_owner(run, TARGET, AUTHORITY)
+        self.assertEqual(cold.support.status, "REQUALIFICATION_REQUIRED")
+        self.assertEqual(cold.ledger.pending_source_tasks, update.ledger.pending_source_tasks)
+        self.assertEqual(cold.ledger.pending_c10_intents, update.ledger.pending_c10_intents)
+        self.assertEqual(len(pending_events(outbox)), 1)
+
+        with shape_patch():
+            _event_id, later_faults = record_accepted_derived_claim(
+                run, later, AUTHORITY)
+        self.assertEqual(later_faults, ())
+        with shape_patch():
+            self.assertEqual(
+                bind_accepted_execution_cache(run).accepted_manifest_sha256,
+                accepted_manifest,
+            )
 
 
 if __name__ == "__main__":

@@ -136,9 +136,44 @@ def records_from_bytes(raw: bytes, manifest_sha256: str) -> tuple[dict, ...]:
     return tuple(ordered)
 
 
+def lineage_records_from_bytes(
+    raw: bytes, manifest_sha256s: tuple[str, ...],
+) -> tuple[dict, ...]:
+    """Decode one physical ledger in append order for an accepted manifest lineage."""
+    if not raw:
+        return ()
+    allowed = frozenset(manifest_sha256s)
+    records = []
+    try:
+        for encoded in raw.splitlines(keepends=True):
+            if not encoded.endswith(b"\n"):
+                _invalid("BAMF_C09_CORRECTION_LEDGER_TRUNCATED")
+            item = json.loads(encoded.decode("utf-8"))
+            if (not isinstance(item, dict)
+                    or item.get("accepted_manifest_sha256") not in allowed
+                    or item.get("event") not in ACCEPTED_EVENT_TYPES):
+                continue
+            records.append(validate_record(
+                item, item["accepted_manifest_sha256"]))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        _invalid("BAMF_C09_CORRECTION_LEDGER_INVALID")
+    by_id = {}
+    ordered = []
+    for item in records:
+        event_id = item["event_id"]
+        prior = by_id.get(event_id)
+        if prior is not None and prior != item:
+            _invalid("BAMF_C09_CORRECTION_LEDGER_CONFLICT")
+        if prior is None:
+            by_id[event_id] = item
+            ordered.append(item)
+    return tuple(ordered)
+
+
 __all__ = (
     "ACCEPTED_EVENT_TYPES", "CORRECTION_EVENT", "DERIVED_CLAIM_EVENT",
     "PROCESS_FAULT_EVENT", "REMEDIATION_EVENT", "REVALIDATION_EVENT",
     "_canonical", "correction_record", "frontier_from_record",
-    "records_from_bytes", "revalidation_record", "validate_record",
+    "lineage_records_from_bytes", "records_from_bytes", "revalidation_record",
+    "validate_record",
 )

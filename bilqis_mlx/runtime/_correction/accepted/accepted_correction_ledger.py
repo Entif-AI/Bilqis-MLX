@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 from pathlib import Path
 
@@ -11,7 +12,8 @@ from bilqis_mlx.runtime.capability_support_journal import event_from_record
 from .accepted_correction_records import (
     ACCEPTED_EVENT_TYPES, CORRECTION_EVENT, DERIVED_CLAIM_EVENT,
     PROCESS_FAULT_EVENT, REMEDIATION_EVENT, REVALIDATION_EVENT, _canonical,
-    correction_record, frontier_from_record, revalidation_record, validate_record,
+    correction_record, frontier_from_record, lineage_records_from_bytes,
+    revalidation_record, validate_record,
 )
 from .accepted_correction_recovery import read_records_unlocked, recover_transaction
 from .accepted_correction_storage import (
@@ -24,15 +26,60 @@ from .atlas_source_authority import SourceAuthorityRegistry
 from .atlas_revalidation_common import _invalid
 
 
+def _manifest_lineage(run_dir: Path, manifest_sha256: str) -> tuple[str, ...]:
+    """Return accepted bundle ancestry from genesis through the requested manifest."""
+    root = Path(run_dir) / "bamf-bundles"
+    current = manifest_sha256
+    seen = set()
+    lineage = []
+    while current is not None:
+        if (not isinstance(current, str) or len(current) != 64
+                or any(char not in "0123456789abcdef" for char in current)
+                or current in seen):
+            _invalid("BAMF_C09_CORRECTION_LINEAGE_INVALID")
+        seen.add(current)
+        path = root / current / "manifest.json"
+        if path.is_symlink() or not path.is_file():
+            _invalid("BAMF_C09_CORRECTION_LINEAGE_INVALID")
+        try:
+            raw = path.read_bytes()
+            record = json.loads(raw.decode("utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+            _invalid("BAMF_C09_CORRECTION_LINEAGE_INVALID")
+        if (hashlib.sha256(raw).hexdigest() != current
+                or not isinstance(record, dict)
+                or "parent_manifest_sha256" not in record):
+            _invalid("BAMF_C09_CORRECTION_LINEAGE_INVALID")
+        lineage.append(current)
+        current = record["parent_manifest_sha256"]
+    return tuple(reversed(lineage))
+
+
 def read_records(run_dir: Path, manifest_sha256: str) -> tuple[dict, ...]:
     with ledger_lock(run_dir):
-        recover_transaction(run_dir, manifest_sha256)
-        result = read_records_unlocked(run_dir, manifest_sha256)
-        if (not ledger_path(run_dir).exists()
-                and committed_history(run_dir, manifest_sha256) is not None):
-            _invalid("BAMF_C09_CORRECTION_LEDGER_MISSING")
-        verify_committed_history(run_dir, manifest_sha256, result)
-        return result
+        lineage = _manifest_lineage(run_dir, manifest_sha256)
+        for lineage_manifest in lineage:
+            recover_transaction(run_dir, lineage_manifest)
+        path = ledger_path(run_dir)
+        if path.is_symlink() or (path.exists() and not path.is_file()):
+            _invalid("BAMF_C09_CORRECTION_LEDGER_UNSAFE")
+        if not path.exists():
+            if any(committed_history(run_dir, item) is not None for item in lineage):
+                _invalid("BAMF_C09_CORRECTION_LEDGER_MISSING")
+            return ()
+        try:
+            raw = path.read_bytes()
+        except OSError:
+            _invalid("BAMF_C09_CORRECTION_LEDGER_INVALID")
+        records = lineage_records_from_bytes(raw, lineage)
+        for lineage_manifest in lineage:
+            verify_committed_history(
+                run_dir,
+                lineage_manifest,
+                tuple(item for item in records
+                      if item["accepted_manifest_sha256"] == lineage_manifest),
+            )
+        return records
 
 
 def accepted_correction_id(

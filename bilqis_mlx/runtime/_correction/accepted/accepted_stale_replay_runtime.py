@@ -7,17 +7,21 @@ from .accepted_correction_ledger import accepted_corrections, append_record, rea
 from .accepted_stale_replay_ledger import (
     DERIVED_CLAIM_EVENT, PROCESS_FAULT_EVENT, REMEDIATION_EVENT,
     derived_claim_from_record, process_fault_from_record, process_fault_record,
+    process_fault_requalification_from_record,
     remediation_from_record,
 )
 from .atlas_requalification import RequalificationLedger
 from .atlas_requalification_contracts import RequalificationStatus
 from .atlas_revalidation_common import _invalid
 from .atlas_stale_replay import escalate_stale_replay
-from bilqis_mlx.semantics.cognitive_dependencies import DependencyIndex, DependencyKind
+from bilqis_mlx.semantics.cognitive_dependencies import (
+    ArtifactKind, DependencyIndex, DependencyKind,
+)
 
 
-def _registered_index(targets) -> DependencyIndex | None:
-    nodes = {}
+def _registered_index(targets, census_nodes=()) -> DependencyIndex | None:
+    nodes = {node.artifact_id: node for node in census_nodes}
+    census_ids = frozenset(nodes)
     for target in targets:
         owner = target.owner
         index = getattr(owner, "index", None)
@@ -26,7 +30,10 @@ def _registered_index(targets) -> DependencyIndex | None:
         for node in index.nodes:
             prior = nodes.get(node.artifact_id)
             if prior is not None and prior != node:
-                _invalid("BAMF_C09_REGISTERED_OWNER_INDEX_CONFLICT")
+                if (node.artifact_id not in census_ids
+                        or prior.kind is not ArtifactKind.CAPABILITY_SUPPORT
+                        or node.kind is not ArtifactKind.CAPABILITY_SUPPORT):
+                    _invalid("BAMF_C09_REGISTERED_OWNER_INDEX_CONFLICT")
             nodes[node.artifact_id] = node
     if not nodes:
         return None
@@ -41,29 +48,54 @@ def _registered_index(targets) -> DependencyIndex | None:
     return DependencyIndex.build(tuple(nodes.values()))
 
 
-def _registered_requalification(targets) -> RequalificationLedger | None:
-    supports = {}
+def _registered_requalification(
+    targets, census: RequalificationLedger,
+) -> RequalificationLedger:
+    supports = {item.capability_id: item for item in census.capabilities}
+    historical = {item: item for item in census.historical}
+    tasks = {item.task_id: item for item in census.pending_source_tasks}
+    intents = {item.event_id: item for item in census.pending_c10_intents}
     for target in targets:
         ledger = getattr(target.owner, "ledger", None)
         if not isinstance(ledger, RequalificationLedger):
             continue
         for support in ledger.capabilities:
             prior = supports.get(support.capability_id)
-            if prior is not None and prior != support:
+            if (prior is not None
+                    and replace(prior, status=RequalificationStatus.QUALIFIED)
+                    != replace(support, status=RequalificationStatus.QUALIFIED)):
                 _invalid("BAMF_C09_REGISTERED_SUPPORT_CONFLICT")
-            supports[support.capability_id] = support
-    return RequalificationLedger(tuple(sorted(
-        supports.values(), key=lambda item: item.capability_id)))
+            if (prior is None
+                    or support.status is RequalificationStatus.REQUALIFICATION_REQUIRED):
+                supports[support.capability_id] = support
+        for item in ledger.historical:
+            historical[item] = item
+        for item in ledger.pending_source_tasks:
+            prior = tasks.get(item.task_id)
+            if prior is not None and prior != item:
+                _invalid("BAMF_C09_REGISTERED_SUPPORT_CONFLICT")
+            tasks[item.task_id] = item
+        for item in ledger.pending_c10_intents:
+            prior = intents.get(item.event_id)
+            if prior is not None and prior != item:
+                _invalid("BAMF_C09_REGISTERED_SUPPORT_CONFLICT")
+            intents[item.event_id] = item
+    return RequalificationLedger(
+        capabilities=tuple(sorted(
+            supports.values(), key=lambda item: item.capability_id)),
+        historical=tuple(sorted(
+            historical.values(),
+            key=lambda item: (item.capability_id, item.retained_generation_sha256,
+                              item.status.value, item.observation_ids))),
+        pending_source_tasks=tuple(sorted(
+            tasks.values(), key=lambda item: item.task_id)),
+        pending_c10_intents=tuple(sorted(
+            intents.values(), key=lambda item: item.event_id)),
+    )
 
 
 def _install_fault(targets, fault, requalification=None) -> None:
     held = set(fault.held_artifact_ids)
-    updated_support = {}
-    if requalification is not None:
-        updated_support = {
-            item.capability_id: item
-            for item in requalification.ledger.capabilities
-        }
     for target in targets:
         owner = target.owner
         if owner is None:
@@ -77,21 +109,54 @@ def _install_fault(targets, fault, requalification=None) -> None:
                 owner, "_accepted_process_fault_holds",
                 frozenset(target.process_fault_holds),
             )
-            support = getattr(owner, "_support", None)
-            if (support is not None
-                    and getattr(support, "status", None)
-                    is not RequalificationStatus.REQUALIFICATION_REQUIRED):
-                setattr(
-                    owner, "_support",
-                    replace(
-                        support,
-                        status=RequalificationStatus.REQUALIFICATION_REQUIRED,
-                    ),
-                )
         capability_id = getattr(owner, "capability_id", None)
-        support = updated_support.get(capability_id)
-        if support is not None:
-            setattr(owner, "_support", support)
+        if (requalification is not None
+                and capability_id in requalification.affected_capability_ids):
+            installer = getattr(owner, "install_requalification", None)
+            if not callable(installer):
+                _invalid("BAMF_C09_PROCESS_FAULT_REQUALIFICATION_DRIFT")
+            installer(requalification)
+
+
+def replay_persisted_faults(retained, records=None) -> tuple[object, ...]:
+    """Install already-committed process faults without reclassifying claims."""
+    records = (read_records(retained.run_dir, retained.manifest_sha256)
+               if records is None else records)
+    targets = tuple(retained.targets.values())
+    faults = []
+    for record in records:
+        if record["event"] != PROCESS_FAULT_EVENT:
+            continue
+        fault = process_fault_from_record(record)
+        _install_fault(
+            targets, fault,
+            process_fault_requalification_from_record(record),
+        )
+        faults.append(fault)
+    return tuple(faults)
+
+
+def _support_census(retained):
+    cached = getattr(retained, "_accepted_support_census", None)
+    if cached is not None:
+        return cached
+    from bilqis_mlx.runtime.capability_support_loading import accepted_support_census
+    cached = accepted_support_census(retained.run_dir, retained.manifest_sha256)
+    retained._accepted_support_census = cached
+    return cached
+
+
+def _flush_c10_intents(retained, ledger, corrections) -> None:
+    if not ledger.pending_c10_intents:
+        return
+    from bilqis_mlx.runtime.akasha_outbox import append_c09_intent
+    outbox = retained.run_dir / "akasha-outbox.sqlite3"
+    for intent in ledger.pending_c10_intents:
+        correction = corrections.get(intent.correction_event_id)
+        if correction is None:
+            continue
+        append_c09_intent(
+            outbox, intent, correction, ledger, retained.registry)
 
 
 def replay_stale_evidence(retained) -> tuple[object, ...]:
@@ -100,19 +165,19 @@ def replay_stale_evidence(retained) -> tuple[object, ...]:
         return ()
     records = read_records(retained.run_dir, retained.manifest_sha256)
     targets = tuple(retained.targets.values())
-    for record in records:
-        if record["event"] == PROCESS_FAULT_EVENT:
-            _install_fault(targets, process_fault_from_record(record))
+    replay_persisted_faults(retained, records)
 
-    index = _registered_index(targets)
-    ledger = _registered_requalification(targets)
-    if index is None or ledger is None:
+    census, census_nodes = _support_census(retained)
+    index = _registered_index(targets, census_nodes)
+    ledger = _registered_requalification(targets, census)
+    if index is None:
         return ()
     corrections = {
         event.event_id: event
         for _event_id, event in accepted_corrections(
             retained.run_dir, retained.manifest_sha256, retained.registry)
     }
+    _flush_c10_intents(retained, ledger, corrections)
     remediations = tuple(
         remediation_from_record(record)
         for record in records if record["event"] == REMEDIATION_EVENT)
@@ -136,12 +201,14 @@ def replay_stale_evidence(retained) -> tuple[object, ...]:
                 remediation, claim, correction, index, ledger, retained.registry)
             if result is None:
                 continue
-            record = process_fault_record(retained.manifest_sha256, result.fault)
+            record = process_fault_record(
+                retained.manifest_sha256, result.fault, result.requalification)
             append_record(retained.run_dir, retained.manifest_sha256, record)
             _install_fault(targets, result.fault, result.requalification)
+            _flush_c10_intents(retained, result.requalification.ledger, corrections)
             existing.add(claim.claim_id)
             results.append(result)
     return tuple(results)
 
 
-__all__ = ("replay_stale_evidence",)
+__all__ = ("replay_persisted_faults", "replay_stale_evidence")

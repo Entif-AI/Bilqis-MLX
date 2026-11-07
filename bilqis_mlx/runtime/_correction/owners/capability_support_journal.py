@@ -12,7 +12,8 @@ from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, Dependen
 from .atlas_revalidation_common import _invalid
 from .atlas_revalidation_evidence import CorrectionEvent, StateTransition
 
-SCHEMA = "bilqis.c09.capability-support-hold/v1"
+SCHEMA = "bilqis.c09.capability-support-hold/v2"
+LEGACY_SCHEMA = "bilqis.c09.capability-support-hold/v1"
 MARKER_SCHEMA = "bilqis.c09.capability-support-hold-seen/v1"
 COMMITMENT_SCHEMA = "bilqis.c09.capability-support-hold-commitment/v1"
 
@@ -177,11 +178,13 @@ def transition_from_record(record: dict | None) -> StateTransition | None:
 
 def write_journal(path: Path, *, capability_id: str, manifest_sha256: str,
                   artifact_id: str, state: str, event: CorrectionEvent,
-                  transition: StateTransition | None = None) -> None:
+                  transition: StateTransition | None = None, ledger=None) -> None:
     if state not in {"HELD", "CLEARED", "REQUALIFICATION_REQUIRED"}:
         _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_INVALID")
     if (state == "HELD") != (transition is None):
         _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_INVALID")
+    from bilqis_mlx.runtime.accepted_requalification_codec import ledger_record
+    encoded_ledger = ledger_record(ledger)
     marker = _marker_identity(capability_id, manifest_sha256, artifact_id)
     _commit_seen(capability_id, manifest_sha256, artifact_id)
     marker_path = _marker_path(path)
@@ -197,6 +200,7 @@ def write_journal(path: Path, *, capability_id: str, manifest_sha256: str,
         "manifest_sha256": manifest_sha256, "artifact_id": artifact_id,
         "state": state, "event": _event_record(event),
         "transition": _transition_record(transition),
+        "requalification_ledger": encoded_ledger,
     }
     _atomic_json(path, data, replace_existing=True)
 
@@ -222,7 +226,7 @@ def read_journal(path: Path, *, capability_id: str,
     if (not isinstance(marker, dict)
             or marker.get("schema_version") != MARKER_SCHEMA
             or not isinstance(record, dict)
-            or record.get("schema_version") != SCHEMA
+            or record.get("schema_version") not in {SCHEMA, LEGACY_SCHEMA}
             or any(marker.get(key) != record.get(key)
                    for key in ("capability_id", "manifest_sha256", "artifact_id"))):
         _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_INVALID")

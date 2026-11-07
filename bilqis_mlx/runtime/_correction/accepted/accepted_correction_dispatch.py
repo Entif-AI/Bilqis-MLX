@@ -25,6 +25,7 @@ class AcceptedCorrectionRuntime:
         self.registry: SourceAuthorityRegistry | None = None
         self.targets: dict[tuple[str, int], AcceptedCorrectionTarget] = {}
         self.lock = RLock()
+        self._accepted_support_census = None
 
     def bind_registry(self, registry: SourceAuthorityRegistry | None) -> None:
         if registry is None:
@@ -183,6 +184,8 @@ class AcceptedCorrectionRuntime:
                 else:
                     target.deferred[event_id] = frontier
                 self._retry_deferred(target)
+            from .accepted_stale_replay_runtime import replay_stale_evidence
+            replay_stale_evidence(self)
 
 
 __all__ = ("AcceptedCorrectionRuntime",)

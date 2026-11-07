@@ -22,8 +22,9 @@ from bilqis_mlx.runtime.atlas_capability_support_owner import (
     CapabilitySupportArtifactOwner, load_capability_support_owner,
 )
 from bilqis_mlx.runtime.accepted_corrections import (
-    _RUNTIME_OWNER, record_accepted_correction,
+    _RUNTIME_OWNER, record_accepted_correction, record_accepted_revalidation,
 )
+from bilqis_mlx.runtime.akasha_outbox import pending_events
 from bilqis_mlx.runtime.atlas_revalidation import apply_capability_support_correction
 from bilqis_mlx.runtime.atlas_training_authority import _issue as issue_training_authority
 from bilqis_mlx.runtime.atlas_training_contracts import (
@@ -189,11 +190,18 @@ class CapabilitySupportOwnerTests(unittest.TestCase):
         node = owner.current_node
         owner.advance(_result(node, digest="f" * 64, correction=correction), AUTHORITY)
         self.assertEqual(owner.support.status, "REQUALIFICATION_REQUIRED")
+        self.assertEqual(len(owner.ledger.pending_source_tasks), 1)
+        self.assertEqual(
+            owner.ledger.pending_source_tasks[0].capability_id,
+            TARGET,
+        )
+        self.assertEqual(len(owner.ledger.pending_c10_intents), 1)
+        expected_ledger = owner.ledger
         with self.assertRaises(BilqisError):
             owner.require(TARGET)
-        self.assertEqual(
-            self.load_support(AUTHORITY).support.status,
-            "REQUALIFICATION_REQUIRED")
+        reloaded = self.load_support(AUTHORITY)
+        self.assertEqual(reloaded.support.status, "REQUALIFICATION_REQUIRED")
+        self.assertEqual(reloaded.ledger, expected_ledger)
 
     def test_accepted_correction_stream_delivers_to_live_capability_support_owner(self):
         self.publish_support()
@@ -214,6 +222,21 @@ class CapabilitySupportOwnerTests(unittest.TestCase):
             (reloaded.current_node.artifact_id,))
         with self.assertRaises(BilqisError):
             reloaded.require(TARGET)
+
+        node = reloaded.current_node
+        with shape_patch():
+            record_accepted_revalidation(
+                self.run,
+                _result(node, digest="f" * 64, correction=correction),
+                AUTHORITY,
+            )
+        self.assertEqual(reloaded.support.status, "REQUALIFICATION_REQUIRED")
+        self.assertEqual(len(reloaded.ledger.pending_source_tasks), 1)
+        self.assertEqual(len(reloaded.ledger.pending_c10_intents), 1)
+        self.assertEqual(
+            len(pending_events(self.run / "akasha-outbox.sqlite3")),
+            1,
+        )
 
     def test_deleting_active_hold_state_cannot_masquerade_as_clear(self):
         published, _authority = self.publish_support()

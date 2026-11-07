@@ -1,7 +1,10 @@
 """Accepted-run C09 branch, pending, and revalidation custody."""
 from dataclasses import replace
+import json
 import os
 from pathlib import Path
+import subprocess
+import sys
 from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
@@ -14,14 +17,16 @@ from bilqis_mlx.runtime.accepted_corrections import (
     record_accepted_correction, record_accepted_revalidation,
     register_solve_context,
 )
+from bilqis_mlx.runtime.accepted_correction_ledger import correction_record
 from bilqis_mlx.runtime.atlas_revalidation import RevalidationFrontier
 from bilqis_mlx.runtime.bamf_bundle import admission, publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     bind_accepted_correction_authority, bind_accepted_execution_cache,
+    derive_successor_bundle, load_accepted_generation,
 )
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import bind_motif_artifact_owner
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, candidate, parent_state, shape_patch,
+    acceptance, candidate, next_accepted_step, parent_state, shape_patch,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
     AUTHORITY, _event, _result, _sign_event,
@@ -84,6 +89,82 @@ class AcceptedCorrectionRuntimeTests(unittest.TestCase):
         cold_owner = bind_motif_artifact_owner(cold_cache, compiled)
         self.assertEqual(cold_owner.queue.held_artifact_ids, ())
         self.assertIs(cold_owner.require(cold_cache, compiled), cold_owner.current_node)
+
+    def test_unresolved_correction_survives_unrelated_successor_and_cold_restart(self):
+        cache, compiled, owner = self._motif_fixture()
+        correction = _event(owner.source_dependencies[0])
+        with shape_patch():
+            AcceptedRuntimeHost(self.run, AUTHORITY).record_correction(correction)
+        with self.assertRaises(BilqisError) as held:
+            owner.require(cache, compiled)
+        self.assertEqual(held.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
+
+        with shape_patch():
+            parent = load_accepted_generation(self.run)
+        retained = next_accepted_step(parent.retained_state)
+        successor = derive_successor_bundle(
+            parent,
+            retained,
+            parent_manifest_sha256=cache.accepted_manifest_sha256,
+            delivery_events=({"event": "FIXTURE_SUCCESSOR"},),
+        )
+        self.publish(successor)
+        admission._EXECUTION_CACHE_OWNER.entries.clear()
+        _RUNTIME_OWNER.clear()
+
+        with shape_patch():
+            cold_cache = bind_accepted_correction_authority(self.run, AUTHORITY)
+        cold_compiled = replace(
+            compiled,
+            extents=replace(
+                compiled.extents,
+                motif_key_map_digest=cold_cache.motif_manifest.digest,
+            ),
+        )
+        with self.assertRaises(BilqisError) as cold_held:
+            bind_motif_artifact_owner(cold_cache, cold_compiled)
+        self.assertEqual(
+            cold_held.exception.context["reason"],
+            "BAMF_C09_ARTIFACT_HELD",
+        )
+
+    def test_live_reader_observes_correction_committed_by_another_process(self):
+        cache, compiled, owner = self._motif_fixture()
+        with shape_patch():
+            self.assertIs(
+                bind_accepted_correction_authority(self.run, AUTHORITY),
+                cache,
+            )
+        correction = _event(owner.source_dependencies[0])
+        record = correction_record(cache.accepted_manifest_sha256, correction)
+        script = (
+            "import json, pathlib, sys; "
+            "from bilqis_mlx.runtime.accepted_correction_ledger import append_record; "
+            "append_record(pathlib.Path(sys.argv[1]), sys.argv[2], json.loads(sys.argv[3]))"
+        )
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                script,
+                str(self.run),
+                cache.accepted_manifest_sha256,
+                json.dumps(record, sort_keys=True),
+            ],
+            capture_output=True,
+            text=True,
+            env=os.environ.copy(),
+            check=False,
+        )
+        self.assertEqual(
+            completed.returncode,
+            0,
+            msg=f"stdout={completed.stdout!r} stderr={completed.stderr!r}",
+        )
+
+        with self.assertRaises(BilqisError) as held:
+            owner.require(cache, compiled)
+        self.assertEqual(held.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
 
     def test_concurrent_accepted_corrections_remain_staged_until_each_revalidates(self):
         cache, compiled, owner = self._motif_fixture()

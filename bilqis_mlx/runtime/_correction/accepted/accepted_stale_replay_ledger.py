@@ -106,7 +106,8 @@ def derived_claim_from_record(record: dict) -> DerivedClaim:
         _invalid("BAMF_C09_DERIVED_CLAIM_LEDGER_INVALID")
 
 
-def process_fault_record(manifest_sha256: str, fault: ProcessFault) -> dict:
+def process_fault_record(manifest_sha256: str, fault: ProcessFault,
+                         requalification=None) -> dict:
     if not isinstance(fault, ProcessFault):
         _invalid("BAMF_C09_PROCESS_FAULT_INVALID")
     body = {
@@ -127,6 +128,9 @@ def process_fault_record(manifest_sha256: str, fault: ProcessFault) -> dict:
             "schema_version": fault.schema_version,
         },
     }
+    if requalification is not None:
+        from .accepted_requalification_codec import update_record
+        body["requalification"] = update_record(requalification)
     return {"event_id": hashlib.sha256(_canonical(body)).hexdigest(), **body}
 
 
@@ -150,9 +154,20 @@ def process_fault_from_record(record: dict) -> ProcessFault:
         _invalid("BAMF_C09_PROCESS_FAULT_LEDGER_INVALID")
 
 
+def process_fault_requalification_from_record(record: dict):
+    if "requalification" not in record:
+        return None
+    try:
+        from .accepted_requalification_codec import update_from_record
+        return update_from_record(record["requalification"])
+    except (KeyError, TypeError, ValueError):
+        _invalid("BAMF_C09_PROCESS_FAULT_LEDGER_INVALID")
+
+
 __all__ = (
     "DERIVED_CLAIM_EVENT", "PROCESS_FAULT_EVENT", "REMEDIATION_EVENT",
     "derived_claim_from_record", "derived_claim_record",
     "process_fault_from_record", "process_fault_record",
+    "process_fault_requalification_from_record",
     "remediation_from_record", "remediation_record",
 )
