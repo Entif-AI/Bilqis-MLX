@@ -11,7 +11,7 @@ from bilqis_mlx.semantics.domains import contract_digest
 from .atlas_requalification_contracts import (
     CapabilitySupport, RequalificationStatus,
 )
-from .atlas_revalidation_common import _invalid
+from .atlas_revalidation_common import _invalid, owner_priority
 
 
 class _SourceAnchor(NamedTuple):
@@ -43,8 +43,24 @@ def _anchor_dependencies(anchors, policy_sha256, manifest_sha256):
         dependencies.update((
             DependencyRef(DependencyKind.SOURCE, source.source_row_id),
             DependencyRef(
+                DependencyKind.SOURCE,
+                "source-row-digest:" + source.source_row_sha256,
+            ),
+            DependencyRef(
+                DependencyKind.SOURCE,
+                "training-batch:" + source.training_batch_sha256,
+            ),
+            DependencyRef(
+                DependencyKind.SOURCE,
+                "source-proof:" + source.training_authority_sha256,
+            ),
+            DependencyRef(
                 DependencyKind.RELEASE,
                 "source-release:" + source.release_sha256,
+            ),
+            DependencyRef(
+                DependencyKind.RELEASE,
+                "source-generation:" + source.generation_binding,
             ),
         ))
     return tuple(sorted(dependencies))
@@ -76,6 +92,7 @@ def materialized_support(binding, student, manifest_sha256, capability_id):
     anchors = _verify_anchor_proofs(binding, student, capability_id)
     dependencies = _anchor_dependencies(
         anchors, binding.policy_sha256, manifest_sha256)
+    impact, exigency = owner_priority(ArtifactKind.CAPABILITY_SUPPORT)
     node = ArtifactNode(
         artifact_id="capability-support:" + capability_id,
         kind=ArtifactKind.CAPABILITY_SUPPORT,
@@ -90,8 +107,8 @@ def materialized_support(binding, student, manifest_sha256, capability_id):
         }),
         eligible=True,
         immediate_dependencies=dependencies,
-        impact=0,
-        exigency=0,
+        impact=impact,
+        exigency=exigency,
     )
     support = CapabilitySupport(
         capability_id=capability_id,

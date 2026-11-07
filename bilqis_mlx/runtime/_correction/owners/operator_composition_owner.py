@@ -6,12 +6,12 @@ from bilqis_mlx.semantics.cognitive_dependencies import (
 )
 from bilqis_mlx.semantics.cognitive_operators import OperatorBinding
 from bilqis_mlx.semantics.domains import contract_digest
-from bilqis_mlx.runtime.atlas_revalidation_common import _invalid
+from bilqis_mlx.runtime.atlas_revalidation_common import _invalid, owner_priority
 from bilqis_mlx.runtime.atlas_revalidation_evidence import (
     CorrectionEvent, RevalidationFrontier,
 )
 from bilqis_mlx.runtime.atlas_revalidation_queue import (
-    RevalidationProgress, RevalidationQueue,
+    RevalidationProgress, RevalidationQueue, _sort_tasks, _task,
 )
 from bilqis_mlx.runtime.atlas_revalidation_runtime import (
     advance_revalidation, apply_correction, next_revalidation_task,
@@ -30,20 +30,22 @@ def _node(composition, binding: OperatorBinding) -> ArtifactNode:
     dependencies = {
         DependencyRef(DependencyKind.SOURCE, "source:binding:" + binding_digest),
         DependencyRef(DependencyKind.SOURCE, "source:qualification:" + composition.qualification_receipt_sha256),
+        DependencyRef(DependencyKind.RELEASE, "generation:" + composition.generation_digest),
         DependencyRef(DependencyKind.RELEASE, "semantic-release:" + composition.goal.semantic_release),
         DependencyRef(DependencyKind.RIGHTS, "rights-epoch:" + str(composition.rights_epoch)),
         DependencyRef(DependencyKind.POLICY, "correction-generation:" + str(composition.correction_generation)),
         *(DependencyRef(DependencyKind.OPERATOR, "operator:" + operator_id)
           for operator_id in composition.goal.allowed_operator_ids),
     }
+    impact, exigency = owner_priority(ArtifactKind.OPERATOR_COMPOSITION)
     return ArtifactNode(
         artifact_id="composition:" + composition.qualification_receipt_sha256,
         kind=ArtifactKind.OPERATOR_COMPOSITION,
         content_digest=contract_digest(composition),
         eligible=True,
         immediate_dependencies=tuple(sorted(dependencies)),
-        impact=0,
-        exigency=0,
+        impact=impact,
+        exigency=exigency,
     )
 
 
@@ -113,6 +115,21 @@ class OperatorCompositionArtifactOwner:
             else:
                 rebuilt.append(expected)
         self._index = DependencyIndex.build(tuple(rebuilt))
+        if (self._queue is not None
+                and node.artifact_id not in self._queue.held_artifact_ids
+                and self._queue.event.dependency in node.immediate_dependencies):
+            history_ids = {item.artifact_id for item in self._queue.history}
+            if node.artifact_id not in history_ids:
+                pending = _sort_tasks((*self._queue.pending, _task(
+                    self._index.node(node.artifact_id),
+                    self._queue.event.dependency,
+                )))
+                self._queue = RevalidationQueue(
+                    self._queue.event,
+                    pending,
+                    tuple(sorted(item.artifact_id for item in pending)),
+                    self._queue.history,
+                )
         return True
 
     def node_for(self, composition) -> ArtifactNode:

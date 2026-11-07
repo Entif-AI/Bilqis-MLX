@@ -150,6 +150,15 @@ class SourceExecutionContext:
         return record_accepted_correction(
             self.run_dir, event, self.correction_registry)
 
+    def record_revalidation(self, frontier) -> str:
+        if self.run_dir is None or self.correction_registry is None:
+            _invalid_source_batch("FACTORY_SOURCE_CORRECTION_RUNTIME_REQUIRED")
+        from bilqis_mlx.runtime.accepted_corrections import (
+            record_accepted_revalidation,
+        )
+        return record_accepted_revalidation(
+            self.run_dir, frontier, self.correction_registry)
+
     def require_capabilities(self, capabilities: tuple[str, ...]) -> None:
         """Check a complete host request before any of its providers run."""
         admitted = self.release.execution_plan.capability_map

@@ -10,9 +10,13 @@ from threading import RLock
 from typing import Callable
 
 from bilqis_mlx.data_plane import data_plane
+from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
 
 from .atlas_revalidation_common import _invalid
-from .atlas_revalidation_evidence import CorrectionEvent
+from .atlas_revalidation_evidence import (
+    CorrectionEvent, RevalidatedArtifact, RevalidationFrontier,
+)
+from .atlas_revalidation_runtime import next_revalidation_task
 from .atlas_source_authority import SourceAuthorityRegistry
 from bilqis_mlx.runtime.capability_support_journal import (
     _event_record, event_from_record,
@@ -20,6 +24,7 @@ from bilqis_mlx.runtime.capability_support_journal import (
 
 
 _LEDGER_EVENT = "BAMF_C09_CORRECTION"
+_LEDGER_REVALIDATION = "BAMF_C09_REVALIDATION"
 _RUNTIME_LOCK = RLock()
 
 
@@ -39,6 +44,66 @@ def _ledger_record(manifest_sha256: str, event: CorrectionEvent) -> dict:
         "event_id": hashlib.sha256(_canonical(body)).hexdigest(),
         **body,
     }
+
+
+def _revalidation_payload(frontier: RevalidationFrontier) -> list[dict]:
+    return [
+        {
+            "artifact_id": item.artifact_id,
+            "immediate_dependencies": [
+                {"kind": ref.kind.value, "key": ref.key}
+                for ref in item.immediate_dependencies
+            ],
+            "content_digest": item.content_digest,
+            "eligible": item.eligible,
+            "source_receipt_sha256": item.source_receipt_sha256,
+            "correction_event_id": item.correction_event_id,
+            "correction_receipt_sha256": item.correction_receipt_sha256,
+            "source_owner": item.source_owner,
+            "source_signature_hex": item.source_signature_hex,
+        }
+        for item in frontier.results
+    ]
+
+
+def _revalidation_record(
+    manifest_sha256: str, frontier: RevalidationFrontier,
+) -> dict:
+    if not isinstance(frontier, RevalidationFrontier):
+        _invalid("BAMF_C09_REVALIDATION_FRONTIER_REQUIRED")
+    body = {
+        "event": _LEDGER_REVALIDATION,
+        "accepted_manifest_sha256": manifest_sha256,
+        "frontier": _revalidation_payload(frontier),
+    }
+    return {
+        "event_id": hashlib.sha256(_canonical(body)).hexdigest(),
+        **body,
+    }
+
+
+def _frontier_from_record(record: dict) -> RevalidationFrontier:
+    try:
+        results = tuple(sorted((
+            RevalidatedArtifact(
+                artifact_id=item["artifact_id"],
+                immediate_dependencies=tuple(sorted(
+                    DependencyRef(DependencyKind(ref["kind"]), ref["key"])
+                    for ref in item["immediate_dependencies"]
+                )),
+                content_digest=item["content_digest"],
+                eligible=item["eligible"],
+                source_receipt_sha256=item["source_receipt_sha256"],
+                correction_event_id=item["correction_event_id"],
+                correction_receipt_sha256=item["correction_receipt_sha256"],
+                source_owner=item["source_owner"],
+                source_signature_hex=item["source_signature_hex"],
+            )
+            for item in record["frontier"]
+        ), key=lambda item: item.artifact_id))
+        return RevalidationFrontier(results)
+    except (KeyError, TypeError, ValueError):
+        _invalid("BAMF_C09_REVALIDATION_LEDGER_INVALID")
 
 
 def accepted_correction_id(
@@ -61,9 +126,12 @@ def _read_records(run_dir: Path, manifest_sha256: str) -> tuple[dict, ...]:
                     _invalid("BAMF_C09_CORRECTION_LEDGER_TRUNCATED")
                 item = json.loads(line)
                 if (not isinstance(item, dict)
-                        or item.get("event") != _LEDGER_EVENT
                         or item.get("accepted_manifest_sha256")
                         != manifest_sha256):
+                    continue
+                if item.get("event") not in {
+                    _LEDGER_EVENT, _LEDGER_REVALIDATION,
+                }:
                     continue
                 body = {key: value for key, value in item.items()
                         if key != "event_id"}
@@ -90,7 +158,10 @@ def accepted_corrections(
     run_dir: Path, manifest_sha256: str,
     registry: SourceAuthorityRegistry | None,
 ) -> tuple[tuple[str, CorrectionEvent], ...]:
-    records = _read_records(run_dir, manifest_sha256)
+    records = tuple(
+        item for item in _read_records(run_dir, manifest_sha256)
+        if item["event"] == _LEDGER_EVENT
+    )
     if records and not isinstance(registry, SourceAuthorityRegistry):
         _invalid("BAMF_C09_CORRECTION_AUTHORITY_REQUIRED")
     result = []
@@ -103,6 +174,7 @@ def accepted_corrections(
 
 @dataclass
 class _Target:
+    owner: object
     apply: Callable[[CorrectionEvent, SourceAuthorityRegistry], object]
     seen: set[str] = field(default_factory=set)
 
@@ -132,14 +204,37 @@ class _AcceptedCorrectionRuntime:
         with self.lock:
             self.bind_registry(registry)
             key = (kind, id(owner))
-            target = self.targets.setdefault(key, _Target(apply))
+            target = self.targets.setdefault(key, _Target(owner, apply))
             target.seen.update(seen_event_ids)
-            for event_id, event in accepted_corrections(
-                    self.run_dir, self.manifest_sha256, self.registry):
+            for record in _read_records(
+                    self.run_dir, self.manifest_sha256):
+                event_id = record["event_id"]
                 if event_id in target.seen:
                     continue
-                target.apply(event, self.registry)
+                if record["event"] == _LEDGER_EVENT:
+                    event = event_from_record(record["correction"])
+                    self.registry.verify_correction(event)
+                    target.apply(event, self.registry)
+                else:
+                    self._advance(
+                        target, _frontier_from_record(record), self.registry)
                 target.seen.add(event_id)
+
+    @staticmethod
+    def _advance(
+        target: _Target, frontier: RevalidationFrontier,
+        registry: SourceAuthorityRegistry,
+    ) -> bool:
+        owner = target.owner
+        if (not hasattr(owner, "queue") or owner.queue is None
+                or not hasattr(owner, "index") or not hasattr(owner, "advance")):
+            return False
+        task = next_revalidation_task(owner.index, owner.queue)
+        if task is None or all(
+                item.artifact_id != task.artifact_id for item in frontier.results):
+            return False
+        owner.advance(frontier, registry)
+        return True
 
     def deliver(self, event_id: str, event: CorrectionEvent,
                 registry: SourceAuthorityRegistry) -> None:
@@ -149,6 +244,18 @@ class _AcceptedCorrectionRuntime:
                 if event_id in target.seen:
                     continue
                 target.apply(event, self.registry)
+                target.seen.add(event_id)
+
+    def deliver_revalidation(
+        self, event_id: str, frontier: RevalidationFrontier,
+        registry: SourceAuthorityRegistry,
+    ) -> None:
+        with self.lock:
+            self.bind_registry(registry)
+            for target in self.targets.values():
+                if event_id in target.seen:
+                    continue
+                self._advance(target, frontier, self.registry)
                 target.seen.add(event_id)
 
 
@@ -202,28 +309,33 @@ def register_compiled_batch(
     run_dir: Path, batch, registry: SourceAuthorityRegistry | None = None,
 ) -> None:
     from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
-    from .owners.atlas_owner_ingress import apply_compiled_batch_correction
+    from .owners.atlas_owner_ingress import _route
 
     cache = bind_accepted_execution_cache(run_dir)
-    register_accepted_target(
-        run_dir, cache.accepted_manifest_sha256, "B11_BATCH", batch,
-        lambda event, authority: apply_compiled_batch_correction(
-            batch, event, authority),
-        registry,
+    owners = (
+        ("ATLAS_FEATURE", batch.atlas_feature_artifact_owner),
+        ("PACKED_FRAME", batch.compiled.packed_frame_artifact_owner),
     )
+    for kind, owner in owners:
+        register_accepted_target(
+            run_dir, cache.accepted_manifest_sha256, kind, owner,
+            lambda event, authority, owner=owner: _route(
+                owner, event, authority),
+            registry,
+        )
 
 
 def register_solve_context(
     run_dir: Path, context, registry: SourceAuthorityRegistry | None = None,
 ) -> None:
     from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
-    from .owners.atlas_owner_ingress import apply_solve_context_correction
+    from .owners.atlas_owner_ingress import _route
 
     cache = bind_accepted_execution_cache(run_dir)
+    owner = context.operator_composition_artifact_owner
     register_accepted_target(
-        run_dir, cache.accepted_manifest_sha256, "C04_CONTEXT", context,
-        lambda event, authority: apply_solve_context_correction(
-            context, event, authority),
+        run_dir, cache.accepted_manifest_sha256, "OPERATOR_COMPOSITION", owner,
+        lambda event, authority: _route(owner, event, authority),
         registry,
     )
 
@@ -259,8 +371,52 @@ def record_accepted_correction(
     return record["event_id"]
 
 
+def record_accepted_revalidation(
+    run_dir: Path, frontier: RevalidationFrontier,
+    registry: SourceAuthorityRegistry,
+) -> str:
+    """Persist signed source recomputation evidence and advance live holds."""
+    from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
+
+    if not isinstance(frontier, RevalidationFrontier) or not frontier.results:
+        _invalid("BAMF_C09_REVALIDATION_FRONTIER_REQUIRED")
+    for result in frontier.results:
+        registry.verify_revalidation(result)
+    run_dir = Path(run_dir)
+    cache = bind_accepted_execution_cache(run_dir)
+    corrections = {
+        event.event_id: event
+        for _event_id, event in accepted_corrections(
+            run_dir, cache.accepted_manifest_sha256, registry)
+    }
+    for result in frontier.results:
+        correction = corrections.get(result.correction_event_id)
+        if (correction is None
+                or correction.source_receipt_sha256
+                != result.correction_receipt_sha256):
+            _invalid("BAMF_C09_REVALIDATION_CORRECTION_MISSING")
+    record = _revalidation_record(cache.accepted_manifest_sha256, frontier)
+    prior = _read_records(run_dir, cache.accepted_manifest_sha256)
+    if all(item["event_id"] != record["event_id"] for item in prior):
+        path = run_dir / "events.jsonl"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        raw = _canonical(record) + b"\n"
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+        try:
+            os.write(fd, raw)
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+        data_plane().sync_event_ledger(run_dir)
+    runtime = _runtime(run_dir, cache.accepted_manifest_sha256)
+    runtime.deliver_revalidation(record["event_id"], frontier, registry)
+    object.__setattr__(cache, "_correction_registry", registry)
+    return record["event_id"]
+
+
 __all__ = (
     "accepted_correction_id", "accepted_corrections", "bind_accepted_registry",
-    "record_accepted_correction", "register_accepted_target",
+    "record_accepted_correction", "record_accepted_revalidation",
+    "register_accepted_target",
     "register_compiled_batch", "register_solve_context",
 )

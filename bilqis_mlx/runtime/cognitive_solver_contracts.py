@@ -13,7 +13,7 @@ from ..semantics.memo import PureOperationMemo
 from .operator_registry import RouteKind, RouteRegistry, default_route_registry
 
 GENERATION_BINDING_SCHEMA = "bilqis.c04.generation-binding/v1"
-QUALIFIED_COMPOSITION_SCHEMA = "bilqis.c04.qualified-composition/v1"
+QUALIFIED_COMPOSITION_SCHEMA = "bilqis.c04.qualified-composition/v2"
 SOLVE_BUDGET_SCHEMA = "bilqis.c04.solve-budget/v2"
 SOLVE_CONTEXT_SCHEMA = "bilqis.c04.solve-context/v2"
 NEURAL_REQUEST_SCHEMA = "bilqis.c04.neural-request/v1"
@@ -56,6 +56,7 @@ class GenerationBinding:
 class QualifiedComposition:
     goal: TaskGoal
     source_binding_digest: str
+    generation_digest: str
     rights_epoch: int
     correction_generation: int
     qualification_receipt_sha256: str
@@ -64,6 +65,7 @@ class QualifiedComposition:
     def __post_init__(self) -> None:
         if (not isinstance(self.goal, TaskGoal)
                 or not _sha(self.source_binding_digest)
+                or not _sha(self.generation_digest)
                 or any(type(item) is not int or item < 0 for item in (
                     self.rights_epoch, self.correction_generation))
                 or not _sha(self.qualification_receipt_sha256)

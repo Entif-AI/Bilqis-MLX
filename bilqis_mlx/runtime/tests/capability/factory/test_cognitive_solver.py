@@ -47,6 +47,7 @@ class CognitiveSolverTests(unittest.TestCase):
         cached = QualifiedComposition(
             goal=add,
             source_binding_digest=generation.source_binding_digest,
+            generation_digest=generation.generation_digest,
             rights_epoch=binding.frontier.rights_epoch,
             correction_generation=binding.frontier.correction_generation,
             qualification_receipt_sha256="a" * 64,
@@ -74,10 +75,38 @@ class CognitiveSolverTests(unittest.TestCase):
             generation, budget)
         self.assertEqual(rejected.route, RouteKind.UNRESOLVED)
 
+    def test_cached_composition_is_bound_to_its_producing_generation(self):
+        binding, generation, budget, add, ambiguous = _fixture()
+        cached = QualifiedComposition(
+            goal=add,
+            source_binding_digest=generation.source_binding_digest,
+            generation_digest=generation.generation_digest,
+            rights_epoch=binding.frontier.rights_epoch,
+            correction_generation=binding.frontier.correction_generation,
+            qualification_receipt_sha256="a" * 64,
+        )
+        accepted = solve_task(
+            ambiguous,
+            SolveContext(
+                binding, qualified_compositions=(cached,),
+                qualification_verifier=lambda item: True),
+            generation, budget)
+        self.assertEqual(accepted.route, RouteKind.CACHED_COMPOSITION)
+
+        later = replace(generation, generation_digest="e" * 64)
+        rejected = solve_task(
+            ambiguous,
+            SolveContext(
+                binding, qualified_compositions=(cached,),
+                qualification_verifier=lambda item: True),
+            later, budget)
+        self.assertEqual(rejected.route, RouteKind.UNRESOLVED)
+
     def test_correction_hold_blocks_real_cached_composition_before_execution(self):
         binding, generation, budget, add, ambiguous = _fixture()
         cached = QualifiedComposition(
             add, generation.source_binding_digest,
+            generation.generation_digest,
             binding.frontier.rights_epoch,
             binding.frontier.correction_generation, "a" * 64)
         context = SolveContext(
@@ -107,6 +136,7 @@ class CognitiveSolverTests(unittest.TestCase):
                     correction=event), AUTHORITY)
         replacement = QualifiedComposition(
             add, generation.source_binding_digest,
+            generation.generation_digest,
             binding.frontier.rights_epoch,
             binding.frontier.correction_generation, "b" * 64)
         owner.remember(replacement, binding)
@@ -176,10 +206,35 @@ class CognitiveSolverTests(unittest.TestCase):
         self.assertEqual(
             caught.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
 
+    def test_active_correction_holds_newly_materialized_affected_composition(self):
+        binding, generation, _budget, add, _ambiguous = _fixture()
+        cached = QualifiedComposition(
+            add, generation.source_binding_digest, generation.generation_digest,
+            binding.frontier.rights_epoch,
+            binding.frontier.correction_generation, "a" * 64)
+        context = SolveContext(
+            binding, qualified_compositions=(cached,),
+            qualification_verifier=lambda item: True)
+        owner = context.operator_composition_artifact_owner
+        source = next(
+            ref for ref in owner.node_for(cached).immediate_dependencies
+            if ref.kind.value == "SOURCE" and ref.key.startswith("source:binding:"))
+        event = _event(source)
+        self.assertTrue(apply_solve_context_correction(
+            context, event, AUTHORITY))
+
+        learned = QualifiedComposition(
+            add, generation.source_binding_digest, generation.generation_digest,
+            binding.frontier.rights_epoch,
+            binding.frontier.correction_generation, "b" * 64)
+        self.assertTrue(owner.remember(learned, binding))
+        self.assertIn(owner.node_for(learned).artifact_id, owner.queue.held_artifact_ids)
+
     def test_neural_materialization_cannot_exceed_cached_candidate_budget(self):
         binding, generation, _budget, add, ambiguous = _fixture()
         cached = QualifiedComposition(
             add, generation.source_binding_digest,
+            generation.generation_digest,
             binding.frontier.rights_epoch,
             binding.frontier.correction_generation, "a" * 64)
         calls = []
@@ -233,6 +288,7 @@ class CognitiveSolverTests(unittest.TestCase):
         binding, generation, budget, add, ambiguous = _fixture()
         fallback = QualifiedComposition(
             add, generation.source_binding_digest,
+            generation.generation_digest,
             binding.frontier.rights_epoch,
             binding.frontier.correction_generation,
             "a" * 64)
@@ -271,6 +327,7 @@ class CognitiveSolverTests(unittest.TestCase):
             node, operands=(node.operands[0], node.operands[0]))))
         cached = QualifiedComposition(
             changed, generation.source_binding_digest,
+            generation.generation_digest,
             binding.frontier.rights_epoch,
             binding.frontier.correction_generation, "a" * 64)
         for context in (
@@ -286,6 +343,7 @@ class CognitiveSolverTests(unittest.TestCase):
         binding, generation, budget, add, ambiguous = _fixture()
         fallback = QualifiedComposition(
             add, generation.source_binding_digest,
+            generation.generation_digest,
             binding.frontier.rights_epoch,
             binding.frontier.correction_generation, "a" * 64)
         for malformed_digest in (False, True):
