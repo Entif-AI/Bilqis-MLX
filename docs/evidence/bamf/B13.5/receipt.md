@@ -165,7 +165,9 @@ Review episode: `697-b13-5-20261107`, round 1.
   and generated-test setup paths, and missing `vendor/legacy-v16/runs` in the
   Grade-C trainer setup path. The targeted #697/B13.5 and A02 authority tests in
   the same premerge selection are green.
-- the repository static legacy-trainer check also fails unchanged on pristine
+- the repository static legacy-trainer check, whose current adaptation oracle is
+  `/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`,
+  also fails unchanged on pristine
   reviewed unified because `docs/evidence/bamf/906/receipt.md` omits the
   canonical run identity. #697 does not modify that unrelated #906 evidence;
   the legacy-trainer checker unit suite itself passes **6/6**.
@@ -301,3 +303,30 @@ no unrelated test was changed from #697 to mask it.
 Because the authority semantics changed, the earlier 3,545-test aggregate is not
 reused as final round-2 qualification. A fresh isolated premerge aggregate is
 required before the issue may return to `EGM-Pending` and fresh round-2 review.
+
+### Reviewed-unified synchronization before the replacement aggregate
+
+Before the replacement aggregate launched, reviewed unified advanced from
+`cc48ac40d875f0c2ae8ffbdc70001dbfc4815334` to
+`d4bad39a32a80acbffdb9f891a906892ab2e9fab`. The synchronized candidate merge
+`b9438fa2d532bdf83663bc860f3d5230e4af9734` combines the pushed #697 repair and
+evidence head `be379153753e58218b0ebe389da0824369e63bd7` with that exact reviewed
+unified head. The merge is integration-only; the #697 semantic repair remains
+`a211836f59a2a7c4949d585f2e30060473a53a38`.
+
+Post-synchronization requalification against `d4bad39a`:
+
+- feature receipt + lineage authority: **11/11 PASS**;
+- generation acceptance/provenance: **20/20 PASS**;
+- publication: **18/18 PASS**;
+- expanded B13 custody package after the C09 integration: **138 PASS / 5 explicit
+  skips / 0 failures**;
+- governance integrity, Factory architecture, docs, error-control, changed-file
+  smell, development structure, flow-control units and `git diff --check` remain
+  **PASS**; error-control new debt 0 and changed-file smell findings 0.
+
+The current legacy-trainer authority contract names
+`/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`
+as the adaptation oracle. B13.5's historical note about the earlier inherited #906
+static failure is retained as chronology, while the current evidence names that
+canonical run explicitly so the present static guard can validate this receipt.

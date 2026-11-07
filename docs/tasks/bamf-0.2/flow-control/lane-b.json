@@ -67,7 +67,7 @@
       "state": "ACTIVE",
       "head_sha": "a211836f59a2a7c4949d585f2e30060473a53a38",
       "head_sha_role": "semantic head after the prime-side historical-acceptance authority audit found and repaired an unanchored ancestor acceptance sidecar; later evidence/flow commits are nonsemantic bookkeeping",
-      "summary": "B13.5 episode 697-b13-5-20261107 remains ACTIVE and EGM-Failed while semantic head a211836f is requalified. The round-2 pre-review audit proved a historical accepted-parent sidecar could be re-signed after pointer advance; accepted publication now emits an acceptance-bound v3 manifest that commits the exact parent acceptance digest while generic v2 custody remains readable/unbound. Focused B13 custody and A02 integration witnesses are green; fresh whole-candidate round 2 has not yet run.",
+      "summary": "B13.5 episode 697-b13-5-20261107 remains ACTIVE and EGM-Failed while semantic head a211836f is requalified on reviewed-unified d4bad39a. Local synchronization merge b9438fa2 preserves the historical-acceptance repair: accepted publication emits an acceptance-bound v3 manifest that commits the exact parent acceptance digest while generic v2 custody remains readable/unbound. Focused B13 custody and A02 integration witnesses are green; fresh whole-candidate round 2 has not yet run.",
       "resume_trigger": null,
       "closed_pr": 698,
       "preserved_branch": "feat/bamf-b13-5-697-generation-feature-binding-20261101",
