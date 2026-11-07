@@ -18,13 +18,14 @@ def refresh_owner_corrections(owner) -> None:
         runtime for runtime in _RUNTIME_OWNER.entries.values()
         if any(candidate is target for candidate in runtime.targets.values())
     ), None)
-    if retained_runtime is not None and retained_runtime.registry is not None:
+    if retained_runtime is not None:
         with retained_runtime.lock:
             retained_runtime._replay(target)
-            target.activate_pending(retained_runtime.registry)
-            retained_runtime._retry_deferred(target)
-            from .accepted_stale_replay_runtime import replay_persisted_faults
-            replay_persisted_faults(retained_runtime)
+            if retained_runtime.registry is not None:
+                target.activate_pending(retained_runtime.registry)
+                retained_runtime._retry_deferred(target)
+                from .accepted_stale_replay_runtime import replay_persisted_faults
+                replay_persisted_faults(retained_runtime)
 
 
 def require_pending_corrections(owner, artifact_id: str) -> None:
@@ -35,6 +36,8 @@ def require_pending_corrections(owner, artifact_id: str) -> None:
     target = getattr(owner, "_accepted_correction_target", None)
     if target is None:
         return
+    if artifact_id in target.context_holds:
+        _invalid("BAMF_C09_ARTIFACT_HELD")
     if artifact_id in target.process_fault_holds:
         _invalid("BAMF_C09_PROPAGATION_REPAIR_FAILED")
     node = owner.index.node(artifact_id)

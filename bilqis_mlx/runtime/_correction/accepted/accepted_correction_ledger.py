@@ -10,8 +10,9 @@ from bilqis_mlx.data_plane import data_plane
 from bilqis_mlx.runtime.capability_support_journal import event_from_record
 
 from .accepted_correction_records import (
-    ACCEPTED_EVENT_TYPES, CORRECTION_EVENT, DERIVED_CLAIM_EVENT,
+    ACCEPTED_EVENT_TYPES, CONTEXT_INVALIDATION_EVENT, CORRECTION_EVENT, DERIVED_CLAIM_EVENT,
     PROCESS_FAULT_EVENT, REMEDIATION_EVENT, REVALIDATION_EVENT, _canonical,
+    context_invalidation_from_record, context_invalidation_record,
     correction_record, frontier_from_record, lineage_records_from_bytes,
     revalidation_record, validate_record,
 )
@@ -158,8 +159,9 @@ def append_record(run_dir: Path, manifest_sha256: str, record: dict) -> None:
 
 
 __all__ = (
-    "CORRECTION_EVENT", "REVALIDATION_EVENT", "REMEDIATION_EVENT",
+    "CONTEXT_INVALIDATION_EVENT", "CORRECTION_EVENT", "REVALIDATION_EVENT", "REMEDIATION_EVENT",
     "DERIVED_CLAIM_EVENT", "PROCESS_FAULT_EVENT", "accepted_correction_id",
     "accepted_corrections", "append_record", "correction_record",
+    "context_invalidation_from_record", "context_invalidation_record",
     "frontier_from_record", "read_records", "revalidation_record",
 )

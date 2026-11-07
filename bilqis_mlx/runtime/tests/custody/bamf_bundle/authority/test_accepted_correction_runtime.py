@@ -17,7 +17,7 @@ from bilqis_mlx.runtime.accepted_corrections import (
     record_accepted_correction, record_accepted_revalidation,
     register_solve_context,
 )
-from bilqis_mlx.runtime.accepted_correction_ledger import correction_record
+from bilqis_mlx.runtime.accepted_correction_ledger import correction_record, read_records
 from bilqis_mlx.runtime.atlas_revalidation import RevalidationFrontier
 from bilqis_mlx.runtime.bamf_bundle import admission, publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import (
@@ -127,6 +127,42 @@ class AcceptedCorrectionRuntimeTests(unittest.TestCase):
             cold_held.exception.context["reason"],
             "BAMF_C09_ARTIFACT_HELD",
         )
+
+    def test_a13_context_invalidation_is_durable_without_becoming_a_correction(self):
+        cache, compiled, owner = self._motif_fixture()
+        config = compiled.compiler_configs[0]
+        previous = config.approved
+        task = replace(config.task, effective_time=config.task.effective_time + 1)
+        with shape_patch():
+            host = AcceptedRuntimeHost(self.run, AUTHORITY)
+            transition = host.record_context_transition(
+                previous, previous.envelopes, task, config.frontier, config.policy)
+        self.assertEqual(len(transition.invalidations), 1)
+        records = read_records(self.run, cache.accepted_manifest_sha256)
+        self.assertEqual(records[-1]["event"], "BAMF_C09_CONTEXT_INVALIDATION")
+        self.assertNotIn("correction", records[-1])
+        self.assertEqual(
+            records[-1]["context_invalidation"]["context_event_id"],
+            transition.invalidations[0].event_id,
+        )
+        with self.assertRaises(BilqisError) as held:
+            owner.require(cache, compiled)
+        self.assertEqual(held.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
+
+        admission._EXECUTION_CACHE_OWNER.entries.clear()
+        _RUNTIME_OWNER.clear()
+        with shape_patch():
+            cold_cache = bind_accepted_execution_cache(self.run)
+        cold_compiled = replace(
+            compiled,
+            extents=replace(
+                compiled.extents,
+                motif_key_map_digest=cold_cache.motif_manifest.digest,
+            ),
+        )
+        with self.assertRaises(BilqisError) as cold_held:
+            bind_motif_artifact_owner(cold_cache, cold_compiled)
+        self.assertEqual(cold_held.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
 
     def test_live_reader_observes_correction_committed_by_another_process(self):
         cache, compiled, owner = self._motif_fixture()

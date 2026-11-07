@@ -9,7 +9,8 @@ from bilqis_mlx.runtime.capability_support_journal import event_from_record
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyIndex
 
 from .accepted_correction_ledger import (
-    CORRECTION_EVENT, REVALIDATION_EVENT, frontier_from_record, read_records,
+    CONTEXT_INVALIDATION_EVENT, CORRECTION_EVENT, REVALIDATION_EVENT,
+    context_invalidation_from_record, frontier_from_record, read_records,
 )
 from .accepted_correction_target import AcceptedCorrectionTarget
 from .atlas_revalidation_common import _invalid
@@ -153,6 +154,9 @@ class AcceptedCorrectionRuntime:
                 event = event_from_record(record["correction"])
                 self.registry.verify_correction(event)
                 target.accept_correction(event, self.registry)
+            elif record["event"] == CONTEXT_INVALIDATION_EVENT:
+                target.accept_context_invalidation(
+                    context_invalidation_from_record(record))
             elif record["event"] == REVALIDATION_EVENT:
                 frontier = frontier_from_record(record)
                 if not self._advance(target, event_id, frontier, self.registry):
@@ -199,6 +203,14 @@ class AcceptedCorrectionRuntime:
                 self._retry_deferred(target)
             from .accepted_stale_replay_runtime import replay_stale_evidence
             replay_stale_evidence(self)
+
+    def deliver_context_invalidation(self, event_id: str, event) -> None:
+        with self.lock:
+            for target in tuple(self.targets.values()):
+                if target.owner is None or event_id in target.seen:
+                    continue
+                target.accept_context_invalidation(event)
+                target.seen.add(event_id)
 
 
 __all__ = ("AcceptedCorrectionRuntime",)

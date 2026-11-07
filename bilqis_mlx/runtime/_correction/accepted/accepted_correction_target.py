@@ -8,6 +8,8 @@ import weakref
 from .atlas_correction_branches import CorrectionBranches, add_correction
 from .atlas_revalidation_evidence import CorrectionEvent, RevalidationFrontier
 from .atlas_source_authority import SourceAuthorityRegistry
+from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
+from bilqis_mlx.semantics.context_eligibility import C09ContextInvalidation
 
 
 @dataclass
@@ -20,6 +22,7 @@ class AcceptedCorrectionTarget:
     deferred: dict[str, RevalidationFrontier] = field(default_factory=dict)
     revalidation_consumed: dict[str, set[tuple[str, str]]] = field(default_factory=dict)
     process_fault_holds: set[str] = field(default_factory=set)
+    context_holds: set[str] = field(default_factory=set)
 
     @property
     def owner(self):
@@ -71,6 +74,30 @@ class AcceptedCorrectionTarget:
         else:
             self._stage(event)
         self._sync_owner_pending()
+
+    def accept_context_invalidation(self, event: C09ContextInvalidation) -> None:
+        """Hold retained artifacts that were built from the invalidated A13 context."""
+        if not isinstance(event, C09ContextInvalidation):
+            from .atlas_revalidation_common import _invalid
+            _invalid("BAMF_C09_CONTEXT_INVALIDATION_REQUIRED")
+        owner = self.owner
+        if owner is None:
+            return
+        cause = DependencyRef(
+            DependencyKind.TIME, "time:asof:context:" + event.old_context_digest)
+        pending = [
+            node.artifact_id for node in owner.index.direct_dependents(cause)
+        ]
+        held = set(pending)
+        while pending:
+            artifact_id = pending.pop()
+            node = owner.index.node(artifact_id)
+            for dependent in owner.index.direct_dependents(node.reference):
+                if dependent.artifact_id in held:
+                    continue
+                held.add(dependent.artifact_id)
+                pending.append(dependent.artifact_id)
+        self.context_holds.update(held)
 
     def record_correction_branch(
         self, event: CorrectionEvent, registry: SourceAuthorityRegistry,

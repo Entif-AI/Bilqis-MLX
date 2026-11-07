@@ -5,6 +5,7 @@ import hashlib
 import json
 
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
+from bilqis_mlx.semantics.context_eligibility import C09ContextInvalidation
 from bilqis_mlx.runtime.capability_support_journal import _event_record
 
 from .accepted_stale_replay_ledger import (
@@ -18,8 +19,9 @@ from .atlas_revalidation_evidence import (
 
 CORRECTION_EVENT = "BAMF_C09_CORRECTION"
 REVALIDATION_EVENT = "BAMF_C09_REVALIDATION"
+CONTEXT_INVALIDATION_EVENT = "BAMF_C09_CONTEXT_INVALIDATION"
 ACCEPTED_EVENT_TYPES = frozenset((
-    CORRECTION_EVENT, REVALIDATION_EVENT, REMEDIATION_EVENT,
+    CORRECTION_EVENT, REVALIDATION_EVENT, CONTEXT_INVALIDATION_EVENT, REMEDIATION_EVENT,
     DERIVED_CLAIM_EVENT, PROCESS_FAULT_EVENT,
 ))
 
@@ -37,6 +39,74 @@ def correction_record(manifest_sha256: str, event: CorrectionEvent) -> dict:
         "correction": _event_record(event),
     }
     return {"event_id": hashlib.sha256(_canonical(body)).hexdigest(), **body}
+
+
+def _context_invalidation_payload(event: C09ContextInvalidation) -> dict:
+    if not isinstance(event, C09ContextInvalidation):
+        _invalid("BAMF_C09_CONTEXT_INVALIDATION_REQUIRED")
+    return {
+        "context_event_id": event.event_id,
+        "old_context_digest": event.old_context_digest,
+        "new_context_digest": event.new_context_digest,
+        "reason_codes": list(event.reason_codes),
+        "principal_id": event.principal_id,
+        "tenant_id": event.tenant_id,
+        "scope": event.scope,
+        "semantic_release": event.semantic_release,
+        "policy_epoch": event.policy_epoch,
+        "rights_epoch": event.rights_epoch,
+        "correction_generation": event.correction_generation,
+        "causal_prefix_end": event.causal_prefix_end,
+        "invalidated_handles": list(event.invalidated_handles),
+        "schema_version": event.schema_version,
+    }
+
+
+def context_invalidation_record(
+    manifest_sha256: str, event: C09ContextInvalidation,
+) -> dict:
+    body = {
+        "event": CONTEXT_INVALIDATION_EVENT,
+        "accepted_manifest_sha256": manifest_sha256,
+        "context_invalidation": _context_invalidation_payload(event),
+    }
+    return {"event_id": hashlib.sha256(_canonical(body)).hexdigest(), **body}
+
+
+def context_invalidation_from_record(record: dict) -> C09ContextInvalidation:
+    expected = {
+        "context_event_id", "old_context_digest", "new_context_digest", "reason_codes",
+        "principal_id", "tenant_id", "scope", "semantic_release",
+        "policy_epoch", "rights_epoch", "correction_generation",
+        "causal_prefix_end", "invalidated_handles", "schema_version",
+    }
+    try:
+        payload = record["context_invalidation"]
+        if not isinstance(payload, dict) or set(payload) != expected:
+            _invalid("BAMF_C09_CONTEXT_INVALIDATION_LEDGER_INVALID")
+        if (type(payload["reason_codes"]) is not list
+                or type(payload["invalidated_handles"]) is not list):
+            _invalid("BAMF_C09_CONTEXT_INVALIDATION_LEDGER_INVALID")
+        event = C09ContextInvalidation(
+            old_context_digest=payload["old_context_digest"],
+            new_context_digest=payload["new_context_digest"],
+            reason_codes=tuple(payload["reason_codes"]),
+            principal_id=payload["principal_id"],
+            tenant_id=payload["tenant_id"],
+            scope=payload["scope"],
+            semantic_release=payload["semantic_release"],
+            policy_epoch=payload["policy_epoch"],
+            rights_epoch=payload["rights_epoch"],
+            correction_generation=payload["correction_generation"],
+            causal_prefix_end=payload["causal_prefix_end"],
+            invalidated_handles=tuple(payload["invalidated_handles"]),
+            schema_version=payload["schema_version"],
+        )
+        if event.event_id != payload["context_event_id"]:
+            _invalid("BAMF_C09_CONTEXT_INVALIDATION_LEDGER_DRIFT")
+        return event
+    except (KeyError, TypeError, ValueError):
+        _invalid("BAMF_C09_CONTEXT_INVALIDATION_LEDGER_INVALID")
 
 
 def _revalidation_payload(frontier: RevalidationFrontier) -> list[dict]:
@@ -171,9 +241,10 @@ def lineage_records_from_bytes(
 
 
 __all__ = (
-    "ACCEPTED_EVENT_TYPES", "CORRECTION_EVENT", "DERIVED_CLAIM_EVENT",
+    "ACCEPTED_EVENT_TYPES", "CONTEXT_INVALIDATION_EVENT", "CORRECTION_EVENT", "DERIVED_CLAIM_EVENT",
     "PROCESS_FAULT_EVENT", "REMEDIATION_EVENT", "REVALIDATION_EVENT",
-    "_canonical", "correction_record", "frontier_from_record",
+    "_canonical", "context_invalidation_from_record", "context_invalidation_record",
+    "correction_record", "frontier_from_record",
     "lineage_records_from_bytes", "records_from_bytes", "revalidation_record",
     "validate_record",
 )

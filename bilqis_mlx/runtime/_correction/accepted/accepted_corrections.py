@@ -6,7 +6,7 @@ from pathlib import Path
 
 from .accepted_correction_ledger import (
     accepted_correction_id, accepted_corrections, append_record,
-    correction_record, revalidation_record,
+    context_invalidation_record, correction_record, revalidation_record,
 )
 from .accepted_stale_replay_ledger import (
     derived_claim_record, remediation_record,
@@ -54,6 +54,12 @@ class AcceptedRuntimeHost:
     def record_correction(self, event: CorrectionEvent) -> str:
         return record_accepted_correction(self.run_dir, event, self.registry)
 
+    def record_context_transition(
+        self, previous, frames, task_scope, source_frontier, policy,
+    ):
+        return record_accepted_context_transition(
+            self.run_dir, previous, frames, task_scope, source_frontier, policy)
+
     def record_revalidation(self, frontier: RevalidationFrontier) -> str:
         return record_accepted_revalidation(self.run_dir, frontier, self.registry)
 
@@ -97,6 +103,27 @@ def record_accepted_correction(
         record["event_id"], event, registry)
     object.__setattr__(cache, "_correction_registry", registry)
     return record["event_id"]
+
+
+def record_accepted_context_transition(
+    run_dir: Path, previous, frames, task_scope, source_frontier, policy,
+):
+    """Persist and deliver A13-owned context invalidations without correction authority."""
+    from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
+    from bilqis_mlx.semantics.context_eligibility import transition_context
+
+    run_dir = Path(run_dir)
+    cache = bind_accepted_execution_cache(run_dir)
+    transition = transition_context(
+        previous, frames, task_scope, source_frontier, policy)
+    if not transition.invalidations:
+        return transition
+    retained = runtime(run_dir, cache.accepted_manifest_sha256)
+    for event in transition.invalidations:
+        record = context_invalidation_record(cache.accepted_manifest_sha256, event)
+        append_record(run_dir, cache.accepted_manifest_sha256, record)
+        retained.deliver_context_invalidation(record["event_id"], event)
+    return transition
 
 
 def record_accepted_revalidation(
@@ -185,6 +212,7 @@ __all__ = (
     "AcceptedRuntimeHost", "_RUNTIME_OWNER", "accepted_correction_id",
     "accepted_corrections",
     "bind_accepted_registry", "record_accepted_correction",
+    "record_accepted_context_transition",
     "record_accepted_derived_claim", "record_accepted_remediation",
     "record_accepted_revalidation", "register_accepted_target",
     "register_compiled_batch", "register_solve_context",

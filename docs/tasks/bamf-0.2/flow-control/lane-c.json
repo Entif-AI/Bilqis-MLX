@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "70a4ef1e883d348920d64083c7546f443a90ef77",
-  "updated_at": "2026-11-05T06:20:10+00:00",
+  "observed_unified": "bd3657e170c8bdc046a7bb28524c0fb829ca7ce9",
+  "updated_at": "2026-11-07T10:15:48Z",
   "exception": null,
   "items": [
     {
@@ -119,6 +119,15 @@
       "summary": "Governance PR843 externally merged as2debce4f; synchronized lane intake, no implementation acceptance inferred.",
       "resume_trigger": null,
       "merged_pr": 843
+    },
+    {
+      "issue": 752,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "5f2aa2c1fea34a25377654a903defe15866c09ce",
+      "preserved_branch": "codex/752-post-egm-h1-fixes-20261107",
+      "summary": "H3 historical FAIL preserved. Six findings are repaired; sole remaining engineering scope is Lane-C durable consumption of typed A13.3 C09ContextInvalidation into retained C09 artifact owners. No H4, PR or merge-readiness claim is authorized.",
+      "resume_trigger": null
     },
     {
       "issue": 829,
