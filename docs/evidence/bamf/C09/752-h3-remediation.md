@@ -522,3 +522,46 @@ Engineering disposition: the complete known H4 finding set is repaired at semant
 head `4ff3294a...`. H4 itself remains historical FAIL until a new fresh-context
 whole-candidate review evaluates a newly frozen exact head. No PR, merge, issue
 closure, or neural/trainer mutation is claimed here.
+
+### H4 re-review round 2 and package-import custody repair
+
+The next fresh whole-candidate review evaluated exact remote-equal candidate
+`acc1500a4e36eed5de02dae6c280cef3d3e3ef6f` against unchanged reviewed unified
+`cc48ac40d875f0c2ae8ffbdc70001dbfc4815334`, again under pinned EGM
+`b3a35956759bf7f024af2ff061b2e0b44b438e4c`. All three independent lenses
+converged on **FAIL - 0 Blockers, 1 Major, 0 Nits**, with no additional severe
+finding. Both Majors from the preceding H4 round were confirmed closed.
+
+The new `PARENT_INTEGRATION` Major was a sibling-path custody gap. Normal Factory
+retention already required `source_context.require_accepted_runtime(run_dir)` before
+source draws and complete-solver work, but `evaluate_factory_package_import()` did
+not. `screen_delta_candidate()` could therefore hand package-import C05 screening an
+unbound source execution context; compiled-batch and solver-owner registration could
+become inert, durable accepted C09 correction replay/holds could be skipped, and the
+resulting C05 decision could later reach publication without repeating the screen
+under accepted-runtime custody.
+
+A failing-before regression proved the gap directly: the package-import owner test
+expected `require_accepted_runtime(Path("unused"))` and failed because the call count
+was zero. Semantic repair `f7537a0a5874ef031d992f71ee86f42ee9447d71`
+places the same accepted-runtime custody boundary at the start of package-import
+screening, before any live-parent load, source draw, instrument construction or C05
+solver evaluation. A second regression makes the ordering explicit: if custody raises,
+the package-import live-parent/C05 path is not entered.
+
+Post-repair proof:
+
+- package-import owner + source-execution custody ring: **11/11 PASS**;
+- complete Factory capability directory: **50 PASS, 0 FAIL, 6 explicit A01-mount
+  skips**;
+- changed-scope development structure and governance: **PASS, 0 violations**;
+- changed-file smell delta: **0 new findings**;
+- legacy-trainer authority: **PASS, 7/7**;
+- BAMF flow control: **PASS, 15/15**;
+- `git diff --check`: **PASS**.
+
+The prior fresh A01 real-source witness on the repaired lineage is also **3/3 PASS**,
+including the explicit-policy-expiry crossing. Historical H3, H4 round 1, and H4
+round 2 remain immutable failure receipts. This checkpoint asserts only that the
+complete known round-two finding set has been repaired; a new fresh-context
+whole-candidate review remains the merge-readiness gate.

@@ -133,9 +133,9 @@
       "issue": 752,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "4ff3294abfae8d39c25d6ba525dd1ba3bc6c7cf7",
+      "head_sha": "f7537a0a5874ef031d992f71ee86f42ee9447d71",
       "preserved_branch": "codex/752-post-egm-h1-fixes-20261107",
-      "summary": "H3 historical FAIL remains immutable. Fresh H4 on 5480830d failed 0 Blockers / 2 Majors: accepted C09 temporal ingress dropped #906 source-owned transition authority, and capability-support live generation identity reused the pre-update B11 source generation. Both have failing-before regressions and semantic repairs at 4ff3294a; widened 72/72 runtime/custody/capability proof, changed-scope quality, 43/43 contracts and diff hygiene are green. Candidate remains ACTIVE pending a newly frozen fresh-context H4 re-review.",
+      "summary": "H3 historical FAIL remains immutable. H4 round 1 on 5480830d failed 0B/2M and is repaired at 4ff3294a. Fresh H4 round 2 on acc1500a failed 0B/1M because package-import C05 screening omitted accepted C09 runtime custody; all three lenses converged and found no other severe issue. The gap has failing-before proof and semantic repair f7537a0a; package/source custody 11/11, Factory capability 50 pass with 6 explicit A01-mount skips, quality, flow, and diff hygiene are green. Candidate remains ACTIVE pending a new fresh-context whole-candidate review.",
       "resume_trigger": null
     },
     {
