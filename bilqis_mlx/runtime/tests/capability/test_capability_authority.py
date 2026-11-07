@@ -17,6 +17,10 @@ from bilqis_mlx.runtime.capability_authority import (
     AuthorityKind, AuthorityReceipt, AuthorityStatus, PrerequisiteThreshold,
     ReleasedEvidence, evaluate_progression_authority,
 )
+from bilqis_mlx.runtime.atlas_capability_support_owner import _issue_owner
+from bilqis_mlx.runtime.atlas_requalification import (
+    CapabilitySupport, RequalificationStatus,
+)
 from bilqis_mlx.runtime.capability_retention import (
     CompleteSolver, EvaluationCase, EvaluationCohort, EvidenceKind,
     case_census_digest, evaluate_capabilities,
@@ -24,12 +28,27 @@ from bilqis_mlx.runtime.capability_retention import (
 from bilqis_mlx.runtime.cognitive_solver import NeuralProposal, SolveBudget, SolveContext
 from bilqis_mlx.semantics.cognitive_dag import DAGBudget, DAGNode
 from bilqis_mlx.semantics.cognitive_operators import TypedValue
+from bilqis_mlx.semantics.cognitive_dependencies import (
+    ArtifactKind, ArtifactNode, DependencyKind, DependencyRef,
+)
 from bilqis_mlx.semantics.domains import contract_digest
 from bilqis_mlx.semantics.tests.test_cognitive_dag import _goal, _literal, _program
 from bilqis_mlx.semantics.tests.test_cognitive_operators import RELEASE, SCOPE, _case
 
 GENERATION, POLICY = "a" * 64, "9" * 64
 GRAPH = contract_digest({"tokens": ["fixture.padding", "cogal.value.false", "cogal.value.true"]})
+_DEFAULT_SUPPORT = object()
+
+
+def _support_owner(status=RequalificationStatus.QUALIFIED):
+    node = ArtifactNode(
+        "capability-support:target", ArtifactKind.CAPABILITY_SUPPORT,
+        "7" * 64, True,
+        (DependencyRef(DependencyKind.SOURCE, "fixture:source"),), 0, 0)
+    support = CapabilitySupport(
+        "target", (node.artifact_id,), ("fixture:source",), "8" * 64,
+        ("fixture:observation",), status)
+    return _issue_owner(support, node)
 
 
 def _release(edge=False, labels=("B", "C")):
@@ -101,7 +120,8 @@ def _authority(kind, status=AuthorityStatus.PERMITTED):
 
 class CapabilityAuthorityTests(unittest.TestCase):
     def gate(self, release, checkpoint, admission, *, proof=True, lease=True,
-             rights=True, policy=True, thresholds=(), omit=False, verifiers=None):
+             rights=True, policy=True, thresholds=(), omit=False, verifiers=None,
+             support_owner=_DEFAULT_SUPPORT):
         solver, target = _evidence(release, "target")
         _, prerequisite = _evidence(release, "foundation", proof)
         replay = ReplayBinding(solver, GENERATION, checkpoint, "C",
@@ -117,7 +137,9 @@ class CapabilityAuthorityTests(unittest.TestCase):
             promotion_policy=verifiers.get(AuthorityKind.PROMOTION_POLICY, _authority(AuthorityKind.PROMOTION_POLICY,
                 AuthorityStatus.PERMITTED if policy else AuthorityStatus.HELD)),
             admission_lease=verifiers.get(AuthorityKind.ADMISSION_LEASE,
-                _authority(AuthorityKind.ADMISSION_LEASE) if lease else None))
+                _authority(AuthorityKind.ADMISSION_LEASE) if lease else None),
+            capability_support_owner=(
+                _support_owner() if support_owner is _DEFAULT_SUPPORT else support_owner))
 
     def test_unfinished_grade_labels_neither_grant_nor_deny_independent_target(self):
         for labels in (("B", "C"), ("C", "B")):
@@ -194,3 +216,16 @@ class CapabilityAuthorityTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             admission.verify_baseline(student_sha256=checkpoint.sha256, optimizer_step=2,
                                       semantic_graph_sha256=GRAPH)
+
+    def test_learned_progression_requires_current_qualified_support(self):
+        release, checkpoint, admission = _release()
+        self.assertEqual(
+            self.gate(release, checkpoint, admission, support_owner=None).reason,
+            "CURRENT_CAPABILITY_SUPPORT_REQUIRED")
+        held = _support_owner(RequalificationStatus.REQUALIFICATION_REQUIRED)
+        self.assertEqual(
+            self.gate(release, checkpoint, admission, support_owner=held).reason,
+            "CURRENT_CAPABILITY_SUPPORT_HELD")
+        self.assertEqual(
+            self.gate(release, checkpoint, admission, support_owner=_support_owner()).status,
+            "ELIGIBLE")
