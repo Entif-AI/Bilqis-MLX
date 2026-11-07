@@ -10,12 +10,13 @@ import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.tests.test_frame_encoder import FrameEncoderTests
 from bilqis_mlx.runtime.accepted_corrections import (
-    _RUNTIME_OWNER, record_accepted_correction, record_accepted_revalidation,
+    _RUNTIME_OWNER, record_accepted_correction,
 )
 from bilqis_mlx.runtime.atlas_cache_codec import CacheAuthorityRuntime
 from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
 )
+from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
 from bilqis_mlx.runtime.bamf_bundle import admission, publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     admit_candidate_step, bind_accepted_cache_authority,
@@ -29,9 +30,8 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     acceptance, candidate, parent_state, shape_patch,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
-    AUTHORITY, _event, _result,
+    AUTHORITY, _event, _sign_event,
 )
-from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
 
 
 class AcceptedRuntimeCustodyTests(unittest.TestCase):
@@ -116,33 +116,56 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
         with shape_patch():
             cold_cache = bind_accepted_correction_authority(
                 self.run, AUTHORITY)
-        cold_owner = bind_motif_artifact_owner(cold_cache, compiled)
+        with self.assertRaises(BilqisError):
+            bind_motif_artifact_owner(cold_cache, compiled)
+        cold_owner = cold_cache._motif_artifact_owner
         self.assertTrue(cold_owner.queue.held_artifact_ids)
         with self.assertRaises(BilqisError):
             cold_owner.require(cold_cache, compiled)
 
-    def test_signed_revalidation_replays_after_correction_and_clears_cold_hold(self):
+    def test_missing_local_correction_ledger_fails_closed_after_history_exists(self):
         _cache, compiled, owner = self._motif_fixture()
         correction = _event(owner.source_dependencies[0])
         with shape_patch():
             record_accepted_correction(self.run, correction, AUTHORITY)
-        held = owner.index.node(owner.queue.held_artifact_ids[0])
-        with shape_patch():
-            record_accepted_revalidation(
-                self.run,
-                _result(held, digest=held.content_digest, correction=correction),
-                AUTHORITY,
-            )
-        self.assertEqual(owner.queue.held_artifact_ids, ())
-
+        (self.run / "events.jsonl").unlink()
         admission._EXECUTION_CACHE_OWNER.entries.clear()
         _RUNTIME_OWNER.clear()
         with shape_patch():
             cold_cache = bind_accepted_correction_authority(
                 self.run, AUTHORITY)
-        cold_owner = bind_motif_artifact_owner(cold_cache, compiled)
-        self.assertEqual(cold_owner.queue.held_artifact_ids, ())
-        self.assertIs(cold_owner.require(cold_cache, compiled), cold_owner.current_node)
+        with self.assertRaises(BilqisError) as caught:
+            bind_motif_artifact_owner(cold_cache, compiled)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_C09_CORRECTION_LEDGER_MISSING",
+        )
+
+    def test_truncated_local_correction_ledger_fails_closed_against_committed_history(self):
+        _cache, compiled, owner = self._motif_fixture()
+        first = _event(owner.source_dependencies[0])
+        second = _sign_event(replace(
+            first,
+            event_id="correction:synthetic:history-2",
+            source_receipt_sha256="e" * 64,
+            new_evidence_sha256="d" * 64,
+        ))
+        with shape_patch():
+            record_accepted_correction(self.run, first, AUTHORITY)
+            record_accepted_correction(self.run, second, AUTHORITY)
+        ledger = self.run / "events.jsonl"
+        lines = ledger.read_text(encoding="utf-8").splitlines(keepends=True)
+        ledger.write_text("".join(lines[:-1]), encoding="utf-8")
+        admission._EXECUTION_CACHE_OWNER.entries.clear()
+        _RUNTIME_OWNER.clear()
+        with shape_patch():
+            cold_cache = bind_accepted_correction_authority(self.run, AUTHORITY)
+        with self.assertRaises(BilqisError) as caught:
+            bind_motif_artifact_owner(cold_cache, compiled)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_C09_CORRECTION_HISTORY_COMMITMENT_DRIFT",
+        )
 
     def test_production_step_reaches_the_owner_binder(self):
         self.publish(candidate(parent_state()))

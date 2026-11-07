@@ -90,6 +90,8 @@ class AtlasFeatureArtifactOwner:
         node = self.current_node
         if node.content_digest != features.digest:
             _invalid("BAMF_C09_ATLAS_FEATURE_CONTENT_DRIFT")
+        from bilqis_mlx.runtime.accepted_correction_runtime import require_pending_corrections
+        require_pending_corrections(self, node.artifact_id)
         if self._queue is not None:
             return read_artifact(self._index, self._queue, node.artifact_id)
         if not node.eligible:
@@ -204,6 +206,8 @@ class PackedFrameArtifactOwner:
             if (node.content_digest != expected.content_digest
                     or node.immediate_dependencies != expected.immediate_dependencies):
                 _invalid("BAMF_C09_PACKED_FRAME_CONTENT_DRIFT")
+            from bilqis_mlx.runtime.accepted_correction_runtime import require_pending_corrections
+            require_pending_corrections(self, node.artifact_id)
             if self._queue is not None:
                 node = read_artifact(self._index, self._queue, node.artifact_id)
             elif not node.eligible:

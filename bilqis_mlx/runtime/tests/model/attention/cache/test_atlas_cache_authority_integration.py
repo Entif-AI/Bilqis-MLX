@@ -34,7 +34,7 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
     bind_accepted_cache_authority, interactive_accepted_cache_inference,
 )
 from bilqis_mlx.runtime.accepted_corrections import (
-    _RUNTIME_OWNER, record_accepted_correction,
+    AcceptedRuntimeHost, _RUNTIME_OWNER,
 )
 from bilqis_mlx.runtime import atlas_cache_runtime
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
@@ -240,8 +240,8 @@ def _assert_live_cache_use(
     with _cache_shape_patch():
         live_artifact = encode_cold_cache(
             authority, values, binding.codec_manifest, binding=binding)
-        live = interactive_accepted_cache_inference(
-            run, registry, live_artifact, binding,
+        live = AcceptedRuntimeHost(run, registry).cache_inference(
+            live_artifact, binding,
             cached_infer=lambda _: "CACHE", fp32_recompute=lambda: "FP32",
             quality_check=lambda _: CacheQualityObservation(True, 0.0),
             policy=CacheQualityPolicy(0.01), eligibility_source=eligibility_source)
@@ -255,9 +255,10 @@ def _assert_correction_hold(
     correction = _event(_ref(
         DependencyKind.RIGHTS, "rights:" + binding.source_rights_sha256))
     with _cache_shape_patch():
-        record_accepted_correction(run, correction, registry)
-        held = interactive_accepted_cache_inference(
-            run, registry, live_artifact, binding,
+        host = AcceptedRuntimeHost(run, registry)
+        host.record_correction(correction)
+        held = host.cache_inference(
+            live_artifact, binding,
             cached_infer=lambda _: test.fail("held cache influenced output"),
             fp32_recompute=lambda: "FP32",
             quality_check=lambda _: CacheQualityObservation(True, 0.0),

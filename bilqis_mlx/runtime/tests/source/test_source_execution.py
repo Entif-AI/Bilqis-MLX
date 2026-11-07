@@ -33,6 +33,12 @@ class SourceExecutionContextTests(unittest.TestCase):
         self.assertIs(context.answer_registry, self.answers)
         self.assertIsNone(context.source_root)
 
+    def test_unbound_source_context_cannot_claim_accepted_runtime_custody(self):
+        from pathlib import Path
+        context = SourceExecutionContext(**self.arguments)
+        with self.assertRaises(ValueError):
+            context.require_accepted_runtime(Path("fixture-run"))
+
     def test_admitted_context_uses_the_cold_read_authority(self):
         from pathlib import Path
         from bilqis_mlx.factory.execution import GradeProfile

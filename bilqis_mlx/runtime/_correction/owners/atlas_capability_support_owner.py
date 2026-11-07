@@ -82,6 +82,8 @@ class CapabilitySupportArtifactOwner:
         if (generation_binding is not None
                 and generation_binding not in self._generation_bindings):
             _invalid("BAMF_C09_CAPABILITY_SUPPORT_GENERATION_DRIFT")
+        from bilqis_mlx.runtime.accepted_correction_runtime import require_pending_corrections
+        require_pending_corrections(self, self.current_node.artifact_id)
         if self._support.status is not RequalificationStatus.QUALIFIED:
             _invalid("BAMF_C09_CAPABILITY_SUPPORT_REQUALIFICATION_REQUIRED")
         if self._queue is not None:

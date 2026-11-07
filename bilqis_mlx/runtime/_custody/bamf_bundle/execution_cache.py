@@ -106,7 +106,6 @@ def bind_motif_artifact_owner(cache, compiled):
     if owner is None:
         owner = MotifArtifactOwner(cache, compiled)
         object.__setattr__(cache, "_motif_artifact_owner", owner)
-    owner.require(cache, compiled)
     if cache._run_dir is not None:
         from bilqis_mlx.runtime.accepted_corrections import (
             register_accepted_target,
@@ -118,6 +117,7 @@ def bind_motif_artifact_owner(cache, compiled):
             lambda event, registry: _route(owner, event, registry),
             cache._correction_registry,
         )
+    owner.require(cache, compiled)
     return owner
 
 

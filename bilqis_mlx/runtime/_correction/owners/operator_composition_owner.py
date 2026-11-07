@@ -130,6 +130,10 @@ class OperatorCompositionArtifactOwner:
                     tuple(sorted(item.artifact_id for item in pending)),
                     self._queue.history,
                 )
+        from bilqis_mlx.runtime.accepted_correction_runtime import (
+            refresh_owner_corrections,
+        )
+        refresh_owner_corrections(self)
         return True
 
     def node_for(self, composition) -> ArtifactNode:
@@ -143,6 +147,10 @@ class OperatorCompositionArtifactOwner:
         if (node.content_digest != expected.content_digest
                 or node.immediate_dependencies != expected.immediate_dependencies):
             _invalid("BAMF_C09_OPERATOR_COMPOSITION_CONTENT_DRIFT")
+        from bilqis_mlx.runtime.accepted_correction_runtime import (
+            require_pending_corrections,
+        )
+        require_pending_corrections(self, node.artifact_id)
         if self._queue is not None:
             return read_artifact(self._index, self._queue, node.artifact_id)
         if not node.eligible:

@@ -34,7 +34,7 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     acceptance, accepted_state, candidate, parent_state, retention_decision,
     shape_patch,
 )
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.test_feature_authority import (
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.test_feature_authority import (
     RELEASE, source_features, feature_bound,
 )
 from bilqis_mlx.runtime.bamf_bundle.records import canonical

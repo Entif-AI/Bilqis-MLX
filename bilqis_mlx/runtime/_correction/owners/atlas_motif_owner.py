@@ -91,6 +91,9 @@ class MotifArtifactOwner:
         if (node.content_digest != expected.content_digest
                 or node.immediate_dependencies != expected.immediate_dependencies):
             _invalid("BAMF_C09_MOTIF_CONTENT_DRIFT")
+        from bilqis_mlx.runtime.accepted_correction_runtime import require_pending_corrections
+        for artifact_id in (*self._frame_ids, node.artifact_id):
+            require_pending_corrections(self, artifact_id)
         # A direct source correction holds its actual A05 input before the
         # manifest lookup can influence hidden state. Downstream motif holding
         # is propagated only when the recomputed input changes.

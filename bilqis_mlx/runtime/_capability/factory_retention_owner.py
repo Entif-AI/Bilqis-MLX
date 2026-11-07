@@ -171,6 +171,7 @@ def evaluate_factory_retention_candidate(
             or not isinstance(run_dir, Path)):
         _invalid("BAMF_C05_FACTORY_OWNER_INPUT_INVALID")
     source_context.__post_init__()
+    source_context.require_accepted_runtime(run_dir)
     release = source_context.release
     capability_map = release.execution_plan.capability_map
     if target_capability not in capability_map:

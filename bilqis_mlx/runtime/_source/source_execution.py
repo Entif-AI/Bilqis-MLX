@@ -159,6 +159,29 @@ class SourceExecutionContext:
         return record_accepted_revalidation(
             self.run_dir, frontier, self.correction_registry)
 
+    def record_remediation(self, remediation) -> str:
+        self.require_accepted_runtime(self.run_dir)
+        from bilqis_mlx.runtime.accepted_corrections import (
+            record_accepted_remediation,
+        )
+        return record_accepted_remediation(
+            self.run_dir, remediation, self.correction_registry)
+
+    def record_derived_claim(self, claim):
+        self.require_accepted_runtime(self.run_dir)
+        from bilqis_mlx.runtime.accepted_corrections import (
+            record_accepted_derived_claim,
+        )
+        return record_accepted_derived_claim(
+            self.run_dir, claim, self.correction_registry)
+
+    def require_accepted_runtime(self, run_dir: Path | None) -> None:
+        """Require host-owned accepted-run correction custody before execution."""
+        if (self.run_dir is None or self.correction_registry is None
+                or run_dir is None
+                or Path(self.run_dir).resolve() != Path(run_dir).resolve()):
+            _invalid_source_batch("FACTORY_SOURCE_CORRECTION_RUNTIME_REQUIRED")
+
     def require_capabilities(self, capabilities: tuple[str, ...]) -> None:
         """Check a complete host request before any of its providers run."""
         admitted = self.release.execution_plan.capability_map
