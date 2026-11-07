@@ -108,6 +108,7 @@ def solve_task(
                 proposal.proposal_receipt_sha256,
             ),
             binding,
+            max_cached_candidates=budget.max_cached_candidates,
         )
 
     def execute_proposal(

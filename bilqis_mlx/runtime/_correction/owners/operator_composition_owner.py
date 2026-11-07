@@ -80,13 +80,19 @@ class OperatorCompositionArtifactOwner:
     def is_materialized(self, composition) -> bool:
         return composition.qualification_receipt_sha256 in self._materialized
 
-    def remember(self, composition, binding: OperatorBinding) -> None:
+    def remember(
+        self, composition, binding: OperatorBinding, *,
+        max_cached_candidates: int | None = None,
+    ) -> bool:
         """Retain one composition only after the live solver validated it."""
         node = _node(composition, binding)
         key = composition.qualification_receipt_sha256
         existing = self._compositions.get(key)
         if existing is not None and existing != composition:
             _invalid("BAMF_C09_OPERATOR_COMPOSITION_RECEIPT_COLLISION")
+        if (existing is None and max_cached_candidates is not None
+                and len(self._cache_keys) >= max_cached_candidates):
+            return False
         self._compositions[key] = composition
         self._cache_keys.add(key)
         self._materialized.add(key)
@@ -107,6 +113,7 @@ class OperatorCompositionArtifactOwner:
             else:
                 rebuilt.append(expected)
         self._index = DependencyIndex.build(tuple(rebuilt))
+        return True
 
     def node_for(self, composition) -> ArtifactNode:
         return self._index.node("composition:" + composition.qualification_receipt_sha256)

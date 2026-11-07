@@ -4,16 +4,13 @@ from __future__ import annotations
 import json
 from dataclasses import replace
 from pathlib import Path
-from typing import NamedTuple
-
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_acceptance import (
     ACCEPTANCE_SCHEMA, AcceptedCandidateBinding, candidate_identity_digest,
 )
 from bilqis_mlx.semantics.cognitive_dependencies import (
-    ArtifactKind, ArtifactNode, DependencyIndex, DependencyKind, DependencyRef,
+    ArtifactKind, ArtifactNode, DependencyIndex,
 )
-from bilqis_mlx.semantics.domains import contract_digest
 
 from .atlas_requalification_contracts import (
     CapabilitySupport, RequalificationLedger, RequalificationStatus,
@@ -30,110 +27,10 @@ from .capability_support_journal import (
     event_from_record, journal_path, read_journal, transition_from_record,
     write_journal,
 )
+from .capability_support_materialization import materialized_support
 
 
 _ISSUER = object()
-
-
-class _SourceAnchor(NamedTuple):
-    capability_id: str
-    source_row_id: str
-    source_row_sha256: str
-    source_family_id: str
-    episode_id: str
-    release_sha256: str
-    training_batch_sha256: str
-    generation_binding: str
-    training_authority_sha256: str
-
-
-def _source_anchor(anchor) -> _SourceAnchor:
-    try:
-        return _SourceAnchor(*anchor)
-    except (TypeError, ValueError):
-        _invalid("BAMF_C09_CAPABILITY_SUPPORT_SOURCE_INVALID")
-
-
-def _anchor_dependencies(anchors, policy_sha256, manifest_sha256):
-    dependencies = {
-        DependencyRef(DependencyKind.POLICY, "retention-policy:" + policy_sha256),
-        DependencyRef(DependencyKind.RELEASE, "generation:" + manifest_sha256),
-    }
-    for anchor in anchors:
-        source = _source_anchor(anchor)
-        dependencies.update((
-            DependencyRef(DependencyKind.SOURCE, source.source_row_id),
-            DependencyRef(
-                DependencyKind.RELEASE,
-                "source-release:" + source.release_sha256,
-            ),
-        ))
-    return tuple(sorted(dependencies))
-
-
-def _verify_anchor_proofs(binding, student, capability_id):
-    anchors = tuple(anchor for anchor in binding.source_anchors
-                    if _source_anchor(anchor).capability_id == capability_id)
-    if not anchors:
-        _invalid("BAMF_C09_CAPABILITY_SUPPORT_SOURCE_MISSING")
-    proofs = {proof.training_authority_sha256: proof
-              for proof in student.retained_state.step_proofs}
-    if None in proofs or len(proofs) != len(student.retained_state.step_proofs):
-        _invalid("BAMF_C09_CAPABILITY_SUPPORT_PROOF_DRIFT")
-    for anchor in anchors:
-        source = _source_anchor(anchor)
-        proof = proofs.get(source.training_authority_sha256)
-        if (proof is None
-                or proof.source_release_sha256 != source.release_sha256
-                or proof.training_batch_sha256 != source.training_batch_sha256
-                or proof.target_capability_id != source.capability_id
-                or proof.source_family_id != source.source_family_id
-                or proof.episode_id != source.episode_id):
-            _invalid("BAMF_C09_CAPABILITY_SUPPORT_PROOF_DRIFT")
-    return anchors
-
-
-def _materialized_support(binding, student, manifest_sha256, capability_id):
-    anchors = _verify_anchor_proofs(binding, student, capability_id)
-    dependencies = _anchor_dependencies(
-        anchors, binding.policy_sha256, manifest_sha256)
-    node = ArtifactNode(
-        artifact_id="capability-support:" + capability_id,
-        kind=ArtifactKind.CAPABILITY_SUPPORT,
-        content_digest=contract_digest({
-            "capability": capability_id,
-            "accepted_generation": manifest_sha256,
-            "acceptance": binding.digest,
-            "decision": binding.decision_sha256,
-            "evidence": binding.evidence_sha256,
-            "policy": binding.policy_sha256,
-            "source_anchors": anchors,
-        }),
-        eligible=True,
-        immediate_dependencies=dependencies,
-        impact=0,
-        exigency=0,
-    )
-    support = CapabilitySupport(
-        capability_id=capability_id,
-        support_artifact_ids=(node.artifact_id,),
-        source_anchor_ids=tuple(sorted({
-            _source_anchor(anchor).source_row_id for anchor in anchors
-        })),
-        retained_generation_sha256=manifest_sha256,
-        observation_ids=tuple(sorted((
-            "acceptance:" + binding.digest,
-            "decision:" + binding.decision_sha256,
-            "evidence:" + binding.evidence_sha256,
-        ))),
-        status=RequalificationStatus.QUALIFIED,
-    )
-    generation_bindings = tuple(sorted({
-        _source_anchor(anchor).generation_binding for anchor in anchors
-    }))
-    if len(generation_bindings) != 1:
-        _invalid("BAMF_C09_CAPABILITY_SUPPORT_GENERATION_AMBIGUOUS")
-    return support, node, generation_bindings
 
 
 class CapabilitySupportArtifactOwner:
@@ -257,17 +154,12 @@ def _issue_owner(support, node, generation_bindings=(), journal=None):
     return owner
 
 
-def load_capability_support_owner(
-    run_dir: Path, capability_id: str,
-    authority_registry: SourceAuthorityRegistry | None = None,
-) -> CapabilitySupportArtifactOwner:
-    """Materialize current support only from accepted B13 custody and v3 source anchors."""
+def _load_accepted_support(run_dir: Path, capability_id: str):
     from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
     from bilqis_mlx.runtime.bamf_bundle.publication import (
         ACCEPTANCE_DIR, _live_bundle_manifest, _pointer_lock, _read_pointer,
     )
 
-    run_dir = Path(run_dir)
     with _pointer_lock(run_dir):
         pointer = _read_pointer(run_dir / "bamf-state.json")
         if pointer is None:
@@ -295,22 +187,19 @@ def load_capability_support_owner(
                 or binding.step_proof_sha256 != tuple(
                     proof.digest for proof in student.retained_state.step_proofs)):
             _invalid("BAMF_C09_CAPABILITY_SUPPORT_ACCEPTANCE_DRIFT")
-    support, node, generation_bindings = _materialized_support(
+    support, node, generation_bindings = materialized_support(
         binding, student, manifest_sha256, capability_id)
-    hold_path = journal_path(run_dir, manifest_sha256, capability_id)
-    owner = _issue_owner(support, node, generation_bindings, hold_path)
-    hold = read_journal(hold_path)
+    return manifest_sha256, support, node, generation_bindings
+
+
+def _rehydrate_support_hold(
+    owner, hold, node, authority_registry: SourceAuthorityRegistry | None,
+):
     if hold is None:
         return owner
-    if (hold.get("capability_id") != capability_id
-            or hold.get("manifest_sha256") != manifest_sha256
-            or hold.get("artifact_id") != node.artifact_id
-            or hold.get("state") not in {
-                "HELD", "CLEARED", "REQUALIFICATION_REQUIRED"}):
-        _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_DRIFT")
-    event = event_from_record(hold.get("event"))
     if not isinstance(authority_registry, SourceAuthorityRegistry):
         _invalid("BAMF_C09_CAPABILITY_SUPPORT_CORRECTION_AUTHORITY_REQUIRED")
+    event = event_from_record(hold.get("event"))
     authority_registry.verify_correction(event)
     transition = transition_from_record(hold.get("transition"))
     if transition is not None:
@@ -318,7 +207,11 @@ def load_capability_support_owner(
         if (transition.artifact_id != node.artifact_id
                 or transition.correction_event_id != event.event_id
                 or transition.correction_receipt_sha256
-                != event.source_receipt_sha256):
+                != event.source_receipt_sha256
+                or transition.previous_content_digest != node.content_digest
+                or transition.previous_eligible != node.eligible
+                or transition.immediate_dependencies
+                != node.immediate_dependencies):
             _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_DRIFT")
     if hold["state"] == "CLEARED":
         if transition is None or transition.changed:
@@ -335,6 +228,33 @@ def load_capability_support_owner(
         _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_DRIFT")
     owner._queue = apply_correction(event, owner._index, authority_registry)
     return owner
+
+
+def load_capability_support_owner(
+    run_dir: Path, capability_id: str,
+    authority_registry: SourceAuthorityRegistry | None = None,
+) -> CapabilitySupportArtifactOwner:
+    """Materialize current support only from accepted B13 custody and v3 source anchors."""
+    run_dir = Path(run_dir)
+    manifest_sha256, support, node, generation_bindings = _load_accepted_support(
+        run_dir, capability_id)
+    hold_path = journal_path(run_dir, manifest_sha256, capability_id)
+    owner = _issue_owner(support, node, generation_bindings, hold_path)
+    hold = read_journal(
+        hold_path,
+        capability_id=capability_id,
+        manifest_sha256=manifest_sha256,
+        artifact_id=node.artifact_id,
+    )
+    if hold is None:
+        return owner
+    if (hold.get("capability_id") != capability_id
+            or hold.get("manifest_sha256") != manifest_sha256
+            or hold.get("artifact_id") != node.artifact_id
+            or hold.get("state") not in {
+                "HELD", "CLEARED", "REQUALIFICATION_REQUIRED"}):
+        _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_DRIFT")
+    return _rehydrate_support_hold(owner, hold, node, authority_registry)
 
 
 __all__ = ("CapabilitySupportArtifactOwner", "load_capability_support_owner")

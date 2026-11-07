@@ -91,6 +91,12 @@ wording and legitimate new evidence must not be treated as the stale replay.
   uncorrected capability from missing/tampered state; equal and changed
   revalidations persist explicit signed-transition-backed `CLEARED` or
   `REQUALIFICATION_REQUIRED` states rather than authorizing by file deletion.
+  The correction-seen commitment is also retained in the canonical Bilqis
+  data plane, outside the run-local journal subtree, so deleting both local
+  journal files still fails closed. Persisted transitions must bind their
+  previous content, eligibility and dependencies to the current materialized
+  capability-support node before a cleared or requalification state is
+  accepted.
 - Signed correction ingress routes only to owners with a direct dependent for
   the corrected dependency. An unrelated correction therefore cannot replace
   another owner's active hold queue.
@@ -123,7 +129,7 @@ Review the complete diff from
 
 ## Verification receipts before EGM
 
-- Focused C09/custody acceptance suite: `86 passed, 0 failed, 0 skipped`.
+- Focused C09/custody acceptance suite: `89 passed, 0 failed, 0 skipped`.
 - `npm run quality:changed`: development structure OK; governance integrity
   OK; BAMF flow control OK; 15/15 flow-control tests passed; zero new
   changed-file smell findings.
