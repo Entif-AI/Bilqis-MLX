@@ -66,13 +66,11 @@ class FormalSourceResolutionTests(unittest.TestCase):
         self.assertEqual(
             resolved.source_authority, SOURCE_PROJECTION_ONLY)
         self.assertEqual(
-            resolved.uncovered,
-            ((FORMAL[2][0], "OPERATOR_SOURCE_SIGNATURE_MISMATCH"),))
+            resolved.uncovered, ())
         self.assertEqual(
             {item.semantic_id: item.operator.operator_id
              for item in resolved.witnesses},
-            {semantic_id: operator for semantic_id, _, operator in FORMAL
-             if operator != "COUNT"})
+            {semantic_id: operator for semantic_id, _, operator in FORMAL})
         for item in resolved.witnesses:
             self.assertEqual(
                 item.source_authority, SOURCE_PROJECTION_ONLY)
@@ -96,11 +94,8 @@ class FormalSourceResolutionTests(unittest.TestCase):
             (altered, bindings[1]), entries, default_registry(RELEASE),
             semantic_release=RELEASE, atlas_bundle_id=BUNDLE)
         self.assertEqual(
-            resolved.uncovered, (
-                (FORMAL[2][0], "OPERATOR_SOURCE_SIGNATURE_MISMATCH"),
-                (unknown, "OPERATOR_UNREGISTERED"),
-            ))
-        self.assertEqual(len(resolved.witnesses), len(FORMAL) - 1)
+            resolved.uncovered, ((unknown, "OPERATOR_UNREGISTERED"),))
+        self.assertEqual(len(resolved.witnesses), len(FORMAL))
         self.assertEqual(resolved.status, FORMAL_SOURCE_ONLY)
         self.assertEqual(
             resolved.source_authority, SOURCE_PROJECTION_ONLY)

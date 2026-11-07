@@ -1,12 +1,16 @@
 """Retention integration contracts; original evidence and boundaries preserved."""
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 from bilqis_mlx import trainer as trainer
+from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.learning.learning_experiment import Settings
 from bilqis_mlx.runtime import visits as runtime_visits
-from tests.integration.retention.fixtures import VisitFixture, _BatchCaptured, _rows, _visit_program, _visit_release
+from tests.integration.retention.fixtures import (
+    VisitFixture, _BatchCaptured, _rows, _school_receipt, _visit_program, _visit_release,
+)
 
 
 class CustodyTests(VisitFixture, unittest.TestCase):
@@ -17,12 +21,14 @@ class CustodyTests(VisitFixture, unittest.TestCase):
         self.assertEqual(
             runtime_visits._runtime_candidate_evidence._retention_support_capabilities(
                 admitted, ("A", "B", "C"), "B.AND"),
-            ("C.ADD", "C.COUNT", "C.NUMBER", "C.SUB", "C.SUCCESSOR"),
+            ("A.IDENTITY", "B.IFF", "C.ADD", "C.COUNT", "C.NUMBER",
+             "C.SUB", "C.SUCCESSOR"),
         )
         self.assertEqual(
             runtime_visits._runtime_candidate_evidence._retention_support_capabilities(
                 admitted, ("A", "B", "C"), "C.SUB"),
-            ("C.ADD", "C.COUNT", "C.NUMBER", "C.SUCCESSOR"),
+            ("A.IDENTITY", "B.AND", "B.IFF", "C.ADD", "C.COUNT", "C.NUMBER",
+             "C.SUCCESSOR"),
         )
 
     def test_b_debt_visit_delivers_fresh_c_frontier_support(self):
@@ -34,13 +40,17 @@ class CustodyTests(VisitFixture, unittest.TestCase):
             schema="bilqis.mlx.letter-grade/v1",
             stage="MAIN", grade="B", visits=4,
             active_grades=("A", "B", "C"),
+            introduction_stage=0,
+            introduction_frontiers=(),
             champions={"A": {"optimizer_step": 1}},
             carried_mastery_debt=("B.XOR", "C.COUNT"),
+            current_student=Checkpoint(
+                "e" * 64, "bundles/frontier-support", 1, True),
         )
         course = _visit_program()
         receipt = {
             "teacher": teacher, "generation": 1, "run_id": "frontier-support",
-            "school": {}, "teacher_misses": [], "config": {},
+            "school": _school_receipt(school), "teacher_misses": [], "config": {},
             "answer_ids": [6, 7], "curriculum_mode": "fixture-school",
         }
         optimizer = SimpleNamespace(
@@ -59,7 +69,8 @@ class CustodyTests(VisitFixture, unittest.TestCase):
             return {row["id"]: ("FALSE" if row["gold"] == "TRUE" else "TRUE")
                     for row in rows}
 
-        with (patch('bilqis_mlx.runtime.state._state_from_json', return_value=school),
+        with (TemporaryDirectory() as temporary,
+              patch('bilqis_mlx.runtime.state._state_from_json', return_value=school),
               patch('bilqis_mlx.runtime.admission._read_executable_factory_release_artifact',
                     return_value=_visit_release(course)),
               patch('bilqis_mlx.factory.schedule.schedule_program_from_executable_release',
@@ -88,7 +99,7 @@ class CustodyTests(VisitFixture, unittest.TestCase):
                     side_effect=inspect_batch)):
             with self.assertRaisesRegex(_BatchCaptured, "FRONTIER_SUPPORT_CAPTURED"):
                 trainer._take_visit(
-                    None, Path("/never-opened"), receipt, {}, course, engine,
+                    None, Path(temporary), receipt, {}, course, engine,
                     {}, optimizer, {}, steps_per_visit=1, batch_size=8,
                     reserve_gib=0., source_root=Path("/not-used"),
                     learning_settings=Settings())
@@ -111,5 +122,8 @@ class CustodyTests(VisitFixture, unittest.TestCase):
             attempted,
         )
 
-    def test_binary_grade_b_visit_does_not_invent_old_examples_at_zero_policy(self):
-        self.assertEqual(set(self._visit_selection(old=0)), {"B.XOR"})
+    def test_binary_grade_b_zero_old_policy_still_keeps_retention_support(self):
+        self.assertEqual(
+            set(self._visit_selection(old=0)),
+            {"A.IDENTITY", "B.XOR"},
+        )

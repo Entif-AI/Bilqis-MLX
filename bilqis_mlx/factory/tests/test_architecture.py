@@ -8,6 +8,39 @@ from scripts.check_factory_architecture import inspect_factory_architecture
 ROOT = Path(__file__).resolve().parents[3]
 
 
+def _write_developmental_policy_fixture(root: Path) -> None:
+    policy = ROOT / "docs/specifications/developmental_evidence_policy.json"
+    target = root / "docs/specifications/developmental_evidence_policy.json"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(policy.read_bytes())
+    marker = "FOUNDATION_EVIDENCE_POLICY_ACTIVE\n"
+    for relative in (
+        "README.md", "AGENTS.md",
+        "docs/specifications/0001_GENERATIVE_CURRICULUM_FACTORY.md",
+        "docs/architecture/BAMF_0_2.md",
+        "docs/tasks/bamf-0.2/issues/A08.md",
+        "docs/tasks/bamf-0.2/issues/C01.md",
+        "docs/tasks/bamf-0.2/issues/C02.md",
+        "docs/tasks/bamf-0.2/issues/C04.md",
+        "docs/tasks/bamf-0.2/issues/C05.md",
+        "docs/tasks/bamf-0.2/issues/C13.md",
+        "docs/tasks/bamf-0.2/issues/C14.md",
+        "docs/tasks/bamf-0.2/issues/C16.md",
+    ):
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(marker)
+    owner = root / "bilqis_mlx/runtime/_capability/factory_retention_owner.py"
+    owner.parent.mkdir(parents=True, exist_ok=True)
+    owner.write_text(
+        "CURRENT_EVIDENCE_STAGE = EvidenceStage.FOUNDATION_ACQUISITION\n")
+    evaluation = root / "bilqis_mlx/runtime/_capability/capability_evaluation.py"
+    evaluation.write_text(
+        "STRICT_GENERALIZATION = \"STRICT_GENERALIZATION\"\n"
+        "def evaluate(evidence_stage: EvidenceStage = "
+        "EvidenceStage.FOUNDATION_ACQUISITION):\n    pass\n")
+
+
 class FactoryArchitectureTests(unittest.TestCase):
     def test_semantic_identity_dispatch_is_confined_to_registration_owners(self):
         concrete = "from bilqis_mlx import live_grade_d\n"
@@ -249,6 +282,7 @@ class FactoryArchitectureTests(unittest.TestCase):
                 "# Historical evidence digests only.\n")
             (root / "bilqis_mlx/numeric_staircase.py").write_text(
                 "def _rebind():\n _factory_admission()\n")
+            _write_developmental_policy_fixture(root)
             self.assertEqual(inspect_factory_architecture(root), ())
 
     def test_legacy_release_gate_does_not_authorize_current_training(self):
