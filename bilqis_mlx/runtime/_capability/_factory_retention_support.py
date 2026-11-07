@@ -109,7 +109,7 @@ def _independent_draw(source_context, rows, seed, training):
         family = row.get("source_family_id")
         if not isinstance(family, str) or not family:
             execution = source_context.release.execution_plan.capability_map[row["capability"]]
-            family = _source_family(execution, seed=seed, each=C05_PROBE_EACH)
+            family = _source_family(execution)
         episode = row.get("episode_id")
         if not isinstance(episode, str) or not episode:
             episode = identity

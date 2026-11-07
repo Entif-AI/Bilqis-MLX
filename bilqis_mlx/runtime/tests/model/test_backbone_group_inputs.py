@@ -14,7 +14,9 @@ from bilqis_mlx.runtime.model_topology_v2 import (
 )
 
 
-from bilqis_mlx.runtime.tests.model.test_backbone_group_numerical import _params, _run, SPEC
+from bilqis_mlx.runtime.tests.model.backbone.test_backbone_group_numerical import (
+    SPEC, _params, _run,
+)
 
 class BackboneInputTests(unittest.TestCase):
     def test_wrong_group_and_parameter_geometry_reject(self):

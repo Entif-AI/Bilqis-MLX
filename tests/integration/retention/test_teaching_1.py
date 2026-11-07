@@ -1,12 +1,16 @@
 """Retention integration contracts; original evidence and boundaries preserved."""
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 from bilqis_mlx import trainer as trainer
 from bilqis_mlx.learning.learning_experiment import Settings
 from bilqis_mlx.runtime import visits as runtime_visits
-from tests.integration.retention.fixtures import VisitFixture, _BatchCaptured, _InlinePrefetchExecutor, _prefetch_visit_fixture, _rows, _visit_program, _visit_release
+from tests.integration.retention.fixtures import (
+    VisitFixture, _BatchCaptured, _InlinePrefetchExecutor, _prefetch_visit_fixture,
+    _rows, _school, _school_receipt, _visit_program, _visit_release,
+)
 
 
 class TeachingTests(VisitFixture, unittest.TestCase):
@@ -37,9 +41,8 @@ class TeachingTests(VisitFixture, unittest.TestCase):
                   "contrast": 1., "distill": 0., "preview": 0}
         teacher = {"strategies": {"p": policy}}
         engine = SimpleNamespace(pick=lambda *_: ("p", policy))
-        school = SimpleNamespace(stage="MAIN", grade="B", visits=0,
-                                 champions={"A": {"optimizer_step": 1}})
         course = _visit_program()
+        school = _school(course)
         miss = {
             "id": "historic:wrong:xor", "source_id": "historic:wrong:xor",
             "capability": "B.XOR", "answer_kind": "binary",
@@ -47,7 +50,7 @@ class TeachingTests(VisitFixture, unittest.TestCase):
         }
         receipt = {
             "teacher": teacher, "generation": 1, "run_id": "fresh-score",
-            "school": {}, "teacher_misses": [miss],
+            "school": _school_receipt(school), "teacher_misses": [miss],
             "teacher_miss_exposures": {miss["id"]: 0},
             "config": {}, "answer_ids": [6, 7],
             "curriculum_mode": "fixture-school",
@@ -64,7 +67,8 @@ class TeachingTests(VisitFixture, unittest.TestCase):
             scored_ids.extend(row["id"] for row in rows)
             raise _BatchCaptured("FRESH_SCORE_ROWS_CAPTURED")
 
-        with (patch('bilqis_mlx.runtime.state._state_from_json', return_value=school),
+        with (TemporaryDirectory() as temporary,
+              patch('bilqis_mlx.runtime.state._state_from_json', return_value=school),
               patch('bilqis_mlx.runtime.admission._read_executable_factory_release_artifact',
                     return_value=_visit_release(course)),
               patch('bilqis_mlx.factory.schedule.schedule_program_from_executable_release',
@@ -80,7 +84,7 @@ class TeachingTests(VisitFixture, unittest.TestCase):
             with self.assertRaisesRegex(
                     _BatchCaptured, "FRESH_SCORE_ROWS_CAPTURED"):
                 trainer._take_visit(
-                    None, Path("/never-opened"), receipt, {}, course, engine,
+                    None, Path(temporary), receipt, {}, course, engine,
                     {}, optimizer, {}, steps_per_visit=1, batch_size=8,
                     reserve_gib=0., source_root=Path("/not-used"),
                     learning_settings=Settings())
@@ -108,7 +112,8 @@ class TeachingTests(VisitFixture, unittest.TestCase):
             return {row["id"]: ("FALSE" if row["gold"] == "TRUE" else "TRUE")
                     for row in rows}
 
-        with (patch('bilqis_mlx.runtime.state._state_from_json', return_value=school),
+        with (TemporaryDirectory() as temporary,
+              patch('bilqis_mlx.runtime.state._state_from_json', return_value=school),
               patch('bilqis_mlx.runtime.admission._read_executable_factory_release_artifact',
                            return_value=_visit_release(course)),
               patch('bilqis_mlx.factory.schedule.schedule_program_from_executable_release',
@@ -129,7 +134,7 @@ class TeachingTests(VisitFixture, unittest.TestCase):
               patch('bilqis_mlx.learning.student_ops._train_step', side_effect=inspect_batch)):
             with self.assertRaisesRegex(_BatchCaptured, "STOP_BEFORE_ANY_OPTIMIZER"):
                 trainer._take_visit(
-                    None, Path("/never-opened"), receipt, {}, course, engine, {},
+                    None, Path(temporary), receipt, {}, course, engine, {},
                     optimizer, {}, steps_per_visit=1, batch_size=8, reserve_gib=0.,
                     source_root=Path("/not-used"), learning_settings=Settings(),
                     source_prefetch_executor=_InlinePrefetchExecutor(submitted_requests),
@@ -152,4 +157,7 @@ class TeachingTests(VisitFixture, unittest.TestCase):
         delivered = self._visit_selection(old=16, carried_debt=True)
         self.assertIn("A.IDENTITY", delivered)
         self.assertIn("B.XOR", delivered)
-        self.assertEqual(set(self._visit_selection(old=0, carried_debt=True)), {"B.XOR"})
+        self.assertEqual(
+            set(self._visit_selection(old=0, carried_debt=True)),
+            {"A.IDENTITY", "B.XOR"},
+        )

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from .. import context_eligibility as _api
+import bilqis_mlx.semantics.context_eligibility as _api
 
 
 @dataclass(frozen=True)
