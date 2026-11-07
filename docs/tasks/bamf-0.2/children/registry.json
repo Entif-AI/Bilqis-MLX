@@ -1826,6 +1826,46 @@
       "source_parent_sha256": "7337f48ccbb3dbd89c5d1d114c28d01815ed3e19b4c5008c66495ea36838c187"
     },
     {
+      "key": "C02.5",
+      "number": 905,
+      "parent_key": "C02",
+      "parent_number": 371,
+      "deps": [
+        "C02.3",
+        "B13",
+        "C03"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C02.5 | Transport B13/C03 run and visit provenance into BAMF batches",
+      "body_sha256": "081ca325173a805cee4475e8b9bab574123e2401bcf05943ebf99e00f972c4b0",
+      "source_parent_sha256": "7337f48ccbb3dbd89c5d1d114c28d01815ed3e19b4c5008c66495ea36838c187",
+      "dependency_evidence": {
+        "schema": "bilqis.bamf.dependency-evidence/v1",
+        "resolution": "held",
+        "body_sha256": "081ca325173a805cee4475e8b9bab574123e2401bcf05943ebf99e00f972c4b0",
+        "clause": "This leaf transports those owner records only.",
+        "known_edges": [
+          "C02.3",
+          "B13",
+          "C03"
+        ],
+        "external_receipts": [],
+        "source_records": [
+          {
+            "source_id": "C02.5.body",
+            "kind": "body",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/905",
+            "sha256": "081ca325173a805cee4475e8b9bab574123e2401bcf05943ebf99e00f972c4b0",
+            "excerpt": "B13.6 #904 frozen run-identity/seed interface."
+          }
+        ],
+        "obligations": [
+          "Transport the exact upstream record as non-authorizing provenance; preserve optimizer_step_seed and episode_id as separate existing meanings; final turn-in requires accepted #904/#376 receipts through reviewed unified."
+        ],
+        "unresolved": "B13.6 #904 and the new C03 visit-identity surface are frozen branch receipts, not yet accepted reviewed-unified dependencies. Implementation may proceed against the frozen interface; merge-readiness may not."
+      }
+    },
+    {
       "key": "C03.1",
       "number": 494,
       "parent_key": "C03",
