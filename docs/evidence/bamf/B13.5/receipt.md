@@ -235,3 +235,69 @@ The clean aggregate supersedes the earlier environment-limited premerge receipt.
 No production or test criterion was weakened to obtain it. Round 2 may therefore
 review the repaired semantic head `b85a96a86910ba7083fbef315ec31fe4c2cfc4a6`
 plus nonsemantic evidence/flow bookkeeping only.
+
+### Round-2 pre-review authority audit: historical acceptance anchor
+
+Before any round-2 Goldfish worker was created, a prime-side authority audit of
+candidate `3218636f8c9f9d6ab9c3dfa110a31ca457eed941` found a second
+`TARGET_LOCAL` B13.5 defect. The live pointer cryptographically named only the
+current generation's `acceptance_sha256`. Historical ancestors were reopened by
+manifest-named JSON sidecars whose self-digest and retained-state fields were
+validated, but no immutable artifact committed the exact historical acceptance
+digest after the pointer advanced.
+
+Failing-before regression
+`test_successor_rejects_resigned_historical_parent_acceptance` published an
+accepted generation 0 and generation 1, changed the historical generation-0
+acceptance `policy_sha256`, recomputed its `binding_sha256` self-consistently,
+and left the immutable parent/child bundle DAG untouched. The exact candidate
+still accepted the lineage: the feature-authority selection produced **10 PASS /
+1 FAIL** because the expected `BilqisError` was not raised. The issue therefore
+returned from `EGM-Pending` to `EGM-Failed` before any round-2 reviewer consumed
+budget; round 2 remains the next whole-candidate review in episode
+`697-b13-5-20261107`.
+
+Semantic repair `a211836f59a2a7c4949d585f2e30060473a53a38` adds an
+acceptance-bound published-bundle schema without rewriting generic historical
+custody:
+
+- ordinary/unbound bundle writes retain readable v2 semantics;
+- accepted publication emits v3 and commits `parent_acceptance_sha256` inside
+  the child manifest's content-addressed identity;
+- the current generation remains rooted at the pointer's exact
+  `acceptance_sha256`;
+- recursive feature-lineage replay obtains each historical parent's exact
+  acceptance digest from its immutable child manifest and requires the sidecar's
+  binding digest to equal that anchor;
+- a v2 historical bundle remains readable custody evidence but cannot be
+  silently promoted into acceptance-bound recursive authority where no immutable
+  historical acceptance anchor ever existed.
+
+Passing-after proof on the semantic repair:
+
+- feature receipt + lineage authority: **11/11 PASS**;
+- all B13 bundle contracts: **42 PASS / 1 explicit opt-in skip / 0 failures**,
+  including pinned pre-CAS writer compatibility;
+- complete B13 custody package: **113 PASS / 5 explicit fixture or opt-in skips /
+  0 failures**;
+- package-import plus production-authority selection: **20/20 PASS**;
+- module-size/development structure, governance integrity, Factory architecture,
+  docs, error-control, changed-file smell, flow-control and `git diff --check`:
+  **PASS**; error-control new debt 0, changed-file smell findings 0, flow-control
+  unit suite **15/15 PASS**;
+- disposable composition with preserved A02/#399 production work produced the
+  real full-topology vocabulary staging witness **1/1 PASS in 190.290s** and the
+  A02 planner **5/5 PASS + 1 optional real-source skip**. Generic/caller-minted
+  predecessor authority remains fail-closed.
+
+The differential leaf's parallel pytest selection reported 16 failures caused by
+Python 3.14 `xdist`/`execnet` attempting to serialize `unittest.subTest()` lambda
+values (`DumpError: can't serialize <class 'function'>`). A representative exact
+test reproduces the same failure on pristine reviewed-unified
+`cc48ac40d875f0c2ae8ffbdc70001dbfc4815334` under `-n 4` and passes serially
+with its subtests. This is inherited runner behavior, not a candidate regression;
+no unrelated test was changed from #697 to mask it.
+
+Because the authority semantics changed, the earlier 3,545-test aggregate is not
+reused as final round-2 qualification. A fresh isolated premerge aggregate is
+required before the issue may return to `EGM-Pending` and fresh round-2 review.
