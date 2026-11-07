@@ -5,7 +5,7 @@ import unittest
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.atlas_visit_provenance import BamfVisitProvenance
-from bilqis_mlx.runtime.tests.batch.visit_provenance_support import (
+from bilqis_mlx.runtime.tests.batch.training.visit_provenance_support import (
     c03_visit_record, visit_provenance,
 )
 

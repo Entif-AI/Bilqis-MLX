@@ -141,6 +141,29 @@ def _bind_b11_rows(source_context, candidate, authenticated, training, source_ro
     return tuple(compiled_rows)
 
 
+def _validated_training_request(
+        source_context, candidate, delivered_rows, generation_binding, *,
+        capability, delivery, requested_count, source_seed, source_each,
+        optimizer_step_seed, visit_provenance, teacher_strategy):
+    rows = tuple(delivered_rows) if isinstance(delivered_rows, (tuple, list)) else ()
+    if (type(source_context) is not SourceExecutionContext
+            or not isinstance(candidate, BamfBundleCandidate)
+            or not rows or any(type(row) is not dict for row in rows)
+            or not isinstance(capability, str) or not capability
+            or not isinstance(delivery, DeliveredTeaching)
+            or type(requested_count) is not int or requested_count < len(rows)
+            or type(source_seed) is not int or source_seed < 0
+            or type(source_each) is not int or source_each != len(rows)
+            or type(optimizer_step_seed) is not int or optimizer_step_seed < 0
+            or type(visit_provenance) is not BamfVisitProvenance
+            or visit_provenance.capability_id != capability
+            or not isinstance(teacher_strategy, dict)
+            or not isinstance(generation_binding, str) or not generation_binding
+            or source_context.source_root is None):
+        _invalid("FACTORY_TRAINING_BRIDGE_INPUT_INVALID")
+    return rows
+
+
 def prepare_factory_training_batch(
     source_context: SourceExecutionContext,
     candidate: BamfBundleCandidate,
@@ -164,22 +187,12 @@ def prepare_factory_training_batch(
     The bridge owns composition only. A05/A06/A13 remain source authority, B11
     remains the neural owner, and C16 remains the durable-student launch owner.
     """
-    rows = tuple(delivered_rows) if isinstance(delivered_rows, (tuple, list)) else ()
-    if (type(source_context) is not SourceExecutionContext
-            or not isinstance(candidate, BamfBundleCandidate)
-            or not rows or any(type(row) is not dict for row in rows)
-            or not isinstance(capability, str) or not capability
-            or not isinstance(delivery, DeliveredTeaching)
-            or type(requested_count) is not int or requested_count < len(rows)
-            or type(source_seed) is not int or source_seed < 0
-            or type(source_each) is not int or source_each != len(rows)
-            or type(optimizer_step_seed) is not int or optimizer_step_seed < 0
-            or type(visit_provenance) is not BamfVisitProvenance
-            or visit_provenance.capability_id != capability
-            or not isinstance(teacher_strategy, dict)
-            or not isinstance(generation_binding, str) or not generation_binding
-            or source_context.source_root is None):
-        _invalid("FACTORY_TRAINING_BRIDGE_INPUT_INVALID")
+    rows = _validated_training_request(
+        source_context, candidate, delivered_rows, generation_binding,
+        capability=capability, delivery=delivery, requested_count=requested_count,
+        source_seed=source_seed, source_each=source_each,
+        optimizer_step_seed=optimizer_step_seed,
+        visit_provenance=visit_provenance, teacher_strategy=teacher_strategy)
     authenticated = authenticate_bamf_candidate_feature_context(
         candidate, atlas_artifact_path)
     execution = source_context.release.execution_plan.capability_map[capability]

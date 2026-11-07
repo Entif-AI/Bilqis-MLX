@@ -18,7 +18,7 @@ from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.runtime.atlas_training_adapter import compile_training_batch
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
-from bilqis_mlx.runtime.tests.batch.visit_provenance_support import visit_provenance
+from bilqis_mlx.runtime.tests.batch.training.visit_provenance_support import visit_provenance
 from bilqis_mlx.runtime.tests.test_atlas_training_adapter import answer_plan_for
 from bilqis_mlx.semantics.atlas.feature_io import persist_feature_manifest
 from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest

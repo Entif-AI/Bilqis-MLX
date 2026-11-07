@@ -47,7 +47,7 @@ from bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_liv
     HP, genesis_bundle, live_factory_context,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import acceptance
-from bilqis_mlx.runtime.tests.batch.visit_provenance_support import visit_provenance
+from bilqis_mlx.runtime.tests.batch.training.visit_provenance_support import visit_provenance
 from bilqis_mlx.runtime.teacher_observation_capture import (
     ObservationCapture, read_sidecar, store_sidecar,
 )

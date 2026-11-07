@@ -9,7 +9,7 @@ from bilqis_mlx.factory.teaching import describe_delivered_teaching
 from bilqis_mlx.runtime.atlas_training_adapter import compile_training_batch
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.runtime.bamf_bundle import authenticate_bamf_candidate_feature_context
-from bilqis_mlx.runtime.tests.batch.visit_provenance_support import visit_provenance
+from bilqis_mlx.runtime.tests.batch.training.visit_provenance_support import visit_provenance
 from bilqis_mlx.semantics.context_eligibility import (
     PUBLIC_FORMAL, ContextPolicy, SourceFrontier, TaskScope,
 )
