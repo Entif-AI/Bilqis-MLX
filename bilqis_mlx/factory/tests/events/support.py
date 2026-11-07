@@ -110,4 +110,3 @@ class EventCandidateRealizationFixture:
             admitted_release_sha256=current.release_sha256,
             admission_receipt_sha256="a" * 64,
         )
-
