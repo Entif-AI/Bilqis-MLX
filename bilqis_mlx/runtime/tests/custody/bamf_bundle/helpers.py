@@ -329,7 +329,12 @@ def publish_candidate(run_dir, bundle):
             and bundle.extents.active_semantic_digest
             == parent.extents.active_semantic_digest
             and bundle.extents.factor_map_digest == parent.extents.factor_map_digest):
-        bundle = replace(bundle, extents=parent.extents)
+        retained = replace(
+            bundle.retained_state,
+            allocations=parent.retained_state.allocations,
+            custody=parent.retained_state.custody)
+        bundle = replace(
+            bundle, extents=parent.extents, retained_state=retained)
     return publish_bamf_generation(
         run_dir, bundle,
         acceptance=acceptance(
