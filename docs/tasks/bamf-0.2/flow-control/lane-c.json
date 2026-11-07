@@ -132,11 +132,11 @@
     {
       "issue": 752,
       "pr": null,
-      "state": "WAITING",
-      "head_sha": "c8c9675829e5d83a138fc33d8ca3d3dec05a1f12",
+      "state": "ACTIVE",
+      "head_sha": "03e7a3c060bc49962ccfe049417090ea2c1c6ec0",
       "preserved_branch": "codex/752-post-egm-h1-fixes-20261107",
-      "summary": "H3 historical FAIL preserved. Lane-C half of residual Major 3 is implemented at c8c96758 and M3-qualified: typed A13.3 C09ContextInvalidation is persisted/replayed into retained artifact holds without CorrectionEvent authority. Upstream real time-sensitive producer authority remains unresolved; no H4 or PR is authorized.",
-      "resume_trigger": "A13/source owner supplies a real production task/frontier/policy transition that emits C09ContextInvalidation for retained artifacts, followed by explicit authorization for any next EGM review round."
+      "summary": "H3 historical FAIL preserved. #906 producer authority is now EGM-Passed and merged into reviewed unified as PR #907 / fd9ef289, and the user explicitly resumed #752. Lane-C consumer c8c96758 remains the accepted durable C09ContextInvalidation path. Resuming the canonical branch for current-unified integration, full Major 3 proof, and the next governed whole-candidate review.",
+      "resume_trigger": null
     },
     {
       "issue": 829,
