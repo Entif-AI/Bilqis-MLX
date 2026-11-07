@@ -28,6 +28,7 @@ from bilqis_mlx.runtime.atlas_training_contracts import (
     BamfDeliveryProvenance, BamfTrainingRow, _issue_training_batch,
 )
 from bilqis_mlx.runtime.atlas_training_authority import _issue as issue_training_authority
+from bilqis_mlx.runtime.source_execution import source_content_digest
 
 
 class CandidateTransactionTests(TestCase):
@@ -94,13 +95,13 @@ class CandidateTransactionTests(TestCase):
     def test_direct_public_step_with_real_b11_authority_still_uses_b01_decay(self):
         source_row = {"id": "row-1", "capability": "A.TEST", "payload": "fixture"}
         delivery = BamfDeliveryProvenance(
-            "row-1", "source-1", "A.TEST", "op-1", (), 1, 1, None, 0,
+            "row-1", source_content_digest((source_row,)), "source-1", "A.TEST", "op-1", (), 1, 1, None, 0,
             "family-1", "episode-1")
         batch = _issue_training_batch(
             "4" * 64, "5" * 64, content_digest((source_row,)), "A.TEST",
             (BamfTrainingRow(None, None, None, delivery),))
         source = SourceAtomRow(None, source_row, {}, Path("."), 0, 1)
-        authority = issue_training_authority(batch, source)
+        authority = issue_training_authority(batch, source, delivery)
         optimizer = self.parent.optimizer
         zero_moments = AdamWStateTree(
             optimizer.parameters,
