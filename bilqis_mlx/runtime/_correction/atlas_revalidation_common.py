@@ -22,14 +22,14 @@ _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _ED25519_SIGNATURE = re.compile(r"[0-9a-f]{128}\Z")
 MAX_REVALIDATION_PRIORITY = 4
 
-_OWNER_PRIORITY = {
-    ArtifactKind.ATLAS_FEATURE: (4, 2),
-    ArtifactKind.PACKED_FRAME: (3, 3),
-    ArtifactKind.MOTIF: (4, 4),
-    ArtifactKind.EXACT_CACHE: (3, 4),
-    ArtifactKind.OPERATOR_COMPOSITION: (2, 4),
-    ArtifactKind.CAPABILITY_SUPPORT: (4, 4),
-}
+_OWNER_PRIORITY = (
+    (ArtifactKind.ATLAS_FEATURE, (4, 2)),
+    (ArtifactKind.PACKED_FRAME, (3, 3)),
+    (ArtifactKind.MOTIF, (4, 4)),
+    (ArtifactKind.EXACT_CACHE, (3, 4)),
+    (ArtifactKind.OPERATOR_COMPOSITION, (2, 4)),
+    (ArtifactKind.CAPABILITY_SUPPORT, (4, 4)),
+)
 
 
 def _invalid(reason: str) -> None:
@@ -46,9 +46,12 @@ def _digest(value: object) -> bool:
 
 def owner_priority(kind: ArtifactKind) -> tuple[int, int]:
     """Return declared impact/exigency for production artifact reuse."""
-    if not isinstance(kind, ArtifactKind) or kind not in _OWNER_PRIORITY:
+    if not isinstance(kind, ArtifactKind):
         _invalid("BAMF_C09_OWNER_PRIORITY_INVALID")
-    return _OWNER_PRIORITY[kind]
+    priority = next((value for item, value in _OWNER_PRIORITY if item is kind), None)
+    if priority is None:
+        _invalid("BAMF_C09_OWNER_PRIORITY_INVALID")
+    return priority
 
 
 def _time(value: object) -> bool:
