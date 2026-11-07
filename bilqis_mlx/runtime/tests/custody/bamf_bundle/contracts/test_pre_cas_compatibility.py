@@ -15,10 +15,16 @@ import bilqis_mlx.runtime.bamf_bundle.publication as publication
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.data_plane import DataPlane, data_plane
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation
+from bilqis_mlx.learning.atlas_acceptance import mint_acceptance_binding
+from bilqis_mlx.runtime.bamf_bundle import (
+    load_bamf_generation, publish_bamf_generation,
+)
+from bilqis_mlx.runtime.bamf_bundle.codec import save_bamf_bundle
+from bilqis_mlx.runtime.bamf_bundle.records import BAMF_POINTER_SCHEMA, canonical
 from bilqis_mlx.runtime.tests.custody.data_plane.base import DataPlaneCase, historical_module
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    accepted_state, candidate, parent_state, publish_candidate, shape_patch,
+    acceptance, accepted_state, candidate, next_accepted_step, parent_state,
+    publish_candidate, retention_decision, shape_patch,
 )
 
 PRE_CAS = "dfc0c7586c23b6477c08d4db486ade3deeb79fae"
@@ -158,3 +164,48 @@ class PreCasCompatibilityTests(DataPlaneCase):
                 self.assertRaises(BilqisError):
             publish_candidate(run, successor)
         self.assertEqual(json.loads((run / "bamf-state.json").read_text())["generation"], 0)
+
+    def test_live_v2_non_genesis_parent_cannot_authorize_fresh_successor(self):
+        run = self.root / "v2-upgrade-run"
+        genesis = candidate(parent_state())
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            first = publish_candidate(run, genesis)
+
+        generation_one = candidate(
+            accepted_state(parent_state()), 1, first["manifest_sha256"])
+        stage = run / "legacy-v2-stage"
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            manifest = save_bamf_bundle(generation_one, stage)
+        target = run / "bamf-bundles" / manifest["manifest_sha256"]
+        stage.rename(target)
+        accepted_one = acceptance(generation_one)
+        acceptance_dir = run / "bamf-acceptance"
+        acceptance_dir.mkdir(exist_ok=True)
+        (acceptance_dir / f"{manifest['manifest_sha256']}.json").write_bytes(
+            canonical(accepted_one.to_record()))
+        pointer = {
+            "schema": BAMF_POINTER_SCHEMA,
+            "run_id": generation_one.run_id,
+            "generation": generation_one.generation,
+            "parent_manifest_sha256": generation_one.parent_manifest_sha256,
+            "bundle": f"bamf-bundles/{manifest['manifest_sha256']}",
+            "manifest_sha256": manifest["manifest_sha256"],
+            "acceptance_sha256": accepted_one.digest,
+        }
+        (run / "bamf-state.json").write_bytes(canonical(pointer))
+
+        generation_two = candidate(
+            next_accepted_step(generation_one.retained_state), 2,
+            manifest["manifest_sha256"])
+        accepted_two = mint_acceptance_binding(
+            retention_decision(
+                parent=generation_one.retained_state,
+                retained=generation_two.retained_state),
+            generation_two.retained_state,
+            run_id=generation_two.run_id,
+            generation=generation_two.generation,
+            feature_sha256=generation_two.extents.factor_map_digest)
+
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
+                self.assertRaises(BilqisError):
+            publish_bamf_generation(run, generation_two, acceptance=accepted_two)
