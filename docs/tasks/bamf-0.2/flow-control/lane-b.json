@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "bd3657e170c8bdc046a7bb28524c0fb829ca7ce9",
-  "updated_at": "2026-11-07T14:46:00+00:00",
+  "updated_at": "2026-11-07T15:19:00+00:00",
   "exception": null,
   "items": [
     {
@@ -372,10 +372,10 @@
     {
       "issue": 367,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "bd3657e170c8bdc046a7bb28524c0fb829ca7ce9",
-      "summary": "B10 parent scoped integration active: derive closed source-owned refinement request disposition from current C04 TaskGoal and B10 AnswerPlan; accepted B10 children remain closed.",
-      "resume_trigger": null,
+      "state": "WAITING",
+      "head_sha": "d63bd8f9f4699087d67a6f4c740a9120a58ddf2a",
+      "summary": "Scoped B10 request-disposition owner is implemented and proven: C04 TaskGoal structure yields ORDINARY / EXPLICIT_MEMBER / UNRESOLVED_NESTED without caller booleans.",
+      "resume_trigger": "Reviewed unified consumes this branch and the remaining B06 source/seed authorities; then B11/#471 may compose canonical B06 selection.",
       "preserved_branch": "codex/367-b10-refinement-disposition-20261107"
     }
   ]
