@@ -22,6 +22,7 @@ from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
 )
 from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation
+from bilqis_mlx.runtime.bamf_bundle.records import canonical
 from bilqis_mlx.runtime.cognitive_package import (
     DeltaSlice, PackageArtifact, PackageBinding, PackageKind, ReceiverTensor, SourceRights,
     apply_plastic_delta, encode_plastic_delta, export_capability,
@@ -122,6 +123,10 @@ class PackageImportAdoptionTests(TestCase):
                 screened, self.run, export_clearance=receipt,
                 atlas_selection=self.selection, source_frontier=self.frontier,
                 authority_registry=REGISTRY)
+
+    def parent_acceptance_path(self):
+        return (self.run / "bamf-acceptance"
+                / f"{self.pointer['manifest_sha256']}.json")
 
     def test_eligible_import_resets_receiver_state_and_publishes_lineage(self):
         screened, receipt = self.screened()
@@ -228,6 +233,29 @@ class PackageImportAdoptionTests(TestCase):
             loaded = load_bamf_generation(self.run / "bamf-state.json")
         self.assertEqual(loaded.generation, 1)
         self.assertEqual(loaded.transition["package_sha256"], screened.candidate.package.digest)
+
+    def test_missing_parent_acceptance_cannot_authorize_package_import(self):
+        screened, receipt = self.screened()
+        self.parent_acceptance_path().unlink()
+        with self.assertRaises(BilqisError):
+            self.adopt(screened, receipt)
+        pointer = json.loads((self.run / "bamf-state.json").read_text())
+        self.assertEqual(pointer["manifest_sha256"], self.pointer["manifest_sha256"])
+
+    def test_resigned_parent_acceptance_drift_cannot_authorize_package_import(self):
+        screened, receipt = self.screened()
+        path = self.parent_acceptance_path()
+        record = json.loads(path.read_text())
+        record["optimizer_step"] += 1
+        record["binding_sha256"] = sha256(canonical({
+            key: value for key, value in record.items()
+            if key != "binding_sha256"
+        })).hexdigest()
+        path.write_text(json.dumps(record))
+        with self.assertRaises(BilqisError):
+            self.adopt(screened, receipt)
+        pointer = json.loads((self.run / "bamf-state.json").read_text())
+        self.assertEqual(pointer["manifest_sha256"], self.pointer["manifest_sha256"])
 
 
 if __name__ == "__main__":
