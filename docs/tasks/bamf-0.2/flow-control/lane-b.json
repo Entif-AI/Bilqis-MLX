@@ -383,10 +383,10 @@
     {
       "issue": 904,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "f8a47e4d434d96f4d53ba08ddfb5ae844d7a8e5a",
-      "summary": "B13.6 generation-zero custody has consumed accepted B13.1/#478 through reviewed unified cc48ac40 and passed refreshed dependency-sensitive custody, publication, cold-resume, authority and static proof. Fresh exact-head EGM is the remaining merge-readiness gate.",
-      "resume_trigger": "Fresh exact-head EGM passes on the stable refreshed candidate and hosted checks are green; then turn in #904 to reviewed unified without self-merge.",
+      "state": "READY",
+      "head_sha": "4465799c7c977c136cd7684df031f104db638748",
+      "summary": "B13.6 round-3 EGM Majors are repaired after consuming reviewed unified d4bad39a. B01 now owns genesis geometry/implementation identity, the shared publication sink self-enforces generation-specific authority, reviewed-unified accepted-support replay distinguishes B13 bootstrap from C05 acceptance, and exact M3 B13 custody/full-resume plus repository leaf quality proof are green. Fresh exact-head EGM is requested.",
+      "resume_trigger": "Fresh pinned EGM passes on the stable candidate; then run the premerge/hosted turn-in gates and open the lane-to-unified PR without self-merge.",
       "preserved_branch": "codex/904-b13-6-generation-zero-20261107"
     }
   ]
