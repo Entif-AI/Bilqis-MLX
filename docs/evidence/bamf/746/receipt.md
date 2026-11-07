@@ -78,14 +78,15 @@ B12, C12, C05, A12, C09, optimizer and B13 custody selection passes **146/146**,
 with zero failures, skips or errors. All new production and companion test files are
 below 240 lines. Every touched directory remains below 18 direct Python files.
 
-## Remaining production seam
+## Production composition closure
 
-The repository still has no non-test caller of `export_capability`, `receive_package`,
-`apply_plastic_delta`, `screen_delta_candidate`, or `publish_screened_delta_import`.
-The owner path is coherent and testable, but no existing production operator or
-importer invokes it. This branch does not invent one. #746/#718/#526 remain
-dependency-held until that caller exists.
+The final #746 implementation adds the production C12 composition seam
+`cognitive_package.operator.receive_screen_and_publish_package(...)`. It is the
+non-test caller of `receive_package`, A12/C09 verification, `apply_plastic_delta`,
+`screen_delta_candidate`, and `publish_screened_delta_import`. The operator derives
+receiver identity from current B13 custody and does not issue source, retention, or
+publication authority.
 
-No fresh EGM is spent on this child owner increment. #718/#526 retains the
-whole-candidate EGM gate after the production caller is real and the complete exact
-head has local proof plus remote readback.
+This section supersedes the earlier pre-operator hold that was recorded while #746
+was still being assembled. #746 does not spend a separate fresh EGM. #718/#526 owns
+the final whole-candidate review after this implementation reaches reviewed unified.

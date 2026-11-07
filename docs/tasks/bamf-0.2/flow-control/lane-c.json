@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "bd3657e170c8bdc046a7bb28524c0fb829ca7ce9",
-  "updated_at": "2026-11-07T09:45:11Z",
+  "observed_unified": "5f8f3d4b42cc4656020e4427c7d8e822825a36f9",
+  "updated_at": "2026-11-07T16:50:43Z",
   "exception": null,
   "items": [
     {
@@ -20,10 +20,10 @@
     {
       "issue": 526,
       "pr": null,
-      "state": "WAITING",
-      "head_sha": "41e37cf60a934181548e9b343ddab1ce2b3849a7",
-      "summary": "717receiver authority and744C05screen are consumed;745A12clearance merged. Remaining718/746bridge waits for production importer ownership.",
-      "resume_trigger": "746has a real production package-importer/operator owner, completes its existing acceptance and is consumed by718/526; then select526for integration.",
+      "state": "ACTIVE",
+      "head_sha": "5f8f3d4b42cc4656020e4427c7d8e822825a36f9",
+      "summary": "718/526 resume trigger fired: PR903/#746 is merged through reviewed unified. Assemble and verify the complete C12.2 owner candidate against the production package-import operator before reserved final EGM.",
+      "resume_trigger": null,
       "closed_pr": 680,
       "preserved_branch": "codex/bamf02-c12-526-exchange-20261101",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
