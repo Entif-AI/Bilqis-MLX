@@ -97,7 +97,7 @@
     },
     {
       "issue": 888,
-      "pr": 891,
+      "pr": null,
       "state": "READY",
       "head_sha": "78e5e45078539da3005077b34f1316b95c1b8b5a",
       "summary": "A09.5a realization authority is now consumed by the parent #395 adapter on the same PR candidate. Three genuine post-A/B/C source-qualified event realizations (D.EVENT_OCCURRENCE, D.COMMENCEMENT, D.TERMINATION) stage successively, persist/restart identically, preserve source-order and grade-label invariance, and each traverses next_atlas_delta through the existing learner-evidence/JIT seam. The merge-forward duplicate copular-only source resolver was removed after a focused failing integration test exposed it. Focused A09/frontier/event proof is 122 passed / 1 intentional real-corpus skip; changed-from-unified error debt is zero, changed-file smell audit is clean, Factory architecture/governance/flow-control/diff checks are green, and no C07 lease/admission or learner/optimizer mutation occurs.",
