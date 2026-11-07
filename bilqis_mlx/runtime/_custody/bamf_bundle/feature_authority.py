@@ -254,7 +254,7 @@ def _accepted_feature_chain(run_dir: Path, manifest_sha256: str, student,
     if (student.extents.factor_map_digest == parent.extents.factor_map_digest
             and student.compiler_features == parent.compiler_features
             and student.provenance.release_digest == parent.provenance.release_digest):
-        return prior, binding, prior_predecessor
+        return prior, binding, prior
     features = _authenticate_features(student, artifact_path, predecessor=prior)
     if features.predecessor_digest != prior.digest:
         invalid("BAMF_FEATURE_PREDECESSOR_UNAUTHENTICATED")
@@ -302,9 +302,9 @@ def read_accepted_generation_feature_lineage(pointer_path: Path, artifact_path: 
         pointer_path.parent, pointer["manifest_sha256"], student, artifact_path)
     if binding != current_binding:
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
-    predecessor = features.predecessor_digest
+    predecessor = None if predecessor_features is None else predecessor_features.digest
     if student.generation == 0:
-        if predecessor is not None:
+        if predecessor is not None or features.predecessor_digest is not None:
             invalid("BAMF_FEATURE_LINEAGE_DRIFT")
     elif predecessor is None:
         invalid("BAMF_FEATURE_PREDECESSOR_UNAUTHENTICATED")

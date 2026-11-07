@@ -6,6 +6,8 @@ receipt is minted from custody and from the replayed admitted source release.
 from __future__ import annotations
 
 import os
+import subprocess
+import sys
 import unittest
 from dataclasses import replace
 from pathlib import Path
@@ -178,9 +180,24 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
         features = source_features()
         self.publish(feature_bound(candidate(parent_state()), features))
         first = self.read_receipt(features)
-        second = self.read_receipt(features)
-        self.assertEqual(first.digest, second.digest)
-        self.assertEqual(first, second)
+        child = subprocess.run(
+            [sys.executable, "-B", "-c", """
+from pathlib import Path
+from unittest.mock import patch
+from bilqis_mlx.runtime.bamf_bundle import feature_authority, read_accepted_generation_feature_receipt
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.contracts.test_feature_authority import source_features, frozen_snapshot
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
+
+features = source_features()
+with shape_patch(), patch.object(
+        feature_authority, "load_pinned_atlas_snapshot",
+        side_effect=frozen_snapshot), patch.object(
+        feature_authority, "build_feature_manifest", return_value=features):
+    print(read_accepted_generation_feature_receipt(Path(__import__('sys').argv[1]), "/artifact").digest)
+""", str(self.pointer)],
+            cwd=Path.cwd(), env=os.environ.copy(), text=True,
+            capture_output=True, check=True)
+        self.assertEqual(first.digest, child.stdout.strip().splitlines()[-1])
 
     def test_successor_receipt_replays_accepted_predecessor_lineage(self):
         root = source_features()
@@ -228,6 +245,23 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
                 with self.subTest(forged=forged), self.assertRaises(BilqisError):
                     verify_accepted_generation_feature_receipt(
                         self.pointer, "/artifact", forged)
+
+    def test_retained_successor_binds_the_feature_map_its_parent_consumed(self):
+        root = source_features()
+        first = self.publish(feature_bound(candidate(parent_state()), root))
+        retained = feature_bound(
+            candidate(accepted_state(parent_state()), 1, first["manifest_sha256"]),
+            root)
+        self.publish(retained)
+
+        with shape_patch(), self.source_replay(root):
+            receipt, current, predecessor = read_accepted_generation_feature_lineage(
+                self.pointer, "/artifact")
+
+        self.assertEqual(receipt.generation, 1)
+        self.assertEqual(receipt.feature_sha256, root.digest)
+        self.assertEqual(receipt.predecessor_feature_sha256, root.digest)
+        self.assertEqual((current, predecessor), (root, root))
 
     def test_receipt_record_round_trip_detects_tampering(self):
         features = source_features()
