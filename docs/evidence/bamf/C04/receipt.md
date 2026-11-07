@@ -74,5 +74,4 @@ new-capability learning claim remains with its separate owner and is not manufac
 
 ## Turn-in rule
 
-The PR must target `codex/bamf-unified-base-20261028`, remain unmerged, and list
-`Closes #498`, `Closes #499`, `Closes #500`, and `Closes #373` for human merge.
+Children #498, #499 and #500 are already closed under ADR-121. The PR must target `codex/bamf-unified-base-20261028`, remain unmerged, and list only `Closes #373` for human merge.
