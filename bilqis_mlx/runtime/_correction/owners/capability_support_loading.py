@@ -16,6 +16,9 @@ from .capability_support_materialization import materialized_support
 
 def _accepted_binding(run_dir: Path, manifest_sha256: str):
     from bilqis_mlx.runtime.bamf_bundle.publication import ACCEPTANCE_DIR, _pointer_lock
+    from bilqis_mlx.runtime.bamf_bundle.genesis_records import (
+        INITIAL_BINDING_SCHEMA, InitialGenerationBinding,
+    )
 
     run_dir = Path(run_dir)
     with _pointer_lock(run_dir):
@@ -23,7 +26,13 @@ def _accepted_binding(run_dir: Path, manifest_sha256: str):
         if path.is_symlink() or not path.is_file():
             _invalid("BAMF_C09_CAPABILITY_SUPPORT_ACCEPTANCE_MISSING")
         try:
-            return AcceptedCandidateBinding.from_record(json.loads(path.read_bytes()))
+            record = json.loads(path.read_bytes())
+            schema = record.get("schema_version") if isinstance(record, dict) else None
+            if schema == INITIAL_BINDING_SCHEMA:
+                return InitialGenerationBinding.from_record(record)
+            if schema == ACCEPTANCE_SCHEMA:
+                return AcceptedCandidateBinding.from_record(record)
+            _invalid("BAMF_C09_CAPABILITY_SUPPORT_ACCEPTANCE_INVALID")
         except (UnicodeDecodeError, json.JSONDecodeError, BilqisError):
             _invalid("BAMF_C09_CAPABILITY_SUPPORT_ACCEPTANCE_INVALID")
 
@@ -41,6 +50,18 @@ def _accepted_materialization(
             run_dir / "bamf-bundles" / manifest_sha256,
             expected_manifest_sha256=manifest_sha256,
         )
+        if student.generation == 0:
+            from bilqis_mlx.runtime.bamf_bundle.genesis import (
+                validate_parsed_initial_generation_binding,
+            )
+            expected = (
+                binding.digest if expected_acceptance_sha256 is None
+                else expected_acceptance_sha256)
+            try:
+                validate_parsed_initial_generation_binding(student, binding, expected)
+            except BilqisError:
+                _invalid("BAMF_C09_CAPABILITY_SUPPORT_ACCEPTANCE_DRIFT")
+            return binding, student
         if (binding.schema_version != ACCEPTANCE_SCHEMA
                 or (expected_acceptance_sha256 is not None
                     and binding.digest != expected_acceptance_sha256)
@@ -67,7 +88,7 @@ def _latest_source_qualified_materialization(
         binding = _accepted_binding(run_dir, manifest_sha256)
         if (binding.schema_version != ACCEPTANCE_SCHEMA
                 or not any(anchor[0] == capability_id
-                           for anchor in binding.source_anchors)):
+                           for anchor in getattr(binding, "source_anchors", ()))):
             continue
         binding, student = _accepted_materialization(run_dir, manifest_sha256)
         return manifest_sha256, binding, student
@@ -111,7 +132,8 @@ def accepted_support_census(
     materializations = {}
     for lineage_manifest in reversed(_manifest_lineage(run_dir, manifest_sha256)):
         binding = _accepted_binding(run_dir, lineage_manifest)
-        if binding.schema_version != ACCEPTANCE_SCHEMA or not binding.source_anchors:
+        if (binding.schema_version != ACCEPTANCE_SCHEMA
+                or not getattr(binding, "source_anchors", ())):
             continue
         binding, student = _accepted_materialization(run_dir, lineage_manifest)
         for capability_id in sorted({anchor[0] for anchor in binding.source_anchors}):

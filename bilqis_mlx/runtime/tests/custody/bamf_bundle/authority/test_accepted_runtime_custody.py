@@ -66,9 +66,10 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
         self.assertIs(require_accepted_execution_cache(cache), cache)
         self.assertIs(rebound, cache)
         self.assertEqual(cache.run_id, "fixture-run")
+        accepted = load_accepted_generation(self.run)
         self.assertEqual(
             cache.motif_manifest.digest,
-            parent_state().allocations.manifest.digest,
+            accepted.retained_state.allocations.manifest.digest,
         )
         with self.assertRaises(BilqisError):
             AcceptedExecutionCache()

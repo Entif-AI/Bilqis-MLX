@@ -55,10 +55,20 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
         self.temporary.cleanup()
 
     def _publish_source_qualified_support(self, run):
-        parent, transaction, retained, _authority = _source_qualified_state()
-        bundle = candidate(retained)
-        decision = retention_decision(parent=parent, retained=retained)
+        _source_parent, transaction, retained, _authority = _source_qualified_state()
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            publish_candidate(run, candidate(parent_state()))
+            parent = load_accepted_generation(run)
+            retained = replace(
+                retained, allocations=parent.retained_state.allocations,
+                custody=parent.retained_state.custody)
+            bundle = derive_successor_bundle(
+                parent, retained,
+                parent_manifest_sha256=bind_accepted_execution_cache(
+                    run).accepted_manifest_sha256,
+                delivery_events=({"event": "FIXTURE_SOURCE_QUALIFIED"},))
+            decision = retention_decision(
+                parent=parent.retained_state, retained=retained)
             published = accept_and_publish(
                 run, bundle, retained, decision=decision,
                 feature_sha256=bundle.extents.factor_map_digest,
