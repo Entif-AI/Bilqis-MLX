@@ -97,12 +97,15 @@
     },
     {
       "issue": 399,
-      "pr": 887,
+      "pr": null,
       "state": "WAITING",
       "head_sha": "8457161520ae02173ef7c021e0cd7916b66467fc",
       "summary": "A02.1 now stages an exact append-only vocabulary successor from accepted B13 feature authority and leaves the accepted generation pointer unchanged. Preflight review corrected an earlier C07 authority bypass: Lane A no longer mints parameter-extension publication authority, and ordinary B13 publication fails closed on vocabulary changes until the C07 adoption executor exists. B13 recursive predecessor-lineage projection and accepted-active-set replay are repaired; focused staging/authority and semantic checks are green. Final #399 acceptance remains blocked on C07.1b/#510 atomic adoption.",
       "resume_trigger": "C07.1b/#510 must provide the persisted-lease-gated atomic adoption executor for the exact A02 staged candidate. #510 in turn remains acceptance-blocked on A09.5/#395 obtaining at least three genuinely new source-qualified candidate-to-staged-successor realizations beyond historical A/B/C.",
-      "preserved_branch": "codex/bamf02-a-399-production-admission-20261106"
+      "preserved_branch": "codex/bamf02-a-399-production-admission-20261106",
+      "closed_pr": 887,
+      "closed_under": "BAMF WAITING issue/branch queue; open implementation PRs are reserved for merge-ready candidates or active remediation delivery.",
+      "close_reason": "C07.1b/#510 owns persisted-lease-gated atomic adoption; #510 remains blocked on A09.5/#395 realization breadth."
     },
     {
       "issue": 395,
