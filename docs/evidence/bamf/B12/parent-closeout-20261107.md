@@ -64,8 +64,8 @@ follows:
 | First update of a new row uses count 1 | `test_b09_bridge_drives_b12_zero_gradient_count_and_decay`; parent denominator witness below |
 | Rejection restores all hashes/clocks | `test_rejection_returns_exact_parent_with_all_custody` |
 | Nonfinite/NaN gradient rejects without partial publication | `test_invalid_masks_nonfinite_gradient_and_count_overflow_fail_without_mutation` |
-| Unused motif row is byte-identical after an update | `test_unused_motif_row_is_byte_identical_after_b12_update`; production witness `test_b11_output_denominator_and_motif_read_reach_real_b12_transaction` |
-| Output-only semantic row receives denominator update | `test_loss_owner_records_denominators_feedback_and_role_reads`; `test_output_only_semantic_denominator_row_updates_through_b12`; production witness `test_b11_output_denominator_and_motif_read_reach_real_b12_transaction` |
+| Unused motif row is byte-identical after an update | `test_unused_motif_row_is_byte_identical_after_b12_update`; production witness `test_output_denominator_and_motif_read_reach_real_transaction` |
+| Output-only semantic row receives denominator update | `test_loss_owner_records_denominators_feedback_and_role_reads`; `test_output_only_semantic_denominator_row_updates_through_b12`; production witness `test_output_denominator_and_motif_read_reach_real_transaction` |
 | Huge frozen gradients cannot alter active clipping factor | `test_mask_precedes_global_clip_even_for_huge_frozen_gradients`; `test_mask_is_applied_before_clipping_and_huge_inactive_gradient_vanishes` |
 | Zero-gradient participating and never-participating rows have distinct clocks/decay | `test_zero_gradient_participates_but_frozen_and_no_loss_preserve_objects`; `test_b09_bridge_drives_b12_zero_gradient_count_and_decay` |
 | Multi-step rejection preserves all ages/counts | `test_rejection_returns_exact_parent_with_all_custody`; `test_acceptance_moves_entire_state_and_ages_once_for_two_steps` provides the accepted contrast |
@@ -83,7 +83,7 @@ EGM round 1 correctly found that those two witnesses stopped one ownership layer
 too low: they manually composed participation/mask/AdamW primitives, so they could
 remain green if the production B11 -> B09 -> B12 seam dropped execution facts.
 The repair therefore adds
-`test_b11_output_denominator_and_motif_read_reach_real_b12_transaction`, which
+`test_output_denominator_and_motif_read_reach_real_transaction`, which
 uses a B11-owner-issued loss/gradient execution, the real
 `production_candidate_step`, the real B09 execution-provenance binder, and the
 real B12 candidate transaction. It proves in one executable path that an
@@ -127,7 +127,7 @@ zero skips/errors**.
 
 Top-level affected boundary check:
 
-`python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/batch/test_atlas_candidate_step.py bilqis_mlx/runtime/tests/batch/test_factory_training_bridge.py`
+`python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/batch/test_atlas_candidate_step.py bilqis_mlx/runtime/tests/model/training/test_b12_production_participation.py bilqis_mlx/runtime/tests/batch/test_factory_training_bridge.py`
 
 Result: **10 PASS, 8 environment skips, 0 failures/errors**. The eight Factory
 bridge tests require the real `BILQIS_A01_ATLAS_BUNDLE` fixture, which is not
@@ -182,13 +182,16 @@ B12 parent regression.
 
 The first `quality:changed` integration gate also exposed two already-merged C02
 evidence sentences that the legacy-trainer authority checker correctly treated as
-ambiguous historical Prometheus-as-current-baseline language. The initial B12
-candidate carried a documentation-only wording repair. PR #895 subsequently landed
-the authoritative C02 evidence successor on reviewed unified, including the same
-historical/non-authoritative Prometheus boundary and canonical operator lineage at
+ambiguous historical Prometheus-as-current-baseline language. PR #895 later landed
+the C02 post-merge optimizer repair, but exact reviewed base
+`58eb36bba1958e0b3ca5d6aa3080260ccac3e9a1` still reproduces those same two static
+checker violations. The B12 branch therefore retains the minimal documentation-only
+mechanical-conformance repair so a required whole-repository gate does not remain
+red on inherited wording debt. Both sentences explicitly classify Prometheus as
+historical/non-authoritative for adaptation and retain the canonical operator
+lineage at
 `/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`.
-The B12 branch now consumes that reviewed successor rather than owning a parallel
-C02 evidence correction.
+No C02 runtime behavior or authority contract is changed.
 
 ## Mutation boundary
 

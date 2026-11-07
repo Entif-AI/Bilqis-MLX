@@ -175,7 +175,8 @@ Its current `state.json` reports generation **24254**, node
 receipt
 `5a9f680246b5f073e5aa387d8cacfe4e3a67e21fe1bb308f92dc4af7436e1895`.
 C02 did not mutate, resume, or train that run. The disposable exact-head proof
-above remains isolated. No Prometheus trainer path is part of this handoff.
+above remains isolated. Historical Prometheus trainer evidence is non-authoritative
+for this handoff and is not the current legacy-trainer adaptation source.
 
 The next review is a fresh whole-candidate re-audit of the post-merge repair
 plus this evidence successor. Its final disposition is recorded in the
