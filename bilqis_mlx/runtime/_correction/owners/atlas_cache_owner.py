@@ -56,6 +56,9 @@ def _dependencies(binding: CacheBinding) -> tuple[DependencyRef, ...]:
         DependencyRef(DependencyKind.RIGHTS, "purpose:" + binding.rights_purpose_sha256),
         DependencyRef(DependencyKind.POLICY, "policy-epoch:" + binding.policy_epoch_sha256),
         DependencyRef(DependencyKind.POLICY, "context:" + binding.context_eligibility_sha256),
+        DependencyRef(
+            DependencyKind.TIME,
+            "time:asof:context:" + binding.context_eligibility_sha256),
         DependencyRef(DependencyKind.SOURCE, "prefix:" + binding.causal_prefix_sha256),
         DependencyRef(DependencyKind.POLICY, "masks:" + binding.masks_sha256),
         DependencyRef(DependencyKind.POLICY, "scope:" + binding.scope_sha256),
@@ -112,12 +115,17 @@ class ExactCacheArtifactOwner:
 
     def _install_context_revalidation(
         self, index: DependencyIndex, transition,
-    ) -> None:
+    ) -> bool:
         if (not isinstance(index, DependencyIndex)
                 or {node.artifact_id for node in index.nodes}
                 != {node.artifact_id for node in self._index.nodes}):
             _invalid("BAMF_C09_CONTEXT_REVALIDATION_INDEX_DRIFT")
+        if transition.new_dependencies != transition.previous_dependencies:
+            # Cache identity commits the approved context. Rebinding it in place
+            # would make the immutable CacheBinding lie about the stored artifact.
+            return False
         self._index = index
+        return True
 
     @property
     def queue(self) -> RevalidationQueue | None:

@@ -295,7 +295,7 @@ class AcceptedContextOrderingTests(unittest.TestCase):
         with self.assertRaises(BilqisError) as caught:
             owner.require_row(case.row)
         self.assertEqual(
-            caught.exception.context["reason"], "BAMF_C09_ARTIFACT_INELIGIBLE")
+            caught.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
 
 
 if __name__ == "__main__":

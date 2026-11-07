@@ -33,6 +33,8 @@ _ISSUER = object()
 class CapabilitySupportArtifactOwner:
     """Stateful before-read hold owner for one source-qualified learned capability."""
 
+    _context_revalidation_materializes_metadata = True
+
     def __init__(self, *args, **kwargs):
         _invalid("BAMF_C09_CAPABILITY_SUPPORT_OWNER_CALLER_CONSTRUCTION_FORBIDDEN")
 
@@ -72,7 +74,7 @@ class CapabilitySupportArtifactOwner:
 
     def _install_context_revalidation(
         self, index: DependencyIndex, transition,
-    ) -> None:
+    ) -> bool:
         if (not isinstance(index, DependencyIndex)
                 or {node.artifact_id for node in index.nodes}
                 != {node.artifact_id for node in self._index.nodes}):
@@ -84,6 +86,7 @@ class CapabilitySupportArtifactOwner:
             )
             self.install_requalification(
                 mark_context_affected_capability(self.ledger, transition))
+        return True
 
     @property
     def queue(self) -> RevalidationQueue | None:

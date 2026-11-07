@@ -176,6 +176,31 @@ class AcceptedCorrectionCompositionTests(unittest.TestCase):
             owner.require(compositions[0], binding)
         self.assertEqual(caught.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
 
+    def test_operator_composition_declares_direct_policy_and_time_premises(self):
+        binding, context, compositions = self._composition_context(1)
+        node = context.operator_composition_artifact_owner.node_for(compositions[0])
+        refs = set(node.immediate_dependencies)
+        self.assertIn(DependencyRef(
+            DependencyKind.POLICY,
+            "policy:" + contract_digest((
+                binding.task.scope,
+                binding.policy.policy_id,
+                binding.policy.policy_epoch,
+            )),
+        ), refs)
+        self.assertIn(DependencyRef(
+            DependencyKind.TIME,
+            "time:observed-frontier:" + str(binding.task.observed_frontier),
+        ), refs)
+        self.assertIn(DependencyRef(
+            DependencyKind.TIME,
+            "time:effective:" + str(binding.task.effective_time),
+        ), refs)
+        self.assertIn(DependencyRef(
+            DependencyKind.TIME,
+            "time:causal-prefix-end:" + str(binding.task.causal_prefix_end),
+        ), refs)
+
     def test_multi_result_frontier_consumes_every_applicable_held_artifact(self):
         self.publish(candidate(parent_state()))
         binding, context, compositions = self._composition_context(2)

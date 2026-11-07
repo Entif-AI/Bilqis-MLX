@@ -82,7 +82,7 @@ class AtlasFeatureArtifactOwner:
 
     def _install_context_revalidation(
         self, index: DependencyIndex, transition,
-    ) -> None:
+    ) -> bool:
         if (not isinstance(index, DependencyIndex)
                 or {node.artifact_id for node in index.nodes}
                 != {node.artifact_id for node in self._index.nodes}):
@@ -228,6 +228,7 @@ class PackedFrameArtifactOwner:
                 updated.artifact_id] = updated.immediate_dependencies
         else:
             self._context_dependency_overrides.pop(updated.artifact_id, None)
+        return True
 
     @property
     def queue(self) -> RevalidationQueue | None:

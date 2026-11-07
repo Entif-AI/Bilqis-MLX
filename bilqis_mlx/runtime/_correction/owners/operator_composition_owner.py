@@ -27,6 +27,21 @@ def _node(composition, binding: OperatorBinding) -> ArtifactNode:
     binding_digest = contract_digest(binding)
     if composition.source_binding_digest != binding_digest:
         _invalid("BAMF_C09_OPERATOR_COMPOSITION_SOURCE_DRIFT")
+    policy_ref = DependencyRef(
+        DependencyKind.POLICY,
+        "policy:" + contract_digest((
+            binding.task.scope,
+            binding.policy.policy_id,
+            binding.policy.policy_epoch,
+        )),
+    )
+    rights_ref = DependencyRef(
+        DependencyKind.RIGHTS,
+        "rights:" + contract_digest((
+            binding.policy.rights_epoch,
+            binding.frontier.correction_generation,
+        )),
+    )
     dependencies = {
         DependencyRef(DependencyKind.SOURCE, "source:binding:" + binding_digest),
         DependencyRef(DependencyKind.SOURCE, "source:qualification:" + composition.qualification_receipt_sha256),
@@ -35,10 +50,32 @@ def _node(composition, binding: OperatorBinding) -> ArtifactNode:
         DependencyRef(DependencyKind.RELEASE, "generation:" + composition.generation_digest),
         DependencyRef(DependencyKind.RELEASE, "semantic-release:" + composition.goal.semantic_release),
         DependencyRef(DependencyKind.RIGHTS, "rights-epoch:" + str(composition.rights_epoch)),
+        rights_ref,
         DependencyRef(DependencyKind.POLICY, "correction-generation:" + str(composition.correction_generation)),
+        policy_ref,
+        DependencyRef(
+            DependencyKind.TIME,
+            "time:observed-frontier:" + str(binding.task.observed_frontier)),
+        DependencyRef(
+            DependencyKind.TIME,
+            "time:effective:" + str(binding.task.effective_time)),
+        DependencyRef(
+            DependencyKind.TIME,
+            "time:causal-prefix-end:" + str(binding.task.causal_prefix_end)),
         *(DependencyRef(DependencyKind.OPERATOR, "operator:" + operator_id)
           for operator_id in composition.goal.allowed_operator_ids),
     }
+    if binding.frames:
+        from bilqis_mlx.semantics.context_eligibility import (
+            ApprovedContextProjection, project_context,
+        )
+        projection = project_context(
+            binding.frames, binding.task, binding.frontier, binding.policy)
+        if isinstance(projection, ApprovedContextProjection):
+            dependencies.add(DependencyRef(
+                DependencyKind.TIME,
+                "time:asof:context:" + projection.digest,
+            ))
     impact, exigency = owner_priority(ArtifactKind.OPERATOR_COMPOSITION)
     return ArtifactNode(
         artifact_id="composition:" + composition.qualification_receipt_sha256,
@@ -74,12 +111,18 @@ class OperatorCompositionArtifactOwner:
 
     def _install_context_revalidation(
         self, index: DependencyIndex, transition,
-    ) -> None:
+    ) -> bool:
         if (not isinstance(index, DependencyIndex)
                 or {node.artifact_id for node in index.nodes}
                 != {node.artifact_id for node in self._index.nodes}):
             _invalid("BAMF_C09_CONTEXT_REVALIDATION_INDEX_DRIFT")
+        if transition.new_dependencies != transition.previous_dependencies:
+            # The binding is the physical authority for a qualified composition.
+            # A new context therefore requires a newly materialized binding rather
+            # than rewriting dependency metadata under the old composition.
+            return False
         self._index = index
+        return True
 
     @property
     def queue(self) -> RevalidationQueue | None:
