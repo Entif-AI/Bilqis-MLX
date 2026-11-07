@@ -1,6 +1,6 @@
 {
-  "legacy_raw_file_count": 248,
-  "legacy_raw_raise_count": 2071,
+  "legacy_raw_file_count": 250,
+  "legacy_raw_raise_count": 2072,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BOOLEAN_ASSOCIATION_B_GRADE_OWNERSHIP_DRIFT",
@@ -11546,18 +11546,18 @@
       "path": "bilqis_mlx/runtime/tests/capability/factory/retention/owner_live_support.py"
     },
     {
-      "code_hint": "exact cached route must preempt neural",
-      "count": 1,
-      "exception": "AssertionError",
-      "expression": "'exact cached route must preempt neural'",
-      "path": "bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver.py"
-    },
-    {
       "code_hint": "malformed decoder payload",
       "count": 1,
       "exception": "ValueError",
       "expression": "'malformed decoder payload'",
       "path": "bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver.py"
+    },
+    {
+      "code_hint": "exact cached route must preempt neural",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'exact cached route must preempt neural'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver_retention.py"
     },
     {
       "code_hint": "missing source manifest",
@@ -11572,6 +11572,13 @@
       "exception": "ValueError",
       "expression": "'malformed translated score'",
       "path": "bilqis_mlx/runtime/tests/capability/test_capability_evidence_history.py"
+    },
+    {
+      "code_hint": "source-owned context was not approved",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'source-owned context was not approved'",
+      "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/accepted_correction_runtime_temporal_support.py"
     },
     {
       "code_hint": "COLD_RESUME_CONTINUATION_REJECTED before=",

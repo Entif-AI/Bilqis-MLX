@@ -144,6 +144,7 @@ def execute_factory_candidate_step(
     if (not isinstance(parent, CompleteStudent)
             or not isinstance(observation, FactoryDeliveryObservation)):
         _invalid("FACTORY_CANDIDATE_STEP_INPUT_INVALID")
+    source_context.require_accepted_runtime(Path(run_dir))
     start = time.perf_counter()
     cache = bind_accepted_execution_cache(Path(run_dir))
     generation = execution_generation_digest(

@@ -4,7 +4,11 @@ from __future__ import annotations
 import hashlib
 import hmac
 
+from bilqis_mlx.errors import BilqisError
 from ..semantics.cognitive_dependencies import DependencyKind, DependencyRef
+from .atlas_cache_binding import (
+    CacheArtifact, _require_cache_binding, binding_digest,
+)
 
 
 CACHE_AUTHENTICATOR_BYTES = 16
@@ -23,21 +27,48 @@ def _new_authority_owner():
         entry = issued.get(id(authority))
         if entry is None or entry[0] is not authority:
             _invalid()
-        return entry[1], entry[2], entry[3]
+        return entry[1], entry[2], entry[3], entry[4]
 
     def issue(registry, mac_key, eligibility_source=None):
         if eligibility_source is not None and not callable(eligibility_source):
             _invalid()
         authority = object.__new__(CacheAuthorityRuntime)
-        issued[id(authority)] = (authority, registry, mac_key, eligibility_source)
+        issued[id(authority)] = (
+            authority, registry, mac_key, eligibility_source, {})
         return authority
 
     return require, issue
 
 
-# No production issuer is exposed until the upstream run owner supplies one.
-_authority_state, _discarded_issuer = _new_authority_owner()
-del _discarded_issuer
+class _AcceptedCacheAuthorityIssuer:
+    """Non-callable issuer owned by authenticated B13 execution custody."""
+
+    def __init__(self, issue):
+        self._issue = issue
+        self._accepted_caches = {}
+
+    def issue(self, accepted_cache, registry, eligibility_source=None):
+        from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
+            require_accepted_execution_cache,
+        )
+        from bilqis_mlx.runtime.atlas_revalidation import SourceAuthorityRegistry
+
+        cache = require_accepted_execution_cache(accepted_cache)
+        if not isinstance(registry, SourceAuthorityRegistry):
+            _invalid()
+        authority = self._issue(
+            registry, cache._cache_mac_key, eligibility_source)
+        self._accepted_caches[id(authority)] = cache
+        return authority
+
+    def accepted_cache(self, authority):
+        return self._accepted_caches.get(id(authority))
+
+
+_authority_state, _raw_authority_issue = _new_authority_owner()
+_ACCEPTED_CACHE_AUTHORITY_ISSUER = _AcceptedCacheAuthorityIssuer(
+    _raw_authority_issue)
+del _raw_authority_issue
 
 
 class CacheAuthorityRuntime:
@@ -52,7 +83,7 @@ class CacheAuthorityRuntime:
         _invalid()
 
     def _require_binding_authority(self, binding) -> None:
-        registry, _, _ = _authority_state(self)
+        registry, _, _, _ = _authority_state(self)
         registry.require_claimed_authority(
             binding.artifact_authority_id,
             DependencyRef(DependencyKind.ARTIFACT, f"cache:{binding.key_sha256}"),
@@ -63,7 +94,7 @@ class CacheAuthorityRuntime:
         if type(subject) is not bytes:
             _invalid()
         self._require_binding_authority(binding)
-        _, mac_key, _ = _authority_state(self)
+        _, mac_key, _, _ = _authority_state(self)
         return hmac.new(
             mac_key, subject, hashlib.sha256,
         ).digest()[:CACHE_AUTHENTICATOR_BYTES]
@@ -76,7 +107,7 @@ class CacheAuthorityRuntime:
 
     def _verify_detached(self, owner_id, dependency, signature_hex, payload) -> None:
         """Verify a source-owner statement through this host-bound registry."""
-        registry, _, _ = _authority_state(self)
+        registry, _, _, _ = _authority_state(self)
         registry.verify_detached(owner_id, dependency, signature_hex, payload)
 
     def _validate_export_clearance_context(
@@ -85,13 +116,12 @@ class CacheAuthorityRuntime:
         from bilqis_mlx.semantics.atlas_release_audit import (
             validate_export_clearance_context,
         )
-        registry, _, _ = _authority_state(self)
+        registry, _, _, _ = _authority_state(self)
         return validate_export_clearance_context(
             receipt, selection, source_frontier, artifact_digests, registry)
-
     def _current_eligibility_inputs(self):
         """Read current rebuild authority from the owner-bound resolver."""
-        _, _, source = _authority_state(self)
+        _, _, source, _ = _authority_state(self)
         if source is None:
             _invalid()
         return source()
@@ -101,6 +131,44 @@ def _require_authority(authority: CacheAuthorityRuntime) -> CacheAuthorityRuntim
         _invalid()
     _authority_state(authority)
     return authority
+
+
+def bind_cache_artifact_owner(authority, artifact, binding):
+    from bilqis_mlx.runtime.atlas_cache_owner import (
+        _issue_exact_cache_artifact_owner, cache_artifact_digest,
+    )
+    authority = _require_authority(authority)
+    _, _, _, owners = _authority_state(authority)
+    key = (bytes(binding_digest(binding)), cache_artifact_digest(artifact))
+    owner = owners.get(key)
+    if owner is None:
+        owner = _issue_exact_cache_artifact_owner(authority, artifact, binding)
+        owners[key] = owner
+    accepted_cache = _ACCEPTED_CACHE_AUTHORITY_ISSUER.accepted_cache(authority)
+    if accepted_cache is not None and accepted_cache._run_dir is not None:
+        from bilqis_mlx.runtime.accepted_corrections import (
+            register_accepted_target,
+        )
+        from bilqis_mlx.runtime.atlas_owner_ingress import _route
+        register_accepted_target(
+            accepted_cache._run_dir,
+            accepted_cache.accepted_manifest_sha256,
+            "EXACT_CACHE", owner,
+            lambda current, event, registry: _route(current, event, registry),
+            accepted_cache._correction_registry,
+        )
+    return owner
+
+
+def apply_cache_correction(
+    authority, artifact, binding, event, authority_registry,
+):
+    """Deliver one qualified C09 correction into opaque cache custody."""
+    owner = bind_cache_artifact_owner(authority, artifact, binding)
+    authority_registry.verify_correction(event)
+    if not owner.index.direct_dependents(event.dependency):
+        return owner.queue
+    return owner.apply_correction(event, authority_registry)
 
 
 def encode_cold_cache(authority, cache, codec_manifest, *, binding):
@@ -126,11 +194,25 @@ def decode_cache(authority, artifact, expected_binding):
 
 def interactive_cache_inference(
     authority, artifact, expected_binding, *, cached_infer,
-    fp32_recompute, quality_check, policy,
+    fp32_recompute, quality_check, policy, artifact_owner=None,
 ):
     from .atlas_cache_policy import _interactive_cache_inference
+    retained_owner = None
+    if isinstance(artifact, CacheArtifact):
+        try:
+            from .atlas_cache_eligibility import validate_current_binding
+            validate_current_binding(authority, expected_binding)
+            _require_cache_binding(artifact, expected_binding, authority)
+        except BilqisError:
+            pass
+        else:
+            retained_owner = bind_cache_artifact_owner(
+                authority, artifact, expected_binding)
+            if artifact_owner is not None and artifact_owner is not retained_owner:
+                _invalid()
     return _interactive_cache_inference(
         artifact, expected_binding,
+        artifact_owner=retained_owner,
         cached_infer=cached_infer,
         fp32_recompute=fp32_recompute,
         quality_check=quality_check,

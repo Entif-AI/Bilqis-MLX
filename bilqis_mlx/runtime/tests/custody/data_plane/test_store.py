@@ -47,3 +47,20 @@ class DataPlaneStoreTests(DataPlaneCase):
         plane.put_object(digest, raw)
         self.assertEqual(plane.get_object(digest), raw)
         self.assertEqual(plane.stats()["objects"], 1)
+
+    def test_named_object_reference_updates_without_mutating_prior_content(self):
+        first = b'{"history":["a"]}'
+        second = b'{"history":["a","b"]}'
+        plane = data_plane()
+        first_digest = plane.put_object_reference("accepted-history:fixture", first)
+        self.assertEqual(
+            plane.get_object_reference("accepted-history:fixture"),
+            (first_digest, first),
+        )
+        second_digest = plane.put_object_reference("accepted-history:fixture", second)
+        self.assertNotEqual(first_digest, second_digest)
+        self.assertEqual(plane.get_object(first_digest), first)
+        self.assertEqual(
+            plane.get_object_reference("accepted-history:fixture"),
+            (second_digest, second),
+        )
