@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "4cffd8c79cbb5021cedce225118448af58a68253",
-  "updated_at": "2026-11-05T23:08:00Z",
+  "observed_unified": "3899649586b105b075e92f0ee3c51e80c379b473",
+  "updated_at": "2026-11-07T05:03:55Z",
   "exception": null,
   "items": [
     {
@@ -94,6 +94,15 @@
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a-421-egm-repair-20261105",
       "merged_pr": 862
+    },
+    {
+      "issue": 888,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "3899649586b105b075e92f0ee3c51e80c379b473",
+      "summary": "A09.5a realization-breadth child: bind accepted #420/#758/#737 Boolean, numeric and qualified-world authority into at least three genuine source-qualified candidate-to-staged-successor realizations. Strict subset of #395 acceptance; no new acceptance, C07 lease/admission, learner run or optimizer mutation.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a09-5a-888-realizations-20261107"
     },
     {
       "issue": 395,
