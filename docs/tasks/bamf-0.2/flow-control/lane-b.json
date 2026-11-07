@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "5f8f3d4b42cc4656020e4427c7d8e822825a36f9",
-  "updated_at": "2026-11-07T12:05:00-05:00",
+  "updated_at": "2026-11-07T12:20:47-05:00",
   "exception": null,
   "items": [
     {
@@ -77,14 +77,10 @@
       "issue": 478,
       "pr": 885,
       "state": "ACTIVE",
-      "head_sha": "e50d759cc45bf61807f62ee62d7354052a3f0db8",
-      "summary": "B13.1 reactivated after root-cause tracing showed the remaining A02/C07 cycle is blocked on a B13-owned accepted-run custody seam: #399 already stages the exact native BAMF candidate, while #510 must authenticate that candidate and the concrete accepted runtime without reconstructing legacy optimizer state. A09.5/PR #891 is now consumed by reviewed unified. #478 owns the missing accepted-run projection and is the canonical place to break the cycle.",
+      "head_sha": "acbe3c05782b298918f96286657c950c9b867d20",
+      "head_sha_role": "latest semantic implementation head; later receipt/flow-control-only commits are nonsemantic and must be reconciled separately in PR/issue exact-head metadata",
+      "summary": "B13.1 is active after EGM round 3 found one target-local first-publication durability defect plus mechanical evidence drift. The custody defect is repaired at semantic implementation head acbe3c05782b298918f96286657c950c9b867d20 with failing-before and passing-after publication ancestry proof. The earlier A02/C07 WAIT condition was inverted: reviewed PR #593 supplies the A02 staging/interface dependency B13.1 consumes, while later #399/#510 production adoption consumes B13 authority and is not a #478 completion prerequisite. Exact final custody proof and the next whole-candidate EGM round remain before review readiness.",
       "resume_trigger": null,
-      "open_pr_exception": {
-        "reason": "The user explicitly directed continuation on existing PR #885 and preservation of the truthful blocked PR state rather than closing/recreating the integration vehicle while the direct A02 dependency remains unconsumable.",
-        "authority": "User directive for #478 continuation plus flow-control policy open-PR exception contract.",
-        "expires_when": "PR #885 becomes review-ready after current-unified synchronization, accepted-run projection repair, downstream A02/C07 consumption, scoped proof and fresh pinned EGM, or is otherwise closed/replaced under human-directed reconciliation."
-      },
       "preserved_branch": "codex/bamf02-b13-1-478-complete-20261106"
     },
     {
