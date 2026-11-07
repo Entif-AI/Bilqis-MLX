@@ -23,6 +23,21 @@ def _clear_package(package):
 
 
 class RunTestsTests(unittest.TestCase):
+    def test_prepend_root_makes_repository_packages_precede_script_directory(self):
+        runner = _runner_module()
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            scripts = root / "scripts"
+            scripts.mkdir()
+            original = sys.path[:]
+            try:
+                sys.path[:] = [str(scripts), *original]
+                runner._prepend_root(root)
+                self.assertEqual(sys.path[0], str(root))
+                self.assertEqual(sys.path.count(str(root)), 1)
+            finally:
+                sys.path[:] = original
+
     def test_relative_helpers_keep_package_context_and_unique_file_identities(self):
         runner = _runner_module()
         for namespace in (False, True):

@@ -17,6 +17,12 @@ IGNORED_DIRECTORIES = frozenset({
 })
 
 
+def _prepend_root(root: Path) -> None:
+    """Make repository-local packages importable before policy/plugin discovery."""
+    root_string = str(root.resolve())
+    sys.path[:] = [root_string, *(entry for entry in sys.path if entry != root_string)]
+
+
 def _install_source_only_legacy_geometry_shim() -> bool:
     """Keep symbolic source tests portable without changing admitted generator bytes."""
     name = "bilqis_logic.geometry"
@@ -124,8 +130,7 @@ def _local_test_suite(suite: unittest.TestSuite, module_name: str) -> unittest.T
 def load_test_files(paths: tuple[Path, ...], root: Path) -> unittest.TestSuite:
     """Load files under unique names so duplicate test basenames remain distinct."""
     suite = unittest.TestSuite()
-    root_string = str(root)
-    sys.path[:] = [root_string, *(entry for entry in sys.path if entry != root_string)]
+    _prepend_root(root)
     for path in paths:
         name = _module_name(path, root)
         try:
@@ -196,6 +201,7 @@ def main(argv: list[str] | None = None, *, root: Path | None = None, stream=None
     parser.add_argument("targets", nargs="*", help="test file paths or dotted unittest names")
     arguments = parser.parse_args(argv)
     root = root or Path(__file__).resolve().parents[1]
+    _prepend_root(root)
     stream = stream or sys.stdout
     shimmed = _install_source_only_legacy_geometry_shim()
     try:
