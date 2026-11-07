@@ -11,6 +11,7 @@ from .records import FrameOutputDomain, RoleCandidate, invalid
 
 PLAN_SCHEMA = 'bilqis.mlx.answer-plan/v2'
 DECISION_SCHEMA = 'bilqis.mlx.decision-spec/v1'
+ROUTE_MODALITY = 'answer.cognitive-route/v1'
 MAX_DECISIONS = 64
 MAX_POSITIONS = ModelTopologySpecV2.context
 
@@ -20,6 +21,8 @@ class DecisionKind(str, Enum):
     ROLE = 'ROLE'
     CONTROL = 'CONTROL'
     EPISTEMIC = 'EPISTEMIC'
+    OPERATOR = 'OPERATOR'
+    OPERAND = 'OPERAND'
 
 
 def _text(value):
@@ -39,7 +42,8 @@ class DecisionSpec:
     def __post_init__(self):
         types = {DecisionKind.VALUE: (ConceptRef, RoleOccurrence),
                  DecisionKind.ROLE: (RoleCandidate,), DecisionKind.CONTROL: (ControlAction,),
-                 DecisionKind.EPISTEMIC: (str,)}
+                 DecisionKind.EPISTEMIC: (str,), DecisionKind.OPERATOR: (str,),
+                 DecisionKind.OPERAND: (str,)}
         if (self.schema_version != DECISION_SCHEMA or not _text(self.decision_id)
                 or (self.role_id is not None and not _text(self.role_id))
                 or type(self.occurrence) is not int or self.occurrence < 0
@@ -86,7 +90,7 @@ class AnswerPlan:
     modality_id: str
     input_prefix_end: int
     decisions: tuple[DecisionSpec, ...]
-    allowed_output_schema: FrameOutputDomain
+    allowed_output_schema: FrameOutputDomain | None
     snapshot: FrozenAtlasSnapshot
     source_span: SourceSpan
     generation_binding: str
@@ -102,23 +106,32 @@ class AnswerPlan:
                 or not 1 <= self.maximum_decisions <= MAX_DECISIONS
                 or type(self.decisions) is not tuple or not self.decisions
                 or any(type(d) is not DecisionSpec for d in self.decisions)
-                or type(self.allowed_output_schema) is not FrameOutputDomain
+                or (self.allowed_output_schema is not None
+                    and type(self.allowed_output_schema) is not FrameOutputDomain)
                 or type(self.snapshot) is not FrozenAtlasSnapshot
                 or type(self.source_span) is not SourceSpan
                 or self.source_span.end > self.input_prefix_end):
             invalid()
         domain = self.allowed_output_schema
-        domain.__post_init__()
         self.source_span.__post_init__()
-        manifest = domain.released_schemas.manifest
-        if (self.modality_id != domain.modality_id
-                or (self.snapshot.release_sha256, self.snapshot.bundle_id, self.snapshot.source_bundle_id)
-                != (manifest.semantic_release, manifest.atlas_bundle_id, manifest.source_bundle_id)):
-            invalid()
+        if domain is None:
+            if (self.modality_id != ROUTE_MODALITY
+                    or any(d.kind not in (DecisionKind.OPERATOR, DecisionKind.OPERAND)
+                           or d.role_id is not None for d in self.decisions)):
+                invalid()
+        else:
+            domain.__post_init__()
+            manifest = domain.released_schemas.manifest
+            if (self.modality_id != domain.modality_id
+                    or (self.snapshot.release_sha256, self.snapshot.bundle_id,
+                        self.snapshot.source_bundle_id)
+                    != (manifest.semantic_release, manifest.atlas_bundle_id,
+                        manifest.source_bundle_id)):
+                invalid()
         for d in self.decisions:
             d.__post_init__()
         _ordered_ids(self.decisions)
-        roles = {r.role_id: r for r in domain.schema.roles}
+        roles = {} if domain is None else {r.role_id: r for r in domain.schema.roles}
         lookup = {d.decision_id: d for d in self.decisions}
         coordinates = {kind: set() for kind in (DecisionKind.CONTROL, DecisionKind.VALUE)}
         for d in self.decisions:
@@ -150,6 +163,10 @@ class AnswerPlan:
     @property
     def execution_order(self):
         return _ordered_ids(self.decisions)
+
+    @property
+    def route_only(self):
+        return self.allowed_output_schema is None
 
     @property
     def position_budget(self):

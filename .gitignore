@@ -1,6 +1,7 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.testmondata*
 .venv/
 node_modules/
 .env

@@ -7,7 +7,6 @@ import re
 from typing import Callable
 
 from ..errors import ErrorBus, SCHOOL
-from ..learning.retention_policy import retention_reason, scaled_loss_allowance
 from ..semantics.cognitive_dag import TaskGoal
 from ..semantics.cognitive_operators import TypedValue, ValueState
 from ..semantics.domains import contract_digest
@@ -16,13 +15,8 @@ from .cognitive_solver import (
 )
 
 from .capability_evaluation import (
-    _invalid, _sha, _names, EvidenceKind, EvaluationCase, case_census_digest,
+    _invalid, _sha, _names, EvidenceKind, EvidenceStage, EvaluationCase, case_census_digest,
     EvaluationCohort, CompleteSolver, _answer_identity, Assessment, evaluate_capabilities,
-)
-
-
-_RETENTION_COHORT_KINDS = (
-    EvidenceKind.FRESH_TARGET, EvidenceKind.FRESH_LESSON, EvidenceKind.FIXED_SCHOOL,
 )
 
 
@@ -122,6 +116,8 @@ class PairedRetentionEvidence:
                 or len({pair.parent.generation_digest for pair in pairs}) != 1
                 or len({pair.candidate.generation_digest for pair in pairs}) != 1):
             _invalid("BAMF_RETENTION_COMPLETE_COVERAGE_REQUIRED")
+        if len({pair.parent.cohort.evidence_stage for pair in pairs}) != 1:
+            _invalid("BAMF_RETENTION_EVIDENCE_STAGE_DRIFT")
 
     def digest(self):
         return contract_digest(tuple((pair.parent.digest(), pair.candidate.digest())
@@ -147,6 +143,7 @@ class Decision:
     candidate_generation: str
     evidence_sha256: str
     policy_sha256: str
+    blocking_capability: str | None = None
     schema_version: str = "bilqis.c05.retention-decision/v1"
 
     def __post_init__(self):
@@ -155,6 +152,9 @@ class Decision:
                 or not all(_sha(value) for value in (
                     self.parent_generation, self.candidate_generation,
                     self.evidence_sha256, self.policy_sha256))
+                or (self.blocking_capability is not None
+                    and (not isinstance(self.blocking_capability, str)
+                         or not self.blocking_capability))
                 or self.schema_version != "bilqis.c05.retention-decision/v1"):
             _invalid("BAMF_RETENTION_DECISION_INVALID")
 
@@ -188,56 +188,46 @@ def candidate_work_disposition(parent: Assessment, capability: str) -> WorkDispo
 
 
 def retain_candidate(parent, candidate, paired_assessment) -> Decision:
-    """Return eligibility evidence; B12/B13 alone own actual state publication."""
-    evidence = paired_assessment
-    if (not isinstance(evidence, PairedRetentionEvidence)
-            or parent != evidence.target.parent.generation_digest
-            or candidate != evidence.target.candidate.generation_digest):
-        _invalid("BAMF_RETENTION_GENERATION_DRIFT")
-    target = evidence.target_capability
-    census = dict(evidence.policy.capability_groups)
-    fixed = evidence.fixed_school
-    def net(pair, capabilities):
-        return sum(pair.delta(capability) for capability in capabilities)
-    lesson = tuple(cap for cap, group in census.items() if group == census[target])
-    exceeded = any(
-        -pair.delta(capability) > scaled_loss_allowance(
-            pair.parent.score(capability)[1], reference, evidence.policy.probe_each)
-        for pair in (evidence.fresh_lesson, fixed)
-        for capability, reference in evidence.policy.protected_reference_losses
-        if capability in dict(pair.parent.cohort.capability_groups))
-    reason = retention_reason(
-        no_target_gain=evidence.target.delta(target) <= 0,
-        same_grade_net_gain=net(evidence.fresh_lesson, lesson),
-        fixed_grade_regression=net(fixed, lesson) < 0,
-        active_grade_regression=any(
-            net(fixed, tuple(cap for cap, group in census.items() if group == protected)) < 0
-            for protected in evidence.policy.protected_groups),
-        whole_school_regression=net(fixed, census) < 0,
-        frontier_measured=True, fragile_losses=False, exceeded=exceeded)
-    return Decision(DecisionStatus.ELIGIBLE if reason == "PAIRED_SCREEN_WITHIN_BUDGET"
-                    else DecisionStatus.REJECT,
-                    reason, parent, candidate, evidence.digest(), evidence.policy.digest())
+    """Return strict paired eligibility evidence; foundation dispatch lives below."""
+    from .capability_retention_strict import retain_candidate as _strict_retain_candidate
+    return _strict_retain_candidate(parent, candidate, paired_assessment)
 
 
 def evaluate_retention_candidate(
         parent_solver, candidate_solver, target_capability, policy, cohorts,
         parent_generation, candidate_generation) -> Decision:
-    """Run C05's required cohorts before issuing a retention decision."""
+    """Run the authoritative C05 cohorts before deciding candidate retention.
+
+    This is the owner-run screen from #744. Accepting a caller-built
+    PairedRetentionEvidence would let a caller retarget its generation digests.
+    """
+    required_kinds = (
+        EvidenceKind.FRESH_TARGET, EvidenceKind.FRESH_LESSON,
+        EvidenceKind.FIXED_SCHOOL,
+    )
     if (not isinstance(parent_solver, CompleteSolver)
             or not isinstance(candidate_solver, CompleteSolver)
             or not isinstance(policy, RetentionPolicy)
             or not isinstance(target_capability, str) or not target_capability
             or not isinstance(cohorts, tuple)
-            or len(cohorts) != len(_RETENTION_COHORT_KINDS)
             or not all(isinstance(cohort, EvaluationCohort) for cohort in cohorts)
-            or tuple(cohort.kind for cohort in cohorts) != _RETENTION_COHORT_KINDS):
+            or tuple(cohort.kind for cohort in cohorts) != required_kinds):
         _invalid("BAMF_RETENTION_SCREEN_INPUT_INVALID")
+    stages = {cohort.evidence_stage for cohort in cohorts}
+    if len(stages) != 1:
+        _invalid("BAMF_RETENTION_EVIDENCE_STAGE_DRIFT")
+    if next(iter(stages)) is EvidenceStage.FOUNDATION_ACQUISITION:
+        from .capability_retention_foundation import evaluate_foundation_retention_candidate
+        return evaluate_foundation_retention_candidate(
+            parent_solver, candidate_solver, target_capability, policy, cohorts,
+            parent_generation, candidate_generation)
+
     pairs = tuple(AssessmentPair(
         evaluate_capabilities(parent_solver, cohort, parent_generation),
         evaluate_capabilities(candidate_solver, cohort, candidate_generation),
     ) for cohort in cohorts)
-    target_pair, lesson_pair, school_pair = pairs
+    target_pair, fresh_lesson_pair, fixed_school_pair = pairs
     evidence = PairedRetentionEvidence(
-        target_capability, policy, target_pair, lesson_pair, school_pair)
+        target_capability, policy,
+        target_pair, fresh_lesson_pair, fixed_school_pair)
     return retain_candidate(parent_generation, candidate_generation, evidence)

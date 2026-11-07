@@ -16,7 +16,7 @@ from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.learning.frame_embeddings import FeatureRequest, compose_factor_features
 from bilqis_mlx.learning.atlas_plasticity import AdapterParameters, adapter_forward
 from bilqis_mlx.semantics.atlas_features import AtlasFeatures
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.runtime.backbone_identity import (
     bamf_parameter_tree_digest, execution_generation_digest,
 )

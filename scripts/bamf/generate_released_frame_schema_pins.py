@@ -1,4 +1,4 @@
-"""Stage A03 schema-body releases from actual pinned A01 and registered A/B/C.
+"""Stage A03 schema-body releases from pinned A01, registered A/B/C, and A03-owned evidence roles.
 
 This is a source-owner generator, not a neural admission action. The produced
 pin registry must be independently reviewed and its digest pinned in code.
@@ -17,7 +17,7 @@ from bilqis_mlx.grade_a_probe import read_sources
 from bilqis_mlx.grade_b_oracle import CONNECTIVES
 from bilqis_mlx.live_grade_c import PLANS, registry_graph
 from bilqis_mlx.numeric_curriculum import draw_numeric
-from bilqis_mlx.semantics.atlas_snapshot import (
+from bilqis_mlx.semantics.atlas.snapshot import (
     AtlasArtifactSelection, load_pinned_atlas_snapshot,
 )
 from bilqis_mlx.semantics.core import Apply
@@ -26,7 +26,9 @@ from bilqis_mlx.semantics.frame_adapters import (
     bind_registered_source_row,
 )
 from bilqis_mlx.semantics.frame_codec import SchemaTagMap, _canonical_bytes
-from bilqis_mlx.semantics.frame_schema import SourceSpan, ast_construct_id
+from bilqis_mlx.semantics.frame_schema import (
+    FrameSchema, RoleSpec, SourceSpan, ast_construct_id,
+)
 from bilqis_mlx.semantics.released_frame_schemas import (
     persist_released_frame_schemas, seal_released_frame_schemas,
 )
@@ -104,11 +106,29 @@ def _checked_row(adapter, row, snapshot, graph):
     return span
 
 
+def _evidence_schema():
+    """A03-owned released AGENT-role contract for the BRAVO adapter.
+
+    The application EvidenceFrame retains category/status/duration values.
+    Their identities and value laws remain owned by A01 and the cognitive
+    operator domain; A03 publishes only the released semantic role A10 needs.
+    """
+    return FrameSchema(
+        schema_id="frame:bravo.evidence.actor/v1",
+        revision=1,
+        ast_construct="source:bravo-evidence-actor",
+        roles=(RoleSpec("agent", ("Entity",), 1, 1),),
+        order_mode="ORDERED",
+        scope="source-evidence",
+    )
+
+
 def _catalogs(snapshot):
     micro = read_sources(SOURCE_ROOT)[2]
     numeric = registry_graph()
     registry = live_source_registry()
-    catalogs = {family: {} for family in ("micro", "boolean", "numeric")}
+    catalogs = {family: {} for family in ("micro", "boolean", "evidence", "numeric")}
+    _add(catalogs["evidence"], _evidence_schema())
 
     adapter = registry.require(
         "bilqis_mlx.grade_a_probe.make_record", A_ORACLE)

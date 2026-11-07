@@ -68,14 +68,6 @@ class DepthSelectionTests(unittest.TestCase):
             self.assertEqual(alpha.shape, (2, 3, boundary + 1))
             np.testing.assert_allclose(np.asarray(actual), expected,
                                        atol=3e-6, rtol=3e-5)
-        baseline = _depth_components(
-            self.current, self.sources, self.features, self.params)[0]
-        unrelated_future = _summaries(3)[2].hidden.at[:].add(100)
-        self.assertIsInstance(unrelated_future, mx.array)
-        np.testing.assert_array_equal(
-            np.asarray(_depth_components(
-                self.current, self.sources, self.features, self.params)[0]),
-            np.asarray(baseline))
         for invalid in (
             (self.sources[1], self.sources[0]),
             (*self.sources, _summaries(2)[2]),

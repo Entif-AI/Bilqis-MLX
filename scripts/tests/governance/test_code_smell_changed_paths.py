@@ -76,6 +76,23 @@ class ChangedPathSmellTests(unittest.TestCase):
             ("bilqis_mlx/runtime/atlas_training_adapter.py",
              "module-mutable-literal", "NEW")])
 
+    def test_added_canonical_owner_compartment_preserves_existing_smell_identity(self):
+        canonical = "bilqis_mlx/semantics/cognitive_dag.py"
+        physical = "bilqis_mlx/semantics/_cognitive_dag/execution.py"
+        source = "def execute_dag():\n" + "    value = 1\n" * 90
+        self.commit(canonical, source)
+        target = self.root / physical
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(source, encoding="utf-8")
+        subprocess.run(["git", "add", physical], cwd=self.root, check=True)
+        records = [("A", physical, physical)]
+        prior = audit._base_findings("HEAD", records)
+        expected = (canonical, "long-function", "execute_dag")
+        self.assertEqual([audit.fingerprint(item) for item in prior], [expected])
+        current = audit.inspect_source(audit.logical_source_path(physical), source)
+        baseline = {"fingerprints": [list(audit.fingerprint(item)) for item in prior]}
+        self.assertEqual(audit.compare_to_baseline(current, baseline), [])
+
     def test_ambiguous_physical_owners_do_not_hide_new_debt(self):
         self.commit("bilqis_mlx/runtime/_batch/atlas_training_adapter.py",
                     "EXISTING = []\n")

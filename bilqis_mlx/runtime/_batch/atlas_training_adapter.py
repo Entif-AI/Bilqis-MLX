@@ -1,25 +1,39 @@
-"""Release-bound, source-visible BAMF input preparation.
-
-The compiler and feature callables are explicit seams until A05 and A06 land.
-They are the interfaces in their owner contracts, not replacement implementations.
-"""
+"""Release-bound, source-visible BAMF input preparation."""
 from __future__ import annotations
 
+from dataclasses import asdict, replace
 from graphlib import CycleError, TopologicalSorter
 from typing import Callable
 
-from bilqis_mlx.runtime.source_execution import SourceExecutionContext
-from bilqis_mlx.factory.adapters import validate_instructional_constituents
-from bilqis_mlx.factory.generation import runtime_adapter_for_release
-from bilqis_mlx.factory.teaching import DeliveredTeaching, describe_delivered_teaching, content_digest
-from bilqis_mlx.semantics.context_eligibility import (
-    ContextEligibility, ContextPolicy, EligibleContext, SourceFrontier,
-    TaskScope, check_context_eligibility as _check_context_eligibility,
+from bilqis_mlx.runtime.source_execution import (
+    SourceBatchAuthority, SourceExecutionContext, source_content_digest,
 )
+from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
+from bilqis_mlx.factory.teaching import DeliveredTeaching, content_digest
+from bilqis_mlx.semantics.atlas_features import AtlasFeatures
+from bilqis_mlx.semantics.frame_compiler import (
+    FrameCompilerConfig, compile_prefix,
+)
+from bilqis_mlx.semantics.context_eligibility import (
+    ApprovedContextProjection, ContextEligibility, ContextPolicy,
+    SourceFrontier, TaskScope, project_context,
+)
+from bilqis_mlx.semantics.domains import contract_digest
 from .atlas_training_contracts import (
-    BamfModelInput, BamfTarget, BamfTargetEvidence, BamfDeliveryProvenance,
+    BamfModelInput, BamfTarget, BamfDeliveryProvenance,
     BamfTrainingRow, BamfTrainingBatch, PaddedMicrobatch,
-    _invalid, _freeze, require_current_release,
+    _invalid, _freeze, _issue_training_batch, require_current_release,
+)
+from .batch_training_authority import rederive_training_authority
+from .training_input_authority import (
+    require_semantic_authority as _require_semantic_authority_impl,
+    require_source_lineage as _require_source_lineage,
+    row_contexts as _row_contexts,
+    source_features as _source_features,
+)
+from .training_request import (
+    require_compile_request as _require_compile_request,
+    row_source_inputs as _row_source_inputs,
 )
 from .atlas_training_delivery import (
     pad_microbatches, attach_auxiliaries, execute_with_backend,
@@ -44,7 +58,8 @@ def _answer_plan(plan, head, visible_end, generation_binding):
                 or not isinstance(decision['id'], str) or not decision['id']
                 or not isinstance(decision['roleID'], str) or not decision['roleID']
                 or type(decision['occurrence']) is not int or decision['occurrence'] < 0
-                or decision['kind'] not in ('VALUE', 'ROLE', 'CONTROL', 'EPISTEMIC')
+                or decision['kind'] not in (
+                    'VALUE', 'ROLE', 'CONTROL', 'EPISTEMIC', 'OPERATOR', 'OPERAND')
                 or not isinstance(decision['legalValues'], (list, tuple)) or not decision['legalValues']
                 or not isinstance(decision['depends_on'], (list, tuple))
                 or any(not isinstance(dep, str) or not dep for dep in decision['depends_on'])
@@ -60,148 +75,158 @@ def _answer_plan(plan, head, visible_end, generation_binding):
     return _freeze(plan)
 
 
+def _require_semantic_authority(
+        compiler_config, task_scope, source_frontier, eligibility_policy,
+        atlas_selection, feature_artifact_path):
+    return _require_semantic_authority_impl(
+        compiler_config, task_scope, source_frontier, eligibility_policy,
+        atlas_selection, feature_artifact_path, rederive_training_authority)
+
+
+def _compile_model_input(
+        row, capability: str, visible: tuple, *, source_context, capabilities, heads,
+        source_ast_for: Callable, frames_for_ast: Callable, task_scope: TaskScope, source_frontier: SourceFrontier,
+        eligibility_policy: ContextPolicy, compiler_config: FrameCompilerConfig,
+        atlas_selection, feature_artifact_path,
+        answer_plan_for: Callable, generation_binding: str,
+        atlas_features: AtlasFeatures | None) -> tuple:
+    kind, gold = row.get('answer_kind', 'binary'), row.get('gold')
+    families = {family.kind: family.values for family in capabilities[capability].answer_families}
+    if not isinstance(kind, str) or kind not in families or kind not in heads:
+        _invalid('ANSWER_NOT_RELEASED')
+    source_context.answer_registry.require(kind)
+    head = heads[kind]
+    ast = source_ast_for(visible)
+    frames = frames_for_ast(ast)
+    if (type(frames) is not tuple or
+            any(type(frame) is not ContextEligibility for frame in frames)):
+        _invalid('CONTEXT_SOURCE_FRAMES_REQUIRED')
+    projection = None
+    if frames:
+        _require_source_lineage(ast, frames, visible, source_context.graph)
+        projection = project_context(frames, task_scope, source_frontier, eligibility_policy)
+        if type(projection) is not ApprovedContextProjection:
+            _invalid('CONTEXT_NOT_ELIGIBLE')
+    elif ast.frames:
+        _invalid('CONTEXT_SOURCE_FRAMES_REQUIRED')
+    current_features = _require_semantic_authority(
+        compiler_config, task_scope, source_frontier, eligibility_policy,
+        atlas_selection, feature_artifact_path)
+    if atlas_features is None:
+        atlas_features = current_features
+    elif current_features != atlas_features:
+        _invalid('UPSTREAM_SEMANTIC_AUTHORITY_MISMATCH')
+    prefix = compile_prefix(
+        ast, len(visible), task_scope.semantic_release,
+        compiler_config if projection is None
+        else replace(compiler_config, approved=projection))
+    features = (() if projection is None
+                else _source_features(projection, atlas_features, atlas_selection))
+    eligibility_digest = (projection.digest if projection is not None else contract_digest({
+        'schema': 'bilqis.mlx.c02-atomic-eligibility/v1',
+        'task': asdict(task_scope), 'frontier': asdict(source_frontier),
+        'policy': asdict(eligibility_policy),
+        'source_instance_id': ast.source_instance_id,
+        'visible_end': len(visible),
+    }))
+    plan = _answer_plan(answer_plan_for(
+        prefix, source_context.release, capabilities[capability], kind),
+        head, len(visible), generation_binding)
+    model_input = BamfModelInput(prefix, features, eligibility_digest, plan)
+    return kind, gold, families, head, plan, model_input, atlas_features
+
+def _compile_target(row, *, kind, gold, families, head, plan) -> BamfTarget:
+    """Compile only released registry-owned scalar modalities.
+
+    B10 structured route supervision is derived later from FactoryTaskAuthority;
+    callers cannot inject target encoders at this boundary.
+    """
+    if (not isinstance(gold, str) or gold not in families[kind]
+            or gold not in head.values):
+        _invalid('ANSWER_NOT_RELEASED')
+    return BamfTarget(kind, gold, head.token_ids[head.values.index(gold)], True)
+
+def _compile_native_target(row, *, kind: str, gold, head, source_context: SourceExecutionContext):
+    native = row.get('native_output')
+    if kind.startswith('numeric_') and native is None:
+        _invalid('NATIVE_TARGET_REQUIRED')
+    if native is None:
+        return None
+    if not isinstance(gold, str) or gold not in head.values:
+        _invalid('NATIVE_TARGET_MISMATCH')
+    native_token_id = head.token_ids[head.values.index(gold)]
+    if (not isinstance(native, dict) or native.get('token_id') != native_token_id or
+            native.get('identity') != source_context.graph['tokens'][native_token_id]):
+        _invalid('NATIVE_TARGET_MISMATCH')
+    return BamfTarget('semantic_token', native['identity'], native['token_id'], True)
+
 def compile_training_batch(delivered_rows, source_context: SourceExecutionContext,
                            topology, *, delivery: DeliveredTeaching, delivery_capability: str,
-                           delivery_release_sha256: str, teacher_strategy: dict,
-                           requested_count: int, optimizer_step_seed: int,
-                           rehearsal_by_id: dict, visible_ends: dict,
-                           source_ast_for: Callable, compile_prefix: Callable,
-                           feature_requests_for: Callable, features_for: Callable, answer_plan_for: Callable,
+                           delivery_release_sha256: str, teacher_strategy: dict, requested_count: int,
+                           optimizer_step_seed: int, source_authority: SourceBatchAuthority,
+                           rehearsal_by_id: dict, visible_ends: dict, source_ast_for: Callable,
+                           compiler_config, feature_artifact_path, answer_plan_for: Callable,
                            frames_for_ast: Callable, task_scope: TaskScope,
-                           source_frontier: SourceFrontier,
-                           eligibility_policy: ContextPolicy, generation_binding: str,
-                           target_encoders: dict | None = None, sealed_holdout_ids=()) -> BamfTrainingBatch:
-    """Compile source-oracled delivery using explicit frozen A05/A06 seams."""
-    if not isinstance(source_context, SourceExecutionContext):
-        _invalid('SOURCE_CONTEXT_REQUIRED')
-    if not isinstance(delivered_rows, (tuple, list)) or not delivered_rows:
-        _invalid('DELIVERED_ROWS_REQUIRED')
-    if any(not callable(fn) for fn in (source_ast_for, compile_prefix, feature_requests_for, features_for,
-                                           frames_for_ast, answer_plan_for)):
-        _invalid('UPSTREAM_INTERFACES_REQUIRED')
-    if (type(task_scope) is not TaskScope
-            or type(source_frontier) is not SourceFrontier
-            or type(eligibility_policy) is not ContextPolicy):
-        _invalid('CONTEXT_AUTHORITY_REQUIRED')
-    source_context.release.verify()
-    source_context.release.verify_semantic_catalog(source_context.graph)
-    release = source_context.release
-    capabilities = release.execution_plan.capability_map
-    if (delivery_release_sha256 != release.release_sha256 or not isinstance(delivery, DeliveredTeaching)
-            or delivery_capability not in capabilities):
-        _invalid('DELIVERY_RELEASE_INVALID')
-    try:
-        expected = describe_delivered_teaching(release, delivery_capability, delivery.option_id, delivered_rows)
-    except (ValueError, KeyError, TypeError):
-        _invalid('DELIVERY_INVALID')
-    if delivery != expected or len(delivery.specimen_ids) != len(delivered_rows):
-        _invalid('DELIVERY_CONTENT_MISMATCH')
-    if (type(requested_count) is not int or requested_count < len(delivered_rows)
-            or type(optimizer_step_seed) is not int or optimizer_step_seed < 0
-            or not isinstance(teacher_strategy, dict) or not isinstance(rehearsal_by_id, dict)
-            or not isinstance(visible_ends, dict) or not isinstance(generation_binding, str) or not generation_binding
-            or (target_encoders is not None and not isinstance(target_encoders, dict))):
-        _invalid('DELIVERY_METADATA_INVALID')
-    if (not isinstance(sealed_holdout_ids, (tuple, list, frozenset)) or
-            any(not isinstance(identity, str) for identity in sealed_holdout_ids)):
-        _invalid('HOLDOUT_IDENTITIES_INVALID')
+                           source_frontier: SourceFrontier, eligibility_policy: ContextPolicy, generation_binding: str,
+                           sealed_holdout_ids=(), atlas_selection=None) -> BamfTrainingBatch:
+    """Compile source-oracled delivery through accepted A05/A06 owners."""
+    if type(topology) is not ModelTopologySpecV2:
+        _invalid('TOPOLOGY_AUTHORITY_REQUIRED')
+    release, capabilities, owner = _require_compile_request(delivered_rows, source_context,
+        delivery=delivery, delivery_capability=delivery_capability,
+        delivery_release_sha256=delivery_release_sha256,
+        teacher_strategy=teacher_strategy, requested_count=requested_count,
+        optimizer_step_seed=optimizer_step_seed, source_authority=source_authority,
+        rehearsal_by_id=rehearsal_by_id,
+        visible_ends=visible_ends, source_ast_for=source_ast_for, answer_plan_for=answer_plan_for,
+        frames_for_ast=frames_for_ast, task_scope=task_scope, source_frontier=source_frontier,
+        eligibility_policy=eligibility_policy, generation_binding=generation_binding,
+        sealed_holdout_ids=sealed_holdout_ids)
+    row_count = len(delivered_rows)
+    compiler_configs = _row_contexts(
+        compiler_config, FrameCompilerConfig, row_count,
+        'UPSTREAM_SEMANTIC_AUTHORITY_MISMATCH')
+    task_scopes = _row_contexts(
+        task_scope, TaskScope, row_count, 'CONTEXT_AUTHORITY_REQUIRED')
+    source_frontiers = _row_contexts(
+        source_frontier, SourceFrontier, row_count, 'CONTEXT_AUTHORITY_REQUIRED')
+    eligibility_policies = _row_contexts(
+        eligibility_policy, ContextPolicy, row_count, 'CONTEXT_AUTHORITY_REQUIRED')
+    atlas_features = None
     heads = {head.kind: head for head in release.answer_heads}
     result = []
-    for row in delivered_rows:
-        if not isinstance(row, dict):
-            _invalid('ROW_INVALID')
-        identity, capability = row.get('id'), row.get('capability')
-        if not isinstance(identity, str) or not identity or not isinstance(capability, str) or capability not in capabilities:
-            _invalid('ROW_IDENTITY_OR_CAPABILITY_INVALID')
-        if identity in sealed_holdout_ids:
-            _invalid('SEALED_HOLDOUT_IN_TRAINING')
-        source_id, operation_id = row.get('source_id'), row.get('operation_id')
-        family, episode = row.get('source_family_id'), row.get('episode_id')
-        if any(value is not None and (not isinstance(value, str) or not value) for value in (family, episode)):
-            _invalid('SOURCE_FAMILY_IDENTITY_INVALID')
-        if operation_id is None and isinstance(row.get('record'), dict):
-            operation_id = row['record'].get('operator')
-        if ((source_id is not None and (not isinstance(source_id, str) or not source_id)) or
-                (operation_id is not None and (not isinstance(operation_id, str) or not operation_id))):
-            _invalid('SOURCE_OR_OPERATION_INVALID')
-        owner = capabilities[delivery_capability]
-        if delivery.option_id == 'source.direct/' + delivery_capability:
-            if capability != delivery_capability:
-                _invalid('DELIVERY_CAPABILITY_MISMATCH')
-        elif (capability not in {delivery_capability, *owner.prerequisites}
-              or capabilities[capability].provider_id != owner.provider_id
-              or capabilities[capability].provider_implementation_sha256 != owner.provider_implementation_sha256):
-            _invalid('DELIVERY_CAPABILITY_MISMATCH')
-        adapter = runtime_adapter_for_release(source_context.source_root, source_context.graph, release,
-                                              source_context.source_registry, capabilities[capability])
-        if adapter.check(row, source_root=source_context.source_root, graph=source_context.graph,
-                         course=release.curriculum) is not True:
-            _invalid('SOURCE_ORACLE_REJECTED')
-        validate_instructional_constituents(row, curriculum=release.curriculum, plan=release.execution_plan,
-                                            capability=capability, adapter=adapter)
-        rehearsal = rehearsal_by_id.get(identity)
-        if rehearsal is not None and not isinstance(rehearsal, str):
-            _invalid('REHEARSAL_INVALID')
-        tokens = row.get('tokens')
-        end = visible_ends.get(identity, len(tokens) if isinstance(tokens, (list, tuple)) else None)
-        if (not isinstance(tokens, (list, tuple)) or type(end) is not int or end < 1 or end > len(tokens)
-                or any(type(token) is not int or token < 0 or token >= len(source_context.graph['tokens'])
-                       for token in tokens[:end])):
-            _invalid('SOURCE_PREFIX_INVALID')
-        kind, gold = row.get('answer_kind', 'binary'), row.get('gold')
-        families = {family.kind: family.values for family in capabilities[capability].answer_families}
-        if not isinstance(kind, str) or kind not in families or kind not in heads:
-            _invalid('ANSWER_NOT_RELEASED')
-        source_context.answer_registry.require(kind)
-        head = heads[kind]
-        visible = tuple(tokens[:end])
-        ast = source_ast_for(visible)
-        frames = frames_for_ast(ast)
-        if (type(frames) is not tuple or not frames
-                or any(type(frame) is not ContextEligibility for frame in frames)):
-            _invalid('CONTEXT_SOURCE_FRAMES_REQUIRED')
-        eligible = _check_context_eligibility(
-            frames, task_scope, source_frontier, eligibility_policy)
-        if type(eligible) is not EligibleContext:
-            _invalid('CONTEXT_NOT_ELIGIBLE')
-        eligibility_digest = eligible.digest
-        prefix = compile_prefix(ast, len(visible), release, topology)
-        queries = feature_requests_for(prefix)
-        if not isinstance(queries, (list, tuple)) or any(not isinstance(q, (list, tuple)) or len(q) != 4 for q in queries):
-            _invalid('FEATURE_REQUESTS_INVALID')
-        features = tuple(_freeze(features_for(*query)) for query in queries)
-        plan = _answer_plan(answer_plan_for(prefix, release, capabilities[capability], kind), head, len(visible), generation_binding)
-        encoder = (target_encoders or {}).get(kind)
-        if isinstance(gold, str) and (gold not in families[kind] or gold not in head.values):
-            _invalid('ANSWER_NOT_RELEASED')
-        if encoder is None:
-            if not isinstance(gold, str) or gold not in families[kind] or gold not in head.values:
-                _invalid('ANSWER_NOT_RELEASED')
-            target = BamfTarget(kind, gold, head.token_ids[head.values.index(gold)], True)
-        else:
-            if not callable(encoder):
-                _invalid('TARGET_ENCODER_INVALID')
-            evidence = BamfTargetEvidence(_freeze(gold), plan,
-                                          _freeze(row.get('auxiliary_labels')))
-            encoded = encoder(evidence, head)
-            if (not isinstance(encoded, BamfTarget) or encoded.kind != kind or
-                    not (type(encoded.mask) is bool or isinstance(encoded.mask, tuple)
-                         and all(type(mask) is bool for mask in encoded.mask))):
-                _invalid('TARGET_ENCODER_INVALID')
-            target = BamfTarget(kind, _freeze(encoded.value), _freeze(encoded.token_id), encoded.mask)
-        native_target = None
-        native = row.get('native_output')
-        if kind.startswith('numeric_') and native is None:
-            _invalid('NATIVE_TARGET_REQUIRED')
-        if native is not None:
-            if not isinstance(gold, str) or gold not in head.values:
-                _invalid('NATIVE_TARGET_MISMATCH')
-            native_token_id = head.token_ids[head.values.index(gold)]
-            if (not isinstance(native, dict) or native.get('token_id') != native_token_id or
-                    native.get('identity') != source_context.graph['tokens'][native_token_id]):
-                _invalid('NATIVE_TARGET_MISMATCH')
-            native_target = BamfTarget('semantic_token', native['identity'], native['token_id'], True)
-        provenance = BamfDeliveryProvenance(identity, source_id, capability, operation_id,
+    for row_index, row in enumerate(delivered_rows):
+        (identity, capability, source_id, operation_id, family, episode,
+         rehearsal, visible) = _row_source_inputs(
+            row, row_index, capabilities=capabilities, owner=owner, delivery=delivery,
+            delivery_capability=delivery_capability,
+            source_context=source_context, source_authority=source_authority, rehearsal_by_id=rehearsal_by_id,
+            visible_ends=visible_ends,
+            sealed_holdout_ids=sealed_holdout_ids)
+        (kind, gold, families, head, plan, model_input,
+         atlas_features) = _compile_model_input(
+            row, capability, visible, source_context=source_context,
+            capabilities=capabilities, heads=heads, source_ast_for=source_ast_for, frames_for_ast=frames_for_ast,
+            task_scope=task_scopes[row_index],
+            source_frontier=source_frontiers[row_index],
+            eligibility_policy=eligibility_policies[row_index],
+            compiler_config=compiler_configs[row_index],
+            atlas_selection=atlas_selection, feature_artifact_path=feature_artifact_path,
+            answer_plan_for=answer_plan_for, generation_binding=generation_binding,
+            atlas_features=atlas_features)
+        maximum_decisions = dict(model_input.answer_plan).get('maximum_decisions')
+        if (type(maximum_decisions) is not int
+                or len(model_input.prefix.positions) + maximum_decisions
+                > topology.context):
+            _invalid('TRAINING_CONTEXT_BUDGET_EXCEEDED')
+        target = _compile_target(
+            row, kind=kind, gold=gold, families=families, head=head, plan=plan)
+        native_target = _compile_native_target(row, kind=kind, gold=gold, head=head,
+                                               source_context=source_context)
+        provenance = BamfDeliveryProvenance(identity, source_content_digest((row,)), source_id,
+            capability, operation_id,
             _freeze(teacher_strategy), requested_count, len(delivered_rows), rehearsal, optimizer_step_seed, family, episode)
-        result.append(BamfTrainingRow(BamfModelInput(prefix, features, eligibility_digest, plan), target, native_target, provenance))
-    return BamfTrainingBatch(release.release_sha256, generation_binding, content_digest(delivered_rows), tuple(result))
+        result.append(BamfTrainingRow(model_input, target, native_target, provenance))
+    return _issue_training_batch(
+        release.release_sha256, generation_binding, content_digest(delivered_rows),
+        delivery_capability, tuple(result))

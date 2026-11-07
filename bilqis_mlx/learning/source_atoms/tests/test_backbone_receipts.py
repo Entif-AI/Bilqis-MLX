@@ -9,7 +9,10 @@ import numpy as np
 
 from bilqis_mlx.errors import BilqisError
 import bilqis_mlx.learning.source_atoms.backbone_receipts as receipt_authority
-from bilqis_mlx.learning.source_atoms.backbone import start_source_backbone_producer
+from bilqis_mlx.learning.source_atoms.backbone import (
+    complete_source_backbone_producer,
+    start_source_backbone_producer,
+)
 from bilqis_mlx.learning.source_atoms.backbone_receipts import (
     ProducedBackboneBoundary, receipt_projection as _receipt_projection,
 )
@@ -22,7 +25,7 @@ from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.semantics.domains import contract_digest
 from bilqis_mlx.source_adapters.tests.atoms.helpers import REAL_BUNDLE
-from .backbone_test_support import SourceBackboneTestBase
+from bilqis_mlx.learning.source_atoms.tests.backbone_test_support import SourceBackboneTestBase
 
 
 @skipUnless(REAL_BUNDLE, "real pinned A01 artifact not mounted")
@@ -90,6 +93,19 @@ class SourceBackboneReceiptTests(SourceBackboneTestBase):
         self.assertNotEqual(receipts[1].motif_read_digest, contract_digest(()))
         self.assertEqual(tuple(item.motif_disposition for item in receipts[2:]),
                          ("NOT_APPLICABLE", "NOT_APPLICABLE"))
+
+    def test_completion_owner_runs_all_three_groups_without_caller_depth_facts(self):
+        producer = self.producer()
+        completed = complete_source_backbone_producer(producer)
+        self.assertIs(completed, producer)
+        self.assertEqual(
+            tuple(item.source_id for item in completed.receipts),
+            ("h0", "g1", "g2", "g3"),
+        )
+        self.assertEqual(
+            tuple(item.completed_layer for item in completed.receipts),
+            (0, 4, 8, 12),
+        )
 
     def test_g2_cannot_be_relabelled_as_g1_or_mixed_into_public_selector(self):
         producer = self.producer()

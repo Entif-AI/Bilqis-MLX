@@ -12,6 +12,8 @@ FRAME_ANSWER_SCHEMA = 'bilqis.mlx.frame-answer/v1'
 
 
 def _frame_bindings(plan, outputs):
+    if plan.route_only:
+        return ()
     decisions = {d.decision_id: d for d in plan.decisions}
     result = {}
     for output in outputs:

@@ -1,14 +1,17 @@
 """Complete-solver assessment and advisory retention with source fixtures."""
 from dataclasses import replace
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.capability_retention import (
     AssessmentPair, CompleteSolver, EvaluationCase, EvaluationCohort,
-    EvidenceKind, PairedRetentionEvidence, RetentionPolicy,
-    candidate_work_disposition, case_census_digest, configuration_outcome,
-    evaluate_capabilities, evaluate_retention_candidate, retain_candidate,
+    EvidenceKind, EvidenceStage, PairedRetentionEvidence, RetentionPolicy,
+    candidate_work_disposition, case_census_digest, configuration_outcome, evaluate_capabilities, retain_candidate,
+    evaluate_retention_candidate,
 )
+import bilqis_mlx.runtime.capability_retention_foundation as foundation_module
+import bilqis_mlx.runtime.capability_retention as retention_module
 from bilqis_mlx.runtime.cognitive_solver import NeuralProposal, SolveBudget, SolveContext
 from bilqis_mlx.semantics.cognitive_dag import DAGBudget, DAGNode
 from bilqis_mlx.semantics.cognitive_operators import TypedValue
@@ -22,7 +25,7 @@ CANDIDATE = "b" * 64
 
 
 from bilqis_mlx.runtime.tests.capability.capability_retention_helpers import (
-    _cases, _solver, _evidence, _screen_inputs, _rescore, _repolicy,
+    _cases, _solver, _evidence, _rescore, _repolicy, _screen_inputs,
 )
 
 
@@ -36,13 +39,71 @@ from bilqis_mlx.runtime.tests.capability.capability_retention_helpers import (
 
 
 class CapabilityRetentionTests(unittest.TestCase):
-    def test_owner_screen_recomputes_all_required_cohorts(self):
-        parent_solver, candidate_solver, target, policy, cohorts = _screen_inputs()
-        decision = evaluate_retention_candidate(
-            parent_solver, candidate_solver, target, policy, cohorts, PARENT, CANDIDATE)
-        self.assertEqual(decision.status, "ELIGIBLE")
-        self.assertEqual(decision.parent_generation, PARENT)
-        self.assertEqual(decision.candidate_generation, CANDIDATE)
+    def test_foundation_authorizing_screen_skips_measure_only_fresh_cohorts(self):
+        parent_solver, candidate_solver, target, policy, cohorts = _screen_inputs(
+            protected_loss=3)
+        cohorts = tuple(replace(
+            cohort, evidence_stage=EvidenceStage.FOUNDATION_ACQUISITION)
+            for cohort in cohorts)
+        observed = []
+        original = foundation_module.evaluate_capabilities
+
+        def traced(solver, cohort, generation):
+            observed.append(cohort.kind)
+            return original(solver, cohort, generation)
+
+        with patch.object(foundation_module, "evaluate_capabilities", side_effect=traced):
+            decision = evaluate_retention_candidate(
+                parent_solver, candidate_solver, target, policy, cohorts,
+                PARENT, CANDIDATE)
+
+        self.assertEqual(decision.reason, "PROTECTED_CAPABILITY_REGRESSION")
+        self.assertEqual(observed, [EvidenceKind.FIXED_SCHOOL, EvidenceKind.FIXED_SCHOOL])
+        self.assertEqual(decision.blocking_capability, "protected")
+
+    def test_foundation_acceptance_uses_fixed_school_only(self):
+        parent_solver, candidate_solver, target, policy, cohorts = _screen_inputs(
+            protected_loss=0)
+        cohorts = tuple(replace(
+            cohort, evidence_stage=EvidenceStage.FOUNDATION_ACQUISITION)
+            for cohort in cohorts)
+        observed = []
+        original = foundation_module.evaluate_capabilities
+
+        def traced(solver, cohort, generation):
+            observed.append(cohort.kind)
+            return original(solver, cohort, generation)
+
+        with patch.object(foundation_module, "evaluate_capabilities", side_effect=traced):
+            decision = evaluate_retention_candidate(
+                parent_solver, candidate_solver, target, policy, cohorts,
+                PARENT, CANDIDATE)
+
+        self.assertEqual(decision.reason, "PAIRED_SCREEN_WITHIN_BUDGET")
+        self.assertEqual(observed, [EvidenceKind.FIXED_SCHOOL] * 6)
+        self.assertIsNone(decision.blocking_capability)
+
+    def test_strict_generalization_keeps_complete_paired_screen(self):
+        parent_solver, candidate_solver, target, policy, cohorts = _screen_inputs(
+            protected_loss=3)
+        observed = []
+        original = retention_module.evaluate_capabilities
+
+        def traced(solver, cohort, generation):
+            observed.append(cohort.kind)
+            return original(solver, cohort, generation)
+
+        with patch.object(retention_module, "evaluate_capabilities", side_effect=traced):
+            decision = evaluate_retention_candidate(
+                parent_solver, candidate_solver, target, policy, cohorts,
+                PARENT, CANDIDATE)
+
+        self.assertEqual(decision.reason, "PROTECTED_CAPABILITY_REGRESSION")
+        self.assertEqual(observed, [
+            EvidenceKind.FRESH_TARGET, EvidenceKind.FRESH_TARGET,
+            EvidenceKind.FRESH_LESSON, EvidenceKind.FRESH_LESSON,
+            EvidenceKind.FIXED_SCHOOL, EvidenceKind.FIXED_SCHOOL,
+        ])
 
     def test_fresh_protected_loss_cannot_hide_behind_target_gain(self):
         evidence = _evidence()
@@ -129,6 +190,75 @@ class CapabilityRetentionTests(unittest.TestCase):
         self.assertEqual(retain_candidate(PARENT, CANDIDATE, evidence).reason,
                          "NO_MEASURABLE_TARGET_GAIN")
         self.assertEqual(evidence.digest(), before)
+
+    def test_foundation_stage_does_not_require_fresh_target_gain(self):
+        evidence = _evidence()
+        same = replace(
+            evidence.target.candidate,
+            results=tuple(replace(result, generation_digest=CANDIDATE)
+                          for result in evidence.target.parent.results),
+        )
+        target = AssessmentPair(evidence.target.parent, same)
+
+        def staged(pair):
+            cohort = replace(
+                pair.parent.cohort,
+                evidence_stage=EvidenceStage.FOUNDATION_ACQUISITION,
+            )
+            return AssessmentPair(
+                replace(pair.parent, cohort=cohort),
+                replace(pair.candidate, cohort=cohort),
+            )
+
+        evidence = replace(
+            evidence,
+            target=staged(target),
+            fresh_lesson=staged(evidence.fresh_lesson),
+            fixed_school=staged(evidence.fixed_school),
+        )
+        decision = retain_candidate(PARENT, CANDIDATE, evidence)
+        self.assertEqual(decision.status, "ELIGIBLE")
+        self.assertEqual(decision.reason, "PAIRED_SCREEN_WITHIN_BUDGET")
+
+    def test_foundation_stage_ignores_fresh_variant_regression_but_keeps_fixed_school(self):
+        evidence = _evidence()
+
+        def staged(pair):
+            cohort = replace(
+                pair.parent.cohort,
+                evidence_stage=EvidenceStage.FOUNDATION_ACQUISITION,
+            )
+            return AssessmentPair(
+                replace(pair.parent, cohort=cohort),
+                replace(pair.candidate, cohort=cohort),
+            )
+
+        fresh = _rescore(
+            evidence.fresh_lesson,
+            {"target": 0, "protected": 3},
+            {"target": 0, "protected": 2},
+        )
+        foundation = replace(
+            evidence,
+            target=staged(evidence.target),
+            fresh_lesson=staged(fresh),
+            fixed_school=staged(evidence.fixed_school),
+        )
+        self.assertEqual(
+            retain_candidate(PARENT, CANDIDATE, foundation).reason,
+            "PAIRED_SCREEN_WITHIN_BUDGET",
+        )
+
+        fixed = _rescore(
+            evidence.fixed_school,
+            {"protected": 12},
+            {"protected": 10},
+        )
+        foundation = replace(foundation, fixed_school=staged(fixed))
+        self.assertNotEqual(
+            retain_candidate(PARENT, CANDIDATE, foundation).reason,
+            "PAIRED_SCREEN_WITHIN_BUDGET",
+        )
 
 
 

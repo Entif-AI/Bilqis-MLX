@@ -125,7 +125,9 @@ class ModelOutput:
                 or not {d.decision_id for d in self.decisions}<=ids
                 or len({o.decision_id for o in self.committed})!=len(self.committed)
                 or not {o.decision_id for o in self.committed}<=ids
-                or (self.status is DecodeStatus.COMPLETE)!=(self.frame is not None)
+                or (not self.plan.route_only
+                    and (self.status is DecodeStatus.COMPLETE)!=(self.frame is not None))
+                or (self.plan.route_only and self.frame is not None)
                 or self.fallback_requested!=(self.status is not DecodeStatus.COMPLETE)):
             invalid()
         for record in (*self.decisions,*self.committed):
@@ -200,7 +202,7 @@ def predict_typed(memory,eligible_context,answer_plan,active_semantics,readout_p
         committed_ids={o.decision_id for o in outputs}
         records.extend(record for record in batch if record.decision_id in committed_ids)
     status,frame=state.status,None
-    if status is DecodeStatus.COMPLETE:
+    if status is DecodeStatus.COMPLETE and not answer_plan.route_only:
         try:
             frame=publish_frame(state)
         except BilqisError:

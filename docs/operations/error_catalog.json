@@ -1,6 +1,6 @@
 {
-  "legacy_raw_file_count": 231,
-  "legacy_raw_raise_count": 2029,
+  "legacy_raw_file_count": 248,
+  "legacy_raw_raise_count": 2072,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BOOLEAN_ASSOCIATION_B_GRADE_OWNERSHIP_DRIFT",
@@ -4518,6 +4518,279 @@
       "path": "bilqis_mlx/diagnostics/trajectories.py"
     },
     {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_INVALID_INPUT",
+      "count": 1,
+      "exception": "TypeError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_INVALID_INPUT'",
+      "path": "bilqis_mlx/factory/_executable_release/compile.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_DUPLICATE_SPECIMEN",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_DUPLICATE_SPECIMEN:' + execution.capability_id",
+      "path": "bilqis_mlx/factory/_executable_release/evidence.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_ADMISSION_RELEASE_REQUIRED",
+      "count": 1,
+      "exception": "TypeError",
+      "expression": "'FACTORY_EXECUTABLE_ADMISSION_RELEASE_REQUIRED'",
+      "path": "bilqis_mlx/factory/_executable_release/operations.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_INVALID",
+      "count": 2,
+      "exception": "TypeError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_INVALID'",
+      "path": "bilqis_mlx/factory/_executable_release/operations.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_REQUIRED",
+      "count": 1,
+      "exception": "TypeError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_REQUIRED'",
+      "path": "bilqis_mlx/factory/_executable_release/operations.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_INCOMPATIBLE_GEOMETRY",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_INCOMPATIBLE_GEOMETRY'",
+      "path": "bilqis_mlx/factory/_executable_release/operations.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_LINEAGE_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_LINEAGE_DRIFT'",
+      "path": "bilqis_mlx/factory/_executable_release/operations.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_LINEAGE_WITHOUT_PREDECESSOR",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_LINEAGE_WITHOUT_PREDECESSOR'",
+      "path": "bilqis_mlx/factory/_executable_release/operations.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_ADMISSION_RELEASE_REQUIRED",
+      "count": 1,
+      "exception": "TypeError",
+      "expression": "'FACTORY_EXECUTABLE_ADMISSION_RELEASE_REQUIRED'",
+      "path": "bilqis_mlx/factory/_executable_release/primitives.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_ADMISSION_BASELINE_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_ADMISSION_BASELINE_DRIFT'",
+      "path": "bilqis_mlx/factory/_executable_release/primitives.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_ADMISSION_RELEASE_MISMATCH",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_ADMISSION_RELEASE_MISMATCH'",
+      "path": "bilqis_mlx/factory/_executable_release/primitives.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_ADMISSION_STEP_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_ADMISSION_STEP_INVALID'",
+      "path": "bilqis_mlx/factory/_executable_release/primitives.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_ANSWER_HEAD_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_ANSWER_HEAD_INVALID'",
+      "path": "bilqis_mlx/factory/_executable_release/primitives.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_ASSESSMENT_SEAL_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_ASSESSMENT_SEAL_INVALID'",
+      "path": "bilqis_mlx/factory/_executable_release/primitives.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_REQUIRED",
+      "count": 1,
+      "exception": "TypeError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_REQUIRED'",
+      "path": "bilqis_mlx/factory/_executable_release/release.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_ANSWER_HEAD_CATALOG_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_ANSWER_HEAD_CATALOG_DRIFT'",
+      "path": "bilqis_mlx/factory/_executable_release/release.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_MANIFEST_CONTENT_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_MANIFEST_CONTENT_DRIFT'",
+      "path": "bilqis_mlx/factory/_executable_release/release.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_MANIFEST_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_MANIFEST_INVALID'",
+      "path": "bilqis_mlx/factory/_executable_release/release.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_DRIFT'",
+      "path": "bilqis_mlx/factory/_executable_release/release.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTABLE_RELEASE_SCHEMA_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTABLE_RELEASE_SCHEMA_INVALID'",
+      "path": "bilqis_mlx/factory/_executable_release/release.py"
+    },
+    {
+      "code_hint": "FACTORY_PROFILE_DIMENSION_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PROFILE_DIMENSION_INVALID'",
+      "path": "bilqis_mlx/factory/_execution/common.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTION_PLAN_INVALID_INPUT",
+      "count": 2,
+      "exception": "TypeError",
+      "expression": "'FACTORY_EXECUTION_PLAN_INVALID_INPUT'",
+      "path": "bilqis_mlx/factory/_execution/compilation.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTION_PLAN_REGISTRY_REQUIRED",
+      "count": 1,
+      "exception": "TypeError",
+      "expression": "'FACTORY_EXECUTION_PLAN_REGISTRY_REQUIRED'",
+      "path": "bilqis_mlx/factory/_execution/compilation.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTION_PLAN_ANSWER_REGISTRY_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTION_PLAN_ANSWER_REGISTRY_REQUIRED'",
+      "path": "bilqis_mlx/factory/_execution/compilation.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTION_PLAN_LEGACY_BINDINGS_AMBIGUOUS",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTION_PLAN_LEGACY_BINDINGS_AMBIGUOUS'",
+      "path": "bilqis_mlx/factory/_execution/compilation.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTION_PLAN_SOURCE_BINDINGS_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTION_PLAN_SOURCE_BINDINGS_REQUIRED'",
+      "path": "bilqis_mlx/factory/_execution/compilation.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTION_PLAN_DIFF_INVALID_INPUT",
+      "count": 1,
+      "exception": "TypeError",
+      "expression": "'FACTORY_EXECUTION_PLAN_DIFF_INVALID_INPUT'",
+      "path": "bilqis_mlx/factory/_execution/lineage.py"
+    },
+    {
+      "code_hint": "FACTORY_EXECUTION_PLAN_LINEAGE_REQUIRED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_EXECUTION_PLAN_LINEAGE_REQUIRED'",
+      "path": "bilqis_mlx/factory/_execution/lineage.py"
+    },
+    {
+      "code_hint": "FACTORY_PLAN_LINEAGE_CURRICULUM_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PLAN_LINEAGE_CURRICULUM_DRIFT'",
+      "path": "bilqis_mlx/factory/_execution/lineage.py"
+    },
+    {
+      "code_hint": "FACTORY_PROFILE_ANSWER_VALUES_NOT_CANONICAL_SUBSET",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PROFILE_ANSWER_VALUES_NOT_CANONICAL_SUBSET:' + capability.capability_id",
+      "path": "bilqis_mlx/factory/_execution/profiling.py"
+    },
+    {
+      "code_hint": "FACTORY_PROFILE_CAPABILITY_OUTSIDE_GRADE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PROFILE_CAPABILITY_OUTSIDE_GRADE:' + grade.grade_id",
+      "path": "bilqis_mlx/factory/_execution/profiling.py"
+    },
+    {
+      "code_hint": "FACTORY_PROFILE_DISABLED_CONSTITUENT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PROFILE_DISABLED_CONSTITUENT:' + cap.capability_id",
+      "path": "bilqis_mlx/factory/_execution/profiling.py"
+    },
+    {
+      "code_hint": "FACTORY_PROFILE_DISABLED_PREREQUISITE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PROFILE_DISABLED_PREREQUISITE:' + cap.capability_id",
+      "path": "bilqis_mlx/factory/_execution/profiling.py"
+    },
+    {
+      "code_hint": "FACTORY_PROFILE_EMPTY_EXECUTION",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PROFILE_EMPTY_EXECUTION'",
+      "path": "bilqis_mlx/factory/_execution/profiling.py"
+    },
+    {
+      "code_hint": "FACTORY_PROFILE_OVERRIDE_FOR_DISABLED_CAPABILITY",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PROFILE_OVERRIDE_FOR_DISABLED_CAPABILITY:' + grade.grade_id",
+      "path": "bilqis_mlx/factory/_execution/profiling.py"
+    },
+    {
+      "code_hint": "FACTORY_PROFILE_OVERRIDE_FOR_DISABLED_GRADE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PROFILE_OVERRIDE_FOR_DISABLED_GRADE:' + grade.grade_id",
+      "path": "bilqis_mlx/factory/_execution/profiling.py"
+    },
+    {
+      "code_hint": "FACTORY_PROFILE_STAGES_MUST_PARTITION_ENABLED_CAPABILITIES",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PROFILE_STAGES_MUST_PARTITION_ENABLED_CAPABILITIES'",
+      "path": "bilqis_mlx/factory/_execution/profiling.py"
+    },
+    {
+      "code_hint": "FACTORY_PROFILE_UNKNOWN_ANSWER_FAMILY",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PROFILE_UNKNOWN_ANSWER_FAMILY:' + capability.capability_id",
+      "path": "bilqis_mlx/factory/_execution/profiling.py"
+    },
+    {
+      "code_hint": "FACTORY_PROFILE_UNKNOWN_GRADE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_PROFILE_UNKNOWN_GRADE:' + ','.join(sorted(unknown))",
+      "path": "bilqis_mlx/factory/_execution/profiling.py"
+    },
+    {
       "code_hint": "FACTORY_INVALID_REGISTERED_SOURCE_ADAPTER",
       "count": 1,
       "exception": "TypeError",
@@ -5687,199 +5960,10 @@
       "path": "bilqis_mlx/factory/curriculum_definition.py"
     },
     {
-      "code_hint": "FACTORY_EXECUTABLE_ADMISSION_RELEASE_REQUIRED",
-      "count": 2,
-      "exception": "TypeError",
-      "expression": "'FACTORY_EXECUTABLE_ADMISSION_RELEASE_REQUIRED'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_INVALID_INPUT",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_INVALID_INPUT'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_INVALID",
-      "count": 2,
-      "exception": "TypeError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_INVALID'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_REQUIRED",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_REQUIRED'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_REQUIRED",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_REQUIRED'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_ADMISSION_BASELINE_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_ADMISSION_BASELINE_DRIFT'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_ADMISSION_RELEASE_MISMATCH",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_ADMISSION_RELEASE_MISMATCH'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_ADMISSION_STEP_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_ADMISSION_STEP_INVALID'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_ANSWER_HEAD_CATALOG_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_ANSWER_HEAD_CATALOG_DRIFT'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_ANSWER_HEAD_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_ANSWER_HEAD_INVALID'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_ASSESSMENT_SEAL_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_ASSESSMENT_SEAL_INVALID'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_DUPLICATE_SPECIMEN",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_DUPLICATE_SPECIMEN:' + execution.capability_id",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_INCOMPATIBLE_GEOMETRY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_INCOMPATIBLE_GEOMETRY'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_LINEAGE_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_LINEAGE_DRIFT'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_LINEAGE_WITHOUT_PREDECESSOR",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_LINEAGE_WITHOUT_PREDECESSOR'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_MANIFEST_CONTENT_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_MANIFEST_CONTENT_DRIFT'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_MANIFEST_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_MANIFEST_INVALID'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_DRIFT'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_RELEASE_SCHEMA_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_RELEASE_SCHEMA_INVALID'",
-      "path": "bilqis_mlx/factory/executable_release.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTION_PLAN_DIFF_INVALID_INPUT",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'FACTORY_EXECUTION_PLAN_DIFF_INVALID_INPUT'",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTION_PLAN_INVALID_INPUT",
-      "count": 2,
-      "exception": "TypeError",
-      "expression": "'FACTORY_EXECUTION_PLAN_INVALID_INPUT'",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTION_PLAN_REGISTRY_REQUIRED",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'FACTORY_EXECUTION_PLAN_REGISTRY_REQUIRED'",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTION_PLAN_ANSWER_REGISTRY_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTION_PLAN_ANSWER_REGISTRY_REQUIRED'",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTION_PLAN_LEGACY_BINDINGS_AMBIGUOUS",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTION_PLAN_LEGACY_BINDINGS_AMBIGUOUS'",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTION_PLAN_LINEAGE_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTION_PLAN_LINEAGE_REQUIRED'",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTION_PLAN_SOURCE_BINDINGS_REQUIRED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTION_PLAN_SOURCE_BINDINGS_REQUIRED'",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
       "code_hint": "FACTORY_PLAN_LINEAGE_CURRICULUM_DIGEST_INVALID",
       "count": 1,
       "exception": "ValueError",
       "expression": "'FACTORY_PLAN_LINEAGE_CURRICULUM_DIGEST_INVALID'",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_PLAN_LINEAGE_CURRICULUM_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PLAN_LINEAGE_CURRICULUM_DRIFT'",
       "path": "bilqis_mlx/factory/execution.py"
     },
     {
@@ -5890,45 +5974,10 @@
       "path": "bilqis_mlx/factory/execution.py"
     },
     {
-      "code_hint": "FACTORY_PROFILE_ANSWER_VALUES_NOT_CANONICAL_SUBSET",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PROFILE_ANSWER_VALUES_NOT_CANONICAL_SUBSET:' + capability.capability_id",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
       "code_hint": "FACTORY_PROFILE_CAPABILITY_ID_REQUIRED",
       "count": 1,
       "exception": "ValueError",
       "expression": "'FACTORY_PROFILE_CAPABILITY_ID_REQUIRED'",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_PROFILE_CAPABILITY_OUTSIDE_GRADE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PROFILE_CAPABILITY_OUTSIDE_GRADE:' + grade.grade_id",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_PROFILE_DIMENSION_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PROFILE_DIMENSION_INVALID'",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_PROFILE_DISABLED_CONSTITUENT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PROFILE_DISABLED_CONSTITUENT:' + cap.capability_id",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_PROFILE_DISABLED_PREREQUISITE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PROFILE_DISABLED_PREREQUISITE:' + cap.capability_id",
       "path": "bilqis_mlx/factory/execution.py"
     },
     {
@@ -5943,13 +5992,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'FACTORY_PROFILE_DUPLICATE_GRADE_OVERRIDE'",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_PROFILE_EMPTY_EXECUTION",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PROFILE_EMPTY_EXECUTION'",
       "path": "bilqis_mlx/factory/execution.py"
     },
     {
@@ -5971,41 +6013,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'FACTORY_PROFILE_ID_REQUIRED'",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_PROFILE_OVERRIDE_FOR_DISABLED_CAPABILITY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PROFILE_OVERRIDE_FOR_DISABLED_CAPABILITY:' + grade.grade_id",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_PROFILE_OVERRIDE_FOR_DISABLED_GRADE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PROFILE_OVERRIDE_FOR_DISABLED_GRADE:' + grade.grade_id",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_PROFILE_STAGES_MUST_PARTITION_ENABLED_CAPABILITIES",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PROFILE_STAGES_MUST_PARTITION_ENABLED_CAPABILITIES'",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_PROFILE_UNKNOWN_ANSWER_FAMILY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PROFILE_UNKNOWN_ANSWER_FAMILY:' + capability.capability_id",
-      "path": "bilqis_mlx/factory/execution.py"
-    },
-    {
-      "code_hint": "FACTORY_PROFILE_UNKNOWN_GRADE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_PROFILE_UNKNOWN_GRADE:' + ','.join(sorted(unknown))",
       "path": "bilqis_mlx/factory/execution.py"
     },
     {
@@ -11238,11 +11245,319 @@
       "path": "bilqis_mlx/runtime/tests/admission/test_atlas_lease_renewal.py"
     },
     {
-      "code_hint": "A05 requires a typed source AST",
+      "code_hint": "model-input planning entered before A06 authority rejection",
       "count": 1,
       "exception": "AssertionError",
-      "expression": "'A05 requires a typed source AST'",
-      "path": "bilqis_mlx/runtime/tests/batch/test_atlas_training_adapter.py"
+      "expression": "'model-input planning entered before A06 authority rejection'",
+      "path": "bilqis_mlx/runtime/tests/batch/test_atlas_training_real_source.py"
+    },
+    {
+      "code_hint": "C05 fixed diagnostic Factory release drift",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'C05 fixed diagnostic Factory release drift'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_fixed_diagnostic.py"
+    },
+    {
+      "code_hint": "C05 fixed diagnostic capability is not admitted",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'C05 fixed diagnostic capability is not admitted'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_fixed_diagnostic.py"
+    },
+    {
+      "code_hint": "C05 fixed diagnostic cohort unavailable",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'C05 fixed diagnostic cohort unavailable'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_fixed_diagnostic.py"
+    },
+    {
+      "code_hint": "C05 fixed diagnostic optimizer census drift",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'C05 fixed diagnostic optimizer census drift'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_fixed_diagnostic.py"
+    },
+    {
+      "code_hint": "C05 fixed diagnostic protected capability absent",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'C05 fixed diagnostic protected capability absent'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_fixed_diagnostic.py"
+    },
+    {
+      "code_hint": "C05 fixed diagnostic training authority drift",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'C05 fixed diagnostic training authority drift'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_fixed_diagnostic.py"
+    },
+    {
+      "code_hint": "C05 lesson diagnostic capability is not admitted",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'C05 lesson diagnostic capability is not admitted'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_lesson_diagnostic.py"
+    },
+    {
+      "code_hint": "C05 lesson diagnostic training authority drift",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'C05 lesson diagnostic training authority drift'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_lesson_diagnostic.py"
+    },
+    {
+      "code_hint": "C05 source-owned identity bank unavailable",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'C05 source-owned identity bank unavailable'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_live_support.py"
+    },
+    {
+      "code_hint": "B13.2 accepted bundle/CAS mutated",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'B13.2 accepted bundle/CAS mutated'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_next_step_evidence.py"
+    },
+    {
+      "code_hint": "B13.2 accepted pointer mutated",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'B13.2 accepted pointer mutated'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_next_step_evidence.py"
+    },
+    {
+      "code_hint": "B13.2 cold accepted parent drift or generation-2 publication",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'B13.2 cold accepted parent drift or generation-2 publication'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_next_step_evidence.py"
+    },
+    {
+      "code_hint": "B13.2 destination arm is not CPU",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'B13.2 destination arm is not CPU'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_next_step_evidence.py"
+    },
+    {
+      "code_hint": "B13.2 in-memory accepted parent mutated",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'B13.2 in-memory accepted parent mutated'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_next_step_evidence.py"
+    },
+    {
+      "code_hint": "B13.2 numeric reference already exists",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'B13.2 numeric reference already exists'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_next_step_evidence.py"
+    },
+    {
+      "code_hint": "B13.2 numeric reference census drift",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'B13.2 numeric reference census drift'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_next_step_evidence.py"
+    },
+    {
+      "code_hint": "B13.2 numeric reference schema drift",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'B13.2 numeric reference schema drift'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_next_step_evidence.py"
+    },
+    {
+      "code_hint": "B13.2 numeric tensor contract drift",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'B13.2 numeric tensor contract drift'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_next_step_evidence.py"
+    },
+    {
+      "code_hint": "B13.2 source arm is not Apple Metal",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'B13.2 source arm is not Apple Metal'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_next_step_evidence.py"
+    },
+    {
+      "code_hint": "B13.2 structural parity drift",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'B13.2 structural parity drift: forward'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_next_step_evidence.py"
+    },
+    {
+      "code_hint": "B13.2 structural parity drift",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'B13.2 structural parity drift: step_proof fields=' + ','.join(differing)",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_next_step_evidence.py"
+    },
+    {
+      "code_hint": "B13.2 execution provenance drift",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "f'B13.2 execution provenance drift: {field}'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_next_step_evidence.py"
+    },
+    {
+      "code_hint": "B13.2 numeric",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "f'B13.2 numeric {role} non-finite: {logical}'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_next_step_evidence.py"
+    },
+    {
+      "code_hint": "B13.2 structural parity drift",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "f'B13.2 structural parity drift: {field}'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_next_step_evidence.py"
+    },
+    {
+      "code_hint": "B13.2 controlled capability selection drift",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'B13.2 controlled capability selection drift'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_next_step_state.py"
+    },
+    {
+      "code_hint": "B13.2 execution seal already written",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'B13.2 execution seal already written'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_next_step_state.py"
+    },
+    {
+      "code_hint": "B13.2 sealed execution drift",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'B13.2 sealed execution drift'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_next_step_state.py"
+    },
+    {
+      "code_hint": "B13.2 sealed visit drift",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'B13.2 sealed visit drift'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_next_step_state.py"
+    },
+    {
+      "code_hint": "B13.2 committed semantic output drift",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'B13.2 committed semantic output drift'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_next_step_witness.py"
+    },
+    {
+      "code_hint": "B13.2 cross-backend FP32 parity exceeded tolerance",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'B13.2 cross-backend FP32 parity exceeded tolerance'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_next_step_witness.py"
+    },
+    {
+      "code_hint": "B13.2 expected exactly one route decision",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'B13.2 expected exactly one route decision'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_next_step_witness.py"
+    },
+    {
+      "code_hint": "B13.2 natural Factory next capability drift",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'B13.2 natural Factory next capability drift'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_next_step_witness.py"
+    },
+    {
+      "code_hint": "B13.2 natural Factory next-selection cold readback drift",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'B13.2 natural Factory next-selection cold readback drift'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_next_step_witness.py"
+    },
+    {
+      "code_hint": "B13.2 next step did not execute exactly once",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'B13.2 next step did not execute exactly once'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_next_step_witness.py"
+    },
+    {
+      "code_hint": "B13.2 witness requires published accepted generation one",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'B13.2 witness requires published accepted generation one'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_next_step_witness.py"
+    },
+    {
+      "code_hint": "C05 target diagnostic capability is not admitted",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'C05 target diagnostic capability is not admitted'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_target_diagnostic.py"
+    },
+    {
+      "code_hint": "C05 target diagnostic training authority drift",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'C05 target diagnostic training authority drift'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_target_diagnostic.py"
+    },
+    {
+      "code_hint": "C05 source-owned generation-one publication drift",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'C05 source-owned generation-one publication drift'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/owner_live_support.py"
+    },
+    {
+      "code_hint": "C05 source-owned route decision drift",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'C05 source-owned route decision drift'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/owner_live_support.py"
+    },
+    {
+      "code_hint": "C05 source-owned step did not execute exactly once",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'C05 source-owned step did not execute exactly once'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/owner_live_support.py"
+    },
+    {
+      "code_hint": "C05 Factory retention did not accept source-owned candidate",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "f'C05 Factory retention did not accept source-owned candidate: reason={decision.reason} evidence={decision.evidence_sha256} policy={decision.policy_sha256} blocking_capability={evaluation.decision.blocking_capability}'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/owner_live_support.py"
+    },
+    {
+      "code_hint": "C05 source-owned MLX backend is not GPU",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "f'C05 source-owned MLX backend is not GPU: {backend.device}'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/owner_live_support.py"
+    },
+    {
+      "code_hint": "exact cached route must preempt neural",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'exact cached route must preempt neural'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver.py"
+    },
+    {
+      "code_hint": "malformed decoder payload",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'malformed decoder payload'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver.py"
     },
     {
       "code_hint": "missing source manifest",
@@ -11259,18 +11574,11 @@
       "path": "bilqis_mlx/runtime/tests/capability/test_capability_evidence_history.py"
     },
     {
-      "code_hint": "exact cached route must preempt neural",
-      "count": 1,
-      "exception": "AssertionError",
-      "expression": "'exact cached route must preempt neural'",
-      "path": "bilqis_mlx/runtime/tests/capability/test_cognitive_solver.py"
-    },
-    {
-      "code_hint": "malformed decoder payload",
+      "code_hint": "COLD_RESUME_CONTINUATION_REJECTED before=",
       "count": 1,
       "exception": "ValueError",
-      "expression": "'malformed decoder payload'",
-      "path": "bilqis_mlx/runtime/tests/capability/test_cognitive_solver.py"
+      "expression": "f'COLD_RESUME_CONTINUATION_REJECTED before={loss_before} after={loss_after}'",
+      "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/cold_resume_probe.py"
     },
     {
       "code_hint": "test synchronization timed out",
@@ -11945,6 +12253,27 @@
       "path": "bilqis_mlx/semantics/tests/operators/test_cognitive_operator_native.py"
     },
     {
+      "code_hint": "EVENT_FRAME_INVALID_DRAW",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'EVENT_FRAME_INVALID_DRAW'",
+      "path": "bilqis_mlx/source_adapters/_events/event_frames.py"
+    },
+    {
+      "code_hint": "EVENT_FRAME_SOURCE_PDF_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'EVENT_FRAME_SOURCE_PDF_DRIFT'",
+      "path": "bilqis_mlx/source_adapters/_events/event_frames.py"
+    },
+    {
+      "code_hint": "FACTORY_TEACHING_OPTION_NOT_RELEASED",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'FACTORY_TEACHING_OPTION_NOT_RELEASED'",
+      "path": "bilqis_mlx/source_adapters/_events/event_intro.py"
+    },
+    {
       "code_hint": "BOOLEAN_ASSOCIATION_REQUIRES_NUMERIC_SOURCE_ADAPTER",
       "count": 1,
       "exception": "ValueError",
@@ -12075,56 +12404,56 @@
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_DUPLICATE_REQUESTED_SEMANTIC'",
-      "path": "bilqis_mlx/source_adapters/catalog.py"
+      "path": "bilqis_mlx/source_adapters/catalog/__init__.py"
     },
     {
       "code_hint": "COMPOSITION_DUPLICATE_SOURCE_BINDING",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_DUPLICATE_SOURCE_BINDING'",
-      "path": "bilqis_mlx/source_adapters/catalog.py"
+      "path": "bilqis_mlx/source_adapters/catalog/__init__.py"
     },
     {
       "code_hint": "COMPOSITION_INVALID_SOURCE_CATALOG",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_INVALID_SOURCE_CATALOG'",
-      "path": "bilqis_mlx/source_adapters/catalog.py"
+      "path": "bilqis_mlx/source_adapters/catalog/__init__.py"
     },
     {
       "code_hint": "COMPOSITION_INVALID_SOURCE_SIGNATURE",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_INVALID_SOURCE_SIGNATURE'",
-      "path": "bilqis_mlx/source_adapters/catalog.py"
+      "path": "bilqis_mlx/source_adapters/catalog/__init__.py"
     },
     {
       "code_hint": "COMPOSITION_SOURCE_ARITY_DRIFT",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_SOURCE_ARITY_DRIFT'",
-      "path": "bilqis_mlx/source_adapters/catalog.py"
+      "path": "bilqis_mlx/source_adapters/catalog/__init__.py"
     },
     {
       "code_hint": "COMPOSITION_SOURCE_MEANING_CONTRACT_DRIFT",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_SOURCE_MEANING_CONTRACT_DRIFT'",
-      "path": "bilqis_mlx/source_adapters/catalog.py"
+      "path": "bilqis_mlx/source_adapters/catalog/__init__.py"
     },
     {
       "code_hint": "COMPOSITION_SOURCE_TOKEN_IDENTITY_DRIFT",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_SOURCE_TOKEN_IDENTITY_DRIFT'",
-      "path": "bilqis_mlx/source_adapters/catalog.py"
+      "path": "bilqis_mlx/source_adapters/catalog/__init__.py"
     },
     {
       "code_hint": "COMPOSITION_UNRESOLVED_SEMANTIC_ID",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_UNRESOLVED_SEMANTIC_ID'",
-      "path": "bilqis_mlx/source_adapters/catalog.py"
+      "path": "bilqis_mlx/source_adapters/catalog/__init__.py"
     },
     {
       "code_hint": "COPULAR_CODEC_INCOMPLETE",
@@ -12232,74 +12561,53 @@
       "path": "bilqis_mlx/source_adapters/copular_curriculum.py"
     },
     {
-      "code_hint": "EVENT_FRAME_INVALID_DRAW",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'EVENT_FRAME_INVALID_DRAW'",
-      "path": "bilqis_mlx/source_adapters/event_frames.py"
-    },
-    {
-      "code_hint": "EVENT_FRAME_SOURCE_PDF_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'EVENT_FRAME_SOURCE_PDF_DRIFT'",
-      "path": "bilqis_mlx/source_adapters/event_frames.py"
-    },
-    {
-      "code_hint": "FACTORY_TEACHING_OPTION_NOT_RELEASED",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_TEACHING_OPTION_NOT_RELEASED'",
-      "path": "bilqis_mlx/source_adapters/event_intro.py"
-    },
-    {
       "code_hint": "COMPOSITION_MICRO_ENTITY_SHAPE",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_MICRO_ENTITY_SHAPE'",
-      "path": "bilqis_mlx/source_adapters/micro.py"
+      "path": "bilqis_mlx/source_adapters/micro/__init__.py"
     },
     {
       "code_hint": "COMPOSITION_MICRO_INCOMPLETE_APPLICATION",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_MICRO_INCOMPLETE_APPLICATION'",
-      "path": "bilqis_mlx/source_adapters/micro.py"
+      "path": "bilqis_mlx/source_adapters/micro/__init__.py"
     },
     {
       "code_hint": "COMPOSITION_MICRO_INVALID_AST",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_MICRO_INVALID_AST'",
-      "path": "bilqis_mlx/source_adapters/micro.py"
+      "path": "bilqis_mlx/source_adapters/micro/__init__.py"
     },
     {
       "code_hint": "COMPOSITION_MICRO_LITERAL_SHAPE",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_MICRO_LITERAL_SHAPE'",
-      "path": "bilqis_mlx/source_adapters/micro.py"
+      "path": "bilqis_mlx/source_adapters/micro/__init__.py"
     },
     {
       "code_hint": "COMPOSITION_MICRO_OPERATOR_NAME_INVALID",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_MICRO_OPERATOR_NAME_INVALID'",
-      "path": "bilqis_mlx/source_adapters/micro.py"
+      "path": "bilqis_mlx/source_adapters/micro/__init__.py"
     },
     {
       "code_hint": "COMPOSITION_MICRO_OPERATOR_SHAPE",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_MICRO_OPERATOR_SHAPE'",
-      "path": "bilqis_mlx/source_adapters/micro.py"
+      "path": "bilqis_mlx/source_adapters/micro/__init__.py"
     },
     {
       "code_hint": "COMPOSITION_MICRO_UNSUPPORTED_SOURCE_NODE",
       "count": 1,
       "exception": "TypedError",
       "expression": "'COMPOSITION_MICRO_UNSUPPORTED_SOURCE_NODE'",
-      "path": "bilqis_mlx/source_adapters/micro.py"
+      "path": "bilqis_mlx/source_adapters/micro/__init__.py"
     },
     {
       "code_hint": "NUMERIC_CODEC_CONTEXT_OVERFLOW",

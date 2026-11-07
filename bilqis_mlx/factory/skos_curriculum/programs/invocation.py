@@ -1,7 +1,7 @@
 """Source-specific invocation under an existing verified Factory binding."""
 from inspect import signature
 
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection, load_pinned_atlas_snapshot
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection, load_pinned_atlas_snapshot
 from ..common import _fail
 from .contracts import SourceFamilyBatch
 

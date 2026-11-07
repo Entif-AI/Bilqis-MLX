@@ -13,8 +13,9 @@ from bilqis_mlx.errors import ErrorBus, SCHOOL
 from .atlas_engram import (
     CandidateMotifView, MotifBudget, MotifFrameInput, MotifKey, MotifManifest,
     OBSERVED_USE_ARITY,
-    _digest, candidate_motif_manifest, prepare_motifs,
+    candidate_motif_manifest, prepare_motifs,
 )
+from .atlas_engram_identity import _digest
 
 
 SNAPSHOT_SCHEMA = "bilqis.motif-allocation-snapshot/v1"
@@ -133,7 +134,7 @@ class CandidateMotifSnapshot:
         return _digest(asdict(self))
 
 
-def prepare_candidate_motif_snapshot(
+def _prepare_candidate_motif_snapshot(
     frames: tuple[MotifFrameInput, ...],
     parent: MotifAllocationSnapshot,
     budget: MotifBudget,
@@ -160,7 +161,7 @@ def prepare_candidate_motif_snapshot(
     return CandidateMotifSnapshot(parent.digest, view, proposed)
 
 
-def verify_candidate_motif_snapshot(
+def _verify_candidate_motif_snapshot(
     candidate: CandidateMotifSnapshot,
     *,
     frames: tuple[MotifFrameInput, ...],
@@ -176,7 +177,7 @@ def verify_candidate_motif_snapshot(
     """
     if type(candidate) is not CandidateMotifSnapshot:
         _invalid("BAMF_MOTIF_TRANSACTION_INVALID")
-    expected = prepare_candidate_motif_snapshot(
+    expected = _prepare_candidate_motif_snapshot(
         frames, parent, budget, source_aliases=source_aliases)
     if candidate != expected:
         _invalid("BAMF_MOTIF_TRANSACTION_REPLAY_MISMATCH")

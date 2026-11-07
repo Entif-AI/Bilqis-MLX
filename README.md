@@ -32,6 +32,37 @@ unified trunk for human sign-off; the issue never authorizes self-merging that P
 Accepted cross-lane work becomes available to the other lanes through the next
 issue-boundary sync from unified.
 
+## BAMF-0.2 GitHub Project dashboard contract — 2026-11-03
+
+The `BAMF-0.2 Execution` GitHub Project is an observability surface. It does not
+own execution state, EGM state, issue state, dependency authority, or merge
+readiness. Repository issues and labels, ADRs, the BAMF task registry,
+flow-control records, dependency evidence, and execution receipts remain
+authoritative.
+
+- `BAMF-Leaf` is a one-time structural projection of the current BAMF leaf set for
+  dashboard filtering. Do not add automatic leaf-label synchronization or treat
+  the Project as the source of leaf identity.
+- EGM state is read from the canonical issue labels `EGM-Pending`, `EGM-Failed`,
+  `EGM-Mitigation`, and `EGM-Passed`. Do not duplicate EGM state in a Project
+  field or encode it in PR status tokens.
+- Project views, charts, and filters may summarize authoritative repository state.
+  They must not create a competing workflow state machine.
+- Project `Status` is not issue-close authority. Keep the Project workflow that
+  closes an issue merely because `Status` becomes `Done` disabled.
+- For a bounded implementing issue, once its accepted implementation PR is
+  confirmed merged into the owning reviewed integration target and the issue's
+  acceptance/EGM obligations are satisfied, close the issue as `completed`
+  immediately. Do not leave merged work open for later bookkeeping cleanup.
+- BAMF implementation PRs commonly merge into the reviewed unified trunk rather
+  than the repository default branch, so do not rely on GitHub's default linked-PR
+  auto-close behavior. The closeout operator must read back the merge and close
+  the owning issue explicitly. A later regression may reopen that issue or create
+  a new one.
+- Group/integration parents remain open while their own aggregate acceptance,
+  child, hold, or remediation scope is unresolved, even when one scoped child or
+  structural PR has merged.
+
 ## Mandatory development structure discipline — 2026-10-29
 
 **This rule is a development interruption contract, not a repository-wide cleanup
@@ -159,7 +190,9 @@ The former Bilqis implementations are preserved as pinned, read-only source depe
 
 **Operator recovery:** hard stops should identify the failed predicate, state what remains safe, and give a concrete neural-inert next step. See the [`Bilqis Operator Field Manual`](docs/operations/OPERATOR_FIELD_MANUAL.md). Do not hand-edit `state.json` or replace checkpoint/AdamW evidence to bypass a guard.
 
-**Curriculum factory authority:** [`SPEC-0001`](docs/specifications/0001_GENERATIVE_CURRICULUM_FACTORY.md) defines the mandatory end state for semantics-to-grade compilation, release, admission, developmental routine/promotion assessment, repository structure and extension. [`Authority convergence`](docs/architecture/10_CURRICULUM_AUTHORITY_CONVERGENCE_20261019.md) records the current source hierarchy, resolved architecture, known conflicts and migration order. The production rule is **no factory release, no grade**. New grades are declarative factory instances; handwritten grade-specific runtime paths are nonconforming. Fresh GENERALIZATION is currently dormant compatibility/research machinery, not a live graduation gate; reactivation requires a future explicit human maturity decision. Issue #150 decomposes the factory cutover into reusable architecture leaves, not one ticket per future semantic root. The execution packet is [`TASK-0001`](docs/tasks/0001_IMPLEMENT_GENERATIVE_CURRICULUM_FACTORY.md).
+**Curriculum factory authority:** [`SPEC-0001`](docs/specifications/0001_GENERATIVE_CURRICULUM_FACTORY.md) defines the mandatory end state for semantics-to-grade compilation, release, admission, developmental routine/promotion assessment, repository structure and extension. [`Authority convergence`](docs/architecture/10_CURRICULUM_AUTHORITY_CONVERGENCE_20261019.md) records the current source hierarchy, resolved architecture, known conflicts and migration order. The production rule is **no factory release, no grade**. New grades are declarative factory instances; handwritten grade-specific runtime paths are nonconforming. Generalization and novelty are measured during BAMF-0.2 alpha but do not independently gate graduation or retention. A later fixed held-out/generalization gate requires explicit human admission. Issue #150 decomposes the factory cutover into reusable architecture leaves, not one ticket per future semantic root. The execution packet is [`TASK-0001`](docs/tasks/0001_IMPLEMENT_GENERATIVE_CURRICULUM_FACTORY.md).
+
+**FOUNDATION_EVIDENCE_POLICY_ACTIVE:** Current BAMF foundation work optimizes for acquisition and retention of taught semantics. Teacher-forced gold, exact specimen replay, exact memorization, cache retrieval and memoized procedures are valid current-stage mechanisms. Previously shown examples count toward the current earned-complexity success ratio. Fresh episodes, independent source families and novel compositions are measured as non-authorizing diagnostics that locate the competence breakdown frontier. They are not current acceptance gates. The machine-readable authority is [developmental_evidence_policy.json](docs/specifications/developmental_evidence_policy.json).
 
 **Championship authority:** [Championship lifecycle specification](docs/specifications/0002_CHAMPIONSHIP_LIFECYCLE_V1.md) governs curriculum-boundary resets, capability champions, defended title succession, advisory rights and frozen soup eligibility. Normal examinations establish earned capability roles before graduation, including on fresh runs. Flash continues to defer title qualification.
 

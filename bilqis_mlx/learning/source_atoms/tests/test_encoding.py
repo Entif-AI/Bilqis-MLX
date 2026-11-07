@@ -12,7 +12,7 @@ from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes,
 )
 from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest
-from bilqis_mlx.semantics.atlas_snapshot import load_pinned_atlas_snapshot
+from bilqis_mlx.semantics.atlas.snapshot import load_pinned_atlas_snapshot
 from bilqis_mlx.semantics.frame_compiler import compile_prefix_rows
 from bilqis_mlx.source_adapters.tests.atoms.helpers import REAL_BUNDLE, source_case
 

@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from ...semantics.atlas_snapshot import AtlasArtifactSelection
+from ...semantics.atlas.snapshot import AtlasArtifactSelection
 
 
 @dataclass(frozen=True)

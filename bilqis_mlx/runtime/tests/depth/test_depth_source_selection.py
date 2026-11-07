@@ -9,7 +9,7 @@ from bilqis_mlx.runtime import depth_selection
 from bilqis_mlx.runtime.block_attnres import depth_parameter_view
 from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes
 from bilqis_mlx.runtime.tests.depth.depth_helpers import _hidden, _released_features, _summaries
-from bilqis_mlx.semantics.atlas_snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 
 
 class DepthSourceSelectionTests(TestCase):
