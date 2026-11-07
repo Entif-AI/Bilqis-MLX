@@ -160,10 +160,12 @@ def parent_state() -> CandidateState:
             ModelTopologySpecV2().digest, extents.digest))
 
 
-def accepted_state(parent: CandidateState) -> CandidateState:
+def accepted_state(
+        parent: CandidateState,
+        extents: GenerationExtents | None = None) -> CandidateState:
     transaction = begin_candidate(parent)
     spec = ModelTopologySpecV2()
-    extents = GenerationExtents(
+    extents = extents or GenerationExtents(
         1, 1, "a" * 64, parent.allocations.manifest.digest, "c" * 64)
     with shape_patch():
         transaction = candidate_step(
@@ -175,10 +177,12 @@ def accepted_state(parent: CandidateState) -> CandidateState:
     return resolve_candidate(transaction, accepted=True)
 
 
-def rejected_state(parent: CandidateState) -> CandidateState:
+def rejected_state(
+        parent: CandidateState,
+        extents: GenerationExtents | None = None) -> CandidateState:
     transaction = begin_candidate(parent)
     spec = ModelTopologySpecV2()
-    extents = GenerationExtents(
+    extents = extents or GenerationExtents(
         1, 1, "a" * 64, parent.allocations.manifest.digest, "c" * 64)
     with shape_patch():
         transaction = candidate_step(
@@ -190,10 +194,12 @@ def rejected_state(parent: CandidateState) -> CandidateState:
     return resolve_candidate(transaction, accepted=False)
 
 
-def next_accepted_step(parent: CandidateState) -> CandidateState:
+def next_accepted_step(
+        parent: CandidateState,
+        extents: GenerationExtents | None = None) -> CandidateState:
     transaction = begin_candidate(parent)
     spec = ModelTopologySpecV2()
-    extents = GenerationExtents(
+    extents = extents or GenerationExtents(
         1, 1, "a" * 64, parent.allocations.manifest.digest, "c" * 64)
     with shape_patch():
         transaction = candidate_step(

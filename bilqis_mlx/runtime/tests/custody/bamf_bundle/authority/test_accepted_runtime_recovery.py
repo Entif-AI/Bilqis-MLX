@@ -98,7 +98,7 @@ class AcceptedRuntimeRecoveryTests(unittest.TestCase):
                 append_record(self.run, ancestor_manifest, second_record)
         with shape_patch():
             parent = load_accepted_generation(self.run)
-        retained = next_accepted_step(parent.retained_state)
+        retained = next_accepted_step(parent.retained_state, parent.extents)
         successor = derive_successor_bundle(
             parent, retained, parent_manifest_sha256=ancestor_manifest,
             delivery_events=({"event": "FIXTURE_SUCCESSOR"},))

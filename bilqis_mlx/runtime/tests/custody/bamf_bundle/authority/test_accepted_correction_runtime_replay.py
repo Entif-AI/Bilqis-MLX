@@ -75,7 +75,7 @@ class AcceptedCorrectionReplayTests(unittest.TestCase):
 
         with shape_patch():
             parent = load_accepted_generation(self.run)
-        retained = next_accepted_step(parent.retained_state)
+        retained = next_accepted_step(parent.retained_state, parent.extents)
         successor = derive_successor_bundle(
             parent,
             retained,

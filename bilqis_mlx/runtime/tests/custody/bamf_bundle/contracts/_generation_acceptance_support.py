@@ -78,8 +78,8 @@ class GenerationAcceptanceFixture:
     def source(self, *, alternate=False):
         parent = self.parent()
         retained = (
-            next_accepted_step(parent.retained_state)
-            if alternate else accepted_state(parent.retained_state)
+            next_accepted_step(parent.retained_state, parent.extents)
+            if alternate else accepted_state(parent.retained_state, parent.extents)
         )
         return replace(
             candidate(retained, 1, self._parent_pointer["manifest_sha256"]),
