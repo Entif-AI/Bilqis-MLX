@@ -4,8 +4,11 @@ from __future__ import annotations
 import hashlib
 import hmac
 
+from bilqis_mlx.errors import BilqisError
 from ..semantics.cognitive_dependencies import DependencyKind, DependencyRef
-from .atlas_cache_binding import CacheArtifact, binding_digest
+from .atlas_cache_binding import (
+    CacheArtifact, _require_cache_binding, binding_digest,
+)
 
 
 CACHE_AUTHENTICATOR_BYTES = 16
@@ -37,9 +40,29 @@ def _new_authority_owner():
     return require, issue
 
 
-# No production issuer is exposed until the upstream run owner supplies one.
-_authority_state, _discarded_issuer = _new_authority_owner()
-del _discarded_issuer
+class _AcceptedCacheAuthorityIssuer:
+    """Non-callable issuer owned by authenticated B13 execution custody."""
+
+    def __init__(self, issue):
+        self._issue = issue
+
+    def issue(self, accepted_cache, registry, eligibility_source=None):
+        from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
+            require_accepted_execution_cache,
+        )
+        from bilqis_mlx.runtime.atlas_revalidation import SourceAuthorityRegistry
+
+        cache = require_accepted_execution_cache(accepted_cache)
+        if not isinstance(registry, SourceAuthorityRegistry):
+            _invalid()
+        return self._issue(
+            registry, cache._cache_mac_key, eligibility_source)
+
+
+_authority_state, _raw_authority_issue = _new_authority_owner()
+_ACCEPTED_CACHE_AUTHORITY_ISSUER = _AcceptedCacheAuthorityIssuer(
+    _raw_authority_issue)
+del _raw_authority_issue
 
 
 class CacheAuthorityRuntime:
@@ -148,10 +171,17 @@ def interactive_cache_inference(
     from .atlas_cache_policy import _interactive_cache_inference
     retained_owner = None
     if isinstance(artifact, CacheArtifact):
-        retained_owner = bind_cache_artifact_owner(
-            authority, artifact, expected_binding)
-        if artifact_owner is not None and artifact_owner is not retained_owner:
-            _invalid()
+        try:
+            from .atlas_cache_eligibility import validate_current_binding
+            validate_current_binding(authority, expected_binding)
+            _require_cache_binding(artifact, expected_binding, authority)
+        except BilqisError:
+            pass
+        else:
+            retained_owner = bind_cache_artifact_owner(
+                authority, artifact, expected_binding)
+            if artifact_owner is not None and artifact_owner is not retained_owner:
+                _invalid()
     return _interactive_cache_inference(
         artifact, expected_binding,
         artifact_owner=retained_owner,

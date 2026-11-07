@@ -15,6 +15,7 @@ from dataclasses import asdict, dataclass
 import json
 from pathlib import Path
 import sys
+from threading import RLock
 
 from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
 from bilqis_mlx.errors import BilqisError
@@ -42,7 +43,26 @@ from .records import (
     BAMF_POINTER_SCHEMA, BamfBundleCandidate, CompleteStudent,
     canonical, invalid, sha, sidecar_records,
 )
-from .execution_cache import _issue_accepted_execution_cache
+from .execution_cache import (
+    _issue_accepted_execution_cache, bind_cache_authority,
+)
+
+
+class _ExecutionCacheOwner:
+    """Process-lifetime custody for one retained execution cache per live run."""
+
+    def __init__(self):
+        self.lock = RLock()
+        self.entries = {}
+
+    def get(self, key):
+        return self.entries.get(key)
+
+    def set(self, key, manifest_sha256, cache) -> None:
+        self.entries[key] = (manifest_sha256, cache)
+
+
+_EXECUTION_CACHE_OWNER = _ExecutionCacheOwner()
 
 
 @dataclass(frozen=True)
@@ -90,13 +110,35 @@ def bind_accepted_execution_cache(run_dir: Path):
         spec=student.topology,
         extents=student.extents,
     )
-    return _issue_accepted_execution_cache(
-        run_id=identity.run_id,
-        generation=identity.generation,
-        accepted_manifest_sha256=identity.manifest_sha256,
-        generation_binding=generation_binding,
-        motif_manifest=student.retained_state.allocations.manifest,
-    )
+    key = str(run_dir.resolve())
+    with _EXECUTION_CACHE_OWNER.lock:
+        retained = _EXECUTION_CACHE_OWNER.get(key)
+        if retained is not None and retained[0] == identity.manifest_sha256:
+            cache = retained[1]
+            if (cache.run_id != identity.run_id
+                    or cache.generation != identity.generation
+                    or cache.generation_binding != generation_binding
+                    or cache.motif_manifest.digest
+                    != student.retained_state.allocations.manifest.digest):
+                invalid("BAMF_EXECUTION_CACHE_CUSTODY_DRIFT")
+            return cache
+        cache = _issue_accepted_execution_cache(
+            run_id=identity.run_id,
+            generation=identity.generation,
+            accepted_manifest_sha256=identity.manifest_sha256,
+            generation_binding=generation_binding,
+            motif_manifest=student.retained_state.allocations.manifest,
+        )
+        _EXECUTION_CACHE_OWNER.set(key, identity.manifest_sha256, cache)
+        return cache
+
+
+def bind_accepted_cache_authority(
+    run_dir: Path, registry, eligibility_source=None,
+):
+    """Issue/reuse the B14 authority owned by the current accepted generation."""
+    cache = bind_accepted_execution_cache(run_dir)
+    return cache, bind_cache_authority(cache, registry, eligibility_source)
 
 
 def _identity_from_pointer(

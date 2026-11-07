@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import secrets
 
 from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
 from bilqis_mlx.errors import ErrorBus, SCHOOL
@@ -35,6 +36,10 @@ class AcceptedExecutionCache:
     schema_version: str = "bilqis.mlx.b13-accepted-execution-cache/v1"
     _issuance: object = field(init=False, repr=False, compare=False)
     _motif_artifact_owner: object | None = field(init=False, repr=False, compare=False)
+    _cache_mac_key: bytes = field(init=False, repr=False, compare=False)
+    _cache_authority: object | None = field(init=False, repr=False, compare=False)
+    _cache_authority_registry: object | None = field(init=False, repr=False, compare=False)
+    _cache_eligibility_source: object | None = field(init=False, repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
         _invalid("B13_EXECUTION_CACHE_CALLER_CONSTRUCTION_FORBIDDEN")
@@ -71,6 +76,10 @@ def _issue_accepted_execution_cache(
         ("schema_version", "bilqis.mlx.b13-accepted-execution-cache/v1"),
         ("_issuance", _ISSUER),
         ("_motif_artifact_owner", None),
+        ("_cache_mac_key", secrets.token_bytes(32)),
+        ("_cache_authority", None),
+        ("_cache_authority_registry", None),
+        ("_cache_eligibility_source", None),
     ):
         object.__setattr__(cache, name, value)
     cache.__post_init__()
@@ -96,7 +105,27 @@ def bind_motif_artifact_owner(cache, compiled):
     return owner
 
 
+def bind_cache_authority(cache, registry, eligibility_source=None):
+    """Bind one opaque B14 cache authority to authenticated B13 custody."""
+    cache = require_accepted_execution_cache(cache)
+    from bilqis_mlx.runtime.atlas_cache_runtime import (
+        _ACCEPTED_CACHE_AUTHORITY_ISSUER,
+    )
+    authority = cache._cache_authority
+    if authority is None:
+        authority = _ACCEPTED_CACHE_AUTHORITY_ISSUER.issue(
+            cache, registry, eligibility_source)
+        object.__setattr__(cache, "_cache_authority", authority)
+        object.__setattr__(cache, "_cache_authority_registry", registry)
+        object.__setattr__(cache, "_cache_eligibility_source", eligibility_source)
+        return authority
+    if (registry != cache._cache_authority_registry
+            or eligibility_source is not cache._cache_eligibility_source):
+        _invalid("B13_CACHE_AUTHORITY_SOURCE_DRIFT")
+    return authority
+
+
 __all__ = (
-    "AcceptedExecutionCache", "bind_motif_artifact_owner",
+    "AcceptedExecutionCache", "bind_cache_authority", "bind_motif_artifact_owner",
     "require_accepted_execution_cache",
 )

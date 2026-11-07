@@ -67,12 +67,17 @@ wording and legitimate new evidence must not be treated as the stale replay.
 - `PACKED_FRAME`: compiled frame input owns current packed-frame
   materialization.
 - `MOTIF`: authenticated B13 accepted-execution cache owns retained motif
-  manifest state used by the retained source read path.
+  manifest state used by the retained source read path. Rebinding the same
+  accepted run/generation returns the same retained execution-cache object, so
+  motif correction custody cannot be reset by another same-generation bind.
 - `EXACT_CACHE`: cache policy/runtime owns lossy exact-cache admission and must
   retain correction custody behind the opaque cache authority, keyed by the
   authenticated binding plus exact stored-artifact digest. Callers cannot mint
   or substitute a fresh empty-queue owner; held/changed/ineligible cache state
-  fails closed to exact FP32 recomputation.
+  fails closed to exact FP32 recomputation. The only production authority
+  issuance path is rooted in authenticated B13 accepted-execution custody;
+  the per-generation MAC secret is generated inside that custody while the
+  host-provisioned source registry remains outside the public cache boundary.
 - `OPERATOR_COMPOSITION`: `SolveContext` owns qualified reusable composition
   custody for the real cognitive-solver path. A neural composition enters that
   custody only after source/generation checks and successful DAG execution,
@@ -129,7 +134,7 @@ Review the complete diff from
 
 ## Verification receipts before EGM
 
-- Focused C09/custody acceptance suite: `89 passed, 0 failed, 0 skipped`.
+- Focused C09/custody acceptance suite: `100 passed, 0 failed, 0 skipped`.
 - `npm run quality:changed`: development structure OK; governance integrity
   OK; BAMF flow control OK; 15/15 flow-control tests passed; zero new
   changed-file smell findings.
