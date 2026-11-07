@@ -1,6 +1,6 @@
 {
   "legacy_raw_file_count": 248,
-  "legacy_raw_raise_count": 2072,
+  "legacy_raw_raise_count": 2071,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BOOLEAN_ASSOCIATION_B_GRADE_OWNERSHIP_DRIFT",
@@ -12257,13 +12257,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'EVENT_FRAME_INVALID_DRAW'",
-      "path": "bilqis_mlx/source_adapters/_events/event_frames.py"
-    },
-    {
-      "code_hint": "EVENT_FRAME_SOURCE_PDF_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'EVENT_FRAME_SOURCE_PDF_DRIFT'",
       "path": "bilqis_mlx/source_adapters/_events/event_frames.py"
     },
     {

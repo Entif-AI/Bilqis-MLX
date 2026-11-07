@@ -53,7 +53,7 @@ def _boolean_answers():
     ))
 
 
-from bilqis_mlx.factory.tests._executable_release_support import ReleaseTestSupport, _answers, _boolean_answers
+from bilqis_mlx.factory.tests.executable_release.support import ReleaseTestSupport, _answers, _boolean_answers
 
 
 class ExecutableFactoryReleaseTests(ReleaseTestSupport):
