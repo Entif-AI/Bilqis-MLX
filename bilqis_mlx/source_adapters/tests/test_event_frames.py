@@ -43,6 +43,21 @@ class EventFrameTests(unittest.TestCase):
             'source_adapters/event_frames.py': b'changed-event-provider'})
         self.assertNotEqual(current, changed)
 
+    def test_projected_graph_advances_one_prerequisite_closed_event_at_a_time(self):
+        parent = registry_graph()
+        occurrence = frames.projected_graph(parent, ('D.EVENT_OCCURRENCE',))
+        self.assertIn(frames.SYMBOLS['D.EVENT_OCCURRENCE'], occurrence['tokens'])
+        self.assertNotIn(frames.SYMBOLS['D.COMMENCEMENT'], occurrence['tokens'])
+        with self.assertRaises(BilqisError) as blocked:
+            frames.projected_graph(parent, ('D.COMMENCEMENT',))
+        self.assertEqual(blocked.exception.context['reason'],
+                         'EVENT_FRAME_CATALOG_PREREQUISITE_MISSING')
+        commencement = frames.projected_graph(occurrence, ('D.COMMENCEMENT',))
+        termination = frames.projected_graph(commencement, ('D.TERMINATION',))
+        self.assertEqual(
+            tuple(token for token in termination['tokens'] if token in frames.SYMBOLS.values()),
+            tuple(frames.SYMBOLS.values()))
+
     def test_three_candidates_share_one_generator_and_checked_codec(self):
         graph = frames.expanded_graph(registry_graph())
         for capability in frames.SPECS:
