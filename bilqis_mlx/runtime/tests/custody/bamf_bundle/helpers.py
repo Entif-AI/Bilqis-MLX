@@ -171,7 +171,8 @@ def accepted_state(
         transaction = candidate_step(
             transaction, {NAME: mx.array([[3., 4.], [0., 0.]], dtype=mx.float32)},
             execution_provenance(transaction.parent, rows=(0,),
-                                       candidate_step=transaction.update_steps + 1), HP,
+                                       candidate_step=transaction.update_steps + 1,
+                                       extents=extents), HP,
             spec=spec, extents=extents,
             loss_bearing=True, max_norm=1.)
     return resolve_candidate(transaction, accepted=True)
@@ -188,7 +189,8 @@ def rejected_state(
         transaction = candidate_step(
             transaction, {NAME: mx.ones((2, 2), dtype=mx.float32)},
             execution_provenance(transaction.parent, rows=(0,),
-                                       candidate_step=transaction.update_steps + 1), HP,
+                                       candidate_step=transaction.update_steps + 1,
+                                       extents=extents), HP,
             spec=spec, extents=extents,
             loss_bearing=True, max_norm=1.)
     return resolve_candidate(transaction, accepted=False)
@@ -205,7 +207,8 @@ def next_accepted_step(
         transaction = candidate_step(
             transaction, {NAME: mx.array([[.25, -.5], [0., 0.]], dtype=mx.float32)},
             execution_provenance(transaction.parent, rows=(0,),
-                                       candidate_step=transaction.update_steps + 1), HP,
+                                       candidate_step=transaction.update_steps + 1,
+                                       extents=extents), HP,
             spec=spec, extents=extents,
             loss_bearing=True, max_norm=1.)
     return resolve_candidate(transaction, accepted=True)

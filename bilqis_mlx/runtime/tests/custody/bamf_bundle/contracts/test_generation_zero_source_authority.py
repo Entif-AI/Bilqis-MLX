@@ -76,7 +76,7 @@ class GenerationZeroSourceAuthorityTests(unittest.TestCase):
                 publish_initial_generation(self.run, forged, reserve_gib=0.)
         self.assertEqual(
             failure.exception.context["reason"],
-            "BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
+            "BAMF_INITIAL_GENERATION_MODEL_AUTHORITY_DRIFT")
         self.assertFalse((self.run / "bamf-state.json").exists())
 
     def test_wrong_b01_model_authority_rejects_before_allocation(self):
@@ -157,7 +157,7 @@ class GenerationZeroSourceAuthorityTests(unittest.TestCase):
                 graph=prepared.graph, origin_checkpoint=prepared.origin_checkpoint)
         self.assertEqual(
             failure.exception.context["reason"],
-            "BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
+            "BAMF_INITIAL_GENERATION_MODEL_AUTHORITY_DRIFT")
 
     def test_valid_factory_cannot_relabel_seeded_genesis_state(self):
         with shape_patch():
@@ -171,7 +171,7 @@ class GenerationZeroSourceAuthorityTests(unittest.TestCase):
                 graph=prepared.graph, origin_checkpoint=prepared.origin_checkpoint)
         self.assertEqual(
             failure.exception.context["reason"],
-            "BAMF_INITIAL_GENERATION_MODEL_AUTHORITY_DRIFT")
+            "BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
 
     def test_valid_factory_cannot_publish_caller_authored_foundation_sidecars(self):
         with shape_patch():
