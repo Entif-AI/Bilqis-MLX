@@ -28,6 +28,9 @@ from bilqis_mlx.runtime.bamf_bundle import (
     BamfBundleCandidate, prepare_initial_generation, publish_bamf_generation,
     publish_initial_generation, load_bamf_generation,
 )
+from bilqis_mlx.runtime.bamf_bundle.genesis_foundation import (
+    initial_foundation_sidecars,
+)
 from bilqis_mlx.runtime.bamf_bundle.motif_codec import snapshot_to_record
 from bilqis_mlx.runtime.bamf_bundle.records import canonical, sha
 from bilqis_mlx.runtime.model_topology_v2 import (
@@ -103,11 +106,21 @@ def genesis_preparation(*, run_id="fixture-run", run_seed=17,
         release, student_sha256=origin.sha256,
         optimizer_step=origin.optimizer_step,
         semantic_graph_sha256=_fingerprint(graph), graph=graph)
+    forbidden = {
+        "semantic_abi", "compiler_features", "correction_frontier",
+        "teacher_state", "evaluation_contract",
+    } & set(overrides)
+    if forbidden:
+        raise AssertionError(
+            "generation-zero sidecars are owner-derived: " + ",".join(sorted(forbidden)))
     values = _genesis_defaults(release) | overrides
+    (semantic_abi, compiler_features, _correction_frontier,
+     _teacher_state, _evaluation_contract) = initial_foundation_sidecars(
+        release, admission, graph, run_seed=run_seed)
     motif = MotifManifest(values["provenance"].release_digest)
     extents = b01_generation_extents(
-        semantic_abi=values["semantic_abi"],
-        compiler_features=values["compiler_features"], motif_page_count=1,
+        semantic_abi=semantic_abi,
+        compiler_features=compiler_features, motif_page_count=1,
         motif_key_map_digest=motif.digest)
     return prepare_initial_generation(
         run_id=run_id, run_seed=run_seed, origin_checkpoint=origin,
@@ -115,11 +128,6 @@ def genesis_preparation(*, run_id="fixture-run", run_seed=17,
         model_authority=b01_generation_authority(extents),
         optimizer_hyperparameters=HP,
         provenance=values["provenance"],
-        semantic_abi=values["semantic_abi"],
-        compiler_features=values["compiler_features"],
-        correction_frontier=values["correction_frontier"],
-        teacher_state=values["teacher_state"],
-        evaluation_contract=values["evaluation_contract"],
         foundation_row_ages=(
             () if foundation_row_ages is None else foundation_row_ages),
         delivery_events=(
@@ -316,9 +324,6 @@ def publish_candidate(run_dir, bundle):
         prepared = genesis_preparation(
             run_id=bundle.run_id,
             foundation_row_ages=bundle.retained_state.policy.row_ages,
-            semantic_abi=dict(bundle.semantic_abi),
-            compiler_features=dict(bundle.compiler_features),
-            evaluation_contract=dict(bundle.evaluation_contract),
             delivery_events=({"event": "FIXTURE_GENESIS", "optimizer_step": 0},))
         return publish_initial_generation(run_dir, prepared, reserve_gib=0.)
     parent = None

@@ -29,6 +29,7 @@ from .genesis_records import (
     BamfRunIdentity, InitialGenerationBinding, ParsedInitialGenerationBinding,
     mint_initial_generation_binding,
 )
+from .genesis_foundation import initial_foundation_sidecars
 
 
 @dataclass(frozen=True)
@@ -75,12 +76,19 @@ def _validate_candidate_source_authority(
     """Re-prove Factory/source/teacher authority for a generation-zero candidate."""
     _validated_factory_origin(release, admission, graph, origin_checkpoint)
     identity = candidate.run_identity
+    if type(identity) is not BamfRunIdentity:
+        invalid("BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
     expected = _factory_generation_provenance(release)
+    expected_sidecars = initial_foundation_sidecars(
+        release, admission, graph, run_seed=identity.run_seed)
     teacher = candidate.teacher_state
     correction = candidate.correction_frontier
     if (candidate.generation != 0 or candidate.parent_manifest_sha256 is not None
-            or type(identity) is not BamfRunIdentity
             or candidate.provenance != expected
+            or tuple(dict(value) for value in (
+                candidate.semantic_abi, candidate.compiler_features,
+                candidate.correction_frontier, candidate.teacher_state,
+                candidate.evaluation_contract)) != expected_sidecars
             or not isinstance(teacher, Mapping)
             or teacher.get("teacher_identity") != expected.teacher_identity
             or teacher.get("teacher_epoch") != expected.teacher_epoch
@@ -162,9 +170,7 @@ def prepare_initial_generation(
         graph: dict, model_authority: B01GenerationAuthority,
         optimizer_hyperparameters: AdamWHyperparameters,
         provenance: GenerationProvenance,
-        semantic_abi: Mapping, compiler_features: Mapping,
-        correction_frontier: Mapping, teacher_state: Mapping,
-        evaluation_contract: Mapping, foundation_row_ages: tuple[IdentityRowAge, ...] = (),
+        foundation_row_ages: tuple[IdentityRowAge, ...] = (),
         delivery_events: tuple = ()) -> PreparedInitialGeneration:
     """Construct one source-bound generation-zero candidate and live B13 capability."""
     _validated_factory_origin(release, admission, graph, origin_checkpoint)
@@ -179,6 +185,9 @@ def prepare_initial_generation(
             or any(type(item) is not IdentityRowAge for item in foundation_row_ages)
             or type(delivery_events) is not tuple):
         invalid("BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
+    (semantic_abi, compiler_features, correction_frontier,
+     teacher_state, evaluation_contract) = initial_foundation_sidecars(
+        release, admission, graph, run_seed=run_seed)
     allocations = MotifAllocationSnapshot(MotifManifest(provenance.release_digest))
     try:
         extents = b01_generation_extents(

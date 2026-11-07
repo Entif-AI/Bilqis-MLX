@@ -1,6 +1,6 @@
 {
-  "legacy_raw_file_count": 250,
-  "legacy_raw_raise_count": 2072,
+  "legacy_raw_file_count": 251,
+  "legacy_raw_raise_count": 2073,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BOOLEAN_ASSOCIATION_B_GRADE_OWNERSHIP_DRIFT",
@@ -11586,6 +11586,13 @@
       "exception": "ValueError",
       "expression": "f'COLD_RESUME_CONTINUATION_REJECTED before={loss_before} after={loss_after}'",
       "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/cold_resume_probe.py"
+    },
+    {
+      "code_hint": "generation-zero sidecars are owner-derived",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'generation-zero sidecars are owner-derived: ' + ','.join(sorted(forbidden))",
+      "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/helpers.py"
     },
     {
       "code_hint": "test synchronization timed out",

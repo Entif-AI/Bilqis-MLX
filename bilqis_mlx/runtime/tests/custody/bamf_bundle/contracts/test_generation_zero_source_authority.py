@@ -109,11 +109,6 @@ class GenerationZeroSourceAuthorityTests(unittest.TestCase):
                         graph=prepared.graph, model_authority=authority,
                         optimizer_hyperparameters=prepared.candidate.optimizer_hyperparameters,
                         provenance=prepared.candidate.provenance,
-                        semantic_abi=prepared.candidate.semantic_abi,
-                        compiler_features=prepared.candidate.compiler_features,
-                        correction_frontier=prepared.candidate.correction_frontier,
-                        teacher_state=prepared.candidate.teacher_state,
-                        evaluation_contract=prepared.candidate.evaluation_contract,
                         delivery_events=prepared.candidate.outbox)
                 self.assertEqual(
                     failure.exception.context["reason"],
@@ -177,6 +172,35 @@ class GenerationZeroSourceAuthorityTests(unittest.TestCase):
         self.assertEqual(
             failure.exception.context["reason"],
             "BAMF_INITIAL_GENERATION_MODEL_AUTHORITY_DRIFT")
+
+    def test_valid_factory_cannot_publish_caller_authored_foundation_sidecars(self):
+        with shape_patch():
+            prepared = genesis_preparation(run_seed=251)
+        candidate = prepared.candidate
+        variants = (
+            replace(candidate, semantic_abi={
+                **candidate.semantic_abi, "active_set_sha256": "1" * 64}),
+            replace(candidate, compiler_features={
+                **candidate.compiler_features, "compiler_sha256": "2" * 64}),
+            replace(candidate, correction_frontier={
+                **candidate.correction_frontier,
+                "frontier": [{"caller_authored": True}]}),
+            replace(candidate, teacher_state={
+                **candidate.teacher_state,
+                "next_seed": candidate.teacher_state["next_seed"] + 1}),
+            replace(candidate, evaluation_contract={
+                **candidate.evaluation_contract, "contract_sha256": "3" * 64}),
+        )
+        for altered in variants:
+            with self.subTest(sidecars=altered), shape_patch(), \
+                    patch.object(mlx_checkpoint, "assert_headroom"), \
+                    self.assertRaises(BilqisError) as failure:
+                publish_initial_generation(
+                    self.run, replace(prepared, candidate=altered), reserve_gib=0.)
+            self.assertEqual(
+                failure.exception.context["reason"],
+                "BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
+            self.assertFalse((self.run / "bamf-state.json").exists())
 
 
 if __name__ == "__main__":

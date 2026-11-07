@@ -109,6 +109,9 @@ class GenerationZeroAuthorityTests(unittest.TestCase):
         from bilqis_mlx.runtime.state import _fingerprint
         from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import _genesis_defaults
         from bilqis_mlx.runtime.tests.operator.test_admission import _executable_fixture
+        from bilqis_mlx.runtime.bamf_bundle.genesis_foundation import (
+            initial_foundation_sidecars,
+        )
 
         release, graph = _executable_fixture()
         origin = Checkpoint("7" * 64, "bundles/foundation-origin", 0, True)
@@ -122,9 +125,11 @@ class GenerationZeroAuthorityTests(unittest.TestCase):
             b01_generation_authority, b01_generation_extents,
         )
         motif = MotifManifest(values["provenance"].release_digest)
+        semantic_abi, compiler_features, _, _, _ = initial_foundation_sidecars(
+            release, admission, graph, run_seed=73)
         extents = b01_generation_extents(
-            semantic_abi=values["semantic_abi"],
-            compiler_features=values["compiler_features"], motif_page_count=1,
+            semantic_abi=semantic_abi,
+            compiler_features=compiler_features, motif_page_count=1,
             motif_key_map_digest=motif.digest)
         with shape_patch(), self.assertRaises(BilqisError) as failure:
             prepare_initial_generation(
@@ -132,12 +137,7 @@ class GenerationZeroAuthorityTests(unittest.TestCase):
                 origin_checkpoint=origin, release=release, admission=admission,
                 graph=graph, model_authority=b01_generation_authority(extents),
                 optimizer_hyperparameters=HP,
-                provenance=values["provenance"],
-                semantic_abi=values["semantic_abi"],
-                compiler_features=values["compiler_features"],
-                correction_frontier=values["correction_frontier"],
-                teacher_state=values["teacher_state"],
-                evaluation_contract=values["evaluation_contract"])
+                provenance=values["provenance"])
         self.assertEqual(
             failure.exception.context["reason"],
             "BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
