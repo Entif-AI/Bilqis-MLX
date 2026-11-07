@@ -1,6 +1,7 @@
 """B13.3 derived attention caches never cross accepted-generation custody."""
 from __future__ import annotations
 
+from dataclasses import replace
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -62,6 +63,14 @@ class CacheSeparationTests(unittest.TestCase):
                 ccgqa(
                     params, hidden[:, 3:4], valid[:, 3:4], next_scope,
                     cache=cache, offset=3)
+
+            same_generation_scope = replace(
+                next_scope, generation=first["manifest_sha256"])
+            corrupted_cache = replace(cache, parameter_digest="0" * 64)
+            with self.assertRaises(BilqisError):
+                ccgqa(
+                    params, hidden[:, 3:4], valid[:, 3:4],
+                    same_generation_scope, cache=corrupted_cache, offset=3)
 
             swapped = dict(params)
             swapped["query"] = params["query"] + mx.array(.001, dtype=mx.float32)
