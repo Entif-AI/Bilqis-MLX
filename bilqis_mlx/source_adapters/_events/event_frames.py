@@ -17,6 +17,7 @@ from ..curriculum import AnswerFamily, BINARY
 from ..factory.adapters import RegisteredSourceAdapter
 from ..factory.model import SourceAdapter
 from ..factory.curriculum_definition import CapabilitySpec, CapabilitySourceBinding, GradeSpec
+from ..factory.candidate_staging import candidate_source_anchor, compile_candidate_successor
 from ..factory.executable_release import compile_executable_factory_release
 from ..factory.execution import CurriculumProfile
 from ..semantics.core import Apply, Operation, Signature, literal
@@ -31,6 +32,7 @@ from ..factory.semantic_contrast.teaching import (
 )
 from ..errors import ErrorBus, SCHOOL
 from ..vocabulary_growth import AdmittedToken, append_catalog, digest
+from lib.ithkuil.src.skos.identity import sense_from_source
 
 DIALECT = 'bilqis.finite-event-frame/v1'
 GENERATOR = 'bilqis.ithkuil-event-frame-constructor/v1'
@@ -163,6 +165,20 @@ def source_contract_digest(capability):
     })
 
 
+def atlas_semantic_id(capability):
+    """Resolve the canonical A01 atlas identity for one pinned event sense."""
+    return sense_from_source('lexicon_root_senses', source_senses()[capability]).iri
+
+
+def capability_definition(capability):
+    """Return the ordinary Factory capability declaration for one event sense."""
+    spec = SOURCE_SPECS[capability]
+    return CapabilitySpec(
+        capability, 'finite-event-frame', (SYMBOLS[capability],), (SYMBOLS[capability],),
+        spec.prerequisites, (), (AnswerFamily('binary', BINARY),),
+    )
+
+
 def expression(graph, capability, before, after):
     symbol = SYMBOLS[capability]
     operation = Operation(graph['tokens'].index(symbol), symbol,
@@ -291,6 +307,57 @@ def projected_graph(parent, capabilities):
 
 def expanded_graph(parent):
     return projected_graph(parent, tuple(SOURCE_SPECS))
+
+
+def stage_capability(
+    frontier, current, parent_graph, capability, *,
+    source_root, source_registry, answer_registry,
+):
+    """Stage exactly one prerequisite-closed event successor without admitting it."""
+    spec = SOURCE_SPECS.get(capability)
+    matches = [
+        candidate for candidate in frontier.candidates
+        if candidate.proposed_capability_id == capability
+        and spec is not None and candidate.target_sense_id == spec.sense_id
+    ]
+    if (spec is None or capability in current.curriculum.capability_map
+            or len(matches) != 1):
+        _source_invalid('EVENT_FRAME_EXACT_NEW_CANDIDATE_REQUIRED')
+    if any(prerequisite not in current.curriculum.capability_map
+           for prerequisite in spec.prerequisites):
+        _source_invalid('EVENT_FRAME_FACTORY_PREREQUISITE_MISSING')
+
+    candidate_id = matches[0].candidate_id
+    event_capability = capability_definition(capability)
+    grades = list(current.curriculum.grades)
+    for index, grade in enumerate(grades):
+        if grade.grade_id != 'D':
+            continue
+        grades[index] = replace(
+            grade,
+            capabilities=(*grade.capabilities, event_capability),
+            exam_item_counts=(*grade.exam_item_counts, (capability, 12)),
+            teaching_stages=(*grade.teaching_stages, (capability,)),
+        )
+        break
+    else:
+        grades.append(GradeSpec('D', (event_capability,), ((capability, 12),), ((capability,),)))
+    curriculum = replace(current.curriculum, grades=tuple(grades))
+    bindings = replace(
+        current.source_bindings,
+        bindings=(*current.source_bindings.bindings, CapabilitySourceBinding(
+            capability, candidate_source_anchor(frontier, candidate_id), GENERATOR, ORACLE)),
+    )
+    graph = projected_graph(parent_graph, (capability,))
+    profile = CurriculumProfile('jit/event-frames/v1', grades=current.profile.grades)
+    staged = compile_candidate_successor(
+        frontier, current, candidate_id,
+        curriculum=curriculum, source_bindings=bindings, profile=profile,
+        source_registry=source_registry, answer_registry=answer_registry,
+        source_root=source_root, graph=graph, verification_seed=2026110704,
+    )
+    staged.successor.verify_semantic_catalog(graph)
+    return staged
 
 
 def compile_tranche(current, graph, *, source_root, source_registry, answer_registry):
