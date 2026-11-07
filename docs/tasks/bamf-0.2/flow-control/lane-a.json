@@ -117,8 +117,8 @@
       "issue": 890,
       "pr": null,
       "state": "READY",
-      "head_sha": "b0ac9ed999140b7e5fd5d77de9388c2f6cd8a2d2",
-      "summary": "A09.5c promotes D.EVENT_OCCURRENCE, D.COMMENCEMENT and D.TERMINATION from experiment identities to source-qualified production authority with exact pinned senses/text/PDF hashes, stable ithkuil.op.* and semantic IDs, independent oracle, typed source-drift failures and neural-inert proposed catalog semantics. Direct event/source/semantic-contrast tests pass 20/20; live registry resolves the production adapter; code-smell and error-control report zero new debt.",
+      "head_sha": "831e6419370cadf1fe5128cf7d6e90e112e2d54a",
+      "summary": "A09.5c promotes D.EVENT_OCCURRENCE, D.COMMENCEMENT and D.TERMINATION from experiment identities to source-qualified production authority with exact pinned senses/text/PDF hashes, stable ithkuil.op.* and semantic IDs, independent oracle, typed source-drift failures and neural-inert proposed catalog semantics. The source owner now projects one prerequisite-closed event identity at a time so occurrence, commencement and termination can form genuine successive deltas. Direct event/source/semantic-contrast tests pass 21/21; live registry resolves the production adapter; code-smell and error-control report zero new debt.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a09-5c-890-event-authority-20261107"
     },
