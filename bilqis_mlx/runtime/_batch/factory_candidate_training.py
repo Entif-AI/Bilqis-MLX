@@ -129,7 +129,6 @@ def execute_factory_candidate_step(
     optimizer_step_seed: int,
     teacher_strategy: dict,
     teacher_hparams,
-    decay,
     max_norm: float,
     observation: FactoryDeliveryObservation,
     rehearsal_by_id: dict | None = None,
@@ -178,7 +177,7 @@ def execute_factory_candidate_step(
     transaction = admit_uninterrupted_candidate_step(
         Path(run_dir), parent, loss_bearing_target=True,
         gradient_execution=gradient, teacher_hparams=teacher_hparams,
-        decay=decay, max_norm=max_norm)
+        max_norm=max_norm)
     cost = {
         "wall_seconds": time.perf_counter() - start,
         "loss_total": float(gradient.loss_total.item()),

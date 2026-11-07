@@ -46,7 +46,6 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import acceptance
 from bilqis_mlx.runtime.teacher_observation_capture import (
     ObservationCapture, read_sidecar, store_sidecar,
 )
-from bilqis_mlx.runtime.model_topology_v2 import expected_bamf_shapes
 from bilqis_mlx.semantics.atlas.feature_io import persist_feature_manifest
 
 
@@ -264,10 +263,6 @@ class FactoryTrainingBridgeTests(SourceBackboneTestBase):
             capture.select_option("B.IDBOOLOPS", None)
             observation = FactoryDeliveryObservation(
                 capture, 1, rows, 37116)
-            decay = {
-                item.name: item.decay
-                for item in expected_bamf_shapes(parent.topology, parent.extents)
-            }
             result = train_bamf_factory_step(
                 run_dir, self.context, parent, str(self.artifact),
                 self.feature_receipt.path, rows,
@@ -275,7 +270,7 @@ class FactoryTrainingBridgeTests(SourceBackboneTestBase):
                 requested_count=2, source_seed=37116, source_each=1,
                 optimizer_step_seed=17,
                 teacher_strategy={"policy": "c02-parent-production"},
-                teacher_hparams=HP, decay=decay, max_norm=1.0,
+                teacher_hparams=HP, max_norm=1.0,
                 observation=observation)
             self.assertEqual(result.transaction.update_steps, 1)
             self.assertEqual(result.resource_plan.groups, ((0,),))
@@ -306,10 +301,6 @@ class FactoryTrainingBridgeTests(SourceBackboneTestBase):
             parent = load_accepted_generation(run_dir)
             capture = ObservationCapture(run_dir, {})
             observation = FactoryDeliveryObservation(capture, 1, rows, 37117)
-            decay = {
-                item.name: item.decay
-                for item in expected_bamf_shapes(parent.topology, parent.extents)
-            }
             with self.assertRaises(BilqisError):
                 train_bamf_factory_step(
                     run_dir, self.context, parent, str(self.artifact),
@@ -318,7 +309,7 @@ class FactoryTrainingBridgeTests(SourceBackboneTestBase):
                     requested_count=2, source_seed=37117, source_each=2,
                     optimizer_step_seed=18,
                     teacher_strategy={"policy": "c02-parent-production"},
-                    teacher_hparams=HP, decay=decay, max_norm=1.0,
+                    teacher_hparams=HP, max_norm=1.0,
                     observation=observation)
 
 
