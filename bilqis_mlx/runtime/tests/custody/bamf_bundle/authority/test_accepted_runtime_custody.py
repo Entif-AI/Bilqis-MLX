@@ -245,6 +245,49 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
              successor_record["event_id"]),
         )
 
+    def test_ancestor_recovery_rejects_foreign_manifest_suffix(self):
+        cache, _compiled, owner = self._motif_fixture()
+        first = _event(owner.source_dependencies[0])
+        second = _sign_event(replace(
+            first,
+            event_id="correction:synthetic:ancestor-foreign-2",
+            source_receipt_sha256="e" * 64,
+            new_evidence_sha256="d" * 64,
+        ))
+        foreign = _sign_event(replace(
+            first,
+            event_id="correction:synthetic:foreign-manifest-3",
+            source_receipt_sha256="c" * 64,
+            new_evidence_sha256="b" * 64,
+        ))
+        ancestor_manifest = cache.accepted_manifest_sha256
+        first_record = correction_record(ancestor_manifest, first)
+        second_record = correction_record(ancestor_manifest, second)
+        append_record(self.run, ancestor_manifest, first_record)
+
+        with patch(
+                "bilqis_mlx.runtime.accepted_correction_storage.commit_history",
+                side_effect=RuntimeError("simulated ancestor crash after ledger fsync")):
+            with self.assertRaisesRegex(RuntimeError, "simulated ancestor crash"):
+                append_record(self.run, ancestor_manifest, second_record)
+
+        foreign_manifest = "f" * 64
+        foreign_record = correction_record(foreign_manifest, foreign)
+        from bilqis_mlx.runtime.accepted_correction_records import _canonical
+        from bilqis_mlx.runtime.accepted_correction_storage import ledger_path
+        with ledger_path(self.run).open("ab") as stream:
+            stream.write(_canonical(foreign_record) + b"\n")
+            stream.flush()
+            import os
+            os.fsync(stream.fileno())
+
+        with self.assertRaises(BilqisError) as caught:
+            read_records(self.run, ancestor_manifest)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_C09_CORRECTION_HISTORY_COMMITMENT_DRIFT",
+        )
+
     def test_concurrent_process_writers_commit_one_exact_history(self):
         cache, _compiled, owner = self._motif_fixture()
         first = _event(owner.source_dependencies[0])

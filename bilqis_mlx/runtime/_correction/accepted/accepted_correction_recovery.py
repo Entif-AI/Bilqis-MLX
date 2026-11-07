@@ -2,12 +2,15 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 from pathlib import Path
 
 from bilqis_mlx.data_plane import data_plane
 
-from .accepted_correction_records import _canonical, records_from_bytes, validate_record
+from .accepted_correction_records import (
+    ACCEPTED_EVENT_TYPES, _canonical, records_from_bytes, validate_record,
+)
 from .accepted_correction_storage import (
     clear_transaction, commit_history_and_clear, committed_history, history_state,
     ledger_path, read_transaction,
@@ -34,6 +37,42 @@ def _same_history_state(committed: dict | None, state: dict) -> bool:
     return (committed is not None
             and committed["event_ids"] == state["event_ids"]
             and committed["records_sha256"] == state["records_sha256"])
+
+
+def _validate_successor_suffix(
+    run_dir: Path, transaction_manifest: str, tail: bytes,
+) -> None:
+    """Accept only complete accepted-C09 records from the live descendant lineage."""
+    if not tail:
+        return
+    pointer = Path(run_dir) / "bamf-state.json"
+    try:
+        current = (
+            json.loads(pointer.read_text(encoding="utf-8"))["manifest_sha256"]
+            if pointer.is_file() and not pointer.is_symlink()
+            else transaction_manifest
+        )
+        # Lazy import avoids the ledger -> recovery import cycle at module load.
+        from .accepted_correction_ledger import _manifest_lineage
+        lineage = _manifest_lineage(run_dir, current)
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError, KeyError, TypeError):
+        _invalid("BAMF_C09_CORRECTION_HISTORY_COMMITMENT_DRIFT")
+    if transaction_manifest not in lineage:
+        _invalid("BAMF_C09_CORRECTION_HISTORY_COMMITMENT_DRIFT")
+    allowed = frozenset(lineage)
+    for encoded in tail.splitlines(keepends=True):
+        if not encoded.endswith(b"\n"):
+            _invalid("BAMF_C09_CORRECTION_HISTORY_COMMITMENT_DRIFT")
+        try:
+            item = json.loads(encoded.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            _invalid("BAMF_C09_CORRECTION_HISTORY_COMMITMENT_DRIFT")
+        if not isinstance(item, dict) or item.get("event") not in ACCEPTED_EVENT_TYPES:
+            continue
+        manifest = item.get("accepted_manifest_sha256")
+        if manifest not in allowed:
+            _invalid("BAMF_C09_CORRECTION_HISTORY_COMMITMENT_DRIFT")
+        validate_record(item, manifest)
 
 
 def recover_transaction(run_dir: Path, manifest_sha256: str) -> None:
@@ -83,6 +122,8 @@ def recover_transaction(run_dir: Path, manifest_sha256: str) -> None:
     if suffix.startswith(record_line):
         if not (committed_is_prior or committed_is_target):
             _invalid("BAMF_C09_CORRECTION_HISTORY_COMMITMENT_DRIFT")
+        _validate_successor_suffix(
+            run_dir, manifest_sha256, suffix[len(record_line):])
         full = records_from_bytes(raw, manifest_sha256)
         if history_state(full) != target_state:
             _invalid("BAMF_C09_CORRECTION_HISTORY_COMMITMENT_DRIFT")

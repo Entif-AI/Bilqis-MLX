@@ -123,7 +123,48 @@ class AtlasFeatureArtifactOwner:
 
 
 
-def _packed_frame_node(row: CompiledFrameBatch, packed) -> ArtifactNode:
+def _context_time_ref(row: CompiledFrameBatch, packed, config) -> DependencyRef | None:
+    """Bind source-validity boundaries without treating wall-clock ticks as changes."""
+    from bilqis_mlx.semantics.frame_compiler import FrameCompilerConfig
+    if type(config) is not FrameCompilerConfig:
+        _invalid("BAMF_C09_PACKED_FRAME_TEMPORAL_CONTEXT_INVALID")
+    if config.approved is None:
+        return None
+    envelope = next((
+        item for item in config.approved.envelopes
+        if item.frame.occurrence_id == packed.sidecar.occurrence_id
+    ), None)
+    if envelope is None:
+        _invalid("BAMF_C09_PACKED_FRAME_TEMPORAL_CONTEXT_INVALID")
+    handles = {
+        envelope.source_handle,
+        *(member.source_handle for member in envelope.members),
+    }
+    grants = tuple(
+        grant for grant in config.frontier.grants
+        if grant.source_handle in handles)
+    if not grants:
+        return None
+    effective_boundaries = tuple(sorted({
+        boundary for grant in grants
+        for boundary in (grant.effective_from, grant.effective_until)
+        if boundary is not None
+    }))
+    observed_boundaries = tuple(sorted({grant.observed_at for grant in grants}))
+    key = contract_digest({
+        "scope": row.scope,
+        "sources": tuple(sorted(grant.source_handle for grant in grants)),
+        "effective_boundaries": effective_boundaries,
+        "effective_bucket": sum(
+            boundary <= config.task.effective_time for boundary in effective_boundaries),
+        "observed_boundaries": observed_boundaries,
+        "observed_bucket": sum(
+            boundary <= config.task.observed_frontier for boundary in observed_boundaries),
+    })
+    return DependencyRef(DependencyKind.TIME, "time:context-boundary:" + key)
+
+
+def _packed_frame_node(row: CompiledFrameBatch, packed, config=None) -> ArtifactNode:
     """Derive C09 identity only from one compiler-owned PackedFrame."""
     from bilqis_mlx.semantics.frame_codec import PackedFrame
     if type(row) is not CompiledFrameBatch or type(packed) is not PackedFrame:
@@ -148,15 +189,10 @@ def _packed_frame_node(row: CompiledFrameBatch, packed) -> ArtifactNode:
             DependencyKind.RIGHTS,
             "rights:" + contract_digest((row.policy_version[2], row.policy_version[3]))),
     ))
-    if row.context_digest is not None:
-        # The approved context digest commits the real TaskScope and the exact
-        # SourceGrant frontier used by context eligibility, including observed
-        # and effective-time/expiry boundaries. Project it explicitly into C09
-        # so time-dependent validity is a first-class reverse dependency.
-        dependencies.add(DependencyRef(
-            DependencyKind.TIME,
-            "time:asof:context:" + row.context_digest,
-        ))
+    if config is not None:
+        time_ref = _context_time_ref(row, packed, config)
+        if time_ref is not None:
+            dependencies.add(time_ref)
     impact, exigency = owner_priority(ArtifactKind.PACKED_FRAME)
     return ArtifactNode(
         artifact_id="frame:" + sidecar.occurrence_id,
@@ -172,16 +208,21 @@ def _packed_frame_node(row: CompiledFrameBatch, packed) -> ArtifactNode:
 class PackedFrameArtifactOwner:
     """Own correction state for actual A05 PackedFrame objects consumed by B03."""
 
-    def __init__(self, rows: CompiledFrameRows):
-        if type(rows) is not CompiledFrameRows or not rows.rows:
+    def __init__(self, rows: CompiledFrameRows, configs=()):
+        if (type(rows) is not CompiledFrameRows or not rows.rows
+                or type(configs) is not tuple
+                or (configs and len(configs) != len(rows.rows))):
             _invalid("BAMF_C09_PACKED_FRAME_OWNER_INVALID")
         self._rows = rows
+        self._configs = configs
+        self._temporal_holds = set()
         nodes = {}
-        for row in rows.rows:
+        for index, row in enumerate(rows.rows):
+            config = configs[index] if configs else None
             for position in row.positions:
                 if position.packed is None:
                     continue
-                node = _packed_frame_node(row, position.packed)
+                node = _packed_frame_node(row, position.packed, config)
                 prior = nodes.get(node.artifact_id)
                 if prior is not None and prior != node:
                     _invalid("BAMF_C09_PACKED_FRAME_IDENTITY_DRIFT")
@@ -203,20 +244,34 @@ class PackedFrameArtifactOwner:
             _invalid("BAMF_C09_PACKED_FRAME_OWNER_INVALID")
         return self._index.node("frame:" + packed.sidecar.occurrence_id)
 
-    def require_row(self, row: CompiledFrameBatch) -> tuple[ArtifactNode, ...]:
+    def require_row(self, row: CompiledFrameBatch, config=None) -> tuple[ArtifactNode, ...]:
         if type(row) is not CompiledFrameBatch or row not in self._rows.rows:
             _invalid("BAMF_C09_PACKED_FRAME_OWNER_MISMATCH")
         result = []
         for position in row.positions:
             if position.packed is None:
                 continue
-            expected = _packed_frame_node(row, position.packed)
+            expected = _packed_frame_node(row, position.packed, config)
             node = self.node_for(position.packed)
-            if (node.content_digest != expected.content_digest
-                    or node.immediate_dependencies != expected.immediate_dependencies):
+            if node.content_digest != expected.content_digest:
                 _invalid("BAMF_C09_PACKED_FRAME_CONTENT_DRIFT")
+            if node.immediate_dependencies != expected.immediate_dependencies:
+                prior_time = tuple(ref for ref in node.immediate_dependencies
+                                   if ref.kind is DependencyKind.TIME)
+                current_time = tuple(ref for ref in expected.immediate_dependencies
+                                     if ref.kind is DependencyKind.TIME)
+                if (prior_time != current_time
+                        and tuple(ref for ref in node.immediate_dependencies
+                                 if ref.kind is not DependencyKind.TIME)
+                        == tuple(ref for ref in expected.immediate_dependencies
+                                 if ref.kind is not DependencyKind.TIME)):
+                    self._temporal_holds.add(node.artifact_id)
+                else:
+                    _invalid("BAMF_C09_PACKED_FRAME_CONTENT_DRIFT")
             from bilqis_mlx.runtime.accepted_correction_runtime import require_pending_corrections
             require_pending_corrections(self, node.artifact_id)
+            if node.artifact_id in self._temporal_holds:
+                _invalid("BAMF_C09_ARTIFACT_HELD")
             if self._queue is not None:
                 node = read_artifact(self._index, self._queue, node.artifact_id)
             elif not node.eligible:
