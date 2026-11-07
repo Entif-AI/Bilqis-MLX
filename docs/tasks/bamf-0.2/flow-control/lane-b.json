@@ -77,9 +77,9 @@
       "issue": 478,
       "pr": 885,
       "state": "ACTIVE",
-      "head_sha": "acbe3c05782b298918f96286657c950c9b867d20",
-      "head_sha_role": "latest semantic implementation head; later receipt/flow-control-only commits are nonsemantic and must be reconciled separately in PR/issue exact-head metadata",
-      "summary": "B13.1 is active after EGM round 3 found one target-local first-publication durability defect plus mechanical evidence drift. The custody defect is repaired at semantic implementation head acbe3c05782b298918f96286657c950c9b867d20 with failing-before and passing-after publication ancestry proof. The earlier A02/C07 WAIT condition was inverted: reviewed PR #593 supplies the A02 staging/interface dependency B13.1 consumes, while later #399/#510 production adoption consumes B13 authority and is not a #478 completion prerequisite. Exact final custody proof and the next whole-candidate EGM round remain before review readiness.",
+      "head_sha": "f6c53bc8bb3fd5d370a1faab8d90a7ac83f87922",
+      "head_sha_role": "latest exact full-custody-tested PR head; an immediately following receipt/flow-control-only commit may reuse this proof under AGENTS.md TEST_EVIDENCE_REUSED and is reconciled in live PR/issue metadata",
+      "summary": "B13.1 round-3 repair is complete. EGM found one target-local first-publication durability defect plus mechanical evidence drift; the custody defect is repaired at semantic implementation head acbe3c05782b298918f96286657c950c9b867d20 with failing-before/passing-after ancestry proof, and full custody plus hosted proof are green on exact head f6c53bc8bb3fd5d370a1faab8d90a7ac83f87922. The earlier A02/C07 WAIT condition was inverted: reviewed PR #593 supplies the A02 staging/interface dependency B13.1 consumes, while later #399/#510 production adoption consumes B13 authority and is not a #478 completion prerequisite. The next whole-candidate EGM round is the remaining review-readiness gate.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-b13-1-478-complete-20261106"
     },
