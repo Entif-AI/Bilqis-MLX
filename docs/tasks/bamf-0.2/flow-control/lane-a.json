@@ -98,10 +98,10 @@
     {
       "issue": 888,
       "pr": null,
-      "state": "READY",
-      "head_sha": "78e5e45078539da3005077b34f1316b95c1b8b5a",
-      "summary": "A09.5a realization authority is now consumed by the parent #395 adapter on the same PR candidate. Three genuine post-A/B/C source-qualified event realizations (D.EVENT_OCCURRENCE, D.COMMENCEMENT, D.TERMINATION) stage successively, persist/restart identically, preserve source-order and grade-label invariance, and each traverses next_atlas_delta through the existing learner-evidence/JIT seam. The merge-forward duplicate copular-only source resolver was removed after a focused failing integration test exposed it. Focused A09/frontier/event proof is 122 passed / 1 intentional real-corpus skip; changed-from-unified error debt is zero, changed-file smell audit is clean, Factory architecture/governance/flow-control/diff checks are green, and no C07 lease/admission or learner/optimizer mutation occurs.",
-      "resume_trigger": "Fresh exact-head EGM passes on the combined #395/#888 candidate; hosted PR checks remain green; human review/merge remains separate.",
+      "state": "ACTIVE",
+      "head_sha": "8e4fd3bee22cb2a9730a1d3f10ed219fe3dd4fad",
+      "summary": "Fresh exact-head EGM found the event-only realization batch does not satisfy #888's live authority contract. #890 legitimately promotes event source authority, but #888 explicitly requires candidate-to-staged-successor bindings for the already accepted A08.3 Boolean, numeric and qualified-world family/rule/source authorities from #420/#758/#737. Repair is active on the same preserved branch; prior event work remains valid evidence for #889/#890 but is not counted as the #888 finish witness.",
+      "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a09-5a-888-realizations-20261107"
     },
     {
@@ -125,10 +125,10 @@
     {
       "issue": 395,
       "pr": 891,
-      "state": "READY",
-      "head_sha": "78e5e45078539da3005077b34f1316b95c1b8b5a",
-      "summary": "A09.5 parent implementation and realization authority are combined on PR #891 after consuming reviewed unified 76f456776c88a642f79f5a7fa0df01bc729edb04. The adapter now proves three successive real source-qualified post-A/B/C proposals through next_atlas_delta with exact staged successors and current learner evidence; staged restart, source-order/grade-label invariance, true prerequisite holds, held-only termination and COMPLETE_ATLAS_COVERAGE zero-debt behavior are covered across the focused suite. Focused A09/frontier/event proof is 122 passed / 1 intentional real-corpus skip; governance, Factory architecture, error-control, flow-control, diff hygiene and changed-path smell checks are green. Repository-wide workstack remains on its eight pre-existing normalization holds, while the exact mirror/contract verifier passes 43/43 owners and 171 recursive children. Fresh exact-head EGM and hosted/human integration remain.",
-      "resume_trigger": "Fresh exact-head EGM passes on PR #891; then hosted checks and human review/merge complete turn-in.",
+      "state": "WAITING",
+      "head_sha": "8e4fd3bee22cb2a9730a1d3f10ed219fe3dd4fad",
+      "summary": "A09.5 parent adapter is preserved on PR #891 and consumed current reviewed unified, but fresh exact-head EGM correctly rejected the claimed realization-breadth closure: the current three-successor proof traverses newly promoted event authorities rather than #888's required accepted A08.3 Boolean/numeric/qualified-world family authorities. Parent completion waits on the #888 repair, then requires one fresh whole-candidate EGM pass and hosted/human integration.",
+      "resume_trigger": "#888 binds accepted #420/#758/#737 family/rule/source authority into three real staged successors and the combined candidate passes fresh exact-head EGM.",
       "preserved_branch": "codex/bamf02-a09-5-395-20261105"
     },
     {
