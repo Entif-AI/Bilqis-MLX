@@ -32,6 +32,17 @@ proceeds concurrently. MLX evaluation and neural updates use one serialized M3
 Ultra lane. The first durable student gate is [C16](issues/C16.md); full delivery
 is [C15](issues/C15.md).
 
+## Latest legacy trainer source
+
+Any issue that needs to adapt behavior from the latest legacy trainer uses the
+preserved Factory replay at
+`/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`,
+not the Prometheus training run. See
+[`LEGACY_TRAINER_AUTHORITY.md`](LEGACY_TRAINER_AUTHORITY.md) and run
+`python3 -B scripts/check_legacy_trainer_authority.py --live` before relying on
+legacy behavior in implementation or review. Prometheus remains historical lineage
+evidence only.
+
 ## Flow control and parked PR discipline
 
 **Compaction recovery:** Resume the same issue and preserved branch/worktree when
