@@ -60,6 +60,74 @@ class DetachedLongRunTests(unittest.TestCase):
             self.assertEqual(completed.stdout.strip(), "before")
             self.assertEqual(receipt["source_sha256"], receipt["snapshot_sha256"])
 
+    def test_git_snapshot_is_a_real_worktree_and_preserves_dirty_surface(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            snapshot = root / "snapshot"
+            source.mkdir()
+            subprocess.run(["git", "init", "-q"], cwd=source, check=True)
+            subprocess.run(["git", "config", "user.email", "tests@example.invalid"],
+                           cwd=source, check=True)
+            subprocess.run(["git", "config", "user.name", "Detached Tests"],
+                           cwd=source, check=True)
+            (source / "subject.py").write_text("VALUE = 'committed'\n", encoding="utf-8")
+            subprocess.run(["git", "add", "subject.py"], cwd=source, check=True)
+            subprocess.run(["git", "commit", "-qm", "seed"], cwd=source, check=True)
+            (source / "subject.py").write_text("VALUE = 'dirty'\n", encoding="utf-8")
+            (source / "untracked.txt").write_text("present\n", encoding="utf-8")
+            venv = source / ".venv"
+            (venv / "bin").mkdir(parents=True)
+            (venv / "bin" / "python").write_text("#!/bin/sh\n", encoding="utf-8")
+
+            receipt = _snapshot_workdir(source, snapshot)
+
+            self.assertTrue((snapshot / ".git").is_file())
+            self.assertEqual(
+                subprocess.check_output(
+                    ["git", "rev-parse", "--show-toplevel"], cwd=snapshot, text=True
+                ).strip(),
+                str(snapshot.resolve()),
+            )
+            self.assertEqual((snapshot / "subject.py").read_text(), "VALUE = 'dirty'\n")
+            self.assertEqual((snapshot / "untracked.txt").read_text(), "present\n")
+            self.assertTrue((snapshot / ".venv").is_symlink())
+            self.assertEqual(receipt["source_sha256"], receipt["snapshot_sha256"])
+
+    def test_worker_allows_private_generated_outputs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            snapshot = root / "snapshot"
+            (source / "lib" / "ithkuil").mkdir(parents=True)
+            (source / "subject.py").write_text("VALUE = 'before'\n", encoding="utf-8")
+            snapshot_receipt = _snapshot_workdir(source, snapshot)
+            receipt = root / "receipt.json"
+            args = SimpleNamespace(
+                label="private-output-test",
+                workdir=snapshot,
+                source_workdir=source,
+                source_sha256=snapshot_receipt["source_sha256"],
+                snapshot_sha256=snapshot_receipt["snapshot_sha256"],
+                log=root / "run.log",
+                receipt=receipt,
+                pid_file=root / "pid",
+                no_notify=True,
+                command=[
+                    sys.executable, "-B", "-c",
+                    "from pathlib import Path; "
+                    "p=Path('lib/ithkuil/_private/curriculum_frontier'); "
+                    "p.mkdir(parents=True); (p/'plan.json').write_text('{}\\n')",
+                ],
+            )
+
+            self.assertEqual(_worker(args), 0)
+            result = json.loads(receipt.read_text(encoding="utf-8"))
+            self.assertEqual(result["status"], "PASS")
+            self.assertFalse(result["source_mutated"])
+            self.assertNotEqual(
+                result["snapshot_sha256"], result["final_snapshot_sha256"])
+
     def test_worker_fails_if_command_mutates_snapshot_source(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
