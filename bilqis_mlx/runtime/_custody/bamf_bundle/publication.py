@@ -190,6 +190,8 @@ def _save_publication_bundle(candidate: BamfBundleCandidate, stage: Path,
     except TypeError as exc:
         if "unexpected keyword argument 'parent_acceptance_sha256'" not in str(exc):
             raise
+        if candidate.generation > 0:
+            invalid("BAMF_GENERATION_ACCEPTANCE_MISSING")
         return save_bamf_bundle(candidate, stage, reserve_gib=reserve_gib)
 
 

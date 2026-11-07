@@ -14,10 +14,11 @@ import bilqis_mlx.runtime.bamf_bundle.codec as codec
 import bilqis_mlx.runtime.bamf_bundle.publication as publication
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.data_plane import DataPlane, data_plane
+from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation
 from bilqis_mlx.runtime.tests.custody.data_plane.base import DataPlaneCase, historical_module
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    candidate, parent_state, publish_candidate, shape_patch,
+    accepted_state, candidate, parent_state, publish_candidate, shape_patch,
 )
 
 PRE_CAS = "dfc0c7586c23b6477c08d4db486ade3deeb79fae"
@@ -130,3 +131,30 @@ class PreCasCompatibilityTests(DataPlaneCase):
                                 check=True, capture_output=True, text=True)
         self.assertEqual(json.loads(result.stdout), expected)
         self.assertEqual({path.name: path.read_bytes() for path in bundle.iterdir()}, before)
+
+    def test_pinned_old_writer_cannot_publish_fresh_accepted_successor(self):
+        repository = Path(__file__).resolve().parents[5]
+        source = subprocess.run(
+            ["git", "show", PRE_CAS + ":bilqis_mlx/runtime/_custody/bamf_bundle/codec.py"],
+            cwd=repository, check=True, capture_output=True).stdout
+        self.assertEqual(hashlib.sha256(source).hexdigest(), WRITER_SHA256)
+        writer_path = self.root / "pre_cas_codec.py"
+        writer_path.write_bytes(source)
+        spec = importlib.util.spec_from_file_location(
+            "bilqis_mlx.runtime.bamf_bundle.pre_cas_successor_fixture", writer_path)
+        writer = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(writer)
+
+        run = self.root / "successor-run"
+        parent = candidate(parent_state())
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            pointer = publish_candidate(run, parent)
+        successor = candidate(
+            accepted_state(parent_state()), 1, pointer["manifest_sha256"])
+
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
+                patch.object(publication, "save_bamf_bundle",
+                             side_effect=writer.save_bamf_bundle), \
+                self.assertRaises(BilqisError):
+            publish_candidate(run, successor)
+        self.assertEqual(json.loads((run / "bamf-state.json").read_text())["generation"], 0)

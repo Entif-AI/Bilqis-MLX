@@ -57,7 +57,7 @@ class BamfBundleCandidate:
 
 @dataclass(frozen=True)
 class CompleteStudent(BamfBundleCandidate):
-    """Cold-loaded immutable v2 generation with exact B12 retained custody."""
+    """Cold-loaded immutable generation with exact B12 retained custody."""
 
 
 @dataclass(frozen=True)
