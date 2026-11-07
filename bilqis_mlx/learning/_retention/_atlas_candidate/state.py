@@ -109,6 +109,75 @@ def _array_equal(left, right) -> bool:
     return np.array_equal(np.asarray(left), np.asarray(right))
 
 
+def _identity_bank(name: str) -> int | None:
+    if not name.startswith("identity.bank."):
+        return None
+    try:
+        return int(name.rsplit(".", 1)[1])
+    except ValueError:
+        invalid()
+
+
+def _admitted_rows_by_bank(
+        new_rows: set[tuple[int, int]]) -> dict[int, set[int]]:
+    allowed: dict[int, set[int]] = {}
+    for bank, row in new_rows:
+        allowed.setdefault(bank, set()).add(row)
+    return allowed
+
+
+def _require_zero_rows(array, rows: set[int]) -> None:
+    if rows and np.any(np.asarray(array)[sorted(rows)] != 0):
+        invalid()
+
+
+def _require_zero_outside_rows(array, rows: set[int]) -> None:
+    values = np.asarray(array)
+    protected = [row for row in range(values.shape[0]) if row not in rows]
+    if protected and np.any(values[protected] != 0):
+        invalid()
+
+
+def _validate_new_identity_parameter(
+        optimizer: AdamWStateTree, name: str, admitted_rows: set[int]) -> None:
+    for group in (optimizer.parameters, optimizer.m, optimizer.v,
+                  optimizer.update_counts):
+        _require_zero_outside_rows(group[name], admitted_rows)
+    for group in (optimizer.m, optimizer.v, optimizer.update_counts):
+        _require_zero_rows(group[name], admitted_rows)
+
+
+def _validate_existing_parameter_group(
+        before, after, admitted_rows: set[int], *, zero_admitted: bool) -> None:
+    old_values = np.asarray(before)
+    next_values = np.asarray(after)
+    if old_values.shape != next_values.shape:
+        invalid()
+    if not admitted_rows:
+        if not np.array_equal(old_values, next_values):
+            invalid()
+        return
+    protected = [row for row in range(old_values.shape[0])
+                 if row not in admitted_rows]
+    if protected and not np.array_equal(old_values[protected], next_values[protected]):
+        invalid()
+    if zero_admitted:
+        _require_zero_rows(next_values, admitted_rows)
+
+
+def _validate_existing_parameter(
+        old: AdamWStateTree, optimizer: AdamWStateTree, name: str,
+        admitted_rows: set[int]) -> None:
+    for old_group, next_group, zero_admitted in (
+            (old.parameters, optimizer.parameters, False),
+            (old.m, optimizer.m, True),
+            (old.v, optimizer.v, True),
+            (old.update_counts, optimizer.update_counts, True)):
+        _validate_existing_parameter_group(
+            old_group[name], next_group[name], admitted_rows,
+            zero_admitted=zero_admitted)
+
+
 def _validate_parameter_extension_optimizer(
         parent: CandidateState, optimizer: AdamWStateTree,
         new_rows: set[tuple[int, int]]) -> None:
@@ -118,57 +187,18 @@ def _validate_parameter_extension_optimizer(
     next_names = set(optimizer.parameters)
     if not old_names <= next_names:
         invalid()
-    allowed_by_bank: dict[int, set[int]] = {}
-    for bank, row in new_rows:
-        allowed_by_bank.setdefault(bank, set()).add(row)
+    allowed_by_bank = _admitted_rows_by_bank(new_rows)
     for name in next_names - old_names:
-        if not name.startswith("identity.bank."):
-            invalid()
-        try:
-            bank = int(name.rsplit(".", 1)[1])
-        except ValueError:
-            invalid()
+        bank = _identity_bank(name)
         if bank not in allowed_by_bank:
             invalid()
     for name in next_names:
-        bank = None
-        if name.startswith("identity.bank."):
-            try:
-                bank = int(name.rsplit(".", 1)[1])
-            except ValueError:
-                invalid()
+        bank = _identity_bank(name)
         admitted_rows = allowed_by_bank.get(bank, set()) if bank is not None else set()
         if name not in old_names:
-            for group in (optimizer.parameters, optimizer.m, optimizer.v,
-                          optimizer.update_counts):
-                array = np.asarray(group[name])
-                for row in range(array.shape[0]):
-                    if row not in admitted_rows and np.any(array[row] != 0):
-                        invalid()
-            for group in (optimizer.m, optimizer.v, optimizer.update_counts):
-                array = np.asarray(group[name])
-                if any(np.any(array[row] != 0) for row in admitted_rows):
-                    invalid()
+            _validate_new_identity_parameter(optimizer, name, admitted_rows)
             continue
-        for old_group, next_group, zero_new in (
-                (old.parameters, optimizer.parameters, False),
-                (old.m, optimizer.m, True),
-                (old.v, optimizer.v, True),
-                (old.update_counts, optimizer.update_counts, True)):
-            before = np.asarray(old_group[name])
-            after = np.asarray(next_group[name])
-            if before.shape != after.shape:
-                invalid()
-            if not admitted_rows:
-                if not _array_equal(before, after):
-                    invalid()
-                continue
-            protected = [row for row in range(before.shape[0])
-                         if row not in admitted_rows]
-            if protected and not np.array_equal(before[protected], after[protected]):
-                invalid()
-            if zero_new and any(np.any(after[row] != 0) for row in admitted_rows):
-                invalid()
+        _validate_existing_parameter(old, optimizer, name, admitted_rows)
 
 
 def _issue_parameter_extension_state(
