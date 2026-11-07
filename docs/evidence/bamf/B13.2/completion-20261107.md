@@ -90,24 +90,49 @@ Factory release and natural next-selection evidence, executes one controlled
 optimizer comparison from the same committed parent, and holds publication of the
 comparison successor. No durable learner or own AdamW is started or mutated.
 
-## Genuine historical-v1 witness
+## Canonical legacy-v1 witness — Microspenics
 
-#479 consumes the genuine historical-v1 compatibility proof already accepted and
-merged through #754 / PR #902 rather than substituting a synthetic archive.
+Current repository authority is explicit: BAMF compatibility work that inspects or
+adapts the latest legacy trainer MUST use the preserved Factory replay worktree/run
+`microspenics-349-replay`. Prometheus is historical evidence about the Prometheus
+lineage only and cannot establish current BAMF legacy-trainer compatibility.
 
-That accepted exact-head proof used canonical Prometheus bundle
-`best-19300-6a12407cdcad`, manifest SHA-256
-`dbcddbe9647a3dba55bc5b48f67275563f288216773e9ca677f1268ce1b78ac6`, and passed
-**1/1**. It verified read-only historical-v1 loading, byte preservation and typed
-rejection before any v2 allocation. #754 then passed independent EGM and was merged
-into reviewed unified via PR #902 at
-`bd3657e170c8bdc046a7bb28524c0fb829ca7ce9`; both that merge commit and the reviewed
-#754 head `beae73a57df182fd478856a340b0685d861095b1` are ancestors of this #479 candidate.
+The required live authority check passed before using legacy behavior as a #479
+premise:
 
-The original #434 proof remains historical corroboration. Its protected fixture
-locator is no longer present in the live worktrees, so this completion does not
-pretend to rerun that older private locator or relabel an unavailable archive as a
-fresh local test.
+- command: `python3 -B scripts/check_legacy_trainer_authority.py --live`;
+- branch: `codex/337-replay-349-20261026`;
+- observed legacy source head: `d84d2ab9e2d79817c131ef7e0d4ec0d574e57b32`;
+- canonical run: `/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`;
+- observed generation: `24254`;
+- state schema: `bilqis.state-head/v1`.
+
+The canonical Microspenics state resolves its current `model_bundle` to
+`bundles/best-18601-70d09abe56ca`. That bundle is an actual six-layer historical-v1
+student with:
+
+- schema `bilqis.mlx.fp32-adamw-bundle/v1`;
+- optimizer step `135208`;
+- topology schema `bilqis.mlx.model-topology/v1`;
+- six layers, width 384, 24 heads, context 96;
+- manifest SHA-256
+  `70cb9169b8bcae85cd4ea6db81c4e88eb9c423d82888af1f6b4e00c26419315d`.
+
+Fresh #479 witness on the current candidate lineage:
+
+- `BILQIS_FROZEN_V1_BUNDLE=<microspenics run>/bundles/best-18601-70d09abe56ca`
+  `BILQIS_FROZEN_V1_MANIFEST_SHA256=70cb9169...`
+  `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/custody/bamf_bundle/test_frozen_v1.py`;
+- **1 passed / 0 failed / 0 skipped / 0 errors**.
+
+The test verifies the real Microspenics bundle reads through the historical reader
+without mutation, reproduces its optimizer/topology state, and is rejected as
+`bamf-atlas-v2` before v2 tensor/optimizer construction.
+
+The earlier #754 / PR #902 Prometheus witness remains historical evidence about the
+Prometheus lineage and is not consumed as #479 compatibility authority. Its prior
+classification as "canonical" in this completion receipt was incorrect and was
+withdrawn before accepting any round-2 EGM verdict.
 
 ## Acceptance disposition before final EGM
 
@@ -120,9 +145,13 @@ candidate:
 - Factory next-visit state and one controlled next optimizer step are measured;
 - the source-qualified continuation path is freshly measured;
 - Metal-to-CPU FP32 continuation parity is freshly measured;
-- genuine historical-v1 compatibility is consumed from accepted merged #754 proof.
+- genuine historical-v1 compatibility is freshly measured against the canonical
+  Microspenics run and bundle.
 
-Fresh pinned Goldfish remains the merge-readiness gate. This receipt does not call
-#479 `EGM-Passed` before that review, and it does not authorize self-merge or a live
-student start.
+The first attempted round-2 Goldfish review was aborted before verdict when this
+authority error was discovered. It is `OBSOLETE/SUPERSEDED`, not PASS or FAIL, and
+does not count as a completed round. Fresh pinned Goldfish remains the merge-readiness
+gate after this corrected evidence head is mechanically revalidated. This receipt
+does not call #479 `EGM-Passed`, authorize self-merge, or authorize a live student
+start.
 
