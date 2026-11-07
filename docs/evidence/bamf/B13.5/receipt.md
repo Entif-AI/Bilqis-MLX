@@ -483,3 +483,75 @@ repairs, using a disposable composition with preserved #399 head
 Together with the round-2 repair regressions, focused B13 custody and quality gates,
 this closes the deterministic engineering queue for fresh whole-candidate EGM round
 3. No EGM PASS is claimed by this qualification receipt.
+
+### Round-3 finding and repair
+
+Fresh round 3 reviewed exact candidate
+`c54c5da7722d2091ceff3e6de1aae87f22fd72d9`. The comprehension / implementation-
+readiness reviewer returned **PASS** with no target-local Blocker, Major or Nit. The
+independent code-vs-contract authority reviewer returned **FAIL** with one
+target-local Major.
+
+The Major exposed a publication/replay capability mismatch. Fresh successor
+publication could read a historical v1/v2 parent acceptance through the broad
+custody reader and embed that legacy digest as immutable `parent_acceptance_sha256`
+in a new v3 child. Recursive B13.5 lineage correctly refuses legacy acceptance
+schemas as historical minting authority, so that freshly published child could not
+later reconstruct accepted feature ancestry.
+
+Failing-before `test_legacy_parent_acceptance_cannot_authorize_fresh_successor`
+reproduced the seam: generation-acceptance tests reported **20 PASS / 1 FAIL**
+because the expected `BilqisError` was not raised. Semantic repair
+`7b5798b69ac6019219e0a697a6aeb9f30b5d0f6d` keeps historical v1/v2 records
+readable, but requires the live parent acceptance to use current `ACCEPTANCE_SCHEMA`
+before its digest may authorize and become the immutable parent anchor of a fresh
+successor.
+
+Passing-after:
+
+- generation acceptance/provenance including the new legacy-parent adversary:
+  **21/21 PASS**;
+- focused feature authority + lineage + generation acceptance + pre-CAS
+  compatibility + publication: **54/54 PASS**;
+- the enlarged acceptance test module was split into
+  `test_generation_acceptance.py` and `test_generation_acceptance_history.py` rather
+  than bypassing the repository structural limit; combined acceptance tests remain
+  **21/21 PASS** and development-structure reports **0 violations**;
+- governance integrity, Factory architecture, docs, error-control, changed-file
+  smell, flow-control and `git diff --check` remain green; error-control new debt 0,
+  changed-file smell findings 0 and flow-control units **15/15 PASS**.
+
+Semantic authority after this repair is `7b5798b6`; structural test split
+`66cf30332173c69ad0909a4d3ad55a8186caa6fd` is nonsemantic.
+
+### Final deterministic qualification for round 4
+
+Reviewed unified remains `d4bad39a32a80acbffdb9f891a906892ab2e9fab` and the exact
+candidate is `66cf30332173c69ad0909a4d3ad55a8186caa6fd` before final evidence
+bookkeeping.
+
+The final-head forced-serial differential leaf completed with exit 0:
+**123 passed + 28 subtests**, 885 deselected, in **208.53s**. Receipt head is exact
+candidate `66cf3033`.
+
+The A02/#399 consumer seam was repeated against this exact state using preserved
+head `ba1c366e8f583d1c0bb2676a7740c749707e7fa1` without mutating the A02 branch:
+
+- full-topology production staging: **1/1 PASS in 188.110s**;
+- ordinary vocabulary planner: **5/5 PASS + 1 optional real-source skip**;
+- coherent caller-minted predecessor authority remains fail-closed.
+
+The required fresh ADR-132/ADR-136 snapshot-isolated forced-serial premerge then
+completed with source mutation guard intact (`source_mutated=false`) and reported:
+
+- **3,623 total**;
+- **3,451 passed**;
+- **167 explicit skips**;
+- **5 errors**;
+- **447.451s**.
+
+The complete failing set is exactly the same five inherited nested-frame C09
+`BAMF_C09_PACKED_FRAME_IDENTITY_DRIFT` cases already reproduced on pristine
+reviewed-unified `d4bad39a`. No new #697-local failure appeared. This closes the
+deterministic engineering queue for fresh whole-candidate EGM round 4. No EGM PASS
+is claimed by this qualification receipt.
