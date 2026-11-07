@@ -169,7 +169,7 @@ def prepare_factory_training_batch(
         _invalid("FACTORY_TRAINING_AMBIGUOUS_SOURCE_PREFIX")
     by_ast = dict(zip((id(ast) for ast in source_asts), projections))
     training = compile_training_batch(
-        rows, source_context, {"context": 1024}, delivery=delivery,
+        rows, source_context, candidate.topology, delivery=delivery,
         delivery_capability=capability,
         delivery_release_sha256=source_context.release.release_sha256,
         teacher_strategy=teacher_strategy,

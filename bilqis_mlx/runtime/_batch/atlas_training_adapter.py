@@ -8,6 +8,7 @@ from typing import Callable
 from bilqis_mlx.runtime.source_execution import (
     SourceBatchAuthority, SourceExecutionContext, source_content_digest,
 )
+from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.factory.teaching import DeliveredTeaching, content_digest
 from bilqis_mlx.semantics.atlas_features import AtlasFeatures
 from bilqis_mlx.semantics.frame_compiler import (
@@ -169,6 +170,8 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
                            source_frontier: SourceFrontier, eligibility_policy: ContextPolicy, generation_binding: str,
                            sealed_holdout_ids=(), atlas_selection=None) -> BamfTrainingBatch:
     """Compile source-oracled delivery through accepted A05/A06 owners."""
+    if type(topology) is not ModelTopologySpecV2:
+        _invalid('TOPOLOGY_AUTHORITY_REQUIRED')
     release, capabilities, owner = _require_compile_request(delivered_rows, source_context,
         delivery=delivery, delivery_capability=delivery_capability,
         delivery_release_sha256=delivery_release_sha256,
@@ -211,6 +214,11 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
             atlas_selection=atlas_selection, feature_artifact_path=feature_artifact_path,
             answer_plan_for=answer_plan_for, generation_binding=generation_binding,
             atlas_features=atlas_features)
+        maximum_decisions = dict(model_input.answer_plan).get('maximum_decisions')
+        if (type(maximum_decisions) is not int
+                or len(model_input.prefix.positions) + maximum_decisions
+                > topology.context):
+            _invalid('TRAINING_CONTEXT_BUDGET_EXCEEDED')
         target = _compile_target(
             row, kind=kind, gold=gold, families=families, head=head, plan=plan)
         native_target = _compile_native_target(row, kind=kind, gold=gold, head=head,
