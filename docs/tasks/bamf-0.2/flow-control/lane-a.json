@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "4cffd8c79cbb5021cedce225118448af58a68253",
-  "updated_at": "2026-11-05T23:08:00Z",
+  "observed_unified": "3899649586b105b075e92f0ee3c51e80c379b473",
+  "updated_at": "2026-11-07T04:36:02Z",
   "exception": null,
   "items": [
     {
@@ -94,6 +94,15 @@
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a-421-egm-repair-20261105",
       "merged_pr": 862
+    },
+    {
+      "issue": 399,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "9dac486a06ea8a5ae70a1ec6b93afa20a2aa7bdb",
+      "summary": "A02.1 production successor allocation/admission is implemented on the accepted #708/#809 B13 predecessor-feature authority, synchronized through reviewed unified 38996495. Full production admission/cold-readback witness passed 1/1; post-sync authority regressions passed 4/4, A02 semantic owners 11/11 with 2 explicit opt-in skips, and tensor-CAS/cold-resume 14/14. Turned in with EGM_PENDING; no self-merge or issue closure is authorized.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a-399-production-admission-20261106"
     },
     {
       "issue": 395,
