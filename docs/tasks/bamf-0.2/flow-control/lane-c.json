@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "48315ee7bae3caa7d5ac279128c79217b9178d16",
-  "updated_at": "2026-11-03T10:17:19Z",
+  "updated_at": "2026-11-07T09:45:11Z",
   "exception": null,
   "items": [
     {
@@ -86,10 +86,10 @@
     {
       "issue": 746,
       "pr": null,
-      "state": "WAITING",
+      "state": "ACTIVE",
       "head_sha": "3c19ab9ed74fe3f2972761073d209055868460cf",
-      "summary": "Verified C12 accepted-import owner path now consumes signed A12 clearance, execution-owned C05 screening, B12 reset custody and sealed B13 PACKAGE_IMPORT publication with a non-public transition issuer. The repository still has no non-test package importer/operator caller, so #746/#526/#718 remain dependency-held rather than EGM-ready.",
-      "resume_trigger": "A production package importer/operator invokes the existing receive/apply/screen/publish_screened_delta_import owner path without caller-minted acceptance authority.",
+      "summary": "Owner-directed EGM blocker-resolution pass reactivated #746 to port its preserved C12 package-import path onto current C05/B12/B13 authority and add the missing production composition seam without caller-minted acceptance.",
+      "resume_trigger": null,
       "preserved_branch": "codex/746-c12-import-commit-20261102"
     }
   ]
