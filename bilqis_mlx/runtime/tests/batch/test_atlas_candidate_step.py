@@ -133,7 +133,7 @@ class ProductionCandidateStepTests(unittest.TestCase):
                 "feedback_identity_rows", "local_slot_rows", "active_admitted"):
             self.assertNotIn(forbidden, parameters)
 
-    def test_decay_manifest_is_derived_from_b01_not_the_caller(self):
+    def test_production_wrapper_forwards_b01_authority_not_decay(self):
         parameters = set(inspect.signature(production_candidate_step).parameters)
         self.assertNotIn("decay", parameters)
         candidate = begin_candidate(self.parent)
@@ -162,7 +162,10 @@ class ProductionCandidateStepTests(unittest.TestCase):
                 teacher_hparams=self.hp, max_norm=1.,
             )
         self.assertIs(result, marker)
-        self.assertEqual(apply_step.call_args.kwargs["decay"], {BANK: False})
+        forwarded = apply_step.call_args.kwargs
+        self.assertNotIn("decay", forwarded)
+        self.assertEqual(forwarded["spec"].digest, self.parent.custody.topology_digest)
+        self.assertEqual(forwarded["extents"].digest, self.parent.custody.extents_digest)
 
     def test_b01_manifest_rejects_wrong_count_geometry_and_misowned_prefix(self):
         optimizer = self.parent.optimizer

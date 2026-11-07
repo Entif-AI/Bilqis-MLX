@@ -6,7 +6,6 @@ from bilqis_mlx.learning.atlas_candidate import candidate_step
 from bilqis_mlx.runtime.atlas_model import BamfGradientExecution
 from bilqis_mlx.runtime.atlas_execution_binder import bind_execution_provenance
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
-from bilqis_mlx.runtime.atlas_optimizer import reconcile_b01_optimizer_manifest
 
 
 def _invalid(reason):
@@ -55,9 +54,9 @@ def production_candidate_step(
         parent_optimizer_step=parent_optimizer_step,
         topology_digest=topology_digest,
         candidate_step_ordinal=candidate_step_ordinal)
-    decay = reconcile_b01_optimizer_manifest(candidate.optimizer, spec, extents)
     return candidate_step(
-        candidate, actual_gradients, provenance, teacher_hparams, decay=decay,
+        candidate, actual_gradients, provenance, teacher_hparams,
+        spec=spec, extents=extents,
         loss_bearing=loss_bearing_target, max_norm=max_norm,
         training_authority=(getattr(loss_execution, "training_authority", None)
                             if loss_execution is not None else None))
