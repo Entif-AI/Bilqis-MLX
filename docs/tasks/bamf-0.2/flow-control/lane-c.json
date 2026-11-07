@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "70a4ef1e883d348920d64083c7546f443a90ef77",
-  "updated_at": "2026-11-05T06:20:10+00:00",
+  "observed_unified": "bb8e83f03e38b64018cfe357addd90a0a6d67297",
+  "updated_at": "2026-11-07T07:47:14+00:00",
   "exception": null,
   "items": [
     {
@@ -16,6 +16,15 @@
       "preserved_branch": "codex/bamf02-c-347-integration-20261103",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
       "close_reason": "EGM-Failed; remediation #733"
+    },
+    {
+      "issue": 376,
+      "pr": null,
+      "state": "WAITING",
+      "head_sha": "31582efffc422628ac9b64a50859801fa066d346",
+      "summary": "C03 parent-owned teacher lineage projection, grade-neutral Factory acceptance, structural teacher-owner repairs and current observation/replay evidence are implemented and focused-green. Final atomic teacher-state consumption remains B13-owned and cannot land before accepted B13.1 custody/admission authority.",
+      "resume_trigger": "B13.1 #478 / PR #885 is accepted and consumed into reviewed unified with its A02.1/C07.1b/A09.5 dependency chain satisfied; then reactivate #376, sync unified once, wire the C03 projection at the accepted B13 seam, run exact-head verification and EGM, and turn in the parent.",
+      "preserved_branch": "codex/bamf02-c03-376-20261107"
     },
     {
       "issue": 526,
