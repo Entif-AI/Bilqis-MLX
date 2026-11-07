@@ -10,6 +10,7 @@ from .publication import (
     load_bamf_generation, load_bamf_generation_authority,
     publish_bamf_generation, record_bamf_rejection,
 )
+from .package_import_transition import PackageImportTransition
 from .source_continuation import continue_source_qualified_motifs_from_bundle
 from .records import (
     BAMF_BUNDLE_SCHEMA, BAMF_POINTER_SCHEMA, BamfBundleCandidate,
@@ -22,6 +23,7 @@ __all__ = (
     "continue_source_qualified_motifs_from_bundle",
     "publish_bamf_generation", "load_bamf_generation",
     "load_bamf_generation_authority", "record_bamf_rejection",
+    "PackageImportTransition",
     "AcceptedGenerationFeatureReceipt", "AuthenticatedCandidateFeatureContext",
     "authenticate_bamf_candidate_feature_context", "read_accepted_generation_feature_receipt",
     "authenticate_bamf_candidate_features",
