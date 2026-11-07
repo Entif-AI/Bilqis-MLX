@@ -45,7 +45,7 @@ from .publication import (
     _pointer_lock, _read_pointer, load_bamf_generation_authority,
     publish_bamf_generation,
 )
-from .records import BamfBundleCandidate, canonical, invalid, sha
+from .records import BamfBundleCandidate, _hex, canonical, invalid, sha
 
 _ADMISSION_OWNER_ISSUER = object()
 
@@ -82,9 +82,7 @@ class _VocabularyAdmissionEvaluation:
         if (getattr(self, "_issuance", None) is not _ADMISSION_OWNER_ISSUER
                 or not isinstance(self.run_id, str) or not self.run_id
                 or type(self.generation) is not int or self.generation < 1
-                or any(not isinstance(value, str) or len(value) != 64
-                       or any(char not in "0123456789abcdef" for char in value)
-                       for value in values)):
+                or any(not _hex(value) for value in values)):
             invalid("BAMF_A02_ADMISSION_OWNER_EVALUATION_INVALID")
 
 
