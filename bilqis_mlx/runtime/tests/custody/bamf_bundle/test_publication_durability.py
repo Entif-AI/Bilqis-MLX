@@ -128,7 +128,7 @@ class PublicationDurabilityTests(unittest.TestCase):
                             future.result(timeout=5)
                 events = [json.loads(line) for line in (self.run / 'events.jsonl').read_text().splitlines()]
                 self.assertEqual(len(events), 1)
-                self.assertEqual(events[0]['event'], 'FIXTURE_ACCEPTED')
+                self.assertEqual(events[0]['event'], 'FIXTURE_GENESIS')
 
     def test_successor_recovers_pending_predecessor_before_advancing_pointer(self):
         initial = parent_state()
@@ -142,5 +142,5 @@ class PublicationDurabilityTests(unittest.TestCase):
             loaded = load_bamf_generation(self.run / 'bamf-state.json')
         self.assertEqual(loaded.generation, 1)
         events = [json.loads(line) for line in (self.run / 'events.jsonl').read_text().splitlines()]
-        self.assertEqual([e['optimizer_step'] for e in events], [11, 12])
+        self.assertEqual([e['optimizer_step'] for e in events], [0, 12])
         self.assertEqual(len({e['event_id'] for e in events}), 2)

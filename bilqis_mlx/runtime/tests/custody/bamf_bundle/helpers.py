@@ -292,10 +292,11 @@ def retention_decision(*, accepted=True, parent=None, retained=None) -> object:
     )
 
 
-def acceptance(bundle) -> object:
+def acceptance(bundle, *, parent=None) -> object:
     """Mint the retention owner's acceptance binding for one candidate bundle."""
     return mint_acceptance_binding(
-        retention_decision(retained=bundle.retained_state), bundle.retained_state, run_id=bundle.run_id,
+        retention_decision(parent=parent, retained=bundle.retained_state),
+        bundle.retained_state, run_id=bundle.run_id,
         generation=bundle.generation,
         feature_sha256=bundle.extents.factor_map_digest)
 
@@ -314,9 +315,15 @@ def publish_candidate(run_dir, bundle):
             correction_frontier=dict(bundle.correction_frontier),
             teacher_state=dict(bundle.teacher_state),
             evaluation_contract=dict(bundle.evaluation_contract),
-            delivery_events=tuple(bundle.outbox))
+            delivery_events=({"event": "FIXTURE_GENESIS", "optimizer_step": 0},))
         return publish_initial_generation(run_dir, prepared, reserve_gib=0.)
+    parent = None
     if bundle.run_identity is None:
         parent = load_bamf_generation(Path(run_dir) / "bamf-state.json")
         bundle = replace(bundle, run_identity=parent.run_identity)
-    return publish_bamf_generation(run_dir, bundle, acceptance=acceptance(bundle))
+    elif bundle.generation > 0:
+        parent = load_bamf_generation(Path(run_dir) / "bamf-state.json")
+    return publish_bamf_generation(
+        run_dir, bundle,
+        acceptance=acceptance(
+            bundle, parent=None if parent is None else parent.retained_state))

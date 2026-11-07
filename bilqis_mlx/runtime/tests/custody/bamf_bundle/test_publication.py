@@ -154,11 +154,11 @@ class BamfPublicationTests(unittest.TestCase):
         with shape_patch():
             first = load_bamf_generation(self.run / "bamf-state.json")
             second = load_bamf_generation(self.run / "bamf-state.json")
-        self.assertEqual(first.retained_state.optimizer_step, 11)
-        self.assertEqual(second.retained_state.optimizer_step, 11)
+        self.assertEqual(first.retained_state.optimizer_step, 0)
+        self.assertEqual(second.retained_state.optimizer_step, 0)
         events = [json.loads(line) for line in (self.run / "events.jsonl").read_text().splitlines()]
         self.assertEqual(len(events), 1)
-        self.assertEqual(events[0]["event"], "FIXTURE_ACCEPTED")
+        self.assertEqual(events[0]["event"], "FIXTURE_GENESIS")
 
     def test_competing_same_generation_cannot_overwrite_pointer(self):
         first = self.publish(candidate(parent_state()))
