@@ -2,6 +2,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 import mlx.core as mx
+import numpy as np
 from bilqis_mlx.learning.atlas_engram import INITIAL_MOTIF_CAPACITY
 from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
 from bilqis_mlx.learning.atlas_plasticity import PlasticityPolicy
@@ -102,3 +103,106 @@ def _load_retained_candidate_state_with_parts(
         object.__setattr__(state, name, value)
     state.__post_init__()
     return state, parts
+
+
+def _array_equal(left, right) -> bool:
+    return np.array_equal(np.asarray(left), np.asarray(right))
+
+
+def _validate_parameter_extension_optimizer(
+        parent: CandidateState, optimizer: AdamWStateTree,
+        new_rows: set[tuple[int, int]]) -> None:
+    """Permit only source-admitted identity rows to differ from the parent."""
+    old = parent.optimizer
+    old_names = set(old.parameters)
+    next_names = set(optimizer.parameters)
+    if not old_names <= next_names:
+        invalid()
+    allowed_by_bank: dict[int, set[int]] = {}
+    for bank, row in new_rows:
+        allowed_by_bank.setdefault(bank, set()).add(row)
+    for name in next_names - old_names:
+        if not name.startswith("identity.bank."):
+            invalid()
+        try:
+            bank = int(name.rsplit(".", 1)[1])
+        except ValueError:
+            invalid()
+        if bank not in allowed_by_bank:
+            invalid()
+    for name in next_names:
+        bank = None
+        if name.startswith("identity.bank."):
+            try:
+                bank = int(name.rsplit(".", 1)[1])
+            except ValueError:
+                invalid()
+        admitted_rows = allowed_by_bank.get(bank, set()) if bank is not None else set()
+        if name not in old_names:
+            for group in (optimizer.parameters, optimizer.m, optimizer.v,
+                          optimizer.update_counts):
+                array = np.asarray(group[name])
+                for row in range(array.shape[0]):
+                    if row not in admitted_rows and np.any(array[row] != 0):
+                        invalid()
+            for group in (optimizer.m, optimizer.v, optimizer.update_counts):
+                array = np.asarray(group[name])
+                if any(np.any(array[row] != 0) for row in admitted_rows):
+                    invalid()
+            continue
+        for old_group, next_group, zero_new in (
+                (old.parameters, optimizer.parameters, False),
+                (old.m, optimizer.m, True),
+                (old.v, optimizer.v, True),
+                (old.update_counts, optimizer.update_counts, True)):
+            before = np.asarray(old_group[name])
+            after = np.asarray(next_group[name])
+            if before.shape != after.shape:
+                invalid()
+            if not admitted_rows:
+                if not _array_equal(before, after):
+                    invalid()
+                continue
+            protected = [row for row in range(before.shape[0])
+                         if row not in admitted_rows]
+            if protected and not np.array_equal(before[protected], after[protected]):
+                invalid()
+            if zero_new and any(np.any(after[row] != 0) for row in admitted_rows):
+                invalid()
+
+
+def _issue_parameter_extension_state(
+        parent: CandidateState, optimizer: AdamWStateTree,
+        policy: PlasticityPolicy) -> CandidateState:
+    """Issue neural-inert state for an admitted append-only parameter extension.
+
+    The accepted parent's motif allocation, optimizer step, custody identity and
+    proof history remain exact. New policy rows must begin at age zero. A
+    separate admission binding is still required before publication.
+    """
+    if (type(parent) is not CandidateState
+            or type(optimizer) is not AdamWStateTree
+            or type(policy) is not PlasticityPolicy):
+        invalid()
+    parent_rows = {row.identity: row.accepted_age for row in parent.policy.row_ages}
+    next_rows = {row.identity: row.accepted_age for row in policy.row_ages}
+    new_rows = set(next_rows) - set(parent_rows)
+    if (any(next_rows.get(identity) != age
+            for identity, age in parent_rows.items())
+            or any(identity not in parent_rows and age != 0
+                   for identity, age in next_rows.items())
+            or policy.mode != parent.policy.mode
+            or policy.accepted_fast_since_full
+            != parent.policy.accepted_fast_since_full):
+        invalid()
+    _validate_parameter_extension_optimizer(parent, optimizer, new_rows)
+    state = object.__new__(CandidateState)
+    for name, value in (
+            ('optimizer', optimizer), ('policy', policy),
+            ('allocations', parent.allocations),
+            ('optimizer_step', parent.optimizer_step),
+            ('custody', parent.custody), ('step_proofs', parent.step_proofs),
+            ('schema_version', STATE_SCHEMA), ('_issuance', RETAINED_STATE_ISSUER)):
+        object.__setattr__(state, name, value)
+    state.__post_init__()
+    return state

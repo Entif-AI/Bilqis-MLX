@@ -20,56 +20,15 @@ from bilqis_mlx.runtime.bamf_bundle import (
     verify_accepted_generation_feature_receipt,
 )
 from bilqis_mlx.runtime.bamf_bundle import feature_authority
-from bilqis_mlx.semantics.atlas_features import AtlasFeatures
-from bilqis_mlx.semantics.atlas_projection import FrozenAtlasSnapshot
-from bilqis_mlx.semantics.atlas_projection_parts.releases import AtlasCounts
-
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     publish_candidate,
-    candidate, parent_state, shape_patch,
+    accepted_state, candidate, parent_state, shape_patch,
 )
-
-RELEASE = "1" * 64
-ATLAS_BUNDLE = "2" * 64
-SOURCE_BUNDLE = "3" * 64
-ARBITRARY = "b" * 64
-def feature_schema() -> dict:
-    """One recorded feature schema shape with no categorical bindings."""
-    return {"role_ids": [], "schema_ids": [], "source_bindings": []}
-
-
-def source_features() -> AtlasFeatures:
-    return AtlasFeatures(
-        RELEASE, ATLAS_BUNDLE, SOURCE_BUNDLE, None, (), (), (), (), ())
-
-
-def feature_bound(source, features: AtlasFeatures, *, digest=None, release=RELEASE):
-    """Bind a candidate to a recorded source release and feature map."""
-    factor_map = digest or features.digest
-    return replace(
-        source,
-        extents=replace(source.extents, factor_map_digest=factor_map),
-        provenance=replace(source.provenance, release_digest=release),
-        compiler_features={
-            **source.compiler_features,
-            "factor_map_sha256": factor_map,
-            "feature_source": {
-                "atlas_bundle_id": ATLAS_BUNDLE,
-                "release_sha256": release,
-                "source_bundle_id": SOURCE_BUNDLE},
-            "feature_schema": feature_schema()},
-        correction_frontier={
-            **source.correction_frontier, "release_digest": release})
-
-
-def frozen_snapshot(selection):
-    return FrozenAtlasSnapshot(
-        "bilqis.atlas.snapshot/v1", selection.bundle_id,
-        selection.release_sha256, selection.source_bundle_id,
-        "4" * 64, "5" * 64, "6" * 64, "7" * 64, "8" * 64, "9" * 64,
-        "a" * 64, AtlasCounts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-        (), (), (), (), (), (), (),
-    )
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.feature_authority_test_support import (
+    ARBITRARY, ATLAS_BUNDLE, RELEASE, SOURCE_BUNDLE,
+    SUCCESSOR_ATLAS_BUNDLE, SUCCESSOR_RELEASE, SUCCESSOR_SOURCE_BUNDLE,
+    feature_bound, frozen_snapshot, source_features, source_snapshot,
+)
 
 
 class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
@@ -177,6 +136,54 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
         second = self.read_receipt(features)
         self.assertEqual(first.digest, second.digest)
         self.assertEqual(first, second)
+
+    def test_successor_generation_replays_accepted_predecessor_feature_chain(self):
+        root_features = source_features()
+        first = self.publish(feature_bound(candidate(parent_state()), root_features))
+        successor_selection = feature_authority.AtlasArtifactSelection(
+            "/artifact", SUCCESSOR_ATLAS_BUNDLE,
+            SUCCESSOR_RELEASE, SUCCESSOR_SOURCE_BUNDLE)
+        successor_snapshot = source_snapshot(successor_selection)
+        successor_features = feature_authority.build_feature_manifest(
+            successor_snapshot, feature_authority.FeatureSchema(
+                role_ids=(), schema_ids=(), predecessor=root_features))
+        successor = feature_bound(
+            candidate(accepted_state(parent_state()), 1, first["manifest_sha256"]),
+            successor_features,
+            release=SUCCESSOR_RELEASE,
+            atlas_bundle=SUCCESSOR_ATLAS_BUNDLE,
+            source_bundle=SUCCESSOR_SOURCE_BUNDLE,
+        )
+        successor = replace(
+            successor,
+            transition={
+                **successor.transition,
+                "kind": "PARAMETER_EXTENSION",
+                "invalidate_derived_caches": True,
+            },
+        )
+        self.publish(successor)
+        def replay_features(snapshot, schema):
+            if snapshot.release_sha256 == RELEASE:
+                self.assertIsNone(schema.predecessor)
+                return root_features
+            self.assertEqual(snapshot.release_sha256, SUCCESSOR_RELEASE)
+            self.assertEqual(schema.predecessor, root_features)
+            return successor_features
+        with shape_patch(), patch.object(
+                feature_authority, "load_pinned_atlas_snapshot",
+                side_effect=source_snapshot), patch.object(
+                feature_authority, "build_feature_manifest",
+                side_effect=replay_features):
+            receipt = read_accepted_generation_feature_receipt(
+                self.pointer, "/artifact")
+            verified = verify_accepted_generation_feature_receipt(
+                self.pointer, "/artifact", receipt)
+        self.assertEqual(receipt.generation, 1)
+        self.assertEqual(receipt.feature_sha256, successor_features.digest)
+        self.assertEqual(
+            receipt.predecessor_feature_sha256, root_features.digest)
+        self.assertEqual(verified, receipt)
 
     def test_receipt_record_round_trip_detects_tampering(self):
         features = source_features()

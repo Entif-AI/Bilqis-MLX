@@ -140,16 +140,16 @@ class BamfTensorCasTests(unittest.TestCase):
             original = data_plane().require_file_object(digest)
             original_inode = original.stat().st_ino
             swap = candidate(state, 1, first["manifest_sha256"])
-            extents = replace(swap.extents, active_semantic_digest="8" * 64)
-            semantic = {**swap.semantic_abi, "active_set_sha256": "8" * 64}
-            swap = replace(swap, extents=extents, semantic_abi=semantic,
+            extents = replace(swap.extents, factor_map_digest="8" * 64)
+            compiler = {**swap.compiler_features, "factor_map_sha256": "8" * 64}
+            swap = replace(swap, extents=extents, compiler_features=compiler,
                            transition={**swap.transition, "kind": "PARAMETER_EXTENSION"})
             second = publish_candidate(run, swap)
             second_manifest = json.loads((run / second["bundle"] / "manifest.json").read_bytes())
             self.assertEqual(second_manifest["tensors"]["object_sha256"], digest)
             self.assertEqual(original.stat().st_ino, original_inode)
             changed = replace(candidate(accepted_state(state), 2, second["manifest_sha256"]),
-                              extents=extents, semantic_abi=semantic)
+                              extents=extents, compiler_features=compiler)
             third = publish_candidate(run, changed)
             third_manifest = json.loads((run / third["bundle"] / "manifest.json").read_bytes())
             self.assertNotEqual(third_manifest["tensors"]["object_sha256"], digest)
