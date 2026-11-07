@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "5f8f3d4b42cc4656020e4427c7d8e822825a36f9",
-  "updated_at": "2026-11-07T13:07:38-05:00",
+  "observed_unified": "9301e41ef215b9d035449c3260c7cd0f8ee0b5a7",
+  "updated_at": "2026-11-07T13:19:19-05:00",
   "exception": null,
   "items": [
     {
@@ -76,22 +76,23 @@
     {
       "issue": 478,
       "pr": 885,
-      "state": "READY",
-      "head_sha": "ec9188d10112bed5c0a42f138e9bceda81a4af1c",
-      "head_sha_role": "final reviewed head; semantic repair proof is bound to d51bb12f and reused across the docs/flow-only d51bb12f..ec9188d1 range under AGENTS.md TEST_EVIDENCE_REUSED",
-      "summary": "B13.1 #478 is review-ready. Round-5 same-round reinspection cleared the final C12 package-parent authority Major with PASS from both comprehension and codebase-details reviewers: 0 unsettled Blockers / 0 unsettled Majors. Semantic repair d51bb12f routes C12 through shared B13 acceptance-authenticated authority; missing and re-signed-drifted acceptance witnesses fail closed before successor publication. Cognitive-package is 54/54; fresh full B13 custody is 111 total / 107 passed / 0 failed / 4 explicit skips; final-head hosted portable-core, semantic-abi-integrity and aggregate portable are green; PR #885 is CLEAN and ready for human review. Human merge and issue closure remain external authority.",
+      "state": "TURNED_IN",
+      "head_sha": "f166cac5db1e217880ce706efb51408001c7231e",
+      "head_sha_role": "merged PR head; semantic repair proof is bound to d51bb12f and reused across the docs/flow-only d51bb12f..f166cac5 range under AGENTS.md TEST_EVIDENCE_REUSED",
+      "summary": "B13.1 #478 is accepted and closed. PR #885 was human-merged into reviewed unified as 9301e41e after round-5 same-round reinspection PASS from both reviewers, exact-head hosted semantic-abi-integrity/portable-core/portable success, and CLEAN merge state. The accepted B13.1 custody surface is now consumable by B13.2 #479.",
       "resume_trigger": null,
-      "preserved_branch": "codex/bamf02-b13-1-478-complete-20261106"
+      "preserved_branch": "codex/bamf02-b13-1-478-complete-20261106",
+      "merged_pr": 885
     },
     {
       "issue": 479,
       "pr": null,
-      "state": "WAITING",
-      "head_sha": "d18997f2b5c9314a6f4fd15dd590fabfd2dd3546",
-      "summary": "B13.2 cold-resume proof remains incomplete.",
-      "resume_trigger": "Remediation #709 proves the required real cold resume through the next controlled optimizer step and the accepted B13.1 custody surface is consumable.",
+      "state": "ACTIVE",
+      "head_sha": "9301e41ef215b9d035449c3260c7cd0f8ee0b5a7",
+      "summary": "B13.2 completion pass is active on current reviewed unified. Remediation #709 is closed EGM-Passed with the real source-qualified pointer/lock cold-resume, next controlled optimizer-step and cross-backend continuation witness, and B13.1 #478 is now accepted through merged PR #885. This pass consumes those accepted authorities and reconciles the preserved complete numerical-custody witness before final merge-readiness EGM.",
+      "resume_trigger": null,
       "closed_pr": 677,
-      "preserved_branch": "codex/bamf02-b13-2-479-cold-resume-20261101",
+      "preserved_branch": "codex/bamf02-b13-2-479-complete-20261107",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
       "close_reason": "EGM-Failed; remediation #709"
     },
