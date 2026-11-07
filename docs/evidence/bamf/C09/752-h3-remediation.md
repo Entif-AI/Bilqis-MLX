@@ -19,7 +19,7 @@ This receipt records implementation work performed after the immutable EGM episo
 - Current unified consumed by merge commit: `bd3657e170c8bdc046a7bb28524c0fb829ca7ce9`
 - Unified refresh merge: `5389b49e10d79fb0af6e8d3036daf7a0eddeb283`
 - Merge-resolution correction: `97780aa3335b7197f31d040e91a4b202161e9d9e`
-- Exact M3 verified code candidate: `97780aa3335b7197f31d040e91a4b202161e9d9e`
+- Final exact M3 verified code candidate: `643dd73cd0d941728de1b5df53e3bca8ebfedd8a`
 
 The unified refresh produced two rename/rename conflicts in custody test organization.
 The competing file contents were identical. The resolution retained unified's current
@@ -71,7 +71,11 @@ missing/current support. Accepted correction replay also explicitly rejects miss
 correction authority before dereferencing a registry.
 
 Focused regression:
-`test_accepted_progression_fails_closed_when_support_replay_lacks_authority`.
+`test_cold_accepted_correction_history_fails_closed_without_authority`, with the
+mock-boundary witness `test_accepted_progression_fails_closed_when_support_replay_lacks_authority`
+retained as a narrower unit check. The cold-history proof also verifies that providing
+valid correction authority replays the persisted correction into a live
+`CURRENT_CAPABILITY_SUPPORT_HELD` gate.
 
 ### Major 2 - F15 remediation-root proof
 
@@ -85,17 +89,22 @@ Focused regression is embedded in
 
 ### Major 3 - production expiry/as-of dependency
 
-Real packed-frame artifact ownership now projects the compiler's approved-context digest
-as a first-class C09 `TIME` dependency. That digest is already derived from the real
-`TaskScope`, policy, and exact relevant `SourceGrant` frontier, including
-`observed_frontier`, `effective_time`, `observed_at`, `effective_from`, and
-`effective_until`. This uses the production context-eligibility authority rather than a
-synthetic-only temporal fixture. The generic `project_as_of`/`bind_as_of_dependency`
-helpers remain available, but production validity is bound through the stronger existing
-approved-context commitment.
+Packed-frame artifact ownership now retains the real compiler configs that produced the
+rows it governs. For each packed frame, the owner resolves the approved envelope's exact
+frame/member source handles back to their real `SourceGrant`s and derives a C09 `TIME`
+dependency from the known `observed_at`, `effective_from`, and `effective_until`
+boundaries plus the current `TaskScope.observed_frontier` and `effective_time` boundary
+buckets. Ordinary clock movement inside one bucket does not churn dependency identity.
+Crossing a known validity boundary changes the dependency deterministically. The
+production `require_row(row, config)` read seam recomputes that dependency and installs a
+fail-closed owner-local temporal hold before the packed artifact can be reused when only
+its temporal dependency has changed. This uses the production context-eligibility
+authority rather than a synthetic-only temporal fixture.
 
 Focused regression:
-`test_real_packed_frame_owner_projects_context_time_dependency`.
+`test_real_packed_frame_owner_holds_when_source_grant_expires`, which gives an approved
+production source grant `effective_until=6`, advances the real task's `effective_time`
+from 5 to 6, and proves `BAMF_C09_ARTIFACT_HELD` before reuse.
 
 ### Major 4 - crash recovery across successor publication
 
@@ -103,27 +112,33 @@ Accepted-ledger transaction recovery now recognizes an ancestor transaction's co
 record as a prefix of a longer shared-ledger suffix. It still validates the filtered
 manifest-specific history against the transaction target before committing recovery.
 Thus a legitimate successor append no longer turns an ancestor post-fsync/pre-history
-crash into `BAMF_C09_CORRECTION_HISTORY_COMMITMENT_DRIFT`.
+crash into `BAMF_C09_CORRECTION_HISTORY_COMMITMENT_DRIFT`. Recovery also validates that
+later accepted-C09 tail records belong to the live accepted descendant lineage; a
+well-formed record carrying a foreign manifest is rejected rather than silently filtered.
 
-Focused regression:
-`test_ancestor_commit_crash_recovers_after_successor_append`.
+Focused regressions:
+`test_ancestor_commit_crash_recovers_after_successor_append` and
+`test_ancestor_recovery_rejects_foreign_manifest_suffix`.
 
 ## Verification
 
 Exact M3 detached worktree:
-`/Users/emilie/Code/bamf-752-h3-repair-exact-20261107`
+`/Users/emilie/Code/bamf-752-h3-repair-verified-20261107`
 
 Exact verified SHA:
-`97780aa3335b7197f31d040e91a4b202161e9d9e`
+`643dd73cd0d941728de1b5df53e3bca8ebfedd8a`
 
-- Focused H3 regression set: 8 tests, PASS.
-- Widened deterministic C09/custody/projection/authority ring: 49 tests, PASS.
+- Final exact-head deterministic ring, including frame-encoder construction, all focused
+  H3 regressions, C09/custody/projection/authority preservation, and adversarial recovery:
+  55 tests, PASS.
 - `git diff --check`: PASS.
 - `BILQIS_QUALITY_BASE_REF=bd3657e170c8bdc046a7bb28524c0fb829ca7ce9 npm run quality:changed`: PASS.
   - development structure: 0 violations
   - governance integrity: 0 violations
   - new changed-file smell findings: 0
   - legacy trainer authority: PASS; 7/7 tests PASS
+  - canonical legacy-trainer source run:
+    `/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`
   - BAMF flow control: PASS; 15/15 tests PASS
 - `python3 -B scripts/verify_bamf_0_2_contracts.py`: 43/43 PASS.
 - Global workstack validation remains `held`, with `issues: []` and
@@ -131,6 +146,13 @@ Exact verified SHA:
   `A03.4`, `A05.4`, `A05.5`, `A08.1b.2`, `A08.1b.5`, `B02.4`, `B11.1a`, `C14.4`.
 
 The global `held` result is not a C09 schema or validator failure.
+
+The earlier GitHub remediation checkpoint comment `6705215565` was posted before the
+post-implementation read-only audit completed. That audit correctly found the first M3
+implementation insufficient because it merely labeled an approved-context digest as
+`TIME` without making production validity change when an expiry boundary was crossed.
+The final implementation and proof above supersede that provisional checkpoint. The
+earlier comment remains historical evidence and is not edited or erased.
 
 ## Governed stopping boundary
 
@@ -143,3 +165,80 @@ The global `held` result is not a C09 schema or validator failure.
 - No issue closure was performed.
 - No neural-state mutation or trainer run was performed.
 - Prometheus was not used.
+
+## Residual audit correction | 2026-11-07
+
+This section supersedes the earlier remediation disposition where it conflicts,
+without rewriting either the immutable H3 FAIL or the implementation history above.
+A fresh residual audit against the repaired branch found that six H3 findings are
+mechanically closed, while Major 3 still lacks the shared production authority seam
+needed to claim closure.
+
+### Major 4 hardening - accepted descendant suffix only
+
+The original successor-crash repair accepted the ancestor transaction record as a
+prefix of a longer shared-ledger suffix, but ancestor recovery filtered later manifest
+records before proving that they belonged to the current accepted descendant lineage.
+That permitted a validly encoded accepted-C09 record for a foreign/non-descendant
+manifest to be ignored during ancestor recovery.
+
+`recover_transaction()` now validates accepted-C09 records after the transaction line
+against the current accepted manifest lineage. Every accepted-C09 tail record must be
+complete, canonical under its own manifest, and owned by a manifest in that lineage;
+non-C09 shared-ledger records remain opaque to this transaction recovery path.
+
+Failing-before regression:
+`test_ancestor_recovery_rejects_foreign_manifest_suffix` raised no error before the
+repair. Passing-after exact M3 proof runs that negative together with
+`test_ancestor_commit_crash_recovers_after_successor_append`, preserving the legitimate
+successor path.
+
+### Major 3 residual - A13 -> C09 temporal invalidation authority gap
+
+The prior claim that a packed-frame `TIME` dependency over the approved-context digest
+closed production expiry/as-of invalidation was too strong. The owner is production
+code, but the focused regression obtains its `TaskScope` and `SourceGrant` frontier from
+the synthetic context fixture and manually applies a correction. The actual Factory
+training/evaluation source paths construct `TaskScope` with fixed
+`observed_frontier=0` / `effective_time=0` and issue PUBLIC_FORMAL grants with
+`observed_at=0`, `effective_from=0`, and no finite `effective_until`. No non-test caller
+of `project_as_of()` / `bind_as_of_dependency()` supplies a production expiry boundary.
+
+The existing A13.3 authority already defines the correct local semantic transition:
+`transition_context()` emits typed `C09ContextInvalidation` when a previously approved
+context changes or becomes held, including time-driven validity changes. Its accepted
+A13.3 receipt explicitly states that the transition is pure and that downstream C09
+owns durable delivery/consumption of that local invalidation event. C09 currently has no
+such consumption contract: its accepted runtime and `RevalidationQueue` are built around
+signed `CorrectionEvent` authority. There is no existing production signer, source-owned
+expiry issuer, or accepted event mapping that permits C09 to reinterpret the A13 event
+as a signed correction.
+
+An experimental owner-local temporal-hold patch was tested during this audit, but it
+required a test-only call that supplied a changed compiler config to an already-created
+owner. Production never does that: changed `CompiledEncoderInput` authority constructs a
+new owner. The experiment was therefore reverted in the effective candidate rather than
+claimed as proof.
+
+Residual classification: `SHARED_CONTRACT / AUTHORITY_GAP`, not a safely local patch.
+Closing it requires an authoritative A13 -> C09 durable invalidation/consumption seam
+(or an equivalent source-owned temporal authority) before another implementation can be
+honestly claimed. This remediation does not fabricate a signer, wall clock, source
+expiry, or new accepted-event ontology to make the test green.
+
+### Residual exact-head verification
+
+- Exact local candidate: `c39655c26f2889c6b5b7912bef6483f6fcbcb5d2`.
+- M3 exact detached worktree: `/Users/emilie/Code/bamf-752-c39655c2`.
+- Accepted-runtime custody suite: 14/14 PASS.
+- Widened deterministic C09/custody/projection/authority ring: 51/51 PASS.
+- `git diff --check`: PASS.
+- `BILQIS_QUALITY_BASE_REF=bd3657e170c8bdc046a7bb28524c0fb829ca7ce9 npm run quality:changed`: PASS,
+  with 0 structure/governance violations and 0 new changed-file smell findings;
+  legacy-trainer 7/7 PASS and BAMF flow-control 15/15 PASS.
+- `python3 -B scripts/verify_bamf_0_2_contracts.py`: 43/43 PASS.
+- Global workstack remains the same eight-key dependency hold with `issues: []` and
+  `registry_integrity: valid`; it is not a C09 validator failure.
+
+Current truthful disposition: H3 remains historical FAIL; six findings are repaired;
+Major 3 remains open on the authority seam above. No H4 is authorized or implied.
