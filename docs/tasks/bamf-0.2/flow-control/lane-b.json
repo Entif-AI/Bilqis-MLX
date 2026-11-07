@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "d29fd6cd290d88f0b3dbd1557b7ce229db0caab3",
-  "updated_at": "2026-11-05T06:27:03+00:00",
+  "observed_unified": "0afb12a08848a6f2aba3b83b26f1466ea708d857",
+  "updated_at": "2026-11-07T02:32:52+00:00",
   "exception": null,
   "items": [
     {
@@ -340,6 +340,15 @@
       "preserved_branch": "codex/bamf02-b-451-selector-custody-20261103",
       "summary": "Ready PR849; pinned EGM PASS0B/0M/0N and CPU19/19. UNBOUND selector identity/schema/cold custody only; hosted and human merge pending.",
       "resume_trigger": null
+    },
+    {
+      "issue": 476,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "0afb12a08848a6f2aba3b83b26f1466ea708d857",
+      "summary": "B12.3 full-completion work active on a fresh issue branch, reconciling historical scalar migration, accepted global optimizer steps, preclip participation masking, and persisted row-age separation against current reviewed unified.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b12-3-476-complete-20261106"
     }
   ]
 }
