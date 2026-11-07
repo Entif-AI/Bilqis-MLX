@@ -23,6 +23,7 @@ SNAPSHOT_IGNORED_NAMES = frozenset({
     ".git", ".local", ".pytest_cache", ".venv", "__pycache__",
     "node_modules", "venv",
 })
+MUTATION_IGNORED_NAMES = SNAPSHOT_IGNORED_NAMES | frozenset({"_private"})
 SOURCE_MUTATED_EXIT = 86
 
 
@@ -41,18 +42,18 @@ def _snapshot_ignore(_directory: str, names: list[str]) -> set[str]:
     return set(names).intersection(SNAPSHOT_IGNORED_NAMES)
 
 
-def _snapshot_entries(root: Path):
+def _snapshot_entries(root: Path, *, ignored_names=SNAPSHOT_IGNORED_NAMES):
     root = root.resolve()
     for path in sorted(root.rglob("*")):
         relative = path.relative_to(root)
-        if any(part in SNAPSHOT_IGNORED_NAMES for part in relative.parts):
+        if any(part in ignored_names for part in relative.parts):
             continue
         yield path, relative
 
 
-def _tree_digest(root: Path) -> str:
+def _tree_digest(root: Path, *, ignored_names=SNAPSHOT_IGNORED_NAMES) -> str:
     digest = hashlib.sha256()
-    for path, relative in _snapshot_entries(root):
+    for path, relative in _snapshot_entries(root, ignored_names=ignored_names):
         identity = relative.as_posix().encode("utf-8")
         mode = f"{path.lstat().st_mode & 0o7777:o}".encode("ascii")
         if path.is_symlink():
@@ -83,6 +84,59 @@ def _validate_snapshot_symlinks(root: Path) -> None:
             raise RuntimeError(f"detached source symlink escapes workdir: {path}")
 
 
+def _git_toplevel(source: Path) -> Path | None:
+    completed = subprocess.run(
+        ["git", "-C", str(source), "rev-parse", "--show-toplevel"],
+        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, check=False,
+    )
+    if completed.returncode:
+        return None
+    return Path(completed.stdout.strip()).resolve()
+
+
+def _prepare_git_snapshot(source: Path, snapshot: Path) -> bool:
+    """Create a real detached Git worktree when source is one repository root."""
+    if _git_toplevel(source) != source:
+        return False
+    completed = subprocess.run(
+        ["git", "-C", str(source), "worktree", "add", "--detach", str(snapshot), "HEAD"],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=False,
+    )
+    if completed.returncode:
+        raise RuntimeError(
+            "detached git worktree creation failed: " + completed.stderr.strip())
+    for child in snapshot.iterdir():
+        if child.name == ".git":
+            continue
+        if child.is_dir() and not child.is_symlink():
+            shutil.rmtree(child)
+        else:
+            child.unlink()
+    shutil.copytree(
+        source, snapshot, symlinks=True, ignore=_snapshot_ignore,
+        copy_function=shutil.copy2, dirs_exist_ok=True,
+    )
+    return True
+
+
+def _bind_local_runtime(source: Path, snapshot: Path) -> None:
+    """Expose an ignored local venv without copying it into every snapshot."""
+    source_venv = source / ".venv"
+    snapshot_venv = snapshot / ".venv"
+    if not source_venv.exists() or snapshot_venv.exists():
+        return
+    snapshot_venv.symlink_to(source_venv, target_is_directory=True)
+
+
+def _discard_snapshot(source: Path, snapshot: Path, *, git_snapshot: bool) -> None:
+    if git_snapshot:
+        subprocess.run(
+            ["git", "-C", str(source), "worktree", "remove", "--force", str(snapshot)],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False,
+        )
+    shutil.rmtree(snapshot, ignore_errors=True)
+
+
 def _snapshot_workdir(source: Path, snapshot: Path) -> dict[str, str]:
     """Copy one stable worktree image for every process in a detached run."""
     source = Path(source).resolve()
@@ -99,11 +153,15 @@ def _snapshot_workdir(source: Path, snapshot: Path) -> dict[str, str]:
     _validate_snapshot_symlinks(source)
     before = _tree_digest(source)
     snapshot.parent.mkdir(parents=True, exist_ok=True)
+    git_snapshot = False
     try:
-        shutil.copytree(
-            source, snapshot, symlinks=True, ignore=_snapshot_ignore,
-            copy_function=shutil.copy2,
-        )
+        git_snapshot = _prepare_git_snapshot(source, snapshot)
+        if not git_snapshot:
+            shutil.copytree(
+                source, snapshot, symlinks=True, ignore=_snapshot_ignore,
+                copy_function=shutil.copy2,
+            )
+        _bind_local_runtime(source, snapshot)
         after = _tree_digest(source)
         copied = _tree_digest(snapshot)
         if before != after:
@@ -111,7 +169,7 @@ def _snapshot_workdir(source: Path, snapshot: Path) -> dict[str, str]:
         if copied != after:
             raise RuntimeError("detached source snapshot digest mismatch")
     except Exception:
-        shutil.rmtree(snapshot, ignore_errors=True)
+        _discard_snapshot(source, snapshot, git_snapshot=git_snapshot)
         raise
     return {"source_sha256": after, "snapshot_sha256": copied}
 
@@ -151,6 +209,8 @@ def _worker(args) -> int:
     pid_file.write_text(f"{os.getpid()}\n", encoding="utf-8")
     started = _utc_now()
     snapshot_sha256 = _tree_digest(workdir)
+    mutation_guard_sha256 = _tree_digest(
+        workdir, ignored_names=MUTATION_IGNORED_NAMES)
     if args.snapshot_sha256 and snapshot_sha256 != args.snapshot_sha256:
         raise SystemExit("detached source snapshot changed before worker start")
     initial = {
@@ -162,6 +222,7 @@ def _worker(args) -> int:
         "workdir": str(workdir),
         "source_sha256": args.source_sha256 or snapshot_sha256,
         "snapshot_sha256": snapshot_sha256,
+        "mutation_guard_sha256": mutation_guard_sha256,
         "command": args.command,
         "log": str(log),
         "started_at": started,
@@ -189,7 +250,9 @@ def _worker(args) -> int:
         )
         finished = _utc_now()
         final_snapshot_sha256 = _tree_digest(workdir)
-        source_mutated = final_snapshot_sha256 != snapshot_sha256
+        final_mutation_guard_sha256 = _tree_digest(
+            workdir, ignored_names=MUTATION_IGNORED_NAMES)
+        source_mutated = final_mutation_guard_sha256 != mutation_guard_sha256
         returncode = SOURCE_MUTATED_EXIT if source_mutated else completed.returncode
         stream.write(
             (f"DETACHED_LONG_RUN_END {finished} label={args.label!r} "
@@ -202,6 +265,7 @@ def _worker(args) -> int:
         "command_returncode": completed.returncode,
         "source_mutated": source_mutated,
         "final_snapshot_sha256": final_snapshot_sha256,
+        "final_mutation_guard_sha256": final_mutation_guard_sha256,
         "finished_at": finished,
     }
     _write_json(receipt, final)

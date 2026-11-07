@@ -29,6 +29,9 @@ from bilqis_mlx.runtime.bamf_bundle import (
 from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
 from bilqis_mlx.runtime.factory_candidate_training import FactoryDeliveryObservation
 from bilqis_mlx.runtime.factory_complete_solver import factory_evaluation_instrument
+from bilqis_mlx.runtime.cognitive_solver import (
+    GenerationBinding, RouteKind, SolveBudget, SolveContext, solve_task,
+)
 from bilqis_mlx.runtime.factory_task_authority import (
     factory_task_authority, factory_task_training_goal,
 )
@@ -37,7 +40,8 @@ from bilqis_mlx.runtime.factory_training_bridge import (
 )
 from bilqis_mlx.runtime.atlas_training_adapter import pad_microbatches
 from bilqis_mlx.runtime.task_goal_readout import (
-    task_goal_route_decisions, task_goal_route_plan, task_goal_training_targets,
+    b11_task_goal_proposer, task_goal_route_decisions, task_goal_route_plan,
+    task_goal_training_targets,
 )
 from bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_live_support import (
     HP, genesis_bundle, live_factory_context,
@@ -162,6 +166,37 @@ class FactoryTrainingBridgeTests(SourceBackboneTestBase):
                 self.assertTrue(output.decisions)
                 for decision in output.decisions:
                     self.assertTrue(bool(mx.all(mx.isfinite(decision.logits))))
+
+    def test_live_b11_proposer_routes_source_binding_into_pure_operator(self):
+        """Exercise source authority -> B11 proposer -> pure C04 operator."""
+        rows, prepared = self.prepare("A.IDENTITY", 37118, 1)
+        compiled = prepared.compiled_rows[0]
+        authority, plan = self.route_context(compiled)
+        proposer = b11_task_goal_proposer(
+            self.candidate.retained_state.optimizer.parameters,
+            compiled, plan, authority)
+
+        result = solve_task(
+            authority.goal,
+            SolveContext(authority.binding, neural_proposer=proposer),
+            GenerationBinding(
+                self.generation, authority.goal.semantic_release,
+                authority.source_binding_sha256),
+            SolveBudget(authority.goal.budget))
+
+        receipt = result.dag_receipts[-1]
+        node = authority.goal.expression_or_holes.nodes[0]
+        legal = {ref.identity for ref in node.candidate_operand_refs[0]}
+        self.assertIs(result.route, RouteKind.NEURAL_COMPOSITION)
+        self.assertEqual(result.neural_calls, 1)
+        self.assertEqual(result.local_refinement_calls, 0)
+        self.assertEqual(
+            sum(item.operation_count for item in result.dag_receipts), 1)
+        self.assertEqual(receipt.executed_nodes, ("choice:root",))
+        self.assertEqual(receipt.selected_bindings[0][1], "SELECT_BOOLEAN")
+        self.assertIn(receipt.selected_bindings[0][2][0], legal)
+        self.assertIn(result.answer.value, (False, True))
+        self.assertEqual(rows[0]["capability"], "A.IDENTITY")
 
     def test_source_owner_mints_b10_operator_training_target(self):
         rows, prepared = self.prepare("C.ADD", 37115, 3)
