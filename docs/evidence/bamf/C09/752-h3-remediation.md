@@ -565,3 +565,45 @@ including the explicit-policy-expiry crossing. Historical H3, H4 round 1, and H4
 round 2 remain immutable failure receipts. This checkpoint asserts only that the
 complete known round-two finding set has been repaired; a new fresh-context
 whole-candidate review remains the merge-readiness gate.
+
+### H4 round 3 exact-head acceptance
+
+Fresh isolated whole-candidate H4 round 3 reviewed exact remote-equal candidate
+`fa667a8b0ad1cb6dba628b0771f69a4965e98a2c` against reviewed unified
+`cc48ac40d875f0c2ae8ffbdc70001dbfc4815334` using pinned Elephant-Goldfish
+`b3a35956759bf7f024af2ff061b2e0b44b438e4c`.
+
+All three requested independent lenses passed:
+
+- implementation-readiness: **PASS - 0 Blockers, 0 Majors, 0 Notes**;
+- codebase/ownership: **PASS - 0 Blockers, 0 Majors**;
+- semantic/comprehension: **PASS - 0 Blockers, 0 Majors**.
+
+The round re-traced the repaired authority and integration seams rather than treating
+the prior focused tests as sufficient by themselves. Review confirmed that #906's
+source/policy-issued temporal authority is required at accepted C09 ingress; raw
+caller-selected expiry cannot mint a durable invalidation; the event remains typed
+`C09ContextInvalidation` and separate from `CorrectionEvent`; no wall-clock, TTL,
+evidence-time, or signer authority is fabricated; historical source-generation
+provenance remains distinct from current accepted execution eligibility; and both
+ordinary and package-import C05 screening require accepted-runtime/C09 custody before
+solver use. Live/cold holds, stale replay, correction ancestry, crash recovery,
+dependency indexing and publication gates exposed no unsettled severe defect.
+
+Mechanical evidence on the accepted lineage includes the previously recorded
+**72/72** widened runtime/custody/capability ring, **11/11** package-import/source
+custody ring, Factory capability **50 PASS / 0 FAIL / 6 explicit A01-mount skips**,
+real mounted A01 source witness **3/3 PASS**, BAMF mirrors **43/43 PASS**, and green
+changed-scope structure/governance/smell/legacy-trainer/flow/diff checks.
+
+Review history remains append-only and immutable:
+
+- H3: **FAIL - 3 Blockers, 4 Majors, 0 Nits**;
+- H4 round 1: **FAIL - 0 Blockers, 2 Majors, 0 Nits**;
+- H4 round 2: **FAIL - 0 Blockers, 1 Major, 0 Nits**;
+- H4 round 3: **PASS - 0 Blockers, 0 Majors, 0 Nits/Notes**.
+
+Engineering disposition: issue #752 is EGM-accepted for governed turn-in at exact
+semantic/review head `fa667a8b...`. Subsequent evidence/flow/PR bookkeeping is
+nonsemantic and does not invalidate H4 unless it changes implementation, tests, or
+governing semantics. No neural/trainer mutation and no self-merge are authorized.

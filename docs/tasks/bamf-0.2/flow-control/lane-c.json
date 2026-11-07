@@ -133,9 +133,9 @@
       "issue": 752,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "f7537a0a5874ef031d992f71ee86f42ee9447d71",
+      "head_sha": "fa667a8b0ad1cb6dba628b0771f69a4965e98a2c",
       "preserved_branch": "codex/752-post-egm-h1-fixes-20261107",
-      "summary": "H3 historical FAIL remains immutable. H4 round 1 on 5480830d failed 0B/2M and is repaired at 4ff3294a. Fresh H4 round 2 on acc1500a failed 0B/1M because package-import C05 screening omitted accepted C09 runtime custody; all three lenses converged and found no other severe issue. The gap has failing-before proof and semantic repair f7537a0a; package/source custody 11/11, Factory capability 50 pass with 6 explicit A01-mount skips, quality, flow, and diff hygiene are green. Candidate remains ACTIVE pending a new fresh-context whole-candidate review.",
+      "summary": "EGM accepted at exact whole-candidate review head fa667a8b: fresh H4 round 3 PASS across readiness, codebase/ownership and semantic/comprehension lenses with 0 Blockers / 0 Majors / 0 Nits. Historical H3 FAIL 3B/4M and H4 failures 0B/2M then 0B/1M remain immutable append-only evidence. All discovered defects are repaired with red-to-green proof; runtime/custody/capability, package-import custody, A01 source witness, contracts, quality, flow and diff hygiene are green. ACTIVE only until governed PR turn-in bookkeeping completes.",
       "resume_trigger": null
     },
     {
