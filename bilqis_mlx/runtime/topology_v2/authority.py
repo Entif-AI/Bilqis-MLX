@@ -93,7 +93,7 @@ class B01GenerationAuthority:
 def b01_generation_authority(extents: GenerationExtents) -> B01GenerationAuthority:
     """Bind the accepted B01 census and current B01 implementation surface."""
     if type(extents) is not GenerationExtents:
-        raise ValueError("B01_GENERATION_EXTENTS_AUTHORITY_INVALID")
+        raise ValueError("B01_GENERATION_EXTENTS_TYPE_INVALID")
     topology = ModelTopologySpecV2()
     return B01GenerationAuthority(
         bamf_parameter_census(topology, extents),
@@ -105,7 +105,7 @@ def validate_b01_generation_authority(
         extents: GenerationExtents) -> tuple[ModelTopologySpecV2, str]:
     """Reconstruct B01 authority; a matching caller record does not mint it."""
     if type(authority) is not B01GenerationAuthority:
-        raise ValueError("B01_GENERATION_AUTHORITY_INVALID")
+        raise ValueError("B01_GENERATION_AUTHORITY_TYPE_INVALID")
     expected = b01_generation_authority(extents)
     if authority != expected:
         raise ValueError("B01_GENERATION_AUTHORITY_DRIFT")
