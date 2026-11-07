@@ -131,6 +131,7 @@ def _source_producer(params, compiled_batch, generation, cache):
             params,
             compiled_batch.sources,
             compiled_batch.feature_schema,
+            compiled_batch.atlas_feature_artifact_owner,
         ), None
     accepted_cache = require_accepted_execution_cache(cache)
     if (
@@ -145,6 +146,7 @@ def _source_producer(params, compiled_batch, generation, cache):
             params,
             compiled_batch.sources,
             compiled_batch.feature_schema,
+            compiled_batch.atlas_feature_artifact_owner,
         ), accepted_cache
     bind_motif_artifact_owner(accepted_cache, compiled_batch.compiled)
     return start_retained_source_backbone_producer(
@@ -153,6 +155,7 @@ def _source_producer(params, compiled_batch, generation, cache):
         compiled_batch.sources,
         compiled_batch.feature_schema,
         accepted_cache.motif_manifest,
+        compiled_batch.atlas_feature_artifact_owner,
         seal=_B13_EXECUTION_SEAL,
     ), accepted_cache
 

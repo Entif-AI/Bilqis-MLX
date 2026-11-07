@@ -178,10 +178,8 @@ class ProductionAuthorityTests(unittest.TestCase):
             cold_cache = bind_accepted_correction_authority(
                 self.run, AUTHORITY)
         self.assertIsNot(cold_cache, cache)
-        cold_owner = bind_motif_artifact_owner(cold_cache, compiled)
-        self.assertTrue(cold_owner.queue.held_artifact_ids)
         with self.assertRaises(BilqisError):
-            cold_owner.require(cold_cache, compiled)
+            bind_motif_artifact_owner(cold_cache, compiled)
 
     def test_provenance_cannot_replay_onto_another_candidate_or_step(self):
         self.publish(candidate(parent_state()))

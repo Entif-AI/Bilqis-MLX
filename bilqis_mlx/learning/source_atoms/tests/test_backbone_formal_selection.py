@@ -8,6 +8,7 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.frame_embeddings import FeatureRequest, motif_gate_features
 from bilqis_mlx.learning.frame_embeddings.tests import test_public_formal_types as formal_fixtures
 from bilqis_mlx.learning.source_atoms.backbone import start_source_backbone_producer
+from bilqis_mlx.runtime.atlas_artifact_owner import AtlasFeatureArtifactOwner
 from bilqis_mlx.runtime.block_attnres import DepthFrameFeatures, depth_parameter_view, depth_select
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2, expected_bamf_shapes
 from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest
@@ -51,7 +52,9 @@ class BackboneFormalSelectionTests(SourceBackboneTestBase):
         self.assertTrue(all(next(item for item in features.concepts
                                  if item.semantic_id == request.concept.semantic_id).source_status
                             == "ADMITTED_FORMAL_ABI_UNTYPED" for request in requests))
-        producer = start_source_backbone_producer(compiled, params, (self.source,), schema)
+        producer = start_source_backbone_producer(
+            compiled, params, (self.source,), schema,
+            AtlasFeatureArtifactOwner(features, schema))
         producer.advance()
         frame = DepthFrameFeatures(((requests, requests),), features, 1, atlas_selection=selection)
         view = depth_parameter_view(params, spec=ModelTopologySpecV2(), extents=extents, boundary_group=1)

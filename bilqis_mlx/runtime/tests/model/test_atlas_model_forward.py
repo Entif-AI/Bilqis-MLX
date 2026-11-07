@@ -1,6 +1,8 @@
 """Source-backed B11 forward, loss, gradient, and update ownership."""
 from dataclasses import replace
-from unittest import skipUnless
+from types import SimpleNamespace
+from unittest import TestCase, skipUnless
+from unittest.mock import patch
 
 import mlx.core as mx
 
@@ -31,6 +33,7 @@ from bilqis_mlx.runtime.atlas_revalidation import apply_compiled_batch_correctio
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
+import bilqis_mlx.runtime.atlas_model_forward as forward_impl
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
     _issue_accepted_execution_cache,
 )
@@ -44,6 +47,65 @@ from bilqis_mlx.semantics.released_frame_schemas import (
     load_released_frame_schemas, seal_released_frame_schemas,
 )
 from bilqis_mlx.source_adapters.tests.atoms.helpers import REAL_BUNDLE
+
+
+class AtlasModelOwnerThreadingTests(TestCase):
+    def _batch(self, owner):
+        compiled = SimpleNamespace(
+            extents=SimpleNamespace(motif_key_map_digest="motif-digest"))
+        return SimpleNamespace(
+            compiled=compiled,
+            sources=("source",),
+            feature_schema=object(),
+            atlas_feature_artifact_owner=owner,
+        )
+
+    def test_source_producer_threads_compiled_batch_owner_in_every_cache_mode(self):
+        owner = object()
+        batch = self._batch(owner)
+        params = object()
+        producer = object()
+        with patch.object(
+                forward_impl, "start_source_backbone_producer",
+                return_value=producer) as start:
+            actual, accepted = forward_impl._source_producer(
+                params, batch, "generation", None)
+        self.assertIs(actual, producer)
+        self.assertIsNone(accepted)
+        self.assertIs(start.call_args.args[-1], owner)
+
+        empty_cache = SimpleNamespace(
+            generation_binding="generation",
+            motif_manifest=SimpleNamespace(digest="motif-digest", slots=()),
+        )
+        with patch.object(
+                forward_impl, "require_accepted_execution_cache",
+                return_value=empty_cache), patch.object(
+                forward_impl, "start_source_backbone_producer",
+                return_value=producer) as start:
+            actual, accepted = forward_impl._source_producer(
+                params, batch, "generation", object())
+        self.assertIs(actual, producer)
+        self.assertIs(accepted, empty_cache)
+        self.assertIs(start.call_args.args[-1], owner)
+
+        retained_cache = SimpleNamespace(
+            generation_binding="generation",
+            motif_manifest=SimpleNamespace(
+                digest="motif-digest", slots=(object(),)),
+        )
+        with patch.object(
+                forward_impl, "require_accepted_execution_cache",
+                return_value=retained_cache), patch.object(
+                forward_impl, "bind_motif_artifact_owner") as bind, patch.object(
+                forward_impl, "start_retained_source_backbone_producer",
+                return_value=producer) as start:
+            actual, accepted = forward_impl._source_producer(
+                params, batch, "generation", object())
+        self.assertIs(actual, producer)
+        self.assertIs(accepted, retained_cache)
+        bind.assert_called_once_with(retained_cache, batch.compiled)
+        self.assertIs(start.call_args.args[-1], owner)
 
 
 @skipUnless(REAL_BUNDLE, "real pinned A01 artifact not mounted")
