@@ -11,6 +11,11 @@ def rederive_training_authority(config, selection, feature_artifact_path):
     if type(selection) is not AtlasArtifactSelection:
         _invalid('UPSTREAM_SEMANTIC_AUTHORITY_MISMATCH')
     snapshot = load_pinned_atlas_snapshot(selection)
+    if not config.schemas and not config.schema_map.entries:
+        if config.schema_map.semantic_release != snapshot.release_sha256:
+            _invalid('UPSTREAM_SEMANTIC_AUTHORITY_MISMATCH')
+        return load_source_pinned_feature_manifest(
+            feature_artifact_path, atlas_selection=selection)
     families = tuple(entry['family'] for entry in _source_pins()
                      if entry['semantic_release'] == snapshot.release_sha256
                      and entry['atlas_bundle_id'] == snapshot.bundle_id

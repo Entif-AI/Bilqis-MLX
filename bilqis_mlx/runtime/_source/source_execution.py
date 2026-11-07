@@ -27,6 +27,11 @@ def _source_content(rows) -> str:
         for row in rows))
 
 
+def source_content_digest(rows) -> str:
+    """Digest source-owned row content without derived/reporting fields."""
+    return _source_content(rows)
+
+
 def _source_family(execution, *, seed: int, each: int) -> str:
     return contract_digest({
         "schema": "bilqis.mlx.source-draw-family/v1",
@@ -153,4 +158,6 @@ class SourceExecutionContext:
         return authority
 
 
-__all__ = ("SourceBatchAuthority", "SourceExecutionContext")
+__all__ = (
+    "SourceBatchAuthority", "SourceExecutionContext", "source_content_digest",
+)

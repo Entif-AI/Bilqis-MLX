@@ -6,9 +6,10 @@ import hashlib
 import json
 
 from bilqis_mlx.factory.generation import runtime_adapter_for_release
-from bilqis_mlx.factory.teaching import content_digest
 from bilqis_mlx.runtime.atlas_model_contracts import BamfCompiledBatch
-from bilqis_mlx.runtime.source_execution import SourceExecutionContext
+from bilqis_mlx.runtime.source_execution import (
+    SourceExecutionContext, source_content_digest,
+)
 from bilqis_mlx.semantics.cognitive_dag import TaskGoal
 from bilqis_mlx.semantics.cognitive_operators import OperatorBinding
 from bilqis_mlx.semantics.domains import contract_digest
@@ -122,7 +123,7 @@ def factory_task_authority(
     row = source.source_row
     row_id = row.get("id")
     capability_id = row.get("capability")
-    row_sha256 = content_digest((row,))
+    row_sha256 = source_content_digest((row,))
     generation_binding, release_sha256, training_sha256 = _generation_authority(
         source_context, compiled_batch, row_id, capability_id, row_sha256,
         generation_binding)
