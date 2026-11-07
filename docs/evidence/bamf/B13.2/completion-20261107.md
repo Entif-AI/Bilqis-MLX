@@ -227,3 +227,10 @@ lane-to-unified PR and human review. This receipt does not authorize self-merge 
 live student start. Issue closure remains tied to accepted integration into reviewed
 unified.
 
+Turn-in PR: #909 — `BAMF-0.2 B13.2 | Complete generation custody and exact cold
+resume (#479)`.
+
+PR #909 is opened ready for human review against
+`codex/bamf-unified-base-20261028`, not as a draft queue marker. Hosted checks on the
+exact final PR head are the remaining integration gate. No self-merge is authorized.
+
