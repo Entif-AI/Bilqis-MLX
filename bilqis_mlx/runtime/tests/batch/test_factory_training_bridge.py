@@ -28,7 +28,10 @@ from bilqis_mlx.runtime.bamf_bundle import (
 )
 from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
 from bilqis_mlx.runtime.factory_candidate_training import FactoryDeliveryObservation
-from bilqis_mlx.runtime.factory_complete_solver import factory_evaluation_instrument
+from bilqis_mlx.runtime.factory_complete_solver import (
+    factory_complete_solver, factory_evaluation_instrument,
+)
+from bilqis_mlx.runtime.cognitive_solver import RouteKind
 from bilqis_mlx.runtime.factory_task_authority import (
     factory_task_authority, factory_task_training_goal,
 )
@@ -162,6 +165,26 @@ class FactoryTrainingBridgeTests(SourceBackboneTestBase):
                 self.assertTrue(output.decisions)
                 for decision in output.decisions:
                     self.assertTrue(bool(mx.all(mx.isfinite(decision.logits))))
+
+    def test_live_b11_proposer_routes_source_binding_into_pure_operator(self):
+        """Exercise C04's actual B11 proposer seam, not a decoder-only surrogate."""
+        seed = 37118
+        row = self.context.draw_rows(
+            seed=seed, capability="B.IDBOOLOPS", each=1)[0]
+        instrument = factory_evaluation_instrument(
+            self.context, self.candidate, str(self.artifact), row,
+            source_seed=seed, source_each=1)
+        solver, generation = factory_complete_solver(
+            self.context, self.candidate, str(self.artifact), (instrument,))
+
+        result, _contract = solver.evaluate(instrument.case.goal, generation)
+
+        self.assertIs(result.route, RouteKind.NEURAL_COMPOSITION)
+        self.assertEqual(result.neural_calls, 1)
+        self.assertIsNone(result.score)
+        self.assertEqual(result.answer.type_name, instrument.case.goal.output_signature)
+        self.assertEqual(
+            sum(receipt.operation_count for receipt in result.dag_receipts), 1)
 
     def test_source_owner_mints_b10_operator_training_target(self):
         rows, prepared = self.prepare("C.ADD", 37115, 3)
