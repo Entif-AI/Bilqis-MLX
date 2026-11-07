@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "70a4ef1e883d348920d64083c7546f443a90ef77",
-  "updated_at": "2026-11-05T06:20:10+00:00",
+  "observed_unified": "bd3657e170c8bdc046a7bb28524c0fb829ca7ce9",
+  "updated_at": "2026-11-07T14:13:00+00:00",
   "exception": null,
   "items": [
     {
@@ -128,6 +128,15 @@
       "preserved_branch": "codex/bamf02-c-829-local-handoff-20261104",
       "summary": "20/20focused tests; implementation75e47376preserved. EGM-Failed episode C829-HANDOFF-20261104 exhausted5/5. User questioned further spend; operator recommended parking. No sixth round or PR.",
       "resume_trigger": "Explicit human override for additional review or explicit accepted human disposition underADR127; general continuous-work authority is not an override."
+    },
+    {
+      "issue": 378,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "bd3657e170c8bdc046a7bb28524c0fb829ca7ce9",
+      "preserved_branch": "codex/378-c05-eval-ast-20261107",
+      "summary": "C05 parent integration active for source-AST and partial-forest custody at the evaluation-to-B11 boundary; completed child #501 remains closed and is not reopened.",
+      "resume_trigger": null
     }
   ]
 }
