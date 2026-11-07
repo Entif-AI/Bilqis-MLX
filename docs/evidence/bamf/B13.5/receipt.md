@@ -634,12 +634,13 @@ Fresh whole-candidate round 5 reviewed exact pushed candidate
 `d4bad39a32a80acbffdb9f891a906892ab2e9fab`, and pinned EGM
 `b3a35956759bf7f024af2ff061b2e0b44b438e4c`.
 
-Both requested fresh reviewers completed. Round 5 returned **FAIL**.
+The valid clean reviewer pair completed. Round 5 returned **FAIL**. One earlier
+authority worker self-disqualified after opening historical review narrative, and
+one replacement comprehension worker failed to start; neither contributes a
+disposition. The final independent pair is the clean codebase-details reviewer
+and the clean comprehension/implementation-readiness reviewer.
 
-The codebase-details reviewer found one `TARGET_LOCAL` Blocker. The independent
-comprehension reviewer found the same root defect as a `TARGET_LOCAL` Major, so
-the overlapping observations are promoted to one systemic finding under the EGM
-convergence policy:
+The codebase-details reviewer found one `TARGET_LOCAL` Blocker:
 
 - **multi-release Atlas artifact resolution is missing from accepted feature-lineage
   replay.** `_accepted_feature_chain()` receives one `artifact_path` and reuses
@@ -654,13 +655,23 @@ convergence policy:
   resolver or custody-bound mapping plus a real-loader multi-release cold-read
   regression.
 
-The comprehension reviewer also raised one `PARENT_INTEGRATION` Major: the A02
-planner on reviewed unified does not itself consume the B13 receipt yet. That is a
-real integration-state observation, but #399 is the separately owned downstream
-A02 consumer by the #697 contract. The preserved #399 branch already supplied the
-disposable compatibility proof recorded above. #697 must not absorb A02 authority;
-if work continues after the cap, the integration/ordering observation remains
-routed to the #399 boundary rather than becoming permission to edit A02 here.
+Both clean reviewers independently found one `TARGET_LOCAL` Major:
+
+- **pre-existing accepted non-genesis bundle/v2 lineages are stranded by the new
+  acceptance-bound publication rule.** Reviewed unified publishes accepted BAMF
+  generations as bundle/v2. The round-4 repair now rejects any live generation > 0
+  v2 parent from authorizing a fresh successor, while historical feature-lineage
+  replay also requires the new acceptance-bound manifest schema. Cold load itself
+  still succeeds, but the accepted lineage cannot take and publish the next
+  controlled optimizer step. B13/B13.2 explicitly require cold-resume continuation,
+  and #697 requires their existing custody/cold-resume contract to remain intact.
+  No v2-to-acceptance-bound sealing or migration path exists in this candidate.
+
+Both reviewers initially examined whether acceptance criterion 7 required A02
+consumer edits in this B13 branch, then independently retracted that as a
+`TARGET_LOCAL` finding after applying #697's explicit ownership boundary: #399 is
+the separately owned downstream A02 consumer. The preserved #399 composition is
+cross-owner proof and does not authorize moving A02 implementation into #697.
 
 The five aggregate C09 `BAMF_C09_PACKED_FRAME_IDENTITY_DRIFT` errors remain
 inherited/base-only and unrelated to the round-5 disposition.
