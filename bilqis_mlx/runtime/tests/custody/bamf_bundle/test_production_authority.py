@@ -37,17 +37,24 @@ from bilqis_mlx.learning.atlas_participation import (
 from bilqis_mlx.runtime.bamf_bundle import admission
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     admit_candidate_step, bind_accepted_cache_authority,
+    bind_accepted_correction_authority,
     bind_accepted_execution_cache,
     derive_participation_inputs,
 )
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
-    AcceptedExecutionCache, require_accepted_execution_cache,
+    AcceptedExecutionCache, bind_motif_artifact_owner,
+    require_accepted_execution_cache,
+)
+from bilqis_mlx.runtime.accepted_corrections import (
+    _RUNTIME_OWNER, record_accepted_correction,
 )
 from bilqis_mlx.runtime.atlas_cache_codec import CacheAuthorityRuntime
 from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
 )
+from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
+from bilqis_mlx.learning.tests.test_frame_encoder import FrameEncoderTests
 
 from bilqis_mlx.learning._retention.tests.execution_fixtures import (
     execution_provenance,
@@ -142,6 +149,39 @@ class ProductionAuthorityTests(unittest.TestCase):
         with shape_patch(), self.assertRaises(BilqisError):
             bind_accepted_cache_authority(
                 self.run, registry, lambda: object())
+
+    def test_signed_accepted_correction_replays_into_motif_owner_after_cold_restart(self):
+        self.publish(candidate(parent_state()))
+        with shape_patch():
+            cache = bind_accepted_execution_cache(self.run)
+        fixture = FrameEncoderTests()
+        fixture.setUp()
+        compiled, _vectors, _ast = fixture.compiled_inputs()
+        compiled = replace(
+            compiled,
+            extents=replace(
+                compiled.extents,
+                motif_key_map_digest=cache.motif_manifest.digest,
+            ),
+        )
+        owner = bind_motif_artifact_owner(cache, compiled)
+        correction = _event(owner.source_dependencies[0])
+        with shape_patch():
+            record_accepted_correction(self.run, correction, AUTHORITY)
+        self.assertTrue(owner.queue.held_artifact_ids)
+        with self.assertRaises(BilqisError):
+            owner.require(cache, compiled)
+
+        admission._EXECUTION_CACHE_OWNER.entries.clear()
+        _RUNTIME_OWNER.clear()
+        with shape_patch():
+            cold_cache = bind_accepted_correction_authority(
+                self.run, AUTHORITY)
+        self.assertIsNot(cold_cache, cache)
+        cold_owner = bind_motif_artifact_owner(cold_cache, compiled)
+        self.assertTrue(cold_owner.queue.held_artifact_ids)
+        with self.assertRaises(BilqisError):
+            cold_owner.require(cold_cache, compiled)
 
     def test_production_step_reaches_the_owner_binder(self):
         self.publish(candidate(parent_state()))

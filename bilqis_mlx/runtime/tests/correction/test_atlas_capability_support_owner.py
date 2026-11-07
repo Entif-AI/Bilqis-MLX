@@ -21,6 +21,9 @@ from bilqis_mlx.learning.source_atoms import SourceAtomRow
 from bilqis_mlx.runtime.atlas_capability_support_owner import (
     CapabilitySupportArtifactOwner, load_capability_support_owner,
 )
+from bilqis_mlx.runtime.accepted_corrections import (
+    _RUNTIME_OWNER, record_accepted_correction,
+)
 from bilqis_mlx.runtime.atlas_revalidation import apply_capability_support_correction
 from bilqis_mlx.runtime.atlas_training_authority import _issue as issue_training_authority
 from bilqis_mlx.runtime.atlas_training_contracts import (
@@ -166,6 +169,26 @@ class CapabilitySupportOwnerTests(unittest.TestCase):
         self.assertEqual(
             self.load_support(AUTHORITY).support.status,
             "REQUALIFICATION_REQUIRED")
+
+    def test_accepted_correction_stream_delivers_to_live_capability_support_owner(self):
+        self.publish_support()
+        owner = self.load_support(AUTHORITY)
+        correction = _event(_ref(DependencyKind.SOURCE, SOURCE_ROW))
+        with shape_patch():
+            record_accepted_correction(self.run, correction, AUTHORITY)
+        self.assertEqual(
+            owner.queue.held_artifact_ids,
+            (owner.current_node.artifact_id,))
+        with self.assertRaises(BilqisError):
+            owner.require(TARGET)
+
+        _RUNTIME_OWNER.clear()
+        reloaded = self.load_support(AUTHORITY)
+        self.assertEqual(
+            reloaded.queue.held_artifact_ids,
+            (reloaded.current_node.artifact_id,))
+        with self.assertRaises(BilqisError):
+            reloaded.require(TARGET)
 
     def test_deleting_active_hold_state_cannot_masquerade_as_clear(self):
         published, _authority = self.publish_support()

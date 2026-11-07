@@ -45,6 +45,7 @@ class _AcceptedCacheAuthorityIssuer:
 
     def __init__(self, issue):
         self._issue = issue
+        self._accepted_caches = {}
 
     def issue(self, accepted_cache, registry, eligibility_source=None):
         from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
@@ -55,8 +56,13 @@ class _AcceptedCacheAuthorityIssuer:
         cache = require_accepted_execution_cache(accepted_cache)
         if not isinstance(registry, SourceAuthorityRegistry):
             _invalid()
-        return self._issue(
+        authority = self._issue(
             registry, cache._cache_mac_key, eligibility_source)
+        self._accepted_caches[id(authority)] = cache
+        return authority
+
+    def accepted_cache(self, authority):
+        return self._accepted_caches.get(id(authority))
 
 
 _authority_state, _raw_authority_issue = _new_authority_owner()
@@ -104,6 +110,10 @@ class CacheAuthorityRuntime:
         registry, _, _, _ = _authority_state(self)
         registry.verify_detached(owner_id, dependency, signature_hex, payload)
 
+    def _source_authority_registry(self):
+        registry, _, _, _ = _authority_state(self)
+        return registry
+
     def _current_eligibility_inputs(self):
         """Read current rebuild authority from the owner-bound resolver."""
         _, _, source, _ = _authority_state(self)
@@ -129,6 +139,19 @@ def bind_cache_artifact_owner(authority, artifact, binding):
     if owner is None:
         owner = _issue_exact_cache_artifact_owner(authority, artifact, binding)
         owners[key] = owner
+    accepted_cache = _ACCEPTED_CACHE_AUTHORITY_ISSUER.accepted_cache(authority)
+    if accepted_cache is not None and accepted_cache._run_dir is not None:
+        from bilqis_mlx.runtime.accepted_corrections import (
+            register_accepted_target,
+        )
+        from bilqis_mlx.runtime.atlas_owner_ingress import _route
+        register_accepted_target(
+            accepted_cache._run_dir,
+            accepted_cache.accepted_manifest_sha256,
+            "EXACT_CACHE", owner,
+            lambda event, registry: _route(owner, event, registry),
+            accepted_cache._correction_registry,
+        )
     return owner
 
 

@@ -105,7 +105,8 @@ def _source_context_identity(authority, student, inputs) -> tuple[str, str, str,
         clearance.source_owner, clearance.dependency(),
         clearance.signature_hex, clearance.signing_bytes())
     clearance_sha256 = validate_export_clearance_context(
-        clearance, selection, frontier, inputs.export_artifact_digests)
+        clearance, selection, frontier, inputs.export_artifact_digests,
+        authority._source_authority_registry())
     projection = project_context(inputs.frames, task, frontier, policy)
     if type(projection) is not ApprovedContextProjection:
         _invalid()

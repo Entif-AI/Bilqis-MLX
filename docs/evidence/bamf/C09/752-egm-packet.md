@@ -105,6 +105,16 @@ wording and legitimate new evidence must not be treated as the stale replay.
 - Signed correction ingress routes only to owners with a direct dependent for
   the corrected dependency. An unrelated correction therefore cannot replace
   another owner's active hold queue.
+- The production ingress is the accepted-run signed correction stream owned by
+  `SourceExecutionContext.record_correction()`. It verifies the immutable C09
+  event, appends it to the accepted run's durable `events.jsonl`, syncs the
+  canonical data-plane event ledger, and synchronously delivers it to live
+  registered owners. Real Factory compilation registers B11 ATLAS_FEATURE /
+  PACKED_FRAME custody; real Factory solver construction registers C04
+  OPERATOR_COMPOSITION custody; accepted motif, exact-cache and capability-
+  support owners register on bind/load. Cold restart re-establishes the
+  host-provisioned source authority and replays the same signed accepted-run
+  ledger before those retained artifacts may influence output.
 - `BamfCompiledBatch` and `SolveContext` validation preserve already-issued
   owner objects; validation never replaces correction custody.
 - Generic C09 fixtures are not sufficient evidence unless the corresponding
@@ -121,6 +131,7 @@ Review the complete diff from
 - `bilqis_mlx/runtime/_correction/owners/operator_composition_owner.py`
 - `bilqis_mlx/runtime/_correction/owners/atlas_capability_support_owner.py`
 - `bilqis_mlx/runtime/_correction/owners/atlas_owner_ingress.py`
+- `bilqis_mlx/runtime/_correction/accepted_corrections.py`
 - `bilqis_mlx/learning/source_atoms/`
 - `bilqis_mlx/learning/frame_encoder/compiled.py`
 - `bilqis_mlx/runtime/_model/`
@@ -128,13 +139,14 @@ Review the complete diff from
 - `bilqis_mlx/runtime/cognitive_solver*.py`
 - `bilqis_mlx/learning/_retention/atlas_acceptance.py`
 - `bilqis_mlx/runtime/_custody/bamf_bundle/admission.py`
+- `bilqis_mlx/runtime/_custody/bamf_bundle/accepted_runtime.py`
 - `bilqis_mlx/runtime/_capability/capability_authority.py`
 - focused tests under `bilqis_mlx/runtime/tests/correction/`, capability,
   custody, cache, frame-encoder and source-atom test surfaces.
 
 ## Verification receipts before EGM
 
-- Focused C09/custody acceptance suite: `100 passed, 0 failed, 0 skipped`.
+- Focused C09/custody acceptance suite: `109 passed, 0 failed, 0 skipped`.
 - `npm run quality:changed`: development structure OK; governance integrity
   OK; BAMF flow control OK; 15/15 flow-control tests passed; zero new
   changed-file smell findings.
