@@ -1,9 +1,12 @@
 """BAMF pre-RoPE QKV projection and boundary-aware causal convolution."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+import hashlib
 from importlib.metadata import version as _package_version
+import json
 from typing import Mapping
+import weakref
 
 import mlx.core as mx
 
@@ -157,6 +160,30 @@ def _valid_digest(value) -> bool:
             all(character in "0123456789abcdef" for character in value))
 
 
+def _attention_parameters(params: Mapping[str, mx.array]) -> tuple[mx.array, ...]:
+    """Borrow the exact in-process attention tensors used by one cache operation."""
+    if not isinstance(params, Mapping):
+        ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+    try:
+        parameters = tuple(params[name] for name in ATTENTION_PARAMETER_NAMES)
+    except KeyError:
+        ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+    if any(not isinstance(value, mx.array) for value in parameters):
+        ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+    return parameters
+
+
+def _attention_parameter_digest(parameters: tuple[mx.array, ...], *,
+                                generation: str, layer: int) -> str:
+    """Return a deterministic generation-bound receipt without reading tensor bytes."""
+    record = tuple(
+        (name, tuple(value.shape), str(value.dtype))
+        for name, value in zip(ATTENTION_PARAMETER_NAMES, parameters, strict=True))
+    return hashlib.sha256(json.dumps(
+        (generation, layer, record), separators=(",", ":"),
+        ensure_ascii=True).encode("ascii")).hexdigest()
+
+
 @dataclass(frozen=True)
 class AttentionScope:
     """Source scope coordinates and caller-bound identity of the resulting prefix."""
@@ -187,6 +214,8 @@ class AttentionCache:
     valid: mx.array
     layer: int
     generation: str
+    parameter_identity: tuple[weakref.ReferenceType, ...] = field(repr=False, compare=False)
+    parameter_digest: str
     prefix_digest: str
     start_offset: int
     rope_variant: tuple = ROPE_VARIANT
@@ -196,6 +225,7 @@ class AttentionCache:
         dimensions, base, traditional, scale = self.rope_variant
         return {
             "schema": CACHE_SCHEMA, "layer": self.layer, "generation": self.generation,
+            "parameter_digest": self.parameter_digest,
             "prefix_digest": self.prefix_digest, "prefix_length": self.key.shape[2],
             "start_offset": self.start_offset,
             "scope": self.scope_ids.tolist(), "sequence": self.sequence_ids.tolist(),
@@ -216,8 +246,18 @@ def _validate_attention(params, hidden, mask, scope, cache, offset) -> None:
         if scope.parent_prefix_digest is not None:
             ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.MISMATCH)
         return
+    current_parameters = _attention_parameters(params)
+    current_parameter_digest = _attention_parameter_digest(
+        current_parameters, generation=scope.generation, layer=scope.layer)
     if (type(cache) is not AttentionCache or cache.layer != scope.layer or
             cache.generation != scope.generation or cache.prefix_digest != scope.parent_prefix_digest or
+            type(cache.parameter_identity) is not tuple or
+            len(cache.parameter_identity) != len(current_parameters) or
+            any(not isinstance(cached, weakref.ReferenceType)
+                for cached in cache.parameter_identity) or
+            any(cached() is not current for cached, current in
+                zip(cache.parameter_identity, current_parameters, strict=True)) or
+            cache.parameter_digest != current_parameter_digest or
             cache.rope_variant != ROPE_VARIANT or cache.mlx_version != MLX_VERSION or
             type(cache.convolution) is not QKVConvolutionCache or
             not isinstance(cache.key, mx.array) or cache.key.ndim != HEAD_ARRAY_RANK or
@@ -280,7 +320,12 @@ def ccgqa(params: Mapping[str, mx.array], h: mx.array, mask: mx.array, scope: At
     attended = mx.where(has_key[:, None], attended, 0)
     joined = attended.transpose(0, 2, 1, 3).reshape(batch, length, QUERY_HEADS * HEAD_DIMENSION)
     output = joined @ params["output"].T
+    parameters = _attention_parameters(params)
+    parameter_identity = tuple(weakref.ref(value) for value in parameters)
     next_cache = AttentionCache(k, v, convolution, scope_ids, all_sequences, valid,
-                                scope.layer, scope.generation, scope.prefix_digest,
+                                scope.layer, scope.generation, parameter_identity,
+                                _attention_parameter_digest(
+                                    parameters, generation=scope.generation,
+                                    layer=scope.layer), scope.prefix_digest,
                                 offset if cache is None else cache.start_offset)
     return output, next_cache
