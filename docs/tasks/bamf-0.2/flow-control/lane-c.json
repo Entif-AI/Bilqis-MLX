@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "9301e41ef215b9d035449c3260c7cd0f8ee0b5a7",
-  "updated_at": "2026-11-07T18:29:11Z",
+  "observed_unified": "cc48ac40d875f0c2ae8ffbdc70001dbfc4815334",
+  "updated_at": "2026-11-07T19:33:00Z",
   "exception": null,
   "items": [
     {
@@ -127,6 +127,15 @@
       "head_sha": "ebd5a417bb73525a0853a03291dd1ee065d88357",
       "preserved_branch": "codex/746-c12-import-commit-20261102",
       "summary": "Review-ready #746 authority closure is turned in at PR #903: production C12 receive -> A12/C09 verify -> B12 import -> C05 screen -> B13 publication, with exact-head and expanded affected validation green and no child EGM spent.",
+      "resume_trigger": null
+    },
+    {
+      "issue": 752,
+      "pr": 910,
+      "state": "TURNED_IN",
+      "head_sha": "fa667a8b0ad1cb6dba628b0771f69a4965e98a2c",
+      "preserved_branch": "codex/752-post-egm-h1-fixes-20261107",
+      "summary": "EGM accepted at exact whole-candidate review head fa667a8b: fresh H4 round 3 PASS across readiness, codebase/ownership and semantic/comprehension lenses with 0 Blockers / 0 Majors / 0 Nits. Historical H3 FAIL 3B/4M and H4 failures 0B/2M then 0B/1M remain immutable append-only evidence. All discovered defects are repaired with red-to-green proof; runtime/custody/capability, package-import custody, A01 source witness, contracts, quality, flow and diff hygiene are green. Turned in as ready PR #910 to reviewed unified; no self-merge authorized.",
       "resume_trigger": null
     },
     {

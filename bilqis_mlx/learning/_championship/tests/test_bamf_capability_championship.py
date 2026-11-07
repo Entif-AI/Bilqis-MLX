@@ -235,7 +235,8 @@ class CapabilityChampionshipTests(unittest.TestCase):
             filled = replace(goal, expression_or_holes=replace(
                 goal.expression_or_holes, nodes=(replace(node, operator_id="ADD", candidate_operator_ids=()),)))
             composition = QualifiedComposition(
-                filled, contract_digest(binding), binding.frontier.rights_epoch,
+                filled, contract_digest(binding), generation,
+                binding.frontier.rights_epoch,
                 binding.frontier.correction_generation, "9" * 64)
             return SolveContext(binding, qualified_compositions=(composition,),
                                 qualification_verifier=lambda item: True)

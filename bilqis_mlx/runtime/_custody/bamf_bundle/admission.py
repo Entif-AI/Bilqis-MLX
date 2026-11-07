@@ -11,11 +11,10 @@ another candidate, generation, step, topology or extents state.
 """
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 import sys
 
-from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
 from bilqis_mlx.learning.atlas_acceptance import (
     candidate_identity_digest, mint_acceptance_binding,
 )
@@ -28,132 +27,19 @@ from bilqis_mlx.learning.atlas_candidate import (
 from bilqis_mlx.learning.atlas_plasticity import group_eligibility, next_update_mode
 from bilqis_mlx.learning.atlas_participation import ActiveAdmittedRows
 from bilqis_mlx.runtime.atlas_candidate_step import production_candidate_step
-from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.model_topology_v2 import ParameterCensus
 
-from .codec import load_bamf_bundle
-from .publication import (
-    _live_bundle_manifest, _pointer_lock, _read_pointer,
-    _require_published_acceptance,
-    publish_bamf_generation,
+from .accepted_runtime import (
+    AcceptedGenerationIdentity, _identity_from_pointer,
+    _EXECUTION_CACHE_OWNER, _published_in_memory_identity, _read_accepted,
+    bind_accepted_cache_authority, bind_accepted_correction_authority,
+    bind_accepted_execution_cache, interactive_accepted_cache_inference,
+    load_accepted_generation,
 )
+from .publication import publish_bamf_generation
 from .records import (
-    BAMF_POINTER_SCHEMA, BamfBundleCandidate, CompleteStudent,
-    canonical, invalid, sha, sidecar_records,
+    BamfBundleCandidate, CompleteStudent, invalid,
 )
-from .execution_cache import _issue_accepted_execution_cache
-
-
-@dataclass(frozen=True)
-class AcceptedGenerationIdentity:
-    """The published identity of the accepted generation in custody."""
-
-    run_id: str
-    generation: int
-    manifest_sha256: str
-    topology_digest: str
-    extents_digest: str
-    optimizer_step: int
-    candidate_identity_sha256: str
-
-
-def _read_accepted(run_dir: Path):
-    run_dir = Path(run_dir)
-    pointer_path = run_dir / "bamf-state.json"
-    with _pointer_lock(run_dir):
-        pointer = _read_pointer(pointer_path)
-        if pointer is None:
-            invalid("BAMF_GENERATION_POINTER_MISSING")
-        student = load_bamf_bundle(
-            run_dir / "bamf-bundles" / pointer["manifest_sha256"],
-            expected_manifest_sha256=pointer["manifest_sha256"])
-        if (student.run_id != pointer["run_id"]
-                or student.generation != pointer["generation"]
-                or student.parent_manifest_sha256 != pointer["parent_manifest_sha256"]):
-            invalid("BAMF_GENERATION_POINTER_DRIFT")
-        _require_published_acceptance(run_dir, pointer, student)
-    return pointer, student
-
-
-def load_accepted_generation(run_dir: Path) -> CompleteStudent:
-    """Load the currently published accepted generation under the pointer lock."""
-    return _read_accepted(run_dir)[1]
-
-
-def bind_accepted_execution_cache(run_dir: Path):
-    """Authenticate the live accepted generation and mint its retained B08 cache."""
-    run_dir = Path(run_dir)
-    _pointer, student = _read_accepted(run_dir)
-    identity = _published_in_memory_identity(run_dir, student)
-    generation_binding = execution_generation_digest(
-        student.retained_state.optimizer.parameters,
-        spec=student.topology,
-        extents=student.extents,
-    )
-    return _issue_accepted_execution_cache(
-        run_id=identity.run_id,
-        generation=identity.generation,
-        accepted_manifest_sha256=identity.manifest_sha256,
-        generation_binding=generation_binding,
-        motif_manifest=student.retained_state.allocations.manifest,
-    )
-
-
-def _identity_from_pointer(
-        student: CompleteStudent, pointer: dict) -> AcceptedGenerationIdentity:
-    """Bind the current student to the exact accepted B13 pointer."""
-    manifest = pointer.get("manifest_sha256") if isinstance(pointer, dict) else None
-    if (type(student) is not CompleteStudent
-            or not isinstance(pointer, dict)
-            or pointer.get("schema") != BAMF_POINTER_SCHEMA
-            or pointer.get("run_id") != student.run_id
-            or pointer.get("generation") != student.generation
-            or pointer.get("parent_manifest_sha256") != student.parent_manifest_sha256
-            or not isinstance(manifest, str) or len(manifest) != SHA256_HEX_LENGTH
-            or any(char not in "0123456789abcdef" for char in manifest)):
-        invalid("BAMF_GENERATION_POINTER_DRIFT")
-    return AcceptedGenerationIdentity(
-        run_id=student.run_id,
-        generation=student.generation,
-        manifest_sha256=manifest,
-        topology_digest=student.topology.digest,
-        extents_digest=student.extents.digest,
-        optimizer_step=student.retained_state.optimizer_step,
-        candidate_identity_sha256=candidate_identity_digest(student.retained_state))
-
-
-def _published_in_memory_identity(
-        run_dir: Path, student: CompleteStudent) -> AcceptedGenerationIdentity:
-    """Authenticate an in-memory student without reconstructing its tensor bundle."""
-    run_dir = Path(run_dir)
-    if type(student) is not CompleteStudent:
-        invalid("BAMF_GENERATION_POINTER_DRIFT")
-    with _pointer_lock(run_dir):
-        pointer = _read_pointer(run_dir / "bamf-state.json")
-        if pointer is None:
-            invalid("BAMF_GENERATION_POINTER_MISSING")
-        identity = _identity_from_pointer(student, pointer)
-        manifest = _live_bundle_manifest(run_dir, pointer)
-        if (manifest["implementation_sha256"] != student.implementation_sha256
-                or canonical(manifest["topology"])
-                != canonical(student.topology.to_record())
-                or canonical(manifest["extents"])
-                != canonical(student.extents.to_record())
-                or canonical(manifest["provenance"])
-                != canonical(student.provenance.to_record())
-                or canonical(manifest["transition"])
-                != canonical(dict(student.transition))
-                or manifest["optimizer"]["step"] != student.retained_state.optimizer_step
-                or canonical(manifest["optimizer"]["hyperparameters"])
-                != canonical(asdict(student.optimizer_hyperparameters))):
-            invalid("BAMF_GENERATION_POINTER_DRIFT")
-        for name, record in sidecar_records(student).items():
-            stored = manifest["sidecars"].get(name)
-            if (not isinstance(stored, dict)
-                    or stored.get("sha256") != sha(canonical(record))):
-                invalid("BAMF_GENERATION_POINTER_DRIFT")
-        _require_published_acceptance(run_dir, pointer, student)
-    return identity
 
 
 def derive_successor_bundle(parent: CompleteStudent, retained_state: CandidateState,
@@ -279,7 +165,8 @@ def accept_and_publish(run_dir: Path, bundle: BamfBundleCandidate,
                        retained_state: CandidateState, *,
                        decision: CandidateRetentionDecision,
                        feature_sha256: str,
-                       reserve_gib: float = 100.0) -> dict:
+                       reserve_gib: float = 100.0,
+                       training_authorities=None) -> dict:
     """Publish a candidate that the retention decision owner has accepted.
 
     Publication does not decide that the candidate was accepted. The retention
@@ -289,6 +176,7 @@ def accept_and_publish(run_dir: Path, bundle: BamfBundleCandidate,
     """
     binding = mint_acceptance_binding(
         decision, retained_state, run_id=bundle.run_id,
-        generation=bundle.generation, feature_sha256=feature_sha256)
+        generation=bundle.generation, feature_sha256=feature_sha256,
+        training_authorities=training_authorities)
     return publish_bamf_generation(
         run_dir, bundle, acceptance=binding, reserve_gib=reserve_gib)

@@ -8,6 +8,7 @@ from pathlib import Path
 _OWNER_GROUPS = (
     "_projection", "_admission", "_capability", "_source", "_model", "_custody",
     "_operator", "_teacher", "_depth", "_correction", "_batch",
-    "_model/cache", "_model/backbone",
+    "_model/cache", "_model/backbone", "_correction/owners",
+    "_correction/accepted",
 )
 __path__.extend(str(Path(__file__).parent / name) for name in _OWNER_GROUPS)
