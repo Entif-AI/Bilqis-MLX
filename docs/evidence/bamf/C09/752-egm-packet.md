@@ -116,7 +116,7 @@ Review the complete diff from
 
 ## Verification receipts before EGM
 
-- Focused C09/custody acceptance suite: `83 passed, 0 failed, 0 skipped`.
+- Focused C09/custody acceptance suite: `84 passed, 0 failed, 0 skipped`.
 - `npm run quality:changed`: development structure OK; governance integrity
   OK; BAMF flow control OK; 15/15 flow-control tests passed; zero new
   changed-file smell findings.

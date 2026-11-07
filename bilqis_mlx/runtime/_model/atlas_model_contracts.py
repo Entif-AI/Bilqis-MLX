@@ -232,7 +232,7 @@ class BamfCompiledBatch:
                     self.compiled.features, self.feature_schema),
             )
         else:
-            owner.require(self.compiled.features, self.feature_schema)
+            owner.require(self.compiled.features)
 
 
 __all__ = (
