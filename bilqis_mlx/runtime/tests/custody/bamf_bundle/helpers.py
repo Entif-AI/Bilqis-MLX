@@ -28,7 +28,7 @@ from bilqis_mlx.runtime.bamf_bundle import (
     BamfBundleCandidate, prepare_initial_generation, publish_bamf_generation,
     publish_initial_generation, load_bamf_generation,
 )
-from bilqis_mlx.runtime._custody.bamf_bundle.admission import derive_successor_bundle
+from bilqis_mlx.runtime.bamf_bundle.admission import derive_successor_bundle
 from bilqis_mlx.runtime.bamf_bundle.genesis_foundation import (
     initial_foundation_sidecars,
 )
