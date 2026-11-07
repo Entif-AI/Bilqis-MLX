@@ -197,7 +197,7 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
         registry = SourceAdapterRegistry((replace(registered, draw=draw),))
         return replace(self.context, source_registry=registry)
 
-    def compile(self, rows, *, release_sha=None, encoders=None, policy='allow',
+    def compile(self, rows, *, release_sha=None, policy='allow',
                 generation=None, sealed=(), context_mutator=None,
                 frames_override=None, source_ast_override=None,
                 delivery_override=None, extra_kwargs=None,
@@ -241,7 +241,7 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
             answer_plan_for=lambda *args: {**answer_plan_for(*args), 'generation_binding': self.model_generation},
             frames_for_ast=frames_for_ast, task_scope=task,
             source_frontier=frontier, eligibility_policy=context_policy,
-            target_encoders=encoders, generation_binding=generation or self.model_generation,
+            generation_binding=generation or self.model_generation,
             sealed_holdout_ids=sealed, **(extra_kwargs or {}))
 
     def test_cross_source_ast_and_frame_substitution_is_rejected(self):

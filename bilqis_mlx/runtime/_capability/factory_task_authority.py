@@ -141,17 +141,20 @@ def factory_task_authority(
             execution.provider_id, execution.provider_implementation_sha256)
     except ValueError:
         _invalid("BAMF_C04_SOURCE_TASK_LOWERER_REQUIRED")
-    family = row.get("source_family_id")
+    training = compiled_batch.training_authority
+    family = None if training is None else training.source_family_id
+    episode = None if training is None else training.episode_id
+    if family is None:
+        family = row.get("source_family_id")
     if not isinstance(family, str) or not family:
         family = contract_digest({
             "schema": "bilqis.mlx.source-draw-family/v1",
             "provider": execution.provider_id,
             "implementation": execution.provider_implementation_sha256,
             "capability": execution.capability_id,
-            "seed": source.source_seed,
-            "each": source.source_each,
         })
-    episode = row.get("episode_id")
+    if episode is None:
+        episode = row.get("episode_id")
     if not isinstance(episode, str) or not episode:
         episode = row_id
     lowered = lowerer.lower(
@@ -187,4 +190,35 @@ def factory_task_authority(
     return item
 
 
-__all__ = ("FactoryTaskAuthority", "factory_task_authority")
+def factory_task_training_goal(
+    source_context: SourceExecutionContext,
+    compiled_batch: BamfCompiledBatch,
+    authority: FactoryTaskAuthority,
+):
+    """Resolve training-only route truth through the same source lowerer owner."""
+    if (type(source_context) is not SourceExecutionContext
+            or type(compiled_batch) is not BamfCompiledBatch
+            or type(authority) is not FactoryTaskAuthority):
+        _invalid("BAMF_C04_FACTORY_TASK_TRAINING_TARGET_INVALID")
+    source = compiled_batch.sources[0]
+    row = source.source_row
+    execution = source_context.release.execution_plan.capability_map.get(
+        authority.capability_id)
+    if (execution is None or row.get("id") != authority.source_row_id
+            or source_content_digest((row,)) != authority.source_row_sha256):
+        _invalid("BAMF_C04_FACTORY_TASK_TRAINING_TARGET_INVALID")
+    lowerer = require_task_goal_lowerer(
+        execution.provider_id, execution.provider_implementation_sha256)
+    resolved = lowerer.resolve(
+        dict(row), semantic_release=compiled_batch.compiled.features.semantic_release,
+        source_root=source_context.source_root, graph=source_context.graph,
+        release=source_context.release, capability=execution)
+    if type(resolved) is not TaskGoal:
+        _invalid("BAMF_C04_FACTORY_TASK_TRAINING_TARGET_INVALID")
+    return resolved
+
+
+__all__ = (
+    "FactoryTaskAuthority", "factory_task_authority",
+    "factory_task_training_goal",
+)

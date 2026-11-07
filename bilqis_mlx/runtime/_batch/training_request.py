@@ -24,8 +24,7 @@ def require_compile_request(
         source_authority: SourceBatchAuthority, rehearsal_by_id: dict,
         visible_ends: dict, source_ast_for: Callable, answer_plan_for: Callable,
         frames_for_ast: Callable, task_scope, source_frontier,
-        eligibility_policy, generation_binding: str, target_encoders: dict | None,
-        sealed_holdout_ids) -> tuple:
+        eligibility_policy, generation_binding: str, sealed_holdout_ids) -> tuple:
     if not isinstance(source_context, SourceExecutionContext):
         _invalid("SOURCE_CONTEXT_REQUIRED")
     if not isinstance(delivered_rows, (tuple, list)) or not delivered_rows:
@@ -70,9 +69,7 @@ def require_compile_request(
             or not isinstance(teacher_strategy, dict)
             or not isinstance(rehearsal_by_id, dict)
             or not isinstance(visible_ends, dict)
-            or not isinstance(generation_binding, str) or not generation_binding
-            or (target_encoders is not None
-                and not isinstance(target_encoders, dict))):
+            or not isinstance(generation_binding, str) or not generation_binding):
         _invalid("DELIVERY_METADATA_INVALID")
     if (not isinstance(sealed_holdout_ids, (tuple, list, frozenset))
             or any(not isinstance(identity, str)

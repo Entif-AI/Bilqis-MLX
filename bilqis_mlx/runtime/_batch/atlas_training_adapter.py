@@ -19,7 +19,7 @@ from bilqis_mlx.semantics.context_eligibility import (
 )
 from bilqis_mlx.semantics.domains import contract_digest
 from .atlas_training_contracts import (
-    BamfModelInput, BamfTarget, BamfTargetEvidence, BamfDeliveryProvenance,
+    BamfModelInput, BamfTarget, BamfDeliveryProvenance,
     BamfTrainingRow, BamfTrainingBatch, PaddedMicrobatch,
     _invalid, _freeze, _issue_training_batch, require_current_release,
 )
@@ -57,7 +57,8 @@ def _answer_plan(plan, head, visible_end, generation_binding):
                 or not isinstance(decision['id'], str) or not decision['id']
                 or not isinstance(decision['roleID'], str) or not decision['roleID']
                 or type(decision['occurrence']) is not int or decision['occurrence'] < 0
-                or decision['kind'] not in ('VALUE', 'ROLE', 'CONTROL', 'EPISTEMIC')
+                or decision['kind'] not in (
+                    'VALUE', 'ROLE', 'CONTROL', 'EPISTEMIC', 'OPERATOR', 'OPERAND')
                 or not isinstance(decision['legalValues'], (list, tuple)) or not decision['legalValues']
                 or not isinstance(decision['depends_on'], (list, tuple))
                 or any(not isinstance(dep, str) or not dep for dep in decision['depends_on'])
@@ -133,26 +134,16 @@ def _compile_model_input(
     model_input = BamfModelInput(prefix, features, eligibility_digest, plan)
     return kind, gold, families, head, plan, model_input, atlas_features
 
-def _compile_target(row, *, kind, gold, families, head, plan, target_encoders) -> BamfTarget:
-    encoder = (target_encoders or {}).get(kind)
-    if isinstance(gold, str) and (
-            gold not in families[kind] or gold not in head.values):
+def _compile_target(row, *, kind, gold, families, head, plan) -> BamfTarget:
+    """Compile only released registry-owned scalar modalities.
+
+    B10 structured route supervision is derived later from FactoryTaskAuthority;
+    callers cannot inject target encoders at this boundary.
+    """
+    if (not isinstance(gold, str) or gold not in families[kind]
+            or gold not in head.values):
         _invalid('ANSWER_NOT_RELEASED')
-    if encoder is None:
-        if (not isinstance(gold, str) or gold not in families[kind]
-                or gold not in head.values):
-            _invalid('ANSWER_NOT_RELEASED')
-        return BamfTarget(kind, gold, head.token_ids[head.values.index(gold)], True)
-    if not callable(encoder):
-        _invalid('TARGET_ENCODER_INVALID')
-    evidence = BamfTargetEvidence(_freeze(gold), plan, _freeze(row.get('auxiliary_labels')))
-    encoded = encoder(evidence, head)
-    if (not isinstance(encoded, BamfTarget) or encoded.kind != kind
-            or not (type(encoded.mask) is bool
-                    or isinstance(encoded.mask, tuple)
-                    and all(type(mask) is bool for mask in encoded.mask))):
-        _invalid('TARGET_ENCODER_INVALID')
-    return BamfTarget(kind, _freeze(encoded.value), _freeze(encoded.token_id), encoded.mask)
+    return BamfTarget(kind, gold, head.token_ids[head.values.index(gold)], True)
 
 def _compile_native_target(row, *, kind: str, gold, head, source_context: SourceExecutionContext):
     native = row.get('native_output')
@@ -176,8 +167,7 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
                            compiler_config, feature_artifact_path, answer_plan_for: Callable,
                            frames_for_ast: Callable, task_scope: TaskScope,
                            source_frontier: SourceFrontier, eligibility_policy: ContextPolicy, generation_binding: str,
-                           target_encoders: dict | None = None, sealed_holdout_ids=(),
-                           atlas_selection=None) -> BamfTrainingBatch:
+                           sealed_holdout_ids=(), atlas_selection=None) -> BamfTrainingBatch:
     """Compile source-oracled delivery through accepted A05/A06 owners."""
     release, capabilities, owner = _require_compile_request(delivered_rows, source_context,
         delivery=delivery, delivery_capability=delivery_capability,
@@ -188,7 +178,7 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
         visible_ends=visible_ends, source_ast_for=source_ast_for, answer_plan_for=answer_plan_for,
         frames_for_ast=frames_for_ast, task_scope=task_scope, source_frontier=source_frontier,
         eligibility_policy=eligibility_policy, generation_binding=generation_binding,
-        target_encoders=target_encoders, sealed_holdout_ids=sealed_holdout_ids)
+        sealed_holdout_ids=sealed_holdout_ids)
     row_count = len(delivered_rows)
     compiler_configs = _row_contexts(
         compiler_config, FrameCompilerConfig, row_count,
@@ -221,8 +211,8 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
             atlas_selection=atlas_selection, feature_artifact_path=feature_artifact_path,
             answer_plan_for=answer_plan_for, generation_binding=generation_binding,
             atlas_features=atlas_features)
-        target = _compile_target(row, kind=kind, gold=gold, families=families, head=head,
-            plan=plan, target_encoders=target_encoders)
+        target = _compile_target(
+            row, kind=kind, gold=gold, families=families, head=head, plan=plan)
         native_target = _compile_native_target(row, kind=kind, gold=gold, head=head,
                                                source_context=source_context)
         provenance = BamfDeliveryProvenance(identity, source_content_digest((row,)), source_id,

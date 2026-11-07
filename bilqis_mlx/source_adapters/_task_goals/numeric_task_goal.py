@@ -1,6 +1,7 @@
 """Gold-blind C04 lowering for admitted finite-number arithmetic rows."""
 from __future__ import annotations
 import json
+from dataclasses import replace
 from types import MappingProxyType
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
@@ -218,6 +219,53 @@ def lower_numeric_task_goal(
         numeric_domain=domain, numeric_source_handle=domain_handle)
     program = DAGProgram(tuple(nodes), nodes[-1].node_id, capability.capability_id)
     return task_goal_from_program(program, binding, goal_id=row_id), binding
+
+
+def resolve_numeric_task_goal(
+    row: dict, *, semantic_release: str, capability, release, **kwargs,
+):
+    """Resolve the source-owned route hole without exposing it to model input."""
+    if not isinstance(row, dict):
+        _invalid("BAMF_C04_NUMERIC_TRAINING_TARGET_INVALID")
+    if row.get("answer_kind") == "binary":
+        from .answer_choice_task_goal import resolve_answer_choice_task_goal
+        return resolve_answer_choice_task_goal(
+            row, semantic_release=semantic_release, capability=capability,
+            release=release, **kwargs)
+    source = dict(row)
+    source.pop("gold", None)
+    goal, _binding = lower_numeric_task_goal(
+        source, semantic_release=semantic_release, capability=capability,
+        release=release, **kwargs)
+    expression = decode(row["record"]["symbols"])
+    declared = capability.capability_id.removeprefix("C.")
+    if declared == "NUMBER" and isinstance(expression, Literal):
+        from .answer_choice_task_goal import resolve_answer_choice_task_goal
+        return resolve_answer_choice_task_goal(
+            row, semantic_release=semantic_release, capability=capability,
+            release=release, **kwargs)
+    if (isinstance(expression, Apply)
+            and expression.operator.symbol == "school.op.EQ"
+            and declared != "EQ"):
+        expression = expression.arguments[0]
+    if not isinstance(expression, Apply):
+        _invalid("BAMF_C04_NUMERIC_TRAINING_TARGET_INVALID")
+    actual = expression.operator.symbol.removeprefix("school.op.")
+    nodes = []
+    resolved = 0
+    for node in goal.expression_or_holes.nodes:
+        if node.operator_id is None:
+            if actual not in node.candidate_operator_ids:
+                _invalid("BAMF_C04_NUMERIC_TRAINING_TARGET_INVALID")
+            node = replace(
+                node, operator_id=actual, candidate_operator_ids=(), constraints=())
+            resolved += 1
+        nodes.append(node)
+    if resolved != 1:
+        _invalid("BAMF_C04_NUMERIC_TRAINING_TARGET_INVALID")
+    return replace(
+        goal, expression_or_holes=replace(
+            goal.expression_or_holes, nodes=tuple(nodes)))
 
 
 __all__ = ("lower_numeric_task_goal",)

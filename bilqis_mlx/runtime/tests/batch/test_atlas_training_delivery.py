@@ -21,14 +21,20 @@ class TrainingDeliveryTests(AtlasTrainingAdapterTest):
             require_independent_cohorts(batch, batch)
         spoofed = [{**self.rows[0], 'source_family_id': 'family-2',
                     'episode_id': 'episode-2'}]
-        same_family = self.compile(
+        distinct_family = self.compile(
             spoofed, source_context=self.source_owned_context(spoofed))
-        with self.assertRaises(BilqisError):
-            require_independent_cohorts(batch, same_family)
+        self.assertNotEqual(
+            batch.rows[0].provenance.source_family_id,
+            distinct_family.rows[0].provenance.source_family_id)
+        require_independent_cohorts(batch, distinct_family)
         sibling_rows = self.context.draw_rows(
             seed=19, capability='Z.C0', each=1)
         sibling = self.compile(sibling_rows, source_seed=19)
-        require_independent_cohorts(batch, sibling)
+        self.assertEqual(
+            batch.rows[0].provenance.source_family_id,
+            sibling.rows[0].provenance.source_family_id)
+        with self.assertRaises(BilqisError):
+            require_independent_cohorts(batch, sibling)
 
     def test_released_signatures_select_rules_without_grade_input(self):
         from bilqis_mlx.runtime.atlas_training_adapter import resolve_batch_rules

@@ -5,13 +5,17 @@ import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
 import mlx.core as mx
 from mlx.utils import tree_flatten
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory.teaching import describe_delivered_teaching
-from bilqis_mlx.learning.atlas_readout import DecisionOutput, ExecutionMode
+from bilqis_mlx.learning.atlas_readout import (
+    DecisionKind, DecisionOutput, ExecutionMode,
+)
+from bilqis_mlx.learning.student_ops import train_bamf_factory_step
 from bilqis_mlx.learning.source_atoms.tests.backbone_test_support import (
     SourceBackboneTestBase,
 )
@@ -20,20 +24,29 @@ from bilqis_mlx.runtime.atlas_model import (
 )
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.bamf_bundle import (
-    authenticate_bamf_candidate_feature_context,
+    authenticate_bamf_candidate_feature_context, publish_bamf_generation,
 )
+from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
+from bilqis_mlx.runtime.factory_candidate_training import FactoryDeliveryObservation
 from bilqis_mlx.runtime.factory_complete_solver import factory_evaluation_instrument
-from bilqis_mlx.runtime.factory_task_authority import factory_task_authority
+from bilqis_mlx.runtime.factory_task_authority import (
+    factory_task_authority, factory_task_training_goal,
+)
 from bilqis_mlx.runtime.factory_training_bridge import (
     prepare_factory_training_batch,
 )
 from bilqis_mlx.runtime.atlas_training_adapter import pad_microbatches
 from bilqis_mlx.runtime.task_goal_readout import (
-    task_goal_route_decisions, task_goal_route_plan,
+    task_goal_route_decisions, task_goal_route_plan, task_goal_training_targets,
 )
 from bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_live_support import (
-    genesis_bundle, live_factory_context,
+    HP, genesis_bundle, live_factory_context,
 )
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import acceptance
+from bilqis_mlx.runtime.teacher_observation_capture import (
+    ObservationCapture, read_sidecar, store_sidecar,
+)
+from bilqis_mlx.runtime.model_topology_v2 import expected_bamf_shapes
 from bilqis_mlx.semantics.atlas.feature_io import persist_feature_manifest
 
 
@@ -151,6 +164,20 @@ class FactoryTrainingBridgeTests(SourceBackboneTestBase):
                 for decision in output.decisions:
                     self.assertTrue(bool(mx.all(mx.isfinite(decision.logits))))
 
+    def test_source_owner_mints_b10_operator_training_target(self):
+        rows, prepared = self.prepare("C.ADD", 37115, 1)
+        compiled = prepared.compiled_rows[0]
+        authority = factory_task_authority(self.context, compiled)
+        resolved = factory_task_training_goal(self.context, compiled, authority)
+        targets, mask = task_goal_training_targets(authority.goal, resolved)
+        route = task_goal_route_decisions(authority.goal)
+        self.assertEqual(len(route), 1)
+        self.assertIs(route[0].kind, DecisionKind.OPERATOR)
+        self.assertEqual(targets[0].decision_id, route[0].decision_id)
+        self.assertEqual(targets[0].value, "ADD")
+        self.assertEqual(mask, {route[0].decision_id: True})
+        self.assertEqual(rows[0]["capability"], "C.ADD")
+
     def test_disposable_gradient_is_finite_and_target_cannot_change_logits(self):
         seed = 37114
         rows, prepared = self.prepare("B.IDBOOLOPS", seed, 1)
@@ -213,6 +240,86 @@ class FactoryTrainingBridgeTests(SourceBackboneTestBase):
             tuple(row["id"] for row in rows))
         self.assertEqual(
             tuple(sum(mask) for mask in packed[0].padding_mask), lengths)
+
+    def test_student_ops_executes_one_real_factory_candidate_step_and_records_cost(self):
+        rows = tuple(self.context.draw_rows(
+            seed=37116, capability="B.IDBOOLOPS", each=1))
+        execution = self.context.release.execution_plan.capability_map["B.IDBOOLOPS"]
+        delivery = describe_delivered_teaching(
+            self.context.release, "B.IDBOOLOPS",
+            execution.teaching_option_ids[0], rows)
+        with TemporaryDirectory() as run_dir:
+            with patch(
+                "bilqis_mlx.runtime.bamf_bundle.codec.assert_headroom",
+                return_value=None,
+            ):
+                publish_bamf_generation(
+                    run_dir, self.candidate,
+                    acceptance=acceptance(self.candidate))
+            parent = load_accepted_generation(run_dir)
+            capture = ObservationCapture(run_dir, {})
+            capture.attempt_id = "c02-parent-step"
+            proposal = store_sidecar(run_dir, {"attempt_id": capture.attempt_id})
+            capture.proposal_id = proposal["sha256"]
+            capture.select_option("B.IDBOOLOPS", None)
+            observation = FactoryDeliveryObservation(
+                capture, 1, rows, 37116)
+            decay = {
+                item.name: item.decay
+                for item in expected_bamf_shapes(parent.topology, parent.extents)
+            }
+            result = train_bamf_factory_step(
+                run_dir, self.context, parent, str(self.artifact),
+                self.feature_receipt.path, rows,
+                capability="B.IDBOOLOPS", delivery=delivery,
+                requested_count=2, source_seed=37116, source_each=1,
+                optimizer_step_seed=17,
+                teacher_strategy={"policy": "c02-parent-production"},
+                teacher_hparams=HP, decay=decay, max_norm=1.0,
+                observation=observation)
+            self.assertEqual(result.transaction.update_steps, 1)
+            self.assertEqual(result.resource_plan.groups, ((0,),))
+            self.assertEqual(len(result.route_targets), 1)
+            self.assertEqual(result.realized_cost["optimizer_steps"], 1)
+            payload = read_sidecar(run_dir, capture.steps[0])
+            self.assertEqual(
+                payload["positions"][0]["row"]["sha256"],
+                store_sidecar(run_dir, rows[0])["sha256"])
+            self.assertEqual(
+                payload["controls"]["realized_cost"]["optimizer_steps"], 1)
+
+    def test_production_step_fails_closed_before_multirow_gradient_accumulation(self):
+        rows = tuple(self.context.draw_rows(
+            seed=37117, capability="A.IDENTITY", each=2))
+        execution = self.context.release.execution_plan.capability_map["A.IDENTITY"]
+        delivery = describe_delivered_teaching(
+            self.context.release, "A.IDENTITY",
+            execution.teaching_option_ids[0], rows)
+        with TemporaryDirectory() as run_dir:
+            with patch(
+                "bilqis_mlx.runtime.bamf_bundle.codec.assert_headroom",
+                return_value=None,
+            ):
+                publish_bamf_generation(
+                    run_dir, self.candidate,
+                    acceptance=acceptance(self.candidate))
+            parent = load_accepted_generation(run_dir)
+            capture = ObservationCapture(run_dir, {})
+            observation = FactoryDeliveryObservation(capture, 1, rows, 37117)
+            decay = {
+                item.name: item.decay
+                for item in expected_bamf_shapes(parent.topology, parent.extents)
+            }
+            with self.assertRaises(BilqisError):
+                train_bamf_factory_step(
+                    run_dir, self.context, parent, str(self.artifact),
+                    self.feature_receipt.path, rows,
+                    capability="A.IDENTITY", delivery=delivery,
+                    requested_count=2, source_seed=37117, source_each=2,
+                    optimizer_step_seed=18,
+                    teacher_strategy={"policy": "c02-parent-production"},
+                    teacher_hparams=HP, decay=decay, max_norm=1.0,
+                    observation=observation)
 
 
 if __name__ == "__main__":
