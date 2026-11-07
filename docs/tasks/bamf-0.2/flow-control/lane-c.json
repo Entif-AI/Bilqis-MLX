@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "5f8f3d4b42cc4656020e4427c7d8e822825a36f9",
-  "updated_at": "2026-11-07T16:53:58Z",
+  "observed_unified": "fd9ef2890149ab5ae395640ce980a20f13a388c6",
+  "updated_at": "2026-11-07T19:22:56Z",
   "exception": null,
   "items": [
     {
@@ -135,17 +135,17 @@
       "state": "ACTIVE",
       "head_sha": "03e7a3c060bc49962ccfe049417090ea2c1c6ec0",
       "preserved_branch": "codex/752-post-egm-h1-fixes-20261107",
-      "summary": "H3 historical FAIL preserved. #906 producer authority is now EGM-Passed and merged into reviewed unified as PR #907 / fd9ef289, and the user explicitly resumed #752. Lane-C consumer c8c96758 remains the accepted durable C09ContextInvalidation path. Resuming the canonical branch for current-unified integration, full Major 3 proof, and the next governed whole-candidate review.",
+      "summary": "H3 historical FAIL preserved. #906 producer authority is EGM-Passed and merged into reviewed unified as PR #907 / fd9ef289, and the user explicitly resumed #752. Lane-C consumer c8c96758 remains the accepted durable C09ContextInvalidation path. The branch is integrating current unified, including #478 custody hardening, before full Major 3 proof and the next whole-candidate review.",
       "resume_trigger": null
     },
     {
       "issue": 829,
-      "pr": null,
-      "state": "WAITING",
-      "head_sha": "93fe19ab2504ed6bd17156cb6f58487892ec77b7",
+      "pr": 908,
+      "state": "TURNED_IN",
+      "head_sha": "94d5763dcedd049db65e0a080238786ca0f53542",
       "preserved_branch": "codex/bamf02-c-829-local-handoff-20261104",
-      "summary": "20/20focused tests; implementation75e47376preserved. EGM-Failed episode C829-HANDOFF-20261104 exhausted5/5. User questioned further spend; operator recommended parking. No sixth round or PR.",
-      "resume_trigger": "Explicit human override for additional review or explicit accepted human disposition underADR127; general continuous-work authority is not an override."
+      "summary": "Human-authorized EGM round 6 accepted; semantic repair 94d5763d with 21/21 focused proof. Synced reviewed unified 9301e41e without semantic implementation/test change and opened ready PR #908 from sync head 246e7ea3.",
+      "resume_trigger": null
     }
   ]
 }

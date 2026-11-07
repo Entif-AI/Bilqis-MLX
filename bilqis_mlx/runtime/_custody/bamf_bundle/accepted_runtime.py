@@ -2,21 +2,18 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-import json
 from pathlib import Path
 from threading import RLock
 
 from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
-from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.learning.atlas_acceptance import (
-    AcceptedCandidateBinding, candidate_identity_digest,
-)
+from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 
 from .codec import load_bamf_bundle
 from .execution_cache import _issue_accepted_execution_cache, bind_cache_authority
 from .publication import (
-    ACCEPTANCE_DIR, _live_bundle_manifest, _pointer_lock, _read_pointer,
+    _live_bundle_manifest, _pointer_lock, _read_pointer,
+    _require_published_acceptance,
 )
 from .records import (
     BAMF_POINTER_SCHEMA, CompleteStudent, canonical, invalid, sha, sidecar_records,
@@ -67,6 +64,7 @@ def _read_accepted(run_dir: Path):
                 or student.generation != pointer["generation"]
                 or student.parent_manifest_sha256 != pointer["parent_manifest_sha256"]):
             invalid("BAMF_GENERATION_POINTER_DRIFT")
+        _require_published_acceptance(run_dir, pointer, student)
     return pointer, student
 
 
@@ -126,25 +124,7 @@ def _published_in_memory_identity(
             if (not isinstance(stored, dict)
                     or stored.get("sha256") != sha(canonical(record))):
                 invalid("BAMF_GENERATION_POINTER_DRIFT")
-        acceptance_path = (
-            run_dir / ACCEPTANCE_DIR / f"{identity.manifest_sha256}.json")
-        if acceptance_path.is_symlink() or not acceptance_path.is_file():
-            invalid("BAMF_GENERATION_ACCEPTANCE_MISSING")
-        try:
-            acceptance = AcceptedCandidateBinding.from_record(
-                json.loads(acceptance_path.read_bytes()))
-        except (OSError, UnicodeDecodeError, json.JSONDecodeError, BilqisError):
-            invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
-        if (acceptance.digest != pointer["acceptance_sha256"]
-                or acceptance.run_id != identity.run_id
-                or acceptance.generation != identity.generation
-                or acceptance.feature_sha256 != student.extents.factor_map_digest
-                or acceptance.optimizer_step != identity.optimizer_step
-                or acceptance.candidate_identity_sha256
-                != identity.candidate_identity_sha256
-                or acceptance.step_proof_sha256 != tuple(
-                    proof.digest for proof in student.retained_state.step_proofs)):
-            invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+        _require_published_acceptance(run_dir, pointer, student)
     return identity
 
 

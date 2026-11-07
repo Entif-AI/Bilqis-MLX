@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "947a4ddda2c133cabec846b09d3b58d18732dcf1",
-  "updated_at": "2026-11-07T10:09:42Z",
+  "observed_unified": "9301e41ef215b9d035449c3260c7cd0f8ee0b5a7",
+  "updated_at": "2026-11-07T18:21:51Z",
   "exception": null,
   "items": [
     {
@@ -216,6 +216,15 @@
       "preserved_branch": "codex/bamf02-a-842-execution-structure-20261105",
       "summary": "Scoped842round1 source-inspection/literal-proof repair durable and regression-verified at a0a00fef; consumed by parent candidate, no separate PR.",
       "resume_trigger": null
+    },
+    {
+      "issue": 906,
+      "pr": 907,
+      "state": "TURNED_IN",
+      "head_sha": "48c2dbad85137b0589d64a9df8a1c2b062d48232",
+      "summary": "A13 EGM-Mitigation follow-on turned in as PR #907. Round 1 EGM rejected caller-owned temporal authority and a skipped real-A01 witness; repair 3b80a76c replaces that seam with a hash-pinned opaque source/policy authority. Current-unified proof: source-context 10/10, C09 boundary 5/5, real A01 3/3 zero skips, changed-scope quality green. Disposable join with authoritative #752 consumer 03e7a3c0 proves hold-before-reuse and cold replay; accepted-runtime 9/9. Targeted EGM re-audit PASS at 4e3b8826 with zero Blocker/Major/Minor/Nit. Remote turn-in head 48c2dbad includes EGM evidence only after the reviewed head.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a-906-temporal-context-20261107"
     }
   ]
 }
