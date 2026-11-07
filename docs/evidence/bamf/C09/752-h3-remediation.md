@@ -242,3 +242,25 @@ expiry, or new accepted-event ontology to make the test green.
 
 Current truthful disposition: H3 remains historical FAIL; six findings are repaired;
 Major 3 remains open on the authority seam above. No H4 is authorized or implied.
+
+### Post-split exact-head verification addendum
+
+The accepted-runtime recovery witnesses were subsequently split from
+`test_accepted_runtime_custody.py` into
+`test_accepted_runtime_recovery.py` without changing production recovery code.
+The reorganized candidate was then re-run from the exact detached M3 head
+`67c7eaed9371ab4112dd96750c6c76cef218d4da` in
+`/Users/emilie/Code/bamf-752-67c7eaed`.
+
+- Reconciled code/test candidate before documentation-only receipt update:
+  `643dd73cd0d941728de1b5df53e3bca8ebfedd8a`.
+- Exact M3 head including the residual-audit receipt: `67c7eaed9371ab4112dd96750c6c76cef218d4da`.
+- Reorganized widened C09/custody/projection/authority ring: 53/53 PASS.
+- The ring explicitly included both accepted-runtime custody and accepted-runtime
+  recovery modules, the cold accepted-progression authority history regression,
+  capability-support lineage/fault release, F15 stale replay, Akasha C10 projection,
+  and the retained temporal projection test.
+
+The passing temporal projection test remains preservation evidence for the currently
+implemented context-digest dependency only; it does not override the Major 3 authority
+gap documented above.
