@@ -11,6 +11,7 @@ from bilqis_mlx.runtime.source_execution import source_content_digest
 from bilqis_mlx.learning.frame_encoder import CompiledEncoderInput
 from bilqis_mlx.learning.source_atoms import SourceAtomRow
 from bilqis_mlx.semantics.atlas_features import FeatureSchema
+from bilqis_mlx.semantics.cognitive_dependencies import DependencyRef
 from bilqis_mlx.runtime.atlas_training_contracts import BamfTrainingBatch
 
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
@@ -31,6 +32,7 @@ class BamfTrainingAuthority:
     source_row_sha256: str
     source_family_id: str
     episode_id: str
+    immediate_dependencies: tuple[DependencyRef, ...]
     _issuance: object = field(init=False, repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
@@ -45,7 +47,13 @@ class BamfTrainingAuthority:
                            for value in (self.release_sha256,
                                self.generation_binding,
                                self.training_batch_sha256,
-                               self.source_row_sha256))):
+                               self.source_row_sha256))
+                or type(self.immediate_dependencies) is not tuple
+                or not self.immediate_dependencies
+                or any(not isinstance(item, DependencyRef)
+                       for item in self.immediate_dependencies)
+                or self.immediate_dependencies != tuple(sorted(
+                    set(self.immediate_dependencies)))):
             _invalid("B11_TRAINING_AUTHORITY_INVALID")
 
     @property
@@ -59,13 +67,17 @@ class BamfTrainingAuthority:
             "row_sha256": self.source_row_sha256,
             "source_family": self.source_family_id,
             "episode": self.episode_id,
+            "immediate_dependencies": tuple(
+                (ref.kind.value, ref.key)
+                for ref in self.immediate_dependencies),
         }
         wire = json.dumps(payload, sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(wire.encode()).hexdigest()
 
 
 def _issue(batch, source, provenance):
-    if not provenance.source_family_id or not provenance.episode_id:
+    if (not provenance.source_family_id or not provenance.episode_id
+            or not provenance.immediate_dependencies):
         _invalid("B11_TRAINING_SOURCE_INDEPENDENCE_REQUIRED")
     authority = object.__new__(BamfTrainingAuthority)
     for name, value in (
@@ -77,6 +89,7 @@ def _issue(batch, source, provenance):
         ("source_row_sha256", provenance.source_row_content_sha256),
         ("source_family_id", provenance.source_family_id),
         ("episode_id", provenance.episode_id),
+        ("immediate_dependencies", provenance.immediate_dependencies),
         ("_issuance", _ISSUER),
     ):
         object.__setattr__(authority, name, value)

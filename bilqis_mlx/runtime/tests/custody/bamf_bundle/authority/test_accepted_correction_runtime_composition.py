@@ -13,18 +13,30 @@ from bilqis_mlx.runtime.accepted_corrections import (
     register_solve_context,
 )
 from bilqis_mlx.runtime.atlas_revalidation import RevalidationFrontier
+from bilqis_mlx.runtime.atlas_revalidation import (
+    SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
+)
 from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_correction_authority
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     acceptance, candidate, parent_state, shape_patch,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
-    AUTHORITY, _event, _result,
+    AUTHORITY, _SOURCE_OWNER, _TEST_PUBLIC, _event, _result,
 )
 from bilqis_mlx.runtime.tests.capability.factory.solver_helpers import _fixture
 from bilqis_mlx.runtime.cognitive_solver import QualifiedComposition, SolveContext
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
 from bilqis_mlx.semantics.domains import contract_digest
+
+
+SYNTHETIC_SOURCE_AUTHORITY = SourceAuthorityRegistry((
+    SourceAuthorityKey(
+        _SOURCE_OWNER,
+        _TEST_PUBLIC,
+        (SourceAuthorityScope(DependencyKind.SOURCE, "synthetic:"),),
+    ),
+))
 
 
 class AcceptedCorrectionCompositionTests(unittest.TestCase):
@@ -81,6 +93,27 @@ class AcceptedCorrectionCompositionTests(unittest.TestCase):
         self.assertEqual(owner.queue.event.event_id, correction.event_id)
         with self.assertRaises(BilqisError):
             owner.require(learned, binding)
+
+    def test_real_source_operand_correction_holds_operator_composition(self):
+        self.publish(candidate(parent_state()))
+        binding, context, compositions = self._composition_context(1)
+        source_reference = binding.operands[0].source_reference
+        with shape_patch():
+            bind_accepted_correction_authority(
+                self.run, SYNTHETIC_SOURCE_AUTHORITY)
+            register_solve_context(
+                self.run, context, SYNTHETIC_SOURCE_AUTHORITY)
+            correction = _event(DependencyRef(
+                DependencyKind.SOURCE, source_reference))
+            record_accepted_correction(
+                self.run, correction, SYNTHETIC_SOURCE_AUTHORITY)
+
+        owner = context.operator_composition_artifact_owner
+        self.assertIsNotNone(owner.queue)
+        self.assertEqual(owner.queue.event.event_id, correction.event_id)
+        with self.assertRaises(BilqisError) as caught:
+            owner.require(compositions[0], binding)
+        self.assertEqual(caught.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
 
     def test_multi_result_frontier_consumes_every_applicable_held_artifact(self):
         self.publish(candidate(parent_state()))

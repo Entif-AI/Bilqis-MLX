@@ -24,12 +24,19 @@ class _SourceAnchor(NamedTuple):
     training_batch_sha256: str
     generation_binding: str
     training_authority_sha256: str
+    immediate_dependencies: tuple[DependencyRef, ...]
 
 
 def _source_anchor(anchor) -> _SourceAnchor:
     try:
-        return _SourceAnchor(*anchor)
-    except (TypeError, ValueError):
+        values = tuple(anchor)
+        dependencies = tuple(
+            DependencyRef(DependencyKind(kind), key)
+            for kind, key in values[9])
+        if dependencies != tuple(sorted(set(dependencies))):
+            raise ValueError
+        return _SourceAnchor(*values[:9], dependencies)
+    except (TypeError, ValueError, IndexError):
         _invalid("BAMF_C09_CAPABILITY_SUPPORT_SOURCE_INVALID")
 
 
@@ -40,6 +47,7 @@ def _anchor_dependencies(anchors, policy_sha256, manifest_sha256):
     }
     for anchor in anchors:
         source = _source_anchor(anchor)
+        dependencies.update(source.immediate_dependencies)
         dependencies.update((
             DependencyRef(DependencyKind.SOURCE, source.source_row_id),
             DependencyRef(

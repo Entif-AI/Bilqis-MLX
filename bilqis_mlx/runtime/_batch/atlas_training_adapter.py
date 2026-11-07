@@ -11,6 +11,9 @@ from bilqis_mlx.runtime.source_execution import (
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.factory.teaching import DeliveredTeaching, content_digest
 from bilqis_mlx.semantics.atlas_features import AtlasFeatures
+from bilqis_mlx.semantics.cognitive_dependencies import (
+    DependencyKind, DependencyRef,
+)
 from bilqis_mlx.semantics.frame_compiler import (
     FrameCompilerConfig, compile_prefix,
 )
@@ -160,6 +163,37 @@ def _compile_native_target(row, *, kind: str, gold, head, source_context: Source
         _invalid('NATIVE_TARGET_MISMATCH')
     return BamfTarget('semantic_token', native['identity'], native['token_id'], True)
 
+
+def _row_immediate_dependencies(
+    row_id: str,
+    operation_id: str | None,
+    model_input: BamfModelInput,
+) -> tuple[DependencyRef, ...]:
+    """Freeze the exact C09 inputs while C02 still owns their authority."""
+    prefix = model_input.prefix
+    dependencies = {
+        DependencyRef(DependencyKind.SOURCE, row_id),
+        DependencyRef(
+            DependencyKind.RELEASE,
+            "release:" + prefix.semantic_release),
+        DependencyRef(
+            DependencyKind.POLICY,
+            "policy:" + contract_digest((
+                prefix.scope, prefix.policy_version[0], prefix.policy_version[1]))),
+        DependencyRef(
+            DependencyKind.RIGHTS,
+            "rights:" + contract_digest((
+                prefix.policy_version[2], prefix.policy_version[3]))),
+    }
+    if operation_id is not None:
+        dependencies.add(DependencyRef(
+            DependencyKind.OPERATOR, "operator:" + operation_id))
+    if prefix.context_digest is not None:
+        dependencies.add(DependencyRef(
+            DependencyKind.TIME,
+            "time:asof:context:" + prefix.context_digest))
+    return tuple(sorted(dependencies))
+
 def compile_training_batch(delivered_rows, source_context: SourceExecutionContext,
                            topology, *, delivery: DeliveredTeaching, delivery_capability: str,
                            delivery_release_sha256: str, teacher_strategy: dict, requested_count: int,
@@ -226,6 +260,10 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
         provenance = BamfDeliveryProvenance(identity, source_content_digest((row,)), source_id,
             capability, operation_id,
             _freeze(teacher_strategy), requested_count, len(delivered_rows), rehearsal, optimizer_step_seed, family, episode)
+        provenance = replace(
+            provenance,
+            immediate_dependencies=_row_immediate_dependencies(
+                identity, operation_id, model_input))
         result.append(BamfTrainingRow(model_input, target, native_target, provenance))
     return _issue_training_batch(
         release.release_sha256, generation_binding, content_digest(delivered_rows),

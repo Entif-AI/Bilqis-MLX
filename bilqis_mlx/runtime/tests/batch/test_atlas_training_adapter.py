@@ -20,6 +20,10 @@ from bilqis_mlx.semantics.context_eligibility import (
     SourceFrontier, SourceGrant, TaskScope, frame_evidence_digest,
     member_evidence_digest,
 )
+from bilqis_mlx.semantics.cognitive_dependencies import (
+    DependencyKind, DependencyRef,
+)
+from bilqis_mlx.semantics.domains import contract_digest
 from bilqis_mlx.semantics.frame_codec import SchemaTagMap
 from bilqis_mlx.semantics.frame_compiler import (
     FrameCompilerConfig, SourceAtom, StreamingAST, atom_evidence_digest,
@@ -298,6 +302,38 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
             self.compile(
                 self.rows,
                 extra_kwargs={'compile_prefix': lambda *_args: object()})
+
+    def test_training_provenance_preserves_immediate_c09_dependencies(self):
+        rows = ({**self.rows[0], 'operation_id': 'fixture.operator'},)
+        context = self.source_owned_context(rows)
+        batch = self.compile(rows, source_context=context)
+        row = batch.rows[0]
+        prefix = row.model_input.prefix
+        expected = {
+            DependencyRef(DependencyKind.SOURCE, row.provenance.row_id),
+            DependencyRef(
+                DependencyKind.OPERATOR, 'operator:fixture.operator'),
+            DependencyRef(
+                DependencyKind.RELEASE,
+                'release:' + prefix.semantic_release),
+            DependencyRef(
+                DependencyKind.POLICY,
+                'policy:' + contract_digest((
+                    prefix.scope,
+                    prefix.policy_version[0],
+                    prefix.policy_version[1],
+                ))),
+            DependencyRef(
+                DependencyKind.RIGHTS,
+                'rights:' + contract_digest((
+                    prefix.policy_version[2],
+                    prefix.policy_version[3],
+                ))),
+            DependencyRef(
+                DependencyKind.TIME,
+                'time:asof:context:' + prefix.context_digest),
+        }
+        self.assertEqual(set(row.provenance.immediate_dependencies), expected)
         with self.assertRaises(TypeError):
             self.compile(
                 self.rows,

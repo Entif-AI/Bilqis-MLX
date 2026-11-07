@@ -7,9 +7,10 @@ import numpy as np
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
 from bilqis_mlx.runtime.atlas_cache_codec import (
     HEAD_WIDTH, CacheBinding, CacheQualityObservation, CacheQualityPolicy,
-    apply_cache_correction, bind_cache_artifact_owner, codec_manifest,
+    apply_cache_correction, bind_cache_artifact_owner, codec_manifest, decode_cache,
     encode_cold_cache, interactive_cache_inference,
 )
+from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import (
     CACHE_AUTHORITY, OWNER_ID, PUBLIC_KEY_HEX, install_test_owner,
 )
@@ -77,6 +78,15 @@ class ExactCacheArtifactOwnerTests(unittest.TestCase):
         self.assertEqual(progress.queue.held_artifact_ids, ())
         accepted = self.infer(self.owner)
         self.assertEqual((accepted.value, accepted.used_cache), ("CACHE", True))
+
+    def test_public_decode_cannot_bypass_held_exact_cache_owner(self):
+        event = _event(self.owner.rights_dependency)
+        apply_cache_correction(
+            CACHE_AUTHORITY, self.artifact, self.binding, event, AUTHORITY)
+
+        with self.assertRaises(BilqisError) as caught:
+            decode_cache(CACHE_AUTHORITY, self.artifact, self.binding)
+        self.assertEqual(caught.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
 
     def test_unrelated_correction_cannot_clear_existing_cache_hold(self):
         event = _event(self.owner.rights_dependency)

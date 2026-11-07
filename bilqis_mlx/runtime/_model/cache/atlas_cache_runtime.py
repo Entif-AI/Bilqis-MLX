@@ -187,6 +187,8 @@ def decode_cache(authority, artifact, expected_binding):
     from .atlas_cache_eligibility import validate_current_binding
     authority = _require_authority(authority)
     validate_current_binding(authority, expected_binding)
+    owner = bind_cache_artifact_owner(authority, artifact, expected_binding)
+    owner.require(authority, artifact, expected_binding)
     return _decode_cache(
         artifact, expected_binding, authority=authority,
     )

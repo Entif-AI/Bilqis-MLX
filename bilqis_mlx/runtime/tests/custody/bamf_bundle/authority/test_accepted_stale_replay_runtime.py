@@ -26,8 +26,8 @@ from bilqis_mlx.runtime.tests.capability.factory.solver_helpers import _fixture
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     acceptance, candidate, parent_state, retention_decision, shape_patch,
 )
-from bilqis_mlx.runtime.tests.correction.test_atlas_capability_support_owner import (
-    SOURCE_ROW, TARGET, _source_qualified_state,
+from bilqis_mlx.runtime.tests.correction.capability_support_owner_support import (
+    SOURCE_ROW, TARGET, source_qualified_state,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
     AUTHORITY, _event, _result,
@@ -57,7 +57,7 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
         self.temporary.cleanup()
 
     def _publish_source_qualified_support(self, run):
-        parent, transaction, retained, _authority = _source_qualified_state()
+        parent, transaction, retained, _authority = source_qualified_state()
         bundle = candidate(retained)
         decision = retention_decision(parent=parent, retained=retained)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
@@ -293,7 +293,7 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
 
         with shape_patch():
             accepted_parent = load_accepted_generation(run)
-        parent, transaction, retained, _authority = _source_qualified_state(
+        parent, transaction, retained, _authority = source_qualified_state(
             accepted_parent.retained_state,
             capability=TARGET,
             source_row="source:capability-support:requalified",

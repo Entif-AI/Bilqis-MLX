@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -12,13 +13,16 @@ from mlx.utils import tree_flatten
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory.teaching import describe_delivered_teaching
 from bilqis_mlx.learning.atlas_readout import DecisionOutput
+from bilqis_mlx.learning.tests.test_frame_encoder import FrameEncoderTests
 from bilqis_mlx.learning.student_ops import train_bamf_factory_step
 from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
 from bilqis_mlx.runtime.atlas_model import bamf_value_and_grad
 from bilqis_mlx.runtime.atlas_training_adapter import pad_microbatches
 from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
-from bilqis_mlx.runtime.factory_candidate_training import FactoryDeliveryObservation
+from bilqis_mlx.runtime.factory_candidate_training import (
+    FactoryDeliveryObservation, _frame_stats,
+)
 from bilqis_mlx.runtime.factory_complete_solver import factory_evaluation_instrument
 from bilqis_mlx.runtime.factory_task_authority import factory_task_authority
 from bilqis_mlx.runtime.task_goal_readout import (
@@ -33,6 +37,23 @@ from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
 
 from .factory_training_bridge_support import FactoryTrainingBridgeFixture
+
+
+class FactoryResourcePlanningCustodyTests(unittest.TestCase):
+    def test_held_packed_frame_cannot_feed_resource_stats(self):
+        fixture = FrameEncoderTests()
+        fixture.setUp()
+        compiled, _vectors, _ast = fixture.compiled_inputs()
+        owner = compiled.packed_frame_artifact_owner
+        source = next(
+            ref for node in owner.index.nodes
+            for ref in node.immediate_dependencies
+            if ref.kind is DependencyKind.SOURCE)
+        owner.apply_correction(_event(source), AUTHORITY)
+
+        with self.assertRaises(BilqisError) as caught:
+            _frame_stats(SimpleNamespace(compiled=compiled))
+        self.assertEqual(caught.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
 
 
 class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):

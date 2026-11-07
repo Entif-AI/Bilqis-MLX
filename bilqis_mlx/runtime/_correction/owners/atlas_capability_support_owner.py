@@ -173,7 +173,7 @@ def load_capability_support_owner(
     run_dir: Path, capability_id: str,
     authority_registry: SourceAuthorityRegistry | None = None,
 ) -> CapabilitySupportArtifactOwner:
-    """Materialize current support only from accepted B13 custody and v3 source anchors."""
+    """Materialize current support only from accepted B13 lossless source anchors."""
     run_dir = Path(run_dir)
     manifest_sha256, support, node, generation_bindings = load_current_support(
         run_dir, capability_id)

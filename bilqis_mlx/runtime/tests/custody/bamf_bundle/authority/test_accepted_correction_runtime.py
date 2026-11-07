@@ -13,6 +13,7 @@ from bilqis_mlx.runtime.accepted_corrections import (
     AcceptedRuntimeHost, _RUNTIME_OWNER, record_accepted_revalidation,
     register_accepted_target,
 )
+from bilqis_mlx.runtime.accepted_correction_runtime import require_pending_corrections
 from bilqis_mlx.runtime.accepted_correction_ledger import read_records
 from bilqis_mlx.runtime.atlas_artifact_owner import PackedFrameArtifactOwner
 from bilqis_mlx.runtime.atlas_owner_ingress import _route
@@ -26,6 +27,9 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
     AUTHORITY, _event, _result,
+)
+from bilqis_mlx.semantics.cognitive_dependencies import (
+    ArtifactKind, ArtifactNode, DependencyIndex, DependencyKind, DependencyRef,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.accepted_correction_runtime_temporal_support import (
     source_owned_temporal_case,
@@ -168,3 +172,38 @@ class AcceptedCorrectionRuntimeTests(unittest.TestCase):
             read_records(self.run, cache.accepted_manifest_sha256),
             before,
         )
+
+    def test_context_invalidation_holds_direct_time_dependent_not_unchanged_descendant(self):
+        case = source_owned_temporal_case()
+        direct = ArtifactNode(
+            "frame:context-direct", ArtifactKind.PACKED_FRAME, "a" * 64, True,
+            (DependencyRef(
+                DependencyKind.TIME,
+                "time:asof:context:" + case.previous.digest),),
+            impact=3, exigency=3,
+        )
+        descendant = ArtifactNode(
+            "motif:context-descendant", ArtifactKind.MOTIF, "b" * 64, True,
+            (direct.reference,), impact=2, exigency=2,
+        )
+
+        class Owner:
+            def __init__(self):
+                self.index = DependencyIndex.build((direct, descendant))
+
+        owner = Owner()
+        self.publish(candidate(parent_state()))
+        with shape_patch():
+            cache = bind_accepted_execution_cache(self.run)
+            register_accepted_target(
+                self.run, cache.accepted_manifest_sha256, "TEST_CONTEXT", owner,
+                lambda current, event, source_authority: current,
+                AUTHORITY,
+            )
+            AcceptedRuntimeHost(self.run, AUTHORITY).record_context_transition(
+                case.previous, case.contexts)
+
+        with self.assertRaises(BilqisError) as held:
+            require_pending_corrections(owner, direct.artifact_id)
+        self.assertEqual(held.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
+        self.assertIsNone(require_pending_corrections(owner, descendant.artifact_id))

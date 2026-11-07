@@ -85,19 +85,8 @@ class AcceptedCorrectionTarget:
             return
         cause = DependencyRef(
             DependencyKind.TIME, "time:asof:context:" + event.old_context_digest)
-        pending = [
-            node.artifact_id for node in owner.index.direct_dependents(cause)
-        ]
-        held = set(pending)
-        while pending:
-            artifact_id = pending.pop()
-            node = owner.index.node(artifact_id)
-            for dependent in owner.index.direct_dependents(node.reference):
-                if dependent.artifact_id in held:
-                    continue
-                held.add(dependent.artifact_id)
-                pending.append(dependent.artifact_id)
-        self.context_holds.update(held)
+        self.context_holds.update(
+            node.artifact_id for node in owner.index.direct_dependents(cause))
 
     def record_correction_branch(
         self, event: CorrectionEvent, registry: SourceAuthorityRegistry,

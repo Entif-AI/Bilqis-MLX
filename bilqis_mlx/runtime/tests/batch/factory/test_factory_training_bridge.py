@@ -63,6 +63,9 @@ class FactoryTrainingBridgeTests(FactoryTrainingBridgeFixture):
                     self.assertEqual(
                         compiled.training_authority.source_row_sha256,
                         training_row.provenance.source_row_content_sha256)
+                    self.assertEqual(
+                        compiled.training_authority.immediate_dependencies,
+                        training_row.provenance.immediate_dependencies)
                     self.assertEqual(training_row.provenance.requested_count, each + 2)
                     self.assertEqual(training_row.provenance.delivered_count, each)
                     self.assertEqual(

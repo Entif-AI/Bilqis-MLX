@@ -142,6 +142,9 @@ def _packed_frame_node(row: CompiledFrameBatch, packed) -> ArtifactNode:
     dependencies.update((
         DependencyRef(DependencyKind.RELEASE, "release:" + packed.semantic_release),
         DependencyRef(
+            DependencyKind.OPERATOR,
+            "operator:frame-compiler:" + row.schema_version),
+        DependencyRef(
             DependencyKind.POLICY,
             "policy:" + contract_digest((row.scope, row.policy_version[0], row.policy_version[1]))),
         DependencyRef(

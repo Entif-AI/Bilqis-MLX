@@ -30,6 +30,8 @@ def _node(composition, binding: OperatorBinding) -> ArtifactNode:
     dependencies = {
         DependencyRef(DependencyKind.SOURCE, "source:binding:" + binding_digest),
         DependencyRef(DependencyKind.SOURCE, "source:qualification:" + composition.qualification_receipt_sha256),
+        *(DependencyRef(DependencyKind.SOURCE, operand.source_reference)
+          for operand in binding.operands),
         DependencyRef(DependencyKind.RELEASE, "generation:" + composition.generation_digest),
         DependencyRef(DependencyKind.RELEASE, "semantic-release:" + composition.goal.semantic_release),
         DependencyRef(DependencyKind.RIGHTS, "rights-epoch:" + str(composition.rights_epoch)),
