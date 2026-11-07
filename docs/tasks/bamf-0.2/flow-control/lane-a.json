@@ -99,8 +99,8 @@
       "issue": 888,
       "pr": 891,
       "state": "READY",
-      "head_sha": "d0dc79d825f43d8ba4d732a2b668817692db67d9",
-      "summary": "A09.5a now exposes three genuine post-A/B/C source-qualified event realizations through the existing candidate-realization seam: D.EVENT_OCCURRENCE, D.COMMENCEMENT and D.TERMINATION. They stage successively with prerequisite-closed one-row semantic growth, exact pinned source identities and exact restart identity; no C07 lease/admission or learner/optimizer mutation occurs. Focused realization 3/3, event authority 6/6, staging 9/9 and legacy Ithkuil realization 17/17 pass; error-control new debt and changed-file smell findings are zero.",
+      "head_sha": "28c81d07ae9dd0bfbba9272274d19b5f4357fde6",
+      "summary": "A09.5a exposes three genuine post-A/B/C source-qualified event realizations through the existing candidate-realization seam: D.EVENT_OCCURRENCE, D.COMMENCEMENT and D.TERMINATION. They stage successively with prerequisite-closed one-row semantic growth, exact pinned source identities and exact restart identity. Hosted structural feedback was repaired by splitting source authority/staging from the public facade; preflight grade-label coupling was repaired by selecting the event tranche container from curriculum structure rather than a literal grade. Focused source 6/6, realization/restart/relabel 4/4, staging 9/9 and legacy Ithkuil compatibility 17/17 pass; module-size, error-control, governance, Factory architecture, flow-control and changed-file smell gates are green. No C07 lease/admission or learner/optimizer mutation occurs.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a09-5a-888-realizations-20261107"
     },
