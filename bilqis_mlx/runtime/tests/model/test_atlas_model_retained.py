@@ -33,7 +33,9 @@ from bilqis_mlx.runtime.topology_v2.ledger import bamf_parameter_census
 from bilqis_mlx.runtime.model_topology_v2 import Initializer, expected_bamf_shapes
 from bilqis_mlx.semantics.atlas.snapshot import load_pinned_atlas_snapshot
 from bilqis_mlx.semantics.frame_codec import SchemaTagMap
-from bilqis_mlx.semantics.frame_schema import FrameSchema, RoleSpec, SourceSpan
+from bilqis_mlx.semantics.frame_schema import (
+    ConceptRef, FrameSchema, RoleSpec, SourceSpan,
+)
 from bilqis_mlx.semantics.released_frame_schemas import (
     load_released_frame_schemas, seal_released_frame_schemas,
 )
@@ -127,6 +129,61 @@ class AtlasModelRetainedMotifTests(SourceOwnedMotifReadTests):
             spec, extents, manifest, slot_id,
         )
 
+    def _real_output_denominator_case(self):
+        (compiled, parameters, source, feature_schema, plan, cache,
+         spec, extents, manifest, _slot_id) = self._runtime_fixture()
+        snapshot = plan.snapshot
+        row = compiled.compiled.rows[0]
+        visible = {
+            (entry.bank, entry.row)
+            for abi_index in tuple(source.source_row.get("tokens", ()))[:row.visible_end]
+            for entry in (snapshot.abi(abi_index),)
+        }
+        output_entries = tuple(
+            entry for entry in snapshot.abi_entries
+            if entry.active and (entry.bank, entry.row) not in visible
+        )[:3]
+        self.assertEqual(len(output_entries), 3)
+        role = plan.allowed_output_schema.schema.roles[0]
+        candidates = tuple(
+            ConceptRef(
+                entry.semantic_id, snapshot.release_sha256, entry.index,
+                role.allowed_type_ids, entry.source,
+            )
+            for entry in output_entries[:2]
+        )
+        value_plan = AnswerPlan(
+            plan.modality_id, plan.input_prefix_end,
+            (
+                DecisionSpec(
+                    "emit", role.role_id, 0, DecisionKind.CONTROL,
+                    (ControlAction.EMIT_VALUE,),
+                ),
+                DecisionSpec(
+                    "value", role.role_id, 0, DecisionKind.VALUE,
+                    candidates, ("emit",),
+                ),
+                DecisionSpec(
+                    "finish", None, 0, DecisionKind.CONTROL,
+                    (ControlAction.END_FRAME,), ("value",),
+                ),
+            ),
+            plan.allowed_output_schema, snapshot, plan.source_span,
+            plan.generation_binding,
+        )
+        gradient = bamf_value_and_grad(
+            parameters,
+            BamfCompiledBatch(compiled, (source,), feature_schema),
+            value_plan,
+            (DecisionOutput("value", candidates[0]),),
+            {"value": True},
+            cache=cache,
+        )
+        denominator = tuple(
+            (entry.bank, entry.row) for entry in output_entries[:2])
+        unrelated = (output_entries[2].bank, output_entries[2].row)
+        return parameters, manifest, spec, extents, gradient, denominator, unrelated
+
     def test_retained_b08_hit_enters_the_same_loss_bearing_b09_trace(self):
         (compiled, parameters, source, feature_schema, plan, cache,
          spec, extents, _manifest, slot_id) = self._runtime_fixture()
@@ -205,3 +262,48 @@ class AtlasModelRetainedMotifTests(SourceOwnedMotifReadTests):
             self.assertTrue(bool(mx.array_equal(
                 getattr(transaction.optimizer, field)["motif.page.0"][untouched],
                 getattr(parent.optimizer, field)["motif.page.0"][untouched])))
+
+    def test_real_b11_output_denominator_reaches_b12_transaction(self):
+        (parameters, manifest, spec, extents, gradient,
+         denominator, unrelated) = self._real_output_denominator_case()
+        self.assertEqual(
+            gradient.execution.semantic_denominator_identity_rows, denominator)
+        self.assertTrue(
+            set(denominator).isdisjoint(
+                gradient.execution.visible_identity_rows))
+        self.assertNotIn(unrelated, gradient.execution.visible_identity_rows)
+        self.assertNotIn(unrelated, denominator)
+
+        admitted = tuple(sorted(
+            set(gradient.execution.visible_identity_rows)
+            | set(denominator) | {unrelated}))
+        ages = tuple(IdentityRowAge(bank, row_index, 0)
+                     for bank, row_index in admitted)
+        eligibility = group_eligibility(
+            "FULL", bamf_parameter_census(spec, extents), ages)
+        parent = self._retained_parent(
+            parameters, manifest, spec, extents, ages)
+        transaction = production_candidate_step(
+            begin_candidate(parent), loss_bearing_target=True,
+            gradient_execution=gradient, group_eligible=eligibility,
+            spec=spec, extents=extents, run_id="test-retained", generation=2,
+            parent_manifest_sha256="8" * 64,
+            parent_candidate_identity_sha256=candidate_identity_digest(parent),
+            parent_optimizer_step=0, topology_digest=spec.digest,
+            candidate_step_ordinal=1,
+            teacher_hparams=AdamWHyperparameters(.001, (.9, .95), 1e-8, .01),
+            max_norm=1.0)
+
+        for bank, row_index in denominator:
+            self.assertEqual(int(transaction.optimizer.update_counts[
+                f"identity.bank.{bank}"][row_index]), 1)
+        unrelated_name = f"identity.bank.{unrelated[0]}"
+        self.assertEqual(
+            int(transaction.optimizer.update_counts[
+                unrelated_name][unrelated[1]]), 0)
+        for field in ("parameters", "m", "v", "update_counts"):
+            self.assertTrue(bool(mx.array_equal(
+                getattr(transaction.optimizer, field)[
+                    unrelated_name][unrelated[1]],
+                getattr(parent.optimizer, field)[
+                    unrelated_name][unrelated[1]])))

@@ -246,3 +246,69 @@ not touch `main` and does not authorize self-merge.
 Final current-unified reconciliation, integration-boundary quality/differential
 checks, exact-head EGM disposition, branch SHA, PR, and hosted check readback are
 recorded in the final #370 turn-in comment after they exist.
+
+## EGM round 3 | failed candidate and denominator-proof repair
+
+Exact reviewed candidate:
+`377151bfe605f350025a55123c77b7721fce2323` against reviewed unified
+`bb8e83f03e38b64018cfe357addd90a0a6d67297`.
+
+Three fresh reviewers used the pinned
+`b3a35956759bf7f024af2ff061b2e0b44b438e4c` EGM checkout and the current
+implementation-readiness standard:
+
+- contract review: **FAIL — 0 Blockers / 1 Major / 0 Nits**;
+- authority/custody review: **PASS — 0 Blockers / 0 Majors / 0 Nits**;
+- regression/integration review: **PASS — 0 Blockers / 0 Majors / 0 Nits**.
+
+The unique Major was a parent-proof gap, not a production-authority defect. The
+real retained-motif witness crossed production B11 -> B09 -> B12, but its
+`END_FRAME` task had no semantic output denominator. The output-denominator
+transaction witness therefore still depended on a hand-minted B11-shaped fixture.
+The parent acceptance requires the same real production chain for an output-only
+semantic row.
+
+The repair adds
+`test_real_b11_output_denominator_reaches_b12_transaction` beside the existing
+real-source retained-motif witness. It reuses the accepted A01-backed source,
+constructs a lawful structured
+`CONTROL(EMIT_VALUE) -> VALUE(ConceptRef candidates) -> END_FRAME` answer plan,
+and selects active candidate identities that are absent from the source-visible
+rows. Production `bamf_value_and_grad` then emits those candidates as
+`semantic_denominator_identity_rows`; its returned `BamfGradientExecution`
+passes unchanged into `production_candidate_step`.
+
+The regression proves both required distinctions:
+
+1. two output-only semantic denominator rows each advance their B12 AdamW update
+   count to 1 even though their numerical identity-bank gradients cancel to zero;
+   participation, not numerical nonzero gradient, owns the optimizer clock; and
+2. a third admitted but neither visible nor denominator identity row remains
+   byte-identical in parameters, first moment, second moment and update count.
+
+No production module or authority boundary changed. The defect was missing
+end-to-end executable evidence. The repaired real-source suite is **5/5 PASS,
+zero skips/errors**.
+
+## Current reviewed-base differential
+
+The branch consumed reviewed unified
+`bb8e83f03e38b64018cfe357addd90a0a6d67297` before round 3. Against that base,
+the parent delta is limited to B12 tests and this B12 evidence receipt. The earlier
+C02 historical-Prometheus wording repair described above is now present in
+reviewed unified itself and is not part of the current #370 delta.
+
+Six representative School, TeachingMethodology and frozen error-catalog failures
+observed by the aggregate gate were rerun on exact reviewed unified
+`bb8e83f0...`; all six reproduced there. A fresh round-3 regression review also
+observed one A01-backed Factory bridge failure before B12 with
+`LIVE_GRADE_A_INVALID_DRAW` and traced that failing test and source-draw stack
+byte-for-byte to the exact base. These remain disclosed inherited integration debt,
+not #370 regressions.
+
+The checked-in BAMF contract mirror validator passes **43/43**. The global
+workstack registry reports valid integrity and zero issues but retains eight
+pre-existing dependency-normalization holds. The B11.1a hold is stale normalization
+rather than missing executable authority: #586 is closed after human-merged PR
+#762 (`2d4b99f3...`). No unresolved B11.1a implementation is required by this
+B12 parent closeout.
