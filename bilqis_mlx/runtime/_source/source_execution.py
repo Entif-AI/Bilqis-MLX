@@ -103,13 +103,16 @@ class SourceExecutionContext:
     answer_registry: AnswerModalityRegistry
     run_dir: Path | None = None
     correction_registry: object | None = None
+    _accepted_runtime_host: object | None = field(
+        default=None, init=False, repr=False, compare=False)
 
     @classmethod
     def from_admitted_release(
             cls, run_dir: Path, receipt: dict, *, graph: dict,
             source_root: Path | None, source_registry: SourceAdapterRegistry,
             answer_registry: AnswerModalityRegistry,
-            correction_registry=None) -> SourceExecutionContext:
+            correction_registry=None, accepted_runtime_host=None,
+    ) -> SourceExecutionContext:
         from .admission import (
             _read_executable_factory_release_artifact as _read_executable_factory_release)
 
@@ -119,9 +122,13 @@ class SourceExecutionContext:
                 bind_accepted_correction_authority,
             )
             bind_accepted_correction_authority(run_dir, correction_registry)
-        return cls(release=release, graph=graph, source_root=source_root,
-                   source_registry=source_registry, answer_registry=answer_registry,
-                   run_dir=Path(run_dir), correction_registry=correction_registry)
+        context = cls(
+            release=release, graph=graph, source_root=source_root,
+            source_registry=source_registry, answer_registry=answer_registry,
+            run_dir=Path(run_dir), correction_registry=correction_registry)
+        if accepted_runtime_host is not None:
+            object.__setattr__(context, "_accepted_runtime_host", accepted_runtime_host)
+        return context
 
     def __post_init__(self) -> None:
         if not isinstance(self.release, ExecutableFactoryRelease):
@@ -198,9 +205,15 @@ class SourceExecutionContext:
 
     def require_accepted_runtime(self, run_dir: Path | None) -> None:
         """Require host-owned accepted-run correction custody before execution."""
+        from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
+
+        host = self._accepted_runtime_host
         if (self.run_dir is None or self.correction_registry is None
                 or run_dir is None
-                or Path(self.run_dir).resolve() != Path(run_dir).resolve()):
+                or Path(self.run_dir).resolve() != Path(run_dir).resolve()
+                or not isinstance(host, AcceptedRuntimeHost)
+                or host.run_dir.resolve() != Path(run_dir).resolve()
+                or host.registry is not self.correction_registry):
             _invalid_source_batch("FACTORY_SOURCE_CORRECTION_RUNTIME_REQUIRED")
 
     def require_capabilities(self, capabilities: tuple[str, ...]) -> None:

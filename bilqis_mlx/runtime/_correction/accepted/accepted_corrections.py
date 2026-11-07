@@ -48,6 +48,7 @@ class AcceptedRuntimeHost:
             source_registry=live_source_registry(),
             answer_registry=live_answer_registry(),
             correction_registry=self.registry,
+            accepted_runtime_host=self,
         )
 
     def record_correction(self, event: CorrectionEvent) -> str:
