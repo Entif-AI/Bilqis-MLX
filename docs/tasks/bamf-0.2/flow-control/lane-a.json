@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "947a4ddda2c133cabec846b09d3b58d18732dcf1",
-  "updated_at": "2026-11-07T09:18:16Z",
+  "updated_at": "2026-11-07T10:09:42Z",
   "exception": null,
   "items": [
     {
@@ -98,10 +98,10 @@
     {
       "issue": 888,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "abab27505e5c0842fdc4922ef81206371392d6c6",
-      "summary": "#888 authority-reconciliation repair is durable at abab2750. The accepted #890 event realization seam now validates exact pinned source authority before staging, A09.5 filters historical requests through A09.4 credited receipts, and the realization bridge inspects only registered A08 realization identities. A real pinned A01/A08 replay (9307 eligible concepts / 12351 obligations) is source-checked before a bounded three-event planning projection drives three successive next_atlas_delta proposals to COMPLETE_ATLAS_COVERAGE. Local focused/frontier/governance gates are green; exact-head EGM and hosted checks remain pending.",
-      "resume_trigger": "Exact-head EGM and hosted portable-core/portable/Semantic ABI pass on the pushed repair candidate.",
+      "state": "READY",
+      "head_sha": "3bedf7c3ddf1e536261aeb5b0830441cd399dca5",
+      "summary": "#888 realization-breadth repair is review-ready at semantic head 3bedf7c3 on reviewed unified 947a4ddd. Fresh targeted EGM PASS: 0 Blockers/0 Majors; readiness had one nonblocking test-clarity Nit only. Actual pinned A01/A08 replay proves the three #890 event successors through the parent next_atlas_delta path; a reviewer additionally exercised the full unmodified 9307-concept census. Hosted portable-core/portable/Semantic ABI PASS. PR #891 is ready for human review; merge/closure remain external authority.",
+      "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a09-5a-888-realizations-20261107"
     },
     {
@@ -125,10 +125,10 @@
     {
       "issue": 395,
       "pr": 891,
-      "state": "ACTIVE",
-      "head_sha": "abab27505e5c0842fdc4922ef81206371392d6c6",
-      "summary": "A09.5 parent repair is durable at abab2750 on top of reviewed unified 947a4ddd. It consumes #889/#890 authority, rejects forged event source digests before staging, reconciles invalidated historical staging receipts through current A09.4 credit, and proves the parent next_atlas_delta path from the actual pinned A01/A08 source replay through three distinct event successors. Real-source witness reaches COMPLETE_ATLAS_COVERAGE; synthetic event, source-adapter and full frontier suites plus structure/error/smell/flow/architecture/governance gates are green. Exact-head EGM and hosted checks remain pending before review-ready turn-in.",
-      "resume_trigger": "Fresh targeted exact-head EGM re-audit plus hosted portable-core/portable/Semantic ABI must pass; then reconcile PR #891 and leave merge/closure to human authority.",
+      "state": "READY",
+      "head_sha": "3bedf7c3ddf1e536261aeb5b0830441cd399dca5",
+      "summary": "A09.5 parent is review-ready at semantic head 3bedf7c3 after consuming #889/#890 and closing #888. Real pinned A01/A08 replay, three successive source-qualified next_atlas_delta proposals, restart/source-order/grade-label behavior, current-credit filtering, source-authority failure closure, and fixed-point behavior are accepted. Fresh targeted EGM PASS 0 Blockers/0 Majors; hosted portable-core/portable/Semantic ABI PASS; PR #891 MERGEABLE/CLEAN and out of draft. Human merge and issue closure remain separate.",
+      "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a09-5-395-20261105"
     },
     {
