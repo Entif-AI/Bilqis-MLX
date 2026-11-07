@@ -10,6 +10,7 @@ from bilqis_mlx.factory.executable_release import (
 from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.learning.atlas_candidate import CandidateState
 from bilqis_mlx.learning.atlas_engram import MotifManifest
+from bilqis_mlx.learning.atlas_engram import INITIAL_MOTIF_CAPACITY
 from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
 from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
 from bilqis_mlx.learning.champions import Checkpoint
@@ -17,7 +18,9 @@ from bilqis_mlx.runtime.atlas_optimizer import (
     AdamWHyperparameters, _create_unbound_bamf_optimizer,
 )
 from bilqis_mlx.runtime.model_topology_v2 import (
-    GenerationExtents, GenerationProvenance, ModelTopologySpecV2,
+    B01GenerationAuthority, GenerationProvenance,
+    b01_generation_extents,
+    validate_b01_generation_authority,
 )
 from bilqis_mlx.runtime.state import _fingerprint
 
@@ -115,9 +118,9 @@ def _issue_binding(
 def prepare_initial_generation(
         *, run_id: str, run_seed: int, origin_checkpoint: Checkpoint,
         release: ExecutableFactoryRelease, admission: ExecutableAdmissionReceipt,
-        graph: dict, topology: ModelTopologySpecV2, extents: GenerationExtents,
+        graph: dict, model_authority: B01GenerationAuthority,
         optimizer_hyperparameters: AdamWHyperparameters,
-        provenance: GenerationProvenance, implementation_sha256: str,
+        provenance: GenerationProvenance,
         semantic_abi: Mapping, compiler_features: Mapping,
         correction_frontier: Mapping, teacher_state: Mapping,
         evaluation_contract: Mapping, foundation_row_ages: tuple[IdentityRowAge, ...] = (),
@@ -127,8 +130,7 @@ def prepare_initial_generation(
     expected_provenance = _factory_generation_provenance(release)
     if (not isinstance(run_id, str) or not run_id
             or type(run_seed) is not int or run_seed < 0
-            or type(topology) is not ModelTopologySpecV2
-            or type(extents) is not GenerationExtents
+            or type(model_authority) is not B01GenerationAuthority
             or type(optimizer_hyperparameters) is not AdamWHyperparameters
             or type(provenance) is not GenerationProvenance
             or provenance != expected_provenance
@@ -137,8 +139,16 @@ def prepare_initial_generation(
             or type(delivery_events) is not tuple):
         invalid("BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
     allocations = MotifAllocationSnapshot(MotifManifest(provenance.release_digest))
-    if allocations.manifest.digest != extents.motif_key_map_digest:
-        invalid("BAMF_INITIAL_GENERATION_MOTIF_DRIFT")
+    try:
+        extents = b01_generation_extents(
+            semantic_abi=semantic_abi, compiler_features=compiler_features,
+            motif_page_count=(
+                allocations.manifest.capacity // INITIAL_MOTIF_CAPACITY),
+            motif_key_map_digest=allocations.manifest.digest)
+        topology, implementation_sha256 = validate_b01_generation_authority(
+            model_authority, extents)
+    except (TypeError, ValueError, KeyError):
+        invalid("BAMF_INITIAL_GENERATION_MODEL_AUTHORITY_DRIFT")
     optimizer, _decay, _initialization = _create_unbound_bamf_optimizer(
         topology, extents, run_seed=run_seed)
     state = CandidateState(

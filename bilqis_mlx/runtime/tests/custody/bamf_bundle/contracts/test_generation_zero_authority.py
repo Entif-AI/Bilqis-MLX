@@ -19,9 +19,8 @@ from bilqis_mlx.runtime.bamf_bundle import (
     load_bamf_generation, load_bamf_generation_authority,
     prepare_initial_generation, publish_bamf_generation, publish_initial_generation,
 )
-from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    HP, IMPLEMENTATION, acceptance, candidate, genesis_preparation,
+    HP, acceptance, candidate, genesis_preparation,
     parent_state, shape_patch,
 )
 
@@ -118,14 +117,22 @@ class GenerationZeroAuthorityTests(unittest.TestCase):
             optimizer_step=origin.optimizer_step,
             semantic_graph_sha256=_fingerprint(graph), graph=graph)
         values = _genesis_defaults(release)
+        from bilqis_mlx.learning.atlas_engram import MotifManifest
+        from bilqis_mlx.runtime.model_topology_v2 import (
+            b01_generation_authority, b01_generation_extents,
+        )
+        motif = MotifManifest(values["provenance"].release_digest)
+        extents = b01_generation_extents(
+            semantic_abi=values["semantic_abi"],
+            compiler_features=values["compiler_features"], motif_page_count=1,
+            motif_key_map_digest=motif.digest)
         with shape_patch(), self.assertRaises(BilqisError) as failure:
             prepare_initial_generation(
                 run_id="fixture-run", run_seed=73,
                 origin_checkpoint=origin, release=release, admission=admission,
-                graph=graph, topology=ModelTopologySpecV2(),
-                extents=values["extents"], optimizer_hyperparameters=HP,
+                graph=graph, model_authority=b01_generation_authority(extents),
+                optimizer_hyperparameters=HP,
                 provenance=values["provenance"],
-                implementation_sha256=IMPLEMENTATION,
                 semantic_abi=values["semantic_abi"],
                 compiler_features=values["compiler_features"],
                 correction_frontier=values["correction_frontier"],

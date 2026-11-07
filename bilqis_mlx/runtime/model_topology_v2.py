@@ -79,6 +79,14 @@ from .topology_v2.serialization import (
     bamf_serialization_arrays,
     bamf_deserialize_arrays,
 )
+from .topology_v2.authority import (
+    AUTHORITY_SCHEMA as B01_GENERATION_AUTHORITY_SCHEMA,
+    B01GenerationAuthority,
+    b01_generation_authority,
+    b01_generation_extents,
+    b01_model_implementation_sha256,
+    validate_b01_generation_authority,
+)
 
 # Preserve historical serialized type and pickle resolution.
 for _record in (

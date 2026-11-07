@@ -32,13 +32,14 @@ from bilqis_mlx.runtime.bamf_bundle.motif_codec import snapshot_to_record
 from bilqis_mlx.runtime.bamf_bundle.records import canonical, sha
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, GenerationProvenance, Initializer, ModelTopologySpecV2,
-    ParameterCensus, ParameterGroup, ParameterSpec,
+    ParameterCensus, ParameterGroup, ParameterSpec, b01_generation_authority,
+    b01_generation_extents, b01_model_implementation_sha256,
 )
 from bilqis_mlx.runtime.state import _fingerprint
 
 NAME = "identity.bank.0"
 RELEASE = "b" * 64
-IMPLEMENTATION = "e" * 64
+IMPLEMENTATION = b01_model_implementation_sha256()
 DECLARED = (ParameterSpec(NAME, (2, 2), Initializer.EMBEDDING,
                           ParameterGroup.IDENTITY_ROW_AGE, True),)
 HP = AdamWHyperparameters(.001, (.9, .95), 1e-8, .01)
@@ -93,7 +94,6 @@ def _genesis_defaults(release):
 
 
 def genesis_preparation(*, run_id="fixture-run", run_seed=17,
-                        topology=None, implementation_sha256=IMPLEMENTATION,
                         delivery_events=None, foundation_row_ages=None, **overrides):
     """Enter B13 generation zero through the production constructor and issuer."""
     from bilqis_mlx.runtime.tests.operator.test_admission import _executable_fixture
@@ -104,16 +104,17 @@ def genesis_preparation(*, run_id="fixture-run", run_seed=17,
         optimizer_step=origin.optimizer_step,
         semantic_graph_sha256=_fingerprint(graph), graph=graph)
     values = _genesis_defaults(release) | overrides
-    values["extents"] = replace(
-        values["extents"],
-        motif_key_map_digest=MotifManifest(values["provenance"].release_digest).digest)
+    motif = MotifManifest(values["provenance"].release_digest)
+    extents = b01_generation_extents(
+        semantic_abi=values["semantic_abi"],
+        compiler_features=values["compiler_features"], motif_page_count=1,
+        motif_key_map_digest=motif.digest)
     return prepare_initial_generation(
         run_id=run_id, run_seed=run_seed, origin_checkpoint=origin,
         release=release, admission=admission, graph=graph,
-        topology=topology or ModelTopologySpecV2(),
-        extents=values["extents"], optimizer_hyperparameters=HP,
+        model_authority=b01_generation_authority(extents),
+        optimizer_hyperparameters=HP,
         provenance=values["provenance"],
-        implementation_sha256=implementation_sha256,
         semantic_abi=values["semantic_abi"],
         compiler_features=values["compiler_features"],
         correction_frontier=values["correction_frontier"],
@@ -313,9 +314,7 @@ def publish_candidate(run_dir, bundle):
     """Use production genesis for fixture generation zero; C05 only for successors."""
     if bundle.generation == 0:
         prepared = genesis_preparation(
-            run_id=bundle.run_id, topology=bundle.topology,
-            implementation_sha256=bundle.implementation_sha256,
-            extents=bundle.extents,
+            run_id=bundle.run_id,
             foundation_row_ages=bundle.retained_state.policy.row_ages,
             semantic_abi=dict(bundle.semantic_abi),
             compiler_features=dict(bundle.compiler_features),

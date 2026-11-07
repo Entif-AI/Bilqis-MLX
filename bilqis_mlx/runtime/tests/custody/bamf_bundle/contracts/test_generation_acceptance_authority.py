@@ -5,6 +5,19 @@ import bilqis_mlx.runtime.bamf_bundle.publication as publication
 
 
 class GenerationAcceptanceAuthorityTests(GenerationAcceptanceFixture, unittest.TestCase):
+    def test_shared_publication_sink_rejects_arbitrary_successor_authority(self):
+        source = self.source()
+        before = json.loads((self.run / "bamf-state.json").read_text())
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            with self.assertRaises(BilqisError) as failure:
+                publication._publish_authorized_generation(
+                    self.run, source, object(), reserve_gib=0.)
+        self.assertEqual(
+            failure.exception.context["reason"],
+            "BAMF_GENERATION_ACCEPTANCE_REQUIRED")
+        self.assertEqual(
+            json.loads((self.run / "bamf-state.json").read_text()), before)
+
     def test_caller_cannot_construct_an_acceptance_binding(self):
         source = self.source()
         binding = self.binding(source)
