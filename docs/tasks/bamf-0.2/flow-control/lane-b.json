@@ -354,10 +354,10 @@
     {
       "issue": 477,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "6a3466122dfbd93b4e41e705558059be01c0a07a",
-      "summary": "B12.4 round-1 TARGET_LOCAL Major repaired at 6a346612: the public candidate issuance API no longer accepts caller-authored decay, binds topology/extents to retained custody, and derives decay from the B01 ParameterSpec ledger before AdamW. Focused production/custody proof is green; fresh whole-candidate EGM is next.",
-      "resume_trigger": null,
+      "state": "WAITING",
+      "head_sha": "c77471968e78a06d2695352c9fa9da299d42a5fc",
+      "summary": "B12.4 passed fresh whole-candidate Chat on Steroids EGM round 2 at c7747196 with 0 Blockers / 0 Majors / 0 Nits after repairing the round-1 TARGET_LOCAL decay-authority Major. Focused production/custody/optimizer proof and changed-file quality checks are green. PR admission is parked because the three-PR BAMF ceiling is full and Lane B already owns draft PR #885.",
+      "resume_trigger": "Lane B PR #885 leaves the open implementation inventory and the total BAMF implementation-PR inventory is below three; then reactivate #477, synchronize once to current reviewed unified as required, run the smallest invalidated verification, and open the merge-ready PR without self-merging.",
       "preserved_branch": "codex/bamf02-b12-4-477-complete-20261106"
     }
   ]
