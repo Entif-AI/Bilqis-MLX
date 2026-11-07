@@ -2,7 +2,7 @@
 
 Issue: #373  
 Children: #498, #499, #500  
-Status: **REQUALIFIED_COMPLETE_PENDING_HUMAN_MERGE**  
+Status: **REQUALIFICATION_REPAIR_UNDER_REVIEW**  
 Reviewed integration target: `codex/bamf-unified-base-20261028`  
 Fresh closeout branch base: `58eb36bba1958e0b3ca5d6aa3080260ccac3e9a1`
 
@@ -50,6 +50,8 @@ pending-upstream disposition.
 - `bilqis_mlx/runtime/tests/capability/factory/test_solver_replay.py`
 - `bilqis_mlx/runtime/tests/capability/factory/test_solver_import_boundaries.py`
 - `bilqis_mlx/runtime/tests/capability/factory/test_task_goal_readout.py`
+- `bilqis_mlx/runtime/tests/capability/test_capability_evaluation.py`
+- `bilqis_mlx/runtime/tests/batch/test_factory_training_bridge.py`
 - `bilqis_mlx/semantics/tests/cognitive_dag/test_execution.py`
 - `bilqis_mlx/semantics/tests/cognitive_dag/test_planning.py`
 
@@ -61,9 +63,13 @@ stable through the runtime/semantics package paths.
 ### Exact role / exact operator route
 
 The solver registry orders EXACT before cache, neural, fallback and unresolved.
-`test_applicable_exact_operator_wins_with_full_score_no_neural` exercises the exact
-route, full score, and zero neural calls. Source/release/generation drift is rejected before
-routing.
+The current complete-solver witness
+`test_fresh_role_fillers_and_two_node_structure_use_actual_source_operators`
+exercises fresh `ROLE_LOOKUP` cases through `CompleteSolver` and asserts the role
+results. Separately,
+`test_applicable_exact_operator_wins_with_full_score_no_neural` verifies exact-first
+routing, full score, and zero neural calls. Source/release/generation drift is rejected
+before routing.
 
 ### Two-operation deterministic composition
 
@@ -79,8 +85,16 @@ The current B10 TaskGoal readout witness
 decoder output into a source/scope-preserving neural proposal. The same current suite's
 `test_fixed_selector_routes_only_source_visible_answer_operand` feeds that typed proposal
 through `solve_task` and proves `NEURAL_COMPOSITION` returns the selected legal source-visible
-value. C04 still executes the selected operation through the existing pure DAG/operator path;
-it does not add a second neural executor.
+value.
+
+The closeout repair adds
+`FactoryTrainingBridgeTests.test_live_b11_proposer_routes_source_binding_into_pure_operator`.
+That regression uses a source-owned `A.IDENTITY` Factory row and its
+`FactoryTaskAuthority`, constructs the real `b11_task_goal_proposer`, calls the actual
+B11 `forward_bamf` path, then requires `solve_task` to execute the selected legal
+source-visible Boolean binding through the pure `SELECT_BOOLEAN` operator with exactly
+one neural call and one pure operation. It does not force logits or consult evaluator gold.
+C04 therefore exercises the actual B11 proposer seam without adding a second neural executor.
 
 ### Bounds and fallbacks
 
