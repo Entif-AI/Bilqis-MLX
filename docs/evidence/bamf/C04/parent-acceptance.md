@@ -2,7 +2,7 @@
 
 Issue: #373  
 Children: #498, #499, #500  
-Status: **REQUALIFICATION_REPAIR_UNDER_REVIEW**  
+Status: **REQUALIFIED_COMPLETE_PENDING_HUMAN_MERGE**  
 Reviewed integration target: `codex/bamf-unified-base-20261028`  
 Fresh closeout branch base: `58eb36bba1958e0b3ca5d6aa3080260ccac3e9a1`
 
