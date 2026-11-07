@@ -16,7 +16,6 @@ from bilqis_mlx.runtime.akasha_outbox import pending_events
 from bilqis_mlx.runtime.atlas_capability_support_owner import (
     load_capability_support_owner,
 )
-from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     accept_and_publish, bind_accepted_execution_cache, derive_successor_bundle,
     load_accepted_generation,
@@ -24,7 +23,7 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
 from bilqis_mlx.runtime.cognitive_solver import QualifiedComposition, SolveContext
 from bilqis_mlx.runtime.tests.capability.factory.solver_helpers import _fixture
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, candidate, parent_state, retention_decision, shape_patch,
+    candidate, parent_state, publish_candidate, retention_decision, shape_patch,
 )
 from bilqis_mlx.runtime.tests.correction.test_atlas_capability_support_owner import (
     SOURCE_ROW, TARGET, _source_qualified_state,
@@ -49,8 +48,7 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
         self.environment.start()
         source = candidate(parent_state())
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            publish_bamf_generation(
-                self.run, source, acceptance=acceptance(source))
+            publish_candidate(self.run, source)
 
     def tearDown(self):
         self.environment.stop()

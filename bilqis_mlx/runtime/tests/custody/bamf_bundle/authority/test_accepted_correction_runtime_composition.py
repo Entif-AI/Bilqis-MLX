@@ -13,10 +13,9 @@ from bilqis_mlx.runtime.accepted_corrections import (
     register_solve_context,
 )
 from bilqis_mlx.runtime.atlas_revalidation import RevalidationFrontier
-from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_correction_authority
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, candidate, parent_state, shape_patch,
+    candidate, parent_state, publish_candidate, shape_patch,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
     AUTHORITY, _event, _result,
@@ -42,8 +41,7 @@ class AcceptedCorrectionCompositionTests(unittest.TestCase):
 
     def publish(self, source):
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            return publish_bamf_generation(
-                self.run, source, acceptance=acceptance(source))
+            return publish_candidate(self.run, source)
 
     def _composition_context(self, count):
         binding, generation, _budget, add, _ambiguous = _fixture()

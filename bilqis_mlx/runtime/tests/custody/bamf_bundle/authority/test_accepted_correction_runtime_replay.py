@@ -17,14 +17,14 @@ from bilqis_mlx.runtime.accepted_corrections import (
     record_accepted_correction, record_accepted_revalidation,
 )
 from bilqis_mlx.runtime.accepted_correction_ledger import correction_record
-from bilqis_mlx.runtime.bamf_bundle import admission, publish_bamf_generation
+from bilqis_mlx.runtime.bamf_bundle import admission
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     bind_accepted_correction_authority, bind_accepted_execution_cache,
     derive_successor_bundle, load_accepted_generation,
 )
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import bind_motif_artifact_owner
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, candidate, next_accepted_step, parent_state, shape_patch,
+    candidate, next_accepted_step, parent_state, publish_candidate, shape_patch,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
     AUTHORITY, _event, _result, _sign_event,
@@ -46,8 +46,7 @@ class AcceptedCorrectionReplayTests(unittest.TestCase):
 
     def publish(self, source):
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            return publish_bamf_generation(
-                self.run, source, acceptance=acceptance(source))
+            return publish_candidate(self.run, source)
 
     def _motif_fixture(self):
         self.publish(candidate(parent_state()))

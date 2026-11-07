@@ -23,7 +23,7 @@ from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
 )
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
-from bilqis_mlx.runtime.bamf_bundle import admission, publish_bamf_generation
+from bilqis_mlx.runtime.bamf_bundle import admission
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     admit_candidate_step, bind_accepted_cache_authority,
     bind_accepted_correction_authority, bind_accepted_execution_cache,
@@ -34,7 +34,7 @@ from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
     require_accepted_execution_cache,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, candidate, next_accepted_step, parent_state, shape_patch,
+    candidate, next_accepted_step, parent_state, publish_candidate, shape_patch,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
     AUTHORITY, _event, _sign_event,
@@ -56,8 +56,7 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
 
     def publish(self, source):
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            return publish_bamf_generation(
-                self.run, source, acceptance=acceptance(source))
+            return publish_candidate(self.run, source)
 
     def test_only_accepted_b13_custody_mints_live_execution_cache(self):
         self.publish(candidate(parent_state()))
