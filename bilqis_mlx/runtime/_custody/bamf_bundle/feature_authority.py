@@ -94,10 +94,10 @@ def _artifact_path_for_bundle(artifact_path: str, bundle_id: str) -> Path:
     every other release path from the custody-recorded bundle digest.
     """
     supplied = Path(artifact_path)
-    if supplied.name == bundle_id:
-        return supplied
-    if is_digest(supplied.name) and (supplied / "manifest.json").is_file():
-        return supplied.parent / bundle_id
+    is_bundle_dir = (
+        is_digest(supplied.name) and (supplied / "manifest.json").is_file())
+    if is_bundle_dir:
+        return supplied if supplied.name == bundle_id else supplied.parent / bundle_id
     return supplied / bundle_id
 
 

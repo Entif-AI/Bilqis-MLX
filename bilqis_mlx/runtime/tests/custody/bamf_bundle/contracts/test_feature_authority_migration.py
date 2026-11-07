@@ -36,7 +36,9 @@ class AcceptedFeatureMigrationTests(FeatureLineageCase):
         source_root = self.root / "source"
         source_root.mkdir()
         bundle, coverage, *_ = _fixture_bundle(source_root)
-        atlas_root = self.root / "atlas"
+        # A digest-looking artifact root is still a root unless it is itself a
+        # persisted Atlas bundle. This guards the locator-availability edge.
+        atlas_root = self.root / ("f" * 64)
 
         first_release = compile_atlas_release(
             bundle, coverage, PRIOR_ABI, _bindings())
@@ -68,14 +70,16 @@ class AcceptedFeatureMigrationTests(FeatureLineageCase):
             "invalidate_derived_caches": True})
         self.publish(changed)
 
-        with shape_patch(), patch(
-                "bilqis_mlx.semantics.atlas.snapshot._require_registered_source_pin"):
-            receipt, current, predecessor = read_accepted_generation_feature_lineage(
-                self.pointer, second_artifact.path)
+        for locator in (atlas_root, second_artifact.path):
+            with self.subTest(locator=locator), shape_patch(), patch(
+                    "bilqis_mlx.semantics.atlas.snapshot._require_registered_source_pin"):
+                receipt, current, predecessor = read_accepted_generation_feature_lineage(
+                    self.pointer, locator)
 
-        self.assertEqual(receipt.feature_sha256, second_features.digest)
-        self.assertEqual(receipt.predecessor_feature_sha256, first_features.digest)
-        self.assertEqual((current, predecessor), (second_features, first_features))
+            self.assertEqual(receipt.feature_sha256, second_features.digest)
+            self.assertEqual(receipt.predecessor_feature_sha256, first_features.digest)
+            self.assertEqual(
+                (current, predecessor), (second_features, first_features))
 
     def test_live_v2_cutover_preserves_changed_feature_construction_history(self):
         root = source_features()
