@@ -137,10 +137,17 @@ def _accepted_feature_chain(run_dir: Path, manifest_sha256: str, student,
         run_dir, parent_sha, parent, artifact_path,
         expected_acceptance_sha256=parent_acceptance)
     if student.extents.factor_map_digest == parent.extents.factor_map_digest:
-        features = _authenticate_features(student, artifact_path)
-        if features.digest != prior.digest:
-            invalid("BAMF_FEATURE_PREDECESSOR_UNAUTHENTICATED")
-        return features, binding, prior
+        source = _feature_source(student.compiler_features)
+        if (student.compiler_features.get("factor_map_sha256") != prior.digest
+                or source != _feature_source(parent.compiler_features)
+                or _feature_schema(student.compiler_features)
+                != _feature_schema(parent.compiler_features)
+                or student.provenance.release_digest != prior.semantic_release
+                or source["release_sha256"] != prior.semantic_release
+                or source["atlas_bundle_id"] != prior.atlas_bundle_id
+                or source["source_bundle_id"] != prior.source_bundle_id):
+            invalid("BAMF_FEATURE_SOURCE_REPLAY_MISMATCH")
+        return prior, binding, prior
     features = _authenticate_features(student, artifact_path, predecessor=prior)
     if features.predecessor_digest != prior.digest:
         invalid("BAMF_FEATURE_PREDECESSOR_UNAUTHENTICATED")

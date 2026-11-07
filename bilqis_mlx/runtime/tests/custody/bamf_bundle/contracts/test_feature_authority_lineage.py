@@ -12,7 +12,9 @@ from unittest.mock import patch
 
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.learning.atlas_acceptance import mint_acceptance_binding
 from bilqis_mlx.runtime.bamf_bundle import (
+    publish_bamf_generation,
     read_accepted_generation_feature_lineage,
     verify_accepted_generation_feature_receipt,
 )
@@ -22,7 +24,8 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.contracts.test_feature_authori
     ARBITRARY, feature_bound, frozen_snapshot, source_features,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    accepted_state, candidate, parent_state, publish_candidate, shape_patch,
+    accepted_state, candidate, next_accepted_step, parent_state, publish_candidate,
+    retention_decision, shape_patch,
 )
 
 SUCCESSOR_RELEASE = "c" * 64
@@ -146,6 +149,58 @@ class AcceptedFeatureLineageTests(unittest.TestCase):
         self.assertEqual(receipt.feature_sha256, root.digest)
         self.assertEqual(receipt.predecessor_feature_sha256, root.digest)
         self.assertEqual((current, predecessor), (root, root))
+
+    def test_retained_descendant_preserves_changed_map_construction_lineage(self):
+        root = source_features()
+        first = self.publish(feature_bound(candidate(parent_state()), root))
+        changed = replace(
+            root, semantic_release=SUCCESSOR_RELEASE,
+            atlas_bundle_id=SUCCESSOR_ATLAS_BUNDLE,
+            source_bundle_id=SUCCESSOR_SOURCE_BUNDLE,
+            predecessor_digest=root.digest)
+        changed_candidate = feature_bound(
+            candidate(accepted_state(parent_state()), 1, first["manifest_sha256"]),
+            changed, release=SUCCESSOR_RELEASE,
+            atlas_bundle=SUCCESSOR_ATLAS_BUNDLE,
+            source_bundle=SUCCESSOR_SOURCE_BUNDLE)
+        changed_candidate = replace(changed_candidate, transition={
+            **changed_candidate.transition, "kind": "PARAMETER_EXTENSION",
+            "invalidate_derived_caches": True})
+        second = self.publish(changed_candidate)
+        retained = feature_bound(
+            candidate(
+                next_accepted_step(accepted_state(parent_state())), 2,
+                second["manifest_sha256"]),
+            changed, release=SUCCESSOR_RELEASE,
+            atlas_bundle=SUCCESSOR_ATLAS_BUNDLE,
+            source_bundle=SUCCESSOR_SOURCE_BUNDLE)
+        binding = mint_acceptance_binding(
+            retention_decision(
+                parent=changed_candidate.retained_state,
+                retained=retained.retained_state),
+            retained.retained_state, run_id=retained.run_id,
+            generation=retained.generation,
+            feature_sha256=retained.extents.factor_map_digest)
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            publish_bamf_generation(self.run, retained, acceptance=binding)
+
+        def replay(snapshot, schema):
+            return changed if schema.predecessor is not None else root
+
+        with shape_patch(), patch.object(
+                feature_authority, "load_pinned_atlas_snapshot",
+                side_effect=frozen_snapshot), patch.object(
+                feature_authority, "build_feature_manifest", side_effect=replay):
+            receipt, current, predecessor = read_accepted_generation_feature_lineage(
+                self.pointer, "/artifact")
+            self.assertEqual(
+                verify_accepted_generation_feature_receipt(
+                    self.pointer, "/artifact", receipt), receipt)
+
+        self.assertEqual(receipt.generation, 2)
+        self.assertEqual(receipt.feature_sha256, changed.digest)
+        self.assertEqual(receipt.predecessor_feature_sha256, changed.digest)
+        self.assertEqual((current, predecessor), (changed, changed))
 
     def test_successor_rejects_resigned_historical_parent_acceptance(self):
         root = source_features()
