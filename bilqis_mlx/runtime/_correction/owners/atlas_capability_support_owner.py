@@ -247,14 +247,36 @@ def load_capability_support_owner(
         artifact_id=node.artifact_id,
     )
     if hold is None:
-        return owner
-    if (hold.get("capability_id") != capability_id
-            or hold.get("manifest_sha256") != manifest_sha256
-            or hold.get("artifact_id") != node.artifact_id
-            or hold.get("state") not in {
-                "HELD", "CLEARED", "REQUALIFICATION_REQUIRED"}):
-        _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_DRIFT")
-    return _rehydrate_support_hold(owner, hold, node, authority_registry)
+        rehydrated = owner
+        seen_event_ids = ()
+    else:
+        if (hold.get("capability_id") != capability_id
+                or hold.get("manifest_sha256") != manifest_sha256
+                or hold.get("artifact_id") != node.artifact_id
+                or hold.get("state") not in {
+                    "HELD", "CLEARED", "REQUALIFICATION_REQUIRED"}):
+            _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_DRIFT")
+        rehydrated = _rehydrate_support_hold(
+            owner, hold, node, authority_registry)
+        from bilqis_mlx.runtime.accepted_corrections import (
+            accepted_correction_id,
+        )
+        seen_event_ids = (
+            accepted_correction_id(
+                manifest_sha256, event_from_record(hold.get("event"))),
+        )
+    from bilqis_mlx.runtime.accepted_corrections import (
+        register_accepted_target,
+    )
+    from .atlas_owner_ingress import apply_capability_support_correction
+    register_accepted_target(
+        run_dir, manifest_sha256, "CAPABILITY_SUPPORT", rehydrated,
+        lambda event, registry: apply_capability_support_correction(
+            rehydrated, event, registry),
+        authority_registry,
+        seen_event_ids=seen_event_ids,
+    )
+    return rehydrated
 
 
 __all__ = ("CapabilitySupportArtifactOwner", "load_capability_support_owner")

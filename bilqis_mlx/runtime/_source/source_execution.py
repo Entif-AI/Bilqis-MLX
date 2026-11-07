@@ -80,18 +80,27 @@ class SourceExecutionContext:
     source_root: Path | None
     source_registry: SourceAdapterRegistry
     answer_registry: AnswerModalityRegistry
+    run_dir: Path | None = None
+    correction_registry: object | None = None
 
     @classmethod
     def from_admitted_release(
             cls, run_dir: Path, receipt: dict, *, graph: dict,
             source_root: Path | None, source_registry: SourceAdapterRegistry,
-            answer_registry: AnswerModalityRegistry) -> SourceExecutionContext:
+            answer_registry: AnswerModalityRegistry,
+            correction_registry=None) -> SourceExecutionContext:
         from .admission import (
             _read_executable_factory_release_artifact as _read_executable_factory_release)
 
         release = _read_executable_factory_release(run_dir, receipt)
+        if correction_registry is not None:
+            from bilqis_mlx.runtime.bamf_bundle.admission import (
+                bind_accepted_correction_authority,
+            )
+            bind_accepted_correction_authority(run_dir, correction_registry)
         return cls(release=release, graph=graph, source_root=source_root,
-                   source_registry=source_registry, answer_registry=answer_registry)
+                   source_registry=source_registry, answer_registry=answer_registry,
+                   run_dir=Path(run_dir), correction_registry=correction_registry)
 
     def __post_init__(self) -> None:
         if not isinstance(self.release, ExecutableFactoryRelease):
@@ -100,6 +109,12 @@ class SourceExecutionContext:
             raise TypeError(FACTORY.EXECUTION.EXPECTED_A_SOURCEADAPTERREGISTRY.legacy_codes[0])
         if not isinstance(self.answer_registry, AnswerModalityRegistry):
             raise TypeError(FACTORY.EXECUTION.EXPECTED_AN_ANSWERMODALITYREGISTRY.legacy_codes[0])
+        if self.run_dir is not None and not isinstance(self.run_dir, Path):
+            _invalid_source_batch("FACTORY_SOURCE_RUN_DIR_INVALID")
+        if self.correction_registry is not None:
+            from bilqis_mlx.runtime.atlas_revalidation import SourceAuthorityRegistry
+            if not isinstance(self.correction_registry, SourceAuthorityRegistry):
+                _invalid_source_batch("FACTORY_SOURCE_CORRECTION_AUTHORITY_INVALID")
         self.release.verify()
         self.release.verify_semantic_catalog(self.graph)
         bindings = self.release.source_bindings.by_capability
@@ -107,6 +122,33 @@ class SourceExecutionContext:
             binding = bindings[capability.capability_id]
             self.source_registry.require(binding.generator_id, binding.oracle_id)
         self.answer_registry.validate_plan(self.release.execution_plan)
+
+    def register_compiled_batch(self, batch) -> None:
+        if self.run_dir is None:
+            return
+        from bilqis_mlx.runtime.accepted_corrections import (
+            register_compiled_batch,
+        )
+        register_compiled_batch(
+            self.run_dir, batch, self.correction_registry)
+
+    def register_solve_context(self, context) -> None:
+        if self.run_dir is None:
+            return
+        from bilqis_mlx.runtime.accepted_corrections import (
+            register_solve_context,
+        )
+        register_solve_context(
+            self.run_dir, context, self.correction_registry)
+
+    def record_correction(self, event) -> str:
+        if self.run_dir is None or self.correction_registry is None:
+            _invalid_source_batch("FACTORY_SOURCE_CORRECTION_RUNTIME_REQUIRED")
+        from bilqis_mlx.runtime.accepted_corrections import (
+            record_accepted_correction,
+        )
+        return record_accepted_correction(
+            self.run_dir, event, self.correction_registry)
 
     def require_capabilities(self, capabilities: tuple[str, ...]) -> None:
         """Check a complete host request before any of its providers run."""

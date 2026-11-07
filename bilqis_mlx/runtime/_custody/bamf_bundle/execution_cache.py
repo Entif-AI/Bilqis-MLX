@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import secrets
+from pathlib import Path
 
 from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
 from bilqis_mlx.errors import ErrorBus, SCHOOL
@@ -40,6 +41,8 @@ class AcceptedExecutionCache:
     _cache_authority: object | None = field(init=False, repr=False, compare=False)
     _cache_authority_registry: object | None = field(init=False, repr=False, compare=False)
     _cache_eligibility_source: object | None = field(init=False, repr=False, compare=False)
+    _run_dir: Path | None = field(init=False, repr=False, compare=False)
+    _correction_registry: object | None = field(init=False, repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
         _invalid("B13_EXECUTION_CACHE_CALLER_CONSTRUCTION_FORBIDDEN")
@@ -80,6 +83,8 @@ def _issue_accepted_execution_cache(
         ("_cache_authority", None),
         ("_cache_authority_registry", None),
         ("_cache_eligibility_source", None),
+        ("_run_dir", None),
+        ("_correction_registry", None),
     ):
         object.__setattr__(cache, name, value)
     cache.__post_init__()
@@ -102,6 +107,17 @@ def bind_motif_artifact_owner(cache, compiled):
         owner = MotifArtifactOwner(cache, compiled)
         object.__setattr__(cache, "_motif_artifact_owner", owner)
     owner.require(cache, compiled)
+    if cache._run_dir is not None:
+        from bilqis_mlx.runtime.accepted_corrections import (
+            register_accepted_target,
+        )
+        from bilqis_mlx.runtime.atlas_owner_ingress import _route
+        register_accepted_target(
+            cache._run_dir, cache.accepted_manifest_sha256,
+            "MOTIF", owner,
+            lambda event, registry: _route(owner, event, registry),
+            cache._correction_registry,
+        )
     return owner
 
 
@@ -118,10 +134,12 @@ def bind_cache_authority(cache, registry, eligibility_source=None):
         object.__setattr__(cache, "_cache_authority", authority)
         object.__setattr__(cache, "_cache_authority_registry", registry)
         object.__setattr__(cache, "_cache_eligibility_source", eligibility_source)
+        object.__setattr__(cache, "_correction_registry", registry)
         return authority
     if (registry != cache._cache_authority_registry
             or eligibility_source is not cache._cache_eligibility_source):
         _invalid("B13_CACHE_AUTHORITY_SOURCE_DRIFT")
+    object.__setattr__(cache, "_correction_registry", registry)
     return authority
 
 

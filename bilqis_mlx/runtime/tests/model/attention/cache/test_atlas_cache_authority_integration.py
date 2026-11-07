@@ -19,6 +19,7 @@ from bilqis_mlx.runtime import mlx_checkpoint
 from bilqis_mlx.runtime.atlas_cache_codec import (
     HEAD_WIDTH, CacheBinding, CacheEligibilityReceipt, codec_manifest,
     encode_cold_cache, issue_cache_eligibility, rebuild_revoked_cache,
+    CacheQualityObservation, CacheQualityPolicy,
 )
 from bilqis_mlx.runtime.atlas_cache_binding import binding_digest
 from bilqis_mlx.runtime.atlas_cache_eligibility import CacheEligibilityInputs
@@ -28,9 +29,18 @@ from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
 )
 from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    DECLARED, candidate, parent_state, shape_patch,
+from bilqis_mlx.runtime.bamf_bundle import admission
+from bilqis_mlx.runtime.bamf_bundle.admission import (
+    bind_accepted_cache_authority, interactive_accepted_cache_inference,
 )
+from bilqis_mlx.runtime.accepted_corrections import (
+    _RUNTIME_OWNER, record_accepted_correction,
+)
+from bilqis_mlx.runtime import atlas_cache_runtime
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
+    DECLARED, acceptance, candidate, parent_state, shape_patch,
+)
+from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event, _ref
 from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import (
     OWNER_ID, PUBLIC_KEY_HEX, authority_for_registry, install_test_owner,
 )
@@ -185,7 +195,9 @@ def _binding(pointer, source, selection, clearance, frames, task, frontier, poli
 
 class CacheAuthorityIntegrationTests(unittest.TestCase):
     def setUp(self):
-        install_test_owner(self, eligibility=False, current_binding=False)
+        if self._testMethodName != (
+                "test_live_b13_a12_and_context_authority_issue_exact_rebuild_receipt"):
+            install_test_owner(self, eligibility=False, current_binding=False)
 
     def test_caller_matching_receipt_is_not_authority(self):
         binding = CacheBinding(
@@ -218,14 +230,20 @@ class CacheAuthorityIntegrationTests(unittest.TestCase):
             run = Path(temporary) / "run"
             source = _source(selection, frontier)
             with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-                pointer = publish_bamf_generation(run, source)
+                pointer = publish_bamf_generation(
+                    run, source, acceptance=acceptance(source))
             inputs = CacheEligibilityInputs(
                 run / "bamf-state.json", clearance, selection, frontier,
                 _EXPORTED, frames, task, policy,
                 lambda binding: np.zeros((256, HEAD_WIDTH), dtype=np.float32),
             )
-            authority = authority_for_registry(
-                _registry(), eligibility_source=lambda: inputs)
+            registry = SourceAuthorityRegistry(tuple(sorted(
+                (*_registry().keys, *AUTHORITY.keys),
+                key=lambda item: item.owner_id)))
+            eligibility_source = lambda: inputs
+            with _cache_shape_patch():
+                _cache, authority = bind_accepted_cache_authority(
+                    run, registry, eligibility_source)
             binding = _binding(
                 pointer, source, selection, clearance, frames, task, frontier, policy)
             with _cache_shape_patch():
@@ -242,6 +260,54 @@ class CacheAuthorityIntegrationTests(unittest.TestCase):
                     persist=persisted.append)
             self.assertTrue(rebuilt.persisted)
             self.assertEqual(persisted, [rebuilt.artifact])
+
+            values = np.ones((256, HEAD_WIDTH), dtype=np.float32)
+            with _cache_shape_patch():
+                live_artifact = encode_cold_cache(
+                    authority, values, binding.codec_manifest, binding=binding)
+                live = interactive_accepted_cache_inference(
+                    run, registry, live_artifact, binding,
+                    cached_infer=lambda _: "CACHE",
+                    fp32_recompute=lambda: "FP32",
+                    quality_check=lambda _: CacheQualityObservation(True, 0.0),
+                    policy=CacheQualityPolicy(0.01),
+                    eligibility_source=eligibility_source,
+                )
+            self.assertTrue(live.used_cache)
+            correction = _event(_ref(
+                DependencyKind.RIGHTS,
+                "rights:" + binding.source_rights_sha256))
+            with _cache_shape_patch():
+                record_accepted_correction(run, correction, registry)
+                held = interactive_accepted_cache_inference(
+                    run, registry, live_artifact, binding,
+                    cached_infer=lambda _: self.fail(
+                        "held cache influenced output"),
+                    fp32_recompute=lambda: "FP32",
+                    quality_check=lambda _: CacheQualityObservation(True, 0.0),
+                    policy=CacheQualityPolicy(0.01),
+                    eligibility_source=eligibility_source,
+                )
+            self.assertFalse(held.used_cache)
+
+            admission._EXECUTION_CACHE_OWNER.entries.clear()
+            _RUNTIME_OWNER.clear()
+            atlas_cache_runtime._ACCEPTED_CACHE_AUTHORITY_ISSUER._accepted_caches.clear()
+            with _cache_shape_patch():
+                _cold_cache, cold_authority = bind_accepted_cache_authority(
+                    run, registry, eligibility_source)
+                cold_artifact = encode_cold_cache(
+                    cold_authority, values, binding.codec_manifest, binding=binding)
+                cold_held = interactive_accepted_cache_inference(
+                    run, registry, cold_artifact, binding,
+                    cached_infer=lambda _: self.fail(
+                        "cold-replayed held cache influenced output"),
+                    fp32_recompute=lambda: "FP32",
+                    quality_check=lambda _: CacheQualityObservation(True, 0.0),
+                    policy=CacheQualityPolicy(0.01),
+                    eligibility_source=eligibility_source,
+                )
+            self.assertFalse(cold_held.used_cache)
 
             for changed in (
                 replace(binding, generation_sha256="0" * 64),
