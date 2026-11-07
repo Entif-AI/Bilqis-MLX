@@ -11,13 +11,25 @@ from unittest.mock import patch
 
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.factory.skos_curriculum.source_context import (
+    SourceLessonContexts, project_source_lesson_contexts,
+    source_lesson_expiry_task,
+)
+from bilqis_mlx.factory.skos_curriculum.source_context_policy import (
+    issue_source_context_transition_authority,
+)
+from bilqis_mlx.factory.tests.skos.test_source_context import (
+    RELEASE, SELECTION, _context,
+)
 from bilqis_mlx.learning.tests.test_frame_encoder import FrameEncoderTests
 from bilqis_mlx.runtime.accepted_corrections import (
     AcceptedRuntimeHost, _RUNTIME_OWNER,
     record_accepted_correction, record_accepted_revalidation,
-    register_solve_context,
+    register_accepted_target, register_solve_context,
 )
 from bilqis_mlx.runtime.accepted_correction_ledger import correction_record, read_records
+from bilqis_mlx.runtime.atlas_artifact_owner import PackedFrameArtifactOwner
+from bilqis_mlx.runtime.atlas_owner_ingress import _route
 from bilqis_mlx.runtime.atlas_revalidation import RevalidationFrontier
 from bilqis_mlx.runtime.bamf_bundle import admission, publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import (
@@ -34,7 +46,15 @@ from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
 from bilqis_mlx.runtime.tests.capability.factory.solver_helpers import _fixture
 from bilqis_mlx.runtime.cognitive_solver import QualifiedComposition, SolveContext
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
+from bilqis_mlx.semantics.context_eligibility import (
+    ApprovedContextProjection, SourceFrontier,
+)
 from bilqis_mlx.semantics.domains import contract_digest
+from bilqis_mlx.semantics.frame_codec import SchemaTagMap
+from bilqis_mlx.semantics.frame_compiler import (
+    CompiledFrameBatch, CompiledFrameRows, CompiledPosition, PositionKind,
+    SourceAtom, _prefix_digest, pack_frame,
+)
 
 
 class AcceptedCorrectionRuntimeTests(unittest.TestCase):
@@ -129,15 +149,76 @@ class AcceptedCorrectionRuntimeTests(unittest.TestCase):
         )
 
     def test_a13_context_invalidation_is_durable_without_becoming_a_correction(self):
-        cache, compiled, owner = self._motif_fixture()
-        config = compiled.compiler_configs[0]
-        previous = config.approved
-        task = replace(config.task, effective_time=config.task.effective_time + 1)
+        authority = issue_source_context_transition_authority(SELECTION)
+        task, policy = authority.task, authority.policy
+        positive = _context(
+            "fixture:positive", "NI-WEB-CH01:1.0", task, policy,
+            authority=authority)
+        contrast = _context(
+            "fixture:contrast", "NI-WEB-CH01:1.1", task, policy,
+            authority=authority)
+        grants = tuple(sorted(
+            (*positive.grants, *contrast.grants),
+            key=lambda item: item.source_handle))
+        contexts = SourceLessonContexts(
+            RELEASE, positive, contrast, grants, authority)
+        frontier = SourceFrontier(
+            authority.frontier.rights_epoch,
+            authority.frontier.correction_generation,
+            grants,
+        )
+        previous = project_source_lesson_contexts(
+            contexts, task, frontier, policy)
+        self.assertIsInstance(previous, ApprovedContextProjection)
+        expiry_task = source_lesson_expiry_task(
+            contexts, task, frontier, policy)
+
+        frame = positive.envelope.frame
+        schema_map = SchemaTagMap.from_schemas(RELEASE, ())
+        packed = pack_frame(frame, schema=None, schema_map=schema_map)
+        atom = SourceAtom(0, "fixture", "source:fixture-atom")
+        positions = (
+            CompiledPosition(0, PositionKind.ATOM, atom=atom),
+            CompiledPosition(
+                0, PositionKind.CLOSURE, packed=packed,
+                frame_handle=positive.envelope.frame_handle),
+        )
+        version = (
+            policy.policy_id, policy.policy_epoch, policy.rights_epoch,
+            frontier.correction_generation,
+        )
+        row = CompiledFrameBatch(
+            frame.source_instance_id, RELEASE, 1, positions, schema_map,
+            previous.digest, task.scope, version,
+            _prefix_digest(
+                frame.source_instance_id, RELEASE, 1, schema_map,
+                previous.digest, positions, task.scope, version),
+        )
+        rows = CompiledFrameRows(
+            (row,), (positions,), ((True, True),))
+        owner = PackedFrameArtifactOwner(rows)
+
+        self.publish(candidate(parent_state()))
         with shape_patch():
+            cache = bind_accepted_execution_cache(self.run)
+            register_accepted_target(
+                self.run, cache.accepted_manifest_sha256,
+                "PACKED_FRAME", owner,
+                lambda current, event, source_authority: _route(
+                    current, event, source_authority),
+                AUTHORITY,
+            )
+            self.assertTrue(owner.require_row(row))
             host = AcceptedRuntimeHost(self.run, AUTHORITY)
             transition = host.record_context_transition(
-                previous, previous.envelopes, task, config.frontier, config.policy)
+                previous,
+                (positive.envelope, contrast.envelope),
+                expiry_task, frontier, policy)
         self.assertEqual(len(transition.invalidations), 1)
+        self.assertEqual(
+            transition.invalidations[0].old_context_digest,
+            previous.digest,
+        )
         records = read_records(self.run, cache.accepted_manifest_sha256)
         self.assertEqual(records[-1]["event"], "BAMF_C09_CONTEXT_INVALIDATION")
         self.assertNotIn("correction", records[-1])
@@ -146,22 +227,23 @@ class AcceptedCorrectionRuntimeTests(unittest.TestCase):
             transition.invalidations[0].event_id,
         )
         with self.assertRaises(BilqisError) as held:
-            owner.require(cache, compiled)
+            owner.require_row(row)
         self.assertEqual(held.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
 
         admission._EXECUTION_CACHE_OWNER.entries.clear()
         _RUNTIME_OWNER.clear()
+        cold_owner = PackedFrameArtifactOwner(rows)
         with shape_patch():
             cold_cache = bind_accepted_execution_cache(self.run)
-        cold_compiled = replace(
-            compiled,
-            extents=replace(
-                compiled.extents,
-                motif_key_map_digest=cold_cache.motif_manifest.digest,
-            ),
-        )
+            register_accepted_target(
+                self.run, cold_cache.accepted_manifest_sha256,
+                "PACKED_FRAME", cold_owner,
+                lambda current, event, source_authority: _route(
+                    current, event, source_authority),
+                AUTHORITY,
+            )
         with self.assertRaises(BilqisError) as cold_held:
-            bind_motif_artifact_owner(cold_cache, cold_compiled)
+            cold_owner.require_row(row)
         self.assertEqual(cold_held.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
 
     def test_live_reader_observes_correction_committed_by_another_process(self):
