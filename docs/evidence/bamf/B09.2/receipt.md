@@ -87,3 +87,62 @@ Focused B09.2 tests prove:
 The inherited B09 adapter/cadence suite remains green. No live learner, optimizer
 moments/counts, checkpoint, accepted generation, teacher choice, or student
 parameter was mutated.
+
+
+## Completion addendum — 2026-11-06
+
+This addendum supersedes the historical integration-status sentence above without
+rewriting the evidence that was true when the original receipt was authored.
+
+Issue #465's original candidate was correctly rejected by pinned Goldfish because
+caller-mintable eligibility/participation records could authorize a contradictory
+FAST-over-SLOW update. Remediation issue #711 closed that authority seam by binding
+B09 participation and final masks to production execution ownership and the B01
+census, while #710 bound B12 candidate steps to the resulting owner-issued
+execution provenance.
+
+The accepted remediation lineage was consolidated in PR #809. Pinned Goldfish EGM
+checkout `b3a35956759bf7f024af2ff061b2e0b44b438e4c` passed the semantic candidate
+`93233f86849f374ce5026291d4fd5cfa902a2e31` with **0 Blockers / 0 Majors /
+0 Nits** after the sole initial mirror-policy Major was repaired and re-audited.
+PR #809 then passed fresh hosted `portable-core`, `portable`, and
+`semantic-abi-integrity` checks and merged into reviewed unified as
+`b16941114dee33247ee9a9e6c013797b9d82af27`.
+
+The reviewed-unified production path now:
+- rederives group eligibility from accepted B01 topology/census and retained policy;
+- consumes B11-issued loss execution, including actual identity, feature,
+  local-slot, dense-parameter, semantic-denominator, role-read, and retained B08
+  motif-read facts;
+- rejects caller-authored execution participation and forged FAST
+  reclassification of SLOW parameters;
+- applies the final B09 mask before clipping and B12 AdamW arithmetic;
+- advances selected zero-gradient rows through B12's moment/count/decay owner while
+  leaving nonparticipants byte-identical;
+- increments row establishment age only from accepted candidates and preserves
+  parent clocks/state on rejection;
+- seals run/generation/parent/topology/step identity so provenance cannot be
+  replayed as another candidate step.
+
+The historical #691/B08.1 integration hold recorded above is therefore no longer a
+B09.2 completion blocker. The accepted #710/#711 remediation is present in the
+reviewed-unified ancestry, and both remediation issues are CLOSED/COMPLETED with
+`EGM-Passed`.
+
+### Final B09.2 acceptance ledger
+
+- Original issue: #465 / B09.2.
+- Original failed candidate: PR #692, head
+  `a1025e442277ee71b2120f87b9254179cee88dfb`.
+- Corrective owner: #711; coupled B12 provenance remediation: #710.
+- Accepted integration: PR #809.
+- Accepted reviewed-unified merge commit:
+  `b16941114dee33247ee9a9e6c013797b9d82af27`.
+- Pinned semantic EGM: PASS, 0 Blockers / 0 Majors / 0 Nits.
+- Fresh hosted merge-head checks: portable-core PASS; portable PASS;
+  semantic-abi-integrity PASS.
+- No live human-owned student, optimizer lineage, checkpoint, teacher, champion,
+  or durable neural run was started or mutated by this closeout.
+
+This closeout branch is documentation-only. It does not create a second B09.2
+implementation or fork the accepted authority path.
