@@ -18,6 +18,7 @@ from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.runtime.atlas_training_adapter import compile_training_batch
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
+from bilqis_mlx.runtime.tests.batch.visit_provenance_support import visit_provenance
 from bilqis_mlx.runtime.tests.test_atlas_training_adapter import answer_plan_for
 from bilqis_mlx.semantics.atlas.feature_io import persist_feature_manifest
 from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest
@@ -127,6 +128,7 @@ class RealTrainingAuthorityTests(unittest.TestCase):
                 release, 'A.IDENTITY', 'source.direct/A.IDENTITY', cls.rows),
             delivery_capability='A.IDENTITY', delivery_release_sha256=release.release_sha256,
             teacher_strategy={}, requested_count=2, optimizer_step_seed=1, rehearsal_by_id={},
+            visit_provenance=visit_provenance('A.IDENTITY'),
             source_authority=cls.source_authority,
             visible_ends={row['id']: len(row['tokens']) for row in cls.rows},
             source_ast_for=lambda tokens: ast_by_tokens[tuple(tokens)],

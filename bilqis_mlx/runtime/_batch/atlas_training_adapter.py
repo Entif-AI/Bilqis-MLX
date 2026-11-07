@@ -21,7 +21,7 @@ from bilqis_mlx.semantics.context_eligibility import (
 from bilqis_mlx.semantics.domains import contract_digest
 from .atlas_training_contracts import (
     BamfModelInput, BamfTarget, BamfDeliveryProvenance,
-    BamfTrainingRow, BamfTrainingBatch, PaddedMicrobatch,
+    BamfTrainingRow, BamfTrainingBatch, BamfVisitProvenance, PaddedMicrobatch,
     _invalid, _freeze, _issue_training_batch, require_current_release,
 )
 from .batch_training_authority import rederive_training_authority
@@ -163,7 +163,8 @@ def _compile_native_target(row, *, kind: str, gold, head, source_context: Source
 def compile_training_batch(delivered_rows, source_context: SourceExecutionContext,
                            topology, *, delivery: DeliveredTeaching, delivery_capability: str,
                            delivery_release_sha256: str, teacher_strategy: dict, requested_count: int,
-                           optimizer_step_seed: int, source_authority: SourceBatchAuthority,
+                           optimizer_step_seed: int, visit_provenance: BamfVisitProvenance,
+                           source_authority: SourceBatchAuthority,
                            rehearsal_by_id: dict, visible_ends: dict, source_ast_for: Callable,
                            compiler_config, feature_artifact_path, answer_plan_for: Callable,
                            frames_for_ast: Callable, task_scope: TaskScope,
@@ -172,6 +173,9 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
     """Compile source-oracled delivery through accepted A05/A06 owners."""
     if type(topology) is not ModelTopologySpecV2:
         _invalid('TOPOLOGY_AUTHORITY_REQUIRED')
+    if (type(visit_provenance) is not BamfVisitProvenance
+            or visit_provenance.capability_id != delivery_capability):
+        _invalid('VISIT_PROVENANCE_CAPABILITY_MISMATCH')
     release, capabilities, owner = _require_compile_request(delivered_rows, source_context,
         delivery=delivery, delivery_capability=delivery_capability,
         delivery_release_sha256=delivery_release_sha256,
@@ -225,7 +229,8 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
                                                source_context=source_context)
         provenance = BamfDeliveryProvenance(identity, source_content_digest((row,)), source_id,
             capability, operation_id,
-            _freeze(teacher_strategy), requested_count, len(delivered_rows), rehearsal, optimizer_step_seed, family, episode)
+            _freeze(teacher_strategy), requested_count, len(delivered_rows), rehearsal,
+            optimizer_step_seed, visit_provenance, family, episode)
         result.append(BamfTrainingRow(model_input, target, native_target, provenance))
     return _issue_training_batch(
         release.release_sha256, generation_binding, content_digest(delivered_rows),

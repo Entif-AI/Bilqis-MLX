@@ -9,6 +9,7 @@ from bilqis_mlx.factory.teaching import describe_delivered_teaching
 from bilqis_mlx.runtime.atlas_training_adapter import compile_training_batch
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.runtime.bamf_bundle import authenticate_bamf_candidate_feature_context
+from bilqis_mlx.runtime.tests.batch.visit_provenance_support import visit_provenance
 from bilqis_mlx.semantics.context_eligibility import (
     PUBLIC_FORMAL, ContextPolicy, SourceFrontier, TaskScope,
 )
@@ -110,6 +111,7 @@ def source_training_batch(source_context, candidate, artifact_path, row, generat
             delivery_release_sha256=source_context.release.release_sha256,
             teacher_strategy=(teacher_strategy or {"policy": "factory-c05-live"}),
             requested_count=1, optimizer_step_seed=optimizer_step_seed,
+            visit_provenance=visit_provenance(capability),
             source_authority=source_context.bind_rows(
                 (row,), seed=source_seed, capability=capability, each=source_each),
             rehearsal_by_id={}, visible_ends={row["id"]: len(row["tokens"])},

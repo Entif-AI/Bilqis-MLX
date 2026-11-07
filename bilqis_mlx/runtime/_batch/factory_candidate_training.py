@@ -30,6 +30,7 @@ from .atlas_training_delivery import capture_realized_delivery
 from .factory_training_bridge import (
     PreparedFactoryTrainingBatch, prepare_factory_training_batch,
 )
+from .atlas_visit_provenance import BamfVisitProvenance
 
 
 def _invalid(reason: str):
@@ -127,6 +128,7 @@ def execute_factory_candidate_step(
     source_seed: int,
     source_each: int,
     optimizer_step_seed: int,
+    visit_provenance: BamfVisitProvenance,
     teacher_strategy: dict,
     teacher_hparams,
     max_norm: float,
@@ -156,6 +158,7 @@ def execute_factory_candidate_step(
         delivered_rows, generation, capability=capability, delivery=delivery,
         requested_count=requested_count, source_seed=source_seed,
         source_each=source_each, optimizer_step_seed=optimizer_step_seed,
+        visit_provenance=visit_provenance,
         teacher_strategy=teacher_strategy,
         rehearsal_by_id=rehearsal_by_id)
     resource_plan = _resource_plan(prepared, parent, memory_budget)

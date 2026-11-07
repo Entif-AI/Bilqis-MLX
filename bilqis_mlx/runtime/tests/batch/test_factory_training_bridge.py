@@ -47,6 +47,7 @@ from bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_liv
     HP, genesis_bundle, live_factory_context,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import acceptance
+from bilqis_mlx.runtime.tests.batch.visit_provenance_support import visit_provenance
 from bilqis_mlx.runtime.teacher_observation_capture import (
     ObservationCapture, read_sidecar, store_sidecar,
 )
@@ -92,6 +93,7 @@ class FactoryTrainingBridgeTests(SourceBackboneTestBase):
             capability=capability, delivery=delivery, requested_count=each + 2,
             source_seed=seed, source_each=each,
             optimizer_step_seed=7,
+            visit_provenance=visit_provenance(capability),
             teacher_strategy={"policy": "c02-parent-integration"})
 
     def test_current_a_b_c_draws_bind_exact_c02_rows_into_b11(self):
@@ -304,6 +306,7 @@ class FactoryTrainingBridgeTests(SourceBackboneTestBase):
                 capability="B.IDBOOLOPS", delivery=delivery,
                 requested_count=2, source_seed=37116, source_each=1,
                 optimizer_step_seed=17,
+                visit_provenance=visit_provenance("B.IDBOOLOPS"),
                 teacher_strategy={"policy": "c02-parent-production"},
                 teacher_hparams=HP, max_norm=1.0,
                 observation=observation)
@@ -343,6 +346,7 @@ class FactoryTrainingBridgeTests(SourceBackboneTestBase):
                     capability="A.IDENTITY", delivery=delivery,
                     requested_count=2, source_seed=37117, source_each=2,
                     optimizer_step_seed=18,
+                    visit_provenance=visit_provenance("A.IDENTITY"),
                     teacher_strategy={"policy": "c02-parent-production"},
                     teacher_hparams=HP, max_norm=1.0,
                     observation=observation)

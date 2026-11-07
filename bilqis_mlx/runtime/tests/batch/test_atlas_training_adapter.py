@@ -13,6 +13,7 @@ from bilqis_mlx.factory.tests.test_teaching import closed_source_fixture
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.runtime.atlas_training_adapter import BamfTarget, compile_training_batch, require_current_release
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
+from bilqis_mlx.runtime.tests.batch.visit_provenance_support import visit_provenance
 from bilqis_mlx.semantics.atlas_features import AtlasFeatures, ConceptFeature
 from bilqis_mlx.semantics.core import Literal
 from bilqis_mlx.semantics.context_eligibility import (
@@ -202,7 +203,7 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
                 generation=None, sealed=(), context_mutator=None,
                 frames_override=None, source_ast_override=None,
                 delivery_override=None, extra_kwargs=None,
-                source_context=None, source_seed=17):
+                source_context=None, source_seed=17, visit=None):
         context = source_context or self.context
         delivery = delivery_override or describe_delivered_teaching(
             context.release, 'Z.C0', 'source.direct/Z.C0', rows)
@@ -230,6 +231,7 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
         return compile_training_batch(rows, context, ModelTopologySpecV2(),
             delivery=delivery, delivery_capability='Z.C0', delivery_release_sha256=release_sha or context.release.release_sha256,
             teacher_strategy={'policy': 'focused'}, requested_count=3, optimizer_step_seed=42,
+            visit_provenance=(visit or visit_provenance('Z.C0')),
             source_authority=context.bind_rows(
                 rows, seed=source_seed, capability='Z.C0', each=len(rows)),
             rehearsal_by_id={rows[0]['id']: 'prior'}, visible_ends=visible_ends,
@@ -244,6 +246,22 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
             source_frontier=frontier, eligibility_policy=context_policy,
             generation_binding=generation or self.model_generation,
             sealed_holdout_ids=sealed, **(extra_kwargs or {}))
+
+    def test_visit_provenance_is_bound_without_aliasing_existing_source_or_optimizer_fields(self):
+        first_visit = visit_provenance('Z.C0', run_seed=17)
+        second_visit = visit_provenance('Z.C0', run_seed=18)
+        first = self.compile(self.rows, visit=first_visit)
+        second = self.compile(self.rows, visit=second_visit)
+        provenance = first.rows[0].provenance
+        self.assertEqual(provenance.visit.to_c03_record(), first_visit.to_c03_record())
+        self.assertEqual(provenance.visit.run_seed, 17)
+        self.assertEqual(provenance.optimizer_step_seed, 42)
+        self.assertEqual(provenance.episode_id, 'episode-1')
+        self.assertNotEqual(first.authority_digest, second.authority_digest)
+
+    def test_visit_capability_mismatch_rejects_before_batch_issue(self):
+        with self.assertRaises(BilqisError):
+            self.compile(self.rows, visit=visit_provenance('C.NUMBER'))
 
     def test_cross_source_ast_and_frame_substitution_is_rejected(self):
         def forged_ast(tokens):

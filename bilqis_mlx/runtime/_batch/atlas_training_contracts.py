@@ -12,6 +12,8 @@ from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.semantics.atlas_features import FeatureRow
 from bilqis_mlx.semantics.frame_compiler import CompiledFrameBatch
 
+from .atlas_visit_provenance import BamfVisitProvenance
+
 
 @dataclass(frozen=True)
 class BamfModelInput:
@@ -56,8 +58,14 @@ class BamfDeliveryProvenance:
     delivered_count: int
     rehearsal: str | None
     optimizer_step_seed: int
+    visit: BamfVisitProvenance
     source_family_id: str | None = None
     episode_id: str | None = None
+
+    def __post_init__(self) -> None:
+        if (type(self.visit) is not BamfVisitProvenance
+                or self.visit.capability_id != self.capability_id):
+            _invalid("VISIT_PROVENANCE_CAPABILITY_MISMATCH")
 
 
 @dataclass(frozen=True)
@@ -102,7 +110,10 @@ class BamfTrainingBatch:
             'delivered_content_sha256': self.delivered_content_sha256,
             'delivery_capability': self.delivery_capability,
             'rows': tuple((row.provenance.row_id, row.provenance.source_row_content_sha256,
-                           row.provenance.capability_id)
+                           row.provenance.capability_id,
+                           row.provenance.visit.run_identity_sha256,
+                           row.provenance.visit.run_seed,
+                           row.provenance.visit.visit_id)
                           for row in self.rows),
         }
         wire = json.dumps(payload, sort_keys=True, separators=(',', ':'))

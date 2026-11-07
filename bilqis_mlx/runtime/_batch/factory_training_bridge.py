@@ -33,7 +33,7 @@ from bilqis_mlx.source_adapters.atoms.admission import public_formal_atom_contex
 from bilqis_mlx.source_adapters.atoms.authority import canonical_graph_for
 
 from .atlas_training_adapter import compile_training_batch
-from .atlas_training_contracts import BamfTrainingBatch, _invalid
+from .atlas_training_contracts import BamfTrainingBatch, BamfVisitProvenance, _invalid
 from .factory_training_context import (
     public_training_context, schemas_cover_tree, training_answer_plan,
 )
@@ -155,6 +155,7 @@ def prepare_factory_training_batch(
     source_seed: int,
     source_each: int,
     optimizer_step_seed: int = 0,
+    visit_provenance: BamfVisitProvenance,
     teacher_strategy: dict,
     rehearsal_by_id: dict | None = None,
 ) -> PreparedFactoryTrainingBatch:
@@ -173,6 +174,8 @@ def prepare_factory_training_batch(
             or type(source_seed) is not int or source_seed < 0
             or type(source_each) is not int or source_each != len(rows)
             or type(optimizer_step_seed) is not int or optimizer_step_seed < 0
+            or type(visit_provenance) is not BamfVisitProvenance
+            or visit_provenance.capability_id != capability
             or not isinstance(teacher_strategy, dict)
             or not isinstance(generation_binding, str) or not generation_binding
             or source_context.source_root is None):
@@ -203,6 +206,7 @@ def prepare_factory_training_batch(
         delivery_release_sha256=source_context.release.release_sha256,
         teacher_strategy=teacher_strategy,
         requested_count=requested_count, optimizer_step_seed=optimizer_step_seed,
+        visit_provenance=visit_provenance,
         source_authority=source_context.bind_rows(
             rows, seed=source_seed, capability=capability, each=source_each),
         rehearsal_by_id=(rehearsal_by_id or {}),
