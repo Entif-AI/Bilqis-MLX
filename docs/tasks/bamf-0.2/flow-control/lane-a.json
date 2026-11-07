@@ -98,10 +98,10 @@
     {
       "issue": 888,
       "pr": 891,
-      "state": "ACTIVE",
-      "head_sha": "f956f79af91a5ebc1b8709fb24527dad36a58b1b",
-      "summary": "A09.5a exposes three genuine post-A/B/C source-qualified event realizations through an explicit target-selected candidate-realization seam: D.EVENT_OCCURRENCE, D.COMMENCEMENT and D.TERMINATION. The first event preserves the accepted 227-row numeric allocation frontier by reserving the already-authorized copular row before its own row; later copular activation can consume that preallocated identity with zero semantic rewrite, and copular-first/event-first both remain valid. project_realized_target now advertises the exact semantic suffix actually staged, including the copular reservation on the first event, so #395 AtlasDeltaAdapter projection/staged matching will not falsely classify the valid successor as IMPLEMENTATION_UNCOVERED. The legacy ambient live boundary remains copular-only; source-order permutation and real grade-relabel staging preserve the realization decision; persisted restart returns the same candidate; and foreign same-name rows are rejected unless they equal the canonical source-owned node contract. Focused event realization/order/restart/relabel/authority proof 8/8, source authority 6/6, generic staging 9/9 and legacy Ithkuil compatibility 17/17 pass; module-size, error-control new debt, governance, Factory architecture, flow-control, diff hygiene and changed-file smell gates are green. No C07 lease/admission or learner/optimizer mutation occurs.",
-      "resume_trigger": null,
+      "state": "READY",
+      "head_sha": "78e5e45078539da3005077b34f1316b95c1b8b5a",
+      "summary": "A09.5a realization authority is now consumed by the parent #395 adapter on the same PR candidate. Three genuine post-A/B/C source-qualified event realizations (D.EVENT_OCCURRENCE, D.COMMENCEMENT, D.TERMINATION) stage successively, persist/restart identically, preserve source-order and grade-label invariance, and each traverses next_atlas_delta through the existing learner-evidence/JIT seam. The merge-forward duplicate copular-only source resolver was removed after a focused failing integration test exposed it. Focused A09/frontier/event proof is 122 passed / 1 intentional real-corpus skip; changed-from-unified error debt is zero, changed-file smell audit is clean, Factory architecture/governance/flow-control/diff checks are green, and no C07 lease/admission or learner/optimizer mutation occurs.",
+      "resume_trigger": "Fresh exact-head EGM passes on the combined #395/#888 candidate; hosted PR checks remain green; human review/merge remains separate.",
       "preserved_branch": "codex/bamf02-a09-5a-888-realizations-20261107"
     },
     {
@@ -124,11 +124,11 @@
     },
     {
       "issue": 395,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "c2e212e0bef7975e78dfc2f0a6071e21566b6539",
-      "summary": "A09.5 focused implementation passes on current unified, but three genuine post-A/B/C source-to-staged successor realizations are not yet accepted; #420 supplied rule/family authority, not the required realization breadth.",
-      "resume_trigger": null,
+      "pr": 891,
+      "state": "READY",
+      "head_sha": "78e5e45078539da3005077b34f1316b95c1b8b5a",
+      "summary": "A09.5 parent implementation and realization authority are combined on PR #891 after consuming reviewed unified 76f456776c88a642f79f5a7fa0df01bc729edb04. The adapter now proves three successive real source-qualified post-A/B/C proposals through next_atlas_delta with exact staged successors and current learner evidence; staged restart, source-order/grade-label invariance, true prerequisite holds, held-only termination and COMPLETE_ATLAS_COVERAGE zero-debt behavior are covered across the focused suite. Focused A09/frontier/event proof is 122 passed / 1 intentional real-corpus skip; governance, Factory architecture, error-control, flow-control, diff hygiene and changed-path smell checks are green. Repository-wide workstack remains on its eight pre-existing normalization holds, while the exact mirror/contract verifier passes 43/43 owners and 171 recursive children. Fresh exact-head EGM and hosted/human integration remain.",
+      "resume_trigger": "Fresh exact-head EGM passes on PR #891; then hosted checks and human review/merge complete turn-in.",
       "preserved_branch": "codex/bamf02-a09-5-395-20261105"
     },
     {
