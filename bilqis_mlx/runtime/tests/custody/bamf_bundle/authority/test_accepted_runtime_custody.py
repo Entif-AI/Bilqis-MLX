@@ -186,7 +186,7 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
         append_record(self.run, manifest, first_record)
 
         with patch(
-                "bilqis_mlx.runtime.accepted_correction_ledger._commit_history",
+                "bilqis_mlx.runtime.accepted_correction_storage.commit_history",
                 side_effect=RuntimeError("simulated crash after ledger fsync")):
             with self.assertRaisesRegex(RuntimeError, "simulated crash"):
                 append_record(self.run, manifest, second_record)

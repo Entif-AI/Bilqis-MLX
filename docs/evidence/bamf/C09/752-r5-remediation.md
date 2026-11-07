@@ -18,10 +18,12 @@ EGM episode `C09-752-EGM-20261107`, round `5/5`.
 - H1 verdict: **FAIL — 2 Blockers, 2 Majors, 0 Nits**
 - Post-H1 repair branch: `codex/752-post-egm-h1-fixes-20261107`
 - Required integration trunk: `codex/bamf-unified-base-20261028`
-- Current unified SHA consumed by the final recut integration boundary:
+- Historical final-recut unified SHA:
   `58eb36bba1958e0b3ca5d6aa3080260ccac3e9a1`
-- Current code checkpoint before the final evidence-only freeze:
-  `a18394d7a7bb5fa301dec2b1f2cc62ff65f1c99d`
+- Current post-H1 repair unified SHA:
+  `bb8e83f03e38b64018cfe357addd90a0a6d67297`
+- Current post-H1 code checkpoint is populated after the structural repair
+  freeze commit below; no pre-freeze SHA is presented as the final candidate.
 
 Round 5 was a FAIL. This packet does not revise that verdict, claim a sixth
 review round, claim EGM PASS, authorize a PR, or authorize merge/issue closure.
@@ -94,9 +96,11 @@ full intended append is synchronized and committed. Final history advancement
 and transaction clearing occur in one SQLite transaction. The recovery protocol
 therefore does not trust an auxiliary marker on the mutable ledger filesystem.
 
-Primary surface:
+Primary surfaces:
 
-- `bilqis_mlx/runtime/_correction/accepted_correction_ledger.py`
+- `bilqis_mlx/runtime/_correction/accepted/accepted_correction_ledger.py`
+- `bilqis_mlx/runtime/_correction/accepted/accepted_correction_storage.py`
+- `bilqis_mlx/runtime/_correction/accepted/accepted_correction_recovery.py`
 
 ### H1 Major 2 — registration could evict a still-live equivalent reader
 
@@ -114,8 +118,10 @@ retirement. Dead physical owners disappear without unbounded target retention.
 
 Primary surfaces:
 
-- `bilqis_mlx/runtime/_correction/accepted_correction_runtime.py`
-- `bilqis_mlx/runtime/_correction/accepted_stale_replay_runtime.py`
+- `bilqis_mlx/runtime/_correction/accepted/accepted_correction_runtime.py`
+- `bilqis_mlx/runtime/_correction/accepted/accepted_correction_dispatch.py`
+- `bilqis_mlx/runtime/_correction/accepted/accepted_correction_target.py`
+- `bilqis_mlx/runtime/_correction/accepted/accepted_stale_replay_runtime.py`
 
 ## Governing acceptance
 
@@ -359,6 +365,22 @@ not presented as proof of a later exact head.
   - A01-backed Factory persisted-correction witness likewise crossed the
     interactive threshold and was deliberately stopped. It remains pending a
     detached M3 run against the frozen repair candidate.
+- Current post-H1 repair integration on unified
+  `bb8e83f03e38b64018cfe357addd90a0a6d67297`:
+  - `quality:changed`: **PASS** with **0 new changed-file findings**;
+  - development structure: **PASS, 0 violations** after moving accepted-run
+    correction custody into `_correction/accepted/` and Factory/retention batch
+    tests into `runtime/tests/batch/factory/`;
+  - governance integrity: **PASS, 0 violations**;
+  - legacy-trainer authority checker: **PASS**; checker regressions **7/7 PASS**;
+  - BAMF flow control: **PASS**; flow-control regressions **15/15 PASS**;
+  - BAMF contract verification: **43/43 PASS**;
+  - `git diff --check`: **PASS**;
+  - post-refactor M3 preservation ring: **51/51 focused tests PASS** across
+    motif ownership, accepted correction dispatch, accepted runtime custody,
+    source context, capability support, stale replay, exact-cache authority, and
+    production authority. The accepted-runtime subset was rerun again after the
+    physical compartment move and remained **16/16 PASS**.
 - Final recut on unified
   `58eb36bba1958e0b3ca5d6aa3080260ccac3e9a1`:
   - `quality:changed`: **PASS** with four inherited code-smell findings and
