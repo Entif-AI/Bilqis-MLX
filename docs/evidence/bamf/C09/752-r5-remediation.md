@@ -16,20 +16,24 @@ EGM episode `C09-752-EGM-20261107`, round `5/5`.
 - Human-authorized one-off EGM episode: `C09-752-EGM-H1-20261107`
 - H1 reviewed head: `b6f6a558addaaf16e5ccd94c2267fe338be19e54`
 - H1 verdict: **FAIL — 2 Blockers, 2 Majors, 0 Nits**
+- Human-authorized H2 EGM episode: `C09-752-EGM-H2-20261107`
+- H2 reviewed head: `8006216c9103e77f609ad75a6c7cf1c28759fd5a`
+- H2 verdict: **FAIL — 2 Blockers, 3 Majors, 0 Nits**
 - Post-H1 repair branch: `codex/752-post-egm-h1-fixes-20261107`
 - Required integration trunk: `codex/bamf-unified-base-20261028`
 - Historical final-recut unified SHA:
   `58eb36bba1958e0b3ca5d6aa3080260ccac3e9a1`
 - Current post-H1 repair unified SHA:
-  `bb8e83f03e38b64018cfe357addd90a0a6d67297`
-- Current post-H1 code checkpoint is populated after the structural repair
-  freeze commit below; no pre-freeze SHA is presented as the final candidate.
+  `76f456776c88a642f79f5a7fa0df01bc729edb04`
+- Current post-H2 engineering code freeze:
+  `7a9a698865942af92c04217064c2e648fb8039cf`
 
 Round 5 was a FAIL. This packet does not revise that verdict, claim a sixth
 review round, claim EGM PASS, authorize a PR, or authorize merge/issue closure.
 `docs/tasks/bamf-0.2/EGM_EXECUTION.md` caps an episode at five complete rounds.
-The user subsequently authorized exactly one additional fresh-context review,
-episode `C09-752-EGM-H1-20261107`, and that review also failed. There is no
+The user subsequently authorized H1 and then one further exact-head H2 review.
+Both reviews failed. H2 is the latest authorized review and remains historical
+FAIL; the engineering repairs below do not rewrite that verdict. There is no
 automatic further round. Any later exact-head EGM again requires explicit
 human/design authority. Issue #752 remains OPEN and `EGM-Failed`.
 
@@ -127,6 +131,103 @@ Primary surfaces:
 - `bilqis_mlx/runtime/_correction/accepted/accepted_correction_dispatch.py`
 - `bilqis_mlx/runtime/_correction/accepted/accepted_correction_target.py`
 - `bilqis_mlx/runtime/_correction/accepted/accepted_stale_replay_runtime.py`
+
+## Human-authorized H2 finding closure
+
+H2 reviewed immutable head `8006216c9103e77f609ad75a6c7cf1c28759fd5a`
+and returned **FAIL — 2 Blockers, 3 Majors, 0 Nits**. The following repairs are
+engineering closure only; H2 remains FAIL until a separately authorized future
+exact-head review says otherwise.
+
+### H2 Blocker 1 — unresolved C09 state could vanish across accepted successors
+
+**Finding:** accepted correction evidence and live runtimes were scoped to one
+accepted manifest. An unrelated accepted successor could advance the current
+generation while ancestor corrections, holds, process faults, and
+requalification evidence remained behind the previous manifest.
+
+**Repair:** accepted C09 reads now walk the immutable accepted-manifest ancestry
+and decode `events.jsonl` once in physical append order. Each generation's
+existing crash-safe history commitment is still verified independently; no event
+is copied, rekeyed, or rewritten into a successor. Cold successor custody
+therefore sees unresolved ancestor evidence while retaining the original record
+and commitment authority.
+
+Focused regression:
+`test_unresolved_correction_survives_unrelated_successor_and_cold_restart`.
+It holds a real accepted motif on M0, publishes a legitimate unrelated retained
+M1, clears process caches, and proves M1 refuses the affected motif before use.
+
+### H2 Major 1 — another process could commit a correction after owner registration
+
+**Finding:** durable accepted history was replayed at target registration, but an
+already-registered reader could retain only process-local state while another
+process committed a correction.
+
+**Repair:** every accepted-owner before-use gate reconciles committed durable
+history under the runtime lock and the existing interprocess ledger lock before
+checking artifact holds. Persisted process-fault holds are refreshed there too.
+The append path still releases the ledger lock before synchronous runtime
+delivery, preserving lock ordering.
+
+Focused regression:
+`test_live_reader_observes_correction_committed_by_another_process` starts with a
+live registered reader in process A, appends a valid correction in process B,
+and proves A's very next read fails held without restart or re-registration.
+
+### H2 Major 2 — learned-support invalidation dropped targeted requalification work
+
+**Finding:** changed capability support could enter
+`REQUALIFICATION_REQUIRED` while the production owner discarded the existing
+`TargetedSourceTask` and `C10InvalidationIntent` semantics.
+
+**Repair:** `CapabilitySupportArtifactOwner` now owns a one-capability
+`RequalificationLedger` as its state authority. Changed revalidation invokes the
+existing `mark_affected_capabilities()` semantics, retaining the exact targeted
+source task and C10 intent. The capability-support journal is v2 and persists the
+full ledger on HELD, CLEARED, and REQUALIFICATION_REQUIRED states, with v1
+read compatibility. Accepted runtime flushes pending C10 intents idempotently to
+the run-local Akasha outbox.
+
+### H2 Blocker 2 — stale-replay requalification depended on live support owners
+
+**Finding:** stale replay built its dependency/requalification view only from
+currently registered physical owners. If learned support was not live when a
+post-remediation stale claim arrived, the process fault could be skipped and a
+later/cold support owner could miss `REQUALIFICATION_REQUIRED`.
+
+**Repair:** stale classification supplements live owners with an authenticated,
+non-registering capability-support census derived from the accepted B13 v3
+source anchors. New process-fault records persist the complete
+`RequalificationUpdate`; legacy process-fault rows without that field remain
+readable and do not invent missing state. Late or cold support registration
+replays the durable update, restores tasks/intents, and remains fail-closed.
+
+### H2 Major 3 — F15 did not prove the learned-support production path
+
+**Finding:** the prior F15 integration witness used only a composition owner and
+did not prove retained generation identity, learned-support requalification, or
+targeted task/C10 output.
+
+**Repair / proof:**
+`test_stale_fault_requalifies_support_loaded_only_after_fault` publishes real
+source-qualified accepted support, deliberately leaves the support owner unloaded
+during stale classification, and proves all of the following:
+
+- one process fault is created after completed remediation and matching stale
+  recurrence;
+- the accepted generation remains unchanged;
+- late-loaded support is `REQUALIFICATION_REQUIRED` and blocked;
+- the exact targeted source task and C10 intent are present;
+- the run-local C10 outbox contains exactly one event;
+- clearing the process runtime and cold-loading support restores the same debt
+  without duplicating the outbox event; and
+- independent later actor/time evidence creates no new process fault.
+
+H2 repair preservation ring on M3 Ultra: **32/32 PASS in 21.579s**. The ring
+includes capability-support custody, accepted correction runtime, stale replay,
+true concurrent writers, crash recovery, and C10 outbox idempotence. The focused
+F15 witness re-ran after test-structure cleanup and passed in **1.411s**.
 
 ## Governing acceptance
 
@@ -440,13 +541,13 @@ is consumed at the integration boundary, and the remote feature ref is read
 back exactly.
 
 - Repaired code head before evidence-only freeze:
-  `a18394d7a7bb5fa301dec2b1f2cc62ff65f1c99d`
+  `7a9a698865942af92c04217064c2e648fb8039cf`
 - Consumed unified exact head:
-  `58eb36bba1958e0b3ca5d6aa3080260ccac3e9a1`
+  `76f456776c88a642f79f5a7fa0df01bc729edb04`
 - `quality:changed`: `PASS`
 - BAMF contracts: `PASS_43_OF_43`
-- detached `verify:leaf`:
-  `FAIL_INHERITED_BASELINE_NO_752_SPECIFIC_FAILURE_IDENTIFIED`
-- detached `verify:premerge`: `PENDING`
-- EGM: `FAILED_H1_ONE_OFF_NO_FURTHER_REVIEW_AUTHORIZED`
+- H2 focused preservation ring: `PASS_32_OF_32`
+- detached `verify:leaf`: `NOT_RERUN_AFTER_H2_FAIL`
+- detached `verify:premerge`: `NOT_RUN_WHILE_EGM_FAILED`
+- EGM: `FAILED_H2_2_BLOCKERS_3_MAJORS_REPAIRED_ENGINEERING_ONLY`
 - Final PR: `BLOCKED_PENDING_AUTHORIZED_EGM_PASS`
