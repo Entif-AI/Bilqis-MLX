@@ -30,6 +30,9 @@ from bilqis_mlx.runtime.cognitive_package import (
 )
 from bilqis_mlx.runtime.cognitive_package.delta import _issue_screened, _package_transaction
 from bilqis_mlx.runtime.cognitive_package.tests.fixtures import snapshot
+from bilqis_mlx.runtime.cognitive_package.tests.source_authority_fixture import (
+    authority_for_registry, install_test_owner,
+)
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     HP, NAME, accepted_state, candidate, parent_state, publish_candidate,
     retention_decision, shape_patch,
@@ -46,6 +49,7 @@ PUBLIC = PRIVATE.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw).hex()
 OWNER = "fixture:a12-source-owner"
 REGISTRY = SourceAuthorityRegistry((SourceAuthorityKey(
     OWNER, PUBLIC, (SourceAuthorityScope(DependencyKind.ARTIFACT, "a12-export:"),)),))
+SOURCE_AUTHORITY = authority_for_registry(REGISTRY)
 
 
 def _selection():
@@ -66,6 +70,7 @@ def _receipt(selection, frontier, artifacts):
 
 class PackageImportAdoptionTests(TestCase):
     def setUp(self):
+        install_test_owner(self)
         self.temp = TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
@@ -121,7 +126,7 @@ class PackageImportAdoptionTests(TestCase):
             return publish_screened_delta_import(
                 screened, self.run, export_clearance=receipt,
                 atlas_selection=self.selection, source_frontier=self.frontier,
-                authority_registry=REGISTRY)
+                source_authority=SOURCE_AUTHORITY)
 
     def test_eligible_import_resets_receiver_state_and_publishes_lineage(self):
         screened, receipt = self.screened()
@@ -196,6 +201,17 @@ class PackageImportAdoptionTests(TestCase):
         pointer = json.loads((self.run / "bamf-state.json").read_text())
         self.assertEqual(pointer["manifest_sha256"], self.pointer["manifest_sha256"])
 
+    def test_matching_caller_registry_is_not_c09_runtime_authority(self):
+        screened, receipt = self.screened()
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            with self.assertRaises(BilqisError):
+                publish_screened_delta_import(
+                    screened, self.run, export_clearance=receipt,
+                    atlas_selection=self.selection, source_frontier=self.frontier,
+                    source_authority=REGISTRY)
+        pointer = json.loads((self.run / "bamf-state.json").read_text())
+        self.assertEqual(pointer["manifest_sha256"], self.pointer["manifest_sha256"])
+
     def test_stale_screened_parent_fails_after_intervening_generation(self):
         screened, receipt = self.screened()
         advanced = accepted_state(self.state)
@@ -218,7 +234,7 @@ class PackageImportAdoptionTests(TestCase):
                 publish_screened_delta_import(
                     screened, self.run, export_clearance=receipt,
                     atlas_selection=self.selection, source_frontier=self.frontier,
-                    authority_registry=REGISTRY)
+                    source_authority=SOURCE_AUTHORITY)
         pointer = json.loads((self.run / "bamf-state.json").read_text())
         self.assertEqual(pointer["manifest_sha256"], self.pointer["manifest_sha256"])
 

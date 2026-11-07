@@ -160,3 +160,54 @@ class SourceAuthorityRegistry:
             transition.artifact_id,
             transition.source_signature_hex,
             transition.revalidated_signing_bytes())
+
+
+def _new_authority_owner():
+    """Create one process-local owner for opaque C09 source authority."""
+    issued = {}
+
+    def require(authority):
+        entry = issued.get(id(authority))
+        if entry is None or entry[0] is not authority:
+            _invalid("BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID")
+        return entry[1]
+
+    def issue(registry):
+        if type(registry) is not SourceAuthorityRegistry:
+            _invalid("BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID")
+        authority = object.__new__(SourceAuthorityRuntime)
+        issued[id(authority)] = (authority, registry)
+        return authority
+
+    return require, issue
+
+
+# A production host must own provisioning. C09 deliberately exposes no issuer here;
+# accepting a caller-created registry would let that caller choose the trust root.
+_authority_state, _discarded_issuer = _new_authority_owner()
+del _discarded_issuer
+
+
+class SourceAuthorityRuntime:
+    """Opaque C09 capability bound by the trusted host to one source registry."""
+
+    __slots__ = ()
+
+    def __new__(cls, *args, **kwargs):
+        _invalid("BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID")
+
+    def _validate_export_clearance_context(
+            self, receipt, selection, source_frontier, artifact_digests):
+        from bilqis_mlx.semantics.atlas_release_audit import (
+            validate_export_clearance_context,
+        )
+        registry = _authority_state(self)
+        return validate_export_clearance_context(
+            receipt, selection, source_frontier, artifact_digests, registry)
+
+
+def require_source_authority_runtime(authority) -> SourceAuthorityRuntime:
+    if type(authority) is not SourceAuthorityRuntime:
+        _invalid("BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID")
+    _authority_state(authority)
+    return authority

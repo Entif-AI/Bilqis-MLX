@@ -3,14 +3,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from bilqis_mlx.runtime.atlas_revalidation import SourceAuthorityRegistry
+from bilqis_mlx.runtime.atlas_revalidation import require_source_authority_runtime
 from bilqis_mlx.runtime.bamf_bundle import BamfBundleCandidate
 from bilqis_mlx.runtime.bamf_bundle.admission import accept_and_publish
 from bilqis_mlx.runtime.bamf_bundle.package_import_transition import (
     _issue_package_import_transition,
 )
 from bilqis_mlx.semantics.atlas_release_audit import (
-    ExportClearanceReceipt, validate_export_clearance_context,
+    ExportClearanceReceipt,
 )
 
 from .contracts import SourceRights, require
@@ -23,13 +23,12 @@ def _artifact_digests(package):
 
 
 def _verify_export_clearance(
-        package, parent, receipt, atlas_selection, source_frontier, authority_registry):
+        package, parent, receipt, atlas_selection, source_frontier, source_authority):
     require(type(receipt) is ExportClearanceReceipt, "A12 export clearance required")
-    require(isinstance(authority_registry, SourceAuthorityRegistry),
-            "C09 source authority registry required")
+    source_authority = require_source_authority_runtime(source_authority)
     digests = _artifact_digests(package)
-    clearance = validate_export_clearance_context(
-        receipt, atlas_selection, source_frontier, digests, authority_registry)
+    clearance = source_authority._validate_export_clearance_context(
+        receipt, atlas_selection, source_frontier, digests)
     expected = SourceRights(
         receipt.source_owner, clearance, receipt.export_artifact_digests,
         receipt.revoked_artifact_digests, receipt.revocation_lineage)
@@ -84,7 +83,7 @@ def _successor(parent, pointer, screened, transaction, clearance):
 
 def publish_screened_delta_import(
         screened, run_dir, *, export_clearance, atlas_selection, source_frontier,
-        authority_registry, reserve_gib: float = 100.0,
+        source_authority, reserve_gib: float = 100.0,
 ):
     """Publish only an owner-issued, C05-eligible, A12-cleared exact-parent import."""
     require(type(screened) is ScreenedDeltaCandidate, "issued screened delta candidate required")
@@ -94,7 +93,7 @@ def publish_screened_delta_import(
     _require_exact_parent(screened, pointer, parent)
     clearance = _verify_export_clearance(
         screened.candidate.package, parent, export_clearance, atlas_selection,
-        source_frontier, authority_registry)
+        source_frontier, source_authority)
     transaction = screened.transaction
     successor = _successor(parent, pointer, screened, transaction, clearance)
     return accept_and_publish(
