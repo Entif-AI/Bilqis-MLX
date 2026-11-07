@@ -182,6 +182,39 @@ class CapabilitySupportOwnerTests(unittest.TestCase):
         with self.assertRaises(BilqisError):
             self.load_support(AUTHORITY)
 
+    def test_deleting_both_local_hold_files_cannot_erase_data_plane_commitment(self):
+        published, _authority = self.publish_support()
+        owner = self.load_support()
+        correction = _event(_ref(DependencyKind.SOURCE, SOURCE_ROW))
+        self.assertTrue(apply_capability_support_correction(
+            owner, correction, AUTHORITY))
+        hold_dir = (
+            self.run / "c09-capability-support" / published["manifest_sha256"])
+        state_path = next(hold_dir.glob("*.json"))
+        marker_path = state_path.with_suffix(state_path.suffix + ".seen")
+        state_path.unlink()
+        marker_path.unlink()
+        with self.assertRaises(BilqisError):
+            self.load_support(AUTHORITY)
+
+    def test_replayed_transition_must_match_current_materialized_support_node(self):
+        published, _authority = self.publish_support()
+        owner = self.load_support()
+        correction = _event(_ref(DependencyKind.SOURCE, SOURCE_ROW))
+        self.assertTrue(apply_capability_support_correction(
+            owner, correction, AUTHORITY))
+        node = owner.current_node
+        owner.advance(
+            _result(node, digest=node.content_digest, correction=correction), AUTHORITY)
+        hold_dir = (
+            self.run / "c09-capability-support" / published["manifest_sha256"])
+        state_path = next(hold_dir.glob("*.json"))
+        record = json.loads(state_path.read_text())
+        record["transition"]["previous_content_digest"] = "0" * 64
+        state_path.write_text(json.dumps(record, sort_keys=True) + "\n")
+        with self.assertRaises(BilqisError):
+            self.load_support(AUTHORITY)
+
 
 if __name__ == "__main__":
     unittest.main()

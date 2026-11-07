@@ -176,6 +176,38 @@ class CognitiveSolverTests(unittest.TestCase):
         self.assertEqual(
             caught.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
 
+    def test_neural_materialization_cannot_exceed_cached_candidate_budget(self):
+        binding, generation, _budget, add, ambiguous = _fixture()
+        cached = QualifiedComposition(
+            add, generation.source_binding_digest,
+            binding.frontier.rights_epoch,
+            binding.frontier.correction_generation, "a" * 64)
+        calls = []
+
+        def neural(request):
+            calls.append(request)
+            return NeuralProposal(
+                add, request.source_binding_digest,
+                request.generation_digest,
+                request.unresolved_signature,
+                "b" * 64)
+
+        context = SolveContext(
+            binding, qualified_compositions=(cached,),
+            qualification_verifier=lambda item: False,
+            neural_proposer=neural)
+        budget = SolveBudget(
+            DAGBudget(), max_neural_calls=1, max_cached_candidates=1)
+        first = solve_task(ambiguous, context, generation, budget)
+        self.assertEqual(first.route, RouteKind.NEURAL_COMPOSITION)
+        self.assertEqual(
+            len(context.operator_composition_artifact_owner.compositions), 1)
+        second = solve_task(ambiguous, context, generation, budget)
+        self.assertEqual(second.route, RouteKind.NEURAL_COMPOSITION)
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(
+            len(context.operator_composition_artifact_owner.compositions), 1)
+
     def test_neural_foreign_source_binding_rejects_before_dag_execution(self):
         binding, generation, budget, add, ambiguous = _fixture()
         foreign = replace(

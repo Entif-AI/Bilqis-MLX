@@ -7,12 +7,14 @@ import os
 from pathlib import Path
 import uuid
 
+from bilqis_mlx.data_plane import data_plane
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
 from .atlas_revalidation_common import _invalid
 from .atlas_revalidation_evidence import CorrectionEvent, StateTransition
 
 SCHEMA = "bilqis.c09.capability-support-hold/v1"
 MARKER_SCHEMA = "bilqis.c09.capability-support-hold-seen/v1"
+COMMITMENT_SCHEMA = "bilqis.c09.capability-support-hold-commitment/v1"
 
 
 def journal_path(run_dir: Path, manifest_sha256: str, capability_id: str) -> Path:
@@ -22,6 +24,47 @@ def journal_path(run_dir: Path, manifest_sha256: str, capability_id: str) -> Pat
 
 def _marker_path(path: Path) -> Path:
     return path.with_suffix(path.suffix + ".seen")
+
+
+def _commitment(capability_id: str, manifest_sha256: str,
+                artifact_id: str) -> tuple[str, bytes]:
+    record = {
+        "schema_version": COMMITMENT_SCHEMA,
+        "capability_id": capability_id,
+        "manifest_sha256": manifest_sha256,
+        "artifact_id": artifact_id,
+    }
+    raw = json.dumps(
+        record, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(raw).hexdigest(), raw
+
+
+def _commit_seen(capability_id: str, manifest_sha256: str,
+                 artifact_id: str) -> None:
+    digest, raw = _commitment(capability_id, manifest_sha256, artifact_id)
+    data_plane().put_object(digest, raw)
+
+
+def _seen(capability_id: str, manifest_sha256: str,
+          artifact_id: str) -> bool:
+    digest, raw = _commitment(capability_id, manifest_sha256, artifact_id)
+    try:
+        stored = data_plane().get_object(digest)
+    except ValueError:
+        return False
+    if stored != raw:
+        _invalid("BAMF_C09_CAPABILITY_SUPPORT_COMMITMENT_DRIFT")
+    return True
+
+
+def _marker_identity(capability_id: str, manifest_sha256: str,
+                     artifact_id: str) -> dict:
+    return {
+        "schema_version": MARKER_SCHEMA,
+        "capability_id": capability_id,
+        "manifest_sha256": manifest_sha256,
+        "artifact_id": artifact_id,
+    }
 
 
 def _atomic_json(path: Path, data: dict, *, replace_existing: bool) -> None:
@@ -139,12 +182,8 @@ def write_journal(path: Path, *, capability_id: str, manifest_sha256: str,
         _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_INVALID")
     if (state == "HELD") != (transition is None):
         _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_INVALID")
-    marker = {
-        "schema_version": MARKER_SCHEMA,
-        "capability_id": capability_id,
-        "manifest_sha256": manifest_sha256,
-        "artifact_id": artifact_id,
-    }
+    marker = _marker_identity(capability_id, manifest_sha256, artifact_id)
+    _commit_seen(capability_id, manifest_sha256, artifact_id)
     marker_path = _marker_path(path)
     _atomic_json(marker_path, marker, replace_existing=False)
     try:
@@ -162,11 +201,14 @@ def write_journal(path: Path, *, capability_id: str, manifest_sha256: str,
     _atomic_json(path, data, replace_existing=True)
 
 
-def read_journal(path: Path) -> dict | None:
+def read_journal(path: Path, *, capability_id: str,
+                 manifest_sha256: str, artifact_id: str) -> dict | None:
     marker_path = _marker_path(path)
     marker_exists = marker_path.exists()
     journal_exists = path.exists()
     if not marker_exists and not journal_exists:
+        if _seen(capability_id, manifest_sha256, artifact_id):
+            _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_MISSING")
         return None
     if (not marker_exists or not journal_exists
             or marker_path.is_symlink() or not marker_path.is_file()
@@ -184,5 +226,7 @@ def read_journal(path: Path) -> dict | None:
             or any(marker.get(key) != record.get(key)
                    for key in ("capability_id", "manifest_sha256", "artifact_id"))):
         _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_INVALID")
+    if not _seen(capability_id, manifest_sha256, artifact_id):
+        _invalid("BAMF_C09_CAPABILITY_SUPPORT_COMMITMENT_MISSING")
     return record
 
