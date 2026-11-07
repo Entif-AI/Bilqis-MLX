@@ -12,6 +12,9 @@ import numpy as np
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.learning.atlas_candidate import CandidateState
+from bilqis_mlx.learning._retention._atlas_candidate.common import (
+    RETAINED_STATE_ISSUER, STATE_SCHEMA,
+)
 from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
 from bilqis_mlx.runtime.atlas_optimizer import AdamWStateTree
 
@@ -172,7 +175,15 @@ def _reset_state(parent: CandidateState, parameters, slices):
         mode=parent.policy.mode, accepted_fast_since_full=0, row_ages=ages,
         policy_version=parent.policy.policy_version, schema_version=parent.policy.schema_version)
     optimizer = AdamWStateTree(parameters, first, second, counts)
-    return CandidateState(optimizer, policy, parent.allocations, parent.optimizer_step), tuple(sorted(changed))
+    candidate = object.__new__(CandidateState)
+    for name, value in (
+            ("optimizer", optimizer), ("policy", policy),
+            ("allocations", parent.allocations), ("optimizer_step", parent.optimizer_step),
+            ("custody", parent.custody), ("step_proofs", parent.step_proofs),
+            ("schema_version", STATE_SCHEMA), ("_issuance", RETAINED_STATE_ISSUER)):
+        object.__setattr__(candidate, name, value)
+    candidate.__post_init__()
+    return candidate, tuple(sorted(changed))
 
 
 def _issue_transaction(parent, candidate, slices, changed_identity_rows):

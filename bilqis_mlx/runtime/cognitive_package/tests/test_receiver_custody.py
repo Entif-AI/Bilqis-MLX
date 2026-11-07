@@ -11,7 +11,7 @@ import numpy as np
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime import mlx_checkpoint
-from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation, publication
+from bilqis_mlx.runtime.bamf_bundle import publication
 from bilqis_mlx.runtime.cognitive_package import (
     DeltaSlice, PackageArtifact, PackageBinding, PackageKind, ReceiverTensor,
     apply_plastic_delta, encode_plastic_delta, export_capability,
@@ -19,7 +19,7 @@ from bilqis_mlx.runtime.cognitive_package import (
 )
 from bilqis_mlx.runtime.cognitive_package.tests.fixtures import snapshot
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    NAME, candidate, parent_state, shape_patch,
+    NAME, candidate, parent_state, publish_candidate, shape_patch,
 )
 
 
@@ -34,7 +34,7 @@ class ReceiverCustodyTests(TestCase):
         self.run = self.root / 'run'
         self.student = candidate(parent_state())
         with shape_patch(), patch.object(mlx_checkpoint, 'assert_headroom'):
-            self.pointer = publish_bamf_generation(self.run, self.student)
+            self.pointer = publish_candidate(self.run, self.student)
         array = np.asarray(self.student.retained_state.optimizer.parameters[NAME], dtype='<f4')
         self.tensor = ReceiverTensor(NAME, array.shape, array.tobytes())
         self.binding = PackageBinding(

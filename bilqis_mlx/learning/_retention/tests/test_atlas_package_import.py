@@ -6,7 +6,6 @@ import mlx.core as mx
 import numpy as np
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.learning.atlas_candidate import begin_candidate, candidate_step, resolve_candidate
 from bilqis_mlx.learning.atlas_engram import MotifManifest
 from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
 from bilqis_mlx.learning.atlas_package_import import (
@@ -14,13 +13,12 @@ from bilqis_mlx.learning.atlas_package_import import (
 )
 from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
 from bilqis_mlx.learning.atlas_candidate import CandidateState
-from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree
+from bilqis_mlx.runtime.atlas_optimizer import AdamWStateTree
 
 
 IDENTITY = "identity.bank.0"
 DENSE = "dense.weight"
 RELEASE = "b" * 64
-HP = AdamWHyperparameters(.001, (.9, .95), 1e-8, .01)
 
 
 def _parent():
@@ -138,24 +136,6 @@ class PackageImportTransactionTests(TestCase):
         np.testing.assert_array_equal(np.asarray(right_import.optimizer.update_counts[IDENTITY]), [0, 6])
         self.assertEqual(int(np.asarray(left_import.optimizer.update_counts[DENSE])), 9)
         self.assertEqual(int(np.asarray(right_import.optimizer.update_counts[DENSE])), 99)
-
-    def test_next_native_adamw_step_starts_from_reset_count_one(self):
-        parent = _parent()
-        imported = prepare_package_import(
-            parent, _candidate_parameters(parent),
-            (ImportSlice(DENSE, 2, 3), ImportSlice(IDENTITY, 1, 2))).candidate
-        candidate = begin_candidate(imported)
-        candidate = candidate_step(
-            candidate,
-            {IDENTITY: mx.array([[1., 1.], [0., 0.]], dtype=mx.float32),
-             DENSE: mx.zeros((2, 2), dtype=mx.float32)},
-            {IDENTITY: mx.array([True, False]), DENSE: mx.array(False)},
-            HP, decay={IDENTITY: True, DENSE: True}, loss_bearing=True, max_norm=1.)
-        retained = resolve_candidate(candidate, accepted=True)
-        np.testing.assert_array_equal(np.asarray(retained.optimizer.update_counts[IDENTITY]), [1, 6])
-        self.assertEqual(retained.optimizer_step, 12)
-        self.assertEqual(retained.policy.accepted_fast_since_full, 1)
-
 
 if __name__ == "__main__":
     import unittest

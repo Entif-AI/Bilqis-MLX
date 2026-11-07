@@ -3,22 +3,18 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import mlx.core as mx
-import numpy as np
-
-from bilqis_mlx.learning.atlas_package_import import ImportSlice, prepare_package_import
 from bilqis_mlx.runtime.atlas_revalidation import SourceAuthorityRegistry
-from bilqis_mlx.runtime.bamf_bundle import BamfBundleCandidate, publish_bamf_generation
+from bilqis_mlx.runtime.bamf_bundle import BamfBundleCandidate
+from bilqis_mlx.runtime.bamf_bundle.admission import accept_and_publish
 from bilqis_mlx.runtime.bamf_bundle.package_import_transition import (
     _issue_package_import_transition,
 )
-from bilqis_mlx.runtime.capability_retention import DecisionStatus
 from bilqis_mlx.semantics.atlas_release_audit import (
     ExportClearanceReceipt, validate_export_clearance_context,
 )
 
 from .contracts import SourceRights, require
-from .delta import ScreenedDeltaCandidate, _all_delta_slices
+from .delta import ScreenedDeltaCandidate
 from .receiver import _load_current_generation, _receiver_tensors
 
 
@@ -31,11 +27,9 @@ def _verify_export_clearance(
     require(type(receipt) is ExportClearanceReceipt, "A12 export clearance required")
     require(isinstance(authority_registry, SourceAuthorityRegistry),
             "C09 source authority registry required")
-    authority_registry.verify_detached(
-        receipt.source_owner, receipt.dependency(), receipt.signature_hex, receipt.signing_bytes())
     digests = _artifact_digests(package)
     clearance = validate_export_clearance_context(
-        receipt, atlas_selection, source_frontier, digests)
+        receipt, atlas_selection, source_frontier, digests, authority_registry)
     expected = SourceRights(
         receipt.source_owner, clearance, receipt.export_artifact_digests,
         receipt.revoked_artifact_digests, receipt.revocation_lineage)
@@ -47,21 +41,6 @@ def _verify_export_clearance(
             and correction.get("correction_generation") == receipt.correction_generation,
             "receiver rights frontier differs from A12 clearance")
     return clearance
-
-
-def _candidate_parameters(candidate):
-    parameters = {}
-    for tensor in candidate.tensors:
-        array = np.frombuffer(tensor.values_fp32, dtype="<f4").copy().reshape(tensor.shape)
-        parameters[tensor.parameter_name] = mx.array(array, dtype=mx.float32)
-    return parameters
-
-
-def _import_slices(package):
-    return tuple(ImportSlice(item.parameter_name, item.start, item.stop)
-                 for item in sorted(
-                     _all_delta_slices(package),
-                     key=lambda item: (item.parameter_name, item.start, item.stop)))
 
 
 def _require_exact_parent(screened, pointer, parent):
@@ -110,15 +89,16 @@ def publish_screened_delta_import(
     """Publish only an owner-issued, C05-eligible, A12-cleared exact-parent import."""
     require(type(screened) is ScreenedDeltaCandidate, "issued screened delta candidate required")
     screened.__post_init__()
-    require(screened.decision.status is DecisionStatus.ELIGIBLE,
-            "C05 rejected package import")
+    require(screened.decision.accepted, "C05 rejected package import")
     pointer, parent = _load_current_generation(Path(run_dir))
     _require_exact_parent(screened, pointer, parent)
     clearance = _verify_export_clearance(
         screened.candidate.package, parent, export_clearance, atlas_selection,
         source_frontier, authority_registry)
-    transaction = prepare_package_import(
-        parent.retained_state, _candidate_parameters(screened.candidate),
-        _import_slices(screened.candidate.package))
+    transaction = screened.transaction
     successor = _successor(parent, pointer, screened, transaction, clearance)
-    return publish_bamf_generation(Path(run_dir), successor, reserve_gib=reserve_gib)
+    return accept_and_publish(
+        Path(run_dir), successor, transaction.candidate,
+        decision=screened.decision,
+        feature_sha256=successor.extents.factor_map_digest,
+        reserve_gib=reserve_gib)

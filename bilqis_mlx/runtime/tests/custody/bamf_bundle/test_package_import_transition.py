@@ -11,13 +11,13 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime import mlx_checkpoint
 import bilqis_mlx.runtime.bamf_bundle as bamf_bundle
 from bilqis_mlx.runtime.bamf_bundle import (
-    PackageImportTransition, load_bamf_generation, publish_bamf_generation,
+    PackageImportTransition, load_bamf_generation,
 )
 from bilqis_mlx.runtime.bamf_bundle.package_import_transition import (
     _issue_package_import_transition,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    candidate, parent_state, shape_patch,
+    candidate, parent_state, publish_candidate, shape_patch,
 )
 
 
@@ -40,7 +40,7 @@ class PackageImportTransitionTests(TestCase):
 
     def publish(self, source):
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            return publish_bamf_generation(self.run, source)
+            return publish_candidate(self.run, source)
 
     def initial(self):
         state = parent_state()

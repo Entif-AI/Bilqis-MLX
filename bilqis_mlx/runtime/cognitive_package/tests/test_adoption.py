@@ -10,25 +10,29 @@ from unittest.mock import patch
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+import mlx.core as mx
 import numpy as np
 
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.learning.atlas_candidate import begin_candidate, candidate_step, resolve_candidate
+from bilqis_mlx.learning._retention.tests.execution_fixtures import execution_provenance
 from bilqis_mlx.runtime import mlx_checkpoint
 from bilqis_mlx.runtime.bamf_bundle import publication
 from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
 )
-from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation, publish_bamf_generation
+from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation
 from bilqis_mlx.runtime.cognitive_package import (
     DeltaSlice, PackageArtifact, PackageBinding, PackageKind, ReceiverTensor, SourceRights,
     apply_plastic_delta, encode_plastic_delta, export_capability,
     publish_screened_delta_import, receiver_parameter_schema_digest,
-    receiver_weight_digest, screen_delta_candidate,
+    receiver_weight_digest,
 )
+from bilqis_mlx.runtime.cognitive_package.delta import _issue_screened, _package_transaction
 from bilqis_mlx.runtime.cognitive_package.tests.fixtures import snapshot
-from bilqis_mlx.runtime.tests.capability.capability_retention_helpers import _screen_inputs
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    NAME, accepted_state, candidate, parent_state, shape_patch,
+    HP, NAME, accepted_state, candidate, parent_state, publish_candidate,
+    retention_decision, shape_patch,
 )
 from bilqis_mlx.semantics.atlas.snapshot_contracts import AtlasArtifactSelection
 from bilqis_mlx.semantics.atlas_release_audit import ExportClearanceReceipt
@@ -79,7 +83,7 @@ class PackageImportAdoptionTests(TestCase):
             correction_frontier={**base.correction_frontier,
                                  "release_digest": self.selection.release_sha256})
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            self.pointer = publish_bamf_generation(self.run, self.initial)
+            self.pointer = publish_candidate(self.run, self.initial)
         array = np.asarray(self.state.optimizer.parameters[NAME], dtype="<f4")
         self.tensor = ReceiverTensor(NAME, array.shape, array.tobytes())
         self.binding = PackageBinding(
@@ -101,14 +105,15 @@ class PackageImportAdoptionTests(TestCase):
         rights = SourceRights(OWNER, receipt.clearance_sha256, artifacts, (), ())
         return export_capability(source, source.signature, rights), receipt
 
-    def screened(self, *, protected_loss=2):
+    def screened(self, *, accepted=True):
         package, receipt = self.package_and_clearance()
         with shape_patch():
             disposable = apply_plastic_delta(package, self.run)
-        inputs = _screen_inputs(protected_loss)
-        screened = screen_delta_candidate(
-            disposable, parent_solver=inputs[0], candidate_solver=inputs[1],
-            target_capability=inputs[2], policy=inputs[3], cohorts=inputs[4])
+            transaction = _package_transaction(disposable, self.run)
+        decision = retention_decision(
+            accepted=accepted, parent=transaction.parent,
+            retained=transaction.candidate)
+        screened = _issue_screened(disposable, transaction, decision)
         return screened, receipt
 
     def adopt(self, screened, receipt):
@@ -141,9 +146,39 @@ class PackageImportAdoptionTests(TestCase):
         self.assertEqual(loaded.outbox[0]["receiver_manifest_sha256"], self.pointer["manifest_sha256"])
         self.assertEqual(published["parent_manifest_sha256"], self.pointer["manifest_sha256"])
 
+    def test_next_native_step_binds_to_imported_generation_and_reset_lineage(self):
+        screened, receipt = self.screened()
+        published = self.adopt(screened, receipt)
+        with shape_patch():
+            loaded = load_bamf_generation(self.run / "bamf-state.json")
+
+        self.assertEqual(loaded.generation, 1)
+        self.assertEqual(loaded.transition["kind"], "PACKAGE_IMPORT")
+        self.assertEqual(loaded.transition["package_sha256"], screened.candidate.package.digest)
+        self.assertEqual(
+            loaded.transition["reset_policy_sha256"], screened.transaction.reset_policy_sha256)
+        self.assertEqual(
+            loaded.retained_state.custody.manifest_sha256, published["manifest_sha256"])
+
+        transaction = begin_candidate(loaded.retained_state)
+        execution = execution_provenance(
+            transaction.parent, rows=(0,), candidate_step=1)
+        with shape_patch():
+            transaction = candidate_step(
+                transaction,
+                {NAME: mx.array([[1., 1.], [0., 0.]], dtype=mx.float32)},
+                execution, HP, spec=loaded.topology, extents=loaded.extents,
+                loss_bearing=True, max_norm=1.)
+        retained = resolve_candidate(transaction, accepted=True)
+
+        np.testing.assert_array_equal(
+            np.asarray(retained.optimizer.update_counts[NAME]), [1, 3])
+        self.assertEqual(retained.optimizer_step, loaded.retained_state.optimizer_step + 1)
+        self.assertEqual(execution.parent_manifest_sha256, published["manifest_sha256"])
+
     def test_reject_or_eligible_label_alone_cannot_publish(self):
-        rejected, receipt = self.screened(protected_loss=3)
-        self.assertEqual(rejected.decision.status, "REJECT")
+        rejected, receipt = self.screened(accepted=False)
+        self.assertFalse(rejected.decision.accepted)
         with self.assertRaises(BilqisError):
             self.adopt(rejected, receipt)
         eligible, receipt = self.screened()
@@ -169,7 +204,7 @@ class PackageImportAdoptionTests(TestCase):
             successor, provenance=self.initial.provenance,
             correction_frontier=self.initial.correction_frontier)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            newer = publish_bamf_generation(self.run, successor)
+            newer = publish_candidate(self.run, successor)
         with self.assertRaises(BilqisError):
             self.adopt(screened, receipt)
         pointer = json.loads((self.run / "bamf-state.json").read_text())

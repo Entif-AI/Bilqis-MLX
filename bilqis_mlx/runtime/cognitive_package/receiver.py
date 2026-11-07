@@ -31,17 +31,28 @@ def _receiver_tensors(student):
                  for array in (np.asarray(value, dtype='<f4'),))
 
 
-def apply_from_current_generation(package, run_dir):
-    """Build a disposable delta against the exact locked published generation."""
-    from .delta import (_apply_delta_tensors, _issue_candidate,
-                        receiver_parameter_schema_digest, receiver_weight_digest)
-
-    pointer, student = _load_current_generation(run_dir)
-    tensors = _receiver_tensors(student)
-    binding = PackageBinding(
+def _binding_for_student(student, tensors):
+    from .delta import receiver_parameter_schema_digest, receiver_weight_digest
+    return PackageBinding(
         receiver_weight_digest(tensors), receiver_parameter_schema_digest(tensors),
         student.topology.digest, student.provenance.release_digest,
         student.extents.active_semantic_digest, student.extents.factor_map_digest,
         student.extents.motif_key_map_digest)
+
+
+def current_receiver_binding(run_dir):
+    """Read the exact package compatibility identity from current B13 custody."""
+    _, student = _load_current_generation(run_dir)
+    tensors = _receiver_tensors(student)
+    return _binding_for_student(student, tensors)
+
+
+def apply_from_current_generation(package, run_dir):
+    """Build a disposable delta against the exact locked published generation."""
+    from .delta import _apply_delta_tensors, _issue_candidate
+
+    pointer, student = _load_current_generation(run_dir)
+    tensors = _receiver_tensors(student)
+    binding = _binding_for_student(student, tensors)
     result = _apply_delta_tensors(package, binding, tensors)
     return _issue_candidate(pointer['manifest_sha256'], package, binding, tensors, result)

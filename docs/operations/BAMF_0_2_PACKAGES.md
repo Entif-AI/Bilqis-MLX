@@ -105,20 +105,22 @@ and resulting tensor digests. The parent snapshot is never mutated. The function
 does not allocate a parameter, bank or motif and does not reset or publish any
 optimizer, age, clock, teacher or checkpoint state.
 
-After the disposable candidate has been evaluated with the complete solver,
-`screen_delta_candidate(...)` asks C05 to run the required cohorts itself through
-`evaluate_retention_candidate(...)`. Callers cannot supply a matching retention
-decision or evidence object. A rejected candidate is discarded and the current B13
-pointer remains unchanged.
+After the disposable candidate has been built, `screen_delta_candidate(...)` asks
+the Factory-owned C05 retention boundary to evaluate the sealed B12 package-import
+transaction through `evaluate_factory_package_import(...)`. C05 owns the complete
+solver comparison and issues the retention decision from that evaluation. Callers
+cannot supply a matching decision, policy, cohort set, or acceptance Boolean. A
+rejected candidate is discarded and the current B13 pointer remains unchanged.
 
-`publish_screened_delta_import(...)` is the durable acceptance boundary. It re-reads the
-current B13 receiver, rejects stale parent drift, verifies current A12 authority,
-and asks B12 to create a sealed package-import transaction. B12 accepts tensor
-changes only inside the package's declared slices. It resets `m` and `v` on those
-slices, resets the owner-supported update count for the affected rows or tensor,
-resets touched identity-row age, preserves untouched state and policy mode, and
-resets the accepted-fast cadence counter. Package import does not fabricate an
-optimizer step.
+`publish_screened_delta_import(...)` is the durable acceptance boundary. It re-reads
+the current B13 receiver, rejects stale parent drift, revalidates the signed A12
+export-clearance receipt through C09's host-provisioned source-authority registry,
+and consumes the B12 transaction already bound into the internally issued screened
+candidate. B12 accepts tensor changes only inside the package's declared slices. It
+resets `m` and `v` on those slices, resets the owner-supported update count for the
+affected rows or tensor, resets touched identity-row age, preserves untouched state
+and policy mode, and resets the accepted-fast cadence counter. Package import does
+not fabricate an optimizer step.
 
 B13 publishes the result as a distinct `PACKAGE_IMPORT` generation at the same
 optimizer-step clock. The generation records parent manifest, package digest, reset
@@ -128,3 +130,19 @@ the prior generation current and retry converges on the immutable staged bundle.
 Cold load preserves the import lineage and reset state, and the next disposable B12
 optimizer step starts from those reset counts and moments. This candidate does not
 close #526/#718 until final exact-head EGM and human integration.
+
+## Production receive -> screen -> publish operator
+
+`cognitive_package.operator.receive_screen_and_publish_package(...)` is C12's
+production composition seam. It derives the receiver binding from the current B13
+generation, performs the bounded local directory receive, refuses any delta that is
+not `EXACT_BINDING`, verifies the current A12/C09 source authority before the C05
+screen, constructs the disposable B12 candidate, obtains the C05 owner-issued
+decision, and delegates accepted publication to the B13 boundary above.
+
+The operator is orchestration, not a new authority. An `ExportClearanceReceipt`,
+Atlas selection, source frontier, or source-authority registry supplied to the call
+is still revalidated by its existing owner contract. A matching embedded
+`SourceRights`, an `ELIGIBLE`-style result, or a caller-created `accepted=True`
+cannot publish a generation. Presentation/CLI code therefore does not duplicate
+this chain or become a package-admission trust root.

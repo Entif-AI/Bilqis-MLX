@@ -296,7 +296,8 @@ def admit_candidate_step(run_dir: Path, gradients=None, *,
 def accept_and_publish(run_dir: Path, bundle: BamfBundleCandidate,
                        retained_state: CandidateState, *,
                        decision: CandidateRetentionDecision,
-                       feature_sha256: str) -> dict:
+                       feature_sha256: str,
+                       reserve_gib: float = 100.0) -> dict:
     """Publish a candidate that the retention decision owner has accepted.
 
     Publication does not decide that the candidate was accepted. The retention
@@ -307,4 +308,5 @@ def accept_and_publish(run_dir: Path, bundle: BamfBundleCandidate,
     binding = mint_acceptance_binding(
         decision, retained_state, run_id=bundle.run_id,
         generation=bundle.generation, feature_sha256=feature_sha256)
-    return publish_bamf_generation(run_dir, bundle, acceptance=binding)
+    return publish_bamf_generation(
+        run_dir, bundle, acceptance=binding, reserve_gib=reserve_gib)

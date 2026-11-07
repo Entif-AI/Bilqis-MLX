@@ -2,10 +2,19 @@
 from dataclasses import dataclass, field
 from hashlib import sha256
 import json
+from pathlib import Path
 
+import mlx.core as mx
 import numpy as np
 
-from bilqis_mlx.runtime.capability_retention import Decision, evaluate_retention_candidate
+from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
+from bilqis_mlx.learning.atlas_package_import import (
+    ImportSlice, PackageImportTransaction, prepare_package_import,
+)
+from bilqis_mlx.learning.atlas_retention_decision import (
+    CandidateRetentionDecision, issue_factory_retention_decision,
+)
+from bilqis_mlx.runtime.factory_retention_owner import evaluate_factory_package_import
 
 from .contracts import PackageBinding, PackageKind, digest_string, invalid, name, require
 from .records import CognitivePackage
@@ -99,7 +108,8 @@ class DisposableDeltaCandidate:
 @dataclass(frozen=True, init=False)
 class ScreenedDeltaCandidate:
     candidate: DisposableDeltaCandidate
-    decision: Decision
+    transaction: PackageImportTransaction
+    decision: CandidateRetentionDecision
     _issuance: object = field(init=False, repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
@@ -111,9 +121,14 @@ class ScreenedDeltaCandidate:
         require(type(self.candidate) is DisposableDeltaCandidate,
                 "invalid screened candidate")
         self.candidate.__post_init__()
-        require(type(self.decision) is Decision
-                and self.decision.parent_generation == self.candidate.parent_generation
-                and self.decision.candidate_generation == self.candidate.generation_digest,
+        require(type(self.transaction) is PackageImportTransaction,
+                "invalid package import transaction")
+        self.transaction.__post_init__()
+        require(type(self.decision) is CandidateRetentionDecision
+                and self.decision.parent_generation
+                == candidate_identity_digest(self.transaction.parent)
+                and self.decision.candidate_generation
+                == candidate_identity_digest(self.transaction.candidate),
                 "screened decision identity mismatch")
 
 
@@ -274,13 +289,41 @@ def _issue_candidate(parent_generation, package, binding, parent_tensors, tensor
     return candidate
 
 
-def _issue_screened(candidate, decision):
+def _issue_screened(candidate, transaction, decision):
     screened = object.__new__(ScreenedDeltaCandidate)
-    for key, value in (("candidate", candidate), ("decision", decision),
+    for key, value in (("candidate", candidate), ("transaction", transaction),
+                       ("decision", decision),
                        ("_issuance", _SCREEN_ISSUER)):
         object.__setattr__(screened, key, value)
     screened.__post_init__()
     return screened
+
+
+def _candidate_parameters(candidate):
+    parameters = {}
+    for tensor in candidate.tensors:
+        array = np.frombuffer(tensor.values_fp32, dtype="<f4").copy().reshape(tensor.shape)
+        parameters[tensor.parameter_name] = mx.array(array, dtype=mx.float32)
+    return parameters
+
+
+def _import_slices(package):
+    return tuple(ImportSlice(item.parameter_name, item.start, item.stop)
+                 for item in sorted(
+                     _all_delta_slices(package),
+                     key=lambda item: (item.parameter_name, item.start, item.stop)))
+
+
+def _package_transaction(candidate, run_dir):
+    from .receiver import _load_current_generation, _receiver_tensors
+    pointer, parent = _load_current_generation(run_dir)
+    require(candidate.parent_generation == pointer["manifest_sha256"],
+            "screened import parent is stale")
+    require(candidate.parent_tensors == _receiver_tensors(parent),
+            "screened import parent tensors drifted")
+    return prepare_package_import(
+        parent.retained_state, _candidate_parameters(candidate),
+        _import_slices(candidate.package))
 
 
 def apply_plastic_delta(package, receiver_run_dir):
@@ -290,12 +333,15 @@ def apply_plastic_delta(package, receiver_run_dir):
     return apply_from_current_generation(package, receiver_run_dir)
 
 
-def screen_delta_candidate(candidate, *, parent_solver, candidate_solver,
-                           target_capability, policy, cohorts):
-    """Run C05 owner evaluation before activation; caller evidence is not accepted."""
+def screen_delta_candidate(
+        candidate, source_context, artifact_path, target_capability, *, run_dir):
+    """Run the Factory-owned C05 screen over the B12 package-import proposal."""
     require(type(candidate) is DisposableDeltaCandidate, "invalid delta candidate")
     candidate.__post_init__()
-    decision = evaluate_retention_candidate(
-        parent_solver, candidate_solver, target_capability, policy, cohorts,
-        candidate.parent_generation, candidate.generation_digest)
-    return _issue_screened(candidate, decision)
+    run_dir = Path(run_dir)
+    transaction = _package_transaction(candidate, run_dir)
+    evaluation = evaluate_factory_package_import(
+        source_context, transaction, str(artifact_path), target_capability,
+        run_dir=run_dir)
+    decision = issue_factory_retention_decision(evaluation)
+    return _issue_screened(candidate, transaction, decision)
