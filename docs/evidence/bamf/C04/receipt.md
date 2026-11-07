@@ -55,8 +55,18 @@ python3 -B scripts/run_tests.py \
   bilqis_mlx/runtime/tests/capability/factory/test_solver_replay.py \
   bilqis_mlx/runtime/tests/capability/factory/test_solver_import_boundaries.py \
   bilqis_mlx/runtime/tests/capability/factory/test_task_goal_readout.py \
+  bilqis_mlx/runtime/tests/capability/test_capability_evaluation.py \
   bilqis_mlx/semantics/tests/cognitive_dag
 ```
+
+The new fixture-backed B11 bridge regression is replayed separately on a configured Studio/MLX host with the pinned A01 bundle mounted:
+
+```sh
+python3 -B scripts/run_tests.py \
+  bilqis_mlx/runtime/tests/batch/test_factory_training_bridge.py
+```
+
+That fixture-backed replay was attempted in the independent reviewer sandbox but could not enter test discovery because the sandbox lacked `mlx` and `BILQIS_A01_ATLAS_BUNDLE`. No passing local result is claimed for that attempt.
 
 No new local test result is claimed in this receipt until the exact repaired head is exercised. Historical results above are consumed from their cited exact run receipts. Fresh hosted PR checks and an independent exact-head re-audit are required before this closeout is marked complete.
 
@@ -76,3 +86,27 @@ new-capability learning claim remains with its separate owner and is not manufac
 ## Turn-in rule
 
 Children #498, #499 and #500 are already closed under ADR-121. The PR must target `codex/bamf-unified-base-20261028`, remain unmerged, and list only `Closes #373` for human merge.
+
+
+## Final exact-head review and hosted verification
+
+Semantic candidate reviewed: `5f02a471504e08c3dc088584e6cac454917e72cd` on base
+`58eb36bba1958e0b3ca5d6aa3080260ccac3e9a1`.
+
+Fresh independent exact-head source review: **PASS, 0 Blockers / 0 Majors**. The reviewer
+confirmed the repaired role-lookup citation and the new source-authority -> real B11 proposer
+-> `forward_bamf` -> `solve_task` -> pure `SELECT_BOOLEAN` regression. One documentation
+nit about the fixture-backed replay command was repaired in this receipt.
+
+Hosted checks on the exact semantic candidate:
+- Semantic ABI integrity: **PASS**.
+- Bilqis MLX portable verification: **PASS**.
+- portable-core: **PASS**.
+- portable: **PASS**.
+- semantic-profile jobs: skipped as non-applicable.
+
+The independent reviewer did not run a passing MLX fixture-backed execution. A separate
+attempt failed before test discovery because the review environment had no `mlx` module and
+no `BILQIS_A01_ATLAS_BUNDLE`; this is recorded as an environment limitation, not converted
+into a fabricated test result. No live learner, optimizer, checkpoint, or source state was
+mutated.
