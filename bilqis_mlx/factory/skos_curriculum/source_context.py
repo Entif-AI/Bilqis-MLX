@@ -20,7 +20,7 @@ from lib.ithkuil.src.skos.source_owner.row_witness import source_row_byte_witnes
 from .checkers import assert_source_lesson_set_current
 from .common import LEARNING_UNVERIFIED, _fail
 from .lesson_types import SourceConstructiveLesson, SourceConstructiveLessonSet
-from .source_context_policy import SourceContextPolicyWindow
+from .source_context_policy import SourceContextTransitionAuthority
 
 
 SOURCE_CONTEXT_SCHEMA = "bilqis.source-lesson-context/v1"
@@ -37,7 +37,7 @@ class SourceLessonContexts:
     positive: SourceRowContext
     contrast: SourceRowContext
     grants: tuple[SourceGrant, ...]
-    validity: SourceContextPolicyWindow | None = None
+    transition_authority: SourceContextTransitionAuthority | None = None
     learning_state: str = LEARNING_UNVERIFIED
     schema: str = SOURCE_CONTEXT_SCHEMA
 
@@ -50,32 +50,35 @@ class SourceLessonContexts:
                    != self.contrast.a01_source_bundle_id
                 or not isinstance(self.grants, tuple)
                 or len({item.source_handle for item in self.grants}) != len(self.grants)
-                or (self.validity is not None
-                    and type(self.validity) is not SourceContextPolicyWindow)
+                or (self.transition_authority is not None
+                    and type(self.transition_authority)
+                    is not SourceContextTransitionAuthority)
                 or self.learning_state != LEARNING_UNVERIFIED
                 or self.schema != SOURCE_CONTEXT_SCHEMA):
             _fail("BAMF_SOURCE_LESSON_CONTEXT_INVALID")
-        if self.validity is not None:
-            self.validity.__post_init__()
+        if self.transition_authority is not None:
+            self.transition_authority.__post_init__()
+            validity = self.transition_authority
             envelopes = (self.positive.envelope, self.contrast.envelope)
-            if (self.semantic_release != self.validity.semantic_release
+            if (self.semantic_release != validity.semantic_release
                     or self.positive.a01_source_bundle_id
-                       != self.validity.source_bundle_id
-                    or any(item.principal_id != self.validity.principal_id
-                    or item.tenant_id != self.validity.tenant_id
-                    or item.purpose != self.validity.purpose
-                    or item.jurisdiction != self.validity.jurisdiction
-                    or item.scope != self.validity.scope
-                    or item.policy_epoch != self.validity.policy_epoch
-                    or item.rights_epoch != self.validity.rights_epoch
-                    or item.correction_generation != self.validity.correction_generation
-                    or item.observed_at != self.validity.observed_at
-                    or item.effective_from != self.validity.effective_from
-                    or item.effective_until != self.validity.effective_until
+                       != validity.source_bundle_id
+                    or any(item.principal_id != validity.task.principal_id
+                    or item.tenant_id != validity.task.tenant_id
+                    or item.purpose != validity.task.purpose
+                    or item.jurisdiction != validity.task.jurisdiction
+                    or item.scope != validity.task.scope
+                    or item.policy_epoch != validity.policy.policy_epoch
+                    or item.rights_epoch != validity.policy.rights_epoch
+                    or item.correction_generation
+                       != validity.frontier.correction_generation
+                    or item.observed_at != validity.task.observed_frontier
+                    or item.effective_from != validity.effective_from
+                    or item.effective_until != validity.effective_until
                     for item in envelopes)
-                    or any(item.observed_at != self.validity.observed_at
-                           or item.effective_from != self.validity.effective_from
-                           or item.effective_until != self.validity.effective_until
+                    or any(item.observed_at != validity.task.observed_frontier
+                           or item.effective_from != validity.effective_from
+                           or item.effective_until != validity.effective_until
                            for item in self.grants)):
                 _fail("BAMF_SOURCE_LESSON_CONTEXT_VALIDITY_DRIFT")
 
@@ -120,7 +123,7 @@ def issue_source_lesson_contexts(
     lesson: SourceConstructiveLesson, lessons: SourceConstructiveLessonSet,
     atlas: AtlasArtifactSelection, task: TaskScope, policy: ContextPolicy,
     frontier: SourceFrontier,
-    *, validity: SourceContextPolicyWindow | None = None,
+    *, transition_authority: SourceContextTransitionAuthority | None = None,
 ) -> tuple[SourceLessonContexts, SourceFrontier]:
     """Replay A01 lesson authority before issuing exact frame/member grants."""
     assert_source_lesson_set_current(lessons, atlas)
@@ -134,26 +137,17 @@ def issue_source_lesson_contexts(
     observed_at = task.observed_frontier
     effective_from = 0
     effective_until = None
-    if validity is not None:
-        validity.__post_init__()
+    if transition_authority is not None:
+        transition_authority.__post_init__()
+        validity = transition_authority
         if (validity.atlas_bundle_id != atlas.bundle_id
                 or validity.semantic_release != atlas.release_sha256
                 or validity.source_bundle_id != atlas.source_bundle_id
-                or validity.principal_id != task.principal_id
-                or validity.tenant_id != task.tenant_id
-                or validity.purpose != task.purpose
-                or validity.jurisdiction != task.jurisdiction
-                or validity.scope != task.scope
-                or validity.policy_id != policy.policy_id
-                or validity.policy_epoch != policy.policy_epoch
-                or validity.rights_epoch != policy.rights_epoch
-                or validity.rights_epoch != frontier.rights_epoch
-                or validity.correction_generation != frontier.correction_generation
-                or validity.observed_at > task.observed_frontier
-                or not validity.effective_from <= task.effective_time
-                < validity.effective_until):
+                or task != validity.task
+                or policy != validity.policy
+                or frontier != validity.frontier):
             _fail("BAMF_SOURCE_CONTEXT_POLICY_WINDOW_AUTHORITY_MISMATCH")
-        observed_at = validity.observed_at
+        observed_at = validity.task.observed_frontier
         effective_from = validity.effective_from
         effective_until = validity.effective_until
     positive = _source_fact_context(
@@ -177,7 +171,7 @@ def issue_source_lesson_contexts(
     issued = SourceLessonContexts(
         lesson.semantic_release, positive, contrast,
         tuple(sorted(by_handle.values(), key=lambda item: item.source_handle)),
-        validity)
+        transition_authority)
     return issued, _merge_issued_grants(frontier, issued.grants)
 
 
@@ -190,24 +184,15 @@ def source_lesson_expiry_task(
             or type(task) is not TaskScope
             or type(frontier) is not SourceFrontier
             or type(policy) is not ContextPolicy
-            or contexts.validity is None):
+            or contexts.transition_authority is None):
         _fail("BAMF_SOURCE_CONTEXT_POLICY_WINDOW_REQUIRED")
     contexts.__post_init__()
-    validity = contexts.validity
-    if (validity.semantic_release != task.semantic_release
-            or validity.principal_id != task.principal_id
-            or validity.tenant_id != task.tenant_id
-            or validity.purpose != task.purpose
-            or validity.jurisdiction != task.jurisdiction
-            or validity.scope != task.scope
-            or validity.policy_id != policy.policy_id
-            or validity.policy_epoch != policy.policy_epoch
-            or validity.rights_epoch != policy.rights_epoch
-            or validity.rights_epoch != frontier.rights_epoch
-            or validity.correction_generation != frontier.correction_generation
-            or task.observed_frontier < validity.observed_at
-            or not validity.effective_from <= task.effective_time
-            < validity.effective_until):
+    validity = contexts.transition_authority
+    if (task != validity.task
+            or policy != validity.policy
+            or frontier.rights_epoch != validity.frontier.rights_epoch
+            or frontier.correction_generation
+               != validity.frontier.correction_generation):
         _fail("BAMF_SOURCE_CONTEXT_POLICY_WINDOW_AUTHORITY_MISMATCH")
     return replace(task, effective_time=validity.effective_until)
 

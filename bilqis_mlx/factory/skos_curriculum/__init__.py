@@ -28,7 +28,7 @@ from .source_context import (
     project_source_lesson_contexts, source_lesson_expiry_task,
 )
 from .source_context_policy import (
-    SourceContextPolicyWindow, declare_source_context_policy_window,
+    SourceContextTransitionAuthority, issue_source_context_transition_authority,
 )
 
 __all__ = [
@@ -44,7 +44,7 @@ __all__ = [
     "FamilyProgramCoverage", "FamilyProgramRegistry", "RegisteredFamilyProgram",
     "bind_factory_release_families", "default_family_program_registry",
     "uncovered_family_obligations",
-    "SourceContextPolicyWindow", "SourceLessonContexts",
-    "declare_source_context_policy_window", "issue_source_lesson_contexts",
+    "SourceContextTransitionAuthority", "SourceLessonContexts",
+    "issue_source_context_transition_authority", "issue_source_lesson_contexts",
     "project_source_lesson_contexts", "source_lesson_expiry_task",
 ]

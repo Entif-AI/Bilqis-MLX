@@ -11,7 +11,7 @@ from bilqis_mlx.factory.skos_curriculum.source_context import (
     project_source_lesson_contexts, source_lesson_expiry_task,
 )
 from bilqis_mlx.factory.skos_curriculum.source_context_policy import (
-    SourceContextPolicyWindow, declare_source_context_policy_window,
+    SourceContextTransitionAuthority, issue_source_context_transition_authority,
 )
 from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.context_eligibility import (
@@ -20,9 +20,9 @@ from bilqis_mlx.semantics.context_eligibility import (
 )
 
 
-RELEASE = "a" * 64
-SOURCE_BUNDLE = "b" * 64
-ATLAS_BUNDLE = "c" * 64
+RELEASE = "58e0c281b5da18b9b7e6c803709b29eeeb0a88f16b06f48de692808e2fb88306"
+SOURCE_BUNDLE = "f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec"
+ATLAS_BUNDLE = "5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7"
 SELECTION = AtlasArtifactSelection(
     "/fixture/a01-atlas.json", ATLAS_BUNDLE, RELEASE, SOURCE_BUNDLE)
 
@@ -49,7 +49,7 @@ def _snapshot(semantic_id, domain, table, key):
     )
 
 
-def _context(semantic_id, key, task, policy, *, validity=None):
+def _context(semantic_id, key, task, policy, *, authority=None):
     with patch(
         "bilqis_mlx.factory.skos_curriculum.source_context.load_pinned_atlas_snapshot",
         return_value=_snapshot(semantic_id, "source", "source_sections", key),
@@ -57,25 +57,33 @@ def _context(semantic_id, key, task, policy, *, validity=None):
         return _source_fact_context(
             ("identity", semantic_id, f"source/source_sections/{key}"),
             SELECTION, task, policy,
-            rights_epoch=2, correction_generation=3,
-            observed_at=(None if validity is None else validity.observed_at),
-            effective_from=(0 if validity is None else validity.effective_from),
-            effective_until=(None if validity is None else validity.effective_until))
+            rights_epoch=policy.rights_epoch,
+            correction_generation=(
+                3 if authority is None
+                else authority.frontier.correction_generation),
+            observed_at=(None if authority is None
+                         else authority.task.observed_frontier),
+            effective_from=(0 if authority is None else authority.effective_from),
+            effective_until=(None if authority is None
+                             else authority.effective_until))
 
 
-def _contexts(task, policy, *, validity=None):
+def _contexts(task, policy, *, authority=None):
     positive = _context(
         "fixture:positive", "NI-WEB-CH01:1.0", task, policy,
-        validity=validity)
+        authority=authority)
     contrast = _context(
         "fixture:contrast", "NI-WEB-CH01:1.1", task, policy,
-        validity=validity)
+        authority=authority)
     grants = tuple(sorted(
         (*positive.grants, *contrast.grants),
         key=lambda item: item.source_handle))
     return (
-        SourceLessonContexts(RELEASE, positive, contrast, grants, validity),
-        SourceFrontier(2, 3, grants),
+        SourceLessonContexts(RELEASE, positive, contrast, grants, authority),
+        SourceFrontier(
+            policy.rights_epoch,
+            (3 if authority is None else authority.frontier.correction_generation),
+            grants),
     )
 
 
@@ -103,17 +111,15 @@ class SourceLessonContextTests(unittest.TestCase):
         self.assertIn(contrast_handle, held.source_handles)
 
     def test_explicit_policy_window_expires_source_rows_and_emits_invalidation(self):
-        task, policy = _task(), _policy()
-        empty = SourceFrontier(2, 3, ())
-        validity = declare_source_context_policy_window(
-            SELECTION, task, policy, empty,
-            observed_at=7, effective_from=4, effective_until=10)
-        contexts, frontier = _contexts(task, policy, validity=validity)
+        authority = issue_source_context_transition_authority(SELECTION)
+        task, policy = authority.task, authority.policy
+        contexts, frontier = _contexts(task, policy, authority=authority)
         before = project_source_lesson_contexts(
             contexts, task, frontier, policy)
         self.assertIsInstance(before, ApprovedContextProjection)
         self.assertEqual(
-            {item.effective_until for item in frontier.grants}, {10})
+            {item.effective_until for item in frontier.grants},
+            {authority.effective_until})
 
         expiry_task = source_lesson_expiry_task(
             contexts, task, frontier, policy)
@@ -130,18 +136,16 @@ class SourceLessonContextTests(unittest.TestCase):
             transition.invalidations[0].old_context_digest, before.digest)
 
     def test_observation_movement_cannot_fabricate_expiry(self):
-        task, policy = _task(), _policy()
-        empty = SourceFrontier(2, 3, ())
-        validity = declare_source_context_policy_window(
-            SELECTION, task, policy, empty,
-            observed_at=7, effective_from=4, effective_until=10)
-        contexts, frontier = _contexts(task, policy, validity=validity)
+        authority = issue_source_context_transition_authority(SELECTION)
+        task, policy = authority.task, authority.policy
+        contexts, frontier = _contexts(task, policy, authority=authority)
         moved = replace(task, observed_frontier=1000)
         projected = project_source_lesson_contexts(
             contexts, moved, frontier, policy)
         self.assertIsInstance(projected, ApprovedContextProjection)
         self.assertEqual(
-            {item.effective_until for item in frontier.grants}, {10})
+            {item.effective_until for item in frontier.grants},
+            {authority.effective_until})
 
     def test_reissuance_cannot_resurrect_revoked_grant(self):
         task, policy = _task(), _policy()
@@ -192,24 +196,31 @@ class SourceLessonContextTests(unittest.TestCase):
                     rights_epoch=2, correction_generation=3)
 
     def test_policy_window_cannot_be_caller_constructed_or_reused_across_scope(self):
-        task, policy = _task(), _policy()
-        frontier = SourceFrontier(2, 3, ())
         with self.assertRaises(BilqisError):
-            SourceContextPolicyWindow(
-                ATLAS_BUNDLE, RELEASE, SOURCE_BUNDLE,
-                task.principal_id, task.tenant_id, task.purpose,
-                task.jurisdiction, task.scope, policy.policy_id,
-                policy.policy_epoch, policy.rights_epoch,
-                frontier.correction_generation, 7, 4, 10)
-        validity = declare_source_context_policy_window(
-            SELECTION, task, policy, frontier,
-            observed_at=7, effective_from=4, effective_until=10)
-        contexts, issued_frontier = _contexts(
-            task, policy, validity=validity)
+            SourceContextTransitionAuthority()
+        authority = issue_source_context_transition_authority(SELECTION)
+        task, policy = authority.task, authority.policy
+        contexts, issued_frontier = _contexts(task, policy, authority=authority)
         moved = replace(task, scope="fixture:other-scope")
         with self.assertRaises(BilqisError):
             source_lesson_expiry_task(
                 contexts, moved, issued_frontier, policy)
+
+    def test_caller_selected_effective_time_cannot_mint_invalidation(self):
+        authority = issue_source_context_transition_authority(SELECTION)
+        task, policy = authority.task, authority.policy
+        contexts, frontier = _contexts(task, policy, authority=authority)
+        forged = replace(task, effective_time=authority.effective_from)
+        self.assertNotEqual(forged, authority.task)
+        with self.assertRaises(BilqisError):
+            source_lesson_expiry_task(contexts, forged, frontier, policy)
+
+    def test_post_issue_authority_tampering_fails_closed(self):
+        authority = issue_source_context_transition_authority(SELECTION)
+        object.__setattr__(
+            authority, "effective_until", authority.effective_until + 100)
+        with self.assertRaises(BilqisError):
+            authority.__post_init__()
 
 
 if __name__ == "__main__":

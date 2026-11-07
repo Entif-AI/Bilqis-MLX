@@ -9,7 +9,7 @@ from bilqis_mlx.factory.skos_curriculum.source_context import (
     source_lesson_expiry_task,
 )
 from bilqis_mlx.factory.skos_curriculum.source_context_policy import (
-    declare_source_context_policy_window,
+    issue_source_context_transition_authority,
 )
 from bilqis_mlx.factory.skos_curriculum.programs.tests.real_fixtures import ARTIFACT, selection
 from bilqis_mlx.factory.tests.skos.test_source_context import _task, _policy
@@ -52,22 +52,19 @@ class RealSourceLessonContextTests(TestCase):
                 self.lesson, self.lessons, self.atlas, self.task, self.policy, revoked)
 
     def test_real_pinned_source_crosses_only_explicit_policy_expiry(self):
-        empty = SourceFrontier(2, 3, ())
-        validity = declare_source_context_policy_window(
-            self.atlas, self.task, self.policy, empty,
-            observed_at=self.task.observed_frontier,
-            effective_from=0, effective_until=self.task.effective_time + 1)
+        authority = issue_source_context_transition_authority(self.atlas)
+        task, policy, empty = authority.task, authority.policy, authority.frontier
         contexts, frontier = issue_source_lesson_contexts(
-            self.lesson, self.lessons, self.atlas, self.task, self.policy, empty,
-            validity=validity)
+            self.lesson, self.lessons, self.atlas, task, policy, empty,
+            transition_authority=authority)
         before = project_source_lesson_contexts(
-            contexts, self.task, frontier, self.policy)
+            contexts, task, frontier, policy)
         self.assertIsInstance(before, ApprovedContextProjection)
         expiry_task = source_lesson_expiry_task(
-            contexts, self.task, frontier, self.policy)
+            contexts, task, frontier, policy)
         transition = transition_context(
             before, (contexts.positive.envelope, contexts.contrast.envelope),
-            expiry_task, frontier, self.policy)
+            expiry_task, frontier, policy)
         self.assertIsInstance(transition.current, ContextHold)
         self.assertEqual(
             transition.current.reason_codes,
