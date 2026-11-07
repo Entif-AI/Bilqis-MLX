@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "aef69dae9179bb09f85f955b8a494f6582eac942",
-  "updated_at": "2026-11-07T02:57:47Z",
+  "updated_at": "2026-11-07T02:59:09Z",
   "exception": null,
   "items": [
     {
@@ -75,7 +75,7 @@
     },
     {
       "issue": 478,
-      "pr": null,
+      "pr": 885,
       "state": "ACTIVE",
       "head_sha": "1826a53502cbbb6cc11877f7f3bf0f01188152e4",
       "summary": "B13.1 completion is active on a fresh current-unified branch, reconciling already-merged atomic custody, tensor CAS, accepted-generation and cold-continuation evidence against the full leaf acceptance contract.",
