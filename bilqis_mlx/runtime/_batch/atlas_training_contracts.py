@@ -1,7 +1,7 @@
 """Immutable BAMF batch records and exact release-consumption boundary."""
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field, is_dataclass
+from dataclasses import dataclass, field, fields, is_dataclass
 from enum import Enum
 import hashlib
 import json
@@ -167,7 +167,12 @@ def _canonical_json_value(value):
     if type(value) is BamfVisitProvenance:
         value = value.to_c03_record()
     elif is_dataclass(value):
-        value = asdict(value)
+        # Process-local issuer tokens prove authority; they are not portable row data.
+        value = {
+            item.name: getattr(value, item.name)
+            for item in fields(value)
+            if not item.name.startswith("_")
+        }
     if value is None or type(value) in (str, bool, int, float):
         return value
     if isinstance(value, bytes):

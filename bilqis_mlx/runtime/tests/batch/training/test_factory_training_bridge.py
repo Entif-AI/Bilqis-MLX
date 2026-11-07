@@ -171,7 +171,7 @@ class FactoryTrainingBridgeTests(SourceBackboneTestBase):
 
     def test_live_b11_proposer_routes_source_binding_into_pure_operator(self):
         """Exercise source authority -> B11 proposer -> pure C04 operator."""
-        rows, prepared = self.prepare("A.IDENTITY", 37118, 1)
+        rows, prepared = self.prepare("A.IDENTITY", 37118, 2)
         compiled = prepared.compiled_rows[0]
         authority, plan = self.route_context(compiled)
         proposer = b11_task_goal_proposer(
