@@ -14,7 +14,7 @@ findings.
   semantic and learned artifacts
 - Reviewed integration trunk: `codex/bamf-unified-base-20261028`
 - Consumed unified SHA: `aef69dae9179bb09f85f955b8a494f6582eac942`
-- Candidate branch: `codex/752-egm-complete-20261106`
+- Candidate branch: `codex/752-final-20261106`
 
 The Goldfish MUST resolve the candidate's exact HEAD itself before review and
 report that SHA in its verdict.
