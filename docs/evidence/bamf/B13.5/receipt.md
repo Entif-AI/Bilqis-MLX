@@ -444,3 +444,42 @@ Passing-after qualification on semantic head `142f6e01` against reviewed unified
 Because `142f6e01` changes publication behavior, the earlier aggregate cannot be
 reused as final qualification. One fresh ADR-132/ADR-136 snapshot-isolated premerge
 aggregate is required before #697 may return to `EGM-Pending` for round 3.
+
+### Final deterministic qualification for round 3
+
+The final behavior-changing semantic head remains
+`142f6e01b54959c14ff40328c9e6b0b0c82b038f`; bookkeeping commit
+`b701dac1c3934691d869fc505e85c5965d6e1c75` records the round-2 findings without
+changing production semantics. Reviewed unified remains
+`d4bad39a32a80acbffdb9f891a906892ab2e9fab`.
+
+The required fresh forced-serial differential premerge completed on this final
+semantic state and reported:
+
+- **3,622 total**;
+- **3,450 passed**;
+- **167 explicit skips**;
+- **5 errors**;
+- **450.688s**.
+
+The complete failing set is again exactly the five inherited nested-frame C09
+`BAMF_C09_PACKED_FRAME_IDENTITY_DRIFT` cases already reproduced on pristine
+reviewed-unified `d4bad39a`; no new #697-local failure appeared. The aggregate is
+therefore inherited-red rather than globally green, with exact base-vs-candidate
+evidence preserved above.
+
+The final-head forced-serial differential leaf also completed with exit 0:
+**138 passed + 68 subtests**, 869 deselected, in **213.04s**. Its receipt binds
+semantic head `142f6e01b54959c14ff40328c9e6b0b0c82b038f`.
+
+The downstream A02/#399 consumer seam was repeated once more after both round-2
+repairs, using a disposable composition with preserved #399 head
+`ba1c366e8f583d1c0bb2676a7740c749707e7fa1` and without modifying the A02 branch:
+
+- full-topology production staging: **1/1 PASS in 198.707s**;
+- ordinary vocabulary planner: **5/5 PASS + 1 optional real-source skip**;
+- coherent caller-minted predecessor authority remains fail-closed.
+
+Together with the round-2 repair regressions, focused B13 custody and quality gates,
+this closes the deterministic engineering queue for fresh whole-candidate EGM round
+3. No EGM PASS is claimed by this qualification receipt.
