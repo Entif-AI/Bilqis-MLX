@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "fd9ef2890149ab5ae395640ce980a20f13a388c6",
-  "updated_at": "2026-11-07T19:22:56Z",
+  "observed_unified": "cc48ac40d875f0c2ae8ffbdc70001dbfc4815334",
+  "updated_at": "2026-11-07T19:33:00Z",
   "exception": null,
   "items": [
     {
@@ -135,7 +135,7 @@
       "state": "ACTIVE",
       "head_sha": "cf1e46bb576be119fe99e48ad113d7319d42ef43",
       "preserved_branch": "codex/752-post-egm-h1-fixes-20261107",
-      "summary": "H3 historical FAIL preserved. All seven H3 findings are now engineering-repaired after reviewed #906 merged as fd9ef289. Canonical #752 consumed current unified at b177af8c, preserved #478 accepted-custody checks in the split accepted_runtime owner, and replaced the synthetic Major-3 witness with the real source-owned temporal authority -> durable C09 invalidation -> live/cold retained hold path. Current proof: 28/28 custody, 9/9 accepted runtime, 37/37 correction, 45/45 preservation, #906 10/10 + real A01 3/3; changed-scope quality and BAMF contracts green. Exact whole candidate is ready for the user-authorized H4 EGM review.",
+      "summary": "H3 historical FAIL preserved. All seven findings are engineering-repaired. #906 source-owned temporal authority is integrated; real producer -> C09 durable invalidation -> live/cold retained hold is proven. Latest reviewed unified cc48ac40 (#479/B13.2) was consumed at merge 0290f00f; its delta is test/evidence-only for #752 surfaces, new controls pass 8/8 with one intended full-witness skip. Changed-scope quality and 43/43 contracts are green. Candidate is frozen for the explicitly authorized H4 whole-candidate EGM.",
       "resume_trigger": null
     },
     {

@@ -431,3 +431,31 @@ production-path witness. Historical H3 remains immutable **FAIL - 3 Blockers,
 authorized continuation of #752 after #907 merged, satisfying the prior gate for
 the next whole-candidate EGM review. No neural execution, trainer run, H4 verdict,
 PR merge, or issue closure is implied.
+
+### H4 current-unified freeze
+
+Reviewed unified advanced once more after the first H4 freeze, from
+`fd9ef2890149ab5ae395640ce980a20f13a388c6` to
+`cc48ac40d875f0c2ae8ffbdc70001dbfc4815334` through reviewed B13.2 / #479.
+That delta changes no #752 production owner, C09 runtime, source-context authority,
+or correction contract. It adds B13.2 full-resume controls, one learning-layout
+test adjustment, evidence, and Lane-B bookkeeping.
+
+The canonical #752 branch consumed that reviewed delta without conflict at merge
+head `0290f00ff4a1a6957bc82ff8786adf3646836204`. The newly introduced B13.2
+local controls then ran **8/8 PASS**; the complete disposable full-resume witness
+remained one intentional environment-gated skip requiring
+`BILQIS_BAMF_FULL_WITNESS`. No #752 behavioral receipt was invalidated by the
+disjoint delta, so the preceding 28/28, 9/9, 37/37, 45/45, 10/10 and real-A01
+3/3 results are reused under the repository's passing-evidence reuse rule.
+
+Changed-scope governance was rerun against exact reviewed unified
+`cc48ac40...`: development structure and governance integrity PASS with zero
+violations, code-smell audit reports zero new changed-file findings,
+legacy-trainer authority and its 7/7 regressions PASS, BAMF flow control and
+15/15 regressions PASS, BAMF contracts remain 43/43 PASS, and
+`git diff --check` is clean.
+
+This is the final engineering freeze before the explicitly authorized H4
+whole-candidate review. H3 remains immutable historical FAIL until and after that
+review; no H4 verdict is claimed here.
