@@ -1749,7 +1749,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **2072** raw raises across **249** files. The baseline gate permits only reduction.
+Current production scan: **2072** raw raises across **250** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -2374,7 +2374,6 @@ Current production scan: **2072** raw raises across **249** files. The baseline 
 | `EVENT_FRAME_INVALID_DRAW` | 1 | `bilqis_mlx/source_adapters/_events/event_frames.py` |
 | `EVENT_FRAME_INVALID_EVENTS` | 1 | `bilqis_mlx/verification/event_frames.py` |
 | `EVENT_FRAME_INVALID_RECORD` | 1 | `bilqis_mlx/verification/event_frames.py` |
-| `EVENT_FRAME_SOURCE_PDF_DRIFT` | 1 | `bilqis_mlx/source_adapters/_events/event_frames.py` |
 | `EVENT_FRAME_UNDECLARED_QUERY` | 1 | `bilqis_mlx/verification/event_frames.py` |
 | `EVENT_FRAME_UNKNOWN_CAPABILITY` | 1 | `bilqis_mlx/verification/event_frames.py` |
 | `EXAM_ANSWER_OUTSIDE_CAPABILITY_ABI` | 1 | `bilqis_mlx/curriculum/__init__.py` |
@@ -3643,6 +3642,7 @@ Current production scan: **2072** raw raises across **249** files. The baseline 
 | `model-input planning entered before A06 authority rejection` | 1 | `bilqis_mlx/runtime/tests/batch/test_atlas_training_real_source.py` |
 | `non-finite JSON literal` | 1 | `bilqis_mlx/semantics/atlas/feature_io_contracts.py` |
 | `pointer interrupted` | 1 | `bilqis_mlx/runtime/tests/custody/state_dag/test_persistence.py` |
+| `short write` | 1 | `bilqis_mlx/runtime/_correction/accepted/accepted_correction_storage.py` |
 | `snapshot must not mutate MLX telemetry` | 1 | `bilqis_mlx/runtime/tests/model/resources/test_memory_retry.py` |
 | `test synchronization timed out` | 1 | `bilqis_mlx/runtime/tests/custody/bamf_bundle/test_publication_durability.py` |
 | `undefined` | 1 | `bilqis_mlx/semantics/tests/foundation/test_source_memo.py` |

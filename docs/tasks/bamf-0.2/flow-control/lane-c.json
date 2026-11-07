@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "bd3657e170c8bdc046a7bb28524c0fb829ca7ce9",
-  "updated_at": "2026-11-07T10:15:48Z",
+  "observed_unified": "5f8f3d4b42cc4656020e4427c7d8e822825a36f9",
+  "updated_at": "2026-11-07T16:53:58Z",
   "exception": null,
   "items": [
     {
@@ -119,6 +119,15 @@
       "summary": "Governance PR843 externally merged as2debce4f; synchronized lane intake, no implementation acceptance inferred.",
       "resume_trigger": null,
       "merged_pr": 843
+    },
+    {
+      "issue": 746,
+      "pr": 903,
+      "state": "TURNED_IN",
+      "head_sha": "ebd5a417bb73525a0853a03291dd1ee065d88357",
+      "preserved_branch": "codex/746-c12-import-commit-20261102",
+      "summary": "Review-ready #746 authority closure is turned in at PR #903: production C12 receive -> A12/C09 verify -> B12 import -> C05 screen -> B13 publication, with exact-head and expanded affected validation green and no child EGM spent.",
+      "resume_trigger": null
     },
     {
       "issue": 752,

@@ -1,5 +1,5 @@
 {
-  "legacy_raw_file_count": 249,
+  "legacy_raw_file_count": 250,
   "legacy_raw_raise_count": 2072,
   "legacy_raw_raise_groups": [
     {
@@ -9439,6 +9439,13 @@
       "path": "bilqis_mlx/runtime/_capability/candidate_staging.py"
     },
     {
+      "code_hint": "short write",
+      "count": 1,
+      "exception": "OSError",
+      "expression": "'short write'",
+      "path": "bilqis_mlx/runtime/_correction/accepted/accepted_correction_storage.py"
+    },
+    {
       "code_hint": "HUMAN_TRAINER_LIVE_EXAM_INCOMPLETE_FACTORS",
       "count": 1,
       "exception": "ValueError",
@@ -12257,13 +12264,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'EVENT_FRAME_INVALID_DRAW'",
-      "path": "bilqis_mlx/source_adapters/_events/event_frames.py"
-    },
-    {
-      "code_hint": "EVENT_FRAME_SOURCE_PDF_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'EVENT_FRAME_SOURCE_PDF_DRIFT'",
       "path": "bilqis_mlx/source_adapters/_events/event_frames.py"
     },
     {

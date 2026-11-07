@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "4cffd8c79cbb5021cedce225118448af58a68253",
-  "updated_at": "2026-11-05T23:08:00Z",
+  "observed_unified": "947a4ddda2c133cabec846b09d3b58d18732dcf1",
+  "updated_at": "2026-11-07T10:09:42Z",
   "exception": null,
   "items": [
     {
@@ -96,12 +96,39 @@
       "merged_pr": 862
     },
     {
-      "issue": 395,
+      "issue": 888,
       "pr": null,
-      "state": "WAITING",
-      "head_sha": "c2e212e0bef7975e78dfc2f0a6071e21566b6539",
-      "summary": "A09.5 focused implementation passes on current unified, but three genuine post-A/B/C source-to-staged successor realizations are not yet accepted; #420 supplied rule/family authority, not the required realization breadth.",
-      "resume_trigger": "Accepted realization/staging authority must provide at least three genuinely new source-qualified candidate-to-staged-successor bindings beyond historical A/B/C, or an accepted equivalent owner contract.",
+      "state": "READY",
+      "head_sha": "3bedf7c3ddf1e536261aeb5b0830441cd399dca5",
+      "summary": "#888 realization-breadth repair is review-ready at semantic head 3bedf7c3 on reviewed unified 947a4ddd. Fresh targeted EGM PASS: 0 Blockers/0 Majors; readiness had one nonblocking test-clarity Nit only. Actual pinned A01/A08 replay proves the three #890 event successors through the parent next_atlas_delta path; a reviewer additionally exercised the full unmodified 9307-concept census. Hosted portable-core/portable/Semantic ABI PASS. PR #891 is ready for human review; merge/closure remain external authority.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a09-5a-888-realizations-20261107"
+    },
+    {
+      "issue": 889,
+      "pr": null,
+      "state": "READY",
+      "head_sha": "4e3f36afbd41856fe671bcd1dfb159df51eeb6b2",
+      "summary": "A09.5b primary-source staging repair is consumed by the #888 cohesive candidate: exact pinned primary source sense/text hash can stage without an auxiliary evidence row while all source/provider/oracle/admission boundaries remain fail-closed. Focused staging proof is green.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a09-5b-889-primary-source-20261107"
+    },
+    {
+      "issue": 890,
+      "pr": null,
+      "state": "READY",
+      "head_sha": "831e6419370cadf1fe5128cf7d6e90e112e2d54a",
+      "summary": "A09.5c event source authority is consumed by the #888 cohesive candidate: occurrence, commencement and termination use stable non-experimental identities bound to exact Ithkuil senses, source-text/PDF hashes, independent oracle and append-only prerequisite-closed semantic projection. Source/semantic owner checks are green.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a09-5c-890-event-authority-20261107"
+    },
+    {
+      "issue": 395,
+      "pr": 891,
+      "state": "READY",
+      "head_sha": "3bedf7c3ddf1e536261aeb5b0830441cd399dca5",
+      "summary": "A09.5 parent is review-ready at semantic head 3bedf7c3 after consuming #889/#890 and closing #888. Real pinned A01/A08 replay, three successive source-qualified next_atlas_delta proposals, restart/source-order/grade-label behavior, current-credit filtering, source-authority failure closure, and fixed-point behavior are accepted. Fresh targeted EGM PASS 0 Blockers/0 Majors; hosted portable-core/portable/Semantic ABI PASS; PR #891 MERGEABLE/CLEAN and out of draft. Human merge and issue closure remain separate.",
+      "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a09-5-395-20261105"
     },
     {

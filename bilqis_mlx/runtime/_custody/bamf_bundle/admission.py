@@ -165,6 +165,7 @@ def accept_and_publish(run_dir: Path, bundle: BamfBundleCandidate,
                        retained_state: CandidateState, *,
                        decision: CandidateRetentionDecision,
                        feature_sha256: str,
+                       reserve_gib: float = 100.0,
                        training_authorities=None) -> dict:
     """Publish a candidate that the retention decision owner has accepted.
 
@@ -177,4 +178,5 @@ def accept_and_publish(run_dir: Path, bundle: BamfBundleCandidate,
         decision, retained_state, run_id=bundle.run_id,
         generation=bundle.generation, feature_sha256=feature_sha256,
         training_authorities=training_authorities)
-    return publish_bamf_generation(run_dir, bundle, acceptance=binding)
+    return publish_bamf_generation(
+        run_dir, bundle, acceptance=binding, reserve_gib=reserve_gib)

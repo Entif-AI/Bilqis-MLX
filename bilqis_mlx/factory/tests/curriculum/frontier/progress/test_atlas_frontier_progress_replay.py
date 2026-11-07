@@ -9,7 +9,7 @@ from bilqis_mlx.factory.tests.curriculum.frontier.atlas_frontier_closure_fixture
 from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier_progress import (
     ProjectionAuthorityFixture, _staged_ready,
 )
-from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier_progress_dispositions import (
+from bilqis_mlx.factory.tests.curriculum.frontier.progress.test_atlas_frontier_progress_dispositions import (
     _admit, _single_ready,
 )
 from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier_selection import (
