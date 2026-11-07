@@ -77,9 +77,9 @@
       "issue": 478,
       "pr": 885,
       "state": "ACTIVE",
-      "head_sha": "f9d14b207218c636f0b81d29059b4f6ae65ad6af",
-      "head_sha_role": "combined round-4 semantic integration head; fresh full-custody proof is required because accepted-authority production behavior changed after the a7ac31de broad receipt",
-      "summary": "B13.1 EGM round 4 final disposition is 0 Blockers / 2 Majors. Genesis run-root ancestry is repaired by a7ac31de, which durably syncs every newly-created run-root directory through the first pre-existing ancestor. Accepted-state authority authentication is repaired by 4bedc397: publication/admission authority loaders now share acceptance-receipt authentication and reject missing or re-signed drifted custody. Combined targeted proof is green: nested ancestry 1/1, generation acceptance 20/20, publication durability 8/8, production authority 14/14, cache authority 7/7, structure/diff clean and smell delta 0. The earlier a7ac31de full-custody receipt is invalidated by the later authority production change; fresh full custody and then round 5 remain before review readiness.",
+      "head_sha": "49f57e4ef799bea9f4565bde4be15c0815bf0d24",
+      "head_sha_role": "latest exact combined repaired head with fresh full-custody and hosted proof; immediately following evidence/flow-control-only bookkeeping may reuse this proof under AGENTS.md TEST_EVIDENCE_REUSED",
+      "summary": "B13.1 EGM round 4 final disposition is 0 Blockers / 2 Majors. Genesis run-root ancestry is repaired by a7ac31de; accepted-state authority authentication is repaired by 4bedc397; both are combined in f9d14b20 and carried by exact candidate 49f57e4e. Fresh full custody on 49f57e4e is 111 total / 107 passed / 0 failed / 4 explicit skips; exact-head hosted portable-core, semantic-abi-integrity and aggregate portable are green; merge state is CLEAN. Round 5 is now the remaining default-cap review-readiness gate after this evidence/flow-only bookkeeping is pushed and read back.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-b13-1-478-complete-20261106"
     },
