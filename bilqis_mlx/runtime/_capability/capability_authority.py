@@ -245,9 +245,11 @@ def evaluate_accepted_progression_authority(
     )
     if not isinstance(run_dir, Path):
         _invalid("BAMF_PROGRESSION_ACCEPTED_RUN_REQUIRED")
-    owner = load_capability_support_owner(run_dir, capability_id)
     if "capability_support_owner" in authority_inputs:
         _invalid("BAMF_PROGRESSION_CALLER_SUPPORT_FORBIDDEN")
+    correction_registry = authority_inputs.pop("correction_authority_registry", None)
+    owner = load_capability_support_owner(
+        run_dir, capability_id, correction_registry)
     return evaluate_progression_authority(
         release, capability_id, target_evidence, prerequisite_evidence, current,
         capability_support_owner=owner, **authority_inputs)

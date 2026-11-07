@@ -114,6 +114,9 @@ def apply_cache_correction(
 ):
     """Deliver one qualified C09 correction into opaque cache custody."""
     owner = bind_cache_artifact_owner(authority, artifact, binding)
+    authority_registry.verify_correction(event)
+    if not owner.index.direct_dependents(event.dependency):
+        return owner.queue
     return owner.apply_correction(event, authority_registry)
 
 

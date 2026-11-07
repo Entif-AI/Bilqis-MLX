@@ -100,9 +100,10 @@ class CapabilitySupportOwnerTests(unittest.TestCase):
                 training_authorities=transaction.training_authorities)
         return published, authority
 
-    def load_support(self):
+    def load_support(self, authority_registry=None):
         with shape_patch():
-            return load_capability_support_owner(self.run, TARGET)
+            return load_capability_support_owner(
+                self.run, TARGET, authority_registry)
 
     def test_b13_acceptance_persists_exact_source_anchor_and_materializes_owner(self):
         published, authority = self.publish_support()
@@ -138,11 +139,20 @@ class CapabilitySupportOwnerTests(unittest.TestCase):
         self.assertEqual(queue.held_artifact_ids, (owner.current_node.artifact_id,))
         with self.assertRaises(BilqisError):
             owner.require(TARGET)
+        with self.assertRaises(BilqisError):
+            self.load_support()
+        reloaded = self.load_support(AUTHORITY)
+        self.assertEqual(
+            reloaded.queue.held_artifact_ids,
+            (reloaded.current_node.artifact_id,))
+        with self.assertRaises(BilqisError):
+            reloaded.require(TARGET)
 
         node = owner.current_node
         owner.advance(
             _result(node, digest=node.content_digest, correction=correction), AUTHORITY)
         self.assertEqual(owner.require(TARGET).status, "QUALIFIED")
+        self.assertIsNone(self.load_support().queue)
 
         self.assertTrue(apply_capability_support_correction(
             owner, correction, AUTHORITY))
@@ -151,6 +161,9 @@ class CapabilitySupportOwnerTests(unittest.TestCase):
         self.assertEqual(owner.support.status, "REQUALIFICATION_REQUIRED")
         with self.assertRaises(BilqisError):
             owner.require(TARGET)
+        self.assertEqual(
+            self.load_support().support.status,
+            "REQUALIFICATION_REQUIRED")
 
 
 if __name__ == "__main__":

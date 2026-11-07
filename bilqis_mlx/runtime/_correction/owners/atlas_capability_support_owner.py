@@ -26,6 +26,9 @@ from .atlas_revalidation_runtime import (
     read_artifact, revalidate_node,
 )
 from .atlas_source_authority import SourceAuthorityRegistry
+from .capability_support_journal import (
+    clear_journal, event_from_record, journal_path, read_journal, write_journal,
+)
 
 
 _ISSUER = object()
@@ -193,6 +196,13 @@ class CapabilitySupportArtifactOwner:
         self, event: CorrectionEvent, authority_registry: SourceAuthorityRegistry,
     ) -> RevalidationQueue:
         self._queue = apply_correction(event, self._index, authority_registry)
+        if self._journal_path is not None and self._queue.held_artifact_ids:
+            write_journal(
+                self._journal_path,
+                capability_id=self.capability_id,
+                manifest_sha256=self._support.retained_generation_sha256,
+                artifact_id=self.current_node.artifact_id,
+                state="HELD", event=event)
         return self._queue
 
     def advance(
@@ -214,15 +224,26 @@ class CapabilitySupportArtifactOwner:
             self._support = replace(
                 self._support,
                 status=RequalificationStatus.REQUALIFICATION_REQUIRED)
+            if self._journal_path is not None:
+                write_journal(
+                    self._journal_path,
+                    capability_id=self.capability_id,
+                    manifest_sha256=self._support.retained_generation_sha256,
+                    artifact_id=self.current_node.artifact_id,
+                    state="REQUALIFICATION_REQUIRED", event=self._queue.event)
+        elif (self._journal_path is not None
+              and not self._queue.held_artifact_ids and not self._queue.pending):
+            clear_journal(self._journal_path)
         return progress
 
 
-def _issue_owner(support, node, generation_bindings=()):
+def _issue_owner(support, node, generation_bindings=(), journal=None):
     owner = object.__new__(CapabilitySupportArtifactOwner)
     owner._support = support
     owner._index = DependencyIndex.build((node,))
     owner._queue = None
     owner._generation_bindings = tuple(generation_bindings)
+    owner._journal_path = journal
     owner._issuance = _ISSUER
     owner.__post_init__()
     return owner
@@ -230,6 +251,7 @@ def _issue_owner(support, node, generation_bindings=()):
 
 def load_capability_support_owner(
     run_dir: Path, capability_id: str,
+    authority_registry: SourceAuthorityRegistry | None = None,
 ) -> CapabilitySupportArtifactOwner:
     """Materialize current support only from accepted B13 custody and v3 source anchors."""
     from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
@@ -267,7 +289,26 @@ def load_capability_support_owner(
             _invalid("BAMF_C09_CAPABILITY_SUPPORT_ACCEPTANCE_DRIFT")
     support, node, generation_bindings = _materialized_support(
         binding, student, manifest_sha256, capability_id)
-    return _issue_owner(support, node, generation_bindings)
+    hold_path = journal_path(run_dir, manifest_sha256, capability_id)
+    owner = _issue_owner(support, node, generation_bindings, hold_path)
+    hold = read_journal(hold_path)
+    if hold is None:
+        return owner
+    if (hold.get("capability_id") != capability_id
+            or hold.get("manifest_sha256") != manifest_sha256
+            or hold.get("artifact_id") != node.artifact_id
+            or hold.get("state") not in {"HELD", "REQUALIFICATION_REQUIRED"}):
+        _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_DRIFT")
+    event = event_from_record(hold.get("event"))
+    if hold["state"] == "REQUALIFICATION_REQUIRED":
+        owner._support = replace(
+            owner._support,
+            status=RequalificationStatus.REQUALIFICATION_REQUIRED)
+        return owner
+    if not isinstance(authority_registry, SourceAuthorityRegistry):
+        _invalid("BAMF_C09_CAPABILITY_SUPPORT_CORRECTION_AUTHORITY_REQUIRED")
+    owner._queue = apply_correction(event, owner._index, authority_registry)
+    return owner
 
 
 __all__ = ("CapabilitySupportArtifactOwner", "load_capability_support_owner")

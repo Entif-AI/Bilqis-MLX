@@ -264,5 +264,5 @@ class CapabilityAuthorityTests(unittest.TestCase):
                 promotion_policy=_authority(AuthorityKind.PROMOTION_POLICY),
                 admission_lease=_authority(AuthorityKind.ADMISSION_LEASE),
             )
-        loader.assert_called_once_with(Path("/accepted-run"), "target")
+        loader.assert_called_once_with(Path("/accepted-run"), "target", None)
         self.assertEqual(gate.status, "ELIGIBLE")
