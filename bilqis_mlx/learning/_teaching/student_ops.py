@@ -153,7 +153,7 @@ def _train_step(mx, parameters, optimizer, rows, config, answer_ids,
 
 
 def train_bamf_factory_step(*args, **kwargs):
-    """Explicit BAMF successor entrypoint; legacy Prometheus training is unchanged."""
+    """Explicit BAMF successor entrypoint; the stale historical trainer is not used."""
     from bilqis_mlx.runtime.factory_candidate_training import (
         execute_factory_candidate_step,
     )

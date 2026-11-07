@@ -3,7 +3,7 @@
 `issue_key`: C02 / #371
 `lane`: C
 `reviewed_integration_base`: `3899649586b105b075e92f0ee3c51e80c379b473`
-`implementation_head`: `daaabc2872d4da624f34c22c1a842c20cee7a508`
+`implementation_head`: `dc67a3c8d2d6edbf9ca63dcd6ed105d9fed4909c`
 `feature_branch`: `codex/bamf02-c02-371-complete-20261106`
 
 ## Consumed authority and dependencies
@@ -24,6 +24,10 @@
   exact merged code receipts.
 - C08 resource owner is parent #374 / C08.1 #513. #333 remains the teacher
   observation owner. C16 retains live durable learner-start authority.
+- The operator runtime lineage for later C16 work is
+  `/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`.
+  It was inspected read-only at generation 24254. C02 did not mutate or resume it,
+  and the stale Prometheus trainer is not a BAMF activation path.
 
 ## Changed paths
 
@@ -73,11 +77,12 @@ Exact CPU command:
 
 ```bash
 /Users/cr8s/Code/bilqis-skos-19/.venv/bin/python -B scripts/run_tests.py \
+  bilqis_mlx/runtime/tests/batch/test_atlas_training_adapter.py \
   bilqis_mlx/runtime/tests/batch/test_atlas_training_compilation.py \
   bilqis_mlx/runtime/tests/batch/test_atlas_training_delivery.py
 ```
 
-**25 passed, 0 failed, 0 skipped, 0 errors.**
+**29 passed, 0 failed, 0 skipped, 0 errors.**
 
 Exact detached Studio command and fixture are recorded in
 `docs/evidence/bamf/C02/egm.md`. Result: **12 passed, 0 failed, 0 skipped, 0
@@ -99,20 +104,22 @@ execute `student_ops -> C02 -> C08 -> B10/B11 -> candidate custody -> #333`,
 producing one finite speculative optimizer step and realized row/cost evidence
 without publishing the candidate.
 
-The deliberate remaining boundary is C08/B11 multi-microbatch gradient-tree
-accumulation: C02 consumes C08 planning and fails closed before neural execution
-when a logical batch requires more than the currently admitted one-group B11
-witness. C02 does not counterfeit that separate owner or perform one AdamW step
-per microbatch. Live learner start and sustained iteration remain human/C16-owned.
+The deliberate remaining boundary is downstream C08/B12 multi-microbatch
+gradient-tree accumulation. C02 consumes C08 planning and fails closed before
+neural execution when a logical batch requires more than the currently admitted
+one-group B11 witness. This is not a C02 dependency: C08 depends on C02+B11 and
+owns weighted logical-batch accumulation before one B12 AdamW step. C02 does not
+counterfeit that owner or perform one AdamW step per microbatch. Live learner
+start and sustained iteration remain human/C16-owned.
 
 ## EGM
 
 Report: `docs/evidence/bamf/C02/egm.md`. Round 1 failed on the production seams
-listed there; all known Blocker/Major findings received concrete repairs or an
-explicit fail-closed owner boundary. Fresh whole-candidate round 2 is pending at
-the time this pre-review receipt is committed. Final independent disposition is
-also recorded on #371 and the turn-in PR without rewriting the reviewed behavior
-head.
+listed there; all C02-owned Blocker/Major findings received concrete repairs.
+Fresh round-2 comprehension on exact behavior head `dc67a3c8...` found one
+Major only: this durable receipt/EGM record still named the pre-topology repair
+head and 25/25 CPU proof. This commit corrects that evidence defect. Final fresh
+whole-candidate exact-head disposition is recorded on #371 and the turn-in PR.
 
 `next_ready_issue`: none claimed by C02; parent #371 turns in to the reviewed
 unified trunk after independent merge-readiness acceptance. No self-merge, issue

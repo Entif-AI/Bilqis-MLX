@@ -36,10 +36,14 @@ Repair commits:
   production training transaction and repair source/B10/C08/#333 authority.
 - `daaabc2872d4da624f34c22c1a842c20cee7a508` — correct the numeric construction
   witness to the source owner's legal `each >= 3` scope and export the resolver.
+- `dc67a3c8d2d6edbf9ca63dcd6ed105d9fed4909c` — bind C02 compilation to the
+  actual `ModelTopologySpecV2`, pass the accepted candidate topology through the
+  Factory bridge, and enforce `input positions + maximum decisions <= topology.context`.
 
 The repaired production seam is explicit and dormant: `student_ops` exposes
-`train_bamf_factory_step`, while historical Prometheus `_train_step` remains
-unchanged. The BAMF path authenticates the accepted parent, compiles one exact
+`train_bamf_factory_step`. The stale historical Prometheus trainer is not an
+activation path for BAMF and is not used by this C02 transaction. The BAMF path
+authenticates the accepted parent, compiles one exact
 source-owned Factory delivery, derives stable family/episode identity, resolves
 training-only B10 route truth through the registered source TaskGoal lowerer,
 uses the canonical B10 `OPERATOR`/`OPERAND` decisions, derives measured A05 frame
@@ -48,23 +52,27 @@ gradient, admits one speculative candidate optimizer step through existing B13
 custody, and immediately records exact delivered rows plus realized cost through
 #333 observation capture. It publishes no candidate and starts no live learner.
 
-C08/B11 split-gradient accumulation remains a distinct owner boundary: if C08
-requires more than the currently admitted one-row/one-group B11 witness, C02
-fails closed before neural execution rather than applying multiple AdamW steps or
-inventing a second optimizer owner. Live durable launch/iteration remains C16
-operator authority.
+C08 split-gradient accumulation remains a downstream owner boundary. C02's own
+acceptance separately proves plural Factory-row compilation/identity preservation
+and a finite disposable MLX gradient step. C08 depends on C02+B11 and owns the
+stronger one-logical-batch -> weighted microbatch accumulation -> one B12 AdamW
+step contract. Until that downstream C08/B12 integration exists, C02 fails closed
+instead of fabricating multirow optimizer custody. Live durable launch/iteration
+remains C16 operator authority.
 
 ## Exact repair proof
 
-CPU authority proof on the exact repair implementation head:
+CPU authority proof on the exact behavior implementation head
+`dc67a3c8d2d6edbf9ca63dcd6ed105d9fed4909c`:
 
 ```bash
 /Users/cr8s/Code/bilqis-skos-19/.venv/bin/python -B scripts/run_tests.py \
+  bilqis_mlx/runtime/tests/batch/test_atlas_training_adapter.py \
   bilqis_mlx/runtime/tests/batch/test_atlas_training_compilation.py \
   bilqis_mlx/runtime/tests/batch/test_atlas_training_delivery.py
 ```
 
-Result: **25 passed, 0 failed, 0 skipped, 0 errors**.
+Result: **29 passed, 0 failed, 0 skipped, 0 errors**.
 
 Deterministic repository gates:
 
@@ -88,11 +96,25 @@ accepted A01 artifact fixture mounted explicitly:
   bilqis_mlx/runtime/tests/capability/factory/test_task_goal_readout.py
 ```
 
-Detached receipt:
-`/Users/emilie/Code/371-c02-complete-20261106/.local/c02-371-repair-proof/receipt.json`.
+Detached exact-head receipt:
+`/Users/emilie/Code/371-c02-complete-20261106/.local/c02-371-topology-proof/receipt.json`.
 Result: **12 passed, 0 failed, 0 skipped, 0 errors**, return code 0. Snapshot
-SHA-256 `4268043efc81700e6fdd0dfbb01d3a003a636d93a4a861d9fe04d7253c2fa59c`
+SHA-256 `221c737c8ce048edf541a42dc8491129532782e629da99fa8b2a82b9774ae681`
 was unchanged after execution (`source_mutated=false`).
+
+## Runtime lineage clarification
+
+The operator runtime lineage relevant to later C16 activation is the existing
+read-only run:
+
+`/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`
+
+Its current `state.json` reports generation **24254**, node
+`4b7c27690474b2ac48b90a74dcbe8cbb3e66da4681d5a898ea128117e63335cc`,
+receipt
+`5a9f680246b5f073e5aa387d8cacfe4e3a67e21fe1bb308f92dc4af7436e1895`.
+C02 did not mutate, resume, or train that run. The disposable exact-head proof
+above remains isolated. No Prometheus trainer path is part of this handoff.
 
 Round 2 is a fresh whole-candidate re-audit of the repaired head plus this
 turn-in evidence. Its final disposition is recorded in the issue/PR receipt once
