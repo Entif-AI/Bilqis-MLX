@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "5f8f3d4b42cc4656020e4427c7d8e822825a36f9",
-  "updated_at": "2026-11-07T12:20:47-05:00",
+  "updated_at": "2026-11-07T12:37:54-05:00",
   "exception": null,
   "items": [
     {
@@ -77,9 +77,9 @@
       "issue": 478,
       "pr": 885,
       "state": "ACTIVE",
-      "head_sha": "f6c53bc8bb3fd5d370a1faab8d90a7ac83f87922",
-      "head_sha_role": "latest exact full-custody-tested PR head; an immediately following receipt/flow-control-only commit may reuse this proof under AGENTS.md TEST_EVIDENCE_REUSED and is reconciled in live PR/issue metadata",
-      "summary": "B13.1 round-3 repair is complete. EGM found one target-local first-publication durability defect plus mechanical evidence drift; the custody defect is repaired at semantic implementation head acbe3c05782b298918f96286657c950c9b867d20 with failing-before/passing-after ancestry proof, and full custody plus hosted proof are green on exact head f6c53bc8bb3fd5d370a1faab8d90a7ac83f87922. The earlier A02/C07 WAIT condition was inverted: reviewed PR #593 supplies the A02 staging/interface dependency B13.1 consumes, while later #399/#510 production adoption consumes B13 authority and is not a #478 completion prerequisite. The next whole-candidate EGM round is the remaining review-readiness gate.",
+      "head_sha": "a7ac31de92cbba325f4263b5f6e8872d7434ff4a",
+      "head_sha_role": "round-4 semantic repair head; exact full-custody proof is running detached on this snapshot before final evidence/bookkeeping",
+      "summary": "B13.1 EGM round 4 failed on one target-local Major: genesis run-root ancestry was not crash-durable before pointer publication. Semantic repair a7ac31de records the pre-existing ancestor, fsyncs every newly-created run-root directory plus that first existing ancestor, and adds a data-plane-isolated nested-run ordering witness. The new witness failed before the fix and passes after; the neighboring publication/durability/sidecar ring is 32/32 and deterministic structure/governance/docs/flow checks are green. Round 5 is the remaining default-cap whole-candidate review after exact full-custody proof and final bookkeeping are green.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-b13-1-478-complete-20261106"
     },
