@@ -68,6 +68,64 @@ class PublicationDurabilityTests(unittest.TestCase):
     def test_tensor_file_is_fsynced_before_pointer_can_be_installed(self):
         self.assert_persisted_tensor_durable()
 
+    def test_acceptance_directory_is_fsynced_before_pointer_can_be_installed(self):
+        durable = set()
+        fsync, pointer = os.fsync, publication._atomic_pointer
+
+        def identity(path):
+            state = path.stat()
+            return state.st_dev, state.st_ino
+
+        def sync(fd):
+            state = os.fstat(fd)
+            durable.add((state.st_dev, state.st_ino))
+            fsync(fd)
+
+        def install(path, pointer_value):
+            acceptance = (path.parent / 'bamf-acceptance'
+                          / f"{pointer_value['manifest_sha256']}.json")
+            self.assertIn(identity(acceptance), durable,
+                          'acceptance receipt inode must be durable')
+            self.assertIn(
+                identity(acceptance.parent), durable,
+                'acceptance directory must be durable before pointer publication')
+            pointer(path, pointer_value)
+
+        with patch.object(os, 'fsync', side_effect=sync), \
+                patch.object(publication, '_atomic_pointer', side_effect=install):
+            self.publish(candidate(parent_state()))
+
+    def test_acceptance_directory_is_resynced_on_pre_pointer_retry(self):
+        initial = parent_state()
+        first = self.publish(candidate(initial))
+        successor = candidate(accepted_state(initial), 1, first['manifest_sha256'])
+        with patch.object(publication, '_atomic_pointer', side_effect=RuntimeError('crash')):
+            with self.assertRaisesRegex(RuntimeError, 'crash'):
+                self.publish(successor)
+        self.assertEqual(
+            json.loads((self.run / 'bamf-state.json').read_text()), first)
+
+        durable = set()
+        fsync, pointer = os.fsync, publication._atomic_pointer
+
+        def sync(fd):
+            state = os.fstat(fd)
+            durable.add((state.st_dev, state.st_ino))
+            fsync(fd)
+
+        def install(path, pointer_value):
+            acceptance_root = path.parent / 'bamf-acceptance'
+            state = acceptance_root.stat()
+            self.assertIn(
+                (state.st_dev, state.st_ino), durable,
+                'existing acceptance directory must be durable before pointer retry')
+            pointer(path, pointer_value)
+
+        with patch.object(os, 'fsync', side_effect=sync), \
+                patch.object(publication, '_atomic_pointer', side_effect=install):
+            second = self.publish(successor)
+        self.assertEqual(second['generation'], 1)
+
     def test_ordering_witness_detects_unsynced_cas_inode(self):
         with patch.object(file_objects, '_fsync_file'):
             with self.assertRaisesRegex(AssertionError, 'persisted CAS inode'):
