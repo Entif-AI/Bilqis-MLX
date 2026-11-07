@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from dataclasses import replace
 
 from bilqis_mlx.compatibility.executable_projection import compile_projected_executable_release
 from bilqis_mlx.factory import candidate_realizations
@@ -129,6 +130,19 @@ class EventCandidateRealizationTests(unittest.TestCase):
             match = next(item for item in staged if item.target_capability_id == capability)
             graph = candidate_realizations.admitted_candidate_graph(match, graph)
             current = match.successor
+
+    def test_event_grade_container_is_selected_from_structure_not_grade_name(self):
+        curriculum = self.current.curriculum
+        relabel = {'A': 'D', 'B': 'A', 'C': 'B'}
+        relabeled = replace(
+            curriculum,
+            grades=tuple(
+                replace(grade, grade_id=relabel[grade.grade_id])
+                for grade in curriculum.grades
+            ),
+        )
+        self.assertEqual(event_frames.event_grade_id(curriculum), 'D')
+        self.assertEqual(event_frames.event_grade_id(relabeled), 'C')
 
 
 if __name__ == '__main__':

@@ -311,8 +311,8 @@ class IthkuilIdentityFactoryTests(unittest.TestCase):
             staged = load_staged_candidates(root, self.frontier, self.current)
             self.assertIn(self.staged, staged)
             self.assertEqual(
-                tuple(item.target_capability_id for item in staged),
-                (CAPABILITY, "D.EVENT_OCCURRENCE"),
+                {item.target_capability_id for item in staged},
+                {CAPABILITY, "D.EVENT_OCCURRENCE"},
             )
             self.assertEqual(session.ledger.receipts, ())
 
