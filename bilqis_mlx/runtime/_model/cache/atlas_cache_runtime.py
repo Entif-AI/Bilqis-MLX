@@ -116,11 +116,12 @@ def decode_cache(authority, artifact, expected_binding):
 
 def interactive_cache_inference(
     authority, artifact, expected_binding, *, cached_infer,
-    fp32_recompute, quality_check, policy,
+    fp32_recompute, quality_check, policy, artifact_owner=None,
 ):
     from .atlas_cache_policy import _interactive_cache_inference
     return _interactive_cache_inference(
         artifact, expected_binding,
+        artifact_owner=artifact_owner,
         cached_infer=cached_infer,
         fp32_recompute=fp32_recompute,
         quality_check=quality_check,

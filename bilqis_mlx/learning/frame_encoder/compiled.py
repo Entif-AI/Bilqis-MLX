@@ -21,6 +21,7 @@ from bilqis_mlx.semantics.partial_visible_forest import PartialVisibleForestRece
 from bilqis_mlx.semantics.partial_visible_forest import validate_partial_visible_forest
 from dataclasses import dataclass
 from dataclasses import field
+from bilqis_mlx.runtime.atlas_artifact_owner import PackedFrameArtifactOwner
 from dataclasses import replace
 from .contracts import (
     AtomicSourceHandle, _invalid,
@@ -96,6 +97,11 @@ def _compiled_groups(row, config, source_ast=None, receipt=None):
     return tuple(groups), projection
 
 
+def _owned_compiled_groups(row, config, artifact_owner, source_ast=None, receipt=None):
+    artifact_owner.require_row(row)
+    return _compiled_groups(row, config, source_ast, receipt)
+
+
 @dataclass(frozen=True)
 class CompiledEncoderInput:
     """Actual A05 rows, current compiler authority and released B02 features."""
@@ -110,6 +116,8 @@ class CompiledEncoderInput:
     atomic_handles: tuple[tuple[AtomicSourceHandle, ...], ...] = field(init=False)
     _groups: tuple[tuple[tuple[FrameConstituentRequest, ...], ...], ...] = field(init=False, repr=False)
     _projections: tuple[ApprovedContextProjection | None, ...] = field(init=False, repr=False)
+    packed_frame_artifact_owner: PackedFrameArtifactOwner = field(
+        init=False, repr=False, compare=False)
     schema_version: str = "bilqis.mlx.compiled-encoder-input/v1"
 
     def __post_init__(self):
@@ -129,10 +137,15 @@ class CompiledEncoderInput:
                          or len(self.partial_forest_receipts) != len(self.compiled.rows)))):
             _invalid()
         self.compiled.__post_init__()
+        if not hasattr(self, "packed_frame_artifact_owner"):
+            object.__setattr__(
+                self, "packed_frame_artifact_owner",
+                PackedFrameArtifactOwner(self.compiled))
         source_asts = self.source_asts or (None,) * len(self.compiled.rows)
         receipts = self.partial_forest_receipts or (None,) * len(self.compiled.rows)
         checked = tuple(
-            _compiled_groups(row, config, source_ast, receipt)
+            _owned_compiled_groups(
+                row, config, self.packed_frame_artifact_owner, source_ast, receipt)
             for row, config, source_ast, receipt in zip(
                 self.compiled.rows, self.compiler_configs,
                 source_asts, receipts))
