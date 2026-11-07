@@ -212,7 +212,8 @@ def _publish_c05_successor(run_dir, source_context, parent, cache, artifact, tra
     ):
         published = accept_and_publish(
             run_dir, successor, retained, decision=decision,
-            feature_sha256=successor.extents.factor_map_digest)
+            feature_sha256=successor.extents.factor_map_digest,
+            training_authorities=transaction.training_authorities)
     return successor, retained, published
 
 
