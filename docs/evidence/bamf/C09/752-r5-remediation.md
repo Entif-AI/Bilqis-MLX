@@ -50,8 +50,13 @@ the accepted ledger could be invisible before the B11 training read.
 **Repair:** `_bind_b11_rows()` registers every compiled training batch with its
 host-owned `SourceExecutionContext` before returning it, and
 `execute_factory_candidate_step()` now requires that context to be bound to the
-same accepted run before any neural execution. Source-prefetch workers remain
-unprivileged; authority stays at the host boundary.
+same accepted run before any neural execution. The source context now retains
+the actual `AcceptedRuntimeHost` capability that minted it; matching `run_dir`
+and correction-registry fields alone no longer satisfy the custody gate.
+Structurally forged contexts therefore fail closed with
+`FACTORY_SOURCE_CORRECTION_RUNTIME_REQUIRED`, while host-minted contexts clear
+the gate. Source-prefetch workers remain unprivileged; authority stays at the
+host boundary.
 
 Primary surfaces:
 
