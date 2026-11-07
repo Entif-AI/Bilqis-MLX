@@ -119,39 +119,56 @@ def _authenticate_features(student, artifact_path: str, *, predecessor=None):
 def _accepted_feature_chain(run_dir: Path, manifest_sha256: str, student,
                             artifact_path: str, *, expected_acceptance_sha256: str):
     """Rebuild feature ancestry only from accepted B13 generation custody."""
-    binding = accepted_binding_for_manifest(
-        run_dir, manifest_sha256, student,
-        expected_acceptance_sha256=expected_acceptance_sha256)
-    if student.generation == 0:
-        return _authenticate_features(student, artifact_path), binding, None
-    parent_sha = student.parent_manifest_sha256
-    if parent_sha is None:
-        invalid("BAMF_FEATURE_PREDECESSOR_UNAUTHENTICATED")
-    parent = load_bamf_bundle(
-        run_dir / "bamf-bundles" / parent_sha,
-        expected_manifest_sha256=parent_sha)
-    if parent.run_id != student.run_id or parent.generation + 1 != student.generation:
-        invalid("BAMF_FEATURE_PREDECESSOR_UNAUTHENTICATED")
-    parent_acceptance = parent_acceptance_from_manifest(run_dir, manifest_sha256)
-    prior, _, _ = _accepted_feature_chain(
-        run_dir, parent_sha, parent, artifact_path,
-        expected_acceptance_sha256=parent_acceptance)
-    if student.extents.factor_map_digest == parent.extents.factor_map_digest:
-        source = _feature_source(student.compiler_features)
-        if (student.compiler_features.get("factor_map_sha256") != prior.digest
-                or source != _feature_source(parent.compiler_features)
-                or _feature_schema(student.compiler_features)
-                != _feature_schema(parent.compiler_features)
-                or student.provenance.release_digest != prior.semantic_release
-                or source["release_sha256"] != prior.semantic_release
-                or source["atlas_bundle_id"] != prior.atlas_bundle_id
-                or source["source_bundle_id"] != prior.source_bundle_id):
-            invalid("BAMF_FEATURE_SOURCE_REPLAY_MISMATCH")
-        return prior, binding, prior
-    features = _authenticate_features(student, artifact_path, predecessor=prior)
-    if features.predecessor_digest != prior.digest:
-        invalid("BAMF_FEATURE_PREDECESSOR_UNAUTHENTICATED")
-    return features, binding, prior
+    history = []
+    current_sha = manifest_sha256
+    current = student
+    current_acceptance = expected_acceptance_sha256
+
+    while True:
+        binding = accepted_binding_for_manifest(
+            run_dir, current_sha, current,
+            expected_acceptance_sha256=current_acceptance)
+        history.append((current, binding))
+        if current.generation == 0:
+            break
+        parent_sha = current.parent_manifest_sha256
+        if parent_sha is None:
+            invalid("BAMF_FEATURE_PREDECESSOR_UNAUTHENTICATED")
+        parent = load_bamf_bundle(
+            run_dir / "bamf-bundles" / parent_sha,
+            expected_manifest_sha256=parent_sha)
+        if (parent.run_id != current.run_id
+                or parent.generation + 1 != current.generation):
+            invalid("BAMF_FEATURE_PREDECESSOR_UNAUTHENTICATED")
+        current_acceptance = parent_acceptance_from_manifest(run_dir, current_sha)
+        current_sha = parent_sha
+        current = parent
+
+    genesis, _, = history[-1]
+    features = _authenticate_features(genesis, artifact_path)
+    predecessor = None
+    result_binding = history[0][1]
+    for child, _ in reversed(history[:-1]):
+        parent = current
+        predecessor = features
+        if child.extents.factor_map_digest == parent.extents.factor_map_digest:
+            source = _feature_source(child.compiler_features)
+            if (child.compiler_features.get("factor_map_sha256") != features.digest
+                    or source != _feature_source(parent.compiler_features)
+                    or _feature_schema(child.compiler_features)
+                    != _feature_schema(parent.compiler_features)
+                    or child.provenance.release_digest != features.semantic_release
+                    or source["release_sha256"] != features.semantic_release
+                    or source["atlas_bundle_id"] != features.atlas_bundle_id
+                    or source["source_bundle_id"] != features.source_bundle_id):
+                invalid("BAMF_FEATURE_SOURCE_REPLAY_MISMATCH")
+        else:
+            features = _authenticate_features(
+                child, artifact_path, predecessor=features)
+            if features.predecessor_digest != predecessor.digest:
+                invalid("BAMF_FEATURE_PREDECESSOR_UNAUTHENTICATED")
+        current = child
+    return features, result_binding, predecessor
 
 
 def authenticate_bamf_candidate_features(

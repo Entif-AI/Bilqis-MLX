@@ -8,6 +8,7 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
@@ -222,6 +223,43 @@ class AcceptedFeatureLineageTests(unittest.TestCase):
 
         with shape_patch(), self.source_replay(root), self.assertRaises(BilqisError):
             read_accepted_generation_feature_lineage(self.pointer, "/artifact")
+
+    def test_long_accepted_history_has_no_python_recursion_ceiling(self):
+        root = source_features()
+        template = feature_bound(candidate(parent_state()), root)
+        count = 1100
+        manifests = [f"{index:064x}" for index in range(1, count + 1)]
+        students = {}
+        for generation, manifest in enumerate(manifests):
+            students[manifest] = SimpleNamespace(
+                run_id="long-history",
+                generation=generation,
+                parent_manifest_sha256=(
+                    None if generation == 0 else manifests[generation - 1]),
+                extents=SimpleNamespace(factor_map_digest=root.digest),
+                compiler_features=template.compiler_features,
+                provenance=SimpleNamespace(release_digest=root.semantic_release),
+            )
+
+        def load_bundle(path, *, expected_manifest_sha256):
+            self.assertEqual(path.name, expected_manifest_sha256)
+            return students[expected_manifest_sha256]
+
+        binding = object()
+        with patch.object(
+                feature_authority, "load_bamf_bundle", side_effect=load_bundle), patch.object(
+                feature_authority, "accepted_binding_for_manifest",
+                return_value=binding), patch.object(
+                feature_authority, "parent_acceptance_from_manifest",
+                return_value="a" * 64), patch.object(
+                feature_authority, "_authenticate_features", return_value=root):
+            current, current_binding, predecessor = feature_authority._accepted_feature_chain(
+                self.run, manifests[-1], students[manifests[-1]], "/artifact",
+                expected_acceptance_sha256="b" * 64)
+
+        self.assertIs(current, root)
+        self.assertIs(current_binding, binding)
+        self.assertIs(predecessor, root)
 
 
 if __name__ == "__main__":
