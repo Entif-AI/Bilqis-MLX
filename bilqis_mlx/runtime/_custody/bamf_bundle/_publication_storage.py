@@ -20,6 +20,14 @@ from .records import (
 ACCEPTANCE_DIR = "bamf-acceptance"
 
 
+def _fsync_directory(path: Path) -> None:
+    directory = os.open(path, os.O_RDONLY)
+    try:
+        os.fsync(directory)
+    finally:
+        os.close(directory)
+
+
 def _require_run_root(run_dir: Path) -> None:
     if run_dir.is_symlink() or (run_dir.exists() and not run_dir.is_dir()):
         invalid(DataPlaneError.BUNDLE_ROOT_UNSAFE)
@@ -113,11 +121,7 @@ def _atomic_pointer(path: Path, pointer: dict) -> None:
             stream.flush()
             os.fsync(stream.fileno())
         os.replace(temporary, path)
-        directory = os.open(path.parent, os.O_RDONLY)
-        try:
-            os.fsync(directory)
-        finally:
-            os.close(directory)
+        _fsync_directory(path.parent)
     finally:
         if os.path.exists(temporary):
             os.unlink(temporary)
@@ -151,6 +155,7 @@ def _write_acceptance(run_dir: Path, manifest_sha256: str,
     if path.exists():
         if not path.is_file() or path.read_bytes() != raw:
             invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+        _fsync_directory(path.parent)
         return
     fd, temporary = tempfile.mkstemp(prefix=".bamf-acceptance-", dir=path.parent)
     try:
@@ -159,6 +164,7 @@ def _write_acceptance(run_dir: Path, manifest_sha256: str,
             stream.flush()
             os.fsync(stream.fileno())
         os.replace(temporary, path)
+        _fsync_directory(path.parent)
     finally:
         if os.path.exists(temporary):
             os.unlink(temporary)
