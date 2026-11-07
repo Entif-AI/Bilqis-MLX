@@ -18,7 +18,7 @@ def production_candidate_step(
         group_eligible, spec, extents,
         run_id, generation, parent_manifest_sha256,
         parent_candidate_identity_sha256, parent_optimizer_step, topology_digest,
-        candidate_step_ordinal, teacher_hparams, decay, max_norm: float):
+        candidate_step_ordinal, teacher_hparams, max_norm: float):
     """Run only when the binder can issue truthful execution provenance."""
     loss_execution = None
     actual_gradients = gradients
@@ -55,7 +55,8 @@ def production_candidate_step(
         topology_digest=topology_digest,
         candidate_step_ordinal=candidate_step_ordinal)
     return candidate_step(
-        candidate, actual_gradients, provenance, teacher_hparams, decay=decay,
+        candidate, actual_gradients, provenance, teacher_hparams,
+        spec=spec, extents=extents,
         loss_bearing=loss_bearing_target, max_norm=max_norm,
         training_authority=(getattr(loss_execution, "training_authority", None)
                             if loss_execution is not None else None))
