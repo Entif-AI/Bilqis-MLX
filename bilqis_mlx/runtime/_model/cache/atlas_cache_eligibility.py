@@ -92,7 +92,6 @@ def _canonical_fp32_values(authority, binding: CacheBinding):
 
 
 def _source_context_identity(authority, student, inputs) -> tuple[str, str, str, str]:
-    from bilqis_mlx.semantics.atlas_release_audit import validate_export_clearance_context
     from bilqis_mlx.semantics.context_eligibility import ApprovedContextProjection, project_context
     from bilqis_mlx.semantics.domains import contract_digest
 
@@ -101,12 +100,8 @@ def _source_context_identity(authority, student, inputs) -> tuple[str, str, str,
     selection = inputs.atlas_selection
     task = inputs.task_scope
     policy = inputs.policy
-    authority._verify_detached(
-        clearance.source_owner, clearance.dependency(),
-        clearance.signature_hex, clearance.signing_bytes())
-    clearance_sha256 = validate_export_clearance_context(
-        clearance, selection, frontier, inputs.export_artifact_digests,
-        authority._source_authority_registry())
+    clearance_sha256 = authority._validate_export_clearance_context(
+        clearance, selection, frontier, inputs.export_artifact_digests)
     projection = project_context(inputs.frames, task, frontier, policy)
     if type(projection) is not ApprovedContextProjection:
         _invalid()

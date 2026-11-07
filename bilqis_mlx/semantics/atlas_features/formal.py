@@ -22,6 +22,15 @@ _SOURCE_FAMILIES = (
 )
 
 
+def source_family_for_adapter(adapter_id: str) -> str:
+    """Return the A06-owned released-schema family for one source adapter."""
+    family = next((value for owner, value in _SOURCE_FAMILIES
+                   if owner == adapter_id), None)
+    if family is None:
+        ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
+    return family
+
+
 def _reject(invalid):
     invalid()
     ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
@@ -44,9 +53,7 @@ def source_qualified_feature_row(features, concept, role_id, frame, scope, selec
     if not isinstance(reference, str) or ':' not in reference:
         _reject(invalid)
     adapter_id, _ = reference.split(':', 1)
-    family = next((value for owner, value in _SOURCE_FAMILIES if owner == adapter_id), None)
-    if family is None:
-        _reject(invalid)
+    family = source_family_for_adapter(adapter_id)
     snapshot = load_pinned_atlas_snapshot(selection)
     _, graph = source_graph_for_adapter(adapter_id)
     types = _formal_source_types(snapshot, concept, graph, adapter_id, frame.source_span, role_id)

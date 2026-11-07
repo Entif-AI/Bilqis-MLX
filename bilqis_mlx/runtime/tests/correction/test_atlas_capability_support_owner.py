@@ -30,6 +30,7 @@ from bilqis_mlx.runtime.atlas_training_contracts import (
     BamfDeliveryProvenance, BamfTrainingRow, _issue_training_batch,
 )
 from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, ModelTopologySpecV2
+from bilqis_mlx.runtime.source_execution import source_content_digest
 from bilqis_mlx.runtime.bamf_bundle.admission import accept_and_publish
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     HP, NAME, candidate, parent_state, retention_decision, shape_patch,
@@ -52,7 +53,8 @@ GENERATION = "5" * 64
 def _training_authority():
     row = {"id": SOURCE_ROW, "capability": TARGET}
     provenance = BamfDeliveryProvenance(
-        SOURCE_ROW, "fixture-source", TARGET, None, (), 1, 1, None, 0,
+        SOURCE_ROW, source_content_digest((row,)), "fixture-source", TARGET,
+        None, (), 1, 1, None, 0,
         SOURCE_FAMILY, EPISODE)
     training_row = BamfTrainingRow(None, None, None, provenance)
     batch = _issue_training_batch(
@@ -62,7 +64,7 @@ def _training_authority():
         AtlasArtifactSelection(
             "/fixture", "1" * 64, SOURCE_RELEASE, "2" * 64),
         row, {}, Path("."), 17, 1)
-    return issue_training_authority(batch, source)
+    return issue_training_authority(batch, source, provenance)
 
 
 def _source_qualified_state():

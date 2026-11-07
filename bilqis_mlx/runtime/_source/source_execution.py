@@ -27,19 +27,40 @@ def _source_content(rows) -> str:
         for row in rows))
 
 
-def _source_family(execution, *, seed: int, each: int) -> str:
+def source_content_digest(rows) -> str:
+    """Digest source-owned row content without derived/reporting fields."""
+    return _source_content(rows)
+
+
+def _source_family(execution) -> str:
+    """Stable fallback family for a released provider/capability binding.
+
+    A draw seed identifies an episode/sample, never the underlying source family.
+    Source-owned explicit family metadata takes precedence in ``bind_rows``.
+    """
     return contract_digest({
         "schema": "bilqis.mlx.source-draw-family/v1",
         "provider": execution.provider_id,
         "implementation": execution.provider_implementation_sha256,
         "capability": execution.capability_id,
-        "seed": seed,
-        "each": each,
     })
 
 
 def _source_episode(family: str, row: dict) -> str:
-    return row["id"]
+    declared = row.get("episode_id")
+    return declared if isinstance(declared, str) and declared else row["id"]
+
+
+def _source_family_for_rows(execution, rows) -> str:
+    declared = tuple(row.get("source_family_id") for row in rows)
+    present = tuple(value for value in declared if value is not None)
+    if present:
+        if (len(present) != len(declared)
+                or any(not isinstance(value, str) or not value for value in present)
+                or len(set(present)) != 1):
+            _invalid_source_batch("FACTORY_SOURCE_FAMILY_IDENTITY_DRIFT")
+        return present[0]
+    return _source_family(execution)
 
 
 @dataclass(frozen=True, init=False)
@@ -210,7 +231,7 @@ class SourceExecutionContext:
             _invalid_source_batch("FACTORY_SOURCE_BATCH_CONTENT_DRIFT")
         execution = self.release.execution_plan.capability_map[capability]
         content = _source_content(expected)
-        family = _source_family(execution, seed=seed, each=each)
+        family = _source_family_for_rows(execution, expected)
         episodes = tuple(_source_episode(family, row) for row in expected)
         authority = object.__new__(SourceBatchAuthority)
         for name, value in (
@@ -227,4 +248,6 @@ class SourceExecutionContext:
         return authority
 
 
-__all__ = ("SourceBatchAuthority", "SourceExecutionContext")
+__all__ = (
+    "SourceBatchAuthority", "SourceExecutionContext", "source_content_digest",
+)
