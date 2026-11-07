@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 import mlx.core as mx
+import numpy as np
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
@@ -14,12 +15,18 @@ from bilqis_mlx.learning.atlas_candidate import (
     CandidateCustodyIdentity, CandidateState, begin_candidate,
 )
 from bilqis_mlx.learning.atlas_engram import MotifManifest
+from bilqis_mlx.learning.atlas_engram_reads import MotifReadResult
 from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
 from bilqis_mlx.learning.atlas_plasticity import (
     GroupEligibility, IdentityRowAge, PlasticityPolicy,
 )
+from bilqis_mlx.learning.atlas_readout import LossParts, ModelOutput
 from bilqis_mlx.runtime.atlas_candidate_step import production_candidate_step
 from bilqis_mlx.runtime.atlas_model import BamfGradientExecution
+from bilqis_mlx.runtime.atlas_model_contracts import (
+    _FORWARD_ISSUANCE, _LOSS_EXECUTION_ISSUER, _ForwardRecord,
+    _issue_loss_execution,
+)
 from bilqis_mlx.runtime.atlas_optimizer import (
     AdamWHyperparameters, AdamWStateTree, reconcile_b01_optimizer_manifest,
 )
@@ -30,6 +37,7 @@ from bilqis_mlx.runtime.model_topology_v2 import (
 )
 
 BANK = "identity.bank.0"
+MOTIF = "motif.page.0"
 FEATURE = "features.type"
 RELEASE = "b" * 64
 DECLARED = (ParameterSpec(
@@ -43,6 +51,14 @@ ORDERED_DECLARED = (
     ParameterSpec(
         FEATURE, (2, 2), Initializer.EMBEDDING,
         ParameterGroup.FAST, False),
+)
+PRODUCTION_DECLARED = (
+    ParameterSpec(
+        BANK, (2, 2), Initializer.EMBEDDING,
+        ParameterGroup.IDENTITY_ROW_AGE, True),
+    ParameterSpec(
+        MOTIF, (2, 2), Initializer.EMBEDDING,
+        ParameterGroup.FAST, True),
 )
 CENSUS_SHAPE = (
     "bilqis_mlx.learning.atlas_participation_census.expected_bamf_shapes",
@@ -124,6 +140,44 @@ class ProductionCandidateStepTests(unittest.TestCase):
         gradient = object.__new__(BamfGradientExecution)
         object.__setattr__(gradient, "execution", execution)
         object.__setattr__(gradient, "gradients", {BANK: mx.zeros((2, 2))})
+        return gradient
+
+    def owner_issued_gradient_execution(self, parent, gradients):
+        """Mint one exact B11-owned witness without bypassing B09/B12 owners."""
+        generation = execution_generation_digest(
+            parent.optimizer.parameters,
+            spec=ModelTopologySpecV2(), extents=self.extents,
+        )
+        output = object.__new__(ModelOutput)
+        object.__setattr__(output, "plan", SimpleNamespace(generation_binding=generation))
+        motif_read = MotifReadResult(
+            mx.zeros((1, 1, 768), dtype=mx.float32),
+            (("EXACT",),), (0,), ("a" * 64,),
+        )
+        record = _ForwardRecord(
+            generation,
+            parent.custody.run_id,
+            parent.custody.generation,
+            parent.custody.manifest_sha256,
+            (), (), (), (), (motif_read,), (), None,
+        )
+        _FORWARD_ISSUANCE.issue(output, record)
+        zero = mx.array(0.0, dtype=mx.float32)
+        execution = _issue_loss_execution(
+            output,
+            LossParts(zero, zero, zero, zero),
+            record,
+            ((), ((0, 1),), (), ()),
+        )
+        gradient = object.__new__(BamfGradientExecution)
+        for name, value in (
+                ("execution", execution),
+                ("gradients", gradients),
+                ("loss_total", zero),
+                ("schema_version", "bilqis.mlx.b11-gradient-execution/v1"),
+                ("_issuance", _LOSS_EXECUTION_ISSUER)):
+            object.__setattr__(gradient, name, value)
+        gradient.__post_init__()
         return gradient
 
     def test_step_accepts_no_caller_execution_or_motif_facts(self):
@@ -247,6 +301,85 @@ class ProductionCandidateStepTests(unittest.TestCase):
         self.assertIs(result, accepted)
         self.assertIs(binder.call_args.kwargs["loss_execution"], gradient.execution)
         self.assertIs(apply_step.call_args.args[1], gradient.gradients)
+
+    def test_b11_output_denominator_and_motif_read_reach_real_b12_transaction(self):
+        """B11 execution facts must survive the real B09 -> B12 production path."""
+        bank = mx.array([[1., 2.], [3., 4.]], dtype=mx.float32)
+        motif = mx.array([[5., 6.], [7., 8.]], dtype=mx.float32)
+        optimizer = AdamWStateTree(
+            {BANK: bank, MOTIF: motif},
+            {BANK: mx.zeros_like(bank), MOTIF: mx.zeros_like(motif)},
+            {BANK: mx.zeros_like(bank), MOTIF: mx.zeros_like(motif)},
+            {
+                BANK: mx.array([4, 0], dtype=mx.uint64),
+                MOTIF: mx.array([0, 5], dtype=mx.uint64),
+            },
+        )
+        parent = CandidateState(
+            optimizer,
+            PlasticityPolicy(
+                "FOUNDATION", 0,
+                (IdentityRowAge(0, 0, 4), IdentityRowAge(0, 1, 0)),
+            ),
+            self.parent.allocations,
+            self.parent.optimizer_step,
+            self.parent.custody,
+        )
+        eligibility = GroupEligibility(
+            mode="FULL",
+            eligible_parameter_names=(BANK, MOTIF),
+            frozen_parameter_names=(),
+            admitted_identity_rows=((0, 0), (0, 1)),
+            fast_identity_rows=((0, 0), (0, 1)),
+            established_identity_rows=(),
+        )
+        gradients = {
+            BANK: mx.array([[1e9, -1e9], [1., -2.]], dtype=mx.float32),
+            MOTIF: mx.array([[2., -1.], [1e9, -1e9]], dtype=mx.float32),
+        }
+        patches = tuple(
+            patch(target, return_value=PRODUCTION_DECLARED)
+            for target in (*CENSUS_SHAPE, *DIGEST_SHAPE)
+        )
+        for item in patches:
+            item.start()
+            self.addCleanup(item.stop)
+        gradient = self.owner_issued_gradient_execution(parent, gradients)
+        candidate = production_candidate_step(
+            begin_candidate(parent),
+            loss_bearing_target=True,
+            gradient_execution=gradient,
+            group_eligible=eligibility,
+            spec=ModelTopologySpecV2(), extents=self.extents,
+            run_id=parent.custody.run_id,
+            generation=parent.custody.generation + 1,
+            parent_manifest_sha256=parent.custody.manifest_sha256,
+            parent_candidate_identity_sha256=candidate_identity_digest(parent),
+            parent_optimizer_step=parent.optimizer_step,
+            topology_digest=parent.custody.topology_digest,
+            candidate_step_ordinal=1,
+            teacher_hparams=self.hp, max_norm=1.,
+        )
+
+        self.assertEqual(candidate.update_steps, 1)
+        proof = candidate.step_proofs[0]
+        self.assertTrue(proof.loss_bearing)
+        self.assertEqual(int(candidate.optimizer.update_counts[BANK][1]), 1)
+        self.assertEqual(int(candidate.optimizer.update_counts[MOTIF][0]), 1)
+        for name, untouched_row in ((BANK, 0), (MOTIF, 1)):
+            for field in ("parameters", "m", "v", "update_counts"):
+                np.testing.assert_array_equal(
+                    np.asarray(getattr(candidate.optimizer, field)[name][untouched_row]),
+                    np.asarray(getattr(parent.optimizer, field)[name][untouched_row]),
+                )
+        self.assertFalse(bool(mx.all(
+            candidate.optimizer.parameters[BANK][1]
+            == parent.optimizer.parameters[BANK][1]
+        )))
+        self.assertFalse(bool(mx.all(
+            candidate.optimizer.parameters[MOTIF][0]
+            == parent.optimizer.parameters[MOTIF][0]
+        )))
 
     def test_sibling_b13_manifest_cannot_replay_gradient_execution(self):
         candidate = begin_candidate(self.parent)
