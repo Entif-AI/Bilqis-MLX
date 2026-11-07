@@ -60,7 +60,7 @@ def _canonical_feature_schema(selection):
 class RealTrainingAuthorityTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        root = Path(__file__).resolve().parents[4]
+        root = Path(__file__).resolve().parents[5]
         source = root / 'vendor/legacy-v16'
         graph = read_sources(source)[2]
         course = initial_course(accepted_grade_a(json.loads((root / 'docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json').read_text())))

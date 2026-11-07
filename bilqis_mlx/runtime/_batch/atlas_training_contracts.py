@@ -164,7 +164,9 @@ def _freeze(value):
 
 def _canonical_json_value(value):
     """Convert exact C02 records into an unambiguous JSON-safe digest form."""
-    if is_dataclass(value):
+    if type(value) is BamfVisitProvenance:
+        value = value.to_c03_record()
+    elif is_dataclass(value):
         value = asdict(value)
     if value is None or type(value) in (str, bool, int, float):
         return value
