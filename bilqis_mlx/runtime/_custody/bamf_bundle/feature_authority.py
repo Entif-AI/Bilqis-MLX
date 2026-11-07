@@ -24,9 +24,9 @@ from bilqis_mlx.semantics.atlas_projection import FrozenAtlasSnapshot
 
 from .codec import load_bamf_bundle
 from .publication import (
-    ACCEPTANCE_DIR, _pointer_lock, _read_pointer,
+    ACCEPTANCE_DIR, _pointer_lock, _read_pointer, _require_published_acceptance,
 )
-from .records import BAMF_POINTER_SCHEMA, canonical, invalid, sha
+from .records import canonical, invalid, sha
 from .records import BamfBundleCandidate
 
 RECEIPT_SCHEMA = "bilqis.mlx.bamf-accepted-generation-feature-receipt/v1"
@@ -169,13 +169,10 @@ def _accepted_generation(pointer_path: Path):
     return pointer, student
 
 
-def _accepted_binding(run_dir: Path, pointer: dict, student) -> AcceptedCandidateBinding:
-    """Read the retention owner's acceptance binding for the accepted generation.
-
-    Publication is not acceptance. Without a matching retention binding the
-    generation may not mint accepted-generation authority.
-    """
-    path = run_dir / ACCEPTANCE_DIR / f"{pointer['manifest_sha256']}.json"
+def _accepted_binding_for_manifest(
+        run_dir: Path, manifest_sha256: str, student) -> AcceptedCandidateBinding:
+    """Authenticate one immutable generation's retained-acceptance evidence."""
+    path = run_dir / ACCEPTANCE_DIR / f"{manifest_sha256}.json"
     if path.is_symlink() or not path.is_file():
         invalid("BAMF_GENERATION_ACCEPTANCE_MISSING")
     try:
@@ -183,11 +180,9 @@ def _accepted_binding(run_dir: Path, pointer: dict, student) -> AcceptedCandidat
         binding = AcceptedCandidateBinding.from_record(record)
     except (UnicodeDecodeError, json.JSONDecodeError, BilqisError):
         invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
-    if (pointer.get("schema") != BAMF_POINTER_SCHEMA
-            or binding.schema_version != ACCEPTANCE_SCHEMA
-            or binding.digest != pointer.get("acceptance_sha256")
-            or binding.run_id != pointer["run_id"]
-            or binding.generation != pointer["generation"]
+    if (binding.schema_version != ACCEPTANCE_SCHEMA
+            or binding.run_id != student.run_id
+            or binding.generation != student.generation
             or binding.feature_sha256 != student.extents.factor_map_digest
             or binding.optimizer_step != student.retained_state.optimizer_step
             or binding.candidate_identity_sha256
@@ -210,13 +205,17 @@ def _accepted_binding(run_dir: Path, pointer: dict, student) -> AcceptedCandidat
     return binding
 
 
-def _authenticate_features(student, artifact_path: str):
+def _authenticate_features(student, artifact_path: str, *, predecessor=None):
     """Replay the admitted source release and rederive the accepted feature map."""
     compiler = student.compiler_features
     if compiler.get("factor_map_sha256") != student.extents.factor_map_digest:
         invalid("BAMF_FEATURE_BINDING_DRIFT")
     source = _feature_source(compiler)
     schema = _feature_schema(compiler)
+    if predecessor is not None:
+        schema = FeatureSchema(
+            schema.role_ids, schema.schema_ids, predecessor,
+            schema.source_bindings)
     selection = AtlasArtifactSelection(
         str(artifact_path), source["atlas_bundle_id"],
         source["release_sha256"], source["source_bundle_id"])
@@ -234,6 +233,32 @@ def _authenticate_features(student, artifact_path: str):
     if student.provenance.release_digest != features.semantic_release:
         invalid("BAMF_FEATURE_RELEASE_DRIFT")
     return features
+
+
+def _accepted_feature_chain(run_dir: Path, manifest_sha256: str, student,
+                            artifact_path: str):
+    """Rebuild feature ancestry only from accepted B13 generation custody."""
+    binding = _accepted_binding_for_manifest(run_dir, manifest_sha256, student)
+    if student.generation == 0:
+        return _authenticate_features(student, artifact_path), binding, None
+    parent_sha = student.parent_manifest_sha256
+    if parent_sha is None:
+        invalid("BAMF_FEATURE_PREDECESSOR_UNAUTHENTICATED")
+    parent = load_bamf_bundle(
+        run_dir / "bamf-bundles" / parent_sha,
+        expected_manifest_sha256=parent_sha)
+    if parent.run_id != student.run_id or parent.generation + 1 != student.generation:
+        invalid("BAMF_FEATURE_PREDECESSOR_UNAUTHENTICATED")
+    prior, _, prior_predecessor = _accepted_feature_chain(
+        run_dir, parent_sha, parent, artifact_path)
+    if (student.extents.factor_map_digest == parent.extents.factor_map_digest
+            and student.compiler_features == parent.compiler_features
+            and student.provenance.release_digest == parent.provenance.release_digest):
+        return prior, binding, prior_predecessor
+    features = _authenticate_features(student, artifact_path, predecessor=prior)
+    if features.predecessor_digest != prior.digest:
+        invalid("BAMF_FEATURE_PREDECESSOR_UNAUTHENTICATED")
+    return features, binding, prior
 
 
 def authenticate_bamf_candidate_features(
@@ -268,24 +293,22 @@ def authenticate_bamf_candidate_feature_context(
     return context
 
 
-def read_accepted_generation_feature_receipt(
-        pointer_path: Path, artifact_path: str) -> AcceptedGenerationFeatureReceipt:
-    """Mint the receipt of the accepted generation from custody and source replay.
-
-    The feature identity is rederived from the admitted source release, never
-    taken from a caller candidate. A generation whose recorded feature map is
-    not the replayed source map cannot mint a receipt.
-    """
+def read_accepted_generation_feature_lineage(pointer_path: Path, artifact_path: str):
+    """Return the accepted receipt plus source-replayed current/predecessor maps."""
     pointer, student = _accepted_generation(pointer_path)
-    binding = _accepted_binding(pointer_path.parent, pointer, student)
-    features = _authenticate_features(student, artifact_path)
+    current_binding = _require_published_acceptance(
+        pointer_path.parent, pointer, student)
+    features, binding, predecessor_features = _accepted_feature_chain(
+        pointer_path.parent, pointer["manifest_sha256"], student, artifact_path)
+    if binding != current_binding:
+        invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
     predecessor = features.predecessor_digest
     if student.generation == 0:
         if predecessor is not None:
             invalid("BAMF_FEATURE_LINEAGE_DRIFT")
     elif predecessor is None:
         invalid("BAMF_FEATURE_PREDECESSOR_UNAUTHENTICATED")
-    return AcceptedGenerationFeatureReceipt(
+    receipt = AcceptedGenerationFeatureReceipt(
         run_id=student.run_id,
         generation=student.generation,
         generation_manifest_sha256=pointer["manifest_sha256"],
@@ -301,6 +324,13 @@ def read_accepted_generation_feature_receipt(
         source_release_sha256=features.semantic_release,
         source_source_bundle_id=features.source_bundle_id,
     )
+    return receipt, features, predecessor_features
+
+
+def read_accepted_generation_feature_receipt(
+        pointer_path: Path, artifact_path: str) -> AcceptedGenerationFeatureReceipt:
+    """Mint the accepted generation's source-replayed immutable feature receipt."""
+    return read_accepted_generation_feature_lineage(pointer_path, artifact_path)[0]
 
 
 def verify_accepted_generation_feature_receipt(

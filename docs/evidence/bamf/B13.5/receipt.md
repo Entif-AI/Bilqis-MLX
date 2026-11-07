@@ -98,3 +98,49 @@ binding back and re-verifies it against the accepted bundle before it mints.
 
 No student, optimizer, checkpoint lineage or live run was changed. No
 self-merge. Fresh pinned EGM is reserved for the merge-ready head.
+
+## Parent #697 completion reconciliation — 2026-11-07
+
+Reviewed-unified base: `cc48ac40d875f0c2ae8ffbdc70001dbfc4815334`.
+The #708 remediation above is now integrated, B13.1/#478 is closed, and B13.2
+is integrated through #479/PR #909. The remaining parent-owned gap was the
+successor feature-map lineage called out in the historical open limits above.
+
+`feature_authority.py` now reconstructs a changed accepted generation's
+feature map recursively from immutable B13 parent bundles and each generation's
+retention-acceptance evidence. The current generation's source feature compiler
+receives the rederived accepted predecessor map; no caller supplies that map.
+Unchanged feature generations reuse the already authenticated map instead of
+inventing a new predecessor edge. `read_accepted_generation_feature_lineage()`
+returns the receipt plus the authenticated current and predecessor feature maps
+for the downstream owner while `read_accepted_generation_feature_receipt()`
+remains the narrow receipt API.
+
+Focused parent proof on this base:
+
+- B13.5 feature authority: **9/9 PASS**, including a real accepted generation-1
+  source replay whose receipt binds the exact generation manifest and predecessor
+  feature digest; forged generation, manifest, feature and predecessor identities
+  fail live verification.
+- generation acceptance/provenance: **20/20 PASS**, including rejected or
+  unpublished authority, foreign candidate/feature identity, missing acceptance
+  custody and re-signed acceptance drift.
+- development structure: **PASS, 0 violations**; `git diff --check`: **PASS**.
+
+The A02 consumer remains owned by #399. Its preserved production branch
+`codex/bamf02-a-399-production-admission-20261106` at
+`ba1c366e8f583d1c0bb2676a7740c749707e7fa1` consumes this B13 lineage before
+calling the authenticated A02 planner. On that exact branch the full-topology
+`test_stages_bank_extension_without_granting_admission` witness passed **1/1**
+in **186.699s**: two accepted B13 generations were reconstructed, the genuine
+predecessor-bearing source plan staged the next semantic bank, and generic
+publication remained denied. The ordinary A02 planning suite passed **5/5**
+with one optional real-corpus witness skipped, preserving the default
+`BAMF_VOCABULARY_PREDECESSOR_FEATURE_AUTHORITY_REQUIRED` fail-closed path for
+caller-minted predecessors.
+
+This resolves the historical successor-chain limit without transferring A02 or
+C07 authority into B13. No durable student start, optimizer update, admission,
+or source promotion was performed by this reconciliation. Parent #697 still
+requires its own fresh exact-head EGM before merge readiness; #708's prior EGM
+PASS is not inherited.
