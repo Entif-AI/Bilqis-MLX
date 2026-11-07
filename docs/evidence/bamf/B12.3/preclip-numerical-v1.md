@@ -34,3 +34,111 @@ IPR-0220 remains open; PM-2026-10-29-001/002/003/004/006 controls remain.
 No durable student, own AdamW, teacher, champion or original changed.
 Learning/retention remain unmeasured. Human owns unified integration and
 actual durable training initiation.
+
+## Full-completion reconciliation — 2026-11-06
+
+The historical status above is preserved as the truth of the original numerical
+cut. Current reviewed unified `0afb12a08848a6f2aba3b83b26f1466ea708d857`
+now contains the accepted upstream seams that were missing then:
+
+- #465 / B09.2 is CLOSED / COMPLETED / `EGM-Passed`; production participation
+  and update masks are derived from B11 execution authority rather than caller
+  assertions.
+- #474 / B12.1 is CLOSED / COMPLETED / `EGM-Passed`; native AdamW owns scalar
+  and per-row participation counts, local bias correction, zero-gradient legal
+  participation, and byte-identical frozen state.
+- #475 / B12.2 is CLOSED / COMPLETED / `EGM-Passed`; PR #882 is merged into
+  reviewed unified as `0afb12a08848a6f2aba3b83b26f1466ea708d857`, and
+  complete candidate optimizer transactions now accept/reject through owner
+  execution provenance and retained-generation custody.
+
+Those accepted ancestors satisfy B12.3 clauses 2–4 but do not, by themselves,
+satisfy clause 1. The remaining gap was historical scalar-step migration.
+
+### B12.3 clause-by-clause closure
+
+1. **Historical scalar migration is conditional on a real all-together history.**
+   `_mint_historical_bamf_migration_capability` can issue a non-serializable
+   `HistoricalAdamWMigrationCapability` only from a code-owned attestation whose
+   update contract is
+   `bilqis.mlx.historical-full-tree-shared-scalar-static-count-geometry/v1`.
+   The capability binds BAMF-v2 architecture identity, exact checkpoint SHA-256,
+   exact ordered FP32 model state, exact native AdamW moments/hyperparameters and
+   per-parameter steps, exact B01 parameter/count geometry, and the independently
+   attested global optimizer step. `_migrate_historical_bamf_optimizer` rechecks
+   those numerical digests before filling scalar/per-row B12 counts. Equal terminal
+   per-parameter counters alone are explicitly insufficient: two disjoint native
+   optimizer calls that end with `[1,1]` cannot satisfy an attested global step 2.
+   Divergent steps, altered numerical state, unsupported late-row lineage, unknown
+   attestations and caller-constructed capabilities all fail closed.
+
+   The production attestation registry is intentionally empty. The pinned six-layer
+   historical v1 student is readable evidence but its vocabulary-growth lineage
+   inherited a scalar into newly introduced rows with zero moments, and B01/B13
+   already forbid coercing v1 custody into BAMF v2. Therefore this change does not
+   fabricate a migration authority for that source. A future BAMF-v2 historical
+   scalar state may be migrated only after a repository-owned whole-lineage
+   attestation proves the stronger contract above.
+
+2. **Global optimizer step counts accepted optimizer steps.**
+   Current `CandidateTransaction` advances retained `optimizer_step` by the number
+   of accepted candidate update steps; rejected candidates return the exact parent.
+   The two-step acceptance witness moves step 11→13 while rejection preserves 11.
+
+3. **Participation masks precede clipping, decay and moments.**
+   The accepted B09→B12 path materializes owner-issued participation against B12
+   count geometry. `_masked_clipped_gradients` zeroes ineligible rows before the
+   global norm, and `_adamw_update` performs native AdamW/decay/moment arithmetic
+   only for selected leaves/rows. Huge frozen gradients therefore cannot change
+   the active clipping factor.
+
+4. **Per-step optimizer counts remain separate from retained-candidate row age.**
+   Per-parameter/per-row counts advance on each legal optimizer step. On retention,
+   `resolve_candidate` derives the union of identity rows whose counts changed and
+   advances establishment age once for the accepted candidate, independent of its
+   internal step count. B13 bundle records persist `optimizer_step`, the count tree,
+   and plasticity policy/row ages separately; cold resume preserves that separation.
+
+### Behavioral and integration evidence
+
+Historical-migration TDD started with **13/15 passing and 2 expected missing-API
+errors**. The first implementation reached 15/15, but ordinary adversarial review
+found a real authority flaw: equal native terminal counts can arise from disjoint
+optimizer calls. The implementation was hardened rather than accepting that false
+premise. Ordinary review then found two further authority defects before turn-in:
+a frozen capability could still be altered with `object.__setattr__`, and native
+fractional step tensors could collide after integer truncation. Migration now
+re-resolves the code-owned attestation on use, and native steps must be exact
+finite nonnegative integers whose raw dtype/shape/value bytes are bound into the
+optimizer-state digest. Final optimizer owner proof is **21/21 passed, zero
+skips**, including:
+
+- positive attested static full-tree scalar→B01 count geometry;
+- divergent native-step rejection;
+- equal-count/disjoint-history rejection;
+- exact numerical-state anti-replay rejection;
+- mutated-capability rejection against the code-owned attestation;
+- fractional native-step rejection without truncation;
+- unsupported late-row lineage rejection;
+- caller-construction rejection;
+- native FULL parity, FAST→FAST→FULL local counts, frozen bytes, count overflow,
+  NaN/nonfinite failure, zero-gradient participation and preclip huge-gradient
+  adversaries.
+
+Affected optimizer/candidate/participation/parity/custody/topology and production
+authority proof is **84 passed / 0 failed / 1 optional skipped**. The skip is the pre-existing
+environment-gated frozen-real-v1 bundle witness; the executable v1 isolation test
+in the same run passes. A stale cold-resume regression assertion was also corrected
+from the superseded `B11_EXECUTION_AUTHORITY_REQUIRED` token to the
+accepted #710/#809 production token `B11_GRADIENT_EXECUTION_REQUIRED`; production
+behavior was unchanged.
+
+Deterministic branch checks: BAMF flow control PASS; recursive contract mirrors
+PASS; changed-file structure PASS; diff hygiene PASS; no new changed-file code-smell
+finding. The workstack validator remains globally `held` only by its eight recorded
+normalization holds (`A03.4`, `A05.4`, `A05.5`, `A08.1b.2`, `A08.1b.5`, `B02.4`,
+`B11.1a`, `C14.4`); it reports no #476-specific issue.
+
+Fresh merge-readiness Goldfish review is still required before #476 can be marked
+`EGM-Passed` or closed. No live student, durable optimizer lineage, teacher,
+champion, checkpoint or original artifact was mutated by this implementation.
