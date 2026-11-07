@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import contextlib
+from enum import Enum
 import fcntl
 import hashlib
 import json
@@ -18,6 +19,10 @@ from .atlas_revalidation_common import _invalid
 HISTORY_COMMITMENT_SCHEMA = "bilqis.c09.accepted-history/v2"
 HISTORY_TRANSACTION_SCHEMA = "bilqis.c09.accepted-history-transaction/v1"
 _PROCESS_LEDGER_LOCK = RLock()
+
+
+class AcceptedCorrectionStorageError(str, Enum):
+    SHORT_WRITE = "short write"
 
 
 def history_state(records: tuple[dict, ...]) -> dict:
@@ -118,7 +123,7 @@ def write_all(descriptor: int, payload: bytes) -> None:
     while offset < len(payload):
         written = os.write(descriptor, payload[offset:])
         if written <= 0:
-            raise OSError("short write")
+            raise OSError(AcceptedCorrectionStorageError.SHORT_WRITE.value)
         offset += written
 
 

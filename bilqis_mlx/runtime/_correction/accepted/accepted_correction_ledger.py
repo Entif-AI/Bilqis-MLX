@@ -6,7 +6,7 @@ import json
 import os
 from pathlib import Path
 
-from bilqis_mlx.data_plane import data_plane
+from bilqis_mlx.data_plane import SHA256_HEX_LENGTH, data_plane
 from bilqis_mlx.runtime.capability_support_journal import event_from_record
 
 from .accepted_correction_records import (
@@ -34,7 +34,7 @@ def _manifest_lineage(run_dir: Path, manifest_sha256: str) -> tuple[str, ...]:
     seen = set()
     lineage = []
     while current is not None:
-        if (not isinstance(current, str) or len(current) != 64
+        if (not isinstance(current, str) or len(current) != SHA256_HEX_LENGTH
                 or any(char not in "0123456789abcdef" for char in current)
                 or current in seen):
             _invalid("BAMF_C09_CORRECTION_LINEAGE_INVALID")

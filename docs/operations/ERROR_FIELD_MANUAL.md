@@ -3642,8 +3642,8 @@ Current production scan: **2072** raw raises across **250** files. The baseline 
 | `model-input planning entered before A06 authority rejection` | 1 | `bilqis_mlx/runtime/tests/batch/test_atlas_training_real_source.py` |
 | `non-finite JSON literal` | 1 | `bilqis_mlx/semantics/atlas/feature_io_contracts.py` |
 | `pointer interrupted` | 1 | `bilqis_mlx/runtime/tests/custody/state_dag/test_persistence.py` |
-| `short write` | 1 | `bilqis_mlx/runtime/_correction/accepted/accepted_correction_storage.py` |
 | `snapshot must not mutate MLX telemetry` | 1 | `bilqis_mlx/runtime/tests/model/resources/test_memory_retry.py` |
+| `source-owned context was not approved` | 1 | `bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/accepted_correction_runtime_temporal_support.py` |
 | `test synchronization timed out` | 1 | `bilqis_mlx/runtime/tests/custody/bamf_bundle/test_publication_durability.py` |
 | `undefined` | 1 | `bilqis_mlx/semantics/tests/foundation/test_source_memo.py` |
 | `unreachable` | 2 | `bilqis_mlx/factory/curriculum/formal_lesson_types.py`, `bilqis_mlx/learning/championship_runtime.py` |

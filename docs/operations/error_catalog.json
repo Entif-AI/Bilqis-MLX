@@ -9439,13 +9439,6 @@
       "path": "bilqis_mlx/runtime/_capability/candidate_staging.py"
     },
     {
-      "code_hint": "short write",
-      "count": 1,
-      "exception": "OSError",
-      "expression": "'short write'",
-      "path": "bilqis_mlx/runtime/_correction/accepted/accepted_correction_storage.py"
-    },
-    {
       "code_hint": "HUMAN_TRAINER_LIVE_EXAM_INCOMPLETE_FACTORS",
       "count": 1,
       "exception": "ValueError",
@@ -11579,6 +11572,13 @@
       "exception": "ValueError",
       "expression": "'malformed translated score'",
       "path": "bilqis_mlx/runtime/tests/capability/test_capability_evidence_history.py"
+    },
+    {
+      "code_hint": "source-owned context was not approved",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'source-owned context was not approved'",
+      "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/accepted_correction_runtime_temporal_support.py"
     },
     {
       "code_hint": "COLD_RESUME_CONTINUATION_REJECTED before=",
