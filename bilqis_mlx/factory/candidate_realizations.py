@@ -66,9 +66,9 @@ def _a08_frontier_candidate(curriculum_candidate, frontier, semantic_id):
     if (type(curriculum_candidate) is not CurriculumCandidateSet
             or type(frontier) is not CandidateFrontierRelease):
         _fail("A09_REALIZATION_BRIDGE_INPUT_INVALID")
-    frontier.verify()
     capability = realized_capability_id(semantic_id)
     source_sense = realized_source_sense_id(semantic_id)
+    frontier.verify()
     concept = next((item for item in curriculum_candidate.census.concepts
                     if item.semantic_id == semantic_id), None)
     source_ref = f"lexicon/lexicon_root_senses/{source_sense}"
@@ -95,18 +95,25 @@ def _a08_frontier_candidate(curriculum_candidate, frontier, semantic_id):
     return candidate
 
 
+def _realized_a08_semantic_ids(curriculum_candidate):
+    """Return only registered realizations that exist in the frozen A08 census."""
+    eligible = set(curriculum_candidate.source_eligible_concept_ids)
+    return tuple(
+        semantic_id
+        for semantic_id in (_COPULAR_ATLAS_SEMANTIC_ID, *_EVENT_ATLAS_IDENTITIES)
+        if semantic_id in eligible
+    )
+
+
 def realized_prerequisite_edges(curriculum_candidate, frontier):
     """Project frontier hypotheses into A01 identity space without promoting truth."""
     from .atlas_frontier_contracts import PrerequisiteEdge
 
     capability_to_semantic = {}
     candidates = {}
-    for semantic_id in curriculum_candidate.source_eligible_concept_ids:
-        try:
-            candidate = _a08_frontier_candidate(
-                curriculum_candidate, frontier, semantic_id)
-        except ValueError:
-            continue
+    for semantic_id in _realized_a08_semantic_ids(curriculum_candidate):
+        candidate = _a08_frontier_candidate(
+            curriculum_candidate, frontier, semantic_id)
         capability_to_semantic[candidate.proposed_capability_id] = semantic_id
         candidates[semantic_id] = candidate
     edges = []
@@ -139,31 +146,25 @@ def realized_coverage_rows(
         _fail("A09_REALIZATION_STAGED_SET_INVALID")
     covered = set()
     current_capabilities = current.execution_plan.capability_map
-    for semantic_id in curriculum_candidate.source_eligible_concept_ids:
-        try:
-            candidate = _a08_frontier_candidate(
-                curriculum_candidate, frontier, semantic_id)
-        except ValueError:
-            continue
+    realized_ids = _realized_a08_semantic_ids(curriculum_candidate)
+    for semantic_id in realized_ids:
+        candidate = _a08_frontier_candidate(
+            curriculum_candidate, frontier, semantic_id)
         if candidate.proposed_capability_id in current_capabilities:
             covered.add(semantic_id)
     for staged in staged_candidates:
         staged.verify(frontier, current)
-        matches = []
-        for semantic_id in curriculum_candidate.source_eligible_concept_ids:
-            try:
-                candidate = _a08_frontier_candidate(
-                    curriculum_candidate, frontier, semantic_id)
-            except ValueError:
-                continue
-            if (candidate.proposed_capability_id == staged.target_capability_id
-                    and candidate.target_sense_id == staged.source_sense_id):
-                matches.append(semantic_id)
-        matches = tuple(matches)
-        if len(matches) != 1:
+        try:
+            semantic_id = realized_atlas_semantic_id(staged.target_capability_id)
+        except ValueError:
             _fail("A09_REALIZATION_STAGED_AUTHORITY_MISMATCH")
-        _a08_frontier_candidate(curriculum_candidate, frontier, matches[0])
-        covered.add(matches[0])
+        if semantic_id not in realized_ids:
+            _fail("A09_REALIZATION_STAGED_AUTHORITY_MISMATCH")
+        candidate = _a08_frontier_candidate(
+            curriculum_candidate, frontier, semantic_id)
+        if candidate.target_sense_id != staged.source_sense_id:
+            _fail("A09_REALIZATION_STAGED_AUTHORITY_MISMATCH")
+        covered.add(semantic_id)
     return tuple(sorted((
         replace(row, implementation_status=PROGRAM_BOUND,
                 reason="FACTORY_REALIZATION_BOUND")

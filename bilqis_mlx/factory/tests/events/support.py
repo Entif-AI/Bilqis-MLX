@@ -1,3 +1,4 @@
+from dataclasses import replace
 import hashlib
 import json
 import os
@@ -18,14 +19,22 @@ from bilqis_mlx.factory.autonomy import (
 from bilqis_mlx.factory.candidate_frontier import load_candidate_frontier
 from bilqis_mlx.factory.live_answers import live_answer_registry
 from bilqis_mlx.factory.skos_curriculum import (
+    FamilyInventoryCounts,
     LearnedFrontier,
     SOURCE_FAMILY_ADAPTERS,
     _compile_semantic_curriculum_snapshot,
+    compile_semantic_curriculum,
 )
 from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier import _rights
 from bilqis_mlx.factory.tests.sources.test_skos_curriculum import _snapshot as source_atlas_snapshot
 from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.live_grade_c import registry_graph
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas_projection import (
+    FormalDomainBinding,
+    compile_atlas_release,
+    persist_atlas_release,
+)
 from bilqis_mlx.source_adapters import event_frames
 from bilqis_mlx.source_adapters.school import live_source_registry
 
@@ -71,6 +80,74 @@ class EventCandidateRealizationFixture:
             atlas, SOURCE_FAMILY_ADAPTERS, LearnedFrontier(atlas.release_sha256))
         source_frontier, policy = _rights()
         return candidate, source_frontier, policy
+
+    def real_atlas_fixture(self, corpus):
+        """Replay the pinned A01 source bundle and compile its real A08 candidate set."""
+        corpus = Path(corpus)
+        prior = ROOT / "bilqis_mlx/semantics/copular_registry_v1.json"
+        boolean = ROOT / "bilqis_mlx/semantics/legacy_abi_v1.json"
+        numeric = ROOT / "bilqis_mlx/semantics/numeric_v1.json"
+        bindings = (
+            FormalDomainBinding(
+                "boolean", "bilqis_mlx/semantics/legacy_abi_v1.json",
+                hashlib.sha256(boolean.read_bytes()).hexdigest(),
+                ("legacy:cogal.operator.NOT", "legacy:cogal.operator.AND"),
+                ("B.NOT", "B.AND")),
+            FormalDomainBinding(
+                "numeric", "bilqis_mlx/semantics/numeric_v1.json",
+                hashlib.sha256(numeric.read_bytes()).hexdigest(),
+                ("bilqis.numeric/v1:school.op.COUNT",
+                 "bilqis.numeric/v1:school.op.SUCC"),
+                ("C.COUNT", "C.SUCCESSOR")),
+        )
+        release = compile_atlas_release(corpus, corpus / "coverage.json", prior, bindings)
+        artifact = persist_atlas_release(release, Path(self.temp.name) / "real-atlas")
+        selection = AtlasArtifactSelection(
+            artifact.path, artifact.bundle_id, release.digest, release.source_bundle_id)
+        learned = LearnedFrontier(release.digest)
+        candidate = compile_semantic_curriculum(selection, SOURCE_FAMILY_ADAPTERS, learned)
+        source_frontier, policy = _rights()
+        return candidate, source_frontier, policy, selection, learned
+
+    def bounded_realization_candidate(self, candidate):
+        """Project the real replayed A08 census to the three #890 realizations."""
+        semantic_ids = tuple(sorted(
+            event_frames.atlas_semantic_id(capability)
+            for capability in event_frames.SOURCE_SPECS
+        ))
+        selected = set(semantic_ids)
+        concepts = tuple(
+            item for item in candidate.census.concepts if item.semantic_id in selected)
+        obligations = tuple(
+            item for item in candidate.census.obligations if item.semantic_id in selected)
+        lessons = tuple(
+            item for item in candidate.source_lessons if item.semantic_id in selected)
+        families = tuple(sorted({
+            family for concept in concepts for family in concept.required_family_ids
+        }))
+        pending = tuple(
+            family for family in candidate.census.pending_source_family_ids
+            if family in families
+        )
+        counts = FamilyInventoryCounts(
+            len(concepts), 0, len(concepts), 0, 0, 0,
+            len(families), len(pending), len(obligations),
+            sum(item.implementation_status == "IMPLEMENTATION_UNCOVERED"
+                for item in obligations),
+        )
+        census = replace(
+            candidate.census,
+            source_eligible_concept_ids=semantic_ids,
+            required_source_family_ids=families,
+            pending_source_family_ids=pending,
+            concepts=concepts,
+            obligations=obligations,
+            source_held=(),
+            source_ir_only=(),
+            source_nonconcept=(),
+            counts=counts,
+        )
+        return replace(candidate, census=census, source_lessons=lessons)
 
     def learner_evidence(self, current, mastered, capability):
         plan = compile_autonomy_plan(current)

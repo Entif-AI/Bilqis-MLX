@@ -137,25 +137,45 @@ def expanded_graph(parent):
     return projected_graph(parent, tuple(SOURCE_SPECS))
 
 
-def stage_capability(
-    frontier, current, parent_graph, capability, *,
-    source_root, source_registry, answer_registry,
-):
-    """Stage exactly one prerequisite-closed event successor without admitting it."""
+def _qualified_frontier_candidate(frontier, capability):
     spec = SOURCE_SPECS.get(capability)
     matches = [
         candidate for candidate in frontier.candidates
         if candidate.proposed_capability_id == capability
         and spec is not None and candidate.target_sense_id == spec.sense_id
     ]
-    if (spec is None or capability in current.curriculum.capability_map
-            or len(matches) != 1):
+    if spec is None or len(matches) != 1:
         source_invalid('EVENT_FRAME_EXACT_NEW_CANDIDATE_REQUIRED')
+    candidate = matches[0]
+    sense = next((item for item in frontier.senses
+                  if item.sense_id == spec.sense_id), None)
+    source = source_senses()[capability]
+    if (sense is None
+            or sense.root_id != spec.root_id
+            or sense.root_form != spec.root_form
+            or sense.selected_target_capability != capability
+            or sense.source_text_sha256 != spec.source_text_sha256
+            or sense.source_text_sha256 != source['source_text_sha256']
+            or tuple(item.capability_id for item in candidate.prerequisites)
+               != spec.prerequisites):
+        source_invalid('EVENT_FRAME_FRONTIER_SOURCE_AUTHORITY_DRIFT')
+    return candidate
+
+
+def stage_capability(
+    frontier, current, parent_graph, capability, *,
+    source_root, source_registry, answer_registry,
+):
+    """Stage exactly one prerequisite-closed event successor without admitting it."""
+    spec = SOURCE_SPECS.get(capability)
+    if spec is None or capability in current.curriculum.capability_map:
+        source_invalid('EVENT_FRAME_EXACT_NEW_CANDIDATE_REQUIRED')
+    candidate = _qualified_frontier_candidate(frontier, capability)
     if any(prerequisite not in current.curriculum.capability_map
            for prerequisite in spec.prerequisites):
         source_invalid('EVENT_FRAME_FACTORY_PREREQUISITE_MISSING')
 
-    candidate_id = matches[0].candidate_id
+    candidate_id = candidate.candidate_id
     event_capability = capability_definition(capability)
     target_grade = event_grade_id(current.curriculum)
     grades = list(current.curriculum.grades)

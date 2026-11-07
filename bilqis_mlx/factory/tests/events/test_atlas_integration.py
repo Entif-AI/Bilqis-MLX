@@ -122,7 +122,14 @@ class EventCandidateAtlasIntegrationTests(EventCandidateRealizationFixture, unit
         admission = replace(admission, event_sha256=admission.expected_digest())
         return reconcile(snapshot, admission)
 
-    def _assert_final_frontier(self, candidate, state):
+    def _assert_final_frontier(
+        self,
+        candidate,
+        state,
+        *,
+        expected_status=FrontierStatus.IMPLEMENTATION_UNCOVERED,
+        expected_uncovered=6,
+    ):
         current, _, mastered, prior, admitted_snapshot = state
         final_snapshot = bind_realized_snapshot(
             admitted_snapshot, candidate, self.frontier, current, ())
@@ -167,8 +174,11 @@ class EventCandidateAtlasIntegrationTests(EventCandidateRealizationFixture, unit
             for row in final_snapshot.coverage_rows if row.semantic_id in event_ids
         ))
         self.assertEqual(final_progress.requested_semantic_ids, tuple(sorted(event_ids)))
-        self.assertIs(final_progress.status, FrontierStatus.IMPLEMENTATION_UNCOVERED)
-        self.assertEqual(final_progress.implementation_uncovered_count, 6)
+        self.assertIs(final_progress.status, expected_status)
+        self.assertEqual(
+            final_progress.implementation_uncovered_count,
+            expected_uncovered,
+        )
 
     def test_atlas_adapter_proposes_three_real_source_qualified_successors(self):
         candidate, source_frontier, policy = self.atlas_fixture()

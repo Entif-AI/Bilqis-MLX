@@ -1,5 +1,6 @@
 import hashlib
 import json
+from dataclasses import replace
 from pathlib import Path
 import tempfile
 import unittest
@@ -98,8 +99,6 @@ class EventCandidateRealizationTests(EventCandidateRealizationFixture, unittest.
             event_frames.projected_graph(graph, ("D.EVENT_OCCURRENCE",))
 
     def test_frontier_source_order_does_not_change_event_successor(self):
-        from dataclasses import replace
-
         semantic_id = event_frames.atlas_semantic_id("D.EVENT_OCCURRENCE")
         expected = candidate_realizations.prepare_realized_candidate(
             self.frontier, self.current, self.parent_graph, semantic_id,
@@ -117,6 +116,28 @@ class EventCandidateRealizationTests(EventCandidateRealizationFixture, unittest.
         )
         self.assertEqual(observed.candidate_id, expected.candidate_id)
         self.assertEqual(observed.successor, expected.successor)
+
+    def test_event_staging_rejects_rehashed_frontier_source_digest(self):
+        capability = "D.EVENT_OCCURRENCE"
+        sense_id = event_frames.SOURCE_SPECS[capability].sense_id
+        senses = tuple(
+            replace(item, source_text_sha256="0" * 64)
+            if item.sense_id == sense_id else item
+            for item in self.frontier.senses
+        )
+        forged = replace(self.frontier, senses=senses, release_sha256="0" * 64)
+        forged = replace(forged, release_sha256=forged.expected_digest())
+        with self.assertRaises(BilqisError) as failure:
+            candidate_realizations.prepare_realized_candidate(
+                forged, self.current, self.parent_graph,
+                event_frames.atlas_semantic_id(capability),
+                source_root=LEGACY, source_registry=self.source_registry,
+                answer_registry=self.answer_registry,
+            )
+        self.assertEqual(
+            failure.exception.context["reason"],
+            "EVENT_FRAME_FRONTIER_SOURCE_AUTHORITY_DRIFT",
+        )
 
 
 if __name__ == "__main__":

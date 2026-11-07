@@ -19,7 +19,11 @@ from .jit_curriculum import CurriculumDeltaProposal, ProposalDisposition, propos
 from .atlas_frontier_closure import ClosureStatus, FrontierClosure
 from .atlas_frontier_contracts import CurriculumSnapshot, _fail
 from .atlas_frontier_progress import plan_frontier_progress
-from .atlas_frontier_progress_validation import requested_keys
+from .atlas_frontier_progress_validation import (
+    credited_receipts,
+    current_obligations,
+    requested_keys,
+)
 from .atlas_frontier_progress_contracts import (
     FrontierProgress, FrontierStatus, StagedSelectionReceipt,
 )
@@ -171,6 +175,22 @@ def staged_selection_receipt(
     return receipt
 
 
+def _credited_requested_keys(coverage_epoch: AtlasCoverageEpoch) -> tuple[tuple[str, str], ...]:
+    """Filter historical staging receipts through A09.4 credit before reranking."""
+    if coverage_epoch.prior is None:
+        return ()
+    current = current_obligations(coverage_epoch.closure)
+    credited = credited_receipts(
+        coverage_epoch.snapshot,
+        coverage_epoch.closure,
+        coverage_epoch.prior.staged_receipts,
+        current,
+        snapshot_history=coverage_epoch.prior.snapshot_history,
+        pending_receipt_sha256=coverage_epoch.prior.pending_staged_receipt_sha256,
+    )
+    return tuple(sorted(requested_keys(credited)))
+
+
 def next_atlas_delta(
     coverage_epoch: AtlasCoverageEpoch,
     learner_evidence: AtlasLearnerEvidence,
@@ -191,9 +211,7 @@ def next_atlas_delta(
             coverage_epoch.snapshot, coverage_epoch.closure,
             prior=coverage_epoch.prior).status
 
-    requested = tuple(sorted(requested_keys(
-        coverage_epoch.prior.staged_receipts
-        if coverage_epoch.prior is not None else ())))
+    requested = _credited_requested_keys(coverage_epoch)
     try:
         semantic_id, rows = ranked_frontier_target(
             coverage_epoch.snapshot, coverage_epoch.closure, requested)
