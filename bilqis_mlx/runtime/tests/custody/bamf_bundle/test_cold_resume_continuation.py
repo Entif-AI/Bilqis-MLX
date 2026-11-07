@@ -175,7 +175,7 @@ class BamfColdResumeContinuationTests(unittest.TestCase):
             with self.assertRaises(BilqisError) as failure:
                 admission.admit_candidate_step(
                     self.run, {}, loss_bearing_target=True,
-                    teacher_hparams=None, decay={}, max_norm=1.)
+                    teacher_hparams=None, max_norm=1.)
         self.assertEqual(failure.exception.context["reason"],
                          "B11_GRADIENT_EXECUTION_REQUIRED")
 

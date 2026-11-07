@@ -233,7 +233,7 @@ def derive_participation_inputs(parent: CompleteStudent):
 def _admit_loaded_candidate_step(
         parent: CompleteStudent, identity: AcceptedGenerationIdentity, gradients=None, *,
         loss_bearing_target, gradient_execution=None, teacher_hparams,
-        decay, max_norm: float) -> CandidateTransaction:
+        max_norm: float) -> CandidateTransaction:
     """Pass custody-verified state plus B11 execution truth to B09/B12.
 
     Raw gradients remain usable only for the no-loss no-op path. A loss-bearing
@@ -264,25 +264,25 @@ def _admit_loaded_candidate_step(
         parent_optimizer_step=identity.optimizer_step,
         topology_digest=identity.topology_digest,
         candidate_step_ordinal=1,
-        teacher_hparams=teacher_hparams, decay=decay, max_norm=max_norm)
+        teacher_hparams=teacher_hparams, max_norm=max_norm)
 
 
 def admit_uninterrupted_candidate_step(
         run_dir: Path, parent: CompleteStudent, gradients=None, *,
         loss_bearing_target, gradient_execution=None, teacher_hparams,
-        decay, max_norm: float) -> CandidateTransaction:
+        max_norm: float) -> CandidateTransaction:
     """Continue held state only after full current B13 custody authentication."""
     identity = _published_in_memory_identity(run_dir, parent)
     return _admit_loaded_candidate_step(
         parent, identity, gradients,
         loss_bearing_target=loss_bearing_target,
         gradient_execution=gradient_execution,
-        teacher_hparams=teacher_hparams, decay=decay, max_norm=max_norm)
+        teacher_hparams=teacher_hparams, max_norm=max_norm)
 
 
 def admit_candidate_step(run_dir: Path, gradients=None, *,
                          loss_bearing_target, gradient_execution=None, teacher_hparams,
-                         decay, max_norm: float) -> CandidateTransaction:
+                         max_norm: float) -> CandidateTransaction:
     """Cold-load the accepted state and enter the production execution guard."""
     pointer, parent = _read_accepted(run_dir)
     identity = _identity_from_pointer(parent, pointer)
@@ -290,7 +290,7 @@ def admit_candidate_step(run_dir: Path, gradients=None, *,
         parent, identity, gradients,
         loss_bearing_target=loss_bearing_target,
         gradient_execution=gradient_execution,
-        teacher_hparams=teacher_hparams, decay=decay, max_norm=max_norm)
+        teacher_hparams=teacher_hparams, max_norm=max_norm)
 
 
 def accept_and_publish(run_dir: Path, bundle: BamfBundleCandidate,
