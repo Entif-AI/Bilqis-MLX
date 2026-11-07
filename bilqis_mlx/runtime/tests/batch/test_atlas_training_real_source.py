@@ -16,6 +16,7 @@ from bilqis_mlx.factory.teaching import describe_delivered_teaching
 from bilqis_mlx.grade_a_probe import read_sources
 from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.runtime.atlas_training_adapter import compile_training_batch
+from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.runtime.tests.test_atlas_training_adapter import answer_plan_for
 from bilqis_mlx.semantics.atlas.feature_io import persist_feature_manifest
@@ -140,7 +141,7 @@ class RealTrainingAuthorityTests(unittest.TestCase):
         cls._feature_root.cleanup()
 
     def compile(self, config):
-        return compile_training_batch(self.rows, self.context, {'context': 1024},
+        return compile_training_batch(self.rows, self.context, ModelTopologySpecV2(),
             compiler_config=config, **self.args)
 
     def test_real_row_accepts_canonical_and_rejects_noncanonical_a05(self):
@@ -175,7 +176,7 @@ class RealTrainingAuthorityTests(unittest.TestCase):
         self.assertEqual(alternate_features.semantic_release, self.features.semantic_release)
         self.assertNotEqual(alternate_features.digest, self.features.digest)
         with self.assertRaises(TypeError):
-            compile_training_batch((self.row,), self.context, {'context': 1024},
+            compile_training_batch((self.row,), self.context, ModelTopologySpecV2(),
                 compiler_config=self.config, atlas_features=alternate_features,
                 feature_schema=alternate_schema, **self.args)
 
@@ -205,5 +206,5 @@ class RealTrainingAuthorityTests(unittest.TestCase):
                 'answer_plan_for': model_input_planning_entered,
             }
             with self.assertRaises(BilqisError):
-                compile_training_batch(self.rows, self.context, {'context': 1024},
+                compile_training_batch(self.rows, self.context, ModelTopologySpecV2(),
                     compiler_config=self.config, **args)

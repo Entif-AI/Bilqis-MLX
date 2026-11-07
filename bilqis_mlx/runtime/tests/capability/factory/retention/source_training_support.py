@@ -7,6 +7,7 @@ from tempfile import TemporaryDirectory
 from bilqis_mlx.factory.generation import runtime_adapter_for_release
 from bilqis_mlx.factory.teaching import describe_delivered_teaching
 from bilqis_mlx.runtime.atlas_training_adapter import compile_training_batch
+from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.runtime.bamf_bundle import authenticate_bamf_candidate_feature_context
 from bilqis_mlx.semantics.context_eligibility import (
     PUBLIC_FORMAL, ContextPolicy, SourceFrontier, TaskScope,
@@ -104,7 +105,7 @@ def source_training_batch(source_context, candidate, artifact_path, row, generat
     with TemporaryDirectory() as feature_root:
         receipt = persist_feature_manifest(authenticated.features, feature_root)
         return compile_training_batch(
-            (row,), source_context, {"context": 1024},
+            (row,), source_context, ModelTopologySpecV2(),
             delivery=delivery, delivery_capability=capability,
             delivery_release_sha256=source_context.release.release_sha256,
             teacher_strategy=(teacher_strategy or {"policy": "factory-c05-live"}),

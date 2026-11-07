@@ -29,7 +29,7 @@ from bilqis_mlx.runtime.atlas_revalidation import (
 )
 from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    DECLARED, candidate, parent_state, shape_patch,
+    DECLARED, acceptance, candidate, parent_state, shape_patch,
 )
 from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import (
     OWNER_ID, PUBLIC_KEY_HEX, authority_for_registry, install_test_owner,
@@ -218,7 +218,8 @@ class CacheAuthorityIntegrationTests(unittest.TestCase):
             run = Path(temporary) / "run"
             source = _source(selection, frontier)
             with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-                pointer = publish_bamf_generation(run, source)
+                pointer = publish_bamf_generation(
+                    run, source, acceptance=acceptance(source))
             inputs = CacheEligibilityInputs(
                 run / "bamf-state.json", clearance, selection, frontier,
                 _EXPORTED, frames, task, policy,

@@ -47,6 +47,7 @@ class BamfTargetEvidence:
 @dataclass(frozen=True)
 class BamfDeliveryProvenance:
     row_id: str
+    source_row_content_sha256: str
     source_id: str | None
     capability_id: str
     operation_id: str | None
@@ -100,7 +101,8 @@ class BamfTrainingBatch:
             'generation_binding': self.generation_binding,
             'delivered_content_sha256': self.delivered_content_sha256,
             'delivery_capability': self.delivery_capability,
-            'rows': tuple((row.provenance.row_id, row.provenance.capability_id)
+            'rows': tuple((row.provenance.row_id, row.provenance.source_row_content_sha256,
+                           row.provenance.capability_id)
                           for row in self.rows),
         }
         wire = json.dumps(payload, sort_keys=True, separators=(',', ':'))

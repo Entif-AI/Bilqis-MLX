@@ -7,7 +7,7 @@ import json
 import re
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
-from bilqis_mlx.factory.teaching import content_digest
+from bilqis_mlx.runtime.source_execution import source_content_digest
 from bilqis_mlx.learning.frame_encoder import CompiledEncoderInput
 from bilqis_mlx.learning.source_atoms import SourceAtomRow
 from bilqis_mlx.semantics.atlas_features import FeatureSchema
@@ -64,8 +64,7 @@ class BamfTrainingAuthority:
         return hashlib.sha256(wire.encode()).hexdigest()
 
 
-def _issue(batch, source):
-    provenance = batch.rows[0].provenance
+def _issue(batch, source, provenance):
     if not provenance.source_family_id or not provenance.episode_id:
         _invalid("B11_TRAINING_SOURCE_INDEPENDENCE_REQUIRED")
     authority = object.__new__(BamfTrainingAuthority)
@@ -75,7 +74,7 @@ def _issue(batch, source):
         ("training_batch_sha256", batch.authority_digest),
         ("delivery_capability", batch.delivery_capability),
         ("source_row_id", source.source_row["id"]),
-        ("source_row_sha256", content_digest((source.source_row,))),
+        ("source_row_sha256", provenance.source_row_content_sha256),
         ("source_family_id", provenance.source_family_id),
         ("episode_id", provenance.episode_id),
         ("_issuance", _ISSUER),
@@ -85,8 +84,8 @@ def _issue(batch, source):
     return authority
 
 
-def bind_compiled_training_batch(batch, compiled, sources, feature_schema):
-    """Issue B11 input only when Factory delivery and source atom are identical."""
+def bind_compiled_training_batch(batch, compiled, sources, feature_schema, *, row_index=0):
+    """Issue one B11 row from an exact source-owned C02 delivery batch."""
     from bilqis_mlx.runtime.atlas_model_contracts import BamfCompiledBatch
 
     if (type(batch) is not BamfTrainingBatch
@@ -94,15 +93,17 @@ def bind_compiled_training_batch(batch, compiled, sources, feature_schema):
             or type(sources) is not tuple or len(sources) != 1
             or type(sources[0]) is not SourceAtomRow
             or type(feature_schema) is not FeatureSchema
-            or len(batch.rows) != 1):
+            or type(row_index) is not int
+            or not 0 <= row_index < len(batch.rows)):
         _invalid("B11_TRAINING_AUTHORITY_INPUT_INVALID")
     batch.__post_init__()
-    provenance = batch.rows[0].provenance
+    provenance = batch.rows[row_index].provenance
     source = sources[0]
     source_row = source.source_row
-    if (content_digest((source_row,)) != batch.delivered_content_sha256
+    if (source_content_digest((source_row,)) != provenance.source_row_content_sha256
             or source_row.get("id") != provenance.row_id
             or source_row.get("capability") != provenance.capability_id):
         _invalid("B11_TRAINING_SOURCE_ROW_MISMATCH")
     return BamfCompiledBatch(
-        compiled, sources, feature_schema, training_authority=_issue(batch, source))
+        compiled, sources, feature_schema,
+        training_authority=_issue(batch, source, provenance))

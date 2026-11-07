@@ -12,6 +12,7 @@ from bilqis_mlx.factory.teaching import describe_delivered_teaching
 from bilqis_mlx.factory.tests.test_teaching import closed_source_fixture
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.runtime.atlas_training_adapter import BamfTarget, compile_training_batch, require_current_release
+from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.semantics.atlas_features import AtlasFeatures, ConceptFeature
 from bilqis_mlx.semantics.core import Literal
 from bilqis_mlx.semantics.context_eligibility import (
@@ -197,7 +198,7 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
         registry = SourceAdapterRegistry((replace(registered, draw=draw),))
         return replace(self.context, source_registry=registry)
 
-    def compile(self, rows, *, release_sha=None, encoders=None, policy='allow',
+    def compile(self, rows, *, release_sha=None, policy='allow',
                 generation=None, sealed=(), context_mutator=None,
                 frames_override=None, source_ast_override=None,
                 delivery_override=None, extra_kwargs=None,
@@ -226,7 +227,7 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
             None,
             base_task, base_frontier, base_policy)
         self.authority.return_value = _atlas_features(legitimate_asts, semantic_release)
-        return compile_training_batch(rows, context, {'context': 1024},
+        return compile_training_batch(rows, context, ModelTopologySpecV2(),
             delivery=delivery, delivery_capability='Z.C0', delivery_release_sha256=release_sha or context.release.release_sha256,
             teacher_strategy={'policy': 'focused'}, requested_count=3, optimizer_step_seed=42,
             source_authority=context.bind_rows(
@@ -241,7 +242,7 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
             answer_plan_for=lambda *args: {**answer_plan_for(*args), 'generation_binding': self.model_generation},
             frames_for_ast=frames_for_ast, task_scope=task,
             source_frontier=frontier, eligibility_policy=context_policy,
-            target_encoders=encoders, generation_binding=generation or self.model_generation,
+            generation_binding=generation or self.model_generation,
             sealed_holdout_ids=sealed, **(extra_kwargs or {}))
 
     def test_cross_source_ast_and_frame_substitution_is_rejected(self):
