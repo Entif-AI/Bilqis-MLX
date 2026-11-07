@@ -113,10 +113,10 @@
       "issue": 829,
       "pr": null,
       "state": "WAITING",
-      "head_sha": "75e47376d7a0977e31809291508fcdf33eb03b0e",
+      "head_sha": "94d5763dcedd049db65e0a080238786ca0f53542",
       "preserved_branch": "codex/bamf02-c-829-local-handoff-20261104",
-      "summary": "Complete known engineering set repaired;20/20 tests and static gates pass. C829-HANDOFF-20261104 exhausted5/5 rounds; EGM-Failed remains, no ready PR.",
-      "resume_trigger": "Explicit human override authorizes further whole-candidate review, or the human supplies an accepted review disposition for the returned design. Preserve the same5/5 episode; do not reset by changing head."
+      "summary": "Human-authorized EGM round 6 accepted: comprehension PASS; codebase plan-scope Major mechanically closed in live issue body; NUL-framed leading-whitespace path defect repaired with 21/21 focused proof.",
+      "resume_trigger": "Human selects #829 for turn-in; sync current reviewed unified, resolve the Lane-C flow-control-only overlap, run the smallest affected structural checks, then open a ready PR. No further EGM is required absent semantic invalidation."
     },
     {
       "issue": 831,
