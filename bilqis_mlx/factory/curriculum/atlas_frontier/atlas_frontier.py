@@ -294,6 +294,6 @@ def assert_initial_snapshot_current(
 # A09.5 keeps the public atlas-frontier entrypoint on this established module
 # while the adapter implementation remains compartmentalized below the structure threshold.
 from .atlas_delta_adapter import (
-    AtlasCoverageEpoch, AtlasLearnerEvidence, next_atlas_delta,
+    AtlasCoverageEpoch, AtlasLearnerEvidence, bind_realized_snapshot, next_atlas_delta,
     staged_selection_receipt,
 )

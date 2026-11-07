@@ -19,6 +19,7 @@ from .jit_curriculum import CurriculumDeltaProposal, ProposalDisposition, propos
 from .atlas_frontier_closure import ClosureStatus, FrontierClosure
 from .atlas_frontier_contracts import CurriculumSnapshot, _fail
 from .atlas_frontier_progress import plan_frontier_progress
+from .atlas_frontier_progress_validation import requested_keys
 from .atlas_frontier_progress_contracts import (
     FrontierProgress, FrontierStatus, StagedSelectionReceipt,
 )
@@ -31,6 +32,37 @@ from . import candidate_realizations
 
 
 _SHA256_HEX_LENGTH = hashlib.sha256().digest_size * 2
+
+
+def bind_realized_snapshot(
+    snapshot: CurriculumSnapshot,
+    curriculum_candidate,
+    candidate_frontier: CandidateFrontierRelease,
+    current_release: ExecutableFactoryRelease,
+    staged_candidates: tuple[StagedCandidate, ...],
+) -> CurriculumSnapshot:
+    """Overlay A09.5 realization evidence without changing the frozen A08 census."""
+    if (type(snapshot) is not CurriculumSnapshot
+            or snapshot.frozen_census_sha256 != curriculum_candidate.census.digest
+            or snapshot.candidate_frontier_sha256 != candidate_frontier.release_sha256
+            or snapshot.admitted_factory_release_sha256 != current_release.release_sha256):
+        _fail("BAMF_PLANNER_REALIZATION_BRIDGE_INPUT_INVALID")
+    coverage = candidate_realizations.realized_coverage_rows(
+        curriculum_candidate, candidate_frontier, current_release, staged_candidates)
+    frontier_edges = candidate_realizations.realized_prerequisite_edges(
+        curriculum_candidate, candidate_frontier)
+    edges = tuple(sorted(set((*snapshot.prerequisite_edges, *frontier_edges))))
+    draft = replace(
+        snapshot,
+        coverage_rows=coverage,
+        prerequisite_edges=edges,
+        staged_factory_release_sha256s=tuple(sorted(
+            item.successor.release_sha256 for item in staged_candidates)),
+        snapshot_sha256="0" * 64,
+    )
+    result = replace(draft, snapshot_sha256=draft.expected_digest())
+    result.verify()
+    return result
 
 
 @dataclass(frozen=True)
@@ -159,9 +191,12 @@ def next_atlas_delta(
             coverage_epoch.snapshot, coverage_epoch.closure,
             prior=coverage_epoch.prior).status
 
+    requested = tuple(sorted(requested_keys(
+        coverage_epoch.prior.staged_receipts
+        if coverage_epoch.prior is not None else ())))
     try:
         semantic_id, rows = ranked_frontier_target(
-            coverage_epoch.snapshot, coverage_epoch.closure)
+            coverage_epoch.snapshot, coverage_epoch.closure, requested)
     except BilqisError as error:
         if error.context.get("reason") == "BAMF_PLANNER_NO_BOUNDED_READY_DELTA":
             return plan_frontier_progress(
@@ -175,7 +210,7 @@ def next_atlas_delta(
         return FrontierStatus.IMPLEMENTATION_UNCOVERED
     selection = select_frontier_delta_for_projection(
         coverage_epoch.snapshot, coverage_epoch.closure,
-        coverage_epoch.current_release, projection)
+        coverage_epoch.current_release, projection, requested)
     progress = plan_frontier_progress(
         coverage_epoch.snapshot, coverage_epoch.closure, selection,
         current_release=coverage_epoch.current_release,

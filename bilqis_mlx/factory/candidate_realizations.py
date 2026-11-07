@@ -1,5 +1,9 @@
 """Code-owned source realizations that can supply ordinary factory successors."""
 
+from dataclasses import replace
+import hashlib
+import json
+
 from ..source_adapters import copular_curriculum as ithkuil_identity
 from ..source_adapters import event_frames as ithkuil_events
 
@@ -31,6 +35,141 @@ def _realization(semantic_id):
     if len(matches) != 1:
         raise ValueError
     return matches[0]
+
+
+def realized_capability_id(semantic_id):
+    """Return the exact executable capability owned by one realized A01 identity."""
+    if semantic_id == _COPULAR_ATLAS_SEMANTIC_ID:
+        return _COPULAR_CAPABILITY
+    capability = _EVENT_ATLAS_IDENTITIES.get(semantic_id)
+    if capability is None:
+        raise ValueError
+    return capability
+
+
+def realized_atlas_semantic_id(capability_id):
+    """Return the A01 semantic identity realized by one executable capability."""
+    if capability_id == _COPULAR_CAPABILITY:
+        return _COPULAR_ATLAS_SEMANTIC_ID
+    for semantic_id, capability in _EVENT_ATLAS_IDENTITIES.items():
+        if capability == capability_id:
+            return semantic_id
+    raise ValueError
+
+
+def _a08_frontier_candidate(curriculum_candidate, frontier, semantic_id):
+    """Translate one frozen A08 concept to its exact existing frontier row."""
+    from .atlas_frontier_contracts import _fail
+    from .candidate_frontier import CandidateFrontierRelease
+    from .skos_curriculum import CurriculumCandidateSet
+
+    if (type(curriculum_candidate) is not CurriculumCandidateSet
+            or type(frontier) is not CandidateFrontierRelease):
+        _fail("A09_REALIZATION_BRIDGE_INPUT_INVALID")
+    frontier.verify()
+    capability = realized_capability_id(semantic_id)
+    source_sense = realized_source_sense_id(semantic_id)
+    concept = next((item for item in curriculum_candidate.census.concepts
+                    if item.semantic_id == semantic_id), None)
+    source_ref = f"lexicon/lexicon_root_senses/{source_sense}"
+    if concept is None or source_ref not in concept.source_refs:
+        _fail("A09_REALIZATION_A08_SOURCE_IDENTITY_MISMATCH")
+    matches = tuple(item for item in frontier.candidates
+                    if item.priority_tier == "CORE_D_O"
+                    and item.proposed_capability_id == capability
+                    and item.target_sense_id == source_sense)
+    if len(matches) != 1:
+        _fail("A09_REALIZATION_FRONTIER_TARGET_MISMATCH")
+    candidate = matches[0]
+    sense = next((item for item in frontier.senses
+                  if item.sense_id == source_sense), None)
+    if sense is None or sense.selected_target_capability != capability:
+        _fail("A09_REALIZATION_FRONTIER_SENSE_MISMATCH")
+    if capability in ithkuil_events.SOURCE_SPECS:
+        source_row = ithkuil_events.source_senses()[capability]
+        spec = ithkuil_events.SOURCE_SPECS[capability]
+        if (sense.source_text_sha256 != source_row["source_text_sha256"]
+                or tuple(item.capability_id for item in candidate.prerequisites)
+                   != spec.prerequisites):
+            _fail("A09_REALIZATION_FRONTIER_AUTHORITY_MISMATCH")
+    return candidate
+
+
+def realized_prerequisite_edges(curriculum_candidate, frontier):
+    """Project frontier hypotheses into A01 identity space without promoting truth."""
+    from .atlas_frontier_contracts import PrerequisiteEdge
+
+    capability_to_semantic = {}
+    candidates = {}
+    for semantic_id in curriculum_candidate.source_eligible_concept_ids:
+        try:
+            candidate = _a08_frontier_candidate(
+                curriculum_candidate, frontier, semantic_id)
+        except ValueError:
+            continue
+        capability_to_semantic[candidate.proposed_capability_id] = semantic_id
+        candidates[semantic_id] = candidate
+    edges = []
+    for semantic_id, candidate in candidates.items():
+        for prerequisite in candidate.prerequisites:
+            prerequisite_semantic_id = capability_to_semantic.get(
+                prerequisite.capability_id)
+            if prerequisite_semantic_id is None:
+                continue
+            evidence = hashlib.sha256(json.dumps({
+                "frontier_sha256": frontier.release_sha256,
+                "candidate_id": candidate.candidate_id,
+                "semantic_id": semantic_id,
+                "prerequisite_capability_id": prerequisite.capability_id,
+                "status": prerequisite.status.value,
+            }, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+            edges.append(PrerequisiteEdge(
+                semantic_id, prerequisite_semantic_id, evidence,
+                status="FRONTIER_HYPOTHESIS_UNVERIFIED"))
+    return tuple(sorted(edges))
+
+
+def realized_coverage_rows(
+        curriculum_candidate, frontier, current, staged_candidates):
+    """Overlay verified executable realization readiness on the frozen A08 census."""
+    from .atlas_frontier_contracts import _fail
+    from .skos_curriculum import PROGRAM_BOUND
+
+    if type(staged_candidates) is not tuple:
+        _fail("A09_REALIZATION_STAGED_SET_INVALID")
+    covered = set()
+    current_capabilities = current.execution_plan.capability_map
+    for semantic_id in curriculum_candidate.source_eligible_concept_ids:
+        try:
+            candidate = _a08_frontier_candidate(
+                curriculum_candidate, frontier, semantic_id)
+        except ValueError:
+            continue
+        if candidate.proposed_capability_id in current_capabilities:
+            covered.add(semantic_id)
+    for staged in staged_candidates:
+        staged.verify(frontier, current)
+        matches = []
+        for semantic_id in curriculum_candidate.source_eligible_concept_ids:
+            try:
+                candidate = _a08_frontier_candidate(
+                    curriculum_candidate, frontier, semantic_id)
+            except ValueError:
+                continue
+            if (candidate.proposed_capability_id == staged.target_capability_id
+                    and candidate.target_sense_id == staged.source_sense_id):
+                matches.append(semantic_id)
+        matches = tuple(matches)
+        if len(matches) != 1:
+            _fail("A09_REALIZATION_STAGED_AUTHORITY_MISMATCH")
+        _a08_frontier_candidate(curriculum_candidate, frontier, matches[0])
+        covered.add(matches[0])
+    return tuple(sorted((
+        replace(row, implementation_status=PROGRAM_BOUND,
+                reason="FACTORY_REALIZATION_BOUND")
+        if row.semantic_id in covered else row
+        for row in curriculum_candidate.census.obligations
+    ), key=lambda item: (item.semantic_id, item.family_id)))
 
 
 def project_realized_target(
