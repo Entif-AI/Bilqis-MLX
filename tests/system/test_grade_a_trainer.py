@@ -534,8 +534,8 @@ class GradeATrainerContractTests(unittest.TestCase):
                                  len(retained))
 
     @unittest.skipUnless(SOURCE.is_file(), "Pinned original student unavailable")
-    def test_historical_v1_resume_preserves_optimizer_teacher_and_archives_old_authority(self):
-        """Copy, never optimize, original weights; migrate a disposable v1 run."""
+    def test_historical_v1_resume_is_rejected_without_rewriting_history(self):
+        """Historical v1 evidence remains inspectable but cannot re-enter live writers."""
         import mlx.core as mx
         mx.set_default_device(mx.cpu)
         manifest, old_course, engine, sha, teacher, provenance = prepare_source(
@@ -570,48 +570,14 @@ class GradeATrainerContractTests(unittest.TestCase):
                 "checkpoint_status": "RECORDED_AT_BOUNDARY",
             })
             _persist(run_dir, historical)
-            with redirect_stdout(io.StringIO()):
-                loaded, own_adamw, loaded_graph, resumed = _resume(
+            before = json.loads(json.dumps(historical))
+            with self.assertRaisesRegex(
+                    ValueError, "SCHOOL.STATE.HISTORICAL_NOT_RESUMABLE"):
+                _resume(
                     run_dir, manifest, course, sha,
                     grade_a_course=course, source_root=ROOT)
-            self.assertEqual(resumed["curriculum_mode"], LIVE_RELEASE)
-            self.assertEqual(resumed["school"]["current_student"], asdict(base))
-            self.assertEqual(int(own_adamw.state["step"].item()), base.optimizer_step)
-            self.assertEqual(resumed["teacher"], teacher)
-            self.assertEqual(resumed["historical_capability_best"], frontier)
-            self.assertTrue(resumed["legacy_frontier_pending_replay"])
-            self.assertEqual(resumed["championship_checkpoint_origins"],
-                             {base.sha256: "A"})
-            admitted_release = trainer._read_executable_factory_release_artifact(
-                run_dir, resumed)
-            self.assertEqual(
-                resumed["school"]["course_digest"],
-                trainer.schedule_program_from_executable_release(
-                    admitted_release).digest())
-            self.assertEqual(read_generation(run_dir, 1),
-                             json.loads(json.dumps(historical)))
-            self.assertIn("factory_admission_v2", resumed)
-            self.assertEqual(resumed["factory_release_schema"],
-                             "bilqis.mlx.factory-release/v2")
-            self.assertEqual(resumed["factory_release_sha256"],
-                             resumed["factory_admission_v2"]["factory_release_sha256"])
-            # Fault injection: the live-course migration plus factory-admission
-            # generations exist, but the mutable latest pointer is rewound to
-            # the historical generation 1 receipt.
-            # latest pointer still says generation 1 after interruption.
-            _durable_json(run_dir / "state.json",
-                          json.loads(json.dumps(historical)), replace_existing=True)
-            with redirect_stdout(io.StringIO()):
-                restored_weights, restored_adamw, restored_graph, repaired = _resume(
-                    run_dir, manifest, course, sha,
-                    grade_a_course=course, source_root=ROOT)
-            self.assertEqual(repaired, resumed)
-            self.assertEqual(repaired["generation"], 4)
-            self.assertEqual(int(restored_adamw.state["step"].item()),
-                             base.optimizer_step)
-            self.assertEqual(resumed.get("mentor_epoch", {}).get("active_roles", {}), {})
-            self.assertEqual(resumed.get("mentor_epoch", {}).get("active_grade_soups", {}), {})
-            self.assertEqual(int(own_adamw.state["step"].item()), base.optimizer_step)
+            self.assertEqual(read_generation(run_dir, 1), before)
+            self.assertEqual(read_current(run_dir), before)
 
 
 

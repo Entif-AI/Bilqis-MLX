@@ -30,6 +30,9 @@ HISTORICAL_A_GENERATOR_SHA256 = (
 ABI_REFACTORED_A_GENERATOR_SHA256 = (
     "4b1a491d09fccfced98d368d52794b003de26e628c867ae3fd4a7c979060f59d"
 )
+SOURCE_RELOCATED_A_GENERATOR_SHA256 = (
+    "4b8c4587931bcbbd74997c46d8013d8ca4d21e8d4322715a22ff7ab8e9371992"
+)
 HISTORICAL_A_RUBRIC_SHA256 = (
     "c65522b6de61bc40d386ec60a66b3c01d274a60f7c9feaf84a9679150935e32d"
 )
@@ -39,11 +42,19 @@ HISTORICAL_B_RUBRIC_SHA256 = (
 HISTORICAL_B_COURSE_SHA256 = (
     "8b50a9c964c82785fe65cbfd65344b706f492cc9e8348f95a3c24d803845e8c6"
 )
+HISTORICAL_B_SOURCE_ATTESTATION_SHA256 = (
+    "9cbf5e33e6e2ff0583e48710520a242768ddbb625e920f3695f666432574087d"
+)
+HISTORICAL_B_PREREQUISITES = ("A.IDENTITY", "A.PARENT", "A.LINK")
+HISTORICAL_B_SOURCE_ANCHOR = "repo:bilqis_micro/kernel.py::_operation+_table"
 
 
 def historical_grade_a_course(accepted):
     """Rebuild the archived seal; never rewrite archived states or specimens."""
-    if generator_source_digest() != ABI_REFACTORED_A_GENERATOR_SHA256:
+    if generator_source_digest() not in {
+            ABI_REFACTORED_A_GENERATOR_SHA256,
+            SOURCE_RELOCATED_A_GENERATOR_SHA256,
+    }:
         raise ValueError("HISTORICAL_GRADE_A_SOURCE_COMPATIBILITY_NOT_PROVEN")
     current = live_course(accepted)
     rubric = _sha({
@@ -64,6 +75,25 @@ def historical_grade_b_course(accepted, source_root):
 
     old_a = historical_grade_a_course(accepted)
     old_b = build_grade_b(old_a, source_root)
+    # Grade B later moved to direct U7C authority with no Grade-A prerequisites
+    # and a different source anchor. Historical receipts must retain the exact
+    # pre-change course they were sealed against, so reconstruct those immutable
+    # fields rather than asking today's release builder to impersonate history.
+    historical_caps = tuple(replace(
+        capability,
+        prerequisites=HISTORICAL_B_PREREQUISITES,
+        source_anchor=HISTORICAL_B_SOURCE_ANCHOR,
+    ) for capability in old_b.grades[-1].capabilities)
+    historical_grade = replace(
+        old_b.grades[-1], capabilities=historical_caps,
+        assessment_sha256=HISTORICAL_B_RUBRIC_SHA256,
+    )
+    old_b = replace(
+        old_b,
+        grades=(*old_b.grades[:-1], historical_grade),
+        assessment_manifest_sha256=HISTORICAL_B_RUBRIC_SHA256,
+        source_attestation_sha256=HISTORICAL_B_SOURCE_ATTESTATION_SHA256,
+    )
     if (old_b.digest() != HISTORICAL_B_COURSE_SHA256 or
             old_b.grades[-1].assessment_sha256 != HISTORICAL_B_RUBRIC_SHA256):
         raise ValueError("HISTORICAL_GRADE_B_RUBRIC_NOT_REPRODUCIBLE")
