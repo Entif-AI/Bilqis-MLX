@@ -44,6 +44,11 @@ def project_realized_target(
     if semantic_id == _semantic_id:
         if _capability in current.execution_plan.capability_map:
             raise ValueError
+        if _admission_token in current.semantic_catalog:
+            prefix = (*_registered_tokens, _admission_token)
+            if current.semantic_catalog[:len(prefix)] != prefix:
+                raise ValueError
+            return (_capability,), ()
         if (len(current.semantic_catalog) > len(_registered_tokens)
                 or current.semantic_catalog
                    != _registered_tokens[:len(current.semantic_catalog)]
@@ -88,7 +93,11 @@ def prepare_realized_candidate(
     project_realized_target(semantic_id, current)
     if semantic_id == _COPULAR_ATLAS_SEMANTIC_ID:
         realization, capability = ithkuil_identity, _COPULAR_CAPABILITY
-        graph = realization.expanded_graph(parent_graph)
+        graph = (
+            parent_graph
+            if _COPULAR_ADMISSION_TOKEN in current.semantic_catalog
+            else realization.expanded_graph(parent_graph)
+        )
         staged = realization.stage_identity(
             frontier, current, graph,
             source_root=source_root, source_registry=source_registry,

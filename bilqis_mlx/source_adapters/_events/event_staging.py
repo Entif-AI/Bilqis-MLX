@@ -6,6 +6,7 @@ from ..factory.candidate_staging import candidate_source_anchor, compile_candida
 from ..factory.curriculum_definition import CapabilitySourceBinding, CapabilitySpec, GradeSpec
 from ..factory.execution import CurriculumProfile
 from ..vocabulary_growth import AdmittedToken, append_catalog
+from bilqis_mlx.source_adapters import copular_curriculum
 from .event_authority import (
     SEMANTIC_IDS,
     SOURCE_SPECS,
@@ -90,12 +91,24 @@ def _canonical_node(entry):
     }
 
 
+def _allocation_base(parent):
+    """Preserve the already-authorized numeric->copular allocation frontier."""
+    copular = copular_curriculum.token_admission()
+    if copular.token_id not in parent['tokens']:
+        return copular_curriculum.proposed_graph(parent)
+    index = parent['tokens'].index(copular.token_id)
+    if parent['nodes'][index] != _canonical_node(copular):
+        source_invalid('EVENT_FRAME_COPULAR_ALLOCATION_AUTHORITY_DRIFT')
+    return parent
+
+
 def projected_graph(parent, capabilities):
     """Append only the requested prerequisite-closed event identities."""
     if (type(capabilities) is not tuple or not capabilities
             or len(set(capabilities)) != len(capabilities)
             or any(capability not in SOURCE_SPECS for capability in capabilities)):
         source_invalid('EVENT_FRAME_CATALOG_PROJECTION_INVALID')
+    parent = _allocation_base(parent)
     sources = source_senses()
     admissions = []
     available = set(parent.get('tokens', ()))
