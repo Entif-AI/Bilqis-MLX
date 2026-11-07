@@ -64,8 +64,8 @@ follows:
 | First update of a new row uses count 1 | `test_b09_bridge_drives_b12_zero_gradient_count_and_decay`; parent denominator witness below |
 | Rejection restores all hashes/clocks | `test_rejection_returns_exact_parent_with_all_custody` |
 | Nonfinite/NaN gradient rejects without partial publication | `test_invalid_masks_nonfinite_gradient_and_count_overflow_fail_without_mutation` |
-| Unused motif row is byte-identical after an update | `test_unused_motif_row_is_byte_identical_after_b12_update`; production witness `test_output_denominator_and_motif_read_reach_real_transaction` |
-| Output-only semantic row receives denominator update | `test_loss_owner_records_denominators_feedback_and_role_reads`; `test_output_only_semantic_denominator_row_updates_through_b12`; production witness `test_output_denominator_and_motif_read_reach_real_transaction` |
+| Unused motif row is byte-identical after an update | `test_unused_motif_row_is_byte_identical_after_b12_update`; deterministic B09/B12 witness `test_output_denominator_and_motif_read_reach_real_transaction`; real B11/B09/B12 witness `test_real_b11_retained_motif_execution_reaches_b12_transaction` |
+| Output-only semantic row receives denominator update | `test_loss_owner_records_denominators_feedback_and_role_reads`; `test_output_only_semantic_denominator_row_updates_through_b12`; deterministic B09/B12 witness `test_output_denominator_and_motif_read_reach_real_transaction` |
 | Huge frozen gradients cannot alter active clipping factor | `test_mask_precedes_global_clip_even_for_huge_frozen_gradients`; `test_mask_is_applied_before_clipping_and_huge_inactive_gradient_vanishes` |
 | Zero-gradient participating and never-participating rows have distinct clocks/decay | `test_zero_gradient_participates_but_frozen_and_no_loss_preserve_objects`; `test_b09_bridge_drives_b12_zero_gradient_count_and_decay` |
 | Multi-step rejection preserves all ages/counts | `test_rejection_returns_exact_parent_with_all_custody`; `test_acceptance_moves_entire_state_and_ages_once_for_two_steps` provides the accepted contrast |
@@ -82,14 +82,27 @@ observable outcomes required by the parent text:
 EGM round 1 correctly found that those two witnesses stopped one ownership layer
 too low: they manually composed participation/mask/AdamW primitives, so they could
 remain green if the production B11 -> B09 -> B12 seam dropped execution facts.
-The repair therefore adds
-`test_output_denominator_and_motif_read_reach_real_transaction`, which
-uses a B11-owner-issued loss/gradient execution, the real
-`production_candidate_step`, the real B09 execution-provenance binder, and the
-real B12 candidate transaction. It proves in one executable path that an
-output-only denominator identity row and an actually-read motif row update/count,
-while an unrelated identity row and unread motif row remain byte-identical even
-when their supplied gradients are enormous.
+The first repair added `test_output_denominator_and_motif_read_reach_real_transaction`.
+That test uses the real `production_candidate_step`, real B09 binder and real B12
+transaction, but hand-mints a valid B11-shaped execution fixture. It is therefore
+only a deterministic B09/B12 acceptance witness; it is not evidence that production
+B11 itself emitted the participation facts.
+
+EGM round 2 caught that distinction. The complete repair adds
+`test_real_b11_retained_motif_execution_reaches_b12_transaction` to the existing
+real-source retained-motif suite. With the accepted A01 artifact mounted, the test
+calls production `bamf_value_and_grad`, passes the returned `BamfGradientExecution`
+unchanged into `production_candidate_step`, and exercises the real B09 binder and
+B12 transaction. The production task has an actually-read motif slot whose gradient
+is exactly zero; B12 still advances that participating row's update count while an
+unread motif row remains byte-identical in parameters, first/second moments and
+update count. This directly exercises the zero-gradient-participated versus
+never-participated distinction from the parent contract.
+
+This particular production `END_FRAME` task emits no semantic-denominator identity
+rows. The denominator clause is therefore proved separately by the B11 loss-owner
+derivation witness plus the deterministic B09/B12 denominator witness above; no
+synthetic denominator is falsely attributed to the real retained-motif task.
 
 ## EGM round 1 | failed candidate and full repair set
 
@@ -115,11 +128,31 @@ Issue #370 was moved from `EGM-Pending` to `EGM-Failed` immediately after the
 round. It returns to `EGM-Pending` only after this complete known Major set is
 verified and a new exact candidate is frozen.
 
+## EGM round 2 | failed candidate and repair
+
+Exact reviewed candidate:
+`9441a1f0757a725c70620c4f070d39f4771c615e` against reviewed unified
+`58eb36bba1958e0b3ca5d6aa3080260ccac3e9a1`.
+
+Three fresh Studio reviewers returned two FAIL dispositions and one PASS:
+
+- contract review: **FAIL — 0 Blockers / 1 Major / 1 Nit**;
+- authority review: **FAIL — 0 Blockers / 1 Major / 0 Nits**;
+- regression review: **PASS — 0 Blockers / 0 Majors / 1 Nit**.
+
+The unique Major was the same in both failing reviews: the deterministic
+`test_b12_production_participation.py` fixture hand-authored B11 execution facts
+instead of obtaining its `BamfGradientExecution` from production
+`bamf_value_and_grad`. The shared Nit was that the printed focused-matrix command
+omitted that added test while the prose reported 57/57. The real-source production
+witness above repairs the Major; the command below repairs the receipt mismatch.
+Issue #370 returned to `EGM-Failed` before this repair began.
+
 ## Verification so far
 
 Focused parent matrix:
 
-`python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/model/optimization/test_atlas_optimizer.py bilqis_mlx/learning/_retention/tests/test_atlas_candidate.py bilqis_mlx/runtime/tests/model/training/test_atlas_participation.py bilqis_mlx/runtime/tests/model/training/test_b12_parent_acceptance.py bilqis_mlx/runtime/tests/model/test_atlas_model_participation.py bilqis_mlx/runtime/tests/batch/test_atlas_candidate_step.py bilqis_mlx/learning/_retention/tests/test_atlas_execution_provenance.py`
+`python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/model/optimization/test_atlas_optimizer.py bilqis_mlx/learning/_retention/tests/test_atlas_candidate.py bilqis_mlx/runtime/tests/model/training/test_atlas_participation.py bilqis_mlx/runtime/tests/model/training/test_b12_parent_acceptance.py bilqis_mlx/runtime/tests/model/training/test_b12_production_participation.py bilqis_mlx/runtime/tests/model/test_atlas_model_participation.py bilqis_mlx/runtime/tests/batch/test_atlas_candidate_step.py bilqis_mlx/learning/_retention/tests/test_atlas_execution_provenance.py`
 
 Original pre-EGM result: **56/56 PASS, zero skips/errors**. The repaired candidate
 reran the same matrix with the added production-boundary witness: **57/57 PASS,
@@ -129,11 +162,21 @@ Top-level affected boundary check:
 
 `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/batch/test_atlas_candidate_step.py bilqis_mlx/runtime/tests/model/training/test_b12_production_participation.py bilqis_mlx/runtime/tests/batch/test_factory_training_bridge.py`
 
-Result: **10 PASS, 8 environment skips, 0 failures/errors**. The eight Factory
-bridge tests require the real `BILQIS_A01_ATLAS_BUNDLE` fixture, which is not
-mounted in this worktree. Their reviewed-unified C02 successor was independently
-proved before PR #895 merged; the non-fixture production B09/B12 boundary tests
-executed here.
+Result without artifact environment variables: **10 PASS, 8 environment skips,
+0 failures/errors**. The eight Factory bridge tests require the real
+`BILQIS_A01_ATLAS_BUNDLE` fixture. Their reviewed-unified C02 successor was
+independently proved before PR #895 merged; the non-fixture production B09/B12
+boundary tests executed here. The accepted artifact is available locally and is
+mounted explicitly for the real-source proofs below rather than made implicit.
+
+Real production B11 -> B09 -> B12 retained-motif witness:
+
+`BILQIS_A01_ATLAS_BUNDLE=<accepted-a01-artifact> BILQIS_ATLAS_REAL_ARTIFACT=<accepted-a01-artifact> python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/model/test_atlas_model_retained.py`
+
+The mounted artifact was
+`/Users/emilie/Code/371-c02-complete-20261106/.local/c02-a01-rebuild/5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7`.
+Result: **4/4 PASS, zero skips/errors**, including
+`test_real_b11_retained_motif_execution_reaches_b12_transaction`.
 
 `BILQIS_QUALITY_BASE_REF=origin/codex/bamf-unified-base-20261028 npm run quality:changed`:
 **PASS** after consuming reviewed unified `58eb36bb...`; changed-file smell audit
@@ -145,9 +188,10 @@ Production/cold-resume custody seam:
 
 `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/model/test_atlas_model_forward.py bilqis_mlx/runtime/tests/custody/bamf_bundle/test_production_authority.py bilqis_mlx/runtime/tests/custody/bamf_bundle/test_cold_resume_continuation.py`
 
-Result: **21 PASS, 2 environment skips, 0 failures/errors**. The two skipped model
-forward tests require `BILQIS_ATLAS_REAL_ARTIFACT`; the production authority and
-cold-resume candidate/custody paths executed successfully.
+With the same accepted A01 artifact mounted for both
+`BILQIS_A01_ATLAS_BUNDLE` and `BILQIS_ATLAS_REAL_ARTIFACT`, result:
+**23/23 PASS, zero skips/errors**. The real B11 source-forward tests, production
+authority, and cold-resume candidate/custody paths all executed successfully.
 
 `git diff --check`: PASS.
 

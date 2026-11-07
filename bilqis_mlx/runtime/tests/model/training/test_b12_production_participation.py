@@ -81,7 +81,8 @@ def _parent():
     return state, spec, extents
 
 
-def _owner_gradient(parent, spec, extents, gradients):
+def _synthetic_b11_gradient_fixture(parent, spec, extents, gradients):
+    """Mint deterministic B11-shaped facts for the B09/B12 seam only."""
     generation = execution_generation_digest(
         parent.optimizer.parameters, spec=spec, extents=extents)
     output = object.__new__(ModelOutput)
@@ -128,7 +129,8 @@ class B12ProductionParticipationTests(TestCase):
         with ExitStack() as stack:
             for target in SHAPE_OWNERS:
                 stack.enter_context(patch(target, return_value=DECLARED))
-            gradient = _owner_gradient(parent, spec, extents, gradients)
+            gradient = _synthetic_b11_gradient_fixture(
+                parent, spec, extents, gradients)
             candidate = production_candidate_step(
                 begin_candidate(parent), loss_bearing_target=True,
                 gradient_execution=gradient, group_eligible=eligibility,
