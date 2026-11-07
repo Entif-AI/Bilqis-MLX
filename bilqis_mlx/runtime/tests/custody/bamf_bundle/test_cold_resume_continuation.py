@@ -26,7 +26,7 @@ from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
     require_accepted_execution_cache,
 )
 from bilqis_mlx.runtime.bamf_bundle.records import SIDECARS
-from bilqis_mlx.runtime._model.backbone.atlas_model_forward import _source_producer
+from bilqis_mlx.runtime.atlas_model_forward import _source_producer
 
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.cold_resume_probe import (
     continue_generation, retained_digest,
