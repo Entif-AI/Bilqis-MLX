@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "53eba37e5c9dd6ad065b1980fa4850c484aaa624",
-  "updated_at": "2026-11-07T05:55:40Z",
+  "observed_unified": "947a4ddda2c133cabec846b09d3b58d18732dcf1",
+  "updated_at": "2026-11-07T09:18:16Z",
   "exception": null,
   "items": [
     {
@@ -99,9 +99,9 @@
       "issue": 888,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "8e4fd3bee22cb2a9730a1d3f10ed219fe3dd4fad",
-      "summary": "Fresh exact-head EGM found the event-only realization batch does not satisfy #888's live authority contract. #890 legitimately promotes event source authority, but #888 explicitly requires candidate-to-staged-successor bindings for the already accepted A08.3 Boolean, numeric and qualified-world family/rule/source authorities from #420/#758/#737. Repair is active on the same preserved branch; prior event work remains valid evidence for #889/#890 but is not counted as the #888 finish witness.",
-      "resume_trigger": null,
+      "head_sha": "abab27505e5c0842fdc4922ef81206371392d6c6",
+      "summary": "#888 authority-reconciliation repair is durable at abab2750. The accepted #890 event realization seam now validates exact pinned source authority before staging, A09.5 filters historical requests through A09.4 credited receipts, and the realization bridge inspects only registered A08 realization identities. A real pinned A01/A08 replay (9307 eligible concepts / 12351 obligations) is source-checked before a bounded three-event planning projection drives three successive next_atlas_delta proposals to COMPLETE_ATLAS_COVERAGE. Local focused/frontier/governance gates are green; exact-head EGM and hosted checks remain pending.",
+      "resume_trigger": "Exact-head EGM and hosted portable-core/portable/Semantic ABI pass on the pushed repair candidate.",
       "preserved_branch": "codex/bamf02-a09-5a-888-realizations-20261107"
     },
     {
@@ -126,9 +126,9 @@
       "issue": 395,
       "pr": 891,
       "state": "ACTIVE",
-      "head_sha": "8e4fd3bee22cb2a9730a1d3f10ed219fe3dd4fad",
-      "summary": "A09.5 parent adapter is preserved on PR #891 and consumed current reviewed unified, but fresh exact-head EGM correctly rejected the claimed realization-breadth closure: the current three-successor proof traverses newly promoted event authorities rather than #888's required accepted A08.3 Boolean/numeric/qualified-world family authorities. Parent completion waits on the #888 repair, then requires one fresh whole-candidate EGM pass and hosted/human integration.",
-      "resume_trigger": "#888 binds accepted #420/#758/#737 family/rule/source authority into three real staged successors and the combined candidate passes fresh exact-head EGM.",
+      "head_sha": "abab27505e5c0842fdc4922ef81206371392d6c6",
+      "summary": "A09.5 parent repair is durable at abab2750 on top of reviewed unified 947a4ddd. It consumes #889/#890 authority, rejects forged event source digests before staging, reconciles invalidated historical staging receipts through current A09.4 credit, and proves the parent next_atlas_delta path from the actual pinned A01/A08 source replay through three distinct event successors. Real-source witness reaches COMPLETE_ATLAS_COVERAGE; synthetic event, source-adapter and full frontier suites plus structure/error/smell/flow/architecture/governance gates are green. Exact-head EGM and hosted checks remain pending before review-ready turn-in.",
+      "resume_trigger": "Fresh targeted exact-head EGM re-audit plus hosted portable-core/portable/Semantic ABI must pass; then reconcile PR #891 and leave merge/closure to human authority.",
       "preserved_branch": "codex/bamf02-a09-5-395-20261105"
     },
     {
