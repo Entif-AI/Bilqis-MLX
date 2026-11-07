@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "3899649586b105b075e92f0ee3c51e80c379b473",
-  "updated_at": "2026-11-07T05:33:13+00:00",
+  "updated_at": "2026-11-07T05:36:46+00:00",
   "exception": null,
   "items": [
     {
@@ -353,10 +353,10 @@
     },
     {
       "issue": 477,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "fdb53084dc9b41860acb8b6e94fe757f18327342",
-      "summary": "B12.4 passed fresh whole-candidate Chat on Steroids EGM round 2 at semantic head c7747196 with 0 Blockers / 0 Majors / 0 Nits after repairing the round-1 TARGET_LOCAL decay-authority Major. The earlier PR-admission park was erroneous: ADR-128 already raises the BAMF implementation-PR ceiling to twelve total and removes the per-lane PR cap. Current unified remains 38996495, so no semantic resync is required; PR turn-in is active.",
+      "pr": 892,
+      "state": "TURNED_IN",
+      "head_sha": "95b1a776ae79d03934d123845081ba71d6edf842",
+      "summary": "Ready PR #892 turns in B12.4 against reviewed unified 38996495. Fresh whole-candidate Chat on Steroids EGM round 2 passed semantic head c7747196 with 0 Blockers / 0 Majors / 0 Nits after repairing the round-1 TARGET_LOCAL decay-authority Major. Candidate-owned proof is green; representative aggregate failures reproduce on exact reviewed unified and are disclosed as inherited base debt. ADR-128 governs admission at twelve total PRs with no per-lane PR cap.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-b12-4-477-complete-20261106"
     }
