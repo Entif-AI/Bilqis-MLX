@@ -73,7 +73,10 @@ def project_realized_target(
     )
     if any(item not in current.semantic_catalog for item in required_symbols):
         raise ValueError
-    return (capability,), (symbol,)
+    reserved = ()
+    if _COPULAR_ADMISSION_TOKEN not in current.semantic_catalog:
+        _, reserved = project_realized_target(_COPULAR_ATLAS_SEMANTIC_ID, current)
+    return (capability,), (*reserved, symbol)
 
 
 def realized_source_sense_id(semantic_id):

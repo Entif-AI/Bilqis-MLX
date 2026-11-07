@@ -101,12 +101,19 @@ class EventCandidateRealizationTests(unittest.TestCase):
     def test_event_atlas_projection_and_source_identity_share_one_owner(self):
         current = self.current
         graph = self.parent_graph
-        for capability in event_frames.SOURCE_SPECS:
+        for index, capability in enumerate(event_frames.SOURCE_SPECS):
             semantic_id = event_frames.atlas_semantic_id(capability)
             added, identities = candidate_realizations.project_realized_target(
                 semantic_id, current)
             self.assertEqual(added, (capability,))
-            self.assertEqual(identities, (event_frames.SYMBOLS[capability],))
+            expected = (event_frames.SYMBOLS[capability],)
+            if index == 0:
+                from bilqis_mlx.source_adapters import copular_curriculum
+                expected = (
+                    copular_curriculum.PROJECTION_ADMISSION_TOKEN,
+                    *expected,
+                )
+            self.assertEqual(identities, expected)
             self.assertEqual(
                 candidate_realizations.realized_source_sense_id(semantic_id),
                 event_frames.SOURCE_SPECS[capability].sense_id,
@@ -115,6 +122,10 @@ class EventCandidateRealizationTests(unittest.TestCase):
                 self.frontier, current, graph, semantic_id,
                 source_root=LEGACY, source_registry=self.source_registry,
                 answer_registry=self.answer_registry,
+            )
+            self.assertEqual(
+                staged.successor.semantic_catalog[len(current.semantic_catalog):],
+                identities,
             )
             graph = candidate_realizations.admitted_candidate_graph(staged, graph)
             current = staged.successor
