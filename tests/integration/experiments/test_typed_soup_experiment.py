@@ -24,7 +24,7 @@ class TypedSoupExperimentTests(unittest.TestCase):
             "numeric_0_3": {"values": [str(i) for i in range(4)],
                             "token_ids": list(range(23, 27))},
         }
-        self.rows = [{"id": "one", "tokens": [1,2,3,4],
+        self.rows = [{"id": "one", "capability": "C.ADD", "tokens": [1,2,3,4],
                       "answer_kind": "numeric_0_3", "gold": "1",
                       "native_output": {"identity": "school.number.1", "token_id":24}}]
         d = 12
