@@ -97,7 +97,7 @@
     },
     {
       "issue": 888,
-      "pr": null,
+      "pr": 891,
       "state": "READY",
       "head_sha": "d0dc79d825f43d8ba4d732a2b668817692db67d9",
       "summary": "A09.5a now exposes three genuine post-A/B/C source-qualified event realizations through the existing candidate-realization seam: D.EVENT_OCCURRENCE, D.COMMENCEMENT and D.TERMINATION. They stage successively with prerequisite-closed one-row semantic growth, exact pinned source identities and exact restart identity; no C07 lease/admission or learner/optimizer mutation occurs. Focused realization 3/3, event authority 6/6, staging 9/9 and legacy Ithkuil realization 17/17 pass; error-control new debt and changed-file smell findings are zero.",
