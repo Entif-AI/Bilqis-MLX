@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "bd3657e170c8bdc046a7bb28524c0fb829ca7ce9",
-  "updated_at": "2026-11-07T14:43:00+00:00",
+  "updated_at": "2026-11-07T15:25:00+00:00",
   "exception": null,
   "items": [
     {
@@ -372,10 +372,10 @@
     {
       "issue": 904,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "bd3657e170c8bdc046a7bb28524c0fb829ca7ce9",
-      "summary": "B13.6 generation-zero custody active: replace test-only C05 genesis acceptance with B13-owned bootstrap binding, persist operator run_seed, and expose authenticated generation-zero lineage for C16/B13.2.",
-      "resume_trigger": null,
+      "state": "WAITING",
+      "head_sha": "1bba69e385f2666a5a185aa9114a3f64cd3f7685",
+      "summary": "B13.6 generation-zero custody is implemented and exact-head proven: production bootstrap authority replaces test-only C05 genesis acceptance, immutable run identity persists operator run_seed, and successors preserve existing C05 acceptance.",
+      "resume_trigger": "Accepted B13.1/#478 dependency receipt lands through reviewed unified; then refresh from unified, rerun only dependency-sensitive proof, spend fresh EGM at merge-readiness, and turn in #904.",
       "preserved_branch": "codex/904-b13-6-generation-zero-20261107"
     }
   ]
