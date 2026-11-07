@@ -13,9 +13,8 @@ import numpy as np
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime import mlx_checkpoint
 from bilqis_mlx.runtime.atlas_attention import AttentionScope, ccgqa
-from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    accepted_state, candidate, parent_state, shape_patch,
+    accepted_state, candidate, parent_state, publish_candidate, shape_patch,
 )
 
 
@@ -45,9 +44,9 @@ class CacheSeparationTests(unittest.TestCase):
             run = Path(temporary) / "run"
             parent = parent_state()
             with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-                first = publish_bamf_generation(run, candidate(parent))
+                first = publish_candidate(run, candidate(parent))
                 retained = accepted_state(parent)
-                second = publish_bamf_generation(
+                second = publish_candidate(
                     run, candidate(retained, 1, first["manifest_sha256"]))
 
             params, hidden, ids, valid = _attention_case()
