@@ -30,7 +30,7 @@ from bilqis_mlx.source_adapters import event_frames
 from bilqis_mlx.source_adapters.school import live_source_registry
 
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[4]
 LEGACY = ROOT / "vendor/legacy-v16"
 
 

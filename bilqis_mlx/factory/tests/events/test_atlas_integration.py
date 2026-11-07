@@ -23,7 +23,7 @@ from bilqis_mlx.factory.autonomy import (
     record_evidence,
 )
 from bilqis_mlx.factory.jit_curriculum import CurriculumDeltaProposal
-from bilqis_mlx.factory.tests._event_candidate_realization_support import (
+from bilqis_mlx.factory.tests.events.support import (
     EventCandidateRealizationFixture,
     LEGACY,
 )
