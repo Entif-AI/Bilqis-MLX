@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 from dataclasses import replace
 from pathlib import Path
+from typing import NamedTuple
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_acceptance import (
@@ -30,22 +31,45 @@ from .atlas_source_authority import SourceAuthorityRegistry
 _ISSUER = object()
 
 
+class _SourceAnchor(NamedTuple):
+    capability_id: str
+    source_row_id: str
+    source_row_sha256: str
+    source_family_id: str
+    episode_id: str
+    release_sha256: str
+    training_batch_sha256: str
+    generation_binding: str
+    training_authority_sha256: str
+
+
+def _source_anchor(anchor) -> _SourceAnchor:
+    try:
+        return _SourceAnchor(*anchor)
+    except (TypeError, ValueError):
+        _invalid("BAMF_C09_CAPABILITY_SUPPORT_SOURCE_INVALID")
+
+
 def _anchor_dependencies(anchors, policy_sha256, manifest_sha256):
     dependencies = {
         DependencyRef(DependencyKind.POLICY, "retention-policy:" + policy_sha256),
         DependencyRef(DependencyKind.RELEASE, "generation:" + manifest_sha256),
     }
     for anchor in anchors:
+        source = _source_anchor(anchor)
         dependencies.update((
-            DependencyRef(DependencyKind.SOURCE, anchor[1]),
-            DependencyRef(DependencyKind.RELEASE, "source-release:" + anchor[5]),
+            DependencyRef(DependencyKind.SOURCE, source.source_row_id),
+            DependencyRef(
+                DependencyKind.RELEASE,
+                "source-release:" + source.release_sha256,
+            ),
         ))
     return tuple(sorted(dependencies))
 
 
 def _verify_anchor_proofs(binding, student, capability_id):
     anchors = tuple(anchor for anchor in binding.source_anchors
-                    if anchor[0] == capability_id)
+                    if _source_anchor(anchor).capability_id == capability_id)
     if not anchors:
         _invalid("BAMF_C09_CAPABILITY_SUPPORT_SOURCE_MISSING")
     proofs = {proof.training_authority_sha256: proof
@@ -53,13 +77,14 @@ def _verify_anchor_proofs(binding, student, capability_id):
     if None in proofs or len(proofs) != len(student.retained_state.step_proofs):
         _invalid("BAMF_C09_CAPABILITY_SUPPORT_PROOF_DRIFT")
     for anchor in anchors:
-        proof = proofs.get(anchor[8])
+        source = _source_anchor(anchor)
+        proof = proofs.get(source.training_authority_sha256)
         if (proof is None
-                or proof.source_release_sha256 != anchor[5]
-                or proof.training_batch_sha256 != anchor[6]
-                or proof.target_capability_id != anchor[0]
-                or proof.source_family_id != anchor[3]
-                or proof.episode_id != anchor[4]):
+                or proof.source_release_sha256 != source.release_sha256
+                or proof.training_batch_sha256 != source.training_batch_sha256
+                or proof.target_capability_id != source.capability_id
+                or proof.source_family_id != source.source_family_id
+                or proof.episode_id != source.episode_id):
             _invalid("BAMF_C09_CAPABILITY_SUPPORT_PROOF_DRIFT")
     return anchors
 
@@ -88,7 +113,9 @@ def _materialized_support(binding, student, manifest_sha256, capability_id):
     support = CapabilitySupport(
         capability_id=capability_id,
         support_artifact_ids=(node.artifact_id,),
-        source_anchor_ids=tuple(sorted({anchor[1] for anchor in anchors})),
+        source_anchor_ids=tuple(sorted({
+            _source_anchor(anchor).source_row_id for anchor in anchors
+        })),
         retained_generation_sha256=manifest_sha256,
         observation_ids=tuple(sorted((
             "acceptance:" + binding.digest,
