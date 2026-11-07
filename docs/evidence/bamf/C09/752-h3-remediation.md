@@ -331,3 +331,35 @@ review state.
 This proves the new Lane-C typed-event ledger, live hold and cold replay behavior. It
 does **not** prove the still-missing upstream production producer for real time-sensitive
 task/frontier/policy changes, so Major 3 remains open at that authority boundary.
+
+### Current-unified reconciliation checkpoint
+
+The remediation branch was refreshed non-destructively against current reviewed unified
+`5f8f3d4b42cc4656020e4427c7d8e822825a36f9` by merge commit
+`69756136b03df34d689feaa92523cc6ef4ce3fe5`. The merge preserves the Lane-C typed
+A13.3 invalidation consumer and also consumes the newer reviewed C12 package-import and
+A09.5 event work from unified.
+
+The newer unified tree does not close the remaining Major 3 authority boundary. A
+non-test search finds `transition_context()` consumed only by C09's accepted runtime
+consumer; no Factory or source-adapter production owner supplies a finite
+`effective_until` boundary. The repository therefore still has no source/A13 producer
+that can authoritatively cause a real retained artifact's time-sensitive context to
+cross a validity boundary. Event timestamps introduced elsewhere are not silently
+reinterpreted as rights expiry.
+
+Merge-surface verification:
+
+- merge-base with current unified: exact `5f8f3d4b42cc4656020e4427c7d8e822825a36f9`;
+- `git diff --check`: PASS;
+- BAMF contract verifier: 43/43 PASS;
+- BAMF flow-control validation: PASS; tests 15/15 PASS;
+- accepted-runtime semantic implementation remains `c8c9675829e5d83a138fc33d8ca3d3dec05a1f12`,
+  whose qualified M3 proof remains 11/11 focused plus 52 passes and 8 subtests;
+- the local default Python environment does not provide pytest, so that qualified M3
+  proof was not falsely represented as freshly rerun during this merge-only checkpoint.
+
+Truthful disposition remains unchanged: H3 is historical FAIL; six findings are repaired;
+Major 3 remains open upstream on production temporal-authority production. No H4, final
+PR, merge of #752 into unified/main, issue closure, neural mutation, trainer run, or
+Prometheus use is authorized or implied.
