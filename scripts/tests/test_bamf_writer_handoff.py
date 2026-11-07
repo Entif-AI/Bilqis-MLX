@@ -56,6 +56,16 @@ class WriterHandoffTests(WriterHandoffFixture):
         with self.assertRaisesRegex(HandoffError, "worktree_status"):
             verify(self.repo, payload)
 
+    def test_local_only_leading_whitespace_path_is_captured_exactly(self) -> None:
+        self.run_git("switch", "-c", "local-only")
+        path = self.repo / " leading"
+        path.write_text("first\n")
+        payload = emit(self.repo, 829, "epoch-829")
+        self.assertEqual("UNVERIFIED", verify(self.repo, payload)["status"])
+        path.write_text("second\n")
+        with self.assertRaisesRegex(HandoffError, "worktree_status"):
+            verify(self.repo, payload)
+
     def test_adding_upstream_to_local_snapshot_requires_reconciliation(self) -> None:
         self.run_git("switch", "-c", "local-only")
         payload = emit(self.repo, 829, "epoch-829")

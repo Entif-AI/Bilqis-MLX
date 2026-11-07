@@ -30,7 +30,7 @@ def git(root: Path, *args: str) -> str:
     )
     if result.returncode:
         raise HandoffError(f"git {' '.join(args)} failed: {result.stderr.strip()}")
-    return result.stdout.strip()
+    return result.stdout if "-z" in args else result.stdout.strip()
 
 
 def _hash_part(digest, payload: bytes) -> None:
