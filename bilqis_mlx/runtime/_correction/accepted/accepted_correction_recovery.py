@@ -80,7 +80,7 @@ def recover_transaction(run_dir: Path, manifest_sha256: str) -> None:
             _invalid("BAMF_C09_CORRECTION_HISTORY_COMMITMENT_DRIFT")
         clear_transaction(run_dir, manifest_sha256)
         return
-    if suffix == record_line:
+    if suffix.startswith(record_line):
         if not (committed_is_prior or committed_is_target):
             _invalid("BAMF_C09_CORRECTION_HISTORY_COMMITMENT_DRIFT")
         full = records_from_bytes(raw, manifest_sha256)

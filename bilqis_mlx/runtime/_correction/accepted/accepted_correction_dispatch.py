@@ -87,6 +87,7 @@ class AcceptedCorrectionRuntime:
             elif target.owner is not owner:
                 _invalid("BAMF_C09_ACCEPTED_TARGET_IDENTITY_CONFLICT")
             setattr(owner, "_accepted_correction_target", target)
+            self._restore_branches(target)
             target.seen.update(seen_event_ids)
             self._replay(target)
             self._retry_deferred(target)
@@ -131,12 +132,24 @@ class AcceptedCorrectionRuntime:
 
         return AcceptedCorrectionTarget(weakref.ref(owner, remove_dead), apply)
 
+    def _restore_branches(self, target: AcceptedCorrectionTarget) -> None:
+        for record in read_records(self.run_dir, self.manifest_sha256):
+            if record["event"] != CORRECTION_EVENT:
+                continue
+            if self.registry is None:
+                _invalid("BAMF_C09_CORRECTION_AUTHORITY_REQUIRED")
+            event = event_from_record(record["correction"])
+            self.registry.verify_correction(event)
+            target.record_correction_branch(event, self.registry)
+
     def _replay(self, target: AcceptedCorrectionTarget) -> None:
         for record in read_records(self.run_dir, self.manifest_sha256):
             event_id = record["event_id"]
             if event_id in target.seen:
                 continue
             if record["event"] == CORRECTION_EVENT:
+                if self.registry is None:
+                    _invalid("BAMF_C09_CORRECTION_AUTHORITY_REQUIRED")
                 event = event_from_record(record["correction"])
                 self.registry.verify_correction(event)
                 target.accept_correction(event, self.registry)

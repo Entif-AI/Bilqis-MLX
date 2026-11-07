@@ -56,6 +56,24 @@ def _accepted_materialization(
     return binding, student
 
 
+def _latest_source_qualified_materialization(
+    run_dir: Path, current_manifest_sha256: str, capability_id: str,
+):
+    """Resolve the newest accepted ancestor that actually qualified this capability."""
+    from bilqis_mlx.runtime.accepted_correction_ledger import _manifest_lineage
+
+    for manifest_sha256 in reversed(_manifest_lineage(
+            Path(run_dir), current_manifest_sha256)):
+        binding = _accepted_binding(run_dir, manifest_sha256)
+        if (binding.schema_version != ACCEPTANCE_SCHEMA
+                or not any(anchor[0] == capability_id
+                           for anchor in binding.source_anchors)):
+            continue
+        binding, student = _accepted_materialization(run_dir, manifest_sha256)
+        return manifest_sha256, binding, student
+    _invalid("BAMF_C09_CAPABILITY_SUPPORT_SOURCE_MISSING")
+
+
 def load_current_support(run_dir: Path, capability_id: str):
     from bilqis_mlx.runtime.bamf_bundle.publication import (
         _live_bundle_manifest, _pointer_lock, _read_pointer,
@@ -68,10 +86,11 @@ def load_current_support(run_dir: Path, capability_id: str):
             _invalid("BAMF_C09_CAPABILITY_SUPPORT_GENERATION_MISSING")
         manifest_sha256 = pointer["manifest_sha256"]
         _live_bundle_manifest(run_dir, pointer)
-    binding, student = _accepted_materialization(
-        run_dir, manifest_sha256, pointer.get("acceptance_sha256"))
+    source_manifest_sha256, binding, student = (
+        _latest_source_qualified_materialization(
+            run_dir, manifest_sha256, capability_id))
     support, node, generation_bindings = materialized_support(
-        binding, student, manifest_sha256, capability_id)
+        binding, student, source_manifest_sha256, capability_id)
     return manifest_sha256, support, node, generation_bindings
 
 
@@ -79,16 +98,23 @@ def accepted_support_census(
     run_dir: Path, manifest_sha256: str,
 ) -> tuple[RequalificationLedger, tuple[object, ...]]:
     """Materialize all v3 learned support without registering physical owners."""
-    binding = _accepted_binding(run_dir, manifest_sha256)
-    if binding.schema_version != ACCEPTANCE_SCHEMA or not binding.source_anchors:
-        return RequalificationLedger(()), ()
-    binding, student = _accepted_materialization(run_dir, manifest_sha256)
-    capabilities = tuple(sorted({anchor[0] for anchor in binding.source_anchors}))
+    from bilqis_mlx.runtime.accepted_correction_ledger import _manifest_lineage
+
+    materializations = {}
+    for lineage_manifest in reversed(_manifest_lineage(run_dir, manifest_sha256)):
+        binding = _accepted_binding(run_dir, lineage_manifest)
+        if binding.schema_version != ACCEPTANCE_SCHEMA or not binding.source_anchors:
+            continue
+        binding, student = _accepted_materialization(run_dir, lineage_manifest)
+        for capability_id in sorted({anchor[0] for anchor in binding.source_anchors}):
+            materializations.setdefault(
+                capability_id, (lineage_manifest, binding, student))
     supports = []
     nodes = []
-    for capability_id in capabilities:
+    for capability_id, (source_manifest, binding, student) in sorted(
+            materializations.items()):
         support, node, _bindings = materialized_support(
-            binding, student, manifest_sha256, capability_id)
+            binding, student, source_manifest, capability_id)
         supports.append(support)
         nodes.append(node)
     return RequalificationLedger(tuple(supports)), tuple(nodes)

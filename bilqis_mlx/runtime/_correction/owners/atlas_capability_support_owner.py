@@ -104,7 +104,7 @@ class CapabilitySupportArtifactOwner:
             write_journal(
                 self._journal_path,
                 capability_id=self.capability_id,
-                manifest_sha256=self.support.retained_generation_sha256,
+                manifest_sha256=self._accepted_manifest_sha256,
                 artifact_id=self.current_node.artifact_id,
                 state="HELD", event=event, ledger=self.ledger)
         return self._queue
@@ -134,7 +134,7 @@ class CapabilitySupportArtifactOwner:
                 write_journal(
                     self._journal_path,
                     capability_id=self.capability_id,
-                    manifest_sha256=self.support.retained_generation_sha256,
+                    manifest_sha256=self._accepted_manifest_sha256,
                     artifact_id=self.current_node.artifact_id,
                     state="REQUALIFICATION_REQUIRED", event=self._queue.event,
                     transition=transition, ledger=self.ledger)
@@ -143,14 +143,17 @@ class CapabilitySupportArtifactOwner:
             write_journal(
                 self._journal_path,
                 capability_id=self.capability_id,
-                manifest_sha256=self.support.retained_generation_sha256,
+                manifest_sha256=self._accepted_manifest_sha256,
                 artifact_id=self.current_node.artifact_id,
                 state="CLEARED", event=self._queue.event,
                 transition=transition, ledger=self.ledger)
         return progress
 
 
-def _issue_owner(support, node, generation_bindings=(), journal=None):
+def _issue_owner(
+    support, node, generation_bindings=(), journal=None,
+    accepted_manifest_sha256=None,
+):
     owner = object.__new__(CapabilitySupportArtifactOwner)
     owner._capability_id = support.capability_id
     owner._ledger = RequalificationLedger((support,))
@@ -158,6 +161,9 @@ def _issue_owner(support, node, generation_bindings=(), journal=None):
     owner._queue = None
     owner._generation_bindings = tuple(generation_bindings)
     owner._journal_path = journal
+    owner._accepted_manifest_sha256 = (
+        support.retained_generation_sha256
+        if accepted_manifest_sha256 is None else accepted_manifest_sha256)
     owner._issuance = _ISSUER
     owner.__post_init__()
     return owner
@@ -172,7 +178,9 @@ def load_capability_support_owner(
     manifest_sha256, support, node, generation_bindings = load_current_support(
         run_dir, capability_id)
     hold_path = journal_path(run_dir, manifest_sha256, capability_id)
-    owner = _issue_owner(support, node, generation_bindings, hold_path)
+    owner = _issue_owner(
+        support, node, generation_bindings, hold_path,
+        accepted_manifest_sha256=manifest_sha256)
     hold = read_journal(
         hold_path,
         capability_id=capability_id,

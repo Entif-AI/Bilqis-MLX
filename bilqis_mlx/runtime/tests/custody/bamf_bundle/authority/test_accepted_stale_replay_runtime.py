@@ -18,7 +18,8 @@ from bilqis_mlx.runtime.atlas_capability_support_owner import (
 )
 from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import (
-    accept_and_publish, bind_accepted_execution_cache,
+    accept_and_publish, bind_accepted_execution_cache, derive_successor_bundle,
+    load_accepted_generation,
 )
 from bilqis_mlx.runtime.cognitive_solver import QualifiedComposition, SolveContext
 from bilqis_mlx.runtime.tests.capability.factory.solver_helpers import _fixture
@@ -277,6 +278,56 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
                 bind_accepted_execution_cache(run).accepted_manifest_sha256,
                 accepted_manifest,
             )
+
+    def test_fresh_source_qualified_successor_releases_ancestor_support_fault(self):
+        run = self.root / "requalified-successor-run"
+        first_manifest = self._publish_source_qualified_support(run)
+        correction, remediation, stale, _later = self._late_support_evidence(
+            first_manifest)
+        with shape_patch():
+            record_accepted_correction(run, correction, AUTHORITY)
+            record_accepted_remediation(run, remediation, AUTHORITY)
+            _event_id, faults = record_accepted_derived_claim(
+                run, stale, AUTHORITY)
+        self.assertEqual(len(faults), 1)
+
+        with shape_patch():
+            accepted_parent = load_accepted_generation(run)
+        parent, transaction, retained, _authority = _source_qualified_state(
+            accepted_parent.retained_state,
+            capability=TARGET,
+            source_row="source:capability-support:requalified",
+            source_family="source-family:capability-support:requalified",
+            episode="episode:capability-support:requalified",
+            generation_binding="7" * 64,
+        )
+        successor = derive_successor_bundle(
+            accepted_parent,
+            retained,
+            parent_manifest_sha256=first_manifest,
+            delivery_events=({"event": "FIXTURE_REQUALIFIED_SUCCESSOR"},),
+        )
+        decision = retention_decision(parent=parent, retained=retained)
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            second = accept_and_publish(
+                run, successor, retained, decision=decision,
+                feature_sha256=successor.extents.factor_map_digest,
+                training_authorities=transaction.training_authorities,
+            )
+
+        _RUNTIME_OWNER.clear()
+        with shape_patch():
+            owner = load_capability_support_owner(run, TARGET, AUTHORITY)
+        self.assertEqual(
+            owner.support.retained_generation_sha256,
+            second["manifest_sha256"],
+        )
+        self.assertEqual(owner.support.status, "QUALIFIED")
+        self.assertEqual(owner.require(TARGET), owner.support)
+        self.assertNotIn(
+            "capability-support:" + TARGET,
+            owner._accepted_correction_target.process_fault_holds,
+        )
 
 
 if __name__ == "__main__":

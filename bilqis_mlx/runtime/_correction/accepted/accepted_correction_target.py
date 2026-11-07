@@ -55,13 +55,7 @@ class AcceptedCorrectionTarget:
     def accept_correction(
         self, event: CorrectionEvent, registry: SourceAuthorityRegistry,
     ) -> None:
-        branches = self.branches.get(event.dependency)
-        if branches is None:
-            branches = CorrectionBranches(event.dependency, ())
-        self.branches[event.dependency] = add_correction(
-            branches, event, authority_registry=registry,
-            supersedes_event_ids=event.supersedes_event_ids,
-        )
+        self.record_correction_branch(event, registry)
         superseded = set(event.supersedes_event_ids)
         if superseded:
             self.pending[:] = [
@@ -77,6 +71,18 @@ class AcceptedCorrectionTarget:
         else:
             self._stage(event)
         self._sync_owner_pending()
+
+    def record_correction_branch(
+        self, event: CorrectionEvent, registry: SourceAuthorityRegistry,
+    ) -> None:
+        """Restore authenticated branch ancestry without re-actuating the owner."""
+        branches = self.branches.get(event.dependency)
+        if branches is None:
+            branches = CorrectionBranches(event.dependency, ())
+        self.branches[event.dependency] = add_correction(
+            branches, event, authority_registry=registry,
+            supersedes_event_ids=event.supersedes_event_ids,
+        )
 
     def activate_pending(self, registry: SourceAuthorityRegistry) -> bool:
         if self._active_event_id() is not None:

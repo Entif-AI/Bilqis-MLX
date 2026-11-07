@@ -21,8 +21,10 @@ from bilqis_mlx.learning.source_atoms import SourceAtomRow
 from bilqis_mlx.runtime.atlas_capability_support_owner import (
     CapabilitySupportArtifactOwner, load_capability_support_owner,
 )
+from bilqis_mlx.runtime.capability_support_loading import accepted_support_census
 from bilqis_mlx.runtime.accepted_corrections import (
-    _RUNTIME_OWNER, record_accepted_correction, record_accepted_revalidation,
+    _RUNTIME_OWNER, record_accepted_correction,
+    record_accepted_revalidation,
 )
 from bilqis_mlx.runtime.akasha_outbox import pending_events
 from bilqis_mlx.runtime.atlas_revalidation import apply_capability_support_correction
@@ -32,7 +34,9 @@ from bilqis_mlx.runtime.atlas_training_contracts import (
 )
 from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, ModelTopologySpecV2
 from bilqis_mlx.runtime.source_execution import source_content_digest
-from bilqis_mlx.runtime.bamf_bundle.admission import accept_and_publish
+from bilqis_mlx.runtime.bamf_bundle.admission import (
+    accept_and_publish, derive_successor_bundle, load_accepted_generation,
+)
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     HP, NAME, candidate, parent_state, retention_decision, shape_patch,
 )
@@ -51,15 +55,19 @@ SOURCE_RELEASE = "4" * 64
 GENERATION = "5" * 64
 
 
-def _training_authority():
-    row = {"id": SOURCE_ROW, "capability": TARGET}
+def _training_authority(
+    *, capability=TARGET, source_row=SOURCE_ROW,
+    source_family=SOURCE_FAMILY, episode=EPISODE,
+    generation_binding=GENERATION,
+):
+    row = {"id": source_row, "capability": capability}
     provenance = BamfDeliveryProvenance(
-        SOURCE_ROW, source_content_digest((row,)), "fixture-source", TARGET,
+        source_row, source_content_digest((row,)), "fixture-source", capability,
         None, (), 1, 1, None, 0,
-        SOURCE_FAMILY, EPISODE)
+        source_family, episode)
     training_row = BamfTrainingRow(None, None, None, provenance)
     batch = _issue_training_batch(
-        SOURCE_RELEASE, GENERATION, content_digest((row,)), TARGET,
+        SOURCE_RELEASE, generation_binding, content_digest((row,)), capability,
         (training_row,))
     source = SourceAtomRow(
         AtlasArtifactSelection(
@@ -68,10 +76,10 @@ def _training_authority():
     return issue_training_authority(batch, source, provenance)
 
 
-def _source_qualified_state():
-    parent = parent_state()
+def _source_qualified_state(parent=None, **authority_kwargs):
+    parent = parent_state() if parent is None else parent
     transaction = begin_candidate(parent)
-    authority = _training_authority()
+    authority = _training_authority(**authority_kwargs)
     spec = ModelTopologySpecV2()
     extents = GenerationExtents(
         1, 1, "a" * 64, parent.allocations.manifest.digest, "c" * 64)
@@ -157,6 +165,54 @@ class CapabilitySupportOwnerTests(unittest.TestCase):
             owner.support)
         with self.assertRaises(BilqisError):
             CapabilitySupportArtifactOwner()
+
+    def test_retained_capability_provenance_survives_unrelated_successor_acceptance(self):
+        first, _authority_a = self.publish_support()
+        first_manifest = first["manifest_sha256"]
+        with shape_patch():
+            accepted_parent = load_accepted_generation(self.run)
+        capability_b = "capability:unrelated-b"
+        source_b = "source:capability-support:row-b"
+        parent_state_b, transaction_b, retained_b, _authority_b = _source_qualified_state(
+            accepted_parent.retained_state,
+            capability=capability_b,
+            source_row=source_b,
+            source_family="source-family:capability-support-b",
+            episode="episode:capability-support-b",
+            generation_binding="6" * 64,
+        )
+        successor = derive_successor_bundle(
+            accepted_parent,
+            retained_b,
+            parent_manifest_sha256=first_manifest,
+            delivery_events=({"event": "FIXTURE_SUCCESSOR_B"},),
+        )
+        decision = retention_decision(parent=parent_state_b, retained=retained_b)
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            second = accept_and_publish(
+                self.run, successor, retained_b, decision=decision,
+                feature_sha256=successor.extents.factor_map_digest,
+                training_authorities=transaction_b.training_authorities,
+            )
+
+        with shape_patch():
+            ledger, _nodes = accepted_support_census(
+                self.run, second["manifest_sha256"])
+        self.assertEqual(
+            tuple(item.capability_id for item in ledger.capabilities),
+            (TARGET, capability_b),
+        )
+        inherited = self.load_support(AUTHORITY)
+        self.assertEqual(inherited.support.source_anchor_ids, (SOURCE_ROW,))
+        self.assertEqual(
+            inherited.support.retained_generation_sha256,
+            first_manifest,
+        )
+        correction = _event(_ref(DependencyKind.SOURCE, SOURCE_ROW))
+        self.assertTrue(apply_capability_support_correction(
+            inherited, correction, AUTHORITY))
+        with self.assertRaises(BilqisError):
+            inherited.require(TARGET)
 
     def test_source_correction_holds_read_equal_revalidation_releases_changed_requires_requalification(self):
         self.publish_support()

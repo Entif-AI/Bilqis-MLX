@@ -3,7 +3,9 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from .accepted_correction_ledger import accepted_corrections, append_record, read_records
+from .accepted_correction_ledger import (
+    _manifest_lineage, accepted_corrections, append_record, read_records,
+)
 from .accepted_stale_replay_ledger import (
     DERIVED_CLAIM_EVENT, PROCESS_FAULT_EVENT, REMEDIATION_EVENT,
     derived_claim_from_record, process_fault_from_record, process_fault_record,
@@ -94,16 +96,44 @@ def _registered_requalification(
     )
 
 
-def _install_fault(targets, fault, requalification=None) -> None:
+def _current_support_supersedes_fault(
+    owner, requalification, lineage: tuple[str, ...],
+) -> bool:
+    capability_id = getattr(owner, "capability_id", None)
+    if capability_id is None or requalification is None:
+        return False
+    if capability_id not in requalification.affected_capability_ids:
+        return False
+    current_support = getattr(owner, "support", None)
+    if current_support is None:
+        return False
+    fault_support = requalification.ledger.capability(capability_id)
+    current_generation = current_support.retained_generation_sha256
+    fault_generation = fault_support.retained_generation_sha256
+    if current_generation == fault_generation:
+        return False
+    order = {manifest: index for index, manifest in enumerate(lineage)}
+    if current_generation not in order or fault_generation not in order:
+        _invalid("BAMF_C09_PROCESS_FAULT_REQUALIFICATION_DRIFT")
+    if order[current_generation] > order[fault_generation]:
+        return True
+    _invalid("BAMF_C09_PROCESS_FAULT_REQUALIFICATION_DRIFT")
+
+
+def _install_fault(
+    targets, fault, requalification=None, *, lineage: tuple[str, ...] = (),
+) -> None:
     held = set(fault.held_artifact_ids)
     for target in targets:
         owner = target.owner
         if owner is None:
             continue
+        support_superseded = _current_support_supersedes_fault(
+            owner, requalification, lineage)
         owned = {
             node.artifact_id for node in getattr(owner, "index").nodes
         }.intersection(held)
-        if owned:
+        if owned and not support_superseded:
             target.process_fault_holds.update(owned)
             setattr(
                 owner, "_accepted_process_fault_holds",
@@ -111,7 +141,8 @@ def _install_fault(targets, fault, requalification=None) -> None:
             )
         capability_id = getattr(owner, "capability_id", None)
         if (requalification is not None
-                and capability_id in requalification.affected_capability_ids):
+                and capability_id in requalification.affected_capability_ids
+                and not support_superseded):
             installer = getattr(owner, "install_requalification", None)
             if not callable(installer):
                 _invalid("BAMF_C09_PROCESS_FAULT_REQUALIFICATION_DRIFT")
@@ -123,6 +154,7 @@ def replay_persisted_faults(retained, records=None) -> tuple[object, ...]:
     records = (read_records(retained.run_dir, retained.manifest_sha256)
                if records is None else records)
     targets = tuple(retained.targets.values())
+    lineage = _manifest_lineage(retained.run_dir, retained.manifest_sha256)
     faults = []
     for record in records:
         if record["event"] != PROCESS_FAULT_EVENT:
@@ -131,6 +163,7 @@ def replay_persisted_faults(retained, records=None) -> tuple[object, ...]:
         _install_fault(
             targets, fault,
             process_fault_requalification_from_record(record),
+            lineage=lineage,
         )
         faults.append(fault)
     return tuple(faults)
@@ -166,6 +199,7 @@ def replay_stale_evidence(retained) -> tuple[object, ...]:
     records = read_records(retained.run_dir, retained.manifest_sha256)
     targets = tuple(retained.targets.values())
     replay_persisted_faults(retained, records)
+    lineage = _manifest_lineage(retained.run_dir, retained.manifest_sha256)
 
     census, census_nodes = _support_census(retained)
     index = _registered_index(targets, census_nodes)
@@ -204,7 +238,8 @@ def replay_stale_evidence(retained) -> tuple[object, ...]:
             record = process_fault_record(
                 retained.manifest_sha256, result.fault, result.requalification)
             append_record(retained.run_dir, retained.manifest_sha256, record)
-            _install_fault(targets, result.fault, result.requalification)
+            _install_fault(
+                targets, result.fault, result.requalification, lineage=lineage)
             _flush_c10_intents(retained, result.requalification.ledger, corrections)
             existing.add(claim.claim_id)
             results.append(result)

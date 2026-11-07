@@ -148,6 +148,15 @@ def _packed_frame_node(row: CompiledFrameBatch, packed) -> ArtifactNode:
             DependencyKind.RIGHTS,
             "rights:" + contract_digest((row.policy_version[2], row.policy_version[3]))),
     ))
+    if row.context_digest is not None:
+        # The approved context digest commits the real TaskScope and the exact
+        # SourceGrant frontier used by context eligibility, including observed
+        # and effective-time/expiry boundaries. Project it explicitly into C09
+        # so time-dependent validity is a first-class reverse dependency.
+        dependencies.add(DependencyRef(
+            DependencyKind.TIME,
+            "time:asof:context:" + row.context_digest,
+        ))
     impact, exigency = owner_priority(ArtifactKind.PACKED_FRAME)
     return ArtifactNode(
         artifact_id="frame:" + sidecar.occurrence_id,

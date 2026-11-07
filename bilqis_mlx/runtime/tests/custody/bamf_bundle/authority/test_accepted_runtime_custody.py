@@ -27,13 +27,14 @@ from bilqis_mlx.runtime.bamf_bundle import admission, publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     admit_candidate_step, bind_accepted_cache_authority,
     bind_accepted_correction_authority, bind_accepted_execution_cache,
+    derive_successor_bundle, load_accepted_generation,
 )
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
     AcceptedExecutionCache, bind_motif_artifact_owner,
     require_accepted_execution_cache,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, candidate, parent_state, shape_patch,
+    acceptance, candidate, next_accepted_step, parent_state, shape_patch,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
     AUTHORITY, _event, _sign_event,
@@ -195,6 +196,53 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
         self.assertEqual(
             tuple(item["event_id"] for item in recovered),
             (first_record["event_id"], second_record["event_id"]),
+        )
+
+    def test_ancestor_commit_crash_recovers_after_successor_append(self):
+        cache, _compiled, owner = self._motif_fixture()
+        first = _event(owner.source_dependencies[0])
+        second = _sign_event(replace(
+            first,
+            event_id="correction:synthetic:ancestor-crash-2",
+            source_receipt_sha256="e" * 64,
+            new_evidence_sha256="d" * 64,
+        ))
+        successor_event = _sign_event(replace(
+            first,
+            event_id="correction:synthetic:successor-3",
+            source_receipt_sha256="c" * 64,
+            new_evidence_sha256="b" * 64,
+        ))
+        ancestor_manifest = cache.accepted_manifest_sha256
+        first_record = correction_record(ancestor_manifest, first)
+        second_record = correction_record(ancestor_manifest, second)
+        append_record(self.run, ancestor_manifest, first_record)
+
+        with patch(
+                "bilqis_mlx.runtime.accepted_correction_storage.commit_history",
+                side_effect=RuntimeError("simulated ancestor crash after ledger fsync")):
+            with self.assertRaisesRegex(RuntimeError, "simulated ancestor crash"):
+                append_record(self.run, ancestor_manifest, second_record)
+
+        with shape_patch():
+            parent = load_accepted_generation(self.run)
+        retained = next_accepted_step(parent.retained_state)
+        successor = derive_successor_bundle(
+            parent,
+            retained,
+            parent_manifest_sha256=ancestor_manifest,
+            delivery_events=({"event": "FIXTURE_SUCCESSOR"},),
+        )
+        published = self.publish(successor)
+        successor_manifest = published["manifest_sha256"]
+        successor_record = correction_record(successor_manifest, successor_event)
+        append_record(self.run, successor_manifest, successor_record)
+
+        recovered = read_records(self.run, successor_manifest)
+        self.assertEqual(
+            tuple(item["event_id"] for item in recovered),
+            (first_record["event_id"], second_record["event_id"],
+             successor_record["event_id"]),
         )
 
     def test_concurrent_process_writers_commit_one_exact_history(self):

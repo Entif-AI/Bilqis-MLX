@@ -266,3 +266,27 @@ class CapabilityAuthorityTests(unittest.TestCase):
             )
         loader.assert_called_once_with(Path("/accepted-run"), "target", None)
         self.assertEqual(gate.status, "ELIGIBLE")
+
+    def test_accepted_progression_fails_closed_when_support_replay_lacks_authority(self):
+        release, checkpoint, admission = _release()
+        solver, target = _evidence(release, "target")
+        replay = ReplayBinding(
+            solver, GENERATION, checkpoint, "C",
+            tuple(sorted(set(target.assessment.solver_contracts))),
+            lambda generation, pointer:
+                generation == GENERATION and pointer == checkpoint)
+        with patch(
+            "bilqis_mlx.runtime.atlas_capability_support_owner."
+            "load_capability_support_owner",
+            side_effect=AttributeError("missing correction authority"),
+        ):
+            gate = evaluate_accepted_progression_authority(
+                Path("/accepted-run"), release, "target", target, (), replay,
+                admission=admission, semantic_graph_sha256=GRAPH,
+                prerequisite_thresholds=(),
+                source_rights=_authority(AuthorityKind.SOURCE_RIGHTS),
+                promotion_policy=_authority(AuthorityKind.PROMOTION_POLICY),
+                admission_lease=_authority(AuthorityKind.ADMISSION_LEASE),
+            )
+        self.assertEqual(gate.status, "HELD")
+        self.assertEqual(gate.reason, "CURRENT_CAPABILITY_SUPPORT_REQUIRED")
