@@ -343,12 +343,22 @@
     },
     {
       "issue": 476,
-      "pr": 886,
+      "pr": null,
       "state": "TURNED_IN",
-      "head_sha": "760b3a75417c95269636f75c3e832f20bfeb665d",
-      "summary": "Ready PR #886; fresh Chat on Steroids Goldfish review PASS with 0 Blocker / 0 Major across codebase-details, comprehension and adversarial reviewers. B12.3 capability-gated historical scalar migration, accepted global optimizer steps, preclip participation masking, and separate retained-candidate row ages are verified; hosted and human merge review remain pending.",
+      "head_sha": "a5c25eb140f1af05ad2b270ed38f7a2b5af42230",
+      "summary": "B12.3 passed fresh Chat on Steroids Goldfish review and human merge through PR #886; reviewed unified consumed the exact candidate as merge 3899649586b105b075e92f0ee3c51e80c379b473 and issue #476 is closed completed.",
       "resume_trigger": null,
-      "preserved_branch": "codex/bamf02-b12-3-476-complete-20261106"
+      "preserved_branch": "codex/bamf02-b12-3-476-complete-20261106",
+      "merged_pr": 886
+    },
+    {
+      "issue": 477,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "3899649586b105b075e92f0ee3c51e80c379b473",
+      "summary": "B12.4 active from reviewed unified after direct prerequisite #476/PR #886 was human-merged. Reconciling the B01 normative tensor ledger, module prefix ownership and exact optimizer constructor tree.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b12-4-477-complete-20261106"
     }
   ]
 }

@@ -34,7 +34,7 @@ from bilqis_mlx.runtime.model_topology_v2 import (
 NAME = "identity.bank.0"
 RELEASE = "b" * 64
 IMPLEMENTATION = "e" * 64
-DECLARED = (ParameterSpec(NAME, (2, 2), Initializer.MATRIX,
+DECLARED = (ParameterSpec(NAME, (2, 2), Initializer.EMBEDDING,
                           ParameterGroup.IDENTITY_ROW_AGE, True),)
 HP = AdamWHyperparameters(.001, (.9, .95), 1e-8, .01)
 FIXTURE_PARENT_MANIFEST = "6" * 64

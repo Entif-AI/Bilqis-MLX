@@ -20,7 +20,9 @@ from bilqis_mlx.learning.atlas_plasticity import (
 )
 from bilqis_mlx.runtime.atlas_candidate_step import production_candidate_step
 from bilqis_mlx.runtime.atlas_model import BamfGradientExecution
-from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree
+from bilqis_mlx.runtime.atlas_optimizer import (
+    AdamWHyperparameters, AdamWStateTree, reconcile_b01_optimizer_manifest,
+)
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, Initializer, ModelTopologySpecV2, ParameterGroup,
@@ -30,10 +32,12 @@ from bilqis_mlx.runtime.model_topology_v2 import (
 BANK = "identity.bank.0"
 RELEASE = "b" * 64
 DECLARED = (ParameterSpec(
-    BANK, (2, 2), Initializer.MATRIX, ParameterGroup.IDENTITY_ROW_AGE, True),)
+    BANK, (2, 2), Initializer.EMBEDDING, ParameterGroup.IDENTITY_ROW_AGE, True),)
 CENSUS_SHAPE = (
     "bilqis_mlx.learning.atlas_participation_census.expected_bamf_shapes",
     "bilqis_mlx.learning._retention.atlas_participation_census.expected_bamf_shapes",
+    "bilqis_mlx.runtime.model_topology_v2.expected_bamf_shapes",
+    "bilqis_mlx.runtime.topology_v2.validation.expected_bamf_shapes",
 )
 DIGEST_SHAPE = (
     "bilqis_mlx.runtime.topology_v2.validation.expected_bamf_shapes",
@@ -69,7 +73,9 @@ class ProductionCandidateStepTests(unittest.TestCase):
 
     def step(self, candidate, *, loss_bearing_target=False, eligibility=None):
         with patch(CENSUS_SHAPE[0], return_value=DECLARED), \
-                patch(CENSUS_SHAPE[1], return_value=DECLARED):
+                patch(CENSUS_SHAPE[1], return_value=DECLARED), \
+                patch(CENSUS_SHAPE[2], return_value=DECLARED), \
+                patch(CENSUS_SHAPE[3], return_value=DECLARED):
             return production_candidate_step(
                 candidate, {BANK: mx.array([[3., 4.], [0., 0.]], dtype=mx.float32)},
                 loss_bearing_target=loss_bearing_target,
@@ -82,12 +88,13 @@ class ProductionCandidateStepTests(unittest.TestCase):
                 parent_optimizer_step=self.parent.optimizer_step,
                 topology_digest=self.parent.custody.topology_digest,
                 candidate_step_ordinal=1,
-                teacher_hparams=self.hp, decay={BANK: True}, max_norm=1.)
+                teacher_hparams=self.hp, max_norm=1.)
 
     def gradient_execution(self, manifest_sha256):
         patches = (
             patch(DIGEST_SHAPE[0], return_value=DECLARED),
             patch(DIGEST_SHAPE[1], return_value=DECLARED),
+            patch(CENSUS_SHAPE[2], return_value=DECLARED),
         )
         for item in patches:
             item.start()
@@ -114,6 +121,56 @@ class ProductionCandidateStepTests(unittest.TestCase):
                 "motif_reads", "executed_parameter_names", "visible_identity_rows",
                 "feedback_identity_rows", "local_slot_rows", "active_admitted"):
             self.assertNotIn(forbidden, parameters)
+
+    def test_decay_manifest_is_derived_from_b01_not_the_caller(self):
+        parameters = set(inspect.signature(production_candidate_step).parameters)
+        self.assertNotIn("decay", parameters)
+        candidate = begin_candidate(self.parent)
+        marker = object()
+        with patch(CENSUS_SHAPE[0], return_value=DECLARED), \
+                patch(CENSUS_SHAPE[1], return_value=DECLARED), \
+                patch(CENSUS_SHAPE[2], return_value=DECLARED), \
+                patch(CENSUS_SHAPE[3], return_value=DECLARED), \
+                patch(
+                    "bilqis_mlx.runtime.atlas_candidate_step.candidate_step",
+                    return_value=marker,
+                ) as apply_step:
+            result = production_candidate_step(
+                candidate,
+                {BANK: mx.zeros((2, 2), dtype=mx.float32)},
+                loss_bearing_target=False,
+                group_eligible=self.eligibility(),
+                spec=ModelTopologySpecV2(), extents=self.extents,
+                run_id=self.parent.custody.run_id,
+                generation=self.parent.custody.generation + 1,
+                parent_manifest_sha256=self.parent.custody.manifest_sha256,
+                parent_candidate_identity_sha256=candidate_identity_digest(self.parent),
+                parent_optimizer_step=self.parent.optimizer_step,
+                topology_digest=self.parent.custody.topology_digest,
+                candidate_step_ordinal=1,
+                teacher_hparams=self.hp, max_norm=1.,
+            )
+        self.assertIs(result, marker)
+        self.assertEqual(apply_step.call_args.kwargs["decay"], {BANK: True})
+
+    def test_b01_manifest_rejects_wrong_count_geometry_and_misowned_prefix(self):
+        optimizer = self.parent.optimizer
+        scalar_count = AdamWStateTree(
+            optimizer.parameters, optimizer.m, optimizer.v,
+            {BANK: mx.array(2, dtype=mx.uint64)})
+        wrong_name = "frame.identity.bank.0"
+        misowned = AdamWStateTree(
+            {wrong_name: optimizer.parameters[BANK]},
+            {wrong_name: optimizer.m[BANK]},
+            {wrong_name: optimizer.v[BANK]},
+            {wrong_name: optimizer.update_counts[BANK]})
+        with patch(CENSUS_SHAPE[2], return_value=DECLARED), \
+                patch(CENSUS_SHAPE[3], return_value=DECLARED):
+            for malformed in (scalar_count, misowned):
+                with self.subTest(keys=tuple(malformed.parameters)), \
+                        self.assertRaises(BilqisError):
+                    reconcile_b01_optimizer_manifest(
+                        malformed, ModelTopologySpecV2(), self.extents)
 
     def test_no_loss_step_is_an_exact_noop(self):
         parent = begin_candidate(self.parent)
@@ -156,7 +213,7 @@ class ProductionCandidateStepTests(unittest.TestCase):
                 parent_optimizer_step=self.parent.optimizer_step,
                 topology_digest=self.parent.custody.topology_digest,
                 candidate_step_ordinal=1,
-                teacher_hparams=self.hp, decay={BANK: True}, max_norm=1.,
+                teacher_hparams=self.hp, max_norm=1.,
             )
         self.assertIs(result, accepted)
         self.assertIs(binder.call_args.kwargs["loss_execution"], gradient.execution)
@@ -183,7 +240,7 @@ class ProductionCandidateStepTests(unittest.TestCase):
                     parent_optimizer_step=self.parent.optimizer_step,
                     topology_digest=self.parent.custody.topology_digest,
                     candidate_step_ordinal=1,
-                    teacher_hparams=self.hp, decay={BANK: True}, max_norm=1.,
+                    teacher_hparams=self.hp, max_norm=1.,
                 )
         binder.assert_not_called()
 

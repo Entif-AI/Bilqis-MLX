@@ -6,6 +6,7 @@ from bilqis_mlx.learning.atlas_candidate import candidate_step
 from bilqis_mlx.runtime.atlas_model import BamfGradientExecution
 from bilqis_mlx.runtime.atlas_execution_binder import bind_execution_provenance
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
+from bilqis_mlx.runtime.atlas_optimizer import reconcile_b01_optimizer_manifest
 
 
 def _invalid(reason):
@@ -18,7 +19,7 @@ def production_candidate_step(
         group_eligible, spec, extents,
         run_id, generation, parent_manifest_sha256,
         parent_candidate_identity_sha256, parent_optimizer_step, topology_digest,
-        candidate_step_ordinal, teacher_hparams, decay, max_norm: float):
+        candidate_step_ordinal, teacher_hparams, max_norm: float):
     """Run only when the binder can issue truthful execution provenance."""
     loss_execution = None
     actual_gradients = gradients
@@ -54,6 +55,7 @@ def production_candidate_step(
         parent_optimizer_step=parent_optimizer_step,
         topology_digest=topology_digest,
         candidate_step_ordinal=candidate_step_ordinal)
+    decay = reconcile_b01_optimizer_manifest(candidate.optimizer, spec, extents)
     return candidate_step(
         candidate, actual_gradients, provenance, teacher_hparams, decay=decay,
         loss_bearing=loss_bearing_target, max_norm=max_norm,
