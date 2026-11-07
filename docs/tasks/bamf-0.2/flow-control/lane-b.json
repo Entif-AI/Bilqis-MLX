@@ -134,8 +134,8 @@
       "issue": 754,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "254703ad600d1231172a26ec4d5a39045b47fe09",
-      "summary": "B13.3 EGM remediation active on current unified: native attention caches bind exact parameter content; accepted B13 MODEL_SWAP and PARAMETER_EXTENSION publication now carry the actual accepted-student attention cache across the production transition classifier, reject stale state, and rebuild to the fresh answer path. #709 cold continuation is consumed, and the genuine canonical Prometheus frozen-v1 witness passed read-only with its pinned manifest digest.",
+      "head_sha": "b31abda68b57da23c4f62ce2103aa3e126fe0f5b",
+      "summary": "B13.3 EGM remediation active on current unified: native attention caches bind the exact in-process MLX tensor objects without host-copy hashing; accepted B13 MODEL_SWAP and PARAMETER_EXTENSION publication carry the actual accepted-student attention cache across the production transition classifier, reject stale state, and rebuild to the fresh answer path. #709 cold continuation is consumed, and the genuine canonical Prometheus frozen-v1 witness passed read-only with its pinned manifest digest.",
       "resume_trigger": null,
       "preserved_branch": "codex/754-cache-transition-20261105"
     },
