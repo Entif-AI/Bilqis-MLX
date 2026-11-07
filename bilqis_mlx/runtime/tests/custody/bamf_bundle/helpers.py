@@ -45,9 +45,12 @@ HP = AdamWHyperparameters(.001, (.9, .95), 1e-8, .01)
 FIXTURE_PARENT_MANIFEST = "6" * 64
 
 
-def _genesis_defaults():
+def _genesis_defaults(release):
+    source_identity = (release.source_bindings.source_attestation_sha256
+                       or release.source_bindings.digest())
+    teacher_identity = release.execution_plan.projection_digests.teaching
     provenance = GenerationProvenance(
-        "fixture-source", "d" * 64, "fixture-teacher", 3)
+        source_identity, release.release_sha256, teacher_identity, 0)
     motif = MotifManifest(provenance.release_digest)
     extents = GenerationExtents(
         1, 1, "a" * 64, motif.digest, "c" * 64)
@@ -69,16 +72,16 @@ def _genesis_defaults():
         },
         "correction_frontier": {
             "schema": "bilqis.mlx.bamf-correction-frontier/v1",
-            "source_identity": "fixture-source",
-            "release_digest": "d" * 64,
+            "source_identity": source_identity,
+            "release_digest": release.release_sha256,
             "rights_epoch": 2,
             "correction_generation": 4,
             "frontier": [],
         },
         "teacher_state": {
             "schema": "bilqis.mlx.bamf-teacher-state/v1",
-            "teacher_identity": "fixture-teacher",
-            "teacher_epoch": 3,
+            "teacher_identity": teacher_identity,
+            "teacher_epoch": 0,
             "next_seed": 42,
             "cursor": "lesson:7",
         },
@@ -100,7 +103,10 @@ def genesis_preparation(*, run_id="fixture-run", run_seed=17,
         release, student_sha256=origin.sha256,
         optimizer_step=origin.optimizer_step,
         semantic_graph_sha256=_fingerprint(graph), graph=graph)
-    values = _genesis_defaults() | overrides
+    values = _genesis_defaults(release) | overrides
+    values["extents"] = replace(
+        values["extents"],
+        motif_key_map_digest=MotifManifest(values["provenance"].release_digest).digest)
     return prepare_initial_generation(
         run_id=run_id, run_seed=run_seed, origin_checkpoint=origin,
         release=release, admission=admission, graph=graph,
@@ -306,17 +312,13 @@ def acceptance(bundle, *, parent=None) -> object:
 def publish_candidate(run_dir, bundle):
     """Use production genesis for fixture generation zero; C05 only for successors."""
     if bundle.generation == 0:
-        motif = MotifManifest(bundle.provenance.release_digest)
-        extents = replace(bundle.extents, motif_key_map_digest=motif.digest)
         prepared = genesis_preparation(
             run_id=bundle.run_id, topology=bundle.topology,
             implementation_sha256=bundle.implementation_sha256,
-            extents=extents, provenance=bundle.provenance,
+            extents=bundle.extents,
             foundation_row_ages=bundle.retained_state.policy.row_ages,
             semantic_abi=dict(bundle.semantic_abi),
             compiler_features=dict(bundle.compiler_features),
-            correction_frontier=dict(bundle.correction_frontier),
-            teacher_state=dict(bundle.teacher_state),
             evaluation_contract=dict(bundle.evaluation_contract),
             delivery_events=({"event": "FIXTURE_GENESIS", "optimizer_step": 0},))
         return publish_initial_generation(run_dir, prepared, reserve_gib=0.)

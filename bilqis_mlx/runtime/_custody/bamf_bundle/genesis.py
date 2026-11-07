@@ -1,7 +1,7 @@
 """B13 generation-zero run identity, construction, and bootstrap authority."""
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field, fields
+from dataclasses import dataclass
 from typing import Mapping
 
 from bilqis_mlx.factory.executable_release import (
@@ -21,156 +21,21 @@ from bilqis_mlx.runtime.model_topology_v2 import (
 )
 from bilqis_mlx.runtime.state import _fingerprint
 
-from .records import BamfBundleCandidate, canonical, invalid, sha, sidecar_records
-
-RUN_IDENTITY_SCHEMA = "bilqis.mlx.bamf-run-identity/v1"
-INITIAL_BINDING_SCHEMA = "bilqis.mlx.bamf-initial-generation-binding/v1"
-_INITIAL_BINDING_ISSUER = object()
-
-
-def _hex(value: object) -> bool:
-    return (isinstance(value, str) and len(value) == 64
-            and all(char in "0123456789abcdef" for char in value))
-
-
-@dataclass(frozen=True)
-class BamfRunIdentity:
-    """Immutable birth identity shared by every generation in one BAMF run."""
-
-    run_id: str
-    run_seed: int
-    origin_checkpoint_sha256: str
-    origin_checkpoint_filename: str
-    origin_optimizer_step: int
-    factory_release_sha256: str
-    semantic_graph_sha256: str
-    initial_candidate_identity_sha256: str
-    initial_topology_digest: str
-    initial_extents_digest: str
-    initial_implementation_sha256: str
-    initial_source_identity: str
-    initial_release_digest: str
-    initial_teacher_identity: str
-    initial_teacher_epoch: int
-    schema_version: str = RUN_IDENTITY_SCHEMA
-
-    def __post_init__(self) -> None:
-        digests = (
-            self.origin_checkpoint_sha256, self.factory_release_sha256,
-            self.semantic_graph_sha256, self.initial_candidate_identity_sha256,
-            self.initial_topology_digest, self.initial_extents_digest,
-            self.initial_implementation_sha256, self.initial_release_digest,
-        )
-        if (self.schema_version != RUN_IDENTITY_SCHEMA
-                or not isinstance(self.run_id, str) or not self.run_id
-                or type(self.run_seed) is not int or self.run_seed < 0
-                or not isinstance(self.origin_checkpoint_filename, str)
-                or not self.origin_checkpoint_filename
-                or type(self.origin_optimizer_step) is not int
-                or self.origin_optimizer_step < 0
-                or any(not _hex(value) for value in digests)
-                or not isinstance(self.initial_source_identity, str)
-                or not self.initial_source_identity
-                or not isinstance(self.initial_teacher_identity, str)
-                or not self.initial_teacher_identity
-                or type(self.initial_teacher_epoch) is not int
-                or self.initial_teacher_epoch < 0):
-            invalid("BAMF_RUN_IDENTITY_INVALID")
-
-    @property
-    def digest(self) -> str:
-        return sha(canonical(asdict(self)))
-
-    def to_record(self) -> dict:
-        return {**asdict(self), "run_identity_sha256": self.digest}
-
-    @classmethod
-    def from_record(cls, record: Mapping) -> "BamfRunIdentity":
-        names = {item.name for item in fields(cls)}
-        if not isinstance(record, Mapping) or set(record) != names | {"run_identity_sha256"}:
-            invalid("BAMF_RUN_IDENTITY_INVALID")
-        identity = cls(**{name: record[name] for name in names})
-        if record["run_identity_sha256"] != identity.digest:
-            invalid("BAMF_RUN_IDENTITY_INVALID")
-        return identity
-
-
-@dataclass(frozen=True)
-class InitialGenerationBinding:
-    """Live B13 capability for exactly one generation-zero bundle."""
-
-    run_id: str
-    generation: int
-    run_identity_sha256: str
-    candidate_identity_sha256: str
-    feature_sha256: str
-    optimizer_step: int
-    schema_version: str = INITIAL_BINDING_SCHEMA
-    _issuance: object = field(init=False, default=None, repr=False, compare=False)
-
-    def __post_init__(self) -> None:
-        if (getattr(self, "_issuance", None) is not _INITIAL_BINDING_ISSUER
-                or not isinstance(self.run_id, str) or not self.run_id
-                or self.generation != 0 or self.optimizer_step != 0
-                or self.schema_version != INITIAL_BINDING_SCHEMA
-                or any(not _hex(value) for value in (
-                    self.run_identity_sha256, self.candidate_identity_sha256,
-                    self.feature_sha256))):
-            invalid("BAMF_INITIAL_GENERATION_BINDING_INVALID")
-
-    def _public_record(self) -> dict:
-        return {name: getattr(self, name) for name in (
-            "run_id", "generation", "run_identity_sha256",
-            "candidate_identity_sha256", "feature_sha256", "optimizer_step",
-            "schema_version")}
-
-    @property
-    def digest(self) -> str:
-        return sha(canonical(self._public_record()))
-
-    def to_record(self) -> dict:
-        return {**self._public_record(), "binding_sha256": self.digest}
-
-    @classmethod
-    def from_record(cls, record: Mapping) -> "ParsedInitialGenerationBinding":
-        names = {
-            "run_id", "generation", "run_identity_sha256",
-            "candidate_identity_sha256", "feature_sha256", "optimizer_step",
-            "schema_version",
-        }
-        if not isinstance(record, Mapping) or set(record) != names | {"binding_sha256"}:
-            invalid("BAMF_INITIAL_GENERATION_BINDING_INVALID")
-        payload = {name: record[name] for name in names}
-        if (payload["schema_version"] != INITIAL_BINDING_SCHEMA
-                or not isinstance(payload["run_id"], str) or not payload["run_id"]
-                or payload["generation"] != 0 or payload["optimizer_step"] != 0
-                or any(not _hex(payload[name]) for name in (
-                    "run_identity_sha256", "candidate_identity_sha256", "feature_sha256"))
-                or record["binding_sha256"] != sha(canonical(payload))):
-            invalid("BAMF_INITIAL_GENERATION_BINDING_INVALID")
-        return ParsedInitialGenerationBinding(payload)
-
-
-@dataclass(frozen=True)
-class ParsedInitialGenerationBinding:
-    """Verified historical bootstrap evidence, never a live publication token."""
-
-    fields: dict
-
-    def __getattr__(self, name: str):
-        if name in self.fields:
-            return self.fields[name]
-        raise AttributeError(name)
-
-    @property
-    def digest(self) -> str:
-        return sha(canonical(self.fields))
+from .records import BamfBundleCandidate, invalid, sidecar_records
+from .genesis_records import (
+    BamfRunIdentity, InitialGenerationBinding, ParsedInitialGenerationBinding,
+    mint_initial_generation_binding,
+)
 
 
 @dataclass(frozen=True)
 class PreparedInitialGeneration:
     candidate: BamfBundleCandidate
     binding: InitialGenerationBinding
+    release: ExecutableFactoryRelease
+    admission: ExecutableAdmissionReceipt
+    graph: dict
+    origin_checkpoint: Checkpoint
 
 
 def _validated_factory_origin(release, admission, graph, origin: Checkpoint) -> None:
@@ -190,22 +55,61 @@ def _validated_factory_origin(release, admission, graph, origin: Checkpoint) -> 
         invalid("BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
 
 
-def _issue_binding(candidate: BamfBundleCandidate) -> InitialGenerationBinding:
+def _factory_generation_provenance(
+        release: ExecutableFactoryRelease) -> GenerationProvenance:
+    """Project immutable generation-zero provenance from verified Factory authority."""
+    source = (release.source_bindings.source_attestation_sha256
+              or release.source_bindings.digest())
+    return GenerationProvenance(
+        source, release.release_sha256,
+        release.execution_plan.projection_digests.teaching, 0)
+
+
+def _validate_candidate_source_authority(
+        candidate: BamfBundleCandidate, *, release: ExecutableFactoryRelease,
+        admission: ExecutableAdmissionReceipt, graph: dict,
+        origin_checkpoint: Checkpoint) -> None:
+    """Re-prove Factory/source/teacher authority for a generation-zero candidate."""
+    _validated_factory_origin(release, admission, graph, origin_checkpoint)
     identity = candidate.run_identity
-    if type(identity) is not BamfRunIdentity:
-        invalid("BAMF_RUN_IDENTITY_REQUIRED")
-    binding = object.__new__(InitialGenerationBinding)
-    for name, value in (
-            ("run_id", candidate.run_id), ("generation", 0),
-            ("run_identity_sha256", identity.digest),
-            ("candidate_identity_sha256", candidate_identity_digest(candidate.retained_state)),
-            ("feature_sha256", candidate.extents.factor_map_digest),
-            ("optimizer_step", candidate.retained_state.optimizer_step),
-            ("schema_version", INITIAL_BINDING_SCHEMA),
-            ("_issuance", _INITIAL_BINDING_ISSUER)):
-        object.__setattr__(binding, name, value)
-    binding.__post_init__()
-    return binding
+    expected = _factory_generation_provenance(release)
+    teacher = candidate.teacher_state
+    correction = candidate.correction_frontier
+    if (candidate.generation != 0 or candidate.parent_manifest_sha256 is not None
+            or type(identity) is not BamfRunIdentity
+            or candidate.provenance != expected
+            or not isinstance(teacher, Mapping)
+            or teacher.get("teacher_identity") != expected.teacher_identity
+            or teacher.get("teacher_epoch") != expected.teacher_epoch
+            or not isinstance(correction, Mapping)
+            or correction.get("source_identity") != expected.source_identity
+            or correction.get("release_digest") != expected.release_digest
+            or identity.run_id != candidate.run_id
+            or identity.origin_checkpoint_sha256 != origin_checkpoint.sha256
+            or identity.origin_checkpoint_filename != origin_checkpoint.filename
+            or identity.origin_optimizer_step != origin_checkpoint.optimizer_step
+            or identity.factory_release_sha256 != release.release_sha256
+            or identity.semantic_graph_sha256 != admission.semantic_graph_sha256
+            or identity.initial_candidate_identity_sha256
+            != candidate_identity_digest(candidate.retained_state)
+            or identity.initial_topology_digest != candidate.topology.digest
+            or identity.initial_extents_digest != candidate.extents.digest
+            or identity.initial_implementation_sha256 != candidate.implementation_sha256
+            or identity.initial_source_identity != expected.source_identity
+            or identity.initial_release_digest != expected.release_digest
+            or identity.initial_teacher_identity != expected.teacher_identity
+            or identity.initial_teacher_epoch != expected.teacher_epoch):
+        invalid("BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
+
+
+def _issue_binding(
+        candidate: BamfBundleCandidate, *, release: ExecutableFactoryRelease,
+        admission: ExecutableAdmissionReceipt, graph: dict,
+        origin_checkpoint: Checkpoint) -> InitialGenerationBinding:
+    _validate_candidate_source_authority(
+        candidate, release=release, admission=admission, graph=graph,
+        origin_checkpoint=origin_checkpoint)
+    return mint_initial_generation_binding(candidate)
 
 
 def prepare_initial_generation(
@@ -220,16 +124,18 @@ def prepare_initial_generation(
         delivery_events: tuple = ()) -> PreparedInitialGeneration:
     """Construct one source-bound generation-zero candidate and live B13 capability."""
     _validated_factory_origin(release, admission, graph, origin_checkpoint)
+    expected_provenance = _factory_generation_provenance(release)
     if (not isinstance(run_id, str) or not run_id
             or type(run_seed) is not int or run_seed < 0
             or type(topology) is not ModelTopologySpecV2
             or type(extents) is not GenerationExtents
             or type(optimizer_hyperparameters) is not AdamWHyperparameters
             or type(provenance) is not GenerationProvenance
+            or provenance != expected_provenance
             or type(foundation_row_ages) is not tuple
             or any(type(item) is not IdentityRowAge for item in foundation_row_ages)
             or type(delivery_events) is not tuple):
-        invalid("BAMF_INITIAL_GENERATION_INPUT_INVALID")
+        invalid("BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
     allocations = MotifAllocationSnapshot(MotifManifest(provenance.release_digest))
     if allocations.manifest.digest != extents.motif_key_map_digest:
         invalid("BAMF_INITIAL_GENERATION_MOTIF_DRIFT")
@@ -254,7 +160,11 @@ def prepare_initial_generation(
          "invalidate_derived_caches": False},
         delivery_events, identity)
     sidecar_records(candidate)
-    return PreparedInitialGeneration(candidate, _issue_binding(candidate))
+    binding = _issue_binding(
+        candidate, release=release, admission=admission, graph=graph,
+        origin_checkpoint=origin_checkpoint)
+    return PreparedInitialGeneration(
+        candidate, binding, release, admission, dict(graph), origin_checkpoint)
 
 
 def validate_initial_generation_binding(candidate, binding) -> None:
@@ -290,6 +200,10 @@ def publish_initial_generation(run_dir, prepared: PreparedInitialGeneration, *, 
     """Publish genesis through the existing B13 transaction, never through C05."""
     if type(prepared) is not PreparedInitialGeneration:
         invalid("BAMF_INITIAL_GENERATION_PREPARATION_REQUIRED")
+    _validate_candidate_source_authority(
+        prepared.candidate, release=prepared.release,
+        admission=prepared.admission, graph=prepared.graph,
+        origin_checkpoint=prepared.origin_checkpoint)
     validate_initial_generation_binding(prepared.candidate, prepared.binding)
     from .publication import _publish_authorized_generation
     return _publish_authorized_generation(

@@ -117,7 +117,7 @@ class GenerationZeroAuthorityTests(unittest.TestCase):
             release, student_sha256="8" * 64,
             optimizer_step=origin.optimizer_step,
             semantic_graph_sha256=_fingerprint(graph), graph=graph)
-        values = _genesis_defaults()
+        values = _genesis_defaults(release)
         with shape_patch(), self.assertRaises(BilqisError) as failure:
             prepare_initial_generation(
                 run_id="fixture-run", run_seed=73,
@@ -155,7 +155,10 @@ class GenerationZeroAuthorityTests(unittest.TestCase):
             with self.assertRaises(BilqisError):
                 publish_initial_generation(
                     self.run,
-                    PreparedInitialGeneration(prepared.candidate, parsed),
+                    PreparedInitialGeneration(
+                        prepared.candidate, parsed, prepared.release,
+                        prepared.admission, prepared.graph,
+                        prepared.origin_checkpoint),
                     reserve_gib=0.)
 
     def test_exact_retry_converges_and_conflicting_seed_cannot_replace_genesis(self):

@@ -28,8 +28,9 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     publish_candidate,
     candidate, parent_state, shape_patch,
 )
+from bilqis_mlx.runtime.tests.operator.test_admission import _executable_fixture
 
-RELEASE = "1" * 64
+RELEASE = _executable_fixture()[0].release_sha256
 ATLAS_BUNDLE = "2" * 64
 SOURCE_BUNDLE = "3" * 64
 ARBITRARY = "b" * 64

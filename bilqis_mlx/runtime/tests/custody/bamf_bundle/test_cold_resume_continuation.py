@@ -92,14 +92,14 @@ class BamfColdResumeContinuationTests(unittest.TestCase):
     def test_cold_resume_continues_the_next_controlled_optimizer_step(self):
         first = self.publish(candidate(parent_state()))
         with shape_patch():
-            initial = load_bamf_generation(
-                self.run / "bamf-state.json").retained_state
+            student = load_bamf_generation(self.run / "bamf-state.json")
+            initial = student.retained_state
         receipt = self.probe()
         self.assertEqual(receipt["generation"], 0)
         self.assertEqual(receipt["manifest_sha256"], first["manifest_sha256"])
         self.assertEqual(receipt["state_digest"], retained_digest(initial))
         self.assertEqual(receipt["teacher_state"]["teacher_identity"],
-                         "fixture-teacher")
+                         student.provenance.teacher_identity)
         self.assertEqual(receipt["optimizer_step"], initial.optimizer_step)
         self.assertEqual(receipt["successor_optimizer_step"],
                          initial.optimizer_step + 1)
