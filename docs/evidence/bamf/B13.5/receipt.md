@@ -118,10 +118,11 @@ remains the narrow receipt API.
 
 Focused parent proof on this base:
 
-- B13.5 feature authority: **9/9 PASS**, including a real accepted generation-1
+- B13.5 feature authority: **10/10 PASS**, including a real accepted generation-1
   source replay whose receipt binds the exact generation manifest and predecessor
-  feature digest; forged generation, manifest, feature and predecessor identities
-  fail live verification.
+  feature digest, a retained generation whose immediate parent uses the same
+  feature map, and fresh-process cold-read receipt identity; forged generation,
+  manifest, feature and predecessor identities fail live verification.
 - generation acceptance/provenance: **20/20 PASS**, including rejected or
   unpublished authority, foreign candidate/feature identity, missing acceptance
   custody and re-signed acceptance drift.
@@ -172,3 +173,39 @@ Review episode: `697-b13-5-20261107`, round 1.
 No failing premerge observation is localized to the #697 diff. The exact
 candidate is therefore eligible for its required fresh pinned whole-candidate
 EGM; no PR is opened before that review.
+
+### EGM round 1 and target-local repair
+
+Round 1 reviewed exact candidate
+`72a3e5891098adf0da2ea5b124483a394c0736f5` and returned **FAIL**. The
+fresh comprehension Goldfish found one `TARGET_LOCAL` Blocker: an accepted
+successor that retained the same feature map/compiler/release as its parent
+reused the authenticated map object, but the receipt still treated that map's
+own historical `predecessor_digest` as the generation-level predecessor. A
+generation-1 child over a root feature map therefore failed with
+`BAMF_FEATURE_PREDECESSOR_UNAUTHENTICATED`; later unchanged children could bind
+the parent's predecessor rather than the immediate parent feature identity.
+The requested codebase-details reviewer failed to start because the worker
+substrate could not confirm its saved model/reasoning configuration, so round 1
+could not have been a clean complete round independently of the Blocker.
+
+The failing-before regression
+`test_retained_successor_binds_the_feature_map_its_parent_consumed` produced
+**9 PASS / 1 ERROR** on the round-1 implementation. Repair commit
+`b85a96a86910ba7083fbef315ec31fe4c2cfc4a6` now keeps feature-map construction
+ancestry separate from generation ancestry: unchanged successors retain the
+already-authenticated current map but bind the immediate accepted parent's
+feature digest in the generation receipt. Changed maps still require source
+replay with that accepted parent map supplied as the compiler predecessor.
+
+Passing-after evidence on the repaired semantic head:
+
+- B13.5 feature authority: **10/10 PASS**;
+- generation acceptance/provenance: **20/20 PASS**;
+- the cold-resume receipt witness now launches a fresh Python interpreter and
+  reproduces the exact receipt digest from persisted B13 custody;
+- development structure: **PASS, 0 violations**; `git diff --check`: **PASS**.
+
+The repaired candidate must clear current differential/premerge gates before
+round 2 is requested. Round 1 remains a durable failed review; its PASS state is
+not reused.
