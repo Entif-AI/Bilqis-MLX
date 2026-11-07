@@ -84,6 +84,11 @@ wording and legitimate new evidence must not be treated as the stale replay.
   from B13 custody and also requires its exact training generation binding to
   equal the current replay generation. Progression may consume current support
   but must not mint it.
+- Capability-support correction holds are journaled under the exact accepted
+  generation/capability custody. A fresh accepted-progression load must
+  re-verify and rehydrate the signed hold with the source authority registry,
+  or fail closed; changed support persists as requalification-required and an
+  equal revalidation clears the journal.
 - Signed correction ingress routes only to owners with a direct dependent for
   the corrected dependency. An unrelated correction therefore cannot replace
   another owner's active hold queue.
@@ -116,7 +121,7 @@ Review the complete diff from
 
 ## Verification receipts before EGM
 
-- Focused C09/custody acceptance suite: `84 passed, 0 failed, 0 skipped`.
+- Focused C09/custody acceptance suite: `85 passed, 0 failed, 0 skipped`.
 - `npm run quality:changed`: development structure OK; governance integrity
   OK; BAMF flow control OK; 15/15 flow-control tests passed; zero new
   changed-file smell findings.

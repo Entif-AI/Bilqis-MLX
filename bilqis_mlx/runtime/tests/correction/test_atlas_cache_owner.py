@@ -4,6 +4,7 @@ import unittest
 
 import numpy as np
 
+from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
 from bilqis_mlx.runtime.atlas_cache_codec import (
     HEAD_WIDTH, CacheBinding, CacheQualityObservation, CacheQualityPolicy,
     apply_cache_correction, bind_cache_artifact_owner, codec_manifest,
@@ -13,7 +14,7 @@ from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import (
     CACHE_AUTHORITY, OWNER_ID, PUBLIC_KEY_HEX, install_test_owner,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
-    AUTHORITY, _event, _result,
+    AUTHORITY, _event, _ref, _result,
 )
 
 
@@ -76,6 +77,18 @@ class ExactCacheArtifactOwnerTests(unittest.TestCase):
         self.assertEqual(progress.queue.held_artifact_ids, ())
         accepted = self.infer(self.owner)
         self.assertEqual((accepted.value, accepted.used_cache), ("CACHE", True))
+
+    def test_unrelated_correction_cannot_clear_existing_cache_hold(self):
+        event = _event(self.owner.rights_dependency)
+        queue = apply_cache_correction(
+            CACHE_AUTHORITY, self.artifact, self.binding, event, AUTHORITY)
+        unrelated = _event(_ref(DependencyKind.SOURCE, "source:unrelated"))
+        returned = apply_cache_correction(
+            CACHE_AUTHORITY, self.artifact, self.binding, unrelated, AUTHORITY)
+        self.assertIs(returned, queue)
+        self.assertIs(self.owner.queue, queue)
+        held = self.infer(self.owner)
+        self.assertFalse(held.used_cache)
 
     def test_changed_or_revoked_cache_cannot_influence_inference(self):
         for index, (digest, eligible) in enumerate((("b" * 64, True), (None, False))):
