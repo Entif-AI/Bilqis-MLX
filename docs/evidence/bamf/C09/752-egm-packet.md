@@ -181,6 +181,9 @@ Review the complete diff from
   source fingerprints; no missing/cyclic dependencies. Eight pre-existing
   dependency-normalization holds remain reported by the workstack and are not
   claimed resolved by #752.
+- ADR-132 detached `npm run verify:leaf`: **PASS**, return code `0`, source
+  snapshot unchanged. Detached source/final snapshot SHA-256:
+  `16ede1492b7339d228b44e1717a3326d43d75ee88cfe34c9eb135418705706bb`.
 - `git diff --check`: clean.
 
 ## Required verdict
