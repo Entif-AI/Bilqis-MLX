@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "4cffd8c79cbb5021cedce225118448af58a68253",
-  "updated_at": "2026-11-05T23:08:00Z",
+  "observed_unified": "3899649586b105b075e92f0ee3c51e80c379b473",
+  "updated_at": "2026-11-07T05:18:30Z",
   "exception": null,
   "items": [
     {
@@ -94,6 +94,33 @@
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a-421-egm-repair-20261105",
       "merged_pr": 862
+    },
+    {
+      "issue": 888,
+      "pr": null,
+      "state": "WAITING",
+      "head_sha": "43226cbfa4049706eecebdb37ffca16135e6f6d3",
+      "summary": "A09.5a realization wiring is parked after authority audit rejected relabeling accepted A/B/C Boolean/numeric/world rules as new D meanings. It resumes only after the primary-source staging repair and three D event realizations are accepted source authority.",
+      "resume_trigger": "#889 and #890 must be accepted/consumable.",
+      "preserved_branch": "codex/bamf02-a09-5a-888-realizations-20261107"
+    },
+    {
+      "issue": 889,
+      "pr": null,
+      "state": "READY",
+      "head_sha": "4e3f36afbd41856fe671bcd1dfb159df51eeb6b2",
+      "summary": "A09.5b primary-source staging repair passes focused staging 9/9 and existing Ithkuil staging 17/17; preserved on its issue branch for cohesive Lane A integration.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a09-5b-889-primary-source-20261107"
+    },
+    {
+      "issue": 890,
+      "pr": null,
+      "state": "READY",
+      "head_sha": "b0ac9ed999140b7e5fd5d77de9388c2f6cd8a2d2",
+      "summary": "A09.5c promotes D.EVENT_OCCURRENCE, D.COMMENCEMENT and D.TERMINATION from experiment identities to source-qualified production authority with exact pinned senses/text/PDF hashes, stable ithkuil.op.* and semantic IDs, independent oracle, typed source-drift failures and neural-inert proposed catalog semantics. Direct event/source/semantic-contrast tests pass 20/20; live registry resolves the production adapter; code-smell and error-control report zero new debt.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a09-5c-890-event-authority-20261107"
     },
     {
       "issue": 395,
