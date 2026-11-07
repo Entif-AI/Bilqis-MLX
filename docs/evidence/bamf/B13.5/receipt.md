@@ -209,3 +209,29 @@ Passing-after evidence on the repaired semantic head:
 The repaired candidate must clear current differential/premerge gates before
 round 2 is requested. Round 1 remains a durable failed review; its PASS state is
 not reused.
+
+### Round-2 qualification boundary
+
+Current reviewed unified remained exactly
+`cc48ac40d875f0c2ae8ffbdc70001dbfc4815334` after a fresh fetch. The canonical
+ignored legacy-v16 fixture relationship used by accepted B13.2 premerge proof
+was bound locally as `vendor/legacy-v16/runs` ->
+`/Users/emilie/Code/bilqis-mlx-retention-lab/vendor/legacy-v16/runs`; no fixture
+bytes or symlink are committed.
+
+Post-repair deterministic proof:
+
+- feature authority: **10/10 PASS**;
+- generation acceptance/provenance: **20/20 PASS**;
+- differential leaf: **14 passed + 3 selected subtests**, 0 failures;
+- flow control: **15/15 PASS**;
+- governance, Factory architecture, docs, error-control, changed-file smell and
+  `git diff --check`: **PASS**, with error-control new debt 0 and changed-file
+  smell findings 0;
+- full differential premerge: **3,545 total / 3,384 passed / 0 failed / 161
+  explicit skips / 0 errors** in **392.741s**.
+
+The clean aggregate supersedes the earlier environment-limited premerge receipt.
+No production or test criterion was weakened to obtain it. Round 2 may therefore
+review the repaired semantic head `b85a96a86910ba7083fbef315ec31fe4c2cfc4a6`
+plus nonsemantic evidence/flow bookkeeping only.
