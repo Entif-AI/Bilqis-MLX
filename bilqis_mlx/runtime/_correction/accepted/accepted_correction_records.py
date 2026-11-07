@@ -15,13 +15,18 @@ from .atlas_revalidation_common import _invalid
 from .atlas_revalidation_evidence import (
     CorrectionEvent, RevalidatedArtifact, RevalidationFrontier,
 )
+from .context_revalidation import (
+    ContextRevalidatedArtifact, ContextRevalidationFrontier,
+)
 
 
 CORRECTION_EVENT = "BAMF_C09_CORRECTION"
 REVALIDATION_EVENT = "BAMF_C09_REVALIDATION"
 CONTEXT_INVALIDATION_EVENT = "BAMF_C09_CONTEXT_INVALIDATION"
+CONTEXT_REVALIDATION_EVENT = "BAMF_C09_CONTEXT_REVALIDATION"
 ACCEPTED_EVENT_TYPES = frozenset((
-    CORRECTION_EVENT, REVALIDATION_EVENT, CONTEXT_INVALIDATION_EVENT, REMEDIATION_EVENT,
+    CORRECTION_EVENT, REVALIDATION_EVENT, CONTEXT_INVALIDATION_EVENT,
+    CONTEXT_REVALIDATION_EVENT, REMEDIATION_EVENT,
     DERIVED_CLAIM_EVENT, PROCESS_FAULT_EVENT,
 ))
 
@@ -107,6 +112,69 @@ def context_invalidation_from_record(record: dict) -> C09ContextInvalidation:
         return event
     except (KeyError, TypeError, ValueError):
         _invalid("BAMF_C09_CONTEXT_INVALIDATION_LEDGER_INVALID")
+
+
+def _context_revalidation_payload(
+    frontier: ContextRevalidationFrontier,
+) -> list[dict]:
+    return [
+        {
+            "artifact_id": item.artifact_id,
+            "immediate_dependencies": [
+                {"kind": ref.kind.value, "key": ref.key}
+                for ref in item.immediate_dependencies
+            ],
+            "content_digest": item.content_digest,
+            "eligible": item.eligible,
+            "source_receipt_sha256": item.source_receipt_sha256,
+            "context_event_id": item.context_event_id,
+            "context_invalidation_receipt_sha256":
+                item.context_invalidation_receipt_sha256,
+            "source_owner": item.source_owner,
+            "source_signature_hex": item.source_signature_hex,
+            "schema_version": item.schema_version,
+        }
+        for item in frontier.results
+    ]
+
+
+def context_revalidation_record(
+    manifest_sha256: str, frontier: ContextRevalidationFrontier,
+) -> dict:
+    if not isinstance(frontier, ContextRevalidationFrontier):
+        _invalid("BAMF_C09_CONTEXT_REVALIDATION_FRONTIER_REQUIRED")
+    body = {
+        "event": CONTEXT_REVALIDATION_EVENT,
+        "accepted_manifest_sha256": manifest_sha256,
+        "frontier": _context_revalidation_payload(frontier),
+    }
+    return {"event_id": hashlib.sha256(_canonical(body)).hexdigest(), **body}
+
+
+def context_frontier_from_record(record: dict) -> ContextRevalidationFrontier:
+    try:
+        results = tuple(sorted((
+            ContextRevalidatedArtifact(
+                artifact_id=item["artifact_id"],
+                immediate_dependencies=tuple(sorted(
+                    DependencyRef(DependencyKind(ref["kind"]), ref["key"])
+                    for ref in item["immediate_dependencies"]
+                )),
+                content_digest=item["content_digest"],
+                eligible=item["eligible"],
+                source_receipt_sha256=item["source_receipt_sha256"],
+                context_event_id=item["context_event_id"],
+                context_invalidation_receipt_sha256=
+                    item["context_invalidation_receipt_sha256"],
+                source_owner=item["source_owner"],
+                source_signature_hex=item["source_signature_hex"],
+                schema_version=item["schema_version"],
+            )
+            for item in record["frontier"]
+        ), key=lambda item: item.artifact_id))
+        return ContextRevalidationFrontier(results)
+    except (KeyError, TypeError, ValueError):
+        _invalid("BAMF_C09_CONTEXT_REVALIDATION_LEDGER_INVALID")
 
 
 def _revalidation_payload(frontier: RevalidationFrontier) -> list[dict]:
@@ -241,9 +309,11 @@ def lineage_records_from_bytes(
 
 
 __all__ = (
-    "ACCEPTED_EVENT_TYPES", "CONTEXT_INVALIDATION_EVENT", "CORRECTION_EVENT", "DERIVED_CLAIM_EVENT",
+    "ACCEPTED_EVENT_TYPES", "CONTEXT_INVALIDATION_EVENT",
+    "CONTEXT_REVALIDATION_EVENT", "CORRECTION_EVENT", "DERIVED_CLAIM_EVENT",
     "PROCESS_FAULT_EVENT", "REMEDIATION_EVENT", "REVALIDATION_EVENT",
     "_canonical", "context_invalidation_from_record", "context_invalidation_record",
+    "context_frontier_from_record", "context_revalidation_record",
     "correction_record", "frontier_from_record",
     "lineage_records_from_bytes", "records_from_bytes", "revalidation_record",
     "validate_record",

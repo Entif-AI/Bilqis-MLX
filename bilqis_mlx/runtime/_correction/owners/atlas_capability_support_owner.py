@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from dataclasses import replace
 from bilqis_mlx.semantics.cognitive_dependencies import (
     ArtifactKind, ArtifactNode, DependencyIndex,
 )
@@ -23,7 +24,7 @@ from .capability_support_journal import (
 )
 from .capability_support_loading import load_current_support
 from .capability_support_requalification import (
-    install_requalification, rehydrate_support_hold,
+    install_ledger, install_requalification, rehydrate_support_hold,
 )
 
 
@@ -69,6 +70,27 @@ class CapabilitySupportArtifactOwner:
     @property
     def index(self) -> DependencyIndex:
         return self._index
+
+    def _install_context_revalidation(
+        self, index: DependencyIndex, transition,
+    ) -> None:
+        if (not isinstance(index, DependencyIndex)
+                or {node.artifact_id for node in index.nodes}
+                != {node.artifact_id for node in self._index.nodes}):
+            _invalid("BAMF_C09_CONTEXT_REVALIDATION_INDEX_DRIFT")
+        self._index = index
+        if transition.changed:
+            current = self.support
+            if current.status is RequalificationStatus.QUALIFIED:
+                install_ledger(self, RequalificationLedger(
+                    capabilities=(replace(
+                        current,
+                        status=RequalificationStatus.REQUALIFICATION_REQUIRED,
+                    ),),
+                    historical=(*self.ledger.historical, current),
+                    pending_source_tasks=self.ledger.pending_source_tasks,
+                    pending_c10_intents=self.ledger.pending_c10_intents,
+                ))
 
     @property
     def queue(self) -> RevalidationQueue | None:

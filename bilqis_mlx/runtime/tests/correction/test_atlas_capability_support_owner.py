@@ -2,30 +2,54 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from unittest.mock import patch
 
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.atlas_capability_support_owner import CapabilitySupportArtifactOwner
+from bilqis_mlx.runtime.accepted_corrections import (
+    AcceptedRuntimeHost, ContextRevalidationFrontier, _RUNTIME_OWNER,
+)
+from bilqis_mlx.runtime.accepted_correction_ledger import (
+    CONTEXT_INVALIDATION_EVENT, CORRECTION_EVENT,
+    append_record, context_invalidation_record, read_records,
+)
 from bilqis_mlx.runtime.capability_support_loading import accepted_support_census
 from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
     apply_capability_support_correction,
 )
+from bilqis_mlx.runtime.context_revalidation import ContextStateTransition
+from bilqis_mlx.runtime.atlas_requalification_contracts import (
+    RequalificationStatus,
+)
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     accept_and_publish, derive_successor_bundle, load_accepted_generation,
 )
+from bilqis_mlx.runtime.bamf_bundle import admission
+from bilqis_mlx.runtime.accepted_correction_runtime import runtime
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     retention_decision, shape_patch,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
     AUTHORITY, _SOURCE_OWNER, _TEST_PUBLIC, _event, _ref,
 )
-from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
+from bilqis_mlx.semantics.cognitive_dependencies import (
+    DependencyIndex, DependencyKind, DependencyRef,
+)
+from bilqis_mlx.semantics.context_eligibility import C09ContextInvalidation
 
 from .capability_support_owner_support import (
     CapabilitySupportOwnerFixture, GENERATION, IMMEDIATE_DEPENDENCIES, SOURCE_ROW,
     TARGET, source_qualified_state,
+)
+from . import capability_support_owner_support as support_fixture
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.test_accepted_context_revalidation import (
+    _signed_context_result,
+)
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.accepted_correction_runtime_temporal_support import (
+    source_owned_temporal_case,
 )
 
 
@@ -95,6 +119,116 @@ class CapabilitySupportOwnerTests(CapabilitySupportOwnerFixture):
             owner.require(TARGET)
         self.assertEqual(
             caught.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
+
+    def test_changed_context_revalidation_requires_capability_requalification(self):
+        self.publish_support()
+        owner = self.load_support(AUTHORITY)
+        prior = owner.current_node
+        updated = replace(prior, content_digest="d" * 64)
+        transition = ContextStateTransition(
+            artifact_id=prior.artifact_id,
+            previous_content_digest=prior.content_digest,
+            new_content_digest=updated.content_digest,
+            previous_eligible=prior.eligible,
+            new_eligible=updated.eligible,
+            previous_dependencies=prior.immediate_dependencies,
+            new_dependencies=updated.immediate_dependencies,
+            source_receipt_sha256="c" * 64,
+            context_event_id="context-event:fixture",
+            context_invalidation_receipt_sha256="e" * 64,
+            source_owner=_SOURCE_OWNER,
+            source_signature_hex="0" * 128,
+            changed=True,
+        )
+        owner._install_context_revalidation(
+            DependencyIndex.build((updated,)), transition)
+        self.assertIs(
+            owner.support.status,
+            RequalificationStatus.REQUALIFICATION_REQUIRED)
+        with self.assertRaises(BilqisError) as caught:
+            owner.require(TARGET)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_C09_CAPABILITY_SUPPORT_REQUALIFICATION_REQUIRED")
+
+    def test_context_requalification_survives_cold_accepted_replay(self):
+        case = source_owned_temporal_case()
+        context_dependency = DependencyRef(
+            DependencyKind.TIME,
+            "time:asof:context:" + case.previous.digest)
+        dependencies = tuple(sorted((
+            *(ref for ref in IMMEDIATE_DEPENDENCIES
+              if ref.kind is not DependencyKind.TIME),
+            context_dependency,
+        )))
+        with patch.object(
+            support_fixture, "immediate_dependencies",
+            return_value=dependencies,
+        ):
+            published, _authority = self.publish_support()
+        owner = self.load_support(AUTHORITY)
+        with shape_patch():
+            host = AcceptedRuntimeHost(self.run, AUTHORITY)
+        invalidation = C09ContextInvalidation(
+            old_context_digest=case.previous.digest,
+            new_context_digest="e" * 64,
+            reason_codes=("BAMF_CONTEXT_APPROVED_VIEW_CHANGED",),
+            principal_id=case.task.principal_id,
+            tenant_id=case.task.tenant_id,
+            scope=case.task.scope,
+            semantic_release=case.task.semantic_release,
+            policy_epoch=case.policy.policy_epoch,
+            rights_epoch=case.frontier.rights_epoch,
+            correction_generation=case.frontier.correction_generation,
+            causal_prefix_end=case.task.causal_prefix_end,
+            invalidated_handles=tuple(sorted({
+                handle
+                for frame in case.previous.eligible.frames
+                for handle in (frame.frame_handle, *frame.member_handles)
+            })),
+        )
+        record = context_invalidation_record(
+            published["manifest_sha256"], invalidation)
+        append_record(
+            self.run, published["manifest_sha256"], record)
+        runtime(
+            self.run, published["manifest_sha256"],
+        ).deliver_context_invalidation(record["event_id"], invalidation)
+        prior = owner.current_node
+        new_time = DependencyRef(
+            DependencyKind.TIME,
+            "time:asof:context:" + invalidation.new_context_digest)
+        result = _signed_context_result(
+            prior,
+            invalidation=invalidation,
+            accepted_event_id=record["event_id"],
+            dependencies=tuple(sorted((
+                *(ref for ref in prior.immediate_dependencies
+                  if ref != context_dependency),
+                new_time,
+            ))),
+            digest="d" * 64,
+        )
+        with shape_patch():
+            host.record_context_revalidation(
+                ContextRevalidationFrontier((result,)))
+        self.assertIs(
+            owner.support.status,
+            RequalificationStatus.REQUALIFICATION_REQUIRED)
+
+        admission._EXECUTION_CACHE_OWNER.entries.clear()
+        _RUNTIME_OWNER.clear()
+        cold_owner = self.load_support(AUTHORITY)
+        self.assertIs(
+            cold_owner.support.status,
+            RequalificationStatus.REQUALIFICATION_REQUIRED)
+        with self.assertRaises(BilqisError):
+            cold_owner.require(TARGET)
+        records = read_records(self.run, published["manifest_sha256"])
+        self.assertIn(CONTEXT_INVALIDATION_EVENT, {
+            item["event"] for item in records})
+        self.assertNotIn(CORRECTION_EVENT, {
+            item["event"] for item in records})
 
     def test_retained_capability_provenance_survives_unrelated_successor_acceptance(self):
         first, _authority_a = self.publish_support()

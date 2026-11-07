@@ -80,6 +80,15 @@ class AtlasFeatureArtifactOwner:
     def index(self) -> DependencyIndex:
         return self._index
 
+    def _install_context_revalidation(
+        self, index: DependencyIndex, transition,
+    ) -> None:
+        if (not isinstance(index, DependencyIndex)
+                or {node.artifact_id for node in index.nodes}
+                != {node.artifact_id for node in self._index.nodes}):
+            _invalid("BAMF_C09_CONTEXT_REVALIDATION_INDEX_DRIFT")
+        self._index = index
+
     @property
     def queue(self) -> RevalidationQueue | None:
         return self._queue
@@ -191,10 +200,34 @@ class PackedFrameArtifactOwner:
                 nodes[node.artifact_id] = node
         self._index = DependencyIndex.build(tuple(nodes.values()))
         self._queue: RevalidationQueue | None = None
+        self._context_dependency_overrides: dict[
+            str, tuple[DependencyRef, ...],
+        ] = {}
 
     @property
     def index(self) -> DependencyIndex:
         return self._index
+
+    def _install_context_revalidation(
+        self, index: DependencyIndex, transition,
+    ) -> None:
+        if (not isinstance(index, DependencyIndex)
+                or {node.artifact_id for node in index.nodes}
+                != {node.artifact_id for node in self._index.nodes}):
+            _invalid("BAMF_C09_CONTEXT_REVALIDATION_INDEX_DRIFT")
+        previous = self._index.node(transition.artifact_id)
+        updated = index.node(transition.artifact_id)
+        if (previous.content_digest != transition.previous_content_digest
+                or updated.content_digest != transition.new_content_digest
+                or updated.immediate_dependencies
+                != transition.new_dependencies):
+            _invalid("BAMF_C09_CONTEXT_REVALIDATION_INDEX_DRIFT")
+        self._index = index
+        if previous.content_digest == updated.content_digest:
+            self._context_dependency_overrides[
+                updated.artifact_id] = updated.immediate_dependencies
+        else:
+            self._context_dependency_overrides.pop(updated.artifact_id, None)
 
     @property
     def queue(self) -> RevalidationQueue | None:
@@ -215,8 +248,12 @@ class PackedFrameArtifactOwner:
                 continue
             expected = _packed_frame_node(row, position.packed)
             node = self.node_for(position.packed)
+            dependency_match = (
+                node.immediate_dependencies == expected.immediate_dependencies
+                or self._context_dependency_overrides.get(node.artifact_id)
+                == node.immediate_dependencies)
             if (node.content_digest != expected.content_digest
-                    or node.immediate_dependencies != expected.immediate_dependencies):
+                    or not dependency_match):
                 _invalid("BAMF_C09_PACKED_FRAME_CONTENT_DRIFT")
             from bilqis_mlx.runtime.accepted_correction_runtime import require_pending_corrections
             require_pending_corrections(self, node.artifact_id)
