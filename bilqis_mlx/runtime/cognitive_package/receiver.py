@@ -3,7 +3,6 @@ from pathlib import Path
 
 import numpy as np
 
-from bilqis_mlx.runtime.bamf_bundle import load_bamf_bundle
 from bilqis_mlx.runtime.bamf_bundle import publication
 
 from .contracts import PackageBinding, require
@@ -12,15 +11,9 @@ from .contracts import PackageBinding, require
 def _load_current_generation(run_dir):
     run_dir = Path(run_dir)
     with publication._pointer_lock(run_dir):
-        pointer = publication._read_pointer(run_dir / 'bamf-state.json')
-        require(pointer is not None, 'receiver generation pointer missing')
-        publication._live_bundle_manifest(run_dir, pointer)
-        student = load_bamf_bundle(run_dir / pointer['bundle'],
-                                   expected_manifest_sha256=pointer['manifest_sha256'])
-        require(student.run_id == pointer['run_id']
-                and student.generation == pointer['generation']
-                and student.parent_manifest_sha256 == pointer['parent_manifest_sha256'],
-                'receiver generation pointer drift')
+        student, pointer = publication._load_generation_locked(
+            run_dir / 'bamf-state.json')
+        publication._require_published_acceptance(run_dir, pointer, student)
         return pointer, student
 
 
