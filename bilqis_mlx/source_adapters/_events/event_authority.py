@@ -137,7 +137,6 @@ def source_contract_digest(capability):
         'signature': 'Boolean*Boolean->Boolean',
         'generator': 'bilqis.ithkuil-event-frame-constructor/v1',
         'oracle': 'bilqis.issue349.event-frame-oracle/v1',
-        'provider_implementation_sha256': provider_implementation_digest(),
         'meaning': row['sense_summary'],
     })
 

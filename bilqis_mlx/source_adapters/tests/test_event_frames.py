@@ -1,6 +1,7 @@
 """Source authority, truth, encoding and fresh-example checks for event frames."""
 from dataclasses import replace
 import unittest
+from unittest.mock import patch
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.source_adapters import event_frames as frames
 from bilqis_mlx.verification.event_frames import independent_answer
@@ -42,6 +43,14 @@ class EventFrameTests(unittest.TestCase):
         changed = frames.provider_implementation_digest({
             'source_adapters/event_frames.py': b'changed-event-provider'})
         self.assertNotEqual(current, changed)
+
+    def test_source_contract_identity_does_not_change_with_provider_revision(self):
+        capability = 'D.EVENT_OCCURRENCE'
+        current = frames.source_contract_digest(capability)
+        with patch(
+                'bilqis_mlx.source_adapters.event_authority.provider_implementation_digest',
+                return_value='f' * 64):
+            self.assertEqual(frames.source_contract_digest(capability), current)
 
     def test_projected_graph_advances_one_prerequisite_closed_event_at_a_time(self):
         parent = registry_graph()
