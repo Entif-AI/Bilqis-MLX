@@ -11,6 +11,7 @@ from unittest.mock import patch
 from bilqis_mlx._data_plane import file_objects
 from bilqis_mlx.data_plane import data_plane
 import bilqis_mlx.runtime.bamf_bundle.publication as publication
+import bilqis_mlx.runtime.bamf_bundle._publication_storage as publication_storage
 import bilqis_mlx.runtime.checkpoints as checkpoints
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
@@ -70,7 +71,9 @@ class PublicationDurabilityTests(unittest.TestCase):
 
     def test_acceptance_directory_is_fsynced_before_pointer_can_be_installed(self):
         durable = set()
+        synced_directories = set()
         fsync, pointer = os.fsync, publication._atomic_pointer
+        sync_directory = publication_storage._fsync_directory
 
         def identity(path):
             state = path.stat()
@@ -80,6 +83,10 @@ class PublicationDurabilityTests(unittest.TestCase):
             state = os.fstat(fd)
             durable.add((state.st_dev, state.st_ino))
             fsync(fd)
+
+        def sync_path(path):
+            synced_directories.add(Path(path))
+            sync_directory(path)
 
         def install(path, pointer_value):
             acceptance = (path.parent / 'bamf-acceptance'
@@ -96,9 +103,13 @@ class PublicationDurabilityTests(unittest.TestCase):
             self.assertIn(
                 identity(path.parent), durable,
                 'run directory must durably link custody directories before pointer publication')
+            self.assertIn(
+                path.parent.parent, synced_directories,
+                'run parent must durably link a newly created run directory before pointer publication')
             pointer(path, pointer_value)
 
         with patch.object(os, 'fsync', side_effect=sync), \
+                patch.object(publication_storage, '_fsync_directory', side_effect=sync_path), \
                 patch.object(publication, '_atomic_pointer', side_effect=install):
             self.publish(candidate(parent_state()))
 

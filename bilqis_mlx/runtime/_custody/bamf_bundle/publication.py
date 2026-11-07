@@ -1,11 +1,13 @@
 """Crash-idempotent, serialized B13.1 pointer publication and outbox recovery."""
 from __future__ import annotations
 
+import json
 import os
 import shutil
 from pathlib import Path
 
 from bilqis_mlx.data_plane import DataPlaneError, data_plane
+from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_acceptance import (
     ACCEPTANCE_SCHEMA, AcceptedCandidateBinding, candidate_identity_digest,
 )
@@ -214,11 +216,39 @@ def _load_generation_locked(pointer_path: Path) -> tuple[CompleteStudent, dict]:
     return student, pointer
 
 
+def _require_published_acceptance(
+        run_dir: Path, pointer: dict, student: CompleteStudent) -> AcceptedCandidateBinding:
+    """Authenticate the acceptance receipt bound by one live BAMF pointer."""
+    if pointer.get("schema") != BAMF_POINTER_SCHEMA:
+        invalid("BAMF_GENERATION_ACCEPTANCE_MISSING")
+    acceptance_path = (
+        Path(run_dir) / ACCEPTANCE_DIR / f"{pointer['manifest_sha256']}.json")
+    if acceptance_path.is_symlink() or not acceptance_path.is_file():
+        invalid("BAMF_GENERATION_ACCEPTANCE_MISSING")
+    try:
+        acceptance = AcceptedCandidateBinding.from_record(
+            json.loads(acceptance_path.read_bytes()))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError, BilqisError):
+        invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
+    if (acceptance.digest != pointer["acceptance_sha256"]
+            or acceptance.run_id != student.run_id
+            or acceptance.generation != student.generation
+            or acceptance.feature_sha256 != student.extents.factor_map_digest
+            or acceptance.optimizer_step != student.retained_state.optimizer_step
+            or acceptance.candidate_identity_sha256
+            != candidate_identity_digest(student.retained_state)
+            or acceptance.step_proof_sha256 != tuple(
+                proof.digest for proof in student.retained_state.step_proofs)):
+        invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+    return acceptance
+
+
 def load_bamf_generation_authority(pointer_path: Path) -> tuple[CompleteStudent, str]:
     """Read current accepted B13 authority without mutating delivery state."""
     pointer_path = Path(pointer_path)
     with _pointer_lock(pointer_path.parent):
         student, pointer = _load_generation_locked(pointer_path)
+        _require_published_acceptance(pointer_path.parent, pointer, student)
         return student, pointer["manifest_sha256"]
 
 

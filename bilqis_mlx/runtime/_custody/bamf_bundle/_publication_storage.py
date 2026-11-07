@@ -31,9 +31,13 @@ def _fsync_directory(path: Path) -> None:
 def _require_run_root(run_dir: Path) -> None:
     if run_dir.is_symlink() or (run_dir.exists() and not run_dir.is_dir()):
         invalid(DataPlaneError.BUNDLE_ROOT_UNSAFE)
+    existed = run_dir.exists()
     run_dir.mkdir(parents=True, exist_ok=True)
     if run_dir.is_symlink() or not run_dir.is_dir():
         invalid(DataPlaneError.BUNDLE_ROOT_UNSAFE)
+    if not existed:
+        _fsync_directory(run_dir)
+        _fsync_directory(run_dir.parent)
 
 
 def _require_bundle_root(run_dir: Path, *, create: bool) -> Path:
