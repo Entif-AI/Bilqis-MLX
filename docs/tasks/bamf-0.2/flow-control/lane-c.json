@@ -122,11 +122,11 @@
     },
     {
       "issue": 746,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "07a6115e",
+      "pr": 903,
+      "state": "TURNED_IN",
+      "head_sha": "ebd5a417bb73525a0853a03291dd1ee065d88357",
       "preserved_branch": "codex/746-c12-import-commit-20261102",
-      "summary": "Owner-directed EGM blocker-resolution pass is porting the preserved C12 package-import path onto current C05/B12/B13 authority and adding the missing production composition seam without caller-minted acceptance.",
+      "summary": "Review-ready #746 authority closure is turned in at PR #903: production C12 receive -> A12/C09 verify -> B12 import -> C05 screen -> B13 publication, with exact-head and expanded affected validation green and no child EGM spent.",
       "resume_trigger": null
     },
     {
