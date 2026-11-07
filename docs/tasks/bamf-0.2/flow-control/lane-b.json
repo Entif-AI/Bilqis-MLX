@@ -67,7 +67,7 @@
       "state": "ACTIVE",
       "head_sha": "a211836f59a2a7c4949d585f2e30060473a53a38",
       "head_sha_role": "semantic head after the prime-side historical-acceptance authority audit found and repaired an unanchored ancestor acceptance sidecar; later evidence/flow commits are nonsemantic bookkeeping",
-      "summary": "B13.5 episode 697-b13-5-20261107 is qualified for fresh whole-candidate round 2 on reviewed-unified d4bad39a. Semantic head a211836f anchors historical parent acceptance in acceptance-bound v3 publication; synchronization merge b9438fa2 preserves it. Detached premerge at candidate 4d6f6090 produced 3448 pass / 167 skip / 5 inherited C09 packed-frame errors; all five reproduce identically on pristine d4bad39a. B13.5 focused/custody/quality and A02 integration witnesses are green; round 2 has not yet run.",
+      "summary": "B13.5 episode 697-b13-5-20261107 is qualified for fresh whole-candidate round 2 on reviewed-unified d4bad39a. Semantic head a211836f anchors historical parent acceptance in acceptance-bound v3 publication; synchronization merge b9438fa2 preserves it. Detached premerge at candidate 4d6f6090 produced 3448 pass / 167 skip / 5 inherited C09 packed-frame errors; all five reproduce identically on pristine d4bad39a. Forced serial leaf exits 0, and an exact-final disposable composition with preserved A02/#399 passes production staging 1/1 in 190.636s plus planner 5/5 with one optional real-source skip. Round 2 has not yet run.",
       "resume_trigger": null,
       "closed_pr": 698,
       "preserved_branch": "feat/bamf-b13-5-697-generation-feature-binding-20261101",

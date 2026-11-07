@@ -365,3 +365,25 @@ gates are green, and the preserved A02/#399 production consumer witness is green
 This base-vs-candidate classification is the deterministic qualification used to
 enter fresh whole-candidate EGM round 2; it is not represented as a clean global
 premerge pass.
+
+### Exact-final candidate leaf and A02/#399 consumer witness
+
+After the inherited C09 classification, the exact current #697 head was rechecked
+with the forced serial differential leaf against reviewed unified. The leaf gate
+completed with exit 0 on candidate `4d6f60901d12dcb9016776b3f4b43e9c4bda17da`.
+
+The downstream A02/#399 consumption witness was also repeated against the exact
+final B13 semantics in a disposable composition: current #697 candidate plus the
+preserved #399 branch `ba1c366e8f583d1c0bb2676a7740c749707e7fa1`. The disposable
+join retained current B13 authority files where the preserved A02 branch carried
+older copies, while keeping A02's staging implementation and public export. No A02
+branch was modified.
+
+- full-topology production staging: **1/1 PASS in 190.636s**;
+- ordinary A02 vocabulary planner: **5/5 PASS + 1 optional real-source skip**;
+- caller-minted predecessor authority remains fail-closed.
+
+Together with the focused B13 suites and inherited-base proof above, this closes the
+deterministic engineering queue for fresh whole-candidate EGM round 2. The semantic
+implementation remains `a211836f59a2a7c4949d585f2e30060473a53a38`; later receipt
+bookkeeping is nonsemantic.
