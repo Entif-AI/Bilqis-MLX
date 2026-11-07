@@ -219,10 +219,10 @@
     },
     {
       "issue": 906,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "3b80a76c0acafce79a061174554fb8ade0c62618",
-      "summary": "A13 EGM-Mitigation follow-on repaired after EGM round 1 rejected caller-owned temporal authority and a skipped real-A01 witness. The producer now issues a hash-pinned opaque SourceContextTransitionAuthority from the exact A01 source; callers cannot choose task, policy, frontier, current time, or validity bounds. Current-unified proof: source-context 10/10, C09 boundary 5/5, real A01 3/3 with zero skips, changed-scope quality green. Disposable join with authoritative #752 consumer head 03e7a3c0 proves durable hold-before-reuse plus cold replay and its accepted-runtime suite passes 9/9. Targeted EGM re-audit is pending.",
+      "pr": 907,
+      "state": "TURNED_IN",
+      "head_sha": "48c2dbad85137b0589d64a9df8a1c2b062d48232",
+      "summary": "A13 EGM-Mitigation follow-on turned in as PR #907. Round 1 EGM rejected caller-owned temporal authority and a skipped real-A01 witness; repair 3b80a76c replaces that seam with a hash-pinned opaque source/policy authority. Current-unified proof: source-context 10/10, C09 boundary 5/5, real A01 3/3 zero skips, changed-scope quality green. Disposable join with authoritative #752 consumer 03e7a3c0 proves hold-before-reuse and cold replay; accepted-runtime 9/9. Targeted EGM re-audit PASS at 4e3b8826 with zero Blocker/Major/Minor/Nit. Remote turn-in head 48c2dbad includes EGM evidence only after the reviewed head.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a-906-temporal-context-20261107"
     }

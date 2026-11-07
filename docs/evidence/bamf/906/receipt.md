@@ -153,3 +153,11 @@ repair `3b80a76c...` and authoritative #752 consumer `03e7a3c0...`.
 - #478 was not inspected, mutated, validated, or reviewed. Its already-reviewed
   unified integration was observed only because current reviewed unified moved.
 - No self-merge was performed.
+
+## Turn-in
+
+PR #907 was opened ready for review against
+`codex/bamf-unified-base-20261028` from remote-equal head
+`48c2dbad85137b0589d64a9df8a1c2b062d48232`. The PR contains `Closes #906`.
+No self-merge or issue closure was performed. Any commit after that remote head is
+turn-in bookkeeping only unless separately identified.
