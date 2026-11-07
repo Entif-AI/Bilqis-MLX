@@ -3,9 +3,13 @@ from dataclasses import replace
 from unittest import TestCase, skipUnless
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.semantics.frame_compiler import compile_prefix
+from bilqis_mlx.semantics.frame_compiler import (
+    compile_prefix, prefix_inventory_evidence_digest, prefix_inventory_handle,
+)
 from bilqis_mlx.semantics.source_atom_binding import AtomBindingDisposition
-from bilqis_mlx.source_adapters.atoms.admission import public_formal_atom_context
+from bilqis_mlx.source_adapters.atoms.admission import (
+    authorize_public_formal_prefix, public_formal_atom_context,
+)
 from bilqis_mlx.source_adapters.atom_binding import (
     build_source_atom_handoff, require_pinned_embedding_ready,
 )
@@ -44,6 +48,33 @@ class AdmissionTests(TestCase):
         self.assertEqual(later.bindings[0], early.bindings[0])
         self.assertEqual(len(early.bindings), 1)
         self.assertTrue(later.embedding_ready)
+
+
+    def test_source_owner_authorizes_exact_compiled_prefix_for_public_refinement(self):
+        ast, config, compiled, _, _, _, _, _ = source_case(visible_end=1)
+        authorized = authorize_public_formal_prefix(ast, compiled, config)
+        handle = prefix_inventory_handle(ast.source_instance_id, compiled.visible_end)
+        grant = next(item for item in authorized.frontier.grants
+                     if item.source_handle == handle)
+        self.assertEqual(grant.evidence_digest, prefix_inventory_evidence_digest(compiled))
+        self.assertEqual(authorize_public_formal_prefix(ast, compiled, authorized), authorized)
+
+        from bilqis_mlx.runtime.refinement_policy import select_prediction_refinements
+        selected = select_prediction_refinements(
+            frames=(), source_ast=ast, compiler_config=authorized,
+            task_scope=authorized.task, source_frontier=authorized.frontier,
+            policy=authorized.policy, input_generation="generation:fixture",
+            query_id="query:fixture", requested_roles=(), run_seed="seed:fixture",
+            visit_id="visit:fixture", training=False,
+            explicit_member_question=False, unresolved_nested_query=False)
+        self.assertEqual(selected.eligible_count, 0)
+        self.assertEqual(selected.quota, 0)
+
+    def test_prefix_authority_rejects_a_different_task_boundary(self):
+        ast, config, compiled, _, _, _, _, _ = source_case(visible_end=1)
+        wrong = replace(config, task=replace(config.task, causal_prefix_end=0))
+        with self.assertRaises(BilqisError):
+            authorize_public_formal_prefix(ast, compiled, wrong)
 
     def test_repeated_source_admission_is_idempotent(self):
         ast, config, _, _, selection, row, graph, args = source_case()
