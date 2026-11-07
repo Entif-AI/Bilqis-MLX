@@ -127,6 +127,19 @@ class CandidateStagingTests(CandidateStagingFixture, unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "CANDIDATE_STAGING_SOURCE_BINDING_MISMATCH"):
             self.stage(source_bindings=unrelated)
 
+    def test_exact_primary_source_sense_does_not_require_auxiliary_evidence_rows(self):
+        selected, reserve = self.frontier.candidates
+        selected = replace(selected, source_evidence_ids=())
+        frontier = replace(self.frontier, candidates=(selected, reserve))
+        self.frontier = replace(frontier, release_sha256=frontier.expected_digest())
+        staged = self.stage()
+        sense = next(item for item in self.frontier.senses
+                     if item.sense_id == selected.target_sense_id)
+        self.assertEqual(
+            staged.source_anchor,
+            f"ithkuil:sense/{sense.sense_id}@sha256:{sense.source_text_sha256}")
+        staged.verify(self.frontier, self.current)
+
     def test_cannot_rewrite_existing_semantics_behind_unchanged_plan_inventory(self):
         grade = self.curriculum.grades[0]
         changed = replace(grade.capabilities[0], taught_roots=("changed",),
