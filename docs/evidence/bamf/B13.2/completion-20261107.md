@@ -190,7 +190,40 @@ and coordination state only and does not invalidate the reviewed behavior.
 
 ## Turn-in disposition
 
-#479 B13.2 is EGM-passed and ready for the repository pre-merge gate and human PR
-review. This receipt does not authorize self-merge or a live student start. Issue
-closure remains tied to accepted integration into reviewed unified.
+#479 B13.2 is EGM-passed and the repository pre-merge gate is now satisfied.
+
+The first detached pre-merge attempt on `6885130e` was not accepted as a #479
+semantic failure. It exposed two independent baseline/harness problems:
+
+- 18 setup errors came from the copied detached snapshot omitting the external
+  `vendor/legacy-v16/runs` fixture relationship, so pinned legacy checkpoints were
+  absent or imported from the wrong root;
+- the sole deterministic assertion failure, the relocated learning-owner census,
+  reproduced unchanged on exact consumed unified `9301e41e`: accepted
+  `atlas_package_import.py` had become the 42nd canonical learning owner while the
+  census still asserted 41.
+
+The baseline census repair is test-only commit
+`c83a9c274d1b9d01d1e3b5d6af1a0e7732f1cc8d`: expected owner count 41 -> 42.
+Failing-before was reproduced on both the #479 branch and a detached worktree at
+`9301e41e`; passing-after is **5/5**. No production/runtime behavior changed after
+the corrected EGM-reviewed head, so `EGM-Passed` remains valid under AGENTS.md.
+
+The true pre-merge retry ran in an isolated Git worktree at exact `c83a9c27` with
+the existing retention-lab legacy `runs` fixture bound into repository-local
+`vendor/legacy-v16/runs` without committing it. Exact result:
+
+- `npm run verify:premerge`;
+- **3520 total / 3360 passed / 0 failed / 160 explicit skips / 0 errors**;
+- return code 0;
+- worktree clean before and after;
+- head before and after: `c83a9c274d1b9d01d1e3b5d6af1a0e7732f1cc8d`;
+- receipt: `/private/tmp/bamf-479/premerge-retry.receipt.json`;
+- log: `/private/tmp/bamf-479/premerge-retry.log`.
+
+Any bookkeeping after `c83a9c27` is documentation/flow-control-only and therefore
+reuses this pre-merge evidence under `TEST_EVIDENCE_REUSED`. B13.2 is ready for a
+lane-to-unified PR and human review. This receipt does not authorize self-merge or a
+live student start. Issue closure remains tied to accepted integration into reviewed
+unified.
 
