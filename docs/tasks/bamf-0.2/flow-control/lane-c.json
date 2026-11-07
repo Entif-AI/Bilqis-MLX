@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "bd3657e170c8bdc046a7bb28524c0fb829ca7ce9",
-  "updated_at": "2026-11-07T15:46:00+00:00",
+  "updated_at": "2026-11-07T17:13:18+00:00",
   "exception": null,
   "items": [
     {
@@ -132,10 +132,10 @@
     {
       "issue": 905,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "bd3657e170c8bdc046a7bb28524c0fb829ca7ce9",
-      "summary": "C02.5 visit-provenance transport active: carry frozen B13 run_seed/run identity and C03 true visit record through issued C02 training batches without aliasing episode_id or optimizer_step_seed.",
-      "resume_trigger": null,
+      "state": "WAITING",
+      "head_sha": "c3d5619e50d98576caaeb324d8ec1de3403026f8",
+      "summary": "C02.5 transports frozen B13 run identity/run_seed plus C03 visit authority through issued training batches without aliasing episode_id or optimizer_step_seed. Canonical hashing excludes process-local issuer state. Exact detached M3 affected ring: 90/90 PASS, zero skips/errors.",
+      "resume_trigger": "Reviewed unified consumes B13.6/#904 and C03/#376 with their accepted owner dependencies; then refresh this branch once from reviewed unified, rerun only dependency-sensitive proof, and select #905 for final review/turn-in.",
       "preserved_branch": "codex/905-c02-5-visit-provenance-20261107"
     }
   ]
