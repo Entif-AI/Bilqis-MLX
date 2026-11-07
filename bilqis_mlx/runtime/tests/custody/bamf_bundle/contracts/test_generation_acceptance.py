@@ -17,7 +17,8 @@ from unittest.mock import patch
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_acceptance import (
-    LEGACY_ACCEPTANCE_SCHEMA, AcceptedCandidateBinding, mint_acceptance_binding,
+    LEGACY_ACCEPTANCE_SCHEMA, PREVIOUS_ACCEPTANCE_SCHEMA,
+    AcceptedCandidateBinding, mint_acceptance_binding,
 )
 from bilqis_mlx.learning.atlas_retention_decision import (
     LEGACY_DECISION_SCHEMA, CandidateRetentionDecision, decide_candidate_retention,
@@ -120,6 +121,30 @@ class GenerationAcceptanceProvenanceTests(unittest.TestCase):
         self.assertEqual(parsed.to_record(), legacy)
         with self.assertRaises(BilqisError):
             self.publish(source, acceptance=parsed)
+
+    def test_legacy_parent_acceptance_cannot_authorize_fresh_successor(self):
+        parent = candidate(parent_state())
+        published = self.publish(parent, acceptance=acceptance(parent))
+        acceptance_path = (
+            self.run / "bamf-acceptance" / f"{published['manifest_sha256']}.json")
+        record = json.loads(acceptance_path.read_text())
+        record.pop("source_anchors")
+        record["schema_version"] = PREVIOUS_ACCEPTANCE_SCHEMA
+        record["binding_sha256"] = hashlib.sha256(canonical({
+            key: value for key, value in record.items()
+            if key != "binding_sha256"
+        })).hexdigest()
+        acceptance_path.write_text(json.dumps(record))
+
+        pointer_path = self.run / "bamf-state.json"
+        pointer = json.loads(pointer_path.read_text())
+        pointer["acceptance_sha256"] = record["binding_sha256"]
+        pointer_path.write_text(json.dumps(pointer))
+
+        successor = candidate(
+            accepted_state(parent_state()), 1, published["manifest_sha256"])
+        with self.assertRaises(BilqisError):
+            self.publish(successor, acceptance=acceptance(successor))
 
     def test_replay_cannot_replace_immutable_acceptance_evidence(self):
         source = candidate(parent_state())

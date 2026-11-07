@@ -171,7 +171,9 @@ def _parent_acceptance_for_publication(
         parent = load_bamf_bundle(
             run_dir / current["bundle"],
             expected_manifest_sha256=current["manifest_sha256"])
-        _require_published_acceptance(run_dir, current, parent)
+        parent_acceptance = _require_published_acceptance(run_dir, current, parent)
+        if parent_acceptance.schema_version != ACCEPTANCE_SCHEMA:
+            invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
         return current["acceptance_sha256"]
 
 
