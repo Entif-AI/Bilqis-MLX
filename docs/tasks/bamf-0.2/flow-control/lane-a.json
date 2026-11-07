@@ -98,11 +98,29 @@
     {
       "issue": 888,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "3899649586b105b075e92f0ee3c51e80c379b473",
-      "summary": "A09.5a realization-breadth child: bind accepted #420/#758/#737 Boolean, numeric and qualified-world authority into at least three genuine source-qualified candidate-to-staged-successor realizations. Strict subset of #395 acceptance; no new acceptance, C07 lease/admission, learner run or optimizer mutation.",
+      "state": "READY",
+      "head_sha": "d0dc79d825f43d8ba4d732a2b668817692db67d9",
+      "summary": "A09.5a now exposes three genuine post-A/B/C source-qualified event realizations through the existing candidate-realization seam: D.EVENT_OCCURRENCE, D.COMMENCEMENT and D.TERMINATION. They stage successively with prerequisite-closed one-row semantic growth, exact pinned source identities and exact restart identity; no C07 lease/admission or learner/optimizer mutation occurs. Focused realization 3/3, event authority 6/6, staging 9/9 and legacy Ithkuil realization 17/17 pass; error-control new debt and changed-file smell findings are zero.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a09-5a-888-realizations-20261107"
+    },
+    {
+      "issue": 889,
+      "pr": null,
+      "state": "READY",
+      "head_sha": "4e3f36afbd41856fe671bcd1dfb159df51eeb6b2",
+      "summary": "A09.5b primary-source staging repair is consumed by the #888 cohesive candidate: exact pinned primary source sense/text hash can stage without an auxiliary evidence row while all source/provider/oracle/admission boundaries remain fail-closed. Focused staging proof is green.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a09-5b-889-primary-source-20261107"
+    },
+    {
+      "issue": 890,
+      "pr": null,
+      "state": "READY",
+      "head_sha": "831e6419370cadf1fe5128cf7d6e90e112e2d54a",
+      "summary": "A09.5c event source authority is consumed by the #888 cohesive candidate: occurrence, commencement and termination use stable non-experimental identities bound to exact Ithkuil senses, source-text/PDF hashes, independent oracle and append-only prerequisite-closed semantic projection. Source/semantic owner checks are green.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a09-5c-890-event-authority-20261107"
     },
     {
       "issue": 395,
