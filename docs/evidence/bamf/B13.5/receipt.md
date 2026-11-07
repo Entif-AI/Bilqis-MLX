@@ -555,3 +555,73 @@ The complete failing set is exactly the same five inherited nested-frame C09
 reviewed-unified `d4bad39a`. No new #697-local failure appeared. This closes the
 deterministic engineering queue for fresh whole-candidate EGM round 4. No EGM PASS
 is claimed by this qualification receipt.
+
+### EGM round 4 and final-cap repair set
+
+Fresh whole-candidate round 4 reviewed exact candidate
+`6e3bab9c68f7d63ff5c222e31318b0c4a2ccfbeb` and returned **FAIL** with one
+`TARGET_LOCAL` Blocker and two `TARGET_LOCAL` Majors.
+
+The Blocker exposed a three-generation retained-map lineage defect. A valid
+`F0 -> F1(changed, predecessor=F0) -> F1(retained)` chain replayed the retained
+grandchild as though F1 were root-constructed, dropping F0 from the feature
+construction identity. Repair `fd739a12d7b65174225a7483b0b835e52314559c`
+preserves the already-authenticated parent feature object when the child retains
+the same factor-map digest, verifies the child's recorded source/schema/release
+against that immutable map, and still binds the immediate accepted parent as
+generation ancestry. The new cold-lineage regression failed before with
+`BAMF_FEATURE_SOURCE_REPLAY_MISMATCH` and passes after.
+
+The first Major showed that a live generation > 0 historical bundle/v2 parent
+could carry a current acceptance sidecar and still authorize a fresh v3 child,
+despite lacking the immutable `parent_acceptance_sha256` needed to authenticate
+its own ancestry after the pointer advanced. Repair
+`377c98c7a138c6fe610209b05b2829fdd4a051db` fails closed for that
+non-genesis parent publication capability while preserving bundle/v2 genesis as
+the bootstrap compatibility boundary.
+
+The second Major showed that accepted feature-lineage replay recursively loaded
+one generation per Python call even though B12/B13 impose no history-length cap.
+Failing-before
+`test_long_accepted_history_has_no_python_recursion_ceiling` used 1,100 accepted
+history nodes and reproduced `RecursionError`. Repair
+`68d3f287122b5ff8e70337e15655e225d073fa3a` walks and validates accepted
+custody backward iteratively, then replays feature construction forward. It does
+not invent a generation cap or weaken historical acceptance verification.
+
+### Final deterministic qualification for round 5
+
+The final behavior-changing semantic head is
+`68d3f287122b5ff8e70337e15655e225d073fa3a`. Reviewed unified remains
+`d4bad39a32a80acbffdb9f891a906892ab2e9fab`.
+
+Exact-head qualification after all round-4 repairs:
+
+- complete B13 bundle proof: **144 PASS / 5 explicit skips / 0 failures**;
+- long-history regression: **1/1 PASS** after the recorded failing-before
+  `RecursionError`;
+- forced-serial differential leaf: **13 PASS + 3 subtests**, exit 0;
+- governance integrity, development structure, current Microspenics legacy-trainer
+  authority and `git diff --check`: **PASS**;
+- disposable A02/#399 full-topology production staging: **1/1 PASS in 192.200s**;
+- ordinary A02 planner: **5/5 PASS + 1 optional real-source skip**, with
+  `BAMF_VOCABULARY_PREDECESSOR_FEATURE_AUTHORITY_REQUIRED` still fail-closed for
+  caller-minted predecessor authority.
+
+The final fresh ADR-132 snapshot-isolated premerge completed with its mutation
+guard intact (`source_mutated=false`) and reported:
+
+- **3,626 total**;
+- **3,454 passed**;
+- **167 explicit skips**;
+- **5 errors**;
+- **430.642s**.
+
+Those five errors are exactly the same inherited C09
+`BAMF_C09_PACKED_FRAME_IDENTITY_DRIFT` cases already reproduced on pristine
+`d4bad39a`: one in `test_compiled.py`, two in `test_execution.py`, and two
+in `test_members.py`. No additional #697-local failure appeared.
+
+The complete known engineering queue is therefore repaired and deterministically
+qualified for fresh whole-candidate EGM round 5, the ADR-127 default episode cap.
+No round-5 EGM PASS is claimed by this receipt.
