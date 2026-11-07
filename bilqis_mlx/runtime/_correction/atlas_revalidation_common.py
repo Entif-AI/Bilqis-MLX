@@ -5,7 +5,7 @@ import json
 import re
 
 from ..errors import ErrorBus, SCHOOL
-from ..semantics.cognitive_dependencies import DependencyRef
+from ..semantics.cognitive_dependencies import ArtifactKind, DependencyRef
 
 
 CORRECTION_EVENT_SCHEMA = "bilqis.c09.correction-event/v3"
@@ -22,6 +22,15 @@ _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _ED25519_SIGNATURE = re.compile(r"[0-9a-f]{128}\Z")
 MAX_REVALIDATION_PRIORITY = 4
 
+_OWNER_PRIORITY = {
+    ArtifactKind.ATLAS_FEATURE: (4, 2),
+    ArtifactKind.PACKED_FRAME: (3, 3),
+    ArtifactKind.MOTIF: (4, 4),
+    ArtifactKind.EXACT_CACHE: (3, 4),
+    ArtifactKind.OPERATOR_COMPOSITION: (2, 4),
+    ArtifactKind.CAPABILITY_SUPPORT: (4, 4),
+}
+
 
 def _invalid(reason: str) -> None:
     ErrorBus.raise_(SCHOOL.BAMF_REVALIDATION.INVALID, reason=reason)
@@ -33,6 +42,13 @@ def _name(value: object) -> bool:
 
 def _digest(value: object) -> bool:
     return isinstance(value, str) and bool(_SHA256.fullmatch(value))
+
+
+def owner_priority(kind: ArtifactKind) -> tuple[int, int]:
+    """Return declared impact/exigency for production artifact reuse."""
+    if not isinstance(kind, ArtifactKind) or kind not in _OWNER_PRIORITY:
+        _invalid("BAMF_C09_OWNER_PRIORITY_INVALID")
+    return _OWNER_PRIORITY[kind]
 
 
 def _time(value: object) -> bool:

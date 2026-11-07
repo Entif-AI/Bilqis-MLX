@@ -126,6 +126,24 @@ class CapabilitySupportOwnerTests(unittest.TestCase):
         self.assertIn(
             DependencyRef(DependencyKind.SOURCE, SOURCE_ROW),
             owner.current_node.immediate_dependencies)
+        self.assertIn(
+            DependencyRef(
+                DependencyKind.SOURCE,
+                "source-proof:" + authority.digest,
+            ),
+            owner.current_node.immediate_dependencies)
+        self.assertIn(
+            DependencyRef(
+                DependencyKind.RELEASE,
+                "source-generation:" + GENERATION,
+            ),
+            owner.current_node.immediate_dependencies)
+        self.assertIn(
+            DependencyRef(
+                DependencyKind.SOURCE,
+                "training-batch:" + authority.training_batch_sha256,
+            ),
+            owner.current_node.immediate_dependencies)
         self.assertEqual(
             self.load_support().support,
             owner.support)

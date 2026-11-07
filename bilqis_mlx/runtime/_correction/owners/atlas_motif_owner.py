@@ -6,7 +6,7 @@ from bilqis_mlx.learning.frame_encoder import CompiledEncoderInput
 from bilqis_mlx.semantics.cognitive_dependencies import (
     ArtifactKind, ArtifactNode, DependencyIndex, DependencyKind, DependencyRef,
 )
-from bilqis_mlx.runtime.atlas_revalidation_common import _invalid
+from bilqis_mlx.runtime.atlas_revalidation_common import _invalid, owner_priority
 from bilqis_mlx.runtime.atlas_revalidation_evidence import (
     CorrectionEvent, RevalidationFrontier,
 )
@@ -39,14 +39,15 @@ def _motif_node(cache, compiled: CompiledEncoderInput) -> tuple[ArtifactNode, tu
         DependencyRef(DependencyKind.SOURCE, "run:" + cache.run_id),
         DependencyRef(DependencyKind.TIME, "generation:" + str(cache.generation)),
     }
+    impact, exigency = owner_priority(ArtifactKind.MOTIF)
     return ArtifactNode(
         artifact_id="motif:" + manifest.digest,
         kind=ArtifactKind.MOTIF,
         content_digest=manifest.digest,
         eligible=True,
         immediate_dependencies=tuple(sorted(dependencies)),
-        impact=0,
-        exigency=0,
+        impact=impact,
+        exigency=exigency,
     ), frame_ids
 
 

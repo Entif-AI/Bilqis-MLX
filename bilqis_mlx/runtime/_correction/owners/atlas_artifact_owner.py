@@ -7,7 +7,7 @@ from bilqis_mlx.semantics.domains import contract_digest
 from bilqis_mlx.semantics.cognitive_dependencies import (
     ArtifactKind, ArtifactNode, DependencyIndex, DependencyKind, DependencyRef,
 )
-from bilqis_mlx.runtime.atlas_revalidation_common import _invalid
+from bilqis_mlx.runtime.atlas_revalidation_common import _invalid, owner_priority
 from bilqis_mlx.runtime.atlas_source_authority import SourceAuthorityRegistry
 from bilqis_mlx.runtime.atlas_revalidation_runtime import (
     advance_revalidation, apply_correction, next_revalidation_task,
@@ -37,14 +37,15 @@ def _node(features: AtlasFeatures, predecessor: AtlasFeatures | None) -> Artifac
     dependencies = [_source_ref(features), _release_ref(features), _atlas_ref(features)]
     if predecessor is not None:
         dependencies.append(DependencyRef(DependencyKind.ARTIFACT, _artifact_id(predecessor)))
+    impact, exigency = owner_priority(ArtifactKind.ATLAS_FEATURE)
     return ArtifactNode(
         artifact_id=_artifact_id(features),
         kind=ArtifactKind.ATLAS_FEATURE,
         content_digest=features.digest,
         eligible=True,
         immediate_dependencies=tuple(sorted(dependencies)),
-        impact=0,
-        exigency=0,
+        impact=impact,
+        exigency=exigency,
     )
 
 
@@ -145,14 +146,15 @@ def _packed_frame_node(row: CompiledFrameBatch, packed) -> ArtifactNode:
             DependencyKind.RIGHTS,
             "rights:" + contract_digest((row.policy_version[2], row.policy_version[3]))),
     ))
+    impact, exigency = owner_priority(ArtifactKind.PACKED_FRAME)
     return ArtifactNode(
         artifact_id="frame:" + sidecar.occurrence_id,
         kind=ArtifactKind.PACKED_FRAME,
         content_digest=packed.projection_sha256,
         eligible=True,
         immediate_dependencies=tuple(sorted(dependencies)),
-        impact=0,
-        exigency=0,
+        impact=impact,
+        exigency=exigency,
     )
 
 

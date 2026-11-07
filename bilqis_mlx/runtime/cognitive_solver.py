@@ -92,6 +92,7 @@ def solve_task(
         )
         return (
             cached.source_binding_digest == source_digest
+            and cached.generation_digest == generation.generation_digest
             and cached.rights_epoch == binding.frontier.rights_epoch
             and cached.correction_generation
             == binding.frontier.correction_generation
@@ -103,6 +104,7 @@ def solve_task(
             QualifiedComposition(
                 proposal.goal,
                 source_digest,
+                generation.generation_digest,
                 binding.frontier.rights_epoch,
                 binding.frontier.correction_generation,
                 proposal.proposal_receipt_sha256,

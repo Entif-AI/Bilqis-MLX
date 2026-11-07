@@ -46,6 +46,16 @@ class MotifArtifactOwnerTests(unittest.TestCase):
             "BAMF_C09_ARTIFACT_DEPENDENCY_HELD",
         ))
 
+    def test_real_owner_nodes_supply_non_tie_revalidation_priority(self):
+        motif = self.owner.current_node
+        self.assertEqual((motif.impact, motif.exigency), (4, 4))
+        frames = tuple(
+            node for node in self.owner.index.nodes
+            if node.kind.value == "PACKED_FRAME")
+        self.assertTrue(frames)
+        self.assertTrue(all(
+            (node.impact, node.exigency) == (3, 3) for node in frames))
+
     def test_equal_input_revalidation_stops_before_motif(self):
         source = self.owner.source_dependencies[0]
         event = _event(source)

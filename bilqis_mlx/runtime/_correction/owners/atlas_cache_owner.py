@@ -10,7 +10,7 @@ from bilqis_mlx.semantics.cognitive_dependencies import (
     ArtifactKind, ArtifactNode, DependencyIndex, DependencyKind, DependencyRef,
 )
 from bilqis_mlx.runtime.atlas_source_authority import SourceAuthorityRegistry
-from bilqis_mlx.runtime.atlas_revalidation_common import _invalid
+from bilqis_mlx.runtime.atlas_revalidation_common import _invalid, owner_priority
 from bilqis_mlx.runtime.atlas_revalidation_runtime import (
     advance_revalidation, apply_correction, next_revalidation_task,
     read_artifact, revalidate_node,
@@ -74,14 +74,15 @@ def _node(authority, artifact: CacheArtifact, binding: CacheBinding) -> Artifact
     from bilqis_mlx.runtime.atlas_cache_eligibility import validate_current_binding
     validate_current_binding(authority, binding)
     _require_cache_binding(artifact, binding, authority)
+    impact, exigency = owner_priority(ArtifactKind.EXACT_CACHE)
     return ArtifactNode(
         artifact_id="cache:" + binding_digest(binding).hex(),
         kind=ArtifactKind.EXACT_CACHE,
         content_digest=cache_artifact_digest(artifact),
         eligible=True,
         immediate_dependencies=_dependencies(binding),
-        impact=0,
-        exigency=0,
+        impact=impact,
+        exigency=exigency,
     )
 
 
