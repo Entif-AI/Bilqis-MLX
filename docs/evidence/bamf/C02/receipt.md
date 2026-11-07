@@ -2,15 +2,17 @@
 
 `issue_key`: C02 / #371
 `lane`: C
-`reviewed_integration_base`: `3899649586b105b075e92f0ee3c51e80c379b473`
-`implementation_head`: `dc67a3c8d2d6edbf9ca63dcd6ed105d9fed4909c`
-`feature_branch`: `codex/bamf02-c02-371-complete-20261106`
+`reviewed_integration_base`: `53eba37e5c9dd6ad065b1980fa4850c484aaa624`
+`implementation_head`: `0a5d0343085a4e18cd64bf00fe25e74eb76f5cac`
+`feature_branch`: `codex/bamf02-c02-371-postmerge-20261107`
+`prior_turn_in_pr`: #893, externally merged as
+`53eba37e5c9dd6ad065b1980fa4850c484aaa624`
 
 ## Consumed authority and dependencies
 
-- Reviewed unified baseline `3899649586b105b075e92f0ee3c51e80c379b473` is an
-  ancestor of the implementation head; no `main` or sibling lane branch was
-  merged directly.
+- Reviewed unified baseline `53eba37e5c9dd6ad065b1980fa4850c484aaa624`
+  is the actual PR #893 merge result and direct parent of the post-merge repair
+  implementation head; no `main` or sibling lane branch was merged directly.
 - C02.1 #490 exact accepted PR #884 head
   `2d8993c7aa654378b13ce9e14e7f0bf0986083b4`, merged to unified as
   `aef69dae9179bb09f85f955b8a494f6582eac942`, is an ancestor of this branch.
@@ -55,6 +57,17 @@ Implementation changes relative to reviewed unified touch:
 - affected package-local behavior regressions under
   `bilqis_mlx/runtime/tests/` and `bilqis_mlx/learning/source_atoms/tests/`.
 
+The post-merge repair relative to
+`53eba37e5c9dd6ad065b1980fa4850c484aaa624` changes only:
+
+- `bilqis_mlx/runtime/_batch/factory_candidate_training.py`
+- `bilqis_mlx/runtime/tests/batch/test_factory_training_bridge.py`
+- this C02 evidence successor.
+
+The repair removes caller-supplied optimizer decay authority. B12/B01 now owns
+decay derivation exclusively through
+`reconcile_b01_optimizer_manifest(...)` inside the candidate transaction.
+
 ## Source and topology bindings
 
 - Exact A01 artifact fixture mounted for real MLX proof:
@@ -86,10 +99,18 @@ Exact CPU command:
 
 Exact detached Studio command and fixture are recorded in
 `docs/evidence/bamf/C02/egm.md`. Result: **12 passed, 0 failed, 0 skipped, 0
-errors**, with source snapshot unchanged.
+errors**, with source snapshot unchanged. Current receipt:
+`/Users/emilie/Code/371-c02-complete-20261106/.local/c02-371-postmerge-repair-proof/receipt.json`.
 
 Repository gates: BAMF flow-control OK; **43/43** issue mirrors and **214**
-owner/child identities/fingerprints verified; `git diff --check` clean.
+owner/child identities/fingerprints verified; changed-file smell audit **0
+findings**; `git diff --check` clean.
+
+The immediately preceding detached witness on merged PR #893 head
+`3e959177314fbd43def41547fd34a1e1701c8909` is intentionally retained as
+failure evidence: **11 passed / 1 error**, `source_mutated=false`, failing only
+because C02 supplied the B12.4-removed `decay` keyword. Incident
+`PM-2026-11-07-003` records that post-merge integration defect.
 
 ## Observed outcome and remaining boundary
 
@@ -116,11 +137,14 @@ start and sustained iteration remain human/C16-owned.
 
 Report: `docs/evidence/bamf/C02/egm.md`. Round 1 failed on the production seams
 listed there; all C02-owned Blocker/Major findings received concrete repairs.
-Fresh round-2 comprehension on exact behavior head `dc67a3c8...` found one
-Major only: this durable receipt/EGM record still named the pre-topology repair
-head and 25/25 CPU proof. This commit corrects that evidence defect. Final fresh
-whole-candidate exact-head disposition is recorded on #371 and the turn-in PR.
+Fresh pre-merge round-2 review on exact candidate `f9f87d8b...` passed both
+personas at **0 Blockers / 0 Majors / 0 Nits**. That review was invalidated for
+merge-readiness when the feature head/base changed. The merged result then
+exposed the B12.4 call-boundary failure described above. The current post-merge
+repair is therefore held at `EGM-Pending` until a genuinely fresh
+whole-candidate review binds to the final repair/evidence head.
 
-`next_ready_issue`: none claimed by C02; parent #371 turns in to the reviewed
-unified trunk after independent merge-readiness acceptance. No self-merge, issue
-closure, `main` mutation or live learner start is authorized here.
+`next_ready_issue`: none claimed by C02; the post-merge repair turns in to the
+reviewed unified trunk only after independent merge-readiness acceptance. No
+self-merge, manual issue closure, `main` mutation or live learner start is
+authorized here.
