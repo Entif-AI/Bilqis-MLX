@@ -36,12 +36,18 @@ from bilqis_mlx.learning.atlas_participation import (
 )
 from bilqis_mlx.runtime.bamf_bundle import admission
 from bilqis_mlx.runtime.bamf_bundle.admission import (
-    admit_candidate_step, bind_accepted_execution_cache,
+    admit_candidate_step, bind_accepted_cache_authority,
+    bind_accepted_execution_cache,
     derive_participation_inputs,
 )
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
     AcceptedExecutionCache, require_accepted_execution_cache,
 )
+from bilqis_mlx.runtime.atlas_cache_codec import CacheAuthorityRuntime
+from bilqis_mlx.runtime.atlas_revalidation import (
+    SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
+)
+from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
 
 from bilqis_mlx.learning._retention.tests.execution_fixtures import (
     execution_provenance,
@@ -107,7 +113,9 @@ class ProductionAuthorityTests(unittest.TestCase):
         self.publish(candidate(parent_state()))
         with shape_patch():
             cache = bind_accepted_execution_cache(self.run)
+            rebound = bind_accepted_execution_cache(self.run)
         self.assertIs(require_accepted_execution_cache(cache), cache)
+        self.assertIs(rebound, cache)
         self.assertEqual(cache.run_id, "fixture-run")
         self.assertEqual(
             cache.motif_manifest.digest,
@@ -115,6 +123,25 @@ class ProductionAuthorityTests(unittest.TestCase):
         )
         with self.assertRaises(BilqisError):
             AcceptedExecutionCache()
+
+    def test_accepted_b13_custody_issues_and_retains_opaque_cache_authority(self):
+        self.publish(candidate(parent_state()))
+        registry = SourceAuthorityRegistry((SourceAuthorityKey(
+            "cache-host", "1" * 64,
+            (SourceAuthorityScope(DependencyKind.ARTIFACT, "cache:"),),
+        ),))
+        source = lambda: object()
+        with shape_patch():
+            cache, authority = bind_accepted_cache_authority(
+                self.run, registry, source)
+            rebound_cache, rebound_authority = bind_accepted_cache_authority(
+                self.run, registry, source)
+        self.assertIsInstance(authority, CacheAuthorityRuntime)
+        self.assertIs(rebound_cache, cache)
+        self.assertIs(rebound_authority, authority)
+        with shape_patch(), self.assertRaises(BilqisError):
+            bind_accepted_cache_authority(
+                self.run, registry, lambda: object())
 
     def test_production_step_reaches_the_owner_binder(self):
         self.publish(candidate(parent_state()))
