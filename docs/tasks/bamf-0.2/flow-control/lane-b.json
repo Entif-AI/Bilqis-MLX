@@ -40,7 +40,7 @@
     {
       "issue": 455,
       "pr": null,
-      "state": "ACTIVE",
+      "state": "WAITING",
       "head_sha": "39732bdb053e33cd917ed03de43ac02ed638474b",
       "summary": "B06.4 parent candidate awaits B06.3 acceptance and stacked repair consumption.",
       "resume_trigger": "B06.3/#454 is accepted sufficiently for this dependency and remediation PR #725 is consumed or otherwise resolved.",
@@ -76,7 +76,7 @@
     {
       "issue": 478,
       "pr": 885,
-      "state": "WAITING",
+      "state": "ACTIVE",
       "head_sha": "e50d759cc45bf61807f62ee62d7354052a3f0db8",
       "summary": "B13.1 reactivated after root-cause tracing showed the remaining A02/C07 cycle is blocked on a B13-owned accepted-run custody seam: #399 already stages the exact native BAMF candidate, while #510 must authenticate that candidate and the concrete accepted runtime without reconstructing legacy optimizer state. A09.5/PR #891 is now consumed by reviewed unified. #478 owns the missing accepted-run projection and is the canonical place to break the cycle.",
       "resume_trigger": null,
