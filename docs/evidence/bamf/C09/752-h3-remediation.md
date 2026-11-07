@@ -264,3 +264,53 @@ The reorganized candidate was then re-run from the exact detached M3 head
 The passing temporal projection test remains preservation evidence for the currently
 implemented context-digest dependency only; it does not override the Major 3 authority
 gap documented above.
+
+### Major 3 implementation checkpoint - durable A13 to C09 consumption
+
+User-authorized blocker resolution resumed from exact remote-equal head
+`5f2aa2c1fea34a25377654a903defe15866c09ce`. The semantic implementation head is
+`c8c9675829e5d83a138fc33d8ca3d3dec05a1f12`. Historical H3 remains FAIL. This
+checkpoint does not start H4 or claim merge readiness.
+
+Lane C now consumes the accepted A13.3 transition without converting it into a
+`CorrectionEvent`. `AcceptedRuntimeHost.record_context_transition()` re-runs the
+authoritative A13.3 `transition_context()` operation under current accepted B13 custody.
+Each resulting `C09ContextInvalidation` is stored as its own canonical
+`BAMF_C09_CONTEXT_INVALIDATION` record in the existing crash-safe accepted-C09 ledger.
+The record retains the original A13 event ID and binds it to the accepted manifest.
+
+Live delivery and cold replay send that typed event to registered retained artifact
+owners. C09 resolves the old approved-context digest to the existing
+`TIME time:asof:context:<digest>` reverse edge, holds direct consumers, and walks only
+declared `ARTIFACT` descendants in that owner's dependency index. Reads fail closed with
+`BAMF_C09_ARTIFACT_HELD`. A newly materialized owner built from a different context
+digest does not inherit the old hold merely because an older event exists.
+
+Context invalidation replay does not require a correction-signing registry. Signed
+source corrections still retain their existing registry requirement and branch/replay
+path. The implementation therefore does not mint a signer, wall clock, source expiry,
+or caller-owned correction authority.
+
+The focused production regression in
+`test_accepted_correction_runtime.py` uses an accepted B13 generation and the retained
+motif owner. It records an A13 transition through `AcceptedRuntimeHost`, verifies that
+the durable ledger contains the typed event and no correction payload, proves the live
+artifact hold, clears process caches, then proves the hold survives cold replay without
+a correction registry.
+
+Local executable proof is limited by this worktree host. Default Python 3.14 lacks
+`mlx`; system Python 3.9 has MLX but cannot execute the repository's Python 3.10+
+typing syntax. Both attempts stopped during module import before the regression ran.
+The bounded checks that do not require that unavailable interpreter combination pass:
+
+- changed production/test modules compile under Python 3.14;
+- `quality:changed` against `bd3657e1...`: PASS, with zero new changed-file findings;
+- BAMF flow control: PASS, 15/15 tests;
+- BAMF contract verifier: 43/43 PASS;
+- `git diff --check`: PASS.
+
+The remaining authority boundary is upstream of this consumer. A13/source authority
+must supply the real changed task/frontier/policy inputs that cause
+`transition_context()` to emit an invalidation. C09 does not infer elapsed time or
+invent an expiry. The durable Lane-C consumption seam is implemented; review status
+remains unchanged until a separately authorized review action occurs.

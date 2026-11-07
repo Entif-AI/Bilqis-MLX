@@ -124,9 +124,9 @@
       "issue": 752,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "5f2aa2c1fea34a25377654a903defe15866c09ce",
+      "head_sha": "c8c9675829e5d83a138fc33d8ca3d3dec05a1f12",
       "preserved_branch": "codex/752-post-egm-h1-fixes-20261107",
-      "summary": "H3 historical FAIL preserved. Six findings are repaired; sole remaining engineering scope is Lane-C durable consumption of typed A13.3 C09ContextInvalidation into retained C09 artifact owners. No H4, PR or merge-readiness claim is authorized.",
+      "summary": "H3 historical FAIL preserved. Residual Major 3 engineering is implemented at c8c96758: typed A13.3 C09ContextInvalidation is persisted in accepted-C09 custody and replayed into retained artifact holds without CorrectionEvent authority. No H4, PR or merge-readiness claim is authorized.",
       "resume_trigger": null
     },
     {
