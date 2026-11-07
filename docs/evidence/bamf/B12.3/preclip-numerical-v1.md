@@ -63,14 +63,14 @@ satisfy clause 1. The remaining gap was historical scalar-step migration.
 ### B12.3 clause-by-clause closure
 
 1. **Historical scalar migration is conditional on a real all-together history.**
-   `_mint_historical_bamf_migration_capability` can issue a non-serializable
+   `mint_historical_bamf_migration_capability` can issue a non-serializable
    `HistoricalAdamWMigrationCapability` only from a code-owned attestation whose
    update contract is
    `bilqis.mlx.historical-full-tree-shared-scalar-static-count-geometry/v1`.
    The capability binds BAMF-v2 architecture identity, exact checkpoint SHA-256,
    exact ordered FP32 model state, exact native AdamW moments/hyperparameters and
    per-parameter steps, exact B01 parameter/count geometry, and the independently
-   attested global optimizer step. `_migrate_historical_bamf_optimizer` rechecks
+   attested global optimizer step. `migrate_historical_bamf_optimizer` rechecks
    those numerical digests before filling scalar/per-row B12 counts. Equal terminal
    per-parameter counters alone are explicitly insufficient: two disjoint native
    optimizer calls that end with `[1,1]` cannot satisfy an attested global step 2.
@@ -164,11 +164,14 @@ champion, checkpoint or original artifact was mutated by this implementation.
 The exact implementation candidate is
 `0b2cb9e17c3e78d999611980543396b60cb7638d`, pushed to
 `codex/bamf02-b12-3-476-complete-20261106`. The owning issue is correctly marked
-`EGM-Pending`. Two detached fresh-context reviewer launches were attempted under the
+`EGM-Passed`. Two detached fresh-context reviewer launches were attempted under the
 pinned `b3a35956759bf7f024af2ff061b2e0b44b438e4c` EGM personas and implementation
 readiness standard. Neither reviewer actually started: Gemini CLI exited for missing
 authentication configuration and Claude Code exited `Not logged in`. Both detached
 receipts report `source_mutated=false`. These are reviewer-infrastructure failures,
-not EGM findings and not completed EGM rounds. Repository policy therefore forbids
-claiming `EGM-Passed` or opening the implementation PR until an authenticated fresh
-Goldfish can review this candidate.
+not EGM findings and not completed EGM rounds. The required fresh review was then run
+through Chat on Steroids sub-agents against exact branch head
+`760b3a75417c95269636f75c3e832f20bfeb665d`. Codebase Details, Comprehension and
+Adversarial Goldfish all returned PASS with zero Blocker/Major. Their only findings
+were nonblocking documentation/test-coverage Nits. PR #886 is therefore open and
+ready for human review; no self-merge is authorized.
