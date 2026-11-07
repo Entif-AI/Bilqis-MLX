@@ -28,9 +28,7 @@ from bilqis_mlx.runtime.bamf_bundle import (
 )
 from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
 from bilqis_mlx.runtime.factory_candidate_training import FactoryDeliveryObservation
-from bilqis_mlx.runtime.factory_complete_solver import (
-    factory_complete_solver, factory_evaluation_instrument,
-)
+from bilqis_mlx.runtime.factory_complete_solver import factory_evaluation_instrument
 from bilqis_mlx.runtime.cognitive_solver import (
     GenerationBinding, RouteKind, SolveBudget, SolveContext, solve_task,
 )
