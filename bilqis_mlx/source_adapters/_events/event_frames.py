@@ -1,10 +1,11 @@
-"""Three exploratory Ithkuil senses share a finite before/after event adapter.
+"""Three source-qualified Ithkuil senses share a finite before/after event adapter.
 
 This models observed occurrence, inactive-to-active commencement and active-to-
 inactive termination. It does not realize morphology, causation or origination.
-Prototype token admissions belong only to issue349 experiments.
+Catalog additions remain neural-inert proposals until the BAMF admission owner
+accepts them; this module owns only source semantics, generation and checking.
 """
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from functools import lru_cache
 from pathlib import Path
 import csv
@@ -28,18 +29,55 @@ from ..factory.semantic_contrast.teaching import (
     contrast_semantic_footprint,
     enrich_contrasts,
 )
+from ..errors import ErrorBus, SCHOOL
 from ..vocabulary_growth import AdmittedToken, append_catalog, digest
 
 DIALECT = 'bilqis.finite-event-frame/v1'
-GENERATOR = 'bilqis.issue349.event-frames/v1'
+GENERATOR = 'bilqis.ithkuil-event-frame-constructor/v1'
+ADAPTER_ID = 'source.ithkuil-event-frames/v1'
 ROOT = Path(__file__).resolve().parents[3]
 _BALANCE_MODULUS = 2
-SPECS = MappingProxyType({
-    'D.EVENT_OCCURRENCE': ('LEXSENSE-294d00be074a56', ('A.IDENTITY',)),
-    'D.COMMENCEMENT': ('LEXSENSE-45453409b348c4', ('D.EVENT_OCCURRENCE',)),
-    'D.TERMINATION': ('LEXSENSE-fb0402389745d0', ('D.EVENT_OCCURRENCE','D.COMMENCEMENT')),
+
+
+@dataclass(frozen=True)
+class EventSourceSpec:
+    sense_id: str
+    root_id: str
+    root_form: str
+    source_text_sha256: str
+    tracked_pdf_sha256: str
+    prerequisites: tuple[str, ...]
+
+
+SOURCE_SPECS = MappingProxyType({
+    'D.EVENT_OCCURRENCE': EventSourceSpec(
+        'LEXSENSE-294d00be074a56', 'LEXROOT-78a8d2e5e8f911', '-PS-',
+        '4ad21b82d3b0ff9f8bedbfb12efb7184cead6cb5ad549cc88c6626e0ec1b0dd7',
+        '0d8eaa667d26345dfb55e99ee823fb8ecfa4b4a2d72f998d0e0e3c7b94bad9b2',
+        ('A.IDENTITY',)),
+    'D.COMMENCEMENT': EventSourceSpec(
+        'LEXSENSE-45453409b348c4', 'LEXROOT-cf61519c142b35', '-TĻ-',
+        '4546ed26bfd8763da86c897ef03e7567d8117497af9ad8f6923fbd7c39df676d',
+        '0d8eaa667d26345dfb55e99ee823fb8ecfa4b4a2d72f998d0e0e3c7b94bad9b2',
+        ('D.EVENT_OCCURRENCE',)),
+    'D.TERMINATION': EventSourceSpec(
+        'LEXSENSE-fb0402389745d0', 'LEXROOT-0762c2b024374a', '-MPR-',
+        '0a9c0af53457cd758c2ec3f3cac87b684d883a5076cd3949fd3c888d25c75a9e',
+        '0d8eaa667d26345dfb55e99ee823fb8ecfa4b4a2d72f998d0e0e3c7b94bad9b2',
+        ('D.EVENT_OCCURRENCE', 'D.COMMENCEMENT')),
 })
-SYMBOLS = {cap: 'experiment.ithkuil.op.' + cap.split('.')[1] for cap in SPECS}
+SPECS = MappingProxyType({
+    capability: (spec.sense_id, spec.prerequisites)
+    for capability, spec in SOURCE_SPECS.items()
+})
+SYMBOLS = MappingProxyType({
+    capability: 'ithkuil.op.' + capability.split('.')[1]
+    for capability in SOURCE_SPECS
+})
+SEMANTIC_IDS = MappingProxyType({
+    capability: f'ithkuil:{spec.sense_id}/finite-event-frame/v1'
+    for capability, spec in SOURCE_SPECS.items()
+})
 TRUE, FALSE = 'cogal.value.true', 'cogal.value.false'
 PROVIDER_IMPLEMENTATION_FILES = (
     'source_adapters/event_frames.py',
@@ -50,6 +88,10 @@ PROVIDER_IMPLEMENTATION_FILES = (
     'factory/semantic_contrast/transform.py',
     'factory/semantic_contrast/types.py',
 )
+
+
+def _source_invalid(reason):
+    ErrorBus.raise_(SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID, reason=reason)
 
 
 def provider_implementation_digest(overrides=None):
@@ -69,15 +111,56 @@ def provider_implementation_digest(overrides=None):
 @lru_cache(maxsize=1)
 def source_senses():
     with (ROOT/'lib/ithkuil/_data/csv/lexicon_root_senses.csv').open() as stream:
-        rows = {r['lexicon_sense_id']: r for r in csv.DictReader(stream)}
+        rows = tuple(csv.DictReader(stream))
     result = {}
-    for cap, (sense, _) in SPECS.items():
-        row = rows[sense]
+    for cap, spec in SOURCE_SPECS.items():
+        matches = tuple(row for row in rows if row['lexicon_sense_id'] == spec.sense_id)
+        if len(matches) != 1:
+            _source_invalid('EVENT_FRAME_SOURCE_SENSE_MISSING_OR_AMBIGUOUS')
+        row = matches[0]
         pdf = ROOT/'lib/ithkuil/_data/pdf'/row['tracked_pdf_name']
-        if hashlib.sha256(pdf.read_bytes()).hexdigest() != row['tracked_pdf_sha256']:
-            raise ValueError('EVENT_FRAME_SOURCE_PDF_DRIFT')
+        _verify_source_row(cap, row, hashlib.sha256(pdf.read_bytes()).hexdigest())
         result[cap] = row
     return result
+
+
+def _verify_source_row(capability, row, observed_pdf_sha256):
+    spec = SOURCE_SPECS.get(capability)
+    if spec is None or not isinstance(row, dict):
+        _source_invalid('EVENT_FRAME_SOURCE_SENSE_INVALID')
+    expected = {
+        'lexicon_sense_id': spec.sense_id,
+        'lexicon_root_id': spec.root_id,
+        'root_form_raw': spec.root_form,
+        'stem': 'STEM 1',
+        'specification': 'BSC',
+        'source_text_sha256': spec.source_text_sha256,
+        'tracked_pdf_sha256': spec.tracked_pdf_sha256,
+        'source_url': 'https://ithkuil.net/New_Ithkuil_Lexicon.pdf',
+    }
+    if any(row.get(key) != value for key, value in expected.items()):
+        _source_invalid('EVENT_FRAME_SOURCE_SENSE_DRIFT')
+    if observed_pdf_sha256 != spec.tracked_pdf_sha256:
+        _source_invalid('EVENT_FRAME_SOURCE_PDF_DRIFT')
+
+
+def source_contract_digest(capability):
+    row = source_senses()[capability]
+    spec = SOURCE_SPECS[capability]
+    return digest({
+        'schema': 'bilqis.ithkuil-event-frame-source/v1',
+        'capability': capability,
+        'semantic_id': SEMANTIC_IDS[capability],
+        'symbol': SYMBOLS[capability],
+        'sense_id': spec.sense_id,
+        'source_text_sha256': spec.source_text_sha256,
+        'tracked_pdf_sha256': spec.tracked_pdf_sha256,
+        'prerequisites': spec.prerequisites,
+        'signature': 'Boolean*Boolean->Boolean',
+        'generator': GENERATOR,
+        'oracle': ORACLE,
+        'meaning': row['sense_summary'],
+    })
 
 
 def expression(graph, capability, before, after):
@@ -163,7 +246,7 @@ def semantic_footprint(row):
 
 
 def registered_adapter():
-    return RegisteredSourceAdapter(SourceAdapter('source.issue349.event-frames/v1',
+    return RegisteredSourceAdapter(SourceAdapter(ADAPTER_ID,
         GENERATOR,(ORACLE,),provider_implementation_digest(),
         variation_axes=('event-identity','before-state','after-state','fact-order','fresh-seed'),
         teaching_option_ids=(SEMANTIC_CONTRAST_OPTION,)),
@@ -180,17 +263,22 @@ def expanded_graph(parent):
     for cap, (sense, prereqs) in SPECS.items():
         if SYMBOLS[cap] in parent['tokens']:
             continue
-        row = sources[cap]; proof = digest((GENERATOR, sense, row['source_text_sha256']))
-        admissions.append(AdmittedToken(SYMBOLS[cap], 'experiment:349/'+sense+'/event-frame/v1',
-            row['sense_summary']+'; exploratory finite event observation/transition only',
+        row = sources[cap]; proof = source_contract_digest(cap)
+        if cap == 'D.EVENT_OCCURRENCE':
+            prerequisite_tokens = ('development.Event.E0',)
+        else:
+            prerequisite_tokens = tuple(SYMBOLS[item] for item in prereqs
+                                        if item in SYMBOLS)
+        admissions.append(AdmittedToken(SYMBOLS[cap], SEMANTIC_IDS[cap],
+            row['sense_summary']+'; finite event observation/transition only; morphology not realized',
             'new_ithkuil','compositional',row['source_url'],row['source_text_sha256'],
             proof,registered_adapter().descriptor.implementation_sha256,
-            ('development.Event.E0',),cap,proof,signature='Boolean*Boolean->Boolean',arity=2))
+            prerequisite_tokens,cap,proof,signature='Boolean*Boolean->Boolean',arity=2))
     return append_catalog(parent,tuple(admissions),allow_disposable_fixtures=True)[0] if admissions else parent
 
 
 def compile_tranche(current, graph, *, source_root, source_registry, answer_registry):
-    """A small experimental factory instance; existing runtime owns execution."""
+    """Compile the three source-qualified event capabilities without admitting them."""
     sources = source_senses()
     caps = tuple(CapabilitySpec(cap,'finite-event-frame',(SYMBOLS[cap],),(SYMBOLS[cap],),
         prerequisites,(),(AnswerFamily('binary',BINARY),))
@@ -202,6 +290,6 @@ def compile_tranche(current, graph, *, source_root, source_registry, answer_regi
         *(CapabilitySourceBinding(cap,'ithkuil:sense/'+sense+'@sha256:'+sources[cap]['source_text_sha256'],
             GENERATOR,ORACLE) for cap,(sense,_) in SPECS.items())))
     return compile_executable_factory_release(curriculum,bindings,
-        CurriculumProfile('issue349/pathfinding-events/v1',grades=current.profile.grades),
+        CurriculumProfile('bamf/event-frames/v1',grades=current.profile.grades),
         source_registry,answer_registry,source_root=source_root,graph=graph,
-        verification_seed=349,predecessor=current)
+        verification_seed=2026110703,predecessor=current)
