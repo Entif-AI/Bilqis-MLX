@@ -40,7 +40,8 @@ def solve_task(
             or generation.source_binding_digest != source_digest
             or not _goal_allowed(task, task, budget)):
         _invalid("BAMF_C04_SOLVE_SOURCE_DRIFT")
-    if len(context.qualified_compositions) > budget.max_cached_candidates:
+    if (len(context.operator_composition_artifact_owner.compositions)
+            > budget.max_cached_candidates):
         _invalid("BAMF_C04_CACHED_CANDIDATE_BUDGET_EXCEEDED")
     receipts = []
     remaining_operations = task.budget.max_operations
@@ -84,14 +85,30 @@ def solve_task(
 
     def qualified(cached: QualifiedComposition) -> bool:
         context.operator_composition_artifact_owner.require(cached, binding)
+        verified = (
+            context.operator_composition_artifact_owner.is_materialized(cached)
+            or (context.qualification_verifier is not None
+                and context.qualification_verifier(cached) is True)
+        )
         return (
             cached.source_binding_digest == source_digest
             and cached.rights_epoch == binding.frontier.rights_epoch
             and cached.correction_generation
             == binding.frontier.correction_generation
-            and context.qualification_verifier is not None
-            and context.qualification_verifier(cached) is True
+            and verified
             and _goal_allowed(cached.goal, task, budget))
+
+    def retain_validated(proposal: NeuralProposal) -> None:
+        context.operator_composition_artifact_owner.remember(
+            QualifiedComposition(
+                proposal.goal,
+                source_digest,
+                binding.frontier.rights_epoch,
+                binding.frontier.correction_generation,
+                proposal.proposal_receipt_sha256,
+            ),
+            binding,
+        )
 
     def execute_proposal(
         proposal: NeuralProposal | None, request: NeuralRequest,
@@ -116,7 +133,7 @@ def solve_task(
         return evaluated, None
 
     ordered_cache = tuple(sorted(
-        context.qualified_compositions,
+        context.operator_composition_artifact_owner.compositions,
         key=lambda item: (
             len(item.goal.expression_or_holes.nodes),
             item.qualification_receipt_sha256, item.goal.goal_id)))
@@ -151,9 +168,10 @@ def solve_task(
                 source_digest, generation.generation_digest,
                 task.allowed_operator_ids)
             neural_calls = 1
-            neural, fallback_reason = execute_proposal(
-                decode(context.neural_proposer, request), request)
+            proposal = decode(context.neural_proposer, request)
+            neural, fallback_reason = execute_proposal(proposal, request)
             if neural is not None and neural.answer.state is ValueState.VALUE:
+                retain_validated(proposal)
                 return result(
                     neural.answer, RouteKind.NEURAL_COMPOSITION, neural_calls)
             if neural is not None:
@@ -161,12 +179,13 @@ def solve_task(
             if context.local_refiner is not None:
                 for attempt in range(1, budget.max_local_refinements + 1):
                     local_refinement_calls += 1
-                    refined, reason = execute_proposal(
-                        decode(context.local_refiner, request, attempt), request)
+                    proposal = decode(context.local_refiner, request, attempt)
+                    refined, reason = execute_proposal(proposal, request)
                     if refined is not None:
                         unresolved_answer = refined.answer
                     if refined is not None and (
                             refined.answer.state is ValueState.VALUE):
+                        retain_validated(proposal)
                         fallback_reason = None
                         return result(
                             refined.answer, RouteKind.NEURAL_COMPOSITION,

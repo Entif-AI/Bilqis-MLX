@@ -1,6 +1,8 @@
 """Uniform Factory preflight with frozen source/rights/lease authority fixtures."""
 from dataclasses import replace
+from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.curriculum import AnswerFamily, BINARY, Capability, Course, Grade
@@ -15,7 +17,8 @@ from bilqis_mlx.learning.capability_championship import ReplayBinding
 from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.runtime.capability_authority import (
     AuthorityKind, AuthorityReceipt, AuthorityStatus, PrerequisiteThreshold,
-    ReleasedEvidence, evaluate_progression_authority,
+    ReleasedEvidence, evaluate_accepted_progression_authority,
+    evaluate_progression_authority,
 )
 from bilqis_mlx.runtime.atlas_capability_support_owner import _issue_owner
 from bilqis_mlx.runtime.atlas_requalification import (
@@ -40,7 +43,9 @@ GRAPH = contract_digest({"tokens": ["fixture.padding", "cogal.value.false", "cog
 _DEFAULT_SUPPORT = object()
 
 
-def _support_owner(status=RequalificationStatus.QUALIFIED):
+def _support_owner(
+    status=RequalificationStatus.QUALIFIED, generation=GENERATION,
+):
     node = ArtifactNode(
         "capability-support:target", ArtifactKind.CAPABILITY_SUPPORT,
         "7" * 64, True,
@@ -48,7 +53,7 @@ def _support_owner(status=RequalificationStatus.QUALIFIED):
     support = CapabilitySupport(
         "target", (node.artifact_id,), ("fixture:source",), "8" * 64,
         ("fixture:observation",), status)
-    return _issue_owner(support, node)
+    return _issue_owner(support, node, (generation,))
 
 
 def _release(edge=False, labels=("B", "C")):
@@ -229,3 +234,35 @@ class CapabilityAuthorityTests(unittest.TestCase):
         self.assertEqual(
             self.gate(release, checkpoint, admission, support_owner=_support_owner()).status,
             "ELIGIBLE")
+        self.assertEqual(
+            self.gate(
+                release, checkpoint, admission,
+                support_owner=_support_owner(generation="b" * 64),
+            ).reason,
+            "CURRENT_CAPABILITY_SUPPORT_HELD",
+        )
+
+    def test_accepted_progression_loads_support_from_b13_custody(self):
+        release, checkpoint, admission = _release()
+        solver, target = _evidence(release, "target")
+        replay = ReplayBinding(
+            solver, GENERATION, checkpoint, "C",
+            tuple(sorted(set(target.assessment.solver_contracts))),
+            lambda generation, pointer:
+                generation == GENERATION and pointer == checkpoint)
+        owner = _support_owner()
+        with patch(
+            "bilqis_mlx.runtime.atlas_capability_support_owner."
+            "load_capability_support_owner",
+            return_value=owner,
+        ) as loader:
+            gate = evaluate_accepted_progression_authority(
+                Path("/accepted-run"), release, "target", target, (), replay,
+                admission=admission, semantic_graph_sha256=GRAPH,
+                prerequisite_thresholds=(),
+                source_rights=_authority(AuthorityKind.SOURCE_RIGHTS),
+                promotion_policy=_authority(AuthorityKind.PROMOTION_POLICY),
+                admission_lease=_authority(AuthorityKind.ADMISSION_LEASE),
+            )
+        loader.assert_called_once_with(Path("/accepted-run"), "target")
+        self.assertEqual(gate.status, "ELIGIBLE")

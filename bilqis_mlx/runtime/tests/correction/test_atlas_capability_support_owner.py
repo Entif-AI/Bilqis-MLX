@@ -21,6 +21,7 @@ from bilqis_mlx.learning.source_atoms import SourceAtomRow
 from bilqis_mlx.runtime.atlas_capability_support_owner import (
     CapabilitySupportArtifactOwner, load_capability_support_owner,
 )
+from bilqis_mlx.runtime.atlas_revalidation import apply_capability_support_correction
 from bilqis_mlx.runtime.atlas_training_authority import _issue as issue_training_authority
 from bilqis_mlx.runtime.atlas_training_contracts import (
     BamfDeliveryProvenance, BamfTrainingRow, _issue_training_batch,
@@ -131,7 +132,9 @@ class CapabilitySupportOwnerTests(unittest.TestCase):
         self.publish_support()
         owner = self.load_support()
         correction = _event(_ref(DependencyKind.SOURCE, SOURCE_ROW))
-        queue = owner.apply_correction(correction, AUTHORITY)
+        self.assertTrue(apply_capability_support_correction(
+            owner, correction, AUTHORITY))
+        queue = owner.queue
         self.assertEqual(queue.held_artifact_ids, (owner.current_node.artifact_id,))
         with self.assertRaises(BilqisError):
             owner.require(TARGET)
@@ -141,7 +144,8 @@ class CapabilitySupportOwnerTests(unittest.TestCase):
             _result(node, digest=node.content_digest, correction=correction), AUTHORITY)
         self.assertEqual(owner.require(TARGET).status, "QUALIFIED")
 
-        owner.apply_correction(correction, AUTHORITY)
+        self.assertTrue(apply_capability_support_correction(
+            owner, correction, AUTHORITY))
         node = owner.current_node
         owner.advance(_result(node, digest="f" * 64, correction=correction), AUTHORITY)
         self.assertEqual(owner.support.status, "REQUALIFICATION_REQUIRED")

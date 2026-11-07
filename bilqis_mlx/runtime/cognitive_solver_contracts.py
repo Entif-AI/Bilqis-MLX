@@ -169,15 +169,19 @@ class SolveContext:
         from bilqis_mlx.runtime.operator_composition_owner import (
             OperatorCompositionArtifactOwner,
         )
-        reusable = tuple(dict.fromkeys((
-            *self.qualified_compositions,
-            *((self.deterministic_fallback,)
-              if self.deterministic_fallback is not None else ()),
-        )))
-        object.__setattr__(
-            self, "operator_composition_artifact_owner",
-            OperatorCompositionArtifactOwner(self.binding, reusable),
-        )
+        reusable = tuple(dict.fromkeys(self.qualified_compositions))
+        owner = getattr(self, "operator_composition_artifact_owner", None)
+        if owner is None:
+            object.__setattr__(
+                self, "operator_composition_artifact_owner",
+                OperatorCompositionArtifactOwner(
+                    self.binding, reusable, self.deterministic_fallback),
+            )
+        else:
+            owned = (*reusable, *((self.deterministic_fallback,)
+                                   if self.deterministic_fallback is not None else ()))
+            for composition in owned:
+                owner.require(composition, self.binding)
 
 
 @dataclass(frozen=True)

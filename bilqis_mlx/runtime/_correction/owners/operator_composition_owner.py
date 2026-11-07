@@ -50,11 +50,17 @@ def _node(composition, binding: OperatorBinding) -> ArtifactNode:
 class OperatorCompositionArtifactOwner:
     """Retain correction holds across repeated Factory solver calls."""
 
-    def __init__(self, binding: OperatorBinding, compositions: tuple):
+    def __init__(self, binding: OperatorBinding, compositions: tuple, fallback=None):
         if type(binding) is not OperatorBinding or type(compositions) is not tuple:
             _invalid("BAMF_C09_OPERATOR_COMPOSITION_OWNER_INVALID")
         self._binding_digest = contract_digest(binding)
-        nodes = tuple(_node(item, binding) for item in compositions)
+        owned = (*compositions, *((fallback,) if fallback is not None else ()))
+        self._compositions = {
+            item.qualification_receipt_sha256: item for item in owned}
+        self._cache_keys = {
+            item.qualification_receipt_sha256 for item in compositions}
+        self._materialized: set[str] = set()
+        nodes = tuple(_node(item, binding) for item in owned)
         self._index = DependencyIndex.build(nodes)
         self._queue: RevalidationQueue | None = None
 
@@ -65,6 +71,28 @@ class OperatorCompositionArtifactOwner:
     @property
     def queue(self) -> RevalidationQueue | None:
         return self._queue
+
+    @property
+    def compositions(self) -> tuple:
+        return tuple(
+            self._compositions[key] for key in sorted(self._cache_keys))
+
+    def is_materialized(self, composition) -> bool:
+        return composition.qualification_receipt_sha256 in self._materialized
+
+    def remember(self, composition, binding: OperatorBinding) -> None:
+        """Retain one composition only after the live solver validated it."""
+        node = _node(composition, binding)
+        key = composition.qualification_receipt_sha256
+        existing = self._compositions.get(key)
+        if existing is not None and existing != composition:
+            _invalid("BAMF_C09_OPERATOR_COMPOSITION_RECEIPT_COLLISION")
+        self._compositions[key] = composition
+        self._cache_keys.add(key)
+        self._materialized.add(key)
+        self._index = DependencyIndex.build(tuple(
+            _node(self._compositions[key], binding)
+            for key in sorted(self._compositions)))
 
     def node_for(self, composition) -> ArtifactNode:
         return self._index.node("composition:" + composition.qualification_receipt_sha256)

@@ -18,7 +18,7 @@ from bilqis_mlx.semantics.domains import contract_digest
 from .atlas_requalification_contracts import (
     CapabilitySupport, RequalificationLedger, RequalificationStatus,
 )
-from .atlas_revalidation_common import _invalid
+from .atlas_revalidation_common import _digest, _invalid
 from .atlas_revalidation_evidence import CorrectionEvent, RevalidationFrontier
 from .atlas_revalidation_queue import RevalidationProgress, RevalidationQueue
 from .atlas_revalidation_runtime import (
@@ -124,7 +124,12 @@ def _materialized_support(binding, student, manifest_sha256, capability_id):
         ))),
         status=RequalificationStatus.QUALIFIED,
     )
-    return support, node
+    generation_bindings = tuple(sorted({
+        _source_anchor(anchor).generation_binding for anchor in anchors
+    }))
+    if len(generation_bindings) != 1:
+        _invalid("BAMF_C09_CAPABILITY_SUPPORT_GENERATION_AMBIGUOUS")
+    return support, node, generation_bindings
 
 
 class CapabilitySupportArtifactOwner:
@@ -137,6 +142,9 @@ class CapabilitySupportArtifactOwner:
         if (getattr(self, "_issuance", None) is not _ISSUER
                 or not isinstance(self._support, CapabilitySupport)
                 or not isinstance(self._index, DependencyIndex)
+                or not isinstance(self._generation_bindings, tuple)
+                or len(self._generation_bindings) != 1
+                or any(not _digest(item) for item in self._generation_bindings)
                 or self._index.node(self._support.support_artifact_ids[0]).kind
                 is not ArtifactKind.CAPABILITY_SUPPORT):
             _invalid("BAMF_C09_CAPABILITY_SUPPORT_OWNER_INVALID")
@@ -158,12 +166,21 @@ class CapabilitySupportArtifactOwner:
         return self._index.node(self._support.support_artifact_ids[0])
 
     @property
+    def index(self) -> DependencyIndex:
+        return self._index
+
+    @property
     def queue(self) -> RevalidationQueue | None:
         return self._queue
 
-    def require(self, capability_id: str) -> CapabilitySupport:
+    def require(
+        self, capability_id: str, generation_binding: str | None = None,
+    ) -> CapabilitySupport:
         if capability_id != self.capability_id:
             _invalid("BAMF_C09_CAPABILITY_SUPPORT_OWNER_MISMATCH")
+        if (generation_binding is not None
+                and generation_binding not in self._generation_bindings):
+            _invalid("BAMF_C09_CAPABILITY_SUPPORT_GENERATION_DRIFT")
         if self._support.status is not RequalificationStatus.QUALIFIED:
             _invalid("BAMF_C09_CAPABILITY_SUPPORT_REQUALIFICATION_REQUIRED")
         if self._queue is not None:
@@ -200,11 +217,12 @@ class CapabilitySupportArtifactOwner:
         return progress
 
 
-def _issue_owner(support, node):
+def _issue_owner(support, node, generation_bindings=()):
     owner = object.__new__(CapabilitySupportArtifactOwner)
     owner._support = support
     owner._index = DependencyIndex.build((node,))
     owner._queue = None
+    owner._generation_bindings = tuple(generation_bindings)
     owner._issuance = _ISSUER
     owner.__post_init__()
     return owner
@@ -247,9 +265,9 @@ def load_capability_support_owner(
                 or binding.step_proof_sha256 != tuple(
                     proof.digest for proof in student.retained_state.step_proofs)):
             _invalid("BAMF_C09_CAPABILITY_SUPPORT_ACCEPTANCE_DRIFT")
-    support, node = _materialized_support(
+    support, node, generation_bindings = _materialized_support(
         binding, student, manifest_sha256, capability_id)
-    return _issue_owner(support, node)
+    return _issue_owner(support, node, generation_bindings)
 
 
 __all__ = ("CapabilitySupportArtifactOwner", "load_capability_support_owner")

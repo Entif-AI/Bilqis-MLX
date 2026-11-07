@@ -29,6 +29,7 @@ from bilqis_mlx.semantics.tests.test_cognitive_operators import (
 
 from bilqis_mlx.runtime.tests.capability.factory.solver_helpers import _fixture
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event, _result
+from bilqis_mlx.runtime.atlas_revalidation import apply_solve_context_correction
 
 class CognitiveSolverTests(unittest.TestCase):
     def test_applicable_exact_operator_wins_with_full_score_no_neural(self):
@@ -87,7 +88,8 @@ class CognitiveSolverTests(unittest.TestCase):
         source = next(ref for ref in node.immediate_dependencies
                       if ref.kind.value == "SOURCE")
         event = _event(source)
-        owner.apply_correction(event, AUTHORITY)
+        self.assertTrue(apply_solve_context_correction(
+            context, event, AUTHORITY))
         with self.assertRaises(BilqisError) as caught:
             solve_task(ambiguous, context, generation, budget)
         self.assertEqual(caught.exception.context["reason"],
@@ -121,6 +123,44 @@ class CognitiveSolverTests(unittest.TestCase):
         self.assertIsNone(result.score)
         self.assertEqual(result.neural_calls, 1)
         self.assertEqual(len(calls), 1)
+
+    def test_successful_neural_composition_materializes_into_retained_owner(self):
+        binding, generation, budget, add, ambiguous = _fixture()
+        calls = []
+
+        def neural(request):
+            calls.append(request)
+            return NeuralProposal(
+                add, request.source_binding_digest,
+                request.generation_digest,
+                request.unresolved_signature,
+                "c" * 64)
+
+        context = SolveContext(binding, neural_proposer=neural)
+        first = solve_task(ambiguous, context, generation, budget)
+        self.assertEqual(first.route, RouteKind.NEURAL_COMPOSITION)
+        self.assertEqual(len(calls), 1)
+        retained = context.operator_composition_artifact_owner.compositions
+        self.assertEqual(len(retained), 1)
+        self.assertTrue(
+            context.operator_composition_artifact_owner.is_materialized(retained[0]))
+
+        second = solve_task(ambiguous, context, generation, budget)
+        self.assertEqual(second.route, RouteKind.CACHED_COMPOSITION)
+        self.assertEqual(len(calls), 1)
+
+        owner = context.operator_composition_artifact_owner
+        node = owner.node_for(retained[0])
+        dependency = next(
+            ref for ref in node.immediate_dependencies
+            if ref.kind.value == "SOURCE")
+        event = _event(dependency)
+        self.assertTrue(apply_solve_context_correction(
+            context, event, AUTHORITY))
+        with self.assertRaises(BilqisError) as caught:
+            solve_task(ambiguous, context, generation, budget)
+        self.assertEqual(
+            caught.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
 
     def test_neural_foreign_source_binding_rejects_before_dag_execution(self):
         binding, generation, budget, add, ambiguous = _fixture()

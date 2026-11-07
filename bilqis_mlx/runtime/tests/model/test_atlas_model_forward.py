@@ -27,6 +27,8 @@ from bilqis_mlx.runtime.atlas_model import (
     BamfCompiledBatch, BamfGradientExecution, BamfLossExecution,
     bamf_value_and_grad, forward_bamf,
 )
+from bilqis_mlx.runtime.atlas_revalidation import apply_compiled_batch_correction
+from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
@@ -100,6 +102,23 @@ class AtlasModelSourceForwardTests(SourceBackboneTestBase):
             ("finish",),
         )
         self.assertEqual(output.committed[0].value, ControlAction.END_FRAME)
+
+    def test_forward_preserves_atlas_feature_correction_hold_until_real_source_read(self):
+        batch = BamfCompiledBatch(
+            self.compiled, (self.source,), self.schema)
+        event = _event(batch.atlas_feature_artifact_owner.source_dependency)
+        self.assertIn(
+            "ATLAS_FEATURE",
+            apply_compiled_batch_correction(batch, event, AUTHORITY),
+        )
+        retained_owner = batch.atlas_feature_artifact_owner
+        with self.assertRaises(BilqisError) as caught:
+            forward_bamf(
+                self.parameters, batch, self._answer_plan(),
+                ExecutionMode.INFERENCE, None)
+        self.assertIs(batch.atlas_feature_artifact_owner, retained_owner)
+        self.assertEqual(
+            caught.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
 
     def _live_gradient_execution(self):
         genesis = MotifAllocationSnapshot(
