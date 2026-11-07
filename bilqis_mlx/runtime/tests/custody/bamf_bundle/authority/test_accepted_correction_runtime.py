@@ -102,8 +102,7 @@ class AcceptedCorrectionRuntimeTests(unittest.TestCase):
             self.assertTrue(owner.require_row(case.row))
             host = AcceptedRuntimeHost(self.run, AUTHORITY)
             transition = host.record_context_transition(
-                case.previous, case.frames, case.expiry_task,
-                case.frontier, case.policy)
+                case.previous, case.contexts)
         self.assertEqual(len(transition.invalidations), 1)
         self.assertEqual(
             transition.invalidations[0].old_context_digest,
@@ -135,3 +134,37 @@ class AcceptedCorrectionRuntimeTests(unittest.TestCase):
         with self.assertRaises(BilqisError) as cold_held:
             cold_owner.require_row(case.row)
         self.assertEqual(cold_held.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
+
+    def test_caller_selected_expiry_cannot_enter_accepted_context_invalidation(self):
+        case = source_owned_temporal_case()
+        owner = case.owner()
+
+        self.publish(candidate(parent_state()))
+        with shape_patch():
+            cache = bind_accepted_execution_cache(self.run)
+            register_accepted_target(
+                self.run, cache.accepted_manifest_sha256,
+                "PACKED_FRAME", owner,
+                lambda current, event, source_authority: _route(
+                    current, event, source_authority),
+                AUTHORITY,
+            )
+            host = AcceptedRuntimeHost(self.run, AUTHORITY)
+            forged_task = replace(
+                case.task,
+                effective_time=case.contexts.transition_authority.effective_until,
+            )
+            before = read_records(self.run, cache.accepted_manifest_sha256)
+            with self.assertRaises(BilqisError) as rejected:
+                host.record_context_transition(
+                    case.previous, case.frames, forged_task,
+                    case.frontier, case.policy,
+                )
+        self.assertEqual(
+            rejected.exception.context["reason"],
+            "BAMF_C09_CONTEXT_TRANSITION_AUTHORITY_REQUIRED",
+        )
+        self.assertEqual(
+            read_records(self.run, cache.accepted_manifest_sha256),
+            before,
+        )

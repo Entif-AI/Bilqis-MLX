@@ -75,6 +75,7 @@ def _latest_source_qualified_materialization(
 
 
 def load_current_support(run_dir: Path, capability_id: str):
+    from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
     from bilqis_mlx.runtime.bamf_bundle.publication import (
         _live_bundle_manifest, _pointer_lock, _read_pointer,
     )
@@ -86,12 +87,19 @@ def load_current_support(run_dir: Path, capability_id: str):
             _invalid("BAMF_C09_CAPABILITY_SUPPORT_GENERATION_MISSING")
         manifest_sha256 = pointer["manifest_sha256"]
         _live_bundle_manifest(run_dir, pointer)
+    _current_binding, current_student = _accepted_materialization(
+        run_dir, manifest_sha256)
     source_manifest_sha256, binding, student = (
         _latest_source_qualified_materialization(
             run_dir, manifest_sha256, capability_id))
-    support, node, generation_bindings = materialized_support(
+    support, node, _source_generation_bindings = materialized_support(
         binding, student, source_manifest_sha256, capability_id)
-    return manifest_sha256, support, node, generation_bindings
+    current_generation_binding = execution_generation_digest(
+        current_student.retained_state.optimizer.parameters,
+        spec=current_student.topology,
+        extents=current_student.extents,
+    )
+    return manifest_sha256, support, node, (current_generation_binding,)
 
 
 def accepted_support_census(

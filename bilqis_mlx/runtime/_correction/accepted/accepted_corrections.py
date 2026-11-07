@@ -54,11 +54,9 @@ class AcceptedRuntimeHost:
     def record_correction(self, event: CorrectionEvent) -> str:
         return record_accepted_correction(self.run_dir, event, self.registry)
 
-    def record_context_transition(
-        self, previous, frames, task_scope, source_frontier, policy,
-    ):
+    def record_context_transition(self, previous, contexts, *caller_state):
         return record_accepted_context_transition(
-            self.run_dir, previous, frames, task_scope, source_frontier, policy)
+            self.run_dir, previous, contexts, *caller_state)
 
     def record_revalidation(self, frontier: RevalidationFrontier) -> str:
         return record_accepted_revalidation(self.run_dir, frontier, self.registry)
@@ -106,16 +104,34 @@ def record_accepted_correction(
 
 
 def record_accepted_context_transition(
-    run_dir: Path, previous, frames, task_scope, source_frontier, policy,
+    run_dir: Path, previous, contexts, *caller_state,
 ):
-    """Persist and deliver A13-owned context invalidations without correction authority."""
+    """Persist only source-authorized A13 invalidations without correction authority."""
     from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
+    from bilqis_mlx.factory.skos_curriculum.source_context import (
+        SourceLessonContexts, source_lesson_expiry_task,
+    )
     from bilqis_mlx.semantics.context_eligibility import transition_context
+    from bilqis_mlx.semantics.context_eligibility import SourceFrontier
+
+    if (caller_state or type(contexts) is not SourceLessonContexts
+            or contexts.transition_authority is None):
+        _invalid("BAMF_C09_CONTEXT_TRANSITION_AUTHORITY_REQUIRED")
+    contexts.__post_init__()
+    authority = contexts.transition_authority
+    source_frontier = SourceFrontier(
+        authority.frontier.rights_epoch,
+        authority.frontier.correction_generation,
+        contexts.grants,
+    )
+    task_scope = source_lesson_expiry_task(
+        contexts, authority.task, source_frontier, authority.policy)
+    frames = (contexts.positive.envelope, contexts.contrast.envelope)
 
     run_dir = Path(run_dir)
     cache = bind_accepted_execution_cache(run_dir)
     transition = transition_context(
-        previous, frames, task_scope, source_frontier, policy)
+        previous, frames, task_scope, source_frontier, authority.policy)
     if not transition.invalidations:
         return transition
     retained = runtime(run_dir, cache.accepted_manifest_sha256)
