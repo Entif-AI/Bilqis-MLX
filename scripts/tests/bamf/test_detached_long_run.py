@@ -72,10 +72,20 @@ class DetachedLongRunTests(unittest.TestCase):
             subprocess.run(["git", "config", "user.name", "Detached Tests"],
                            cwd=source, check=True)
             (source / "subject.py").write_text("VALUE = 'committed'\n", encoding="utf-8")
+            (source / ".gitignore").write_text("vendor/example/runs/\n", encoding="utf-8")
+            (source / "vendor" / "example").mkdir(parents=True)
+            (source / "vendor" / "example" / "tracked.txt").write_text(
+                "tracked\n", encoding="utf-8")
             subprocess.run(["git", "add", "subject.py"], cwd=source, check=True)
+            subprocess.run(
+                ["git", "add", ".gitignore", "vendor/example/tracked.txt"],
+                cwd=source, check=True)
             subprocess.run(["git", "commit", "-qm", "seed"], cwd=source, check=True)
             (source / "subject.py").write_text("VALUE = 'dirty'\n", encoding="utf-8")
             (source / "untracked.txt").write_text("present\n", encoding="utf-8")
+            runs = source / "vendor" / "example" / "runs"
+            runs.mkdir()
+            (runs / "checkpoint.bin").write_bytes(b"historical evidence")
             venv = source / ".venv"
             (venv / "bin").mkdir(parents=True)
             (venv / "bin" / "python").write_text("#!/bin/sh\n", encoding="utf-8")
@@ -91,6 +101,12 @@ class DetachedLongRunTests(unittest.TestCase):
             )
             self.assertEqual((snapshot / "subject.py").read_text(), "VALUE = 'dirty'\n")
             self.assertEqual((snapshot / "untracked.txt").read_text(), "present\n")
+            self.assertEqual(
+                (snapshot / "vendor" / "example" / "tracked.txt").read_text(),
+                "tracked\n")
+            self.assertEqual(
+                (snapshot / "vendor" / "example" / "runs" / "checkpoint.bin").read_bytes(),
+                b"historical evidence")
             self.assertTrue((snapshot / ".venv").is_symlink())
             self.assertEqual(receipt["source_sha256"], receipt["snapshot_sha256"])
 
