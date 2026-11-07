@@ -164,7 +164,7 @@ def active_effective_strategy_keys(
     active_limit = ACTIVE_EFFECTIVE_STRATEGY_LIMIT
     incumbent_limit = ACTIVE_EFFECTIVE_INCUMBENT_LIMIT
     if total_capabilities is not None and teacher.get("selection_contract") != BAMF_SUCCESSOR_SELECTION:
-        from .teacher_population_control import population_limits, rebalance_live_population
+        from ..teacher_population_control import population_limits, rebalance_live_population
         eligible = set(rebalance_live_population(
             teacher, total_capabilities=total_capabilities))
         limits = population_limits(total_capabilities)
