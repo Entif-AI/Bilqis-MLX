@@ -355,8 +355,8 @@
       "issue": 477,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "3899649586b105b075e92f0ee3c51e80c379b473",
-      "summary": "B12.4 active from reviewed unified after direct prerequisite #476/PR #886 was human-merged. Reconciling the B01 normative tensor ledger, module prefix ownership and exact optimizer constructor tree.",
+      "head_sha": "fef4146c3bad484ae9cb5e608618b3eb6e4a9c5e",
+      "summary": "B12.4 implementation complete at fef4146c: production candidate admission reconciles the exact optimizer tree/count geometry to B01 and derives decay from the normative ParameterSpec ledger; callers no longer author decay. Focused production/custody/prefix proof is green; exact-head EGM is next.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-b12-4-477-complete-20261106"
     }
