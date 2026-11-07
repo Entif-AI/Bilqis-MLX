@@ -28,6 +28,7 @@ from bilqis_mlx.semantics.tests.test_cognitive_operators import (
 )
 
 from bilqis_mlx.runtime.tests.capability.factory.solver_helpers import _fixture
+from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event, _result
 
 class CognitiveSolverTests(unittest.TestCase):
     def test_applicable_exact_operator_wins_with_full_score_no_neural(self):
@@ -71,6 +72,31 @@ class CognitiveSolverTests(unittest.TestCase):
                 qualification_verifier=lambda item: False),
             generation, budget)
         self.assertEqual(rejected.route, RouteKind.UNRESOLVED)
+
+    def test_correction_hold_blocks_real_cached_composition_before_execution(self):
+        binding, generation, budget, add, ambiguous = _fixture()
+        cached = QualifiedComposition(
+            add, generation.source_binding_digest,
+            binding.frontier.rights_epoch,
+            binding.frontier.correction_generation, "a" * 64)
+        context = SolveContext(
+            binding, qualified_compositions=(cached,),
+            qualification_verifier=lambda item: True)
+        owner = context.operator_composition_artifact_owner
+        node = owner.node_for(cached)
+        source = next(ref for ref in node.immediate_dependencies
+                      if ref.kind.value == "SOURCE")
+        event = _event(source)
+        owner.apply_correction(event, AUTHORITY)
+        with self.assertRaises(BilqisError) as caught:
+            solve_task(ambiguous, context, generation, budget)
+        self.assertEqual(caught.exception.context["reason"],
+                         "BAMF_C09_ARTIFACT_HELD")
+        progress = owner.advance(
+            _result(node, digest=node.content_digest, correction=event), AUTHORITY)
+        self.assertEqual(progress.queue.held_artifact_ids, ())
+        result = solve_task(ambiguous, context, generation, budget)
+        self.assertEqual(result.route, RouteKind.CACHED_COMPOSITION)
 
     def test_neural_proposes_only_a_source_bound_dag_for_unresolved_part(self):
         binding, generation, budget, add, ambiguous = _fixture()

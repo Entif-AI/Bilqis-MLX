@@ -34,6 +34,7 @@ class AcceptedExecutionCache:
     motif_manifest: MotifManifest
     schema_version: str = "bilqis.mlx.b13-accepted-execution-cache/v1"
     _issuance: object = field(init=False, repr=False, compare=False)
+    _motif_artifact_owner: object | None = field(init=False, repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
         _invalid("B13_EXECUTION_CACHE_CALLER_CONSTRUCTION_FORBIDDEN")
@@ -69,6 +70,7 @@ def _issue_accepted_execution_cache(
         ("motif_manifest", motif_manifest),
         ("schema_version", "bilqis.mlx.b13-accepted-execution-cache/v1"),
         ("_issuance", _ISSUER),
+        ("_motif_artifact_owner", None),
     ):
         object.__setattr__(cache, name, value)
     cache.__post_init__()
@@ -82,4 +84,19 @@ def require_accepted_execution_cache(cache) -> AcceptedExecutionCache:
     return cache
 
 
-__all__ = ("AcceptedExecutionCache", "require_accepted_execution_cache")
+def bind_motif_artifact_owner(cache, compiled):
+    """Bind mutable C09 hold state to one authenticated cache lifetime."""
+    cache = require_accepted_execution_cache(cache)
+    from bilqis_mlx.runtime.atlas_motif_owner import MotifArtifactOwner
+    owner = cache._motif_artifact_owner
+    if owner is None:
+        owner = MotifArtifactOwner(cache, compiled)
+        object.__setattr__(cache, "_motif_artifact_owner", owner)
+    owner.require(cache, compiled)
+    return owner
+
+
+__all__ = (
+    "AcceptedExecutionCache", "bind_motif_artifact_owner",
+    "require_accepted_execution_cache",
+)

@@ -14,7 +14,7 @@ from bilqis_mlx.learning.source_atoms.backbone import (
 )
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
-    require_accepted_execution_cache,
+    bind_motif_artifact_owner, require_accepted_execution_cache,
 )
 from bilqis_mlx.runtime.model_topology_v2 import (
     ModelTopologySpecV2, expected_bamf_shapes, validate_bamf_parameters,
@@ -148,6 +148,7 @@ def _source_producer(params, compiled_batch, generation, cache):
             compiled_batch.feature_schema,
             compiled_batch.atlas_feature_artifact_owner,
         ), accepted_cache
+    bind_motif_artifact_owner(accepted_cache, compiled_batch.compiled)
     return start_retained_source_backbone_producer(
         compiled_batch.compiled,
         params,

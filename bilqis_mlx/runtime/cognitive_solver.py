@@ -83,6 +83,7 @@ def solve_task(
             reserved_operations, local_refinement_calls, fallback_reason)
 
     def qualified(cached: QualifiedComposition) -> bool:
+        context.operator_composition_artifact_owner.require(cached, binding)
         return (
             cached.source_binding_digest == source_digest
             and cached.rights_epoch == binding.frontier.rights_epoch

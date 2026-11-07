@@ -1,0 +1,77 @@
+"""C09 motif custody on the actual compiled-frame/B13 cache boundary."""
+from dataclasses import replace
+import unittest
+
+from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.learning.atlas_engram import MotifManifest
+from bilqis_mlx.learning.frame_encoder import CompiledEncoderInput
+from bilqis_mlx.learning.tests.test_frame_encoder import FrameEncoderTests
+from bilqis_mlx.runtime.atlas_motif_owner import MotifArtifactOwner
+from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
+    _issue_accepted_execution_cache, bind_motif_artifact_owner,
+)
+from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event, _result
+
+
+class MotifArtifactOwnerTests(unittest.TestCase):
+    def setUp(self):
+        fixture = FrameEncoderTests()
+        fixture.setUp()
+        compiled, _vectors, _ast = fixture.compiled_inputs()
+        self.manifest = MotifManifest(compiled.features.semantic_release)
+        extents = replace(
+            compiled.extents, motif_key_map_digest=self.manifest.digest)
+        self.compiled = CompiledEncoderInput(
+            compiled.compiled, compiled.compiler_configs,
+            compiled.features, extents)
+        self.cache = _issue_accepted_execution_cache(
+            run_id="test-c09-motif", generation=7,
+            accepted_manifest_sha256="8" * 64,
+            generation_binding="7" * 64,
+            motif_manifest=self.manifest,
+        )
+        self.owner = bind_motif_artifact_owner(self.cache, self.compiled)
+
+    def test_source_correction_holds_real_frame_before_motif_lookup(self):
+        source = self.owner.source_dependencies[0]
+        queue = self.owner.apply_correction(_event(source), AUTHORITY)
+        self.assertTrue(queue.held_artifact_ids)
+        with self.assertRaises(BilqisError) as caught:
+            self.owner.require(self.cache, self.compiled)
+        self.assertIn(caught.exception.context["reason"], (
+            "BAMF_C09_ARTIFACT_HELD",
+            "BAMF_C09_ARTIFACT_DEPENDENCY_HELD",
+        ))
+
+    def test_equal_input_revalidation_stops_before_motif(self):
+        source = self.owner.source_dependencies[0]
+        event = _event(source)
+        queue = self.owner.apply_correction(event, AUTHORITY)
+        held = self.owner.index.node(queue.held_artifact_ids[0])
+        progress = self.owner.advance(
+            _result(held, digest=held.content_digest, correction=event), AUTHORITY)
+        self.assertEqual(progress.queue.pending, ())
+        self.assertEqual(progress.queue.held_artifact_ids, ())
+        self.assertIs(self.owner.require(self.cache, self.compiled), self.owner.current_node)
+
+    def test_changed_input_propagates_hold_to_manifest(self):
+        source = self.owner.source_dependencies[0]
+        event = _event(source)
+        queue = self.owner.apply_correction(event, AUTHORITY)
+        held = self.owner.index.node(queue.held_artifact_ids[0])
+        self.owner.advance(
+            _result(held, digest="9" * 64, correction=event), AUTHORITY)
+        self.assertIn(self.owner.current_node.artifact_id,
+                      self.owner.queue.held_artifact_ids)
+        with self.assertRaises(BilqisError):
+            self.owner.require(self.cache, self.compiled)
+
+    def test_cache_lifetime_reuses_one_owner(self):
+        self.assertIs(
+            self.owner,
+            bind_motif_artifact_owner(self.cache, self.compiled),
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()

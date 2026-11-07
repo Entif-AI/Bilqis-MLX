@@ -145,6 +145,7 @@ class SolveContext:
     memo: PureOperationMemo | None = None
     route_registry: RouteRegistry = field(default_factory=default_route_registry)
     schema_version: str = SOLVE_CONTEXT_SCHEMA
+    operator_composition_artifact_owner: object = field(init=False, compare=False)
 
     def __post_init__(self) -> None:
         if (not isinstance(self.binding, OperatorBinding)
@@ -165,6 +166,18 @@ class SolveContext:
                 or not isinstance(self.route_registry, RouteRegistry)
                 or self.schema_version != SOLVE_CONTEXT_SCHEMA):
             _invalid("BAMF_C04_SOLVE_CONTEXT_INVALID")
+        from bilqis_mlx.runtime.operator_composition_owner import (
+            OperatorCompositionArtifactOwner,
+        )
+        reusable = tuple(dict.fromkeys((
+            *self.qualified_compositions,
+            *((self.deterministic_fallback,)
+              if self.deterministic_fallback is not None else ()),
+        )))
+        object.__setattr__(
+            self, "operator_composition_artifact_owner",
+            OperatorCompositionArtifactOwner(self.binding, reusable),
+        )
 
 
 @dataclass(frozen=True)
