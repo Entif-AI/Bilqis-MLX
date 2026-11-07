@@ -323,6 +323,13 @@ def publish_candidate(run_dir, bundle):
         bundle = replace(bundle, run_identity=parent.run_identity)
     elif bundle.generation > 0:
         parent = load_bamf_generation(Path(run_dir) / "bamf-state.json")
+    if (parent is not None and bundle.topology == parent.topology
+            and bundle.extents.semantic_bank_count == parent.extents.semantic_bank_count
+            and bundle.extents.motif_page_count == parent.extents.motif_page_count
+            and bundle.extents.active_semantic_digest
+            == parent.extents.active_semantic_digest
+            and bundle.extents.factor_map_digest == parent.extents.factor_map_digest):
+        bundle = replace(bundle, extents=parent.extents)
     return publish_bamf_generation(
         run_dir, bundle,
         acceptance=acceptance(

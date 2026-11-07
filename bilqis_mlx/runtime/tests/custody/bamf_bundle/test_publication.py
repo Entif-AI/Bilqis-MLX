@@ -162,9 +162,14 @@ class BamfPublicationTests(unittest.TestCase):
 
     def test_competing_same_generation_cannot_overwrite_pointer(self):
         first = self.publish(candidate(parent_state()))
-        different = candidate(accepted_state(parent_state()))
-        with self.assertRaises(BilqisError):
-            self.publish(different)
+        from bilqis_mlx.runtime.bamf_bundle import publish_initial_generation
+        from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
+            genesis_preparation,
+        )
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            different = genesis_preparation(run_seed=18)
+            with self.assertRaises(BilqisError):
+                publish_initial_generation(self.run, different, reserve_gib=0.)
         self.assertEqual(
             json.loads((self.run / "bamf-state.json").read_text())["manifest_sha256"],
             first["manifest_sha256"])
