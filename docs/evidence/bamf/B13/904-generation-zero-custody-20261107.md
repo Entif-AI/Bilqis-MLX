@@ -169,3 +169,57 @@ consulted, is exclusively:
 Prometheus remains historical evidence only and is not a current BAMF adaptation
 oracle. No actual learner, persistent optimizer, or human-owned training run was
 started by this remediation.
+
+## EGM round-4 Blocker remediation — 2026-11-07
+
+Fresh round-4 EGM reviewed exact candidate
+`8d7819ad9e2275a793863f6b3d3b89b868aac45d` against reviewed unified
+`d4bad39a32a80acbffdb9f891a906892ab2e9fab` and returned **FAIL — 1 Blocker / 0
+Majors / 0 Nits**. Both independent review lenses converged on the same authority
+gap: a caller could directly mint an `InitialGenerationBinding` for a
+self-consistent caller-built generation-zero candidate, and the shared publication
+sink treated that binding's value consistency as sufficient live mutation authority.
+The same lower-level issuance path also replayed Factory/source authority without
+independently rebuilding the candidate's B01 numerical identity.
+
+The failure is preserved in canonical incident `PM-2026-11-07-006`, reusing root
+cause `RC-139` and pattern `PAT-100`: caller-synthesized authorization must not gain
+issuer authority merely because its values are self-consistent.
+
+Semantic repair head `6df4dcb2710492f1ac53ec86391dbf701b0baa69` closes the gap at the owner and
+mutation boundaries rather than hiding the mint helper:
+
+- generation-zero publication now requires the complete live
+  `PreparedInitialGeneration`, not an `InitialGenerationBinding` alone;
+- the shared publication sink independently replays Factory/source authority,
+  canonical B01 topology/extents/implementation authority, the exact seeded
+  generation-zero optimizer state, FOUNDATION policy/allocation state, and the
+  bootstrap binding before any staging or pointer mutation;
+- `_issue_binding(...)` performs the same B01 replay before it may mint bootstrap
+  evidence, so a valid Factory record cannot bless caller-authored B01 state;
+- a caller cannot relabel a seeded genesis state under another `run_seed`;
+- exact B01 error identities are now enum-backed without changing their emitted
+  strings, leaving the error-control plane at new debt 0.
+
+Exact detached M3 Ultra proof at `6df4dcb2710492f1ac53ec86391dbf701b0baa69`:
+
+- focused generation-zero source/B01 + generation-zero + successor acceptance
+  authority: **28/28 PASS**;
+- complete B13 custody tree: **158 total / 153 passed / 0 failed / 5 explicit
+  optional/environment skips**;
+- opt-in complete B01 parameter-schema plus clean-process full-resume witnesses:
+  **2/2 PASS**;
+- `quality:changed`: PASS, zero structure/governance/smell findings, canonical
+  microspenics legacy-trainer authority green, legacy authority tests **7/7**, BAMF
+  flow-control tests **15/15**;
+- full `quality:check`: PASS, Factory architecture and docs green, error-control
+  **new debt 0**, changed-file smell findings **0**, legacy/flow gates green;
+- BAMF contract verifier: **43/43** exact issue mirrors, **215/215** indexed
+  owner/child identities and **172/172** recursive child mirrors; retained
+  dependency-normalization holds are not integrity failures;
+- `git diff --check`: PASS.
+
+No learner, persistent AdamW, teacher, champion, soup, checkpoint lineage, or
+durable training run was started or mutated. Round-4 failure remains append-only;
+this repair is eligible for a new fresh exact-head EGM, not retroactive acceptance
+of the failed candidate.
