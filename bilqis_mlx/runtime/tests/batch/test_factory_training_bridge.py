@@ -36,6 +36,9 @@ from bilqis_mlx.runtime.factory_training_bridge import (
     prepare_factory_training_batch,
 )
 from bilqis_mlx.runtime.atlas_training_adapter import pad_microbatches
+from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
+from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event
+from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
 from bilqis_mlx.runtime.task_goal_readout import (
     task_goal_route_decisions, task_goal_route_plan, task_goal_training_targets,
 )
@@ -90,6 +93,19 @@ class FactoryTrainingBridgeTests(SourceBackboneTestBase):
             optimizer_step_seed=7,
             teacher_strategy={"policy": "c02-parent-integration"})
 
+    def accepted_source_context(self, run_dir: Path):
+        from bilqis_mlx.runtime import admission as factory_admission
+
+        release_file = factory_admission._persist_executable_factory_release(
+            run_dir, self.context.release)
+        receipt = {
+            "factory_release_sha256": self.context.release.release_sha256,
+            "factory_release_file": release_file,
+        }
+        return AcceptedRuntimeHost(run_dir, AUTHORITY).source_context(
+            receipt, graph=self.context.graph,
+            source_root=self.context.source_root)
+
     def test_current_a_b_c_draws_bind_exact_c02_rows_into_b11(self):
         cases = (
             ("A.IDENTITY", 37101, 2),
@@ -130,6 +146,18 @@ class FactoryTrainingBridgeTests(SourceBackboneTestBase):
                     self.assertFalse(hasattr(compiled, "target"))
                     self.assertFalse(hasattr(compiled.compiled, "target"))
                     self.assertEqual(index, rows.index(source_row))
+
+    def test_training_bridge_registers_every_compiled_row_with_source_custody(self):
+        with patch.object(
+                type(self.context), "register_compiled_batch",
+                autospec=True) as register:
+            _rows, prepared = self.prepare("A.IDENTITY", 37116, 2)
+
+        self.assertEqual(register.call_count, len(prepared.compiled_rows))
+        self.assertEqual(
+            tuple(call.args[1] for call in register.call_args_list),
+            prepared.compiled_rows,
+        )
 
     def test_b11_row_binding_rejects_sibling_row_substitution(self):
         rows, prepared = self.prepare("A.IDENTITY", 37104, 2)
@@ -248,6 +276,7 @@ class FactoryTrainingBridgeTests(SourceBackboneTestBase):
             self.context.release, "B.IDBOOLOPS",
             execution.teaching_option_ids[0], rows)
         with TemporaryDirectory() as run_dir:
+            run_dir = Path(run_dir)
             with patch(
                 "bilqis_mlx.runtime.bamf_bundle.codec.assert_headroom",
                 return_value=None,
@@ -255,6 +284,7 @@ class FactoryTrainingBridgeTests(SourceBackboneTestBase):
                 publish_bamf_generation(
                     run_dir, self.candidate,
                     acceptance=acceptance(self.candidate))
+            source_context = self.accepted_source_context(run_dir)
             parent = load_accepted_generation(run_dir)
             capture = ObservationCapture(run_dir, {})
             capture.attempt_id = "c02-parent-step"
@@ -264,7 +294,7 @@ class FactoryTrainingBridgeTests(SourceBackboneTestBase):
             observation = FactoryDeliveryObservation(
                 capture, 1, rows, 37116)
             result = train_bamf_factory_step(
-                run_dir, self.context, parent, str(self.artifact),
+                run_dir, source_context, parent, str(self.artifact),
                 self.feature_receipt.path, rows,
                 capability="B.IDBOOLOPS", delivery=delivery,
                 requested_count=2, source_seed=37116, source_each=1,
@@ -283,6 +313,50 @@ class FactoryTrainingBridgeTests(SourceBackboneTestBase):
             self.assertEqual(
                 payload["controls"]["realized_cost"]["optimizer_steps"], 1)
 
+    def test_persisted_correction_holds_training_batch_before_gradient_read(self):
+        rows = tuple(self.context.draw_rows(
+            seed=37118, capability="B.IDBOOLOPS", each=1))
+        execution = self.context.release.execution_plan.capability_map["B.IDBOOLOPS"]
+        delivery = describe_delivered_teaching(
+            self.context.release, "B.IDBOOLOPS",
+            execution.teaching_option_ids[0], rows)
+        dependency = DependencyRef(
+            DependencyKind.SOURCE,
+            "source:" + self.feature_context.features.source_bundle_id,
+        )
+        correction = _event(dependency)
+        with TemporaryDirectory() as run_dir_value:
+            run_dir = Path(run_dir_value)
+            with patch(
+                "bilqis_mlx.runtime.bamf_bundle.codec.assert_headroom",
+                return_value=None,
+            ):
+                publish_bamf_generation(
+                    run_dir, self.candidate,
+                    acceptance=acceptance(self.candidate))
+            source_context = self.accepted_source_context(run_dir)
+            host = AcceptedRuntimeHost(run_dir, AUTHORITY)
+            host.record_correction(correction)
+            parent = load_accepted_generation(run_dir)
+            capture = ObservationCapture(run_dir, {})
+            observation = FactoryDeliveryObservation(capture, 1, rows, 37118)
+
+            with self.assertRaises(BilqisError) as caught:
+                train_bamf_factory_step(
+                    run_dir, source_context, parent, str(self.artifact),
+                    self.feature_receipt.path, rows,
+                    capability="B.IDBOOLOPS", delivery=delivery,
+                    requested_count=2, source_seed=37118, source_each=1,
+                    optimizer_step_seed=19,
+                    teacher_strategy={"policy": "c09-correction-hold"},
+                    teacher_hparams=HP, max_norm=1.0,
+                    observation=observation)
+
+            self.assertEqual(
+                caught.exception.context["reason"],
+                "BAMF_C09_ARTIFACT_HELD",
+            )
+
     def test_production_step_fails_closed_before_multirow_gradient_accumulation(self):
         rows = tuple(self.context.draw_rows(
             seed=37117, capability="A.IDENTITY", each=2))
@@ -291,6 +365,7 @@ class FactoryTrainingBridgeTests(SourceBackboneTestBase):
             self.context.release, "A.IDENTITY",
             execution.teaching_option_ids[0], rows)
         with TemporaryDirectory() as run_dir:
+            run_dir = Path(run_dir)
             with patch(
                 "bilqis_mlx.runtime.bamf_bundle.codec.assert_headroom",
                 return_value=None,
@@ -298,12 +373,13 @@ class FactoryTrainingBridgeTests(SourceBackboneTestBase):
                 publish_bamf_generation(
                     run_dir, self.candidate,
                     acceptance=acceptance(self.candidate))
+            source_context = self.accepted_source_context(run_dir)
             parent = load_accepted_generation(run_dir)
             capture = ObservationCapture(run_dir, {})
             observation = FactoryDeliveryObservation(capture, 1, rows, 37117)
             with self.assertRaises(BilqisError):
                 train_bamf_factory_step(
-                    run_dir, self.context, parent, str(self.artifact),
+                    run_dir, source_context, parent, str(self.artifact),
                     self.feature_receipt.path, rows,
                     capability="A.IDENTITY", delivery=delivery,
                     requested_count=2, source_seed=37117, source_each=2,

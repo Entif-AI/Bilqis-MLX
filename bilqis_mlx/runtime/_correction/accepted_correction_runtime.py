@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from threading import RLock
 from typing import Callable
+import weakref
 
 from .accepted_correction_ledger import (
     CORRECTION_EVENT, REVALIDATION_EVENT, accepted_corrections,
@@ -16,12 +17,13 @@ from .atlas_revalidation_runtime import next_revalidation_task
 from .atlas_source_authority import SourceAuthorityRegistry
 from .atlas_revalidation_common import _invalid
 from bilqis_mlx.runtime.capability_support_journal import event_from_record
+from bilqis_mlx.semantics.cognitive_dependencies import DependencyIndex
 
 
 @dataclass
 class _Target:
-    owner: object
-    apply: Callable[[CorrectionEvent, SourceAuthorityRegistry], object]
+    owner_ref: weakref.ReferenceType
+    apply: Callable[[object, CorrectionEvent, SourceAuthorityRegistry], object]
     seen: set[str] = field(default_factory=set)
     branches: dict[object, CorrectionBranches] = field(default_factory=dict)
     pending: list[CorrectionEvent] = field(default_factory=list)
@@ -29,17 +31,30 @@ class _Target:
     revalidation_consumed: dict[str, set[tuple[str, str]]] = field(default_factory=dict)
     process_fault_holds: set[str] = field(default_factory=set)
 
+    @property
+    def owner(self):
+        return self.owner_ref()
+
     def _sync_owner_pending(self) -> None:
-        setattr(self.owner, "_accepted_pending_corrections", self.pending)
+        owner = self.owner
+        if owner is not None:
+            setattr(owner, "_accepted_pending_corrections", self.pending)
 
     def _active_event_id(self) -> str | None:
-        queue = getattr(self.owner, "queue", None)
+        owner = self.owner
+        if owner is None:
+            return None
+        queue = getattr(owner, "queue", None)
         if queue is None or not queue.pending:
             return None
         return queue.event.event_id
 
     def _has_direct_dependents(self, event: CorrectionEvent) -> bool:
-        return bool(self.owner.index.direct_dependents(event.dependency))
+        owner = self.owner
+        return bool(
+            owner is not None
+            and owner.index.direct_dependents(event.dependency)
+        )
 
     def _stage(self, event: CorrectionEvent) -> None:
         if all(item.event_id != event.event_id for item in self.pending):
@@ -66,7 +81,9 @@ class _Target:
             self._stage(event)
             return
         if self._has_direct_dependents(event):
-            self.apply(event, registry)
+            owner = self.owner
+            if owner is not None:
+                self.apply(owner, event, registry)
         else:
             self._stage(event)
         self._sync_owner_pending()
@@ -79,7 +96,10 @@ class _Target:
             if not self._has_direct_dependents(event):
                 continue
             del self.pending[index]
-            self.apply(event, registry)
+            owner = self.owner
+            if owner is None:
+                return False
+            self.apply(owner, event, registry)
             self._sync_owner_pending()
             return True
         self._sync_owner_pending()
@@ -146,22 +166,51 @@ class _AcceptedCorrectionRuntime:
         with self.lock:
             self.bind_registry(registry)
             owner_index = getattr(owner, "index", None)
-            owner_artifact_ids = (
-                frozenset(node.artifact_id for node in owner_index.nodes)
-                if owner_index is not None else frozenset()
+            owner_nodes = (
+                tuple(owner_index.nodes)
+                if isinstance(owner_index, DependencyIndex) else ()
             )
+            owner_artifact_ids = frozenset(
+                node.artifact_id for node in owner_nodes)
+            owner_ledger = getattr(owner, "ledger", None)
             for existing_key, existing in tuple(self.targets.items()):
                 if existing_key[0] != kind:
                     continue
-                existing_index = getattr(existing.owner, "index", None)
-                existing_artifact_ids = (
-                    frozenset(node.artifact_id for node in existing_index.nodes)
-                    if existing_index is not None else frozenset()
+                existing_owner = existing.owner
+                if existing_owner is None:
+                    self.targets.pop(existing_key, None)
+                    continue
+                existing_index = getattr(existing_owner, "index", None)
+                existing_nodes = (
+                    tuple(existing_index.nodes)
+                    if isinstance(existing_index, DependencyIndex) else ()
                 )
-                if owner_artifact_ids and owner_artifact_ids == existing_artifact_ids:
-                    del self.targets[existing_key]
+                existing_artifact_ids = frozenset(
+                    node.artifact_id for node in existing_nodes)
+                existing_ledger = getattr(existing_owner, "ledger", None)
+                if (not owner_artifact_ids
+                        or owner_artifact_ids != existing_artifact_ids
+                        or (owner_nodes == existing_nodes
+                            and owner_ledger == existing_ledger)):
+                    continue
+                setattr(existing_owner, "_accepted_owner_superseded", True)
+                self.targets.pop(existing_key, None)
             key = (kind, id(owner))
-            target = self.targets.setdefault(key, _Target(owner, apply))
+            target = self.targets.get(key)
+            if target is None:
+                runtime_ref = weakref.ref(self)
+
+                def remove_dead(_owner_ref, *, target_key=key, retained_ref=runtime_ref):
+                    retained = retained_ref()
+                    if retained is None:
+                        return
+                    with retained.lock:
+                        retained.targets.pop(target_key, None)
+
+                target = _Target(weakref.ref(owner, remove_dead), apply)
+                self.targets[key] = target
+            elif target.owner is not owner:
+                _invalid("BAMF_C09_ACCEPTED_TARGET_IDENTITY_CONFLICT")
             setattr(owner, "_accepted_correction_target", target)
             target.seen.update(seen_event_ids)
             for record in read_records(self.run_dir, self.manifest_sha256):
@@ -198,7 +247,9 @@ class _AcceptedCorrectionRuntime:
     ) -> None:
         with self.lock:
             self.bind_registry(registry)
-            for target in self.targets.values():
+            for target in tuple(self.targets.values()):
+                if target.owner is None:
+                    continue
                 if event_id in target.seen:
                     continue
                 target.accept_correction(event, self.registry)
@@ -211,7 +262,9 @@ class _AcceptedCorrectionRuntime:
     ) -> None:
         with self.lock:
             self.bind_registry(registry)
-            for target in self.targets.values():
+            for target in tuple(self.targets.values()):
+                if target.owner is None:
+                    continue
                 if event_id in target.seen:
                     continue
                 if self._advance(target, event_id, frontier, self.registry):
@@ -237,6 +290,8 @@ def refresh_owner_corrections(owner) -> None:
 
 def require_pending_corrections(owner, artifact_id: str) -> None:
     """Fail closed when a staged correction already directly affects this artifact."""
+    if getattr(owner, "_accepted_owner_superseded", False):
+        _invalid("BAMF_C09_ARTIFACT_OWNER_SUPERSEDED")
     target = getattr(owner, "_accepted_correction_target", None)
     if target is None:
         return
@@ -309,8 +364,8 @@ def register_compiled_batch(
     for kind, owner in owners:
         register_accepted_target(
             run_dir, cache.accepted_manifest_sha256, kind, owner,
-            lambda event, authority, owner=owner: _route(
-                owner, event, authority),
+            lambda current, event, authority: _route(
+                current, event, authority),
             registry,
         )
 
@@ -325,7 +380,7 @@ def register_solve_context(
     owner = context.operator_composition_artifact_owner
     register_accepted_target(
         run_dir, cache.accepted_manifest_sha256, "OPERATOR_COMPOSITION", owner,
-        lambda event, authority: _route(owner, event, authority), registry)
+        lambda current, event, authority: _route(current, event, authority), registry)
 
 
 __all__ = (

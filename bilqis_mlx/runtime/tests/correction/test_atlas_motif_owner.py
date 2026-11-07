@@ -89,6 +89,31 @@ class MotifArtifactOwnerTests(unittest.TestCase):
             bind_motif_artifact_owner(self.cache, self.compiled),
         )
 
+    def test_cache_lifetime_keeps_distinct_batch_scoped_motif_owners(self):
+        fixture = FrameEncoderTests()
+        fixture.setUp()
+        second, _vectors, _ast = fixture.compiled_inputs(prefix=7)
+        second = replace(
+            second,
+            extents=replace(
+                second.extents,
+                motif_key_map_digest=self.manifest.digest,
+            ),
+        )
+
+        second_owner = bind_motif_artifact_owner(self.cache, second)
+
+        self.assertIsNot(second_owner, self.owner)
+        self.assertIs(second_owner, bind_motif_artifact_owner(self.cache, second))
+        self.assertNotEqual(
+            second_owner.current_node.artifact_id,
+            self.owner.current_node.artifact_id,
+        )
+        self.assertEqual(
+            second_owner.current_node.content_digest,
+            self.owner.current_node.content_digest,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

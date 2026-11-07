@@ -1,7 +1,10 @@
 """Accepted-generation runtime custody and C09 replay witnesses."""
 from dataclasses import replace
+import json
 import os
 from pathlib import Path
+import subprocess
+import sys
 from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
@@ -11,6 +14,9 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.tests.test_frame_encoder import FrameEncoderTests
 from bilqis_mlx.runtime.accepted_corrections import (
     _RUNTIME_OWNER, record_accepted_correction,
+)
+from bilqis_mlx.runtime.accepted_correction_ledger import (
+    append_record, correction_record, read_records,
 )
 from bilqis_mlx.runtime.atlas_cache_codec import CacheAuthorityRuntime
 from bilqis_mlx.runtime.atlas_revalidation import (
@@ -118,10 +124,8 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
                 self.run, AUTHORITY)
         with self.assertRaises(BilqisError):
             bind_motif_artifact_owner(cold_cache, compiled)
-        cold_owner = cold_cache._motif_artifact_owner
-        self.assertTrue(cold_owner.queue.held_artifact_ids)
         with self.assertRaises(BilqisError):
-            cold_owner.require(cold_cache, compiled)
+            bind_motif_artifact_owner(cold_cache, compiled)
 
     def test_missing_local_correction_ledger_fails_closed_after_history_exists(self):
         _cache, compiled, owner = self._motif_fixture()
@@ -165,6 +169,82 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
         self.assertEqual(
             caught.exception.context["reason"],
             "BAMF_C09_CORRECTION_HISTORY_COMMITMENT_DRIFT",
+        )
+
+    def test_file_ahead_of_history_after_commit_crash_recovers_exact_history(self):
+        cache, _compiled, owner = self._motif_fixture()
+        first = _event(owner.source_dependencies[0])
+        second = _sign_event(replace(
+            first,
+            event_id="correction:synthetic:crash-recovery-2",
+            source_receipt_sha256="e" * 64,
+            new_evidence_sha256="d" * 64,
+        ))
+        manifest = cache.accepted_manifest_sha256
+        first_record = correction_record(manifest, first)
+        second_record = correction_record(manifest, second)
+        append_record(self.run, manifest, first_record)
+
+        with patch(
+                "bilqis_mlx.runtime.accepted_correction_ledger._commit_history",
+                side_effect=RuntimeError("simulated crash after ledger fsync")):
+            with self.assertRaisesRegex(RuntimeError, "simulated crash"):
+                append_record(self.run, manifest, second_record)
+
+        recovered = read_records(self.run, manifest)
+        self.assertEqual(
+            tuple(item["event_id"] for item in recovered),
+            (first_record["event_id"], second_record["event_id"]),
+        )
+
+    def test_concurrent_process_writers_commit_one_exact_history(self):
+        cache, _compiled, owner = self._motif_fixture()
+        first = _event(owner.source_dependencies[0])
+        second = _sign_event(replace(
+            first,
+            event_id="correction:synthetic:process-writer-2",
+            source_receipt_sha256="e" * 64,
+            new_evidence_sha256="d" * 64,
+        ))
+        manifest = cache.accepted_manifest_sha256
+        records = (
+            correction_record(manifest, first),
+            correction_record(manifest, second),
+        )
+        barrier = self.root / "writers.start"
+        script = (
+            "import json, pathlib, sys, time; "
+            "from bilqis_mlx.runtime.accepted_correction_ledger import append_record; "
+            "run=pathlib.Path(sys.argv[1]); manifest=sys.argv[2]; "
+            "record=json.loads(sys.argv[3]); barrier=pathlib.Path(sys.argv[4]); "
+            "deadline=time.monotonic()+10; "
+            "\nwhile not barrier.exists():\n"
+            "    if time.monotonic() >= deadline: raise RuntimeError('barrier timeout')\n"
+            "    time.sleep(0.001)\n"
+            "append_record(run, manifest, record)"
+        )
+        processes = [
+            subprocess.Popen(
+                [sys.executable, "-c", script, str(self.run), manifest,
+                 json.dumps(record, sort_keys=True), str(barrier)],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                env=os.environ.copy(),
+            )
+            for record in records
+        ]
+        barrier.touch()
+        outputs = [process.communicate(timeout=15) for process in processes]
+        for process, (stdout, stderr) in zip(processes, outputs):
+            self.assertEqual(
+                process.returncode, 0,
+                msg=f"stdout={stdout!r} stderr={stderr!r}",
+            )
+
+        recovered = read_records(self.run, manifest)
+        self.assertEqual(len(recovered), 2)
+        self.assertEqual(
+            {item["event_id"] for item in recovered},
+            {record["event_id"] for record in records},
         )
 
     def test_production_step_reaches_the_owner_binder(self):

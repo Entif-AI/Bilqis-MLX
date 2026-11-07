@@ -13,6 +13,10 @@ EGM episode `C09-752-EGM-20261107`, round `5/5`.
 - Round-5 branch: `codex/752-final-prime-20261106`
 - Historical Round-5 remediation branch: `codex/752-r5-remediation-20261107`
 - Final engineering recut branch: `codex/752-final-recut-20261107`
+- Human-authorized one-off EGM episode: `C09-752-EGM-H1-20261107`
+- H1 reviewed head: `b6f6a558addaaf16e5ccd94c2267fe338be19e54`
+- H1 verdict: **FAIL — 2 Blockers, 2 Majors, 0 Nits**
+- Post-H1 repair branch: `codex/752-post-egm-h1-fixes-20261107`
 - Required integration trunk: `codex/bamf-unified-base-20261028`
 - Current unified SHA consumed by the final recut integration boundary:
   `58eb36bba1958e0b3ca5d6aa3080260ccac3e9a1`
@@ -22,8 +26,96 @@ EGM episode `C09-752-EGM-20261107`, round `5/5`.
 Round 5 was a FAIL. This packet does not revise that verdict, claim a sixth
 review round, claim EGM PASS, authorize a PR, or authorize merge/issue closure.
 `docs/tasks/bamf-0.2/EGM_EXECUTION.md` caps an episode at five complete rounds.
-Another exact-head EGM requires explicit human/design authority for a new
-review path. Until then issue #752 remains OPEN and `EGM-Failed`.
+The user subsequently authorized exactly one additional fresh-context review,
+episode `C09-752-EGM-H1-20261107`, and that review also failed. There is no
+automatic further round. Any later exact-head EGM again requires explicit
+human/design authority. Issue #752 remains OPEN and `EGM-Failed`.
+
+## Human-authorized H1 finding closure in progress
+
+The H1 review found four additional defects on exact immutable head
+`b6f6a558addaaf16e5ccd94c2267fe338be19e54`. The repairs below are engineering
+work only. They do not alter the H1 FAIL verdict or imply another EGM round.
+
+### H1 Blocker 1 — live Factory training was outside accepted correction custody
+
+**Finding:** the real Factory training bridge created gradient-bearing
+`BamfCompiledBatch` rows without registering their AtlasFeature/PackedFrame
+owners into accepted C09 custody. `require_pending_corrections()` is purposely
+a no-op for an owner with no accepted target, so a correction already present in
+the accepted ledger could be invisible before the B11 training read.
+
+**Repair:** `_bind_b11_rows()` registers every compiled training batch with its
+host-owned `SourceExecutionContext` before returning it, and
+`execute_factory_candidate_step()` now requires that context to be bound to the
+same accepted run before any neural execution. Source-prefetch workers remain
+unprivileged; authority stays at the host boundary.
+
+Primary surfaces:
+
+- `bilqis_mlx/runtime/_batch/factory_training_bridge.py`
+- `bilqis_mlx/runtime/_batch/factory_candidate_training.py`
+- `bilqis_mlx/runtime/_source/source_execution.py`
+
+### H1 Blocker 2 — motif custody mixed generation lifetime with batch identity
+
+**Finding:** one generation-scoped `AcceptedExecutionCache` retained a single
+`MotifArtifactOwner`, while that owner froze the first compiled batch's
+occurrence-specific packed-frame IDs. A later legitimate same-generation batch
+could therefore fail `BAMF_C09_MOTIF_OWNER_MISMATCH` before inference.
+
+**Repair:** a retained motif *use* now has a batch-qualified immutable artifact
+identity: retained manifest content remains `manifest.digest`, while the artifact
+ID also commits the exact packed-frame artifact-ID tuple. The accepted cache
+keeps weakly referenced owners per compiled-frame identity, so same-batch reuse
+reuses custody, distinct batches get distinct dependency graphs, and dead batch
+owners are not retained for the generation lifetime.
+
+Primary surfaces:
+
+- `bilqis_mlx/runtime/_correction/owners/atlas_motif_owner.py`
+- `bilqis_mlx/runtime/_custody/bamf_bundle/execution_cache.py`
+
+### H1 Major 1 — accepted history append was not crash-atomic
+
+**Finding:** `append_record()` fsynced `events.jsonl`, synchronized the data-plane
+index, and advanced the separate history commitment without one writer lock or a
+recoverable transaction. Two real writers could race, and a crash after ledger
+fsync but before commitment advancement could leave file and commitment
+permanently divergent. The old test named “concurrent” executed serial calls.
+
+**Repair:** accepted history uses a run-scoped process lock plus `flock` for
+interprocess serialization. Before file append, the data-plane commitment
+authority atomically publishes a `PREPARED` transaction containing the exact
+prior file digest/size, prior history state, intended record, and target history
+state. Restart reconciliation distinguishes no append, partial append, and full
+append. Partial bytes are truncated only back to the committed exact prefix;
+full intended append is synchronized and committed. Final history advancement
+and transaction clearing occur in one SQLite transaction. The recovery protocol
+therefore does not trust an auxiliary marker on the mutable ledger filesystem.
+
+Primary surface:
+
+- `bilqis_mlx/runtime/_correction/accepted_correction_ledger.py`
+
+### H1 Major 2 — registration could evict a still-live equivalent reader
+
+**Finding:** accepted registration replaced an older same-kind target whenever
+its owned artifact-ID set matched the new owner. A retained earlier context could
+therefore remain readable after its correction target was removed.
+
+**Repair:** accepted targets weakly reference physical owners. Multiple live
+owners with equivalent immutable nodes and equivalent capability ledger state
+remain registered concurrently and all receive later correction delivery. A
+new owner with the same logical artifact IDs but divergent materialized node or
+capability-ledger state is a re-materialization instead of an alias: it
+explicitly supersedes the old target and marks the old owner fail-closed before
+retirement. Dead physical owners disappear without unbounded target retention.
+
+Primary surfaces:
+
+- `bilqis_mlx/runtime/_correction/accepted_correction_runtime.py`
+- `bilqis_mlx/runtime/_correction/accepted_stale_replay_runtime.py`
 
 ## Governing acceptance
 
@@ -216,9 +308,13 @@ artifact. It supplements rather than rewrites the historical Round-5 packet.
    source corrections remain branch-aware correction custody. A post-remediation
    stale replay creates an independent process-fault hold rather than being
    disguised as another source correction.
-4. **Owner replacement is logical, not global.** A cold-loaded owner supersedes
-   an older retained target only when the owner kind and exact owned-artifact set
-   match. Distinct same-kind owners remain concurrently registered.
+4. **Owner replacement distinguishes aliases from re-materialization.** Live
+   physical owners with the same logical artifact IDs remain concurrent when
+   their immutable nodes and capability ledger state are equivalent. Divergent
+   state under the same logical IDs is a new materialization: the older owner is
+   marked superseded/fail-closed before its target is retired. Batch-qualified
+   motif uses carry distinct artifact IDs and therefore never collide merely
+   because they share one retained manifest.
 5. **No self-ratification.** Revalidation, remediation and later-evidence
    records remain source/host supplied; the accepted runtime may verify, route,
    persist and hold but may not fabricate evidence that clears its own holds.
@@ -246,6 +342,23 @@ not presented as proof of a later exact head.
   ACTIVE and #752 is not blocked by a competing writer.
 - `git diff --check`: **PASS**.
 - Host ingress and real exact-cache consumer witness: **7/7 PASS**.
+- Post-H1 focused repair ring on M3 Ultra:
+  - batch-qualified motif-owner custody: **6/6 PASS**;
+  - accepted correction runtime, including two simultaneously live equivalent
+    owners: **6/6 PASS**;
+  - accepted runtime custody: **10/10 PASS**, including a real two-process
+    concurrent-writer test and crash-after-ledger-fsync recovery;
+  - source-context contracts: **6/6 PASS**;
+  - capability-support owner/requalification custody: **6/6 PASS**;
+  - accepted stale-replay runtime: **2/2 PASS**;
+  - exact-cache authority integration: **2/2 PASS**;
+  - production authority/cold-read custody: **13/13 PASS**;
+  - A01-backed B11 forward began interactively and produced three real PASSes,
+    but the aggregate crossed the interactive threshold and was deliberately
+    stopped rather than polled. It is not counted as a completed receipt here.
+  - A01-backed Factory persisted-correction witness likewise crossed the
+    interactive threshold and was deliberately stopped. It remains pending a
+    detached M3 run against the frozen repair candidate.
 - Final recut on unified
   `58eb36bba1958e0b3ca5d6aa3080260ccac3e9a1`:
   - `quality:changed`: **PASS** with four inherited code-smell findings and
@@ -308,5 +421,5 @@ back exactly.
 - detached `verify:leaf`:
   `FAIL_INHERITED_BASELINE_NO_752_SPECIFIC_FAILURE_IDENTIFIED`
 - detached `verify:premerge`: `PENDING`
-- EGM: `BLOCKED_AFTER_ROUND_5_PENDING_EXPLICIT_AUTHORITY`
+- EGM: `FAILED_H1_ONE_OFF_NO_FURTHER_REVIEW_AUTHORIZED`
 - Final PR: `BLOCKED_PENDING_AUTHORIZED_EGM_PASS`

@@ -6,6 +6,7 @@ from bilqis_mlx.learning.frame_encoder import CompiledEncoderInput
 from bilqis_mlx.semantics.cognitive_dependencies import (
     ArtifactKind, ArtifactNode, DependencyIndex, DependencyKind, DependencyRef,
 )
+from bilqis_mlx.semantics.domains import contract_digest
 from bilqis_mlx.runtime.atlas_revalidation_common import _invalid, owner_priority
 from bilqis_mlx.runtime.atlas_revalidation_evidence import (
     CorrectionEvent, RevalidationFrontier,
@@ -41,7 +42,7 @@ def _motif_node(cache, compiled: CompiledEncoderInput) -> tuple[ArtifactNode, tu
     }
     impact, exigency = owner_priority(ArtifactKind.MOTIF)
     return ArtifactNode(
-        artifact_id="motif:" + manifest.digest,
+        artifact_id="motif:" + manifest.digest + ":" + contract_digest(frame_ids),
         kind=ArtifactKind.MOTIF,
         content_digest=manifest.digest,
         eligible=True,

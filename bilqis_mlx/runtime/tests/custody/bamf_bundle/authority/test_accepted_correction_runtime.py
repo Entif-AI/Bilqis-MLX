@@ -201,6 +201,32 @@ class AcceptedCorrectionRuntimeTests(unittest.TestCase):
         self.assertIn(first_event, target.seen)
         self.assertEqual(owner.queue.held_artifact_ids, ())
 
+    def test_same_logical_artifact_owners_all_remain_live_for_later_correction(self):
+        self.publish(candidate(parent_state()))
+        binding, first_context, compositions = self._composition_context(1)
+        second_context = SolveContext(
+            binding, qualified_compositions=compositions,
+            qualification_verifier=lambda item: True)
+        with shape_patch():
+            bind_accepted_correction_authority(self.run, AUTHORITY)
+            register_solve_context(self.run, first_context, AUTHORITY)
+            register_solve_context(self.run, second_context, AUTHORITY)
+        dependency = DependencyRef(
+            DependencyKind.SOURCE,
+            "source:binding:" + contract_digest(binding),
+        )
+        correction = _event(dependency)
+
+        with shape_patch():
+            record_accepted_correction(self.run, correction, AUTHORITY)
+
+        for context in (first_context, second_context):
+            owner = context.operator_composition_artifact_owner
+            self.assertIsNotNone(owner.queue)
+            self.assertEqual(owner.queue.event.event_id, correction.event_id)
+            with self.assertRaises(BilqisError):
+                owner.require(compositions[0], binding)
+
 
 if __name__ == "__main__":
     unittest.main()

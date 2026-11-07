@@ -273,8 +273,8 @@ def load_capability_support_owner(
     from .atlas_owner_ingress import apply_capability_support_correction
     register_accepted_target(
         run_dir, manifest_sha256, "CAPABILITY_SUPPORT", rehydrated,
-        lambda event, registry: apply_capability_support_correction(
-            rehydrated, event, registry),
+        lambda current, event, registry: apply_capability_support_correction(
+            current, event, registry),
         authority_registry,
         seen_event_ids=seen_event_ids,
     )

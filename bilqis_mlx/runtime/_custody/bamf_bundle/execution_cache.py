@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import secrets
 from pathlib import Path
+import weakref
 
 from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
 from bilqis_mlx.errors import ErrorBus, SCHOOL
@@ -36,7 +37,7 @@ class AcceptedExecutionCache:
     motif_manifest: MotifManifest
     schema_version: str = "bilqis.mlx.b13-accepted-execution-cache/v1"
     _issuance: object = field(init=False, repr=False, compare=False)
-    _motif_artifact_owner: object | None = field(init=False, repr=False, compare=False)
+    _motif_artifact_owners: dict = field(init=False, repr=False, compare=False)
     _cache_mac_key: bytes = field(init=False, repr=False, compare=False)
     _cache_authority: object | None = field(init=False, repr=False, compare=False)
     _cache_authority_registry: object | None = field(init=False, repr=False, compare=False)
@@ -78,7 +79,7 @@ def _issue_accepted_execution_cache(
         ("motif_manifest", motif_manifest),
         ("schema_version", "bilqis.mlx.b13-accepted-execution-cache/v1"),
         ("_issuance", _ISSUER),
-        ("_motif_artifact_owner", None),
+        ("_motif_artifact_owners", weakref.WeakValueDictionary()),
         ("_cache_mac_key", secrets.token_bytes(32)),
         ("_cache_authority", None),
         ("_cache_authority_registry", None),
@@ -99,13 +100,17 @@ def require_accepted_execution_cache(cache) -> AcceptedExecutionCache:
 
 
 def bind_motif_artifact_owner(cache, compiled):
-    """Bind mutable C09 hold state to one authenticated cache lifetime."""
+    """Bind mutable C09 hold state to one immutable compiled-frame identity."""
     cache = require_accepted_execution_cache(cache)
     from bilqis_mlx.runtime.atlas_motif_owner import MotifArtifactOwner
-    owner = cache._motif_artifact_owner
+    key = tuple(
+        node.artifact_id
+        for node in compiled.packed_frame_artifact_owner.index.nodes
+    )
+    owner = cache._motif_artifact_owners.get(key)
     if owner is None:
         owner = MotifArtifactOwner(cache, compiled)
-        object.__setattr__(cache, "_motif_artifact_owner", owner)
+        cache._motif_artifact_owners[key] = owner
     if cache._run_dir is not None:
         from bilqis_mlx.runtime.accepted_corrections import (
             register_accepted_target,
@@ -114,7 +119,7 @@ def bind_motif_artifact_owner(cache, compiled):
         register_accepted_target(
             cache._run_dir, cache.accepted_manifest_sha256,
             "MOTIF", owner,
-            lambda event, registry: _route(owner, event, registry),
+            lambda current, event, registry: _route(current, event, registry),
             cache._correction_registry,
         )
     owner.require(cache, compiled)

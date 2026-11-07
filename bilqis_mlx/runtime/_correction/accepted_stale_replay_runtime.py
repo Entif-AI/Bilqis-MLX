@@ -65,30 +65,33 @@ def _install_fault(targets, fault, requalification=None) -> None:
             for item in requalification.ledger.capabilities
         }
     for target in targets:
+        owner = target.owner
+        if owner is None:
+            continue
         owned = {
-            node.artifact_id for node in getattr(target.owner, "index").nodes
+            node.artifact_id for node in getattr(owner, "index").nodes
         }.intersection(held)
         if owned:
             target.process_fault_holds.update(owned)
             setattr(
-                target.owner, "_accepted_process_fault_holds",
+                owner, "_accepted_process_fault_holds",
                 frozenset(target.process_fault_holds),
             )
-            support = getattr(target.owner, "_support", None)
+            support = getattr(owner, "_support", None)
             if (support is not None
                     and getattr(support, "status", None)
                     is not RequalificationStatus.REQUALIFICATION_REQUIRED):
                 setattr(
-                    target.owner, "_support",
+                    owner, "_support",
                     replace(
                         support,
                         status=RequalificationStatus.REQUALIFICATION_REQUIRED,
                     ),
                 )
-        capability_id = getattr(target.owner, "capability_id", None)
+        capability_id = getattr(owner, "capability_id", None)
         support = updated_support.get(capability_id)
         if support is not None:
-            setattr(target.owner, "_support", support)
+            setattr(owner, "_support", support)
 
 
 def replay_stale_evidence(retained) -> tuple[object, ...]:
