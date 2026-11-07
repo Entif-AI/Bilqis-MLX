@@ -10,7 +10,9 @@ import bilqis_mlx.runtime.mlx_checkpoint as _mlx_checkpoint
 from bilqis_mlx.data_plane import DataPlaneError, data_plane
 from bilqis_mlx.runtime.disk import assert_headroom
 from .records import (
-    SIDECARS, BamfBundleCandidate, BamfGenerationManifest, CompleteStudent,
+    ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA, BAMF_BUNDLE_SCHEMA, SIDECARS,
+    BamfBundleCandidate,
+    BamfGenerationManifest, CompleteStudent,
     canonical, invalid, sha, sidecar_records, validate_sidecars,
 )
 
@@ -39,9 +41,18 @@ def _write_file(path: Path, raw: bytes) -> str:
     return sha(raw)
 
 
+_UNBOUND_PARENT_ACCEPTANCE = object()
+
+
 def save_bamf_bundle(candidate: BamfBundleCandidate, destination: Path, *,
-                     reserve_gib: float = 100.0) -> dict:
-    """Write and read back one immutable v2 generation without publishing it."""
+                     reserve_gib: float = 100.0,
+                     parent_acceptance_sha256=_UNBOUND_PARENT_ACCEPTANCE) -> dict:
+    """Write and read back one immutable generation without publishing it.
+
+    Publication passes the exact accepted-parent digest explicitly. Standalone
+    unbound custody writes remain v2 so they cannot masquerade as acceptance-bound
+    publication evidence.
+    """
     destination = Path(destination)
     if destination.exists() or destination.is_symlink():
         invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
@@ -77,12 +88,16 @@ def save_bamf_bundle(candidate: BamfBundleCandidate, destination: Path, *,
             "object_sha256": digest,
         }
     hp = candidate.optimizer_hyperparameters
+    publication_bound = parent_acceptance_sha256 is not _UNBOUND_PARENT_ACCEPTANCE
     manifest = BamfGenerationManifest(
         candidate.run_id, candidate.generation, candidate.parent_manifest_sha256,
         candidate.implementation_sha256, candidate.topology.to_record(),
         candidate.extents.to_record(), candidate.provenance.to_record(), tensor,
         {"schema": retained.optimizer.schema_version, "step": retained.optimizer_step,
-         "hyperparameters": asdict(hp)}, candidate.transition, bindings).to_record()
+         "hyperparameters": asdict(hp)}, candidate.transition, bindings,
+        parent_acceptance_sha256 if publication_bound else None,
+        ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA if publication_bound
+        else BAMF_BUNDLE_SCHEMA).to_record()
     raw = canonical(manifest)
     digest = _write_file(destination / "manifest.json", raw)
     plane.put_node(digest, raw, candidate.generation, candidate.parent_manifest_sha256)
