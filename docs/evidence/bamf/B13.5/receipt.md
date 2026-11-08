@@ -883,3 +883,16 @@ This PASS supplies current merge-readiness review evidence without rewriting the
 historical five-round automatic episode. Downstream A02 consumption remains owned by
 #399. No neural update, source admission, self-merge or merge into reviewed unified
 is authorized by this receipt.
+
+### PR turn-in — 2026-11-07
+
+Ready PR **#913** targets reviewed unified
+`d4bad39a32a80acbffdb9f891a906892ab2e9fab` from branch
+`codex/697-postcap-final-20261107`. It was opened non-draft after issue #697 advanced
+to `EGM-Passed` on the human-authorized post-cap targeted-review evidence above.
+
+`TEST_EVIDENCE_REUSED`: semantic/test proof remains bound to exact head
+`694ba90f55c1bc5fe1b98dc1cae19134d505947a`. The following turn-in commits modify
+only this receipt and the Lane B flow-control record; they do not alter production,
+tests, fixtures, generators, dependencies, harnesses or runtime configuration.
+Hosted PR checks are the remaining integration gate. Merge authority remains human-only.

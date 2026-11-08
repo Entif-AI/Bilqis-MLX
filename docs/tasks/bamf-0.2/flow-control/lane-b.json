@@ -63,11 +63,11 @@
     },
     {
       "issue": 697,
-      "pr": null,
+      "pr": 913,
       "state": "READY",
       "head_sha": "694ba90f55c1bc5fe1b98dc1cae19134d505947a",
       "head_sha_role": "human-authorized post-cap targeted-review exact head; semantic repair head ff00945a closes retained active-set drift and 694ba90f is test-only fixture conformance; ADR-127 automatic episode 697-b13-5-20261107 remains historically capped at round 5",
-      "summary": "B13.5 is ready for ordinary PR turn-in after the explicitly human-authorized post-cap targeted reinspection. The candidate consumes accepted #912 pathless/content-addressed Atlas authority, preserves live accepted bundle/v2 -> acceptance-bound v3 continuation, and now binds B13 active-set custody to replayed Atlas authority across both changed-map and unchanged-map descendants. Fresh exact-head targeted review: 0 Blockers / 0 Majors. Exact proof: B13 custody 158 total / 153 pass / 5 explicit skips / 0 failures; focused B13.5 authority 23 pass + 3 subtests; final premerge 3,635 total / 3,463 pass / 167 skips / exactly 5 inherited C09 BAMF_C09_PACKED_FRAME_IDENTITY_DRIFT errors and no #697-local failure. Downstream A02 consumption remains owned by #399. Human merge only.",
+      "summary": "B13.5 is turned in as ready PR #913 after the explicitly human-authorized post-cap targeted reinspection. The candidate consumes accepted #912 pathless/content-addressed Atlas authority, preserves live accepted bundle/v2 -> acceptance-bound v3 continuation, and now binds B13 active-set custody to replayed Atlas authority across both changed-map and unchanged-map descendants. Fresh exact-head targeted review: 0 Blockers / 0 Majors. Exact proof: B13 custody 158 total / 153 pass / 5 explicit skips / 0 failures; focused B13.5 authority 23 pass + 3 subtests; final premerge 3,635 total / 3,463 pass / 167 skips / exactly 5 inherited C09 BAMF_C09_PACKED_FRAME_IDENTITY_DRIFT errors and no #697-local failure. Hosted PR checks and human merge remain external authority; downstream A02 consumption remains owned by #399.",
       "resume_trigger": null,
       "closed_pr": 698,
       "preserved_branch": "codex/697-postcap-final-20261107",
