@@ -75,6 +75,16 @@ class SidecarContractTests(unittest.TestCase):
                 self.assertHeldBeforeTensorSave(
                     replace(value, compiler_features=raw))
 
+    def test_malformed_source_authority_anchor_holds_before_tensor_save(self):
+        value = source()
+        self.assertHeldBeforeTensorSave(replace(
+            value,
+            correction_frontier={
+                **value.correction_frontier,
+                'source_authority_registry_sha256': 'not-a-digest',
+            },
+        ))
+
     def test_boolean_or_negative_epochs_are_not_integer_identity(self):
         original = source()
         value = replace(original,

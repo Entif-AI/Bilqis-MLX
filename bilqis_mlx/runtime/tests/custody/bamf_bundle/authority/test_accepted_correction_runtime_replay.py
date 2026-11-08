@@ -45,8 +45,14 @@ class AcceptedCorrectionReplayTests(unittest.TestCase):
         self.temporary.cleanup()
 
     def publish(self, source):
+        source = replace(source, correction_frontier={
+            **source.correction_frontier,
+            "source_authority_registry_sha256": AUTHORITY.digest,
+        })
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            return publish_candidate(self.run, source)
+            pointer = publish_candidate(self.run, source)
+            bind_accepted_correction_authority(self.run, AUTHORITY)
+            return pointer
 
     def _motif_fixture(self):
         self.publish(candidate(parent_state()))
@@ -68,7 +74,7 @@ class AcceptedCorrectionReplayTests(unittest.TestCase):
         cache, compiled, owner = self._motif_fixture()
         correction = _event(owner.source_dependencies[0])
         with shape_patch():
-            AcceptedRuntimeHost(self.run, AUTHORITY).record_correction(correction)
+            AcceptedRuntimeHost(self.run).record_correction(correction)
         with self.assertRaises(BilqisError) as held:
             owner.require(cache, compiled)
         self.assertEqual(held.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")

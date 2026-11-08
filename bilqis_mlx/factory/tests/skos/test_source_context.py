@@ -215,6 +215,27 @@ class SourceLessonContextTests(unittest.TestCase):
         with self.assertRaises(BilqisError):
             source_lesson_expiry_task(contexts, forged, frontier, policy)
 
+    def test_transition_authority_owns_complete_four_time_identity(self):
+        authority = issue_source_context_transition_authority(SELECTION)
+        self.assertEqual(
+            (
+                authority.source_time,
+                authority.effective_time,
+                authority.observed_at,
+                authority.recorded_at,
+            ),
+            (0, 2, 1, 1),
+        )
+        self.assertEqual(authority.effective_time, authority.effective_until)
+        self.assertEqual(authority.observed_at, authority.task.observed_frontier)
+
+        for field in ("source_time", "effective_time", "observed_at", "recorded_at"):
+            with self.subTest(field=field):
+                tampered = issue_source_context_transition_authority(SELECTION)
+                object.__setattr__(tampered, field, getattr(tampered, field) + 1)
+                with self.assertRaises(BilqisError):
+                    tampered.__post_init__()
+
     def test_post_issue_authority_tampering_fails_closed(self):
         authority = issue_source_context_transition_authority(SELECTION)
         object.__setattr__(

@@ -13,7 +13,7 @@ from .receiver import _load_current_generation, current_receiver_binding
 def receive_screen_and_publish_package(
         sender_dir, staging_dir, package_sha256, run_dir, *,
         max_wire_bytes: int, source_context, artifact_path, target_capability: str,
-        export_clearance, atlas_selection, source_frontier, authority_registry,
+        export_clearance, atlas_selection, source_frontier,
         reserve_gib: float = 100.0):
     """Apply one exact-binding package only through A12, C05, B12 and B13 owners."""
     run_dir = Path(run_dir)
@@ -28,7 +28,7 @@ def receive_screen_and_publish_package(
     _, parent = _load_current_generation(run_dir)
     _verify_export_clearance(
         exchange.package, parent, export_clearance, atlas_selection,
-        source_frontier, authority_registry)
+        source_frontier, source_context, run_dir)
 
     candidate = apply_plastic_delta(exchange.package, run_dir)
     screened = screen_delta_candidate(
@@ -37,4 +37,4 @@ def receive_screen_and_publish_package(
     return publish_screened_delta_import(
         screened, run_dir, export_clearance=export_clearance,
         atlas_selection=atlas_selection, source_frontier=source_frontier,
-        authority_registry=authority_registry, reserve_gib=reserve_gib)
+        source_context=source_context, reserve_gib=reserve_gib)

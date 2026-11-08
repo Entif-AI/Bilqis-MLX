@@ -54,9 +54,17 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
         self.environment.stop()
         self.temporary.cleanup()
 
-    def publish(self, source):
+    def publish(self, source, registry=None):
+        if registry is not None:
+            source = replace(source, correction_frontier={
+                **source.correction_frontier,
+                "source_authority_registry_sha256": registry.digest,
+            })
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            return publish_candidate(self.run, source)
+            pointer = publish_candidate(self.run, source)
+            if registry is not None:
+                bind_accepted_correction_authority(self.run, registry)
+            return pointer
 
     def test_only_accepted_b13_custody_mints_live_execution_cache(self):
         self.publish(candidate(parent_state()))
@@ -95,7 +103,7 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
                 self.run, registry, lambda: object())
 
     def _motif_fixture(self):
-        self.publish(candidate(parent_state()))
+        self.publish(candidate(parent_state()), AUTHORITY)
         with shape_patch():
             cache = bind_accepted_execution_cache(self.run)
         fixture = FrameEncoderTests()

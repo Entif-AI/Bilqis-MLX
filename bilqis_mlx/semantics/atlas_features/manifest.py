@@ -8,6 +8,9 @@ from .common import _SHA, _ADMITTED_GRAPH_PREDICATES, _invalid, _utf8, _sorted_i
 from .records import FeatureSchema, ConceptFeature, AtlasFeatures
 from .sources import _source_rule_categories, _graph_vector, _senses_by_root
 
+FEATURE_MANIFEST_OPERATOR_ID = "atlas-feature-manifest/v1"
+
+
 def build_feature_manifest(
     release: FrozenAtlasSnapshot,
     feature_schema: FeatureSchema,

@@ -1,7 +1,11 @@
 """Production-owned C09 dependency state for released Atlas features."""
 from __future__ import annotations
 
-from bilqis_mlx.semantics.atlas_features import AtlasFeatures, FeatureSchema
+from bilqis_mlx.semantics.atlas_features import (
+    FEATURE_MANIFEST_OPERATOR_ID,
+    AtlasFeatures,
+    FeatureSchema,
+)
 from bilqis_mlx.semantics.frame_compiler import CompiledFrameBatch, CompiledFrameRows
 from bilqis_mlx.semantics.domains import contract_digest
 from bilqis_mlx.semantics.cognitive_dependencies import (
@@ -44,6 +48,10 @@ def _feature_schema_refs(feature_schema: FeatureSchema) -> tuple[DependencyRef, 
         feature_schema.source_bindings,
     ))
     return tuple(sorted({
+        DependencyRef(
+            DependencyKind.OPERATOR,
+            "operator:" + FEATURE_MANIFEST_OPERATOR_ID,
+        ),
         DependencyRef(
             DependencyKind.OPERATOR,
             "operator:atlas-feature-schema:" + schema_contract,

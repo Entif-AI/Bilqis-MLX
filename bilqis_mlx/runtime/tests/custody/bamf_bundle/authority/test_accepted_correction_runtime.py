@@ -50,8 +50,14 @@ class AcceptedCorrectionRuntimeTests(unittest.TestCase):
         self.temporary.cleanup()
 
     def publish(self, source):
+        source = replace(source, correction_frontier={
+            **source.correction_frontier,
+            "source_authority_registry_sha256": AUTHORITY.digest,
+        })
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            return publish_candidate(self.run, source)
+            pointer = publish_candidate(self.run, source)
+            bind_accepted_correction_authority(self.run, AUTHORITY)
+            return pointer
 
     def _motif_fixture(self):
         self.publish(candidate(parent_state()))
@@ -73,7 +79,7 @@ class AcceptedCorrectionRuntimeTests(unittest.TestCase):
         _cache, compiled, owner = self._motif_fixture()
         correction = _event(owner.source_dependencies[0])
         with shape_patch():
-            host = AcceptedRuntimeHost(self.run, AUTHORITY)
+            host = AcceptedRuntimeHost(self.run)
             host.record_correction(correction)
         held = owner.index.node(owner.queue.held_artifact_ids[0])
         with shape_patch():
@@ -103,7 +109,7 @@ class AcceptedCorrectionRuntimeTests(unittest.TestCase):
                 AUTHORITY,
             )
             self.assertTrue(owner.require_row(case.row))
-            host = AcceptedRuntimeHost(self.run, AUTHORITY)
+            host = AcceptedRuntimeHost(self.run)
             transition = host.record_context_transition(
                 case.previous, case.contexts)
         self.assertEqual(len(transition.invalidations), 1)
@@ -152,7 +158,7 @@ class AcceptedCorrectionRuntimeTests(unittest.TestCase):
                     current, event, source_authority),
                 AUTHORITY,
             )
-            host = AcceptedRuntimeHost(self.run, AUTHORITY)
+            host = AcceptedRuntimeHost(self.run)
             forged_task = replace(
                 case.task,
                 effective_time=case.contexts.transition_authority.effective_until,
@@ -199,7 +205,7 @@ class AcceptedCorrectionRuntimeTests(unittest.TestCase):
                 lambda current, event, source_authority: current,
                 AUTHORITY,
             )
-            AcceptedRuntimeHost(self.run, AUTHORITY).record_context_transition(
+            AcceptedRuntimeHost(self.run).record_context_transition(
                 case.previous, case.contexts)
 
         with self.assertRaises(BilqisError) as held:

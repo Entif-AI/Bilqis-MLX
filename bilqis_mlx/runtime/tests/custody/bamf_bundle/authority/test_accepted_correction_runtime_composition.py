@@ -140,7 +140,7 @@ class AcceptedCorrectionCompositionTests(AcceptedCorrectionCompositionCase):
                 owner.queue.held_artifact_ids)
 
     def test_real_source_operand_correction_holds_operator_composition(self):
-            self.publish(candidate(parent_state()))
+            self.publish(candidate(parent_state()), SYNTHETIC_SOURCE_AUTHORITY)
             binding, context, compositions = self._composition_context(1)
             source_reference = binding.operands[0].source_reference
             with shape_patch():
@@ -161,7 +161,7 @@ class AcceptedCorrectionCompositionTests(AcceptedCorrectionCompositionCase):
             self.assertEqual(caught.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
 
     def test_answer_choice_source_correction_holds_operator_composition(self):
-            self.publish(candidate(parent_state()))
+            self.publish(candidate(parent_state()), SYNTHETIC_SOURCE_AUTHORITY)
             capability = SimpleNamespace(
                 capability_id="A.IDENTITY",
                 answer_families=(AnswerFamily("binary", BINARY),),

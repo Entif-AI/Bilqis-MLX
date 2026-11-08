@@ -112,13 +112,30 @@ def acceptance(bundle, *, parent=None) -> object:
 
 
 def publish_candidate(run_dir, bundle):
-    from ..helpers import genesis_preparation
+    from ..helpers import accepted_state, genesis_preparation
 
     if bundle.generation == 0:
         prepared = genesis_preparation(
             run_id=bundle.run_id,
             delivery_events=({"event": "FIXTURE_GENESIS", "optimizer_step": 0},))
-        return publish_initial_generation(run_dir, prepared, reserve_gib=0.)
+        pointer = publish_initial_generation(run_dir, prepared, reserve_gib=0.)
+        source_authority = bundle.correction_frontier.get(
+            "source_authority_registry_sha256")
+        if source_authority is None:
+            return pointer
+        parent = load_bamf_generation(Path(run_dir) / "bamf-state.json")
+        retained = accepted_state(parent.retained_state, parent.extents)
+        bundle = derive_successor_bundle(
+            parent, retained, parent_manifest_sha256=pointer["manifest_sha256"],
+            delivery_events=({"event": "FIXTURE_SOURCE_AUTHORITY"},))
+        bundle = replace(bundle, correction_frontier={
+            **bundle.correction_frontier,
+            "source_authority_registry_sha256": source_authority,
+        })
+        return publish_bamf_generation(
+            run_dir, bundle,
+            acceptance=acceptance(bundle, parent=parent.retained_state),
+            reserve_gib=0.)
     parent = load_bamf_generation(Path(run_dir) / "bamf-state.json")
     if bundle.run_identity is None:
         bundle = replace(bundle, run_identity=parent.run_identity)

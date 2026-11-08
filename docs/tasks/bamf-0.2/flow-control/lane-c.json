@@ -1,26 +1,28 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "d4bad39a32a80acbffdb9f891a906892ab2e9fab",
-  "updated_at": "2026-11-08T01:24:45Z",
+  "observed_unified": "81a9e4e24fcca307cb0019db4e4c07737a8b744b",
+  "updated_at": "2026-11-08T07:48:27Z",
   "exception": null,
   "items": [
     {
       "issue": 516,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "a8193012ddc8758e500db0133c51321b8b4fa8fd",
-      "summary": "C09.1 semantic repair candidate a8193012 closes the fresh 75a81cb6 structural/readiness Majors by enforcing source-qualified training-authority custody at B13 acceptance and splitting the retained-model C09 witness below repository module-size limits. Exact focused proof, structure, mirrors, flow control and changed-file quality are green; the branch remains ACTIVE only for exact-head qualification and EGM turn-in.",
+      "pr": 915,
+      "state": "TURNED_IN",
+      "head_sha": "071519b6ea141798fd37f4325b81c79f224a7cff",
+      "summary": "C09.1 post-merge materializer repair passed fresh exact-head EGM with 0 Blockers / 0 Majors, merged through PR #915 as reviewed unified 56254f34, and issue #516 is closed EGM-Passed. The current AtlasFeature indexes exact materializer, FeatureSchema contract and source-binding operator dependencies while predecessor custody remains separate.",
       "resume_trigger": null,
-      "preserved_branch": "codex/516-c09-1-egm-remediation-20261107"
+      "preserved_branch": "codex/516-c09-1-materializer-repair-20261108",
+      "merged_pr": 915
     },
     {
       "issue": 911,
-      "pr": null,
-      "state": "WAITING",
-      "head_sha": null,
-      "summary": "Context-driven learned-support requalification reaches a C09-local targeted task, but canonical C10 projection lacks source-owned four-time identity and must not fabricate it inside #516.",
-      "resume_trigger": "Select #911 after #516 turn-in, or earlier only if the C10 owner supplies an accepted context-native temporal identity contract that makes the projection seam dependency-ready."
+      "pr": 921,
+      "state": "TURNED_IN",
+      "head_sha": "dbb9ba00724454d570f73b3e68d8d4d32b37fd98",
+      "summary": "C10 context-native requalification is turned in as PR #921 against reviewed unified 81a9e4e2. Fresh EGM round 2 passed with 0 Blockers / 0 Majors after round-1 repair ae0b1318 closed TARGET_LOCAL task-membership authority and MECHANICAL_PROOF cold-replay isolation. The projector now requires exact C09 pending_source_tasks membership before durable receipt resolution/minting; the literal cold witness deletes the derived outbox and reconstructs the identical canonical Akasha event. Projection family: 42 passed / 3 expected skips / 139 subtests; owner ring: 24 passed / 17 subtests; differential leaf 7/7 PASS; structure/governance/smell/error-control/legacy-trainer/flow green. Correction-backed v1 and canonical Akasha identity/store remain unchanged.",
+      "resume_trigger": "Human review/merge PR #921 into codex/bamf-unified-base-20261028. Do not self-merge. After merge, verify unified receipt, close #911 if not closed automatically, and advance Lane C.",
+      "preserved_branch": "codex/911-c10-context-requalification-20261108"
     },
     {
       "issue": 347,

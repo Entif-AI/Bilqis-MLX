@@ -18,9 +18,11 @@ from bilqis_mlx.runtime.accepted_correction_ledger import (
 )
 from bilqis_mlx.runtime.accepted_correction_runtime import runtime
 from bilqis_mlx.runtime.atlas_owner_ingress import _route
-from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
+from bilqis_mlx.runtime.bamf_bundle.admission import (
+    bind_accepted_correction_authority, bind_accepted_execution_cache,
+)
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    publish_genesis, shape_patch,
+    candidate, parent_state, publish_candidate, shape_patch,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.accepted_correction_runtime_temporal_support import (
     source_owned_temporal_case,
@@ -83,9 +85,14 @@ class AcceptedContextFixture(unittest.TestCase):
         self.temporary.cleanup()
 
     def publish(self):
+        source = candidate(parent_state())
+        source = replace(source, correction_frontier={
+            **source.correction_frontier,
+            "source_authority_registry_sha256": AUTHORITY.digest,
+        })
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            publish_genesis(self.run)
-            return bind_accepted_execution_cache(self.run)
+            publish_candidate(self.run, source)
+            return bind_accepted_correction_authority(self.run, AUTHORITY)
 
     def registered_owner(self):
         case = source_owned_temporal_case()
@@ -109,7 +116,7 @@ class AcceptedContextFixture(unittest.TestCase):
                     current, event, source_authority),
                 AUTHORITY,
             )
-            host = AcceptedRuntimeHost(self.run, AUTHORITY)
+            host = AcceptedRuntimeHost(self.run)
         invalidation = C09ContextInvalidation(
             old_context_digest=case.previous.digest,
             new_context_digest="e" * 64,

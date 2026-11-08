@@ -99,7 +99,7 @@ class AcceptedContextChangeTests(AcceptedContextFixture):
                 self.run, cache.accepted_manifest_sha256, "TEST_EXPIRY", owner,
                 lambda current, event, source_authority: _route(
                     current, event, source_authority), AUTHORITY)
-            host = AcceptedRuntimeHost(self.run, AUTHORITY)
+            host = AcceptedRuntimeHost(self.run)
             transition = host.record_context_transition(case.previous, case.contexts)
         invalidation = transition.invalidations[0]
         accepted_event_id = read_records(
