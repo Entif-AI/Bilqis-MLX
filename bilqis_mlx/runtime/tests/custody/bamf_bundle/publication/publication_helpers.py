@@ -64,8 +64,8 @@ def rewrite_motif_bundle_fixture(
 
 
 def shape_patch():
-    from .helpers import DECLARED
-    from .genesis_authority_fixtures import genesis_feature_source_patch
+    from ..helpers import DECLARED
+    from ..genesis_authority_fixtures import genesis_feature_source_patch
 
     stack = ExitStack()
     stack.enter_context(genesis_feature_source_patch())
@@ -93,7 +93,7 @@ def retention_decision(*, accepted=True, parent=None, retained=None) -> object:
         _screen_inputs,
     )
     from tests.bamf_disposable_retention import issue_disposable_screen
-    from .helpers import parent_state
+    from ..helpers import parent_state
 
     screen = _screen_inputs(protected_loss=2 if accepted else 3)
     return issue_disposable_screen(
@@ -112,7 +112,7 @@ def acceptance(bundle, *, parent=None) -> object:
 
 
 def publish_candidate(run_dir, bundle):
-    from .helpers import genesis_preparation
+    from ..helpers import genesis_preparation
 
     if bundle.generation == 0:
         prepared = genesis_preparation(

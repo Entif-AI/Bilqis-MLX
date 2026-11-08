@@ -11606,7 +11606,7 @@
       "count": 1,
       "exception": "RuntimeError",
       "expression": "'test synchronization timed out'",
-      "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/test_publication_recovery.py"
+      "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication_recovery.py"
     },
     {
       "code_hint": "pointer interrupted",

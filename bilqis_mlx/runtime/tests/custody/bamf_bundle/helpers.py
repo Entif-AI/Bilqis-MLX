@@ -228,7 +228,7 @@ def candidate(state: CandidateState, generation=0, parent=None) -> BamfBundleCan
         transition, ({"event": "FIXTURE_ACCEPTED", "optimizer_step": state.optimizer_step},))
 
 
-from .publication_helpers import (
+from .publication.publication_helpers import (
     acceptance, publish_candidate, retention_decision,
     rewrite_motif_bundle_fixture, shape_patch,
 )
