@@ -105,4 +105,5 @@ def existing_initial_generation_retry(
         if (acceptance.digest != prepared.binding.digest
                 or not _same_initial_candidate(student, candidate)):
             invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
+        reconcile(run_dir, student)
         return current

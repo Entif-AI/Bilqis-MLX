@@ -102,6 +102,28 @@ class GenerationZeroRetryTests(unittest.TestCase):
         self.assertEqual(manifest, durable_manifest)
         self.assertEqual(student.run_identity.run_seed, 311)
 
+    def test_post_pointer_crash_retry_reconciles_pending_delivery_before_success(self):
+        prepared = self._prepare(run_seed=312)
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
+                patch.object(
+                    publication, "reconcile_bamf_outbox",
+                    side_effect=RuntimeError("outbox crash")):
+            with self.assertRaisesRegex(RuntimeError, "outbox crash"):
+                publish_initial_generation(self.run, prepared, reserve_gib=0.)
+
+        before = json.loads((self.run / "bamf-state.json").read_text())
+        self.assertFalse((self.run / "events.jsonl").exists())
+
+        retried = self._publish(prepared)
+
+        self.assertEqual(retried, before)
+        events = [
+            json.loads(line)
+            for line in (self.run / "events.jsonl").read_text().splitlines()
+        ]
+        self.assertEqual([event["event"] for event in events], ["FIXTURE_GENESIS"])
+        self.assertEqual([event["optimizer_step"] for event in events], [0])
+
     def test_unpointed_conflicting_genesis_cannot_replace_durable_acceptance(self):
         prepared = self._prepare(run_seed=313)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
