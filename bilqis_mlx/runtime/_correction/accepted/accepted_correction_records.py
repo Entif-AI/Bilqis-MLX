@@ -69,13 +69,32 @@ def _context_invalidation_payload(event: C09ContextInvalidation) -> dict:
 
 def context_invalidation_record(
     manifest_sha256: str, event: C09ContextInvalidation,
+    temporal_authority=None,
 ) -> dict:
     body = {
         "event": CONTEXT_INVALIDATION_EVENT,
         "accepted_manifest_sha256": manifest_sha256,
         "context_invalidation": _context_invalidation_payload(event),
     }
+    if temporal_authority is not None:
+        from bilqis_mlx.factory.skos_curriculum.source_context_policy import (
+            source_context_temporal_identity,
+        )
+        body["source_temporal_identity"] = source_context_temporal_identity(
+            temporal_authority)
     return {"event_id": hashlib.sha256(_canonical(body)).hexdigest(), **body}
+
+
+def context_temporal_identity_from_record(record: dict) -> dict:
+    from bilqis_mlx.factory.skos_curriculum.source_context_policy import (
+        validate_source_context_temporal_identity,
+    )
+    if (type(record) is not dict
+            or record.get("event") != CONTEXT_INVALIDATION_EVENT
+            or "source_temporal_identity" not in record):
+        _invalid("BAMF_C09_CONTEXT_TEMPORAL_IDENTITY_REQUIRED")
+    return validate_source_context_temporal_identity(
+        record["source_temporal_identity"])
 
 
 def context_invalidation_from_record(record: dict) -> C09ContextInvalidation:
@@ -313,6 +332,7 @@ __all__ = (
     "CONTEXT_REVALIDATION_EVENT", "CORRECTION_EVENT", "DERIVED_CLAIM_EVENT",
     "PROCESS_FAULT_EVENT", "REMEDIATION_EVENT", "REVALIDATION_EVENT",
     "_canonical", "context_invalidation_from_record", "context_invalidation_record",
+    "context_temporal_identity_from_record",
     "context_frontier_from_record", "context_revalidation_record",
     "correction_record", "frontier_from_record",
     "lineage_records_from_bytes", "records_from_bytes", "revalidation_record",

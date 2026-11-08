@@ -194,7 +194,7 @@ def source_lesson_expiry_task(
             or frontier.correction_generation
                != validity.frontier.correction_generation):
         _fail("BAMF_SOURCE_CONTEXT_POLICY_WINDOW_AUTHORITY_MISMATCH")
-    return replace(task, effective_time=validity.effective_until)
+    return replace(task, effective_time=validity.effective_time)
 
 
 def _merge_issued_grants(

@@ -150,7 +150,8 @@ def record_accepted_context_transition(
         return transition
     retained = runtime(run_dir, cache.accepted_manifest_sha256)
     for event in transition.invalidations:
-        record = context_invalidation_record(cache.accepted_manifest_sha256, event)
+        record = context_invalidation_record(
+            cache.accepted_manifest_sha256, event, authority)
         append_record(run_dir, cache.accepted_manifest_sha256, record)
         retained.deliver_context_invalidation(record["event_id"], event)
     return transition

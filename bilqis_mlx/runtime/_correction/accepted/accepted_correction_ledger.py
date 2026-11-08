@@ -15,6 +15,7 @@ from .accepted_correction_records import (
     PROCESS_FAULT_EVENT, REMEDIATION_EVENT, REVALIDATION_EVENT, _canonical,
     context_frontier_from_record, context_revalidation_record,
     context_invalidation_from_record, context_invalidation_record,
+    context_temporal_identity_from_record,
     correction_record, frontier_from_record, lineage_records_from_bytes,
     revalidation_record, validate_record,
 )
@@ -167,5 +168,6 @@ __all__ = (
     "accepted_corrections", "append_record", "correction_record",
     "context_frontier_from_record", "context_revalidation_record",
     "context_invalidation_from_record", "context_invalidation_record",
+    "context_temporal_identity_from_record",
     "frontier_from_record", "read_records", "revalidation_record",
 )
