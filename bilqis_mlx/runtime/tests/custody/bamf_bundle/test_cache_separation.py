@@ -47,7 +47,9 @@ def _digest(value: str) -> str:
 
 
 def _shape_patch():
-    from .genesis_authority_fixtures import genesis_feature_source_patch
+    from bilqis_mlx.runtime.tests.custody.bamf_bundle.genesis_authority_fixtures import (
+        genesis_feature_source_patch,
+    )
 
     stack = ExitStack()
     stack.enter_context(genesis_feature_source_patch())

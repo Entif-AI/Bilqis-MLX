@@ -108,6 +108,7 @@ def _publish_authorized_generation(
         reserve_gib: float) -> dict:
     """Shared crash-safe transaction after generation-specific authority validates."""
     prepared = None
+    initial_preparation = None
     if candidate.generation == 0:
         from ..genesis import (
             PreparedInitialGeneration, validate_initial_generation_binding,
@@ -123,6 +124,7 @@ def _publish_authorized_generation(
         if existing is not None:
             return existing
         validate_initial_generation_preparation(authority)
+        initial_preparation = authority
         authority = authority.binding
     else:
         authority = _require_acceptance(candidate, authority)
@@ -156,6 +158,8 @@ def _publish_authorized_generation(
                 _write_acceptance(run_dir, digest, authority)
                 reconcile_bamf_outbox(run_dir, student)
                 return current
+            if initial_preparation is not None:
+                validate_initial_generation_preparation(initial_preparation)
             _validate_parent_transition_impl(
                 run_dir, current, candidate,
                 load_bundle=load_bamf_bundle, reconcile=reconcile_bamf_outbox)
