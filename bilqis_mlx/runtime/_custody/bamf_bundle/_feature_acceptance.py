@@ -78,7 +78,6 @@ def accepted_binding_for_manifest(
     if (parent.generation + 1 != student.generation
             or parent.run_id != student.run_id
             or (parent_anchor is not None
-                and parent.run_identity is not None
                 and parent.run_identity != student.run_identity)
             or binding.parent_candidate_identity_sha256
             != candidate_identity_digest(parent.retained_state)):

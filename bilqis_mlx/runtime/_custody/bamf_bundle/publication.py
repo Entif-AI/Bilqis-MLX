@@ -11,7 +11,6 @@ from bilqis_mlx.learning.atlas_acceptance import AcceptedCandidateBinding
 from .codec import load_bamf_bundle, save_bamf_bundle
 from .records import (
     BAMF_POINTER_SCHEMA, BamfBundleCandidate, CompleteStudent, invalid,
-    sidecar_records,
 )
 from ._publication_authority import (
     _UNBOUND_RETRY,
@@ -23,6 +22,7 @@ from ._publication_authority import (
     validate_parent_transition as _validate_parent_transition_impl,
 )
 from ._publication_events import record_bamf_rejection
+from ._publication_retry import existing_initial_generation_retry
 from ._publication_storage import (
     ACCEPTANCE_DIR, _acceptance_path, _atomic_pointer, _live_bundle_manifest,
     _pointer_lock, _read_pointer, _require_bundle_root, _require_run_root,
@@ -93,33 +93,13 @@ def publish_bamf_generation(
 def _existing_initial_generation_retry(
         run_dir: Path, candidate: BamfBundleCandidate, prepared):
     """Converge an exact sealed genesis retry without depending on mutable upstream."""
-    run_dir = Path(run_dir)
-    pointer_path = run_dir / "bamf-state.json"
-    with _pointer_lock(run_dir):
-        current = _read_pointer(pointer_path)
-        if current is None:
-            return None
-        if (current.get("schema") != BAMF_POINTER_SCHEMA
-                or current.get("run_id") != candidate.run_id
-                or current.get("generation") != 0
-                or current.get("parent_manifest_sha256") is not None
-                or current.get("acceptance_sha256") != prepared.binding.digest):
-            invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
-        student, locked_pointer = _load_generation_locked(pointer_path)
-        if locked_pointer != current:
-            invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
-        acceptance = _require_published_acceptance(run_dir, current, student)
-        if (acceptance.digest != prepared.binding.digest
-                or student.implementation_sha256 != candidate.implementation_sha256
-                or student.topology != candidate.topology
-                or student.extents != candidate.extents
-                or student.provenance != candidate.provenance
-                or student.transition != candidate.transition
-                or student.run_identity != candidate.run_identity
-                or student.optimizer_hyperparameters != candidate.optimizer_hyperparameters
-                or sidecar_records(student) != sidecar_records(candidate)):
-            invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
-        return current
+    return existing_initial_generation_retry(
+        run_dir, candidate, prepared,
+        pointer_lock=_pointer_lock, read_pointer=_read_pointer,
+        load_generation_locked=_load_generation_locked,
+        require_published_acceptance=_require_published_acceptance,
+        load_bundle=load_bamf_bundle, atomic_pointer=_atomic_pointer,
+        reconcile=reconcile_bamf_outbox)
 
 
 def _publish_authorized_generation(
@@ -128,12 +108,14 @@ def _publish_authorized_generation(
     """Shared crash-safe transaction after generation-specific authority validates."""
     if candidate.generation == 0:
         from .genesis import (
-            PreparedInitialGeneration, validate_initial_generation_preparation,
+            PreparedInitialGeneration, validate_initial_generation_binding,
+            validate_initial_generation_preparation,
         )
         if (type(authority) is not PreparedInitialGeneration
                 or authority.candidate is not candidate):
             invalid("BAMF_INITIAL_GENERATION_PREPARATION_REQUIRED")
         authority.__post_init__()
+        validate_initial_generation_binding(candidate, authority.binding)
         existing = _existing_initial_generation_retry(run_dir, candidate, authority)
         if existing is not None:
             return existing

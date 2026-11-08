@@ -1,6 +1,6 @@
 {
-  "legacy_raw_file_count": 251,
-  "legacy_raw_raise_count": 2073,
+  "legacy_raw_file_count": 252,
+  "legacy_raw_raise_count": 2074,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BOOLEAN_ASSOCIATION_B_GRADE_OWNERSHIP_DRIFT",
@@ -11574,6 +11574,13 @@
       "path": "bilqis_mlx/runtime/tests/capability/test_capability_evidence_history.py"
     },
     {
+      "code_hint": "composition fixture bootstrap must be generation zero",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'composition fixture bootstrap must be generation zero'",
+      "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/accepted_correction_runtime_composition_support.py"
+    },
+    {
       "code_hint": "source-owned context was not approved",
       "count": 1,
       "exception": "AssertionError",
@@ -11599,7 +11606,7 @@
       "count": 1,
       "exception": "RuntimeError",
       "expression": "'test synchronization timed out'",
-      "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/test_publication_durability.py"
+      "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/test_publication_recovery.py"
     },
     {
       "code_hint": "pointer interrupted",
