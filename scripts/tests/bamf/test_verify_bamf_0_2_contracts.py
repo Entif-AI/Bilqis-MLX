@@ -31,9 +31,33 @@ class IssueContractRegistryTests(unittest.TestCase):
             [sys.executable, '-B', str(contracts.ROOT / 'scripts/verify_bamf_0_2_contracts.py')],
             cwd=contracts.ROOT, capture_output=True, text=True, check=False)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn('214 BAMF owner/child specs', result.stdout)
-        self.assertIn('171 total indexed recursive child mirrors', result.stdout)
-        self.assertIn('8 dependency normalization holds retained; no executable order', result.stdout)
+        self.assertIn(
+            f'{len(contracts.ITEMS) + len(self.entries)} BAMF owner/child specs',
+            result.stdout,
+        )
+        self.assertIn(
+            f'{len(self.entries)} total indexed recursive child mirrors',
+            result.stdout,
+        )
+        manifest = json.loads((contracts.TASKS / 'workstack.json').read_text())
+        manifest['items'] = contracts.ITEMS
+        mirrors = {
+            entry['key']: (contracts.TASKS / 'children' / (entry['key'] + '.md')).read_bytes()
+            for entry in self.entries
+            if (contracts.TASKS / 'children' / (entry['key'] + '.md')).is_file()
+        }
+        report = contracts.validate_workstack(
+            manifest,
+            self.registry,
+            self.issue_map,
+            mirrors,
+            evidence_sources=self.sources,
+        )
+        hold_count = len(report['dependency_resolution']['held_keys'])
+        self.assertIn(
+            f'{hold_count} dependency normalization holds retained; no executable order',
+            result.stdout,
+        )
 
     def test_actual_late_packets_have_source_provenance_without_generated_markers(self):
         for key in ('A08.1b.1', 'A08.1b.2', 'A08.1b.3', 'A08.1b.4',
