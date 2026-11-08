@@ -164,3 +164,7 @@ The historical-v1 witness is run separately with the explicit canonical
 Microspenics bundle path and manifest digest. This remaps current ownership and
 test entrypoints only; it does not change the inherited B13.3 requirements or
 acceptance contract.
+
+Exact M3 Ultra witness command:
+
+`BILQIS_FROZEN_V1_BUNDLE=/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay/bundles/best-18601-70d09abe56ca BILQIS_FROZEN_V1_MANIFEST_SHA256=70cb9169b8bcae85cd4ea6db81c4e88eb9c423d82888af1f6b4e00c26419315d python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/custody/bamf_bundle/test_frozen_v1.py`
