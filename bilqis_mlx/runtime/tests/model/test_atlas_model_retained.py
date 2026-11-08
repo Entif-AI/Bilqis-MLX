@@ -24,11 +24,16 @@ from bilqis_mlx.learning.tests.motif_reads.test_source_owner import (
 from bilqis_mlx.runtime.atlas_execution_binder import bind_execution_provenance
 from bilqis_mlx.runtime.atlas_candidate_step import production_candidate_step
 from bilqis_mlx.runtime.atlas_model import BamfCompiledBatch, bamf_value_and_grad
+from bilqis_mlx.runtime.atlas_training_authority import _issue as issue_training_authority
+from bilqis_mlx.runtime.atlas_training_contracts import (
+    BamfDeliveryProvenance, BamfTrainingRow, _issue_training_batch,
+)
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
-    _issue_accepted_execution_cache,
+    _issue_accepted_execution_cache, bind_motif_artifact_owner,
 )
+from bilqis_mlx.runtime.source_execution import source_content_digest
 from bilqis_mlx.runtime.topology_v2.ledger import bamf_parameter_census
 from bilqis_mlx.runtime.model_topology_v2 import Initializer, expected_bamf_shapes
 from bilqis_mlx.semantics.atlas.snapshot import load_pinned_atlas_snapshot
@@ -38,6 +43,7 @@ from bilqis_mlx.semantics.frame_schema import FrameSchema, RoleSpec, SourceSpan
 from bilqis_mlx.semantics.released_frame_schemas import (
     load_released_frame_schemas, seal_released_frame_schemas,
 )
+from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
 from bilqis_mlx.source_adapters.school import (
     A_ORACLE, live_source_registry,
 )
@@ -46,6 +52,27 @@ from bilqis_mlx.source_adapters.tests.atoms.helpers import REAL_BUNDLE
 
 @skipUnless(REAL_BUNDLE, "real pinned A01 artifact not mounted")
 class AtlasModelRetainedMotifTests(SourceOwnedMotifReadTests):
+    def _training_authority(self, compiled, source, generation):
+        row = source.source_row
+        dependencies = {
+            DependencyRef(DependencyKind.SOURCE, row["id"]),
+            DependencyRef(DependencyKind.RELEASE, "release:" + compiled.features.semantic_release),
+        }
+        for node in compiled.packed_frame_artifact_owner.require_row(compiled.compiled.rows[0]):
+            dependencies.update(node.immediate_dependencies)
+        provenance = BamfDeliveryProvenance(
+            row["id"], source_content_digest((row,)), row.get("source_id"),
+            row.get("capability", "A.IDENTITY"), None, (), 1, 1, None, 0,
+            "source-family:test-retained", "episode:test-retained",
+            tuple(sorted(dependencies)),
+        )
+        training_row = BamfTrainingRow(None, None, None, provenance)
+        batch = _issue_training_batch(
+            source.selection.release_sha256, generation, "a" * 64,
+            provenance.capability_id, (training_row,),
+        )
+        return issue_training_authority(batch, source, provenance)
+
     def _retained_parent(self, parameters, manifest, spec, extents, ages):
         declared = expected_bamf_shapes(spec, extents)
         rowwise = {
@@ -239,6 +266,36 @@ class AtlasModelRetainedMotifTests(SourceOwnedMotifReadTests):
             provenance.mask.parameter("motif.page.0").row_indices,
             (slot_id,),
         )
+
+    def test_loss_execution_freezes_c09_dependencies_for_retained_motif_support(self):
+        (compiled, parameters, source, feature_schema, plan, cache,
+         _spec, _extents, _manifest, slot_id) = self._runtime_fixture()
+        authority = self._training_authority(
+            compiled, source, plan.generation_binding)
+        batch = BamfCompiledBatch(
+            compiled, (source,), feature_schema,
+            training_authority=authority,
+        )
+        execution = bamf_value_and_grad(
+            parameters, batch,
+            plan,
+            (DecisionOutput("finish", ControlAction.END_FRAME),),
+            {"finish": True},
+            cache=cache,
+        ).execution
+        self.assertEqual(execution.motif_reads[0].participating_slots, (slot_id,))
+        motif_owner = bind_motif_artifact_owner(cache, compiled)
+        learned = set(execution.training_authority.immediate_dependencies)
+        for dependency in motif_owner.source_dependencies:
+            self.assertIn(dependency, learned)
+        feature = batch.atlas_feature_artifact_owner.current_node
+        for dependency in feature.immediate_dependencies:
+            if dependency.kind is not DependencyKind.ARTIFACT:
+                self.assertIn(dependency, learned)
+        for node in compiled.packed_frame_artifact_owner.require_row(compiled.compiled.rows[0]):
+            for dependency in node.immediate_dependencies:
+                if dependency.kind is not DependencyKind.ARTIFACT:
+                    self.assertIn(dependency, learned)
 
     def test_real_b11_retained_motif_execution_reaches_b12_transaction(self):
         (compiled, parameters, source, feature_schema, plan, cache,

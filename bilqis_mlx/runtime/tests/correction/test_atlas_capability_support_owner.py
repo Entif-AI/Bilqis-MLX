@@ -8,6 +8,7 @@ from unittest.mock import patch
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.atlas_capability_support_owner import CapabilitySupportArtifactOwner
+from bilqis_mlx.runtime.atlas_training_authority import extend_training_dependencies
 from bilqis_mlx.runtime.accepted_corrections import (
     AcceptedRuntimeHost, ContextRevalidationFrontier, _RUNTIME_OWNER,
 )
@@ -42,7 +43,7 @@ from bilqis_mlx.semantics.context_eligibility import C09ContextInvalidation
 
 from .capability_support_owner_support import (
     CapabilitySupportOwnerFixture, GENERATION, IMMEDIATE_DEPENDENCIES,
-    SOURCE_ID, SOURCE_ROW, TARGET, source_qualified_state,
+    SOURCE_ID, SOURCE_ROW, TARGET, source_qualified_state, training_authority,
 )
 from . import capability_support_owner_support as support_fixture
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.test_accepted_context_revalidation import (
@@ -138,6 +139,27 @@ class CapabilitySupportOwnerTests(CapabilitySupportOwnerFixture):
             _event(DependencyRef(DependencyKind.SOURCE, SOURCE_ID)),
             authority,
         ))
+        with self.assertRaises(BilqisError) as caught:
+            owner.require(TARGET)
+        self.assertEqual(
+            caught.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
+
+    def test_execution_observed_source_dependency_reaches_learned_support(self):
+        motif_source = DependencyRef(
+            DependencyKind.SOURCE, "source:retained-motif-independent")
+        authority = extend_training_dependencies(
+            training_authority(), (motif_source,))
+        self.publish_support(authority=authority)
+        registry = SourceAuthorityRegistry((SourceAuthorityKey(
+            _SOURCE_OWNER,
+            _TEST_PUBLIC,
+            (SourceAuthorityScope(
+                DependencyKind.SOURCE, "source:retained-motif-independent"),),
+        ),))
+        owner = self.load_support(registry)
+        self.assertIn(motif_source, owner.current_node.immediate_dependencies)
+        self.assertTrue(apply_capability_support_correction(
+            owner, _event(motif_source), registry))
         with self.assertRaises(BilqisError) as caught:
             owner.require(TARGET)
         self.assertEqual(

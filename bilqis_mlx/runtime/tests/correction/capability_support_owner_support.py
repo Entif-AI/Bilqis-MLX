@@ -75,10 +75,10 @@ def training_authority(
     return issue_training_authority(batch, source, provenance)
 
 
-def source_qualified_state(parent=None, **authority_kwargs):
+def source_qualified_state(parent=None, *, authority=None, **authority_kwargs):
     parent = parent_state() if parent is None else parent
     transaction = begin_candidate(parent)
-    authority = training_authority(**authority_kwargs)
+    authority = training_authority(**authority_kwargs) if authority is None else authority
     spec = ModelTopologySpecV2()
     extents = GenerationExtents(
         1, 1, "a" * 64, parent.allocations.manifest.digest, "c" * 64)
@@ -107,8 +107,9 @@ class CapabilitySupportOwnerFixture(unittest.TestCase):
         self.environment.stop()
         self.temporary.cleanup()
 
-    def publish_support(self):
-        parent, transaction, retained, authority = source_qualified_state()
+    def publish_support(self, *, authority=None):
+        parent, transaction, retained, authority = source_qualified_state(
+            authority=authority)
         bundle = candidate(retained)
         decision = retention_decision(parent=parent, retained=retained)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
