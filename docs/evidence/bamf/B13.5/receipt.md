@@ -827,3 +827,59 @@ mutation.
 Deterministic post-cap qualification is complete for the repaired B13.5 scope. The
 remaining gate is the explicitly human-authorized fresh targeted reinspection of the
 repaired loci. It does not reset or renumber rounds 1–5 and is not automatic round 6.
+
+### Human-authorized post-cap targeted reinspection PASS — 2026-11-07
+
+Fresh targeted review of repaired candidate `6b27397fa3904f250906733e903df040d38c3e60`
+returned **0 Blockers / 0 Majors** for both implementation readiness and historical
+artifact/acceptance authority. The review remained outside automatic episode
+`697-b13-5-20261107`; rounds 1–5 and their capped round-5 FAIL remain historical
+evidence rather than being renumbered or erased.
+
+Before turn-in, an overlapping post-cap review exposed one additional target-local
+authority gap: accepted-generation feature replay authenticated the recorded Atlas
+source and feature map but did not compare B13 custody's active-set digest to the
+replayed Atlas snapshot. Commit `01922c4d07fbab75d36c3d4c9fd7b27d8dbd9cce`
+added that source check. A fresh delta Goldfish then found the corresponding
+same-factor-map descendant bypass: unchanged-map children skip source replay, so a
+coherently rewritten child extents/semantic-ABI active set could otherwise enter the
+receipt. Failing-before proof on `01922c4d` published such a lawful retained child
+and reproduced **no error** at receipt readback.
+
+Semantic repair `ff00945aeccb2e6d479b6a9530dba0e3f41bb1b9` closes that bypass.
+Changed-map/genesis nodes bind `student.extents.active_semantic_digest` to the active
+set recomputed by the pinned Atlas snapshot; unchanged-factor descendants must retain
+their already authenticated parent's active-set digest. The new regression now
+rejects the same forged retained child with `BAMF_FEATURE_ACTIVE_SET_DRIFT`.
+The 1,100-generation synthetic history fixture was then conformed to the real
+`GenerationExtents` shape in test-only commit
+`694ba90f55c1bc5fe1b98dc1cae19134d505947a`; no production behavior changed in that
+last commit.
+
+Both fresh delta reviewers re-inspected exact head `694ba90f` and returned **PASS:
+0 Blockers / 0 Majors**; the authority reviewer also reported **0 Nits**. Exact-head
+proof after repair:
+
+- complete B13 custody package: **158 total / 153 PASS / 5 explicit skips /
+  0 failures / 0 errors**;
+- focused B13.5 authority suite: **23 PASS + 3 subtests / 0 failures**;
+- the active-set retained-child regression fails before the semantic repair and
+  passes after it;
+- development structure, governance, changed-file smell, current Microspenics
+  authority and BAMF flow-control gates: **PASS**;
+- final premerge quality phase against reviewed unified `d4bad39a`:
+  governance/Factory/docs/error-control/smell/legacy-trainer/flow-control **PASS**,
+  with **new error debt 0**;
+- final exact-head aggregate: **3,635 total / 3,463 PASS / 167 explicit skips /
+  5 errors** in 477.831s.
+
+The five aggregate errors are exactly the inherited/base-only C09
+`BAMF_C09_PACKED_FRAME_IDENTITY_DRIFT` set already reproduced before this post-cap
+epoch: one in `test_compiled.py`, two in `test_execution.py`, and two in
+`test_members.py`. No #697-local failure class remains.
+
+The human-authorized post-cap targeted reinspection is therefore **PASS** for B13.5.
+This PASS supplies current merge-readiness review evidence without rewriting the
+historical five-round automatic episode. Downstream A02 consumption remains owned by
+#399. No neural update, source admission, self-merge or merge into reviewed unified
+is authorized by this receipt.
