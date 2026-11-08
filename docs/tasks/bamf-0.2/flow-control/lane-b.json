@@ -87,16 +87,14 @@
     },
     {
       "issue": 479,
-      "pr": 909,
+      "pr": null,
       "state": "TURNED_IN",
-      "head_sha": "c83a9c274d1b9d01d1e3b5d6af1a0e7732f1cc8d",
-      "head_sha_role": "current pre-PR head; corrected EGM-reviewed head is 58dc31f8, semantic/test proof is 62237b46, and c83a9c27 adds only the pre-existing baseline learning-owner census repair. Final docs/flow-only turn-in bookkeeping may advance the Git head under AGENTS.md TEST_EVIDENCE_REUSED.",
-      "summary": "B13.2 #479 is turned in as ready PR #909 after corrected round-2 EGM PASS from both fresh Goldfish reviewers: 0 unsettled Blockers / 0 unsettled Majors. Accepted-custody continuation is 8/8; mutation controls are 3/3; complete 214-tensor / 79,469,798-parameter custody is 1/1 with an unchanged detached snapshot; source-qualified Apple Metal to CPU next-step continuation is 1/1 with committed semantic-output parity, max abs drift 2.35140323638916e-05 inside the 0.002 FP32 tolerance, unchanged accepted parent and no generation-2 publication; canonical Microspenics source /Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay supplies legacy-v1 bundle best-18601-70d09abe56ca, which passes 1/1 after live authority validation. Premerge retry at c83a9c27 passed 3520 total / 3360 passed / 0 failed / 160 explicit skips / 0 errors after binding the canonical external legacy-runs fixture; c83a9c27 also contains the test-only 41->42 learning-owner census repair whose failure reproduced on consumed unified. Hosted PR checks and human merge remain external authority.",
+      "head_sha": "24ee3d80ee0208fd62b6b8d1d84044cb42e24077",
+      "head_sha_role": "merged PR head; corrected EGM-reviewed head is 58dc31f8, semantic/test proof is 62237b46, and the final premerge-tested head is c83a9c27.",
+      "summary": "B13.2 #479 is accepted and closed. PR #909 was human-merged into reviewed unified as cc48ac40d875f0c2ae8ffbdc70001dbfc4815334 after corrected round-2 EGM PASS, accepted-custody continuation 8/8, complete numerical custody, source-qualified Metal-to-CPU continuation, and a 3520-test premerge gate with zero failures or errors. Canonical legacy compatibility remains bound to branch codex/337-replay-349-20261026 at d84d2ab9e2d79817c131ef7e0d4ec0d574e57b32 and run /Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay; its frozen-v1 bundle passed 1/1.",
       "resume_trigger": null,
-      "closed_pr": 677,
       "preserved_branch": "codex/bamf02-b13-2-479-complete-20261107",
-      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
-      "close_reason": "EGM-Failed; remediation #709"
+      "merged_pr": 909
     },
     {
       "issue": 485,
