@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "9301e41ef215b9d035449c3260c7cd0f8ee0b5a7",
-  "updated_at": "2026-11-07T14:24:54-05:00",
+  "updated_at": "2026-11-08T01:16:02-05:00",
   "exception": null,
   "items": [
     {
@@ -384,9 +384,9 @@
       "issue": 904,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "cce50961d68c979b036986239f6f6a39b8c0f077",
-      "summary": "B13.6 fresh EGM round 7 failed 0 Blockers / 2 distinct Majors: the live bootstrap did not seal separately serialized AdamW hyperparameters, and clean-process proof did not literally assert run_seed. Both are locally repaired at cce50961 without changing C16 optimizer-policy ownership: InitialGenerationBinding now binds the exact supplied AdamWHyperparameters digest; PreparedInitialGeneration is owner-issued/non-rewrappable; parsed cold acceptance validates the same digest; lawful subprocess continuation emits/asserts run_seed. RED exploit reproduced before repair. Post-repair source+genesis authority 20/20, cold continuation 8/8, widened ring 85/85, full quality green, contract verifier 43/43 + 215/215 + 172/172, diff clean. PM-2026-11-07-010 and historical EGM FAIL remain append-only. Replacement exact-head detached proof is required before any new EGM.",
-      "resume_trigger": "A new snapshot-pinned detached full-custody + opt-in witness proof passes on exact remote repair head (or evidence-only descendant) with source_mutated=false; then move #904 EGM-Failed -> EGM-Pending and request a genuinely fresh isolated EGM.",
+      "head_sha": "f0c1356546de58cb9350430ddc033df4ab306c29",
+      "summary": "B13.6 round-7 Majors are repaired and exact-head replacement proof r10 is PASS on f0c13565: complete B13 custody 163 total / 158 passed / 5 explicit skips / 0 failures / 0 errors; opt-in B01 parameter-schema and clean-process full-resume witnesses 2/2 PASS; detached return code 0; source_mutated=false with source/snapshot/final mutation-guard digest b8af06544433342272a7ec74f3329b3b4277a331a9fe42a835152f553fb719ea unchanged. The repair binds exact AdamW hyperparameters into InitialGenerationBinding/parsed cold acceptance, makes PreparedInitialGeneration owner-issued/non-rewrappable, and literally asserts authenticated run_seed in the clean-process witness. Historical EGM FAIL and PM-2026-11-07-010 remain append-only. Issue is EGM-Pending and a genuinely fresh isolated whole-candidate comprehension + codebase-details review is running against exact semantic/evidence head f0c13565; later flow/evidence-only commits do not invalidate semantic proof.",
+      "resume_trigger": "Fresh isolated EGM on f0c1356546de58cb9350430ddc033df4ab306c29 returns 0 Blockers / 0 Majors; then reconcile current reviewed unified, run only newly affected integration proof, mark EGM-Passed, and open one ready PR to codex/bamf-unified-base-20261028. Human merge remains external authority.",
       "preserved_branch": "codex/904-b13-6-generation-zero-20261107"
     }
   ]
