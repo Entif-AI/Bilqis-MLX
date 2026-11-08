@@ -72,6 +72,13 @@ which cold-loads accepted custody, reissues execution-cache authority, and rejec
 stale or corrupt cache identity. The complete file passed **8/8**, with zero
 failures, skips, or errors.
 
+After merge-forwarding reviewed unified `9795a3ed...`, the exact candidate
+`5eb62d5e5e16fbdf15ac0d715b17fe29ec545c34` was rerun on the M3 Ultra with the
+repository's dependency-complete Python environment. The combined current
+`test_cache_separation.py` + `test_cold_resume_continuation.py` surface passed
+**10/10**, with zero failures, skips, or errors. That exact rerun includes both
+transition/cache tests and all eight cold-continuation tests.
+
 ## Historical-v1 reader and immutable bytes
 
 Repository authority was checked before the witness:
@@ -104,6 +111,13 @@ tensor or optimizer construction. It hashes the archive again after the witness.
 Fresh execution on the same exact candidate:
 
 - **1 passed / 0 failed / 0 skipped / 0 errors**.
+
+The canonical Microspenics witness was rerun after the final unified merge-forward
+at `5eb62d5e5e16fbdf15ac0d715b17fe29ec545c34`: **1/1 PASS**, zero failures,
+skips, or errors. Live legacy-authority verification at the same head reports
+branch `codex/337-replay-349-20261026`, source head
+`d84d2ab9e2d79817c131ef7e0d4ec0d574e57b32`, generation `24254`, and state
+schema `bilqis.state-head/v1`.
 
 The source bytes were read only. No archive copy, checkpoint publication, cache
 repair, optimizer step, or neural update occurred.
