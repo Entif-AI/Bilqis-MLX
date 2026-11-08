@@ -20,6 +20,7 @@ from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     bind_accepted_execution_cache,
 )
+from bilqis_mlx.runtime.bamf_bundle.records import canonical
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     accepted_state,
     acceptance,
@@ -168,12 +169,11 @@ class SourceAuthorityRuntimeCustodyTests(unittest.TestCase):
         self.publish()
         drift = SourceAuthorityRegistry((replace(
             REGISTRY.keys[0], owner_id="source:drift"),))
-        provision_source_authority_registry(self.run, drift)
-        with shape_patch(), self.assertRaises(BilqisError) as caught:
-            bind_accepted_execution_cache(self.run)
+        with self.assertRaises(BilqisError) as caught:
+            provision_source_authority_registry(self.run, drift)
         self.assertEqual(
             caught.exception.context["reason"],
-            "BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_MISMATCH",
+            "BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_IMMUTABLE",
         )
 
     def test_genesis_candidate_cannot_replace_host_provisioned_source_authority_root(self):
@@ -228,7 +228,11 @@ class SourceAuthorityRuntimeCustodyTests(unittest.TestCase):
         with shape_patch():
             cache = bind_accepted_execution_cache(self.run)
             authority = AcceptedRuntimeHost(self.run).source_authority()
-            provision_source_authority_registry(self.run, drift)
+            from bilqis_mlx.runtime.bamf_bundle.source_authority_custody import (
+                SOURCE_AUTHORITY_REGISTRY_FILE,
+            )
+            (self.run / SOURCE_AUTHORITY_REGISTRY_FILE).write_bytes(
+                canonical(drift.to_record()))
             with self.assertRaises(BilqisError):
                 require_source_authority_runtime(authority, cache)
 

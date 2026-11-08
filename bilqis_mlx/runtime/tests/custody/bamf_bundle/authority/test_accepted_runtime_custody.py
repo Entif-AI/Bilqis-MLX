@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 import sys
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -123,6 +124,37 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
         self.assertTrue(all(
             authority is authorities[0] for authority in authorities))
         self.assertIs(cache._cache_authority, authorities[0])
+
+    def test_cache_authority_rejects_foreign_currentness_resolver(self):
+        registry = SourceAuthorityRegistry((SourceAuthorityKey(
+            "cache-host", "1" * 64,
+            (SourceAuthorityScope(DependencyKind.ARTIFACT, "cache:"),),
+        ),))
+        self.publish(candidate(parent_state()), registry)
+        foreign = self.root / "foreign-run" / "bamf-state.json"
+        source = lambda: SimpleNamespace(pointer_path=foreign)
+        with shape_patch():
+            _cache, authority = bind_accepted_cache_authority(self.run, source)
+            with self.assertRaises(BilqisError):
+                authority._current_eligibility_inputs()
+
+    def test_cache_authority_dies_after_accepted_generation_advance(self):
+        registry = SourceAuthorityRegistry((SourceAuthorityKey(
+            "cache-host", "1" * 64,
+            (SourceAuthorityScope(DependencyKind.ARTIFACT, "cache:"),),
+        ),))
+        pointer = self.publish(candidate(parent_state()), registry)
+        source = lambda: SimpleNamespace(
+            pointer_path=self.run / "bamf-state.json")
+        with shape_patch():
+            _cache, authority = bind_accepted_cache_authority(self.run, source)
+        successor = candidate(
+            next_accepted_step(parent_state()), generation=1,
+            parent=pointer["manifest_sha256"],
+        )
+        self.publish(successor, registry)
+        with shape_patch(), self.assertRaises(BilqisError):
+            authority._current_eligibility_inputs()
 
     def _motif_fixture(self):
         self.publish(candidate(parent_state()), AUTHORITY)

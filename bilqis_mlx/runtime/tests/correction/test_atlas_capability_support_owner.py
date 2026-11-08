@@ -11,6 +11,7 @@ from bilqis_mlx.runtime.atlas_capability_support_owner import CapabilitySupportA
 from bilqis_mlx.runtime.atlas_training_authority import extend_training_dependencies
 from bilqis_mlx.runtime.accepted_corrections import (
     AcceptedRuntimeHost, ContextRevalidationFrontier, _RUNTIME_OWNER,
+    record_accepted_correction,
 )
 from bilqis_mlx.runtime.accepted_correction_ledger import (
     CONTEXT_INVALIDATION_EVENT, CORRECTION_EVENT,
@@ -115,8 +116,8 @@ class CapabilitySupportOwnerTests(CapabilitySupportOwnerFixture):
         dependency = next(
             ref for ref in owner.current_node.immediate_dependencies
             if ref.kind is DependencyKind.OPERATOR)
-        self.assertTrue(apply_capability_support_correction(
-            owner, _event(dependency), authority))
+        with shape_patch():
+            record_accepted_correction(self.run, _event(dependency))
         with self.assertRaises(BilqisError) as caught:
             owner.require(TARGET)
         self.assertEqual(
@@ -135,11 +136,9 @@ class CapabilitySupportOwnerTests(CapabilitySupportOwnerFixture):
             owner.current_node.immediate_dependencies,
         )
         self.assertNotEqual(SOURCE_ID, SOURCE_ROW)
-        self.assertTrue(apply_capability_support_correction(
-            owner,
-            _event(DependencyRef(DependencyKind.SOURCE, SOURCE_ID)),
-            authority,
-        ))
+        with shape_patch():
+            record_accepted_correction(
+                self.run, _event(DependencyRef(DependencyKind.SOURCE, SOURCE_ID)))
         with self.assertRaises(BilqisError) as caught:
             owner.require(TARGET)
         self.assertEqual(
@@ -159,8 +158,8 @@ class CapabilitySupportOwnerTests(CapabilitySupportOwnerFixture):
         self.publish_support(authority=authority, authority_registry=registry)
         owner = self.load_support(registry)
         self.assertIn(motif_source, owner.current_node.immediate_dependencies)
-        self.assertTrue(apply_capability_support_correction(
-            owner, _event(motif_source), registry))
+        with shape_patch():
+            record_accepted_correction(self.run, _event(motif_source))
         with self.assertRaises(BilqisError) as caught:
             owner.require(TARGET)
         self.assertEqual(
@@ -331,8 +330,8 @@ class CapabilitySupportOwnerTests(CapabilitySupportOwnerFixture):
             first_manifest,
         )
         correction = _event(_ref(DependencyKind.SOURCE, SOURCE_ROW))
-        self.assertTrue(apply_capability_support_correction(
-            inherited, correction, AUTHORITY))
+        with shape_patch():
+            record_accepted_correction(self.run, correction)
         with self.assertRaises(BilqisError):
             inherited.require(TARGET)
 

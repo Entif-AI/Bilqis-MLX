@@ -41,6 +41,51 @@ class AcceptedGenerationIdentity:
     candidate_identity_sha256: str
 
 
+@dataclass(frozen=True)
+class _AcceptedExecutionCacheEntry:
+    manifest_sha256: str
+    cache: object
+    registry: object | None
+    registry_sha256: str | None
+    generation_binding: str
+    motif_manifest_sha256: str
+
+
+def _require_retained_entry(entry, cache, current_registry) -> None:
+    if (entry is None
+            or entry.manifest_sha256 != cache.accepted_manifest_sha256
+            or entry.cache is not cache
+            or current_registry != entry.registry
+            or cache._correction_registry is not entry.registry
+            or cache.source_authority_registry_sha256 != entry.registry_sha256
+            or cache.generation_binding != entry.generation_binding
+            or cache.motif_manifest.digest != entry.motif_manifest_sha256):
+        invalid("B13_EXECUTION_CACHE_REQUIRED")
+
+
+def _reuse_retained_cache(retained, identity, generation_binding, student, registry):
+    cache = retained.cache
+    if (cache.run_id != identity.run_id
+            or cache.generation != identity.generation
+            or cache.generation_binding != generation_binding
+            or cache.source_authority_registry_sha256
+            != student.correction_frontier.get("source_authority_registry_sha256")
+            or cache.motif_manifest.digest
+            != student.retained_state.allocations.manifest.digest):
+        invalid("BAMF_EXECUTION_CACHE_CUSTODY_DRIFT")
+    if registry is not None:
+        if cache._correction_registry is None:
+            object.__setattr__(cache, "_correction_registry", registry)
+        elif cache._correction_registry != registry:
+            invalid("BAMF_C09_CORRECTION_AUTHORITY_DRIFT")
+    if (cache._correction_registry is not retained.registry
+            or cache.source_authority_registry_sha256 != retained.registry_sha256
+            or cache.generation_binding != retained.generation_binding
+            or cache.motif_manifest.digest != retained.motif_manifest_sha256):
+        invalid("BAMF_EXECUTION_CACHE_CUSTODY_DRIFT")
+    return cache
+
+
 def _read_accepted_locked(run_dir: Path):
     run_dir = Path(run_dir)
     pointer_path = run_dir / "bamf-state.json"
@@ -153,15 +198,8 @@ def _make_execution_cache_runtime():
             )
             current_registry = read_provisioned_source_authority_registry(run_dir)
             with lock:
-                entry = entries.get(str(run_dir))
-                if (entry is None or entry[0] != cache.accepted_manifest_sha256
-                        or entry[1] is not cache
-                        or current_registry != entry[2]
-                        or cache._correction_registry is not entry[2]
-                        or cache.source_authority_registry_sha256 != entry[3]
-                        or cache.generation_binding != entry[4]
-                        or cache.motif_manifest.digest != entry[5]):
-                    invalid("B13_EXECUTION_CACHE_REQUIRED")
+                _require_retained_entry(
+                    entries.get(str(run_dir)), cache, current_registry)
         return cache
 
     def bind(run_dir: Path):
@@ -180,28 +218,10 @@ def _make_execution_cache_runtime():
             key = str(run_dir)
             with lock:
                 retained = entries.get(key)
-                if retained is not None and retained[0] == identity.manifest_sha256:
-                    cache = retained[1]
-                    if (cache.run_id != identity.run_id
-                            or cache.generation != identity.generation
-                            or cache.generation_binding != generation_binding
-                            or cache.source_authority_registry_sha256
-                            != student.correction_frontier.get(
-                                "source_authority_registry_sha256")
-                            or cache.motif_manifest.digest
-                            != student.retained_state.allocations.manifest.digest):
-                        invalid("BAMF_EXECUTION_CACHE_CUSTODY_DRIFT")
-                    if registry is not None:
-                        if cache._correction_registry is None:
-                            object.__setattr__(cache, "_correction_registry", registry)
-                        elif cache._correction_registry != registry:
-                            invalid("BAMF_C09_CORRECTION_AUTHORITY_DRIFT")
-                    if (cache._correction_registry is not retained[2]
-                            or cache.source_authority_registry_sha256 != retained[3]
-                            or cache.generation_binding != retained[4]
-                            or cache.motif_manifest.digest != retained[5]):
-                        invalid("BAMF_EXECUTION_CACHE_CUSTODY_DRIFT")
-                    return cache
+                if (retained is not None
+                        and retained.manifest_sha256 == identity.manifest_sha256):
+                    return _reuse_retained_cache(
+                        retained, identity, generation_binding, student, registry)
                 cache = _new_execution_cache(
                     run_id=identity.run_id,
                     generation=identity.generation,
@@ -214,14 +234,15 @@ def _make_execution_cache_runtime():
                 object.__setattr__(cache, "_run_dir", run_dir)
                 if registry is not None:
                     object.__setattr__(cache, "_correction_registry", registry)
-                entries[key] = (
-                    identity.manifest_sha256,
-                    cache,
-                    registry,
-                    student.correction_frontier.get(
+                entries[key] = _AcceptedExecutionCacheEntry(
+                    manifest_sha256=identity.manifest_sha256,
+                    cache=cache,
+                    registry=registry,
+                    registry_sha256=student.correction_frontier.get(
                         "source_authority_registry_sha256"),
-                    generation_binding,
-                    student.retained_state.allocations.manifest.digest,
+                    generation_binding=generation_binding,
+                    motif_manifest_sha256=(
+                        student.retained_state.allocations.manifest.digest),
                 )
                 return cache
 

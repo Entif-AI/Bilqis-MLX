@@ -117,6 +117,10 @@ class CapabilitySupportArtifactOwner:
     def apply_correction(
         self, event: CorrectionEvent, authority_registry: SourceAuthorityRegistry,
     ) -> RevalidationQueue:
+        from bilqis_mlx.runtime.accepted_correction_runtime import (
+            require_bound_owner_registry,
+        )
+        authority_registry = require_bound_owner_registry(self, authority_registry)
         self._queue = apply_correction(event, self._index, authority_registry)
         if self._journal_path is not None and self._queue.held_artifact_ids:
             write_journal(
@@ -131,6 +135,10 @@ class CapabilitySupportArtifactOwner:
         self, frontier: RevalidationFrontier,
         authority_registry: SourceAuthorityRegistry,
     ) -> RevalidationProgress:
+        from bilqis_mlx.runtime.accepted_correction_runtime import (
+            require_bound_owner_registry,
+        )
+        authority_registry = require_bound_owner_registry(self, authority_registry)
         if self._queue is None:
             _invalid("BAMF_C09_CAPABILITY_SUPPORT_REVALIDATION_NOT_HELD")
         task = next_revalidation_task(self._index, self._queue)

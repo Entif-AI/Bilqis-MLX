@@ -1,6 +1,7 @@
 """Deterministic test-only cache authority; never production provenance."""
 from unittest.mock import patch
 from types import SimpleNamespace
+from pathlib import Path
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -74,15 +75,30 @@ def _test_rebuild_inputs():
 
 def install_test_owner(test_case, *, eligibility=True, current_binding=True):
     _test_lookup(CACHE_AUTHORITY)[3].clear()
+
+    def synthetic_cache(authority):
+        source = _test_lookup(authority)[2]
+        inputs = source() if source is not None else None
+        pointer_path = getattr(inputs, "pointer_path", None)
+        return SimpleNamespace(
+            _run_dir=pointer_path.parent if isinstance(pointer_path, Path) else None,
+        )
+
     patcher = patch.object(_runtime, "_authority_state", _test_lookup)
     accepted = patch.object(
         _runtime, "_accepted_cache_for_authority",
-        lambda authority: SimpleNamespace(_run_dir=None),
+        synthetic_cache,
+    )
+    custody = patch(
+        "bilqis_mlx.runtime.bamf_bundle.execution_cache.require_accepted_execution_cache",
+        side_effect=lambda cache: cache,
     )
     patcher.start()
     accepted.start()
+    custody.start()
     test_case.addCleanup(patcher.stop)
     test_case.addCleanup(accepted.stop)
+    test_case.addCleanup(custody.stop)
     test_case.addCleanup(set_test_canonical_source, None)
     if current_binding:
         binding_owner = patch.object(

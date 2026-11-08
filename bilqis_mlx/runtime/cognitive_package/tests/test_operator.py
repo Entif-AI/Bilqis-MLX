@@ -111,8 +111,40 @@ class CognitivePackageOperatorTests(unittest.TestCase):
             "bilqis_mlx.runtime.bamf_bundle.publication._pointer_lock",
             return_value=nullcontext(),
         ), patch(
-            "bilqis_mlx.runtime.bamf_bundle.publication._read_pointer",
-            return_value={"manifest_sha256": "c" * 64},
+            "bilqis_mlx.runtime.bamf_bundle.publication._load_generation_locked",
+            return_value=(object(), {"manifest_sha256": "c" * 64}),
+        ):
+            with self.assertRaises(BilqisError):
+                subject.receive_screen_and_publish_package(
+                    "sender", "staging", "a" * 64, Path("run"),
+                    max_wire_bytes=4096, source_context=object(),
+                    artifact_path="artifact", target_capability="C.TARGET",
+                    export_clearance=object(), atlas_selection=object(),
+                    source_frontier=object())
+        stage.assert_not_called()
+
+    def test_acceptance_drift_after_clearance_rejects_before_staging(self):
+        inspected = SimpleNamespace(
+            package=object(), plan=SimpleNamespace(disposition="EXACT_BINDING"))
+        stage = Mock(side_effect=AssertionError("uncustodied staging mutation reached"))
+        rejected = BilqisError.__new__(BilqisError)
+        with patch.multiple(
+                subject,
+                current_receiver_binding=Mock(return_value=object()),
+                inspect_package=Mock(return_value=inspected),
+                stage_received_package=stage,
+                _load_current_generation=Mock(return_value=(object(), object())),
+                _verify_export_clearance=Mock(return_value=(
+                    "clearance", "a" * 64, "b" * 64)),
+        ), patch(
+            "bilqis_mlx.runtime.bamf_bundle.publication._pointer_lock",
+            return_value=nullcontext(),
+        ), patch(
+            "bilqis_mlx.runtime.bamf_bundle.publication._load_generation_locked",
+            return_value=(object(), {"manifest_sha256": "a" * 64}),
+        ), patch(
+            "bilqis_mlx.runtime.bamf_bundle.publication._require_published_acceptance",
+            side_effect=rejected,
         ):
             with self.assertRaises(BilqisError):
                 subject.receive_screen_and_publish_package(

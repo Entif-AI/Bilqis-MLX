@@ -242,6 +242,9 @@ def publish_bamf_generation(run_dir: Path, candidate: BamfBundleCandidate, *,
         pointer_path = run_dir / "bamf-state.json"
         with _pointer_lock(run_dir):
             current = _read_pointer(pointer_path)
+            live_accepted = _require_acceptance(run_dir, candidate, accepted)
+            if live_accepted.digest != accepted.digest:
+                invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
             _require_accepted_parent(run_dir, candidate, accepted)
             if current is not None and current["generation"] == candidate.generation:
                 if (current["run_id"] != candidate.run_id

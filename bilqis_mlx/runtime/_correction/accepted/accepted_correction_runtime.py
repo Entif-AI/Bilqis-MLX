@@ -70,6 +70,25 @@ _RUNTIME_OWNER = _CorrectionRuntimeOwner()
 _RUNTIME_LOCK = RLock()
 
 
+def require_bound_owner_registry(owner, registry):
+    """Reject caller-selected verifier material once an owner is accepted-bound."""
+    from .atlas_source_authority import SourceAuthorityRegistry
+
+    if not isinstance(registry, SourceAuthorityRegistry):
+        _invalid("BAMF_C09_CORRECTION_AUTHORITY_REQUIRED")
+    matched = []
+    for retained in _RUNTIME_OWNER.entries.values():
+        for target in retained.targets.values():
+            if target.owner is owner:
+                matched.append(retained.registry)
+    if not matched:
+        return registry
+    bound = matched[0]
+    if registry is not bound or any(candidate is not bound for candidate in matched):
+        _invalid("BAMF_C09_CALLER_SELECTED_AUTHORITY_FORBIDDEN")
+    return bound
+
+
 def runtime(run_dir: Path, manifest_sha256: str) -> AcceptedCorrectionRuntime:
     from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
         _accepted_correction_registry,
