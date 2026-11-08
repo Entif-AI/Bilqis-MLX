@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "9795a3edff705ff6e44eec29dc60fed74d2abc74",
-  "updated_at": "2026-11-08T07:35:32Z",
+  "observed_unified": "81a9e4e24fcca307cb0019db4e4c07737a8b744b",
+  "updated_at": "2026-11-08T07:37:20Z",
   "exception": null,
   "items": [
     {
@@ -20,8 +20,8 @@
       "pr": null,
       "state": "ACTIVE",
       "head_sha": "ae0b131817bcd1b7379ae38826d6d875ae4d2ef6",
-      "summary": "C10 context-native requalification consumes #916 through reviewed unified 9795a3ed. Fresh EGM round 1 found two bounded findings: TARGET_LOCAL task-membership authority and MECHANICAL_PROOF cold-replay isolation. Semantic repair ae0b1318 now requires the exact context task to exist in C09 pending_source_tasks before receipt resolution/minting; the literal cold witness removes the derived outbox before replay and requires reconstruction of the identical canonical event. Projection family: 42 passed / 3 expected skips / 139 subtests; owner ring: 24 passed / 17 subtests; differential structure/governance/smell/error-control/flow green. Correction-backed v1 and canonical Akasha identity/store remain unchanged.",
-      "resume_trigger": "Push the round-1 repair head, replace EGM-Failed with EGM-Pending, and run fresh whole-candidate EGM round 2. If clean, turn in the lane-to-unified PR without self-merge.",
+      "summary": "C10 context-native requalification consumes #916 and current reviewed unified 81a9e4e2. Fresh EGM round 1 found two bounded findings: TARGET_LOCAL task-membership authority and MECHANICAL_PROOF cold-replay isolation. Semantic repair ae0b1318 requires the exact context task in C09 pending_source_tasks before receipt resolution/minting; the literal cold witness removes the derived outbox before replay and requires reconstruction of the identical canonical event. The later unified advance is B13.3 documentation/flow state only and merged cleanly. Projection family: 42 passed / 3 expected skips / 139 subtests; owner ring: 24 passed / 17 subtests; differential structure/governance/smell/error-control/flow green. Correction-backed v1 and canonical Akasha identity/store remain unchanged.",
+      "resume_trigger": "Push the current-unified sync, replace EGM-Failed with EGM-Pending, and run fresh whole-candidate EGM round 2. If clean, turn in the lane-to-unified PR without self-merge.",
       "preserved_branch": "codex/911-c10-context-requalification-20261108"
     },
     {
