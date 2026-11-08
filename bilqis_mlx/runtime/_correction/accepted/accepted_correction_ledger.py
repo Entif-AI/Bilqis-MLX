@@ -96,14 +96,17 @@ def accepted_correction_id(
 
 def accepted_corrections(
     run_dir: Path, manifest_sha256: str,
-    registry: SourceAuthorityRegistry | None,
 ) -> tuple[tuple[str, CorrectionEvent], ...]:
+    from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
+        _accepted_correction_registry,
+    )
+    cache, registry = _accepted_correction_registry(run_dir)
+    if cache.accepted_manifest_sha256 != manifest_sha256:
+        _invalid("BAMF_C09_ACCEPTED_RUNTIME_STALE")
     records = tuple(
         item for item in read_records(run_dir, manifest_sha256)
         if item["event"] == CORRECTION_EVENT
     )
-    if records and not isinstance(registry, SourceAuthorityRegistry):
-        _invalid("BAMF_C09_CORRECTION_AUTHORITY_REQUIRED")
     result = []
     for item in records:
         event = event_from_record(item["correction"])

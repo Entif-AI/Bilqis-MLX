@@ -1,5 +1,6 @@
 """Accepted-run custody for opaque C09 source authority."""
 from dataclasses import replace
+from concurrent.futures import ThreadPoolExecutor
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -16,7 +17,6 @@ from bilqis_mlx.runtime.atlas_revalidation import (
 )
 from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import (
-    bind_accepted_correction_authority,
     bind_accepted_execution_cache,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
@@ -48,7 +48,7 @@ class SourceAuthorityRuntimeCustodyTests(unittest.TestCase):
         self.temporary.cleanup()
 
     def publish(self, run_dir=None, *, anchored=True, generation=0, parent=None,
-                state=None):
+                state=None, registry=REGISTRY):
         run_dir = self.run if run_dir is None else Path(run_dir)
         source = candidate(parent_state())
         if state is not None or generation or parent is not None:
@@ -60,17 +60,40 @@ class SourceAuthorityRuntimeCustodyTests(unittest.TestCase):
         if anchored:
             source = replace(source, correction_frontier={
                 **source.correction_frontier,
-                "source_authority_registry_sha256": REGISTRY.digest,
+                "source_authority_registry_sha256": registry.digest,
+                "source_authority_registry": self.registry_record(registry),
             })
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             pointer = publish_bamf_generation(
                 run_dir, source, acceptance=acceptance(source))
         return source, pointer
 
+    @staticmethod
+    def registry_record(registry):
+        return {
+            "schema_version": registry.schema_version,
+            "keys": [
+                {
+                    "owner_id": key.owner_id,
+                    "public_key_hex": key.public_key_hex,
+                    "schema_version": key.schema_version,
+                    "allowed_scopes": [
+                        {
+                            "kind": scope.kind.value,
+                            "key_prefix": scope.key_prefix,
+                            "schema_version": scope.schema_version,
+                        }
+                        for scope in key.allowed_scopes
+                    ],
+                }
+                for key in registry.keys
+            ],
+        }
+
     def test_accepted_host_issues_and_reuses_opaque_source_authority(self):
         self.publish()
         with shape_patch():
-            cache = bind_accepted_correction_authority(self.run, REGISTRY)
+            cache = bind_accepted_execution_cache(self.run)
             authority = AcceptedRuntimeHost(self.run).source_authority()
             rebound = AcceptedRuntimeHost(self.run).source_authority()
         self.assertIs(require_source_authority_runtime(authority, cache), authority)
@@ -88,17 +111,52 @@ class SourceAuthorityRuntimeCustodyTests(unittest.TestCase):
             authority._validate_export_clearance_context(
                 cache, receipt, selection, SourceFrontier(8, 3, ()), artifacts)
 
-    def test_attacker_first_registry_cannot_poison_the_accepted_cache(self):
+    def test_concurrent_accepted_hosts_reuse_one_source_authority(self):
         self.publish()
+        from bilqis_mlx.runtime.atlas_source_authority import (
+            _provision_source_authority_runtime,
+        )
+        with shape_patch():
+            cache = bind_accepted_execution_cache(self.run)
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            authorities = tuple(pool.map(
+                lambda _index: _provision_source_authority_runtime(cache),
+                range(16),
+            ))
+        self.assertTrue(all(authority is authorities[0] for authority in authorities))
+
+    def test_execution_cache_has_no_importable_credential_issuer(self):
+        from bilqis_mlx.runtime.bamf_bundle import execution_cache
+        self.assertFalse(hasattr(execution_cache, "_issue_accepted_execution_cache"))
+
+    def test_successor_cannot_replace_accepted_source_authority_root(self):
+        _source, pointer = self.publish()
         drift = SourceAuthorityRegistry((replace(
             REGISTRY.keys[0], owner_id="source:drift"),))
-        with shape_patch():
+        successor = candidate(
+            accepted_state(parent_state()),
+            generation=1,
+            parent=pointer["manifest_sha256"],
+        )
+        successor = replace(successor, correction_frontier={
+            **successor.correction_frontier,
+            "source_authority_registry_sha256": drift.digest,
+            "source_authority_registry": self.registry_record(drift),
+        })
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             with self.assertRaises(BilqisError):
-                bind_accepted_correction_authority(self.run, drift)
+                publish_bamf_generation(
+                    self.run, successor, acceptance=acceptance(successor))
+
+    def test_attacker_first_registry_cannot_poison_the_accepted_cache(self):
+        self.publish()
+        from bilqis_mlx.runtime.bamf_bundle import admission
+        with shape_patch():
+            self.assertFalse(hasattr(admission, "bind_accepted_correction_authority"))
             cache = bind_accepted_execution_cache(self.run)
-            self.assertIsNone(cache._correction_registry)
-            bind_accepted_correction_authority(self.run, REGISTRY)
-            self.assertIs(AcceptedRuntimeHost(self.run).registry, REGISTRY)
+            self.assertEqual(cache._correction_registry, REGISTRY)
+            authority = AcceptedRuntimeHost(self.run).source_authority()
+            self.assertIs(require_source_authority_runtime(authority, cache), authority)
 
     def test_legacy_sidecar_is_readable_but_cannot_mint_source_authority(self):
         self.publish(anchored=False)
@@ -106,15 +164,15 @@ class SourceAuthorityRuntimeCustodyTests(unittest.TestCase):
             cache = bind_accepted_execution_cache(self.run)
             self.assertIsNone(cache.source_authority_registry_sha256)
             with self.assertRaises(BilqisError):
-                bind_accepted_correction_authority(self.run, REGISTRY)
+                AcceptedRuntimeHost(self.run)
 
     def test_foreign_same_registry_capability_rejects_against_other_run_cache(self):
         other = self.root / "other-run"
         self.publish()
         self.publish(other)
         with shape_patch():
-            cache = bind_accepted_correction_authority(self.run, REGISTRY)
-            foreign_cache = bind_accepted_correction_authority(other, REGISTRY)
+            cache = bind_accepted_execution_cache(self.run)
+            foreign_cache = bind_accepted_execution_cache(other)
             authority = AcceptedRuntimeHost(self.run).source_authority()
             with self.assertRaises(BilqisError):
                 require_source_authority_runtime(authority, foreign_cache)
@@ -123,21 +181,22 @@ class SourceAuthorityRuntimeCustodyTests(unittest.TestCase):
     def test_stale_generation_capability_rejects_after_accepted_advance(self):
         _source, pointer = self.publish()
         with shape_patch():
-            old_cache = bind_accepted_correction_authority(self.run, REGISTRY)
+            old_cache = bind_accepted_execution_cache(self.run)
             authority = AcceptedRuntimeHost(self.run).source_authority()
         successor_state = accepted_state(parent_state())
         self.publish(
             generation=1, parent=pointer["manifest_sha256"], state=successor_state)
         with shape_patch():
-            current_cache = bind_accepted_correction_authority(self.run, REGISTRY)
+            current_cache = bind_accepted_execution_cache(self.run)
             with self.assertRaises(BilqisError):
                 require_source_authority_runtime(authority, current_cache)
-        self.assertIs(require_source_authority_runtime(authority, old_cache), authority)
+            with self.assertRaises(BilqisError):
+                require_source_authority_runtime(authority, old_cache)
 
     def test_caller_cannot_construct_or_forge_source_authority_runtime(self):
         self.publish()
         with shape_patch():
-            cache = bind_accepted_correction_authority(self.run, REGISTRY)
+            cache = bind_accepted_execution_cache(self.run)
         with self.assertRaises(BilqisError):
             require_source_authority_runtime(REGISTRY, cache)
         with self.assertRaises(BilqisError):

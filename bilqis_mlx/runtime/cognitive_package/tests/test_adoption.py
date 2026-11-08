@@ -29,9 +29,6 @@ from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
 )
 from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
-from bilqis_mlx.runtime.bamf_bundle.admission import (
-    bind_accepted_correction_authority,
-)
 from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.records import canonical
 from bilqis_mlx.runtime.cognitive_package import (
@@ -44,7 +41,7 @@ from bilqis_mlx.runtime.cognitive_package.delta import _issue_screened, _package
 from bilqis_mlx.runtime.cognitive_package.tests.fixtures import snapshot
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     HP, NAME, accepted_state, candidate, parent_state, publish_candidate,
-    retention_decision, shape_patch,
+    retention_decision, shape_patch, with_source_authority_registry,
 )
 from bilqis_mlx.semantics.atlas.snapshot_contracts import AtlasArtifactSelection
 from bilqis_mlx.semantics.atlas_release_audit import ExportClearanceReceipt
@@ -106,8 +103,8 @@ class PackageImportAdoptionTests(TestCase):
             base,
             provenance=replace(base.provenance, release_digest=self.selection.release_sha256),
             correction_frontier={**base.correction_frontier,
-                                 "release_digest": self.selection.release_sha256,
-                                 "source_authority_registry_sha256": self.registry.digest})
+                                 "release_digest": self.selection.release_sha256})
+        self.initial = with_source_authority_registry(self.initial, self.registry)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             self.pointer = publish_candidate(self.run, self.initial)
         array = np.asarray(self.state.optimizer.parameters[NAME], dtype="<f4")
@@ -160,8 +157,6 @@ class PackageImportAdoptionTests(TestCase):
                 source_context=self.source_context())
 
     def source_context(self):
-        with shape_patch():
-            bind_accepted_correction_authority(self.run, self.registry)
         host = AcceptedRuntimeHost(self.run)
         receipt = {"factory_release_sha256": self.factory_release.release_sha256}
         with patch(

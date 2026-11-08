@@ -25,10 +25,11 @@ from bilqis_mlx.runtime.atlas_training_contracts import (
 from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, ModelTopologySpecV2
 from bilqis_mlx.runtime.source_execution import source_content_digest
 from bilqis_mlx.runtime.bamf_bundle.admission import (
-    accept_and_publish, bind_accepted_correction_authority,
+    accept_and_publish,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     HP, NAME, candidate, parent_state, retention_decision, shape_patch,
+    with_source_authority_registry,
 )
 from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
@@ -115,21 +116,19 @@ class CapabilitySupportOwnerFixture(unittest.TestCase):
             authority=authority)
         bundle = candidate(retained)
         if authority_registry is not None:
-            bundle = replace(bundle, correction_frontier={
-                **bundle.correction_frontier,
-                "source_authority_registry_sha256": authority_registry.digest,
-            })
+            bundle = with_source_authority_registry(bundle, authority_registry)
         decision = retention_decision(parent=parent, retained=retained)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             published = accept_and_publish(
                 self.run, bundle, retained, decision=decision,
                 feature_sha256=bundle.extents.factor_map_digest,
                 training_authorities=transaction.training_authorities)
-            if authority_registry is not None:
-                bind_accepted_correction_authority(self.run, authority_registry)
         return published, authority
 
     def load_support(self, authority_registry=None):
         with shape_patch():
-            return load_capability_support_owner(
-                self.run, TARGET, authority_registry)
+            if authority_registry is not None:
+                from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
+                cache = bind_accepted_execution_cache(self.run)
+                self.assertEqual(cache._correction_registry, authority_registry)
+            return load_capability_support_owner(self.run, TARGET)

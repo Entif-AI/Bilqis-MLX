@@ -6,9 +6,6 @@ from threading import RLock
 
 from .accepted_correction_dispatch import AcceptedCorrectionRuntime
 from .atlas_revalidation_common import _invalid
-from .atlas_source_authority import SourceAuthorityRegistry
-
-
 def refresh_owner_corrections(owner) -> None:
     """Reconcile durable accepted evidence before this physical owner is used."""
     target = getattr(owner, "_accepted_correction_target", None)
@@ -64,47 +61,50 @@ class _CorrectionRuntimeOwner:
     def clear(self) -> None:
         self.entries.clear()
 
+    def require(self, retained) -> None:
+        if not any(candidate is retained for candidate in self.entries.values()):
+            _invalid("BAMF_C09_ACCEPTED_RUNTIME_REQUIRED")
+
 
 _RUNTIME_OWNER = _CorrectionRuntimeOwner()
 _RUNTIME_LOCK = RLock()
 
 
 def runtime(run_dir: Path, manifest_sha256: str) -> AcceptedCorrectionRuntime:
+    from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
+        _accepted_correction_registry,
+    )
+
+    cache, registry = _accepted_correction_registry(run_dir)
+    if cache.accepted_manifest_sha256 != manifest_sha256:
+        _invalid("BAMF_C09_ACCEPTED_RUNTIME_STALE")
     key = (str(Path(run_dir).resolve()), manifest_sha256)
     with _RUNTIME_LOCK:
         retained = _RUNTIME_OWNER.get(key)
         if retained is None:
-            retained = AcceptedCorrectionRuntime(Path(run_dir), manifest_sha256)
+            retained = AcceptedCorrectionRuntime(
+                Path(run_dir), manifest_sha256, registry)
             _RUNTIME_OWNER.set(key, retained)
+        elif retained.registry != registry:
+            _invalid("BAMF_C09_CORRECTION_AUTHORITY_DRIFT")
         return retained
 
 
 def register_accepted_target(
     run_dir: Path, manifest_sha256: str, kind: str, owner, apply,
-    registry: SourceAuthorityRegistry | None = None,
     seen_event_ids: tuple[str, ...] = (),
 ) -> None:
     runtime(run_dir, manifest_sha256).register(
-        kind, owner, apply, registry, seen_event_ids)
-
-
-def bind_accepted_registry(
-    run_dir: Path, manifest_sha256: str, registry: SourceAuthorityRegistry,
-) -> None:
-    retained = runtime(run_dir, manifest_sha256)
-    with retained.lock:
-        retained.bind_registry(registry)
+        kind, owner, apply, seen_event_ids)
 
 
 def register_compiled_batch(
-    run_dir: Path, batch, registry: SourceAuthorityRegistry | None = None,
+    run_dir: Path, batch,
 ) -> None:
-    from bilqis_mlx.runtime.bamf_bundle.admission import (
-        require_accepted_correction_registry,
-    )
+    from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
     from bilqis_mlx.runtime.atlas_owner_ingress import _route
 
-    cache, registry = require_accepted_correction_registry(run_dir, registry)
+    cache = bind_accepted_execution_cache(run_dir)
     owners = (
         ("ATLAS_FEATURE", batch.atlas_feature_artifact_owner),
         ("PACKED_FRAME", batch.compiled.packed_frame_artifact_owner),
@@ -113,27 +113,24 @@ def register_compiled_batch(
         register_accepted_target(
             run_dir, cache.accepted_manifest_sha256, kind, owner,
             lambda current, event, authority: _route(current, event, authority),
-            registry,
         )
 
 
 def register_solve_context(
-    run_dir: Path, context, registry: SourceAuthorityRegistry | None = None,
+    run_dir: Path, context,
 ) -> None:
-    from bilqis_mlx.runtime.bamf_bundle.admission import (
-        require_accepted_correction_registry,
-    )
+    from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
     from bilqis_mlx.runtime.atlas_owner_ingress import _route
 
-    cache, registry = require_accepted_correction_registry(run_dir, registry)
+    cache = bind_accepted_execution_cache(run_dir)
     owner = context.operator_composition_artifact_owner
     register_accepted_target(
         run_dir, cache.accepted_manifest_sha256, "OPERATOR_COMPOSITION", owner,
-        lambda current, event, authority: _route(current, event, authority), registry)
+        lambda current, event, authority: _route(current, event, authority))
 
 
 __all__ = (
-    "_RUNTIME_OWNER", "bind_accepted_registry", "register_accepted_target",
+    "_RUNTIME_OWNER", "register_accepted_target",
     "refresh_owner_corrections", "register_compiled_batch",
     "register_solve_context", "require_pending_corrections", "runtime",
 )

@@ -11,10 +11,11 @@ class CognitivePackageOperatorTests(unittest.TestCase):
     def test_receive_screen_publish_uses_exact_owner_chain(self):
         binding = object()
         package = object()
-        exchange = SimpleNamespace(
+        inspected = SimpleNamespace(
             package=package,
             plan=SimpleNamespace(disposition="EXACT_BINDING"),
         )
+        exchange = SimpleNamespace(package=package, plan=inspected.plan, path=Path("staging/pkg"))
         parent = object()
         candidate = object()
         screened = object()
@@ -23,7 +24,8 @@ class CognitivePackageOperatorTests(unittest.TestCase):
         receipt = object()
         selection = object()
         frontier = object()
-        receive = Mock(return_value=exchange)
+        inspect = Mock(return_value=inspected)
+        stage = Mock(return_value=exchange)
         verify = Mock(return_value="clearance")
         apply = Mock(return_value=candidate)
         screen = Mock(return_value=screened)
@@ -32,7 +34,8 @@ class CognitivePackageOperatorTests(unittest.TestCase):
         with patch.multiple(
                 subject,
                 current_receiver_binding=Mock(return_value=binding),
-                receive_package=receive,
+                inspect_package=inspect,
+                stage_received_package=stage,
                 _load_current_generation=Mock(return_value=(object(), parent)),
                 _verify_export_clearance=verify,
                 apply_plastic_delta=apply,
@@ -48,10 +51,11 @@ class CognitivePackageOperatorTests(unittest.TestCase):
                 reserve_gib=123.0)
 
         self.assertIs(result, published)
-        receive.assert_called_once_with(
-            "sender", "staging", "a" * 64, binding, max_wire_bytes=4096)
+        inspect.assert_called_once_with(
+            "sender", "a" * 64, binding, max_wire_bytes=4096)
         verify.assert_called_once_with(
             package, parent, receipt, selection, frontier, source, Path("run"))
+        stage.assert_called_once_with(inspected, "staging")
         apply.assert_called_once_with(package, Path("run"))
         screen.assert_called_once_with(
             candidate, source, "artifact", "C.TARGET", run_dir=Path("run"))
@@ -59,6 +63,31 @@ class CognitivePackageOperatorTests(unittest.TestCase):
             screened, Path("run"), export_clearance=receipt,
             atlas_selection=selection, source_frontier=frontier,
             source_context=source, reserve_gib=123.0)
+
+    def test_authority_rejection_happens_before_staging(self):
+        binding = object()
+        inspected = SimpleNamespace(
+            package=object(),
+            plan=SimpleNamespace(disposition="EXACT_BINDING"),
+        )
+        stage = Mock(side_effect=AssertionError("staging mutation reached"))
+        rejected = RuntimeError("authority rejected")
+        with patch.multiple(
+                subject,
+                current_receiver_binding=Mock(return_value=binding),
+                inspect_package=Mock(return_value=inspected),
+                stage_received_package=stage,
+                _load_current_generation=Mock(return_value=(object(), object())),
+                _verify_export_clearance=Mock(side_effect=rejected),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "authority rejected"):
+                subject.receive_screen_and_publish_package(
+                    "sender", "staging", "a" * 64, Path("run"),
+                    max_wire_bytes=4096, source_context=object(),
+                    artifact_path="artifact", target_capability="C.TARGET",
+                    export_clearance=object(), atlas_selection=object(),
+                    source_frontier=object())
+        stage.assert_not_called()
 
     def test_caller_cannot_supply_authority_registry(self):
         with self.assertRaises(TypeError):

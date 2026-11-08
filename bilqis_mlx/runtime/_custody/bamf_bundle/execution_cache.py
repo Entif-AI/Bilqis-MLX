@@ -11,9 +11,6 @@ from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.learning.atlas_engram import MotifManifest
 
 
-_ISSUER = object()
-
-
 def _invalid(reason: str) -> None:
     ErrorBus.Raise(SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID, reason=reason)
 
@@ -37,7 +34,6 @@ class AcceptedExecutionCache:
     motif_manifest: MotifManifest
     source_authority_registry_sha256: str | None
     schema_version: str = "bilqis.mlx.b13-accepted-execution-cache/v1"
-    _issuance: object = field(init=False, repr=False, compare=False)
     _motif_artifact_owners: dict = field(init=False, repr=False, compare=False)
     _cache_mac_key: bytes = field(init=False, repr=False, compare=False)
     _cache_authority: object | None = field(init=False, repr=False, compare=False)
@@ -52,8 +48,7 @@ class AcceptedExecutionCache:
 
     def __post_init__(self) -> None:
         if (
-            getattr(self, "_issuance", None) is not _ISSUER
-            or not isinstance(self.run_id, str) or not self.run_id
+            not isinstance(self.run_id, str) or not self.run_id
             or type(self.generation) is not int or self.generation < 0
             or not _digest(self.accepted_manifest_sha256)
             or not _digest(self.generation_binding)
@@ -66,7 +61,7 @@ class AcceptedExecutionCache:
             _invalid("B13_EXECUTION_CACHE_INVALID")
 
 
-def _issue_accepted_execution_cache(
+def _new_execution_cache(
     *,
     run_id: str,
     generation: int,
@@ -84,7 +79,6 @@ def _issue_accepted_execution_cache(
         ("motif_manifest", motif_manifest),
         ("source_authority_registry_sha256", source_authority_registry_sha256),
         ("schema_version", "bilqis.mlx.b13-accepted-execution-cache/v1"),
-        ("_issuance", _ISSUER),
         ("_motif_artifact_owners", weakref.WeakValueDictionary()),
         ("_cache_mac_key", secrets.token_bytes(32)),
         ("_cache_authority", None),
@@ -103,7 +97,10 @@ def require_accepted_execution_cache(cache) -> AcceptedExecutionCache:
     if type(cache) is not AcceptedExecutionCache:
         _invalid("B13_EXECUTION_CACHE_REQUIRED")
     cache.__post_init__()
-    return cache
+    from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
+        _EXECUTION_CACHE_OWNER,
+    )
+    return _EXECUTION_CACHE_OWNER.require(cache)
 
 
 def bind_motif_artifact_owner(cache, compiled):
@@ -127,7 +124,6 @@ def bind_motif_artifact_owner(cache, compiled):
             cache._run_dir, cache.accepted_manifest_sha256,
             "MOTIF", owner,
             lambda current, event, registry: _route(current, event, registry),
-            cache._correction_registry,
         )
     owner.require(cache, compiled)
     return owner

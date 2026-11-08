@@ -68,10 +68,13 @@ An error after linking, including a directory-fsync failure, can leave a complet
 addressed entry even though the call raises. Retry the same package to converge;
 never interpret an exception as proof that no entry exists.
 
-`receive_package(sender, receiver, package_digest, binding, max_wire_bytes=...)`
+`inspect_package(sender, package_digest, binding, max_wire_bytes=...)`
 requires a positive explicit wire-byte limit. It verifies regular-file type,
 bounded raw bytes, exact address digest, canonical package encoding, embedded
-clearance assertions and the existing compatibility plan before receiver writes.
+clearance assertions and the existing compatibility plan without writing receiver
+staging. `stage_received_package(inspected, receiver)` performs the durable write
+only after the production operator has validated current accepted-run authority.
+`receive_package(...)` remains the lower-level inspect-then-stage convenience API.
 The returned frozen `StagedExchange` holds the package, plan and receiver path.
 Heterogeneous exact packages receive `TEACHING_ONLY`; incompatible deltas reject
 before receiver creation. Payloads never execute during exchange.
@@ -135,14 +138,15 @@ close #526/#718 until final exact-head EGM and human integration.
 
 `cognitive_package.operator.receive_screen_and_publish_package(...)` is C12's
 production composition seam. It derives the receiver binding from the current B13
-generation, performs the bounded local directory receive, refuses any delta that is
-not `EXACT_BINDING`, verifies the current A12/C09 source authority before the C05
-screen, constructs the disposable B12 candidate, obtains the C05 owner-issued
+generation, inspects bounded local package bytes without staging, refuses any delta
+that is not `EXACT_BINDING`, verifies the current A12/C09 source authority, and only
+then stages the package. It next constructs the disposable B12 candidate, obtains the C05 owner-issued
 decision, and delegates accepted publication to the B13 boundary above.
 
 The operator is orchestration, not a new authority. An `ExportClearanceReceipt`,
-Atlas selection, source frontier, or source-authority registry supplied to the call
-is still revalidated by its existing owner contract. A matching embedded
+Atlas selection, and source frontier supplied to the call are revalidated against
+the accepted run's custody-owned source authority. Callers do not supply or select
+a source-authority registry. A matching embedded
 `SourceRights`, an `ELIGIBLE`-style result, or a caller-created `accepted=True`
 cannot publish a generation. Presentation/CLI code therefore does not duplicate
 this chain or become a package-admission trust root.

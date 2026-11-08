@@ -131,6 +131,7 @@ class GenerationAcceptanceProvenanceTests(unittest.TestCase):
         record = issued.to_record()
         record["schema_version"] = PREVIOUS_SOURCE_ACCEPTANCE_SCHEMA
         record["source_anchors"] = []
+        record.pop("source_authority_registry_sha256")
         record["binding_sha256"] = hashlib.sha256(canonical({
             key: value for key, value in record.items()
             if key != "binding_sha256"
@@ -170,7 +171,7 @@ class GenerationAcceptanceProvenanceTests(unittest.TestCase):
                       "load_pinned_atlas_snapshot", side_effect=lambda selection: selection):
             with self.assertRaises(BilqisError) as failure:
                 read_accepted_generation_feature_receipt(
-                    self.run / "bamf-state.json", "/artifact")
+                    self.run / "bamf-state.json")
         self.assertEqual(failure.exception.context["reason"],
                          "BAMF_GENERATION_ACCEPTANCE_DRIFT")
 
@@ -193,7 +194,7 @@ class GenerationAcceptanceProvenanceTests(unittest.TestCase):
                       "load_pinned_atlas_snapshot", side_effect=lambda selection: selection):
             with self.assertRaises(BilqisError) as failure:
                 read_accepted_generation_feature_receipt(
-                    self.run / "bamf-state.json", "/artifact")
+                    self.run / "bamf-state.json")
         self.assertEqual(failure.exception.context["reason"],
                          "BAMF_GENERATION_ACCEPTANCE_DRIFT")
 

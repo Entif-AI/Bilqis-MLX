@@ -155,7 +155,6 @@ def bind_cache_artifact_owner(authority, artifact, binding):
             accepted_cache.accepted_manifest_sha256,
             "EXACT_CACHE", owner,
             lambda current, event, registry: _route(current, event, registry),
-            accepted_cache._correction_registry,
         )
     return owner
 

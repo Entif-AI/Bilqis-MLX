@@ -23,10 +23,10 @@ from bilqis_mlx.runtime.accepted_correction_runtime import (
 from bilqis_mlx.runtime.atlas_owner_ingress import _route
 from bilqis_mlx.runtime.bamf_bundle import admission, publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import (
-    bind_accepted_correction_authority, bind_accepted_execution_cache,
+    bind_accepted_execution_cache,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, candidate, parent_state, shape_patch,
+    acceptance, candidate, parent_state, shape_patch, with_source_authority_registry,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.accepted_correction_runtime_temporal_support import (
     source_owned_temporal_case,
@@ -76,23 +76,20 @@ class AcceptedContextOrderingTests(unittest.TestCase):
         self.temporary.cleanup()
 
     def _publish(self):
-        source = candidate(parent_state())
-        source = replace(source, correction_frontier={
-            **source.correction_frontier,
-            "source_authority_registry_sha256": AUTHORITY.digest,
-        })
+        source = with_source_authority_registry(candidate(parent_state()), AUTHORITY)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             publish_bamf_generation(
                 self.run, source, acceptance=acceptance(source))
-            return bind_accepted_correction_authority(self.run, AUTHORITY)
+            return bind_accepted_execution_cache(self.run)
 
     def _persist_invalidation(self, cache, event):
-        record = context_invalidation_record(
-            cache.accepted_manifest_sha256, event)
-        append_record(self.run, cache.accepted_manifest_sha256, record)
-        runtime(
-            self.run, cache.accepted_manifest_sha256,
-        ).deliver_context_invalidation(record["event_id"], event)
+        with shape_patch():
+            record = context_invalidation_record(
+                cache.accepted_manifest_sha256, event)
+            append_record(self.run, cache.accepted_manifest_sha256, record)
+            runtime(
+                self.run, cache.accepted_manifest_sha256,
+            ).deliver_context_invalidation(record["event_id"], event)
         return record["event_id"]
 
     def test_overlapping_contexts_and_premature_evidence_replay_in_order(self):
@@ -115,7 +112,6 @@ class AcceptedContextOrderingTests(unittest.TestCase):
                 self.run, cache.accepted_manifest_sha256, "ORDERING", owner,
                 lambda current, event, source_authority: _route(
                     current, event, source_authority),
-                AUTHORITY,
             )
             host = AcceptedRuntimeHost(self.run)
 
@@ -157,7 +153,6 @@ class AcceptedContextOrderingTests(unittest.TestCase):
                 "ORDERING", cold_owner,
                 lambda current, event, source_authority: _route(
                     current, event, source_authority),
-                AUTHORITY,
             )
         self.assertIsNone(
             require_pending_corrections(cold_owner, direct.artifact_id))
@@ -186,7 +181,6 @@ class AcceptedContextOrderingTests(unittest.TestCase):
                 self.run, cache.accepted_manifest_sha256, "PRIORITY", owner,
                 lambda current, event, source_authority: _route(
                     current, event, source_authority),
-                AUTHORITY,
             )
             host = AcceptedRuntimeHost(self.run)
         invalidation = _event(case, old_digest, new_digest)
@@ -223,7 +217,6 @@ class AcceptedContextOrderingTests(unittest.TestCase):
                 "PRIORITY", cold_owner,
                 lambda current, event, source_authority: _route(
                     current, event, source_authority),
-                AUTHORITY,
             )
         self.assertEqual(
             cold_owner._accepted_correction_target.context_deferred, {})
@@ -244,7 +237,6 @@ class AcceptedContextOrderingTests(unittest.TestCase):
                 "PACKED_FRAME", owner,
                 lambda current, event, source_authority: _route(
                     current, event, source_authority),
-                AUTHORITY,
             )
             host = AcceptedRuntimeHost(self.run)
         invalidation = _event(case, case.previous.digest, "e" * 64)
@@ -276,7 +268,6 @@ class AcceptedContextOrderingTests(unittest.TestCase):
                 "PACKED_FRAME", owner,
                 lambda current, event, source_authority: _route(
                     current, event, source_authority),
-                AUTHORITY,
             )
             host = AcceptedRuntimeHost(self.run)
             transition = host.record_context_transition(

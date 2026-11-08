@@ -77,7 +77,7 @@ class GenerationAcceptanceProvenanceTests(unittest.TestCase):
                 patch("bilqis_mlx.runtime.bamf_bundle.feature_authority."
                       "load_pinned_atlas_snapshot", side_effect=lambda selection: selection):
             with self.assertRaises(BilqisError):
-                read_accepted_generation_feature_receipt(pointer_path, "/artifact")
+                read_accepted_generation_feature_receipt(pointer_path)
 
     def test_caller_cannot_construct_an_acceptance_binding(self):
         source = candidate(parent_state())
@@ -172,7 +172,7 @@ class GenerationAcceptanceProvenanceTests(unittest.TestCase):
                       "load_pinned_atlas_snapshot", side_effect=lambda selection: selection):
             with self.assertRaises(BilqisError) as failure:
                 read_accepted_generation_feature_receipt(
-                    self.run / "bamf-state.json", "/artifact")
+                    self.run / "bamf-state.json")
         self.assertEqual(
             failure.exception.context["reason"],
             "BAMF_GENERATION_ACCEPTANCE_MISSING")

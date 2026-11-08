@@ -16,14 +16,14 @@ from bilqis_mlx.runtime.atlas_capability_support_owner import (
     load_capability_support_owner,
 )
 from bilqis_mlx.runtime.bamf_bundle.admission import (
-    accept_and_publish, bind_accepted_correction_authority,
+    accept_and_publish,
 )
 from bilqis_mlx.runtime.capability_support_journal import journal_path, read_journal
 from bilqis_mlx.runtime.tests.correction.capability_support_owner_support import (
     SOURCE_ROW, TARGET, source_qualified_state,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    candidate, retention_decision, shape_patch,
+    candidate, retention_decision, shape_patch, with_source_authority_registry,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
     AUTHORITY, _event, _ref, _sign_event,
@@ -47,31 +47,29 @@ class CapabilitySupportLineageTests(unittest.TestCase):
 
     def publish_support(self):
         parent, transaction, retained, authority = source_qualified_state()
-        bundle = candidate(retained)
-        bundle = replace(bundle, correction_frontier={
-            **bundle.correction_frontier,
-            "source_authority_registry_sha256": AUTHORITY.digest,
-        })
+        bundle = with_source_authority_registry(candidate(retained), AUTHORITY)
         decision = retention_decision(parent=parent, retained=retained)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             published = accept_and_publish(
                 self.run, bundle, retained, decision=decision,
                 feature_sha256=bundle.extents.factor_map_digest,
                 training_authorities=transaction.training_authorities)
-            bind_accepted_correction_authority(self.run, AUTHORITY)
         return published, authority
 
     def load_support(self, authority_registry=None):
         with shape_patch():
-            return load_capability_support_owner(
-                self.run, TARGET, authority_registry)
+            if authority_registry is not None:
+                from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
+                cache = bind_accepted_execution_cache(self.run)
+                self.assertEqual(cache._correction_registry, authority_registry)
+            return load_capability_support_owner(self.run, TARGET)
 
     def test_cold_rehydrated_correction_remains_branch_ancestor_for_supersession(self):
         published, _authority = self.publish_support()
         live = self.load_support(AUTHORITY)
         first = _event(_ref(DependencyKind.SOURCE, SOURCE_ROW))
         with shape_patch():
-            accepted_id = record_accepted_correction(self.run, first, AUTHORITY)
+            accepted_id = record_accepted_correction(self.run, first)
         self.assertEqual(live.queue.event.event_id, first.event_id)
         manifest = published["manifest_sha256"]
         hold_path = journal_path(self.run, manifest, TARGET)
@@ -103,7 +101,7 @@ class CapabilitySupportLineageTests(unittest.TestCase):
             supersedes_event_ids=(first.event_id,),
         ))
         with shape_patch():
-            record_accepted_correction(self.run, second, AUTHORITY)
+            record_accepted_correction(self.run, second)
 
         branches = target.branches[first.dependency]
         self.assertEqual(

@@ -189,12 +189,17 @@ def _issue_owner(
 
 def load_capability_support_owner(
     run_dir: Path, capability_id: str,
-    authority_registry: SourceAuthorityRegistry | None = None,
 ) -> CapabilitySupportArtifactOwner:
     """Materialize current support only from accepted B13 lossless source anchors."""
     run_dir = Path(run_dir)
+    from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
+        _accepted_correction_registry,
+    )
     manifest_sha256, support, node, generation_bindings = load_current_support(
         run_dir, capability_id)
+    cache, authority_registry = _accepted_correction_registry(run_dir)
+    if cache.accepted_manifest_sha256 != manifest_sha256:
+        _invalid("BAMF_C09_CAPABILITY_SUPPORT_ACCEPTED_GENERATION_DRIFT")
     hold_path = journal_path(run_dir, manifest_sha256, capability_id)
     owner = _issue_owner(
         support, node, generation_bindings, hold_path,
@@ -232,7 +237,6 @@ def load_capability_support_owner(
         run_dir, manifest_sha256, "CAPABILITY_SUPPORT", rehydrated,
         lambda current, event, registry: apply_capability_support_correction(
             current, event, registry),
-        authority_registry,
         seen_event_ids=seen_event_ids,
     )
     return rehydrated

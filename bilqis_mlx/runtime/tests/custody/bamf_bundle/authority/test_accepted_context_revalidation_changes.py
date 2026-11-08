@@ -48,7 +48,7 @@ class AcceptedContextChangeTests(AcceptedContextFixture):
             register_accepted_target(
                 self.run, cache.accepted_manifest_sha256, "TEST_CONTEXT", replacement,
                 lambda current, event, source_authority: _route(
-                    current, event, source_authority), AUTHORITY)
+                    current, event, source_authority))
         self.assertIsNone(
             require_pending_corrections(replacement, replacement_direct.artifact_id))
 
@@ -75,7 +75,7 @@ class AcceptedContextChangeTests(AcceptedContextFixture):
             register_accepted_target(
                 self.run, cold_cache.accepted_manifest_sha256, "TEST_CONTEXT", cold_owner,
                 lambda current, event, source_authority: _route(
-                    current, event, source_authority), AUTHORITY)
+                    current, event, source_authority))
         with self.assertRaises(BilqisError) as held:
             require_pending_corrections(cold_owner, direct.artifact_id)
         self.assertEqual(held.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
@@ -98,7 +98,7 @@ class AcceptedContextChangeTests(AcceptedContextFixture):
             register_accepted_target(
                 self.run, cache.accepted_manifest_sha256, "TEST_EXPIRY", owner,
                 lambda current, event, source_authority: _route(
-                    current, event, source_authority), AUTHORITY)
+                    current, event, source_authority))
             host = AcceptedRuntimeHost(self.run)
             transition = host.record_context_transition(case.previous, case.contexts)
         invalidation = transition.invalidations[0]

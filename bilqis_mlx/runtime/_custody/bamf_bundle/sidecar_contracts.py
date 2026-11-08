@@ -76,6 +76,17 @@ def validate_identity_sidecars(extents, provenance, records, invalid):
     source_authority_anchor = correction.get('source_authority_registry_sha256')
     if (source_authority_anchor is not None and not _digest(source_authority_anchor)):
         invalid()
+    source_authority_record = correction.get('source_authority_registry')
+    if source_authority_record is not None:
+        from bilqis_mlx.runtime.atlas_source_authority import SourceAuthorityRegistry
+        try:
+            source_authority_registry = SourceAuthorityRegistry.from_record(
+                source_authority_record)
+        except Exception:
+            invalid()
+        if (source_authority_anchor is None
+                or source_authority_registry.digest != source_authority_anchor):
+            invalid()
     if (compiler.get('factor_map_sha256') != extents.factor_map_digest
             or not _digest(compiler.get('compiler_sha256'))
             or any(not _epoch(record.get(key)) for record, keys in (

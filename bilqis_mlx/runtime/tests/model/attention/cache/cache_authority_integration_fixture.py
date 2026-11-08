@@ -19,9 +19,7 @@ from bilqis_mlx.runtime.atlas_revalidation import (
 )
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
-from bilqis_mlx.runtime.bamf_bundle.admission import (
-    bind_accepted_cache_authority, bind_accepted_correction_authority,
-)
+from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_cache_authority
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     DECLARED, acceptance, candidate, parent_state, shape_patch,
 )
@@ -153,6 +151,7 @@ def _source(selection, frontier):
             "rights_epoch": frontier.rights_epoch,
             "correction_generation": frontier.correction_generation,
             "source_authority_registry_sha256": _accepted_registry().digest,
+            "source_authority_registry": _accepted_registry().to_record(),
         },
         compiler_features={
             **source.compiler_features,
@@ -202,6 +201,5 @@ def _accepted_cache_authority(
     eligibility_source = lambda: inputs
     with _cache_shape_patch():
         _cache, authority = bind_accepted_cache_authority(
-            run, registry, eligibility_source)
-        bind_accepted_correction_authority(run, registry)
+            run, eligibility_source)
     return authority, registry, eligibility_source

@@ -26,6 +26,18 @@ from ._publication_storage import (
     _stage, _write_acceptance,
 )
 
+
+def _source_authority_registry_digest(correction_frontier: dict) -> str | None:
+    record = correction_frontier.get("source_authority_registry")
+    digest = correction_frontier.get("source_authority_registry_sha256")
+    if record is None:
+        return None
+    from bilqis_mlx.runtime.atlas_source_authority import SourceAuthorityRegistry
+    registry = SourceAuthorityRegistry.from_record(record)
+    if digest != registry.digest:
+        invalid("BAMF_C09_SOURCE_AUTHORITY_REGISTRY_INVALID")
+    return registry.digest
+
 def reconcile_bamf_outbox(run_dir: Path, student: CompleteStudent, *, publish_missing=True) -> bool:
     """Reconcile while the caller holds the generation pointer writer lock."""
     from bilqis_mlx.runtime import checkpoints
@@ -88,6 +100,11 @@ def _validate_parent_transition(run_dir: Path, pointer: dict | None, candidate: 
             or parent.generation != pointer["generation"]
             or parent.parent_manifest_sha256 != pointer["parent_manifest_sha256"]):
         invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
+    if (parent.correction_frontier.get("source_authority_registry")
+            != candidate.correction_frontier.get("source_authority_registry")
+            or parent.correction_frontier.get("source_authority_registry_sha256")
+            != candidate.correction_frontier.get("source_authority_registry_sha256")):
+        invalid("BAMF_C09_SOURCE_AUTHORITY_REGISTRY_DRIFT")
     parent_step = parent.retained_state.optimizer_step
     candidate_step = candidate.retained_state.optimizer_step
     if is_package_import_transition(candidate.transition):
@@ -121,7 +138,9 @@ def _require_acceptance(candidate: BamfBundleCandidate,
             or acceptance.candidate_identity_sha256
             != candidate_identity_digest(candidate.retained_state)
             or acceptance.step_proof_sha256 != tuple(
-                proof.digest for proof in candidate.retained_state.step_proofs)):
+                proof.digest for proof in candidate.retained_state.step_proofs)
+            or acceptance.source_authority_registry_sha256
+            != _source_authority_registry_digest(candidate.correction_frontier)):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
     return acceptance
 
@@ -303,7 +322,9 @@ def _require_published_acceptance(
             or acceptance.candidate_identity_sha256
             != candidate_identity_digest(student.retained_state)
             or acceptance.step_proof_sha256 != tuple(
-                proof.digest for proof in student.retained_state.step_proofs)):
+                proof.digest for proof in student.retained_state.step_proofs)
+            or acceptance.source_authority_registry_sha256
+            != _source_authority_registry_digest(student.correction_frontier)):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
     return acceptance
 

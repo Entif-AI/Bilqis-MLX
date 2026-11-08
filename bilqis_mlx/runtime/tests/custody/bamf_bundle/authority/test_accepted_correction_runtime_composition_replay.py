@@ -5,7 +5,6 @@ from bilqis_mlx.runtime.accepted_corrections import (
     record_accepted_correction, record_accepted_revalidation, register_solve_context,
 )
 from bilqis_mlx.runtime.atlas_revalidation import RevalidationFrontier
-from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_correction_authority
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     candidate, parent_state, shape_patch,
 )
@@ -48,12 +47,11 @@ class AcceptedCorrectionCompositionReplayTests(AcceptedCorrectionCompositionCase
             self.publish(candidate(parent_state()))
             binding, context, compositions = self._composition_context(2)
             with shape_patch():
-                bind_accepted_correction_authority(self.run, AUTHORITY)
-                register_solve_context(self.run, context, AUTHORITY)
+                register_solve_context(self.run, context)
             correction = _event(DependencyRef(
                 DependencyKind.SOURCE, "source:binding:" + contract_digest(binding)))
             with shape_patch():
-                record_accepted_correction(self.run, correction, AUTHORITY)
+                record_accepted_correction(self.run, correction)
             owner = context.operator_composition_artifact_owner
             results = tuple(sorted((
                 _result(owner.node_for(item), digest=owner.node_for(item).content_digest,
@@ -61,19 +59,18 @@ class AcceptedCorrectionCompositionReplayTests(AcceptedCorrectionCompositionCase
                 for item in compositions), key=lambda item: item.artifact_id))
             with shape_patch():
                 record_accepted_revalidation(
-                    self.run, RevalidationFrontier(results), AUTHORITY)
+                    self.run, RevalidationFrontier(results))
             self.assertEqual(owner.queue.held_artifact_ids, ())
 
     def test_deferred_frontier_remembers_partial_consumption_across_retry(self):
             self.publish(candidate(parent_state()))
             binding, context, _compositions = self._composition_context(3)
             with shape_patch():
-                bind_accepted_correction_authority(self.run, AUTHORITY)
-                register_solve_context(self.run, context, AUTHORITY)
+                register_solve_context(self.run, context)
             correction = _event(DependencyRef(
                 DependencyKind.SOURCE, "source:binding:" + contract_digest(binding)))
             with shape_patch():
-                record_accepted_correction(self.run, correction, AUTHORITY)
+                record_accepted_correction(self.run, correction)
             owner = context.operator_composition_artifact_owner
             task_ids = tuple(task.artifact_id for task in owner.queue.pending)
             by_id = {
@@ -84,13 +81,12 @@ class AcceptedCorrectionCompositionReplayTests(AcceptedCorrectionCompositionCase
             with shape_patch():
                 first_event = record_accepted_revalidation(
                     self.run,
-                    RevalidationFrontier((by_id[task_ids[0]], by_id[task_ids[2]])),
-                    AUTHORITY)
+                    RevalidationFrontier((by_id[task_ids[0]], by_id[task_ids[2]])))
             target = owner._accepted_correction_target
             self.assertIn(first_event, target.deferred)
             with shape_patch():
                 record_accepted_revalidation(
-                    self.run, RevalidationFrontier((by_id[task_ids[1]],)), AUTHORITY)
+                    self.run, RevalidationFrontier((by_id[task_ids[1]],)))
             self.assertNotIn(first_event, target.deferred)
             self.assertIn(first_event, target.seen)
             self.assertEqual(owner.queue.held_artifact_ids, ())
@@ -102,9 +98,8 @@ class AcceptedCorrectionCompositionReplayTests(AcceptedCorrectionCompositionCase
                 binding, qualified_compositions=compositions,
                 qualification_verifier=lambda item: True)
             with shape_patch():
-                bind_accepted_correction_authority(self.run, AUTHORITY)
-                register_solve_context(self.run, first_context, AUTHORITY)
-                register_solve_context(self.run, second_context, AUTHORITY)
+                register_solve_context(self.run, first_context)
+                register_solve_context(self.run, second_context)
             dependency = DependencyRef(
                 DependencyKind.SOURCE,
                 "source:binding:" + contract_digest(binding),
@@ -112,7 +107,7 @@ class AcceptedCorrectionCompositionReplayTests(AcceptedCorrectionCompositionCase
             correction = _event(dependency)
 
             with shape_patch():
-                record_accepted_correction(self.run, correction, AUTHORITY)
+                record_accepted_correction(self.run, correction)
 
             for context in (first_context, second_context):
                 owner = context.operator_composition_artifact_owner
@@ -125,17 +120,16 @@ class AcceptedCorrectionCompositionReplayTests(AcceptedCorrectionCompositionCase
             self.publish(candidate(parent_state()))
             binding, context, compositions = self._composition_context(1)
             with shape_patch():
-                bind_accepted_correction_authority(self.run, AUTHORITY)
-                register_solve_context(self.run, context, AUTHORITY)
+                register_solve_context(self.run, context)
             correction_a, correction_b = self._concurrent_corrections(binding)
             owner = context.operator_composition_artifact_owner
 
             with shape_patch():
-                record_accepted_correction(self.run, correction_a, AUTHORITY)
+                record_accepted_correction(self.run, correction_a)
             self._record_equal_revalidation(
                 owner, compositions[0], correction_a)
             with shape_patch():
-                record_accepted_correction(self.run, correction_b, AUTHORITY)
+                record_accepted_correction(self.run, correction_b)
             self._record_equal_revalidation(
                 owner, compositions[0], correction_b)
             self.assertEqual(owner.queue.held_artifact_ids, ())

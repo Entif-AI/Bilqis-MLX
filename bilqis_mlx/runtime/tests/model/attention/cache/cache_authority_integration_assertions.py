@@ -13,7 +13,7 @@ from bilqis_mlx.runtime.atlas_cache_codec import (
 from bilqis_mlx.runtime.atlas_cache_records import _encode_cold_cache
 from bilqis_mlx.runtime.bamf_bundle import admission
 from bilqis_mlx.runtime.bamf_bundle.admission import (
-    bind_accepted_cache_authority, bind_accepted_correction_authority,
+    bind_accepted_cache_authority,
     interactive_accepted_cache_inference,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import _event, _ref
@@ -79,12 +79,11 @@ def _assert_cold_replay_hold(test, run, registry, eligibility_source, binding):
     values = np.ones((256, HEAD_WIDTH), dtype=np.float32)
     with _cache_shape_patch():
         _cold_cache, cold_authority = bind_accepted_cache_authority(
-            run, registry, eligibility_source)
-        bind_accepted_correction_authority(run, registry)
+            run, eligibility_source)
         cold_artifact = encode_cold_cache(
             cold_authority, values, binding.codec_manifest, binding=binding)
         cold_held = interactive_accepted_cache_inference(
-            run, registry, cold_artifact, binding,
+            run, cold_artifact, binding,
             cached_infer=lambda _: test.fail(
                 "cold-replayed held cache influenced output"),
             fp32_recompute=lambda: "FP32",

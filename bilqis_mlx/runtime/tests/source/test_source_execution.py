@@ -15,7 +15,6 @@ from bilqis_mlx.factory.tests.test_executable_release import _answers
 from bilqis_mlx.factory.tests.test_execution_plan import _synthetic_course, _synthetic_registry
 from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
 from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
-from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_correction_authority
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     acceptance, candidate, parent_state, shape_patch,
@@ -53,8 +52,7 @@ class SourceExecutionContextTests(unittest.TestCase):
     def test_structurally_forged_context_cannot_claim_host_custody(self):
         from pathlib import Path
         run_dir = Path("fixture-run")
-        context = SourceExecutionContext(
-            **self.arguments, run_dir=run_dir, correction_registry=AUTHORITY)
+        context = SourceExecutionContext(**self.arguments, run_dir=run_dir)
         with self.assertRaises(BilqisError) as caught:
             context.require_accepted_runtime(run_dir)
         self.assertEqual(
@@ -71,11 +69,11 @@ class SourceExecutionContextTests(unittest.TestCase):
             source = replace(source, correction_frontier={
                 **source.correction_frontier,
                 "source_authority_registry_sha256": AUTHORITY.digest,
+                "source_authority_registry": AUTHORITY.to_record(),
             })
             with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
                 publish_bamf_generation(
                     run_dir, source, acceptance=acceptance(source))
-                bind_accepted_correction_authority(run_dir, AUTHORITY)
             receipt = {"factory_release_sha256": self.release.release_sha256}
             with patch(
                 "bilqis_mlx.runtime.admission._read_executable_factory_release_artifact",
@@ -95,6 +93,34 @@ class SourceExecutionContextTests(unittest.TestCase):
                 self.assertIs(
                     context.source_authority(),
                     AcceptedRuntimeHost(run_dir).source_authority())
+
+    def test_forged_accepted_runtime_host_subclass_cannot_mint_live_context(self):
+        from pathlib import Path
+
+        class ForgedHost(AcceptedRuntimeHost):
+            def __post_init__(self):
+                pass
+
+            @property
+            def registry(self):
+                return AUTHORITY
+
+            def source_authority(self):
+                return object()
+
+        run_dir = Path("fixture-run")
+        forged = ForgedHost(run_dir)
+        receipt = {"factory_release_sha256": self.release.release_sha256}
+        with patch(
+            "bilqis_mlx.runtime.admission._read_executable_factory_release_artifact",
+            return_value=self.release,
+        ):
+            with self.assertRaises(BilqisError):
+                SourceExecutionContext.from_admitted_release(
+                    run_dir, receipt, graph=self.graph, source_root=None,
+                    source_registry=self.sources, answer_registry=self.answers,
+                    accepted_runtime_host=forged,
+                )
 
     def test_admitted_context_uses_the_cold_read_authority(self):
         from pathlib import Path

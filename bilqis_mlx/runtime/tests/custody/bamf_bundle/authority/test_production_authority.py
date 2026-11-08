@@ -37,7 +37,6 @@ from bilqis_mlx.learning.atlas_participation import (
 from bilqis_mlx.runtime.bamf_bundle import admission
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     admit_candidate_step, bind_accepted_cache_authority,
-    bind_accepted_correction_authority,
     bind_accepted_execution_cache,
     derive_participation_inputs,
 )
@@ -61,7 +60,7 @@ from bilqis_mlx.learning._retention.tests.execution_fixtures import (
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     acceptance, accepted_state, candidate, parent_state, retention_decision,
-    shape_patch,
+    shape_patch, with_source_authority_registry,
 )
 
 
@@ -90,15 +89,10 @@ class ProductionAuthorityTests(unittest.TestCase):
 
     def publish(self, source, registry=None):
         if registry is not None:
-            source = replace(source, correction_frontier={
-                **source.correction_frontier,
-                "source_authority_registry_sha256": registry.digest,
-            })
+            source = with_source_authority_registry(source, registry)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             pointer = publish_bamf_generation(
                 self.run, source, acceptance=acceptance(source))
-            if registry is not None:
-                bind_accepted_correction_authority(self.run, registry)
             return pointer
 
     def test_production_step_accepts_no_caller_participation_facts(self):
@@ -141,23 +135,23 @@ class ProductionAuthorityTests(unittest.TestCase):
             AcceptedExecutionCache()
 
     def test_accepted_b13_custody_issues_and_retains_opaque_cache_authority(self):
-        self.publish(candidate(parent_state()))
         registry = SourceAuthorityRegistry((SourceAuthorityKey(
             "cache-host", "1" * 64,
             (SourceAuthorityScope(DependencyKind.ARTIFACT, "cache:"),),
         ),))
+        self.publish(candidate(parent_state()), registry)
         source = lambda: object()
         with shape_patch():
             cache, authority = bind_accepted_cache_authority(
-                self.run, registry, source)
+                self.run, source)
             rebound_cache, rebound_authority = bind_accepted_cache_authority(
-                self.run, registry, source)
+                self.run, source)
         self.assertIsInstance(authority, CacheAuthorityRuntime)
         self.assertIs(rebound_cache, cache)
         self.assertIs(rebound_authority, authority)
         with shape_patch(), self.assertRaises(BilqisError):
             bind_accepted_cache_authority(
-                self.run, registry, lambda: object())
+                self.run, lambda: object())
 
     def test_signed_accepted_correction_replays_into_motif_owner_after_cold_restart(self):
         self.publish(candidate(parent_state()), AUTHORITY)
@@ -173,10 +167,11 @@ class ProductionAuthorityTests(unittest.TestCase):
                 motif_key_map_digest=cache.motif_manifest.digest,
             ),
         )
-        owner = bind_motif_artifact_owner(cache, compiled)
+        with shape_patch():
+            owner = bind_motif_artifact_owner(cache, compiled)
         correction = _event(owner.source_dependencies[0])
         with shape_patch():
-            record_accepted_correction(self.run, correction, AUTHORITY)
+            record_accepted_correction(self.run, correction)
         self.assertTrue(owner.queue.held_artifact_ids)
         with self.assertRaises(BilqisError):
             owner.require(cache, compiled)
@@ -184,10 +179,9 @@ class ProductionAuthorityTests(unittest.TestCase):
         admission._EXECUTION_CACHE_OWNER.entries.clear()
         _RUNTIME_OWNER.clear()
         with shape_patch():
-            cold_cache = bind_accepted_correction_authority(
-                self.run, AUTHORITY)
+            cold_cache = bind_accepted_execution_cache(self.run)
         self.assertIsNot(cold_cache, cache)
-        with self.assertRaises(BilqisError):
+        with shape_patch(), self.assertRaises(BilqisError):
             bind_motif_artifact_owner(cold_cache, compiled)
 
     def test_provenance_cannot_replay_onto_another_candidate_or_step(self):

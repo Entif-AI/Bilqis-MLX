@@ -10,7 +10,7 @@ from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 
 from .codec import load_bamf_bundle
-from .execution_cache import _issue_accepted_execution_cache, bind_cache_authority
+from .execution_cache import _new_execution_cache, bind_cache_authority
 from .publication import (
     _live_bundle_manifest, _pointer_lock, _read_pointer,
     _require_published_acceptance,
@@ -33,8 +33,38 @@ class _ExecutionCacheOwner:
     def set(self, key, manifest_sha256, cache) -> None:
         self.entries[key] = (manifest_sha256, cache)
 
+    def issue(self, key, manifest_sha256, **fields):
+        cache = _new_execution_cache(**fields)
+        object.__setattr__(cache, "_run_dir", Path(key))
+        self.set(key, manifest_sha256, cache)
+        return cache
+
+    def require(self, cache):
+        key = getattr(cache, "_run_dir", None)
+        if key is None:
+            invalid("B13_EXECUTION_CACHE_REQUIRED")
+        entry = self.entries.get(str(Path(key).resolve()))
+        if (entry is None or entry[0] != cache.accepted_manifest_sha256
+                or entry[1] is not cache):
+            invalid("B13_EXECUTION_CACHE_REQUIRED")
+        return cache
+
 
 _EXECUTION_CACHE_OWNER = _ExecutionCacheOwner()
+
+
+def _accepted_source_authority_registry(student: CompleteStudent):
+    record = student.correction_frontier.get("source_authority_registry")
+    digest = student.correction_frontier.get("source_authority_registry_sha256")
+    if record is None:
+        if digest is not None:
+            invalid("BAMF_C09_CORRECTION_AUTHORITY_MATERIAL_MISSING")
+        return None
+    from bilqis_mlx.runtime.atlas_source_authority import SourceAuthorityRegistry
+    registry = SourceAuthorityRegistry.from_record(record)
+    if digest != registry.digest:
+        invalid("BAMF_C09_CORRECTION_AUTHORITY_ANCHOR_MISMATCH")
+    return registry
 
 
 @dataclass(frozen=True)
@@ -138,6 +168,7 @@ def bind_accepted_execution_cache(run_dir: Path):
         spec=student.topology,
         extents=student.extents,
     )
+    registry = _accepted_source_authority_registry(student)
     key = str(run_dir.resolve())
     with _EXECUTION_CACHE_OWNER.lock:
         retained = _EXECUTION_CACHE_OWNER.get(key)
@@ -152,10 +183,16 @@ def bind_accepted_execution_cache(run_dir: Path):
                     or cache.motif_manifest.digest
                     != student.retained_state.allocations.manifest.digest):
                 invalid("BAMF_EXECUTION_CACHE_CUSTODY_DRIFT")
+            if registry is not None:
+                if cache._correction_registry is None:
+                    object.__setattr__(cache, "_correction_registry", registry)
+                elif cache._correction_registry != registry:
+                    invalid("BAMF_C09_CORRECTION_AUTHORITY_DRIFT")
             if cache._run_dir is None:
                 object.__setattr__(cache, "_run_dir", run_dir.resolve())
             return cache
-        cache = _issue_accepted_execution_cache(
+        cache = _EXECUTION_CACHE_OWNER.issue(
+            key, identity.manifest_sha256,
             run_id=identity.run_id,
             generation=identity.generation,
             accepted_manifest_sha256=identity.manifest_sha256,
@@ -164,46 +201,25 @@ def bind_accepted_execution_cache(run_dir: Path):
             source_authority_registry_sha256=student.correction_frontier.get(
                 "source_authority_registry_sha256"),
         )
-        _EXECUTION_CACHE_OWNER.set(key, identity.manifest_sha256, cache)
-        object.__setattr__(cache, "_run_dir", run_dir.resolve())
+        if registry is not None:
+            object.__setattr__(cache, "_correction_registry", registry)
         return cache
 
 
 def bind_accepted_cache_authority(
-    run_dir: Path, registry, eligibility_source=None,
+    run_dir: Path, eligibility_source=None,
 ):
     """Issue/reuse the B14 authority owned by the current accepted generation."""
-    cache = bind_accepted_execution_cache(run_dir)
+    cache, registry = _accepted_correction_registry(run_dir)
     return cache, bind_cache_authority(cache, registry, eligibility_source)
 
 
-def bind_accepted_correction_authority(run_dir: Path, registry):
-    """Re-establish host C09 verification authority for an accepted cold start."""
+def _accepted_correction_registry(run_dir: Path):
+    """Resolve C09 verifier material only from current accepted B13 custody."""
     from bilqis_mlx.runtime.atlas_revalidation import SourceAuthorityRegistry
     from bilqis_mlx.runtime.atlas_source_authority import (
         _provision_source_authority_runtime,
     )
-    from bilqis_mlx.runtime.accepted_corrections import bind_accepted_registry
-
-    if not isinstance(registry, SourceAuthorityRegistry):
-        invalid("BAMF_C09_CORRECTION_AUTHORITY_REQUIRED")
-    cache = bind_accepted_execution_cache(run_dir)
-    anchor = cache.source_authority_registry_sha256
-    if anchor is None or registry.digest != anchor:
-        invalid("BAMF_C09_CORRECTION_AUTHORITY_ANCHOR_MISMATCH")
-    if (cache._correction_registry is not None
-            and cache._correction_registry != registry):
-        invalid("BAMF_C09_CORRECTION_AUTHORITY_DRIFT")
-    bind_accepted_registry(
-        Path(run_dir), cache.accepted_manifest_sha256, registry)
-    object.__setattr__(cache, "_correction_registry", registry)
-    _provision_source_authority_runtime(cache)
-    return cache
-
-
-def require_accepted_correction_registry(run_dir: Path, registry=None):
-    """Return only the registry already provisioned by accepted B13 custody."""
-    from bilqis_mlx.runtime.atlas_revalidation import SourceAuthorityRegistry
 
     cache = bind_accepted_execution_cache(run_dir)
     bound = cache._correction_registry
@@ -211,13 +227,12 @@ def require_accepted_correction_registry(run_dir: Path, registry=None):
             or cache.source_authority_registry_sha256 is None
             or bound.digest != cache.source_authority_registry_sha256):
         invalid("BAMF_C09_CORRECTION_AUTHORITY_REQUIRED")
-    if registry is not None and registry != bound:
-        invalid("BAMF_C09_CORRECTION_AUTHORITY_DRIFT")
+    _provision_source_authority_runtime(cache)
     return cache, bound
 
 
 def interactive_accepted_cache_inference(
-    run_dir: Path, registry, artifact, expected_binding, *,
+    run_dir: Path, artifact, expected_binding, *,
     cached_infer, fp32_recompute, quality_check, policy,
     eligibility_source=None,
 ):
@@ -225,7 +240,7 @@ def interactive_accepted_cache_inference(
     from bilqis_mlx.runtime.atlas_cache_codec import interactive_cache_inference
 
     _cache, authority = bind_accepted_cache_authority(
-        run_dir, registry, eligibility_source)
+        run_dir, eligibility_source)
     return interactive_cache_inference(
         authority, artifact, expected_binding,
         cached_infer=cached_infer,
@@ -238,7 +253,7 @@ def interactive_accepted_cache_inference(
 __all__ = (
     "AcceptedGenerationIdentity", "_EXECUTION_CACHE_OWNER",
     "_identity_from_pointer", "_published_in_memory_identity", "_read_accepted",
-    "bind_accepted_cache_authority", "bind_accepted_correction_authority",
+    "bind_accepted_cache_authority",
     "bind_accepted_execution_cache", "interactive_accepted_cache_inference",
-    "load_accepted_generation", "require_accepted_correction_registry",
+    "load_accepted_generation",
 )

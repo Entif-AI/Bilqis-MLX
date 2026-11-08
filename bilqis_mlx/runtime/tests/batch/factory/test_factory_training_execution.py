@@ -21,7 +21,7 @@ from bilqis_mlx.runtime.atlas_model import bamf_value_and_grad
 from bilqis_mlx.runtime.atlas_training_adapter import pad_microbatches
 from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import (
-    bind_accepted_correction_authority, load_accepted_generation,
+    load_accepted_generation,
 )
 from bilqis_mlx.runtime.factory_candidate_training import (
     FactoryDeliveryObservation, _frame_stats,
@@ -35,7 +35,9 @@ from bilqis_mlx.runtime.teacher_observation_capture import (
     ObservationCapture, read_sidecar, store_sidecar,
 )
 from bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_live_support import HP
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import acceptance
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
+    acceptance, with_source_authority_registry,
+)
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
 
@@ -208,16 +210,12 @@ class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
         return rows, delivery
 
     def _publish(self, run_dir: Path) -> None:
-        candidate = replace(self.candidate, correction_frontier={
-            **self.candidate.correction_frontier,
-            "source_authority_registry_sha256": AUTHORITY.digest,
-        })
+        candidate = with_source_authority_registry(self.candidate, AUTHORITY)
         with patch(
             "bilqis_mlx.runtime.bamf_bundle.codec.assert_headroom", return_value=None,
         ):
             publish_bamf_generation(
                 run_dir, candidate, acceptance=acceptance(candidate))
-            bind_accepted_correction_authority(run_dir, AUTHORITY)
 
 
 if __name__ == "__main__":

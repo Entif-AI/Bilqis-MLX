@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from contextlib import ExitStack
 from copy import deepcopy
+from dataclasses import replace
 import os
 from pathlib import Path
 from unittest.mock import patch
@@ -205,8 +206,23 @@ def acceptance(bundle) -> object:
     """Mint the retention owner's acceptance binding for one candidate bundle."""
     return mint_acceptance_binding(
         retention_decision(retained=bundle.retained_state), bundle.retained_state, run_id=bundle.run_id,
-        generation=bundle.generation,
-        feature_sha256=bundle.extents.factor_map_digest)
+        generation=bundle.generation, feature_sha256=bundle.extents.factor_map_digest,
+        source_authority_registry_sha256=(
+            bundle.correction_frontier.get("source_authority_registry_sha256")
+            if bundle.correction_frontier.get("source_authority_registry") is not None
+            else None))
+
+
+def with_source_authority_registry(bundle, registry):
+    """Bind one test candidate to the full custody-owned source-authority record."""
+    return replace(
+        bundle,
+        correction_frontier={
+            **bundle.correction_frontier,
+            "source_authority_registry_sha256": registry.digest,
+            "source_authority_registry": registry.to_record(),
+        },
+    )
 
 
 def publish_candidate(run_dir, bundle):

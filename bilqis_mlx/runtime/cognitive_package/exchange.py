@@ -18,6 +18,12 @@ class StagedExchange:
     path: Path
 
 
+@dataclass(frozen=True)
+class InspectedExchange:
+    package: CognitivePackage
+    plan: ImportPlan
+
+
 def _directory(path):
     path = Path(path)
     require(not path.is_symlink() and (not path.exists() or path.is_dir()),
@@ -70,8 +76,8 @@ def publish_package(package, directory):
     return destination
 
 
-def receive_package(sender, receiver, package_digest, binding, *, max_wire_bytes):
-    """Copy only validated compatible bytes into a receiver's staging directory."""
+def inspect_package(sender, package_digest, binding, *, max_wire_bytes):
+    """Read and validate package bytes without mutating receiver staging."""
     require(digest_string(package_digest), 'invalid package digest')
     require(type(max_wire_bytes) is int and max_wire_bytes > 0,
             'invalid package wire limit')
@@ -86,5 +92,18 @@ def receive_package(sender, receiver, package_digest, binding, *, max_wire_bytes
         require(False, 'invalid package wire encoding')
     package = CognitivePackage.from_canonical_json(text)
     plan = stage_import(package, binding)
-    path = publish_package(package, receiver)
-    return StagedExchange(package, plan, path)
+    return InspectedExchange(package, plan)
+
+
+def stage_received_package(inspected, receiver):
+    """Durably stage one already inspected package."""
+    require(type(inspected) is InspectedExchange, 'inspected package required')
+    path = publish_package(inspected.package, receiver)
+    return StagedExchange(inspected.package, inspected.plan, path)
+
+
+def receive_package(sender, receiver, package_digest, binding, *, max_wire_bytes):
+    """Copy only validated compatible bytes into a receiver's staging directory."""
+    inspected = inspect_package(
+        sender, package_digest, binding, max_wire_bytes=max_wire_bytes)
+    return stage_received_package(inspected, receiver)

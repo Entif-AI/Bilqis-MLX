@@ -32,9 +32,9 @@ from bilqis_mlx.runtime.model_topology_v2 import ParameterCensus
 from .accepted_runtime import (
     AcceptedGenerationIdentity, _identity_from_pointer,
     _EXECUTION_CACHE_OWNER, _published_in_memory_identity, _read_accepted,
-    bind_accepted_cache_authority, bind_accepted_correction_authority,
+    bind_accepted_cache_authority,
     bind_accepted_execution_cache, interactive_accepted_cache_inference,
-    load_accepted_generation, require_accepted_correction_registry,
+    load_accepted_generation,
 )
 from .publication import publish_bamf_generation
 from .records import (
@@ -177,6 +177,10 @@ def accept_and_publish(run_dir: Path, bundle: BamfBundleCandidate,
     binding = mint_acceptance_binding(
         decision, retained_state, run_id=bundle.run_id,
         generation=bundle.generation, feature_sha256=feature_sha256,
-        training_authorities=training_authorities)
+        training_authorities=training_authorities,
+        source_authority_registry_sha256=(
+            bundle.correction_frontier.get("source_authority_registry_sha256")
+            if bundle.correction_frontier.get("source_authority_registry") is not None
+            else None))
     return publish_bamf_generation(
         run_dir, bundle, acceptance=binding, reserve_gib=reserve_gib)

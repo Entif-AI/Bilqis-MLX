@@ -1,6 +1,7 @@
 """Host-provisioned source authority keys and scoped signature checks."""
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 from cryptography.exceptions import InvalidSignature
@@ -78,6 +79,63 @@ class SourceAuthorityRegistry:
     @property
     def digest(self) -> str:
         return contract_digest(self)
+
+    def to_record(self) -> dict:
+        return {
+            "keys": [
+                {
+                    "allowed_scopes": [
+                        {
+                            "key_prefix": scope.key_prefix,
+                            "kind": scope.kind.value,
+                            "schema_version": scope.schema_version,
+                        }
+                        for scope in key.allowed_scopes
+                    ],
+                    "owner_id": key.owner_id,
+                    "public_key_hex": key.public_key_hex,
+                    "schema_version": key.schema_version,
+                }
+                for key in self.keys
+            ],
+            "schema_version": self.schema_version,
+        }
+
+    @classmethod
+    def from_record(cls, record) -> "SourceAuthorityRegistry":
+        if (not isinstance(record, Mapping)
+                or set(record) != {"keys", "schema_version"}
+                or record.get("schema_version") != SOURCE_AUTHORITY_REGISTRY_SCHEMA
+                or not isinstance(record.get("keys"), (tuple, list))
+                or not record["keys"]):
+            _invalid("BAMF_C09_SOURCE_AUTHORITY_REGISTRY_INVALID")
+        keys = []
+        for item in record["keys"]:
+            if (not isinstance(item, Mapping)
+                    or set(item) != {
+                        "allowed_scopes", "owner_id", "public_key_hex",
+                        "schema_version",
+                    }
+                    or not isinstance(item.get("allowed_scopes"), (tuple, list))):
+                _invalid("BAMF_C09_SOURCE_AUTHORITY_REGISTRY_INVALID")
+            scopes = []
+            for scope in item["allowed_scopes"]:
+                if (not isinstance(scope, Mapping)
+                        or set(scope) != {"key_prefix", "kind", "schema_version"}):
+                    _invalid("BAMF_C09_SOURCE_AUTHORITY_REGISTRY_INVALID")
+                try:
+                    kind = DependencyKind(scope["kind"])
+                except (TypeError, ValueError):
+                    _invalid("BAMF_C09_SOURCE_AUTHORITY_REGISTRY_INVALID")
+                scopes.append(SourceAuthorityScope(
+                    kind, scope["key_prefix"], scope["schema_version"]))
+            keys.append(SourceAuthorityKey(
+                item["owner_id"], item["public_key_hex"], tuple(scopes),
+                item["schema_version"]))
+        registry = cls(tuple(keys), record["schema_version"])
+        if registry.to_record() != dict(record):
+            _invalid("BAMF_C09_SOURCE_AUTHORITY_REGISTRY_INVALID")
+        return registry
 
     def _require(
         self, owner_id: str, dependency_kind: DependencyKind,
@@ -182,7 +240,8 @@ def _new_authority_owner():
                 or entry[1] is not cache):
             _invalid("BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID")
         registry = entry[2]
-        if (cache._correction_registry is not registry
+        if (cache._source_authority is not authority
+                or cache._correction_registry is not registry
                 or cache.source_authority_registry_sha256 is None
                 or cache.source_authority_registry_sha256 != registry.digest):
             _invalid("BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID")
@@ -211,14 +270,18 @@ def _make_source_authority_provisioner(issue):
         from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
             require_accepted_execution_cache,
         )
+        from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
+            _EXECUTION_CACHE_OWNER,
+        )
 
-        cache = require_accepted_execution_cache(accepted_cache)
-        authority = cache._source_authority
-        if authority is None:
-            authority = issue(cache)
-            object.__setattr__(cache, "_source_authority", authority)
-        require_source_authority_runtime(authority, cache)
-        return authority
+        with _EXECUTION_CACHE_OWNER.lock:
+            cache = require_accepted_execution_cache(accepted_cache)
+            authority = cache._source_authority
+            if authority is None:
+                authority = issue(cache)
+                object.__setattr__(cache, "_source_authority", authority)
+            require_source_authority_runtime(authority, cache)
+            return authority
 
     return provision
 

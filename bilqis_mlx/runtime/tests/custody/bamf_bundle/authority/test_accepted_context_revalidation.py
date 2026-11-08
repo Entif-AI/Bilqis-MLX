@@ -62,7 +62,7 @@ class AcceptedContextRevalidationTests(AcceptedContextFixture):
                 self.run, cold_cache.accepted_manifest_sha256,
                 "TEST_CONTEXT", cold_owner,
                 lambda current, event, source_authority: _route(
-                    current, event, source_authority), AUTHORITY)
+                    current, event, source_authority))
         self.assertIsNone(require_pending_corrections(cold_owner, direct.artifact_id))
         self.assertEqual(
             cold_owner.index.node(direct.artifact_id).immediate_dependencies,
@@ -91,7 +91,7 @@ class AcceptedContextRevalidationTests(AcceptedContextFixture):
                 self.run, cache.accepted_manifest_sha256,
                 "TEST_CONTEXT_LATE", owner,
                 lambda current, event, source_authority: _route(
-                    current, event, source_authority), AUTHORITY)
+                    current, event, source_authority))
             host = AcceptedRuntimeHost(self.run)
         invalidation = C09ContextInvalidation(
             old_context_digest=case.previous.digest,
@@ -111,11 +111,13 @@ class AcceptedContextRevalidationTests(AcceptedContextFixture):
                 for handle in (frame.frame_handle, *frame.member_handles)
             })),
         )
-        record = context_invalidation_record(
-            cache.accepted_manifest_sha256, invalidation)
-        append_record(self.run, cache.accepted_manifest_sha256, record)
-        runtime(self.run, cache.accepted_manifest_sha256).deliver_context_invalidation(
-            record["event_id"], invalidation)
+        with shape_patch():
+            record = context_invalidation_record(
+                cache.accepted_manifest_sha256, invalidation)
+            append_record(self.run, cache.accepted_manifest_sha256, record)
+            runtime(
+                self.run, cache.accepted_manifest_sha256,
+            ).deliver_context_invalidation(record["event_id"], invalidation)
         old_time = DependencyRef(
             DependencyKind.TIME, "time:asof:context:" + case.previous.digest)
         new_time = DependencyRef(

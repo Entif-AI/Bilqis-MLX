@@ -19,11 +19,11 @@ from bilqis_mlx.runtime.atlas_artifact_owner import PackedFrameArtifactOwner
 from bilqis_mlx.runtime.atlas_owner_ingress import _route
 from bilqis_mlx.runtime.bamf_bundle import admission, publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import (
-    bind_accepted_correction_authority, bind_accepted_execution_cache,
+    bind_accepted_execution_cache,
 )
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import bind_motif_artifact_owner
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, candidate, parent_state, shape_patch,
+    acceptance, candidate, parent_state, shape_patch, with_source_authority_registry,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
     AUTHORITY, _event, _result,
@@ -50,14 +50,10 @@ class AcceptedCorrectionRuntimeTests(unittest.TestCase):
         self.temporary.cleanup()
 
     def publish(self, source):
-        source = replace(source, correction_frontier={
-            **source.correction_frontier,
-            "source_authority_registry_sha256": AUTHORITY.digest,
-        })
+        source = with_source_authority_registry(source, AUTHORITY)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             pointer = publish_bamf_generation(
                 self.run, source, acceptance=acceptance(source))
-            bind_accepted_correction_authority(self.run, AUTHORITY)
             return pointer
 
     def _motif_fixture(self):
@@ -74,7 +70,9 @@ class AcceptedCorrectionRuntimeTests(unittest.TestCase):
                 motif_key_map_digest=cache.motif_manifest.digest,
             ),
         )
-        return cache, compiled, bind_motif_artifact_owner(cache, compiled)
+        with shape_patch():
+            owner = bind_motif_artifact_owner(cache, compiled)
+        return cache, compiled, owner
 
     def test_signed_revalidation_replays_after_correction_and_clears_cold_hold(self):
         _cache, compiled, owner = self._motif_fixture()
@@ -90,8 +88,8 @@ class AcceptedCorrectionRuntimeTests(unittest.TestCase):
         admission._EXECUTION_CACHE_OWNER.entries.clear()
         _RUNTIME_OWNER.clear()
         with shape_patch():
-            cold_cache = bind_accepted_correction_authority(self.run, AUTHORITY)
-        cold_owner = bind_motif_artifact_owner(cold_cache, compiled)
+            cold_cache = bind_accepted_execution_cache(self.run)
+            cold_owner = bind_motif_artifact_owner(cold_cache, compiled)
         self.assertEqual(cold_owner.queue.held_artifact_ids, ())
         self.assertIs(cold_owner.require(cold_cache, compiled), cold_owner.current_node)
 
@@ -107,7 +105,6 @@ class AcceptedCorrectionRuntimeTests(unittest.TestCase):
                 "PACKED_FRAME", owner,
                 lambda current, event, source_authority: _route(
                     current, event, source_authority),
-                AUTHORITY,
             )
             self.assertTrue(owner.require_row(case.row))
             host = AcceptedRuntimeHost(self.run)
@@ -139,7 +136,6 @@ class AcceptedCorrectionRuntimeTests(unittest.TestCase):
                 "PACKED_FRAME", cold_owner,
                 lambda current, event, source_authority: _route(
                     current, event, source_authority),
-                AUTHORITY,
             )
         with self.assertRaises(BilqisError) as cold_held:
             cold_owner.require_row(case.row)
@@ -157,7 +153,6 @@ class AcceptedCorrectionRuntimeTests(unittest.TestCase):
                 "PACKED_FRAME", owner,
                 lambda current, event, source_authority: _route(
                     current, event, source_authority),
-                AUTHORITY,
             )
             host = AcceptedRuntimeHost(self.run)
             forged_task = replace(
@@ -204,7 +199,6 @@ class AcceptedCorrectionRuntimeTests(unittest.TestCase):
             register_accepted_target(
                 self.run, cache.accepted_manifest_sha256, "TEST_CONTEXT", owner,
                 lambda current, event, source_authority: current,
-                AUTHORITY,
             )
             AcceptedRuntimeHost(self.run).record_context_transition(
                 case.previous, case.contexts)

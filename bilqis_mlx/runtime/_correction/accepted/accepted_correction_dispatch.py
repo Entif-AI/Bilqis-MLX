@@ -22,22 +22,20 @@ from .atlas_source_authority import SourceAuthorityRegistry
 
 
 class AcceptedCorrectionRuntime:
-    def __init__(self, run_dir: Path, manifest_sha256: str):
+    def __init__(self, run_dir: Path, manifest_sha256: str,
+                 registry: SourceAuthorityRegistry):
+        if not isinstance(registry, SourceAuthorityRegistry):
+            _invalid("BAMF_C09_CORRECTION_AUTHORITY_REQUIRED")
         self.run_dir = Path(run_dir)
         self.manifest_sha256 = manifest_sha256
-        self.registry: SourceAuthorityRegistry | None = None
+        self.registry = registry
         self.targets: dict[tuple[str, int], AcceptedCorrectionTarget] = {}
         self.lock = RLock()
         self._accepted_support_census = None
 
-    def bind_registry(self, registry: SourceAuthorityRegistry | None) -> None:
-        if registry is None:
-            return
-        if not isinstance(registry, SourceAuthorityRegistry):
-            _invalid("BAMF_C09_CORRECTION_AUTHORITY_REQUIRED")
-        if self.registry is not None and self.registry != registry:
-            _invalid("BAMF_C09_CORRECTION_AUTHORITY_DRIFT")
-        self.registry = registry
+    def _require_live(self) -> None:
+        from .accepted_correction_runtime import _RUNTIME_OWNER
+        _RUNTIME_OWNER.require(self)
 
     def _advance(
         self, target: AcceptedCorrectionTarget, event_id: str,
@@ -78,11 +76,10 @@ class AcceptedCorrectionRuntime:
 
     def register(
         self, kind: str, owner, apply,
-        registry: SourceAuthorityRegistry | None,
         seen_event_ids: tuple[str, ...] = (),
     ) -> None:
+        self._require_live()
         with self.lock:
-            self.bind_registry(registry)
             self._retire_divergent_aliases(kind, owner)
             key = (kind, id(owner))
             target = self.targets.get(key)
@@ -95,8 +92,7 @@ class AcceptedCorrectionRuntime:
             self._restore_branches(target)
             target.seen.update(seen_event_ids)
             self._replay(target)
-            if self.registry is not None:
-                target.reconcile_late_materializations(self.registry)
+            target.reconcile_late_materializations(self.registry)
             self._retry_deferred(target)
             self._retry_context_deferred(target)
             from .accepted_stale_replay_runtime import replay_stale_evidence
@@ -205,10 +201,9 @@ class AcceptedCorrectionRuntime:
 
     def deliver(
         self, event_id: str, event: CorrectionEvent,
-        registry: SourceAuthorityRegistry,
     ) -> None:
+        self._require_live()
         with self.lock:
-            self.bind_registry(registry)
             for target in tuple(self.targets.values()):
                 if target.owner is None or event_id in target.seen:
                     continue
@@ -218,10 +213,9 @@ class AcceptedCorrectionRuntime:
 
     def deliver_revalidation(
         self, event_id: str, frontier: RevalidationFrontier,
-        registry: SourceAuthorityRegistry,
     ) -> None:
+        self._require_live()
         with self.lock:
-            self.bind_registry(registry)
             for target in tuple(self.targets.values()):
                 if target.owner is None or event_id in target.seen:
                     continue
@@ -234,6 +228,7 @@ class AcceptedCorrectionRuntime:
             replay_stale_evidence(self)
 
     def deliver_context_invalidation(self, event_id: str, event) -> None:
+        self._require_live()
         with self.lock:
             for target in tuple(self.targets.values()):
                 if target.owner is None or event_id in target.seen:
@@ -243,10 +238,10 @@ class AcceptedCorrectionRuntime:
                 self._retry_context_deferred(target)
 
     def deliver_context_revalidation(
-        self, event_id: str, frontier, registry: SourceAuthorityRegistry,
+        self, event_id: str, frontier,
     ) -> None:
+        self._require_live()
         with self.lock:
-            self.bind_registry(registry)
             for target in tuple(self.targets.values()):
                 if target.owner is None or event_id in target.seen:
                     continue
