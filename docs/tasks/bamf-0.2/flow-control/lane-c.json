@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "56254f343904cecebf7fa067e76a937836673083",
-  "updated_at": "2026-11-08T01:45:00Z",
+  "updated_at": "2026-11-08T02:15:00Z",
   "exception": null,
   "items": [
     {
@@ -19,9 +19,9 @@
       "issue": 911,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "56254f343904cecebf7fa067e76a937836673083",
-      "summary": "#516 turn-in is accepted in reviewed unified, so #911 is active. Implement context-native C09->C10 requalification projection against durable accepted context custody and the A13-owned four-time identity contract being closed by #916; do not infer timestamps or alter the correction-backed v1 bridge.",
-      "resume_trigger": null,
+      "head_sha": "ec706edb96c6afc236383ee4a325d4e922dd3e47",
+      "summary": "C10 context-native requalification projection is implemented at semantic head ec706edb: accepted context-targeted C09 tasks project exactly once into the local Akasha outbox using durable context custody; live context revalidation flushes immediately and cold replay flushes pending context tasks. Historical v1 invalidations are never assigned fabricated time. Focused projection/correction/capability proof is green. Final unmocked custody witness and turn-in remain gated on #916/PR #918 arriving through reviewed unified; no sibling merge/cherry-pick.",
+      "resume_trigger": "Resume exact-head integration proof when #916 / PR #918 is merged into reviewed unified, then consume the accepted typed v2 four-time invalidation contract and run fresh #911 EGM.",
       "preserved_branch": "codex/911-c10-context-requalification-20261108"
     },
     {
