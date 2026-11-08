@@ -53,7 +53,9 @@ class AcceptedFeatureHistoryTests(FeatureLineageCase):
                 generation=generation,
                 parent_manifest_sha256=(
                     None if generation == 0 else manifests[generation - 1]),
-                extents=SimpleNamespace(factor_map_digest=root.digest),
+                extents=SimpleNamespace(
+                    factor_map_digest=root.digest,
+                    active_semantic_digest=template.extents.active_semantic_digest),
                 compiler_features=template.compiler_features,
                 provenance=SimpleNamespace(release_digest=root.semantic_release),
             )
