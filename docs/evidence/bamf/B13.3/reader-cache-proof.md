@@ -8,8 +8,12 @@ provenance. It is not the current implementation base.
 
 ## Current basis
 
-The replacement candidate consumes reviewed unified
-`210b29c275dd912801cc85b2bc0aeb7e01c9e7f9`.
+The replacement candidate now consumes reviewed unified
+`9795a3edff705ff6e44eec29dc60fed74d2abc74`. The B13.3 candidate was
+merge-forwarded after its clean round-3 EGM because reviewed unified advanced
+through #516. That merge changes C09/context-correction authority and Lane-A
+flow metadata; it does not change the B13.3 cache, publication, historical-v1
+reader, focused-test, or Microspenics source surfaces named below.
 
 The dependencies that previously kept #480 waiting are now integrated:
 
@@ -104,12 +108,14 @@ Fresh execution on the same exact candidate:
 The source bytes were read only. No archive copy, checkpoint publication, cache
 repair, optimizer step, or neural update occurred.
 
-The fresh neural/custody witnesses are bound to semantic/test head
+The original fresh neural/custody witnesses are bound to semantic/test head
 `9d1bc1c8c753031f0642c60b0f85c8e2d0edb812`. Later changes in this #480
 reconciliation branch are limited to this evidence receipt and Lane-B flow-control
-bookkeeping. They do not change production code, tests, fixtures, dependencies, or
-the Microspenics source input, so the passing evidence is reused under the
-repository's `TEST_EVIDENCE_REUSED` rule.
+bookkeeping until the merge-forward to reviewed unified `9795a3ed...`. The
+merge-forward changes no B13.3 production/test path or Microspenics source input.
+The focused B13.3 witnesses are therefore rerun on the merge-forwarded candidate;
+the earlier proof remains historical evidence rather than a substitute for that
+exact-head rerun.
 
 ## Acceptance disposition
 
@@ -128,8 +134,11 @@ instead of treating a synthetic direct save/load as production authority.
 No live Bilqis student, own AdamW, teacher, source release, or human-run state was
 mutated. Parent #372 retains its broader integration acceptance.
 
-Fresh whole-candidate pinned EGM and the repository pre-merge gate remain before
-#480 turn-in.
+Round-3 whole-candidate EGM passed at `248b30e70d52964363ed01d6fedf4ca15dacc0dd`
+with 0 Blockers / 0 Majors / 0 Nits from both required fresh Goldfish personas.
+Because reviewed unified subsequently advanced and was merge-forwarded, the final
+merge-forwarded candidate receives a new exact-head focused witness and Goldfish
+round before #480 turn-in.
 
 ## Current owner and verification map
 

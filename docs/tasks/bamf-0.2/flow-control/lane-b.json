@@ -131,8 +131,8 @@
       "issue": 480,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "210b29c275dd912801cc85b2bc0aeb7e01c9e7f9",
-      "summary": "B13.3 selected for current integration after #754 cache-transition remediation and #479 B13.2 custody merged; reconciling the preserved historical-reader/disposable-cache proof on current reviewed unified.",
+      "head_sha": "9795a3edff705ff6e44eec29dc60fed74d2abc74",
+      "summary": "B13.3 is EGM-Passed through round 3 and has been merge-forwarded to current reviewed unified 9795a3ed after #516; final exact-head focused proof and Goldfish recheck remain before turn-in.",
       "resume_trigger": null,
       "closed_pr": 734,
       "preserved_branch": "codex/480-b13-3-reconcile-20261108"
