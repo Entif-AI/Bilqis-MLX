@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "81a9e4e24fcca307cb0019db4e4c07737a8b744b",
-  "updated_at": "2026-11-08T07:37:20Z",
+  "updated_at": "2026-11-08T07:48:27Z",
   "exception": null,
   "items": [
     {
@@ -17,11 +17,11 @@
     },
     {
       "issue": 911,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "ae0b131817bcd1b7379ae38826d6d875ae4d2ef6",
-      "summary": "C10 context-native requalification consumes #916 and current reviewed unified 81a9e4e2. Fresh EGM round 1 found two bounded findings: TARGET_LOCAL task-membership authority and MECHANICAL_PROOF cold-replay isolation. Semantic repair ae0b1318 requires the exact context task in C09 pending_source_tasks before receipt resolution/minting; the literal cold witness removes the derived outbox before replay and requires reconstruction of the identical canonical event. The later unified advance is B13.3 documentation/flow state only and merged cleanly. Projection family: 42 passed / 3 expected skips / 139 subtests; owner ring: 24 passed / 17 subtests; differential structure/governance/smell/error-control/flow green. Correction-backed v1 and canonical Akasha identity/store remain unchanged.",
-      "resume_trigger": "Push the current-unified sync, replace EGM-Failed with EGM-Pending, and run fresh whole-candidate EGM round 2. If clean, turn in the lane-to-unified PR without self-merge.",
+      "pr": 921,
+      "state": "TURNED_IN",
+      "head_sha": "dbb9ba00724454d570f73b3e68d8d4d32b37fd98",
+      "summary": "C10 context-native requalification is turned in as PR #921 against reviewed unified 81a9e4e2. Fresh EGM round 2 passed with 0 Blockers / 0 Majors after round-1 repair ae0b1318 closed TARGET_LOCAL task-membership authority and MECHANICAL_PROOF cold-replay isolation. The projector now requires exact C09 pending_source_tasks membership before durable receipt resolution/minting; the literal cold witness deletes the derived outbox and reconstructs the identical canonical Akasha event. Projection family: 42 passed / 3 expected skips / 139 subtests; owner ring: 24 passed / 17 subtests; differential leaf 7/7 PASS; structure/governance/smell/error-control/legacy-trainer/flow green. Correction-backed v1 and canonical Akasha identity/store remain unchanged.",
+      "resume_trigger": "Human review/merge PR #921 into codex/bamf-unified-base-20261028. Do not self-merge. After merge, verify unified receipt, close #911 if not closed automatically, and advance Lane C.",
       "preserved_branch": "codex/911-c10-context-requalification-20261108"
     },
     {
