@@ -895,4 +895,10 @@ to `EGM-Passed` on the human-authorized post-cap targeted-review evidence above.
 `694ba90f55c1bc5fe1b98dc1cae19134d505947a`. The following turn-in commits modify
 only this receipt and the Lane B flow-control record; they do not alter production,
 tests, fixtures, generators, dependencies, harnesses or runtime configuration.
-Hosted PR checks are the remaining integration gate. Merge authority remains human-only.
+Hosted verification on PR head `3e70b2c17b4fa9a243ea59a319279ba42dcc467d`
+passed `semantic-abi-integrity`, `portable-core` and `portable`; the two semantic-profile
+jobs skipped under their normal selectors. GitHub reported PR #913 `MERGEABLE` and
+`CLEAN` against exact reviewed-unified base
+`d4bad39a32a80acbffdb9f891a906892ab2e9fab`. This final lifecycle update changes
+only receipt/flow-control bookkeeping and records #697 as `TURNED_IN`.
+Merge authority remains human-only.
