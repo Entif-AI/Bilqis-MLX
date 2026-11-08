@@ -4,12 +4,14 @@ import unittest
 
 import numpy as np
 
-from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
+from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
+from bilqis_mlx.semantics.context_eligibility import C09ContextInvalidation
 from bilqis_mlx.runtime.atlas_cache_codec import (
     HEAD_WIDTH, CacheBinding, CacheQualityObservation, CacheQualityPolicy,
-    apply_cache_correction, bind_cache_artifact_owner, codec_manifest,
+    apply_cache_correction, bind_cache_artifact_owner, codec_manifest, decode_cache,
     encode_cold_cache, interactive_cache_inference,
 )
+from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import (
     CACHE_AUTHORITY, OWNER_ID, PUBLIC_KEY_HEX, install_test_owner,
 )
@@ -77,6 +79,41 @@ class ExactCacheArtifactOwnerTests(unittest.TestCase):
         self.assertEqual(progress.queue.held_artifact_ids, ())
         accepted = self.infer(self.owner)
         self.assertEqual((accepted.value, accepted.used_cache), ("CACHE", True))
+
+    def test_context_invalidation_reverse_reaches_exact_cache(self):
+        context_ref = DependencyRef(
+            DependencyKind.TIME,
+            "time:asof:context:" + self.binding.context_eligibility_sha256,
+        )
+        self.assertIn(context_ref, self.owner.current_node.immediate_dependencies)
+        event = C09ContextInvalidation(
+            old_context_digest=self.binding.context_eligibility_sha256,
+            new_context_digest="f" * 64,
+            reason_codes=("BAMF_CONTEXT_APPROVED_VIEW_CHANGED",),
+            principal_id="principal:test",
+            tenant_id="tenant:test",
+            scope="scope:test",
+            semantic_release=self.binding.semantic_release_sha256,
+            policy_epoch=1,
+            rights_epoch=1,
+            correction_generation=1,
+            causal_prefix_end=1,
+            invalidated_handles=("source:test",),
+        )
+        self.assertEqual(
+            tuple(node.artifact_id
+                  for node in self.owner.index.direct_dependents(context_ref)),
+            (self.owner.current_node.artifact_id,),
+        )
+
+    def test_public_decode_cannot_bypass_held_exact_cache_owner(self):
+        event = _event(self.owner.rights_dependency)
+        apply_cache_correction(
+            CACHE_AUTHORITY, self.artifact, self.binding, event, AUTHORITY)
+
+        with self.assertRaises(BilqisError) as caught:
+            decode_cache(CACHE_AUTHORITY, self.artifact, self.binding)
+        self.assertEqual(caught.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
 
     def test_unrelated_correction_cannot_clear_existing_cache_hold(self):
         event = _event(self.owner.rights_dependency)

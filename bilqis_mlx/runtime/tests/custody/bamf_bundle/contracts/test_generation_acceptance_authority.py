@@ -2,6 +2,11 @@
 from ._generation_acceptance_support import *
 import bilqis_mlx.runtime.bamf_bundle.feature_authority as feature_authority
 import bilqis_mlx.runtime.bamf_bundle.publication as publication
+import bilqis_mlx.runtime.bamf_bundle._feature_acceptance as feature_acceptance
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.genesis_authority_fixtures import (
+    frozen_snapshot as genesis_frozen_snapshot,
+    source_features as genesis_source_features,
+)
 
 
 class GenerationAcceptanceAuthorityTests(GenerationAcceptanceFixture, unittest.TestCase):
@@ -109,7 +114,7 @@ class GenerationAcceptanceAuthorityTests(GenerationAcceptanceFixture, unittest.T
                       "load_pinned_atlas_snapshot", side_effect=lambda selection: selection):
             with self.assertRaises(BilqisError) as failure:
                 read_accepted_generation_feature_receipt(
-                    self.run / "bamf-state.json", "/artifact")
+                    self.run / "bamf-state.json")
         self.assertEqual(
             failure.exception.context["reason"],
             "BAMF_GENERATION_ACCEPTANCE_MISSING")
@@ -157,8 +162,8 @@ class GenerationAcceptanceAuthorityTests(GenerationAcceptanceFixture, unittest.T
                         "BAMF_GENERATION_ACCEPTANCE_DRIFT")
 
     def test_authoritative_successor_reads_reject_run_identity_drift(self):
-        features = source_features()
-        source = self.feature_source(features)
+        features = genesis_source_features()
+        source = self.source()
         self.publish(source, acceptance=self.binding(source))
         pointer_path = self.run / "bamf-state.json"
         real_load = publication.load_bamf_bundle
@@ -182,7 +187,7 @@ class GenerationAcceptanceAuthorityTests(GenerationAcceptanceFixture, unittest.T
                 failure.exception.context["reason"],
                 "BAMF_RUN_IDENTITY_DRIFT")
 
-        real_feature_load = feature_authority.load_bamf_bundle
+        real_feature_load = feature_acceptance.load_bamf_bundle
 
         def drifted_feature_load(path, *, expected_manifest_sha256=None):
             student = real_feature_load(
@@ -196,14 +201,16 @@ class GenerationAcceptanceAuthorityTests(GenerationAcceptanceFixture, unittest.T
             return student
 
         with shape_patch(), \
-                patch.object(feature_authority, "load_bamf_bundle",
+                patch.object(feature_acceptance, "load_bamf_bundle",
                              side_effect=drifted_feature_load), \
+                patch.object(feature_authority, "resolve_atlas_artifact_selection",
+                             side_effect=lambda identity: identity), \
                 patch.object(feature_authority, "build_feature_manifest",
                              return_value=features), \
                 patch.object(feature_authority, "load_pinned_atlas_snapshot",
-                             side_effect=lambda selection: selection):
+                             side_effect=genesis_frozen_snapshot):
             with self.assertRaises(BilqisError) as failure:
-                read_accepted_generation_feature_receipt(pointer_path, "/artifact")
+                read_accepted_generation_feature_receipt(pointer_path)
             self.assertEqual(
                 failure.exception.context["reason"],
                 "BAMF_RUN_IDENTITY_DRIFT")

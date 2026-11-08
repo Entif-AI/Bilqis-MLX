@@ -100,18 +100,25 @@ def solve_task(
             and _goal_allowed(cached.goal, task, budget))
 
     def retain_validated(proposal: NeuralProposal) -> None:
-        context.operator_composition_artifact_owner.remember(
-            QualifiedComposition(
-                proposal.goal,
-                source_digest,
-                generation.generation_digest,
-                binding.frontier.rights_epoch,
-                binding.frontier.correction_generation,
-                proposal.proposal_receipt_sha256,
-            ),
+        composition = QualifiedComposition(
+            proposal.goal,
+            source_digest,
+            generation.generation_digest,
+            binding.frontier.rights_epoch,
+            binding.frontier.correction_generation,
+            proposal.proposal_receipt_sha256,
+        )
+        retained = context.operator_composition_artifact_owner.remember(
+            composition,
             binding,
             max_cached_candidates=budget.max_cached_candidates,
         )
+        if retained:
+            # remember() can install correction custody for a composition that
+            # did not exist when the correction arrived. Recheck before the
+            # already-computed answer is allowed to escape this solve turn.
+            context.operator_composition_artifact_owner.require(
+                composition, binding)
 
     def execute_proposal(
         proposal: NeuralProposal | None, request: NeuralRequest,

@@ -1,5 +1,4 @@
 """Accepted-run production ingress for post-remediation stale replay faults."""
-from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -24,10 +23,10 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
 from bilqis_mlx.runtime.cognitive_solver import QualifiedComposition, SolveContext
 from bilqis_mlx.runtime.tests.capability.factory.solver_helpers import _fixture
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    candidate, parent_state, publish_candidate, retention_decision, shape_patch,
+    candidate, publish_genesis, retention_decision, shape_patch,
 )
-from bilqis_mlx.runtime.tests.correction.test_atlas_capability_support_owner import (
-    SOURCE_ROW, TARGET, _source_qualified_state,
+from bilqis_mlx.runtime.tests.correction.capability_support_owner_support import (
+    SOURCE_ROW, TARGET, source_qualified_state,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
     AUTHORITY, _event, _result,
@@ -47,29 +46,26 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
         self.environment = patch.dict(
             os.environ, {"BILQIS_DATA_PLANE": str(self.root / "plane.sqlite3")})
         self.environment.start()
-        source = candidate(parent_state())
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            publish_candidate(self.run, source)
+            publish_genesis(self.run)
 
     def tearDown(self):
         self.environment.stop()
         self.temporary.cleanup()
 
     def _publish_source_qualified_support(self, run):
-        _source_parent, transaction, retained, _authority = _source_qualified_state()
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            publish_candidate(run, candidate(parent_state()))
-            parent = load_accepted_generation(run)
-            retained = replace(
-                retained, allocations=parent.retained_state.allocations,
-                custody=parent.retained_state.custody)
-            bundle = derive_successor_bundle(
-                parent, retained,
-                parent_manifest_sha256=bind_accepted_execution_cache(
-                    run).accepted_manifest_sha256,
-                delivery_events=({"event": "FIXTURE_SOURCE_QUALIFIED"},))
-            decision = retention_decision(
-                parent=parent.retained_state, retained=retained)
+            publish_genesis(run)
+            accepted_parent = load_accepted_generation(run)
+            parent_manifest = bind_accepted_execution_cache(
+                run).accepted_manifest_sha256
+        parent, transaction, retained, _authority = source_qualified_state(
+            accepted_parent.retained_state, extents=accepted_parent.extents)
+        bundle = derive_successor_bundle(
+            accepted_parent, retained, parent_manifest_sha256=parent_manifest,
+            delivery_events=({"event": "FIXTURE_SOURCE_QUALIFIED"},))
+        decision = retention_decision(parent=parent, retained=retained)
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             published = accept_and_publish(
                 run, bundle, retained, decision=decision,
                 feature_sha256=bundle.extents.factor_map_digest,
@@ -302,9 +298,8 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
 
         with shape_patch():
             accepted_parent = load_accepted_generation(run)
-        parent, transaction, retained, _authority = _source_qualified_state(
-            accepted_parent.retained_state,
-            extents=accepted_parent.extents,
+        parent, transaction, retained, _authority = source_qualified_state(
+            accepted_parent.retained_state, extents=accepted_parent.extents,
             capability=TARGET,
             source_row="source:capability-support:requalified",
             source_family="source-family:capability-support:requalified",

@@ -76,6 +76,7 @@ class FactoryCandidateStep:
 
 def _frame_stats(compiled_batch) -> FrameStats:
     row = compiled_batch.compiled.compiled.rows[0]
+    compiled_batch.compiled.packed_frame_artifact_owner.require_row(row)
     closures = tuple(
         position for position in row.positions
         if position.kind is PositionKind.CLOSURE)

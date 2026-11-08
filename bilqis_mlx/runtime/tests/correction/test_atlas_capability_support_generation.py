@@ -15,8 +15,8 @@ from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     accept_and_publish, load_accepted_generation,
 )
-from bilqis_mlx.runtime.tests.correction.test_atlas_capability_support_owner import (
-    TARGET, _source_qualified_state,
+from bilqis_mlx.runtime.tests.correction.capability_support_owner_support import (
+    TARGET, source_qualified_state,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     candidate, parent_state, retention_decision, shape_patch,
@@ -45,7 +45,7 @@ class CapabilitySupportGenerationTests(unittest.TestCase):
                 spec=parent_bundle.topology,
                 extents=parent_bundle.extents,
             )
-        parent, transaction, retained, authority = _source_qualified_state(
+        parent, transaction, retained, authority = source_qualified_state(
             parent,
             generation_binding=parent_generation,
         )

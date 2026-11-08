@@ -45,7 +45,7 @@ class FactoryTaskAuthorityTests(unittest.TestCase):
             answer_families=(AnswerFamily("boolean_operator", BOOLEAN_OPERATORS),),
         )
         row = {"id": "row-1", "capability": "A.IDENTITY", "tokens": [1],
-               "gold": "TRUE"}
+               "source_id": "source:shared-answer-premise", "gold": "TRUE"}
         release = "a" * 64
         with self.assertRaises(BilqisError):
             lower_answer_choice_task_goal(
@@ -58,6 +58,10 @@ class FactoryTaskAuthorityTests(unittest.TestCase):
         self.assertEqual(
             tuple(item.typed.value for item in binary_binding.operands),
             (False, True))
+        self.assertEqual(
+            {item.source_reference for item in binary_binding.operands},
+            {"source:shared-answer-premise"},
+        )
 
         operator_goal, operator_binding = lower_answer_choice_task_goal(
             {"id": "row-2", "capability": "B.IDBOOLOPS", "tokens": [1]},

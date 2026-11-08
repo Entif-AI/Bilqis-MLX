@@ -6,7 +6,9 @@ from pathlib import Path
 
 from .accepted_correction_ledger import (
     accepted_correction_id, accepted_corrections, append_record,
-    context_invalidation_record, correction_record, revalidation_record,
+    CONTEXT_INVALIDATION_EVENT, context_invalidation_record,
+    context_revalidation_record, correction_record, read_records,
+    revalidation_record,
 )
 from .accepted_stale_replay_ledger import (
     derived_claim_record, remediation_record,
@@ -18,7 +20,13 @@ from .accepted_correction_runtime import (
 from .atlas_revalidation_common import _invalid
 from .atlas_revalidation_evidence import CorrectionEvent, RevalidationFrontier
 from .atlas_source_authority import SourceAuthorityRegistry
+from .context_revalidation import (
+    ContextRevalidatedArtifact, ContextRevalidationFrontier,
+)
 from .atlas_stale_replay import DerivedClaim, RemediationReceipt
+from bilqis_mlx.semantics.cognitive_dependencies import (
+    DependencyKind, DependencyRef,
+)
 
 
 @dataclass(frozen=True)
@@ -57,6 +65,12 @@ class AcceptedRuntimeHost:
     def record_context_transition(self, previous, contexts, *caller_state):
         return record_accepted_context_transition(
             self.run_dir, previous, contexts, *caller_state)
+
+    def record_context_revalidation(
+        self, frontier: ContextRevalidationFrontier,
+    ) -> str:
+        return record_accepted_context_revalidation(
+            self.run_dir, frontier, self.registry)
 
     def record_revalidation(self, frontier: RevalidationFrontier) -> str:
         return record_accepted_revalidation(self.run_dir, frontier, self.registry)
@@ -174,6 +188,47 @@ def record_accepted_revalidation(
     return record["event_id"]
 
 
+def record_accepted_context_revalidation(
+    run_dir: Path, frontier: ContextRevalidationFrontier,
+    registry: SourceAuthorityRegistry,
+) -> str:
+    """Persist source-signed context recomputation without inventing a correction."""
+    from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
+
+    if (not isinstance(frontier, ContextRevalidationFrontier)
+            or not frontier.results):
+        _invalid("BAMF_C09_CONTEXT_REVALIDATION_FRONTIER_REQUIRED")
+    if not isinstance(registry, SourceAuthorityRegistry):
+        _invalid("BAMF_C09_CORRECTION_AUTHORITY_REQUIRED")
+    run_dir = Path(run_dir)
+    cache = bind_accepted_execution_cache(run_dir)
+    records = read_records(run_dir, cache.accepted_manifest_sha256)
+    invalidations = {
+        item["context_invalidation"]["context_event_id"]: item
+        for item in records
+        if item["event"] == CONTEXT_INVALIDATION_EVENT
+    }
+    for result in frontier.results:
+        invalidation = invalidations.get(result.context_event_id)
+        if (invalidation is None
+                or invalidation["event_id"]
+                != result.context_invalidation_receipt_sha256):
+            _invalid("BAMF_C09_CONTEXT_REVALIDATION_INVALIDATION_MISSING")
+        registry.verify_detached(
+            result.source_owner,
+            DependencyRef(DependencyKind.ARTIFACT, result.artifact_id),
+            result.source_signature_hex,
+            result.signing_bytes(),
+        )
+    record = context_revalidation_record(
+        cache.accepted_manifest_sha256, frontier)
+    append_record(run_dir, cache.accepted_manifest_sha256, record)
+    runtime(run_dir, cache.accepted_manifest_sha256).deliver_context_revalidation(
+        record["event_id"], frontier, registry)
+    object.__setattr__(cache, "_correction_registry", registry)
+    return record["event_id"]
+
+
 def record_accepted_remediation(
     run_dir: Path, remediation: RemediationReceipt,
     registry: SourceAuthorityRegistry,
@@ -226,9 +281,11 @@ def record_accepted_derived_claim(
 
 __all__ = (
     "AcceptedRuntimeHost", "_RUNTIME_OWNER", "accepted_correction_id",
-    "accepted_corrections",
+    "accepted_corrections", "ContextRevalidatedArtifact",
+    "ContextRevalidationFrontier",
     "bind_accepted_registry", "record_accepted_correction",
     "record_accepted_context_transition",
+    "record_accepted_context_revalidation",
     "record_accepted_derived_claim", "record_accepted_remediation",
     "record_accepted_revalidation", "register_accepted_target",
     "register_compiled_batch", "register_solve_context",

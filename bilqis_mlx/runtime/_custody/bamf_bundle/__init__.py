@@ -3,7 +3,7 @@ from .codec import load_bamf_bundle, save_bamf_bundle
 from .feature_authority import (
     AcceptedGenerationFeatureReceipt, AuthenticatedCandidateFeatureContext,
     authenticate_bamf_candidate_feature_context, authenticate_bamf_candidate_features,
-    read_accepted_generation_feature_receipt,
+    read_accepted_generation_feature_lineage, read_accepted_generation_feature_receipt,
     verify_accepted_generation_feature_receipt,
 )
 from .publication import (
@@ -35,7 +35,8 @@ __all__ = (
     "load_bamf_generation_authority", "record_bamf_rejection",
     "PackageImportTransition",
     "AcceptedGenerationFeatureReceipt", "AuthenticatedCandidateFeatureContext",
-    "authenticate_bamf_candidate_feature_context", "read_accepted_generation_feature_receipt",
+    "authenticate_bamf_candidate_feature_context", "read_accepted_generation_feature_lineage",
+    "read_accepted_generation_feature_receipt",
     "authenticate_bamf_candidate_features",
     "verify_accepted_generation_feature_receipt",
     "BamfRunIdentity", "InitialGenerationBinding", "PreparedInitialGeneration",

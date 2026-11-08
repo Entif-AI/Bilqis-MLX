@@ -7,11 +7,17 @@ from bilqis_mlx.learning.atlas_engram import MotifManifest
 from bilqis_mlx.learning.frame_encoder import CompiledEncoderInput
 from bilqis_mlx.learning.tests.test_frame_encoder import FrameEncoderTests
 from bilqis_mlx.runtime.atlas_motif_owner import MotifArtifactOwner
-from bilqis_mlx.runtime.atlas_revalidation import apply_motif_correction
+from bilqis_mlx.runtime.atlas_revalidation import (
+    SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
+    apply_motif_correction,
+)
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
     _issue_accepted_execution_cache, bind_motif_artifact_owner,
 )
-from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event, _result
+from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
+    AUTHORITY, _SOURCE_OWNER, _TEST_PUBLIC, _event, _result,
+)
+from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
 
 
 class MotifArtifactOwnerTests(unittest.TestCase):
@@ -55,6 +61,41 @@ class MotifArtifactOwnerTests(unittest.TestCase):
         self.assertTrue(frames)
         self.assertTrue(all(
             (node.impact, node.exigency) == (3, 3) for node in frames))
+
+    def test_packed_frames_declare_frame_compiler_operator_dependency(self):
+        frames = tuple(
+            node for node in self.owner.index.nodes
+            if node.kind.value == "PACKED_FRAME")
+        self.assertTrue(frames)
+        for node in frames:
+            operator_refs = tuple(
+                ref.key for ref in node.immediate_dependencies
+                if ref.kind is DependencyKind.OPERATOR)
+            self.assertEqual(
+                operator_refs,
+                ("operator:frame-compiler:bilqis.compiled-frame-batch/v2",),
+            )
+
+    def test_frame_compiler_correction_holds_packed_frame_before_motif_use(self):
+        dependency = next(
+            ref for node in self.owner.index.nodes
+            if node.kind.value == "PACKED_FRAME"
+            for ref in node.immediate_dependencies
+            if ref.kind is DependencyKind.OPERATOR)
+        authority = SourceAuthorityRegistry((SourceAuthorityKey(
+            _SOURCE_OWNER,
+            _TEST_PUBLIC,
+            (SourceAuthorityScope(
+                DependencyKind.OPERATOR, "operator:frame-compiler:"),),
+        ),))
+        apply_motif_correction(
+            self.cache, self.compiled, _event(dependency), authority)
+        with self.assertRaises(BilqisError) as caught:
+            self.owner.require(self.cache, self.compiled)
+        self.assertIn(caught.exception.context["reason"], (
+            "BAMF_C09_ARTIFACT_HELD",
+            "BAMF_C09_ARTIFACT_DEPENDENCY_HELD",
+        ))
 
     def test_equal_input_revalidation_stops_before_motif(self):
         source = self.owner.source_dependencies[0]

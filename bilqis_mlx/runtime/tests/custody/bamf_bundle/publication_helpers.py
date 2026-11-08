@@ -154,18 +154,26 @@ def publish_candidate(run_dir, bundle):
             custody=parent.retained_state.custody)
         extents = replace(
             parent.extents,
-            active_semantic_digest=bundle.extents.active_semantic_digest)
+            active_semantic_digest=bundle.extents.active_semantic_digest,
+            factor_map_digest=bundle.extents.factor_map_digest)
         semantic = {
             **parent.semantic_abi,
             "active_set_sha256": bundle.semantic_abi["active_set_sha256"],
         }
+        provenance = replace(
+            parent.provenance, release_digest=bundle.provenance.release_digest)
+        correction = {
+            **bundle.correction_frontier,
+            "source_identity": provenance.source_identity,
+            "release_digest": provenance.release_digest,
+        }
         bundle = replace(
             bundle, implementation_sha256=parent.implementation_sha256,
             topology=parent.topology, extents=extents,
-            retained_state=retained, provenance=parent.provenance,
+            retained_state=retained, provenance=provenance,
             semantic_abi=semantic,
-            compiler_features=dict(parent.compiler_features),
-            correction_frontier=dict(parent.correction_frontier),
+            compiler_features=dict(bundle.compiler_features),
+            correction_frontier=correction,
             teacher_state=dict(parent.teacher_state),
             evaluation_contract=dict(parent.evaluation_contract),
             run_identity=parent.run_identity)

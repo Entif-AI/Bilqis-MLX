@@ -29,6 +29,9 @@ from bilqis_mlx.runtime.atlas_training_contracts import (
 )
 from bilqis_mlx.runtime.atlas_training_authority import _issue as issue_training_authority
 from bilqis_mlx.runtime.source_execution import source_content_digest
+from bilqis_mlx.semantics.cognitive_dependencies import (
+    DependencyKind, DependencyRef,
+)
 
 
 class CandidateTransactionTests(TestCase):
@@ -96,7 +99,13 @@ class CandidateTransactionTests(TestCase):
         source_row = {"id": "row-1", "capability": "A.TEST", "payload": "fixture"}
         delivery = BamfDeliveryProvenance(
             "row-1", source_content_digest((source_row,)), "source-1", "A.TEST", "op-1", (), 1, 1, None, 0,
-            "family-1", "episode-1")
+            "family-1", "episode-1", tuple(sorted((
+                DependencyRef(DependencyKind.SOURCE, "row-1"),
+                DependencyRef(DependencyKind.OPERATOR, "operator:op-1"),
+                DependencyRef(DependencyKind.RELEASE, "source-release:" + "4" * 64),
+                DependencyRef(DependencyKind.POLICY, "policy:fixture"),
+                DependencyRef(DependencyKind.RIGHTS, "rights:fixture"),
+            ))))
         batch = _issue_training_batch(
             "4" * 64, "5" * 64, content_digest((source_row,)), "A.TEST",
             (BamfTrainingRow(None, None, None, delivery),))

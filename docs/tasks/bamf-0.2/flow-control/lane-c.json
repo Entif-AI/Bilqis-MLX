@@ -1,10 +1,27 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "cc48ac40d875f0c2ae8ffbdc70001dbfc4815334",
-  "updated_at": "2026-11-07T19:33:00Z",
+  "observed_unified": "d4bad39a32a80acbffdb9f891a906892ab2e9fab",
+  "updated_at": "2026-11-08T01:24:45Z",
   "exception": null,
   "items": [
+    {
+      "issue": 516,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "a8193012ddc8758e500db0133c51321b8b4fa8fd",
+      "summary": "C09.1 semantic repair candidate a8193012 closes the fresh 75a81cb6 structural/readiness Majors by enforcing source-qualified training-authority custody at B13 acceptance and splitting the retained-model C09 witness below repository module-size limits. Exact focused proof, structure, mirrors, flow control and changed-file quality are green; the branch remains ACTIVE only for exact-head qualification and EGM turn-in.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/516-c09-1-egm-remediation-20261107"
+    },
+    {
+      "issue": 911,
+      "pr": null,
+      "state": "WAITING",
+      "head_sha": null,
+      "summary": "Context-driven learned-support requalification reaches a C09-local targeted task, but canonical C10 projection lacks source-owned four-time identity and must not fabricate it inside #516.",
+      "resume_trigger": "Select #911 after #516 turn-in, or earlier only if the C10 owner supplies an accepted context-native temporal identity contract that makes the projection seam dependency-ready."
+    },
     {
       "issue": 347,
       "pr": null,

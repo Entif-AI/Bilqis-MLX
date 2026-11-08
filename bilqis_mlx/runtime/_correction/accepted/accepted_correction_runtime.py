@@ -22,8 +22,11 @@ def refresh_owner_corrections(owner) -> None:
         with retained_runtime.lock:
             retained_runtime._replay(target)
             if retained_runtime.registry is not None:
+                target.reconcile_late_materializations(
+                    retained_runtime.registry)
                 target.activate_pending(retained_runtime.registry)
                 retained_runtime._retry_deferred(target)
+                retained_runtime._retry_context_deferred(target)
                 from .accepted_stale_replay_runtime import replay_persisted_faults
                 replay_persisted_faults(retained_runtime)
 

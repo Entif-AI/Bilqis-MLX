@@ -73,6 +73,21 @@ class GenerationAcceptancePublicationTests(GenerationAcceptanceFixture, unittest
         with self.assertRaises(BilqisError):
             self.publish(source, acceptance=parsed)
 
+    def test_v3_source_anchor_record_remains_readable_but_not_authoritative(self):
+        source = self.source()
+        issued = self.binding(source)
+        record = issued.to_record()
+        record["schema_version"] = PREVIOUS_SOURCE_ACCEPTANCE_SCHEMA
+        record["source_anchors"] = []
+        record["binding_sha256"] = hashlib.sha256(canonical({
+            key: value for key, value in record.items()
+            if key != "binding_sha256"
+        })).hexdigest()
+        parsed = AcceptedCandidateBinding.from_record(record)
+        self.assertEqual(parsed.schema_version, PREVIOUS_SOURCE_ACCEPTANCE_SCHEMA)
+        with self.assertRaises(BilqisError):
+            self.publish(source, acceptance=parsed)
+
     def test_replay_cannot_replace_immutable_acceptance_evidence(self):
         source = self.source()
         first = self.publish(source, acceptance=self.binding(source))
@@ -103,7 +118,7 @@ class GenerationAcceptancePublicationTests(GenerationAcceptanceFixture, unittest
                       "load_pinned_atlas_snapshot", side_effect=lambda selection: selection):
             with self.assertRaises(BilqisError) as failure:
                 read_accepted_generation_feature_receipt(
-                    self.run / "bamf-state.json", "/artifact")
+                    self.run / "bamf-state.json")
         self.assertEqual(failure.exception.context["reason"],
                          "BAMF_GENERATION_ACCEPTANCE_DRIFT")
 
@@ -126,7 +141,7 @@ class GenerationAcceptancePublicationTests(GenerationAcceptanceFixture, unittest
                       "load_pinned_atlas_snapshot", side_effect=lambda selection: selection):
             with self.assertRaises(BilqisError) as failure:
                 read_accepted_generation_feature_receipt(
-                    self.run / "bamf-state.json", "/artifact")
+                    self.run / "bamf-state.json")
         self.assertEqual(failure.exception.context["reason"],
                          "BAMF_GENERATION_ACCEPTANCE_DRIFT")
 
@@ -148,7 +163,7 @@ class GenerationAcceptancePublicationTests(GenerationAcceptanceFixture, unittest
                 patch("bilqis_mlx.runtime.bamf_bundle.feature_authority."
                       "load_pinned_atlas_snapshot", side_effect=lambda selection: selection):
             with self.assertRaises(BilqisError):
-                read_accepted_generation_feature_receipt(pointer_path, "/artifact")
+                read_accepted_generation_feature_receipt(pointer_path)
 
 
 if __name__ == "__main__":

@@ -33,6 +33,8 @@ _ISSUER = object()
 class CapabilitySupportArtifactOwner:
     """Stateful before-read hold owner for one source-qualified learned capability."""
 
+    _context_revalidation_materializes_metadata = True
+
     def __init__(self, *args, **kwargs):
         _invalid("BAMF_C09_CAPABILITY_SUPPORT_OWNER_CALLER_CONSTRUCTION_FORBIDDEN")
 
@@ -69,6 +71,22 @@ class CapabilitySupportArtifactOwner:
     @property
     def index(self) -> DependencyIndex:
         return self._index
+
+    def _install_context_revalidation(
+        self, index: DependencyIndex, transition,
+    ) -> bool:
+        if (not isinstance(index, DependencyIndex)
+                or {node.artifact_id for node in index.nodes}
+                != {node.artifact_id for node in self._index.nodes}):
+            _invalid("BAMF_C09_CONTEXT_REVALIDATION_INDEX_DRIFT")
+        self._index = index
+        if transition.changed:
+            from bilqis_mlx.runtime.atlas_requalification import (
+                mark_context_affected_capability,
+            )
+            self.install_requalification(
+                mark_context_affected_capability(self.ledger, transition))
+        return True
 
     @property
     def queue(self) -> RevalidationQueue | None:
@@ -173,7 +191,7 @@ def load_capability_support_owner(
     run_dir: Path, capability_id: str,
     authority_registry: SourceAuthorityRegistry | None = None,
 ) -> CapabilitySupportArtifactOwner:
-    """Materialize current support only from accepted B13 custody and v3 source anchors."""
+    """Materialize current support only from accepted B13 lossless source anchors."""
     run_dir = Path(run_dir)
     manifest_sha256, support, node, generation_bindings = load_current_support(
         run_dir, capability_id)

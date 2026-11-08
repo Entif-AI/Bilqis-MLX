@@ -3127,3 +3127,34 @@ live worktree are not.
 redirected into a snapshot without changing its execution environment mid-witness.
 Such an in-flight v1 run keeps its relevant source surface frozen until completion;
 all newly launched runs use the v2 snapshot contract.
+
+## ADR-136 | 2026-11-07 | Semantic artifact authority is pathless and portable
+
+**Status:** Accepted by direct owner correction on 2026-11-07 while resolving the
+#697 B13.5 capped-review multi-release replay finding.
+
+**Problem:** B13 accepted-generation feature replay carried the correct immutable
+Atlas bundle/release/source identities but still required a caller-supplied local
+`artifact_path`. That makes a host pathname participate in historical authority,
+prevents one argument from naming multiple historical releases, and makes exact
+replication brittle when custody is copied to another machine or mounted under a
+different root.
+
+**Decision:** Filesystem paths are storage placement, never semantic identity or
+authority. Portable receipts and accepted historical lineage bind immutable
+content/source identities. A machine-local artifact resolver may translate those
+identities to whatever local path currently contains the bytes, but that location
+is below the authority boundary and is not part of the semantic receipt. Every
+resolved Atlas artifact must still pass the existing registered A01 source pin and
+exact bundle, release and source-bundle identity checks before use.
+
+B13 historical replay must resolve each generation's own source identity rather
+than reuse one caller path across the lineage. Copying an accepted run and its
+required immutable source custody to a different root or machine must reproduce
+the same accepted-generation feature receipt and content identity. Missing,
+substituted, corrupted or unregistered source content fails closed.
+
+**Scope:** This does not transfer A02/#399 authority into B13, authorize new
+semantic admission, or change neural state. Reuse existing content-addressed/Data
+Plane storage primitives where they fit; do not create a second path-as-authority
+registry under another name.

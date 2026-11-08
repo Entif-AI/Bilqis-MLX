@@ -81,6 +81,7 @@ def lower_answer_choice_task_goal(
         "source:operator:" + operator_id,
         operator_grant_digest(spec), release, scope)]
     row_id = row["id"]
+    source_identity = str(row.get("source_id") or row_id)
     for value in family.values:
         payload = (value == "TRUE" if type_name == "Boolean"
                    else int(value) if type_name == "Number"
@@ -92,7 +93,7 @@ def lower_answer_choice_task_goal(
         typed = TypedValue(type_name, payload, release, handle)
         source = SourceOperand(
             typed, SourceKind.TASK_VISIBLE,
-            "source:answer-domain:" + scope,
+            source_identity,
             len(row.get("tokens", ())))
         operands.append(source)
         refs.append(DAGOperand(RefKind.LITERAL, type_name, source_handle=handle))

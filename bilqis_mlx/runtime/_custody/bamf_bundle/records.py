@@ -17,6 +17,7 @@ from .package_import_transition import (
 from .sidecar_contracts import validate_identity_sidecars
 
 BAMF_BUNDLE_SCHEMA = "bilqis.mlx.bamf-generation-bundle/v2"
+ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA = "bilqis.mlx.bamf-generation-bundle/v3"
 LEGACY_BAMF_POINTER_SCHEMA = "bilqis.mlx.bamf-generation-pointer/v1"
 BAMF_POINTER_SCHEMA = "bilqis.mlx.bamf-generation-pointer/v2"
 TRANSITION_SCHEMA = "bilqis.mlx.bamf-generation-transition/v1"
@@ -58,7 +59,7 @@ class BamfBundleCandidate:
 
 @dataclass(frozen=True)
 class CompleteStudent(BamfBundleCandidate):
-    """Cold-loaded immutable v2 generation with exact B12 retained custody."""
+    """Cold-loaded immutable generation with exact B12 retained custody."""
 
 
 @dataclass(frozen=True)
@@ -74,20 +75,26 @@ class BamfGenerationManifest:
     optimizer: Mapping
     transition: Mapping
     sidecars: Mapping
+    parent_acceptance_sha256: str | None = None
     schema: str = BAMF_BUNDLE_SCHEMA
 
     def __post_init__(self) -> None:
         validate_generation_identity(self.run_id, self.generation,
                                      self.parent_manifest_sha256, self.implementation_sha256)
-        if (self.schema != BAMF_BUNDLE_SCHEMA
+        if (self.schema not in {BAMF_BUNDLE_SCHEMA, ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA}
                 or any(not isinstance(value, Mapping) for value in (
                     self.topology, self.extents, self.provenance, self.tensors,
-                    self.optimizer, self.transition, self.sidecars))):
+                    self.optimizer, self.transition, self.sidecars))
+                or (self.schema == BAMF_BUNDLE_SCHEMA
+                    and self.parent_acceptance_sha256 is not None)
+                or (self.schema == ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA
+                    and ((self.generation == 0 and self.parent_acceptance_sha256 is not None)
+                         or (self.generation > 0 and not _hex(self.parent_acceptance_sha256))))):
             invalid()
         validate_transition(self.generation, self.transition)
 
     def to_record(self) -> dict:
-        return {
+        record = {
             "schema": self.schema, "run_id": self.run_id,
             "generation": self.generation,
             "parent_manifest_sha256": self.parent_manifest_sha256,
@@ -97,18 +104,27 @@ class BamfGenerationManifest:
             "optimizer": dict(self.optimizer), "transition": dict(self.transition),
             "sidecars": dict(self.sidecars),
         }
+        if self.schema == ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA:
+            record["parent_acceptance_sha256"] = self.parent_acceptance_sha256
+        return record
 
     @classmethod
     def from_record(cls, record: Mapping) -> "BamfGenerationManifest":
-        expected = {"schema", "run_id", "generation", "parent_manifest_sha256",
-                    "implementation_sha256", "topology", "extents", "provenance",
-                    "tensors", "optimizer", "transition", "sidecars"}
-        if not isinstance(record, Mapping) or set(record) != expected:
+        base = {"schema", "run_id", "generation", "parent_manifest_sha256",
+                "implementation_sha256", "topology", "extents", "provenance",
+                "tensors", "optimizer", "transition", "sidecars"}
+        schema = record.get("schema") if isinstance(record, Mapping) else None
+        expected = base | ({"parent_acceptance_sha256"}
+                           if schema == ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA else set())
+        if (not isinstance(record, Mapping) or set(record) != expected
+                or schema not in {BAMF_BUNDLE_SCHEMA, ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA}):
             invalid()
-        return cls(*(record[name] for name in (
-            "run_id", "generation", "parent_manifest_sha256", "implementation_sha256",
-            "topology", "extents", "provenance", "tensors", "optimizer", "transition",
-            "sidecars", "schema")))
+        return cls(
+            record["run_id"], record["generation"], record["parent_manifest_sha256"],
+            record["implementation_sha256"], record["topology"], record["extents"],
+            record["provenance"], record["tensors"], record["optimizer"],
+            record["transition"], record["sidecars"],
+            record.get("parent_acceptance_sha256"), schema)
 
 
 def canonical(value) -> bytes:

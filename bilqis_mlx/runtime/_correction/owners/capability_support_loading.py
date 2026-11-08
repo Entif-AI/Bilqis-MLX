@@ -126,7 +126,7 @@ def load_current_support(run_dir: Path, capability_id: str):
 def accepted_support_census(
     run_dir: Path, manifest_sha256: str,
 ) -> tuple[RequalificationLedger, tuple[object, ...]]:
-    """Materialize all v3 learned support without registering physical owners."""
+    """Materialize current lossless learned support without physical owners."""
     from bilqis_mlx.runtime.accepted_correction_ledger import _manifest_lineage
 
     materializations = {}

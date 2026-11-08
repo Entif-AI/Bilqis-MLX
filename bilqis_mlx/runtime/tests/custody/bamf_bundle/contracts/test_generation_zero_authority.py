@@ -13,6 +13,9 @@ import mlx.core as mx
 
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 import bilqis_mlx.runtime.bamf_bundle.feature_authority as feature_authority
+from bilqis_mlx.runtime.bamf_bundle._feature_acceptance import (
+    accepted_binding_for_manifest,
+)
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.bamf_bundle import (
     InitialGenerationBinding, PreparedInitialGeneration,
@@ -23,6 +26,7 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     HP, acceptance, candidate, genesis_preparation,
     parent_state, shape_patch,
 )
+from bilqis_mlx.state_dag import persist, read_current
 
 
 class GenerationZeroAuthorityTests(unittest.TestCase):
@@ -98,7 +102,9 @@ class GenerationZeroAuthorityTests(unittest.TestCase):
             "acceptance_sha256": binding.digest,
         }
         with self.assertRaises(BilqisError) as failure:
-            feature_authority._accepted_binding(self.run, pointer, legacy)
+            accepted_binding_for_manifest(
+                self.run, manifest_sha, legacy,
+                expected_acceptance_sha256=binding.digest)
         self.assertEqual(
             failure.exception.context["reason"],
             "BAMF_GENERATION_ACCEPTANCE_INVALID")
@@ -161,6 +167,42 @@ class GenerationZeroAuthorityTests(unittest.TestCase):
         self.assertEqual(first, second)
         self.assertEqual(
             json.loads((self.run / "bamf-state.json").read_text()), first)
+
+    def _advance_factory_source(self, prepared):
+        source = Path(prepared.factory_authority.source_run_dir)
+        current = read_current(source)
+        advanced = dict(current)
+        advanced["generation"] = current["generation"] + 1
+        school = dict(current["school"])
+        checkpoint = dict(school["current_student"])
+        checkpoint.update(
+            optimizer_step=checkpoint["optimizer_step"] + 1,
+            sha256="8" * 64, filename="bundles/advanced")
+        school["current_student"] = checkpoint
+        advanced["school"] = school
+        persist(source, advanced)
+
+    def test_exact_retry_converges_after_upstream_factory_advances(self):
+        prepared, first = self.publish_genesis(run_seed=109)
+        self._advance_factory_source(prepared)
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            second = publish_initial_generation(
+                self.run, prepared, reserve_gib=0.)
+        self.assertEqual(second, first)
+        self.assertEqual(
+            json.loads((self.run / "bamf-state.json").read_text()), first)
+
+    def test_unpublished_stale_preparation_still_requires_current_factory_authority(self):
+        with shape_patch():
+            prepared = genesis_preparation(run_seed=113)
+        self._advance_factory_source(prepared)
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
+                self.assertRaises(BilqisError) as failure:
+            publish_initial_generation(self.run, prepared, reserve_gib=0.)
+        self.assertEqual(
+            failure.exception.context["reason"],
+            "BAMF_INITIAL_GENERATION_FACTORY_AUTHORITY_DRIFT")
+        self.assertFalse((self.run / "bamf-state.json").exists())
 
     def test_bootstrap_binding_cannot_authorize_successor_publication(self):
         prepared, first = self.publish_genesis(run_seed=117)

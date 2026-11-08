@@ -343,7 +343,6 @@ def validate_parsed_initial_generation_binding(student, binding, expected_digest
 
 def publish_initial_generation(run_dir, prepared: PreparedInitialGeneration, *, reserve_gib=100.0):
     """Publish genesis through the existing B13 transaction, never through C05."""
-    validate_initial_generation_preparation(prepared)
     from .publication import _publish_authorized_generation
     return _publish_authorized_generation(
         run_dir, prepared.candidate, prepared, reserve_gib=reserve_gib)

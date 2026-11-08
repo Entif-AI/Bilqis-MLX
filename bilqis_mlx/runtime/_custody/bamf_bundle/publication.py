@@ -16,7 +16,8 @@ from .package_import_transition import (
     is_package_import_transition, require_issued_package_import_transition,
 )
 from .records import (
-    BAMF_POINTER_SCHEMA, BamfBundleCandidate, CompleteStudent, canonical, invalid, sha,
+    ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA, BAMF_POINTER_SCHEMA,
+    BamfBundleCandidate, CompleteStudent, canonical, invalid, sha, sidecar_records,
 )
 
 from ._publication_storage import (
@@ -140,10 +141,62 @@ def _require_accepted_parent(run_dir: Path, candidate: BamfBundleCandidate,
         expected_manifest_sha256=parent_sha)
     if (parent.run_id != candidate.run_id
             or parent.generation + 1 != candidate.generation
-            or candidate.run_identity != parent.run_identity
+            or (parent.run_identity is not None
+                and parent.run_identity != candidate.run_identity)
             or acceptance.parent_candidate_identity_sha256
             != candidate_identity_digest(parent.retained_state)):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+
+
+def _parent_acceptance_for_publication(
+        run_dir: Path, candidate: BamfBundleCandidate,
+        accepted: AcceptedCandidateBinding):
+    """Read the exact parent acceptance that the new immutable manifest must bind."""
+    pointer_path = Path(run_dir) / "bamf-state.json"
+    with _pointer_lock(run_dir):
+        current = _read_pointer(pointer_path)
+        if current is None:
+            if candidate.generation != 0 or candidate.parent_manifest_sha256 is not None:
+                invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
+            return None
+        if current["generation"] == candidate.generation:
+            if (current["run_id"] != candidate.run_id
+                    or current["parent_manifest_sha256"] != candidate.parent_manifest_sha256
+                    or current.get("acceptance_sha256") != accepted.digest):
+                invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
+            manifest = _live_bundle_manifest(run_dir, current)
+            if manifest.get("schema") != ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA:
+                return _UNBOUND_RETRY
+            return manifest.get("parent_acceptance_sha256")
+        if (current["run_id"] != candidate.run_id
+                or current["generation"] != candidate.generation - 1
+                or current["manifest_sha256"] != candidate.parent_manifest_sha256):
+            invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
+        parent = load_bamf_bundle(
+            run_dir / current["bundle"],
+            expected_manifest_sha256=current["manifest_sha256"])
+        _require_published_acceptance(run_dir, current, parent)
+        return current["acceptance_sha256"]
+
+
+_UNBOUND_RETRY = object()
+
+
+def _save_publication_bundle(candidate: BamfBundleCandidate, stage: Path,
+                             parent_acceptance, *, reserve_gib: float):
+    """Use the acceptance-bound writer when available; preserve pinned old-writer replay."""
+    if parent_acceptance is _UNBOUND_RETRY:
+        return save_bamf_bundle(candidate, stage, reserve_gib=reserve_gib)
+    try:
+        return save_bamf_bundle(
+            candidate, stage, reserve_gib=reserve_gib,
+            parent_acceptance_sha256=parent_acceptance)
+    except TypeError as exc:
+        if "unexpected keyword argument 'parent_acceptance_sha256'" not in str(exc):
+            raise
+        if candidate.generation > 0:
+            invalid("BAMF_GENERATION_ACCEPTANCE_MISSING")
+        return save_bamf_bundle(candidate, stage, reserve_gib=reserve_gib)
 
 
 def publish_bamf_generation(run_dir: Path, candidate: BamfBundleCandidate, *,
@@ -155,9 +208,41 @@ def publish_bamf_generation(run_dir: Path, candidate: BamfBundleCandidate, *,
         run_dir, candidate, accepted, reserve_gib=reserve_gib)
 
 
+def _existing_initial_generation_retry(
+        run_dir: Path, candidate: BamfBundleCandidate, prepared):
+    """Converge an exact sealed genesis retry without depending on mutable upstream."""
+    run_dir = Path(run_dir)
+    pointer_path = run_dir / "bamf-state.json"
+    with _pointer_lock(run_dir):
+        current = _read_pointer(pointer_path)
+        if current is None:
+            return None
+        if (current.get("schema") != BAMF_POINTER_SCHEMA
+                or current.get("run_id") != candidate.run_id
+                or current.get("generation") != 0
+                or current.get("parent_manifest_sha256") is not None
+                or current.get("acceptance_sha256") != prepared.binding.digest):
+            invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
+        student, locked_pointer = _load_generation_locked(pointer_path)
+        if locked_pointer != current:
+            invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
+        acceptance = _require_published_acceptance(run_dir, current, student)
+        if (acceptance.digest != prepared.binding.digest
+                or student.implementation_sha256 != candidate.implementation_sha256
+                or student.topology != candidate.topology
+                or student.extents != candidate.extents
+                or student.provenance != candidate.provenance
+                or student.transition != candidate.transition
+                or student.run_identity != candidate.run_identity
+                or student.optimizer_hyperparameters != candidate.optimizer_hyperparameters
+                or sidecar_records(student) != sidecar_records(candidate)):
+            invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
+        return current
+
+
 def _publish_authorized_generation(run_dir: Path, candidate: BamfBundleCandidate,
                                    authority, *, reserve_gib: float) -> dict:
-    """Shared crash-safe transaction after the generation owner authenticates authority."""
+    """Shared crash-safe transaction after generation-specific authority validates."""
     if candidate.generation == 0:
         from .genesis import (
             PreparedInitialGeneration, validate_initial_generation_preparation,
@@ -165,14 +250,21 @@ def _publish_authorized_generation(run_dir: Path, candidate: BamfBundleCandidate
         if (type(authority) is not PreparedInitialGeneration
                 or authority.candidate is not candidate):
             invalid("BAMF_INITIAL_GENERATION_PREPARATION_REQUIRED")
+        authority.__post_init__()
+        existing = _existing_initial_generation_retry(run_dir, candidate, authority)
+        if existing is not None:
+            return existing
         validate_initial_generation_preparation(authority)
         authority = authority.binding
     else:
         authority = _require_acceptance(candidate, authority)
     run_dir = Path(run_dir)
+    parent_acceptance = _parent_acceptance_for_publication(
+        run_dir, candidate, authority)
     stage = _stage(run_dir)
     try:
-        manifest = save_bamf_bundle(candidate, stage, reserve_gib=reserve_gib)
+        manifest = _save_publication_bundle(
+            candidate, stage, parent_acceptance, reserve_gib=reserve_gib)
         digest = manifest["manifest_sha256"]
         target = _require_bundle_root(run_dir, create=True) / digest
         pointer_path = run_dir / "bamf-state.json"
@@ -194,6 +286,14 @@ def _publish_authorized_generation(run_dir: Path, candidate: BamfBundleCandidate
                 reconcile_bamf_outbox(run_dir, student)
                 return current
             _validate_parent_transition(run_dir, current, candidate)
+            if candidate.generation > 0:
+                parent = load_bamf_bundle(
+                    run_dir / current["bundle"],
+                    expected_manifest_sha256=current["manifest_sha256"])
+                live_parent_acceptance = _require_published_acceptance(
+                    run_dir, current, parent)
+                if live_parent_acceptance.digest != parent_acceptance:
+                    invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
             if target.exists() or target.is_symlink():
                 if target.is_symlink() or not target.is_dir():
                     invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
@@ -223,7 +323,6 @@ def _publish_authorized_generation(run_dir: Path, candidate: BamfBundleCandidate
             shutil.rmtree(stage)
         raise
 
-
 def _load_generation_locked(pointer_path: Path) -> tuple[CompleteStudent, dict]:
     pointer = _read_pointer(pointer_path)
     if pointer is None:
@@ -239,8 +338,8 @@ def _load_generation_locked(pointer_path: Path) -> tuple[CompleteStudent, dict]:
 
 
 def _require_published_acceptance(
-        run_dir: Path, pointer: dict, student: CompleteStudent) -> AcceptedCandidateBinding:
-    """Authenticate the acceptance receipt bound by one live BAMF pointer."""
+        run_dir: Path, pointer: dict, student: CompleteStudent):
+    """Authenticate the generation-specific acceptance bound by one live pointer."""
     if pointer.get("schema") != BAMF_POINTER_SCHEMA:
         invalid("BAMF_GENERATION_ACCEPTANCE_MISSING")
     acceptance_path = (
@@ -261,7 +360,8 @@ def _require_published_acceptance(
         acceptance = AcceptedCandidateBinding.from_record(record)
     except (OSError, UnicodeDecodeError, json.JSONDecodeError, BilqisError):
         invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
-    if (acceptance.digest != pointer["acceptance_sha256"]
+    if (acceptance.schema_version != ACCEPTANCE_SCHEMA
+            or acceptance.digest != pointer["acceptance_sha256"]
             or acceptance.run_id != student.run_id
             or acceptance.generation != student.generation
             or acceptance.feature_sha256 != student.extents.factor_map_digest
@@ -271,6 +371,8 @@ def _require_published_acceptance(
             or acceptance.step_proof_sha256 != tuple(
                 proof.digest for proof in student.retained_state.step_proofs)):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+    manifest = _live_bundle_manifest(run_dir, pointer)
+    legacy_student = manifest.get("schema") != ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA
     parent_sha = student.parent_manifest_sha256
     if parent_sha is None:
         invalid("BAMF_RUN_IDENTITY_DRIFT")
@@ -279,10 +381,11 @@ def _require_published_acceptance(
         expected_manifest_sha256=parent_sha)
     if (parent.run_id != student.run_id
             or parent.generation + 1 != student.generation
-            or parent.run_identity != student.run_identity):
+            or (not legacy_student
+                and parent.run_identity is not None
+                and parent.run_identity != student.run_identity)):
         invalid("BAMF_RUN_IDENTITY_DRIFT")
     return acceptance
-
 
 def load_bamf_generation_authority(pointer_path: Path) -> tuple[CompleteStudent, str]:
     """Read current accepted B13 authority without mutating delivery state."""
