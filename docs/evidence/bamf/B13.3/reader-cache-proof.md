@@ -145,11 +145,16 @@ provenance. Current reviewed-unified ownership is:
 - accepted execution-cache reissue:
   `bilqis_mlx/runtime/_custody/bamf_bundle/accepted_runtime.py` and
   `execution_cache.py`;
-- boundary commit:
-  `bilqis_mlx/runtime/_custody/boundary_commit.py`;
+- accepted BAMF generation pointer lock/read/atomic promotion:
+  `bilqis_mlx/runtime/_custody/bamf_bundle/_publication_storage.py`,
+  consumed by `bilqis_mlx/runtime/_custody/bamf_bundle/publication.py`;
 - focused tests:
   `bilqis_mlx/runtime/tests/custody/bamf_bundle/test_cache_separation.py`,
   `test_cold_resume_continuation.py`, and `test_frozen_v1.py`.
+
+The broader predecessor checkpoint boundary owner remains
+`bilqis_mlx/runtime/_custody/boundary_commit.py`; B13.3's accepted-generation
+pointer publication does not route through that module.
 
 The current first verification command is:
 
