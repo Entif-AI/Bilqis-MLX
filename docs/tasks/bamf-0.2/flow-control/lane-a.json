@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "9301e41ef215b9d035449c3260c7cd0f8ee0b5a7",
-  "updated_at": "2026-11-07T18:21:51Z",
+  "observed_unified": "210b29c275dd912801cc85b2bc0aeb7e01c9e7f9",
+  "updated_at": "2026-11-08T06:34:00Z",
   "exception": null,
   "items": [
     {
@@ -225,6 +225,15 @@
       "summary": "A13 EGM-Mitigation follow-on turned in as PR #907. Round 1 EGM rejected caller-owned temporal authority and a skipped real-A01 witness; repair 3b80a76c replaces that seam with a hash-pinned opaque source/policy authority. Current-unified proof: source-context 10/10, C09 boundary 5/5, real A01 3/3 zero skips, changed-scope quality green. Disposable join with authoritative #752 consumer 03e7a3c0 proves hold-before-reuse and cold replay; accepted-runtime 9/9. Targeted EGM re-audit PASS at 4e3b8826 with zero Blocker/Major/Minor/Nit. Remote turn-in head 48c2dbad includes EGM evidence only after the reviewed head.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a-906-temporal-context-20261107"
+    },
+    {
+      "issue": 916,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "210b29c275dd912801cc85b2bc0aeb7e01c9e7f9",
+      "summary": "A13 source-owned four-time identity remediation selected for #911 early-resume dependency: extend the accepted hash-pinned context transition authority and durable C09 invalidation custody with explicit source/effective/observed/recorded time without caller inference or correction authority.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/916-a13-four-time-context-20261108"
     }
   ]
 }
