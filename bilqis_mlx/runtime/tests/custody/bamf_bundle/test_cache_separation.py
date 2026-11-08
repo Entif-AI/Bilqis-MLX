@@ -47,7 +47,10 @@ def _digest(value: str) -> str:
 
 
 def _shape_patch():
+    from .genesis_authority_fixtures import genesis_feature_source_patch
+
     stack = ExitStack()
+    stack.enter_context(genesis_feature_source_patch())
     targets = (
         "bilqis_mlx.runtime.model_topology_v2.expected_bamf_shapes",
         "bilqis_mlx.runtime.topology_v2.ledger.expected_bamf_shapes",
