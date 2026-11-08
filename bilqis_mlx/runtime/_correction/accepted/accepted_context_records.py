@@ -56,6 +56,9 @@ def context_invalidation_record(
     manifest_sha256: str, event: C09ContextInvalidation,
     temporal_authority=None,
 ) -> dict:
+    if (event.schema_version == C09_INVALIDATION_SCHEMA_V2
+            and temporal_authority is None):
+        _invalid("BAMF_C09_CONTEXT_TEMPORAL_AUTHORITY_REQUIRED")
     if temporal_authority is not None:
         from bilqis_mlx.factory.skos_curriculum.source_context_policy import (
             source_context_temporal_identity,
@@ -75,6 +78,21 @@ def context_invalidation_record(
         "context_invalidation": _context_invalidation_payload(event),
     }
     return {"event_id": hashlib.sha256(_canonical(body)).hexdigest(), **body}
+
+
+def _validate_source_temporal_identity(event: C09ContextInvalidation) -> dict:
+    from bilqis_mlx.factory.skos_curriculum.source_context_policy import (
+        SOURCE_CONTEXT_TEMPORAL_IDENTITY_SCHEMA,
+        validate_source_context_temporal_identity,
+    )
+    return validate_source_context_temporal_identity({
+        "source_time": event.source_time,
+        "effective_time": event.effective_time,
+        "observed_at": event.observed_at,
+        "recorded_at": event.recorded_at,
+        "authority_registry_sha256": event.temporal_authority_sha256,
+        "schema_version": SOURCE_CONTEXT_TEMPORAL_IDENTITY_SCHEMA,
+    })
 
 
 def context_invalidation_from_record(record: dict) -> C09ContextInvalidation:
@@ -123,27 +141,18 @@ def context_invalidation_from_record(record: dict) -> C09ContextInvalidation:
         )
         if event.event_id != payload["context_event_id"]:
             _invalid("BAMF_C09_CONTEXT_INVALIDATION_LEDGER_DRIFT")
+        if event.schema_version == C09_INVALIDATION_SCHEMA_V2:
+            _validate_source_temporal_identity(event)
         return event
     except (KeyError, TypeError, ValueError):
         _invalid("BAMF_C09_CONTEXT_INVALIDATION_LEDGER_INVALID")
 
 
 def context_temporal_identity_from_record(record: dict) -> dict:
-    from bilqis_mlx.factory.skos_curriculum.source_context_policy import (
-        SOURCE_CONTEXT_TEMPORAL_IDENTITY_SCHEMA,
-        validate_source_context_temporal_identity,
-    )
     event = context_invalidation_from_record(record)
     if event.schema_version != C09_INVALIDATION_SCHEMA_V2:
         _invalid("BAMF_C09_CONTEXT_TEMPORAL_IDENTITY_REQUIRED")
-    return validate_source_context_temporal_identity({
-        "source_time": event.source_time,
-        "effective_time": event.effective_time,
-        "observed_at": event.observed_at,
-        "recorded_at": event.recorded_at,
-        "authority_registry_sha256": event.temporal_authority_sha256,
-        "schema_version": SOURCE_CONTEXT_TEMPORAL_IDENTITY_SCHEMA,
-    })
+    return _validate_source_temporal_identity(event)
 
 
 def context_revalidation_record(

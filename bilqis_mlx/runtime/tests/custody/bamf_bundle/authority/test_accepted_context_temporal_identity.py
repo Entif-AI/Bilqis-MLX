@@ -1,7 +1,9 @@
 """Accepted C09 context invalidations retain source-owned four-time identity."""
+from dataclasses import replace
 from bilqis_mlx.runtime.accepted_correction_ledger import (
     CONTEXT_INVALIDATION_EVENT,
     context_invalidation_from_record,
+    context_invalidation_record,
     context_temporal_identity_from_record,
     read_records,
 )
@@ -106,6 +108,24 @@ class AcceptedContextTemporalIdentityTests(AcceptedContextFixture):
         cold_event = context_invalidation_from_record(cold_record)
         self.assertEqual(cold_event, live_event)
         self.assertEqual(context_temporal_identity_from_record(cold_record), expected)
+
+        forged_event = replace(
+            live_event,
+            source_time=live_event.source_time + 1,
+        )
+        with self.assertRaises(BilqisError):
+            context_invalidation_record(
+                cache.accepted_manifest_sha256,
+                forged_event,
+            )
+
+        forged_record = dict(cold_record)
+        forged_payload = dict(cold_record["context_invalidation"])
+        forged_payload["source_time"] = forged_event.source_time
+        forged_payload["context_event_id"] = forged_event.event_id
+        forged_record["context_invalidation"] = forged_payload
+        with self.assertRaises(BilqisError):
+            context_invalidation_from_record(forged_record)
 
         for field in ("source_time", "effective_time", "observed_at", "recorded_at"):
             with self.subTest(field=field):
